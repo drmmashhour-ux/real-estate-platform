@@ -17,5 +17,6 @@ model Property {
   sqft            Int
   propertyType    String
   createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
   ownerId         String
 }
