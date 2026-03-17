@@ -1,0 +1,339 @@
+// =============================================================================
+// BNHub Production Database Schema (Short-Term Rental Module)
+// =============================================================================
+// Design for scalable relational schema supporting millions of listings,
+// bookings, and users. Use @@map() for exact table names in PostgreSQL.
+// =============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// -----------------------------------------------------------------------------
+// Enums
+// -----------------------------------------------------------------------------
+enum UserRole {
+  guest
+  host
+  broker
+  admin
+}
+
+enum VerifiedStatus {
+  unverified
+  pending
+  verified
+  rejected
+}
+
+enum ListingStatus {
+  draft
+  published
+  unlisted
+  suspended
+}
+
+enum BookingStatus {
+  pending
+  confirmed
+  cancelled
+  completed
+}
+
+enum PaymentStatus {
+  pending
+  completed
+  failed
+  refunded
+}
+
+enum ModerationStatus {
+  pending
+  approved
+  rejected
+  changes_requested
+}
+
+// -----------------------------------------------------------------------------
+// 1. Users
+// -----------------------------------------------------------------------------
+model User {
+  id            String          @id @default(uuid())
+  name          String?
+  email         String          @unique
+  passwordHash  String?
+  role          UserRole        @default(guest)
+  phone         String?
+  profilePhoto  String?         @map("profile_photo")
+  verifiedStatus VerifiedStatus @default(unverified) @map("verified_status")
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+
+  listingsAsHost   BnhubListing[]    @relation("HostListings")
+  bookingsAsGuest  BnhubBooking[]    @relation("GuestBookings")
+  sentMessages     BnhubMessage[]    @relation("SentMessages")
+  reviewsGiven     BnhubReview[]     @relation("ReviewsGiven")
+  moderationReviews ListingModeration[] @relation("ModerationReviewer")
+
+  @@index([role])
+  @@index([email])
+  @@index([verifiedStatus])
+  @@map("users")
+}
+
+// -----------------------------------------------------------------------------
+// 2. Listings
+// -----------------------------------------------------------------------------
+model BnhubListing {
+  id                   String    @id @default(uuid())
+  hostId               String    @map("host_id")
+  host                 User      @relation("HostListings", fields: [hostId], references: [id], onDelete: Cascade)
+  title                String
+  description          String?   @db.Text
+  propertyType         String    @map("property_type")
+  roomType             String?   @map("room_type")
+  address              String
+  city                 String
+  country              String    @default("US")
+  latitude             Float?
+  longitude            Float?
+  maxGuests            Int       @map("max_guests")
+  bedrooms             Int?
+  beds                 Int
+  bathrooms            Float
+  nightlyPrice        Int       @map("nightly_price")  // cents or smallest currency unit
+  cleaningFee         Int       @default(0) @map("cleaning_fee")
+  securityDeposit     Int       @default(0) @map("security_deposit")
+  minimumStay         Int?      @map("minimum_stay")
+  maximumStay         Int?      @map("maximum_stay")
+  instantBookEnabled  Boolean   @default(false) @map("instant_book_enabled")
+  cancellationPolicy  String?   @map("cancellation_policy")
+  status              ListingStatus @default(draft)
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  photos       BnhubListingPhoto[]
+  amenities    BnhubListingAmenity[]
+  availability BnhubAvailability[]
+  bookings     BnhubBooking[]
+  reviews      BnhubReview[]
+  moderation   ListingModeration[]
+  aiPricing    AiPricingRecommendation[]
+
+  @@index([hostId])
+  @@index([city])
+  @@index([country])
+  @@index([status])
+  @@index([city, status])
+  @@index([latitude, longitude])
+  @@map("bnhub_listings")
+}
+
+// -----------------------------------------------------------------------------
+// 3. Listing Photos
+// -----------------------------------------------------------------------------
+model BnhubListingPhoto {
+  id        String   @id @default(uuid())
+  listingId String   @map("listing_id")
+  listing   BnhubListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  photoUrl  String   @map("photo_url")
+  isCover   Boolean  @default(false) @map("is_cover")
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([listingId])
+  @@map("bnhub_listing_photos")
+}
+
+// -----------------------------------------------------------------------------
+// 4. Amenities (reference + junction)
+// -----------------------------------------------------------------------------
+model Amenity {
+  id   String @id @default(uuid())
+  name String @unique
+
+  listingAmenities BnhubListingAmenity[]
+
+  @@map("amenities")
+}
+
+model BnhubListingAmenity {
+  listingId String @map("listing_id")
+  amenityId String @map("amenity_id")
+  listing   BnhubListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  amenity   Amenity @relation(fields: [amenityId], references: [id], onDelete: Cascade)
+
+  @@id([listingId, amenityId])
+  @@index([listingId])
+  @@index([amenityId])
+  @@map("bnhub_listing_amenities")
+}
+
+// -----------------------------------------------------------------------------
+// 5. Availability Calendar
+// -----------------------------------------------------------------------------
+model BnhubAvailability {
+  id                  String   @id @default(uuid())
+  listingId           String   @map("listing_id")
+  listing             BnhubListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  date                DateTime @db.Date
+  isAvailable         Boolean  @default(true) @map("is_available")
+  priceOverride       Int?     @map("price_override")  // optional nightly override (cents)
+  minimumStayOverride Int?     @map("minimum_stay_override")
+
+  @@unique([listingId, date])
+  @@index([listingId])
+  @@index([date])
+  @@index([listingId, date])
+  @@map("bnhub_availability")
+}
+
+// -----------------------------------------------------------------------------
+// 6. Bookings
+// -----------------------------------------------------------------------------
+model BnhubBooking {
+  id         String        @id @default(uuid())
+  listingId  String        @map("listing_id")
+  guestId    String        @map("guest_id")
+  listing    BnhubListing  @relation(fields: [listingId], references: [id], onDelete: Restrict)
+  guest      User          @relation("GuestBookings", fields: [guestId], references: [id], onDelete: Restrict)
+  checkIn    DateTime      @map("check_in") @db.Date
+  checkOut   DateTime      @map("check_out") @db.Date
+  guests     Int           @default(1)
+  subtotal   Int           @map("subtotal")   // cents
+  fees       Int           @default(0)      // cents (cleaning, service, etc.)
+  totalPrice Int           @map("total_price") // cents
+  status     BookingStatus @default(pending)
+  createdAt  DateTime      @default(now()) @map("created_at")
+  updatedAt  DateTime      @updatedAt @map("updated_at")
+
+  payments  Payment[]
+  reviews   BnhubReview[]
+  messages  BnhubMessage[]
+  aiFraud   AiFraudScore[]
+
+  @@index([listingId])
+  @@index([guestId])
+  @@index([checkIn])
+  @@index([checkOut])
+  @@index([status])
+  @@index([listingId, checkIn, checkOut])
+  @@map("bnhub_bookings")
+}
+
+// -----------------------------------------------------------------------------
+// 7. Payments
+// -----------------------------------------------------------------------------
+model Payment {
+  id               String        @id @default(uuid())
+  bookingId        String        @map("booking_id")
+  booking          BnhubBooking  @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+  paymentProvider  String        @map("payment_provider")
+  transactionId    String?       @map("transaction_id")
+  amount           Int           // cents
+  status           PaymentStatus @default(pending)
+  createdAt        DateTime      @default(now()) @map("created_at")
+
+  @@index([bookingId])
+  @@index([transactionId])
+  @@index([status])
+  @@map("payments")
+}
+
+// -----------------------------------------------------------------------------
+// 8. Reviews
+// -----------------------------------------------------------------------------
+model BnhubReview {
+  id         String   @id @default(uuid())
+  bookingId  String   @map("booking_id")
+  listingId  String   @map("listing_id")
+  reviewerId String   @map("reviewer_id")
+  booking    BnhubBooking @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+  listing    BnhubListing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  reviewer   User         @relation("ReviewsGiven", fields: [reviewerId], references: [id], onDelete: Restrict)
+  rating     Int           // 1-5
+  comment    String?       @db.Text
+  createdAt  DateTime      @default(now()) @map("created_at")
+
+  @@unique([bookingId])
+  @@index([listingId])
+  @@index([reviewerId])
+  @@index([createdAt])
+  @@map("bnhub_reviews")
+}
+
+// -----------------------------------------------------------------------------
+// 9. Messaging
+// -----------------------------------------------------------------------------
+model BnhubMessage {
+  id        String      @id @default(uuid())
+  bookingId String      @map("booking_id")
+  senderId  String      @map("sender_id")
+  booking   BnhubBooking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  sender    User         @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  message   String      @db.Text
+  createdAt DateTime    @default(now()) @map("created_at")
+
+  @@index([bookingId])
+  @@index([senderId])
+  @@index([createdAt])
+  @@map("bnhub_messages")
+}
+
+// -----------------------------------------------------------------------------
+// 10. Moderation
+// -----------------------------------------------------------------------------
+model ListingModeration {
+  id         String           @id @default(uuid())
+  listingId  String           @map("listing_id")
+  listing    BnhubListing     @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  status     ModerationStatus
+  reason     String?          @db.Text
+  reviewedBy String?          @map("reviewed_by")
+  reviewer   User?            @relation("ModerationReviewer", fields: [reviewedBy], references: [id], onDelete: SetNull)
+  createdAt  DateTime        @default(now()) @map("created_at")
+
+  @@index([listingId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("listing_moderation")
+}
+
+// -----------------------------------------------------------------------------
+// 11. AI Data Tables
+// -----------------------------------------------------------------------------
+model AiPricingRecommendation {
+  id                String   @id @default(uuid())
+  listingId         String   @map("listing_id")
+  listing           BnhubListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  recommendedPrice  Int      @map("recommended_price") // cents
+  priceRangeMin     Int?     @map("price_range_min")
+  priceRangeMax     Int?     @map("price_range_max")
+  confidence        Float?   // 0-1
+  factors           Json?
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@index([listingId])
+  @@index([createdAt])
+  @@map("ai_pricing_recommendations")
+}
+
+model AiFraudScore {
+  id        String   @id @default(uuid())
+  bookingId String   @map("booking_id")
+  booking   BnhubBooking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  riskScore Float    @map("risk_score") // 0-1
+  reason    String?  @db.Text
+  factors   Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([bookingId])
+  @@index([riskScore])
+  @@index([createdAt])
+  @@map("ai_fraud_scores")
+}

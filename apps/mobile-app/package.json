@@ -1,0 +1,11 @@
+{
+  "name": "@lecipm/mobile-app",
+  "version": "0.1.0",
+  "private": true,
+  "description": "LECIPM mobile — web placeholder; native iOS/Android planned",
+  "scripts": {
+    "dev": "npx serve . -l 3013",
+    "build": "echo 'Web placeholder — no build'",
+    "lint": "echo 'No lint configured'"
+  }
+}

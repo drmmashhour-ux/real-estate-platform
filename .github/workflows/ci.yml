@@ -1,0 +1,48 @@
+# LECIPM Platform — CI
+# Runs on push and PR to main. Install, lint, build (and optional test).
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+defaults:
+  run:
+    working-directory: .
+
+jobs:
+  lint-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint --if-present
+        continue-on-error: true
+
+      - name: Build
+        run: npm run build --if-present
+
+  # Optional: run tests when DATABASE_URL is not required (unit tests only)
+  test-auth:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - run: npm ci
+      - name: Test auth-service
+        run: npm run test --workspace=@lecipm/auth-service --if-present

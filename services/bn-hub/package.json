@@ -1,0 +1,6 @@
+{
+  "name": "@lecipm/bn-hub",
+  "version": "0.1.0",
+  "private": true,
+  "description": "BNHub short-term rental service. Logic in apps/web-app/lib/bnhub and apps/web-app/app/api/bnhub"
+}

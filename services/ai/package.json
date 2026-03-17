@@ -1,0 +1,28 @@
+{
+  "name": "@lecipm/ai-service",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint src --ext .ts",
+    "pipeline": "tsx src/pipeline/run.ts"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.14.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0",
+    "supertest": "^7.0.0"
+  }
+}
