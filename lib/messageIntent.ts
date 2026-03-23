@@ -1,7 +1,12 @@
-export type MessageIntent = "renew_subscription" | "unknown";
+export type MessageIntent =
+  | "renew_subscription"
+  | "billing_timing_question"
+  | "unknown";
 
 const PLAN_KEYWORDS = ["plan", "subscription", "membership", "package"];
 const RENEW_KEYWORDS = ["renew", "renewal", "extend", "continue"];
+const PAYMENT_KEYWORDS = ["pay", "payment", "bill", "billing", "charge"];
+const TIMING_KEYWORDS = ["now", "wait", "finish", "finished", "later", "until"];
 
 function normalizeMessage(message: string): string {
   return message
@@ -21,6 +26,15 @@ export function detectMessageIntent(message: string): MessageIntent {
   const normalizedMessage = normalizeMessage(message);
 
   if (
+    hasKeyword(normalizedMessage, PAYMENT_KEYWORDS) &&
+    hasKeyword(normalizedMessage, PLAN_KEYWORDS) &&
+    (hasKeyword(normalizedMessage, TIMING_KEYWORDS) ||
+      hasKeyword(normalizedMessage, RENEW_KEYWORDS))
+  ) {
+    return "billing_timing_question";
+  }
+
+  if (
     hasKeyword(normalizedMessage, RENEW_KEYWORDS) &&
     hasKeyword(normalizedMessage, PLAN_KEYWORDS)
   ) {
@@ -32,6 +46,10 @@ export function detectMessageIntent(message: string): MessageIntent {
 
 export function buildAssistantReply(message: string): string {
   const intent = detectMessageIntent(message);
+
+  if (intent === "billing_timing_question") {
+    return "Yes — you can pay now to renew, or you can wait until your current plan finishes and renew then. To avoid service interruption, renew before the current period ends.";
+  }
 
   if (intent === "renew_subscription") {
     return "Absolutely — I can help with your plan renewal. Please share the email on your account, and confirm whether you want monthly or annual billing.";
