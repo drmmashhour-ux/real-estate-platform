@@ -4,7 +4,7 @@ const invoices = [
     issuedOn: "Mar 10, 2026",
     dueOn: "Mar 25, 2026",
     amount: "$2,400",
-    status: "Pending",
+    status: "Paid",
   },
   {
     id: "INV-2026-002",
@@ -18,7 +18,7 @@ const invoices = [
     issuedOn: "Feb 28, 2026",
     dueOn: "Mar 14, 2026",
     amount: "$890",
-    status: "Overdue",
+    status: "Paid",
   },
 ];
 
@@ -29,6 +29,10 @@ const statusColor: Record<string, string> = {
 };
 
 export default function InvoicesPage() {
+  const payableInvoices = invoices.filter(
+    (invoice) => invoice.status === "Pending" || invoice.status === "Overdue",
+  );
+
   return (
     <main className="bg-slate-950 text-slate-50">
       <section className="border-b border-slate-800 bg-slate-950/80">
@@ -47,6 +51,11 @@ export default function InvoicesPage() {
 
       <section className="bg-slate-950/90">
         <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-12 lg:px-8">
+          {payableInvoices.length === 0 && (
+            <div className="mb-5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300 sm:px-5">
+              No invoice to pay.
+            </div>
+          )}
           <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/60 shadow-lg shadow-slate-950/50">
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-slate-800">
