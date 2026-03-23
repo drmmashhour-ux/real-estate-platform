@@ -33,6 +33,10 @@ export default function InvoicesPage() {
 
       <section className="bg-slate-950/90">
         <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-12 lg:px-8">
+          <div className="mb-5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300 sm:px-5">
+            Auto-renew is enabled. Your subscription will renew automatically on
+            the same plan.
+          </div>
           {!hasInvoices ? (
             <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-8 text-center shadow-lg shadow-slate-950/50">
               <p className="text-lg font-semibold text-slate-100">No invoice there.</p>
