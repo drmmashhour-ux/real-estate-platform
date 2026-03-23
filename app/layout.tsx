@@ -30,6 +30,9 @@ export default function RootLayout({
                 <a href="/properties" className="hover:text-emerald-300">
                   Properties
                 </a>
+                <a href="/invoices" className="hover:text-emerald-300">
+                  Invoices
+                </a>
                 <a href="/contact" className="hover:text-emerald-300">
                   Contact
                 </a>
