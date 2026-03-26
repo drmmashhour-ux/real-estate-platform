@@ -1,3 +1,4 @@
+import Link from "next/link";
 import "./globals.css";
 export default function RootLayout({
   children,
@@ -24,15 +25,15 @@ export default function RootLayout({
                 </div>
               </div>
               <nav className="flex items-center gap-4 text-xs font-medium text-slate-300 sm:text-sm">
-                <a href="/" className="hover:text-emerald-300">
+                <Link href="/" className="hover:text-emerald-300">
                   Home
-                </a>
-                <a href="/properties" className="hover:text-emerald-300">
+                </Link>
+                <Link href="/properties" className="hover:text-emerald-300">
                   Properties
-                </a>
-                <a href="/contact" className="hover:text-emerald-300">
+                </Link>
+                <Link href="/contact" className="hover:text-emerald-300">
                   Contact
-                </a>
+                </Link>
               </nav>
             </div>
           </header>
