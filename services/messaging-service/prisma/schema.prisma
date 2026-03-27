@@ -1,0 +1,59 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Conversations between users (1:1 or future group)
+model Conversation {
+  id        String                   @id @default(uuid())
+  createdAt DateTime                 @default(now())
+  updatedAt DateTime                 @updatedAt
+  participants ConversationParticipant[]
+  messages  Message[]
+
+  @@index([updatedAt])
+}
+
+// Links users to conversations; lastReadAt for unread tracking
+model ConversationParticipant {
+  id             String       @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId         String
+  lastReadAt     DateTime?    // null = never read; unread count = messages after this time from others
+  joinedAt       DateTime     @default(now())
+
+  @@unique([conversationId, userId])
+  @@index([userId])
+  @@index([conversationId])
+}
+
+model Message {
+  id             String             @id @default(uuid())
+  conversationId String
+  conversation   Conversation       @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  body           String             @db.Text
+  createdAt      DateTime           @default(now())
+  attachments    MessageAttachment[]
+
+  @@index([conversationId])
+  @@index([conversationId, createdAt])
+  @@index([senderId])
+}
+
+model MessageAttachment {
+  id        String   @id @default(uuid())
+  messageId String
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  url       String   // Storage URL (e.g. S3, CDN)
+  type      String   // MIME type or label: image, file, etc.
+  filename  String?
+  createdAt DateTime @default(now())
+
+  @@index([messageId])
+}

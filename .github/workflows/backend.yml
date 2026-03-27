@@ -1,0 +1,57 @@
+# When services/backend/package.json exists (e.g. @lecipm/backend in pnpm workspace), build & test it.
+name: Backend (optional)
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "services/backend/**"
+  pull_request:
+    branches: [main]
+    paths:
+      - "services/backend/**"
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect backend package
+        id: pkg
+        run: |
+          if [ -f services/backend/package.json ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: pnpm/action-setup@v4
+        if: steps.pkg.outputs.exists == 'true'
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        if: steps.pkg.outputs.exists == 'true'
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Install monorepo
+        if: steps.pkg.outputs.exists == 'true'
+        run: pnpm install --frozen-lockfile
+
+      - name: Build @lecipm/backend
+        if: steps.pkg.outputs.exists == 'true'
+        run: pnpm --filter @lecipm/backend run build --if-present
+
+      - name: Test @lecipm/backend
+        if: steps.pkg.outputs.exists == 'true'
+        run: pnpm --filter @lecipm/backend run test --if-present
+
+      - name: Skip notice
+        if: steps.pkg.outputs.exists != 'true'
+        run: echo "No services/backend/package.json — skipped (see services/backend/README.md)."

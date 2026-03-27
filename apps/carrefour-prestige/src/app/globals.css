@@ -1,0 +1,22 @@
+@import "tailwindcss";
+@source "../**/*.{js,ts,jsx,tsx}";
+
+:root {
+  --color-bg: #0b0b0b;
+  --color-surface: #111111;
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-gold: #c9a646;
+  --color-green: #0f3d2e;
+  --color-text: #ffffff;
+  --color-muted: #cccccc;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-muted);
+}
+
+@theme inline {
+  --font-family-sans: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-family-serif: var(--font-serif), ui-serif, Georgia, "Times New Roman", serif;
+}

@@ -1,0 +1,111 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Incidents (user-reported issues: fraud, harassment, content, etc.)
+// ---------------------------------------------------------------------------
+enum IncidentType {
+  FRAUD
+  HARASSMENT
+  INAPPROPRIATE_CONTENT
+  SCAM
+  SAFETY_CONCERN
+  OTHER
+}
+
+enum IncidentStatus {
+  PENDING
+  REVIEWING
+  RESOLVED
+  DISMISSED
+}
+
+model Incident {
+  id               String         @id @default(uuid())
+  reporterId       String
+  reportedUserId   String?        // accused user (if report is about a person)
+  reportedListingId String?       // accused listing (if report is about a listing)
+  type             IncidentType
+  description      String         @db.Text
+  status           IncidentStatus @default(PENDING)
+  priority         Int            @default(0) // higher = more urgent
+  createdAt        DateTime       @default(now())
+  resolvedAt       DateTime?
+  resolvedById     String?
+  resolutionNotes  String?        @db.Text
+
+  @@index([reporterId])
+  @@index([reportedUserId])
+  @@index([reportedListingId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Flags (quick flag on account or listing for moderation)
+// ---------------------------------------------------------------------------
+enum FlagTargetType {
+  ACCOUNT
+  LISTING
+}
+
+enum FlagStatus {
+  PENDING
+  REVIEWED
+  DISMISSED
+}
+
+model Flag {
+  id          String         @id @default(uuid())
+  flaggerId   String
+  targetType  FlagTargetType
+  targetId    String         // userId or listingId
+  reason      String         @db.Text
+  status      FlagStatus     @default(PENDING)
+  createdAt   DateTime       @default(now())
+  reviewedAt  DateTime?
+  reviewedById String?
+
+  @@index([flaggerId])
+  @@index([targetType, targetId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Suspensions (account or listing suspension)
+// ---------------------------------------------------------------------------
+enum SuspensionTargetType {
+  ACCOUNT
+  LISTING
+}
+
+enum SuspensionStatus {
+  ACTIVE
+  LIFTED
+  EXPIRED
+}
+
+model Suspension {
+  id           String              @id @default(uuid())
+  targetType   SuspensionTargetType
+  targetId     String              // userId or listingId
+  reason       String              @db.Text
+  status       SuspensionStatus     @default(ACTIVE)
+  suspendedAt  DateTime            @default(now())
+  expiresAt    DateTime?           // null = indefinite
+  suspendedById String?
+  liftedAt     DateTime?
+  liftedById   String?
+
+  @@index([targetType, targetId])
+  @@index([status])
+  @@index([suspendedAt])
+  @@index([expiresAt])
+}

@@ -1,0 +1,10 @@
+# Supabase CLI config — Edge Functions for BNHub Growth Engine call LECIPM Next.js internal APIs.
+# Database migrations for this monorepo are owned by Prisma (`apps/web-app/prisma/migrations`).
+
+project_id = "lecipm-bnhub"
+
+[api]
+enabled = true
+
+[functions]
+verify_jwt = false

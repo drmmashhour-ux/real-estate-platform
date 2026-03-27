@@ -1,0 +1,355 @@
+import {
+  BnhubFraudFlagStatus,
+  BnhubFraudFlagType,
+  BnhubFraudSeverity,
+  BnhubTrustProfileStatus,
+  BnhubTrustRiskLevel,
+  ListingStatus,
+  VerificationStatus,
+} from "@prisma/client";
+import { prisma } from "@/lib/db";
+import { scorePhotoCoverage, detectExteriorPhotoPresence } from "./mediaValidationService";
+import { computePropertyScore, type ListingForClassification } from "./propertyClassificationService";
+import { logFraudAction, logTrustDecision } from "./trustAuditService";
+
+export function computeVerificationScore(verificationStatus: VerificationStatus): number {
+  switch (verificationStatus) {
+    case VerificationStatus.VERIFIED:
+      return 100;
+    case VerificationStatus.PENDING:
+      return 45;
+    default:
+      return 25;
+  }
+}
+
+export async function computeDocumentationScore(listingId: string): Promise<number> {
+  const n = await prisma.propertyDocument.count({ where: { listingId } });
+  if (n >= 2) return 90;
+  if (n === 1) return 65;
+  return 30;
+}
+
+export function computeListingConsistencyScore(input: {
+  address: string;
+  city: string;
+  description: string | null;
+  propertyType: string | null;
+}): number {
+  const blob = `${input.description ?? ""}`.toLowerCase();
+  const city = input.city.toLowerCase();
+  const addr = input.address.toLowerCase();
+  let s = 70;
+  if (city && blob.includes(city)) s += 15;
+  if (addr.length > 8 && blob.includes(addr.slice(0, 8))) s += 10;
+  if (input.propertyType && blob.includes(input.propertyType.toLowerCase())) s += 5;
+  return Math.min(100, s);
+}
+
+export function computePhotoAuthenticityScore(photoUrls: string[], experienceTags: unknown, description: string | null): number {
+  return scorePhotoCoverage({ photoUrls, experienceTags, description }).coverageScore;
+}
+
+export async function computePricingSanityScore(listingId: string, nightPriceCents: number, city: string): Promise<number> {
+  if (nightPriceCents <= 0) return 0;
+  const peers = await prisma.shortTermListing.findMany({
+    where: {
+      city: { equals: city, mode: "insensitive" },
+      listingStatus: ListingStatus.PUBLISHED,
+      NOT: { id: listingId },
+    },
+    select: { nightPriceCents: true },
+    take: 80,
+  });
+  if (peers.length < 5) return 70;
+  const sorted = peers.map((p) => p.nightPriceCents).sort((a, b) => a - b);
+  const p25 = sorted[Math.floor(sorted.length * 0.25)]!;
+  const p75 = sorted[Math.floor(sorted.length * 0.75)]!;
+  if (nightPriceCents < p25 * 0.35) return 25;
+  if (nightPriceCents > p75 * 4) return 35;
+  return 90;
+}
+
+export async function computeDuplicationRisk(
+  listingId: string,
+  hostUserId: string,
+  title: string,
+  photoUrls: string[]
+): Promise<number> {
+  const titleNorm = title.trim().toLowerCase().slice(0, 48);
+  const siblings = await prisma.shortTermListing.findMany({
+    where: { ownerId: hostUserId, NOT: { id: listingId } },
+    select: { id: true, title: true, photos: true },
+    take: 40,
+  });
+  let risk = 10;
+  for (const o of siblings) {
+    const ot = o.title.trim().toLowerCase().slice(0, 48);
+    if (titleNorm.length > 12 && ot === titleNorm) risk += 35;
+    const op = Array.isArray(o.photos) ? o.photos.filter((x): x is string => typeof x === "string") : [];
+    for (const u of photoUrls) {
+      if (op.some((p) => p.split("?")[0] === u.split("?")[0])) risk += 25;
+    }
+  }
+  return Math.min(100, risk);
+}
+
+export function computeBehaviorRiskScore(_listing: { updatedAt: Date; createdAt: Date }): number {
+  return 40;
+}
+
+export function deriveOverallRiskLevel(input: {
+  duplicationRiskScore: number;
+  pricingSanityScore: number;
+  verificationScore: number;
+  documentationScore: number;
+}): BnhubTrustRiskLevel {
+  if (input.duplicationRiskScore >= 70 || input.pricingSanityScore <= 30) return BnhubTrustRiskLevel.CRITICAL;
+  if (input.duplicationRiskScore >= 45 || input.pricingSanityScore <= 45 || input.verificationScore < 30)
+    return BnhubTrustRiskLevel.HIGH;
+  if (input.duplicationRiskScore >= 25 || input.pricingSanityScore <= 60 || input.documentationScore < 40)
+    return BnhubTrustRiskLevel.MEDIUM;
+  return BnhubTrustRiskLevel.LOW;
+}
+
+export async function generateFraudFlags(args: {
+  listingId: string;
+  hostUserId: string;
+  nightPriceCents: number;
+  city: string;
+  photoUrls: string[];
+  experienceTags: unknown;
+  description: string | null;
+  duplicationRisk: number;
+  pricingSanity: number;
+  exteriorOk: boolean;
+}): Promise<void> {
+  const open = async (type: BnhubFraudFlagType, severity: BnhubFraudSeverity, summary: string, evidence: object) => {
+    const exists = await prisma.bnhubFraudFlag.findFirst({
+      where: { listingId: args.listingId, flagType: type, status: BnhubFraudFlagStatus.OPEN },
+    });
+    if (exists) return;
+    await prisma.bnhubFraudFlag.create({
+      data: {
+        listingId: args.listingId,
+        hostUserId: args.hostUserId,
+        flagType: type,
+        severity,
+        status: BnhubFraudFlagStatus.OPEN,
+        autoGenerated: true,
+        summary,
+        evidenceJson: evidence,
+      },
+    });
+    await logFraudAction(args.listingId, args.hostUserId, "flag_created", { type, severity, summary });
+  };
+
+  if (!args.exteriorOk) {
+    await open(
+      BnhubFraudFlagType.MISSING_EXTERIOR_PHOTO,
+      BnhubFraudSeverity.LOW,
+      "No exterior or outdoor context signal detected from metadata — additional validation recommended.",
+      { listingId: args.listingId }
+    );
+  }
+  if (args.pricingSanity <= 40) {
+    await open(
+      BnhubFraudFlagType.SUSPICIOUS_PRICE,
+      BnhubFraudSeverity.MEDIUM,
+      "Nightly price is far from typical internal peers in this city — review recommended.",
+      { nightPriceCents: args.nightPriceCents, city: args.city }
+    );
+  }
+  if (args.duplicationRisk >= 50) {
+    await open(
+      BnhubFraudFlagType.DUPLICATE_LISTING,
+      BnhubFraudSeverity.HIGH,
+      "Strong overlap with another listing from the same host — manual review suggested.",
+      {}
+    );
+  }
+}
+
+export async function resolveFraudFlag(id: string, actorNote?: string): Promise<void> {
+  const row = await prisma.bnhubFraudFlag.update({
+    where: { id },
+    data: { status: BnhubFraudFlagStatus.RESOLVED },
+  });
+  await logFraudAction(row.listingId, row.hostUserId, "resolve", { id, actorNote });
+}
+
+export async function dismissFraudFlag(id: string, actorNote?: string): Promise<void> {
+  const row = await prisma.bnhubFraudFlag.update({
+    where: { id },
+    data: { status: BnhubFraudFlagStatus.DISMISSED },
+  });
+  await logFraudAction(row.listingId, row.hostUserId, "dismiss", { id, actorNote });
+}
+
+export async function escalateFraudFlag(id: string, actorNote?: string): Promise<void> {
+  const row = await prisma.bnhubFraudFlag.update({
+    where: { id },
+    data: { status: BnhubFraudFlagStatus.ESCALATED, severity: BnhubFraudSeverity.CRITICAL },
+  });
+  await logFraudAction(row.listingId, row.hostUserId, "escalate", { id, actorNote });
+}
+
+export async function getTrustProfile(listingId: string) {
+  return prisma.bnhubTrustProfile.findUnique({ where: { listingId } });
+}
+
+export function getTrustRecommendations(flagsJson: unknown, status: BnhubTrustProfileStatus): string[] {
+  const out: string[] = [];
+  if (status === BnhubTrustProfileStatus.REVIEW_REQUIRED) {
+    out.push("Trust verification incomplete — additional validation recommended.");
+  }
+  if (status === BnhubTrustProfileStatus.RESTRICTED) {
+    out.push("Listing has restricted trust status — promotion may be limited until review.");
+  }
+  return out;
+}
+
+export async function computeTrustProfile(listingId: string): Promise<void> {
+  const listing = await prisma.shortTermListing.findUnique({
+    where: { id: listingId },
+    include: { listingPhotos: { select: { url: true } } },
+  });
+  if (!listing) return;
+
+  const photoUrls = [
+    ...collectPhotos(listing.photos),
+    ...listing.listingPhotos.map((p) => p.url),
+  ];
+  const unique = [...new Set(photoUrls)];
+
+  const shaped: ListingForClassification = {
+    title: listing.title,
+    description: listing.description,
+    maxGuests: listing.maxGuests,
+    beds: listing.beds,
+    bedrooms: listing.bedrooms,
+    amenities: listing.amenities,
+    safetyFeatures: listing.safetyFeatures,
+    checkInInstructions: listing.checkInInstructions,
+    instantBookEnabled: listing.instantBookEnabled,
+    cleaningFeeCents: listing.cleaningFeeCents,
+    minStayNights: listing.minStayNights,
+    maxStayNights: listing.maxStayNights,
+    neighborhoodDetails: listing.neighborhoodDetails,
+    experienceTags: listing.experienceTags,
+    servicesOffered: listing.servicesOffered,
+    photos: listing.photos,
+    listingPhotoUrls: listing.listingPhotos.map((p) => p.url),
+  };
+  const cls = computePropertyScore(shaped);
+
+  const verificationScore = computeVerificationScore(listing.verificationStatus);
+  const documentationScore = await computeDocumentationScore(listingId);
+  const listingConsistencyScore = computeListingConsistencyScore({
+    address: listing.address,
+    city: listing.city,
+    description: listing.description,
+    propertyType: listing.propertyType,
+  });
+  const photoAuthenticityScore = computePhotoAuthenticityScore(unique, listing.experienceTags, listing.description);
+  const pricingSanityScore = await computePricingSanityScore(listingId, listing.nightPriceCents, listing.city);
+  const duplicationRiskScore = await computeDuplicationRisk(
+    listingId,
+    listing.ownerId,
+    listing.title,
+    unique
+  );
+  const behaviorRiskScore = computeBehaviorRiskScore(listing);
+
+  const overallRiskLevel = deriveOverallRiskLevel({
+    duplicationRiskScore,
+    pricingSanityScore,
+    verificationScore,
+    documentationScore,
+  });
+
+  const trustScore = Math.round(
+    verificationScore * 0.22 +
+      documentationScore * 0.18 +
+      listingConsistencyScore * 0.14 +
+      photoAuthenticityScore * 0.14 +
+      pricingSanityScore * 0.12 +
+      (100 - duplicationRiskScore) * 0.12 +
+      (100 - behaviorRiskScore) * 0.08
+  );
+
+  let status: BnhubTrustProfileStatus = BnhubTrustProfileStatus.TRUSTED;
+  if (overallRiskLevel === BnhubTrustRiskLevel.CRITICAL) status = BnhubTrustProfileStatus.BLOCKED;
+  else if (overallRiskLevel === BnhubTrustRiskLevel.HIGH) status = BnhubTrustProfileStatus.RESTRICTED;
+  else if (overallRiskLevel === BnhubTrustRiskLevel.MEDIUM) status = BnhubTrustProfileStatus.REVIEW_REQUIRED;
+
+  const recommendations = getTrustRecommendations(null, status);
+  const exteriorOk = detectExteriorPhotoPresence({
+    photoUrls: unique,
+    experienceTags: listing.experienceTags,
+    description: listing.description,
+  });
+
+  await generateFraudFlags({
+    listingId,
+    hostUserId: listing.ownerId,
+    nightPriceCents: listing.nightPriceCents,
+    city: listing.city,
+    photoUrls: unique,
+    experienceTags: listing.experienceTags,
+    description: listing.description,
+    duplicationRisk: duplicationRiskScore,
+    pricingSanity: pricingSanityScore,
+    exteriorOk,
+  });
+
+  await prisma.bnhubTrustProfile.upsert({
+    where: { listingId },
+    create: {
+      listingId,
+      hostUserId: listing.ownerId,
+      trustScore,
+      verificationScore,
+      documentationScore,
+      listingConsistencyScore,
+      photoAuthenticityScore,
+      pricingSanityScore,
+      duplicationRiskScore,
+      behaviorRiskScore,
+      overallRiskLevel,
+      status,
+      flagsJson: { classificationStars: cls.starRating },
+      recommendationsJson: recommendations,
+    },
+    update: {
+      trustScore,
+      verificationScore,
+      documentationScore,
+      listingConsistencyScore,
+      photoAuthenticityScore,
+      pricingSanityScore,
+      duplicationRiskScore,
+      behaviorRiskScore,
+      overallRiskLevel,
+      status,
+      flagsJson: { classificationStars: cls.starRating },
+      recommendationsJson: recommendations,
+      computedAt: new Date(),
+    },
+  });
+
+  await logTrustDecision(listingId, listing.ownerId, {
+    trustScore,
+    overallRiskLevel,
+    status,
+  });
+}
+
+function collectPhotos(photos: unknown): string[] {
+  if (!Array.isArray(photos)) return [];
+  return photos.filter((p): p is string => typeof p === "string");
+}
+
+export async function refreshTrustProfileForListing(listingId: string): Promise<void> {
+  await computeTrustProfile(listingId);
+}

@@ -1,0 +1,51 @@
+/**
+ * TrustGraph Autopilot — central config surface (re-exports).
+ * Canonical implementation: `lib/trustgraph/config.ts`, `lib/trustgraph/feature-flags.ts`.
+ */
+export {
+  TRUSTGRAPH_RULE_VERSION,
+  getPhase5GrowthConfig,
+  getTrustGraphFeatureFlags,
+  isTrustGraphAdminQueueEnabled,
+  isTrustGraphBnhubRiskEnabled,
+  isTrustGraphBrokerBadgeEnabled,
+  isTrustGraphDeclarationWidgetEnabled,
+  isTrustGraphEnabled,
+  isTrustGraphInvestorFiltersEnabled,
+  isTrustGraphLeadRoutingEnabled,
+  isTrustGraphListingBadgeEnabled,
+  isTrustGraphMortgageAutopilotEnabled,
+  isTrustGraphRankingBoostEnabled,
+  isTrustGraphDocExtractionEnabled,
+  isTrustGraphGeospatialValidationEnabled,
+  isTrustGraphMediaClassificationEnabled,
+  isTrustGraphAntifraudGraphEnabled,
+  isTrustGraphPremiumPlacementEnabled,
+  getPhase6MoatConfig,
+  getPhase7EnterpriseConfig,
+  getPhase8PlatformConfig,
+  isTrustGraphDocumentApprovalsEnabled,
+  isTrustGraphEnterpriseWorkspacesEnabled,
+  isTrustGraphLegalSlaEnabled,
+  isTrustGraphPortfolioAnalyticsEnabled,
+  isTrustGraphWhiteLabelDashboardsEnabled,
+  isTrustGraphAuditExportsEnabled,
+  isTrustGraphBillingEnabled,
+  isTrustGraphComplianceRulesetsEnabled,
+  isTrustGraphExternalApiEnabled,
+  isTrustGraphRecertificationEnabled,
+  type Phase5GrowthConfig,
+  type Phase6MoatConfig,
+  type Phase7EnterpriseConfig,
+  type Phase8PlatformConfig,
+  type TrustGraphFeatureFlags,
+} from "@/lib/trustgraph/config";
+
+export {
+  DUPLICATE_MEDIA_BLOCKS_PUBLISH,
+  MIN_PHOTOS_FOR_VERIFICATION,
+  PUBLISH_BLOCKING_RULE_CODES,
+  PREMIUM_PUBLISH_MIN_TRUST_LEVELS,
+  freePlanPhotoMax,
+  isFreeSellerPlan,
+} from "@/lib/trustgraph/config/listing-rules-config";

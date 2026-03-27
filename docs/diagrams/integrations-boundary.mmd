@@ -1,0 +1,24 @@
+%% Core platform with swappable adapters — not all are active in every environment
+
+flowchart LR
+  subgraph CORE["Core platform"]
+    P[App + modules + Prisma]
+  end
+
+  subgraph ADAPT["External-ready adapters"]
+    DSA[Document storage]
+    PPA[Payment provider]
+    CSA[Calendar sync]
+    EAA[Email / alerts]
+    AEA[Analytics export]
+    ESP[E-sign / PDF future]
+  end
+
+  P ---|docs| DSA
+  P ---|money| PPA
+  P ---|availability| CSA
+  P ---|mail| EAA
+  P ---|events| AEA
+  P -.->|roadmap| ESP
+
+  style ESP stroke-dasharray: 5 5

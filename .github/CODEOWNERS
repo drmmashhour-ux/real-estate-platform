@@ -1,0 +1,8 @@
+# BNHub / LECIPM — code owners (optional reviews)
+# Replace @YOUR_ORG/... with real GitHub Organization teams or @username.
+# Create teams under: Organization Settings → Teams
+# Docs: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+/apps/web/       @YOUR_ORG/frontend
+/apps/admin/     @YOUR_ORG/admin
+/services/       @YOUR_ORG/backend

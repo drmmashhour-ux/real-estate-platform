@@ -1,0 +1,12 @@
+-- Reference RLS for Supabase (auth.uid()). NOT applied by default — Prisma/Next.js uses server-side auth.
+-- Enable only if you migrate BNHub tables to Supabase with matching JWT claims.
+
+-- Example pattern (adjust table/column names to your Supabase schema):
+-- ALTER TABLE bnhub_listing_services ENABLE ROW LEVEL SECURITY;
+-- CREATE POLICY host_own_listing_services ON bnhub_listing_services
+--   FOR ALL USING (
+--     EXISTS (
+--       SELECT 1 FROM bnhub_listings l
+--       WHERE l.id = listing_id AND l.host_id = auth.uid()::text
+--     )
+--   );

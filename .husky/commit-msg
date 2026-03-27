@@ -1,0 +1,18 @@
+#!/bin/sh
+# Conventional commits: feat|fix|refactor|docs|chore|test|ci|build — see docs/team-workflow.md
+msg=$(head -n1 "$1")
+
+# Merge, revert, squash commits from GitHub
+case "$msg" in
+  Merge\ *|Revert\ *|"Squashed\ commit:"*) exit 0 ;;
+esac
+
+# Optional scope: feat(scope): description
+echo "$msg" | grep -qE '^(feat|fix|refactor|docs|chore|test|ci|build)(\([^)]+\))?: .+' && exit 0
+
+echo ""
+echo "Commit message must start with: feat|fix|refactor|docs|chore|test|ci|build: description"
+echo "Optional scope: feat(bnhub): add feature"
+echo "See docs/team-workflow.md"
+echo ""
+exit 1

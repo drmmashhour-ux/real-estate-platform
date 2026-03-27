@@ -1,0 +1,124 @@
+# Optional: deploy via Vercel CLI when ENABLE_VERCEL_CLI_DEPLOY=true (see docs/cicd.md, docs/release-strategy.md).
+# Recommended: Vercel GitHub integration — production branch main (prod) and/or separate projects for develop (staging).
+name: Deploy (Vercel CLI)
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+concurrency:
+  group: vercel-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+
+jobs:
+  deploy-web:
+    name: Vercel — apps/web
+    runs-on: ubuntu-latest
+    if: vars.ENABLE_VERCEL_CLI_DEPLOY == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+    env:
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_WEB }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Deploy web (preview)
+        if: github.event_name == 'pull_request'
+        working-directory: apps/web
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          echo "::group::Deploy apps/web preview"
+          npx vercel@41 deploy --token "$VERCEL_TOKEN" --yes
+          echo "::endgroup::"
+
+      - name: Deploy web (staging — staging Vercel project)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/develop' && vars.ENABLE_VERCEL_STAGING == 'true'
+        working-directory: apps/web
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_WEB_STAGING }}
+        run: |
+          echo "::group::Deploy apps/web to staging project (develop)"
+          npx vercel@41 deploy --prod --token "$VERCEL_TOKEN" --yes
+          echo "::endgroup::"
+
+      - name: Deploy web (production)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        working-directory: apps/web
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          echo "::group::Deploy apps/web production"
+          npx vercel@41 deploy --prod --token "$VERCEL_TOKEN" --yes
+          echo "::endgroup::"
+
+  deploy-admin:
+    name: Vercel — apps/admin
+    runs-on: ubuntu-latest
+    if: vars.ENABLE_VERCEL_CLI_DEPLOY == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+    env:
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_ADMIN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Deploy admin (preview)
+        if: github.event_name == 'pull_request'
+        working-directory: apps/admin
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          echo "::group::Deploy apps/admin preview"
+          npx vercel@41 deploy --token "$VERCEL_TOKEN" --yes
+          echo "::endgroup::"
+
+      - name: Deploy admin (staging — staging Vercel project)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/develop' && vars.ENABLE_VERCEL_STAGING == 'true'
+        working-directory: apps/admin
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_ADMIN_STAGING }}
+        run: |
+          echo "::group::Deploy apps/admin to staging project (develop)"
+          npx vercel@41 deploy --prod --token "$VERCEL_TOKEN" --yes
+          echo "::endgroup::"
+
+      - name: Deploy admin (production)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        working-directory: apps/admin
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          echo "::group::Deploy apps/admin production"
+          npx vercel@41 deploy --prod --token "$VERCEL_TOKEN" --yes
+          echo "::endgroup::"

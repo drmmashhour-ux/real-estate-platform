@@ -1,0 +1,28 @@
+import { NextRequest } from "next/server";
+import { getGuestId } from "@/lib/auth/session";
+import { acceptLegalAgreement } from "@/lib/hubs/agreements";
+
+/**
+ * POST /api/legal/accept-agreement – Record LegalAgreement acceptance (hub + type).
+ * Body: { hub: string, type: string }
+ */
+export async function POST(request: NextRequest) {
+  try {
+    const userId = await getGuestId();
+    if (!userId) return Response.json({ error: "Sign in required" }, { status: 401 });
+
+    const body = await request.json().catch(() => ({}));
+    const hub = typeof body.hub === "string" ? body.hub.trim().toLowerCase() : "";
+    const type = typeof body.type === "string" ? body.type.trim() : "";
+    if (!hub || !type) return Response.json({ error: "hub and type required" }, { status: 400 });
+
+    const allowed = ["hosting_terms", "broker_terms", "developer_terms", "platform_terms"];
+    if (!allowed.includes(type)) return Response.json({ error: "Invalid type" }, { status: 400 });
+
+    await acceptLegalAgreement(userId, hub, type);
+    return Response.json({ success: true });
+  } catch (e) {
+    console.error(e);
+    return Response.json({ error: "Failed to record acceptance" }, { status: 500 });
+  }
+}

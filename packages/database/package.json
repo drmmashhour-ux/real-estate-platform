@@ -1,0 +1,6 @@
+{
+  "name": "@lecipm/database",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Database layer (Prisma). Schema lives in apps/web/prisma for now."
+}

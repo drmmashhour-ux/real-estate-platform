@@ -1,0 +1,28 @@
+# Generic Dockerfile for LECIPM Node services. Copy to service dir as Dockerfile.
+# Build: docker build -t lecipm/auth-service -f services/auth-service/Dockerfile .
+FROM node:20-alpine AS base
+WORKDIR /app
+
+# Dependencies
+FROM base AS deps
+COPY package*.json ./
+RUN npm ci --omit=dev
+
+# Build (if service has TypeScript build)
+FROM base AS builder
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npm run build 2>/dev/null || true
+
+# Production image
+FROM base AS runner
+ENV NODE_ENV=production
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/prisma ./prisma 2>/dev/null || true
+RUN if [ -d prisma ]; then npx prisma generate; fi
+EXPOSE 3000
+USER node
+CMD ["node", "dist/index.js"]

@@ -1,0 +1,18 @@
+export * from "@/src/modules/growth-funnel/domain/funnelEvents";
+export * from "@/src/modules/growth-funnel/domain/usageLimits";
+export { trackGrowthFunnelEvent } from "@/src/modules/growth-funnel/application/trackGrowthFunnelEvent";
+export { checkGrowthPaywall } from "@/src/modules/growth-funnel/application/checkGrowthPaywall";
+export { recordSuccessfulSimulatorRun } from "@/src/modules/growth-funnel/application/recordSuccessfulSimulatorRun";
+export { recordAiDraftUsage } from "@/src/modules/growth-funnel/application/recordAiDraftUsage";
+export { computeGrowthFunnelMetrics } from "@/src/modules/growth-funnel/application/computeGrowthFunnelMetrics";
+export { runFirstValueSimulation } from "@/src/modules/growth-funnel/application/runFirstValueSimulation";
+export { FirstValueFlow } from "@/src/modules/growth-funnel/ui/FirstValueFlow";
+export { ActivationPrompt } from "@/src/modules/growth-funnel/ui/ActivationPrompt";
+export { UpgradeModal } from "@/src/modules/growth-funnel/ui/UpgradeModal";
+export { ReferralPanel } from "@/src/modules/growth-funnel/ui/ReferralPanel";
+export { GrowthFunnelMetricsPanel } from "@/src/modules/growth-funnel/ui/GrowthFunnelMetricsPanel";
+export { computeExecutionTracking } from "@/src/modules/growth-funnel/application/computeExecutionTracking";
+export { DailyMetricsPanel } from "@/src/modules/growth-funnel/ui/execution/DailyMetricsPanel";
+export { FunnelVisualization } from "@/src/modules/growth-funnel/ui/execution/FunnelVisualization";
+export { DropOffAnalysis } from "@/src/modules/growth-funnel/ui/execution/DropOffAnalysis";
+export { ExecutionTrackingSection } from "@/src/modules/growth-funnel/ui/execution/ExecutionTrackingSection";

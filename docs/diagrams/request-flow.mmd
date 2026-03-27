@@ -1,0 +1,22 @@
+%% Standard request lifecycle (linear + optional branches)
+
+flowchart TD
+  A[User action] --> B[React component]
+  B --> C[API route]
+  C --> D[Auth check]
+  D --> E[Tenant resolution]
+  E --> F[Validator]
+  F --> G[Module service]
+  G --> H[Prisma query]
+  H --> I[Domain event optional]
+  I --> J[Notification trigger]
+  J --> K[HTTP response]
+  K --> L[UI refresh]
+
+  G -.->|optional| Q[Action queue item]
+  C -.->|optional| M[Analytics tracking]
+  D -.->|optional| L2[Structured logging]
+
+  style Q stroke-dasharray: 5 5
+  style M stroke-dasharray: 5 5
+  style L2 stroke-dasharray: 5 5

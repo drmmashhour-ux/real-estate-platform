@@ -1,0 +1,10 @@
+{
+  "name": "@lecipm/admin-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "npx serve . -l 3010",
+    "build": "echo 'Static placeholder — no build'",
+    "lint": "echo 'No lint configured'"
+  }
+}

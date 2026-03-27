@@ -1,0 +1,305 @@
+@import "tailwindcss";
+
+/* Hash links (e.g. /analyze#analyzer) scroll smoothly to the analyzer */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Subtle pulse on primary Save deal CTA */
+@keyframes lecipm-save-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 0 rgba(201, 166, 70, 0.45),
+      0 8px 32px rgba(201, 166, 70, 0.22);
+  }
+  50% {
+    box-shadow:
+      0 0 0 6px rgba(201, 166, 70, 0.12),
+      0 12px 40px rgba(201, 166, 70, 0.32);
+  }
+}
+
+.animate-lecipm-save-pulse {
+  animation: lecipm-save-pulse 2.2s ease-in-out infinite;
+}
+
+/* Tailwind v4 — premium palette (black / gold luxury shell) */
+@theme {
+  --color-premium-bg: #0b0b0b;
+  --color-premium-surface: #121212;
+  --color-premium-card: #111111;
+  /* Single platform gold — LECIPM, Le Carrefour Immobilier Prestige, accents (use `text-premium-gold`, etc.). */
+  --color-premium-gold: #c9a646;
+  --color-premium-gold-hover: #d4b35a;
+  --color-premium-gold-muted: #a68432;
+  --color-premium-text: #ffffff;
+  --color-premium-text-muted: #b0b0b0;
+  --color-premium-secondary: #b0b0b0;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Design tokens — Mashhour premium (black & gold shell) */
+/* -------------------------------------------------------------------------- */
+:root {
+  --font-size-body: 1rem;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  /* Overridden on <html> when Cormorant Garamond loads */
+  --font-serif: ui-serif, Georgia, "Times New Roman", serif;
+  --premium-bg: #0b0b0b;
+  --premium-card: #111111;
+  --premium-surface: #111111;
+  --premium-gold: #c9a646;
+  --premium-gold-hover: #e0b84f;
+  --premium-gold-accent: #c9a646;
+  --premium-text: #ffffff;
+  --premium-text-muted: #b0b0b0;
+  --color-brand: #c9a646;
+  --color-brand-muted: #a68432;
+  --color-secondary: #111111;
+  --color-cta: #c9a646;
+  --color-cta-hover: #e0b84f;
+  --color-accent: #c9a646;
+  --color-gold: #c9a646;
+  --color-text: #ffffff;
+  --color-text-muted: #b0b0b0;
+  --color-text-secondary: #b0b0b0;
+  --color-surface: #111111;
+  --color-surface-muted: #1a1a1a;
+  --color-surface-inverse: #0b0b0b;
+  --color-border: #2a2a2a;
+  --color-border-strong: #3f3f3f;
+  --shadow-card: 0 2px 8px rgb(0 0 0 / 0.45), 0 12px 40px rgb(0 0 0 / 0.35);
+  --shadow-card-hover: 0 8px 24px rgb(0 0 0 / 0.5), 0 20px 50px rgb(212 175 55 / 0.06);
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+}
+
+/* Brand wordmarks + UI accents — same gold as `--color-premium-gold` (avoid mixing #D4AF37). */
+@layer utilities {
+  .text-brand-gold {
+    color: var(--color-premium-gold);
+  }
+}
+
+/* Dark areas (BNHub, dashboards) — override in section with .ds-dark */
+.ds-dark {
+  --color-text: #f5f5f4;
+  --color-text-muted: #a8a29e;
+  --color-surface: #1c1917;
+  --color-surface-muted: #292524;
+  --color-border: #44403c;
+  --color-border-strong: #57534e;
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.2), 0 8px 24px rgb(0 0 0 / 0.35);
+  --shadow-card-hover: 0 4px 12px rgb(0 0 0 / 0.25), 0 16px 40px rgb(0 0 0 / 0.35);
+}
+
+/* Base typography — background comes from layout (dark shell) or page (light marketing) */
+body {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-body);
+  color: var(--color-text);
+}
+
+/* Display titles — serif (Cormorant Garamond via layout) */
+.font-serif {
+  font-family: var(--font-serif), ui-serif, Georgia, "Times New Roman", serif;
+}
+
+/* RTL: logical properties — avoid hard-coded left/right in new UI */
+[dir="rtl"] {
+  text-align: start;
+}
+
+/* Premium UI — dark cards (marketing + hubs): rounded-xl, shadow-lg, subtle border, hover lift */
+.card-premium {
+  @apply rounded-xl border border-white/10 shadow-lg transition-all duration-300 ease-out;
+  background-color: var(--premium-card);
+  box-shadow: var(--shadow-card);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .card-premium:hover {
+    @apply scale-[1.01] border-[#C9A646]/28;
+    box-shadow: var(--shadow-card-hover);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card-premium:hover {
+    @apply border-[#C9A646]/35;
+    box-shadow: var(--shadow-card-hover);
+  }
+}
+
+.property-card-premium {
+  @apply flex flex-col overflow-hidden rounded-xl border border-white/10 shadow-lg transition duration-300 ease-out;
+  background-color: var(--premium-card);
+  box-shadow: var(--shadow-card);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .property-card-premium:hover {
+    @apply scale-[1.01] border-[#C9A646]/35;
+    box-shadow: var(--shadow-card-hover);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .property-card-premium:hover {
+    @apply border-[#C9A646]/35;
+    box-shadow: var(--shadow-card-hover);
+  }
+}
+
+.dashboard-stat-card {
+  @apply rounded-xl border p-5 transition duration-200 ease-out;
+  border-color: color-mix(in srgb, var(--color-brand) 22%, transparent);
+  background: color-mix(in srgb, var(--color-surface) 92%, transparent);
+  box-shadow: var(--shadow-card);
+}
+.dashboard-stat-card:hover {
+  @apply -translate-y-0.5;
+  box-shadow: var(--shadow-card-hover);
+}
+
+/* Dashboard design language — dark tables + glass (same tokens as marketing) */
+.ds-table-wrap {
+  @apply overflow-hidden rounded-2xl border border-white/10 shadow-[var(--shadow-card)];
+  background-color: var(--color-surface);
+}
+.ds-table {
+  @apply w-full border-collapse text-sm;
+  color: var(--color-text);
+}
+.ds-table thead {
+  @apply bg-white/[0.04] text-left text-xs font-semibold uppercase tracking-wider;
+  color: var(--color-text-secondary);
+}
+.ds-table th,
+.ds-table td {
+  @apply border-b border-white/10 px-4 py-3 text-left;
+}
+.ds-table tbody tr:hover {
+  @apply bg-white/[0.03];
+}
+.ds-glass-panel {
+  @apply rounded-xl border border-white/10 bg-[#111111]/85 shadow-[var(--shadow-card)] backdrop-blur-md;
+}
+
+/* Dashboard pages — single shell for hierarchy + spacing */
+.dashboard-shell {
+  @apply min-h-screen bg-premium-bg px-4 py-10 text-premium-text antialiased;
+}
+
+/* Section labels — strong hierarchy, investor-ready */
+.section-title {
+  @apply text-xs font-bold uppercase tracking-[0.22em] text-premium-gold-muted;
+}
+
+.btn-primary {
+  @apply inline-flex min-h-[44px] items-center justify-center rounded-xl px-4 py-3 text-sm font-bold text-[#0b0b0b] shadow-md transition duration-300 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A646] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b0b0b] disabled:pointer-events-none disabled:opacity-45;
+  background: linear-gradient(135deg, #d4b35a 0%, #c9a646 48%, #a68432 100%);
+  box-shadow: 0 4px 24px rgb(201 166 70 / 0.32);
+}
+.btn-primary:hover {
+  background: linear-gradient(135deg, #e0c46a 0%, #d4b35a 45%, #c9a646 100%);
+  box-shadow:
+    0 10px 36px rgb(201 166 70 / 0.42),
+    0 0 28px rgb(201 166 70 / 0.22);
+}
+.btn-primary:focus-visible {
+  --tw-ring-color: var(--premium-gold);
+}
+
+.btn-secondary {
+  @apply inline-flex min-h-[44px] items-center justify-center rounded-xl border-2 border-[#C9A646] bg-[#111111] px-4 py-3 text-sm font-bold text-[#C9A646] transition duration-300 ease-out hover:border-[#d4b35a] hover:bg-[#161616] hover:text-[#e8d089] hover:shadow-[0_0_24px_rgba(201,166,70,0.22)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A646] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b0b0b] disabled:pointer-events-none disabled:opacity-45;
+}
+
+.input-premium {
+  @apply w-full rounded-xl border border-white/15 bg-[#111111] px-4 py-3 text-white placeholder:text-premium-secondary/75 transition focus:border-[#C9A646] focus:outline-none focus:ring-2 focus:ring-[#C9A646]/25;
+}
+
+.invoice-doc-row {
+  @apply flex flex-wrap items-center justify-between gap-3 rounded-xl border border-stone-200 bg-white p-4 transition hover:border-stone-300;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
+}
+
+.dark .invoice-doc-row,
+.invoice-doc-row.dark-invoice {
+  @apply border-stone-700 bg-stone-900/50 hover:border-stone-600;
+}
+
+.ai-panel-premium {
+  @apply rounded-2xl border border-teal-500/25 bg-gradient-to-br from-teal-950/40 via-stone-950/80 to-stone-950 p-6;
+  box-shadow: 0 8px 32px rgb(0 0 0 / 0.25);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .animate-fade-in {
+    animation: fadeIn 0.28s ease-out;
+  }
+  .animate-slide-up {
+    animation: slideUp 0.32s ease-out;
+  }
+  .page-enter {
+    animation: pageEnter 0.35s ease-out;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Floating WhatsApp — subtle pulse (keeps shadow-lg from Tailwind) */
+@keyframes fabPulseSlow {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .animate-fab-pulse-slow {
+    animation: fabPulseSlow 3s ease-in-out infinite;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Investor polish — subtle hover / focus (prefer tokens above) */
+/* -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: no-preference) {
+  .hover-lift-subtle {
+    transition:
+      transform 0.2s ease,
+      box-shadow 0.2s ease,
+      border-color 0.2s ease;
+  }
+  .hover-lift-subtle:hover {
+    transform: translateY(-2px);
+  }
+}

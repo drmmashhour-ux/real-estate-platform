@@ -1,0 +1,94 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  role      Role
+  createdAt DateTime @default(now())
+
+  properties Property[]
+  offers     Offer[]
+  contracts  Contract[]
+}
+
+model Property {
+  id          String   @id @default(uuid())
+  title       String
+  price       Float
+  city        String
+  description String
+  ownerId     String
+  createdAt   DateTime @default(now())
+
+  owner  User    @relation(fields: [ownerId], references: [id])
+  offers Offer[]
+}
+
+model Offer {
+  id         String      @id @default(uuid())
+  amount     Float
+  status     OfferStatus @default(PENDING)
+  buyerId    String
+  propertyId String
+
+  buyer    User     @relation(fields: [buyerId], references: [id])
+  property Property @relation(fields: [propertyId], references: [id])
+}
+
+model Contract {
+  id      String         @id @default(uuid())
+  type    ContractType
+  status  ContractStatus @default(PENDING)
+  fileUrl String
+  userId  String
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Message {
+  id         String   @id @default(uuid())
+  content    String
+  senderId   String
+  receiverId String
+  createdAt  DateTime @default(now())
+}
+
+model Signature {
+  id         String   @id @default(uuid())
+  contractId String
+  userId     String
+  signedAt   DateTime @default(now())
+}
+
+enum Role {
+  BUYER
+  SELLER
+  BROKER
+  INVESTOR
+  ADMIN
+}
+
+enum OfferStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum ContractType {
+  BUY
+  SELL
+  BROKER
+}
+
+enum ContractStatus {
+  PENDING
+  SIGNED
+}
