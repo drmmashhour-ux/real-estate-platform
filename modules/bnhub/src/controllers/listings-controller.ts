@@ -18,7 +18,7 @@ export function createListingsController(service: BNHubListingService) {
         country: String(body.country ?? "US"),
         maxGuests: Number(body.maxGuests ?? 4),
         beds: Number(body.beds),
-        baths: Number(body.baths),
+        bathrooms: Number(body.bathrooms ?? body.baths ?? 1),
         nightlyPriceCents: Number(body.nightlyPriceCents),
         cleaningFeeCents: Number(body.cleaningFeeCents ?? 0),
         securityDepositCents: Number(body.securityDepositCents ?? 0),

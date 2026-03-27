@@ -32,7 +32,7 @@ REST APIs for the BNHub short-term rental module. All under `/api/bnhub/` unless
 |--------|----------|-------------|
 | POST | /api/bnhub/bookings | Create booking. Body: listingId, checkIn, checkOut, guestNotes? |
 | GET | /api/bnhub/bookings/:id | Get booking (guest or host) |
-| POST | /api/bnhub/bookings/:id/pay | Confirm payment → booking confirmed |
+| POST | /api/stripe/checkout | Start booking payment; confirmed via `/api/stripe/webhook` only |
 | POST | /api/bnhub/bookings/:id/approve | Host approve request |
 | POST | /api/bnhub/bookings/:id/decline | Host decline. Body: { reason? } |
 | POST | /api/bnhub/bookings/:id/cancel | Cancel. Body: { by: "guest" \| "host" } |

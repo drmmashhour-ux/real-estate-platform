@@ -185,4 +185,4 @@ The Platform Defense Layer makes LECIPM legally protected, operationally defensi
 - **lib/defense/__tests__/legal-records.test.ts** – recordPolicyAcceptance (creates record + legal event), hasAcceptedPolicy.
 - **lib/defense/__tests__/abuse-prevention.test.ts** – isUserRestricted (suspended, banned, none), getOffenderProfile.
 
-Run: `npm run test -- --run` in `apps/web-app`.
+Run: `npm run test -- --run` in `apps/web`.

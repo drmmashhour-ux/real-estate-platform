@@ -178,7 +178,7 @@ Automatic flags (see `lib/verification/fraud-flags.ts`):
 After setting `DATABASE_URL`, run:
 
 ```bash
-cd apps/web-app && npx prisma migrate dev --name add_property_ownership_verification
+cd apps/web && npx prisma migrate dev --name add_property_ownership_verification
 ```
 
 This creates the `property_documents` (with `owner_name`), `property_verifications` (with request-more-documents fields), `identity_verifications`, `broker_verifications`, and `property_location_validation` tables, and adds the new listing fields (`listing_authority_type`, `listing_verification_status`, `cadastre_number`, `municipality`, `province`, broker fields, etc.).

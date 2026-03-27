@@ -1,0 +1,47 @@
+%% Finance path: domain → records → dashboards; payment adapter optional
+
+flowchart TD
+  subgraph Domain["Deal context"]
+    OC[Offer / contract]
+  end
+
+  subgraph FinanceCore["Finance pipeline"]
+    DF[DealFinancial]
+    CC[Commission calculation]
+    CS[Commission splits]
+    INV[Invoice]
+    PR[PaymentRecord]
+  end
+
+  subgraph Surface["Surfaces"]
+    FD[Finance dashboard]
+    FA[Finance analytics]
+  end
+
+  subgraph Perm["Governance"]
+    TP[Tenant finance permissions]
+  end
+
+  subgraph Notify["Notifications"]
+    N1[Invoice issued]
+    N2[Payment pending]
+  end
+
+  subgraph Future["Future / optional"]
+    ADP[Payment provider adapter]
+    ADP -.->|when enabled| PR
+  end
+
+  OC --> DF
+  DF --> CC
+  CC --> CS
+  CS --> INV
+  INV --> PR
+  PR --> FD
+  PR --> FA
+
+  TP -.-> INV
+  INV -.-> N1
+  PR -.-> N2
+
+%% Live card processor remains optional until the payment adapter is enabled and configured.

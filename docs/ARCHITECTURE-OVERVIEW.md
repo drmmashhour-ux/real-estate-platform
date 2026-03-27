@@ -2,9 +2,9 @@
 
 ## High-level
 
-- **Frontend:** Next.js apps (web, admin). Primary implementation: `apps/web-app` (guests, hosts, BNHub, auth).
+- **Frontend:** Next.js apps (web, admin). Primary implementation: `apps/web` (guests, hosts, BNHub, auth).
 - **API:** Next.js API routes in web-app (`/api/*`, `/api/bnhub/*`) act as the main API surface. Standalone services (e.g. auth-service) can run as Express servers and be proxied or called from the app.
-- **Database:** PostgreSQL. Prisma schema in `apps/web-app/prisma`. Shared `packages/database` for connection/config.
+- **Database:** PostgreSQL. Prisma schema in `apps/web/prisma`. Shared `packages/database` for connection/config.
 - **Modules:** Domain bundles in `modules/*` (bnhub, realestate, crm, analytics) export models, services, routes; the app or API gateway wires them to persistence and HTTP.
 
 ## Data flow
@@ -15,7 +15,7 @@
 
 ## API gateway
 
-The main API entry is **Next.js app** (`apps/web-app`). Routes:
+The main API entry is **Next.js app** (`apps/web`). Routes:
 
 - `/api/auth/*` — login, register, session
 - `/api/users` — user profile

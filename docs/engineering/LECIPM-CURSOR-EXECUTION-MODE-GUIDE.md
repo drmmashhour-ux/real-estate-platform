@@ -78,7 +78,7 @@ lecipm-platform/
 
 ### Frontend apps folder
 
-- `apps/web-app/` contains the main web application: public pages, authenticated app, marketplace, BNHub, host/owner/broker dashboards. Structure per [Frontend Architecture Blueprint](LECIPM-FRONTEND-ARCHITECTURE-BLUEPRINT.md): `app/` or `pages/`, `features/`, `shared/`, `ui/`, `styles/`. Initialize with router, auth provider, and API client placeholder; add screens and features per build order.
+- `apps/web/` contains the main web application: public pages, authenticated app, marketplace, BNHub, host/owner/broker dashboards. Structure per [Frontend Architecture Blueprint](LECIPM-FRONTEND-ARCHITECTURE-BLUEPRINT.md): `app/` or `pages/`, `features/`, `shared/`, `ui/`, `styles/`. Initialize with router, auth provider, and API client placeholder; add screens and features per build order.
 
 ### Shared libraries folder
 

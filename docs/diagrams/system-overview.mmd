@@ -1,0 +1,81 @@
+%% System overview: Frontend → API → Services → DB / storage → outputs
+%% Includes demo/staging touchpoint and analytics + notification outputs
+
+flowchart LR
+  subgraph Users["Users"]
+    U1[Client]
+    U2[Broker]
+    U3[Tenant admin]
+    U4[Global admin]
+  end
+
+  subgraph FE["Frontend"]
+    M[Marketing site]
+    D[Dashboard app]
+    TR[Internal training tools]
+  end
+
+  subgraph DEMO["Demo / staging"]
+    DM[Demo mode routes]
+    DG[Demo write guard]
+  end
+
+  subgraph API["API layer"]
+    R["app/api routes"]
+  end
+
+  subgraph SVC["Service layer"]
+    direction TB
+    A1[Auth]
+    A2[Tenancy]
+    A3[CRM]
+    A4[Listings]
+    A5[Offers]
+    A6[Contracts]
+    A7[Documents]
+    A8[Messaging]
+    A9[Scheduling]
+    A10[Intake]
+    A11[Notifications]
+    A12[Analytics]
+    A13[Finance]
+  end
+
+  subgraph CORE["Shared core"]
+    C1[Auth helpers]
+    C2[Errors]
+    C3[Logging]
+    C4[Metrics]
+    C5[Cache]
+    C6[Audit]
+  end
+
+  subgraph DATA["Data & storage"]
+    DB[(PostgreSQL / Prisma)]
+    DS[Document storage]
+    LD[Local / demo storage]
+    PP[Payment provider future]
+    CAL[Calendar provider future]
+  end
+
+  subgraph OUT["Output systems"]
+    N[Notifications center]
+    Q[Action queue]
+    AN[Analytics dashboards]
+  end
+
+  Users --> FE
+  FE --> R
+  FE -.-> DM
+  DM --> DG
+  DG --> LD
+
+  R --> SVC
+  SVC --> CORE
+  SVC --> DATA
+  SVC --> OUT
+  CORE --> DATA
+
+  A11 --> N
+  A11 --> Q
+  A12 --> AN

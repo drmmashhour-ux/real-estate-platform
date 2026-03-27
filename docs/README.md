@@ -22,6 +22,22 @@ This folder is the **LECIPM Project Architecture Workspace**: the canonical loca
 
 ---
 
+## Brand & design system
+
+- **Brand guidelines:** [BRAND_GUIDELINES.md](BRAND_GUIDELINES.md) — logo, colors, typography, spacing, UI kit usage (`apps/web/config/*`, `components/ui/*`).
+
+---
+
+## Production operations
+
+- **Backups:** [BACKUP_STRATEGY.md](BACKUP_STRATEGY.md) · **Restore:** [RESTORE_PROCEDURE.md](RESTORE_PROCEDURE.md)
+- **Deploy / rollback:** [DEPLOYMENT.md](DEPLOYMENT.md) · **Checklist:** [PRODUCTION_CHECKLIST.md](PRODUCTION_CHECKLIST.md)
+- **Env & security:** [ENVIRONMENT_SETUP.md](ENVIRONMENT_SETUP.md)
+- **Monitoring & alerts:** [MONITORING_METRICS.md](MONITORING_METRICS.md) · [ALERTING_RULES.md](ALERTING_RULES.md)
+- **Incidents:** [INCIDENT_PLAYBOOKS.md](INCIDENT_PLAYBOOKS.md) · **Post-launch:** [POST_LAUNCH_MONITORING.md](POST_LAUNCH_MONITORING.md)
+
+---
+
 ## Start here
 
 - **Investors & partners:** [Investor Pitch Deck](INVESTOR-PITCH-DECK.md) (10 slides) | [Platform Architecture Deck](PLATFORM-ARCHITECTURE-DECK.md) (18 slides) — vision, problem, solution, product, market, business model, technology, growth, roadmap.
@@ -62,10 +78,10 @@ npm run dev
 
 Opens the web app at [http://localhost:3000](http://localhost:3000).
 
-**Database:** Set `DATABASE_URL` in `apps/web-app/.env`, then:
+**Database:** Set `DATABASE_URL` in `apps/web/.env`, then:
 
 ```bash
-cd apps/web-app
+cd apps/web
 npx prisma db push
 npx prisma db seed
 ```

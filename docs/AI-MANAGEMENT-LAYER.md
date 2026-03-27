@@ -8,7 +8,7 @@ For the **AI Platform Manager** (operations-focused service with jobs and monito
 
 - **Standalone service:** `services/ai` – Express app exposing REST APIs for other services.
 - **Web-app integration:** Next.js API routes under `/api/ai/*` and `/api/admin/ai/*` use in-app libs (and can proxy to the AI service when `AI_SERVICE_URL` is set).
-- **Data pipeline:** `apps/web-app/lib/ai-data-pipeline.ts` aggregates platform data for AI; trigger via `GET /api/admin/ai/pipeline` or cron.
+- **Data pipeline:** `apps/web/lib/ai-data-pipeline.ts` aggregates platform data for AI; trigger via `GET /api/admin/ai/pipeline` or cron.
 - **Monitoring:** Admin AI Control Center shows model registry, fraud decision counts, model version metrics, pricing stats, alerts, and decision log.
 
 ## AI Service (`services/ai`)

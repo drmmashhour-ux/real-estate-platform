@@ -23,7 +23,7 @@ export const bnhubRoutes: BNHubRouteConfig[] = [
   {
     method: "GET",
     path: `${BNHUB_BASE}/listings`,
-    handler: (req) => listingsCtrl.listByHost({ query: req.query }),
+    handler: (req) => listingsCtrl.listByHost({ query: req.query ?? {} }),
   },
   {
     method: "GET",

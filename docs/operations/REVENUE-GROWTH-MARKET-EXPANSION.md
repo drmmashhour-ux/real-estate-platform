@@ -11,7 +11,7 @@ This document describes the commercial platform layer that makes LECIPM measurab
 - **RevenueReport** – Stored aggregated reports (reportType, periodStart/End, marketId, data JSON).
 
 **Integration:**
-- **Bookings:** When payment is completed (`POST /api/bnhub/bookings/[id]/pay`), `recordRevenueEntry` is called with type BOOKING_COMMISSION and amountCents = guestFeeCents + hostFeeCents.
+- **Bookings:** When Stripe confirms payment (`POST /api/stripe/webhook`, `checkout.session.completed` for bookings), platform payment, commissions, and revenue ledger are updated (no mock pay endpoint).
 - **Subscriptions:** When an invoice is paid, call `recordSubscriptionRevenue` (or `recordRevenueEntry` type SUBSCRIPTION).
 - **Promotions:** When a listing is promoted with cost, `promoteListing` records a PROMOTION revenue entry.
 - **Referrals:** When referral rewards are paid, record REFERRAL_COST (negative).
@@ -85,7 +85,7 @@ This document describes the commercial platform layer that makes LECIPM measurab
 **Purpose:** Launch in multiple cities/regions/countries with currency, language, tax, and policy bindings.
 
 **Components:**
-- **MarketConfig** – code, name, country, currency, defaultLanguage, active, taxRatePercent.
+- **MarketConfig** – code, name, country, currency, defaultLanguage, active. (BNHub lodging tax: platform-wide Québec GST/QST via `lib/tax/quebec-tax-engine.ts`, not per-market `taxRatePercent`.)
 - **MarketTaxRule** – marketId, ruleType (VAT, GST, PLATFORM_FEE), ratePercent, effectiveFrom, effectiveTo.
 - **MarketPolicyBinding** – marketId, policyRuleKey, overridePayload, active (bind or override policy rules per market).
 
@@ -151,4 +151,4 @@ This document describes the commercial platform layer that makes LECIPM measurab
 - **lib/__tests__/revenue-intelligence.test.ts** – recordRevenueEntry, getRevenueSummary (mocked Prisma).
 - **lib/__tests__/subscription-billing.test.ts** – getActiveSubscription, hasEntitlement (mocked Prisma).
 
-Run: `npm run test -- --run` in `apps/web-app`.
+Run: `npm run test -- --run` in `apps/web`.

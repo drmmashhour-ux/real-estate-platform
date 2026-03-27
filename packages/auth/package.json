@@ -2,5 +2,5 @@
   "name": "@lecipm/auth",
   "version": "0.1.0",
   "private": true,
-  "description": "Auth client (Supabase). Implementation in apps/web-app/lib/supabase.ts"
+  "description": "Auth client (Supabase). Primary implementation in apps/web/lib/supabase.ts"
 }

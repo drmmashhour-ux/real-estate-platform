@@ -10,11 +10,16 @@ export default tseslint.config(
       "**/.next/**",
       "**/build/**",
       "**/coverage/**",
-      "apps/web-app/**",
+      "apps/web/**",
+      "apps/mobile/**",
       "apps/admin-dashboard/**",
       "apps/broker-dashboard/**",
       "apps/owner-dashboard/**",
       "apps/mobile-app/**",
+      "apps/carrefour-prestige/**",
+      "apps/web-next14-starter/**",
+      "carrefour-immobilier/**",
+      "immobilier-prestige/**",
     ],
   },
   js.configs.recommended,
@@ -40,6 +45,17 @@ export default tseslint.config(
       "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
       "@typescript-eslint/no-explicit-any": "warn",
       "@typescript-eslint/no-require-imports": "off",
+    },
+  },
+  // Express `declare global { namespace Express { ... } }` pattern
+  {
+    files: [
+      "services/listing-service/src/authMiddleware.ts",
+      "services/messaging-service/src/authContext.ts",
+      "services/user-service/src/authMiddleware.ts",
+    ],
+    rules: {
+      "@typescript-eslint/no-namespace": "off",
     },
   }
 );

@@ -8,7 +8,7 @@ This document describes the **Core MVP Platform**: structure, authentication, li
 
 # 1. Project Structure
 
-The MVP uses a **modular** layout; the main app and APIs are in `apps/web-app` with shared libs. Services can be split out later.
+The MVP uses a **modular** layout; the main app and APIs are in `apps/web` with shared libs. Services can be split out later.
 
 ```
 apps/
@@ -28,7 +28,7 @@ packages/           # Shared code
   shared-utils/
 ```
 
-**MVP focus:** `apps/web-app` contains:
+**MVP focus:** `apps/web` contains:
 - Next.js app (pages, API routes)
 - Prisma schema and DB access
 - Auth (session, register, login)
@@ -45,7 +45,7 @@ packages/           # Shared code
 - **Login** — `POST /api/auth/login` (email, password); sets session cookie
 - **Password reset** — `POST /api/auth/password-reset` (MVP stub; returns ok, no email)
 - **Session management** — Cookie `lecipm_guest_id`; `getGuestId()` in server code
-- **Demo session** — `POST /api/auth/demo-session` (email) for demo users without password
+- **Demo session** — `POST /api/auth/demo-session` (email) for demo users without password; **disabled when `NODE_ENV === "production"`**
 - **Roles** — `USER` (guest), `OWNER_HOST` (host), `LICENSED_PROFESSIONAL` (broker), `INVESTOR`; stored on `User.role`
 
 ## API
@@ -55,7 +55,7 @@ packages/           # Shared code
 | POST | /api/auth/register | Create account; body: email, password, name?, role? |
 | POST | /api/auth/login | Log in; body: email, password |
 | POST | /api/auth/password-reset | Stub; body: email |
-| POST | /api/auth/demo-session | Set session for demo user; body: email |
+| POST | /api/auth/demo-session | Set session for demo user; body: email; **403 in production** |
 | POST | /api/auth/logout | Clear session cookie |
 
 ---
@@ -105,7 +105,7 @@ Bookings link guest, listing, and dates. Statuses: `PENDING` (awaiting payment),
 |--------|----------|-------------|
 | POST | /api/bnhub/bookings | Create booking (session = guest); body: listingId, checkIn, checkOut, guestNotes? |
 | GET | /api/bnhub/bookings/:id | Get booking (guest or host) |
-| POST | /api/bnhub/bookings/:id/pay | Confirm payment (mock); sets booking CONFIRMED, payment COMPLETED |
+| POST | /api/stripe/checkout + /api/stripe/webhook | Guest pays via Stripe; booking/payment confirmed only via webhook |
 
 ---
 
@@ -161,7 +161,7 @@ Guests leave a review (property rating, optional host rating, comment) after sta
 - **Booking management** — Upcoming and past bookings for host’s listings
 - **Revenue summary** — Earnings from completed payments (hostPayoutCents)
 
-Implemented in `apps/web-app/app/bnhub/host/dashboard/`.
+Implemented in `apps/web/app/bnhub/host/dashboard/`.
 
 ---
 
@@ -174,7 +174,7 @@ Implemented in `apps/web-app/app/bnhub/host/dashboard/`.
 - **Fraud flags** — Fraud alerts and signals
 - **User management** — User list and basic admin (e.g. demo users)
 
-Implemented in `apps/web-app/app/admin/` and `/api/admin/`. Defense, health, and other admin tools are under `/admin/defense`, `/admin/health`, etc.
+Implemented in `apps/web/app/admin/` and `/api/admin/`. Defense, health, and other admin tools are under `/admin/defense`, `/admin/health`, etc.
 
 ---
 
@@ -217,7 +217,7 @@ Availability: `AvailabilitySlot` (listingId, date, available). Verification: `Li
 | Auth | POST /api/auth/register, /api/auth/login, /api/auth/logout, /api/auth/demo-session, /api/auth/password-reset |
 | Listings | GET/POST /api/listings, GET/PUT /api/listings/:id |
 | Search | GET /api/search |
-| Bookings | POST /api/bnhub/bookings, GET /api/bnhub/bookings/:id, POST /api/bnhub/bookings/:id/pay |
+| Bookings | POST /api/bnhub/bookings, GET /api/bnhub/bookings/:id; pay via POST /api/stripe/checkout + webhook |
 | Messages | GET/POST /api/bnhub/messages |
 | Reviews | POST /api/bnhub/reviews |
 | Host | /bnhub/host/dashboard |
@@ -225,4 +225,4 @@ Availability: `AvailabilitySlot` (listingId, date, available). Verification: `Li
 
 ---
 
-*The Core MVP is implemented in `apps/web-app`. Run `npm run dev` from repo root or `apps/web-app`, then use the BNHub and auth flows above. For full architecture see [Master Strategy Book](MASTER-STRATEGY-BOOK.md) and [Build Order](engineering/LECIPM-BUILD-ORDER.md).*
+*The Core MVP is implemented in `apps/web`. Run `npm run dev` from repo root or `apps/web`, then use the BNHub and auth flows above. For full architecture see [Master Strategy Book](MASTER-STRATEGY-BOOK.md) and [Build Order](engineering/LECIPM-BUILD-ORDER.md).*

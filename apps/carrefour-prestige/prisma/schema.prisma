@@ -1,0 +1,294 @@
+// Le Carrefour Immobilier Prestige Mashhour — production schema
+// Not legal/tax advice; templates are informational only.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  BUYER
+  SELLER
+  BROKER
+  INVESTOR
+  ADMIN
+}
+
+enum PropertyStatus {
+  DRAFT
+  ACTIVE
+  PENDING
+  SOLD
+  ARCHIVED
+}
+
+enum PropertyType {
+  HOUSE
+  CONDO
+  TOWNHOUSE
+  MULTI_FAMILY
+  LAND
+  COMMERCIAL
+  OTHER
+}
+
+enum OfferStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  COUNTERED
+  WITHDRAWN
+}
+
+enum ContractType {
+  BUYER_AGREEMENT
+  SELLER_AGREEMENT
+  BROKER_AGREEMENT
+  OFFER_SUMMARY
+}
+
+enum ContractStatus {
+  DRAFT
+  PENDING_SIGNATURE
+  SIGNED
+  VOID
+}
+
+enum NotificationType {
+  NEW_MESSAGE
+  NEW_OFFER
+  OFFER_ACCEPTED
+  OFFER_REJECTED
+  OFFER_COUNTERED
+  CONTRACT_GENERATED
+  SYSTEM
+}
+
+enum SubscriptionStatus {
+  INACTIVE
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+}
+
+enum SubscriptionPlan {
+  BROKER_PREMIUM
+  INVESTOR_PREMIUM
+}
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  supabaseId   String?   @unique
+  role         UserRole  @default(BUYER)
+  emailVerified DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  profile            Profile?
+  propertiesOwned    Property[]           @relation("OwnerProperties")
+  propertiesBrokered Property[]           @relation("BrokerProperties")
+  offersAsBuyer      Offer[]              @relation("BuyerOffers")
+  threadMembers      MessageThreadMember[]
+  messagesSent       Message[]            @relation("MessageSender")
+  contracts          Contract[]
+  signatures         Signature[]
+  savedProperties    SavedProperty[]
+  investorAnalyses   InvestorAnalysis[]
+  notifications      Notification[]
+  subscriptions      Subscription[]
+}
+
+model Profile {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  firstName String?
+  lastName  String?
+  phone     String?
+  avatarUrl String?
+  bio       String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Property {
+  id          String         @id @default(uuid())
+  title       String
+  description String
+  price       Decimal        @db.Decimal(14, 2)
+  city        String
+  address     String
+  propertyType PropertyType
+  bedrooms    Int            @default(0)
+  bathrooms   Float          @default(0)
+  areaSqm     Float?
+  status      PropertyStatus @default(DRAFT)
+  ownerId     String
+  brokerId    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner   User   @relation("OwnerProperties", fields: [ownerId], references: [id])
+  broker  User?  @relation("BrokerProperties", fields: [brokerId], references: [id])
+  images  PropertyImage[]
+  offers     Offer[]
+  threads    MessageThread[]
+  savedBy    SavedProperty[]
+  contracts  Contract[]
+}
+
+model PropertyImage {
+  id         String   @id @default(uuid())
+  propertyId String
+  url        String
+  storagePath String?
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+}
+
+model MessageThread {
+  id         String   @id @default(uuid())
+  propertyId String?
+  subject    String?
+  updatedAt  DateTime @updatedAt
+  createdAt  DateTime @default(now())
+
+  property Property?              @relation(fields: [propertyId], references: [id])
+  members  MessageThreadMember[]
+  messages Message[]
+}
+
+model MessageThreadMember {
+  id         String    @id @default(uuid())
+  threadId   String
+  userId     String
+  lastReadAt DateTime?
+
+  thread MessageThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  user   User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([threadId, userId])
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  threadId  String
+  senderId  String
+  content   String
+  createdAt DateTime @default(now())
+
+  thread MessageThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  sender User          @relation("MessageSender", fields: [senderId], references: [id])
+}
+
+model Offer {
+  id          String      @id @default(uuid())
+  propertyId  String
+  buyerId     String
+  amount      Decimal     @db.Decimal(14, 2)
+  status      OfferStatus @default(PENDING)
+  counterAmount Decimal?  @db.Decimal(14, 2)
+  message     String?
+  reviewedById String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  buyer    User     @relation("BuyerOffers", fields: [buyerId], references: [id])
+
+  contracts Contract[]
+}
+
+model Contract {
+  id          String         @id @default(uuid())
+  userId      String
+  propertyId  String?
+  offerId     String?
+  type        ContractType
+  status      ContractStatus @default(DRAFT)
+  fileUrl     String?
+  storagePath String?
+  metadata    Json?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id])
+  property Property? @relation(fields: [propertyId], references: [id])
+  offer    Offer?    @relation(fields: [offerId], references: [id])
+
+  signatures Signature[]
+}
+
+model Signature {
+  id         String   @id @default(uuid())
+  contractId String
+  userId     String
+  signedAt   DateTime @default(now())
+
+  contract Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id])
+}
+
+model SavedProperty {
+  id         String   @id @default(uuid())
+  userId     String
+  propertyId String
+  note       String?
+  createdAt  DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, propertyId])
+}
+
+model InvestorAnalysis {
+  id        String   @id @default(uuid())
+  userId    String
+  name      String?
+  payload   Json
+  verdict   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  type      NotificationType
+  title     String
+  body      String?
+  readAt    DateTime?
+  link      String?
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Subscription {
+  id                   String             @id @default(uuid())
+  userId               String
+  plan                 SubscriptionPlan
+  status               SubscriptionStatus @default(INACTIVE)
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  currentPeriodEnd     DateTime?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}

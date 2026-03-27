@@ -1,4 +1,4 @@
-# LECIPM — local dev stack (Postgres + web-app + auth-service)
+# LECIPM — local dev stack (Postgres + apps/web + auth-service)
 # Run from repo root: docker compose -f infrastructure/docker/docker-compose.yml up -d
 
 services:

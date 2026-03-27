@@ -110,7 +110,7 @@ Includes:
 2. System checks availability (`isListingAvailable`)  
 3. System calculates price (`computeBookingPricing`)  
 4. `POST /api/bnhub/bookings` creates booking (and payment record)  
-5. If instant book: status `PENDING` → guest pays → `POST /api/bnhub/bookings/:id/pay` → booking confirmed  
+5. If instant book: status `PENDING` → guest pays → `POST /api/stripe/checkout` + webhook → booking confirmed  
 6. If not instant book: status `AWAITING_HOST_APPROVAL` → host approves → status `PENDING` → guest pays → confirmed  
 
 **Statuses:** pending, confirmed, cancelled, completed (+ awaiting_host_approval, declined, cancelled_by_guest, cancelled_by_host for full flow).
@@ -118,7 +118,7 @@ Includes:
 **APIs:**  
 - `POST /api/bnhub/bookings` — create  
 - `GET /api/bnhub/bookings/:id` — get  
-- `POST /api/bnhub/bookings/:id/pay` — confirm after payment  
+- `POST /api/stripe/checkout` + `POST /api/stripe/webhook` — pay and confirm after Stripe  
 - `POST /api/bnhub/bookings/:id/approve` — host approve  
 - `POST /api/bnhub/bookings/:id/decline` — host decline  
 - `POST /api/bnhub/bookings/:id/cancel` — cancel (body: `{ by: "guest" | "host" }`)
@@ -233,7 +233,7 @@ Additional: BnhubBookingEvent (audit), BnhubCheckinDetails (check-in info), List
 | POST /bnhub/bookings/:id/cancel | POST /api/bnhub/bookings/:id/cancel (body: `{ by: "guest" \| "host" }`) |
 | POST /bnhub/reviews          | POST /api/bnhub/reviews |
 
-Additional: PATCH /api/bnhub/listings/:id, GET/POST /api/bnhub/listings/:id/photos, GET/POST/PUT /api/bnhub/availability, GET /api/bnhub/pricing/breakdown, POST .../bookings/:id/pay, .../approve, .../decline, GET/POST /api/bnhub/messages.
+Additional: PATCH /api/bnhub/listings/:id, GET/POST /api/bnhub/listings/:id/photos, GET/POST/PUT /api/bnhub/availability, GET /api/bnhub/pricing/breakdown, POST /api/stripe/checkout (+ webhook), .../approve, .../decline, GET/POST /api/bnhub/messages.
 
 ---
 
@@ -253,9 +253,9 @@ Additional: PATCH /api/bnhub/listings/:id, GET/POST /api/bnhub/listings/:id/phot
 
 **Code locations:**
 
-- **Schema:** `apps/web-app/prisma/schema.prisma`
-- **Logic:** `apps/web-app/lib/bnhub/*.ts`
-- **APIs:** `apps/web-app/app/api/bnhub/**`
-- **Pages:** `apps/web-app/app/bnhub/**`
+- **Schema:** `apps/web/prisma/schema.prisma`
+- **Logic:** `apps/web/lib/bnhub/*.ts`
+- **APIs:** `apps/web/app/api/bnhub/**`
+- **Pages:** `apps/web/app/bnhub/**`
 
 Architecture is modular; APIs are RESTful and documented in this file and in `docs/BNHUB-MODULE.md`. Booking and pricing flows are implemented and tested; the system is production-oriented and readable.

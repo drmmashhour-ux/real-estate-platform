@@ -2,6 +2,7 @@
   "name": "lecipm-platform",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@9.15.4",
   "workspaces": [
     "apps/*",
     "packages/*",
@@ -9,42 +10,60 @@
     "modules/*"
   ],
   "scripts": {
-    "dev": "npm run dev --workspace=apps/web-app",
-    "dev:web": "npm run dev --workspace=apps/web-app",
-    "dev:web-skeleton": "npm run dev --workspace=apps/web",
-    "dev:admin": "npm run dev --workspace=apps/admin",
-    "dev:auth": "npm run dev --workspace=@lecipm/auth-service",
-    "dev:ai": "npm run dev --workspace=@lecipm/ai-service",
-    "dev:ai-manager": "npm run dev --workspace=@lecipm/ai-manager",
-    "dev:ai-operator": "npm run dev --workspace=@lecipm/ai-operator",
-    "build": "npm run build --workspaces --if-present",
-    "build:web": "npm run build --workspace=apps/web-app",
-    "start": "npm run start --workspace=apps/web-app",
+    "prepare": "husky",
+    "dev": "pnpm --filter @lecipm/web dev",
+    "dev:platform": "pnpm --parallel --filter @lecipm/web --filter @lecipm/admin run dev",
+    "dev:web": "pnpm --filter @lecipm/web dev",
+    "dev:mobile": "pnpm --filter @lecipm/mobile start",
+    "dev:web-legacy": "pnpm --filter @lecipm/web-next14-starter dev",
+    "dev:admin": "pnpm --filter @lecipm/admin dev",
+    "dev:auth": "pnpm --filter @lecipm/auth-service dev",
+    "dev:ai": "pnpm --filter @lecipm/ai-service dev",
+    "dev:ai-manager": "pnpm --filter @lecipm/ai-manager dev",
+    "dev:ai-operator": "pnpm --filter @lecipm/ai-operator dev",
+    "build": "pnpm -r --if-present run build",
+    "build:ci": "pnpm build:web && pnpm --filter @lecipm/admin run build && pnpm -r --filter './modules/*' --if-present run build && pnpm -r --filter './packages/*' --if-present run build",
+    "build:web": "pnpm --filter @lecipm/web build",
+    "start": "pnpm --filter @lecipm/web start",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
-    "db:push": "npm run db:push --workspace=apps/web-app",
-    "db:seed": "npm run prisma db seed --workspace=apps/web-app",
+    "db:push": "pnpm --filter @lecipm/web exec prisma db push",
+    "db:seed": "pnpm --filter @lecipm/web exec prisma db seed",
+    "demo:full": "npx tsx scripts/generate-full-demo-data.ts",
+    "backup:db": "npx tsx scripts/backup-db.ts",
+    "export:audit-log": "npx tsx scripts/export-audit-log.ts",
     "docker:build": "docker compose -f infrastructure/docker/docker-compose.yml build",
     "docker:up": "docker compose -f infrastructure/docker/docker-compose.yml up -d",
     "docker:down": "docker compose -f infrastructure/docker/docker-compose.yml down",
-    "test": "npm run test --workspaces --if-present",
-    "test:auth": "npm run test --workspace=@lecipm/auth-service",
-    "test:ai": "npm run test --workspace=@lecipm/ai-service",
-    "test:ai-manager": "npm run test --workspace=@lecipm/ai-manager",
-    "jobs:ai-manager": "npm run jobs --workspace=@lecipm/ai-manager",
-    "test:ai-operator": "npm run test --workspace=@lecipm/ai-operator",
-    "jobs:ai-operator": "npm run jobs --workspace=@lecipm/ai-operator"
+    "test": "pnpm -r run test --if-present",
+    "test:auth": "pnpm --filter @lecipm/auth-service test",
+    "test:ai": "pnpm --filter @lecipm/ai-service test",
+    "test:ai-manager": "pnpm --filter @lecipm/ai-manager test",
+    "jobs:ai-manager": "pnpm --filter @lecipm/ai-manager jobs",
+    "test:ai-operator": "pnpm --filter @lecipm/ai-operator test",
+    "jobs:ai-operator": "pnpm --filter @lecipm/ai-operator jobs"
   },
   "devDependencies": {
     "@eslint/js": "^9.15.0",
     "eslint": "^9.15.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.5.2",
     "prettier": "^3.3.3",
     "typescript": "^5.6.0",
     "typescript-eslint": "^8.15.0"
   },
+  "lint-staged": {
+    "*": "node scripts/git/guard-staged.mjs"
+  },
   "engines": {
     "node": ">=20"
+  },
+  "pnpm": {
+    "overrides": {
+      "@types/react": "19.2.14",
+      "@types/react-dom": "19.2.3"
+    }
   }
 }

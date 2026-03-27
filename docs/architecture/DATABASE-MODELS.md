@@ -1,6 +1,6 @@
 # LECIPM — Database Models Overview
 
-Relational models and indexing strategy across the platform. Implementations live in each service’s Prisma schema (and in `apps/web-app/prisma` for BNHub); this doc is the canonical overview.
+Relational models and indexing strategy across the platform. Implementations live in each service’s Prisma schema (and in `apps/web/prisma` for BNHub); this doc is the canonical overview.
 
 ---
 

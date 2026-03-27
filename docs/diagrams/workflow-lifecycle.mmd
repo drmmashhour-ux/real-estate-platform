@@ -1,0 +1,28 @@
+%% Main business journey + support systems
+
+flowchart LR
+  subgraph Journey["Transaction journey"]
+    CRM[CRM client] --> L[Listing / deal context]
+    L --> O[Offer]
+    O --> CT[Contract]
+    CT --> DR[Documents / deal room]
+    DR --> AP[Appointment / scheduling]
+    AP --> MS[Messaging]
+    MS --> FN[Finance]
+    FN --> AR[Analytics / reporting]
+  end
+
+  subgraph Support["Support systems"]
+    IN[Intake / required docs]
+    NT[Notifications]
+    AQ[Action queue]
+    AU[Audit events]
+  end
+
+  CRM -.-> IN
+  L -.-> NT
+  O -.-> AQ
+  CT -.-> AU
+  DR -.-> IN
+  FN -.-> NT
+  AR -.-> AU

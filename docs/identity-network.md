@@ -124,7 +124,7 @@ Main models:
 Run migrations after schema changes:
 
 ```bash
-cd apps/web-app && npx prisma migrate dev --name add_identity_network
+cd apps/web && npx prisma migrate dev --name add_identity_network
 ```
 
 ---
@@ -146,5 +146,5 @@ cd apps/web-app && npx prisma migrate dev --name add_identity_network
 Run:
 
 ```bash
-cd apps/web-app && npx vitest run lib/identity-network
+cd apps/web && npx vitest run lib/identity-network
 ```

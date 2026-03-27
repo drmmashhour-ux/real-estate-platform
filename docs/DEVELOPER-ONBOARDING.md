@@ -21,7 +21,7 @@ The platform is built for **trust, verification, multi-market expansion, and AI-
 ## 2. Architecture overview
 
 - **Monorepo** — Apps, services, and shared packages live in one repo (npm/pnpm workspaces).
-- **Primary app** — Next.js web app in `apps/web-app` (SSR, API routes, BNHub, marketplace, admin).
+- **Primary app** — Next.js web app in `apps/web` (SSR, API routes, BNHub, marketplace, admin).
 - **Services** — Auth, user, listing, search, booking, payment, messaging, review, trust-safety, analytics, etc. (some logic is in web-app; services can be split out later).
 - **Shared packages** — UI components, API client, design tokens, shared utils, auth, database.
 - **Layers** — Operational controls, observability, policy engine, revenue/growth, AI Operating System, Platform Defense Layer.
@@ -106,11 +106,11 @@ Open [http://localhost:3000](http://localhost:3000).
 
 **Option A — Local Postgres**
 
-1. Set `DATABASE_URL` in `apps/web-app/.env` (or root `.env`).
-2. From repo root or `apps/web-app`:
+1. Set `DATABASE_URL` in `apps/web/.env` (or root `.env`).
+2. From repo root or `apps/web`:
 
 ```bash
-cd apps/web-app
+cd apps/web
 npx prisma db push
 npx prisma db seed
 ```
@@ -119,13 +119,13 @@ npx prisma db seed
 
 ```bash
 docker compose -f infrastructure/docker/docker-compose.yml up -d postgres
-# Set DATABASE_URL=postgresql://lecipm:lecipm@localhost:5432/lecipm in apps/web-app/.env
-cd apps/web-app && npx prisma db push && npx prisma db seed
+# Set DATABASE_URL=postgresql://lecipm:lecipm@localhost:5432/lecipm in apps/web/.env
+cd apps/web && npx prisma db push && npx prisma db seed
 ```
 
 ### Running individual services
 
-- **Web app:** `npm run dev` (root) or `cd apps/web-app && npm run dev` (port 3000).
+- **Web app:** `npm run dev` (root) or `cd apps/web && npm run dev` (port 3000).
 - **Auth service:** `npm run dev:auth` or `cd services/auth-service && npm run dev` (port 3001).
 - **Other services:** See root [README](../README.md) and each service’s `README.md` for ports (e.g. booking 3005, payment 3006).
 
@@ -137,7 +137,7 @@ cd apps/web-app && npx prisma db push && npx prisma db seed
 
 - **Read first:** [LECIPM Cursor Execution Mode Guide](engineering/LECIPM-CURSOR-EXECUTION-MODE-GUIDE.md).
 - **Reference while coding:**
-  - Data: `apps/web-app/prisma/schema.prisma`, [Database Schema Blueprint](architecture/LECIPM-DATABASE-SCHEMA-BLUEPRINT.md).
+  - Data: `apps/web/prisma/schema.prisma`, [Database Schema Blueprint](architecture/LECIPM-DATABASE-SCHEMA-BLUEPRINT.md).
   - APIs: [API Architecture Blueprint](architecture/LECIPM-API-ARCHITECTURE-BLUEPRINT.md), [API Standards](api/API-STANDARDS.md).
   - UI: [Design System](architecture/LECIPM-DESIGN-SYSTEM-BLUEPRINT.md), [Design-to-Code Guide](architecture/LECIPM-DESIGN-TO-CODE-IMPLEMENTATION-GUIDE.md).
 - **Module boundaries:** [Platform Modules Registry](architecture/MODULES-REGISTRY.md).
@@ -149,12 +149,12 @@ Use clear prompts that reference these docs (e.g. “Add API per API blueprint a
 
 ## 6. How to add new modules
 
-1. **Decide placement** — New feature in `apps/web-app` vs new service in `services/` vs new package in `packages/`. Prefer extending the web app for product features unless you need a separate process.
-2. **Data** — Add or extend models in `apps/web-app/prisma/schema.prisma`; run `npx prisma generate` and migrations as needed.
-3. **API** — Add routes under `apps/web-app/app/api/` (e.g. `app/api/my-module/route.ts`). Follow [API Standards](api/API-STANDARDS.md).
-4. **UI** — Add pages under `apps/web-app/app/` and reuse components from `apps/web-app/components/` or `packages/ui-components/`.
+1. **Decide placement** — New feature in `apps/web` vs new service in `services/` vs new package in `packages/`. Prefer extending the web app for product features unless you need a separate process.
+2. **Data** — Add or extend models in `apps/web/prisma/schema.prisma`; run `npx prisma generate` and migrations as needed.
+3. **API** — Add routes under `apps/web/app/api/` (e.g. `app/api/my-module/route.ts`). Follow [API Standards](api/API-STANDARDS.md).
+4. **UI** — Add pages under `apps/web/app/` and reuse components from `apps/web/components/` or `packages/ui-components/`.
 5. **Docs** — Update [Platform Modules Registry](architecture/MODULES-REGISTRY.md) and relevant architecture docs.
-6. **Tests** — Add unit/integration tests next to the code or in `__tests__`; e.g. `apps/web-app/lib/**/__tests__/*.test.ts`.
+6. **Tests** — Add unit/integration tests next to the code or in `__tests__`; e.g. `apps/web/lib/**/__tests__/*.test.ts`.
 
 ---
 
@@ -172,9 +172,9 @@ Use clear prompts that reference these docs (e.g. “Add API per API blueprint a
 
 ## 8. Testing expectations
 
-- **Unit tests** — For libs, utilities, and domain logic (e.g. `apps/web-app/lib/defense/__tests__/`).
+- **Unit tests** — For libs, utilities, and domain logic (e.g. `apps/web/lib/defense/__tests__/`).
 - **API tests** — For critical routes (e.g. booking, auth, defense APIs).
-- **Run tests:** From root `npm run test`, or from `apps/web-app`: `npm run test`, optionally with path: `npm run test -- --run lib/defense/__tests__`.
+- **Run tests:** From root `npm run test`, or from `apps/web`: `npm run test`, optionally with path: `npm run test -- --run lib/defense/__tests__`.
 - **Coverage** — Aim to add tests for new defense, payment, and enforcement logic; policy acceptance; evidence and audit flows.
 
 **Key doc:** [Build Order](engineering/LECIPM-BUILD-ORDER.md) and task map for test requirements per feature.

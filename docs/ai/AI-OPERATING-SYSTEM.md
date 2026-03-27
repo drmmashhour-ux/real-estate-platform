@@ -193,4 +193,4 @@ The AI-OS powers intelligent automation, risk detection, pricing, ranking, deman
 - **lib/__tests__/ai-pricing.test.ts** – getAiPricingRecommendation output shape and store flag.
 - **lib/__tests__/ai-ranking.test.ts** – computeAiRankingScore factors (verification, superHost, reviewScore).
 
-Run: `npm run test -- --run` in `apps/web-app`.
+Run: `npm run test -- --run` in `apps/web`.

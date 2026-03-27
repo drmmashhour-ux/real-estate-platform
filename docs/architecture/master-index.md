@@ -106,7 +106,7 @@ Read in this order when starting or continuing platform development:
 
 When using Cursor or other AI tools to generate code:
 
-1. **Data layer:** [Database Schema Blueprint](LECIPM-DATABASE-SCHEMA-BLUEPRINT.md), [DATABASE-MODELS](DATABASE-MODELS.md), and `apps/web-app/prisma/schema.prisma`.
+1. **Data layer:** [Database Schema Blueprint](LECIPM-DATABASE-SCHEMA-BLUEPRINT.md), [DATABASE-MODELS](DATABASE-MODELS.md), and `apps/web/prisma/schema.prisma`.
 2. **API layer:** [API Architecture Blueprint](LECIPM-API-ARCHITECTURE-BLUEPRINT.md), [API Standards](../api/API-STANDARDS.md).
 3. **Frontend:** [Frontend Architecture](LECIPM-FRONTEND-ARCHITECTURE-BLUEPRINT.md), [Design System](LECIPM-DESIGN-SYSTEM-BLUEPRINT.md), [Design-to-Code Guide](LECIPM-DESIGN-TO-CODE-IMPLEMENTATION-GUIDE.md).
 4. **Modules & boundaries:** [Platform Modules Registry](MODULES-REGISTRY.md).

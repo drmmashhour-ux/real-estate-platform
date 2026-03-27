@@ -24,14 +24,14 @@ Use this checklist to confirm the platform is ready to begin (or continue) devel
 ## Service scaffolding
 
 - [ ] **Primary app runs** — `npm run dev` (or equivalent) starts the main app (e.g. Next.js web app on port 3000).
-- [ ] **Service scaffolding ready** — Apps and services folders exist; each has a README and can be started or extended (e.g. `apps/web-app`, `services/auth-service`).
+- [ ] **Service scaffolding ready** — Apps and services folders exist; each has a README and can be started or extended (e.g. `apps/web`, `services/auth-service`).
 - [ ] **Workspaces configured** — Root `package.json` defines workspaces (`apps/*`, `packages/*`, `services/*` or similar).
 
 ---
 
 ## Database
 
-- [ ] **Database schema defined** — Prisma schema (or equivalent) exists and is the source of truth for core entities (e.g. `apps/web-app/prisma/schema.prisma`).
+- [ ] **Database schema defined** — Prisma schema (or equivalent) exists and is the source of truth for core entities (e.g. `apps/web/prisma/schema.prisma`).
 - [ ] **Migrations / db push** — `npx prisma db push` or `prisma migrate` runs successfully against a dev database.
 - [ ] **Seeding (optional)** — Seed script exists and can populate dev data (`npx prisma db seed`).
 

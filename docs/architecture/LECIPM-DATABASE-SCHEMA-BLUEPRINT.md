@@ -2,7 +2,7 @@
 
 **Structured data model for the LECIPM ecosystem**
 
-This document defines the database schema for the LECIPM platform: main entities, relationships, key fields, indexing, security, and scalability. It supports real estate marketplace, BNHub, Broker CRM, Owner dashboard, Deal marketplace, Investment analytics, Trust & Safety, and AI systems. It aligns with the [Platform Architecture](LECIPM-PLATFORM-ARCHITECTURE.md), [Product Requirements Document](LECIPM-PRODUCT-REQUIREMENTS-DOCUMENT.md), and [Engineering Task Map](LECIPM-ENGINEERING-TASK-MAP.md). Backend engineers can implement or migrate to this model. The existing [Prisma schema](apps/web-app/prisma/schema.prisma) implements a subset; this blueprint describes the full target model.
+This document defines the database schema for the LECIPM platform: main entities, relationships, key fields, indexing, security, and scalability. It supports real estate marketplace, BNHub, Broker CRM, Owner dashboard, Deal marketplace, Investment analytics, Trust & Safety, and AI systems. It aligns with the [Platform Architecture](LECIPM-PLATFORM-ARCHITECTURE.md), [Product Requirements Document](LECIPM-PRODUCT-REQUIREMENTS-DOCUMENT.md), and [Engineering Task Map](LECIPM-ENGINEERING-TASK-MAP.md). Backend engineers can implement or migrate to this model. The existing [Prisma schema](apps/web/prisma/schema.prisma) implements a subset; this blueprint describes the full target model.
 
 ---
 
@@ -933,8 +933,8 @@ Standard migrations table (e.g. Flyway, Prisma migrations).
 | Data entities and flows | [LECIPM-PLATFORM-ARCHITECTURE](LECIPM-PLATFORM-ARCHITECTURE.md) |
 | Product behavior and entities | [LECIPM-PRODUCT-REQUIREMENTS-DOCUMENT](LECIPM-PRODUCT-REQUIREMENTS-DOCUMENT.md) |
 | Implementation tasks | [LECIPM-ENGINEERING-TASK-MAP](LECIPM-ENGINEERING-TASK-MAP.md) |
-| Current Prisma schema | [apps/web-app/prisma/schema.prisma](apps/web-app/prisma/schema.prisma) |
+| Current Prisma schema | [apps/web/prisma/schema.prisma](apps/web/prisma/schema.prisma) |
 
 ---
 
-*This document is the Database Schema Blueprint for the LECIPM platform. Implement in PostgreSQL (or compatible) with migrations; align existing [Prisma schema](apps/web-app/prisma/schema.prisma) over time with this blueprint.*
+*This document is the Database Schema Blueprint for the LECIPM platform. Implement in PostgreSQL (or compatible) with migrations; align existing [Prisma schema](apps/web/prisma/schema.prisma) over time with this blueprint.*

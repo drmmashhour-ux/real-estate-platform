@@ -49,7 +49,7 @@ lecipm/ (real-estate-platform)
 
 ## Getting started
 
-- **Run main app:** `npm run dev` (starts apps/web-app).
+- **Run main app:** `npm run dev` (starts apps/web).
 - **Run admin:** `npm run dev --workspace=apps/admin-dashboard` (or use apps/admin skeleton on port 3002).
 - **Run auth service:** `npm run dev:auth`.
 - **Database:** Set `DATABASE_URL`; `npm run db:push` to sync schema; `npm run db:seed` to seed.

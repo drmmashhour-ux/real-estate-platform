@@ -5,7 +5,7 @@ BNHub is the short-term rental (STR) module: listings, availability, bookings, r
 ## Location
 
 - **Module (domain logic):** `modules/bnhub/`
-- **Implementation:** `apps/web-app` (API routes, lib/bnhub, Prisma schema)
+- **Implementation:** `apps/web` (API routes, lib/bnhub, Prisma schema)
 
 ## Module structure (`modules/bnhub`)
 

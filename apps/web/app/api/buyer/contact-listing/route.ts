@@ -1,0 +1,372 @@
+import { NextRequest, NextResponse } from "next/server";
+import { LeadContactOrigin, NotificationType } from "@prisma/client";
+import { prisma } from "@/lib/db";
+import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
+import { parseFsboContactBody } from "@/lib/fsbo/validation";
+import { isFsboPubliclyVisible } from "@/lib/fsbo/constants";
+import { sendFsboLeadEmailToOwner } from "@/lib/email/fsbo-lead-email";
+import { sendTransactionalEmail } from "@/lib/email/provider";
+import { headers } from "next/headers";
+import { getGuestId } from "@/lib/auth/session";
+import { getDefaultTenantId } from "@/lib/buyer/tenant-context";
+import { recordBuyerGrowthEvent } from "@/lib/buyer/buyer-analytics";
+import { assertBuyerContactAllowed } from "@/modules/legal/assert-legal";
+import { legalEnforcementDisabled } from "@/modules/legal/legal-enforcement";
+import { logImmoContactEvent } from "@/lib/immo/immo-contact-log";
+import { ImmoContactEventType } from "@prisma/client";
+import { requireContentLicenseAccepted } from "@/lib/legal/content-license-enforcement";
+
+export const dynamic = "force-dynamic";
+
+export async function POST(request: NextRequest) {
+  const h = await headers();
+  const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim() ?? h.get("x-real-ip") ?? "unknown";
+  const limit = checkRateLimit(`buyer:contact-listing:${ip}`, { windowMs: 60_000, max: 10 });
+  if (!limit.allowed) {
+    return NextResponse.json(
+      { error: "Too many requests. Try again shortly." },
+      { status: 429, headers: getRateLimitHeaders(limit) }
+    );
+  }
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  const parsed = parseFsboContactBody(body);
+  if (!parsed.ok) {
+    return NextResponse.json({ error: parsed.error }, { status: 400 });
+  }
+
+  const { listingId, name, email, phone, message } = parsed.data;
+  if (!message || message.trim().length < 5) {
+    return NextResponse.json({ error: "Message must be at least 5 characters" }, { status: 400 });
+  }
+
+  const tenantId = await getDefaultTenantId();
+  const userId = await getGuestId();
+
+  const fsbo = await prisma.fsboListing.findUnique({
+    where: { id: listingId },
+    include: {
+      owner: { select: { id: true, email: true } },
+    },
+  });
+
+  const crm =
+    !fsbo || !isFsboPubliclyVisible(fsbo)
+      ? await prisma.listing.findUnique({
+          where: { id: listingId },
+          include: { owner: { select: { id: true, email: true } } },
+        })
+      : null;
+
+  if (fsbo && isFsboPubliclyVisible(fsbo)) {
+    return handleFsboContact({
+      listing: fsbo,
+      name,
+      email,
+      phone,
+      message,
+      tenantId,
+      userId,
+    });
+  }
+
+  if (crm) {
+    return handleCrmContact({
+      listing: crm,
+      name,
+      email,
+      phone,
+      message,
+      tenantId,
+      userId,
+    });
+  }
+
+  return NextResponse.json({ error: "Listing not available" }, { status: 404 });
+}
+
+async function handleFsboContact(opts: {
+  listing: {
+    id: string;
+    title: string;
+    ownerId: string;
+    owner: { id: string; email: string | null } | null;
+  };
+  name: string;
+  email: string;
+  phone: string | null;
+  message: string;
+  tenantId: string | null;
+  userId: string | null;
+}) {
+  const { listing, name, email, phone, message, tenantId, userId } = opts;
+  const listingId = listing.id;
+
+  if (!legalEnforcementDisabled()) {
+    if (!userId) {
+      return NextResponse.json(
+        {
+          error:
+            "Sign in required to contact the listing broker. Complete the buyer acknowledgment in the modal after signing in.",
+          code: "LEGAL_SIGN_IN_REQUIRED",
+        },
+        { status: 401 }
+      );
+    }
+    const licenseBlock = await requireContentLicenseAccepted(userId);
+    if (licenseBlock) return licenseBlock;
+    const legal = await assertBuyerContactAllowed(userId, listingId);
+    if (!legal.ok) {
+      return NextResponse.json(
+        {
+          error: legal.blockingReasons[0] ?? "Complete required legal acknowledgments.",
+          code: "LEGAL_FORMS_REQUIRED",
+          missing: legal.missing.map((m) => m.key),
+        },
+        { status: 403 }
+      );
+    }
+  }
+
+  const fsboLead = await prisma.fsboLead.create({
+    data: {
+      listingId,
+      name,
+      email,
+      phone: phone?.trim() || null,
+      message,
+      leadSource: "DIRECT_BUYER",
+      tenantId,
+      dealOriginTag: "PLATFORM_ORIGIN",
+      commissionEligible: true,
+    },
+  });
+
+  const crmLead = await prisma.lead.create({
+    data: {
+      name,
+      email,
+      phone: phone?.trim() || "—",
+      message,
+      status: "new",
+      score: 55,
+      pipelineStatus: "new",
+      pipelineStage: "new",
+      leadSource: "BUYER",
+      userId: userId ?? undefined,
+      fsboListingId: listingId,
+      contactOrigin: LeadContactOrigin.BUYER,
+      commissionSource: LeadContactOrigin.BUYER,
+      firstPlatformContactAt: new Date(),
+      commissionEligible: true,
+      source: "buyer_hub",
+      highIntent: true,
+    },
+  });
+
+  void recordBuyerGrowthEvent("CONTACT_LISTING_BROKER", listingId, {
+    leadId: crmLead.id,
+    fsboLeadId: fsboLead.id,
+    fsboListingId: listingId,
+    sellerUserId: listing.ownerId,
+  });
+
+  const origin = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, "") || "http://localhost:3000";
+  const ownerInbox = listing.owner?.email?.trim();
+  if (ownerInbox) {
+    void sendFsboLeadEmailToOwner({
+      to: ownerInbox,
+      listingTitle: listing.title,
+      listingId: listing.id,
+      leadName: name,
+      leadEmail: email,
+      leadMessage: [phone ? `Phone: ${phone}` : null, message].filter(Boolean).join("\n\n") || message,
+      origin,
+    });
+  }
+
+  try {
+    await prisma.notification.create({
+      data: {
+        userId: listing.ownerId,
+        type: NotificationType.CRM,
+        title: "New buyer inquiry",
+        message: `${name} contacted you about “${listing.title.slice(0, 80)}”.`,
+        actionUrl: `/dashboard/fsbo`,
+        actionLabel: "View listing",
+        metadata: {
+          leadId: crmLead.id,
+          fsboLeadId: fsboLead.id,
+          fsboListingId: listing.id,
+          buyerEmail: email,
+          flow: "BUYER_HUB_FSBO",
+        } as object,
+        tenantId: tenantId ?? undefined,
+        actorId: userId ?? undefined,
+      },
+    });
+  } catch {
+    /* optional */
+  }
+
+  void logImmoContactEvent({
+    userId,
+    listingId,
+    listingKind: "fsbo",
+    contactType: ImmoContactEventType.MESSAGE,
+    metadata: { source: "buyer_contact_listing", leadId: crmLead.id },
+    policy: {
+      sourceHub: "buyer",
+      channel: "form",
+      semantic: "formal_lead",
+      leadId: crmLead.id,
+    },
+  });
+
+  return NextResponse.json({ ok: true, leadId: crmLead.id, fsboLeadId: fsboLead.id });
+}
+
+async function handleCrmContact(opts: {
+  listing: {
+    id: string;
+    title: string;
+    listingCode: string;
+    price: number;
+    ownerId: string | null;
+    owner: { id: string; email: string | null } | null;
+  };
+  name: string;
+  email: string;
+  phone: string | null;
+  message: string;
+  tenantId: string | null;
+  userId: string | null;
+}) {
+  const { listing, name, email, phone, message, tenantId, userId } = opts;
+
+  if (!legalEnforcementDisabled()) {
+    if (!userId) {
+      return NextResponse.json(
+        {
+          error:
+            "Sign in required to contact the listing broker. Complete the buyer acknowledgment in the modal after signing in.",
+          code: "LEGAL_SIGN_IN_REQUIRED",
+        },
+        { status: 401 }
+      );
+    }
+    const licenseBlock = await requireContentLicenseAccepted(userId);
+    if (licenseBlock) return licenseBlock;
+    const legal = await assertBuyerContactAllowed(userId, listing.id);
+    if (!legal.ok) {
+      return NextResponse.json(
+        {
+          error: legal.blockingReasons[0] ?? "Complete required legal acknowledgments.",
+          code: "LEGAL_FORMS_REQUIRED",
+          missing: legal.missing.map((m) => m.key),
+        },
+        { status: 403 }
+      );
+    }
+  }
+
+  const priceInt = Number.isFinite(listing.price) ? Math.round(listing.price) : null;
+
+  const crmLead = await prisma.lead.create({
+    data: {
+      name,
+      email,
+      phone: phone?.trim() || "—",
+      message,
+      status: "new",
+      score: 55,
+      pipelineStatus: "new",
+      pipelineStage: "new",
+      leadSource: "BUYER",
+      listingId: listing.id,
+      listingCode: listing.listingCode,
+      userId: userId ?? undefined,
+      contactOrigin: LeadContactOrigin.BUYER,
+      commissionSource: LeadContactOrigin.BUYER,
+      firstPlatformContactAt: new Date(),
+      commissionEligible: true,
+      source: "buyer_hub",
+      highIntent: true,
+      ...(priceInt != null ? { dealValue: priceInt, estimatedValue: priceInt } : {}),
+    },
+  });
+
+  void recordBuyerGrowthEvent("CONTACT_LISTING_BROKER", listing.id, {
+    leadId: crmLead.id,
+    crmListingId: listing.id,
+  });
+
+  const origin = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, "") || "http://localhost:3000";
+  const ownerInbox = listing.owner?.email?.trim();
+  if (ownerInbox) {
+    const bodyHtml = `<!DOCTYPE html><html><body style="font-family:system-ui,sans-serif;line-height:1.5;color:#111">
+<p>New inquiry on marketplace listing <strong>${escapeHtml(listing.title)}</strong> (${escapeHtml(listing.listingCode)}).</p>
+<p><strong>From:</strong> ${escapeHtml(name)} &lt;${escapeHtml(email)}&gt;</p>
+${phone ? `<p><strong>Phone:</strong> ${escapeHtml(phone)}</p>` : ""}
+<p><strong>Message:</strong><br/>${escapeHtml(message).replace(/\n/g, "<br/>")}</p>
+<p><a href="${escapeHtml(origin)}/dashboard/broker/leads">Open CRM</a></p>
+</body></html>`;
+    void sendTransactionalEmail({
+      to: ownerInbox,
+      subject: `Marketplace inquiry — ${listing.title.slice(0, 60)}`,
+      html: bodyHtml,
+      template: "crm_listing_inquiry",
+      replyTo: email,
+    });
+  }
+
+  if (listing.ownerId) {
+    try {
+      await prisma.notification.create({
+        data: {
+          userId: listing.ownerId,
+          type: NotificationType.CRM,
+          title: "New buyer inquiry",
+          message: `${name} requested information about “${listing.title.slice(0, 80)}”.`,
+          actionUrl: `/dashboard/broker/leads`,
+          actionLabel: "View leads",
+          metadata: { leadId: crmLead.id, crmListingId: listing.id } as object,
+          tenantId: tenantId ?? undefined,
+          actorId: userId ?? undefined,
+        },
+      });
+    } catch {
+      /* optional */
+    }
+  }
+
+  void logImmoContactEvent({
+    userId,
+    listingId: listing.id,
+    listingKind: "crm",
+    contactType: ImmoContactEventType.MESSAGE,
+    metadata: { source: "buyer_contact_listing", leadId: crmLead.id },
+    policy: {
+      sourceHub: "buyer",
+      channel: "form",
+      semantic: "formal_lead",
+      leadId: crmLead.id,
+    },
+  });
+
+  return NextResponse.json({ ok: true, leadId: crmLead.id });
+}
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}

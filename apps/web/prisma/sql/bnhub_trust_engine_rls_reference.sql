@@ -1,0 +1,5 @@
+-- Reference RLS if tables are replicated to Supabase. Primary enforcement: Next.js API + Prisma.
+-- bnhub_identity_verifications: user_id = auth.uid() for SELECT own row; no client INSERT
+-- bnhub_address_verifications / bnhub_media_validations / bnhub_listing_risk_profiles: host owns listing
+-- bnhub_risk_flags: evidence_json never exposed to guests; host only SAFE_HOST_VISIBLE rows
+-- bnhub_identity_audit_logs: service_role / admin only

@@ -325,4 +325,4 @@ User (host) ──< BnhubListing ──< BnhubListingPhoto
 - Use the Prisma schema in [BNHUB-production-schema.prisma](BNHUB-production-schema.prisma) to generate the client and migrations. Table names are mapped to the snake_case names above via `@@map`.
 - Set `DATABASE_URL` for your PostgreSQL instance (required for `prisma migrate` / `prisma generate`).
 - From repo root: `npx prisma migrate dev --schema=docs/database/BNHUB-production-schema.prisma` (or `prisma db push` for prototyping).
-- To adopt this schema in the main app, merge or replace the BNHub-related models in `apps/web-app/prisma/schema.prisma` and run migrations from that app.
+- To adopt this schema in the main app, merge or replace the BNHub-related models in `apps/web/prisma/schema.prisma` and run migrations from that app.

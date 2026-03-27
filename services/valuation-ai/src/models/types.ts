@@ -1,5 +1,5 @@
 /**
- * AVM input/output types (mirrors web-app lib/valuation/types for standalone service).
+ * AVM input/output types (mirrors apps/web lib/valuation/types for standalone service).
  */
 
 export type ConfidenceLabel = "low" | "medium" | "high";

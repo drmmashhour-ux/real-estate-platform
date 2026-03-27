@@ -1,0 +1,46 @@
+{
+  "name": "carrefour-prestige",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3040",
+    "build": "next build",
+    "start": "next start -p 3040",
+    "lint": "eslint .",
+    "postinstall": "prisma generate",
+    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate dev",
+    "db:seed": "npx tsx prisma/seed.ts"
+  },
+  "prisma": {
+    "seed": "npx tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^5.2.2",
+    "@prisma/client": "^6.19.2",
+    "@supabase/ssr": "^0.7.0",
+    "@supabase/supabase-js": "^2.99.3",
+    "next": "^15.1.0",
+    "openai": "^6.32.0",
+    "pdf-lib": "^1.17.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-hook-form": "^7.71.2",
+    "stripe": "^14.25.0",
+    "uuid": "^11.0.5",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.2.1",
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@types/uuid": "^10.0.0",
+    "eslint": "^9.15.0",
+    "eslint-config-next": "^15.1.0",
+    "prisma": "^6.19.2",
+    "tailwindcss": "^4.2.1",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.0"
+  }
+}

@@ -8,13 +8,13 @@
  * - pricing history (from AiPricingRecommendation or listing history)
  * - search activity (if available)
  * Output: aggregated metrics (console or write to a store).
- * This service has no DB by default; the web-app has Prisma. So we output a stub report.
+ * This service has no DB by default; the apps/web has Prisma. So we output a stub report.
  */
 const run = async () => {
   const report = {
     runAt: new Date().toISOString(),
     source: "ai-service-pipeline",
-    message: "AI data pipeline stub. Wire this to platform DB (e.g. Prisma in web-app) to aggregate listings, bookings, reviews, pricing history, search activity.",
+    message: "AI data pipeline stub. Wire this to platform DB (e.g. Prisma in apps/web) to aggregate listings, bookings, reviews, pricing history, search activity.",
     suggestedMetrics: [
       "listings_per_region",
       "bookings_per_listing",

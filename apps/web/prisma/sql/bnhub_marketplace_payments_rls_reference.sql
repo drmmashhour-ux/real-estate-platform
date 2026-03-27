@@ -1,0 +1,15 @@
+-- Reference RLS patterns if BNHub marketplace tables are replicated to Supabase Postgres.
+-- Primary app DB: access control is enforced in Next.js API routes (Prisma), not via these policies.
+-- Enable per table: ALTER TABLE bnhub_payments ENABLE ROW LEVEL SECURITY;
+--
+-- Guest (auth.uid() = guest_user_id on payment row):
+--   SELECT on bnhub_payments, bnhub_payment_quotes, bnhub_refunds where guest_user_id = auth.uid()
+-- Host:
+--   SELECT on bnhub_payouts, bnhub_payments (limited columns via view) where host_user_id = auth.uid()
+-- Admin:
+--   Full access via service role or custom claim is_admin
+-- Webhook inbox:
+--   NO client access; service_role only on bnhub_payment_processor_webhooks
+--
+-- Example (illustrative only — adjust to your Supabase auth mapping):
+-- CREATE POLICY guest_read_own_quotes ON bnhub_payment_quotes FOR SELECT USING (guest_user_id = auth.uid()::text);

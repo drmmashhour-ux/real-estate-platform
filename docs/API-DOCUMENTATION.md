@@ -1,13 +1,13 @@
 # API Documentation
 
-Main API is served by **apps/web-app** (Next.js). Base path: `/api`.
+Main API is served by **apps/web** (Next.js). Base path: `/api`.
 
 ## Auth
 
 - `POST /api/auth/register` — Register (email, password, name?, role?)
 - `POST /api/auth/login` — Login (email, password)
 - `POST /api/auth/logout` — Clear session
-- `POST /api/auth/demo-session` — Set session for demo user (email)
+- `POST /api/auth/demo-session` — Set session for demo user (email); **403 in production** (`NODE_ENV === "production"`)
 - `POST /api/auth/password-reset` — Password reset stub (email)
 
 ## Users
@@ -26,7 +26,7 @@ Main API is served by **apps/web-app** (Next.js). Base path: `/api`.
 - `GET/POST/PUT /api/bnhub/availability` — Calendar (listingId, date/slots)
 - `POST /api/bnhub/bookings` — Create booking
 - `GET /api/bnhub/bookings/:id` — Get booking
-- `POST /api/bnhub/bookings/:id/pay` — Confirm payment
+- `POST /api/stripe/checkout` — Start payment (e.g. `paymentType: booking`, `bookingId`); `POST /api/stripe/webhook` confirms paid state
 - `POST /api/bnhub/bookings/:id/approve` — Host approve
 - `POST /api/bnhub/bookings/:id/decline` — Host decline
 - `POST /api/bnhub/bookings/:id/cancel` — Cancel (body: `{ by: "guest" | "host" }`)
@@ -47,6 +47,6 @@ Main API is served by **apps/web-app** (Next.js). Base path: `/api`.
 
 ## Admin
 
-- `GET/POST /api/admin/*` — Admin-only routes (moderation, fraud, health, etc.). See apps/web-app/app/api/admin.
+- `GET/POST /api/admin/*` — Admin-only routes (moderation, fraud, health, etc.). See apps/web/app/api/admin.
 
 For full BNHub API reference see [BNHUB-API-REFERENCE.md](BNHUB-API-REFERENCE.md).

@@ -25,6 +25,14 @@ A world where every property search, investment decision, and professional inter
 
 ---
 
+## Operating principle
+
+**AI runs the platform, user supervises.**
+
+Automation and AI handle day-to-day operations—listings, scoring, marketing, recommendations, moderation signals, and analytics. Humans set policy, approve exceptions, resolve disputes, and oversee outcomes. The platform is designed so that AI operates within guardrails and users retain final authority.
+
+---
+
 ## Core values
 
 1. **Trust first** — Verification and transparency before scale.

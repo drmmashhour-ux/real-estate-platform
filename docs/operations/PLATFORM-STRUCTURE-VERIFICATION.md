@@ -8,7 +8,7 @@ Status: **Verified** — Last checked against target architecture.
 
 | Target | Current | Status |
 |--------|---------|--------|
-| **/apps/web-app** | **/app** (Next.js App Router) | ✅ Web app lives at repo root; `app/` is the web app. |
+| **/apps/web** | **/app** (Next.js App Router) | ✅ Web app lives at repo root; `app/` is the web app. |
 | **/apps/mobile-app** | — | ⏳ Not yet; planned (see [PROJECT-OVERVIEW](PROJECT-OVERVIEW.md)). |
 | **/packages/ui** | Shared UI in **app/** components + **app/globals.css** | ⚠️ No separate package; UI is in-app. Acceptable for single app. |
 | **/packages/database** | **prisma/** (schema, migrations) | ✅ Database layer present. |

@@ -1,0 +1,23 @@
+%% Tenant isolation: server-side context, scoped queries, admin override
+
+flowchart TD
+  U[User] --> S[Session / cookie]
+  S --> TC[Current tenant context]
+  TC --> M{Tenant membership OK?}
+  M -->|yes| SV[Service layer]
+  M -->|no| X[Reject / 403]
+  SV --> Q[tenantId-scoped query]
+  Q --> DB[(DB: tenant-only data)]
+
+  R1["Rule: tenantId server-derived"]
+  R2["Rule: do not trust client tenant id"]
+  R3["Rule: records scoped by tenantId"]
+  R4["Rule: block cross-tenant in services"]
+
+  R1 -.-> TC
+  R2 -.-> TC
+  R3 -.-> Q
+  R4 -.-> SV
+
+  GA[Global admin] --> OP[Override path with audit]
+  OP --> SV

@@ -378,7 +378,7 @@ Additional tables already in use:
 
 - **AiOperatorDecision** — Every operator agent run: agentType, entityType, entityId, inputSummary, outputSummary, confidenceScore, recommendedAction, reasonCodes, automatedAction, humanOverride fields, createdAt.
 - **AiOperatorAlert** — Open/acknowledged/resolved alerts from operators (alertType, severity, entityType, entityId, message, status).
-- **AiPricingRecommendation**, **FraudScore**, **DemandForecast**, **AiDecisionLog**, **AiAlert** — Existing in `apps/web-app/prisma/schema.prisma`.
+- **AiPricingRecommendation**, **FraudScore**, **DemandForecast**, **AiDecisionLog**, **AiAlert** — Existing in `apps/web/prisma/schema.prisma`.
 
 Schema details: see [BNHUB-production-schema.prisma](database/BNHUB-production-schema.prisma) and [BNHUB-SCHEMA-DESIGN.md](database/BNHUB-SCHEMA-DESIGN.md) for production BNHub + AI tables.
 

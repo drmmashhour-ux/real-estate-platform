@@ -62,7 +62,7 @@ High-level flow from users down to infrastructure. Use this for onboarding and h
 |-------|-------------|
 | **Users** | All actor types that interact with the platform. |
 | **Applications** | Web, admin, broker, owner, mobile; BNHub is part of web app. |
-| **Platform services** | Domain capabilities (auth, listings, bookings, etc.) implemented in `apps/web-app` and/or `services/*`. |
+| **Platform services** | Domain capabilities (auth, listings, bookings, etc.) implemented in `apps/web` and/or `services/*`. |
 | **APIs** | Entry points for apps and internal callers; Next.js API routes and optional microservice endpoints. |
 | **Data layer** | Single primary database (Prisma schema in web-app); models for users, listings, bookings, payments, defense, compliance, etc. |
 | **AI systems** | AI/ML features (pricing, fraud, moderation, support, ranking) and AI Control Center for governance. |

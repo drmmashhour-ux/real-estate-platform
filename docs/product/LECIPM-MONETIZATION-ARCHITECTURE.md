@@ -442,4 +442,24 @@ LECIPM is designed to evolve into a **diversified global revenue platform** wher
 
 ---
 
+## 13. Implementation reference
+
+The following implementation provides auditable revenue tracking, calculators, and APIs.
+
+| Area | Location | Description |
+|------|----------|-------------|
+| **Booking fees** | `apps/web/lib/monetization/calculators/booking-fees.ts` | Guest service fee (12%) and host fee (3%) from subtotal; cleaning and tax supported. |
+| **Transaction fees** | `apps/web/lib/monetization/calculators/transaction-fees.ts` | Platform facilitation fee: 0.5% of transaction value, min $0.99, max $999. |
+| **Revenue events** | `apps/web/lib/monetization/revenue-events.ts` | `recordRevenueEvent()`, `getRevenueEvents()`, `getRevenueSummary()`, `getRevenueReports()`. Every revenue event is stored in `PlatformRevenueEvent` for audit. |
+| **Entitlements** | `apps/web/lib/monetization/entitlements.ts` | Feature–plan mapping; `checkEntitlement(userId, feature)`, `getEntitlementsForUser(userId)`. |
+| **Plans & subscriptions** | `apps/web/lib/monetization/plans.ts`, `subscriptions.ts` | List/create/update plans; create subscription, cancel at period end, list invoices. |
+| **Promotions** | `apps/web/lib/monetization/promotions.ts` | List campaigns, create promoted listing, get promotions for listing. |
+| **Payout adjustments** | `apps/web/lib/monetization/payout-adjustments.ts` | Record and list adjustments (refunds, dispute deductions). |
+| **Public APIs** | `apps/web/app/api/monetization/*` | Plans, subscriptions, invoices, promotions, booking-fees/calculate, transaction-fees/calculate, revenue/summary, revenue/reports, entitlements. |
+| **Admin APIs** | `apps/web/app/api/admin/monetization/*` | Create/update plans, configure promotion campaigns, revenue, subscriptions, payout-adjustments. |
+| **BNHub revenue recording** | `apps/web/app/api/stripe/webhook/route.ts` (`checkout.session.completed`, `paymentType: booking`) | Commission/revenue ledger via `createCommissionsForPayment` / `createRevenueLedgerForPayment` (not a separate mock pay route). |
+| **Transaction revenue recording** | `apps/web/lib/transactions/steps.ts` | When a transaction is closed, computes platform fee and records `transaction_fee` in `PlatformRevenueEvent`. |
+
+---
+
 *This document is the monetization blueprint for the LECIPM platform. It aligns with [PROJECT-OVERVIEW](PROJECT-OVERVIEW.md), [BNHUB-BUSINESS-MODEL](BNHUB-BUSINESS-MODEL.md), [LECIPM-AI-OPERATING-SYSTEM](LECIPM-AI-OPERATING-SYSTEM.md), [PLATFORM-MISSION](PLATFORM-MISSION.md), and [PLATFORM-GOVERNANCE](PLATFORM-GOVERNANCE.md).*

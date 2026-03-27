@@ -1,5 +1,5 @@
 /**
- * Valuation service: delegates to web-app API or implements minimal logic for standalone runs.
+ * Valuation service: delegates to apps/web API or implements minimal logic for standalone runs.
  * In production, call the platform API (e.g. POST /api/valuation/sale) with property data.
  */
 

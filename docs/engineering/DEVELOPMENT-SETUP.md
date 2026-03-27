@@ -35,7 +35,7 @@ cp .env.example .env
 Optional per-service env (see each service README):
 
 - `services/auth-service/.env` — `DATABASE_URL`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`
-- `apps/web-app/.env` — `DATABASE_URL` (for BNHub Prisma), `NEXT_PUBLIC_APP_URL`
+- `apps/web/.env` — `DATABASE_URL` (for BNHub Prisma), `NEXT_PUBLIC_APP_URL`
 - Other services: `PORT`, `DATABASE_URL` as needed
 
 ---
@@ -56,7 +56,7 @@ Create a database and set `DATABASE_URL` in `.env`.
 **Apply schema and seed (web-app + BNHub)**
 
 ```bash
-cd apps/web-app
+cd apps/web
 npx prisma db push
 npx prisma db seed
 cd ../..
@@ -97,7 +97,7 @@ npm run dev
 | messaging-service | `npm run dev --workspace=@lecipm/messaging-service` | 3007 |
 | review-service | `npm run dev --workspace=@lecipm/review-service` | 3008 |
 | trust-safety   | `npm run dev --workspace=@lecipm/trust-safety` | 3009 |
-| web-app        | `npm run dev --workspace=apps/web-app` | 3000 |
+| web-app        | `npm run dev --workspace=apps/web` | 3000 |
 
 ---
 
