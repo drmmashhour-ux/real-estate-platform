@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getUserRole } from "@/lib/auth/session";
+import { getUserRole, isHubAdminRole } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
 import { AdminIssuesClient } from "./admin-issues-client";
 
@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminIssuesPage() {
   const role = await getUserRole();
-  if (role !== "admin") redirect("/admin");
+  if (!isHubAdminRole(role)) redirect("/admin");
 
   const issues = await prisma.bookingIssue.findMany({
     orderBy: { createdAt: "desc" },

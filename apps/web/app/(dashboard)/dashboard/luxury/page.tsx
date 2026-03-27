@@ -1,4 +1,5 @@
-import { getUserRole } from "@/lib/auth/session";
+
+
 import { hubNavigation } from "@/lib/hub/navigation";
 import { getHubTheme } from "@/lib/hub/themes";
 import { HubLayout } from "@/components/hub/HubLayout";
@@ -7,6 +8,7 @@ import { AnimatedStatCard } from "@/components/ui/AnimatedStatCard";
 import { ActionButton } from "@/components/ui/ActionButton";
 import { LuxuryHero } from "./components/LuxuryHero";
 import { LuxuryDashboardClientDynamic } from "./components/LuxuryDashboardClientDynamic";
+import { getUserRole, isHubAdminRole } from "@/lib/auth/session";
 
 const GOLD = "#C9A96E";
 const BG = "#0f0f0f";
@@ -23,7 +25,7 @@ export default async function LuxuryHubPage() {
       title="Luxury"
       hubKey="luxury"
       navigation={hubNavigation.luxury}
-      showAdminInSwitcher={role === "admin"}
+      showAdminInSwitcher={isHubAdminRole(role)}
     >
       <div className="space-y-[30px]" style={{ backgroundColor: BG }}>
         <LuxuryHero

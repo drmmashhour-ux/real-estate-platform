@@ -1,7 +1,9 @@
 import Link from "next/link";
+import { getGuestId, getUserRole, isHubAdminRole } from "@/lib/auth/session";
+
 import { redirect, notFound } from "next/navigation";
 import { HubLayout } from "@/components/hub/HubLayout";
-import { getGuestId, getUserRole } from "@/lib/auth/session";
+
 import { prisma } from "@/lib/db";
 import { hubNavigation } from "@/lib/hub/navigation";
 import { isTrustGraphAdminQueueEnabled, isTrustGraphEnabled } from "@/lib/trustgraph/config";
@@ -62,7 +64,7 @@ export default async function AdminTrustGraphCaseDetailPage({ params }: { params
       title="TrustGraph case"
       hubKey="admin"
       navigation={hubNavigation.admin}
-      showAdminInSwitcher={role === "admin"}
+      showAdminInSwitcher={isHubAdminRole(role)}
     >
       <div className="mx-auto max-w-4xl space-y-6 px-4 py-8">
         <div className="flex flex-wrap items-center justify-between gap-3">

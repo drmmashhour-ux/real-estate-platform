@@ -1,10 +1,12 @@
 import Link from "next/link";
+import { getGuestId, getUserRole, isHubAdminRole } from "@/lib/auth/session";
+
 import { redirect } from "next/navigation";
 import { HubLayout } from "@/components/hub/HubLayout";
 import { Card } from "@/components/ui/Card";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { TrustgraphQueueQuickActions } from "@/components/trust/TrustgraphQueueQuickActions";
-import { getGuestId, getUserRole } from "@/lib/auth/session";
+
 import { prisma } from "@/lib/db";
 import { hubNavigation } from "@/lib/hub/navigation";
 import { loadVerificationQueue, loadVerificationQueueStats } from "@/lib/trustgraph/application/loadVerificationQueue";
@@ -70,7 +72,7 @@ export default async function AdminTrustGraphQueuePage({
       title="TrustGraph Autopilot"
       hubKey="admin"
       navigation={hubNavigation.admin}
-      showAdminInSwitcher={role === "admin"}
+      showAdminInSwitcher={isHubAdminRole(role)}
     >
       <div className="space-y-6">
         <SectionHeader

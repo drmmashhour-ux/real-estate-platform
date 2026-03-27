@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { getGuestId, getUserRole, isHubAdminRole } from "@/lib/auth/session";
+
 import { redirect } from "next/navigation";
-import { getGuestId, getUserRole } from "@/lib/auth/session";
+
 import { getApprovedHost, hasAcceptedHostAgreement } from "@/lib/bnhub/host";
 import { requirePlatformAcceptance, requireBnhubHostAgreement } from "@/lib/legal/require-acceptance";
 import { hubNavigation } from "@/lib/hub/navigation";
@@ -37,7 +39,7 @@ export default async function BNHubHostNewListingPage() {
       title="BNHub"
       hubKey="bnhub"
       navigation={hubNavigation.bnhub}
-      showAdminInSwitcher={role === "admin"}
+      showAdminInSwitcher={isHubAdminRole(role)}
       quickActions={
         <div className="flex gap-2">
           <Link

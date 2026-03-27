@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { getGuestId, getUserRole } from "@/lib/auth/session";
+import { getGuestId, getUserRole, isHubAdminRole } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
 import type { Prisma } from "@prisma/client";
 
@@ -16,7 +16,7 @@ export async function PATCH(
 ) {
   try {
     const role = await getUserRole();
-    if (role !== "admin") {
+    if (!isHubAdminRole(role)) {
       return Response.json({ error: "Admin required" }, { status: 403 });
     }
 

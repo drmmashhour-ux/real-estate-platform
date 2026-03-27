@@ -2,6 +2,7 @@ import Link from "next/link";
 import { StaysSearchClient } from "./stays-search-client";
 import { FeaturedListings } from "@/components/bnhub/FeaturedListings";
 import { SponsoredListings } from "@/components/bnhub/SponsoredListings";
+import { GuestOnboardingTips } from "@/components/growth/GuestOnboardingTips";
 
 export default function BNHubStaysPage() {
   return (
@@ -45,6 +46,9 @@ export default function BNHubStaysPage() {
           <p className="mt-1 text-sm text-slate-400">
             Search by location, dates, and guests. Verified listings only when you need extra peace of mind.
           </p>
+          <div className="mt-4 max-w-xl">
+            <GuestOnboardingTips />
+          </div>
         </div>
       </section>
 

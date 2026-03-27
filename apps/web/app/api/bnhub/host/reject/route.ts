@@ -1,10 +1,10 @@
 import { NextRequest } from "next/server";
-import { getUserRole } from "@/lib/auth/session";
+import { getUserRole, isHubAdminRole } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
 
 export async function POST(request: NextRequest) {
   const role = await getUserRole();
-  if (role !== "admin") {
+  if (!isHubAdminRole(role)) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 

@@ -1,7 +1,9 @@
 import Link from "next/link";
+import { getGuestId, getUserRole, isHubAdminRole } from "@/lib/auth/session";
+
 import { redirect } from "next/navigation";
 import { HubLayout } from "@/components/hub/HubLayout";
-import { getGuestId, getUserRole } from "@/lib/auth/session";
+
 import { prisma } from "@/lib/db";
 import { hubNavigation } from "@/lib/hub/navigation";
 import { getHubTheme } from "@/lib/hub/themes";
@@ -61,7 +63,7 @@ export default async function AdminHubDashboardPage() {
       title="AdminHub"
       hubKey="admin"
       navigation={hubNavigation.admin}
-      showAdminInSwitcher={role === "admin"}
+      showAdminInSwitcher={isHubAdminRole(role)}
     >
       <div className="space-y-8">
         {overview && (

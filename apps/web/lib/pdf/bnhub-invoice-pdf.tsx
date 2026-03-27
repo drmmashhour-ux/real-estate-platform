@@ -2,8 +2,8 @@
  * BNHub invoice PDF — server-only via `@react-pdf/renderer`.
  * Guest rows: total paid only. Host/admin: platform fee + host payout.
  */
-import path from "path";
 import { Document, Page, Text, View, StyleSheet, Image } from "@react-pdf/renderer";
+import { resolvePublicAssetPath } from "@/lib/pdf/resolve-public-asset";
 import type { BookingInvoiceJson } from "@/lib/bnhub/booking-invoice";
 
 const styles = StyleSheet.create({
@@ -72,7 +72,7 @@ function fmtDate(iso: string) {
 }
 
 function logoSrc(): string {
-  return path.join(process.cwd(), "public", "logo.png");
+  return resolvePublicAssetPath("logo.png");
 }
 
 export function BnhubInvoicePdfDocument({ data }: { data: BookingInvoiceJson }) {

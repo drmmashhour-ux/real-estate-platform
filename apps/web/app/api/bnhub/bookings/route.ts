@@ -17,6 +17,7 @@ import { hasActiveEnforceableContract } from "@/lib/legal/enforceable-contract";
 import { ENFORCEABLE_CONTRACT_TYPES } from "@/lib/legal/enforceable-contract-types";
 import { enforceableContractsRequired } from "@/lib/legal/enforceable-contracts-enforcement";
 import { requireContentLicenseAccepted } from "@/lib/legal/content-license-enforcement";
+import { logApiRouteError } from "@/lib/api/dev-log";
 
 export async function POST(request: NextRequest) {
   try {
@@ -207,10 +208,10 @@ export async function POST(request: NextRequest) {
     }
     return Response.json(booking);
   } catch (e) {
-    console.error(e);
+    logApiRouteError("POST /api/bnhub/bookings", e);
     return Response.json(
-      { error: e instanceof Error ? e.message : "Failed to create booking" },
-      { status: 400 }
+      { error: "Booking could not be created. Try again or contact support." },
+      { status: 500 }
     );
   }
 }

@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { getUserRole } from "@/lib/auth/session";
+import { getUserRole, isHubAdminRole } from "@/lib/auth/session";
+
 import { hubNavigation } from "@/lib/hub/navigation";
 import { getHubTheme } from "@/lib/hub/themes";
 import { HubLayout } from "@/components/hub/HubLayout";
@@ -13,7 +14,7 @@ export default async function BNHubCalendarPage() {
       title="BNHub"
       hubKey="bnhub"
       navigation={hubNavigation.bnhub}
-      showAdminInSwitcher={role === "admin"}
+      showAdminInSwitcher={isHubAdminRole(role)}
     >
       <div className="space-y-6">
         <h1 className="text-xl font-semibold" style={{ color: theme.text }}>

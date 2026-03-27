@@ -34,7 +34,8 @@ export function isPublicPagePath(pathname: string): boolean {
   if (pathname.startsWith("/embed")) return true;
   if (pathname.startsWith("/api")) return true;
   if (pathname === "/favicon.ico" || pathname === "/manifest.json" || pathname === "/robots.txt") return true;
-  if (pathname.startsWith("/images/") || pathname.startsWith("/brand/")) return true;
+  if (pathname.startsWith("/images/") || pathname.startsWith("/brand/") || pathname.startsWith("/branding/"))
+    return true;
   if (/\.(ico|png|svg|jpg|jpeg|gif|webp|json|txt|xml|webmanifest)$/i.test(pathname)) return true;
   return false;
 }

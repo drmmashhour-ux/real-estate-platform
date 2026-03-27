@@ -1,7 +1,9 @@
 import Link from "next/link";
+import { getGuestId, getUserRole, isHubAdminRole } from "@/lib/auth/session";
+
 import { redirect } from "next/navigation";
 import { HubLayout } from "@/components/hub/HubLayout";
-import { getGuestId, getUserRole } from "@/lib/auth/session";
+
 import { prisma } from "@/lib/db";
 import { hubNavigation } from "@/lib/hub/navigation";
 import { generateDailyReport, generateWeeklyReport, generateMonthlyReport } from "@/modules/ai/admin-reports";
@@ -21,7 +23,7 @@ export default async function AdminAiInsightsPage() {
   ]);
 
   return (
-    <HubLayout title="AI insights" hubKey="admin" navigation={hubNavigation.admin} showAdminInSwitcher={role === "admin"}>
+    <HubLayout title="AI insights" hubKey="admin" navigation={hubNavigation.admin} showAdminInSwitcher={isHubAdminRole(role)}>
       <div className="space-y-8">
         <div>
           <h1 className="text-xl font-semibold text-white">AI-style operational reports</h1>

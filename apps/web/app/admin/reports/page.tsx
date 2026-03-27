@@ -1,7 +1,9 @@
 import Link from "next/link";
+import { getGuestId, getUserRole, isHubAdminRole } from "@/lib/auth/session";
+
 import { redirect } from "next/navigation";
 import { HubLayout } from "@/components/hub/HubLayout";
-import { getGuestId, getUserRole } from "@/lib/auth/session";
+
 import { prisma } from "@/lib/db";
 import { hubNavigation } from "@/lib/hub/navigation";
 
@@ -25,7 +27,7 @@ export default async function AdminReportsHubPage() {
   if (me?.role !== "ADMIN" && me?.role !== "ACCOUNTANT") redirect("/");
   const role = await getUserRole();
   return (
-    <HubLayout title="Reports" hubKey="admin" navigation={hubNavigation.admin} showAdminInSwitcher={role === "admin"}>
+    <HubLayout title="Reports" hubKey="admin" navigation={hubNavigation.admin} showAdminInSwitcher={isHubAdminRole(role)}>
       <div className="space-y-6">
         <div>
           <h1 className="text-xl font-semibold text-white">Financial & tax reports</h1>

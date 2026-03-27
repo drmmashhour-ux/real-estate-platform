@@ -1,8 +1,8 @@
 /**
  * Platform GST/QST invoice PDF — server-only via `@react-pdf/renderer`.
  */
-import path from "path";
 import { Document, Page, Text, View, StyleSheet, Image } from "@react-pdf/renderer";
+import { resolvePublicAssetPath } from "@/lib/pdf/resolve-public-asset";
 
 const styles = StyleSheet.create({
   page: {
@@ -40,7 +40,7 @@ function fmtMoney(cents: number | null | undefined, currency: string) {
 }
 
 function logoSrc(): string {
-  return path.join(process.cwd(), "public", "logo.png");
+  return resolvePublicAssetPath("logo.png");
 }
 
 export type PlatformInvoicePdfProps = {

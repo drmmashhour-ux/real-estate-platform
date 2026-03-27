@@ -1,5 +1,4 @@
-# BNHub / LECIPM — continuous integration
-# Fails the PR/branch if lint, Prisma validation, build, or tests fail.
+# BNHub / LECIPM — CI (required for team workflow: lint + build must pass on PRs)
 name: CI
 
 permissions:
@@ -7,9 +6,8 @@ permissions:
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
   pull_request:
-    branches: [main]
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -21,7 +19,7 @@ defaults:
 
 jobs:
   quality:
-    name: Lint, validate, build, test
+    name: Lint, validate, build
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -33,11 +31,11 @@ jobs:
         with:
           version: 9
 
-      - name: Setup Node.js (LTS)
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "pnpm"
+          cache: pnpm
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -50,10 +48,3 @@ jobs:
 
       - name: Build (web, admin, modules, packages)
         run: pnpm run build:ci
-
-      - name: Tests (placeholder — does not fail CI yet)
-        run: pnpm test || echo "No tests yet or test run skipped"
-
-      - name: Dependency audit (informational)
-        run: pnpm audit --audit-level=high
-        continue-on-error: true

@@ -24,6 +24,11 @@ export async function getUserRole(): Promise<string | null> {
   return c.get(HUB_USER_ROLE_COOKIE_NAME)?.value ?? null;
 }
 
+/** Hub role cookie mirrors Prisma `PlatformRole` (e.g. ADMIN); some guards compared lowercase `admin` only. */
+export function isHubAdminRole(role: string | null | undefined): boolean {
+  return (role ?? "").toUpperCase() === "ADMIN";
+}
+
 export function setUserRoleCookie(role: string) {
   return {
     name: HUB_USER_ROLE_COOKIE_NAME,

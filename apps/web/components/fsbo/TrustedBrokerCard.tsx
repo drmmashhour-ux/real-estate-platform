@@ -73,7 +73,7 @@ export default function TrustedBrokerCard({
                   MAM
                 </span>
                 <span className="text-xs font-medium uppercase tracking-[0.2em] text-[#B3B3B3]">Broker photo</span>
-                <span className="text-[11px] text-[#737373]">Add image at /public/images/broker.jpg</span>
+                <span className="text-[11px] text-[#737373]">Add image at /images/broker.jpg</span>
               </div>
             )}
           </div>

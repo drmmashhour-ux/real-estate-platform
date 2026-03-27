@@ -1,11 +1,13 @@
 # CI/CD — BNHub monorepo
 
+**Production releases, staging, rollback, and checklists:** see **`docs/release-strategy.md`**.
+
 ## GitHub Actions
 
 | Workflow | When | Purpose |
 |----------|------|---------|
 | **`CI`** (`.github/workflows/ci.yml`) | Push to `main`, PRs targeting `main` | Install, Prisma validate (`apps/web`), **lint** (strict), **`pnpm build:ci`** (web + admin + `modules/*` + `packages/*`), optional tests |
-| **`Deploy (Vercel CLI)`** (`.github/workflows/deploy-vercel.yml`) | Same triggers | Optional CLI deploy for **`apps/web`** and **`apps/admin`** |
+| **`Deploy (Vercel CLI)`** (`.github/workflows/deploy-vercel.yml`) | Push/PR to **`main`** and **`develop`** | Optional CLI deploy: previews on PRs; **`main`** → prod; **`develop`** → staging projects when **`ENABLE_VERCEL_STAGING`** is set |
 | **`Backend (optional)`** | Changes under `services/backend/` | Build/test when `services/backend/package.json` exists (`@lecipm/backend`) |
 
 ### CI behavior
@@ -32,17 +34,29 @@ pnpm dev:platform     # web + admin in parallel
 
 The most reliable setup for **preview + production** is the [Vercel for GitHub](https://vercel.com/docs/deployments/git/vercel-for-github) integration (no deploy secrets in Actions unless you use the CLI workflow below).
 
-### Two projects, one repo
+### Staging vs production (recommended)
 
-1. **Project: BNHub Web**  
+Use **separate Vercel projects** (or separate Git connections) so staging never shares production env vars:
+
+| Project | Production branch | Env vars |
+|---------|-------------------|----------|
+| Web — **staging** | **`develop`** | Staging Supabase / DB / test Stripe |
+| Web — **production** | **`main`** | Production secrets |
+| Admin — **staging** | **`develop`** | Same split |
+| Admin — **production** | **`main`** | Production secrets |
+
+### Two production projects (minimal Git integration)
+
+1. **Project: BNHub Web (prod)**  
    - Root Directory: **`apps/web`**  
-   - Framework: Next.js (auto)  
    - Production Branch: **`main`**  
-   - Enable **Preview Deployments** for pull requests.
+   - Preview: PRs optional.
 
-2. **Project: BNHub Admin**  
+2. **Project: BNHub Admin (prod)**  
    - Root Directory: **`apps/admin`**  
-   - Same branch / preview settings.
+   - Production Branch: **`main`**.
+
+Duplicate for **staging** with Production Branch **`develop`** (see **`docs/release-strategy.md`**).
 
 ### Environment variables (Vercel dashboard)
 
@@ -60,7 +74,7 @@ Copy from **`apps/web/.env.example`** / **`apps/admin`** templates; mirror names
 
 ### Preview URLs
 
-With the integration, each PR gets **unique preview URLs** per project. Merging to **`main`** promotes to **production** after a successful Vercel build.
+With the integration, each PR gets **unique preview URLs** per project. Merging to **`main`** promotes to **production** after a successful Vercel build. With **staging projects** tied to **`develop`**, each merge to **`develop`** updates your stable **staging** URL (see **`docs/release-strategy.md`**).
 
 ---
 
@@ -77,8 +91,12 @@ Workflow: `.github/workflows/deploy-vercel.yml`. It is **off by default** so mis
 |--------|-------------|
 | `VERCEL_TOKEN` | [Vercel token](https://vercel.com/account/tokens) |
 | `VERCEL_ORG_ID` | Team / user ID (Vercel project settings → General) |
-| `VERCEL_PROJECT_ID_WEB` | Project ID for the **web** Vercel project |
-| `VERCEL_PROJECT_ID_ADMIN` | Project ID for the **admin** Vercel project |
+| `VERCEL_PROJECT_ID_WEB` | Project ID for **web** (production project) |
+| `VERCEL_PROJECT_ID_ADMIN` | Project ID for **admin** (production project) |
+| `VERCEL_PROJECT_ID_WEB_STAGING` | (Optional) Web **staging** project — used when **`ENABLE_VERCEL_STAGING`** = `true` |
+| `VERCEL_PROJECT_ID_ADMIN_STAGING` | (Optional) Admin **staging** project |
+
+**Variables** (not secrets): set **`ENABLE_VERCEL_STAGING`** = `true` to deploy **`develop`** pushes to the staging project IDs above via CLI.
 
 **Fork PRs:** deploy jobs are skipped for forks (no access to secrets).
 

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getUserRole } from "@/lib/auth/session";
+import { getUserRole, isHubAdminRole } from "@/lib/auth/session";
 import { listIncidents } from "@/lib/trust-safety/incident-service";
 import { AdminTrustSafetyClient } from "./admin-trust-safety-client";
 
@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminTrustSafetyPage() {
   const role = await getUserRole();
-  if (role !== "admin") redirect("/admin");
+  if (!isHubAdminRole(role)) redirect("/admin");
 
   const incidents = await listIncidents({ limit: 100 });
   const list = incidents.map((i) => ({

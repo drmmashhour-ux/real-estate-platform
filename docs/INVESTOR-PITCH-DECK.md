@@ -2,6 +2,8 @@
 
 **10-slide pitch for investors**
 
+**Also see:** [investor-pitch.md](investor-pitch.md) (master narrative + 5–7 min script), [pitch-deck.md](pitch-deck.md) (15-slide BNHub + LECIPM + premium layouts), [design-system.md](design-system.md) (black + gold deck system), [financials.md](financials.md), [investor-outreach.md](investor-outreach.md).
+
 ---
 
 # Slide 1 — Title

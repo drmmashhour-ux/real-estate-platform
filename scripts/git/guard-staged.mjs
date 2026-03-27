@@ -43,7 +43,7 @@ for (const f of files) {
 
 if (failed) {
   console.error(
-    "\nSee docs/git-rules.md — use .gitignore, run installs locally, never commit dependencies or build output.\n",
+    "\nSee docs/git-workflow.md and docs/git-rules.md — use .gitignore, run installs locally, never commit dependencies or build output.\n",
   );
   process.exit(1);
 }

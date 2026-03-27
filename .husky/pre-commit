@@ -1,2 +1,27 @@
-#!/usr/bin/env sh
-npx lint-staged
+#!/bin/sh
+set -e
+
+echo "Checking for forbidden paths in staged files..."
+if git diff --cached --name-only | grep -E 'node_modules|\.next/|/\.next$|^\.next/|/dist/|^dist/|/out/|^out/' >/dev/null 2>&1; then
+  echo "Forbidden paths detected (node_modules or build outputs: .next, dist, out)."
+  echo "Fix: git rm -r --cached <path> && add patterns to .gitignore"
+  exit 1
+fi
+
+echo "Checking staged file sizes (max 50MB)..."
+staged=$(mktemp)
+trap 'rm -f "$staged"' EXIT INT HUP
+git diff --cached --name-only >"$staged" || exit 1
+
+while IFS= read -r file || [ -n "$file" ]; do
+  [ -z "$file" ] && continue
+  [ -f "$file" ] || continue
+  size=$(wc -c <"$file" | tr -d '[:space:]')
+  if [ "$size" -gt 50000000 ] 2>/dev/null; then
+    echo "File too large (>50MB): $file"
+    exit 1
+  fi
+done <"$staged"
+
+echo "Running lint-staged..."
+pnpm exec lint-staged

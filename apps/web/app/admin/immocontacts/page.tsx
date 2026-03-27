@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
+import { getGuestId, getUserRole, isHubAdminRole } from "@/lib/auth/session";
+
 import { HubLayout } from "@/components/hub/HubLayout";
-import { getGuestId, getUserRole } from "@/lib/auth/session";
+
 import { prisma } from "@/lib/db";
 import { hubNavigation } from "@/lib/hub/navigation";
 import { ImmoContactsAdminClient } from "./ImmoContactsAdminClient";
@@ -14,7 +16,7 @@ export default async function AdminImmoContactsPage() {
 
   const role = await getUserRole();
   return (
-    <HubLayout title="Immo contacts" hubKey="admin" navigation={hubNavigation.admin} showAdminInSwitcher={role === "admin"}>
+    <HubLayout title="Immo contacts" hubKey="admin" navigation={hubNavigation.admin} showAdminInSwitcher={isHubAdminRole(role)}>
       <ImmoContactsAdminClient />
     </HubLayout>
   );

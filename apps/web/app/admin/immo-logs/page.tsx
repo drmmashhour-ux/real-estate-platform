@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getUserRole } from "@/lib/auth/session";
+import { getUserRole, isHubAdminRole } from "@/lib/auth/session";
 import { HubLayout } from "@/components/hub/HubLayout";
 import { hubNavigation } from "@/lib/hub/navigation";
 import { getHubTheme } from "@/lib/hub/themes";
@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminImmoLogsPage() {
   const role = await getUserRole();
-  if (role !== "admin") {
+  if (!isHubAdminRole(role)) {
     redirect("/admin");
   }
   const theme = getHubTheme("admin");

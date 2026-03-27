@@ -102,6 +102,7 @@ export const hubNavigation: Record<string, NavItem[]> = {
   ],
   admin: [
     { label: "Control center", href: "/admin/dashboard" },
+    { label: "Platform controls", href: "/admin/controls" },
     { label: "Global timeline", href: "/admin/timeline" },
     { label: "Code lookup", href: "/admin/lookup" },
     { label: "Contracts", href: "/admin/contracts" },
@@ -131,7 +132,7 @@ export const hubNavigation: Record<string, NavItem[]> = {
     { label: "Tasks", href: "/dashboard/tasks" },
     { label: "Staging demo", href: "/admin/demo" },
     { label: "Users", href: "/admin/users" },
-    { label: "Payments", href: "/admin/finance/transactions" },
+    { label: "Payments", href: "/admin/finance/overview" },
     { label: "Disputes", href: "/admin/disputes" },
     { label: "Analytics", href: "/admin/revenue" },
     { label: "Revenue optimization", href: "/admin/revenue-optimization" },

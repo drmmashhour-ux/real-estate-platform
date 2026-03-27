@@ -355,6 +355,7 @@ model User {
   /// First-10-clients / manual acquisition CRM (admin launch dashboard)
   clientAcquisitionLeads               ClientAcquisitionLead[]
   clientAcquisitionDailyProgress       ClientAcquisitionDailyProgress[]
+  earlyUserTrackingLinked            EarlyUserTracking[]                 @relation("EarlyUserTrackingLinkedUser")
   crmConversations                     CrmConversation[]
   propertyComparisons                  PropertyComparison[]
   investorProfiles                     InvestorProfile[]
@@ -6272,6 +6273,8 @@ model Referral {
   referrerId         String
   referrer           User             @relation("Referrer", fields: [referrerId], references: [id], onDelete: Cascade)
   code               String           @unique
+  /// USER (default) | HOST — host→host invites for supply growth (ops: visibility boost)
+  inviteKind         String?          @map("invite_kind") @db.VarChar(24)
   rewardCreditsCents Int              @default(0)
   usedByUserId       String?
   usedBy             User?            @relation("Referree", fields: [usedByUserId], references: [id], onDelete: SetNull)
@@ -6281,6 +6284,7 @@ model Referral {
   @@index([referrerId])
   @@index([code])
   @@index([programId])
+  @@index([inviteKind])
 }
 
 model Ambassador {
@@ -11548,6 +11552,122 @@ model EarlyAccessSubscriber {
   @@unique([email])
   @@index([createdAt])
   @@map("early_access_subscribers")
+}
+
+/// First-10 / manual acquisition CRM (see docs/first-10-tracking.md)
+enum EarlyUserTrackingType {
+  HOST
+  GUEST
+}
+
+enum EarlyUserTrackingStatus {
+  CONTACTED
+  REPLIED
+  SIGNED_UP
+  ONBOARDED
+}
+
+/// Growth CRM priority (automation + sorting). See docs/first-1000-users.md
+enum LeadPriorityTier {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+model EarlyUserTracking {
+  id               String                  @id @default(cuid())
+  name             String?                 @db.VarChar(160)
+  type             EarlyUserTrackingType
+  contact          String                  @db.VarChar(320)
+  /// Pipeline stage: contacted → replied → signed (SIGNED_UP) → active (ONBOARDED)
+  status           EarlyUserTrackingStatus @default(CONTACTED)
+  /// Acquisition channel: tiktok, instagram, fb_group, dm, referral, partner, landing, meta_ads, tiktok_ads, seo, other
+  source           String?                 @db.VarChar(64)
+  /// Optional finer funnel label (e.g. video_1, campaign_march)
+  conversionStage  String?                 @map("conversion_stage") @db.VarChar(64)
+  /// When lead hit a conversion milestone (e.g. signup); set manually or via automation
+  conversionDate   DateTime?               @map("conversion_date")
+  /// Follow-up due date (maps to “follow_up_date” in growth docs)
+  followUpAt       DateTime?               @map("follow_up_at")
+  /// 0–100 manual or rule-based score for prioritization
+  conversionScore  Int?                    @map("conversion_score")
+  leadTier         LeadPriorityTier?       @map("lead_tier")
+  lastOutreachAt   DateTime?               @map("last_outreach_at")
+  notes            String?                 @db.Text
+  userId           String?                 @map("user_id")
+  user             User?                   @relation("EarlyUserTrackingLinkedUser", fields: [userId], references: [id], onDelete: SetNull)
+  createdAt        DateTime                @default(now()) @map("created_at")
+  updatedAt        DateTime                @updatedAt @map("updated_at")
+
+  @@index([type, status])
+  @@index([status])
+  @@index([source])
+  @@index([followUpAt])
+  @@index([leadTier])
+  @@index([createdAt])
+  @@map("early_users_tracking")
+}
+
+/// Public landing / LP — email + phone + host|guest intent (see docs/first-100-users.md)
+model GrowthLeadCapture {
+  id         String                @id @default(cuid())
+  email      String                @db.VarChar(320)
+  phone      String?               @db.VarChar(64)
+  intent     EarlyUserTrackingType @map("intent")
+  source     String?               @db.VarChar(64)
+  utmSource  String?               @map("utm_source") @db.VarChar(128)
+  utmMedium  String?               @map("utm_medium") @db.VarChar(64)
+  utmCampaign String?              @map("utm_campaign") @db.VarChar(128)
+  createdAt  DateTime              @default(now()) @map("created_at")
+
+  @@index([email])
+  @@index([intent, createdAt])
+  @@index([createdAt])
+  @@map("growth_lead_captures")
+}
+
+/// B2B / enterprise sales pipeline (property managers, agencies, operators). See docs/enterprise-sales.md
+enum EnterpriseLeadSegment {
+  PROPERTY_MANAGEMENT
+  REAL_ESTATE_AGENCY
+  MULTI_PROPERTY_HOST
+  STR_OPERATOR
+  TRAVEL_BUSINESS
+}
+
+enum EnterpriseLeadStage {
+  LEAD_IDENTIFIED
+  CONTACTED
+  INTERESTED
+  DEMO_SCHEDULED
+  NEGOTIATION
+  CLOSED_WON
+  CLOSED_LOST
+}
+
+model EnterpriseLead {
+  id                     String                 @id @default(cuid())
+  companyName            String                 @map("company_name") @db.VarChar(320)
+  contactName            String?                @map("contact_name") @db.VarChar(160)
+  email                  String                 @db.VarChar(320)
+  phone                  String?                @db.VarChar(64)
+  segment                EnterpriseLeadSegment  @map("segment")
+  stage                  EnterpriseLeadStage    @default(LEAD_IDENTIFIED) @map("stage")
+  notes                  String?                @db.Text
+  /// Estimated annual or pilot deal value in cents (optional)
+  dealValueEstimateCents Int?                   @map("deal_value_estimate_cents")
+  /// Light automation: reminder to follow up
+  followUpAt             DateTime?              @map("follow_up_at")
+  /// 0–100 manual or rule-based (see lib/enterprise/sales-lead-rules.ts)
+  leadScore              Int?                   @map("lead_score")
+  createdAt              DateTime               @default(now()) @map("created_at")
+  updatedAt              DateTime               @updatedAt @map("updated_at")
+
+  @@index([stage])
+  @@index([segment])
+  @@index([followUpAt])
+  @@index([createdAt])
+  @@map("enterprise_leads")
 }
 
 /// Optional product feedback (floating “Give feedback” form)

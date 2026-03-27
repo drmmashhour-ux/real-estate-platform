@@ -1,5 +1,6 @@
 import { HubLayout } from "@/components/hub/HubLayout";
-import { getGuestId, getUserRole } from "@/lib/auth/session";
+import { getGuestId, getUserRole, isHubAdminRole } from "@/lib/auth/session";
+
 import { hubNavigation } from "@/lib/hub/navigation";
 import { prisma } from "@/lib/db";
 import { redirect } from "next/navigation";
@@ -15,7 +16,7 @@ export default async function AdminLegalFinancePage() {
 
   const role = await getUserRole();
   return (
-    <HubLayout title="Legal & finance" hubKey="admin" navigation={hubNavigation.admin} showAdminInSwitcher={role === "admin"}>
+    <HubLayout title="Legal & finance" hubKey="admin" navigation={hubNavigation.admin} showAdminInSwitcher={isHubAdminRole(role)}>
       <div className="mx-auto max-w-6xl">
         <LegalFinanceAdminClient />
       </div>

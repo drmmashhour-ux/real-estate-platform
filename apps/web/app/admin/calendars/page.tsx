@@ -1,7 +1,9 @@
 import Link from "next/link";
+import { getGuestId, getUserRole, isHubAdminRole } from "@/lib/auth/session";
+
 import { redirect } from "next/navigation";
 import { HubLayout } from "@/components/hub/HubLayout";
-import { getGuestId, getUserRole } from "@/lib/auth/session";
+
 import { hubNavigation } from "@/lib/hub/navigation";
 import { prisma } from "@/lib/db";
 
@@ -24,7 +26,7 @@ export default async function AdminCalendarsPage() {
   });
 
   return (
-    <HubLayout title="Calendars" hubKey="admin" navigation={hubNavigation.admin} showAdminInSwitcher={role === "admin"}>
+    <HubLayout title="Calendars" hubKey="admin" navigation={hubNavigation.admin} showAdminInSwitcher={isHubAdminRole(role)}>
       <div className="space-y-6">
         <div>
           <h1 className="text-xl font-semibold text-white">Global calendars</h1>

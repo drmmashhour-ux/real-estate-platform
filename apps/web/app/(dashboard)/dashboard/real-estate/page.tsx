@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { getUserRole } from "@/lib/auth/session";
+import { getUserRole, isHubAdminRole } from "@/lib/auth/session";
+
 import { hubNavigation } from "@/lib/hub/navigation";
 import { getHubTheme } from "@/lib/hub/themes";
 import { getAiFallbacksForHub } from "@/lib/ai/brain";
@@ -43,7 +44,7 @@ export default async function RealEstateHubPage() {
       title="Real Estate"
       hubKey="realEstate"
       navigation={hubNavigation.realEstate}
-      showAdminInSwitcher={role === "admin"}
+      showAdminInSwitcher={isHubAdminRole(role)}
       quickActions={
         <HubQuickActionsRow
           accent={theme.accent}

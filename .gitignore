@@ -1,61 +1,23 @@
-# BNHub / LECIPM monorepo — ignore everywhere (recursive)
+# BNHub / LECIPM — global ignores (apply in all subfolders; no leading slash = recursive)
 
-# Dependencies (never commit — pnpm/npm install restores)
 node_modules/
-**/node_modules/
-
-# Yarn / PnP (keep release artifacts if present)
-/.pnp
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
-
-# Build & caches
 .next/
-**/.next/
-out/
-**/out/
 dist/
-**/dist/
-build/
-**/build/
+out/
 coverage/
 .tmp/
 .cache/
-.turbo/
-*.tsbuildinfo
-
-# Environment (tracked examples whitelisted below)
 .env
 .env.*
 !.env.example
 !**/.env.example
-!.env.production.example
-!**/.env.production.example
-
-# Logs
 *.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
-
-# OS / editor
 .DS_Store
-*.pem
+apps/web/e2e-report/
+apps/web/playwright-report/
+apps/web/test-results/
 
-# Vercel
-.vercel
-
-# Next / tooling
-next-env.d.ts
-
-# Generated / local uploads
-/app/generated/prisma
-apps/web-app/.system-validation/
-apps/web-app/public/uploads/
-apps/web/.system-validation/
-apps/web/public/uploads/
+# Local tooling / decks (do not ship to production repo)
+.venv-pitch/
+.venv-pitch-build/
+*.pptx

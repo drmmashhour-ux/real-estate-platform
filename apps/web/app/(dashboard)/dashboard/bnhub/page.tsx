@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { getUserRole } from "@/lib/auth/session";
-import { getGuestId } from "@/lib/auth/session";
+import { getGuestId, getUserRole, isHubAdminRole } from "@/lib/auth/session";
+
 import { prisma } from "@/lib/db";
 import { createListing } from "@/lib/bnhub/listings";
 import { hubNavigation } from "@/lib/hub/navigation";
@@ -70,7 +70,7 @@ export default async function BNHubDashboardPage({
       title="BNHub"
       hubKey="bnhub"
       navigation={hubNavigation.bnhub}
-      showAdminInSwitcher={role === "admin"}
+      showAdminInSwitcher={isHubAdminRole(role)}
       quickActions={
         <HubQuickActionsRow
           accent={theme.accent}

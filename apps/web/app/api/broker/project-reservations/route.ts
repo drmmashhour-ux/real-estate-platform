@@ -7,7 +7,8 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   try {
     const role = await getUserRole();
-    if (role !== "broker" && role !== "admin") {
+    const r = (role ?? "").toUpperCase();
+    if (r !== "BROKER" && r !== "ADMIN") {
       return NextResponse.json([], { status: 200 });
     }
     const list = await prisma.projectReservation.findMany({

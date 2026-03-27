@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { getUserRole } from "@/lib/auth/session";
+import { getUserRole, isHubAdminRole } from "@/lib/auth/session";
+
 import { hubNavigation } from "@/lib/hub/navigation";
 import { getHubTheme } from "@/lib/hub/themes";
 import { HubLayout } from "@/components/hub/HubLayout";
@@ -14,7 +15,7 @@ export default async function ProjectsFavoritesPage() {
       title="Projects"
       hubKey="projects"
       navigation={hubNavigation.projects}
-      showAdminInSwitcher={role === "admin"}
+      showAdminInSwitcher={isHubAdminRole(role)}
     >
       <div className="space-y-6">
         <div className="flex items-center justify-between">

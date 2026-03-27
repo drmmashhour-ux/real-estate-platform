@@ -31,8 +31,26 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   transpilePackages: ["@lecipm/ui", "@lecipm/api-client"],
   reactStrictMode: true,
+  images: {
+    remotePatterns: [{ protocol: "https", hostname: "images.unsplash.com", pathname: "/**" }],
+  },
   /** PDF rendering uses Node-only deps; keep them external for App Router API routes. */
   serverExternalPackages: ["@react-pdf/renderer", "nspell"],
+  /** Legacy admin URLs from docs / bookmarks → real App Router pages. */
+  async redirects() {
+    return [
+      { source: "/admin/payments", destination: "/admin/finance/overview", permanent: false },
+      { source: "/admin/payments/:path*", destination: "/admin/finance/overview", permanent: false },
+      { source: "/admin/settings", destination: "/admin/controls", permanent: false },
+      { source: "/admin/settings/:path*", destination: "/admin/controls", permanent: false },
+      /** Legacy / marketing URLs → current App Router paths (E2E + bookmarks). */
+      { source: "/map-search", destination: "/bnhub/stays", permanent: false },
+      { source: "/property/:id", destination: "/listings/:id", permanent: false },
+      { source: "/broker-dashboard", destination: "/broker/dashboard", permanent: false },
+      { source: "/favorites", destination: "/projects", permanent: false },
+      { source: "/saved-searches", destination: "/projects", permanent: false },
+    ];
+  },
   async headers() {
     return [
       {

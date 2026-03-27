@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { getGuestId, getUserRole } from "@/lib/auth/session";
+import { getGuestId, getUserRole, isHubAdminRole } from "@/lib/auth/session";
+
 import { prisma } from "@/lib/db";
 import { hubNavigation } from "@/lib/hub/navigation";
 import { getHubTheme } from "@/lib/hub/themes";
@@ -121,7 +122,7 @@ export default async function BrokerHubPage() {
       title="Broker"
       hubKey="broker"
       navigation={hubNavigation.broker}
-      showAdminInSwitcher={role === "admin"}
+      showAdminInSwitcher={isHubAdminRole(role)}
       showWorkspaceBadge
     >
       <div className="space-y-8">

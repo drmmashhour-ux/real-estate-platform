@@ -1,5 +1,7 @@
 # Git rules for the BNHub / LECIPM monorepo
 
+For the full safe workflow (hooks, helper scripts, troubleshooting), see **`docs/git-workflow.md`**.
+
 This repository is configured so **dependencies and build artifacts are never committed**, and **large files are blocked before they reach GitHub** (100 MiB hard limit on GitHub; we enforce **50 MiB** on commit).
 
 ## What not to commit

@@ -1,13 +1,13 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getUserRole } from "@/lib/auth/session";
+import { getUserRole, isHubAdminRole } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminFeedbackPage() {
   const role = await getUserRole();
-  if (role !== "admin") redirect("/admin");
+  if (!isHubAdminRole(role)) redirect("/admin");
 
   const rows = await prisma.userFeedback.findMany({
     orderBy: { createdAt: "desc" },

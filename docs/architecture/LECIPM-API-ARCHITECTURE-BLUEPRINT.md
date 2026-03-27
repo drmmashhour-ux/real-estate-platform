@@ -856,7 +856,7 @@ All endpoints require admin (or support) role. Sensitive actions must be audited
 | GET | `/admin/users` | List/search users | Admin |
 | GET | `/admin/properties` | List all listings (any status) | Admin |
 | GET | `/admin/bookings` | List all bookings | Admin |
-| GET | `/admin/payments` | List payments/payouts | Admin |
+| GET | `/admin/finance/overview` (legacy `/admin/payments` redirects here) | Finance overview / payments context | Admin |
 | GET | `/admin/incidents` | List incidents | Admin |
 | GET | `/admin/disputes` | List disputes | Admin |
 | GET | `/admin/flags` | List account flags | Admin |

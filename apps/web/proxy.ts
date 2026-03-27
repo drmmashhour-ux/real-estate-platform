@@ -33,7 +33,8 @@ function isPublicPathForStaging(pathname: string): boolean {
   if (pathname.startsWith("/auth")) return true;
   if (pathname.startsWith("/embed")) return true;
   if (pathname === "/favicon.ico" || pathname === "/manifest.json" || pathname === "/robots.txt") return true;
-  if (pathname.startsWith("/images/") || pathname.startsWith("/brand/")) return true;
+  if (pathname.startsWith("/images/") || pathname.startsWith("/brand/") || pathname.startsWith("/branding/"))
+    return true;
   if (/\.(ico|png|svg|jpg|jpeg|gif|webp|json|txt|xml|webmanifest)$/i.test(pathname)) return true;
   if (pathname === "/api/health" || pathname === "/api/ready") return true;
   return false;
@@ -185,6 +186,18 @@ export function proxy(request: NextRequest) {
     }
 
     if (pathname.startsWith("/dashboard")) {
+      const session = parseSessionUserId(request.cookies.get(AUTH_SESSION_COOKIE_NAME)?.value);
+      if (!session) {
+        const login = new URL("/auth/login", request.url);
+        login.searchParams.set("next", pathname + request.nextUrl.search);
+        return redirectWithRequestId(request, login);
+      }
+      const requestHeaders = ensureRequestIdHeader(request);
+      requestHeaders.set(LECIPM_PATH_HEADER, pathname + request.nextUrl.search);
+      return applyAttributionCookie(request, NextResponse.next({ request: { headers: requestHeaders } }));
+    }
+
+    if (pathname.startsWith("/admin")) {
       const session = parseSessionUserId(request.cookies.get(AUTH_SESSION_COOKIE_NAME)?.value);
       if (!session) {
         const login = new URL("/auth/login", request.url);

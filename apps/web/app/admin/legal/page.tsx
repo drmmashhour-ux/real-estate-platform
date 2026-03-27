@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getUserRole } from "@/lib/auth/session";
+import { getUserRole, isHubAdminRole } from "@/lib/auth/session";
 import { getAllActiveDocuments, getDocumentsByType, getAcceptanceStats } from "@/lib/legal/documents";
 import { LEGAL_DOCUMENT_TYPES } from "@/lib/legal/constants";
 import { HubLayout } from "@/components/hub/HubLayout";
@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminLegalPage() {
   const role = await getUserRole();
-  if (role !== "admin") {
+  if (!isHubAdminRole(role)) {
     redirect("/admin");
   }
   const theme = getHubTheme("admin");

@@ -4,6 +4,7 @@ import { NextActionPanel } from "@/components/conversion/NextActionPanel";
 import { TrustDealSummaryCard } from "@/components/conversion/TrustDealSummaryCard";
 import { SocialProofStrip } from "@/components/conversion/SocialProofStrip";
 import { PrimaryConversionCTA } from "@/components/conversion/PrimaryConversionCTA";
+import { HubsSection } from "@/components/marketing/HubsSection";
 import { conversionCopy } from "@/src/design/conversionCopy";
 import { PLATFORM_NAME } from "@/config/branding";
 
@@ -82,6 +83,8 @@ export default function LandingPage() {
           reasons={["Missing legal disclosures", "Price drift above comparables", "Fraud risk warning"]}
         />
       </section>
+
+      <HubsSection />
 
       <section className="mx-auto max-w-6xl px-4 py-12">
         <h2 className="text-2xl font-semibold">How it works</h2>

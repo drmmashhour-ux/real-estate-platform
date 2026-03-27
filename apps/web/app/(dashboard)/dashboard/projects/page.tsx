@@ -1,9 +1,11 @@
-import { getUserRole } from "@/lib/auth/session";
+
+
 import { hubNavigation } from "@/lib/hub/navigation";
 import { getHubTheme } from "@/lib/hub/themes";
 import { HubLayout } from "@/components/hub/HubLayout";
 import { ProjectsDashboardClient } from "./ProjectsDashboardClient";
 import { ProjectsTopThreeClient } from "./ProjectsTopThreeClient";
+import { getUserRole, isHubAdminRole } from "@/lib/auth/session";
 
 /** Projects hub – only layout and theme. Projects data and top 3 load in client. */
 export default async function ProjectsHubPage() {
@@ -15,10 +17,10 @@ export default async function ProjectsHubPage() {
       title="Projects"
       hubKey="projects"
       navigation={hubNavigation.projects}
-      showAdminInSwitcher={role === "admin"}
+      showAdminInSwitcher={isHubAdminRole(role)}
     >
       <div className="space-y-8">
-        <ProjectsDashboardClient theme={theme} isAdmin={role === "admin"} />
+        <ProjectsDashboardClient theme={theme} isAdmin={isHubAdminRole(role)} />
         <ProjectsTopThreeClient />
       </div>
     </HubLayout>

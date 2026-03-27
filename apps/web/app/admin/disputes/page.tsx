@@ -1,7 +1,9 @@
 import Link from "next/link";
+import { getGuestId, getUserRole, isHubAdminRole } from "@/lib/auth/session";
+
 import { redirect } from "next/navigation";
 import { getAllDisputes } from "@/lib/bnhub/disputes";
-import { getGuestId, getUserRole } from "@/lib/auth/session";
+
 import { prisma } from "@/lib/db";
 import { HubLayout } from "@/components/hub/HubLayout";
 import { hubNavigation } from "@/lib/hub/navigation";
@@ -107,7 +109,7 @@ export default async function AdminDisputesPage() {
   }));
 
   return (
-    <HubLayout title="Disputes" hubKey="admin" navigation={hubNavigation.admin} showAdminInSwitcher={role === "admin"}>
+    <HubLayout title="Disputes" hubKey="admin" navigation={hubNavigation.admin} showAdminInSwitcher={isHubAdminRole(role)}>
       <div className="mx-auto max-w-6xl space-y-2 px-4 py-8">
         <Link href="/admin/dashboard" className="text-sm text-[#C9A646] hover:underline">
           ← Control center

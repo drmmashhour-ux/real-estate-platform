@@ -20,17 +20,25 @@ export function AnimatedReveal({ children, className = "", delayMs = 0 }: Props)
       setVisible(true);
       return;
     }
+    const show = () => setVisible(true);
     const ob = new IntersectionObserver(
       ([e]) => {
         if (e?.isIntersecting) {
-          setVisible(true);
+          show();
           ob.disconnect();
         }
       },
-      { threshold: 0.12, rootMargin: "0px 0px -8% 0px" }
+      { threshold: 0.06, rootMargin: "0px 0px 10% 0px" }
     );
     ob.observe(el);
-    return () => ob.disconnect();
+    const t = window.setTimeout(() => {
+      show();
+      ob.disconnect();
+    }, 2500);
+    return () => {
+      window.clearTimeout(t);
+      ob.disconnect();
+    };
   }, []);
 
   return (

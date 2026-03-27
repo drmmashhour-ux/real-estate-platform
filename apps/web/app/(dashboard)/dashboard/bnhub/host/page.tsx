@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { getGuestId, getUserRole, isHubAdminRole } from "@/lib/auth/session";
+
 import { redirect } from "next/navigation";
-import { getGuestId, getUserRole } from "@/lib/auth/session";
+
 import { getApprovedHost, getHostByUserId, hasAcceptedHostAgreement } from "@/lib/bnhub/host";
 import { requirePlatformAcceptance } from "@/lib/legal/require-acceptance";
 import { hubNavigation } from "@/lib/hub/navigation";
@@ -30,7 +32,7 @@ export default async function BNHubHostDashboardPage({
         title="BNHub"
         hubKey="bnhub"
         navigation={hubNavigation.bnhub}
-        showAdminInSwitcher={role === "admin"}
+        showAdminInSwitcher={isHubAdminRole(role)}
       >
         <div className="space-y-6">
           <h1 className="text-xl font-semibold" style={{ color: theme.text }}>
@@ -68,7 +70,7 @@ export default async function BNHubHostDashboardPage({
         title="BNHub"
         hubKey="bnhub"
         navigation={hubNavigation.bnhub}
-        showAdminInSwitcher={role === "admin"}
+        showAdminInSwitcher={isHubAdminRole(role)}
       >
         <div className="space-y-6">
           <h1 className="text-xl font-semibold" style={{ color: theme.text }}>
@@ -96,7 +98,7 @@ export default async function BNHubHostDashboardPage({
         title="BNHub"
         hubKey="bnhub"
         navigation={hubNavigation.bnhub}
-        showAdminInSwitcher={role === "admin"}
+        showAdminInSwitcher={isHubAdminRole(role)}
       >
         <div className="space-y-6">
           <h1 className="text-xl font-semibold" style={{ color: theme.text }}>
@@ -122,7 +124,7 @@ export default async function BNHubHostDashboardPage({
         title="BNHub"
         hubKey="bnhub"
         navigation={hubNavigation.bnhub}
-        showAdminInSwitcher={role === "admin"}
+        showAdminInSwitcher={isHubAdminRole(role)}
       >
         <div className="space-y-6">
           <h1 className="text-xl font-semibold" style={{ color: theme.text }}>
@@ -148,7 +150,7 @@ export default async function BNHubHostDashboardPage({
         title="BNHub"
         hubKey="bnhub"
         navigation={hubNavigation.bnhub}
-        showAdminInSwitcher={role === "admin"}
+        showAdminInSwitcher={isHubAdminRole(role)}
       >
         <div className="space-y-6">
           <h1 className="text-xl font-semibold" style={{ color: theme.text }}>
@@ -223,7 +225,7 @@ export default async function BNHubHostDashboardPage({
       title="BNHub"
       hubKey="bnhub"
       navigation={hubNavigation.bnhub}
-      showAdminInSwitcher={role === "admin"}
+      showAdminInSwitcher={isHubAdminRole(role)}
       quickActions={
         <div className="flex flex-wrap gap-2">
           <Link

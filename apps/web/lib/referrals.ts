@@ -1,6 +1,10 @@
 import { randomBytes } from "crypto";
 import { prisma } from "@/lib/db";
 
+/**
+ * Referral engine — user→user and host→host (`ref_kind=HOST` on signup).
+ * 10K scale: pair credits with ops “visibility boost” (featured rotation, local newsletter) for top recruiters — see docs/10k-scaling-system.md.
+ */
 export function generateReferralCode(prefix = "USER"): string {
   return `${prefix}${randomBytes(4).toString("hex").toUpperCase()}`;
 }
@@ -13,18 +17,24 @@ export async function ensureReferralCode(userId: string): Promise<string> {
   return code;
 }
 
-export async function createReferralIfNeeded(referrerCode: string | null | undefined, referredId: string) {
+export async function createReferralIfNeeded(
+  referrerCode: string | null | undefined,
+  referredId: string,
+  opts?: { inviteKind?: string | null }
+) {
   if (!referrerCode) return null;
   const referrer = await prisma.user.findFirst({ where: { referralCode: referrerCode } });
   if (!referrer) return null;
   if (referrer.id === referredId) return null;
   const existing = await prisma.referral.findFirst({ where: { referrerId: referrer.id, usedByUserId: referredId } });
   if (existing) return existing;
+  const kind = opts?.inviteKind?.trim().toUpperCase().slice(0, 24) || null;
   return prisma.referral.create({
     data: {
       referrerId: referrer.id,
       code: referrerCode,
       usedByUserId: referredId,
+      inviteKind: kind,
       rewardCreditsCents: 500,
       programId: null,
       usedAt: null,

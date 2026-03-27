@@ -1,7 +1,9 @@
 import Link from "next/link";
+import { getGuestId, getUserRole, isHubAdminRole } from "@/lib/auth/session";
+
 import { redirect } from "next/navigation";
 import { HubLayout } from "@/components/hub/HubLayout";
-import { getGuestId, getUserRole } from "@/lib/auth/session";
+
 import { prisma } from "@/lib/db";
 import { hubNavigation } from "@/lib/hub/navigation";
 import { AdminAuditTimelinesPanel } from "../immo-logs/AdminAuditTimelinesPanel";
@@ -16,7 +18,7 @@ export default async function AdminGlobalTimelinePage() {
   const role = await getUserRole();
 
   return (
-    <HubLayout title="Global timeline" hubKey="admin" navigation={hubNavigation.admin} showAdminInSwitcher={role === "admin"}>
+    <HubLayout title="Global timeline" hubKey="admin" navigation={hubNavigation.admin} showAdminInSwitcher={isHubAdminRole(role)}>
       <div className="mx-auto max-w-5xl space-y-6">
         <div>
           <Link href="/admin/dashboard" className="text-sm text-[#C9A646] hover:underline">

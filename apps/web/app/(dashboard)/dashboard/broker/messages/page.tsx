@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { getUserRole } from "@/lib/auth/session";
+import { getUserRole, isHubAdminRole } from "@/lib/auth/session";
+
 import { HubLayout } from "@/components/hub/HubLayout";
 import { hubNavigation } from "@/lib/hub/navigation";
 import { getHubTheme } from "@/lib/hub/themes";
@@ -13,7 +14,7 @@ export default async function BrokerMessagesPage() {
       title="Broker"
       hubKey="broker"
       navigation={hubNavigation.broker}
-      showAdminInSwitcher={role === "admin"}
+      showAdminInSwitcher={isHubAdminRole(role)}
     >
       <div className="space-y-6">
         <div>

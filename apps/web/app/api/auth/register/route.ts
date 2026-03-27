@@ -33,6 +33,11 @@ export async function POST(request: NextRequest) {
     const refCodeFromBody = typeof body?.ref === "string" ? body.ref.trim().toUpperCase() : null;
     const refCodeFromQuery = request.nextUrl.searchParams.get("ref")?.trim().toUpperCase() ?? null;
     const refCode = refCodeFromBody ?? refCodeFromQuery;
+    const refKindFromBody =
+      typeof body?.ref_kind === "string" ? body.ref_kind.trim().toUpperCase().slice(0, 24) : null;
+    const refKindFromQuery =
+      request.nextUrl.searchParams.get("ref_kind")?.trim().toUpperCase().slice(0, 24) ?? null;
+    const refKind = refKindFromBody ?? refKindFromQuery;
     const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : null;
     const password = typeof body?.password === "string" ? body.password : null;
     const name = typeof body?.name === "string" ? body.name.trim() : null;
@@ -174,7 +179,7 @@ export async function POST(request: NextRequest) {
       await runFollowUpAutomation(prisma, { userId: user.id, triggers: tracked.triggers }).catch(() => {});
     }
     if (refCode) {
-      await createReferralIfNeeded(refCode, user.id).catch(() => {});
+      await createReferralIfNeeded(refCode, user.id, { inviteKind: refKind }).catch(() => {});
       await prisma.referralEvent.create({ data: { code: refCode, eventType: "signup", userId: user.id } }).catch(() => {});
     }
 

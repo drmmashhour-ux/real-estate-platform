@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { getUserRole } from "@/lib/auth/session";
+import { getUserRole, isHubAdminRole } from "@/lib/auth/session";
+
 import { hubNavigation } from "@/lib/hub/navigation";
 import { getHubTheme } from "@/lib/hub/themes";
 import { HubLayout } from "@/components/hub/HubLayout";
@@ -17,7 +18,7 @@ export default async function ComparePage() {
   const list = (projects.length ? projects : DEMO_PROJECTS).slice(0, 4);
 
   return (
-    <HubLayout title="Investments" hubKey="investments" navigation={hubNavigation.investments} showAdminInSwitcher={role === "admin"}>
+    <HubLayout title="Investments" hubKey="investments" navigation={hubNavigation.investments} showAdminInSwitcher={isHubAdminRole(role)}>
       <div className="space-y-6">
         <h1 className="text-xl font-semibold text-white">Compare Projects</h1>
         <div className="grid gap-4 xl:grid-cols-2">

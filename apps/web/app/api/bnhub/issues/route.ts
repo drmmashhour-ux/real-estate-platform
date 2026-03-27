@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { getGuestId, getUserRole } from "@/lib/auth/session";
+import { getGuestId, getUserRole, isHubAdminRole } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
 
 /**
@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const bookingId = searchParams.get("bookingId") ?? undefined;
 
-    if (role === "admin") {
+    if (isHubAdminRole(role)) {
       const where = bookingId ? { bookingId } : {};
       const issues = await prisma.bookingIssue.findMany({
         where,

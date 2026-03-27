@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getUserRole } from "@/lib/auth/session";
+import { getUserRole, isHubAdminRole } from "@/lib/auth/session";
 import { setActiveVersion } from "@/lib/legal/documents";
 
 export const dynamic = "force-dynamic";
@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 /** POST: set a document version as active (admin only). */
 export async function POST(req: Request) {
   const role = await getUserRole();
-  if (role !== "admin") {
+  if (!isHubAdminRole(role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   try {

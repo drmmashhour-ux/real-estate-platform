@@ -1,7 +1,9 @@
 import Link from "next/link";
+import { getGuestId, getUserRole, isHubAdminRole } from "@/lib/auth/session";
+
 import { notFound, redirect } from "next/navigation";
 import { HubLayout } from "@/components/hub/HubLayout";
-import { getGuestId, getUserRole } from "@/lib/auth/session";
+
 import { prisma } from "@/lib/db";
 import { hubNavigation } from "@/lib/hub/navigation";
 import { getPlatformStats } from "@/modules/analytics/services/get-platform-stats";
@@ -55,7 +57,7 @@ export default async function AdminReportPeriodPage({ params }: { params: Promis
           : "Yearly report";
 
   return (
-    <HubLayout title={title} hubKey="admin" navigation={hubNavigation.admin} showAdminInSwitcher={role === "admin"}>
+    <HubLayout title={title} hubKey="admin" navigation={hubNavigation.admin} showAdminInSwitcher={isHubAdminRole(role)}>
       <div className="space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
