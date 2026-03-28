@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { PLATFORM_NAME } from "@/config/branding";
+import Logo from "@/components/ui/Logo";
 import { marketingTheme } from "@/config/theme";
 import { BuyingNavGroup } from "@/components/layout/BuyingNavGroup";
 import { SellingNavGroup } from "@/components/layout/SellingNavGroup";
@@ -27,9 +27,9 @@ export function Navbar() {
       style={{ backgroundColor: `${marketingTheme.bg}e6` }}
     >
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
-        <Link href="/" className="font-serif text-xl font-semibold tracking-tight text-white">
-          {PLATFORM_NAME}
-        </Link>
+        <div className="min-w-0 shrink-0">
+          <Logo variant="nav" showName className="min-w-0" />
+        </div>
         <nav className="hidden flex-wrap items-center gap-4 xl:gap-6 lg:flex">
           {links.slice(0, 1).map((l) => (
             <Link
