@@ -254,7 +254,7 @@ function AuthLoginInner() {
         </>
       ) : (
         <div>
-          <label className="text-xs font-semibold text-[#C9A646]/90">Email</label>
+          <label className="text-xs font-semibold text-premium-gold/90">Email</label>
           <input
             name="email"
             type="email"
@@ -266,7 +266,7 @@ function AuthLoginInner() {
       )}
       {!twoFactorEmail ? (
         <div>
-          <label className="text-xs font-semibold text-[#C9A646]/90">Password</label>
+          <label className="text-xs font-semibold text-premium-gold/90">Password</label>
           <input
             name="password"
             type="password"
@@ -277,7 +277,7 @@ function AuthLoginInner() {
         </div>
       ) : (
         <div>
-          <label className="text-xs font-semibold text-[#C9A646]/90">Verification code</label>
+          <label className="text-xs font-semibold text-premium-gold/90">Verification code</label>
           <input
             name="twoFaCode"
             type="text"
@@ -292,7 +292,7 @@ function AuthLoginInner() {
       <button
         type="submit"
         disabled={loading}
-        className="w-full rounded-xl bg-[#C9A646] py-3 text-sm font-bold text-[#0B0B0B] disabled:opacity-50"
+        className="w-full rounded-xl bg-premium-gold py-3 text-sm font-bold text-[#0B0B0B] disabled:opacity-50"
       >
         {loading ? (twoFactorEmail ? "Verifying…" : "Signing in…") : twoFactorEmail ? "Verify & continue" : "Sign in"}
       </button>
@@ -301,7 +301,7 @@ function AuthLoginInner() {
           type="button"
           disabled={loading}
           onClick={() => void resendTwoFactor()}
-          className="w-full rounded-xl border border-white/15 py-2.5 text-sm text-[#C9A646] disabled:opacity-50"
+          className="w-full rounded-xl border border-white/15 py-2.5 text-sm text-premium-gold disabled:opacity-50"
         >
           Resend code
         </button>
@@ -313,7 +313,7 @@ function AuthLoginInner() {
             type="button"
             disabled={demoLoading || loading || !!quickLoading}
             onClick={() => void loginAsDemo()}
-            className="mt-2 w-full rounded-xl border border-[#C9A646]/50 bg-transparent py-3 text-sm font-semibold text-[#C9A646] disabled:opacity-50"
+            className="mt-2 w-full rounded-xl border border-premium-gold/50 bg-transparent py-3 text-sm font-semibold text-premium-gold disabled:opacity-50"
           >
             {demoLoading ? "Signing in…" : "Login as Demo User"}
           </button>
@@ -324,7 +324,7 @@ function AuthLoginInner() {
       ) : null}
       {SHOW_DEMO_QUICK_LOGIN ? (
         <div className="border-t border-white/10 pt-4">
-          <p className="text-center text-xs font-medium text-[#C9A646]/90">Investor demo — one-click sign-in</p>
+          <p className="text-center text-xs font-medium text-premium-gold/90">Investor demo — one-click sign-in</p>
           <p className="mt-1 text-center text-xs text-[#737373]">
             After seed: <span className="text-[#B3B3B3]">guest@demo.com</span> uses{" "}
             <span className="text-[#B3B3B3]">DemoGuest2024!</span>; other seed emails use{" "}
@@ -335,7 +335,7 @@ function AuthLoginInner() {
               type="button"
               disabled={!!quickLoading || loading || demoLoading}
               onClick={() => void loginAsDemoEmail("sarah@prestige.demo")}
-              className="rounded-xl border border-[#C9A646]/40 bg-[#1a1a1a] py-2.5 text-xs font-semibold text-[#C9A646] disabled:opacity-50"
+              className="rounded-xl border border-premium-gold/40 bg-[#1a1a1a] py-2.5 text-xs font-semibold text-premium-gold disabled:opacity-50"
             >
               {quickLoading === "sarah@prestige.demo" ? "…" : "Login as Admin"}
             </button>
@@ -343,7 +343,7 @@ function AuthLoginInner() {
               type="button"
               disabled={!!quickLoading || loading || demoLoading}
               onClick={() => void loginAsDemoEmail("david@prestige.demo")}
-              className="rounded-xl border border-[#C9A646]/40 bg-[#1a1a1a] py-2.5 text-xs font-semibold text-[#C9A646] disabled:opacity-50"
+              className="rounded-xl border border-premium-gold/40 bg-[#1a1a1a] py-2.5 text-xs font-semibold text-premium-gold disabled:opacity-50"
             >
               {quickLoading === "david@prestige.demo" ? "…" : "Login as Broker"}
             </button>
@@ -351,7 +351,7 @@ function AuthLoginInner() {
               type="button"
               disabled={!!quickLoading || loading || demoLoading}
               onClick={() => void loginAsDemoEmail("michael@client.demo")}
-              className="rounded-xl border border-[#C9A646]/40 bg-[#1a1a1a] py-2.5 text-xs font-semibold text-[#C9A646] disabled:opacity-50"
+              className="rounded-xl border border-premium-gold/40 bg-[#1a1a1a] py-2.5 text-xs font-semibold text-premium-gold disabled:opacity-50"
             >
               {quickLoading === "michael@client.demo" ? "…" : "Login as Client"}
             </button>

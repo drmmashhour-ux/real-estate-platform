@@ -31,7 +31,7 @@ export function AdminAnalyticsShell({ productInsights }: { productInsights: Prod
             onClick={() => setTab(t.id)}
             className={`rounded-xl px-5 py-2.5 text-sm font-semibold transition ${
               tab === t.id
-                ? "bg-[#C9A646] text-black shadow-md shadow-[#C9A646]/25"
+                ? "bg-premium-gold text-black shadow-md shadow-premium-gold/25"
                 : "text-[#B3B3B3] hover:bg-white/5 hover:text-white"
             }`}
           >

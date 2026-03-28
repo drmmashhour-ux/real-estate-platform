@@ -43,14 +43,14 @@ export default function DealAnalyzerToolPage() {
           </li>
           <li>
             Pair with{" "}
-            <Link href="/tools/roi-calculator" className="text-[#C9A646] hover:underline">
+            <Link href="/tools/roi-calculator" className="text-premium-gold hover:underline">
               ROI calculator
             </Link>{" "}
             for cap-rate and cash-on-cash what-ifs.
           </li>
           <li>
             Explore{" "}
-            <Link href="/market" className="text-[#C9A646] hover:underline">
+            <Link href="/market" className="text-premium-gold hover:underline">
               city market pages
             </Link>{" "}
             for trend and demand context.
@@ -59,11 +59,11 @@ export default function DealAnalyzerToolPage() {
         <div className="flex flex-wrap gap-3">
           <Link
             href="/sell"
-            className="rounded-lg border border-[#C9A646]/40 bg-[#C9A646]/10 px-4 py-2 text-sm font-medium text-[#E8C547] hover:bg-[#C9A646]/20"
+            className="rounded-lg border border-premium-gold/40 bg-premium-gold/10 px-4 py-2 text-sm font-medium text-premium-gold hover:bg-premium-gold/20"
           >
             View listings
           </Link>
-          <Link href="/evaluate" className="rounded-lg border border-white/15 px-4 py-2 text-sm text-slate-200 hover:border-[#C9A646]/40">
+          <Link href="/evaluate" className="rounded-lg border border-white/15 px-4 py-2 text-sm text-slate-200 hover:border-premium-gold/40">
             Property evaluation
           </Link>
         </div>

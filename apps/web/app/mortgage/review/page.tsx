@@ -13,7 +13,7 @@ export default function MortgageReviewPage() {
         <Link href="/" className="text-xs text-[#737373] hover:text-white">
           ← Home
         </Link>
-        <h1 className="mt-6 text-2xl font-bold text-[#C9A646]">Rate your expert</h1>
+        <h1 className="mt-6 text-2xl font-bold text-premium-gold">Rate your expert</h1>
         <p className="mt-2 text-sm text-[#B3B3B3]">
           Use the secure link from your closing confirmation. One review per completed deal.
         </p>

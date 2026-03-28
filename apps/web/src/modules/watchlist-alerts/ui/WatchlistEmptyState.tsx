@@ -5,7 +5,7 @@ export function WatchlistEmptyState() {
       <p className="mt-2 text-sm text-slate-400">
         Save properties to track score changes, pricing updates, and risk signals.
       </p>
-      <a href="/analysis" className="mt-4 inline-flex rounded-lg bg-[#C9A646] px-4 py-2 text-sm font-semibold text-black hover:bg-[#e8c547]">
+      <a href="/analysis" className="mt-4 inline-flex rounded-lg bg-premium-gold px-4 py-2 text-sm font-semibold text-black hover:bg-premium-gold">
         Explore deals
       </a>
     </div>

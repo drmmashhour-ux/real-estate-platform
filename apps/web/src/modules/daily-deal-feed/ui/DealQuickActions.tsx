@@ -31,7 +31,7 @@ export function DealQuickActions({ listingId, analyzeHref, contactHref }: Props)
           track("daily_deal_card_clicked", { meta: { listingId } });
           void postInteraction(listingId, "analyzed");
         }}
-        className="rounded-lg bg-[#C9A646] px-3 py-2 text-center text-xs font-semibold text-black hover:bg-[#e8c547]"
+        className="rounded-lg bg-premium-gold px-3 py-2 text-center text-xs font-semibold text-black hover:bg-premium-gold"
       >
         Analyze
       </a>

@@ -93,7 +93,7 @@ Show:
 |-------|-----|-----|
 | Black (app bg) | `#0B0B0B` | Page background |
 | Card | `#121212` | Surfaces |
-| Gold (brand) | `#C9A646` | CTAs, emphasis |
+| Gold (brand) | `#D4AF37` | CTAs, emphasis |
 | Green (positive) | `#22C55E` | Success / good deal |
 | Red (risk) | `#EF4444` | Errors, warnings |
 

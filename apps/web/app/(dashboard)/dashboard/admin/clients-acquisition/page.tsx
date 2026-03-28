@@ -1,6 +1,6 @@
 import { ClientsAcquisitionClient } from "./clients-acquisition-client";
 
-const GOLD = "#C9A646";
+const GOLD = "var(--color-premium-gold)";
 
 export const metadata = {
   title: "First 10 clients | Acquisition",

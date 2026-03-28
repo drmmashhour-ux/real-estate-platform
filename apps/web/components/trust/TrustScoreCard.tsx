@@ -23,8 +23,8 @@ export function TrustScoreCard({
   }
 
   return (
-    <div className="rounded-2xl border border-[#C9A646]/25 bg-gradient-to-b from-[#C9A646]/[0.08] to-[#121212] p-6 text-center shadow-[0_0_40px_rgba(201,166,70,0.1)]">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#C9A646]">{label}</p>
+    <div className="rounded-2xl border border-premium-gold/25 bg-gradient-to-b from-premium-gold/[0.08] to-[#121212] p-6 text-center shadow-[0_0_40px_rgb(var(--premium-gold-channels) / 0.1)]">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-premium-gold">{label}</p>
       <div className="mt-4 flex justify-center">
         <ScoreCircle value={score} max={max} size={size} />
       </div>

@@ -11,7 +11,7 @@ import {
   YAxis,
 } from "recharts";
 
-const GOLD = "#C9A646";
+const GOLD = "var(--color-premium-gold)";
 
 type Row = { date: string; buy_hub: number; seller_hub: number; nbhub: number; mortgage_hub: number };
 

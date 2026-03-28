@@ -54,7 +54,7 @@ export function GenerateLeaseButton({ listingId, bookingId, disabled, existingCo
         onClick={() => void onClick()}
         disabled={disabled || loading}
         className="mt-3 inline-flex w-full justify-center rounded-xl px-4 py-2.5 text-sm font-bold text-[#0B0B0B] disabled:opacity-50 sm:w-auto"
-        style={{ background: "#C9A646" }}
+        style={{ background: "var(--color-premium-gold)" }}
       >
         {loading ? "Working…" : existingContractId ? "View lease contract" : "Generate lease"}
       </button>

@@ -130,7 +130,7 @@ export function LegalAgreementModal({
             type="button"
             disabled={busy}
             onClick={() => void accept()}
-            className="flex-1 rounded-xl bg-[#C9A646] py-3 text-sm font-bold text-black disabled:opacity-50"
+            className="flex-1 rounded-xl bg-premium-gold py-3 text-sm font-bold text-black disabled:opacity-50"
           >
             {busy ? "Saving…" : "I understand and agree"}
           </button>

@@ -4,11 +4,11 @@
  */
 export function ImmoContactCollaborationNotice() {
   return (
-    <div className="rounded-xl border border-[#C9A646]/25 bg-[#0B0B0B]/80 p-4 text-left shadow-inner shadow-black/40">
-      <h3 className="text-xs font-bold uppercase tracking-[0.12em] text-[#C9A646]">
+    <div className="rounded-xl border border-premium-gold/25 bg-[#0B0B0B]/80 p-4 text-left shadow-inner shadow-black/40">
+      <h3 className="text-xs font-bold uppercase tracking-[0.12em] text-premium-gold">
         Immo contact &amp; collaboration notice
       </h3>
-      <p className="mt-3 rounded-lg border border-[#C9A646]/30 bg-[#C9A646]/10 px-3 py-2 text-[11px] font-medium leading-relaxed text-[#E8D5A3]">
+      <p className="mt-3 rounded-lg border border-premium-gold/30 bg-premium-gold/10 px-3 py-2 text-[11px] font-medium leading-relaxed text-premium-gold">
         This contact will be recorded as a platform-generated interaction.
       </p>
       <p className="mt-3 text-[11px] leading-relaxed text-slate-300">

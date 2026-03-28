@@ -522,7 +522,7 @@ export function SellerListingWizard({
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <Link href={dashboardHref} className="text-sm text-[#C9A646] hover:underline">
+        <Link href={dashboardHref} className="text-sm text-premium-gold hover:underline">
           ← Seller dashboard
         </Link>
         <button
@@ -539,7 +539,7 @@ export function SellerListingWizard({
       <ListingTrustGraphPanel listingId={listingId} enabled={tg.listingBadge} />
 
       <div className="mt-6 h-2 w-full overflow-hidden rounded-full bg-white/10">
-        <div className="h-full bg-[#C9A646] transition-all" style={{ width: `${progress}%` }} />
+        <div className="h-full bg-premium-gold transition-all" style={{ width: `${progress}%` }} />
       </div>
       <p className="mt-2 text-xs text-slate-500">
         Step {step} of {STEPS.length}: {STEPS[step - 1]}
@@ -814,7 +814,7 @@ export function SellerListingWizard({
                     <button
                       type="button"
                       onClick={() => setModalId(c.id)}
-                      className="rounded-lg bg-[#C9A646] px-3 py-1.5 text-xs font-semibold text-black"
+                      className="rounded-lg bg-premium-gold px-3 py-1.5 text-xs font-semibold text-black"
                     >
                       Review & sign
                     </button>
@@ -906,7 +906,7 @@ export function SellerListingWizard({
               type="button"
               disabled={loading}
               onClick={() => void onNext()}
-              className="rounded-xl bg-[#C9A646] px-5 py-2.5 text-sm font-semibold text-black disabled:opacity-50"
+              className="rounded-xl bg-premium-gold px-5 py-2.5 text-sm font-semibold text-black disabled:opacity-50"
             >
               {loading ? "…" : "Next"}
             </button>
@@ -915,7 +915,7 @@ export function SellerListingWizard({
               type="button"
               disabled={loading}
               onClick={() => void submitFinal()}
-              className="rounded-xl bg-[#C9A646] px-5 py-2.5 text-sm font-semibold text-black disabled:opacity-50"
+              className="rounded-xl bg-premium-gold px-5 py-2.5 text-sm font-semibold text-black disabled:opacity-50"
             >
               {loading ? "Submitting…" : "Submit for verification"}
             </button>
@@ -923,8 +923,8 @@ export function SellerListingWizard({
         </div>
       </div>
 
-      <div className="mt-8 rounded-2xl border border-[#C9A646]/30 bg-[#1a1508]/40 p-4">
-        <p className="text-xs font-semibold uppercase tracking-wide text-[#C9A646]">Use AI assistance</p>
+      <div className="mt-8 rounded-2xl border border-premium-gold/30 bg-[#1a1508]/40 p-4">
+        <p className="text-xs font-semibold uppercase tracking-wide text-premium-gold">Use AI assistance</p>
         <p className="mt-1 text-xs text-slate-500">Heuristic hints only — not legal or appraisal advice.</p>
         <div className="mt-3 flex flex-wrap gap-2">
           <button

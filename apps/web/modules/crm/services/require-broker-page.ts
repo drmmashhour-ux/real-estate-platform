@@ -1,8 +1,10 @@
 import { redirect } from "next/navigation";
+import { ensureDynamicAuthRequest } from "@/lib/auth/ensure-dynamic-request";
 import { getGuestId } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
 
 export async function requireBrokerOrAdminPage(nextPath: string) {
+  await ensureDynamicAuthRequest();
   const userId = await getGuestId();
   if (!userId) redirect(`/auth/login?next=${encodeURIComponent(nextPath)}`);
   const user = await prisma.user.findUnique({

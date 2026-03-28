@@ -17,13 +17,13 @@ export function CompareBar() {
       role="region"
       aria-label="Property comparison"
     >
-      <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-[#C9A646]/40 bg-[#0B0B0B]/95 px-4 py-3 shadow-2xl shadow-black/50 backdrop-blur-md">
-        <span className="text-sm font-semibold text-[#C9A646]">
+      <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-premium-gold/40 bg-[#0B0B0B]/95 px-4 py-3 shadow-2xl shadow-black/50 backdrop-blur-md">
+        <span className="text-sm font-semibold text-premium-gold">
           Compare · {count}/{MAX_COMPARE}
         </span>
         <Link
           href={`/compare/fsbo${qs}`}
-          className="relative z-30 inline-flex cursor-pointer rounded-lg bg-[#C9A646] px-4 py-2 text-sm font-bold text-[#0B0B0B]"
+          className="relative z-30 inline-flex cursor-pointer rounded-lg bg-premium-gold px-4 py-2 text-sm font-bold text-[#0B0B0B]"
         >
           Open compare
         </Link>

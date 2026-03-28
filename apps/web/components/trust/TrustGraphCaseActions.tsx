@@ -48,8 +48,8 @@ export function TrustGraphCaseActions({ caseId }: { caseId: string }) {
   }
 
   return (
-    <div className="rounded-xl border border-[#C9A646]/30 bg-[#1a1508]/40 p-4">
-      <p className="text-xs font-semibold uppercase tracking-wide text-[#C9A646]">Human review</p>
+    <div className="rounded-xl border border-premium-gold/30 bg-[#1a1508]/40 p-4">
+      <p className="text-xs font-semibold uppercase tracking-wide text-premium-gold">Human review</p>
       <div className="mt-3 flex flex-wrap gap-2">
         <button
           type="button"

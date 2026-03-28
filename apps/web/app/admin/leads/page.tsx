@@ -3,7 +3,8 @@ import { getGuestId } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
 
 /**
- * Admin entry for the same CRM as brokers (full lead list via /api/leads for ADMIN).
+ * Admin entry for broker-style lead list (`/dashboard/leads`).
+ * Unified BNHub telemetry + scoring: `/admin/crm/internal`.
  */
 export default async function AdminLeadsEntryPage() {
   const id = await getGuestId();

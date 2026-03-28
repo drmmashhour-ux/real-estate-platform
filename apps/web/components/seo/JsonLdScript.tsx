@@ -1,0 +1,4 @@
+/** Server component: emit one schema.org JSON-LD graph node. */
+export function JsonLdScript({ data }: { data: Record<string, unknown> }) {
+  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }} />;
+}

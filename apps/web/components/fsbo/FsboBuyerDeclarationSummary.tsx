@@ -37,7 +37,7 @@ export function FsboBuyerDeclarationSummary({
   if (listingStatus === "SOLD") {
     return (
       <section className="rounded-2xl border border-white/10 bg-[#121212] p-5">
-        <p className="text-xs font-semibold uppercase tracking-wider text-[#C9A646]">Seller declaration</p>
+        <p className="text-xs font-semibold uppercase tracking-wider text-premium-gold">Seller declaration</p>
         <p className="mt-2 text-sm text-slate-400">
           A seller declaration was filed and verified for this listing on{" "}
           <time dateTime={completedAt.toISOString()}>{completedAt.toLocaleDateString()}</time>.
@@ -51,7 +51,7 @@ export function FsboBuyerDeclarationSummary({
 
   return (
     <section className="rounded-2xl border border-white/10 bg-[#121212] p-5">
-      <p className="text-xs font-semibold uppercase tracking-wider text-[#C9A646]">Seller declaration summary</p>
+      <p className="text-xs font-semibold uppercase tracking-wider text-premium-gold">Seller declaration summary</p>
       <p className="mt-1 text-xs text-slate-500">
         Provided by the seller — verify independently with a notary or inspector. Not legal advice.
       </p>

@@ -17,8 +17,8 @@ import {
 } from "recharts";
 import type { FullFinancialModel } from "@/modules/finance/investor-financial-model";
 
-const GOLD = "#C9A646";
-const COLORS = ["#C9A646", "#a88a2e", "#d4b45c", "#8b7355", "#5c4d3a", "#3d3429"];
+const GOLD = "var(--color-premium-gold)";
+const COLORS = ["var(--color-premium-gold)", "#a88a2e", "#d4b45c", "#8b7355", "#5c4d3a", "#3d3429"];
 
 type Props = {
   model: FullFinancialModel;
@@ -104,7 +104,7 @@ export function InvestorFinanceCharts({ model }: Props) {
                 contentStyle={{ background: "#111", border: "1px solid #333" }}
               />
               <Legend />
-              <Bar dataKey="revenue" fill="#C9A646" name="Revenue" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="revenue" fill="var(--color-premium-gold)" name="Revenue" radius={[4, 4, 0, 0]} />
               <Bar dataKey="profit" fill="#4ade80" name="Profit (after modeled costs)" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>

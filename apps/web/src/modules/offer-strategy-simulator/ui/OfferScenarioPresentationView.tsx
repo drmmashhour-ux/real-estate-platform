@@ -58,7 +58,7 @@ export function OfferScenarioPresentationView({
   return (
     <div className={`flex flex-col ${gap} ${compact ? "" : "border-t border-white/10 pt-4"}`}>
       {/* 1 — Title + summary */}
-      <div className={`rounded-xl border border-[#C9A646]/25 bg-[#101010] ${pad}`}>
+      <div className={`rounded-xl border border-premium-gold/25 bg-[#101010] ${pad}`}>
         <h3 className="text-base font-semibold tracking-tight text-white">{title}</h3>
         <div className="mt-2 space-y-1.5 text-sm leading-relaxed text-slate-300">
           {summaryLines.map((line, i) => (
@@ -125,7 +125,7 @@ export function OfferScenarioPresentationView({
       {!hideCta ? (
         <button
           type="button"
-          className="w-full rounded-xl bg-[#C9A646] py-3.5 text-center text-base font-semibold text-black shadow-lg shadow-black/30 transition hover:bg-[#ddb84d] focus:outline-none focus:ring-2 focus:ring-[#C9A646]/50"
+          className="w-full rounded-xl bg-premium-gold py-3.5 text-center text-base font-semibold text-black shadow-lg shadow-black/30 transition hover:bg-[#ddb84d] focus:outline-none focus:ring-2 focus:ring-premium-gold/50"
         >
           Talk this through with your broker or lawyer
         </button>

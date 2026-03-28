@@ -38,7 +38,7 @@ export function SellerHubListingActions({ listingId, canDelete, editHref }: Prop
     <div className="flex flex-wrap gap-2">
       <Link
         href={editHref}
-        className="rounded-lg border border-white/15 px-3 py-1.5 text-xs font-medium text-[#E8C547] hover:bg-white/5"
+        className="rounded-lg border border-white/15 px-3 py-1.5 text-xs font-medium text-premium-gold hover:bg-white/5"
       >
         Edit
       </Link>

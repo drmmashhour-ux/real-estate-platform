@@ -57,7 +57,7 @@ export function OrganizationSettings({
 
   return (
     <section className="rounded-xl border border-white/10 bg-[#0f0f0f] p-6">
-      <h2 className="text-sm font-semibold uppercase tracking-wider text-[#C9A646]/90">Organization settings</h2>
+      <h2 className="text-sm font-semibold uppercase tracking-wider text-premium-gold/90">Organization settings</h2>
       <p className="mt-1 text-xs text-slate-500">
         Workspace is the tenancy boundary for deals, leads, documents, and AI actions. Subscription billing can be linked
         per workspace; optional per-seat pricing is stored in settings.

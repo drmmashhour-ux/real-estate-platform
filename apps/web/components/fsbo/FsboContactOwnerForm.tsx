@@ -72,7 +72,7 @@ export function FsboContactOwnerForm({ listingId }: { listingId: string }) {
       <button
         type="submit"
         disabled={status === "sending"}
-        className="mt-4 w-full rounded-xl bg-[#C9A646] py-3 text-sm font-bold text-[#0B0B0B] hover:bg-[#E8C547] disabled:opacity-50"
+        className="mt-4 w-full rounded-xl bg-premium-gold py-3 text-sm font-bold text-[#0B0B0B] hover:bg-premium-gold disabled:opacity-50"
       >
         {status === "sending" ? "Sending…" : "Send message"}
       </button>

@@ -29,7 +29,7 @@ export function SectionCard({
           type="button"
           disabled={loading}
           onClick={onExplain}
-          className="shrink-0 rounded-md border border-[#C9A646]/50 bg-[#C9A646]/10 px-2 py-1 text-[11px] font-medium text-[#C9A646] hover:bg-[#C9A646]/20 disabled:opacity-50"
+          className="shrink-0 rounded-md border border-premium-gold/50 bg-premium-gold/10 px-2 py-1 text-[11px] font-medium text-premium-gold hover:bg-premium-gold/20 disabled:opacity-50"
         >
           {loading ? "…" : "Explain this"}
         </button>

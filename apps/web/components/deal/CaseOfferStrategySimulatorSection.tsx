@@ -57,7 +57,7 @@ export function CaseOfferStrategySimulatorSection({
   return (
     <div className="space-y-4 rounded-2xl border border-white/10 bg-[#0B0B0B]/80 p-5">
       <div>
-        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#C9A646]">Offer strategy simulator</p>
+        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-premium-gold">Offer strategy simulator</p>
         <p className="mt-1 text-xs text-slate-500">
           Review scenarios with clients in presentation mode, or switch to internal detail for your team.
         </p>

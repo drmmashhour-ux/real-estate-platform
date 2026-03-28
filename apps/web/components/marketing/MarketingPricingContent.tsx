@@ -46,22 +46,22 @@ export function MarketingPricingContent() {
               <div
                 className={`flex h-full flex-col rounded-3xl border p-8 ${
                   t.highlighted
-                    ? "border-[#C9A646]/50 bg-gradient-to-b from-[#C9A646]/10 to-transparent shadow-xl shadow-[#C9A646]/5"
+                    ? "border-premium-gold/50 bg-gradient-to-b from-premium-gold/10 to-transparent shadow-xl shadow-premium-gold/5"
                     : "border-white/10 bg-white/[0.02]"
                 }`}
               >
                 {t.highlighted ? (
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#C9A646]">Most popular</p>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-premium-gold">Most popular</p>
                 ) : (
                   <span className="mb-2 block h-4" aria-hidden />
                 )}
                 <h2 className="font-serif text-2xl font-semibold text-white">{t.name}</h2>
-                <p className="mt-2 text-3xl font-bold text-[#C9A646]">{t.price}</p>
+                <p className="mt-2 text-3xl font-bold text-premium-gold">{t.price}</p>
                 <p className="mt-3 text-sm text-slate-400">{t.blurb}</p>
                 <ul className="mt-6 flex-1 space-y-2 text-sm text-slate-300">
                   {t.features.map((f) => (
                     <li key={f} className="flex gap-2">
-                      <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#C9A646]" aria-hidden />
+                      <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-premium-gold" aria-hidden />
                       {f}
                     </li>
                   ))}
@@ -70,8 +70,8 @@ export function MarketingPricingContent() {
                   href="/#cta"
                   className={`mt-8 inline-flex justify-center rounded-full px-6 py-3 text-sm font-semibold transition ${
                     t.highlighted
-                      ? "bg-[#C9A646] text-black hover:brightness-110"
-                      : "border border-white/20 text-white hover:border-[#C9A646]/50"
+                      ? "bg-premium-gold text-black hover:brightness-110"
+                      : "border border-white/20 text-white hover:border-premium-gold/50"
                   }`}
                 >
                   Request access

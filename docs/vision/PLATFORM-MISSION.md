@@ -23,6 +23,13 @@ A world where every property search, investment decision, and professional inter
 - **Differentiation**: Relationship-driven (not only transactional); trust and verification are core.
 - **Trust layer**: Verified identities, professional credentials, property verification, and community reputation.
 
+### Operating modes (canonical order)
+
+When describing, prioritizing, or sequencing go-to-market and build focus, use this order:
+
+1. **Enterprise / White-Label Operating Mode** — Multi-tenant and partner-branded experiences, workspace distribution, APIs, and B2B rollout.
+2. **Bank / Mortgage / Notary Integration Operating Mode** — Regulated-partner and closing rails: financing, mortgage handoffs, and notary-ready transaction workflows.
+
 ---
 
 ## Operating principle

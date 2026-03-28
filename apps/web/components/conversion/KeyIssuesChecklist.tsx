@@ -5,7 +5,7 @@ export function KeyIssuesChecklist({ items, title = "Key issues" }: { items: str
       <ul className="mt-2 space-y-2 text-sm text-slate-300">
         {(items.length ? items : ["No critical issues detected yet."]).slice(0, 6).map((it) => (
           <li key={it} className="flex items-start gap-2">
-            <span className="mt-1 h-1.5 w-1.5 rounded-full bg-[#C9A646]" />
+            <span className="mt-1 h-1.5 w-1.5 rounded-full bg-premium-gold" />
             <span>{it}</span>
           </li>
         ))}

@@ -71,7 +71,7 @@ export function GrowthDashboard() {
             type="button"
             disabled={loading}
             onClick={() => void runPlan(true)}
-            className="rounded-lg bg-[#C9A646] px-4 py-2 text-sm font-semibold text-black hover:bg-[#ddb84d] disabled:opacity-50"
+            className="rounded-lg bg-premium-gold px-4 py-2 text-sm font-semibold text-black hover:bg-[#ddb84d] disabled:opacity-50"
           >
             {loading ? "…" : "Generate & save"}
           </button>

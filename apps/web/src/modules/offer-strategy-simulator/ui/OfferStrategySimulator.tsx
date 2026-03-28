@@ -273,7 +273,7 @@ export function OfferStrategySimulator({
   return (
     <div className="space-y-4 rounded-2xl border border-white/10 bg-[#0B0B0B]/80 p-5">
       <div>
-        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#C9A646]">Offer strategy simulator</p>
+        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-premium-gold">Offer strategy simulator</p>
         <p className="mt-1 text-xs text-slate-500">
           {isPresentation
             ? "Simple illustration for your conversation — not legal advice, not a guarantee about price or acceptance."
@@ -289,7 +289,7 @@ export function OfferStrategySimulator({
             setError(null);
           }}
           className={`rounded-lg px-3 py-1.5 text-xs font-medium ${
-            mode === "single" ? "bg-[#C9A646] text-black" : "border border-white/15 bg-[#121212] text-slate-300"
+            mode === "single" ? "bg-premium-gold text-black" : "border border-white/15 bg-[#121212] text-slate-300"
           }`}
         >
           Single scenario
@@ -301,7 +301,7 @@ export function OfferStrategySimulator({
             setError(null);
           }}
           className={`rounded-lg px-3 py-1.5 text-xs font-medium ${
-            mode === "compare" ? "bg-[#C9A646] text-black" : "border border-white/15 bg-[#121212] text-slate-300"
+            mode === "compare" ? "bg-premium-gold text-black" : "border border-white/15 bg-[#121212] text-slate-300"
           }`}
         >
           Compare A / B / C
@@ -327,7 +327,7 @@ export function OfferStrategySimulator({
                 type="button"
                 disabled={loading}
                 onClick={runSingle}
-                className="w-full rounded-xl bg-[#C9A646] py-3.5 text-base font-semibold text-black shadow-md shadow-black/25 transition hover:bg-[#ddb84d] disabled:opacity-50"
+                className="w-full rounded-xl bg-premium-gold py-3.5 text-base font-semibold text-black shadow-md shadow-black/25 transition hover:bg-[#ddb84d] disabled:opacity-50"
               >
                 {loading ? "Updating…" : "See how this scenario looks"}
               </button>
@@ -351,7 +351,7 @@ export function OfferStrategySimulator({
                 type="button"
                 disabled={loading}
                 onClick={runSingle}
-                className="rounded-lg bg-[#C9A646] px-4 py-2 text-sm font-semibold text-black disabled:opacity-50"
+                className="rounded-lg bg-premium-gold px-4 py-2 text-sm font-semibold text-black disabled:opacity-50"
               >
                 {loading ? "Running…" : "Run simulation"}
               </button>
@@ -390,7 +390,7 @@ export function OfferStrategySimulator({
                   type="button"
                   disabled={saving || loading}
                   onClick={saveToHistory}
-                  className="rounded-lg border border-[#C9A646]/50 bg-[#C9A646]/10 px-4 py-2 text-sm font-medium text-[#C9A646] disabled:opacity-50"
+                  className="rounded-lg border border-premium-gold/50 bg-premium-gold/10 px-4 py-2 text-sm font-medium text-premium-gold disabled:opacity-50"
                 >
                   {saving ? "Saving…" : "Save snapshot"}
                 </button>
@@ -455,7 +455,7 @@ export function OfferStrategySimulator({
           <div className="grid gap-6 lg:grid-cols-3">
             {COMPARE_LABELS.map((label, idx) => (
               <div key={label} className="rounded-xl border border-white/10 bg-[#121212]/80 p-3">
-                <p className="mb-3 text-xs font-semibold text-[#C9A646]">{label}</p>
+                <p className="mb-3 text-xs font-semibold text-premium-gold">{label}</p>
                 <OfferScenarioInputs
                   listPriceCents={listPriceCents}
                   draft={drafts[idx]!}
@@ -478,7 +478,7 @@ export function OfferStrategySimulator({
                 type="button"
                 disabled={loading}
                 onClick={runCompare}
-                className="w-full rounded-xl bg-[#C9A646] py-3.5 text-base font-semibold text-black shadow-md shadow-black/25 transition hover:bg-[#ddb84d] disabled:opacity-50"
+                className="w-full rounded-xl bg-premium-gold py-3.5 text-base font-semibold text-black shadow-md shadow-black/25 transition hover:bg-[#ddb84d] disabled:opacity-50"
               >
                 {loading ? "Comparing…" : "Compare these three side by side"}
               </button>
@@ -494,7 +494,7 @@ export function OfferStrategySimulator({
                 type="button"
                 disabled={loading}
                 onClick={runCompare}
-                className="rounded-lg bg-[#C9A646] px-4 py-2 text-sm font-semibold text-black disabled:opacity-50"
+                className="rounded-lg bg-premium-gold px-4 py-2 text-sm font-semibold text-black disabled:opacity-50"
               >
                 {loading ? "Comparing…" : "Compare scenarios"}
               </button>

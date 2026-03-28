@@ -11,6 +11,8 @@ import {
 import { prisma } from "@/lib/db";
 import type { GlobalSearchFiltersExtended } from "@/components/search/FilterState";
 import { parseGlobalSearchBody, urlParamsToGlobalFilters } from "@/components/search/FilterState";
+import { isAiRankingEngineEnabled } from "@/src/modules/ranking/rankingEnv";
+import { scoreRealEstateListingsForBrowse } from "@/src/modules/ranking/rankingService";
 
 export const dynamic = "force-dynamic";
 
@@ -345,12 +347,34 @@ async function runBrowse(
     merged.sort((a, b) => a.priceCents - b.priceCents);
   } else if (sortMode === "priceDesc") {
     merged.sort((a, b) => b.priceCents - a.priceCents);
+  } else if (sortMode === "recommended" && isAiRankingEngineEnabled()) {
+    const fsboIds = merged.filter((m) => m.kind === "fsbo").map((m) => m.id);
+    const effMinCad =
+      f.type === "luxury_properties" || (f.type === "rent" && f.rentListingCategory === "luxury_properties")
+        ? Math.max(f.priceMin, 1_000_000)
+        : f.priceMin;
+    const scores = await scoreRealEstateListingsForBrowse(fsboIds, {
+      city: f.location.trim() || undefined,
+      propertyType: f.propertyType?.trim() || undefined,
+      budgetMinCents: effMinCad > 0 ? Math.round(effMinCad * 100) : undefined,
+      budgetMaxCents: f.priceMax > 0 ? Math.round(f.priceMax * 100) : undefined,
+    });
+    for (const row of merged) {
+      if (row.kind === "fsbo") {
+        row.sortAt = Math.round((scores.get(row.id) ?? 35) * 1_000_000);
+      }
+    }
+    merged.sort((a, b) => b.sortAt - a.sortAt);
   } else {
     merged.sort((a, b) => b.sortAt - a.sortAt);
   }
   const total = hasPF ? fsboFiltered.length : fsboTotal + crmTotal;
   const skip = (page - 1) * limit;
-  const pageRows = merged.slice(skip, skip + limit).map(({ sortAt: _s, ...rest }) => rest);
+  const pageRows = merged.slice(skip, skip + limit).map((row) => {
+    const { sortAt: _sortAt, ...rest } = row;
+    void _sortAt;
+    return rest;
+  });
 
   return Response.json({
     data: pageRows,

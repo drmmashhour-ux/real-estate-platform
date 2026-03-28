@@ -11,7 +11,7 @@ export function UpgradePromptCard({ role = "guest" }: { role?: "broker" | "inves
           ? "Get stronger pricing and listing confidence insights."
           : "Unlock full analysis and next best actions.";
   return (
-    <aside className="rounded-xl border border-[#C9A646]/40 bg-[#C9A646]/10 p-4">
+    <aside className="rounded-xl border border-premium-gold/40 bg-premium-gold/10 p-4">
       <p className="text-sm font-semibold text-white">{conversionCopy.upgrade.lockedPrompt}</p>
       <p className="mt-1 text-sm text-slate-200">{roleLine}</p>
       <div className="mt-3">

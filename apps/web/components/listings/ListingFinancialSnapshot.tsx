@@ -15,11 +15,11 @@ export function ListingFinancialSnapshot({ priceCents }: Props) {
 
   return (
     <section
-      className="relative overflow-hidden rounded-2xl border-2 border-[#C9A646]/40 bg-gradient-to-br from-[#1a1508] via-[#0f0f0f] to-[#0B0B0B] p-6 shadow-[0_0_40px_rgba(201,166,70,0.12)]"
+      className="relative overflow-hidden rounded-2xl border-2 border-premium-gold/40 bg-gradient-to-br from-[#1a1508] via-[#0f0f0f] to-[#0B0B0B] p-6 shadow-[0_0_40px_rgb(var(--premium-gold-channels) / 0.12)]"
       aria-labelledby="financial-snapshot-heading"
     >
-      <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-[#C9A646]/10 blur-3xl" />
-      <p id="financial-snapshot-heading" className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#C9A646]">
+      <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-premium-gold/10 blur-3xl" />
+      <p id="financial-snapshot-heading" className="text-[11px] font-bold uppercase tracking-[0.2em] text-premium-gold">
         Financial snapshot
       </p>
       <p className="mt-2 text-xs text-slate-400">

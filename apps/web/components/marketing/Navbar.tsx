@@ -35,7 +35,7 @@ export function Navbar() {
             <Link
               key={l.href}
               href={l.href}
-              className="text-sm font-medium text-slate-300 transition hover:text-[#C9A646]"
+              className="text-sm font-medium text-slate-300 transition hover:text-premium-gold"
             >
               {l.label}
             </Link>
@@ -46,7 +46,7 @@ export function Navbar() {
             <Link
               key={l.href}
               href={l.href}
-              className="text-sm font-medium text-slate-300 transition hover:text-[#C9A646]"
+              className="text-sm font-medium text-slate-300 transition hover:text-premium-gold"
             >
               {l.label}
             </Link>
@@ -64,7 +64,7 @@ export function Navbar() {
           </Link>
           <Link
             href="/#cta"
-            className="rounded-full bg-[#C9A646] px-4 py-2 text-sm font-semibold text-black transition hover:brightness-110"
+            className="rounded-full bg-premium-gold px-4 py-2 text-sm font-semibold text-black transition hover:brightness-110"
           >
             Get Access
           </Link>
@@ -114,7 +114,7 @@ export function Navbar() {
             </Link>
             <Link
               href="/#cta"
-              className="rounded-full bg-[#C9A646] px-4 py-2 text-center text-sm font-semibold text-black"
+              className="rounded-full bg-premium-gold px-4 py-2 text-center text-sm font-semibold text-black"
               onClick={() => setOpen(false)}
             >
               Get Access

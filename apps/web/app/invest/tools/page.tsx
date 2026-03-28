@@ -47,9 +47,9 @@ export default function InvestToolsPage() {
           <Link
             key={c.href}
             href={c.href}
-            className="rounded-2xl border border-[#C9A646]/30 bg-gradient-to-br from-black/60 to-[#1a1508] p-6 transition hover:border-[#C9A646]/60"
+            className="rounded-2xl border border-premium-gold/30 bg-gradient-to-br from-black/60 to-[#1a1508] p-6 transition hover:border-premium-gold/60"
           >
-            <h2 className="text-lg font-semibold text-[#C9A646]">{c.title}</h2>
+            <h2 className="text-lg font-semibold text-premium-gold">{c.title}</h2>
             <p className="mt-2 text-sm text-slate-400">{c.desc}</p>
             <p className="mt-4 text-sm text-white">Open →</p>
           </Link>

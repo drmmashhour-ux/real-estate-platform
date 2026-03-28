@@ -137,7 +137,7 @@ export function LegalAcknowledgmentModal({ open, kind, onClose, onComplete }: Pr
           </button>
           <button
             type="button"
-            className="flex-1 rounded-xl bg-[#C9A646] py-3 text-sm font-bold text-black disabled:opacity-50"
+            className="flex-1 rounded-xl bg-premium-gold py-3 text-sm font-bold text-black disabled:opacity-50"
             disabled={busy}
             onClick={() => void accept()}
           >

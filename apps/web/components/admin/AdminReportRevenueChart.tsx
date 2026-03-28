@@ -2,7 +2,7 @@
 
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid } from "recharts";
 
-const GOLD = "#C9A646";
+const GOLD = "var(--color-premium-gold)";
 
 export function AdminReportRevenueChart({ byHub }: { byHub: Record<string, number> }) {
   const data = Object.entries(byHub).map(([name, cents]) => ({
@@ -20,7 +20,7 @@ export function AdminReportRevenueChart({ byHub }: { byHub: Record<string, numbe
           <XAxis dataKey="name" tick={{ fill: "#94a3b8", fontSize: 10 }} />
           <YAxis tick={{ fill: "#94a3b8", fontSize: 10 }} />
           <Tooltip
-            contentStyle={{ background: "#111", border: "1px solid rgba(201,166,70,0.3)", borderRadius: 8 }}
+            contentStyle={{ background: "#111", border: "1px solid rgb(var(--premium-gold-channels) / 0.3)", borderRadius: 8 }}
             formatter={(v: number) => [`$${v.toLocaleString()}`, "CAD"]}
           />
           <Bar dataKey="value" name="Revenue (CAD)" fill={GOLD} radius={[4, 4, 0, 0]} />

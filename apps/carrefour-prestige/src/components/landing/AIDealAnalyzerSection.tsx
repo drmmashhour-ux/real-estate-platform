@@ -65,7 +65,7 @@ export function AIDealAnalyzerSection() {
           <button
             type="button"
             onClick={() => setShow(true)}
-            className="w-full rounded-lg bg-[#C9A646] py-3.5 text-sm font-semibold text-[#0B0B0B] transition hover:bg-[#b8943d]"
+            className="w-full rounded-lg bg-[#D4AF37] py-3.5 text-sm font-semibold text-[#0B0B0B] transition hover:bg-[#D4AF37]"
           >
             Analyze Deal
           </button>
@@ -73,7 +73,7 @@ export function AIDealAnalyzerSection() {
 
         {result && (
           <div className="mt-8 rounded-xl border border-[#0F3D2E]/60 bg-[#0F3D2E]/20 p-6 text-left">
-            <p className="text-xs uppercase tracking-wider text-[#C9A646]">Results (illustrative)</p>
+            <p className="text-xs uppercase tracking-wider text-[#D4AF37]">Results (illustrative)</p>
             <ul className="mt-4 space-y-2 text-sm text-[#CCCCCC]">
               <li>
                 ROI (yield-style): <span className="text-white">{result.roiPct.toFixed(2)}%</span>
@@ -84,7 +84,7 @@ export function AIDealAnalyzerSection() {
               </li>
               <li>
                 Investment rating:{" "}
-                <span className="text-[#C9A646] capitalize">{result.verdict}</span>
+                <span className="text-[#D4AF37] capitalize">{result.verdict}</span>
               </li>
             </ul>
             <p className="mt-4 text-xs text-[#CCCCCC]/50">Powered by advanced analytics</p>
@@ -97,7 +97,7 @@ export function AIDealAnalyzerSection() {
           href={analyzerUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex w-full items-center justify-center rounded-lg border border-[#C9A646] px-6 py-3 text-sm font-semibold text-[#C9A646] transition hover:bg-[#C9A646]/10"
+          className="inline-flex w-full items-center justify-center rounded-lg border border-[#D4AF37] px-6 py-3 text-sm font-semibold text-[#D4AF37] transition hover:bg-[#D4AF37]/10"
         >
           Open Full Analyzer
           <span className="ml-2 text-[10px] uppercase tracking-widest text-[#CCCCCC]/70">External app ↗</span>

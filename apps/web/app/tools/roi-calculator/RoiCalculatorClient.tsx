@@ -77,7 +77,7 @@ export function RoiCalculatorClient() {
         <label className="block text-sm">
           <span className="text-slate-400">Purchase price (CAD)</span>
           <input
-            className="mt-1 w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-white outline-none focus:border-[#C9A646]/50"
+            className="mt-1 w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-white outline-none focus:border-premium-gold/50"
             value={price}
             onChange={(e) => setPrice(e.target.value)}
             inputMode="decimal"
@@ -86,7 +86,7 @@ export function RoiCalculatorClient() {
         <label className="block text-sm">
           <span className="text-slate-400">Monthly rent (CAD)</span>
           <input
-            className="mt-1 w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-white outline-none focus:border-[#C9A646]/50"
+            className="mt-1 w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-white outline-none focus:border-premium-gold/50"
             value={monthlyRent}
             onChange={(e) => setMonthlyRent(e.target.value)}
             inputMode="decimal"
@@ -95,7 +95,7 @@ export function RoiCalculatorClient() {
         <label className="block text-sm">
           <span className="text-slate-400">Monthly operating expenses (tax, insurance, condo, repairs — CAD)</span>
           <input
-            className="mt-1 w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-white outline-none focus:border-[#C9A646]/50"
+            className="mt-1 w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-white outline-none focus:border-premium-gold/50"
             value={monthlyExpenses}
             onChange={(e) => setMonthlyExpenses(e.target.value)}
             inputMode="decimal"
@@ -104,7 +104,7 @@ export function RoiCalculatorClient() {
         <label className="block text-sm">
           <span className="text-slate-400">Down payment (%)</span>
           <input
-            className="mt-1 w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-white outline-none focus:border-[#C9A646]/50"
+            className="mt-1 w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-white outline-none focus:border-premium-gold/50"
             value={downPct}
             onChange={(e) => setDownPct(e.target.value)}
             inputMode="decimal"
@@ -113,7 +113,7 @@ export function RoiCalculatorClient() {
         <label className="block text-sm">
           <span className="text-slate-400">Mortgage rate (% annual)</span>
           <input
-            className="mt-1 w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-white outline-none focus:border-[#C9A646]/50"
+            className="mt-1 w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-white outline-none focus:border-premium-gold/50"
             value={ratePct}
             onChange={(e) => setRatePct(e.target.value)}
             inputMode="decimal"
@@ -122,7 +122,7 @@ export function RoiCalculatorClient() {
         <label className="block text-sm">
           <span className="text-slate-400">Amortization (years)</span>
           <input
-            className="mt-1 w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-white outline-none focus:border-[#C9A646]/50"
+            className="mt-1 w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-white outline-none focus:border-premium-gold/50"
             value={amortYears}
             onChange={(e) => setAmortYears(e.target.value)}
             inputMode="numeric"
@@ -130,24 +130,24 @@ export function RoiCalculatorClient() {
         </label>
       </div>
 
-      <div className="rounded-xl border border-[#C9A646]/25 bg-black/30 p-6">
+      <div className="rounded-xl border border-premium-gold/25 bg-black/30 p-6">
         <h2 className="text-lg font-medium text-white">Results</h2>
         <ul className="mt-4 space-y-2 text-sm text-slate-300">
           <li>
             Gross yield:{" "}
-            <strong className="text-[#C9A646]">
+            <strong className="text-premium-gold">
               {metrics.grossYield != null ? `${metrics.grossYield.toFixed(2)}%` : "—"}
             </strong>
           </li>
           <li>
             Cap rate (NOI / price):{" "}
-            <strong className="text-[#C9A646]">
+            <strong className="text-premium-gold">
               {metrics.capRate != null ? `${metrics.capRate.toFixed(2)}%` : "—"}
             </strong>
           </li>
           <li>
             Cash-on-cash (after mortgage):{" "}
-            <strong className="text-[#C9A646]">
+            <strong className="text-premium-gold">
               {metrics.cashOnCash != null ? `${metrics.cashOnCash.toFixed(2)}%` : "—"}
             </strong>
           </li>

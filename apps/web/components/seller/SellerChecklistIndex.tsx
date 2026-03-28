@@ -56,15 +56,15 @@ export function SellerChecklistIndex({
   const ui = getSellerDeclarationSectionUiStatus(declaration, propertyType);
 
   return (
-    <div className="rounded-xl border border-[#C9A646]/30 bg-[#C9A646]/[0.06] p-4">
+    <div className="rounded-xl border border-premium-gold/30 bg-premium-gold/[0.06] p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm font-semibold text-[#E8D5A3]">Declaration checklist (OACIQ-style)</p>
+        <p className="text-sm font-semibold text-premium-gold">Declaration checklist (OACIQ-style)</p>
         <span className="text-xs font-mono text-slate-400">
           {completed} / {total} · {pct}%
         </span>
       </div>
       <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-black/40">
-        <div className="h-full bg-[#C9A646] transition-all" style={{ width: `${pct}%` }} />
+        <div className="h-full bg-premium-gold transition-all" style={{ width: `${pct}%` }} />
       </div>
       <ul className="mt-4 grid gap-1.5 text-xs sm:grid-cols-2">
         {DECLARATION_SECTION_IDS.map((id) => {
@@ -107,7 +107,7 @@ export function ExplainSectionButton({
         e.stopPropagation();
         onShow(SELLER_DECLARATION_HELP[sectionId]);
       }}
-      className="text-xs font-medium text-[#C9A646] hover:underline"
+      className="text-xs font-medium text-premium-gold hover:underline"
     >
       Explain this section
     </button>

@@ -13,7 +13,7 @@ export function TrustProofStrip() {
     >
       {ITEMS.map((label) => (
         <span key={label} className="flex items-center gap-2 text-slate-300">
-          <span className="h-1.5 w-1.5 rounded-full bg-[#C9A646] shadow-[0_0_8px_rgba(201,166,70,0.6)]" aria-hidden />
+          <span className="h-1.5 w-1.5 rounded-full bg-premium-gold shadow-[0_0_8px_rgb(var(--premium-gold-channels) / 0.6)]" aria-hidden />
           {label}
         </span>
       ))}

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-const GOLD = "#C9A646";
+const GOLD = "var(--color-premium-gold)";
 const CARD = "#141414";
 
 type BillingPayload = {

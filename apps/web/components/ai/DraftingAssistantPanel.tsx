@@ -57,7 +57,7 @@ export function DraftingAssistantPanel({
   return (
     <aside className="flex h-full min-h-0 flex-col border-l border-white/10 bg-[#0a0a0a]">
       <div className="border-b border-white/10 px-4 py-3">
-        <h2 className="text-sm font-semibold text-[#E8C547]">AI drafting assistant</h2>
+        <h2 className="text-sm font-semibold text-premium-gold">AI drafting assistant</h2>
         <p className="mt-1 text-[11px] leading-snug text-slate-500">
           AI suggestions do not replace legal advice. Always have qualified counsel review binding documents.
         </p>
@@ -125,7 +125,7 @@ export function DraftingAssistantPanel({
               type="button"
               disabled={loading || aiBusy}
               onClick={() => void runAiWording()}
-              className="mt-2 w-full rounded-xl border border-[#C9A646]/40 bg-[#C9A646]/10 px-3 py-2 text-xs font-semibold text-[#E8C547] hover:bg-[#C9A646]/20 disabled:opacity-50"
+              className="mt-2 w-full rounded-xl border border-premium-gold/40 bg-premium-gold/10 px-3 py-2 text-xs font-semibold text-premium-gold hover:bg-premium-gold/20 disabled:opacity-50"
             >
               {aiBusy ? "Generating…" : "Suggest clearer wording"}
             </button>
@@ -139,7 +139,7 @@ export function DraftingAssistantPanel({
             type="button"
             disabled={loading}
             onClick={onCheckCompliance}
-            className="rounded-xl bg-[#C9A646] px-4 py-2.5 text-sm font-semibold text-black hover:opacity-95 disabled:opacity-50"
+            className="rounded-xl bg-premium-gold px-4 py-2.5 text-sm font-semibold text-black hover:opacity-95 disabled:opacity-50"
           >
             {busy === "check" ? "Checking…" : "Check compliance"}
           </button>
@@ -155,7 +155,7 @@ export function DraftingAssistantPanel({
             type="button"
             disabled={loading}
             onClick={onImproveText}
-            className="rounded-xl border border-white/15 bg-transparent px-4 py-2.5 text-sm font-medium text-[#C9A646] hover:bg-[#C9A646]/10 disabled:opacity-50"
+            className="rounded-xl border border-white/15 bg-transparent px-4 py-2.5 text-sm font-medium text-premium-gold hover:bg-premium-gold/10 disabled:opacity-50"
           >
             {busy === "improve" ? "Improving…" : "Improve text"}
           </button>

@@ -11,13 +11,13 @@ export function HeroSection() {
 
   return (
     <section className="relative overflow-hidden border-b border-white/10 px-4 pb-16 pt-10 sm:px-6 sm:pb-20 lg:pt-14">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(201,166,70,0.15),transparent)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgb(var(--premium-gold-channels) / 0.15),transparent)]" />
 
       <div className="relative mx-auto max-w-3xl text-center">
-        <p className={`mb-3 ${marketingType.heroEyebrow} text-[#C9A646]`}>Trust & compliance layer</p>
+        <p className={`mb-3 ${marketingType.heroEyebrow} text-premium-gold`}>Trust & compliance layer</p>
         <h1 className={`${marketingType.heroTitle} text-white`}>
           The First AI Platform That{" "}
-          <span className="bg-gradient-to-r from-[#C9A646] to-amber-200 bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-premium-gold to-amber-200 bg-clip-text text-transparent">
             Verifies Real Estate
           </span>{" "}
           Before You Sell It
@@ -30,13 +30,13 @@ export function HeroSection() {
         <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
           <Link
             href="/sell"
-            className="inline-flex min-h-[44px] min-w-[200px] items-center justify-center rounded-full bg-[#C9A646] px-8 py-3 text-sm font-semibold text-black shadow-[0_0_24px_rgba(201,166,70,0.35)] transition hover:bg-[#d4b55c] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A646]/60"
+            className="inline-flex min-h-[44px] min-w-[200px] items-center justify-center rounded-full bg-premium-gold px-8 py-3 text-sm font-semibold text-black shadow-[0_0_24px_rgb(var(--premium-gold-channels) / 0.35)] transition hover:bg-[#d4b55c] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-premium-gold/60"
           >
             Get Verified Now
           </Link>
           <a
             href="#how-it-works"
-            className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-white/20 px-8 py-3 text-sm font-medium text-white transition hover:border-[#C9A646]/50 hover:text-[#C9A646] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A646]/50"
+            className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-white/20 px-8 py-3 text-sm font-medium text-white transition hover:border-premium-gold/50 hover:text-premium-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-premium-gold/50"
           >
             See How It Works
           </a>

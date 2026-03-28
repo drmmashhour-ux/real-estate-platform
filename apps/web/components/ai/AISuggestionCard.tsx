@@ -9,7 +9,7 @@ type Props = {
   accent?: string;
 };
 
-export function AISuggestionCard({ title, children, footer, accent = "#C9A646" }: Props) {
+export function AISuggestionCard({ title, children, footer, accent = "var(--color-premium-gold)" }: Props) {
   return (
     <div
       className="rounded-2xl border border-white/10 bg-black/30 p-4"

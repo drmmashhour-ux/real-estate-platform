@@ -4,8 +4,8 @@
 export const colors = {
   background: "#0B0B0B",
   card: "#121212",
-  gold: "#C9A646",
-  goldHover: "#E8C547",
+  gold: "#D4AF37",
+  goldHover: "#D4AF37",
   textPrimary: "#FFFFFF",
   textSecondary: "#A1A1A1",
   success: "#22C55E",

@@ -41,7 +41,7 @@ export function TimelineItem({
 
   return (
     <li className="relative border-l border-slate-700 pl-5 pb-6 last:pb-0">
-      <span className="absolute -left-[5px] top-1.5 h-2.5 w-2.5 rounded-full bg-[#C9A646] ring-2 ring-slate-950" />
+      <span className="absolute -left-[5px] top-1.5 h-2.5 w-2.5 rounded-full bg-premium-gold ring-2 ring-slate-950" />
       <div className="flex flex-wrap items-center gap-2">
         {badge ? <TimelineBadge variant={badge}>{badgeLabel ?? badge}</TimelineBadge> : null}
         <span className="text-sm font-medium text-slate-100">{title}</span>

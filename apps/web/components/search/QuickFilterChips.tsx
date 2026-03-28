@@ -63,12 +63,12 @@ export function QuickFilterChips({ tone = "gold" }: { tone?: "gold" | "slate" | 
     applyPatch({ features: nextFeatures });
   };
 
-  const gold = "border-white/15 bg-black/30 text-slate-300 hover:border-[#C9A646]/40 hover:text-white";
-  const goldOn = "border-[#C9A646]/50 bg-[#C9A646]/15 text-[#E8C547]";
+  const gold = "border-white/15 bg-black/30 text-slate-300 hover:border-premium-gold/40 hover:text-white";
+  const goldOn = "border-premium-gold/50 bg-premium-gold/15 text-premium-gold";
   const slate = "border-slate-600 bg-slate-800/60 text-slate-300 hover:border-emerald-500/40";
   const slateOn = "border-emerald-500/50 bg-emerald-500/10 text-emerald-200";
   const hero = "border-slate-200/80 bg-white/95 text-slate-800 shadow-sm hover:border-slate-300";
-  const heroOn = "border-[#C9A646] bg-[#C9A646]/15 text-slate-900";
+  const heroOn = "border-premium-gold bg-premium-gold/15 text-slate-900";
 
   return (
     <div className="flex flex-wrap gap-2 pt-1">

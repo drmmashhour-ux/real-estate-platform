@@ -37,7 +37,7 @@ export function BrokerBenchmarkPanel({ rows }: { rows: BenchmarkBrokerRow[] }) {
           {rows.map((r) => (
             <tr key={r.brokerUserId} className="border-b border-white/5 last:border-0">
               <td className="px-4 py-3 font-medium text-slate-100">{r.label}</td>
-              <td className="px-4 py-3 text-[#C9A646]">
+              <td className="px-4 py-3 text-premium-gold">
                 {r.reputation != null ? Math.round(r.reputation.score) : "—"}
               </td>
               <td className="px-4 py-3 text-slate-300">

@@ -181,10 +181,10 @@ export function SalesAssistantPanel({
 
   return (
     <>
-      <section className="mt-8 rounded-2xl border-2 border-[#C9A646]/40 bg-gradient-to-b from-[#1A1508] to-[#121212] p-5 shadow-lg shadow-black/40">
+      <section className="mt-8 rounded-2xl border-2 border-premium-gold/40 bg-gradient-to-b from-[#1A1508] to-[#121212] p-5 shadow-lg shadow-black/40">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#C9A646]">Sales Assistant</p>
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-premium-gold">Sales Assistant</p>
             <h2 className="mt-1 text-xl font-bold text-white">Close with confidence</h2>
             <p className="mt-1 text-sm text-[#B3B3B3]">
               Live scripts, next step, and one-tap actions—built for Mohamed Al Mashhour (LECIPM).
@@ -196,22 +196,22 @@ export function SalesAssistantPanel({
               void logAssistantEvent(lead.id, "sales_call_started");
               setCallMode(true);
             }}
-            className="shrink-0 rounded-xl bg-[#C9A646] px-4 py-3 text-sm font-bold text-[#0B0B0B] hover:opacity-95"
+            className="shrink-0 rounded-xl bg-premium-gold px-4 py-3 text-sm font-bold text-[#0B0B0B] hover:opacity-95"
           >
             Start call mode
           </button>
         </div>
 
         {/* Next best action */}
-        <div className="mt-6 rounded-xl border border-[#C9A646]/30 bg-black/30 p-4">
+        <div className="mt-6 rounded-xl border border-premium-gold/30 bg-black/30 p-4">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-[#C9A646]">Next best action</p>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-premium-gold">Next best action</p>
             {lead.score >= 80 ? (
               <span className="rounded-full border border-orange-500/50 bg-orange-500/15 px-2 py-0.5 text-[10px] font-bold text-orange-200">
                 Urgent
               </span>
             ) : lead.score >= 50 ? (
-              <span className="rounded-full border border-[#C9A646]/40 bg-[#C9A646]/10 px-2 py-0.5 text-[10px] font-bold text-[#E8C547]">
+              <span className="rounded-full border border-premium-gold/40 bg-premium-gold/10 px-2 py-0.5 text-[10px] font-bold text-premium-gold">
                 Priority
               </span>
             ) : null}
@@ -221,7 +221,7 @@ export function SalesAssistantPanel({
           <button
             type="button"
             onClick={() => runNextAction()}
-            className="mt-3 rounded-xl border border-[#C9A646] bg-[#C9A646]/15 px-4 py-2 text-sm font-bold text-[#E8C547] hover:bg-[#C9A646]/25"
+            className="mt-3 rounded-xl border border-premium-gold bg-premium-gold/15 px-4 py-2 text-sm font-bold text-premium-gold hover:bg-premium-gold/25"
           >
             Do this now
           </button>
@@ -234,7 +234,7 @@ export function SalesAssistantPanel({
             <ul className="mt-2 space-y-1 text-sm text-[#E5E5E5]">
               <li>
                 <span className="text-[#737373]">Stage:</span>{" "}
-                <span className="capitalize text-[#E8C547]">{stage.replace(/_/g, " ")}</span>
+                <span className="capitalize text-premium-gold">{stage.replace(/_/g, " ")}</span>
               </li>
               <li>
                 <span className="text-[#737373]">Market:</span> {city || "—"}
@@ -247,7 +247,7 @@ export function SalesAssistantPanel({
               </li>
               <li>
                 <span className="text-[#737373]">Score:</span>{" "}
-                <span className="font-bold text-[#E8C547]">{lead.score}</span>
+                <span className="font-bold text-premium-gold">{lead.score}</span>
               </li>
             </ul>
           </div>
@@ -256,20 +256,20 @@ export function SalesAssistantPanel({
             <p className="text-[10px] font-semibold uppercase text-[#737373]">Suggested script — {script.title}</p>
             <dl className="mt-2 space-y-2 text-sm text-[#B3B3B3]">
               <div>
-                <dt className="text-xs font-bold uppercase text-[#C9A646]/90">Opening</dt>
+                <dt className="text-xs font-bold uppercase text-premium-gold/90">Opening</dt>
                 <dd className="mt-0.5 leading-relaxed text-white">{script.opening}</dd>
               </div>
               <div>
-                <dt className="text-xs font-bold uppercase text-[#C9A646]/90">Questions</dt>
+                <dt className="text-xs font-bold uppercase text-premium-gold/90">Questions</dt>
                 <dd className="mt-0.5 leading-relaxed">{script.questions}</dd>
               </div>
               <div>
-                <dt className="text-xs font-bold uppercase text-[#C9A646]/90">Value</dt>
+                <dt className="text-xs font-bold uppercase text-premium-gold/90">Value</dt>
                 <dd className="mt-0.5 leading-relaxed">{script.valueStatement}</dd>
               </div>
               <div>
-                <dt className="text-xs font-bold uppercase text-[#C9A646]/90">Closing</dt>
-                <dd className="mt-0.5 font-medium text-[#E8C547]">{script.closingQuestion}</dd>
+                <dt className="text-xs font-bold uppercase text-premium-gold/90">Closing</dt>
+                <dd className="mt-0.5 font-medium text-premium-gold">{script.closingQuestion}</dd>
               </div>
             </dl>
           </div>
@@ -282,7 +282,7 @@ export function SalesAssistantPanel({
             <a
               href={brokerTel}
               onClick={() => void logAssistantEvent(lead.id, "sales_call_started")}
-              className="inline-flex items-center justify-center rounded-xl bg-[#C9A646] px-4 py-2 text-sm font-bold text-[#0B0B0B]"
+              className="inline-flex items-center justify-center rounded-xl bg-premium-gold px-4 py-2 text-sm font-bold text-[#0B0B0B]"
             >
               Call now
             </a>
@@ -298,7 +298,7 @@ export function SalesAssistantPanel({
             <a
               href={mailToClient}
               onClick={() => void logAssistantEvent(lead.id, "sales_email_sent")}
-              className="inline-flex items-center justify-center rounded-xl border border-white/20 px-4 py-2 text-sm font-semibold text-white hover:border-[#C9A646]/50"
+              className="inline-flex items-center justify-center rounded-xl border border-white/20 px-4 py-2 text-sm font-semibold text-white hover:border-premium-gold/50"
             >
               Send email
             </a>
@@ -309,7 +309,7 @@ export function SalesAssistantPanel({
                 onClick={async () => {
                   await sendFollowUpEmail("evaluation_followup_2");
                 }}
-                className="rounded-xl border border-[#C9A646]/50 px-4 py-2 text-sm font-semibold text-[#C9A646] disabled:opacity-50"
+                className="rounded-xl border border-premium-gold/50 px-4 py-2 text-sm font-semibold text-premium-gold disabled:opacity-50"
               >
                 Send template email
               </button>
@@ -319,7 +319,7 @@ export function SalesAssistantPanel({
 
         {/* Follow-up templates (copy) */}
         <div className="mt-6 rounded-xl border border-white/10 bg-[#0B0B0B]/60 p-4">
-          <p className="text-xs font-semibold uppercase tracking-wider text-[#C9A646]">Follow-up templates</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-premium-gold">Follow-up templates</p>
           <p className="mt-1 text-xs text-[#737373]">Copy prefilled messages — you edit before sending.</p>
           <div className="mt-3 flex flex-wrap gap-2">
             {(
@@ -337,7 +337,7 @@ export function SalesAssistantPanel({
                   await navigator.clipboard.writeText(FOLLOWUP_TEMPLATES[key as FollowupTemplateKey]);
                   void logAssistantEvent(lead.id, "followup_template_copied", { key });
                 }}
-                className="rounded-lg border border-[#C9A646]/40 px-3 py-1.5 text-xs font-semibold text-[#E8C547] hover:bg-[#C9A646]/10"
+                className="rounded-lg border border-premium-gold/40 px-3 py-1.5 text-xs font-semibold text-premium-gold hover:bg-premium-gold/10"
               >
                 {label}
               </button>
@@ -352,7 +352,7 @@ export function SalesAssistantPanel({
             <p className="mt-2 text-xs uppercase text-emerald-400/90">Summary</p>
             <ul className="mt-1 text-sm text-white/90">
               <li>
-                Stage: <span className="text-[#E8C547]">{stage.replace(/_/g, " ")}</span>
+                Stage: <span className="text-premium-gold">{stage.replace(/_/g, " ")}</span>
               </li>
               <li>
                 Est. value:{" "}
@@ -362,7 +362,7 @@ export function SalesAssistantPanel({
               </li>
               <li>
                 Urgency:{" "}
-                <span className="font-semibold text-[#E8C547]">
+                <span className="font-semibold text-premium-gold">
                   {lead.score >= 80 ? "High" : lead.score >= 50 ? "Medium" : "Nurture"}
                 </span>
               </li>
@@ -455,7 +455,7 @@ export function SalesAssistantPanel({
               });
               setMeetNotes("");
             }}
-            className="mt-3 rounded-xl bg-[#C9A646] px-4 py-2 text-sm font-bold text-[#0B0B0B]"
+            className="mt-3 rounded-xl bg-premium-gold px-4 py-2 text-sm font-bold text-[#0B0B0B]"
           >
             Save meeting &amp; set stage
           </button>
@@ -505,7 +505,7 @@ export function SalesAssistantPanel({
                     note: "Post-meeting: ready to close",
                   })
                 }
-                className="rounded-xl border border-[#C9A646]/50 px-3 py-2 text-xs font-semibold text-[#E8C547]"
+                className="rounded-xl border border-premium-gold/50 px-3 py-2 text-xs font-semibold text-premium-gold"
               >
                 Ready to close
               </button>
@@ -524,7 +524,7 @@ export function SalesAssistantPanel({
           <button
             type="button"
             onClick={() => setObjectionsOpen((o) => !o)}
-            className="flex w-full items-center justify-between px-4 py-3 text-left text-sm font-semibold text-[#C9A646]"
+            className="flex w-full items-center justify-between px-4 py-3 text-left text-sm font-semibold text-premium-gold"
           >
             Objection handling
             <span className="text-white">{objectionsOpen ? "−" : "+"}</span>
@@ -534,7 +534,7 @@ export function SalesAssistantPanel({
               {ASSISTANT_OBJECTIONS.map((o) => (
                 <li key={o.id} className="rounded-xl border border-white/10 bg-[#121212] p-4">
                   <p className="font-semibold text-white">{o.objection}</p>
-                  <p className="mt-2 text-sm text-[#E8C547]">
+                  <p className="mt-2 text-sm text-premium-gold">
                     <span className="text-[10px] font-bold uppercase text-[#737373]">Short answer · </span>
                     {o.shortAnswer}
                   </p>
@@ -551,7 +551,7 @@ export function SalesAssistantPanel({
         {/* Performance */}
         {stats ? (
           <div className="mt-6 rounded-xl border border-white/10 bg-[#121212]/80 p-4">
-            <p className="text-sm font-semibold text-[#C9A646]">Your performance (30 days)</p>
+            <p className="text-sm font-semibold text-premium-gold">Your performance (30 days)</p>
             <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-5 text-center text-sm">
               <div>
                 <p className="text-2xl font-bold text-white">{stats.callsMade}</p>
@@ -588,7 +588,7 @@ export function SalesAssistantPanel({
         >
           <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col">
             <div className="flex items-center justify-between gap-4">
-              <p className="text-xs font-bold uppercase tracking-widest text-[#C9A646]">Call mode</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-premium-gold">Call mode</p>
               <button
                 type="button"
                 onClick={() => setCallMode(false)}
@@ -598,11 +598,11 @@ export function SalesAssistantPanel({
               </button>
             </div>
             <h2 className="mt-4 text-2xl font-bold leading-tight sm:text-3xl">{script.title}</h2>
-            <div className="mt-6 flex-1 overflow-y-auto rounded-2xl border border-[#C9A646]/25 bg-[#121212] p-6">
+            <div className="mt-6 flex-1 overflow-y-auto rounded-2xl border border-premium-gold/25 bg-[#121212] p-6">
               <p className="text-lg font-semibold leading-relaxed text-white sm:text-xl">{script.opening}</p>
               <p className="mt-6 text-base leading-relaxed text-[#B3B3B3]">{script.questions}</p>
               <p className="mt-6 text-base leading-relaxed text-[#B3B3B3]">{script.valueStatement}</p>
-              <p className="mt-6 text-lg font-medium text-[#E8C547]">{script.closingQuestion}</p>
+              <p className="mt-6 text-lg font-medium text-premium-gold">{script.closingQuestion}</p>
               <div className="mt-8 border-t border-white/10 pt-6">
                 <p className="text-xs font-bold uppercase text-[#737373]">Key questions</p>
                 <ul className="mt-3 list-inside list-disc space-y-2 text-base text-white">
@@ -616,7 +616,7 @@ export function SalesAssistantPanel({
                 <ul className="mt-3 space-y-3 text-sm text-[#B3B3B3]">
                   {ASSISTANT_OBJECTIONS.map((o) => (
                     <li key={o.id}>
-                      <span className="font-semibold text-[#E8C547]">{o.objection}:</span> {o.shortAnswer}
+                      <span className="font-semibold text-premium-gold">{o.objection}:</span> {o.shortAnswer}
                     </li>
                   ))}
                 </ul>
@@ -630,7 +630,7 @@ export function SalesAssistantPanel({
                   void logAssistantEvent(lead.id, "sales_call_started", { outcome: "marked_contacted" });
                   onReload();
                 }}
-                className="rounded-xl bg-[#C9A646] px-4 py-3 text-sm font-bold text-[#0B0B0B]"
+                className="rounded-xl bg-premium-gold px-4 py-3 text-sm font-bold text-[#0B0B0B]"
               >
                 Mark as contacted
               </button>
@@ -640,7 +640,7 @@ export function SalesAssistantPanel({
                   await onPatch({ pipelineStatus: "qualified" });
                   onReload();
                 }}
-                className="rounded-xl border border-[#C9A646]/50 px-4 py-3 text-sm font-semibold text-[#C9A646]"
+                className="rounded-xl border border-premium-gold/50 px-4 py-3 text-sm font-semibold text-premium-gold"
               >
                 Mark qualified
               </button>

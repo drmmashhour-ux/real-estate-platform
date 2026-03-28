@@ -408,14 +408,14 @@ export function BuyerListingDetail({ listing }: { listing: BuyerListingPayload }
     <main className="min-h-screen bg-[#0B0B0B] pb-28 text-white">
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <Link href="/listings" className="text-sm font-medium text-[#C9A646] hover:text-[#E8D5A0]">
+          <Link href="/listings" className="text-sm font-medium text-premium-gold hover:text-[#E8D5A0]">
             ← All listings
           </Link>
           <button
             type="button"
             onClick={() => void toggleSave()}
             disabled={submitting || saved === null}
-            className="rounded-full border border-white/15 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-white/5 disabled:opacity-50"
+            className="rounded-full border border-white/15 px-4 py-2 text-sm font-medium text-premium-text-muted hover:bg-white/5 disabled:opacity-50"
           >
             {saved === null ? "…" : saved ? "★ Saved" : "☆ Save listing"}
           </button>
@@ -430,7 +430,7 @@ export function BuyerListingDetail({ listing }: { listing: BuyerListingPayload }
               {listing.listingCode ? (
                 <p className="mt-2 font-mono text-xs tracking-wide text-slate-500">Listing code · {listing.listingCode}</p>
               ) : null}
-              <p className="mt-2 text-2xl font-bold text-[#C9A646]">{priceLabel}</p>
+              <p className="mt-2 text-2xl font-bold text-premium-gold">{priceLabel}</p>
               <p className="mt-2 text-[#B3B3B3]">
                 {listing.address}, {listing.city}
               </p>
@@ -444,9 +444,9 @@ export function BuyerListingDetail({ listing }: { listing: BuyerListingPayload }
                     href={mapUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/[0.04] px-4 py-2.5 text-sm font-medium text-white transition hover:border-[#C9A646]/40 hover:bg-white/[0.06]"
+                    className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/[0.04] px-4 py-2.5 text-sm font-medium text-white transition hover:border-premium-gold/40 hover:bg-white/[0.06]"
                   >
-                    <MapPin className="h-4 w-4 shrink-0 text-[#C9A646]" aria-hidden />
+                    <MapPin className="h-4 w-4 shrink-0 text-premium-gold" aria-hidden />
                     View on map
                     <ExternalLink className="h-3.5 w-3.5 opacity-60" aria-hidden />
                   </a>
@@ -454,9 +454,9 @@ export function BuyerListingDetail({ listing }: { listing: BuyerListingPayload }
                 <button
                   type="button"
                   onClick={() => void shareListing()}
-                  className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/[0.04] px-4 py-2.5 text-sm font-medium text-white transition hover:border-[#C9A646]/40 hover:bg-white/[0.06]"
+                  className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/[0.04] px-4 py-2.5 text-sm font-medium text-white transition hover:border-premium-gold/40 hover:bg-white/[0.06]"
                 >
-                  <Share2 className="h-4 w-4 shrink-0 text-[#C9A646]" aria-hidden />
+                  <Share2 className="h-4 w-4 shrink-0 text-premium-gold" aria-hidden />
                   Share listing
                 </button>
               </div>
@@ -512,13 +512,13 @@ export function BuyerListingDetail({ listing }: { listing: BuyerListingPayload }
           <aside className="space-y-6 lg:sticky lg:top-24 lg:self-start">
             <BuyerPropertyAiCards listing={listing} />
             <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
-              <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-[#C9A646]">Listing representative</h2>
+              <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-premium-gold">Listing representative</h2>
               <p className="mt-2 text-sm text-[#B3B3B3]">
                 FSBO listing — you&apos;re contacting the seller (or their representative) for this property.
               </p>
             </div>
 
-            <div className="rounded-2xl border border-[#C9A646]/30 bg-[#0f0f0f] p-6 shadow-[0_0_32px_rgba(201,166,70,0.08)]">
+            <div className="rounded-2xl border border-premium-gold/30 bg-[#0f0f0f] p-6 shadow-[0_0_32px_rgb(var(--premium-gold-channels) / 0.08)]">
               <h2 className="text-lg font-semibold text-white">Get help</h2>
               <p className="mt-2 text-sm text-[#B3B3B3]">Three ways to move forward — pick what fits.</p>
 
@@ -538,7 +538,7 @@ export function BuyerListingDetail({ listing }: { listing: BuyerListingPayload }
                       setFeedback(null);
                       setFormError(null);
                     }}
-                    className="mt-2 w-full rounded-xl bg-[#C9A646] px-4 py-3 text-sm font-bold text-black transition hover:brightness-110"
+                    className="mt-2 w-full rounded-xl bg-premium-gold px-4 py-3 text-sm font-bold text-black transition hover:brightness-110"
                   >
                     Contact listing broker
                   </button>
@@ -553,7 +553,7 @@ export function BuyerListingDetail({ listing }: { listing: BuyerListingPayload }
                       setFeedback(null);
                       setFormError(null);
                     }}
-                    className="mt-2 w-full rounded-xl border border-white/10 bg-white/[0.06] px-4 py-3 text-sm font-semibold text-white transition hover:border-[#C9A646]/40"
+                    className="mt-2 w-full rounded-xl border border-white/10 bg-white/[0.06] px-4 py-3 text-sm font-semibold text-white transition hover:border-premium-gold/40"
                   >
                     Get help from platform broker
                   </button>
@@ -654,7 +654,7 @@ export function BuyerListingDetail({ listing }: { listing: BuyerListingPayload }
                 type="button"
                 disabled={submitting}
                 onClick={() => void submitContact()}
-                className="flex-1 rounded-lg bg-[#C9A646] py-2.5 text-sm font-bold text-black disabled:opacity-50"
+                className="flex-1 rounded-lg bg-premium-gold py-2.5 text-sm font-bold text-black disabled:opacity-50"
               >
                 {submitting ? "Sending…" : "Send"}
               </button>
@@ -733,7 +733,7 @@ export function BuyerListingDetail({ listing }: { listing: BuyerListingPayload }
                 type="button"
                 disabled={submitting}
                 onClick={() => void submitPlatform()}
-                className="flex-1 rounded-lg bg-[#C9A646] py-2.5 text-sm font-bold text-black disabled:opacity-50"
+                className="flex-1 rounded-lg bg-premium-gold py-2.5 text-sm font-bold text-black disabled:opacity-50"
               >
                 {submitting ? "Submitting…" : "Submit"}
               </button>
@@ -894,11 +894,11 @@ export function BuyerListingDetail({ listing }: { listing: BuyerListingPayload }
             <ul className="mt-4 space-y-3 text-sm text-slate-300">
               <li className="flex justify-between rounded-lg border border-white/10 px-3 py-2">
                 <span>One-time advisory</span>
-                <span className="font-semibold text-[#C9A646]">$99</span>
+                <span className="font-semibold text-premium-gold">$99</span>
               </li>
               <li className="flex justify-between rounded-lg border border-white/10 px-3 py-2">
                 <span>Monthly</span>
-                <span className="font-semibold text-[#C9A646]">$49/mo</span>
+                <span className="font-semibold text-premium-gold">$49/mo</span>
               </li>
             </ul>
             <div className="mt-6 flex flex-col gap-2">

@@ -41,7 +41,7 @@ export function AdminDemoGenerateClient() {
         type="button"
         disabled={loading}
         onClick={() => void generate()}
-        className="rounded-xl bg-[#C9A646] px-4 py-2 text-sm font-semibold text-[#0B0B0B] disabled:opacity-50"
+        className="rounded-xl bg-premium-gold px-4 py-2 text-sm font-semibold text-[#0B0B0B] disabled:opacity-50"
       >
         {loading ? "Creating…" : "Generate test user"}
       </button>

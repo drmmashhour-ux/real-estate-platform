@@ -23,7 +23,7 @@ export default async function AdminTrustGraphCaseDetailPage({ params }: { params
     return (
       <div className="p-8 text-slate-400">
         TrustGraph disabled. Set TRUSTGRAPH_ENABLED=true.{" "}
-        <Link href="/admin/trustgraph" className="text-[#C9A646] hover:underline">
+        <Link href="/admin/trustgraph" className="text-premium-gold hover:underline">
           Back
         </Link>
       </div>
@@ -34,7 +34,7 @@ export default async function AdminTrustGraphCaseDetailPage({ params }: { params
     return (
       <div className="p-8 text-slate-400">
         Admin queue disabled. Set TRUSTGRAPH_ENABLED=true and do not set TRUSTGRAPH_ADMIN_QUEUE_ENABLED=false.{" "}
-        <Link href="/admin/dashboard" className="text-[#C9A646] hover:underline">
+        <Link href="/admin/dashboard" className="text-premium-gold hover:underline">
           Admin dashboard
         </Link>
       </div>
@@ -72,7 +72,7 @@ export default async function AdminTrustGraphCaseDetailPage({ params }: { params
             <h1 className="text-xl font-semibold text-white">Verification case</h1>
             <p className="mt-1 font-mono text-xs text-slate-500">{c.id}</p>
           </div>
-          <Link href="/admin/trustgraph" className="text-sm text-[#C9A646] hover:underline">
+          <Link href="/admin/trustgraph" className="text-sm text-premium-gold hover:underline">
             ← Queue
           </Link>
         </div>

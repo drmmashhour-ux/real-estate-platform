@@ -83,7 +83,7 @@ export function ImmoContactsAdminClient() {
       </div>
 
       <section className="rounded-2xl border border-slate-700 bg-slate-900/50 p-4">
-        <h2 className="text-sm font-semibold text-[#C9A646]">Manual deal ↔ lead link</h2>
+        <h2 className="text-sm font-semibold text-premium-gold">Manual deal ↔ lead link</h2>
         <p className="mt-1 text-xs text-slate-500">Paste deal UUID and lead UUID (empty lead = unlink).</p>
         <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
           <input
@@ -102,7 +102,7 @@ export function ImmoContactsAdminClient() {
             type="button"
             disabled={busy}
             onClick={() => void linkDeal()}
-            className="rounded-lg bg-[#C9A646] px-4 py-2 text-sm font-semibold text-[#0B0B0B] disabled:opacity-50"
+            className="rounded-lg bg-premium-gold px-4 py-2 text-sm font-semibold text-[#0B0B0B] disabled:opacity-50"
           >
             {busy ? "…" : "Apply"}
           </button>
@@ -133,7 +133,7 @@ export function ImmoContactsAdminClient() {
               rows.map((r) => (
                 <tr key={r.id} className="border-b border-slate-800/80">
                   <td className="px-3 py-2">
-                    <span className="rounded bg-[#C9A646]/20 px-2 py-0.5 font-semibold text-[#E8D5A3]">ImmoContact</span>
+                    <span className="rounded bg-premium-gold/20 px-2 py-0.5 font-semibold text-premium-gold">ImmoContact</span>
                     <div className="mt-1 font-mono text-[10px] text-slate-500">{r.id.slice(0, 12)}…</div>
                     <div className="text-slate-400">{r.name}</div>
                   </td>
@@ -144,7 +144,7 @@ export function ImmoContactsAdminClient() {
                   </td>
                   <td className="px-3 py-2">
                     {r.listingCode ? (
-                      <span className="font-mono text-[#C9A646]">{r.listingCode}</span>
+                      <span className="font-mono text-premium-gold">{r.listingCode}</span>
                     ) : (
                       <span className="font-mono text-slate-500">{r.listingId?.slice(0, 8)}…</span>
                     )}
@@ -155,7 +155,7 @@ export function ImmoContactsAdminClient() {
                   <td className="px-3 py-2">
                     {r.deal ? (
                       <div>
-                        <Link href={`/dashboard/deals/${r.deal.id}`} className="text-[#C9A646] hover:underline">
+                        <Link href={`/dashboard/deals/${r.deal.id}`} className="text-premium-gold hover:underline">
                           {r.deal.id.slice(0, 8)}…
                         </Link>
                         <div className="text-slate-500">{r.deal.status}</div>

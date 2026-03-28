@@ -32,10 +32,10 @@ export default async function CaseStudyDetailPage({ params }: Props) {
   return (
     <main className="min-h-screen bg-[#0B0B0B] text-white">
       <article className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8">
-        <Link href="/case-studies" className="text-sm text-[#C9A646] hover:underline">
+        <Link href="/case-studies" className="text-sm text-premium-gold hover:underline">
           ← All case studies
         </Link>
-        <p className="mt-6 text-xs font-semibold uppercase tracking-wider text-[#C9A646]">
+        <p className="mt-6 text-xs font-semibold uppercase tracking-wider text-premium-gold">
           {study.city ?? "Quebec market"}
         </p>
         <h1 className="mt-2 text-3xl font-bold sm:text-4xl">{study.title}</h1>
@@ -48,21 +48,21 @@ export default async function CaseStudyDetailPage({ params }: Props) {
         ) : null}
 
         <section className="mt-12 rounded-2xl border border-white/10 bg-[#121212] p-6 sm:p-8">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-[#C9A646]">Challenge</h2>
+          <h2 className="text-sm font-bold uppercase tracking-wider text-premium-gold">Challenge</h2>
           <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-[#E5E5E5]">{study.challenge}</p>
         </section>
 
         <section className="mt-6 rounded-2xl border border-white/10 bg-[#121212] p-6 sm:p-8">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-[#C9A646]">Approach</h2>
+          <h2 className="text-sm font-bold uppercase tracking-wider text-premium-gold">Approach</h2>
           <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-[#E5E5E5]">{study.solution}</p>
         </section>
 
-        <section className="mt-6 rounded-2xl border border-[#C9A646]/30 bg-[#121212] p-6 sm:p-8">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-[#C9A646]">Result</h2>
+        <section className="mt-6 rounded-2xl border border-premium-gold/30 bg-[#121212] p-6 sm:p-8">
+          <h2 className="text-sm font-bold uppercase tracking-wider text-premium-gold">Result</h2>
           <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-[#E5E5E5]">{study.result}</p>
         </section>
 
-        <div className="mt-12 rounded-2xl border border-[#C9A646]/25 bg-[#121212] p-6 sm:p-8">
+        <div className="mt-12 rounded-2xl border border-premium-gold/25 bg-[#121212] p-6 sm:p-8">
           <h2 className="text-lg font-bold text-white">Talk to a broker</h2>
           <p className="mt-2 text-sm text-[#737373]">Same professional standards — your situation is unique.</p>
           <div className="mt-6">

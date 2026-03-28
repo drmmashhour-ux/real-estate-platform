@@ -10,13 +10,13 @@ html {
   0%,
   100% {
     box-shadow:
-      0 0 0 0 rgba(201, 166, 70, 0.45),
-      0 8px 32px rgba(201, 166, 70, 0.22);
+      0 0 0 0 rgba(212, 175, 55, 0.45),
+      0 8px 32px rgba(212, 175, 55, 0.22);
   }
   50% {
     box-shadow:
-      0 0 0 6px rgba(201, 166, 70, 0.12),
-      0 12px 40px rgba(201, 166, 70, 0.32);
+      0 0 0 6px rgba(212, 175, 55, 0.12),
+      0 12px 40px rgba(212, 175, 55, 0.32);
   }
 }
 
@@ -29,13 +29,18 @@ html {
   --color-premium-bg: #0b0b0b;
   --color-premium-surface: #121212;
   --color-premium-card: #111111;
-  /* Single platform gold — LECIPM, Le Carrefour Immobilier Prestige, accents (use `text-premium-gold`, etc.). */
-  --color-premium-gold: #c9a646;
-  --color-premium-gold-hover: #d4b35a;
-  --color-premium-gold-muted: #a68432;
+  /* Canonical LECIPM gold (matches BRAND.primaryColor / launch spec #D4AF37). */
+  --color-premium-gold: #d4af37;
+  --color-premium-gold-hover: #e5c158;
+  --color-premium-gold-muted: #b8942e;
   --color-premium-text: #ffffff;
   --color-premium-text-muted: #b0b0b0;
   --color-premium-secondary: #b0b0b0;
+  --color-brand-background: #0b0b0b;
+  --color-brand-primary: #d4af37;
+  --color-brand-accent: #d4af37;
+  /** Alias for `text-brand-gold` / `bg-brand-gold` / `border-brand-gold` utilities (same as premium-gold). */
+  --color-brand-gold: #d4af37;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -49,18 +54,20 @@ html {
   --premium-bg: #0b0b0b;
   --premium-card: #111111;
   --premium-surface: #111111;
-  --premium-gold: #c9a646;
-  --premium-gold-hover: #e0b84f;
-  --premium-gold-accent: #c9a646;
+  --premium-gold: #d4af37;
+  /** Space-separated RGB for `rgb(var(--premium-gold-channels) / α)` in inline styles & arbitrary shadows. */
+  --premium-gold-channels: 212 175 55;
+  --premium-gold-hover: #e5c158;
+  --premium-gold-accent: #d4af37;
   --premium-text: #ffffff;
   --premium-text-muted: #b0b0b0;
-  --color-brand: #c9a646;
-  --color-brand-muted: #a68432;
+  --color-brand: #d4af37;
+  --color-brand-muted: #b8942e;
   --color-secondary: #111111;
-  --color-cta: #c9a646;
-  --color-cta-hover: #e0b84f;
-  --color-accent: #c9a646;
-  --color-gold: #c9a646;
+  --color-cta: #d4af37;
+  --color-cta-hover: #e5c158;
+  --color-accent: #d4af37;
+  --color-gold: #d4af37;
   --color-text: #ffffff;
   --color-text-muted: #b0b0b0;
   --color-text-secondary: #b0b0b0;
@@ -70,15 +77,46 @@ html {
   --color-border: #2a2a2a;
   --color-border-strong: #3f3f3f;
   --shadow-card: 0 2px 8px rgb(0 0 0 / 0.45), 0 12px 40px rgb(0 0 0 / 0.35);
-  --shadow-card-hover: 0 8px 24px rgb(0 0 0 / 0.5), 0 20px 50px rgb(212 175 55 / 0.06);
+  --shadow-card-hover: 0 8px 24px rgb(0 0 0 / 0.5), 0 20px 50px rgb(212 175 55 / 0.1);
   --radius-lg: 1rem;
   --radius-xl: 1.25rem;
 }
 
-/* Brand wordmarks + UI accents — same gold as `--color-premium-gold` (avoid mixing #D4AF37). */
+/* Brand wordmarks + UI accents — same gold as `--color-premium-gold`. */
 @layer utilities {
   .text-brand-gold {
     color: var(--color-premium-gold);
+  }
+  .bg-brand-background {
+    background-color: var(--color-brand-background);
+  }
+  .border-brand-gold {
+    border-color: color-mix(in srgb, var(--color-premium-gold) 55%, transparent);
+  }
+  .ring-brand-gold {
+    --tw-ring-color: var(--color-premium-gold);
+  }
+
+  /** Standard luxury surface — use for dashboard + marketing cards. */
+  .lecipm-card {
+    border-radius: var(--radius-xl);
+    border: 1px solid rgb(255 255 255 / 0.1);
+    background-color: var(--color-premium-card);
+    box-shadow: var(--shadow-card);
+    padding: 1.25rem;
+    transition:
+      border-color 0.2s ease,
+      box-shadow 0.2s ease;
+  }
+
+  .lecipm-card:hover {
+    border-color: rgb(var(--premium-gold-channels) / 0.22);
+    box-shadow: var(--shadow-card-hover);
+  }
+
+  .lecipm-card-static:hover {
+    border-color: rgb(255 255 255 / 0.1);
+    box-shadow: var(--shadow-card);
   }
 }
 
@@ -94,11 +132,13 @@ html {
   --shadow-card-hover: 0 4px 12px rgb(0 0 0 / 0.25), 0 16px 40px rgb(0 0 0 / 0.35);
 }
 
-/* Base typography — background comes from layout (dark shell) or page (light marketing) */
+/* Base typography — default shell is black / white (marketing + app) */
 body {
   font-family: var(--font-sans);
   font-size: var(--font-size-body);
-  color: var(--color-text);
+  color: #ffffff;
+  background-color: #0b0b0b;
+  min-height: 100vh;
 }
 
 /* Display titles — serif (Cormorant Garamond via layout) */
@@ -119,13 +159,13 @@ body {
 }
 @media (prefers-reduced-motion: no-preference) {
   .card-premium:hover {
-    @apply scale-[1.01] border-[#C9A646]/28;
+    @apply scale-[1.01] border-[#D4AF37]/28;
     box-shadow: var(--shadow-card-hover);
   }
 }
 @media (prefers-reduced-motion: reduce) {
   .card-premium:hover {
-    @apply border-[#C9A646]/35;
+    @apply border-[#D4AF37]/35;
     box-shadow: var(--shadow-card-hover);
   }
 }
@@ -137,13 +177,13 @@ body {
 }
 @media (prefers-reduced-motion: no-preference) {
   .property-card-premium:hover {
-    @apply scale-[1.01] border-[#C9A646]/35;
+    @apply scale-[1.01] border-[#D4AF37]/35;
     box-shadow: var(--shadow-card-hover);
   }
 }
 @media (prefers-reduced-motion: reduce) {
   .property-card-premium:hover {
-    @apply border-[#C9A646]/35;
+    @apply border-[#D4AF37]/35;
     box-shadow: var(--shadow-card-hover);
   }
 }
@@ -194,26 +234,26 @@ body {
 }
 
 .btn-primary {
-  @apply inline-flex min-h-[44px] items-center justify-center rounded-xl px-4 py-3 text-sm font-bold text-[#0b0b0b] shadow-md transition duration-300 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A646] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b0b0b] disabled:pointer-events-none disabled:opacity-45;
-  background: linear-gradient(135deg, #d4b35a 0%, #c9a646 48%, #a68432 100%);
-  box-shadow: 0 4px 24px rgb(201 166 70 / 0.32);
+  @apply inline-flex min-h-[44px] items-center justify-center rounded-xl px-4 py-3 text-sm font-bold text-[#0b0b0b] shadow-md transition duration-300 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b0b0b] disabled:pointer-events-none disabled:opacity-45;
+  background: linear-gradient(135deg, #e5c158 0%, #d4af37 48%, #b8942e 100%);
+  box-shadow: 0 4px 24px rgb(212 175 55 / 0.32);
 }
 .btn-primary:hover {
-  background: linear-gradient(135deg, #e0c46a 0%, #d4b35a 45%, #c9a646 100%);
+  background: linear-gradient(135deg, #d4af37 0%, #e5c158 45%, #d4af37 100%);
   box-shadow:
-    0 10px 36px rgb(201 166 70 / 0.42),
-    0 0 28px rgb(201 166 70 / 0.22);
+    0 10px 36px rgb(212 175 55 / 0.42),
+    0 0 28px rgb(212 175 55 / 0.22);
 }
 .btn-primary:focus-visible {
   --tw-ring-color: var(--premium-gold);
 }
 
 .btn-secondary {
-  @apply inline-flex min-h-[44px] items-center justify-center rounded-xl border-2 border-[#C9A646] bg-[#111111] px-4 py-3 text-sm font-bold text-[#C9A646] transition duration-300 ease-out hover:border-[#d4b35a] hover:bg-[#161616] hover:text-[#e8d089] hover:shadow-[0_0_24px_rgba(201,166,70,0.22)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A646] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b0b0b] disabled:pointer-events-none disabled:opacity-45;
+  @apply inline-flex min-h-[44px] items-center justify-center rounded-xl border-2 border-[#D4AF37] bg-[#111111] px-4 py-3 text-sm font-bold text-[#D4AF37] transition duration-300 ease-out hover:border-[#e5c158] hover:bg-[#161616] hover:text-[#d4af37] hover:shadow-[0_0_24px_rgba(212,175,55,0.22)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b0b0b] disabled:pointer-events-none disabled:opacity-45;
 }
 
 .input-premium {
-  @apply w-full rounded-xl border border-white/15 bg-[#111111] px-4 py-3 text-white placeholder:text-premium-secondary/75 transition focus:border-[#C9A646] focus:outline-none focus:ring-2 focus:ring-[#C9A646]/25;
+  @apply w-full rounded-xl border border-white/15 bg-[#111111] px-4 py-3 text-white placeholder:text-premium-secondary/75 transition focus:border-[#D4AF37] focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/25;
 }
 
 .invoice-doc-row {

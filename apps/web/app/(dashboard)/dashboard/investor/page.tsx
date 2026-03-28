@@ -71,13 +71,13 @@ export default async function InvestorDashboardPage() {
       <div className="space-y-8">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <p className="text-xs uppercase tracking-wider text-[#C9A646]">Portfolio workspace</p>
+            <p className="text-xs uppercase tracking-wider text-premium-gold">Portfolio workspace</p>
             <h1 className="text-2xl font-bold text-white">Saved scenarios & tools</h1>
             <p className="mt-1 text-sm text-slate-500">Estimates only — not advice.</p>
           </div>
           <Link
             href="/invest/portfolio"
-            className="rounded-xl bg-[#C9A646] px-5 py-2.5 text-sm font-bold text-black"
+            className="rounded-xl bg-premium-gold px-5 py-2.5 text-sm font-bold text-black"
           >
             Open portfolio planner
           </Link>
@@ -125,7 +125,7 @@ export default async function InvestorDashboardPage() {
         {isDealAnalyzerPortfolioMonitoringEnabled() ? <PortfolioMonitoringPanel enabled /> : null}
 
         <section className="rounded-xl border border-white/10 bg-slate-900/40 p-5">
-          <p className="text-xs font-semibold uppercase tracking-wider text-[#C9A646]">FSBO listing labels</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-premium-gold">FSBO listing labels</p>
           <p className="mt-2 text-sm text-slate-400">
             On FSBO properties we show a rules-based tag such as{" "}
             <span className="text-emerald-300/95">Good deal</span>,{" "}
@@ -133,7 +133,7 @@ export default async function InvestorDashboardPage() {
             <span className="text-red-300/95">High risk investment</span> — combining trust/risk scores and simple price
             per sq ft checks. Estimates only, not advice — always do your own diligence.
           </p>
-          <Link href="/sell#browse-listings" className="mt-3 inline-block text-sm font-medium text-[#C9A646] hover:underline">
+          <Link href="/sell#browse-listings" className="mt-3 inline-block text-sm font-medium text-premium-gold hover:underline">
             Browse FSBO directory →
           </Link>
         </section>

@@ -11,14 +11,14 @@ export function ToolShell({
 }) {
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-slate-200">
-      <div className="border-b border-[#C9A646]/20 bg-black/50">
+      <div className="border-b border-premium-gold/20 bg-black/50">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-4 px-4 py-4">
           <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-[#C9A646]">LECIPM tools</p>
+            <p className="text-xs uppercase tracking-[0.2em] text-premium-gold">LECIPM tools</p>
             <h1 className="text-2xl font-semibold text-white">{title}</h1>
             {subtitle ? <p className="mt-1 text-sm text-slate-400">{subtitle}</p> : null}
           </div>
-          <Link href="/" className="text-sm text-[#C9A646] hover:text-[#E8C547]">
+          <Link href="/" className="text-sm text-premium-gold hover:text-premium-gold">
             ← Home
           </Link>
         </div>

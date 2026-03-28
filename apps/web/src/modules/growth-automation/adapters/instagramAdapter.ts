@@ -56,3 +56,27 @@ export async function publishInstagram(args: {
   }
   return { ok: true, externalPostId: published.id, raw: published };
 }
+
+/** Best-effort public fields on an IG Media id (requires a valid user access token). */
+export async function fetchInstagramMediaEngagement(args: {
+  mediaId: string;
+  accessToken: string;
+}): Promise<{ likes: number | null; comments: number | null } | null> {
+  const url = new URL(`https://graph.facebook.com/v21.0/${encodeURIComponent(args.mediaId)}`);
+  url.searchParams.set("fields", "like_count,comments_count");
+  url.searchParams.set("access_token", args.accessToken);
+  const res = await fetch(url.toString());
+  const json = (await res.json()) as {
+    like_count?: number;
+    comments_count?: number;
+    error?: { message?: string };
+  };
+  if (!res.ok) {
+    console.warn("[instagram] media engagement:", json.error?.message ?? res.status);
+    return null;
+  }
+  return {
+    likes: typeof json.like_count === "number" ? json.like_count : null,
+    comments: typeof json.comments_count === "number" ? json.comments_count : null,
+  };
+}

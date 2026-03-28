@@ -66,11 +66,11 @@ export function GrowthPanel({ className }: { className?: string }) {
   return (
     <div className={`rounded-xl border border-white/10 bg-[#0f0f0f] p-6 ${className ?? ""}`}>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-[#C9A646]/90">Growth automation</h2>
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-premium-gold/90">Growth automation</h2>
         <button
           type="button"
           onClick={() => void runBatch()}
-          className="rounded-lg border border-[#C9A646]/50 bg-[#C9A646]/10 px-3 py-1.5 text-xs font-semibold text-[#E8C547] hover:bg-[#C9A646]/20"
+          className="rounded-lg border border-premium-gold/50 bg-premium-gold/10 px-3 py-1.5 text-xs font-semibold text-premium-gold hover:bg-premium-gold/20"
         >
           Run batch now
         </button>

@@ -44,19 +44,19 @@ export default function TrustedBrokerCard({
   const waHref = getContactWhatsAppUrl(WA_MESSAGE);
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-[#C9A646]/35 bg-[#121212] shadow-[0_20px_60px_rgba(0,0,0,0.45)] transition duration-300 hover:border-[#C9A646]/55 hover:shadow-[0_24px_70px_rgba(201, 166, 70,0.08)]">
+    <div className="relative overflow-hidden rounded-2xl border border-premium-gold/35 bg-[#121212] shadow-[0_20px_60px_rgba(0,0,0,0.45)] transition duration-300 hover:border-premium-gold/55 hover:shadow-[0_24px_70px_rgb(var(--premium-gold-channels) / 0.08)]">
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.07]"
         style={{
           background:
-            "radial-gradient(ellipse 80% 50% at 20% 0%, rgba(201, 166, 70,0.35), transparent 55%), radial-gradient(ellipse 60% 40% at 100% 100%, rgba(201, 166, 70,0.12), transparent 50%)",
+            "radial-gradient(ellipse 80% 50% at 20% 0%, rgb(var(--premium-gold-channels) / 0.35), transparent 55%), radial-gradient(ellipse 60% 40% at 100% 100%, rgb(var(--premium-gold-channels) / 0.12), transparent 50%)",
         }}
         aria-hidden
       />
 
       <div className="relative grid gap-8 p-6 md:grid-cols-2 md:gap-10 md:p-10">
         <div>
-          <div className="relative mx-auto aspect-[4/5] max-w-md overflow-hidden rounded-xl border-2 border-[#C9A646]/50 bg-[#0B0B0B] shadow-inner md:mx-0">
+          <div className="relative mx-auto aspect-[4/5] max-w-md overflow-hidden rounded-xl border-2 border-premium-gold/50 bg-[#0B0B0B] shadow-inner md:mx-0">
             {!imgFailed ? (
               <Image
                 src={image}
@@ -69,7 +69,7 @@ export default function TrustedBrokerCard({
               />
             ) : (
               <div className="flex h-full min-h-[260px] flex-col items-center justify-center gap-3 bg-gradient-to-b from-[#1a1a1a] to-[#0B0B0B] p-8 text-center">
-                <span className="font-serif text-5xl font-semibold text-[#C9A646]/90" aria-hidden>
+                <span className="font-serif text-5xl font-semibold text-premium-gold/90" aria-hidden>
                   MAM
                 </span>
                 <span className="text-xs font-medium uppercase tracking-[0.2em] text-[#B3B3B3]">Broker photo</span>
@@ -81,18 +81,18 @@ export default function TrustedBrokerCard({
 
         <div className="flex flex-col gap-5">
           <header className="space-y-2 border-b border-white/10 pb-5">
-            <span className="inline-flex w-fit rounded-full bg-[#C9A646] px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-[#0B0B0B]">
+            <span className="inline-flex w-fit rounded-full bg-premium-gold px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-[#0B0B0B]">
               Verified Broker
             </span>
             <h2 className="font-serif text-2xl font-semibold tracking-tight text-white sm:text-3xl">{name}</h2>
-            <p className="text-base font-semibold text-[#C9A646]">{title}</p>
+            <p className="text-base font-semibold text-premium-gold">{title}</p>
             <p className="text-sm text-[#B3B3B3]">
               License <span className="font-mono font-semibold text-white">{licenseNumber}</span>
             </p>
             <p className="text-sm leading-snug text-[#E5E5E5]">Licensed Residential Real Estate Broker (OACIQ)</p>
           </header>
 
-          <div className="rounded-xl border border-[#C9A646]/25 bg-[#0B0B0B]/80 px-4 py-3">
+          <div className="rounded-xl border border-premium-gold/25 bg-[#0B0B0B]/80 px-4 py-3">
             <p className="text-xs leading-relaxed text-[#B3B3B3]">
               Member / compliant with Québec real estate brokerage standards (OACIQ).
             </p>
@@ -100,7 +100,7 @@ export default function TrustedBrokerCard({
               href={OACIQ_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-2 inline-flex text-xs font-semibold text-[#C9A646] underline-offset-2 hover:text-[#E8C547] hover:underline"
+              className="mt-2 inline-flex text-xs font-semibold text-premium-gold underline-offset-2 hover:text-premium-gold hover:underline"
             >
               Learn about OACIQ →
             </a>
@@ -111,7 +111,7 @@ export default function TrustedBrokerCard({
           <ul className="space-y-2 text-sm text-[#E5E5E5]">
             {BULLETS.map((item) => (
               <li key={item} className="flex gap-2.5">
-                <span className="mt-0.5 shrink-0 text-[#C9A646]" aria-hidden>
+                <span className="mt-0.5 shrink-0 text-premium-gold" aria-hidden>
                   ✦
                 </span>
                 <span>{item}</span>
@@ -119,23 +119,23 @@ export default function TrustedBrokerCard({
             ))}
           </ul>
 
-          <div className="rounded-xl border-2 border-[#C9A646]/40 bg-gradient-to-br from-[#1a1508]/80 to-[#0B0B0B] px-4 py-4">
-            <p className="text-xs font-semibold uppercase tracking-wider text-[#C9A646]">FREE for you</p>
+          <div className="rounded-xl border-2 border-premium-gold/40 bg-gradient-to-br from-[#1a1508]/80 to-[#0B0B0B] px-4 py-4">
+            <p className="text-xs font-semibold uppercase tracking-wider text-premium-gold">FREE for you</p>
             <ul className="mt-4 space-y-2 text-sm text-white">
               <li>
-                <span className="font-bold text-[#C9A646]">FREE</span> consultation
+                <span className="font-bold text-premium-gold">FREE</span> consultation
               </li>
               <li>
-                <span className="font-bold text-[#C9A646]">FREE</span> property evaluation
+                <span className="font-bold text-premium-gold">FREE</span> property evaluation
               </li>
               <li>
-                <span className="font-bold text-[#C9A646]">No</span> obligation
+                <span className="font-bold text-premium-gold">No</span> obligation
               </li>
             </ul>
           </div>
 
           <p className="text-xs text-[#B3B3B3]/90">
-            <a href={`mailto:${email}`} className="font-medium text-[#C9A646] hover:underline">
+            <a href={`mailto:${email}`} className="font-medium text-premium-gold hover:underline">
               {email}
             </a>
           </p>
@@ -143,13 +143,13 @@ export default function TrustedBrokerCard({
           <div className="flex flex-col gap-3 pt-1">
             <a
               href={consultationHref}
-              className="inline-flex w-full items-center justify-center rounded-xl bg-[#C9A646] px-6 py-3.5 text-sm font-bold text-[#0B0B0B] shadow-lg transition hover:-translate-y-0.5 hover:bg-[#C9A227] hover:shadow-[0_12px_32px_rgba(201, 166, 70,0.25)]"
+              className="inline-flex w-full items-center justify-center rounded-xl bg-premium-gold px-6 py-3.5 text-sm font-bold text-[#0B0B0B] shadow-lg transition hover:-translate-y-0.5 hover:bg-premium-gold hover:shadow-[0_12px_32px_rgb(var(--premium-gold-channels) / 0.25)]"
             >
               Get my FREE consultation
             </a>
             <a
               href={telHref}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-xl border-2 border-[#C9A646] px-6 py-3 text-sm font-semibold text-[#C9A646] transition hover:-translate-y-0.5 hover:bg-[#C9A646]/10"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl border-2 border-premium-gold px-6 py-3 text-sm font-semibold text-premium-gold transition hover:-translate-y-0.5 hover:bg-premium-gold/10"
             >
               Call now →
               <span className="font-semibold text-white">{brokerDisplay}</span>

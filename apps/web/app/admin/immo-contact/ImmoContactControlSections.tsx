@@ -46,7 +46,7 @@ export async function ImmoContactControlSections() {
   return (
     <div className="grid gap-6 lg:grid-cols-2">
       <section className="rounded-2xl border border-slate-700 bg-slate-900/40 p-4">
-        <h2 className="text-sm font-semibold text-[#C9A646]">Linked deals (ImmoContact leads)</h2>
+        <h2 className="text-sm font-semibold text-premium-gold">Linked deals (ImmoContact leads)</h2>
         <p className="mt-1 text-xs text-slate-500">CRM leads with origin ImmoContact tied to a deal.</p>
         <div className="mt-3 overflow-x-auto">
           <table className="min-w-full text-left text-xs text-slate-300">
@@ -87,7 +87,7 @@ export async function ImmoContactControlSections() {
       </section>
 
       <section className="rounded-2xl border border-slate-700 bg-slate-900/40 p-4">
-        <h2 className="text-sm font-semibold text-[#C9A646]">Commission records (ImmoContact-attributed)</h2>
+        <h2 className="text-sm font-semibold text-premium-gold">Commission records (ImmoContact-attributed)</h2>
         <p className="mt-1 text-xs text-slate-500">Platform commission rows tied to ImmoContact source or lead.</p>
         <div className="mt-3 overflow-x-auto">
           <table className="min-w-full text-left text-xs text-slate-300">

@@ -21,7 +21,7 @@ export function AdminDailyAiReportCard(props: {
       intent="summary"
       title="AI Daily Report"
       context={{ ...props.stats, generatedAt: new Date().toISOString() }}
-      accent="#C9A646"
+      accent="var(--color-premium-gold)"
     />
   );
 }

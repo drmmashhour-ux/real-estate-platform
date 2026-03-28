@@ -12,7 +12,7 @@ type Props = {
 
 export function ContractDraftFieldInput({ field, value, onChange, hint, disabled }: Props) {
   const base =
-    "mt-1 w-full rounded-lg border border-white/10 bg-black/50 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-600 focus:border-[#C9A646]/50 focus:outline-none focus:ring-1 focus:ring-[#C9A646]/30";
+    "mt-1 w-full rounded-lg border border-white/10 bg-black/50 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-600 focus:border-premium-gold/50 focus:outline-none focus:ring-1 focus:ring-premium-gold/30";
 
   const showHint = hint?.trim();
 
@@ -26,7 +26,7 @@ export function ContractDraftFieldInput({ field, value, onChange, hint, disabled
             checked={checked}
             disabled={disabled}
             onChange={(e) => onChange(field.key, e.target.checked ? "true" : "false")}
-            className="mt-1 h-4 w-4 rounded border-white/20 bg-black/60 text-[#C9A646] focus:ring-[#C9A646]"
+            className="mt-1 h-4 w-4 rounded border-white/20 bg-black/60 text-premium-gold focus:ring-premium-gold"
           />
           <span>
             <span className="text-sm text-slate-200">{field.label}</span>

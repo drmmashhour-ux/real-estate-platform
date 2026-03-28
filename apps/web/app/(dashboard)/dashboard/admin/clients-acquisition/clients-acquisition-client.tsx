@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-const GOLD = "#C9A646";
+const GOLD = "var(--color-premium-gold)";
 
 type LeadRow = {
   id: string;
@@ -73,13 +73,13 @@ function ProgressBar({ label, value, target }: { label: string; value: number; t
     <div>
       <div className="flex justify-between text-xs text-[#B3B3B3]">
         <span>{label}</span>
-        <span className="font-mono text-[#E8C547]">
+        <span className="font-mono text-premium-gold">
           {value} / {target}
         </span>
       </div>
       <div className="mt-1.5 h-2.5 overflow-hidden rounded-full bg-white/10">
         <div
-          className="h-full rounded-full bg-gradient-to-r from-[#8a7020] to-[#C9A646] transition-all duration-300"
+          className="h-full rounded-full bg-gradient-to-r from-[#8a7020] to-premium-gold transition-all duration-300"
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -232,11 +232,11 @@ export function ClientsAcquisitionClient() {
 
       {/* Motivation */}
       <section
-        className="rounded-2xl border border-[#C9A646]/35 bg-gradient-to-br from-[#1a1508] to-[#0B0B0B] p-6 shadow-lg shadow-black/50"
+        className="rounded-2xl border border-premium-gold/35 bg-gradient-to-br from-[#1a1508] to-[#0B0B0B] p-6 shadow-lg shadow-black/50"
         aria-label="Motivation"
       >
         <p className="text-lg font-semibold leading-relaxed text-white md:text-xl">{scripts.motivation}</p>
-        <p className="mt-3 text-xs uppercase tracking-[0.2em] text-[#C9A646]/80">Stay high-touch until 10 are real.</p>
+        <p className="mt-3 text-xs uppercase tracking-[0.2em] text-premium-gold/80">Stay high-touch until 10 are real.</p>
       </section>
 
       {/* Daily targets */}
@@ -255,7 +255,7 @@ export function ClientsAcquisitionClient() {
           <button
             type="button"
             onClick={() => void bumpDaily("contacts")}
-            className="rounded-lg border border-[#C9A646]/40 px-3 py-2 text-xs font-semibold text-[#E8C547] hover:bg-[#C9A646]/10"
+            className="rounded-lg border border-premium-gold/40 px-3 py-2 text-xs font-semibold text-premium-gold hover:bg-premium-gold/10"
           >
             +1 contact (manual)
           </button>
@@ -297,8 +297,8 @@ export function ClientsAcquisitionClient() {
               ["Clients closed", conversion.clientsClosed],
             ] as const
           ).map(([t, v]) => (
-            <div key={t} className="rounded-2xl border border-[#C9A646]/20 bg-black/40 p-4">
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#C9A646]">{t}</p>
+            <div key={t} className="rounded-2xl border border-premium-gold/20 bg-black/40 p-4">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-premium-gold">{t}</p>
               <p className="mt-2 text-3xl font-semibold text-white">{v}</p>
             </div>
           ))}
@@ -319,7 +319,7 @@ export function ClientsAcquisitionClient() {
               </div>
               <p className="mt-3 text-sm leading-relaxed text-[#D1D5DB]">{s.text}</p>
               <label className="mt-3 flex cursor-pointer items-center gap-2 text-xs text-[#9CA3AF]">
-                <input type="radio" name="dmPick" checked={dmIndex === i} onChange={() => setDmIndex(i)} className="accent-[#C9A646]" />
+                <input type="radio" name="dmPick" checked={dmIndex === i} onChange={() => setDmIndex(i)} className="accent-premium-gold" />
                 Use for quick “Copy message” on leads
               </label>
             </div>
@@ -334,7 +334,7 @@ export function ClientsAcquisitionClient() {
         </h2>
         <div className="mt-4 grid gap-4 md:grid-cols-3">
           <div className="rounded-2xl border border-white/10 bg-[#121212] p-4 md:col-span-1">
-            <p className="text-xs font-bold uppercase tracking-widest text-[#C9A646]">1 · Ask</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-premium-gold">1 · Ask</p>
             <ul className="mt-3 list-inside list-disc space-y-1 text-sm text-[#D1D5DB]">
               {scripts.callFlow.discovery.map((q) => (
                 <li key={q}>{q}</li>
@@ -342,13 +342,13 @@ export function ClientsAcquisitionClient() {
             </ul>
           </div>
           <div className="rounded-2xl border border-white/10 bg-[#121212] p-4">
-            <p className="text-xs font-bold uppercase tracking-widest text-[#C9A646]">2 · Position</p>
-            <p className="mt-3 text-sm leading-relaxed text-[#E8C547]">{scripts.callFlow.position}</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-premium-gold">2 · Position</p>
+            <p className="mt-3 text-sm leading-relaxed text-premium-gold">{scripts.callFlow.position}</p>
             <CopyBtn text={scripts.callFlow.position} label="Copy line" />
           </div>
           <div className="rounded-2xl border border-white/10 bg-[#121212] p-4">
-            <p className="text-xs font-bold uppercase tracking-widest text-[#C9A646]">3 · Close</p>
-            <p className="mt-3 text-sm leading-relaxed text-[#E8C547]">{scripts.callFlow.close}</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-premium-gold">3 · Close</p>
+            <p className="mt-3 text-sm leading-relaxed text-premium-gold">{scripts.callFlow.close}</p>
             <CopyBtn text={scripts.callFlow.close} label="Copy line" />
           </div>
         </div>
@@ -363,7 +363,7 @@ export function ClientsAcquisitionClient() {
         <ul className="mt-4 space-y-2">
           {scripts.followUp.map((f) => (
             <li key={f.day} className="flex flex-col gap-1 rounded-xl border border-white/10 bg-black/30 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-              <span className="font-semibold text-[#C9A646]">{f.label}</span>
+              <span className="font-semibold text-premium-gold">{f.label}</span>
               <span className="text-xs text-[#9CA3AF]">{f.hint}</span>
             </li>
           ))}
@@ -443,7 +443,7 @@ export function ClientsAcquisitionClient() {
         <div className="mt-4 overflow-x-auto rounded-2xl border border-white/10">
           <table className="w-full min-w-[920px] border-collapse text-left text-sm">
             <thead>
-              <tr className="border-b border-white/10 bg-black/60 text-[10px] uppercase tracking-widest text-[#C9A646]">
+              <tr className="border-b border-white/10 bg-black/60 text-[10px] uppercase tracking-widest text-premium-gold">
                 <th className="px-3 py-3">Lead</th>
                 <th className="px-3 py-3">Source</th>
                 <th className="px-3 py-3 text-center">Msg</th>
@@ -497,13 +497,13 @@ export function ClientsAcquisitionClient() {
                             type="checkbox"
                             checked={l[k]}
                             onChange={(e) => void patchLead(l.id, { [k]: e.target.checked })}
-                            className="h-4 w-4 accent-[#C9A646]"
+                            className="h-4 w-4 accent-premium-gold"
                             aria-label={`${k} for ${l.name}`}
                           />
                         </td>
                       ))}
                       <td className="max-w-[140px] px-3 py-3 align-top text-xs text-[#9CA3AF]">
-                        {l.closed ? "—" : rhythm ? <span className="text-[#E8C547]">{rhythm.label}</span> : null}
+                        {l.closed ? "—" : rhythm ? <span className="text-premium-gold">{rhythm.label}</span> : null}
                         {!l.closed && age < 1 ? <div className="text-[#737373]">Day 0 · first touch</div> : null}
                       </td>
                       <td className="min-w-[200px] px-3 py-3 align-top">
@@ -518,7 +518,7 @@ export function ClientsAcquisitionClient() {
                           placeholder="Notes…"
                         />
                         {l.closed ? (
-                          <div className="mt-2 space-y-1 rounded-lg border border-[#C9A646]/20 bg-black/40 p-2">
+                          <div className="mt-2 space-y-1 rounded-lg border border-premium-gold/20 bg-black/40 p-2">
                             <label className="block text-[10px] text-[#9CA3AF]">
                               Service
                               <select
@@ -575,7 +575,7 @@ export function ClientsAcquisitionClient() {
                         <div className="flex flex-col gap-1">
                           <button
                             type="button"
-                            className="rounded-lg border border-[#C9A646]/35 px-2 py-1 text-[10px] font-semibold text-[#E8C547] hover:bg-[#C9A646]/10"
+                            className="rounded-lg border border-premium-gold/35 px-2 py-1 text-[10px] font-semibold text-premium-gold hover:bg-premium-gold/10"
                             onClick={() => {
                               void navigator.clipboard.writeText(activeDm || scripts.dm[0].text);
                             }}
@@ -626,11 +626,11 @@ export function ClientsAcquisitionClient() {
             {closedWins.map((l) => (
               <li
                 key={l.id}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[#C9A646]/25 bg-[#121212] px-4 py-3 text-sm"
+                className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-premium-gold/25 bg-[#121212] px-4 py-3 text-sm"
               >
                 <span className="font-medium text-white">{l.name}</span>
                 <span className="text-[#B3B3B3]">
-                  {l.serviceType ? <span className="capitalize text-[#C9A646]">{l.serviceType}</span> : "—"}
+                  {l.serviceType ? <span className="capitalize text-premium-gold">{l.serviceType}</span> : "—"}
                   {l.valueCents != null ? ` · value $${(l.valueCents / 100).toLocaleString()}` : ""}
                   {l.revenueCents != null ? ` · revenue $${(l.revenueCents / 100).toLocaleString()}` : ""}
                 </span>

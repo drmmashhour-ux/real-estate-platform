@@ -91,8 +91,11 @@ export function triggerReviewReminder(payload: {
   guestId: string;
   listingId: string;
 }) {
-  return triggerBNHubNotification({
+  void triggerBNHubNotification({
     type: "review_reminder",
     ...payload,
   });
+  void import("@/lib/bnhub/review-request-delivery")
+    .then(({ deliverBnhubReviewRequest }) => deliverBnhubReviewRequest(payload))
+    .catch((e) => console.error("[BNHub] review request delivery", e));
 }

@@ -94,8 +94,8 @@ export function LaunchDashboard() {
 
   return (
     <div className="space-y-8">
-      <section className="rounded-xl border border-[#C9A646]/30 bg-[#C9A646]/5 p-5">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-[#C9A646]">Log activity (today, UTC)</h2>
+      <section className="rounded-xl border border-premium-gold/30 bg-premium-gold/5 p-5">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-premium-gold">Log activity (today, UTC)</h2>
         <p className="mt-1 text-xs text-slate-500">
           Increments the selected counter for the current UTC day. Use negative delta to correct mistakes.
         </p>
@@ -127,7 +127,7 @@ export function LaunchDashboard() {
             type="button"
             disabled={saving}
             onClick={() => void onAdd()}
-            className="rounded-lg bg-[#C9A646] px-4 py-2 text-sm font-medium text-slate-950 disabled:opacity-50"
+            className="rounded-lg bg-premium-gold px-4 py-2 text-sm font-medium text-slate-950 disabled:opacity-50"
           >
             {saving ? "Saving…" : "Add to today"}
           </button>

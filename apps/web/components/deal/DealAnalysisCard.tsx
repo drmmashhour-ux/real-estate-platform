@@ -31,7 +31,7 @@ export function DealAnalysisCard({
   if (!analysis) {
     return (
       <div className="rounded-2xl border border-dashed border-white/15 bg-white/[0.02] p-6">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#C9A646]">AI Deal Analyzer</p>
+        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-premium-gold">AI Deal Analyzer</p>
         <p className="mt-2 text-sm text-[#A1A1A1]">
           No analysis on file yet. Run a deterministic, rules-based opportunity check (not investment advice).
         </p>
@@ -44,10 +44,10 @@ export function DealAnalysisCard({
   const topWarnings = analysis.warnings.slice(0, 2);
 
   return (
-    <div className="rounded-2xl border border-[#C9A646]/25 bg-gradient-to-b from-[#C9A646]/[0.07] to-[#121212] p-6 shadow-[0_0_40px_rgba(201,166,70,0.08)]">
+    <div className="rounded-2xl border border-premium-gold/25 bg-gradient-to-b from-premium-gold/[0.07] to-[#121212] p-6 shadow-[0_0_40px_rgb(var(--premium-gold-channels) / 0.08)]">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#C9A646]">AI Deal Analyzer</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-premium-gold">AI Deal Analyzer</p>
           <p className="mt-1 text-lg font-semibold text-white">Opportunity snapshot</p>
         </div>
         <DealRecommendationBadge recommendation={analysis.recommendation} />

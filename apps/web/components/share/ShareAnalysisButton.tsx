@@ -34,13 +34,13 @@ export function ShareAnalysisButton({ listingId }: { listingId: string }) {
 
   return (
     <div className="rounded-2xl border border-white/10 bg-[#121212] p-4">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#C9A646]">Share analysis</p>
+      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-premium-gold">Share analysis</p>
       <p className="mt-1 text-xs text-slate-500">Creates a read-only snapshot (scores & signals — not full listing data).</p>
       <button
         type="button"
         disabled={busy}
         onClick={() => void onShare()}
-        className="mt-3 w-full rounded-full border border-[#C9A646]/40 bg-[#C9A646]/10 py-2.5 text-sm font-semibold text-[#C9A646] transition hover:bg-[#C9A646]/20 disabled:opacity-50"
+        className="mt-3 w-full rounded-full border border-premium-gold/40 bg-premium-gold/10 py-2.5 text-sm font-semibold text-premium-gold transition hover:bg-premium-gold/20 disabled:opacity-50"
       >
         {busy ? "Creating…" : "Copy share link"}
       </button>

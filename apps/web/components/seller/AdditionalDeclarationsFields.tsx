@@ -186,7 +186,7 @@ export function AdditionalDeclarationsFields({
                   toggleTag(opt.id);
                 }}
                 className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
-                  on ? "border-[#C9A646] bg-[#C9A646]/15 text-[#E8D5A3]" : "border-white/15 text-slate-400 hover:border-white/25"
+                  on ? "border-premium-gold bg-premium-gold/15 text-premium-gold" : "border-white/15 text-slate-400 hover:border-white/25"
                 }`}
               >
                 {opt.label}
@@ -252,7 +252,7 @@ export function AdditionalDeclarationsFields({
       <button
         type="button"
         onClick={saveEntry}
-        className="rounded-xl bg-[#C9A646] px-5 py-2.5 text-sm font-semibold text-black hover:bg-[#E8C547]"
+        className="rounded-xl bg-premium-gold px-5 py-2.5 text-sm font-semibold text-black hover:bg-premium-gold"
       >
         Save declaration entry
       </button>

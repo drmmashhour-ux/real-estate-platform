@@ -214,7 +214,7 @@ export function SellerDocumentsPanel({
           }}
           onDrop={onDrop}
           className={`mt-6 flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed px-4 py-10 transition-colors ${
-            dragOver ? "border-[#C9A646] bg-[#C9A646]/10" : "border-white/20 bg-[#0B0B0B]/50"
+            dragOver ? "border-premium-gold bg-premium-gold/10" : "border-white/20 bg-[#0B0B0B]/50"
           } ${uploading ? "pointer-events-none opacity-70" : ""}`}
           onClick={() => !uploading && inputRef.current?.click()}
         >
@@ -236,7 +236,7 @@ export function SellerDocumentsPanel({
           {uploading ? (
             <div className="mt-4 w-full max-w-sm">
               <div className="h-2 overflow-hidden rounded-full bg-white/10">
-                <div className="h-full bg-[#C9A646] transition-all" style={{ width: `${progress}%` }} />
+                <div className="h-full bg-premium-gold transition-all" style={{ width: `${progress}%` }} />
               </div>
               <p className="mt-2 text-center text-xs text-slate-400">Uploading… {progress}%</p>
             </div>

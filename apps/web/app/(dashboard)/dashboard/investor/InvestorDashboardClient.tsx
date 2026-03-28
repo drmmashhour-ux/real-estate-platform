@@ -34,8 +34,8 @@ function InvestorScenarioRead({ scenarios }: { scenarios: ScenarioRow[] }) {
   const worst = byRoi.length > 1 ? byRoi[byRoi.length - 1] : null;
 
   return (
-    <section className="rounded-2xl border border-[#C9A646]/25 bg-[#111]/80 p-5">
-      <p className="text-xs font-semibold uppercase tracking-wide text-[#C9A646]">Scenario read</p>
+    <section className="rounded-2xl border border-premium-gold/25 bg-[#111]/80 p-5">
+      <p className="text-xs font-semibold uppercase tracking-wide text-premium-gold">Scenario read</p>
       <p className="mt-2 text-sm leading-relaxed text-slate-200">
         “{primary.title}” averages ~{roiStr} ROI (est.) with {risk} risk in this model — illustrative only; confirm with your own analysis.
       </p>
@@ -82,13 +82,13 @@ export function InvestorDashboardClient({
       <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
         <h2 className="text-lg font-semibold text-white">Saved portfolio scenarios</h2>
         {scenarios.length === 0 ? (
-          <div className="mt-4 rounded-xl border border-[#C9A646]/25 bg-[#111]/80 p-5">
+          <div className="mt-4 rounded-xl border border-premium-gold/25 bg-[#111]/80 p-5">
             <p className="text-sm text-slate-300">
               No saved scenarios yet. Run the portfolio planner to generate conservative / balanced / aggressive previews — all figures are estimates.
             </p>
             <Link
               href="/invest/portfolio"
-              className="mt-4 inline-flex rounded-xl bg-[#C9A646] px-5 py-2.5 text-sm font-bold text-black hover:bg-[#d4b35a]"
+              className="mt-4 inline-flex rounded-xl bg-premium-gold px-5 py-2.5 text-sm font-bold text-black hover:bg-premium-gold"
             >
               Open portfolio planner
             </Link>
@@ -138,7 +138,7 @@ export function InvestorDashboardClient({
         <p className="mt-1 text-sm text-slate-400">
           {compareIds.length} listing{compareIds.length === 1 ? "" : "s"} in compare
           {compareIds.length ? (
-            <Link href="/compare" className="ml-2 text-[#C9A646] hover:underline">
+            <Link href="/compare" className="ml-2 text-premium-gold hover:underline">
               Open compare
             </Link>
           ) : null}

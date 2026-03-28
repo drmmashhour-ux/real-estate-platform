@@ -131,7 +131,7 @@ export function BookingCalendar({
               onClick={() => {
                 if (primary) setSelected(primary.booking);
               }}
-              className={`relative flex min-h-[52px] flex-col rounded-lg border p-1 text-left transition duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A646]/45 sm:min-h-[64px] ${
+              className={`relative flex min-h-[52px] flex-col rounded-lg border p-1 text-left transition duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-premium-gold/45 sm:min-h-[64px] ${
                 !inMonth
                   ? "border-transparent bg-transparent opacity-40"
                   : primary

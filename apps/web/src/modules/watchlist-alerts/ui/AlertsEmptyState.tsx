@@ -9,7 +9,7 @@ export function AlertsEmptyState({ onRefresh }: { onRefresh?: () => void }) {
         <button
           type="button"
           onClick={onRefresh}
-          className="mt-3 rounded-lg border border-[#C9A646]/40 px-3 py-1.5 text-xs text-[#C9A646] hover:bg-[#C9A646]/10"
+          className="mt-3 rounded-lg border border-premium-gold/40 px-3 py-1.5 text-xs text-premium-gold hover:bg-premium-gold/10"
         >
           Refresh watchlist
         </button>

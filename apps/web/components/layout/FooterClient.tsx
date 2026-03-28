@@ -89,18 +89,18 @@ export default function FooterClient() {
             <strong className="text-white">Need help?</strong>{" "}
             <a
               href={getPublicContactMailto()}
-              className="font-medium text-[#C9A646] hover:underline"
+              className="font-medium text-premium-gold hover:underline"
             >
               Contact us
             </a>{" "}
             ·{" "}
-            <Link href="/contact" className="text-[#B3B3B3] hover:text-[#C9A646] hover:underline">
+            <Link href="/contact" className="text-[#B3B3B3] hover:text-premium-gold hover:underline">
               Contact form
             </Link>
           </p>
-          <div className="mx-auto mt-6 max-w-2xl rounded-2xl border border-[#C9A646]/25 bg-[#121212]/70 px-4 py-3 sm:mx-0">
+          <div className="mx-auto mt-6 max-w-2xl rounded-2xl border border-premium-gold/25 bg-[#121212]/70 px-4 py-3 sm:mx-0">
             <div className="flex gap-3">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#C9A646]/12 text-[#C9A646]">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-premium-gold/12 text-premium-gold">
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
                   <path
                     strokeLinecap="round"
@@ -113,7 +113,7 @@ export default function FooterClient() {
               <p className="text-sm leading-relaxed text-[#B3B3B3]">
                 <strong className="text-white">Trusted real estate platform.</strong> LECIPM delivers structured analysis and
                 secure flows for confident decisions.{" "}
-                <Link href="/about-platform" className="font-medium text-[#C9A646] hover:underline">
+                <Link href="/about-platform" className="font-medium text-premium-gold hover:underline">
                   About LECIPM
                 </Link>
               </p>
@@ -128,7 +128,7 @@ export default function FooterClient() {
                       href={href}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-xs font-semibold uppercase tracking-wide text-[#C9A646] hover:text-[#E8C547]"
+                      className="text-xs font-semibold uppercase tracking-wide text-premium-gold hover:text-premium-gold"
                     >
                       {label}
                     </a>
@@ -145,7 +145,7 @@ export default function FooterClient() {
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-5">
           {/* Platform, trust & legal */}
           <div>
-            <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-[#C9A646]">
+            <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold">
               Platform
             </h3>
             <ul className="mt-4 space-y-3 text-sm">
@@ -184,7 +184,7 @@ export default function FooterClient() {
 
           {/* Core product (investment hub) — other hubs remain on direct URLs */}
           <div>
-            <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-[#C9A646]">
+            <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold">
               Investment
             </h3>
             <ul className="mt-4 space-y-3 text-sm">
@@ -213,7 +213,7 @@ export default function FooterClient() {
 
           {/* Cities */}
           <div>
-            <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-[#C9A646]">
+            <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold">
               Cities
             </h3>
             <ul className="mt-4 space-y-3 text-sm">
@@ -237,7 +237,7 @@ export default function FooterClient() {
 
           {/* Support */}
           <div>
-            <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-[#C9A646]">
+            <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold">
               Support
             </h3>
             <ul className="mt-4 space-y-3 text-sm">
@@ -276,14 +276,14 @@ export default function FooterClient() {
 
           {/* Contact */}
           <div>
-            <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-[#C9A646]">
+            <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold">
               Contact
             </h3>
             <ul className="mt-4 space-y-3 text-sm text-[#B3B3B3]">
               <li>
                 <span className="text-[#B3B3B3]/80">Phone</span>
                 <br />
-                <a href={PRIMARY_PHONE_HREF} className="font-medium text-white hover:text-[#C9A646]">
+                <a href={PRIMARY_PHONE_HREF} className="font-medium text-white hover:text-premium-gold">
                   {PRIMARY_PHONE_DISPLAY}
                 </a>
               </li>
@@ -292,7 +292,7 @@ export default function FooterClient() {
                 <br />
                 <a
                   href={getPublicContactMailto()}
-                  className="font-medium text-white hover:text-[#C9A646]"
+                  className="font-medium text-white hover:text-premium-gold"
                 >
                   {getPublicContactEmail()}
                 </a>
@@ -300,7 +300,7 @@ export default function FooterClient() {
               <li>
                 <span className="text-[#B3B3B3]/80">Support</span>
                 <br />
-                <a href={supportTel} className="font-medium text-white hover:text-[#C9A646]">
+                <a href={supportTel} className="font-medium text-white hover:text-premium-gold">
                   {supportPhone}
                   <span className="text-[#B3B3B3]/90"> · {t("footer_callUs")}</span>
                 </a>
@@ -308,7 +308,7 @@ export default function FooterClient() {
               <li>
                 <span className="text-[#B3B3B3]/80">Broker</span>
                 <br />
-                <a href={brokerTel} className="font-medium text-white hover:text-[#C9A646]">
+                <a href={brokerTel} className="font-medium text-white hover:text-premium-gold">
                   {brokerPhone}
                 </a>
               </li>

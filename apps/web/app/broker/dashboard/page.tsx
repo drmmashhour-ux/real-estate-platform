@@ -33,11 +33,11 @@ export default async function BrokerDashboardPage() {
         <div className="mt-6 space-y-4">
           {watchSummary ? (
             <div className="rounded-xl border border-white/10 bg-black/25 p-4">
-              <p className="text-xs uppercase tracking-wide text-[#C9A646]">Watchlist summary</p>
+              <p className="text-xs uppercase tracking-wide text-premium-gold">Watchlist summary</p>
               <p className="mt-2 text-sm text-slate-300">
                 {watchSummary.savedListings} saved properties · {watchSummary.unreadAlerts} unread alerts
               </p>
-              <a href="/watchlist" className="mt-2 inline-flex text-sm text-[#C9A646] hover:underline">Open watchlist</a>
+              <a href="/watchlist" className="mt-2 inline-flex text-sm text-premium-gold hover:underline">Open watchlist</a>
             </div>
           ) : null}
           {recentAlerts.length ? <WatchlistAlertsPreview initialAlerts={recentAlerts} /> : null}
@@ -60,7 +60,7 @@ export default async function BrokerDashboardPage() {
           />
         </div>
         <p className="mt-10 border-t border-white/10 pt-6 text-center text-sm text-slate-500">
-          <Link href="/dashboard" className="text-[#C9A646] hover:underline">
+          <Link href="/dashboard" className="text-premium-gold hover:underline">
             Back to portfolio
           </Link>
         </p>

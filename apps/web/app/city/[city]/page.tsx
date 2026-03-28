@@ -21,6 +21,7 @@ import { getStaysRecommendedInCity } from "@/lib/recommendations";
 import { prisma } from "@/lib/db";
 import { FsboCompareButton } from "@/components/compare/FsboCompareButton";
 import { PLATFORM_CARREFOUR_NAME, platformCarrefourGoldGradientClass } from "@/lib/brand/platform";
+import { buildCityInternalLinks } from "@/src/modules/demand-engine/internalLinking";
 
 export const revalidate = 120;
 
@@ -141,7 +142,7 @@ export default async function CityPage({ params }: PageProps) {
           <div className="mt-8 flex flex-wrap gap-3">
             <Link
               href={bnhubBrowse}
-              className="inline-flex rounded-full bg-[#C9A646] px-6 py-3 text-sm font-bold text-[#0B0B0B] hover:bg-[#E8C547]"
+              className="inline-flex rounded-full bg-premium-gold px-6 py-3 text-sm font-bold text-[#0B0B0B] hover:bg-premium-gold"
             >
               Browse BNHub in {labelForSlug(slug)}
             </Link>
@@ -226,7 +227,7 @@ export default async function CityPage({ params }: PageProps) {
               </h2>
               <p className="mt-1 text-sm text-slate-600">Private-sale listings in this area.</p>
             </div>
-            <Link href={fsboBrowse} className="text-sm font-semibold text-[#C9A646] hover:underline">
+            <Link href={fsboBrowse} className="text-sm font-semibold text-premium-gold hover:underline">
               View all FSBO — filter by city →
             </Link>
           </div>
@@ -238,7 +239,7 @@ export default async function CityPage({ params }: PageProps) {
                 const img = fsboHeroImage(l.images, l.coverImage);
                 return (
                   <li key={l.id}>
-                    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:border-[#C9A646]/50 hover:shadow-md">
+                    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:border-premium-gold/50 hover:shadow-md">
                       <Link href={`/sell/${l.id}`} className="group block">
                         <div className="relative aspect-[4/3] bg-slate-200">
                           {img ? (
@@ -263,7 +264,7 @@ export default async function CityPage({ params }: PageProps) {
                       <div className="border-t border-slate-100 px-4 pb-4">
                         <FsboCompareButton
                           listingId={l.id}
-                          className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-800 hover:border-[#C9A646]/50"
+                          className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-800 hover:border-premium-gold/50"
                         />
                       </div>
                     </div>
@@ -275,6 +276,22 @@ export default async function CityPage({ params }: PageProps) {
         </section>
 
         {mapListings.length > 0 ? <CityExploreMap listings={mapListings} cityLabel={labelForSlug(slug)} /> : null}
+
+        <nav
+          className="mt-10 flex flex-wrap gap-x-3 gap-y-2 border-t border-slate-200 pt-8 text-sm text-slate-600"
+          aria-label="City and neighborhood links"
+        >
+          <span className="font-medium text-slate-800">On LECIPM:</span>
+          {buildCityInternalLinks(slug).map((l) => (
+            <Link
+              key={l.href}
+              href={l.href}
+              className="rounded-full border border-slate-200 bg-white px-3 py-1 text-slate-700 hover:border-premium-gold/50 hover:text-[#B8941F]"
+            >
+              {l.label}
+            </Link>
+          ))}
+        </nav>
 
         <nav className="mt-12 border-t border-slate-200 pt-8 text-sm text-slate-600" aria-label="Other cities">
           <span className="font-medium text-slate-800">More cities: </span>

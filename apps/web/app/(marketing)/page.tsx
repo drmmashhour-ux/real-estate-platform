@@ -58,35 +58,44 @@ export const metadata: Metadata = {
 
 export default function LandingPage() {
   return (
-    <main className="bg-black text-white">
+    <main className="min-h-screen bg-[#0B0B0B] text-white antialiased">
       <section className="mx-auto max-w-6xl px-4 py-10 sm:py-14">
         <HeroConversionSection ctaLabel={conversionCopy.ctas.primary[0]} />
       </section>
 
-      <section className="mx-auto grid max-w-6xl gap-4 px-4 py-10 sm:grid-cols-3">
-        <TrustDealSummaryCard
-          trustScore={82}
-          dealScore={78}
-          confidence="high"
-          reasons={["Verified ownership signals", "Comparable pricing alignment", "Risk checks completed"]}
-        />
-        <TrustDealSummaryCard
-          trustScore={58}
-          dealScore={64}
-          confidence="medium"
-          reasons={["Partial documents only", "Strong rent ratio", "Market volatility in zone"]}
-        />
-        <TrustDealSummaryCard
-          trustScore={40}
-          dealScore={49}
-          confidence="low"
-          reasons={["Missing legal disclosures", "Price drift above comparables", "Fraud risk warning"]}
-        />
+      <section
+        id="features"
+        aria-labelledby="value-proposition-heading"
+        className="scroll-mt-24 mx-auto max-w-6xl px-4 py-10"
+      >
+        <h2 id="value-proposition-heading" className="sr-only">
+          Features and value proposition
+        </h2>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <TrustDealSummaryCard
+            trustScore={82}
+            dealScore={78}
+            confidence="high"
+            reasons={["Verified ownership signals", "Comparable pricing alignment", "Risk checks completed"]}
+          />
+          <TrustDealSummaryCard
+            trustScore={58}
+            dealScore={64}
+            confidence="medium"
+            reasons={["Partial documents only", "Strong rent ratio", "Market volatility in zone"]}
+          />
+          <TrustDealSummaryCard
+            trustScore={40}
+            dealScore={49}
+            confidence="low"
+            reasons={["Missing legal disclosures", "Price drift above comparables", "Fraud risk warning"]}
+          />
+        </div>
       </section>
 
       <HubsSection />
 
-      <section className="mx-auto max-w-6xl px-4 py-12">
+      <section id="how-it-works" className="scroll-mt-24 mx-auto max-w-6xl px-4 py-12">
         <h2 className="text-2xl font-semibold">How it works</h2>
         <div className="mt-5 grid gap-3 sm:grid-cols-3">
           {conversionCopy.landing.howItWorks.map((s, idx) => (

@@ -54,7 +54,7 @@ export function GrowthLeadCapture({ className = "" }: Props) {
 
   return (
     <div className={className}>
-      <h3 className="text-sm font-semibold uppercase tracking-[0.15em] text-[#C9A646]">Early access</h3>
+      <h3 className="text-sm font-semibold uppercase tracking-[0.15em] text-premium-gold">Early access</h3>
       <p className="mt-2 text-sm text-[#B3B3B3]">
         Leave your details — we prioritize hosts and guests joining the first wave.
       </p>
@@ -71,7 +71,7 @@ export function GrowthLeadCapture({ className = "" }: Props) {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="Email"
-          className="min-h-[44px] w-full rounded-xl border border-white/15 bg-[#121212] px-4 py-2.5 text-sm text-white placeholder:text-[#737373] focus:border-[#C9A646]/50 focus:outline-none focus:ring-1 focus:ring-[#C9A646]/40"
+          className="min-h-[44px] w-full rounded-xl border border-white/15 bg-[#121212] px-4 py-2.5 text-sm text-white placeholder:text-[#737373] focus:border-premium-gold/50 focus:outline-none focus:ring-1 focus:ring-premium-gold/40"
         />
         <label className="sr-only" htmlFor="growth-phone">
           Phone (optional)
@@ -84,7 +84,7 @@ export function GrowthLeadCapture({ className = "" }: Props) {
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
           placeholder="Phone (optional)"
-          className="min-h-[44px] w-full rounded-xl border border-white/15 bg-[#121212] px-4 py-2.5 text-sm text-white placeholder:text-[#737373] focus:border-[#C9A646]/50 focus:outline-none focus:ring-1 focus:ring-[#C9A646]/40"
+          className="min-h-[44px] w-full rounded-xl border border-white/15 bg-[#121212] px-4 py-2.5 text-sm text-white placeholder:text-[#737373] focus:border-premium-gold/50 focus:outline-none focus:ring-1 focus:ring-premium-gold/40"
         />
         <label htmlFor="growth-intent" className="text-xs text-[#737373]">
           I’m interested as
@@ -94,7 +94,7 @@ export function GrowthLeadCapture({ className = "" }: Props) {
           name="intent"
           value={intent}
           onChange={(e) => setIntent(e.target.value as "host" | "guest")}
-          className="min-h-[44px] w-full rounded-xl border border-white/15 bg-[#121212] px-4 py-2.5 text-sm text-white focus:border-[#C9A646]/50 focus:outline-none focus:ring-1 focus:ring-[#C9A646]/40"
+          className="min-h-[44px] w-full rounded-xl border border-white/15 bg-[#121212] px-4 py-2.5 text-sm text-white focus:border-premium-gold/50 focus:outline-none focus:ring-1 focus:ring-premium-gold/40"
         >
           <option value="guest">Guest — find a stay</option>
           <option value="host">Host — list my place</option>
@@ -102,7 +102,7 @@ export function GrowthLeadCapture({ className = "" }: Props) {
         <button
           type="submit"
           disabled={status === "loading"}
-          className="min-h-[44px] rounded-xl bg-[#C9A646] px-6 py-2.5 text-sm font-bold text-[#0B0B0B] transition hover:brightness-110 disabled:opacity-60"
+          className="min-h-[44px] rounded-xl bg-premium-gold px-6 py-2.5 text-sm font-bold text-[#0B0B0B] transition hover:brightness-110 disabled:opacity-60"
         >
           {status === "loading" ? "Sending…" : "Request early access"}
         </button>

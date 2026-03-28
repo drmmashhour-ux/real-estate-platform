@@ -14,7 +14,7 @@ export function DeclarationValidationSummary({ validation, onReadyForReview }: P
         <p className="text-slate-200">Completion: <span className="font-semibold">{validation.completenessPercent}%</span></p>
         <button
           type="button"
-          className="rounded-lg bg-[#C9A646] px-3 py-1.5 text-xs font-medium text-black disabled:opacity-50"
+          className="rounded-lg bg-premium-gold px-3 py-1.5 text-xs font-medium text-black disabled:opacity-50"
           disabled={!validation.isValid}
           onClick={onReadyForReview}
         >

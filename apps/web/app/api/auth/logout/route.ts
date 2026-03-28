@@ -1,15 +1,17 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { AUTH_SESSION_COOKIE_NAME, HUB_USER_ROLE_COOKIE_NAME } from "@/lib/auth/session-cookie";
-import { getGuestId } from "@/lib/auth/session";
+import { revokeDbSessionByToken, resolveSessionTokenToUserId } from "@/lib/auth/db-session";
 import { trackDemoEvent } from "@/lib/demo-analytics";
 import { DemoEvents } from "@/lib/demo-event-types";
 import { DEMO_SESSION_STARTED_AT_COOKIE } from "@/lib/demo-session-cookie";
 
-/** POST /api/auth/logout — Clear session + role cookies. */
+/** POST /api/auth/logout — Revoke server session, clear cookies. */
 export async function POST() {
-  const userId = await getGuestId().catch(() => null);
   const jar = await cookies();
+  const sessionToken = jar.get(AUTH_SESSION_COOKIE_NAME)?.value?.trim() ?? "";
+  const userId = sessionToken ? await resolveSessionTokenToUserId(sessionToken).catch(() => null) : null;
+  await revokeDbSessionByToken(sessionToken);
   const startedRaw = jar.get(DEMO_SESSION_STARTED_AT_COOKIE)?.value;
   let durationSeconds: number | undefined;
   if (startedRaw) {

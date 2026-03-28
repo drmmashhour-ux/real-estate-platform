@@ -16,7 +16,7 @@ export function WatchlistTopBar({ refreshing, onRefresh }: Props) {
         type="button"
         onClick={onRefresh}
         disabled={refreshing}
-        className="rounded-lg border border-[#C9A646]/40 px-3 py-2 text-xs font-semibold text-[#C9A646] hover:bg-[#C9A646]/10 disabled:opacity-60"
+        className="rounded-lg border border-premium-gold/40 px-3 py-2 text-xs font-semibold text-premium-gold hover:bg-premium-gold/10 disabled:opacity-60"
       >
         {refreshing ? "Refreshing..." : "Refresh"}
       </button>

@@ -1,7 +1,7 @@
 import { getInvestorHubAnalytics } from "@/modules/investor/investor-analytics";
 import { InvestorHubBarChart } from "@/components/investor/InvestorHubBarChart";
 
-const GOLD = "#C9A646";
+const GOLD = "var(--color-premium-gold)";
 
 export default async function InvestorAnalyticsPage() {
   const data = await getInvestorHubAnalytics(30);

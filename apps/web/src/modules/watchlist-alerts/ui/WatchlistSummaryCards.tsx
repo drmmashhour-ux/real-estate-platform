@@ -13,7 +13,7 @@ function Card({ label, value, accent }: { label: string; value: number; accent?:
   return (
     <div className="rounded-xl border border-white/10 bg-black/25 p-3">
       <p className="text-xs uppercase tracking-wide text-slate-500">{label}</p>
-      <p className={`mt-1 text-2xl font-semibold ${accent ? "text-[#C9A646]" : "text-white"}`}>{value}</p>
+      <p className={`mt-1 text-2xl font-semibold ${accent ? "text-premium-gold" : "text-white"}`}>{value}</p>
     </div>
   );
 }

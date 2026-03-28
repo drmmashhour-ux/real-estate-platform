@@ -1,6 +1,6 @@
 import { ExpertBillingClient } from "./expert-billing-client";
 
-const GOLD = "#C9A646";
+const GOLD = "var(--color-premium-gold)";
 
 export const dynamic = "force-dynamic";
 

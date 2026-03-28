@@ -15,7 +15,7 @@ export default async function AdminGrowthCrmPage() {
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-10 text-slate-100">
-      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#C9A646]">Growth engine</p>
+      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-premium-gold">Growth engine</p>
       <h1 className="mt-2 text-3xl font-semibold">Growth CRM — 100 → 1000 users</h1>
       <p className="mt-2 max-w-2xl text-sm text-slate-400">
         Funnel view, lead scoring, semi-automated follow-ups, referrals. Playbook:{" "}

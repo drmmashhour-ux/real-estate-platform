@@ -9,6 +9,8 @@ import { escalateLeadToBroker } from "./escalation";
 import { classifyInboundSafety, SAFETY_REPLY } from "./safety";
 import { sendAutomatedEvaluationEmail } from "@/lib/leads/send-automated-eval-email";
 import { EMAIL_2_KEY, EMAIL_3_KEY } from "@/lib/leads/schedule-eval-email-jobs";
+import { CRM_JOB_BNHUB_BOOKING_THANKS_EMAIL } from "@/lib/crm/internal-crm-constants";
+import { sendBnhubBookingThanksEmail } from "@/lib/crm/bnhub-booking-thanks-email";
 
 async function latestConsent(leadId: string) {
   return prisma.leadContactConsent.findFirst({
@@ -187,6 +189,19 @@ export async function processDueFollowUpJobs(limit = 40): Promise<{ processed: n
             data: { status: "completed", processedAt: new Date() },
           });
         }
+        processed += 1;
+        continue;
+      }
+
+      if (job.jobKey === CRM_JOB_BNHUB_BOOKING_THANKS_EMAIL) {
+        const sent = await sendBnhubBookingThanksEmail(lead.id);
+        await appendLeadTimeline(lead.id, sent ? "bnhub_booking_thanks_email_sent" : "bnhub_booking_thanks_email_skipped", {
+          jobId: job.id,
+        });
+        await prisma.leadFollowUpJob.update({
+          where: { id: job.id },
+          data: { status: "completed", processedAt: new Date() },
+        });
         processed += 1;
         continue;
       }

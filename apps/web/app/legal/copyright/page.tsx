@@ -16,7 +16,7 @@ export default function CopyrightPage() {
   return (
     <LegalPageLayout title="Copyright & legal ownership" backHref="/legal">
       <p className="lead text-lg text-[#D4D4D4]">
-        <strong className="text-[#E8C547]">Platform name:</strong> {PLATFORM_LEGAL_DISPLAY}, operated by {PLATFORM_OPERATOR}.{" "}
+        <strong className="text-premium-gold">Platform name:</strong> {PLATFORM_LEGAL_DISPLAY}, operated by {PLATFORM_OPERATOR}.{" "}
         <strong className="text-white">All rights reserved.</strong>
       </p>
 

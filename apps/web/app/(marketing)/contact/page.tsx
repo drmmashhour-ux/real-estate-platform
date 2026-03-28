@@ -35,7 +35,7 @@ export const metadata: Metadata = {
 
 const phoneIcon = (
   <svg
-    className="h-7 w-7 shrink-0 text-[#C9A646]"
+    className="h-7 w-7 shrink-0 text-premium-gold"
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
@@ -94,7 +94,7 @@ export default function ContactPage() {
           <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:flex-wrap">
             <a
               href={supportTel}
-              className="inline-flex items-center gap-3 rounded-2xl border border-[#C9A646]/40 bg-[#121212] px-6 py-4 text-base font-semibold text-white transition hover:border-[#C9A646] hover:text-[#C9A646]"
+              className="inline-flex items-center gap-3 rounded-2xl border border-premium-gold/40 bg-[#121212] px-6 py-4 text-base font-semibold text-white transition hover:border-premium-gold hover:text-premium-gold"
             >
               {phoneIcon}
               <span>
@@ -106,7 +106,7 @@ export default function ContactPage() {
             </a>
             <a
               href={brokerTel}
-              className="inline-flex items-center gap-3 rounded-2xl border border-[#C9A646]/40 bg-[#121212] px-6 py-4 text-base font-semibold text-white transition hover:border-[#C9A646] hover:text-[#C9A646]"
+              className="inline-flex items-center gap-3 rounded-2xl border border-premium-gold/40 bg-[#121212] px-6 py-4 text-base font-semibold text-white transition hover:border-premium-gold hover:text-premium-gold"
             >
               {phoneIcon}
               <span>
@@ -127,8 +127,8 @@ export default function ContactPage() {
             <ContactFormClient />
 
             <aside className="space-y-6">
-              <div className="rounded-2xl border border-[#C9A646]/25 bg-[#121212] p-6 shadow-xl shadow-black/40">
-                <h2 className="text-base font-semibold text-[#C9A646]">What to expect</h2>
+              <div className="rounded-2xl border border-premium-gold/25 bg-[#121212] p-6 shadow-xl shadow-black/40">
+                <h2 className="text-base font-semibold text-premium-gold">What to expect</h2>
                 <ul className="mt-4 space-y-3 text-sm text-[#B3B3B3]">
                   <li>• A short discovery call to align on your goals.</li>
                   <li>• Curated properties that match your brief.</li>
@@ -137,24 +137,24 @@ export default function ContactPage() {
                 </ul>
                 <div className="mt-6 space-y-4 border-t border-white/10 pt-6 text-sm text-[#B3B3B3]">
                   <p>
-                    <span className="text-[#C9A646]">Email</span>
+                    <span className="text-premium-gold">Email</span>
                     <br />
                     <a
                       href={mailto}
-                      className="font-medium text-white hover:text-[#C9A646]"
+                      className="font-medium text-white hover:text-premium-gold"
                     >
                       {email}
                     </a>
                   </p>
                   <p>
-                    <span className="text-[#C9A646]">General inquiries</span>
+                    <span className="text-premium-gold">General inquiries</span>
                     <br />
                     <a
                       href={supportTel}
-                      className="inline-flex items-center gap-2 font-medium text-white hover:text-[#C9A646]"
+                      className="inline-flex items-center gap-2 font-medium text-white hover:text-premium-gold"
                     >
                       <svg
-                        className="h-4 w-4 text-[#C9A646]"
+                        className="h-4 w-4 text-premium-gold"
                         viewBox="0 0 24 24"
                         fill="none"
                         stroke="currentColor"
@@ -171,14 +171,14 @@ export default function ContactPage() {
                     </a>
                   </p>
                   <p>
-                    <span className="text-[#C9A646]">Direct broker</span>
+                    <span className="text-premium-gold">Direct broker</span>
                     <br />
                     <a
                       href={brokerTel}
-                      className="inline-flex items-center gap-2 font-medium text-white hover:text-[#C9A646]"
+                      className="inline-flex items-center gap-2 font-medium text-white hover:text-premium-gold"
                     >
                       <svg
-                        className="h-4 w-4 text-[#C9A646]"
+                        className="h-4 w-4 text-premium-gold"
                         viewBox="0 0 24 24"
                         fill="none"
                         stroke="currentColor"
@@ -195,7 +195,7 @@ export default function ContactPage() {
                     </a>
                   </p>
                   <p>
-                    <span className="text-[#C9A646]">Office</span>
+                    <span className="text-premium-gold">Office</span>
                     <br />
                     {officeAddress}
                   </p>

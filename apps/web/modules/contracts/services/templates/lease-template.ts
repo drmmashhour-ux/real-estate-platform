@@ -59,7 +59,7 @@ export function buildLeaseTemplateHtml(input: LeaseTemplateInput): string {
   <title>Residential Lease Agreement — ${esc(input.contractReference)}</title>
 </head>
 <body style="font-family: Georgia, 'Times New Roman', serif; color: #111; line-height: 1.45; max-width: 800px; margin: 0 auto; padding: 24px;">
-  <header style="border-bottom: 2px solid #C9A646; padding-bottom: 16px; margin-bottom: 24px;">
+  <header style="border-bottom: 2px solid #D4AF37; padding-bottom: 16px; margin-bottom: 24px;">
     <p style="margin:0; font-size: 11px; letter-spacing: 0.12em; color: #666;">LECIPM · Mashhour Investments</p>
     <h1 style="margin: 8px 0 0; font-size: 1.5rem;">Residential Lease Agreement</h1>
     <p style="margin: 8px 0 0; font-size: 13px; color: #444;">Reference: <strong>${esc(input.contractReference)}</strong> · Generated ${esc(input.generatedAtIso)}</p>

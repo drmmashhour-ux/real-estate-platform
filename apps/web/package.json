@@ -12,6 +12,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "validate:flows": "npx tsx scripts/validate-core-flows.ts",
+    "validate:auth": "npx tsx scripts/validate-auth-user-behavior.ts",
     "test:e2e": "playwright test",
     "test:e2e:production": "pnpm run build && PLAYWRIGHT_PRODUCTION=1 playwright test",
     "seed": "prisma db seed",
@@ -20,6 +21,7 @@
     "seed:trustgraph": "npx tsx prisma/seed-trustgraph-demo.ts",
     "seed:calibration": "npx tsx prisma/seed-calibration-study.ts",
     "stripe:verify": "npx tsx scripts/stripe-verify.ts",
+    "validate:bnhub-stripe": "npx tsx scripts/validate-bnhub-stripe-e2e.ts",
     "brand:export": "node scripts/export-brand-logos.cjs",
     "assets:generate": "node scripts/generate-brand-png-assets.mjs",
     "client:test-user": "npx tsx scripts/create-client-test-user.ts",
@@ -28,7 +30,17 @@
     "demo:seed": "npx tsx scripts/generate-full-demo-data.ts",
     "backup:db": "npx tsx scripts/backup-db.ts",
     "export:audit-log": "npx tsx scripts/export-audit-log.ts",
-    "test:system-validation": "TEST_MODE=true npx tsx scripts/run-system-validation.ts"
+    "test:system-validation": "TEST_MODE=true npx tsx scripts/run-system-validation.ts",
+    "validate:monopoly": "npx tsx scripts/validate-monopoly-mode.ts",
+    "validate:growth-engine": "npx tsx scripts/validate-growth-engine.ts",
+    "validate:messaging-system": "npx tsx scripts/validate-messaging-system.ts",
+    "validate:ai-auto-reply": "npx tsx scripts/validate-ai-auto-reply.ts",
+    "validate:ai-learning": "npx tsx scripts/validate-ai-learning.ts",
+    "validate:executive-control": "npx tsx scripts/validate-executive-control.ts",
+    "validate:review-system": "npx tsx scripts/validate-review-system.ts",
+    "validate:ranking-system": "npx tsx scripts/validate-ranking-system.ts",
+    "validate:fraud": "npx tsx scripts/validate-fraud-detection.ts",
+    "inspect:executive-daily": "npx tsx scripts/inspect-executive-daily-recommendations.ts"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed-runner.ts"

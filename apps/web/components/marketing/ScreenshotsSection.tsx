@@ -42,7 +42,7 @@ export function ScreenshotsSection() {
                 onClick={() => setTab(t.id)}
                 className={`rounded-full px-4 py-2 text-sm font-medium transition ${
                   tab === t.id
-                    ? "bg-[#C9A646] text-black"
+                    ? "bg-premium-gold text-black"
                     : "bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white"
                 }`}
               >

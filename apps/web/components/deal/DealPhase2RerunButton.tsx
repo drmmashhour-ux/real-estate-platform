@@ -42,7 +42,7 @@ export function DealPhase2RerunButton({
         type="button"
         onClick={() => void onRun()}
         disabled={loading}
-        className="rounded-lg border border-[#C9A646]/40 bg-[#C9A646]/10 px-4 py-2 text-sm font-medium text-[#C9A646] disabled:opacity-50"
+        className="rounded-lg border border-premium-gold/40 bg-premium-gold/10 px-4 py-2 text-sm font-medium text-premium-gold disabled:opacity-50"
       >
         {loading ? "Running Phase 2…" : "Run market intelligence (Phase 2)"}
       </button>

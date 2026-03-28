@@ -346,14 +346,14 @@ export function FsboCreateClient({
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
-      <Link href="/sell" className="text-sm text-[#C9A646]">
+      <Link href="/sell" className="text-sm text-premium-gold">
         ← Browse FSBO
       </Link>
       <h1 className="mt-4 text-3xl font-semibold text-white">Create your listing</h1>
       <p className="mt-2 text-sm text-[#B3B3B3]">
-        Save a draft anytime. Choose a plan, then pay to publish. Standard <strong className="text-[#C9A646]">{basicDisplay}</strong>
+        Save a draft anytime. Choose a plan, then pay to publish. Standard <strong className="text-premium-gold">{basicDisplay}</strong>
         {" · "}
-        Featured <strong className="text-[#E8C547]">{premiumDisplay}</strong>
+        Featured <strong className="text-premium-gold">{premiumDisplay}</strong>
         {stripeLikelyOn ? " (secure checkout)." : " (enable Stripe or FSBO_ALLOW_UNPAID_PUBLISH for dev)."}
       </p>
 
@@ -367,13 +367,13 @@ export function FsboCreateClient({
               onClick={() => setForm((f) => ({ ...f, publishPlan: "basic" }))}
               className={[
                 "rounded-2xl border-2 p-5 text-left transition",
-                "bg-[#0B0B0B] hover:border-[#C9A646]/60",
+                "bg-[#0B0B0B] hover:border-premium-gold/60",
                 form.publishPlan === "basic"
-                  ? "border-[#C9A646] shadow-[0_0_0_1px_rgba(201, 166, 70,0.35)]"
+                  ? "border-premium-gold shadow-[0_0_0_1px_rgb(var(--premium-gold-channels) / 0.35)]"
                   : "border-white/15",
               ].join(" ")}
             >
-              <p className="text-xs font-semibold uppercase tracking-wider text-[#C9A646]">Basic</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-premium-gold">Basic</p>
               <p className="mt-2 text-2xl font-bold text-white">{basicDisplay}</p>
               <p className="mt-2 text-xs text-[#B3B3B3]">Standard directory listing on LECIPM.</p>
             </button>
@@ -382,23 +382,23 @@ export function FsboCreateClient({
               onClick={() => setForm((f) => ({ ...f, publishPlan: "premium" }))}
               className={[
                 "relative rounded-2xl border-2 p-5 text-left transition",
-                "bg-gradient-to-br from-[#1a1508] to-[#0B0B0B] hover:border-[#E8C547]/70",
+                "bg-gradient-to-br from-[#1a1508] to-[#0B0B0B] hover:border-premium-gold/70",
                 form.publishPlan === "premium"
-                  ? "border-[#E8C547] shadow-[0_0_24px_rgba(232,197,71,0.12)]"
-                  : "border-[#C9A646]/30",
+                  ? "border-premium-gold shadow-[0_0_24px_rgba(232,197,71,0.12)]"
+                  : "border-premium-gold/30",
               ].join(" ")}
             >
-              <span className="absolute right-3 top-3 rounded-full bg-[#C9A646]/20 px-2 py-0.5 text-[10px] font-bold uppercase text-[#E8C547]">
+              <span className="absolute right-3 top-3 rounded-full bg-premium-gold/20 px-2 py-0.5 text-[10px] font-bold uppercase text-premium-gold">
                 Featured
               </span>
-              <p className="text-xs font-semibold uppercase tracking-wider text-[#E8C547]">Premium</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-premium-gold">Premium</p>
               <p className="mt-2 text-2xl font-bold text-white">{premiumDisplay}</p>
               <p className="mt-2 text-xs text-[#B3B3B3]">Highlighted placement in search & directory (featured window set after payment).</p>
             </button>
           </div>
           <p className="mt-3 text-xs text-[#666]">
             Selected checkout:{" "}
-            <strong className="text-[#C9A646]">
+            <strong className="text-premium-gold">
               {(selectedPublishCents / 100).toLocaleString(undefined, { style: "currency", currency: "CAD" })}
             </strong>
           </p>
@@ -540,11 +540,11 @@ export function FsboCreateClient({
           type="button"
           onClick={() => void publish()}
           disabled={publishing || saving}
-          className="rounded-xl bg-[#C9A646] px-5 py-3 text-sm font-bold text-[#0B0B0B] hover:bg-[#E8C547] disabled:opacity-50"
+          className="rounded-xl bg-premium-gold px-5 py-3 text-sm font-bold text-[#0B0B0B] hover:bg-premium-gold disabled:opacity-50"
         >
           {publishing ? "Redirecting…" : "Publish listing"}
         </button>
-        <Link href="/dashboard/fsbo" className="rounded-xl border border-[#C9A646]/40 px-5 py-3 text-sm text-[#C9A646]">
+        <Link href="/dashboard/fsbo" className="rounded-xl border border-premium-gold/40 px-5 py-3 text-sm text-premium-gold">
           My FSBO dashboard
         </Link>
       </div>

@@ -42,7 +42,7 @@ export function ScoreCircle({ value, max = 100, size = "md", className = "" }: S
         />
         <defs>
           <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#C9A646" />
+            <stop offset="0%" stopColor="var(--color-premium-gold)" />
             <stop offset="100%" stopColor="#fde68a" />
           </linearGradient>
         </defs>

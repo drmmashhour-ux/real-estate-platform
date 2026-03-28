@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { InvestorQA } from "@/components/investor/InvestorQA";
 
-const GOLD = "#C9A646";
+const GOLD = "var(--color-premium-gold)";
 
 export const metadata: Metadata = {
   title: "Investor Q&A",

@@ -12,8 +12,8 @@ type Props = {
 export function ShareAnalysisPublicCard({ city, titleHint, trustScore, dealScore, recommendation, riskScore }: Props) {
   const risk = riskScore != null ? riskLevelPublic(riskScore) : null;
   return (
-    <div className="rounded-2xl border border-[#C9A646]/25 bg-[#141414] p-6 shadow-[0_16px_48px_rgba(0,0,0,0.5)]">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#C9A646]">Shared snapshot</p>
+    <div className="rounded-2xl border border-premium-gold/25 bg-[#141414] p-6 shadow-[0_16px_48px_rgba(0,0,0,0.5)]">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-premium-gold">Shared snapshot</p>
       <p className="mt-2 text-sm text-slate-400">{city}</p>
       <p className="mt-1 text-base font-medium text-white">{titleHint}</p>
       <div className="mt-6 grid grid-cols-2 gap-4">

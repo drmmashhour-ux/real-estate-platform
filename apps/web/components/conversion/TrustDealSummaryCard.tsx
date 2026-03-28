@@ -11,7 +11,7 @@ export function TrustDealSummaryCard({
 }) {
   return (
     <article className="rounded-xl border border-white/10 bg-black/40 p-4">
-      <p className="text-xs uppercase tracking-wide text-[#C9A646]">Decision Snapshot</p>
+      <p className="text-xs uppercase tracking-wide text-premium-gold">Decision Snapshot</p>
       <div className="mt-3 grid grid-cols-2 gap-3">
         <Score title="Trust Score" value={trustScore} />
         <Score title="Deal Score" value={dealScore} />

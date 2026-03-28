@@ -29,7 +29,7 @@ export function FeedPreferencesPanel() {
           <option value="medium">Medium risk</option>
           <option value="high">High risk</option>
         </select>
-        <button onClick={save} className="rounded-lg bg-[#C9A646] px-3 py-2 text-sm font-semibold text-black hover:bg-[#e8c547]">Save</button>
+        <button onClick={save} className="rounded-lg bg-premium-gold px-3 py-2 text-sm font-semibold text-black hover:bg-premium-gold">Save</button>
       </div>
     </div>
   );

@@ -29,9 +29,9 @@ export default function AboutPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
       <AnimatedReveal>
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#C9A646]">About</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold">About</p>
         <h1 className="mt-3 font-serif text-4xl font-semibold text-white">{PLATFORM_NAME}</h1>
-        <p className="mt-2 text-lg text-[#C9A646]/90">{PLATFORM_CARREFOUR_NAME}</p>
+        <p className="mt-2 text-lg text-premium-gold/90">{PLATFORM_CARREFOUR_NAME}</p>
         <div className="mt-8 space-y-4 text-slate-300">
           <p>
             We build software for brokerages and investors who need one connected workflow — not another point
@@ -46,7 +46,7 @@ export default function AboutPage() {
         <div className="mt-10 flex flex-wrap gap-4">
           <Link
             href="/contact"
-            className="rounded-full bg-[#C9A646] px-6 py-3 text-sm font-semibold text-black hover:brightness-110"
+            className="rounded-full bg-premium-gold px-6 py-3 text-sm font-semibold text-black hover:brightness-110"
           >
             Contact us
           </Link>

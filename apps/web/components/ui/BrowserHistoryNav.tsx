@@ -20,7 +20,7 @@ export function BrowserHistoryNav() {
       <button
         type="button"
         onClick={() => router.back()}
-        className="min-h-[44px] min-w-[44px] rounded-full px-3 text-sm font-semibold text-slate-200 transition hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A646]/60"
+        className="min-h-[44px] min-w-[44px] rounded-full px-3 text-sm font-semibold text-slate-200 transition hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-premium-gold/60"
         aria-label="Back to previous page"
       >
         Back
@@ -28,7 +28,7 @@ export function BrowserHistoryNav() {
       <button
         type="button"
         onClick={() => router.forward()}
-        className="min-h-[44px] min-w-[44px] rounded-full px-3 text-sm font-semibold text-slate-200 transition hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A646]/60"
+        className="min-h-[44px] min-w-[44px] rounded-full px-3 text-sm font-semibold text-slate-200 transition hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-premium-gold/60"
         aria-label="Forward to next page"
       >
         Next

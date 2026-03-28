@@ -12,7 +12,7 @@ export function PropertyTypeFilter({ selected, onChange }: { selected: string[];
             key={t}
             type="button"
             onClick={() => onChange(on ? selected.filter((x) => x !== t) : [...selected, t])}
-            className={`rounded-full border px-3 py-1 text-xs ${on ? "border-[#C9A646] bg-[#C9A646]/10 text-[#C9A646]" : "border-white/20 text-slate-300"}`}
+            className={`rounded-full border px-3 py-1 text-xs ${on ? "border-premium-gold bg-premium-gold/10 text-premium-gold" : "border-white/20 text-slate-300"}`}
           >
             {t}
           </button>

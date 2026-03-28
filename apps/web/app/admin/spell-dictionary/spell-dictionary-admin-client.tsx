@@ -64,13 +64,13 @@ export function SpellDictionaryAdminClient() {
       <div>
         <h1 className="text-xl font-semibold text-white">Spell dictionary</h1>
         <p className="mt-2 max-w-2xl text-sm text-[#B3B3B3]">
-          Add brand names, streets, or legal terms so they aren&apos;t flagged. <strong className="text-[#C9A646]">Allow</strong> and{" "}
-          <strong className="text-[#C9A646]">Ignore</strong> behave the same (word is never marked wrong). Use locale{" "}
-          <code className="text-[#C9A646]">both</code> for English and French checks.
+          Add brand names, streets, or legal terms so they aren&apos;t flagged. <strong className="text-premium-gold">Allow</strong> and{" "}
+          <strong className="text-premium-gold">Ignore</strong> behave the same (word is never marked wrong). Use locale{" "}
+          <code className="text-premium-gold">both</code> for English and French checks.
         </p>
       </div>
 
-      <form onSubmit={addWord} className="max-w-xl space-y-4 rounded-2xl border border-[#C9A646]/25 bg-[#121212] p-5">
+      <form onSubmit={addWord} className="max-w-xl space-y-4 rounded-2xl border border-premium-gold/25 bg-[#121212] p-5">
         <div>
           <label className="mb-1 block text-xs font-medium text-[#B3B3B3]">Word or phrase</label>
           <input
@@ -106,11 +106,11 @@ export function SpellDictionaryAdminClient() {
             </select>
           </div>
         </div>
-        {msg ? <p className="text-sm text-[#C9A646]">{msg}</p> : null}
+        {msg ? <p className="text-sm text-premium-gold">{msg}</p> : null}
         <button
           type="submit"
           disabled={loading}
-          className="rounded-full bg-[#C9A646] px-5 py-2 text-sm font-bold text-black disabled:opacity-50"
+          className="rounded-full bg-premium-gold px-5 py-2 text-sm font-bold text-black disabled:opacity-50"
         >
           {loading ? "Saving…" : "Add to dictionary"}
         </button>

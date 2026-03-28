@@ -84,7 +84,7 @@ export default function SeoAiPreviewPage() {
         <button
           onClick={generate}
           disabled={loading}
-          className="rounded-lg bg-[#C9A646] px-3 py-2 text-sm font-medium text-black disabled:opacity-60"
+          className="rounded-lg bg-premium-gold px-3 py-2 text-sm font-medium text-black disabled:opacity-60"
         >
           {loading ? "Generating..." : "Generate"}
         </button>

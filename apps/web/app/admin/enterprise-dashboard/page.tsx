@@ -13,7 +13,7 @@ export default async function AdminEnterpriseDashboardPage() {
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-10 text-slate-100">
-      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#C9A646]">Enterprise</p>
+      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-premium-gold">Enterprise</p>
       <h1 className="mt-2 text-3xl font-semibold">Enterprise dashboard</h1>
       <p className="mt-2 max-w-2xl text-sm text-slate-400">
         Multi-region supply and demand, retention proxies, and acquisition funnel. This supports sustainable expansion

@@ -33,7 +33,7 @@ export function FinanceHubTabs() {
             href={t.href}
             className={`rounded-lg border px-3 py-1.5 text-sm ${
               active
-                ? "border-[#C9A646]/60 bg-[#C9A646]/15 text-[#E8C547]"
+                ? "border-premium-gold/60 bg-premium-gold/15 text-premium-gold"
                 : "border-slate-700 bg-slate-900/60 text-slate-300 hover:border-amber-700/50 hover:text-amber-200"
             }`}
           >

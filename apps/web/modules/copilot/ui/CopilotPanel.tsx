@@ -63,9 +63,9 @@ export function CopilotPanel({ listingId, watchlistId }: Props) {
   }, [query, sendWith]);
 
   return (
-    <section className="rounded-2xl border border-[#C9A646]/25 bg-slate-950/60 p-5">
+    <section className="rounded-2xl border border-premium-gold/25 bg-slate-950/60 p-5">
       <div className="mb-3">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#C9A646]">LECIPM Copilot</p>
+        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-premium-gold">LECIPM Copilot</p>
         <p className="mt-1 text-xs text-slate-500">
           Suggestions from your data — deterministic scores only. Not legal, tax, or lending advice.
         </p>
@@ -76,7 +76,7 @@ export function CopilotPanel({ listingId, watchlistId }: Props) {
             key={q}
             type="button"
             onClick={() => void sendWith(q)}
-            className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-400 hover:border-[#C9A646]/30 hover:text-slate-200"
+            className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-400 hover:border-premium-gold/30 hover:text-slate-200"
           >
             {q}
           </button>

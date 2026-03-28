@@ -1,6 +1,6 @@
 import { getFullMarketIntelligence } from "@/modules/ai/market-intelligence";
 
-const GOLD = "#C9A646";
+const GOLD = "var(--color-premium-gold)";
 
 export default async function InvestorMarketPage() {
   const intel = await getFullMarketIntelligence();

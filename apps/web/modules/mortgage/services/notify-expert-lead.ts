@@ -61,7 +61,7 @@ export async function notifyMortgageExpertNewLead(params: {
   <p><strong>Property price (est.):</strong> ${formatMoney(params.purchasePrice)}<br/>
   <strong>Estimated mortgage:</strong> ${formatMoney(estMortgage)}</p>
   <p style="margin-top:1.5em;">
-    <a href="${dashboardUrl}" style="display:inline-block;background:#C9A646;color:#0B0B0B;font-weight:700;text-decoration:none;padding:12px 20px;border-radius:10px;">View lead</a>
+    <a href="${dashboardUrl}" style="display:inline-block;background: var(--color-premium-gold);color:#0B0B0B;font-weight:700;text-decoration:none;padding:12px 20px;border-radius:10px;">View lead</a>
   </p>
   <p style="margin-top:1.5em;font-size:13px;color:#666;">Lead ID: ${params.leadId}</p>
 </div>`,

@@ -6,7 +6,7 @@ export const lecipmDesignTokens = {
   color: {
     black: "#0B0B0B",
     card: "#121212",
-    gold: "#C9A646",
+    gold: "#D4AF37",
     green: "#22C55E",
     red: "#EF4444",
   },

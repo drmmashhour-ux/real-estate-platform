@@ -13,7 +13,7 @@ export default function HelpCenterPage() {
     <main className="min-h-screen bg-[#0B0B0B] text-white">
       <section className="border-b border-white/10">
         <div className="mx-auto max-w-3xl px-4 py-14 sm:px-6 lg:px-8">
-          <p className="text-xs font-semibold uppercase tracking-[0.25em] text-[#C9A646]">Support</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.25em] text-premium-gold">Support</p>
           <h1 className="mt-4 text-3xl font-bold sm:text-4xl">Help center</h1>
           <p className="mt-4 text-[#B3B3B3]">
             Quick answers about BNHub, selling, brokers, and evaluations.
@@ -29,7 +29,7 @@ export default function HelpCenterPage() {
               <a
                 key={id}
                 href={`#${id}`}
-                className="rounded-full border border-[#C9A646]/30 px-3 py-1.5 text-[#C9A646] hover:bg-[#C9A646]/10"
+                className="rounded-full border border-premium-gold/30 px-3 py-1.5 text-premium-gold hover:bg-premium-gold/10"
               >
                 {label}
               </a>
@@ -40,7 +40,7 @@ export default function HelpCenterPage() {
       <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8">
         <HelpAccordions />
         <p className="mt-12 text-center">
-          <Link href="/" className="text-sm font-semibold text-[#C9A646] hover:underline">
+          <Link href="/" className="text-sm font-semibold text-premium-gold hover:underline">
             ← Back to home
           </Link>
         </p>

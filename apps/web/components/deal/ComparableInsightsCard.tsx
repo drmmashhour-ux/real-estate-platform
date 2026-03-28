@@ -4,7 +4,7 @@ export function ComparableInsightsCard({ data }: { data: ComparablesBlockDto }) 
   const s = data.summary;
   return (
     <div className="rounded-2xl border border-white/10 bg-[#121212] p-5">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#C9A646]">Comparable band</p>
+      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-premium-gold">Comparable band</p>
       <p className="mt-2 text-sm text-slate-300">
         Positioning:{" "}
         <span className="font-semibold text-white">

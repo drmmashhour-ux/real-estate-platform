@@ -46,7 +46,7 @@ export function BrokerPricingClient() {
       </div>
 
       <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#C9A646]">Mortgage brokers</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold">Mortgage brokers</p>
         <h1 className="mt-2 text-3xl font-bold tracking-tight text-white sm:text-4xl">Pricing</h1>
         <p className="mt-3 text-lg text-slate-300">
           High-intent, qualified real estate leads — investors who already run ROI and cash-flow analysis on LECIPM.
@@ -75,27 +75,27 @@ export function BrokerPricingClient() {
           <p className="mt-6 text-xs text-slate-500">Best for trying the pipeline.</p>
         </section>
 
-        <section className="relative flex flex-col rounded-2xl border-2 border-[#C9A646]/50 bg-gradient-to-b from-[#14110a] to-[#0B0B0B] p-6 shadow-[0_0_40px_rgba(201,166,70,0.12)]">
-          <span className="absolute right-4 top-4 rounded-full bg-[#C9A646] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#0B0B0B]">
+        <section className="relative flex flex-col rounded-2xl border-2 border-premium-gold/50 bg-gradient-to-b from-[#14110a] to-[#0B0B0B] p-6 shadow-[0_0_40px_rgb(var(--premium-gold-channels) / 0.12)]">
+          <span className="absolute right-4 top-4 rounded-full bg-premium-gold px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#0B0B0B]">
             Pro
           </span>
           <h2 className="text-xl font-bold text-white">Pro</h2>
           <p className="mt-2 text-sm text-[#d4c9a8]">For brokers who want every opportunity.</p>
           <ul className="mt-6 flex-1 space-y-3 text-sm text-slate-200">
             <li className="flex gap-2">
-              <span className="text-[#C9A646]" aria-hidden>
+              <span className="text-premium-gold" aria-hidden>
                 ✓
               </span>
               <strong>Unlimited leads</strong> — full history, no blur
             </li>
             <li className="flex gap-2">
-              <span className="text-[#C9A646]" aria-hidden>
+              <span className="text-premium-gold" aria-hidden>
                 ✓
               </span>
               Priority access to new assignments as volume grows
             </li>
             <li className="flex gap-2">
-              <span className="text-[#C9A646]" aria-hidden>
+              <span className="text-premium-gold" aria-hidden>
                 ✓
               </span>
               Status updates on every lead

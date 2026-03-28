@@ -39,7 +39,7 @@ export function GrowthConversionLayer() {
   return (
     <>
       <div
-        className="fixed bottom-0 left-0 right-0 z-40 border-t border-[#C9A646]/30 bg-[#0B0B0B]/95 px-3 py-3 shadow-[0_-8px_32px_rgba(0,0,0,0.45)] backdrop-blur-md sm:px-4"
+        className="fixed bottom-0 left-0 right-0 z-40 border-t border-premium-gold/30 bg-[#0B0B0B]/95 px-3 py-3 shadow-[0_-8px_32px_rgba(0,0,0,0.45)] backdrop-blur-md sm:px-4"
         role="region"
         aria-label="Quick actions"
       >
@@ -49,14 +49,14 @@ export function GrowthConversionLayer() {
             <Link
               href="/mortgage"
               onClick={() => fireCta("sticky_preapproved", "/mortgage")}
-              className="rounded-lg bg-[#C9A646] px-4 py-2 text-xs font-bold text-black sm:text-sm"
+              className="rounded-lg bg-premium-gold px-4 py-2 text-xs font-bold text-black sm:text-sm"
             >
               Get pre-approved
             </Link>
             <Link
               href="/experts"
               onClick={() => fireCta("sticky_expert", "/experts")}
-              className="rounded-lg border border-[#C9A646]/50 px-4 py-2 text-xs font-semibold text-[#C9A646] sm:text-sm"
+              className="rounded-lg border border-premium-gold/50 px-4 py-2 text-xs font-semibold text-premium-gold sm:text-sm"
             >
               Talk to expert
             </Link>
@@ -86,8 +86,8 @@ export function GrowthConversionLayer() {
             aria-label="Close"
             onClick={() => setPopupOpen(false)}
           />
-          <div className="relative z-10 w-full max-w-md rounded-2xl border border-[#C9A646]/35 bg-[#111] p-6 text-white shadow-2xl">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#C9A646]">Free mortgage estimate</p>
+          <div className="relative z-10 w-full max-w-md rounded-2xl border border-premium-gold/35 bg-[#111] p-6 text-white shadow-2xl">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-premium-gold">Free mortgage estimate</p>
             <h2 className="mt-2 text-xl font-bold">See what you could afford</h2>
             <p className="mt-2 text-sm text-white/75">
               Use our guided tool or speak with a mortgage expert — no obligation.
@@ -95,7 +95,7 @@ export function GrowthConversionLayer() {
             <div className="mt-5 flex flex-col gap-2">
               <Link
                 href="/evaluate"
-                className="rounded-xl bg-[#C9A646] py-3 text-center text-sm font-bold text-black"
+                className="rounded-xl bg-premium-gold py-3 text-center text-sm font-bold text-black"
                 onClick={() => {
                   fireCta("popup_evaluate", "/evaluate");
                   setPopupOpen(false);

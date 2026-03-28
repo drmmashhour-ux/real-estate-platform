@@ -11,12 +11,18 @@ import {
   scheduleBnhubListingEngineRefresh,
   shouldScheduleFullEngineRecompute,
 } from "@/src/modules/bnhub-growth-engine/services/bnhubListingEnginesOrchestrator";
+import { scheduleFraudRecheck } from "@/src/workers/fraudDetectionWorker";
 import { getActivePromotedListingIds } from "@/lib/promotions";
 import { getApprovedHost, hasAcceptedHostAgreement } from "./host";
 import { buildPublishedListingSearchWhere, searchOrderBy } from "./build-search-where";
 import { applyStaysFilters, hasActiveStaysFilters, type StaysSearchFilters } from "@/lib/bnhub/stays-filters";
 import { geocodeAddressLine } from "@/lib/geo/geocode-nominatim";
 import { getLuxuryTierSearchBoostMapForIds, getTrustRiskPenaltyMapForIds } from "@/lib/bnhub/bnhubSearchRankSignals";
+import { isAiRankingEngineEnabled } from "@/src/modules/ranking/rankingEnv";
+import {
+  maybeLogBnhubSearchImpressions,
+  orderBnhubListingsByRankingEngine,
+} from "@/src/modules/ranking/rankingService";
 
 export type ListingSearchParams = {
   city?: string;
@@ -198,7 +204,9 @@ export async function searchListings(params: ListingSearchParams) {
 
   let result = await attachReviewAggregatesForSearch(listingsRaw);
 
-  if (sort === "recommended") {
+  const useAiRanking = sort === "recommended" && isAiRankingEngineEnabled();
+
+  if (sort === "recommended" && !useAiRanking) {
     const weights = await getRankingWeights();
     const marketingBoost = await getMarketingSearchBoostByListingId();
     const growthBoost = await getGrowthSearchBoostByListingId();
@@ -225,12 +233,14 @@ export async function searchListings(params: ListingSearchParams) {
     });
   }
 
-  const featuredIds = await getActivePromotedListingIds({ placement: "FEATURED", limit: 20 });
-  if (featuredIds.length > 0) {
-    const promoted = result.filter((l) => featuredIds.includes(l.id));
-    const rest = result.filter((l) => !featuredIds.includes(l.id));
-    const order = [...featuredIds];
-    result = [...promoted].sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id)).concat(rest);
+  if (!useAiRanking) {
+    const featuredIds = await getActivePromotedListingIds({ placement: "FEATURED", limit: 20 });
+    if (featuredIds.length > 0) {
+      const promoted = result.filter((l) => featuredIds.includes(l.id));
+      const rest = result.filter((l) => !featuredIds.includes(l.id));
+      const order = [...featuredIds];
+      result = [...promoted].sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id)).concat(rest);
+    }
   }
 
   if (amenitySlugs?.length) {
@@ -274,7 +284,44 @@ export async function searchListings(params: ListingSearchParams) {
       const isAvailable = await isListingAvailable(listing.id, checkInDate, checkOutDate);
       if (isAvailable) available.push(listing);
     }
-    return available;
+    result = available;
+  }
+
+  if (useAiRanking && result.length > 0) {
+    const ids = result.map((l) => l.id);
+    const [marketingBoost, growthBoost, starBoost, tierBoost, riskPen] = await Promise.all([
+      getMarketingSearchBoostByListingId(),
+      getGrowthSearchBoostByListingId(),
+      getClassificationSearchBoostMapForIds(ids),
+      getLuxuryTierSearchBoostMapForIds(ids),
+      getTrustRiskPenaltyMapForIds(ids),
+    ]);
+    const boost = (id: string) =>
+      (marketingBoost.get(id) ?? 0) +
+      (growthBoost.get(id) ?? 0) +
+      (starBoost.get(id) ?? 0) +
+      (tierBoost.get(id) ?? 0) -
+      (riskPen.get(id) ?? 0);
+    result = await orderBnhubListingsByRankingEngine(result, {
+      city,
+      guestCount: guests,
+      checkIn,
+      checkOut,
+      budgetMinCents: minPrice != null && minPrice > 0 ? Math.round(minPrice * 100) : undefined,
+      budgetMaxCents: maxPrice != null && maxPrice > 0 ? Math.round(maxPrice * 100) : undefined,
+      propertyType,
+      roomType,
+      pageType: "search",
+    }, boost);
+
+    const featuredIdsAi = await getActivePromotedListingIds({ placement: "FEATURED", limit: 20 });
+    if (featuredIdsAi.length > 0) {
+      const promoted = result.filter((l) => featuredIdsAi.includes(l.id));
+      const rest = result.filter((l) => !featuredIdsAi.includes(l.id));
+      const orderFeat = [...featuredIdsAi];
+      result = [...promoted].sort((a, b) => orderFeat.indexOf(a.id) - orderFeat.indexOf(b.id)).concat(rest);
+    }
+    void maybeLogBnhubSearchImpressions(result, { pageType: "search", city });
   }
 
   return result;
@@ -350,7 +397,9 @@ export async function searchListingsPaginated(
 
   let result = await attachReviewAggregatesForSearch(listingsRaw);
 
-  if (sort === "recommended") {
+  const useAiRankingPage = sort === "recommended" && isAiRankingEngineEnabled();
+
+  if (sort === "recommended" && !useAiRankingPage) {
     const weights = await getRankingWeights();
     const marketingBoost = await getMarketingSearchBoostByListingId();
     const growthBoost = await getGrowthSearchBoostByListingId();
@@ -377,12 +426,14 @@ export async function searchListingsPaginated(
     });
   }
 
-  const featuredIds = await getActivePromotedListingIds({ placement: "FEATURED", limit: 20 });
-  if (featuredIds.length > 0) {
-    const promoted = result.filter((l) => featuredIds.includes(l.id));
-    const rest = result.filter((l) => !featuredIds.includes(l.id));
-    const order = [...featuredIds];
-    result = [...promoted].sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id)).concat(rest);
+  if (!useAiRankingPage) {
+    const featuredIds = await getActivePromotedListingIds({ placement: "FEATURED", limit: 20 });
+    if (featuredIds.length > 0) {
+      const promoted = result.filter((l) => featuredIds.includes(l.id));
+      const rest = result.filter((l) => !featuredIds.includes(l.id));
+      const order = [...featuredIds];
+      result = [...promoted].sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id)).concat(rest);
+    }
   }
 
   if (checkIn && checkOut) {
@@ -392,6 +443,42 @@ export async function searchListingsPaginated(
       result.map((listing) => isListingAvailable(listing.id, checkInDate, checkOutDate))
     );
     result = result.filter((_, i) => flags[i]);
+  }
+
+  if (useAiRankingPage && result.length > 0) {
+    const pids = result.map((l) => l.id);
+    const [marketingBoost, growthBoost, starBoost, tierBoost, riskPen] = await Promise.all([
+      getMarketingSearchBoostByListingId(),
+      getGrowthSearchBoostByListingId(),
+      getClassificationSearchBoostMapForIds(pids),
+      getLuxuryTierSearchBoostMapForIds(pids),
+      getTrustRiskPenaltyMapForIds(pids),
+    ]);
+    const boost = (id: string) =>
+      (marketingBoost.get(id) ?? 0) +
+      (growthBoost.get(id) ?? 0) +
+      (starBoost.get(id) ?? 0) +
+      (tierBoost.get(id) ?? 0) -
+      (riskPen.get(id) ?? 0);
+    result = await orderBnhubListingsByRankingEngine(result, {
+      city,
+      guestCount: guests,
+      checkIn,
+      checkOut,
+      budgetMinCents: minPrice != null && minPrice > 0 ? Math.round(minPrice * 100) : undefined,
+      budgetMaxCents: maxPrice != null && maxPrice > 0 ? Math.round(maxPrice * 100) : undefined,
+      propertyType,
+      roomType,
+      pageType: "search",
+    }, boost);
+    const featuredIdsAi = await getActivePromotedListingIds({ placement: "FEATURED", limit: 20 });
+    if (featuredIdsAi.length > 0) {
+      const promoted = result.filter((l) => featuredIdsAi.includes(l.id));
+      const rest = result.filter((l) => !featuredIdsAi.includes(l.id));
+      const orderFeat = [...featuredIdsAi];
+      result = [...promoted].sort((a, b) => orderFeat.indexOf(a.id) - orderFeat.indexOf(b.id)).concat(rest);
+    }
+    void maybeLogBnhubSearchImpressions(result, { pageType: "search", city });
   }
 
   return {
@@ -686,6 +773,7 @@ export async function updateListing(id: string, data: UpdateListingData) {
     data: payload,
   });
   if (shouldRecompute) scheduleBnhubListingEngineRefresh(id);
+  scheduleFraudRecheck("listing", id);
   return updated;
 }
 
@@ -710,6 +798,7 @@ export async function setListingPhotos(
     orderBy: [{ isCover: "desc" }, { sortOrder: "asc" }],
   });
   scheduleBnhubListingEngineRefresh(listingId);
+  scheduleFraudRecheck("listing", listingId);
   return rows;
 }
 

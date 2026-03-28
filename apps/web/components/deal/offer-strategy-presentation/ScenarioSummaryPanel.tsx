@@ -18,11 +18,11 @@ export function ScenarioSummaryPanel({
 
   return (
     <div className="space-y-3 border-b border-white/10 pb-4 print:border-neutral-300">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#C9A646] print:text-neutral-700">Scenario</p>
+      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-premium-gold print:text-neutral-700">Scenario</p>
       <h3 className="text-lg font-semibold text-white print:text-neutral-900">{scenarioTitle(strategyMode, dto)}</h3>
       <div>
         <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500 print:text-neutral-600">Offer illustration</p>
-        <p className={`mt-1 text-base font-semibold ${hasNumbers ? "text-[#E8C547]" : "text-slate-400"} print:text-neutral-900`}>
+        <p className={`mt-1 text-base font-semibold ${hasNumbers ? "text-premium-gold" : "text-slate-400"} print:text-neutral-900`}>
           {line}
         </p>
       </div>

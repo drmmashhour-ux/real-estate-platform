@@ -17,7 +17,7 @@ function MiniBars({
   const barMaxPx = 112;
   return (
     <div className="rounded-2xl border border-white/10 bg-black/30 p-5">
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#C9A646]">{title}</p>
+      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold">{title}</p>
       <p className="mt-1 text-xs text-[#737373]">{subtitle}</p>
       <div className="mt-4 flex h-32 items-end gap-0.5 sm:gap-1">
         {series.map((s) => (
@@ -47,8 +47,8 @@ function MetricCard({
   hint?: string;
 }) {
   return (
-    <div className="rounded-2xl border border-[#C9A646]/25 bg-gradient-to-br from-[#111111] to-[#0B0B0B] p-5 shadow-lg shadow-black/50">
-      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#C9A646]">{title}</p>
+    <div className="rounded-2xl border border-premium-gold/25 bg-gradient-to-br from-[#111111] to-[#0B0B0B] p-5 shadow-lg shadow-black/50">
+      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-premium-gold">{title}</p>
       <p className="mt-2 text-3xl font-semibold tracking-tight text-white">{value}</p>
       {hint ? <p className="mt-2 text-xs text-[#737373]">{hint}</p> : null}
     </div>

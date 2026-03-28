@@ -159,8 +159,8 @@ export function SearchBar(props: SearchBarProps) {
 
   const labelCls = light ? "text-slate-500" : "text-slate-500";
   const inputCls = light
-    ? "border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 shadow-inner focus:border-[#C9A646]/60 focus:outline-none focus:ring-2 focus:ring-[#C9A646]/25"
-    : "border-white/10 bg-black/40 px-3 py-2.5 text-sm text-white placeholder:text-slate-500 focus:border-[#C9A646]/50 focus:outline-none focus:ring-1 focus:ring-[#C9A646]/40";
+    ? "border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 shadow-inner focus:border-premium-gold/60 focus:outline-none focus:ring-2 focus:ring-premium-gold/25"
+    : "border-white/10 bg-black/40 px-3 py-2.5 text-sm text-white placeholder:text-slate-500 focus:border-premium-gold/50 focus:outline-none focus:ring-1 focus:ring-premium-gold/40";
   const hintCls = light ? "text-slate-500" : "text-slate-500";
   const typeRail = light ? "border-slate-200 bg-slate-100 p-0.5" : "border-white/10 bg-black/30 p-0.5";
   const priceIdle = light
@@ -170,8 +170,8 @@ export function SearchBar(props: SearchBarProps) {
     ? "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
     : "border-white/15 bg-black/30 text-slate-200 hover:border-white/25 hover:bg-white/5";
   const filterActive = light
-    ? "border-[#C9A646]/60 bg-[#C9A646]/10 text-[#8a6a1e]"
-    : "border-[#C9A646]/50 bg-[#C9A646]/10 text-[#E8C547]";
+    ? "border-premium-gold/60 bg-premium-gold/10 text-[#8a6a1e]"
+    : "border-premium-gold/50 bg-premium-gold/10 text-premium-gold";
 
   return (
     <div className={[shell, className].join(" ")}>
@@ -205,8 +205,8 @@ export function SearchBar(props: SearchBarProps) {
               const on = browseMode === id;
               const modeCls = on
                 ? light
-                  ? "border-[#C9A646] bg-[#C9A646] text-black shadow-sm"
-                  : "border-[#C9A646]/80 bg-[#C9A646] text-black shadow-sm"
+                  ? "border-premium-gold bg-premium-gold text-black shadow-sm"
+                  : "border-premium-gold/80 bg-premium-gold text-black shadow-sm"
                 : light
                   ? "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900"
                   : "border-white/10 bg-black/40 text-slate-400 hover:border-white/20 hover:text-white";
@@ -280,7 +280,7 @@ export function SearchBar(props: SearchBarProps) {
                     className={[
                       "rounded-lg border px-2.5 py-1.5 text-xs font-medium transition",
                       effectivePreset === p.id
-                        ? "border-transparent bg-[#C9A646] text-black"
+                        ? "border-transparent bg-premium-gold text-black"
                         : ["border", priceIdle].join(" "),
                     ].join(" ")}
                   >
@@ -324,7 +324,7 @@ export function SearchBar(props: SearchBarProps) {
             <span
               className={[
                 "ml-1.5 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full px-1 text-[11px]",
-                light ? "bg-[#C9A646]/25 text-slate-900" : "bg-white/15 text-white",
+                light ? "bg-premium-gold/25 text-slate-900" : "bg-white/15 text-white",
               ].join(" ")}
             >
               {activeFilterCount}
@@ -341,7 +341,7 @@ export function SearchBar(props: SearchBarProps) {
               ? "bg-emerald-500 text-slate-950 hover:bg-emerald-400"
               : "text-black hover:brightness-110",
           ].join(" ")}
-          style={isGoldBar ? { background: "#C9A646" } : undefined}
+          style={isGoldBar ? { background: "var(--color-premium-gold)" } : undefined}
           aria-label="Search"
         >
           {light ? (

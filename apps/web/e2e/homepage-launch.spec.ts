@@ -26,7 +26,7 @@ test.describe("Homepage launch UI", () => {
 
     await page.goto("/", { waitUntil: "domcontentloaded", timeout: 60_000 });
     await expect(page.locator("#hubs")).toBeVisible({ timeout: 20_000 });
-    await expect(page.getByRole("heading", { name: /four hubs/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /six hubs/i })).toBeVisible();
 
     const logoImg = page.locator('header img[src*="/branding/"]').first();
     await expect(logoImg).toBeVisible({ timeout: 15_000 });

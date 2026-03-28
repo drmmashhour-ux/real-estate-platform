@@ -58,23 +58,23 @@ export default async function MortgagePage({
           </p>
           <h1 className="mt-4 text-3xl font-bold sm:text-4xl">Mortgage experts</h1>
           <p className="mx-auto mt-4 max-w-2xl text-[#B3B3B3]">
-            Speak with a licensed specialist. Request contact below — <strong className="text-[#C9A646]">FREE</strong>, no
+            Speak with a licensed specialist. Request contact below — <strong className="text-premium-gold">FREE</strong>, no
             obligation.
           </p>
           <p className="mt-4">
-            <Link href="/experts" className="text-sm font-semibold text-[#C9A646] hover:underline">
+            <Link href="/experts" className="text-sm font-semibold text-premium-gold hover:underline">
               Browse all experts →
             </Link>
           </p>
-          <div className="mx-auto mt-8 max-w-2xl rounded-2xl border border-[#C9A646]/25 bg-[#121212] px-5 py-4 text-left">
-            <p className="text-xs font-semibold uppercase tracking-wide text-[#C9A646]">AI layer</p>
+          <div className="mx-auto mt-8 max-w-2xl rounded-2xl border border-premium-gold/25 bg-[#121212] px-5 py-4 text-left">
+            <p className="text-xs font-semibold uppercase tracking-wide text-premium-gold">AI layer</p>
             <p className="mt-2 text-sm text-[#B3B3B3]">
               Connect analysis to financing: run scenarios in the{" "}
-              <Link href="/analyze" className="font-medium text-[#E8C547] hover:underline">
+              <Link href="/analyze" className="font-medium text-premium-gold hover:underline">
                 deal analyzer
               </Link>
               , then return here with your numbers — or open the{" "}
-              <Link href="/dashboard/ai" className="font-medium text-[#E8C547] hover:underline">
+              <Link href="/dashboard/ai" className="font-medium text-premium-gold hover:underline">
                 AI workspace
               </Link>{" "}
               for drafting questions for your expert.

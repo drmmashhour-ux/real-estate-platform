@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
 import { refreshUserAiProfile } from "@/lib/ai/behavior-scoring";
+import { recordBnhubActivityToInternalCrm } from "@/lib/crm/internal-crm-telemetry";
 
 const ALLOWED = new Set([
   "search",
@@ -60,6 +61,17 @@ export async function POST(request: NextRequest) {
       metadata: typeof body.metadata === "object" && body.metadata ? (body.metadata as object) : undefined,
     },
   });
+
+  void recordBnhubActivityToInternalCrm({
+    userId,
+    eventType,
+    listingId,
+    durationSeconds,
+    metadata:
+      typeof body.metadata === "object" && body.metadata && !Array.isArray(body.metadata)
+        ? (body.metadata as Record<string, unknown>)
+        : undefined,
+  }).catch(() => {});
 
   await refreshUserAiProfile(userId).catch(() => {});
 

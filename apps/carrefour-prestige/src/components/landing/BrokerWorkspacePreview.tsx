@@ -25,7 +25,7 @@ export function BrokerWorkspacePreview() {
             <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[#CCCCCC]/60">
               Overview
             </span>
-            <span className="rounded-md bg-[#0F3D2E]/40 px-2 py-1 text-[10px] uppercase tracking-wider text-[#C9A646]">
+            <span className="rounded-md bg-[#0F3D2E]/40 px-2 py-1 text-[10px] uppercase tracking-wider text-[#D4AF37]">
               Live preview
             </span>
           </div>
@@ -36,7 +36,7 @@ export function BrokerWorkspacePreview() {
                 <p className="text-xs uppercase tracking-wider text-[#CCCCCC]/50">{r.label}</p>
                 <div className="mt-2 flex items-baseline gap-2">
                   <span className="font-serif text-3xl text-white">{r.value}</span>
-                  {r.delta ? <span className="text-xs text-[#C9A646]/80">{r.delta}</span> : null}
+                  {r.delta ? <span className="text-xs text-[#D4AF37]/80">{r.delta}</span> : null}
                 </div>
               </div>
             ))}
@@ -60,7 +60,7 @@ export function BrokerWorkspacePreview() {
             href={dashboardUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center justify-center rounded-lg bg-[#C9A646] px-10 py-3.5 text-sm font-semibold text-[#0B0B0B] shadow-[0_8px_32px_rgba(201,166,70,0.25)] transition hover:bg-[#b8943d]"
+            className="inline-flex items-center justify-center rounded-lg bg-[#D4AF37] px-10 py-3.5 text-sm font-semibold text-[#0B0B0B] shadow-[0_8px_32px_rgba(212, 175, 55,0.25)] transition hover:bg-[#D4AF37]"
           >
             Access Dashboard
             <span className="ml-2 text-[10px] font-normal uppercase tracking-widest opacity-80">

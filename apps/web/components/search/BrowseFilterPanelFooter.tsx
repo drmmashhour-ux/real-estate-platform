@@ -46,7 +46,7 @@ export function BrowseFilterPanelFooter() {
     "min-h-11 flex-1 rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 shadow-sm hover:bg-slate-50";
 
   const primary =
-    "flex min-h-12 w-full items-center justify-center rounded-xl bg-[#C9A646] px-4 text-sm font-bold text-[#0B0B0B] shadow-md transition hover:brightness-105 disabled:opacity-60";
+    "flex min-h-12 w-full items-center justify-center rounded-xl bg-premium-gold px-4 text-sm font-bold text-[#0B0B0B] shadow-md transition hover:brightness-105 disabled:opacity-60";
 
   const countPart =
     loading && total === null

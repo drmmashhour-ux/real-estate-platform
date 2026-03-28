@@ -36,8 +36,8 @@ export function WhatIfSimulator({ baseDealScore, baseRoiPercent, disclaimer }: P
   }, [baseDealScore, baseRoiPercent, priceAdjPct, rentAdjPct]);
 
   return (
-    <div className="mt-4 rounded-lg border border-[#C9A646]/30 bg-black/40 p-3">
-      <p className="text-xs font-semibold uppercase tracking-wide text-[#C9A646]">What-if (quick)</p>
+    <div className="mt-4 rounded-lg border border-premium-gold/30 bg-black/40 p-3">
+      <p className="text-xs font-semibold uppercase tracking-wide text-premium-gold">What-if (quick)</p>
       <p className="mt-1 text-xs text-slate-500">
         Adjust assumptions to see directionally how scores move. Not a full re-run of the engine.
       </p>
@@ -52,7 +52,7 @@ export function WhatIfSimulator({ baseDealScore, baseRoiPercent, disclaimer }: P
             step={1}
             value={priceAdjPct}
             onChange={(e) => setPriceAdjPct(Number(e.target.value))}
-            className="mt-1 w-full accent-[#C9A646]"
+            className="mt-1 w-full accent-premium-gold"
           />
         </label>
         <label className="block text-xs text-slate-400">
@@ -65,7 +65,7 @@ export function WhatIfSimulator({ baseDealScore, baseRoiPercent, disclaimer }: P
             step={1}
             value={rentAdjPct}
             onChange={(e) => setRentAdjPct(Number(e.target.value))}
-            className="mt-1 w-full accent-[#C9A646]"
+            className="mt-1 w-full accent-premium-gold"
           />
         </label>
       </div>

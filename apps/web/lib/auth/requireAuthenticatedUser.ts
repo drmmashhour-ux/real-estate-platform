@@ -9,7 +9,7 @@ import { requireSessionUserIdOr401 } from "@/lib/auth/api-session";
 export async function requireAuthenticatedUser(
   req: NextRequest
 ): Promise<{ id: string } | NextResponse> {
-  const session = requireSessionUserIdOr401(req);
+  const session = await requireSessionUserIdOr401(req);
   if (session instanceof NextResponse) return session;
 
   const user = await prisma.user.findUnique({

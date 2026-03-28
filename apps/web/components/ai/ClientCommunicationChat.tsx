@@ -362,7 +362,7 @@ export function ClientCommunicationChat({
               type="checkbox"
               checked={immoNoticeChecked}
               onChange={(e) => setImmoNoticeChecked(e.target.checked)}
-              className="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-600 text-[#C9A646] focus:ring-[#C9A646]/40"
+              className="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-600 text-premium-gold focus:ring-premium-gold/40"
             />
             <span>
               I have read this notice and confirm that my contact is initiated through the platform and may be subject
@@ -384,7 +384,7 @@ export function ClientCommunicationChat({
               logImmoActivity("immo_collaboration_notice_accepted", context.listingId ?? null, { flow });
               bootstrapped.current = false;
             }}
-            className="mt-5 w-full rounded-xl bg-[#C9A646] py-3 text-sm font-bold text-[#0B0B0B] transition hover:bg-[#D4B35A] disabled:cursor-not-allowed disabled:opacity-40"
+            className="mt-5 w-full rounded-xl bg-premium-gold py-3 text-sm font-bold text-[#0B0B0B] transition hover:bg-premium-gold disabled:cursor-not-allowed disabled:opacity-40"
           >
             Continue
           </button>

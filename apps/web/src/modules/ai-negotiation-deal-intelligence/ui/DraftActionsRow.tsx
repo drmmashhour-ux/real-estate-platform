@@ -43,7 +43,7 @@ export function DraftActionsRow({
       <button
         type="button"
         onClick={() => void copy()}
-        className="rounded-lg border border-[#C9A646]/40 bg-[#C9A646]/10 px-3 py-1.5 text-xs font-semibold text-[#E8C547] hover:bg-[#C9A646]/20"
+        className="rounded-lg border border-premium-gold/40 bg-premium-gold/10 px-3 py-1.5 text-xs font-semibold text-premium-gold hover:bg-premium-gold/20"
       >
         Copy text
       </button>

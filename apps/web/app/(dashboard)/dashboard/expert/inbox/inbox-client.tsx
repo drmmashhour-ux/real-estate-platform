@@ -86,7 +86,7 @@ export function ExpertInboxClient() {
               type="button"
               onClick={() => setActiveId(r.id)}
               className={`w-full rounded-xl p-3 text-left transition hover:bg-white/5 ${
-                activeId === r.id ? "bg-[#C9A646]/15 ring-1 ring-[#C9A646]/40" : ""
+                activeId === r.id ? "bg-premium-gold/15 ring-1 ring-premium-gold/40" : ""
               }`}
             >
               <p className="text-sm font-medium text-white">
@@ -98,7 +98,7 @@ export function ExpertInboxClient() {
               {r.leadId ? (
                 <Link
                   href="/dashboard/expert/leads"
-                  className="mt-2 inline-block text-[10px] font-semibold text-[#C9A646] hover:underline"
+                  className="mt-2 inline-block text-[10px] font-semibold text-premium-gold hover:underline"
                   onClick={(e) => e.stopPropagation()}
                 >
                   View lead →
@@ -124,8 +124,8 @@ export function ExpertInboxClient() {
                         m.sender === "user"
                           ? "bg-white/10 text-white"
                           : m.sender === "expert"
-                            ? "bg-[#C9A646] text-black"
-                            : "border border-[#C9A646]/30 bg-black/40 text-[#E5E5E5]"
+                            ? "bg-premium-gold text-black"
+                            : "border border-premium-gold/30 bg-black/40 text-[#E5E5E5]"
                       }`}
                     >
                       <span className="mb-1 block text-[10px] uppercase text-[#B3B3B3]">
@@ -149,7 +149,7 @@ export function ExpertInboxClient() {
                     type="button"
                     disabled={loading || !reply.trim()}
                     onClick={() => void sendReply()}
-                    className="rounded-xl bg-[#C9A646] px-4 py-2 text-sm font-bold text-black disabled:opacity-40"
+                    className="rounded-xl bg-premium-gold px-4 py-2 text-sm font-bold text-black disabled:opacity-40"
                   >
                     Send
                   </button>

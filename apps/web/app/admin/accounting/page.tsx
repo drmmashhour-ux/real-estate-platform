@@ -75,14 +75,14 @@ export default async function AdminAccountingOverviewPage({
               className="ml-2 rounded border border-white/10 bg-black/40 px-2 py-1 text-white"
             />
           </label>
-          <button type="submit" className="rounded-lg bg-[#C9A646]/90 px-3 py-1.5 font-medium text-black">
+          <button type="submit" className="rounded-lg bg-premium-gold/90 px-3 py-1.5 font-medium text-black">
             Apply
           </button>
         </form>
 
         <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="rounded-xl border border-[#C9A646]/30 bg-black/40 p-4">
-            <p className="text-xs uppercase tracking-wider text-[#C9A646]">Gross revenue (subtotal)</p>
+          <div className="rounded-xl border border-premium-gold/30 bg-black/40 p-4">
+            <p className="text-xs uppercase tracking-wider text-premium-gold">Gross revenue (subtotal)</p>
             <p className="mt-2 text-2xl font-semibold text-white">{fmt(summary.grossRevenueCents)}</p>
           </div>
           <div className="rounded-xl border border-white/10 bg-black/40 p-4">
@@ -132,7 +132,7 @@ export default async function AdminAccountingOverviewPage({
           >
             Export month PDF
           </a>
-          <Link href="/admin/accounting/revenue" className="rounded-lg bg-[#C9A646]/90 px-4 py-2 text-sm font-medium text-black">
+          <Link href="/admin/accounting/revenue" className="rounded-lg bg-premium-gold/90 px-4 py-2 text-sm font-medium text-black">
             Revenue ledger →
           </Link>
         </div>

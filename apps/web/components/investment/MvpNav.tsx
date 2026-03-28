@@ -77,9 +77,9 @@ export function MvpNav({ variant = "live" }: { variant?: "live" | "demo" }) {
                   href={href}
                   className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
                     active
-                      ? "bg-[#C9A646]/12 text-[#E8D5A3] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] ring-1 ring-[#C9A646]/45"
+                      ? "bg-premium-gold/12 text-premium-gold shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] ring-1 ring-premium-gold/45"
                       : "text-slate-300 hover:bg-white/[0.04] hover:text-white"
-                  } ${pulseAnalyze ? "ring-2 ring-[#C9A646]/50 shadow-[0_0_18px_rgba(201,166,70,0.2)]" : ""}`}
+                  } ${pulseAnalyze ? "ring-2 ring-premium-gold/50 shadow-[0_0_18px_rgb(var(--premium-gold-channels) / 0.2)]" : ""}`}
                   aria-current={active ? "page" : undefined}
                   title={pulseAnalyze ? "Start with Analyze — run your first deal" : undefined}
                 >
@@ -106,10 +106,10 @@ export function MvpNav({ variant = "live" }: { variant?: "live" | "demo" }) {
                   href={href}
                   className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
                     active
-                      ? "bg-[#C9A646]/12 text-[#E8D5A3] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] ring-1 ring-[#C9A646]/45"
+                      ? "bg-premium-gold/12 text-premium-gold shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] ring-1 ring-premium-gold/45"
                       : "text-slate-300 hover:bg-white/[0.04] hover:text-white"
-                  } ${pulseCompare ? "ring-2 ring-[#C9A646]/55 shadow-[0_0_16px_rgba(201,166,70,0.22)]" : ""} ${
-                    pulseHint ? "ring-2 ring-[#C9A646]/50 shadow-[0_0_18px_rgba(201,166,70,0.2)]" : ""
+                  } ${pulseCompare ? "ring-2 ring-premium-gold/55 shadow-[0_0_16px_rgb(var(--premium-gold-channels) / 0.22)]" : ""} ${
+                    pulseHint ? "ring-2 ring-premium-gold/50 shadow-[0_0_18px_rgb(var(--premium-gold-channels) / 0.2)]" : ""
                   }`}
                   aria-current={active ? "page" : undefined}
                   title={

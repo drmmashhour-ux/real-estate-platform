@@ -35,7 +35,7 @@ export function getInsightToneFromString(rating: string): InsightTone {
 export function insightPillClass(tone: InsightTone): string {
   switch (tone) {
     case "success":
-      return "inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold bg-[#C9A646]/15 text-[#E8D5A3] ring-1 ring-[#C9A646]/40 shadow-[0_1px_8px_rgba(201,166,70,0.12)]";
+      return "inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold bg-premium-gold/15 text-premium-gold ring-1 ring-premium-gold/40 shadow-[0_1px_8px_rgb(var(--premium-gold-channels) / 0.12)]";
     case "warning":
       return "inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold bg-amber-500/20 text-amber-200 ring-1 ring-amber-500/40";
     case "danger":

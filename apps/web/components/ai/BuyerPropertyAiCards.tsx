@@ -28,7 +28,7 @@ export function BuyerPropertyAiCards({ listing }: { listing: BuyerListingPayload
         intent="analyze"
         title="Property insight"
         context={ctx}
-        accent="#C9A646"
+        accent="var(--color-premium-gold)"
       />
       <HubAiInsightWidget
         hub="buyer"
@@ -36,7 +36,7 @@ export function BuyerPropertyAiCards({ listing }: { listing: BuyerListingPayload
         intent="summary"
         title="Costs & warnings"
         context={ctx}
-        accent="#C9A646"
+        accent="var(--color-premium-gold)"
       />
     </div>
   );

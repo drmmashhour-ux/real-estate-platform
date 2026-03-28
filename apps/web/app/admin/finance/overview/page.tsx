@@ -76,8 +76,8 @@ export default async function AdminFinanceModelOverviewPage() {
             </div>
           </div>
 
-          <div className="mt-8 rounded-2xl border border-[#C9A646]/25 bg-[#C9A646]/5 p-5">
-            <p className="text-xs font-semibold uppercase tracking-wide text-[#C9A646]">AI-style summary</p>
+          <div className="mt-8 rounded-2xl border border-premium-gold/25 bg-premium-gold/5 p-5">
+            <p className="text-xs font-semibold uppercase tracking-wide text-premium-gold">AI-style summary</p>
             <p className="mt-2 text-sm leading-relaxed text-slate-200">{aiSummary}</p>
           </div>
 
@@ -94,7 +94,7 @@ export default async function AdminFinanceModelOverviewPage() {
               {payload.revenueBySource.map((r) => (
                 <div key={r.source} className="rounded-2xl border border-slate-800 bg-slate-900/40 p-5">
                   <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{r.label}</p>
-                  <p className="mt-2 text-2xl font-semibold tabular-nums text-[#C9A646]">{cad(r.totalCents)}</p>
+                  <p className="mt-2 text-2xl font-semibold tabular-nums text-premium-gold">{cad(r.totalCents)}</p>
                   <p className="mt-1 text-xs text-slate-500">{pct(r.totalCents)}% of total</p>
                 </div>
               ))}
@@ -157,7 +157,7 @@ function StatCard({
       <p
         className="mt-2 text-2xl font-semibold tabular-nums"
         style={{
-          color: accent ? "#C9A646" : positive === false ? "#f87171" : positive === true ? "#4ade80" : "#f8fafc",
+          color: accent ? "var(--color-premium-gold)" : positive === false ? "#f87171" : positive === true ? "#4ade80" : "#f8fafc",
         }}
       >
         {value}

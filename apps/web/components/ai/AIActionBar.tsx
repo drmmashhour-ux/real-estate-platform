@@ -24,7 +24,7 @@ export function AIActionBar({ onCopy, onRetry, onHelpful, onNotHelpful, busy, di
         type="button"
         disabled={busy}
         onClick={onRetry}
-        className="rounded-lg border border-white/15 bg-transparent px-3 py-1.5 text-xs text-[#C9A646] hover:bg-[#C9A646]/10 disabled:opacity-40"
+        className="rounded-lg border border-white/15 bg-transparent px-3 py-1.5 text-xs text-premium-gold hover:bg-premium-gold/10 disabled:opacity-40"
       >
         Retry
       </button>

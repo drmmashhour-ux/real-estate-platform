@@ -32,7 +32,7 @@ export function TrustVerificationPillarsSection() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {pillars.map((p, i) => (
             <AnimatedReveal key={p.title} delayMs={i * 50}>
-              <div className="h-full rounded-2xl border border-[#C9A646]/20 bg-gradient-to-b from-[#C9A646]/[0.07] to-transparent p-6 transition hover:border-[#C9A646]/35">
+              <div className="h-full rounded-2xl border border-premium-gold/20 bg-gradient-to-b from-premium-gold/[0.07] to-transparent p-6 transition hover:border-premium-gold/35">
                 <h3 className="text-base font-semibold text-white">{p.title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-slate-400">{p.body}</p>
               </div>

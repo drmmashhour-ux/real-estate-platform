@@ -143,12 +143,12 @@ export function KPIDashboard({ className }: { className?: string }) {
       </div>
 
       <section className="rounded-xl border border-white/10 bg-[#0f0f0f] p-5">
-        <h3 className="text-sm font-semibold text-[#C9A646]">Signups — last 7 days</h3>
+        <h3 className="text-sm font-semibold text-premium-gold">Signups — last 7 days</h3>
         <div className="mt-4 flex h-32 items-end gap-1">
           {data.signups_last_7_days.map((d) => (
             <div key={d.date} className="flex flex-1 flex-col items-center gap-1">
               <div
-                className="w-full max-w-[48px] rounded-t bg-[#C9A646]/80"
+                className="w-full max-w-[48px] rounded-t bg-premium-gold/80"
                 style={{ height: `${(d.count / maxSignup) * 100}%`, minHeight: d.count ? 4 : 0 }}
                 title={`${d.date}: ${d.count}`}
               />
@@ -185,7 +185,7 @@ function MetricCard({
 }) {
   return (
     <div className="rounded-xl border border-white/[0.08] bg-[#141414] p-4 shadow-[0_8px_32px_rgba(0,0,0,0.35)]">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#C9A646]/90">{label}</p>
+      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-premium-gold/90">{label}</p>
       <p className="mt-2 text-3xl font-bold tabular-nums text-white">{value}</p>
       <div className="mt-1">{hint}</div>
       <p className="mt-2 text-[11px] leading-snug text-slate-500">{def}</p>

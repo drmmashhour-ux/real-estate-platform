@@ -89,7 +89,7 @@ export function SharedDealClient({ payload, referrerDealId, referrerUserId }: Pr
       />
       <main className="mx-auto max-w-4xl px-4 pb-20 pt-8 sm:pt-14">
       <header className="border-b border-white/[0.07] pb-8 text-center">
-        <p className="font-serif text-lg font-semibold tracking-wide text-[#C9A646] sm:text-xl">
+        <p className="font-serif text-lg font-semibold tracking-wide text-premium-gold sm:text-xl">
           LECIPM Analysis Report
         </p>
         <p className="mt-3 text-xs font-semibold uppercase tracking-[0.28em] text-[#9CA3AF]">
@@ -97,7 +97,7 @@ export function SharedDealClient({ payload, referrerDealId, referrerUserId }: Pr
         </p>
       </header>
       <div className="mt-10 text-center">
-        <p className="text-xs font-semibold uppercase tracking-[0.25em] text-[#C9A646]/90">Shared deal · LECIPM</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.25em] text-premium-gold/90">Shared deal · LECIPM</p>
         <h1 className="mt-5 text-balance text-3xl font-semibold tracking-tight text-white sm:text-4xl md:text-5xl">
           See how this real estate deal performs
         </h1>

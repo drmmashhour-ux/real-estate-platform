@@ -3,6 +3,7 @@ import { getListingsByOwner } from "@/lib/bnhub/listings";
 import { getBookingsForHost } from "@/lib/bnhub/booking";
 import { prisma } from "@/lib/db";
 import { getGuestId } from "@/lib/auth/session";
+import { updateHostPerformance } from "@/src/modules/reviews/aggregationService";
 import Logo from "@/components/ui/Logo";
 import { HostDashboardClient } from "./host-dashboard-client";
 import { HostInsightsPanel } from "@/components/bnhub/HostInsightsPanel";
@@ -52,6 +53,32 @@ export default async function HostDashboardPage({
       : 0;
 
   const hostListingId = listings[0]?.id ?? null;
+
+  let hostTrust: {
+    performance: {
+      score: number;
+      responseRate: number;
+      avgResponseTime: number;
+      cancellationRate: number;
+      completionRate: number;
+      disputeRate: number;
+    };
+    badges: { id: string; badgeType: string; assignedAt: Date }[];
+  } | null = null;
+  if (effectiveOwnerId) {
+    let performance = await prisma.hostPerformance.findUnique({
+      where: { hostId: effectiveOwnerId },
+    });
+    if (!performance) {
+      performance = await updateHostPerformance(effectiveOwnerId);
+    }
+    const badges = await prisma.hostBadge.findMany({
+      where: { hostId: effectiveOwnerId },
+      orderBy: { assignedAt: "desc" },
+    });
+    hostTrust = { performance, badges };
+  }
+
   const hostDecision =
     effectiveOwnerId != null
       ? await safeEvaluateDecision({
@@ -172,6 +199,56 @@ export default async function HostDashboardPage({
               <div className="mb-10">
                 <HostInsightsPanel ownerId={effectiveOwnerId} />
               </div>
+
+              {hostTrust ? (
+                <div className="mb-10 rounded-2xl border border-emerald-500/25 bg-emerald-950/15 p-5">
+                  <h2 className="text-sm font-semibold text-emerald-200">Guest trust & performance</h2>
+                  <p className="mt-1 text-xs text-slate-500">
+                    Score blends response speed, completed stays, cancellations, and disputes (0–100).
+                  </p>
+                  <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-slate-500">Host score</p>
+                      <p className="mt-1 text-2xl font-semibold text-white">{hostTrust.performance.score}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-slate-500">Response rate</p>
+                      <p className="mt-1 text-lg text-slate-200">
+                        {(hostTrust.performance.responseRate * 100).toFixed(0)}%
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-slate-500">Avg. response time</p>
+                      <p className="mt-1 text-lg text-slate-200">
+                        {hostTrust.performance.avgResponseTime < 0.05
+                          ? "—"
+                          : `${hostTrust.performance.avgResponseTime.toFixed(1)} h`}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-slate-500">Completion / cancel</p>
+                      <p className="mt-1 text-sm text-slate-200">
+                        {(hostTrust.performance.completionRate * 100).toFixed(0)}% ·{" "}
+                        {(hostTrust.performance.cancellationRate * 100).toFixed(0)}% cancelled
+                      </p>
+                    </div>
+                  </div>
+                  {hostTrust.badges.length > 0 ? (
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {hostTrust.badges.map((b) => (
+                        <span
+                          key={b.id}
+                          className="rounded-full border border-emerald-500/35 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-100"
+                        >
+                          {b.badgeType.replace(/_/g, " ")}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="mt-3 text-xs text-slate-500">Badges unlock as your metrics improve.</p>
+                  )}
+                </div>
+              ) : null}
 
               <div className="mb-10 grid gap-4 sm:grid-cols-3">
                 <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5">

@@ -90,7 +90,7 @@ export function SignaturePanel({
           type="button"
           disabled={!canSubmit}
           onClick={() => void submit()}
-          className="w-full rounded-md bg-[#C9A646] px-3 py-2 text-xs font-medium text-black disabled:opacity-50"
+          className="w-full rounded-md bg-premium-gold px-3 py-2 text-xs font-medium text-black disabled:opacity-50"
         >
           {busy ? "Submitting…" : "Submit signature"}
         </button>

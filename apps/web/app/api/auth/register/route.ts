@@ -2,6 +2,7 @@ import { randomBytes } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { hashPassword } from "@/lib/auth/password";
+import { createDbSession } from "@/lib/auth/db-session";
 import { setGuestIdCookie, setUserRoleCookie } from "@/lib/auth/session";
 import { createReferralIfNeeded, ensureReferralCode } from "@/lib/referrals";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
@@ -14,6 +15,9 @@ import { captureServerEvent } from "@/lib/analytics/posthog-server";
 import { trackConversionEvent } from "@/modules/conversion-engine/application/conversionTriggerService";
 import { runFollowUpAutomation } from "@/modules/conversion-engine/application/followUpAutomationService";
 import { runBnhubPostSignupAutomation } from "@/lib/bnhub/revenue-automation";
+import { trackEvent } from "@/src/services/analytics";
+import { onSignupAutomation } from "@/src/services/automation";
+import { onMessagingTriggerSignup } from "@/src/modules/messaging/triggers";
 
 const VERIFY_TTL_MS = 48 * 60 * 60 * 1000;
 
@@ -162,6 +166,9 @@ export async function POST(request: NextRequest) {
           });
 
     const referralCode = await ensureReferralCode(user.id);
+    void trackEvent("signup", { role: validRole }, { userId: user.id }).catch(() => {});
+    void onSignupAutomation(user.id).catch(() => {});
+    void onMessagingTriggerSignup(user.id).catch(() => {});
     captureServerEvent(user.id, AnalyticsEvents.SIGNUP_COMPLETED, { role: validRole });
     await prisma.trafficEvent
       .create({
@@ -190,7 +197,8 @@ export async function POST(request: NextRequest) {
     if (validRole === "MORTGAGE_EXPERT") {
       sendSignupEmail(user.email, user.name).catch(() => {});
       const res = NextResponse.json({ ok: true, userId: user.id, email: user.email });
-      const cookie = setGuestIdCookie(user.id);
+      const sessionToken = await createDbSession(user.id);
+      const cookie = setGuestIdCookie(sessionToken);
       res.cookies.set(cookie.name, cookie.value, {
         path: cookie.path,
         maxAge: cookie.maxAge,
@@ -210,7 +218,7 @@ export async function POST(request: NextRequest) {
       return res;
     }
 
-    const verifyUrl = `${appBaseUrl()}/auth/verify-email?token=${encodeURIComponent(verificationToken)}`;
+    const verifyUrl = `${appBaseUrl()}/api/auth/verify-email-token?token=${encodeURIComponent(verificationToken)}`;
     sendAccountVerificationEmail(user.email, verifyUrl).catch(() => {});
 
     const res = NextResponse.json({

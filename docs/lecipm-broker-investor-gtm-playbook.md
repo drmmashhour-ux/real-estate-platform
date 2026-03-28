@@ -119,14 +119,14 @@ Show the **structured response** (no invented numbers — platform outputs only)
 
 ## 4. Tailwind UI blocks (copy-paste)
 
-Use with existing LECIPM dark theme (`#0B0B0B`, `#C9A646`, etc.). Prefer **live data** from TrustGraph / Deal Analyzer in product; these are layout references.
+Use with existing LECIPM dark theme (`#0B0B0B`, `#D4AF37`, etc.). Prefer **live data** from TrustGraph / Deal Analyzer in product; these are layout references.
 
 ### Trust score card
 
 ```tsx
 <div className="rounded-2xl bg-[#121212] p-6 shadow-lg">
   <h3 className="mb-4 text-lg font-semibold text-white">Trust Score</h3>
-  <div className="text-4xl font-bold text-[#C9A646]">82</div>
+  <div className="text-4xl font-bold text-[#D4AF37]">82</div>
   <div className="mt-2 text-sm text-gray-400">High Trust</div>
 </div>
 ```

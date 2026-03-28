@@ -22,7 +22,7 @@ export function PresentationModeToggle({
         onClick={() => onChange("client_presentation_mode")}
         className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
           mode === "client_presentation_mode"
-            ? "bg-[#C9A646]/20 text-[#E8C547] ring-1 ring-[#C9A646]/40"
+            ? "bg-premium-gold/20 text-premium-gold ring-1 ring-premium-gold/40"
             : "text-slate-400 hover:text-slate-200"
         }`}
       >
@@ -35,7 +35,7 @@ export function PresentationModeToggle({
         onClick={() => onChange("internal_mode")}
         className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
           mode === "internal_mode"
-            ? "bg-[#C9A646]/20 text-[#E8C547] ring-1 ring-[#C9A646]/40"
+            ? "bg-premium-gold/20 text-premium-gold ring-1 ring-premium-gold/40"
             : "text-slate-400 hover:text-slate-200"
         }`}
       >

@@ -39,7 +39,7 @@ export function AlertsCenter({ alerts, onChanged, title = "Alerts" }: { alerts: 
     <section className="rounded-2xl border border-white/10 bg-[#0b0b0c] p-4">
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
-          <h3 className="text-sm font-semibold uppercase tracking-wide text-[#C9A646]">{title}</h3>
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-premium-gold">{title}</h3>
           <p className="text-xs text-slate-500">{unreadCount} unread</p>
         </div>
         <div className="flex gap-2 overflow-x-auto text-xs">
@@ -47,7 +47,7 @@ export function AlertsCenter({ alerts, onChanged, title = "Alerts" }: { alerts: 
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className={`rounded-full border px-2.5 py-1 whitespace-nowrap ${filter === f ? "border-[#C9A646] bg-[#C9A646]/15 text-[#C9A646]" : "border-white/20 text-slate-300"}`}
+              className={`rounded-full border px-2.5 py-1 whitespace-nowrap ${filter === f ? "border-premium-gold bg-premium-gold/15 text-premium-gold" : "border-white/20 text-slate-300"}`}
             >
               {f === "all" ? "All" : f === "unread" ? "Unread" : f[0].toUpperCase() + f.slice(1)}
             </button>

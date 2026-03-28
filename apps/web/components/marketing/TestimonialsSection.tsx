@@ -38,7 +38,7 @@ export function TestimonialsSection() {
                 <p className="text-sm leading-relaxed text-slate-300">&ldquo;{q.quote}&rdquo;</p>
                 <footer className="mt-6 border-t border-white/10 pt-4">
                   <p className="text-sm font-semibold text-white">{q.name}</p>
-                  <p className="text-xs text-[#C9A646]/90">{q.role}</p>
+                  <p className="text-xs text-premium-gold/90">{q.role}</p>
                 </footer>
               </blockquote>
             </AnimatedReveal>

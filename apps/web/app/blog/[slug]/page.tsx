@@ -92,17 +92,17 @@ function renderDbBody(body: string) {
 
 function renderStaticPost(post: BlogPost) {
   return (
-    <div className="prose-invert mt-10 space-y-10 prose-headings:text-white prose-p:text-white/80 prose-a:text-[#C9A646]">
+    <div className="prose-invert mt-10 space-y-10 prose-headings:text-white prose-p:text-white/80 prose-a:text-premium-gold">
       {post.sections.map((s) => (
         <section key={s.heading}>
-          <h2 className="text-2xl font-bold text-[#C9A646]">{s.heading}</h2>
+          <h2 className="text-2xl font-bold text-premium-gold">{s.heading}</h2>
           {s.paragraphs.map((para, i) => (
             <p key={`${s.heading}-${i}`} className="mt-3 leading-relaxed">
               {para}
             </p>
           ))}
           {s.links && s.links.length > 0 ? (
-            <ul className="mt-4 list-inside list-disc space-y-2 text-[#C9A646]">
+            <ul className="mt-4 list-inside list-disc space-y-2 text-premium-gold">
               {s.links.map((l) => (
                 <li key={l.href}>
                   <Link href={l.href} className="hover:underline">
@@ -143,11 +143,11 @@ export default async function BlogPostPage({ params }: PageProps) {
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleLd) }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(crumbLd) }} />
         <div className="mx-auto max-w-3xl px-4 py-14">
-          <Link href="/blog" className="text-sm text-[#C9A646] hover:underline">
+          <Link href="/blog" className="text-sm text-premium-gold hover:underline">
             ← Blog
           </Link>
           <header className="mt-6">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#C9A646]">LECIPM Insights</p>
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-premium-gold">LECIPM Insights</p>
             <h1 className="mt-3 text-4xl font-bold leading-tight">{post.title}</h1>
             <time dateTime={post.publishedAt.toISOString()} className="mt-2 block text-sm text-white/50">
               {post.publishedAt.toISOString().slice(0, 10)}
@@ -155,7 +155,7 @@ export default async function BlogPostPage({ params }: PageProps) {
             {post.city ? (
               <p className="mt-2 text-sm text-white/50">
                 City focus:{" "}
-                <Link href={`/market/${cityToSlug(post.city)}`} className="text-[#C9A646] hover:underline">
+                <Link href={`/market/${cityToSlug(post.city)}`} className="text-premium-gold hover:underline">
                   {post.city}
                 </Link>
               </p>
@@ -166,13 +166,13 @@ export default async function BlogPostPage({ params }: PageProps) {
           <footer className="mt-14 rounded-2xl border border-white/10 bg-[#111] p-6">
             <p className="text-sm font-semibold text-white">Explore tools</p>
             <div className="mt-3 flex flex-wrap gap-3 text-sm">
-              <Link href="/tools/roi-calculator" className="text-[#C9A646] hover:underline">
+              <Link href="/tools/roi-calculator" className="text-premium-gold hover:underline">
                 ROI calculator
               </Link>
-              <Link href="/tools/deal-analyzer" className="text-[#C9A646] hover:underline">
+              <Link href="/tools/deal-analyzer" className="text-premium-gold hover:underline">
                 Deal analyzer
               </Link>
-              <Link href="/market" className="text-[#C9A646] hover:underline">
+              <Link href="/market" className="text-premium-gold hover:underline">
                 Markets
               </Link>
             </div>
@@ -196,11 +196,11 @@ export default async function BlogPostPage({ params }: PageProps) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(crumbLd) }} />
       <div className="mx-auto max-w-3xl px-4 py-14">
-        <Link href="/blog" className="text-sm text-[#C9A646] hover:underline">
+        <Link href="/blog" className="text-sm text-premium-gold hover:underline">
           ← Blog
         </Link>
         <header className="mt-6">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#C9A646]">{post.author}</p>
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-premium-gold">{post.author}</p>
           <h1 className="mt-3 text-4xl font-bold leading-tight">{post.title}</h1>
           <time dateTime={post.publishedIso} className="mt-2 block text-sm text-white/50">
             {post.publishedIso}
@@ -213,16 +213,16 @@ export default async function BlogPostPage({ params }: PageProps) {
         <footer className="mt-14 rounded-2xl border border-white/10 bg-[#111] p-6">
           <p className="text-sm font-semibold text-white">Explore city hubs</p>
           <div className="mt-3 flex flex-wrap gap-3 text-sm">
-            <Link href="/buy/montreal" className="text-[#C9A646] hover:underline">
+            <Link href="/buy/montreal" className="text-premium-gold hover:underline">
               Buy Montréal
             </Link>
-            <Link href="/rent/laval" className="text-[#C9A646] hover:underline">
+            <Link href="/rent/laval" className="text-premium-gold hover:underline">
               Rent Laval
             </Link>
-            <Link href="/mortgage/quebec" className="text-[#C9A646] hover:underline">
+            <Link href="/mortgage/quebec" className="text-premium-gold hover:underline">
               Mortgage Québec
             </Link>
-            <Link href="/tools/roi-calculator" className="text-[#C9A646] hover:underline">
+            <Link href="/tools/roi-calculator" className="text-premium-gold hover:underline">
               ROI calculator
             </Link>
           </div>

@@ -38,14 +38,7 @@ export function HubLayout({
     hubKey === "admin" && !getTrustGraphFeatureFlags().adminQueue
       ? baseNav.filter((n) => n.href !== "/admin/trustgraph")
       : baseNav;
-  const isDark =
-    hubKey === "luxury" ||
-    hubKey === "broker" ||
-    hubKey === "investments" ||
-    hubKey === "projects" ||
-    hubKey === "admin";
-
-  const bannerBorder = isDark ? "border-white/10" : "border-black/10";
+  const bannerBorder = "border-white/10";
 
   return (
     <div
@@ -64,7 +57,7 @@ export function HubLayout({
           className={`w-full shrink-0 border-b py-4 lg:w-60 lg:border-b-0 lg:border-r ${bannerBorder}`}
           style={{ backgroundColor: "var(--hub-sidebar)" }}
         >
-          <HubSidebarNav items={navItems} theme={theme} isDark={isDark} />
+          <HubSidebarNav items={navItems} theme={theme} isDark />
         </aside>
         <div className="flex min-w-0 flex-1 flex-col">
           <div className="h-1 w-full shrink-0" style={{ backgroundColor: theme.accent }} aria-hidden />
@@ -74,19 +67,9 @@ export function HubLayout({
             style={{ backgroundColor: "var(--hub-sidebar)" }}
           >
             <div className="flex min-w-0 flex-1 items-center gap-4">
-              <Logo
-                showName={true}
-                className={
-                  isDark
-                    ? "shrink-0 text-white [&_span]:text-white"
-                    : "shrink-0 text-slate-900 [&_span]:text-slate-900"
-                }
-              />
+              <Logo showName={true} className="shrink-0 text-white [&_span]:text-white" />
               <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-center sm:gap-3">
-                <h1
-                  className="truncate text-xl font-semibold"
-                  style={{ color: isDark ? "#fff" : "#111" }}
-                >
+                <h1 className="truncate text-xl font-semibold text-white">
                   {title}
                 </h1>
                 {showWorkspaceBadge ? <WorkspaceTenantBadge /> : null}

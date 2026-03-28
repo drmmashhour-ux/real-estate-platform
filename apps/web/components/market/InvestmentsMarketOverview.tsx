@@ -30,7 +30,7 @@ export function InvestmentsMarketOverview() {
         <p className="mt-2 text-sm text-slate-400">
           No city-level market series loaded yet. When admins add data, growth and yield leaders will appear here.
         </p>
-        <Link href="/market" className="mt-3 inline-block text-sm text-[#C9A646] hover:underline">
+        <Link href="/market" className="mt-3 inline-block text-sm text-premium-gold hover:underline">
           Market pages →
         </Link>
       </section>
@@ -49,7 +49,7 @@ export function InvestmentsMarketOverview() {
           <ul className="mt-2 space-y-1 text-sm text-slate-200">
             {data.bestByPriceGrowth6m.slice(0, 5).map((r) => (
               <li key={`${r.city}-${r.propertyType}-g`}>
-                <Link href={`/market/${cityToSlug(r.city)}`} className="text-[#C9A646] hover:underline">
+                <Link href={`/market/${cityToSlug(r.city)}`} className="text-premium-gold hover:underline">
                   {r.city}
                 </Link>{" "}
                 ({r.propertyType}): {r.priceGrowth6mPercent != null ? `${r.priceGrowth6mPercent.toFixed(1)}%` : "—"}
@@ -80,7 +80,7 @@ export function InvestmentsMarketOverview() {
       </div>
 
       <p className="mt-4 text-xs text-slate-500">{data.disclaimer}</p>
-      <Link href="/market" className="mt-2 inline-block text-sm text-[#C9A646] hover:underline">
+      <Link href="/market" className="mt-2 inline-block text-sm text-premium-gold hover:underline">
         Explore market pages →
       </Link>
     </section>

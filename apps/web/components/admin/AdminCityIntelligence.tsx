@@ -10,10 +10,10 @@ export async function AdminCityIntelligence() {
 
   return (
     <section
-      className="rounded-2xl border border-[#C9A646]/25 bg-[#0B0B0B]/80 p-6 shadow-lg shadow-black/20"
+      className="rounded-2xl border border-premium-gold/25 bg-[#0B0B0B]/80 p-6 shadow-lg shadow-black/20"
       aria-labelledby="admin-city-intel-heading"
     >
-      <h2 id="admin-city-intel-heading" className="text-sm font-semibold uppercase tracking-wider text-[#C9A646]">
+      <h2 id="admin-city-intel-heading" className="text-sm font-semibold uppercase tracking-wider text-premium-gold">
         City intelligence
       </h2>
       <p className="mt-2 text-xs text-[#B3B3B3]">
@@ -24,7 +24,7 @@ export async function AdminCityIntelligence() {
           <dt className="text-xs text-slate-500">Top city by revenue</dt>
           <dd className="mt-1 text-lg font-semibold text-white">
             {s.topCityByRevenue ? (
-              <Link href={`/city/${s.topCityByRevenue}`} className="hover:text-[#C9A646]">
+              <Link href={`/city/${s.topCityByRevenue}`} className="hover:text-premium-gold">
                 {labelSlug(s.topCityByRevenue)}
               </Link>
             ) : (
@@ -36,7 +36,7 @@ export async function AdminCityIntelligence() {
           <dt className="text-xs text-slate-500">Top city by bookings</dt>
           <dd className="mt-1 text-lg font-semibold text-white">
             {s.topCityByVolume ? (
-              <Link href={`/city/${s.topCityByVolume}`} className="hover:text-[#C9A646]">
+              <Link href={`/city/${s.topCityByVolume}`} className="hover:text-premium-gold">
                 {labelSlug(s.topCityByVolume)}
               </Link>
             ) : (
@@ -48,7 +48,7 @@ export async function AdminCityIntelligence() {
           <dt className="text-xs text-slate-500">Highest avg nights / booking</dt>
           <dd className="mt-1 text-lg font-semibold text-white">
             {s.topCityByBookingIntensity ? (
-              <Link href={`/city/${s.topCityByBookingIntensity}`} className="hover:text-[#C9A646]">
+              <Link href={`/city/${s.topCityByBookingIntensity}`} className="hover:text-premium-gold">
                 {labelSlug(s.topCityByBookingIntensity)}
               </Link>
             ) : (
@@ -60,7 +60,7 @@ export async function AdminCityIntelligence() {
           <dt className="text-xs text-slate-500">Best investment score</dt>
           <dd className="mt-1 text-lg font-semibold text-white">
             {s.topCityByInvestmentScore ? (
-              <Link href={`/city/${s.topCityByInvestmentScore}`} className="hover:text-[#C9A646]">
+              <Link href={`/city/${s.topCityByInvestmentScore}`} className="hover:text-premium-gold">
                 {labelSlug(s.topCityByInvestmentScore)}
               </Link>
             ) : (
@@ -72,7 +72,7 @@ export async function AdminCityIntelligence() {
       <ul className="mt-6 divide-y divide-white/10 rounded-xl border border-white/10 text-xs text-[#B3B3B3]">
         {s.cities.map((c) => (
           <li key={c.slug} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2">
-            <Link href={`/city/${c.slug}`} className="font-medium text-white hover:text-[#C9A646]">
+            <Link href={`/city/${c.slug}`} className="font-medium text-white hover:text-premium-gold">
               {labelSlug(c.slug)}
             </Link>
             <span>

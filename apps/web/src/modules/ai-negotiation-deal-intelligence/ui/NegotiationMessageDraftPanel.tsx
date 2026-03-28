@@ -84,7 +84,7 @@ export function NegotiationMessageDraftPanel({
     <div className="rounded-2xl border border-white/10 bg-gradient-to-b from-[#141414] to-[#0a0a0a] p-6 shadow-xl ring-1 ring-white/5 print:border-neutral-400 print:bg-white print:text-black">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#C9A646]">Message draft</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-premium-gold">Message draft</p>
           <p className="mt-2 text-xs text-slate-500">
             Choose a template, generate, then copy. No email or SMS is sent from LECIPM here.
           </p>
@@ -112,7 +112,7 @@ export function NegotiationMessageDraftPanel({
           type="button"
           disabled={loading}
           onClick={() => void generate()}
-          className="rounded-full border border-[#C9A646]/50 bg-[#C9A646]/10 px-5 py-2 text-xs font-semibold text-[#C9A646] hover:bg-[#C9A646]/20 disabled:opacity-50 print:hidden"
+          className="rounded-full border border-premium-gold/50 bg-premium-gold/10 px-5 py-2 text-xs font-semibold text-premium-gold hover:bg-premium-gold/20 disabled:opacity-50 print:hidden"
         >
           {loading ? "Generating…" : "Generate draft"}
         </button>
@@ -121,7 +121,7 @@ export function NegotiationMessageDraftPanel({
       {draft ? (
         <div className="mt-5 space-y-4 text-sm text-slate-300 print:text-neutral-900">
           <p className="text-[11px] uppercase tracking-wide text-slate-500">
-            Type: <span className="font-semibold text-[#C9A646]">{draft.draftType.replace(/_/g, " ")}</span>
+            Type: <span className="font-semibold text-premium-gold">{draft.draftType.replace(/_/g, " ")}</span>
           </p>
           {draft.subject ? (
             <div>

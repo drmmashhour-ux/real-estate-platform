@@ -18,7 +18,7 @@ export default function FloatingContact() {
       {telHref ? (
         <a
           href={telHref}
-          className={`z-50 pointer-events-auto ${btnBase} bg-[#C9A646] text-[#0B0B0B] focus-visible:outline-[#C9A646]`}
+          className={`z-50 pointer-events-auto ${btnBase} bg-premium-gold text-[#0B0B0B] focus-visible:outline-premium-gold`}
           aria-label="Call support"
           title="Call us"
         >

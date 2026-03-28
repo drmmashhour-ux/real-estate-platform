@@ -12,8 +12,8 @@ vi.mock("@/lib/auth/password", () => ({
   verifyPassword: vi.fn(),
 }));
 
-vi.mock("@/lib/auth/session", () => ({
-  setGuestIdCookie: vi.fn().mockReturnValue({ name: "g", value: "v", path: "/", maxAge: 1, httpOnly: true, secure: false, sameSite: "lax" }),
+vi.mock("@/lib/auth/apply-login-session", () => ({
+  applyLoginSessionCookies: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock("@/lib/referrals", () => ({
@@ -31,6 +31,9 @@ describe("POST /api/auth/login", () => {
       passwordHash: "hash",
       name: "User",
       role: "USER",
+      emailVerifiedAt: new Date(),
+      userCode: "USR-TEST01",
+      twoFactorEmailEnabled: false,
     } as never);
     vi.mocked(prisma.mortgageExpert.findUnique).mockResolvedValue(null as never);
     vi.mocked(verifyPassword).mockResolvedValue(true);
@@ -81,6 +84,9 @@ describe("POST /api/auth/login", () => {
       passwordHash: "hash",
       name: "Expert",
       role: "MORTGAGE_EXPERT",
+      emailVerifiedAt: new Date(),
+      userCode: "USR-TEST02",
+      twoFactorEmailEnabled: false,
     } as never);
     vi.mocked(prisma.mortgageExpert.findUnique).mockResolvedValue({ acceptedTerms: false } as never);
     const req = new Request("http://x/api/auth/login", {

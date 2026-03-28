@@ -1,10 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="lecipm-mark-light-title">
   <title id="lecipm-mark-light-title">LECIPM mark</title>
-  <rect x="10" y="10" width="108" height="108" rx="26" fill="none" stroke="#C9A646" stroke-width="2.5"/>
+  <rect x="10" y="10" width="108" height="108" rx="26" fill="none" stroke="#D4AF37" stroke-width="2.5"/>
   <path
     d="M 30 42 L 46 34 L 62 40 L 78 30 L 98 36"
     fill="none"
-    stroke="#C9A646"
+    stroke="#D4AF37"
     stroke-width="2.75"
     stroke-linecap="round"
     stroke-linejoin="round"

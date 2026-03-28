@@ -1,6 +1,6 @@
 import { SalesScriptsClient } from "./sales-scripts-client";
 
-const GOLD = "#C9A646";
+const GOLD = "var(--color-premium-gold)";
 
 export const metadata = {
   title: "Launch + sales | Scripts",
@@ -16,7 +16,7 @@ export default function DashboardAdminSalesPage() {
       <h1 className="mt-2 text-3xl font-bold text-white">Sales scripts (in-app)</h1>
       <p className="mt-2 max-w-2xl text-sm text-[#B3B3B3]">
         Generate leads, convert manually, close mortgage &amp; real estate deals — ready-to-copy{" "}
-        <strong className="text-[#C9A646]">DM, call, closing, and follow-up</strong> blocks. Use with{" "}
+        <strong className="text-premium-gold">DM, call, closing, and follow-up</strong> blocks. Use with{" "}
         <strong className="text-white">CRM → Leads</strong> (Copy DM · Call client · WhatsApp).
       </p>
       <SalesScriptsClient />

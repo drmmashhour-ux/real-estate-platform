@@ -1,4 +1,5 @@
 import type { NextResponse } from "next/server";
+import { createDbSession } from "@/lib/auth/db-session";
 import { setGuestIdCookie, setUserRoleCookie } from "@/lib/auth/session";
 import { AnalyticsEvents } from "@/lib/analytics/events";
 import { captureServerEvent } from "@/lib/analytics/posthog-server";
@@ -13,7 +14,8 @@ export async function applyLoginSessionCookies(
   user: { id: string; role: string }
 ): Promise<void> {
   await ensureReferralCode(user.id).catch(() => {});
-  const cookie = setGuestIdCookie(user.id);
+  const token = await createDbSession(user.id);
+  const cookie = setGuestIdCookie(token);
   res.cookies.set(cookie.name, cookie.value, {
     path: cookie.path,
     maxAge: cookie.maxAge,

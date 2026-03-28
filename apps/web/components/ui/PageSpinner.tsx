@@ -13,7 +13,7 @@ export function PageSpinner({ label = "Loading…", className = "" }: Props) {
       aria-busy
     >
       <div
-        className="h-10 w-10 animate-spin rounded-full border-2 border-[#C9A646]/30 border-t-[#C9A646]"
+        className="h-10 w-10 animate-spin rounded-full border-2 border-premium-gold/30 border-t-[var(--color-premium-gold)]"
         aria-hidden
       />
       <p className="text-sm text-slate-400">{label}</p>

@@ -54,24 +54,24 @@ export function LegalPageLayout({
 
   return (
     <main className="min-h-screen bg-[#0B0B0B] text-white">
-      <header className="border-b border-[#C9A646]/25 bg-[#121212]/95 backdrop-blur">
+      <header className="border-b border-premium-gold/25 bg-[#121212]/95 backdrop-blur">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-4">
           <Link
             href={backHref}
-            className="text-sm font-medium text-[#B3B3B3] transition-colors hover:text-[#C9A646]"
+            className="text-sm font-medium text-[#B3B3B3] transition-colors hover:text-premium-gold"
           >
             ← Back
           </Link>
           <div className="flex items-center gap-4">
             <LangToggle />
-            <Link href="/legal" className="text-xs font-semibold text-[#C9A646] hover:text-[#E8C547]">
+            <Link href="/legal" className="text-xs font-semibold text-premium-gold hover:text-premium-gold">
               Legal center
             </Link>
           </div>
         </div>
       </header>
       <article className="mx-auto max-w-3xl px-4 py-10 sm:py-14">
-        <p className="text-xs font-semibold uppercase tracking-[0.25em] text-[#C9A646]">LECIPM · Mashhour Investments</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.25em] text-premium-gold">LECIPM · Mashhour Investments</p>
         <h1 className="mt-3 text-3xl font-bold tracking-tight text-white sm:text-4xl">{title}</h1>
         {(version || updatedAt) && (
           <p className="mt-3 text-sm text-[#737373]">
@@ -81,7 +81,7 @@ export function LegalPageLayout({
           </p>
         )}
         <div
-          className="prose prose-invert mt-8 max-w-none prose-headings:text-[#E8C547] prose-headings:font-semibold prose-p:text-[#D4D4D4] prose-p:leading-relaxed prose-li:text-[#D4D4D4] prose-a:text-[#C9A646] prose-strong:text-white prose-h2:mt-10 prose-h2:border-b prose-h2:border-[#C9A646]/20 prose-h2:pb-2"
+          className="prose prose-invert mt-8 max-w-none prose-headings:text-premium-gold prose-headings:font-semibold prose-p:text-[#D4D4D4] prose-p:leading-relaxed prose-li:text-[#D4D4D4] prose-a:text-premium-gold prose-strong:text-white prose-h2:mt-10 prose-h2:border-b prose-h2:border-premium-gold/20 prose-h2:pb-2"
         >
           {children}
         </div>

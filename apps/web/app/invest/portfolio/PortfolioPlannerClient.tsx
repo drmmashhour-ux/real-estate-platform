@@ -201,7 +201,7 @@ export function PortfolioPlannerClient() {
   return (
     <div className="mx-auto max-w-5xl space-y-10 px-4 py-10">
       <div>
-        <p className="text-xs uppercase tracking-wider text-[#C9A646]">Planning tool</p>
+        <p className="text-xs uppercase tracking-wider text-premium-gold">Planning tool</p>
         <h1 className="mt-2 text-3xl font-bold text-white">AI investor portfolio</h1>
         <p className="mt-2 text-sm text-slate-400">
           Estimates only — not advice. Step {step} of {STEPS}
@@ -209,7 +209,7 @@ export function PortfolioPlannerClient() {
       </div>
 
       {step === 1 && (
-        <section className="rounded-2xl border border-[#C9A646]/25 bg-black/50 p-6">
+        <section className="rounded-2xl border border-premium-gold/25 bg-black/50 p-6">
           <h2 className="text-lg font-semibold text-white">Step 1 — Goals</h2>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <label className="text-xs text-slate-400">
@@ -246,7 +246,7 @@ export function PortfolioPlannerClient() {
                     type="button"
                     onClick={() => setStrategy(s)}
                     className={`rounded-lg px-4 py-2 text-sm font-semibold ${
-                      strategy === s ? "bg-[#C9A646] text-black" : "border border-white/20 text-white"
+                      strategy === s ? "bg-premium-gold text-black" : "border border-white/20 text-white"
                     }`}
                   >
                     {s.replace("_", " ")}
@@ -258,7 +258,7 @@ export function PortfolioPlannerClient() {
           <button
             type="button"
             onClick={() => setStep(2)}
-            className="mt-6 rounded-xl bg-[#C9A646] px-6 py-3 text-sm font-bold text-black"
+            className="mt-6 rounded-xl bg-premium-gold px-6 py-3 text-sm font-bold text-black"
           >
             Next
           </button>
@@ -266,7 +266,7 @@ export function PortfolioPlannerClient() {
       )}
 
       {step === 2 && (
-        <section className="rounded-2xl border border-[#C9A646]/25 bg-black/50 p-6">
+        <section className="rounded-2xl border border-premium-gold/25 bg-black/50 p-6">
           <h2 className="text-lg font-semibold text-white">Step 2 — Risk & targets</h2>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <div>
@@ -278,7 +278,7 @@ export function PortfolioPlannerClient() {
                     type="button"
                     onClick={() => setRisk(r)}
                     className={`rounded-lg px-4 py-2 text-sm font-semibold ${
-                      risk === r ? "bg-[#C9A646] text-black" : "border border-white/20 text-white"
+                      risk === r ? "bg-premium-gold text-black" : "border border-white/20 text-white"
                     }`}
                   >
                     {r}
@@ -322,7 +322,7 @@ export function PortfolioPlannerClient() {
               type="button"
               disabled={loading}
               onClick={() => void runBuild()}
-              className="rounded-xl bg-[#C9A646] px-6 py-3 text-sm font-bold text-black disabled:opacity-50"
+              className="rounded-xl bg-premium-gold px-6 py-3 text-sm font-bold text-black disabled:opacity-50"
             >
               {loading ? "Building…" : "Build suggested portfolio"}
             </button>
@@ -355,7 +355,7 @@ export function PortfolioPlannerClient() {
                       <div className="h-20 w-28 rounded-lg bg-white/10" />
                     )}
                     <div className="min-w-0 flex-1">
-                      <p className="font-semibold text-[#C9A646] line-clamp-2">{it.listing.title}</p>
+                      <p className="font-semibold text-premium-gold line-clamp-2">{it.listing.title}</p>
                       <p className="text-xs text-slate-500">{it.listing.city}</p>
                       <p className="mt-1 text-sm text-white">${(it.listing.priceCents / 100).toLocaleString()}</p>
                     </div>
@@ -379,7 +379,7 @@ export function PortfolioPlannerClient() {
                     <button
                       type="button"
                       onClick={() => add(it.listing.id)}
-                      className="text-xs text-[#C9A646] hover:underline"
+                      className="text-xs text-premium-gold hover:underline"
                     >
                       Add to compare
                     </button>
@@ -404,7 +404,7 @@ export function PortfolioPlannerClient() {
 function SummaryStrip({ profile }: { profile: InvestorProfileInput }) {
   return (
     <div className="rounded-2xl border border-white/10 bg-gradient-to-r from-black/80 to-[#1a1508] p-6">
-      <h3 className="text-sm font-semibold text-[#C9A646]">Investor summary (planning inputs)</h3>
+      <h3 className="text-sm font-semibold text-premium-gold">Investor summary (planning inputs)</h3>
       <div className="mt-3 grid gap-3 text-sm text-slate-300 sm:grid-cols-3">
         <p>
           Budget:{" "}
@@ -434,9 +434,9 @@ function ScenarioCard({
 }) {
   const s = scenario.summary;
   return (
-    <div className="rounded-2xl border border-[#C9A646]/30 bg-black/60 p-5">
+    <div className="rounded-2xl border border-premium-gold/30 bg-black/60 p-5">
       <h3 className="font-semibold text-white">{scenario.title}</h3>
-      <p className="mt-2 text-3xl font-bold text-[#C9A646]">{s.propertyCount} props</p>
+      <p className="mt-2 text-3xl font-bold text-premium-gold">{s.propertyCount} props</p>
       <ul className="mt-4 space-y-1 text-sm text-slate-300">
         <li>Avg ROI (est.): {s.avgRoi.toFixed(2)}%</li>
         <li>Avg cap (est.): {s.avgCap.toFixed(2)}%</li>
@@ -446,7 +446,7 @@ function ScenarioCard({
       </ul>
       <p className="mt-3 text-xs text-slate-500">{scenario.diversification.notes[0] ?? ""}</p>
       <div className="mt-4 flex flex-wrap gap-2">
-        <button type="button" onClick={onSave} className="rounded-lg bg-[#C9A646] px-3 py-2 text-xs font-bold text-black">
+        <button type="button" onClick={onSave} className="rounded-lg bg-premium-gold px-3 py-2 text-xs font-bold text-black">
           Save scenario
         </button>
         <button type="button" onClick={onCompare} className="rounded-lg border border-white/20 px-3 py-2 text-xs text-white">
@@ -491,10 +491,10 @@ function ExpertCtas() {
         <input className="rounded-lg border border-white/10 bg-black/50 px-3 py-2 text-white" placeholder="Phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
       </div>
       <div className="mt-4 flex flex-wrap gap-2">
-        <button type="button" onClick={() => void send("broker")} className="rounded-lg bg-[#C9A646] px-4 py-2 text-sm font-bold text-black">
+        <button type="button" onClick={() => void send("broker")} className="rounded-lg bg-premium-gold px-4 py-2 text-sm font-bold text-black">
           Broker
         </button>
-        <button type="button" onClick={() => void send("mortgage")} className="rounded-lg border border-[#C9A646]/50 px-4 py-2 text-sm text-[#C9A646]">
+        <button type="button" onClick={() => void send("mortgage")} className="rounded-lg border border-premium-gold/50 px-4 py-2 text-sm text-premium-gold">
           Mortgage expert
         </button>
         <button type="button" onClick={() => void send("plan")} className="rounded-lg border border-white/20 px-4 py-2 text-sm text-white">

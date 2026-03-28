@@ -19,7 +19,7 @@ export function LandingHero() {
       <div className="absolute inset-0 bg-black/50" aria-hidden />
       <div className="relative z-10 mx-auto flex min-h-[min(92vh,900px)] max-w-5xl flex-col items-center justify-center px-6 py-24 text-center">
         <p className="font-sans text-xs font-bold uppercase tracking-[0.25em] text-white">{PLATFORM_NAME}</p>
-        <p className="mt-2 font-serif text-xs uppercase tracking-[0.2em] text-[#C9A646]">
+        <p className="mt-2 font-serif text-xs uppercase tracking-[0.2em] text-[#D4AF37]">
           {PLATFORM_CARREFOUR_NAME}
         </p>
         <h1 className="mt-6 max-w-4xl font-serif text-4xl font-normal leading-tight text-white sm:text-5xl md:text-[3.25rem]">
@@ -35,7 +35,7 @@ export function LandingHero() {
             href={platformUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center justify-center rounded-lg bg-[#C9A646] px-8 py-3.5 text-sm font-semibold text-[#0B0B0B] shadow-[0_8px_32px_rgba(201,166,70,0.25)] transition hover:bg-[#b8943d]"
+            className="inline-flex items-center justify-center rounded-lg bg-[#D4AF37] px-8 py-3.5 text-sm font-semibold text-[#0B0B0B] shadow-[0_8px_32px_rgba(212, 175, 55,0.25)] transition hover:bg-[#D4AF37]"
           >
             Access Platform
             <span className="ml-2 text-[10px] font-normal uppercase tracking-widest text-[#0B0B0B]/70">
@@ -44,13 +44,13 @@ export function LandingHero() {
           </a>
           <Link
             href="/properties"
-            className="inline-flex items-center justify-center rounded-lg border border-[#C9A646] px-8 py-3.5 text-sm font-semibold text-[#C9A646] transition hover:bg-[#C9A646]/10"
+            className="inline-flex items-center justify-center rounded-lg border border-[#D4AF37] px-8 py-3.5 text-sm font-semibold text-[#D4AF37] transition hover:bg-[#D4AF37]/10"
           >
             Browse Properties
           </Link>
           <Link
             href="#investor-positioning"
-            className="inline-flex items-center justify-center rounded-lg border border-[#C9A646] px-8 py-3.5 text-sm font-semibold text-[#C9A646] transition hover:bg-[#C9A646]/10"
+            className="inline-flex items-center justify-center rounded-lg border border-[#D4AF37] px-8 py-3.5 text-sm font-semibold text-[#D4AF37] transition hover:bg-[#D4AF37]/10"
           >
             Start Investing
           </Link>

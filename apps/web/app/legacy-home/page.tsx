@@ -83,16 +83,16 @@ const EarlyAccessCaptureFormLazy = nextDynamic(
   }
 );
 
-const GOLD = "#C9A646";
+const GOLD = "var(--color-premium-gold)";
 const SURFACE = "#121212";
 
 /** Hero primary CTAs — identical gold pill footprint (analyzer + dashboard). */
 const HERO_GOLD_BASE =
-  "inline-flex w-full min-h-[88px] rounded-full bg-[#C9A646] px-6 py-4 text-center shadow-[0_16px_48px_rgba(201,166,70,0.38)] ring-2 ring-[#C9A646]/80 ring-offset-2 ring-offset-[#0B0B0B] transition duration-300 hover:-translate-y-0.5 hover:brightness-110 sm:min-h-[96px] sm:px-10";
+  "inline-flex w-full min-h-[88px] rounded-full bg-premium-gold px-6 py-4 text-center shadow-[0_16px_48px_rgb(var(--premium-gold-channels) / 0.38)] ring-2 ring-premium-gold/80 ring-offset-2 ring-offset-[#0B0B0B] transition duration-300 hover:-translate-y-0.5 hover:brightness-110 sm:min-h-[96px] sm:px-10";
 const HERO_GOLD_SINGLE = `${HERO_GOLD_BASE} items-center justify-center text-base font-extrabold tracking-wide text-[#0B0B0B]`;
 /** Smaller matching gold pills (Sign up / Sign in under View Dashboard). */
 const HERO_GOLD_MINI =
-  "inline-flex min-h-[44px] min-w-[7.5rem] flex-1 items-center justify-center rounded-full bg-[#C9A646] px-5 text-sm font-semibold text-[#0B0B0B] shadow-[0_8px_24px_rgba(201,166,70,0.28)] ring-2 ring-[#C9A646]/75 ring-offset-2 ring-offset-[#0B0B0B] transition hover:brightness-105 sm:min-h-[48px] sm:min-w-[8.5rem] sm:text-base";
+  "inline-flex min-h-[44px] min-w-[7.5rem] flex-1 items-center justify-center rounded-full bg-premium-gold px-5 text-sm font-semibold text-[#0B0B0B] shadow-[0_8px_24px_rgb(var(--premium-gold-channels) / 0.28)] ring-2 ring-premium-gold/75 ring-offset-2 ring-offset-[#0B0B0B] transition hover:brightness-105 sm:min-h-[48px] sm:min-w-[8.5rem] sm:text-base";
 
 /** Avoid SSG hanging on self-fetch when no dev server is up during `next build`. */
 export const dynamic = "force-dynamic";
@@ -165,28 +165,28 @@ async function getFeaturedListings() {
 
 function IconStay() {
   return (
-    <svg className="h-6 w-6 text-[#C9A646]" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
+    <svg className="h-6 w-6 text-premium-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
     </svg>
   );
 }
 function IconBuy() {
   return (
-    <svg className="h-6 w-6 text-[#C9A646]" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
+    <svg className="h-6 w-6 text-premium-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
     </svg>
   );
 }
 function IconInvest() {
   return (
-    <svg className="h-6 w-6 text-[#C9A646]" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
+    <svg className="h-6 w-6 text-premium-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
     </svg>
   );
 }
 function IconList() {
   return (
-    <svg className="h-6 w-6 text-[#C9A646]" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
+    <svg className="h-6 w-6 text-premium-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" />
     </svg>
   );
@@ -279,13 +279,13 @@ function LocalImageSection({
       />
       <div className="absolute inset-0 bg-black/60" aria-hidden />
       <div
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_80%_50%,rgba(201,166,70,0.1),transparent)]"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_80%_50%,rgb(var(--premium-gold-channels) / 0.1),transparent)]"
         aria-hidden
       />
       <div className="relative z-10 mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
         <h2 className="max-w-2xl text-3xl font-bold tracking-tight text-white sm:text-4xl">{title}</h2>
         <p className="mt-5 max-w-2xl text-base leading-relaxed text-white/95 sm:text-lg">{body}</p>
-        <p className="mt-6 text-xs font-semibold uppercase tracking-[0.2em] text-[#C9A646]">
+        <p className="mt-6 text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold">
           Montreal · Laval · Greater Québec
         </p>
       </div>
@@ -401,11 +401,11 @@ export default async function HomePage() {
       {/* Hero */}
       <section className="relative overflow-hidden bg-[#0B0B0B] px-4 pb-24 pt-10 text-center sm:px-6 sm:pb-28 sm:pt-16">
         <div
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_50%_-20%,rgba(201,166,70,0.16),transparent)]"
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_50%_-20%,rgb(var(--premium-gold-channels) / 0.16),transparent)]"
           aria-hidden
         />
         <div
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_100%_0%,rgba(201,166,70,0.1),transparent)]"
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_100%_0%,rgb(var(--premium-gold-channels) / 0.1),transparent)]"
           aria-hidden
         />
         <div className="relative z-10 mx-auto max-w-5xl page-enter">
@@ -426,7 +426,7 @@ export default async function HomePage() {
             AI-powered ROI, cash flow, and financing paths — built for serious investors
           </p>
           {feedbackSummary && feedbackSummary.count > 0 ? (
-            <p className="mx-auto mt-4 text-center text-sm font-semibold text-[#E8D5A3]">
+            <p className="mx-auto mt-4 text-center text-sm font-semibold text-premium-gold">
               ⭐ {feedbackSummary.average.toFixed(1)}/5 from users
             </p>
           ) : null}
@@ -473,13 +473,13 @@ export default async function HomePage() {
               {!isLoggedIn ? (
                 <p className="w-full text-center text-[11px] leading-relaxed text-[#9CA3AF]">
                   <span className="text-[#6B7280]">Mortgage broker: </span>
-                  <Link href="/auth/signup-broker" className="font-semibold text-[#C9A646] hover:underline">
+                  <Link href="/auth/signup-broker" className="font-semibold text-premium-gold hover:underline">
                     Sign up
                   </Link>
                   <span className="text-[#6B7280]"> · </span>
                   <Link
                     href="/auth/login?next=/broker/complete-profile"
-                    className="font-semibold text-[#C9A646] hover:underline"
+                    className="font-semibold text-premium-gold hover:underline"
                   >
                     Sign in
                   </Link>
@@ -509,7 +509,7 @@ export default async function HomePage() {
                   key={row.t}
                   className="min-w-[140px] rounded-xl border border-white/10 bg-[#0B0B0B]/90 px-4 py-3 text-left shadow-inner"
                 >
-                  <p className="text-xs font-semibold uppercase tracking-wide text-[#C9A646]">{row.t}</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-premium-gold">{row.t}</p>
                   <p className="mt-1 text-xs text-[#737373]">{row.d}</p>
                 </li>
               ))}
@@ -526,22 +526,22 @@ export default async function HomePage() {
               <div className="mx-auto mt-10 flex flex-wrap items-center justify-center gap-3">
                 <Link
                   href="/dashboard/real-estate"
-                  className="rounded-full border border-white/15 bg-white/5 px-5 py-2.5 text-xs font-semibold text-[#E5E5E5] transition hover:border-[#C9A646]/40 hover:text-white"
+                  className="rounded-full border border-white/15 bg-white/5 px-5 py-2.5 text-xs font-semibold text-[#E5E5E5] transition hover:border-premium-gold/40 hover:text-white"
                 >
                   Buy
                 </Link>
                 <Link
                   href="/sell"
-                  className="rounded-full border border-white/15 bg-white/5 px-5 py-2.5 text-xs font-semibold text-[#E5E5E5] transition hover:border-[#C9A646]/40 hover:text-white"
+                  className="rounded-full border border-white/15 bg-white/5 px-5 py-2.5 text-xs font-semibold text-[#E5E5E5] transition hover:border-premium-gold/40 hover:text-white"
                 >
                   Sell
                 </Link>
-                <Link href="/search/bnhub" className="rounded-full border border-white/15 bg-white/5 px-5 py-2.5 text-xs font-semibold text-[#E5E5E5] transition hover:border-[#C9A646]/40 hover:text-white">
+                <Link href="/search/bnhub" className="rounded-full border border-white/15 bg-white/5 px-5 py-2.5 text-xs font-semibold text-[#E5E5E5] transition hover:border-premium-gold/40 hover:text-white">
                   Rent stays
                 </Link>
                 <Link
                   href="/evaluate"
-                  className="rounded-full border border-[#C9A646]/35 bg-[#C9A646]/10 px-5 py-2.5 text-xs font-semibold text-[#C9A646] transition hover:bg-[#C9A646]/15"
+                  className="rounded-full border border-premium-gold/35 bg-premium-gold/10 px-5 py-2.5 text-xs font-semibold text-premium-gold transition hover:bg-premium-gold/15"
                 >
                   Free evaluation
                 </Link>
@@ -549,7 +549,7 @@ export default async function HomePage() {
               <div className="mb-6 mt-12 flex flex-wrap items-center justify-center gap-2">
                 <VerifiedBrokerBadge />
                 <span
-                  className="rounded-full border border-[#C9A646]/30 px-3 py-1 text-xs font-medium text-[#C9A646]"
+                  className="rounded-full border border-premium-gold/30 px-3 py-1 text-xs font-medium text-premium-gold"
                   style={{ backgroundColor: `${SURFACE}` }}
                 >
                   Secure payments · Stripe
@@ -559,13 +559,13 @@ export default async function HomePage() {
                 <Link
                   href="/search/bnhub"
                   className="inline-flex items-center justify-center rounded-full px-10 py-3.5 text-sm font-bold text-[#0B0B0B] shadow-lg transition hover:brightness-110"
-                  style={{ backgroundColor: GOLD, boxShadow: "0 12px 40px rgba(201,166,70,0.25)" }}
+                  style={{ backgroundColor: GOLD, boxShadow: "0 12px 40px rgb(var(--premium-gold-channels) / 0.25)" }}
                 >
                   Explore BNHub stays
                 </Link>
                 <Link
                   href="/auth/signup"
-                  className="inline-flex items-center justify-center rounded-full border border-white/20 bg-white/5 px-8 py-3.5 text-sm font-semibold text-white backdrop-blur hover:border-[#C9A646]/50"
+                  className="inline-flex items-center justify-center rounded-full border border-white/20 bg-white/5 px-8 py-3.5 text-sm font-semibold text-white backdrop-blur hover:border-premium-gold/50"
                 >
                   Open your account
                 </Link>
@@ -573,24 +573,24 @@ export default async function HomePage() {
               <div className="mx-auto mt-5 flex flex-wrap items-center justify-center gap-2">
                 <Link
                   href="/mortgage"
-                  className="rounded-full border border-[#C9A646]/45 bg-[#121212]/90 px-5 py-2 text-xs font-bold text-[#C9A646] hover:bg-[#C9A646]/10"
+                  className="rounded-full border border-premium-gold/45 bg-[#121212]/90 px-5 py-2 text-xs font-bold text-premium-gold hover:bg-premium-gold/10"
                 >
                   Get pre-approved FREE
                 </Link>
                 <Link
                   href="/contact"
-                  className="rounded-full border border-white/20 bg-white/5 px-5 py-2 text-xs font-semibold text-white hover:border-[#C9A646]/50"
+                  className="rounded-full border border-white/20 bg-white/5 px-5 py-2 text-xs font-semibold text-white hover:border-premium-gold/50"
                 >
                   Talk to an expert
                 </Link>
                 <Link
                   href="/properties"
-                  className="rounded-full border border-white/20 bg-white/5 px-5 py-2 text-xs font-semibold text-white hover:border-[#C9A646]/50"
+                  className="rounded-full border border-white/20 bg-white/5 px-5 py-2 text-xs font-semibold text-white hover:border-premium-gold/50"
                 >
                   Find your property
                 </Link>
               </div>
-              <p className="mx-auto mt-3 max-w-2xl text-center text-xs font-medium text-[#C9A646]/95">
+              <p className="mx-auto mt-3 max-w-2xl text-center text-xs font-medium text-premium-gold/95">
                 FREE mortgage help · FREE consultation · FREE home evaluation — no obligation.
               </p>
               <div className="mx-auto mt-10 w-full max-w-4xl">
@@ -612,13 +612,13 @@ export default async function HomePage() {
               <Link
                 key={href}
                 href={href}
-                className="group flex items-start gap-3 rounded-2xl border border-white/10 bg-[#121212] p-4 text-left shadow-lg transition duration-300 hover:-translate-y-1 hover:border-[#C9A646]/45 hover:shadow-[0_16px_40px_rgba(201,166,70,0.12)]"
+                className="group flex items-start gap-3 rounded-2xl border border-white/10 bg-[#121212] p-4 text-left shadow-lg transition duration-300 hover:-translate-y-1 hover:border-premium-gold/45 hover:shadow-[0_16px_40px_rgb(var(--premium-gold-channels) / 0.12)]"
               >
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#C9A646]/10 transition group-hover:bg-[#C9A646]/20">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-premium-gold/10 transition group-hover:bg-premium-gold/20">
                   <Icon />
                 </span>
                 <span>
-                  <span className="block font-semibold text-white group-hover:text-[#C9A646]">{title}</span>
+                  <span className="block font-semibold text-white group-hover:text-premium-gold">{title}</span>
                   <span className="mt-0.5 block text-xs text-[#B3B3B3]">{sub}</span>
                 </span>
               </Link>
@@ -632,7 +632,7 @@ export default async function HomePage() {
 
           {/* Value proposition */}
           <div className="mx-auto mt-20 w-full max-w-5xl text-left">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#C9A646]">Why investors use this platform</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold">Why investors use this platform</p>
             <h2 className="mt-3 text-2xl font-bold tracking-tight text-white sm:text-3xl">Value proposition</h2>
             <div className="mt-10 grid gap-4 sm:grid-cols-2">
               {[
@@ -655,9 +655,9 @@ export default async function HomePage() {
               ].map((v) => (
                 <div
                   key={v.title}
-                  className="flex gap-4 rounded-2xl border border-white/10 bg-[#0B0B0B] p-5 transition hover:border-[#C9A646]/30"
+                  className="flex gap-4 rounded-2xl border border-white/10 bg-[#0B0B0B] p-5 transition hover:border-premium-gold/30"
                 >
-                  <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#C9A646]/12 text-[#C9A646]" aria-hidden>
+                  <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-premium-gold/12 text-premium-gold" aria-hidden>
                     <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 13l4 4L19 7" />
                     </svg>
@@ -673,13 +673,13 @@ export default async function HomePage() {
 
           {/* Demo flow */}
           <div className="mx-auto mt-20 w-full max-w-5xl text-left">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#C9A646]">Demo flow</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold">Demo flow</p>
             <h2 className="mt-3 text-2xl font-bold tracking-tight text-white sm:text-3xl">Analyze → Save → Compare → Track</h2>
             <p className="mt-2 max-w-2xl text-sm text-[#9CA3AF] sm:text-base">
               Walk investors through the full lifecycle in minutes: underwrite a deal, save it to your workspace, compare
               against alternatives, and follow performance from the dashboard.
             </p>
-            <div className="mt-8 rounded-2xl border border-[#C9A646]/25 bg-gradient-to-br from-[#121212] to-[#0B0B0B] p-6 sm:p-8">
+            <div className="mt-8 rounded-2xl border border-premium-gold/25 bg-gradient-to-br from-[#121212] to-[#0B0B0B] p-6 sm:p-8">
               <ol className="flex list-none flex-col items-stretch gap-3 md:flex-row md:flex-wrap md:items-center md:justify-center md:gap-2">
                 {[
                   { label: "Analyze", href: "/analyze#analyzer", sub: "Run the model" },
@@ -691,9 +691,9 @@ export default async function HomePage() {
                     <li key={step.label}>
                       <Link
                         href={step.href}
-                        className="block w-full rounded-xl border border-white/10 bg-[#0B0B0B]/80 px-4 py-4 text-center transition hover:border-[#C9A646]/45 md:min-w-[140px] md:max-w-[200px]"
+                        className="block w-full rounded-xl border border-white/10 bg-[#0B0B0B]/80 px-4 py-4 text-center transition hover:border-premium-gold/45 md:min-w-[140px] md:max-w-[200px]"
                       >
-                        <span className="block text-sm font-bold text-[#C9A646]">{step.label}</span>
+                        <span className="block text-sm font-bold text-premium-gold">{step.label}</span>
                         <span className="mt-1 block text-xs text-[#9CA3AF]">{step.sub}</span>
                       </Link>
                     </li>
@@ -702,7 +702,7 @@ export default async function HomePage() {
                   const sep = (
                     <li
                       key={`${step.label}-sep`}
-                      className="flex list-none items-center justify-center py-0.5 text-lg font-bold text-[#C9A646] md:py-0 md:px-1"
+                      className="flex list-none items-center justify-center py-0.5 text-lg font-bold text-premium-gold md:py-0 md:px-1"
                       aria-hidden
                     >
                       <span className="md:hidden">↓</span>
@@ -721,7 +721,7 @@ export default async function HomePage() {
 
           {/* Monetization — tiers */}
           <div className="mx-auto mt-20 w-full max-w-5xl text-left">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#C9A646]">Plans</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold">Plans</p>
             <h2 className="mt-3 text-2xl font-bold tracking-tight text-white sm:text-3xl">Built for every stage</h2>
             <p className="mt-2 max-w-2xl text-sm text-[#9CA3AF]">
               Illustrative tiers for investor conversations — adjust pricing and limits in product when you launch.
@@ -764,12 +764,12 @@ export default async function HomePage() {
                   className={[
                     "relative flex flex-col rounded-2xl border p-6 shadow-xl",
                     tier.emphasis
-                      ? "border-[#C9A646]/50 bg-[#121212] ring-1 ring-[#C9A646]/35"
+                      ? "border-premium-gold/50 bg-[#121212] ring-1 ring-premium-gold/35"
                       : "border-white/10 bg-[#121212]/80",
                   ].join(" ")}
                 >
                   {tier.emphasis ? (
-                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#C9A646] px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-[#0B0B0B]">
+                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-premium-gold px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-[#0B0B0B]">
                       {tier.badge}
                     </span>
                   ) : (
@@ -777,13 +777,13 @@ export default async function HomePage() {
                   )}
                   <h3 className="mt-4 text-xl font-bold text-white">{tier.name}</h3>
                   <p className="mt-2 flex items-baseline gap-1">
-                    <span className="text-3xl font-bold text-[#C9A646]">{tier.price}</span>
+                    <span className="text-3xl font-bold text-premium-gold">{tier.price}</span>
                     {tier.period ? <span className="text-sm text-[#737373]">{tier.period}</span> : null}
                   </p>
                   <ul className="mt-6 flex-1 space-y-3 text-sm text-[#B3B3B3]">
                     {tier.highlights.map((h) => (
                       <li key={h} className="flex gap-2">
-                        <span className="text-[#C9A646]" aria-hidden>
+                        <span className="text-premium-gold" aria-hidden>
                           ✓
                         </span>
                         {h}
@@ -795,8 +795,8 @@ export default async function HomePage() {
                     className={[
                       "mt-8 inline-flex w-full items-center justify-center rounded-full px-4 py-3 text-sm font-bold transition",
                       tier.emphasis
-                        ? "bg-[#C9A646] text-[#0B0B0B] hover:brightness-110"
-                        : "border border-white/20 bg-white/5 text-white hover:border-[#C9A646]/50",
+                        ? "bg-premium-gold text-[#0B0B0B] hover:brightness-110"
+                        : "border border-white/20 bg-white/5 text-white hover:border-premium-gold/50",
                     ].join(" ")}
                   >
                     {tier.cta}
@@ -808,9 +808,9 @@ export default async function HomePage() {
 
           {/* Strong CTA — investor demo */}
           <div className="mx-auto mt-20 w-full max-w-5xl">
-            <div className="relative overflow-hidden rounded-3xl border border-[#C9A646]/40 bg-gradient-to-br from-[#1a1510] via-[#121212] to-[#0B0B0B] px-6 py-12 text-center sm:px-12 sm:py-14">
+            <div className="relative overflow-hidden rounded-3xl border border-premium-gold/40 bg-gradient-to-br from-[#1a1510] via-[#121212] to-[#0B0B0B] px-6 py-12 text-center sm:px-12 sm:py-14">
               <div
-                className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_-20%,rgba(201,166,70,0.2),transparent)]"
+                className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_-20%,rgb(var(--premium-gold-channels) / 0.2),transparent)]"
                 aria-hidden
               />
               <div className="relative z-10 mx-auto max-w-2xl">
@@ -821,13 +821,13 @@ export default async function HomePage() {
                 <div className="mt-8 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
                   <Link
                     href="/contact"
-                    className="inline-flex min-h-[48px] flex-1 items-center justify-center rounded-full bg-[#C9A646] px-8 py-3.5 text-sm font-bold text-[#0B0B0B] shadow-lg shadow-[#C9A646]/20 transition hover:brightness-110 sm:flex-none"
+                    className="inline-flex min-h-[48px] flex-1 items-center justify-center rounded-full bg-premium-gold px-8 py-3.5 text-sm font-bold text-[#0B0B0B] shadow-lg shadow-premium-gold/20 transition hover:brightness-110 sm:flex-none"
                   >
                     Request Early Access
                   </Link>
                   <Link
                     href="/analyze"
-                    className="inline-flex min-h-[48px] flex-1 items-center justify-center rounded-full border border-white/25 bg-white/5 px-8 py-3.5 text-sm font-semibold text-white backdrop-blur transition hover:border-[#C9A646]/50 hover:text-[#C9A646] sm:flex-none"
+                    className="inline-flex min-h-[48px] flex-1 items-center justify-center rounded-full border border-white/25 bg-white/5 px-8 py-3.5 text-sm font-semibold text-white backdrop-blur transition hover:border-premium-gold/50 hover:text-premium-gold sm:flex-none"
                   >
                     Start Investing Smarter
                   </Link>
@@ -849,7 +849,7 @@ export default async function HomePage() {
                 <Link
                   key={c.href}
                   href={c.href}
-                  className="group relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-white/10 shadow-lg transition hover:-translate-y-0.5 hover:border-[#C9A646]/40"
+                  className="group relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-white/10 shadow-lg transition hover:-translate-y-0.5 hover:border-premium-gold/40"
                 >
                   <Image
                     src={c.img}
@@ -892,9 +892,9 @@ export default async function HomePage() {
                 <Link
                   key={c.href}
                   href={c.href}
-                  className="rounded-2xl border border-white/10 bg-[#121212]/90 p-4 transition hover:border-[#C9A646]/45"
+                  className="rounded-2xl border border-white/10 bg-[#121212]/90 p-4 transition hover:border-premium-gold/45"
                 >
-                  <span className="block font-semibold text-[#C9A646]">{c.title}</span>
+                  <span className="block font-semibold text-premium-gold">{c.title}</span>
                   <span className="mt-1 block text-xs text-[#B3B3B3]">{c.sub}</span>
                 </Link>
               ))}
@@ -902,7 +902,7 @@ export default async function HomePage() {
           </div>
 
           {/* Property value CTA */}
-          <div className="relative mx-auto mt-12 w-full max-w-5xl overflow-hidden rounded-2xl border border-[#C9A646]/30 bg-[#121212] px-6 py-8 text-left sm:px-10 sm:py-10">
+          <div className="relative mx-auto mt-12 w-full max-w-5xl overflow-hidden rounded-2xl border border-premium-gold/30 bg-[#121212] px-6 py-8 text-left sm:px-10 sm:py-10">
             <div
               className="pointer-events-none absolute inset-0 opacity-[0.12]"
               aria-hidden
@@ -911,15 +911,15 @@ export default async function HomePage() {
             </div>
             <div className="absolute inset-0 bg-gradient-to-r from-[#0B0B0B]/95 via-[#0B0B0B]/88 to-[#0B0B0B]/75" aria-hidden />
             <div className="relative z-10 max-w-2xl">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#C9A646]">Homeowners</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold">Homeowners</p>
               <h2 className="mt-2 text-2xl font-bold text-white sm:text-3xl">Find your property value</h2>
               <p className="mt-3 text-sm text-[#B3B3B3] sm:text-base">
                 Instant results for Montreal, Laval &amp; Quebec.{" "}
-                <span className="font-semibold text-[#C9A646]">100% free — no obligation.</span>
+                <span className="font-semibold text-premium-gold">100% free — no obligation.</span>
               </p>
               <Link
                 href="/evaluate"
-                className="mt-6 inline-flex rounded-full bg-[#C9A646] px-8 py-3.5 text-sm font-bold text-[#0B0B0B] shadow-lg hover:bg-[#E8C547]"
+                className="mt-6 inline-flex rounded-full bg-premium-gold px-8 py-3.5 text-sm font-bold text-[#0B0B0B] shadow-lg hover:bg-premium-gold"
               >
                 Free evaluation
               </Link>
@@ -928,7 +928,7 @@ export default async function HomePage() {
 
           {/* Sell path: FSBO vs broker */}
           <div className="relative mx-auto mt-14 w-full max-w-5xl overflow-hidden rounded-2xl border border-white/10 bg-[#121212] px-6 py-8 text-left sm:px-10 sm:py-10">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#C9A646]">Selling</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold">Selling</p>
             <h2 className="mt-2 text-2xl font-bold text-white sm:text-3xl">Sell your property</h2>
             <p className="mt-3 max-w-2xl text-sm text-[#B3B3B3]">
               Choose how you want to move forward — list yourself on {PLATFORM_CARREFOUR_NAME} or get expert help from a
@@ -937,13 +937,13 @@ export default async function HomePage() {
             <div className="mt-6 flex flex-wrap gap-3">
               <Link
                 href="/sell/create"
-                className="inline-flex rounded-full border border-white/25 px-8 py-3 text-sm font-semibold text-white hover:border-[#C9A646]/50 hover:text-[#C9A646]"
+                className="inline-flex rounded-full border border-white/25 px-8 py-3 text-sm font-semibold text-white hover:border-premium-gold/50 hover:text-premium-gold"
               >
                 Sell by yourself
               </Link>
               <Link
                 href="/sell/compare"
-                className="inline-flex rounded-full bg-[#C9A646] px-8 py-3 text-sm font-bold text-[#0B0B0B] shadow-lg hover:bg-[#E8C547]"
+                className="inline-flex rounded-full bg-premium-gold px-8 py-3 text-sm font-bold text-[#0B0B0B] shadow-lg hover:bg-premium-gold"
               >
                 Work with a broker
               </Link>
@@ -951,10 +951,10 @@ export default async function HomePage() {
           </div>
 
           {/* What clients say */}
-          <section className="relative mx-auto mt-14 w-full max-w-5xl rounded-2xl border border-[#C9A646]/25 bg-[#121212] px-6 py-10 text-left sm:px-10 sm:py-12">
+          <section className="relative mx-auto mt-14 w-full max-w-5xl rounded-2xl border border-premium-gold/25 bg-[#121212] px-6 py-10 text-left sm:px-10 sm:py-12">
             <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#C9A646]">Trust &amp; social proof</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold">Trust &amp; social proof</p>
                 <h2 className="mt-2 text-2xl font-bold text-white sm:text-3xl">
                   Success stories &amp; trust messages
                 </h2>
@@ -964,7 +964,7 @@ export default async function HomePage() {
               </div>
               <Link
                 href="/why-lecipm"
-                className="text-sm font-medium text-[#C9A646] hover:underline"
+                className="text-sm font-medium text-premium-gold hover:underline"
               >
                 Why {PLATFORM_NAME} →
               </Link>
@@ -994,7 +994,7 @@ export default async function HomePage() {
                     key={t.name}
                     className="flex h-full flex-col rounded-2xl border border-white/10 bg-[#0B0B0B] p-5"
                   >
-                    <p className="text-[#C9A646]" aria-hidden>
+                    <p className="text-premium-gold" aria-hidden>
                       ★★★★★
                     </p>
                     <p className="mt-3 flex-1 text-sm leading-relaxed text-[#E5E5E5]">&ldquo;{t.quote}&rdquo;</p>
@@ -1011,9 +1011,9 @@ export default async function HomePage() {
                 {testimonials.map((t) => (
                   <div
                     key={t.id}
-                    className="flex h-full flex-col rounded-2xl border border-white/10 bg-[#0B0B0B] p-5 transition hover:-translate-y-0.5 hover:border-[#C9A646]/35"
+                    className="flex h-full flex-col rounded-2xl border border-white/10 bg-[#0B0B0B] p-5 transition hover:-translate-y-0.5 hover:border-premium-gold/35"
                   >
-                    <p className="text-[#C9A646]" aria-hidden>
+                    <p className="text-premium-gold" aria-hidden>
                       {"★".repeat(Math.min(5, Math.max(1, t.rating)))}
                     </p>
                     <p className="mt-3 flex-1 text-sm leading-relaxed text-[#E5E5E5]">&ldquo;{t.quote}&rdquo;</p>
@@ -1031,8 +1031,8 @@ export default async function HomePage() {
           </section>
 
         {/* FSBO */}
-        <section className="relative mx-auto mt-14 max-w-5xl rounded-2xl border border-[#C9A646]/35 bg-gradient-to-br from-[#121212] to-[#0B0B0B] px-6 py-10 text-left sm:px-10">
-          <p className="text-xs font-semibold uppercase tracking-[0.25em] text-[#C9A646]">Private sale</p>
+        <section className="relative mx-auto mt-14 max-w-5xl rounded-2xl border border-premium-gold/35 bg-gradient-to-br from-[#121212] to-[#0B0B0B] px-6 py-10 text-left sm:px-10">
+          <p className="text-xs font-semibold uppercase tracking-[0.25em] text-premium-gold">Private sale</p>
           <h2 className="mt-3 text-2xl font-semibold text-white sm:text-3xl">Sell your property yourself</h2>
           <p className="mt-3 max-w-2xl text-[#B3B3B3]">
             List your home FSBO on {PLATFORM_CARREFOUR_NAME} — one-time publish fee, you manage inquiries. Separate from
@@ -1041,17 +1041,17 @@ export default async function HomePage() {
           <div className="mt-6 flex flex-wrap gap-3">
             <Link
               href="/sell/create"
-              className="inline-flex rounded-full bg-[#C9A646] px-8 py-3 text-sm font-bold text-[#0B0B0B] hover:bg-[#E8C547]"
+              className="inline-flex rounded-full bg-premium-gold px-8 py-3 text-sm font-bold text-[#0B0B0B] hover:bg-premium-gold"
             >
               Create your listing
             </Link>
             <Link
               href="/sell/learn"
-              className="inline-flex rounded-full border border-white/25 px-8 py-3 text-sm font-semibold text-white hover:border-[#C9A646]/50"
+              className="inline-flex rounded-full border border-white/25 px-8 py-3 text-sm font-semibold text-white hover:border-premium-gold/50"
             >
               Learn more
             </Link>
-            <Link href="/sell" className="inline-flex items-center px-4 py-3 text-sm font-medium text-[#C9A646] hover:underline">
+            <Link href="/sell" className="inline-flex items-center px-4 py-3 text-sm font-medium text-premium-gold hover:underline">
               Browse FSBO →
             </Link>
           </div>
@@ -1101,16 +1101,16 @@ export default async function HomePage() {
           <div className="mb-5 flex flex-wrap items-center justify-center gap-3">
             <QuebecCanadaFlagsPair gapClass="gap-3" />
           </div>
-          <h2 className="text-2xl font-bold tracking-tight text-[#C9A646] sm:text-3xl">Proudly a Quebec platform</h2>
+          <h2 className="text-2xl font-bold tracking-tight text-premium-gold sm:text-3xl">Proudly a Quebec platform</h2>
           <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-[#B3B3B3]">
             Québec is known for its strong real estate market, clear regulatory frameworks, and deep local expertise.
             {PLATFORM_CARREFOUR_NAME} embraces that identity: we are a{" "}
             <strong className="font-semibold text-white">Quebec real estate platform</strong> connecting serious buyers,
             sellers, and guests with transparent economics — from{" "}
-            <strong className="text-[#C9A646]">real estate Montreal</strong> searches to{" "}
-            <strong className="text-[#C9A646]">Laval property</strong> listings and stays across the province.
+            <strong className="text-premium-gold">real estate Montreal</strong> searches to{" "}
+            <strong className="text-premium-gold">Laval property</strong> listings and stays across the province.
           </p>
-          <p className="mt-6 text-sm font-medium text-[#C9A646]">
+          <p className="mt-6 text-sm font-medium text-premium-gold">
             OACIQ-minded professionalism · BNHub · FSBO · Investments
           </p>
         </div>
@@ -1121,25 +1121,25 @@ export default async function HomePage() {
         <div className="mx-auto max-w-7xl">
           <div className="grid gap-10 lg:grid-cols-2">
             <div>
-              <h2 className="text-xs font-semibold uppercase tracking-[0.25em] text-[#C9A646]">Services</h2>
+              <h2 className="text-xs font-semibold uppercase tracking-[0.25em] text-premium-gold">Services</h2>
               <p className="mt-3 text-2xl font-semibold text-white">Everything in one verified marketplace</p>
               <ul className="mt-6 space-y-4 text-[#B3B3B3]">
                 <li className="flex gap-3">
-                  <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[#C9A646]" />
+                  <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-premium-gold" />
                   <span>
                     <strong className="text-white">BNHub</strong> — short-term stays with secure Stripe checkout & host
                     payouts.
                   </span>
                 </li>
                 <li className="flex gap-3">
-                  <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[#C9A646]" />
+                  <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-premium-gold" />
                   <span>
                     <strong className="text-white">Residential & luxury</strong> — acquisition and advisory with licensed
                     brokers.
                   </span>
                 </li>
                 <li className="flex gap-3">
-                  <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[#C9A646]" />
+                  <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-premium-gold" />
                   <span>
                     <strong className="text-white">Projects & investments</strong> — curated developments and yield-focused
                     inventory.
@@ -1149,19 +1149,19 @@ export default async function HomePage() {
             </div>
             <div className="space-y-10">
               <div>
-                <h2 className="text-xs font-semibold uppercase tracking-[0.25em] text-[#C9A646]">Mission</h2>
+                <h2 className="text-xs font-semibold uppercase tracking-[0.25em] text-premium-gold">Mission</h2>
                 <p className="mt-3 text-lg leading-relaxed text-[#B3B3B3]">
                   To simplify real estate, rentals, and investment through one premium platform.
                 </p>
               </div>
               <div>
-                <h2 className="text-xs font-semibold uppercase tracking-[0.25em] text-[#C9A646]">Vision</h2>
+                <h2 className="text-xs font-semibold uppercase tracking-[0.25em] text-premium-gold">Vision</h2>
                 <p className="mt-3 text-lg leading-relaxed text-[#B3B3B3]">
                   To become the trusted intelligent real estate ecosystem for Québec and beyond.
                 </p>
               </div>
-              <div className="rounded-2xl border border-[#C9A646]/30 bg-[#0B0B0B] p-6">
-                <h2 className="text-xs font-semibold uppercase tracking-[0.25em] text-[#C9A646]">Contact us</h2>
+              <div className="rounded-2xl border border-premium-gold/30 bg-[#0B0B0B] p-6">
+                <h2 className="text-xs font-semibold uppercase tracking-[0.25em] text-premium-gold">Contact us</h2>
                 <p className="mt-3 text-sm text-[#B3B3B3]">
                   Partnerships, press, or concierge — we respond to serious inquiries quickly.
                 </p>
@@ -1169,9 +1169,9 @@ export default async function HomePage() {
                   <li>
                     <a
                       href={getPhoneTelLink()}
-                      className="inline-flex items-center gap-2 font-medium text-white hover:text-[#C9A646]"
+                      className="inline-flex items-center gap-2 font-medium text-white hover:text-premium-gold"
                     >
-                      <span className="text-[#C9A646]" aria-hidden>
+                      <span className="text-premium-gold" aria-hidden>
                         📞
                       </span>
                       {getPhoneNumber()}
@@ -1180,9 +1180,9 @@ export default async function HomePage() {
                   <li>
                     <a
                       href={getPublicContactMailto()}
-                      className="inline-flex items-center gap-2 font-medium text-white hover:text-[#C9A646]"
+                      className="inline-flex items-center gap-2 font-medium text-white hover:text-premium-gold"
                     >
-                      <span className="text-[#C9A646]" aria-hidden>
+                      <span className="text-premium-gold" aria-hidden>
                         ✉️
                       </span>
                       {getPublicContactEmail()}
@@ -1190,7 +1190,7 @@ export default async function HomePage() {
                   </li>
                   {socialEntries.length > 0 ? (
                     <li className="pt-1">
-                      <p className="text-xs font-semibold uppercase tracking-wider text-[#C9A646]/90">Social</p>
+                      <p className="text-xs font-semibold uppercase tracking-wider text-premium-gold/90">Social</p>
                       <div className="mt-2 flex flex-wrap gap-3">
                         {socialEntries.map(([key, label, href]) => (
                           <a
@@ -1198,7 +1198,7 @@ export default async function HomePage() {
                             href={href}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-[#B3B3B3] transition hover:text-[#C9A646]"
+                            className="text-[#B3B3B3] transition hover:text-premium-gold"
                           >
                             {label}
                           </a>
@@ -1250,7 +1250,7 @@ export default async function HomePage() {
                     />
                   </div>
                   <div className="flex flex-1 flex-col p-4">
-                <h3 className="line-clamp-1 font-semibold text-white group-hover:text-[#C9A646]">
+                <h3 className="line-clamp-1 font-semibold text-white group-hover:text-premium-gold">
                       {item.title || "Property"}
                     </h3>
                 <p className="mt-1 text-sm text-[#B3B3B3]">{item.city || ""}</p>
@@ -1310,7 +1310,7 @@ export default async function HomePage() {
               </span>
             </div>
             <div className="p-4">
-              <h3 className="font-semibold text-white group-hover:text-[#C9A646]">{l.title}</h3>
+              <h3 className="font-semibold text-white group-hover:text-premium-gold">{l.title}</h3>
               <p className="mt-1 text-sm text-[#B3B3B3]">{l.city}</p>
               <p className="mt-2 text-sm font-medium" style={{ color: GOLD }}>
                 {l.price}
@@ -1360,7 +1360,7 @@ export default async function HomePage() {
                     />
                   </div>
             <div className="p-4">
-              <h3 className="font-semibold text-white group-hover:text-[#C9A646]">{p.name}</h3>
+              <h3 className="font-semibold text-white group-hover:text-premium-gold">{p.name}</h3>
               <p className="mt-1 text-sm text-[#B3B3B3]">{p.city}</p>
               <p className="mt-2 text-sm font-semibold" style={{ color: GOLD }}>
                 From $
@@ -1387,7 +1387,7 @@ export default async function HomePage() {
             className="card-premium min-w-[240px] max-w-[260px] shrink-0 snap-start p-5 sm:min-w-[260px]"
           >
             <div className="flex items-center gap-2">
-              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#C9A646]/15 text-[#C9A646]">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-premium-gold/15 text-premium-gold">
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
@@ -1396,7 +1396,7 @@ export default async function HomePage() {
             </div>
             <h3 className="mt-4 font-semibold text-white">{b.name}</h3>
             <p className="mt-1 text-sm text-[#B3B3B3]">{b.region}</p>
-            <span className="mt-3 inline-flex text-xs font-semibold text-[#C9A646]">
+            <span className="mt-3 inline-flex text-xs font-semibold text-premium-gold">
               Connect →
             </span>
           </Link>
@@ -1410,7 +1410,7 @@ export default async function HomePage() {
       {/* CTA — investor demo close */}
       <section className="border-t border-white/10 bg-[#121212] px-4 py-16 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-3xl text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#C9A646]">Get started</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold">Get started</p>
           <h2 className="mt-3 text-2xl font-bold text-white sm:text-3xl">
             {INVESTMENT_HUB_FOCUS ? "Try the analyzer — sign in only to sync" : "Request early access or try the product"}
           </h2>
@@ -1428,13 +1428,13 @@ export default async function HomePage() {
             </Link>
             <Link
               href="/contact"
-              className="inline-flex min-h-[48px] items-center justify-center rounded-full border border-white/20 bg-white/5 px-10 py-3 text-sm font-semibold text-white backdrop-blur transition hover:border-[#C9A646]/50 hover:text-[#C9A646]"
+              className="inline-flex min-h-[48px] items-center justify-center rounded-full border border-white/20 bg-white/5 px-10 py-3 text-sm font-semibold text-white backdrop-blur transition hover:border-premium-gold/50 hover:text-premium-gold"
             >
               {INVESTMENT_HUB_FOCUS ? "Contact us" : "Request Early Access"}
             </Link>
             <Link
               href="/auth/signup"
-              className="inline-flex min-h-[48px] items-center justify-center rounded-full border border-[#C9A646]/35 px-10 py-3 text-sm font-semibold text-[#C9A646] transition hover:bg-[#C9A646]/10"
+              className="inline-flex min-h-[48px] items-center justify-center rounded-full border border-premium-gold/35 px-10 py-3 text-sm font-semibold text-premium-gold transition hover:bg-premium-gold/10"
             >
               {INVESTMENT_HUB_FOCUS ? "Create account to sync" : "Create account"}
             </Link>
@@ -1453,7 +1453,7 @@ export default async function HomePage() {
                 <Link
                   key={mod.key}
                   href={mod.href}
-                  className="rounded-xl border border-white/15 bg-[#121212] px-4 py-2 text-sm font-medium text-[#B3B3B3] transition hover:border-[#C9A646]/40 hover:text-white"
+                  className="rounded-xl border border-white/15 bg-[#121212] px-4 py-2 text-sm font-medium text-[#B3B3B3] transition hover:border-premium-gold/40 hover:text-white"
                 >
                   {mod.name}
                 </Link>
@@ -1478,30 +1478,30 @@ export default async function HomePage() {
           </div>
           <div className="grid gap-8 sm:grid-cols-3 lg:gap-12">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-[#C9A646]">Location</p>
+              <p className="text-xs font-semibold uppercase tracking-widest text-premium-gold">Location</p>
               <p className="mt-2 text-sm font-medium text-white">{officeAddress}</p>
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-[#C9A646]">Email</p>
+              <p className="text-xs font-semibold uppercase tracking-widest text-premium-gold">Email</p>
               <a
                 href={getPublicContactMailto()}
-                className="mt-2 block text-sm font-medium text-white hover:text-[#C9A646]"
+                className="mt-2 block text-sm font-medium text-white hover:text-premium-gold"
               >
                 {getPublicContactEmail()}
               </a>
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-[#C9A646]">Phone</p>
+              <p className="text-xs font-semibold uppercase tracking-widest text-premium-gold">Phone</p>
               <a
                 href={getPhoneTelLink()}
-                className="mt-2 block text-sm font-medium text-white hover:text-[#C9A646]"
+                className="mt-2 block text-sm font-medium text-white hover:text-premium-gold"
               >
                 {getPhoneNumber()}
               </a>
             </div>
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-[#C9A646]">Social</p>
+            <p className="text-xs font-semibold uppercase tracking-widest text-premium-gold">Social</p>
             {socialEntries.length > 0 ? (
               <div className="mt-3 flex flex-wrap gap-4 text-sm">
                 {socialEntries.map(([key, label, href]) => (
@@ -1510,7 +1510,7 @@ export default async function HomePage() {
                     href={href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-[#B3B3B3] hover:text-[#C9A646]"
+                    className="text-[#B3B3B3] hover:text-premium-gold"
                   >
                     {label}
                   </a>
@@ -1518,7 +1518,7 @@ export default async function HomePage() {
               </div>
             ) : (
               <p className="mt-3 text-sm text-[#B3B3B3]">
-                <Link href="/contact" className="text-[#C9A646] hover:text-[#D4B35A]">
+                <Link href="/contact" className="text-premium-gold hover:text-premium-gold">
                   Contact us
                 </Link>{" "}
                 — social profiles are added at deploy time.

@@ -54,11 +54,11 @@ export function SellPageLeadForm() {
   return (
     <form
       onSubmit={onSubmit}
-      className="rounded-2xl border border-[#C9A646]/25 bg-[#121212] p-6 shadow-lg sm:p-8"
+      className="rounded-2xl border border-premium-gold/25 bg-[#121212] p-6 shadow-lg sm:p-8"
     >
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="sm:col-span-2">
-          <label htmlFor="sell-lead-name" className="block text-xs font-medium uppercase tracking-wider text-[#C9A646]/90">
+          <label htmlFor="sell-lead-name" className="block text-xs font-medium uppercase tracking-wider text-premium-gold/90">
             Name
           </label>
           <input
@@ -66,12 +66,12 @@ export function SellPageLeadForm() {
             name="name"
             required
             autoComplete="name"
-            className="mt-1.5 w-full rounded-xl border border-white/15 bg-[#0B0B0B] px-4 py-3 text-sm text-white placeholder:text-[#B3B3B3]/50 focus:border-[#C9A646]/50 focus:outline-none focus:ring-1 focus:ring-[#C9A646]/40"
+            className="mt-1.5 w-full rounded-xl border border-white/15 bg-[#0B0B0B] px-4 py-3 text-sm text-white placeholder:text-[#B3B3B3]/50 focus:border-premium-gold/50 focus:outline-none focus:ring-1 focus:ring-premium-gold/40"
             placeholder="Your name"
           />
         </div>
         <div>
-          <label htmlFor="sell-lead-email" className="block text-xs font-medium uppercase tracking-wider text-[#C9A646]/90">
+          <label htmlFor="sell-lead-email" className="block text-xs font-medium uppercase tracking-wider text-premium-gold/90">
             Email
           </label>
           <input
@@ -80,12 +80,12 @@ export function SellPageLeadForm() {
             type="email"
             required
             autoComplete="email"
-            className="mt-1.5 w-full rounded-xl border border-white/15 bg-[#0B0B0B] px-4 py-3 text-sm text-white placeholder:text-[#B3B3B3]/50 focus:border-[#C9A646]/50 focus:outline-none focus:ring-1 focus:ring-[#C9A646]/40"
+            className="mt-1.5 w-full rounded-xl border border-white/15 bg-[#0B0B0B] px-4 py-3 text-sm text-white placeholder:text-[#B3B3B3]/50 focus:border-premium-gold/50 focus:outline-none focus:ring-1 focus:ring-premium-gold/40"
             placeholder="you@example.com"
           />
         </div>
         <div>
-          <label htmlFor="sell-lead-phone" className="block text-xs font-medium uppercase tracking-wider text-[#C9A646]/90">
+          <label htmlFor="sell-lead-phone" className="block text-xs font-medium uppercase tracking-wider text-premium-gold/90">
             Phone
           </label>
           <input
@@ -94,19 +94,19 @@ export function SellPageLeadForm() {
             type="tel"
             required
             autoComplete="tel"
-            className="mt-1.5 w-full rounded-xl border border-white/15 bg-[#0B0B0B] px-4 py-3 text-sm text-white placeholder:text-[#B3B3B3]/50 focus:border-[#C9A646]/50 focus:outline-none focus:ring-1 focus:ring-[#C9A646]/40"
+            className="mt-1.5 w-full rounded-xl border border-white/15 bg-[#0B0B0B] px-4 py-3 text-sm text-white placeholder:text-[#B3B3B3]/50 focus:border-premium-gold/50 focus:outline-none focus:ring-1 focus:ring-premium-gold/40"
             placeholder="+1 …"
           />
         </div>
         <div className="sm:col-span-2">
-          <label htmlFor="sell-lead-message" className="block text-xs font-medium uppercase tracking-wider text-[#C9A646]/90">
+          <label htmlFor="sell-lead-message" className="block text-xs font-medium uppercase tracking-wider text-premium-gold/90">
             Message
           </label>
           <textarea
             id="sell-lead-message"
             name="message"
             rows={4}
-            className="mt-1.5 w-full resize-y rounded-xl border border-white/15 bg-[#0B0B0B] px-4 py-3 text-sm text-white placeholder:text-[#B3B3B3]/50 focus:border-[#C9A646]/50 focus:outline-none focus:ring-1 focus:ring-[#C9A646]/40"
+            className="mt-1.5 w-full resize-y rounded-xl border border-white/15 bg-[#0B0B0B] px-4 py-3 text-sm text-white placeholder:text-[#B3B3B3]/50 focus:border-premium-gold/50 focus:outline-none focus:ring-1 focus:ring-premium-gold/40"
             placeholder="Tell us about your property or timeline…"
           />
         </div>
@@ -126,7 +126,7 @@ export function SellPageLeadForm() {
       <button
         type="submit"
         disabled={status === "submitting"}
-        className="mt-6 w-full rounded-xl bg-[#C9A646] px-6 py-3.5 text-sm font-bold text-[#0B0B0B] shadow-md transition hover:bg-[#E8C547] disabled:opacity-60 sm:w-auto"
+        className="mt-6 w-full rounded-xl bg-premium-gold px-6 py-3.5 text-sm font-bold text-[#0B0B0B] shadow-md transition hover:bg-premium-gold disabled:opacity-60 sm:w-auto"
       >
         {status === "submitting" ? "Sending…" : "Request FREE consultation"}
       </button>

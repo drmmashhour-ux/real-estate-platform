@@ -23,7 +23,7 @@ export function PremiumActivityFeed({ listings }: { listings: CommandListingRow[
     <ol className="space-y-3 text-sm">
       {events.map((e) => (
         <li key={e.id} className="flex gap-3 border-b border-white/5 pb-3 last:border-0">
-          <span className="mt-0.5 h-2 w-2 shrink-0 rounded-full bg-[#C9A646]/80" />
+          <span className="mt-0.5 h-2 w-2 shrink-0 rounded-full bg-premium-gold/80" />
           <div>
             <p className="font-medium text-slate-200">{e.title}</p>
             <p className="text-xs text-slate-500">{e.line}</p>

@@ -13,7 +13,7 @@ export default async function AdminSalesDashboardPage() {
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-10 text-slate-100">
-      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#C9A646]">B2B sales</p>
+      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-premium-gold">B2B sales</p>
       <h1 className="mt-2 text-3xl font-semibold">Enterprise sales CRM</h1>
       <p className="mt-2 max-w-2xl text-sm text-slate-400">
         Pipeline for property managers, agencies, and operators. No outcome guarantees — structured tracking and

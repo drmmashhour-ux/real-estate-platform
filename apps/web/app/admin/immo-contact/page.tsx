@@ -19,14 +19,14 @@ export default async function AdminImmoContactPage() {
     <HubLayout title="ImmoContact" hubKey="admin" navigation={hubNavigation.admin} showAdminInSwitcher>
       <div className="mx-auto max-w-6xl space-y-6">
         <div>
-          <Link href="/admin/dashboard" className="text-sm text-[#C9A646] hover:underline">
+          <Link href="/admin/dashboard" className="text-sm text-premium-gold hover:underline">
             ← Control center
           </Link>
           <h1 className="mt-3 text-2xl font-semibold text-white">ImmoContact — control center</h1>
           <p className="mt-1 text-sm text-slate-400">
             Full contact logs, linked deals, and commission attribution. Append-only events; admins may add notes only.
             Use{" "}
-            <Link href="/admin/timeline" className="text-[#C9A646] hover:underline">
+            <Link href="/admin/timeline" className="text-premium-gold hover:underline">
               global timeline
             </Link>{" "}
             for deep entity history.

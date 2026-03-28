@@ -4,7 +4,7 @@ export const conversionTokens = {
     panel: "#0D0D0F",
     text: "#F8F8F8",
     muted: "#A3A3A3",
-    primary: "#C9A646",
+    primary: "var(--color-premium-gold)",
     success: "#10B981",
     warning: "#F59E0B",
     danger: "#EF4444",

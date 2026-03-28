@@ -5,7 +5,7 @@ import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
-const GOLD = "#C9A646";
+const GOLD = "var(--color-premium-gold)";
 
 export default async function AdminOffersPage() {
   const id = await getGuestId();

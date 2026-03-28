@@ -422,7 +422,7 @@ export default async function BuyerDashboardPage() {
                 <li key={p.id}>
                   <Link
                     href={`/dashboard/messages?conversationId=${encodeURIComponent(p.conversation.id)}`}
-                    className="flex flex-wrap items-baseline justify-between gap-2 rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-sm font-medium text-premium-gold transition duration-200 hover:border-[#C9A646]/35 hover:bg-white/[0.04]"
+                    className="flex flex-wrap items-baseline justify-between gap-2 rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-sm font-medium text-premium-gold transition duration-200 hover:border-premium-gold/35 hover:bg-white/[0.04]"
                   >
                     <span className="line-clamp-2">
                       {p.conversation.subject ?? p.conversation.type}

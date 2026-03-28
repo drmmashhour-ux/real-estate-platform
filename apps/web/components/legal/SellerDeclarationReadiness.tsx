@@ -40,7 +40,7 @@ export function SellerDeclarationReadiness({
           ))}
         </ul>
       ) : null}
-      <Link href={fixHref} className="mt-2 inline-block text-xs font-medium text-[#C9A646] hover:underline">
+      <Link href={fixHref} className="mt-2 inline-block text-xs font-medium text-premium-gold hover:underline">
         Open declaration
       </Link>
     </div>

@@ -9,7 +9,7 @@ export function RentalApplyCta({ listingId }: { listingId: string }) {
       <Link
         href={href}
         className="rounded-xl px-5 py-2.5 text-sm font-bold text-[#0B0B0B]"
-        style={{ background: "#C9A646" }}
+        style={{ background: "var(--color-premium-gold)" }}
       >
         Apply to rent
       </Link>

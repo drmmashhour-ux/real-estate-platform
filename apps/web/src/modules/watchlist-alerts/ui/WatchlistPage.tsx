@@ -88,7 +88,7 @@ export function WatchlistPage() {
             {!loading ? (
               <AlertsCenter alerts={recentAlerts} onChanged={load} title="Recent alerts" />
             ) : null}
-            <a href="#alerts" className="mt-3 inline-flex text-sm text-[#C9A646] hover:underline">
+            <a href="#alerts" className="mt-3 inline-flex text-sm text-premium-gold hover:underline">
               View full Alerts Center
             </a>
           </aside>

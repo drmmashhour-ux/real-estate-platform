@@ -15,7 +15,7 @@ export default async function ListingNotFoundPage({ searchParams }: Props) {
       </p>
       <Link
         href="/search/bnhub"
-        className="mt-8 inline-flex justify-center rounded-xl bg-[#C9A646] px-6 py-3 text-sm font-semibold text-black"
+        className="mt-8 inline-flex justify-center rounded-xl bg-premium-gold px-6 py-3 text-sm font-semibold text-black"
       >
         Back to search
       </Link>

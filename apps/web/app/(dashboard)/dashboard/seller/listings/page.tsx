@@ -41,13 +41,13 @@ export default async function SellerHubListingsPage() {
           <div className="flex flex-wrap gap-2">
             <Link
               href="/dashboard/command"
-              className="rounded-xl border border-[#C9A646]/40 px-4 py-2 text-sm font-semibold text-[#C9A646]"
+              className="rounded-xl border border-premium-gold/40 px-4 py-2 text-sm font-semibold text-premium-gold"
             >
               Command center
             </Link>
             <Link
               href="/dashboard/seller/create"
-              className="rounded-xl bg-[#C9A646] px-4 py-2 text-sm font-semibold text-black"
+              className="rounded-xl bg-premium-gold px-4 py-2 text-sm font-semibold text-black"
             >
               Create listing
             </Link>
@@ -62,7 +62,7 @@ export default async function SellerHubListingsPage() {
               <li key={l.id} className="rounded-2xl border border-white/10 bg-[#121212] p-4">
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div>
-                    <Link href={`/dashboard/seller/listings/${l.id}`} className="font-medium text-[#E8C547] hover:underline">
+                    <Link href={`/dashboard/seller/listings/${l.id}`} className="font-medium text-premium-gold hover:underline">
                       {l.title}
                     </Link>
                     <p className="text-xs text-slate-500">
@@ -98,7 +98,7 @@ export default async function SellerHubListingsPage() {
             >
               <Link
                 href="/dashboard/seller/create"
-                className="rounded-xl bg-[#C9A646] px-6 py-3 text-sm font-bold text-[#0B0B0B] shadow-lg shadow-[#C9A646]/25 transition hover:bg-[#D4B35A]"
+                className="rounded-xl bg-premium-gold px-6 py-3 text-sm font-bold text-[#0B0B0B] shadow-lg shadow-premium-gold/25 transition hover:bg-premium-gold"
               >
                 Create listing
               </Link>

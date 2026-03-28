@@ -12,7 +12,7 @@ export function DashboardPreviewMockup() {
   ] as const;
 
   const rows = [
-    { deal: "Marina Loft — Plateau", stage: "Offer", amount: "$1.85M", tone: "text-[#C9A646]" },
+    { deal: "Marina Loft — Plateau", stage: "Offer", amount: "$1.85M", tone: "text-premium-gold" },
     { deal: "124 Rue du Lac", stage: "Qualified", amount: "Visit Thu", tone: "text-slate-300" },
     { deal: "Penthouse Belvedere", stage: "Lead", amount: "Intake", tone: "text-slate-400" },
   ] as const;
@@ -21,9 +21,9 @@ export function DashboardPreviewMockup() {
     <div className="rounded-xl border border-white/10 bg-gradient-to-br from-[#141414] to-[#0a0a0a] p-4 sm:p-6">
       <div className="flex flex-wrap items-center gap-3 border-b border-white/10 pb-4">
         <div className="flex items-center gap-2">
-          <span className="h-8 w-8 rounded-lg bg-[#C9A646]/25 ring-1 ring-[#C9A646]/40" aria-hidden />
+          <span className="h-8 w-8 rounded-lg bg-premium-gold/25 ring-1 ring-premium-gold/40" aria-hidden />
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-[#C9A646]">Brokerage</p>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-premium-gold">Brokerage</p>
             <p className="text-sm font-semibold text-white">Good morning, Sarah</p>
           </div>
         </div>
@@ -31,7 +31,7 @@ export function DashboardPreviewMockup() {
           <div className="hidden min-w-[140px] rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[10px] text-slate-500 sm:block">
             Search deals, contacts…
           </div>
-          <span className="flex h-8 min-w-[2rem] items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] text-[10px] font-semibold text-[#C9A646]">
+          <span className="flex h-8 min-w-[2rem] items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] text-[10px] font-semibold text-premium-gold">
             3
           </span>
         </div>
@@ -42,7 +42,7 @@ export function DashboardPreviewMockup() {
           <div
             key={k.label}
             className={`rounded-lg border p-3 ${
-              k.accent ? "border-[#C9A646]/35 bg-[#C9A646]/[0.07]" : "border-white/10 bg-white/[0.03]"
+              k.accent ? "border-premium-gold/35 bg-premium-gold/[0.07]" : "border-white/10 bg-white/[0.03]"
             }`}
           >
             <p className="text-[10px] font-medium uppercase tracking-wide text-slate-500">{k.label}</p>
@@ -57,12 +57,12 @@ export function DashboardPreviewMockup() {
       <div className="mt-4 rounded-lg border border-white/10 bg-black/40">
         <div className="flex items-center justify-between border-b border-white/10 px-3 py-2">
           <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Pipeline activity</span>
-          <span className="text-[10px] text-[#C9A646]">View all →</span>
+          <span className="text-[10px] text-premium-gold">View all →</span>
         </div>
         <ul className="divide-y divide-white/[0.06]">
           {rows.map((r) => (
             <li key={r.deal} className="flex flex-wrap items-center gap-2 px-3 py-2.5">
-              <span className="h-7 w-7 shrink-0 rounded-full bg-gradient-to-br from-[#C9A646]/40 to-[#C9A646]/10 ring-1 ring-white/10" />
+              <span className="h-7 w-7 shrink-0 rounded-full bg-gradient-to-br from-premium-gold/40 to-premium-gold/10 ring-1 ring-white/10" />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-xs font-medium text-white">{r.deal}</p>
                 <p className="text-[10px] text-slate-500">Updated 2h ago · {r.stage}</p>
@@ -79,7 +79,7 @@ export function DashboardPreviewMockup() {
 export function CrmPipelinePreviewMockup() {
   const columns = [
     { name: "New", count: 5, color: "bg-slate-500/20 text-slate-300" },
-    { name: "Active", count: 12, color: "bg-[#C9A646]/15 text-[#E8D5A0]" },
+    { name: "Active", count: 12, color: "bg-premium-gold/15 text-[#E8D5A0]" },
     { name: "Offer", count: 4, color: "bg-amber-500/15 text-amber-200" },
     { name: "Closing", count: 3, color: "bg-emerald-500/15 text-emerald-200" },
   ] as const;
@@ -96,7 +96,7 @@ export function CrmPipelinePreviewMockup() {
     <div className="rounded-xl border border-white/10 bg-[#0a0a0a] p-4 sm:p-6">
       <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-[#C9A646]">CRM</p>
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-premium-gold">CRM</p>
           <p className="text-sm font-semibold text-white">Pipeline</p>
         </div>
         <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] text-slate-400">
@@ -167,7 +167,7 @@ export function OfferContractPreviewMockup() {
             </li>
             <li className="flex justify-between gap-2">
               <span className="text-slate-500">Response deadline</span>
-              <span className="text-[#C9A646]">Mar 24 · 17:00</span>
+              <span className="text-premium-gold">Mar 24 · 17:00</span>
             </li>
           </ul>
         </div>
@@ -182,7 +182,7 @@ export function OfferContractPreviewMockup() {
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2">
-        <span className="rounded-lg bg-[#C9A646] px-4 py-2 text-[10px] font-bold text-black">Open contract</span>
+        <span className="rounded-lg bg-premium-gold px-4 py-2 text-[10px] font-bold text-black">Open contract</span>
         <span className="rounded-lg border border-white/15 bg-white/[0.06] px-4 py-2 text-[10px] font-semibold text-white">
           Message co-broke
         </span>
@@ -202,11 +202,11 @@ export function DocumentRoomPreviewMockup() {
     <div className="rounded-xl border border-white/10 bg-[#0a0a0a] p-4 sm:p-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-[#C9A646]">Deal room</p>
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-premium-gold">Deal room</p>
           <p className="text-sm font-semibold text-white">Marina Loft / Offer #2841</p>
           <p className="text-[10px] text-slate-500">Shared with buyer · seller counsel · mortgage (read-only)</p>
         </div>
-        <span className="rounded-lg border border-[#C9A646]/40 bg-[#C9A646]/15 px-3 py-1.5 text-[10px] font-semibold text-[#E8D5A0]">
+        <span className="rounded-lg border border-premium-gold/40 bg-premium-gold/15 px-3 py-1.5 text-[10px] font-semibold text-[#E8D5A0]">
           Upload
         </span>
       </div>
@@ -227,7 +227,7 @@ export function DocumentRoomPreviewMockup() {
               </p>
             </div>
             <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[9px] text-slate-400">{f.status}</span>
-            <span className="text-[10px] font-semibold text-[#C9A646]">Open</span>
+            <span className="text-[10px] font-semibold text-premium-gold">Open</span>
           </div>
         ))}
       </div>
@@ -257,13 +257,13 @@ export function AnalyticsPreviewMockup() {
     <div className="rounded-xl border border-white/10 bg-[#0a0a0a] p-4 sm:p-6">
       <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-[#C9A646]">Analytics</p>
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-premium-gold">Analytics</p>
           <p className="text-sm font-semibold text-white">Production — rolling 6 months</p>
         </div>
         <span className="text-[10px] text-slate-500">Demo figures</span>
       </div>
 
-      <div className="rounded-lg border border-white/10 bg-gradient-to-b from-[#C9A646]/[0.08] to-transparent p-3">
+      <div className="rounded-lg border border-white/10 bg-gradient-to-b from-premium-gold/[0.08] to-transparent p-3">
         <div className="flex h-[112px] items-end justify-between gap-1 px-0.5 sm:gap-1.5">
           {bars.map((b) => {
             const barPx = Math.round((b.h / 100) * 88);
@@ -271,7 +271,7 @@ export function AnalyticsPreviewMockup() {
               <div key={b.label} className="flex min-w-0 flex-1 flex-col items-center gap-1">
                 <span className="text-[9px] font-semibold tabular-nums text-[#E8D5A0]">{b.v}</span>
                 <div
-                  className="w-full max-w-[40px] rounded-t-md bg-gradient-to-t from-[#C9A646]/80 to-[#C9A646]/30 shadow-sm shadow-[#C9A646]/20"
+                  className="w-full max-w-[40px] rounded-t-md bg-gradient-to-t from-premium-gold/80 to-premium-gold/30 shadow-sm shadow-premium-gold/20"
                   style={{ height: `${barPx}px` }}
                 />
                 <span className="text-[9px] text-slate-500">{b.label}</span>

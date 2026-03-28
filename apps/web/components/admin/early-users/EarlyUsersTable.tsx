@@ -194,7 +194,7 @@ export function EarlyUsersTable() {
               key={k}
               type="button"
               onClick={() => void copyTemplate(k)}
-              className="rounded border border-slate-600 bg-slate-950 px-3 py-1.5 text-xs text-slate-200 hover:border-[#C9A646]/50"
+              className="rounded border border-slate-600 bg-slate-950 px-3 py-1.5 text-xs text-slate-200 hover:border-premium-gold/50"
             >
               {copied === k ? "Copied" : `Copy: ${label}`}
             </button>
@@ -240,7 +240,7 @@ export function EarlyUsersTable() {
           <button
             type="submit"
             disabled={saving}
-            className="rounded bg-[#C9A646] px-4 py-2 text-sm font-medium text-black disabled:opacity-50"
+            className="rounded bg-premium-gold px-4 py-2 text-sm font-medium text-black disabled:opacity-50"
           >
             {saving ? "Saving…" : "Add"}
           </button>

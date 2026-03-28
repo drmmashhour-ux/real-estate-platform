@@ -49,10 +49,10 @@ export function ConversionSteps({ className = "" }: { className?: string }) {
         <li key={s.n} className="flex min-h-0">
           <Link
             href={s.href}
-            className="flex min-h-[7.25rem] w-full gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-4 text-left transition hover:border-[#C9A646]/45 hover:bg-white/[0.06] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C9A646]/70 sm:min-h-[7.5rem]"
+            className="flex min-h-[7.25rem] w-full gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-4 text-left transition hover:border-premium-gold/45 hover:bg-white/[0.06] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-premium-gold/70 sm:min-h-[7.5rem]"
           >
             <span
-              className="flex h-9 w-9 shrink-0 items-center justify-center self-start rounded-full bg-[#C9A646]/20 text-sm font-bold text-[#E8D5A3]"
+              className="flex h-9 w-9 shrink-0 items-center justify-center self-start rounded-full bg-premium-gold/20 text-sm font-bold text-premium-gold"
               aria-hidden
             >
               {s.n}
@@ -81,7 +81,7 @@ export function TrustBadgesRow({ className = "" }: { className?: string }) {
           key={t.label}
           className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-center sm:px-4"
         >
-          <span className="block text-xs font-semibold text-[#E8D5A3]">{t.label}</span>
+          <span className="block text-xs font-semibold text-premium-gold">{t.label}</span>
           <span className="hidden text-[11px] text-slate-500 sm:block">{t.sub}</span>
         </li>
       ))}

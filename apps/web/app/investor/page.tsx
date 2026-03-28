@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 
-const GOLD = "#C9A646";
+const GOLD = "var(--color-premium-gold)";
 
 export const metadata: Metadata = {
   title: "Investor relations — LECIPM",
@@ -46,7 +46,7 @@ export default function InvestorPitchPage() {
         <div className="mt-8">
           <Link
             href="/investor/qa"
-            className="inline-flex rounded-2xl border border-[#C9A646]/35 bg-[#C9A646]/10 px-8 py-4 text-sm font-semibold text-[#C9A646] transition hover:bg-[#C9A646]/15"
+            className="inline-flex rounded-2xl border border-premium-gold/35 bg-premium-gold/10 px-8 py-4 text-sm font-semibold text-premium-gold transition hover:bg-premium-gold/15"
           >
             Open Investor Q&A →
           </Link>

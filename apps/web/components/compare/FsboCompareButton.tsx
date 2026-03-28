@@ -17,8 +17,8 @@ export function FsboCompareButton({
     className ||
     `rounded-lg border px-3 py-1.5 text-xs font-semibold transition ${
       on
-        ? "border-[#C9A646] bg-[#C9A646]/15 text-[#C9A646]"
-        : "border-white/20 bg-black/40 text-white hover:border-[#C9A646]/50"
+        ? "border-premium-gold bg-premium-gold/15 text-premium-gold"
+        : "border-white/20 bg-black/40 text-white hover:border-premium-gold/50"
     }`;
 
   return (
@@ -39,7 +39,7 @@ export function FsboCompareButton({
       }}
       className={
         className
-          ? `${className} ${on ? "ring-2 ring-[#C9A646]/60 ring-offset-2 ring-offset-white" : ""}`
+          ? `${className} ${on ? "ring-2 ring-premium-gold/60 ring-offset-2 ring-offset-white" : ""}`
           : base
       }
     >

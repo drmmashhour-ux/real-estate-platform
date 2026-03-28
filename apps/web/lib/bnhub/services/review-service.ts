@@ -12,9 +12,11 @@ export const ReviewService = {
     propertyRating: number;
     hostRating?: number;
     cleanlinessRating?: number;
+    accuracyRating?: number;
     communicationRating?: number;
     locationRating?: number;
     valueRating?: number;
+    checkinRating?: number;
     comment?: string;
   }) {
     return createReview(data);

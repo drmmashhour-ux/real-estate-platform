@@ -28,7 +28,7 @@ export function WatchlistFilters({
             onClick={() => onChange(f.id)}
             className={`rounded-full border px-3 py-1 text-xs whitespace-nowrap ${
               active
-                ? "border-[#C9A646] bg-[#C9A646]/15 text-[#C9A646]"
+                ? "border-premium-gold bg-premium-gold/15 text-premium-gold"
                 : "border-white/20 text-slate-300 hover:bg-white/5"
             }`}
           >

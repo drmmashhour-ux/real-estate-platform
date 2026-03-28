@@ -26,7 +26,7 @@ export function FeaturedPropertyCard({
   detailHref,
 }: FeaturedPropertyCardProps) {
   return (
-    <article className="group flex flex-col overflow-hidden rounded-2xl border border-white/[0.06] bg-[#111] shadow-[0_24px_80px_rgba(0,0,0,0.45)] transition hover:border-[#C9A646]/25">
+    <article className="group flex flex-col overflow-hidden rounded-2xl border border-white/[0.06] bg-[#111] shadow-[0_24px_80px_rgba(0,0,0,0.45)] transition hover:border-[#D4AF37]/25">
       <div className="relative aspect-[4/3]">
         <Image
           src={imageUrl}
@@ -40,14 +40,14 @@ export function FeaturedPropertyCard({
       <div className="flex flex-1 flex-col p-6">
         <h3 className="font-serif text-lg text-white">{title}</h3>
         <p className="mt-1 text-sm text-[#CCCCCC]/80">{city}</p>
-        <p className="mt-4 font-serif text-2xl text-[#C9A646]">{priceLabel}</p>
+        <p className="mt-4 font-serif text-2xl text-[#D4AF37]">{priceLabel}</p>
         <p className="mt-3 text-sm text-[#CCCCCC]/90">
           {beds} beds · {baths} baths
           {sqft != null ? ` · ${Math.round(sqft)} sqft` : ""}
         </p>
         <Link
           href={detailHref ?? `/properties/${id}`}
-          className="mt-6 inline-flex w-full items-center justify-center rounded-lg border border-[#C9A646]/40 py-2.5 text-sm font-medium text-[#C9A646] transition hover:bg-[#C9A646]/10"
+          className="mt-6 inline-flex w-full items-center justify-center rounded-lg border border-[#D4AF37]/40 py-2.5 text-sm font-medium text-[#D4AF37] transition hover:bg-[#D4AF37]/10"
         >
           View Details
         </Link>

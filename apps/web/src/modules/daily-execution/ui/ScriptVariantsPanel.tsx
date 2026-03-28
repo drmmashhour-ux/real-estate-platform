@@ -75,7 +75,7 @@ export function ScriptVariantsPanel({
         {variants.map((v) => (
           <div key={v.variantKey} className="rounded-lg border border-white/10 bg-black/30 p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="text-sm font-semibold text-[#C9A646]">
+              <span className="text-sm font-semibold text-premium-gold">
                 Variant {v.label}{" "}
                 <span className="font-normal text-slate-500">({v.variantKey.replace(/_/g, " ")})</span>
               </span>

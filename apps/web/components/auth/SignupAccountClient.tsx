@@ -71,7 +71,7 @@ export function SignupAccountClient({ referralRef = "" }: Props) {
     >
       {err ? <p className="text-sm text-red-400">{err}</p> : null}
       <div>
-        <label className="text-xs font-semibold text-[#C9A646]/90">Email</label>
+        <label className="text-xs font-semibold text-premium-gold/90">Email</label>
         <input
           name="email"
           type="email"
@@ -81,7 +81,7 @@ export function SignupAccountClient({ referralRef = "" }: Props) {
         />
       </div>
       <div>
-        <label className="text-xs font-semibold text-[#C9A646]/90">Password (min 8 characters)</label>
+        <label className="text-xs font-semibold text-premium-gold/90">Password (min 8 characters)</label>
         <input
           name="password"
           type="password"
@@ -92,7 +92,7 @@ export function SignupAccountClient({ referralRef = "" }: Props) {
         />
       </div>
       <div>
-        <label className="text-xs font-semibold text-[#C9A646]/90">Confirm password</label>
+        <label className="text-xs font-semibold text-premium-gold/90">Confirm password</label>
         <input
           name="confirmPassword"
           type="password"
@@ -102,24 +102,24 @@ export function SignupAccountClient({ referralRef = "" }: Props) {
           className="mt-1 w-full rounded-xl border border-white/15 bg-[#0B0B0B] px-3 py-2 text-sm text-white"
         />
       </div>
-      <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[#C9A646]/25 bg-[#0B0B0B]/80 p-3 text-sm text-[#D4D4D4]">
+      <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-premium-gold/25 bg-[#0B0B0B]/80 p-3 text-sm text-[#D4D4D4]">
         <input
           type="checkbox"
           checked={legalOk}
           onChange={(e) => setLegalOk(e.target.checked)}
-          className="mt-1 h-4 w-4 shrink-0 rounded border-[#C9A646]/50 text-[#C9A646] focus:ring-[#C9A646]"
+          className="mt-1 h-4 w-4 shrink-0 rounded border-premium-gold/50 text-premium-gold focus:ring-premium-gold"
         />
         <span>
           I agree to the{" "}
-          <Link href="/legal/terms" className="font-semibold text-[#C9A646] hover:underline">
+          <Link href="/legal/terms" className="font-semibold text-premium-gold hover:underline">
             Terms
           </Link>
           ,{" "}
-          <Link href="/legal/privacy" className="font-semibold text-[#C9A646] hover:underline">
+          <Link href="/legal/privacy" className="font-semibold text-premium-gold hover:underline">
             Privacy
           </Link>
           , and{" "}
-          <Link href="/legal/platform-usage" className="font-semibold text-[#C9A646] hover:underline">
+          <Link href="/legal/platform-usage" className="font-semibold text-premium-gold hover:underline">
             Platform Rules
           </Link>
           .
@@ -128,7 +128,7 @@ export function SignupAccountClient({ referralRef = "" }: Props) {
       <button
         type="submit"
         disabled={loading || !legalOk}
-        className="w-full rounded-xl bg-[#C9A646] py-3 text-sm font-bold text-[#0B0B0B] disabled:opacity-50"
+        className="w-full rounded-xl bg-premium-gold py-3 text-sm font-bold text-[#0B0B0B] disabled:opacity-50"
       >
         {loading ? "Creating account…" : "Create account"}
       </button>

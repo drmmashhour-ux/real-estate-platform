@@ -2,7 +2,7 @@ import { DailyDashboardClient } from "./daily-dashboard-client";
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
 import { InboxSummaryCards } from "@/components/notifications/InboxSummaryCards";
 
-const GOLD = "#C9A646";
+const GOLD = "var(--color-premium-gold)";
 
 export const metadata = {
   title: "Daily action | Admin",

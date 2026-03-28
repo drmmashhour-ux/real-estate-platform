@@ -16,13 +16,13 @@ export function Footer() {
       <div className="mx-auto flex max-w-6xl flex-col gap-10 md:flex-row md:justify-between">
         <div>
           <p className="font-serif text-xl font-semibold text-white">{PLATFORM_NAME}</p>
-          <p className="mt-1 text-sm text-[#C9A646]/90">{PLATFORM_CARREFOUR_NAME}</p>
+          <p className="mt-1 text-sm text-premium-gold/90">{PLATFORM_CARREFOUR_NAME}</p>
           <p className="mt-4 max-w-sm text-sm text-slate-500">
             Premium real estate operating platform — CRM, deals, documents, and finance in one workspace.
           </p>
           <p className="mt-4 text-sm text-slate-500">
             <span className="text-slate-600">Contact:</span>{" "}
-            <a href={mailto} className="text-[#C9A646] hover:underline">
+            <a href={mailto} className="text-premium-gold hover:underline">
               {contactEmail}
             </a>
           </p>
@@ -32,17 +32,17 @@ export function Footer() {
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Product</p>
             <ul className="mt-3 space-y-2 text-sm text-slate-400">
               <li>
-                <Link href="/#features" className="hover:text-[#C9A646]">
+                <Link href="/#features" className="hover:text-premium-gold">
                   Features
                 </Link>
               </li>
               <li>
-                <Link href="/pricing" className="hover:text-[#C9A646]">
+                <Link href="/pricing" className="hover:text-premium-gold">
                   Pricing
                 </Link>
               </li>
               <li>
-                <Link href="/demo" className="hover:text-[#C9A646]">
+                <Link href="/demo" className="hover:text-premium-gold">
                   Demo
                 </Link>
               </li>
@@ -52,17 +52,17 @@ export function Footer() {
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Company</p>
             <ul className="mt-3 space-y-2 text-sm text-slate-400">
               <li>
-                <Link href="/about" className="hover:text-[#C9A646]">
+                <Link href="/about" className="hover:text-premium-gold">
                   About
                 </Link>
               </li>
               <li>
-                <Link href="/contact" className="hover:text-[#C9A646]">
+                <Link href="/contact" className="hover:text-premium-gold">
                   Contact
                 </Link>
               </li>
               <li>
-                <Link href="/legal/privacy" className="hover:text-[#C9A646]">
+                <Link href="/legal/privacy" className="hover:text-premium-gold">
                   Privacy
                 </Link>
               </li>
@@ -72,7 +72,7 @@ export function Footer() {
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Legacy</p>
             <ul className="mt-3 space-y-2 text-sm text-slate-400">
               <li>
-                <Link href="/legacy-home" className="hover:text-[#C9A646]">
+                <Link href="/legacy-home" className="hover:text-premium-gold">
                   Previous homepage
                 </Link>
               </li>

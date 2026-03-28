@@ -21,11 +21,11 @@ function linkClass(
   if (mode === "header-mobile" || mode === "marketing-mobile") {
     return [
       "block rounded-lg px-3 py-2.5 text-sm font-medium transition",
-      active ? "bg-[#C9A646]/15 text-[#C9A646]" : "text-slate-300 hover:bg-white/5 hover:text-white",
+      active ? "bg-premium-gold/15 text-premium-gold" : "text-slate-300 hover:bg-white/5 hover:text-white",
     ].join(" ");
   }
   if (mode === "marketing-desktop") {
-    return "block rounded-md px-3 py-2.5 text-sm text-slate-200 transition hover:bg-white/10 hover:text-[#C9A646]";
+    return "block rounded-md px-3 py-2.5 text-sm text-slate-200 transition hover:bg-white/10 hover:text-premium-gold";
   }
   return "block rounded-md px-3 py-2 text-sm text-left text-slate-200 transition hover:bg-white/[0.08] hover:text-white";
 }
@@ -90,17 +90,17 @@ export function SellingNavGroup({
       ? [
           "inline-flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium transition",
           sellingActive
-            ? "bg-[#C9A646]/12 text-[#E8D5A3] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] ring-1 ring-[#C9A646]/45"
+            ? "bg-premium-gold/12 text-premium-gold shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] ring-1 ring-premium-gold/45"
             : "text-slate-300 hover:bg-white/[0.04] hover:text-white",
         ].join(" ")
       : mode === "marketing-desktop"
         ? [
-            "inline-flex items-center gap-1 rounded-md px-2 py-1.5 text-sm font-medium text-slate-300 transition hover:text-[#C9A646]",
-            sellingActive ? "text-[#C9A646]" : "",
+            "inline-flex items-center gap-1 rounded-md px-2 py-1.5 text-sm font-medium text-slate-300 transition hover:text-premium-gold",
+            sellingActive ? "text-premium-gold" : "",
           ].join(" ")
         : [
             "relative inline-flex items-center gap-1 text-sm font-semibold transition duration-200",
-            sellingActive ? "text-[#E8D5A3]" : "text-[#B3B3B3] hover:text-white",
+            sellingActive ? "text-premium-gold" : "text-[#B3B3B3] hover:text-white",
           ].join(" ");
 
   const panelClass =
@@ -137,7 +137,7 @@ export function SellingNavGroup({
       </button>
       {sellingActive && mode === "header-desktop" ? (
         <span
-          className="absolute -bottom-2 left-0 right-0 mx-auto h-0.5 max-w-[2.25rem] rounded-full bg-[#C9A646]"
+          className="absolute -bottom-2 left-0 right-0 mx-auto h-0.5 max-w-[2.25rem] rounded-full bg-premium-gold"
           aria-hidden
         />
       ) : null}

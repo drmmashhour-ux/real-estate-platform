@@ -26,6 +26,7 @@ import {
 import { syncTrustGraphOnBookingCreated } from "@/lib/trustgraph/application/integrations/bnHubBookingIntegration";
 import { runBnhubPostBookingPaidAutomation, runBnhubStayCompletedAutomation } from "@/lib/bnhub/revenue-automation";
 import { evaluateListingForNewBooking } from "@/lib/bnhub/bnhub-safety-rules";
+import { onGrowthAiCheckoutCompleted } from "@/src/modules/messaging/triggers";
 
 const GUEST_FEE_PERCENT = 12;
 const HOST_FEE_PERCENT = 3;
@@ -399,6 +400,8 @@ export async function confirmBooking(bookingId: string) {
     guestId: updated.guestId,
     hostId: updated.listing.ownerId,
   });
+
+  void onGrowthAiCheckoutCompleted(updated.guestId).catch(() => {});
 
   void prisma.notification
     .create({

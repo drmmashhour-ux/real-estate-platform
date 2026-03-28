@@ -47,7 +47,7 @@ export function AICommandCenter() {
   return (
     <div className="space-y-6">
       <div>
-        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#C9A646]/90">LECIPM</p>
+        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-premium-gold/90">LECIPM</p>
         <h1 className="mt-1 text-2xl font-semibold text-white">AI Operator</h1>
         <p className="mt-2 max-w-2xl text-sm text-slate-400">
           Centralized suggestions with explicit reasons. Execution is policy-gated: no auto messaging, no auto billing, no destructive
@@ -74,7 +74,7 @@ export function AICommandCenter() {
             type="button"
             disabled={ingesting}
             onClick={() => void runIngest()}
-            className="rounded-lg bg-[#C9A646] px-4 py-2 text-sm font-semibold text-black hover:bg-[#d4b456] disabled:opacity-50"
+            className="rounded-lg bg-premium-gold px-4 py-2 text-sm font-semibold text-black hover:bg-[#d4b456] disabled:opacity-50"
           >
             {ingesting ? "Running…" : "Generate actions"}
           </button>

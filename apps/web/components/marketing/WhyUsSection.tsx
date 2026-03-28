@@ -37,7 +37,7 @@ export function WhyUsSection() {
           {points.map((p, i) => (
             <AnimatedReveal key={p.title} delayMs={i * 50}>
               <div className="h-full rounded-2xl border border-white/10 bg-black/40 p-6">
-                <div className="mb-3 h-1 w-12 rounded-full bg-[#C9A646]" />
+                <div className="mb-3 h-1 w-12 rounded-full bg-premium-gold" />
                 <h3 className="text-lg font-semibold text-white">{p.title}</h3>
                 <p className="mt-2 text-sm text-slate-400">{p.body}</p>
               </div>

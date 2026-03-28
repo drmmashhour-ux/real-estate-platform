@@ -20,7 +20,7 @@ export function PricingComparisonTable({ columns, rows, className = "" }: Pricin
           <tr className="border-b border-white/10 bg-white/[0.03]">
             <th className="px-4 py-4 font-medium text-slate-300">Feature</th>
             {columns.map((c) => (
-              <th key={c.id} className="px-4 py-4 font-semibold text-[#C9A646]">
+              <th key={c.id} className="px-4 py-4 font-semibold text-premium-gold">
                 {c.label}
               </th>
             ))}

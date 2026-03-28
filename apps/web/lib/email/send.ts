@@ -73,7 +73,7 @@ export async function sendAccountVerificationEmail(to: string, verifyUrl: string
     subject: "LECIPM — confirm your email",
     html: `<p>Thank you for registering with LECIPM.</p>
 <p>Your account has been created. Please confirm your email address to sign in, complete your profile, and use the dashboard:</p>
-<p><a href="${verifyUrl}" style="color:#C9A646;font-weight:bold;">Confirm my email</a></p>
+<p><a href="${verifyUrl}" style="color:#D4AF37;font-weight:bold;">Confirm my email</a></p>
 <p style="color:#737373;font-size:12px;">If the button does not work, paste this link into your browser:<br/>${verifyUrl}</p>`,
   });
 }

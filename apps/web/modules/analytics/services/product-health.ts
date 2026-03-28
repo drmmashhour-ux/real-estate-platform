@@ -13,14 +13,10 @@ export type ProductHealthResult = {
 };
 
 function countsFromRows(rows: { eventType: UserEventType; _count: number }[]): Record<UserEventType, number> {
-  const out: Record<UserEventType, number> = {
-    [UserEventType.ANALYZE]: 0,
-    [UserEventType.SAVE_DEAL]: 0,
-    [UserEventType.COMPARE]: 0,
-    [UserEventType.VISIT_PAGE]: 0,
-    [UserEventType.WAITLIST_SIGNUP]: 0,
-    [UserEventType.RETURN_VISIT]: 0,
-  };
+  const out = {} as Record<UserEventType, number>;
+  for (const t of Object.values(UserEventType)) {
+    out[t] = 0;
+  }
   for (const r of rows) {
     out[r.eventType] = r._count;
   }

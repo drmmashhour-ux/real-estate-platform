@@ -52,7 +52,7 @@ export default async function BnhubRevenueDashboardPage({
     <HubLayout title="BNHub revenue" hubKey="admin" navigation={hubNavigation.admin} showAdminInSwitcher>
       <div className="space-y-6 text-slate-100">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#C9A646]/90">BNHub</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-premium-gold/90">BNHub</p>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight">Revenue + growth + automation</h1>
           <p className="mt-2 max-w-2xl text-sm text-slate-400">
             Booking and promotion revenue, manual sales assist, promotion catalog, content ideas, and growth automations.

@@ -54,7 +54,7 @@ export function RevenueDashboard({ className }: Props) {
 
   return (
     <div className={`rounded-xl border border-white/10 bg-[#0f0f0f] p-6 ${className ?? ""}`}>
-      <h2 className="text-sm font-semibold uppercase tracking-wider text-[#C9A646]/90">Revenue (Stripe-backed)</h2>
+      <h2 className="text-sm font-semibold uppercase tracking-wider text-premium-gold/90">Revenue (Stripe-backed)</h2>
       <div className="mt-4 grid gap-4 sm:grid-cols-3">
         <Metric label="MRR" value={data.mrr.mrr != null ? `$${data.mrr.mrr.toFixed(2)}` : "—"} hint={`${data.mrr.activeSubscriptionCount} active`} />
         <Metric

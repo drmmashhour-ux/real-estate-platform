@@ -26,7 +26,7 @@ export default async function AdminAttributionPage() {
           ← Admin
         </Link>
         <h1 className="mt-4 text-2xl font-semibold">Traffic &amp; attribution</h1>
-        <p className="mt-2 text-sm text-[#C9A646]">
+        <p className="mt-2 text-sm text-premium-gold">
           <Link href="/admin/analytics" className="hover:underline">
             Full ads analytics dashboard →
           </Link>

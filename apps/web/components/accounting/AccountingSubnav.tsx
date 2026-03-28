@@ -16,7 +16,7 @@ export function AccountingSubnav({ current }: { current?: string }) {
           key={l.href}
           href={l.href}
           className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
-            current === l.href ? "bg-[#C9A646]/20 text-[#C9A646]" : "text-slate-300 hover:bg-white/5"
+            current === l.href ? "bg-premium-gold/20 text-premium-gold" : "text-slate-300 hover:bg-white/5"
           }`}
         >
           {l.label}

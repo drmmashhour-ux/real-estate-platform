@@ -45,7 +45,7 @@ export default async function ShareAnalysisPage({ searchParams }: Props) {
     <main className="min-h-screen bg-[#0D0D0D] px-4 py-12 text-slate-100">
       <ShareAnalysisViewTracker listingId={listing.id} />
       <div className="mx-auto max-w-lg">
-        <p className="text-center text-xs font-semibold uppercase tracking-[0.2em] text-[#C9A646]">LECIPM</p>
+        <p className="text-center text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold">LECIPM</p>
         <h1 className="mt-2 text-center text-xl font-semibold text-white">Listing analysis snapshot</h1>
         <p className="mt-2 text-center text-xs text-slate-500">
           Estimates only — not an appraisal or investment advice. Recipient sees a summary, not full listing details.

@@ -195,6 +195,44 @@ export async function findPublishedDuplicateFingerprint(fingerprint: string, exc
   });
 }
 
+export async function findAnyContentItemByFingerprint(fingerprint: string) {
+  if (!fingerprint) return null;
+  return prisma.growthAutomationContentItem.findFirst({
+    where: { publishFingerprint: fingerprint },
+  });
+}
+
+export async function findFirstConnectedMarketingChannel(platform: GrowthMarketingPlatform) {
+  return prisma.marketingChannel.findFirst({
+    where: { platform, status: "CONNECTED" },
+    orderBy: { updatedAt: "desc" },
+  });
+}
+
+export async function listScheduledGrowthContentDue(now = new Date(), take = 30) {
+  return prisma.growthAutomationContentItem.findMany({
+    where: {
+      status: "SCHEDULED",
+      scheduledFor: { lte: now },
+    },
+    orderBy: { scheduledFor: "asc" },
+    take,
+  });
+}
+
+export async function listPublishedInstagramWithExternalId(take = 50) {
+  return prisma.growthAutomationContentItem.findMany({
+    where: {
+      platform: "INSTAGRAM",
+      status: "PUBLISHED",
+      externalPostId: { not: null },
+      marketingChannelId: { not: null },
+    },
+    orderBy: { publishedAt: "desc" },
+    take,
+  });
+}
+
 export async function listRecentFingerprints(platform: GrowthMarketingPlatform, day: string) {
   const start = new Date(`${day}T00:00:00.000Z`);
   const end = new Date(`${day}T23:59:59.999Z`);

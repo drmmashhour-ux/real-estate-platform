@@ -25,7 +25,7 @@ export function DocumentViewer({ payload, highlightedKeys, onExplain }: Props) {
           <section key={section} className="rounded-lg border border-white/10 bg-black/30 p-2">
             <div className="mb-1 flex items-center justify-between">
               <p className="font-medium text-slate-200">{section.replace(/_/g, " ")}</p>
-              <button type="button" onClick={() => onExplain(section)} className="text-[11px] text-[#C9A646] hover:underline">Explain</button>
+              <button type="button" onClick={() => onExplain(section)} className="text-[11px] text-premium-gold hover:underline">Explain</button>
             </div>
             <ul className="space-y-1">
               {fields.map(([k, v]) => (

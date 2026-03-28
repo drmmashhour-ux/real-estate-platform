@@ -22,7 +22,7 @@ export function ProgressBar({
   const pct = Math.min(100, Math.max(0, max <= 0 ? 0 : (value / max) * 100));
 
   const isHex = typeof accent === "string" && accent.startsWith("#");
-  let fillClass = "bg-gradient-to-r from-[#C9A646] to-amber-200";
+  let fillClass = "bg-gradient-to-r from-premium-gold to-amber-200";
   let fillStyle: CSSProperties | undefined;
 
   if (accent === "neutral") {
@@ -35,7 +35,7 @@ export function ProgressBar({
         }
       : { backgroundColor: accent };
   } else if (accent === "gold" && !gradient) {
-    fillClass = "bg-gradient-to-r from-[#C9A646] to-amber-200";
+    fillClass = "bg-gradient-to-r from-premium-gold to-amber-200";
   }
 
   return (

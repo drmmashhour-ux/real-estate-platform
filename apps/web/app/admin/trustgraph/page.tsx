@@ -82,7 +82,7 @@ export default async function AdminTrustGraphQueuePage({
           action={
             <Link
               href="/admin/analytics/tools"
-              className="rounded-full border border-white/15 px-4 py-2 text-xs font-semibold text-slate-200 transition hover:border-[#C9A646]/40 hover:text-white"
+              className="rounded-full border border-white/15 px-4 py-2 text-xs font-semibold text-slate-200 transition hover:border-premium-gold/40 hover:text-white"
             >
               Analytics
             </Link>
@@ -234,7 +234,7 @@ export default async function AdminTrustGraphQueuePage({
               <input type="hidden" name="pageSize" value={String(q.pageSize)} />
               <button
                 type="submit"
-                className="rounded-lg border border-[#C9A646]/40 bg-[#C9A646]/10 px-3 py-1.5 text-sm text-[#C9A646] hover:bg-[#C9A646]/20"
+                className="rounded-lg border border-premium-gold/40 bg-premium-gold/10 px-3 py-1.5 text-sm text-premium-gold hover:bg-premium-gold/20"
               >
                 Apply filters
               </button>
@@ -263,7 +263,7 @@ export default async function AdminTrustGraphQueuePage({
                   <tbody>
                     {queueData.items.map((c) => (
                       <tr key={c.id} className="border-t border-slate-800 hover:bg-slate-900/40">
-                        <td className="px-3 py-2 font-mono text-xs text-[#C9A646]">
+                        <td className="px-3 py-2 font-mono text-xs text-premium-gold">
                           <Link href={`/admin/trustgraph/cases/${c.id}`} className="hover:underline">
                             {c.id.slice(0, 8)}…
                           </Link>
@@ -287,7 +287,7 @@ export default async function AdminTrustGraphQueuePage({
                         <td className="px-3 py-2 text-xs text-slate-500">{new Date(c.updatedAt).toLocaleString()}</td>
                         <td className="px-3 py-2">
                           <div className="flex flex-col gap-1">
-                            <Link href={`/admin/trustgraph/cases/${c.id}`} className="text-[11px] text-[#C9A646] hover:underline">
+                            <Link href={`/admin/trustgraph/cases/${c.id}`} className="text-[11px] text-premium-gold hover:underline">
                               Open
                             </Link>
                             <TrustgraphQueueQuickActions caseId={c.id} />
@@ -326,7 +326,7 @@ export default async function AdminTrustGraphQueuePage({
           </>
         )}
 
-        <Link href="/admin/dashboard" className="text-sm text-[#C9A646] hover:underline">
+        <Link href="/admin/dashboard" className="text-sm text-premium-gold hover:underline">
           ← Admin dashboard
         </Link>
       </div>

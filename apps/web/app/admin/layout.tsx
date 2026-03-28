@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { ensureDynamicAuthRequest } from "@/lib/auth/ensure-dynamic-request";
 import { headers } from "next/headers";
 import type { PlatformRole } from "@prisma/client";
 import { getGuestId } from "@/lib/auth/session";
@@ -8,11 +9,14 @@ import { prisma } from "@/lib/db";
 
 const ADMIN_SURFACE_ROLES = new Set<PlatformRole>(["ADMIN", "ACCOUNTANT"]);
 
+export { dynamic, revalidate } from "@/lib/auth/protected-route-segment";
+
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  await ensureDynamicAuthRequest();
   const guestId = await getGuestId();
   if (!guestId) {
     const h = await headers();

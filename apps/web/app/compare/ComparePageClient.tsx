@@ -297,10 +297,10 @@ export function ComparePageClient() {
       <div className="mx-auto max-w-lg py-20 text-center">
         <h1 className="text-2xl font-semibold text-white">Nothing to compare yet</h1>
         <p className="mt-3 text-slate-400">
-          Browse FSBO listings and tap <strong className="text-[#C9A646]">Compare</strong> on up to {MAX_COMPARE}{" "}
+          Browse FSBO listings and tap <strong className="text-premium-gold">Compare</strong> on up to {MAX_COMPARE}{" "}
           properties.
         </p>
-        <Link href="/sell#browse-listings" className="mt-6 inline-block rounded-xl bg-[#C9A646] px-6 py-3 text-sm font-bold text-black">
+        <Link href="/sell#browse-listings" className="mt-6 inline-block rounded-xl bg-premium-gold px-6 py-3 text-sm font-bold text-black">
           Browse listings
         </Link>
       </div>
@@ -311,7 +311,7 @@ export function ComparePageClient() {
     <div className="space-y-8 pb-32">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="text-xs uppercase tracking-wider text-[#C9A646]">Property comparison</p>
+          <p className="text-xs uppercase tracking-wider text-premium-gold">Property comparison</p>
           <h1 className="text-2xl font-bold text-white">Side-by-side</h1>
           <p className="mt-1 text-sm text-slate-500">
             Estimates only — not investment or mortgage advice. Adjust rent, down %, and rate per property.
@@ -321,14 +321,14 @@ export function ComparePageClient() {
           <button
             type="button"
             onClick={() => setMode("investor")}
-            className={`rounded-lg px-4 py-2 text-sm font-semibold ${mode === "investor" ? "bg-[#C9A646] text-black" : "border border-white/20 text-white"}`}
+            className={`rounded-lg px-4 py-2 text-sm font-semibold ${mode === "investor" ? "bg-premium-gold text-black" : "border border-white/20 text-white"}`}
           >
             Investor
           </button>
           <button
             type="button"
             onClick={() => setMode("buyer")}
-            className={`rounded-lg px-4 py-2 text-sm font-semibold ${mode === "buyer" ? "bg-[#C9A646] text-black" : "border border-white/20 text-white"}`}
+            className={`rounded-lg px-4 py-2 text-sm font-semibold ${mode === "buyer" ? "bg-premium-gold text-black" : "border border-white/20 text-white"}`}
           >
             Buyer
           </button>
@@ -346,7 +346,7 @@ export function ComparePageClient() {
         <button
           type="button"
           onClick={() => void downloadPdf()}
-          className="rounded-lg border border-[#C9A646]/50 px-4 py-2 text-sm text-[#C9A646]"
+          className="rounded-lg border border-premium-gold/50 px-4 py-2 text-sm text-premium-gold"
         >
           Download PDF
         </button>
@@ -387,7 +387,7 @@ export function ComparePageClient() {
                           // eslint-disable-next-line @next/next/no-img-element
                           <img src={l.imageUrl} alt="" className="h-24 w-full rounded-lg object-cover" />
                         ) : null}
-                        <Link href={l.href} className="font-semibold text-[#C9A646] hover:underline">
+                        <Link href={l.href} className="font-semibold text-premium-gold hover:underline">
                           {l.title}
                         </Link>
                         <button
@@ -437,7 +437,7 @@ export function ComparePageClient() {
                   </tr>
                 ))}
                 <tr className="border-b border-white/5 bg-white/[0.02]">
-                  <td className="sticky left-0 bg-[#0B0B0B] px-3 py-2 text-[#C9A646]">Rent (mo)</td>
+                  <td className="sticky left-0 bg-[#0B0B0B] px-3 py-2 text-premium-gold">Rent (mo)</td>
                   {listings.map((l) => (
                     <td key={l.id} className="px-3 py-2">
                       <input
@@ -564,7 +564,7 @@ export function ComparePageClient() {
           <div className="space-y-6 md:hidden">
             {listings.map((l) => (
               <div key={l.id} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-                <Link href={l.href} className="text-lg font-semibold text-[#C9A646]">
+                <Link href={l.href} className="text-lg font-semibold text-premium-gold">
                   {l.title}
                 </Link>
                 <p className="text-sm text-slate-400">{l.address}</p>
@@ -580,7 +580,7 @@ export function ComparePageClient() {
                   </div>
                   <div>
                     <span className="text-slate-500">AI deal score (est.)</span>
-                    <p className="font-medium text-[#C9A646]">
+                    <p className="font-medium text-premium-gold">
                       {dealAnalyses[l.id]?.dealScore ?? "—"}/100
                     </p>
                   </div>
@@ -656,7 +656,7 @@ function BrokerLeadForm({ listingIds, mode }: { listingIds: string[]; mode: stri
   }
 
   return (
-    <div className="rounded-2xl border border-[#C9A646]/25 bg-black/40 p-6">
+    <div className="rounded-2xl border border-premium-gold/25 bg-black/40 p-6">
       <h2 className="text-lg font-semibold text-white">Talk to a broker about these properties</h2>
       <p className="mt-1 text-sm text-slate-500">We&apos;ll attach the selected listing IDs to your request.</p>
       <form onSubmit={submit} className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -680,7 +680,7 @@ function BrokerLeadForm({ listingIds, mode }: { listingIds: string[]; mode: stri
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
         />
-        <button type="submit" className="rounded-lg bg-[#C9A646] px-4 py-2 text-sm font-bold text-black sm:col-span-2">
+        <button type="submit" className="rounded-lg bg-premium-gold px-4 py-2 text-sm font-bold text-black sm:col-span-2">
           Request callback
         </button>
       </form>

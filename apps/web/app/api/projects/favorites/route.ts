@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getProjectsUserId } from "@/lib/projects-user";
+import { trackEvent } from "@/src/services/analytics";
 
 export const dynamic = "force-dynamic";
 
@@ -34,6 +35,7 @@ export async function POST(req: Request) {
       create: { userId, projectId },
       update: {},
     });
+    void trackEvent("favorite", { projectId, kind: "project" }, { userId }).catch(() => {});
     return NextResponse.json({ success: true, projectId });
   } catch (e) {
     console.error("POST /api/projects/favorites:", e);

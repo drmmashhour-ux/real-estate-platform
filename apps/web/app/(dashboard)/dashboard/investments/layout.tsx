@@ -1,9 +1,10 @@
 import { redirect } from "next/navigation";
+import { ensureDynamicAuthRequest } from "@/lib/auth/ensure-dynamic-request";
 import { getGuestId } from "@/lib/auth/session";
 import { isInvestmentFeaturesEnabled } from "@/lib/compliance/investment-features";
 import { prisma } from "@/lib/db";
 
-export const dynamic = "force-dynamic";
+export { dynamic, revalidate } from "@/lib/auth/protected-route-segment";
 
 /**
  * Investment hub is off by default (AMF / securities risk).
@@ -11,6 +12,7 @@ export const dynamic = "force-dynamic";
  * Platform admins always see the hub for operations / QA.
  */
 export default async function InvestmentsLayout({ children }: { children: React.ReactNode }) {
+  await ensureDynamicAuthRequest();
   if (await isInvestmentFeaturesEnabled()) {
     return <>{children}</>;
   }

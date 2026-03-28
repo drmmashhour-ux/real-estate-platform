@@ -23,16 +23,16 @@ export default function BnhubPricingPage() {
         />
 
         <div className="mt-10 grid gap-6 lg:grid-cols-2">
-          <div className="rounded-2xl border border-[#C9A646]/25 bg-gradient-to-br from-[#C9A646]/10 to-transparent p-6">
+          <div className="rounded-2xl border border-premium-gold/25 bg-gradient-to-br from-premium-gold/10 to-transparent p-6">
             <h2 className="font-serif text-lg font-semibold text-white">Booking fees (every stay)</h2>
             <ul className="mt-4 space-y-3 text-sm text-slate-300">
               <li className="flex justify-between gap-4 border-b border-white/10 pb-2">
                 <span>Host fee</span>
-                <span className="font-semibold text-[#C9A646]">~3%</span>
+                <span className="font-semibold text-premium-gold">~3%</span>
               </li>
               <li className="flex justify-between gap-4">
                 <span>Guest service fee</span>
-                <span className="font-semibold text-[#C9A646]">~10–14%</span>
+                <span className="font-semibold text-premium-gold">~10–14%</span>
               </li>
             </ul>
             <p className="mt-4 text-xs text-slate-500">
@@ -47,7 +47,7 @@ export default function BnhubPricingPage() {
             </p>
             <Link
               href="/bnhub/stays"
-              className="mt-5 inline-flex text-sm font-medium text-[#C9A646] hover:underline"
+              className="mt-5 inline-flex text-sm font-medium text-premium-gold hover:underline"
             >
               Browse stays →
             </Link>

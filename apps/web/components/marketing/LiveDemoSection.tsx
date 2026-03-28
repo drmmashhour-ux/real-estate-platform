@@ -22,7 +22,7 @@ export function LiveDemoSection() {
               <AnimatedReveal delayMs={i * 40}>
                 <div className="flex h-full gap-4 rounded-2xl border border-white/10 bg-black/30 p-5">
                   <span
-                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#C9A646]/40 bg-[#C9A646]/10 text-sm font-bold text-[#C9A646]"
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-premium-gold/40 bg-premium-gold/10 text-sm font-bold text-premium-gold"
                     aria-hidden
                   >
                     {i + 1}
@@ -37,7 +37,7 @@ export function LiveDemoSection() {
           <div className="mt-10 flex justify-center">
             <Link
               href="/demo"
-              className="inline-flex items-center justify-center rounded-full bg-[#C9A646] px-8 py-3.5 text-sm font-semibold text-black shadow-lg shadow-[#C9A646]/20 transition hover:brightness-110"
+              className="inline-flex items-center justify-center rounded-full bg-premium-gold px-8 py-3.5 text-sm font-semibold text-black shadow-lg shadow-premium-gold/20 transition hover:brightness-110"
             >
               Open demo hub
             </Link>

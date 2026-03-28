@@ -14,10 +14,10 @@ export function DeclarationTopBar({ progressPercent, onSave, onValidate, onPrevi
           <p className="text-xs text-slate-400">Structured drafting with controlled AI section assistance</p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="rounded-full border border-[#C9A646]/40 bg-[#C9A646]/10 px-2.5 py-1 text-xs font-medium text-[#E8C547]">
+          <span className="rounded-full border border-premium-gold/40 bg-premium-gold/10 px-2.5 py-1 text-xs font-medium text-premium-gold">
             {progressPercent}% complete
           </span>
-          <button type="button" onClick={onSave} className="rounded-lg bg-[#C9A646] px-3 py-2 text-xs font-medium text-black hover:bg-[#E8C547]">Save</button>
+          <button type="button" onClick={onSave} className="rounded-lg bg-premium-gold px-3 py-2 text-xs font-medium text-black hover:bg-premium-gold">Save</button>
           <button type="button" onClick={onValidate} className="rounded-lg border border-white/20 px-3 py-2 text-xs text-white hover:bg-white/10">Validate</button>
           <button type="button" onClick={onPreview} className="rounded-lg border border-white/20 px-3 py-2 text-xs text-white hover:bg-white/10">Preview</button>
         </div>

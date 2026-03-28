@@ -15,7 +15,7 @@ export function LegalAssistantPanel({ documentId, sectionKey }: { documentId: st
     <div className="rounded-xl border border-white/10 bg-black/20 p-3">
       <div className="flex items-center justify-between">
         <p className="text-sm font-semibold text-white">AI Legal Assistant</p>
-        <button type="button" onClick={() => { const next = !open; setOpen(next); if (next) refreshContext().catch(() => undefined); }} className="text-xs text-[#C9A646]">{open ? "Hide" : "Open"}</button>
+        <button type="button" onClick={() => { const next = !open; setOpen(next); if (next) refreshContext().catch(() => undefined); }} className="text-xs text-premium-gold">{open ? "Hide" : "Open"}</button>
       </div>
       {open ? <div className="mt-2 space-y-2">{contextHealth ? <p className="text-[10px] text-slate-500">Graph health: {contextHealth}</p> : null}<LegalAssistantChat documentId={documentId} sectionKey={sectionKey} /></div> : <p className="mt-1 text-xs text-slate-500">Grounded guidance from document context only.</p>}
     </div>

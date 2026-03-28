@@ -38,7 +38,7 @@ export function PremiumActionRequired({ listings }: { listings: CommandListingRo
             </div>
             <Link
               href={`/dashboard/seller/listings/${l.id}`}
-              className="shrink-0 rounded-full bg-[#C9A646] px-4 py-2 text-xs font-bold text-black hover:bg-[#d4b35c]"
+              className="shrink-0 rounded-full bg-premium-gold px-4 py-2 text-xs font-bold text-black hover:bg-[#d4b35c]"
             >
               Fix now
             </Link>

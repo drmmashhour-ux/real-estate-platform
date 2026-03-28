@@ -134,7 +134,7 @@ export function WorkspaceOverviewDashboard({ workspaceId, canViewAudit }: Worksp
             </p>
           </div>
           <div className="flex flex-wrap gap-4 text-sm">
-            <Link href={`/dashboard/workspaces/${workspaceId}/monopoly`} className="text-[#C9A646]/90 hover:text-[#C9A646]">
+            <Link href={`/dashboard/workspaces/${workspaceId}/monopoly`} className="text-premium-gold/90 hover:text-premium-gold">
               Monopoly layer
             </Link>
             <Link href={`/dashboard/workspaces/${workspaceId}/team`} className="text-violet-400/90 hover:text-violet-300">
@@ -148,7 +148,7 @@ export function WorkspaceOverviewDashboard({ workspaceId, canViewAudit }: Worksp
       </header>
 
       <section className="rounded-xl border border-white/10 bg-[#0f0f0f] p-6">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-[#C9A646]/90">Billing / plan</h2>
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-premium-gold/90">Billing / plan</h2>
         {billing ? (
           <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
             <div>

@@ -14,7 +14,7 @@ export default async function AdminEarlyUsersPage() {
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-10 text-slate-100">
-      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#C9A646]">Acquisition</p>
+      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-premium-gold">Acquisition</p>
       <h1 className="mt-2 text-3xl font-semibold">Early users — CRM</h1>
       <p className="mt-2 max-w-2xl text-sm text-slate-400">
         Outreach + conversion tracking. Scale view (funnel, automation, leaderboard):{" "}

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-const GOLD = "#C9A646";
+const GOLD = "var(--color-premium-gold)";
 
 type NotifRow = {
   id: string;
@@ -69,13 +69,13 @@ export function ExpertNotificationBell() {
         type="button"
         aria-label="Notifications"
         onClick={() => setOpen((o) => !o)}
-        className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-black/40 text-[#C9A646] hover:bg-white/5"
+        className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-black/40 text-premium-gold hover:bg-white/5"
       >
         <span className="text-lg" aria-hidden>
           🔔
         </span>
         {unread > 0 ? (
-          <span className="absolute -right-1 -top-1 min-w-[18px] rounded-full bg-[#C9A646] px-1 text-center text-[10px] font-bold text-black">
+          <span className="absolute -right-1 -top-1 min-w-[18px] rounded-full bg-premium-gold px-1 text-center text-[10px] font-bold text-black">
             {unread > 99 ? "99+" : unread}
           </span>
         ) : null}
@@ -106,7 +106,7 @@ export function ExpertNotificationBell() {
                     {n.leadId ? (
                       <Link
                         href="/dashboard/expert/leads"
-                        className="text-[10px] font-bold text-[#C9A646] hover:underline"
+                        className="text-[10px] font-bold text-premium-gold hover:underline"
                         onClick={() => setOpen(false)}
                       >
                         View leads →

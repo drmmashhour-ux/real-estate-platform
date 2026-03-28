@@ -165,7 +165,7 @@ export function ExpertLeadsClient() {
                   {l.revenueTier || l.purchaseRegion != null ? (
                     <p className="mt-2 flex flex-wrap gap-2 text-[10px] font-bold uppercase tracking-wide">
                       {l.revenueTier ? (
-                        <span className="rounded border border-[#C9A646]/50 px-2 py-0.5 text-[#C9A646]">
+                        <span className="rounded border border-premium-gold/50 px-2 py-0.5 text-premium-gold">
                           Tier {l.revenueTier}
                         </span>
                       ) : null}
@@ -186,7 +186,7 @@ export function ExpertLeadsClient() {
                       {inq.downPayment != null ? <>Down: ${Number(inq.downPayment).toLocaleString()}</> : null}
                     </p>
                   ) : null}
-                  <p className="mt-2 text-xs uppercase tracking-wider text-[#C9A646]">
+                  <p className="mt-2 text-xs uppercase tracking-wider text-premium-gold">
                     Status: {l.pipelineStatus}
                     {l.highIntent ? " · High intent" : ""}
                     {l.mortgageCreditCost > 0 ? ` · Charged ${l.mortgageCreditCost} credits` : ""}
@@ -254,7 +254,7 @@ export function ExpertLeadsClient() {
                       target="_blank"
                       rel="noreferrer"
                       onClick={() => void trackContact(l.id, "whatsapp")}
-                      className="rounded-lg border border-[#C9A646]/50 px-3 py-2 text-xs font-semibold text-[#C9A646] hover:bg-[#C9A646]/10"
+                      className="rounded-lg border border-premium-gold/50 px-3 py-2 text-xs font-semibold text-premium-gold hover:bg-premium-gold/10"
                       title="Opens WhatsApp — marks contacted when clicked from dashboard"
                     >
                       WhatsApp client
@@ -291,7 +291,7 @@ export function ExpertLeadsClient() {
           aria-labelledby="close-deal-title"
         >
           <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#121212] p-6 shadow-2xl">
-            <h2 id="close-deal-title" className="text-lg font-bold text-[#C9A646]">
+            <h2 id="close-deal-title" className="text-lg font-bold text-premium-gold">
               Confirm closed deal
             </h2>
             <p className="mt-2 text-xs text-[#B3B3B3]">
@@ -299,7 +299,7 @@ export function ExpertLeadsClient() {
               (see your agreement).
             </p>
             {closeErr ? <p className="mt-2 text-sm text-red-400">{closeErr}</p> : null}
-            <label className="mt-4 block text-xs font-semibold text-[#C9A646]/90">
+            <label className="mt-4 block text-xs font-semibold text-premium-gold/90">
               Deal amount ($)
               <input
                 type="text"
@@ -315,7 +315,7 @@ export function ExpertLeadsClient() {
                 type="button"
                 disabled={closing}
                 onClick={() => void submitCloseDeal()}
-                className="flex-1 rounded-xl bg-[#C9A646] py-2.5 text-sm font-bold text-[#0B0B0B] disabled:opacity-50"
+                className="flex-1 rounded-xl bg-premium-gold py-2.5 text-sm font-bold text-[#0B0B0B] disabled:opacity-50"
               >
                 {closing ? "Saving…" : "Confirm deal closed"}
               </button>

@@ -7,7 +7,7 @@ export function PremiumDealAlertsStrip() {
       <p>
         <span className="font-semibold text-sky-200">Deal alerts</span> — watch for new opportunities across saved scenarios.
       </p>
-      <Link href="/dashboard/investments/alerts" className="shrink-0 font-medium text-[#C9A646] hover:underline">
+      <Link href="/dashboard/investments/alerts" className="shrink-0 font-medium text-premium-gold hover:underline">
         Open alerts →
       </Link>
     </div>

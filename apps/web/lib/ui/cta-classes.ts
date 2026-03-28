@@ -1,6 +1,6 @@
 /** Shared primary CTA styling — gold on dark (#0B0B0B) shell. */
 export const CTA_PRIMARY_LG =
-  "rounded-xl bg-[#C9A646] px-6 py-3.5 text-sm font-bold text-[#0B0B0B] shadow-lg shadow-[#C9A646]/25 transition duration-200 hover:bg-[#D4B35A] hover:shadow-[#C9A646]/35 active:scale-[0.99] disabled:pointer-events-none disabled:opacity-45";
+  "rounded-xl bg-premium-gold px-6 py-3.5 text-sm font-bold text-[#0B0B0B] shadow-lg shadow-premium-gold/25 transition duration-200 hover:bg-premium-gold hover:shadow-premium-gold/35 active:scale-[0.99] disabled:pointer-events-none disabled:opacity-45";
 
 export const CTA_PRIMARY_FULL_WIDTH = `w-full ${CTA_PRIMARY_LG}`;
 

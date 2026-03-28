@@ -61,7 +61,7 @@ export default async function AdminReportPeriodPage({ params }: { params: Promis
       <div className="space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <Link href="/admin/reports" className="text-sm text-[#C9A646] hover:underline">
+            <Link href="/admin/reports" className="text-sm text-premium-gold hover:underline">
               ← Reports hub
             </Link>
             <h1 className="mt-2 text-2xl font-semibold text-white">{title}</h1>
@@ -73,13 +73,13 @@ export default async function AdminReportPeriodPage({ params }: { params: Promis
           <div className="flex flex-wrap gap-2">
             <a
               href={`/api/admin/finance/export?format=csv&type=admin_report&period=${period}`}
-              className="rounded-xl border border-slate-600 px-4 py-2 text-sm text-slate-200 hover:border-[#C9A646]/50"
+              className="rounded-xl border border-slate-600 px-4 py-2 text-sm text-slate-200 hover:border-premium-gold/50"
             >
               Export CSV
             </a>
             <a
               href={`/api/admin/finance/export?format=json&type=admin_report&period=${period}`}
-              className="rounded-xl border border-slate-600 px-4 py-2 text-sm text-slate-200 hover:border-[#C9A646]/50"
+              className="rounded-xl border border-slate-600 px-4 py-2 text-sm text-slate-200 hover:border-premium-gold/50"
             >
               Export JSON
             </a>
@@ -91,8 +91,8 @@ export default async function AdminReportPeriodPage({ params }: { params: Promis
           accounting, legal review, or government filings.
         </div>
 
-        <section className="rounded-2xl border border-[#C9A646]/25 bg-[#0a0a0a] p-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#C9A646]">{report.period}</p>
+        <section className="rounded-2xl border border-premium-gold/25 bg-[#0a0a0a] p-6">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold">{report.period}</p>
           <h2 className="mt-2 text-lg font-semibold text-white">{report.headline}</h2>
           <ul className="mt-4 list-inside list-disc space-y-2 text-sm text-slate-400">
             {report.bullets.map((b, i) => (
@@ -124,15 +124,15 @@ export default async function AdminReportPeriodPage({ params }: { params: Promis
         ) : null}
 
         <section className="grid gap-6 lg:grid-cols-2">
-          <div className="rounded-2xl border border-[#C9A646]/20 bg-[#0a0a0a] p-4 sm:p-6">
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-[#C9A646]">Revenue by hub (paid platform payments)</h3>
+          <div className="rounded-2xl border border-premium-gold/20 bg-[#0a0a0a] p-4 sm:p-6">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-premium-gold">Revenue by hub (paid platform payments)</h3>
             <p className="mt-1 text-xs text-slate-500">Mapped from paymentType — see finance module for rules.</p>
             <div className="mt-4">
               <AdminReportRevenueChart byHub={revenue.byHubLabel} />
             </div>
           </div>
-          <div className="rounded-2xl border border-[#C9A646]/20 bg-[#0a0a0a] p-4 sm:p-6">
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-[#C9A646]">Listing & booking signals</h3>
+          <div className="rounded-2xl border border-premium-gold/20 bg-[#0a0a0a] p-4 sm:p-6">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-premium-gold">Listing & booking signals</h3>
             <AdminHubCharts stats={stats} />
           </div>
         </section>

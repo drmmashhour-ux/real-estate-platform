@@ -23,8 +23,8 @@ export const PLATFORM_LEGAL_DISPLAY = `${PLATFORM_NAME} (${PLATFORM_CARREFOUR_NA
 /** Footer line without year: "LECIPM · Mashhour Investments". */
 export const PLATFORM_COPYRIGHT_LINE = `${PLATFORM_NAME} · ${PLATFORM_OPERATOR}`;
 
-/** Matches `--color-premium-gold` in `app/globals.css` (#c9a646). */
-export const PLATFORM_BRAND_GOLD_HEX = "#C9A646";
+/** Matches `--color-premium-gold` in `app/globals.css` (#d4af37). */
+export const PLATFORM_BRAND_GOLD_HEX = "#D4AF37";
 
 /**
  * Single solid gold for LECIPM + Le Carrefour Immobilier Prestige (no multi-stop gradient).

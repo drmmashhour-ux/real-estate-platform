@@ -6,6 +6,8 @@ import { PlatformLegalGate } from "@/components/legal/PlatformLegalGate";
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
 import { getPlatformLegalGateStatus } from "@/lib/legal/platform-legal-status";
 
+export { dynamic, revalidate } from "@/lib/auth/protected-route-segment";
+
 export default async function DashboardSectionLayout({ children }: { children: ReactNode }) {
   const { userId: id } = await requireAuthenticatedUser();
   let showGuide = false;

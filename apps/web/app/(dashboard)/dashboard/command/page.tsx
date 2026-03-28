@@ -24,7 +24,7 @@ export default async function CommandCenterPage() {
       <div className="mx-auto max-w-7xl space-y-10">
         <header className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#C9A646]">Command center</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-premium-gold">Command center</p>
             <h1 className="mt-1 text-3xl font-bold tracking-tight text-white">Decisions at a glance</h1>
             <p className="mt-2 max-w-xl text-sm text-slate-500">
               Trust and deal signals across your listings — estimates only, not advice.
@@ -33,13 +33,13 @@ export default async function CommandCenterPage() {
           <div className="flex flex-wrap gap-3">
             <Link
               href="/dashboard/fsbo"
-              className="rounded-full border border-white/15 px-4 py-2 text-sm text-slate-200 hover:border-[#C9A646]/40"
+              className="rounded-full border border-white/15 px-4 py-2 text-sm text-slate-200 hover:border-premium-gold/40"
             >
               FSBO hub
             </Link>
             <Link
               href="/dashboard/seller/listings"
-              className="rounded-full bg-[#C9A646] px-5 py-2 text-sm font-bold text-black hover:bg-[#d4b35c]"
+              className="rounded-full bg-premium-gold px-5 py-2 text-sm font-bold text-black hover:bg-[#d4b35c]"
             >
               All listings
             </Link>
@@ -70,7 +70,7 @@ export default async function CommandCenterPage() {
           <aside className="space-y-6 lg:col-span-1">
             <PremiumCopilotPanel />
             <div className="rounded-2xl border border-white/[0.08] bg-[#141414] p-5 shadow-[0_12px_40px_rgba(0,0,0,0.45)]">
-              <h3 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#C9A646]/90">Activity</h3>
+              <h3 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-premium-gold/90">Activity</h3>
               <div className="mt-4">
                 <PremiumActivityFeed listings={data.listings} />
               </div>

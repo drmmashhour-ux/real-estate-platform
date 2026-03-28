@@ -1,26 +1,32 @@
 import { NextRequest } from "next/server";
+import { getGuestId } from "@/lib/auth/session";
 import { createReview } from "@/lib/bnhub/reviews";
 import { canLeaveReview } from "@/lib/policy-engine";
 import { prisma } from "@/lib/db";
 
+/** @deprecated Prefer POST /api/reviews (session-based). Body guestId ignored when signed in. */
 export async function POST(request: NextRequest) {
   try {
+    const sessionUserId = await getGuestId();
     const body = await request.json();
     const {
       bookingId,
-      guestId,
+      guestId: bodyGuestId,
       listingId,
       propertyRating,
       hostRating,
       cleanlinessRating,
+      accuracyRating,
       communicationRating,
       locationRating,
       valueRating,
+      checkinRating,
       comment,
     } = body;
+    const guestId = sessionUserId ?? bodyGuestId;
     if (!bookingId || !guestId || !listingId || propertyRating == null) {
       return Response.json(
-        { error: "bookingId, guestId, listingId, propertyRating required" },
+        { error: "bookingId, listingId, propertyRating required; sign in or pass guestId for legacy demos" },
         { status: 400 }
       );
     }
@@ -45,9 +51,11 @@ export async function POST(request: NextRequest) {
       propertyRating: Number(propertyRating),
       hostRating: hostRating != null ? Number(hostRating) : undefined,
       cleanlinessRating: cleanlinessRating != null ? Number(cleanlinessRating) : undefined,
+      accuracyRating: accuracyRating != null ? Number(accuracyRating) : undefined,
       communicationRating: communicationRating != null ? Number(communicationRating) : undefined,
       locationRating: locationRating != null ? Number(locationRating) : undefined,
       valueRating: valueRating != null ? Number(valueRating) : undefined,
+      checkinRating: checkinRating != null ? Number(checkinRating) : undefined,
       comment: comment ?? undefined,
     });
     return Response.json(review);

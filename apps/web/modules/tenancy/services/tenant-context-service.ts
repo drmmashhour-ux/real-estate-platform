@@ -122,7 +122,7 @@ export async function getCurrentTenantFromRequest(
 export async function requireTenantContext(
   request: NextRequest
 ): Promise<{ ctx: ResolvedTenantContext } | NextResponse> {
-  const session = requireSessionUserIdOr401(request);
+  const session = await requireSessionUserIdOr401(request);
   if (session instanceof NextResponse) return session;
 
   const user = await prisma.user.findUnique({

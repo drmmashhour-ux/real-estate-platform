@@ -62,7 +62,7 @@ export default async function AdminFinancePayoutsHubPage() {
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
             <p className="text-xs text-slate-500">BNHub host transfers pending release</p>
             <p className="mt-1 text-2xl font-semibold text-white">{hostPending}</p>
-            <Link href="/admin/payouts" className="mt-2 inline-block text-sm text-[#C9A646] hover:underline">
+            <Link href="/admin/payouts" className="mt-2 inline-block text-sm text-premium-gold hover:underline">
               Open host payouts →
             </Link>
           </div>

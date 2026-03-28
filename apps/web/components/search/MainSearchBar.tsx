@@ -51,7 +51,7 @@ export function MainSearchBar() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="mx-auto w-full max-w-4xl rounded-2xl border border-[#C9A646]/25 bg-[#121212]/95 p-2 shadow-[0_20px_50px_rgba(0,0,0,0.55)] backdrop-blur-md transition duration-300 hover:border-[#C9A646]/45 hover:shadow-[0_24px_60px_rgba(201, 166, 70,0.08)] focus-within:border-[#C9A646]/55 focus-within:ring-2 focus-within:ring-[#C9A646]/20 md:flex md:items-stretch md:gap-0"
+      className="mx-auto w-full max-w-4xl rounded-2xl border border-premium-gold/25 bg-[#121212]/95 p-2 shadow-[0_20px_50px_rgba(0,0,0,0.55)] backdrop-blur-md transition duration-300 hover:border-premium-gold/45 hover:shadow-[0_24px_60px_rgb(var(--premium-gold-channels) / 0.08)] focus-within:border-premium-gold/55 focus-within:ring-2 focus-within:ring-premium-gold/20 md:flex md:items-stretch md:gap-0"
     >
       <div className="flex flex-1 flex-col rounded-xl md:flex-row md:items-center md:divide-x md:divide-white/10">
         <label className="flex flex-1 flex-col px-4 py-3 md:py-2.5">
@@ -100,7 +100,7 @@ export function MainSearchBar() {
       </div>
       <button
         type="submit"
-        className="mt-2 inline-flex w-full shrink-0 items-center justify-center rounded-xl bg-[#C9A646] px-8 py-3.5 text-sm font-bold tracking-wide text-black shadow-lg shadow-[#C9A646]/25 transition duration-200 hover:bg-[#C9A227] md:mt-0 md:ml-2 md:w-auto md:self-stretch"
+        className="mt-2 inline-flex w-full shrink-0 items-center justify-center rounded-xl bg-premium-gold px-8 py-3.5 text-sm font-bold tracking-wide text-black shadow-lg shadow-premium-gold/25 transition duration-200 hover:bg-premium-gold md:mt-0 md:ml-2 md:w-auto md:self-stretch"
       >
         Search
       </button>

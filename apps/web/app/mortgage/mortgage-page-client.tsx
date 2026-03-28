@@ -44,7 +44,7 @@ export type MortgagePrefill = {
   purchaseRegion?: string;
 };
 
-const GOLD = "#C9A646";
+const GOLD = "var(--color-premium-gold)";
 
 export function MortgagePageClient({
   experts,
@@ -126,7 +126,7 @@ export function MortgagePageClient({
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
-      <p className="mb-8 rounded-2xl border border-[#C9A646]/25 bg-[#121212] px-4 py-4 text-center text-sm leading-relaxed text-[#E5E5E5]">
+      <p className="mb-8 rounded-2xl border border-premium-gold/25 bg-[#121212] px-4 py-4 text-center text-sm leading-relaxed text-[#E5E5E5]">
         All mortgage services are handled by verified experts who agree to platform standards and client protection
         policies.
       </p>
@@ -149,20 +149,20 @@ export function MortgagePageClient({
               <p className={status === "ok" ? "text-sm text-emerald-400" : "text-sm text-red-400"}>{msg}</p>
             ) : null}
             <div>
-              <label className="text-xs font-semibold text-[#C9A646]/90">Name *</label>
+              <label className="text-xs font-semibold text-premium-gold/90">Name *</label>
               <input name="name" required className="mt-1 w-full rounded-xl border border-white/15 bg-[#0B0B0B] px-3 py-2 text-sm" />
             </div>
             <div>
-              <label className="text-xs font-semibold text-[#C9A646]/90">Email *</label>
+              <label className="text-xs font-semibold text-premium-gold/90">Email *</label>
               <input name="email" type="email" required className="mt-1 w-full rounded-xl border border-white/15 bg-[#0B0B0B] px-3 py-2 text-sm" />
             </div>
             <div>
-              <label className="text-xs font-semibold text-[#C9A646]/90">Phone</label>
+              <label className="text-xs font-semibold text-premium-gold/90">Phone</label>
               <input name="phone" type="tel" className="mt-1 w-full rounded-xl border border-white/15 bg-[#0B0B0B] px-3 py-2 text-sm" />
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label className="text-xs font-semibold text-[#C9A646]/90">Purchase price (est.)</label>
+                <label className="text-xs font-semibold text-premium-gold/90">Purchase price (est.)</label>
                 <input
                   name="purchasePrice"
                   type="number"
@@ -173,12 +173,12 @@ export function MortgagePageClient({
                 />
               </div>
               <div>
-                <label className="text-xs font-semibold text-[#C9A646]/90">Down payment (est.)</label>
+                <label className="text-xs font-semibold text-premium-gold/90">Down payment (est.)</label>
                 <input name="downPayment" type="number" min={0} className="mt-1 w-full rounded-xl border border-white/15 bg-[#0B0B0B] px-3 py-2 text-sm" />
               </div>
             </div>
             <div>
-              <label className="text-xs font-semibold text-[#C9A646]/90">City / region</label>
+              <label className="text-xs font-semibold text-premium-gold/90">City / region</label>
               <input
                 name="purchaseRegion"
                 placeholder="e.g. Montreal, Laval…"
@@ -188,7 +188,7 @@ export function MortgagePageClient({
               />
             </div>
             <div>
-              <label className="text-xs font-semibold text-[#C9A646]/90">How soon do you want to buy?</label>
+              <label className="text-xs font-semibold text-premium-gold/90">How soon do you want to buy?</label>
               <select
                 name="buyTimeline"
                 className="mt-1 w-full rounded-xl border border-white/15 bg-[#0B0B0B] px-3 py-2 text-sm text-white"
@@ -204,15 +204,15 @@ export function MortgagePageClient({
               </select>
             </div>
             <div>
-              <label className="text-xs font-semibold text-[#C9A646]/90">Timeline</label>
+              <label className="text-xs font-semibold text-premium-gold/90">Timeline</label>
               <input name="timeline" placeholder="e.g. 30–60 days" className="mt-1 w-full rounded-xl border border-white/15 bg-[#0B0B0B] px-3 py-2 text-sm" />
             </div>
             <div>
-              <label className="text-xs font-semibold text-[#C9A646]/90">Property type</label>
+              <label className="text-xs font-semibold text-premium-gold/90">Property type</label>
               <input name="propertyType" placeholder="House, condo…" className="mt-1 w-full rounded-xl border border-white/15 bg-[#0B0B0B] px-3 py-2 text-sm" />
             </div>
             <div>
-              <label className="text-xs font-semibold text-[#C9A646]/90">Notes</label>
+              <label className="text-xs font-semibold text-premium-gold/90">Notes</label>
               <AiWriterToolbar
                 className="mt-1 mb-2"
                 type="mortgage"
@@ -246,7 +246,7 @@ export function MortgagePageClient({
           {!primary ? (
             <p className="mt-4 text-sm text-[#737373]">
               Experts will appear here once registered.{" "}
-              <Link href="/auth/signup-expert" className="text-[#C9A646] hover:underline">
+              <Link href="/auth/signup-expert" className="text-premium-gold hover:underline">
                 Expert signup
               </Link>
             </p>
@@ -259,10 +259,10 @@ export function MortgagePageClient({
                 return (
                   <div
                     key={ex.id}
-                    className="rounded-2xl border border-[#C9A646]/35 bg-gradient-to-br from-[#121212] to-[#0B0B0B] p-6 shadow-xl"
+                    className="rounded-2xl border border-premium-gold/35 bg-gradient-to-br from-[#121212] to-[#0B0B0B] p-6 shadow-xl"
                   >
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-                      <div className="relative mx-auto h-28 w-28 shrink-0 overflow-hidden rounded-2xl border-2 border-[#C9A646]/50 bg-black sm:mx-0">
+                      <div className="relative mx-auto h-28 w-28 shrink-0 overflow-hidden rounded-2xl border-2 border-premium-gold/50 bg-black sm:mx-0">
                         {ex.photo ? (
                           <Image
                             src={ex.photo}
@@ -283,7 +283,7 @@ export function MortgagePageClient({
                             {ex.badges.map((b) => (
                               <span
                                 key={b}
-                                className="rounded-full border border-[#C9A646]/40 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#C9A646]"
+                                className="rounded-full border border-premium-gold/40 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-premium-gold"
                               >
                                 {b}
                               </span>
@@ -295,7 +295,7 @@ export function MortgagePageClient({
                           {ex.reviewCount != null ? ` · ${ex.reviewCount} reviews` : ""}
                           {ex.totalDeals != null ? ` · ${ex.totalDeals} deals` : ""}
                         </p>
-                        <p className="text-sm font-medium text-[#C9A646]">{ex.title || "Mortgage expert"}</p>
+                        <p className="text-sm font-medium text-premium-gold">{ex.title || "Mortgage expert"}</p>
                         {ex.company ? <p className="text-sm text-[#B3B3B3]">{ex.company}</p> : null}
                         {ex.bio ? <p className="mt-2 text-sm text-[#B3B3B3]">{ex.bio}</p> : null}
                         {ex.phone ? <p className="mt-2 text-sm text-white">{ex.phone}</p> : null}
@@ -314,7 +314,7 @@ export function MortgagePageClient({
                             href={waExpert}
                             target="_blank"
                             rel="noreferrer"
-                            className="rounded-xl border border-[#C9A646]/50 px-4 py-2 text-xs font-semibold text-[#C9A646] hover:bg-[#C9A646]/10"
+                            className="rounded-xl border border-premium-gold/50 px-4 py-2 text-xs font-semibold text-premium-gold hover:bg-premium-gold/10"
                           >
                             WhatsApp
                           </a>

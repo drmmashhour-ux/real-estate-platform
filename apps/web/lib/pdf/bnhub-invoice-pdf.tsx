@@ -34,7 +34,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
     padding: 14,
     borderWidth: 2,
-    borderColor: "#C9A646",
+    borderColor: "#D4AF37",
     backgroundColor: "#FFFCF2",
   },
   codeLabel: { fontSize: 9, color: "#666", textTransform: "uppercase" as const },

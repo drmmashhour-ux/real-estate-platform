@@ -30,7 +30,7 @@ export function HubNavLinks() {
             href={href}
             className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${
               active
-                ? "bg-[#C9A646]/18 text-[#F0E6C8] ring-1 ring-[#C9A646]/50"
+                ? "bg-premium-gold/18 text-[#F0E6C8] ring-1 ring-premium-gold/50"
                 : "text-slate-400 hover:bg-white/[0.06] hover:text-white"
             }`}
             aria-current={active ? "page" : undefined}

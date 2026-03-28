@@ -5,7 +5,7 @@ import Link from "next/link";
 import { PLATFORM_COPYRIGHT_LINE } from "@/lib/brand/platform";
 import { OpenContextConversationButton } from "@/components/messaging/OpenContextConversationButton";
 
-const GOLD = "#C9A646";
+const GOLD = "var(--color-premium-gold)";
 const BG = "#0B0B0B";
 
 type SigRow = {
@@ -160,7 +160,7 @@ export function ContractLeaseClient({ contractId }: { contractId: string }) {
         </header>
 
         <section
-          className="prose prose-invert mt-8 max-w-none prose-headings:text-[#C9A646] prose-p:text-slate-300 prose-li:text-slate-300"
+          className="prose prose-invert mt-8 max-w-none prose-headings:text-premium-gold prose-p:text-slate-300 prose-li:text-slate-300"
           dangerouslySetInnerHTML={{ __html: data.contentHtml ?? "<p>No content.</p>" }}
         />
 

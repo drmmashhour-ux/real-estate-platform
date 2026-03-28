@@ -5,6 +5,8 @@ import { getGuestId } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
 import { ACCOUNTANT_NAV } from "@/lib/admin/accountant-nav";
 
+export { dynamic, revalidate } from "@/lib/auth/protected-route-segment";
+
 export default async function AdminRootPage() {
   const guestId = await getGuestId();
   const dbUser = guestId

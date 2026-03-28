@@ -50,7 +50,7 @@ export default function BuyerInquiriesPage() {
       ) : rows.length === 0 ? (
         <p className="mt-8 text-sm text-slate-500">
           No inquiries yet.{" "}
-          <Link href="/buy" className="text-[#C9A646] hover:underline">
+          <Link href="/buy" className="text-premium-gold hover:underline">
             Browse listings
           </Link>
         </p>
@@ -71,7 +71,7 @@ export default function BuyerInquiriesPage() {
               {(r.fsboListingId || r.listingId) && (
                 <Link
                   href={`/listings/${r.fsboListingId ?? r.listingId}`}
-                  className="mt-3 inline-block text-xs font-medium text-[#C9A646] hover:underline"
+                  className="mt-3 inline-block text-xs font-medium text-premium-gold hover:underline"
                 >
                   View listing →
                 </Link>

@@ -192,10 +192,10 @@ export function BrokerDashboardClient() {
 
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#C9A646]">Mortgage</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold">Mortgage</p>
           <h1 className="mt-2 text-3xl font-bold tracking-tight text-white">Broker dashboard</h1>
           {valueProposition ? (
-            <p className="mt-2 max-w-xl text-base font-medium text-[#E8D5A3]">{valueProposition}</p>
+            <p className="mt-2 max-w-xl text-base font-medium text-premium-gold">{valueProposition}</p>
           ) : (
             <p className="mt-2 max-w-xl text-sm text-slate-400">
               Get qualified real estate leads. Connect with serious investors — requests assigned to you update in real time.
@@ -208,7 +208,7 @@ export function BrokerDashboardClient() {
             <p className="mt-3 inline-flex items-center gap-2 text-sm">
               <span className="text-slate-500">Plan:</span>
               {isPro ? (
-                <span className="rounded-full bg-[#C9A646]/20 px-3 py-1 text-xs font-bold uppercase tracking-wide text-[#E8D5A3] ring-1 ring-[#C9A646]/45">
+                <span className="rounded-full bg-premium-gold/20 px-3 py-1 text-xs font-bold uppercase tracking-wide text-premium-gold ring-1 ring-premium-gold/45">
                   Pro
                 </span>
               ) : (
@@ -231,7 +231,7 @@ export function BrokerDashboardClient() {
           ) : null}
           <Link
             href="/mortgage"
-            className="text-sm font-medium text-[#C9A646] hover:text-[#E8D5A3] hover:underline"
+            className="text-sm font-medium text-premium-gold hover:text-premium-gold hover:underline"
           >
             Public mortgage page
           </Link>
@@ -289,7 +289,7 @@ export function BrokerDashboardClient() {
                           Free shows only the {FREE_BROKER_VISIBLE_LEADS} newest requests.
                         </p>
                         {r.estimatedApprovalAmount != null && r.approvalConfidence ? (
-                          <p className="mt-3 font-mono text-sm text-[#E8D5A3]">
+                          <p className="mt-3 font-mono text-sm text-premium-gold">
                             Est. approval {formatCurrencyCAD(r.estimatedApprovalAmount)} ·{" "}
                             <span className="capitalize">{r.approvalConfidence}</span> confidence
                           </p>
@@ -299,7 +299,7 @@ export function BrokerDashboardClient() {
                         <Link
                           href="/broker/pricing"
                           onClick={() => void trackUpgradeClick()}
-                          className="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-[#C9A646] px-5 py-3 text-sm font-bold text-[#0B0B0B] shadow-lg hover:bg-[#D4B35A]"
+                          className="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-premium-gold px-5 py-3 text-sm font-bold text-[#0B0B0B] shadow-lg hover:bg-premium-gold"
                         >
                           Upgrade to Pro
                         </Link>
@@ -327,7 +327,7 @@ export function BrokerDashboardClient() {
           {!isAdminView && !isPro && totalLeads > FREE_BROKER_VISIBLE_LEADS ? (
             <p className="text-center text-xs text-slate-500">
               Showing {FREE_BROKER_VISIBLE_LEADS} of {totalLeads} leads ·{" "}
-              <Link href="/broker/pricing" onClick={() => void trackUpgradeClick()} className="text-[#C9A646] hover:underline">
+              <Link href="/broker/pricing" onClick={() => void trackUpgradeClick()} className="text-premium-gold hover:underline">
                 Unlock the rest
               </Link>
             </p>
@@ -405,7 +405,7 @@ function LeadCardBody({
     <>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-medium text-[#C9A646]/90">{r.freshnessLabel}</p>
+          <p className="text-xs font-medium text-premium-gold/90">{r.freshnessLabel}</p>
           {r.intentLevel?.toLowerCase() === "high" ? (
             <p className="mt-1 text-[11px] font-semibold uppercase tracking-wide text-emerald-400/90">
               High-quality lead
@@ -485,12 +485,12 @@ function LeadCardBody({
       ) : null}
 
       {contactLocked ? (
-        <div className="mt-5 space-y-3 rounded-2xl border border-[#C9A646]/30 bg-[#14110a]/50 px-4 py-4">
+        <div className="mt-5 space-y-3 rounded-2xl border border-premium-gold/30 bg-[#14110a]/50 px-4 py-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-emerald-400/90">This lead is exclusive</p>
-          <p className="text-sm font-semibold text-[#E8D5A3]">Borrower contact locked</p>
+          <p className="text-sm font-semibold text-premium-gold">Borrower contact locked</p>
           <p className="text-sm text-slate-400">Email and phone are hidden until you unlock. Unlock before others.</p>
           <p className="text-xs text-slate-500">
-            Lead price <span className="font-mono text-[#E8D5A3]">{formatCurrencyCAD(r.leadValue)}</span>
+            Lead price <span className="font-mono text-premium-gold">{formatCurrencyCAD(r.leadValue)}</span>
             {isPro && (weeklyFreeUnlocksRemaining ?? 0) > 0 ? (
               <span className="text-emerald-400/90"> · Pro includes free weekly unlocks</span>
             ) : null}
@@ -499,14 +499,14 @@ function LeadCardBody({
             type="button"
             disabled={unlockingId === r.id}
             onClick={() => void onUnlock(r.id)}
-            className="inline-flex min-h-[44px] w-full items-center justify-center rounded-xl bg-[#C9A646] px-4 py-3 text-sm font-bold text-[#0B0B0B] hover:bg-[#D4B35A] disabled:opacity-50 sm:w-auto"
+            className="inline-flex min-h-[44px] w-full items-center justify-center rounded-xl bg-premium-gold px-4 py-3 text-sm font-bold text-[#0B0B0B] hover:bg-premium-gold disabled:opacity-50 sm:w-auto"
           >
             {unlockingId === r.id ? "Please wait…" : unlockLabel}
           </button>
           {!isPro ? (
             <p className="text-xs text-slate-500">
               Want more visible leads?{" "}
-              <Link href="/broker/pricing" className="font-medium text-[#C9A646] hover:underline">
+              <Link href="/broker/pricing" className="font-medium text-premium-gold hover:underline">
                 Upgrade to Pro
               </Link>
             </p>
@@ -517,7 +517,7 @@ function LeadCardBody({
           <button
             type="button"
             onClick={() => setContactClientOpen((v) => !v)}
-            className="min-h-[44px] w-full rounded-xl border border-[#C9A646]/50 bg-[#C9A646]/10 px-4 py-3 text-sm font-semibold text-[#E8D5A3] transition hover:bg-[#C9A646]/20 sm:w-auto"
+            className="min-h-[44px] w-full rounded-xl border border-premium-gold/50 bg-premium-gold/10 px-4 py-3 text-sm font-semibold text-premium-gold transition hover:bg-premium-gold/20 sm:w-auto"
           >
             {contactClientOpen ? "Hide client contact" : "Contact Client"}
           </button>
@@ -536,7 +536,7 @@ function LeadCardBody({
                   <dt className="text-slate-500">Email</dt>
                   <dd>
                     {r.borrowerEmail ? (
-                      <a href={`mailto:${r.borrowerEmail}`} className="break-all text-[#C9A646] hover:underline">
+                      <a href={`mailto:${r.borrowerEmail}`} className="break-all text-premium-gold hover:underline">
                         {r.borrowerEmail}
                       </a>
                     ) : (
@@ -548,7 +548,7 @@ function LeadCardBody({
                   <dt className="text-slate-500">Phone</dt>
                   <dd>
                     {r.borrowerPhone ? (
-                      <a href={`tel:${r.borrowerPhone.replace(/\s/g, "")}`} className="text-[#C9A646] hover:underline">
+                      <a href={`tel:${r.borrowerPhone.replace(/\s/g, "")}`} className="text-premium-gold hover:underline">
                         {r.borrowerPhone}
                       </a>
                     ) : (

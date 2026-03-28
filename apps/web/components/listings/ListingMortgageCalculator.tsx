@@ -52,7 +52,7 @@ export function ListingMortgageCalculator({ listPriceCents }: Props) {
             step={1}
             value={downPct}
             onChange={(e) => setDownPct(Number(e.target.value))}
-            className="mt-2 w-full accent-[#C9A646]"
+            className="mt-2 w-full accent-premium-gold"
           />
           <div className="mt-1 text-xs text-slate-500">{downPct}% · ${(listPrice * (downPct / 100)).toLocaleString("en-CA", { maximumFractionDigits: 0 })} down</div>
         </label>
@@ -93,7 +93,7 @@ export function ListingMortgageCalculator({ listPriceCents }: Props) {
         </div>
         <div className="flex justify-between gap-4">
           <dt className="text-slate-400">Monthly payment</dt>
-          <dd className="font-semibold text-[#C9A646]">${monthly.toLocaleString("en-CA", { maximumFractionDigits: 0 })}</dd>
+          <dd className="font-semibold text-premium-gold">${monthly.toLocaleString("en-CA", { maximumFractionDigits: 0 })}</dd>
         </div>
         <div className="flex justify-between gap-4">
           <dt className="text-slate-400">Total interest (approx.)</dt>

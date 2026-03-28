@@ -28,7 +28,7 @@ Single design system for **marketing** and **product** (`apps/web`). Code source
 **Don’t**
 
 - Stretch or skew the logo.
-- Change the gold (`#C9A646`) to another hue without a design update.
+- Change the gold (`#D4AF37`) to another hue without a design update.
 - Place the dark wordmark on busy imagery without a subtle scrim or solid band.
 
 ---
@@ -37,7 +37,7 @@ Single design system for **marketing** and **product** (`apps/web`). Code source
 
 | Role | Hex | Usage |
 |------|-----|--------|
-| Primary / gold | `#C9A646` | CTAs, key accents, focus rings, logo strokes |
+| Primary / gold | `#D4AF37` | CTAs, key accents, focus rings, logo strokes |
 | Primary hover | `#E0B84F` | Hover states (`--color-cta-hover`) |
 | Background | `#0B0B0B` | App shell, marketing page background |
 | Surface | `#111111` | Cards, panels |

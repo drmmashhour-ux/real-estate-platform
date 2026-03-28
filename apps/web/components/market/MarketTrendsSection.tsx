@@ -60,11 +60,11 @@ export function MarketTrendsSection({ city, propertyType = "Residential" }: { ci
   if (err || !data) {
     return (
       <section className="mt-10 rounded-2xl border border-white/10 bg-[#121212] p-6 text-sm text-slate-400">
-        <p className="text-xs uppercase tracking-wider text-[#C9A646]">Market Trends</p>
+        <p className="text-xs uppercase tracking-wider text-premium-gold">Market Trends</p>
         <p className="mt-2">{err ?? "No analysis available."}</p>
         <p className="mt-2 text-xs text-slate-500">
           Trend analysis may appear once market data exists for this city.{" "}
-          <Link href={`/market/${cityToSlug(city)}`} className="text-[#C9A646] hover:underline">
+          <Link href={`/market/${cityToSlug(city)}`} className="text-premium-gold hover:underline">
             Open city market page
           </Link>
         </p>
@@ -75,7 +75,7 @@ export function MarketTrendsSection({ city, propertyType = "Residential" }: { ci
   if (data.dataPoints < 2) {
     return (
       <section className="mt-10 rounded-2xl border border-white/10 bg-[#121212] p-6">
-        <p className="text-xs uppercase tracking-wider text-[#C9A646]">Market Trends</p>
+        <p className="text-xs uppercase tracking-wider text-premium-gold">Market Trends</p>
         <p className="mt-2 text-sm text-slate-400">
           Not enough historical data in our system for a reliable trend estimate for <strong>{city}</strong>.
         </p>
@@ -100,10 +100,10 @@ export function MarketTrendsSection({ city, propertyType = "Residential" }: { ci
     );
 
   return (
-    <section className="mt-10 rounded-2xl border border-[#C9A646]/25 bg-black/40 p-6">
+    <section className="mt-10 rounded-2xl border border-premium-gold/25 bg-black/40 p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-xs uppercase tracking-wider text-[#C9A646]">Market Trends</p>
+          <p className="text-xs uppercase tracking-wider text-premium-gold">Market Trends</p>
           <h2 className="mt-1 text-lg font-semibold text-white">Trend analysis — {city}</h2>
         </div>
         {badge}
@@ -128,7 +128,7 @@ export function MarketTrendsSection({ city, propertyType = "Residential" }: { ci
       {data.insights[0] ? <p className="mt-4 text-sm leading-relaxed text-slate-300">{data.insights[0]}</p> : null}
 
       <p className="mt-4 text-xs text-slate-500">{data.disclaimer}</p>
-      <Link href={`/market/${cityToSlug(city)}`} className="mt-3 inline-block text-sm text-[#C9A646] hover:underline">
+      <Link href={`/market/${cityToSlug(city)}`} className="mt-3 inline-block text-sm text-premium-gold hover:underline">
         Full trend analysis & charts →
       </Link>
     </section>

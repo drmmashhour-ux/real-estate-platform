@@ -5,9 +5,9 @@
 export function ImmoPlatformCollaborationClause({ className = "" }: { className?: string }) {
   return (
     <div
-      className={`rounded-xl border border-[#C9A646]/20 bg-[#0B0B0B]/90 p-4 text-left text-[11px] leading-relaxed text-slate-300 shadow-inner shadow-black/40 ${className}`}
+      className={`rounded-xl border border-premium-gold/20 bg-[#0B0B0B]/90 p-4 text-left text-[11px] leading-relaxed text-slate-300 shadow-inner shadow-black/40 ${className}`}
     >
-      <h3 className="text-xs font-bold uppercase tracking-[0.1em] text-[#C9A646]">
+      <h3 className="text-xs font-bold uppercase tracking-[0.1em] text-premium-gold">
         Immo contact &amp; platform collaboration clause
       </h3>
       <p className="mt-3 text-slate-300">

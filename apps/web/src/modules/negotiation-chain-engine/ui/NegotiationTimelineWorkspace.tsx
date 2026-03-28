@@ -59,7 +59,7 @@ export function NegotiationTimelineWorkspace({
     <div className="space-y-4">
       {!compact ? (
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#C9A646]">Negotiation chain (versioned)</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-premium-gold">Negotiation chain (versioned)</p>
           <p className="mt-1 text-[11px] leading-relaxed text-slate-500">
             {NEGOTIATION_IMMUTABLE_VERSION} {NEGOTIATION_NOT_LEGAL_ADVICE}
           </p>

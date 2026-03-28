@@ -40,5 +40,5 @@ export const marketingTheme = {
   muted: "#94a3b8",
   accent: COLORS.primary,
   gradientHero:
-    "radial-gradient(ellipse 80% 50% at 50% -20%, rgba(201,166,70,0.15), transparent 55%), radial-gradient(ellipse 60% 40% at 100% 0%, rgba(201,166,70,0.08), transparent 50%)",
+    "radial-gradient(ellipse 80% 50% at 50% -20%, rgb(var(--premium-gold-channels) / 0.15), transparent 55%), radial-gradient(ellipse 60% 40% at 100% 0%, rgb(var(--premium-gold-channels) / 0.08), transparent 50%)",
 } as const;

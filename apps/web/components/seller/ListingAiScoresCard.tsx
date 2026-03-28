@@ -82,7 +82,7 @@ export function ListingAiScoresCard({
           <button
             type="button"
             onClick={() => setWhyOpen((o) => !o)}
-            className="text-xs font-medium text-[#C9A646] hover:underline"
+            className="text-xs font-medium text-premium-gold hover:underline"
           >
             Why this score? {whyOpen ? "▲" : "▼"}
           </button>

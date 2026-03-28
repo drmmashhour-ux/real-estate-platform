@@ -6,3 +6,4 @@ AI Operating System (AI-OS): pricing, fraud, moderation, support, recommendation
 |----------|-------------|
 | [AI-OPERATING-SYSTEM.md](AI-OPERATING-SYSTEM.md) | Concise AI-OS overview |
 | [LECIPM-AI-OPERATING-SYSTEM.md](LECIPM-AI-OPERATING-SYSTEM.md) | Full AI Operating System blueprint |
+| [GROWTH-AI-WORKER-ORDER.md](GROWTH-AI-WORKER-ORDER.md) | Cron order: self-learning before autonomous deal closer (and relation to auto-reply) |

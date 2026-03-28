@@ -25,13 +25,13 @@ export function HintTooltip({ label, children, className = "", side = "inline" }
         type="button"
         title={label}
         aria-label={label}
-        className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-[#C9A646]/40 bg-[#C9A646]/10 text-[10px] font-bold text-[#C9A646] outline-none transition hover:bg-[#C9A646]/20 focus-visible:ring-2 focus-visible:ring-[#C9A646]/50"
+        className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-premium-gold/40 bg-premium-gold/10 text-[10px] font-bold text-premium-gold outline-none transition hover:bg-premium-gold/20 focus-visible:ring-2 focus-visible:ring-premium-gold/50"
       >
         i
       </button>
       <span
         role="tooltip"
-        className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 hidden w-56 -translate-x-1/2 rounded-xl border border-[#C9A646]/30 bg-[#1a1a1a] px-3 py-2 text-left text-xs leading-snug text-[#E5E5E5] shadow-xl group-hover:block group-focus-within:block sm:group-focus-within:block"
+        className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 hidden w-56 -translate-x-1/2 rounded-xl border border-premium-gold/30 bg-[#1a1a1a] px-3 py-2 text-left text-xs leading-snug text-[#E5E5E5] shadow-xl group-hover:block group-focus-within:block sm:group-focus-within:block"
       >
         {label}
       </span>

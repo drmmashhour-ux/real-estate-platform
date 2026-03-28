@@ -58,7 +58,7 @@ export function LeaseSignClient({
         </pre>
         <button
           type="button"
-          className="mt-4 text-sm font-semibold text-[#C9A646] hover:underline"
+          className="mt-4 text-sm font-semibold text-premium-gold hover:underline"
           onClick={() => setOpen(true)}
         >
           Open full contract view
@@ -100,7 +100,7 @@ export function LeaseSignClient({
         type="button"
         disabled={busy}
         onClick={sign}
-        className="w-full rounded-xl bg-[#C9A646] py-3 text-sm font-bold text-[#0B0B0B] disabled:opacity-50"
+        className="w-full rounded-xl bg-premium-gold py-3 text-sm font-bold text-[#0B0B0B] disabled:opacity-50"
       >
         {busy ? "Signing…" : "Accept & sign lease"}
       </button>

@@ -60,7 +60,7 @@ export function FsboListingGallery({ images, coverImage, title }: Props) {
         <button
           type="button"
           onClick={() => main && openLightbox(main)}
-          className="relative w-full overflow-hidden rounded-xl border border-white/10 bg-[#1a1a1a] text-left outline-none ring-[#C9A646]/40 focus-visible:ring-2"
+          className="relative w-full overflow-hidden rounded-xl border border-white/10 bg-[#1a1a1a] text-left outline-none ring-premium-gold/40 focus-visible:ring-2"
           aria-label={`Enlarge photo — ${title}`}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -82,7 +82,7 @@ export function FsboListingGallery({ images, coverImage, title }: Props) {
                   onClick={() => setMain(src)}
                   className={[
                     "overflow-hidden rounded-lg border-2 transition",
-                    active ? "border-[#C9A646]" : "border-transparent opacity-80 hover:opacity-100",
+                    active ? "border-premium-gold" : "border-transparent opacity-80 hover:opacity-100",
                   ].join(" ")}
                   aria-label="Show this photo"
                   aria-pressed={active}

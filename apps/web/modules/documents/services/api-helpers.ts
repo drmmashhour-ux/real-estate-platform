@@ -7,7 +7,7 @@ import { prisma } from "@/lib/db";
 export async function requireDocumentUser(
   request: NextRequest
 ): Promise<{ userId: string; role: PlatformRole } | NextResponse> {
-  const r = requireSessionUserIdOr401(request);
+  const r = await requireSessionUserIdOr401(request);
   if (r instanceof NextResponse) return r;
   const user = await prisma.user.findUnique({
     where: { id: r.userId },

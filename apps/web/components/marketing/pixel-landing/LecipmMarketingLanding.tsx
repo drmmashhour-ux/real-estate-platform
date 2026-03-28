@@ -2,7 +2,7 @@ import Link from "next/link";
 import { lecipmDesignTokens } from "@/lib/ui/lecipmDesignTokens";
 
 const { black, card } = lecipmDesignTokens.color;
-const GOLD = "#C9A646";
+const GOLD = "var(--color-premium-gold)";
 
 /**
  * Marketing landing — “Decision Engine” positioning; CTAs use `Link`.
@@ -162,7 +162,7 @@ export function LecipmMarketingLanding() {
           <p className="mt-2 text-sm text-slate-400">Short-term stays — same trust lens, different use case.</p>
           <Link
             href="/bnhub"
-            className="mt-5 inline-block rounded-lg border border-white/20 px-6 py-2.5 text-sm font-medium text-white hover:border-[#C9A646]/50"
+            className="mt-5 inline-block rounded-lg border border-white/20 px-6 py-2.5 text-sm font-medium text-white hover:border-premium-gold/50"
           >
             Explore BNHub
           </Link>

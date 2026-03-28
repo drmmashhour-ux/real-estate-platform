@@ -12,7 +12,7 @@ import {
 } from "recharts";
 import type { PlatformStatsResult } from "@/modules/analytics/services/get-platform-stats";
 
-const GOLD = "#C9A646";
+const GOLD = "var(--color-premium-gold)";
 
 export function AdminHubCharts({ stats }: { stats: PlatformStatsResult | null }) {
   if (!stats || stats.series.length === 0) {
@@ -33,8 +33,8 @@ export function AdminHubCharts({ stats }: { stats: PlatformStatsResult | null })
 
   return (
     <section className="grid gap-6 lg:grid-cols-2">
-      <div className="rounded-2xl border border-[#C9A646]/20 bg-[#0a0a0a] p-4 sm:p-6">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-[#C9A646]">Listings growth</h2>
+      <div className="rounded-2xl border border-premium-gold/20 bg-[#0a0a0a] p-4 sm:p-6">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-premium-gold">Listings growth</h2>
         <p className="mt-1 text-xs text-slate-500">New broker vs self-serve listings per day</p>
         <div className="mt-4 h-64 w-full">
           <ResponsiveContainer width="100%" height="100%">
@@ -43,7 +43,7 @@ export function AdminHubCharts({ stats }: { stats: PlatformStatsResult | null })
               <XAxis dataKey="date" tick={{ fill: "#94a3b8", fontSize: 10 }} />
               <YAxis tick={{ fill: "#94a3b8", fontSize: 10 }} allowDecimals={false} />
               <Tooltip
-                contentStyle={{ background: "#111", border: "1px solid rgba(201,166,70,0.3)", borderRadius: 8 }}
+                contentStyle={{ background: "#111", border: "1px solid rgb(var(--premium-gold-channels) / 0.3)", borderRadius: 8 }}
                 labelStyle={{ color: "#e2e8f0" }}
               />
               <Legend />
@@ -53,8 +53,8 @@ export function AdminHubCharts({ stats }: { stats: PlatformStatsResult | null })
           </ResponsiveContainer>
         </div>
       </div>
-      <div className="rounded-2xl border border-[#C9A646]/20 bg-[#0a0a0a] p-4 sm:p-6">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-[#C9A646]">Booking signals</h2>
+      <div className="rounded-2xl border border-premium-gold/20 bg-[#0a0a0a] p-4 sm:p-6">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-premium-gold">Booking signals</h2>
         <p className="mt-1 text-xs text-slate-500">Closed transaction signals per day</p>
         <div className="mt-4 h-64 w-full">
           <ResponsiveContainer width="100%" height="100%">
@@ -63,7 +63,7 @@ export function AdminHubCharts({ stats }: { stats: PlatformStatsResult | null })
               <XAxis dataKey="date" tick={{ fill: "#94a3b8", fontSize: 10 }} />
               <YAxis tick={{ fill: "#94a3b8", fontSize: 10 }} allowDecimals={false} />
               <Tooltip
-                contentStyle={{ background: "#111", border: "1px solid rgba(201,166,70,0.3)", borderRadius: 8 }}
+                contentStyle={{ background: "#111", border: "1px solid rgb(var(--premium-gold-channels) / 0.3)", borderRadius: 8 }}
                 labelStyle={{ color: "#e2e8f0" }}
               />
               <Line type="monotone" dataKey="closed" name="Closed signals" stroke="#34d399" strokeWidth={2} dot={false} />

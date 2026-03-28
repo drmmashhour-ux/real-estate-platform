@@ -202,19 +202,19 @@ export function CompleteProfileClient({ initial }: { initial: Initial }) {
       </p>
 
       <div>
-        <label className="text-xs font-semibold text-[#C9A646]/90">Full name</label>
+        <label className="text-xs font-semibold text-premium-gold/90">Full name</label>
         <input className={input} value={fullName} onChange={(e) => setFullName(e.target.value)} required />
       </div>
       <div>
-        <label className="text-xs font-semibold text-[#C9A646]/90">Phone</label>
+        <label className="text-xs font-semibold text-premium-gold/90">Phone</label>
         <input className={input} value={phone} onChange={(e) => setPhone(e.target.value)} required type="tel" />
       </div>
       <div>
-        <label className="text-xs font-semibold text-[#C9A646]/90">Company</label>
+        <label className="text-xs font-semibold text-premium-gold/90">Company</label>
         <input className={input} value={company} onChange={(e) => setCompany(e.target.value)} required />
       </div>
       <div>
-        <label className="text-xs font-semibold text-[#C9A646]/90">License number</label>
+        <label className="text-xs font-semibold text-premium-gold/90">License number</label>
         <input
           className={input}
           value={licenseNumber}
@@ -245,16 +245,16 @@ export function CompleteProfileClient({ initial }: { initial: Initial }) {
       </div>
 
       <div className="rounded-xl border border-white/10 bg-[#14110a]/60 p-4">
-        <p className="text-xs font-semibold uppercase tracking-wide text-[#C9A646]/90">Identity verification</p>
+        <p className="text-xs font-semibold uppercase tracking-wide text-premium-gold/90">Identity verification</p>
         <p className="mt-2 text-xs leading-relaxed text-slate-400">{IDENTITY_MANUAL_REVIEW_DISCLAIMER}</p>
         <p className="mt-2 text-xs font-medium text-amber-100/90">{IDENTITY_LEADS_REQUIRED_WARNING}</p>
         <div className="mt-4">
-          <label className="text-xs font-semibold text-[#C9A646]/90">Government ID (passport or driver license)</label>
+          <label className="text-xs font-semibold text-premium-gold/90">Government ID (passport or driver license)</label>
           <input
             type="file"
             accept="image/jpeg,image/png"
             disabled={idUploading}
-            className="mt-1 w-full text-sm text-slate-400 file:mr-3 file:rounded-lg file:border-0 file:bg-[#C9A646] file:px-3 file:py-2 file:text-sm file:font-semibold file:text-[#0B0B0B]"
+            className="mt-1 w-full text-sm text-slate-400 file:mr-3 file:rounded-lg file:border-0 file:bg-premium-gold file:px-3 file:py-2 file:text-sm file:font-semibold file:text-[#0B0B0B]"
             onChange={(e) => void uploadIdentityFile("id", e.target.files?.[0] ?? null)}
           />
           <p className="mt-1 text-xs text-slate-500">JPEG or PNG · max 5 MB</p>
@@ -265,12 +265,12 @@ export function CompleteProfileClient({ initial }: { initial: Initial }) {
           )}
         </div>
         <div className="mt-4">
-          <label className="text-xs font-semibold text-[#C9A646]/90">Selfie photo</label>
+          <label className="text-xs font-semibold text-premium-gold/90">Selfie photo</label>
           <input
             type="file"
             accept="image/jpeg,image/png"
             disabled={selfieUploading}
-            className="mt-1 w-full text-sm text-slate-400 file:mr-3 file:rounded-lg file:border-0 file:bg-[#C9A646] file:px-3 file:py-2 file:text-sm file:font-semibold file:text-[#0B0B0B]"
+            className="mt-1 w-full text-sm text-slate-400 file:mr-3 file:rounded-lg file:border-0 file:bg-premium-gold file:px-3 file:py-2 file:text-sm file:font-semibold file:text-[#0B0B0B]"
             onChange={(e) => void uploadIdentityFile("selfie", e.target.files?.[0] ?? null)}
           />
           <p className="mt-1 text-xs text-slate-500">JPEG or PNG · max 5 MB</p>
@@ -286,7 +286,7 @@ export function CompleteProfileClient({ initial }: { initial: Initial }) {
       </div>
 
       <div>
-        <label className="text-xs font-semibold text-[#C9A646]/90">Years of experience</label>
+        <label className="text-xs font-semibold text-premium-gold/90">Years of experience</label>
         <input
           className={input}
           type="number"
@@ -297,7 +297,7 @@ export function CompleteProfileClient({ initial }: { initial: Initial }) {
         />
       </div>
       <div>
-        <label className="text-xs font-semibold text-[#C9A646]/90">Specialties</label>
+        <label className="text-xs font-semibold text-premium-gold/90">Specialties</label>
         <input
           className={input}
           placeholder="e.g. residential, commercial, first-time buyers"
@@ -306,7 +306,7 @@ export function CompleteProfileClient({ initial }: { initial: Initial }) {
         />
       </div>
       <div>
-        <label className="text-xs font-semibold text-[#C9A646]/90">Insurance provider</label>
+        <label className="text-xs font-semibold text-premium-gold/90">Insurance provider</label>
         <input className={input} value={insuranceProvider} onChange={(e) => setInsuranceProvider(e.target.value)} />
       </div>
       <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-300">
@@ -314,12 +314,12 @@ export function CompleteProfileClient({ initial }: { initial: Initial }) {
           type="checkbox"
           checked={insuranceValid}
           onChange={(e) => setInsuranceValid(e.target.checked)}
-          className="h-4 w-4 rounded border-white/20 accent-[#C9A646]"
+          className="h-4 w-4 rounded border-white/20 accent-premium-gold"
         />
         Professional liability / E&amp;O insurance is current
       </label>
       <div>
-        <label className="text-xs font-semibold text-[#C9A646]/90">Professional references</label>
+        <label className="text-xs font-semibold text-premium-gold/90">Professional references</label>
         <textarea
           className={`${input} min-h-[100px]`}
           value={references}
@@ -328,11 +328,11 @@ export function CompleteProfileClient({ initial }: { initial: Initial }) {
         />
       </div>
       <div>
-        <label className="text-xs font-semibold text-[#C9A646]/90">Profile photo</label>
+        <label className="text-xs font-semibold text-premium-gold/90">Profile photo</label>
         <input
           type="file"
           accept="image/jpeg,image/png,image/webp"
-          className="mt-1 w-full text-sm text-slate-400 file:mr-3 file:rounded-lg file:border-0 file:bg-[#C9A646] file:px-3 file:py-2 file:text-sm file:font-semibold file:text-[#0B0B0B]"
+          className="mt-1 w-full text-sm text-slate-400 file:mr-3 file:rounded-lg file:border-0 file:bg-premium-gold file:px-3 file:py-2 file:text-sm file:font-semibold file:text-[#0B0B0B]"
           onChange={(e) => setPhotoFile(e.target.files?.[0] ?? null)}
         />
         <p className="mt-1 text-xs text-slate-500">JPEG, PNG, or WebP · max 2.5 MB</p>
@@ -345,7 +345,7 @@ export function CompleteProfileClient({ initial }: { initial: Initial }) {
       <button
         type="submit"
         disabled={loading}
-        className="w-full rounded-xl bg-[#C9A646] py-3 text-sm font-bold text-[#0B0B0B] disabled:opacity-50"
+        className="w-full rounded-xl bg-premium-gold py-3 text-sm font-bold text-[#0B0B0B] disabled:opacity-50"
       >
         {loading ? "Submitting…" : "Submit for verification"}
       </button>

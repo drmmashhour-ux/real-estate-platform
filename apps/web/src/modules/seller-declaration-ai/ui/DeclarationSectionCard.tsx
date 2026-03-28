@@ -23,7 +23,7 @@ export function DeclarationSectionCard({ section, values, sectionReady, sectionW
             {sectionReady ? "ready" : "needs review"}
           </span>
           <button type="button" className="text-xs text-slate-300 hover:text-white" onClick={() => onExplain(section.key)}>Explain</button>
-          <button type="button" className="text-xs text-[#C9A646] hover:underline" onClick={() => onSuggest(section.key)}>Suggest</button>
+          <button type="button" className="text-xs text-premium-gold hover:underline" onClick={() => onSuggest(section.key)}>Suggest</button>
         </div>
       </div>
 

@@ -79,9 +79,9 @@ export function InvestmentsDashboardClient({ theme }: { theme: HubTheme }) {
     <div className="space-y-8">
       <section
         id="edit-profile"
-        className="rounded-2xl border border-[#C9A646]/25 bg-gradient-to-br from-black/50 to-[#1a1508]/80 p-5"
+        className="rounded-2xl border border-premium-gold/25 bg-gradient-to-br from-black/50 to-[#1a1508]/80 p-5"
       >
-        <p className="text-xs uppercase tracking-wider text-[#C9A646]">Investment profile</p>
+        <p className="text-xs uppercase tracking-wider text-premium-gold">Investment profile</p>
         <p className="mt-2 text-sm text-slate-200">
           Your goals, budget, and cities power matches, alerts, and rankings below. Update anytime as your strategy
           changes.
@@ -96,11 +96,11 @@ export function InvestmentsDashboardClient({ theme }: { theme: HubTheme }) {
       </section>
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-2xl border border-[#C9A646]/25 bg-gradient-to-br from-black/60 to-[#1a1508] p-5">
-          <p className="text-xs uppercase tracking-wider text-[#C9A646]">ROI snapshot</p>
+        <div className="rounded-2xl border border-premium-gold/25 bg-gradient-to-br from-black/60 to-[#1a1508] p-5">
+          <p className="text-xs uppercase tracking-wider text-premium-gold">ROI snapshot</p>
           <p className="mt-2 text-2xl font-bold text-white">{(avgRoi * 100).toFixed(1)}%</p>
           <p className="mt-1 text-xs text-slate-400">Avg. projected yield from AI ranking.</p>
-          <Link href="/invest/tools/roi" className="mt-3 inline-block text-sm font-medium text-[#C9A646] hover:underline">
+          <Link href="/invest/tools/roi" className="mt-3 inline-block text-sm font-medium text-premium-gold hover:underline">
             Open full ROI calculator →
           </Link>
         </div>
@@ -113,7 +113,7 @@ export function InvestmentsDashboardClient({ theme }: { theme: HubTheme }) {
           <p className="text-xs uppercase tracking-wider text-slate-500">Est. monthly cash flow</p>
           <p className="mt-2 text-xl font-semibold text-white">—</p>
           <p className="mt-1 text-xs text-slate-400">Use the ROI tool with your rent &amp; expenses.</p>
-          <Link href="/invest/tools/roi" className="mt-2 inline-block text-sm text-[#C9A646] hover:underline">
+          <Link href="/invest/tools/roi" className="mt-2 inline-block text-sm text-premium-gold hover:underline">
             Calculate →
           </Link>
         </div>
@@ -121,7 +121,7 @@ export function InvestmentsDashboardClient({ theme }: { theme: HubTheme }) {
           <p className="text-xs uppercase tracking-wider text-slate-500">Financing impact</p>
           <p className="mt-2 text-sm text-slate-300">Model rate &amp; amortization in ROI or speak to a specialist.</p>
           <div className="mt-3 flex flex-wrap gap-2">
-            <Link href="/mortgage" className="rounded-lg bg-[#C9A646] px-3 py-1.5 text-xs font-semibold text-black">
+            <Link href="/mortgage" className="rounded-lg bg-premium-gold px-3 py-1.5 text-xs font-semibold text-black">
               Mortgage
             </Link>
             <Link href="/invest/tools/roi" className="rounded-lg border border-white/20 px-3 py-1.5 text-xs text-white">
@@ -135,7 +135,7 @@ export function InvestmentsDashboardClient({ theme }: { theme: HubTheme }) {
         <p className="text-sm font-medium text-white">Compare two scenarios</p>
         <p className="mt-1 text-xs text-slate-500">Side-by-side projects — or run two columns in the ROI calculator.</p>
         <div className="mt-3 flex flex-wrap gap-2">
-          <Link href="/dashboard/investments/compare" className="rounded-lg border border-[#C9A646]/40 px-4 py-2 text-sm text-[#C9A646]">
+          <Link href="/dashboard/investments/compare" className="rounded-lg border border-premium-gold/40 px-4 py-2 text-sm text-premium-gold">
             Project compare
           </Link>
           <Link href="/invest/tools/roi" className="rounded-lg border border-white/15 px-4 py-2 text-sm text-white">

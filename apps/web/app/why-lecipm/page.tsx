@@ -75,9 +75,9 @@ export default function WhyLecipmPage() {
           {CARDS.map((c) => (
             <div
               key={c.title}
-              className="rounded-2xl border border-[#C9A646]/25 bg-[#121212] p-6 shadow-lg transition hover:-translate-y-0.5 hover:border-[#C9A646]/45"
+              className="rounded-2xl border border-premium-gold/25 bg-[#121212] p-6 shadow-lg transition hover:-translate-y-0.5 hover:border-premium-gold/45"
             >
-              <h3 className="text-lg font-semibold text-[#C9A646]">{c.title}</h3>
+              <h3 className="text-lg font-semibold text-premium-gold">{c.title}</h3>
               <p className="mt-3 text-sm leading-relaxed text-[#B3B3B3]">{c.body}</p>
             </div>
           ))}
@@ -97,28 +97,28 @@ export default function WhyLecipmPage() {
         <h2 className="text-center text-xl font-bold text-white">Trust &amp; authority</h2>
         <ul className="mt-8 space-y-4 text-sm text-[#B3B3B3]">
           <li className="flex gap-3 rounded-xl border border-white/10 bg-[#121212] p-4">
-            <span className="text-[#C9A646]">●</span>
+            <span className="text-premium-gold">●</span>
             <span>
               <strong className="text-white">OACIQ context</strong> — brokerage is regulated in Québec; we present licensed
               support clearly and professionally.
             </span>
           </li>
           <li className="flex gap-3 rounded-xl border border-white/10 bg-[#121212] p-4">
-            <span className="text-[#C9A646]">●</span>
+            <span className="text-premium-gold">●</span>
             <span>
               <strong className="text-white">Local Quebec identity</strong> — product and copy tuned for sellers, buyers,
               and hosts in the province.
             </span>
           </li>
           <li className="flex gap-3 rounded-xl border border-white/10 bg-[#121212] p-4">
-            <span className="text-[#C9A646]">●</span>
+            <span className="text-premium-gold">●</span>
             <span>
               <strong className="text-white">Verified hosts &amp; brokers</strong> — professional flows and verification
               paths where it matters for trust.
             </span>
           </li>
           <li className="flex gap-3 rounded-xl border border-white/10 bg-[#121212] p-4">
-            <span className="text-[#C9A646]">●</span>
+            <span className="text-premium-gold">●</span>
             <span>
               <strong className="text-white">Secure checkout</strong> — payments and receipts handled with transparency
               for BNHub and platform services.
@@ -127,7 +127,7 @@ export default function WhyLecipmPage() {
         </ul>
       </section>
 
-      <section className="border-t border-[#C9A646]/20 bg-[#0B0B0B] px-4 py-16 sm:px-6">
+      <section className="border-t border-premium-gold/20 bg-[#0B0B0B] px-4 py-16 sm:px-6">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="text-xl font-bold text-white sm:text-2xl">Ready to talk?</h2>
           <p className="mt-3 text-sm text-[#737373]">
@@ -138,11 +138,11 @@ export default function WhyLecipmPage() {
           </div>
           <p className="mt-10 text-xs text-[#525252]">
             FSBO and BNHub flows are unchanged — explore{" "}
-            <Link href="/sell" className="text-[#C9A646] hover:underline">
+            <Link href="/sell" className="text-premium-gold hover:underline">
               FSBO
             </Link>{" "}
             or{" "}
-            <Link href="/bnhub" className="text-[#C9A646] hover:underline">
+            <Link href="/bnhub" className="text-premium-gold hover:underline">
               BNHub
             </Link>{" "}
             anytime.

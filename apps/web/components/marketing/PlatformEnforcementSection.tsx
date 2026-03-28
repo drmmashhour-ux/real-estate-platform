@@ -24,8 +24,8 @@ export function PlatformEnforcementSection() {
           ))}
         </div>
         <AnimatedReveal delayMs={rules.length * 45}>
-          <p className="mt-8 rounded-2xl border border-[#C9A646]/25 bg-gradient-to-br from-[#C9A646]/10 to-transparent px-6 py-5 text-center text-sm font-medium text-slate-200 sm:text-base">
-            <span className="mr-2 text-[#C9A646]" aria-hidden>
+          <p className="mt-8 rounded-2xl border border-premium-gold/25 bg-gradient-to-br from-premium-gold/10 to-transparent px-6 py-5 text-center text-sm font-medium text-slate-200 sm:text-base">
+            <span className="mr-2 text-premium-gold" aria-hidden>
               →
             </span>
             Built for public protection and compliance

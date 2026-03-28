@@ -27,7 +27,7 @@ export async function AccountLegalStrip({ userId }: { userId: string }) {
       ) : (
         <span>
           Optional: review platform agreements on the{" "}
-          <a href="/legal" className="text-[#C9A646] underline hover:text-[#d4b35a]">
+          <a href="/legal" className="text-premium-gold underline hover:text-premium-gold">
             Legal
           </a>{" "}
           page when convenient.

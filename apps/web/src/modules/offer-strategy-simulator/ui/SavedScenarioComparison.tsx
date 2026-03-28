@@ -10,10 +10,10 @@ type Props = {
 
 export function SavedScenarioComparison({ comparison, onClose }: Props) {
   return (
-    <div className="space-y-4 rounded-xl border border-[#C9A646]/30 bg-[#0f0f0f] p-4">
+    <div className="space-y-4 rounded-xl border border-premium-gold/30 bg-[#0f0f0f] p-4">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#C9A646]">Compare saved snapshots</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-premium-gold">Compare saved snapshots</p>
           <p className="mt-2 text-sm leading-relaxed text-slate-300">{comparison.summary}</p>
         </div>
         <button

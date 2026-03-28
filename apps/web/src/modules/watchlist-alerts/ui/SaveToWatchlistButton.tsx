@@ -34,7 +34,7 @@ export function SaveToWatchlistButton({ listingId, initiallySaved = false }: { l
         }}
         className={`rounded-lg border px-3 py-2 text-xs font-medium transition disabled:opacity-60 ${
           saved
-            ? "border-[#C9A646]/50 bg-[#C9A646]/15 text-[#C9A646]"
+            ? "border-premium-gold/50 bg-premium-gold/15 text-premium-gold"
             : "border-white/20 text-white hover:bg-white/5"
         }`}
       >

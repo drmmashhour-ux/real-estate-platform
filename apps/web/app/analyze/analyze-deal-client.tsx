@@ -468,7 +468,7 @@ export function AnalyzeDealClient({
   const errorBorder = "border-red-500/60";
   const okBorder = "border-white/15";
   const inputClass =
-    "mt-2 min-h-[48px] w-full rounded-xl border bg-black/30 px-4 py-3 text-base text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#C9A646]/45";
+    "mt-2 min-h-[48px] w-full rounded-xl border bg-black/30 px-4 py-3 text-base text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-premium-gold/45";
 
   const ltWins = comparison && !comparison.shortTermWinsOnRoi;
   const stWins = comparison?.shortTermWinsOnRoi;
@@ -610,10 +610,10 @@ export function AnalyzeDealClient({
       ) : null}
 
       <p
-        className="rounded-xl border border-[#C9A646]/25 bg-[#14110a]/50 px-4 py-3 text-center text-sm text-[#d4c9a8] md:text-left"
+        className="rounded-xl border border-premium-gold/25 bg-[#14110a]/50 px-4 py-3 text-center text-sm text-[#d4c9a8] md:text-left"
         role="status"
       >
-        <strong className="text-[#C9A646]">Compare both strategies:</strong> enter long-term rent and short-term nightly rate
+        <strong className="text-premium-gold">Compare both strategies:</strong> enter long-term rent and short-term nightly rate
         + occupancy — we show both ROIs side by side.
       </p>
 
@@ -938,7 +938,7 @@ export function AnalyzeDealClient({
             </p>
             <Link
               href={mortgageContactHref}
-              className="mt-3 inline-block text-xs font-semibold text-[#C9A646] underline hover:text-[#E8D5A3]"
+              className="mt-3 inline-block text-xs font-semibold text-premium-gold underline hover:text-premium-gold"
             >
               Request a real approval estimate
             </Link>
@@ -1223,7 +1223,7 @@ export function AnalyzeDealClient({
               <p className="hidden text-sm text-slate-500 md:block">
                 <Link
                   href={`/auth/login?next=${encodeURIComponent("/analyze")}`}
-                  className="text-[#C9A646] underline hover:text-[#E8D5A3]"
+                  className="text-premium-gold underline hover:text-premium-gold"
                 >
                   Sign in
                 </Link>{" "}
@@ -1232,8 +1232,8 @@ export function AnalyzeDealClient({
             ) : null}
           </>
         ) : (
-          <div className="rounded-2xl border border-[#C9A646]/25 bg-gradient-to-b from-[#14110a]/90 to-[#0B0B0B] px-4 py-6 text-center shadow-inner shadow-black/20 sm:px-8 sm:py-8">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#C9A646]/90">After you analyze</p>
+          <div className="rounded-2xl border border-premium-gold/25 bg-gradient-to-b from-[#14110a]/90 to-[#0B0B0B] px-4 py-6 text-center shadow-inner shadow-black/20 sm:px-8 sm:py-8">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-premium-gold/90">After you analyze</p>
             <h2 className="mt-2 text-xl font-bold tracking-tight text-white sm:text-2xl">ROI &amp; insights</h2>
             <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-slate-400">
               This panel fills in automatically after you run the deal analyzer. You’ll see ROI, monthly cash flow, and an AI summary here — nothing is wrong; we just need your numbers first.
@@ -1259,13 +1259,13 @@ export function AnalyzeDealClient({
               onClick={() => {
                 document.getElementById("analyzer")?.scrollIntoView({ behavior: "smooth", block: "start" });
               }}
-              className="mt-6 w-full max-w-sm rounded-xl bg-[#C9A646] px-4 py-3.5 text-sm font-extrabold text-[#0B0B0B] shadow-[0_8px_28px_rgba(201,166,70,0.25)] transition hover:brightness-110 sm:mx-auto"
+              className="mt-6 w-full max-w-sm rounded-xl bg-premium-gold px-4 py-3.5 text-sm font-extrabold text-[#0B0B0B] shadow-[0_8px_28px_rgb(var(--premium-gold-channels) / 0.25)] transition hover:brightness-110 sm:mx-auto"
             >
               Go to deal inputs
             </button>
             <p className="mt-4 text-xs text-slate-500">
               Scroll up to the <strong className="text-slate-400">Deal inputs</strong> section, fill the fields, then tap{" "}
-              <strong className="text-[#C9A646]">Analyze deal</strong>.
+              <strong className="text-premium-gold">Analyze deal</strong>.
             </p>
           </div>
         )}
@@ -1277,7 +1277,7 @@ export function AnalyzeDealClient({
             type="button"
             onClick={() => void saveDeal()}
             disabled={saving || analyzing}
-            className={`flex min-h-[48px] w-full items-center justify-center rounded-xl bg-[#C9A646] px-4 py-3 text-base font-extrabold text-[#0B0B0B] transition hover:bg-[#D4B35A] disabled:opacity-50 ${
+            className={`flex min-h-[48px] w-full items-center justify-center rounded-xl bg-premium-gold px-4 py-3 text-base font-extrabold text-[#0B0B0B] transition hover:bg-premium-gold disabled:opacity-50 ${
               pulseSaveCta ? "ring-2 ring-amber-400/60" : ""
             }`}
           >

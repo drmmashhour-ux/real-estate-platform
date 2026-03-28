@@ -93,7 +93,7 @@ export default async function AdminRiskMonitoringPage({
                 </p>
                 <Link
                   href={`/admin/fsbo/${a.fsboListingId}/edit`}
-                  className="mt-2 inline-block text-xs font-medium text-[#C9A646] hover:underline"
+                  className="mt-2 inline-block text-xs font-medium text-premium-gold hover:underline"
                 >
                   Open listing (admin) →
                 </Link>
@@ -110,7 +110,7 @@ export default async function AdminRiskMonitoringPage({
           </ul>
         )}
 
-        <Link href="/admin/dashboard" className="text-sm text-[#C9A646] hover:underline">
+        <Link href="/admin/dashboard" className="text-sm text-premium-gold hover:underline">
           ← Admin dashboard
         </Link>
       </div>

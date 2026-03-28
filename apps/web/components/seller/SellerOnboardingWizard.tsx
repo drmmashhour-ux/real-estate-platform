@@ -128,7 +128,7 @@ export function SellerOnboardingWizard() {
 
   return (
     <div className="mx-auto max-w-lg px-4 py-10">
-      <Link href="/seller/dashboard" className="text-sm text-[#C9A646] hover:underline">
+      <Link href="/seller/dashboard" className="text-sm text-premium-gold hover:underline">
         ← Seller dashboard
       </Link>
       <h1 className="mt-6 text-2xl font-semibold text-white">Seller onboarding</h1>
@@ -137,7 +137,7 @@ export function SellerOnboardingWizard() {
       </p>
 
       <div className="mt-6 h-2 w-full overflow-hidden rounded-full bg-white/10">
-        <div className="h-full bg-[#C9A646] transition-all" style={{ width: `${progress}%` }} />
+        <div className="h-full bg-premium-gold transition-all" style={{ width: `${progress}%` }} />
       </div>
       <p className="mt-2 text-xs text-slate-500">
         Step {step} of {STEPS.length}: {STEPS[step - 1]}
@@ -277,7 +277,7 @@ export function SellerOnboardingWizard() {
             type="button"
             disabled={loading}
             onClick={() => void onNext()}
-            className="rounded-xl bg-[#C9A646] px-5 py-2.5 text-sm font-semibold text-black disabled:opacity-50"
+            className="rounded-xl bg-premium-gold px-5 py-2.5 text-sm font-semibold text-black disabled:opacity-50"
           >
             {loading ? "…" : step === 5 ? "Finish" : "Next"}
           </button>

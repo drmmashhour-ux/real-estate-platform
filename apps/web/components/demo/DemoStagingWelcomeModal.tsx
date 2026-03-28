@@ -51,8 +51,8 @@ export function DemoStagingWelcomeModal() {
       aria-modal="true"
       aria-labelledby="demo-welcome-title"
     >
-      <div className="max-w-md rounded-2xl border border-[#C9A646]/30 bg-[#121212] p-6 shadow-2xl">
-        <p className="text-xs font-semibold uppercase tracking-wide text-[#C9A646]">Demo environment</p>
+      <div className="max-w-md rounded-2xl border border-premium-gold/30 bg-[#121212] p-6 shadow-2xl">
+        <p className="text-xs font-semibold uppercase tracking-wide text-premium-gold">Demo environment</p>
         <h2 id="demo-welcome-title" className="mt-2 text-lg font-semibold text-white">
           Welcome — here&apos;s how to explore
         </h2>
@@ -65,7 +65,7 @@ export function DemoStagingWelcomeModal() {
           <button
             type="button"
             onClick={dismiss}
-            className="rounded-xl bg-[#C9A646] px-4 py-2.5 text-sm font-semibold text-[#0B0B0B]"
+            className="rounded-xl bg-premium-gold px-4 py-2.5 text-sm font-semibold text-[#0B0B0B]"
           >
             Got it
           </button>

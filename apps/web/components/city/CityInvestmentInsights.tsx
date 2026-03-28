@@ -22,18 +22,18 @@ export function CityInvestmentInsights({
 }) {
   return (
     <section
-      className="mt-16 rounded-2xl border border-[#C9A646]/25 bg-gradient-to-br from-[#0B0B0B] via-[#121212] to-[#0B0B0B] px-5 py-8 sm:px-8"
+      className="mt-16 rounded-2xl border border-premium-gold/25 bg-gradient-to-br from-[#0B0B0B] via-[#121212] to-[#0B0B0B] px-5 py-8 sm:px-8"
       aria-labelledby="investment-insights-heading"
     >
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#C9A646]">Market snapshot</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold">Market snapshot</p>
           <h2 id="investment-insights-heading" className="mt-2 text-2xl font-bold text-white">
             Investment insights
           </h2>
           <p className="mt-2 max-w-2xl text-sm text-[#B3B3B3]">
             Aggregated from active BNHub stays and FSBO listings in this city. Figures are indicative — consult a{" "}
-            <Link href={brokerHref} className="font-medium text-[#C9A646] hover:text-[#E8C547]">
+            <Link href={brokerHref} className="font-medium text-premium-gold hover:text-premium-gold">
               licensed broker
             </Link>{" "}
             before making decisions.
@@ -42,7 +42,7 @@ export function CityInvestmentInsights({
         <div className="flex flex-wrap gap-2 text-xs">
           <Link
             href={bnhubHref}
-            className="rounded-full border border-[#C9A646]/40 px-3 py-1.5 font-medium text-[#C9A646] hover:bg-[#C9A646]/10"
+            className="rounded-full border border-premium-gold/40 px-3 py-1.5 font-medium text-premium-gold hover:bg-premium-gold/10"
           >
             BNHub listings
           </Link>
@@ -119,14 +119,14 @@ function InsightCard({
 }) {
   return (
     <li
-      className={`rounded-xl border px-4 py-4 transition duration-200 hover:-translate-y-0.5 hover:border-[#C9A646]/45 hover:shadow-[0_12px_40px_rgba(201, 166, 70,0.08)] ${
+      className={`rounded-xl border px-4 py-4 transition duration-200 hover:-translate-y-0.5 hover:border-premium-gold/45 hover:shadow-[0_12px_40px_rgb(var(--premium-gold-channels) / 0.08)] ${
         highlight
-          ? "border-[#C9A646]/50 bg-[#C9A646]/[0.07]"
+          ? "border-premium-gold/50 bg-premium-gold/[0.07]"
           : "border-white/10 bg-white/[0.03]"
       }`}
     >
       <div className="flex items-start justify-between gap-2">
-        <span className="text-[#C9A646] [&>svg]:h-5 [&>svg]:w-5">{icon}</span>
+        <span className="text-premium-gold [&>svg]:h-5 [&>svg]:w-5">{icon}</span>
       </div>
       <p className="mt-3 text-[11px] font-semibold uppercase tracking-wider text-[#737373]">{label}</p>
       <p className="mt-1 text-xl font-bold text-white">{value}</p>

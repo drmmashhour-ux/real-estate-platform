@@ -40,17 +40,17 @@ export function InvestorToolsSection() {
             href={`${base}${t.hrefSuffix}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="group flex flex-col rounded-2xl border border-white/[0.08] bg-[#111] p-8 text-left shadow-[0_20px_60px_rgba(0,0,0,0.4)] transition hover:border-[#C9A646]/30"
+            className="group flex flex-col rounded-2xl border border-white/[0.08] bg-[#111] p-8 text-left shadow-[0_20px_60px_rgba(0,0,0,0.4)] transition hover:border-[#D4AF37]/30"
           >
             <span
-              className="flex h-11 w-11 items-center justify-center rounded-lg border border-[#0F3D2E]/50 bg-[#0F3D2E]/25 font-serif text-lg text-[#C9A646]"
+              className="flex h-11 w-11 items-center justify-center rounded-lg border border-[#0F3D2E]/50 bg-[#0F3D2E]/25 font-serif text-lg text-[#D4AF37]"
               aria-hidden
             >
               {t.icon}
             </span>
             <h3 className="mt-6 font-serif text-xl text-white">{t.title}</h3>
             <p className="mt-3 flex-1 text-sm leading-relaxed text-[#CCCCCC]/90">{t.description}</p>
-            <span className="mt-6 text-xs font-semibold uppercase tracking-widest text-[#C9A646]">
+            <span className="mt-6 text-xs font-semibold uppercase tracking-widest text-[#D4AF37]">
               Open in platform ↗
             </span>
           </a>

@@ -24,7 +24,7 @@ import { safeEvaluateDecision } from "@/modules/ai/decision-engine";
 
 export const dynamic = "force-dynamic";
 
-const GOLD = "#C9A646";
+const GOLD = "var(--color-premium-gold)";
 
 export default async function AdminOperationsPage({
   searchParams,
@@ -87,7 +87,7 @@ export default async function AdminOperationsPage({
         result={adminDecision}
         actionHref="/dashboard/admin/daily"
         actionLabel="Open daily report"
-        className="border-[#C9A646]/30 bg-black/40"
+        className="border-premium-gold/30 bg-black/40"
       />
 
       <section>

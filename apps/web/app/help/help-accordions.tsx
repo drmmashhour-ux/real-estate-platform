@@ -94,7 +94,7 @@ export function HelpAccordions() {
     <div className="space-y-12">
       {SECTIONS.map((section) => (
         <section key={section.id} id={section.id}>
-          <h2 className="text-lg font-bold text-[#C9A646]">{section.title}</h2>
+          <h2 className="text-lg font-bold text-premium-gold">{section.title}</h2>
           <ul className="mt-4 space-y-2">
             {section.items.map((item, idx) => {
               const key = `${section.id}-${idx}`;
@@ -107,7 +107,7 @@ export function HelpAccordions() {
                     className="flex w-full items-center justify-between gap-4 px-4 py-4 text-left text-sm font-semibold text-white"
                   >
                     {item.q}
-                    <span className="text-[#C9A646]" aria-hidden>
+                    <span className="text-premium-gold" aria-hidden>
                       {isOpen ? "−" : "+"}
                     </span>
                   </button>
@@ -124,7 +124,7 @@ export function HelpAccordions() {
       ))}
       <p className="text-center text-sm text-[#737373]">
         New here?{" "}
-        <Link href="/how-it-works" className="text-[#C9A646] hover:underline">
+        <Link href="/how-it-works" className="text-premium-gold hover:underline">
           How {PLATFORM_NAME} works
         </Link>
       </p>

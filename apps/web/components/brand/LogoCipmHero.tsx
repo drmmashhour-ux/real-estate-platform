@@ -21,11 +21,11 @@ export function LogoCipmHero() {
   if (failed) {
     return (
       <div
-        className="mx-auto flex w-full max-w-4xl flex-col items-center justify-center rounded-2xl border-2 border-premium-gold/50 bg-[#121212] px-4 py-8 shadow-[0_0_40px_rgba(201,166,70,0.12)] sm:px-6 sm:py-10"
+        className="mx-auto flex w-full max-w-4xl flex-col items-center justify-center rounded-2xl border-2 border-premium-gold/50 bg-[#121212] px-4 py-8 shadow-[0_0_40px_rgb(var(--premium-gold-channels) / 0.12)] sm:px-6 sm:py-10"
         role="img"
         aria-label={HERO_ALT}
       >
-        <span className="font-serif text-4xl font-extrabold leading-none tracking-tight text-brand-gold drop-shadow-[0_2px_16px_rgba(201,166,70,0.35)] sm:text-5xl md:text-6xl lg:text-7xl">
+        <span className="font-serif text-4xl font-extrabold leading-none tracking-tight text-brand-gold drop-shadow-[0_2px_16px_rgb(var(--premium-gold-channels) / 0.35)] sm:text-5xl md:text-6xl lg:text-7xl">
           {PLATFORM_NAME}
         </span>
         <span
@@ -45,7 +45,7 @@ export function LogoCipmHero() {
           alt={HERO_ALT}
           fill
           sizes="(max-width: 896px) 100vw, 704px"
-          className="object-contain object-center drop-shadow-[0_8px_56px_rgba(201,166,70,0.42)]"
+          className="object-contain object-center drop-shadow-[0_8px_56px_rgb(var(--premium-gold-channels) / 0.42)]"
           priority
           onError={() => setFailed(true)}
         />

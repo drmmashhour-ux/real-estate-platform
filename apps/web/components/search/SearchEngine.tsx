@@ -247,7 +247,7 @@ export function SearchEngineBar({
 }
 
 const FIELD =
-  "mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#C9A646]/55 focus:outline-none focus:ring-2 focus:ring-[#C9A646]/20";
+  "mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-premium-gold/55 focus:outline-none focus:ring-2 focus:ring-premium-gold/20";
 const LABEL = "block text-xs font-medium text-slate-600";
 
 const PROPERTY_CHECKBOXES = [
@@ -301,7 +301,7 @@ function CentrisCheckbox({
         type="checkbox"
         checked={checked}
         onChange={onChange}
-        className="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 text-[#C9A646] focus:ring-[#C9A646]/40"
+        className="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 text-premium-gold focus:ring-premium-gold/40"
       />
       <span className="leading-snug">{label}</span>
     </label>
@@ -401,7 +401,7 @@ function BuyFilterFields() {
     [
       "min-h-[2.5rem] rounded-lg border px-3 py-2 text-xs font-semibold transition",
       active
-        ? "border-[#C9A646] bg-[#C9A646] text-black"
+        ? "border-premium-gold bg-premium-gold text-black"
         : "border-slate-200 bg-white text-slate-700 hover:border-slate-300",
     ].join(" ");
 
@@ -415,7 +415,7 @@ function BuyFilterFields() {
         className={[
           "min-h-[2.5rem] rounded-lg border px-3 py-2 text-xs font-semibold transition",
           on
-            ? "border-[#C9A646] bg-[#C9A646] text-black"
+            ? "border-premium-gold bg-premium-gold text-black"
             : "border-slate-200 bg-white text-slate-700 hover:border-slate-300",
         ].join(" ")}
       >
@@ -671,7 +671,7 @@ function BuyFilterFields() {
                   type="checkbox"
                   checked={luxuryOn}
                   onChange={() => toggleLuxury()}
-                  className="h-4 w-4 rounded border-slate-300 text-[#C9A646] focus:ring-[#C9A646]/40"
+                  className="h-4 w-4 rounded border-slate-300 text-premium-gold focus:ring-premium-gold/40"
                 />
                 Luxury ($1M+ minimum price)
               </span>
@@ -700,7 +700,7 @@ function RentFilterFields() {
     [
       "min-h-[2.5rem] rounded-lg border px-3 py-2 text-xs font-semibold transition",
       active
-        ? "border-[#C9A646] bg-[#C9A646] text-black"
+        ? "border-premium-gold bg-premium-gold text-black"
         : "border-slate-200 bg-white text-slate-700 hover:border-slate-300",
     ].join(" ");
 
@@ -714,7 +714,7 @@ function RentFilterFields() {
         className={[
           "min-h-[2.5rem] rounded-lg border px-3 py-2 text-xs font-semibold transition",
           on
-            ? "border-[#C9A646] bg-[#C9A646] text-black"
+            ? "border-premium-gold bg-premium-gold text-black"
             : "border-slate-200 bg-white text-slate-700 hover:border-slate-300",
         ].join(" ")}
       >
@@ -733,7 +733,7 @@ function RentFilterFields() {
         className={[
           "min-h-[2.5rem] rounded-lg border px-3 py-2 text-xs font-semibold transition",
           on
-            ? "border-[#C9A646] bg-[#C9A646] text-black"
+            ? "border-premium-gold bg-premium-gold text-black"
             : "border-slate-200 bg-white text-slate-700 hover:border-slate-300",
         ].join(" ")}
       >
@@ -830,7 +830,7 @@ function RentFilterFields() {
                 className={[
                   "min-h-[2.5rem] rounded-lg border px-3 py-2 text-xs font-semibold transition",
                   draft.furnished === id
-                    ? "border-[#C9A646] bg-[#C9A646] text-black"
+                    ? "border-premium-gold bg-premium-gold text-black"
                     : "border-slate-200 bg-white text-slate-700 hover:border-slate-300",
                 ].join(" ")}
               >

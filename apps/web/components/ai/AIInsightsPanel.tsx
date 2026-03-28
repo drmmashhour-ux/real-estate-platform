@@ -45,7 +45,7 @@ export function AIInsightsPanel({ listingId }: Props) {
         <button
           onClick={run}
           disabled={loading}
-          className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-800 disabled:opacity-60 dark:bg-[#C9A646] dark:text-black"
+          className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-800 disabled:opacity-60 dark:bg-premium-gold dark:text-black"
         >
           {loading ? "Analyzing..." : "Run AI analysis"}
         </button>

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { InvestorLogoutButton } from "@/components/investor/InvestorLogoutButton";
 
-const GOLD = "#C9A646";
+const GOLD = "var(--color-premium-gold)";
 
 const links = [
   { href: "/investor/dashboard", label: "Dashboard" },

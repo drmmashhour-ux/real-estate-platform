@@ -8,8 +8,8 @@ const OACIQ_URL = "https://www.oaciq.com";
 export function DsDsdRegulatoryNotice() {
   return (
     <details className="group rounded-xl border border-white/10 bg-[#141414] p-4 text-xs text-slate-400">
-      <summary className="cursor-pointer list-none font-medium text-[#C9A646] outline-none [&::-webkit-details-marker]:hidden">
-        <span className="underline decoration-[#C9A646]/40 decoration-dotted underline-offset-2 group-open:no-underline">
+      <summary className="cursor-pointer list-none font-medium text-premium-gold outline-none [&::-webkit-details-marker]:hidden">
+        <span className="underline decoration-premium-gold/40 decoration-dotted underline-offset-2 group-open:no-underline">
           Details &amp; Additional Declarations — regulatory context (DS / DSD brokerage forms vs this checklist)
         </span>
       </summary>
@@ -41,7 +41,7 @@ export function DsDsdRegulatoryNotice() {
         </p>
         <p className="text-slate-500">
           Source: OACIQ professional standards (e.g. duty to verify, disclosure to parties).{" "}
-          <a href={OACIQ_URL} target="_blank" rel="noopener noreferrer" className="text-[#C9A646] hover:underline">
+          <a href={OACIQ_URL} target="_blank" rel="noopener noreferrer" className="text-premium-gold hover:underline">
             oaciq.com
           </a>
           {" — "}

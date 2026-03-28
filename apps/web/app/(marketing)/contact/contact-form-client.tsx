@@ -68,8 +68,8 @@ export function ContactFormClient() {
 
   if (success) {
     return (
-      <div className="rounded-2xl border border-[#C9A646]/35 bg-[#C9A646]/10 p-8 text-center">
-        <p className="text-lg font-medium text-[#C9A646]">Thank you</p>
+      <div className="rounded-2xl border border-premium-gold/35 bg-premium-gold/10 p-8 text-center">
+        <p className="text-lg font-medium text-premium-gold">Thank you</p>
         <p className="mt-2 text-sm text-[#B3B3B3]">
           We&apos;ll respond within one business day. No spam, ever.
         </p>
@@ -78,10 +78,10 @@ export function ContactFormClient() {
   }
 
   const input =
-    "w-full rounded-xl border border-white/15 bg-[#0B0B0B] px-3 py-2.5 text-sm text-white placeholder:text-[#B3B3B3]/55 focus:border-[#C9A646] focus:outline-none focus:ring-2 focus:ring-[#C9A646]/25";
+    "w-full rounded-xl border border-white/15 bg-[#0B0B0B] px-3 py-2.5 text-sm text-white placeholder:text-[#B3B3B3]/55 focus:border-premium-gold focus:outline-none focus:ring-2 focus:ring-premium-gold/25";
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5 rounded-2xl border border-[#C9A646]/25 bg-[#121212] p-5 shadow-xl shadow-black/40 sm:p-6 lg:p-7">
+    <form onSubmit={handleSubmit} className="space-y-5 rounded-2xl border border-premium-gold/25 bg-[#121212] p-5 shadow-xl shadow-black/40 sm:p-6 lg:p-7">
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label className="mb-1.5 block text-xs font-medium text-[#B3B3B3]">
@@ -178,7 +178,7 @@ export function ContactFormClient() {
             type="checkbox"
             checked={consentSmsWhatsapp}
             onChange={(e) => setConsentSmsWhatsapp(e.target.checked)}
-            className="mt-1 rounded border-white/20 bg-[#121212] text-[#C9A646] focus:ring-[#C9A646]"
+            className="mt-1 rounded border-white/20 bg-[#121212] text-premium-gold focus:ring-premium-gold"
           />
           <span>
             SMS / WhatsApp follow-up for this inquiry{" "}
@@ -190,7 +190,7 @@ export function ContactFormClient() {
             type="checkbox"
             checked={consentVoice}
             onChange={(e) => setConsentVoice(e.target.checked)}
-            className="mt-1 rounded border-white/20 bg-[#121212] text-[#C9A646] focus:ring-[#C9A646]"
+            className="mt-1 rounded border-white/20 bg-[#121212] text-premium-gold focus:ring-premium-gold"
           />
           <span>
             Automated voice call for hot leads only{" "}
@@ -237,7 +237,7 @@ export function ContactFormClient() {
         <button
           type="submit"
           disabled={loading}
-          className="inline-flex items-center justify-center rounded-full bg-[#C9A646] px-6 py-2.5 text-sm font-bold text-black shadow-lg shadow-[#C9A646]/30 transition hover:bg-[#C9A227] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A646] focus-visible:ring-offset-2 focus-visible:ring-offset-[#121212] disabled:opacity-50"
+          className="inline-flex items-center justify-center rounded-full bg-premium-gold px-6 py-2.5 text-sm font-bold text-black shadow-lg shadow-premium-gold/30 transition hover:bg-premium-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-premium-gold focus-visible:ring-offset-2 focus-visible:ring-offset-[#121212] disabled:opacity-50"
         >
           {loading ? "Submitting…" : "Submit inquiry"}
         </button>

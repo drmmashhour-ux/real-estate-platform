@@ -33,7 +33,7 @@ export async function RentalListingDetail({ listingId }: { listingId: string }) 
     <div className="min-h-screen bg-[#0B0B0B] text-white">
       <MvpNav variant="live" />
       <main className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
-        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#C9A646]">Long-term · Rent Hub</p>
+        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-premium-gold">Long-term · Rent Hub</p>
         <h1 className="mt-3 text-3xl font-bold tracking-tight">{row.title}</h1>
         <p className="mt-2 text-sm text-white/60">
           Code: <span className="font-mono text-white/80">{row.listingCode}</span>
@@ -65,7 +65,7 @@ export async function RentalListingDetail({ listingId }: { listingId: string }) 
             <Link
               href={`/rent/lease/${tenantLease.id}`}
               className="rounded-xl px-5 py-2.5 font-bold text-[#0B0B0B]"
-              style={{ background: "#C9A646" }}
+              style={{ background: "var(--color-premium-gold)" }}
             >
               Open lease ({tenantLease.status.replace("_", " ").toLowerCase()})
             </Link>
@@ -83,7 +83,7 @@ export async function RentalListingDetail({ listingId }: { listingId: string }) 
                 Landlord dashboard
               </Link>
             ) : null}
-            <Link href="/rent" className="rounded-xl px-4 py-2 font-semibold text-[#0B0B0B] hover:opacity-90" style={{ background: "#C9A646" }}>
+            <Link href="/rent" className="rounded-xl px-4 py-2 font-semibold text-[#0B0B0B] hover:opacity-90" style={{ background: "var(--color-premium-gold)" }}>
               Back to search
             </Link>
           </div>

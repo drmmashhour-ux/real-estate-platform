@@ -186,7 +186,7 @@ export function SalesDashboardClient() {
                 <p className="text-[10px] font-medium uppercase text-slate-500">{s.label}</p>
                 <p className="mt-1 text-xl font-semibold text-white">{n}</p>
                 <div className="mt-2 h-1 overflow-hidden rounded bg-slate-800">
-                  <div className="h-full bg-[#C9A646]/70" style={{ width: `${pct}%` }} />
+                  <div className="h-full bg-premium-gold/70" style={{ width: `${pct}%` }} />
                 </div>
               </div>
             );
@@ -273,7 +273,7 @@ export function SalesDashboardClient() {
             <button
               type="submit"
               disabled={saving}
-              className="rounded bg-[#C9A646] px-4 py-2 text-sm font-medium text-black disabled:opacity-50"
+              className="rounded bg-premium-gold px-4 py-2 text-sm font-medium text-black disabled:opacity-50"
             >
               {saving ? "Saving…" : "Add"}
             </button>

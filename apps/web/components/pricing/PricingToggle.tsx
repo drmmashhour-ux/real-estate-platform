@@ -20,7 +20,7 @@ export function PricingToggle({
         onClick={() => onChange("monthly")}
         className={`rounded-full px-4 py-2 text-sm font-medium transition ${
           value === "monthly"
-            ? "bg-[#C9A646] text-black shadow-lg shadow-[#C9A646]/20"
+            ? "bg-premium-gold text-black shadow-lg shadow-premium-gold/20"
             : "text-slate-400 hover:text-white"
         }`}
       >
@@ -31,7 +31,7 @@ export function PricingToggle({
         onClick={() => onChange("yearly")}
         className={`rounded-full px-4 py-2 text-sm font-medium transition ${
           value === "yearly"
-            ? "bg-[#C9A646] text-black shadow-lg shadow-[#C9A646]/20"
+            ? "bg-premium-gold text-black shadow-lg shadow-premium-gold/20"
             : "text-slate-400 hover:text-white"
         }`}
       >

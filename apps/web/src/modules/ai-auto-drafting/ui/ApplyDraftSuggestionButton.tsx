@@ -17,7 +17,7 @@ export function ApplyDraftSuggestionButton({ disabled, onApply, label = "Apply s
         posthog?.capture("auto_draft_applied", { source: "auto_drafting_panel" });
         onApply();
       }}
-      className="rounded-md bg-[#C9A646] px-3 py-1.5 text-xs font-medium text-black disabled:opacity-40"
+      className="rounded-md bg-premium-gold px-3 py-1.5 text-xs font-medium text-black disabled:opacity-40"
     >
       {label}
     </button>

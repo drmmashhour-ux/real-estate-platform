@@ -30,7 +30,7 @@ export default async function GrowthEnginePage() {
     <HubLayout title="Growth engine" hubKey="admin" navigation={hubNavigation.admin} showAdminInSwitcher>
       <div className="space-y-8 text-slate-100">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#C9A646]/90">Internal</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-premium-gold/90">Internal</p>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight">Revenue + growth</h1>
           <p className="mt-2 max-w-2xl text-sm text-slate-400">
             MRR, churn, and LTV from Stripe-mirrored subscriptions. Deterministic lead scores. Growth emails require{" "}
@@ -47,7 +47,7 @@ export default async function GrowthEnginePage() {
 
         <section className="space-y-3">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#C9A646]/90">AI Growth Engine</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-premium-gold/90">AI Growth Engine</p>
             <h2 className="mt-1 text-lg font-semibold text-white">Content automation (drafts)</h2>
             <p className="mt-1 max-w-2xl text-sm text-slate-400">
               Plans, platform adapters, and scheduling are internal-first. Human approval is required before publish; outbound
@@ -59,7 +59,7 @@ export default async function GrowthEnginePage() {
 
         <section className="space-y-3">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#C9A646]/90">Execution tracking</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-premium-gold/90">Execution tracking</p>
             <h2 className="mt-1 text-lg font-semibold text-white">Daily metrics & flow</h2>
             <p className="mt-1 max-w-2xl text-sm text-slate-400">
               New users, simulator volume, activation/retention/conversion, sequential funnel steps, drop-offs vs prior
@@ -71,7 +71,7 @@ export default async function GrowthEnginePage() {
 
         <section className="space-y-3">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#C9A646]/90">Growth funnel</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-premium-gold/90">Growth funnel</p>
             <h2 className="mt-1 text-lg font-semibold text-white">Activation & conversion (raw)</h2>
             <p className="mt-1 max-w-2xl text-sm text-slate-400">
               Funnel events stored in-app + PostHog. Requires migration{" "}
@@ -83,7 +83,7 @@ export default async function GrowthEnginePage() {
 
         <section className="space-y-3">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#C9A646]/90">Growth automation</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-premium-gold/90">Growth automation</p>
             <h2 className="mt-1 text-lg font-semibold text-white">OAuth channels, drafts, publish</h2>
             <p className="mt-1 max-w-2xl text-sm text-slate-400">
               Official API integrations only. OAuth tokens encrypted at rest. Human review is default; approve before

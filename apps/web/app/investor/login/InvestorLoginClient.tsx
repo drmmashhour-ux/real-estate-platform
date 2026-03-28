@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
-const GOLD = "#C9A646";
+const GOLD = "var(--color-premium-gold)";
 
 export function InvestorLoginClient() {
   const router = useRouter();

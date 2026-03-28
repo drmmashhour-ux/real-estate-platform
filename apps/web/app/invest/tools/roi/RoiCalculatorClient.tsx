@@ -9,7 +9,7 @@ function Tip({ label, text }: { label: string; text: string }) {
   return (
     <span className="inline-flex items-center gap-1">
       {label}
-      <span title={text} className="cursor-help text-[#C9A646]" aria-label={text}>
+      <span title={text} className="cursor-help text-premium-gold" aria-label={text}>
         ⓘ
       </span>
     </span>
@@ -148,8 +148,8 @@ export function RoiCalculatorClient() {
       </div>
 
       <div className="space-y-4">
-        <div className="rounded-2xl border border-[#C9A646]/35 bg-gradient-to-br from-black/80 to-[#1a1508] p-6">
-          <h2 className="text-lg font-semibold text-[#C9A646]">Results</h2>
+        <div className="rounded-2xl border border-premium-gold/35 bg-gradient-to-br from-black/80 to-[#1a1508] p-6">
+          <h2 className="text-lg font-semibold text-premium-gold">Results</h2>
           <dl className="mt-4 space-y-3 text-sm">
             <div className="flex justify-between gap-4 border-b border-white/5 pb-2">
               <dt>Gross annual income</dt>
@@ -201,7 +201,7 @@ export function RoiCalculatorClient() {
               <dt>
                 <Tip label="ROI % (year 1)" text="Shown as cash-on-cash return for the first year in this tool." />
               </dt>
-              <dd className="text-xl font-bold text-[#C9A646]">{out.roiPercent.toFixed(2)}%</dd>
+              <dd className="text-xl font-bold text-premium-gold">{out.roiPercent.toFixed(2)}%</dd>
             </div>
           </dl>
           <p className="mt-4 text-xs text-slate-500">
@@ -213,7 +213,7 @@ export function RoiCalculatorClient() {
           <button
             type="button"
             onClick={() => void downloadPdf()}
-            className="rounded-lg border border-[#C9A646]/50 px-4 py-2 text-sm text-[#C9A646]"
+            className="rounded-lg border border-premium-gold/50 px-4 py-2 text-sm text-premium-gold"
           >
             Download PDF
           </button>
@@ -227,7 +227,7 @@ export function RoiCalculatorClient() {
             <a
               href="/mortgage"
               onClick={() => void trackCta("cta_mortgage")}
-              className="rounded-lg bg-[#C9A646] px-4 py-2 text-sm font-semibold text-black"
+              className="rounded-lg bg-premium-gold px-4 py-2 text-sm font-semibold text-black"
             >
               Talk to mortgage expert
             </a>

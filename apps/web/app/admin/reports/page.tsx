@@ -41,9 +41,9 @@ export default async function AdminReportsHubPage() {
             <Link
               key={item.href}
               href={item.href}
-              className="rounded-2xl border border-[#C9A646]/30 bg-[#C9A646]/[0.06] p-5 transition hover:border-[#C9A646]/50"
+              className="rounded-2xl border border-premium-gold/30 bg-premium-gold/[0.06] p-5 transition hover:border-premium-gold/50"
             >
-              <p className="text-sm font-semibold text-[#C9A646]">{item.label}</p>
+              <p className="text-sm font-semibold text-premium-gold">{item.label}</p>
               <p className="mt-2 text-xs text-slate-500">{item.desc}</p>
               <span className="mt-3 inline-block text-xs text-slate-400">Open →</span>
             </Link>

@@ -30,7 +30,7 @@ export function SellerPublishReadinessAiCard({ listing }: { listing: ListingLite
       intent="summary"
       title="Publish readiness (AI)"
       context={ctx}
-      accent="#C9A646"
+      accent="var(--color-premium-gold)"
     />
   );
 }

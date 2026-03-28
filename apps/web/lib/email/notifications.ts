@@ -309,7 +309,7 @@ export async function sendPropertyEstimateEmailToUser(params: {
   <p style="margin:0 0 1.25em 0;"><strong>Range:</strong> $${escapeHtml(fmt(params.minValue))} – $${escapeHtml(fmt(params.maxValue))}</p>
   <p style="margin:0 0 1.25em 0;font-size:14px;color:#444;">This AI estimate is based on market averages and may vary.</p>
   <p style="margin:0 0 1.5em 0;">
-    <a href="${escapeHtml(consultUrl)}" style="display:inline-block;background:#C9A646;color:#0B0B0B;font-weight:700;text-decoration:none;padding:12px 22px;border-radius:10px;">Book your FREE consultation</a>
+    <a href="${escapeHtml(consultUrl)}" style="display:inline-block;background:#D4AF37;color:#0B0B0B;font-weight:700;text-decoration:none;padding:12px 22px;border-radius:10px;">Book your FREE consultation</a>
   </p>
   <div style="margin-top:2em;padding-top:1.25em;border-top:1px solid #e5e5e5;font-size:14px;color:#333;">
     <p style="margin:0 0 0.25em 0;font-weight:700;">LECIPM</p>

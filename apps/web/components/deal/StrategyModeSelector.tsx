@@ -19,7 +19,7 @@ export function StrategyModeSelector({ enabled, value, onChange }: Props) {
 
   return (
     <div className="rounded-xl border border-white/10 bg-[#121212] p-4">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#C9A646]">Strategy mode</p>
+      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-premium-gold">Strategy mode</p>
       <p className="mt-1 text-xs text-slate-500">
         Adjusts how the offer assistant weighs cash flow, price position, trust, and risk (rules-based, not a product
         recommendation).

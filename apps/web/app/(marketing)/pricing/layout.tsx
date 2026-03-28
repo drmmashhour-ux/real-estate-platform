@@ -18,7 +18,7 @@ export default function PricingLayout({ children }: { children: ReactNode }) {
             <Link
               key={l.href}
               href={l.href}
-              className="rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-sm font-medium text-slate-300 transition hover:border-[#C9A646]/40 hover:text-[#C9A646]"
+              className="rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-sm font-medium text-slate-300 transition hover:border-premium-gold/40 hover:text-premium-gold"
             >
               {l.label}
             </Link>

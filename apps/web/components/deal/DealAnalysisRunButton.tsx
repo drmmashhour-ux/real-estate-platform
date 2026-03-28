@@ -36,7 +36,7 @@ export function DealAnalysisRunButton({ listingId }: { listingId: string }) {
         type="button"
         onClick={() => void run()}
         disabled={status === "loading"}
-        className="rounded-full border border-[#C9A646]/50 bg-[#C9A646]/10 px-4 py-2 text-xs font-semibold text-[#C9A646] transition hover:bg-[#C9A646]/20 disabled:opacity-50"
+        className="rounded-full border border-premium-gold/50 bg-premium-gold/10 px-4 py-2 text-xs font-semibold text-premium-gold transition hover:bg-premium-gold/20 disabled:opacity-50"
       >
         {status === "loading" ? "Running…" : "Run deal analysis"}
       </button>

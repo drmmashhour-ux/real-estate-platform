@@ -42,8 +42,8 @@ function Card({
   hint?: string;
 }) {
   return (
-    <div className="rounded-2xl border border-[#C9A646]/25 bg-[#0B0B0B] p-5 shadow-lg shadow-black/40">
-      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#C9A646]">{title}</p>
+    <div className="rounded-2xl border border-premium-gold/25 bg-[#0B0B0B] p-5 shadow-lg shadow-black/40">
+      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-premium-gold">{title}</p>
       <p className="mt-2 text-3xl font-semibold text-white">{value}</p>
       {hint ? <p className="mt-2 text-xs text-[#B3B3B3]">{hint}</p> : null}
     </div>
@@ -112,7 +112,7 @@ export function AnalyticsDashboardClient() {
     <div className="space-y-10">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <label className="text-xs font-medium uppercase tracking-wider text-[#C9A646]">
+          <label className="text-xs font-medium uppercase tracking-wider text-premium-gold">
             Period
           </label>
           <select
@@ -128,7 +128,7 @@ export function AnalyticsDashboardClient() {
           </select>
         </div>
         <div className="rounded-2xl border border-white/10 bg-[#121212] px-4 py-3 text-sm text-[#B3B3B3]">
-          <span className="text-[#C9A646]">Best performing campaign: </span>
+          <span className="text-premium-gold">Best performing campaign: </span>
           {bestLine}
         </div>
       </div>
@@ -156,7 +156,7 @@ export function AnalyticsDashboardClient() {
         />
       </section>
 
-      <section className="rounded-2xl border border-[#C9A646]/20 bg-[#0B0B0B] p-6">
+      <section className="rounded-2xl border border-premium-gold/20 bg-[#0B0B0B] p-6">
         <h2 className="text-lg font-semibold text-white">Ad spend &amp; CPL</h2>
         <p className="mt-1 text-sm text-[#B3B3B3]">
           Manual total spend for the period (CAD, whole dollars). Cost per lead = spend ÷ leads.
@@ -172,14 +172,14 @@ export function AnalyticsDashboardClient() {
           <button
             type="button"
             onClick={() => void saveSpend()}
-            className="rounded-xl bg-[#C9A646] px-4 py-2 text-sm font-bold text-[#0B0B0B] hover:bg-[#E8C547]"
+            className="rounded-xl bg-premium-gold px-4 py-2 text-sm font-bold text-[#0B0B0B] hover:bg-premium-gold"
           >
             Save spend
           </button>
           {data.costPerLeadCad != null ? (
             <p className="text-sm text-white">
               Cost / lead:{" "}
-              <span className="font-semibold text-[#C9A646]">${data.costPerLeadCad}</span>
+              <span className="font-semibold text-premium-gold">${data.costPerLeadCad}</span>
             </p>
           ) : (
             <p className="text-sm text-[#B3B3B3]">Set spend &gt; 0 and ensure leads exist to see CPL.</p>
@@ -190,7 +190,7 @@ export function AnalyticsDashboardClient() {
 
       <section className="grid gap-8 lg:grid-cols-2">
         <div className="rounded-2xl border border-white/10 bg-[#121212] p-5">
-          <h3 className="text-sm font-semibold uppercase tracking-wider text-[#C9A646]">
+          <h3 className="text-sm font-semibold uppercase tracking-wider text-premium-gold">
             Leads by source
           </h3>
           <ul className="mt-4 space-y-2 text-sm">
@@ -212,7 +212,7 @@ export function AnalyticsDashboardClient() {
           </ul>
         </div>
         <div className="rounded-2xl border border-white/10 bg-[#121212] p-5">
-          <h3 className="text-sm font-semibold uppercase tracking-wider text-[#C9A646]">
+          <h3 className="text-sm font-semibold uppercase tracking-wider text-premium-gold">
             Leads by campaign
           </h3>
           <ul className="mt-4 space-y-2 text-sm">
@@ -237,7 +237,7 @@ export function AnalyticsDashboardClient() {
 
       <section className="grid gap-8 lg:grid-cols-2">
         <div className="rounded-2xl border border-white/10 bg-[#121212] p-5">
-          <h3 className="text-sm font-semibold uppercase tracking-wider text-[#C9A646]">
+          <h3 className="text-sm font-semibold uppercase tracking-wider text-premium-gold">
             Top cities (eval leads)
           </h3>
           <ul className="mt-4 space-y-2 text-sm">
@@ -257,7 +257,7 @@ export function AnalyticsDashboardClient() {
           </ul>
         </div>
         <div className="rounded-2xl border border-white/10 bg-[#121212] p-5">
-          <h3 className="text-sm font-semibold uppercase tracking-wider text-[#C9A646]">
+          <h3 className="text-sm font-semibold uppercase tracking-wider text-premium-gold">
             Retargeting prep
           </h3>
           <ul className="mt-4 space-y-3 text-sm text-[#E5E5E5]">
@@ -279,7 +279,7 @@ export function AnalyticsDashboardClient() {
 
       <section className="grid gap-8 lg:grid-cols-2">
         <div className="rounded-2xl border border-white/10 bg-[#121212] p-5">
-          <h3 className="text-sm font-semibold uppercase tracking-wider text-[#C9A646]">
+          <h3 className="text-sm font-semibold uppercase tracking-wider text-premium-gold">
             Most visited pages
           </h3>
           <ul className="mt-4 space-y-2 text-sm">
@@ -299,7 +299,7 @@ export function AnalyticsDashboardClient() {
           </ul>
         </div>
         <div className="rounded-2xl border border-white/10 bg-[#121212] p-5">
-          <h3 className="text-sm font-semibold uppercase tracking-wider text-[#C9A646]">
+          <h3 className="text-sm font-semibold uppercase tracking-wider text-premium-gold">
             Most clicked (CTA / call / WhatsApp)
           </h3>
           <ul className="mt-4 space-y-2 text-sm">
@@ -321,7 +321,7 @@ export function AnalyticsDashboardClient() {
       </section>
 
       <section className="rounded-2xl border border-white/10 bg-[#121212] p-5">
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-[#C9A646]">
+        <h3 className="text-sm font-semibold uppercase tracking-wider text-premium-gold">
           Raw event counts
         </h3>
         <div className="mt-3 flex flex-wrap gap-2">
@@ -330,13 +330,13 @@ export function AnalyticsDashboardClient() {
               key={k}
               className="rounded-full border border-white/10 bg-[#0B0B0B] px-3 py-1 text-xs text-[#B3B3B3]"
             >
-              {k}: <span className="text-[#C9A646]">{v}</span>
+              {k}: <span className="text-premium-gold">{v}</span>
             </span>
           ))}
         </div>
         <p className="mt-4 text-xs text-[#525252]">
           Detailed attribution:{" "}
-          <Link href="/admin/attribution" className="text-[#C9A646] hover:underline">
+          <Link href="/admin/attribution" className="text-premium-gold hover:underline">
             Traffic &amp; attribution
           </Link>
         </p>

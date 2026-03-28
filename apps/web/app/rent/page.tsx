@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     "Long-term rentals with applications, leases, and rent tracking — plus short-term stays on BNHub.",
 };
 
-const GOLD = "#C9A646";
+const GOLD = "var(--color-premium-gold)";
 
 export default function RentHubPage() {
   const sampleCity = GROWTH_CITY_SLUGS[0];
@@ -57,17 +57,17 @@ export default function RentHubPage() {
               <p className="font-medium text-slate-200">Dashboards</p>
               <ul className="mt-3 space-y-2">
                 <li>
-                  <Link href="/dashboard/tenant/payments" className="text-[#C9A646] hover:underline">
+                  <Link href="/dashboard/tenant/payments" className="text-premium-gold hover:underline">
                     Tenant — applications &amp; rent
                   </Link>
                 </li>
                 <li>
-                  <Link href="/dashboard/landlord" className="text-[#C9A646] hover:underline">
+                  <Link href="/dashboard/landlord" className="text-premium-gold hover:underline">
                     Landlord — listings &amp; applications
                   </Link>
                 </li>
                 <li>
-                  <Link href={HUB_DASHBOARDS.bnhubHost} className="text-[#C9A646] hover:underline">
+                  <Link href={HUB_DASHBOARDS.bnhubHost} className="text-premium-gold hover:underline">
                     BNHub host dashboard
                   </Link>
                 </li>

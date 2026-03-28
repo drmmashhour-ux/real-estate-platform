@@ -89,7 +89,7 @@ export function AIAssistantPanel({
       <div className="flex h-full w-full max-w-md flex-col border-l border-white/10 bg-[#0c0c0c] shadow-2xl">
         <div className="flex items-start justify-between gap-2 border-b border-white/10 px-4 py-3">
           <div>
-            <p className="text-xs uppercase tracking-wide text-[#C9A646]">AI assistant</p>
+            <p className="text-xs uppercase tracking-wide text-premium-gold">AI assistant</p>
             <h2 className="text-lg font-semibold text-white">{title}</h2>
           </div>
           <button
@@ -123,7 +123,7 @@ export function AIAssistantPanel({
               type="button"
               disabled={loading}
               onClick={() => void run()}
-              className="rounded-xl bg-[#C9A646] px-4 py-2 text-sm font-semibold text-black disabled:opacity-40"
+              className="rounded-xl bg-premium-gold px-4 py-2 text-sm font-semibold text-black disabled:opacity-40"
             >
               {loading ? "Running…" : "Run"}
             </button>

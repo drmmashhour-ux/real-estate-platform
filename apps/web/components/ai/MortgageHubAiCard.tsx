@@ -14,8 +14,8 @@ export function MortgageHubAiCard(props: {
   };
 
   return (
-    <div className="mt-6 rounded-2xl border border-[#C9A646]/20 bg-[#141414] p-4">
-      <p className="text-xs font-semibold uppercase tracking-wide text-[#C9A646]">Request summary (AI)</p>
+    <div className="mt-6 rounded-2xl border border-premium-gold/20 bg-[#141414] p-4">
+      <p className="text-xs font-semibold uppercase tracking-wide text-premium-gold">Request summary (AI)</p>
       <p className="mt-2 text-[11px] leading-relaxed text-slate-500">{MORTGAGE_AI_LEGAL_NOTICE}</p>
       <div className="mt-3">
         <HubAiInsightWidget
@@ -24,7 +24,7 @@ export function MortgageHubAiCard(props: {
           intent="summary"
           title="Your scenario"
           context={ctx}
-          accent="#C9A646"
+          accent="var(--color-premium-gold)"
         />
       </div>
     </div>

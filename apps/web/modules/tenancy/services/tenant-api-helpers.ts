@@ -12,7 +12,7 @@ export type SessionUser = {
 };
 
 export async function requireSessionUser(request: NextRequest): Promise<SessionUser | NextResponse> {
-  const session = requireSessionUserIdOr401(request);
+  const session = await requireSessionUserIdOr401(request);
   if (session instanceof NextResponse) return session;
   const user = await prisma.user.findUnique({
     where: { id: session.userId },

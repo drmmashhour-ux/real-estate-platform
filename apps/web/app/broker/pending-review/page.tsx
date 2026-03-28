@@ -51,7 +51,7 @@ export default async function BrokerPendingReviewPage() {
           This platform connects clients with brokers. All professionals must comply with AMF regulations.
         </p>
         <p className="mt-8 text-sm text-slate-500">
-          <Link href="/auth/login" className="text-[#C9A646] hover:underline">
+          <Link href="/auth/login" className="text-premium-gold hover:underline">
             Sign out and back in
           </Link>{" "}
           after you receive approval — or refresh this page later.

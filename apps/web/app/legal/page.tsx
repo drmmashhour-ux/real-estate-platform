@@ -37,11 +37,11 @@ export default function LegalCenterPage() {
   return (
     <main className="min-h-screen bg-[#0B0B0B] px-4 py-12 text-white sm:px-6">
       <div className="mx-auto max-w-2xl">
-        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#C9A646]">Legal</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-premium-gold">Legal</p>
         <h1 className="mt-3 text-3xl font-bold">Legal center</h1>
         <p className="mt-3 text-sm leading-relaxed text-[#B3B3B3]">
           Transparent terms for{" "}
-          <strong className="text-[#E8C547]">{PLATFORM_CARREFOUR_NAME}</strong> ({PLATFORM_OPERATOR}),
+          <strong className="text-premium-gold">{PLATFORM_CARREFOUR_NAME}</strong> ({PLATFORM_OPERATOR}),
           Québec. Documents may be updated; the effective version is the one published here (or as linked
           from checkout and onboarding).
         </p>
@@ -50,20 +50,20 @@ export default function LegalCenterPage() {
             <li key={item.href}>
               <Link
                 href={item.href}
-                className="block rounded-2xl border border-[#C9A646]/30 bg-[#121212] px-5 py-4 transition-colors hover:border-[#C9A646]/55 hover:bg-[#1a1a1a]"
+                className="block rounded-2xl border border-premium-gold/30 bg-[#121212] px-5 py-4 transition-colors hover:border-premium-gold/55 hover:bg-[#1a1a1a]"
               >
-                <span className="font-semibold text-[#E8C547]">{item.label}</span>
+                <span className="font-semibold text-premium-gold">{item.label}</span>
                 <span className="mt-1 block text-sm text-[#9CA3AF]">{item.detail}</span>
               </Link>
             </li>
           ))}
         </ul>
         <p className="mt-10 text-xs text-[#737373]">
-          French summaries may be available under <Link href="/fr/legal/terms" className="text-[#C9A646] hover:underline">/fr/legal</Link>.
+          French summaries may be available under <Link href="/fr/legal/terms" className="text-premium-gold hover:underline">/fr/legal</Link>.
           For binding interpretation in case of discrepancy between unofficial translations, the English
           published legal text on this site prevails unless applicable law requires otherwise.
         </p>
-        <Link href="/" className="mt-8 inline-block text-sm font-medium text-[#C9A646] hover:underline">
+        <Link href="/" className="mt-8 inline-block text-sm font-medium text-premium-gold hover:underline">
           ← Home
         </Link>
       </div>

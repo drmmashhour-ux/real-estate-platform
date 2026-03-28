@@ -115,10 +115,10 @@ export function OfferStrategyCard({ listingId, enabled, strategyMode }: Props) {
   if (!enabled) return null;
 
   return (
-    <div className="rounded-2xl border border-[#C9A646]/20 bg-[#121212] p-5 print:bg-white print:text-black">
+    <div className="rounded-2xl border border-premium-gold/20 bg-[#121212] p-5 print:bg-white print:text-black">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#C9A646]">Offer strategy assistant</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-premium-gold">Offer strategy assistant</p>
           <p className="mt-2 text-xs text-slate-500 print:text-neutral-600">
             Educational bands only — not legal or brokerage advice. Does not guarantee acceptance.
           </p>
@@ -129,7 +129,7 @@ export function OfferStrategyCard({ listingId, enabled, strategyMode }: Props) {
         type="button"
         onClick={() => void run()}
         disabled={loading}
-        className="mt-4 rounded-full border border-[#C9A646]/50 bg-[#C9A646]/10 px-4 py-2 text-xs font-semibold text-[#C9A646] transition hover:bg-[#C9A646]/20 disabled:opacity-50 print:hidden"
+        className="mt-4 rounded-full border border-premium-gold/50 bg-premium-gold/10 px-4 py-2 text-xs font-semibold text-premium-gold transition hover:bg-premium-gold/20 disabled:opacity-50 print:hidden"
       >
         {loading ? "Running…" : "Refresh offer guidance"}
       </button>

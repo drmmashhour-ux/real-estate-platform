@@ -47,7 +47,7 @@ export function EarlyAccessCaptureForm({ source = "homepage", className = "" }: 
 
   return (
     <div className={className}>
-      <h3 className="text-sm font-semibold uppercase tracking-[0.15em] text-[#C9A646]">Stay in the loop</h3>
+      <h3 className="text-sm font-semibold uppercase tracking-[0.15em] text-premium-gold">Stay in the loop</h3>
       <p className="mt-2 text-sm text-[#B3B3B3]">Get early access and product updates — no spam.</p>
       <form onSubmit={onSubmit} className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-stretch">
         <label className="sr-only" htmlFor="early-access-email">
@@ -62,12 +62,12 @@ export function EarlyAccessCaptureForm({ source = "homepage", className = "" }: 
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="you@example.com"
-          className="min-h-[44px] flex-1 rounded-xl border border-white/15 bg-[#121212] px-4 py-2.5 text-sm text-white placeholder:text-[#737373] focus:border-[#C9A646]/50 focus:outline-none focus:ring-1 focus:ring-[#C9A646]/40"
+          className="min-h-[44px] flex-1 rounded-xl border border-white/15 bg-[#121212] px-4 py-2.5 text-sm text-white placeholder:text-[#737373] focus:border-premium-gold/50 focus:outline-none focus:ring-1 focus:ring-premium-gold/40"
         />
         <button
           type="submit"
           disabled={status === "loading"}
-          className="min-h-[44px] shrink-0 rounded-xl bg-[#C9A646] px-6 py-2.5 text-sm font-bold text-[#0B0B0B] transition hover:brightness-110 disabled:opacity-60"
+          className="min-h-[44px] shrink-0 rounded-xl bg-premium-gold px-6 py-2.5 text-sm font-bold text-[#0B0B0B] transition hover:brightness-110 disabled:opacity-60"
         >
           {status === "loading" ? "Sending…" : "Notify me"}
         </button>

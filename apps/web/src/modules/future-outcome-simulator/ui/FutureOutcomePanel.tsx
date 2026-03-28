@@ -50,9 +50,9 @@ export function FutureOutcomePanel({
   );
 
   return (
-    <div className="space-y-4 rounded-xl border border-[#C9A646]/20 bg-gradient-to-b from-[#141414] to-black/40 p-4">
+    <div className="space-y-4 rounded-xl border border-premium-gold/20 bg-gradient-to-b from-[#141414] to-black/40 p-4">
       <div>
-        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#C9A646]">If this scenario moves forward</p>
+        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-premium-gold">If this scenario moves forward</p>
         <p className="mt-1 text-xs text-slate-500">
           {presentationMode
             ? "A simple picture of what often comes next — not a promise of dates or acceptance."

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { hashPassword } from "@/lib/auth/password";
+import { createDbSession } from "@/lib/auth/db-session";
 import { setGuestIdCookie } from "@/lib/auth/session";
 import { ensureReferralCode } from "@/lib/referrals";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
@@ -93,7 +94,8 @@ export async function POST(request: NextRequest) {
     sendSignupEmail(user.email, user.name).catch(() => {});
 
     const res = NextResponse.json({ ok: true, userId: user.id, email: user.email });
-    const cookie = setGuestIdCookie(user.id);
+    const sessionToken = await createDbSession(user.id);
+    const cookie = setGuestIdCookie(sessionToken);
     res.cookies.set(cookie.name, cookie.value, {
       path: cookie.path,
       maxAge: cookie.maxAge,

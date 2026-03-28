@@ -81,7 +81,7 @@ export function AvailabilityCalendar({ listingId }: { listingId: string }) {
           type="button"
           aria-label="Previous month"
           onClick={() => setMonthOffset((m) => m - 1)}
-          className="rounded-lg border border-slate-600 px-3 py-1.5 text-sm text-slate-300 transition hover:border-[#C9A646]/40 hover:bg-slate-800 hover:text-white"
+          className="rounded-lg border border-slate-600 px-3 py-1.5 text-sm text-slate-300 transition hover:border-premium-gold/40 hover:bg-slate-800 hover:text-white"
         >
           ←
         </button>
@@ -90,7 +90,7 @@ export function AvailabilityCalendar({ listingId }: { listingId: string }) {
           type="button"
           aria-label="Next month"
           onClick={() => setMonthOffset((m) => m + 1)}
-          className="rounded-lg border border-slate-600 px-3 py-1.5 text-sm text-slate-300 transition hover:border-[#C9A646]/40 hover:bg-slate-800 hover:text-white"
+          className="rounded-lg border border-slate-600 px-3 py-1.5 text-sm text-slate-300 transition hover:border-premium-gold/40 hover:bg-slate-800 hover:text-white"
         >
           →
         </button>
@@ -144,7 +144,7 @@ export function AvailabilityCalendar({ listingId }: { listingId: string }) {
                 type="button"
                 disabled={isPast}
                 aria-label={`${monthLabel} day ${day}${available === true ? ", available" : available === false ? ", unavailable" : ""}`}
-                className={`rounded-md border p-1 text-center text-xs transition duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A646]/50 disabled:cursor-not-allowed ${tone}`}
+                className={`rounded-md border p-1 text-center text-xs transition duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-premium-gold/50 disabled:cursor-not-allowed ${tone}`}
               >
                 {day}
               </button>

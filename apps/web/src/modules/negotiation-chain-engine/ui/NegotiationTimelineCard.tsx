@@ -45,7 +45,7 @@ export function NegotiationTimelineCard({
       ? "border-emerald-500/45 bg-emerald-950/25 shadow-lg shadow-emerald-900/10"
       : version.status === "pending"
         ? "border-amber-400/50 bg-amber-950/20 shadow-lg shadow-amber-900/10"
-        : "border-[#C9A646]/40 bg-[#0f0f0f]"
+        : "border-premium-gold/40 bg-[#0f0f0f]"
     : isRejected
       ? "border-rose-500/25 bg-rose-950/15 opacity-95"
       : "border-white/10 bg-black/25 opacity-90";
@@ -58,7 +58,7 @@ export function NegotiationTimelineCard({
             <span className="text-sm font-bold text-white">v{version.versionNumber}</span>
             <NegotiationStatusBadge status={version.status} isFinal={version.isFinal} />
             {isCurrentActive ? (
-              <span className="rounded bg-white/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[#C9A646]">
+              <span className="rounded bg-white/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-premium-gold">
                 Active
               </span>
             ) : null}
@@ -112,7 +112,7 @@ export function NegotiationTimelineCard({
         {documentHref ? (
           <Link
             href={documentHref}
-            className="rounded-lg border border-[#C9A646]/30 bg-[#C9A646]/10 px-2.5 py-1.5 text-[11px] font-medium text-[#C9A646] hover:bg-[#C9A646]/20"
+            className="rounded-lg border border-premium-gold/30 bg-premium-gold/10 px-2.5 py-1.5 text-[11px] font-medium text-premium-gold hover:bg-premium-gold/20"
           >
             Open case
           </Link>

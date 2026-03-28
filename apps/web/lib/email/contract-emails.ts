@@ -12,7 +12,7 @@ export async function sendContractSignRequestEmail(params: {
     <h1 style="font-size:18px;">Please sign your lease</h1>
     <p>A residential lease agreement is ready for you: <strong>${escapeHtml(params.title)}</strong></p>
     <p>Reference: <code>${escapeHtml(params.reference)}</code></p>
-    <p><a href="${escapeHtml(params.signUrl)}" style="display:inline-block;padding:12px 20px;background:#C9A646;color:#0B0B0B;font-weight:700;">Review &amp; sign</a></p>
+    <p><a href="${escapeHtml(params.signUrl)}" style="display:inline-block;padding:12px 20px;background:#D4AF37;color:#0B0B0B;font-weight:700;">Review &amp; sign</a></p>
     <p style="font-size:12px;color:#666;">This electronic signature is legally binding under applicable Québec laws.</p>
   </div>`;
   for (const to of params.to) {

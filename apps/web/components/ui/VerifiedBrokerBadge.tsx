@@ -8,7 +8,7 @@ export function VerifiedBrokerBadge({
 }) {
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full bg-[#C9A646]/15 px-2.5 py-0.5 text-xs font-semibold text-[#C9A646] ring-1 ring-[#C9A646]/35 ${className}`.trim()}
+      className={`inline-flex items-center gap-1 rounded-full bg-premium-gold/15 px-2.5 py-0.5 text-xs font-semibold text-premium-gold ring-1 ring-premium-gold/35 ${className}`.trim()}
     >
       <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden>
         <path

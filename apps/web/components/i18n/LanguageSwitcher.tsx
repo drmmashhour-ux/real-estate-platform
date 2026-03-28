@@ -18,7 +18,7 @@ export function LanguageSwitcher({
     variant === "header"
       ? HEADER_SELECT
       : variant === "dark"
-        ? "cursor-pointer rounded-lg border border-white/20 bg-white/5 px-2 py-1.5 text-xs font-medium text-white shadow-none transition hover:border-[#C9A646]/50 hover:bg-white/10 focus:border-[#C9A646] focus:outline-none focus:ring-2 focus:ring-[#C9A646]/30"
+        ? "cursor-pointer rounded-lg border border-white/20 bg-white/5 px-2 py-1.5 text-xs font-medium text-white shadow-none transition hover:border-premium-gold/50 hover:bg-white/10 focus:border-premium-gold focus:outline-none focus:ring-2 focus:ring-premium-gold/30"
         : "cursor-pointer rounded-lg border border-gray-200 bg-white/90 px-2 py-1.5 text-xs font-medium text-slate-700 shadow-sm transition hover:border-gray-300 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500";
 
   return (

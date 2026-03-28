@@ -102,7 +102,7 @@ export function GrowthCrmPanels() {
                     <p className="mt-1 text-2xl font-semibold text-white">{n}</p>
                     <p className="text-xs text-slate-500">{pct}%</p>
                     <div className="mt-2 h-1.5 overflow-hidden rounded bg-slate-800">
-                      <div className="h-full bg-[#C9A646]/80" style={{ width: `${pct}%` }} />
+                      <div className="h-full bg-premium-gold/80" style={{ width: `${pct}%` }} />
                     </div>
                   </div>
                 );
@@ -137,7 +137,7 @@ export function GrowthCrmPanels() {
             type="button"
             disabled={autoLoading}
             onClick={() => void runAutomation(true)}
-            className="rounded border border-slate-600 bg-slate-950 px-3 py-1.5 text-xs text-slate-200 hover:border-[#C9A646]/40 disabled:opacity-50"
+            className="rounded border border-slate-600 bg-slate-950 px-3 py-1.5 text-xs text-slate-200 hover:border-premium-gold/40 disabled:opacity-50"
           >
             Dry run
           </button>
@@ -145,7 +145,7 @@ export function GrowthCrmPanels() {
             type="button"
             disabled={autoLoading}
             onClick={() => void runAutomation(false)}
-            className="rounded bg-[#C9A646] px-3 py-1.5 text-xs font-medium text-black disabled:opacity-50"
+            className="rounded bg-premium-gold px-3 py-1.5 text-xs font-medium text-black disabled:opacity-50"
           >
             Run rules
           </button>

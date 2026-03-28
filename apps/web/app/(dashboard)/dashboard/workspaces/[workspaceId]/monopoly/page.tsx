@@ -110,7 +110,7 @@ export default async function WorkspaceMonopolyPage({ params }: { params: Promis
       <div className="mx-auto max-w-6xl space-y-12 px-4 py-10 text-slate-100">
         <header className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-[#C9A646]/90">Monopoly layer</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-premium-gold/90">Monopoly layer</p>
             <h1 className="text-2xl font-semibold">Data & network advantage</h1>
             <p className="mt-1 text-sm text-slate-500">
               Isolated per organization · aggregated insights · internal collaboration

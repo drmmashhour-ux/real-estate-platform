@@ -21,10 +21,10 @@ export function RevenueStreamsSection() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {streams.map((s, i) => (
             <AnimatedReveal key={s.label} delayMs={i * 45}>
-              <div className="h-full rounded-2xl border border-[#C9A646]/15 bg-black/30 p-6">
+              <div className="h-full rounded-2xl border border-premium-gold/15 bg-black/30 p-6">
                 <h3 className="text-base font-semibold text-white">{s.label}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-slate-400">
-                  <span className="mr-1.5 text-[#C9A646]/90" aria-hidden>
+                  <span className="mr-1.5 text-premium-gold/90" aria-hidden>
                     →
                   </span>
                   {s.detail}

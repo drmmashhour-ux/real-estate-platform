@@ -48,17 +48,17 @@ export function CTASection() {
           subtitle="Get your first property verified in minutes. Request access — we’ll follow up with onboarding and next steps."
         />
         <AnimatedReveal>
-          <div className="mx-auto max-w-xl rounded-3xl border border-[#C9A646]/25 bg-gradient-to-br from-[#C9A646]/10 to-transparent p-8 shadow-2xl">
+          <div className="mx-auto max-w-xl rounded-3xl border border-premium-gold/25 bg-gradient-to-br from-premium-gold/10 to-transparent p-8 shadow-2xl">
             <div className="flex flex-wrap gap-3">
               <Link
                 href="/#cta"
-                className="inline-flex flex-1 items-center justify-center rounded-full bg-[#C9A646] px-6 py-3 text-sm font-semibold text-black min-w-[140px] hover:brightness-110"
+                className="inline-flex flex-1 items-center justify-center rounded-full bg-premium-gold px-6 py-3 text-sm font-semibold text-black min-w-[140px] hover:brightness-110"
               >
                 Get Early Access
               </Link>
               <Link
                 href="/contact"
-                className="inline-flex flex-1 items-center justify-center rounded-full border border-white/20 px-6 py-3 text-sm font-semibold text-white min-w-[140px] hover:border-[#C9A646]/50"
+                className="inline-flex flex-1 items-center justify-center rounded-full border border-white/20 px-6 py-3 text-sm font-semibold text-white min-w-[140px] hover:border-premium-gold/50"
               >
                 Book a Demo
               </Link>
@@ -67,7 +67,7 @@ export function CTASection() {
               <div>
                 <label className="block text-xs font-medium uppercase tracking-wide text-slate-500">Name</label>
                 <input
-                  className="mt-1 w-full rounded-xl border border-white/10 bg-black/50 px-4 py-3 text-sm text-white outline-none focus:border-[#C9A646]/50"
+                  className="mt-1 w-full rounded-xl border border-white/10 bg-black/50 px-4 py-3 text-sm text-white outline-none focus:border-premium-gold/50"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   autoComplete="name"
@@ -78,7 +78,7 @@ export function CTASection() {
                 <input
                   required
                   type="email"
-                  className="mt-1 w-full rounded-xl border border-white/10 bg-black/50 px-4 py-3 text-sm text-white outline-none focus:border-[#C9A646]/50"
+                  className="mt-1 w-full rounded-xl border border-white/10 bg-black/50 px-4 py-3 text-sm text-white outline-none focus:border-premium-gold/50"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   autoComplete="email"
@@ -90,7 +90,7 @@ export function CTASection() {
                 </label>
                 <select
                   id="lead-role"
-                  className="mt-1 w-full rounded-xl border border-white/10 bg-black/50 px-4 py-3 text-sm text-white outline-none focus:border-[#C9A646]/50"
+                  className="mt-1 w-full rounded-xl border border-white/10 bg-black/50 px-4 py-3 text-sm text-white outline-none focus:border-premium-gold/50"
                   value={role}
                   onChange={(e) => setRole(e.target.value)}
                 >

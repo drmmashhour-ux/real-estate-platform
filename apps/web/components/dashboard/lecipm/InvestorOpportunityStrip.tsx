@@ -17,7 +17,7 @@ type Props = {
 export function InvestorOpportunityStrip({ opportunities, watchlist, risk, bnhub }: Props) {
   const col = (title: string, items: Column[]) => (
     <div className="rounded-2xl border border-white/10 bg-[#121212] p-4">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#C9A646]">{title}</p>
+      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-premium-gold">{title}</p>
       <ul className="mt-3 space-y-3 text-sm text-slate-300">
         {items.map((c, i) => (
           <li key={i}>

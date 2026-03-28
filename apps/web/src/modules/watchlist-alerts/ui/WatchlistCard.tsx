@@ -40,7 +40,7 @@ export function WatchlistCard({ item }: { item: any }) {
           {latest ? (
             <div>
               <div className="flex items-center justify-between gap-2">
-                <p className="text-xs text-[#C9A646]">Latest alert</p>
+                <p className="text-xs text-premium-gold">Latest alert</p>
                 <SeverityBadge severity={latest.severity} />
               </div>
               <p className="mt-1 text-xs text-slate-200">{latest.title}</p>

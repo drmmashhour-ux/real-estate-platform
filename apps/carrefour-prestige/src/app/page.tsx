@@ -84,7 +84,7 @@ export default async function HomePage() {
           <div className="mt-6 flex justify-center">
             <Link
               href="/properties"
-              className="text-sm font-medium text-[#C9A646] underline-offset-4 transition hover:underline"
+              className="text-sm font-medium text-[#D4AF37] underline-offset-4 transition hover:underline"
             >
               View all listings
             </Link>

@@ -17,6 +17,7 @@ import {
   hasActivePropertyBrowseFilters,
   type PropertyBrowseFilters,
 } from "@/lib/buy/property-browse-filters";
+import { buildFsboPublicListingPath } from "@/lib/seo/public-urls";
 
 /** Luxury residential hero — Unsplash (modern home, dusk). */
 const LISTINGS_HERO_BG =
@@ -56,6 +57,17 @@ const EMPTY_PF: PropertyBrowseFilters = {
   svcShuttle: false,
 };
 
+function listingPublicHref(row: Row): string {
+  if (row.kind === "fsbo") {
+    return buildFsboPublicListingPath({
+      id: row.id,
+      city: row.city,
+      propertyType: row.propertyType,
+    });
+  }
+  return `/listings/${row.id}`;
+}
+
 function toMapListing(row: Row): MapListing | null {
   if (!hasValidCoordinates(row)) return null;
   const img = row.coverImage || row.images[0] || null;
@@ -66,7 +78,7 @@ function toMapListing(row: Row): MapListing | null {
     price: row.priceCents / 100,
     title: row.title,
     image: img ?? undefined,
-    href: `/listings/${row.id}`,
+    href: listingPublicHref(row),
   };
 }
 
@@ -182,11 +194,11 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
             <Link
               key={row.id}
               id={`listing-card-${row.id}`}
-              href={`/listings/${row.id}`}
+              href={listingPublicHref(row)}
               onMouseEnter={() => setSelectedId(row.id)}
               onMouseLeave={() => setSelectedId(null)}
-              className={`group block overflow-hidden rounded-2xl border bg-white/[0.03] shadow-[var(--shadow-card)] transition duration-300 hover:-translate-y-0.5 hover:border-[#C9A646]/35 hover:shadow-[var(--shadow-card-hover)] ${
-                selectedId === row.id ? "border-[#C9A646]/50 ring-1 ring-[#C9A646]/30" : "border-white/10"
+              className={`group block overflow-hidden rounded-2xl border bg-white/[0.03] shadow-[var(--shadow-card)] transition duration-300 hover:-translate-y-0.5 hover:border-premium-gold/35 hover:shadow-[var(--shadow-card-hover)] ${
+                selectedId === row.id ? "border-premium-gold/50 ring-1 ring-premium-gold/30" : "border-white/10"
               }`}
             >
               <div className="relative aspect-[4/3] overflow-hidden bg-white/5">
@@ -202,7 +214,7 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
                 ) : (
                   <div className="flex h-full flex-col items-center justify-center gap-1 text-xs text-slate-600">
                     {row.kind === "crm" ? (
-                      <span className="rounded-full border border-[#C9A646]/40 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#C9A646]">
+                      <span className="rounded-full border border-premium-gold/40 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-premium-gold">
                         Broker CRM
                       </span>
                     ) : null}
@@ -212,7 +224,7 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
               </div>
               <div className="p-4 sm:p-5">
                 <p className="line-clamp-2 text-sm font-semibold text-white">{row.title}</p>
-                <p className="mt-1 text-lg font-bold text-[#C9A646]">{price}</p>
+                <p className="mt-1 text-lg font-bold text-premium-gold">{price}</p>
                 <p className="mt-1 text-xs text-slate-500">
                   {row.city}
                   {row.address ? ` · ${row.address}` : ""}
@@ -223,7 +235,7 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
                 {row.kind === "fsbo" && (row.noiseLevel || row.familyFriendly || row.petsAllowed) ? (
                   <div className="mt-2 flex flex-wrap gap-1">
                     {row.noiseLevel ? (
-                      <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] text-slate-400">{row.noiseLevel}</span>
+                      <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] text-premium-text-muted">{row.noiseLevel}</span>
                     ) : null}
                     {row.familyFriendly ? (
                       <span className="rounded bg-sky-500/15 px-1.5 py-0.5 text-[10px] text-sky-200">Family</span>
@@ -235,7 +247,7 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
                 ) : null}
                 <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-4">
                   <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Property details</span>
-                  <span className="text-xs font-medium text-[#C9A646] transition group-hover:text-[#E8D5A0]">
+                  <span className="text-xs font-medium text-premium-gold transition group-hover:text-[#E8D5A0]">
                     View full listing →
                   </span>
                 </div>
@@ -266,10 +278,10 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
 
   const filterPanel = (
     <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-left">
-      <p className="text-xs font-semibold uppercase tracking-wide text-[#C9A646]/90">Lifestyle, pets &amp; experience</p>
+      <p className="text-xs font-semibold uppercase tracking-wide text-premium-gold/90">Lifestyle, pets &amp; experience</p>
       <p className="mt-1 text-[11px] text-slate-500">Narrow FSBO listings; broker CRM rows hide when these filters are on.</p>
       <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <label className="flex flex-col gap-1 text-xs text-slate-400">
+        <label className="flex flex-col gap-1 text-xs text-premium-text-muted">
           Noise
           <select
             value={propertyFilters.noiseLevel ?? ""}
@@ -279,7 +291,7 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
                 noiseLevel: (e.target.value || null) as PropertyBrowseFilters["noiseLevel"],
               }))
             }
-            className="rounded-lg border border-white/15 bg-[#0B0B0B] px-2 py-1.5 text-sm text-slate-200"
+            className="rounded-lg border border-white/15 bg-[#0B0B0B] px-2 py-1.5 text-sm text-white/85"
           >
             <option value="">Any</option>
             <option value="quiet">Quiet</option>
@@ -287,7 +299,7 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
             <option value="lively">Lively</option>
           </select>
         </label>
-        <label className="flex items-center gap-2 text-sm text-slate-300">
+        <label className="flex items-center gap-2 text-sm text-white/80">
           <input
             type="checkbox"
             checked={Boolean(propertyFilters.familyFriendly)}
@@ -296,7 +308,7 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
           />
           Family-friendly
         </label>
-        <label className="flex items-center gap-2 text-sm text-slate-300">
+        <label className="flex items-center gap-2 text-sm text-white/80">
           <input
             type="checkbox"
             checked={Boolean(propertyFilters.partyFriendly)}
@@ -305,7 +317,7 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
           />
           Party-friendly
         </label>
-        <label className="flex items-center gap-2 text-sm text-slate-300">
+        <label className="flex items-center gap-2 text-sm text-white/80">
           <input
             type="checkbox"
             checked={Boolean(propertyFilters.petsOnly)}
@@ -314,7 +326,7 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
           />
           Pets allowed
         </label>
-        <label className="flex flex-col gap-1 text-xs text-slate-400">
+        <label className="flex flex-col gap-1 text-xs text-premium-text-muted">
           Pet type
           <select
             value={propertyFilters.petType ?? ""}
@@ -324,7 +336,7 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
                 petType: (e.target.value || null) as PropertyBrowseFilters["petType"],
               }))
             }
-            className="rounded-lg border border-white/15 bg-[#0B0B0B] px-2 py-1.5 text-sm text-slate-200"
+            className="rounded-lg border border-white/15 bg-[#0B0B0B] px-2 py-1.5 text-sm text-white/85"
           >
             <option value="">Any</option>
             <option value="dog">Dog</option>
@@ -332,7 +344,7 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
             <option value="other">Other</option>
           </select>
         </label>
-        <label className="flex flex-col gap-1 text-xs text-slate-400">
+        <label className="flex flex-col gap-1 text-xs text-premium-text-muted">
           Pet weight (kg)
           <input
             type="number"
@@ -346,7 +358,7 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
                 guestPetWeightKg: e.target.value ? Number(e.target.value) : null,
               }))
             }
-            className="w-full rounded-lg border border-white/15 bg-[#0B0B0B] px-2 py-1.5 text-sm text-slate-200"
+            className="w-full rounded-lg border border-white/15 bg-[#0B0B0B] px-2 py-1.5 text-sm text-white/85"
           />
         </label>
       </div>
@@ -362,7 +374,7 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
             ["svcShuttle", "Shuttle"],
           ] as const
         ).map(([key, label]) => (
-          <label key={key} className="flex items-center gap-2 text-sm text-slate-300">
+          <label key={key} className="flex items-center gap-2 text-sm text-white/80">
             <input
               type="checkbox"
               checked={Boolean(propertyFilters[key])}
@@ -377,7 +389,7 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
         <button
           type="button"
           onClick={() => void fetchList()}
-          className="rounded-lg bg-[#C9A646] px-4 py-2 text-sm font-semibold text-[#0B0B0B] hover:bg-[#D4B35A]"
+          className="rounded-lg bg-premium-gold px-4 py-2 text-sm font-semibold text-[#0B0B0B] hover:bg-premium-gold"
         >
           Apply lifestyle filters
         </button>
@@ -387,7 +399,7 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
             onClick={() => {
               setPropertyFilters(EMPTY_PF);
             }}
-            className="rounded-lg border border-white/20 px-4 py-2 text-sm text-slate-300 hover:bg-white/5"
+            className="rounded-lg border border-white/20 px-4 py-2 text-sm text-white/80 hover:bg-white/5"
           >
             Clear lifestyle
           </button>
@@ -415,13 +427,13 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
     <div className="flex flex-col gap-4 border-b border-white/10 pb-5 lg:flex-row lg:items-center lg:justify-between">
       <p className="text-base font-medium text-white">
         {loading ? (
-          <span className="text-slate-400">Searching…</span>
+          <span className="text-premium-text-muted">Searching…</span>
         ) : (
           <>
-            <span className="text-[#E8C547]">{total.toLocaleString()}</span>{" "}
-            <span className="text-slate-300">propert{total === 1 ? "y" : "ies"} found</span>
+            <span className="text-premium-gold">{total.toLocaleString()}</span>{" "}
+            <span className="text-white/80">propert{total === 1 ? "y" : "ies"} found</span>
             {pfActive ? (
-              <span className="ml-2 text-xs font-normal text-[#C9A646]">· Lifestyle filters on</span>
+              <span className="ml-2 text-xs font-normal text-premium-gold">· Lifestyle filters on</span>
             ) : null}
           </>
         )}
@@ -437,8 +449,8 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
               className={[
                 "inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition",
                 mapLayout === id
-                  ? "bg-[#C9A646]/20 text-[#E8D5A3] ring-1 ring-[#C9A646]/40"
-                  : "text-slate-400 hover:bg-white/5 hover:text-slate-200",
+                  ? "bg-premium-gold/20 text-premium-gold ring-1 ring-premium-gold/40"
+                  : "text-premium-text-muted hover:bg-white/5 hover:text-white/85",
               ].join(" ")}
             >
               <Icon className="h-4 w-4 opacity-90" aria-hidden />
@@ -461,7 +473,7 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
           onChange={(e) => {
             applyPatch({ sort: e.target.value, page: 1 });
           }}
-          className="rounded-xl border border-white/15 bg-[#141414] px-3 py-2 text-sm text-slate-200 focus:border-[#C9A646]/45 focus:outline-none focus:ring-1 focus:ring-[#C9A646]/30"
+          className="rounded-xl border border-white/15 bg-[#141414] px-3 py-2 text-sm text-white/85 focus:border-premium-gold/45 focus:outline-none focus:ring-1 focus:ring-premium-gold/30"
         >
           <option value="recommended">Recommended</option>
           <option value="newest">Newest</option>
@@ -474,12 +486,12 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
 
   const paginationBar =
     !loading && !fetchError && total > 0 ? (
-      <div className="flex flex-wrap items-center justify-center gap-2 py-4 text-sm text-slate-300">
+      <div className="flex flex-wrap items-center justify-center gap-2 py-4 text-sm text-white/80">
         <button
           type="button"
           disabled={page <= 1}
           onClick={() => goToPage(1)}
-          className="rounded-lg border border-white/10 px-2 py-1.5 text-slate-400 hover:bg-white/5 disabled:opacity-30"
+          className="rounded-lg border border-white/10 px-2 py-1.5 text-premium-text-muted hover:bg-white/5 disabled:opacity-30"
           aria-label="First page"
         >
           «
@@ -488,12 +500,12 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
           type="button"
           disabled={page <= 1}
           onClick={() => goToPage(page - 1)}
-          className="rounded-lg border border-white/10 px-2 py-1.5 text-slate-400 hover:bg-white/5 disabled:opacity-30"
+          className="rounded-lg border border-white/10 px-2 py-1.5 text-premium-text-muted hover:bg-white/5 disabled:opacity-30"
           aria-label="Previous page"
         >
           ‹
         </button>
-        <span className="min-w-[8rem] text-center tabular-nums text-slate-400">
+        <span className="min-w-[8rem] text-center tabular-nums text-premium-text-muted">
           {page} / {totalPages}
           {hasMore ? "+" : ""}
         </span>
@@ -501,7 +513,7 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
           type="button"
           disabled={!hasMore}
           onClick={() => goToPage(page + 1)}
-          className="rounded-lg border border-white/10 px-2 py-1.5 text-slate-400 hover:bg-white/5 disabled:opacity-30"
+          className="rounded-lg border border-white/10 px-2 py-1.5 text-premium-text-muted hover:bg-white/5 disabled:opacity-30"
           aria-label="Next page"
         >
           ›
@@ -510,7 +522,7 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
           type="button"
           disabled={page >= totalPages}
           onClick={() => goToPage(totalPages)}
-          className="rounded-lg border border-white/10 px-2 py-1.5 text-slate-400 hover:bg-white/5 disabled:opacity-30"
+          className="rounded-lg border border-white/10 px-2 py-1.5 text-premium-text-muted hover:bg-white/5 disabled:opacity-30"
           aria-label="Last page"
         >
           »
@@ -520,7 +532,7 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
 
   const lifestyleSection = (
     <details className="mt-6 rounded-2xl border border-white/10 bg-white/[0.02] open:bg-white/[0.03]">
-      <summary className="cursor-pointer list-none px-4 py-3 text-sm font-semibold text-[#C9A646] [&::-webkit-details-marker]:hidden">
+      <summary className="cursor-pointer list-none px-4 py-3 text-sm font-semibold text-premium-gold [&::-webkit-details-marker]:hidden">
         <span className="inline-flex items-center gap-2">
           Lifestyle &amp; experience
           <span className="text-xs font-normal text-slate-500">(optional — refines FSBO matches)</span>
@@ -581,7 +593,7 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
               <button
                 type="button"
                 onClick={reset}
-                className="rounded-xl bg-[#C9A646] px-6 py-2.5 text-sm font-bold text-[#0B0B0B] transition hover:bg-[#D4B35A]"
+                className="rounded-xl bg-premium-gold px-6 py-2.5 text-sm font-bold text-[#0B0B0B] transition hover:bg-premium-gold"
               >
                 Clear search filters
               </button>
@@ -597,7 +609,7 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
     return grid;
   }
 
-  return <main className="min-h-screen bg-[#0B0B0B] pb-24 text-white">{grid}</main>;
+  return <main className="min-h-screen bg-brand-background pb-24 text-white">{grid}</main>;
 }
 
 export function ListingsBrowseClient({ embedded = false, hubMode = "buy" }: BrowseProps) {
@@ -627,7 +639,7 @@ export function ListingsBrowseClient({ embedded = false, hubMode = "buy" }: Brow
             />
             <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/55 to-[#0B0B0B]" aria-hidden />
             <div className="relative z-10 mx-auto flex max-w-5xl flex-col px-4 pb-12 pt-8 sm:px-6 sm:pb-16 sm:pt-14">
-              <p className="text-center text-xs font-semibold uppercase tracking-[0.28em] text-[#E8C547]/95">
+              <p className="text-center text-xs font-semibold uppercase tracking-[0.28em] text-premium-gold/95">
                 {PLATFORM_NAME}
               </p>
               <h1 className="mt-4 text-center text-4xl font-semibold tracking-tight text-white sm:text-5xl md:text-6xl md:leading-[1.1]">
@@ -639,12 +651,12 @@ export function ListingsBrowseClient({ embedded = false, hubMode = "buy" }: Brow
                 Public catalog — no sign-in required. Filters sync to the URL so you can share or bookmark your search.
               </p>
               <p className="mx-auto mt-3 max-w-2xl text-center text-sm text-white/75">
-                <span className="font-medium text-[#E8C547]">AI</span> — shortlist a property, then{" "}
-                <Link href="/analyze" className="text-white underline decoration-[#C9A646]/80 underline-offset-2 hover:text-white">
+                <span className="font-medium text-premium-gold">AI</span> — shortlist a property, then{" "}
+                <Link href="/analyze" className="text-white underline decoration-premium-gold/80 underline-offset-2 hover:text-white">
                   run investment analysis
                 </Link>{" "}
                 or{" "}
-                <Link href="/dashboard/ai" className="text-white underline decoration-[#C9A646]/80 underline-offset-2 hover:text-white">
+                <Link href="/dashboard/ai" className="text-white underline decoration-premium-gold/80 underline-offset-2 hover:text-white">
                   open the AI workspace
                 </Link>
                 .

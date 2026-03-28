@@ -5,7 +5,7 @@ import { SocialProofStrip } from "./SocialProofStrip";
 export function HeroConversionSection({ ctaLabel }: { ctaLabel?: string }) {
   return (
     <section className="rounded-3xl border border-white/10 bg-black px-6 py-12 sm:px-10 sm:py-16">
-      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#C9A646]">The Decision Layer</p>
+      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-premium-gold">The Decision Layer</p>
       <h1 className="mt-3 max-w-3xl text-3xl font-semibold leading-tight text-white sm:text-5xl">
         {conversionCopy.heroTitles[0]}
       </h1>

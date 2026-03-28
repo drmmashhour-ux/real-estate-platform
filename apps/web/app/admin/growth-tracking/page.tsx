@@ -15,7 +15,7 @@ export default async function GrowthTrackingPage() {
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-10 text-slate-100">
-      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#C9A646]">Ads + Growth</p>
+      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-premium-gold">Ads + Growth</p>
       <h1 className="mt-2 text-3xl font-semibold">Acquisition and conversion tracking</h1>
       <p className="mt-2 text-sm text-slate-400">
         Visit → Signup → Analysis → Lead → Purchase funnel with revenue + cost metrics.

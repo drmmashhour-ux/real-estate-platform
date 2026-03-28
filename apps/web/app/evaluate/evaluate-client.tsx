@@ -184,9 +184,9 @@ export function EvaluateClient() {
       {/* Above-the-fold CTAs — same broker line as CRM; tracking fires without leadId */}
       <section
         aria-label="Contact options"
-        className="mb-6 rounded-2xl border border-[#C9A646]/30 bg-[#121212] px-4 py-4 sm:px-5"
+        className="mb-6 rounded-2xl border border-premium-gold/30 bg-[#121212] px-4 py-4 sm:px-5"
       >
-        <p className="text-center text-[11px] font-bold uppercase tracking-[0.15em] text-[#C9A646]">
+        <p className="text-center text-[11px] font-bold uppercase tracking-[0.15em] text-premium-gold">
           FREE — no obligation
         </p>
         <p className="mt-1 text-center text-xs text-[#9CA3AF]">Speak with a licensed broker anytime</p>
@@ -203,14 +203,14 @@ export function EvaluateClient() {
             rel="noopener noreferrer"
             target="_blank"
             onClick={() => trackEvaluateCta(null, "whatsapp")}
-            className="inline-flex items-center justify-center rounded-xl border border-[#C9A646]/45 bg-[#0B0B0B] px-4 py-2.5 text-center text-sm font-semibold text-[#C9A646] hover:bg-[#C9A646]/10"
+            className="inline-flex items-center justify-center rounded-xl border border-premium-gold/45 bg-[#0B0B0B] px-4 py-2.5 text-center text-sm font-semibold text-premium-gold hover:bg-premium-gold/10"
           >
             WhatsApp
           </a>
           <Link
             href="/sell#sell-consultation"
             onClick={() => trackEvaluateCta(null, "consultation_cta")}
-            className="inline-flex items-center justify-center rounded-xl bg-[#C9A646] px-4 py-2.5 text-center text-sm font-bold text-[#0B0B0B] hover:bg-[#E8C547]"
+            className="inline-flex items-center justify-center rounded-xl bg-premium-gold px-4 py-2.5 text-center text-sm font-bold text-[#0B0B0B] hover:bg-premium-gold"
           >
             Get consultation
           </Link>
@@ -224,7 +224,7 @@ export function EvaluateClient() {
         </h2>
         <form onSubmit={onSubmit} className="space-y-5 rounded-2xl border border-white/10 bg-[#121212] p-6 sm:p-8">
           <div>
-            <label htmlFor="eval-email" className="block text-xs font-medium uppercase tracking-wider text-[#C9A646]/90">
+            <label htmlFor="eval-email" className="block text-xs font-medium uppercase tracking-wider text-premium-gold/90">
               Email <span className="text-red-400">*</span>
             </label>
             <input
@@ -233,12 +233,12 @@ export function EvaluateClient() {
               type="email"
               required
               autoComplete="email"
-              className="mt-1.5 w-full rounded-xl border border-white/15 bg-[#0B0B0B] px-4 py-3 text-sm text-white placeholder:text-[#737373] focus:border-[#C9A646] focus:outline-none focus:ring-2 focus:ring-[#C9A646]/35"
+              className="mt-1.5 w-full rounded-xl border border-white/15 bg-[#0B0B0B] px-4 py-3 text-sm text-white placeholder:text-[#737373] focus:border-premium-gold focus:outline-none focus:ring-2 focus:ring-premium-gold/35"
               placeholder="you@example.com"
             />
           </div>
           <div>
-            <label htmlFor="eval-address" className="block text-xs font-medium uppercase tracking-wider text-[#C9A646]/90">
+            <label htmlFor="eval-address" className="block text-xs font-medium uppercase tracking-wider text-premium-gold/90">
               Address
             </label>
             <input
@@ -246,12 +246,12 @@ export function EvaluateClient() {
               name="address"
               required
               autoComplete="street-address"
-              className="mt-1.5 w-full rounded-xl border border-white/15 bg-[#0B0B0B] px-4 py-3 text-sm text-white placeholder:text-[#737373] focus:border-[#C9A646] focus:outline-none focus:ring-2 focus:ring-[#C9A646]/35"
+              className="mt-1.5 w-full rounded-xl border border-white/15 bg-[#0B0B0B] px-4 py-3 text-sm text-white placeholder:text-[#737373] focus:border-premium-gold focus:outline-none focus:ring-2 focus:ring-premium-gold/35"
               placeholder="123 Main Street"
             />
           </div>
           <div>
-            <label htmlFor="eval-city" className="block text-xs font-medium uppercase tracking-wider text-[#C9A646]/90">
+            <label htmlFor="eval-city" className="block text-xs font-medium uppercase tracking-wider text-premium-gold/90">
               City
             </label>
             <select
@@ -259,7 +259,7 @@ export function EvaluateClient() {
               name="city"
               required
               defaultValue=""
-              className="mt-1.5 w-full rounded-xl border border-white/15 bg-[#0B0B0B] px-4 py-3 text-sm text-white focus:border-[#C9A646] focus:outline-none focus:ring-2 focus:ring-[#C9A646]/35"
+              className="mt-1.5 w-full rounded-xl border border-white/15 bg-[#0B0B0B] px-4 py-3 text-sm text-white focus:border-premium-gold focus:outline-none focus:ring-2 focus:ring-premium-gold/35"
             >
               {CITY_OPTIONS.map((o) => (
                 <option key={o.value || "city-empty"} value={o.value} disabled={o.value === ""}>
@@ -269,7 +269,7 @@ export function EvaluateClient() {
             </select>
           </div>
           <div>
-            <label htmlFor="eval-type" className="block text-xs font-medium uppercase tracking-wider text-[#C9A646]/90">
+            <label htmlFor="eval-type" className="block text-xs font-medium uppercase tracking-wider text-premium-gold/90">
               Property type
             </label>
             <select
@@ -277,7 +277,7 @@ export function EvaluateClient() {
               name="propertyType"
               required
               defaultValue=""
-              className="mt-1.5 w-full rounded-xl border border-white/15 bg-[#0B0B0B] px-4 py-3 text-sm text-white focus:border-[#C9A646] focus:outline-none focus:ring-2 focus:ring-[#C9A646]/35"
+              className="mt-1.5 w-full rounded-xl border border-white/15 bg-[#0B0B0B] px-4 py-3 text-sm text-white focus:border-premium-gold focus:outline-none focus:ring-2 focus:ring-premium-gold/35"
             >
               {PROPERTY_TYPES.map((o) => (
                 <option key={o.value || "empty"} value={o.value} disabled={o.value === ""}>
@@ -288,7 +288,7 @@ export function EvaluateClient() {
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label htmlFor="eval-bed" className="block text-xs font-medium uppercase tracking-wider text-[#C9A646]/90">
+              <label htmlFor="eval-bed" className="block text-xs font-medium uppercase tracking-wider text-premium-gold/90">
                 Bedrooms
               </label>
               <input
@@ -299,11 +299,11 @@ export function EvaluateClient() {
                 max={30}
                 step={1}
                 required
-                className="mt-1.5 w-full rounded-xl border border-white/15 bg-[#0B0B0B] px-4 py-3 text-sm text-white focus:border-[#C9A646] focus:outline-none focus:ring-2 focus:ring-[#C9A646]/35"
+                className="mt-1.5 w-full rounded-xl border border-white/15 bg-[#0B0B0B] px-4 py-3 text-sm text-white focus:border-premium-gold focus:outline-none focus:ring-2 focus:ring-premium-gold/35"
               />
             </div>
             <div>
-              <label htmlFor="eval-bath" className="block text-xs font-medium uppercase tracking-wider text-[#C9A646]/90">
+              <label htmlFor="eval-bath" className="block text-xs font-medium uppercase tracking-wider text-premium-gold/90">
                 Bathrooms
               </label>
               <input
@@ -314,12 +314,12 @@ export function EvaluateClient() {
                 max={30}
                 step={0.5}
                 required
-                className="mt-1.5 w-full rounded-xl border border-white/15 bg-[#0B0B0B] px-4 py-3 text-sm text-white focus:border-[#C9A646] focus:outline-none focus:ring-2 focus:ring-[#C9A646]/35"
+                className="mt-1.5 w-full rounded-xl border border-white/15 bg-[#0B0B0B] px-4 py-3 text-sm text-white focus:border-premium-gold focus:outline-none focus:ring-2 focus:ring-premium-gold/35"
               />
             </div>
           </div>
           <div>
-            <label htmlFor="eval-sqft" className="block text-xs font-medium uppercase tracking-wider text-[#C9A646]/90">
+            <label htmlFor="eval-sqft" className="block text-xs font-medium uppercase tracking-wider text-premium-gold/90">
               Surface (sq ft)
             </label>
             <input
@@ -330,19 +330,19 @@ export function EvaluateClient() {
               max={20000}
               step={1}
               required
-              className="mt-1.5 w-full rounded-xl border border-white/15 bg-[#0B0B0B] px-4 py-3 text-sm text-white focus:border-[#C9A646] focus:outline-none focus:ring-2 focus:ring-[#C9A646]/35"
+              className="mt-1.5 w-full rounded-xl border border-white/15 bg-[#0B0B0B] px-4 py-3 text-sm text-white focus:border-premium-gold focus:outline-none focus:ring-2 focus:ring-premium-gold/35"
               placeholder="e.g. 1200"
             />
           </div>
           <div>
-            <label htmlFor="eval-condition" className="block text-xs font-medium uppercase tracking-wider text-[#C9A646]/90">
+            <label htmlFor="eval-condition" className="block text-xs font-medium uppercase tracking-wider text-premium-gold/90">
               Condition <span className="font-normal text-[#737373]">(optional)</span>
             </label>
             <select
               id="eval-condition"
               name="condition"
               defaultValue=""
-              className="mt-1.5 w-full rounded-xl border border-white/15 bg-[#0B0B0B] px-4 py-3 text-sm text-white focus:border-[#C9A646] focus:outline-none focus:ring-2 focus:ring-[#C9A646]/35"
+              className="mt-1.5 w-full rounded-xl border border-white/15 bg-[#0B0B0B] px-4 py-3 text-sm text-white focus:border-premium-gold focus:outline-none focus:ring-2 focus:ring-premium-gold/35"
             >
               {CONDITIONS.map((o) => (
                 <option key={o.value || "c-empty"} value={o.value}>
@@ -373,7 +373,7 @@ export function EvaluateClient() {
           <button
             type="submit"
             disabled={status === "submitting"}
-            className="w-full rounded-xl bg-[#C9A646] py-3.5 text-sm font-bold text-[#0B0B0B] transition hover:bg-[#E8C547] disabled:opacity-60"
+            className="w-full rounded-xl bg-premium-gold py-3.5 text-sm font-bold text-[#0B0B0B] transition hover:bg-premium-gold disabled:opacity-60"
           >
             {status === "submitting" ? "Working…" : "Get FREE evaluation"}
           </button>
@@ -391,8 +391,8 @@ export function EvaluateClient() {
       >
         {status === "success" && estimated != null ? (
           <>
-            <div className="rounded-2xl border border-[#C9A646]/35 bg-gradient-to-br from-[#121212] to-[#0B0B0B] p-8 shadow-xl">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#C9A646]">AI estimate</p>
+            <div className="rounded-2xl border border-premium-gold/35 bg-gradient-to-br from-[#121212] to-[#0B0B0B] p-8 shadow-xl">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold">AI estimate</p>
               <h2 className="mt-2 text-2xl font-bold text-white sm:text-3xl">Estimated property value</h2>
               <p className="mt-6 text-4xl font-bold tracking-tight text-white tabular-nums sm:text-6xl">${fmt(estimated)}</p>
               {rangeMin != null && rangeMax != null ? (
@@ -418,7 +418,7 @@ export function EvaluateClient() {
             </div>
 
             {/* High-conversion block */}
-            <div className="rounded-2xl border border-[#C9A646]/25 bg-[#121212] p-6 sm:p-8">
+            <div className="rounded-2xl border border-premium-gold/25 bg-[#121212] p-6 sm:p-8">
               <h3 className="text-xl font-bold text-white sm:text-2xl">Next step — speak with a broker</h3>
               <p className="mt-3 text-sm leading-relaxed text-[#B3B3B3] sm:text-base">
                 Work with a licensed broker to get the most accurate price and sell faster.
@@ -432,7 +432,7 @@ export function EvaluateClient() {
                 <Link
                   href="/sell#sell-consultation"
                   onClick={() => trackEvaluateCta(leadId, "consultation_cta")}
-                  className="inline-flex flex-1 items-center justify-center rounded-xl bg-[#C9A646] px-6 py-3.5 text-sm font-bold text-[#0B0B0B] shadow-lg hover:bg-[#E8C547] sm:flex-initial"
+                  className="inline-flex flex-1 items-center justify-center rounded-xl bg-premium-gold px-6 py-3.5 text-sm font-bold text-[#0B0B0B] shadow-lg hover:bg-premium-gold sm:flex-initial"
                 >
                   Get my FREE consultation
                 </Link>
@@ -448,7 +448,7 @@ export function EvaluateClient() {
                   rel="noopener noreferrer"
                   target="_blank"
                   onClick={() => trackEvaluateCta(leadId, "whatsapp")}
-                  className="inline-flex flex-1 items-center justify-center rounded-xl border border-[#C9A646]/45 px-6 py-3.5 text-sm font-semibold text-[#C9A646] hover:bg-[#C9A646]/10 sm:flex-initial"
+                  className="inline-flex flex-1 items-center justify-center rounded-xl border border-premium-gold/45 px-6 py-3.5 text-sm font-semibold text-premium-gold hover:bg-premium-gold/10 sm:flex-initial"
                 >
                   WhatsApp
                 </a>
@@ -458,7 +458,7 @@ export function EvaluateClient() {
                 <a
                   href={waHref}
                   onClick={() => trackEvaluateCta(leadId, "whatsapp")}
-                  className="text-[#C9A646] hover:underline"
+                  className="text-premium-gold hover:underline"
                   rel="noopener noreferrer"
                   target="_blank"
                 >
@@ -471,14 +471,14 @@ export function EvaluateClient() {
             <div
               role="button"
               tabIndex={0}
-              className="cursor-pointer rounded-2xl border border-[#C9A646]/25 bg-[#0B0B0B] p-6 sm:p-8 focus:outline-none focus:ring-2 focus:ring-[#C9A646]/40"
+              className="cursor-pointer rounded-2xl border border-premium-gold/25 bg-[#0B0B0B] p-6 sm:p-8 focus:outline-none focus:ring-2 focus:ring-premium-gold/40"
               onClick={() => trackEvaluateCta(leadId, "broker_card")}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") trackEvaluateCta(leadId, "broker_card");
               }}
             >
               <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
-                <div className="relative mx-auto h-36 w-28 shrink-0 overflow-hidden rounded-xl border-2 border-[#C9A646] sm:mx-0 sm:h-44 sm:w-32">
+                <div className="relative mx-auto h-36 w-28 shrink-0 overflow-hidden rounded-xl border-2 border-premium-gold sm:mx-0 sm:h-44 sm:w-32">
                   <Image
                     src="/images/broker.jpg"
                     alt="Mohamed Al Mashhour, Residential Real Estate Broker"
@@ -488,7 +488,7 @@ export function EvaluateClient() {
                   />
                 </div>
                 <div className="min-w-0 flex-1 text-center sm:text-left">
-                  <span className="inline-flex rounded-full border border-[#C9A646]/40 bg-[#C9A646]/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[#C9A646]">
+                  <span className="inline-flex rounded-full border border-premium-gold/40 bg-premium-gold/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-premium-gold">
                     Verified Broker
                   </span>
                   <p className="mt-3 text-xl font-bold text-white sm:text-2xl">Mohamed Al Mashhour</p>
@@ -496,7 +496,7 @@ export function EvaluateClient() {
                   <p className="mt-3 text-sm text-white/90">Get a professional evaluation with full market analysis.</p>
                   <a
                     href={`mailto:${CONTACT_EMAIL}?subject=Property%20evaluation%20follow-up`}
-                    className="mt-2 inline-block text-sm font-medium text-[#C9A646] hover:underline"
+                    className="mt-2 inline-block text-sm font-medium text-premium-gold hover:underline"
                     onClick={(e) => e.stopPropagation()}
                   >
                     {CONTACT_EMAIL}
@@ -525,7 +525,7 @@ export function EvaluateClient() {
                 setErrorMsg("");
                 window.scrollTo({ top: 0, behavior: "smooth" });
               }}
-              className="text-sm font-medium text-[#C9A646] hover:underline"
+              className="text-sm font-medium text-premium-gold hover:underline"
             >
               ← Evaluate another property
             </button>

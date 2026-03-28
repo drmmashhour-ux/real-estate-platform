@@ -111,7 +111,7 @@ export default async function AdminDisputesPage() {
   return (
     <HubLayout title="Disputes" hubKey="admin" navigation={hubNavigation.admin} showAdminInSwitcher={isHubAdminRole(role)}>
       <div className="mx-auto max-w-6xl space-y-2 px-4 py-8">
-        <Link href="/admin/dashboard" className="text-sm text-[#C9A646] hover:underline">
+        <Link href="/admin/dashboard" className="text-sm text-premium-gold hover:underline">
           ← Control center
         </Link>
         <h1 className="mt-3 text-2xl font-semibold text-white">Disputes</h1>

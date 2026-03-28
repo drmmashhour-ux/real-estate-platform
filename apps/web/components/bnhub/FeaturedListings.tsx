@@ -103,7 +103,7 @@ export async function FeaturedListings() {
                     </span>
                   ) : null}
                   {campaignFeatured.has(l.id) ? (
-                    <span className="mb-1 inline-block rounded bg-[#C9A646]/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#C9A646]">
+                    <span className="mb-1 inline-block rounded bg-premium-gold/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-premium-gold">
                       Promoted by campaign
                     </span>
                   ) : null}

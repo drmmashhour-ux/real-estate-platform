@@ -105,12 +105,12 @@ export function InvestmentMobileBottomNav() {
               href={href}
               className={`flex min-h-[52px] flex-col items-center justify-center gap-0.5 rounded-xl px-2 py-1.5 text-[10px] font-semibold transition ${
                 active
-                  ? "text-[#C9A646]"
+                  ? "text-premium-gold"
                   : "text-slate-400 active:text-white"
               }`}
               aria-current={active ? "page" : undefined}
             >
-              <span className={active ? "text-[#C9A646]" : "text-slate-500"}>
+              <span className={active ? "text-premium-gold" : "text-slate-500"}>
                 <Icon />
               </span>
               <span className="truncate tracking-tight">{label}</span>

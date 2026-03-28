@@ -237,7 +237,7 @@ export function ContractSign({ kind, fsboListingId, listingId, onSuccess, classN
             type="button"
             disabled={busy || !agree || signerName.trim().length < 2}
             onClick={() => void submit()}
-            className="mt-4 w-full rounded-xl bg-[#C9A646] py-3 text-sm font-bold text-black disabled:opacity-40"
+            className="mt-4 w-full rounded-xl bg-premium-gold py-3 text-sm font-bold text-black disabled:opacity-40"
           >
             {busy ? "Saving…" : "Sign & continue"}
           </button>

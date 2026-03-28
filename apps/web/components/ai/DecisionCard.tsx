@@ -67,7 +67,7 @@ export function DecisionCard({
 
   return (
     <section
-      className={`group relative overflow-hidden rounded-xl border-2 border-[#C9A646]/55 bg-[#111111] p-6 shadow-lg transition-all duration-300 ease-out hover:border-[#C9A646]/80 hover:shadow-xl motion-safe:hover:scale-[1.005] ${className}`}
+      className={`group relative overflow-hidden rounded-xl border-2 border-premium-gold/55 bg-[#111111] p-6 shadow-lg transition-all duration-300 ease-out hover:border-premium-gold/80 hover:shadow-xl motion-safe:hover:scale-[1.005] ${className}`}
       data-ai-priority={result.priorityLevel}
       data-ai-notification={notificationHint(result.priorityLevel)}
     >
@@ -76,17 +76,17 @@ export function DecisionCard({
         aria-hidden
       />
       <div
-        className="pointer-events-none absolute -end-16 -top-16 h-40 w-40 rounded-full bg-[#C9A646]/[0.07] blur-2xl transition-opacity duration-300 group-hover:opacity-100"
+        className="pointer-events-none absolute -end-16 -top-16 h-40 w-40 rounded-full bg-premium-gold/[0.07] blur-2xl transition-opacity duration-300 group-hover:opacity-100"
         aria-hidden
       />
 
       <div className="relative flex flex-wrap items-start justify-between gap-4">
         <div className="flex min-w-0 flex-1 gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[#C9A646]/35 bg-[#C9A646]/12 text-[#C9A646] shadow-[0_0_24px_rgba(201,166,70,0.15)]">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-premium-gold/35 bg-premium-gold/12 text-premium-gold shadow-[0_0_24px_rgb(var(--premium-gold-channels) / 0.15)]">
             <Sparkles className="h-6 w-6" strokeWidth={1.75} aria-hidden />
           </div>
           <div className="min-w-0 pt-0.5">
-            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#C9A646]/90">{title}</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-premium-gold/90">{title}</p>
             <h2 className="mt-2 font-serif text-xl font-semibold leading-snug tracking-tight text-white">
               {result.summary}
             </h2>
@@ -115,8 +115,8 @@ export function DecisionCard({
         </ul>
       ) : null}
 
-      <div className="relative mt-6 rounded-xl border border-[#C9A646]/25 bg-black/25 p-4">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#C9A646]/85">Next best action</p>
+      <div className="relative mt-6 rounded-xl border border-premium-gold/25 bg-black/25 p-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-premium-gold/85">Next best action</p>
         <p className="mt-2 text-sm leading-relaxed text-white/95">{result.nextBestAction}</p>
         {actionHref ? (
           <Link href={actionHref} className="btn-primary mt-4 inline-flex min-h-0 px-5 py-2.5 text-sm">
@@ -129,7 +129,7 @@ export function DecisionCard({
         {result.recommendations.slice(0, 4).map((rec) => (
           <div
             key={rec.title}
-            className="rounded-xl border border-white/10 bg-white/[0.03] p-3.5 transition-colors duration-200 hover:border-[#C9A646]/20"
+            className="rounded-xl border border-white/10 bg-white/[0.03] p-3.5 transition-colors duration-200 hover:border-premium-gold/20"
           >
             <p className="font-medium text-white">{rec.title}</p>
             <p className="mt-1.5 text-xs leading-relaxed text-premium-secondary">{rec.detail}</p>

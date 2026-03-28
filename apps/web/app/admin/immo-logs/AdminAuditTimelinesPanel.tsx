@@ -127,7 +127,7 @@ export function AdminAuditTimelinesPanel() {
 
   return (
     <section className="rounded-2xl border border-slate-700 bg-slate-900/40 p-4">
-      <h2 className="text-sm font-semibold text-[#C9A646]">Admin audit timelines</h2>
+      <h2 className="text-sm font-semibold text-premium-gold">Admin audit timelines</h2>
       <p className="mt-1 text-xs text-slate-500">
         UTC in database; browser-local display. Toggle “Raw UTC” for ISO-style audit lines. Default sort: newest first.
       </p>
@@ -148,7 +148,7 @@ export function AdminAuditTimelinesPanel() {
             type="button"
             onClick={() => setTab(k)}
             className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${
-              tab === k ? "bg-[#C9A646] text-black" : "bg-slate-800 text-slate-300"
+              tab === k ? "bg-premium-gold text-black" : "bg-slate-800 text-slate-300"
             }`}
           >
             {label}
@@ -222,7 +222,7 @@ export function AdminAuditTimelinesPanel() {
           type="button"
           disabled={loading}
           onClick={() => void load()}
-          className="rounded-xl bg-[#C9A646] px-4 py-2 text-sm font-semibold text-black disabled:opacity-40"
+          className="rounded-xl bg-premium-gold px-4 py-2 text-sm font-semibold text-black disabled:opacity-40"
         >
           {loading ? "Loading…" : "Load"}
         </button>

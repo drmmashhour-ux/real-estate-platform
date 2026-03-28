@@ -28,7 +28,7 @@ export function CityWhyInvestSection({
       <ul className="mt-6 space-y-2">
         {content.bullets.map((b) => (
           <li key={b} className="flex gap-2 text-sm text-slate-700">
-            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#C9A646]" aria-hidden />
+            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-premium-gold" aria-hidden />
             <span>{b}</span>
           </li>
         ))}
@@ -43,7 +43,7 @@ export function CityWhyInvestSection({
           FSBO homes
         </Link>
         {" · "}
-        <Link href={brokerHref} className="font-semibold text-slate-900 underline decoration-[#C9A646]/50 hover:decoration-[#C9A646]">
+        <Link href={brokerHref} className="font-semibold text-slate-900 underline decoration-premium-gold/50 hover:decoration-premium-gold">
           Trusted broker support
         </Link>
         .

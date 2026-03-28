@@ -41,7 +41,7 @@ export function ActionQueuePanel() {
         <button
           type="button"
           onClick={() => void load()}
-          className="text-xs text-[#C9A646] hover:underline"
+          className="text-xs text-premium-gold hover:underline"
         >
           Refresh
         </button>
@@ -62,7 +62,7 @@ export function ActionQueuePanel() {
                 setSelected(a);
                 setOpen(true);
               }}
-              className="w-full rounded-xl border border-white/10 bg-[#0B0B0B]/80 px-3 py-2 text-left text-sm text-slate-200 hover:border-[#C9A646]/40"
+              className="w-full rounded-xl border border-white/10 bg-[#0B0B0B]/80 px-3 py-2 text-left text-sm text-slate-200 hover:border-premium-gold/40"
             >
               <span className="font-medium text-white">{a.title}</span>
               <span className="ml-2 text-[10px] uppercase text-slate-500">{a.status}</span>

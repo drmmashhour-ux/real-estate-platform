@@ -29,7 +29,7 @@ export async function BrokerCityMarketSnapshot() {
               {r.label}
             </Link>
             <span className="text-slate-400">
-              Score <span className="font-semibold text-[#C9A646]">{r.score}</span>
+              Score <span className="font-semibold text-premium-gold">{r.score}</span>
               <span className="mx-1.5 text-slate-600">·</span>
               {r.bn} BNHub · {r.fs} FSBO
             </span>

@@ -68,7 +68,7 @@ export function AdminConversationsClient() {
                 key={r.id}
                 type="button"
                 onClick={() => setActiveId(r.id)}
-                className={`w-full px-4 py-3 text-left hover:bg-white/5 ${activeId === r.id ? "bg-[#C9A646]/10" : ""}`}
+                className={`w-full px-4 py-3 text-left hover:bg-white/5 ${activeId === r.id ? "bg-premium-gold/10" : ""}`}
               >
                 <p className="text-sm font-medium">
                   {r.lead?.name ?? r.clientUser?.email ?? "Guest"}{" "}
@@ -81,7 +81,7 @@ export function AdminConversationsClient() {
                 </p>
                 <div className="mt-2 flex flex-wrap gap-2 text-[10px]">
                   {r.leadId ? (
-                    <Link href="/admin/leads" className="text-[#C9A646] hover:underline">
+                    <Link href="/admin/leads" className="text-premium-gold hover:underline">
                       Lead: {r.leadId.slice(0, 8)}…
                     </Link>
                   ) : (
@@ -101,7 +101,7 @@ export function AdminConversationsClient() {
             <div className="max-h-[480px] space-y-3 overflow-y-auto">
               {messages.map((m) => (
                 <div key={m.id} className="rounded-lg border border-white/10 bg-black/30 p-3 text-sm">
-                  <span className="text-[10px] uppercase text-[#C9A646]">{m.sender}</span>
+                  <span className="text-[10px] uppercase text-premium-gold">{m.sender}</span>
                   <p className="mt-1 whitespace-pre-wrap text-[#E5E5E5]">{m.content}</p>
                   <p className="mt-2 text-[10px] text-[#737373]">{new Date(m.createdAt).toLocaleString()}</p>
                 </div>

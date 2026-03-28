@@ -166,12 +166,12 @@ export default async function SellerHubDashboardPage() {
 
         <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/[0.02] px-4 py-3 text-sm text-[#A1A1A1]">
           <p>
-            Plan: <span className="font-medium text-[#C9A646]">{user?.sellerPlan ?? "basic"}</span>
+            Plan: <span className="font-medium text-premium-gold">{user?.sellerPlan ?? "basic"}</span>
             {" · "}
             Role: <span className="text-white">{user?.role ?? "—"}</span>
           </p>
           <div className="flex flex-wrap gap-3">
-            <Link href="/dashboard/seller/listings" className="text-[#C9A646] hover:underline">
+            <Link href="/dashboard/seller/listings" className="text-premium-gold hover:underline">
               All listings
             </Link>
             {user?.sellerProfileAddress ? (
@@ -243,7 +243,7 @@ export default async function SellerHubDashboardPage() {
           <div className="mt-5 flex flex-wrap gap-3">
             <Link
               href="/dashboard/seller/documents"
-              className="rounded-xl bg-[#C9A646] px-4 py-2.5 text-center text-sm font-bold text-[#0B0B0B] hover:bg-[#E8C547]"
+              className="rounded-xl bg-premium-gold px-4 py-2.5 text-center text-sm font-bold text-[#0B0B0B] hover:bg-premium-gold"
             >
               Manage documents
             </Link>

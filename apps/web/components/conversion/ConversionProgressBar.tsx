@@ -15,7 +15,7 @@ export function ConversionProgressBar({
         <span>{pct}%</span>
       </div>
       <div className="h-2 w-full rounded-full bg-slate-800">
-        <div className="h-full rounded-full bg-[#C9A646]" style={{ width: `${pct}%` }} />
+        <div className="h-full rounded-full bg-premium-gold" style={{ width: `${pct}%` }} />
       </div>
     </div>
   );

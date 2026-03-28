@@ -3,11 +3,15 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getGuestId } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
+import { ensureDynamicAuthRequest } from "@/lib/auth/ensure-dynamic-request";
 
-const GOLD = "#C9A646";
+export { dynamic, revalidate } from "@/lib/auth/protected-route-segment";
+
+const GOLD = "var(--color-premium-gold)";
 const BG = "#0B0B0B";
 
 export default async function DashboardAdminLaunchLayout({ children }: { children: ReactNode }) {
+  await ensureDynamicAuthRequest();
   const id = await getGuestId();
   if (!id) redirect("/auth/login?next=/dashboard/admin/sales");
   const user = await prisma.user.findUnique({

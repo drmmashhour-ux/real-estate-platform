@@ -74,7 +74,7 @@ export function PartyIdentityFields({
 
   return (
     <div className="rounded-lg border border-white/10 bg-black/20 p-4">
-      <p className="text-xs font-semibold uppercase tracking-wide text-[#C9A646]">{label}</p>
+      <p className="text-xs font-semibold uppercase tracking-wide text-premium-gold">{label}</p>
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         <label className="block text-sm text-slate-300 sm:col-span-2">
           ID type
@@ -218,7 +218,7 @@ export function PartyIdentityFields({
                   href={party.idDocumentUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[#C9A646] hover:underline"
+                  className="text-premium-gold hover:underline"
                 >
                   View uploaded file
                 </a>

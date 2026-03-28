@@ -32,7 +32,7 @@ export default async function CaseStudiesIndexPage() {
   return (
     <main className="min-h-screen bg-[#0B0B0B] text-white">
       <section className="border-b border-white/10 px-4 py-14 text-center sm:px-6">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#C9A646]">Proof</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold">Proof</p>
         <h1 className="mt-4 text-3xl font-bold sm:text-4xl">Case studies</h1>
         <p className="mx-auto mt-4 max-w-2xl text-[#B3B3B3]">
           Real examples of challenges, approach, and results — published when we have a story worth sharing.
@@ -41,7 +41,7 @@ export default async function CaseStudiesIndexPage() {
 
       {featured ? (
         <section className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
-          <div className="overflow-hidden rounded-2xl border border-[#C9A646]/35 bg-gradient-to-br from-[#121212] to-[#0B0B0B] shadow-xl transition hover:-translate-y-0.5">
+          <div className="overflow-hidden rounded-2xl border border-premium-gold/35 bg-gradient-to-br from-[#121212] to-[#0B0B0B] shadow-xl transition hover:-translate-y-0.5">
             <div className="grid gap-0 md:grid-cols-2">
               <div className="relative aspect-[16/10] md:min-h-[280px]">
                 {featured.image ? (
@@ -53,13 +53,13 @@ export default async function CaseStudiesIndexPage() {
                 )}
               </div>
               <div className="flex flex-col justify-center p-8 md:p-10">
-                <span className="text-xs font-bold uppercase tracking-wider text-[#C9A646]">Featured</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-premium-gold">Featured</span>
                 <h2 className="mt-2 text-2xl font-bold text-white">{featured.title}</h2>
                 {featured.city ? <p className="mt-1 text-sm text-[#737373]">{featured.city}</p> : null}
                 <p className="mt-4 line-clamp-4 text-sm leading-relaxed text-[#B3B3B3]">{featured.summary}</p>
                 <Link
                   href={`/case-studies/${featured.id}`}
-                  className="mt-6 inline-flex w-fit rounded-xl bg-[#C9A646] px-5 py-2.5 text-sm font-bold text-[#0B0B0B] hover:bg-[#E8C547]"
+                  className="mt-6 inline-flex w-fit rounded-xl bg-premium-gold px-5 py-2.5 text-sm font-bold text-[#0B0B0B] hover:bg-premium-gold"
                 >
                   Read full story →
                 </Link>
@@ -81,7 +81,7 @@ export default async function CaseStudiesIndexPage() {
               <Link
                 key={c.id}
                 href={`/case-studies/${c.id}`}
-                className="group rounded-2xl border border-white/10 bg-[#121212] p-5 transition hover:-translate-y-0.5 hover:border-[#C9A646]/40"
+                className="group rounded-2xl border border-white/10 bg-[#121212] p-5 transition hover:-translate-y-0.5 hover:border-premium-gold/40"
               >
                 {c.image ? (
                   <div className="relative mb-4 aspect-video w-full overflow-hidden rounded-lg">
@@ -94,7 +94,7 @@ export default async function CaseStudiesIndexPage() {
                     />
                   </div>
                 ) : null}
-                <h3 className="font-semibold text-[#C9A646] group-hover:underline">{c.title}</h3>
+                <h3 className="font-semibold text-premium-gold group-hover:underline">{c.title}</h3>
                 {c.city ? <p className="text-xs text-[#737373]">{c.city}</p> : null}
                 <p className="mt-2 line-clamp-3 text-sm text-[#B3B3B3]">{c.summary}</p>
               </Link>
@@ -103,7 +103,7 @@ export default async function CaseStudiesIndexPage() {
         </section>
       ) : null}
 
-      <section className="border-t border-[#C9A646]/20 px-4 py-16 sm:px-6">
+      <section className="border-t border-premium-gold/20 px-4 py-16 sm:px-6">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="text-xl font-bold text-white">Discuss your property</h2>
           <div className="mx-auto mt-8 max-w-lg">

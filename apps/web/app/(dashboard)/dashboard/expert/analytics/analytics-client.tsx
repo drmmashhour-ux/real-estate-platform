@@ -37,14 +37,14 @@ export function ExpertAnalyticsClient() {
   return (
     <div className="mt-8 grid gap-4 sm:grid-cols-2">
       <div className="rounded-2xl border border-white/10 bg-[#121212] p-5">
-        <p className="text-xs font-bold uppercase tracking-wider text-[#C9A646]">Profile</p>
+        <p className="text-xs font-bold uppercase tracking-wider text-premium-gold">Profile</p>
         <p className="mt-2 text-sm text-white">Rating ★ {data.expert.rating.toFixed(1)}</p>
         <p className="text-sm text-[#B3B3B3]">{data.expert.reviewCount} reviews</p>
         <p className="mt-2 text-sm text-white">{data.expert.totalDeals} deals closed</p>
         <p className="text-sm text-[#B3B3B3]">${data.expert.totalRevenue.toLocaleString()} revenue (reported)</p>
       </div>
       <div className="rounded-2xl border border-white/10 bg-[#121212] p-5">
-        <p className="text-xs font-bold uppercase tracking-wider text-[#C9A646]">Lead caps</p>
+        <p className="text-xs font-bold uppercase tracking-wider text-premium-gold">Lead caps</p>
         <p className="mt-2 text-sm text-white">
           Today: {data.expert.currentLeadsToday} / {data.expert.maxLeadsPerDay}
         </p>
@@ -58,7 +58,7 @@ export function ExpertAnalyticsClient() {
         )}
       </div>
       <div className="rounded-2xl border border-white/10 bg-[#121212] p-5 sm:col-span-2">
-        <p className="text-xs font-bold uppercase tracking-wider text-[#C9A646]">Pipeline</p>
+        <p className="text-xs font-bold uppercase tracking-wider text-premium-gold">Pipeline</p>
         <div className="mt-3 grid gap-2 text-sm sm:grid-cols-3">
           <p className="text-[#B3B3B3]">
             Leads 24h: <span className="font-semibold text-white">{data.period.leadsAssigned24h}</span>

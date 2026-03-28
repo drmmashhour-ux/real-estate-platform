@@ -41,7 +41,7 @@ export function SellerDashboardTrustOverview({
     <div className="space-y-10">
       <div className="flex flex-col justify-between gap-6 border-b border-white/10 pb-8 sm:flex-row sm:items-end">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#C9A646]/90">Seller hub</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-premium-gold/90">Seller hub</p>
           <h1 className="mt-2 font-serif text-3xl font-semibold tracking-tight text-white md:text-4xl">
             Welcome back{firstName ? `, ${firstName}` : ""}
           </h1>
@@ -49,7 +49,7 @@ export function SellerDashboardTrustOverview({
         </div>
         <Link
           href="/dashboard/seller/create"
-          className="inline-flex min-h-[44px] items-center justify-center rounded-full bg-[#C9A646] px-6 py-3 text-sm font-bold text-[#0B0B0B] shadow-[0_0_24px_rgba(201,166,70,0.35)] transition duration-200 hover:bg-[#E8C547]"
+          className="inline-flex min-h-[44px] items-center justify-center rounded-full bg-premium-gold px-6 py-3 text-sm font-bold text-[#0B0B0B] shadow-[0_0_24px_rgb(var(--premium-gold-channels) / 0.35)] transition duration-200 hover:bg-premium-gold"
         >
           Add listing
         </Link>
@@ -65,7 +65,7 @@ export function SellerDashboardTrustOverview({
         </Card>
         <Card hoverable className="p-5">
           <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#A1A1A1]">Listings verified</p>
-          <p className="mt-3 font-serif text-3xl font-bold tabular-nums text-[#C9A646]">{stats.verifiedPct}%</p>
+          <p className="mt-3 font-serif text-3xl font-bold tabular-nums text-premium-gold">{stats.verifiedPct}%</p>
           <p className="mt-1 text-xs text-[#A1A1A1]">Identity verified</p>
         </Card>
         <Card hoverable className="p-5">
@@ -90,7 +90,7 @@ export function SellerDashboardTrustOverview({
               action={
                 <Link
                   href="/dashboard/seller/create"
-                  className="rounded-full bg-[#C9A646] px-5 py-2.5 text-sm font-bold text-[#0B0B0B]"
+                  className="rounded-full bg-premium-gold px-5 py-2.5 text-sm font-bold text-[#0B0B0B]"
                 >
                   Create listing
                 </Link>
@@ -111,7 +111,7 @@ export function SellerDashboardTrustOverview({
                   {listings.map((row) => (
                     <tr key={row.id} className="border-b border-white/5 transition hover:bg-white/[0.03]">
                       <td className="px-4 py-3">
-                        <Link href={`/dashboard/seller/listings/${row.id}`} className="font-medium text-[#C9A646] hover:underline">
+                        <Link href={`/dashboard/seller/listings/${row.id}`} className="font-medium text-premium-gold hover:underline">
                           {row.title}
                         </Link>
                         <p className="text-xs text-[#A1A1A1]">
@@ -146,8 +146,8 @@ export function SellerDashboardTrustOverview({
               <ul className="space-y-3">
                 {issues.map((issue) => (
                   <li key={issue.id}>
-                    <Link href={issue.href} className="group block rounded-xl border border-white/10 bg-white/[0.02] p-3 transition hover:border-[#C9A646]/35">
-                      <p className="text-sm font-medium text-white group-hover:text-[#C9A646]">{issue.title}</p>
+                    <Link href={issue.href} className="group block rounded-xl border border-white/10 bg-white/[0.02] p-3 transition hover:border-premium-gold/35">
+                      <p className="text-sm font-medium text-white group-hover:text-premium-gold">{issue.title}</p>
                       <p className="mt-1 text-xs text-[#A1A1A1]">{issue.detail}</p>
                     </Link>
                   </li>

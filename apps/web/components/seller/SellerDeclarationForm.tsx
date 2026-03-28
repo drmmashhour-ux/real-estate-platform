@@ -224,7 +224,7 @@ export function SellerDeclarationForm({
           </p>
 
           <div className="rounded-lg border border-white/10 bg-black/20 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-[#C9A646]">Property address (civic)</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-premium-gold">Property address (civic)</p>
             <p className="mt-1 text-xs text-slate-500">
               Must match your listing property type (e.g. condo usually has a unit number). Canadian postal code format
               (e.g. H2X 1Y1).
@@ -392,7 +392,7 @@ export function SellerDeclarationForm({
           <button
             type="button"
             onClick={() => patch({ sellers: [...value.sellers, emptyParty()] })}
-            className="rounded-lg border border-dashed border-[#C9A646]/50 px-4 py-2 text-sm font-medium text-[#C9A646] hover:bg-[#C9A646]/10"
+            className="rounded-lg border border-dashed border-premium-gold/50 px-4 py-2 text-sm font-medium text-premium-gold hover:bg-premium-gold/10"
           >
             + Add another seller
           </button>
@@ -930,14 +930,14 @@ export function SellerDeclarationForm({
             </h4>
             <p className="mt-2 text-sm text-slate-400">{help.explain}</p>
             <p className="mt-3 text-sm text-slate-300">
-              <span className="font-medium text-[#C9A646]">What to fill:</span> {help.whatToFill}
+              <span className="font-medium text-premium-gold">What to fill:</span> {help.whatToFill}
             </p>
             <p className="mt-2 text-sm text-slate-500">
               <span className="font-medium text-slate-400">Example:</span> {help.example}
             </p>
             <button
               type="button"
-              className="mt-4 w-full rounded-xl bg-[#C9A646] py-2.5 text-sm font-semibold text-black"
+              className="mt-4 w-full rounded-xl bg-premium-gold py-2.5 text-sm font-semibold text-black"
               onClick={() => setHelp(null)}
             >
               Close

@@ -3,6 +3,8 @@ import { InvestorShell } from "@/components/investor/InvestorShell";
 import { PlatformLegalGate } from "@/components/legal/PlatformLegalGate";
 import { getPlatformLegalGateStatus } from "@/lib/legal/platform-legal-status";
 
+export { dynamic, revalidate } from "@/lib/auth/protected-route-segment";
+
 export default async function InvestorPortalLayout({ children }: { children: React.ReactNode }) {
   const { userId } = await requireInvestorUser();
   const legal = await getPlatformLegalGateStatus(userId);

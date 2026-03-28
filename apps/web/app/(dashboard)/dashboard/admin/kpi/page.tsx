@@ -1,6 +1,6 @@
 import { KPIDashboard } from "@/components/internal/KPIDashboard";
 
-const GOLD = "#C9A646";
+const GOLD = "var(--color-premium-gold)";
 
 export const metadata = {
   title: "KPI dashboard | Admin",

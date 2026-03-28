@@ -3,7 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 
-const GOLD = "#C9A646";
+const GOLD = "var(--color-premium-gold)";
 
 function ReviewFormInner() {
   const searchParams = useSearchParams();
@@ -50,7 +50,7 @@ function ReviewFormInner() {
       {status !== "idle" ? (
         <p className={status === "ok" ? "text-sm text-emerald-400" : "text-sm text-red-400"}>{msg}</p>
       ) : null}
-      <label className="block text-xs font-semibold text-[#C9A646]/90">
+      <label className="block text-xs font-semibold text-premium-gold/90">
         Rating (1–5)
         <select
           value={rating}
@@ -64,7 +64,7 @@ function ReviewFormInner() {
           ))}
         </select>
       </label>
-      <label className="block text-xs font-semibold text-[#C9A646]/90">
+      <label className="block text-xs font-semibold text-premium-gold/90">
         Comment (optional)
         <textarea
           value={comment}
@@ -73,7 +73,7 @@ function ReviewFormInner() {
           className="mt-1 w-full rounded-xl border border-white/15 bg-[#0B0B0B] px-3 py-2 text-sm"
         />
       </label>
-      <label className="block text-xs font-semibold text-[#C9A646]/90">
+      <label className="block text-xs font-semibold text-premium-gold/90">
         Your email (optional)
         <input
           type="email"

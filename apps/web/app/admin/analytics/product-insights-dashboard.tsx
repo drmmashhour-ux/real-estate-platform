@@ -12,8 +12,8 @@ function Card({
   subtitle?: string;
 }) {
   return (
-    <div className="rounded-2xl border border-[#C9A646]/25 bg-gradient-to-br from-[#111111] to-[#0B0B0B] p-5 shadow-lg shadow-black/50">
-      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#C9A646]">{title}</p>
+    <div className="rounded-2xl border border-premium-gold/25 bg-gradient-to-br from-[#111111] to-[#0B0B0B] p-5 shadow-lg shadow-black/50">
+      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-premium-gold">{title}</p>
       <p className="mt-2 text-3xl font-semibold tracking-tight text-white">{value}</p>
       {subtitle ? <p className="mt-2 text-xs text-[#B3B3B3]">{subtitle}</p> : null}
     </div>
@@ -76,12 +76,12 @@ export function ProductInsightsDashboard({ data }: { data: ProductInsightsPayloa
 
       <div className="grid gap-4 md:grid-cols-2">
         <div className="rounded-2xl border border-white/10 bg-black/30 p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#C9A646]">Page visits (events)</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold">Page visits (events)</p>
           <p className="mt-2 text-2xl font-semibold text-white">{counts.VISIT_PAGE ?? 0}</p>
           <p className="mt-1 text-xs text-[#737373]">VISIT_PAGE rows (same window)</p>
         </div>
         <div className="rounded-2xl border border-white/10 bg-black/30 p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#C9A646]">Most used product feature</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold">Most used product feature</p>
           <p className="mt-2 text-xl font-semibold text-white">{mostUsedFeature ?? "—"}</p>
           <p className="mt-1 text-xs text-[#737373]">Among Analyze / Save / Compare (excludes visits)</p>
         </div>

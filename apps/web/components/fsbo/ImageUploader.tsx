@@ -20,7 +20,7 @@ type Props = {
   maxImages?: number;
 };
 
-const GOLD = "#C9A646";
+const GOLD = "var(--color-premium-gold)";
 
 function acceptAttribute(): string {
   // Keep client-side accept aligned with server-side support.
@@ -219,8 +219,8 @@ export function ImageUploader({
         className={[
           "relative cursor-pointer rounded-xl border-2 border-dashed px-4 py-10 text-center transition-colors",
           "bg-[#0B0B0B]",
-          dragOver && !blocked ? "border-[#E8C547] bg-[#141414]" : "border-white/20",
-          !blocked ? "hover:border-[#C9A646] hover:bg-[#111]" : "cursor-not-allowed opacity-60",
+          dragOver && !blocked ? "border-premium-gold bg-[#141414]" : "border-white/20",
+          !blocked ? "hover:border-premium-gold hover:bg-[#111]" : "cursor-not-allowed opacity-60",
         ].join(" ")}
         style={
           {
@@ -257,7 +257,7 @@ export function ImageUploader({
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={src} alt="" className="aspect-square w-full object-cover" />
               {i === 0 ? (
-                <span className="absolute left-2 top-2 rounded bg-black/70 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#C9A646]">
+                <span className="absolute left-2 top-2 rounded bg-black/70 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-premium-gold">
                   Exterior (required)
                 </span>
               ) : null}

@@ -5,7 +5,7 @@ import Link from "next/link";
 import type { PublicMortgageExpertCard } from "@/modules/mortgage/services/public-experts";
 import { getBrokerTelHref, getContactWhatsAppUrl } from "@/lib/config/contact";
 
-const GOLD = "#C9A646";
+const GOLD = "var(--color-premium-gold)";
 
 export function ExpertsDirectoryClient({ experts }: { experts: PublicMortgageExpertCard[] }) {
   return (
@@ -15,7 +15,7 @@ export function ExpertsDirectoryClient({ experts }: { experts: PublicMortgageExp
           <h2 className="text-xl font-bold text-white">Verified mortgage experts</h2>
           <p className="mt-1 text-sm text-[#B3B3B3]">
             Ranked by performance, client feedback, and platform tier. Request a match from the{" "}
-            <Link href="/mortgage" className="font-semibold text-[#C9A646] hover:underline">
+            <Link href="/mortgage" className="font-semibold text-premium-gold hover:underline">
               mortgage page
             </Link>
             .
@@ -33,10 +33,10 @@ export function ExpertsDirectoryClient({ experts }: { experts: PublicMortgageExp
             return (
               <li
                 key={ex.id}
-                className="rounded-2xl border border-[#C9A646]/30 bg-gradient-to-br from-[#121212] to-[#0B0B0B] p-6"
+                className="rounded-2xl border border-premium-gold/30 bg-gradient-to-br from-[#121212] to-[#0B0B0B] p-6"
               >
                 <div className="flex gap-4">
-                  <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl border border-[#C9A646]/40 bg-black">
+                  <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl border border-premium-gold/40 bg-black">
                     {ex.photo ? (
                       <Image
                         src={ex.photo}
@@ -56,7 +56,7 @@ export function ExpertsDirectoryClient({ experts }: { experts: PublicMortgageExp
                       {ex.badges.map((b) => (
                         <span
                           key={b}
-                          className="rounded-full border border-[#C9A646]/35 px-2 py-0.5 text-[9px] font-bold uppercase text-[#C9A646]"
+                          className="rounded-full border border-premium-gold/35 px-2 py-0.5 text-[9px] font-bold uppercase text-premium-gold"
                         >
                           {b}
                         </span>
@@ -87,7 +87,7 @@ export function ExpertsDirectoryClient({ experts }: { experts: PublicMortgageExp
                   </a>
                   <Link
                     href="/mortgage"
-                    className="rounded-xl border border-[#C9A646]/50 px-4 py-2 text-xs font-semibold text-[#C9A646] hover:bg-[#C9A646]/10"
+                    className="rounded-xl border border-premium-gold/50 px-4 py-2 text-xs font-semibold text-premium-gold hover:bg-premium-gold/10"
                   >
                     Request contact
                   </Link>

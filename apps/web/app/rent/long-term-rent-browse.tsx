@@ -107,10 +107,10 @@ export function LongTermRentBrowse() {
                 <Link
                   key={l.id}
                   href={`/rent/${l.id}`}
-                  className="group rounded-2xl border border-white/10 bg-white/[0.03] p-5 transition hover:border-[#C9A646]/40 hover:bg-white/[0.05]"
+                  className="group rounded-2xl border border-white/10 bg-white/[0.03] p-5 transition hover:border-premium-gold/40 hover:bg-white/[0.05]"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-[#C9A646]/90">
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-premium-gold/90">
                       Code: {l.listingCode}
                     </p>
                     {l.status === "RENTED" ? (
@@ -123,7 +123,7 @@ export function LongTermRentBrowse() {
                       </span>
                     )}
                   </div>
-                  <h3 className="mt-2 text-lg font-semibold text-white group-hover:text-[#C9A646]">{l.title}</h3>
+                  <h3 className="mt-2 text-lg font-semibold text-white group-hover:text-premium-gold">{l.title}</h3>
                   <p className="mt-1 line-clamp-2 text-sm text-[#888]">{l.address}</p>
                   <div className="mt-4 flex flex-wrap gap-4 text-sm">
                     <span className="text-white/80">

@@ -51,7 +51,7 @@ export function BrokerPricingConversion() {
             key={p.id}
             hoverable
             glow={p.highlight}
-            className={`relative flex flex-col p-6 ${p.highlight ? "ring-1 ring-[#C9A646]/40" : ""}`}
+            className={`relative flex flex-col p-6 ${p.highlight ? "ring-1 ring-premium-gold/40" : ""}`}
           >
             {p.badge ? (
               <Badge variant="gold" className="mb-3 w-fit">
@@ -59,12 +59,12 @@ export function BrokerPricingConversion() {
               </Badge>
             ) : null}
             <h2 className="text-lg font-semibold text-white">{p.name}</h2>
-            <p className="mt-2 font-serif text-3xl font-bold text-[#C9A646]">{p.price}</p>
+            <p className="mt-2 font-serif text-3xl font-bold text-premium-gold">{p.price}</p>
             <p className="mt-1 text-xs text-[#A1A1A1]">{p.blurb}</p>
             <ul className="mt-6 flex-1 space-y-2 text-sm text-[#A1A1A1]">
               {p.features.map((f) => (
                 <li key={f} className="flex gap-2">
-                  <span className="text-[#C9A646]" aria-hidden>
+                  <span className="text-premium-gold" aria-hidden>
                     ✓
                   </span>
                   {f}
@@ -75,8 +75,8 @@ export function BrokerPricingConversion() {
               href={p.id === "free" ? "/auth/signup" : buildPlanCheckoutHref("broker", p.id, PERIOD)}
               className={`mt-8 block rounded-full py-3 text-center text-sm font-bold transition duration-200 ${
                 p.highlight
-                  ? "bg-[#C9A646] text-[#0B0B0B] shadow-[0_0_24px_rgba(201,166,70,0.35)] hover:bg-[#E8C547]"
-                  : "border border-white/15 text-white hover:border-[#C9A646]/40"
+                  ? "bg-premium-gold text-[#0B0B0B] shadow-[0_0_24px_rgb(var(--premium-gold-channels) / 0.35)] hover:bg-premium-gold"
+                  : "border border-white/15 text-white hover:border-premium-gold/40"
               }`}
             >
               {p.id === "free" ? "Start free" : "Choose plan"}
@@ -100,7 +100,7 @@ export function BrokerPricingConversion() {
           </div>
           <Link
             href="/contact"
-            className="inline-flex shrink-0 items-center justify-center rounded-full border border-[#C9A646]/50 bg-[#C9A646]/10 px-8 py-3 text-sm font-semibold text-[#C9A646] transition hover:bg-[#C9A646]/20"
+            className="inline-flex shrink-0 items-center justify-center rounded-full border border-premium-gold/50 bg-premium-gold/10 px-8 py-3 text-sm font-semibold text-premium-gold transition hover:bg-premium-gold/20"
           >
             Talk to sales
           </Link>

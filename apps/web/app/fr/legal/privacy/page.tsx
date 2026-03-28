@@ -10,7 +10,7 @@ export default async function PrivacyPageFr() {
     <>
       <h1 className="text-3xl font-bold text-white">Politique de confidentialité</h1>
       <div
-        className="prose prose-invert mt-8 max-w-none prose-headings:text-[#E8C547] prose-p:text-[#D4D4D4] prose-a:text-[#C9A646]"
+        className="prose prose-invert mt-8 max-w-none prose-headings:text-premium-gold prose-p:text-[#D4D4D4] prose-a:text-premium-gold"
         dangerouslySetInnerHTML={{ __html: content }}
       />
     </>

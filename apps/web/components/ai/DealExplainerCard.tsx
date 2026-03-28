@@ -223,7 +223,7 @@ export function DealExplainerCard({
               <button
                 type="button"
                 onClick={() => setExpanded(true)}
-                className="mt-2 text-xs font-medium text-[#C9A646] hover:underline"
+                className="mt-2 text-xs font-medium text-premium-gold hover:underline"
               >
                 Show more
               </button>
@@ -252,7 +252,7 @@ export function DealExplainerCard({
           <span className="text-sm font-semibold text-white">{confPct}%</span>
         </div>
         <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-white/10">
-          <div className="h-full rounded-full bg-[#C9A646]/90 transition-all" style={{ width: `${confPct}%` }} />
+          <div className="h-full rounded-full bg-premium-gold/90 transition-all" style={{ width: `${confPct}%` }} />
         </div>
         <p className="mt-2 text-xs leading-relaxed text-slate-500">{confExplain}</p>
       </div>
@@ -269,7 +269,7 @@ export function DealExplainerCard({
                 onClick={() => setOpenFactorId(f.id)}
                 className="flex w-full items-start gap-2 rounded-lg px-1 py-1.5 text-left text-sm text-slate-300 transition hover:bg-white/5"
               >
-                <span className="mt-0.5 text-[#C9A646]">•</span>
+                <span className="mt-0.5 text-premium-gold">•</span>
                 <span className="flex-1">
                   {f.label}
                   <span className={`ml-2 text-xs ${f.impact === "positive" ? "text-emerald-400/90" : "text-rose-400/90"}`}>
@@ -300,21 +300,21 @@ export function DealExplainerCard({
         {smart === "contact" ? (
           <a
             href={contactHref}
-            className="block w-full rounded-lg bg-[#C9A646] px-4 py-2.5 text-center text-sm font-semibold text-black hover:bg-[#e8c547]"
+            className="block w-full rounded-lg bg-premium-gold px-4 py-2.5 text-center text-sm font-semibold text-black hover:bg-premium-gold"
           >
             Contact now
           </a>
         ) : smart === "verify" ? (
           <a
             href={requestInfoHref}
-            className="block w-full rounded-lg bg-[#C9A646] px-4 py-2.5 text-center text-sm font-semibold text-black hover:bg-[#e8c547]"
+            className="block w-full rounded-lg bg-premium-gold px-4 py-2.5 text-center text-sm font-semibold text-black hover:bg-premium-gold"
           >
             Verify documents
           </a>
         ) : (
           <a
             href={deeperHref}
-            className="block w-full rounded-lg bg-[#C9A646] px-4 py-2.5 text-center text-sm font-semibold text-black hover:bg-[#e8c547]"
+            className="block w-full rounded-lg bg-premium-gold px-4 py-2.5 text-center text-sm font-semibold text-black hover:bg-premium-gold"
           >
             Analyze deeper
           </a>

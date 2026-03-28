@@ -1,6 +1,6 @@
 # LECIPM brand assets
 
-Premium logo system: **one brand gold** (`#C9A646`, same as `--color-premium-gold` / `text-brand-gold` in the web app), black (`#000000`), white (`#FFFFFF`). Wordmark and tagline use this gold only (no multi-stop gradients).
+Premium logo system: **one brand gold** (`#D4AF37`, same as `--color-premium-gold` / `text-brand-gold` in the web app), black (`#000000`), white (`#FFFFFF`). Wordmark and tagline use this gold only (no multi-stop gradients).
 
 | File | Use |
 |------|-----|

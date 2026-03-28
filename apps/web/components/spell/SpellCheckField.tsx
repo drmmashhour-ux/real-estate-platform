@@ -117,7 +117,7 @@ export const SpellCheckField = forwardRef<SpellCheckFieldHandle, SpellCheckField
     const [fixing, setFixing] = useState(false);
 
     const baseTextClass = variant === "slate" ? "text-slate-100" : "text-white";
-    const caretClass = variant === "slate" ? "caret-emerald-400" : "caret-[#C9A646]";
+    const caretClass = variant === "slate" ? "caret-emerald-400" : "caret-premium-gold";
 
     const runCheck = useCallback(
       async (text: string, signal: AbortSignal) => {
@@ -264,7 +264,7 @@ export const SpellCheckField = forwardRef<SpellCheckFieldHandle, SpellCheckField
             disabled={Boolean(disabled) || fixing || !value.trim()}
             className={
               fixButtonClassName ||
-              `pointer-events-auto absolute right-0 top-0 z-20 translate-y-0 rounded-md border border-[#C9A646]/45 bg-[#0B0B0B]/95 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#C9A646] shadow-md backdrop-blur-sm transition hover:border-[#C9A646]/80 hover:bg-black disabled:cursor-not-allowed disabled:opacity-40 ${
+              `pointer-events-auto absolute right-0 top-0 z-20 translate-y-0 rounded-md border border-premium-gold/45 bg-[#0B0B0B]/95 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-premium-gold shadow-md backdrop-blur-sm transition hover:border-premium-gold/80 hover:bg-black disabled:cursor-not-allowed disabled:opacity-40 ${
                 variant === "slate"
                   ? "border-emerald-500/40 bg-slate-950/95 text-emerald-300 hover:border-emerald-400/70"
                   : ""

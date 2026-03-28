@@ -24,7 +24,7 @@ export function ExpertAlertBanner() {
     >
       <span className="font-semibold">New mortgage lead received — {n} unread</span>
       {" · "}
-      <Link href="/dashboard/expert/leads" className="font-bold text-[#C9A646] underline">
+      <Link href="/dashboard/expert/leads" className="font-bold text-premium-gold underline">
         View leads
       </Link>
     </div>

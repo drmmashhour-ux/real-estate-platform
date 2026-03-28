@@ -31,7 +31,7 @@ export function ActionInsightsPanel() {
     <section className="rounded-2xl border border-white/10 bg-black/30 p-4">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold text-white">Learning loop</h2>
-        <button type="button" onClick={() => void load()} className="text-xs text-[#C9A646] hover:underline">
+        <button type="button" onClick={() => void load()} className="text-xs text-premium-gold hover:underline">
           Refresh
         </button>
       </div>

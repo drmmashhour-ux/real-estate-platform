@@ -14,7 +14,7 @@ export default function StagingRestrictedPage() {
       <div className="mt-8 flex flex-wrap justify-center gap-3">
         <Link
           href="/auth/login"
-          className="rounded-xl bg-[#C9A646] px-5 py-2.5 text-sm font-semibold text-[#0B0B0B]"
+          className="rounded-xl bg-premium-gold px-5 py-2.5 text-sm font-semibold text-[#0B0B0B]"
         >
           Sign in with another account
         </Link>

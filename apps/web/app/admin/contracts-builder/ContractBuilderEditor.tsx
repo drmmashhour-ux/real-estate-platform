@@ -201,7 +201,7 @@ export function ContractBuilderEditor({ id }: { id: string }) {
   return (
     <div className="flex min-h-[calc(100vh-5rem)] flex-col">
       <div className="mb-4 flex flex-wrap items-center gap-3">
-        <Link href="/admin/contracts-builder" className="text-sm text-[#C9A646] hover:underline">
+        <Link href="/admin/contracts-builder" className="text-sm text-premium-gold hover:underline">
           ← Templates
         </Link>
       </div>
@@ -272,7 +272,7 @@ export function ContractBuilderEditor({ id }: { id: string }) {
                 type="button"
                 onClick={() => void save()}
                 disabled={saving}
-                className="rounded-xl bg-[#C9A646] px-4 py-2 text-sm font-semibold text-black hover:opacity-90 disabled:opacity-50"
+                className="rounded-xl bg-premium-gold px-4 py-2 text-sm font-semibold text-black hover:opacity-90 disabled:opacity-50"
               >
                 {saving ? "Saving…" : "Save template"}
               </button>
@@ -308,7 +308,7 @@ export function ContractBuilderEditor({ id }: { id: string }) {
                   id={`draft-section-${sec.key}`}
                   className="scroll-mt-4 rounded-2xl border border-white/10 bg-black/40 p-5 shadow-sm"
                 >
-                  <h3 className="border-b border-white/5 pb-3 text-base font-semibold text-[#E8C547]">
+                  <h3 className="border-b border-white/5 pb-3 text-base font-semibold text-premium-gold">
                     {sec.title}
                   </h3>
                   <div className="mt-4 space-y-5">

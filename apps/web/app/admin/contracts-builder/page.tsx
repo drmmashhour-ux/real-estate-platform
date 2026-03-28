@@ -6,7 +6,7 @@ import { seedContractDraftTemplatesIfEmpty } from "@/lib/contracts/seed-contract
 
 export const dynamic = "force-dynamic";
 
-const GOLD = "#C9A646";
+const GOLD = "var(--color-premium-gold)";
 
 export default async function AdminContractsBuilderPage() {
   const id = await getGuestId();

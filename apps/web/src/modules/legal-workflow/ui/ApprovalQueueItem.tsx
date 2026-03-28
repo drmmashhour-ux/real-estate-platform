@@ -16,7 +16,7 @@ export function ApprovalQueueItem({ item, selected, onSelect }: { item: QueueIte
     <button
       type="button"
       onClick={() => onSelect(item.documentId)}
-      className={`w-full rounded-xl border p-3 text-left transition ${selected ? "border-[#C9A646]/60 bg-[#C9A646]/10" : "border-white/10 bg-black/25 hover:bg-black/35"}`}
+      className={`w-full rounded-xl border p-3 text-left transition ${selected ? "border-premium-gold/60 bg-premium-gold/10" : "border-white/10 bg-black/25 hover:bg-black/35"}`}
     >
       <div className="flex items-start justify-between gap-2">
         <div>

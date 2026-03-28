@@ -22,8 +22,8 @@ export function LookingForSection() {
           ))}
         </div>
         <AnimatedReveal delayMs={asks.length * 50}>
-          <div className="mx-auto mt-10 max-w-2xl rounded-2xl border border-[#C9A646]/25 bg-gradient-to-br from-[#C9A646]/10 to-transparent px-6 py-6 text-center">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#C9A646]">Goal</p>
+          <div className="mx-auto mt-10 max-w-2xl rounded-2xl border border-premium-gold/25 bg-gradient-to-br from-premium-gold/10 to-transparent px-6 py-6 text-center">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold">Goal</p>
             <p className="mt-3 font-serif text-xl font-semibold tracking-tight text-white sm:text-2xl">
               Build the leading trusted real estate ecosystem
             </p>

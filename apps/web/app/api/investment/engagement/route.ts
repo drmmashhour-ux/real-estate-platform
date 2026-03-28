@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const userId = getSessionUserIdFromRequest(req);
+  const userId = await getSessionUserIdFromRequest(req);
   if (!userId) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }

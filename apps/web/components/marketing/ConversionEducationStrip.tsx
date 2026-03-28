@@ -35,15 +35,15 @@ export function ConversionEducationStrip({ variant }: { variant: Variant }) {
         ].map(([title, body]) => (
           <div
             key={title}
-            className="rounded-2xl border border-[#C9A646]/25 bg-[#121212] p-4 text-sm text-[#B3B3B3]"
+            className="rounded-2xl border border-premium-gold/25 bg-[#121212] p-4 text-sm text-[#B3B3B3]"
           >
-            <p className="text-xs font-bold uppercase tracking-wider text-[#C9A646]">{title}</p>
+            <p className="text-xs font-bold uppercase tracking-wider text-premium-gold">{title}</p>
             <p className="mt-2 leading-relaxed">{body}</p>
           </div>
         ))}
       </div>
       <p className="mt-6 text-center">
-        <Link href="/how-it-works" className="text-sm font-semibold text-[#C9A646] hover:underline">
+        <Link href="/how-it-works" className="text-sm font-semibold text-premium-gold hover:underline">
           See how LECIPM works →
         </Link>
       </p>

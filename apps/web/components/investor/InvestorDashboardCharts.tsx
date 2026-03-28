@@ -12,7 +12,7 @@ import {
 } from "recharts";
 import type { InvestorMetricsPayload } from "@/modules/investor/investor-metrics";
 
-const GOLD = "#C9A646";
+const GOLD = "var(--color-premium-gold)";
 
 export function InvestorDashboardCharts({ data }: { data: InvestorMetricsPayload }) {
   const combo = data.listingsGrowth.map((row, i) => ({

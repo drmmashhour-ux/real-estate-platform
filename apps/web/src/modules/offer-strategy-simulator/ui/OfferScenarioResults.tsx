@@ -60,7 +60,7 @@ export function OfferScenarioResults({
         <ImpactCard title="Readiness impact" v={result.readinessImpact} />
       </div>
       <div className="rounded-xl border border-white/10 bg-[#121212] p-4">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#C9A646]">Recommended strategy (illustrative)</p>
+        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-premium-gold">Recommended strategy (illustrative)</p>
         <p className="mt-2 text-sm leading-relaxed text-slate-200">{result.recommendedStrategy}</p>
         <p className="mt-3 text-xs text-slate-500">Confidence: {result.confidence}</p>
       </div>

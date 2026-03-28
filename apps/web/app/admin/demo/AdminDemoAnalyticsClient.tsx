@@ -94,15 +94,15 @@ export function AdminDemoAnalyticsClient() {
         <ul className="mt-2 max-h-40 overflow-auto rounded-lg border border-white/10 bg-black/20 text-xs">
           <li className="flex justify-between border-b border-white/5 px-3 py-2">
             <span className="text-slate-300">Listing views</span>
-            <span className="text-[#C9A646]">{funnel.view_listing}</span>
+            <span className="text-premium-gold">{funnel.view_listing}</span>
           </li>
           <li className="flex justify-between border-b border-white/5 px-3 py-2">
             <span className="text-slate-300">Contact broker</span>
-            <span className="text-[#C9A646]">{funnel.contact_broker}</span>
+            <span className="text-premium-gold">{funnel.contact_broker}</span>
           </li>
           <li className="flex justify-between px-3 py-2">
             <span className="text-slate-300">Create offer</span>
-            <span className="text-[#C9A646]">{funnel.create_offer}</span>
+            <span className="text-premium-gold">{funnel.create_offer}</span>
           </li>
         </ul>
       </div>
@@ -135,7 +135,7 @@ export function AdminDemoAnalyticsClient() {
             {(gd.stepCounts ?? []).map((row) => (
               <li key={row.stepId} className="flex justify-between border-b border-white/5 px-3 py-1.5 last:border-0">
                 <span className="font-mono text-slate-400">{row.stepId}</span>
-                <span className="text-[#C9A646]">{row.count}</span>
+                <span className="text-premium-gold">{row.count}</span>
               </li>
             ))}
           </ul>
@@ -172,7 +172,7 @@ export function AdminDemoAnalyticsClient() {
               (da.topListings ?? []).map((row) => (
                 <li key={row.listingId} className="flex justify-between border-b border-white/5 px-3 py-1.5 last:border-0">
                   <span className="truncate font-mono text-slate-400">{row.listingId}</span>
-                  <span className="text-[#C9A646]">{row.count}</span>
+                  <span className="text-premium-gold">{row.count}</span>
                 </li>
               ))
             )}
@@ -214,7 +214,7 @@ export function AdminDemoAnalyticsClient() {
                 <span className="truncate font-mono text-slate-300" title={row.listingId}>
                   {row.listingId.length > 28 ? `${row.listingId.slice(0, 28)}…` : row.listingId}
                 </span>
-                <span className="text-[#C9A646]">{row.count}</span>
+                <span className="text-premium-gold">{row.count}</span>
               </li>
             ))
           )}
@@ -232,7 +232,7 @@ export function AdminDemoAnalyticsClient() {
                 <span className="truncate text-slate-300" title={row.query}>
                   {row.query || "—"}
                 </span>
-                <span className="text-[#C9A646]">{row.count}</span>
+                <span className="text-premium-gold">{row.count}</span>
               </li>
             ))
           )}
@@ -255,7 +255,7 @@ export function AdminDemoAnalyticsClient() {
                 <span className="truncate font-mono text-slate-300" title={row.route}>
                   {row.route}
                 </span>
-                <span className="text-[#C9A646]">{row.count}</span>
+                <span className="text-premium-gold">{row.count}</span>
               </li>
             ))
           )}
@@ -268,7 +268,7 @@ export function AdminDemoAnalyticsClient() {
           {(data.byEvent ?? []).map((row) => (
             <li key={row.event} className="flex justify-between border-b border-white/5 px-3 py-2 last:border-0">
               <span className="text-slate-300">{row.event}</span>
-              <span className="text-[#C9A646]">{row.count}</span>
+              <span className="text-premium-gold">{row.count}</span>
             </li>
           ))}
         </ul>

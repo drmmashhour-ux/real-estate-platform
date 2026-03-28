@@ -24,7 +24,7 @@ export function ListingTrustBadge({ listingId, snapshot, role = "seller" }: Prop
   if (!snapshot) {
     return (
       <div className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-slate-400">
-        <span className="text-xs font-semibold uppercase tracking-wide text-[#C9A646]">Trust</span>
+        <span className="text-xs font-semibold uppercase tracking-wide text-premium-gold">Trust</span>
         <p className="mt-1 text-xs">Run a save to refresh trust readiness.</p>
       </div>
     );
@@ -43,7 +43,7 @@ export function ListingTrustBadge({ listingId, snapshot, role = "seller" }: Prop
   return (
     <div className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-slate-200">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="text-xs font-semibold uppercase tracking-wide text-[#C9A646]">Trust & readiness</span>
+        <span className="text-xs font-semibold uppercase tracking-wide text-premium-gold">Trust & readiness</span>
         {snapshot.displayScore != null ? (
           <span className="text-lg font-bold text-white">
             {snapshot.displayScore}
@@ -68,7 +68,7 @@ export function ListingTrustBadge({ listingId, snapshot, role = "seller" }: Prop
           {snapshot.recommendedActionsCount > 0 ? `${snapshot.recommendedActionsCount} recommended action(s)` : null}
         </p>
       ) : null}
-      <Link href={ctaHref} className="mt-2 inline-block text-xs font-medium text-[#C9A646] hover:underline">
+      <Link href={ctaHref} className="mt-2 inline-block text-xs font-medium text-premium-gold hover:underline">
         {ctaLabel}
       </Link>
     </div>

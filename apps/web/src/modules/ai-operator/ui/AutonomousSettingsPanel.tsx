@@ -67,7 +67,7 @@ export function AutonomousSettingsPanel() {
           <label
             key={m.id}
             className={`flex cursor-pointer gap-3 rounded-xl border px-3 py-2 text-left ${
-              mode === m.id ? "border-[#C9A646]/50 bg-[#C9A646]/10" : "border-white/10 bg-black/20"
+              mode === m.id ? "border-premium-gold/50 bg-premium-gold/10" : "border-white/10 bg-black/20"
             }`}
           >
             <input

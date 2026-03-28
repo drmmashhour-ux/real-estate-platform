@@ -34,11 +34,11 @@ export async function GET(
 <html lang="en"><head><meta charset="utf-8"/><title>${title}</title>
 <style>
   body{font-family:system-ui,Segoe UI,Roboto,sans-serif;background:#0b0b0b;color:#f5f5f5;padding:32px;max-width:720px;margin:0 auto;}
-  h1{color:#C9A646;font-size:22px;margin:0 0 8px;}
+  h1{color: 'var(--color-premium-gold)';font-size:22px;margin:0 0 8px;}
   .muted{color:#a3a3a3;font-size:13px;}
   .box{border:1px solid #333;border-radius:12px;padding:20px;margin-top:24px;background:#141414;}
   .row{display:flex;justify-content:space-between;margin:8px 0;}
-  .amt{font-size:28px;font-weight:700;color:#C9A646;margin-top:16px;}
+  .amt{font-size:28px;font-weight:700;color: 'var(--color-premium-gold)';margin-top:16px;}
   @media print{body{background:#fff;color:#000}h1{color:#000}.box{border-color:#ccc;background:#fff}}
 </style></head><body>
   <h1>${title}</h1>

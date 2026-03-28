@@ -83,7 +83,7 @@ export function OfferScenarioInputs({
       <div>
         <div className="flex justify-between text-xs text-slate-500">
           <label htmlFor={`${idPrefix}-offer`}>{presentationMode ? "Offer amount" : "Offer vs list (illustration)"}</label>
-          <span className="tabular-nums text-[#C9A646]">
+          <span className="tabular-nums text-premium-gold">
             ${offerDollars.toLocaleString(undefined, { maximumFractionDigits: 0 })}
           </span>
         </div>
@@ -95,7 +95,7 @@ export function OfferScenarioInputs({
           step={0.005}
           value={draft.offerRatio}
           onChange={(e) => onChange({ ...draft, offerRatio: Number(e.target.value) })}
-          className="mt-2 w-full accent-[#C9A646]"
+          className="mt-2 w-full accent-premium-gold"
         />
         <p className="mt-1 text-[11px] text-slate-500">
           {presentationMode
@@ -118,7 +118,7 @@ export function OfferScenarioInputs({
           value={draft.depositRatio ?? 0}
           disabled={draft.depositRatio === null}
           onChange={(e) => onChange({ ...draft, depositRatio: Number(e.target.value) })}
-          className="mt-2 w-full accent-[#C9A646] disabled:opacity-40"
+          className="mt-2 w-full accent-premium-gold disabled:opacity-40"
         />
         <label className="mt-2 flex cursor-pointer items-center gap-2 text-xs text-slate-400">
           <input

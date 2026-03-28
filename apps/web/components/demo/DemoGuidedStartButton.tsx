@@ -13,7 +13,7 @@ export function DemoGuidedStartButton() {
       <button
         type="button"
         onClick={() => startDemo()}
-        className="rounded-full border border-[#C9A646]/60 bg-[#121212]/95 px-4 py-2.5 text-xs font-semibold text-[#C9A646] shadow-lg backdrop-blur hover:bg-[#C9A646]/10 sm:text-sm"
+        className="rounded-full border border-premium-gold/60 bg-[#121212]/95 px-4 py-2.5 text-xs font-semibold text-premium-gold shadow-lg backdrop-blur hover:bg-premium-gold/10 sm:text-sm"
       >
         Start Guided Demo
       </button>

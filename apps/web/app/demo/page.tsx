@@ -13,7 +13,7 @@ export default function DemoHubPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
       <AnimatedReveal>
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#C9A646]">Product demo</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold">Product demo</p>
         <h1 className="mt-3 font-serif text-4xl font-semibold text-white">Experience the platform</h1>
         <p className="mt-4 text-slate-400">
           Choose a guided path. The full interactive tour runs inside the authenticated app (staging or when demo
@@ -26,7 +26,7 @@ export default function DemoHubPage() {
         <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <button
             type="button"
-            className="rounded-full bg-[#C9A646] px-6 py-3 text-sm font-semibold text-black hover:brightness-110"
+            className="rounded-full bg-premium-gold px-6 py-3 text-sm font-semibold text-black hover:brightness-110"
             onClick={() => {
               try {
                 localStorage.setItem("lecipm_demo_tour_id", "standard_user_tour");
@@ -42,7 +42,7 @@ export default function DemoHubPage() {
           </button>
           <button
             type="button"
-            className="rounded-full border border-white/20 px-6 py-3 text-sm font-semibold text-white hover:border-[#C9A646]/50"
+            className="rounded-full border border-white/20 px-6 py-3 text-sm font-semibold text-white hover:border-premium-gold/50"
             onClick={() => {
               try {
                 localStorage.setItem("lecipm_demo_tour_id", "investor_tour");

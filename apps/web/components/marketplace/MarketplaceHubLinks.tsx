@@ -49,7 +49,7 @@ export function MarketplaceHubLinks() {
               href={href}
               className={`rounded-lg px-2 py-2 text-xs font-medium transition sm:px-2.5 ${
                 active
-                  ? "bg-[#C9A646]/12 text-[#E8D5A3] ring-1 ring-[#C9A646]/40"
+                  ? "bg-premium-gold/12 text-premium-gold ring-1 ring-premium-gold/40"
                   : "text-slate-400 hover:bg-white/[0.04] hover:text-white"
               }`}
               aria-current={active ? "page" : undefined}

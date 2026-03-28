@@ -43,7 +43,7 @@ export function ScenarioHistoryItem({
           type="button"
           disabled={busy}
           onClick={onRestore}
-          className="rounded-md border border-white/15 px-2 py-1 text-xs text-slate-200 hover:border-[#C9A646]/50 disabled:opacity-50"
+          className="rounded-md border border-white/15 px-2 py-1 text-xs text-slate-200 hover:border-premium-gold/50 disabled:opacity-50"
         >
           Restore
         </button>

@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   description: "Browse listings, estimate payments, and connect with brokers — BuyHub on LECIPM. No login required to search.",
 };
 
-const GOLD = "#C9A646";
+const GOLD = "var(--color-premium-gold)";
 
 export default function BuyHubPage() {
   const sampleCity = GROWTH_CITY_SLUGS[0];
@@ -46,12 +46,12 @@ export default function BuyHubPage() {
               >
                 City guide ({sampleCity})
               </Link>
-              <Link href={HUB_DASHBOARDS.buyer} className="text-sm font-medium text-[#C9A646] hover:underline">
+              <Link href={HUB_DASHBOARDS.buyer} className="text-sm font-medium text-premium-gold hover:underline">
                 Buyer dashboard →
               </Link>
               <Link
                 href="/dashboard/buyer/inquiries"
-                className="text-sm font-medium text-slate-400 hover:text-[#C9A646]"
+                className="text-sm font-medium text-slate-400 hover:text-premium-gold"
               >
                 Your inquiries →
               </Link>

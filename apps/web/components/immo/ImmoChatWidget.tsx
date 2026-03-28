@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
-const GOLD = "#C9A646";
+const GOLD = "var(--color-premium-gold)";
 const STORAGE_KEY = "lecipm_immo_guest_session";
 
 function getOrCreateGuestId(): string {
@@ -140,20 +140,20 @@ export function ImmoChatWidget() {
         aria-expanded={open}
         aria-label="Open chat"
         onClick={() => setOpen((o) => !o)}
-        className="pointer-events-auto fixed bottom-6 left-4 z-50 flex h-14 w-14 items-center justify-center rounded-full border-2 border-[#C9A646]/50 bg-[#121212] text-xl shadow-[0_12px_40px_rgba(201, 166, 70,0.25)] transition hover:scale-105 hover:border-[#C9A646] md:bottom-8 md:left-8"
+        className="pointer-events-auto fixed bottom-6 left-4 z-50 flex h-14 w-14 items-center justify-center rounded-full border-2 border-premium-gold/50 bg-[#121212] text-xl shadow-[0_12px_40px_rgb(var(--premium-gold-channels) / 0.25)] transition hover:scale-105 hover:border-premium-gold md:bottom-8 md:left-8"
         style={{ color: GOLD }}
       >
         💬
       </button>
 
       <div
-        className={`fixed bottom-24 left-4 z-50 flex w-[min(100vw-2rem,380px)] flex-col overflow-hidden rounded-2xl border border-[#C9A646]/35 bg-[#0B0B0B]/98 shadow-[0_24px_80px_rgba(0,0,0,0.65)] backdrop-blur-lg transition-all duration-300 md:bottom-28 md:left-8 ${
+        className={`fixed bottom-24 left-4 z-50 flex w-[min(100vw-2rem,380px)] flex-col overflow-hidden rounded-2xl border border-premium-gold/35 bg-[#0B0B0B]/98 shadow-[0_24px_80px_rgba(0,0,0,0.65)] backdrop-blur-lg transition-all duration-300 md:bottom-28 md:left-8 ${
           open ? "pointer-events-auto max-h-[min(70vh,520px)] translate-y-0 opacity-100" : "pointer-events-none max-h-0 translate-y-4 opacity-0"
         }`}
       >
         <div
           className="flex items-center justify-between border-b border-white/10 px-4 py-3"
-          style={{ background: `linear-gradient(90deg, rgba(11,11,11,0.95), rgba(201, 166, 70,0.08))` }}
+          style={{ background: `linear-gradient(90deg, rgba(11,11,11,0.95), rgb(var(--premium-gold-channels) / 0.08))` }}
         >
           <div>
             <p className="text-xs font-bold uppercase tracking-wider" style={{ color: GOLD }}>
@@ -176,7 +176,7 @@ export function ImmoChatWidget() {
           <QuickChip label="Mortgage" onClick={() => void send("I need mortgage help.")} />
           <Link
             href="/search/bnhub"
-            className="rounded-full border border-[#C9A646]/35 bg-[#121212] px-2.5 py-1 text-[10px] font-semibold text-[#C9A646] hover:bg-[#C9A646]/10"
+            className="rounded-full border border-premium-gold/35 bg-[#121212] px-2.5 py-1 text-[10px] font-semibold text-premium-gold hover:bg-premium-gold/10"
           >
             Listings
           </Link>
@@ -196,7 +196,7 @@ export function ImmoChatWidget() {
               <div
                 className={`max-w-[88%] rounded-2xl px-3 py-2 text-sm leading-relaxed ${
                   m.sender === "user"
-                    ? "rounded-br-md bg-[#C9A646] text-black"
+                    ? "rounded-br-md bg-premium-gold text-black"
                     : m.sender === "expert"
                       ? "rounded-bl-md border border-emerald-500/40 bg-emerald-500/10 text-emerald-100"
                       : "rounded-bl-md border border-white/10 bg-[#121212] text-[#E5E5E5]"
@@ -221,7 +221,7 @@ export function ImmoChatWidget() {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), void send())}
               placeholder="Type a message…"
-              className="min-w-0 flex-1 rounded-xl border border-white/15 bg-[#121212] px-3 py-2.5 text-sm text-white placeholder:text-[#B3B3B3]/50 focus:border-[#C9A646]/50 focus:outline-none focus:ring-2 focus:ring-[#C9A646]/20"
+              className="min-w-0 flex-1 rounded-xl border border-white/15 bg-[#121212] px-3 py-2.5 text-sm text-white placeholder:text-[#B3B3B3]/50 focus:border-premium-gold/50 focus:outline-none focus:ring-2 focus:ring-premium-gold/20"
             />
             <button
               type="button"
@@ -235,7 +235,7 @@ export function ImmoChatWidget() {
           </div>
           <p className="mt-2 text-[10px] text-[#737373]">
             Not licensed advice — we connect you with verified professionals.{" "}
-            <Link href="/contact" className="underline hover:text-[#C9A646]">
+            <Link href="/contact" className="underline hover:text-premium-gold">
               Contact
             </Link>
           </p>
@@ -250,7 +250,7 @@ function QuickChip({ label, onClick }: { label: string; onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="rounded-full border border-white/15 bg-[#121212] px-2.5 py-1 text-[10px] font-medium text-[#E5E5E5] hover:border-[#C9A646]/40 hover:text-[#C9A646]"
+      className="rounded-full border border-white/15 bg-[#121212] px-2.5 py-1 text-[10px] font-medium text-[#E5E5E5] hover:border-premium-gold/40 hover:text-premium-gold"
     >
       {label}
     </button>

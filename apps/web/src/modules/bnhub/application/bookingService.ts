@@ -10,6 +10,7 @@ import {
 } from "@/src/modules/bnhub/infrastructure/bnhubRepository";
 import { utcDayStart } from "@/lib/bnhub/availability-day-helpers";
 import { prisma } from "@/lib/db";
+import { onGrowthAiCheckoutCompleted } from "@/src/modules/messaging/triggers";
 import { holdPaymentInEscrow, releasePaymentAfterStay } from "@/src/modules/bnhub/application/paymentService";
 import { generateListingTrustScore } from "@/src/modules/bnhub/application/trustService";
 
@@ -97,6 +98,7 @@ export async function confirmBooking(bookingId: string) {
   }
   const confirmed = await updateBookingStatus(bookingId, BookingStatus.CONFIRMED);
   await holdPaymentInEscrow(bookingId);
+  void onGrowthAiCheckoutCompleted(booking.guestId).catch(() => {});
   return confirmed;
 }
 

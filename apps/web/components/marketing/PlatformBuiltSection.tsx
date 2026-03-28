@@ -16,7 +16,7 @@ export function PlatformBuiltSection() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {points.map((line, i) => (
             <AnimatedReveal key={line} delayMs={i * 45}>
-              <div className="h-full rounded-2xl border border-[#C9A646]/15 bg-black/30 p-6">
+              <div className="h-full rounded-2xl border border-premium-gold/15 bg-black/30 p-6">
                 <p className="text-sm leading-relaxed text-slate-200">{line}</p>
               </div>
             </AnimatedReveal>

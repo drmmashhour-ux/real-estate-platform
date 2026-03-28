@@ -141,7 +141,7 @@ export function AccountingEntryForm({ entryType, categories, defaultStatus = "co
       <button
         type="submit"
         disabled={loading}
-        className="rounded-lg bg-[#C9A646] px-4 py-2 text-sm font-semibold text-black disabled:opacity-50"
+        className="rounded-lg bg-premium-gold px-4 py-2 text-sm font-semibold text-black disabled:opacity-50"
       >
         {loading ? "Saving…" : "Add entry"}
       </button>

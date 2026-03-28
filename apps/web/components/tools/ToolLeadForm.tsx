@@ -47,8 +47,8 @@ export function ToolLeadForm({
   }
 
   return (
-    <div className="rounded-xl border border-[#C9A646]/25 bg-black/50 p-4">
-      <p className="text-sm font-medium text-[#C9A646]">Send my estimate</p>
+    <div className="rounded-xl border border-premium-gold/25 bg-black/50 p-4">
+      <p className="text-sm font-medium text-premium-gold">Send my estimate</p>
       <p className="mt-1 text-xs text-slate-500">Optional — we&apos;ll store inputs/outputs with your request.</p>
       <div className="mt-3 grid gap-2 sm:grid-cols-2">
         <input
@@ -76,7 +76,7 @@ export function ToolLeadForm({
         type="button"
         disabled={loading || !email.includes("@")}
         onClick={() => void send()}
-        className="mt-3 rounded-lg bg-[#C9A646] px-4 py-2 text-sm font-semibold text-black disabled:opacity-40"
+        className="mt-3 rounded-lg bg-premium-gold px-4 py-2 text-sm font-semibold text-black disabled:opacity-40"
       >
         {loading ? "Sending…" : "Send my estimate"}
       </button>

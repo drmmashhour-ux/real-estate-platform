@@ -9,7 +9,7 @@ export const metadata = {
 export default function SellerDeclarationPropertyReferencePage() {
   return (
     <LegalPageLayout title="Seller declaration form (property)" backHref="/legal">
-      <div className="prose prose-invert max-w-none prose-headings:text-[#E8C547] prose-p:text-[#B3B3B3] prose-li:text-[#B3B3B3] prose-strong:text-[#E5E5E5]">
+      <div className="prose prose-invert max-w-none prose-headings:text-premium-gold prose-p:text-[#B3B3B3] prose-li:text-[#B3B3B3] prose-strong:text-[#E5E5E5]">
         <p className="text-sm text-[#9CA3AF]">
           This page is a readable reference for the declaration you complete in the host dashboard. The
           binding submission is the one you sign electronically there.

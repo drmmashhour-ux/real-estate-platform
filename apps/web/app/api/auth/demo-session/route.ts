@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { createDbSession } from "@/lib/auth/db-session";
 import { setGuestIdCookie } from "@/lib/auth/session";
 import { ensureReferralCode } from "@/lib/referrals";
 import { DEMO_AUTH_DISABLED_MESSAGE, isDemoAuthAllowed } from "@/lib/auth/demo-auth-allowed";
@@ -30,7 +31,8 @@ export async function POST(request: NextRequest) {
     }
     const res = NextResponse.json({ ok: true, userId: user.id });
     await ensureReferralCode(user.id).catch(() => {});
-    const cookie = setGuestIdCookie(user.id);
+    const sessionToken = await createDbSession(user.id);
+    const cookie = setGuestIdCookie(sessionToken);
     res.cookies.set(cookie.name, cookie.value, {
       path: cookie.path,
       maxAge: cookie.maxAge,

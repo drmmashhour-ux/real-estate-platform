@@ -1,4 +1,4 @@
-const GOLD = "#C9A646";
+const GOLD = "var(--color-premium-gold)";
 const CARD = "#121212";
 
 const CONTENT_IDEAS = [
@@ -30,7 +30,7 @@ export default function DashboardAdminContentPage() {
         </p>
         <h1 className="mt-2 text-3xl font-bold text-white">Content system</h1>
         <p className="mt-2 max-w-2xl text-sm text-[#B3B3B3]">
-          Ideas for posts and lead magnets. Pair with <strong className="text-[#C9A646]">Sales scripts</strong> for DMs.
+          Ideas for posts and lead magnets. Pair with <strong className="text-premium-gold">Sales scripts</strong> for DMs.
         </p>
       </div>
 
@@ -39,7 +39,7 @@ export default function DashboardAdminContentPage() {
         <ul className="mt-4 space-y-2 text-sm text-[#D1D5DB]">
           {CONTENT_IDEAS.map((idea) => (
             <li key={idea} className="flex items-start gap-2">
-              <span className="text-[#C9A646]" aria-hidden>
+              <span className="text-premium-gold" aria-hidden>
                 ✦
               </span>
               {idea}
@@ -48,13 +48,13 @@ export default function DashboardAdminContentPage() {
         </ul>
       </section>
 
-      <section className="rounded-2xl border border-[#C9A646]/25 p-6" style={{ background: CARD }}>
+      <section className="rounded-2xl border border-premium-gold/25 p-6" style={{ background: CARD }}>
         <h2 className="text-lg font-bold text-white">Traffic strategy panel</h2>
         <p className="mt-1 text-xs text-[#737373]">Where to fish for conversations — pair with DMs from Sales scripts.</p>
         <ul className="mt-4 space-y-4">
           {TRAFFIC_CHANNELS.map((ch) => (
             <li key={ch.name} className="rounded-xl border border-white/10 p-4">
-              <p className="font-semibold text-[#C9A646]">{ch.name}</p>
+              <p className="font-semibold text-premium-gold">{ch.name}</p>
               <p className="mt-2 text-sm text-[#B3B3B3]">{ch.tip}</p>
             </li>
           ))}

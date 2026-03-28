@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-const GOLD = "#C9A646";
+const GOLD = "var(--color-premium-gold)";
 
 export function ExpertTermsClient() {
   const router = useRouter();
@@ -43,7 +43,7 @@ export function ExpertTermsClient() {
       <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-white/10 bg-[#121212] px-4 py-3 text-sm text-[#E5E5E5]">
         <input
           type="checkbox"
-          className="mt-1 accent-[#C9A646]"
+          className="mt-1 accent-premium-gold"
           checked={agreed}
           onChange={(e) => setAgreed(e.target.checked)}
         />

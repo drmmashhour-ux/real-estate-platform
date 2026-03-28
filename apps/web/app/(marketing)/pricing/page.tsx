@@ -105,7 +105,7 @@ export default function PricingOverviewPage() {
 
         <p className="mt-16 text-center text-sm text-slate-500">
           {conversionCopy.upgrade.trustLine}. Taxes may apply. Enterprise or brokerage-wide rollouts —{" "}
-          <a href="/contact" className="text-[#C9A646] hover:underline">
+          <a href="/contact" className="text-premium-gold hover:underline">
             contact sales
           </a>
           .

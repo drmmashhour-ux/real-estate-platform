@@ -121,7 +121,7 @@ export function TeamDashboard({ workspaceId }: TeamDashboardProps) {
           </button>
           <Link
             href={`/dashboard/workspaces/${workspaceId}/monopoly`}
-            className="rounded-md border border-[#C9A646]/30 px-3 py-2 text-sm text-[#C9A646]/90 hover:bg-[#C9A646]/10"
+            className="rounded-md border border-premium-gold/30 px-3 py-2 text-sm text-premium-gold/90 hover:bg-premium-gold/10"
           >
             Monopoly layer
           </Link>

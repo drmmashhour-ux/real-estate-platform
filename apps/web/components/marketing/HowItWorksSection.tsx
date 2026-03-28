@@ -39,13 +39,13 @@ export function HowItWorksSection() {
           subtitle="Repeatable on every transaction — from intake to closed commission."
         />
         <div className="relative">
-          <div className="absolute left-[1.35rem] top-0 hidden h-full w-px bg-gradient-to-b from-[#C9A646]/60 via-white/10 to-transparent md:block" aria-hidden />
+          <div className="absolute left-[1.35rem] top-0 hidden h-full w-px bg-gradient-to-b from-premium-gold/60 via-white/10 to-transparent md:block" aria-hidden />
           <ol className="space-y-8">
             {steps.map((s, i) => (
               <AnimatedReveal key={s.n} delayMs={i * 70}>
                 <li className="relative flex flex-col gap-3 md:flex-row md:items-start md:gap-8">
                   <div className="flex items-center gap-3 md:w-40 md:shrink-0">
-                    <span className="flex h-11 w-11 items-center justify-center rounded-full border border-[#C9A646]/40 bg-[#C9A646]/10 text-sm font-bold text-[#C9A646]">
+                    <span className="flex h-11 w-11 items-center justify-center rounded-full border border-premium-gold/40 bg-premium-gold/10 text-sm font-bold text-premium-gold">
                       {s.n}
                     </span>
                     <span className="font-serif text-lg font-semibold text-white md:hidden">{s.title}</span>

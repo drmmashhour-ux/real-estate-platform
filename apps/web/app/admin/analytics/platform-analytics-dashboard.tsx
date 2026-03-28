@@ -34,15 +34,15 @@ type Payload = {
   };
 };
 
-const GOLD = "#C9A646";
-const GOLD_SOFT = "#E8C547";
+const GOLD = "var(--color-premium-gold)";
+const GOLD_SOFT = "var(--color-premium-gold)";
 const AXIS = "#6b7280";
-const GRID = "rgba(201, 166, 70, 0.12)";
+const GRID = "rgb(var(--premium-gold-channels) / 0.12)";
 
 function SummaryCard({ title, value, subtitle }: { title: string; value: string | number; subtitle?: string }) {
   return (
-    <div className="rounded-2xl border border-[#C9A646]/25 bg-gradient-to-br from-[#111111] to-[#0B0B0B] p-5 shadow-lg shadow-black/50">
-      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#C9A646]">{title}</p>
+    <div className="rounded-2xl border border-premium-gold/25 bg-gradient-to-br from-[#111111] to-[#0B0B0B] p-5 shadow-lg shadow-black/50">
+      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-premium-gold">{title}</p>
       <p className="mt-2 text-3xl font-semibold tracking-tight text-white">{value}</p>
       {subtitle ? <p className="mt-2 text-xs text-[#B3B3B3]">{subtitle}</p> : null}
     </div>
@@ -101,7 +101,7 @@ export function PlatformAnalyticsDashboard() {
     <div className="space-y-10">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#C9A646]">Platform metrics</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold">Platform metrics</p>
           <h2 className="mt-1 text-2xl font-semibold text-white">Traffic, listings &amp; closed deals</h2>
           <p className="mt-1 max-w-2xl text-sm text-[#B3B3B3]">
             Visitors from sitewide beacons; listings split broker vs self-serve; transactions = unique BNHub bookings
@@ -122,8 +122,8 @@ export function PlatformAnalyticsDashboard() {
               onClick={() => setRange(k)}
               className={`rounded-full px-4 py-2 text-sm font-medium transition ${
                 range === k
-                  ? "bg-[#C9A646] text-black shadow-lg shadow-[#C9A646]/30"
-                  : "border border-white/15 bg-black/40 text-[#E8C547] hover:border-[#C9A646]/50"
+                  ? "bg-premium-gold text-black shadow-lg shadow-premium-gold/30"
+                  : "border border-white/15 bg-black/40 text-premium-gold hover:border-premium-gold/50"
               }`}
             >
               {label}
@@ -132,7 +132,7 @@ export function PlatformAnalyticsDashboard() {
           <button
             type="button"
             onClick={() => void load()}
-            className="rounded-full border border-[#C9A646]/40 px-4 py-2 text-sm font-medium text-[#E8C547] transition hover:bg-[#C9A646]/10"
+            className="rounded-full border border-premium-gold/40 px-4 py-2 text-sm font-medium text-premium-gold transition hover:bg-premium-gold/10"
           >
             Refresh
           </button>
@@ -164,8 +164,8 @@ export function PlatformAnalyticsDashboard() {
             />
           </div>
 
-          <section className="rounded-2xl border border-[#C9A646]/20 bg-[#0B0B0B] p-4 sm:p-6">
-            <h3 className="text-sm font-semibold uppercase tracking-[0.15em] text-[#C9A646]">Visitors over time</h3>
+          <section className="rounded-2xl border border-premium-gold/20 bg-[#0B0B0B] p-4 sm:p-6">
+            <h3 className="text-sm font-semibold uppercase tracking-[0.15em] text-premium-gold">Visitors over time</h3>
             <div className="mt-4 h-72 w-full min-w-0">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
@@ -175,7 +175,7 @@ export function PlatformAnalyticsDashboard() {
                   <Tooltip
                     contentStyle={{
                       backgroundColor: "#111",
-                      border: "1px solid rgba(201, 166, 70,0.35)",
+                      border: "1px solid rgb(var(--premium-gold-channels) / 0.35)",
                       borderRadius: 12,
                     }}
                     labelStyle={{ color: GOLD_SOFT }}
@@ -188,8 +188,8 @@ export function PlatformAnalyticsDashboard() {
           </section>
 
           <div className="grid gap-6 lg:grid-cols-2">
-            <section className="rounded-2xl border border-[#C9A646]/20 bg-[#0B0B0B] p-4 sm:p-6">
-              <h3 className="text-sm font-semibold uppercase tracking-[0.15em] text-[#C9A646]">New listings by channel</h3>
+            <section className="rounded-2xl border border-premium-gold/20 bg-[#0B0B0B] p-4 sm:p-6">
+              <h3 className="text-sm font-semibold uppercase tracking-[0.15em] text-premium-gold">New listings by channel</h3>
               <p className="mt-1 text-xs text-[#888]">Broker vs self-listed (per day)</p>
               <div className="mt-4 h-80 w-full min-w-0">
                 <ResponsiveContainer width="100%" height="100%">
@@ -200,7 +200,7 @@ export function PlatformAnalyticsDashboard() {
                     <Tooltip
                       contentStyle={{
                         backgroundColor: "#111",
-                        border: "1px solid rgba(201, 166, 70,0.35)",
+                        border: "1px solid rgb(var(--premium-gold-channels) / 0.35)",
                         borderRadius: 12,
                       }}
                     />
@@ -212,8 +212,8 @@ export function PlatformAnalyticsDashboard() {
               </div>
             </section>
 
-            <section className="rounded-2xl border border-[#C9A646]/20 bg-[#0B0B0B] p-4 sm:p-6">
-              <h3 className="text-sm font-semibold uppercase tracking-[0.15em] text-[#C9A646]">Closed transactions</h3>
+            <section className="rounded-2xl border border-premium-gold/20 bg-[#0B0B0B] p-4 sm:p-6">
+              <h3 className="text-sm font-semibold uppercase tracking-[0.15em] text-premium-gold">Closed transactions</h3>
               <p className="mt-1 text-xs text-[#888]">Unique bookings (deduped) per UTC day</p>
               <div className="mt-4 h-80 w-full min-w-0">
                 <ResponsiveContainer width="100%" height="100%">
@@ -224,7 +224,7 @@ export function PlatformAnalyticsDashboard() {
                     <Tooltip
                       contentStyle={{
                         backgroundColor: "#111",
-                        border: "1px solid rgba(201, 166, 70,0.35)",
+                        border: "1px solid rgb(var(--premium-gold-channels) / 0.35)",
                         borderRadius: 12,
                       }}
                     />

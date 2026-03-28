@@ -90,7 +90,7 @@ export function WatchlistButton({ listingId, enabled }: Props) {
 
   return (
     <div className="rounded-xl border border-white/10 bg-[#121212] p-4">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#C9A646]">Watchlist</p>
+      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-premium-gold">Watchlist</p>
       <p className="mt-1 text-xs text-slate-500">
         Track this listing for rules-based score and risk change alerts (on-demand evaluation).
       </p>
@@ -103,7 +103,7 @@ export function WatchlistButton({ listingId, enabled }: Props) {
         type="button"
         onClick={() => void add()}
         disabled={status === "loading"}
-        className="mt-3 rounded-full border border-[#C9A646]/40 bg-[#C9A646]/10 px-4 py-2 text-xs font-semibold text-[#C9A646] transition hover:bg-[#C9A646]/20 disabled:opacity-50"
+        className="mt-3 rounded-full border border-premium-gold/40 bg-premium-gold/10 px-4 py-2 text-xs font-semibold text-premium-gold transition hover:bg-premium-gold/20 disabled:opacity-50"
       >
         {status === "loading" ? "Saving…" : "Add to watchlist"}
       </button>

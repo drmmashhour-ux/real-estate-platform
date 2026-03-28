@@ -107,7 +107,7 @@ export default async function AdminFinanceTaxesRemittancePage() {
         <div className="flex flex-wrap gap-3">
           <a
             href="/api/admin/finance/export?format=csv&type=tax_invoices"
-            className="rounded-xl bg-[#C9A646] px-4 py-2 text-sm font-semibold text-black"
+            className="rounded-xl bg-premium-gold px-4 py-2 text-sm font-semibold text-black"
           >
             Export invoice tax CSV
           </a>

@@ -8,7 +8,7 @@ export function ScenarioSimulatorCard({ scenarios }: { scenarios: ScenarioSummar
 
   return (
     <div className="rounded-2xl border border-white/10 bg-[#121212] p-5">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#C9A646]">Scenario simulator</p>
+      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-premium-gold">Scenario simulator</p>
       <p className="mt-1 text-xs text-slate-500">
         Illustrative rules-based projections — not market rent comps or guaranteed revenue.
       </p>

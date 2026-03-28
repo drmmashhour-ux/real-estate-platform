@@ -57,7 +57,7 @@ export default async function ShareLandingPage({ params }: Props) {
 
   return (
     <main className="mx-auto max-w-lg px-4 py-16 text-center">
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#C9A646]">Shared via LECIPM</p>
+      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold">Shared via LECIPM</p>
       <h1 className="mt-4 text-2xl font-semibold text-slate-900 dark:text-white">
         {link.title ?? "Property analysis"}
       </h1>
@@ -74,7 +74,7 @@ export default async function ShareLandingPage({ params }: Props) {
       {path ? (
         <Link
           href={path}
-          className="mt-10 inline-flex rounded-xl bg-[#C9A646] px-6 py-3 text-sm font-semibold text-black hover:bg-[#E8C547]"
+          className="mt-10 inline-flex rounded-xl bg-premium-gold px-6 py-3 text-sm font-semibold text-black hover:bg-premium-gold"
         >
           Open full analysis
         </Link>

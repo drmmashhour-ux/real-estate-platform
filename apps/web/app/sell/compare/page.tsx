@@ -54,7 +54,7 @@ export default function SellComparePage() {
       {/* Hero */}
       <section className="border-b border-white/10">
         <div className="mx-auto max-w-4xl px-4 py-14 text-center sm:px-6 lg:px-8">
-          <span className="inline-flex rounded-full border border-[#C9A646]/45 bg-[#C9A646]/10 px-4 py-1.5 text-xs font-semibold tracking-wide text-[#C9A646]">
+          <span className="inline-flex rounded-full border border-premium-gold/45 bg-premium-gold/10 px-4 py-1.5 text-xs font-semibold tracking-wide text-premium-gold">
             100% free consultation available
           </span>
           <h1 className="mt-6 text-3xl font-bold tracking-tight sm:text-4xl md:text-[2.75rem] md:leading-tight">
@@ -70,7 +70,7 @@ export default function SellComparePage() {
           </div>
           <Link
             href="/evaluate"
-            className="mt-8 inline-flex rounded-xl bg-[#C9A646] px-8 py-3.5 text-sm font-bold text-[#0B0B0B] shadow-lg shadow-black/40 transition hover:bg-[#E8C547]"
+            className="mt-8 inline-flex rounded-xl bg-premium-gold px-8 py-3.5 text-sm font-bold text-[#0B0B0B] shadow-lg shadow-black/40 transition hover:bg-premium-gold"
           >
             Get my FREE evaluation
           </Link>
@@ -86,16 +86,16 @@ export default function SellComparePage() {
           Same property — two paths. See where a licensed broker adds value.
         </p>
 
-        <div className="mt-10 overflow-hidden rounded-2xl border border-[#C9A646]/25 bg-[#121212] shadow-xl">
+        <div className="mt-10 overflow-hidden rounded-2xl border border-premium-gold/25 bg-[#121212] shadow-xl">
           {/* Header row (desktop) */}
-          <div className="hidden grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)_minmax(0,1.1fr)] border-b border-[#C9A646]/30 bg-[#0B0B0B] md:grid">
+          <div className="hidden grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)_minmax(0,1.1fr)] border-b border-premium-gold/30 bg-[#0B0B0B] md:grid">
             <div className="p-4" />
             <div className="border-l border-white/10 p-4 text-center">
               <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#B3B3B3]">Sell by yourself</p>
               <p className="mt-1 text-sm font-semibold text-white">FSBO</p>
             </div>
-            <div className="border-l border-[#C9A646]/30 bg-[#C9A646]/[0.06] p-4 text-center">
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#C9A646]">With a broker</p>
+            <div className="border-l border-premium-gold/30 bg-premium-gold/[0.06] p-4 text-center">
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-premium-gold">With a broker</p>
               <p className="mt-1 text-sm font-semibold text-white">{PLATFORM_NAME}</p>
             </div>
           </div>
@@ -108,7 +108,7 @@ export default function SellComparePage() {
               }`}
             >
               <div className="border-b border-white/10 p-5 md:border-b-0 md:border-r md:border-white/10 md:p-4">
-                <p className="text-sm font-semibold text-[#C9A646]">{row.label}</p>
+                <p className="text-sm font-semibold text-premium-gold">{row.label}</p>
               </div>
               <div className="border-b border-white/10 p-5 pt-0 md:border-b-0 md:border-r md:border-white/10 md:p-4">
                 <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#737373] md:hidden">FSBO</p>
@@ -119,8 +119,8 @@ export default function SellComparePage() {
                   {row.fsbo}
                 </p>
               </div>
-              <div className="bg-[#C9A646]/[0.04] p-5 pt-0 md:bg-transparent md:p-4">
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#C9A646] md:hidden">
+              <div className="bg-premium-gold/[0.04] p-5 pt-0 md:bg-transparent md:p-4">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-premium-gold md:hidden">
                   With a broker ({PLATFORM_NAME})
                 </p>
                 <p className="flex items-start gap-2 text-sm text-white">
@@ -145,7 +145,7 @@ export default function SellComparePage() {
       {/* OACIQ */}
       <section className="border-t border-white/10 bg-[#121212]/50 py-14">
         <div className="mx-auto max-w-3xl px-4 text-center sm:px-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#C9A646]">Regulation & trust</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold">Regulation & trust</p>
           <h2 className="mt-3 text-2xl font-bold text-white">OACIQ — Quebec real estate authority</h2>
           <p className="mt-4 text-[#B3B3B3]">
             Working with a licensed broker is regulated by{" "}
@@ -153,19 +153,19 @@ export default function SellComparePage() {
           </p>
           <ul className="mx-auto mt-6 max-w-xl space-y-3 text-left text-sm text-[#B3B3B3]">
             <li className="flex gap-3">
-              <span className="text-[#C9A646]">●</span>
+              <span className="text-premium-gold">●</span>
               <span>
                 <strong className="text-white">Protection</strong> — professional standards and oversight for the public.
               </span>
             </li>
             <li className="flex gap-3">
-              <span className="text-[#C9A646]">●</span>
+              <span className="text-premium-gold">●</span>
               <span>
                 <strong className="text-white">Transparency</strong> — clear rules on representation, contracts, and disclosures.
               </span>
             </li>
             <li className="flex gap-3">
-              <span className="text-[#C9A646]">●</span>
+              <span className="text-premium-gold">●</span>
               <span>
                 <strong className="text-white">Professionalism</strong> — trained, licensed brokers held to a code of ethics.
               </span>
@@ -176,9 +176,9 @@ export default function SellComparePage() {
 
       {/* Broker */}
       <section className="mx-auto max-w-4xl px-4 py-14 sm:px-6 lg:px-8">
-        <div className="overflow-hidden rounded-2xl border border-[#C9A646]/30 bg-gradient-to-br from-[#121212] to-[#0B0B0B] p-8 sm:p-10">
+        <div className="overflow-hidden rounded-2xl border border-premium-gold/30 bg-gradient-to-br from-[#121212] to-[#0B0B0B] p-8 sm:p-10">
           <div className="flex flex-col gap-8 sm:flex-row sm:items-center">
-            <div className="relative mx-auto h-44 w-36 shrink-0 overflow-hidden rounded-xl border-2 border-[#C9A646] bg-[#1a1a1a] sm:mx-0">
+            <div className="relative mx-auto h-44 w-36 shrink-0 overflow-hidden rounded-xl border-2 border-premium-gold bg-[#1a1a1a] sm:mx-0">
               <Image
                 src="/images/broker.jpg"
                 alt="Mohamed Al Mashhour, Residential Real Estate Broker"
@@ -189,7 +189,7 @@ export default function SellComparePage() {
               />
             </div>
             <div className="min-w-0 flex-1 text-center sm:text-left">
-              <span className="inline-flex rounded-full border border-[#C9A646]/40 bg-[#C9A646]/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[#C9A646]">
+              <span className="inline-flex rounded-full border border-premium-gold/40 bg-premium-gold/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-premium-gold">
                 Verified Broker
               </span>
               <h2 className="mt-4 text-2xl font-bold text-white">Mohamed Al Mashhour</h2>
@@ -205,21 +205,21 @@ export default function SellComparePage() {
       {/* Free value */}
       <section className="mx-auto max-w-3xl px-4 pb-14 sm:px-6 lg:px-8">
         <div className="rounded-2xl border border-white/10 bg-[#121212] px-6 py-8 text-center sm:px-10">
-          <h2 className="text-xl font-bold text-[#C9A646] sm:text-2xl">FREE services available</h2>
+          <h2 className="text-xl font-bold text-premium-gold sm:text-2xl">FREE services available</h2>
           <ul className="mx-auto mt-6 max-w-md space-y-3 text-left text-sm text-[#B3B3B3]">
             <li className="flex items-center gap-2">
-              <span className="text-[#C9A646]">✓</span> Free AI evaluation
+              <span className="text-premium-gold">✓</span> Free AI evaluation
             </li>
             <li className="flex items-center gap-2">
-              <span className="text-[#C9A646]">✓</span> Free consultation
+              <span className="text-premium-gold">✓</span> Free consultation
             </li>
             <li className="flex items-center gap-2">
-              <span className="text-[#C9A646]">✓</span> No obligation
+              <span className="text-premium-gold">✓</span> No obligation
             </li>
           </ul>
           <Link
             href="/evaluate"
-            className="mt-8 inline-flex rounded-xl bg-[#C9A646] px-8 py-3.5 text-sm font-bold text-[#0B0B0B] hover:bg-[#E8C547]"
+            className="mt-8 inline-flex rounded-xl bg-premium-gold px-8 py-3.5 text-sm font-bold text-[#0B0B0B] hover:bg-premium-gold"
           >
             Get my FREE evaluation
           </Link>
@@ -227,7 +227,7 @@ export default function SellComparePage() {
       </section>
 
       {/* Strong CTA */}
-      <section className="border-t border-[#C9A646]/20 bg-[#0B0B0B] py-16">
+      <section className="border-t border-premium-gold/20 bg-[#0B0B0B] py-16">
         <div className="mx-auto max-w-3xl px-4 text-center sm:px-6">
           <h2 className="text-2xl font-bold text-white sm:text-3xl">Get the best price for your property</h2>
           <p className="mt-3 text-sm text-[#737373]">No obligation · Free consultation · Local Quebec broker</p>

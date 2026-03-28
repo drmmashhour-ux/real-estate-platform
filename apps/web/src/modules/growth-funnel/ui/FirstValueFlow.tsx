@@ -72,7 +72,7 @@ export function FirstValueFlow() {
 
   return (
     <div className="rounded-2xl border border-white/10 bg-slate-950/80 p-6 text-slate-100 shadow-xl">
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#C9A646]/90">First value</p>
+      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold/90">First value</p>
       <h2 className="mt-2 text-xl font-semibold text-white">Simulate your first deal</h2>
       <p className="mt-2 max-w-xl text-sm text-slate-400">
         One click runs the offer-strategy model on a demo listing: risk signal, next actions, and a recommended strategy.

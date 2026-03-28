@@ -28,7 +28,7 @@ export default async function SellerHubDocumentsPage() {
   return (
     <main className="min-h-screen bg-[#0B0B0B] px-4 py-10 text-slate-100">
       <div className="mx-auto max-w-3xl">
-        <Link href="/dashboard/seller" className="text-sm text-[#C9A646] hover:underline">
+        <Link href="/dashboard/seller" className="text-sm text-premium-gold hover:underline">
           ← Seller dashboard
         </Link>
         <h1 className="mt-4 text-2xl font-semibold">Documents</h1>

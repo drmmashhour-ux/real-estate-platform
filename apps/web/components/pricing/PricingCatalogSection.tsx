@@ -40,7 +40,7 @@ export function PricingCatalogSection({
         {hasHeading ? (
           <div>
             {eyebrow ? (
-              <p className="text-xs font-semibold uppercase tracking-wider text-[#C9A646]/90">{eyebrow}</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-premium-gold/90">{eyebrow}</p>
             ) : null}
             {title ? (
               <h2 className="mt-1 font-serif text-2xl font-semibold text-white sm:text-3xl">{title}</h2>
@@ -78,7 +78,7 @@ export function PricingCatalogSection({
         <div className="mt-8 text-center">
           <Link
             href={detailsHref}
-            className="text-sm font-medium text-[#C9A646] transition hover:text-[#d4b45c] hover:underline"
+            className="text-sm font-medium text-premium-gold transition hover:text-[#d4b45c] hover:underline"
           >
             {detailsLabel} →
           </Link>

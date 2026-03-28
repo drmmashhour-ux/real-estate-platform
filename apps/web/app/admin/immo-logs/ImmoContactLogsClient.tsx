@@ -170,7 +170,7 @@ export function ImmoContactLogsClient({ variant = "table" }: Props) {
         <button
           type="button"
           onClick={() => void load()}
-          className="rounded-xl bg-[#C9A646] px-4 py-2 text-sm font-semibold text-black"
+          className="rounded-xl bg-premium-gold px-4 py-2 text-sm font-semibold text-black"
         >
           Refresh
         </button>
@@ -178,7 +178,7 @@ export function ImmoContactLogsClient({ variant = "table" }: Props) {
 
       {riskSummary ? (
         <section className="rounded-2xl border border-slate-700 bg-slate-900/50 p-4">
-          <h2 className="text-sm font-semibold text-[#C9A646]">24h legal risk snapshot</h2>
+          <h2 className="text-sm font-semibold text-premium-gold">24h legal risk snapshot</h2>
           <p className="mt-2 text-sm text-slate-300">{riskSummary}</p>
         </section>
       ) : null}
@@ -192,11 +192,11 @@ export function ImmoContactLogsClient({ variant = "table" }: Props) {
           ) : (
             byDay.map(([day, dayRows]) => (
               <div key={day}>
-                <p className="text-xs font-semibold uppercase tracking-wide text-[#C9A646]">{day}</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-premium-gold">{day}</p>
                 <ul className="relative mt-3 border-l border-slate-700 pl-6">
                   {dayRows.map((r) => (
                     <li key={r.id} className="relative mb-4 pl-0">
-                      <span className="absolute -left-[21px] top-1.5 h-2 w-2 rounded-full bg-[#C9A646]" />
+                      <span className="absolute -left-[21px] top-1.5 h-2 w-2 rounded-full bg-premium-gold" />
                       <p className="text-xs text-slate-500">
                         {formatAuditDateTime(r.actionAt ?? r.createdAt, { showTimezone: true, relative: true })}
                       </p>

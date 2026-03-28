@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useDemo } from "@/components/demo/demo-context";
 import { DemoProgressBar } from "@/components/demo/DemoProgressBar";
 
-const GOLD = "#C9A646";
+const GOLD = "var(--color-premium-gold)";
 
 export function DemoOverlay() {
   const pathname = usePathname();
@@ -96,7 +96,7 @@ export function DemoOverlay() {
 
       {rect && step.highlight ? (
         <div
-          className="pointer-events-none absolute rounded-lg ring-2 ring-[#C9A646] ring-offset-2 ring-offset-black/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.5)]"
+          className="pointer-events-none absolute rounded-lg ring-2 ring-premium-gold ring-offset-2 ring-offset-black/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.5)]"
           style={{
             top: rect.top,
             left: rect.left,
@@ -133,7 +133,7 @@ export function DemoOverlay() {
             type="button"
             onClick={explainMore}
             disabled={aiLoading}
-            className="rounded-lg border border-[#C9A646]/50 px-3 py-2 text-xs font-medium text-[#C9A646] hover:bg-[#C9A646]/10 disabled:opacity-50"
+            className="rounded-lg border border-premium-gold/50 px-3 py-2 text-xs font-medium text-premium-gold hover:bg-premium-gold/10 disabled:opacity-50"
           >
             {aiLoading ? "…" : "Explain more"}
           </button>
@@ -148,7 +148,7 @@ export function DemoOverlay() {
           <button
             type="button"
             onClick={nextStep}
-            className="rounded-lg bg-[#C9A646] px-3 py-2 text-xs font-semibold text-black hover:brightness-110"
+            className="rounded-lg bg-premium-gold px-3 py-2 text-xs font-semibold text-black hover:brightness-110"
           >
             {currentStepIndex >= totalSteps - 1 ? "Finish" : "Next"}
           </button>

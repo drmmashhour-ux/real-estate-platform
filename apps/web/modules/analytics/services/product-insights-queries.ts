@@ -5,13 +5,14 @@ import { countFeedbackWords } from "@/modules/analytics/services/feedback-word-c
 const DAYS = 30;
 
 const EVENT_LABEL: Record<UserEventType, string> = {
+  ...Object.fromEntries(Object.values(UserEventType).map((t) => [t, String(t).replace(/_/g, " ")])),
   [UserEventType.ANALYZE]: "Analyze",
   [UserEventType.SAVE_DEAL]: "Save deal",
   [UserEventType.COMPARE]: "Compare",
   [UserEventType.VISIT_PAGE]: "Page visit",
   [UserEventType.WAITLIST_SIGNUP]: "Waitlist signup",
   [UserEventType.RETURN_VISIT]: "Return visit",
-};
+} as Record<UserEventType, string>;
 
 export type GrowthMetrics = {
   emailsCollectedTotal: number;
@@ -83,14 +84,10 @@ export async function getProductInsightsPayload(): Promise<ProductInsightsPayloa
     }),
   ]);
 
-  const counts: Record<string, number> = {
-    ANALYZE: 0,
-    SAVE_DEAL: 0,
-    COMPARE: 0,
-    VISIT_PAGE: 0,
-    WAITLIST_SIGNUP: 0,
-    RETURN_VISIT: 0,
-  };
+  const counts: Record<string, number> = {};
+  for (const t of Object.values(UserEventType)) {
+    counts[t] = 0;
+  }
   for (const g of grouped) {
     counts[g.eventType] = g._count;
   }

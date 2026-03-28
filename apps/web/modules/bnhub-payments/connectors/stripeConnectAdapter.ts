@@ -79,6 +79,7 @@ export class StripeConnectAdapter implements MarketplacePaymentProcessorAdapter 
     const s = stripe();
     if (!s) return { error: "Stripe not configured" };
     const paymentIntentData: Stripe.Checkout.SessionCreateParams.PaymentIntentData = {
+      metadata: input.metadata,
       ...(input.captureMethod === "manual" ? { capture_method: "manual" } : {}),
       ...(input.connect && input.connect.destinationAccountId
         ? {
@@ -104,7 +105,7 @@ export class StripeConnectAdapter implements MarketplacePaymentProcessorAdapter 
         success_url: input.successUrl,
         cancel_url: input.cancelUrl,
         metadata: input.metadata,
-        ...(Object.keys(paymentIntentData).length ? { payment_intent_data: paymentIntentData } : {}),
+        payment_intent_data: paymentIntentData,
       });
       const url = session.url;
       if (!url) return { error: "Failed to get checkout URL" };
@@ -114,6 +115,10 @@ export class StripeConnectAdapter implements MarketplacePaymentProcessorAdapter 
     }
   }
 
+  /**
+   * Not used for BNHub guest payments — guests pay via {@link createPaymentSession} (hosted Checkout) only.
+   * Kept for potential non-card flows or tests; never collect card data on your servers.
+   */
   async createPaymentIntent(input: CreatePaymentIntentInput) {
     const s = stripe();
     if (!s) return { error: "Stripe not configured" };

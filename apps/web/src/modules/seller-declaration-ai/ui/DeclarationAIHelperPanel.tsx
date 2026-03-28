@@ -34,7 +34,7 @@ export function DeclarationAIHelperPanel({
     <aside className="space-y-3 rounded-xl border border-white/10 bg-black/25 p-4">
       <div className="flex items-center justify-between">
         <p className="text-sm font-semibold text-white">AI helper panel</p>
-        <button type="button" onClick={onGenerateFollowUp} className="text-xs text-[#C9A646] hover:underline">Refresh follow-up</button>
+        <button type="button" onClick={onGenerateFollowUp} className="text-xs text-premium-gold hover:underline">Refresh follow-up</button>
       </div>
 
       <div className="rounded-lg border border-white/10 bg-black/35 p-3">

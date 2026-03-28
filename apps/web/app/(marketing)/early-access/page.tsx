@@ -24,7 +24,7 @@ function LeadFormFallback() {
 export default function EarlyAccessPage() {
   return (
     <main className="mx-auto min-h-[70vh] max-w-2xl px-4 py-16 text-white">
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#C9A646]">BNHub</p>
+      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold">BNHub</p>
       <h1 className="mt-3 text-3xl font-semibold tracking-tight">Early access</h1>
       <p className="mt-3 text-sm leading-relaxed text-[#B3B3B3]">
         Verified stays, fair pricing for guests; visibility and lower friction for hosts. Join the first wave — we
@@ -33,7 +33,7 @@ export default function EarlyAccessPage() {
       <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
         <Link
           href="/bnhub/stays"
-          className="inline-flex min-h-[44px] flex-1 items-center justify-center rounded-xl border border-[#C9A646]/40 bg-[#C9A646]/10 px-5 text-sm font-semibold text-[#C9A646] transition hover:bg-[#C9A646]/20"
+          className="inline-flex min-h-[44px] flex-1 items-center justify-center rounded-xl border border-premium-gold/40 bg-premium-gold/10 px-5 text-sm font-semibold text-premium-gold transition hover:bg-premium-gold/20"
         >
           Find your stay
         </Link>

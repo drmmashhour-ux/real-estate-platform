@@ -96,9 +96,9 @@ export function TrustCredibilitySections() {
     <section className="border-t border-white/10 bg-[#0B0B0B] px-4 py-16 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl space-y-12">
         {/* Trusted platform */}
-        <div className="rounded-3xl border border-[#C9A646]/25 bg-gradient-to-br from-[#121212] to-[#0B0B0B] p-8 sm:p-10">
+        <div className="rounded-3xl border border-premium-gold/25 bg-gradient-to-br from-[#121212] to-[#0B0B0B] p-8 sm:p-10">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
-            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#C9A646]/12 text-[#C9A646]">
+            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-premium-gold/12 text-premium-gold">
               <IconShield className="h-8 w-8" />
             </span>
             <div>
@@ -109,19 +109,19 @@ export function TrustCredibilitySections() {
               </p>
               <ul className="mt-6 flex flex-nowrap items-center gap-2 overflow-x-auto pb-1 text-xs font-medium text-[#9CA3AF] sm:gap-4 sm:text-sm">
                 <li className="inline-flex shrink-0 items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5">
-                  <span className="text-[#C9A646]" aria-hidden>
+                  <span className="text-premium-gold" aria-hidden>
                     ✓
                   </span>
                   Structured analysis
                 </li>
                 <li className="inline-flex shrink-0 items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5">
-                  <span className="text-[#C9A646]" aria-hidden>
+                  <span className="text-premium-gold" aria-hidden>
                     ✓
                   </span>
                   Secure, modern stack
                 </li>
                 <li className="inline-flex shrink-0 items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5">
-                  <span className="text-[#C9A646]" aria-hidden>
+                  <span className="text-premium-gold" aria-hidden>
                     ✓
                   </span>
                   Transparent methodology
@@ -135,7 +135,7 @@ export function TrustCredibilitySections() {
           {/* Professional identity */}
           <div className="rounded-2xl border border-white/10 bg-[#121212] p-6 sm:p-8">
             <div className="flex items-start gap-4">
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#C9A646]/10 text-[#C9A646]">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-premium-gold/10 text-premium-gold">
                 <IconUserBadge className="h-6 w-6" />
               </span>
               <div>
@@ -153,34 +153,34 @@ export function TrustCredibilitySections() {
             <h3 className="text-lg font-semibold text-white">Contact &amp; presence</h3>
             <ul className="mt-5 space-y-4 text-sm text-[#B3B3B3]">
               <li className="flex gap-3">
-                <IconMapPin className="mt-0.5 h-5 w-5 shrink-0 text-[#C9A646]" />
+                <IconMapPin className="mt-0.5 h-5 w-5 shrink-0 text-premium-gold" />
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wide text-[#737373]">Location</p>
                   <p className="mt-0.5 text-white">{officeAddress}</p>
                 </div>
               </li>
               <li className="flex gap-3">
-                <IconMail className="mt-0.5 h-5 w-5 shrink-0 text-[#C9A646]" />
+                <IconMail className="mt-0.5 h-5 w-5 shrink-0 text-premium-gold" />
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wide text-[#737373]">Email</p>
-                  <a href={mailto} className="mt-0.5 font-medium text-white hover:text-[#C9A646]">
+                  <a href={mailto} className="mt-0.5 font-medium text-white hover:text-premium-gold">
                     {email}
                   </a>
                 </div>
               </li>
               {phoneTel ? (
                 <li className="flex gap-3">
-                  <IconPhone className="mt-0.5 h-5 w-5 shrink-0 text-[#C9A646]" />
+                  <IconPhone className="mt-0.5 h-5 w-5 shrink-0 text-premium-gold" />
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-wide text-[#737373]">Phone</p>
-                    <a href={phoneTel} className="mt-0.5 font-medium text-white hover:text-[#C9A646]">
+                    <a href={phoneTel} className="mt-0.5 font-medium text-white hover:text-premium-gold">
                       {phoneDisplay}
                     </a>
                   </div>
                 </li>
               ) : (
                 <li className="flex gap-3">
-                  <IconPhone className="mt-0.5 h-5 w-5 shrink-0 text-[#C9A646]" />
+                  <IconPhone className="mt-0.5 h-5 w-5 shrink-0 text-premium-gold" />
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-wide text-[#737373]">Phone</p>
                     <p className="mt-0.5 text-[#737373]">Configure in deployment (see contact settings).</p>
@@ -190,7 +190,7 @@ export function TrustCredibilitySections() {
             </ul>
             <p className="mt-6 text-xs text-[#737373]">
               Prefer a form?{" "}
-              <Link href="/contact" className="font-medium text-[#C9A646] hover:underline">
+              <Link href="/contact" className="font-medium text-premium-gold hover:underline">
                 Contact us
               </Link>
             </p>

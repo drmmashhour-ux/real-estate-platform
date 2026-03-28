@@ -24,6 +24,9 @@ import {
   attachCheckoutSessionToReservationPayment,
   prepareReservationPaymentForCheckout,
 } from "@/modules/bnhub-payments/services/paymentService";
+import { trackEvent } from "@/src/services/analytics";
+import { onCheckoutStartAutomation } from "@/src/services/automation";
+import { onMessagingTriggerCheckoutStarted } from "@/src/modules/messaging/triggers";
 
 export const dynamic = "force-dynamic";
 
@@ -106,6 +109,9 @@ export async function POST(request: NextRequest) {
       flow: "lecipm_workspace_subscription",
       planCode: typeof body.planCode === "string" ? body.planCode : null,
     });
+    void trackEvent("checkout_started", { flow: "lecipm_workspace_subscription" }, { userId }).catch(() => {});
+    void onCheckoutStartAutomation(userId, { flow: "workspace_subscription" }).catch(() => {});
+    void onMessagingTriggerCheckoutStarted(userId).catch(() => {});
     return Response.json({ url: result.url, sessionId: result.sessionId });
   }
 
@@ -169,6 +175,8 @@ export async function POST(request: NextRequest) {
     fsboListingId = fid;
   }
 
+  let serverBookingListingId: string | undefined;
+
   if (paymentType === "booking") {
     const bookingId = typeof body.bookingId === "string" ? body.bookingId.trim() : "";
     if (!bookingId) {
@@ -183,6 +191,7 @@ export async function POST(request: NextRequest) {
     const bookingHost = await prisma.booking.findUnique({
       where: { id: bookingId },
       select: {
+        listingId: true,
         listing: {
           select: {
             owner: {
@@ -195,6 +204,7 @@ export async function POST(request: NextRequest) {
         },
       },
     });
+    serverBookingListingId = bookingHost?.listingId;
     const owner = bookingHost?.listing?.owner;
     if (!owner?.stripeAccountId || !owner.stripeOnboardingComplete) {
       return Response.json(
@@ -240,7 +250,12 @@ export async function POST(request: NextRequest) {
     currency: typeof body.currency === "string" ? body.currency : undefined,
     paymentType,
     userId,
-    listingId: typeof body.listingId === "string" ? body.listingId : undefined,
+    listingId:
+      paymentType === "booking" && serverBookingListingId
+        ? serverBookingListingId
+        : typeof body.listingId === "string"
+          ? body.listingId
+          : undefined,
     projectId: typeof body.projectId === "string" ? body.projectId : undefined,
     bookingId: typeof body.bookingId === "string" ? body.bookingId : undefined,
     dealId: typeof body.dealId === "string" ? body.dealId : undefined,
@@ -292,6 +307,28 @@ export async function POST(request: NextRequest) {
       ...auditSplit,
     },
   }).catch(() => {});
+
+  void trackEvent(
+    "checkout_started",
+    {
+      paymentType,
+      sessionId: result.sessionId,
+      bookingId: typeof body.bookingId === "string" ? body.bookingId : undefined,
+      amountCents: chargeAmountCents,
+    },
+    { userId }
+  ).catch(() => {});
+  if (paymentType === "booking" && typeof body.bookingId === "string" && body.bookingId) {
+    void trackEvent("booking_started", { bookingId: body.bookingId.trim(), sessionId: result.sessionId }, { userId }).catch(
+      () => {}
+    );
+  }
+  void onCheckoutStartAutomation(userId, {
+    sessionId: result.sessionId,
+    paymentType,
+    bookingId: typeof body.bookingId === "string" ? body.bookingId : undefined,
+  }).catch(() => {});
+  void onMessagingTriggerCheckoutStarted(userId).catch(() => {});
 
   return Response.json({ url: result.url, sessionId: result.sessionId });
 }

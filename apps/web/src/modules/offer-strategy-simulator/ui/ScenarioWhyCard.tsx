@@ -10,7 +10,7 @@ type Props = {
 export function ScenarioWhyCard({ text, nextStep }: Props) {
   return (
     <div className="rounded-xl border border-white/10 bg-[#141414] p-4">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#C9A646]">Why this scenario</p>
+      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-premium-gold">Why this scenario</p>
       <p className="mt-2 text-sm leading-relaxed text-slate-200">{text}</p>
       {nextStep ? (
         <div className="mt-4 border-t border-white/10 pt-4">

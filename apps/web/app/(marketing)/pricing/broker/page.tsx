@@ -20,7 +20,7 @@ export default function BrokerPricingPage() {
         <div className="mt-10 rounded-2xl border border-white/10 bg-white/[0.02] px-5 py-4 text-sm text-slate-400">
           <p>
             Lead purchases and success fees may apply separately in your market — see{" "}
-            <Link href="/dashboard/broker" className="text-[#C9A646] hover:underline">
+            <Link href="/dashboard/broker" className="text-premium-gold hover:underline">
               Broker dashboard
             </Link>{" "}
             and deal workflows for live numbers.

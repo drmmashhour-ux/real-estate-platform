@@ -52,7 +52,7 @@ export function GenerateOfferButton({ listingId, offerType = "purchase_offer" }:
         onClick={() => void go()}
         disabled={loading}
         className="mt-3 inline-flex rounded-xl px-4 py-2.5 text-sm font-bold text-[#0B0B0B] disabled:opacity-50"
-        style={{ background: "#C9A646" }}
+        style={{ background: "var(--color-premium-gold)" }}
       >
         {loading ? "Generating…" : "Generate offer"}
       </button>

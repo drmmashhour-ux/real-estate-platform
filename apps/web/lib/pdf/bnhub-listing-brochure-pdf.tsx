@@ -17,7 +17,7 @@ const styles = StyleSheet.create({
   hero: { width: "100%", height: 160, objectFit: "cover" as const, marginBottom: 14 },
   box: {
     borderWidth: 1,
-    borderColor: "#C9A646",
+    borderColor: "#D4AF37",
     padding: 12,
     backgroundColor: "#fffdf7",
     marginBottom: 12,

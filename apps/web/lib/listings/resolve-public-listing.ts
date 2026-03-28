@@ -6,7 +6,7 @@ import { normalizeAnyPublicListingCode } from "@/lib/listing-code-public";
 export type ResolvedPublicListing =
   | { kind: "fsbo"; row: FsboListing }
   | { kind: "crm"; row: Listing & { owner?: { id: string; email: string | null; name: string | null } | null } }
-  | { kind: "bnhub"; slug: string };
+  | { kind: "bnhub"; slug: string; id: string; city: string; propertyType: string | null };
 
 /**
  * Resolve `/listings/[id]` to FSBO, CRM `Listing`, or BNHub `ShortTermListing` (by uuid or public code).
@@ -38,10 +38,16 @@ export async function resolvePublicListing(idOrCode: string): Promise<ResolvedPu
 
   const bn = await prisma.shortTermListing.findFirst({
     where: bnWhere,
-    select: { id: true, listingCode: true, listingStatus: true },
+    select: { id: true, listingCode: true, listingStatus: true, city: true, propertyType: true },
   });
   if (bn && bn.listingStatus === "PUBLISHED") {
-    return { kind: "bnhub", slug: bn.listingCode || bn.id };
+    return {
+      kind: "bnhub",
+      slug: bn.listingCode || bn.id,
+      id: bn.id,
+      city: bn.city,
+      propertyType: bn.propertyType,
+    };
   }
 
   return null;

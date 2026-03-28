@@ -61,7 +61,7 @@ export function AdminContractsClient() {
         <button
           type="button"
           onClick={() => void load()}
-          className="rounded-xl bg-[#C9A646] px-4 py-2 text-sm font-semibold text-black"
+          className="rounded-xl bg-premium-gold px-4 py-2 text-sm font-semibold text-black"
         >
           Apply
         </button>
@@ -111,7 +111,7 @@ export function AdminContractsClient() {
                     <div className="flex flex-wrap gap-2">
                       <Link
                         href={`/contracts/${c.id}`}
-                        className="text-xs font-semibold text-[#C9A646] hover:underline"
+                        className="text-xs font-semibold text-premium-gold hover:underline"
                       >
                         View
                       </Link>

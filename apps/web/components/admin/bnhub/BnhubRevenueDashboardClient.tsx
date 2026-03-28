@@ -199,7 +199,7 @@ export function BnhubRevenueDashboardClient({
           type="button"
           disabled={pending}
           onClick={() => refreshAll(days)}
-          className="rounded-lg bg-[#C9A646] px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-[#d4b456] disabled:opacity-50"
+          className="rounded-lg bg-premium-gold px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-[#d4b456] disabled:opacity-50"
         >
           {pending ? "Loading…" : "Refresh metrics"}
         </button>
@@ -276,7 +276,7 @@ export function BnhubRevenueDashboardClient({
                 <div className="mt-2 flex flex-wrap gap-2">
                   <button
                     type="button"
-                    className="text-xs text-[#C9A646] hover:underline"
+                    className="text-xs text-premium-gold hover:underline"
                     onClick={() => {
                       const bookingId = window.prompt("Booking id to attach");
                       if (bookingId) void patchSales(row.id, { stage: "won", convertedBookingId: bookingId.trim() });
@@ -321,7 +321,7 @@ export function BnhubRevenueDashboardClient({
               <input type="checkbox" checked={markPaid} onChange={(e) => setMarkPaid(e.target.checked)} />
               Mark paid (manual / before Stripe)
             </label>
-            <button type="submit" className="rounded-md bg-[#C9A646] px-3 py-2 text-sm font-semibold text-slate-950">
+            <button type="submit" className="rounded-md bg-premium-gold px-3 py-2 text-sm font-semibold text-slate-950">
               Create order
             </button>
           </form>
@@ -360,7 +360,7 @@ export function BnhubRevenueDashboardClient({
 function MetricCard({ label, value, sub }: { label: string; value: string; sub: string }) {
   return (
     <div className="rounded-xl border border-slate-700/80 bg-gradient-to-br from-slate-900/80 to-slate-950/80 p-4">
-      <div className="text-xs font-semibold uppercase tracking-wide text-[#C9A646]/90">{label}</div>
+      <div className="text-xs font-semibold uppercase tracking-wide text-premium-gold/90">{label}</div>
       <div className="mt-2 text-2xl font-semibold text-white">{value}</div>
       <div className="mt-1 text-xs text-slate-500">{sub}</div>
     </div>

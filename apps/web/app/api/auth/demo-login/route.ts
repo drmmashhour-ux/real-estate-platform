@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { createDbSession } from "@/lib/auth/db-session";
 import { setGuestIdCookie, setTenantContextCookie, setUserRoleCookie } from "@/lib/auth/session";
 import { ensureReferralCode } from "@/lib/referrals";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
@@ -67,7 +68,8 @@ export async function POST(request: NextRequest) {
       tenantId,
     });
 
-    const cookie = setGuestIdCookie(user.id);
+    const sessionToken = await createDbSession(user.id);
+    const cookie = setGuestIdCookie(sessionToken);
     res.cookies.set(cookie.name, cookie.value, {
       path: cookie.path,
       maxAge: cookie.maxAge,

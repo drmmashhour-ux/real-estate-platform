@@ -66,13 +66,13 @@ export function AiWriterToolbar({
 
   const btn =
     "rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold transition disabled:opacity-45 disabled:pointer-events-none";
-  const gold = "border-[#C9A646]/50 bg-[#C9A646]/10 text-[#E8C547] hover:bg-[#C9A646]/20";
-  const subtle = "border-white/15 bg-black/30 text-[#B3B3B3] hover:border-[#C9A646]/35 hover:text-white";
+  const gold = "border-premium-gold/50 bg-premium-gold/10 text-premium-gold hover:bg-premium-gold/20";
+  const subtle = "border-white/15 bg-black/30 text-[#B3B3B3] hover:border-premium-gold/35 hover:text-white";
 
   return (
     <div className={`space-y-2 ${className}`}>
       <div className="flex flex-wrap items-center gap-1.5">
-        <span className="mr-1 inline-flex items-center gap-1 rounded-md border border-[#C9A646]/35 bg-[#0B0B0B] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#C9A646]">
+        <span className="mr-1 inline-flex items-center gap-1 rounded-md border border-premium-gold/35 bg-[#0B0B0B] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-premium-gold">
           <span aria-hidden>✨</span> AI
         </span>
         {type === "listing" && showDescriptionGenerator ? (
@@ -80,7 +80,7 @@ export function AiWriterToolbar({
             type="button"
             disabled={loading !== null}
             onClick={() => void run("generate")}
-            className={`${btn} border-[#C9A646] bg-[#C9A646] text-black hover:brightness-110`}
+            className={`${btn} border-premium-gold bg-premium-gold text-black hover:brightness-110`}
           >
             {loading === "generate" ? "Generating…" : "✨ Generate description"}
           </button>
@@ -128,13 +128,13 @@ export function AiWriterToolbar({
         ) : null}
       </div>
       {loading ? (
-        <p className="flex items-center gap-2 text-[11px] text-[#C9A646]">
-          <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#C9A646] border-t-transparent" />
+        <p className="flex items-center gap-2 text-[11px] text-premium-gold">
+          <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-premium-gold border-t-transparent" />
           Generating…
         </p>
       ) : null}
       {err ? <p className="text-[11px] text-red-400">{err}</p> : null}
-      {hint ? <p className="text-[11px] text-[#C9A646]/90">{hint}</p> : null}
+      {hint ? <p className="text-[11px] text-premium-gold/90">{hint}</p> : null}
     </div>
   );
 }

@@ -6,7 +6,7 @@ import { prisma } from "@/lib/db";
 import { isMortgageExpertRole } from "@/lib/marketplace/mortgage-role";
 import { ExpertTermsClient } from "./expert-terms-client";
 
-const GOLD = "#C9A646";
+const GOLD = "var(--color-premium-gold)";
 const BG = "#0B0B0B";
 
 export const dynamic = "force-dynamic";

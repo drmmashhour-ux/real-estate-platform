@@ -40,7 +40,7 @@ export function KnowledgeLibraryPage() {
           </select>
         </div>
         <textarea className="mt-2 w-full rounded-md bg-black/40 p-2 text-xs text-white" rows={5} placeholder="Paste extracted text" value={rawText} onChange={(e) => setRawText(e.target.value)} />
-        <button type="button" onClick={upload} className="mt-2 rounded-md bg-[#C9A646] px-3 py-2 text-xs font-medium text-black">Upload + Process</button>
+        <button type="button" onClick={upload} className="mt-2 rounded-md bg-premium-gold px-3 py-2 text-xs font-medium text-black">Upload + Process</button>
         {lastChunkCount != null ? <p className="mt-2 text-xs text-emerald-200/90">Processed {lastChunkCount} tagged chunks (500–1000 token budget).</p> : null}
       </div>
 

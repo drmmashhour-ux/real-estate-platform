@@ -52,16 +52,16 @@ export function MortgageFinancingBanner() {
   return (
     <div
       id="financing-banner"
-      className="rounded-2xl border border-[#C9A646]/35 bg-gradient-to-br from-[#14110a] to-[#0B0B0B] px-4 py-4 sm:px-5"
+      className="rounded-2xl border border-premium-gold/35 bg-gradient-to-br from-[#14110a] to-[#0B0B0B] px-4 py-4 sm:px-5"
     >
-      <p className="text-sm font-semibold text-[#E8D5A3]">Need financing?</p>
+      <p className="text-sm font-semibold text-premium-gold">Need financing?</p>
       <p className="mt-1 text-sm text-slate-300">
         Connect with a mortgage expert to review your numbers and explore pre-approval options.
       </p>
       <p className="mt-3">
         <a
           href="/mortgage#request-contact"
-          className="text-sm font-semibold text-[#C9A646] underline hover:text-[#E8D5A3]"
+          className="text-sm font-semibold text-premium-gold underline hover:text-premium-gold"
         >
           Request a real approval estimate →
         </a>
@@ -291,7 +291,7 @@ export function MortgageUserHub({
   };
 
   const inputClass =
-    "mt-2 min-h-[48px] w-full rounded-xl border border-white/15 bg-black/30 px-4 py-3 text-base text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#C9A646]/45";
+    "mt-2 min-h-[48px] w-full rounded-xl border border-white/15 bg-black/30 px-4 py-3 text-base text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-premium-gold/45";
 
   const cardClass =
     variant === "dashboard"
@@ -311,7 +311,7 @@ export function MortgageUserHub({
         <div className="mt-4 rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-slate-300">
           <Link
             href={`/auth/login?next=${encodeURIComponent(variant === "analyze" ? "/analyze#mortgage-hub" : "/dashboard#mortgage-hub")}`}
-            className="font-semibold text-[#C9A646] underline hover:text-[#E8D5A3]"
+            className="font-semibold text-premium-gold underline hover:text-premium-gold"
           >
             Sign in
           </Link>{" "}
@@ -349,7 +349,7 @@ export function MortgageUserHub({
           </button>
 
           {data?.broker ? (
-            <div className="rounded-2xl border border-[#C9A646]/30 bg-[#14110a]/60 p-4 sm:p-5">
+            <div className="rounded-2xl border border-premium-gold/30 bg-[#14110a]/60 p-4 sm:p-5">
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <h3 className="text-base font-semibold text-white">Talk to a Mortgage Expert</h3>
                 {data.broker.isTopBroker ? (
@@ -416,7 +416,7 @@ export function MortgageUserHub({
                 <div>
                   <dt className="text-slate-500">Email</dt>
                   <dd>
-                    <a href={`mailto:${data.broker.email}`} className="text-[#C9A646] hover:underline">
+                    <a href={`mailto:${data.broker.email}`} className="text-premium-gold hover:underline">
                       {data.broker.email}
                     </a>
                   </dd>
@@ -425,7 +425,7 @@ export function MortgageUserHub({
                   <div>
                     <dt className="text-slate-500">Phone</dt>
                     <dd>
-                      <a href={`tel:${data.broker.phone.replace(/\s/g, "")}`} className="text-[#C9A646] hover:underline">
+                      <a href={`tel:${data.broker.phone.replace(/\s/g, "")}`} className="text-premium-gold hover:underline">
                         {data.broker.phone}
                       </a>
                     </dd>
@@ -434,7 +434,7 @@ export function MortgageUserHub({
               </dl>
               <a
                 href={`mailto:${data.broker.email}?subject=${encodeURIComponent("Mortgage inquiry — LECIPM")}`}
-                className="mt-5 inline-flex min-h-[44px] w-full items-center justify-center rounded-xl border-2 border-[#C9A646] bg-transparent px-4 py-3 text-sm font-semibold text-[#C9A646] transition hover:bg-[#C9A646]/10 sm:w-auto"
+                className="mt-5 inline-flex min-h-[44px] w-full items-center justify-center rounded-xl border-2 border-premium-gold bg-transparent px-4 py-3 text-sm font-semibold text-premium-gold transition hover:bg-premium-gold/10 sm:w-auto"
               >
                 Contact Broker
               </a>
@@ -571,7 +571,7 @@ export function MortgageUserHub({
                       name="preApproved"
                       checked={preApproved === "yes"}
                       onChange={() => setPreApproved("yes")}
-                      className="h-4 w-4 accent-[#C9A646]"
+                      className="h-4 w-4 accent-premium-gold"
                     />
                     Yes
                   </label>
@@ -581,7 +581,7 @@ export function MortgageUserHub({
                       name="preApproved"
                       checked={preApproved === "no"}
                       onChange={() => setPreApproved("no")}
-                      className="h-4 w-4 accent-[#C9A646]"
+                      className="h-4 w-4 accent-premium-gold"
                     />
                     No
                   </label>
@@ -598,7 +598,7 @@ export function MortgageUserHub({
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="min-h-[44px] rounded-xl bg-[#C9A646] px-4 py-3 text-sm font-bold text-[#0B0B0B] disabled:opacity-50"
+                  className="min-h-[44px] rounded-xl bg-premium-gold px-4 py-3 text-sm font-bold text-[#0B0B0B] disabled:opacity-50"
                 >
                   {submitting ? "Submitting…" : "Submit request"}
                 </button>

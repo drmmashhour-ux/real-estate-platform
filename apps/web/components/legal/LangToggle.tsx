@@ -12,8 +12,8 @@ export function LangToggle() {
   const enPath = pathname.replace(/^\/fr/, "") || "/legal/terms";
   const frPath = pathname.startsWith("/fr/") ? pathname : `/fr${pathname}`;
 
-  const active = "font-semibold text-[#C9A646]";
-  const idle = "text-[#737373] hover:text-[#E8C547]";
+  const active = "font-semibold text-premium-gold";
+  const idle = "text-[#737373] hover:text-premium-gold";
 
   return (
     <div className="flex gap-2 text-sm">

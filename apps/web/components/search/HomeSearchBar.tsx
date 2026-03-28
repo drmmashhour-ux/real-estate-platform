@@ -48,12 +48,12 @@ export function HomeSearchBar({ tone, heroBrowseMode, onHeroBrowseModeChange, on
   const light = tone === "light";
   const labelCls = light ? "text-slate-600" : "text-slate-500";
   const inputCls = light
-    ? "border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 shadow-inner focus:border-[#C9A646]/60 focus:outline-none focus:ring-2 focus:ring-[#C9A646]/25"
-    : "border-white/10 bg-black/40 px-3 py-2.5 text-sm text-white placeholder:text-slate-500 focus:border-[#C9A646]/50 focus:outline-none focus:ring-1 focus:ring-[#C9A646]/40";
+    ? "border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 shadow-inner focus:border-premium-gold/60 focus:outline-none focus:ring-2 focus:ring-premium-gold/25"
+    : "border-white/10 bg-black/40 px-3 py-2.5 text-sm text-white placeholder:text-slate-500 focus:border-premium-gold/50 focus:outline-none focus:ring-1 focus:ring-premium-gold/40";
 
   const filterActive = light
-    ? "border-[#C9A646]/60 bg-[#C9A646]/10 text-[#8a6a1e]"
-    : "border-[#C9A646]/50 bg-[#C9A646]/10 text-[#E8C547]";
+    ? "border-premium-gold/60 bg-premium-gold/10 text-[#8a6a1e]"
+    : "border-premium-gold/50 bg-premium-gold/10 text-premium-gold";
 
   const buySelfHref = (() => {
     const listingType = listingTypeForSaleBrowseHref(draft.type);
@@ -136,7 +136,7 @@ export function HomeSearchBar({ tone, heroBrowseMode, onHeroBrowseModeChange, on
                 className={[
                   SEARCH_BTN_SECONDARY,
                   "flex-1 min-w-[5.5rem] sm:flex-none",
-                  on ? "!border-[#C9A646] !bg-[#C9A646] !text-black" : "",
+                  on ? "!border-premium-gold !bg-premium-gold !text-black" : "",
                 ].join(" ")}
               >
                 {id === "buy" ? "Buy" : id === "sell" ? "Sell" : "Rent"}
@@ -184,7 +184,7 @@ export function HomeSearchBar({ tone, heroBrowseMode, onHeroBrowseModeChange, on
         <p className={`text-[11px] ${labelCls}`}>
           <Link
             href={newListingsHref}
-            className="font-medium text-[#C9A646] underline decoration-[#C9A646]/50 underline-offset-2 hover:text-[#d4b55a]"
+            className="font-medium text-premium-gold underline decoration-premium-gold/50 underline-offset-2 hover:text-[#d4b55a]"
           >
             Recently added listings (14 days)
           </Link>
@@ -207,7 +207,7 @@ export function HomeSearchBar({ tone, heroBrowseMode, onHeroBrowseModeChange, on
             <span
               className={[
                 "ml-1.5 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full px-1 text-[11px]",
-                light ? "bg-[#C9A646]/25 text-slate-900" : "bg-white/15 text-white",
+                light ? "bg-premium-gold/25 text-slate-900" : "bg-white/15 text-white",
               ].join(" ")}
             >
               {activeFilterCount}

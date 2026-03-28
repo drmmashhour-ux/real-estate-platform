@@ -83,10 +83,10 @@ export function CopilotFloatingDock({ listingId, watchlistId, showSellerQuick = 
   return (
     <div className="pointer-events-none fixed bottom-4 right-4 z-[100] flex flex-col items-end gap-3">
       {open ? (
-        <div className="pointer-events-auto w-[min(100vw-2rem,22rem)] max-h-[min(70vh,520px)] overflow-y-auto rounded-2xl border border-[#C9A646]/30 bg-[#0B0B0B]/95 p-4 shadow-[0_12px_48px_rgba(0,0,0,0.55)] backdrop-blur-md">
+        <div className="pointer-events-auto w-[min(100vw-2rem,22rem)] max-h-[min(70vh,520px)] overflow-y-auto rounded-2xl border border-premium-gold/30 bg-[#0B0B0B]/95 p-4 shadow-[0_12px_48px_rgba(0,0,0,0.55)] backdrop-blur-md">
           <div className="mb-2 flex items-start justify-between gap-2">
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#C9A646]">Copilot</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-premium-gold">Copilot</p>
               <p className="text-[11px] text-slate-500">Deterministic scores only.</p>
             </div>
             <button
@@ -104,7 +104,7 @@ export function CopilotFloatingDock({ listingId, watchlistId, showSellerQuick = 
                 key={a.label}
                 type="button"
                 onClick={() => void sendWith(a.query)}
-                className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] text-slate-300 hover:border-[#C9A646]/35"
+                className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] text-slate-300 hover:border-premium-gold/35"
               >
                 {a.label}
               </button>
@@ -125,7 +125,7 @@ export function CopilotFloatingDock({ listingId, watchlistId, showSellerQuick = 
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="pointer-events-auto flex h-14 w-14 items-center justify-center rounded-full border border-[#C9A646]/40 bg-[#C9A646] text-lg font-bold text-[#0B0B0B] shadow-[0_8px_32px_rgba(201,166,70,0.45)] transition hover:scale-[1.03] hover:bg-[#E8C547]"
+        className="pointer-events-auto flex h-14 w-14 items-center justify-center rounded-full border border-premium-gold/40 bg-premium-gold text-lg font-bold text-[#0B0B0B] shadow-[0_8px_32px_rgb(var(--premium-gold-channels) / 0.45)] transition hover:scale-[1.03] hover:bg-premium-gold"
         aria-expanded={open}
         aria-label={open ? "Close Copilot" : "Open Copilot"}
       >

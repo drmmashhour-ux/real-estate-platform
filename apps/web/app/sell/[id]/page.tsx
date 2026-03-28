@@ -103,7 +103,7 @@ export default async function FsboListingPublicPage({
   return (
     <main className="min-h-screen bg-[#0B0B0B] text-white">
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-        <Link href="/sell" className="text-sm text-[#C9A646] hover:text-[#E8C547]">
+        <Link href="/sell" className="text-sm text-premium-gold hover:text-premium-gold">
           ← All FSBO listings
         </Link>
 
@@ -115,7 +115,7 @@ export default async function FsboListingPublicPage({
               title={row.title}
             />
             <h1 className="mt-8 text-3xl font-semibold">{row.title}</h1>
-            <p className="mt-2 text-2xl font-bold text-[#C9A646]">${(row.priceCents / 100).toLocaleString()}</p>
+            <p className="mt-2 text-2xl font-bold text-premium-gold">${(row.priceCents / 100).toLocaleString()}</p>
             <div className="mt-4 max-w-xl">
               <ListingInvestmentRecommendationCard recommendation={investmentRec} />
             </div>
@@ -159,7 +159,7 @@ export default async function FsboListingPublicPage({
               {phase4BuyerEnabled ? (
                 <div className="space-y-6 rounded-2xl border border-white/10 bg-[#0B0B0B]/80 p-5">
                   <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#C9A646]">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-premium-gold">
                       Deal Analyzer — Phase 4
                     </p>
                     <p className="mt-1 text-xs text-slate-500">
@@ -202,17 +202,17 @@ export default async function FsboListingPublicPage({
               </div>
             )}
             <div className="rounded-2xl border border-white/10 bg-[#121212] p-5 text-sm">
-              <p className="text-xs uppercase tracking-wider text-[#C9A646]">Listed by owner</p>
+              <p className="text-xs uppercase tracking-wider text-premium-gold">Listed by owner</p>
               <p className="mt-2 text-[#B3B3B3]">Direct sale — no brokerage commission on our side for this module.</p>
               {showContact ? (
                 <>
                   <p className="mt-3 text-xs text-slate-500">Owner contact (published)</p>
-                  <a href={`mailto:${row.contactEmail}`} className="font-medium text-white hover:text-[#C9A646]">
+                  <a href={`mailto:${row.contactEmail}`} className="font-medium text-white hover:text-premium-gold">
                     {row.contactEmail}
                   </a>
                   {row.contactPhone ? (
                     <p className="mt-2">
-                      <a href={`tel:${row.contactPhone.replace(/\D/g, "")}`} className="text-[#C9A646]">
+                      <a href={`tel:${row.contactPhone.replace(/\D/g, "")}`} className="text-premium-gold">
                         {row.contactPhone}
                       </a>
                     </p>

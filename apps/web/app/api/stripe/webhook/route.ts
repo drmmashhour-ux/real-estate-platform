@@ -24,6 +24,7 @@ import { bnhubBookingFeeSplitCents } from "@/lib/stripe/bnhub-connect";
 import { allocateUniqueConfirmationCode } from "@/lib/bnhub/confirmation-code";
 import { applyGuarantee } from "@/lib/bnhub/bnhub-guarantee";
 import { sendBnhubPostPaymentEmails } from "@/lib/email/bnhub-lifecycle-emails";
+import { onBnhubBookingPaymentConfirmed } from "@/lib/crm/internal-crm-telemetry";
 import {
   handleMortgageExpertCheckoutCompleted,
   handleMortgageExpertSubscriptionStripeEvent,
@@ -41,6 +42,9 @@ import {
   recordStripeWebhookReceived,
 } from "@/modules/bnhub-payments/infrastructure/stripeWebhookInbox";
 import { BnhubMpWebhookInboxStatus } from "@prisma/client";
+import { captureStripeEventForGrowthEngine } from "@/src/modules/stripe/growthWebhook";
+import { onPaymentFailedAutomation, onPaymentSuccessAutomation } from "@/src/services/automation";
+import { trackEvent } from "@/src/services/analytics";
 
 export const dynamic = "force-dynamic";
 
@@ -142,6 +146,10 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  logInfo("Stripe webhook verified", { eventType: event.type, eventId: event.id });
+
+  void captureStripeEventForGrowthEngine(event).catch((e) => logError("growth stripe observability failed", e));
+
   void recordStripeWebhookReceived(event).catch((e) => logError("bnhub webhook inbox record failed", e));
 
   if (event.type === "charge.refunded") {
@@ -196,6 +204,10 @@ export async function POST(req: NextRequest) {
       entityId: pi.id,
       payload: { error: pi.last_payment_error?.message },
     });
+    void onPaymentFailedAutomation(undefined, {
+      paymentIntentId: pi.id,
+      error: pi.last_payment_error?.message,
+    }).catch(() => {});
     return Response.json({ received: true });
   }
 
@@ -229,6 +241,22 @@ export async function POST(req: NextRequest) {
   }
 
   const session = event.data.object as Stripe.Checkout.Session;
+  const metaKeys =
+    session.metadata && typeof session.metadata === "object"
+      ? Object.keys(session.metadata as Record<string, string>)
+      : [];
+  logInfo("Stripe checkout.session.completed", {
+    sessionId: session.id,
+    paymentStatus: session.payment_status,
+    mode: session.mode,
+    amountTotal: session.amount_total ?? null,
+    currency: session.currency ?? null,
+    paymentType: session.metadata?.paymentType ?? null,
+    metadataType: session.metadata?.type ?? null,
+    hasUserId: Boolean(session.metadata?.userId),
+    metadataKeys: metaKeys,
+  });
+
   const metadataType = session.metadata?.type as string;
   const paymentType = session.metadata?.paymentType as string | undefined;
   const userId = session.metadata?.userId;
@@ -588,6 +616,22 @@ export async function POST(req: NextRequest) {
         .catch((e) => logError("Webhook: platform commission record failed", e));
 
       void sendBnhubPostPaymentEmails(bookingId).catch((e) => logError("Webhook: BNHub lifecycle emails failed", e));
+
+      void trackEvent(
+        "payment_success",
+        { bookingId, sessionId, paymentIntentId: piId, paymentType: "booking" },
+        { userId }
+      ).catch(() => {});
+      void onPaymentSuccessAutomation(userId, {
+        bookingId,
+        sessionId,
+        paymentIntentId: piId,
+        paymentType: "booking",
+      }).catch((e) => logError("Webhook: growth payment_success automation failed", e));
+
+      void onBnhubBookingPaymentConfirmed(bookingId).catch((e) =>
+        logError("Webhook: internal CRM booking telemetry failed", e),
+      );
 
       void recordPlatformEvent({
         eventType: "bnhub_payment_completed",
@@ -1102,11 +1146,16 @@ export async function POST(req: NextRequest) {
   const feature = (session.metadata?.feature as string) || metadataType;
 
   if (!userId) {
-    console.error("Webhook missing userId in metadata", { userId });
-    return Response.json(
-      { error: "Invalid session metadata" },
-      { status: 400 }
-    );
+    logInfo("Stripe webhook: checkout.session.completed not handled (no userId in metadata)", {
+      sessionId: session.id,
+      paymentType: paymentType ?? null,
+      metadataType: metadataType ?? null,
+    });
+    return Response.json({
+      received: true,
+      ignored: "no_user_id",
+      detail: "No LECIPM handler matched; Stripe CLI and third-party checkouts often omit userId.",
+    });
   }
 
   const sessionId = session.id;
@@ -1146,11 +1195,17 @@ export async function POST(req: NextRequest) {
 
   const plan = ((session.metadata?.plan as string) || "basic") as PlanKey;
   if (!VALID_PLANS.includes(plan)) {
-    console.error("Webhook invalid plan in metadata", { plan });
-    return Response.json(
-      { error: "Invalid session metadata" },
-      { status: 400 }
-    );
+    logInfo("Stripe webhook: checkout.session.completed not handled (unknown plan / feature)", {
+      sessionId: session.id,
+      userId,
+      feature: feature ?? null,
+      plan,
+    });
+    return Response.json({
+      received: true,
+      ignored: "unknown_plan_or_feature",
+      detail: "Session is not design_access, storage-upgrade, or a valid subscription plan (basic|pro).",
+    });
   }
 
   // Idempotency: do not create duplicate invoice or apply upgrade twice

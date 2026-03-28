@@ -9,7 +9,7 @@ import { getWatchlistSummary } from "@/src/modules/watchlist-alerts/infrastructu
 import { listWatchlistAlerts } from "@/src/modules/watchlist-alerts/infrastructure/watchlistAlertRepository";
 import { WatchlistAlertsPreview } from "@/src/modules/watchlist-alerts/ui/WatchlistAlertsPreview";
 
-const GOLD = "#C9A646";
+const GOLD = "var(--color-premium-gold)";
 
 export default async function InvestorDashboardPage() {
   const userId = await getGuestId();
@@ -32,7 +32,7 @@ export default async function InvestorDashboardPage() {
         </div>
         <Link
           href="/investor/qa"
-          className="rounded-xl border border-[#C9A646]/35 bg-[#C9A646]/10 px-4 py-2.5 text-sm font-semibold text-[#C9A646] transition hover:bg-[#C9A646]/15"
+          className="rounded-xl border border-premium-gold/35 bg-premium-gold/10 px-4 py-2.5 text-sm font-semibold text-premium-gold transition hover:bg-premium-gold/15"
         >
           Investor Q&A
         </Link>
@@ -66,11 +66,11 @@ export default async function InvestorDashboardPage() {
       <div className="mt-8">
         {watchSummary ? (
           <div className="mb-4 rounded-2xl border border-white/10 bg-black/25 p-4">
-            <p className="text-xs uppercase tracking-wide text-[#C9A646]">Watchlist summary</p>
+            <p className="text-xs uppercase tracking-wide text-premium-gold">Watchlist summary</p>
             <p className="mt-2 text-sm text-slate-300">
               {watchSummary.savedListings} saved · {watchSummary.unreadAlerts} unread alerts · {watchSummary.strongOpportunityUpdates} strong opportunity updates
             </p>
-            <a href="/watchlist" className="mt-2 inline-flex text-sm text-[#C9A646] hover:underline">Open watchlist</a>
+            <a href="/watchlist" className="mt-2 inline-flex text-sm text-premium-gold hover:underline">Open watchlist</a>
           </div>
         ) : null}
         {recentAlerts.length ? (

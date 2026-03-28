@@ -29,6 +29,8 @@ import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
 import type { Prisma } from "@prisma/client";
 import { LeadContactOrigin } from "@prisma/client";
 import { normalizeCrmLeadType } from "@/lib/leads/crm-constants";
+import { trackEvent } from "@/src/services/analytics";
+import { onMessagingTriggerInquiry } from "@/src/modules/messaging/triggers";
 import {
   appendLeadTimelineEvent,
   extractEvaluationSnapshot,
@@ -462,6 +464,13 @@ export async function POST(req: Request) {
         },
       });
 
+      void trackEvent(
+        "inquiry_sent",
+        { leadId: dbLead.id, listingId: dbLead.listingId, leadSource },
+        { userId: linkedUserId }
+      ).catch(() => {});
+      if (linkedUserId) void onMessagingTriggerInquiry(linkedUserId).catch(() => {});
+
       if (introducedByBrokerId && tierLabel === "hot") {
         await recordHotLeadAlert({
           brokerId: introducedByBrokerId,
@@ -595,6 +604,13 @@ export async function POST(req: Request) {
         medium: traffic.medium,
       },
     });
+
+    void trackEvent(
+      "inquiry_sent",
+      { leadId: dbLead.id, listingId: dbLead.listingId, leadSource },
+      { userId: linkedUserId }
+    ).catch(() => {});
+    if (linkedUserId) void onMessagingTriggerInquiry(linkedUserId).catch(() => {});
 
     if (introducedByBrokerId && tierLabel === "hot") {
       await recordHotLeadAlert({

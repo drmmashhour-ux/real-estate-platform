@@ -30,7 +30,7 @@ export default async function InvitePage() {
   return (
     <div className="min-h-screen bg-[#0B0B0B] text-white">
       <div className="mx-auto max-w-2xl px-4 py-16">
-        <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#C9A646]">Referral growth</p>
+        <p className="text-xs font-bold uppercase tracking-[0.25em] text-premium-gold">Referral growth</p>
         <h1 className="mt-3 text-4xl font-bold">Invite &amp; earn</h1>
         <p className="mt-4 text-white/75">
           Share your personal link. When friends create an account and activate (subscriptions, bookings, or
@@ -39,12 +39,12 @@ export default async function InvitePage() {
         </p>
 
         {refLink ? (
-          <div className="mt-8 rounded-2xl border border-[#C9A646]/30 bg-[#111] p-6">
-            <p className="text-sm font-semibold text-[#C9A646]">Your invite link</p>
+          <div className="mt-8 rounded-2xl border border-premium-gold/30 bg-[#111] p-6">
+            <p className="text-sm font-semibold text-premium-gold">Your invite link</p>
             <code className="mt-2 block break-all text-sm text-white/90">{refLink}</code>
             <Link
               href="/dashboard/referrals"
-              className="mt-4 inline-block rounded-xl bg-[#C9A646] px-5 py-2.5 text-sm font-bold text-black"
+              className="mt-4 inline-block rounded-xl bg-premium-gold px-5 py-2.5 text-sm font-bold text-black"
             >
               Open referral dashboard
             </Link>
@@ -54,11 +54,11 @@ export default async function InvitePage() {
             <p className="text-sm text-white/80">Sign in to generate your referral code and track rewards.</p>
             <Link
               href="/auth/login?next=/invite"
-              className="mt-4 inline-block rounded-xl bg-[#C9A646] px-5 py-2.5 text-sm font-bold text-black"
+              className="mt-4 inline-block rounded-xl bg-premium-gold px-5 py-2.5 text-sm font-bold text-black"
             >
               Sign in
             </Link>
-            <Link href="/auth/signup" className="ml-3 text-sm text-[#C9A646] hover:underline">
+            <Link href="/auth/signup" className="ml-3 text-sm text-premium-gold hover:underline">
               Create account
             </Link>
           </div>

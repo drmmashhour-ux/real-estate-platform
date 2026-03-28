@@ -56,7 +56,7 @@ export function PortfolioAlertsPanel({ enabled }: Props) {
     <div className="rounded-xl border border-white/10 bg-slate-900/40 p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-[#C9A646]">Deal watchlist alerts</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-premium-gold">Deal watchlist alerts</p>
           <p className="mt-1 text-sm text-slate-500">Deterministic signals from saved listings — not investment advice.</p>
         </div>
         <button
@@ -88,7 +88,7 @@ export function PortfolioAlertsPanel({ enabled }: Props) {
                 <button
                   type="button"
                   onClick={() => void patch(a.id, "read")}
-                  className="text-xs text-[#C9A646] hover:underline"
+                  className="text-xs text-premium-gold hover:underline"
                 >
                   Mark read
                 </button>

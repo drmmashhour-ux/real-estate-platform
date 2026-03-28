@@ -67,7 +67,7 @@ export function EnforceableContractsAdminClient() {
         <button
           type="button"
           onClick={() => void load()}
-          className="rounded-lg bg-[#C9A646] px-4 py-2 text-sm font-semibold text-black"
+          className="rounded-lg bg-premium-gold px-4 py-2 text-sm font-semibold text-black"
         >
           Search
         </button>
@@ -114,7 +114,7 @@ export function EnforceableContractsAdminClient() {
                   <td className="px-3 py-2">
                     <Link
                       href={`/api/contracts/${encodeURIComponent(r.id)}/download`}
-                      className="text-[#C9A646] hover:underline"
+                      className="text-premium-gold hover:underline"
                       target="_blank"
                       rel="noreferrer"
                     >

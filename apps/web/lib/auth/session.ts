@@ -1,11 +1,12 @@
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import {
   AUTH_SESSION_COOKIE_NAME,
+  getCookieValueFromHeader,
   HUB_USER_ROLE_COOKIE_NAME,
   TENANT_CONTEXT_COOKIE_NAME,
-  parseSessionUserId,
 } from "@/lib/auth/session-cookie";
 import { isSecureCookieContext } from "@/lib/runtime-env";
+import { resolveSessionTokenToUserId } from "@/lib/auth/db-session";
 
 export {
   AUTH_SESSION_COOKIE_NAME,
@@ -14,8 +15,8 @@ export {
 } from "@/lib/auth/session-cookie";
 
 export async function getGuestId(): Promise<string | null> {
-  const c = await cookies();
-  return parseSessionUserId(c.get(AUTH_SESSION_COOKIE_NAME)?.value);
+  const raw = getCookieValueFromHeader((await headers()).get("cookie"), AUTH_SESSION_COOKIE_NAME);
+  return resolveSessionTokenToUserId(raw);
 }
 
 /** User role for hub routing and access control (admin-only hub). */
@@ -41,10 +42,11 @@ export function setUserRoleCookie(role: string) {
   };
 }
 
-export function setGuestIdCookie(guestId: string) {
+/** Cookie descriptor — `value` must be an opaque session token from `createDbSession`, not a raw user id. */
+export function setGuestIdCookie(sessionToken: string) {
   return {
     name: AUTH_SESSION_COOKIE_NAME,
-    value: guestId,
+    value: sessionToken,
     path: "/",
     maxAge: 60 * 60 * 24 * 7, // 7 days
     httpOnly: true,

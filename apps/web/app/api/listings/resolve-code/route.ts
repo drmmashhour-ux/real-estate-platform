@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { normalizeAnyPublicListingCode } from "@/lib/listing-code-public";
+import { buildBnhubStaySeoSlug, buildFsboPublicListingPath } from "@/lib/seo/public-urls";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +19,7 @@ export async function GET(request: NextRequest) {
   const [st, crm, fsbo] = await Promise.all([
     prisma.shortTermListing.findFirst({
       where: { listingCode: { equals: code, mode: "insensitive" } },
-      select: { id: true },
+      select: { id: true, city: true, propertyType: true },
     }),
     prisma.listing.findFirst({
       where: { listingCode: { equals: code, mode: "insensitive" } },
@@ -26,15 +27,24 @@ export async function GET(request: NextRequest) {
     }),
     prisma.fsboListing.findFirst({
       where: { listingCode: { equals: code, mode: "insensitive" } },
-      select: { id: true },
+      select: { id: true, city: true, propertyType: true },
     }),
   ]);
 
   if (st) {
-    return NextResponse.json({ kind: "bnhub", id: st.id, url: `/bnhub/${encodeURIComponent(st.id)}` });
+    const slug = buildBnhubStaySeoSlug({
+      id: st.id,
+      city: st.city,
+      propertyType: st.propertyType,
+    });
+    return NextResponse.json({ kind: "bnhub", id: st.id, url: `/stays/${encodeURIComponent(slug)}` });
   }
   if (fsbo) {
-    return NextResponse.json({ kind: "fsbo", id: fsbo.id, url: `/listings/${encodeURIComponent(fsbo.id)}` });
+    return NextResponse.json({
+      kind: "fsbo",
+      id: fsbo.id,
+      url: buildFsboPublicListingPath(fsbo),
+    });
   }
   if (crm) {
     return NextResponse.json({

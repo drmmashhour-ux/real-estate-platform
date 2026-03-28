@@ -78,18 +78,18 @@ export function OnboardingModal() {
       aria-modal="true"
       aria-labelledby="onboard-title"
     >
-      <div className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-[#C9A646]/40 bg-[#121212] p-6 shadow-2xl shadow-black/60">
+      <div className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-premium-gold/40 bg-[#121212] p-6 shadow-2xl shadow-black/60">
         <button
           type="button"
           onClick={finish}
-          className="absolute right-4 top-4 rounded-lg border border-white/15 px-2 py-1 text-xs text-[#737373] hover:border-[#C9A646]/50 hover:text-white"
+          className="absolute right-4 top-4 rounded-lg border border-white/15 px-2 py-1 text-xs text-[#737373] hover:border-premium-gold/50 hover:text-white"
         >
           Skip
         </button>
 
         {step === 1 ? (
           <>
-            <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#C9A646]">Welcome</p>
+            <p className="text-xs font-bold uppercase tracking-[0.25em] text-premium-gold">Welcome</p>
             <h2 id="onboard-title" className="mt-2 text-2xl font-bold text-white">
               Welcome to LECIPM
             </h2>
@@ -100,14 +100,14 @@ export function OnboardingModal() {
             <button
               type="button"
               onClick={() => setStep(2)}
-              className="mt-8 w-full rounded-xl bg-[#C9A646] py-3 text-sm font-bold text-[#0B0B0B]"
+              className="mt-8 w-full rounded-xl bg-premium-gold py-3 text-sm font-bold text-[#0B0B0B]"
             >
               Continue
             </button>
           </>
         ) : (
           <>
-            <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#C9A646]">Step 2</p>
+            <p className="text-xs font-bold uppercase tracking-[0.25em] text-premium-gold">Step 2</p>
             <h2 className="mt-2 text-xl font-bold text-white">What do you want to do?</h2>
             <div className="mt-6 grid gap-2">
               {(
@@ -124,8 +124,8 @@ export function OnboardingModal() {
                   onClick={() => setGoal(k)}
                   className={`rounded-xl border px-4 py-3 text-left transition ${
                     goal === k
-                      ? "border-[#C9A646] bg-[#C9A646]/15 text-white"
-                      : "border-white/15 text-[#B3B3B3] hover:border-[#C9A646]/40"
+                      ? "border-premium-gold bg-premium-gold/15 text-white"
+                      : "border-white/15 text-[#B3B3B3] hover:border-premium-gold/40"
                   }`}
                 >
                   <span className="block font-semibold text-white">{title}</span>
@@ -137,12 +137,12 @@ export function OnboardingModal() {
               type="button"
               disabled={!goal}
               onClick={goToFlow}
-              className="mt-6 w-full rounded-xl bg-[#C9A646] py-3 text-sm font-bold text-[#0B0B0B] disabled:opacity-40"
+              className="mt-6 w-full rounded-xl bg-premium-gold py-3 text-sm font-bold text-[#0B0B0B] disabled:opacity-40"
             >
               Go
             </button>
             <p className="mt-4 text-center text-xs text-[#737373]">
-              <Link href="/how-it-works" className="text-[#C9A646] hover:underline" onClick={finish}>
+              <Link href="/how-it-works" className="text-premium-gold hover:underline" onClick={finish}>
                 Read how LECIPM works
               </Link>
             </p>

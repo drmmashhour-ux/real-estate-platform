@@ -59,8 +59,8 @@ export function ComparableRefreshStatusCard({ listingId, enabled }: Props) {
   if (!enabled) return null;
 
   return (
-    <div className="rounded-2xl border border-[#C9A646]/25 bg-[#121212] p-5">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#C9A646]">Comparable refresh</p>
+    <div className="rounded-2xl border border-premium-gold/25 bg-[#121212] p-5">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-premium-gold">Comparable refresh</p>
       <p className="mt-2 text-xs text-slate-500">
         Refreshes rules-based comparables — not an appraisal. Staleness and list-price changes can prompt updates.
       </p>
@@ -68,7 +68,7 @@ export function ComparableRefreshStatusCard({ listingId, enabled }: Props) {
         type="button"
         onClick={() => void runRefresh()}
         disabled={loading}
-        className="mt-4 rounded-full border border-[#C9A646]/40 bg-[#C9A646]/10 px-4 py-2 text-xs font-semibold text-[#E8C547] transition hover:bg-[#C9A646]/20 disabled:opacity-50"
+        className="mt-4 rounded-full border border-premium-gold/40 bg-premium-gold/10 px-4 py-2 text-xs font-semibold text-premium-gold transition hover:bg-premium-gold/20 disabled:opacity-50"
       >
         {loading ? "Running…" : "Request comparable refresh"}
       </button>

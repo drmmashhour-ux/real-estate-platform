@@ -79,7 +79,9 @@ export async function assertBookingStripeWebhookValid(params: {
   if (booking.payment.status !== "PENDING") {
     return { ok: false, reason: "payment_not_pending" };
   }
-  if (booking.payment.amountCents !== params.amountTotalCents) {
+  const delta = Math.abs(booking.payment.amountCents - params.amountTotalCents);
+  /** Allow 1¢ drift for Stripe minor-unit rounding vs our quote snapshot. */
+  if (delta > 1) {
     return { ok: false, reason: "amount_mismatch" };
   }
   return { ok: true };

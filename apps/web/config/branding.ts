@@ -33,8 +33,8 @@ export const BRAND = {
   /** French luxury line — pairs with `shortName` in subtitles. */
   carrefourLine: PLATFORM_CARREFOUR_NAME,
   tagline: "Buy • Sell • Rent • Finance — All in One System",
-  primaryColor: "#C9A646",
-  primaryHover: "#E0B84F",
+  primaryColor: "#D4AF37",
+  primaryHover: "#E5C158",
   background: "#0B0B0B",
   surface: "#111111",
   surfaceLight: "#1A1A1A",

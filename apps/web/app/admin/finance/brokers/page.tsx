@@ -75,7 +75,7 @@ export default async function AdminFinanceBrokersPage() {
                     <td className="px-3 py-2">{((s?.grossAmountCents ?? 0) / 100).toFixed(2)}</td>
                     <td className="px-3 py-2">{((s?.brokerAmountCents ?? 0) / 100).toFixed(2)}</td>
                     <td className="px-3 py-2">
-                      <Link href={`/admin/finance/brokers/${b.id}`} className="text-[#C9A646] hover:underline">
+                      <Link href={`/admin/finance/brokers/${b.id}`} className="text-premium-gold hover:underline">
                         Open
                       </Link>
                     </td>

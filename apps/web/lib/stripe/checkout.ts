@@ -110,13 +110,24 @@ export async function createCheckoutSession(
     }
   }
 
-  const paymentIntentData: Stripe.Checkout.SessionCreateParams.PaymentIntentData | undefined =
-    connect && connect.destinationAccountId
+  if (paymentType === "booking") {
+    if (!bookingId?.trim()) {
+      return { error: "bookingId is required for booking checkout (metadata + webhook)" };
+    }
+    if (!listingId?.trim()) {
+      return { error: "listingId is required for booking checkout (metadata + webhook)" };
+    }
+  }
+
+  const paymentIntentData: Stripe.Checkout.SessionCreateParams.PaymentIntentData = {
+    metadata: metadataCombined,
+    ...(connect && connect.destinationAccountId
       ? {
           application_fee_amount: connect.applicationFeeAmount,
           transfer_data: { destination: connect.destinationAccountId },
         }
-      : undefined;
+      : {}),
+  };
 
   try {
     const session = await stripe.checkout.sessions.create({
@@ -138,7 +149,7 @@ export async function createCheckoutSession(
       success_url: successUrl,
       cancel_url: cancelUrl,
       metadata: metadataCombined,
-      ...(paymentIntentData ? { payment_intent_data: paymentIntentData } : {}),
+      payment_intent_data: paymentIntentData,
     });
 
     const url = session.url;

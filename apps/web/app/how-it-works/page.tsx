@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 
 function FlowIcon({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-2xl border border-[#C9A646]/35 bg-[#C9A646]/10 text-[#C9A646]">
+    <div className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-2xl border border-premium-gold/35 bg-premium-gold/10 text-premium-gold">
       {children}
     </div>
   );
@@ -28,7 +28,7 @@ export default function HowItWorksPage() {
     <main className="min-h-screen bg-[#0B0B0B] text-white">
       <section className="border-b border-white/10">
         <div className="mx-auto max-w-4xl px-4 py-16 text-center sm:px-6 lg:px-8">
-          <p className="text-xs font-semibold uppercase tracking-[0.25em] text-[#C9A646]">Guide</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.25em] text-premium-gold">Guide</p>
           <h1 className="font-serif mt-4 text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
             How {PLATFORM_NAME} works
           </h1>
@@ -84,7 +84,7 @@ export default function HowItWorksPage() {
           ].map((card) => (
             <article
               key={card.title}
-              className="flex flex-col rounded-2xl border border-white/10 bg-[#121212] p-6 transition hover:border-[#C9A646]/35 hover:shadow-lg hover:shadow-[#C9A646]/5"
+              className="flex flex-col rounded-2xl border border-white/10 bg-[#121212] p-6 transition hover:border-premium-gold/35 hover:shadow-lg hover:shadow-premium-gold/5"
             >
               <FlowIcon>{card.icon}</FlowIcon>
               <h2 className="text-xl font-bold text-white">{card.title}</h2>
@@ -95,7 +95,7 @@ export default function HowItWorksPage() {
               </ol>
               <Link
                 href={card.href}
-                className="mt-6 inline-flex text-sm font-semibold text-[#C9A646] hover:underline"
+                className="mt-6 inline-flex text-sm font-semibold text-premium-gold hover:underline"
               >
                 Start →
               </Link>
@@ -106,7 +106,7 @@ export default function HowItWorksPage() {
 
       <section className="border-y border-white/10 bg-[#111]/80">
         <div className="mx-auto max-w-4xl px-4 py-14 sm:px-6 lg:px-8">
-          <h2 className="text-center text-sm font-bold uppercase tracking-[0.2em] text-[#C9A646]">Trust</h2>
+          <h2 className="text-center text-sm font-bold uppercase tracking-[0.2em] text-premium-gold">Trust</h2>
           <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {[
               "Quebec platform",
@@ -116,7 +116,7 @@ export default function HowItWorksPage() {
             ].map((t) => (
               <li
                 key={t}
-                className="rounded-xl border border-[#C9A646]/20 bg-[#0B0B0B] px-4 py-4 text-center text-sm font-medium text-white"
+                className="rounded-xl border border-premium-gold/20 bg-[#0B0B0B] px-4 py-4 text-center text-sm font-medium text-white"
               >
                 {t}
               </li>
@@ -131,7 +131,7 @@ export default function HowItWorksPage() {
           <h3 className="mt-2 text-lg font-bold text-white">Watch how it works</h3>
           <p className="mt-2 text-sm text-[#B3B3B3]">
             A short walkthrough video will appear here. Until then, explore{" "}
-            <Link href="/help" className="text-[#C9A646] hover:underline">
+            <Link href="/help" className="text-premium-gold hover:underline">
               Help center
             </Link>{" "}
             or start a flow below.
@@ -142,9 +142,9 @@ export default function HowItWorksPage() {
           <LeadCTA variant="evaluation" className="justify-center" />
         </div>
         <p className="mt-8 text-center text-sm text-[#737373]">
-          Questions? <Link href="/help" className="text-[#C9A646] hover:underline">Help center</Link>
+          Questions? <Link href="/help" className="text-premium-gold hover:underline">Help center</Link>
           {" · "}
-          <Link href="/broker/mohamed-al-mashhour" className="text-[#C9A646] hover:underline">
+          <Link href="/broker/mohamed-al-mashhour" className="text-premium-gold hover:underline">
             Talk to a broker
           </Link>
         </p>

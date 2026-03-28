@@ -19,7 +19,7 @@ export function FunnelVisualization({ snapshot }: { snapshot: ExecutionSnapshot 
       <ol className="mt-4 space-y-3">
         {steps.map((s, i) => (
           <li key={s.label} className="flex flex-wrap items-start gap-3">
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#C9A646]/20 text-xs font-semibold text-[#C9A646]">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-premium-gold/20 text-xs font-semibold text-premium-gold">
               {i + 1}
             </span>
             <div className="min-w-0 flex-1">

@@ -19,8 +19,8 @@ export function InvestorMarketInsightCard(props: {
   };
 
   return (
-    <div className="mt-8 rounded-2xl border border-[#C9A646]/25 bg-white/[0.02] p-5">
-      <h2 className="text-sm font-semibold text-[#C9A646]">Market & platform insight</h2>
+    <div className="mt-8 rounded-2xl border border-premium-gold/25 bg-white/[0.02] p-5">
+      <h2 className="text-sm font-semibold text-premium-gold">Market & platform insight</h2>
       <p className="mt-1 text-xs text-slate-500">Interprets the KPI row and charts — estimates only.</p>
       <div className="mt-4">
         <HubAiInsightWidget
@@ -29,7 +29,7 @@ export function InvestorMarketInsightCard(props: {
           intent="explain"
           title="Explain this view"
           context={ctx}
-          accent="#C9A646"
+          accent="var(--color-premium-gold)"
         />
       </div>
     </div>

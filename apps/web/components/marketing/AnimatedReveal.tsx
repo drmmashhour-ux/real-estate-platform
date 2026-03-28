@@ -34,7 +34,7 @@ export function AnimatedReveal({ children, className = "", delayMs = 0 }: Props)
     const t = window.setTimeout(() => {
       show();
       ob.disconnect();
-    }, 2500);
+    }, 2000);
     return () => {
       window.clearTimeout(t);
       ob.disconnect();

@@ -38,7 +38,7 @@ export const metadata: Metadata = {
   ],
 };
 
-const GOLD = "#C9A646";
+const GOLD = "var(--color-premium-gold)";
 
 const BENEFITS = [
   {
@@ -180,14 +180,14 @@ export default async function FsboSellPage({
           <div className="mt-10 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
             <Link
               href="/sell/create"
-              className="inline-flex items-center justify-center rounded-xl px-8 py-3.5 text-sm font-bold text-[#0B0B0B] shadow-lg transition hover:-translate-y-0.5 hover:shadow-[0_12px_32px_rgba(201, 166, 70,0.25)]"
+              className="inline-flex items-center justify-center rounded-xl px-8 py-3.5 text-sm font-bold text-[#0B0B0B] shadow-lg transition hover:-translate-y-0.5 hover:shadow-[0_12px_32px_rgb(var(--premium-gold-channels) / 0.25)]"
               style={{ backgroundColor: GOLD }}
             >
               Create your listing
             </Link>
             <a
               href="#sell-consultation"
-              className="inline-flex items-center justify-center rounded-xl border-2 border-[#C9A646] px-8 py-3.5 text-sm font-semibold text-[#C9A646] transition hover:-translate-y-0.5 hover:bg-[#C9A646]/10"
+              className="inline-flex items-center justify-center rounded-xl border-2 border-premium-gold px-8 py-3.5 text-sm font-semibold text-premium-gold transition hover:-translate-y-0.5 hover:bg-premium-gold/10"
             >
               Talk to a broker
             </a>
@@ -213,9 +213,9 @@ export default async function FsboSellPage({
             {BENEFITS.map(({ title, body, icon: Icon }) => (
               <div
                 key={title}
-                className="rounded-2xl border border-white/10 bg-[#121212] p-6 shadow-lg transition duration-300 hover:-translate-y-1 hover:border-[#C9A646]/35 hover:shadow-[0_16px_40px_rgba(201, 166, 70,0.08)]"
+                className="rounded-2xl border border-white/10 bg-[#121212] p-6 shadow-lg transition duration-300 hover:-translate-y-1 hover:border-premium-gold/35 hover:shadow-[0_16px_40px_rgb(var(--premium-gold-channels) / 0.08)]"
               >
-                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#C9A646]/15 text-[#C9A646]">
+                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-premium-gold/15 text-premium-gold">
                   <Icon className="h-6 w-6" />
                 </span>
                 <h3 className="mt-4 font-semibold text-white">{title}</h3>
@@ -244,8 +244,8 @@ export default async function FsboSellPage({
             Create your listing first, pick a plan on the form, then complete secure checkout to go live.
           </p>
           <div className="mt-10 grid gap-6 lg:grid-cols-2">
-            <div className="rounded-2xl border-2 border-white/15 bg-[#0B0B0B] p-8 shadow-lg transition hover:border-[#C9A646]/45">
-              <p className="text-xs font-semibold uppercase tracking-wider text-[#C9A646]">Basic</p>
+            <div className="rounded-2xl border-2 border-white/15 bg-[#0B0B0B] p-8 shadow-lg transition hover:border-premium-gold/45">
+              <p className="text-xs font-semibold uppercase tracking-wider text-premium-gold">Basic</p>
               <p className="mt-3 text-4xl font-bold text-white">{basicPrice}</p>
               <p className="mt-2 text-sm text-[#B3B3B3]">Standard FSBO listing in the directory.</p>
               <Link
@@ -256,12 +256,12 @@ export default async function FsboSellPage({
               </Link>
             </div>
             <div
-              className="relative rounded-2xl border-2 border-[#C9A646]/50 bg-gradient-to-br from-[#1a1508] to-[#0B0B0B] p-8 shadow-[0_0_40px_rgba(201, 166, 70,0.12)] transition hover:border-[#E8C547]"
+              className="relative rounded-2xl border-2 border-premium-gold/50 bg-gradient-to-br from-[#1a1508] to-[#0B0B0B] p-8 shadow-[0_0_40px_rgb(var(--premium-gold-channels) / 0.12)] transition hover:border-premium-gold"
             >
-              <span className="absolute right-4 top-4 rounded-full bg-[#C9A646]/25 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-[#E8C547]">
+              <span className="absolute right-4 top-4 rounded-full bg-premium-gold/25 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-premium-gold">
                 Best visibility
               </span>
-              <p className="text-xs font-semibold uppercase tracking-wider text-[#E8C547]">Premium</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-premium-gold">Premium</p>
               <p className="mt-3 text-4xl font-bold text-white">{premiumPrice}</p>
               <p className="mt-2 text-sm text-[#B3B3B3]">Featured placement — highlighted in search & browse results.</p>
               <Link
@@ -287,24 +287,24 @@ export default async function FsboSellPage({
           </p>
           <ul className="mt-6 space-y-4 text-sm text-[#B3B3B3]">
             <li className="flex gap-3">
-              <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[#C9A646]" aria-hidden />
+              <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-premium-gold" aria-hidden />
               <span>
                 <strong className="text-white">BNHub (stays):</strong> guests pay through Stripe; we retain a{" "}
-                <strong className="text-[#C9A646]">15%</strong> platform commission on each booking (configurable). The rest
+                <strong className="text-premium-gold">15%</strong> platform commission on each booking (configurable). The rest
                 is transferred to hosts via Stripe Connect.
               </span>
             </li>
             <li className="flex gap-3">
-              <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[#C9A646]" aria-hidden />
+              <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-premium-gold" aria-hidden />
               <span>
                 <strong className="text-white">FSBO (sell):</strong> you pay a{" "}
-                <strong className="text-[#C9A646]">one-time flat fee</strong> ({basicPrice} standard, {premiumPrice}{" "}
+                <strong className="text-premium-gold">one-time flat fee</strong> ({basicPrice} standard, {premiumPrice}{" "}
                 featured) to publish; <strong className="text-white">the platform keeps 100% of that listing fee</strong>{" "}
                 — it is not a commission on your home price.
               </span>
             </li>
             <li className="flex gap-3">
-              <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[#C9A646]" aria-hidden />
+              <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-premium-gold" aria-hidden />
               <span>
                 <strong className="text-white">Brokers & deals:</strong> traditional brokerage and closing flows may use
                 separate agreements; we do not hide booking or FSBO fees in small print.
@@ -327,7 +327,7 @@ export default async function FsboSellPage({
           >
             Create your listing
           </Link>
-          <Link href="/sell/learn" className="text-sm font-medium text-[#C9A646] hover:underline">
+          <Link href="/sell/learn" className="text-sm font-medium text-premium-gold hover:underline">
             How FSBO works →
           </Link>
         </div>
@@ -338,7 +338,7 @@ export default async function FsboSellPage({
         <div className="mx-auto max-w-5xl">
           <h2
             id="trusted-broker-heading"
-            className="text-center text-sm font-semibold uppercase tracking-[0.2em] text-[#C9A646]"
+            className="text-center text-sm font-semibold uppercase tracking-[0.2em] text-premium-gold"
           >
             Or work with a trusted broker
           </h2>
@@ -358,7 +358,7 @@ export default async function FsboSellPage({
       {/* Compare FSBO vs broker */}
       <section className="border-y border-white/10 bg-[#121212] px-4 py-14 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-3xl text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#C9A646]">Not sure yet?</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold">Not sure yet?</p>
           <h2 className="font-serif mt-3 text-2xl font-semibold text-white sm:text-3xl">
             Sell by yourself vs work with a broker
           </h2>
@@ -385,7 +385,7 @@ export default async function FsboSellPage({
             Talk to a licensed broker
           </h2>
           <p className="mx-auto mt-3 max-w-lg text-center text-sm text-[#B3B3B3]">
-            Request your <span className="font-semibold text-[#C9A646]">FREE</span> consultation — FSBO coaching or
+            Request your <span className="font-semibold text-premium-gold">FREE</span> consultation — FSBO coaching or
             full brokerage. No obligation.
           </p>
           <div className="mt-8">
@@ -398,31 +398,31 @@ export default async function FsboSellPage({
       <section className="border-t border-white/10 bg-[#121212] px-4 py-12 sm:px-6 lg:px-8">
         <div className="mx-auto grid max-w-6xl gap-10 md:grid-cols-2 md:gap-12">
           <div>
-            <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-[#C9A646]">Mission</h3>
+            <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold">Mission</h3>
             <p className="mt-3 text-sm leading-relaxed text-[#B3B3B3]">
               To simplify real estate, rentals, and investment through one premium platform — with transparent tools and
               optional licensed guidance when you want it.
             </p>
           </div>
           <div>
-            <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-[#C9A646]">Contact</h3>
+            <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold">Contact</h3>
             <ul className="mt-3 space-y-2 text-sm text-[#B3B3B3]">
               <li>
-                <a href={getPublicContactMailto()} className="font-medium text-white hover:text-[#C9A646]">
+                <a href={getPublicContactMailto()} className="font-medium text-white hover:text-premium-gold">
                   {CONTACT_EMAIL}
                 </a>
               </li>
               <li>
                 <span className="text-[#B3B3B3]/80">Support</span>
                 <br />
-                <a href={getSupportTelHref()} className="font-medium text-white hover:text-[#C9A646]">
+                <a href={getSupportTelHref()} className="font-medium text-white hover:text-premium-gold">
                   {getSupportPhoneDisplay()}
                 </a>
               </li>
               <li>
                 <span className="text-[#B3B3B3]/80">Broker</span>
                 <br />
-                <a href={getBrokerTelHref()} className="font-medium text-white hover:text-[#C9A646]">
+                <a href={getBrokerTelHref()} className="font-medium text-white hover:text-premium-gold">
                   {getBrokerPhoneDisplay()}
                 </a>
               </li>
@@ -433,7 +433,7 @@ export default async function FsboSellPage({
 
         {/* Optional testimonials placeholder */}
         <div className="mx-auto mt-12 max-w-6xl rounded-2xl border border-dashed border-white/15 bg-[#0B0B0B]/60 p-8 text-center">
-          <p className="text-xs font-semibold uppercase tracking-wider text-[#C9A646]/80">Testimonials</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-premium-gold/80">Testimonials</p>
           <p className="mt-2 text-sm text-[#B3B3B3]">Owner stories coming soon — we&apos;re collecting verified reviews.</p>
         </div>
       </section>
@@ -443,13 +443,13 @@ export default async function FsboSellPage({
         <div className="mx-auto max-w-6xl">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#C9A646]">Directory</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold">Directory</p>
               <h2 className="mt-2 text-2xl font-semibold tracking-tight">Browse FSBO listings</h2>
               <p className="mt-1 text-sm text-[#B3B3B3]">Private sale properties — contact owners directly.</p>
             </div>
             <Link
               href="/sell/create"
-              className="inline-flex justify-center rounded-xl bg-[#C9A646] px-5 py-3 text-sm font-bold text-[#0B0B0B] hover:bg-[#E8C547]"
+              className="inline-flex justify-center rounded-xl bg-premium-gold px-5 py-3 text-sm font-bold text-[#0B0B0B] hover:bg-premium-gold"
             >
               Create your listing
             </Link>
@@ -531,11 +531,11 @@ export default async function FsboSellPage({
               return (
                 <article
                   key={l.id}
-                  className="overflow-hidden rounded-2xl border border-white/10 bg-[#121212] shadow-lg transition hover:border-[#C9A646]/40"
+                  className="overflow-hidden rounded-2xl border border-white/10 bg-[#121212] shadow-lg transition hover:border-premium-gold/40"
                 >
                   <Link href={`/sell/${l.id}`} className="relative block aspect-[4/3] bg-[#1a1a1a]">
                     {isFeatured ? (
-                      <span className="absolute left-2 top-2 z-10 rounded-md bg-[#C9A646] px-2 py-0.5 text-[10px] font-bold uppercase text-[#0B0B0B]">
+                      <span className="absolute left-2 top-2 z-10 rounded-md bg-premium-gold px-2 py-0.5 text-[10px] font-bold uppercase text-[#0B0B0B]">
                         Featured
                       </span>
                     ) : null}
@@ -548,12 +548,12 @@ export default async function FsboSellPage({
                   </Link>
                   <div className="p-4">
                     <h3 className="line-clamp-2 font-semibold text-white">
-                      <Link href={`/sell/${l.id}`} className="hover:text-[#C9A646]">
+                      <Link href={`/sell/${l.id}`} className="hover:text-premium-gold">
                         {l.title}
                       </Link>
                     </h3>
                     <p className="mt-1 text-sm text-[#B3B3B3]">{l.city}</p>
-                    <p className="mt-2 text-lg font-bold text-[#C9A646]">
+                    <p className="mt-2 text-lg font-bold text-premium-gold">
                       ${(l.priceCents / 100).toLocaleString()}
                       {l.bedrooms != null ? (
                         <span className="ml-2 text-sm font-normal text-[#B3B3B3]">{l.bedrooms} bd</span>
@@ -568,7 +568,7 @@ export default async function FsboSellPage({
                       <FsboCompareButton listingId={l.id} className="w-full sm:flex-1" />
                       <Link
                         href={`/sell/${l.id}#contact`}
-                        className="inline-flex w-full flex-1 items-center justify-center rounded-xl border border-[#C9A646]/50 py-2.5 text-sm font-semibold text-[#C9A646] hover:bg-[#C9A646]/10"
+                        className="inline-flex w-full flex-1 items-center justify-center rounded-xl border border-premium-gold/50 py-2.5 text-sm font-semibold text-premium-gold hover:bg-premium-gold/10"
                       >
                         Contact owner
                       </Link>

@@ -16,12 +16,12 @@ export function ListingTrustPublicPanel({ listingId, trustScore, isOwner }: Prop
   const pct = Math.min(100, Math.max(0, score));
 
   return (
-    <div className="rounded-2xl border border-[#C9A646]/25 bg-[#121212] p-6">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#C9A646]">Trust & readiness</p>
+    <div className="rounded-2xl border border-premium-gold/25 bg-[#121212] p-6">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-premium-gold">Trust & readiness</p>
       <p className="mt-1 text-xs text-slate-500">Informational — improves with verification and documents.</p>
       <div className="mt-6 flex flex-col items-center">
         <div
-          className="flex h-28 w-28 flex-col items-center justify-center rounded-full border-4 border-[#C9A646]/40 bg-[#0B0B0B] shadow-[0_0_28px_rgba(201,166,70,0.2)]"
+          className="flex h-28 w-28 flex-col items-center justify-center rounded-full border-4 border-premium-gold/40 bg-[#0B0B0B] shadow-[0_0_28px_rgb(var(--premium-gold-channels) / 0.2)]"
           aria-hidden
         >
           <span className="text-3xl font-bold text-white">{score}</span>
@@ -32,12 +32,12 @@ export function ListingTrustPublicPanel({ listingId, trustScore, isOwner }: Prop
         </span>
       </div>
       <div className="mt-5 h-2 w-full overflow-hidden rounded-full bg-white/10">
-        <div className="h-full rounded-full bg-[#C9A646]/90 transition-[width]" style={{ width: `${pct}%` }} />
+        <div className="h-full rounded-full bg-premium-gold/90 transition-[width]" style={{ width: `${pct}%` }} />
       </div>
       {isOwner ? (
         <Link
           href={`/dashboard/seller/listings/${encodeURIComponent(listingId)}`}
-          className="mt-6 flex min-h-[44px] w-full items-center justify-center rounded-full bg-[#C9A646] px-4 text-sm font-bold text-[#0B0B0B] shadow-[0_0_24px_rgba(201,166,70,0.35)] transition hover:bg-[#E8C547]"
+          className="mt-6 flex min-h-[44px] w-full items-center justify-center rounded-full bg-premium-gold px-4 text-sm font-bold text-[#0B0B0B] shadow-[0_0_24px_rgb(var(--premium-gold-channels) / 0.35)] transition hover:bg-premium-gold"
         >
           Fix now
         </Link>

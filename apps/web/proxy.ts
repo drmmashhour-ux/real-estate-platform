@@ -12,6 +12,7 @@ import {
 import { shouldSetFirstTouchCookie } from "@/lib/attribution/lead-attribution";
 import {
   AUTH_SESSION_COOKIE_NAME,
+  HUB_USER_ROLE_COOKIE_NAME,
   LECIPM_PATH_HEADER,
   parseSessionUserId,
 } from "@/lib/auth/session-cookie";
@@ -203,6 +204,14 @@ export function proxy(request: NextRequest) {
         const login = new URL("/auth/login", request.url);
         login.searchParams.set("next", pathname + request.nextUrl.search);
         return redirectWithRequestId(request, login);
+      }
+      /** Edge gate (cookie mirrors DB role at login). Layout still enforces Prisma role. */
+      const role = request.cookies.get(HUB_USER_ROLE_COOKIE_NAME)?.value?.trim().toUpperCase() ?? "";
+      if (role !== "ADMIN" && role !== "ACCOUNTANT") {
+        const dash = request.nextUrl.clone();
+        dash.pathname = "/dashboard";
+        dash.search = "";
+        return redirectWithRequestId(request, dash);
       }
       const requestHeaders = ensureRequestIdHeader(request);
       requestHeaders.set(LECIPM_PATH_HEADER, pathname + request.nextUrl.search);

@@ -18,12 +18,12 @@ export function FilterCategory({ title, defaultOpen = false, children, variant =
         open={defaultOpen}
         className="group border-b border-slate-200/90 last:border-b-0 dark:border-white/10"
       >
-        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-1 py-3.5 text-sm font-semibold text-[#C9A646] [&::-webkit-details-marker]:hidden">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-1 py-3.5 text-sm font-semibold text-premium-gold [&::-webkit-details-marker]:hidden">
           <span>{title}</span>
-          <span className="text-lg font-light leading-none text-[#C9A646]/90 group-open:hidden" aria-hidden>
+          <span className="text-lg font-light leading-none text-premium-gold/90 group-open:hidden" aria-hidden>
             +
           </span>
-          <span className="hidden text-lg font-light leading-none text-[#C9A646]/90 group-open:inline" aria-hidden>
+          <span className="hidden text-lg font-light leading-none text-premium-gold/90 group-open:inline" aria-hidden>
             −
           </span>
         </summary>

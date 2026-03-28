@@ -32,7 +32,7 @@ export default async function AiAdaptationPage() {
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-10 text-slate-100">
-      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#C9A646]">AI Adaptation</p>
+      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-premium-gold">AI Adaptation</p>
       <h1 className="mt-2 text-3xl font-semibold">RAG, feedback, and eval quality dashboard</h1>
       <Link href="/admin" className="mt-3 inline-block text-sm text-emerald-400 hover:text-emerald-300">
         ← Back to admin

@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   },
 };
 
-export const dynamic = "force-dynamic";
+export { dynamic, revalidate } from "@/lib/auth/protected-route-segment";
 
 export default async function InvestmentPortfolioDashboardPage() {
   const { userId } = await requireAuthenticatedUser();
@@ -44,7 +44,7 @@ export default async function InvestmentPortfolioDashboardPage() {
   const monetization = buildMonetizationSnapshot(user?.plan ?? "free", deals.length);
 
   return (
-    <div className="min-h-screen bg-[#0B0B0B] text-white">
+    <div className="min-h-screen bg-brand-background text-white">
       <MvpNav variant="live" />
       <PortfolioDashboardClient
         deals={deals}
@@ -54,11 +54,11 @@ export default async function InvestmentPortfolioDashboardPage() {
       />
       <div className="mx-auto mt-6 w-full max-w-6xl px-4 pb-10">
         <div className="mb-4 rounded-2xl border border-white/10 bg-black/25 p-4 text-white">
-          <p className="text-xs uppercase tracking-wide text-[#C9A646]">Watchlist pulse</p>
+          <p className="text-xs uppercase tracking-wide text-premium-gold">Watchlist pulse</p>
           <p className="mt-2 text-sm">
             {watchSummary.savedListings} saved properties · {watchSummary.unreadAlerts} unread alerts · {watchSummary.changedToday} changed today
           </p>
-          <a href="/watchlist" className="mt-2 inline-flex text-sm text-[#C9A646] hover:underline">Open watchlist</a>
+          <a href="/watchlist" className="mt-2 inline-flex text-sm text-premium-gold hover:underline">Open watchlist</a>
           {watchAlerts.length ? <p className="mt-2 text-xs text-slate-400">Latest: {watchAlerts[0]?.title}</p> : null}
         </div>
         <div className="mb-4">

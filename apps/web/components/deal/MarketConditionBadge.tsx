@@ -19,7 +19,7 @@ export function MarketConditionBadge({ marketCondition, className = "" }: Props)
         ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-200/90"
         : marketCondition === "uncertain"
           ? "border-slate-500/40 bg-slate-500/10 text-slate-300"
-          : "border-[#C9A646]/35 bg-[#C9A646]/10 text-[#E8C547]/95";
+          : "border-premium-gold/35 bg-premium-gold/10 text-premium-gold/95";
 
   return (
     <span

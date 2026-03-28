@@ -95,7 +95,7 @@ export function DailyContentCreator({
           type="button"
           disabled={loading}
           onClick={() => void generate()}
-          className="rounded-md bg-[#C9A646]/90 px-4 py-2 text-sm font-semibold text-black hover:bg-[#d4b456] disabled:opacity-50"
+          className="rounded-md bg-premium-gold/90 px-4 py-2 text-sm font-semibold text-black hover:bg-[#d4b456] disabled:opacity-50"
         >
           {loading ? "Generating…" : "Generate hook + script"}
         </button>
@@ -117,7 +117,7 @@ export function DailyContentCreator({
           Mark as posted
         </button>
       </div>
-      {hook ? <p className="mt-4 text-sm font-medium text-[#C9A646]">Hook: {hook}</p> : null}
+      {hook ? <p className="mt-4 text-sm font-medium text-premium-gold">Hook: {hook}</p> : null}
       {shortScript ? (
         <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap rounded-lg border border-white/10 bg-black/30 p-3 text-xs text-slate-300">
           {shortScript}
@@ -134,7 +134,7 @@ export function DailyContentCreator({
               type="button"
               onClick={() => setHookAngle(a)}
               className={`rounded-md px-3 py-1 text-xs font-medium ${
-                hookAngle === a ? "bg-[#C9A646]/90 text-black" : "border border-white/15 text-slate-300 hover:bg-white/5"
+                hookAngle === a ? "bg-premium-gold/90 text-black" : "border border-white/15 text-slate-300 hover:bg-white/5"
               }`}
             >
               {a}
@@ -153,7 +153,7 @@ export function DailyContentCreator({
           <ul className="mt-3 space-y-2 text-xs text-slate-300">
             {betterHooks.map((h, i) => (
               <li key={i} className="flex gap-2 rounded-md border border-white/10 bg-black/25 p-2">
-                <span className="shrink-0 font-medium text-[#C9A646]">{i + 1}.</span>
+                <span className="shrink-0 font-medium text-premium-gold">{i + 1}.</span>
                 <span className="flex-1">{h}</span>
                 <button
                   type="button"

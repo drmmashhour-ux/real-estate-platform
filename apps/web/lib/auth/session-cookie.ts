@@ -1,6 +1,6 @@
 /**
- * Session cookie: set on successful login/register (httpOnly).
- * Value is the authenticated User.id (legacy internal name: "guest_id").
+ * Session cookie: httpOnly; value is an opaque `Session.token` (resolved to `User.id` server-side).
+ * Cookie name kept as `lecipm_guest_id` for backward-compatible client checks.
  */
 export const AUTH_SESSION_COOKIE_NAME = "lecipm_guest_id" as const;
 
@@ -16,4 +16,23 @@ export const LECIPM_PATH_HEADER = "x-lecipm-path" as const;
 export function parseSessionUserId(value: string | undefined | null): string | null {
   const v = typeof value === "string" ? value.trim() : "";
   return v.length > 0 ? v : null;
+}
+
+/** Read a cookie value from the raw `Cookie` request header (matches Route Handler parsing). */
+export function getCookieValueFromHeader(header: string | null | undefined, name: string): string | undefined {
+  if (!header) return undefined;
+  for (const part of header.split(";")) {
+    const i = part.indexOf("=");
+    if (i === -1) continue;
+    const k = part.slice(0, i).trim();
+    if (k !== name) continue;
+    let v = part.slice(i + 1).trim();
+    try {
+      v = decodeURIComponent(v);
+    } catch {
+      /* keep raw */
+    }
+    return v;
+  }
+  return undefined;
 }

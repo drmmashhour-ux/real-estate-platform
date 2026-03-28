@@ -7,7 +7,7 @@ import {
   type InvestorQAItem,
 } from "@/modules/investor/investor-qa";
 
-const GOLD = "#C9A646";
+const GOLD = "var(--color-premium-gold)";
 
 function normalize(s: string) {
   return s.toLowerCase().trim();
@@ -86,7 +86,7 @@ export function InvestorQA() {
               setOpen((prev) => pruneOpen(filterQA(tab, q), prev));
             }}
             placeholder="Search questions or answers…"
-            className="w-full rounded-2xl border border-white/10 bg-black/50 py-3 pl-4 pr-4 text-sm text-white placeholder:text-slate-600 outline-none transition focus:border-[#C9A646]/50 focus:ring-2 focus:ring-[#C9A646]/20"
+            className="w-full rounded-2xl border border-white/10 bg-black/50 py-3 pl-4 pr-4 text-sm text-white placeholder:text-slate-600 outline-none transition focus:border-premium-gold/50 focus:ring-2 focus:ring-premium-gold/20"
           />
         </label>
         <label className="flex cursor-pointer items-center gap-2 text-xs text-slate-500">
@@ -104,7 +104,7 @@ export function InvestorQA() {
                 });
               }
             }}
-            className="rounded border-white/20 bg-black text-[#C9A646] focus:ring-[#C9A646]"
+            className="rounded border-white/20 bg-black text-premium-gold focus:ring-premium-gold"
           />
           Allow multiple open
         </label>
@@ -141,7 +141,7 @@ export function InvestorQA() {
               <li key={item.id}>
                 <div
                   className={`overflow-hidden rounded-2xl border transition ${
-                    expanded ? "border-[#C9A646]/35 bg-[#C9A646]/[0.06]" : "border-white/10 bg-white/[0.03] hover:border-white/20"
+                    expanded ? "border-premium-gold/35 bg-premium-gold/[0.06]" : "border-white/10 bg-white/[0.03] hover:border-white/20"
                   }`}
                 >
                   <button
@@ -152,7 +152,7 @@ export function InvestorQA() {
                   >
                     <span className="min-w-0">
                       {item.category ? (
-                        <span className="mb-1 block text-[10px] font-bold uppercase tracking-[0.2em] text-[#C9A646]/90">
+                        <span className="mb-1 block text-[10px] font-bold uppercase tracking-[0.2em] text-premium-gold/90">
                           {item.category}
                         </span>
                       ) : null}

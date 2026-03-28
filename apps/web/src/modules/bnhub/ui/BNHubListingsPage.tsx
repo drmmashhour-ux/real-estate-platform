@@ -23,7 +23,7 @@ export async function BNHubListingsPage() {
             <p className="text-slate-400">{l.city}</p>
             <p className="mt-1 text-slate-200">${(l.nightPriceCents / 100).toFixed(0)} / night</p>
             <p className="mt-1 text-xs text-emerald-400">Trust score: {l.trust.score}</p>
-            <Link href={`/bnhub/listings/${l.id}`} className="mt-2 inline-block text-xs text-[#C9A646] hover:underline">
+            <Link href={`/bnhub/listings/${l.id}`} className="mt-2 inline-block text-xs text-premium-gold hover:underline">
               View property
             </Link>
           </article>

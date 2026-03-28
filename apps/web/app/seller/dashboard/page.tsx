@@ -90,7 +90,7 @@ export default async function SellerHubDashboardRoutePage() {
             </Link>
             <Link
               href="/seller/create-listing"
-              className="rounded-xl bg-[#C9A646] px-4 py-2 text-sm font-semibold text-black"
+              className="rounded-xl bg-premium-gold px-4 py-2 text-sm font-semibold text-black"
             >
               New listing
             </Link>
@@ -122,7 +122,7 @@ export default async function SellerHubDashboardRoutePage() {
               <li key={l.id} className="rounded-2xl border border-white/10 bg-[#121212] p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
-                    <Link href={`/listings/${l.id}`} className="font-medium text-[#E8C547] hover:underline">
+                    <Link href={`/listings/${l.id}`} className="font-medium text-premium-gold hover:underline">
                       {l.title}
                     </Link>
                     <p className="text-xs text-slate-500">
@@ -171,7 +171,7 @@ export default async function SellerHubDashboardRoutePage() {
                     <div className="flex flex-col items-end gap-1">
                       <Link
                         href={`/seller/create-listing?id=${encodeURIComponent(l.id)}`}
-                        className="rounded-lg border border-[#C9A646]/40 px-3 py-1.5 text-center text-xs font-semibold text-[#C9A646] hover:bg-[#C9A646]/10"
+                        className="rounded-lg border border-premium-gold/40 px-3 py-1.5 text-center text-xs font-semibold text-premium-gold hover:bg-premium-gold/10"
                       >
                         Continue setup
                       </Link>
@@ -207,7 +207,7 @@ export default async function SellerHubDashboardRoutePage() {
                 </Link>
                 <Link
                   href="/seller/create-listing"
-                  className="rounded-xl bg-[#C9A646] px-6 py-3 text-sm font-bold text-[#0B0B0B]"
+                  className="rounded-xl bg-premium-gold px-6 py-3 text-sm font-bold text-[#0B0B0B]"
                 >
                   Create listing
                 </Link>
@@ -218,7 +218,7 @@ export default async function SellerHubDashboardRoutePage() {
 
         <p className="mt-10 text-center text-xs text-slate-600">
           After approval, published listings appear in{" "}
-          <Link href="/buy" className="text-[#C9A646] hover:underline">
+          <Link href="/buy" className="text-premium-gold hover:underline">
             buyer search
           </Link>
           .

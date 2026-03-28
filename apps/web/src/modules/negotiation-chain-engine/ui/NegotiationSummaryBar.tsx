@@ -16,11 +16,11 @@ export function NegotiationSummaryBar({ chainStatus, activeVersion, lastUpdatedI
   const fin = activeVersion?.terms ? financingTermsSummary(activeVersion.terms.financingTerms) : "—";
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-[#C9A646]/25 bg-gradient-to-br from-[#141414] via-[#0c0c0c] to-black p-4 shadow-lg shadow-black/40">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(201,166,70,0.08),transparent_55%)]" />
+    <div className="relative overflow-hidden rounded-2xl border border-premium-gold/25 bg-gradient-to-br from-[#141414] via-[#0c0c0c] to-black p-4 shadow-lg shadow-black/40">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgb(var(--premium-gold-channels) / 0.08),transparent_55%)]" />
       <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#C9A646]/90">Negotiation</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-premium-gold/90">Negotiation</p>
           <div className="mt-1 flex flex-wrap items-center gap-2">
             <NegotiationStatusBadge status={chainStatus} size="md" />
             {activeVersion ? (

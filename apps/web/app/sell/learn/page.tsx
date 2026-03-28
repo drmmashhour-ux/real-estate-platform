@@ -6,7 +6,7 @@ export default function FsboLearnPage() {
   return (
     <main className="min-h-screen bg-[#0B0B0B] px-4 py-14 text-white sm:px-6">
       <div className="mx-auto max-w-3xl">
-        <Link href="/sell" className="text-sm text-[#C9A646]">
+        <Link href="/sell" className="text-sm text-premium-gold">
           ← FSBO listings
         </Link>
         <h1 className="mt-6 text-3xl font-semibold">Sell your property yourself</h1>
@@ -17,7 +17,7 @@ export default function FsboLearnPage() {
         </p>
 
         <section className="mt-12 border-t border-white/10 pt-10" aria-labelledby="learn-trusted-broker-heading">
-          <h2 id="learn-trusted-broker-heading" className="text-center text-sm font-semibold uppercase tracking-[0.2em] text-[#C9A646]">
+          <h2 id="learn-trusted-broker-heading" className="text-center text-sm font-semibold uppercase tracking-[0.2em] text-premium-gold">
             Or work with a trusted broker
           </h2>
           <div className="mt-8">
@@ -41,7 +41,7 @@ export default function FsboLearnPage() {
         <div className="mt-10 flex flex-wrap gap-3">
           <Link
             href="/sell/create"
-            className="rounded-xl bg-[#C9A646] px-6 py-3 text-sm font-bold text-[#0B0B0B] hover:bg-[#E8C547]"
+            className="rounded-xl bg-premium-gold px-6 py-3 text-sm font-bold text-[#0B0B0B] hover:bg-premium-gold"
           >
             Create your listing
           </Link>

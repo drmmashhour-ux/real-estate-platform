@@ -1,3 +1,13 @@
+import type { LucideIcon } from "lucide-react";
+import {
+  Building2,
+  Home,
+  Landmark,
+  LayoutDashboard,
+  Search,
+  Sparkles,
+  Briefcase,
+} from "lucide-react";
 import Link from "next/link";
 import { SectionHeading } from "@/components/marketing/SectionHeading";
 import { AnimatedReveal } from "@/components/marketing/AnimatedReveal";
@@ -6,42 +16,109 @@ type Hub = {
   name: string;
   line: string;
   href?: string;
+  Icon: LucideIcon;
   /** Cross-cutting layer — full width, distinct styling */
   layer?: boolean;
 };
 
 const hubs: Hub[] = [
-  { name: "BuyHub", line: "Search, financial insights, broker access", href: "/buy" },
-  { name: "SellerHub", line: "Listing, verification, legal compliance", href: "/sell" },
-  { name: "NBHub (Rent)", line: "Long-term + short-term rentals", href: "/rent" },
-  { name: "MortgageHub", line: "Financing + broker matching", href: "/mortgage" },
-  { name: "AI Layer", line: "Integrated across all hubs", layer: true },
+  {
+    name: "Listings",
+    line: "Browse verified properties, compare deals, and move with confidence.",
+    href: "/listings",
+    Icon: Search,
+  },
+  {
+    name: "SellerHub",
+    line: "Listing, verification, and compliance for sellers and FSBO.",
+    href: "/sell",
+    Icon: Home,
+  },
+  {
+    name: "BNHub",
+    line: "Short-term stays, hospitality, and BNHub host tools.",
+    href: "/bnhub/stays",
+    Icon: Building2,
+  },
+  {
+    name: "MortgageHub",
+    line: "Financing paths and specialist matching.",
+    href: "/mortgage",
+    Icon: Landmark,
+  },
+  {
+    name: "BrokerHub",
+    line: "CRM, pipeline, and brokerage workspace (signed-in brokers).",
+    href: "/broker/dashboard",
+    Icon: Briefcase,
+  },
+  {
+    name: "Admin",
+    line: "Platform operations and controls (authenticated admins only).",
+    href: "/admin",
+    Icon: LayoutDashboard,
+  },
+  {
+    name: "AI Layer",
+    line: "Trust, scoring, and copilot intelligence across every hub.",
+    Icon: Sparkles,
+    layer: true,
+  },
 ];
 
 function HubCard({ hub, delayMs }: { hub: Hub; delayMs: number }) {
+  const { Icon } = hub;
+
   const inner = (
     <>
-      <h3 className="text-lg font-semibold text-white">{hub.name}</h3>
-      <p className="mt-2 text-sm leading-relaxed text-slate-400">
-        <span className="mr-1.5 text-[#C9A646]/90" aria-hidden>
-          →
-        </span>
-        {hub.line}
-      </p>
-      {hub.href ? (
-        <p className="mt-3 text-xs font-medium text-[#C9A646]/80">Open hub →</p>
-      ) : null}
+      <div className="flex items-start gap-4">
+        <div
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border bg-black/40"
+          style={{
+            borderColor: "rgb(var(--premium-gold-channels) / 0.35)",
+            boxShadow: "0 0 24px rgb(var(--premium-gold-channels) / 0.12)",
+          }}
+          aria-hidden
+        >
+          <Icon className="h-6 w-6 text-premium-gold" strokeWidth={1.75} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <h3 className="text-lg font-semibold text-white">{hub.name}</h3>
+          <p className="mt-2 text-sm leading-relaxed text-slate-400">
+            <span
+              className="mr-1.5 font-medium text-premium-gold/80"
+              aria-hidden
+            >
+              →
+            </span>
+            {hub.line}
+          </p>
+          {hub.href ? (
+            <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-premium-gold/80">
+              Open hub →
+            </p>
+          ) : null}
+        </div>
+      </div>
     </>
   );
 
+  const baseCard =
+    "rounded-2xl p-6 transition duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-premium-bg";
+  const ringGold = "focus-visible:ring-premium-gold/70";
+
   const className = hub.layer
-    ? "rounded-2xl border border-[#C9A646]/35 bg-gradient-to-br from-[#C9A646]/10 via-[#C9A646]/5 to-transparent p-6 shadow-[0_0_40px_rgba(201,166,70,0.08)] transition hover:border-[#C9A646]/50"
-    : "rounded-2xl border border-white/10 bg-white/[0.02] p-6 transition hover:border-[#C9A646]/30";
+    ? `${baseCard} ${ringGold} border bg-gradient-to-br from-premium-gold/12 via-premium-gold/6 to-transparent shadow-[0_0_48px_rgb(var(--premium-gold-channels)/0.1)] hover:border-premium-gold/55`
+    : `${baseCard} ${ringGold} border border-white/10 bg-premium-card hover:border-premium-gold/45 shadow-[0_0_32px_rgb(var(--premium-gold-channels)/0.06)] hover:shadow-[0_0_40px_rgb(var(--premium-gold-channels)/0.14)]`;
+
+  const layerStyle = hub.layer
+    ? { borderColor: "rgb(var(--premium-gold-channels) / 0.4)" }
+    : { borderColor: "rgba(255,255,255,0.1)" };
 
   if (hub.href) {
     return (
       <AnimatedReveal delayMs={delayMs}>
-        <Link href={hub.href} className={`block h-full ${className} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A646]/50`}>
+        <Link href={hub.href} className={`block h-full ${className}`} style={layerStyle}>
           {inner}
         </Link>
       </AnimatedReveal>
@@ -50,7 +127,9 @@ function HubCard({ hub, delayMs }: { hub: Hub; delayMs: number }) {
 
   return (
     <AnimatedReveal delayMs={delayMs}>
-      <div className={className}>{inner}</div>
+      <div className={className} style={layerStyle}>
+        {inner}
+      </div>
     </AnimatedReveal>
   );
 }
@@ -60,20 +139,20 @@ export function HubsSection() {
   const aiLayer = hubs.find((h) => h.layer)!;
 
   return (
-    <section id="hubs" className="scroll-mt-24 px-4 py-20 sm:px-6">
+    <section id="hubs" className="scroll-mt-24 bg-brand-background px-4 py-20 sm:px-6">
       <div className="mx-auto max-w-6xl">
         <SectionHeading
           eyebrow="Ecosystem hubs"
-          title="Four hubs, one AI layer"
-          subtitle="Buy, sell, rent, and finance — each with dedicated tools, shared trust, and AI where it matters."
+          title="Six hubs, one AI layer"
+          subtitle="Listings, sell, BNHub stays, mortgage, brokers, and admin — unified trust, intelligence, and workflows."
         />
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {productHubs.map((hub, i) => (
-            <HubCard key={hub.name} hub={hub} delayMs={i * 60} />
+            <HubCard key={hub.name} hub={hub} delayMs={i * 50} />
           ))}
         </div>
         <div className="mt-4">
-          <HubCard hub={aiLayer} delayMs={productHubs.length * 60} />
+          <HubCard hub={aiLayer} delayMs={productHubs.length * 50} />
         </div>
       </div>
     </section>

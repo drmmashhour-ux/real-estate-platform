@@ -38,6 +38,8 @@
     "prelaunch:check": "npx tsx scripts/prelaunch-check.ts",
     "db:seed": "pnpm --filter @lecipm/web exec prisma db seed",
     "validate:flows": "pnpm --filter @lecipm/web run validate:flows",
+    "validate:staging-stack": "pnpm validate:flows && pnpm --filter @lecipm/web run validate:executive-control && pnpm --filter @lecipm/web run validate:ranking-system && pnpm --filter @lecipm/web run validate:fraud",
+    "inspect:executive-daily": "pnpm --filter @lecipm/web run inspect:executive-daily",
     "test:e2e": "pnpm --filter @lecipm/web run test:e2e",
     "test:e2e:production": "pnpm --filter @lecipm/web run test:e2e:production",
     "demo:full": "npx tsx scripts/generate-full-demo-data.ts",

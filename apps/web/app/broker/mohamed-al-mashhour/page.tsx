@@ -38,18 +38,18 @@ export default function MohamedAlMashhourPage() {
     <main className="min-h-screen bg-[#0B0B0B] text-white">
       <section className="border-b border-white/10">
         <div className="mx-auto max-w-4xl px-4 py-14 text-center sm:px-6">
-          <span className="inline-flex rounded-full border border-[#C9A646]/40 bg-[#C9A646]/10 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-[#C9A646]">
+          <span className="inline-flex rounded-full border border-premium-gold/40 bg-premium-gold/10 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-premium-gold">
             Verified Broker
           </span>
           <h1 className="mt-6 font-bold tracking-tight text-white" style={{ fontSize: "clamp(1.75rem, 5vw, 2.75rem)" }}>
             Mohamed Al Mashhour
           </h1>
-          <p className="mt-2 text-lg text-[#C9A646]">Residential Real Estate Broker</p>
+          <p className="mt-2 text-lg text-premium-gold">Residential Real Estate Broker</p>
           <p className="mt-1 text-sm text-[#B3B3B3]">License J1321</p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <a
               href={TEL}
-              className="inline-flex rounded-xl bg-[#C9A646] px-6 py-3 text-sm font-bold text-[#0B0B0B] hover:bg-[#E8C547]"
+              className="inline-flex rounded-xl bg-premium-gold px-6 py-3 text-sm font-bold text-[#0B0B0B] hover:bg-premium-gold"
             >
               Call now
             </a>
@@ -57,7 +57,7 @@ export default function MohamedAlMashhourPage() {
               href={WA}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex rounded-xl border border-[#C9A646]/50 px-6 py-3 text-sm font-semibold text-[#C9A646] hover:bg-[#C9A646]/10"
+              className="inline-flex rounded-xl border border-premium-gold/50 px-6 py-3 text-sm font-semibold text-premium-gold hover:bg-premium-gold/10"
             >
               WhatsApp
             </a>
@@ -72,7 +72,7 @@ export default function MohamedAlMashhourPage() {
       </section>
 
       <section className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
-        <div className="overflow-hidden rounded-2xl border border-[#C9A646]/30 bg-[#121212]">
+        <div className="overflow-hidden rounded-2xl border border-premium-gold/30 bg-[#121212]">
           <div className="grid gap-0 md:grid-cols-2">
             <div className="relative aspect-[4/5] max-h-[420px] w-full md:max-h-none">
               <Image
@@ -107,9 +107,9 @@ export default function MohamedAlMashhourPage() {
           {SERVICES.map((s) => (
             <div
               key={s.title}
-              className="rounded-2xl border border-white/10 bg-[#121212] p-5 transition hover:-translate-y-0.5 hover:border-[#C9A646]/35"
+              className="rounded-2xl border border-white/10 bg-[#121212] p-5 transition hover:-translate-y-0.5 hover:border-premium-gold/35"
             >
-              <h3 className="font-semibold text-[#C9A646]">{s.title}</h3>
+              <h3 className="font-semibold text-premium-gold">{s.title}</h3>
               <p className="mt-2 text-sm text-[#B3B3B3]">{s.body}</p>
             </div>
           ))}
@@ -117,17 +117,17 @@ export default function MohamedAlMashhourPage() {
       </section>
 
       <section className="border-t border-white/10 bg-[#121212]/50 py-14">
-        <div className="mx-auto max-w-3xl rounded-2xl border border-[#C9A646]/25 bg-[#0B0B0B] px-6 py-10 text-center sm:px-10">
-          <h2 className="text-xl font-bold text-[#C9A646] sm:text-2xl">Free value</h2>
+        <div className="mx-auto max-w-3xl rounded-2xl border border-premium-gold/25 bg-[#0B0B0B] px-6 py-10 text-center sm:px-10">
+          <h2 className="text-xl font-bold text-premium-gold sm:text-2xl">Free value</h2>
           <ul className="mx-auto mt-6 max-w-md space-y-2 text-left text-sm text-[#B3B3B3]">
             <li className="flex gap-2">
-              <span className="text-[#C9A646]">✓</span> FREE consultation
+              <span className="text-premium-gold">✓</span> FREE consultation
             </li>
             <li className="flex gap-2">
-              <span className="text-[#C9A646]">✓</span> FREE AI property evaluation
+              <span className="text-premium-gold">✓</span> FREE AI property evaluation
             </li>
             <li className="flex gap-2">
-              <span className="text-[#C9A646]">✓</span> No obligation
+              <span className="text-premium-gold">✓</span> No obligation
             </li>
           </ul>
           <div className="mx-auto mt-8 max-w-lg">
@@ -140,23 +140,23 @@ export default function MohamedAlMashhourPage() {
         <h2 className="text-lg font-bold text-white">Contact</h2>
         <div className="mt-6 space-y-2 text-sm text-[#B3B3B3]">
           <p>
-            <a href={TEL} className="text-white hover:text-[#C9A646]">
+            <a href={TEL} className="text-white hover:text-premium-gold">
               {BROKER_PHONE_DISPLAY}
             </a>
           </p>
           <p>
-            <a href={getSupportTelHref()} className="hover:text-[#C9A646]">
+            <a href={getSupportTelHref()} className="hover:text-premium-gold">
               {getSupportPhoneDisplay()}
             </a>
             <span className="block text-xs text-[#737373]">Platform line</span>
           </p>
           <p>
-            <a href={`mailto:${CONTACT_EMAIL}`} className="text-[#C9A646] hover:underline">
+            <a href={`mailto:${CONTACT_EMAIL}`} className="text-premium-gold hover:underline">
               {CONTACT_EMAIL}
             </a>
           </p>
         </div>
-        <Link href="/why-lecipm" className="mt-10 inline-block text-sm text-[#737373] hover:text-[#C9A646]">
+        <Link href="/why-lecipm" className="mt-10 inline-block text-sm text-[#737373] hover:text-premium-gold">
           Why {PLATFORM_NAME} →
         </Link>
       </section>

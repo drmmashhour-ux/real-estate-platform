@@ -149,7 +149,7 @@ export default async function SellerHubListingDetailPage({ params }: { params: P
   return (
     <main className="min-h-screen bg-[#0D0D0D] px-4 py-10 text-slate-100">
       <div className="mx-auto max-w-6xl">
-        <Link href="/dashboard/seller/listings" className="text-sm text-[#C9A646] transition hover:underline">
+        <Link href="/dashboard/seller/listings" className="text-sm text-premium-gold transition hover:underline">
           ← All listings
         </Link>
 
@@ -177,13 +177,13 @@ export default async function SellerHubListingDetailPage({ params }: { params: P
             <div className="flex flex-wrap gap-3">
               <Link
                 href={`/dashboard/seller/create?id=${encodeURIComponent(listing.id)}`}
-                className="rounded-full border border-white/15 px-5 py-2.5 text-sm text-slate-200 transition duration-200 hover:scale-[1.02] hover:border-[#C9A646]/40 hover:bg-white/5"
+                className="rounded-full border border-white/15 px-5 py-2.5 text-sm text-slate-200 transition duration-200 hover:scale-[1.02] hover:border-premium-gold/40 hover:bg-white/5"
               >
                 Edit in wizard
               </Link>
               <Link
                 href={`/sell/${listing.id}`}
-                className="rounded-full border border-white/15 px-5 py-2.5 text-sm text-slate-200 transition duration-200 hover:scale-[1.02] hover:border-[#C9A646]/40 hover:bg-white/5"
+                className="rounded-full border border-white/15 px-5 py-2.5 text-sm text-slate-200 transition duration-200 hover:scale-[1.02] hover:border-premium-gold/40 hover:bg-white/5"
               >
                 Public view
               </Link>
@@ -263,8 +263,8 @@ export default async function SellerHubListingDetailPage({ params }: { params: P
               <TrustBreakdown missing={missing} warnings={warnings} passed={passed} />
             </div>
             {trustgraphOn ? (
-              <div className="rounded-2xl border border-[#C9A646]/20 bg-[#121212] p-4">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#C9A646]">TrustGraph</p>
+              <div className="rounded-2xl border border-premium-gold/20 bg-[#121212] p-4">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-premium-gold">TrustGraph</p>
                 <ListingTrustGraphPanel listingId={listing.id} enabled />
               </div>
             ) : null}

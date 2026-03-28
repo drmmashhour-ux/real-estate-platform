@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { getSiteBaseUrl } from "@/modules/seo/lib/siteBaseUrl";
+import { seoConfig } from "@/lib/seo/config";
 
 export default function robots(): MetadataRoute.Robots {
   if (process.env.NEXT_PUBLIC_ENV === "staging") {
@@ -7,9 +7,25 @@ export default function robots(): MetadataRoute.Robots {
       rules: { userAgent: "*", disallow: ["/"] },
     };
   }
-  const base = getSiteBaseUrl();
   return {
-    rules: { userAgent: "*", allow: ["/"] },
-    sitemap: `${base}/sitemap.xml`,
+    rules: {
+      userAgent: "*",
+      allow: ["/"],
+      disallow: [
+        "/admin/",
+        "/dashboard/",
+        "/api/",
+        "/auth/",
+        "/host/",
+        "/guest/",
+        "/workspaces/",
+        "/demo/",
+        "/embed/",
+        "/internal/",
+        "/checkout/",
+        "/client-documents/",
+      ],
+    },
+    sitemap: `${seoConfig.domain}/sitemap.xml`,
   };
 }

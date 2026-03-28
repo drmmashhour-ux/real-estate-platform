@@ -158,7 +158,7 @@ export function FirstHomeBuyerClient() {
 
       <section className="grid gap-6 lg:grid-cols-2">
         <div className="space-y-3 rounded-2xl border border-white/10 p-6">
-          <h3 className="font-semibold text-[#C9A646]">Inputs</h3>
+          <h3 className="font-semibold text-premium-gold">Inputs</h3>
           <div className="grid gap-3 text-sm">
             {(
               [
@@ -197,8 +197,8 @@ export function FirstHomeBuyerClient() {
           </div>
         </div>
 
-        <div className="space-y-4 rounded-2xl border border-[#C9A646]/30 bg-gradient-to-br from-black/80 to-[#1a1508] p-6">
-          <h3 className="font-semibold text-[#C9A646]">Outputs</h3>
+        <div className="space-y-4 rounded-2xl border border-premium-gold/30 bg-gradient-to-br from-black/80 to-[#1a1508] p-6">
+          <h3 className="font-semibold text-premium-gold">Outputs</h3>
           <dl className="space-y-2 text-sm">
             <div className="flex justify-between gap-4">
               <dt>Estimated affordability range</dt>
@@ -235,7 +235,7 @@ export function FirstHomeBuyerClient() {
           <button
             type="button"
             onClick={() => void downloadPdf()}
-            className="mt-4 rounded-lg border border-[#C9A646]/50 px-4 py-2 text-sm text-[#C9A646]"
+            className="mt-4 rounded-lg border border-premium-gold/50 px-4 py-2 text-sm text-premium-gold"
           >
             Download PDF
           </button>
@@ -251,7 +251,7 @@ export function FirstHomeBuyerClient() {
           {incentives.length ? (
             incentives.map((i) => (
               <div key={i.id} className="rounded-lg border border-white/5 bg-black/30 p-4 text-sm">
-                <p className="font-medium text-[#C9A646]">{i.title}</p>
+                <p className="font-medium text-premium-gold">{i.title}</p>
                 <p className="mt-1 text-slate-300">{i.description}</p>
                 {i.externalLink ? (
                   <a href={i.externalLink} className="mt-2 inline-block text-xs text-sky-400 underline" target="_blank" rel="noreferrer">
@@ -275,7 +275,7 @@ export function FirstHomeBuyerClient() {
           <a
             href="/mortgage"
             onClick={() => void trackCta("cta_mortgage")}
-            className="rounded-lg bg-[#C9A646] px-4 py-2 text-sm font-semibold text-black"
+            className="rounded-lg bg-premium-gold px-4 py-2 text-sm font-semibold text-black"
           >
             Talk to mortgage expert
           </a>

@@ -17,7 +17,7 @@ type Props = {
 };
 
 /**
- * Lucide icons with consistent sizing and default stroke (tint via `className`, e.g. `text-[#C9A646]`).
+ * Lucide icons with consistent sizing and default stroke (tint via `className`, e.g. `text-premium-gold`).
  */
 export function Icon({ icon: Lucide, size = "md", className = "", strokeWidth = 1.75 }: Props) {
   const px = sizePx[size];

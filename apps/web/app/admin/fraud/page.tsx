@@ -8,6 +8,7 @@ import {
 } from "@/lib/anti-fraud/admin-dashboard";
 import { FraudAlertsClient } from "./fraud-alerts-client";
 import { AntiFraudDashboardClient } from "./anti-fraud-dashboard-client";
+import { FraudDashboardClient } from "@/components/admin/FraudDashboardClient";
 
 export const dynamic = "force-dynamic";
 
@@ -40,6 +41,8 @@ export default async function AdminFraudPage() {
           suspiciousBrokers={suspiciousBrokers}
           underInvestigationListings={underInvestigation}
         />
+
+        <FraudDashboardClient />
 
         <h2 className="mt-10 text-lg font-semibold">Legacy fraud alerts</h2>
         <p className="mt-1 text-sm text-slate-500">Aggregated fraud signals (booking/payment/review).</p>

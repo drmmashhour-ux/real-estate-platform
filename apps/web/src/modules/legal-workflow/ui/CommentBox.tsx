@@ -32,7 +32,7 @@ export function CommentBox({ comments, onSubmit }: { comments: Comment[]; onSubm
             onSubmit(text.trim(), sectionKey.trim() || undefined);
             setText("");
           }}
-          className="rounded-md bg-[#C9A646] px-3 py-1 text-xs font-medium text-black"
+          className="rounded-md bg-premium-gold px-3 py-1 text-xs font-medium text-black"
         >
           Add comment
         </button>

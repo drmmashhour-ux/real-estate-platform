@@ -44,8 +44,8 @@ export function OfferScenarioComparison({
   if (presentationMode && listPriceCents != null && compareInputs) {
     return (
       <div className="space-y-4">
-        <div className="rounded-xl border border-[#C9A646]/25 bg-[#0f0f0f] p-4 text-sm leading-relaxed text-slate-300">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#C9A646]">How to read this</p>
+        <div className="rounded-xl border border-premium-gold/25 bg-[#0f0f0f] p-4 text-sm leading-relaxed text-slate-300">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-premium-gold">How to read this</p>
           <p className="mt-2">{clientCompareIntro(comparison)}</p>
         </div>
 
@@ -60,7 +60,7 @@ export function OfferScenarioComparison({
                   onClick={() => pick(s.id)}
                   className={`w-full rounded-t-xl border px-3 py-2.5 text-left text-sm font-medium transition ${
                     active
-                      ? "border-[#C9A646] bg-[#C9A646]/10 text-white"
+                      ? "border-premium-gold bg-premium-gold/10 text-white"
                       : "border-white/10 bg-[#121212] text-slate-300 hover:border-white/20"
                   }`}
                 >
@@ -90,7 +90,7 @@ export function OfferScenarioComparison({
         </div>
         <button
           type="button"
-          className="w-full rounded-xl bg-[#C9A646] py-3.5 text-center text-base font-semibold text-black shadow-lg shadow-black/30 transition hover:bg-[#ddb84d] focus:outline-none focus:ring-2 focus:ring-[#C9A646]/50"
+          className="w-full rounded-xl bg-premium-gold py-3.5 text-center text-base font-semibold text-black shadow-lg shadow-black/30 transition hover:bg-[#ddb84d] focus:outline-none focus:ring-2 focus:ring-premium-gold/50"
         >
           Talk this through with your broker or lawyer
         </button>
@@ -101,8 +101,8 @@ export function OfferScenarioComparison({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-[#C9A646]/25 bg-[#0f0f0f] p-4 text-sm text-slate-300">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#C9A646]">Tradeoffs (illustrative)</p>
+      <div className="rounded-xl border border-premium-gold/25 bg-[#0f0f0f] p-4 text-sm text-slate-300">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-premium-gold">Tradeoffs (illustrative)</p>
         <p className="mt-2 leading-relaxed">{comparison.tradeoffExplanation}</p>
         <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-400">
           <span className="rounded-md border border-white/10 px-2 py-1">
@@ -128,7 +128,7 @@ export function OfferScenarioComparison({
                 onClick={() => pick(s.id)}
                 className={`w-full rounded-t-xl border px-3 py-2 text-left text-sm font-medium transition ${
                   active
-                    ? "border-[#C9A646] bg-[#C9A646]/10 text-white"
+                    ? "border-premium-gold bg-premium-gold/10 text-white"
                     : "border-white/10 bg-[#121212] text-slate-300 hover:border-white/20"
                 }`}
               >

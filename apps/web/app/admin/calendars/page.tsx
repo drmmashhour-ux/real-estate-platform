@@ -32,11 +32,11 @@ export default async function AdminCalendarsPage() {
           <h1 className="text-xl font-semibold text-white">Global calendars</h1>
           <p className="mt-2 text-sm text-slate-400">
             Cross-property BNHub bookings (latest 60). For finance-grade payout timing use{" "}
-            <Link href="/admin/finance/payouts" className="text-[#C9A646] hover:underline">
+            <Link href="/admin/finance/payouts" className="text-premium-gold hover:underline">
               broker payouts
             </Link>{" "}
             and{" "}
-            <Link href="/admin/finance/reports" className="text-[#C9A646] hover:underline">
+            <Link href="/admin/finance/reports" className="text-premium-gold hover:underline">
               reports
             </Link>
             .
@@ -69,7 +69,7 @@ export default async function AdminCalendarsPage() {
                       : "—"}
                   </td>
                   <td className="px-4 py-3">
-                    <Link href={`/bnhub/booking/${b.id}`} className="text-[#C9A646] hover:underline">
+                    <Link href={`/bnhub/booking/${b.id}`} className="text-premium-gold hover:underline">
                       View
                     </Link>
                   </td>
@@ -79,7 +79,7 @@ export default async function AdminCalendarsPage() {
           </table>
         </div>
         <p className="text-xs text-slate-500">
-          Full booking admin tools: <Link href="/admin/bookings" className="text-[#C9A646] hover:underline">/admin/bookings</Link>
+          Full booking admin tools: <Link href="/admin/bookings" className="text-premium-gold hover:underline">/admin/bookings</Link>
         </p>
       </div>
     </HubLayout>

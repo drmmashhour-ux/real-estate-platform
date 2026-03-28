@@ -243,7 +243,7 @@ export default async function ListingAnalysisSeoPage({ params }: Props) {
                 <div className="mt-4 flex flex-wrap gap-3">
                   <Link
                     href={`/auth/signup?next=${encodeURIComponent(nextPath)}`}
-                    className="inline-flex rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 dark:bg-[#C9A646] dark:text-black dark:hover:bg-[#E8C547]"
+                    className="inline-flex rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 dark:bg-premium-gold dark:text-black dark:hover:bg-premium-gold"
                   >
                     Create free account
                   </Link>
@@ -276,7 +276,7 @@ export default async function ListingAnalysisSeoPage({ params }: Props) {
         <aside className="space-y-4">
           <ActionRecommendationCard result={actionSelection} />
           <div className="rounded-xl border border-white/10 bg-black/30 p-4">
-            <p className="text-xs uppercase tracking-wide text-[#C9A646]">Strategy signal</p>
+            <p className="text-xs uppercase tracking-wide text-premium-gold">Strategy signal</p>
             <p className="mt-2 text-sm font-semibold text-white">{strategySelection.strategy.replace(/_/g, " ")}</p>
             <p className="mt-1 text-xs text-slate-400">{strategySelection.reasons[0]}</p>
             <p className="mt-1 text-xs text-slate-500">Score {strategySelection.score} · Confidence {strategySelection.confidence}%</p>
@@ -284,7 +284,7 @@ export default async function ListingAnalysisSeoPage({ params }: Props) {
           <div className="rounded-xl border border-white/10 bg-black/30 p-4">
             <p className="mb-2 text-xs uppercase tracking-wide text-slate-500">Watchlist</p>
             <SaveToWatchlistButton listingId={listingId} />
-            <a href="/watchlist" className="mt-2 inline-flex text-xs text-[#C9A646] hover:underline">
+            <a href="/watchlist" className="mt-2 inline-flex text-xs text-premium-gold hover:underline">
               Open alerts center
             </a>
           </div>
@@ -338,7 +338,7 @@ export default async function ListingAnalysisSeoPage({ params }: Props) {
             />
           )}
           <div className="rounded-xl border border-white/10 bg-black/30 p-4">
-            <p className="text-xs uppercase tracking-wide text-[#C9A646]">{conversionCopy.analysis.confidenceLabel}</p>
+            <p className="text-xs uppercase tracking-wide text-premium-gold">{conversionCopy.analysis.confidenceLabel}</p>
             <div className="mt-2">
               <UrgencyBadge
                 level={(deal?.investmentScore ?? 0) >= 75 ? "high" : (deal?.investmentScore ?? 0) >= 55 ? "medium" : "early"}

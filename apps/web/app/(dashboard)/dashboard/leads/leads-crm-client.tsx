@@ -114,7 +114,7 @@ type Summary = {
   };
 };
 
-const GOLD = "#C9A646";
+const GOLD = "var(--color-premium-gold)";
 const BG = "#0B0B0B";
 const CARD = "#121212";
 
@@ -122,7 +122,7 @@ function bandClass(temperature: string | undefined, score: number): string {
   const band =
     temperature ?? (score >= 80 ? "hot" : score >= 50 ? "warm" : "cold");
   if (band === "hot") return "bg-orange-500/20 text-orange-200 border-orange-500/40";
-  if (band === "warm") return "bg-[#C9A646]/15 text-[#E8C547] border-[#C9A646]/35";
+  if (band === "warm") return "bg-premium-gold/15 text-premium-gold border-premium-gold/35";
   return "bg-white/5 text-[#9CA3AF] border-white/15";
 }
 
@@ -284,19 +284,19 @@ export function LeadsCrmClient({ isAdmin }: { isAdmin: boolean }) {
           <div className="flex flex-wrap items-center gap-3">
             <Link
               href="/dashboard/leads/pipeline"
-              className="rounded-xl bg-[#C9A646] px-4 py-2 text-sm font-bold text-[#0B0B0B] hover:opacity-95"
+              className="rounded-xl bg-premium-gold px-4 py-2 text-sm font-bold text-[#0B0B0B] hover:opacity-95"
             >
               Pipeline board
             </Link>
             <Link
               href="/dashboard/training"
-              className="rounded-xl border border-[#C9A646]/50 px-4 py-2 text-sm font-semibold text-[#C9A646] hover:bg-[#C9A646]/10"
+              className="rounded-xl border border-premium-gold/50 px-4 py-2 text-sm font-semibold text-premium-gold hover:bg-premium-gold/10"
             >
               Training
             </Link>
             <Link
               href="/dashboard/broker"
-              className="text-sm font-medium text-[#C9A646] hover:underline"
+              className="text-sm font-medium text-premium-gold hover:underline"
             >
               ← Broker dashboard
             </Link>
@@ -304,7 +304,7 @@ export function LeadsCrmClient({ isAdmin }: { isAdmin: boolean }) {
               <>
                 <Link
                   href="/dashboard/admin/sales"
-                  className="rounded-xl border border-[#C9A646]/50 px-3 py-2 text-xs font-semibold text-[#C9A646] hover:bg-[#C9A646]/10"
+                  className="rounded-xl border border-premium-gold/50 px-3 py-2 text-xs font-semibold text-premium-gold hover:bg-premium-gold/10"
                 >
                   Sales scripts
                 </Link>
@@ -328,7 +328,7 @@ export function LeadsCrmClient({ isAdmin }: { isAdmin: boolean }) {
         {summary?.dmActions &&
           (summary.dmActions.newToMessage > 0 || summary.dmActions.followUpsDue > 0) && (
             <section
-              className="mt-8 rounded-2xl border border-[#C9A646]/40 p-5"
+              className="mt-8 rounded-2xl border border-premium-gold/40 p-5"
               style={{ background: CARD }}
             >
               <h2 className="text-lg font-bold text-white">DM actions</h2>
@@ -337,7 +337,7 @@ export function LeadsCrmClient({ isAdmin }: { isAdmin: boolean }) {
               </p>
               <div className="mt-4 grid gap-6 md:grid-cols-2">
                 <div>
-                  <p className="text-xs font-semibold uppercase text-[#C9A646]">
+                  <p className="text-xs font-semibold uppercase text-premium-gold">
                     New leads to message ({summary.dmActions.newToMessage})
                   </p>
                   <ul className="mt-2 space-y-2 text-sm">
@@ -348,7 +348,7 @@ export function LeadsCrmClient({ isAdmin }: { isAdmin: boolean }) {
                         <li key={l.id}>
                           <Link
                             href={`/dashboard/leads/${l.id}`}
-                            className="font-medium text-[#E8C547] hover:underline"
+                            className="font-medium text-premium-gold hover:underline"
                           >
                             {l.name}
                           </Link>
@@ -393,7 +393,7 @@ export function LeadsCrmClient({ isAdmin }: { isAdmin: boolean }) {
               style={{ fontFamily: "inherit" }}
             >
               <div
-                className="rounded-2xl border border-[#C9A646]/45 p-5 shadow-[inset_0_1px_0_rgba(201, 166, 70,0.12)]"
+                className="rounded-2xl border border-premium-gold/45 p-5 shadow-[inset_0_1px_0_rgb(var(--premium-gold-channels) / 0.12)]"
                 style={{ background: CARD }}
               >
                 <p className="text-xs font-semibold uppercase tracking-[0.2em]" style={{ color: GOLD }}>
@@ -410,7 +410,7 @@ export function LeadsCrmClient({ isAdmin }: { isAdmin: boolean }) {
                       <li key={l.id}>
                         <Link
                           href={`/dashboard/leads/${l.id}`}
-                          className="font-semibold text-[#E8C547] hover:underline"
+                          className="font-semibold text-premium-gold hover:underline"
                         >
                           {l.name}
                         </Link>
@@ -454,7 +454,7 @@ export function LeadsCrmClient({ isAdmin }: { isAdmin: boolean }) {
                   </div>
                 </div>
                 {summary.automation.brokerNotifications.length > 0 ? (
-                  <ul className="mt-3 space-y-1.5 border-t border-white/10 pt-3 text-xs text-[#E8C547]/95">
+                  <ul className="mt-3 space-y-1.5 border-t border-white/10 pt-3 text-xs text-premium-gold/95">
                     {summary.automation.brokerNotifications.map((n, i) => (
                       <li key={i}>● {n}</li>
                     ))}
@@ -518,7 +518,7 @@ export function LeadsCrmClient({ isAdmin }: { isAdmin: boolean }) {
             ].map(([label, val]) => (
               <div
                 key={String(label)}
-                className="rounded-xl border border-[#C9A646]/25 px-4 py-3"
+                className="rounded-xl border border-premium-gold/25 px-4 py-3"
                 style={{ background: CARD }}
               >
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-[#737373]">
@@ -532,7 +532,7 @@ export function LeadsCrmClient({ isAdmin }: { isAdmin: boolean }) {
 
         {summary?.closingPerformance ? (
           <section
-            className="mt-8 rounded-2xl border border-[#C9A646]/25 p-5"
+            className="mt-8 rounded-2xl border border-premium-gold/25 p-5"
             style={{ background: CARD }}
           >
             <h2 className="text-lg font-bold text-white">Closing performance</h2>
@@ -545,7 +545,7 @@ export function LeadsCrmClient({ isAdmin }: { isAdmin: boolean }) {
                 .map(([stage, count]) => (
                   <span
                     key={stage}
-                    className="rounded-full border border-[#C9A646]/35 bg-black/40 px-3 py-1 text-xs font-semibold text-[#E8C547]"
+                    className="rounded-full border border-premium-gold/35 bg-black/40 px-3 py-1 text-xs font-semibold text-premium-gold"
                   >
                     {stage.replace(/_/g, " ")}: {count}
                   </span>
@@ -577,7 +577,7 @@ export function LeadsCrmClient({ isAdmin }: { isAdmin: boolean }) {
 
         {summary?.todaysPriorities ? (
           <section
-            className="mt-8 rounded-2xl border border-[#C9A646]/30 p-5"
+            className="mt-8 rounded-2xl border border-premium-gold/30 p-5"
             style={{ background: CARD }}
           >
             <h2 className="text-lg font-bold text-white">Today&apos;s closing priorities</h2>
@@ -586,14 +586,14 @@ export function LeadsCrmClient({ isAdmin }: { isAdmin: boolean }) {
             </p>
             <div className="mt-4 grid gap-6 lg:grid-cols-2 xl:grid-cols-4">
               <div>
-                <p className="text-xs font-semibold uppercase text-[#C9A646]">Leads to call</p>
+                <p className="text-xs font-semibold uppercase text-premium-gold">Leads to call</p>
                 <ul className="mt-2 space-y-2 text-sm">
                   {summary.todaysPriorities.leadsToCall.length === 0 ? (
                     <li className="text-[#737373]">None overdue.</li>
                   ) : (
                     summary.todaysPriorities.leadsToCall.map((l) => (
                       <li key={l.id} className="flex flex-wrap items-center justify-between gap-2">
-                        <Link href={`/dashboard/leads/${l.id}`} className="font-medium text-white hover:text-[#E8C547]">
+                        <Link href={`/dashboard/leads/${l.id}`} className="font-medium text-white hover:text-premium-gold">
                           {l.name}
                         </Link>
                         <span className="text-xs text-[#737373]">Score {l.score}</span>
@@ -603,22 +603,22 @@ export function LeadsCrmClient({ isAdmin }: { isAdmin: boolean }) {
                 </ul>
               </div>
               <div>
-                <p className="text-xs font-semibold uppercase text-[#C9A646]">Hot leads</p>
+                <p className="text-xs font-semibold uppercase text-premium-gold">Hot leads</p>
                 <ul className="mt-2 space-y-2 text-sm">
                   {summary.todaysPriorities.hotLeadsSample.map((l) => (
                     <li key={l.id}>
-                      <Link href={`/dashboard/leads/${l.id}`} className="text-[#E8C547] hover:underline">
+                      <Link href={`/dashboard/leads/${l.id}`} className="text-premium-gold hover:underline">
                         {l.name}
                       </Link>
                       <span className="text-[#737373]"> · {l.score}</span>
                     </li>
                   ))}
                 </ul>
-                <p className="mt-4 text-xs font-semibold uppercase text-[#C9A646]">Recent leads</p>
+                <p className="mt-4 text-xs font-semibold uppercase text-premium-gold">Recent leads</p>
                 <ul className="mt-2 space-y-2 text-sm">
                   {summary.todaysPriorities.recentLeads.map((l) => (
                     <li key={l.id}>
-                      <Link href={`/dashboard/leads/${l.id}`} className="text-white hover:text-[#E8C547]">
+                      <Link href={`/dashboard/leads/${l.id}`} className="text-white hover:text-premium-gold">
                         {l.name}
                       </Link>
                     </li>
@@ -626,14 +626,14 @@ export function LeadsCrmClient({ isAdmin }: { isAdmin: boolean }) {
                 </ul>
               </div>
               <div>
-                <p className="text-xs font-semibold uppercase text-[#C9A646]">Meetings today</p>
+                <p className="text-xs font-semibold uppercase text-premium-gold">Meetings today</p>
                 <ul className="mt-2 space-y-2 text-sm">
                   {(summary.todaysPriorities.meetingsToday?.length ?? 0) === 0 ? (
                     <li className="text-[#737373]">None scheduled.</li>
                   ) : (
                     summary.todaysPriorities.meetingsToday!.map((m) => (
                       <li key={m.id} className="flex flex-col gap-0.5">
-                        <Link href={`/dashboard/leads/${m.id}`} className="font-medium text-[#E8C547] hover:underline">
+                        <Link href={`/dashboard/leads/${m.id}`} className="font-medium text-premium-gold hover:underline">
                           {m.name}
                         </Link>
                         <span className="text-xs text-[#737373]">
@@ -655,7 +655,7 @@ export function LeadsCrmClient({ isAdmin }: { isAdmin: boolean }) {
                 </p>
               </div>
               <div>
-                <p className="text-xs font-semibold uppercase text-[#C9A646]">In closing / negotiation</p>
+                <p className="text-xs font-semibold uppercase text-premium-gold">In closing / negotiation</p>
                 <ul className="mt-2 space-y-2 text-sm">
                   {(summary.todaysPriorities.closingStageLeads?.length ?? 0) === 0 ? (
                     <li className="text-[#737373]">None in closing right now.</li>
@@ -664,7 +664,7 @@ export function LeadsCrmClient({ isAdmin }: { isAdmin: boolean }) {
                       <li key={l.id} className="flex flex-wrap items-center justify-between gap-2">
                         <Link
                           href={`/dashboard/leads/${l.id}`}
-                          className="font-medium text-[#E8C547] hover:underline"
+                          className="font-medium text-premium-gold hover:underline"
                         >
                           {l.name}
                         </Link>
@@ -720,7 +720,7 @@ export function LeadsCrmClient({ isAdmin }: { isAdmin: boolean }) {
               {weeklyBuckets.map(([k, n]) => (
                 <div key={k} className="flex flex-1 flex-col items-center justify-end gap-1">
                   <div
-                    className="w-full max-w-[40px] rounded-t bg-[#C9A646]/70"
+                    className="w-full max-w-[40px] rounded-t bg-premium-gold/70"
                     style={{ height: `${Math.max(8, Math.min(100, n * 12))}%` }}
                     title={`${k}: ${n}`}
                   />
@@ -740,12 +740,12 @@ export function LeadsCrmClient({ isAdmin }: { isAdmin: boolean }) {
             placeholder="Search name, email, address…"
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            className="rounded-xl border border-white/15 bg-[#0B0B0B] px-3 py-2 text-sm text-white placeholder:text-[#737373] focus:border-[#C9A646] focus:outline-none focus:ring-1 focus:ring-[#C9A646]/40 lg:col-span-2"
+            className="rounded-xl border border-white/15 bg-[#0B0B0B] px-3 py-2 text-sm text-white placeholder:text-[#737373] focus:border-premium-gold focus:outline-none focus:ring-1 focus:ring-premium-gold/40 lg:col-span-2"
           />
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value)}
-            className="rounded-xl border border-white/15 bg-[#0B0B0B] px-3 py-2 text-sm text-white focus:border-[#C9A646]"
+            className="rounded-xl border border-white/15 bg-[#0B0B0B] px-3 py-2 text-sm text-white focus:border-premium-gold"
           >
             <option value="">All statuses</option>
             {["new", "contacted", "qualified", "meeting", "negotiation", "follow_up", "won", "lost"].map(
@@ -759,7 +759,7 @@ export function LeadsCrmClient({ isAdmin }: { isAdmin: boolean }) {
           <select
             value={band}
             onChange={(e) => setBand(e.target.value)}
-            className="rounded-xl border border-white/15 bg-[#0B0B0B] px-3 py-2 text-sm text-white focus:border-[#C9A646]"
+            className="rounded-xl border border-white/15 bg-[#0B0B0B] px-3 py-2 text-sm text-white focus:border-premium-gold"
           >
             <option value="">All score bands</option>
             <option value="hot">Hot (80+)</option>
@@ -770,12 +770,12 @@ export function LeadsCrmClient({ isAdmin }: { isAdmin: boolean }) {
             placeholder="City contains…"
             value={city}
             onChange={(e) => setCity(e.target.value)}
-            className="rounded-xl border border-white/15 bg-[#0B0B0B] px-3 py-2 text-sm text-white placeholder:text-[#737373] focus:border-[#C9A646] focus:outline-none"
+            className="rounded-xl border border-white/15 bg-[#0B0B0B] px-3 py-2 text-sm text-white placeholder:text-[#737373] focus:border-premium-gold focus:outline-none"
           />
           <select
             value={leadType}
             onChange={(e) => setLeadType(e.target.value)}
-            className="rounded-xl border border-white/15 bg-[#0B0B0B] px-3 py-2 text-sm text-white focus:border-[#C9A646]"
+            className="rounded-xl border border-white/15 bg-[#0B0B0B] px-3 py-2 text-sm text-white focus:border-premium-gold"
           >
             <option value="">All lead types</option>
             <option value="evaluation_lead">Evaluation</option>
@@ -787,12 +787,12 @@ export function LeadsCrmClient({ isAdmin }: { isAdmin: boolean }) {
             placeholder="Min deal $ (e.g. 500000)"
             value={minDealValue}
             onChange={(e) => setMinDealValue(e.target.value)}
-            className="rounded-xl border border-white/15 bg-[#0B0B0B] px-3 py-2 text-sm text-white placeholder:text-[#737373] focus:border-[#C9A646] focus:outline-none"
+            className="rounded-xl border border-white/15 bg-[#0B0B0B] px-3 py-2 text-sm text-white placeholder:text-[#737373] focus:border-premium-gold focus:outline-none"
           />
           <select
             value={cityRegion}
             onChange={(e) => setCityRegion(e.target.value)}
-            className="rounded-xl border border-white/15 bg-[#0B0B0B] px-3 py-2 text-sm text-white focus:border-[#C9A646]"
+            className="rounded-xl border border-white/15 bg-[#0B0B0B] px-3 py-2 text-sm text-white focus:border-premium-gold"
           >
             <option value="">All cities</option>
             <option value="mtl_laval">Montreal + Laval</option>
@@ -855,7 +855,7 @@ export function LeadsCrmClient({ isAdmin }: { isAdmin: boolean }) {
                     <td className="px-4 py-3 tabular-nums text-white">
                       {fmtMoney(l.dealValue ?? l.estimatedValue)}
                     </td>
-                    <td className="px-4 py-3 tabular-nums text-[#E8C547]">
+                    <td className="px-4 py-3 tabular-nums text-premium-gold">
                       {fmtMoney(l.commissionEstimate)}
                     </td>
                     <td className="px-4 py-3 text-xs text-[#B3B3B3]">{l.leadType ?? "—"}</td>
@@ -866,7 +866,7 @@ export function LeadsCrmClient({ isAdmin }: { isAdmin: boolean }) {
                         {l.score}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-xs capitalize text-[#E8C547]">
+                    <td className="px-4 py-3 text-xs capitalize text-premium-gold">
                       {(l.pipelineStatus || l.status || "new").replace("_", " ")}
                     </td>
                     <td className="px-4 py-3">
@@ -878,7 +878,7 @@ export function LeadsCrmClient({ isAdmin }: { isAdmin: boolean }) {
                             onChange={(e) =>
                               void patchLaunchFields(l.id, { launchSalesContacted: e.target.checked })
                             }
-                            className="rounded border-[#C9A646]/40"
+                            className="rounded border-premium-gold/40"
                           />
                           Contacted
                         </label>
@@ -891,7 +891,7 @@ export function LeadsCrmClient({ isAdmin }: { isAdmin: boolean }) {
                           <button
                             type="button"
                             onClick={() => void copyDmForLead(l)}
-                            className="rounded border border-[#C9A646]/45 px-2 py-0.5 text-[10px] font-semibold text-[#C9A646] hover:bg-[#C9A646]/10"
+                            className="rounded border border-premium-gold/45 px-2 py-0.5 text-[10px] font-semibold text-premium-gold hover:bg-premium-gold/10"
                           >
                             Copy DM
                           </button>
@@ -935,14 +935,14 @@ export function LeadsCrmClient({ isAdmin }: { isAdmin: boolean }) {
                       <div className="flex flex-wrap gap-1">
                         <Link
                           href={`/dashboard/leads/${l.id}`}
-                          className="rounded-lg border border-[#C9A646]/40 px-2 py-1 text-xs font-semibold text-[#C9A646] hover:bg-[#C9A646]/10"
+                          className="rounded-lg border border-premium-gold/40 px-2 py-1 text-xs font-semibold text-premium-gold hover:bg-premium-gold/10"
                         >
                           Open
                         </Link>
                         <button
                           type="button"
                           onClick={() => patchLead(l.id, "contacted")}
-                          className="rounded-lg bg-[#C9A646] px-2 py-1 text-xs font-bold text-[#0B0B0B]"
+                          className="rounded-lg bg-premium-gold px-2 py-1 text-xs font-bold text-[#0B0B0B]"
                         >
                           Stage: contacted
                         </button>

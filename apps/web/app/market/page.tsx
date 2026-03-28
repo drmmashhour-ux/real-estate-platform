@@ -28,7 +28,7 @@ export default async function MarketIndexPage() {
             <li key={c}>
               <Link
                 href={`/market/${cityToSlug(c)}`}
-                className="text-slate-900 underline dark:text-[#C9A646]"
+                className="text-slate-900 underline dark:text-premium-gold"
               >
                 {c}
               </Link>

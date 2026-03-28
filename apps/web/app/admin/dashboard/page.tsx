@@ -71,31 +71,31 @@ export default async function AdminHubDashboardPage() {
             <section className="flex flex-wrap gap-3">
               <Link
                 href="/admin/risk-monitoring"
-                className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-2 text-sm font-semibold text-amber-200 hover:bg-amber-500/20"
+                className="rounded-xl border border-premium-gold/40 bg-premium-gold/10 px-4 py-2 text-sm font-semibold text-premium-gold hover:bg-premium-gold/20"
               >
                 AI Risk Monitoring (seller declarations)
               </Link>
               <Link
                 href="/admin/timeline"
-                className="rounded-xl border border-[#C9A646]/40 bg-[#C9A646]/10 px-4 py-2 text-sm font-semibold text-[#C9A646] hover:bg-[#C9A646]/20"
+                className="rounded-xl border border-premium-gold/40 bg-premium-gold/10 px-4 py-2 text-sm font-semibold text-premium-gold hover:bg-premium-gold/20"
               >
                 Global timeline (listing · booking · user)
               </Link>
               <Link
                 href="/admin/immo-contact"
-                className="rounded-xl border border-slate-600 px-4 py-2 text-sm text-slate-300 hover:border-[#C9A646]/40 hover:text-white"
+                className="rounded-xl border border-white/15 px-4 py-2 text-sm text-white/85 hover:border-premium-gold/40 hover:text-white"
               >
                 ImmoContact control
               </Link>
               <Link
                 href="/admin/finance"
-                className="rounded-xl border border-slate-600 px-4 py-2 text-sm text-slate-300 hover:border-[#C9A646]/40 hover:text-white"
+                className="rounded-xl border border-white/15 px-4 py-2 text-sm text-white/85 hover:border-premium-gold/40 hover:text-white"
               >
                 Finance
               </Link>
               <Link
                 href="/admin/listings"
-                className="rounded-xl border border-slate-600 px-4 py-2 text-sm text-slate-300 hover:border-[#C9A646]/40 hover:text-white"
+                className="rounded-xl border border-white/15 px-4 py-2 text-sm text-white/85 hover:border-premium-gold/40 hover:text-white"
               >
                 Listing control
               </Link>
@@ -104,7 +104,7 @@ export default async function AdminHubDashboardPage() {
             <AdminHubAiSection />
 
             {overview ? (
-              <section className="rounded-2xl border border-[#C9A646]/20 bg-slate-900/40 p-5">
+              <section className="rounded-2xl border border-premium-gold/20 bg-black/40 p-5">
                 <AdminDailyAiReportCard
                   stats={{
                     totalUsers: overview.totalUsers,
@@ -121,72 +121,72 @@ export default async function AdminHubDashboardPage() {
             ) : null}
 
             <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
-              <div className="rounded-2xl border border-[#C9A646]/30 bg-[#C9A646]/[0.06] p-5 shadow-lg shadow-black/30">
-                <p className="text-xs font-semibold uppercase tracking-wider text-[#C9A646]">Total users</p>
+              <div className="rounded-2xl border border-premium-gold/30 bg-premium-gold/[0.06] p-5 shadow-lg shadow-black/30">
+                <p className="text-xs font-semibold uppercase tracking-wider text-premium-gold">Total users</p>
                 <p className="mt-2 text-3xl font-semibold text-white">{overview.totalUsers.toLocaleString()}</p>
-                <Link href="/admin/users" className="mt-2 inline-block text-xs text-[#B3B3B3] hover:text-[#C9A646]">
+                <Link href="/admin/users" className="mt-2 inline-block text-xs text-[#B3B3B3] hover:text-premium-gold">
                   Manage users →
                 </Link>
               </div>
-              <div className="rounded-2xl border border-[#C9A646]/30 bg-[#C9A646]/[0.06] p-5 shadow-lg shadow-black/30">
-                <p className="text-xs font-semibold uppercase tracking-wider text-[#C9A646]">Total listings</p>
+              <div className="rounded-2xl border border-premium-gold/30 bg-premium-gold/[0.06] p-5 shadow-lg shadow-black/30">
+                <p className="text-xs font-semibold uppercase tracking-wider text-premium-gold">Total listings</p>
                 <p className="mt-2 text-3xl font-semibold text-white">{overview.totalListings.toLocaleString()}</p>
-                <p className="mt-1 text-xs text-slate-500">Active (visible): {overview.activeListings.toLocaleString()}</p>
-                <Link href="/admin/listings" className="mt-2 inline-block text-xs text-[#B3B3B3] hover:text-[#C9A646]">
+                <p className="mt-1 text-xs text-white0">Active (visible): {overview.activeListings.toLocaleString()}</p>
+                <Link href="/admin/listings" className="mt-2 inline-block text-xs text-[#B3B3B3] hover:text-premium-gold">
                   Listings hub →
                 </Link>
               </div>
-              <div className="rounded-2xl border border-[#C9A646]/30 bg-[#C9A646]/[0.06] p-5 shadow-lg shadow-black/30">
-                <p className="text-xs font-semibold uppercase tracking-wider text-[#C9A646]">Active bookings</p>
+              <div className="rounded-2xl border border-premium-gold/30 bg-premium-gold/[0.06] p-5 shadow-lg shadow-black/30">
+                <p className="text-xs font-semibold uppercase tracking-wider text-premium-gold">Active bookings</p>
                 <p className="mt-2 text-3xl font-semibold text-white">{overview.activeBookingsCount.toLocaleString()}</p>
-                <p className="mt-1 text-xs text-slate-500">Today new: {overview.bookingsToday.toLocaleString()}</p>
-                <Link href="/admin/bookings" className="mt-2 inline-block text-xs text-[#B3B3B3] hover:text-[#C9A646]">
+                <p className="mt-1 text-xs text-white0">Today new: {overview.bookingsToday.toLocaleString()}</p>
+                <Link href="/admin/bookings" className="mt-2 inline-block text-xs text-[#B3B3B3] hover:text-premium-gold">
                   View bookings →
                 </Link>
               </div>
-              <div className="rounded-2xl border border-[#C9A646]/30 bg-[#C9A646]/[0.06] p-5 shadow-lg shadow-black/30">
-                <p className="text-xs font-semibold uppercase tracking-wider text-[#C9A646]">Revenue today</p>
+              <div className="rounded-2xl border border-premium-gold/30 bg-premium-gold/[0.06] p-5 shadow-lg shadow-black/30">
+                <p className="text-xs font-semibold uppercase tracking-wider text-premium-gold">Revenue today</p>
                 <p className="mt-2 text-3xl font-semibold text-white">
                   ${(overview.revenueTodayCents / 100).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                 </p>
-                <p className="mt-1 text-xs text-slate-500">Paid platform checkouts</p>
-                <Link href="/admin/finance" className="mt-2 inline-block text-xs text-[#B3B3B3] hover:text-[#C9A646]">
+                <p className="mt-1 text-xs text-white0">Paid platform checkouts</p>
+                <Link href="/admin/finance" className="mt-2 inline-block text-xs text-[#B3B3B3] hover:text-premium-gold">
                   Finance →
                 </Link>
               </div>
-              <div className="rounded-2xl border border-[#C9A646]/30 bg-[#C9A646]/[0.06] p-5 shadow-lg shadow-black/30">
-                <p className="text-xs font-semibold uppercase tracking-wider text-[#C9A646]">Revenue (7 days)</p>
+              <div className="rounded-2xl border border-premium-gold/30 bg-premium-gold/[0.06] p-5 shadow-lg shadow-black/30">
+                <p className="text-xs font-semibold uppercase tracking-wider text-premium-gold">Revenue (7 days)</p>
                 <p className="mt-2 text-3xl font-semibold text-white">
                   ${(overview.revenueWeekCents / 100).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                 </p>
-                <p className="mt-1 text-xs text-slate-500">Rolling week</p>
+                <p className="mt-1 text-xs text-white0">Rolling week</p>
               </div>
-              <div className="rounded-2xl border border-[#C9A646]/30 bg-[#C9A646]/[0.06] p-5 shadow-lg shadow-black/30">
-                <p className="text-xs font-semibold uppercase tracking-wider text-[#C9A646]">Revenue (30 days)</p>
+              <div className="rounded-2xl border border-premium-gold/30 bg-premium-gold/[0.06] p-5 shadow-lg shadow-black/30">
+                <p className="text-xs font-semibold uppercase tracking-wider text-premium-gold">Revenue (30 days)</p>
                 <p className="mt-2 text-3xl font-semibold text-white">
                   ${(overview.revenueMonthCents / 100).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                 </p>
-                <p className="mt-1 text-xs text-slate-500">Rolling month</p>
+                <p className="mt-1 text-xs text-white0">Rolling month</p>
               </div>
-              <div className="rounded-2xl border border-[#C9A646]/30 bg-[#C9A646]/[0.06] p-5 shadow-lg shadow-black/30">
-                <p className="text-xs font-semibold uppercase tracking-wider text-[#C9A646]">Open disputes</p>
+              <div className="rounded-2xl border border-premium-gold/30 bg-premium-gold/[0.06] p-5 shadow-lg shadow-black/30">
+                <p className="text-xs font-semibold uppercase tracking-wider text-premium-gold">Open disputes</p>
                 <p className="mt-2 text-3xl font-semibold text-white">{overview.openDisputesCount.toLocaleString()}</p>
-                <Link href="/admin/disputes" className="mt-2 inline-block text-xs text-[#B3B3B3] hover:text-[#C9A646]">
+                <Link href="/admin/disputes" className="mt-2 inline-block text-xs text-[#B3B3B3] hover:text-premium-gold">
                   Dispute center →
                 </Link>
               </div>
-              <div className="rounded-2xl border border-[#C9A646]/30 bg-[#C9A646]/[0.06] p-5 shadow-lg shadow-black/30">
-                <p className="text-xs font-semibold uppercase tracking-wider text-[#C9A646]">Pending payouts</p>
+              <div className="rounded-2xl border border-premium-gold/30 bg-premium-gold/[0.06] p-5 shadow-lg shadow-black/30">
+                <p className="text-xs font-semibold uppercase tracking-wider text-premium-gold">Pending payouts</p>
                 <p className="mt-2 text-3xl font-semibold text-white">{overview.pendingPayoutsCount.toLocaleString()}</p>
-                <p className="mt-1 text-xs text-slate-500">BNHub host transfer not released</p>
-                <Link href="/admin/payouts" className="mt-2 inline-block text-xs text-[#B3B3B3] hover:text-[#C9A646]">
+                <p className="mt-1 text-xs text-white0">BNHub host transfer not released</p>
+                <Link href="/admin/payouts" className="mt-2 inline-block text-xs text-[#B3B3B3] hover:text-premium-gold">
                   Payout management →
                 </Link>
               </div>
-              <div className="rounded-2xl border border-[#C9A646]/30 bg-[#C9A646]/[0.06] p-5 shadow-lg shadow-black/30">
-                <p className="text-xs font-semibold uppercase tracking-wider text-[#C9A646]">Contracts</p>
-                <p className="mt-2 text-sm text-slate-400">Signed agreements & links</p>
-                <Link href="/admin/contracts" className="mt-2 inline-block text-xs text-[#B3B3B3] hover:text-[#C9A646]">
+              <div className="rounded-2xl border border-premium-gold/30 bg-premium-gold/[0.06] p-5 shadow-lg shadow-black/30">
+                <p className="text-xs font-semibold uppercase tracking-wider text-premium-gold">Contracts</p>
+                <p className="mt-2 text-sm text-premium-text-muted">Signed agreements & links</p>
+                <Link href="/admin/contracts" className="mt-2 inline-block text-xs text-[#B3B3B3] hover:text-premium-gold">
                   Contract view →
                 </Link>
               </div>
@@ -194,21 +194,21 @@ export default async function AdminHubDashboardPage() {
 
             <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">All-time bookings</p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-white0">All-time bookings</p>
                 <p className="mt-1 text-xl font-semibold text-white">{overview.totalBookings.toLocaleString()}</p>
               </div>
               <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Deals</p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-white0">Deals</p>
                 <p className="mt-1 text-xl font-semibold text-white">{overview.totalDeals.toLocaleString()}</p>
               </div>
               <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Revenue (all completed)</p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-white0">Revenue (all completed)</p>
                 <p className="mt-1 text-xl font-semibold text-white">
                   ${(overview.revenueCents / 100).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                 </p>
               </div>
               <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Platform fees (BNHub)</p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-white0">Platform fees (BNHub)</p>
                 <p className="mt-1 text-xl font-semibold text-white">
                   ${(overview.commissionCents / 100).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                 </p>
@@ -216,19 +216,19 @@ export default async function AdminHubDashboardPage() {
             </section>
 
             <section className="rounded-2xl border border-white/10 bg-black/30 p-5">
-              <h2 className="text-sm font-semibold text-[#C9A646]">AI summary</h2>
+              <h2 className="text-sm font-semibold text-premium-gold">AI summary</h2>
               <div className="mt-3 grid gap-4 sm:grid-cols-2">
                 <div>
-                  <p className="text-xs uppercase text-slate-500">Daily (24h)</p>
-                  <p className="mt-1 text-sm text-slate-300">
+                  <p className="text-xs uppercase text-white0">Daily (24h)</p>
+                  <p className="mt-1 text-sm text-white/85">
                     {aiSummary.alertsCount} active alerts · {aiSummary.fraudFlags} fraud flags · {aiSummary.revenueOpportunitySummary}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs uppercase text-slate-500">Weekly (30d trend)</p>
-                  <p className="mt-1 text-sm text-slate-300">
+                  <p className="text-xs uppercase text-white0">Weekly (30d trend)</p>
+                  <p className="mt-1 text-sm text-white/85">
                     Platform activity in charts below; review revenue & funnels in{" "}
-                    <Link href="/admin/revenue" className="text-[#C9A646] hover:underline">
+                    <Link href="/admin/revenue" className="text-premium-gold hover:underline">
                       analytics
                     </Link>
                     .
@@ -257,9 +257,9 @@ export default async function AdminHubDashboardPage() {
             <Link
               key={item.href + item.label}
               href={item.href}
-              className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 transition hover:border-[#C9A646]/40 hover:bg-[#C9A646]/[0.06]"
+              className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 transition hover:border-premium-gold/40 hover:bg-premium-gold/[0.06]"
             >
-              <p className="text-sm font-semibold text-[#C9A646]">{item.label}</p>
+              <p className="text-sm font-semibold text-premium-gold">{item.label}</p>
               <p className="mt-1 text-xs text-[#B3B3B3]">{item.sub}</p>
             </Link>
           ))}
@@ -272,117 +272,117 @@ export default async function AdminHubDashboardPage() {
             className="rounded-xl border border-white/10 p-4 transition-colors hover:bg-white/5"
             style={{ backgroundColor: "rgba(255,255,255,0.04)" }}
           >
-            <p className="text-xs font-medium uppercase tracking-wider text-[#C9A646]/90">Revenue</p>
+            <p className="text-xs font-medium uppercase tracking-wider text-premium-gold/90">Revenue</p>
             <p className="mt-1 text-lg font-semibold text-white">—</p>
-            <p className="mt-0.5 text-xs text-slate-500">View revenue</p>
+            <p className="mt-0.5 text-xs text-white0">View revenue</p>
           </Link>
           <Link
             href="/admin/income"
             className="rounded-xl border border-white/10 p-4 transition-colors hover:bg-white/5"
             style={{ backgroundColor: "rgba(255,255,255,0.04)" }}
           >
-            <p className="text-xs font-medium uppercase tracking-wider text-[#C9A646]/90">Income</p>
+            <p className="text-xs font-medium uppercase tracking-wider text-premium-gold/90">Income</p>
             <p className="mt-1 text-lg font-semibold text-white">—</p>
-            <p className="mt-0.5 text-xs text-slate-500">Canva income</p>
+            <p className="mt-0.5 text-xs text-white0">Canva income</p>
           </Link>
           <Link
             href="/admin/users"
             className="rounded-xl border border-white/10 p-4 transition-colors hover:bg-white/5"
             style={{ backgroundColor: "rgba(255,255,255,0.04)" }}
           >
-            <p className="text-xs font-medium uppercase tracking-wider text-[#C9A646]/90">Users</p>
+            <p className="text-xs font-medium uppercase tracking-wider text-premium-gold/90">Users</p>
             <p className="mt-1 text-lg font-semibold text-white">—</p>
-            <p className="mt-0.5 text-xs text-slate-500">Manage users</p>
+            <p className="mt-0.5 text-xs text-white0">Manage users</p>
           </Link>
           <Link
             href="/admin/legal"
             className="rounded-xl border border-white/10 p-4 transition-colors hover:bg-white/5"
             style={{ backgroundColor: "rgba(255,255,255,0.04)" }}
           >
-            <p className="text-xs font-medium uppercase tracking-wider text-[#C9A646]/90">Legal</p>
+            <p className="text-xs font-medium uppercase tracking-wider text-premium-gold/90">Legal</p>
             <p className="mt-1 text-lg font-semibold text-white">Terms & docs</p>
-            <p className="mt-0.5 text-xs text-slate-500">Documents & acceptance</p>
+            <p className="mt-0.5 text-xs text-white0">Documents & acceptance</p>
           </Link>
           <Link
             href="/admin/forms"
             className="rounded-xl border border-white/10 p-4 transition-colors hover:bg-white/5"
             style={{ backgroundColor: "rgba(255,255,255,0.04)" }}
           >
-            <p className="text-xs font-medium uppercase tracking-wider text-[#C9A646]/90">Forms</p>
+            <p className="text-xs font-medium uppercase tracking-wider text-premium-gold/90">Forms</p>
             <p className="mt-1 text-lg font-semibold text-white">List / edit</p>
-            <p className="mt-0.5 text-xs text-slate-500">Operational forms</p>
+            <p className="mt-0.5 text-xs text-white0">Operational forms</p>
           </Link>
           <Link
             href="/admin/testimonials"
             className="rounded-xl border border-white/10 p-4 transition-colors hover:bg-white/5"
             style={{ backgroundColor: "rgba(255,255,255,0.04)" }}
           >
-            <p className="text-xs font-medium uppercase tracking-wider text-[#C9A646]/90">Testimonials</p>
+            <p className="text-xs font-medium uppercase tracking-wider text-premium-gold/90">Testimonials</p>
             <p className="mt-1 text-lg font-semibold text-white">Approve & feature</p>
-            <p className="mt-0.5 text-xs text-slate-500">Homepage trust content</p>
+            <p className="mt-0.5 text-xs text-white0">Homepage trust content</p>
           </Link>
           <Link
             href="/admin/case-studies"
             className="rounded-xl border border-white/10 p-4 transition-colors hover:bg-white/5"
             style={{ backgroundColor: "rgba(255,255,255,0.04)" }}
           >
-            <p className="text-xs font-medium uppercase tracking-wider text-[#C9A646]/90">Case studies</p>
+            <p className="text-xs font-medium uppercase tracking-wider text-premium-gold/90">Case studies</p>
             <p className="mt-1 text-lg font-semibold text-white">Publish</p>
-            <p className="mt-0.5 text-xs text-slate-500">Proof & outcomes</p>
+            <p className="mt-0.5 text-xs text-white0">Proof & outcomes</p>
           </Link>
           <Link
             href="/admin/storage"
             className="rounded-xl border border-white/10 p-4 transition-colors hover:bg-white/5"
             style={{ backgroundColor: "rgba(255,255,255,0.04)" }}
           >
-            <p className="text-xs font-medium uppercase tracking-wider text-[#C9A646]/90">Storage</p>
+            <p className="text-xs font-medium uppercase tracking-wider text-premium-gold/90">Storage</p>
             <p className="mt-1 text-lg font-semibold text-white">—</p>
-            <p className="mt-0.5 text-xs text-slate-500">Platform storage</p>
+            <p className="mt-0.5 text-xs text-white0">Platform storage</p>
           </Link>
           <Link
             href="/admin/projects-monetization"
             className="rounded-xl border border-white/10 p-4 transition-colors hover:bg-white/5"
             style={{ backgroundColor: "rgba(255,255,255,0.04)" }}
           >
-            <p className="text-xs font-medium uppercase tracking-wider text-[#C9A646]/90">Projects</p>
+            <p className="text-xs font-medium uppercase tracking-wider text-premium-gold/90">Projects</p>
             <p className="mt-1 text-lg font-semibold text-white">Monetization</p>
-            <p className="mt-0.5 text-xs text-slate-500">Pricing & revenue</p>
+            <p className="mt-0.5 text-xs text-white0">Pricing & revenue</p>
           </Link>
           <Link
             href="/admin/fraud"
             className="rounded-xl border border-white/10 p-4 transition-colors hover:bg-white/5"
             style={{ backgroundColor: "rgba(255,255,255,0.04)" }}
           >
-            <p className="text-xs font-medium uppercase tracking-wider text-[#C9A646]/90">Fraud alerts</p>
+            <p className="text-xs font-medium uppercase tracking-wider text-premium-gold/90">Fraud alerts</p>
             <p className="mt-1 text-lg font-semibold text-white">—</p>
-            <p className="mt-0.5 text-xs text-slate-500">Alerts</p>
+            <p className="mt-0.5 text-xs text-white0">Alerts</p>
           </Link>
           <Link
             href="/admin/trust-safety"
             className="rounded-xl border border-white/10 p-4 transition-colors hover:bg-white/5"
             style={{ backgroundColor: "rgba(255,255,255,0.04)" }}
           >
-            <p className="text-xs font-medium uppercase tracking-wider text-[#C9A646]/90">Trust & Safety</p>
+            <p className="text-xs font-medium uppercase tracking-wider text-premium-gold/90">Trust & Safety</p>
             <p className="mt-1 text-lg font-semibold text-white">Reports</p>
-            <p className="mt-0.5 text-xs text-slate-500">Refund · Warn · Suspend</p>
+            <p className="mt-0.5 text-xs text-white0">Refund · Warn · Suspend</p>
           </Link>
           <Link
             href="/admin/brokers"
             className="rounded-xl border border-white/10 p-4 transition-colors hover:bg-white/5"
             style={{ backgroundColor: "rgba(255,255,255,0.04)" }}
           >
-            <p className="text-xs font-medium uppercase tracking-wider text-[#C9A646]/90">Brokers</p>
+            <p className="text-xs font-medium uppercase tracking-wider text-premium-gold/90">Brokers</p>
             <p className="mt-1 text-lg font-semibold text-white">Certification</p>
-            <p className="mt-0.5 text-xs text-slate-500">Approve / reject applications</p>
+            <p className="mt-0.5 text-xs text-white0">Approve / reject applications</p>
           </Link>
           <Link
             href="/admin/logs"
             className="rounded-xl border border-white/10 p-4 transition-colors hover:bg-white/5"
             style={{ backgroundColor: "rgba(255,255,255,0.04)" }}
           >
-            <p className="text-xs font-medium uppercase tracking-wider text-[#C9A646]/90">Logs</p>
+            <p className="text-xs font-medium uppercase tracking-wider text-premium-gold/90">Logs</p>
             <p className="mt-1 text-lg font-semibold text-white">Audit</p>
-            <p className="mt-0.5 text-xs text-slate-500">Audit logs</p>
+            <p className="mt-0.5 text-xs text-white0">Audit logs</p>
           </Link>
         </div>
 
@@ -396,51 +396,51 @@ export default async function AdminHubDashboardPage() {
 
         {/* Top performing hubs & system health */}
         <section className="rounded-xl border border-white/10 p-6 transition-all duration-200 hover:scale-[1.01]" style={{ backgroundColor: "rgba(255,255,255,0.04)" }}>
-          <h2 className="text-lg font-semibold text-slate-50 sm:text-xl">Summary</h2>
-          <p className="mt-2 text-sm text-slate-400">Active subscriptions/payments: —</p>
-          <p className="mt-1 text-sm text-slate-400">Top performing hubs: —</p>
-          <p className="mt-1 text-sm text-slate-400">System health: Operational</p>
-          <p className="mt-1 text-sm text-slate-400">AI alerts: {aiSummary.alertsCount} · Fraud flags: {aiSummary.fraudFlags}</p>
-          <p className="mt-1 text-sm text-slate-400">AI: {aiSummary.revenueOpportunitySummary}</p>
+          <h2 className="text-lg font-semibold text-white sm:text-xl">Summary</h2>
+          <p className="mt-2 text-sm text-premium-text-muted">Active subscriptions/payments: —</p>
+          <p className="mt-1 text-sm text-premium-text-muted">Top performing hubs: —</p>
+          <p className="mt-1 text-sm text-premium-text-muted">System health: Operational</p>
+          <p className="mt-1 text-sm text-premium-text-muted">AI alerts: {aiSummary.alertsCount} · Fraud flags: {aiSummary.fraudFlags}</p>
+          <p className="mt-1 text-sm text-premium-text-muted">AI: {aiSummary.revenueOpportunitySummary}</p>
           <div className="mt-4 flex flex-wrap gap-2">
-            <Link href="/admin/health" className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-200">Platform health</Link>
-            <Link href="/admin/audit" className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-200">Audit logs</Link>
+            <Link href="/admin/health" className="rounded-lg border border-white/12 px-3 py-1.5 text-sm text-premium-text-muted hover:bg-white/10 hover:text-white/90">Platform health</Link>
+            <Link href="/admin/audit" className="rounded-lg border border-white/12 px-3 py-1.5 text-sm text-premium-text-muted hover:bg-white/10 hover:text-white/90">Audit logs</Link>
           </div>
         </section>
 
         {/* Platform mission — internal alignment */}
         <section className="rounded-xl border border-white/10 p-6" style={{ backgroundColor: "rgba(255,255,255,0.04)" }}>
-          <h2 className="text-lg font-semibold text-slate-50 sm:text-xl">
+          <h2 className="text-lg font-semibold text-white sm:text-xl">
             Platform mission (internal reference)
           </h2>
-          <p className="mt-2 text-xs text-slate-500">
+          <p className="mt-2 text-xs text-white0">
             Single source of truth:{" "}
-            <code className="rounded bg-slate-800 px-1.5 py-0.5 text-slate-400">
+            <code className="rounded bg-white/10 px-1.5 py-0.5 text-premium-text-muted">
               docs/PLATFORM-MISSION.md
             </code>
           </p>
-          <div className="mt-6 rounded-xl border border-slate-800 bg-slate-900/60 p-5 text-sm">
+          <div className="mt-6 rounded-xl border border-white/10 bg-black/50 p-5 text-sm">
             <p className="font-medium text-amber-400">Operating principle</p>
-            <p className="mt-1 text-slate-200 font-medium">AI runs the platform, user supervises.</p>
-            <p className="mt-2 text-slate-400 text-xs">
+            <p className="mt-1 text-white/90 font-medium">AI runs the platform, user supervises.</p>
+            <p className="mt-2 text-premium-text-muted text-xs">
               Automation handles operations; humans set policy, approve exceptions, and oversee outcomes.
             </p>
             <p className="mt-4 font-medium text-emerald-300">Mission</p>
-            <p className="mt-2 text-slate-300">
+            <p className="mt-2 text-white/85">
               To connect people, licensed professionals, and investors in a
               trusted and verified digital ecosystem—enabling confident property
               discovery, professional guidance, and long-term value through
               relationship-driven real estate and lifestyle services.
             </p>
             <p className="mt-4 font-medium text-emerald-300">Vision</p>
-            <p className="mt-2 text-slate-300">
+            <p className="mt-2 text-white/85">
               A world where every property search, investment decision, and
               professional interaction happens inside a transparent, safe, and
               relationship-oriented platform—where verification and reputation
               replace uncertainty.
             </p>
             <p className="mt-4 font-medium text-emerald-300">Core values</p>
-            <ul className="mt-2 list-inside list-disc space-y-1 text-slate-300">
+            <ul className="mt-2 list-inside list-disc space-y-1 text-white/85">
               <li>Trust first — Verification and transparency before scale.</li>
               <li>
                 Relationships over transactions — Long-term professional and
@@ -456,10 +456,10 @@ export default async function AdminHubDashboardPage() {
               </li>
             </ul>
           </div>
-          <p className="mt-4 text-xs text-slate-500">
+          <p className="mt-4 text-xs text-white0">
             Use this mission when making moderation decisions, designing
             features, or resolving disputes. Governance rules:{" "}
-            <code className="rounded bg-slate-800 px-1.5 py-0.5 text-slate-400">
+            <code className="rounded bg-white/10 px-1.5 py-0.5 text-premium-text-muted">
               docs/PLATFORM-GOVERNANCE.md
             </code>
           </p>
@@ -475,51 +475,51 @@ export default async function AdminHubDashboardPage() {
 
         {/* Admin tools */}
         <section className="rounded-xl border border-white/10 p-6" style={{ backgroundColor: "rgba(255,255,255,0.04)" }}>
-          <h2 className="text-lg font-semibold text-slate-50 sm:text-xl">
+          <h2 className="text-lg font-semibold text-white sm:text-xl">
             Tools
           </h2>
           <nav className="mt-4 flex flex-wrap gap-2">
             <AdminOpenCanvaButtonDynamic />
-            <Link href="/admin/forms" className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-200">Forms</Link>
-            <Link href="/admin/contracts-builder" className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-200">Contract templates</Link>
-            <a href="/admin/listing-compliance" className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-200">Listing compliance</a>
-            <a href="/admin/users" className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-200">Users</a>
-            <a href="/admin/controls" className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-200">Operational controls</a>
-            <a href="/admin/health" className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-200">Platform health</a>
-            <a href="/admin/policies" className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-200">Policy engine</a>
-            <a href="/admin/moderation" className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-200">Verification queue</a>
-            <a href="/admin/verifications" className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-200">Ownership verification</a>
-            <a href="/admin/listings" className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-200">Listing moderation</a>
-            <a href="/admin/bookings" className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-200">Bookings</a>
-            <a href="/admin/fsbo" className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-200">FSBO listings</a>
-            <a href="/admin/issues" className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-200">BNHub issues</a>
-            <a href="/admin/trust-safety" className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-200">Trust & Safety</a>
-            <a href="/admin/transactions" className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-200">Transactions</a>
-            <a href="/admin/incidents" className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-200">Incidents</a>
-            <a href="/admin/disputes" className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-200">Dispute resolution</a>
-            <a href="/admin/payouts" className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-200">Payout holds</a>
-            <a href="/admin/trust-safety" className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-200">Trust & safety</a>
-            <a href="/admin/fraud" className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-200">Fraud alerts</a>
-            <a href="/admin/property-identities" className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-200">Property Identity Console</a>
-            <a href="/admin/valuation" className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-200">AVM Valuation</a>
-            <a href="/admin/ranking" className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-200">Ranking config</a>
-            <a href="/admin/supply-growth" className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-200">Supply growth</a>
-            <a href="/admin/revenue" className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-200">Revenue</a>
-            <a href="/admin/income" className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-200">Canva income</a>
-            <a href="/admin/storage" className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-200">Storage</a>
-            <a href="/admin/subscriptions" className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-200">Subscriptions</a>
-            <a href="/admin/promotions" className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-200">Promotions</a>
-            <a href="/admin/markets" className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-200">Markets</a>
-            <a href="/admin/growth" className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-200">Growth campaigns</a>
-            <a href="/admin/executive" className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-200">Executive dashboard</a>
-            <a href="/admin/ai" className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-200">AI Control Center</a>
-            <a href="/admin/defense" className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-200">Platform Defense</a>
-            <a href="/admin/audit" className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-200">Audit logs</a>
-            <a href="/admin/metrics" className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-200">System metrics</a>
+            <Link href="/admin/forms" className="rounded-lg border border-white/12 px-3 py-1.5 text-sm text-premium-text-muted hover:bg-white/10 hover:text-white/90">Forms</Link>
+            <Link href="/admin/contracts-builder" className="rounded-lg border border-white/12 px-3 py-1.5 text-sm text-premium-text-muted hover:bg-white/10 hover:text-white/90">Contract templates</Link>
+            <a href="/admin/listing-compliance" className="rounded-lg border border-white/12 px-3 py-1.5 text-sm text-premium-text-muted hover:bg-white/10 hover:text-white/90">Listing compliance</a>
+            <a href="/admin/users" className="rounded-lg border border-white/12 px-3 py-1.5 text-sm text-premium-text-muted hover:bg-white/10 hover:text-white/90">Users</a>
+            <a href="/admin/controls" className="rounded-lg border border-white/12 px-3 py-1.5 text-sm text-premium-text-muted hover:bg-white/10 hover:text-white/90">Operational controls</a>
+            <a href="/admin/health" className="rounded-lg border border-white/12 px-3 py-1.5 text-sm text-premium-text-muted hover:bg-white/10 hover:text-white/90">Platform health</a>
+            <a href="/admin/policies" className="rounded-lg border border-white/12 px-3 py-1.5 text-sm text-premium-text-muted hover:bg-white/10 hover:text-white/90">Policy engine</a>
+            <a href="/admin/moderation" className="rounded-lg border border-white/12 px-3 py-1.5 text-sm text-premium-text-muted hover:bg-white/10 hover:text-white/90">Verification queue</a>
+            <a href="/admin/verifications" className="rounded-lg border border-white/12 px-3 py-1.5 text-sm text-premium-text-muted hover:bg-white/10 hover:text-white/90">Ownership verification</a>
+            <a href="/admin/listings" className="rounded-lg border border-white/12 px-3 py-1.5 text-sm text-premium-text-muted hover:bg-white/10 hover:text-white/90">Listing moderation</a>
+            <a href="/admin/bookings" className="rounded-lg border border-white/12 px-3 py-1.5 text-sm text-premium-text-muted hover:bg-white/10 hover:text-white/90">Bookings</a>
+            <a href="/admin/fsbo" className="rounded-lg border border-white/12 px-3 py-1.5 text-sm text-premium-text-muted hover:bg-white/10 hover:text-white/90">FSBO listings</a>
+            <a href="/admin/issues" className="rounded-lg border border-white/12 px-3 py-1.5 text-sm text-premium-text-muted hover:bg-white/10 hover:text-white/90">BNHub issues</a>
+            <a href="/admin/trust-safety" className="rounded-lg border border-white/12 px-3 py-1.5 text-sm text-premium-text-muted hover:bg-white/10 hover:text-white/90">Trust & Safety</a>
+            <a href="/admin/transactions" className="rounded-lg border border-white/12 px-3 py-1.5 text-sm text-premium-text-muted hover:bg-white/10 hover:text-white/90">Transactions</a>
+            <a href="/admin/incidents" className="rounded-lg border border-white/12 px-3 py-1.5 text-sm text-premium-text-muted hover:bg-white/10 hover:text-white/90">Incidents</a>
+            <a href="/admin/disputes" className="rounded-lg border border-white/12 px-3 py-1.5 text-sm text-premium-text-muted hover:bg-white/10 hover:text-white/90">Dispute resolution</a>
+            <a href="/admin/payouts" className="rounded-lg border border-white/12 px-3 py-1.5 text-sm text-premium-text-muted hover:bg-white/10 hover:text-white/90">Payout holds</a>
+            <a href="/admin/trust-safety" className="rounded-lg border border-white/12 px-3 py-1.5 text-sm text-premium-text-muted hover:bg-white/10 hover:text-white/90">Trust & safety</a>
+            <a href="/admin/fraud" className="rounded-lg border border-white/12 px-3 py-1.5 text-sm text-premium-text-muted hover:bg-white/10 hover:text-white/90">Fraud alerts</a>
+            <a href="/admin/property-identities" className="rounded-lg border border-white/12 px-3 py-1.5 text-sm text-premium-text-muted hover:bg-white/10 hover:text-white/90">Property Identity Console</a>
+            <a href="/admin/valuation" className="rounded-lg border border-white/12 px-3 py-1.5 text-sm text-premium-text-muted hover:bg-white/10 hover:text-white/90">AVM Valuation</a>
+            <a href="/admin/ranking" className="rounded-lg border border-white/12 px-3 py-1.5 text-sm text-premium-text-muted hover:bg-white/10 hover:text-white/90">Ranking config</a>
+            <a href="/admin/supply-growth" className="rounded-lg border border-white/12 px-3 py-1.5 text-sm text-premium-text-muted hover:bg-white/10 hover:text-white/90">Supply growth</a>
+            <a href="/admin/revenue" className="rounded-lg border border-white/12 px-3 py-1.5 text-sm text-premium-text-muted hover:bg-white/10 hover:text-white/90">Revenue</a>
+            <a href="/admin/income" className="rounded-lg border border-white/12 px-3 py-1.5 text-sm text-premium-text-muted hover:bg-white/10 hover:text-white/90">Canva income</a>
+            <a href="/admin/storage" className="rounded-lg border border-white/12 px-3 py-1.5 text-sm text-premium-text-muted hover:bg-white/10 hover:text-white/90">Storage</a>
+            <a href="/admin/subscriptions" className="rounded-lg border border-white/12 px-3 py-1.5 text-sm text-premium-text-muted hover:bg-white/10 hover:text-white/90">Subscriptions</a>
+            <a href="/admin/promotions" className="rounded-lg border border-white/12 px-3 py-1.5 text-sm text-premium-text-muted hover:bg-white/10 hover:text-white/90">Promotions</a>
+            <a href="/admin/markets" className="rounded-lg border border-white/12 px-3 py-1.5 text-sm text-premium-text-muted hover:bg-white/10 hover:text-white/90">Markets</a>
+            <a href="/admin/growth" className="rounded-lg border border-white/12 px-3 py-1.5 text-sm text-premium-text-muted hover:bg-white/10 hover:text-white/90">Growth campaigns</a>
+            <a href="/admin/executive" className="rounded-lg border border-white/12 px-3 py-1.5 text-sm text-premium-text-muted hover:bg-white/10 hover:text-white/90">Executive dashboard</a>
+            <a href="/admin/ai" className="rounded-lg border border-white/12 px-3 py-1.5 text-sm text-premium-text-muted hover:bg-white/10 hover:text-white/90">AI Control Center</a>
+            <a href="/admin/defense" className="rounded-lg border border-white/12 px-3 py-1.5 text-sm text-premium-text-muted hover:bg-white/10 hover:text-white/90">Platform Defense</a>
+            <a href="/admin/audit" className="rounded-lg border border-white/12 px-3 py-1.5 text-sm text-premium-text-muted hover:bg-white/10 hover:text-white/90">Audit logs</a>
+            <a href="/admin/metrics" className="rounded-lg border border-white/12 px-3 py-1.5 text-sm text-premium-text-muted hover:bg-white/10 hover:text-white/90">System metrics</a>
           </nav>
-          <p className="mt-4 text-sm text-slate-500">
+          <p className="mt-4 text-sm text-white0">
             Ensure all actions align with platform mission and governance (
-            <code className="rounded bg-slate-800 px-1 py-0.5 text-slate-400">
+            <code className="rounded bg-white/10 px-1 py-0.5 text-premium-text-muted">
               docs/PLATFORM-GOVERNANCE.md
             </code>
             ).

@@ -50,7 +50,7 @@ export function LeadScoringTable({ className }: { className?: string }) {
 
   return (
     <div className={`rounded-xl border border-white/10 bg-[#0f0f0f] p-6 ${className ?? ""}`}>
-      <h2 className="text-sm font-semibold uppercase tracking-wider text-[#C9A646]/90">Lead scoring (deterministic)</h2>
+      <h2 className="text-sm font-semibold uppercase tracking-wider text-premium-gold/90">Lead scoring (deterministic)</h2>
       <div className="mt-4 overflow-x-auto">
         <table className="w-full text-left text-sm">
           <thead>
@@ -71,7 +71,7 @@ export function LeadScoringTable({ className }: { className?: string }) {
                       r.category === "high"
                         ? "text-emerald-400"
                         : r.category === "medium"
-                          ? "text-[#E8C547]"
+                          ? "text-premium-gold"
                           : "text-slate-400"
                     }
                   >

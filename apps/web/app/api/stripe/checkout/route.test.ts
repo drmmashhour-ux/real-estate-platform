@@ -56,6 +56,7 @@ describe("POST /api/stripe/checkout", () => {
     vi.mocked(prisma.booking.findUnique).mockImplementation((args: { include?: unknown; select?: unknown }) => {
       if (args?.select && "listing" in (args.select as object)) {
         return Promise.resolve({
+          listingId: "listing-1",
           listing: {
             owner: {
               stripeAccountId: "acct_test_connect",
@@ -151,6 +152,7 @@ describe("POST /api/stripe/checkout", () => {
       expect.objectContaining({
         amountCents: 2500,
         bookingId: "booking-1",
+        listingId: "listing-1",
         paymentType: "booking",
         userId: "user-1",
         connect: expect.objectContaining({
@@ -167,6 +169,7 @@ describe("POST /api/stripe/checkout", () => {
     vi.mocked(prisma.booking.findUnique).mockImplementation((args: { include?: unknown; select?: unknown }) => {
       if (args?.select && "listing" in (args.select as object)) {
         return Promise.resolve({
+          listingId: "listing-1",
           listing: {
             owner: {
               stripeAccountId: null,

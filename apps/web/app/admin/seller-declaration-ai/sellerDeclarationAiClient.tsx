@@ -25,7 +25,7 @@ export function SellerDeclarationAiClient() {
         <label className="text-xs text-slate-300">Listing ID</label>
         <div className="mt-2 flex gap-2">
           <input value={listingId} onChange={(e) => setListingId(e.target.value)} className="w-full rounded-lg bg-black/40 p-2 text-sm text-white" placeholder="Enter listing id" />
-          <button type="button" onClick={loadDraft} className="rounded-lg bg-[#C9A646] px-3 py-2 text-xs font-medium text-black">Load draft</button>
+          <button type="button" onClick={loadDraft} className="rounded-lg bg-premium-gold px-3 py-2 text-xs font-medium text-black">Load draft</button>
         </div>
         {error ? <p className="mt-2 text-xs text-rose-300">{error}</p> : null}
       </div>

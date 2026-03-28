@@ -61,7 +61,7 @@ export function LeadCTA({
               },
             })
           }
-          className="inline-flex flex-1 items-center justify-center rounded-xl bg-[#C9A646] px-5 py-3 text-center text-sm font-bold text-[#0B0B0B] shadow-lg transition hover:-translate-y-0.5 hover:bg-[#E8C547] sm:flex-initial sm:min-w-[200px]"
+          className="inline-flex flex-1 items-center justify-center rounded-xl bg-premium-gold px-5 py-3 text-center text-sm font-bold text-[#0B0B0B] shadow-lg transition hover:-translate-y-0.5 hover:bg-premium-gold sm:flex-initial sm:min-w-[200px]"
         >
           {primary.label}
         </Link>
@@ -77,7 +77,7 @@ export function LeadCTA({
               },
             })
           }
-          className="inline-flex flex-1 items-center justify-center rounded-xl border border-[#C9A646]/50 px-5 py-3 text-center text-sm font-semibold text-[#C9A646] transition hover:-translate-y-0.5 hover:bg-[#C9A646]/10 sm:flex-initial"
+          className="inline-flex flex-1 items-center justify-center rounded-xl border border-premium-gold/50 px-5 py-3 text-center text-sm font-semibold text-premium-gold transition hover:-translate-y-0.5 hover:bg-premium-gold/10 sm:flex-initial"
         >
           Talk to a licensed broker
         </Link>
@@ -105,7 +105,7 @@ export function LeadCTA({
               meta: { ...baseMeta, ctaKind: "whatsapp", label: "WhatsApp" },
             })
           }
-          className="inline-flex flex-1 items-center justify-center rounded-xl border border-white/20 px-5 py-3 text-center text-sm font-semibold text-[#C9A646] transition hover:-translate-y-0.5 hover:bg-[#C9A646]/10 sm:flex-initial"
+          className="inline-flex flex-1 items-center justify-center rounded-xl border border-white/20 px-5 py-3 text-center text-sm font-semibold text-premium-gold transition hover:-translate-y-0.5 hover:bg-premium-gold/10 sm:flex-initial"
         >
           WhatsApp
         </a>
@@ -120,7 +120,7 @@ export function LeadCTA({
               },
             })
           }
-          className="inline-flex flex-1 items-center justify-center rounded-xl border border-white/10 px-4 py-3 text-center text-xs font-medium text-[#B3B3B3] transition hover:border-[#C9A646]/40 hover:text-white sm:flex-initial"
+          className="inline-flex flex-1 items-center justify-center rounded-xl border border-white/10 px-4 py-3 text-center text-xs font-medium text-[#B3B3B3] transition hover:border-premium-gold/40 hover:text-white sm:flex-initial"
         >
           {CONTACT_EMAIL}
         </a>
@@ -153,7 +153,7 @@ export function LeadCTA({
               },
             })
           }
-          className="text-[#C9A646] hover:underline"
+          className="text-premium-gold hover:underline"
           target="_blank"
           rel="noopener noreferrer"
         >

@@ -64,13 +64,13 @@ export default function HeaderClient({
   const navLink = (active: boolean) =>
     [
       "relative text-sm font-semibold transition duration-200",
-      active ? "text-[#E8D5A3]" : "text-[#B3B3B3] hover:text-white",
+      active ? "text-premium-gold" : "text-[#B3B3B3] hover:text-white",
     ].join(" ");
 
   const NavUnderline = ({ active }: { active: boolean }) =>
     active ? (
       <span
-        className="absolute -bottom-2 left-0 right-0 mx-auto h-0.5 max-w-[2.25rem] rounded-full bg-[#C9A646]"
+        className="absolute -bottom-2 left-0 right-0 mx-auto h-0.5 max-w-[2.25rem] rounded-full bg-premium-gold"
         aria-hidden
       />
     ) : null;
@@ -142,7 +142,7 @@ export default function HeaderClient({
           <div className="flex items-center justify-center gap-2 sm:gap-3">
             <QuebecFlagIcon className="h-4 w-6 shrink-0 rounded-sm sm:h-5 sm:w-7" aria-hidden />
             <Logo variant="nav" showName className="min-w-0" />
-            <span className="hidden rounded-full border border-[#C9A646]/35 bg-white/5 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#C9A646] xl:inline">
+            <span className="hidden rounded-full border border-premium-gold/35 bg-white/5 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-premium-gold xl:inline">
               Quebec Platform
             </span>
           </div>
@@ -195,7 +195,7 @@ export default function HeaderClient({
                 className={[
                   "rounded-lg px-3 py-3 text-sm font-semibold transition",
                   analyzeActive
-                    ? "bg-[#C9A646]/15 text-[#C9A646]"
+                    ? "bg-premium-gold/15 text-premium-gold"
                     : "text-[#B3B3B3] hover:bg-white/5 hover:text-white",
                 ].join(" ")}
               >
@@ -209,7 +209,7 @@ export default function HeaderClient({
                 className={[
                   "rounded-lg px-3 py-3 text-sm font-semibold transition",
                   dashboardActive
-                    ? "bg-[#C9A646]/15 text-[#C9A646]"
+                    ? "bg-premium-gold/15 text-premium-gold"
                     : "text-[#B3B3B3] hover:bg-white/5 hover:text-white",
                 ].join(" ")}
               >
@@ -221,7 +221,7 @@ export default function HeaderClient({
                 className={[
                   "rounded-lg px-3 py-3 text-sm font-semibold transition",
                   compareActive
-                    ? "bg-[#C9A646]/15 text-[#C9A646]"
+                    ? "bg-premium-gold/15 text-premium-gold"
                     : "text-[#B3B3B3] hover:bg-white/5 hover:text-white",
                 ].join(" ")}
               >

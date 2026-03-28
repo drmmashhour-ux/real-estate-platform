@@ -151,8 +151,8 @@ export function MunicipalitySchoolTaxClient() {
       </div>
 
       <div className="space-y-4">
-        <div className="rounded-2xl border border-[#C9A646]/35 bg-gradient-to-br from-black/80 to-[#1a1508] p-6">
-          <h2 className="text-lg font-semibold text-[#C9A646]">Estimated annual taxes</h2>
+        <div className="rounded-2xl border border-premium-gold/35 bg-gradient-to-br from-black/80 to-[#1a1508] p-6">
+          <h2 className="text-lg font-semibold text-premium-gold">Estimated annual taxes</h2>
           <p className="mt-4 text-4xl font-bold text-white">${totalAnnual.toFixed(2)}</p>
           <p className="mt-1 text-xs text-slate-500">
             ~${monthly.toFixed(2)} / month (simple ÷12 — your city may bill in instalments differently)
@@ -172,7 +172,7 @@ export function MunicipalitySchoolTaxClient() {
         <button
           type="button"
           onClick={() => void downloadPdf()}
-          className="rounded-lg border border-[#C9A646]/50 px-4 py-2 text-sm text-[#C9A646]"
+          className="rounded-lg border border-premium-gold/50 px-4 py-2 text-sm text-premium-gold"
         >
           Download PDF
         </button>
@@ -185,7 +185,7 @@ export function MunicipalitySchoolTaxClient() {
             <a
               href="/contact"
               onClick={() => void trackCta("cta_callback")}
-              className="rounded-lg bg-[#C9A646] px-4 py-2 text-sm font-semibold text-black"
+              className="rounded-lg bg-premium-gold px-4 py-2 text-sm font-semibold text-black"
             >
               Talk to an expert
             </a>

@@ -119,7 +119,7 @@ test.describe("Public routes", () => {
     }
     await page.goto("/", { waitUntil: "domcontentloaded" });
     await expect(page.locator("#hubs")).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByRole("heading", { name: /four hubs/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /six hubs/i })).toBeVisible();
   });
 });
 

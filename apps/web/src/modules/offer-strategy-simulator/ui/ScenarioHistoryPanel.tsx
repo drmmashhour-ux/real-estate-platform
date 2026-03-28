@@ -150,7 +150,7 @@ export function ScenarioHistoryPanel({ propertyId, caseId, refreshKey, onRestore
     <div className="space-y-3 rounded-2xl border border-white/10 bg-[#0B0B0B]/90 p-5">
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#C9A646]">Scenario history</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-premium-gold">Scenario history</p>
           <p className="mt-1 text-xs text-slate-500">
             Deterministic snapshots for this case — for review and audit. Not a binding offer.
           </p>
@@ -160,7 +160,7 @@ export function ScenarioHistoryPanel({ propertyId, caseId, refreshKey, onRestore
             type="button"
             disabled={compareSet.size !== 2 || busyId === "compare"}
             onClick={runCompare}
-            className="rounded-lg border border-[#C9A646]/40 px-3 py-1.5 text-xs font-medium text-[#C9A646] disabled:opacity-40"
+            className="rounded-lg border border-premium-gold/40 px-3 py-1.5 text-xs font-medium text-premium-gold disabled:opacity-40"
           >
             {busyId === "compare" ? "Comparing…" : "Compare selected"}
           </button>

@@ -6,7 +6,7 @@ import { ListingComplianceClient } from "./ListingComplianceClient";
 
 export const dynamic = "force-dynamic";
 
-const GOLD = "#C9A646";
+const GOLD = "var(--color-premium-gold)";
 
 export default async function AdminListingCompliancePage() {
   const id = await getGuestId();

@@ -75,7 +75,7 @@ type Props = {
   legalFinancialSurface?: boolean;
 };
 
-export function HubAiDock({ hub, context = {}, accent = "#C9A646", legalFinancialSurface }: Props) {
+export function HubAiDock({ hub, context = {}, accent = "var(--color-premium-gold)", legalFinancialSurface }: Props) {
   const [open, setOpen] = useState(false);
   const [preset, setPreset] = useState<Preset | null>(null);
 

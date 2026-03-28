@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-const GOLD = "#C9A646";
+const GOLD = "var(--color-premium-gold)";
 const CARD = "#121212";
 const STORAGE_PREFIX = "launch_daily_checklist_";
 
@@ -103,7 +103,7 @@ export function DailyDashboardClient() {
 
   return (
     <div className="space-y-10">
-      <section className="rounded-2xl border border-[#C9A646]/30 p-6" style={{ background: CARD }}>
+      <section className="rounded-2xl border border-premium-gold/30 p-6" style={{ background: CARD }}>
         <h2 className="text-lg font-bold text-white">Today&apos;s checklist</h2>
         <p className="mt-1 text-xs text-[#737373]">Saves locally on this device ({todayKey()}).</p>
         <ul className="mt-4 space-y-3">
@@ -114,7 +114,7 @@ export function DailyDashboardClient() {
                   type="checkbox"
                   checked={checklist[key]}
                   onChange={() => toggle(key)}
-                  className="h-4 w-4 rounded border-[#C9A646]/50"
+                  className="h-4 w-4 rounded border-premium-gold/50"
                 />
                 {label}
               </label>
@@ -135,7 +135,7 @@ export function DailyDashboardClient() {
             >
               −
             </button>
-            <span className="min-w-[2rem] text-center font-mono text-lg text-[#C9A646]">{callsMade}</span>
+            <span className="min-w-[2rem] text-center font-mono text-lg text-premium-gold">{callsMade}</span>
             <button
               type="button"
               onClick={() => {
@@ -161,7 +161,7 @@ export function DailyDashboardClient() {
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <div className="rounded-xl border border-white/10 p-4">
               <p className="text-xs uppercase text-[#737373]">Leads today</p>
-              <p className="mt-1 text-2xl font-bold text-[#C9A646]">{stats.leadsToday}</p>
+              <p className="mt-1 text-2xl font-bold text-premium-gold">{stats.leadsToday}</p>
             </div>
             <div className="rounded-xl border border-white/10 p-4">
               <p className="text-xs uppercase text-[#737373]">RE deals closed (7d)</p>
@@ -181,7 +181,7 @@ export function DailyDashboardClient() {
                 {stats.leadsPerDayLast7.map(([day, n]) => (
                   <div key={day} className="flex flex-1 flex-col items-center gap-1">
                     <div
-                      className="w-full max-w-[32px] rounded-t bg-[#C9A646]/80"
+                      className="w-full max-w-[32px] rounded-t bg-premium-gold/80"
                       style={{ height: `${Math.max(10, Math.min(100, n * 20 + 8))}%` }}
                       title={`${day}: ${n}`}
                     />

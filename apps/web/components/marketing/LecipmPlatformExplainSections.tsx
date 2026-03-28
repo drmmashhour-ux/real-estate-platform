@@ -71,13 +71,13 @@ type Props = {
  */
 export function LecipmPlatformExplainSections({ accent = "gold", showAboutLink = false }: Props) {
   const isGold = accent === "gold";
-  const eyebrow = isGold ? "text-[#C9A646]" : "text-emerald-400";
+  const eyebrow = isGold ? "text-premium-gold" : "text-emerald-400";
   const border = isGold ? "border-white/10" : "border-slate-800";
   const cardBg = isGold ? "bg-[#121212]" : "bg-slate-900/60";
   const muted = isGold ? "text-[#9CA3AF]" : "text-slate-400";
   const body = isGold ? "text-[#B3B3B3]" : "text-slate-300";
-  const iconWrap = isGold ? "bg-[#C9A646]/12 text-[#C9A646]" : "bg-emerald-500/15 text-emerald-300";
-  const divider = isGold ? "border-[#C9A646]/20" : "border-slate-800";
+  const iconWrap = isGold ? "bg-premium-gold/12 text-premium-gold" : "bg-emerald-500/15 text-emerald-300";
+  const divider = isGold ? "border-premium-gold/20" : "border-slate-800";
 
   return (
     <div className="space-y-16 sm:space-y-20">
@@ -144,7 +144,7 @@ export function LecipmPlatformExplainSections({ accent = "gold", showAboutLink =
                 >
                   <span
                     className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
-                      isGold ? "bg-[#C9A646]/15 text-[#C9A646]" : "bg-emerald-500/20 text-emerald-300"
+                      isGold ? "bg-premium-gold/15 text-premium-gold" : "bg-emerald-500/20 text-emerald-300"
                     }`}
                   >
                     {step.n}
@@ -184,7 +184,7 @@ export function LecipmPlatformExplainSections({ accent = "gold", showAboutLink =
                     <span className="min-w-0 flex-1 leading-snug">{item.q}</span>
                     <span
                       className={`mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/10 text-lg font-light leading-none transition-transform duration-200 group-open:rotate-45 ${
-                        isGold ? "text-[#C9A646]" : "text-emerald-400"
+                        isGold ? "text-premium-gold" : "text-emerald-400"
                       }`}
                       aria-hidden
                     >
@@ -200,7 +200,7 @@ export function LecipmPlatformExplainSections({ accent = "gold", showAboutLink =
             {showAboutLink ? (
               <p className={`mt-8 text-sm ${muted}`}>
                 More about the full platform:{" "}
-                <Link href="/about-platform" className={`font-medium underline ${isGold ? "text-[#C9A646]" : "text-emerald-400"}`}>
+                <Link href="/about-platform" className={`font-medium underline ${isGold ? "text-premium-gold" : "text-emerald-400"}`}>
                   About the platform
                 </Link>
                 .

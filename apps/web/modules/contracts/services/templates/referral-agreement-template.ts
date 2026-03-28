@@ -15,7 +15,7 @@ export type ReferralAgreementVars = {
 export function buildReferralAgreementHtml(v: ReferralAgreementVars): string {
   return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><title>Referral agreement — ${esc(v.ref)}</title></head>
 <body style="font-family:Georgia,serif;max-width:800px;margin:0 auto;padding:24px;color:#111">
-<header style="border-bottom:2px solid #C9A646;padding-bottom:12px"><h1 style="margin:0">Referral agreement</h1><p>Ref: ${esc(v.ref)} · ${esc(v.generatedAt)}</p></header>
+<header style="border-bottom:2px solid #D4AF37;padding-bottom:12px"><h1 style="margin:0">Referral agreement</h1><p>Ref: ${esc(v.ref)} · ${esc(v.generatedAt)}</p></header>
 <section><p><strong>Party A:</strong> ${esc(v.partyAName)} (${esc(v.partyAEmail)})</p><p><strong>Party B:</strong> ${esc(v.partyBName)} (${esc(v.partyBEmail)})</p></section>
 <section><h2 style="color:#B8860B">Service scope</h2><p>${esc(v.serviceScope)}</p></section>
 <section><h2 style="color:#B8860B">Referral source</h2><p>${esc(v.referralSource)}</p></section>

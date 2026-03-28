@@ -21,7 +21,7 @@ export function NegotiationDiffPreview({ lines: linesProp, diff, collapsible, ti
       <ul className="space-y-1.5 text-xs text-slate-200">
         {lines.map((line, i) => (
           <li key={`${i}-${line.slice(0, 24)}`} className="flex gap-2">
-            <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-[#C9A646]/80" aria-hidden />
+            <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-premium-gold/80" aria-hidden />
             <span>{line}</span>
           </li>
         ))}

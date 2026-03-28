@@ -9,7 +9,7 @@ export function PricingFeatureList({ features, className = "" }: PricingFeatureL
       {features.map((f) => (
         <li key={f} className="flex gap-2.5">
           <span
-            className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#C9A646]"
+            className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-premium-gold"
             aria-hidden
           />
           <span>{f}</span>

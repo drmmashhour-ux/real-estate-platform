@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
 
-const GOLD = "#C9A646";
+const GOLD = "var(--color-premium-gold)";
 
 type Expert = {
   id: string;
@@ -105,7 +105,7 @@ export function ExpertProfileClient() {
     <div className="mt-8 space-y-8 rounded-2xl border border-white/10 bg-[#121212] p-6">
       <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
         <div className="flex flex-col items-center gap-2">
-          <div className="relative h-32 w-32 overflow-hidden rounded-2xl border-2 border-[#C9A646]/50 bg-[#0B0B0B]">
+          <div className="relative h-32 w-32 overflow-hidden rounded-2xl border-2 border-premium-gold/50 bg-[#0B0B0B]">
             {photoSrc ? (
               <Image
                 src={photoSrc}
@@ -119,7 +119,7 @@ export function ExpertProfileClient() {
               <span className="flex h-full items-center justify-center text-xs text-[#737373]">No photo</span>
             )}
           </div>
-          <label className="cursor-pointer text-xs font-semibold text-[#C9A646] hover:underline">
+          <label className="cursor-pointer text-xs font-semibold text-premium-gold hover:underline">
             Upload photo
             <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={onPhoto} />
           </label>
@@ -132,7 +132,7 @@ export function ExpertProfileClient() {
             </span>
           </p>
           <div>
-            <label className="text-xs font-semibold uppercase text-[#C9A646]/90">Name</label>
+            <label className="text-xs font-semibold uppercase text-premium-gold/90">Name</label>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -140,7 +140,7 @@ export function ExpertProfileClient() {
             />
           </div>
           <div>
-            <label className="text-xs font-semibold uppercase text-[#C9A646]/90">Title</label>
+            <label className="text-xs font-semibold uppercase text-premium-gold/90">Title</label>
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -149,7 +149,7 @@ export function ExpertProfileClient() {
             />
           </div>
           <div>
-            <label className="text-xs font-semibold uppercase text-[#C9A646]/90">Email (login)</label>
+            <label className="text-xs font-semibold uppercase text-premium-gold/90">Email (login)</label>
             <input
               value={expert.email}
               disabled
@@ -157,7 +157,7 @@ export function ExpertProfileClient() {
             />
           </div>
           <div>
-            <label className="text-xs font-semibold uppercase text-[#C9A646]/90">Phone</label>
+            <label className="text-xs font-semibold uppercase text-premium-gold/90">Phone</label>
             <input
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
@@ -165,7 +165,7 @@ export function ExpertProfileClient() {
             />
           </div>
           <div>
-            <label className="text-xs font-semibold uppercase text-[#C9A646]/90">Company</label>
+            <label className="text-xs font-semibold uppercase text-premium-gold/90">Company</label>
             <input
               value={company}
               onChange={(e) => setCompany(e.target.value)}
@@ -173,7 +173,7 @@ export function ExpertProfileClient() {
             />
           </div>
           <div>
-            <label className="text-xs font-semibold uppercase text-[#C9A646]/90">Bio</label>
+            <label className="text-xs font-semibold uppercase text-premium-gold/90">Bio</label>
             <textarea
               value={bio}
               onChange={(e) => setBio(e.target.value)}

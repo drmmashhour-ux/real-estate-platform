@@ -24,7 +24,7 @@ export function DealPipelineBoard({ columns }: DealPipelineBoardProps) {
       <div className="flex min-w-[880px] gap-3">
         {order.map((key) => (
           <div key={key} className="flex-1 rounded-lg border border-white/10 bg-[#0a0a0a]">
-            <div className="border-b border-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-[#C9A646]/90">
+            <div className="border-b border-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-premium-gold/90">
               {LABELS[key]}{" "}
               <span className="font-normal text-slate-500">({columns[key]?.length ?? 0})</span>
             </div>

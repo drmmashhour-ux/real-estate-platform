@@ -55,7 +55,7 @@ export function CurrentActiveTermsCard({ version }: Props) {
     <div className={`rounded-2xl border border-white/10 bg-gradient-to-b from-[#121212] to-black p-4 shadow-xl ${ring}`}>
       <div className="flex items-start justify-between gap-2">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#C9A646]">Current active terms</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-premium-gold">Current active terms</p>
           <p className="mt-1 text-lg font-bold text-white">v{version.versionNumber}</p>
         </div>
         <NegotiationStatusBadge status={version.status} isFinal={version.isFinal} size="md" />

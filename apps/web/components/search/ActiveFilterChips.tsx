@@ -158,7 +158,7 @@ export function ActiveFilterChips({ tone = "default" }: { tone?: "default" | "he
             "group inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs transition",
             hero
               ? "border-slate-200/90 bg-white text-slate-900 shadow-sm hover:border-slate-300"
-              : "border-white/15 bg-black/40 text-slate-200 hover:border-[#C9A646]/40",
+              : "border-white/15 bg-black/40 text-slate-200 hover:border-premium-gold/40",
           ].join(" ")}
         >
           <span>{c.label}</span>

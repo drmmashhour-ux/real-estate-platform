@@ -106,7 +106,7 @@ export function ActionApprovalModal({ action, open, onClose, onAfterChange }: Pr
       >
         <div className="flex items-start justify-between gap-2">
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#C9A646]/90">AI Operator</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-premium-gold/90">AI Operator</p>
             <h2 className="mt-1 text-lg font-semibold text-white">{row.title}</h2>
           </div>
           <button type="button" onClick={onClose} className="rounded-lg px-2 py-1 text-sm text-slate-400 hover:bg-white/5">
@@ -118,7 +118,7 @@ export function ActionApprovalModal({ action, open, onClose, onAfterChange }: Pr
 
         <div className="mt-4 space-y-2 rounded-xl border border-white/10 bg-black/30 p-3 text-xs">
           <p>
-            <span className="font-semibold text-[#C9A646]">Why suggested</span>
+            <span className="font-semibold text-premium-gold">Why suggested</span>
             <span className="mt-1 block text-slate-400">{row.reason}</span>
           </p>
           {row.dataUsedSummary ? (
@@ -187,7 +187,7 @@ export function ActionApprovalModal({ action, open, onClose, onAfterChange }: Pr
                 type="button"
                 disabled={busy}
                 onClick={() => void postDecision("approve")}
-                className="rounded-lg bg-[#C9A646] px-4 py-2 text-sm font-semibold text-black hover:bg-[#d4b456] disabled:opacity-50"
+                className="rounded-lg bg-premium-gold px-4 py-2 text-sm font-semibold text-black hover:bg-[#d4b456] disabled:opacity-50"
               >
                 Approve
               </button>

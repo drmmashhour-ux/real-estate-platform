@@ -12,7 +12,7 @@ import {
   personalizeLaunchTemplate,
 } from "@/lib/launch/sales-scripts";
 
-const GOLD = "#C9A646";
+const GOLD = "var(--color-premium-gold)";
 const CARD = "#121212";
 
 function CopyBlock({ title, text }: { title: string; text: string }) {
@@ -47,8 +47,8 @@ function CopyBlock({ title, text }: { title: string; text: string }) {
 
 function SectionHeader({ n, title, hint }: { n: number; title: string; hint?: string }) {
   return (
-    <div className="border-b border-[#C9A646]/25 pb-3">
-      <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#C9A646]">
+    <div className="border-b border-premium-gold/25 pb-3">
+      <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-premium-gold">
         Part {n}
       </p>
       <h2 className="mt-1 text-xl font-bold text-white">{title}</h2>
@@ -68,8 +68,8 @@ export function SalesScriptsClient() {
 
   return (
     <div className="space-y-12">
-      <div className="rounded-2xl border border-[#C9A646]/30 bg-gradient-to-br from-[#1a1508] to-[#0B0B0B] p-5">
-        <p className="text-xs font-semibold text-[#E8C547]">
+      <div className="rounded-2xl border border-premium-gold/30 bg-gradient-to-br from-[#1a1508] to-[#0B0B0B] p-5">
+        <p className="text-xs font-semibold text-premium-gold">
           Launch + sales system · same copy powers{" "}
           <Link href="/dashboard/leads" className="underline hover:text-white">
             CRM → Leads
@@ -77,7 +77,7 @@ export function SalesScriptsClient() {
           and lead detail DMs.
         </p>
         <div className="mt-3 flex flex-wrap gap-3 text-xs">
-          <Link href="/dashboard/admin/daily" className="rounded-lg border border-white/20 px-3 py-2 text-[#C9A646] hover:bg-white/5">
+          <Link href="/dashboard/admin/daily" className="rounded-lg border border-white/20 px-3 py-2 text-premium-gold hover:bg-white/5">
             Daily action →
           </Link>
           <Link href="/dashboard/admin/content" className="rounded-lg border border-white/20 px-3 py-2 text-[#B3B3B3] hover:bg-white/5">

@@ -50,7 +50,7 @@ export function DealAnalyzerPhase3BuyerPanel({
   return (
     <div className="space-y-6 rounded-2xl border border-white/10 bg-[#0B0B0B]/80 p-5">
       <div>
-        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#C9A646]">Deal Analyzer — Phase 3</p>
+        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-premium-gold">Deal Analyzer — Phase 3</p>
         <p className="mt-1 text-xs text-slate-500">
           Planning tools and illustrations — not approvals, guarantees, or legal advice.
         </p>

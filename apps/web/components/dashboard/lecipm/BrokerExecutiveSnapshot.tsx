@@ -19,7 +19,7 @@ export function BrokerExecutiveSnapshot({
   return (
     <section className="space-y-4">
       <div>
-        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#C9A646]">Executive</p>
+        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-premium-gold">Executive</p>
         <h2 className="mt-1 text-xl font-semibold text-white">Workspace snapshot</h2>
         <p className="mt-1 text-sm text-slate-500">High-signal KPIs — refreshed from your CRM and listings.</p>
       </div>

@@ -33,7 +33,7 @@ function classificationBadgeClass(id: string): string {
     case "excellent":
       return "border-emerald-500/50 bg-emerald-950/40 text-emerald-200";
     case "good":
-      return "border-[#C9A646]/50 bg-[#C9A646]/10 text-[#E8C547]";
+      return "border-premium-gold/50 bg-premium-gold/10 text-premium-gold";
     case "average":
       return "border-white/20 bg-white/5 text-slate-200";
     case "risky":
@@ -154,10 +154,10 @@ export function DealAnalyzerPanel({
     analysis;
 
   return (
-    <section className="rounded-2xl border border-[#C9A646]/25 bg-gradient-to-b from-[#121212] to-black p-6 shadow-lg shadow-black/40">
+    <section className="rounded-2xl border border-premium-gold/25 bg-gradient-to-b from-[#121212] to-black p-6 shadow-lg shadow-black/40">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-xs uppercase tracking-wider text-[#C9A646]">AI Deal Analysis</p>
+          <p className="text-xs uppercase tracking-wider text-premium-gold">AI Deal Analysis</p>
           <h2 className="mt-1 text-lg font-semibold text-white">Investment snapshot</h2>
           <p className="mt-1 text-xs text-slate-500">Rule-based estimate — not advice.</p>
         </div>
@@ -166,7 +166,7 @@ export function DealAnalyzerPanel({
             type="button"
             onClick={() => setMode("investor")}
             className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${
-              mode === "investor" ? "bg-[#C9A646] text-black" : "border border-white/20 text-white"
+              mode === "investor" ? "bg-premium-gold text-black" : "border border-white/20 text-white"
             }`}
           >
             Investor
@@ -175,7 +175,7 @@ export function DealAnalyzerPanel({
             type="button"
             onClick={() => setMode("buyer")}
             className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${
-              mode === "buyer" ? "bg-[#C9A646] text-black" : "border border-white/20 text-white"
+              mode === "buyer" ? "bg-premium-gold text-black" : "border border-white/20 text-white"
             }`}
           >
             Buyer
@@ -233,9 +233,9 @@ export function DealAnalyzerPanel({
       </div>
 
       <div className="mt-6 grid gap-3 sm:grid-cols-3">
-        <div className="rounded-xl border border-[#C9A646]/30 bg-black/50 p-4">
+        <div className="rounded-xl border border-premium-gold/30 bg-black/50 p-4">
           <p className="text-[10px] uppercase tracking-wider text-slate-500">Deal score (estimate)</p>
-          <p className="mt-1 text-2xl font-bold text-[#C9A646]">{dealScore}/100</p>
+          <p className="mt-1 text-2xl font-bold text-premium-gold">{dealScore}/100</p>
         </div>
         <div className="rounded-xl border border-white/10 bg-black/50 p-4">
           <p className="text-[10px] uppercase tracking-wider text-slate-500">ROI % (Y1 est.)</p>
@@ -283,7 +283,7 @@ export function DealAnalyzerPanel({
 
       {opportunities.length > 0 ? (
         <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.02] p-4">
-          <p className="text-xs uppercase tracking-wider text-[#C9A646]">Opportunity insights (illustrative)</p>
+          <p className="text-xs uppercase tracking-wider text-premium-gold">Opportunity insights (illustrative)</p>
           <ul className="mt-2 space-y-2 text-sm text-slate-300">
             {opportunities.map((o) => (
               <li key={o.id}>
@@ -298,7 +298,7 @@ export function DealAnalyzerPanel({
         <button
           type="button"
           onClick={save}
-          className="rounded-lg border border-[#C9A646]/60 bg-[#C9A646]/10 px-4 py-2 text-sm font-semibold text-[#E8C547] hover:bg-[#C9A646]/20"
+          className="rounded-lg border border-premium-gold/60 bg-premium-gold/10 px-4 py-2 text-sm font-semibold text-premium-gold hover:bg-premium-gold/20"
         >
           Save assumptions
         </button>

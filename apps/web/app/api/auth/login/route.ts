@@ -8,6 +8,7 @@ import { allocateUniqueUserCode } from "@/lib/user-code";
 import { sendTwoFactorCodeEmail } from "@/lib/email/send";
 import { applyLoginSessionCookies } from "@/lib/auth/apply-login-session";
 import { isMortgageExpertRole } from "@/lib/marketplace/mortgage-role";
+import { trackEvent } from "@/src/services/analytics";
 
 function maskEmail(email: string): string {
   const [a, d] = email.split("@");
@@ -97,6 +98,8 @@ export async function POST(request: NextRequest) {
       entityType: "USER",
       entityId: user.id,
     }).catch(() => {});
+
+    void trackEvent("login", { path: "/api/auth/login" }, { userId: user.id }).catch(() => {});
 
     let expertTermsAccepted: boolean | undefined;
     if (isMortgageExpertRole(user.role)) {

@@ -9,7 +9,7 @@ import {
 } from "@/lib/leads/pipeline-stage";
 import { getNextBestAction } from "@/lib/leads/next-action";
 
-const GOLD = "#C9A646";
+const GOLD = "var(--color-premium-gold)";
 const BG = "#0B0B0B";
 const CARD = "#121212";
 
@@ -35,7 +35,7 @@ function fmtMoney(n: number | null | undefined): string {
 function bandClass(score: number, temperature?: string): string {
   const band = temperature ?? (score >= 80 ? "hot" : score >= 50 ? "warm" : "cold");
   if (band === "hot") return "border-orange-500/40 bg-orange-500/10 text-orange-100";
-  if (band === "warm") return "border-[#C9A646]/35 bg-[#C9A646]/10 text-[#E8C547]";
+  if (band === "warm") return "border-premium-gold/35 bg-premium-gold/10 text-premium-gold";
   return "border-white/15 bg-white/[0.04] text-[#B3B3B3]";
 }
 
@@ -120,11 +120,11 @@ export function SalesPipelineBoardClient() {
           <div className="flex flex-wrap gap-3">
             <Link
               href="/dashboard/leads"
-              className="rounded-xl border border-[#C9A646]/50 px-4 py-2 text-sm font-semibold text-[#C9A646] hover:bg-[#C9A646]/10"
+              className="rounded-xl border border-premium-gold/50 px-4 py-2 text-sm font-semibold text-premium-gold hover:bg-premium-gold/10"
             >
               ← Table &amp; filters
             </Link>
-            <Link href="/dashboard/broker" className="text-sm font-medium text-[#C9A646] hover:underline">
+            <Link href="/dashboard/broker" className="text-sm font-medium text-premium-gold hover:underline">
               Broker home
             </Link>
           </div>
@@ -165,16 +165,16 @@ export function SalesPipelineBoardClient() {
                       onDragEnd={() => setDragId(null)}
                       className={`cursor-grab rounded-xl border p-3 transition hover:-translate-y-0.5 active:cursor-grabbing ${bandClass(l.score, l.temperature)}`}
                     >
-                      <Link href={`/dashboard/leads/${l.id}`} className="block font-semibold text-white hover:text-[#E8C547]">
+                      <Link href={`/dashboard/leads/${l.id}`} className="block font-semibold text-white hover:text-premium-gold">
                         {l.name}
                       </Link>
                       <p className="mt-1 text-xs text-[#9CA3AF]">
-                        Score <span className="font-bold text-[#E8C547]">{l.score}</span>
+                        Score <span className="font-bold text-premium-gold">{l.score}</span>
                       </p>
                       <p className="mt-1 text-[11px] text-[#737373]">
                         Deal {fmtMoney(l.dealValue)} · Est. comm. {fmtMoney(l.commissionEstimate)}
                       </p>
-                      <p className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-[#C9A646]/90">
+                      <p className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-premium-gold/90">
                         Next best:{" "}
                         {
                           getNextBestAction({

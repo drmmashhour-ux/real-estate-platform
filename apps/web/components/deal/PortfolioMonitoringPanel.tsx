@@ -86,7 +86,7 @@ export function PortfolioMonitoringPanel({ enabled }: Props) {
   if (watchlists && watchlists.length === 0) {
     return (
       <div className="rounded-xl border border-white/10 bg-slate-900/40 p-5">
-        <p className="text-xs font-semibold uppercase tracking-wider text-[#C9A646]">Portfolio monitoring</p>
+        <p className="text-xs font-semibold uppercase tracking-wider text-premium-gold">Portfolio monitoring</p>
         <p className="mt-2 text-sm text-slate-400">
           Add listings to a watchlist first — monitoring compares score snapshots across saved properties.
         </p>
@@ -98,7 +98,7 @@ export function PortfolioMonitoringPanel({ enabled }: Props) {
     <div className="rounded-xl border border-white/10 bg-slate-900/40 p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-[#C9A646]">Portfolio monitoring</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-premium-gold">Portfolio monitoring</p>
           <p className="mt-1 text-sm text-slate-500">
             Rules-based watchlist deltas — not performance guarantees. Enterprise-style summary of opportunity shifts.
           </p>
@@ -124,7 +124,7 @@ export function PortfolioMonitoringPanel({ enabled }: Props) {
         type="button"
         onClick={() => void runMonitoring()}
         disabled={loading || !watchlistId}
-        className="mt-4 rounded-lg border border-[#C9A646]/40 bg-[#C9A646]/10 px-4 py-2 text-sm font-semibold text-[#E8C547] transition hover:bg-[#C9A646]/20 disabled:opacity-50"
+        className="mt-4 rounded-lg border border-premium-gold/40 bg-premium-gold/10 px-4 py-2 text-sm font-semibold text-premium-gold transition hover:bg-premium-gold/20 disabled:opacity-50"
       >
         {loading ? "Running…" : "Run portfolio monitoring"}
       </button>

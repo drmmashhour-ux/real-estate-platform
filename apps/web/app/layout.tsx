@@ -18,6 +18,7 @@ import {
   PLATFORM_DEFAULT_SITE_TITLE,
   PLATFORM_NAME,
 } from "@/lib/brand/platform";
+import { getSiteBaseUrl } from "@/modules/seo/lib/siteBaseUrl";
 
 const inter = Inter({
   subsets: ["latin", "latin-ext"],
@@ -33,6 +34,7 @@ const cormorant = Cormorant_Garamond({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(getSiteBaseUrl()),
   title: {
     default: PLATFORM_DEFAULT_SITE_TITLE,
     template: `%s | ${PLATFORM_NAME}`,
@@ -61,6 +63,8 @@ export const metadata: Metadata = {
   openGraph: {
     title: PLATFORM_DEFAULT_SITE_TITLE,
     description: PLATFORM_DEFAULT_DESCRIPTION,
+    siteName: PLATFORM_NAME,
+    type: "website",
   },
   twitter: {
     card: "summary_large_image",

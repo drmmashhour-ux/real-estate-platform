@@ -70,7 +70,7 @@ export function MortgageAffordabilityCard({ listingId, priceCents, enabled }: Pr
 
   return (
     <div className="rounded-2xl border border-white/10 bg-[#121212] p-5">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#C9A646]">Mortgage affordability (illustrative)</p>
+      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-premium-gold">Mortgage affordability (illustrative)</p>
       <p className="mt-2 text-xs text-slate-500">
         Estimated payment and ratios only — not a lender approval or pre-qualification.
       </p>

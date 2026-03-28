@@ -16,8 +16,8 @@ export function ExternalLinkButton({
 }: Props) {
   const base =
     variant === "primary"
-      ? "bg-[#C9A646] text-[#0B0B0B] shadow-[0_8px_32px_rgba(201,166,70,0.25)] hover:bg-[#b8943d]"
-      : "border border-[#C9A646] text-[#C9A646] bg-transparent hover:bg-[#C9A646]/10";
+      ? "bg-[#D4AF37] text-[#0B0B0B] shadow-[0_8px_32px_rgba(212, 175, 55,0.25)] hover:bg-[#D4AF37]"
+      : "border border-[#D4AF37] text-[#D4AF37] bg-transparent hover:bg-[#D4AF37]/10";
 
   return (
     <Link

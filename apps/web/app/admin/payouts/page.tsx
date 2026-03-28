@@ -21,7 +21,7 @@ export default async function AdminPayoutsPage() {
     <HubLayout title="Host payouts" hubKey="admin" navigation={hubNavigation.admin} showAdminInSwitcher={isHubAdminRole(role)}>
       <div className="mx-auto max-w-6xl space-y-6">
         <div>
-          <Link href="/admin/dashboard" className="text-sm text-[#C9A646] hover:underline">
+          <Link href="/admin/dashboard" className="text-sm text-premium-gold hover:underline">
             ← Control center
           </Link>
           <h1 className="mt-3 text-2xl font-semibold text-white">BNHub host payouts</h1>

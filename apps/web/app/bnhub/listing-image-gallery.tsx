@@ -28,11 +28,14 @@ export function ListingImageGallery({
   photos,
   badges,
   listingId,
+  imageAltBase,
 }: {
   photos: string[];
   badges?: ListingGalleryBadges;
   /** For analytics when navigating gallery */
   listingId?: string;
+  /** Used for descriptive alt text (e.g. listing title). */
+  imageAltBase?: string;
 }) {
   const [selectedIndex, setSelectedIndex] = useState(0);
 
@@ -71,13 +74,14 @@ export function ListingImageGallery({
   }
 
   const mainSrc = photos[selectedIndex];
+  const altRoot = (imageAltBase ?? "Property").trim() || "Property";
 
   return (
     <div className="space-y-3">
       <div className="relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/60">
         <img
           src={mainSrc}
-          alt=""
+          alt={`${altRoot} — photo ${selectedIndex + 1} of ${photos.length}`}
           width={1200}
           height={720}
           decoding="async"
@@ -137,7 +141,7 @@ export function ListingImageGallery({
             >
               <img
                 src={url}
-                alt=""
+                alt={`${altRoot} — thumbnail ${i + 1}`}
                 width={96}
                 height={64}
                 loading="lazy"

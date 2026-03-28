@@ -21,7 +21,7 @@ export function PrimaryConversionCTA({
       onClick={() => track(event, { meta: { label, ...meta } })}
       className={
         className ??
-        "inline-flex rounded-xl bg-[#C9A646] px-5 py-2.5 text-sm font-semibold text-black hover:bg-[#e8c547]"
+        "inline-flex rounded-xl bg-premium-gold px-5 py-2.5 text-sm font-semibold text-black hover:bg-premium-gold"
       }
     >
       {label}

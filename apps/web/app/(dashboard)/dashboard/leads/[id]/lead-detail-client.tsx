@@ -218,7 +218,7 @@ export function LeadDetailClient({ leadId }: { leadId: string }) {
     return (
       <main className="min-h-screen bg-[#0B0B0B] px-4 py-12 text-white">
         <p className="text-[#B3B3B3]">{error || "Loading…"}</p>
-        <Link href="/dashboard/leads" className="mt-4 inline-block text-[#C9A646]">
+        <Link href="/dashboard/leads" className="mt-4 inline-block text-premium-gold">
           ← Back
         </Link>
       </main>
@@ -244,7 +244,7 @@ export function LeadDetailClient({ leadId }: { leadId: string }) {
   return (
     <main className="min-h-screen bg-[#0B0B0B] text-white">
       <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
-        <Link href="/dashboard/leads" className="text-sm font-medium text-[#C9A646] hover:underline">
+        <Link href="/dashboard/leads" className="text-sm font-medium text-premium-gold hover:underline">
           ← All leads
         </Link>
 
@@ -253,9 +253,9 @@ export function LeadDetailClient({ leadId }: { leadId: string }) {
           {lead.email} · {lead.phone}
         </p>
         {lead.contactOrigin === "IMMO_CONTACT" ? (
-          <div className="mt-4 rounded-xl border border-[#C9A646]/35 bg-[#1a1508] px-4 py-3 text-xs leading-relaxed text-[#E8D5A3]">
+          <div className="mt-4 rounded-xl border border-premium-gold/35 bg-[#1a1508] px-4 py-3 text-xs leading-relaxed text-premium-gold">
             <p>
-              <span className="font-bold uppercase tracking-wide text-[#C9A646]">ImmoContact</span>
+              <span className="font-bold uppercase tracking-wide text-premium-gold">ImmoContact</span>
               <span className="text-[#B3B3B3]"> · platform-originated contact</span>
             </p>
             <p className="mt-1 text-[#B3B3B3]">
@@ -263,11 +263,11 @@ export function LeadDetailClient({ leadId }: { leadId: string }) {
               {lead.listingCode ? (
                 <>
                   {" "}
-                  · Listing <span className="font-mono text-[#E8D5A3]">{lead.listingCode}</span>
+                  · Listing <span className="font-mono text-premium-gold">{lead.listingCode}</span>
                 </>
               ) : null}
               {lead.commissionEligible ? (
-                <span className="text-[#C9A646]"> · Commission-eligible (platform rules)</span>
+                <span className="text-premium-gold"> · Commission-eligible (platform rules)</span>
               ) : null}
             </p>
             <p className="mt-2 text-[#737373]">
@@ -276,11 +276,11 @@ export function LeadDetailClient({ leadId }: { leadId: string }) {
             {lead.deal?.id ? (
               <p className="mt-2 text-xs text-[#737373]">
                 Linked deal:{" "}
-                <span className="font-mono text-[#C9A646]">{lead.deal.id.slice(0, 8)}…</span> ({lead.deal.status})
+                <span className="font-mono text-premium-gold">{lead.deal.id.slice(0, 8)}…</span> ({lead.deal.status})
               </p>
             ) : null}
-            <details className="mt-4 border-t border-[#C9A646]/20 pt-3">
-              <summary className="cursor-pointer list-none text-[11px] font-semibold text-[#C9A646] marker:hidden hover:underline [&::-webkit-details-marker]:hidden">
+            <details className="mt-4 border-t border-premium-gold/20 pt-3">
+              <summary className="cursor-pointer list-none text-[11px] font-semibold text-premium-gold marker:hidden hover:underline [&::-webkit-details-marker]:hidden">
                 Full ImmoContact &amp; platform collaboration clause (broker)
               </summary>
               <div className="mt-3 max-h-[min(420px,55vh)] overflow-y-auto pr-1">
@@ -292,13 +292,13 @@ export function LeadDetailClient({ leadId }: { leadId: string }) {
         <div className="mt-4 flex flex-wrap gap-2">
           <Link
             href="/dashboard/leads/pipeline"
-            className="rounded-xl border border-[#C9A646]/50 px-4 py-2 text-xs font-semibold text-[#C9A646] hover:bg-[#C9A646]/10"
+            className="rounded-xl border border-premium-gold/50 px-4 py-2 text-xs font-semibold text-premium-gold hover:bg-premium-gold/10"
           >
             Pipeline board
           </Link>
           <Link
             href="/dashboard/training"
-            className="rounded-xl border border-white/15 px-4 py-2 text-xs font-semibold text-white hover:border-[#C9A646]/40"
+            className="rounded-xl border border-white/15 px-4 py-2 text-xs font-semibold text-white hover:border-premium-gold/40"
           >
             Training
           </Link>
@@ -306,7 +306,7 @@ export function LeadDetailClient({ leadId }: { leadId: string }) {
 
         <div className="mt-8 grid gap-4 sm:grid-cols-2">
           <div className="rounded-2xl border border-white/10 bg-[#121212] p-5">
-            <p className="text-xs font-semibold uppercase tracking-wider text-[#C9A646]">Property</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-premium-gold">Property</p>
             <p className="mt-2 text-sm text-[#B3B3B3]">
               {snap?.address && (
                 <>
@@ -321,8 +321,8 @@ export function LeadDetailClient({ leadId }: { leadId: string }) {
               {snap?.bathrooms != null && `${snap.bathrooms} bath`}
             </p>
           </div>
-          <div className="rounded-2xl border border-[#C9A646]/30 bg-[#121212] p-5">
-            <p className="text-xs font-semibold uppercase tracking-wider text-[#C9A646]">AI estimate</p>
+          <div className="rounded-2xl border border-premium-gold/30 bg-[#121212] p-5">
+            <p className="text-xs font-semibold uppercase tracking-wider text-premium-gold">AI estimate</p>
             <p className="mt-2 text-2xl font-bold tabular-nums text-white">
               {snap?.estimate != null ? `$${snap.estimate.toLocaleString()}` : "—"}
             </p>
@@ -332,15 +332,15 @@ export function LeadDetailClient({ leadId }: { leadId: string }) {
               </p>
             ) : null}
             <p className="mt-2 text-sm text-[#737373]">
-              Score <span className="font-bold text-[#E8C547]">{lead.score}</span>
+              Score <span className="font-bold text-premium-gold">{lead.score}</span>
               {lead.scoreLevel ? (
                 <>
                   {" "}
-                  · <span className="text-[#C9A646]">{lead.scoreLevel}</span>
+                  · <span className="text-premium-gold">{lead.scoreLevel}</span>
                 </>
               ) : null}{" "}
               · Engagement{" "}
-              <span className="font-bold text-[#E8C547]">{lead.engagementScore ?? 0}</span> · Pipeline:{" "}
+              <span className="font-bold text-premium-gold">{lead.engagementScore ?? 0}</span> · Pipeline:{" "}
               <span className="capitalize text-white">{pipeline.replace("_", " ")}</span>
             </p>
             {lead.evaluationEmailStatus && lead.evaluationEmailStatus !== "none" ? (
@@ -354,7 +354,7 @@ export function LeadDetailClient({ leadId }: { leadId: string }) {
             ) : null}
           </div>
           <div className="rounded-2xl border border-white/10 bg-[#121212] p-5">
-            <p className="text-xs font-semibold uppercase tracking-wider text-[#C9A646]">Deal &amp; commission</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-premium-gold">Deal &amp; commission</p>
             <p className="mt-2 text-sm text-[#B3B3B3]">
               Deal value (est.):{" "}
               <span className="font-bold text-white">
@@ -363,7 +363,7 @@ export function LeadDetailClient({ leadId }: { leadId: string }) {
             </p>
             <p className="mt-1 text-sm text-[#B3B3B3]">
               Est. broker commission (configurable rate):{" "}
-              <span className="font-bold text-[#E8C547]">
+              <span className="font-bold text-premium-gold">
                 {commEst != null ? `$${commEst.toLocaleString()}` : "—"}
               </span>
             </p>
@@ -388,10 +388,10 @@ export function LeadDetailClient({ leadId }: { leadId: string }) {
 
         {/* Recommended action + tasks */}
         {(lead.automation?.recommendedAction || (lead.automationTasks && lead.automationTasks.length > 0)) && (
-          <section className="mt-8 rounded-2xl border border-[#C9A646]/40 bg-gradient-to-br from-[#121212] to-[#0B0B0B] p-5 shadow-[0_0_0_1px_rgba(201, 166, 70,0.08)]">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#C9A646]">Automation</p>
+          <section className="mt-8 rounded-2xl border border-premium-gold/40 bg-gradient-to-br from-[#121212] to-[#0B0B0B] p-5 shadow-[0_0_0_1px_rgb(var(--premium-gold-channels) / 0.08)]">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold">Automation</p>
             {lead.automation?.recommendedAction ? (
-              <div className="mt-3 rounded-xl border border-[#C9A646]/30 bg-black/40 px-4 py-3">
+              <div className="mt-3 rounded-xl border border-premium-gold/30 bg-black/40 px-4 py-3">
                 <p className="text-xs font-semibold uppercase text-[#B3B3B3]">Recommended action</p>
                 <p className="mt-1 text-lg font-bold text-white">{lead.automation.recommendedAction.label}</p>
                 <p className="mt-1 text-sm text-[#9CA3AF]">{lead.automation.recommendedAction.reason}</p>
@@ -404,7 +404,7 @@ export function LeadDetailClient({ leadId }: { leadId: string }) {
                     key={s.id}
                     className="rounded-lg border border-white/10 bg-[#0B0B0B]/80 px-3 py-2 text-[#D4D4D4]"
                   >
-                    <span className="font-semibold text-[#E8C547]">{s.title}</span>
+                    <span className="font-semibold text-premium-gold">{s.title}</span>
                     <span className="block text-xs text-[#737373]">{s.detail}</span>
                   </li>
                 ))}
@@ -412,7 +412,7 @@ export function LeadDetailClient({ leadId }: { leadId: string }) {
             ) : null}
             {lead.automationTasks && lead.automationTasks.some((t) => t.status === "open") ? (
               <div className="mt-4 border-t border-white/10 pt-4">
-                <p className="text-xs font-semibold uppercase text-[#C9A646]">Open tasks</p>
+                <p className="text-xs font-semibold uppercase text-premium-gold">Open tasks</p>
                 <ul className="mt-2 space-y-2">
                   {lead.automationTasks
                     .filter((t) => t.status === "open")
@@ -441,14 +441,14 @@ export function LeadDetailClient({ leadId }: { leadId: string }) {
             ) : null}
             {lead.leadTasks && lead.leadTasks.some((t) => t.status === "pending") ? (
               <div className="mt-4 border-t border-white/10 pt-4">
-                <p className="text-xs font-semibold uppercase text-[#C9A646]">Closing tasks (CRM)</p>
+                <p className="text-xs font-semibold uppercase text-premium-gold">Closing tasks (CRM)</p>
                 <ul className="mt-2 space-y-2">
                   {lead.leadTasks
                     .filter((t) => t.status === "pending")
                     .map((t) => (
                       <li
                         key={t.id}
-                        className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[#C9A646]/25 bg-[#0B0B0B] px-3 py-2 text-sm"
+                        className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-premium-gold/25 bg-[#0B0B0B] px-3 py-2 text-sm"
                       >
                         <span>
                           <span
@@ -485,8 +485,8 @@ export function LeadDetailClient({ leadId }: { leadId: string }) {
         )}
 
         {/* DM automation — organic / social follow-up */}
-        <section className="mt-8 rounded-2xl border border-[#C9A646]/35 bg-[#121212] p-5">
-          <p className="text-xs font-semibold uppercase tracking-wider text-[#C9A646]">DM automation</p>
+        <section className="mt-8 rounded-2xl border border-premium-gold/35 bg-[#121212] p-5">
+          <p className="text-xs font-semibold uppercase tracking-wider text-premium-gold">DM automation</p>
           <p className="mt-1 text-sm text-[#B3B3B3]">
             Status: <span className="capitalize text-white">{dmStatus}</span>
             {lead.lastDmAt ? (
@@ -496,7 +496,7 @@ export function LeadDetailClient({ leadId }: { leadId: string }) {
               </>
             ) : null}
             {lead.highIntent ? (
-              <span className="ml-2 rounded-full border border-[#C9A646]/50 px-2 py-0.5 text-[10px] font-bold text-[#C9A646]">
+              <span className="ml-2 rounded-full border border-premium-gold/50 px-2 py-0.5 text-[10px] font-bold text-premium-gold">
                 High intent
               </span>
             ) : null}
@@ -512,14 +512,14 @@ export function LeadDetailClient({ leadId }: { leadId: string }) {
             <button
               type="button"
               onClick={() => void sendDmTemplate("initial")}
-              className="rounded-xl bg-[#C9A646] px-3 py-2 text-xs font-bold text-[#0B0B0B]"
+              className="rounded-xl bg-premium-gold px-3 py-2 text-xs font-bold text-[#0B0B0B]"
             >
               Send initial DM (copy)
             </button>
             <button
               type="button"
               onClick={() => void sendDmTemplate("followUp")}
-              className="rounded-xl border border-[#C9A646]/50 px-3 py-2 text-xs font-semibold text-[#C9A646] hover:bg-[#C9A646]/10"
+              className="rounded-xl border border-premium-gold/50 px-3 py-2 text-xs font-semibold text-premium-gold hover:bg-premium-gold/10"
             >
               Send follow-up DM (copy)
             </button>
@@ -558,7 +558,7 @@ export function LeadDetailClient({ leadId }: { leadId: string }) {
             </button>
           </div>
           <details className="mt-4 text-xs text-[#737373]">
-            <summary className="cursor-pointer text-[#C9A646]">Preview template text</summary>
+            <summary className="cursor-pointer text-premium-gold">Preview template text</summary>
             <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap rounded-lg bg-[#0B0B0B] p-3 text-[11px] text-[#B3B3B3]">
               {`initial:\n${getDmTemplateForLead("initial", { name: lead.name, city })}\n\nfollowUp:\n${getDmTemplateForLead("followUp", { name: lead.name, city })}\n\nclosing:\n${getDmTemplateForLead("closing", { name: lead.name, city })}`}
             </pre>
@@ -609,7 +609,7 @@ export function LeadDetailClient({ leadId }: { leadId: string }) {
                 key={k}
                 type="button"
                 onClick={() => patch({ pipelineStatus: k })}
-                className="rounded-xl border border-[#C9A646]/40 px-3 py-2 text-xs font-semibold text-[#C9A646] hover:bg-[#C9A646]/10"
+                className="rounded-xl border border-premium-gold/40 px-3 py-2 text-xs font-semibold text-premium-gold hover:bg-premium-gold/10"
               >
                 {label}
               </button>
@@ -648,7 +648,7 @@ export function LeadDetailClient({ leadId }: { leadId: string }) {
             ) : null}
           </div>
           <div id="close-deal-section" className="mt-4 border-t border-white/10 pt-4">
-            <p className="text-xs font-semibold text-[#C9A646]">Close deal (won)</p>
+            <p className="text-xs font-semibold text-premium-gold">Close deal (won)</p>
             <div className="mt-2 flex flex-wrap items-end gap-2">
               <input
                 type="number"
@@ -690,7 +690,7 @@ export function LeadDetailClient({ leadId }: { leadId: string }) {
                   setFinalSaleInput("");
                   setWonNotes("");
                 }}
-                className="rounded-xl bg-[#C9A646] px-3 py-2 text-xs font-bold text-[#0B0B0B]"
+                className="rounded-xl bg-premium-gold px-3 py-2 text-xs font-bold text-[#0B0B0B]"
               >
                 Save as won
               </button>
@@ -706,7 +706,7 @@ export function LeadDetailClient({ leadId }: { leadId: string }) {
           <button
             type="button"
             onClick={() => patch({ recordFollowUp: true })}
-            className="mt-3 rounded-xl bg-[#C9A646] px-4 py-2 text-xs font-bold text-[#0B0B0B]"
+            className="mt-3 rounded-xl bg-premium-gold px-4 py-2 text-xs font-bold text-[#0B0B0B]"
           >
             Log contact (now)
           </button>
@@ -733,14 +733,14 @@ export function LeadDetailClient({ leadId }: { leadId: string }) {
                 const d = new Date(raw);
                 if (!Number.isNaN(d.getTime())) patch({ meetingAt: d.toISOString() });
               }}
-              className="rounded-xl border border-[#C9A646]/40 px-3 py-2 text-xs font-semibold text-[#C9A646]"
+              className="rounded-xl border border-premium-gold/40 px-3 py-2 text-xs font-semibold text-premium-gold"
             >
               Schedule / edit meeting
             </button>
             <button
               type="button"
               onClick={() => patch({ meetingCompleted: true })}
-              className="rounded-xl bg-[#C9A646] px-3 py-2 text-xs font-bold text-[#0B0B0B]"
+              className="rounded-xl bg-premium-gold px-3 py-2 text-xs font-bold text-[#0B0B0B]"
             >
               Mark meeting completed
             </button>
@@ -767,7 +767,7 @@ export function LeadDetailClient({ leadId }: { leadId: string }) {
             <button
               type="button"
               onClick={() => setReminderPreset(1)}
-              className="rounded-xl bg-[#C9A646] px-3 py-2 text-xs font-bold text-[#0B0B0B]"
+              className="rounded-xl bg-premium-gold px-3 py-2 text-xs font-bold text-[#0B0B0B]"
             >
               Tomorrow
             </button>
@@ -809,7 +809,7 @@ export function LeadDetailClient({ leadId }: { leadId: string }) {
 
         {/* Manual drip */}
         {lead.leadSource === "evaluation_lead" && (
-          <section className="mt-8 rounded-2xl border border-[#C9A646]/25 bg-[#121212] p-5">
+          <section className="mt-8 rounded-2xl border border-premium-gold/25 bg-[#121212] p-5">
             <p className="text-sm font-semibold text-white">Follow-up emails (manual)</p>
             <p className="mt-1 text-xs text-[#737373]">Sends only when you click — templates #2 and #3 prepared.</p>
             <div className="mt-3 flex flex-wrap gap-2">
@@ -817,7 +817,7 @@ export function LeadDetailClient({ leadId }: { leadId: string }) {
                 type="button"
                 disabled={!!sending}
                 onClick={() => sendFollowUpEmail("evaluation_followup_2")}
-                className="rounded-xl bg-[#C9A646] px-3 py-2 text-xs font-bold text-[#0B0B0B] disabled:opacity-50"
+                className="rounded-xl bg-premium-gold px-3 py-2 text-xs font-bold text-[#0B0B0B] disabled:opacity-50"
               >
                 Send #2 — precise evaluation
               </button>
@@ -825,7 +825,7 @@ export function LeadDetailClient({ leadId }: { leadId: string }) {
                 type="button"
                 disabled={!!sending}
                 onClick={() => sendFollowUpEmail("evaluation_followup_3")}
-                className="rounded-xl border border-[#C9A646]/50 px-3 py-2 text-xs font-semibold text-[#C9A646] disabled:opacity-50"
+                className="rounded-xl border border-premium-gold/50 px-3 py-2 text-xs font-semibold text-premium-gold disabled:opacity-50"
               >
                 Send #3 — free consultation
               </button>
@@ -840,13 +840,13 @@ export function LeadDetailClient({ leadId }: { leadId: string }) {
             value={note}
             onChange={(e) => setNote(e.target.value)}
             rows={3}
-            className="mt-2 w-full rounded-xl border border-white/15 bg-[#0B0B0B] px-3 py-2 text-sm text-white focus:border-[#C9A646] focus:outline-none"
+            className="mt-2 w-full rounded-xl border border-white/15 bg-[#0B0B0B] px-3 py-2 text-sm text-white focus:border-premium-gold focus:outline-none"
             placeholder="Log a note (author = you)…"
           />
           <button
             type="button"
             onClick={sendNote}
-            className="mt-2 rounded-xl bg-[#C9A646] px-4 py-2 text-xs font-bold text-[#0B0B0B]"
+            className="mt-2 rounded-xl bg-premium-gold px-4 py-2 text-xs font-bold text-[#0B0B0B]"
           >
             Save note
           </button>
@@ -863,14 +863,14 @@ export function LeadDetailClient({ leadId }: { leadId: string }) {
         </section>
 
         {lead.contactAuditEvents && lead.contactAuditEvents.length > 0 ? (
-          <section className="mt-8 rounded-2xl border border-[#C9A646]/25 bg-[#121212] p-5">
+          <section className="mt-8 rounded-2xl border border-premium-gold/25 bg-[#121212] p-5">
             <p className="text-sm font-semibold text-white">Platform contact audit</p>
             <p className="mt-1 text-xs text-[#737373]">Append-only record (who, when, listing).</p>
             <ul className="mt-4 space-y-2 text-sm">
               {lead.contactAuditEvents.map((ev) => (
-                <li key={ev.id} className="border-l-2 border-[#C9A646]/50 pl-3">
+                <li key={ev.id} className="border-l-2 border-premium-gold/50 pl-3">
                   <p className="text-xs text-[#737373]">{new Date(ev.createdAt).toLocaleString()}</p>
-                  <p className="font-mono text-xs text-[#E8D5A3]">{ev.eventType}</p>
+                  <p className="font-mono text-xs text-premium-gold">{ev.eventType}</p>
                 </li>
               ))}
             </ul>
@@ -885,9 +885,9 @@ export function LeadDetailClient({ leadId }: { leadId: string }) {
               <li className="text-sm text-[#737373]">No events yet.</li>
             ) : (
               timeline.map((ev) => (
-                <li key={ev.id} className="border-l-2 border-[#C9A646]/40 pl-3 text-sm">
+                <li key={ev.id} className="border-l-2 border-premium-gold/40 pl-3 text-sm">
                   <p className="text-xs text-[#737373]">{new Date(ev.createdAt).toLocaleString()}</p>
-                  <p className="font-semibold capitalize text-[#E8C547]">
+                  <p className="font-semibold capitalize text-premium-gold">
                     {ev.eventType.replace(/_/g, " ")}
                   </p>
                   {ev.payload != null && typeof ev.payload === "object" ? (

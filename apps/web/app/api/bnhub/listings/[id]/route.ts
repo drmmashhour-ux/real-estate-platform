@@ -61,6 +61,35 @@ function buildUpdateData(body: Record<string, unknown>) {
   return data;
 }
 
+async function onListingFirstPublished(
+  id: string,
+  listing: { ownerId: string; listingStatus: string },
+  source: "bnhub_put" | "bnhub_patch"
+) {
+  try {
+    const { createListingContract } = await import("@/lib/hubs/contracts");
+    await createListingContract({
+      listingId: id,
+      userId: listing.ownerId,
+      hub: "bnhub",
+    });
+  } catch (e) {
+    console.warn("[listings] Failed to create listing contract:", e);
+  }
+  captureServerEvent(listing.ownerId, AnalyticsEvents.LISTING_PUBLISHED, {
+    listingId: id,
+    source,
+  });
+  try {
+    const { queueSocialContentForPublishedListing } = await import(
+      "@/src/modules/growth-automation/application/listingSocialAutopost"
+    );
+    await queueSocialContentForPublishedListing(id);
+  } catch (e) {
+    console.warn("[listings] Social autopost skipped or failed:", e);
+  }
+}
+
 async function assertCanPublish(listingId: string) {
   const { allowed, reasons } = await canPublishListingMandatory(listingId);
   if (!allowed) {
@@ -110,22 +139,17 @@ export async function PUT(
         );
       }
     }
+    const prev = await prisma.shortTermListing.findUnique({
+      where: { id },
+      select: { listingStatus: true },
+    });
     const listing = await updateListing(id, data);
-    if (listing.listingStatus === "PUBLISHED" && data.listingStatus === "PUBLISHED") {
-      try {
-        const { createListingContract } = await import("@/lib/hubs/contracts");
-        await createListingContract({
-          listingId: id,
-          userId: listing.ownerId,
-          hub: "bnhub",
-        });
-      } catch (e) {
-        console.warn("[listings] Failed to create listing contract:", e);
-      }
-      captureServerEvent(listing.ownerId, AnalyticsEvents.LISTING_PUBLISHED, {
-        listingId: id,
-        source: "bnhub_put",
-      });
+    const becamePublished =
+      listing.listingStatus === "PUBLISHED" &&
+      data.listingStatus === "PUBLISHED" &&
+      prev?.listingStatus !== "PUBLISHED";
+    if (becamePublished) {
+      await onListingFirstPublished(id, listing, "bnhub_put");
     }
     return Response.json(listing);
   } catch (e) {
@@ -151,22 +175,17 @@ export async function PATCH(
         );
       }
     }
+    const prev = await prisma.shortTermListing.findUnique({
+      where: { id },
+      select: { listingStatus: true },
+    });
     const listing = await updateListing(id, data);
-    if (listing.listingStatus === "PUBLISHED" && data.listingStatus === "PUBLISHED") {
-      try {
-        const { createListingContract } = await import("@/lib/hubs/contracts");
-        await createListingContract({
-          listingId: id,
-          userId: listing.ownerId,
-          hub: "bnhub",
-        });
-      } catch (e) {
-        console.warn("[listings] Failed to create listing contract:", e);
-      }
-      captureServerEvent(listing.ownerId, AnalyticsEvents.LISTING_PUBLISHED, {
-        listingId: id,
-        source: "bnhub_patch",
-      });
+    const becamePublished =
+      listing.listingStatus === "PUBLISHED" &&
+      data.listingStatus === "PUBLISHED" &&
+      prev?.listingStatus !== "PUBLISHED";
+    if (becamePublished) {
+      await onListingFirstPublished(id, listing, "bnhub_patch");
     }
     return Response.json(listing);
   } catch (e) {

@@ -53,7 +53,7 @@ export function UpgradeButton({ planCode = "pro", workspaceId, className }: Prop
       disabled={loading}
       className={
         className ??
-        "rounded-lg bg-[#C9A646] px-4 py-2 font-semibold text-black disabled:opacity-60"
+        "rounded-lg bg-premium-gold px-4 py-2 font-semibold text-black disabled:opacity-60"
       }
     >
       {loading ? "Loading..." : "Upgrade"}

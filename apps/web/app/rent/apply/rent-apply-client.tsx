@@ -123,7 +123,7 @@ export function RentApplyClient() {
             I have read and accept the application terms (required before submitting).
             <button
               type="button"
-              className="ml-2 text-[#C9A646] underline"
+              className="ml-2 text-premium-gold underline"
               onClick={() => setShowTerms(true)}
             >
               View terms
@@ -149,7 +149,7 @@ export function RentApplyClient() {
             />
             <button
               type="button"
-              className="mt-4 rounded-xl bg-[#C9A646] px-4 py-2 text-sm font-bold text-[#0B0B0B]"
+              className="mt-4 rounded-xl bg-premium-gold px-4 py-2 text-sm font-bold text-[#0B0B0B]"
               onClick={() => setShowTerms(false)}
             >
               Close
@@ -164,7 +164,7 @@ export function RentApplyClient() {
         type="button"
         disabled={busy || !listingId}
         onClick={submit}
-        className="w-full rounded-xl bg-[#C9A646] py-3 text-sm font-bold text-[#0B0B0B] disabled:opacity-50"
+        className="w-full rounded-xl bg-premium-gold py-3 text-sm font-bold text-[#0B0B0B] disabled:opacity-50"
       >
         {busy ? "Submitting…" : "Submit application"}
       </button>

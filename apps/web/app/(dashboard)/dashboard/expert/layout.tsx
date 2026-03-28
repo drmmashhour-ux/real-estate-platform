@@ -6,11 +6,15 @@ import { prisma } from "@/lib/db";
 import { isMortgageExpertRole } from "@/lib/marketplace/mortgage-role";
 import { ExpertAlertBanner } from "./expert-alert-banner";
 import { ExpertNotificationBell } from "./expert-notification-bell";
+import { ensureDynamicAuthRequest } from "@/lib/auth/ensure-dynamic-request";
 
-const GOLD = "#C9A646";
+export { dynamic, revalidate } from "@/lib/auth/protected-route-segment";
+
+const GOLD = "var(--color-premium-gold)";
 const BG = "#0B0B0B";
 
 export default async function ExpertDashboardLayout({ children }: { children: ReactNode }) {
+  await ensureDynamicAuthRequest();
   const id = await getGuestId();
   if (!id) redirect("/auth/login?next=/dashboard/expert");
   const user = await prisma.user.findUnique({
@@ -104,7 +108,7 @@ export default async function ExpertDashboardLayout({ children }: { children: Re
       <ExpertAlertBanner />
       {subPlan !== "premium" ? (
         <div
-          className="border-b border-[#C9A646]/30 bg-[#C9A646]/[0.07] px-4 py-2 text-center text-xs text-[#E5E5E5]"
+          className="border-b border-premium-gold/30 bg-premium-gold/[0.07] px-4 py-2 text-center text-xs text-[#E5E5E5]"
           role="region"
           aria-label="Revenue optimization"
         >

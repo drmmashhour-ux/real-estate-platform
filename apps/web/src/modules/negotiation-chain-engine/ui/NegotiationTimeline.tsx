@@ -24,14 +24,14 @@ export function NegotiationTimeline({ history, activeVersion, onPresetCompare, d
     <div>
       <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">Offer &amp; counter timeline</p>
       <div className="relative">
-        <div className="absolute bottom-0 left-[11px] top-2 w-px bg-gradient-to-b from-[#C9A646]/60 via-[#C9A646]/25 to-transparent" aria-hidden />
+        <div className="absolute bottom-0 left-[11px] top-2 w-px bg-gradient-to-b from-premium-gold/60 via-premium-gold/25 to-transparent" aria-hidden />
         <ol className="space-y-4">
           {sorted.map((v, i) => {
             const prev = i > 0 ? sorted[i - 1]! : null;
             return (
               <li key={v.id} className="relative pl-8">
                 <span
-                  className="absolute left-1 top-3 h-2.5 w-2.5 rounded-full border-2 border-[#0a0a0a] bg-[#C9A646] shadow-[0_0_0_1px_rgba(201,166,70,0.35)]"
+                  className="absolute left-1 top-3 h-2.5 w-2.5 rounded-full border-2 border-[#0a0a0a] bg-premium-gold shadow-[0_0_0_1px_rgb(var(--premium-gold-channels) / 0.35)]"
                   aria-hidden
                 />
                 <NegotiationTimelineCard

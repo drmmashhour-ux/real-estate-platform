@@ -14,7 +14,7 @@ export function DealRecommendationBadge({ recommendation }: { recommendation: De
     recommendation === "strong_opportunity"
       ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-200"
       : recommendation === "worth_reviewing"
-        ? "border-[#C9A646]/40 bg-[#C9A646]/10 text-[#C9A646]"
+        ? "border-premium-gold/40 bg-premium-gold/10 text-premium-gold"
         : recommendation === "caution"
           ? "border-amber-500/40 bg-amber-500/10 text-amber-200"
           : recommendation === "insufficient_data"

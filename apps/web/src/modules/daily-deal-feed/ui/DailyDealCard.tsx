@@ -16,7 +16,7 @@ export function DailyDealCard({ item }: { item: RankedDailyDealItem }) {
             {item.city} · ${(item.priceCents / 100).toLocaleString("en-CA")}
           </p>
         </div>
-        <p className="rounded bg-[#C9A646]/15 px-2 py-1 text-xs font-semibold text-[#C9A646]">#{item.rankPosition}</p>
+        <p className="rounded bg-premium-gold/15 px-2 py-1 text-xs font-semibold text-premium-gold">#{item.rankPosition}</p>
       </div>
 
       <div className="mt-3 grid grid-cols-3 gap-2 text-xs">

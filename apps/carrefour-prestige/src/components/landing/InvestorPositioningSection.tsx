@@ -14,7 +14,7 @@ export function InvestorPositioningSection() {
         </p>
         <Link
           href="#platform-access"
-          className="mt-10 inline-flex items-center justify-center rounded-lg border border-[#C9A646] px-10 py-3.5 text-sm font-semibold text-[#C9A646] transition hover:bg-[#C9A646]/10"
+          className="mt-10 inline-flex items-center justify-center rounded-lg border border-[#D4AF37] px-10 py-3.5 text-sm font-semibold text-[#D4AF37] transition hover:bg-[#D4AF37]/10"
         >
           Start Investing
         </Link>

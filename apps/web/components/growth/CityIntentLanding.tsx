@@ -15,7 +15,7 @@ import type { CityIntentKind } from "@/lib/growth/city-intent-seo";
 import { intentBenefits, intentFaqs, faqJsonLd } from "@/lib/growth/city-intent-seo";
 import { GrowthTestimonialsStrip, GrowthTrustStrip } from "@/components/growth/GrowthTrustStrip";
 
-const GOLD = "#C9A646";
+const GOLD = "var(--color-premium-gold)";
 
 function firstBnhubPhoto(photos: unknown): string | null {
   if (!Array.isArray(photos)) return null;
@@ -194,7 +194,7 @@ export async function CityIntentLanding({
                 </Link>
                 <Link
                   href="/evaluate"
-                  className="rounded-xl border border-[#C9A646]/40 px-6 py-3 text-sm text-[#C9A646] hover:bg-[#C9A646]/10"
+                  className="rounded-xl border border-premium-gold/40 px-6 py-3 text-sm text-premium-gold hover:bg-premium-gold/10"
                 >
                   Free mortgage estimate
                 </Link>
@@ -222,7 +222,7 @@ export async function CityIntentLanding({
         <div className="mt-10 grid gap-6 md:grid-cols-3">
           {benefits.map((b) => (
             <div key={b} className="rounded-xl border border-white/10 bg-[#111] p-5">
-              <span className="text-[#C9A646]" aria-hidden>
+              <span className="text-premium-gold" aria-hidden>
                 ✓
               </span>
               <p className="mt-2 text-sm text-white/85">{b}</p>
@@ -252,7 +252,7 @@ export async function CityIntentLanding({
                 );
               })}
             </div>
-            <Link href={fsBrowse} className="mt-6 inline-block text-sm font-semibold text-[#C9A646] hover:underline">
+            <Link href={fsBrowse} className="mt-6 inline-block text-sm font-semibold text-premium-gold hover:underline">
               View all in {city} →
             </Link>
           </div>
@@ -277,7 +277,7 @@ export async function CityIntentLanding({
                 />
               ))}
             </div>
-            <Link href={bnBrowse} className="mt-6 inline-block text-sm font-semibold text-[#C9A646] hover:underline">
+            <Link href={bnBrowse} className="mt-6 inline-block text-sm font-semibold text-premium-gold hover:underline">
               Open BNHub search →
             </Link>
           </div>
@@ -290,13 +290,13 @@ export async function CityIntentLanding({
           <dl className="mt-6 space-y-4">
             {faqs.map((f) => (
               <div key={f.question} className="rounded-xl border border-white/10 bg-[#111] p-4">
-                <dt className="font-semibold text-[#C9A646]">{f.question}</dt>
+                <dt className="font-semibold text-premium-gold">{f.question}</dt>
                 <dd className="mt-2 text-sm text-white/80">{f.answer}</dd>
               </div>
             ))}
           </dl>
           <div className="mt-10 flex flex-wrap gap-3 text-sm">
-            <Link href="/blog" className="text-[#C9A646] hover:underline">
+            <Link href="/blog" className="text-premium-gold hover:underline">
               Market guides (blog)
             </Link>
             <span className="text-white/30">|</span>

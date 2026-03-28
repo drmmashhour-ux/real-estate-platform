@@ -32,8 +32,8 @@ export function SolutionSection() {
         <div className="grid gap-6 lg:grid-cols-2">
           {solutions.map((s, i) => (
             <AnimatedReveal key={s.title} delayMs={i * 80}>
-              <div className="flex gap-4 rounded-2xl border border-[#C9A646]/20 bg-gradient-to-br from-[#C9A646]/5 to-transparent p-6">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#C9A646]/20 text-sm font-bold text-[#C9A646]">
+              <div className="flex gap-4 rounded-2xl border border-premium-gold/20 bg-gradient-to-br from-premium-gold/5 to-transparent p-6">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-premium-gold/20 text-sm font-bold text-premium-gold">
                   {i + 1}
                 </div>
                 <div>

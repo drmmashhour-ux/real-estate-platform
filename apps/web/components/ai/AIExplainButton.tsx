@@ -7,7 +7,7 @@ type Props = {
   accent?: string;
 };
 
-export function AIExplainButton({ label, onClick, disabled, accent = "#C9A646" }: Props) {
+export function AIExplainButton({ label, onClick, disabled, accent = "var(--color-premium-gold)" }: Props) {
   return (
     <button
       type="button"

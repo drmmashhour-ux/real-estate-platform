@@ -224,7 +224,7 @@ export function PortfolioDashboardClient({
 
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#C9A646]">Investment MVP</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold">Investment MVP</p>
           <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">Portfolio dashboard</h1>
           <p className="mt-2 text-sm text-slate-400">
             Portfolio analytics from your saved deals — estimates only, not financial advice. Updates automatically when you
@@ -238,7 +238,7 @@ export function PortfolioDashboardClient({
           {variant === "live" ? (
             <p className="mt-4 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-slate-400">
               <strong className="text-slate-200">Demo hint:</strong> Track your investment portfolio here. Open{" "}
-              <Link href="/compare" className="font-medium text-[#C9A646] hover:underline">
+              <Link href="/compare" className="font-medium text-premium-gold hover:underline">
                 Compare
               </Link>{" "}
               to review 2–4 deals side by side.
@@ -246,7 +246,7 @@ export function PortfolioDashboardClient({
           ) : (
             <p className="mt-4 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-slate-400">
               <strong className="text-slate-200">Demo hint:</strong> Track your investment portfolio here. Open{" "}
-              <Link href={dashboardCompareHref} className="font-medium text-[#C9A646] hover:underline">
+              <Link href={dashboardCompareHref} className="font-medium text-premium-gold hover:underline">
                 Compare
               </Link>{" "}
               to review 2–4 deals side by side.
@@ -254,11 +254,11 @@ export function PortfolioDashboardClient({
           )}
           {demoHint && variant === "demo" ? (
             <p
-              className="mt-3 rounded-xl border border-[#C9A646]/30 bg-[#14110a]/30 px-4 py-3 text-sm text-[#d4c9a8]"
+              className="mt-3 rounded-xl border border-premium-gold/30 bg-[#14110a]/30 px-4 py-3 text-sm text-[#d4c9a8]"
               role="status"
             >
-              <span className="font-semibold text-[#E8D5A3]">Quick tip:</span> Use{" "}
-              <Link href="/analyze" className="font-medium text-[#C9A646] underline hover:text-[#E8D5A3]">
+              <span className="font-semibold text-premium-gold">Quick tip:</span> Use{" "}
+              <Link href="/analyze" className="font-medium text-premium-gold underline hover:text-premium-gold">
                 Analyze
               </Link>{" "}
               to add more deals, then compare them here.
@@ -277,7 +277,7 @@ export function PortfolioDashboardClient({
         </div>
         <Link
           href={analyzeHref}
-          className="rounded-xl bg-[#C9A646] px-5 py-2.5 text-sm font-bold text-slate-950 shadow-lg shadow-black/40 transition hover:bg-[#D4B35A]"
+          className="rounded-xl bg-premium-gold px-5 py-2.5 text-sm font-bold text-slate-950 shadow-lg shadow-black/40 transition hover:bg-premium-gold"
         >
           Analyze a deal
         </Link>
@@ -379,22 +379,22 @@ export function PortfolioDashboardClient({
 
       {showOneDealNudge ? (
         <div
-          className="flex flex-col gap-3 rounded-2xl border border-[#C9A646]/30 bg-[#14110a]/20 px-4 py-3 text-sm text-[#d4c9a8] sm:flex-row sm:items-center sm:justify-between"
+          className="flex flex-col gap-3 rounded-2xl border border-premium-gold/30 bg-[#14110a]/20 px-4 py-3 text-sm text-[#d4c9a8] sm:flex-row sm:items-center sm:justify-between"
           role="status"
         >
           <p>
-            <span className="font-semibold text-[#E8D5A3]">Next step:</span> add another deal to compare strategies.
+            <span className="font-semibold text-premium-gold">Next step:</span> add another deal to compare strategies.
           </p>
           <div className="flex flex-wrap items-center gap-2">
             <Link
               href={analyzeHref}
-              className="rounded-lg border border-[#C9A646]/50 bg-[#C9A646]/15 px-3 py-1.5 text-xs font-semibold text-[#E8D5A3] hover:bg-[#C9A646]/25"
+              className="rounded-lg border border-premium-gold/50 bg-premium-gold/15 px-3 py-1.5 text-xs font-semibold text-premium-gold hover:bg-premium-gold/25"
             >
               Add another deal
             </Link>
             <button
               type="button"
-              className="text-xs text-[#C9A646]/70 underline hover:text-white"
+              className="text-xs text-premium-gold/70 underline hover:text-white"
               onClick={() => {
                 try {
                   localStorage.setItem(PI_DISMISS_BEHAVIOR_1, "1");
@@ -457,7 +457,7 @@ export function PortfolioDashboardClient({
             </p>
           </div>
           <div className="flex flex-wrap gap-3 text-sm">
-            <Link href={analyzeHref} className="text-[#C9A646] hover:underline">
+            <Link href={analyzeHref} className="text-premium-gold hover:underline">
               New analysis
             </Link>
             <span className="text-slate-600">·</span>
@@ -486,9 +486,9 @@ export function PortfolioDashboardClient({
             </p>
             <p className="mt-2 text-xs text-slate-500">Sum of (rent or est. revenue − expenses) per month</p>
           </div>
-          <div className="rounded-2xl border border-[#C9A646]/25 bg-gradient-to-br from-[#14110a]/50 to-slate-950 p-6">
-            <p className="text-xs font-semibold uppercase tracking-wide text-[#C9A646]/90">Average ROI</p>
-            <p className="mt-3 font-mono text-2xl font-bold tracking-tight text-[#E8D5A3] sm:text-3xl">
+          <div className="rounded-2xl border border-premium-gold/25 bg-gradient-to-br from-[#14110a]/50 to-slate-950 p-6">
+            <p className="text-xs font-semibold uppercase tracking-wide text-premium-gold/90">Average ROI</p>
+            <p className="mt-3 font-mono text-2xl font-bold tracking-tight text-premium-gold sm:text-3xl">
               {analytics.totalDeals === 0 ? "—" : formatRoiPercent(analytics.averageROI)}
             </p>
             <p className="mt-2 text-xs text-slate-500">Mean of saved deal ROIs</p>
@@ -496,15 +496,15 @@ export function PortfolioDashboardClient({
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
-          <div className="rounded-2xl border border-[#C9A646]/35 bg-[#14110a]/25 p-6">
-            <p className="text-xs font-semibold uppercase tracking-wide text-[#C9A646]">Best deal</p>
+          <div className="rounded-2xl border border-premium-gold/35 bg-[#14110a]/25 p-6">
+            <p className="text-xs font-semibold uppercase tracking-wide text-premium-gold">Best deal</p>
             {analytics.bestDeal ? (
               <>
-                <p className="mt-3 font-mono text-3xl font-bold text-[#E8D5A3]">{formatRoiPercent(analytics.bestDeal.roi)}</p>
+                <p className="mt-3 font-mono text-3xl font-bold text-premium-gold">{formatRoiPercent(analytics.bestDeal.roi)}</p>
                 <p className="mt-2 text-sm text-slate-300">
                   <span className="text-slate-500">City:</span> {analytics.bestDeal.city}
                 </p>
-                <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-[#C9A646]/90">
+                <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-premium-gold/90">
                   Risk {riskBandFromScore(analytics.bestDeal.riskScore)}
                 </p>
                 <p className="mt-2 text-xs leading-relaxed text-slate-400">{explainBestDeal(analytics.bestDeal)}</p>
@@ -536,14 +536,14 @@ export function PortfolioDashboardClient({
       <ReferralInviteBlock referrerUserId={variant === "live" ? shareReferrerUserId : null} />
 
       {deals.length >= 2 ? (
-        <div className="rounded-2xl border border-[#C9A646]/40 bg-[#14110a]/30 px-5 py-5 sm:flex sm:items-center sm:justify-between sm:gap-6">
+        <div className="rounded-2xl border border-premium-gold/40 bg-[#14110a]/30 px-5 py-5 sm:flex sm:items-center sm:justify-between sm:gap-6">
           <div>
             <p className="text-sm font-semibold text-white">Compare your deals to find the best investment</p>
             <p className="mt-1 text-sm text-slate-400">Side-by-side ROI, cash flow, and risk for up to four saves.</p>
           </div>
           <Link
             href={dashboardCompareHref}
-            className="mt-4 inline-flex shrink-0 items-center justify-center rounded-xl bg-[#C9A646] px-5 py-2.5 text-sm font-bold text-slate-950 hover:bg-[#D4B35A] sm:mt-0"
+            className="mt-4 inline-flex shrink-0 items-center justify-center rounded-xl bg-premium-gold px-5 py-2.5 text-sm font-bold text-slate-950 hover:bg-premium-gold sm:mt-0"
           >
             Open compare
           </Link>
@@ -560,7 +560,7 @@ export function PortfolioDashboardClient({
           >
             <Link
               href={analyzeHref}
-              className="rounded-xl bg-[#C9A646] px-6 py-3 text-sm font-bold text-[#0B0B0B] shadow-lg shadow-[#C9A646]/25 transition hover:bg-[#D4B35A]"
+              className="rounded-xl bg-premium-gold px-6 py-3 text-sm font-bold text-[#0B0B0B] shadow-lg shadow-premium-gold/25 transition hover:bg-premium-gold"
             >
               Open Analyze
             </Link>
@@ -597,8 +597,8 @@ export function PortfolioDashboardClient({
                           <span
                             className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${
                               isSt
-                                ? "bg-[#C9A646]/25 text-[#E8D5A3] ring-2 ring-[#C9A646]/50"
-                                : "bg-[#C9A646]/20 text-[#d4c9a8] ring-2 ring-[#C9A646]/40"
+                                ? "bg-premium-gold/25 text-premium-gold ring-2 ring-premium-gold/50"
+                                : "bg-premium-gold/20 text-[#d4c9a8] ring-2 ring-premium-gold/40"
                             }`}
                           >
                             {rentalTypeLabel(pref)}
@@ -613,7 +613,7 @@ export function PortfolioDashboardClient({
                         <td className="px-4 py-3 font-medium">{formatCurrencyCAD(d.propertyPrice)}</td>
                         <td className="px-4 py-3">{formatCurrencyCAD(monthlyCf)}</td>
                         <td className="px-4 py-3">{formatCurrencyCAD(annualCf)}</td>
-                        <td className="px-4 py-3 font-semibold text-[#C9A646]">{formatRoiPercent(d.roi)}</td>
+                        <td className="px-4 py-3 font-semibold text-premium-gold">{formatRoiPercent(d.roi)}</td>
                         <td className="px-4 py-3">
                           <span className={insightPillClass(getMarketComparisonToneFromString(d.marketComparison))}>
                             {d.marketComparison}
@@ -652,7 +652,7 @@ export function PortfolioDashboardClient({
                       <span>{d.city}</span>
                       <span
                         className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
-                          isSt ? "bg-[#C9A646]/30 text-[#E8D5A3] ring-1 ring-[#C9A646]/50" : "bg-[#C9A646]/30 text-[#d4c9a8] ring-1 ring-[#C9A646]/40"
+                          isSt ? "bg-premium-gold/30 text-premium-gold ring-1 ring-premium-gold/50" : "bg-premium-gold/30 text-[#d4c9a8] ring-1 ring-premium-gold/40"
                         }`}
                       >
                         Best: {rentalTypeLabel(pref)}
@@ -680,7 +680,7 @@ export function PortfolioDashboardClient({
                       </div>
                       <div className="col-span-2">
                         <dt className="text-slate-500">ROI</dt>
-                        <dd className="font-mono text-lg font-semibold text-[#C9A646]">{formatRoiPercent(d.roi)}</dd>
+                        <dd className="font-mono text-lg font-semibold text-premium-gold">{formatRoiPercent(d.roi)}</dd>
                       </div>
                       <div className="col-span-2">
                         <dt className="text-slate-500">vs market</dt>

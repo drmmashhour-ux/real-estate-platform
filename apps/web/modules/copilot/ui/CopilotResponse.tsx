@@ -23,7 +23,7 @@ export function CopilotResponseView({ response, error, loading }: Props) {
   return (
     <div className="space-y-4 rounded-xl border border-white/10 bg-black/30 p-4 text-sm text-slate-200">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="rounded-full border border-[#C9A646]/35 bg-[#C9A646]/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#E8C547]">
+        <span className="rounded-full border border-premium-gold/35 bg-premium-gold/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-premium-gold">
           {response.intent.replace(/_/g, " ")}
         </span>
         <span className="text-xs text-slate-500">Confidence: {response.confidence}</span>
@@ -56,7 +56,7 @@ export function CopilotResponseView({ response, error, loading }: Props) {
               <a
                 key={a.id}
                 href={a.href}
-                className="rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-medium text-[#C9A646] hover:bg-white/10"
+                className="rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-medium text-premium-gold hover:bg-white/10"
               >
                 {a.label}
               </a>
