@@ -24,7 +24,14 @@ describe("captureWatchlistSnapshot", () => {
   beforeEach(() => vi.clearAllMocks());
 
   it("snapshot created successfully", async () => {
-    vi.mocked(prisma.fsboListing.findUnique).mockResolvedValue({ trustScore: 70, riskScore: 20, priceCents: 500000, status: "ACTIVE" } as never);
+    vi.mocked(prisma.fsboListing.findUnique).mockResolvedValue({
+      id: "l1",
+      trustScore: 70,
+      riskScore: 20,
+      priceCents: 500000,
+      status: "ACTIVE",
+      updatedAt: new Date(),
+    } as never);
     vi.mocked(prisma.dealAnalysis.findFirst).mockResolvedValue({ investmentScore: 75, confidenceScore: 66, recommendation: "good" } as never);
     vi.mocked(getLatestWatchlistSnapshotRow).mockResolvedValue(null as never);
     vi.mocked(createWatchlistSnapshotRow).mockResolvedValue({ id: "s2", userId: "u1", listingId: "l1", dealScore: 75, trustScore: 70, fraudScore: 20, confidence: 66, recommendation: "good", price: 500000, listingStatus: "ACTIVE", createdAt: new Date() } as never);

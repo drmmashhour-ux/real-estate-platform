@@ -27,6 +27,7 @@ import {
 import { trackEvent } from "@/src/services/analytics";
 import { onCheckoutStartAutomation } from "@/src/services/automation";
 import { onMessagingTriggerCheckoutStarted } from "@/src/modules/messaging/triggers";
+import { recordInternalCrmEvent } from "@/lib/crm/internal-crm-telemetry";
 
 export const dynamic = "force-dynamic";
 
@@ -319,9 +320,25 @@ export async function POST(request: NextRequest) {
     { userId }
   ).catch(() => {});
   if (paymentType === "booking" && typeof body.bookingId === "string" && body.bookingId) {
-    void trackEvent("booking_started", { bookingId: body.bookingId.trim(), sessionId: result.sessionId }, { userId }).catch(
-      () => {}
-    );
+    const bid = body.bookingId.trim();
+    void trackEvent("booking_started", { bookingId: bid, sessionId: result.sessionId }, { userId }).catch(() => {});
+    void prisma.booking
+      .findUnique({
+        where: { id: bid },
+        select: { listingId: true },
+      })
+      .then((b) => {
+        if (!b?.listingId) return;
+        return recordInternalCrmEvent({
+          eventType: "booking_started",
+          channel: "bnhub",
+          userId,
+          shortTermListingId: b.listingId,
+          bookingId: bid,
+          metadata: { source: "stripe_checkout", sessionId: result.sessionId },
+        });
+      })
+      .catch(() => {});
   }
   void onCheckoutStartAutomation(userId, {
     sessionId: result.sessionId,

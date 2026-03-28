@@ -16,6 +16,11 @@ coverage/
 apps/web/e2e-report/
 apps/web/playwright-report/
 apps/web/test-results/
+apps/web/.integrity-report.json
+apps/web/.stabilization-report.json
+debug_git_status.txt
+debug_missing.txt
+missing_files.txt
 
 # Local tooling / decks (do not ship to production repo)
 .venv-pitch/

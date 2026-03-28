@@ -2,6 +2,7 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { refreshLeadAutomationScoring } from "@/lib/automation/engine";
 import { appendLeadTimelineEvent } from "@/lib/leads/timeline-helpers";
+import { refreshLeadExecutionLayer } from "@/src/modules/crm/leadExecutionRefresh";
 import { CRM_JOB_BNHUB_BOOKING_THANKS_EMAIL } from "./internal-crm-constants";
 
 export type InternalCrmChannel = "bnhub" | "fsbo" | "marketplace" | "mortgage" | "platform";
@@ -68,6 +69,7 @@ export async function recordInternalCrmEvent(
 
   if (leadId) {
     await applySingleCrmEventToLead(leadId, input.eventType).catch(() => {});
+    await refreshLeadExecutionLayer(leadId).catch(() => {});
   }
 
   return { leadId };
@@ -93,6 +95,9 @@ async function applySingleCrmEventToLead(leadId: string, eventType: string): Pro
     case "booking_confirmed":
       delta = 12;
       setHighIntent = true;
+      break;
+    case "booking_started":
+      delta = 8;
       break;
     default:
       break;

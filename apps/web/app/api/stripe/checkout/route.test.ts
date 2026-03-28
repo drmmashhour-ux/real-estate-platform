@@ -29,6 +29,14 @@ vi.mock("@/lib/db", () => ({
   },
 }));
 
+vi.mock("@/src/services/automation", () => ({
+  onCheckoutStartAutomation: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock("@/src/modules/messaging/triggers", () => ({
+  onMessagingTriggerCheckoutStarted: vi.fn().mockResolvedValue(undefined),
+}));
+
 import { getGuestId } from "@/lib/auth/session";
 import { createCheckoutSession } from "@/lib/stripe/checkout";
 import { isStripeConfigured } from "@/lib/stripe";

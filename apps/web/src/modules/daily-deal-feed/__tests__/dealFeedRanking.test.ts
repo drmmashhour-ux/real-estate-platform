@@ -22,9 +22,9 @@ function candidate(overrides: Partial<any> = {}) {
 }
 
 describe("daily feed ranking", () => {
-  it("orders higher score first", () => {
+  it("orders higher composite signal first (trust drives intelligence layer)", () => {
     const out = rankDailyDeals({
-      candidates: [candidate({ listingId: "a", dealScore: 60 }), candidate({ listingId: "b", dealScore: 90 })],
+      candidates: [candidate({ listingId: "a", trustScore: 60 }), candidate({ listingId: "b", trustScore: 92 })],
       preferences: null,
       interactions: [],
     });

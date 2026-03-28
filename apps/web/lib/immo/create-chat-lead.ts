@@ -13,6 +13,7 @@ import { runClosingAutomationById } from "@/lib/automation/closing-engine";
 import { computeDynamicLeadPriceCents } from "@/lib/revenue/dynamic-pricing";
 import type { CrmConversationMetadata } from "./crm-metadata";
 import { mergeMetadata } from "./crm-metadata";
+import { refreshLeadExecutionLayer } from "@/src/modules/crm/leadExecutionRefresh";
 
 const MORTGAGE_SERVICE_COMMISSION = 0.3;
 
@@ -136,6 +137,7 @@ export async function createLeadFromImmoChat(input: CreateChatLeadInput): Promis
   }
 
   void runClosingAutomationById(lead.id).catch(() => {});
+  void refreshLeadExecutionLayer(lead.id).catch(() => {});
 
   return { leadId: lead.id, expertId, marketplace: inMarketplace };
 }

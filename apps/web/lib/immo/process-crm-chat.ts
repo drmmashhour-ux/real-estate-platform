@@ -12,6 +12,7 @@ import { mergeMetadata, parseMetadata } from "@/lib/immo/crm-metadata";
 import { createLeadFromImmoChat } from "@/lib/immo/create-chat-lead";
 import { sendDashboardNotification } from "@/lib/notifications";
 import { appendLeadTimelineEvent } from "@/lib/leads/timeline-helpers";
+import { refreshCrmConversationExecution } from "@/src/modules/crm/conversationExecutionRefresh";
 
 export type CrmChatRequestBody = {
   message: string;
@@ -237,6 +238,8 @@ export async function processCrmChatMessage(
     void runClosingAutomationById(brokerHandoffLeadId).catch(() => {});
   }
 
+  void refreshCrmConversationExecution(conversationId).catch(() => {});
+
   return {
     reply,
     conversationId,
@@ -283,4 +286,5 @@ export async function appendExpertChatMessage(params: {
       preview: text.slice(0, 200),
     }).catch(() => {});
   }
+  void refreshCrmConversationExecution(params.conversationId).catch(() => {});
 }

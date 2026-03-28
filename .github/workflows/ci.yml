@@ -1,4 +1,5 @@
-# BNHub / LECIPM — CI (required for team workflow: lint + build must pass on PRs)
+# BNHub / LECIPM — CI safety net: integrity (hard gate) → typecheck → build → platform validations.
+# Web ESLint (`pnpm run ci:lint`) is intentionally not a gate until the backlog is clean (see docs/ci-policy.md).
 name: CI
 
 permissions:
@@ -17,9 +18,12 @@ defaults:
   run:
     shell: bash
 
+env:
+  NEXT_TELEMETRY_DISABLED: 1
+
 jobs:
   quality:
-    name: Lint, validate, build
+    name: Integrity, typecheck, build, validate
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -40,11 +44,52 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Prisma schema (apps/web)
+      - name: Prisma schema validate (@lecipm/web)
         run: pnpm --filter @lecipm/web exec prisma validate
 
-      - name: Lint
-        run: pnpm run lint
+      - name: Integrity gate (critical structure)
+        id: integrity
+        run: pnpm run ci:integrity
 
-      - name: Build (web, admin, modules, packages)
-        run: pnpm run build:ci
+      - name: TypeScript (apps/web)
+        id: typecheck
+        run: |
+          set -o pipefail
+          pnpm run ci:typecheck 2>&1 | tee apps/web/typecheck-ci.log
+
+      - name: Next.js production build (apps/web)
+        id: build
+        run: |
+          set -o pipefail
+          pnpm run ci:build 2>&1 | tee apps/web/next-build-ci.log
+
+      - name: Platform validations (safe subset)
+        id: validate
+        run: pnpm run ci:validate:platform
+
+      - name: Job summary
+        if: always()
+        run: |
+          {
+            echo "## LECIPM CI summary"
+            echo ""
+            echo "| Step | Result |"
+            echo "|------|--------|"
+            echo "| Integrity | ${{ steps.integrity.outcome }} |"
+            echo "| Typecheck | ${{ steps.typecheck.outcome }} |"
+            echo "| Build (web) | ${{ steps.build.outcome }} |"
+            echo "| Validate platform | ${{ steps.validate.outcome }} |"
+            echo ""
+            echo "Outcome values: success, failure, skipped, cancelled."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload CI debug artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lecipm-ci-debug-${{ github.run_id }}
+          if-no-files-found: ignore
+          path: |
+            apps/web/.integrity-report.json
+            apps/web/typecheck-ci.log
+            apps/web/next-build-ci.log

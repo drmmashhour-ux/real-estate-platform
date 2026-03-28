@@ -11069,6 +11069,20 @@ model Lead {
    * Elite pipeline: new_lead | contacted | qualified | visit_scheduled | offer_made | closed
    */
   lecipmCrmStage             String?                     @default("new_lead") @map("lecipm_crm_stage")
+  /**
+   * Action-driven CRM execution layer (0–100 sub-scores; refreshed from telemetry + behavior).
+   */
+  intentScore                Int                         @default(0) @map("crm_intent_score")
+  urgencyScore               Int                         @default(0) @map("crm_urgency_score")
+  trustScore                 Int                         @default(0) @map("crm_trust_score")
+  frictionScore              Int                         @default(0) @map("crm_friction_score")
+  lastActivityAt             DateTime?                   @map("crm_last_activity_at")
+  nextBestAction             String?                     @map("crm_next_best_action")
+  priorityScore              Int                         @default(0) @map("crm_priority_score")
+  /**
+   * Real-time close pipeline: browsing | viewing_property | inquiry_sent | broker_connected | booking_started | negotiation | closed | lost
+   */
+  executionStage             String                      @default("browsing") @map("crm_execution_stage")
   lecipmScoresComputedAt     DateTime?                   @map("lecipm_scores_computed_at")
   /**
    * Denormalized: HOT | WARM | COLD (synced with score + engagement).
@@ -11157,6 +11171,8 @@ model Lead {
   @@index([purchaseRegion])
   @@index([contactOrigin])
   @@index([shortTermListingId])
+  @@index([priorityScore, lastActivityAt])
+  @@index([executionStage])
 }
 
 /// Unified telemetry for internal CRM (BNHub + LECIPM): views, clicks, bookings — complements `TrafficEvent` and `AiUserActivityLog`.
@@ -11222,6 +11238,16 @@ model CrmConversation {
   messages         CrmMessage[]
   metadata         Json?
   expertLastReadAt DateTime?       @map("expert_last_read_at")
+  /**
+   * Guest-thread execution scores (mirrors Lead when leadId is set; refreshed from chat activity).
+   */
+  intentScore      Int             @default(0) @map("convo_intent_score")
+  urgencyScore     Int             @default(0) @map("convo_urgency_score")
+  trustScore       Int             @default(0) @map("convo_trust_score")
+  frictionScore    Int             @default(0) @map("convo_friction_score")
+  lastActivityAt   DateTime?       @map("convo_last_activity_at")
+  nextBestAction   String?         @map("convo_next_best_action")
+  priorityScore    Int             @default(0) @map("convo_priority_score")
   createdAt        DateTime        @default(now()) @map("created_at")
   updatedAt        DateTime        @updatedAt @map("updated_at")
 
@@ -11229,6 +11255,7 @@ model CrmConversation {
   @@index([guestSessionId])
   @@index([expertId])
   @@index([updatedAt])
+  @@index([priorityScore, lastActivityAt])
   @@map("crm_conversations")
 }
 

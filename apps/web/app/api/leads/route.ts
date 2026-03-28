@@ -36,6 +36,7 @@ import {
   extractEvaluationSnapshot,
   extractLeadCity,
 } from "@/lib/leads/timeline-helpers";
+import { refreshLeadExecutionLayer } from "@/src/modules/crm/leadExecutionRefresh";
 import { estimateBrokerCommissionDollars } from "@/lib/leads/commission";
 import {
   defaultNextTouchForStage,
@@ -501,6 +502,8 @@ export async function POST(req: Request) {
         });
       }
 
+      void refreshLeadExecutionLayer(dbLead.id).catch(() => {});
+
       const leadResponse = {
         id: dbLead.id,
         name: dbLead.name,
@@ -641,6 +644,8 @@ export async function POST(req: Request) {
         },
       });
     }
+
+    void refreshLeadExecutionLayer(dbLead.id).catch(() => {});
 
     const leadResponse = {
       id: dbLead.id,
