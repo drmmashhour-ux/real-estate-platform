@@ -1,14 +1,16 @@
-import type { ReactNode } from "react";
+import * as React from "react";
 import { prisma } from "@/lib/db";
 import { AccountLegalStrip } from "@/components/dashboard/AccountLegalStrip";
 import { DashboardGuideBanner } from "@/components/dashboard/DashboardGuideBanner";
 import { PlatformLegalGate } from "@/components/legal/PlatformLegalGate";
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
 import { getPlatformLegalGateStatus } from "@/lib/legal/platform-legal-status";
+import { OnboardingGate } from "@/src/modules/onboarding/OnboardingGate";
 
-export { dynamic, revalidate } from "@/lib/auth/protected-route-segment";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-export default async function DashboardSectionLayout({ children }: { children: ReactNode }) {
+export default async function DashboardSectionLayout({ children }: { children: React.ReactNode }) {
   const { userId: id } = await requireAuthenticatedUser();
   let showGuide = false;
   const user = await prisma.user.findUnique({
@@ -20,7 +22,7 @@ export default async function DashboardSectionLayout({ children }: { children: R
   const legal = await getPlatformLegalGateStatus(id);
 
   return (
-    <>
+    <OnboardingGate userId={id}>
       {showGuide ? <DashboardGuideBanner /> : null}
       <AccountLegalStrip userId={id} />
       <PlatformLegalGate
@@ -29,6 +31,6 @@ export default async function DashboardSectionLayout({ children }: { children: R
       >
         {children}
       </PlatformLegalGate>
-    </>
+    </OnboardingGate>
   );
 }

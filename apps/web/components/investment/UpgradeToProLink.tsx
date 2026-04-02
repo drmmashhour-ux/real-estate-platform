@@ -1,12 +1,12 @@
 "use client";
 
-import type { ReactNode } from "react";
+import * as React from "react";
 import Link from "next/link";
 import { track, TrackingEvent } from "@/lib/tracking";
 
 type Props = {
   className?: string;
-  children?: ReactNode;
+  children?: React.ReactNode;
   /** For analytics */
   source?: string;
 };

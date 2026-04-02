@@ -1,4 +1,4 @@
-import { createElement } from "react";
+import * as React from "react";
 import { NextRequest } from "next/server";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { getGuestId } from "@/lib/auth/session";
@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
         ? `${request.headers.get("x-forwarded-proto")}://${request.headers.get("x-forwarded-host")}`
         : process.env.NEXT_PUBLIC_APP_URL ?? "https://localhost:3000";
     const path = l.listingCode ? `/bnhub/${l.listingCode}` : `/bnhub/listings/${listingId}`;
-    const doc = createElement(BnhubListingBrochureDocument, {
+    const doc = React.createElement(BnhubListingBrochureDocument, {
       title: l.title,
       city: l.city,
       listingCode: l.listingCode,
@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
       amenitiesLine: am.slice(0, 12).join(", "),
       ctaUrl: `${origin.replace(/\/$/, "")}${path}`,
     });
-    const buf = await renderToBuffer(doc);
+    const buf = await renderToBuffer(doc as Parameters<typeof renderToBuffer>[0]);
     const safeName = `${l.listingCode ?? listingId}-bnhub-brochure.pdf`.replace(/[^a-zA-Z0-9._-]/g, "_");
     return new Response(new Uint8Array(buf), {
       headers: {
