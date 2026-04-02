@@ -1,6 +1,7 @@
 # BNHub / LECIPM — global ignores (apply in all subfolders; no leading slash = recursive)
 
 node_modules/
+.expo/
 .next/
 dist/
 out/
