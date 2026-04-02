@@ -1,3 +1,50 @@
+# BNHub Guest Mobile
+
+Expo starter app for the BNHub guest experience.
+
+## What is included
+
+- Guest trip list from `/api/mobile/bnhub/trips`
+- Booking detail from `/api/mobile/bnhub/bookings/[id]`
+- Reservation notification inbox from `/api/mobile/bnhub/notifications`
+- Guest account summary from `/api/mobile/bnhub/account/me`
+- Guest cancellation action
+- Expo push token registration to `/api/mobile/bnhub/devices`
+
+## Local setup
+
+1. Install workspace dependencies from the repo root:
+
+```bash
+pnpm install
+```
+
+2. Create mobile env file:
+
+```bash
+cp apps/mobile/.env.example apps/mobile/.env
+```
+
+3. Set the web API base URL in `apps/mobile/.env`.
+
+4. Start the web app and mobile app:
+
+```bash
+pnpm dev:web
+pnpm dev:mobile
+```
+
+## Authentication note
+
+This starter expects the web backend to authenticate the same guest session used by the mobile endpoints. For production mobile login, the next step should be a token-based auth flow for Expo/native clients rather than browser-style cookie dependence.
+
+## Recommended next improvements
+
+- Add token-based mobile auth
+- Replace the simple tab shell with Expo Router
+- Add booking chat screen
+- Add branded splash, icon, and store assets
+- Add EAS project config and release profiles
 # BNHub Mobile (Expo)
 
 Premium guest / host / admin surfaces for the LECIPM + BNHub platform. Uses **Expo Router**, **Supabase Auth** (secure storage), **TanStack Query**, and **react-native-maps** (Expo Go–friendly). Mapbox can replace maps after a dev build (`@rnmapbox/maps`).
