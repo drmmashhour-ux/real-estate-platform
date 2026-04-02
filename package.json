@@ -10,7 +10,7 @@
     "modules/*"
   ],
   "scripts": {
-    "prepare": "husky",
+    "prepare": "node scripts/prepare-husky.cjs",
     "dev": "pnpm --filter @lecipm/web dev",
     "dev:platform": "pnpm --parallel --filter @lecipm/web --filter @lecipm/admin run dev",
     "dev:web": "pnpm --filter @lecipm/web dev",
@@ -61,7 +61,7 @@
     "docker:build": "docker compose -f infrastructure/docker/docker-compose.yml build",
     "docker:up": "docker compose -f infrastructure/docker/docker-compose.yml up -d",
     "docker:down": "docker compose -f infrastructure/docker/docker-compose.yml down",
-    "test": "pnpm -r run test --if-present",
+    "test": "pnpm -r --if-present run test",
     "test:auth": "pnpm --filter @lecipm/auth-service test",
     "test:ai": "pnpm --filter @lecipm/ai-service test",
     "test:ai-manager": "pnpm --filter @lecipm/ai-manager test",
