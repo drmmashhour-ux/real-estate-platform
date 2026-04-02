@@ -24,6 +24,9 @@ const config: ExpoConfig = {
   },
   extra: {
     apiBaseUrl,
+    /** Fallback when reading from Constants.expoConfig.extra (same values as EXPO_PUBLIC_* at build time). */
+    supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL ?? "",
+    supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? "",
   },
 };
 
