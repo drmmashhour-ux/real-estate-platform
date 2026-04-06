@@ -21,14 +21,15 @@ defaults:
 
 env:
   NEXT_TELEMETRY_DISABLED: 1
-  # Optional secret: Settings → Secrets and variables → Actions → DATABASE_URL. Fork PRs: secret absent → dummy.
-  DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://dummy' }}
 
 jobs:
   quality:
     name: Integrity, typecheck, build, validate
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      # Job-level: secrets in workflow-level env can fail to apply on some runners/repos.
+      DATABASE_URL: "${{ secrets.DATABASE_URL || 'postgresql://dummy' }}"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -61,8 +62,6 @@ jobs:
           fi
 
       - name: Prisma schema validate (@lecipm/web)
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://dummy' }}
         run: pnpm --filter @lecipm/web exec prisma validate
 
       - name: Integrity gate (critical structure)
