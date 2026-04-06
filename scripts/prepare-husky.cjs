@@ -6,7 +6,14 @@
  */
 const { execSync } = require("node:child_process");
 
-if (process.env.CI === "true" || process.env.VERCEL === "1") {
+function truthyEnv(v) {
+  if (v == null || v === "") return false;
+  const s = String(v).trim().toLowerCase();
+  return s === "1" || s === "true" || s === "yes";
+}
+
+/** Vercel sets CI=1 (not "true"); without this, husky runs and `pnpm install` exits 1. */
+if (truthyEnv(process.env.CI) || truthyEnv(process.env.VERCEL)) {
   process.exit(0);
 }
 

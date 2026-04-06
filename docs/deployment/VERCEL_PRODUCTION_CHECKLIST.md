@@ -36,6 +36,10 @@ Set in the Vercel project (or team) settings. Values are encrypted at rest; **re
 | `DEAL_ANALYZER_ENABLED` | Deal Analyzer. |
 | `COPILOT_USE_RESPONSES_API` | When `true`, optional OpenAI Responses API summarization layer (deterministic data still computed first). |
 
+## `pnpm install` exits 1 on Vercel (Husky)
+
+The root **`prepare`** script runs **`husky`**. Vercel sets **`CI=1`** (not `CI=true`). **`scripts/prepare-husky.cjs`** skips Husky when `CI` or `VERCEL` is truthy (`1`, `true`, `yes`) so installs do not fail.
+
 ## Vercel Cron Jobs (Hobby vs Pro)
 
 On **Vercel Hobby**, crons must run **at most once per day** per job. `apps/web/vercel.json` uses **daily** schedules for all entries so deploys succeed on Hobby. **Pro** allows hourly / sub-daily schedules; if you upgrade, you may restore stricter cadences (e.g. auto-close hourly, marketing publish every 15 minutes) in `vercel.json`.
