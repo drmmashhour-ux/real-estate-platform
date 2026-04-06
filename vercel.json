@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
-  "installCommand": "env NODE_ENV=development pnpm install --no-frozen-lockfile",
+  "installCommand": "corepack enable && corepack prepare pnpm@9.0.0 --activate && env CI=1 NODE_ENV=development NPM_CONFIG_PRODUCTION=false pnpm install --no-frozen-lockfile",
   "buildCommand": "pnpm --filter @lecipm/web build",
   "outputDirectory": "apps/web/.next",
   "env": {
