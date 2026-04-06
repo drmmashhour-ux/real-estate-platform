@@ -13,6 +13,7 @@
     "modules/*"
   ],
   "scripts": {
+    "preinstall": "node -e \"console.log('Using pnpm version:', process.env.npm_config_user_agent)\"",
     "prepare": "echo skip husky",
     "dev": "pnpm --filter @lecipm/web dev",
     "dev:platform": "pnpm --parallel --filter @lecipm/web --filter @lecipm/admin run dev",

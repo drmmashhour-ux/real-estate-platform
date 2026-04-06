@@ -1,11 +1,14 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
-  "installCommand": "env CI=1 NODE_ENV=development NPM_CONFIG_PRODUCTION=false pnpm install --no-frozen-lockfile",
+  "installCommand": "pnpm install --no-frozen-lockfile",
   "buildCommand": "pnpm --filter @lecipm/web build",
   "outputDirectory": "apps/web/.next",
   "env": {
     "ENABLE_EXPERIMENTAL_COREPACK": "1",
+    "CI": "1",
+    "NODE_ENV": "development",
+    "NPM_CONFIG_PRODUCTION": "false",
     "HUSKY": "0",
     "NEXT_TELEMETRY_DISABLED": "1",
     "NODE_OPTIONS": "--max-old-space-size=8192",
