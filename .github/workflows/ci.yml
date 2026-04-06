@@ -49,6 +49,22 @@ jobs:
         id: install
         run: pnpm install --frozen-lockfile
 
+      # Do not echo DATABASE_URL — real values come from Actions secrets and would leak in logs.
+      - name: Verify DATABASE_URL for Prisma
+        run: |
+          if [ -z "${DATABASE_URL:-}" ]; then
+            echo "::error::DATABASE_URL is empty (check job env / secrets.DATABASE_URL fallback)."
+            exit 1
+          fi
+          case "$DATABASE_URL" in
+            postgresql://dummy)
+              echo "CI: using dummy DATABASE_URL (no secret / fallback)"
+              ;;
+            *)
+              echo "CI: DATABASE_URL is set (value not printed)"
+              ;;
+          esac
+
       - name: Prisma schema validate (@lecipm/web)
         run: pnpm --filter @lecipm/web exec prisma validate
 
