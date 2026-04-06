@@ -1,6 +1,6 @@
 # BNHub / LECIPM — CI safety net: integrity (hard gate) → typecheck → build → platform validations.
 # Web ESLint (`pnpm run ci:lint`) is intentionally not a gate until the backlog is clean (see docs/ci-policy.md).
-# pnpm via Corepack only (no pnpm/action-setup). Second setup-node restores the pnpm store cache after `corepack prepare`.
+# pnpm via pnpm/action-setup on GHA. Vercel uses Corepack + packageManager (vercel.json / root package.json).
 name: CI
 
 permissions:
@@ -21,6 +21,8 @@ defaults:
 
 env:
   NEXT_TELEMETRY_DISABLED: 1
+  # Prisma schema uses env("DATABASE_URL"); CI does not connect — dummy is enough for validate/generate.
+  DATABASE_URL: postgresql://dummy
 
 jobs:
   quality:
@@ -31,27 +33,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@v4
         with:
-          node-version: "20"
+          version: 9.15.4
 
-      - name: Enable Corepack (pnpm)
-        run: |
-          corepack enable
-          corepack prepare pnpm@9.15.4 --activate
-
-      - name: Setup Node.js (pnpm cache)
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: pnpm
 
       - name: Install dependencies
+        id: install
         run: pnpm install --frozen-lockfile
 
       - name: Prisma schema validate (@lecipm/web)
-        run: pnpm --filter @lecipm/web exec prisma validate
+        run: DATABASE_URL="postgresql://dummy" pnpm --filter @lecipm/web exec prisma validate
 
       - name: Integrity gate (critical structure)
         id: integrity
@@ -81,6 +78,7 @@ jobs:
             echo ""
             echo "| Step | Result |"
             echo "|------|--------|"
+            echo "| Install | ${{ steps.install.outcome }} |"
             echo "| Integrity | ${{ steps.integrity.outcome }} |"
             echo "| Typecheck | ${{ steps.typecheck.outcome }} |"
             echo "| Build (web) | ${{ steps.build.outcome }} |"

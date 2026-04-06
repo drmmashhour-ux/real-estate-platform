@@ -1,5 +1,8 @@
 import { z } from "zod";
 
+/** Dev/CI: Prisma needs a URL when env is unset; production must set `DATABASE_URL` (e.g. Vercel + Supabase). */
+export const DATABASE_URL = process.env.DATABASE_URL || "postgresql://dummy";
+
 type EnvConfig = {
   DATABASE_URL: string;
   OPENAI_API_KEY?: string;
