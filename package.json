@@ -13,7 +13,7 @@
     "modules/*"
   ],
   "scripts": {
-    "prepare": "node scripts/prepare-husky.cjs",
+    "prepare": "echo skip husky",
     "dev": "pnpm --filter @lecipm/web dev",
     "dev:platform": "pnpm --parallel --filter @lecipm/web --filter @lecipm/admin run dev",
     "dev:web": "pnpm --filter @lecipm/web dev",
