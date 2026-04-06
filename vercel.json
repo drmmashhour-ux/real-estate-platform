@@ -7,7 +7,6 @@
   "env": {
     "ENABLE_EXPERIMENTAL_COREPACK": "1",
     "CI": "1",
-    "NODE_ENV": "development",
     "NPM_CONFIG_PRODUCTION": "false",
     "HUSKY": "0",
     "NEXT_TELEMETRY_DISABLED": "1",
