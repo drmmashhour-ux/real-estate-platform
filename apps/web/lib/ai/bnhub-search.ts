@@ -1,8 +1,14 @@
 /**
- * AI-powered search ranking for BNHub.
- * Scores listings by price competitiveness, location popularity, match quality,
- * recency, and booking probability; assigns labels for UI.
+ * Search ranking for BNHub: marketplace quality / performance / availability / freshness,
+ * plus lightweight labels for UI. Core scoring lives in `lib/bnhub/ranking/listing-ranking.ts`.
  */
+
+import {
+  explainListingScore,
+  scoreListingForSearch,
+  type ListingForMarketplaceRank,
+  type ListingSearchScoreResult,
+} from "@/lib/bnhub/ranking/listing-ranking";
 
 export type BnhubSearchFilters = {
   location?: string;
@@ -32,12 +38,21 @@ export type BnhubListingForRanking = {
   propertyType?: string | null;
   roomType?: string | null;
   photos?: unknown;
+  description?: string | null;
+  amenities?: unknown;
+  listingStatus?: string | null;
   latitude?: number | null;
   longitude?: number | null;
   createdAt?: string | Date;
+  updatedAt?: string | Date;
   verificationStatus?: string;
+  bnhubListingRatingAverage?: number | null;
+  bnhubListingReviewCount?: number | null;
+  bnhubListingCompletedStays?: number | null;
   _count?: { reviews?: number; bookings?: number };
   reviews?: { propertyRating?: number }[];
+  /** When owner host performance is joined — small ranking nudge only */
+  hostReputationScore?: number | null;
 };
 
 export type BnhubListingLabel = "Best Match" | "Great Price" | "High Demand";
@@ -45,33 +60,24 @@ export type BnhubListingLabel = "Best Match" | "Great Price" | "High Demand";
 export type RankedBnhubListing<T extends BnhubListingForRanking = BnhubListingForRanking> = T & {
   _aiScore: number;
   _aiLabels: BnhubListingLabel[];
+  /** Present only when `rankListings` is called with `rankingDebug: true` (server env + query). */
+  _marketplaceRankDebug?: {
+    score: number;
+    components: ListingSearchScoreResult["components"];
+    weightsEffective: ListingSearchScoreResult["weightsEffective"];
+    explain: string[];
+  };
 };
 
 const LABEL_BEST_MATCH: BnhubListingLabel = "Best Match";
 const LABEL_GREAT_PRICE: BnhubListingLabel = "Great Price";
 const LABEL_HIGH_DEMAND: BnhubListingLabel = "High Demand";
 
-/** Weight for each score component (tune as needed). */
-const WEIGHTS = {
-  priceCompetitiveness: 25,
-  locationPopularity: 15,
-  availabilityMatch: 20,
-  guestCapacityMatch: 15,
-  recency: 10,
-  bookingProbability: 15,
-};
-
-/**
- * Normalize location string for comparison (lowercase, trim).
- */
 function normalizeLocation(s: string | undefined): string {
   if (!s || typeof s !== "string") return "";
   return s.trim().toLowerCase();
 }
 
-/**
- * Check if listing location matches filter (exact or contains).
- */
 function locationMatches(
   listingCity: string | undefined,
   filterLocation: string | undefined
@@ -85,9 +91,6 @@ function locationMatches(
   return "none";
 }
 
-/**
- * Guest capacity match: exact = high, meets = medium, else low.
- */
 function guestMatch(listingGuests: number | undefined, filterGuests: number | undefined): number {
   if (filterGuests == null || filterGuests <= 0) return 1;
   const max = listingGuests ?? 0;
@@ -97,149 +100,103 @@ function guestMatch(listingGuests: number | undefined, filterGuests: number | un
   return 0.2;
 }
 
-/**
- * Recency score: newer listings get a boost (0–1).
- * Uses createdAt if present, else 0.5.
- */
-function recencyScore(createdAt: string | Date | undefined): number {
-  if (createdAt == null) return 0.5;
-  const t = typeof createdAt === "string" ? new Date(createdAt).getTime() : createdAt.getTime();
-  if (Number.isNaN(t)) return 0.5;
-  const now = Date.now();
-  const ageDays = (now - t) / (24 * 60 * 60 * 1000);
-  if (ageDays <= 7) return 1;
-  if (ageDays <= 30) return 0.9;
-  if (ageDays <= 90) return 0.7;
-  if (ageDays <= 365) return 0.5;
-  return 0.3;
+function priceVsMarketRatio(listingPriceCents: number, marketAvgCents: number): number {
+  if (marketAvgCents <= 0) return 1;
+  return listingPriceCents / marketAvgCents;
 }
 
 /**
- * Booking probability proxy: more bookings + reviews = higher score (0–1).
+ * UI labels from marketplace explainers + light price/location/guest heuristics (no extra DB fields).
  */
-function bookingProbabilityScore(listing: BnhubListingForRanking): number {
-  const bookings = listing._count?.bookings ?? 0;
-  const reviews = listing._count?.reviews ?? listing.reviews?.length ?? 0;
-  const total = bookings + reviews;
-  if (total <= 0) return 0.3;
-  if (total <= 2) return 0.5;
-  if (total <= 5) return 0.7;
-  if (total <= 15) return 0.85;
-  return 1;
-}
-
-/**
- * Price competitiveness: below market avg = bonus, far above = penalty.
- * marketAvgCents is computed from the current result set (no external data).
- */
-function priceScore(
-  listingPriceCents: number,
-  marketAvgCents: number,
-  filterMaxPrice?: number
-): number {
-  const listingPrice = listingPriceCents / 100;
-  const marketAvg = marketAvgCents / 100;
-  if (marketAvg <= 0) return 1;
-
-  const ratio = listingPrice / marketAvg;
-  // Below market = good
-  if (ratio <= 0.85) return 1;
-  if (ratio <= 1) return 0.9;
-  // Above market = gradual penalty
-  if (ratio <= 1.2) return 0.7;
-  if (ratio <= 1.5) return 0.4;
-  return 0.2;
-}
-
-/**
- * Location popularity: if filter has location, exact match gets full score;
- * partial gets medium; no filter = neutral.
- */
-function locationScore(
-  listingCity: string | undefined,
-  filterLocation: string | undefined
-): number {
-  const match = locationMatches(listingCity, filterLocation);
-  if (match === "exact") return 1;
-  if (match === "partial") return 0.6;
-  return 0.5;
-}
-
-/**
- * Availability match: when checkIn/checkOut are provided, we assume the list
- * is already filtered by availability (API does that). So if filters have dates,
- * treat as full match; else neutral.
- */
-function availabilityMatchScore(filters: BnhubSearchFilters): number {
-  if (filters.checkIn && filters.checkOut) return 1;
-  return 0.7;
-}
-
-/**
- * Compute total score for one listing and determine labels.
- */
-function scoreListing(
+function deriveLabels(
   listing: BnhubListingForRanking,
   filters: BnhubSearchFilters,
-  userContext: BnhubSearchUserContext | undefined,
+  marketplaceScore01: number,
   marketAvgCents: number
-): { score: number; labels: BnhubListingLabel[] } {
-  const priceCents = listing.nightPriceCents ?? 0;
-  const priceComp = priceScore(
-    priceCents,
-    marketAvgCents,
-    filters.maxPrice != null ? filters.maxPrice * 100 : userContext?.preferredMaxPrice
-  );
-  const locPop = locationScore(listing.city, filters.location);
-  const availMatch = availabilityMatchScore(filters);
-  const guestCap = guestMatch(listing.maxGuests, filters.guests);
-  const recency = recencyScore(listing.createdAt);
-  const bookingProb = bookingProbabilityScore(listing);
-
-  const score =
-    priceComp * WEIGHTS.priceCompetitiveness +
-    locPop * WEIGHTS.locationPopularity +
-    availMatch * WEIGHTS.availabilityMatch +
-    guestCap * WEIGHTS.guestCapacityMatch +
-    recency * WEIGHTS.recency +
-    bookingProb * WEIGHTS.bookingProbability;
-
+): BnhubListingLabel[] {
+  const ctxRank: ListingForMarketplaceRank = listing;
+  const explains = explainListingScore(ctxRank, {
+    checkIn: filters.checkIn,
+    checkOut: filters.checkOut,
+  });
   const labels: BnhubListingLabel[] = [];
+
   const exactLocation = locationMatches(listing.city, filters.location) === "exact";
   const hasDates = Boolean(filters.checkIn && filters.checkOut);
-  const guestFit = guestCap >= 0.85;
-  if (exactLocation && hasDates && guestFit) labels.push(LABEL_BEST_MATCH);
-  if (priceComp >= 0.95 && (listing.nightPriceCents ?? 0) / 100 <= (marketAvgCents / 100) * 0.9)
-    labels.push(LABEL_GREAT_PRICE);
-  if (bookingProb >= 0.7) labels.push(LABEL_HIGH_DEMAND);
+  const guestFit = guestMatch(listing.maxGuests, filters.guests) >= 0.85;
+  if (exactLocation && hasDates && guestFit && marketplaceScore01 >= 0.52) labels.push(LABEL_BEST_MATCH);
 
-  return { score, labels };
+  const ratio = priceVsMarketRatio(listing.nightPriceCents ?? 0, marketAvgCents);
+  if (ratio > 0 && ratio <= 0.92) labels.push(LABEL_GREAT_PRICE);
+
+  if (
+    explains.some((e) => e.includes("strong guest feedback")) ||
+    (listing._count?.bookings ?? 0) >= 5 ||
+    (listing._count?.reviews ?? 0) >= 5
+  ) {
+    labels.push(LABEL_HIGH_DEMAND);
+  }
+
+  return [...new Set(labels)];
 }
 
+export type RankListingsOptions = {
+  /** When true, attaches `_marketplaceRankDebug` (internal — enable via env + query on API). */
+  rankingDebug?: boolean;
+};
+
 /**
- * Rank listings by AI score and attach labels.
+ * Rank listings by marketplace score and attach labels.
  * After filtering, pass the result here; this sorts by score DESC and adds
- * _aiScore and _aiLabels to each listing.
+ * `_aiScore` (0–100 scale) and `_aiLabels`.
  */
 export function rankListings<T extends BnhubListingForRanking>(
   listings: T[],
   filters: BnhubSearchFilters,
-  userContext?: BnhubSearchUserContext
+  _userContext?: BnhubSearchUserContext,
+  options?: RankListingsOptions
 ): RankedBnhubListing<T>[] {
   if (listings.length === 0) return [];
 
   const marketAvgCents =
     listings.reduce((sum, l) => sum + (l.nightPriceCents ?? 0), 0) / listings.length;
 
+  const rankCtx = {
+    checkIn: filters.checkIn,
+    checkOut: filters.checkOut,
+  };
+
   const scored: RankedBnhubListing<T>[] = listings.map((listing) => {
-    const { score, labels } = scoreListing(listing, filters, userContext, marketAvgCents);
-    return {
+    const ctxListing = listing as ListingForMarketplaceRank;
+    const result = scoreListingForSearch(ctxListing, rankCtx);
+    const score01 = result.score;
+    const labels = deriveLabels(listing, filters, score01, marketAvgCents);
+    const tieGuest = guestMatch(listing.maxGuests, filters.guests) * 0.02;
+    const tiePrice = 1 - Math.min(1, priceVsMarketRatio(listing.nightPriceCents ?? 0, marketAvgCents)) * 0.01;
+    const displayScore = Math.round((score01 * 100 + tieGuest + tiePrice) * 100) / 100;
+
+    const row: RankedBnhubListing<T> = {
       ...listing,
-      _aiScore: Math.round(score * 100) / 100,
+      _aiScore: displayScore,
       _aiLabels: labels,
     };
+
+    if (options?.rankingDebug) {
+      row._marketplaceRankDebug = {
+        score: score01,
+        components: result.components,
+        weightsEffective: result.weightsEffective,
+        explain: explainListingScore(ctxListing, rankCtx),
+      };
+    }
+
+    return row;
   });
 
-  scored.sort((a, b) => b._aiScore - a._aiScore);
+  scored.sort((a, b) => {
+    const d = b._aiScore - a._aiScore;
+    if (Math.abs(d) > 1e-6) return d;
+    return String(a.id).localeCompare(String(b.id));
+  });
   return scored;
 }

@@ -231,6 +231,69 @@ export async function sendFormStatusUpdateToClient(params: {
   }
 }
 
+export async function sendFormSignatureRequestToClient(params: {
+  clientEmail: string;
+  formType: string;
+  submissionId: string;
+  clientName?: string | null;
+  reviewUrl?: string;
+}): Promise<void> {
+  if (!params.clientEmail || !params.clientEmail.includes("@")) return;
+  const safeName = params.clientName?.trim() || "Client";
+  const subject = `Signature requested — ${params.formType.replace(/[-_]/g, " ")}`;
+  const reviewLine = params.reviewUrl
+    ? `<p><a href="${params.reviewUrl}" style="color:#D4AF37;font-weight:600;">Open your client file</a></p>`
+    : "";
+  const html = `
+    <p>Hello ${escapeHtml(safeName)},</p>
+    <p>Your form file is ready for review and signature follow-up in the platform.</p>
+    <p><strong>Form:</strong> ${escapeHtml(params.formType)}</p>
+    <p><strong>Reference:</strong> ${escapeHtml(params.submissionId)}</p>
+    ${reviewLine}
+    <p>Please review the file carefully. If any correction is needed, reply to this email or contact your broker before signing.</p>
+  `;
+  const replyTo = getReplyToEmail();
+  const sent = await sendEmail({
+    to: params.clientEmail,
+    subject,
+    html: html + getEmailFooter(),
+    ...(replyTo ? { replyTo } : {}),
+  });
+  if (!sent) {
+    console.log("[Email] Resend not configured. Would send signature request to:", params.clientEmail);
+  }
+}
+
+export async function sendFormSignatureConfirmedToAdmin(params: {
+  formType: string;
+  submissionId: string;
+  clientName?: string | null;
+  clientEmail?: string | null;
+}): Promise<void> {
+  const to = getNotificationEmail();
+  if (!to || !to.includes("@")) {
+    console.log("[Email] No notification address. Would send signature confirmation:", params);
+    return;
+  }
+  const subject = `Client signature confirmed — ${params.formType.replace(/[-_]/g, " ")}`;
+  const html = `
+    <p>A client confirmed a signature-ready form file in the platform.</p>
+    <p><strong>Form:</strong> ${escapeHtml(params.formType)}</p>
+    <p><strong>Reference:</strong> ${escapeHtml(params.submissionId)}</p>
+    <p><strong>Client:</strong> ${escapeHtml(params.clientName || "Not provided")}</p>
+    <p><strong>Email:</strong> ${escapeHtml(params.clientEmail || "Not provided")}</p>
+  `;
+  const sent = await sendEmail({
+    to,
+    subject,
+    html: html + getEmailFooter(),
+    ...(params.clientEmail ? { replyTo: params.clientEmail } : {}),
+  });
+  if (!sent) {
+    console.log("[Email] Resend not configured. Would send signature confirmation to admin:", params);
+  }
+}
+
 /**
  * AI follow-up escalation — rich summary for broker / ops inbox.
  */

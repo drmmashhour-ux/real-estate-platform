@@ -1,9 +1,17 @@
+"use client";
+
+import { usePathname } from "next/navigation";
 import { getContactTelHref, getContactWhatsAppUrl } from "@/lib/config/contact";
 
 /**
  * Global floating call + WhatsApp actions (mobile + desktop).
  */
 export default function FloatingContact() {
+  const pathname = usePathname() ?? "";
+  if (pathname.startsWith("/admin")) {
+    return null;
+  }
+
   const telHref = getContactTelHref();
   const waHref = getContactWhatsAppUrl();
 

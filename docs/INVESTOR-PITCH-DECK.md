@@ -1,8 +1,14 @@
+## Also see
+
+Full investor package: [docs/investors/](investors/)
+
+---
+
 # LECIPM — Investor Pitch Deck
 
 **10-slide pitch for investors**
 
-**Also see:** [investor-pitch.md](investor-pitch.md) (master narrative + 5–7 min script), [pitch-deck.md](pitch-deck.md) (15-slide BNHub + LECIPM + premium layouts), [design-system.md](design-system.md) (black + gold deck system), [financials.md](financials.md), [investor-outreach.md](investor-outreach.md).
+**Also see:** [investor/LECIPM-INVESTOR-PITCH-DECK.md](investor/LECIPM-INVESTOR-PITCH-DECK.md) (LECIPM platform variant), [investor-pitch.md](investor-pitch.md) (master narrative + 5–7 min script), [pitch-deck.md](pitch-deck.md) (15-slide BNHub + LECIPM + premium layouts), [design-system.md](design-system.md) (black + gold deck system), [financials.md](financials.md), [investor-outreach.md](investor-outreach.md).
 
 ---
 

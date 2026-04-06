@@ -21,12 +21,17 @@ export default async function AdminContractsBuilderPage() {
   });
 
   return (
-    <main className="min-h-screen bg-[#0B0B0B] text-slate-100">
+    <main className="min-h-screen bg-[#0B0B0B] text-slate-100" data-testid="admin-contract-template-builder">
       <div className="mx-auto max-w-3xl px-4 py-10">
         <Link href="/admin" className="text-sm hover:underline" style={{ color: GOLD }}>
           ← Admin
         </Link>
-        <h1 className="mt-4 text-2xl font-semibold text-white">Contract templates (drafting)</h1>
+        <p className="mt-4 text-xs font-semibold uppercase tracking-widest" style={{ color: GOLD }}>
+          Structured form filler
+        </p>
+        <h1 className="mt-2 text-2xl font-semibold text-white" data-testid="admin-contract-builder-title">
+          Contract templates (drafting)
+        </h1>
         <p className="mt-2 text-sm text-slate-400">
           Structured sections and fields for marketplace agreements (e.g. SELLER_AGREEMENT). Reorder sections
           and toggle required fields; attachments (e.g. seller declaration) are shown for reference.

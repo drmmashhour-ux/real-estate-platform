@@ -6,6 +6,10 @@ import { getSellerDisclosure } from "@/lib/bnhub/seller-disclosure";
 import { ensureHostListingContract } from "@/lib/contracts/bnhub-host-contracts";
 import { ensureSellerListingAgreementForBnhub } from "@/lib/contracts/bnhub-seller-listing-contracts";
 import { MARKETPLACE_CONTRACT_TYPES } from "@/lib/contracts/marketplace-contract-types";
+import {
+  hasCurrentLegalRentRightAttestation,
+  LEGAL_RENT_RIGHT_ATTESTATION_VERSION,
+} from "@/lib/bnhub/legal-rent-attestation-policy";
 
 export const dynamic = "force-dynamic";
 
@@ -64,6 +68,11 @@ export async function GET(
   const contractsDone = Boolean(sellerSigned && hostSigned);
 
   const publishReady = listing.listingStatus === "PUBLISHED";
+  const verificationApproved = listing.listingVerificationStatus === "VERIFIED";
+  const legalAttestationDone = hasCurrentLegalRentRightAttestation(
+    listing.legalRentRightAttestedAt,
+    listing.legalRentRightAttestationVersion
+  );
 
   return Response.json({
     steps: {
@@ -72,11 +81,17 @@ export async function GET(
       details: hasDetails,
       disclosure: disclosureDone,
       contracts: contractsDone,
+      verification: verificationApproved,
+      legalAttestation: legalAttestationDone,
       submit: publishReady,
     },
     meta: {
       photoCount,
       listingStatus: listing.listingStatus,
+      listingVerificationStatus: listing.listingVerificationStatus,
+      legalRentRightAttestedAt: listing.legalRentRightAttestedAt?.toISOString() ?? null,
+      legalRentRightAttestationVersion: listing.legalRentRightAttestationVersion ?? null,
+      requiredAttestationVersion: LEGAL_RENT_RIGHT_ATTESTATION_VERSION,
     },
   });
 }

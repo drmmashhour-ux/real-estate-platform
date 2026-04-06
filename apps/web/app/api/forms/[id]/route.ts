@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { sendFormStatusUpdateToClient } from "@/lib/email/notifications";
+import { formatFormActivityNote } from "@/lib/forms/form-activity";
 
 export const dynamic = "force-dynamic";
 
@@ -52,7 +53,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<Params> 
       data: {
         formSubmissionId: id,
         action: newStatus != null ? "status_changed" : "updated",
-        note: newStatus != null ? `Status set to ${newStatus}` : body.note ?? "Payload updated",
+        note: formatFormActivityNote("Admin", newStatus != null ? `Status set to ${newStatus}` : body.note ?? "Payload updated"),
       },
     });
 

@@ -10,6 +10,7 @@ function platformCategory(paymentType: string): string {
     deposit: "platform_deal_deposit_fee",
     closing_fee: "platform_deal_closing_fee",
     featured_listing: "platform_featured_listing_fee",
+    listing_contact_lead: "platform_listing_contact_lead_fee",
   };
   return map[paymentType] ?? `platform_fee_${paymentType}`;
 }

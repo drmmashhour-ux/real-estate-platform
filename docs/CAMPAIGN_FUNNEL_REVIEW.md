@@ -18,4 +18,4 @@
 
 ## Automated “full flow”
 
-There is no single Playwright suite in-repo for ad → booking; use the checklist above + Stripe test mode (`4242` card) against a tunnel (e.g. ngrok) for webhooks.
+There is no single Playwright suite in-repo for ad → booking; use the checklist above + Stripe test mode (complete Checkout on Stripe’s hosted page using cards from [Stripe Testing](https://stripe.com/docs/testing)) against a tunnel (e.g. ngrok) for webhooks.

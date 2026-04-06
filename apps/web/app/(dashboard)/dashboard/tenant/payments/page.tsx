@@ -13,10 +13,10 @@ function money(cents: number) {
 export default async function TenantRentPaymentsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ applied?: string }>;
+  searchParams?: Promise<{ applied?: string }>;
 }) {
   const { userId } = await requireAuthenticatedUser();
-  const sp = await searchParams;
+  const sp = (await searchParams) ?? {};
   const showApplied = sp.applied === "1";
 
   const [payments, applications, leases] = await Promise.all([

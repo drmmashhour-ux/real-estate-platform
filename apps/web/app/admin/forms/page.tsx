@@ -25,14 +25,17 @@ export default async function AdminFormsPage() {
   });
 
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-50">
+    <main className="min-h-screen bg-slate-950 text-slate-50" data-testid="admin-forms-filler-page">
       <div className="mx-auto max-w-5xl px-4 py-8">
         <Link href="/admin" className="text-sm text-amber-400 hover:text-amber-300">
           ← Admin
         </Link>
-        <h1 className="mt-4 text-2xl font-semibold">Forms</h1>
+        <p className="mt-4 text-xs font-semibold uppercase tracking-widest text-emerald-400/90">Form filler</p>
+        <h1 className="mt-2 text-2xl font-semibold" data-testid="admin-forms-filler-title">
+          Forms &amp; submissions
+        </h1>
         <p className="mt-1 text-slate-400">
-          Form submissions (OACIQ-style) and operational form tools.
+          Review client submissions, edit fields, change status (OACIQ-style flows), and open operational form tools.
         </p>
 
         {/* Submissions list */}
@@ -114,6 +117,23 @@ export default async function AdminFormsPage() {
               </li>
             ))}
           </ul>
+        </section>
+
+        <section className="mt-10 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-medium text-amber-100">AI refill examples</h2>
+              <p className="mt-1 text-sm text-slate-400">
+                Run test examples for OACIQ forms before attaching real uploaded files.
+              </p>
+            </div>
+            <Link
+              href="/admin/forms/examples"
+              className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-amber-400"
+            >
+              Open examples
+            </Link>
+          </div>
         </section>
       </div>
     </main>

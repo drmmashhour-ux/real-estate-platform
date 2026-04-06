@@ -8,7 +8,7 @@ import path from "node:path";
 import { config } from "dotenv";
 import Stripe from "stripe";
 
-config({ path: path.join(__dirname, "../.env") });
+config({ path: path.join(__dirname, "../.env"), override: true });
 
 const key = process.env.STRIPE_SECRET_KEY?.trim() ?? "";
 

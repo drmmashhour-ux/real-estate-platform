@@ -20,7 +20,9 @@ export type AiLogEvent =
   | "ai_writer_request"
   | "immo_chat_message"
   | "investment_insight"
-  | "mortgage_insight";
+  | "mortgage_insight"
+  | "lecipm_manager_run"
+  | "lecipm_manager_action";
 
 export type AiLogPayload = Record<string, unknown>;
 

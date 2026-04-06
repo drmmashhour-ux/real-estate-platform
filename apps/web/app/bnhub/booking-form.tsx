@@ -5,10 +5,18 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { HintTooltip } from "@/components/ui/HintTooltip";
 import { CTA_PRIMARY_FULL_WIDTH } from "@/lib/ui/cta-classes";
+import { earlyBookingHintForLeadDays, nightsUntilCheckInUtc } from "@/lib/bnhub/early-booking";
 
 type PricingBreakdown = {
   nightlyBreakdown: { date: string; cents: number }[];
   subtotalCents: number;
+  earlyBookingDiscountCents?: number;
+  earlyBookingLabel?: string | null;
+  lodgingDiscountAppliedCents?: number;
+  lodgingDiscountSource?: "NONE" | "EARLY_BOOKING" | "LOYALTY";
+  loyaltyDiscountLabel?: string | null;
+  loyaltyDiscountPercentOffered?: number;
+  lodgingSubtotalAfterDiscountCents?: number;
   cleaningFeeCents: number;
   gstCents?: number;
   qstCents?: number;
@@ -32,6 +40,10 @@ export function BookingForm({
   hostPayoutReady = true,
   petsAllowed = null,
   maxPetWeightKg = null,
+  maxGuests = 4,
+  listingVerified = false,
+  stripeConfigured = false,
+  loyaltyTierBadge = null,
 }: {
   listingId: string;
   nightPriceCents: number;
@@ -45,6 +57,12 @@ export function BookingForm({
   /** Listing pet policy — used for guest warnings only. */
   petsAllowed?: boolean | null;
   maxPetWeightKg?: number | null;
+  maxGuests?: number;
+  listingVerified?: boolean;
+  /** When true, unpaid flow can open Stripe Checkout after create. */
+  stripeConfigured?: boolean;
+  /** BNHub Rewards tier label for signed-in guests (e.g. Silver · up to 5% off lodging). */
+  loyaltyTierBadge?: string | null;
 }) {
   const router = useRouter();
   const [checkIn, setCheckIn] = useState("");
@@ -61,6 +79,7 @@ export function BookingForm({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [breakdown, setBreakdown] = useState<PricingBreakdown | null>(null);
+  const [guestCount, setGuestCount] = useState(Math.min(2, Math.max(1, maxGuests)));
   const hasRulesToConfirm = Boolean(houseRules || cancellationPolicy);
 
   const nights =
@@ -71,21 +90,102 @@ export function BookingForm({
         )
       : 0;
 
+  const leadDays = checkIn ? nightsUntilCheckInUtc(checkIn) : null;
+  const earlyHint = earlyBookingHintForLeadDays(leadDays);
+
   useEffect(() => {
     if (!listingId || !checkIn || !checkOut || nights < 1) {
       setBreakdown(null);
       return;
     }
-    const params = new URLSearchParams({ listingId, checkIn, checkOut });
-    fetch(`/api/bnhub/pricing/breakdown?${params}`)
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => data?.breakdown ?? null)
-      .then(setBreakdown)
+    const ctrl = new AbortController();
+    fetch("/api/bookings/quote", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      signal: ctrl.signal,
+      body: JSON.stringify({
+        listingId,
+        checkIn,
+        checkOut,
+        guestsCount: Math.min(maxGuests, Math.max(1, guestCount)),
+      }),
+    })
+      .then(async (res) => {
+        if (!res.ok) {
+          const j = (await res.json().catch(() => ({}))) as { error?: string };
+          if (res.status === 409 || j.error?.toLowerCase().includes("available")) {
+            setError("Selected dates are unavailable.");
+          } else {
+            setError("");
+          }
+          return null;
+        }
+        return res.json() as Promise<{
+          nights: number;
+          grossSubtotalCents?: number;
+          baseAmount?: number;
+          cleaningFee?: number;
+          serviceFee?: number;
+          taxesAmount?: number;
+          totalAmount?: number;
+          currency?: string;
+          breakdown?: {
+            lodgingDiscountAppliedCents?: number;
+            lodgingDiscountSource?: "NONE" | "EARLY_BOOKING" | "LOYALTY";
+            loyaltyDiscountLabel?: string | null;
+            loyaltyDiscountPercentOffered?: number;
+            earlyBookingDiscountCents?: number;
+            earlyBookingLabel?: string | null;
+            lodgingSubtotalAfterDiscountCents?: number;
+          };
+        }>;
+      })
+      .then((q) => {
+        if (!q) {
+          setBreakdown(null);
+          return;
+        }
+        setError("");
+        const toCents = (n: number) => Math.round(n * 100);
+        const br = q.breakdown;
+        const gross = typeof q.grossSubtotalCents === "number" ? q.grossSubtotalCents : toCents(q.baseAmount ?? 0);
+        const applied =
+          br?.lodgingDiscountAppliedCents ??
+          Math.max(br?.earlyBookingDiscountCents ?? 0, 0);
+        setBreakdown({
+          nightlyBreakdown: [],
+          subtotalCents: gross,
+          earlyBookingDiscountCents: br?.earlyBookingDiscountCents ?? 0,
+          earlyBookingLabel: br?.earlyBookingLabel ?? null,
+          lodgingDiscountAppliedCents: applied,
+          lodgingDiscountSource: br?.lodgingDiscountSource ?? "NONE",
+          loyaltyDiscountLabel: br?.loyaltyDiscountLabel ?? null,
+          loyaltyDiscountPercentOffered: br?.loyaltyDiscountPercentOffered ?? 0,
+          lodgingSubtotalAfterDiscountCents: br?.lodgingSubtotalAfterDiscountCents ?? toCents(q.baseAmount ?? 0),
+          cleaningFeeCents: toCents(q.cleaningFee ?? 0),
+          gstCents: undefined,
+          qstCents: undefined,
+          taxCents: toCents(q.taxesAmount ?? 0),
+          serviceFeeCents: toCents(q.serviceFee ?? 0),
+          totalCents: toCents(q.totalAmount ?? 0),
+          nights: q.nights,
+          currency: (q.currency ?? "CAD").toUpperCase(),
+        });
+      })
       .catch(() => setBreakdown(null));
-  }, [listingId, checkIn, checkOut, nights]);
+    return () => ctrl.abort();
+  }, [listingId, checkIn, checkOut, nights, guestCount, maxGuests]);
 
   const displayBreakdown = breakdown ?? {
     subtotalCents: nights * nightPriceCents,
+    earlyBookingDiscountCents: 0,
+    earlyBookingLabel: null,
+    lodgingDiscountAppliedCents: 0,
+    lodgingDiscountSource: "NONE" as const,
+    loyaltyDiscountLabel: null,
+    loyaltyDiscountPercentOffered: 0,
+    lodgingSubtotalAfterDiscountCents: nights * nightPriceCents,
     cleaningFeeCents,
     taxCents: 0,
     serviceFeeCents: Math.round((nights * nightPriceCents * 12) / 100),
@@ -141,22 +241,66 @@ export function BookingForm({
         extraServicesText.trim().length > 0 ||
         travelingWithPet;
 
-      const res = await fetch("/api/bnhub/bookings", {
+      const res = await fetch("/api/bookings/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           listingId,
           checkIn,
           checkOut,
+          guestsCount: Math.min(maxGuests, Math.max(1, guestCount)),
+          guestNotes: notes.trim() || undefined,
           specialRequest: notes.trim() || undefined,
           ...(hasStructured ? { specialRequestsJson } : {}),
         }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Booking failed");
-      router.push(`/bnhub/booking/${data.id}`);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Booking failed");
+      const data = (await res.json()) as {
+        id?: string;
+        error?: string;
+        summary?: { status?: string; totalCents?: number | null };
+      };
+      if (!res.ok) {
+        setError(
+          typeof data.error === "string" && data.error.trim()
+            ? data.error
+            : "Something went wrong — please try again."
+        );
+        return;
+      }
+      const bookingId = data.id;
+      if (!bookingId) {
+        setError("Something went wrong — please try again.");
+        return;
+      }
+
+      if (data.summary?.status === "PENDING" && stripeConfigured && hostPayoutReady) {
+        const ck = await fetch("/api/stripe/checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            paymentType: "booking",
+            bookingId,
+          }),
+        });
+        const ckData = (await ck.json()) as { url?: string; error?: string };
+        if (!ck.ok) {
+          setError(
+            typeof ckData.error === "string" && ckData.error.trim()
+              ? ckData.error
+              : "Could not start checkout."
+          );
+          router.push(`/bnhub/booking/${bookingId}`);
+          return;
+        }
+        if (ckData.url) {
+          window.location.href = ckData.url;
+          return;
+        }
+      }
+
+      router.push(`/bnhub/booking/${bookingId}`);
+    } catch {
+      setError("Something went wrong — please try again.");
     } finally {
       setLoading(false);
     }
@@ -175,29 +319,71 @@ export function BookingForm({
         </div>
       )}
       <div>
-        <label className="mb-1 block text-xs font-medium text-slate-400">
+        <label id="bnhub-booking-check-in-label" className="mb-1 block text-xs font-medium text-slate-600">
           Check-in
         </label>
         <input
           type="date"
+          aria-labelledby="bnhub-booking-check-in-label"
           value={checkIn}
           onChange={(e) => setCheckIn(e.target.value)}
           min={new Date().toISOString().slice(0, 10)}
-          className="w-full rounded-xl border border-slate-700 bg-slate-950/60 px-3 py-2.5 text-sm text-slate-100 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-400/40"
+          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 focus:border-[#006ce4] focus:outline-none focus:ring-2 focus:ring-[#006ce4]/20"
         />
       </div>
       <div>
-        <label className="mb-1 block text-xs font-medium text-slate-400">
+        <label id="bnhub-booking-check-out-label" className="mb-1 block text-xs font-medium text-slate-600">
           Check-out
         </label>
         <input
           type="date"
+          aria-labelledby="bnhub-booking-check-out-label"
           value={checkOut}
           onChange={(e) => setCheckOut(e.target.value)}
           min={checkIn || new Date().toISOString().slice(0, 10)}
-          className="w-full rounded-xl border border-slate-700 bg-slate-950/60 px-3 py-2.5 text-sm text-slate-100 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-400/40"
+          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 focus:border-[#006ce4] focus:outline-none focus:ring-2 focus:ring-[#006ce4]/20"
         />
       </div>
+      <div>
+        <label className="mb-1 block text-xs font-medium text-slate-600">Guests</label>
+        <input
+          type="number"
+          min={1}
+          max={maxGuests}
+          value={guestCount}
+          onChange={(e) =>
+            setGuestCount(Math.min(maxGuests, Math.max(1, parseInt(e.target.value, 10) || 1)))
+          }
+          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 focus:border-[#006ce4] focus:outline-none focus:ring-2 focus:ring-[#006ce4]/20"
+        />
+        <p className="mt-1 text-[11px] text-slate-500">Maximum {maxGuests} guests for this listing.</p>
+      </div>
+      {earlyHint && checkIn ? (
+        <div className="rounded-xl border border-sky-500/25 bg-sky-950/30 px-3 py-2.5">
+          <p className="text-xs font-semibold text-sky-200">{earlyHint.title}</p>
+          <p className="mt-1 text-[11px] leading-relaxed text-sky-100/90">{earlyHint.body}</p>
+        </div>
+      ) : null}
+      {loyaltyTierBadge && guestId ? (
+        <div className="rounded-xl border border-amber-500/30 bg-amber-950/20 px-3 py-2.5">
+          <p className="text-xs font-semibold text-amber-100">BNHub Rewards</p>
+          <p className="mt-1 text-[11px] leading-relaxed text-amber-100/90">{loyaltyTierBadge}</p>
+        </div>
+      ) : null}
+      {nights > 0 && (displayBreakdown.lodgingDiscountAppliedCents ?? 0) > 0 ? (
+        <div className="rounded-xl border border-emerald-500/30 bg-emerald-950/25 px-3 py-2.5">
+          <p className="text-xs font-semibold text-emerald-200">
+            {displayBreakdown.lodgingDiscountSource === "LOYALTY"
+              ? "Your loyalty discount applied"
+              : "Early-booking rate applied"}
+          </p>
+          <p className="mt-1 text-[11px] leading-relaxed text-emerald-100/90">
+            {displayBreakdown.lodgingDiscountSource === "LOYALTY" && (displayBreakdown.loyaltyDiscountPercentOffered ?? 0) > 0
+              ? `Your loyalty discount: ${displayBreakdown.loyaltyDiscountPercentOffered}% off the nightly subtotal (before taxes and service fee).`
+              : `You save $${((displayBreakdown.lodgingDiscountAppliedCents ?? 0) / 100).toFixed(0)} on the nightly subtotal (before taxes and service fee).`}
+          </p>
+        </div>
+      ) : null}
       {nights > 0 && (
         <>
           {instantBookEnabled && (
@@ -210,9 +396,19 @@ export function BookingForm({
           )}
           <div className="border-t border-slate-700 pt-4 text-sm">
           <div className="flex justify-between text-slate-400">
-            <span>${(displayBreakdown.subtotalCents / 100).toFixed(0)} × {displayBreakdown.nights} nights</span>
+            <span>Nightly total ({displayBreakdown.nights} nights)</span>
             <span>${(displayBreakdown.subtotalCents / 100).toFixed(0)}</span>
           </div>
+          {(displayBreakdown.lodgingDiscountAppliedCents ?? 0) > 0 && (
+            <div className="flex justify-between text-emerald-400">
+              <span>
+                {displayBreakdown.lodgingDiscountSource === "LOYALTY"
+                  ? displayBreakdown.loyaltyDiscountLabel ?? "Loyalty savings"
+                  : displayBreakdown.earlyBookingLabel ?? "Early booking"}
+              </span>
+              <span>-${((displayBreakdown.lodgingDiscountAppliedCents ?? 0) / 100).toFixed(0)}</span>
+            </div>
+          )}
           {displayBreakdown.cleaningFeeCents > 0 && (
             <div className="flex justify-between text-slate-400">
               <span>Cleaning fee</span>
@@ -386,23 +582,40 @@ export function BookingForm({
         <p className="text-sm text-red-400">{error}</p>
       )}
       {guestId ? (
-        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-slate-700/80 bg-slate-900/50 px-3 py-2 text-[10px] text-slate-400">
-          <HintTooltip label="Secure payment with Stripe — card processed at checkout.">
-            <span className="text-slate-300">Secure payment</span>
-          </HintTooltip>
-          <HintTooltip label="You’ll get booking confirmation after payment completes (or after host approval if not instant book).">
-            <span className="text-slate-300">Confirmation</span>
-          </HintTooltip>
-          {instantBookEnabled ? (
-            <HintTooltip label="Eligible stays may confirm instantly after checkout.">
-              <span className="text-emerald-300/90">Instant book</span>
-            </HintTooltip>
+        <div className="space-y-2">
+          {stripeConfigured && instantBookEnabled && hostPayoutReady ? (
+            <p className="text-xs font-medium text-emerald-200/95">
+              You won&apos;t be charged until you complete secure Stripe checkout.
+            </p>
           ) : null}
+          <div className="flex flex-wrap items-center gap-3 rounded-xl border border-slate-700/80 bg-slate-900/50 px-3 py-2 text-[10px] text-slate-400">
+            <HintTooltip label="Secure payment with Stripe — card processed at checkout.">
+              <span className="text-slate-300">Secure checkout</span>
+            </HintTooltip>
+            {listingVerified ? (
+              <HintTooltip label="This listing passed platform verification checks.">
+                <span className="text-sky-300/90">Verified listing</span>
+              </HintTooltip>
+            ) : null}
+            <HintTooltip label="You’ll get booking confirmation after payment completes (or after host approval if not instant book).">
+              <span className="text-slate-300">Confirmation</span>
+            </HintTooltip>
+            {cancellationPolicy ? (
+              <HintTooltip label={cancellationPolicy}>
+                <span className="text-slate-300">Cancellation policy</span>
+              </HintTooltip>
+            ) : null}
+            {instantBookEnabled ? (
+              <HintTooltip label="Eligible stays may confirm instantly after checkout.">
+                <span className="text-emerald-300/90">Instant book</span>
+              </HintTooltip>
+            ) : null}
+          </div>
         </div>
       ) : null}
       {!guestId ? (
         <Link
-          href={`/bnhub/login?next=${encodeURIComponent(`/bnhub/${listingId}`)}`}
+              href={`/bnhub/login?next=${encodeURIComponent(`/bnhub/stays/${listingId}`)}`}
           className={`block text-center ${CTA_PRIMARY_FULL_WIDTH}`}
         >
           Sign in to book
@@ -421,8 +634,8 @@ export function BookingForm({
             {loading
               ? "Booking…"
               : instantBookEnabled
-                ? "Book now"
-                : "Request to book"}
+                ? "Book now — instant confirmation"
+                : "Reserve now — pay securely"}
         </button>
       )}
     </form>

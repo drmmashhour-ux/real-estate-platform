@@ -770,40 +770,40 @@ export function BnhubSearchClient() {
     () => [
       {
         id: "location" as const,
-        label: t("filters_location"),
+        label: t("filters.location"),
         summary:
           effectiveFilters.listingCode.trim() ||
           effectiveFilters.location.trim() ||
-          t("filters_locationSummaryPlaceholder"),
+          t("filters.locationSummaryPlaceholder"),
       },
       {
         id: "dates" as const,
-        label: t("filters_dates"),
+        label: t("filters.dates"),
         summary:
           filters.checkIn && filters.checkOut
             ? `${filters.checkIn} → ${filters.checkOut}`
-            : t("filters_addDates"),
+            : t("filters.addDates"),
       },
       {
         id: "guests" as const,
-        label: t("filters_guests"),
+        label: t("filters.guests"),
         summary:
           filters.adults + filters.children > 0
-            ? t("filters_guestsCount", { count: filters.adults + filters.children })
-            : t("filters_addGuests"),
+            ? t("filters.guestsCount", { count: filters.adults + filters.children })
+            : t("filters.addGuests"),
       },
       {
         id: "price" as const,
-        label: t("filters_price"),
+        label: t("filters.price"),
         summary:
           filters.priceMin || filters.priceMax
-            ? `$${filters.priceMin || "0"} – $${filters.priceMax || t("filters_priceAny")}`
-            : t("filters_addPrice"),
+            ? `$${filters.priceMin || "0"} – $${filters.priceMax || t("filters.priceAny")}`
+            : t("filters.addPrice"),
       },
       {
         id: "filters" as const,
-        label: t("filters_filters"),
-        summary: hasActiveFilters ? t("filters_filtersOn") : t("filters_advanced"),
+        label: t("filters.filters"),
+        summary: hasActiveFilters ? t("filters.filtersOn") : t("filters.advanced"),
       },
     ],
     [t, locale, effectiveFilters, filters, hasActiveFilters]
@@ -1276,17 +1276,17 @@ export function BnhubSearchClient() {
       <section className="border-b border-slate-200 bg-gradient-to-b from-slate-50 to-white">
         <div className="mx-auto max-w-4xl px-4 py-8 sm:py-12">
           <h1 className="text-center text-2xl font-semibold text-slate-900 sm:text-3xl">
-            {t("search_heroTitle")}
+            {t("search.heroTitle")}
           </h1>
           <p className="mt-2 text-center text-slate-600">
-            {t("search_heroSubtitle")}
+            {t("search.heroSubtitle")}
           </p>
           <div className="mx-auto mt-8 max-w-3xl space-y-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
               <input
                 type="search"
-                aria-label={t("a11y_searchStays")}
-                placeholder={t("search_placeholder")}
+                aria-label={t("common.a11y.searchStays")}
+                placeholder={t("search.placeholder")}
                 value={query}
                 onChange={(e) => {
                   const nextQuery = e.target.value;
@@ -1307,13 +1307,13 @@ export function BnhubSearchClient() {
                 onClick={() => void handleSearch()}
                 className="min-h-[52px] shrink-0 rounded-xl bg-rose-500 px-8 text-base font-semibold text-white hover:bg-rose-600 sm:px-10"
               >
-                {nlBusy ? t("search_searching") : t("search_button")}
+                {nlBusy ? t("search.searching") : t("search.button")}
               </button>
             </div>
             {recentSearches.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 <span className="w-full text-xs font-medium uppercase tracking-wide text-slate-500">
-                  {t("search_recent")}
+                  {t("search.recent")}
                 </span>
                 {recentSearches.slice(0, 6).map((s) => (
                   <button
@@ -1333,7 +1333,7 @@ export function BnhubSearchClient() {
                 onClick={saveCurrentSearch}
                 className="font-semibold text-rose-600 hover:text-rose-700"
               >
-                {t("search_saveThisSearch")}
+                {t("search.saveThisSearch")}
               </button>
               <span className="text-slate-300">|</span>
               <button
@@ -1341,14 +1341,14 @@ export function BnhubSearchClient() {
                 onClick={() => setSavedOpen(true)}
                 className="font-medium text-slate-600 hover:text-slate-900"
               >
-                {t("search_savedSearches")}
+                {t("search.savedSearches")}
               </button>
               <span className="text-slate-300">|</span>
               <Link href="/projects" className="font-medium text-slate-600 hover:text-slate-900">
-                {t("search_buyRentProjects")}
+                {t("search.buyRentProjects")}
               </Link>
               <p className="w-full text-xs text-slate-500">
-                {t("search_alertsNote")}
+                {t("search.alertsNote")}
               </p>
             </div>
           </div>
@@ -1865,7 +1865,7 @@ export function BnhubSearchClient() {
             ) : listings.length === 0 ? (
               <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-12 text-center">
                 <h2 className="text-lg font-semibold text-slate-900">
-                  {t("search_noProperties")}
+                  {t("search.noProperties")}
                 </h2>
                 <div className="mt-4 flex flex-wrap justify-center gap-3">
                   <button
@@ -1879,14 +1879,14 @@ export function BnhubSearchClient() {
                     }}
                     className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
                   >
-                    {t("search_browseAll")}
+                    {t("search.browseAll")}
                   </button>
                   <button
                     type="button"
                     onClick={clearAllFilters}
                     className="rounded-lg bg-rose-500 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-600"
                   >
-                    {t("search_clearFilters")}
+                    {t("search.clearFilters")}
                   </button>
                 </div>
               </div>

@@ -17,15 +17,10 @@ export class MockPaymentProvider implements PaymentProvider {
   private intents = new Map<string, { amountCents: number; status: string }>();
   private payouts = new Map<string, { amountCents: number }>();
 
-  async createIntent(params: CreateIntentParams): Promise<CreateIntentResult> {
-    const providerIntentId = `pi_mock_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-    const clientSecret = `mock_secret_${providerIntentId}`;
-    this.intents.set(providerIntentId, { amountCents: params.amountCents, status: "HELD" });
-    return {
-      intentId: providerIntentId,
-      clientSecret,
-      providerIntentId,
-    };
+  async createIntent(_params: CreateIntentParams): Promise<CreateIntentResult> {
+    throw new Error(
+      "Mock PaymentIntents are disabled — use Stripe Checkout Sessions only (same as production).",
+    );
   }
 
   async captureIntent(params: CaptureIntentParams): Promise<void> {

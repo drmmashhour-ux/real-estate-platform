@@ -1,6 +1,6 @@
 import { prisma } from "../db.js";
 import type { CreateFlagBody, ListFlagsQuery } from "../validation/schemas.js";
-import type { Prisma } from "@prisma/client";
+import type { Prisma } from "../generated/prisma/index.js";
 
 function toFlagResponse(flag: {
   id: string;

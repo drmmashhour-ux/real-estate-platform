@@ -45,6 +45,7 @@ export async function computeReservationQuoteFromBooking(bookingId: string): Pro
     checkIn: booking.checkIn.toISOString().slice(0, 10),
     checkOut: booking.checkOut.toISOString().slice(0, 10),
     selectedAddons: selectedAddons.length ? selectedAddons : undefined,
+    guestUserId: booking.guestId,
   });
   if (!pricing) return { ok: false, error: "Pricing unavailable" };
 
@@ -87,7 +88,8 @@ export async function createQuoteSnapshot(params: {
       addOnTotalCents: b.addonsSubtotalCents,
       bundleTotalCents: 0,
       membershipDiscountCents: 0,
-      couponDiscountCents: 0,
+      /** Best single lodging discount (early-booking rule vs loyalty — never stacked). */
+      couponDiscountCents: b.lodgingDiscountAppliedCents ?? 0,
       securityHoldCents: b.depositCents,
       grandTotalCents: b.totalCents,
       currency: params.currency,

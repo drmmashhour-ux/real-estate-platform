@@ -72,7 +72,7 @@ For **auth-service** (if using same DB): run migrations or `db push` from `servi
 
 ```bash
 npm run dev
-# Open http://localhost:3000
+# Open http://localhost:3001
 ```
 
 **With auth service**
@@ -103,7 +103,7 @@ npm run dev
 
 ## 5. First flow (BNHub)
 
-1. Open http://localhost:3000/bnhub
+1. Open http://localhost:3001/bnhub
 2. Search listings (e.g. Montreal)
 3. Open a listing → pick dates → Book
 4. Sign in (or use guest session) → complete booking

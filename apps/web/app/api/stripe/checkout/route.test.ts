@@ -18,10 +18,34 @@ vi.mock("@/lib/stripe", () => ({
   isStripeConfigured: vi.fn(),
 }));
 
+vi.mock("@/lib/stripe/guestSupabaseBooking", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/stripe/guestSupabaseBooking")>(
+    "@/lib/stripe/guestSupabaseBooking"
+  );
+  return {
+    ...actual,
+    createGuestSupabaseBookingCheckoutSession: vi.fn(),
+  };
+});
+
+vi.mock("@/lib/stripe/hostPayoutReadiness", () => ({
+  BNHUB_HOST_CHECKOUT_UNAVAILABLE_MESSAGE:
+    "Host payout is not configured yet. Booking checkout is temporarily unavailable.",
+  BNHUB_CHECKOUT_BLOCKED_RESPONSE_CODE: "HOST_PAYOUT_NOT_READY",
+  validateHostStripePayoutReadiness: vi.fn(),
+}));
+
+vi.mock("@/lib/bnhub/booking-pricing", () => ({
+  computeBookingPricing: vi.fn().mockResolvedValue(null),
+}));
+
 vi.mock("@/lib/db", () => ({
   prisma: {
     booking: {
       findUnique: vi.fn(),
+    },
+    payment: {
+      update: vi.fn().mockResolvedValue({}),
     },
     propertyFraudScore: {
       findUnique: vi.fn(),
@@ -37,18 +61,33 @@ vi.mock("@/src/modules/messaging/triggers", () => ({
   onMessagingTriggerCheckoutStarted: vi.fn().mockResolvedValue(undefined),
 }));
 
+vi.mock("@/src/modules/launch/persistLaunchEvent", () => ({
+  persistLaunchEvent: vi.fn().mockResolvedValue(undefined),
+}));
+
 import { getGuestId } from "@/lib/auth/session";
 import { createCheckoutSession } from "@/lib/stripe/checkout";
 import { isStripeConfigured } from "@/lib/stripe";
+import { createGuestSupabaseBookingCheckoutSession } from "@/lib/stripe/guestSupabaseBooking";
+import { validateHostStripePayoutReadiness } from "@/lib/stripe/hostPayoutReadiness";
 import { prisma } from "@/lib/db";
 import {
   prepareReservationPaymentForCheckout,
   attachCheckoutSessionToReservationPayment,
 } from "@/modules/bnhub-payments/services/paymentService";
+import { persistLaunchEvent } from "@/src/modules/launch/persistLaunchEvent";
 
 describe("POST /api/stripe/checkout", () => {
   beforeEach(() => {
+    process.env.NEXT_PUBLIC_APP_URL = "http://localhost:3001";
     vi.mocked(isStripeConfigured).mockReturnValue(true);
+    vi.mocked(createGuestSupabaseBookingCheckoutSession).mockReset();
+    vi.mocked(validateHostStripePayoutReadiness).mockResolvedValue({
+      ok: true,
+      code: "READY",
+      userMessage: "",
+      logDetail: "",
+    });
     vi.mocked(getGuestId).mockResolvedValue("user-1");
     vi.mocked(createCheckoutSession).mockResolvedValue({
       url: "https://checkout.stripe.com/session",
@@ -62,6 +101,14 @@ describe("POST /api/stripe/checkout", () => {
     vi.mocked(attachCheckoutSessionToReservationPayment).mockResolvedValue(undefined);
     vi.mocked(prisma.propertyFraudScore.findUnique).mockResolvedValue(null);
     vi.mocked(prisma.booking.findUnique).mockImplementation((args: { include?: unknown; select?: unknown }) => {
+      const sel = args?.select as Record<string, unknown> | undefined;
+      if (sel && "checkIn" in sel) {
+        return Promise.resolve({
+          listingId: "listing-1",
+          checkIn: new Date("2025-06-01T15:00:00.000Z"),
+          checkOut: new Date("2025-06-05T11:00:00.000Z"),
+        } as never);
+      }
       if (args?.select && "listing" in (args.select as object)) {
         return Promise.resolve({
           listingId: "listing-1",
@@ -107,6 +154,24 @@ describe("POST /api/stripe/checkout", () => {
     expect(res.status).toBe(503);
     const data = await res.json();
     expect(data.error).toMatch(/not configured/i);
+  });
+
+  it("returns checkout url for guest Supabase booking without sign-in (bookingId only)", async () => {
+    vi.mocked(getGuestId).mockResolvedValue(null);
+    vi.mocked(createGuestSupabaseBookingCheckoutSession).mockResolvedValue({
+      url: "https://checkout.stripe.com/guest",
+      sessionId: "cs_guest_1",
+    });
+    const req = new Request("http://x/api/stripe/checkout", {
+      method: "POST",
+      body: JSON.stringify({ bookingId: "550e8400-e29b-41d4-a716-446655440000" }),
+      headers: { "Content-Type": "application/json" },
+    });
+    const res = await POST(req as never);
+    expect(res.status).toBe(200);
+    const data = await res.json();
+    expect(data.url).toBe("https://checkout.stripe.com/guest");
+    expect(createGuestSupabaseBookingCheckoutSession).toHaveBeenCalled();
   });
 
   it("returns 401 when user is not signed in", async () => {
@@ -163,18 +228,28 @@ describe("POST /api/stripe/checkout", () => {
         listingId: "listing-1",
         paymentType: "booking",
         userId: "user-1",
-        connect: expect.objectContaining({
-          destinationAccountId: "acct_test_connect",
-          applicationFeeAmount: 375,
-          bnhubPlatformFeeCents: 375,
-          bnhubHostPayoutCents: 2125,
-        }),
+        connect: undefined,
       })
     );
   });
 
-  it("returns 409 when host has no Stripe Connect account", async () => {
+  it("TEMP_DISABLE_CONNECT: allows booking checkout without host Connect (no connect payload)", async () => {
+    vi.mocked(validateHostStripePayoutReadiness).mockResolvedValue({
+      ok: false,
+      code: "HOST_PAYOUT_NOT_CONFIGURED",
+      userMessage:
+        "Host payout is not configured yet. Booking checkout is temporarily unavailable.",
+      logDetail: "host_missing_stripe_account_id",
+    });
     vi.mocked(prisma.booking.findUnique).mockImplementation((args: { include?: unknown; select?: unknown }) => {
+      const sel = args?.select as Record<string, unknown> | undefined;
+      if (sel && "checkIn" in sel) {
+        return Promise.resolve({
+          listingId: "listing-1",
+          checkIn: new Date("2025-06-01T15:00:00.000Z"),
+          checkOut: new Date("2025-06-05T11:00:00.000Z"),
+        } as never);
+      }
       if (args?.select && "listing" in (args.select as object)) {
         return Promise.resolve({
           listingId: "listing-1",
@@ -205,9 +280,14 @@ describe("POST /api/stripe/checkout", () => {
       headers: { "Content-Type": "application/json" },
     });
     const res = await POST(req as never);
-    expect(res.status).toBe(409);
-    const data = await res.json();
-    expect(data.error).toMatch(/Host payout account is not configured/i);
+    expect(res.status).toBe(200);
+    expect(vi.mocked(validateHostStripePayoutReadiness)).not.toHaveBeenCalled();
+    expect(createCheckoutSession).toHaveBeenCalledWith(
+      expect.objectContaining({
+        paymentType: "booking",
+        connect: undefined,
+      })
+    );
   });
 
   it("returns 400 when bookingId is missing for booking payments", async () => {

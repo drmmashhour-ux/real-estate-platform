@@ -5,6 +5,7 @@ import { parseFsboContactBody } from "@/lib/fsbo/validation";
 import { isFsboPubliclyVisible } from "@/lib/fsbo/constants";
 import { sendFsboLeadEmailToOwner } from "@/lib/email/fsbo-lead-email";
 import { headers } from "next/headers";
+import { getPublicAppUrl } from "@/lib/config/public-app-url";
 
 export const dynamic = "force-dynamic";
 
@@ -58,7 +59,7 @@ export async function POST(request: Request) {
     },
   });
 
-  const origin = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, "") || "http://localhost:3000";
+  const origin = getPublicAppUrl();
   const ownerInbox = listing.owner.email?.trim();
   if (ownerInbox) {
     void sendFsboLeadEmailToOwner({

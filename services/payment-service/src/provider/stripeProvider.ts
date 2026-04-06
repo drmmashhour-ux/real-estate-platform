@@ -16,21 +16,10 @@ import type {
  */
 export function createStripeProvider(secretKey: string): PaymentProvider {
   return {
-    async createIntent(params: CreateIntentParams): Promise<CreateIntentResult> {
-      const Stripe = await import("stripe").then((m) => m.default);
-      const stripe = new Stripe(secretKey);
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount: params.amountCents,
-        currency: params.currency,
-        metadata: params.metadata,
-        capture_method: "manual",
-        automatic_payment_methods: { enabled: true },
-      });
-      return {
-        intentId: paymentIntent.id,
-        clientSecret: paymentIntent.client_secret ?? "",
-        providerIntentId: paymentIntent.id,
-      };
+    async createIntent(_params: CreateIntentParams): Promise<CreateIntentResult> {
+      throw new Error(
+        "Stripe PaymentIntents for client-side card collection are disabled (PCI). Use Checkout Sessions only.",
+      );
     },
 
     async captureIntent(params: CaptureIntentParams): Promise<void> {

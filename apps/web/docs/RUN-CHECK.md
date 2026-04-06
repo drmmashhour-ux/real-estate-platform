@@ -28,7 +28,7 @@ cd apps/web && npm test -- --run
 cd apps/web && npm run dev
 ```
 
-**Expected:** "Ready" on http://localhost:3000 (or 3001 if 3000 is in use).
+**Expected:** "Ready" on http://localhost:3001 (use `pnpm dev:3000` only if you need legacy port 3000).
 
 ---
 
@@ -75,6 +75,6 @@ npm run build
 npm test -- --run
 
 # After dev server is running:
-curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/          # expect 200
-curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/projects  # expect 200
+curl -s -o /dev/null -w "%{http_code}" http://localhost:3001/          # expect 200
+curl -s -o /dev/null -w "%{http_code}" http://localhost:3001/api/projects  # expect 200
 ```

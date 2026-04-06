@@ -8,6 +8,9 @@ import { BnhubListingView, bnhubGalleryUrls } from "@/app/bnhub/bnhub-listing-vi
 import { getGuestId } from "@/lib/auth/session";
 import { trackEvent } from "@/src/services/analytics";
 import { onMessagingTriggerListingView } from "@/src/modules/messaging/triggers";
+import { CityIntentLanding } from "@/components/growth/CityIntentLanding";
+import { buildCityIntentMetadata } from "@/lib/growth/city-intent-seo";
+import { parseGrowthCitySlugParam } from "@/lib/growth/geo-slugs";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +20,10 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
+  const citySlug = parseGrowthCitySlugParam(slug);
+  if (citySlug) {
+    return buildCityIntentMetadata("stays", citySlug);
+  }
   let listing = null as Awaited<ReturnType<typeof getCachedBnhubListingById>>;
   for (const key of stayPathLookupKeys(slug)) {
     listing = await getCachedBnhubListingById(key);
@@ -57,6 +64,10 @@ export async function generateMetadata({
 
 export default async function StaySeoPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
+  const citySlug = parseGrowthCitySlugParam(slug);
+  if (citySlug) {
+    return <CityIntentLanding intent="stays" cityParam={slug} />;
+  }
   let listing = null as Awaited<ReturnType<typeof getCachedBnhubListingById>>;
   for (const key of stayPathLookupKeys(slug)) {
     listing = await getCachedBnhubListingById(key);

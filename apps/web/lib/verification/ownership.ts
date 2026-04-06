@@ -231,6 +231,10 @@ export async function setVerificationDecision(
         rejectionReason: decision === "REJECTED" ? notes ?? "Rejected by admin" : null,
         listingStatus:
           decision === "VERIFIED" ? (listing.listingStatus === "DRAFT" ? "DRAFT" : listing.listingStatus) : listing.listingStatus,
+        ...(decision === "REJECTED" && {
+          legalRentRightAttestedAt: null,
+          legalRentRightAttestationVersion: null,
+        }),
       },
     }),
     prisma.propertyVerification.upsert({
@@ -296,7 +300,11 @@ export async function requestMoreDocuments(
   const now = new Date();
   await prisma.shortTermListing.update({
     where: { id: listingId },
-    data: { listingVerificationStatus: "PENDING_DOCUMENTS" },
+    data: {
+      listingVerificationStatus: "PENDING_DOCUMENTS",
+      legalRentRightAttestedAt: null,
+      legalRentRightAttestationVersion: null,
+    },
   });
   await prisma.propertyVerification.update({
     where: { listingId },

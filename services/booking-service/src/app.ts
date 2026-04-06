@@ -1,7 +1,7 @@
-import express from "express";
+import express, { type Application } from "express";
 import { createBookingsRouter, createAvailabilityRouter } from "./routes/bookings.js";
 
-const app = express();
+const app: Application = express();
 app.use(express.json());
 
 app.use("/v1/bookings", createBookingsRouter());

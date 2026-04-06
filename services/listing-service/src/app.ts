@@ -1,8 +1,8 @@
-import express from "express";
+import express, { type Application } from "express";
 import { authMiddleware } from "./authMiddleware.js";
 import { createPropertiesRouter } from "./routes/properties.js";
 
-const app = express();
+const app: Application = express();
 app.use(express.json());
 
 app.use("/v1/properties", authMiddleware, createPropertiesRouter());

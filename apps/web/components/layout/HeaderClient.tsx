@@ -102,10 +102,10 @@ export default function HeaderClient({
       {!loggedIn ? (
         <>
           <Link href="/auth/login" className={HEADER_CONTROL}>
-            {t("auth_login")}
+            {t("auth.login")}
           </Link>
           <Link href="/auth/signup" className={HEADER_CONTROL_CTA}>
-            {t("auth_signup")}
+            {t("auth.signup")}
           </Link>
         </>
       ) : null}
@@ -116,7 +116,7 @@ export default function HeaderClient({
         aria-expanded={mobileOpen}
         aria-controls="mobile-menu"
       >
-        <span className="sr-only">{t("a11y_toggleMenu")}</span>
+        <span className="sr-only">{t("common.a11y.toggleMenu")}</span>
         <svg
           className="h-5 w-5"
           viewBox="0 0 24 24"
@@ -245,14 +245,14 @@ export default function HeaderClient({
                     onClick={() => setMobileOpen(false)}
                     className={`${HEADER_CONTROL} w-full`}
                   >
-                    {t("auth_login")}
+                    {t("auth.login")}
                   </Link>
                   <Link
                     href="/auth/signup"
                     onClick={() => setMobileOpen(false)}
                     className={`${HEADER_CONTROL_CTA} w-full`}
                   >
-                    {t("auth_signup")}
+                    {t("auth.signup")}
                   </Link>
                 </div>
               ) : null}

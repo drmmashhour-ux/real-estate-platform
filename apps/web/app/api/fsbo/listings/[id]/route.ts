@@ -3,6 +3,7 @@ import { getGuestId } from "@/lib/auth/session";
 import { isPlatformAdmin } from "@/lib/auth/is-platform-admin";
 import { parseFsboListingBody, toFsboUpdateData } from "@/lib/fsbo/validation";
 import { isFsboPubliclyVisible } from "@/lib/fsbo/constants";
+import { syncFsboListingExpiryState } from "@/lib/fsbo/listing-expiry";
 import { requireContentLicenseAccepted } from "@/lib/legal/content-license-enforcement";
 import { getFsboListingTrustSummary } from "@/lib/fsbo/listing-trust-summary";
 import { refreshListingTrustGraphOnSave } from "@/lib/trustgraph/application/integrations/sellerDeclarationIntegration";
@@ -17,6 +18,7 @@ export async function GET(
 ) {
   const { id } = await context.params;
   const userId = await getGuestId();
+  await syncFsboListingExpiryState(id, { sendReminder: Boolean(userId) }).catch(() => null);
   const row = await prisma.fsboListing.findUnique({
     where: { id },
     include: {
@@ -88,8 +90,17 @@ export async function GET(
             publishPriceCents: row.publishPriceCents,
             paidPublishAt: row.paidPublishAt,
             featuredUntil: row.featuredUntil,
+            expiresAt: row.expiresAt,
+            expiryReminderSentAt: row.expiryReminderSentAt,
+            archivedAt: row.archivedAt,
             paymentLabel:
               row.status === "DRAFT" ? "unpaid" : row.paidPublishAt ? "paid" : "active_no_timestamp",
+          }
+        : {}),
+      ...(publicOk
+        ? {
+            listingOwnerType: row.listingOwnerType,
+            expiresAt: row.expiresAt,
           }
         : {}),
     },

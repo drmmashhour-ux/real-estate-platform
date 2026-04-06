@@ -1,6 +1,13 @@
 import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
+import { formatAssistantChecklistMessage } from "@/lib/bnhub/host-verification-assistant";
+import {
+  buildModerationRequirements,
+  hasBlockingMissingRequirements,
+  type ModerationListingForRequirements,
+} from "@/lib/bnhub/moderation-requirements";
+import { loadShortTermListingForRequirements } from "@/lib/bnhub/verification";
 import { submitListingForVerification } from "@/lib/verification/ownership";
 import { runFraudChecks } from "@/lib/verification/fraud-flags";
 
@@ -54,6 +61,70 @@ export async function POST(request: NextRequest) {
     });
     const hasLandRegistryExtract = docs.some((d) => d.documentType === "LAND_REGISTRY_EXTRACT");
     const hasBrokerAuthorization = docs.some((d) => d.documentType === "BROKER_AUTHORIZATION");
+
+    const row = await loadShortTermListingForRequirements(listingId);
+    if (!row) {
+      return Response.json({ error: "Listing not found" }, { status: 404 });
+    }
+
+    const effectiveDocRows = [...row.propertyDocuments];
+    if (hasLandRegistryExtract && !docs.some((d) => d.documentType === "LAND_REGISTRY_EXTRACT")) {
+      effectiveDocRows.push({ id: "__submit_claimed_land_registry__" });
+    }
+    if (
+      listingAuthorityType === "BROKER" &&
+      hasBrokerAuthorization &&
+      !docs.some((d) => d.documentType === "BROKER_AUTHORIZATION")
+    ) {
+      effectiveDocRows.push({ id: "__submit_claimed_broker_auth__" });
+    }
+
+    const synthetic: ModerationListingForRequirements = {
+      ...row,
+      address: String(address).trim(),
+      cadastreNumber: String(cadastreNumber).trim(),
+      municipality: String(municipality).trim(),
+      province: String(province).trim(),
+      listingAuthorityType,
+      brokerLicenseNumber:
+        listingAuthorityType === "BROKER"
+          ? String(brokerLicenseNumber || "").trim() || null
+          : row.brokerLicenseNumber,
+      brokerageName:
+        listingAuthorityType === "BROKER"
+          ? String(brokerageName || "").trim() || null
+          : row.brokerageName,
+      propertyDocuments: effectiveDocRows,
+    };
+
+    const preSubmitRequirements = buildModerationRequirements(synthetic, {
+      omitKeys: new Set(["property_verification"]),
+    });
+    if (hasBlockingMissingRequirements(preSubmitRequirements)) {
+      return Response.json(
+        {
+          code: "CHECKLIST_INCOMPLETE",
+          error: "Verification checklist incomplete — fix missing items before submitting.",
+          requirements: preSubmitRequirements,
+          assistantMessage: formatAssistantChecklistMessage(row.title, preSubmitRequirements),
+        },
+        { status: 400 }
+      );
+    }
+
+    const photosReq = preSubmitRequirements.find((r) => r.key === "photos");
+    if (photosReq && photosReq.status !== "complete") {
+      return Response.json(
+        {
+          code: "PHOTOS_INSUFFICIENT",
+          error:
+            "Photo set is not ready for review — upload at least 10 clear images covering the whole unit, beds, bathrooms, kitchen, and amenities.",
+          requirements: preSubmitRequirements,
+          assistantMessage: formatAssistantChecklistMessage(row.title, preSubmitRequirements),
+        },
+        { status: 400 }
+      );
+    }
 
     const result = await submitListingForVerification({
       listingId,

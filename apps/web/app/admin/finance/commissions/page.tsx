@@ -12,13 +12,13 @@ export const dynamic = "force-dynamic";
 
 type Sp = { source?: string; brokerId?: string };
 
-export default async function AdminFinanceCommissionsPage({ searchParams }: { searchParams: Promise<Sp> }) {
+export default async function AdminFinanceCommissionsPage({ searchParams }: { searchParams?: Promise<Sp> }) {
   const userId = await getGuestId();
   if (!userId) redirect("/auth/login");
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
   if (!isFinancialStaff(user?.role)) redirect("/");
 
-  const sp = await searchParams;
+  const sp = (await searchParams) ?? {};
   const source = sp.source?.trim();
   const brokerId = sp.brokerId?.trim();
 

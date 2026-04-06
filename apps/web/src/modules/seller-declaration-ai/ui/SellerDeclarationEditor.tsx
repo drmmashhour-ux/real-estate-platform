@@ -1,11 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { sellerDeclarationSections } from "@/src/modules/seller-declaration-ai/domain/declaration.schema";
+import { getSellerDeclarationSections } from "@/src/modules/seller-declaration-ai/domain/declaration.schema";
 import { runDeclarationValidationDeterministic } from "@/src/modules/seller-declaration-ai/validation/declarationValidationService";
 import { DeclarationSectionCard } from "@/src/modules/seller-declaration-ai/ui/DeclarationSectionCard";
 import { DeclarationAIHelperPanel } from "@/src/modules/seller-declaration-ai/ui/DeclarationAIHelperPanel";
 import { DeclarationValidationSummary } from "@/src/modules/seller-declaration-ai/ui/DeclarationValidationSummary";
+import { DeclarationWorkflowGuideCard } from "@/src/modules/seller-declaration-ai/ui/DeclarationWorkflowGuideCard";
 import { DeclarationReviewSummary } from "@/src/modules/seller-declaration-ai/ui/DeclarationReviewSummary";
 import { DeclarationTopBar } from "@/src/modules/seller-declaration-ai/ui/DeclarationTopBar";
 import { LegalWorkflowStatusBar } from "@/src/modules/legal-workflow/ui/LegalWorkflowStatusBar";
@@ -28,7 +29,7 @@ type Props = { listingId: string; initialDraftId: string; initialPayload?: Recor
 export function SellerDeclarationEditor({ listingId, initialDraftId, initialPayload = {} }: Props) {
   const [draftId, setDraftId] = useState(initialDraftId);
   const [values, setValues] = useState<Record<string, unknown>>(initialPayload);
-  const [activeSection, setActiveSection] = useState<string>(sellerDeclarationSections[0]?.key ?? "");
+  const [activeSection, setActiveSection] = useState<string>(getSellerDeclarationSections(initialPayload)[0]?.key ?? "");
   const [suggestion, setSuggestion] = useState("");
   const [missingFacts, setMissingFacts] = useState<string[]>([]);
   const [questions, setQuestions] = useState<string[]>([]);
@@ -56,7 +57,18 @@ export function SellerDeclarationEditor({ listingId, initialDraftId, initialPayl
     resolvedRecent: any[];
   } | null>(null);
 
-  const activeSectionObj = useMemo(() => sellerDeclarationSections.find((s) => s.key === activeSection) ?? sellerDeclarationSections[0], [activeSection]);
+  const resolvedSections = useMemo(() => getSellerDeclarationSections(values), [values]);
+
+  const activeSectionObj = useMemo(
+    () => resolvedSections.find((s) => s.key === activeSection) ?? resolvedSections[0],
+    [activeSection, resolvedSections]
+  );
+
+  useEffect(() => {
+    if (!resolvedSections.some((section) => section.key === activeSection)) {
+      setActiveSection(resolvedSections[0]?.key ?? "");
+    }
+  }, [activeSection, resolvedSections]);
 
   const reloadWorkflowTasks = useCallback(async () => {
     const tv = await fetch(
@@ -144,6 +156,8 @@ export function SellerDeclarationEditor({ listingId, initialDraftId, initialPayl
             prev
               ? {
                   ...prev,
+                  declarationVariant: j.declarationVariant ?? prev.declarationVariant,
+                  representationMode: j.representationMode ?? prev.representationMode,
                   knowledgeRiskHints: j.knowledgeRiskHints ?? prev.knowledgeRiskHints ?? [],
                 }
               : prev,
@@ -155,13 +169,13 @@ export function SellerDeclarationEditor({ listingId, initialDraftId, initialPayl
   }, [values]);
 
   const sectionCompletion = useMemo(() => {
-    const readyCount = sellerDeclarationSections.filter((section) =>
+    const readyCount = resolvedSections.filter((section) =>
       section.fields
         .filter((f) => !f.conditional || values[f.conditional.fieldKey] === f.conditional.equals)
         .every((f) => !f.required || (typeof values[f.key] === "boolean" ? true : String(values[f.key] ?? "").trim().length > 0))
     ).length;
-    return Math.round((readyCount / Math.max(1, sellerDeclarationSections.length)) * 100);
-  }, [values]);
+    return Math.round((readyCount / Math.max(1, resolvedSections.length)) * 100);
+  }, [resolvedSections, values]);
 
   async function saveDraft() {
     const res = await fetch("/api/seller-declaration-ai/draft/save", {
@@ -268,8 +282,7 @@ export function SellerDeclarationEditor({ listingId, initialDraftId, initialPayl
   }
 
   function previewText() {
-    return sellerDeclarationSections
-      .map((section) => {
+    return resolvedSections.map((section) => {
         const lines = section.fields.map((f) => `${f.label}: ${String(values[f.key] ?? "")}`);
         return `${section.label}\n${lines.join("\n")}`;
       })
@@ -292,11 +305,14 @@ export function SellerDeclarationEditor({ listingId, initialDraftId, initialPayl
 
       <LegalWorkflowStatusBar status={workflowStatus} onRequestReview={requestReview} />
 
+      <DeclarationWorkflowGuideCard validation={validation} />
+
       <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
         <div className="space-y-3">
-          {sellerDeclarationSections.map((section) => {
+          {resolvedSections.map((section) => {
             const sectionStatus = validation?.sectionStatuses.find((s) => s.sectionKey === section.key);
             const sectionWarnings = (validation?.warningFlags ?? []).filter((w) => w.toLowerCase().includes(section.key.split("_")[0]));
+            const sectionContentIssues = (validation?.contentIssues ?? []).filter((issue) => issue.sectionKey === section.key);
             return (
               <DeclarationSectionCard
                 key={section.key}
@@ -304,6 +320,7 @@ export function SellerDeclarationEditor({ listingId, initialDraftId, initialPayl
                 values={values}
                 sectionReady={sectionStatus?.ready ?? false}
                 sectionWarnings={sectionWarnings}
+                sectionContentIssues={sectionContentIssues}
                 onChange={(k, v) => setValues((prev) => ({ ...prev, [k]: v }))}
                 onExplain={onExplain}
                 onSuggest={onSuggest}
@@ -320,6 +337,7 @@ export function SellerDeclarationEditor({ listingId, initialDraftId, initialPayl
             questionAnswers={questionAnswers}
             explain={explain}
             warnings={validation?.warningFlags ?? []}
+            contentIssues={(validation?.contentIssues ?? []).filter((issue) => issue.sectionKey === activeSection)}
             onApply={applySuggestion}
             onGenerateFollowUp={() => onFollowUp()}
             onAnswerChange={(q, a) => setQuestionAnswers((prev) => ({ ...prev, [q]: a }))}

@@ -12,9 +12,9 @@ export const metadata = {
 export default async function VerifyEmailPage({
   searchParams,
 }: {
-  searchParams: Promise<{ token?: string }>;
+  searchParams?: Promise<{ token?: string }>;
 }) {
-  const { token } = await searchParams;
+  const { token } = (await searchParams) ?? {};
   if (!token?.trim()) {
     redirect("/auth/login?error=missing_token");
   }

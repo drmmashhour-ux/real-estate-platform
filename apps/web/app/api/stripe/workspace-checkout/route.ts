@@ -15,7 +15,10 @@ export const dynamic = "force-dynamic";
 
 const bodySchema = z.object({
   planCode: z.string().min(1),
-  priceId: z.string().min(1),
+  /** Optional; falls back to STRIPE_PRICE_LECIPM_PRO when omitted. */
+  priceId: z.string().min(1).optional(),
+  /** Optional; resolves price via Stripe Price lookup_key. */
+  lookupKey: z.string().min(1).optional(),
   workspaceId: z.string().uuid().optional(),
   successUrl: z.string().url(),
   cancelUrl: z.string().url(),
@@ -79,6 +82,7 @@ export async function POST(req: Request) {
     successUrl: body.successUrl,
     cancelUrl: body.cancelUrl,
     priceId: body.priceId,
+    lookupKey: body.lookupKey,
     planCode: body.planCode,
     workspaceId: body.workspaceId,
   });

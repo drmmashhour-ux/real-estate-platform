@@ -19,9 +19,13 @@ import { getCityInsights, getWhyInvestContent } from "@/lib/city-insights";
 import { searchListingsPaginated } from "@/lib/bnhub/listings";
 import { getStaysRecommendedInCity } from "@/lib/recommendations";
 import { prisma } from "@/lib/db";
+import { buildFsboPublicVisibilityWhere } from "@/lib/fsbo/listing-expiry";
+import { isCitySearchPageEnabled } from "@/modules/multi-city/cityRolloutGate";
 import { FsboCompareButton } from "@/components/compare/FsboCompareButton";
 import { PLATFORM_CARREFOUR_NAME, platformCarrefourGoldGradientClass } from "@/lib/brand/platform";
 import { buildCityInternalLinks } from "@/src/modules/demand-engine/internalLinking";
+import { getListingTransactionFlagsForListings } from "@/lib/fsbo/listing-transaction-flag";
+import { ListingTransactionFlag } from "@/components/listings/ListingTransactionFlag";
 
 export const revalidate = 120;
 
@@ -78,6 +82,9 @@ export default async function CityPage({ params }: PageProps) {
   const slug = parseCitySlugParam(raw);
   if (!slug) notFound();
 
+  const searchEnabled = await isCitySearchPageEnabled(prisma, slug);
+  if (!searchEnabled) notFound();
+
   const config = getCityPageConfig(slug);
   const q = config.searchQuery;
 
@@ -85,7 +92,7 @@ export default async function CityPage({ params }: PageProps) {
     searchListingsPaginated({ city: q, page: 1, limit: 12, sort: "newest" }),
     prisma.fsboListing.findMany({
       where: {
-        AND: [{ status: "ACTIVE" }, { moderationStatus: "APPROVED" }, fsboCityWhereFromParam(q)],
+        AND: [buildFsboPublicVisibilityWhere(), fsboCityWhereFromParam(q)],
       },
       orderBy: [{ featuredUntil: { sort: "desc", nulls: "last" } }, { updatedAt: "desc" }],
       take: 12,
@@ -97,6 +104,7 @@ export default async function CityPage({ params }: PageProps) {
         bedrooms: true,
         images: true,
         coverImage: true,
+        status: true,
       },
     }),
     getCityInsights(slug),
@@ -118,6 +126,9 @@ export default async function CityPage({ params }: PageProps) {
 
   const bnhubBrowse = `/search/bnhub?location=${encodeURIComponent(q)}`;
   const fsboBrowse = `/sell?city=${encodeURIComponent(q)}`;
+  const transactionFlags = await getListingTransactionFlagsForListings(
+    fsboRows.map((listing) => ({ id: listing.id, status: listing.status }))
+  );
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
@@ -251,6 +262,11 @@ export default async function CityPage({ params }: PageProps) {
                           ) : null}
                         </div>
                         <div className="p-4">
+                          {transactionFlags.get(l.id) ? (
+                            <div className="mb-3">
+                              <ListingTransactionFlag flag={transactionFlags.get(l.id)!} />
+                            </div>
+                          ) : null}
                           <p className="font-semibold text-slate-900 group-hover:text-[#B8941F]">{l.title}</p>
                           <p className="mt-1 text-sm text-slate-600">{l.city}</p>
                           <p className="mt-2 text-sm font-medium text-slate-800">

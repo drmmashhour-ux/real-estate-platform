@@ -7,11 +7,13 @@ import { assertSellerHubSubmitReady } from "@/lib/fsbo/seller-hub-validation";
 import { persistSellerDeclarationAiReview } from "@/lib/fsbo/seller-declaration-ai-review";
 import { ensureFsboListingDocumentSlots } from "@/lib/fsbo/seller-hub-seed-documents";
 import { ensureFsboListingListingCode } from "@/lib/fsbo/ensure-fsbo-listing-code";
+import { syncFsboListingExpiryState } from "@/lib/fsbo/listing-expiry";
 import { hasActiveEnforceableContract } from "@/lib/legal/enforceable-contract";
 import { ENFORCEABLE_CONTRACT_TYPES } from "@/lib/legal/enforceable-contract-types";
 import { enforceableContractsRequired } from "@/lib/legal/enforceable-contracts-enforcement";
 import { isTrustGraphEnabled } from "@/lib/trustgraph/config";
 import { assertListingPublishTrustGate } from "@/lib/trustgraph/application/integrations/listingPublishIntegration";
+import { getPublicAppUrl } from "@/lib/config/public-app-url";
 
 export type FsboPublishCheckoutTrustGraphError = {
   blocking: Array<{ ruleCode: string; message: string }>;
@@ -40,7 +42,7 @@ export async function startFsboListingPublishCheckout(
 
   const listing = await prisma.fsboListing.findUnique({
     where: { id: listingId },
-    include: { documents: true },
+    include: { documents: true, sellerSupportingDocuments: { select: { category: true, status: true, declarationSectionKey: true } } },
   });
   if (!listing || listing.ownerId !== userId) {
     return { ok: false, error: "Not found", status: 404 };
@@ -49,7 +51,7 @@ export async function startFsboListingPublishCheckout(
     return { ok: false, error: "Only draft listings can be published", status: 409 };
   }
 
-  const gate = await assertSellerHubSubmitReady(listing, listing.documents);
+  const gate = await assertSellerHubSubmitReady(listing, listing.documents, listing.sellerSupportingDocuments);
   if (!gate.ok) {
     return { ok: false, error: gate.errors.join(" · "), status: 400 };
   }
@@ -116,6 +118,7 @@ export async function startFsboListingPublishCheckout(
         entityId: listingId,
         payload: { publishPlan: plan, freePublish: true },
       }).catch(() => {});
+      await syncFsboListingExpiryState(listingId, { sendReminder: false }).catch(() => null);
       return { ok: true, freePublish: true };
     }
     return {
@@ -127,8 +130,7 @@ export async function startFsboListingPublishCheckout(
   }
 
   const amountCents = getFsboPlanPublishPriceCents(plan);
-  const base =
-    process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, "") || "http://localhost:3000";
+  const base = getPublicAppUrl();
   const result = await createCheckoutSession({
     successUrl: `${base}/dashboard/fsbo?fsboPaid=1`,
     cancelUrl: `${base}/sell/create?id=${encodeURIComponent(listingId)}`,

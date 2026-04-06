@@ -22,6 +22,8 @@ import { fsboCityWhereFromParam } from "@/lib/geo/city-search";
 import { getFsboPremiumPublishPriceCents, getFsboPublishPriceCents } from "@/lib/fsbo/constants";
 import { computeListingInvestmentRecommendation } from "@/lib/fsbo/listing-investment-recommendation";
 import { ListingInvestmentRecommendationChip } from "@/components/fsbo/ListingInvestmentRecommendationCard";
+import { getListingTransactionFlagsForListings } from "@/lib/fsbo/listing-transaction-flag";
+import { ListingTransactionFlag } from "@/components/listings/ListingTransactionFlag";
 
 export const dynamic = "force-dynamic";
 
@@ -150,8 +152,12 @@ export default async function FsboSellPage({
       coverImage: true,
       featuredUntil: true,
       publishPlan: true,
+      status: true,
     },
   });
+  const transactionFlags = await getListingTransactionFlagsForListings(
+    listings.map((listing) => ({ id: listing.id, status: listing.status }))
+  );
 
   const fsboBasicCents = getFsboPublishPriceCents();
   const fsboPremiumCents = getFsboPremiumPublishPriceCents();
@@ -547,6 +553,11 @@ export default async function FsboSellPage({
                     )}
                   </Link>
                   <div className="p-4">
+                    {transactionFlags.get(l.id) ? (
+                      <div className="mb-3">
+                        <ListingTransactionFlag flag={transactionFlags.get(l.id)!} />
+                      </div>
+                    ) : null}
                     <h3 className="line-clamp-2 font-semibold text-white">
                       <Link href={`/sell/${l.id}`} className="hover:text-premium-gold">
                         {l.title}

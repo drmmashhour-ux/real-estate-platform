@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { getGuestId } from "@/lib/auth/session";
 import { computeBookingPricing } from "@/lib/bnhub/booking-pricing";
 import type { SelectedAddonInput } from "@/lib/bnhub/hospitality-addons";
 
@@ -36,12 +37,15 @@ export async function GET(request: NextRequest) {
     const guestCount =
       guestCountRaw != null ? Math.max(1, Math.min(50, parseInt(guestCountRaw, 10) || 0)) : undefined;
 
+    const guestUserId = (await getGuestId()) ?? undefined;
+
     const result = await computeBookingPricing({
       listingId,
       checkIn,
       checkOut,
       guestCount: guestCount && guestCount > 0 ? guestCount : undefined,
       selectedAddons,
+      guestUserId,
     });
     if (!result) {
       return Response.json({ error: "Listing not found or invalid dates" }, { status: 404 });

@@ -7,6 +7,8 @@ import { HubLayout } from "@/components/hub/HubLayout";
 import { prisma } from "@/lib/db";
 import { hubNavigation } from "@/lib/hub/navigation";
 import { AdminAuditTimelinesPanel } from "../immo-logs/AdminAuditTimelinesPanel";
+import { getAdminMovementMonitor } from "@/lib/admin/admin-movement-monitor";
+import { AdminMovementAssistantPanel } from "@/components/admin/AdminMovementAssistantPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +18,7 @@ export default async function AdminGlobalTimelinePage() {
   const u = await prisma.user.findUnique({ where: { id }, select: { role: true } });
   if (u?.role !== "ADMIN") redirect("/dashboard");
   const role = await getUserRole();
+  const movementMonitor = await getAdminMovementMonitor();
 
   return (
     <HubLayout title="Global timeline" hubKey="admin" navigation={hubNavigation.admin} showAdminInSwitcher={isHubAdminRole(role)}>
@@ -30,6 +33,12 @@ export default async function AdminGlobalTimelinePage() {
             component as operational reviews.
           </p>
         </div>
+        <AdminMovementAssistantPanel
+          last24h={movementMonitor.last24h}
+          priorityFeed={movementMonitor.priorityFeed}
+          aiSummary={movementMonitor.aiSummary}
+          lanes={movementMonitor.lanes}
+        />
         <AdminAuditTimelinesPanel />
       </div>
     </HubLayout>

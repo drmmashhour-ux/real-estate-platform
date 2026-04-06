@@ -14,11 +14,11 @@ import { prisma } from "@/lib/db";
 export default async function BNHubHostDashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ ownerId?: string; applied?: string }>;
+  searchParams?: Promise<{ ownerId?: string; applied?: string }>;
 }) {
   const role = await getUserRole();
   const theme = getHubTheme("bnhub");
-  const { ownerId: ownerIdFromQuery, applied } = await searchParams;
+  const { ownerId: ownerIdFromQuery, applied } = (await searchParams) ?? {};
 
   const userId = await getGuestId();
   const ownerId =

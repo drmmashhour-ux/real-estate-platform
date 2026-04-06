@@ -44,7 +44,11 @@ export const INVITE_FRIEND_LINE =
   "I'm using LECIPM to analyze real estate deals — try the free analyzer (no signup required to run numbers):";
 
 export function buildInviteFriendMessage(origin: string, referrerUserId?: string): string {
-  return `${INVITE_FRIEND_LINE}\n\n${buildAnalyzeInviteShareUrl(origin, referrerUserId)}`;
+  const analyzer = `${INVITE_FRIEND_LINE}\n\n${buildAnalyzeInviteShareUrl(origin, referrerUserId)}`;
+  if (!referrerUserId?.trim()) return analyzer;
+  const viral = new URL("/invite", origin);
+  viral.searchParams.set("ref", referrerUserId.trim());
+  return `${analyzer}\n\nFull account invite (referral rewards on conversion):\n${viral.toString()}`;
 }
 
 /** Viral “share the tool” copy (dashboard banner) */

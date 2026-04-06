@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { QuebecCanadaFlagsPair } from "@/components/brand/QuebecCanadaFlagsPair";
 import {
   getPublicContactEmail,
@@ -26,8 +27,13 @@ const PRIMARY_PHONE_DISPLAY = "+1 844 441 5444";
 const PRIMARY_PHONE_HREF = "tel:+18444415444";
 
 export default function FooterClient() {
+  const pathname = usePathname() ?? "";
   const { t } = useI18n();
   const year = new Date().getFullYear();
+
+  if (pathname.startsWith("/admin")) {
+    return null;
+  }
   const supportPhone = getSupportPhoneDisplay();
   const supportTel = getSupportTelHref();
   const brokerPhone = getBrokerPhoneDisplay();
@@ -60,6 +66,15 @@ export default function FooterClient() {
           </Link>
           <Link href="/contact" className="text-white transition hover:text-premium-gold">
             Contact
+          </Link>
+          <Link href="/list-your-property" className="text-white transition hover:text-premium-gold">
+            List your property
+          </Link>
+          <Link href="/host/listings/new" className="text-white transition hover:text-premium-gold">
+            Start a listing (host)
+          </Link>
+          <Link href="/broker/dashboard" className="text-white transition hover:text-premium-gold">
+            Broker workspace
           </Link>
         </nav>
         <div className="mb-10">
@@ -171,12 +186,12 @@ export default function FooterClient() {
               </li>
               <li>
                 <Link href="/legal/privacy" className={linkCls}>
-                  {t("footer_privacy")}
+                  {t("footer.privacy")}
                 </Link>
               </li>
               <li>
                 <Link href="/legal/terms" className={linkCls}>
-                  {t("footer_terms")}
+                  {t("footer.terms")}
                 </Link>
               </li>
             </ul>
@@ -253,22 +268,22 @@ export default function FooterClient() {
               </li>
               <li>
                 <Link href="/legal/terms" className={linkCls}>
-                  {t("footer_terms")}
+                  {t("footer.terms")}
                 </Link>
               </li>
               <li>
                 <Link href="/legal/privacy" className={linkCls}>
-                  {t("footer_privacy")}
+                  {t("footer.privacy")}
                 </Link>
               </li>
               <li>
                 <Link href="/legal" className={linkCls}>
-                  {t("footer_legal_center")}
+                  {t("footer.legalCenter")}
                 </Link>
               </li>
               <li>
                 <Link href="/legal/copyright" className={linkCls}>
-                  {t("footer_copyright_page")}
+                  {t("footer.copyrightPage")}
                 </Link>
               </li>
             </ul>
@@ -302,7 +317,7 @@ export default function FooterClient() {
                 <br />
                 <a href={supportTel} className="font-medium text-white hover:text-premium-gold">
                   {supportPhone}
-                  <span className="text-[#B3B3B3]/90"> · {t("footer_callUs")}</span>
+                  <span className="text-[#B3B3B3]/90"> · {t("footer.callUs")}</span>
                 </a>
               </li>
               <li>

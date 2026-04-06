@@ -28,7 +28,7 @@ cp .env.example .env   # optional; edit per app/service
 npm run dev
 ```
 
-Opens the web app at [http://localhost:3000](http://localhost:3000).
+Opens the web app at [http://localhost:3001](http://localhost:3001) (see `apps/web` `pnpm dev`).
 
 ### Database (web-app + BNHub)
 
@@ -137,7 +137,7 @@ The platform supports this first operational flow:
 3. **Host creates listing** → listing-service `POST /v1/properties` or web-app BNHub flow
 4. **Guest searches** → search-service `GET /v1/search/properties` or web-app `/bnhub`
 5. **Guest books stay** → booking-service `POST /v1/bookings`
-6. **Guest pays** → payment-service `POST /v1/payments/intent` + `POST /v1/payments/confirm`
+6. **Guest pays** → platform Stripe **Checkout Session** (`/api/stripe/checkout`); card data stays on Stripe’s hosted UI; payment-service `POST /v1/payments/intent` is disabled (410) for PCI ([docs/STRIPE_CONNECT_VALIDATION.md](docs/STRIPE_CONNECT_VALIDATION.md))
 7. **Host receives booking** → booking-service `GET /v1/bookings/:id`
 8. **Users communicate** → messaging-service `GET/POST /v1/conversations`, `POST /v1/conversations/:id/messages`
 9. **Guest leaves review** → review-service `POST /v1/reviews`

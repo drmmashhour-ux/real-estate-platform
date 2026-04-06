@@ -7,6 +7,7 @@ import { gtagReportEvent } from "@/modules/analytics/services/gtag";
 import { pushRetargetingPayload } from "@/lib/retargeting/data-layer";
 import { track } from "@/lib/tracking";
 import { INVESTMENT_HUB_FOCUS, isInvestmentShellPath } from "@/lib/product-focus";
+import { suppressGlobalMarketingOverlays } from "@/lib/ui/dev-overlays";
 
 function hiddenPath(pathname: string | null): boolean {
   if (!pathname) return true;
@@ -34,6 +35,7 @@ export function GrowthConversionLayer() {
     []
   );
 
+  if (suppressGlobalMarketingOverlays()) return null;
   if (hiddenPath(pathname)) return null;
 
   return (

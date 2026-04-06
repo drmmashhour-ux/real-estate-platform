@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { BrandAssetPlaceholder } from "@/components/brand/BrandAssetPlaceholder";
+import { BrandGuidelineStrip } from "@/components/brand/BrandGuidelineStrip";
 import { CONTACT_EMAIL, getSupportPhoneDisplay, getSupportTelHref } from "@/lib/config/contact";
 import { PLATFORM_CARREFOUR_NAME, PLATFORM_NAME } from "@/lib/brand/platform";
 import { LeadCTA } from "@/components/ui/LeadCTA";
@@ -8,6 +10,10 @@ import { LeadCTA } from "@/components/ui/LeadCTA";
 const BROKER_PHONE_DISPLAY = "+1 514 462 4457";
 const TEL = "tel:+15144624457";
 const WA = "https://wa.me/15144624457";
+const BROKER_LICENSE_LABEL = "License No. # 1321 Quebec";
+const BROKER_OFFICE = "207-805 boul. Chomedey, Laval, QC H7V 0B1";
+const BROKER_CARD_EMAIL = "dr.m.mashhour@gmail.com";
+const BROKER_CARD_WEBSITE = "www.mashhourinvestments.com";
 
 export const metadata: Metadata = {
   title: { absolute: "Mohamed Al Mashhour | Residential Real Estate Broker J1321" },
@@ -76,7 +82,7 @@ export default function MohamedAlMashhourPage() {
           <div className="grid gap-0 md:grid-cols-2">
             <div className="relative aspect-[4/5] max-h-[420px] w-full md:max-h-none">
               <Image
-                src="/images/broker.jpg"
+                src="/branding/mohamed-portrait.png"
                 alt="Mohamed Al Mashhour"
                 fill
                 className="object-cover"
@@ -99,6 +105,104 @@ export default function MohamedAlMashhourPage() {
             </div>
           </div>
         </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-4 py-4 sm:px-6 lg:px-8">
+        <div className="grid gap-6 lg:grid-cols-[1.05fr,0.95fr]">
+          <div className="rounded-3xl border border-premium-gold/25 bg-[radial-gradient(circle_at_top,#2a2108,transparent_35%),linear-gradient(180deg,#0d0d0d,#111111)] p-6">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold">Broker identity</p>
+            <h2 className="mt-3 text-2xl font-semibold text-white">Professional card details on-platform</h2>
+            <div className="mt-6 rounded-3xl border border-premium-gold/30 bg-black/30 p-6">
+              <p className="text-lg font-semibold text-premium-gold">Mohamed Al Mashhour</p>
+              <p className="mt-2 text-sm text-slate-200">Residential Real Estate Broker</p>
+              <p className="mt-1 text-sm text-slate-400">{PLATFORM_CARREFOUR_NAME}</p>
+              <p className="mt-4 text-sm text-white">{BROKER_LICENSE_LABEL}</p>
+              <div className="mt-5 space-y-2 text-sm text-slate-300">
+                <p>{BROKER_OFFICE}</p>
+                <p>
+                  <a href={TEL} className="hover:text-premium-gold">
+                    {BROKER_PHONE_DISPLAY}
+                  </a>
+                </p>
+                <p>
+                  <a href={`mailto:${BROKER_CARD_EMAIL}`} className="hover:text-premium-gold">
+                    {BROKER_CARD_EMAIL}
+                  </a>
+                </p>
+                <p>
+                  <a href={`https://${BROKER_CARD_WEBSITE}`} target="_blank" rel="noopener noreferrer" className="hover:text-premium-gold">
+                    {BROKER_CARD_WEBSITE}
+                  </a>
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-white/10 bg-[#121212] p-6">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold">Platform + mobile tracking</p>
+            <h2 className="mt-3 text-2xl font-semibold text-white">Real estate broker platform with field visibility</h2>
+            <p className="mt-4 text-sm leading-relaxed text-slate-400">
+              The design direction in your images clearly points to a black-and-gold broker operating system with phone-based
+              property tracking. This platform can present that identity as a premium broker workspace, not only a listing site.
+            </p>
+            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+                <p className="text-sm font-semibold text-white">Mobile lead tracking</p>
+                <p className="mt-2 text-sm text-slate-400">
+                  Follow listing activity, buyer contact, and response speed from a phone-friendly interface.
+                </p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+                <p className="text-sm font-semibold text-white">Property map visibility</p>
+                <p className="mt-2 text-sm text-slate-400">
+                  Connect listings, locations, and field activity into one broker dashboard for faster action.
+                </p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+                <p className="text-sm font-semibold text-white">Premium broker identity</p>
+                <p className="mt-2 text-sm text-slate-400">
+                  Present your license, office, direct phone, and brand in a more serious luxury-operator style.
+                </p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+                <p className="text-sm font-semibold text-white">Future app layer</p>
+                <p className="mt-2 text-sm text-slate-400">
+                  This can evolve into a full mobile-first broker app for tracking buildings, visits, and partner coordination.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
+        <div className="grid gap-6 lg:grid-cols-3">
+          <BrandAssetPlaceholder
+            title="Broker logo / wordmark"
+            subtitle="Reserved for the clean exported LECIPM logo or broker luxury wordmark from Canva."
+            formatHint="SVG or transparent PNG"
+            imageSrc="/branding/lecipm-logo-gold.png"
+            imageAlt="LECIPM gold logo"
+          />
+          <BrandAssetPlaceholder
+            title="Broker business card"
+            subtitle="Reserved for the clean exported broker card with license, office, and direct contact details."
+            formatHint="PNG recommended"
+            imageSrc="/branding/mohamed-broker-card.png"
+            imageAlt="Mohamed Al Mashhour broker card"
+          />
+          <BrandAssetPlaceholder
+            title="Mobile app tracking visual"
+            subtitle="Reserved for the exported phone or dashboard visual showing building tracking, maps, or field workflow."
+            formatHint="PNG or WebP"
+            imageSrc="/branding/mohamed-skyline.png"
+            imageAlt="Mohamed Al Mashhour skyline brand visual"
+          />
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
+        <BrandGuidelineStrip />
       </section>
 
       <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">

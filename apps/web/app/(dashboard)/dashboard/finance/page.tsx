@@ -49,51 +49,49 @@ export default async function FinanceDashboardPage() {
     );
   }
 
-  const [pendingSplits, unpaidAgg, paidAgg, payAgg, dealAgg, invoices, payments] = await Promise.all([
-    prisma.commissionSplit.count({ where: { tenantId, status: "PENDING" } }),
-    prisma.tenantInvoice.aggregate({
-      where: { tenantId, status: { in: ["ISSUED", "PARTIALLY_PAID", "OVERDUE"] } },
-      _sum: { totalAmount: true },
-    }),
-    prisma.tenantInvoice.aggregate({
-      where: { tenantId, status: "PAID" },
-      _sum: { totalAmount: true },
-    }),
-    prisma.paymentRecord.aggregate({
-      where: { tenantId, status: "SUCCEEDED", type: "INCOMING" },
-      _sum: { amount: true },
-    }),
-    prisma.dealFinancial.aggregate({
-      where: { tenantId },
-      _sum: { netCommission: true, grossCommission: true },
-    }),
-    prisma.tenantInvoice.findMany({
-      where: { tenantId },
-      orderBy: { createdAt: "desc" },
-      take: 8,
-      select: {
-        id: true,
-        invoiceNumber: true,
-        status: true,
-        totalAmount: true,
-        currency: true,
-        dueAt: true,
-      },
-    }),
-    prisma.paymentRecord.findMany({
-      where: { tenantId },
-      orderBy: { createdAt: "desc" },
-      take: 8,
-      select: {
-        id: true,
-        type: true,
-        status: true,
-        amount: true,
-        currency: true,
-        createdAt: true,
-      },
-    }),
-  ]);
+  const pendingSplits = await prisma.commissionSplit.count({ where: { tenantId, status: "PENDING" } });
+  const unpaidAgg = await prisma.tenantInvoice.aggregate({
+    where: { tenantId, status: { in: ["ISSUED", "PARTIALLY_PAID", "OVERDUE"] } },
+    _sum: { totalAmount: true },
+  });
+  const paidAgg = await prisma.tenantInvoice.aggregate({
+    where: { tenantId, status: "PAID" },
+    _sum: { totalAmount: true },
+  });
+  const payAgg = await prisma.paymentRecord.aggregate({
+    where: { tenantId, status: "SUCCEEDED", type: "INCOMING" },
+    _sum: { amount: true },
+  });
+  const dealAgg = await prisma.dealFinancial.aggregate({
+    where: { tenantId },
+    _sum: { netCommission: true, grossCommission: true },
+  });
+  const invoices = await prisma.tenantInvoice.findMany({
+    where: { tenantId },
+    orderBy: { createdAt: "desc" },
+    take: 8,
+    select: {
+      id: true,
+      invoiceNumber: true,
+      status: true,
+      totalAmount: true,
+      currency: true,
+      dueAt: true,
+    },
+  });
+  const payments = await prisma.paymentRecord.findMany({
+    where: { tenantId },
+    orderBy: { createdAt: "desc" },
+    take: 8,
+    select: {
+      id: true,
+      type: true,
+      status: true,
+      amount: true,
+      currency: true,
+      createdAt: true,
+    },
+  });
 
   const staging = isStagingEnv();
 

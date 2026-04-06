@@ -22,7 +22,7 @@ export const TERMS_FR_HTML = `
 <h2>10. Modération</h2>
 <p>Retrait de contenu, suspension ou fermeture de compte si violation ou risque.</p>
 <h2>11. Contact</h2>
-<p><a href="mailto:info@mashhourinvestments.com">info@mashhourinvestments.com</a> · <a href="/legal/terms">Texte anglais complet</a></p>
+<p><a href="mailto:dr.m.mashhour@gmail.com">dr.m.mashhour@gmail.com</a> · <a href="/legal/terms">Texte anglais complet</a></p>
 `;
 
 export const PRIVACY_FR_HTML = `
@@ -34,5 +34,5 @@ export const PRIVACY_FR_HTML = `
 <h2>Protection</h2>
 <p>Mesures raisonnables incluant HTTPS ; pas de revente de données personnelles.</p>
 <h2>Droits</h2>
-<p>Selon les lois applicables (Loi 25, resemblant PIPEDA), accès, correction, retrait dans la mesure possible : info@mashhourinvestments.com</p>
+<p>Selon les lois applicables (Loi 25, resemblant PIPEDA), accès, correction, retrait dans la mesure possible : dr.m.mashhour@gmail.com</p>
 `;

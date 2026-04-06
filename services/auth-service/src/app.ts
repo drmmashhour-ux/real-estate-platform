@@ -1,5 +1,5 @@
-import express from "express";
-import { PrismaClient } from "@prisma/client";
+import express, { type Application } from "express";
+import { PrismaClient } from "./generated/prisma/index.js";
 import { config } from "./config.js";
 import { BcryptPasswordHasher } from "./infrastructure/crypto/BcryptPasswordHasher.js";
 import { JwtTokenService } from "./infrastructure/jwt/JwtTokenService.js";
@@ -55,7 +55,7 @@ const getMe = new GetMe(userRepo);
 const forgotPassword = new ForgotPassword(userRepo, prisma);
 const resetPassword = new ResetPassword(userRepo, passwordHasher, prisma);
 
-const app = express();
+const app: Application = express();
 app.use(express.json());
 
 const authRouter = createAuthRouter(registerUser, login, logout, refreshTokens, getMe, forgotPassword, resetPassword);

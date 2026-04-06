@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { suppressGlobalMarketingOverlays } from "@/lib/ui/dev-overlays";
 
 const STORAGE_KEY = "lecipm_onboarding_v1";
 
@@ -25,8 +26,15 @@ export function OnboardingModal() {
   const sp = searchParams?.toString() ?? "";
 
   useEffect(() => {
+    if (suppressGlobalMarketingOverlays()) return;
     if (!pathname) return;
-    if (pathname.startsWith("/admin") || pathname.startsWith("/embed")) return;
+    if (
+      pathname.startsWith("/admin") ||
+      pathname.startsWith("/embed") ||
+      pathname.startsWith("/auth")
+    ) {
+      return;
+    }
 
     const force = new URLSearchParams(sp).get("onboarding") === "1";
     try {

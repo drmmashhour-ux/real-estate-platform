@@ -1,11 +1,12 @@
 import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
 import { getStripe, isStripeConfigured } from "@/lib/stripe";
-import { plans, type PlanKey } from "@/lib/billing/plans";
+import { PAID_STORAGE_PLAN_KEYS, plans, type PlanKey } from "@/lib/billing/plans";
+import { getPublicAppUrl } from "@/lib/config/public-app-url";
 
 export const dynamic = "force-dynamic";
 
-const VALID_PLANS: PlanKey[] = ["basic", "pro"];
+const VALID_PLANS: PlanKey[] = PAID_STORAGE_PLAN_KEYS;
 
 /**
  * POST /api/billing/checkout
@@ -30,7 +31,7 @@ export async function POST(request: NextRequest) {
     const plan = body?.plan as string | undefined;
     if (!plan || !VALID_PLANS.includes(plan as PlanKey)) {
       return Response.json(
-        { error: "plan must be basic or pro" },
+        { error: "plan must be basic, pro, or platinum" },
         { status: 400 }
       );
     }
@@ -39,9 +40,7 @@ export async function POST(request: NextRequest) {
     const amountCents = Math.round(planConfig.price * 100);
 
     const baseUrl =
-      process.env.NEXT_PUBLIC_APP_URL ||
-      request.nextUrl?.origin ||
-      "http://localhost:3000";
+      process.env.NEXT_PUBLIC_APP_URL?.trim() || request.nextUrl?.origin || getPublicAppUrl();
     const successUrl = `${baseUrl}/dashboard/storage?upgrade=success&plan=${encodeURIComponent(plan)}`;
     const cancelUrl = `${baseUrl}/dashboard/storage?upgrade=cancelled`;
 

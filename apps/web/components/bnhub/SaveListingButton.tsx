@@ -37,24 +37,69 @@ export function SaveListingButton({
 }) {
   const [saved, setSaved] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [serverSync, setServerSync] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    setSaved(readSaved().has(listingId));
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/bnhub/favorites", { credentials: "same-origin" });
+        if (!res.ok) {
+          if (!cancelled) {
+            setSaved(readSaved().has(listingId));
+            setServerSync(false);
+          }
+          return;
+        }
+        const data = (await res.json()) as { listingIds?: string[] };
+        const ids = Array.isArray(data.listingIds) ? data.listingIds : [];
+        if (!cancelled) {
+          setSaved(ids.includes(listingId));
+          setServerSync(true);
+        }
+      } catch {
+        if (!cancelled) {
+          setSaved(readSaved().has(listingId));
+          setServerSync(false);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [listingId]);
 
   const toggle = useCallback(async () => {
+    const nextSaved = !saved;
+    setSaved(nextSaved);
+
+    if (serverSync) {
+      try {
+        const res = await fetch("/api/bnhub/favorites", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ listingId, favorited: nextSaved }),
+        });
+        if (!res.ok) {
+          setSaved(!nextSaved);
+        }
+      } catch {
+        setSaved(!nextSaved);
+      }
+      return;
+    }
+
     const next = new Set(readSaved());
-    if (next.has(listingId)) {
-      next.delete(listingId);
-      setSaved(false);
-    } else {
+    if (nextSaved) {
       next.add(listingId);
-      setSaved(true);
       await logActivity("listing_save", listingId);
+    } else {
+      next.delete(listingId);
     }
     writeSaved(next);
-  }, [listingId]);
+  }, [listingId, saved, serverSync]);
 
   const shell =
     variant === "dark"

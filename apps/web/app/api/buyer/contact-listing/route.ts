@@ -15,6 +15,12 @@ import { legalEnforcementDisabled } from "@/modules/legal/legal-enforcement";
 import { logImmoContactEvent } from "@/lib/immo/immo-contact-log";
 import { ImmoContactEventType } from "@prisma/client";
 import { requireContentLicenseAccepted } from "@/lib/legal/content-license-enforcement";
+import { logBusinessMilestone, trackEvent } from "@/src/services/analytics";
+import { persistLaunchEvent } from "@/src/modules/launch/persistLaunchEvent";
+import { getPublicAppUrl } from "@/lib/config/public-app-url";
+import { buyerHasPaidListingContact, isListingContactPaywallEnabled } from "@/lib/leads";
+import { trackFunnelEvent } from "@/lib/funnel/tracker";
+import { PRICING } from "@/lib/monetization/pricing";
 
 export const dynamic = "force-dynamic";
 
@@ -91,10 +97,47 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({ error: "Listing not available" }, { status: 404 });
 }
 
+async function assertListingContactPaywallForInquiry(input: {
+  userId: string | null;
+  ownerId: string | null;
+  targetListingId: string;
+  targetKind: "FSBO_LISTING" | "CRM_LISTING";
+}): Promise<NextResponse | null> {
+  if (!isListingContactPaywallEnabled()) return null;
+  const isOwner = Boolean(input.userId && input.ownerId && input.userId === input.ownerId);
+  if (isOwner) return null;
+  if (!input.userId) {
+    return NextResponse.json(
+      {
+        error: "Sign in and unlock listing contact before sending an inquiry.",
+        code: "LEAD_PAYMENT_REQUIRED",
+        priceCents: PRICING.leadPriceCents,
+      },
+      { status: 401 },
+    );
+  }
+  const paid = await buyerHasPaidListingContact(input.userId, input.targetKind, input.targetListingId);
+  if (paid) return null;
+  void trackFunnelEvent("contact_click_blocked_paywall", {
+    listingId: input.targetListingId,
+    targetKind: input.targetKind,
+  });
+  return NextResponse.json(
+    {
+      error: "Unlock representative contact to send an inquiry.",
+      code: "LEAD_PAYMENT_REQUIRED",
+      priceCents: PRICING.leadPriceCents,
+    },
+    { status: 402 },
+  );
+}
+
 async function handleFsboContact(opts: {
   listing: {
     id: string;
     title: string;
+    city: string;
+    priceCents: number;
     ownerId: string;
     owner: { id: string; email: string | null } | null;
   };
@@ -134,6 +177,16 @@ async function handleFsboContact(opts: {
     }
   }
 
+  const paywallBlockFsbo = await assertListingContactPaywallForInquiry({
+    userId,
+    ownerId: listing.ownerId,
+    targetListingId: listingId,
+    targetKind: "FSBO_LISTING",
+  });
+  if (paywallBlockFsbo) return paywallBlockFsbo;
+
+  void trackFunnelEvent("contact_click", { listingId, flow: "fsbo" });
+
   const fsboLead = await prisma.fsboLead.create({
     data: {
       listingId,
@@ -161,8 +214,8 @@ async function handleFsboContact(opts: {
       leadSource: "BUYER",
       userId: userId ?? undefined,
       fsboListingId: listingId,
-      contactOrigin: LeadContactOrigin.BUYER,
-      commissionSource: LeadContactOrigin.BUYER,
+      contactOrigin: LeadContactOrigin.DIRECT,
+      commissionSource: LeadContactOrigin.DIRECT,
       firstPlatformContactAt: new Date(),
       commissionEligible: true,
       source: "buyer_hub",
@@ -177,7 +230,7 @@ async function handleFsboContact(opts: {
     sellerUserId: listing.ownerId,
   });
 
-  const origin = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, "") || "http://localhost:3000";
+  const origin = getPublicAppUrl();
   const ownerInbox = listing.owner?.email?.trim();
   if (ownerInbox) {
     void sendFsboLeadEmailToOwner({
@@ -229,6 +282,26 @@ async function handleFsboContact(opts: {
     },
   });
 
+  void trackEvent(
+    "inquiry_sent",
+    {
+      listingId,
+      city: listing.city,
+      price: listing.priceCents / 100,
+      leadId: crmLead.id,
+      flow: "fsbo",
+    },
+    { userId }
+  );
+  logBusinessMilestone("INQUIRY CREATED", { listingId, leadId: crmLead.id, flow: "fsbo" });
+
+  void persistLaunchEvent("CONTACT_BROKER", {
+    listingId,
+    leadId: crmLead.id,
+    flow: "fsbo",
+    ...(userId ? { userId } : {}),
+  });
+
   return NextResponse.json({ ok: true, leadId: crmLead.id, fsboLeadId: fsboLead.id });
 }
 
@@ -276,6 +349,16 @@ async function handleCrmContact(opts: {
     }
   }
 
+  const paywallBlockCrm = await assertListingContactPaywallForInquiry({
+    userId,
+    ownerId: listing.ownerId,
+    targetListingId: listing.id,
+    targetKind: "CRM_LISTING",
+  });
+  if (paywallBlockCrm) return paywallBlockCrm;
+
+  void trackFunnelEvent("contact_click", { listingId: listing.id, flow: "crm" });
+
   const priceInt = Number.isFinite(listing.price) ? Math.round(listing.price) : null;
 
   const crmLead = await prisma.lead.create({
@@ -292,8 +375,8 @@ async function handleCrmContact(opts: {
       listingId: listing.id,
       listingCode: listing.listingCode,
       userId: userId ?? undefined,
-      contactOrigin: LeadContactOrigin.BUYER,
-      commissionSource: LeadContactOrigin.BUYER,
+      contactOrigin: LeadContactOrigin.DIRECT,
+      commissionSource: LeadContactOrigin.DIRECT,
       firstPlatformContactAt: new Date(),
       commissionEligible: true,
       source: "buyer_hub",
@@ -307,7 +390,7 @@ async function handleCrmContact(opts: {
     crmListingId: listing.id,
   });
 
-  const origin = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, "") || "http://localhost:3000";
+  const origin = getPublicAppUrl();
   const ownerInbox = listing.owner?.email?.trim();
   if (ownerInbox) {
     const bodyHtml = `<!DOCTYPE html><html><body style="font-family:system-ui,sans-serif;line-height:1.5;color:#111">
@@ -358,6 +441,26 @@ ${phone ? `<p><strong>Phone:</strong> ${escapeHtml(phone)}</p>` : ""}
       semantic: "formal_lead",
       leadId: crmLead.id,
     },
+  });
+
+  void trackEvent(
+    "inquiry_sent",
+    {
+      listingId: listing.id,
+      city: listing.title,
+      ...(priceInt != null ? { price: priceInt } : {}),
+      leadId: crmLead.id,
+      flow: "crm",
+    },
+    { userId }
+  );
+  logBusinessMilestone("INQUIRY CREATED", { listingId: listing.id, leadId: crmLead.id, flow: "crm" });
+
+  void persistLaunchEvent("CONTACT_BROKER", {
+    listingId: listing.id,
+    leadId: crmLead.id,
+    flow: "crm",
+    ...(userId ? { userId } : {}),
   });
 
   return NextResponse.json({ ok: true, leadId: crmLead.id });

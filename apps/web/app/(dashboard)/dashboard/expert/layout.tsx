@@ -8,7 +8,8 @@ import { ExpertAlertBanner } from "./expert-alert-banner";
 import { ExpertNotificationBell } from "./expert-notification-bell";
 import { ensureDynamicAuthRequest } from "@/lib/auth/ensure-dynamic-request";
 
-export { dynamic, revalidate } from "@/lib/auth/protected-route-segment";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 const GOLD = "var(--color-premium-gold)";
 const BG = "#0B0B0B";

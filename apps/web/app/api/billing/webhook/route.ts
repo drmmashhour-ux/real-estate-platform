@@ -3,12 +3,12 @@ import { headers } from "next/headers";
 import Stripe from "stripe";
 import { getStripe, isStripeConfigured } from "@/lib/stripe";
 import { prisma } from "@/lib/db";
-import { plans, type PlanKey } from "@/lib/billing/plans";
+import { PAID_STORAGE_PLAN_KEYS, plans, type PlanKey } from "@/lib/billing/plans";
 import { trackGrowthFunnelEvent } from "@/src/modules/growth-funnel/application/trackGrowthFunnelEvent";
 
 export const dynamic = "force-dynamic";
 
-const VALID_PLANS: PlanKey[] = ["basic", "pro"];
+const VALID_PLANS: PlanKey[] = PAID_STORAGE_PLAN_KEYS;
 
 /**
  * POST /api/billing/webhook

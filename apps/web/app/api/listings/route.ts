@@ -5,19 +5,34 @@ import { getGuestId } from "@/lib/auth/session";
 import { assertCanCreateListing } from "@/lib/compliance/professional-compliance";
 import { AnalyticsEvents } from "@/lib/analytics/events";
 import { captureServerEvent } from "@/lib/analytics/posthog-server";
+import {
+  logSearchRelevanceDebug,
+  sortListingsBySearchRelevance,
+} from "@/lib/bnhub/listings-search-relevance";
 
 /**
  * GET /api/listings — Search listings (MVP alias for BNHub search).
- * Query: city, checkIn, checkOut, minPrice, maxPrice, guests, verifiedOnly, sort.
+ * Query: city, country, checkIn, checkOut, minPrice, maxPrice, guests, verifiedOnly, sort.
+ * Default / newest: results are re-sorted by basic relevance (location, price fit, rating, completeness);
+ * `sort=priceAsc|priceDesc|recommended` keeps the search layer order.
  */
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const city = searchParams.get("city") ?? undefined;
+    const country = searchParams.get("country") ?? undefined;
     const checkIn = searchParams.get("checkIn") ?? undefined;
     const checkOut = searchParams.get("checkOut") ?? undefined;
-    const minPrice = searchParams.get("minPrice");
-    const maxPrice = searchParams.get("maxPrice");
+    const minPriceRaw = searchParams.get("minPrice");
+    const maxPriceRaw = searchParams.get("maxPrice");
+    const minPrice =
+      minPriceRaw != null && minPriceRaw !== "" && Number.isFinite(Number(minPriceRaw))
+        ? Number(minPriceRaw)
+        : undefined;
+    const maxPrice =
+      maxPriceRaw != null && maxPriceRaw !== "" && Number.isFinite(Number(maxPriceRaw))
+        ? Number(maxPriceRaw)
+        : undefined;
     const guests = searchParams.get("guests");
     const verifiedOnly = searchParams.get("verifiedOnly") === "true";
     const sort = searchParams.get("sort") ?? "newest";
@@ -26,13 +41,25 @@ export async function GET(request: NextRequest) {
       city,
       checkIn,
       checkOut,
-      minPrice: minPrice ? Number(minPrice) : undefined,
-      maxPrice: maxPrice ? Number(maxPrice) : undefined,
+      minPrice,
+      maxPrice,
       guests: guests ? Number(guests) : undefined,
       verifiedOnly,
       sort: sort === "priceAsc" || sort === "priceDesc" || sort === "recommended" ? sort : "newest",
     });
-    return Response.json(listings);
+
+    const preserveSearchOrder =
+      sort === "priceAsc" || sort === "priceDesc" || sort === "recommended";
+
+    const ordered = preserveSearchOrder
+      ? listings
+      : sortListingsBySearchRelevance(listings, { city, country, minPrice, maxPrice });
+
+    if (!preserveSearchOrder) {
+      logSearchRelevanceDebug(ordered, { city, country, minPrice, maxPrice });
+    }
+
+    return Response.json(ordered);
   } catch (e) {
     console.error(e);
     return Response.json({ error: "Failed to fetch listings" }, { status: 500 });

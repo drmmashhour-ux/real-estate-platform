@@ -1,15 +1,22 @@
 import { NextRequest } from "next/server";
 import { headers } from "next/headers";
 import Stripe from "stripe";
-import { PlatformInvoiceStatus } from "@prisma/client";
+import { PaymentStatus, PlatformInvoiceStatus, type Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { generateInvoiceNumber } from "@/lib/codes/generate-code";
-import { plans, type PlanKey } from "@/lib/billing/plans";
+import { PAID_STORAGE_PLAN_KEYS, plans, type PlanKey } from "@/lib/billing/plans";
 import { getResend, isResendConfigured, getFromEmail } from "@/lib/email/resend";
-import { logError, logInfo } from "@/lib/logger";
+import { logError, logInfo, logWarn } from "@/lib/logger";
 import { addCommissionForReferral, rewardReferralActivation } from "@/lib/referrals";
+import {
+  grantReferrerVisibilityBoostOnGuestBookingComplete,
+  recordGrowthEventWithFunnel,
+} from "@/lib/growth/events";
+import { recordLecipmManagerGrowthEvent } from "@/lib/growth/manager-events";
+import { getPublicCodeForReferralRow } from "@/lib/referrals/viral";
 import { createCommissionsForPayment, getOrCreateCommissionRules } from "@/lib/stripe/commission";
 import { recordPlatformEvent } from "@/lib/observability";
+import { syncFsboListingExpiryState } from "@/lib/fsbo/listing-expiry";
 import {
   registrationToSnapshot,
   isRegistrationFormatValid,
@@ -23,6 +30,7 @@ import { assertBookingStripeWebhookValid } from "@/lib/bnhub/booking-checkout-gu
 import { bnhubBookingFeeSplitCents } from "@/lib/stripe/bnhub-connect";
 import { allocateUniqueConfirmationCode } from "@/lib/bnhub/confirmation-code";
 import { applyGuarantee } from "@/lib/bnhub/bnhub-guarantee";
+import { ensureBnhubBookingChecklist } from "@/lib/bnhub/booking-checklist";
 import { sendBnhubPostPaymentEmails } from "@/lib/email/bnhub-lifecycle-emails";
 import { onBnhubBookingPaymentConfirmed } from "@/lib/crm/internal-crm-telemetry";
 import {
@@ -36,7 +44,21 @@ import {
   handleBrokerLecipmSubscriptionStripeEvent,
 } from "@/modules/billing/brokerLecipmSubscription";
 import { completeLeadMarketplacePurchase } from "@/modules/lead-marketplace/application/completeLeadMarketplacePurchase";
+import {
+  applyBrokerAssignedLeadCheckoutSuccess,
+  applyBrokerLeadInvoiceCheckoutSuccess,
+  markBrokerLeadCheckoutFailed,
+} from "@/modules/billing/brokerLeadBilling";
 import { syncReservationPaymentPaidFromWebhook } from "@/modules/bnhub-payments/services/paymentService";
+import { markPaymentFailed } from "@/modules/bnhub-payments/services/paymentService";
+import { stripeHandleCheckoutSessionCompleted } from "@/lib/payments/providers/stripe";
+import { computePayoutScheduledAt, schedulePayoutFromBooking } from "@/lib/payments/payout";
+import { computeBookingPricing } from "@/lib/bnhub/booking-pricing";
+import { applyLoyaltyCreditForPaidBooking } from "@/lib/loyalty/loyalty-service";
+import type { SelectedAddonInput } from "@/lib/bnhub/hospitality-addons";
+import { bookingMoneyBreakdownFromPricingBreakdown } from "@/lib/bookings/money";
+import { persistMoneyEvent } from "@/lib/payments/money-events";
+import { queueBnhubManualHostPayout } from "@/lib/payouts/manual-bnhub";
 import {
   markStripeWebhookProcessed,
   recordStripeWebhookReceived,
@@ -44,11 +66,22 @@ import {
 import { BnhubMpWebhookInboxStatus } from "@prisma/client";
 import { captureStripeEventForGrowthEngine } from "@/src/modules/stripe/growthWebhook";
 import { onPaymentFailedAutomation, onPaymentSuccessAutomation } from "@/src/services/automation";
-import { trackEvent } from "@/src/services/analytics";
+import { logBusinessMilestone, trackErrorEvent, trackEvent } from "@/src/services/analytics";
+import { persistLaunchEvent } from "@/src/modules/launch/persistLaunchEvent";
+import { describeStripeSecretKeyError } from "@/lib/stripe/stripeEnvGate";
+import { syncHostOnboardingCompleteFromStripe } from "@/lib/stripe/hostConnectExpress";
+import {
+  GUEST_SUPABASE_BOOKING_PAYMENT_TYPE,
+  markGuestSupabaseBookingPaidFromStripeSession,
+} from "@/lib/stripe/guestSupabaseBooking";
+import { fulfillListingContactLeadFromWebhook } from "@/lib/leads/fulfill-from-webhook";
+import { fulfillFeaturedListingFromWebhook } from "@/lib/featured/fulfill-featured-checkout-webhook";
+import { trackRevenueEvent } from "@/lib/monetization/events";
+import { trackFunnelEvent } from "@/lib/funnel/tracker";
 
 export const dynamic = "force-dynamic";
 
-const VALID_PLANS: PlanKey[] = ["basic", "pro"];
+const VALID_PLANS: PlanKey[] = PAID_STORAGE_PLAN_KEYS;
 const STORAGE_UPGRADE_FEATURE = "storage-upgrade";
 
 async function sendPaymentSuccessEmail(userId: string): Promise<void> {
@@ -75,6 +108,15 @@ function getStripe(): Stripe | null {
   const key = process.env.STRIPE_SECRET_KEY;
   if (!key) return null;
   return new Stripe(key);
+}
+
+async function syncConnectedAccountStatusFromEvent(stripe: Stripe, accountId: string) {
+  const user = await prisma.user.findFirst({
+    where: { stripeAccountId: accountId },
+    select: { id: true },
+  });
+  if (!user) return null;
+  return syncHostOnboardingCompleteFromStripe(stripe, user.id, accountId);
 }
 
 /**
@@ -105,12 +147,16 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
-  logInfo("Stripe webhook handler: ready");
+  const stripeKeyErr = describeStripeSecretKeyError();
+  if (stripeKeyErr) {
+    logError(`[STRIPE] ${stripeKeyErr}`);
+    return Response.json({ error: stripeKeyErr }, { status: 503 });
+  }
 
   const stripe = getStripe();
   if (!stripe) {
     return Response.json(
-      { error: "Stripe is not configured. Add STRIPE_SECRET_KEY to .env" },
+      { error: "Stripe is not configured (demo mode or client unavailable)." },
       { status: 503 }
     );
   }
@@ -139,14 +185,18 @@ export async function POST(req: NextRequest) {
     event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
-    logError("Stripe webhook signature verification failed", message);
+    logError(
+      "[STRIPE] webhook signature verification failed",
+      `${message} — Local dev: STRIPE_WEBHOOK_SECRET must exactly match the whsec_* printed when you started stripe listen (same Stripe account as STRIPE_SECRET_KEY); restart pnpm dev after editing .env.`,
+    );
     return Response.json(
       { error: "Invalid signature" },
       { status: 400 }
     );
   }
 
-  logInfo("Stripe webhook verified", { eventType: event.type, eventId: event.id });
+  logInfo("[webhook] event received", { type: event.type, id: event.id });
+  logInfo(`[STRIPE] webhook received: type=${event.type} id=${event.id}`);
 
   void captureStripeEventForGrowthEngine(event).catch((e) => logError("growth stripe observability failed", e));
 
@@ -158,10 +208,16 @@ export async function POST(req: NextRequest) {
       typeof charge.payment_intent === "string" ? charge.payment_intent : charge.payment_intent?.id;
     const refundCents = charge.amount_refunded ?? 0;
     if (paymentIntentId) {
+      const chargeFull = typeof charge.amount === "number" ? charge.amount : 0;
+      const refunded = typeof charge.amount_refunded === "number" ? charge.amount_refunded : 0;
+      const nextStatus =
+        chargeFull > 0 && refunded > 0 && refunded < chargeFull
+          ? PaymentStatus.PARTIALLY_REFUNDED
+          : PaymentStatus.REFUNDED;
       await prisma.payment
         .updateMany({
           where: { stripePaymentId: paymentIntentId },
-          data: { status: "REFUNDED" },
+          data: { status: nextStatus },
         })
         .catch((e) => logError("Webhook: refund payment update failed", e));
       const pp = await prisma.platformPayment.findFirst({
@@ -192,22 +248,130 @@ export async function POST(req: NextRequest) {
           },
         })
         .catch((e) => logError("Webhook: stripe ledger refund duplicate or failed", e));
+      let piMeta: Record<string, string> = {};
+      try {
+        const pi = await stripe.paymentIntents.retrieve(paymentIntentId);
+        piMeta = { ...(pi.metadata as Record<string, string>) };
+      } catch {
+        /* optional */
+      }
+      void persistLaunchEvent("PAYMENT_REFUNDED", {
+        paymentIntentId,
+        amountRefundedCents: refundCents,
+        userId: piMeta.userId ?? null,
+        paymentType: piMeta.paymentType ?? null,
+        bookingId: piMeta.bookingId ?? null,
+        listingId: piMeta.listingId ?? null,
+      });
+
+      const payRow = await prisma.payment
+        .findFirst({
+          where: { stripePaymentId: paymentIntentId },
+          select: { bookingId: true, hostPayoutCents: true },
+        })
+        .catch(() => null);
+      if (payRow?.bookingId) {
+        const sentPayout = await prisma.orchestratedPayout
+          .findFirst({
+            where: { bookingId: payRow.bookingId, status: "sent", providerRef: { not: null } },
+            select: { hostId: true, providerRef: true },
+          })
+          .catch(() => null);
+        if (sentPayout) {
+          const b = await prisma.booking
+            .findUnique({
+              where: { id: payRow.bookingId },
+              select: { listing: { select: { ownerId: true } } },
+            })
+            .catch(() => null);
+          const ownerId = b?.listing?.ownerId ?? sentPayout.hostId;
+          await prisma.payment
+            .updateMany({
+              where: { bookingId: payRow.bookingId },
+              data: { payoutHoldReason: "refund_after_transfer" },
+            })
+            .catch((e) => logError("Webhook: refund hold on payment failed", e));
+          await queueBnhubManualHostPayout({
+            bookingId: payRow.bookingId,
+            hostUserId: ownerId,
+            amountCents: refundCents > 0 ? refundCents : payRow.hostPayoutCents ?? 0,
+            queueReason: "refund_after_payout_sent",
+          }).catch((e) => logError("Webhook: manual reconciliation queue failed", e));
+          void persistMoneyEvent({
+            type: "booking_refunded",
+            bookingId: payRow.bookingId,
+            hostUserId: ownerId,
+            amountCents: refundCents,
+            metadata: {
+              phase: "after_host_transfer",
+              stripeTransferId: sentPayout.providerRef,
+            },
+          });
+        }
+      }
     }
     return Response.json({ received: true });
   }
 
   if (event.type === "payment_intent.payment_failed") {
     const pi = event.data.object as Stripe.PaymentIntent;
+    const md = pi.metadata ?? {};
+    if (md.paymentType === "broker_assigned_lead" && typeof md.brokerLeadId === "string") {
+      await markBrokerLeadCheckoutFailed(prisma, {
+        stripePaymentIntentId: pi.id,
+        brokerLeadId: md.brokerLeadId,
+      }).catch((e) => logError("Webhook: broker assigned lead payment failed handling", e));
+    }
     void recordPlatformEvent({
       eventType: "payment_failed",
       entityType: "PAYMENT_INTENT",
       entityId: pi.id,
       payload: { error: pi.last_payment_error?.message },
     });
+    const failUserId = typeof md.userId === "string" ? md.userId : null;
+    void trackEvent(
+      "payment_failed",
+      { paymentIntentId: pi.id, paymentType: typeof md.paymentType === "string" ? md.paymentType : undefined },
+      { userId: failUserId }
+    );
+    void trackErrorEvent({
+      errorType: "stripe_payment_intent_failed",
+      message: pi.last_payment_error?.message ?? "payment_intent.payment_failed",
+      userId: failUserId,
+      route: "/api/stripe/webhook",
+      metadata: { paymentIntentId: pi.id },
+    });
+    logBusinessMilestone("PAYMENT FAILED", { paymentIntentId: pi.id });
     void onPaymentFailedAutomation(undefined, {
       paymentIntentId: pi.id,
       error: pi.last_payment_error?.message,
     }).catch(() => {});
+    void persistLaunchEvent("CHECKOUT_FAILED", {
+      paymentIntentId: pi.id,
+      userId: typeof md.userId === "string" ? md.userId : null,
+      paymentType: typeof md.paymentType === "string" ? md.paymentType : null,
+      bookingId: typeof md.bookingId === "string" ? md.bookingId : null,
+      listingId: typeof md.listingId === "string" ? md.listingId : null,
+      error: pi.last_payment_error?.message ?? null,
+    });
+    void persistLaunchEvent("PAYMENT_FAILED", {
+      paymentIntentId: pi.id,
+      userId: typeof md.userId === "string" ? md.userId : null,
+      paymentType: typeof md.paymentType === "string" ? md.paymentType : null,
+    });
+    if (md.paymentType === "booking" && typeof md.bookingId === "string" && md.bookingId.trim()) {
+      const bid = md.bookingId.trim();
+      await prisma.payment
+        .updateMany({
+          where: { bookingId: bid, status: PaymentStatus.PENDING },
+          data: { status: PaymentStatus.FAILED },
+        })
+        .catch((e) => logError("Webhook: booking payment_intent.payment_failed update failed", e));
+      logInfo("[stripe/webhook] [booking] payment_intent.payment_failed", {
+        bookingId: bid,
+        paymentIntentId: pi.id,
+      });
+    }
     return Response.json({ received: true });
   }
 
@@ -236,26 +400,228 @@ export async function POST(req: NextRequest) {
     if (workspaceHandled) return Response.json({ received: true, workspaceSubscription: true });
   }
 
-  if (event.type !== "checkout.session.completed") {
+  if (event.type === "checkout.session.expired") {
+    const expiredSession = event.data.object as Stripe.Checkout.Session;
+    const em = expiredSession.metadata ?? {};
+    void persistLaunchEvent("CHECKOUT_EXPIRED", {
+      sessionId: expiredSession.id,
+      userId: typeof em.userId === "string" ? em.userId : null,
+      paymentType: typeof em.paymentType === "string" ? em.paymentType : null,
+      bookingId: typeof em.bookingId === "string" ? em.bookingId : null,
+      listingId: typeof em.listingId === "string" ? em.listingId : null,
+    });
+    return Response.json({ received: true });
+  }
+
+  if (event.type === "checkout.session.async_payment_failed") {
+    const session = event.data.object as Stripe.Checkout.Session;
+    const reservationPaymentId =
+      typeof session.metadata?.bnhubReservationPaymentId === "string"
+        ? session.metadata.bnhubReservationPaymentId
+        : null;
+    if (reservationPaymentId) {
+      await markPaymentFailed(reservationPaymentId, "checkout.session.async_payment_failed").catch((e) =>
+        logError("Webhook: marketplace async payment failed update failed", e)
+      );
+    }
+    if (typeof session.metadata?.bookingId === "string") {
+      await prisma.bnhubBookingEvent
+        .create({
+          data: {
+            bookingId: session.metadata.bookingId,
+            eventType: "payment_failed",
+            actorId: typeof session.metadata?.userId === "string" ? session.metadata.userId : null,
+            payload: { source: event.type, sessionId: session.id },
+          },
+        })
+        .catch(() => {});
+    }
+    void markStripeWebhookProcessed(event.id, BnhubMpWebhookInboxStatus.FAILED).catch((e) =>
+      logError("Webhook: inbox mark failed failed", e)
+    );
+    return Response.json({ received: true, asyncPaymentFailed: true });
+  }
+
+  if (event.type === "account.updated" || event.type === "account.external_account.updated") {
+    const connectedAccountId =
+      event.type === "account.updated"
+        ? (event.data.object as Stripe.Account).id
+        : event.account ?? null;
+    if (connectedAccountId) {
+      await syncConnectedAccountStatusFromEvent(stripe, connectedAccountId).catch((e) =>
+        logError("Webhook: connect account sync failed", e)
+      );
+      void recordPlatformEvent({
+        eventType: "stripe_connect_account_updated",
+        sourceModule: "stripe",
+        entityType: "PAYMENT_ACCOUNT",
+        entityId: connectedAccountId,
+        payload: { stripeEventType: event.type },
+      }).catch(() => {});
+    }
+    return Response.json({ received: true, connectAccountUpdated: true });
+  }
+
+  if (event.type === "payout.failed" || event.type === "payout.paid") {
+    const payout = event.data.object as Stripe.Payout;
+    const connectedAccountId = event.account ?? null;
+    if (connectedAccountId) {
+      await syncConnectedAccountStatusFromEvent(stripe, connectedAccountId).catch((e) =>
+        logError(`Webhook: ${event.type} connect sync failed`, e)
+      );
+    }
+    const bookingId =
+      typeof payout.metadata?.bookingId === "string" && payout.metadata.bookingId.trim()
+        ? payout.metadata.bookingId.trim()
+        : null;
+    if (event.type === "payout.failed" && bookingId) {
+      await prisma.payment
+        .updateMany({
+          where: { bookingId },
+          data: { payoutHoldReason: "payout_failed", hostPayoutReleasedAt: null },
+        })
+        .catch((e) => logError("Webhook: payout.failed payment hold update failed", e));
+      await prisma.bnhubBookingEvent
+        .create({
+          data: {
+            bookingId,
+            eventType: "payout_failed",
+            actorId: null,
+            payload: {
+              source: "stripe_payout_failed",
+              payoutId: payout.id,
+              failureCode: payout.failure_code ?? null,
+            },
+          },
+        })
+        .catch(() => {});
+    }
+    if (event.type === "payout.paid" && bookingId) {
+      await prisma.payment
+        .updateMany({
+          where: { bookingId, status: PaymentStatus.COMPLETED },
+          data: { payoutHoldReason: null, hostPayoutReleasedAt: new Date() },
+        })
+        .catch((e) => logError("Webhook: payout.paid payment release update failed", e));
+      await prisma.bnhubBookingEvent
+        .create({
+          data: {
+            bookingId,
+            eventType: "payout_paid",
+            actorId: null,
+            payload: { source: "stripe_payout_paid", payoutId: payout.id },
+          },
+        })
+        .catch(() => {});
+    }
+    void recordPlatformEvent({
+      eventType: event.type === "payout.failed" ? "stripe_payout_failed" : "stripe_payout_paid",
+      sourceModule: "stripe",
+      entityType: "PAYOUT",
+      entityId: payout.id,
+      payload: {
+        connectedAccountId,
+        bookingId,
+        payoutStatus: payout.status ?? null,
+        failureCode: payout.failure_code ?? null,
+        failureMessage: payout.failure_message ?? null,
+      },
+    }).catch(() => {});
+    return Response.json({ received: true, payoutEvent: event.type });
+  }
+
+  if (event.type === "payment_intent.succeeded") {
+    /**
+     * BNHub booking confirmation + PAYMENT_SUCCESS are applied from `checkout.session.completed`
+     * (session metadata, platformPayment row, idempotency). This handler acknowledges the PI so
+     * Stripe retries stop; DB remains single-writer via session + `payment.updateMany` where status=PENDING.
+     */
+    const pi = event.data.object as Stripe.PaymentIntent;
+    logInfo("[STRIPE] payment_intent.succeeded acknowledged (fulfillment via checkout.session.completed)", {
+      paymentIntentId: pi.id,
+      amountReceived: pi.amount_received ?? pi.amount,
+      currency: pi.currency,
+    });
+    return Response.json({ received: true });
+  }
+
+  if (event.type !== "checkout.session.completed" && event.type !== "checkout.session.async_payment_succeeded") {
     return Response.json({ received: true });
   }
 
   const session = event.data.object as Stripe.Checkout.Session;
-  const metaKeys =
-    session.metadata && typeof session.metadata === "object"
-      ? Object.keys(session.metadata as Record<string, string>)
-      : [];
-  logInfo("Stripe checkout.session.completed", {
-    sessionId: session.id,
-    paymentStatus: session.payment_status,
-    mode: session.mode,
-    amountTotal: session.amount_total ?? null,
-    currency: session.currency ?? null,
-    paymentType: session.metadata?.paymentType ?? null,
-    metadataType: session.metadata?.type ?? null,
-    hasUserId: Boolean(session.metadata?.userId),
-    metadataKeys: metaKeys,
-  });
+  logInfo(
+    `[STRIPE] webhook_received: type=${event.type} sessionId=${session.id} paymentStatus=${session.payment_status} amountTotal=${session.amount_total ?? 0} paymentType=${session.metadata?.paymentType ?? "n/a"} stripeEventId=${event.id}`
+  );
+
+  /** Mobile guest Supabase `bookings` — no Prisma User; fulfillment updates Supabase only. */
+  if (session.metadata?.paymentType === GUEST_SUPABASE_BOOKING_PAYMENT_TYPE) {
+    try {
+      await stripeHandleCheckoutSessionCompleted(session, { stripeEventId: event.id });
+    } catch (e) {
+      logError("Stripe webhook: orchestrated payment bridge failed (guest_supabase_booking)", e);
+    }
+    if (session.payment_status !== "paid") {
+      logInfo(`[STRIPE] ${event.type}: guest_supabase_booking awaiting paid for session ${session.id}`);
+      return Response.json({ received: true, awaitingPaidState: true, guestSupabaseBooking: true });
+    }
+    const guestPaid = await markGuestSupabaseBookingPaidFromStripeSession(session);
+    const piFromSession =
+      typeof session.payment_intent === "string"
+        ? session.payment_intent
+        : session.payment_intent && typeof session.payment_intent === "object"
+          ? (session.payment_intent as Stripe.PaymentIntent).id
+          : null;
+    if (!guestPaid.ok) {
+      if (guestPaid.reason === "booking_not_found") {
+        logWarn("Webhook: guest_supabase_booking — booking row missing (metadata ok)", {
+          sessionId: session.id,
+          paymentIntentId: piFromSession,
+          reason: guestPaid.reason,
+        });
+      } else {
+        logError("Webhook: guest_supabase_booking mark paid failed", new Error(guestPaid.reason ?? "unknown"));
+      }
+    } else {
+      logInfo("Webhook: guest_supabase_booking fulfilled", {
+        sessionId: session.id,
+        paymentIntentId: piFromSession,
+        bookingId: typeof session.metadata?.bookingId === "string" ? session.metadata.bookingId : null,
+      });
+    }
+    return Response.json({ received: true, guestSupabaseBooking: true, paidMarked: guestPaid.ok });
+  }
+
+  try {
+    await stripeHandleCheckoutSessionCompleted(session, { stripeEventId: event.id });
+  } catch (e) {
+    logError("Stripe webhook: orchestrated payment bridge failed", e);
+  }
+
+  if (session.payment_status !== "paid") {
+    logInfo(`[STRIPE] ${event.type}: awaiting final paid state for session ${session.id}`);
+    return Response.json({ received: true, awaitingPaidState: true });
+  }
+
+  if (session.payment_status === "paid") {
+    const md = session.metadata ?? {};
+    const bookingIdMeta = typeof md.bookingId === "string" ? md.bookingId.trim() : "";
+    const userIdMeta = typeof md.userId === "string" ? md.userId.trim() : "";
+    if (bookingIdMeta && userIdMeta) {
+      logInfo("[webhook] [booking] checkout session paid (launch marker)", {
+        bookingId: md.bookingId,
+        amountCents: session.amount_total,
+        sessionId: session.id,
+      });
+      await prisma.launchEvent.create({
+        data: {
+          event: "PAYMENT_SUCCESS",
+          payload: { metadata: md } as Prisma.InputJsonValue,
+          userId: userIdMeta || undefined,
+        },
+      });
+    }
+  }
 
   const metadataType = session.metadata?.type as string;
   const paymentType = session.metadata?.paymentType as string | undefined;
@@ -265,9 +631,46 @@ export async function POST(req: NextRequest) {
   const amountTotal = session.amount_total ?? 0;
   const amountDollars = amountTotal / 100;
   const amountCents = amountTotal;
-  const referral = userId
-    ? await prisma.referral.findFirst({ where: { usedByUserId: userId }, select: { code: true } }).catch(() => null)
+  const referralRow = userId
+    ? await prisma.referral
+        .findFirst({
+          where: { usedByUserId: userId },
+          select: { code: true, referralPublicCode: true, referrerId: true },
+        })
+        .catch(() => null)
     : null;
+  const referralAttributionCode = referralRow ? await getPublicCodeForReferralRow(referralRow) : null;
+
+  /**
+   * PAYMENT_SUCCESS / CHECKOUT_SUCCESS for BNHub bookings are emitted only after DB confirms
+   * booking + payment (see platform payment branch). Non-booking paid checkouts record here.
+   */
+  if (
+    session.payment_status === "paid" &&
+    typeof userId === "string" &&
+    userId.length > 0 &&
+    paymentType !== "booking"
+  ) {
+    void persistLaunchEvent("PAYMENT_SUCCESS", {
+      userId,
+      sessionId: session.id,
+      amountCents,
+      paymentType: paymentType ?? null,
+      listingId: typeof session.metadata?.listingId === "string" ? session.metadata.listingId : null,
+      bookingId: typeof session.metadata?.bookingId === "string" ? session.metadata.bookingId : null,
+    });
+    void persistLaunchEvent("CHECKOUT_SUCCESS", {
+      userId,
+      sessionId: session.id,
+      amountCents,
+      paymentType: paymentType ?? null,
+      listingId: typeof session.metadata?.listingId === "string" ? session.metadata.listingId : null,
+      bookingId: typeof session.metadata?.bookingId === "string" ? session.metadata.bookingId : null,
+    });
+    logInfo(
+      `[STRIPE] payment success: bookingId=${typeof session.metadata?.bookingId === "string" ? session.metadata.bookingId : "n/a"} paymentType=${paymentType ?? "n/a"}`
+    );
+  }
 
   const mortgageCheckoutHandled = await handleMortgageExpertCheckoutCompleted({
     stripe,
@@ -317,6 +720,9 @@ export async function POST(req: NextRequest) {
     "featured_listing",
     "fsbo_publish",
     "lead_marketplace",
+    "broker_assigned_lead",
+    "broker_lead_invoice",
+    "listing_contact_lead",
   ];
   if (paymentType && PLATFORM_PAYMENT_TYPES.includes(paymentType) && userId) {
     const sessionId = session.id;
@@ -333,16 +739,29 @@ export async function POST(req: NextRequest) {
     const brokerId = session.metadata?.brokerId as string | undefined;
 
     if (paymentType === "booking" && bookingId) {
+      const mdUserId = typeof userId === "string" ? userId.trim() : "";
+      const mdBookingId = typeof bookingId === "string" ? bookingId.trim() : "";
+      const mdListingId =
+        typeof session.metadata?.listingId === "string" ? session.metadata.listingId.trim() : "";
+      if (!mdUserId || !mdBookingId || !mdListingId) {
+        logError("Webhook: booking checkout.session.completed missing required metadata — no fulfillment", {
+          hasUserId: Boolean(mdUserId),
+          hasBookingId: Boolean(mdBookingId),
+          hasListingId: Boolean(mdListingId),
+        });
+        return Response.json({ received: true, ignored: "missing_booking_metadata" });
+      }
+
       const bookingCheck = await assertBookingStripeWebhookValid({
-        bookingId,
-        metadataUserId: userId,
+        bookingId: mdBookingId,
+        metadataUserId: mdUserId,
         amountTotalCents: amountCents,
       });
       if (!bookingCheck.ok) {
         logError("Webhook: booking payment rejected — no DB updates", {
           reason: bookingCheck.reason,
-          bookingId,
-          userId,
+          bookingId: mdBookingId,
+          userId: mdUserId,
           amountCents,
         });
         return Response.json({ received: true, ignored: bookingCheck.reason });
@@ -415,6 +834,16 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    logInfo("[payment] marked paid", {
+      platformPaymentId: platformPayment.id,
+      userId,
+      bookingId: bookingId ?? null,
+      listingId: listingId ?? null,
+      paymentType,
+      amountCents: sessionAmountTotal,
+      stripeSessionId: sessionId,
+    });
+
     await prisma.stripeLedgerEntry
       .create({
         data: {
@@ -437,6 +866,21 @@ export async function POST(req: NextRequest) {
         typeof session.metadata?.connectDestination === "string"
           ? session.metadata.connectDestination.trim()
           : null;
+
+      if (connectDestination && stripe) {
+        try {
+          const hostAcct = await stripe.accounts.retrieve(connectDestination);
+          logInfo("[webhook] [payout] host connect readiness snapshot", {
+            bookingId,
+            details_submitted: hostAcct.details_submitted,
+            charges_enabled: hostAcct.charges_enabled,
+            payouts_enabled: hostAcct.payouts_enabled,
+          });
+        } catch (e) {
+          logWarn("[STRIPE] webhook: connected account retrieve failed (readiness log)", e);
+        }
+      }
+
       const metaFee = session.metadata?.applicationFeeCents;
       const parsedMetaFee = typeof metaFee === "string" ? parseInt(metaFee, 10) : NaN;
       const metaBnhubPlatform =
@@ -475,15 +919,47 @@ export async function POST(req: NextRequest) {
 
       const bookingRow = await prisma.booking.findUnique({
         where: { id: bookingId },
-        include: {
+        select: {
+          id: true,
+          guestId: true,
+          listingId: true,
+          checkIn: true,
+          checkOut: true,
+          confirmationCode: true,
+          guestsCount: true,
+          bnhubBookingServices: { select: { listingServiceId: true, quantity: true } },
           guest: { select: { name: true } },
           listing: { select: { title: true } },
         },
       });
 
-      const scheduledHostPayoutAt = bookingRow
-        ? new Date(bookingRow.checkIn.getTime() + 7 * 24 * 60 * 60 * 1000)
-        : null;
+      const scheduledHostPayoutAt = bookingRow ? computePayoutScheduledAt(bookingRow.checkIn) : null;
+
+      let moneyBreakdownJson: Prisma.InputJsonValue | undefined;
+      if (bookingRow) {
+        const breakdownListingId =
+          (typeof listingId === "string" ? listingId.trim() : "") || bookingRow.listingId;
+        const selectedAddons: SelectedAddonInput[] = bookingRow.bnhubBookingServices.map((s) => ({
+          listingServiceId: s.listingServiceId,
+          quantity: s.quantity,
+        }));
+        try {
+          const pricing = await computeBookingPricing({
+            listingId: breakdownListingId,
+            checkIn: bookingRow.checkIn.toISOString().slice(0, 10),
+            checkOut: bookingRow.checkOut.toISOString().slice(0, 10),
+            guestCount: bookingRow.guestsCount ?? undefined,
+            selectedAddons: selectedAddons.length ? selectedAddons : undefined,
+            guestUserId: bookingRow.guestId,
+          });
+          if (pricing) {
+            const br = bookingMoneyBreakdownFromPricingBreakdown(bookingId, pricing.breakdown);
+            moneyBreakdownJson = br as unknown as Prisma.InputJsonValue;
+          }
+        } catch (e) {
+          logWarn("Webhook: money breakdown compute skipped", e);
+        }
+      }
 
       let confirmationCode = bookingRow?.confirmationCode ?? null;
       if (!confirmationCode) {
@@ -504,13 +980,21 @@ export async function POST(req: NextRequest) {
         })
         .catch((e) => logError("Webhook: booking confirm failed", e));
 
+      logInfo(`[STRIPE] booking updated: bookingId=${bookingId} status=CONFIRMED paymentStatus=COMPLETED`);
+
+      if (bookingRow?.listingId) {
+        void import("@/lib/listings/listing-analytics-service").then((m) =>
+          m.incrementBnhubBookingCompleted(bookingRow.listingId)
+        );
+      }
+
       void applyGuarantee(bookingId).catch((e) => logError("Webhook: BNHub guarantee apply failed", e));
 
-      await prisma.payment
+      const paymentUpdate = await prisma.payment
         .updateMany({
-          where: { bookingId },
+          where: { bookingId, status: PaymentStatus.PENDING },
           data: {
-            status: "COMPLETED",
+            status: PaymentStatus.COMPLETED,
             stripePaymentId:
               typeof session.payment_intent === "string" ? session.payment_intent : piId ?? sessionId,
             stripeCheckoutSessionId: sessionId,
@@ -523,9 +1007,115 @@ export async function POST(req: NextRequest) {
             linkedContractId: enforceableLink?.contractId ?? null,
             linkedContractType: enforceableLink?.contractType ?? null,
             scheduledHostPayoutAt: scheduledHostPayoutAt ?? undefined,
+            paidAt: new Date(),
+            ...(moneyBreakdownJson ? { moneyBreakdownJson } : {}),
           },
         })
-        .catch((e) => logError("Webhook: payment update failed", e));
+        .catch((e) => {
+          logError("Webhook: payment update failed", e);
+          return { count: 0 };
+        });
+
+      if (paymentUpdate.count > 0) {
+        const payUserId = typeof userId === "string" ? userId.trim() : "";
+        const payListingId = typeof listingId === "string" ? listingId.trim() : "";
+        const payBookingId = typeof bookingId === "string" ? bookingId.trim() : "";
+        if (payBookingId && bookingRow?.guestId) {
+          void applyLoyaltyCreditForPaidBooking(prisma, {
+            bookingId: payBookingId,
+            guestUserId: bookingRow.guestId,
+          }).then((r) => {
+            if (r.ok && !r.skipped) {
+              logInfo("[bnhub][loyalty] loyalty_credit_applied", {
+                userId: bookingRow.guestId,
+                bookingId: payBookingId,
+              });
+            }
+          });
+        }
+        if (payBookingId) {
+          void ensureBnhubBookingChecklist(payBookingId).catch((e) =>
+            logError("Webhook: bnhub arrival checklist seed failed", e)
+          );
+        }
+        if (payUserId && payListingId && payBookingId) {
+          void persistLaunchEvent("PAYMENT_SUCCESS", {
+            userId: payUserId,
+            sessionId,
+            amountCents: sessionAmountTotal,
+            paymentType: "booking",
+            listingId: payListingId,
+            bookingId: payBookingId,
+          });
+          void persistLaunchEvent("CHECKOUT_SUCCESS", {
+            userId: payUserId,
+            sessionId,
+            amountCents: sessionAmountTotal,
+            paymentType: "booking",
+            listingId: payListingId,
+            bookingId: payBookingId,
+          });
+          void recordGrowthEventWithFunnel("booking_complete", {
+            userId: payUserId,
+            metadata: {
+              bookingId: payBookingId,
+              listingId: payListingId,
+              amountCents: sessionAmountTotal,
+            },
+          });
+          void recordLecipmManagerGrowthEvent("payment_completed", {
+            userId: payUserId,
+            listingId: payListingId,
+            metadata: {
+              bookingId: payBookingId,
+              amountCents: sessionAmountTotal,
+              stripeSessionId: sessionId,
+            },
+          });
+          void recordLecipmManagerGrowthEvent("booking_confirmed", {
+            userId: payUserId,
+            listingId: payListingId,
+            metadata: { bookingId: payBookingId, via: "stripe_checkout" },
+          });
+          void trackRevenueEvent({
+            type: "booking",
+            amountCents: platformFeeResolved,
+            userId: payUserId,
+            metadata: { bookingId: payBookingId, listingId: payListingId, paymentType: "booking" },
+          });
+          void trackFunnelEvent("booking_success", {
+            bookingId: payBookingId,
+            listingId: payListingId,
+            platformFeeCents: platformFeeResolved,
+          });
+          void grantReferrerVisibilityBoostOnGuestBookingComplete(payUserId);
+          logInfo(`[STRIPE] webhook_verified booking_updated: bookingId=${payBookingId} userId=${payUserId} paymentRowsUpdated=${paymentUpdate.count}`);
+          void schedulePayoutFromBooking(payBookingId, hostPayoutResolved ?? undefined).catch((e) =>
+            logError("Webhook: orchestrated payout schedule failed", e)
+          );
+          void persistMoneyEvent({
+            type: "booking_paid",
+            bookingId: payBookingId,
+            amountCents: sessionAmountTotal,
+            metadata: {
+              stripeSessionId: sessionId,
+              platformFeeCents: platformFeeResolved,
+              hostPayoutCents: hostPayoutResolved,
+            },
+          });
+        } else {
+          logError("Webhook: PAYMENT_SUCCESS skipped — booking checkout.session.completed missing userId, listingId, or bookingId", {
+            sessionId,
+            hasUserId: Boolean(payUserId),
+            hasListingId: Boolean(payListingId),
+            hasBookingId: Boolean(payBookingId),
+          });
+        }
+      } else if (bookingId && userId) {
+        logInfo(
+          `[STRIPE] duplicate_webhook_ignored: bookingId=${bookingId} sessionId=${sessionId} (payment row already completed or not pending)`,
+        );
+      }
 
       const legacyPaymentRow = await prisma.payment.findUnique({
         where: { bookingId },
@@ -622,6 +1212,7 @@ export async function POST(req: NextRequest) {
         { bookingId, sessionId, paymentIntentId: piId, paymentType: "booking" },
         { userId }
       ).catch(() => {});
+      logBusinessMilestone("PAYMENT SUCCESS", { bookingId, paymentIntentId: piId });
       void onPaymentSuccessAutomation(userId, {
         bookingId,
         sessionId,
@@ -722,6 +1313,30 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    if (paymentType === "broker_assigned_lead" && userId && piId) {
+      const brokerLeadId = session.metadata?.brokerLeadId as string | undefined;
+      if (brokerLeadId) {
+        await applyBrokerAssignedLeadCheckoutSuccess(prisma, {
+          payingBrokerId: userId,
+          brokerLeadId,
+          stripePaymentIntentId: piId,
+          amountCents: sessionAmountTotal,
+        }).catch((e) => logError("Webhook: broker assigned lead checkout apply failed", e));
+      }
+    }
+
+    if (paymentType === "broker_lead_invoice" && userId && piId) {
+      const brokerInvoiceId = session.metadata?.brokerInvoiceId as string | undefined;
+      if (brokerInvoiceId) {
+        await applyBrokerLeadInvoiceCheckoutSuccess(prisma, {
+          payingBrokerId: userId,
+          brokerInvoiceId,
+          stripePaymentIntentId: piId,
+          amountCents: sessionAmountTotal,
+        }).catch((e) => logError("Webhook: broker lead invoice checkout apply failed", e));
+      }
+    }
+
     if (paymentType === "mortgage_contact_unlock") {
       const mortgageRequestId = session.metadata?.mortgageRequestId as string | undefined;
       const mortgageBrokerId = session.metadata?.mortgageBrokerId as string | undefined;
@@ -774,12 +1389,16 @@ export async function POST(req: NextRequest) {
         });
         const listingFull = await prisma.fsboListing.findUnique({
           where: { id: fsboListingId },
-          include: { documents: true },
+          include: { documents: true, sellerSupportingDocuments: { select: { category: true, status: true, declarationSectionKey: true } } },
         });
         if (!listingFull || listingFull.ownerId !== userId) {
           logError("Webhook: FSBO listing missing or owner mismatch for publish", { fsboListingId, userId });
         } else {
-          const submitGate = await assertSellerHubSubmitReady(listingFull, listingFull.documents);
+          const submitGate = await assertSellerHubSubmitReady(
+            listingFull,
+            listingFull.documents,
+            listingFull.sellerSupportingDocuments
+          );
           if (!submitGate.ok) {
             logError("Webhook: FSBO activation blocked — seller publish gates not satisfied", {
               fsboListingId,
@@ -807,6 +1426,7 @@ export async function POST(req: NextRequest) {
               entityId: fsboListingId,
               payload: { publishPlan, source: "stripe_webhook" },
             }).catch(() => {});
+            await syncFsboListingExpiryState(fsboListingId, { sendReminder: false }).catch(() => null);
           }
         }
       }
@@ -1106,8 +1726,10 @@ export async function POST(req: NextRequest) {
     }
     if (userId) {
       await rewardReferralActivation(userId).catch(() => {});
-      if (referral?.code) {
-        await prisma.referralEvent.create({ data: { code: referral.code, eventType: "paid", userId } }).catch(() => {});
+      if (referralAttributionCode) {
+        await prisma.referralEvent
+          .create({ data: { code: referralAttributionCode, eventType: "paid", userId } })
+          .catch(() => {});
       }
     }
     if (userId) {
@@ -1134,8 +1756,10 @@ export async function POST(req: NextRequest) {
       where: { id: projectId },
       data: { featured: plan === "premium" },
     });
-    if (referral?.code && userId) {
-      await prisma.referralEvent.create({ data: { code: referral.code, eventType: "paid", userId } }).catch(() => {});
+    if (referralAttributionCode && userId) {
+      await prisma.referralEvent
+        .create({ data: { code: referralAttributionCode, eventType: "paid", userId } })
+        .catch(() => {});
     }
     if (userId) {
       await rewardReferralActivation(userId).catch(() => {});
@@ -1225,8 +1849,10 @@ export async function POST(req: NextRequest) {
       stripePaymentId: sessionId,
     },
   });
-  if (referral?.code) {
-    await prisma.referralEvent.create({ data: { code: referral.code, eventType: "paid", userId } }).catch(() => {});
+  if (referralAttributionCode) {
+    await prisma.referralEvent
+      .create({ data: { code: referralAttributionCode, eventType: "paid", userId } })
+      .catch(() => {});
   }
 
   await rewardReferralActivation(userId).catch(() => {});

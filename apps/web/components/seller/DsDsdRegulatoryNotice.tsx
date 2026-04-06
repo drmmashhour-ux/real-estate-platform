@@ -5,7 +5,11 @@
 
 const OACIQ_URL = "https://www.oaciq.com";
 
-export function DsDsdRegulatoryNotice() {
+export function DsDsdRegulatoryNotice({
+  variant,
+}: {
+  variant?: "DS" | "DSD";
+}) {
   return (
     <details className="group rounded-xl border border-white/10 bg-[#141414] p-4 text-xs text-slate-400">
       <summary className="cursor-pointer list-none font-medium text-premium-gold outline-none [&::-webkit-details-marker]:hidden">
@@ -14,6 +18,16 @@ export function DsDsdRegulatoryNotice() {
         </span>
       </summary>
       <div className="mt-3 space-y-3 leading-relaxed">
+        {variant ? (
+          <p className="rounded-lg border border-premium-gold/20 bg-premium-gold/5 px-3 py-2 text-slate-300">
+            Current path guidance: this file most closely matches the{" "}
+            <strong className="text-premium-gold">{variant}</strong>{" "}
+            disclosure track.
+            {variant === "DSD"
+              ? " Divided co-ownership requires stronger condo / syndicate financial context before the file is really complete."
+              : " Standard residential or undivided ownership follows the DS-style disclosure track."}
+          </p>
+        ) : null}
         <p>
           Under Québec brokerage standards, the official{" "}
           <strong className="text-slate-300">Declarations by the seller of the immovable (DS)</strong> or, for divided

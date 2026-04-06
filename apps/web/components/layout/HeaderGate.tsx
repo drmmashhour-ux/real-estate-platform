@@ -29,5 +29,10 @@ export function HeaderGate() {
     return null;
   }
 
+  /** Admin uses its own shell; global marketing header overlaps nav and confuses clicks. */
+  if (pathname?.startsWith("/admin")) {
+    return null;
+  }
+
   return <HeaderClient loggedIn={loggedIn} roleCookie={roleCookie} />;
 }

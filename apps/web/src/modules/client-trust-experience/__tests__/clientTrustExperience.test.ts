@@ -33,6 +33,7 @@ describe("client trust experience", () => {
     const payload: Record<string, unknown> = {
       property_address: "1 Main St",
       property_type: "condo",
+      ownership_type: "divided_coownership",
       owner_occupied: true,
       known_defects_flag: false,
       water_damage_flag: false,
@@ -43,6 +44,9 @@ describe("client trust experience", () => {
       inclusions: "Fridge",
       exclusions: "",
       tenant_present: false,
+      condo_syndicate_documents_available: true,
+      condo_financial_statements_available: true,
+      contingency_fund_details: "Healthy contingency fund with no urgent special assessment on file.",
       additional_notes: "",
     };
     const v = runDeclarationValidationDeterministic(payload);

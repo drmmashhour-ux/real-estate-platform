@@ -15,6 +15,7 @@ import {
 } from "@/modules/offers/services/offer-validation";
 import { notifyOfferEvent } from "@/modules/offers/services/offer-notifications";
 import { onOfferCountered } from "@/modules/notifications/services/workflow-notification-triggers";
+import { autoRecordDealLegalActionFromOffer } from "@/lib/deals/legal-timeline-bridge";
 
 export const dynamic = "force-dynamic";
 
@@ -98,6 +99,13 @@ export async function POST(request: NextRequest, context: Params) {
     listingId: offer.listingId,
     buyerId: offer.buyerId,
     brokerId: updated.brokerId,
+  });
+  void autoRecordDealLegalActionFromOffer({
+    listingId: offer.listingId,
+    buyerId: offer.buyerId,
+    actorUserId: userId,
+    action: "COUNTER_PROPOSAL_SENT",
+    note: msg.value ?? "Counter-offer recorded automatically from offer workflow.",
   });
 
   return NextResponse.json({ ok: true, offer: updated });

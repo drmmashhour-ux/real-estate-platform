@@ -7,6 +7,9 @@ import { getHubTheme } from "@/lib/hub/themes";
 
 const HUB_LABELS: Record<HubKey, string> = {
   bnhub: "BNHub",
+  carhub: "CarHub",
+  servicehub: "ServiceHub",
+  investorhub: "InvestorHub",
   realEstate: "Real Estate",
   luxury: "Luxury",
   broker: "Broker",
@@ -23,7 +26,12 @@ type HubSwitcherProps = {
 
 function pathToHubKey(pathname: string): HubKey | null {
   if (pathname.startsWith("/admin")) return "admin";
-  if (pathname.startsWith("/dashboard/bnhub") || pathname.startsWith("/search/bnhub")) return "bnhub";
+  if (pathname.startsWith("/hub/carhub")) return "carhub";
+  if (pathname.startsWith("/hub/servicehub")) return "servicehub";
+  if (pathname.startsWith("/hub/investorhub")) return "investorhub";
+  if (pathname.startsWith("/dashboard/bnhub") || pathname.startsWith("/search/bnhub") || pathname.startsWith("/bnhub")) {
+    return "bnhub";
+  }
   if (pathname.startsWith("/dashboard/real-estate")) return "realEstate";
   if (pathname.startsWith("/dashboard/luxury")) return "luxury";
   if (pathname.startsWith("/dashboard/broker")) return "broker";
@@ -55,8 +63,20 @@ export function HubSwitcher({ showAdmin = false, currentHubKey: controlledHub }:
   const label = currentHubKey ? HUB_LABELS[currentHubKey] : "Select hub";
   const theme = currentHubKey ? getHubTheme(currentHubKey) : null;
 
+  const engineHubs: HubKey[] = [];
+  if (typeof process !== "undefined" && process.env.NEXT_PUBLIC_HUB_CAR_ENABLED === "1") {
+    engineHubs.push("carhub");
+  }
+  if (typeof process !== "undefined" && process.env.NEXT_PUBLIC_HUB_SERVICE_ENABLED === "1") {
+    engineHubs.push("servicehub");
+  }
+  if (typeof process !== "undefined" && process.env.NEXT_PUBLIC_HUB_INVESTOR_SHELL_ENABLED === "1") {
+    engineHubs.push("investorhub");
+  }
+
   const hubs: HubKey[] = [
     "bnhub",
+    ...engineHubs,
     "realEstate",
     "luxury",
     "broker",

@@ -3,17 +3,19 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getGuestId } from "@/lib/auth/session";
 import { getFsboPremiumPublishPriceCents, getFsboPublishPriceCents } from "@/lib/fsbo/constants";
+import { getListingTransactionFlagsForListings } from "@/lib/fsbo/listing-transaction-flag";
+import { ListingTransactionFlag } from "@/components/listings/ListingTransactionFlag";
 
 export const dynamic = "force-dynamic";
 
 export default async function FsboOwnerDashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ fsboPaid?: string }>;
+  searchParams?: Promise<{ fsboPaid?: string }>;
 }) {
   const userId = await getGuestId();
   if (!userId) redirect("/auth/login?returnUrl=/dashboard/fsbo");
-  const { fsboPaid } = await searchParams;
+  const { fsboPaid } = (await searchParams) ?? {};
 
   const listings = await prisma.fsboListing.findMany({
     where: { ownerId: userId },
@@ -22,6 +24,9 @@ export default async function FsboOwnerDashboardPage({
       _count: { select: { leads: true } },
     },
   });
+  const transactionFlags = await getListingTransactionFlagsForListings(
+    listings.map((listing) => ({ id: listing.id, status: listing.status }))
+  );
 
   const feeBasic = getFsboPublishPriceCents();
   const feePremium = getFsboPremiumPublishPriceCents();
@@ -65,6 +70,11 @@ export default async function FsboOwnerDashboardPage({
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <h2 className="font-semibold text-white">{l.title}</h2>
+                  {transactionFlags.get(l.id) ? (
+                    <div className="mt-2">
+                      <ListingTransactionFlag flag={transactionFlags.get(l.id)!} />
+                    </div>
+                  ) : null}
                   <p className="text-sm text-slate-400">
                     {l.city} · ${(l.priceCents / 100).toLocaleString()}
                   </p>

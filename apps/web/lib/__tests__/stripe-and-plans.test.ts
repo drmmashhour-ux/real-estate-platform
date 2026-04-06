@@ -36,6 +36,9 @@ describe("billing plans", () => {
   });
 
   it("lists the expected plan keys", () => {
-    expect(Object.keys(plansModule.plans)).toEqual(expect.arrayContaining(["free", "basic", "pro"]));
+    expect(Object.keys(plansModule.plans)).toEqual(
+      expect.arrayContaining(["free", "basic", "pro", "platinum"])
+    );
+    expect(plansModule.PAID_STORAGE_PLAN_KEYS).toEqual(["basic", "pro", "platinum"]);
   });
 });

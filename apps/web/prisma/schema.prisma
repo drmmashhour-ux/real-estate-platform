@@ -166,6 +166,17 @@ enum BookingStatus {
   CANCELLED // Legacy / admin cancellation
   COMPLETED
   DISPUTED
+  /// Unpaid checkout abandoned past `pendingCheckoutExpiresAt` (or legacy 1h rule) — ignored for overlap.
+  EXPIRED
+}
+
+/// Offline / manual settlement tracking (Syria-style markets). Does not replace `BookingStatus`; pairs with `PENDING` while host arranges payment outside Stripe.
+enum ManualPaymentSettlement {
+  NOT_APPLICABLE
+  PENDING
+  RECEIVED
+  FAILED
+  WAIVED
 }
 
 enum ListingStatus {
@@ -186,6 +197,35 @@ enum PaymentStatus {
   COMPLETED
   FAILED
   REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+/// Permission-based listing supply (owners / brokers / hosts). Never used for scraped third-party inventory.
+enum ListingAcquisitionSourceType {
+  OWNER
+  BROKER
+  HOST
+  MANUAL
+  @@map("listing_acquisition_source_type")
+}
+
+enum ListingAcquisitionPermissionStatus {
+  UNKNOWN
+  REQUESTED
+  GRANTED
+  REJECTED
+  @@map("listing_acquisition_permission_status")
+}
+
+enum ListingAcquisitionIntakeStatus {
+  NEW
+  CONTACTED
+  INTERESTED
+  AWAITING_ASSETS
+  READY_FOR_REVIEW
+  PUBLISHED
+  ARCHIVED
+  @@map("listing_acquisition_intake_status")
 }
 
 model User {
@@ -204,8 +244,19 @@ model User {
   /// One-time token for /auth/verify-email?token=… (cleared after use).
   emailVerificationToken               String?                               @unique @map("email_verification_token")
   emailVerificationExpires             DateTime?                             @map("email_verification_expires")
+  /// Set when the user confirms their mobile number via SMS OTP (see ContactVerificationCode).
+  phoneVerifiedAt                      DateTime?                             @map("phone_verified_at")
   name                                 String?
   phone                                String?
+  /// Optional home / primary market (multi-city expansion; denormalized).
+  homeCity                             String?                               @map("home_city")
+  homeRegion                           String?                               @map("home_region")
+  homeCountry                          String?                               @map("home_country")
+  /// UI locale preference (`en` | `fr` | `es` | `ar`); synced with `mi_locale` cookie when the user switches language.
+  preferredUiLocale                    String?                               @map("preferred_ui_locale") @db.VarChar(8)
+  /// Canonical LECIPM market city for dashboards and rollout.
+  lecipmCityId                         String?                               @map("lecipm_city_id")
+  lecipmCity                           City?                                 @relation(fields: [lecipmCityId], references: [id], onDelete: SetNull)
   /// Seller Hub: mailing / contact address collected at onboarding (not legal advice).
   sellerProfileAddress                 String?                               @map("seller_profile_address") @db.Text
   /// Seller Hub wizard: `basicInfo`, `propertyAddress`, `ownershipConfirmed`, `idVerifiedAt` (ISO), etc.
@@ -229,6 +280,10 @@ model User {
    * True when Connect onboarding completed (synced from Stripe or return URL).
    */
   stripeOnboardingComplete             Boolean                               @default(false) @map("stripe_onboarding_complete")
+  /// Last known Stripe Account `charges_enabled` (denormalized; refreshed on status sync).
+  stripeChargesEnabled                 Boolean?                              @map("stripe_charges_enabled")
+  /// Last known Stripe Account `payouts_enabled` (denormalized; refreshed on status sync).
+  stripePayoutsEnabled                 Boolean?                              @map("stripe_payouts_enabled")
   /// Outbound growth messaging: warm | buyer | broker | host (manual or automation).
   growthOutreachSegment                String?                               @map("growth_outreach_segment")
   growthLastContactAt                  DateTime?                             @map("growth_last_contact_at")
@@ -236,11 +291,23 @@ model User {
   growthFollowUpSentAt                 DateTime?                             @map("growth_follow_up_sent_at")
   /// When true, automated follow-ups and triggers skip this user.
   growthMessagingPaused                Boolean                               @default(false) @map("growth_messaging_paused")
+  /// Launch checklist: persona picker completed (`/onboarding`).
+  launchOnboardingCompletedAt          DateTime?                             @map("launch_onboarding_completed_at")
+  /// Optional: `find` | `list` | `invest`
+  launchPersonaChoice                  String?                               @map("launch_persona_choice") @db.VarChar(32)
+  /// BNHub guest trust snapshot (0–100); recomputed from stays, host reviews, disputes.
+  bnhubGuestTrustScore                 Int                                   @default(50) @map("bnhub_guest_trust_score")
+  /// Completed BNHub stays (paid + COMPLETED) for this guest.
+  bnhubGuestTotalStays                 Int                                   @default(0) @map("bnhub_guest_total_stays")
+  /// Average of host post-stay ratings (1–5), when at least one exists.
+  bnhubGuestRatingAverage              Float?                                @map("bnhub_guest_rating_average")
   createdAt                            DateTime                              @default(now())
   updatedAt                            DateTime                              @updatedAt
+  launchEvents                         LaunchEvent[]                         @relation("LaunchEvents")
   properties                           Property[]
   shortTermListings                    ShortTermListing[]
   bnhubChannelConnections              BnhubChannelConnection[]
+  bnhubOtaAiTraces                     BnhubOtaAiTrace[]
   bnhubPaymentAccounts                 BnhubPaymentAccount[]
   bnhubPaymentQuotesGuest              BnhubPaymentQuote[]                   @relation("BnhubPaymentQuoteGuest")
   bnhubPaymentQuotesHost               BnhubPaymentQuote[]                   @relation("BnhubPaymentQuoteHost")
@@ -252,6 +319,10 @@ model User {
   bnhubFinancialLedgerEntriesUser      BnhubFinancialLedgerEntry[]           @relation("BnhubLedgerUser")
   bookingsAsGuest                      Booking[]
   reviewsGiven                         Review[]
+  bnhubHostReviewsOfGuestsWritten      BnhubHostReviewOfGuest[]              @relation("BnhubHostReviewAuthor")
+  bnhubHostReviewsOfGuestsAboutMe      BnhubHostReviewOfGuest[]              @relation("BnhubHostReviewSubjectGuest")
+  bnhubMonthlyReputationSnapshots      BnhubMonthlyReputationSnapshot[]
+  contactVerificationCodes             ContactVerificationCode[]
   hostQuality                          HostQuality?
   hostPerformanceMetrics               HostPerformance?
   hostTrustBadges                      HostBadge[]                  @relation("BnhubHostTrustBadges")
@@ -260,8 +331,12 @@ model User {
   ambassadorProfile                    Ambassador?
   referralEvents                       ReferralEvent[]
   referralRewards                      ReferralReward[]
+  growthEngineLeadsAssigned            GrowthEngineLead[]                    @relation("GrowthEngineLeadAssignee")
+  growthEngineLeadsReferred            GrowthEngineLead[]                    @relation("GrowthEngineLeadReferrer")
+  growthBrainApprovalsReviewed         GrowthBrainApproval[]                 @relation("GrowthBrainApprovalReviewer")
   bookingMessagesSent                  BookingMessage[]
   identityVerifications                IdentityVerification[]
+  bnhubTrustSimpleDisputesReported     BnhubTrustSimpleDispute[]             @relation("BnhubTrustSimpleDisputeReporter")
   brokerVerifications                  BrokerVerification[]
   brokerActivityScores                 BrokerActivityScore[]
   transactionsAsBuyer                  RealEstateTransaction[]               @relation("TransactionBuyer")
@@ -284,6 +359,19 @@ model User {
   bnhubHostTrustProfile                BnhubHostProfile?
   bnhubGuestTrustProfile               BnhubGuestProfile?
   bnhubGuestFavorites                  BnhubGuestFavorite[]
+  userSearchProfile                    UserSearchProfile?
+  userIntelligenceProfile              UserIntelligenceProfile?
+  searchEvents                         SearchEvent[]
+  userBehaviorEvents                   UserBehaviorEvent[]
+  behaviorPreferenceProfile            BehaviorPreferenceProfile?
+  userBnhubPreferences                 UserBnhubPreferences?
+  bnhubSupabaseListingFavorites        BnhubSupabaseGuestFavorite[]
+  bnhubClientSearchEvents              BnhubClientSearchEvent[]
+  bnhubClientListingViewEvents        BnhubClientListingViewEvent[]
+  bnhubClientClickEvents              BnhubClientClickEvent[]
+  bnhubClientBookingFunnelEvents      BnhubClientBookingFunnelEvent[]
+  bnhubListingPriceWatches            BnhubListingPriceWatch[]
+  bnhubDiscoveryAlerts                 BnhubDiscoveryAlert[]
   bnhubServiceRequestsAsGuest          BnhubServiceRequest[]                 @relation("BnhubServiceRequestGuest")
   bnhubServiceRequestsAsHost           BnhubServiceRequest[]                 @relation("BnhubServiceRequestHost")
   bnhubListingServicesAsHost           BnhubListingService[]                 @relation("BnhubListingServiceHost")
@@ -319,6 +407,12 @@ model User {
   activityLogs                         ActivityLog[]
   legalAgreements                      LegalAgreement[]
   platformPayments                     PlatformPayment[]
+  listingContactLeadPurchases          ListingContactLeadPurchase[]
+  /// Multi-provider orchestration ledger (Stripe primary, Clover secondary) — see `lib/payments`.
+  orchestratedPayments                 OrchestratedPayment[]
+  orchestratedPayoutsAsHost            OrchestratedPayout[]                  @relation("OrchestratedPayoutHost")
+  hostStripeAccountSnapshot            HostStripeAccountSnapshot?
+  bnhubManualHostPayouts               BnhubManualHostPayout[]
   platformInvoicesParty                PlatformInvoice[]                     @relation("PlatformInvoiceParty")
   brokerCommissions                    BrokerCommission[]
   brokerPayoutsAsBroker                BrokerPayout[]                        @relation("BrokerPayoutBroker")
@@ -348,6 +442,23 @@ model User {
   isRetargetCandidate                  Boolean                               @default(false) @map("is_retarget_candidate")
   aiAutomationEvents                   AiAutomationEvent[]
   aiAutomationEventsForBroker          AiAutomationEvent[]                   @relation("AiAutomationBroker")
+  managerAiConversations               ManagerAiConversation[]
+  managerAiAgentRuns                   ManagerAiAgentRun[]
+  managerAiActionLogs                  ManagerAiActionLog[]
+  managerAiRecommendations             ManagerAiRecommendation[]
+  managerAiApprovalRequests            ManagerAiApprovalRequest[]            @relation("ManagerAiApprovalRequester")
+  managerAiApprovalReviews             ManagerAiApprovalRequest[]            @relation("ManagerAiApprovalReviewer")
+  managerAiNotificationLogs            ManagerAiNotificationLog[]
+  managerAiHostAutopilotSettings       ManagerAiHostAutopilotSettings?
+  bnhubAutomatedHostMessagesAsHost     BnhubAutomatedHostMessageLog[]       @relation("BnhubAutomatedHostMessageHost")
+  bnhubAutomatedHostMessagesAsGuest    BnhubAutomatedHostMessageLog[]       @relation("BnhubAutomatedHostMessageGuest")
+  aiConversionSignalsAsGuest           AiConversionSignal[]                 @relation("AiConversionSignalGuest")
+  hostBnhubAutopilotSettings         HostAutopilotSettings?
+  aiSuggestionsHosted                AiSuggestion[]                    @relation("AiSuggestionHostUser")
+  aiAutopilotActionsHosted           AiAutopilotAction[]               @relation("AiAutopilotActionHostUser")
+  managerAiOverrideEvents            ManagerAiOverrideEvent[]
+  aiFraudRiskLogsReviewed            AiFraudRiskLog[]                    @relation("AiFraudRiskLogReviewer")
+  managerAiOutcomeEvals              ManagerAiOutcomeEval[]
   crmInteractionsLogged                CrmInteraction[]                      @relation("CrmInteractionBroker")
   retentionTouchesScheduled            ClientRetentionTouchpoint[]           @relation("RetentionBroker")
   fsboListings                         FsboListing[]
@@ -364,6 +475,8 @@ model User {
   mortgageExpertProfile                MortgageExpert?
   /// First-10-clients / manual acquisition CRM (admin launch dashboard)
   clientAcquisitionLeads               ClientAcquisitionLead[]
+  /// Listing supply pipeline rows assigned to this admin/operator.
+  listingAcquisitionLeadsAssigned      ListingAcquisitionLead[]              @relation("AcquisitionLeadAssignee")
   clientAcquisitionDailyProgress       ClientAcquisitionDailyProgress[]
   earlyUserTrackingLinked              EarlyUserTracking[]                   @relation("EarlyUserTrackingLinkedUser")
   crmConversations                     CrmConversation[]
@@ -386,6 +499,7 @@ model User {
   mortgageBrokerAccount                MortgageBroker?
   userFeedbacks                        UserFeedback[]
   growthUserEvents                     UserEvent[]                           @relation("GrowthUserEvents")
+  liveDebugErrorEvents                 ErrorEvent[]                          @relation("LiveDebugErrorEvents")
   growthEmailQueueItems                GrowthEmailQueue[]                    @relation("GrowthEmailQueueUser")
   growthMessageLogs                    MessageLog[]
   growthAiConversations                GrowthAiConversation[]
@@ -424,6 +538,10 @@ model User {
   clientIntakeEventsAsActor            ClientIntakeEvent[]                   @relation("ClientIntakeEventActor")
   notificationsReceived                Notification[]                        @relation("NotificationRecipient")
   notificationsAsActor                 Notification[]                        @relation("NotificationActor")
+  mobileDeviceTokens                   MobileDeviceToken[]
+  clientInterestProfile                ClientInterestProfile?
+  clientCelebrationProfile             ClientCelebrationProfile?
+  clientFollowUpQueueItems             ClientFollowUpQueue[]
   actionQueueItems                     ActionQueueItem[]
   notificationLifecycleEvents          NotificationEvent[]                   @relation("NotificationEventActor")
   tenantMemberships                    TenantMembership[]
@@ -453,6 +571,11 @@ model User {
   /// FSBO / CRM leads this broker purchased on the lead marketplace.
   leadMarketplacePurchases             LeadMarketplaceListing[]              @relation("LeadMarketplaceBuyer")
   brokerLecipmSubscription             BrokerLecipmSubscription?
+  brokerMonetizationProfile            BrokerMonetizationProfile?
+  brokerBillingLeadsReceived           BrokerLead[]                          @relation("BrokerLeadBroker")
+  brokerBillingLeadsAsBuyer            BrokerLead[]                          @relation("BrokerLeadBuyer")
+  brokerInvoices                       BrokerInvoice[]
+  brokerPayments                       BrokerPayment[]
   publicShareLinksCreated              PublicShareLink[]                     @relation("ShareLinkCreator")
   crmSalesLeadsOwned                   CrmSalesLead[]                        @relation("CrmSalesLeadOwner")
   copilotConversations                 CopilotConversation[]
@@ -502,6 +625,55 @@ model User {
   bnhubHostQualityProfile              BnhubHostQualityProfile?
   /// Browser cookie holds `Session.token`; revoked on logout; prior rows revoked on new login (single active session).
   sessions                             Session[]
+  playbookExecutions                   PlaybookExecution[]
+  revenueEvents                        RevenueEvent[]
+  revenueOpportunities                 RevenueOpportunity[]
+  /// Revenue execution CRM — actions logged against this user (outreach / conversion).
+  executionActionsAsCrmTarget        ExecutionAction[]                     @relation("ExecutionActionCrmUser")
+  salesAgentProfile                SalesAgent?
+  salesAssignmentsAsProspect       SalesAssignment[]                     @relation("SalesAssignmentProspect")
+  insuranceLeads                   InsuranceLead[]
+  userLoyaltyProfile               UserLoyaltyProfile?
+  loyaltyRewardEvents              LoyaltyRewardEvent[]
+
+  @@index([lecipmCityId])
+}
+
+enum LoyaltyTier {
+  NONE
+  BRONZE
+  SILVER
+  GOLD
+}
+
+/// BNHub guest loyalty — simple tier + counters (no points).
+model UserLoyaltyProfile {
+  id                String      @id @default(cuid())
+  userId            String      @unique @map("user_id")
+  user              User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  totalBookings     Int         @default(0) @map("total_bookings")
+  completedBookings Int         @default(0) @map("completed_bookings")
+  lastBookingAt     DateTime?   @map("last_booking_at")
+  tier              LoyaltyTier @default(NONE)
+  createdAt         DateTime    @default(now()) @map("created_at")
+  updatedAt         DateTime    @updatedAt @map("updated_at")
+
+  @@map("user_loyalty_profiles")
+}
+
+/// One row per paid booking — idempotent loyalty credit + audit log.
+model LoyaltyRewardEvent {
+  id                     String      @id @default(cuid())
+  userId                 String      @map("user_id")
+  user                   User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookingId              String      @unique @map("booking_id")
+  tierBefore             LoyaltyTier @map("tier_before")
+  tierAfter              LoyaltyTier @map("tier_after")
+  discountPercentApplied Float?      @map("discount_percent_applied")
+  createdAt              DateTime    @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@map("loyalty_reward_events")
 }
 
 /// Server-side auth session (`lecipm_guest_id` cookie value = opaque `token`).
@@ -1538,6 +1710,8 @@ model FsboListing {
   priceCents                     Int                             @map("price_cents")
   address                        String
   city                           String
+  country                        String                          @default("CA")
+  region                         String?
   bedrooms                       Int?
   bathrooms                      Int?
   surfaceSqft                    Int?                            @map("surface_sqft")
@@ -1563,6 +1737,12 @@ model FsboListing {
   publishPriceCents              Int?                            @map("publish_price_cents")
   paidPublishAt                  DateTime?                       @map("paid_publish_at")
   featuredUntil                  DateTime?                       @map("featured_until")
+  /// Listing expiry is contract-driven for broker-managed inventory and platform-driven for owner-direct inventory.
+  expiresAt                      DateTime?                       @map("expires_at")
+  /// Prevent duplicate renewal reminders inside the same renewal window.
+  expiryReminderSentAt           DateTime?                       @map("expiry_reminder_sent_at")
+  /// Archive timestamp when the platform auto-expires a listing.
+  archivedAt                     DateTime?                       @map("archived_at")
   /// Optional map coordinates; fill via geocoding when available.
   latitude                       Float?                          @map("latitude")
   longitude                      Float?                          @map("longitude")
@@ -1643,6 +1823,16 @@ model FsboListing {
   /// Optional 1:1 canonical listing row (`properties.id` bigint) for new integrations.
   canonicalListingProperty       ListingProperty?
   internalCrmTelemetryEvents     InternalCrmEvent[]              @relation("CrmEventFsboListing")
+  /// Optional 1:1 — FSBO row created from safe intake (`ListingAcquisitionLead`).
+  sourcedFromAcquisitionLead     ListingAcquisitionLead?         @relation("FsboFromAcquisition")
+  /// Ops workflow: draft | pending_review | approved | published | rejected (alongside `status` / moderation).
+  supplyPublicationStage         String                          @default("draft") @map("supply_publication_stage")
+  permissionConfirmedAt          DateTime?                       @map("permission_confirmed_at")
+  permissionSourceNote         String?                         @map("permission_source_note") @db.Text
+  rewrittenDescriptionReviewed Boolean                         @default(false) @map("rewritten_description_reviewed")
+  imagesApproved                 Boolean                         @default(false) @map("images_approved")
+  imageSourceNote                String?                         @map("image_source_note") @db.Text
+  missingApprovedImages          Boolean                         @default(false) @map("missing_approved_images")
 
   @@index([ownerId])
   @@index([tenantId])
@@ -1650,10 +1840,54 @@ model FsboListing {
   @@index([city, status, moderationStatus])
   @@index([status])
   @@index([moderationStatus])
+  @@index([expiresAt])
+  @@index([archivedAt])
   @@index([priceCents])
   @@index([riskScore])
+  @@index([supplyPublicationStage])
   @@index([updatedAt(sort: Desc)], map: "idx_fsbo_listings_updated_at_desc")
   @@map("fsbo_listings")
+}
+
+/// Safe, permission-based supply pipeline — tracks outreach and intake before publication.
+model ListingAcquisitionLead {
+  id                       String                           @id @default(cuid())
+  sourceType               ListingAcquisitionSourceType     @map("source_type")
+  contactName              String                           @map("contact_name")
+  contactEmail             String                           @map("contact_email")
+  contactPhone             String?                          @map("contact_phone")
+  city                     String
+  propertyCategory         String                           @map("property_category")
+  /// Internal note only (e.g. “met at open house”) — never auto-imported listing text.
+  sourcePlatformText       String?                          @map("source_platform_text") @db.Text
+  permissionStatus         ListingAcquisitionPermissionStatus @default(UNKNOWN) @map("permission_status")
+  intakeStatus             ListingAcquisitionIntakeStatus     @default(NEW) @map("intake_status")
+  notes                    String?                          @db.Text
+  assignedToUserId         String?                          @map("assigned_to_user_id")
+  assignedTo               User?                            @relation("AcquisitionLeadAssignee", fields: [assignedToUserId], references: [id], onDelete: SetNull)
+  priceCents               Int?                             @map("price_cents")
+  bedrooms                 Int?
+  bathrooms                Int?
+  description              String?                          @db.Text
+  amenitiesText            String?                          @map("amenities_text") @db.Text
+  permissionConfirmedAt    DateTime?                        @map("permission_confirmed_at")
+  submittedImageUrls       Json                             @default("[]") @map("submitted_image_urls")
+  linkedFsboListingId      String?                          @unique @map("linked_fsbo_listing_id")
+  linkedFsboListing        FsboListing?                     @relation("FsboFromAcquisition", fields: [linkedFsboListingId], references: [id], onDelete: SetNull)
+  linkedShortTermListingId String?                          @unique @map("linked_short_term_listing_id")
+  linkedShortTermListing   ShortTermListing?                @relation("StayFromAcquisition", fields: [linkedShortTermListingId], references: [id], onDelete: SetNull)
+  linkedCrmListingId       String?                          @unique @map("linked_crm_listing_id")
+  linkedCrmListing         Listing?                         @relation("CrmListingFromAcquisition", fields: [linkedCrmListingId], references: [id], onDelete: SetNull)
+  growthEngineLead         GrowthEngineLead?
+  createdAt                DateTime                         @default(now()) @map("created_at")
+  updatedAt                DateTime                         @updatedAt @map("updated_at")
+
+  @@index([intakeStatus])
+  @@index([permissionStatus])
+  @@index([city])
+  @@index([sourceType])
+  @@index([createdAt])
+  @@map("listing_acquisition_leads")
 }
 
 /// AI Deal Analyzer — deterministic opportunity / risk snapshot (Phase 1: FSBO listing id as property_id).
@@ -3426,6 +3660,8 @@ model ShortTermListing {
   photos                             Json                              @default("[]") // Legacy URLs; prefer BnhubListingPhoto for order/cover
   amenities                          Json                              @default("[]")
   houseRules                         String?
+  /// Optional structured rules checklist (e.g. JSON array of { key, label, allowed }); complements `houseRules` text.
+  listingRulesStructured             Json?                             @map("listing_rules_structured")
   checkInInstructions                String?
   checkInTime                        String? // e.g. "15:00"
   checkOutTime                       String? // e.g. "11:00"
@@ -3433,6 +3669,19 @@ model ShortTermListing {
   cleaningFeeCents                   Int                               @default(0)
   securityDepositCents               Int                               @default(0)
   instantBookEnabled                 Boolean                           @default(false)
+  /// When true, guests must have approved government ID (`IdentityVerification`) before booking.
+  requireGuestIdentityVerification   Boolean                           @default(false) @map("require_guest_identity_verification")
+  /// Denormalized guest-review average (1–5) for cards / mobile.
+  bnhubListingRatingAverage          Float?                            @map("bnhub_listing_rating_average")
+  bnhubListingReviewCount            Int                               @default(0) @map("bnhub_listing_review_count")
+  /// Completed paid stays for this listing.
+  bnhubListingCompletedStays         Int                               @default(0) @map("bnhub_listing_completed_stays")
+  /// Platform-verified host/listing (cadastre + identity path complete).
+  bnhubListingHostVerified           Boolean                           @default(false) @map("bnhub_listing_host_verified")
+  /// Heuristic “top host” badge for discovery UI.
+  bnhubListingTopHostBadge           Boolean                           @default(false) @map("bnhub_listing_top_host_badge")
+  /// Optional cached 0–100 AI discovery score; search API computes live scores for map/cards regardless.
+  aiDiscoveryScore                   Int?                              @map("ai_discovery_score")
   minStayNights                      Int? // null = no minimum
   maxStayNights                      Int?
   listingStatus                      ListingStatus                     @default(DRAFT)
@@ -3464,12 +3713,18 @@ model ShortTermListing {
   allowedPetTypes                    Json                              @default("[]") @map("allowed_pet_types")
   maxPetWeightKg                     Float?                            @map("max_pet_weight_kg")
   petRules                           String?                           @map("pet_rules") @db.Text
+  /// Added to BNHub search review signal for monthly top-host winners (0–0.12). Reset by admin monthly job.
+  reputationRankBoost                Float                             @default(0) @map("reputation_rank_boost")
   /// JSON string[] e.g. ["waterfront","downtown","near_attractions"]
   experienceTags                     Json                              @default("[]") @map("experience_tags")
   /// JSON string[] e.g. ["airport_pickup","parking","shuttle"]
   servicesOffered                    Json                              @default("[]") @map("services_offered")
   conditionOfProperty                String?                           @map("condition_of_property") // Mandatory disclosure: overall condition
   knownIssues                        String?                           @map("known_issues") @db.Text // Mandatory disclosure: known issues (e.g. "None" or description)
+  /// Host attestation timestamp: legal right to offer the stay (audit via ListingVerificationLog).
+  legalRentRightAttestedAt           DateTime?                         @map("legal_rent_right_attested_at")
+  /// Version of attestation copy the host agreed to; bump to require re-attestation.
+  legalRentRightAttestationVersion   String?                           @map("legal_rent_right_attestation_version")
   createdAt                          DateTime                          @default(now()) @map("created_at")
   updatedAt                          DateTime                          @updatedAt @map("updated_at")
   ownerId                            String                            @map("host_id")
@@ -3478,6 +3733,7 @@ model ShortTermListing {
   listingPhotos                      BnhubListingPhoto[]
   bookings                           Booking[]
   reviews                            Review[]
+  hostReviewsOfGuest                 BnhubHostReviewOfGuest[]
   verificationLogs                   ListingVerificationLog[]
   disputes                           Dispute[]
   propertyDocuments                  PropertyDocument[]
@@ -3505,6 +3761,7 @@ model ShortTermListing {
   channelIcalExportToken             String?                           @unique @map("channel_ical_export_token")
   externalMappings                   BnhubExternalListingMapping[]
   bnhubChannelListingMappings        BnhubChannelListingMapping[]
+  bnhubOtaAiTraces                   BnhubOtaAiTrace[]
   bnhubChannelCalendarEvents         BnhubChannelCalendarEvent[]
   bnhubOtaSyncLogs                   BnhubOtaSyncLog[]
   bnhubPaymentQuotes                 BnhubPaymentQuote[]
@@ -3537,12 +3794,30 @@ model ShortTermListing {
   bnhubListingSafetyProfile          BnhubListingSafetyProfile?
   bnhubSafetyFlags                   BnhubSafetyFlag[]
   bnhubGuestFavorites                BnhubGuestFavorite[]
+  listingSearchMetrics               ListingSearchMetrics?
+  searchEvents                       SearchEvent[]
+  userBehaviorEvents                 UserBehaviorEvent[]
+  listingLearningStats               ListingLearningStats?
+  listingIntelligenceSnapshots       ListingIntelligenceSnapshot[]
   propertyRatingAggregate            PropertyRatingAggregate?
   bnhubListingServices               BnhubListingService[]
   bnhubBookingServiceLines           BnhubBookingService[]
   bnhubServiceRequests               BnhubServiceRequest[]
   bnhubBookingBundles                BnhubBookingBundle[]
   bnhubConciergeSessions             BnhubConciergeSession[]
+  bnhubHostListingPromotions         BnhubHostListingPromotion[]
+  listingPricingSnapshots            ListingPricingSnapshot[]
+  bnhubAiSuggestions                 AiSuggestion[]                    @relation("AiSuggestionListing")
+  bnhubAiAutopilotActions            AiAutopilotAction[]               @relation("AiAutopilotActionListing")
+  /// Optional 1:1 — stay created from safe intake (`ListingAcquisitionLead`).
+  sourcedFromAcquisitionLead         ListingAcquisitionLead?           @relation("StayFromAcquisition")
+  permissionConfirmedAt              DateTime?                         @map("permission_confirmed_at")
+  permissionSourceNote             String?                           @map("permission_source_note") @db.Text
+  imagesApproved                   Boolean                           @default(false) @map("images_approved")
+  imageSourceNote                  String?                           @map("image_source_note") @db.Text
+  missingApprovedImages            Boolean                           @default(false) @map("missing_approved_images")
+  bnhubAutomatedHostMessages       BnhubAutomatedHostMessageLog[]
+  aiConversionSignals              AiConversionSignal[]
 
   @@index([city, verificationStatus])
   @@index([city, listingStatus])
@@ -3555,6 +3830,423 @@ model ShortTermListing {
   @@index([listingVerificationStatus])
   @@index([cadastreNumber])
   @@map("bnhub_listings")
+}
+
+enum SearchEventType {
+  VIEW
+  CLICK
+  SAVE
+  BOOK
+  SEARCH
+}
+
+/// Denormalized BNHub listing signals for AI search ranking (refreshed by events + optional cron).
+model ListingSearchMetrics {
+  id               String   @id @default(cuid())
+  listingId        String   @unique @map("listing_id")
+  views7d          Int      @default(0) @map("views_7d")
+  views30d         Int      @default(0) @map("views_30d")
+  bookings7d       Int      @default(0) @map("bookings_7d")
+  bookings30d      Int      @default(0) @map("bookings_30d")
+  ctr              Float?
+  conversionRate   Float?   @map("conversion_rate")
+  avgStayLength    Float?   @map("avg_stay_length")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  listing ShortTermListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@map("listing_search_metrics")
+}
+
+/// Learned guest preferences for personalized BNHub search & recommendations.
+model UserSearchProfile {
+  id                 String    @id @default(cuid())
+  userId             String    @unique @map("user_id")
+  preferredCities    String[]  @default([]) @map("preferred_cities")
+  preferredTypes     String[]  @default([]) @map("preferred_types")
+  preferredPriceMin  Float?    @map("preferred_price_min")
+  preferredPriceMax  Float?    @map("preferred_price_max")
+  preferredGuests    Int?      @map("preferred_guests")
+  preferredAmenities String[]  @default([]) @map("preferred_amenities")
+  lastSearchAt       DateTime? @map("last_search_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_search_profiles")
+}
+
+model SearchEvent {
+  id        String          @id @default(cuid())
+  userId    String?         @map("user_id")
+  listingId String?         @map("listing_id")
+  eventType SearchEventType @map("event_type")
+  metadata  Json?
+  createdAt DateTime        @default(now()) @map("created_at")
+
+  user    User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  listing ShortTermListing? @relation(fields: [listingId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([listingId, createdAt])
+  @@index([eventType, createdAt])
+  @@map("search_events")
+}
+
+/// High-granularity behavior stream for ranking learning (BNHub + future verticals).
+enum BehaviorEventType {
+  LISTING_IMPRESSION
+  LISTING_CLICK
+  LISTING_SAVE
+  LISTING_SHARE
+  LISTING_CONTACT_CLICK
+  LISTING_UNLOCK_START
+  LISTING_UNLOCK_SUCCESS
+  LISTING_BOOKING_ATTEMPT
+  LISTING_BOOKING_SUCCESS
+  SEARCH_FILTERS_APPLIED
+  MAP_PIN_CLICK
+  SIMILAR_LISTING_CLICK
+  SEARCH_RESULT_IMPRESSION
+  DWELL_POSITIVE
+  DWELL_NEGATIVE
+}
+
+model UserBehaviorEvent {
+  id              String            @id @default(cuid())
+  sessionId       String            @map("session_id") @db.VarChar(64)
+  userId          String?           @map("user_id")
+  listingId       String?           @map("listing_id")
+  eventType       BehaviorEventType @map("event_type")
+  pageType        String            @map("page_type") @db.VarChar(64)
+  city            String?           @db.VarChar(128)
+  category        String?           @db.VarChar(64)
+  propertyType    String?           @map("property_type") @db.VarChar(64)
+  priceCents      Int?              @map("price_cents")
+  aiScoreSnapshot Float?            @map("ai_score_snapshot")
+  metadataJson    Json?             @map("metadata_json")
+  createdAt       DateTime          @default(now()) @map("created_at")
+
+  user    User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  listing ShortTermListing? @relation(fields: [listingId], references: [id], onDelete: SetNull)
+
+  @@index([sessionId, createdAt])
+  @@index([userId, createdAt])
+  @@index([listingId, createdAt])
+  @@index([eventType, createdAt])
+  @@map("user_behavior_events")
+}
+
+/// BNHub guest conversion funnel — explicit events (supplements SearchEvent / UserBehaviorEvent).
+model AiConversionSignal {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  listingId String   @map("listing_id")
+  listing   ShortTermListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  guestId   String?  @map("guest_id")
+  guest     User?    @relation("AiConversionSignalGuest", fields: [guestId], references: [id], onDelete: SetNull)
+  eventType String   @map("event_type")
+  metadata  Json?
+
+  @@index([listingId, createdAt])
+  @@index([guestId, createdAt])
+  @@index([eventType, createdAt])
+  @@map("ai_conversion_signals")
+}
+
+/// Cached per-listing behavior + learning scores (updated by aggregation job, not every request).
+model ListingLearningStats {
+  listingId           String   @id @map("listing_id")
+  behaviorScore       Float    @default(0.5) @map("behavior_score")
+  clickThroughRate    Float?   @map("click_through_rate")
+  saveRate            Float?   @map("save_rate")
+  contactRate         Float?   @map("contact_rate")
+  unlockRate          Float?   @map("unlock_rate")
+  bookingAttemptRate  Float?   @map("booking_attempt_rate")
+  bookingSuccessRate  Float?   @map("booking_success_rate")
+  positiveDwellRate   Float?   @map("positive_dwell_rate")
+  contextMatchBoost   Float    @default(0) @map("context_match_boost")
+  recentTrendScore    Float    @default(0.5) @map("recent_trend_score")
+  finalLearningScore  Float    @default(0.5) @map("final_learning_score")
+  totalWeightedEvents Float    @default(0) @map("total_weighted_events")
+  impressionCount30d  Int      @default(0) @map("impression_count_30d")
+  engagementCount30d  Int      @default(0) @map("engagement_count_30d")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  listing ShortTermListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@map("listing_learning_stats")
+}
+
+/// Lightweight preference priors for bounded personalization (merged from repeated behavior).
+model BehaviorPreferenceProfile {
+  id                         String   @id @default(cuid())
+  userId                     String?  @unique @map("user_id")
+  sessionId                  String?  @unique @map("session_id")
+  preferredCitiesJson        Json     @default("[]") @map("preferred_cities_json")
+  preferredCategoriesJson    Json     @default("[]") @map("preferred_categories_json")
+  preferredPropertyTypesJson Json     @default("[]") @map("preferred_property_types_json")
+  preferredPriceBandsJson    Json     @default("[]") @map("preferred_price_bands_json")
+  preferredBedsJson          Json     @default("[]") @map("preferred_beds_json")
+  preferredAmenitiesJson     Json     @default("[]") @map("preferred_amenities_json")
+  updatedAt                  DateTime @updatedAt @map("updated_at")
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@map("behavior_preference_profiles")
+}
+
+/// Segment-level demand trend cache (city + category + coarse price band, etc.).
+model MarketSegmentLearningStats {
+  id                 String   @id @default(cuid())
+  segmentKey         String   @unique @map("segment_key") @db.VarChar(256)
+  impressionCount    Int      @default(0) @map("impression_count")
+  engagementWeighted Float    @default(0) @map("engagement_weighted")
+  trendScore         Float    @default(0.5) @map("trend_score")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  @@map("market_segment_learning_stats")
+}
+
+enum AiDecisionDomain {
+  SEARCH
+  PRICING
+  AUTOPILOT
+  RECOMMENDATIONS
+  ADMIN_OPS
+}
+
+/// Unified AI snapshot for BNHub stays (`ShortTermListing`). Historical rows; UI reads latest.
+model ListingIntelligenceSnapshot {
+  id                     String   @id @default(cuid())
+  listingId              String   @map("listing_id")
+  createdAt              DateTime @default(now()) @map("created_at")
+
+  relevanceScore         Float?   @map("relevance_score")
+  demandScore            Float?   @map("demand_score")
+  conversionScore        Float?   @map("conversion_score")
+  priceCompetitiveness   Float?   @map("price_competitiveness")
+  qualityScore           Float?   @map("quality_score")
+  personalizationScore   Float?   @map("personalization_score")
+
+  aiCompositeScore       Float?   @map("ai_composite_score")
+  confidenceScore        Float?   @map("confidence_score")
+
+  views7d                Int      @default(0) @map("views_7d")
+  views30d               Int      @default(0) @map("views_30d")
+  bookings7d             Int      @default(0) @map("bookings_7d")
+  bookings30d            Int      @default(0) @map("bookings_30d")
+  ctr                    Float?
+  conversionRate         Float?   @map("conversion_rate")
+  occupancyRate          Float?   @map("occupancy_rate")
+
+  currentPrice           Float?   @map("current_price")
+  suggestedPrice         Float?   @map("suggested_price")
+  priceDeltaPct          Float?   @map("price_delta_pct")
+
+  lowPhotoCount          Boolean  @default(false) @map("low_photo_count")
+  weakDescription        Boolean  @default(false) @map("weak_description")
+  weakTitle              Boolean  @default(false) @map("weak_title")
+  missingAmenities       Boolean  @default(false) @map("missing_amenities")
+
+  trendLabel             String?  @map("trend_label")
+  summary                String?  @map("summary") @db.Text
+
+  shortTermListing       ShortTermListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([listingId, createdAt])
+  @@map("listing_intelligence_snapshots")
+}
+
+/// Enriched guest intelligence (preferences + engagement). Complements `UserSearchProfile` event aggregates.
+model UserIntelligenceProfile {
+  id                    String   @id @default(cuid())
+  userId                String   @unique @map("user_id")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  preferredCities       String[] @default([]) @map("preferred_cities")
+  preferredTypes        String[] @default([]) @map("preferred_types")
+  preferredPriceMin     Float?   @map("preferred_price_min")
+  preferredPriceMax     Float?   @map("preferred_price_max")
+  preferredGuests       Int?     @map("preferred_guests")
+  preferredAmenities    String[] @default([]) @map("preferred_amenities")
+
+  engagementScore       Float?   @map("engagement_score")
+  bookingIntentScore    Float?   @map("booking_intent_score")
+  luxuryPreferenceScore Float?   @map("luxury_preference_score")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_intelligence_profiles")
+}
+
+/// Unified intelligence audit (distinct from legacy `AiDecisionLog` / model-registry logs).
+model IntelligenceDecisionLog {
+  id                String           @id @default(cuid())
+  listingId         String?          @map("listing_id")
+  userId            String?          @map("user_id")
+  hostId            String?          @map("host_id")
+  domain            AiDecisionDomain @map("domain")
+  actionType        String           @map("action_type")
+  inputPayload      Json?            @map("input_payload")
+  outputPayload     Json?            @map("output_payload")
+  explanation       String?          @map("explanation") @db.Text
+  confidenceScore   Float?           @map("confidence_score")
+  createdAt         DateTime         @default(now()) @map("created_at")
+
+  @@index([domain, createdAt])
+  @@index([listingId, createdAt])
+  @@map("intelligence_decision_logs")
+}
+
+/// Host-managed discount window for a listing (mobile quick promotion). Quote/checkout can apply when `active` and dates overlap stay.
+model BnhubHostListingPromotion {
+  id              String           @id @default(uuid())
+  listingId       String           @map("listing_id")
+  listing         ShortTermListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  /// Host-facing label (e.g. “Spring weekend”).
+  label           String?          @map("promotion_label")
+  discountPercent Int              @map("discount_percent")
+  startDate       DateTime         @map("start_date") @db.Date
+  endDate         DateTime         @map("end_date") @db.Date
+  active          Boolean          @default(true)
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+
+  @@index([listingId])
+  @@index([startDate, endDate])
+  @@map("bnhub_host_listing_promotions")
+}
+
+// ---------------------------------------------------------------------------
+// BNHub — AI autopilot & smart pricing (suggestions, snapshots, actions)
+// ---------------------------------------------------------------------------
+
+enum AiSuggestionType {
+  PRICE_INCREASE
+  PRICE_DECREASE
+  PROMOTION_SUGGESTION
+  DESCRIPTION_IMPROVEMENT
+  TITLE_IMPROVEMENT
+  AMENITIES_IMPROVEMENT
+  PHOTO_QUALITY_WARNING
+  DEMAND_ALERT
+}
+
+enum AiSuggestionStatus {
+  PENDING
+  APPLIED
+  DISMISSED
+  FAILED
+}
+
+enum AutopilotMode {
+  OFF
+  ASSIST
+  SAFE_AUTOPILOT
+  FULL_AUTOPILOT_APPROVAL
+}
+
+enum AiAutopilotActionType {
+  UPDATE_PRICE
+  CREATE_PROMOTION
+  OPTIMIZE_DESCRIPTION
+  OPTIMIZE_TITLE
+}
+
+enum AiAutopilotActionStatus {
+  PENDING
+  APPROVED
+  EXECUTED
+  REJECTED
+  FAILED
+}
+
+/// Point-in-time pricing intelligence for a BNHub stay listing.
+model ListingPricingSnapshot {
+  id                String           @id @default(cuid())
+  listingId         String           @map("listing_id")
+  capturedAt        DateTime         @default(now()) @map("captured_at")
+  basePrice         Float            @map("base_price")
+  suggestedPrice    Float?           @map("suggested_price")
+  appliedPrice      Float?           @map("applied_price")
+  occupancyRate     Float?           @map("occupancy_rate")
+  bookingVelocity   Float?           @map("booking_velocity")
+  viewsCount        Int?             @map("views_count")
+  demandScore       Float?           @map("demand_score")
+  seasonalityScore  Float?           @map("seasonality_score")
+  competitionScore  Float?           @map("competition_score")
+  reasonSummary     String?          @map("reason_summary") @db.Text
+  confidenceScore   Float?           @map("confidence_score")
+  listing           ShortTermListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([listingId, capturedAt])
+  @@map("bnhub_listing_pricing_snapshots")
+}
+
+model AiSuggestion {
+  id              String             @id @default(cuid())
+  listingId       String?            @map("listing_id")
+  hostId          String?            @map("host_id")
+  type            AiSuggestionType
+  title           String
+  description     String             @db.Text
+  payload         Json?
+  confidenceScore Float?             @map("confidence_score")
+  status          AiSuggestionStatus @default(PENDING)
+  createdAt       DateTime           @default(now()) @map("created_at")
+  updatedAt       DateTime           @updatedAt @map("updated_at")
+  listing         ShortTermListing?  @relation("AiSuggestionListing", fields: [listingId], references: [id], onDelete: Cascade)
+  host            User?              @relation("AiSuggestionHostUser", fields: [hostId], references: [id], onDelete: Cascade)
+
+  @@index([listingId, status])
+  @@index([hostId, status])
+  @@index([type, status])
+  @@map("bnhub_ai_suggestions")
+}
+
+model HostAutopilotSettings {
+  id                            String        @id @default(cuid())
+  hostId                        String        @unique @map("host_id")
+  mode                          AutopilotMode @default(ASSIST)
+  autoPricing                   Boolean       @default(true) @map("auto_pricing")
+  autoPromotions                Boolean       @default(false) @map("auto_promotions")
+  autoListingOptimization       Boolean       @default(false) @map("auto_listing_optimization")
+  autoMessaging                 Boolean       @default(false) @map("auto_messaging")
+  minPrice                      Float?        @map("min_price")
+  maxPrice                      Float?        @map("max_price")
+  maxDailyChangePct             Float?        @default(15) @map("max_daily_change_pct")
+  requireApprovalForPricing     Boolean       @default(true) @map("require_approval_for_pricing")
+  requireApprovalForPromotions  Boolean       @default(true) @map("require_approval_for_promotions")
+  paused                        Boolean       @default(false)
+  pauseReason                   String?       @map("pause_reason") @db.Text
+  createdAt                     DateTime      @default(now()) @map("created_at")
+  updatedAt                     DateTime      @updatedAt @map("updated_at")
+  host                          User          @relation(fields: [hostId], references: [id], onDelete: Cascade)
+
+  @@map("bnhub_host_autopilot_settings")
+}
+
+model AiAutopilotAction {
+  id             String                  @id @default(cuid())
+  listingId      String?                 @map("listing_id")
+  hostId         String?                 @map("host_id")
+  actionType     AiAutopilotActionType   @map("action_type")
+  status         AiAutopilotActionStatus @default(PENDING)
+  inputPayload   Json?                   @map("input_payload")
+  resultPayload  Json?                   @map("result_payload")
+  reasonSummary  String?                 @map("reason_summary") @db.Text
+  createdAt      DateTime                @default(now()) @map("created_at")
+  executedAt     DateTime?               @map("executed_at")
+  reviewedAt     DateTime?               @map("reviewed_at")
+  listing        ShortTermListing?       @relation("AiAutopilotActionListing", fields: [listingId], references: [id], onDelete: Cascade)
+  host           User?                   @relation("AiAutopilotActionHostUser", fields: [hostId], references: [id], onDelete: Cascade)
+
+  @@index([listingId, status])
+  @@index([hostId, status])
+  @@index([actionType, status])
+  @@map("bnhub_ai_autopilot_actions")
 }
 
 /// BNHub short-term listing star estimate (amenities, completeness, heuristics + optional AI-style adjustment). Not official hotel classification.
@@ -4268,7 +4960,7 @@ model ListingVerificationLog {
   id        String           @id @default(uuid())
   listingId String
   listing   ShortTermListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
-  step      String // HOST_IDENTITY | ADDRESS | PHOTO | OWNERSHIP
+  step      String // HOST_IDENTITY | ADDRESS | PHOTO | OWNERSHIP | LEGAL_RENT_RIGHT_ATTESTATION
   status    String // PASSED | FAILED | PENDING
   notes     String?
   createdBy String? // Admin/moderator user id
@@ -5275,6 +5967,26 @@ model PropertyVerification {
   @@map("property_verifications")
 }
 
+/// Time-bound 6-digit OTP for verifying email and/or mobile (all account types).
+model ContactVerificationCode {
+  id             String    @id @default(cuid())
+  userId         String    @map("user_id")
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// EMAIL | SMS
+  channel        String    @map("channel") @db.VarChar(8)
+  codeHash       String    @map("code_hash")
+  expiresAt      DateTime  @map("expires_at") @db.Timestamptz(6)
+  consumedAt     DateTime? @map("consumed_at") @db.Timestamptz(6)
+  failedAttempts Int       @default(0) @map("failed_attempts")
+  /// E.164 when channel = SMS (must match on confirm).
+  smsTargetE164  String?   @map("sms_target_e164") @db.VarChar(24)
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  @@index([userId, channel])
+  @@index([expiresAt])
+  @@map("contact_verification_codes")
+}
+
 // Triple verification (2): identity of the lister (gov ID + selfie)
 model IdentityVerification {
   id                  String             @id @default(uuid())
@@ -5358,6 +6070,10 @@ enum BnhubChannelPlatform {
   AIRBNB
   EXPEDIA
   VRBO
+  /// Metasearch / Google Hotels — map when partner or feed supplies a stable property ref
+  TRIVAGO
+  HOTELS_COM
+  GOOGLE_HOTEL
   DIRECT
   OTHER
 }
@@ -5571,6 +6287,25 @@ model BnhubOtaSyncLog {
   @@index([createdAt])
   @@index([status])
   @@map("bnhub_sync_logs")
+}
+
+/// AI-assisted OTA / metasearch parsing & webhook normalization (audit trail; host-owned).
+model BnhubOtaAiTrace {
+  id          String            @id @default(cuid())
+  userId      String            @map("user_id")
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listingId   String?           @map("listing_id")
+  listing     ShortTermListing? @relation(fields: [listingId], references: [id], onDelete: SetNull)
+  traceType   String            @map("trace_type") @db.VarChar(40)
+  sourceLabel String?           @map("source_label") @db.VarChar(80)
+  inputDigest String            @map("input_digest") @db.VarChar(64)
+  resultJson  Json              @map("result_json")
+  model       String?           @map("model") @db.VarChar(80)
+  createdAt   DateTime          @default(now()) @map("created_at")
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([listingId])
+  @@map("bnhub_ota_ai_traces")
 }
 
 // ---------------------------------------------------------------------------
@@ -6020,6 +6755,8 @@ model Booking {
    * Structured special requests (airport pickup, parking, shuttle, extras).
    */
   specialRequestsJson          Json?                           @map("special_requests_json")
+  /// Host confirmed arrival checklist items are ready before guest check-in.
+  checklistDeclaredByHostAt    DateTime?                       @map("checklist_declared_by_host_at")
   checkedInAt                  DateTime? // actual check-in time (booking-service)
   checkedOutAt                 DateTime? // actual check-out time (booking-service)
   refunded                     Boolean                         @default(false) @map("refunded")
@@ -6034,6 +6771,7 @@ model Booking {
   bookingSource                BnhubBookingSource              @default(LOCAL) @map("booking_source")
   payment                      Payment?
   review                       Review?
+  bnhubHostReviewOfGuest       BnhubHostReviewOfGuest?
   disputes                     Dispute[]
   bookingIssues                BookingIssue[]
   bookingMessages              BookingMessage[]
@@ -6047,6 +6785,7 @@ model Booking {
   platformCommissionRecords    PlatformCommissionRecord[]
   platformLegalDisputes        PlatformLegalDispute[]
   platformPayments             PlatformPayment[]
+  orchestratedPayments         OrchestratedPayment[]
   /**
    * Transactional email tracking (BNHub); failures do not block booking.
    */
@@ -6070,12 +6809,97 @@ model Booking {
   bnhubFinancialLedgerEntries  BnhubFinancialLedgerEntry[]
   bnhubTrustRiskFlagsEngine    BnhubTrustRiskFlag[]            @relation("BnhubTrustRiskFlagBooking")
   internalCrmTelemetryEvents   InternalCrmEvent[]              @relation("CrmEventBooking")
+  insuranceLeads               InsuranceLead[]
+  bnhubBookingChecklistItems   BnhubBookingChecklistItem[]
+  bnhubTrustSimpleDisputes     BnhubTrustSimpleDispute[]
+  manualPaymentSettlement      ManualPaymentSettlement         @default(NOT_APPLICABLE) @map("manual_payment_settlement")
+  manualPaymentUpdatedAt       DateTime?                       @map("manual_payment_updated_at")
+  manualPaymentUpdatedByUserId String?                         @map("manual_payment_updated_by_user_id")
+  manualPaymentEvents          BookingManualPaymentEvent[]
+  bnhubManualHostPayout        BnhubManualHostPayout?
+  aiDisputeRiskLogs            AiDisputeRiskLog[]
+  bnhubAutomatedHostMessages   BnhubAutomatedHostMessageLog[]
+  /// Guest count for the stay (distinct from `User` account).
+  guestsCount                  Int?                            @map("guests_count")
+  guestContactEmail            String?                         @map("guest_contact_email")
+  guestContactName             String?                         @map("guest_contact_name")
+  guestContactPhone            String?                         @map("guest_contact_phone")
+  cancellationReason           String?                         @map("cancellation_reason") @db.Text
+  canceledAt                   DateTime?                       @map("canceled_at")
+  /// When set, unpaid `PENDING` bookings past this instant are expired for overlap + checkout.
+  pendingCheckoutExpiresAt     DateTime?                       @map("pending_checkout_expires_at")
 
   @@index([guestId])
   @@index([listingId])
   @@index([status])
   @@index([checkIn])
   @@index([bookingSource])
+  @@index([pendingCheckoutExpiresAt])
+}
+
+/// BNHub / LECIPM Manager: early dispute-risk signals (detection + guidance only — no auto-resolution).
+enum AiDisputeRiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum AiDisputeRiskSignalType {
+  MISSING_CHECKIN_DETAILS
+  MISSING_CHECKIN_COMPLETION
+  GUEST_SLOW_RESPONSE
+  HOST_SLOW_RESPONSE
+  REPEATED_BOOKING_ISSUES
+  NEGATIVE_FEEDBACK_SIGNAL
+  INCOMPLETE_LISTING_SIGNAL
+  HOST_ROOM_READINESS_MISSING
+}
+
+enum AiDisputePreventionAction {
+  GENTLE_REMINDER
+  NOTIFY_BOTH_PARTIES
+  NOTIFY_ADMIN_ESCALATION
+}
+
+model AiDisputeRiskLog {
+  id                    String                   @id @default(cuid())
+  bookingId             String                   @map("booking_id")
+  booking               Booking                  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  riskLevel             AiDisputeRiskLevel       @map("risk_level")
+  signalType            AiDisputeRiskSignalType  @map("signal_type")
+  summary               String                   @db.VarChar(500)
+  recommendedAction     String                   @map("recommended_action") @db.Text
+  preventionAction      AiDisputePreventionAction @map("prevention_action")
+  messageDraftHost      String?                  @map("message_draft_host") @db.Text
+  messageDraftGuest     String?                  @map("message_draft_guest") @db.Text
+  /// Timeline / audit: what we recorded (never implies funds or legal outcomes).
+  actionTaken           String                   @default("risk_detected") @map("action_taken") @db.VarChar(64)
+  metadataJson          Json?                    @map("metadata_json")
+  cooldownKey           String                   @map("cooldown_key") @db.VarChar(200)
+  requiresAdminReview   Boolean                  @default(false) @map("requires_admin_review")
+  adminReviewedAt       DateTime?                @map("admin_reviewed_at")
+  notificationSentAt    DateTime?                @map("notification_sent_at")
+  createdAt             DateTime                 @default(now()) @map("created_at")
+
+  @@index([bookingId, createdAt])
+  @@index([requiresAdminReview, createdAt])
+  @@index([signalType, createdAt])
+  @@map("ai_dispute_risk_logs")
+}
+
+/// Audit trail for host/admin manual payment state changes (Syria / offline launch modes).
+model BookingManualPaymentEvent {
+  id               String                  @id @default(cuid())
+  bookingId        String                  @map("booking_id")
+  booking          Booking                 @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  actorUserId      String?                 @map("actor_user_id")
+  fromSettlement   ManualPaymentSettlement @map("from_settlement")
+  toSettlement     ManualPaymentSettlement @map("to_settlement")
+  note             String?                 @db.Text
+  createdAt        DateTime                @default(now()) @map("created_at")
+
+  @@index([bookingId, createdAt])
+  @@map("booking_manual_payment_events")
 }
 
 enum BnhubGuaranteeStatus {
@@ -6098,6 +6922,24 @@ model BnhubBookingGuarantee {
   @@map("bn_guarantees")
 }
 
+/// Arrival trust checklist — guest confirms essentials; host can see responses.
+model BnhubBookingChecklistItem {
+  id         String   @id @default(cuid())
+  bookingId  String   @map("booking_id")
+  booking    Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  itemKey    String   @map("item_key")
+  label      String?
+  expected   Boolean  @default(true)
+  confirmed  Boolean?
+  note       String?  @db.Text
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@unique([bookingId, itemKey])
+  @@index([bookingId])
+  @@map("bnhub_booking_checklist_items")
+}
+
 // Guest-reported issue. Admin can set status: reviewing, approved, rejected, resolved.
 model BookingIssue {
   id          String    @id @default(cuid())
@@ -6113,6 +6955,28 @@ model BookingIssue {
   @@index([bookingId])
   @@index([status])
   @@map("bnhub_booking_issues")
+}
+
+enum BnhubTrustSimpleDisputeStatus {
+  OPEN
+  RESOLVED
+}
+
+/// Lightweight trust dispute (checklist mismatch, payout hold) — complements full `Dispute`.
+model BnhubTrustSimpleDispute {
+  id         String                        @id @default(cuid())
+  bookingId  String                        @map("booking_id")
+  booking    Booking                       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  reporterId String                        @map("reporter_id")
+  reporter   User                          @relation("BnhubTrustSimpleDisputeReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  message    String                        @db.Text
+  status     BnhubTrustSimpleDisputeStatus @default(OPEN)
+  createdAt  DateTime                      @default(now()) @map("created_at")
+  resolvedAt DateTime?                     @map("resolved_at")
+
+  @@index([bookingId])
+  @@index([status])
+  @@map("bnhub_trust_simple_disputes")
 }
 
 // BNHub booking audit trail (status changes, payments, cancellations)
@@ -6232,6 +7096,10 @@ model Dispute {
   resolvedBy         String?
   hostPayoutFrozenAt DateTime?           @map("host_payout_frozen_at")
   hostRespondedAt    DateTime?           @map("host_responded_at")
+  /// AI assistant: REFUND | NO_ACTION (admin tooling; not legal determination).
+  aiAssistantRecommendation  String?   @map("ai_assistant_recommendation")
+  aiAssistantSummary         String?   @map("ai_assistant_summary") @db.Text
+  aiAssistantGeneratedAt     DateTime? @map("ai_assistant_generated_at")
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
   messages           DisputeMessage[]
@@ -6308,7 +7176,13 @@ model Referral {
   program            ReferralProgram? @relation(fields: [programId], references: [id], onDelete: SetNull)
   referrerId         String
   referrer           User             @relation("Referrer", fields: [referrerId], references: [id], onDelete: Cascade)
+  /// Unique per row (host one-time codes or viral instance id `V…`).
   code               String           @unique
+  /// Sharer’s public `User.referralCode` for analytics / `ReferralEvent.code` (viral loop).
+  referralPublicCode String?          @map("referral_public_code")
+  /// invited (link opened) | joined (account created) | converted (paid / qualifying action)
+  status             String           @default("joined")
+  rewardGiven        Boolean          @default(false) @map("reward_given")
   /// USER (default) | HOST — host→host invites for supply growth (ops: visibility boost)
   inviteKind         String?          @map("invite_kind") @db.VarChar(24)
   rewardCreditsCents Int              @default(0)
@@ -6321,6 +7195,8 @@ model Referral {
   @@index([code])
   @@index([programId])
   @@index([inviteKind])
+  @@index([referralPublicCode])
+  @@index([status])
 }
 
 model Ambassador {
@@ -6350,7 +7226,8 @@ model Commission {
 model ReferralEvent {
   id        String   @id @default(cuid())
   code      String
-  eventType String // click, signup, activated, paid
+  /// click, invite_sent, signup, activated, paid
+  eventType String
   userId    String?
   user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
   ip        String?
@@ -6407,7 +7284,7 @@ model PricingRecommendation {
 model PricingRule {
   id        String    @id @default(uuid())
   listingId String
-  ruleType  String // SEASONALITY | MIN_STAY | EVENT | BASE
+  ruleType  String // SEASONALITY | MIN_STAY | EVENT | BASE | EARLY_BOOKING
   payload   Json // e.g. { "multiplier": 1.2 } or { "minNights": 2 }
   validFrom DateTime?
   validTo   DateTime?
@@ -6666,6 +7543,8 @@ model Payment {
    * Checkout Session currency (lowercase ISO).
    */
   stripeCheckoutCurrency             String?                  @map("stripe_checkout_currency")
+  /** Last Stripe refund id (re_…) for support / idempotency notes. */
+  stripeLastRefundId                 String?                  @map("stripe_last_refund_id")
   /**
    * Stripe Connect destination account (acct_…) on this charge; for admin reconciliation.
    */
@@ -6682,6 +7561,11 @@ model Payment {
   linkedContractId                   String?                  @map("linked_contract_id")
   linkedContractType                 String?                  @map("linked_contract_type")
   linkedContract                     Contract?                @relation("PaymentLegalLink", fields: [linkedContractId], references: [id], onDelete: SetNull)
+  /**
+   * Canonical BNHub money breakdown (subtotal, taxes, fees, host payout) — cents only, JSON shape from `BookingMoneyBreakdown`.
+   */
+  moneyBreakdownJson                 Json?                    @map("money_breakdown_json")
+  paidAt                             DateTime?                @map("paid_at")
   createdAt                          DateTime                 @default(now())
   updatedAt                          DateTime                 @updatedAt
   bookingId                          String                   @unique
@@ -6690,7 +7574,115 @@ model Payment {
 
   @@index([payoutHoldReason])
   @@index([linkedContractId])
+  @@index([stripePaymentId])
+  @@index([status])
   @@map("payments")
+}
+
+// ---------------------------------------------------------------------------
+// Multi-provider payment orchestration (Stripe + Clover) — complements BNHub `Payment` / `PlatformPayment`.
+// ---------------------------------------------------------------------------
+model OrchestratedPayment {
+  id                 String   @id @default(cuid())
+  provider           String
+  providerPaymentId  String?  @map("provider_payment_id")
+  userId             String   @map("user_id")
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookingId          String?  @map("booking_id")
+  booking            Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  paymentType        String   @map("payment_type")
+  amountCents        Int      @map("amount_cents")
+  currency           String   @default("cad")
+  platformFeeCents   Int      @map("platform_fee_cents")
+  hostAmountCents    Int      @map("host_amount_cents")
+  status             String
+  checkoutSessionUrl String?  @map("checkout_session_url") @db.Text
+  metadata           Json?
+  /** Stripe PaymentIntent id after checkout completes — reconciliation / support. */
+  stripePaymentIntentId String? @map("stripe_payment_intent_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([bookingId])
+  @@index([provider])
+  @@index([status])
+  @@index([createdAt])
+  @@index([stripePaymentIntentId])
+  @@map("orchestrated_payments")
+}
+
+model OrchestratedPayout {
+  id          String    @id @default(cuid())
+  provider    String
+  providerRef String?   @map("provider_ref")
+  hostId      String    @map("host_id")
+  host        User      @relation("OrchestratedPayoutHost", fields: [hostId], references: [id], onDelete: Cascade)
+  amountCents Int       @map("amount_cents")
+  currency    String    @default("cad")
+  status      String
+  scheduledAt DateTime? @map("scheduled_at")
+  bookingId   String?   @map("booking_id")
+  payoutMethod     String    @default("stripe_connect") @map("payout_method")
+  failureReason    String?   @map("failure_reason") @db.Text
+  availableAt      DateTime? @map("available_at")
+  paidAt           DateTime? @map("paid_at")
+  stripePayoutId   String?   @map("stripe_payout_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([hostId])
+  @@index([status])
+  @@index([scheduledAt])
+  @@index([bookingId])
+  @@index([providerRef])
+  @@map("orchestrated_payouts")
+}
+
+/// Admin / ops queue when Connect is unavailable or market is manual-first.
+model BnhubManualHostPayout {
+  id                 String    @id @default(cuid())
+  bookingId          String    @unique @map("booking_id")
+  booking            Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  hostUserId         String    @map("host_user_id")
+  host               User      @relation(fields: [hostUserId], references: [id], onDelete: Cascade)
+  amountCents        Int       @map("amount_cents")
+  currency           String    @default("cad")
+  /// queued | paid | cancelled
+  status             String
+  queueReason        String?   @map("queue_reason") @db.Text
+  beneficiaryName    String?   @map("beneficiary_name")
+  contactPhone       String?   @map("contact_phone")
+  contactEmail       String?   @map("contact_email")
+  referenceNote      String?   @map("reference_note") @db.Text
+  processedByUserId  String?   @map("processed_by_user_id")
+  processedAt        DateTime? @map("processed_at")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+
+  @@index([hostUserId])
+  @@index([status])
+  @@map("bnhub_manual_host_payouts")
+}
+
+/// Cached Stripe Connect requirements for host dashboard / payout gates.
+model HostStripeAccountSnapshot {
+  id                   String   @id @default(cuid())
+  hostUserId           String   @unique @map("host_user_id")
+  host                 User     @relation(fields: [hostUserId], references: [id], onDelete: Cascade)
+  stripeAccountId      String   @map("stripe_account_id")
+  chargesEnabled       Boolean  @default(false) @map("charges_enabled")
+  payoutsEnabled       Boolean  @default(false) @map("payouts_enabled")
+  detailsSubmitted     Boolean  @default(false) @map("details_submitted")
+  onboardingComplete   Boolean  @default(false) @map("onboarding_complete")
+  rawRequirementsJson  Json?    @map("raw_requirements_json")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  @@index([stripeAccountId])
+  @@map("host_stripe_account_snapshots")
 }
 
 // ---------------------------------------------------------------------------
@@ -6750,6 +7742,33 @@ model PlatformPayment {
   @@index([stripeSessionId])
   @@index([linkedContractId])
   @@map("platform_payments")
+}
+
+/// Paywalled buyer access to FSBO / CRM listing representative contact (Stripe `listing_contact_lead`).
+enum ListingContactTargetKind {
+  FSBO_LISTING
+  CRM_LISTING
+
+  @@map("listing_contact_target_kind")
+}
+
+model ListingContactLeadPurchase {
+  id                      String                   @id @default(cuid())
+  buyerUserId             String                   @map("buyer_user_id")
+  buyer                   User                     @relation(fields: [buyerUserId], references: [id], onDelete: Cascade)
+  targetKind              ListingContactTargetKind @map("target_kind")
+  targetListingId         String                   @map("target_listing_id")
+  status                  String                   @default("locked") @db.VarChar(24)
+  priceCents              Int                      @map("price_cents")
+  stripeCheckoutSessionId String?                  @unique @map("stripe_checkout_session_id")
+  paidAt                  DateTime?                @map("paid_at")
+  createdAt               DateTime                 @default(now()) @map("created_at")
+  updatedAt               DateTime                 @updatedAt @map("updated_at")
+
+  @@unique([buyerUserId, targetKind, targetListingId], map: "listing_contact_lead_purchase_unique_buyer_target")
+  @@index([buyerUserId])
+  @@index([targetListingId])
+  @@map("listing_contact_lead_purchases")
 }
 
 // Commission rules by source type (defaults: booking 12% platform; sale 70% broker / 30% platform; subscription 90% platform; lead 20% broker)
@@ -7076,6 +8095,7 @@ model TaxDocument {
 // ---------------------------------------------------------------------------
 // BNHub: Reviews (property + host)
 // ---------------------------------------------------------------------------
+/// Guest reviews stay + host (`reviewerType` = GUEST implicitly; see `BnhubHostReviewOfGuest` for host → guest).
 model Review {
   id                  String                   @id @default(uuid())
   propertyRating      Int // 1-5 overall
@@ -7087,6 +8107,13 @@ model Review {
   valueRating         Int? // 1-5
   checkinRating       Int?                     @map("check_in_rating")
   comment             String?
+  /// Guest post-stay checklist (kitchen, beds, amenities accurate, etc.)
+  stayChecklistJson   Json?                    @map("stay_checklist_json")
+  /// Whether advertised amenities matched reality (guest attestation).
+  amenitiesAsAdvertised Boolean?               @map("amenities_as_advertised")
+  /// AI-assisted composite 0–100 for reputation / monthly medians.
+  aiCompositeScore    Float?                   @map("ai_composite_score")
+  aiSummary           String?                  @map("ai_summary") @db.Text
   /// When true, review is hidden from public until moderation clears.
   moderationHeld      Boolean                  @default(false) @map("moderation_held")
   /// Heuristic 0–1; higher = more spam-like (optional moderation queue).
@@ -7104,6 +8131,57 @@ model Review {
 
   @@index([listingId])
   @@index([guestId])
+}
+
+/// Host → guest post-stay evaluation (`reviewerType` = HOST implicitly). One row per `bookingId`.
+model BnhubHostReviewOfGuest {
+  id                       String           @id @default(uuid())
+  bookingId                String           @unique @map("booking_id")
+  booking                  Booking          @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  hostId                   String           @map("host_id")
+  host                     User             @relation("BnhubHostReviewAuthor", fields: [hostId], references: [id], onDelete: Cascade)
+  guestId                  String           @map("guest_id")
+  guest                    User             @relation("BnhubHostReviewSubjectGuest", fields: [guestId], references: [id], onDelete: Cascade)
+  listingId                String           @map("listing_id")
+  listing                  ShortTermListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  guestRespectRating       Int              @map("guest_respect_rating")
+  propertyCareRating       Int?             @map("property_care_rating")
+  checkoutComplianceRating Int?             @map("checkout_compliance_rating")
+  quietHoursRespected      Boolean?         @map("quiet_hours_respected")
+  houseRulesRespected      Boolean?         @map("house_rules_respected")
+  theftOrDamageReported    Boolean          @default(false) @map("theft_or_damage_reported")
+  incidentDetails          String?          @map("incident_details") @db.Text
+  hostNotes                String?          @map("host_notes") @db.Text
+  hostChecklistJson        Json?            @map("host_checklist_json")
+  aiCompositeScore         Float?           @map("ai_composite_score")
+  aiSummary                String?          @map("ai_summary") @db.Text
+  createdAt                DateTime         @default(now()) @map("created_at")
+  updatedAt                DateTime         @updatedAt @map("updated_at")
+
+  @@index([guestId])
+  @@index([hostId])
+  @@index([listingId])
+  @@map("bnhub_host_reviews_of_guest")
+}
+
+/// Monthly median AI-assisted scores + top-performer flags (rewards, listing boost).
+model BnhubMonthlyReputationSnapshot {
+  id              String   @id @default(cuid())
+  userId          String   @map("user_id")
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  periodYearMonth String   @map("period_year_month") @db.VarChar(7)
+  role            String   @map("role") @db.VarChar(16)
+  city            String   @default("") @map("city") @db.VarChar(128)
+  medianScore     Float    @map("median_score")
+  sampleCount     Int      @map("sample_count")
+  rankInScope     Int?     @map("rank_in_scope")
+  topPerformer    Boolean  @default(false) @map("top_performer")
+  perksJson       Json?    @map("perks_json")
+  computedAt      DateTime @default(now()) @map("computed_at")
+
+  @@unique([userId, periodYearMonth, role, city])
+  @@index([periodYearMonth, role, topPerformer])
+  @@map("bnhub_monthly_reputation_snapshots")
 }
 
 /// Denormalized guest-review aggregates per BNHub listing (ShortTermListing).
@@ -8947,6 +10025,379 @@ model PlatformRevenueEvent {
   @@map("platform_revenue_events")
 }
 
+/// User-centric monetization events (booking completed, lead purchased, premium upgrade) — complements `PlatformRevenueEvent`.
+model RevenueEvent {
+  id           String   @id @default(uuid())
+  userId       String?  @map("user_id")
+  user         User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  eventType    String   @map("event_type")
+  amount       Float    @default(0)
+  metadataJson Json?    @map("metadata_json")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([userId, createdAt])
+  @@index([eventType, createdAt])
+  @@map("revenue_events")
+}
+
+/// Open / converted / lost revenue opportunities for prioritization and nudges.
+model RevenueOpportunity {
+  id              String   @id @default(uuid())
+  userId          String?  @map("user_id")
+  user            User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  leadId          String?  @map("lead_id")
+  lead            Lead?    @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  opportunityType String   @map("opportunity_type")
+  status          String   @default("open")
+  valueEstimate   Float    @default(0) @map("value_estimate")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@index([userId, status])
+  @@index([leadId, status])
+  @@index([status, createdAt])
+  @@map("revenue_opportunities")
+}
+
+/// Daily investor / board KPI snapshot (growth, marketplace, conversion).
+model MetricSnapshot {
+  id             String   @id @default(uuid())
+  date           DateTime @db.Date
+  totalUsers     Int      @map("total_users")
+  activeUsers    Int      @map("active_users")
+  totalListings  Int      @map("total_listings")
+  bookings       Int      @default(0)
+  revenue        Float    @default(0)
+  conversionRate Float   @default(0) @map("conversion_rate")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@unique([date])
+  @@index([date])
+  @@map("investor_metric_snapshots")
+}
+
+/// Fundraising CRM: prospective capital partners (not product `InvestorProfile`).
+model FundraisingInvestor {
+  id             String    @id @default(uuid())
+  name           String
+  email          String
+  firm           String    @default("")
+  /// contacted | interested | meeting | negotiating | closed
+  stage          String    @default("contacted")
+  notes          String?
+  nextFollowUpAt DateTime? @map("next_follow_up_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  interactions  FundraisingInvestorInteraction[]
+  deals         FundraisingDeal[]
+  commitments   InvestorCommitment[]
+
+  @@index([stage])
+  @@index([email])
+  @@map("fundraising_investors")
+}
+
+/// Logged touchpoints: email, call, meeting, plus outreach / response / follow_up.
+model FundraisingInvestorInteraction {
+  id         String   @id @default(uuid())
+  investorId String   @map("investor_id")
+  /// email | call | meeting | outreach | response | follow_up
+  type       String
+  summary    String   @db.Text
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  investor FundraisingInvestor @relation(fields: [investorId], references: [id], onDelete: Cascade)
+
+  @@index([investorId, createdAt])
+  @@map("fundraising_investor_interactions")
+}
+
+model FundraisingDeal {
+  id         String   @id @default(uuid())
+  investorId String   @map("investor_id")
+  amount     Float
+  /// open | committed | closed
+  status     String   @default("open")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  investor FundraisingInvestor @relation(fields: [investorId], references: [id], onDelete: Cascade)
+
+  @@index([investorId])
+  @@index([status])
+  @@map("fundraising_deals")
+}
+
+/// Active fundraising round (e.g. $100K) with denormalized raised total from commitments.
+model FundraisingRound {
+  id           String   @id @default(uuid())
+  targetAmount Float    @map("target_amount")
+  raisedAmount Float    @default(0) @map("raised_amount")
+  /// open | closed
+  status       String   @default("open")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  commitments InvestorCommitment[]
+
+  @@index([status])
+  @@map("fundraising_rounds")
+}
+
+/// Per-investor pledge toward a round: interested → committed → transferred.
+model InvestorCommitment {
+  id         String   @id @default(uuid())
+  roundId    String   @map("round_id")
+  investorId String   @map("investor_id")
+  amount     Float
+  /// interested | committed | transferred
+  status     String   @default("interested")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  round    FundraisingRound    @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  investor FundraisingInvestor @relation(fields: [investorId], references: [id], onDelete: Cascade)
+
+  @@index([roundId])
+  @@index([investorId])
+  @@index([status])
+  @@map("investor_commitments")
+}
+
+/// Daily rollup for revenue execution discipline (messages, contacts, bookings, revenue).
+model ExecutionDay {
+  id                   String   @id @default(uuid())
+  date                 DateTime @db.Date
+  messagesSent         Int      @default(0) @map("messages_sent")
+  brokersContacted     Int      @default(0) @map("brokers_contacted")
+  hostsContacted       Int      @default(0) @map("hosts_contacted")
+  inquiriesGenerated   Int      @default(0) @map("inquiries_generated")
+  bookingsCompleted    Int      @default(0) @map("bookings_completed")
+  revenue              Float    @default(0)
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  @@unique([date])
+  @@index([date])
+  @@map("revenue_execution_days")
+}
+
+/// Per-touch log: message | call | follow_up | close (CRM user optional).
+model ExecutionAction {
+  id        String   @id @default(uuid())
+  /// message | call | follow_up | close
+  type      String
+  userId    String?  @map("user_id")
+  /// pending | done | skipped | converted
+  status    String   @default("done")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User? @relation("ExecutionActionCrmUser", fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([type, createdAt])
+  @@map("revenue_execution_actions")
+}
+
+/// Generated investor pitch deck (slides stored as JSON content).
+model PitchDeck {
+  id        String           @id @default(uuid())
+  title     String
+  createdAt DateTime         @default(now()) @map("created_at")
+  slides    PitchDeckSlide[]
+
+  @@index([createdAt])
+  @@map("pitch_decks")
+}
+
+model PitchDeckSlide {
+  id      String   @id @default(uuid())
+  deckId  String   @map("deck_id")
+  order   Int
+  /// title | problem | solution | product | traction | business_model | growth | vision
+  type    String
+  title   String
+  content Json
+
+  deck PitchDeck @relation(fields: [deckId], references: [id], onDelete: Cascade)
+
+  @@index([deckId, order])
+  @@map("pitch_deck_slides")
+}
+
+/// In-platform sales team member (round-robin / priority routing).
+model SalesAgent {
+  id        String   @id @default(uuid())
+  userId    String   @unique @map("user_id")
+  /// agent | closer | manager
+  role      String   @default("agent")
+  active    Boolean  @default(true)
+  /// Higher = earlier pick in priority mode (tie-breaker: lower load).
+  priority  Int      @default(0) @map("priority_weight")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assignments  SalesAssignment[]
+  performance  SalesPerformance?
+
+  @@index([active, priority])
+  @@map("sales_agents")
+}
+
+/// One row per lead — links CRM lead to sales agent (Close Room / pipeline).
+model SalesAssignment {
+  id        String   @id @default(uuid())
+  agentId   String   @map("agent_id")
+  leadId    String   @unique @map("lead_id")
+  /// Denormalized from Lead.userId when present (priority user / CRM).
+  userId    String?  @map("user_id")
+  /// assigned | contacted | closed | lost
+  status    String   @default("assigned")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  agent SalesAgent @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  lead  Lead       @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  user  User?      @relation("SalesAssignmentProspect", fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([agentId, status])
+  @@index([status])
+  @@map("sales_assignments")
+}
+
+model SalesPerformance {
+  id             String   @id @default(uuid())
+  agentId        String   @unique @map("agent_id")
+  leadsAssigned  Int      @default(0) @map("leads_assigned")
+  dealsClosed    Int      @default(0) @map("deals_closed")
+  revenue        Float    @default(0)
+  commission     Float    @default(0) @map("commission_earned")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  agent SalesAgent @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@map("sales_performance")
+}
+
+/// Internal hiring CRM — candidates for sales / ops / growth.
+model Candidate {
+  id        String   @id @default(uuid())
+  name      String
+  email     String
+  /// sales | operations | growth
+  role      String
+  /// applied | screening | interview | trial | hired | rejected
+  stage     String   @default("applied")
+  /// Latest rollup from evaluations (0–10 scale).
+  score     Float    @default(0)
+  notes     String?
+  /// high_performer | low_performer | null (auto from rules)
+  flag      String?  @map("performance_flag")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  interactions  CandidateInteraction[]
+  evaluations   CandidateEvaluation[]
+  trialTasks    CandidateTrialTask[]
+
+  @@index([stage])
+  @@index([role])
+  @@index([email])
+  @@index([flag])
+  @@map("hiring_candidates")
+}
+
+model CandidateInteraction {
+  id          String   @id @default(uuid())
+  candidateId String   @map("candidate_id")
+  /// message | call | interview
+  type        String
+  summary     String   @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  candidate Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@index([candidateId, createdAt])
+  @@map("hiring_candidate_interactions")
+}
+
+model CandidateEvaluation {
+  id                 String   @id @default(uuid())
+  candidateId        String   @map("candidate_id")
+  communicationScore Int      @map("communication_score")
+  salesSkillScore    Int      @map("sales_skill_score")
+  executionScore     Int      @map("execution_score")
+  /// Raw pillars (0–10) for structured rubric.
+  speedScore         Int      @default(0) @map("speed_score")
+  clarityScore       Int      @default(0) @map("clarity_score")
+  closingScore       Int      @default(0) @map("closing_score")
+  overallScore       Float    @map("overall_score")
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  candidate Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@index([candidateId, createdAt])
+  @@map("hiring_candidate_evaluations")
+}
+
+/// Real-world trial: contact leads, close a user, etc.
+model CandidateTrialTask {
+  id              String    @id @default(uuid())
+  candidateId     String    @map("candidate_id")
+  /// contact_leads | close_one_user
+  taskKey         String    @map("task_key")
+  /// assigned | in_progress | submitted | reviewed | passed | failed
+  status          String    @default("assigned")
+  resultSummary   String?   @map("result_summary") @db.Text
+  /// 0–10 quality of response / execution evidence
+  responseQuality Int?      @map("response_quality")
+  dueAt           DateTime? @map("due_at")
+  completedAt     DateTime? @map("completed_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  candidate Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@index([candidateId, status])
+  @@map("hiring_candidate_trial_tasks")
+}
+
+/// Cap table holder (founder, employee, advisor, investor).
+model EquityHolder {
+  id            String        @id @default(uuid())
+  name          String
+  /// founder | employee | advisor | investor
+  role          String
+  /// Fully diluted % (denormalized; recomputed from grants).
+  equityPercent Float         @default(0) @map("equity_percent")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+  grants        EquityGrant[]
+
+  @@index([role])
+  @@map("equity_holders")
+}
+
+model EquityGrant {
+  id               String   @id @default(uuid())
+  holderId         String   @map("holder_id")
+  totalShares      Float    @map("total_shares")
+  vestingStart     DateTime @map("vesting_start")
+  /// Total schedule length in months (e.g. 48).
+  vestingDuration  Int      @map("vesting_duration")
+  cliffMonths      Int      @map("cliff_months")
+  vestedShares     Float    @default(0) @map("vested_shares")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  holder EquityHolder @relation(fields: [holderId], references: [id], onDelete: Cascade)
+
+  @@index([holderId])
+  @@map("equity_grants")
+}
+
 model PayoutAdjustment {
   id             String   @id @default(uuid())
   bookingId      String?  @map("booking_id")
@@ -9682,6 +11133,30 @@ model LegalDocument {
   @@index([type])
   @@index([type, isActive])
   @@map("legal_documents")
+}
+
+/// Corporate / entity legal records for LECIPM Legal Management (name + lifecycle status).
+/// Types: shareholder_agreement | privacy_policy | terms. Status: draft | signed.
+model CorporateLegalDocument {
+  id        String   @id @default(uuid())
+  name      String
+  type      String
+  status    String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([type])
+  @@index([status])
+  @@map("corporate_legal_documents")
+}
+
+model CompanyStructure {
+  id           String   @id @default(uuid())
+  entityType   String   @map("entity_type")
+  jurisdiction String
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([jurisdiction])
+  @@map("company_structures")
 }
 
 // User acceptance of legal documents – traceable, version-specific
@@ -10825,6 +12300,8 @@ model Listing {
   documentFiles      DocumentFile[]
   dealFinancials     DealFinancial[]
   tenantInvoices     TenantInvoice[]
+  /// Optional 1:1 — CRM listing created from safe intake (`ListingAcquisitionLead`).
+  sourcedFromAcquisitionLead ListingAcquisitionLead? @relation("CrmListingFromAcquisition")
 
   @@index([ownerId])
   @@index([tenantId])
@@ -11137,6 +12614,10 @@ model Lead {
    */
   workspaceId                String?                     @map("workspace_id") @db.Uuid
   workspace                  EnterpriseWorkspace?        @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+  playbookExecutions         PlaybookExecution[]
+  revenueOpportunities       RevenueOpportunity[]
+  brokerBillingLead          BrokerLead?
+  salesAssignment            SalesAssignment?
 
   @@index([listingId])
   @@index([fsboListingId])
@@ -11428,6 +12909,77 @@ model AiFollowUpSettings {
   updatedAt              DateTime @updatedAt @map("updated_at")
 
   @@map("ai_follow_up_settings")
+}
+
+/// Singleton: pause safe auto-close from admin UI (env still must allow execution).
+model AutoCloseSettings {
+  id        String   @id @default("global")
+  paused    Boolean  @default(false)
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("auto_close_settings")
+}
+
+/// Append-only log for safe auto-close actions (audit / reversible flag only — messages are not unsent).
+model AutoCloseAuditEvent {
+  id         String    @id @default(uuid())
+  actionType String    @map("action_type")
+  targetType String    @map("target_type")
+  targetId   String    @map("target_id")
+  safeMode   Boolean   @map("safe_mode")
+  detail     Json?
+  revertedAt DateTime? @map("reverted_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@index([targetType, targetId])
+  @@map("auto_close_audit_events")
+}
+
+/// Structured conversion playbooks (buyer / host / broker) — steps drive CRM + assistant messaging.
+model Playbook {
+  id          String                @id @default(cuid())
+  key         String                @unique
+  name        String
+  description String                @db.Text
+  steps       PlaybookStep[]
+  executions  PlaybookExecution[]
+
+  @@map("conversion_playbooks")
+}
+
+model PlaybookStep {
+  id                String   @id @default(cuid())
+  playbookId        String   @map("playbook_id")
+  playbook          Playbook @relation(fields: [playbookId], references: [id], onDelete: Cascade)
+  stepOrder         Int      @map("step_order")
+  stage             String
+  triggerCondition  String   @map("trigger_condition") @db.Text
+  recommendedAction String   @map("recommended_action") @db.Text
+  messageTemplate   String   @map("message_template") @db.Text
+
+  @@unique([playbookId, stepOrder])
+  @@index([playbookId])
+  @@map("conversion_playbook_steps")
+}
+
+model PlaybookExecution {
+  id          String    @id @default(cuid())
+  userId      String?   @map("user_id")
+  user        User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  leadId      String?   @map("lead_id")
+  lead        Lead?     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  playbookId  String    @map("playbook_id")
+  playbook    Playbook  @relation(fields: [playbookId], references: [id], onDelete: Cascade)
+  currentStep Int       @default(1) @map("current_step")
+  status      String    @default("active")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@unique([leadId, playbookId])
+  @@index([userId])
+  @@index([playbookId])
+  @@map("conversion_playbook_executions")
 }
 
 /// CRM note / AI suggestion / stage change (traceability).
@@ -11979,20 +13531,182 @@ model EarlyUserTracking {
 
 /// Public landing / LP — email + phone + host|guest intent (see docs/first-100-users.md)
 model GrowthLeadCapture {
-  id          String                @id @default(cuid())
-  email       String                @db.VarChar(320)
-  phone       String?               @db.VarChar(64)
-  intent      EarlyUserTrackingType @map("intent")
-  source      String?               @db.VarChar(64)
-  utmSource   String?               @map("utm_source") @db.VarChar(128)
-  utmMedium   String?               @map("utm_medium") @db.VarChar(64)
-  utmCampaign String?               @map("utm_campaign") @db.VarChar(128)
-  createdAt   DateTime              @default(now()) @map("created_at")
+  id           String                @id @default(cuid())
+  email        String                @db.VarChar(320)
+  fullName     String?               @map("full_name") @db.VarChar(200)
+  phone        String?               @db.VarChar(64)
+  city         String?               @db.VarChar(120)
+  category     String?               @db.VarChar(120)
+  /// buy | rent | list | host — narrows buyer/host intent for CRM
+  intentDetail String?               @map("intent_detail") @db.VarChar(32)
+  consentAt    DateTime?             @map("consent_at")
+  intent       EarlyUserTrackingType @map("intent")
+  source       String?               @db.VarChar(64)
+  utmSource    String?               @map("utm_source") @db.VarChar(128)
+  utmMedium    String?               @map("utm_medium") @db.VarChar(64)
+  utmCampaign  String?               @map("utm_campaign") @db.VarChar(128)
+  createdAt    DateTime              @default(now()) @map("created_at")
 
   @@index([email])
   @@index([intent, createdAt])
   @@index([createdAt])
   @@map("growth_lead_captures")
+}
+
+/// Permission-based growth CRM (inbound forms, CSV imports, manual ops). Safe outreach — no auto-external messaging.
+enum GrowthEngineLeadRole {
+  owner
+  broker
+  buyer
+  host
+}
+
+enum GrowthEngineLeadSource {
+  form
+  csv
+  manual
+  referral
+}
+
+enum GrowthEnginePermissionStatus {
+  unknown
+  requested
+  granted
+  rejected
+  granted_by_source
+}
+
+enum GrowthEngineLeadStage {
+  new
+  contacted
+  interested
+  awaiting_assets
+  converted
+  lost
+}
+
+model GrowthEngineLead {
+  id                   String                       @id @default(cuid())
+  role                 GrowthEngineLeadRole
+  name                 String?                      @db.VarChar(200)
+  email                String?                      @db.VarChar(320)
+  phone                String?                      @db.VarChar(64)
+  city                 String?                      @db.VarChar(120)
+  category             String?                      @db.VarChar(120)
+  intent               String?                      @db.VarChar(64)
+  source               GrowthEngineLeadSource
+  permissionStatus     GrowthEnginePermissionStatus @default(unknown)
+  stage                GrowthEngineLeadStage        @default(new)
+  assignedToUserId     String?                      @map("assigned_to_user_id")
+  assignedTo           User?                        @relation("GrowthEngineLeadAssignee", fields: [assignedToUserId], references: [id], onDelete: SetNull)
+  lastContactAt        DateTime?                    @map("last_contact_at")
+  lastTemplateKey      String?                      @map("last_template_key") @db.VarChar(64)
+  notes                String?                      @db.Text
+  referralCode         String?                      @map("referral_code") @db.VarChar(64)
+  referredByUserId     String?                      @map("referred_by_user_id")
+  referredBy           User?                        @relation("GrowthEngineLeadReferrer", fields: [referredByUserId], references: [id], onDelete: SetNull)
+  consentAt            DateTime?                    @map("consent_at")
+  needsFollowUp        Boolean                      @default(false) @map("needs_follow_up")
+  followUpReason       String?                      @map("follow_up_reason") @db.VarChar(256)
+  archivedAt             DateTime?               @map("archived_at")
+  listingAcquisitionLeadId String?             @unique @map("listing_acquisition_lead_id")
+  listingAcquisitionLead ListingAcquisitionLead? @relation(fields: [listingAcquisitionLeadId], references: [id], onDelete: SetNull)
+  createdAt              DateTime              @default(now()) @map("created_at")
+  updatedAt              DateTime              @updatedAt @map("updated_at")
+
+  @@index([email])
+  @@index([stage])
+  @@index([source])
+  @@index([role])
+  @@index([needsFollowUp])
+  @@index([createdAt])
+  @@map("growth_engine_leads")
+}
+
+/// AI Growth Brain — recommendations, approvals, outcomes (see lib/growth-brain/).
+enum GrowthBrainDomain {
+  supply
+  demand
+  seo
+  content
+  conversion
+  revenue
+  retention
+}
+
+enum GrowthBrainPriority {
+  low
+  medium
+  high
+}
+
+enum GrowthBrainApprovalStatus {
+  pending
+  approved
+  rejected
+  executed
+}
+
+model GrowthBrainRecommendation {
+  id                 String             @id @default(cuid())
+  type               String             @db.VarChar(96)
+  domain             GrowthBrainDomain
+  priority           GrowthBrainPriority
+  confidence         Float
+  title              String             @db.VarChar(400)
+  description        String             @db.Text
+  reasoning          String             @db.Text
+  suggestedAction    String             @map("suggested_action") @db.Text
+  autoRunnable       Boolean            @default(false) @map("auto_runnable")
+  requiresApproval   Boolean            @default(true) @map("requires_approval")
+  targetEntityType   String?            @map("target_entity_type") @db.VarChar(64)
+  targetEntityId     String?            @map("target_entity_id") @db.VarChar(64)
+  metadataJson       Json?              @map("metadata_json")
+  runId              String             @map("run_id") @db.VarChar(64)
+  status             String             @default("active") @db.VarChar(24)
+  fingerprint        String             @unique @db.VarChar(160)
+  viewedCount        Int                @default(0) @map("viewed_count")
+  dismissedCount     Int                @default(0) @map("dismissed_count")
+  approvedCount      Int                @default(0) @map("approved_count")
+  executedCount      Int                @default(0) @map("executed_count")
+  createdAt          DateTime           @default(now()) @map("created_at")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
+
+  approvals GrowthBrainApproval[]
+  outcomes  GrowthBrainOutcomeEvent[]
+
+  @@index([domain, priority])
+  @@index([runId])
+  @@index([status, createdAt])
+  @@map("growth_brain_recommendations")
+}
+
+model GrowthBrainApproval {
+  id                 String                    @id @default(cuid())
+  recommendationId   String                    @map("recommendation_id")
+  recommendation     GrowthBrainRecommendation @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
+  status             GrowthBrainApprovalStatus @default(pending)
+  reviewerId         String?                   @map("reviewer_id")
+  reviewer           User?                     @relation("GrowthBrainApprovalReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+  notes              String?                   @db.Text
+  createdAt          DateTime                  @default(now()) @map("created_at")
+  executedAt         DateTime?                 @map("executed_at")
+
+  @@index([recommendationId])
+  @@index([status, createdAt])
+  @@map("growth_brain_approvals")
+}
+
+model GrowthBrainOutcomeEvent {
+  id               String                    @id @default(cuid())
+  recommendationId String                  @map("recommendation_id")
+  recommendation   GrowthBrainRecommendation @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
+  eventType        String                    @map("event_type") @db.VarChar(32)
+  metadataJson     Json?                     @map("metadata_json")
+  createdAt        DateTime                  @default(now()) @map("created_at")
+
+  @@index([recommendationId, createdAt])
+  @@map("growth_brain_outcome_events")
 }
 
 /// B2B / enterprise sales pipeline (property managers, agencies, operators). See docs/enterprise-sales.md
@@ -12072,6 +13786,10 @@ enum UserEventType {
   PAYMENT_SUCCESS
   PAYMENT_FAILED
   STRIPE_WEBHOOK
+  /// Live funnel / monitoring (search, messaging, AI)
+  SEARCH_PERFORMED
+  MESSAGE_SENT
+  AI_REPLY_SENT
 }
 
 /// Email waitlist for product updates (growth / conversion)
@@ -12089,6 +13807,16 @@ model WaitlistUser {
   @@map("waitlist_users")
 }
 
+/// Growth engine: simple marketing waitlist (distinct from `WaitlistUser` tags/cohorts).
+model Waitlist {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@map("growth_waitlist")
+}
+
 model UserEvent {
   id        String        @id @default(cuid())
   eventType UserEventType
@@ -12101,7 +13829,43 @@ model UserEvent {
   @@index([eventType, createdAt])
   @@index([createdAt])
   @@index([userId, createdAt])
+  @@index([userId, eventType, createdAt])
   @@map("user_events")
+}
+
+/// Admin / ops: API, Stripe, and validation failures for live debugging (optional `LIVE_DEBUG_MODE` workflows).
+model ErrorEvent {
+  id        String   @id @default(cuid())
+  errorType String   @map("error_type") @db.VarChar(64)
+  message   String   @db.Text
+  stack     String?  @db.Text
+  userId    String?  @map("user_id")
+  user      User?    @relation("LiveDebugErrorEvents", fields: [userId], references: [id], onDelete: SetNull)
+  route     String?  @db.VarChar(512)
+  metadata  Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([errorType, createdAt])
+  @@index([userId, createdAt])
+  @@index([createdAt])
+  @@map("error_events")
+}
+
+/// Launch / investor validation funnel — discrete events for admin dashboard.
+model LaunchEvent {
+  id        String   @id @default(cuid())
+  event     String
+  payload   Json
+  timestamp DateTime @default(now())
+  createdAt DateTime @default(now()) @map("created_at")
+  /// Optional actor for growth metrics (signups, bookings, referrals).
+  userId    String?  @map("user_id")
+  user      User?    @relation("LaunchEvents", fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([event, createdAt])
+  @@index([createdAt])
+  @@index([userId, createdAt])
+  @@map("launch_events")
 }
 
 /// Idempotent log of Stripe webhook deliveries for growth analytics (one row per `event.id`).
@@ -12227,6 +13991,7 @@ model GrowthAiConversation {
   decisions GrowthAiConversationDecision[]
   templateOutcomeEvents GrowthAiTemplateOutcomeEvent[]
   orchestration         GrowthAiLeadOrchestration?
+  dealAssistantInsights DealAssistantInsight[]
 
   @@index([userId, status])
   @@index([status, aiReplyPending])
@@ -12258,6 +14023,23 @@ model GrowthAiConversationMessage {
 
   @@index([conversationId, createdAt])
   @@map("growth_ai_conversation_messages")
+}
+
+/// Operator-facing Deal Assistant snapshot (assisted AI — human sends messages).
+model DealAssistantInsight {
+  id                  String               @id @default(uuid())
+  conversationId      String               @map("conversation_id")
+  conversation        GrowthAiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  detectedIntent      String               @map("detected_intent")
+  detectedObjection   String               @map("detected_objection")
+  urgencyLevel        String               @map("urgency_level")
+  recommendedAction   String               @map("recommended_action")
+  messageSuggestion   String               @map("message_suggestion") @db.Text
+  confidence          Float
+  createdAt           DateTime             @default(now()) @map("created_at")
+
+  @@index([conversationId, createdAt])
+  @@map("deal_assistant_insights")
 }
 
 model AutoReplyRule {
@@ -13707,6 +15489,100 @@ model Notification {
   @@map("notifications")
 }
 
+model MobileDeviceToken {
+  id          String    @id @default(cuid())
+  userId      String    @map("user_id")
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token       String    @unique
+  platform    String
+  provider    String    @default("expo")
+  deviceName  String?   @map("device_name")
+  appVersion  String?   @map("app_version")
+  lastSeenAt  DateTime  @default(now()) @map("last_seen_at")
+  revokedAt   DateTime? @map("revoked_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([platform])
+  @@index([provider])
+  @@index([revokedAt])
+  @@map("mobile_device_tokens")
+}
+
+model ClientInterestProfile {
+  id                      String   @id @default(cuid())
+  userId                  String   @unique @map("user_id")
+  user                    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topCity                 String?  @map("top_city")
+  topPropertyType         String?  @map("top_property_type")
+  topIntentMode           String?  @map("top_intent_mode")
+  preferredPriceMinCents  Int?     @map("preferred_price_min_cents")
+  preferredPriceMaxCents  Int?     @map("preferred_price_max_cents")
+  interestScore           Int      @default(0) @map("interest_score")
+  intentStage             String   @default("cold") @map("intent_stage")
+  lastActiveAt            DateTime? @map("last_active_at")
+  computedFromEventsAt    DateTime? @map("computed_from_events_at")
+  summaryJson             Json?
+  createdAt               DateTime @default(now()) @map("created_at")
+  updatedAt               DateTime @updatedAt @map("updated_at")
+
+  @@index([intentStage])
+  @@index([interestScore])
+  @@index([topCity])
+  @@map("client_interest_profiles")
+}
+
+model ClientCelebrationProfile {
+  id                 String    @id @default(cuid())
+  userId             String    @unique @map("user_id")
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  birthDate          DateTime? @map("birth_date")
+  allowBirthdayTouch Boolean   @default(false) @map("allow_birthday_touch")
+  lastBirthdaySentAt DateTime? @map("last_birthday_sent_at")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+
+  @@index([birthDate])
+  @@map("client_celebration_profiles")
+}
+
+enum ClientFollowUpType {
+  NEW_MATCH
+  INACTIVITY_NUDGE
+  BIRTHDAY_GREETING
+  BROKER_REENGAGE
+}
+
+enum ClientFollowUpStatus {
+  PENDING
+  SENT
+  SKIPPED
+  FAILED
+}
+
+model ClientFollowUpQueue {
+  id            String               @id @default(cuid())
+  userId        String               @map("user_id")
+  user          User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type          ClientFollowUpType
+  status        ClientFollowUpStatus @default(PENDING)
+  title         String
+  message       String               @db.Text
+  payload       Json?
+  scheduledAt   DateTime             @map("scheduled_at")
+  sentAt        DateTime?            @map("sent_at")
+  lastError     String?              @map("last_error") @db.Text
+  dedupeKey     String?              @unique @map("dedupe_key")
+  createdAt     DateTime             @default(now()) @map("created_at")
+  updatedAt     DateTime             @updatedAt @map("updated_at")
+
+  @@index([userId, status])
+  @@index([scheduledAt, status])
+  @@index([type, status])
+  @@map("client_follow_up_queue")
+}
+
 model ActionQueueItem {
   id          String                @id @default(cuid())
   tenantId    String?               @map("tenant_id")
@@ -14670,6 +16546,107 @@ model BrokerLecipmSubscription {
   @@map("broker_lecipm_subscriptions")
 }
 
+/// Per-broker pay-per-assigned-lead settings (price override, batch vs immediate checkout, enforcement).
+model BrokerMonetizationProfile {
+  brokerId            String   @id @map("broker_id")
+  broker              User     @relation(fields: [brokerId], references: [id], onDelete: Cascade)
+  /// Unit price in major currency units (CAD) for one assigned CRM lead.
+  leadPrice           Float    @default(100) @map("lead_price")
+  /// Pre-paid lead credits (1 credit = one assigned lead settled without Stripe).
+  leadCreditsBalance  Int      @default(0) @map("lead_credits_balance")
+  /// immediate = pay per lead checkout; invoice_batch = roll unpaid leads into one invoice checkout.
+  checkoutMode        String   @default("invoice_batch") @map("checkout_mode")
+  maxUnpaidLeads      Int      @default(5) @map("max_unpaid_leads")
+  leadReceivingPaused Boolean  @default(false) @map("lead_receiving_paused")
+  /// When true, assigned leads are recorded but not billed (e.g. enterprise / comped brokers).
+  subscriptionCoversAssignedLeads Boolean @default(false) @map("subscription_covers_assigned_leads")
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("broker_monetization_profiles")
+}
+
+/// Marketing / pricing page tiers (Free · Pro · Platinum). Seeded; editable via admin later.
+model MonetizationPlanTier {
+  id                String   @id @default(cuid())
+  slug              String   @unique
+  name              String
+  description       String?  @db.Text
+  priceCentsMonthly Int      @default(0) @map("price_cents_monthly")
+  currency          String   @default("cad")
+  storageBytesHint  BigInt?  @map("storage_bytes_hint")
+  features          Json?
+  sortOrder         Int      @default(0) @map("sort_order")
+  active            Boolean  @default(true)
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@index([active, sortOrder])
+  @@map("monetization_plan_tiers")
+}
+
+/// Billable row for a CRM `Lead` once a broker is introduced / assigned.
+model BrokerLead {
+  id              String         @id @default(cuid())
+  brokerId        String         @map("broker_id")
+  broker          User           @relation("BrokerLeadBroker", fields: [brokerId], references: [id], onDelete: Cascade)
+  buyerId         String?        @map("buyer_id")
+  buyer           User?          @relation("BrokerLeadBuyer", fields: [buyerId], references: [id], onDelete: SetNull)
+  listingId       String?        @map("listing_id")
+  leadId          String         @unique @map("lead_id")
+  lead            Lead           @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  /// CRM-style stage: new | contacted | closed | lost
+  status          String         @default("new")
+  /// Billing lifecycle: unpaid | pending_checkout | paid | waived
+  billingStatus   String         @default("unpaid") @map("billing_status")
+  price           Float
+  brokerInvoiceId String?        @map("broker_invoice_id")
+  brokerInvoice   BrokerInvoice? @relation(fields: [brokerInvoiceId], references: [id], onDelete: SetNull)
+  createdAt       DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+  payments        BrokerPayment[]
+
+  @@index([brokerId])
+  @@index([brokerId, billingStatus])
+  @@index([brokerInvoiceId])
+  @@map("broker_leads")
+}
+
+model BrokerInvoice {
+  id              String       @id @default(cuid())
+  brokerId        String       @map("broker_id")
+  broker          User         @relation(fields: [brokerId], references: [id], onDelete: Cascade)
+  totalAmount     Float        @map("total_amount")
+  status          String       @default("pending")
+  stripeSessionId String?      @unique @map("stripe_session_id")
+  createdAt       DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
+  leads           BrokerLead[]
+  payments        BrokerPayment[]
+
+  @@index([brokerId])
+  @@index([status])
+  @@map("broker_invoices")
+}
+
+model BrokerPayment {
+  id                    String      @id @default(cuid())
+  brokerId              String      @map("broker_id")
+  broker                User        @relation(fields: [brokerId], references: [id], onDelete: Cascade)
+  stripePaymentIntentId String      @unique @map("stripe_payment_intent_id")
+  amount                Float
+  status                String
+  brokerLeadId          String?     @map("broker_lead_id")
+  brokerLead            BrokerLead? @relation(fields: [brokerLeadId], references: [id], onDelete: SetNull)
+  brokerInvoiceId       String?     @map("broker_invoice_id")
+  brokerInvoice         BrokerInvoice? @relation(fields: [brokerInvoiceId], references: [id], onDelete: SetNull)
+  createdAt             DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([brokerId])
+  @@index([brokerInvoiceId])
+  @@map("broker_payments")
+}
+
 model PublicShareLink {
   id              String            @id @default(cuid())
   token           String            @unique
@@ -14717,6 +16694,54 @@ model SeoBlogPost {
 
   @@index([publishedAt])
   @@map("seo_blog_posts")
+}
+
+/// LECIPM market city — rollout, playbooks, and admin dashboards (multi-city expansion).
+model City {
+  id                    String    @id @default(cuid())
+  slug                  String    @unique
+  name                  String
+  country               String    @default("CA")
+  region                String?
+  /// testing | active
+  status                String    @default("testing")
+  launchDate            DateTime? @map("launch_date") @db.Timestamptz(6)
+  listingsEnabled       Boolean   @default(false) @map("listings_enabled")
+  searchPagesEnabled    Boolean   @default(false) @map("search_pages_enabled")
+  growthEngineEnabled   Boolean   @default(false) @map("growth_engine_enabled")
+  playbookMessaging     String?   @map("playbook_messaging") @db.Text
+  playbookPricing       String?   @map("playbook_pricing") @db.Text
+  playbookStrategy      String?   @map("playbook_strategy") @db.Text
+  /// Cached 0–100 opportunity score (expansion engine).
+  expansionScore        Int?      @map("expansion_score")
+  /// Match `FsboListing.city` / `ShortTermListing.city` (case-insensitive contains).
+  cityMatchTerms        String[]  @default([]) @map("city_match_terms")
+  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  users                 User[]
+
+  @@index([status])
+  @@index([country])
+  @@map("lecipm_cities")
+}
+
+/// Programmatic SEO blocks for city intent pages (buy | rent | investment) — refreshed by growth cron.
+model SeoPageContent {
+  id                   String   @id @default(cuid())
+  citySlug             String   @map("city_slug")
+  /// buy | rent | investment
+  pageKind             String   @map("page_kind")
+  blockBestProperties  String   @map("block_best_properties") @db.Text
+  blockTopInvestment   String   @map("block_top_investment") @db.Text
+  blockRentVsBuy       String   @map("block_rent_vs_buy") @db.Text
+  keywords             String[] @default([])
+  generatedAt          DateTime @default(now()) @map("generated_at") @db.Timestamptz(6)
+  createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([citySlug, pageKind], map: "uq_seo_page_content_city_kind")
+  @@index([citySlug])
+  @@map("seo_page_contents")
 }
 
 model ModelValidationItem {
@@ -15226,6 +17251,116 @@ model ContentPerformanceMetric {
   @@map("content_performance_metrics")
 }
 
+/// AI marketing engine: generated blog / social / email rows + distribution metadata + aggregate performance.
+model MarketingEngineContent {
+  id               String    @id @default(cuid())
+  /// blog | social | email
+  type             String
+  title            String
+  body             String    @db.Text
+  /// linkedin | twitter | instagram | email | blog | newsletter
+  platform         String
+  /// draft | scheduled | published | failed
+  status           String    @default("draft")
+  topicKey         String?   @map("topic_key")
+  listingId        String?   @map("listing_id")
+  citySlug         String?   @map("city_slug")
+  scheduledFor     DateTime? @map("scheduled_for") @db.Timestamptz(6)
+  publishedAt      DateTime? @map("published_at") @db.Timestamptz(6)
+  externalPostId   String?   @map("external_post_id")
+  blogSlug         String?   @map("blog_slug")
+  clicks           Int       @default(0)
+  engagements      Int       @default(0)
+  conversions      Int       @default(0)
+  optimizationMeta Json?     @map("optimization_meta") @db.JsonB
+  metadata         Json?     @db.JsonB
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([type, status], map: "idx_marketing_engine_content_type_status")
+  @@index([platform], map: "idx_marketing_engine_content_platform")
+  @@index([createdAt], map: "idx_marketing_engine_content_created")
+  @@map("lecipm_marketing_engine_content")
+}
+
+// ---------------------------------------------------------------------------
+// LECIPM — Multilingual generated content (AI/template; review-before-publish)
+// ---------------------------------------------------------------------------
+
+model LecipmGeneratedContent {
+  id       String  @id @default(cuid())
+  surface  String  @db.VarChar(64)
+  locale   String  @db.VarChar(8)
+  marketCode String @map("market_code") @db.VarChar(32)
+  entityType String @map("entity_type") @db.VarChar(32)
+  entityId String? @map("entity_id") @db.VarChar(64)
+
+  title          String? @db.Text
+  body           String  @db.Text
+  summary        String? @db.Text
+  seoTitle       String? @map("seo_title") @db.Text
+  seoDescription String? @map("seo_description") @db.Text
+
+  /// draft | pending_review | approved | rejected | published
+  status String @default("draft") @db.VarChar(32)
+
+  createdByUserId String? @map("created_by_user_id")
+  createdBySystem Boolean @default(false) @map("created_by_system")
+
+  /// ai | template | hybrid
+  generationSource String @map("generation_source") @db.VarChar(16)
+  promptVersion    String? @map("prompt_version") @db.VarChar(64)
+
+  /// generate_native | translate_from_source | hybrid_localize
+  creationMode    String? @map("creation_mode") @db.VarChar(32)
+  sourceContentId String? @map("source_content_id") @db.VarChar(64)
+
+  reviewedByUserId String?   @map("reviewed_by_user_id")
+  reviewedAt       DateTime? @map("reviewed_at") @db.Timestamptz(6)
+  reviewNote       String?   @map("review_note") @db.Text
+
+  publishedByUserId String?   @map("published_by_user_id")
+  publishedAt       DateTime? @map("published_at") @db.Timestamptz(6)
+
+  /// append_suggestion | replace_ai_field_only | manual_review_required
+  hostOverwritePolicy String? @map("host_overwrite_policy") @db.VarChar(32)
+
+  metadata Json? @db.JsonB
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  auditLogs LecipmGeneratedContentAuditLog[]
+
+  @@index([surface, status], map: "idx_lecipm_gen_content_surface_status")
+  @@index([locale, marketCode], map: "idx_lecipm_gen_content_locale_market")
+  @@index([entityType, entityId], map: "idx_lecipm_gen_content_entity")
+  @@index([status, createdAt], map: "idx_lecipm_gen_content_status_created")
+  @@index([sourceContentId], map: "idx_lecipm_gen_content_source")
+  @@map("lecipm_generated_content")
+}
+
+model LecipmGeneratedContentAuditLog {
+  id        String @id @default(cuid())
+  contentId String @map("content_id")
+  content   LecipmGeneratedContent @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  action     String  @db.VarChar(64)
+  fromStatus String? @map("from_status") @db.VarChar(32)
+  toStatus   String? @map("to_status") @db.VarChar(32)
+
+  actorUserId String? @map("actor_user_id")
+  actorSystem Boolean @default(false) @map("actor_system")
+
+  snapshot Json? @db.JsonB
+  payload  Json? @db.JsonB
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([contentId, createdAt], map: "idx_lecipm_gen_audit_content_time")
+  @@map("lecipm_generated_content_audit")
+}
+
 // ---------------------------------------------------------------------------
 // LECIPM — Growth funnel (activation, retention, conversions; measurable events)
 // ---------------------------------------------------------------------------
@@ -15479,6 +17614,167 @@ model BnhubGuestFavorite {
   @@index([guestUserId])
   @@index([listingId])
   @@map("bnhub_guest_favorites")
+}
+
+/// BNHub mobile guest preferences for AI ranking, notifications, and upsell defaults (JSON blob).
+model UserBnhubPreferences {
+  id        String   @id @default(cuid())
+  userId    String   @unique @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  prefsJson Json     @default("{}") @map("prefs_json")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("user_bnhub_preferences")
+}
+
+/// Favorites for Supabase `public.listings` ids (parallel to `BnhubGuestFavorite` for Prisma stays).
+model BnhubSupabaseGuestFavorite {
+  id                String   @id @default(cuid())
+  guestUserId       String   @map("guest_user_id")
+  guest             User     @relation(fields: [guestUserId], references: [id], onDelete: Cascade)
+  supabaseListingId String   @map("supabase_listing_id")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@unique([guestUserId, supabaseListingId], map: "bnhub_supabase_fav_user_listing_key")
+  @@index([guestUserId])
+  @@index([supabaseListingId])
+  @@map("bnhub_supabase_guest_favorites")
+}
+
+model BnhubClientSearchEvent {
+  id          String   @id @default(cuid())
+  userId      String?  @map("user_id")
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  anonymousId String?  @map("anonymous_id")
+  query       String   @db.Text
+  filtersJson Json?    @map("filters_json")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([userId, createdAt])
+  @@index([anonymousId, createdAt])
+  @@map("bnhub_client_search_events")
+}
+
+model BnhubClientListingViewEvent {
+  id                String   @id @default(cuid())
+  userId            String?  @map("user_id")
+  user              User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  anonymousId       String?  @map("anonymous_id")
+  supabaseListingId String   @map("supabase_listing_id")
+  source            String?  @map("source")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@index([userId, createdAt])
+  @@index([supabaseListingId, createdAt])
+  @@map("bnhub_client_listing_view_events")
+}
+
+/// High-volume click stream for conversion attribution (CTAs, cards, SERP).
+model BnhubClientClickEvent {
+  id                String   @id @default(cuid())
+  userId            String?  @map("user_id")
+  user              User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  anonymousId       String?  @map("anonymous_id")
+  /// e.g. cta_primary | listing_card | search_chip | bnhub_nav
+  targetType        String   @map("target_type") @db.VarChar(64)
+  targetUrl         String?  @map("target_url") @db.Text
+  supabaseListingId String?  @map("supabase_listing_id")
+  metaJson          Json?    @map("meta_json")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@index([userId, createdAt])
+  @@index([targetType, createdAt])
+  @@map("bnhub_client_click_events")
+}
+
+enum BnhubBookingFunnelStage {
+  STARTED
+  CHECKOUT
+  PAID
+  CANCELLED
+}
+
+/// BNHub Supabase booking funnel — complements Stripe webhooks for product analytics.
+model BnhubClientBookingFunnelEvent {
+  id                 String                  @id @default(cuid())
+  userId             String?                 @map("user_id")
+  user               User?                   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  anonymousId        String?                 @map("anonymous_id")
+  stage              BnhubBookingFunnelStage @map("stage")
+  supabaseBookingId  String?                 @map("supabase_booking_id") @db.VarChar(80)
+  supabaseListingId  String?                 @map("supabase_listing_id") @db.VarChar(80)
+  amountCents        Int?                    @map("amount_cents")
+  metaJson           Json?                   @map("meta_json")
+  createdAt          DateTime                @default(now()) @map("created_at")
+
+  @@index([userId, createdAt])
+  @@index([supabaseListingId, createdAt])
+  @@index([stage, createdAt])
+  @@map("bnhub_client_booking_funnel_events")
+}
+
+/// Rolling demand signal for a Supabase listing (recommendations + host pricing hints).
+model BnhubListingDemandScore {
+  id                String   @id @default(cuid())
+  supabaseListingId String   @unique @map("supabase_listing_id")
+  score             Int      @default(50) @map("score")
+  factorsJson       Json?    @map("factors_json")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@map("bnhub_listing_demand_scores")
+}
+
+/// Optional price history for Supabase listings (AI / analytics).
+model BnhubSupabasePricingSnapshot {
+  id                String   @id @default(cuid())
+  supabaseListingId String   @map("supabase_listing_id")
+  priceCents        Int      @map("price_cents")
+  source            String   @default("system") @map("source")
+  factorsJson       Json?    @map("factors_json")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@index([supabaseListingId, createdAt])
+  @@map("bnhub_supabase_pricing_snapshots")
+}
+
+/// Guest watches a Supabase listing for price drops / promos.
+model BnhubListingPriceWatch {
+  id                   String    @id @default(cuid())
+  userId               String    @map("user_id")
+  user                 User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  supabaseListingId    String    @map("supabase_listing_id")
+  lastKnownPriceCents  Int?      @map("last_known_price_cents")
+  lastNotifiedAt       DateTime? @map("last_notified_at")
+  createdAt            DateTime  @default(now()) @map("created_at")
+
+  @@unique([userId, supabaseListingId], map: "bnhub_price_watch_user_listing_key")
+  @@index([supabaseListingId])
+  @@map("bnhub_listing_price_watches")
+}
+
+enum BnhubDiscoveryAlertType {
+  PRICE_DROP
+  NEW_LISTING
+  PROMOTION
+}
+
+model BnhubDiscoveryAlert {
+  id        String                 @id @default(cuid())
+  userId    String                 @map("user_id")
+  user      User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  alertType BnhubDiscoveryAlertType @map("alert_type")
+  city      String?                @map("city")
+  /// Supabase listing id when alert is listing-scoped.
+  supabaseListingId String?        @map("supabase_listing_id")
+  active    Boolean                @default(true) @map("active")
+  prefsJson Json?                  @map("prefs_json")
+  createdAt DateTime               @default(now()) @map("created_at")
+  updatedAt DateTime               @updatedAt @map("updated_at")
+
+  @@index([userId, active])
+  @@map("bnhub_discovery_alerts")
 }
 
 model BnhubMobileNotificationQueue {
@@ -16113,4 +18409,701 @@ model BnhubServiceDiscountRule {
 
   @@index([isActive])
   @@map("bnhub_service_discount_rules")
+}
+
+// ---------------------------------------------------------------------------
+// AI marketing — drafts, scheduling (no auto-post), light metrics
+// ---------------------------------------------------------------------------
+
+enum MarketingContentType {
+  SOCIAL_POST
+  CAPTION
+  EMAIL
+  GROWTH_IDEA
+}
+
+enum MarketingContentStatus {
+  DRAFT
+  APPROVED
+  SCHEDULED
+  PUBLISHED
+  /// Publish pipeline in progress (claimed by worker or admin publish)
+  PUBLISHING
+  /// Last publish attempt failed (see marketing_publish_jobs)
+  FAILED
+}
+
+/// Where admin intends to publish (execution via provider adapters; many are dry-run until OAuth).
+enum MarketingPublishChannel {
+  EMAIL
+  X
+  LINKEDIN
+  INSTAGRAM
+  TIKTOK
+}
+
+/// Append-only style job log for audit (row updated from RUNNING → terminal state).
+enum MarketingPublishJobStatus {
+  SCHEDULED
+  RUNNING
+  SUCCESS
+  FAILED
+  DRY_RUN
+}
+
+model MarketingContent {
+  id       String                 @id @default(cuid())
+  type     MarketingContentType
+  /// Primary copy: post/caption text, flattened growth ideas, or email body mirror
+  content  String                 @db.Text
+  /// Structured payload: ideas[], emailKind, generation context, etc.
+  contentJson Json?               @map("content_json")
+  platform String?
+  topic    String?
+  tone     String?
+  audience String?
+  theme    String?
+  status   MarketingContentStatus @default(DRAFT)
+  /// Intended publish/send time — worker picks up when due
+  scheduledAt DateTime?           @map("scheduled_at")
+  createdAt   DateTime            @default(now()) @map("created_at")
+  updatedAt   DateTime          @updatedAt @map("updated_at")
+  /// "openai" | "fallback" (stored as plain string)
+  aiSource    String?            @map("ai_source")
+
+  emailSubject    String? @map("email_subject")
+  emailBody       String? @map("email_body") @db.Text
+  emailCta        String? @map("email_cta")
+  isEmailCampaign Boolean @default(false) @map("is_email_campaign")
+
+  createdByUserId String? @map("created_by_user_id")
+
+  /// Publish destination (set before schedule / publish now).
+  publishChannel  MarketingPublishChannel? @map("publish_channel")
+  publishTargetId String?                  @map("publish_target_id")
+  /// When true, providers must not call live APIs (default safe).
+  publishDryRun   Boolean                  @default(true) @map("publish_dry_run")
+
+  /// A/B parent row (variant A lives here; B/C are separate rows pointing to this id).
+  parentContentId String? @map("parent_content_id")
+  parentContent   MarketingContent?  @relation("MarketingContentVariants", fields: [parentContentId], references: [id], onDelete: SetNull)
+  childVariants   MarketingContent[] @relation("MarketingContentVariants")
+  variantLabel    String?            @map("variant_label")
+  isVariant       Boolean            @default(false) @map("is_variant")
+  isWinnerVariant Boolean            @default(false) @map("is_winner_variant")
+
+  metrics     MarketingMetric[]
+  publishJobs MarketingPublishJob[]
+
+  @@index([status])
+  @@index([type])
+  @@index([createdAt])
+  @@index([scheduledAt])
+  @@index([parentContentId])
+  @@map("marketing_content")
+}
+
+model MarketingPublishJob {
+  id              String                  @id @default(cuid())
+  contentId       String                  @map("content_id")
+  content         MarketingContent        @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  channel         MarketingPublishChannel
+  status          MarketingPublishJobStatus
+  scheduledAt     DateTime?               @map("scheduled_at")
+  startedAt       DateTime?               @map("started_at")
+  finishedAt      DateTime?               @map("finished_at")
+  externalPostId  String?                 @map("external_post_id")
+  /// Safe, truncated reason for admins (no stack traces).
+  errorMessage    String?                 @map("error_message") @db.Text
+  responseSummary String?                 @map("response_summary") @db.Text
+  dryRun          Boolean                 @map("dry_run")
+  createdAt       DateTime                @default(now()) @map("created_at")
+
+  @@index([contentId])
+  @@index([createdAt])
+  @@index([status])
+  @@map("marketing_publish_jobs")
+}
+
+/// Manual / imported metric snapshots (append-only)
+model MarketingMetric {
+  id            String           @id @default(cuid())
+  contentId     String           @map("content_id")
+  content       MarketingContent @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  views         Int?
+  clicks        Int?
+  conversions   Int?
+  /// Email opens (manual / future ESP); use with views as “sent” when you log both
+  opens         Int?
+  notes         String?          @db.Text
+  createdAt     DateTime         @default(now()) @map("created_at")
+
+  @@index([contentId])
+  @@index([createdAt])
+  @@map("marketing_metrics")
+}
+
+// ---------------------------------------------------------------------------
+// Insurance leads (partner monetization; consent stored server-side)
+// ---------------------------------------------------------------------------
+
+enum InsuranceLeadType {
+  TRAVEL
+  PROPERTY
+  MORTGAGE
+}
+
+enum InsuranceLeadSource {
+  BNBHUB
+  LISTING
+  CHECKOUT
+  MANUAL
+}
+
+enum InsuranceLeadStatus {
+  NEW
+  SENT
+  CONVERTED
+  REJECTED
+}
+
+model InsurancePartner {
+  id                   String   @id @default(cuid())
+  name                 String
+  contactEmail         String   @map("contact_email")
+  webhookUrl           String?  @map("webhook_url") @db.Text
+  /// Legacy single price; used when `basePricePerLead` is null.
+  fixedPricePerLead    Decimal  @default(0) @map("fixed_price_per_lead") @db.Decimal(18, 2)
+  /// Preferred base payout per lead (CAD). Falls back to `fixedPricePerLead` if unset.
+  basePricePerLead     Decimal? @map("base_price_per_lead") @db.Decimal(18, 2)
+  /// Extra payout when `InsuranceLead.leadScore` exceeds quality threshold.
+  bonusHighQualityLead Decimal  @default(0) @map("bonus_high_quality_lead") @db.Decimal(18, 2)
+  /// Optional JSON array of lead types this partner accepts, e.g. ["TRAVEL","PROPERTY"]. Null/empty = all types.
+  preferredLeadTypes   Json?    @map("preferred_lead_types")
+  isActive             Boolean  @default(true) @map("is_active")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+  leads                InsuranceLead[]
+  revenueLogs          InsuranceRevenueLog[]
+
+  @@index([isActive])
+  @@map("insurance_partners")
+}
+
+model InsuranceLead {
+  id             String              @id @default(cuid())
+  userId         String?             @map("user_id")
+  user           User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
+  email          String
+  phone          String?             @map("phone")
+  fullName       String?             @map("full_name")
+  leadType       InsuranceLeadType   @map("lead_type")
+  listingId      String?             @map("listing_id")
+  bookingId      String?             @map("booking_id")
+  booking        Booking?            @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  source         InsuranceLeadSource @map("source")
+  message        String?             @db.Text
+  consentGiven   Boolean             @map("consent_given")
+  consentText    String              @map("consent_text") @db.Text
+  status         InsuranceLeadStatus @default(NEW)
+  partnerId      String?             @map("partner_id")
+  partner        InsurancePartner?   @relation(fields: [partnerId], references: [id], onDelete: SetNull)
+  estimatedValue Decimal?            @map("estimated_value") @db.Decimal(18, 2)
+  /// Quality score at last calculation (phone, booking, checkout, listing context).
+  leadScore      Int                 @default(0) @map("lead_score")
+  /// A/B variant id for the capture form (e.g. A = minimal, B = phone visible).
+  variantId      String?             @map("variant_id")
+  metadata       Json?               @map("metadata")
+  createdAt      DateTime            @default(now()) @map("created_at")
+  updatedAt      DateTime            @updatedAt @map("updated_at")
+  revenueLogs    InsuranceRevenueLog[]
+
+  @@index([status])
+  @@index([leadType])
+  @@index([createdAt])
+  @@index([userId])
+  @@index([partnerId])
+  @@index([email, createdAt])
+  @@map("insurance_leads")
+}
+
+enum InsuranceLeadFunnelEventType {
+  LEAD_FORM_VIEWED
+  LEAD_STARTED
+  LEAD_SUBMITTED
+  LEAD_FAILED
+}
+
+model InsuranceLeadFunnelEvent {
+  id           String                     @id @default(cuid())
+  eventType    InsuranceLeadFunnelEventType @map("event_type")
+  /// Normalized funnel: booking | listing | payment | manual
+  funnelSource String                     @map("funnel_source")
+  leadType     InsuranceLeadType?         @map("lead_type")
+  device       String                     @map("device")
+  leadId       String?                    @map("lead_id")
+  variantId    String?                    @map("variant_id")
+  metadata     Json?                      @map("metadata")
+  ipHash       String?                    @map("ip_hash")
+  createdAt    DateTime                   @default(now()) @map("created_at")
+
+  @@index([eventType, createdAt])
+  @@index([funnelSource, createdAt])
+  @@map("insurance_lead_funnel_events")
+}
+
+model InsuranceRevenueLog {
+  id        String            @id @default(cuid())
+  leadId    String            @map("lead_id")
+  lead      InsuranceLead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  partnerId String?           @map("partner_id")
+  partner   InsurancePartner? @relation(fields: [partnerId], references: [id], onDelete: SetNull)
+  amount    Decimal           @map("amount") @db.Decimal(18, 2)
+  currency  String            @default("CAD") @map("currency")
+  createdAt DateTime          @default(now()) @map("created_at")
+
+  @@index([leadId])
+  @@map("insurance_revenue_logs")
+}
+
+// ---------------------------------------------------------------------------
+// LECIPM Manager — AI operations layer (audit, recommendations, approvals)
+// ---------------------------------------------------------------------------
+
+model ManagerAiConversation {
+  id          String   @id @default(cuid())
+  userId      String   @map("user_id")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String?
+  contextJson Json?    @map("context_json")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  messages    ManagerAiMessage[]
+
+  @@index([userId, updatedAt])
+  @@map("manager_ai_conversations")
+}
+
+model ManagerAiMessage {
+  id             String                @id @default(cuid())
+  conversationId String                @map("conversation_id")
+  conversation   ManagerAiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           String                @map("role")
+  content        String                @db.Text
+  metadata       Json?
+  createdAt      DateTime              @default(now()) @map("created_at")
+
+  @@index([conversationId, createdAt])
+  @@map("manager_ai_messages")
+}
+
+model ManagerAiAgentRun {
+  id               String   @id @default(cuid())
+  userId           String?  @map("user_id")
+  user             User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  actorUserId      String?  @map("actor_user_id")
+  agentKey         String   @map("agent_key")
+  decisionMode     String   @map("decision_mode")
+  inputSummary     String   @map("input_summary") @db.Text
+  outputSummary    String?  @map("output_summary") @db.Text
+  confidence       Float?
+  status           String   @default("completed")
+  payload          Json?
+  result           Json?
+  error            Json?
+  targetEntityType String?  @map("target_entity_type")
+  targetEntityId   String?  @map("target_entity_id")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  @@index([userId, createdAt])
+  @@index([agentKey, createdAt])
+  @@map("manager_ai_agent_runs")
+}
+
+model ManagerAiActionLog {
+  id                 String   @id @default(cuid())
+  userId             String?  @map("user_id")
+  user               User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  actionKey          String   @map("action_key")
+  targetEntityType   String   @map("target_entity_type")
+  targetEntityId     String   @map("target_entity_id")
+  status             String   @default("executed")
+  decisionMode       String?  @map("decision_mode")
+  confidence         Float?
+  /// Host Autopilot multi-factor decision score (0–1) at log time.
+  decisionScore      Float?   @map("decision_score")
+  /// When status is suppressed, why (e.g. score threshold).
+  suppressionReason  String?  @map("suppression_reason") @db.Text
+  payload            Json?
+  result             Json?
+  error              Json?
+  approvalId         String?  @map("approval_id")
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  @@index([actionKey, createdAt])
+  @@index([targetEntityType, targetEntityId])
+  @@map("manager_ai_action_logs")
+}
+
+/// BNHub / LECIPM Manager — deterministic fraud risk snapshots (detect-only; no auto-ban).
+model AiFraudRiskLog {
+  id          String    @id @default(cuid())
+  createdAt   DateTime  @default(now()) @map("created_at")
+  entityType  String    @map("entity_type")
+  entityId    String    @map("entity_id")
+  riskLevel   String    @map("risk_level")
+  riskScore   Int       @map("risk_score")
+  reasons     Json
+  payload     Json?
+  status      String    @default("open") @map("status")
+  reviewedBy  String?   @map("reviewed_by")
+  reviewedAt  DateTime? @map("reviewed_at")
+  reviewer    User?     @relation("AiFraudRiskLogReviewer", fields: [reviewedBy], references: [id], onDelete: SetNull)
+
+  @@index([entityType, entityId, createdAt(sort: Desc)])
+  @@index([riskLevel, createdAt])
+  @@map("ai_fraud_risk_logs")
+}
+
+model ManagerAiRecommendation {
+  id               String   @id @default(cuid())
+  userId           String   @map("user_id")
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agentKey         String   @map("agent_key")
+  title            String
+  description      String   @db.Text
+  confidence       Float?
+  targetEntityType String   @map("target_entity_type")
+  targetEntityId   String   @map("target_entity_id")
+  suggestedAction  String?  @map("suggested_action") @db.Text
+  status           String   @default("active")
+  payload          Json?
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@index([userId, status])
+  @@index([createdAt])
+  @@map("manager_ai_recommendations")
+}
+
+model ManagerAiApprovalRequest {
+  id               String    @id @default(cuid())
+  requesterId      String    @map("requester_id")
+  requester        User      @relation("ManagerAiApprovalRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  reviewerId       String?   @map("reviewer_id")
+  reviewer         User?     @relation("ManagerAiApprovalReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+  actionKey        String    @map("action_key")
+  targetEntityType String    @map("target_entity_type")
+  targetEntityId   String    @map("target_entity_id")
+  status           String    @default("pending")
+  confidence       Float?
+  payload          Json?
+  result           Json?
+  reviewNote       String?   @map("review_note") @db.Text
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+  reviewedAt       DateTime? @map("reviewed_at")
+
+  @@index([status, createdAt])
+  @@index([requesterId])
+  @@map("manager_ai_approval_requests")
+}
+
+model ManagerAiAutomationRule {
+  id          String    @id @default(cuid())
+  key         String    @unique @map("rule_key")
+  name        String
+  description String?   @db.Text
+  enabled     Boolean   @default(true)
+  frequency   String    @default("on_demand")
+  lastRunAt   DateTime? @map("last_run_at")
+  nextRunAt   DateTime? @map("next_run_at")
+  config      Json?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@map("manager_ai_automation_rules")
+}
+
+model ManagerAiNotificationLog {
+  id        String   @id @default(cuid())
+  userId    String?  @map("user_id")
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  channel   String
+  type      String
+  payload   Json?
+  status    String   @default("queued")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId, createdAt])
+  @@map("manager_ai_notification_logs")
+}
+
+/// Singleton row (`id = default`) — configurable launch / market behavior (Syria manual-first, payments, contact UX).
+model PlatformMarketLaunchSettings {
+  id                           String   @id @default("default")
+  activeMarketCode             String   @default("default") @map("active_market_code") @db.VarChar(32)
+  syriaModeEnabled             Boolean  @default(false) @map("syria_mode_enabled")
+  onlinePaymentsEnabled        Boolean  @default(true) @map("online_payments_enabled")
+  manualPaymentTrackingEnabled Boolean  @default(true) @map("manual_payment_tracking_enabled")
+  contactFirstEmphasis         Boolean  @default(false) @map("contact_first_emphasis")
+  defaultDisplayCurrency       String   @default("USD") @map("default_display_currency") @db.VarChar(8)
+  defaultLanguageCodesJson     Json?    @map("default_language_codes_json")
+  updatedAt                    DateTime @updatedAt @map("updated_at")
+
+  @@map("platform_market_launch_settings")
+}
+
+/// Singleton row (id = default) — admin AI autopilot / notification prefs.
+model ManagerAiPlatformSettings {
+  id                     String    @id @default("default")
+  globalMode             String    @default("ASSISTANT") @map("global_mode")
+  automationsEnabled     Boolean   @default(true) @map("automations_enabled")
+  agentModesJson         Json?     @map("agent_modes_json")
+  notifyOnApproval       Boolean   @default(true) @map("notify_on_approval")
+  /// Hard stop for scheduled automation (chat/orchestrator may still respond per product rules).
+  globalKillSwitch       Boolean   @default(false) @map("global_kill_switch")
+  /// Per-domain pause flags, e.g. `{ "trust_safety": true }` = paused.
+  domainKillSwitchesJson Json?     @map("domain_kill_switches_json")
+  autonomyPausedUntil    DateTime? @map("autonomy_paused_until")
+  updatedAt              DateTime  @updatedAt @map("updated_at")
+
+  @@map("manager_ai_platform_settings")
+}
+
+/// Per-host LECIPM Manager AI Autopilot (guardrails + feature flags).
+model ManagerAiHostAutopilotSettings {
+  userId      String   @id @map("user_id")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Master switch — when false, engine no-ops regardless of mode.
+  autopilotEnabled Boolean @default(false) @map("autopilot_enabled")
+  /// OFF | ASSIST | SAFE_AUTOPILOT | FULL_AUTOPILOT_APPROVAL
+  autopilotMode    String  @default("OFF") @map("autopilot_mode")
+  autoPricing                 Boolean @default(false) @map("auto_pricing")
+  autoMessaging               Boolean @default(false) @map("auto_messaging")
+  autoPromotions              Boolean @default(false) @map("auto_promotions")
+  autoListingOptimization     Boolean @default(false) @map("auto_listing_optimization")
+  /// BNHub: host-controlled guest lifecycle messages (booking chat). Requires consent; platform is not responsible for operations.
+  autoGuestMessagingEnabled   Boolean @default(false) @map("auto_guest_messaging_enabled")
+  /// `draft_only` (default, safe) | `auto_send_safe` (only when gate allows).
+  guestMessageMode            String    @default("draft_only") @map("guest_message_mode") @db.VarChar(24)
+  /// Per-trigger toggles: booking_confirmed, pre_checkin, checkin, checkout, post_checkout — each `{ enabled: boolean }`.
+  guestMessageTriggersJson    Json      @default("{}") @map("guest_message_triggers_json")
+  /// Internal-only host reminders (room prep / post-stay check); NOT sent to guests.
+  hostInternalChecklistEnabled Boolean  @default(true) @map("host_internal_checklist_enabled")
+  lastAutopilotRunAt DateTime? @map("last_autopilot_run_at")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+
+  @@map("manager_ai_host_autopilot_settings")
+}
+
+/// Audit log for BNHub host-controlled automated messaging (draft vs sent).
+model BnhubAutomatedHostMessageLog {
+  id          String   @id @default(cuid())
+  bookingId   String   @map("booking_id")
+  booking     Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  hostId      String   @map("host_id")
+  host        User     @relation("BnhubAutomatedHostMessageHost", fields: [hostId], references: [id], onDelete: Cascade)
+  guestId     String   @map("guest_id")
+  guest       User     @relation("BnhubAutomatedHostMessageGuest", fields: [guestId], references: [id], onDelete: Cascade)
+  listingId   String   @map("listing_id")
+  listing     ShortTermListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  messageType String   @map("message_type") @db.VarChar(64)
+  triggerType String   @map("trigger_type") @db.VarChar(64)
+  locale      String   @default("en") @db.VarChar(8)
+  content     String   @db.Text
+  status      String   @db.VarChar(24)
+  recipient   String   @default("guest") @map("recipient") @db.VarChar(24)
+  metadataJson Json?   @map("metadata_json")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([bookingId, createdAt])
+  @@index([hostId, createdAt])
+  @@index([guestId, createdAt])
+  @@map("bnhub_automated_host_message_logs")
+}
+
+/// Admin or operator override / incident actions (audit).
+model ManagerAiOverrideEvent {
+  id          String   @id @default(cuid())
+  actorUserId String   @map("actor_user_id")
+  actor       User     @relation(fields: [actorUserId], references: [id], onDelete: Cascade)
+  scope       String
+  targetJson  Json?    @map("target_json")
+  note        String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([actorUserId, createdAt])
+  @@map("manager_ai_override_events")
+}
+
+model ManagerAiHealthEvent {
+  id            String   @id @default(cuid())
+  level         String
+  source        String
+  message       String   @db.Text
+  payload       Json?
+  correlationId String?  @map("correlation_id")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@map("manager_ai_health_events")
+}
+
+model ManagerAiOutcomeEval {
+  id         String   @id @default(cuid())
+  userId     String?  @map("user_id")
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  sourceType String   @map("source_type")
+  sourceId   String   @map("source_id")
+  outcome    String
+  score      Float?
+  payload    Json?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([sourceType, sourceId])
+  @@index([userId, createdAt])
+  @@map("manager_ai_outcome_evals")
+}
+
+/// Host Autopilot / AI learning — raw outcome events (no UI).
+model AiOutcomeSignal {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now()) @map("created_at")
+  hostId      String   @map("host_id")
+  listingId   String?  @map("listing_id")
+  bookingId   String?  @map("booking_id")
+  ruleName    String   @map("rule_name")
+  actionType  String   @map("action_type")
+  outcomeType String   @map("outcome_type")
+  metadata    Json     @default("{}")
+
+  @@index([hostId, createdAt])
+  @@index([ruleName])
+  @@map("ai_outcome_signals")
+}
+
+/// Aggregated per-rule counters for simple learning feedback.
+model AiRulePerformance {
+  id           String   @id @default(cuid())
+  ruleName     String   @unique @map("rule_name")
+  total        Int      @default(0)
+  successCount Int      @default(0) @map("success_count")
+  failureCount Int      @default(0) @map("failure_count")
+  lastUpdated  DateTime @updatedAt @map("last_updated")
+
+  @@map("ai_rule_performance")
+}
+
+/// Host Autopilot template A/B learning (per rule + template variant).
+model AiTemplatePerformance {
+  id          String   @id @default(cuid())
+  templateKey String   @map("template_key")
+  ruleName    String   @map("rule_name")
+  impressions Int      @default(0)
+  successes   Int      @default(0)
+  failures    Int      @default(0)
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@unique([templateKey, ruleName])
+  @@index([ruleName])
+  @@map("ai_template_performance")
+}
+
+/// Maps stated confidence buckets to observed success (calibration).
+model AiConfidenceCalibration {
+  id           String   @id @default(cuid())
+  ruleName     String   @map("rule_name")
+  bucket       String   @map("bucket")
+  total        Int      @default(0)
+  successCount Int      @default(0) @map("success_count")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@unique([ruleName, bucket])
+  @@index([ruleName])
+  @@map("ai_confidence_calibration")
+}
+
+/// Per-host Autopilot personalization (weights, template prefs, ignore sensitivity).
+model AiHostPreferenceProfile {
+  id                      String   @id @default(cuid())
+  hostId                  String   @unique @map("host_id")
+  preferredTemplateKeys   Json     @default("{}") @map("preferred_template_keys")
+  preferredRuleWeights    Json     @default("{}") @map("preferred_rule_weights")
+  rejectionPatterns       Json     @default("{}") @map("rejection_patterns")
+  notificationSensitivity Float    @default(0.5) @map("notification_sensitivity")
+  updatedAt               DateTime @updatedAt @map("updated_at")
+
+  @@map("ai_host_preference_profiles")
+}
+
+// ---------------------------------------------------------------------------
+// Marketplace autonomy — human-gated approvals for Level 4 controlled actions
+// ---------------------------------------------------------------------------
+
+model MarketplaceAutonomyApproval {
+  id                String    @id @default(cuid())
+  /// pending | approved | rejected | executed
+  status            String    @default("pending") @db.VarChar(20)
+  actionType        String    @map("action_type") @db.VarChar(64)
+  riskTier          String    @map("risk_tier") @db.VarChar(16)
+  payload           Json      @default("{}")
+  summary           String?   @db.VarChar(512)
+  requestedByUserId String?   @map("requested_by_user_id")
+  reviewedByUserId  String?   @map("reviewed_by_user_id")
+  reviewNote        String?   @map("review_note") @db.Text
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+  executedAt        DateTime? @map("executed_at")
+
+  @@index([status, createdAt])
+  @@index([actionType, status])
+  @@map("marketplace_autonomy_approvals")
+}
+
+// ---------------------------------------------------------------------------
+// Listing demand / monetization analytics (aggregates + cached demand score)
+// ---------------------------------------------------------------------------
+
+enum ListingAnalyticsKind {
+  FSBO
+  CRM
+  BNHUB
+}
+
+model ListingAnalytics {
+  id                    String               @id @default(cuid())
+  kind                  ListingAnalyticsKind @map("listing_kind")
+  listingId             String               @map("listing_id")
+  viewsTotal            Int                  @default(0) @map("views_total")
+  saves                 Int                  @default(0)
+  contactClicks         Int                  @default(0) @map("contact_clicks")
+  bookingAttempts       Int                  @default(0) @map("booking_attempts")
+  bookings              Int                  @default(0)
+  demandScore           Int                  @default(0) @map("demand_score")
+  demandScoreComputedAt DateTime?            @map("demand_score_computed_at")
+  views24hCached        Int                  @default(0) @map("views_24h_cached")
+  uniqueViews24hCached  Int                  @default(0) @map("unique_views_24h_cached")
+  shareCount            Int                  @default(0) @map("share_count")
+  unlockCheckoutStarts  Int                  @default(0) @map("unlock_checkout_starts")
+  unlockCheckoutSuccesses Int                @default(0) @map("unlock_checkout_successes")
+  createdAt             DateTime             @default(now()) @map("created_at")
+  updatedAt             DateTime             @updatedAt @map("updated_at")
+
+  @@unique([kind, listingId])
+  @@index([kind, listingId])
+  @@index([demandScore])
+  @@map("listing_analytics")
+}
+
+model ListingPriceHistory {
+  id         String               @id @default(cuid())
+  kind       ListingAnalyticsKind @map("listing_kind")
+  listingId  String               @map("listing_id")
+  priceCents Int                  @map("price_cents")
+  recordedAt DateTime             @default(now()) @map("recorded_at")
+
+  @@index([kind, listingId, recordedAt])
+  @@map("listing_price_history")
 }

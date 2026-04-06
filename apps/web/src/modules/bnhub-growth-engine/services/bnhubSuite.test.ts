@@ -8,7 +8,7 @@ describe("luxury tier eligibility", () => {
     const ok = evaluateVerifiedEligibility({
       starRating: 4,
       trustScore: 60,
-      photoCount: 5,
+      photoCount: 10,
       verificationOk: true,
       openCriticalFraud: false,
     });

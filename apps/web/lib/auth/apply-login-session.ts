@@ -1,6 +1,8 @@
 import type { NextResponse } from "next/server";
 import { createDbSession } from "@/lib/auth/db-session";
 import { setGuestIdCookie, setUserRoleCookie } from "@/lib/auth/session";
+import { prisma } from "@/lib/db";
+import { LOCALE_COOKIE, UI_LOCALE_ENTRIES, type LocaleCode } from "@/lib/i18n/locales";
 import { AnalyticsEvents } from "@/lib/analytics/events";
 import { captureServerEvent } from "@/lib/analytics/posthog-server";
 import { trackDemoEvent, trackDemoUserTypeFromRole } from "@/lib/demo-analytics";
@@ -36,6 +38,22 @@ export async function applyLoginSessionCookies(
     sameSite: roleCk.sameSite,
   });
   captureServerEvent(user.id, AnalyticsEvents.LOGIN_COMPLETED, { source: "session" });
+
+  const prefRow = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: { preferredUiLocale: true },
+  });
+  const pref = prefRow?.preferredUiLocale?.trim();
+  const uiLocale = UI_LOCALE_ENTRIES.find((l) => l.code === (pref as LocaleCode))?.code;
+  if (uiLocale) {
+    res.cookies.set(LOCALE_COOKIE, uiLocale, {
+      path: "/",
+      maxAge: 60 * 60 * 24 * 365,
+      sameSite: "lax",
+      httpOnly: false,
+    });
+  }
+
   if (process.env.NEXT_PUBLIC_ENV === "staging") {
     const secure = process.env.NODE_ENV === "production";
     res.cookies.set(DEMO_SESSION_STARTED_AT_COOKIE, String(Date.now()), {

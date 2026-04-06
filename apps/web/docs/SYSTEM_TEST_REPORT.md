@@ -85,8 +85,7 @@ E2E automation was **not run** (no Playwright/Cypress in this run). From code re
 
 ### Test cards
 
-- **Success:** 4242 4242 4242 4242  
-- **Declined:** 4000 0000 0000 0002  
+Use only **Stripe’s documented test cards** on **checkout.stripe.com** — see [Stripe Testing](https://stripe.com/docs/testing). Do not store full card numbers in `.env`, automation, or app code ([docs/STRIPE_CONNECT_VALIDATION.md](../../../docs/STRIPE_CONNECT_VALIDATION.md)).
 
 Use Stripe **test** keys (`sk_test_`, `whsec_`).
 
@@ -106,7 +105,7 @@ Implemented in `lib/stripe/commission.ts` and invoked from webhook after payment
 - Payment status in DB: webhook updates Booking, Payment, DealMilestone, Deal.status
 - Commission: created in webhook via `createCommissionsForPayment`
 
-**Manual step required:** Run a full Stripe test flow (checkout with 4242 / 4000 0000 0000 0002) and confirm DB state and commission records.
+**Manual step required:** Run a full Stripe test flow (hosted Checkout; test cards per [Stripe Testing](https://stripe.com/docs/testing)) and confirm DB state and commission records.
 
 ---
 
@@ -170,7 +169,7 @@ Not measured in this run. Recommendation: profile main pages and key APIs (searc
 
 | Priority | Fix |
 |----------|-----|
-| **High** | Run Stripe test-mode flow (4242 / 4000 0000 0000 0002) and verify DB and commissions |
+| **High** | Run Stripe test-mode flow (hosted Checkout; test cards per Stripe docs) and verify DB and commissions |
 | **Medium** | Add API tests for auth, booking, deal checkout, webhook idempotency |
 | **Low** | Add E2E (Playwright/Cypress) for critical flows; performance testing |
 

@@ -34,9 +34,12 @@ pnpm dev:web
 pnpm dev:mobile
 ```
 
-## Authentication note
+## Authentication (hybrid)
 
-This starter expects the web backend to authenticate the same guest session used by the mobile endpoints. For production mobile login, the next step should be a token-based auth flow for Expo/native clients rather than browser-style cookie dependence.
+- **Guests**: no login; browse, book with email, pay via Stripe, review per existing rules — unchanged.
+- **Signed-in**: Supabase session → `Authorization: Bearer` on API calls; optional **`user_id`** on BNHub bookings; **My bookings** at `/my-bookings` (`GET /api/mobile/v1/bnhub/my-bookings`).
+- **Host / admin**: host earnings and admin metrics require a valid session and role (see `apps/web` `assertBnhubHostOrAdmin` / `requireMobileAdmin`).
+- Toggle dev auth bypass: `src/config/dev.ts` → `AUTH_DISABLED` (keep `false` for production-shaped testing).
 
 ## Recommended next improvements
 
@@ -59,8 +62,10 @@ Premium guest / host / admin surfaces for the LECIPM + BNHub platform. Uses **Ex
 
 ## Architecture
 
-- **Auth**: Bearer token from Supabase session → Next.js `app/api/mobile/v1/*` validates via service role `auth.getUser`.
-- **Roles**: `PlatformRole.ADMIN` → admin stack; `HOST` or any user with ≥1 listing → host stack; else guest.
+- **Data plane**: Listings, guest booking reads, and review previews load through **`apps/web`** (`/api/bnhub/public/*`, `/api/bookings/guest/*`). The mobile app does not use the Supabase client to query `listings` / `bookings` / `reviews` tables for those flows.
+- **Auth**: Bearer token from Supabase session → Next.js `app/api/mobile/v1/*` validates via service role `auth.getUser`. Guests omit Bearer; public routes are not walled behind auth.
+- **Roles**: Prisma `ADMIN` / `HOST`, Supabase `app_metadata.bnhub_admin`, or BNHub `listings.host_user_id` count — see `resolveMobileAppRole` in `apps/web`.
+- **Reference**: `docs/bnhub/platform-architecture-mobile.md`.
 - **Safety**: Public copy uses `public_message_key` mapping only — no neighborhood danger claims.
 - **Secrets**: Only anon Supabase key and public API URL in the app.
 

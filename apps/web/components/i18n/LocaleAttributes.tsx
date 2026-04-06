@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { LOCALE_COOKIE, UI_LOCALES, type LocaleCode } from "@/lib/i18n/locales";
+import { LOCALE_COOKIE, UI_LOCALE_ENTRIES, type LocaleCode } from "@/lib/i18n/locales";
 
 /**
  * Syncs <html lang> and dir (LTR/RTL) from mi_locale cookie on mount.
@@ -11,7 +11,7 @@ export function LocaleAttributes() {
   useEffect(() => {
     const m = document.cookie.match(new RegExp(`(?:^|; )${LOCALE_COOKIE}=([^;]*)`));
     const raw = m?.[1] ? decodeURIComponent(m[1]) : "en";
-    const entry = UI_LOCALES.find((l) => l.code === (raw as LocaleCode)) ?? UI_LOCALES[0];
+    const entry = UI_LOCALE_ENTRIES.find((l) => l.code === (raw as LocaleCode)) ?? UI_LOCALE_ENTRIES[0];
     document.documentElement.lang = entry.bcp47;
     document.documentElement.dir = entry.rtl ? "rtl" : "ltr";
   }, []);

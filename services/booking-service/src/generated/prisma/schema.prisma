@@ -1,0 +1,129 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// BNHub enums (must match web-app if sharing DB)
+enum PlatformRole {
+  USER
+  LICENSED_PROFESSIONAL
+  OWNER_HOST
+  INVESTOR
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+model User {
+  id                String             @id @default(uuid())
+  email             String             @unique
+  role              PlatformRole       @default(USER)
+  name              String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  shortTermListings ShortTermListing[]
+  bookingsAsGuest   Booking[]
+}
+
+model ShortTermListing {
+  id                 String             @id @default(uuid())
+  title              String
+  description        String?
+  address            String
+  city               String
+  country            String             @default("US")
+  latitude           Float?
+  longitude          Float?
+  nightPriceCents    Int
+  beds               Int
+  baths              Float
+  maxGuests          Int                @default(4)
+  photos             String[]
+  verificationStatus VerificationStatus @default(PENDING)
+  cadastreNumber     String?
+  verificationDocUrl String?
+  verifiedAt         DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  ownerId            String
+  owner              User               @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  availability       AvailabilitySlot[]
+  bookings           Booking[]
+
+  @@index([city, verificationStatus])
+  @@index([ownerId])
+}
+
+model AvailabilitySlot {
+  id        String           @id @default(uuid())
+  date      DateTime         @db.Date
+  available Boolean          @default(true)
+  listingId String
+  listing   ShortTermListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@unique([listingId, date])
+  @@index([listingId])
+  @@index([date])
+}
+
+model Booking {
+  id            String           @id @default(uuid())
+  checkIn       DateTime         @db.Date
+  checkOut      DateTime         @db.Date
+  nights        Int
+  totalCents    Int
+  guestFeeCents Int              @default(0)
+  hostFeeCents  Int              @default(0)
+  status        BookingStatus    @default(PENDING)
+  guestNotes    String?
+  checkedInAt   DateTime? // actual check-in time
+  checkedOutAt  DateTime? // actual check-out time
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  guestId       String
+  guest         User             @relation(fields: [guestId], references: [id], onDelete: Cascade)
+  listingId     String
+  listing       ShortTermListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  payment       Payment?
+
+  @@index([guestId])
+  @@index([listingId])
+  @@index([status])
+  @@index([checkIn])
+}
+
+model Payment {
+  id              String        @id @default(uuid())
+  amountCents     Int
+  guestFeeCents   Int
+  hostFeeCents    Int
+  hostPayoutCents Int
+  status          PaymentStatus @default(PENDING)
+  stripePaymentId String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  bookingId       String        @unique
+  booking         Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+}

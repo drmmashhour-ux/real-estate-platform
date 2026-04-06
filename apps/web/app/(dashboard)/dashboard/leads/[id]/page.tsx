@@ -27,5 +27,8 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   });
   if (!lead) notFound();
 
-  return <LeadDetailClient leadId={id} />;
+  const base = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? "";
+  const viralInviteUrl = `${base}/invite?ref=${encodeURIComponent(viewerId)}`;
+
+  return <LeadDetailClient leadId={id} viralInviteUrl={viralInviteUrl} />;
 }

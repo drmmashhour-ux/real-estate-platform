@@ -87,8 +87,19 @@ export const ENFORCEMENT_REASON_CODES = [
 /** Guest must report issue within this many hours of check-in */
 export const DISPUTE_REPORT_WINDOW_HOURS = 24;
 
-/** Escrow: release host payout this many hours after check-in (unless held) */
-export const ESCROW_RELEASE_HOURS_AFTER_CHECKIN = 48;
+/** Default ~10 days; override with `BNHUB_ESCROW_RELEASE_HOURS_AFTER_CHECKIN` (e.g. 168–336 for 7–14d). */
+export const ESCROW_RELEASE_HOURS_AFTER_CHECKIN_DEFAULT = 240;
+
+export function getEscrowReleaseHoursAfterCheckin(): number {
+  const raw = process.env.BNHUB_ESCROW_RELEASE_HOURS_AFTER_CHECKIN?.trim();
+  if (!raw) return ESCROW_RELEASE_HOURS_AFTER_CHECKIN_DEFAULT;
+  const n = parseInt(raw, 10);
+  if (!Number.isFinite(n) || n < 24) return ESCROW_RELEASE_HOURS_AFTER_CHECKIN_DEFAULT;
+  return Math.min(504, n); // cap 21d
+}
+
+/** @deprecated Use `getEscrowReleaseHoursAfterCheckin()` */
+export const ESCROW_RELEASE_HOURS_AFTER_CHECKIN = ESCROW_RELEASE_HOURS_AFTER_CHECKIN_DEFAULT;
 
 /** Host must respond to dispute within this many hours */
 export const HOST_RESPONSE_DEADLINE_HOURS = 48;

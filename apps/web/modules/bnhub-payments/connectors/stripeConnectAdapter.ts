@@ -6,7 +6,6 @@ import Stripe from "stripe";
 import { getStripe, isStripeConfigured } from "@/lib/stripe";
 import type {
   CapturePaymentInput,
-  CreatePaymentIntentInput,
   CreatePaymentSessionInput,
   MarketplacePaymentProcessorAdapter,
   RefundInput,
@@ -110,49 +109,6 @@ export class StripeConnectAdapter implements MarketplacePaymentProcessorAdapter 
       const url = session.url;
       if (!url) return { error: "Failed to get checkout URL" };
       return { url, sessionId: session.id };
-    } catch (e) {
-      return { error: this.mapProcessorError(e).message };
-    }
-  }
-
-  /**
-   * Not used for BNHub guest payments — guests pay via {@link createPaymentSession} (hosted Checkout) only.
-   * Kept for potential non-card flows or tests; never collect card data on your servers.
-   */
-  async createPaymentIntent(input: CreatePaymentIntentInput) {
-    const s = stripe();
-    if (!s) return { error: "Stripe not configured" };
-    try {
-      const pi = await s.paymentIntents.create(
-        {
-          amount: input.amountCents,
-          currency: input.currency.toLowerCase(),
-          metadata: input.metadata,
-          capture_method: input.captureMethod === "manual" ? "manual" : "automatic",
-          ...(input.connect && input.connect.destinationAccountId
-            ? {
-                application_fee_amount: input.connect.applicationFeeAmount,
-                transfer_data: { destination: input.connect.destinationAccountId },
-              }
-            : {}),
-        },
-        input.idempotencyKey ? { idempotencyKey: input.idempotencyKey } : undefined
-      );
-      return { paymentIntentId: pi.id, clientSecret: pi.client_secret };
-    } catch (e) {
-      return { error: this.mapProcessorError(e).message };
-    }
-  }
-
-  async confirmPaymentIfNeeded(paymentIntentId: string) {
-    const s = stripe();
-    if (!s) return { error: "Stripe not configured" };
-    try {
-      const pi = await s.paymentIntents.retrieve(paymentIntentId);
-      if (pi.status === "requires_confirmation") {
-        await s.paymentIntents.confirm(paymentIntentId);
-      }
-      return { ok: true as const };
     } catch (e) {
       return { error: this.mapProcessorError(e).message };
     }

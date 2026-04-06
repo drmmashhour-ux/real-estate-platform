@@ -1,5 +1,9 @@
 import { ListingStatus, VerificationStatus } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import {
+  MIN_LISTING_PHOTOS_FOR_VERIFICATION,
+  moderationPhotoCount,
+} from "@/lib/bnhub/moderation-requirements";
 
 export type FraudCheckFlag = {
   checkType: string;
@@ -59,21 +63,22 @@ export async function runFraudChecks(listingId: string): Promise<{ fraudScore: n
     flags.push({ checkType: "address", result: "warning", score: 20, detail: "No cadastre / verification on file" });
   }
 
-  // Images
-  const photoCount =
-    (Array.isArray(listing.listingPhotos) ? listing.listingPhotos.length : 0) +
-    (() => {
-      try {
-        const p = listing.photos as unknown;
-        return Array.isArray(p) ? p.length : 0;
-      } catch {
-        return 0;
-      }
-    })();
+  // Images (same count semantics as admin verification checklist)
+  const photoCount = moderationPhotoCount({
+    photos: listing.photos,
+    listingPhotos: Array.isArray(listing.listingPhotos)
+      ? (listing.listingPhotos as { id: string }[])
+      : [],
+  });
   if (photoCount < 1) {
     flags.push({ checkType: "image", result: "fail", score: 30, detail: "No listing photos" });
-  } else if (photoCount < 3) {
-    flags.push({ checkType: "image", result: "warning", score: 15, detail: "Fewer than 3 photos" });
+  } else if (photoCount < MIN_LISTING_PHOTOS_FOR_VERIFICATION) {
+    flags.push({
+      checkType: "image",
+      result: "warning",
+      score: 15,
+      detail: `Fewer than ${MIN_LISTING_PHOTOS_FOR_VERIFICATION} photos`,
+    });
   } else {
     flags.push({ checkType: "image", result: "pass", score: 0 });
   }

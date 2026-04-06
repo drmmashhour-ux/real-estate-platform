@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { getGuestId } from "@/lib/auth/session";
 import { FSBO_STATUS } from "@/lib/fsbo/constants";
+import { syncFsboListingExpiryState } from "@/lib/fsbo/listing-expiry";
 import { persistSellerDeclarationAiReview } from "@/lib/fsbo/seller-declaration-ai-review";
 
 export const dynamic = "force-dynamic";
@@ -77,6 +78,7 @@ export async function POST(
   }
 
   await persistSellerDeclarationAiReview(id);
+  await syncFsboListingExpiryState(id, { sendReminder: false }).catch(() => null);
 
   return Response.json({ ok: true });
 }

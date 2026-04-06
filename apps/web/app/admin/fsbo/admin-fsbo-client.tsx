@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { LegalPacketLink } from "@/components/admin/LegalPacketLink";
+import { ListingTransactionFlag } from "@/components/listings/ListingTransactionFlag";
 
 type Row = {
   id: string;
@@ -17,11 +19,19 @@ type Row = {
   riskScore: number | null;
   trustScore: number | null;
   _count: { leads: number };
+  transactionFlag?: {
+    key: "offer_received" | "offer_accepted" | "sold";
+    label: string;
+    tone: "amber" | "emerald" | "slate";
+  } | null;
 };
 
 export function AdminFsboClient({ listings }: { listings: Row[] }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [minRisk, setMinRisk] = useState<number | "">("");
+  const [transactionStage, setTransactionStage] = useState<
+    "all" | "none" | "offer_received" | "offer_accepted" | "sold"
+  >("all");
 
   async function moderate(id: string, action: "approve" | "reject") {
     const reason =
@@ -46,8 +56,18 @@ export function AdminFsboClient({ listings }: { listings: Row[] }) {
     }
   }
 
-  const filtered =
-    minRisk === "" ? listings : listings.filter((l) => (l.riskScore ?? 0) >= Number(minRisk));
+  const filtered = listings.filter((l) => {
+    if (minRisk !== "" && (l.riskScore ?? 0) < Number(minRisk)) {
+      return false;
+    }
+    if (transactionStage === "all") {
+      return true;
+    }
+    if (transactionStage === "none") {
+      return !l.transactionFlag;
+    }
+    return l.transactionFlag?.key === transactionStage;
+  });
 
   return (
     <div className="mt-6 space-y-4">
@@ -71,6 +91,24 @@ export function AdminFsboClient({ listings }: { listings: Row[] }) {
             className="w-20 rounded border border-slate-700 bg-slate-900 px-2 py-1 text-white"
           />
         </label>
+        <label className="flex items-center gap-2">
+          <span>Deal stage</span>
+          <select
+            value={transactionStage}
+            onChange={(e) =>
+              setTransactionStage(
+                e.target.value as "all" | "none" | "offer_received" | "offer_accepted" | "sold"
+              )
+            }
+            className="rounded border border-slate-700 bg-slate-900 px-2 py-1 text-white"
+          >
+            <option value="all">All</option>
+            <option value="none">No active deal</option>
+            <option value="offer_received">Offer received</option>
+            <option value="offer_accepted">Offer accepted</option>
+            <option value="sold">Sold</option>
+          </select>
+        </label>
         <span className="text-xs text-slate-500">
           Rows with risk &gt; 70 are highlighted. Showing {filtered.length} of {listings.length}.
         </span>
@@ -82,6 +120,7 @@ export function AdminFsboClient({ listings }: { listings: Row[] }) {
               <th className="p-3">Listing</th>
               <th className="p-3">Owner</th>
               <th className="p-3">Status</th>
+              <th className="p-3">Deal stage</th>
               <th className="p-3">Mod</th>
               <th className="p-3">Risk</th>
               <th className="p-3">Trust</th>
@@ -99,6 +138,11 @@ export function AdminFsboClient({ listings }: { listings: Row[] }) {
                 <td className="p-3">
                   <div className="font-mono text-xs text-slate-400">{l.listingCode ?? "—"}</div>
                   <div className="mt-1 font-medium text-white">{l.title}</div>
+                  {l.transactionFlag ? (
+                    <div className="mt-2">
+                      <ListingTransactionFlag flag={l.transactionFlag} />
+                    </div>
+                  ) : null}
                   <div className="text-xs text-slate-500">
                     {l.city} · ${(l.priceCents / 100).toLocaleString()}
                   </div>
@@ -108,6 +152,13 @@ export function AdminFsboClient({ listings }: { listings: Row[] }) {
                 </td>
                 <td className="p-3 font-mono text-xs">{l.ownerId.slice(0, 8)}…</td>
                 <td className="p-3">{l.status}</td>
+                <td className="p-3">
+                  {l.transactionFlag ? (
+                    <ListingTransactionFlag flag={l.transactionFlag} />
+                  ) : (
+                    <span className="text-xs text-slate-500">No active deal</span>
+                  )}
+                </td>
                 <td className="p-3">{l.moderationStatus}</td>
                 <td className="p-3 font-mono text-xs">
                   {l.riskScore != null ? (
@@ -130,6 +181,7 @@ export function AdminFsboClient({ listings }: { listings: Row[] }) {
                     <Link href={`/admin/fsbo/${l.id}/edit`} className="text-xs text-sky-400 hover:underline">
                       Edit
                     </Link>
+                    <LegalPacketLink href={`/admin/fsbo/${l.id}`} className="text-xs text-fuchsia-400 hover:underline" />
                     <Link href={`/sell/${l.id}`} className="text-xs text-amber-400 hover:underline">
                       View
                     </Link>

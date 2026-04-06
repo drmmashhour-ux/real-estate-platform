@@ -1,7 +1,7 @@
 import type { IUserRepository } from "../domain/ports/UserRepository.js";
 import type { IPasswordHasher } from "../domain/ports/PasswordHasher.js";
 import { createHash } from "crypto";
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "../generated/prisma/index.js";
 
 export class ResetPassword {
   constructor(

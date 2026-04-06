@@ -8,6 +8,7 @@ import {
   MarketingAuthError,
 } from "@/src/modules/bnhub-marketing/services/marketingAccess";
 import { BnhubListingBrochureDocument } from "@/lib/pdf/bnhub-listing-brochure-pdf";
+import { getPublicAppUrl } from "@/lib/config/public-app-url";
 
 export const dynamic = "force-dynamic";
 
@@ -41,7 +42,7 @@ export async function GET(request: NextRequest) {
     const origin =
       request.headers.get("x-forwarded-host") && request.headers.get("x-forwarded-proto")
         ? `${request.headers.get("x-forwarded-proto")}://${request.headers.get("x-forwarded-host")}`
-        : process.env.NEXT_PUBLIC_APP_URL ?? "https://localhost:3000";
+        : getPublicAppUrl();
     const path = l.listingCode ? `/bnhub/${l.listingCode}` : `/bnhub/listings/${listingId}`;
     const doc = React.createElement(BnhubListingBrochureDocument, {
       title: l.title,

@@ -10,6 +10,7 @@ import {
 } from "@/src/modules/bnhub/infrastructure/bnhubRepository";
 import { utcDayStart } from "@/lib/bnhub/availability-day-helpers";
 import { prisma } from "@/lib/db";
+import { computeReservationQuoteFromBooking } from "@/modules/bnhub-payments/services/paymentQuoteService";
 import { onGrowthAiCheckoutCompleted } from "@/src/modules/messaging/triggers";
 import { holdPaymentInEscrow, releasePaymentAfterStay } from "@/src/modules/bnhub/application/paymentService";
 import { generateListingTrustScore } from "@/src/modules/bnhub/application/trustService";
@@ -80,7 +81,7 @@ export async function createBooking(args: {
     depositCents: listing.securityDepositCents,
   });
 
-  return createBookingRow({
+  const row = await createBookingRow({
     listingId: args.listingId,
     guestId: args.userId,
     checkIn,
@@ -88,6 +89,20 @@ export async function createBooking(args: {
     nights,
     totalCents,
   });
+
+  const quote = await computeReservationQuoteFromBooking(row.id);
+  if (quote.ok) {
+    await prisma.payment.updateMany({
+      where: { bookingId: row.id },
+      data: {
+        amountCents: quote.grandTotalCents,
+        guestFeeCents: quote.breakdown.serviceFeeCents,
+        hostFeeCents: quote.breakdown.hostFeeCents,
+      },
+    });
+  }
+
+  return row;
 }
 
 export async function confirmBooking(bookingId: string) {
@@ -119,6 +134,30 @@ export async function completeBookingStay(bookingId: string) {
   }
   const completed = await updateBookingStatus(bookingId, BookingStatus.COMPLETED);
   await releasePaymentAfterStay(bookingId);
+  const snap = await prisma.booking.findUnique({
+    where: { id: bookingId },
+    select: {
+      guestId: true,
+      totalCents: true,
+      guestFeeCents: true,
+      hostFeeCents: true,
+      listingId: true,
+    },
+  });
+  if (snap) {
+    void import("@/src/modules/revenue/revenueEngine")
+      .then(({ recordBookingCompletedRevenue }) =>
+        recordBookingCompletedRevenue({
+          guestUserId: snap.guestId,
+          bookingId,
+          totalCents: snap.totalCents,
+          guestFeeCents: snap.guestFeeCents,
+          hostFeeCents: snap.hostFeeCents,
+          listingId: snap.listingId,
+        })
+      )
+      .catch(() => {});
+  }
   return completed;
 }
 

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
+import { GrowthConversionStrip } from "@/components/marketing/GrowthConversionStrip";
 import { GrowthLeadCapture } from "@/components/marketing/GrowthLeadCapture";
 import { PLATFORM_DEFAULT_DESCRIPTION, PLATFORM_NAME } from "@/lib/brand/platform";
 
@@ -68,6 +69,9 @@ export default function EarlyAccessPage() {
         <Suspense fallback={<LeadFormFallback />}>
           <GrowthLeadCapture />
         </Suspense>
+        <div className="mt-6">
+          <GrowthConversionStrip variant="buyer" />
+        </div>
       </div>
       <section className="mt-12 border-t border-white/10 pt-10" aria-labelledby="early-social-proof">
         <h2 id="early-social-proof" className="text-sm font-semibold uppercase tracking-[0.15em] text-[#737373]">

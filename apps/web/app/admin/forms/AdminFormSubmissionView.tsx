@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import { PrintPageButton } from "@/components/ui/PrintPageButton";
 
 type Submission = {
   id: string;
@@ -29,6 +31,7 @@ export function AdminFormSubmissionView({
   const [payload, setPayload] = useState(initial.payloadJson);
   const [saving, setSaving] = useState(false);
   const [statusChanging, setStatusChanging] = useState(false);
+  const [sendingForSign, setSendingForSign] = useState(false);
 
   async function saveDraft() {
     setSaving(true);
@@ -36,7 +39,13 @@ export function AdminFormSubmissionView({
       const res = await fetch(`/api/forms/${submission.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ payload, status: submission.status, note: "Draft saved by admin" }),
+        body: JSON.stringify({
+          payload,
+          status: submission.status,
+          clientName: submission.clientName,
+          clientEmail: submission.clientEmail,
+          note: "Draft saved by admin",
+        }),
       });
       if (res.ok) {
         const updated = await res.json();
@@ -64,6 +73,24 @@ export function AdminFormSubmissionView({
     }
   }
 
+  async function sendForSign() {
+    setSendingForSign(true);
+    try {
+      const res = await fetch(`/api/forms/${submission.id}/send-for-sign`, {
+        method: "POST",
+      });
+      if (res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setSubmission((current) => ({
+          ...current,
+          status: typeof data?.status === "string" ? data.status : current.status,
+        }));
+      }
+    } finally {
+      setSendingForSign(false);
+    }
+  }
+
   function updateField(key: string, value: unknown) {
     setPayload((p) => ({ ...p, [key]: value }));
   }
@@ -85,6 +112,15 @@ export function AdminFormSubmissionView({
           Created {new Date(submission.createdAt).toLocaleString()} · Updated{" "}
           {new Date(submission.updatedAt).toLocaleString()}
         </p>
+        <div className="mt-4 flex flex-wrap gap-3">
+          <PrintPageButton label="Print file" className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-200 transition hover:border-amber-400 hover:bg-slate-900" />
+          <Link
+            href={`/forms/file/${submission.id}`}
+            className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-200 transition hover:border-amber-400 hover:bg-slate-900"
+          >
+            Open client file
+          </Link>
+        </div>
       </header>
 
       {/* Status workflow */}
@@ -115,6 +151,28 @@ export function AdminFormSubmissionView({
         <h2 className="text-lg font-semibold text-slate-200">Structured fields</h2>
         <p className="mt-1 text-sm text-slate-500">Edit values below. Save draft to persist.</p>
         <div className="mt-4 space-y-3">
+          <div className="flex flex-wrap items-start gap-2">
+            <label className="w-48 shrink-0 truncate text-sm font-medium text-slate-400">
+              clientName
+            </label>
+            <input
+              type="text"
+              value={submission.clientName ?? ""}
+              onChange={(e) => setSubmission((current) => ({ ...current, clientName: e.target.value || null }))}
+              className="min-w-[200px] flex-1 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
+            />
+          </div>
+          <div className="flex flex-wrap items-start gap-2">
+            <label className="w-48 shrink-0 truncate text-sm font-medium text-slate-400">
+              clientEmail
+            </label>
+            <input
+              type="email"
+              value={submission.clientEmail ?? ""}
+              onChange={(e) => setSubmission((current) => ({ ...current, clientEmail: e.target.value || null }))}
+              className="min-w-[200px] flex-1 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
+            />
+          </div>
           {payloadEntries.map(([key, value]) => (
             <div key={key} className="flex flex-wrap items-start gap-2">
               <label className="w-48 shrink-0 truncate text-sm font-medium text-slate-400">
@@ -175,6 +233,14 @@ export function AdminFormSubmissionView({
             className="rounded-lg bg-red-500/20 px-4 py-2 text-sm font-medium text-red-300 hover:bg-red-500/30 disabled:opacity-50"
           >
             Reject
+          </button>
+          <button
+            type="button"
+            onClick={sendForSign}
+            disabled={sendingForSign || !submission.clientEmail}
+            className="rounded-lg bg-amber-500/20 px-4 py-2 text-sm font-medium text-amber-300 hover:bg-amber-500/30 disabled:opacity-50"
+          >
+            {sendingForSign ? "Sending..." : "Send by email for sign & return"}
           </button>
           <button
             type="button"

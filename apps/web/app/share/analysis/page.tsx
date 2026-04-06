@@ -6,14 +6,14 @@ import { ShareAnalysisViewTracker } from "@/components/share/ShareAnalysisViewTr
 
 export const dynamic = "force-dynamic";
 
-type Props = { searchParams: Promise<{ t?: string }> };
+type Props = { searchParams?: Promise<{ t?: string }> };
 
 /**
  * Public, link-only view of listing analysis summary (no PII; estimates only).
  * Opened via /share/analysis?t=... from POST /api/fsbo-listings/[id]/share-analysis
  */
 export default async function ShareAnalysisPage({ searchParams }: Props) {
-  const { t } = await searchParams;
+  const { t } = (await searchParams) ?? {};
   if (!t?.trim()) notFound();
 
   const payload = verifyListingAnalysisShareToken(t);

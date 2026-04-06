@@ -37,6 +37,7 @@ import {
   extractLeadCity,
 } from "@/lib/leads/timeline-helpers";
 import { refreshLeadExecutionLayer } from "@/src/modules/crm/leadExecutionRefresh";
+import { assertBrokerCanReceiveNewLead } from "@/modules/billing/brokerLeadBilling";
 import { estimateBrokerCommissionDollars } from "@/lib/leads/commission";
 import {
   defaultNextTouchForStage,
@@ -45,6 +46,7 @@ import {
 } from "@/lib/leads/pipeline-stage";
 import { tierEmoji, recommendedActionsForLead } from "@/lib/ai/lead-tier";
 import { getLeadAttributionFromRequest } from "@/lib/attribution/lead-attribution";
+import { persistLaunchEvent } from "@/src/modules/launch/persistLaunchEvent";
 import { assertImmoContactLegalForSession } from "@/lib/immo/immo-contact-legal-gate";
 import {
   brokerDemoLeadStage,
@@ -381,6 +383,30 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Too many requests. Try again shortly." }, { status: 429, headers: getRateLimitHeaders(limit) });
   }
   const body = await req.json().catch(() => ({}));
+
+  if (body && typeof body === "object" && (body as Record<string, unknown>).source === "launch_lead_capture") {
+    const emailRaw = (body as Record<string, unknown>).email;
+    const email = typeof emailRaw === "string" ? emailRaw.trim().toLowerCase() : "";
+    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    if (!emailOk) {
+      return NextResponse.json({ error: "Valid email required" }, { status: 400 });
+    }
+    const sessionUserId = await getGuestId();
+    await persistLaunchEvent("CONTACT_BROKER", {
+      email,
+      source: "launch_capture",
+      ...(sessionUserId ? { userId: sessionUserId } : {}),
+    });
+    await prisma.waitlistUser
+      .upsert({
+        where: { email },
+        create: { email, tags: ["launch_capture"] as Prisma.InputJsonValue },
+        update: {},
+      })
+      .catch(() => {});
+    return NextResponse.json({ ok: true });
+  }
+
   const projectId = body.projectId != null ? String(body.projectId) : null;
   const listingId = body.listingId != null ? String(body.listingId) : null;
 
@@ -536,6 +562,14 @@ export async function POST(req: Request) {
 
       void dispatchAutomation("lead_created", { leadId: dbLead.id }).catch(() => {});
 
+      void persistLaunchEvent("CONTACT_BROKER", {
+        leadId: dbLead.id,
+        projectId,
+        listingId: dbLead.listingId,
+        source: "lead_form_project",
+        ...(linkedUserId ? { userId: linkedUserId } : {}),
+      });
+
       return NextResponse.json(leadResponse);
     }
 
@@ -584,6 +618,13 @@ export async function POST(req: Request) {
     const leadSource =
       typeof body.leadSource === "string" ? body.leadSource.slice(0, 64) : "listing_contact";
     const traffic = getLeadAttributionFromRequest(h.get("cookie"), body);
+
+    if (introducedByBrokerId) {
+      const gate = await assertBrokerCanReceiveNewLead(prisma, introducedByBrokerId);
+      if (!gate.ok) {
+        return NextResponse.json({ error: `broker_billing:${gate.reason}` }, { status: 403 });
+      }
+    }
 
     const dbLead = await prisma.lead.create({
       data: {
@@ -679,6 +720,14 @@ export async function POST(req: Request) {
 
     void dispatchAutomation("lead_created", { leadId: dbLead.id }).catch(() => {});
     void runClosingAutomationById(dbLead.id).catch(() => {});
+
+    void persistLaunchEvent("CONTACT_BROKER", {
+      leadId: dbLead.id,
+      listingId: dbLead.listingId,
+      listingCode: dbLead.listingCode,
+      source: "lead_form_listing",
+      ...(linkedUserId ? { userId: linkedUserId } : {}),
+    });
 
     return NextResponse.json(leadResponse);
   } catch (e) {
@@ -1171,6 +1220,8 @@ export async function PATCH(req: Request) {
     }
 
     void runClosingAutomationById(id).catch(() => {});
+
+    void refreshLeadExecutionLayer(id).catch(() => {});
 
     return NextResponse.json({ success: true });
   } catch (e) {

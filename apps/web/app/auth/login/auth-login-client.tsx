@@ -224,7 +224,12 @@ function AuthLoginInner() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="mt-8 space-y-4 rounded-2xl border border-white/10 bg-[#121212] p-6">
+    <form
+      data-testid="lecipm-auth-login-form"
+      method="post"
+      onSubmit={onSubmit}
+      className="mt-8 space-y-4 rounded-2xl border border-white/10 bg-[#121212] p-6"
+    >
       {registered ? (
         <p className="text-sm leading-relaxed text-emerald-300">
           Account created. Check your email for the confirmation link from LECIPM. After you confirm, sign in below to

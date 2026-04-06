@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, type IRouter } from "express";
 import multer from "multer";
 import { analyzeDocument } from "../controllers/analyze-controller.js";
 
@@ -11,7 +11,7 @@ const upload = multer({
   },
 });
 
-const router = Router();
+const router: IRouter = Router();
 
 router.post("/analyze", upload.single("file"), analyzeDocument);
 

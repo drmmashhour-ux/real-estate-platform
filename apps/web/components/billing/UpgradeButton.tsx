@@ -29,7 +29,7 @@ export function UpgradeButton({ planCode = "pro", workspaceId, className }: Prop
       body: JSON.stringify({
         paymentType: "lecipm_workspace_subscription",
         planCode,
-        successUrl: `${origin}/dashboard?success=1`,
+        successUrl: `${origin}/billing/workspace-subscription/success?session_id={CHECKOUT_SESSION_ID}`,
         cancelUrl: `${origin}/dashboard?canceled=1`,
         ...(workspaceId ? { workspaceId } : {}),
       }),

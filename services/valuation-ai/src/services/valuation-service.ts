@@ -5,7 +5,7 @@
 
 import type { PropertyInput, ValuationType } from "../models/types.js";
 
-const PLATFORM_API_BASE = process.env.PLATFORM_API_BASE || "http://localhost:3000";
+const PLATFORM_API_BASE = process.env.PLATFORM_API_BASE || "http://localhost:3001";
 
 export async function requestValuation(
   type: ValuationType,

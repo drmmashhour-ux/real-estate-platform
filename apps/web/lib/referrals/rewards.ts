@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { computeViralCoefficientForReferrer } from "@/lib/referrals/viral";
 
 export type ReferralLevel = "Starter" | "Connector" | "Ambassador" | "Elite Partner";
 
@@ -32,14 +33,25 @@ export async function evaluateReferralRewards(userId: string) {
 }
 
 export async function getReferralAnalytics(userId: string) {
-  const [clicks, signups, activated, paid, rewards] = await Promise.all([
-    prisma.referralEvent.count({ where: { code: { in: await getUserReferralCodes(userId) }, eventType: "click" } }).catch(() => 0),
-    prisma.referralEvent.count({ where: { code: { in: await getUserReferralCodes(userId) }, eventType: "signup" } }).catch(() => 0),
-    prisma.referralEvent.count({ where: { code: { in: await getUserReferralCodes(userId) }, eventType: "activated" } }).catch(() => 0),
-    prisma.referralEvent.count({ where: { code: { in: await getUserReferralCodes(userId) }, eventType: "paid" } }).catch(() => 0),
+  const codes = await getUserReferralCodes(userId);
+  const [viral, clicks, signups, activated, paid, rewards] = await Promise.all([
+    computeViralCoefficientForReferrer(codes),
+    prisma.referralEvent.count({ where: { code: { in: codes }, eventType: "click" } }).catch(() => 0),
+    prisma.referralEvent.count({ where: { code: { in: codes }, eventType: "signup" } }).catch(() => 0),
+    prisma.referralEvent.count({ where: { code: { in: codes }, eventType: "activated" } }).catch(() => 0),
+    prisma.referralEvent.count({ where: { code: { in: codes }, eventType: "paid" } }).catch(() => 0),
     prisma.referralReward.findMany({ where: { userId } }).catch(() => []),
   ]);
-  return { clicks, signups, activated, paid, rewards };
+  return {
+    clicks,
+    signups,
+    activated,
+    paid,
+    rewards,
+    invitesSent: viral.invitesSent,
+    conversions: viral.conversions,
+    viralCoefficient: viral.viralCoefficient,
+  };
 }
 
 async function getUserReferralCodes(userId: string) {

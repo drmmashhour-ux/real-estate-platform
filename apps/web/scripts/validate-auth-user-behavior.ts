@@ -2,7 +2,7 @@
  * End-to-end auth behavior check (real HTTP + DB).
  * Flow: register → email verification GET → login → session cookies → dashboard → admin gate → logout.
  *
- * Requires: DATABASE_URL, Next server running (default http://127.0.0.1:3000).
+ * Requires: DATABASE_URL, Next server running (default http://127.0.0.1:3001).
  *
  *   pnpm --filter @lecipm/web exec tsx scripts/validate-auth-user-behavior.ts
  */
@@ -13,7 +13,7 @@ import { PrismaClient } from "@prisma/client";
 config({ path: resolve(process.cwd(), ".env") });
 config({ path: resolve(process.cwd(), "../../.env") });
 
-const BASE = process.env.AUTH_VALIDATE_BASE_URL ?? "http://127.0.0.1:3000";
+const BASE = process.env.AUTH_VALIDATE_BASE_URL ?? "http://127.0.0.1:3001";
 const prisma = new PrismaClient();
 
 type StepResult = { name: string; ok: boolean; detail?: string };

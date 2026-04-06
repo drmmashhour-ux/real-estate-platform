@@ -1,0 +1,14 @@
+{
+  "common": {
+    "loading": "Loading…",
+    "save": "Save",
+    "cancel": "Cancel"
+  },
+  "bookings": {
+    "manualPaymentTitle": "Arrange payment with the host",
+    "manualPaymentBody": "Online checkout is not enabled. Coordinate payment with your host."
+  },
+  "market": {
+    "syriaRibbon": "Syria launch mode: payments may be arranged offline."
+  }
+}

@@ -12,6 +12,7 @@ import { isStripeConfigured } from "@/lib/stripe";
 import { hasActiveEnforceableContract } from "@/lib/legal/enforceable-contract";
 import { ENFORCEABLE_CONTRACT_TYPES } from "@/lib/legal/enforceable-contract-types";
 import { enforceableContractsRequired } from "@/lib/legal/enforceable-contracts-enforcement";
+import { getPublicAppUrl } from "@/lib/config/public-app-url";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +24,7 @@ function appBaseUrl(req: Request): string {
   const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host");
   const proto = req.headers.get("x-forwarded-proto") ?? "https";
   if (host) return `${proto}://${host}`;
-  return "http://localhost:3000";
+  return getPublicAppUrl();
 }
 
 /** Unlock borrower email/phone on a mortgage lead (free weekly quota for Pro, else paid Checkout). */

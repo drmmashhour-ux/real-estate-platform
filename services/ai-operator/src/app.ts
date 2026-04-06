@@ -1,9 +1,9 @@
-import express from "express";
+import express, { type Application } from "express";
 import { createOperatorRouter } from "./routes.js";
 import { config } from "./config.js";
 import { startScheduler } from "./jobs/scheduler.js";
 
-const app = express();
+const app: Application = express();
 app.use(express.json());
 
 app.use(config.basePath, createOperatorRouter());

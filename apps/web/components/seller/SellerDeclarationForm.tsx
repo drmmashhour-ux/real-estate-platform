@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useId, useMemo, useState, type ReactNode } from "react";
+import { resolveSellerDeclarationVariant } from "@/src/modules/seller-declaration-ai/knowledge/sellerWorkflowPillarRules";
 import {
   declarationCompletionPercent,
   emptyParty,
@@ -155,6 +156,15 @@ export function SellerDeclarationForm({
   const roughWelcome = priceCents > 0 ? Math.round((priceCents / 100) * 0.015) : null;
 
   const isCondoType = propertyType === "CONDO";
+  const declarationVariant = useMemo(
+    () =>
+      resolveSellerDeclarationVariant({
+        property_type: propertyType === "CONDO" ? "condo" : propertyType === "TOWNHOUSE" ? "townhouse" : propertyType === "MULTI_FAMILY" ? "plex" : "single_family",
+        ownership_type: value.isCondo ? "divided_coownership" : "standard",
+        isCondo: value.isCondo,
+      }),
+    [propertyType, value.isCondo]
+  );
 
   const trustGraphReadiness = useMemo(() => {
     const pct = declarationCompletionPercent(value, propertyType);
@@ -204,7 +214,26 @@ export function SellerDeclarationForm({
         consult a notary or lawyer for your situation.
       </p>
 
-      <DsDsdRegulatoryNotice />
+      <div className="rounded-xl border border-sky-400/20 bg-sky-500/5 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <p className="text-sm font-semibold text-white">Declaration path guide</p>
+            <p className="text-xs text-slate-300">
+              The seller hub now tracks whether this disclosure follows a standard DS-style path or a divided co-ownership DSD-style path.
+            </p>
+          </div>
+          <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-slate-200">
+            {declarationVariant ? `Current path: ${declarationVariant}` : "Current path: pending"}
+          </span>
+        </div>
+        <p className="mt-3 text-xs text-slate-300">
+          {declarationVariant === "DSD"
+            ? "Because this file is being treated as divided co-ownership, section 9 should include syndicate documents, financial statements, contingency-fund details, and any known special assessments."
+            : "For standard residential or undivided ownership, the DS-style path applies. If this listing is actually a condo / divided co-ownership, confirm that in section 9."}
+        </p>
+      </div>
+
+      <DsDsdRegulatoryNotice variant={declarationVariant ?? undefined} />
 
       <SellerDeclarationAiReviewPanel review={declarationAiReview ?? null} />
 
@@ -753,6 +782,9 @@ export function SellerDeclarationForm({
         ) : null}
         {value.isCondo ? (
           <div className="mt-3 space-y-2 text-sm text-slate-300">
+            <div className="rounded-lg border border-premium-gold/20 bg-premium-gold/5 p-3 text-xs text-slate-300">
+              DSD-style reminder: buyers usually need co-ownership documents, financial statements, contingency-fund context, and any special assessment information to understand the file properly.
+            </div>
             <label className="flex items-center gap-2">
               <input
                 type="checkbox"
@@ -776,6 +808,45 @@ export function SellerDeclarationForm({
                 onChange={(e) => patch({ condoRulesReviewed: e.target.checked })}
               />
               I have reviewed (or will provide access to) the co-ownership rules.
+            </label>
+            <label className="block">
+              Contingency fund / reserve details
+              <textarea
+                value={value.condoContingencyFundDetails}
+                onChange={(e) => patch({ condoContingencyFundDetails: e.target.value })}
+                rows={3}
+                className={`mt-1 w-full rounded-lg border bg-black/50 px-3 py-2 text-white ${
+                  fieldErrors.condoContingencyFundDetails ? "border-red-500/60" : "border-white/10"
+                }`}
+                placeholder="Describe reserve fund context, major planned repairs, or what the seller knows about the contingency fund."
+              />
+              {fieldErrors.condoContingencyFundDetails ? (
+                <p className="mt-1 text-xs text-red-400">{fieldErrors.condoContingencyFundDetails}</p>
+              ) : (
+                <p className="mt-1 text-xs text-slate-500">
+                  Add factual reserve-fund or contingency-fund context, even if the information is incomplete.
+                </p>
+              )}
+            </label>
+            <label className="block">
+              Special assessments
+              <textarea
+                value={value.condoSpecialAssessmentDetails}
+                onChange={(e) => patch({ condoSpecialAssessmentDetails: e.target.value })}
+                rows={2}
+                className="mt-1 w-full rounded-lg border border-white/10 bg-black/50 px-3 py-2 text-white"
+                placeholder="Describe any known special assessments, timing, amount, or whether none are known."
+              />
+            </label>
+            <label className="block">
+              Common services / rules notes
+              <textarea
+                value={value.condoCommonServicesNotes}
+                onChange={(e) => patch({ condoCommonServicesNotes: e.target.value })}
+                rows={2}
+                className="mt-1 w-full rounded-lg border border-white/10 bg-black/50 px-3 py-2 text-white"
+                placeholder="Summarize common services, restrictions, or co-ownership rules relevant to the buyer."
+              />
             </label>
           </div>
         ) : null}

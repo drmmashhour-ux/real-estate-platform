@@ -67,9 +67,14 @@ export async function GET(request: NextRequest) {
 
     const sort = mapSort(sortParam);
 
-    const cacheKey = isRedisConfigured()
-      ? `bnhub:search:${[city, listingCode, checkIn, checkOut, guests, minPrice, maxPrice, propertyType, roomType, centerLat, centerLng, radiusKm, minBaths, instantBook, verifiedOnly, sort, page, limit].join(":")}`
-      : null;
+    const rankingDebug =
+      process.env.BNHUB_SEARCH_RANKING_DEBUG === "true" &&
+      searchParams.get("ranking_debug") === "1";
+
+    const cacheKey =
+      isRedisConfigured() && !rankingDebug
+        ? `bnhub:search:${[city, listingCode, checkIn, checkOut, guests, minPrice, maxPrice, propertyType, roomType, centerLat, centerLng, radiusKm, minBaths, instantBook, verifiedOnly, sort, page, limit].join(":")}`
+        : null;
     if (cacheKey) {
       const cached = await cacheGet(cacheKey);
       if (cached) {
@@ -121,7 +126,7 @@ export async function GET(request: NextRequest) {
       propertyType,
     };
 
-    const ranked = rankListings(listings, filters);
+    const ranked = rankListings(listings, filters, undefined, { rankingDebug });
 
     const featuredIds = new Set(await getActivePromotedListingIds({ placement: "FEATURED", limit: 40 }));
     const NEW_DAYS = 14;

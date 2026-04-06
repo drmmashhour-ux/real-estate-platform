@@ -19,6 +19,11 @@ function parsePlatform(p: string): BnhubChannelPlatform | null {
     BOOKING_COM: BnhubChannelPlatform.BOOKING_COM,
     VRBO: BnhubChannelPlatform.VRBO,
     EXPEDIA: BnhubChannelPlatform.EXPEDIA,
+    TRIVAGO: BnhubChannelPlatform.TRIVAGO,
+    HOTELS_COM: BnhubChannelPlatform.HOTELS_COM,
+    HOTELS: BnhubChannelPlatform.HOTELS_COM,
+    GOOGLE_HOTEL: BnhubChannelPlatform.GOOGLE_HOTEL,
+    GOOGLE: BnhubChannelPlatform.GOOGLE_HOTEL,
     DIRECT: BnhubChannelPlatform.DIRECT,
     OTHER: BnhubChannelPlatform.OTHER,
   };

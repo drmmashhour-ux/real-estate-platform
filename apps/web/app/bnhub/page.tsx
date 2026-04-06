@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { GrowthConversionStrip } from "@/components/marketing/GrowthConversionStrip";
 
 export default function BNHubPage() {
   return (
@@ -18,6 +19,12 @@ export default function BNHubPage() {
               className="text-sm font-medium text-slate-300 hover:text-white"
             >
               Find a stay
+            </Link>
+            <Link
+              href="/bnhub/travel/compare"
+              className="text-sm font-medium text-slate-300 hover:text-white"
+            >
+              Travel AI
             </Link>
             <Link
               href="/bnhub/host/dashboard"
@@ -100,6 +107,12 @@ export default function BNHubPage() {
         </div>
       </section>
 
+      <section className="border-b border-slate-800 bg-slate-950 py-10">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+          <GrowthConversionStrip variant="host" />
+        </div>
+      </section>
+
       {/* Footer links */}
       <footer className="bg-slate-950 py-8">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
@@ -111,6 +124,9 @@ export default function BNHubPage() {
               </Link>
               <Link href="/bnhub/host/dashboard" className="text-sm text-slate-400 hover:text-slate-300">
                 Host dashboard
+              </Link>
+              <Link href="/bnhub/travel/compare" className="text-sm text-slate-400 hover:text-slate-300">
+                Travel AI
               </Link>
               <Link href="/bnhub/trips" className="text-sm text-slate-400 hover:text-slate-300">
                 My trips

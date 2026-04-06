@@ -5,11 +5,16 @@
  */
 
 import { prisma } from "@/lib/db";
+import { MIN_LISTING_PHOTOS_FOR_VERIFICATION } from "@/lib/bnhub/moderation-requirements";
 import { getBrokerProfessionalCompliance } from "@/lib/compliance/professional-compliance";
 import { assertHostAgreementSignedForPublish } from "@/lib/contracts/bnhub-host-contracts";
 import { assertSellerAgreementSignedForBnhub } from "@/lib/contracts/bnhub-seller-listing-contracts";
 import { assertSellerAgreementTemplateAnswers } from "@/lib/contracts/listing-template-compliance";
 import { assertComplianceReviewApprovedIfRequired } from "@/lib/contracts/compliance-review-service";
+import {
+  hasCurrentLegalRentRightAttestation,
+  LEGAL_RENT_RIGHT_ATTESTATION_VERSION,
+} from "@/lib/bnhub/legal-rent-attestation-policy";
 
 export type OwnerVerificationStatus =
   | "pending"
@@ -124,7 +129,7 @@ export async function getPropertyVerificationStatus(
       conditionOfProperty: true,
       knownIssues: true,
       photos: true,
-      listingPhotos: { select: { id: true }, take: 1 },
+      _count: { select: { listingPhotos: true } },
     },
   });
 
@@ -156,13 +161,17 @@ export async function getPropertyVerificationStatus(
   const hasKnownIssues = listing.knownIssues != null && String(listing.knownIssues).trim() !== "";
   if (!hasKnownIssues) reasons.push("Known issues must be disclosed (use \"None\" if none)");
 
-  const photoUrls =
-    Array.isArray(listing.photos) &&
-    listing.photos.filter((p): p is string => typeof p === "string");
-  const hasListingPhotos = (listing.listingPhotos?.length ?? 0) > 0;
-  const hasImages =
-    hasListingPhotos || (Array.isArray(photoUrls) && photoUrls.length > 0);
-  if (!hasImages) reasons.push("At least one listing image is required");
+  const fromTable = listing._count.listingPhotos;
+  const fromJson = Array.isArray(listing.photos) ? listing.photos.length : 0;
+  const photoCount = fromTable > 0 ? fromTable : fromJson;
+  const hasImages = photoCount >= MIN_LISTING_PHOTOS_FOR_VERIFICATION;
+  if (!hasImages) {
+    reasons.push(
+      photoCount === 0
+        ? `At least ${MIN_LISTING_PHOTOS_FOR_VERIFICATION} listing images are required`
+        : `${MIN_LISTING_PHOTOS_FOR_VERIFICATION} images required (you have ${photoCount}). Include overall space, beds, bathrooms, kitchen, and amenities — clear on any device.`
+    );
+  }
 
   const canPublish =
     hasAddress &&
@@ -222,6 +231,9 @@ export async function canPublishListingMandatory(
       listingAuthorityType: true,
       brokerLicenseNumber: true,
       brokerageName: true,
+      listingVerificationStatus: true,
+      legalRentRightAttestedAt: true,
+      legalRentRightAttestationVersion: true,
     },
   });
   if (!listing) {
@@ -245,6 +257,26 @@ export async function canPublishListingMandatory(
     ...propertyStatus.reasons,
     ...disclosureStatus.reasons,
   ];
+
+  if (listing.listingVerificationStatus !== "VERIFIED") {
+    reasons.push(
+      "Platform ownership or broker authorization must be verified by an administrator before this listing can go live."
+    );
+  }
+
+  if (
+    !hasCurrentLegalRentRightAttestation(
+      listing.legalRentRightAttestedAt,
+      listing.legalRentRightAttestationVersion
+    )
+  ) {
+    reasons.push(
+      listing.legalRentRightAttestationVersion &&
+        listing.legalRentRightAttestationVersion !== LEGAL_RENT_RIGHT_ATTESTATION_VERSION
+        ? "Confirm the legal right to offer this stay again (our attestation was updated)."
+        : "Confirm the legal right to offer this stay before publishing."
+    );
+  }
 
   let brokerGateOk = true;
   if (listing.listingAuthorityType === "BROKER") {
@@ -285,7 +317,15 @@ export async function canPublishListingMandatory(
     reasons.push(...complianceGate.reasons);
   }
 
+  const listingGateOk =
+    listing.listingVerificationStatus === "VERIFIED" &&
+    hasCurrentLegalRentRightAttestation(
+      listing.legalRentRightAttestedAt,
+      listing.legalRentRightAttestationVersion
+    );
+
   const allowed =
+    listingGateOk &&
     authorityOk &&
     propertyStatus.canPublish &&
     disclosureStatus.completed &&

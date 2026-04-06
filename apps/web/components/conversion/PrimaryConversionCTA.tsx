@@ -1,6 +1,7 @@
 "use client";
 
 import { track } from "@/lib/tracking";
+import { trackLaunchEvent } from "@/src/modules/launch/LaunchTracker";
 
 export function PrimaryConversionCTA({
   href,
@@ -18,7 +19,10 @@ export function PrimaryConversionCTA({
   return (
     <a
       href={href}
-      onClick={() => track(event, { meta: { label, ...meta } })}
+      onClick={() => {
+        track(event, { meta: { label, ...meta } });
+        void trackLaunchEvent("CTA_CLICK", { ...meta, href, label, event });
+      }}
       className={
         className ??
         "inline-flex rounded-xl bg-premium-gold px-5 py-2.5 text-sm font-semibold text-black hover:bg-premium-gold"

@@ -31,12 +31,17 @@ export default async function AdminLegalAiPage() {
           <Link href="/admin/content-license" className="text-sm text-amber-400/90 hover:text-amber-300">
             ← Content license
           </Link>
-          <h1 className="mt-3 text-xl font-semibold" style={{ color: theme.text }}>
-            AI legal monitor
+          <p
+            className="mt-2 text-xs font-semibold uppercase tracking-widest text-amber-400/90"
+            data-testid="admin-law-helper-eyebrow"
+          >
+            Law helper
+          </p>
+          <h1 className="mt-2 text-xl font-semibold" style={{ color: theme.text }} data-testid="admin-law-helper-title">
+            AI legal monitor &amp; drafting
           </h1>
           <p className="mt-1 text-sm opacity-80">
-            Content-rule signals, legal-context AI audit trail, and an aggregated Legal Risk Report. Not a substitute for
-            counsel.
+            Risk report, legal-context AI logs, and template-first drafting (below). Not a substitute for counsel.
           </p>
         </div>
         <LegalAiMonitorClient />

@@ -1,4 +1,4 @@
-import type { Prisma } from "@prisma/client";
+import type { Prisma } from "../generated/prisma/index.js";
 import { prisma } from "../db.js";
 import type { CreateSuspensionBody } from "../validation/schemas.js";
 

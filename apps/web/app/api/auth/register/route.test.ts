@@ -43,6 +43,7 @@ vi.mock("@/lib/auth/session", () => ({
 vi.mock("@/lib/referrals", () => ({
   createReferralIfNeeded: vi.fn().mockResolvedValue(undefined),
   ensureReferralCode: vi.fn().mockResolvedValue("REFCODE"),
+  resolveReferralAttribution: vi.fn().mockResolvedValue(null),
 }));
 
 vi.mock("@/lib/email/send", () => ({

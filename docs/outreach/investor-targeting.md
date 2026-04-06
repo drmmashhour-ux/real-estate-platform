@@ -1,60 +1,31 @@
-# Investor targeting
+# Investor targeting — LECIPM Manager
 
-## A. Ideal investor profile
+## 1. Ideal investor profile
 
-**Stage**
+- **Stage:** Pre-seed / Seed  
+- **Focus:** Marketplaces, PropTech, travel / hospitality, applied AI (workflow & operations, not hype)  
+- **Geography:** Canada and United States (timezone and regulatory familiarity; expand later with intent)
 
-- Early-stage through seed (pre-seed, seed). Angels who write smaller checks into B2B SaaS also fit if thesis-aligned.
+## 2. Investor categories
 
-**Sector / thesis**
+| Category | Why they fit |
+|----------|----------------|
+| **Angels (operators, founders)** | Understand GTM pain, fast feedback, often intro-rich |
+| **Micro VCs** | Check size and pace match early marketplace builds |
+| **Pre-seed funds** | Thesis fit for platform + AI-assisted operations |
+| **Strategic (real estate, travel)** | Distribution, credibility, and sector insight — use selectively to avoid premature lock-in |
 
-- SaaS, PropTech, vertical software, marketplaces with a B2B or pro-user angle.
-- Interest in **B2B tools** — workflow, operations, multi-tenant products — not only consumer marketplaces.
+## 3. Where to find them
 
-**Geography (first pass)**
+- **LinkedIn** — partners, principals, angels; filter by thesis keywords  
+- **X (Twitter)** — fund announcements, founder-investor discourse  
+- **AngelList (Wellfound)** — discovery and syndicate context  
+- **Fund websites** — portfolio overlap, thesis pages, partner mandates  
 
-- **Canada** and **US** first (time zones, legal familiarity, many active PropTech / B2B SaaS funds).
-- Expand only after the first pipeline is repeatable.
+## 4. Prioritization
 
-**Fit**
+1. **Warm intro** — highest response quality; always lead with mutual connection.  
+2. **Referral** — second-degree via founder or operator network.  
+3. **Cold outreach** — tight, specific, single CTA (short call); only after light research on thesis and portfolio.
 
-- Comfortable with regulated or semi-regulated domains (real estate, financial workflows) and longer sales cycles.
-- Not required: prior real estate-only portfolio — **workflow + B2B** relevance matters more than domain match alone.
-
----
-
-## B. Where to find them
-
-| Channel | Notes |
-|--------|--------|
-| **LinkedIn** | Partners, principals, associates at funds; filter by stage and sector keywords. |
-| **VC firm websites** | Team pages, thesis statements, portfolio — use to qualify before contacting. |
-| **Angel networks** | e.g. regional angel groups, syndicates (verify active investing). |
-| **University / local startup networks** | Alumni funds, accelerator mentors, demo days — often warm intro paths. |
-
-**Process:** build a list first, qualify second, then personalize third.
-
----
-
-## C. How to qualify them
-
-Before adding someone to Tier 1:
-
-1. **Past investments** — Do they back companies similar in *motion* (B2B SaaS, workflow, vertical software)? Not every deal needs to be PropTech.
-2. **Stage preference** — Does their stated fund focus match where you are (pre-seed / seed)?
-3. **Ticket size** — Roughly in range for your round (public fund info, Crunchbase, press — do not guess; mark “unknown” if unclear).
-4. **Relevance to your product** — Multi-operator, brokerages, compliance-heavy workflows, or “operating system” narratives — note one line why they might care.
-
-**If you cannot verify two of the above,** default Tier 2 or 3 until you learn more.
-
----
-
-## D. Targeting tiers
-
-| Tier | Definition | Action |
-|------|------------|--------|
-| **Tier 1** | Highly relevant — thesis + stage + geography fit; clear reason to believe interest. | Personalized first line; priority for follow-ups. |
-| **Tier 2** | Somewhat relevant — one or two gaps (e.g. stage OK, sector adjacent). | Shorter personalization; still worth a first touch. |
-| **Tier 3** | Broad outreach — weak fit or incomplete data. | Lower priority; use only when building volume or testing messaging — do not misrepresent fit. |
-
-**Rule:** Tier is about *qualification*, not worth. Update tier when you learn more (reply, intro, new data).
+**LECIPM Manager** positioning in one line: *AI-assisted operations for a real estate and short-term rental marketplace — soft launch ready, meeting to share architecture and GTM.*

@@ -1,4 +1,8 @@
 import { NextRequest } from "next/server";
+import {
+  PRICING_RULE_TYPE_EARLY_BOOKING,
+  sanitizeEarlyBookingPayload,
+} from "@/lib/bnhub/early-booking-discount";
 import { getPricingRulesForListing, upsertPricingRule } from "@/lib/bnhub/pricing";
 
 /** GET: pricing rules for a listing (?listingId=). */
@@ -29,10 +33,24 @@ export async function POST(request: NextRequest) {
     if (!listingId || !ruleType || typeof payload !== "object") {
       return Response.json({ error: "listingId, ruleType, payload required" }, { status: 400 });
     }
+    let safePayload: Record<string, unknown> = payload as Record<string, unknown>;
+    if (ruleType === PRICING_RULE_TYPE_EARLY_BOOKING) {
+      const p = sanitizeEarlyBookingPayload(safePayload);
+      if (!p) {
+        return Response.json(
+          {
+            error:
+              "EARLY_BOOKING payload needs minLeadDays (1–365) and discountPercent (1–35)",
+          },
+          { status: 400 }
+        );
+      }
+      safePayload = p;
+    }
     const rule = await upsertPricingRule({
       listingId,
       ruleType,
-      payload,
+      payload: safePayload,
       validFrom,
       validTo,
     });

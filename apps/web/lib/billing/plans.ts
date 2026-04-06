@@ -22,9 +22,18 @@ export const plans = {
     label: "Pro",
     storageLabel: "50GB",
   },
+  platinum: {
+    storage: 100 * 1024 * 1024 * 1024, // 100GB
+    price: 39,
+    label: "Platinum",
+    storageLabel: "100GB",
+  },
 } as const;
 
 export type PlanKey = keyof typeof plans;
+
+/** Paid storage upgrade keys accepted by Stripe checkout + webhooks (excludes `free`). */
+export const PAID_STORAGE_PLAN_KEYS: Array<Exclude<PlanKey, "free">> = ["basic", "pro", "platinum"];
 
 export function getPlanStorage(plan: PlanKey): number {
   return plans[plan].storage;

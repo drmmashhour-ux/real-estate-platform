@@ -39,7 +39,7 @@ export const TERMS_DEFAULT_HTML = `
 <p>The platform is offered from Québec, Canada. These terms are governed by the laws applicable in the Province of Québec, without regard to conflict-of-law rules that would require another jurisdiction’s law, subject to non-waivable consumer protections.</p>
 
 <h2>12. Changes and contact</h2>
-<p>We may update these terms. Material changes may require renewed acceptance for certain features. Questions: <a href="mailto:info@mashhourinvestments.com">info@mashhourinvestments.com</a></p>
+<p>We may update these terms. Material changes may require renewed acceptance for certain features. Questions: <a href="mailto:dr.m.mashhour@gmail.com">dr.m.mashhour@gmail.com</a></p>
 `;
 
 export const PRIVACY_DEFAULT_HTML = `
@@ -73,11 +73,11 @@ export const PRIVACY_DEFAULT_HTML = `
 <p>We use <strong>encryption in transit</strong> (HTTPS) and industry-standard safeguards. We retain data only as long as needed for the purposes above, legal obligations, or dispute resolution.</p>
 
 <h2>7. Your rights</h2>
-<p>Depending on applicable law, you may request access, correction, deletion, or portability of your information, or withdraw consent where processing is consent-based. Contact: <a href="mailto:info@mashhourinvestments.com">info@mashhourinvestments.com</a></p>
+<p>Depending on applicable law, you may request access, correction, deletion, or portability of your information, or withdraw consent where processing is consent-based. Contact: <a href="mailto:dr.m.mashhour@gmail.com">dr.m.mashhour@gmail.com</a></p>
 
 <h2>8. AI disclaimer</h2>
 <p>AI-assisted features produce <strong>informational content only</strong>, not legal or financial advice.</p>
 
 <h2>9. Contact</h2>
-<p>Privacy inquiries: <a href="mailto:info@mashhourinvestments.com">info@mashhourinvestments.com</a></p>
+<p>Privacy inquiries: <a href="mailto:dr.m.mashhour@gmail.com">dr.m.mashhour@gmail.com</a></p>
 `;

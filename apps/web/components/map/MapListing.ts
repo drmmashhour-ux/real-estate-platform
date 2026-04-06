@@ -11,6 +11,8 @@ export type MapListing = {
   image?: string | null;
   /** Optional link for "View listing" (e.g. /bnhub/[id]) */
   href?: string;
+  /** Integer 0–100 — drives pin color and heat weight */
+  aiScore?: number;
 };
 
 export function hasValidCoordinates(

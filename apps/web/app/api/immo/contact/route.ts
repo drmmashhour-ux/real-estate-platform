@@ -28,6 +28,7 @@ import { DemoEvents } from "@/lib/demo-event-types";
 import { logImmoContactEvent } from "@/lib/immo/immo-contact-log";
 import { ImmoContactEventType } from "@prisma/client";
 import { requireContentLicenseAccepted } from "@/lib/legal/content-license-enforcement";
+import { getImmoContactRestriction } from "@/lib/immo/immo-contact-enforcement";
 
 export const dynamic = "force-dynamic";
 
@@ -114,6 +115,20 @@ export async function POST(req: NextRequest) {
     .join("\n");
 
   const introducedByBrokerId = await resolveImmoIntroducedBrokerId(snapshot);
+  const restriction = await getImmoContactRestriction({
+    listingId: snapshot.listingId,
+    buyerUserId: sessionForLicense,
+    brokerId: introducedByBrokerId,
+  });
+  if (restriction.blocked) {
+    return NextResponse.json(
+      {
+        error: restriction.reasons[0] ?? "ImmoContact is temporarily restricted for this listing.",
+        code: "IMMO_CONTACT_RESTRICTED",
+      },
+      { status: 403 }
+    );
+  }
 
   const duplicate = await findRecentListingLeadDuplicate({
     listingId: snapshot.listingId,

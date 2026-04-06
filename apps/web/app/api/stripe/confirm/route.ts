@@ -2,11 +2,11 @@ import { NextRequest } from "next/server";
 import Stripe from "stripe";
 import { getGuestId } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
-import { plans, type PlanKey } from "@/lib/billing/plans";
+import { PAID_STORAGE_PLAN_KEYS, plans, type PlanKey } from "@/lib/billing/plans";
 
 export const dynamic = "force-dynamic";
 
-const VALID_PLANS: PlanKey[] = ["basic", "pro"];
+const VALID_PLANS: PlanKey[] = PAID_STORAGE_PLAN_KEYS;
 
 function getStripe(): Stripe | null {
   const key = process.env.STRIPE_SECRET_KEY;

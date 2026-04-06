@@ -74,7 +74,7 @@ export default function CopyrightPage() {
 
       <h2>Contact</h2>
       <p>
-        Rights inquiries: <a href="mailto:info@mashhourinvestments.com">info@mashhourinvestments.com</a>
+        Rights inquiries: <a href="mailto:dr.m.mashhour@gmail.com">dr.m.mashhour@gmail.com</a>
       </p>
     </LegalPageLayout>
   );

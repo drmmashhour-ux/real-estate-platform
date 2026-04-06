@@ -1,17 +1,13 @@
 import { join } from "node:path";
-import { existsSync, readdirSync } from "node:fs";
 import type { AuditResult, StabilizationIssue } from "./types";
 import { readTextSafe, relWeb } from "./fsUtils";
+import { forEachChildEntry } from "./fileScanner";
 
 function collectApiRoutes(dir: string, out: string[]): void {
-  if (!existsSync(dir)) return;
-  const entries = readdirSync(dir, { withFileTypes: true });
-  for (const entry of entries) {
-    const entryName = String(entry.name);
-    const absPath = join(dir, entryName);
-    if (entry.isDirectory()) collectApiRoutes(absPath, out);
-    else if (entryName === "route.ts" || entryName === "route.tsx") out.push(absPath);
-  }
+  forEachChildEntry(dir, ({ absPath, name, isDirectory }) => {
+    if (isDirectory) collectApiRoutes(absPath, out);
+    else if (name === "route.ts" || name === "route.tsx") out.push(absPath);
+  });
 }
 
 export function runErrorAudit(webRoot: string): AuditResult {

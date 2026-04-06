@@ -28,6 +28,13 @@ function countMissingRequiredHubDocs(docs: Pick<FsboListingDocument, "docType" |
   }).length;
 }
 
+function supportingCount(
+  docs: Pick<SellerSupportingDocument, "category" | "status">[],
+  category: SellerSupportingDocument["category"]
+): number {
+  return docs.filter((d) => d.category === category && d.status !== "REJECTED").length;
+}
+
 function identityVerifiedForTrust(
   declaration: SellerDeclarationData,
   verification: FsboListingVerification | null | undefined
@@ -46,7 +53,7 @@ export function computeListingAiScores(params: {
   declaration: SellerDeclarationData;
   review: SellerDeclarationAiReview;
   hubDocuments: Pick<FsboListingDocument, "docType" | "fileUrl">[];
-  supportingDocuments: Pick<SellerSupportingDocument, "category">[];
+  supportingDocuments: Pick<SellerSupportingDocument, "category" | "status">[];
   verification: FsboListingVerification | null | undefined;
   sellerDeclarationJson: unknown;
   sellerDeclarationCompletedAt: Date | null;
@@ -56,6 +63,7 @@ export function computeListingAiScores(params: {
     declaration,
     review,
     hubDocuments,
+    supportingDocuments,
     verification,
     sellerDeclarationJson,
     sellerDeclarationCompletedAt,
@@ -90,6 +98,21 @@ export function computeListingAiScores(params: {
     reasons.push("Missing required listing documents (ownership / ID).");
   }
 
+  if (declaration.isCondo && supportingCount(supportingDocuments, "CONDO_DOCUMENTS") === 0) {
+    risk += 10;
+    reasons.push("Condo / divided co-ownership file lacks condo supporting documents.");
+  }
+
+  if (declaration.renovationInvoicesAvailable === true && supportingCount(supportingDocuments, "RENOVATION_INVOICES") === 0) {
+    risk += 10;
+    reasons.push("Renovation invoices were declared as available but are not uploaded.");
+  }
+
+  if (declaration.isNewConstruction && supportingCount(supportingDocuments, "CERTIFICATES_WARRANTIES") === 0) {
+    risk += 10;
+    reasons.push("New construction / warranty context lacks supporting certificate documents.");
+  }
+
   const unclearSections = missingSecs.length;
   if (unclearSections >= 2) {
     risk += 5;
@@ -118,6 +141,16 @@ export function computeListingAiScores(params: {
   if (review.missingInformation.length > 0) {
     trust -= 20;
     trustReasons.push("Potential inconsistencies or missing supporting information flagged.");
+  }
+
+  if (declaration.isCondo && supportingCount(supportingDocuments, "CONDO_DOCUMENTS") > 0) {
+    trust += 5;
+    trustReasons.push("Condo supporting documents uploaded.");
+  }
+
+  if (declaration.renovationInvoicesAvailable === true && supportingCount(supportingDocuments, "RENOVATION_INVOICES") > 0) {
+    trust += 5;
+    trustReasons.push("Renovation evidence uploaded for declared work.");
   }
 
   const idOk = identityVerifiedForTrust(declaration, verification);

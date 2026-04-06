@@ -75,8 +75,21 @@ type Props = {
   legalFinancialSurface?: boolean;
 };
 
+function panelContextFromHub(
+  hub: AiHub,
+  ctx: Record<string, unknown>
+): { listingId?: string; bookingId?: string; role?: string; surface?: string } {
+  const listingId = typeof ctx.listingId === "string" ? ctx.listingId : undefined;
+  const bookingId = typeof ctx.bookingId === "string" ? ctx.bookingId : undefined;
+  return {
+    listingId,
+    bookingId,
+    role: typeof ctx.role === "string" ? ctx.role : hub,
+    surface: typeof ctx.surface === "string" ? ctx.surface : hub,
+  };
+}
+
 export function HubAiDock({ hub, context = {}, accent = "var(--color-premium-gold)", legalFinancialSurface }: Props) {
-  const [open, setOpen] = useState(false);
   const [preset, setPreset] = useState<Preset | null>(null);
 
   const presets = useMemo(() => PRESETS[hub] ?? [], [hub]);
@@ -96,7 +109,6 @@ export function HubAiDock({ hub, context = {}, accent = "var(--color-premium-gol
                 type="button"
                 onClick={() => {
                   setPreset(p);
-                  setOpen(true);
                 }}
                 className="rounded-lg border border-white/15 bg-white/[0.04] px-3 py-1.5 text-left text-xs text-slate-200 hover:bg-white/10"
                 style={{ borderColor: `${accent}44` }}
@@ -109,20 +121,26 @@ export function HubAiDock({ hub, context = {}, accent = "var(--color-premium-gol
       </AISuggestionCard>
 
       {preset ? (
-        <AIAssistantPanel
-          key={`${preset.feature}-${preset.intent}`}
-          open={open}
-          onClose={() => {
-            setOpen(false);
-            setPreset(null);
-          }}
-          hub={hub}
-          feature={preset.feature}
-          intent={preset.intent}
-          title={preset.title}
-          context={mergedContext}
-          legalFinancialSurface={legalFinancialSurface}
-        />
+        <div className="mt-4 space-y-2">
+          <button
+            type="button"
+            className="text-xs text-slate-400 underline hover:text-slate-200"
+            onClick={() => setPreset(null)}
+          >
+            Close assistant
+          </button>
+          <AIAssistantPanel
+            key={`${preset.feature}-${preset.intent}`}
+            title={preset.title}
+            subtitle={
+              legalFinancialSurface
+                ? "Legal or financial topics need human review — AI output is guidance only."
+                : undefined
+            }
+            context={panelContextFromHub(hub, mergedContext)}
+            agentKey={preset.feature}
+          />
+        </div>
       ) : null}
     </>
   );

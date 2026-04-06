@@ -8,9 +8,50 @@ export type QuickChipDef = {
   id: string;
   label: string;
   patch: Partial<GlobalSearchFiltersExtended>;
+  /** When set, second click clears back to this snapshot (buy / rent quick chips). */
+  clearPatch?: Partial<GlobalSearchFiltersExtended>;
 };
 
-const BUY_DEFS: QuickChipDef[] = [];
+const BUY_CLEAR: Partial<GlobalSearchFiltersExtended> = {
+  type: "buy",
+  propertyTypes: [],
+  propertyType: "",
+  sort: "recommended",
+};
+
+/** One-tap shortcuts on `/listings` — full criteria stay in Filters. */
+const BUY_DEFS: QuickChipDef[] = [
+  {
+    id: "condo",
+    label: "Condo",
+    patch: { type: "buy", propertyTypes: ["CONDO"], propertyType: "", sort: "recommended" },
+    clearPatch: BUY_CLEAR,
+  },
+  {
+    id: "house",
+    label: "House",
+    patch: { type: "buy", propertyTypes: ["HOUSE"], propertyType: "", sort: "recommended" },
+    clearPatch: BUY_CLEAR,
+  },
+  {
+    id: "plex",
+    label: "Plex",
+    patch: { type: "buy", propertyTypes: ["MULTI_FAMILY"], propertyType: "", sort: "recommended" },
+    clearPatch: BUY_CLEAR,
+  },
+  {
+    id: "new_listings",
+    label: "New listings",
+    patch: { type: "new_listing", sort: "newest", propertyTypes: [], propertyType: "" },
+    clearPatch: BUY_CLEAR,
+  },
+  {
+    id: "commercial",
+    label: "Commercial",
+    patch: { type: "commercial", propertyType: "COMMERCIAL", propertyTypes: [], sort: "recommended" },
+    clearPatch: BUY_CLEAR,
+  },
+];
 
 const SHORT_DEFS: QuickChipDef[] = [
   { id: "waterfront", label: "Waterfront", patch: { features: ["waterfront"] } },
@@ -40,6 +81,15 @@ export function QuickFilterChips({ tone = "gold" }: { tone?: "gold" | "slate" | 
 
   const isActive = (def: QuickChipDef) => {
     const p = def.patch;
+    if (def.clearPatch != null) {
+      if (p.type === "new_listing") return draft.type === "new_listing";
+      if (p.type === "commercial") return draft.type === "commercial";
+      if (p.propertyTypes?.length) {
+        const a = [...(draft.propertyTypes ?? [])].sort().join(",");
+        const b = [...p.propertyTypes].sort().join(",");
+        return draft.type === "buy" && a === b;
+      }
+    }
     if (p.priceMin != null && p.priceMin > 0) return draft.priceMin >= p.priceMin;
     if (p.furnished != null) return draft.furnished === p.furnished;
     if (p.features?.length) {
@@ -51,6 +101,10 @@ export function QuickFilterChips({ tone = "gold" }: { tone?: "gold" | "slate" | 
 
   const toggle = (def: QuickChipDef) => {
     const active = isActive(def);
+    if (def.clearPatch != null) {
+      applyPatch(active ? def.clearPatch : def.patch);
+      return;
+    }
     if (def.patch.furnished != null) {
       applyPatch(active ? { furnished: "any" } : { furnished: def.patch.furnished ?? "yes" });
       return;

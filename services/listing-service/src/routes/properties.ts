@@ -1,5 +1,5 @@
 import { Router, type Request, type Response } from "express";
-import { PrismaClient, type ListingType, type ListingStatus } from "@prisma/client";
+import { PrismaClient, type ListingType, type ListingStatus } from "../generated/prisma/index.js";
 import {
   createPropertyBodySchema,
   updatePropertyBodySchema,

@@ -26,7 +26,7 @@ export type CalendarBookingRow = {
   specialRequest?: string | null;
   guestNotes?: string | null;
   guest: { name: string | null; email: string };
-  listing: { id: string; title: string };
+  listing: { id: string; title: string; listingCode?: string | null };
   payment: { hostPayoutCents: number | null; status: string } | null;
 };
 
@@ -193,6 +193,12 @@ export function BookingCalendar({
                   ${(selected.totalCents / 100).toFixed(2)} + fees
                 </dd>
               </div>
+              {selected.listing.listingCode ? (
+                <div className="flex justify-between gap-4">
+                  <dt className="text-slate-500">Listing ref</dt>
+                  <dd className="text-right font-mono text-xs text-emerald-300">{selected.listing.listingCode}</dd>
+                </div>
+              ) : null}
               {(selected.specialRequest || selected.guestNotes) && (
                 <div>
                   <dt className="text-slate-500">Special requests</dt>

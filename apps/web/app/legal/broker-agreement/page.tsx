@@ -16,7 +16,7 @@ const DEFAULT_BROKER = `
 <p>Commission splits, referral fees, and platform fees are as agreed in separate agreements or as displayed in your dashboard. Payment terms are subject to our general payment policies.</p>
 
 <h2>5. Contact</h2>
-<p>Broker support: info@mashhourinvestments.com</p>
+<p>Broker support: dr.m.mashhour@gmail.com</p>
 `;
 
 export default async function BrokerAgreementPage() {

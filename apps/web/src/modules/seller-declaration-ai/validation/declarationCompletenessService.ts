@@ -1,7 +1,7 @@
-import { sellerDeclarationSections } from "@/src/modules/seller-declaration-ai/domain/declaration.schema";
+import { getSellerDeclarationSections } from "@/src/modules/seller-declaration-ai/domain/declaration.schema";
 
 export function computeDeclarationCompleteness(payload: Record<string, unknown>) {
-  const allFields = sellerDeclarationSections.flatMap((s) => s.fields);
+  const allFields = getSellerDeclarationSections(payload).flatMap((s) => s.fields);
   let required = 0;
   let completed = 0;
   const missing: string[] = [];

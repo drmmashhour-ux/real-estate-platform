@@ -1,5 +1,5 @@
 import { prisma } from "../db.js";
-import type { BookingStatus } from "@prisma/client";
+import type { BookingStatus } from "../generated/prisma/index.js";
 import { calculateBookingPrice, nightsBetween } from "./price.js";
 import { isListingAvailable } from "./availability.js";
 import type { CreateBookingBody, UpdateBookingBody } from "../validation/schemas.js";

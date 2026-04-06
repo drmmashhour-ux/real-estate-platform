@@ -27,9 +27,11 @@ const BuyingIcon = () =>
     "M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z M9 22V12h6v10"
   );
 
-/** Selling hub — tag / listing */
-const SellingIcon = () =>
-  icon("M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z");
+/** Host — listings grid (distinct from Buying house) */
+const HostIcon = () =>
+  icon(
+    "M4 5h4v4H4V5zm6 0h4v4h-4V5zm6 0h4v4h-4V5zM4 15h4v4H4v-4zm6 0h4v4h-4v-4zm6 0h4v4h-4v-4z"
+  );
 
 const ProfileIcon = () =>
   icon(
@@ -84,6 +86,15 @@ export function InvestmentMobileBottomNav() {
       label: "Buying",
       Icon: BuyingIcon,
       active: p === "/buying" || p.startsWith("/buying/"),
+    },
+    {
+      href: "/host/listings/new",
+      label: "Host",
+      Icon: HostIcon,
+      active:
+        p.startsWith("/host/listings") ||
+        p.startsWith("/bnhub/host") ||
+        p.startsWith("/host/apply"),
     },
     {
       href: supportHref,

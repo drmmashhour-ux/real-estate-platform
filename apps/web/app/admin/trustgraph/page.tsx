@@ -31,7 +31,7 @@ function parseQueueSearchParams(sp: Record<string, string | string[] | undefined
 export default async function AdminTrustGraphQueuePage({
   searchParams,
 }: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const userId = await getGuestId();
   if (!userId) redirect("/auth/login?next=/admin/trustgraph");
@@ -42,7 +42,7 @@ export default async function AdminTrustGraphQueuePage({
   const queueEnabled = isTrustGraphAdminQueueEnabled();
   const role = await getUserRole();
 
-  const rawSp = parseQueueSearchParams(await searchParams);
+  const rawSp = parseQueueSearchParams((await searchParams) ?? {});
   const parsedQ = queueQuerySchema.safeParse(rawSp);
   const q = parsedQ.success ? parsedQ.data : queueQuerySchema.parse({});
 

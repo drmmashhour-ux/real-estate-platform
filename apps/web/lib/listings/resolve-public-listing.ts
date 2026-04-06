@@ -4,8 +4,40 @@ import { isFsboPubliclyVisible } from "@/lib/fsbo/constants";
 import { normalizeAnyPublicListingCode } from "@/lib/listing-code-public";
 
 export type ResolvedPublicListing =
-  | { kind: "fsbo"; row: FsboListing }
-  | { kind: "crm"; row: Listing & { owner?: { id: string; email: string | null; name: string | null } | null } }
+  | {
+      kind: "fsbo";
+      row: FsboListing & {
+        owner: {
+          id: string;
+          email: string;
+          name: string | null;
+          phone: string | null;
+          sellerProfileAddress: string | null;
+          brokerVerifications: Array<{
+            licenseNumber: string;
+            brokerageCompany: string;
+            verificationStatus: string;
+          }>;
+        };
+      };
+    }
+  | {
+      kind: "crm";
+      row: Listing & {
+        owner?: {
+          id: string;
+          email: string | null;
+          name: string | null;
+          phone: string | null;
+          sellerProfileAddress: string | null;
+          brokerVerifications: Array<{
+            licenseNumber: string;
+            brokerageCompany: string;
+            verificationStatus: string;
+          }>;
+        } | null;
+      };
+    }
   | { kind: "bnhub"; slug: string; id: string; city: string; propertyType: string | null };
 
 /**
@@ -17,6 +49,26 @@ export async function resolvePublicListing(idOrCode: string): Promise<ResolvedPu
 
   const fsbo = await prisma.fsboListing.findUnique({
     where: { id: raw },
+    include: {
+      owner: {
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          phone: true,
+          sellerProfileAddress: true,
+          brokerVerifications: {
+            select: {
+              licenseNumber: true,
+              brokerageCompany: true,
+              verificationStatus: true,
+            },
+            take: 1,
+            orderBy: { updatedAt: "desc" },
+          },
+        },
+      },
+    },
   });
   if (fsbo && isFsboPubliclyVisible(fsbo)) {
     return { kind: "fsbo", row: fsbo };
@@ -24,7 +76,26 @@ export async function resolvePublicListing(idOrCode: string): Promise<ResolvedPu
 
   const crm = await prisma.listing.findUnique({
     where: { id: raw },
-    include: { owner: { select: { id: true, email: true, name: true } } },
+    include: {
+      owner: {
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          phone: true,
+          sellerProfileAddress: true,
+          brokerVerifications: {
+            select: {
+              licenseNumber: true,
+              brokerageCompany: true,
+              verificationStatus: true,
+            },
+            take: 1,
+            orderBy: { updatedAt: "desc" },
+          },
+        },
+      },
+    },
   });
   if (crm) {
     return { kind: "crm", row: crm };
@@ -53,11 +124,28 @@ export async function resolvePublicListing(idOrCode: string): Promise<ResolvedPu
   return null;
 }
 
-export function mapCrmListingToBuyerPayload(row: Listing & { owner?: { email: string | null; name: string | null } | null }) {
+export function mapCrmListingToBuyerPayload(
+  row: Listing & {
+    owner?: {
+      id: string;
+      email: string | null;
+      name: string | null;
+      phone: string | null;
+      sellerProfileAddress: string | null;
+      brokerVerifications: Array<{
+        licenseNumber: string;
+        brokerageCompany: string;
+        verificationStatus: string;
+      }>;
+    } | null;
+  }
+) {
   const priceCents = Math.round(Number(row.price) * 100);
+  const brokerVerification = row.owner?.brokerVerifications?.[0] ?? null;
   return {
     id: row.id,
     listingCode: row.listingCode,
+    listingOwnerType: "BROKER" as const,
     ownerId: row.ownerId ?? "",
     title: row.title,
     description:
@@ -70,7 +158,7 @@ export function mapCrmListingToBuyerPayload(row: Listing & { owner?: { email: st
     surfaceSqft: null as number | null,
     images: [] as string[],
     coverImage: null as string | null,
-    contactEmail: row.owner?.email ?? "contact@lecipm.com",
+    contactEmail: row.owner?.email ?? "dr.m.mashhour@gmail.com",
     contactPhone: null as string | null,
     propertyType: "RESIDENTIAL" as string | null,
     yearBuilt: null as number | null,
@@ -78,5 +166,19 @@ export function mapCrmListingToBuyerPayload(row: Listing & { owner?: { email: st
     condoFeesCents: null as number | null,
     cadastreNumber: null as string | null,
     listingKind: "crm" as const,
+    representative: {
+      name: row.owner?.name ?? "Listing broker",
+      roleLabel: "Listing broker",
+      email: row.owner?.email ?? "dr.m.mashhour@gmail.com",
+      phone: row.owner?.phone ?? null,
+      company: brokerVerification?.brokerageCompany ?? "Brokerage on file",
+      licenseNumber: brokerVerification?.licenseNumber ?? null,
+      licenseVerified: brokerVerification?.verificationStatus === "VERIFIED",
+      address: row.owner?.sellerProfileAddress ?? null,
+    },
+    propertyDetails: [
+      { label: "Property type", value: "Residential listing" },
+      { label: "Listing code", value: row.listingCode },
+    ],
   };
 }

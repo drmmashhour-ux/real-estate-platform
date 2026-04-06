@@ -1,7 +1,7 @@
-import express from "express";
+import express, { type Application } from "express";
 import { createPaymentsRouter } from "./routes/payments.js";
 
-const app = express();
+const app: Application = express();
 app.use(express.json());
 
 app.use("/v1/payments", createPaymentsRouter());

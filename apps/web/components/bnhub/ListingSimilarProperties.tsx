@@ -16,7 +16,7 @@ export function ListingSimilarProperties({ items }: { items: SimilarListingCard[
         {items.map((l) => (
           <li key={l.id}>
             <Link
-              href={`/bnhub/${l.listingCode}`}
+              href={`/bnhub/stays/${l.listingCode}`}
               className="group flex gap-3 rounded-2xl border border-slate-800 bg-slate-900/50 p-3 transition hover:border-emerald-500/40 hover:bg-slate-900/80"
             >
               <div className="relative h-24 w-32 shrink-0 overflow-hidden rounded-xl bg-slate-800">

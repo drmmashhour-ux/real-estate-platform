@@ -1,4 +1,4 @@
-import type { Property, PropertyImage, PropertyAmenity } from "@prisma/client";
+import type { Property, PropertyImage, PropertyAmenity } from "../generated/prisma/index.js";
 
 /**
  * Search document shape used for indexing and querying.

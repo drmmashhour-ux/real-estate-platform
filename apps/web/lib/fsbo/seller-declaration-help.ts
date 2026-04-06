@@ -56,9 +56,9 @@ export const SELLER_DECLARATION_HELP: Record<
   },
   condo: {
     title: "Condo / syndicate",
-    explain: "Condo buyers rely on syndicate minutes, financial statements, and bylaws.",
-    whatToFill: "If condo: confirm documents are available or where the buyer can obtain them.",
-    example: "Minutes & financials available through syndicate manager; special assessment $2k in 2023 completed.",
+    explain: "Divided co-ownership follows a stronger DSD-style disclosure path. Condo buyers rely on syndicate minutes, financial statements, bylaws, contingency-fund context, and special-assessment information.",
+    whatToFill: "If condo: confirm documents are available, add reserve / contingency-fund context, mention special assessments, and summarize relevant rules or common services.",
+    example: "Minutes & financials available through syndicate manager; contingency fund reviewed in 2024 budget; special assessment $2k in 2023 already paid; pet rules and shared rooftop terrace disclosed.",
   },
   newConstruction: {
     title: "New construction / GCR",

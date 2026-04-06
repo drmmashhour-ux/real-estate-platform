@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { getPublicContactMailto } from "@/lib/marketing-contact";
+import { suppressGlobalMarketingOverlays } from "@/lib/ui/dev-overlays";
 
 const SUBMITTED_LS = "lecipm_feedback_submitted_at";
 const TIMER_MS = 100_000; // ~1.7 min (between 1–2 minutes)
@@ -114,7 +115,10 @@ export function FeedbackFloatButton() {
     }
   }, [rating, message, pathname, close]);
 
-  if (pathname?.startsWith("/admin") || pathname?.startsWith("/embed")) return null;
+  if (suppressGlobalMarketingOverlays()) return null;
+  if (pathname?.startsWith("/admin") || pathname?.startsWith("/embed") || pathname?.startsWith("/auth")) {
+    return null;
+  }
 
   return (
     <>

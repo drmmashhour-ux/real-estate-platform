@@ -34,7 +34,7 @@
 - **Payments:** Checkout session creation; webhook `checkout.session.completed` updates payment and commissions.
 - **Refunds:** `charge.refunded` → Payment.status REFUNDED.
 - **Commission split:** `lib/stripe/commission.ts` — booking 12% platform; sale/deposit/closing 70% broker / 30% platform; subscription 90% platform; lead_unlock 20% broker.
-- **Validate real flow:** Manual test in test mode (4242 / 4000…); then switch to live and verify DB + commissions.
+- **Validate real flow:** Manual test in test mode (Stripe-hosted Checkout + test cards per [Stripe Testing](https://stripe.com/docs/testing)); then switch to live and verify DB + commissions.
 
 ---
 

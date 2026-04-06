@@ -1,5 +1,7 @@
-import { sellerDeclarationSections } from "@/src/modules/seller-declaration-ai/domain/declaration.schema";
+import { getSellerDeclarationSections } from "@/src/modules/seller-declaration-ai/domain/declaration.schema";
 import type { DeclarationValidationResult } from "@/src/modules/seller-declaration-ai/domain/declaration.types";
+import { evaluateSellerWorkflowPillarRules } from "@/src/modules/seller-declaration-ai/knowledge/sellerWorkflowPillarRules";
+import { evaluateDeclarationContentCompliance } from "@/src/modules/seller-declaration-ai/validation/declarationContentComplianceService";
 import { computeDeclarationCompleteness } from "@/src/modules/seller-declaration-ai/validation/declarationCompletenessService";
 import { detectDeclarationContradictions } from "@/src/modules/seller-declaration-ai/validation/declarationContradictionService";
 import { evaluateDeclarationKnowledgeRules } from "@/src/modules/knowledge/rules/knowledgeRuleEngine";
@@ -14,8 +16,10 @@ export function runDeclarationValidationDeterministic(payload: Record<string, un
   }
 
   const rules = evaluateDeclarationKnowledgeRules(payload);
+  const pillar = evaluateSellerWorkflowPillarRules(payload);
+  const contentIssues = evaluateDeclarationContentCompliance(payload);
 
-  const sectionStatuses = sellerDeclarationSections.map((section) => {
+  const sectionStatuses = getSellerDeclarationSections(payload).map((section) => {
     const sectionMissing = section.fields
       .filter((f) => !f.conditional || payload[f.conditional.fieldKey] === f.conditional.equals)
       .filter((f) => f.required)
@@ -28,7 +32,7 @@ export function runDeclarationValidationDeterministic(payload: Record<string, un
   });
 
   const ruleWarnings = Array.from(new Set([...warningFlags, ...rules.warnings]));
-  const blockedByRules = rules.blocks.length > 0;
+  const blockedByRules = rules.blocks.length > 0 || contentIssues.some((issue) => issue.severity === "block");
 
   return {
     isValid: missingFields.length === 0 && contradictionFlags.length === 0 && !blockedByRules,
@@ -36,9 +40,12 @@ export function runDeclarationValidationDeterministic(payload: Record<string, un
     missingFields,
     contradictionFlags,
     warningFlags: ruleWarnings,
+    declarationVariant: pillar.declarationVariant,
+    representationMode: pillar.representationMode,
     sectionStatuses,
-    knowledgeRuleBlocks: rules.blocks,
+    knowledgeRuleBlocks: [...rules.blocks, ...contentIssues.filter((issue) => issue.severity === "block").map((issue) => issue.message)],
     knowledgeRuleWarnings: rules.warnings,
     knowledgeRiskHints: [],
+    contentIssues,
   };
 }

@@ -62,6 +62,9 @@ function gatherDeclarationText(d: SellerDeclarationData): string {
   push(d.renovationsDetail);
   push(d.poolType);
   push(d.poolSafetyCompliance);
+  push(d.condoContingencyFundDetails);
+  push(d.condoSpecialAssessmentDetails);
+  push(d.condoCommonServicesNotes);
   push(d.gcrWarrantyDetails);
   push(d.builderNameContact);
   push(d.gstQstNotes);
@@ -118,6 +121,14 @@ function analyzeMissingAndInconsistencies(
 
   if (d.renovationInvoicesAvailable === true && d.renovationsDetail?.trim() && !hasSupportingCategory("RENOVATION_INVOICES")) {
     missing.push("Potential missing disclosure: renovations declared with invoices expected, but no renovation invoice uploaded in your document library.");
+  }
+
+  if (d.isCondo && !hasSupportingCategory("CONDO_DOCUMENTS")) {
+    missing.push("Potential missing disclosure: condo / co-ownership file has no condo document uploaded in the seller document library.");
+  }
+
+  if (d.isNewConstruction && !hasSupportingCategory("CERTIFICATES_WARRANTIES")) {
+    missing.push("Potential missing disclosure: new construction / warranty context is declared, but no warranty or builder document is uploaded.");
   }
 
   if (d.buyerInspectionAccepted && !hasSupportingCategory("INSPECTION_REPORT")) {
@@ -196,7 +207,7 @@ export async function persistSellerDeclarationAiReview(
     where: { id: listingId },
     include: {
       documents: true,
-      sellerSupportingDocuments: { select: { category: true } },
+      sellerSupportingDocuments: { select: { category: true, status: true } },
       verification: true,
     },
   });

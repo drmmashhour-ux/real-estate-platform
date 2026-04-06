@@ -21,6 +21,7 @@ export const PricingService = {
     checkIn: string;
     checkOut: string;
     guestCount?: number;
+    guestUserId?: string;
   }) {
     return computeBookingPricing(params);
   },

@@ -16,6 +16,7 @@ import { VerifiedBrokerBadge } from "@/components/ui/VerifiedBrokerBadge";
 import { getGuestId } from "@/lib/auth/session";
 import { getFeedbackRatingSummary } from "@/lib/feedback/rating-summary";
 import { prisma } from "@/lib/db";
+import { getPublicAppUrl } from "@/lib/config/public-app-url";
 import { getStaysRecommendedForYou, type SimilarListingCard } from "@/lib/recommendations";
 import { getFeaturedTestimonialsForHome } from "@/lib/marketing/trust-content";
 import {
@@ -127,7 +128,7 @@ const FEATURED_FETCH_MS = 8_000;
 
 async function getFeaturedProjects() {
   if (!process.env.DATABASE_URL) return [];
-  const base = process.env.NEXT_PUBLIC_APP_URL || "http://127.0.0.1:3000";
+  const base = process.env.NEXT_PUBLIC_APP_URL?.trim() || getPublicAppUrl();
   const ac = new AbortController();
   const t = setTimeout(() => ac.abort(), FEATURED_FETCH_MS);
   try {
@@ -146,7 +147,7 @@ async function getFeaturedProjects() {
 
 async function getFeaturedListings() {
   if (!process.env.DATABASE_URL) return [];
-  const base = process.env.NEXT_PUBLIC_APP_URL || "http://127.0.0.1:3000";
+  const base = process.env.NEXT_PUBLIC_APP_URL?.trim() || getPublicAppUrl();
   const ac = new AbortController();
   const t = setTimeout(() => ac.abort(), FEATURED_FETCH_MS);
   try {

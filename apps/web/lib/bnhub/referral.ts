@@ -45,6 +45,8 @@ export async function createReferral(
       code,
       rewardCreditsCents: credits,
       programId: program?.id ?? undefined,
+      status: "invited",
+      rewardGiven: false,
     },
   });
 }
@@ -58,7 +60,7 @@ export async function useReferralCode(code: string, usedByUserId: string) {
   if (ref.referrerId === usedByUserId) throw new Error("Cannot use your own code");
   return prisma.referral.update({
     where: { id: ref.id },
-    data: { usedByUserId, usedAt: new Date() },
+    data: { usedByUserId, usedAt: new Date(), status: "joined" },
   });
 }
 

@@ -3,6 +3,7 @@
  * Fire-and-forget from webhook; failures must not affect booking state.
  */
 
+import { getPublicAppUrl } from "@/lib/config/public-app-url";
 import { prisma } from "@/lib/db";
 import { logInfo, logError } from "@/lib/logger";
 import { recordPlatformEvent } from "@/lib/observability";
@@ -14,9 +15,7 @@ import {
 } from "@/lib/email/templates/bnhub-transactional-html";
 
 function appOrigin(): string {
-  const u = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, "");
-  if (u) return u;
-  return "http://localhost:3000";
+  return getPublicAppUrl();
 }
 
 function fmtMoney(cents: number, currency = "CAD"): string {

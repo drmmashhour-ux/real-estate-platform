@@ -1,58 +1,99 @@
-import { randomBytes } from "crypto";
 import { prisma } from "@/lib/db";
+import { generateViralReferralInstanceCode } from "@/lib/referrals/code";
+
+export { generateReferralCode, generateViralReferralInstanceCode, ensureReferralCode } from "@/lib/referrals/code";
+export type { ReferralAttribution } from "@/lib/referrals/viral";
+export {
+  VIRAL_REF_COOKIE,
+  VIRAL_REF_COOKIE_MAX_AGE,
+  normalizeSignupRefParam,
+  resolveReferralAttribution,
+  computeViralCoefficientForReferrer,
+} from "@/lib/referrals/viral";
 
 /**
  * Referral engine — user→user and host→host (`ref_kind=HOST` on signup).
  * 10K scale: pair credits with ops “visibility boost” (featured rotation, local newsletter) for top recruiters — see docs/10k-scaling-system.md.
  */
-export function generateReferralCode(prefix = "USER"): string {
-  return `${prefix}${randomBytes(4).toString("hex").toUpperCase()}`;
-}
-
-export async function ensureReferralCode(userId: string): Promise<string> {
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: { referralCode: true } });
-  if (user?.referralCode) return user.referralCode;
-  const code = generateReferralCode();
-  await prisma.user.update({ where: { id: userId }, data: { referralCode: code } });
-  return code;
-}
 
 export async function createReferralIfNeeded(
-  referrerCode: string | null | undefined,
+  referrerPublicCode: string | null | undefined,
   referredId: string,
   opts?: { inviteKind?: string | null }
 ) {
-  if (!referrerCode) return null;
-  const referrer = await prisma.user.findFirst({ where: { referralCode: referrerCode } });
+  if (!referrerPublicCode) return null;
+  const upper = referrerPublicCode.trim().toUpperCase();
+  const referrer = await prisma.user.findFirst({ where: { referralCode: upper } });
   if (!referrer) return null;
   if (referrer.id === referredId) return null;
   const existing = await prisma.referral.findFirst({ where: { referrerId: referrer.id, usedByUserId: referredId } });
   if (existing) return existing;
   const kind = opts?.inviteKind?.trim().toUpperCase().slice(0, 24) || null;
-  return prisma.referral.create({
-    data: {
-      referrerId: referrer.id,
-      code: referrerCode,
-      usedByUserId: referredId,
-      inviteKind: kind,
-      rewardCreditsCents: 500,
-      programId: null,
-      usedAt: null,
-    },
-  });
+
+  for (let i = 0; i < 8; i++) {
+    const instanceCode = generateViralReferralInstanceCode();
+    try {
+      return await prisma.referral.create({
+        data: {
+          referrerId: referrer.id,
+          code: instanceCode,
+          referralPublicCode: upper,
+          usedByUserId: referredId,
+          inviteKind: kind,
+          rewardCreditsCents: 500,
+          programId: null,
+          usedAt: null,
+          status: "joined",
+          rewardGiven: false,
+        },
+      });
+    } catch {
+      // collision on code — retry
+    }
+  }
+  return null;
 }
 
 export async function rewardReferralActivation(referredId: string) {
-  await prisma.referral.updateMany({
-    where: { usedByUserId: referredId },
-    data: { usedAt: new Date(), rewardCreditsCents: 500 },
+  const rows = await prisma.referral.findMany({
+    where: { usedByUserId: referredId, rewardGiven: false },
+    select: { id: true, referrerId: true, code: true, referralPublicCode: true },
   });
-  await prisma.referralEvent.createMany({
-    data: await (async () => {
-      const referral = await prisma.referral.findFirst({ where: { usedByUserId: referredId }, select: { code: true } }).catch(() => null);
-      return referral?.code ? [{ code: referral.code, eventType: "activated", userId: referredId }] : [];
-    })(),
-  }).catch(() => {});
+  if (rows.length === 0) return;
+
+  await prisma.referral.updateMany({
+    where: { usedByUserId: referredId, rewardGiven: false },
+    data: { usedAt: new Date(), rewardCreditsCents: 500, status: "converted", rewardGiven: true },
+  });
+
+  const program = await prisma.referralProgram.findFirst({ where: { active: true } }).catch(() => null);
+  const refCents = program?.rewardCreditsReferrer ?? 500;
+  const refeeCents = program?.rewardCreditsReferee ?? 500;
+
+  let refereeCredited = false;
+  for (const row of rows) {
+    await prisma.referralReward
+      .create({
+        data: {
+          userId: row.referrerId,
+          rewardType: "credits",
+          value: String(refCents),
+        },
+      })
+      .catch(() => {});
+    if (!refereeCredited) {
+      refereeCredited = true;
+      await prisma.referralReward
+        .create({
+          data: {
+            userId: referredId,
+            rewardType: "credits",
+            value: String(refeeCents),
+          },
+        })
+        .catch(() => {});
+    }
+  }
 }
 
 export async function addCommissionForUser(userId: string, sourceType: string, sourceId: string, amount: number) {

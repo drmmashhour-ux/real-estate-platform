@@ -24,7 +24,7 @@ export async function POST(_request: Request, context: { params: Promise<{ id: s
 
   const listing = await prisma.fsboListing.findUnique({
     where: { id },
-    include: { documents: true },
+    include: { documents: true, sellerSupportingDocuments: { select: { category: true, status: true, declarationSectionKey: true } } },
   });
   if (!listing || listing.ownerId !== userId) {
     return Response.json({ error: "Not found" }, { status: 404 });
@@ -39,7 +39,7 @@ export async function POST(_request: Request, context: { params: Promise<{ id: s
     return Response.json({ error: "Listing is already active" }, { status: 409 });
   }
 
-  const gate = await assertSellerHubSubmitReady(listing, listing.documents);
+  const gate = await assertSellerHubSubmitReady(listing, listing.documents, listing.sellerSupportingDocuments);
   if (!gate.ok) {
     return Response.json({ error: "Validation failed", details: gate.errors }, { status: 400 });
   }

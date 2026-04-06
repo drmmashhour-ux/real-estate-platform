@@ -1,3 +1,4 @@
+import { getPublicAppUrl } from "@/lib/config/public-app-url";
 import { sendEmail } from "@/lib/email/send";
 
 export async function sendContractSignRequestEmail(params: {
@@ -30,7 +31,7 @@ export async function sendContractCompletedEmail(params: {
   contractId: string;
   title: string;
 }): Promise<void> {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") || "http://localhost:3000";
+  const appUrl = getPublicAppUrl();
   const viewUrl = `${appUrl}/contracts/${params.contractId}`;
   const html = `
   <div style="font-family: system-ui, sans-serif; max-width: 560px;">

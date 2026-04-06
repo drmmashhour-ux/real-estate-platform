@@ -1,58 +1,104 @@
 import Link from "next/link";
-import { getPendingHosts, getAllHosts } from "@/lib/bnhub/host";
+import { LecipmControlShell } from "@/components/admin/LecipmControlShell";
 import { AdminHostsClient } from "./admin-hosts-client";
+import { getPendingHosts, getAllHosts } from "@/lib/bnhub/host";
+import { getAdminHosts } from "@/lib/admin/control-center";
+import { requireAdminControlUserId } from "@/lib/admin/guard";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminHostsPage() {
-  const [pendingHosts, allHosts] = await Promise.all([
+const GOLD = "#D4AF37";
+
+export default async function AdminHostsControlPage() {
+  await requireAdminControlUserId();
+  const [pendingHosts, allHosts, stats] = await Promise.all([
     getPendingHosts(),
     getAllHosts(),
+    getAdminHosts(80),
   ]);
 
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-50">
-      <div className="mx-auto max-w-6xl px-4 py-8">
-        <Link
-          href="/admin"
-          className="text-sm text-amber-400 hover:text-amber-300"
-        >
-          ← Admin
-        </Link>
-        <h1 className="mt-4 text-2xl font-semibold">BNHub host applications</h1>
-        <p className="mt-1 text-slate-400">
-          Review and approve or reject host applications. Only approved hosts
-          can access the host dashboard and create listings.
-        </p>
+    <LecipmControlShell>
+      <div className="space-y-10">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Hosts</h1>
+          <p className="mt-1 text-sm text-zinc-500">Applications, supply health, and payout posture.</p>
+        </div>
 
-        <section className="mt-8">
-          <h2 className="text-lg font-medium text-slate-200">
-            Pending ({pendingHosts.length})
-          </h2>
-          <AdminHostsClient
-            pendingHosts={pendingHosts.map((h) => ({
-              id: h.id,
-              userId: h.userId,
-              status: h.status,
-              name: h.name ?? h.user?.name ?? "—",
-              email: h.email ?? h.user?.email ?? "—",
-              phone: h.phone ?? "—",
-              propertyType: h.propertyType ?? "—",
-              location: h.location ?? "—",
-              description: h.description ?? "—",
-              createdAt: h.createdAt,
-            }))}
-            allHosts={allHosts.map((h) => ({
-              id: h.id,
-              userId: h.userId,
-              status: h.status,
-              name: h.name ?? h.user?.name ?? "—",
-              email: h.email ?? h.user?.email ?? "—",
-              createdAt: h.createdAt,
-            }))}
-          />
+        <section>
+          <h2 className="text-lg font-semibold text-white">Pending applications ({pendingHosts.length})</h2>
+          <div className="mt-4">
+            <AdminHostsClient
+              pendingHosts={pendingHosts.map((h) => ({
+                id: h.id,
+                userId: h.userId,
+                status: h.status,
+                name: h.name ?? h.user?.name ?? "—",
+                email: h.email ?? h.user?.email ?? "—",
+                phone: h.phone ?? "—",
+                propertyType: h.propertyType ?? "—",
+                location: h.location ?? "—",
+                description: h.description ?? "—",
+                createdAt: h.createdAt,
+              }))}
+              allHosts={allHosts.map((h) => ({
+                id: h.id,
+                userId: h.userId,
+                status: h.status,
+                name: h.name ?? h.user?.name ?? "—",
+                email: h.email ?? h.user?.email ?? "—",
+                createdAt: h.createdAt,
+              }))}
+            />
+          </div>
         </section>
+
+        <section>
+          <h2 className="text-lg font-semibold text-white">Host performance snapshot</h2>
+          <div className="mt-4 overflow-hidden rounded-2xl border border-zinc-800 bg-[#111]">
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-left text-sm">
+                <thead className="border-b border-zinc-800 bg-black/50 text-xs uppercase text-zinc-500">
+                  <tr>
+                    <th className="px-4 py-3">Host</th>
+                    <th className="px-4 py-3">BnHub status</th>
+                    <th className="px-4 py-3">Listings</th>
+                    <th className="px-4 py-3">Confirmed stays</th>
+                    <th className="px-4 py-3">Earnings (host payout)</th>
+                    <th className="px-4 py-3">Payout mix</th>
+                    <th className="px-4 py-3">Avg rating</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {stats.map((h) => (
+                    <tr key={h.userId} className="border-b border-zinc-800/80">
+                      <td className="px-4 py-3">
+                        <p className="font-medium text-white">{h.name}</p>
+                        <p className="text-xs text-zinc-500">{h.email}</p>
+                      </td>
+                      <td className="px-4 py-3 text-xs text-zinc-400">{h.hostStatus ?? "—"}</td>
+                      <td className="px-4 py-3">{h.listingsCount}</td>
+                      <td className="px-4 py-3">{h.confirmedBookings}</td>
+                      <td className="px-4 py-3" style={{ color: GOLD }}>
+                        {(h.totalEarningsCents / 100).toLocaleString("en-CA", { style: "currency", currency: "CAD" })}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-zinc-500">{h.payoutStatusLabel}</td>
+                      <td className="px-4 py-3 text-xs">{h.avgRating != null ? h.avgRating.toFixed(1) : "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <p className="text-xs text-zinc-600">
+          Stripe Connect:{" "}
+          <Link href="/admin/bnhub/payments/onboarding" className="text-zinc-400 underline">
+            onboarding & payouts
+          </Link>
+        </p>
       </div>
-    </main>
+    </LecipmControlShell>
   );
 }

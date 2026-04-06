@@ -46,10 +46,11 @@ export default async function BrokerHubPage() {
 
   let overviewStats = { activeClients: "—", activeListings: "—", newLeads: "—", closedDeals: "—" };
   let commissionStats = { estimatedOpen: "—", closedCommissions: "—", pendingDeals: "—" };
+  let contentReminderStats = { dueNow: "—", upcoming: "—", planned: "—" };
 
   if (userId && dbUser?.role === "BROKER") {
     const weekAgo = new Date(Date.now() - 7 * 86400000);
-    const [activeClients, activeListings, newLeads, closedDeals, pendingCents, paidCents, pendingOffers] =
+    const [activeClients, activeListings, newLeads, closedDeals, pendingCents, paidCents, pendingOffers, contentPacks] =
       await Promise.all([
         prisma.brokerClient.count({ where: { brokerId: userId, status: { not: "LOST" } } }),
         prisma.brokerListingAccess.count({ where: { brokerId: userId } }),
@@ -75,6 +76,16 @@ export default async function BrokerHubPage() {
             status: { in: ["SUBMITTED", "UNDER_REVIEW", "COUNTERED"] },
           },
         }),
+        prisma.formSubmission.findMany({
+          where: {
+            formType: "broker_content_pack",
+            assignedTo: userId,
+          },
+          select: {
+            payloadJson: true,
+          },
+          take: 100,
+        }),
       ]);
     overviewStats = {
       activeClients: String(activeClients),
@@ -86,6 +97,29 @@ export default async function BrokerHubPage() {
       estimatedOpen: fmtCommissionCents(pendingCents._sum.brokerAmountCents),
       closedCommissions: fmtCommissionCents(paidCents._sum.brokerAmountCents),
       pendingDeals: String(pendingOffers),
+    };
+    const now = new Date();
+    const reminderQueue = contentPacks
+      .map((row) => (row.payloadJson ?? {}) as Record<string, unknown>)
+      .filter(
+        (payload) =>
+          payload.campaignStatus === "planned" &&
+          typeof payload.plannedFor === "string" &&
+          typeof payload.reminderHoursBefore === "number" &&
+          !payload.reminderDismissedAt
+      )
+      .map((payload) => {
+        const plannedFor = new Date(String(payload.plannedFor));
+        const reminderAt = new Date(
+          plannedFor.getTime() - Number(payload.reminderHoursBefore) * 60 * 60 * 1000
+        );
+        return { plannedFor, reminderAt };
+      })
+      .filter((item) => !Number.isNaN(item.plannedFor.getTime()) && !Number.isNaN(item.reminderAt.getTime()));
+    contentReminderStats = {
+      dueNow: String(reminderQueue.filter((item) => item.reminderAt <= now).length),
+      upcoming: String(reminderQueue.filter((item) => item.reminderAt > now).length),
+      planned: String(reminderQueue.length),
     };
   }
 
@@ -159,6 +193,43 @@ export default async function BrokerHubPage() {
             secondaryHref="/dashboard/broker/crm"
             secondaryLabel="Open CRM"
           />
+        </section>
+        <section className="rounded-2xl border border-premium-gold/20 bg-[linear-gradient(135deg,rgba(212,175,55,0.12),rgba(11,11,11,0.95))] p-5">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-premium-gold">
+                Broker Content
+              </p>
+              <h2 className="mt-2 text-xl font-semibold text-white">Launch designs and social content faster</h2>
+              <p className="mt-2 max-w-2xl text-sm text-slate-300">
+                Open the broker content studio for Adobe Express launch links, listing post copy, seller attraction campaigns, and branded templates for your market.
+              </p>
+            </div>
+            <Link href="/dashboard/broker/content-studio" className="btn-primary min-h-0 px-4 py-2 text-sm">
+              Open content studio →
+            </Link>
+          </div>
+        </section>
+        <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-premium-gold">
+                Content Reminder Queue
+              </p>
+              <h2 className="mt-2 text-xl font-semibold text-white">Campaign reminders and scheduled follow-up</h2>
+              <p className="mt-2 max-w-2xl text-sm text-slate-300">
+                Review due-now reminder tasks, upcoming reminder windows, and planned campaign volume without opening the studio first.
+              </p>
+            </div>
+            <Link href="/dashboard/broker/content-studio" className="btn-secondary min-h-0 px-4 py-2 text-sm">
+              Open reminder inbox
+            </Link>
+          </div>
+          <div className="mt-5 grid gap-4 sm:grid-cols-3">
+            <HubStatCard theme={theme} label="Due now" value={contentReminderStats.dueNow} sub="Reminder actions" accent={theme.accent} />
+            <HubStatCard theme={theme} label="Upcoming reminders" value={contentReminderStats.upcoming} sub="Next reminder windows" accent={theme.accent} />
+            <HubStatCard theme={theme} label="Planned content" value={contentReminderStats.planned} sub="Queued campaign packs" accent={theme.accent} />
+          </div>
         </section>
         <AIInsightPanel
           title="Recommended actions"

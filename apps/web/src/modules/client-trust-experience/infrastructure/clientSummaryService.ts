@@ -1,4 +1,4 @@
-import { sellerDeclarationSections } from "@/src/modules/seller-declaration-ai/domain/declaration.schema";
+import { getSellerDeclarationSections } from "@/src/modules/seller-declaration-ai/domain/declaration.schema";
 
 const PRICE_KEYS = ["list_price", "sale_price", "purchase_price", "asking_price", "price_cad"];
 
@@ -54,7 +54,7 @@ export function buildClientSummaryFromPayload(payload: Record<string, unknown>):
 }
 
 export function buildSectionValuePreview(sectionKey: string, payload: Record<string, unknown>): string {
-  const section = sellerDeclarationSections.find((s) => s.key === sectionKey);
+  const section = getSellerDeclarationSections(payload).find((s) => s.key === sectionKey);
   if (!section) return "";
   const parts: string[] = [];
   for (const f of section.fields) {

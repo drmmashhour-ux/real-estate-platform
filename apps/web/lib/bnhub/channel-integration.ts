@@ -12,7 +12,15 @@ import {
 import { prisma } from "@/lib/db";
 import { eachNightBetween, utcDayStart } from "./availability-day-helpers";
 
-export type ChannelPlatformKey = "booking" | "airbnb" | "expedia";
+export type ChannelPlatformKey =
+  | "booking"
+  | "airbnb"
+  | "expedia"
+  | "vrbo"
+  | "trivago"
+  | "hotels_com"
+  | "google_hotel"
+  | "other";
 
 export function toPrismaPlatform(key: ChannelPlatformKey): BnhubChannelPlatform {
   switch (key) {
@@ -22,8 +30,16 @@ export function toPrismaPlatform(key: ChannelPlatformKey): BnhubChannelPlatform 
       return BnhubChannelPlatform.AIRBNB;
     case "expedia":
       return BnhubChannelPlatform.EXPEDIA;
+    case "vrbo":
+      return BnhubChannelPlatform.VRBO;
+    case "trivago":
+      return BnhubChannelPlatform.TRIVAGO;
+    case "hotels_com":
+      return BnhubChannelPlatform.HOTELS_COM;
+    case "google_hotel":
+      return BnhubChannelPlatform.GOOGLE_HOTEL;
     default:
-      return BnhubChannelPlatform.BOOKING_COM;
+      return BnhubChannelPlatform.OTHER;
   }
 }
 
@@ -126,8 +142,21 @@ export async function ingestExternalReservationWebhook(
     return { ok: false, reason: "invalid_payload", status: 400 };
   }
 
-  const platformKey: ChannelPlatformKey =
-    platformRaw.includes("airbnb") ? "airbnb" : platformRaw.includes("expedia") ? "expedia" : "booking";
+  const platformKey: ChannelPlatformKey = platformRaw.includes("airbnb")
+    ? "airbnb"
+    : platformRaw.includes("expedia")
+      ? "expedia"
+      : platformRaw.includes("vrbo") || platformRaw.includes("homeaway")
+        ? "vrbo"
+        : platformRaw.includes("trivago")
+          ? "trivago"
+          : platformRaw.includes("hotels.com") || platformRaw.includes("hotels_com")
+            ? "hotels_com"
+            : platformRaw.includes("google")
+              ? "google_hotel"
+              : platformRaw.includes("booking")
+                ? "booking"
+                : "other";
   const prismaPlatform = toPrismaPlatform(platformKey);
 
   const mapping = await prisma.bnhubExternalListingMapping.findFirst({

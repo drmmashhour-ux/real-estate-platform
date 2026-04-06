@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 
 export { FilterCategory, FilterCategory as FilterAccordionSection } from "./FilterCategory";
 
@@ -23,6 +23,8 @@ type FilterPanelProps = {
   className?: string;
   /** Light surface (MLS-style white panel) vs dark premium panel. */
   tone?: "dark" | "light";
+  /** For `aria-controls` on the open trigger. */
+  id?: string;
 };
 
 /**
@@ -37,7 +39,10 @@ export function FilterPanel({
   size = "lg",
   className = "",
   tone = "dark",
+  id = "search-filters-panel",
 }: FilterPanelProps) {
+  const panelRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -46,6 +51,16 @@ export function FilterPanel({
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [open, onClose]);
+
+  useEffect(() => {
+    if (!open) return;
+    const el = panelRef.current;
+    if (!el) return;
+    const t = window.setTimeout(() => {
+      el.focus();
+    }, 0);
+    return () => window.clearTimeout(t);
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -72,6 +87,9 @@ export function FilterPanel({
         onClick={onClose}
       />
       <div
+        ref={panelRef}
+        id={id}
+        tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-label="Filters"

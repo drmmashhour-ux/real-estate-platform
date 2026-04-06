@@ -1,3 +1,4 @@
+import type { GuestStayChecklist } from "@/lib/bnhub/stay-evaluation-ai";
 import {
   createReview as createReviewCore,
   getPublicListingReviews,
@@ -17,6 +18,8 @@ export type CreateReviewPayload = {
   valueRating?: number;
   checkinRating?: number;
   comment?: string;
+  stayChecklist?: GuestStayChecklist;
+  amenitiesAsAdvertised?: boolean;
 };
 
 export async function createReview(data: CreateReviewPayload) {
@@ -30,6 +33,8 @@ export async function createReview(data: CreateReviewPayload) {
     valueRating: data.valueRating,
     checkinRating: data.checkinRating,
     comment: data.comment,
+    stayChecklist: data.stayChecklist,
+    amenitiesAsAdvertised: data.amenitiesAsAdvertised,
   });
 }
 

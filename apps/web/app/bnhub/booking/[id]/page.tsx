@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { cookies } from "next/headers";
+import { notFound, redirect } from "next/navigation";
 import { getBookingById } from "@/lib/bnhub/booking";
 import { getGuestId } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
@@ -11,6 +12,7 @@ import { getBrokerPhoneDisplay, getBrokerTelHref } from "@/lib/config/contact";
 import { getPhoneNumber, getPhoneTelLink } from "@/lib/phone";
 import { BookingPayButton } from "./booking-pay-button";
 import { HostBookingActions } from "./host-booking-actions";
+import { HostManualPaymentActions } from "./host-manual-payment-actions";
 import { GuestBookingActions } from "./guest-booking-actions";
 import { CopyCodeButton, PostPaymentPoll } from "./booking-confirmation-ux";
 import { DecisionCard } from "@/components/ai/DecisionCard";
@@ -18,22 +20,146 @@ import { safeEvaluateDecision } from "@/modules/ai/decision-engine";
 import { getGuaranteesForBooking } from "@/lib/bnhub/bnhub-guarantee";
 import { GuaranteeClaimButton } from "@/components/bnhub/GuaranteeClaimButton";
 import { ServiceRequestPanel } from "@/components/bnhub/services/ServiceRequestPanel";
+import { ViralMomentPrompt } from "@/components/referral/ViralMomentPrompt";
+import { BnhubBookingInsuranceSection } from "@/components/insurance/BnhubBookingInsuranceSection";
+import { AIAssistantPanel } from "@/components/ai/AIAssistantPanel";
+import { getResolvedMarket } from "@/lib/markets";
+import { resolveInitialLocale } from "@/lib/i18n/resolve-initial-locale";
+import { translateServer } from "@/lib/i18n/server-translate";
+
+function formatEventLabel(eventType: string) {
+  switch (eventType) {
+    case "created":
+      return "Booking created";
+    case "awaiting_host_approval":
+      return "Waiting for host approval";
+    case "approved":
+      return "Approved by host";
+    case "confirmed":
+      return "Payment confirmed";
+    case "completed":
+      return "Stay completed";
+    case "cancelled":
+      return "Booking cancelled";
+    case "declined":
+      return "Declined by host";
+    default:
+      return eventType.replace(/_/g, " ");
+  }
+}
+
+function buildTimelineSteps(params: {
+  bookingStatus: string;
+  paymentStatus: string | null;
+  paymentLegacyStatus: string | null;
+  eventTypes: string[];
+}) {
+  const { bookingStatus, paymentStatus, paymentLegacyStatus, eventTypes } = params;
+  const createdDone = eventTypes.includes("created") || eventTypes.includes("awaiting_host_approval");
+  const hostApprovedDone =
+    bookingStatus !== "AWAITING_HOST_APPROVAL" &&
+    bookingStatus !== "DECLINED" &&
+    (eventTypes.includes("approved") || bookingStatus !== "PENDING");
+  const paymentDone = paymentStatus === "PAID" || paymentLegacyStatus === "COMPLETED";
+  const stayDone = bookingStatus === "COMPLETED" || eventTypes.includes("completed");
+
+  const hostApprovalState =
+    bookingStatus === "DECLINED"
+      ? "failed"
+      : bookingStatus === "AWAITING_HOST_APPROVAL"
+        ? "current"
+        : hostApprovedDone
+          ? "done"
+          : "upcoming";
+  const paymentState =
+    paymentStatus === "FAILED"
+      ? "failed"
+      : paymentDone
+        ? "done"
+        : paymentStatus === "PROCESSING" || paymentStatus === "REQUIRES_ACTION" || bookingStatus === "PENDING"
+          ? "current"
+          : bookingStatus === "CONFIRMED" || bookingStatus === "COMPLETED"
+            ? "done"
+            : "upcoming";
+  const stayState =
+    bookingStatus === "CANCELLED" || bookingStatus === "DECLINED"
+      ? "upcoming"
+      : stayDone
+        ? "done"
+        : bookingStatus === "CONFIRMED"
+          ? "current"
+          : "upcoming";
+
+  return [
+    {
+      key: "request",
+      label: "Request sent",
+      state: createdDone ? "done" : "current",
+      description: "The reservation was created and is now tracked on BNHub.",
+    },
+    {
+      key: "approval",
+      label: "Host approval",
+      state: hostApprovalState,
+      description:
+        bookingStatus === "AWAITING_HOST_APPROVAL"
+          ? "The host still needs to approve this stay."
+          : bookingStatus === "DECLINED"
+            ? "The host declined this booking."
+            : "Approval requirements are complete.",
+    },
+    {
+      key: "payment",
+      label: "Payment",
+      state: paymentState,
+      description:
+        paymentStatus === "PROCESSING"
+          ? "Checkout finished and payment confirmation is still processing."
+          : paymentStatus === "REQUIRES_ACTION"
+            ? "The guest still needs to finish checkout."
+            : paymentStatus === "FAILED"
+              ? "Payment failed and needs attention."
+              : paymentDone
+                ? "Payment was captured successfully."
+                : "Payment details will appear here.",
+    },
+    {
+      key: "stay",
+      label: "Stay complete",
+      state: stayState,
+      description:
+        bookingStatus === "COMPLETED"
+          ? "The reservation has been completed."
+          : bookingStatus === "CONFIRMED"
+            ? "The booking is confirmed and ready for the stay."
+            : "This step completes after checkout and the stay itself.",
+    },
+  ];
+}
 
 export default async function BookingConfirmationPage({
   params,
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ paid?: string }>;
+  searchParams?: Promise<{ paid?: string }>;
 }) {
   const { id } = await params;
-  const { paid: paidParam } = await searchParams;
-  const [booking, guestId, guarantees] = await Promise.all([
-    getBookingById(id),
-    getGuestId(),
-    getGuaranteesForBooking(id),
-  ]);
+  const { paid: paidParam } = (await searchParams) ?? {};
+  const booking = await getBookingById(id);
+  const market = await getResolvedMarket();
+  const pageLocale = await resolveInitialLocale(await cookies());
+  const guestId = await getGuestId();
+  const guarantees = await getGuaranteesForBooking(id);
+  const bookingEvents = await prisma.bnhubBookingEvent.findMany({
+    where: { bookingId: id },
+    select: { id: true, eventType: true, createdAt: true },
+    orderBy: { createdAt: "asc" },
+  });
   if (!booking) notFound();
+  if (!guestId) {
+    redirect(`/bnhub/login?next=${encodeURIComponent(`/bnhub/booking/${id}`)}`);
+  }
 
   const activeBnGuarantee = guarantees.find((g) => g.status === "ACTIVE");
 
@@ -51,11 +177,16 @@ export default async function BookingConfirmationPage({
   const awaitingApproval = booking.status === "AWAITING_HOST_APPROVAL";
   const isHost = guestId === booking.listing.ownerId;
   const isGuest = guestId === booking.guestId;
+  if (!isHost && !isGuest) {
+    notFound();
+  }
   const showGuestGuaranteeClaim =
     isGuest &&
     Boolean(activeBnGuarantee) &&
     (booking.status === "CONFIRMED" || booking.status === "COMPLETED");
   const canPay = isPending && isGuest;
+  const showManualGuestSettlement =
+    isGuest && isPending && booking.manualPaymentSettlement === "PENDING";
   const canApproveOrDecline = awaitingApproval && isHost;
   const receiptUrl = booking.payment?.stripeReceiptUrl;
   const canDownloadBnhubInvoice = Boolean(
@@ -64,6 +195,30 @@ export default async function BookingConfirmationPage({
   );
   const showStripeReceipt = Boolean(receiptUrl && canDownloadBnhubInvoice);
   const showPaidConfirmation = Boolean(canDownloadBnhubInvoice && booking.confirmationCode);
+  const showOnlineCheckoutBlock =
+    canPay && !showPaidConfirmation && !showManualGuestSettlement && market.onlinePaymentsEnabled;
+  const marketplacePaymentStatus = booking.bnhubReservationPayment?.paymentStatus ?? null;
+  const eventTypes = bookingEvents.map((event) => event.eventType);
+  const paymentProgressMessage =
+    marketplacePaymentStatus === "PAID"
+      ? "Payment captured and booking confirmed"
+      : marketplacePaymentStatus === "PROCESSING"
+        ? "Checkout received. We are finalizing payment confirmation."
+        : marketplacePaymentStatus === "REQUIRES_ACTION"
+          ? "Payment action required to confirm this booking"
+          : marketplacePaymentStatus === "FAILED"
+            ? "Payment failed. Try checkout again or contact support."
+            : booking.payment?.status === "COMPLETED"
+              ? "Payment captured"
+              : booking.payment?.status === "PENDING"
+                ? "Payment not completed yet"
+                : "Payment details will appear here";
+  const timelineSteps = buildTimelineSteps({
+    bookingStatus: booking.status,
+    paymentStatus: marketplacePaymentStatus,
+    paymentLegacyStatus: booking.payment?.status ?? null,
+    eventTypes,
+  });
 
   const statusMessage =
     awaitingApproval
@@ -88,6 +243,8 @@ export default async function BookingConfirmationPage({
 
   const messagesLink = `/messages?host=${booking.listing.ownerId}&listing=${booking.listingId}`;
 
+  const appBase = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? "";
+
   const bookingDecision = await safeEvaluateDecision({
     hub: "bnhub",
     userId: guestId ?? "anonymous",
@@ -109,17 +266,105 @@ export default async function BookingConfirmationPage({
             actionHref={`/bnhub/${booking.listingId}`}
             actionLabel="View listing"
           />
+          <div className="mt-6">
+            <AIAssistantPanel
+              context={{
+                bookingId: id,
+                listingId: booking.listingId,
+                role: isHost ? "HOST" : isGuest ? "USER" : undefined,
+              }}
+            />
+          </div>
         </div>
       </div>
 
       <section className="border-b border-slate-800 bg-slate-950/80">
         <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
+          {market.code === "syria" ? (
+            <p className="mb-4 rounded-lg border border-amber-500/35 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+              {translateServer(pageLocale, "market.syriaRibbon")}
+            </p>
+          ) : null}
+          {market.contactFirstEmphasis && market.code !== "syria" ? (
+            <p className="mb-4 rounded-lg border border-sky-500/30 bg-sky-500/10 px-4 py-3 text-sm text-sky-100">
+              {translateServer(pageLocale, "market.contactFirstBanner")}
+            </p>
+          ) : null}
           <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-amber-400/90">
             {isHost ? "Reservation" : "Booking"}
           </p>
           <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
             {showPaidConfirmation ? "Booking confirmed" : statusMessage}
           </h1>
+          <div className="mt-6 rounded-2xl border border-slate-800 bg-slate-900/50 p-5">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-slate-100">Booking progress</p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Shared guest and host timeline for request, payment, confirmation, and completion.
+                </p>
+              </div>
+              <p className="text-xs font-medium text-emerald-300">{paymentProgressMessage}</p>
+            </div>
+            <div className="mt-5 grid gap-3 md:grid-cols-4">
+              {timelineSteps.map((step, index) => (
+                <div
+                  key={step.key}
+                  className={`rounded-xl border p-4 ${
+                    step.state === "done"
+                      ? "border-emerald-500/30 bg-emerald-500/10"
+                      : step.state === "current"
+                        ? "border-sky-500/30 bg-sky-500/10"
+                        : step.state === "failed"
+                          ? "border-rose-500/30 bg-rose-500/10"
+                          : "border-slate-800 bg-slate-950/40"
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${
+                        step.state === "done"
+                          ? "bg-emerald-500 text-slate-950"
+                          : step.state === "current"
+                            ? "bg-sky-500 text-slate-950"
+                            : step.state === "failed"
+                              ? "bg-rose-500 text-white"
+                              : "bg-slate-800 text-slate-300"
+                      }`}
+                    >
+                      {index + 1}
+                    </span>
+                    <p className="text-sm font-semibold text-slate-100">{step.label}</p>
+                  </div>
+                  <p className="mt-3 text-xs text-slate-400">{step.description}</p>
+                </div>
+              ))}
+            </div>
+            {bookingEvents.length > 0 ? (
+              <div className="mt-5 border-t border-slate-800 pt-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Activity log</p>
+                <div className="mt-3 grid gap-2">
+                  {bookingEvents.slice(-6).map((event) => (
+                    <div
+                      key={event.id}
+                      className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-800 bg-slate-950/40 px-3 py-2 text-xs"
+                    >
+                      <span className="text-slate-300">{formatEventLabel(event.eventType)}</span>
+                      <span className="text-slate-500">
+                        {event.createdAt.toLocaleString(undefined, {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                          hour: "numeric",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </div>
 
           {showPaidConfirmation ? (
             <div className="mt-6 rounded-2xl border-2 border-amber-500/50 bg-gradient-to-b from-amber-950/40 to-slate-900/60 p-6 shadow-lg shadow-amber-900/20">
@@ -199,6 +444,25 @@ export default async function BookingConfirmationPage({
                   </a>
                 </p>
               </div>
+              {isGuest && guestId ? (
+                <div className="mt-8">
+                  <ViralMomentPrompt
+                    compact
+                    headline="Grow LECIPM with us — invite a friend."
+                    sub="First 1000 guests: share your link. When friends sign up and book, you both earn referral rewards plus visibility boosts for active sharers."
+                    inviteUrl={`${appBase}/invite?ref=${encodeURIComponent(guestId)}`}
+                  />
+                </div>
+              ) : null}
+              {showPaidConfirmation && isGuest ? (
+                <div className="mt-8">
+                  <BnhubBookingInsuranceSection
+                    bookingId={id}
+                    listingId={booking.listing.id}
+                    isGuest={isGuest}
+                  />
+                </div>
+              ) : null}
             </div>
           ) : booking.confirmationCode ? (
             <div className="mt-4 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3">
@@ -212,6 +476,46 @@ export default async function BookingConfirmationPage({
             </div>
           ) : null}
 
+          {showManualGuestSettlement ? (
+            <div className="mt-6 rounded-2xl border border-sky-500/35 bg-slate-900/70 p-5 shadow-inner shadow-black/20">
+              <p className="text-xs font-semibold uppercase tracking-wider text-sky-300/90">
+                {translateServer(pageLocale, "bookings.manualPaymentTitle")}
+              </p>
+              <p className="mt-2 text-sm text-slate-300">
+                {translateServer(pageLocale, "bookings.manualPaymentBody")}
+              </p>
+              <p className="mt-3 text-lg font-semibold text-white">
+                ${(totalCharged / 100).toFixed(2)}
+              </p>
+              <div className="mt-4 flex flex-wrap gap-3">
+                <Link
+                  href={messagesLink}
+                  className="inline-flex rounded-xl bg-sky-500 px-4 py-2.5 text-sm font-bold text-slate-950 hover:bg-sky-400"
+                >
+                  {translateServer(pageLocale, "bookings.contactHost")}
+                </Link>
+              </div>
+            </div>
+          ) : null}
+          {showOnlineCheckoutBlock ? (
+            <div className="mt-6 rounded-2xl border border-amber-500/35 bg-slate-900/70 p-5 shadow-inner shadow-black/20">
+              <p className="text-xs font-semibold uppercase tracking-wider text-amber-300/90">
+                {translateServer(pageLocale, "bookings.oneStepToConfirm")}
+              </p>
+              <p className="mt-2 text-3xl font-bold text-white">${(totalCharged / 100).toFixed(2)}</p>
+              <p className="text-sm text-slate-400">
+                {translateServer(pageLocale, "bookings.totalDue")}
+              </p>
+              <div className="mt-5">
+                <BookingPayButton
+                  bookingId={id}
+                  amountCents={booking.payment?.amountCents ?? booking.totalCents + booking.guestFeeCents}
+                  stripeConfigured={isStripeConfigured()}
+                />
+              </div>
+            </div>
+          ) : null}
+
           {!showPaidConfirmation ? (
             <>
               <p className="mt-4 text-sm text-slate-400">
@@ -219,6 +523,10 @@ export default async function BookingConfirmationPage({
                 {new Date(booking.checkOut).toLocaleDateString()}
               </p>
               <p className="mt-1 font-mono text-xs text-slate-500">Listing ID {booking.listing.listingCode}</p>
+            <p className="mt-2 text-sm text-slate-300">
+              Payment progress:{" "}
+              <span className="font-medium text-emerald-300">{paymentProgressMessage}</span>
+            </p>
             </>
           ) : null}
         </div>
@@ -259,21 +567,29 @@ export default async function BookingConfirmationPage({
             <p className="mt-1 text-lg font-semibold text-emerald-300">
               ${(totalCharged / 100).toFixed(2)}
             </p>
+            <div className="mt-4 rounded-xl border border-slate-800 bg-slate-900/40 px-4 py-3 text-sm text-slate-300">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Payment progress</p>
+              <p className="mt-1">{paymentProgressMessage}</p>
+              <p className="mt-1 text-xs text-slate-500">
+                Marketplace: {marketplacePaymentStatus ?? "—"} · Legacy: {booking.payment?.status ?? "—"}
+              </p>
+            </div>
             {canApproveOrDecline && (
               <HostBookingActions bookingId={id} className="mt-6 flex flex-wrap gap-3" />
             )}
+            {isHost &&
+            isPending &&
+            (booking.manualPaymentSettlement === "PENDING" ||
+              booking.manualPaymentSettlement === "FAILED") ? (
+              <HostManualPaymentActions
+                bookingId={id}
+                manualSettlement={booking.manualPaymentSettlement}
+              />
+            ) : null}
             {showGuestGuaranteeClaim ? <GuaranteeClaimButton bookingId={id} /> : null}
-            {canPay && (
-              <div className="mt-6 flex flex-wrap gap-3">
-                <BookingPayButton
-                  bookingId={id}
-                  amountCents={
-                    booking.payment?.amountCents ?? booking.totalCents + booking.guestFeeCents
-                  }
-                  stripeConfigured={isStripeConfigured()}
-                />
-              </div>
-            )}
+            {showOnlineCheckoutBlock ? (
+              <p className="mt-6 text-xs text-slate-500">Payment: use the card at the top of this page.</p>
+            ) : null}
             {canDownloadBnhubInvoice && !showPaidConfirmation ? (
               <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                 <a
@@ -384,6 +700,14 @@ export default async function BookingConfirmationPage({
               >
                 My trips
               </Link>
+              {isGuest && (
+                <Link
+                  href={`/guest/payments/${id}`}
+                  className="rounded-xl border border-slate-700 px-4 py-2.5 text-sm font-semibold text-slate-200 hover:border-slate-500"
+                >
+                  Payment details
+                </Link>
+              )}
               <Link
                 href="/bnhub/stays"
                 className="rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-slate-950 hover:bg-emerald-400"

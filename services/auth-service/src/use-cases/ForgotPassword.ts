@@ -1,7 +1,7 @@
 import type { IUserRepository } from "../domain/ports/UserRepository.js";
 import { randomBytes } from "crypto";
 import { createHash } from "crypto";
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "../generated/prisma/index.js";
 
 const TOKEN_EXPIRY_MS = 60 * 60 * 1000; // 1 hour
 

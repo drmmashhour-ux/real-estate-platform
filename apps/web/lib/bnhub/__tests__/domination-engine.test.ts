@@ -20,6 +20,7 @@ describe("computeSmartPrice", () => {
     expect(r.recommendedPriceCents).toBeGreaterThan(10_000);
     expect(r.confidence).toBe("high");
     expect(r.demandLevel).toBe("high");
+    expect(r.peerListingCount).toBe(20);
   });
 
   it("falls back when no market average", () => {
@@ -32,6 +33,7 @@ describe("computeSmartPrice", () => {
     });
     expect(r.recommendedPriceCents).toBeGreaterThanOrEqual(100);
     expect(r.confidence).toBe("low");
+    expect(r.peerListingCount).toBe(2);
   });
 });
 

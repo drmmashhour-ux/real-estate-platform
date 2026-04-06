@@ -44,12 +44,12 @@ export async function ReviewSection({ listingId }: { listingId: string }) {
       : [];
 
   return (
-    <section className="rounded-xl border border-white/10 bg-black/20 p-4">
-      <h3 className="text-sm font-semibold text-white">Guest reviews</h3>
+    <section className="rounded-2xl border border-slate-200 bg-white p-5">
+      <h3 className="text-lg font-semibold text-slate-900">Guest reviews</h3>
 
       {aggregate && aggregate.totalReviews > 0 ? (
-        <div className="mt-3 rounded-lg border border-white/10 bg-white/[0.03] p-3">
-          <p className="text-lg font-semibold text-white">
+        <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
+          <p className="text-lg font-semibold text-slate-900">
             <span className="text-amber-400">★</span> {aggregate.avgRating.toFixed(1)}
             <span className="text-xs font-normal text-slate-500">
               {" "}
@@ -57,18 +57,18 @@ export async function ReviewSection({ listingId }: { listingId: string }) {
             </span>
           </p>
           {subRows.length > 0 ? (
-            <ul className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-400 sm:grid-cols-3">
+            <ul className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-600 sm:grid-cols-3">
               {subRows.map((row) => (
-                <li key={row.label} className="flex justify-between gap-2 border-b border-white/5 pb-1">
+                <li key={row.label} className="flex justify-between gap-2 border-b border-slate-200 pb-1">
                   <span>{row.label}</span>
-                  <span className="text-slate-200">{row.v.toFixed(1)}</span>
+                  <span className="text-slate-800">{row.v.toFixed(1)}</span>
                 </li>
               ))}
             </ul>
           ) : null}
         </div>
       ) : (
-        <p className="mt-2 text-xs text-slate-500">No reviews yet — be the first guest to stay.</p>
+        <p className="mt-2 text-sm text-slate-500">No reviews yet — be the first guest to stay.</p>
       )}
 
       {badges.length > 0 ? (
@@ -76,7 +76,7 @@ export async function ReviewSection({ listingId }: { listingId: string }) {
           {badges.map((b) => (
             <span
               key={b.id}
-              className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-emerald-200"
+              className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-emerald-700"
             >
               {badgeLabel[b.badgeType] ?? b.badgeType.replace(/_/g, " ")}
             </span>
@@ -86,14 +86,14 @@ export async function ReviewSection({ listingId }: { listingId: string }) {
 
       <div className="mt-4 space-y-2">
         {reviews.length === 0 ? (
-          <p className="text-xs text-slate-500">No written reviews to show yet.</p>
+          <p className="text-sm text-slate-500">No written reviews to show yet.</p>
         ) : null}
         {reviews.map((r) => (
           <article
             key={r.id}
-            className="rounded border border-white/10 bg-white/[0.02] p-2 text-xs text-slate-300"
+            className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-700"
           >
-            <div className="flex flex-wrap items-center gap-2 text-slate-200">
+            <div className="flex flex-wrap items-center gap-2 text-slate-800">
               <Stars value={r.propertyRating} />
               <span className="text-slate-500">
                 {r.guest?.name ? r.guest.name.split(/\s+/)[0] : "Guest"} ·{" "}

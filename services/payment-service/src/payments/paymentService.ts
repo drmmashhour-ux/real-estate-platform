@@ -1,7 +1,6 @@
-import type { Prisma } from "@prisma/client";
+import type { Prisma, TransactionType } from "../generated/prisma/index.js";
 import { prisma } from "../db.js";
 import { getPaymentProvider } from "../provider/index.js";
-import type { TransactionType } from "@prisma/client";
 
 const provider = getPaymentProvider();
 

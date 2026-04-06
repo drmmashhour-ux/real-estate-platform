@@ -9,7 +9,8 @@ import { prisma } from "@/lib/db";
 
 const ADMIN_SURFACE_ROLES = new Set<PlatformRole>(["ADMIN", "ACCOUNTANT"]);
 
-export { dynamic, revalidate } from "@/lib/auth/protected-route-segment";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },

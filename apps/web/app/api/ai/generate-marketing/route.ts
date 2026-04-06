@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { openai, isOpenAiConfigured } from "@/lib/ai/openai";
 import { analyzeListing } from "@/lib/ai/brain";
 import { logAiEvent } from "@/lib/ai/log";
+import { getPublicAppUrl } from "@/lib/config/public-app-url";
 import { logError } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
@@ -32,7 +33,7 @@ export async function POST(req: Request) {
     if (listingId) {
       try {
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/design-studio/payload?id=${encodeURIComponent(listingId)}`,
+          `${getPublicAppUrl()}/api/design-studio/payload?id=${encodeURIComponent(listingId)}`,
           { cache: "no-store" }
         );
         const data = await res.json().catch(() => ({}));

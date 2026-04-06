@@ -1,6 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 import type Stripe from "stripe";
 import { logError, logInfo } from "@/lib/logger";
+import { recordPremiumUpgradeRevenue } from "@/src/modules/revenue/revenueEngine";
 import type { BrokerPlanSlug } from "@/modules/subscription/domain/brokerPlans";
 import { LECIPM_BROKER_SUBSCRIPTION_CHECKOUT } from "./constants";
 
@@ -80,6 +81,16 @@ export async function handleBrokerLecipmSubscriptionCheckoutCompleted(args: {
   try {
     const sub = await args.stripe.subscriptions.retrieve(subId);
     await upsertBrokerLecipmFromStripeSubscription(args.prisma, sub, userId);
+    const amount = (args.session.amount_total ?? 0) / 100;
+    void recordPremiumUpgradeRevenue({
+      userId,
+      amount,
+      metadata: {
+        stripeSessionId: args.session.id,
+        subscriptionId: subId,
+        flow: "broker_lecipm_subscription",
+      },
+    }).catch(() => {});
   } catch (e) {
     logError("Broker LECIPM checkout sync failed", e);
     return false;

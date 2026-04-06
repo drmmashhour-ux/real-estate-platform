@@ -1,5 +1,4 @@
-import { PrismaClient } from "@prisma/client";
-import type { Prisma } from "@prisma/client";
+import { PrismaClient, type Prisma } from "../generated/prisma/index.js";
 import type { SearchPropertiesQuery, MapSearchQuery } from "../validation/schemas.js";
 import { buildSearchDocument, parseSort, type SortOption } from "./indexer.js";
 

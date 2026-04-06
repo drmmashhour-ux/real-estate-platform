@@ -5,12 +5,15 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 const STEPS = ["Basic info", "Property address", "Ownership", "ID check", "Selling mode"] as const;
+type SellHubMode = "FREE_HUB" | "PLATFORM_BROKER" | "PREFERRED_BROKER";
 
 export function SellerOnboardingWizard() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
+  const [brokerVerified, setBrokerVerified] = useState(false);
   const [basicInfo, setBasicInfo] = useState({ fullName: "", phone: "" });
   const [propertyAddress, setPropertyAddress] = useState({
     line1: "",
@@ -21,7 +24,7 @@ export function SellerOnboardingWizard() {
   });
   const [ownershipConfirmed, setOwnershipConfirmed] = useState(false);
   const [idPlaceholderDone, setIdPlaceholderDone] = useState(false);
-  const [sellingMode, setSellingMode] = useState<"FSBO" | "PLATFORM_BROKER">("FSBO");
+  const [sellingMode, setSellingMode] = useState<SellHubMode>("FREE_HUB");
 
   const load = useCallback(async () => {
     const res = await fetch("/api/seller/onboarding", { credentials: "same-origin" });
@@ -40,7 +43,12 @@ export function SellerOnboardingWizard() {
     });
     setOwnershipConfirmed(o.ownershipConfirmed === true);
     setIdPlaceholderDone(typeof o.idVerifiedAt === "string");
-    if (data.sellingMode === "PLATFORM_BROKER" || data.sellingMode === "FSBO") {
+    setBrokerVerified(data.brokerVerified === true);
+    if (
+      data.sellingMode === "FREE_HUB" ||
+      data.sellingMode === "PLATFORM_BROKER" ||
+      data.sellingMode === "PREFERRED_BROKER"
+    ) {
       setSellingMode(data.sellingMode);
     }
     if (typeof o.lastStep === "number" && o.lastStep >= 1 && o.lastStep <= STEPS.length) {
@@ -55,6 +63,7 @@ export function SellerOnboardingWizard() {
   async function save(partial: Record<string, unknown>, nextStep?: number) {
     setLoading(true);
     setErr(null);
+    setInfo(null);
     try {
       const res = await fetch("/api/seller/onboarding", {
         method: "POST",
@@ -66,6 +75,19 @@ export function SellerOnboardingWizard() {
       if (!res.ok) {
         setErr(typeof data.error === "string" ? data.error : "Save failed");
         return false;
+      }
+      if (typeof data.warning === "string" && data.warning.trim()) {
+        setInfo(data.warning);
+      }
+      if (typeof data.brokerVerified === "boolean") {
+        setBrokerVerified(data.brokerVerified);
+      }
+      if (
+        data.sellingMode === "FREE_HUB" ||
+        data.sellingMode === "PLATFORM_BROKER" ||
+        data.sellingMode === "PREFERRED_BROKER"
+      ) {
+        setSellingMode(data.sellingMode);
       }
       return true;
     } finally {
@@ -131,10 +153,15 @@ export function SellerOnboardingWizard() {
       <Link href="/seller/dashboard" className="text-sm text-premium-gold hover:underline">
         ← Seller dashboard
       </Link>
-      <h1 className="mt-6 text-2xl font-semibold text-white">Seller onboarding</h1>
+      <h1 className="mt-6 text-2xl font-semibold text-white">Sell Hub onboarding</h1>
       <p className="mt-2 text-sm text-slate-400">
         A few steps to set up your seller profile. ID verification below is a placeholder for a future KYC flow.
       </p>
+      {!brokerVerified ? (
+        <p className="mt-2 text-xs text-amber-300">
+          Broker paths require a verified broker license. Until that verification is approved, you can continue in Sell Hub free / non-broker mode.
+        </p>
+      ) : null}
 
       <div className="mt-6 h-2 w-full overflow-hidden rounded-full bg-white/10">
         <div className="h-full bg-premium-gold transition-all" style={{ width: `${progress}%` }} />
@@ -239,15 +266,15 @@ export function SellerOnboardingWizard() {
 
         {step === 5 && (
           <div className="space-y-4 text-sm">
-            <p className="text-slate-400">How do you want to sell?</p>
+            <p className="text-slate-400">Choose your Sell Hub path.</p>
             <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-white/10 p-3 text-white">
               <input
                 type="radio"
                 name="mode"
-                checked={sellingMode === "FSBO"}
-                onChange={() => setSellingMode("FSBO")}
+                checked={sellingMode === "FREE_HUB"}
+                onChange={() => setSellingMode("FREE_HUB")}
               />
-              Sell by myself (FSBO)
+              Sell Hub Free
             </label>
             <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-white/10 p-3 text-white">
               <input
@@ -255,13 +282,30 @@ export function SellerOnboardingWizard() {
                 name="mode"
                 checked={sellingMode === "PLATFORM_BROKER"}
                 onChange={() => setSellingMode("PLATFORM_BROKER")}
+                disabled={!brokerVerified}
               />
-              Use a platform broker
+              Sell Hub with platform broker
             </label>
+            <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-white/10 p-3 text-white">
+              <input
+                type="radio"
+                name="mode"
+                checked={sellingMode === "PREFERRED_BROKER"}
+                onChange={() => setSellingMode("PREFERRED_BROKER")}
+                disabled={!brokerVerified}
+              />
+              Sell Hub with preferred real estate broker
+            </label>
+            {!brokerVerified ? (
+              <p className="text-xs text-amber-300">
+                Broker license verification is still missing or not approved, so broker listing modes are disabled.
+              </p>
+            ) : null}
           </div>
         )}
 
         {err ? <p className="mt-4 text-sm text-red-400">{err}</p> : null}
+        {info ? <p className="mt-4 text-sm text-amber-300">{info}</p> : null}
 
         <div className="mt-6 flex flex-wrap gap-3">
           {step > 1 ? (

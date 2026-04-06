@@ -77,7 +77,7 @@ const SECTIONS: { id: string; title: string; items: Item[] }[] = [
     items: [
       {
         q: "Where do I get more help?",
-        a: "Email contact@lecipm.com or use Call / WhatsApp on marketing pages. For account-specific issues, sign in and use dashboard tools where available.",
+        a: "Email dr.m.mashhour@gmail.com or use Call / WhatsApp on marketing pages. For account-specific issues, sign in and use dashboard tools where available.",
       },
       {
         q: "How do I report a listing or payment issue?",

@@ -14,14 +14,14 @@ export const dynamic = "force-dynamic";
 export default async function AdminAccountingOverviewPage({
   searchParams,
 }: {
-  searchParams: Promise<{ year?: string; month?: string }>;
+  searchParams?: Promise<{ year?: string; month?: string }>;
 }) {
   const userId = await getGuestId();
   if (!userId) redirect("/auth/login");
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
   if (!isFinancialStaff(user?.role)) redirect("/");
 
-  const params = await searchParams;
+  const params = (await searchParams) ?? {};
   const now = new Date();
   const year = Number(params.year ?? now.getFullYear());
   const month = Number(params.month ?? now.getMonth() + 1);

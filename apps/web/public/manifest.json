@@ -1,16 +1,23 @@
 {
-  "name": "LECIPM",
+  "name": "LECIPM Manager",
   "short_name": "LECIPM",
+  "description": "AI-managed real estate & stays marketplace",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#000000",
+  "background_color": "#0b0b0b",
   "theme_color": "#D4AF37",
   "icons": [
     {
-      "src": "/icon.png",
+      "src": "/logo.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
     }
   ]
 }

@@ -5,10 +5,11 @@
  */
 
 import { NextRequest } from "next/server";
-import { getGuestId } from "@/lib/auth/session";
+import { resolveCheckoutUserId } from "@/lib/auth/resolve-checkout-user";
 import { assertGuestCanCheckoutBooking } from "@/lib/bnhub/booking-checkout-guard";
 import { createCheckoutSession, type CreateCheckoutParams, type PaymentType } from "@/lib/stripe/checkout";
 import { isStripeConfigured } from "@/lib/stripe";
+import { describeStripeSecretKeyError } from "@/lib/stripe/stripeEnvGate";
 import {
   bnhubBookingFeeSplitCents,
   bnhubStripeApplicationFeeCents,
@@ -25,11 +26,58 @@ import {
   prepareReservationPaymentForCheckout,
 } from "@/modules/bnhub-payments/services/paymentService";
 import { trackEvent } from "@/src/services/analytics";
+import { persistLaunchEvent } from "@/src/modules/launch/persistLaunchEvent";
+import { logInfo, logWarn } from "@/lib/logger";
+import { stripeSecretBlockedInTestMode } from "@/lib/stripe/test-mode-stripe-guard";
+import {
+  BNHUB_CHECKOUT_BLOCKED_RESPONSE_CODE,
+  validateHostStripePayoutReadiness,
+} from "@/lib/stripe/hostPayoutReadiness";
 import { onCheckoutStartAutomation } from "@/src/services/automation";
 import { onMessagingTriggerCheckoutStarted } from "@/src/modules/messaging/triggers";
 import { recordInternalCrmEvent } from "@/lib/crm/internal-crm-telemetry";
+import { BNHUB_BOOKING_CHECKOUT_SKIPS_HOST_CONNECT } from "@/lib/stripe/bnhubCheckoutConnectMode";
+import { parseUpsellsFromBody } from "@/lib/monetization/bnhub-checkout-pricing";
+import {
+  createGuestSupabaseBookingCheckoutSession,
+  isGuestSupabaseOnlyCheckoutBody,
+} from "@/lib/stripe/guestSupabaseBooking";
+import { getResolvedMarket } from "@/lib/markets";
+import { resolveActivePaymentModeFromMarket } from "@/lib/payments/resolve-payment-mode";
+import { computeBookingPricing } from "@/lib/bnhub/booking-pricing";
+import { bookingMoneyBreakdownFromPricingBreakdown } from "@/lib/bookings/money";
+import { persistMoneyEvent } from "@/lib/payments/money-events";
 
 export const dynamic = "force-dynamic";
+
+/** Allow Expo / app scheme returns for Supabase guest checkout; block arbitrary https origins. */
+function isAllowedGuestSupabaseCheckoutRedirect(urlRaw: string): boolean {
+  const url = urlRaw.trim();
+  if (!url || url.length > 2048) return false;
+  const testInput = url.includes("{CHECKOUT_SESSION_ID}")
+    ? url.replace("{CHECKOUT_SESSION_ID}", "cs_test_placeholder")
+    : url;
+  try {
+    const u = new URL(testInput);
+    const proto = u.protocol.replace(":", "").toLowerCase();
+    if (proto === "lecipm" || proto === "bnhubguest" || proto === "exp" || proto === "exps")
+      return true;
+    const app = process.env.NEXT_PUBLIC_APP_URL?.trim();
+    if (app) {
+      const normalized = app.replace(/\/$/, "");
+      const base = new URL(normalized);
+      if (u.origin === base.origin) return true;
+    }
+    if (proto === "http" && (u.hostname === "localhost" || u.hostname === "127.0.0.1")) return true;
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+/** Alias for historical comments in this file — source: `bnhubCheckoutConnectMode.ts`. */
+const TEMP_DISABLE_CONNECT = BNHUB_BOOKING_CHECKOUT_SKIPS_HOST_CONNECT;
+const USE_ON_BEHALF_OF_FOR_BNHUB_BOOKINGS = process.env.STRIPE_CONNECT_USE_ON_BEHALF_OF === "1";
 
 const PAYMENT_TYPES: PaymentType[] = [
   "booking",
@@ -55,14 +103,6 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const userId = await getGuestId();
-  if (userId) {
-    const limit = checkRateLimit(`stripe:checkout:${userId}`, { windowMs: 60 * 1000, max: 20 });
-    if (!limit.allowed) {
-      return Response.json({ error: "Too many checkout requests. Try again in a minute." }, { status: 429, headers: getRateLimitHeaders(limit) });
-    }
-  }
-
   if (!isStripeConfigured()) {
     return Response.json(
       { error: "Payments are not configured. Please try again later." },
@@ -70,8 +110,10 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  if (!userId) {
-    return Response.json({ error: "Sign in required" }, { status: 401 });
+  const testStripeBlock = stripeSecretBlockedInTestMode();
+  if (testStripeBlock) {
+    logWarn("[checkout] blocked live Stripe in test mode");
+    return Response.json({ error: testStripeBlock }, { status: 403 });
   }
 
   let body: Record<string, unknown>;
@@ -81,9 +123,72 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const successUrl = typeof body.successUrl === "string" ? body.successUrl.trim() : "";
-  const cancelUrl = typeof body.cancelUrl === "string" ? body.cancelUrl.trim() : "";
+  /** Mobile guest BNHub: Supabase `bookings` only — no LECIPM session; server loads amount from DB. */
+  if (isGuestSupabaseOnlyCheckoutBody(body)) {
+    const bookingId = typeof body.bookingId === "string" ? body.bookingId.trim() : "";
+    const guestLimit = checkRateLimit(`stripe:guest-supabase-checkout:ip:${ip}`, { windowMs: 60_000, max: 30 });
+    if (!guestLimit.allowed) {
+      return Response.json(
+        { error: "Too many checkout requests. Try again shortly." },
+        { status: 429, headers: getRateLimitHeaders(guestLimit) }
+      );
+    }
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, "");
+    if (!appUrl) {
+      return Response.json({ error: "NEXT_PUBLIC_APP_URL is not configured." }, { status: 500 });
+    }
+    const defaultSuccess = `${appUrl}/payment-success?bookingId=${encodeURIComponent(bookingId)}&session_id={CHECKOUT_SESSION_ID}`;
+    const defaultCancel = `${appUrl}/payment-cancel?bookingId=${encodeURIComponent(bookingId)}`;
+    const clientSuccess = typeof body.successUrl === "string" ? body.successUrl.trim() : "";
+    const clientCancel = typeof body.cancelUrl === "string" ? body.cancelUrl.trim() : "";
+    const successUrlGuest =
+      clientSuccess && isAllowedGuestSupabaseCheckoutRedirect(clientSuccess) ? clientSuccess : defaultSuccess;
+    const cancelUrlGuest =
+      clientCancel && isAllowedGuestSupabaseCheckoutRedirect(clientCancel) ? clientCancel : defaultCancel;
+    const guestResult = await createGuestSupabaseBookingCheckoutSession({
+      bookingId,
+      successUrl: successUrlGuest,
+      cancelUrl: cancelUrlGuest,
+      upsells: parseUpsellsFromBody(body),
+    });
+    if ("error" in guestResult) {
+      logWarn("[bnhub] guest_checkout_start_failed", {
+        bookingId,
+        status: guestResult.status,
+      });
+      return Response.json({ error: guestResult.error }, { status: guestResult.status });
+    }
+    return Response.json({ url: guestResult.url, sessionId: guestResult.sessionId });
+  }
+
+  const userId = await resolveCheckoutUserId(request);
+  if (userId) {
+    const limit = checkRateLimit(`stripe:checkout:${userId}`, { windowMs: 60 * 1000, max: 20 });
+    if (!limit.allowed) {
+      return Response.json({ error: "Too many checkout requests. Try again in a minute." }, { status: 429, headers: getRateLimitHeaders(limit) });
+    }
+  }
+
+  if (!userId) {
+    return Response.json({ error: "Sign in required" }, { status: 401 });
+  }
+
+  const appBase = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, "") || "";
+  let successUrl = typeof body.successUrl === "string" ? body.successUrl.trim() : "";
+  let cancelUrl = typeof body.cancelUrl === "string" ? body.cancelUrl.trim() : "";
   const rawPaymentType = typeof body.paymentType === "string" ? body.paymentType.trim() : "";
+  const bookingIdForRedirects =
+    typeof body.bookingId === "string" && body.bookingId.trim() ? body.bookingId.trim() : "";
+  if (
+    rawPaymentType === "booking" &&
+    bookingIdForRedirects &&
+    appBase &&
+    (!successUrl || !cancelUrl)
+  ) {
+    successUrl = `${appBase}/bnhub/booking-success?booking_id=${encodeURIComponent(bookingIdForRedirects)}&session_id={CHECKOUT_SESSION_ID}`;
+    cancelUrl = `${appBase}/bnhub/booking-cancel?booking_id=${encodeURIComponent(bookingIdForRedirects)}`;
+    logInfo("[stripe/checkout] defaulted bnhub booking redirect URLs", { bookingId: bookingIdForRedirects });
+  }
 
   if (rawPaymentType === "lecipm_workspace_subscription") {
     if (!successUrl || !cancelUrl) {
@@ -100,6 +205,7 @@ export async function POST(request: NextRequest) {
       successUrl,
       cancelUrl,
       priceId: typeof body.priceId === "string" ? body.priceId.trim() : undefined,
+      lookupKey: typeof body.lookupKey === "string" ? body.lookupKey.trim() : undefined,
       planCode: typeof body.planCode === "string" ? body.planCode.trim() : undefined,
       workspaceId: typeof body.workspaceId === "string" ? body.workspaceId.trim() : undefined,
     });
@@ -113,6 +219,14 @@ export async function POST(request: NextRequest) {
     void trackEvent("checkout_started", { flow: "lecipm_workspace_subscription" }, { userId }).catch(() => {});
     void onCheckoutStartAutomation(userId, { flow: "workspace_subscription" }).catch(() => {});
     void onMessagingTriggerCheckoutStarted(userId).catch(() => {});
+    void persistLaunchEvent("CHECKOUT_START", {
+      userId,
+      sessionId: result.sessionId,
+      paymentType: "lecipm_workspace_subscription",
+      amountCents: null,
+      bookingId: null,
+      listingId: null,
+    });
     return Response.json({ url: result.url, sessionId: result.sessionId });
   }
 
@@ -125,8 +239,11 @@ export async function POST(request: NextRequest) {
       { status: 400 }
     );
   }
+  const bookingIdForAmount =
+    paymentType === "booking" && typeof body.bookingId === "string" ? body.bookingId.trim() : "";
   if (
     paymentType !== "fsbo_publish" &&
+    paymentType !== "booking" &&
     (!Number.isFinite(amountCents) || amountCents < 1)
   ) {
     return Response.json(
@@ -134,8 +251,14 @@ export async function POST(request: NextRequest) {
       { status: 400 }
     );
   }
+  if (paymentType === "booking" && bookingIdForAmount && (!Number.isFinite(amountCents) || amountCents < 1)) {
+    /** Amount loaded server-side from `assertGuestCanCheckoutBooking` below. */
+  } else if (paymentType === "booking" && !bookingIdForAmount) {
+    return Response.json({ error: "bookingId is required for booking payments" }, { status: 400 });
+  }
 
-  let chargeAmountCents = paymentType === "fsbo_publish" ? 0 : Math.round(amountCents);
+  let chargeAmountCents =
+    paymentType === "fsbo_publish" || paymentType === "booking" ? 0 : Math.round(amountCents);
   let connect: CreateCheckoutParams["connect"];
   let fsboListingId: string | undefined;
 
@@ -177,6 +300,10 @@ export async function POST(request: NextRequest) {
   }
 
   let serverBookingListingId: string | undefined;
+  let bookingHostSnapshot: {
+    listingId: string;
+    listing: { owner: { id: string; stripeAccountId: string | null; stripeOnboardingComplete: boolean } | null } | null;
+  } | null = null;
 
   if (paymentType === "booking") {
     const bookingId = typeof body.bookingId === "string" ? body.bookingId.trim() : "";
@@ -189,7 +316,7 @@ export async function POST(request: NextRequest) {
     }
     chargeAmountCents = gate.amountCents;
 
-    const bookingHost = await prisma.booking.findUnique({
+    bookingHostSnapshot = await prisma.booking.findUnique({
       where: { id: bookingId },
       select: {
         listingId: true,
@@ -197,6 +324,7 @@ export async function POST(request: NextRequest) {
           select: {
             owner: {
               select: {
+                id: true,
                 stripeAccountId: true,
                 stripeOnboardingComplete: true,
               },
@@ -205,31 +333,72 @@ export async function POST(request: NextRequest) {
         },
       },
     });
-    serverBookingListingId = bookingHost?.listingId;
-    const owner = bookingHost?.listing?.owner;
-    if (!owner?.stripeAccountId || !owner.stripeOnboardingComplete) {
-      return Response.json(
-        { error: "Host payout account is not configured yet." },
-        { status: 409 }
-      );
+    serverBookingListingId = bookingHostSnapshot?.listingId;
+    const owner = bookingHostSnapshot?.listing?.owner;
+
+    // TEMP_DISABLE_CONNECT — restore block below when TEMP_DISABLE_CONNECT is false
+    if (!TEMP_DISABLE_CONNECT) {
+      const payoutReadiness = await validateHostStripePayoutReadiness({
+        stripeAccountId: owner?.stripeAccountId,
+        stripeOnboardingComplete: owner?.stripeOnboardingComplete,
+      });
+      if (!payoutReadiness.ok) {
+        const bookingId = typeof body.bookingId === "string" ? body.bookingId.trim() : "";
+        logWarn("[bnhub][checkout] blocked — host payout / Connect not ready", {
+          code: payoutReadiness.code,
+          bookingId,
+          detail: payoutReadiness.logDetail,
+        });
+        void persistLaunchEvent("CHECKOUT_BLOCKED", {
+          code: BNHUB_CHECKOUT_BLOCKED_RESPONSE_CODE,
+          detailCode: payoutReadiness.code,
+          bookingId: bookingId || null,
+          listingId: serverBookingListingId ?? null,
+          userId,
+          reason: payoutReadiness.logDetail,
+        });
+        return Response.json(
+          {
+            error: "Host payout not configured",
+            code: BNHUB_CHECKOUT_BLOCKED_RESPONSE_CODE,
+            detailCode: payoutReadiness.code,
+          },
+          { status: 409 }
+        );
+      }
+      const split = bnhubBookingFeeSplitCents(chargeAmountCents);
+      const applicationFeeAmount = bnhubStripeApplicationFeeCents(chargeAmountCents);
+      if (applicationFeeAmount >= chargeAmountCents && chargeAmountCents > 0) {
+        return Response.json(
+          { error: "Invalid BNHub fee split for Stripe Connect." },
+          { status: 400 }
+        );
+      }
+      const destinationAccountId = owner?.stripeAccountId;
+      if (!destinationAccountId) {
+        return Response.json(
+          {
+            error: "Host payout not configured",
+            code: BNHUB_CHECKOUT_BLOCKED_RESPONSE_CODE,
+            detailCode: "HOST_STRIPE_ACCOUNT_MISSING",
+          },
+          { status: 409 }
+        );
+      }
+      connect = {
+        destinationAccountId,
+        applicationFeeAmount,
+        ...(USE_ON_BEHALF_OF_FOR_BNHUB_BOOKINGS
+          ? { onBehalfOfAccountId: destinationAccountId }
+          : {}),
+        bnhubPlatformFeeCents: split.platformFeeCents,
+        bnhubHostPayoutCents: split.hostPayoutCents,
+      };
     }
-    const split = bnhubBookingFeeSplitCents(chargeAmountCents);
-    const applicationFeeAmount = bnhubStripeApplicationFeeCents(chargeAmountCents);
-    if (applicationFeeAmount >= chargeAmountCents && chargeAmountCents > 0) {
-      return Response.json(
-        { error: "Invalid BNHub fee split for Stripe Connect." },
-        { status: 400 }
-      );
-    }
-    connect = {
-      destinationAccountId: owner.stripeAccountId,
-      applicationFeeAmount,
-      bnhubPlatformFeeCents: split.platformFeeCents,
-      bnhubHostPayoutCents: split.hostPayoutCents,
-    };
   }
 
   let marketplaceCheckoutMetadata: Record<string, string> = {};
+  let bnhubStripeMetadata: Record<string, string> = {};
   if (paymentType === "booking" && typeof body.bookingId === "string" && body.bookingId) {
     const mp = await prepareReservationPaymentForCheckout({
       bookingId: body.bookingId.trim(),
@@ -239,6 +408,15 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: mp.error }, { status: mp.httpStatus ?? 400 });
     }
     marketplaceCheckoutMetadata = { bnhubReservationPaymentId: mp.reservationPaymentId };
+    const hostOwnerId = bookingHostSnapshot?.listing?.owner?.id?.trim();
+    if (hostOwnerId) {
+      const market = await getResolvedMarket();
+      bnhubStripeMetadata = {
+        flow: "bnhub_booking",
+        payoutMethod: resolveActivePaymentModeFromMarket(market) === "manual" ? "manual" : "stripe_connect",
+        hostUserId: hostOwnerId,
+      };
+    }
   }
 
   const fsboPlanForSession =
@@ -272,7 +450,10 @@ export async function POST(request: NextRequest) {
           ? body.description
           : undefined,
     connect,
-    metadata: Object.keys(marketplaceCheckoutMetadata).length ? marketplaceCheckoutMetadata : undefined,
+    metadata:
+      Object.keys({ ...marketplaceCheckoutMetadata, ...bnhubStripeMetadata }).length > 0
+        ? { ...marketplaceCheckoutMetadata, ...bnhubStripeMetadata }
+        : undefined,
   });
 
   if ("error" in result) {
@@ -284,6 +465,59 @@ export async function POST(request: NextRequest) {
       marketplaceCheckoutMetadata.bnhubReservationPaymentId,
       result.sessionId
     );
+  }
+
+  if (paymentType === "booking" && typeof body.bookingId === "string" && body.bookingId.trim()) {
+    const bid = body.bookingId.trim();
+    const row = await prisma.booking.findUnique({
+      where: { id: bid },
+      select: { checkIn: true, checkOut: true, listingId: true, guestId: true },
+    });
+    if (row) {
+      try {
+        const pricing = await computeBookingPricing({
+          listingId: row.listingId,
+          checkIn: row.checkIn.toISOString().slice(0, 10),
+          checkOut: row.checkOut.toISOString().slice(0, 10),
+          guestUserId: row.guestId,
+        });
+        const breakdown = pricing
+          ? bookingMoneyBreakdownFromPricingBreakdown(bid, pricing.breakdown)
+          : null;
+        await prisma.payment.update({
+          where: { bookingId: bid },
+          data: {
+            stripeCheckoutSessionId: result.sessionId,
+            ...(breakdown ? { moneyBreakdownJson: breakdown as object } : {}),
+          },
+        });
+        if (pricing && pricing.breakdown.lodgingDiscountSource === "LOYALTY" && pricing.breakdown.loyaltyDiscountPercentOffered > 0) {
+          logInfo("[bnhub][loyalty] checkout_discount_applied", {
+            userId: row.guestId,
+            bookingId: bid,
+            tier: pricing.breakdown.loyaltyTierCode,
+            discountPercent: pricing.breakdown.loyaltyDiscountPercentOffered,
+            appliedAt: new Date().toISOString(),
+          });
+        }
+      } catch (e) {
+        logWarn("[bnhub] checkout_created payment update failed", {
+          bookingId: bid,
+          message: e instanceof Error ? e.message : String(e),
+        });
+        await prisma.payment
+          .update({
+            where: { bookingId: bid },
+            data: { stripeCheckoutSessionId: result.sessionId },
+          })
+          .catch(() => {});
+      }
+      void persistMoneyEvent({
+        type: "booking_checkout_created",
+        bookingId: bid,
+        metadata: { sessionId: result.sessionId },
+      });
+    }
   }
 
   let auditSplit: { platformFeeCents: number; hostPayoutCents: number; bnhubCommissionRate: number } | undefined;
@@ -346,6 +580,33 @@ export async function POST(request: NextRequest) {
     bookingId: typeof body.bookingId === "string" ? body.bookingId : undefined,
   }).catch(() => {});
   void onMessagingTriggerCheckoutStarted(userId).catch(() => {});
+
+  void persistLaunchEvent("CHECKOUT_START", {
+    userId,
+    sessionId: result.sessionId,
+    paymentType,
+    amountCents: chargeAmountCents,
+    bookingId: typeof body.bookingId === "string" ? body.bookingId.trim() : null,
+    listingId:
+      paymentType === "booking" && serverBookingListingId
+        ? serverBookingListingId
+        : typeof body.listingId === "string"
+          ? body.listingId
+          : null,
+  });
+
+  logInfo("[checkout] session created", {
+    paymentType,
+    sessionId: result.sessionId,
+    amountCents: chargeAmountCents,
+    bookingId: typeof body.bookingId === "string" ? body.bookingId.trim() : null,
+    listingId:
+      paymentType === "booking" && serverBookingListingId
+        ? serverBookingListingId
+        : typeof body.listingId === "string"
+          ? body.listingId
+          : null,
+  });
 
   return Response.json({ url: result.url, sessionId: result.sessionId });
 }

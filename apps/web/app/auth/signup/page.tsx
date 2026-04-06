@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { SignupPageClient } from "@/app/signup/signup-page-client";
+import { normalizeSignupRefParam } from "@/lib/referrals";
 
 export const metadata: Metadata = {
   title: "Create account",
@@ -10,9 +11,9 @@ export const metadata: Metadata = {
 export default async function AuthSignupPage({
   searchParams,
 }: {
-  searchParams: Promise<{ ref?: string }>;
+  searchParams?: Promise<{ ref?: string }>;
 }) {
-  const params = await searchParams;
-  const ref = params.ref?.toUpperCase() ?? "";
+  const params = (await searchParams) ?? {};
+  const ref = normalizeSignupRefParam(params.ref);
   return <SignupPageClient refCode={ref} />;
 }

@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { moderationPhotoCount } from "@/lib/bnhub/moderation-requirements";
 import { recordPlatformEvent } from "@/lib/observability";
 import { persistVerificationCaseRun } from "@/lib/trustgraph/application/persistVerificationCaseRun";
 import {
@@ -7,14 +8,6 @@ import {
   collectBookingRiskRuleResults,
   collectShortTermListingRuleResults,
 } from "@/lib/trustgraph/infrastructure/rules/bnhubRulesRegistry";
-
-function photoCountFromListing(l: {
-  photos: unknown;
-  listingPhotos: { id: string }[];
-}): number {
-  const fromPhotos = Array.isArray(l.photos) ? l.photos.length : 0;
-  return Math.max(fromPhotos, l.listingPhotos.length);
-}
 
 export async function runHostVerificationPipeline(args: {
   caseId: string;
@@ -107,7 +100,7 @@ export async function runShortTermListingVerificationPipeline(args: {
   const results = collectShortTermListingRuleResults({
     title: listing.title,
     description: listing.description,
-    photoCount: photoCountFromListing(listing),
+    photoCount: moderationPhotoCount(listing),
     houseRules: listing.houseRules,
   });
 

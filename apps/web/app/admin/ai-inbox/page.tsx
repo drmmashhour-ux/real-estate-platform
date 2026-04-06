@@ -21,8 +21,10 @@ export default function AdminAiInboxPage() {
           <p className="mt-2 max-w-2xl text-sm text-slate-500">
             Rule-based classifier on inbound user lines; templates in <code className="text-slate-400">auto_reply_templates</code>.
             Threads live in <code className="text-slate-400">growth_ai_conversations</code> (separate from CRM{" "}
-            <code className="text-slate-400">conversations</code>).
+            <code className="text-slate-400">conversations</code>). Deal Assistant suggests intent, objections, and reply
+            drafts — human sends.
           </p>
+          <p className="mt-3 text-xs font-medium tracking-wide text-violet-300/90">LECIPM DEAL ASSISTANT ACTIVE</p>
         </header>
 
         <AiAutoReplyInboxClient />

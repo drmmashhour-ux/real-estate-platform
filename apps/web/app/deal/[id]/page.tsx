@@ -12,7 +12,7 @@ const SITE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://lecipm.com";
 
 type Props = {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ ref?: string; ru?: string }>;
+  searchParams?: Promise<{ ref?: string; ru?: string }>;
 };
 
 export const dynamic = "force-dynamic";
@@ -57,7 +57,7 @@ export default async function SharedDealPage({ params, searchParams }: Props) {
     notFound();
   }
 
-  const sp = await searchParams;
+  const sp = (await searchParams) ?? {};
   const refRaw = sp.ref;
   const referrerDealId =
     typeof refRaw === "string" && z.string().uuid().safeParse(refRaw).success ? refRaw : undefined;

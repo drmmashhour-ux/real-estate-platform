@@ -204,6 +204,11 @@ export default async function BuyerDashboardPage() {
                 </Link>
               </li>
               <li>
+                <Link href="/financial-hub" className="font-medium text-premium-gold hover:text-premium-gold-hover">
+                  Financial services hub
+                </Link>
+              </li>
+              <li>
                 <Link href="/onboarding/buyer" className="text-premium-secondary transition-colors hover:text-white">
                   Re-run buyer onboarding
                 </Link>

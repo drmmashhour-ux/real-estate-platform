@@ -1,17 +1,30 @@
-# Investor outreach system
+# LECIPM Manager — Investor outreach system
 
-Structured docs for targeting investors, sending factual outreach, tracking conversations, and iterating messaging.
+Structured outreach for **LECIPM Manager** (AI-managed real estate & stays marketplace): targeting, templates, follow-up rhythm, CRM rules, and optional tooling in the web app.
 
-**Principle:** No fabricated traction or metrics — describe the product honestly.
+## File index
 
-| Doc | Purpose |
-|-----|---------|
-| [investor-targeting.md](./investor-targeting.md) | Ideal profile, where to find investors, qualification, tiers |
-| [outreach-strategy.md](./outreach-strategy.md) | Channels, volume, sequence, personalization, links |
-| [email-templates.md](./email-templates.md) | Cold, warm, and follow-up emails |
-| [linkedin-templates.md](./linkedin-templates.md) | LinkedIn connection and DM templates |
-| [follow-up-system.md](./follow-up-system.md) | Timing, tone, cadence |
-| [outreach-tracker-template.md](./outreach-tracker-template.md) | Copy-paste tracker table |
-| [messaging-angles.md](./messaging-angles.md) | Product positioning angles to test |
-| [response-handling.md](./response-handling.md) | Replies to interest, asks, declines, silence |
-| [daily-plan.md](./daily-plan.md) | Daily and weekly execution routine |
+| File | Purpose |
+|------|---------|
+| [investor-targeting.md](investor-targeting.md) | Who to reach, categories, channels, prioritization |
+| [investor-database-template.csv](investor-database-template.csv) | CSV column template for your pipeline |
+| [outreach-templates.md](outreach-templates.md) | Cold / warm email, LinkedIn DM, follow-up copy |
+| [follow-up-sequences.md](follow-up-sequences.md) | Day 0 / 3 / 7 / 14 sequence |
+| [outreach-playbook.md](outreach-playbook.md) | Daily & weekly workflow, goals, best practices |
+| [crm-logic.md](crm-logic.md) | Pipeline states and automation rules |
+
+## Consistency rules
+
+- **Name:** Use **LECIPM Manager** everywhere in external copy.
+- **Traction:** Do not claim revenue, user counts, or growth unless verified. Safe stage line: *platform built; soft launch ready*.
+- **Tone:** Professional, concise, meeting-oriented CTAs.
+- **Numbers in playbook:** Reply rates and meeting targets are **internal goals**, not reported metrics.
+
+## Optional web CRM
+
+- **UI:** `/investors-crm` (platform admins only) — table, filters, status actions.
+- **API:** `GET` / `POST` `/api/investors`, `PATCH` `/api/investors/[id]` — persists to `apps/web/data/investors-crm.json` (local/dev). Serverless read-only filesystem may block writes in production; migrate to your database or use the platform admin fundraising area in `apps/web` if needed.
+
+## Related
+
+- Full investor narrative & materials: [docs/investors/](../investors/README.md)

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getGuestId } from "@/lib/auth/session";
 import { AdminFsboClient } from "./admin-fsbo-client";
+import { getListingTransactionFlagsForListings } from "@/lib/fsbo/listing-transaction-flag";
 
 export const dynamic = "force-dynamic";
 
@@ -34,6 +35,13 @@ export default async function AdminFsboPage() {
       _count: { select: { leads: true } },
     },
   });
+  const transactionFlags = await getListingTransactionFlagsForListings(
+    listings.map((listing) => ({ id: listing.id, status: listing.status }))
+  );
+  const listingsWithFlags = listings.map((listing) => ({
+    ...listing,
+    transactionFlag: transactionFlags.get(listing.id) ?? null,
+  }));
 
   return (
     <main className="min-h-screen bg-slate-950 px-4 py-8 text-slate-50">
@@ -41,11 +49,11 @@ export default async function AdminFsboPage() {
         <Link href="/admin" className="text-sm text-amber-400 hover:text-amber-300">
           ← Admin
         </Link>
-        <h1 className="mt-4 text-2xl font-semibold">FSBO listings</h1>
+        <h1 className="mt-4 text-2xl font-semibold">FSBO case files</h1>
         <p className="mt-1 text-sm text-slate-400">
-          Moderate sell-by-owner listings. Rejecting hides them from the public directory.
+          Review seller compliance records, moderation state, and packet-backed case files for sell-by-owner listings.
         </p>
-        <AdminFsboClient listings={listings} />
+        <AdminFsboClient listings={listingsWithFlags} />
       </div>
     </main>
   );

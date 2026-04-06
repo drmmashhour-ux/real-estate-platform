@@ -27,16 +27,22 @@ import { DemoModeFetchToast } from "@/components/demo/DemoModeFetchToast";
 import { DemoPageViewTracker } from "@/components/demo/DemoPageViewTracker";
 import { DemoProvider } from "@/components/demo/DemoProvider";
 import { PostHogPageView, PostHogProvider } from "@/components/analytics/PostHogClient";
+import { AccessibilityPreferencesProvider } from "@/components/accessibility/AccessibilityPreferencesContext";
+import { PlatformAssistantProvider } from "@/components/ai/PlatformAssistantContext";
+import { PlatformAssistantLazy } from "@/components/ai/PlatformAssistantLazy";
 
 export function AppProviders({
   children,
   initialLocale,
+  allowedLocales,
 }: {
   children: ReactNode;
   initialLocale: LocaleCode;
+  allowedLocales?: LocaleCode[];
 }) {
   return (
-    <I18nProvider initialLocale={initialLocale}>
+    <I18nProvider initialLocale={initialLocale} allowedLocales={allowedLocales}>
+      <AccessibilityPreferencesProvider>
       <PostHogProvider>
         <DemoProvider>
         <StagingEnvironmentBanner />
@@ -84,13 +90,21 @@ export function AppProviders({
                 <Suspense fallback={null}>
                   <InvestmentMvpEngagement />
                 </Suspense>
-                <CompareProvider>{children}</CompareProvider>
+                <CompareProvider>
+                  <PlatformAssistantProvider>
+                    {children}
+                    <Suspense fallback={null}>
+                      <PlatformAssistantLazy />
+                    </Suspense>
+                  </PlatformAssistantProvider>
+                </CompareProvider>
               </InvestmentProgressProvider>
             </ProductInsightsProvider>
           </ProductHealthProvider>
         </ToastProvider>
         </DemoProvider>
       </PostHogProvider>
+      </AccessibilityPreferencesProvider>
     </I18nProvider>
   );
 }

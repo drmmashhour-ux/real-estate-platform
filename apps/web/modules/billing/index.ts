@@ -19,3 +19,10 @@ export {
   type WorkspacePlanTier,
   type SubscriptionEntitlements,
 } from "@/modules/billing/getPlanEntitlements";
+export {
+  createBrokerCheckoutSession,
+  createBrokerInvoiceBatchCheckout,
+  type CreateBrokerCheckoutResult,
+  type CreateInvoiceCheckoutResult,
+} from "@/modules/billing/brokerLeadBilling";
+export { DEFAULT_BROKER_LEAD_PRICE, getBrokerLeadUnitPrice, getOrCreateBrokerMonetizationProfile } from "@/modules/billing/brokerPricing";

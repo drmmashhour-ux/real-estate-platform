@@ -2,65 +2,111 @@ import type { Metadata } from "next";
 import type { GrowthCitySlug } from "@/lib/growth/geo-slugs";
 import { growthCityDisplayName, growthCityRegion, growthCitySearchQuery } from "@/lib/growth/geo-slugs";
 
-export type CityIntentKind = "buy" | "rent" | "mortgage";
+export type CityIntentKind = "buy" | "rent" | "stays" | "mortgage" | "investment";
+
+function siteBase(): string {
+  return (process.env.NEXT_PUBLIC_APP_URL ?? "").replace(/\/$/, "") || "https://lecipm.com";
+}
+
+function programmaticSeoMeta(input: {
+  path: string;
+  title: string;
+  description: string;
+  keywords: string[];
+}): Metadata {
+  const base = siteBase();
+  const url = `${base}${input.path}`;
+  const ogUrl = `${base}/brand/lecipm-mark-on-dark.svg`;
+  return {
+    title: input.title,
+    description: input.description,
+    keywords: input.keywords,
+    alternates: { canonical: url },
+    openGraph: {
+      title: input.title,
+      description: input.description,
+      type: "website",
+      url,
+      images: [{ url: ogUrl }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: input.title,
+      description: input.description,
+      images: [ogUrl],
+    },
+    robots: { index: true, follow: true },
+  };
+}
+
+/** Default canonical URL path segment for intent landing (before optional override). */
+export function defaultCityIntentPath(intent: CityIntentKind, slug: GrowthCitySlug): string {
+  if (intent === "investment") return `/city/${slug}/investment`;
+  if (intent === "stays") return `/stays/${slug}`;
+  return `/${intent}/${slug}`;
+}
 
 export function buildCityIntentMetadata(
   intent: CityIntentKind,
-  slug: GrowthCitySlug
+  slug: GrowthCitySlug,
+  opts?: { canonicalPath?: string }
 ): Metadata {
   const city = growthCityDisplayName(slug);
   const region = growthCityRegion(slug) === "US" ? "USA" : "Canada";
-  const base = (process.env.NEXT_PUBLIC_APP_URL ?? "").replace(/\/$/, "") || "https://lecipm.com";
-  const path = `/${intent}/${slug}`;
+  const path = opts?.canonicalPath ?? defaultCityIntentPath(intent, slug);
 
   if (intent === "buy") {
     const title = `Buy a home in ${city} (${region}) | FSBO & listings | LECIPM`;
     const description = `Browse homes and FSBO listings in ${city}. Local market notes, FAQs, and a free consultation. Compare options in ${growthCitySearchQuery(slug)} on LECIPM.`;
-    return {
+    return programmaticSeoMeta({
+      path,
       title,
       description,
       keywords: [`buy home ${city}`, `FSBO ${city}`, `real estate ${city}`, "LECIPM"],
-      openGraph: {
-        title,
-        description,
-        type: "website",
-        url: `${base}${path}`,
-      },
-      twitter: { card: "summary_large_image", title, description },
-    };
+    });
+  }
+
+  if (intent === "stays") {
+    const title = `BNHub stays in ${city} (${region}) | Short-term rentals | LECIPM`;
+    const description = `Discover short-term stays and nightly rentals in ${city}. Filter by dates and guests on BNHub — book with clear pricing on LECIPM.`;
+    return programmaticSeoMeta({
+      path,
+      title,
+      description,
+      keywords: [`${city} vacation rental`, `short term stay ${city}`, "BNHub", "LECIPM"],
+    });
   }
 
   if (intent === "rent") {
     const title = `Rent & short-term stays in ${city} | LECIPM BNHub`;
     const description = `Find verified stays and rentals in ${city}. Local benefits, traveler FAQs, and fast booking on LECIPM BNHub.`;
-    return {
+    return programmaticSeoMeta({
+      path,
       title,
       description,
       keywords: [`rent ${city}`, `short term rental ${city}`, "BNHub", "LECIPM"],
-      openGraph: {
-        title,
-        description,
-        type: "website",
-        url: `${base}${path}`,
-      },
-      twitter: { card: "summary_large_image", title, description },
-    };
+    });
+  }
+
+  if (intent === "investment") {
+    const title = `Real estate investment in ${city} (${region}) | Market snapshot | LECIPM`;
+    const description = `Explore investment angles in ${city}: FSBO inventory, BNHub yields, and rent vs buy context. Tools and FAQs on LECIPM.`;
+    return programmaticSeoMeta({
+      path,
+      title,
+      description,
+      keywords: [`invest ${city}`, `real estate investment ${city}`, `rental yield ${city}`, "LECIPM"],
+    });
   }
 
   const title = `Mortgage broker & pre-approval in ${city} | LECIPM`;
   const description = `Get pre-approved, compare mortgage options, and talk to a verified expert serving ${city}. Free tools and local tips for ${region} buyers.`;
-  return {
+  return programmaticSeoMeta({
+    path,
     title,
     description,
     keywords: [`mortgage ${city}`, `pre-approval ${city}`, "mortgage expert", "LECIPM"],
-    openGraph: {
-      title,
-      description,
-      type: "website",
-      url: `${base}${path}`,
-    },
-    twitter: { card: "summary_large_image", title, description },
-  };
+  });
 }
 
 export function intentBenefits(intent: CityIntentKind, slug: GrowthCitySlug): string[] {
@@ -77,6 +123,20 @@ export function intentBenefits(intent: CityIntentKind, slug: GrowthCitySlug): st
       `Curated stays and nightly rentals in ${city}`,
       "Verified BNHub hosts with clear pricing",
       "Guest protections and simple booking flow",
+    ];
+  }
+  if (intent === "stays") {
+    return [
+      `Nightly stays in ${city} with BNHub filters for dates and guests`,
+      "See pricing upfront before you commit",
+      "Secure booking flow and clear listing detail pages",
+    ];
+  }
+  if (intent === "investment") {
+    return [
+      `Blend FSBO acquisitions with BNHub yield benchmarks in ${city}`,
+      "Deal analyzer + ROI tools on-platform",
+      "Structured content: best pockets, rent vs buy, liquidity",
     ];
   }
   return [
@@ -109,6 +169,23 @@ export function intentFaqs(
       },
     ];
   }
+  if (intent === "stays") {
+    return [
+      {
+        question: `How do I book a stay in ${city}?`,
+        answer: `Open BNHub search for ${city}, pick your dates and guest count, then review house rules and cancellation terms on each listing before you book.`,
+      },
+      {
+        question: "Are prices shown per night?",
+        answer:
+          "BNHub listings show nightly rates; taxes and fees may be summarized at checkout depending on the listing. Always confirm the final total before paying.",
+      },
+      {
+        question: "Can I share a listing with someone I’m traveling with?",
+        answer: "Yes — use your browser share menu or copy the listing link from the stay page.",
+      },
+    ];
+  }
   if (intent === "rent") {
     return [
       {
@@ -123,6 +200,23 @@ export function intentFaqs(
       {
         question: "Can I book for groups?",
         answer: "Many listings support multiple guests. Check the listing's guest limit and amenities.",
+      },
+    ];
+  }
+  if (intent === "investment") {
+    return [
+      {
+        question: `Where do investors start in ${city}?`,
+        answer: `Review the market snapshot, compare FSBO ask prices with BNHub nightly rates, then stress-test assumptions in the deal analyzer.`,
+      },
+      {
+        question: "Are yield figures guaranteed?",
+        answer:
+          "No — displayed metrics are heuristic aggregates for education. Engage licensed professionals for underwriting and compliance.",
+      },
+      {
+        question: "Can LECIPM connect me to a broker?",
+        answer: "Yes — use Request property or the broker directory to align with someone licensed in your province or state.",
       },
     ];
   }

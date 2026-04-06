@@ -18,14 +18,14 @@ type SearchParams = {
 export default async function AdminFinanceTaxPage({
   searchParams,
 }: {
-  searchParams: Promise<SearchParams>;
+  searchParams?: Promise<SearchParams>;
 }) {
   const userId = await getGuestId();
   if (!userId) redirect("/auth/login");
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
   if (!isFinancialStaff(user?.role)) redirect("/");
 
-  const params = await searchParams;
+  const params = (await searchParams) ?? {};
   const year = params.year ? parseInt(params.year, 10) : undefined;
   const docStatus = params.status?.trim() || undefined;
   const documentType = params.documentType?.trim() || undefined;

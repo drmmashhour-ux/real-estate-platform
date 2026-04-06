@@ -5,6 +5,7 @@ import { buildBrokerAgreementSellerHtml } from "@/modules/contracts/services/tem
 import { buildBrokerAgreementBuyerHtml } from "@/modules/contracts/services/templates/broker-agreement-buyer-template";
 import { buildCollaborationAgreementHtml } from "@/modules/contracts/services/templates/collaboration-agreement-template";
 import { buildReferralAgreementHtml } from "@/modules/contracts/services/templates/referral-agreement-template";
+import { getPublicAppUrl } from "@/lib/config/public-app-url";
 import { sendContractSignRequestEmail } from "@/lib/email/contract-emails";
 import { onContractReadyForSignature } from "@/modules/notifications/services/workflow-notification-triggers";
 
@@ -150,6 +151,7 @@ export async function createBrokerContract(input: CreateBrokerContractInput): Pr
         userId: brokerUser.id,
         createdById: input.actorId,
         listingId: typeof b.listingId === "string" ? b.listingId : null,
+        fsboListingId: typeof b.fsboListingId === "string" ? b.fsboListingId : null,
         title,
         contentHtml: html,
         content: { ...content, snapshot: b } as unknown as Prisma.InputJsonValue,
@@ -169,7 +171,7 @@ export async function createBrokerContract(input: CreateBrokerContractInput): Pr
     return c;
   });
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") || "http://localhost:3000";
+  const appUrl = getPublicAppUrl();
   const contractUrl = `${appUrl}/contracts/${contract.id}`;
 
   await sendContractSignRequestEmail({

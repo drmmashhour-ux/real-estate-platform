@@ -13,7 +13,7 @@ const DEFAULT_PLATFORM_USAGE = `
 <p>We may suspend or terminate accounts that violate this policy. We may report illegal activity to authorities and cooperate with law enforcement.</p>
 
 <h2>4. Contact</h2>
-<p>Report abuse: info@mashhourinvestments.com</p>
+<p>Report abuse: dr.m.mashhour@gmail.com</p>
 `;
 
 export default async function PlatformUsagePage() {

@@ -5,6 +5,7 @@ import { isFsboPubliclyVisible } from "@/lib/fsbo/constants";
 import { getGuestId } from "@/lib/auth/session";
 import { getDefaultTenantId } from "@/lib/buyer/tenant-context";
 import { recordBuyerGrowthEvent } from "@/lib/buyer/buyer-analytics";
+import { refreshFsboListingAnalytics } from "@/lib/listings/listing-analytics-service";
 
 export const dynamic = "force-dynamic";
 
@@ -47,6 +48,8 @@ export async function POST(request: NextRequest) {
     userId: userId ?? undefined,
     sessionId: sessionId ?? undefined,
   });
+
+  void refreshFsboListingAnalytics(fsboListingId, listing.priceCents).catch(() => {});
 
   return NextResponse.json({ ok: true });
 }

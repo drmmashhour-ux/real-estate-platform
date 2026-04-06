@@ -23,6 +23,7 @@ import {
   type GrowthAiFunnelStage,
 } from "@/src/modules/messaging/growthAiStage";
 import { MarketplacePersona, PlatformRole, type Prisma } from "@prisma/client";
+import { logBusinessMilestone, trackEvent } from "@/src/services/analytics";
 
 export function isAiAutoReplyEnabled(): boolean {
   return process.env.AI_AUTO_REPLY_ENABLED === "1";
@@ -239,6 +240,12 @@ export async function recordGrowthAiUserInbound(options: {
   });
 
   await refreshGrowthAiConversationStage(conv.id, "user_inbound");
+
+  void trackEvent(
+    "message_sent",
+    { conversationId: conv.id, messageId: msg.id, channel },
+    { userId }
+  );
 
   await updateGrowthAiOutcome(conv.id, "user_replied");
 
@@ -555,6 +562,13 @@ export async function processOneGrowthAiReply(conversationId: string): Promise<{
   }
 
   await refreshGrowthAiConversationStage(conv.id, "post_auto_reply");
+
+  void trackEvent(
+    "ai_reply_sent",
+    { conversationId: conv.id, templateKey: tplKey, handoffRequired },
+    { userId: conv.userId }
+  );
+  logBusinessMilestone("AI REPLY SENT", { conversationId: conv.id, templateKey: tplKey });
 
   return { ok: true };
 }

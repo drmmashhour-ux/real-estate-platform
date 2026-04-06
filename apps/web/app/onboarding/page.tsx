@@ -1,11 +1,28 @@
-import type { Metadata } from "next";
-import OnboardingPageClient from "./onboardingPage";
+import { redirect } from "next/navigation";
+import { prisma } from "@/lib/db";
+import { getGuestId } from "@/lib/auth/session";
+import { OnboardingClient } from "./onboarding-client";
 
-export const metadata: Metadata = {
-  title: "Onboarding",
-  description: "Role selection, property input, and instant analysis onboarding.",
-};
+export const dynamic = "force-dynamic";
 
-export default function OnboardingPage() {
-  return <OnboardingPageClient />;
+export default async function OnboardingPage() {
+  const userId = await getGuestId();
+  if (!userId) {
+    redirect("/auth/login?returnUrl=/onboarding");
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { launchOnboardingCompletedAt: true, role: true },
+  });
+
+  if (!user) {
+    redirect("/auth/login?returnUrl=/onboarding");
+  }
+
+  if (user.launchOnboardingCompletedAt) {
+    redirect("/dashboard");
+  }
+
+  return <OnboardingClient />;
 }

@@ -15,6 +15,7 @@ import { DeleteBrokerClientButton } from "./delete-client-button";
 import { OpenContextConversationButton } from "@/components/messaging/OpenContextConversationButton";
 import { buildIntakeReadinessSummary } from "@/modules/intake/services/build-intake-readiness-summary";
 import { calculateChecklistProgress } from "@/modules/intake/services/calculate-checklist-progress";
+import { PrintPageButton } from "@/components/ui/PrintPageButton";
 
 export const dynamic = "force-dynamic";
 
@@ -86,6 +87,17 @@ export default async function BrokerClientDetailPage(props: PageProps) {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <BrokerCrmStagingBadge />
+            <Link
+              href={`/api/broker/clients/${client.id}/export`}
+              target="_blank"
+              className="rounded-full border border-white/10 px-3 py-1.5 text-sm text-slate-200 hover:border-emerald-400/40 hover:text-white"
+            >
+              Open dossier
+            </Link>
+            <PrintPageButton
+              label="Print client file"
+              className="print:hidden rounded-full border border-white/10 px-3 py-1.5 text-sm text-slate-200 hover:border-emerald-400/40 hover:text-white disabled:opacity-60"
+            />
             <Link
               href="/dashboard/broker/clients"
               className="text-sm text-emerald-400/90 hover:underline"

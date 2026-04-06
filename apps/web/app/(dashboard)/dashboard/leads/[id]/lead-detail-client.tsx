@@ -10,6 +10,8 @@ import { SalesAssistantPanel } from "./sales-assistant";
 import { getDmTemplateForLead, type DmTemplateKey } from "@/lib/leads/dm-templates";
 import { getContactWhatsAppUrl } from "@/lib/config/contact";
 import { ImmoPlatformCollaborationClause } from "@/components/immo/ImmoPlatformCollaborationClause";
+import { ViralMomentPrompt } from "@/components/referral/ViralMomentPrompt";
+import { DealLegalTimelineSummaryCard } from "@/components/deal/DealLegalTimelineSummaryCard";
 
 type AutomationTaskRow = {
   id: string;
@@ -51,6 +53,12 @@ type LeadDetail = {
     leadContactOrigin?: string | null;
     commissionEligible?: boolean;
   } | null;
+  dealLegalTimeline?: {
+    dealId: string;
+    currentStage: string;
+    stages: Array<{ key: string; label: string; status: "completed" | "current" | "upcoming" }>;
+    events: Array<{ id: string; createdAt: string; note: string | null; stage: string | null }>;
+  } | null;
   contactAuditEvents?: { id: string; eventType: string; createdAt: string; metadata?: unknown }[];
   dealValue?: number | null;
   commissionEstimate?: number | null;
@@ -81,6 +89,8 @@ type LeadDetail = {
     dmSuggestions: { id: string; title: string; detail: string }[];
     recommendedAction: { label: string; reason: string; kind: string };
   };
+  revenuePotential?: number;
+  revenuePushActions?: { key: string; label: string; reason: string }[];
   crmInteractions: {
     id: string;
     type: string;
@@ -97,7 +107,13 @@ type TimelineEvent = {
   createdAt: string;
 };
 
-export function LeadDetailClient({ leadId }: { leadId: string }) {
+export function LeadDetailClient({
+  leadId,
+  viralInviteUrl,
+}: {
+  leadId: string;
+  viralInviteUrl?: string;
+}) {
   const [lead, setLead] = useState<LeadDetail | null>(null);
   const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
   const [note, setNote] = useState("");
@@ -352,6 +368,23 @@ export function LeadDetailClient({ leadId }: { leadId: string }) {
                   : ""}
               </p>
             ) : null}
+            {typeof lead.revenuePotential === "number" && lead.revenuePotential > 0 ? (
+              <p className="mt-2 rounded-lg border border-emerald-500/30 bg-emerald-950/20 px-3 py-2 text-xs text-emerald-100/90">
+                Revenue potential (open opportunities):{" "}
+                <span className="font-bold tabular-nums text-emerald-300">
+                  ~${Math.round(lead.revenuePotential).toLocaleString()}
+                </span>
+              </p>
+            ) : null}
+            {lead.revenuePushActions && lead.revenuePushActions.length > 0 ? (
+              <ul className="mt-2 list-inside list-disc text-[11px] text-[#9CA3AF]">
+                {lead.revenuePushActions.map((a) => (
+                  <li key={a.key}>
+                    <span className="font-medium text-[#D1D5DB]">{a.label}</span> — {a.reason}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
           </div>
           <div className="rounded-2xl border border-white/10 bg-[#121212] p-5">
             <p className="text-xs font-semibold uppercase tracking-wider text-premium-gold">Deal &amp; commission</p>
@@ -385,6 +418,16 @@ export function LeadDetailClient({ leadId }: { leadId: string }) {
             ) : null}
           </div>
         </div>
+
+        {lead.deal?.id && lead.dealLegalTimeline ? (
+          <div className="mt-4">
+            <DealLegalTimelineSummaryCard
+              summary={lead.dealLegalTimeline}
+              href={`/dashboard/deals/${lead.deal.id}`}
+              title="Linked deal legal timeline"
+            />
+          </div>
+        ) : null}
 
         {/* Recommended action + tasks */}
         {(lead.automation?.recommendedAction || (lead.automationTasks && lead.automationTasks.length > 0)) && (
@@ -697,6 +740,16 @@ export function LeadDetailClient({ leadId }: { leadId: string }) {
             </div>
           </div>
         </section>
+
+        {pipeline === "won" && viralInviteUrl ? (
+          <section className="mt-8">
+            <ViralMomentPrompt
+              headline="Deal closed — scale your network"
+              sub="Invite another agent or client while momentum is high; referral credits apply on their first conversion."
+              inviteUrl={viralInviteUrl}
+            />
+          </section>
+        ) : null}
 
         <section className="mt-8 rounded-2xl border border-white/10 bg-[#121212] p-5">
           <p className="text-sm font-semibold text-white">Activity</p>

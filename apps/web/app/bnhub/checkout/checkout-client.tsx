@@ -14,6 +14,14 @@ import type { GuestOfferCard } from "@/components/bnhub/services/ServiceCard";
 
 type Breakdown = {
   subtotalCents: number;
+  earlyBookingDiscountCents?: number;
+  earlyBookingLabel?: string | null;
+  loyaltyDiscountCents?: number;
+  loyaltyDiscountLabel?: string | null;
+  lodgingDiscountAppliedCents?: number;
+  lodgingDiscountSource?: "NONE" | "EARLY_BOOKING" | "LOYALTY";
+  loyaltyDiscountPercentOffered?: number;
+  lodgingSubtotalAfterDiscountCents?: number;
   cleaningFeeCents: number;
   gstCents?: number;
   qstCents?: number;
@@ -101,7 +109,7 @@ export function BNHubCheckoutClient({
       guestCount: String(Math.min(maxGuests, Math.max(1, guestCount))),
     });
     if (servicesPayload) params.set("services", servicesPayload);
-    fetch(`/api/bnhub/pricing/breakdown?${params}`)
+    fetch(`/api/bnhub/pricing/breakdown?${params}`, { credentials: "include" })
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
         const b = d?.breakdown;
@@ -111,6 +119,14 @@ export function BNHubCheckoutClient({
         }
         setBreakdown({
           subtotalCents: b.subtotalCents,
+          earlyBookingDiscountCents: b.earlyBookingDiscountCents ?? 0,
+          earlyBookingLabel: b.earlyBookingLabel ?? null,
+          loyaltyDiscountCents: b.loyaltyDiscountCents ?? 0,
+          loyaltyDiscountLabel: b.loyaltyDiscountLabel ?? null,
+          lodgingDiscountAppliedCents: b.lodgingDiscountAppliedCents ?? 0,
+          lodgingDiscountSource: b.lodgingDiscountSource ?? "NONE",
+          loyaltyDiscountPercentOffered: b.loyaltyDiscountPercentOffered ?? 0,
+          lodgingSubtotalAfterDiscountCents: b.lodgingSubtotalAfterDiscountCents ?? b.subtotalCents,
           cleaningFeeCents: b.cleaningFeeCents,
           gstCents: b.gstCents,
           qstCents: b.qstCents,
@@ -138,7 +154,7 @@ export function BNHubCheckoutClient({
       return;
     }
     if (!hostPayoutReady) {
-      setError("Host payout account is not configured yet.");
+      setError("Host payout is not configured yet. Booking checkout is temporarily unavailable.");
       return;
     }
     setLoading(true);
@@ -191,11 +207,12 @@ export function BNHubCheckoutClient({
           setLicenseOpen(true);
           return;
         }
-        throw new Error(data.error ?? "Booking failed");
+        setError("Something went wrong — please try again.");
+        return;
       }
       router.push(`/bnhub/booking/${data.id}`);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Booking failed");
+    } catch {
+      setError("Something went wrong — please try again.");
     } finally {
       setLoading(false);
     }
@@ -259,6 +276,24 @@ export function BNHubCheckoutClient({
               <span>Stay subtotal ({breakdown.nights} night{breakdown.nights !== 1 ? "s" : ""})</span>
               <span>${(breakdown.subtotalCents / 100).toFixed(0)}</span>
             </div>
+            {(breakdown.lodgingDiscountAppliedCents ?? 0) > 0 && (
+              <div className="flex justify-between text-emerald-400">
+                <span>
+                  {breakdown.lodgingDiscountSource === "LOYALTY"
+                    ? breakdown.loyaltyDiscountLabel ?? "Loyalty savings"
+                    : breakdown.earlyBookingLabel ?? "Early booking"}
+                </span>
+                <span>-${((breakdown.lodgingDiscountAppliedCents ?? 0) / 100).toFixed(0)}</span>
+              </div>
+            )}
+            {guestId &&
+              (breakdown.loyaltyDiscountPercentOffered ?? 0) > 0 &&
+              breakdown.lodgingDiscountSource === "LOYALTY" && (
+                <p className="text-xs text-emerald-300/90">
+                  Your loyalty discount: {breakdown.loyaltyDiscountPercentOffered}% on lodging (best single offer vs other
+                  promos).
+                </p>
+              )}
             {breakdown.cleaningFeeCents > 0 && (
               <div className="flex justify-between text-slate-400">
                 <span>Cleaning fee</span>
@@ -357,9 +392,9 @@ export function BNHubCheckoutClient({
           <button
             type="submit"
             disabled={loading || !breakdown || (hasRules && !agreed) || !hostPayoutReady}
-            className="rounded-xl bg-emerald-500 px-6 py-3 text-sm font-semibold text-slate-950 hover:bg-emerald-400 disabled:opacity-50"
+            className="min-h-[44px] rounded-xl bg-emerald-500 px-6 py-3 text-sm font-semibold text-slate-950 hover:bg-emerald-400 disabled:opacity-50"
           >
-            {loading ? "Reserving…" : "Confirm and pay"}
+            {loading ? "Reserving…" : "Reserve now — pay securely"}
           </button>
         )}
         <Link

@@ -6,7 +6,7 @@ import { prisma } from "@/lib/db";
 import { hubNavigation } from "@/lib/hub/navigation";
 import { SeoBlogEditForm } from "../../SeoBlogEditForm";
 
-type Props = { params: Promise<{ id: string }>; searchParams: Promise<{ created?: string }> };
+type Props = { params: Promise<{ id: string }>; searchParams?: Promise<{ created?: string }> };
 
 export default async function AdminSeoBlogEditPage({ params, searchParams }: Props) {
   const guestId = await getGuestId();
@@ -15,7 +15,7 @@ export default async function AdminSeoBlogEditPage({ params, searchParams }: Pro
   if (user?.role !== "ADMIN") redirect("/admin/dashboard");
 
   const { id } = await params;
-  const { created } = await searchParams;
+  const { created } = (await searchParams) ?? {};
   const post = await prisma.seoBlogPost.findUnique({
     where: { id },
     select: {

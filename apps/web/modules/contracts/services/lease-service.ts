@@ -6,6 +6,7 @@ type BookingWithGuestListing = Prisma.BookingGetPayload<{
     listing: true;
   };
 }>;
+import { getPublicAppUrl } from "@/lib/config/public-app-url";
 import { prisma } from "@/lib/db";
 import { CONTRACT_TYPES, LEASE_CONTRACT_STATUS } from "@/lib/hubs/contract-types";
 import { buildLeaseTemplateHtml } from "@/modules/contracts/services/templates/lease-template";
@@ -228,7 +229,7 @@ export async function createLeaseContract(input: CreateLeaseInput): Promise<{ co
     return c;
   });
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") || "http://localhost:3000";
+  const appUrl = getPublicAppUrl();
   const signUrl = `${appUrl}/contracts/${contract.id}`;
 
   const notifyEmails = [tenantEmail, landlordEmail, ...(broker ? [broker.email] : [])].filter(

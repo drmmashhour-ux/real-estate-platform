@@ -20,6 +20,10 @@ import { isDemoMode } from "@/lib/demo-mode";
 import { isDemoModeApiMutationAllowed } from "@/lib/demo-mode-allowlist";
 import { DemoEvents } from "@/lib/demo-event-types";
 import { REQUEST_ID_HEADER } from "@/lib/middleware/request-logger";
+import {
+  hasRawCardLikePayload,
+  jsonResponseRawCardBlocked,
+} from "@/lib/security/blockRawCardData";
 import { isSecureCookieContext } from "@/lib/runtime-env";
 import {
   HUB_USER_ROLE_COOKIE,
@@ -91,9 +95,30 @@ function redirectWithRequestId(request: NextRequest, url: URL): NextResponse {
  * Next.js 16+ network boundary: merges legacy staging/demo gates with auth redirects and API gates.
  * Injects `x-request-id` for structured logging downstream.
  */
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   try {
     const pathname = request.nextUrl.pathname;
+
+    if (request.method === "POST" && pathname.startsWith("/api/") && !pathname.includes("webhook")) {
+      const ct = request.headers.get("content-type") ?? "";
+      if (ct.includes("application/json")) {
+        try {
+          const text = await request.clone().text();
+          if (text.trim() !== "") {
+            try {
+              const parsed = JSON.parse(text) as unknown;
+              if (hasRawCardLikePayload(parsed)) {
+                return jsonResponseRawCardBlocked();
+              }
+            } catch {
+              /* invalid JSON — let route handler reject */
+            }
+          }
+        } catch {
+          /* body read failed — continue */
+        }
+      }
+    }
 
     if (isDemoMode() && pathname.startsWith("/api/")) {
       const m = request.method.toUpperCase();

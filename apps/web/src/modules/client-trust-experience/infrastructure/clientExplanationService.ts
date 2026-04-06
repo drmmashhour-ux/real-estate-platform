@@ -1,4 +1,4 @@
-import { sellerDeclarationSections } from "@/src/modules/seller-declaration-ai/domain/declaration.schema";
+import { getSellerDeclarationSections } from "@/src/modules/seller-declaration-ai/domain/declaration.schema";
 import type { ClientSectionExplanation } from "@/src/modules/client-trust-experience/domain/clientExperience.types";
 
 const DISCLAIMER =
@@ -19,7 +19,7 @@ function formatFieldCheck(fieldKey: string, label: string, payload: Record<strin
  * Grounded, schema-based copy only—no generative legal advice.
  */
 export function buildClientSectionExplanation(sectionKey: string, payload: Record<string, unknown>): ClientSectionExplanation {
-  const section = sellerDeclarationSections.find((s) => s.key === sectionKey);
+  const section = getSellerDeclarationSections(payload).find((s) => s.key === sectionKey);
   if (!section) {
     return {
       sectionKey,

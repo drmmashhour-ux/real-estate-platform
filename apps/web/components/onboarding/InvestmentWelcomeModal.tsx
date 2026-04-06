@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AnalyzeLinkButton } from "@/components/marketing/AnalyzeLinkButton";
+import { suppressGlobalMarketingOverlays } from "@/lib/ui/dev-overlays";
 
 const STORAGE_KEY = "lecipm_investment_welcome_v1";
 
@@ -15,8 +16,11 @@ export function InvestmentWelcomeModal() {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
+    if (suppressGlobalMarketingOverlays()) return;
     if (!pathname) return;
-    if (pathname.startsWith("/admin") || pathname.startsWith("/embed")) return;
+    if (pathname.startsWith("/admin") || pathname.startsWith("/embed") || pathname.startsWith("/auth")) {
+      return;
+    }
     if (pathname !== "/") return;
 
     let cancelled = false;

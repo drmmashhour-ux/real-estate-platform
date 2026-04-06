@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import type { UserRole } from "@prisma/client";
+import type { UserRole } from "@/generated/prisma";
 
 export type CurrentUser = {
   id: string;

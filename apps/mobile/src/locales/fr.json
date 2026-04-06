@@ -1,0 +1,14 @@
+{
+  "common": {
+    "loading": "Chargement…",
+    "save": "Enregistrer",
+    "cancel": "Annuler"
+  },
+  "bookings": {
+    "manualPaymentTitle": "Organiser le paiement avec l’hôte",
+    "manualPaymentBody": "Le paiement en ligne n’est pas activé. Coordonnez le paiement avec votre hôte."
+  },
+  "market": {
+    "syriaRibbon": "Mode lancement Syrie : les paiements peuvent être organisés hors ligne."
+  }
+}

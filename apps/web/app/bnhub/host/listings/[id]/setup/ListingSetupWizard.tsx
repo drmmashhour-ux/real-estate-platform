@@ -6,10 +6,18 @@ import { useRouter } from "next/navigation";
 import { DynamicForm } from "@/components/forms/DynamicForm";
 import { useI18n } from "@/lib/i18n/I18nContext";
 import type { ContractTemplateDefinition } from "@/modules/contracts/templates";
+import { LEGAL_RENT_RIGHT_ATTESTATION_SUMMARY } from "@/lib/bnhub/legal-rent-attestation-policy";
 
 type SetupPayload = {
   steps: Record<string, boolean>;
-  meta?: { photoCount?: number; listingStatus?: string };
+  meta?: {
+    photoCount?: number;
+    listingStatus?: string;
+    listingVerificationStatus?: string;
+    legalRentRightAttestedAt?: string | null;
+    legalRentRightAttestationVersion?: string | null;
+    requiredAttestationVersion?: string;
+  };
 };
 
 export function ListingSetupWizard({
@@ -27,6 +35,9 @@ export function ListingSetupWizard({
   const [formError, setFormError] = useState<string | null>(null);
   const [publishLoading, setPublishLoading] = useState(false);
   const [publishReasons, setPublishReasons] = useState<string[]>([]);
+  const [attestChecked, setAttestChecked] = useState(false);
+  const [attestLoading, setAttestLoading] = useState(false);
+  const [attestError, setAttestError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     const [sRes, tRes] = await Promise.all([
@@ -71,6 +82,31 @@ export function ListingSetupWizard({
       void load();
     } finally {
       setPublishLoading(false);
+    }
+  }
+
+  async function handleAttestation() {
+    setAttestError(null);
+    if (!attestChecked) {
+      setAttestError("Check the box to confirm before saving.");
+      return;
+    }
+    setAttestLoading(true);
+    try {
+      const res = await fetch(`/api/bnhub/host/listings/${listingId}/legal-attestation`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirm: true }),
+      });
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) {
+        setAttestError(data.error ?? "Could not save attestation");
+        return;
+      }
+      setAttestChecked(false);
+      void load();
+    } finally {
+      setAttestLoading(false);
     }
   }
 
@@ -216,7 +252,67 @@ export function ListingSetupWizard({
 
         <li className="rounded-2xl border border-slate-800 bg-slate-900/50 p-4">
           <div className="flex items-center justify-between gap-2">
-            <span className="font-medium text-white">6. Submit (publish)</span>
+            <span className="font-medium text-white">6. Platform ownership verification</span>
+            {done.verification ? (
+              <span className="text-xs text-emerald-400">Approved</span>
+            ) : (
+              <span className="text-xs text-amber-400">Required</span>
+            )}
+          </div>
+          <p className="mt-2 text-sm text-slate-500">
+            An administrator must verify your land register (or broker authorization) and listing details before you can
+            go live. Upload documents and submit from the listing editor when your cadastre and province are set.
+          </p>
+          <Link
+            href={`/bnhub/host/listings/${listingId}/edit`}
+            className="mt-2 inline-block text-sm text-emerald-400 hover:text-emerald-300"
+          >
+            Listing editor &amp; documents →
+          </Link>
+        </li>
+
+        <li className="rounded-2xl border border-slate-800 bg-slate-900/50 p-4">
+          <div className="flex items-center justify-between gap-2">
+            <span className="font-medium text-white">7. Legal right to offer this stay</span>
+            {done.legalAttestation ? (
+              <span className="text-xs text-emerald-400">Confirmed</span>
+            ) : (
+              <span className="text-xs text-amber-400">Required</span>
+            )}
+          </div>
+          <p className="mt-2 text-sm text-slate-400">{LEGAL_RENT_RIGHT_ATTESTATION_SUMMARY}</p>
+          {!done.verification && (
+            <p className="mt-2 text-sm text-amber-400/90">
+              Available after step 6 is approved by the platform.
+            </p>
+          )}
+          {done.verification && !done.legalAttestation && (
+            <div className="mt-4 space-y-3">
+              <label className="flex cursor-pointer items-start gap-2 text-sm text-slate-300">
+                <input
+                  type="checkbox"
+                  className="mt-1 rounded border-slate-600"
+                  checked={attestChecked}
+                  onChange={(e) => setAttestChecked(e.target.checked)}
+                />
+                <span>I have read the statement above and confirm it is true for this listing.</span>
+              </label>
+              {attestError && <p className="text-sm text-red-400">{attestError}</p>}
+              <button
+                type="button"
+                disabled={attestLoading}
+                onClick={() => void handleAttestation()}
+                className="rounded-xl border border-emerald-600/60 bg-emerald-950/40 px-4 py-2 text-sm font-semibold text-emerald-300 hover:bg-emerald-950/70 disabled:opacity-50"
+              >
+                {attestLoading ? "Saving…" : "Save confirmation"}
+              </button>
+            </div>
+          )}
+        </li>
+
+        <li className="rounded-2xl border border-slate-800 bg-slate-900/50 p-4">
+          <div className="flex items-center justify-between gap-2">
+            <span className="font-medium text-white">8. Submit (publish)</span>
             {done.submit ? (
               <span className="text-xs text-emerald-400">Published</span>
             ) : (
@@ -224,8 +320,8 @@ export function ListingSetupWizard({
             )}
           </div>
           <p className="mt-2 text-sm text-slate-500">
-            Publishing runs all mandatory checks (verification, disclosure, agreements, template fields, optional admin
-            approval).
+            Publishing runs mandatory checks: host identity, listing quality, disclosure, agreements, admin ownership
+            approval, and your legal-right confirmation.
           </p>
           {publishReasons.length > 0 && (
             <ul className="mt-2 list-inside list-disc text-sm text-red-400">

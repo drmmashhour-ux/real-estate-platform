@@ -63,8 +63,8 @@ export function AvailabilityCalendar({ listingId }: { listingId: string }) {
   const todayStart = new Date(new Date().setHours(0, 0, 0, 0)).getTime();
 
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 sm:p-5">
-      <h2 className="text-lg font-semibold text-slate-200">Availability</h2>
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+      <h2 className="text-lg font-semibold text-slate-900">Availability</h2>
       <div className="mt-2 flex flex-wrap gap-3 text-[10px] text-slate-500 sm:text-xs">
         <span className="flex items-center gap-2">
           <span className="h-3 w-3 rounded bg-emerald-500/35 ring-1 ring-emerald-500/50" /> Available
@@ -81,16 +81,16 @@ export function AvailabilityCalendar({ listingId }: { listingId: string }) {
           type="button"
           aria-label="Previous month"
           onClick={() => setMonthOffset((m) => m - 1)}
-          className="rounded-lg border border-slate-600 px-3 py-1.5 text-sm text-slate-300 transition hover:border-premium-gold/40 hover:bg-slate-800 hover:text-white"
+          className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-700 transition hover:bg-slate-50"
         >
           ←
         </button>
-        <span className="text-sm font-medium text-slate-300">{monthLabel}</span>
+        <span className="text-sm font-medium text-slate-800">{monthLabel}</span>
         <button
           type="button"
           aria-label="Next month"
           onClick={() => setMonthOffset((m) => m + 1)}
-          className="rounded-lg border border-slate-600 px-3 py-1.5 text-sm text-slate-300 transition hover:border-premium-gold/40 hover:bg-slate-800 hover:text-white"
+          className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-700 transition hover:bg-slate-50"
         >
           →
         </button>
@@ -132,12 +132,12 @@ export function AvailabilityCalendar({ listingId }: { listingId: string }) {
             const isPast = d.getTime() < todayStart;
             const tone =
               isPast
-                ? "text-slate-600 border-transparent"
+                ? "text-slate-400 border-transparent"
                 : available === true
-                  ? "border-emerald-500/35 bg-emerald-500/15 text-emerald-100 hover:bg-emerald-500/25"
+                  ? "border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
                   : available === false
-                    ? "border-rose-500/35 bg-rose-500/10 text-rose-100/90 hover:bg-rose-500/15"
-                    : "border-amber-500/30 bg-amber-500/10 text-amber-100/90 hover:bg-amber-500/18";
+                    ? "border-rose-300 bg-rose-50 text-rose-700 hover:bg-rose-100"
+                    : "border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100";
             return (
               <button
                 key={day}

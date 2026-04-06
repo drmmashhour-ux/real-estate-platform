@@ -13,10 +13,10 @@ type Search = {
 };
 
 export default async function BrokerIntakeDashboardPage(props: {
-  searchParams: Promise<Search>;
+  searchParams?: Promise<Search>;
 }) {
   const user = await requireBrokerOrAdminPage("/dashboard/broker/intake");
-  const sp = await props.searchParams;
+  const sp = (await props.searchParams) ?? {};
   const statusFilter = sp.status?.trim();
   const listFilter = sp.filter?.trim();
 

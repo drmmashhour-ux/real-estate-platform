@@ -1,5 +1,6 @@
 import { GrowthEmailQueueType, GrowthEmailQueueStatus } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { assertBrokerCanReceiveNewLead } from "@/modules/billing/brokerLeadBilling";
 import { trackEvent } from "./analytics";
 import { createLead } from "./crm";
 import { getNotificationEmail, sendEmail } from "@/lib/email/resend";
@@ -52,10 +53,13 @@ export async function onInquiryAutomation(input: InquiryAutomationInput): Promis
   );
 
   if (input.brokerId) {
-    await prisma.lead.update({
-      where: { id: lead.id },
-      data: { introducedByBrokerId: input.brokerId },
-    });
+    const gate = await assertBrokerCanReceiveNewLead(prisma, input.brokerId);
+    if (gate.ok) {
+      await prisma.lead.update({
+        where: { id: lead.id },
+        data: { introducedByBrokerId: input.brokerId },
+      });
+    }
     const to = getNotificationEmail();
     if (to) {
       void sendEmail({

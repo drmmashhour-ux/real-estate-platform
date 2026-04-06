@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { assertBrokerCanReceiveNewLead, formatBrokerBillingBlockReason } from "@/modules/billing/brokerLeadBilling";
 
 export type CreateGrowthLeadInput = {
   userId?: string | null;
@@ -46,6 +47,8 @@ export async function updateLeadStatus(id: string, status: string) {
 
 /** Maps to broker assignment field used across LECIPM CRM. */
 export async function assignLead(id: string, brokerId: string) {
+  const gate = await assertBrokerCanReceiveNewLead(prisma, brokerId);
+  if (!gate.ok) throw new Error(formatBrokerBillingBlockReason(gate.reason));
   return prisma.lead.update({
     where: { id },
     data: { introducedByBrokerId: brokerId },

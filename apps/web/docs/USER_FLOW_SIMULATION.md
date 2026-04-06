@@ -103,7 +103,7 @@
 | Refund | charge.refunded | Payment.status = REFUNDED | ✅ Per SYSTEM_TEST_REPORT |
 | Failure | payment_intent.payment_failed | Logged via recordPlatformEvent | ✅ Per SYSTEM_TEST_REPORT |
 
-**Issues logged:** Manual test-mode validation required (4242 / 4000 0000 0000 0002); verify live keys and webhooks for production.
+**Issues logged:** Manual test-mode validation on Stripe-hosted Checkout (test cards per [Stripe Testing](https://stripe.com/docs/testing)); verify live keys and webhooks for production.
 
 ---
 

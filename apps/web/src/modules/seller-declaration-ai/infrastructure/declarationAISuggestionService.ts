@@ -1,11 +1,13 @@
 import type { DeclarationSuggestionResult } from "@/src/modules/seller-declaration-ai/domain/declaration.types";
 import { retrieveExamplesByField, retrieveGuidanceBySection } from "@/src/modules/seller-declaration-ai/knowledge/declarationKnowledgeRetrievalService";
+import { evaluateDeclarationContentCompliance } from "@/src/modules/seller-declaration-ai/validation/declarationContentComplianceService";
 
 export function generateSectionSuggestionInputSafe(args: {
   sectionKey: string;
   currentFacts: Record<string, unknown>;
 }): DeclarationSuggestionResult {
   const guidance = retrieveGuidanceBySection(args.sectionKey);
+  const contentIssues = evaluateDeclarationContentCompliance(args.currentFacts).filter((issue) => issue.sectionKey === args.sectionKey);
   const factEntries = Object.entries(args.currentFacts).filter(([, v]) => String(v ?? "").trim().length > 0);
   const factualLines = factEntries.map(([k, v]) => `${k}: ${String(v)}`);
 
@@ -14,10 +16,13 @@ export function generateSectionSuggestionInputSafe(args: {
   if (args.sectionKey === "water_damage" && !factEntries.some(([k]) => k.includes("details") || k.includes("date"))) {
     missingFacts.push("Include date/period and affected area.");
   }
+  if (contentIssues.length) {
+    missingFacts.push(...contentIssues.map((issue) => `${issue.message} ${issue.suggestion}`));
+  }
 
   const examples = retrieveExamplesByField(args.sectionKey, factEntries[0]?.[0] ?? "notes");
   const suggestedText = factualLines.length
-    ? `Based on provided facts: ${factualLines.join("; ")}. ${guidance[0]?.text ?? "Use neutral, factual wording."}`
+    ? `Based on provided facts, rewrite in neutral disclosure language only: ${factualLines.join("; ")}. ${guidance[0]?.text ?? "Use neutral, factual wording."}`
     : `${guidance[0]?.text ?? "Provide factual details for this section."}`;
 
   return {

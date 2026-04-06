@@ -2,15 +2,15 @@
  * Mobile — host payout summary (same data as web host API).
  */
 
-import { getGuestId } from "@/lib/auth/session";
+import { resolveCheckoutUserId } from "@/lib/auth/resolve-checkout-user";
 import { prisma } from "@/lib/db";
 import { getHostPayoutSummary } from "@/modules/bnhub-payments/services/payoutControlService";
 import { syncHostAccountFromUserStripe } from "@/modules/bnhub-payments/services/connectedAccountService";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
-  const userId = await getGuestId();
+export async function GET(request: Request) {
+  const userId = await resolveCheckoutUserId(request);
   if (!userId) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
   const listing = await prisma.shortTermListing.findFirst({

@@ -5,6 +5,8 @@ import { getGuestId } from "@/lib/auth/session";
 import { fsboListingLifecycleUx } from "@/lib/fsbo/listing-verification";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { bandAccent, scoreToVisualBand } from "@/lib/decision-engine/scoreVisual";
+import { getListingTransactionFlagsForListings } from "@/lib/fsbo/listing-transaction-flag";
+import { ListingTransactionFlag } from "@/components/listings/ListingTransactionFlag";
 
 export const dynamic = "force-dynamic";
 
@@ -32,6 +34,9 @@ export default async function SellerHubListingsPage() {
     take: 50,
     include: { verification: true },
   });
+  const transactionFlags = await getListingTransactionFlagsForListings(
+    listings.map((listing) => ({ id: listing.id, status: listing.status }))
+  );
 
   return (
     <main className="min-h-screen bg-[#0B0B0B] px-4 py-10 text-slate-100">
@@ -65,6 +70,11 @@ export default async function SellerHubListingsPage() {
                     <Link href={`/dashboard/seller/listings/${l.id}`} className="font-medium text-premium-gold hover:underline">
                       {l.title}
                     </Link>
+                    {transactionFlags.get(l.id) ? (
+                      <div className="mt-2">
+                        <ListingTransactionFlag flag={transactionFlags.get(l.id)!} />
+                      </div>
+                    ) : null}
                     <p className="text-xs text-slate-500">
                       {l.city} · updated {l.updatedAt.toLocaleDateString()}
                     </p>

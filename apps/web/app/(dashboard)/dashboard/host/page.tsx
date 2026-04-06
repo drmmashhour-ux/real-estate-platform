@@ -3,6 +3,10 @@ import { getGuestId } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
 import { getBookingsForHost } from "@/lib/bnhub/booking";
 import { HostDashboardHub } from "@/components/host/HostDashboardHub";
+import { getHostConversionInsights } from "@/lib/ai/conversion/conversion-engine";
+import { getHostReputationForHost } from "@/lib/ai/reputation/reputation-engine";
+import { updateHostPerformance } from "@/src/modules/reviews/aggregationService";
+import { AIAssistantPanel } from "@/components/ai/AIAssistantPanel";
 import type { CalendarBookingRow } from "@/components/calendar/BookingCalendar";
 
 export const dynamic = "force-dynamic";
@@ -15,6 +19,8 @@ export default async function DashboardHostPage() {
     where: { id: userId },
     select: {
       role: true,
+      stripeAccountId: true,
+      stripeOnboardingComplete: true,
       _count: { select: { shortTermListings: true } },
     },
   });
@@ -26,23 +32,26 @@ export default async function DashboardHostPage() {
     redirect("/dashboard");
   }
 
-  const [bookings, completedPayments, pendingPayments] = await Promise.all([
-    getBookingsForHost(userId),
-    prisma.payment.findMany({
-      where: {
-        status: "COMPLETED",
-        booking: { listing: { ownerId: userId } },
-      },
-      select: { hostPayoutCents: true },
-    }),
-    prisma.payment.findMany({
-      where: {
-        status: "PENDING",
-        booking: { listing: { ownerId: userId } },
-      },
-      select: { hostPayoutCents: true },
-    }),
-  ]);
+  const bookings = await getBookingsForHost(userId);
+  const completedPayments = await prisma.payment.findMany({
+    where: {
+      status: "COMPLETED",
+      booking: { listing: { ownerId: userId } },
+    },
+    select: { hostPayoutCents: true },
+  });
+  const pendingPayments = await prisma.payment.findMany({
+    where: {
+      status: "PENDING",
+      booking: { listing: { ownerId: userId } },
+    },
+    select: { hostPayoutCents: true },
+  });
+  const listingRefs = await prisma.shortTermListing.findMany({
+    where: { ownerId: userId },
+    select: { id: true, title: true, listingCode: true },
+    orderBy: { createdAt: "desc" },
+  });
 
   const totalEarningsCents = completedPayments.reduce((s, p) => s + (p.hostPayoutCents ?? 0), 0);
   const pendingPayoutCents = pendingPayments.reduce((s, p) => s + (p.hostPayoutCents ?? 0), 0);
@@ -64,13 +73,34 @@ export default async function DashboardHostPage() {
       : null,
   }));
 
+  const firstListingId = listingRefs[0]?.id;
+
+  const conversionInsights = await getHostConversionInsights(prisma, userId).catch(() => []);
+  void updateHostPerformance(userId).catch(() => {});
+  const hostReputation = await getHostReputationForHost(prisma, userId).catch(() => null);
+
   return (
     <div className="min-h-screen bg-[#050505] px-4 py-8 text-slate-100 sm:px-6">
+      <div className="mx-auto mb-8 max-w-6xl">
+        <AIAssistantPanel
+          context={{ listingId: firstListingId, role: "HOST" }}
+          agentKey="host_management"
+        />
+      </div>
       <HostDashboardHub
         bookings={rows}
         totalEarningsCents={totalEarningsCents}
         pendingPayoutCents={pendingPayoutCents}
         canManage
+        stripeAccountId={user.stripeAccountId}
+        stripeOnboardingComplete={user.stripeOnboardingComplete}
+        conversionInsights={conversionInsights}
+        hostReputation={hostReputation}
+        listingRefs={listingRefs.map((l) => ({
+          id: l.id,
+          title: l.title,
+          listingCode: l.listingCode,
+        }))}
       />
     </div>
   );

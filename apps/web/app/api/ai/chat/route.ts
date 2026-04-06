@@ -9,6 +9,8 @@ import { logError } from "@/lib/logger";
 import { getGuestId } from "@/lib/auth/session";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
 import { processCrmChatMessage, type CrmChatRequestBody } from "@/lib/immo/process-crm-chat";
+import { getPublicAppUrl } from "@/lib/config/public-app-url";
+import { handleLecipmManagerChat } from "@/lib/ai/managed-chat-handler";
 
 export const dynamic = "force-dynamic";
 
@@ -120,7 +122,7 @@ async function handleListingDesignChat(body: Record<string, unknown>) {
   if (listingId) {
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/design-studio/payload?id=${encodeURIComponent(String(listingId))}`,
+        `${getPublicAppUrl()}/api/design-studio/payload?id=${encodeURIComponent(String(listingId))}`,
         { cache: "no-store" }
       );
       const data = await res.json().catch(() => ({}));
@@ -166,6 +168,10 @@ async function handleListingDesignChat(body: Record<string, unknown>) {
 export async function POST(req: Request) {
   try {
     const body = await req.json().catch(() => ({}));
+
+    if (body?.lecipmManager === true || body?.channel === "lecipm_manager") {
+      return handleLecipmManagerChat(req, body as Record<string, unknown>);
+    }
 
     const hasCrmConversation =
       typeof body?.conversationId === "string" && body.conversationId.length > 0;

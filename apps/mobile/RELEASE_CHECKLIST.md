@@ -1,4 +1,4 @@
-# BNHub Guest Release Checklist
+# LECIPM mobile (Expo) release checklist
 
 This checklist covers the Expo mobile app in `apps/mobile` for App Store and Google Play release.
 
@@ -6,9 +6,9 @@ This checklist covers the Expo mobile app in `apps/mobile` for App Store and Goo
 
 - [x] Production API base URL points to `https://lecipm.com`
 - [x] `eas.json` exists with build profiles
-- [ ] Confirm app name is final: `BNHub Guest`
-- [ ] Confirm iOS bundle ID is final: `com.lecipm.bnhubguest`
-- [ ] Confirm Android package is final: `com.lecipm.bnhubguest`
+- [ ] Confirm app name is final: `LECIPM` (store listing can add subtitle)
+- [ ] Confirm iOS bundle ID is final: `com.lecipm.app`
+- [ ] Confirm Android package is final: `com.lecipm.app`
 - [ ] Confirm app version and build numbers are ready for release
 
 ## 2. Store Assets

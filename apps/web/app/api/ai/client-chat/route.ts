@@ -36,6 +36,7 @@ import {
   assertImmoContactLegalForSession,
   assertImmoGuestCanMessage,
 } from "@/lib/immo/immo-contact-legal-gate";
+import { getImmoContactRestriction } from "@/lib/immo/immo-contact-enforcement";
 
 export const dynamic = "force-dynamic";
 
@@ -181,6 +182,21 @@ export async function POST(req: NextRequest) {
             code: legal.code,
             brokerReasons: legal.brokerReasons,
             missing: legal.missing,
+            disclaimer: CLIENT_CHAT_DISCLAIMER,
+          },
+          { status: 403, headers: cors }
+        );
+      }
+      const restriction = await getImmoContactRestriction({
+        listingId: context.listingId,
+        buyerUserId: sessionUserIdGate,
+        brokerId: context.introducedByBrokerId,
+      });
+      if (restriction.blocked) {
+        return NextResponse.json(
+          {
+            error: restriction.reasons[0] ?? "ImmoContact is temporarily restricted for this listing.",
+            code: "IMMO_CONTACT_RESTRICTED",
             disclaimer: CLIENT_CHAT_DISCLAIMER,
           },
           { status: 403, headers: cors }

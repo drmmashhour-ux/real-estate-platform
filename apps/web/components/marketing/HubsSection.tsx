@@ -1,12 +1,14 @@
 import type { LucideIcon } from "lucide-react";
 import {
   Building2,
+  Briefcase,
+  HelpCircle,
   Home,
   Landmark,
   LayoutDashboard,
+  PiggyBank,
   Search,
   Sparkles,
-  Briefcase,
 } from "lucide-react";
 import Link from "next/link";
 import { SectionHeading } from "@/components/marketing/SectionHeading";
@@ -23,44 +25,57 @@ type Hub = {
 
 const hubs: Hub[] = [
   {
-    name: "Listings",
-    line: "Browse verified properties, compare deals, and move with confidence.",
+    name: "Buy hub",
+    line: "Search listings, filters, and deal context — the main purchase workspace.",
     href: "/listings",
     Icon: Search,
   },
   {
-    name: "SellerHub",
+    name: "Seller hub",
     line: "Listing, verification, and compliance for sellers and FSBO.",
     href: "/sell",
     Icon: Home,
   },
   {
     name: "BNHub",
-    line: "Short-term stays, hospitality, and BNHub host tools.",
-    href: "/bnhub/stays",
+    line: "Short-term stays, trips, and host tools (dashboard after sign-in).",
+    href: "/bnhub",
     Icon: Building2,
   },
   {
-    name: "MortgageHub",
+    name: "Mortgage hub",
     line: "Financing paths and specialist matching.",
     href: "/mortgage",
     Icon: Landmark,
   },
   {
-    name: "BrokerHub",
-    line: "CRM, pipeline, and brokerage workspace (signed-in brokers).",
+    name: "Finance hub",
+    line: "Invoices, commissions, and payments inside your dashboard (sign-in).",
+    href: "/dashboard/finance",
+    Icon: PiggyBank,
+  },
+  {
+    name: "Broker hub",
+    line: "CRM, pipeline, and brokerage workspace for signed-in brokers.",
     href: "/broker/dashboard",
     Icon: Briefcase,
   },
   {
+    name: "Help center",
+    line: "Guides for booking, selling, brokers, and evaluations.",
+    href: "/help",
+    Icon: HelpCircle,
+  },
+  {
     name: "Admin",
-    line: "Platform operations and controls (authenticated admins only).",
+    line: "Platform operations and staff console (authorized roles only).",
     href: "/admin",
     Icon: LayoutDashboard,
   },
   {
-    name: "AI Layer",
-    line: "Trust, scoring, and copilot intelligence across every hub.",
+    name: "AI layer",
+    line: "Analyze deals on the web; full AI workspace and copilot live in the dashboard after sign-in.",
+    href: "/analyze",
     Icon: Sparkles,
     layer: true,
   },
@@ -143,8 +158,8 @@ export function HubsSection() {
       <div className="mx-auto max-w-6xl">
         <SectionHeading
           eyebrow="Ecosystem hubs"
-          title="Six hubs, one AI layer"
-          subtitle="Listings, sell, BNHub stays, mortgage, brokers, and admin — unified trust, intelligence, and workflows."
+          title="Buy, sell, BNHub, finance, AI — one platform"
+          subtitle="Public hubs below; broker, finance, and BNHub dashboards open after sign-in. Use the Hubs menu in the header for a full link map."
         />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {productHubs.map((hub, i) => (

@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from "react";
 
-type Variant = "success" | "info" | "warning";
+type Variant = "success" | "info" | "warning" | "error";
 
 type Toast = { id: string; message: string; variant: Variant };
 
@@ -59,7 +59,9 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 ? "border-emerald-500/40 bg-emerald-950/95 text-emerald-100"
                 : t.variant === "warning"
                   ? "border-amber-500/50 bg-amber-950/95 text-amber-50"
-                  : "border-white/15 bg-[#1a1a1a]/95 text-white"
+                  : t.variant === "error"
+                    ? "border-red-500/50 bg-red-600 text-white"
+                    : "border-white/15 bg-[#1a1a1a]/95 text-white"
             }`}
             role="status"
           >

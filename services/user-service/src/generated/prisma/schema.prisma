@@ -1,0 +1,89 @@
+// User service shares the same DB as auth-service (users, user_roles, user_sessions).
+// Run auth-service migrations first. This schema adds user_settings only.
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  FAILED
+}
+
+enum AuthRole {
+  GUEST
+  HOST
+  BROKER
+  OWNER
+  ADMIN
+}
+
+model User {
+  id                      String             @id @default(uuid())
+  email                   String             @unique
+  passwordHash            String?            @map("password_hash")
+  name                    String?
+  phone                   String?
+  locale                  String?            @default("en_CA")
+  timezone                String?
+  verificationStatus      VerificationStatus @default(PENDING) @map("verification_status")
+  verificationProviderId  String?            @map("verification_provider_id")
+  verificationCompletedAt DateTime?          @map("verification_completed_at")
+  suspendedAt             DateTime?          @map("suspended_at")
+  suspensionReason        String?            @map("suspension_reason")
+  lastLoginAt             DateTime?          @map("last_login_at")
+  createdAt               DateTime           @default(now()) @map("created_at")
+  updatedAt               DateTime           @updatedAt @map("updated_at")
+  deletedAt               DateTime?          @map("deleted_at")
+
+  roles    UserRole[]
+  sessions UserSession[]
+  settings UserSettings?
+
+  @@map("users")
+}
+
+model UserRole {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  role      AuthRole
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, role])
+  @@index([userId])
+  @@map("user_roles")
+}
+
+model UserSession {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  tokenHash String   @map("token_hash")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("user_sessions")
+}
+
+model UserSettings {
+  id        String   @id @default(uuid())
+  userId    String   @unique @map("user_id")
+  settings  Json     @default("{}") // e.g. { "notifications": { "email": true }, "privacy": { "showEmail": false } }
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_settings")
+}

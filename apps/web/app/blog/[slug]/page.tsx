@@ -9,8 +9,20 @@ import { blogPostingJsonLd, breadcrumbJsonLd } from "@/modules/seo/infrastructur
 
 export const revalidate = 600;
 
-export function generateStaticParams() {
-  return BLOG_POSTS.map((p) => ({ slug: p.slug }));
+export const dynamicParams = true;
+
+export async function generateStaticParams() {
+  const staticParams = BLOG_POSTS.map((p) => ({ slug: p.slug }));
+  try {
+    const dbSlugs = await prisma.seoBlogPost.findMany({
+      select: { slug: true },
+    });
+    const have = new Set(staticParams.map((s) => s.slug));
+    const extra = dbSlugs.filter((r) => !have.has(r.slug)).map((r) => ({ slug: r.slug }));
+    return [...staticParams, ...extra];
+  } catch {
+    return staticParams;
+  }
 }
 
 type PageProps = { params: Promise<{ slug: string }> };

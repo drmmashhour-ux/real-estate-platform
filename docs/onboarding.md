@@ -35,7 +35,7 @@ pnpm install
 ## 4. Run the project
 
 ```bash
-# Main web app (http://localhost:3000 by default)
+# Main web app (http://localhost:3001 — `apps/web` default `pnpm dev`)
 pnpm dev
 
 # Web + admin together (when you work on both)

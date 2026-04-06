@@ -34,6 +34,9 @@ export function getDefaultHub(user: UserWithRole): string {
 
 export type HubKey =
   | "bnhub"
+  | "carhub"
+  | "servicehub"
+  | "investorhub"
   | "realEstate"
   | "luxury"
   | "broker"
@@ -52,6 +55,9 @@ export function getAccessibleHubs(user: UserWithRole): HubKey[] {
 
 export const HUB_PATHS: Record<HubKey, string> = {
   bnhub: "/dashboard/bnhub",
+  carhub: "/hub/carhub",
+  servicehub: "/hub/servicehub",
+  investorhub: "/hub/investorhub",
   realEstate: "/dashboard/real-estate",
   luxury: "/dashboard/luxury",
   broker: "/dashboard/broker",

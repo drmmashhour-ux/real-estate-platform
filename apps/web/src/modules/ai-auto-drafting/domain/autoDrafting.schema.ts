@@ -1,14 +1,15 @@
 import { AutoDraftDocumentType } from "@/src/modules/ai-auto-drafting/domain/autoDrafting.enums";
 import type { AutoDraftTemplateSchema } from "@/src/modules/ai-auto-drafting/domain/autoDrafting.types";
-import { sellerDeclarationSections } from "@/src/modules/seller-declaration-ai/domain/declaration.schema";
+import { getSellerDeclarationSections } from "@/src/modules/seller-declaration-ai/domain/declaration.schema";
 
 /** Maps seller declaration sections into auto-draft schema (template-first). */
 function fromSellerDeclaration(): AutoDraftTemplateSchema {
+  const sections = getSellerDeclarationSections();
   return {
     id: "seller_declaration_v1",
     label: "Seller declaration",
     documentType: AutoDraftDocumentType.SELLER_DECLARATION,
-    sections: sellerDeclarationSections.map((s) => ({
+    sections: sections.map((s) => ({
       key: s.key,
       label: s.label,
       description: s.description,

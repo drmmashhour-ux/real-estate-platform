@@ -2,6 +2,16 @@ import Link from "next/link";
 import { getGuestId } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
 
+function getPaymentTimelineLabel(paymentStatus: string | null | undefined, legacyStatus: string | null | undefined) {
+  if (paymentStatus === "PAID") return { label: "Payment confirmed", tone: "text-emerald-300" };
+  if (paymentStatus === "PROCESSING") return { label: "Processing after checkout", tone: "text-sky-300" };
+  if (paymentStatus === "REQUIRES_ACTION") return { label: "Action needed to complete payment", tone: "text-amber-300" };
+  if (paymentStatus === "FAILED") return { label: "Payment failed", tone: "text-rose-300" };
+  if (legacyStatus === "COMPLETED") return { label: "Payment confirmed", tone: "text-emerald-300" };
+  if (legacyStatus === "PENDING") return { label: "Not paid yet", tone: "text-amber-300" };
+  return { label: "Payment status unavailable", tone: "text-slate-400" };
+}
+
 export default async function GuestPaymentsPage() {
   const guestId = await getGuestId();
   if (!guestId) {
@@ -42,23 +52,43 @@ export default async function GuestPaymentsPage() {
         <ul className="mt-8 space-y-3">
           {bookings.map((b) => (
             <li key={b.id} className="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div>
-                  <p className="font-medium">{b.listing.title}</p>
-                  <p className="text-xs text-slate-500">
-                    {b.listing.city ?? "—"} ·{" "}
-                    {b.payment ? `${(b.payment.amountCents / 100).toFixed(2)} charged` : "No payment row"}
-                  </p>
-                </div>
-                <div className="text-right text-sm">
-                  <p className="text-slate-300">Legacy: {b.payment?.status ?? "—"}</p>
-                  {b.bnhubReservationPayment ? (
-                    <p className="text-slate-400">Marketplace: {b.bnhubReservationPayment.paymentStatus}</p>
-                  ) : (
-                    <p className="text-slate-600">Marketplace row after next checkout</p>
-                  )}
-                </div>
-              </div>
+              {(() => {
+                const timeline = getPaymentTimelineLabel(
+                  b.bnhubReservationPayment?.paymentStatus,
+                  b.payment?.status
+                );
+                return (
+                  <>
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                        <p className="font-medium">{b.listing.title}</p>
+                        <p className="text-xs text-slate-500">
+                          {b.listing.city ?? "—"} ·{" "}
+                          {b.payment ? `${(b.payment.amountCents / 100).toFixed(2)} charged` : "No payment row"}
+                        </p>
+                      </div>
+                      <div className="text-right text-sm">
+                        <p className={timeline.tone}>{timeline.label}</p>
+                        <p className="text-xs text-slate-500">
+                          Checkout: {b.bnhubReservationPayment?.paymentStatus ?? "not started"} · Booking:{" "}
+                          {b.payment?.status?.toLowerCase() ?? "—"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-3 rounded-lg border border-slate-800 bg-slate-950/40 px-3 py-2 text-xs text-slate-400">
+                      {b.bnhubReservationPayment?.paymentStatus === "PROCESSING"
+                        ? "Your checkout finished, and the platform is waiting for payment confirmation from Stripe."
+                        : b.bnhubReservationPayment?.paymentStatus === "REQUIRES_ACTION"
+                          ? "Open this payment to continue checkout and confirm the booking."
+                          : b.bnhubReservationPayment?.paymentStatus === "PAID"
+                            ? "Receipt and final breakdown are available."
+                            : b.bnhubReservationPayment?.paymentStatus === "FAILED"
+                              ? "Try checkout again or contact support if money left your card."
+                              : "Open the payment detail page to see the latest booking and receipt status."}
+                    </div>
+                  </>
+                );
+              })()}
               <Link
                 href={`/guest/payments/${b.id}`}
                 className="mt-3 inline-block text-sm font-medium text-emerald-400 hover:text-emerald-300"

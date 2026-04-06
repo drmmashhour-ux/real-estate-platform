@@ -1,6 +1,6 @@
 import { prisma } from "../db.js";
 import type { CreateReviewBody, ListReviewsQuery } from "../validation/schemas.js";
-import type { Prisma } from "@prisma/client";
+import type { Prisma } from "../generated/prisma/index.js";
 
 function round1(value: number): number {
   return Math.round(value * 10) / 10;

@@ -3,6 +3,7 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { getDefaultPayloadForFormType } from "@/lib/forms/registry";
 import { sendFormSubmissionNotificationToAdmin } from "@/lib/email/notifications";
+import { formatFormActivityNote } from "@/lib/forms/form-activity";
 
 export const dynamic = "force-dynamic";
 
@@ -44,7 +45,7 @@ export async function POST(req: Request) {
       data: {
         formSubmissionId: submission.id,
         action: "created",
-        note: status === "submitted" ? "Submitted by client" : "Draft created",
+        note: formatFormActivityNote("Client", status === "submitted" ? "Submitted form" : "Draft created"),
       },
     });
 

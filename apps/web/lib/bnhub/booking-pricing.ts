@@ -11,6 +11,9 @@ import {
   type AddonLineBreakdown,
   type SelectedAddonInput,
 } from "@/lib/bnhub/hospitality-addons";
+import { resolveEarlyBookingDiscount } from "@/lib/bnhub/early-booking-discount";
+import { pickBestLodgingDiscount, type LoyaltyTierCode } from "@/lib/loyalty/loyalty-engine";
+import { getLoyaltyLodgingDiscountForGuest } from "@/lib/loyalty/loyalty-service";
 
 const GUEST_SERVICE_FEE_PERCENT = 12;
 const HOST_FEE_PERCENT = 3;
@@ -18,8 +21,22 @@ const HOST_FEE_PERCENT = 3;
 export type PricingBreakdown = {
   /** Per-night amounts in cents (for date-based overrides) */
   nightlyBreakdown: { date: string; cents: number }[];
-  /** Sum of nightly amounts */
+  /** Sum of nightly amounts before lodging discounts */
   subtotalCents: number;
+  /** Early-booking rule candidate (not necessarily applied if loyalty is higher). */
+  earlyBookingDiscountCents: number;
+  earlyBookingLabel: string | null;
+  /** Loyalty candidate on lodging subtotal (not necessarily applied if early is higher). */
+  loyaltyDiscountCents: number;
+  loyaltyDiscountLabel: string | null;
+  /** Max(early, loyalty) — single discount on lodging; never both. */
+  lodgingDiscountAppliedCents: number;
+  lodgingDiscountSource: "NONE" | "EARLY_BOOKING" | "LOYALTY";
+  /** Tier-based % offered to this guest before best-of vs early booking (0 if anonymous). */
+  loyaltyTierCode: LoyaltyTierCode;
+  loyaltyDiscountPercentOffered: number;
+  /** subtotalCents − lodgingDiscountAppliedCents */
+  lodgingSubtotalAfterDiscountCents: number;
   cleaningFeeCents: number;
   /** Québec GST on (subtotal + cleaning), then QST on (subtotal + cleaning + GST) */
   gstCents: number;
@@ -55,6 +72,10 @@ export type ComputePricingParams = {
   guestCount?: number;
   /** Optional BNHub hospitality add-ons (listing service row ids + qty) */
   selectedAddons?: SelectedAddonInput[];
+  /** Server “today” for lead-time rules (tests) */
+  pricingAsOf?: Date;
+  /** When set, loyalty discount is evaluated vs early-booking; best single discount wins. */
+  guestUserId?: string;
 };
 
 /**
@@ -65,7 +86,7 @@ export type ComputePricingParams = {
 export async function computeBookingPricing(
   params: ComputePricingParams
 ): Promise<{ breakdown: PricingBreakdown; listing: { id: string; title: string; currency: string } } | null> {
-  const { listingId, checkIn, checkOut } = params;
+  const { listingId, checkIn, checkOut, pricingAsOf } = params;
   const checkInDate = new Date(checkIn);
   const checkOutDate = new Date(checkOut);
   const nights = Math.ceil(
@@ -89,7 +110,7 @@ export async function computeBookingPricing(
 
   // Build per-night prices: check AvailabilitySlot for priceOverrideCents per date
   const nightlyBreakdown: { date: string; cents: number }[] = [];
-  let cursor = new Date(checkInDate);
+  const cursor = new Date(checkInDate);
   while (cursor < checkOutDate) {
     const dateStr = cursor.toISOString().slice(0, 10);
     const slot = await prisma.availabilitySlot.findUnique({
@@ -105,19 +126,57 @@ export async function computeBookingPricing(
   }
 
   const subtotalCents = nightlyBreakdown.reduce((s, n) => s + n.cents, 0);
+
+  const pricingRules = await prisma.pricingRule.findMany({
+    where: { listingId },
+    select: { ruleType: true, payload: true, validFrom: true, validTo: true },
+  });
+
+  const early = resolveEarlyBookingDiscount({
+    grossNightlySubtotalCents: subtotalCents,
+    checkInIsoDate: checkIn.slice(0, 10),
+    rules: pricingRules,
+    pricingAsOf,
+  });
+  const earlyBookingDiscountCents = early?.discountCents ?? 0;
+  const earlyBookingLabel = early ? early.label : null;
+
+  let loyaltyDiscountCents = 0;
+  let loyaltyDiscountLabel: string | null = null;
+  let loyaltyTierCode: LoyaltyTierCode = "NONE";
+  let loyaltyDiscountPercentOffered = 0;
+  if (params.guestUserId) {
+    const loy = await getLoyaltyLodgingDiscountForGuest(prisma, params.guestUserId, subtotalCents);
+    loyaltyDiscountCents = loy.loyaltyDiscountCents;
+    loyaltyTierCode = loy.tier;
+    loyaltyDiscountPercentOffered = loy.discountPercent;
+    if (loy.discountPercent > 0) {
+      loyaltyDiscountLabel = `${loy.label} member · ${loy.discountPercent}% off lodging`;
+    }
+  }
+
+  const best = pickBestLodgingDiscount({
+    subtotalCents,
+    earlyDiscountCents: earlyBookingDiscountCents,
+    loyaltyDiscountCents,
+  });
+  const lodgingDiscountAppliedCents = best.appliedCents;
+  const lodgingDiscountSource = best.source;
+  const lodgingSubtotalAfterDiscountCents = subtotalCents - lodgingDiscountAppliedCents;
+
   const cleaningFeeCents = listing.cleaningFeeCents ?? 0;
-  const lodgingTaxableBaseCents = subtotalCents + cleaningFeeCents;
+  const lodgingTaxableBaseCents = lodgingSubtotalAfterDiscountCents + cleaningFeeCents;
   const { gstCents, qstCents, taxCents } =
     calculateQuebecRetailTaxOnLodgingBaseExclusiveCents(lodgingTaxableBaseCents);
   const serviceFeeCents = Math.round(
-    (subtotalCents * GUEST_SERVICE_FEE_PERCENT) / 100
+    (lodgingSubtotalAfterDiscountCents * GUEST_SERVICE_FEE_PERCENT) / 100
   );
   const hostFeeCents = Math.round(
-    (subtotalCents * HOST_FEE_PERCENT) / 100
+    (lodgingSubtotalAfterDiscountCents * HOST_FEE_PERCENT) / 100
   );
   const lodgingTotalBeforeAddonsCents =
-    subtotalCents + cleaningFeeCents + taxCents + serviceFeeCents;
-  const lodgingHostPayoutCents = subtotalCents + cleaningFeeCents - hostFeeCents;
+    lodgingSubtotalAfterDiscountCents + cleaningFeeCents + taxCents + serviceFeeCents;
+  const lodgingHostPayoutCents = lodgingSubtotalAfterDiscountCents + cleaningFeeCents - hostFeeCents;
   const depositCents = listing.securityDepositCents ?? 0;
 
   const guestCount = Math.min(
@@ -147,6 +206,15 @@ export async function computeBookingPricing(
     breakdown: {
       nightlyBreakdown,
       subtotalCents,
+      earlyBookingDiscountCents,
+      earlyBookingLabel,
+      loyaltyDiscountCents,
+      loyaltyDiscountLabel,
+      loyaltyTierCode,
+      loyaltyDiscountPercentOffered,
+      lodgingDiscountAppliedCents,
+      lodgingDiscountSource,
+      lodgingSubtotalAfterDiscountCents,
       cleaningFeeCents,
       gstCents,
       qstCents,

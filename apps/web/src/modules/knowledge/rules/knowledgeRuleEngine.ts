@@ -1,4 +1,5 @@
 import { computeDeclarationCompleteness } from "@/src/modules/seller-declaration-ai/validation/declarationCompletenessService";
+import { evaluateSellerWorkflowPillarRules } from "@/src/modules/seller-declaration-ai/knowledge/sellerWorkflowPillarRules";
 
 export type KnowledgeRuleEvaluation = {
   blocks: string[];
@@ -27,6 +28,10 @@ export function evaluateDeclarationKnowledgeRules(payload: Record<string, unknow
   if (completenessPercent > 0 && completenessPercent < 100) {
     warnings.push("Incomplete contract / declaration: finish all required sections before final approval.");
   }
+
+  const pillar = evaluateSellerWorkflowPillarRules(payload);
+  blocks.push(...pillar.blocks);
+  warnings.push(...pillar.warnings);
 
   return { blocks, warnings };
 }

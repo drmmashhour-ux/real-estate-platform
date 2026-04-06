@@ -136,6 +136,7 @@ export function searchOrderBy(
   const paginated = options?.paginated ?? false;
   switch (sort) {
     case "recommended":
+    case "ai":
       return paginated ? [{ createdAt: "desc" }] : [];
     case "priceAsc":
       return [{ nightPriceCents: "asc" }];

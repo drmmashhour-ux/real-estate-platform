@@ -1,84 +1,44 @@
-import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
-import { recordTrafficEventServer } from "@/lib/traffic/record-server-event";
+import { persistLaunchEvent } from "@/src/modules/launch/persistLaunchEvent";
 
 export const dynamic = "force-dynamic";
 
-const bodySchema = z.object({
-  email: z.string().email().max(320),
-  source: z.string().max(64).optional(),
-  sessionId: z.string().max(64).optional(),
-  /** Shared deal page — links waitlist to originating deal */
-  dealId: z.string().uuid().optional(),
-});
-
-export async function POST(req: NextRequest) {
-  const ip =
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    req.headers.get("x-real-ip") ??
-    "unknown";
-  const rl = checkRateLimit(`waitlist:${ip}`, { max: 20, windowMs: 86_400_000 });
-  if (!rl.allowed) {
+/** POST /api/waitlist — growth engine email capture → `growth_waitlist`. */
+export async function POST(req: Request) {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? req.headers.get("x-real-ip") ?? "anon";
+  const limit = checkRateLimit(`growth:waitlist:${ip}`, { windowMs: 60_000, max: 15 });
+  if (!limit.allowed) {
     return NextResponse.json(
-      { ok: false, error: "Too many requests." },
-      { status: 429, headers: getRateLimitHeaders(rl) }
+      { error: "Too many requests. Try again shortly." },
+      { status: 429, headers: getRateLimitHeaders(limit) }
     );
   }
 
-  let json: unknown;
+  let body: unknown;
   try {
-    json = await req.json();
+    body = await req.json();
   } catch {
-    return NextResponse.json({ ok: false, error: "Invalid JSON" }, { status: 400 });
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
-
-  const parsed = bodySchema.safeParse(json);
-  if (!parsed.success) {
-    return NextResponse.json({ ok: false, error: "Invalid email." }, { status: 400 });
+  const o = body && typeof body === "object" ? (body as Record<string, unknown>) : {};
+  const email = typeof o.email === "string" ? o.email.trim().toLowerCase() : "";
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return NextResponse.json({ error: "Valid email required" }, { status: 400 });
   }
-
-  const email = parsed.data.email.trim().toLowerCase();
-  const source = parsed.data.source?.trim() || "homepage";
-  const sessionId = parsed.data.sessionId?.trim().slice(0, 64) ?? null;
-  const dealId = parsed.data.dealId ?? null;
 
   try {
-    const existing = await prisma.waitlistUser.findUnique({ where: { email } });
-    const prevTags = Array.isArray(existing?.tags) ? [...(existing.tags as string[])] : [];
-    const hadEarly = prevTags.includes("early_user");
-    const tags = hadEarly ? prevTags : [...prevTags, "early_user"];
-
-    await prisma.waitlistUser.upsert({
+    await prisma.waitlist.upsert({
       where: { email },
-      create: {
-        email,
-        tags,
-        earlyUserTaggedAt: new Date(),
-      },
-      update: {
-        tags,
-        ...(!hadEarly ? { earlyUserTaggedAt: new Date() } : {}),
-      },
+      create: { email },
+      update: {},
     });
-  } catch (e) {
-    console.error("[waitlist]", e);
-    return NextResponse.json({ ok: false, error: "Could not save email." }, { status: 500 });
+  } catch {
+    return NextResponse.json({ error: "Could not save email" }, { status: 500 });
   }
 
-  await recordTrafficEventServer({
-    eventType: "growth_waitlist_signup",
-    path: null,
-    meta: {
-      source,
-      emailDomain: email.split("@")[1] ?? "",
-      ...(dealId ? { dealId } : {}),
-    },
-    sessionId,
-    headers: req.headers,
-    body: parsed.data,
-  });
+  void persistLaunchEvent("WAITLIST_SIGNUP", { email });
 
-  return NextResponse.json({ ok: true }, { headers: getRateLimitHeaders(rl) });
+  return NextResponse.json({ ok: true }, { headers: getRateLimitHeaders(limit) });
 }

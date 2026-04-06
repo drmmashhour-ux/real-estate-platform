@@ -9,10 +9,11 @@ import {
   getLeadPriceCentsAsync,
 } from "@/lib/projects-pricing";
 import { logError } from "@/lib/logger";
+import { getPublicAppUrl } from "@/lib/config/public-app-url";
 
 export const dynamic = "force-dynamic";
 
-const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+const baseUrl = getPublicAppUrl();
 
 export async function POST(
   req: Request,

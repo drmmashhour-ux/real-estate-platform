@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
 import { getStripe, isStripeConfigured } from "@/lib/stripe";
-import { plans, type PlanKey } from "@/lib/billing/plans";
+import { PAID_STORAGE_PLAN_KEYS, plans, type PlanKey } from "@/lib/billing/plans";
 import { trackGrowthFunnelEvent } from "@/src/modules/growth-funnel/application/trackGrowthFunnelEvent";
+import { getPublicAppUrl } from "@/lib/config/public-app-url";
 
 export const dynamic = "force-dynamic";
 
-const VALID_PLANS: PlanKey[] = ["basic", "pro"];
+const VALID_PLANS: PlanKey[] = PAID_STORAGE_PLAN_KEYS;
 
 /**
  * POST /api/closing/checkout
@@ -38,7 +39,8 @@ export async function POST(req: Request) {
   const planConfig = plans[plan as PlanKey];
   const amountCents = Math.round(planConfig.price * 100);
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || req.headers.get("origin") || "http://localhost:3000";
+  const baseUrl =
+    process.env.NEXT_PUBLIC_APP_URL?.trim() || req.headers.get("origin") || getPublicAppUrl();
   const successUrl = `${baseUrl}/dashboard/storage?upgrade=success&plan=${encodeURIComponent(plan)}&closing=1`;
   const cancelUrl = `${baseUrl}/dashboard/storage?upgrade=cancelled`;
 

@@ -2,6 +2,8 @@ import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
 import { acceptOffer } from "@/lib/transactions/offers";
 import { verifyTransactionParties } from "@/lib/transactions/verification";
+import { prisma } from "@/lib/db";
+import { autoRecordDealLegalActionFromOffer } from "@/lib/deals/legal-timeline-bridge";
 
 /**
  * POST /api/offers/accept
@@ -22,10 +24,28 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: "offer_id is required" }, { status: 400 });
     }
 
+    const offer = await prisma.offer.findUnique({
+      where: { id: offerId },
+      select: { listingId: true, buyerId: true, status: true },
+    });
+    if (!offer) {
+      return Response.json({ error: "Offer not found" }, { status: 404 });
+    }
+
     const result = await acceptOffer({
       offerId,
       acceptedById: userId,
       acceptCounterOfferId: acceptCounterOfferId ?? null,
+    });
+    void autoRecordDealLegalActionFromOffer({
+      listingId: offer.listingId,
+      buyerId: offer.buyerId,
+      actorUserId: userId,
+      action: "OFFER_ACCEPTED",
+      note:
+        offer.status === "COUNTERED"
+          ? "Counter-offer accepted automatically from offer workflow."
+          : "Offer accepted automatically from offer workflow.",
     });
 
     const verification = await verifyTransactionParties(result.transactionId);

@@ -1,9 +1,11 @@
-# AI
+# LECIPM Manager — AI & autonomy docs
 
-AI Operating System (AI-OS): pricing, fraud, moderation, support, recommendations, demand, ranking, and human-in-the-loop governance.
+- [AUTONOMY-AUDIT.md](./AUTONOMY-AUDIT.md) — codebase map and safe boundaries
+- [ARCHITECTURE.md](./ARCHITECTURE.md) — module layout
+- [AUTONOMY.md](./AUTONOMY.md) — modes, kill switches, scheduler
+- [AGENTS.md](./AGENTS.md) — agent responsibilities
+- [POLICIES.md](./POLICIES.md) — action and risk classes
+- [OVERRIDES.md](./OVERRIDES.md) — human override and approvals
+- [OPERATIONS.md](./OPERATIONS.md) — cron, troubleshooting
 
-| Document | Description |
-|----------|-------------|
-| [AI-OPERATING-SYSTEM.md](AI-OPERATING-SYSTEM.md) | Concise AI-OS overview |
-| [LECIPM-AI-OPERATING-SYSTEM.md](LECIPM-AI-OPERATING-SYSTEM.md) | Full AI Operating System blueprint |
-| [GROWTH-AI-WORKER-ORDER.md](GROWTH-AI-WORKER-ORDER.md) | Cron order: self-learning before autonomous deal closer (and relation to auto-reply) |
+All metrics shown in product UIs must come from real database queries — never invented figures.

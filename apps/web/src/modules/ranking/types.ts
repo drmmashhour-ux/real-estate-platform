@@ -106,6 +106,8 @@ export type BnhubListingRankingInput = {
   hostHasFastResponder: boolean;
   hostHasReliable: boolean;
   medianNightPriceCents: number | null;
+  /** Monthly top-host program — added to review signal (capped in engine). */
+  reputationRankBoost: number;
 };
 
 export type FsboListingRankingInput = {
@@ -128,6 +130,8 @@ export type FsboListingRankingInput = {
   viewCount: number;
   saveCount: number;
   leadCount: number;
+  /** Cached demand score (0–100) from `ListingAnalytics` when available. */
+  demandScoreFromAnalytics?: number | null;
   medianPriceCents: number | null;
 };
 

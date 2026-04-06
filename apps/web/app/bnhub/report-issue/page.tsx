@@ -6,13 +6,13 @@ import { TrustSafetyReportForm } from "./trust-safety-report-form";
 
 export const dynamic = "force-dynamic";
 
-type Props = { searchParams: Promise<{ listingId?: string; bookingId?: string }> };
+type Props = { searchParams?: Promise<{ listingId?: string; bookingId?: string }> };
 
 export default async function TrustSafetyReportPage({ searchParams }: Props) {
   const userId = await getGuestId();
   if (!userId) redirect("/login");
 
-  const params = await searchParams;
+  const params = (await searchParams) ?? {};
   const listingId = params.listingId?.trim() || null;
   const bookingId = params.bookingId?.trim() || null;
 

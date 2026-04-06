@@ -19,6 +19,7 @@ export function getProductionEnvStatus(): ProductionEnvCheck {
   ] as const;
 
   const recommended = [
+    "NEXT_PUBLIC_APP_URL",
     "NEXT_PUBLIC_SUPABASE_URL",
     "NEXT_PUBLIC_SUPABASE_ANON_KEY",
     "SUPABASE_SERVICE_ROLE_KEY",
@@ -52,6 +53,15 @@ export function getProductionEnvStatus(): ProductionEnvCheck {
 
 export function validateProductionEnvAtStartup(): void {
   const { ok, missing, warnings } = getProductionEnvStatus();
+  const strict =
+    PRODUCTION_HINT && (process.env.FAIL_LAUNCH_ON_MISSING_ENV === "1" || process.env.STRICT_LAUNCH_ENV === "1");
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  if (strict && !appUrl) {
+    throw new Error("[lecipm] STRICT_LAUNCH: NEXT_PUBLIC_APP_URL is required");
+  }
+  if (!ok && strict) {
+    throw new Error(`[lecipm] STRICT_LAUNCH: missing required env: ${missing.join(", ")}`);
+  }
   if (!ok && PRODUCTION_HINT) {
     console.warn("[lecipm] Production env incomplete — missing:", missing.join(", "));
   }

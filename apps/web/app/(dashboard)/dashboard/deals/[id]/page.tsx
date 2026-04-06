@@ -4,6 +4,8 @@ import { getGuestId } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
 import { isStripeConfigured } from "@/lib/stripe";
 import { DealDetailClient } from "./deal-detail-client";
+import { DealLegalTimelineClient } from "./deal-legal-timeline-client";
+import { getDealLegalTimeline } from "@/lib/deals/legal-timeline";
 
 export const dynamic = "force-dynamic";
 
@@ -43,6 +45,9 @@ export default async function DealDetailPage({
     },
   });
   if (!deal) notFound();
+  const viewer = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
+  const legalTimeline = await getDealLegalTimeline(deal.id);
+  const canEditLegalTimeline = viewer?.role === "ADMIN" || viewer?.role === "BROKER" || deal.brokerId === userId;
 
   return (
     <main className="min-h-screen bg-slate-950 text-slate-50">
@@ -133,6 +138,10 @@ export default async function DealDetailPage({
             </ul>
           )}
         </section>
+
+        {legalTimeline ? (
+          <DealLegalTimelineClient dealId={deal.id} timeline={legalTimeline} canEdit={canEditLegalTimeline} />
+        ) : null}
 
         {deal.status !== "closed" && deal.status !== "cancelled" && isStripeConfigured() && (
           <DealDetailClient

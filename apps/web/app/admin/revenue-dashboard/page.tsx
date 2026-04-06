@@ -14,13 +14,13 @@ export const dynamic = "force-dynamic";
 export default async function BnhubRevenueDashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ days?: string }>;
+  searchParams?: Promise<{ days?: string }>;
 }) {
   const guestId = await getGuestId();
   if (!guestId) redirect("/auth/login?next=/admin/revenue-dashboard");
   if (!(await isPlatformAdmin(guestId))) redirect("/admin");
 
-  const sp = await searchParams;
+  const sp = (await searchParams) ?? {};
   const days = Math.min(365, Math.max(1, Number(sp.days || 30)));
 
   await ensureDefaultPromotionPlans();

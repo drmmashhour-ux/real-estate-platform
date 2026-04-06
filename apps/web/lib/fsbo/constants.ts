@@ -5,6 +5,7 @@ export const FSBO_STATUS = {
   /** Submitted by seller; awaiting admin review before going live. */
   PENDING_VERIFICATION: "PENDING_VERIFICATION",
   ACTIVE: "ACTIVE",
+  ARCHIVED: "ARCHIVED",
   SOLD: "SOLD",
 } as const;
 
@@ -50,8 +51,20 @@ export function parseFsboPublishPlan(raw: unknown): FsboPublishPlan {
 export function isFsboPubliclyVisible(listing: {
   status: string;
   moderationStatus: string;
+  expiresAt?: Date | string | null;
+  archivedAt?: Date | string | null;
 }): boolean {
+  const expiresAt =
+    listing.expiresAt instanceof Date
+      ? listing.expiresAt
+      : typeof listing.expiresAt === "string"
+        ? new Date(listing.expiresAt)
+        : null;
+
   return (
-    listing.status === FSBO_STATUS.ACTIVE && listing.moderationStatus === FSBO_MODERATION.APPROVED
+    listing.status === FSBO_STATUS.ACTIVE &&
+    listing.moderationStatus === FSBO_MODERATION.APPROVED &&
+    !listing.archivedAt &&
+    (!expiresAt || Number.isNaN(expiresAt.getTime()) || expiresAt.getTime() > Date.now())
   );
 }

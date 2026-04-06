@@ -3,6 +3,7 @@ import { getGuestId } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
 import { captureServerEvent } from "@/lib/analytics/posthog-server";
 import { signListingAnalysisShare } from "@/lib/share/listing-analysis-share";
+import { getPublicAppUrl } from "@/lib/config/public-app-url";
 
 export const dynamic = "force-dynamic";
 
@@ -25,9 +26,7 @@ export async function POST(_request: Request, context: { params: Promise<{ id: s
   const exp = Math.floor(Date.now() / 1000) + 30 * 86400;
   const token = signListingAnalysisShare({ listingId, ownerId: userId, exp });
 
-  const origin =
-    process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+  const origin = getPublicAppUrl();
   const url = `${origin}/share/analysis?t=${encodeURIComponent(token)}`;
 
   captureServerEvent(userId, "listing_analysis_share_created", { listingId });

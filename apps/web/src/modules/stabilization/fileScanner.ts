@@ -1,7 +1,7 @@
 /**
- * Single implementation: walk apps/web for .ts / .tsx / .mts (stabilization + import audits).
+ * Single implementation: directory reads + walk apps/web for .ts / .tsx / .mts (stabilization + audits).
  */
-import { readdirSync } from "node:fs";
+import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
 export const STABILIZATION_SKIP_DIRS = new Set([
@@ -16,21 +16,34 @@ export const STABILIZATION_SKIP_DIRS = new Set([
   "e2e-report",
 ]);
 
-export function walkTsFiles(root: string, out: string[] = []): string[] {
+export type ChildEntryVisitor = (args: { absPath: string; name: string; isDirectory: boolean }) => void;
+
+/** One `join(dir, name)` path — use this instead of duplicating readdir loops. */
+export function forEachChildEntry(dir: string, visit: ChildEntryVisitor): void {
+  if (!existsSync(dir)) return;
   try {
-    const entries = readdirSync(root, { withFileTypes: true });
+    const entries = readdirSync(dir, { withFileTypes: true });
     for (const entry of entries) {
-      const entryName = String(entry.name);
-      const absPath = join(root, entryName);
-      if (entry.isDirectory()) {
-        if (STABILIZATION_SKIP_DIRS.has(entryName)) continue;
-        walkTsFiles(absPath, out);
-      } else if (/\.(tsx?|mts)$/.test(entryName) && !entryName.endsWith(".d.ts")) {
-        out.push(absPath);
-      }
+      const name = String(entry.name);
+      visit({
+        absPath: join(dir, name),
+        name,
+        isDirectory: entry.isDirectory(),
+      });
     }
   } catch {
-    return out;
+    /* permission / race: skip this directory */
   }
+}
+
+export function walkTsFiles(root: string, out: string[] = []): string[] {
+  forEachChildEntry(root, ({ absPath, name, isDirectory }) => {
+    if (isDirectory) {
+      if (STABILIZATION_SKIP_DIRS.has(name)) return;
+      walkTsFiles(absPath, out);
+    } else if (/\.(tsx?|mts)$/.test(name) && !name.endsWith(".d.ts")) {
+      out.push(absPath);
+    }
+  });
   return out;
 }

@@ -27,6 +27,8 @@ export type SmartPriceResult = {
   confidence: "low" | "medium" | "high";
   confidenceScore: number;
   marketAvgCents: number | null;
+  /** Published peers in the same city (includes this listing in count). */
+  peerListingCount: number;
   demandLevel: "low" | "medium" | "high";
   factors: { seasonality: number; demandRatio: number };
 };
@@ -72,6 +74,7 @@ export function computeSmartPrice(input: {
     confidence,
     confidenceScore,
     marketAvgCents: input.marketAvgCents,
+    peerListingCount: input.peerListingCount,
     demandLevel,
     factors: { seasonality: season, demandRatio },
   };

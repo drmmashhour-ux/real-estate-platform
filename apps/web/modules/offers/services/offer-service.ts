@@ -4,6 +4,8 @@ import { CONTRACT_TYPES, LEASE_CONTRACT_STATUS } from "@/lib/hubs/contract-types
 import { buildPurchaseOfferHtml } from "@/modules/contracts/services/templates/purchase-offer-template";
 import { buildRentalOfferHtml } from "@/modules/contracts/services/templates/rental-offer-template";
 import { sendContractSignRequestEmail } from "@/lib/email/contract-emails";
+import { recordDealLegalAction } from "@/lib/deals/legal-timeline";
+import { getPublicAppUrl } from "@/lib/config/public-app-url";
 
 export type OfferTypeKey = "purchase_offer" | "rental_offer";
 
@@ -153,7 +155,7 @@ export async function createOfferDocument(input: CreateOfferInput): Promise<{
     return { contract: c, offer: od };
   });
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") || "http://localhost:3000";
+  const appUrl = getPublicAppUrl();
   const offerUrl = `${appUrl}/contracts/${result.contract.id}`;
 
   await sendContractSignRequestEmail({
@@ -162,6 +164,28 @@ export async function createOfferDocument(input: CreateOfferInput): Promise<{
     title,
     reference: r,
   });
+
+  const effectiveLeadId =
+    typeof input.leadId === "string"
+      ? input.leadId
+      : typeof b.leadId === "string"
+        ? b.leadId
+        : null;
+  if (effectiveLeadId) {
+    const linkedDeal = await prisma.deal.findFirst({
+      where: { leadId: effectiveLeadId },
+      select: { id: true },
+    });
+    if (linkedDeal && input.type === "purchase_offer") {
+      await recordDealLegalAction({
+        dealId: linkedDeal.id,
+        actorUserId: input.actorId,
+        action: "PROMISE_RECEIVED",
+        note: "Purchase offer document generated and attached automatically.",
+        documentIds: [result.offer.id],
+      }).catch(() => {});
+    }
+  }
 
   return {
     offerDocumentId: result.offer.id,

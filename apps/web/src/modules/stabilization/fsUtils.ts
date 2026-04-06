@@ -1,7 +1,8 @@
 import { readFileSync, statSync, existsSync } from "node:fs";
 import { join, relative, dirname, normalize, resolve } from "node:path";
 
-export { walkTsFiles, STABILIZATION_SKIP_DIRS } from "./fileScanner";
+export { walkTsFiles, STABILIZATION_SKIP_DIRS, forEachChildEntry } from "./fileScanner";
+export type { ChildEntryVisitor } from "./fileScanner";
 
 export function relWeb(webRoot: string, abs: string): string {
   return relative(webRoot, abs).replace(/\\/g, "/");

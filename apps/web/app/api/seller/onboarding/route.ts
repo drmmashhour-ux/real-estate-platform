@@ -2,6 +2,7 @@ import type { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getGuestId } from "@/lib/auth/session";
+import { isBrokerVerified } from "@/lib/verification/broker";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +12,7 @@ export type SellerOnboardingPayload = {
   propertyAddress?: { line1?: string; city?: string; region?: string; postal?: string; country?: string };
   ownershipConfirmed?: boolean;
   idVerificationPlaceholder?: boolean;
-  sellingMode?: "FSBO" | "PLATFORM_BROKER";
+  sellingMode?: "FREE_HUB" | "PLATFORM_BROKER" | "PREFERRED_BROKER";
   completed?: boolean;
 };
 
@@ -33,10 +34,12 @@ export async function GET() {
     },
   });
   if (!user) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  const brokerVerified = await isBrokerVerified(userId).catch(() => false);
 
   return NextResponse.json({
     onboarding: user.sellerHubOnboardingJson ?? {},
     sellingMode: user.sellerSellingMode,
+    brokerVerified,
     completedAt: user.sellerOnboardingCompletedAt,
     legalAccuracyAcceptedAt: user.sellerLegalAccuracyAcceptedAt,
     sellerProfileAddress: user.sellerProfileAddress,
@@ -61,6 +64,7 @@ export async function POST(request: NextRequest) {
     where: { id: userId },
     select: { sellerHubOnboardingJson: true, marketplacePersona: true },
   });
+  const brokerVerified = await isBrokerVerified(userId).catch(() => false);
   const prev = (existing?.sellerHubOnboardingJson as Record<string, unknown> | null) ?? {};
 
   const merged = {
@@ -79,9 +83,14 @@ export async function POST(request: NextRequest) {
       ? [addr.line1, addr.city, addr.region, addr.postal, addr.country].filter(Boolean).join(", ")
       : undefined;
 
+  const requestedBrokerMode =
+    body.sellingMode === "PLATFORM_BROKER" || body.sellingMode === "PREFERRED_BROKER";
+  const normalizedSellingMode =
+    requestedBrokerMode && !brokerVerified ? "FREE_HUB" : body.sellingMode;
+
   const data: Prisma.UserUpdateInput = {
     sellerHubOnboardingJson: merged as object,
-    ...(body.sellingMode ? { sellerSellingMode: body.sellingMode } : {}),
+    ...(normalizedSellingMode ? { sellerSellingMode: normalizedSellingMode } : {}),
     ...(sellerProfileAddress ? { sellerProfileAddress } : {}),
   };
   if (body.completed === true) {
@@ -96,5 +105,14 @@ export async function POST(request: NextRequest) {
     data,
   });
 
-  return NextResponse.json({ ok: true, onboarding: merged });
+  return NextResponse.json({
+    ok: true,
+    onboarding: merged,
+    sellingMode: normalizedSellingMode,
+    brokerVerified,
+    warning:
+      requestedBrokerMode && !brokerVerified
+        ? "Broker license is not verified. Listing remains in Sell Hub free / non-broker mode until verification is approved."
+        : null,
+  });
 }

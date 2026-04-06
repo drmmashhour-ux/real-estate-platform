@@ -3,7 +3,7 @@ import { formatNegotiationDiffSummary, getNegotiationSnapshotForCase } from "@/s
 import { getCaseLegalSummary } from "@/src/modules/case-command-center/application/getCaseLegalSummary";
 import { runDeclarationValidationDeterministic } from "@/src/modules/seller-declaration-ai/validation/declarationValidationService";
 import { evaluateDeclarationKnowledgeRules } from "@/src/modules/knowledge/rules/knowledgeRuleEngine";
-import { sellerDeclarationSections } from "@/src/modules/seller-declaration-ai/domain/declaration.schema";
+import { getSellerDeclarationSections } from "@/src/modules/seller-declaration-ai/domain/declaration.schema";
 import type {
   CaseHealthBlockerItem,
   CaseHealthSnapshot,
@@ -15,14 +15,14 @@ import type {
 const MAX_ITEMS = 5;
 
 export function sectionKeyForFieldKey(fieldKey: string): string | undefined {
-  for (const sec of sellerDeclarationSections) {
+  for (const sec of getSellerDeclarationSections()) {
     if (sec.fields.some((f) => f.key === fieldKey)) return sec.key;
   }
   return undefined;
 }
 
 function fieldLabel(fieldKey: string): string {
-  for (const sec of sellerDeclarationSections) {
+  for (const sec of getSellerDeclarationSections()) {
     const f = sec.fields.find((x) => x.key === fieldKey);
     if (f) return f.label;
   }

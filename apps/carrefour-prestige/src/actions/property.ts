@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { propertyCreateSchema } from "@/validators/property";
 import { revalidatePath } from "next/cache";
-import type { PropertyStatus, PropertyType } from "@prisma/client";
+import type { PropertyStatus, PropertyType } from "@/generated/prisma";
 
 export async function createPropertyAction(formData: FormData): Promise<void> {
   const user = await getCurrentUser();

@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import { hashPassword } from "@/lib/auth/password";
 import { createDbSession } from "@/lib/auth/db-session";
 import { setGuestIdCookie, setUserRoleCookie } from "@/lib/auth/session";
-import { createReferralIfNeeded, ensureReferralCode } from "@/lib/referrals";
+import { createReferralIfNeeded, ensureReferralCode, resolveReferralAttribution } from "@/lib/referrals";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
 import { sendAccountVerificationEmail, sendSignupEmail } from "@/lib/email/send";
 import type { PlatformRole } from "@prisma/client";
@@ -16,13 +16,16 @@ import { trackConversionEvent } from "@/modules/conversion-engine/application/co
 import { runFollowUpAutomation } from "@/modules/conversion-engine/application/followUpAutomationService";
 import { runBnhubPostSignupAutomation } from "@/lib/bnhub/revenue-automation";
 import { trackEvent } from "@/src/services/analytics";
+import { persistLaunchEvent } from "@/src/modules/launch/persistLaunchEvent";
+import { recordGrowthEventWithFunnel } from "@/lib/growth/events";
 import { onSignupAutomation } from "@/src/services/automation";
 import { onMessagingTriggerSignup } from "@/src/modules/messaging/triggers";
+import { getPublicAppUrl } from "@/lib/config/public-app-url";
 
 const VERIFY_TTL_MS = 48 * 60 * 60 * 1000;
 
 function appBaseUrl(): string {
-  return (process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000").replace(/\/$/, "");
+  return getPublicAppUrl();
 }
 
 /** POST /api/auth/register — Create account; USER must verify email before session (see /auth/verify-email). */
@@ -34,9 +37,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Too many signup attempts. Try again later." }, { status: 429, headers: getRateLimitHeaders(limit) });
     }
     const body = await request.json();
-    const refCodeFromBody = typeof body?.ref === "string" ? body.ref.trim().toUpperCase() : null;
-    const refCodeFromQuery = request.nextUrl.searchParams.get("ref")?.trim().toUpperCase() ?? null;
-    const refCode = refCodeFromBody ?? refCodeFromQuery;
+    const refCodeFromBody = typeof body?.ref === "string" ? body.ref.trim() : null;
+    const refCodeFromQuery = request.nextUrl.searchParams.get("ref")?.trim() ?? null;
+    const refCodeRaw = refCodeFromBody ?? refCodeFromQuery;
     const refKindFromBody =
       typeof body?.ref_kind === "string" ? body.ref_kind.trim().toUpperCase().slice(0, 24) : null;
     const refKindFromQuery =
@@ -167,6 +170,15 @@ export async function POST(request: NextRequest) {
 
     const referralCode = await ensureReferralCode(user.id);
     void trackEvent("signup", { role: validRole }, { userId: user.id }).catch(() => {});
+    void persistLaunchEvent("USER_SIGNUP", {
+      userId: user.id,
+      role: validRole,
+      ...(refCodeRaw ? { referralRef: refCodeRaw } : {}),
+    });
+    void recordGrowthEventWithFunnel("signup", {
+      userId: user.id,
+      metadata: { role: validRole, ...(refCodeRaw ? { referralRef: refCodeRaw } : {}) },
+    });
     void onSignupAutomation(user.id).catch(() => {});
     void onMessagingTriggerSignup(user.id).catch(() => {});
     captureServerEvent(user.id, AnalyticsEvents.SIGNUP_COMPLETED, { role: validRole });
@@ -185,9 +197,21 @@ export async function POST(request: NextRequest) {
     if (tracked?.triggers?.length) {
       await runFollowUpAutomation(prisma, { userId: user.id, triggers: tracked.triggers }).catch(() => {});
     }
-    if (refCode) {
-      await createReferralIfNeeded(refCode, user.id, { inviteKind: refKind }).catch(() => {});
-      await prisma.referralEvent.create({ data: { code: refCode, eventType: "signup", userId: user.id } }).catch(() => {});
+    const attribution = refCodeRaw ? await resolveReferralAttribution(refCodeRaw).catch(() => null) : null;
+    if (attribution) {
+      await createReferralIfNeeded(attribution.publicCode, user.id, { inviteKind: refKind }).catch(() => {});
+      await prisma.referralEvent
+        .create({ data: { code: attribution.publicCode, eventType: "signup", userId: user.id } })
+        .catch(() => {});
+      void persistLaunchEvent("REFERRAL_SIGNUP", {
+        referredUserId: user.id,
+        referrerPublicCode: attribution.publicCode,
+        ...(refKind ? { inviteKind: refKind } : {}),
+      });
+      void recordGrowthEventWithFunnel("referral_signup", {
+        userId: user.id,
+        metadata: { referrerPublicCode: attribution.publicCode, ...(refKind ? { inviteKind: refKind } : {}) },
+      });
     }
 
     if (validRole !== "MORTGAGE_EXPERT") {

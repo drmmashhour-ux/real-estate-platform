@@ -1,17 +1,11 @@
 import { Router, type Request, type Response } from "express";
 import {
-  createIntentBodySchema,
   confirmPaymentBodySchema,
   refundPaymentBodySchema,
   historyQuerySchema,
 } from "../validation/schemas.js";
 import { validateBody, validateQuery, sendValidationError } from "../validation/validate.js";
-import {
-  createIntent,
-  confirmPayment,
-  refundPayment,
-  getHistory,
-} from "../payments/paymentService.js";
+import { confirmPayment, refundPayment, getHistory } from "../payments/paymentService.js";
 
 function toPaymentResponse(payment: Awaited<ReturnType<typeof confirmPayment>>) {
   if (!payment) return null;
@@ -40,24 +34,18 @@ function toPaymentResponse(payment: Awaited<ReturnType<typeof confirmPayment>>) 
 export function createPaymentsRouter(): Router {
   const router = Router();
 
-  /** POST /payments/intent — create payment intent (escrow hold). Returns clientSecret for frontend. */
-  router.post("/intent", async (req: Request, res: Response): Promise<void> => {
-    const validation = validateBody(createIntentBodySchema, req.body);
-    if (!validation.success) {
-      sendValidationError(res, validation.errors);
-      return;
-    }
-    try {
-      const result = await createIntent(validation.data);
-      res.status(201).json(result);
-    } catch (e) {
-      const message = e instanceof Error ? e.message : "Failed to create intent";
-      const status =
-        message.includes("not found") || message.includes("not pending") || message.includes("already")
-          ? 400
-          : 500;
-      res.status(status).json({ error: { code: "PAYMENT_ERROR", message } });
-    }
+  /**
+   * POST /payments/intent — removed (PCI): card data must never touch this service.
+   * Use Stripe Checkout Sessions from the platform app only.
+   */
+  router.post("/intent", async (_req: Request, res: Response): Promise<void> => {
+    res.status(410).json({
+      error: {
+        code: "CHECKOUT_ONLY",
+        message:
+          "PaymentIntents for client-side card entry are not supported. Use Stripe Checkout Sessions only.",
+      },
+    });
   });
 
   /** POST /payments/confirm — capture payment (confirm booking payment). */

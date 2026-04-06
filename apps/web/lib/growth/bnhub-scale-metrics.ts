@@ -54,6 +54,57 @@ export async function getBnhubScaleMetrics(days = 30) {
     take: 40,
   });
 
+  const [guestGmvAgg, guestFeeAgg, guestUpsellAgg, guestPaidBookingCount] = await Promise.all([
+    prisma.platformRevenueEvent.aggregate({
+      where: {
+        createdAt: { gte: start },
+        status: "realized",
+        revenueType: "bnhub_guest_booking_gmv",
+      },
+      _sum: { amountCents: true },
+    }),
+    prisma.platformRevenueEvent.aggregate({
+      where: {
+        createdAt: { gte: start },
+        status: "realized",
+        revenueType: "bnhub_guest_booking_service_fee",
+      },
+      _sum: { amountCents: true },
+    }),
+    prisma.platformRevenueEvent.aggregate({
+      where: {
+        createdAt: { gte: start },
+        status: "realized",
+        revenueType: "bnhub_guest_booking_upsell",
+      },
+      _sum: { amountCents: true },
+    }),
+    prisma.platformRevenueEvent.count({
+      where: {
+        createdAt: { gte: start },
+        status: "realized",
+        revenueType: "bnhub_guest_booking_gmv",
+      },
+    }),
+  ]);
+
+  const guestGmvCents = guestGmvAgg._sum.amountCents ?? 0;
+  const guestPlatformRevenueCents =
+    (guestFeeAgg._sum.amountCents ?? 0) + (guestUpsellAgg._sum.amountCents ?? 0);
+  const guestAvgBookingGmvCents =
+    guestPaidBookingCount > 0 ? Math.round(guestGmvCents / guestPaidBookingCount) : null;
+
+  const guestBookingsWithUpsell = await prisma.platformRevenueEvent.count({
+    where: {
+      createdAt: { gte: start },
+      status: "realized",
+      revenueType: "bnhub_guest_booking_upsell",
+      amountCents: { gt: 0 },
+    },
+  });
+  const guestUpsellAttachRateComputed =
+    guestPaidBookingCount > 0 ? guestBookingsWithUpsell / guestPaidBookingCount : null;
+
   return {
     rangeDays: days,
     since: start.toISOString(),
@@ -72,6 +123,15 @@ export async function getBnhubScaleMetrics(days = 30) {
       avgBookingValueCents: bookingAgg._avg.totalCents
         ? Math.round(bookingAgg._avg.totalCents)
         : null,
+    },
+    /** Supabase guest stays settled via Stripe (`recordBnhubGuestBookingRevenueFromPaidSession`). */
+    guestSupabaseStripe: {
+      paidBookingsInPeriod: guestPaidBookingCount,
+      gmvCentsInPeriod: guestGmvCents,
+      avgGmvPerBookingCents: guestAvgBookingGmvCents,
+      platformRevenueCentsInPeriod: guestPlatformRevenueCents,
+      upsellRevenueCentsInPeriod: guestUpsellAgg._sum.amountCents ?? 0,
+      upsellAttachRate: guestUpsellAttachRateComputed,
     },
     supplyByCity: citySupply.map((c) => ({
       city: c.city,

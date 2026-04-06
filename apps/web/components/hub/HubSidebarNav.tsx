@@ -58,8 +58,15 @@ type Props = {
 export function HubSidebarNav({ items, theme, isDark }: Props) {
   const pathname = usePathname();
 
+  /**
+   * Never `flex-wrap` long admin lists: it fills the viewport with chips and feels “broken”.
+   * One column + scroll keeps real `<Link>` targets obvious and leaves room for page content.
+   */
   return (
-    <nav className="flex flex-wrap gap-1 px-3 lg:flex-col lg:gap-0.5" aria-label="Hub">
+    <nav
+      className="flex max-h-[min(38vh,320px)] flex-col gap-0.5 overflow-y-auto overflow-x-hidden px-3 pb-2 sm:max-h-[min(44vh,400px)] lg:max-h-[calc(100vh-5.5rem)] lg:pb-4"
+      aria-label="Hub"
+    >
       {items.map((item, index) => {
         const active =
           item.href === "/admin"
@@ -70,7 +77,8 @@ export function HubSidebarNav({ items, theme, isDark }: Props) {
           <Link
             key={`${item.href}-${item.label}-${index}`}
             href={item.href}
-            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 hover:opacity-95"
+            prefetch={false}
+            className="flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 hover:opacity-95"
             style={{
               color: isDark ? "rgba(255,255,255,0.92)" : theme.text ?? "#111",
               backgroundColor: active

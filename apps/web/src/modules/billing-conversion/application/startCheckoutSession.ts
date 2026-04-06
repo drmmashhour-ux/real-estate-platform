@@ -1,3 +1,4 @@
+import { getPublicAppUrl } from "@/lib/config/public-app-url";
 import { assertStripeConfigured, getProPriceId, getTeamPriceId } from "@/src/modules/billing-conversion/infrastructure/stripeBillingService";
 import { trackGrowthFunnelEvent } from "@/src/modules/growth-funnel/application/trackGrowthFunnelEvent";
 import type { ConversionPlanCode } from "@/src/modules/billing-conversion/domain/billing.enums";
@@ -17,7 +18,7 @@ export async function startCheckoutSession(args: {
   }
 
   const stripe = assertStripeConfigured();
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const baseUrl = getPublicAppUrl();
   const resume = args.returnUrl ? `&resume=${encodeURIComponent(args.returnUrl)}` : "";
   const successUrl = `${baseUrl}/dashboard/storage?upgrade=success&plan=${args.plan}&closing=1${resume}`;
   const cancelUrl = `${baseUrl}/dashboard/storage?upgrade=cancelled`;

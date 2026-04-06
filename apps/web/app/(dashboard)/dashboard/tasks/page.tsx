@@ -8,9 +8,9 @@ import type { ActionQueueRow } from "@/components/notifications/ActionQueueItemC
 export const dynamic = "force-dynamic";
 
 export default async function ActionQueuePage(props: {
-  searchParams: Promise<{ overdue?: string; dueToday?: string }>;
+  searchParams?: Promise<{ overdue?: string; dueToday?: string }>;
 }) {
-  const sp = await props.searchParams;
+  const sp = (await props.searchParams) ?? {};
   const filter =
     sp.overdue === "1" ? "overdue" : sp.dueToday === "1" ? "dueToday" : "open";
 

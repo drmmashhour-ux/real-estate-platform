@@ -16,7 +16,7 @@ const DEFAULT_COOKIES = `
 <p>Some features may use third-party cookies (e.g. maps, payments). Their use is governed by their respective policies.</p>
 
 <h2>5. Contact</h2>
-<p>Questions: info@mashhourinvestments.com</p>
+<p>Questions: dr.m.mashhour@gmail.com</p>
 `;
 
 export default async function CookiesPage() {

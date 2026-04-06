@@ -22,31 +22,29 @@ export default async function AdminCrmLivePage() {
 
   const since24h = new Date(Date.now() - 24 * 3600 * 1000);
 
-  const [top, events, inquiries, stale, pipelineRows] = await Promise.all([
-    getTopPriorityLeads(25),
-    prisma.internalCrmEvent.findMany({
-      where: { createdAt: { gte: since24h } },
-      orderBy: { createdAt: "desc" },
-      take: 40,
-      include: {
-        user: { select: { email: true } },
-        lead: { select: { id: true, name: true } },
-        booking: { select: { id: true, status: true, confirmationCode: true } },
-      },
-    }),
-    prisma.lead.findMany({
-      where: { createdAt: { gte: since24h } },
-      orderBy: { createdAt: "desc" },
-      take: 25,
-      select: { id: true, name: true, email: true, leadSource: true, intentScore: true, executionStage: true },
-    }),
-    findStaleHighIntentLeads(55),
-    prisma.lead.groupBy({
-      by: ["executionStage"],
-      where: { executionStage: { notIn: ["lost"] } },
-      _count: { id: true },
-    }),
-  ]);
+  const top = await getTopPriorityLeads(25);
+  const events = await prisma.internalCrmEvent.findMany({
+    where: { createdAt: { gte: since24h } },
+    orderBy: { createdAt: "desc" },
+    take: 40,
+    include: {
+      user: { select: { email: true } },
+      lead: { select: { id: true, name: true } },
+      booking: { select: { id: true, status: true, confirmationCode: true } },
+    },
+  });
+  const inquiries = await prisma.lead.findMany({
+    where: { createdAt: { gte: since24h } },
+    orderBy: { createdAt: "desc" },
+    take: 25,
+    select: { id: true, name: true, email: true, leadSource: true, intentScore: true, executionStage: true },
+  });
+  const stale = await findStaleHighIntentLeads(55);
+  const pipelineRows = await prisma.lead.groupBy({
+    by: ["executionStage"],
+    where: { executionStage: { notIn: ["lost"] } },
+    _count: { id: true },
+  });
 
   const bookingHints = events.filter(
     (e) => e.eventType === "booking_started" || e.eventType === "booking_confirmed"
@@ -64,10 +62,12 @@ export default async function AdminCrmLivePage() {
           <h1 className="text-xl font-semibold text-white">Who to act on now</h1>
           <p className="mt-2 max-w-3xl text-slate-400">
             Priority queue uses <code className="text-slate-300">priorityScore</code>,{" "}
-            <code className="text-slate-300">intentScore</code>, and{" "}
-            <code className="text-slate-300">executionStage</code>. Refreshed on internal CRM events, Immo chat, Stripe
-            checkout (booking started), and new inquiries. Close Room can consume the same payload via{" "}
-            <code className="text-slate-300">getCloseRoomCrmPayload</code>.
+            <code className="text-slate-300">intentScore</code>,{" "}
+            <code className="text-slate-300">executionStage</code>, and open{" "}
+            <code className="text-slate-300">RevenueOpportunity</code> value (revenue engine). Refreshed on internal CRM
+            events, Immo chat, Stripe checkout, and execution refresh. Close Room uses{" "}
+            <code className="text-slate-300">getCloseRoomCrmPayload</code> (includes{" "}
+            <code className="text-slate-300">closeRoomRank</code>).
           </p>
           <div className="mt-3 flex flex-wrap gap-3 text-xs">
             <Link href="/admin/crm/internal" className="text-amber-200/90 underline">
@@ -91,6 +91,8 @@ export default async function AdminCrmLivePage() {
                     <th className="py-2 pr-2">Stage</th>
                     <th className="py-2 pr-2">Next action</th>
                     <th className="py-2 pr-2">Pri</th>
+                    <th className="py-2 pr-2">Rev ~</th>
+                    <th className="py-2 pr-2">Rank</th>
                     <th className="py-2">Quick</th>
                   </tr>
                 </thead>
@@ -105,6 +107,12 @@ export default async function AdminCrmLivePage() {
                       <td className="py-2 pr-2 font-mono text-[11px] text-slate-300">{row.executionStage}</td>
                       <td className="py-2 pr-2 text-amber-100/90">{row.nextBestAction ?? "—"}</td>
                       <td className="py-2 pr-2">{row.priorityScore}</td>
+                      <td className="py-2 pr-2 tabular-nums text-emerald-200/90">
+                        {Math.round(row.openRevenueValue)}
+                      </td>
+                      <td className="py-2 pr-2 tabular-nums text-slate-400">
+                        {row.monetizationRank.toFixed(1)}
+                      </td>
                       <td className="py-2">
                         <CrmLiveQuickActions leadId={row.id} compact />
                       </td>

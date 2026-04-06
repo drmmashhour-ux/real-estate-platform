@@ -46,6 +46,8 @@ export type SearchEngineBarProps = {
   /** Homepage only — structured Rent / Buy / Sell + journey + property row. */
   heroBrowseMode?: "buy" | "rent";
   onHeroBrowseModeChange?: (m: "buy" | "rent") => void;
+  /** Replaces the default SearchBar row; chips + FilterPanel still render (e.g. BNHub guest booking hero). */
+  customBar?: ReactNode;
 };
 
 /** SearchBar + FilterPanel — requires `SearchFiltersProvider` ancestor. */
@@ -55,6 +57,7 @@ export function SearchEngineBar({
   heroLayout = false,
   heroBrowseMode,
   onHeroBrowseModeChange,
+  customBar,
 }: SearchEngineBarProps) {
   const {
     mode,
@@ -187,6 +190,8 @@ export function SearchEngineBar({
       />
     );
 
+  const effectiveBar = customBar ?? bar;
+
   const footerSlate = (
     <div className="flex flex-wrap items-center justify-between gap-2">
       <button
@@ -209,10 +214,10 @@ export function SearchEngineBar({
   const saveTone = isShort ? "slate" : useHero ? "light" : "gold";
 
   const barRow = showHomeBar ? (
-    <div className="min-w-0 w-full">{bar}</div>
+    <div className="min-w-0 w-full">{effectiveBar}</div>
   ) : (
     <div className="flex flex-wrap items-start gap-3">
-      <div className="min-w-0 flex-1">{bar}</div>
+      <div className="min-w-0 flex-1">{effectiveBar}</div>
       <SaveSearchButton tone={saveTone} />
     </div>
   );
@@ -225,7 +230,19 @@ export function SearchEngineBar({
         barRow
       )}
       <ActiveFilterChips tone={chipTone === "hero" ? "hero" : "default"} />
-      {!useHero ? <QuickFilterChips tone={chipTone} /> : null}
+      <QuickFilterChips tone={chipTone} />
+      {useHero && !isShort ? (
+        <p className="text-center text-sm text-white/90">
+          <button
+            type="button"
+            onClick={() => setFiltersOpen(true)}
+            className="font-semibold text-white underline decoration-white/50 underline-offset-2 hover:decoration-white"
+          >
+            All property filters
+          </button>
+          <span className="text-white/80"> — bedrooms, bathrooms, building style, size, and keyword features.</span>
+        </p>
+      ) : null}
       <div className="relative z-[60]">
         <FilterPanel
           open={filtersOpen}

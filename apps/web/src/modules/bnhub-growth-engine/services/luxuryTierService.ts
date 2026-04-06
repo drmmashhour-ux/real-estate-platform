@@ -8,6 +8,7 @@ import {
   VerificationStatus,
 } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { MIN_LISTING_PHOTOS_FOR_VERIFICATION } from "@/lib/bnhub/moderation-requirements";
 import { logTierDecision } from "./trustAuditService";
 
 export function evaluateVerifiedEligibility(input: {
@@ -20,7 +21,11 @@ export function evaluateVerifiedEligibility(input: {
   const reasons: string[] = [];
   if (input.starRating < 3) reasons.push("BNHub internal star estimate is below 3 — improve listing quality.");
   if (input.trustScore < 45) reasons.push("Trust score is below the Verified threshold.");
-  if (input.photoCount < 3) reasons.push("At least three photos are required for BNHub Verified.");
+  if (input.photoCount < MIN_LISTING_PHOTOS_FOR_VERIFICATION) {
+    reasons.push(
+      `At least ${MIN_LISTING_PHOTOS_FOR_VERIFICATION} photos are required for BNHub Verified.`
+    );
+  }
   if (!input.verificationOk) reasons.push("Listing verification should be completed where supported.");
   if (input.openCriticalFraud) reasons.push("Resolve critical trust flags before Verified.");
   return { ok: reasons.length === 0, reasons };

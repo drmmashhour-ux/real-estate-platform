@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import Link from "next/link";
+import { LegalPacketLink } from "@/components/admin/LegalPacketLink";
 import { PremiumCard } from "@/components/ui/PremiumCard";
 import { ActionButton } from "@/components/ui/ActionButton";
 import { AnimatedStatCard } from "@/components/ui/AnimatedStatCard";
@@ -17,8 +18,8 @@ export default async function AdminAmbassadorsPage() {
       <PremiumCard accent={themeAccent} className="space-y-6">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.3em]" style={{ color: themeAccent }}>Admin Growth</p>
-          <h1 className="mt-2 text-3xl font-bold">Ambassador management</h1>
-          <p className="mt-2 text-slate-300">Activate ambassadors, inspect commissions, and prepare payouts.</p>
+          <h1 className="mt-2 text-3xl font-bold">Ambassador case files</h1>
+          <p className="mt-2 text-slate-300">Inspect commission terms, payout readiness, and packet-based review records for each ambassador.</p>
         </div>
         <div className="grid gap-4 sm:grid-cols-3">
           <AnimatedStatCard label="Ambassadors" value={ambassadors.length} accent={themeAccent} />
@@ -34,6 +35,10 @@ export default async function AdminAmbassadorsPage() {
                 <p className="text-sm text-slate-400">Earnings: ${a.commissions.reduce((s, c) => s + c.amount, 0).toFixed(2)}</p>
               </div>
               <div className="flex gap-2">
+                <LegalPacketLink
+                  href={`/admin/ambassadors/${encodeURIComponent(a.id)}`}
+                  className="rounded-2xl border border-sky-500/30 bg-sky-500/10 px-4 py-3 text-sm font-semibold text-sky-200"
+                />
                 <ActionButton href="/admin/ambassadors/payouts" accent={themeAccent}>Payouts</ActionButton>
                 <Link href="/admin/referrals" className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-white">Referral stats</Link>
               </div>

@@ -12,6 +12,8 @@ import {
   getContactMailtoHref,
   getContactWhatsAppUrl,
 } from "@/lib/config/contact";
+import { PlaybookConversionStrip } from "@/components/leads/PlaybookConversionStrip";
+import { CloseScriptsReference } from "@/components/leads/CloseScriptsReference";
 
 type LeadAssistant = {
   id: string;
@@ -181,6 +183,8 @@ export function SalesAssistantPanel({
 
   return (
     <>
+      <PlaybookConversionStrip leadId={lead.id} />
+      <CloseScriptsReference leadName={lead.name} />
       <section className="mt-8 rounded-2xl border-2 border-premium-gold/40 bg-gradient-to-b from-[#1A1508] to-[#121212] p-5 shadow-lg shadow-black/40">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
           <div>

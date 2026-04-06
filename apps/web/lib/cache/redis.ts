@@ -69,3 +69,18 @@ export async function cacheDel(key: string): Promise<void> {
 export function isRedisConfigured(): boolean {
   return Boolean(REDIS_URL);
 }
+
+/** Fire-and-forget pub/sub (e.g. optional Socket.IO bridge). Returns false if Redis unavailable. */
+export async function redisPublish(channel: string, message: string): Promise<boolean> {
+  if (!REDIS_URL) return false;
+  try {
+    const ioredisMod = await import("ioredis");
+    const RedisCtor = (ioredisMod as any).default ?? ioredisMod;
+    const redis = new RedisCtor(REDIS_URL);
+    await redis.publish(channel, message);
+    redis.disconnect();
+    return true;
+  } catch {
+    return false;
+  }
+}

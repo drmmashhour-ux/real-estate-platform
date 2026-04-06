@@ -1,13 +1,37 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { AUTH_DISABLED } from "../config/dev";
 import { supabase } from "../lib/supabase";
 import { mobileFetch } from "../services/apiClient";
+import { clearStoredAccessToken, persistAccessToken } from "../services/auth";
 
 export type AppRole = "guest" | "host" | "admin";
 
+export type IdentityVerificationSummary = {
+  isVerified: boolean;
+  verificationStatus: "unverified" | "pending" | "verified" | "rejected";
+};
+
 type MeResponse = {
-  user: { id: string; email: string | null; name: string | null; platformRole: string };
+  user: {
+    id: string;
+    email: string | null;
+    name: string | null;
+    platformRole: string;
+    /** Government ID approved (optional progressive verification). */
+    isVerified?: boolean;
+    verificationStatus?: IdentityVerificationSummary["verificationStatus"];
+    /** BNHub guest trust snapshot (0–100). */
+    trustScore?: number;
+    totalStays?: number;
+    /** Average host rating of this guest (1–5). */
+    rating?: number | null;
+  };
+  identityVerification?: IdentityVerificationSummary;
+  trust?: { trustScore: number; totalStays: number; rating: number | null; badges: string[] };
   appRole: AppRole;
   hostListingCount: number;
+  /** BNHub `listings.host_user_id` count for the Supabase Auth id (JWT). */
+  bnhubHostListingCount?: number;
 };
 
 type AuthCtx = {
@@ -51,27 +75,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (AUTH_DISABLED) {
+      setSession(null);
+      setMe(null);
+      setProfileLoadFailed(false);
+      setReady(true);
+      return;
+    }
     if (!supabase) {
       setReady(true);
       return;
     }
-    supabase.auth.getSession().then(({ data }) => {
+    void supabase.auth.getSession().then(async ({ data }) => {
+      const tok = data.session?.access_token ?? null;
+      if (tok) await persistAccessToken(tok);
+      else await clearStoredAccessToken();
       setSession(data.session ? { access_token: data.session.access_token } : null);
       setReady(true);
     });
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
+      void (async () => {
+        const t = s?.access_token ?? null;
+        if (t) await persistAccessToken(t);
+        else await clearStoredAccessToken();
+      })();
       setSession(s ? { access_token: s.access_token } : null);
     });
     return () => sub.subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
-    if (!ready) return;
+    if (AUTH_DISABLED || !ready) return;
     void refreshMe();
   }, [ready, session?.access_token, refreshMe]);
 
   const signOut = useCallback(async () => {
+    if (AUTH_DISABLED) {
+      setMe(null);
+      setSession(null);
+      return;
+    }
     if (supabase) await supabase.auth.signOut();
+    await clearStoredAccessToken();
     setMe(null);
     setSession(null);
   }, []);
@@ -84,8 +129,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
-export function useAuth() {
+export function useAppAuth() {
   const v = useContext(Ctx);
-  if (!v) throw new Error("useAuth outside AuthProvider");
+  if (!v) throw new Error("useAppAuth outside AuthProvider");
   return v;
 }

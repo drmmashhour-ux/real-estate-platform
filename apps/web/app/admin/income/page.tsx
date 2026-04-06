@@ -12,14 +12,14 @@ type SearchParams = { plan?: string; dateFrom?: string; dateTo?: string };
 export default async function AdminIncomePage({
   searchParams,
 }: {
-  searchParams: Promise<SearchParams>;
+  searchParams?: Promise<SearchParams>;
 }) {
   const uid = await getGuestId();
   if (!uid) redirect("/auth/login");
   const actor = await prisma.user.findUnique({ where: { id: uid }, select: { role: true } });
   if (!isFinancialStaff(actor?.role)) redirect("/");
 
-  const params = await searchParams;
+  const params = (await searchParams) ?? {};
   const planFilter = params.plan?.trim() || undefined;
   const dateFrom = params.dateFrom ? new Date(params.dateFrom) : null;
   const dateTo = params.dateTo ? new Date(params.dateTo) : null;

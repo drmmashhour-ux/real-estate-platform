@@ -1,7 +1,7 @@
-import express from "express";
+import express, { type Application } from "express";
 import routes from "./routes/index.js";
 
-const app = express();
+const app: Application = express();
 app.use(express.json());
 app.use("/valuation", routes);
 app.get("/health", (_req, res) => res.json({ status: "ok", service: "valuation-ai" }));

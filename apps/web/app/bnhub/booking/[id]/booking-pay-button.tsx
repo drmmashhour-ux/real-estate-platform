@@ -41,13 +41,19 @@ export function BookingPayButton({
           bookingId,
           amountCents,
           currency: "cad",
-          successUrl: `${base}/bnhub/booking/${bookingId}?paid=1`,
-          cancelUrl: `${base}/bnhub/booking/${bookingId}`,
+          successUrl: `${base}/bnhub/booking-success?booking_id=${encodeURIComponent(bookingId)}&session_id={CHECKOUT_SESSION_ID}`,
+          cancelUrl: `${base}/bnhub/booking-cancel?booking_id=${encodeURIComponent(bookingId)}`,
           description: `Booking ${bookingId}`,
         }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Checkout failed");
+      const data = (await res.json()) as { error?: string; code?: string; url?: string };
+      if (!res.ok) {
+        const msg =
+          typeof data.error === "string" && data.error.trim()
+            ? data.error
+            : "Checkout failed. Please try again later.";
+        throw new Error(msg);
+      }
       if (data.url) {
         window.location.href = data.url;
         return;
@@ -61,26 +67,22 @@ export function BookingPayButton({
   }
 
   return (
-    <div className="flex flex-col gap-1">
-      {!stripeConfigured && (
-        <p className="mb-2 text-xs text-amber-400">
-          Stripe is not configured — demo mode completes payment in-app (no card). Use real Stripe in production.
-        </p>
-      )}
+    <div className="flex flex-col gap-2">
+      {!stripeConfigured ? (
+        <p className="text-xs text-amber-400">Demo: no card — confirms in-app.</p>
+      ) : null}
       <button
         type="button"
         onClick={handlePay}
         disabled={loading}
-        className="rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-slate-950 hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
+        className="w-full rounded-xl bg-amber-500 px-5 py-3 text-sm font-bold text-slate-950 hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
       >
-        {loading ? "Processing…" : stripeConfigured ? "Pay now" : "Complete demo payment"}
+        {loading ? "Opening…" : stripeConfigured ? "Pay securely with Stripe" : "Complete demo payment"}
       </button>
-      {error && <p className="text-sm text-red-400">{error}</p>}
-      <p className="text-xs text-slate-500">
-        {stripeConfigured
-          ? "You will complete payment on Stripe. Your booking is confirmed only after payment succeeds."
-          : "Demo mode confirms your booking immediately after you click complete."}
-      </p>
+      {error ? <p className="text-sm text-red-400">{error}</p> : null}
+      {stripeConfigured ? (
+        <p className="text-xs text-slate-500">Secure checkout — you return here when done.</p>
+      ) : null}
     </div>
   );
 }

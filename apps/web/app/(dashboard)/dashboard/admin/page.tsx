@@ -49,15 +49,13 @@ export default async function AdminOperationsPage({
     to: sp.to ?? null,
   });
 
-  const [overview, funnel, pending, usage, bottlenecks, series, feed] = await Promise.all([
-    getDashboardOverview(),
-    getWorkflowFunnel(),
-    getPendingActionsSummary(),
-    getUsageMetrics(range),
-    getBottlenecks(),
-    getTimeSeriesMetrics(range),
-    getRecentActivityFeed(22),
-  ]);
+  const overview = await getDashboardOverview();
+  const funnel = await getWorkflowFunnel();
+  const pending = await getPendingActionsSummary();
+  const usage = await getUsageMetrics(range);
+  const bottlenecks = await getBottlenecks();
+  const series = await getTimeSeriesMetrics(range);
+  const feed = await getRecentActivityFeed(22);
 
   const adminDecision = await safeEvaluateDecision({
     hub: "admin",

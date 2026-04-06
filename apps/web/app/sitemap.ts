@@ -2,10 +2,12 @@ import type { MetadataRoute } from "next";
 import { ListingStatus } from "@prisma/client";
 import { FSBO_MODERATION, FSBO_STATUS } from "@/lib/fsbo/constants";
 import { BLOG_POSTS } from "@/lib/content/blog-posts";
+import { CITY_SLUGS } from "@/lib/geo/city-search";
 import { GROWTH_CITY_SLUGS } from "@/lib/growth/geo-slugs";
 import { listDistinctCitiesWithData } from "@/lib/market/data";
 import { cityToSlug } from "@/lib/market/slug";
 import { prisma } from "@/lib/db";
+import { buildFsboPublicVisibilityWhere } from "@/lib/fsbo/listing-expiry";
 import { getSiteBaseUrl } from "@/modules/seo/lib/siteBaseUrl";
 import { buildBnhubStaySeoSlug, buildFsboPublicListingPath } from "@/lib/seo/public-urls";
 
@@ -51,7 +53,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     [cities, listings, bnhubPublished, dbPosts] = await Promise.all([
       listDistinctCitiesWithData(),
       prisma.fsboListing.findMany({
-        where: { status: FSBO_STATUS.ACTIVE, moderationStatus: FSBO_MODERATION.APPROVED },
+        where: buildFsboPublicVisibilityWhere(now),
         select: { id: true, city: true, propertyType: true, updatedAt: true },
       }),
       prisma.shortTermListing.findMany({
@@ -107,8 +109,35 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     });
   }
 
+  for (const slug of CITY_SLUGS) {
+    entries.push({
+      url: `${base}/city/${slug}`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.72,
+    });
+  }
+
   for (const slug of GROWTH_CITY_SLUGS) {
     entries.push(
+      {
+        url: `${base}/city/${slug}/buy`,
+        lastModified: now,
+        changeFrequency: "weekly",
+        priority: 0.7,
+      },
+      {
+        url: `${base}/city/${slug}/rent`,
+        lastModified: now,
+        changeFrequency: "weekly",
+        priority: 0.7,
+      },
+      {
+        url: `${base}/city/${slug}/investment`,
+        lastModified: now,
+        changeFrequency: "weekly",
+        priority: 0.69,
+      },
       {
         url: `${base}/buy/${slug}`,
         lastModified: now,

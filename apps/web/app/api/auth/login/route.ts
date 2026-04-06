@@ -9,6 +9,8 @@ import { sendTwoFactorCodeEmail } from "@/lib/email/send";
 import { applyLoginSessionCookies } from "@/lib/auth/apply-login-session";
 import { isMortgageExpertRole } from "@/lib/marketplace/mortgage-role";
 import { trackEvent } from "@/src/services/analytics";
+import { persistLaunchEvent } from "@/src/modules/launch/persistLaunchEvent";
+import { isTestMode } from "@/lib/config/app-mode";
 
 function maskEmail(email: string): string {
   const [a, d] = email.split("@");
@@ -34,6 +36,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Email and password required" }, { status: 400 });
     }
 
+    const prodLike = process.env.NODE_ENV === "production" || process.env.VERCEL === "1";
+    if (prodLike && process.env.ALLOW_SEED_ADMIN_LOGIN !== "1" && email === "admin@test.com") {
+      return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
+    }
+
     let user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
       return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
@@ -51,7 +58,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
     }
 
-    if (!user.emailVerifiedAt) {
+    if (!user.emailVerifiedAt && !(isTestMode() && email.endsWith("@test.com"))) {
       return NextResponse.json(
         {
           error:
@@ -100,6 +107,7 @@ export async function POST(request: NextRequest) {
     }).catch(() => {});
 
     void trackEvent("login", { path: "/api/auth/login" }, { userId: user.id }).catch(() => {});
+    void persistLaunchEvent("USER_LOGIN", { userId: user.id, role: user.role });
 
     let expertTermsAccepted: boolean | undefined;
     if (isMortgageExpertRole(user.role)) {

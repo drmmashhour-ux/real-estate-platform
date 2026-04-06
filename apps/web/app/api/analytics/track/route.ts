@@ -4,6 +4,7 @@ import { recordTrafficEventServer } from "@/lib/traffic/record-server-event";
 import { prisma } from "@/lib/db";
 import { getGuestId } from "@/lib/auth/session";
 import { bumpLeadEngagement, dispatchAutomation } from "@/lib/automation/engine";
+import { trackEvent } from "@/src/modules/analytics/eventTracker";
 
 export const dynamic = "force-dynamic";
 
@@ -54,6 +55,19 @@ const ALLOWED = new Set([
   "conversion_trigger",
   "conversion_upgrade_modal_open",
   "conversion_followup_queued",
+  /** Growth engine — programmatic SEO city mesh */
+  "growth_seo_page_view",
+  "growth_seo_lead_capture",
+  /** Platform assistant (voice + chat) */
+  "assistant_opened",
+  "assistant_message_sent",
+  "assistant_voice_started",
+  "assistant_voice_transcribed",
+  "assistant_search_executed",
+  "assistant_listing_explained",
+  "assistant_compare_used",
+  "assistant_help_intent_used",
+  "assistant_tts_used",
 ]);
 
 export async function POST(req: NextRequest) {
@@ -83,6 +97,7 @@ export async function POST(req: NextRequest) {
     body.meta && typeof body.meta === "object" && !Array.isArray(body.meta)
       ? (body.meta as Record<string, unknown>)
       : null;
+  const userId = await getGuestId().catch(() => null);
 
   await recordTrafficEventServer({
     eventType,
@@ -92,6 +107,17 @@ export async function POST(req: NextRequest) {
     headers: req.headers,
     body,
   });
+
+  const trackableMap: Record<string, string> = {
+    page_view: "page_view",
+    listing_view: "listing_view",
+    contact_listing_broker: "inquiry_sent",
+    request_platform_broker: "inquiry_sent",
+  };
+  const mapped = trackableMap[eventType];
+  if (mapped) {
+    void trackEvent(mapped, meta ?? {}, { userId, sessionId }).catch(() => {});
+  }
 
   const leadIdFromMeta =
     meta && typeof meta.leadId === "string" ? meta.leadId.trim().slice(0, 32) : "";
@@ -127,7 +153,6 @@ export async function POST(req: NextRequest) {
   }
 
   if (eventType === "evaluation_started" && sessionId) {
-    const userId = await getGuestId().catch(() => null);
     await prisma.evaluateFunnelSession
       .upsert({
         where: { sessionId },

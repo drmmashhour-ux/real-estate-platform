@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getManagerInsights } from "@/lib/ai-property-manager";
+import { getPublicAppUrl } from "@/lib/config/public-app-url";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +21,7 @@ export async function POST(req: Request) {
     if (listingId && !body?.listing) {
       try {
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/design-studio/payload?id=${encodeURIComponent(listingId)}`,
+          `${getPublicAppUrl()}/api/design-studio/payload?id=${encodeURIComponent(listingId)}`,
           { cache: "no-store" }
         );
         const data = await res.json().catch(() => ({}));

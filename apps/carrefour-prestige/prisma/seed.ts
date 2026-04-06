@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "../src/generated/prisma/index.js";
 
 const prisma = new PrismaClient();
 
@@ -9,8 +9,12 @@ async function main() {
     create: {
       email: "admin@carrefour-prestige.local",
       role: "ADMIN",
-      profile: { create: {} },
     },
+  });
+  await prisma.profile.upsert({
+    where: { userId: admin.id },
+    update: {},
+    create: { userId: admin.id },
   });
 
   const seller = await prisma.user.upsert({
@@ -19,8 +23,12 @@ async function main() {
     create: {
       email: "seller@carrefour-prestige.local",
       role: "SELLER",
-      profile: { create: { firstName: "Demo", lastName: "Seller" } },
     },
+  });
+  await prisma.profile.upsert({
+    where: { userId: seller.id },
+    update: {},
+    create: { userId: seller.id, firstName: "Demo", lastName: "Seller" },
   });
 
   await prisma.property.createMany({

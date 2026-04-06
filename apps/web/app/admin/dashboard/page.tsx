@@ -16,6 +16,8 @@ import { getPlatformStats } from "@/modules/analytics/services/get-platform-stat
 import { AdminHubCharts } from "@/components/admin/AdminHubCharts";
 import { AdminHubAiSection } from "@/components/ai/AdminHubAiSection";
 import { AdminDailyAiReportCard } from "@/components/ai/AdminDailyAiReportCard";
+import { BrandGuidelineStrip } from "@/components/brand/BrandGuidelineStrip";
+import { AISummaryWidget } from "@/components/ai/AISummaryWidget";
 
 export default async function AdminHubDashboardPage() {
   const role = await getUserRole();
@@ -30,7 +32,50 @@ export default async function AdminHubDashboardPage() {
   }
 
   const aiSummary = getAdminAiSummary();
-  const [overview, platformStats] = await Promise.all([getAdminOverviewStats(), getPlatformStats(30)]);
+  const [overview, platformStats, contentPacks] = await Promise.all([
+    getAdminOverviewStats(),
+    getPlatformStats(30),
+    prisma.formSubmission.findMany({
+      where: {
+        formType: "broker_content_pack",
+      },
+      select: {
+        assignedTo: true,
+        payloadJson: true,
+      },
+      take: 250,
+    }),
+  ]);
+  const now = new Date();
+  const reminderQueue = contentPacks
+    .map((row) => ({
+      assignedTo: row.assignedTo,
+      payload: (row.payloadJson ?? {}) as Record<string, unknown>,
+    }))
+    .filter(
+      (row) =>
+        row.payload.campaignStatus === "planned" &&
+        typeof row.payload.plannedFor === "string" &&
+        typeof row.payload.reminderHoursBefore === "number" &&
+        !row.payload.reminderDismissedAt
+    )
+    .map((row) => {
+      const plannedFor = new Date(String(row.payload.plannedFor));
+      const reminderAt = new Date(
+        plannedFor.getTime() - Number(row.payload.reminderHoursBefore) * 60 * 60 * 1000
+      );
+      return {
+        assignedTo: row.assignedTo,
+        plannedFor,
+        reminderAt,
+      };
+    })
+    .filter((item) => !Number.isNaN(item.plannedFor.getTime()) && !Number.isNaN(item.reminderAt.getTime()));
+  const contentReminderStats = {
+    dueNow: reminderQueue.filter((item) => item.reminderAt <= now).length,
+    upcoming: reminderQueue.filter((item) => item.reminderAt > now).length,
+    brokersActive: new Set(reminderQueue.map((item) => item.assignedTo).filter(Boolean)).size,
+  };
   const adminRecommendations = [
     {
       id: "1",
@@ -70,6 +115,12 @@ export default async function AdminHubDashboardPage() {
           <>
             <section className="flex flex-wrap gap-3">
               <Link
+                href="/ai"
+                className="rounded-xl border border-premium-gold/40 bg-premium-gold/10 px-4 py-2 text-sm font-semibold text-premium-gold hover:bg-premium-gold/20"
+              >
+                LECIPM Manager AI control center
+              </Link>
+              <Link
                 href="/admin/risk-monitoring"
                 className="rounded-xl border border-premium-gold/40 bg-premium-gold/10 px-4 py-2 text-sm font-semibold text-premium-gold hover:bg-premium-gold/20"
               >
@@ -94,11 +145,111 @@ export default async function AdminHubDashboardPage() {
                 Finance
               </Link>
               <Link
+                href="/admin/follow-up"
+                className="rounded-xl border border-white/15 px-4 py-2 text-sm text-white/85 hover:border-premium-gold/40 hover:text-white"
+              >
+                Follow-up engine
+              </Link>
+              <Link
+                href="/admin/content-ops"
+                className="rounded-xl border border-white/15 px-4 py-2 text-sm text-white/85 hover:border-premium-gold/40 hover:text-white"
+              >
+                Content ops
+              </Link>
+              <Link
                 href="/admin/listings"
                 className="rounded-xl border border-white/15 px-4 py-2 text-sm text-white/85 hover:border-premium-gold/40 hover:text-white"
               >
                 Listing control
               </Link>
+            </section>
+            <AISummaryWidget />
+
+            <section className="rounded-2xl border border-premium-gold/20 bg-black/25 p-1">
+              <BrandGuidelineStrip />
+            </section>
+
+            <section className="rounded-2xl border border-premium-gold/20 bg-[linear-gradient(135deg,rgba(212,175,55,0.12),rgba(11,11,11,0.95))] p-5">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-premium-gold">
+                    Broker Content Reminder Oversight
+                  </p>
+                  <h2 className="mt-2 text-xl font-semibold text-white">Platform-wide campaign reminder monitoring</h2>
+                  <p className="mt-2 max-w-2xl text-sm text-slate-300">
+                    Monitor scheduled broker content reminders across the platform and jump into broker workspaces when follow-up is due.
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Link
+                    href="/admin/follow-up"
+                    className="rounded-xl border border-white/15 px-4 py-2 text-sm text-white/85 hover:border-premium-gold/40 hover:text-white"
+                  >
+                    Follow-up engine
+                  </Link>
+                  <Link
+                    href="/dashboard/broker/content-studio"
+                    className="rounded-xl border border-premium-gold/40 bg-premium-gold/10 px-4 py-2 text-sm font-semibold text-premium-gold hover:bg-premium-gold/20"
+                  >
+                    Open broker content ops
+                  </Link>
+                </div>
+              </div>
+              <div className="mt-5 grid gap-4 sm:grid-cols-3">
+                <div className="rounded-2xl border border-red-400/20 bg-red-500/5 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-red-200">Due now</p>
+                  <p className="mt-2 text-3xl font-semibold text-white">{contentReminderStats.dueNow.toLocaleString()}</p>
+                  <p className="mt-1 text-xs text-slate-400">Reminder tasks currently inside their action window.</p>
+                </div>
+                <div className="rounded-2xl border border-emerald-400/20 bg-emerald-500/5 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-emerald-200">Upcoming reminders</p>
+                  <p className="mt-2 text-3xl font-semibold text-white">{contentReminderStats.upcoming.toLocaleString()}</p>
+                  <p className="mt-1 text-xs text-slate-400">Scheduled reminder tasks still ahead of their alert time.</p>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-premium-gold">Brokers active</p>
+                  <p className="mt-2 text-3xl font-semibold text-white">{contentReminderStats.brokersActive.toLocaleString()}</p>
+                  <p className="mt-1 text-xs text-slate-400">Distinct broker workspaces with active reminder queue items.</p>
+                </div>
+              </div>
+            </section>
+
+            <section
+              className="rounded-2xl border border-emerald-500/25 bg-emerald-950/20 p-5"
+              data-testid="admin-dashboard-law-forms-strip"
+            >
+              <p className="text-xs font-semibold uppercase tracking-wider text-emerald-400/90">
+                Law helper &amp; form tools
+              </p>
+              <p className="mt-1 text-sm text-slate-400">
+                Compliance drafting, client form review, and structured contract field templates.
+              </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Link
+                  href="/admin/legal-ai"
+                  className="rounded-xl border border-emerald-500/40 bg-emerald-500/15 px-4 py-2 text-sm font-semibold text-emerald-200 hover:bg-emerald-500/25"
+                >
+                  Law helper (AI monitor + drafting)
+                </Link>
+                <Link
+                  href="/admin/legal"
+                  className="rounded-xl border border-white/15 px-4 py-2 text-sm text-white/85 hover:border-emerald-500/40 hover:text-white"
+                >
+                  Legal documents hub
+                </Link>
+                <Link
+                  href="/admin/forms"
+                  className="rounded-xl border border-white/15 px-4 py-2 text-sm text-white/85 hover:border-emerald-500/40 hover:text-white"
+                >
+                  Form filler &amp; submissions
+                </Link>
+                <Link
+                  href="/admin/contracts-builder"
+                  className="rounded-xl border border-white/15 px-4 py-2 text-sm text-white/85 hover:border-emerald-500/40 hover:text-white"
+                >
+                  Contract template builder
+                </Link>
+              </div>
             </section>
 
             <AdminHubAiSection />
@@ -247,12 +398,23 @@ export default async function AdminHubDashboardPage() {
         <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {[
             { label: "Overview", sub: "Mission & health", href: "/admin/dashboard" },
-            { label: "Listings management", sub: "Approve / reject", href: "/admin/moderation" },
+            { label: "Content ops case files", sub: "Broker campaign reminders", href: "/admin/content-ops" },
+            { label: "Moderation case files", sub: "Approve / reject", href: "/admin/moderation" },
             { label: "Users", sub: "View, block, verify", href: "/admin/users" },
             { label: "Payments", sub: "Transactions & ledger", href: "/admin/finance/transactions" },
             { label: "Disputes", sub: "Refunds & resolution", href: "/admin/disputes" },
             { label: "Analytics", sub: "Revenue & funnels", href: "/admin/revenue" },
+            { label: "Fundraising", sub: "Investors & pipeline", href: "/admin/fundraising" },
+            { label: "Execution", sub: "Daily revenue discipline", href: "/admin/execution" },
+            { label: "Pitch deck", sub: "Investor PPTX", href: "/admin/pitch-deck" },
+            { label: "Sales team", sub: "Agents & routing", href: "/admin/sales" },
+            { label: "Hiring", sub: "Candidates & rubric", href: "/admin/hiring" },
+            { label: "Equity", sub: "Cap table & vesting", href: "/admin/equity" },
             { label: "Sales CRM", sub: "Pipeline & commissions", href: "/dashboard/leads/pipeline" },
+            { label: "ImmoContact case files", sub: "Lead enforcement case files", href: "/admin/immocontacts" },
+            { label: "FSBO case files", sub: "Seller compliance packets", href: "/admin/fsbo" },
+            { label: "Referral case files", sub: "Referral revenue case files", href: "/admin/referrals" },
+            { label: "Ambassador case files", sub: "Commission and payout packets", href: "/admin/ambassadors" },
           ].map((item) => (
             <Link
               key={item.href + item.label}

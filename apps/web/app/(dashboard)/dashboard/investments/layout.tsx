@@ -4,7 +4,8 @@ import { getGuestId } from "@/lib/auth/session";
 import { isInvestmentFeaturesEnabled } from "@/lib/compliance/investment-features";
 import { prisma } from "@/lib/db";
 
-export { dynamic, revalidate } from "@/lib/auth/protected-route-segment";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 /**
  * Investment hub is off by default (AMF / securities risk).

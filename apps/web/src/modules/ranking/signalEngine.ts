@@ -119,7 +119,8 @@ export function getEngagementSignalsFsbo(listing: FsboListingRankingInput): numb
   const v = normLog(listing.viewCount, 200);
   const s = normLog(listing.saveCount, 50);
   const l = normLog(listing.leadCount, 30);
-  return clamp01(0.4 * v + 0.35 * s + 0.25 * l);
+  const d = clamp01((listing.demandScoreFromAnalytics ?? 0) / 100);
+  return clamp01(0.36 * v + 0.31 * s + 0.21 * l + 0.12 * d);
 }
 
 export function getConversionSignalsBnhub(listing: BnhubListingRankingInput): number {
@@ -164,7 +165,8 @@ export function getReviewSignalsBnhub(listing: BnhubListingRankingInput): number
   if (avg == null) return 0.35;
   const stars = clamp01(avg / 5);
   const vol = normLog(listing.aggregateTotalReviews || listing.reviewCount, 25);
-  return clamp01(0.65 * stars + 0.35 * vol);
+  const boost = Math.min(0.12, Math.max(0, listing.reputationRankBoost ?? 0));
+  return clamp01(0.65 * stars + 0.35 * vol + boost);
 }
 
 export function getReviewSignalsFsbo(): number {

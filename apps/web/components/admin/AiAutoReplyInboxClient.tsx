@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { DealAssistantPanel } from "@/components/admin/DealAssistantPanel";
 
 type ConvRow = {
   id: string;
@@ -487,8 +488,8 @@ export function AiAutoReplyInboxClient() {
         </div>
       ) : null}
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <div className="rounded-xl border border-slate-800 bg-slate-900/30">
+      <div className="grid gap-4 lg:grid-cols-3">
+        <div className="rounded-xl border border-slate-800 bg-slate-900/30 lg:col-span-1">
           <div className="divide-y divide-slate-800">
             {rows.map((r) => (
               <button
@@ -535,7 +536,8 @@ export function AiAutoReplyInboxClient() {
           {rows.length === 0 ? <p className="p-6 text-sm text-slate-500">No open conversations.</p> : null}
         </div>
 
-        <div className="space-y-4 rounded-xl border border-slate-800 bg-slate-900/30 p-4">
+        <div className="space-y-4 lg:col-span-2 xl:grid xl:grid-cols-2 xl:gap-4">
+          <div className="space-y-4 rounded-xl border border-slate-800 bg-slate-900/30 p-4">
           {!activeId ? (
             <p className="text-sm text-slate-500">Select a conversation.</p>
           ) : (
@@ -603,6 +605,10 @@ export function AiAutoReplyInboxClient() {
               </div>
             </>
           )}
+          </div>
+          <div className="min-h-0 xl:max-h-[520px] xl:overflow-y-auto">
+            <DealAssistantPanel conversationId={activeId} onApplySuggestion={setReplyText} />
+          </div>
         </div>
       </div>
 

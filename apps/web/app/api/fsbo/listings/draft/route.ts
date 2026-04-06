@@ -6,11 +6,15 @@ import { parseSessionUserId, TENANT_CONTEXT_COOKIE_NAME } from "@/lib/auth/sessi
 import { ensureSellerContractsForFsboListing } from "@/lib/contracts/fsbo-seller-contracts";
 import { ensureFsboListingDocumentSlots } from "@/lib/fsbo/seller-hub-seed-documents";
 import { allocateUniqueLSTListingCode } from "@/lib/listing-code";
+import { isBrokerVerified } from "@/lib/verification/broker";
 
 export const dynamic = "force-dynamic";
 
 /**
  * POST — create a minimal FSBO draft for Seller Hub (placeholder fields; complete in wizard).
+ *
+ * Safe acquisition: listings must be owner/broker-submitted or operator-entered with documented permission.
+ * Never auto-populate from scraped or copyrighted third-party sources — see `docs/compliance/safe-listing-acquisition.md`.
  */
 export async function POST() {
   const userId = await getGuestId();
@@ -22,8 +26,12 @@ export async function POST() {
     where: { id: userId },
     select: { email: true, name: true, phone: true, sellerSellingMode: true },
   });
+  const brokerVerified = await isBrokerVerified(userId).catch(() => false);
   const listingOwnerType: FsboListingOwnerType =
-    user?.sellerSellingMode === "PLATFORM_BROKER" ? "BROKER" : "SELLER";
+    brokerVerified &&
+    (user?.sellerSellingMode === "PLATFORM_BROKER" || user?.sellerSellingMode === "PREFERRED_BROKER")
+      ? "BROKER"
+      : "SELLER";
   if (!user?.email) {
     return Response.json({ error: "User email required" }, { status: 400 });
   }

@@ -6,28 +6,11 @@ import {
   getDmAutomationSuggestions,
   getRecommendedAutomationAction,
 } from "@/lib/automation/lead-automation-ui";
+import { getLeadRevenueSnapshot } from "@/src/modules/revenue/revenueEngine";
+import { canBrokerOrAdminAccessLead } from "@/lib/leads/can-access-lead";
+import { getDealLegalTimeline } from "@/lib/deals/legal-timeline";
 
 export const dynamic = "force-dynamic";
-
-function canAccessLead(
-  role: string | undefined,
-  viewerId: string,
-  lead: {
-    introducedByBrokerId: string | null;
-    lastFollowUpByBrokerId: string | null;
-    leadSource: string | null;
-  }
-): boolean {
-  if (role === "ADMIN") return true;
-  if (role !== "BROKER") return false;
-  const shared =
-    lead.leadSource === "evaluation_lead" || lead.leadSource === "broker_consultation";
-  return (
-    lead.introducedByBrokerId === viewerId ||
-    lead.lastFollowUpByBrokerId === viewerId ||
-    shared
-  );
-}
 
 /** GET: single lead (broker/admin) with CRM notes. */
 export async function GET(
@@ -84,9 +67,12 @@ export async function GET(
       return Response.json({ error: "Lead not found" }, { status: 404 });
     }
 
-    if (!canAccessLead(viewer.role, viewerId, lead)) {
+    if (!canBrokerOrAdminAccessLead(viewer.role, viewerId, lead)) {
       return Response.json({ error: "Forbidden" }, { status: 403 });
     }
+
+    const revenueSnapshot = await getLeadRevenueSnapshot(id);
+    const legalTimeline = lead.deal?.id ? await getDealLegalTimeline(lead.deal.id).catch(() => null) : null;
 
     const response = {
       ...lead,
@@ -117,6 +103,21 @@ export async function GET(
           lastContactedAt: lead.lastContactedAt,
         }),
       },
+      revenuePotential: revenueSnapshot.openOpportunityValue,
+      revenuePushActions: revenueSnapshot.pushActions,
+      dealLegalTimeline: legalTimeline
+        ? {
+            dealId: legalTimeline.dealId,
+            currentStage: legalTimeline.currentStage,
+            stages: legalTimeline.stages,
+            events: legalTimeline.events.map((event) => ({
+              id: event.id,
+              createdAt: event.createdAt.toISOString(),
+              note: event.note,
+              stage: event.stage,
+            })),
+          }
+        : null,
     };
     return Response.json(response);
   } catch (e) {

@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { suppressGlobalMarketingOverlays } from "@/lib/ui/dev-overlays";
 
 const STORAGE_KEY = "lecipm_staging_demo_welcome_v1";
 
@@ -19,6 +20,7 @@ export function DemoStagingWelcomeModal() {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
+    if (suppressGlobalMarketingOverlays()) return;
     if (process.env.NEXT_PUBLIC_ENV !== "staging") return;
     if (!pathname || pathname.startsWith("/admin") || pathname.startsWith("/embed") || pathname.startsWith("/auth")) {
       return;

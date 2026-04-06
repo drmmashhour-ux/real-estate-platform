@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { ListingStatus, VerificationStatus } from "@prisma/client";
+import { ListingAnalyticsKind, ListingStatus, VerificationStatus } from "@prisma/client";
 import {
   RANKING_LISTING_TYPE_BNHUB,
   RANKING_LISTING_TYPE_REAL_ESTATE,
@@ -52,6 +52,7 @@ export async function buildBnhubRankingInputs(
     instantBookEnabled: boolean;
     houseRules: string | null;
     checkInInstructions: string | null;
+    reputationRankBoost?: number;
     reviews: { propertyRating: number }[];
     _count: { reviews: number; bookings: number };
   }>
@@ -135,6 +136,7 @@ export async function buildBnhubRankingInputs(
       hostHasFastResponder: fast.has(l.ownerId),
       hostHasReliable: reliable.has(l.ownerId),
       medianNightPriceCents: med,
+      reputationRankBoost: l.reputationRankBoost ?? 0,
     };
   });
 }
@@ -461,6 +463,7 @@ type BnhubSearchRow = {
   instantBookEnabled: boolean;
   houseRules: string | null;
   checkInInstructions: string | null;
+  reputationRankBoost?: number;
   reviews: { propertyRating: number }[];
   _count: { reviews: number; bookings: number };
 };
@@ -523,6 +526,11 @@ export async function scoreRealEstateListingsForBrowse(
       _count: { select: { buyerListingViews: true, buyerSavedListings: true, leads: true } },
     },
   });
+  const demandRows = await prisma.listingAnalytics.findMany({
+    where: { kind: ListingAnalyticsKind.FSBO, listingId: { in: ids } },
+    select: { listingId: true, demandScore: true },
+  });
+  const demandMap = new Map(demandRows.map((r) => [r.listingId, r.demandScore]));
   const med = median(rows.map((r) => r.priceCents));
   const fullCtx: RankingSearchContext = {
     listingType: RANKING_LISTING_TYPE_REAL_ESTATE,
@@ -559,6 +567,7 @@ export async function scoreRealEstateListingsForBrowse(
       viewCount: row._count.buyerListingViews,
       saveCount: row._count.buyerSavedListings,
       leadCount: row._count.leads,
+      demandScoreFromAnalytics: demandMap.get(row.id) ?? 0,
       medianPriceCents: med,
     };
     const res = await computeRealEstateRankingScore(input, fullCtx, weights);

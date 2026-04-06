@@ -16,6 +16,7 @@ const DEFAULTS: Record<string, { brokerPercent: number; platformPercent: number 
   deposit: { brokerPercent: 70, platformPercent: 30 },
   closing_fee: { brokerPercent: 70, platformPercent: 30 },
   featured_listing: { brokerPercent: 0, platformPercent: 100 },
+  listing_contact_lead: { brokerPercent: 0, platformPercent: 100 },
   fsbo_publish: { brokerPercent: 0, platformPercent: 100 },
 };
 

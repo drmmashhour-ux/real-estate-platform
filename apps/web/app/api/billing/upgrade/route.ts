@@ -1,11 +1,11 @@
 import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
-import { plans, type PlanKey } from "@/lib/billing/plans";
+import { PAID_STORAGE_PLAN_KEYS, plans, type PlanKey } from "@/lib/billing/plans";
 
 export const dynamic = "force-dynamic";
 
-const VALID_UPGRADE_PLANS: PlanKey[] = ["basic", "pro"];
+const VALID_UPGRADE_PLANS: PlanKey[] = PAID_STORAGE_PLAN_KEYS;
 
 /**
  * POST /api/billing/upgrade

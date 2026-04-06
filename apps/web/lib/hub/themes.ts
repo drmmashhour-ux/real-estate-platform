@@ -23,6 +23,10 @@ const LECIPM_PREMIUM_HUB: HubTheme = {
 
 export const hubThemes: Record<string, HubTheme> = {
   bnhub: { ...LECIPM_PREMIUM_HUB },
+  /** LECIPM Hub Engine — car rental vertical (beta when enabled). */
+  carhub: { ...LECIPM_PREMIUM_HUB },
+  servicehub: { ...LECIPM_PREMIUM_HUB },
+  investorhub: { ...LECIPM_PREMIUM_HUB },
   realEstate: { ...LECIPM_PREMIUM_HUB },
   luxury: { ...LECIPM_PREMIUM_HUB },
   broker: { ...LECIPM_PREMIUM_HUB },

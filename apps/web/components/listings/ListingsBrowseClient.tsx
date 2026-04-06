@@ -18,6 +18,9 @@ import {
   type PropertyBrowseFilters,
 } from "@/lib/buy/property-browse-filters";
 import { buildFsboPublicListingPath } from "@/lib/seo/public-urls";
+import { trackLaunchEvent } from "@/src/modules/launch/LaunchTracker";
+import { ListingTransactionFlag } from "@/components/listings/ListingTransactionFlag";
+import { SearchSmartComparePanel } from "@/components/compare/SearchSmartComparePanel";
 
 /** Luxury residential hero — Unsplash (modern home, dusk). */
 const LISTINGS_HERO_BG =
@@ -40,6 +43,11 @@ type Row = {
   noiseLevel?: string | null;
   familyFriendly?: boolean;
   petsAllowed?: boolean;
+  transactionFlag?: {
+    key: "offer_received" | "offer_accepted" | "sold";
+    label: string;
+    tone: "amber" | "emerald" | "slate";
+  } | null;
 };
 
 const EMPTY_PF: PropertyBrowseFilters = {
@@ -82,7 +90,7 @@ function toMapListing(row: Row): MapListing | null {
   };
 }
 
-type BrowseProps = { embedded?: boolean; hubMode?: "buy" | "rent" };
+type BrowseProps = { embedded?: boolean; hubMode?: "buy" | "rent"; hideSearchEngineBar?: boolean };
 
 function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
   const router = useRouter();
@@ -97,6 +105,7 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [propertyFilters, setPropertyFilters] = useState<PropertyBrowseFilters>(EMPTY_PF);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [smartCompareIds, setSmartCompareIds] = useState<string[]>([]);
   const listRef = useRef<HTMLDivElement>(null);
 
   const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10) || 1);
@@ -128,7 +137,11 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
         cache: "no-store",
       });
       if (!r.ok) {
-        setFetchError(r.status >= 500 ? "Server error — please try again." : "Could not load listings.");
+        setFetchError(
+          r.status >= 500
+            ? "Something went wrong — please try again."
+            : "Unable to load listings — please try again."
+        );
         setData([]);
         setTotal(0);
         return;
@@ -137,7 +150,7 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
       setData(Array.isArray(j.data) ? j.data : []);
       setTotal(typeof j.total === "number" ? j.total : 0);
     } catch {
-      setFetchError("Network error — check your connection and try again.");
+      setFetchError("Something went wrong — please try again.");
       setData([]);
       setTotal(0);
     } finally {
@@ -148,6 +161,26 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
   useEffect(() => {
     void fetchList();
   }, [fetchList]);
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      void fetch("/api/analytics/public-track", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          eventType: "search_performed",
+          metadata: { query: queryString.slice(0, 400), page, hubMode, pathname },
+        }),
+      }).catch(() => {});
+      void trackLaunchEvent("SEARCH", {
+        query: queryString.slice(0, 400),
+        page,
+        hubMode,
+        pathname,
+      });
+    }, 900);
+    return () => clearTimeout(t);
+  }, [queryString, page, hubMode, pathname]);
 
   const onBoundsChange = useCallback(
     (b: { north: number; south: number; east: number; west: number }) => {
@@ -184,12 +217,21 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
   const hasMore = page * 24 < total;
   const pfActive = hasActivePropertyBrowseFilters(propertyFilters);
 
+  const toggleSmartCompare = (id: string) => {
+    setSmartCompareIds((current) => {
+      if (current.includes(id)) return current.filter((entry) => entry !== id);
+      if (current.length >= 3) return [...current.slice(1), id];
+      return [...current, id];
+    });
+  };
+
   const listGrid = useMemo(
     () => (
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {data.map((row) => {
           const img = row.coverImage || row.images[0] || null;
           const price = `$${(row.priceCents / 100).toLocaleString("en-CA")}`;
+          const inSmartCompare = smartCompareIds.includes(row.id);
           return (
             <Link
               key={row.id}
@@ -223,6 +265,11 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
                 )}
               </div>
               <div className="p-4 sm:p-5">
+                {row.transactionFlag ? (
+                  <div className="mb-3">
+                    <ListingTransactionFlag flag={row.transactionFlag} />
+                  </div>
+                ) : null}
                 <p className="line-clamp-2 text-sm font-semibold text-white">{row.title}</p>
                 <p className="mt-1 text-lg font-bold text-premium-gold">{price}</p>
                 <p className="mt-1 text-xs text-slate-500">
@@ -246,7 +293,21 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
                   </div>
                 ) : null}
                 <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-4">
-                  <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Property details</span>
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      toggleSmartCompare(row.id);
+                    }}
+                    className={`rounded-full px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide transition ${
+                      inSmartCompare
+                        ? "bg-premium-gold text-black"
+                        : "border border-white/15 bg-white/[0.03] text-slate-300 hover:border-premium-gold/40 hover:text-white"
+                    }`}
+                  >
+                    {inSmartCompare ? "Selected" : "Smart compare"}
+                  </button>
                   <span className="text-xs font-medium text-premium-gold transition group-hover:text-[#E8D5A0]">
                     View full listing →
                   </span>
@@ -257,7 +318,7 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
         })}
       </div>
     ),
-    [data, selectedId]
+    [data, selectedId, smartCompareIds]
   );
 
   const mapSearchEl = (
@@ -547,6 +608,17 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
         {resultsToolbar}
 
+        {data.length > 1 ? (
+          <div className="mt-6">
+            <SearchSmartComparePanel
+              rows={data}
+              selectedIds={smartCompareIds}
+              onRemove={(id) => setSmartCompareIds((current) => current.filter((entry) => entry !== id))}
+              onClear={() => setSmartCompareIds([])}
+            />
+          </div>
+        ) : null}
+
         {lifestyleSection}
 
         {paginationBar}
@@ -590,13 +662,21 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
               title="No listings match these filters"
               description="Try widening the city, price range, or property type — or clear filters to see everything available."
             >
-              <button
-                type="button"
-                onClick={reset}
-                className="rounded-xl bg-premium-gold px-6 py-2.5 text-sm font-bold text-[#0B0B0B] transition hover:bg-premium-gold"
-              >
-                Clear search filters
-              </button>
+              <div className="flex flex-col items-center gap-3 sm:flex-row sm:flex-wrap sm:justify-center">
+                <button
+                  type="button"
+                  onClick={reset}
+                  className="min-h-[44px] rounded-xl bg-premium-gold px-6 py-2.5 text-sm font-bold text-[#0B0B0B] transition hover:bg-premium-gold"
+                >
+                  Clear search filters
+                </button>
+                <Link
+                  href="/bnhub/stays"
+                  className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-white/20 px-6 py-2.5 text-sm font-semibold text-white/90 transition hover:border-premium-gold/40 hover:text-white"
+                >
+                  Browse short-term stays
+                </Link>
+              </div>
             </EmptyState>
           </div>
         ) : null}
@@ -612,21 +692,27 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
   return <main className="min-h-screen bg-brand-background pb-24 text-white">{grid}</main>;
 }
 
-export function ListingsBrowseClient({ embedded = false, hubMode = "buy" }: BrowseProps) {
+export function ListingsBrowseClient({
+  embedded = false,
+  hubMode = "buy",
+  hideSearchEngineBar = false,
+}: BrowseProps) {
   const mode = hubMode === "rent" ? "rent" : "buy";
   return (
     <SearchFiltersProvider mode={mode}>
       {embedded ? (
         <div className="bg-[#0B0B0B] pb-16 text-white">
-          <div className="mx-auto max-w-6xl px-4 pt-6 sm:px-6">
-            <h2 className="text-lg font-semibold text-white">
-              {hubMode === "rent" ? "Search rentals" : "Search properties"}
-            </h2>
-            <p className="mt-1 text-sm text-slate-500">Filters sync to the URL — share or bookmark your results.</p>
-            <div className="mt-4">
-              <SearchEngineBar />
+          {!hideSearchEngineBar ? (
+            <div className="mx-auto max-w-6xl px-4 pt-6 sm:px-6">
+              <h2 className="text-lg font-semibold text-white">
+                {hubMode === "rent" ? "Search rentals" : "Search properties"}
+              </h2>
+              <p className="mt-1 text-sm text-slate-500">Filters sync to the URL — share or bookmark your results.</p>
+              <div className="mt-4">
+                <SearchEngineBar />
+              </div>
             </div>
-          </div>
+          ) : null}
           <ListingsBrowseContent embedded hubMode={hubMode} />
         </div>
       ) : (

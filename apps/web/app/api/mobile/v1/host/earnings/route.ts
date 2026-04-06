@@ -1,13 +1,13 @@
 import { prisma } from "@/lib/db";
-import { requireMobileUser, resolveMobileAppRole } from "@/lib/mobile/mobileAuth";
+import { requireMobileUser, resolveMobileAppRoleFromRequest } from "@/lib/mobile/mobileAuth";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   try {
     const user = await requireMobileUser(request);
-    const count = await prisma.shortTermListing.count({ where: { ownerId: user.id } });
-    if (resolveMobileAppRole(user, count) === "guest" && user.role !== "ADMIN") {
+    const appRole = await resolveMobileAppRoleFromRequest(request, user);
+    if (appRole === "guest" && user.role !== "ADMIN") {
       return Response.json({ error: "Host access required" }, { status: 403 });
     }
     const listingIds = (

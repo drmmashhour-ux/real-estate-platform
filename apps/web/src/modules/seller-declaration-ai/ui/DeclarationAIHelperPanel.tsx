@@ -14,6 +14,7 @@ type Props = {
     sources?: Array<{ title: string; pageNumber: number | null; importance: string; excerpt: string }>;
   } | null;
   warnings: string[];
+  contentIssues?: Array<{ severity: "warning" | "block"; message: string; suggestion: string }>;
   onApply: () => void;
   onGenerateFollowUp: () => void;
   onAnswerChange: (question: string, answer: string) => void;
@@ -26,6 +27,7 @@ export function DeclarationAIHelperPanel({
   questionAnswers,
   explain,
   warnings,
+  contentIssues = [],
   onApply,
   onGenerateFollowUp,
   onAnswerChange,
@@ -53,6 +55,22 @@ export function DeclarationAIHelperPanel({
         <div className="rounded-lg bg-rose-500/10 p-2 text-xs text-rose-200">
           <p className="font-medium">Warnings</p>
           <p>{warnings.join(" | ")}</p>
+        </div>
+      ) : null}
+
+      {contentIssues.length ? (
+        <div className="rounded-lg border border-rose-400/20 bg-rose-500/10 p-2 text-xs text-rose-100">
+          <p className="font-medium">Content control</p>
+          <div className="mt-1 space-y-2">
+            {contentIssues.slice(0, 4).map((issue, idx) => (
+              <div key={`${issue.message}-${idx}`} className="rounded-md bg-black/20 p-2">
+                <p>
+                  <span className="font-semibold uppercase">{issue.severity}</span>: {issue.message}
+                </p>
+                <p className="mt-1 text-rose-100/90">{issue.suggestion}</p>
+              </div>
+            ))}
+          </div>
         </div>
       ) : null}
 

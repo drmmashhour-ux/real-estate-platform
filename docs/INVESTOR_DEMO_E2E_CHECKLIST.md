@@ -28,7 +28,7 @@ From repository root, the primary app is **`apps/web`**.
    cd apps/web && npm install && npm run dev
    ```
 
-   App defaults to **http://localhost:3000** (see `package.json` `dev` script).
+   App defaults to **http://localhost:3001** (see `apps/web` `package.json` `dev` script).
 
 2. **Apply migrations**
 

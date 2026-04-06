@@ -1,25 +1,24 @@
 /**
- * POST /api/stripe/connect/onboard — Stripe Connect Express onboarding (BNHub hosts + mortgage experts).
+ * POST /api/stripe/connect/onboard — Legacy single-step onboarding.
+ * Hosts: prefer POST /create-account then /create-account-link + /dashboard/stripe/success.
+ * Mortgage experts: still use this route (custom return URLs).
  */
 
 import { NextRequest } from "next/server";
-import Stripe from "stripe";
 import { prisma } from "@/lib/db";
 import { getGuestId } from "@/lib/auth/session";
-import { isStripeConfigured } from "@/lib/stripe";
+import { getStripe, isStripeConfigured } from "@/lib/stripe";
 import { stripeAppBaseUrl } from "@/lib/stripe/app-base-url";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
 import { recordPlatformEvent } from "@/lib/observability";
+import {
+  createHostAccountOnboardingLink,
+  ensureHostExpressAccount,
+} from "@/lib/stripe/hostConnectExpress";
 
 export const dynamic = "force-dynamic";
 
 const DEFAULT_CONNECT_COUNTRY = (process.env.STRIPE_CONNECT_DEFAULT_COUNTRY ?? "CA").toUpperCase();
-
-function getStripe(): Stripe | null {
-  const key = process.env.STRIPE_SECRET_KEY?.trim();
-  if (!key) return null;
-  return new Stripe(key);
-}
 
 export async function POST(request: NextRequest) {
   if (!isStripeConfigured()) {
@@ -60,8 +59,7 @@ export async function POST(request: NextRequest) {
   const isHostish =
     user.role === "HOST" || user.role === "ADMIN" || user._count.shortTermListings > 0;
   const isMortgageExpert =
-    user.role === "MORTGAGE_EXPERT" ||
-    user.role === "MORTGAGE_BROKER";
+    user.role === "MORTGAGE_EXPERT" || user.role === "MORTGAGE_BROKER";
   if (!isHostish && !isMortgageExpert) {
     return Response.json(
       { error: "Only hosts or mortgage experts can connect a Stripe account for payouts." },
@@ -70,14 +68,6 @@ export async function POST(request: NextRequest) {
   }
 
   const base = stripeAppBaseUrl(request);
-  const refreshUrl = isMortgageExpert
-    ? `${base}/dashboard/expert/billing?stripe_connect=refresh`
-    : `${base}/dashboard/host/payouts?stripe_connect=refresh`;
-  const returnUrl = isMortgageExpert
-    ? `${base}/dashboard/expert/billing?connected=1`
-    : `${base}/dashboard/host/payouts?connected=1`;
-
-  let accountId = user.stripeAccountId;
 
   try {
     void recordPlatformEvent({
@@ -85,43 +75,70 @@ export async function POST(request: NextRequest) {
       sourceModule: "stripe",
       entityType: "USER",
       entityId: user.id,
-      payload: { hadAccount: Boolean(accountId) },
+      payload: { hadAccount: Boolean(user.stripeAccountId), flow: isMortgageExpert ? "expert" : "host" },
     }).catch(() => {});
 
-    if (!accountId) {
-      const account = await stripe.accounts.create({
-        type: "express",
-        country: DEFAULT_CONNECT_COUNTRY,
-        email: user.email ?? undefined,
-        capabilities: {
-          card_payments: { requested: true },
-          transfers: { requested: true },
-        },
-        metadata: { platformUserId: user.id },
+    if (isMortgageExpert) {
+      const refreshUrl = `${base}/dashboard/expert/billing?stripe_connect=refresh`;
+      const returnUrl = `${base}/dashboard/expert/billing?connected=1`;
+
+      let accountId = user.stripeAccountId;
+      if (!accountId) {
+        const account = await stripe.accounts.create({
+          type: "express",
+          country: DEFAULT_CONNECT_COUNTRY,
+          email: user.email ?? undefined,
+          capabilities: {
+            card_payments: { requested: true },
+            transfers: { requested: true },
+          },
+          metadata: { platformUserId: user.id },
+        });
+        accountId = account.id;
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { stripeAccountId: accountId, stripeOnboardingComplete: false },
+        });
+      }
+
+      const link = await stripe.accountLinks.create({
+        account: accountId,
+        refresh_url: refreshUrl,
+        return_url: returnUrl,
+        type: "account_onboarding",
       });
-      accountId = account.id;
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { stripeAccountId: accountId, stripeOnboardingComplete: false },
-      });
+
+      void recordPlatformEvent({
+        eventType: "stripe_connect_onboard_link_created",
+        sourceModule: "stripe",
+        entityType: "USER",
+        entityId: user.id,
+        payload: { accountId, flow: "mortgage_expert" },
+      }).catch(() => {});
+
+      return Response.json({ url: link.url, accountId });
     }
 
-    const link = await stripe.accountLinks.create({
-      account: accountId,
-      refresh_url: refreshUrl,
-      return_url: returnUrl,
-      type: "account_onboarding",
-    });
+    if (isHostish) {
+      const ensured = await ensureHostExpressAccount(stripe, user.id);
+      if (!ensured.ok) {
+        return Response.json({ error: ensured.error }, { status: ensured.status });
+      }
+      const link = await createHostAccountOnboardingLink(stripe, ensured.accountId, base);
+      if (!link.ok) {
+        return Response.json({ error: link.error }, { status: link.status });
+      }
+      void recordPlatformEvent({
+        eventType: "stripe_connect_onboard_link_created",
+        sourceModule: "stripe",
+        entityType: "USER",
+        entityId: user.id,
+        payload: { accountId: ensured.accountId, flow: "host_unified_onboard" },
+      }).catch(() => {});
+      return Response.json({ url: link.url, accountId: ensured.accountId });
+    }
 
-    void recordPlatformEvent({
-      eventType: "stripe_connect_onboard_link_created",
-      sourceModule: "stripe",
-      entityType: "USER",
-      entityId: user.id,
-      payload: { accountId },
-    }).catch(() => {});
-
-    return Response.json({ url: link.url, accountId });
+    return Response.json({ error: "Not allowed" }, { status: 403 });
   } catch (e) {
     console.error("[stripe/connect/onboard]", e);
     const msg = e instanceof Error ? e.message : "Onboarding failed";

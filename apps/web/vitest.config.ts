@@ -10,6 +10,8 @@ export default defineConfig({
       "modules/**/*.test.ts",
       "src/modules/**/*.test.ts",
       "components/**/*.test.ts",
+      "tests/**/*.test.ts",
+      "services/**/*.test.ts",
     ],
     globals: true,
   },

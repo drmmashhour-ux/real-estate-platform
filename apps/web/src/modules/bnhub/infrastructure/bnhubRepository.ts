@@ -1,5 +1,7 @@
-import { BookingStatus, VerificationStatus } from "@prisma/client";
+import { BookingStatus, PaymentStatus, VerificationStatus } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { logBusinessMilestone, trackEvent } from "@/src/services/analytics";
+import { persistLaunchEvent } from "@/src/modules/launch/persistLaunchEvent";
 
 export async function getListingById(listingId: string) {
   return prisma.shortTermListing.findUnique({
@@ -43,17 +45,54 @@ export async function createBookingRow(args: {
   nights: number;
   totalCents: number;
 }) {
-  return prisma.booking.create({
-    data: {
+  const row = await prisma.$transaction(async (tx) => {
+    const booking = await tx.booking.create({
+      data: {
+        listingId: args.listingId,
+        guestId: args.guestId,
+        checkIn: args.checkIn,
+        checkOut: args.checkOut,
+        nights: args.nights,
+        totalCents: args.totalCents,
+        status: BookingStatus.PENDING,
+      },
+    });
+    await tx.payment.create({
+      data: {
+        bookingId: booking.id,
+        amountCents: args.totalCents,
+        guestFeeCents: 0,
+        hostFeeCents: 0,
+        status: PaymentStatus.PENDING,
+      },
+    });
+    return booking;
+  });
+  void trackEvent(
+    "booking_started",
+    {
+      bookingId: row.id,
       listingId: args.listingId,
-      guestId: args.guestId,
-      checkIn: args.checkIn,
-      checkOut: args.checkOut,
       nights: args.nights,
       totalCents: args.totalCents,
-      status: BookingStatus.PENDING,
     },
+    { userId: args.guestId }
+  );
+  logBusinessMilestone("BOOKING CREATED", { bookingId: row.id, listingId: args.listingId });
+  void persistLaunchEvent("CREATE_BOOKING", {
+    bookingId: row.id,
+    listingId: args.listingId,
+    guestId: args.guestId,
+    nights: args.nights,
+    totalCents: args.totalCents,
   });
+  void import("@/lib/growth/events").then(({ recordGrowthEventWithFunnel }) =>
+    recordGrowthEventWithFunnel("booking_start", {
+      userId: args.guestId,
+      metadata: { bookingId: row.id, listingId: args.listingId, nights: args.nights },
+    })
+  );
+  return row;
 }
 
 export async function updateBookingStatus(bookingId: string, status: BookingStatus) {

@@ -1,8 +1,7 @@
-import { PrismaClient } from "@prisma/client";
+import { AuthRole, PrismaClient } from "../../generated/prisma/index.js";
 import type { UserEntity } from "../../domain/entities/User.js";
 import type { IUserRepository, CreateUserInput } from "../../domain/ports/UserRepository.js";
 import type { Role } from "../../domain/enums/Role.js";
-import { AuthRole } from "@prisma/client";
 
 const roleMap = {
   GUEST: "GUEST",

@@ -1,9 +1,12 @@
 import { prisma } from "@/lib/db";
-import { BnhubDayAvailabilityStatus } from "@prisma/client";
+import { BnhubDayAvailabilityStatus, ListingStatus, type LoyaltyTier, type Prisma } from "@prisma/client";
 import type { BnhubListingForRanking } from "@/lib/ai/bnhub-search";
 import { allocateUniqueLSTListingCode } from "@/lib/listing-code";
 import { normalizeAnyPublicListingCode } from "@/lib/listing-code-public";
-import { getRankingWeights, computeListingRankScore } from "./search-ranking";
+import { attachIntegerAiScoresToBnhubSearchResults } from "@/lib/bnhub/discovery-ai-score";
+import { applyBehaviorLearningToBnhubSearchResults } from "@/lib/learning/applyBehaviorLearningRank";
+import { scoreListingForSearch } from "./ranking/listing-ranking";
+import type { ListingSearchRankContext } from "./ranking/listing-ranking";
 import { getMarketingSearchBoostByListingId } from "@/src/modules/bnhub-marketing/services/marketingFeaturedSearchBridge";
 import { getGrowthSearchBoostByListingId } from "@/src/modules/bnhub-growth-engine/services/growthFeaturedBridge";
 import { getClassificationSearchBoostMapForIds } from "@/src/modules/bnhub-growth-engine/services/propertyClassificationService";
@@ -12,6 +15,7 @@ import {
   shouldScheduleFullEngineRecompute,
 } from "@/src/modules/bnhub-growth-engine/services/bnhubListingEnginesOrchestrator";
 import { scheduleFraudRecheck } from "@/src/workers/fraudDetectionWorker";
+import { enqueueHostAutopilot } from "@/lib/ai/autopilot/triggers";
 import { getActivePromotedListingIds } from "@/lib/promotions";
 import { getApprovedHost, hasAcceptedHostAgreement } from "./host";
 import { buildPublishedListingSearchWhere, searchOrderBy } from "./build-search-where";
@@ -23,6 +27,11 @@ import {
   maybeLogBnhubSearchImpressions,
   orderBnhubListingsByRankingEngine,
 } from "@/src/modules/ranking/rankingService";
+import {
+  expireStaleBnhubPendingBookings,
+  findOverlappingActiveBnhubBooking,
+} from "@/lib/bookings/checkAvailability";
+import { applyAiSearchRankingToBnhubResults } from "@/lib/ai/search/applyAiSearchRanking";
 
 export type ListingSearchParams = {
   city?: string;
@@ -59,6 +68,10 @@ export type ListingSearchParams = {
   staysFilters?: StaysSearchFilters | null;
   /** When true (default), background-geocode rows missing coordinates (rate-limited). */
   geocodeMissingCoordinates?: boolean;
+  /** Logged-in guest — enables personalized AI ranking for recommended / ai sort. */
+  userId?: string | null;
+  /** Cookie `lecipm_behavior_sid` — optional behavior-learning personalization. */
+  sessionId?: string | null;
 };
 
 /** Maps filter keys to substrings matched against `ShortTermListing.amenities` JSON strings. */
@@ -111,9 +124,9 @@ type SearchListingWithReviewAvg<T extends { id: string }> = T & {
 /**
  * Search/ranking only needs average review stars, not every Review row.
  * Returns copies with a one-element `reviews` array whose rating equals the DB average so
- * `computeListingRankScore` and client `getRating()` stay unchanged.
+ * marketplace ranking and client `getRating()` stay unchanged.
  */
-async function attachReviewAggregatesForSearch<T extends { id: string }>(
+export async function attachReviewAggregatesForSearch<T extends { id: string }>(
   listings: T[]
 ): Promise<SearchListingWithReviewAvg<T>[]> {
   if (listings.length === 0) return [];
@@ -128,10 +141,15 @@ async function attachReviewAggregatesForSearch<T extends { id: string }>(
   );
   return listings.map((l) => {
     const avg = avgByListingId.get(l.id);
+    const rawOwner = l as { owner?: { hostPerformanceMetrics?: { score: number } | null } };
+    const hrs = rawOwner.owner?.hostPerformanceMetrics?.score;
+    const hostReputationScore =
+      hrs != null && Number.isFinite(hrs) ? hrs : null;
     return {
       ...l,
       reviews:
         avg != null && Number.isFinite(avg) ? [{ propertyRating: avg as number }] : [],
+      hostReputationScore,
     };
   });
 }
@@ -143,6 +161,22 @@ export type SearchListingsResult = {
   limit: number;
   hasMore: boolean;
 };
+
+async function guestMarketplaceRankContext(
+  userId: string | null | undefined,
+  checkIn?: string,
+  checkOut?: string,
+): Promise<ListingSearchRankContext> {
+  let guestLoyaltyTier: LoyaltyTier | undefined;
+  if (userId) {
+    const lp = await prisma.userLoyaltyProfile.findUnique({
+      where: { userId },
+      select: { tier: true },
+    });
+    guestLoyaltyTier = lp?.tier;
+  }
+  return { checkIn, checkOut, guestLoyaltyTier };
+}
 
 export async function searchListings(params: ListingSearchParams) {
   const {
@@ -171,6 +205,8 @@ export async function searchListings(params: ListingSearchParams) {
     discoveryFeatures,
     staysFilters,
     geocodeMissingCoordinates = true,
+    userId,
+    sessionId,
   } = params;
 
   const where = buildPublishedListingSearchWhere({
@@ -204,10 +240,11 @@ export async function searchListings(params: ListingSearchParams) {
 
   let result = await attachReviewAggregatesForSearch(listingsRaw);
 
-  const useAiRanking = sort === "recommended" && isAiRankingEngineEnabled();
+  const sortIsAi = sort === "recommended" || sort === "ai";
+  const useAiRanking = sortIsAi && isAiRankingEngineEnabled();
 
-  if (sort === "recommended" && !useAiRanking) {
-    const weights = await getRankingWeights();
+  if (sortIsAi && !useAiRanking) {
+    const rankCtx = await guestMarketplaceRankContext(userId, checkIn, checkOut);
     const marketingBoost = await getMarketingSearchBoostByListingId();
     const growthBoost = await getGrowthSearchBoostByListingId();
     const ids = result.map((l) => l.id);
@@ -215,15 +252,17 @@ export async function searchListings(params: ListingSearchParams) {
     const tierBoost = await getLuxuryTierSearchBoostMapForIds(ids);
     const riskPen = await getTrustRiskPenaltyMapForIds(ids);
     result = [...result].sort((a, b) => {
+      const baseB = scoreListingForSearch(b, rankCtx).score * 100;
+      const baseA = scoreListingForSearch(a, rankCtx).score * 100;
       const sb =
-        computeListingRankScore(b, weights) +
+        baseB +
         (marketingBoost.get(b.id) ?? 0) +
         (growthBoost.get(b.id) ?? 0) +
         (starBoost.get(b.id) ?? 0) +
         (tierBoost.get(b.id) ?? 0) -
         (riskPen.get(b.id) ?? 0);
       const sa =
-        computeListingRankScore(a, weights) +
+        baseA +
         (marketingBoost.get(a.id) ?? 0) +
         (growthBoost.get(a.id) ?? 0) +
         (starBoost.get(a.id) ?? 0) +
@@ -324,12 +363,43 @@ export async function searchListings(params: ListingSearchParams) {
     void maybeLogBnhubSearchImpressions(result, { pageType: "search", city });
   }
 
-  return result;
+  if (sortIsAi && result.length > 0) {
+    const enginePrior = useAiRanking
+      ? new Map(
+          result.map((l, i) => [l.id, result.length <= 1 ? 0 : i / (result.length - 1)] as const)
+        )
+      : undefined;
+    result = (await applyAiSearchRankingToBnhubResults(result, {
+      filters: {
+        city: city?.trim() || undefined,
+        minPrice,
+        maxPrice,
+        guests,
+        propertyType,
+        amenitySlugs,
+      },
+      userId: userId ?? undefined,
+      engineOrderPrior: enginePrior,
+    })) as typeof result;
+  }
+
+  const scored = await attachIntegerAiScoresToBnhubSearchResults(result, { checkIn, checkOut });
+  return applyBehaviorLearningToBnhubSearchResults(scored, {
+    sort,
+    userId,
+    sessionId,
+    city: city?.trim() || null,
+  });
 }
 
 const LISTING_SEARCH_BASE_INCLUDE = {
   owner: {
-    select: { id: true, name: true, hostQuality: true },
+    select: {
+      id: true,
+      name: true,
+      hostQuality: true,
+      hostPerformanceMetrics: { select: { score: true } },
+    },
   },
   _count: { select: { reviews: true, bookings: true } },
 } as const;
@@ -361,6 +431,8 @@ export async function searchListingsPaginated(
     sort = "newest",
     page = 1,
     limit = 20,
+    amenitySlugs,
+    userId,
   } = params;
 
   const where = buildPublishedListingSearchWhere({
@@ -397,10 +469,11 @@ export async function searchListingsPaginated(
 
   let result = await attachReviewAggregatesForSearch(listingsRaw);
 
-  const useAiRankingPage = sort === "recommended" && isAiRankingEngineEnabled();
+  const sortIsAiPage = sort === "recommended" || sort === "ai";
+  const useAiRankingPage = sortIsAiPage && isAiRankingEngineEnabled();
 
-  if (sort === "recommended" && !useAiRankingPage) {
-    const weights = await getRankingWeights();
+  if (sortIsAiPage && !useAiRankingPage) {
+    const rankCtx = await guestMarketplaceRankContext(userId, checkIn, checkOut);
     const marketingBoost = await getMarketingSearchBoostByListingId();
     const growthBoost = await getGrowthSearchBoostByListingId();
     const pids = result.map((l) => l.id);
@@ -408,15 +481,17 @@ export async function searchListingsPaginated(
     const tierBoost = await getLuxuryTierSearchBoostMapForIds(pids);
     const riskPen = await getTrustRiskPenaltyMapForIds(pids);
     result = [...result].sort((a, b) => {
+      const baseB = scoreListingForSearch(b, rankCtx).score * 100;
+      const baseA = scoreListingForSearch(a, rankCtx).score * 100;
       const sb =
-        computeListingRankScore(b, weights) +
+        baseB +
         (marketingBoost.get(b.id) ?? 0) +
         (growthBoost.get(b.id) ?? 0) +
         (starBoost.get(b.id) ?? 0) +
         (tierBoost.get(b.id) ?? 0) -
         (riskPen.get(b.id) ?? 0);
       const sa =
-        computeListingRankScore(a, weights) +
+        baseA +
         (marketingBoost.get(a.id) ?? 0) +
         (growthBoost.get(a.id) ?? 0) +
         (starBoost.get(a.id) ?? 0) +
@@ -481,6 +556,26 @@ export async function searchListingsPaginated(
     void maybeLogBnhubSearchImpressions(result, { pageType: "search", city });
   }
 
+  if (sortIsAiPage && result.length > 0) {
+    const enginePrior = useAiRankingPage
+      ? new Map(
+          result.map((l, i) => [l.id, result.length <= 1 ? 0 : i / (result.length - 1)] as const)
+        )
+      : undefined;
+    result = (await applyAiSearchRankingToBnhubResults(result, {
+      filters: {
+        city: city?.trim() || undefined,
+        minPrice,
+        maxPrice,
+        guests,
+        propertyType,
+        amenitySlugs,
+      },
+      userId: userId ?? undefined,
+      engineOrderPrior: enginePrior,
+    })) as typeof result;
+  }
+
   return {
     listings: result,
     total,
@@ -511,6 +606,8 @@ export async function getListingById(idOrPublicCode: string) {
     const where = code
       ? { listingCode: { equals: code, mode: "insensitive" as const } }
       : { id: idOrPublicCode };
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
     return await prisma.shortTermListing.findFirst({
       where,
       include: {
@@ -525,6 +622,15 @@ export async function getListingById(idOrPublicCode: string) {
           },
         },
         listingPhotos: { orderBy: [{ isCover: "desc" }, { sortOrder: "asc" }] },
+        bnhubHostListingPromotions: {
+          where: {
+            active: true,
+            startDate: { lte: today },
+            endDate: { gte: today },
+          },
+          orderBy: { discountPercent: "desc" },
+          take: 5,
+        },
         _count: { select: { reviews: true } },
         reviews: {
           take: 5,
@@ -544,32 +650,23 @@ export async function isListingAvailable(
   checkIn: Date,
   checkOut: Date
 ): Promise<boolean> {
-  // Block if any active/reserved booking overlaps (avoid double-booking)
-  const overlapping = await prisma.booking.findFirst({
-    where: {
-      listingId,
-      status: { in: ["CONFIRMED", "PENDING", "AWAITING_HOST_APPROVAL"] },
-      OR: [
-        { checkIn: { lte: checkIn }, checkOut: { gt: checkIn } },
-        { checkIn: { lt: checkOut }, checkOut: { gte: checkOut } },
-        { checkIn: { gte: checkIn }, checkOut: { lte: checkOut } },
-      ],
-    },
+  return prisma.$transaction(async (tx) => {
+    await expireStaleBnhubPendingBookings(tx, listingId);
+    const overlapping = await findOverlappingActiveBnhubBooking(tx, listingId, checkIn, checkOut);
+    if (overlapping) return false;
+    const start = new Date(checkIn);
+    start.setUTCHours(0, 0, 0, 0);
+    const end = new Date(checkOut);
+    end.setUTCHours(0, 0, 0, 0);
+    const blockedSlot = await tx.availabilitySlot.findFirst({
+      where: {
+        listingId,
+        date: { gte: start, lt: end },
+        OR: [{ available: false }, { dayStatus: { in: ["BLOCKED", "BOOKED"] } }],
+      },
+    });
+    return !blockedSlot;
   });
-  if (overlapping) return false;
-  // Block if any night in range is explicitly blocked in calendar
-  const start = new Date(checkIn);
-  start.setUTCHours(0, 0, 0, 0);
-  const end = new Date(checkOut);
-  end.setUTCHours(0, 0, 0, 0);
-  const blockedSlot = await prisma.availabilitySlot.findFirst({
-    where: {
-      listingId,
-      date: { gte: start, lt: end },
-      OR: [{ available: false }, { dayStatus: { in: ["BLOCKED", "BOOKED"] } }],
-    },
-  });
-  return !blockedSlot;
 }
 
 export async function getAvailability(listingId: string, start: Date, end: Date) {
@@ -609,6 +706,8 @@ export type CreateListingData = {
   city: string;
   region?: string;
   country?: string;
+  latitude?: number | null;
+  longitude?: number | null;
   nightPriceCents: number;
   currency?: string;
   beds: number;
@@ -627,7 +726,7 @@ export type CreateListingData = {
   instantBookEnabled?: boolean;
   minStayNights?: number;
   maxStayNights?: number;
-  listingStatus?: "DRAFT" | "PUBLISHED" | "UNLISTED" | "SUSPENDED" | "UNDER_INVESTIGATION";
+  listingStatus?: ListingStatus;
   safetyFeatures?: string[];
   accessibilityFeatures?: string[];
   parkingDetails?: string;
@@ -640,15 +739,20 @@ export type CreateListingData = {
   brokerageName?: string;
   conditionOfProperty?: string;
   knownIssues?: string;
+  listingRulesStructured?: unknown;
 };
 
-export async function createListing(data: CreateListingData) {
-  // Host agreement required before listing: if user is an approved host, they must have accepted.
-  const host = await getApprovedHost(data.ownerId);
-  if (host) {
-    const accepted = await hasAcceptedHostAgreement(host.id);
-    if (!accepted) {
-      throw new Error("You must accept the Host Agreement before creating listings. Visit /bnhub/host-agreement");
+export async function createListing(
+  data: CreateListingData,
+  options?: { skipHostAgreement?: boolean }
+) {
+  if (!options?.skipHostAgreement) {
+    const host = await getApprovedHost(data.ownerId);
+    if (host) {
+      const accepted = await hasAcceptedHostAgreement(host.id);
+      if (!accepted) {
+        throw new Error("You must accept the Host Agreement before creating listings. Visit /bnhub/host-agreement");
+      }
     }
   }
 
@@ -668,6 +772,8 @@ export async function createListing(data: CreateListingData) {
       city: data.city,
       region: data.region,
       country: data.country ?? "US",
+      latitude: data.latitude ?? null,
+      longitude: data.longitude ?? null,
       currency: data.currency ?? "USD",
       nightPriceCents: data.nightPriceCents,
       beds: data.beds,
@@ -699,10 +805,16 @@ export async function createListing(data: CreateListingData) {
       brokerageName: data.brokerageName?.trim() || null,
       conditionOfProperty: data.conditionOfProperty?.trim() || null,
       knownIssues: data.knownIssues?.trim() || null,
+      listingRulesStructured: data.listingRulesStructured ?? undefined,
       },
     });
   });
   scheduleBnhubListingEngineRefresh(listing.id);
+  const { recordGrowthEventWithFunnel } = await import("@/lib/growth/events");
+  void recordGrowthEventWithFunnel("create_listing", {
+    userId: data.ownerId,
+    metadata: { listingId: listing.id, city: listing.city, listingStatus: listing.listingStatus },
+  });
   return listing;
 }
 
@@ -735,7 +847,7 @@ export type UpdateListingData = Partial<{
   instantBookEnabled: boolean;
   minStayNights: number;
   maxStayNights: number;
-  listingStatus: "DRAFT" | "PUBLISHED" | "UNLISTED" | "SUSPENDED" | "UNDER_INVESTIGATION";
+  listingStatus: ListingStatus;
   safetyFeatures: string[];
   accessibilityFeatures: string[];
   parkingDetails: string;
@@ -759,6 +871,9 @@ export type UpdateListingData = Partial<{
   petRules: string | null;
   experienceTags: string[];
   servicesOffered: string[];
+  latitude: number | null;
+  longitude: number | null;
+  listingRulesStructured: unknown;
 }>;
 
 export async function updateListing(id: string, data: UpdateListingData) {
@@ -768,12 +883,20 @@ export async function updateListing(id: string, data: UpdateListingData) {
   if ("knownIssues" in payload && payload.knownIssues !== undefined)
     payload.knownIssues = payload.knownIssues?.trim() || null;
   const shouldRecompute = shouldScheduleFullEngineRecompute(payload as Record<string, unknown>);
+  const { listingRulesStructured, ...rest } = payload;
+  const updateData = {
+    ...rest,
+    ...(listingRulesStructured !== undefined && {
+      listingRulesStructured: listingRulesStructured as Prisma.InputJsonValue,
+    }),
+  } as Prisma.ShortTermListingUpdateInput;
   const updated = await prisma.shortTermListing.update({
     where: { id },
-    data: payload,
+    data: updateData,
   });
   if (shouldRecompute) scheduleBnhubListingEngineRefresh(id);
   scheduleFraudRecheck("listing", id);
+  enqueueHostAutopilot(updated.ownerId, { type: "listing_updated", listingId: id });
   return updated;
 }
 

@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { appendLeadTimelineEvent } from "@/lib/leads/timeline-helpers";
+import { assertBrokerCanReceiveNewLead, formatBrokerBillingBlockReason } from "@/modules/billing/brokerLeadBilling";
 import { refreshLeadExecutionLayer } from "./leadExecutionRefresh";
 
 /** Log operator intent to open messaging / Immo thread (deep links live in UI). */
@@ -11,6 +12,8 @@ export async function sendMessage(leadId: string, actorNote?: string): Promise<v
 }
 
 export async function assignBroker(leadId: string, brokerUserId: string): Promise<void> {
+  const gate = await assertBrokerCanReceiveNewLead(prisma, brokerUserId);
+  if (!gate.ok) throw new Error(formatBrokerBillingBlockReason(gate.reason));
   await prisma.lead.update({
     where: { id: leadId },
     data: { introducedByBrokerId: brokerUserId },

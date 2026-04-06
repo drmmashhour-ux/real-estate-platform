@@ -1,0 +1,103 @@
+// Read-only mirror of listing-service properties table for search.
+// Run listing-service migrations first; this client only reads.
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ListingType {
+  MARKETPLACE_SALE
+  MARKETPLACE_RENT
+  BNHUB
+}
+
+enum ListingStatus {
+  DRAFT
+  PENDING_REVIEW
+  LIVE
+  SUSPENDED
+  ARCHIVED
+}
+
+enum MediaType {
+  PHOTO
+}
+
+model Property {
+  id                 String        @id @default(uuid())
+  ownerId            String        @map("owner_id")
+  brokerId           String?       @map("broker_id")
+  type               ListingType
+  status             ListingStatus @default(DRAFT)
+  title              String
+  description        String?
+  propertyType       String?       @map("property_type")
+  address            String
+  city               String
+  region             String?
+  country            String        @default("CA")
+  latitude           Float?
+  longitude          Float?
+  priceCents         Int?          @map("price_cents")
+  currency           String        @default("CAD")
+  nightlyPriceCents  Int?          @map("nightly_price_cents")
+  cleaningFeeCents   Int?          @default(0) @map("cleaning_fee_cents")
+  maxGuests          Int?          @map("max_guests")
+  bedrooms           Int?
+  beds               Int?
+  baths              Float?
+  checkInTime        String?       @map("check_in_time")
+  checkOutTime       String?       @map("check_out_time")
+  houseRules         String?       @map("house_rules")
+  minNights          Int?          @default(1) @map("min_nights")
+  maxNights          Int?          @map("max_nights")
+  registrationNumber String?       @map("registration_number")
+  reviewedAt         DateTime?     @map("reviewed_at")
+  rejectionReason    String?       @map("rejection_reason")
+  createdAt          DateTime      @default(now()) @map("created_at")
+  updatedAt          DateTime      @updatedAt @map("updated_at")
+  deletedAt          DateTime?     @map("deleted_at")
+
+  images    PropertyImage[]
+  amenities PropertyAmenity[]
+
+  @@index([status, city, country])
+  @@index([status, nightlyPriceCents])
+  @@index([status, maxGuests])
+  @@index([status, propertyType])
+  @@index([status, latitude, longitude])
+  @@map("properties")
+}
+
+model PropertyImage {
+  id         String    @id @default(uuid())
+  propertyId String    @map("property_id")
+  url        String
+  type       MediaType @default(PHOTO)
+  sortOrder  Int       @default(0) @map("sort_order")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId])
+  @@map("property_images")
+}
+
+model PropertyAmenity {
+  id         String   @id @default(uuid())
+  propertyId String   @map("property_id")
+  amenityKey String   @map("amenity_key")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@unique([propertyId, amenityKey])
+  @@index([propertyId])
+  @@map("property_amenities")
+}

@@ -1,6 +1,7 @@
 import { PlatformRole, UserEventType } from "@prisma/client";
 import { subDays } from "date-fns";
 import { prisma } from "@/lib/db";
+import { assertBrokerCanReceiveNewLead } from "@/modules/billing/brokerLeadBilling";
 
 export type IntentLevel = "cold" | "warm" | "hot";
 
@@ -150,13 +151,21 @@ export async function autoAssignLeads(take = 25): Promise<{ assigned: number }> 
   let assigned = 0;
   let i = 0;
   for (const lead of unassigned) {
-    const broker = brokers[i % brokers.length]!;
-    await prisma.lead.update({
-      where: { id: lead.id },
-      data: { introducedByBrokerId: broker.id },
-    });
-    i++;
-    assigned++;
+    let placed = false;
+    for (let k = 0; k < brokers.length; k++) {
+      const broker = brokers[(i + k) % brokers.length]!;
+      const gate = await assertBrokerCanReceiveNewLead(prisma, broker.id);
+      if (!gate.ok) continue;
+      await prisma.lead.update({
+        where: { id: lead.id },
+        data: { introducedByBrokerId: broker.id },
+      });
+      i += k + 1;
+      assigned++;
+      placed = true;
+      break;
+    }
+    if (!placed) break;
   }
   return { assigned };
 }

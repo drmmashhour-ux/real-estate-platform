@@ -1,14 +1,11 @@
 import { LecipmWorkspaceInviteStatus, LecipmWorkspaceRole, type PrismaClient } from "@prisma/client";
+import { getPublicAppUrl } from "@/lib/config/public-app-url";
 import { sendEmail } from "@/lib/email/send";
 import { appendWorkspaceAuditLog } from "./workspaceAuditLogService";
 import { createWorkspaceInvite, hashInviteToken } from "./enterpriseWorkspaceService";
 
 function appBaseUrl(): string {
-  return (
-    process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, "") ||
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL.replace(/^https?:\/\//, "")}` : "") ||
-    "http://localhost:3000"
-  );
+  return getPublicAppUrl();
 }
 
 /**

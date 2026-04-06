@@ -1,48 +1,51 @@
 import Link from "next/link";
-import { getGuestId, getUserRole, isHubAdminRole } from "@/lib/auth/session";
-
-import { redirect } from "next/navigation";
+import { LecipmControlShell } from "@/components/admin/LecipmControlShell";
 import { getAllDisputes } from "@/lib/bnhub/disputes";
-
 import { prisma } from "@/lib/db";
-import { HubLayout } from "@/components/hub/HubLayout";
-import { hubNavigation } from "@/lib/hub/navigation";
+import { requireAdminControlUserId } from "@/lib/admin/guard";
 import { DisputesListClient } from "./disputes-list-client";
 import { PlatformLegalDisputesClient, type PlatformLegalDisputeRow } from "./PlatformLegalDisputesClient";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminDisputesPage() {
-  const userId = await getGuestId();
-  if (!userId) redirect("/auth/login?next=/admin/disputes");
-  const me = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
-  if (me?.role !== "ADMIN") redirect("/dashboard");
-  const role = await getUserRole();
+export default async function AdminDisputesControlPage() {
+  await requireAdminControlUserId();
 
-  const disputes = (await getAllDisputes()).map((d: any) => ({
+  const disputes = (await getAllDisputes()).map((d: Record<string, unknown>) => ({
     ...d,
-    evidenceUrls: Array.isArray(d.evidenceUrls) ? d.evidenceUrls.filter((u: unknown): u is string => typeof u === "string") : [],
+    evidenceUrls: Array.isArray(d.evidenceUrls)
+      ? d.evidenceUrls.filter((u: unknown): u is string => typeof u === "string")
+      : [],
     booking: d.booking
       ? {
-          ...d.booking,
+          ...(d.booking as object),
           guest: {
-            name: d.booking.guest?.name ?? null,
-            email: d.booking.guest?.email ?? "",
+            name: (d.booking as { guest?: { name?: string | null } }).guest?.name ?? null,
+            email: (d.booking as { guest?: { email?: string } }).guest?.email ?? "",
           },
           listing: {
-            title: d.booking.listing?.title ?? d.listing?.title ?? "Listing",
+            title:
+              (d.booking as { listing?: { title?: string } }).listing?.title ??
+              (d.listing as { title?: string } | undefined)?.title ??
+              "Listing",
           },
         }
       : {
           id: d.bookingId,
           guest: { name: null, email: "" },
-          listing: { title: d.listing?.title ?? "Listing" },
+          listing: { title: (d.listing as { title?: string } | undefined)?.title ?? "Listing" },
         },
     listing: {
-      id: d.listing?.id ?? d.booking?.listing?.id ?? "",
-      title: d.listing?.title ?? d.booking?.listing?.title ?? "Listing",
+      id:
+        (d.listing as { id?: string } | undefined)?.id ??
+        (d.booking as { listing?: { id?: string } } | undefined)?.listing?.id ??
+        "",
+      title:
+        (d.listing as { title?: string } | undefined)?.title ??
+        (d.booking as { listing?: { title?: string } } | undefined)?.listing?.title ??
+        "Listing",
     },
-  })) as any[];
+  })) as never[];
 
   const platformRows = await prisma.platformLegalDispute.findMany({
     orderBy: { createdAt: "desc" },
@@ -109,22 +112,27 @@ export default async function AdminDisputesPage() {
   }));
 
   return (
-    <HubLayout title="Disputes" hubKey="admin" navigation={hubNavigation.admin} showAdminInSwitcher={isHubAdminRole(role)}>
-      <div className="mx-auto max-w-6xl space-y-2 px-4 py-8">
-        <Link href="/admin/dashboard" className="text-sm text-premium-gold hover:underline">
-          ← Control center
-        </Link>
-        <h1 className="mt-3 text-2xl font-semibold text-white">Disputes</h1>
-        <p className="mt-1 text-sm text-slate-400">BNHub booking disputes and cross-platform legal cases.</p>
+    <LecipmControlShell>
+      <div className="space-y-8">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Disputes</h1>
+          <p className="mt-1 text-sm text-zinc-500">BNHub booking disputes and cross-platform legal cases.</p>
+        </div>
 
-        <section className="mt-6">
-          <h2 className="text-lg font-semibold text-slate-100">BNHub bookings</h2>
-          <p className="mt-1 text-sm text-slate-500">Guest / host cases tied to a short-term booking.</p>
+        <section>
+          <h2 className="text-lg font-semibold text-zinc-100">BNHub bookings</h2>
+          <p className="mt-1 text-sm text-zinc-500">Guest / host cases tied to a short-term booking.</p>
           <DisputesListClient initialDisputes={disputes} />
         </section>
 
         <PlatformLegalDisputesClient initialRows={platformLegalInitial} />
+
+        <p className="text-xs text-zinc-600">
+          <Link href="/admin/bnhub-disputes" className="text-zinc-400 underline">
+            Legacy BNHub dispute detail routes
+          </Link>
+        </p>
       </div>
-    </HubLayout>
+    </LecipmControlShell>
   );
 }

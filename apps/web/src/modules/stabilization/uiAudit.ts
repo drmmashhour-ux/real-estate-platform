@@ -4,7 +4,7 @@ import type { AuditResult, StabilizationIssue } from "./types";
 import { readTextSafe, relWeb } from "./fsUtils";
 
 const CRITICAL_PAGES = [
-  "app/page.tsx",
+  "app/(marketing)/page.tsx",
   "app/bnhub/page.tsx",
   "app/bnhub/[id]/page.tsx",
   "app/stays/[slug]/page.tsx",

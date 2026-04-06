@@ -2,14 +2,17 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { suppressGlobalMarketingOverlays } from "@/lib/ui/dev-overlays";
 
 const STORAGE_KEY = "legal_cookie_consent";
 
 export function CookieConsentBanner() {
   const [mounted, setMounted] = useState(false);
   const [accepted, setAccepted] = useState(false);
+  const devSuppress = suppressGlobalMarketingOverlays();
 
   useEffect(() => {
+    if (devSuppress) return;
     try {
       const raw = typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null;
       setAccepted(raw === "true");
@@ -17,7 +20,16 @@ export function CookieConsentBanner() {
       setAccepted(false);
     }
     setMounted(true);
-  }, []);
+  }, [devSuppress]);
+
+  useEffect(() => {
+    if (!devSuppress || typeof window === "undefined") return;
+    try {
+      localStorage.setItem(STORAGE_KEY, "true");
+    } catch {
+      /* ignore */
+    }
+  }, [devSuppress]);
 
   function handleAccept() {
     try {
@@ -28,6 +40,7 @@ export function CookieConsentBanner() {
     }
   }
 
+  if (devSuppress) return null;
   if (!mounted || accepted) return null;
 
   return (
@@ -45,6 +58,7 @@ export function CookieConsentBanner() {
         </p>
         <button
           type="button"
+          data-testid="accept-cookies"
           onClick={handleAccept}
           className="shrink-0 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500"
         >

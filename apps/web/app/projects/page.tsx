@@ -298,7 +298,7 @@ export default function ProjectsPage() {
     if (p.sort === "priceAsc" || p.sort === "priceDesc" || p.sort === "newest") setSort(p.sort);
   }, []);
 
-  // On mount, apply URL search params (e.g. from home page Quick Property Search).
+  // On mount, apply URL search params (legacy deep links; home quick search uses /listings).
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
     const q = searchParams.get("q");

@@ -29,7 +29,7 @@ export async function GET(
   const { token } = await context.params;
   const link = await prisma.publicShareLink.findUnique({ where: { token } });
   if (!link) {
-    return NextResponse.redirect(new URL("/", process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"), 302);
+    return NextResponse.redirect(new URL("/", getSiteBaseUrl()), 302);
   }
 
   await prisma.$transaction([

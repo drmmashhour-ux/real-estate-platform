@@ -7,9 +7,9 @@ import { BNHubCheckoutClient } from "./checkout-client";
 export default async function BNHubCheckoutPage({
   searchParams,
 }: {
-  searchParams: Promise<{ listingId?: string; checkIn?: string; checkOut?: string }>;
+  searchParams?: Promise<{ listingId?: string; checkIn?: string; checkOut?: string }>;
 }) {
-  const { listingId, checkIn, checkOut } = await searchParams;
+  const { listingId, checkIn, checkOut } = (await searchParams) ?? {};
   const guestId = await getGuestId();
 
   if (!listingId || !checkIn || !checkOut) {

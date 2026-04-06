@@ -11,7 +11,10 @@ export function DeclarationValidationSummary({ validation, onReadyForReview }: P
   return (
     <div className="space-y-3 text-xs">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-slate-200">Completion: <span className="font-semibold">{validation.completenessPercent}%</span></p>
+        <p className="text-slate-200">
+          Completion: <span className="font-semibold">{validation.completenessPercent}%</span>
+          {validation.declarationVariant ? <span className="ml-2 text-slate-400">· {validation.declarationVariant} path</span> : null}
+        </p>
         <button
           type="button"
           className="rounded-lg bg-premium-gold px-3 py-1.5 text-xs font-medium text-black disabled:opacity-50"
@@ -24,6 +27,21 @@ export function DeclarationValidationSummary({ validation, onReadyForReview }: P
 
       {validation.knowledgeRuleBlocks?.length ? (
         <p className="text-rose-200">Blocking (rules): {validation.knowledgeRuleBlocks.join(" | ")}</p>
+      ) : null}
+      {validation.contentIssues?.length ? (
+        <div className="rounded-md border border-white/10 bg-white/5 p-2">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Content compliance</p>
+          <ul className="mt-1 space-y-1 text-slate-300">
+            {validation.contentIssues.slice(0, 6).map((issue, i) => (
+              <li key={`${issue.fieldKey}-${i}`}>
+                <span className={issue.severity === "block" ? "text-rose-200" : "text-amber-200"}>
+                  {issue.severity === "block" ? "Block" : "Warning"}
+                </span>{" "}
+                · {issue.message} {issue.suggestion}
+              </li>
+            ))}
+          </ul>
+        </div>
       ) : null}
       {validation.missingFields.length ? <p className="text-amber-200">Missing fields: {validation.missingFields.join(", ")}</p> : <p className="text-emerald-200">No required field gaps.</p>}
       {validation.warningFlags.length ? <p className="text-amber-100">Warnings: {validation.warningFlags.join(" | ")}</p> : null}

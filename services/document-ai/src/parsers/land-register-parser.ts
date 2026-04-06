@@ -13,7 +13,7 @@ const NORM = (s: string) =>
 // Cadastre: numbers, optional letters/superscripts, fractions (e.g. 16 1/4), "Bloc 1", "Lot 50"
 const CADASTRE_PATTERNS = [
   /\b(?:cadastre|numéro\s+de\s+lot|lot\s+no\.?|lot\s*#?)\s*[:\s]*([^\n,;]+?)(?=\n|$|,|;)/gi,
-  /\b(?:lot|no\.?)\s*[:\s]*([\p{L}\p{N}\s\-/&.'()]+?)(?=\n|$|,|;)/gi,
+  /\b(?:lot|no\.?)\s*[:\s]*([\p{L}\p{N}\s\-/&.'()]+?)(?=\n|$|,|;)/giu,
   /\b(\d{4,12}(?:\s*[-/]\s*\d+)?(?:\s+\d+\s*\/\s*\d+)?)\s*(?:$|\n)/g,
 ];
 
@@ -40,7 +40,7 @@ const MUNICIPALITY_PATTERNS = [
 // Lot number (may be same as cadastre in some docs)
 const LOT_PATTERNS = [
   /\b(?:lot\s+no\.?|numéro\s+de\s+lot)\s*[:\s]*([^\n,]+?)(?=\n|,|$)/gim,
-  /\blot\s*[#:]?\s*([\p{L}\p{N}\s\-/&.'()]+?)(?=\n|,|$)/gi,
+  /\blot\s*[#:]?\s*([\p{L}\p{N}\s\-/&.'()]+?)(?=\n|,|$)/giu,
 ];
 
 function firstMatch(text: string, patterns: RegExp[]): string | null {

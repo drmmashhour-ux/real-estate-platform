@@ -1,6 +1,7 @@
 import type { DeclarationSection } from "@/src/modules/seller-declaration-ai/domain/declaration.types";
+import { resolveSellerDeclarationVariant } from "@/src/modules/seller-declaration-ai/knowledge/sellerWorkflowPillarRules";
 
-export const sellerDeclarationSections: DeclarationSection[] = [
+const baseSellerDeclarationSections: DeclarationSection[] = [
   {
     key: "property_identity",
     label: "Property identity",
@@ -8,6 +9,15 @@ export const sellerDeclarationSections: DeclarationSection[] = [
     fields: [
       { key: "property_address", label: "Property address", inputType: "text", required: true, helpText: "Full civic address.", aiAssistAllowed: false },
       { key: "property_type", label: "Property type", inputType: "select", required: true, options: ["single_family", "condo", "townhouse", "plex", "other"], helpText: "Select the best fit.", aiAssistAllowed: false },
+      {
+        key: "ownership_type",
+        label: "Ownership type",
+        inputType: "select",
+        required: true,
+        options: ["standard", "divided_coownership", "undivided_coownership"],
+        helpText: "Choose standard ownership, divided co-ownership, or undivided co-ownership.",
+        aiAssistAllowed: false,
+      },
       { key: "year_built", label: "Year built", inputType: "text", required: false, helpText: "Approximate if exact year unknown.", aiAssistAllowed: false },
     ],
   },
@@ -93,6 +103,53 @@ export const sellerDeclarationSections: DeclarationSection[] = [
     ],
   },
   {
+    key: "coownership_financials",
+    label: "Co-ownership / condo documents",
+    description: "Required condo or divided co-ownership context for DSD-style transactions.",
+    fields: [
+      {
+        key: "condo_syndicate_documents_available",
+        label: "Declaration of co-ownership and syndicate documents available",
+        inputType: "boolean",
+        required: true,
+        helpText: "Confirm whether the key syndicate and co-ownership documents are available.",
+        aiAssistAllowed: false,
+      },
+      {
+        key: "condo_financial_statements_available",
+        label: "Financial statements available",
+        inputType: "boolean",
+        required: true,
+        helpText: "Confirm whether recent financial statements are available.",
+        aiAssistAllowed: false,
+      },
+      {
+        key: "contingency_fund_details",
+        label: "Contingency fund details",
+        inputType: "textarea",
+        required: true,
+        helpText: "Describe contingency fund status, major known repairs, and any important financial context.",
+        aiAssistAllowed: true,
+      },
+      {
+        key: "special_assessment_details",
+        label: "Special assessment details",
+        inputType: "textarea",
+        required: false,
+        helpText: "Describe any known special assessments, timing, and current status.",
+        aiAssistAllowed: true,
+      },
+      {
+        key: "condo_rules_notes",
+        label: "Condo rules and common services notes",
+        inputType: "textarea",
+        required: false,
+        helpText: "Summarize relevant co-ownership rules, common services, or restrictions.",
+        aiAssistAllowed: true,
+      },
+    ],
+  },
+  {
     key: "additional_notes",
     label: "Additional notes",
     description: "Additional material facts not covered above.",
@@ -101,3 +158,11 @@ export const sellerDeclarationSections: DeclarationSection[] = [
     ],
   },
 ];
+
+export const sellerDeclarationSections: DeclarationSection[] = baseSellerDeclarationSections;
+
+export function getSellerDeclarationSections(payload: Record<string, unknown> = {}): DeclarationSection[] {
+  const variant = resolveSellerDeclarationVariant(payload);
+  if (variant === "DSD") return baseSellerDeclarationSections;
+  return baseSellerDeclarationSections.filter((section) => section.key !== "coownership_financials");
+}

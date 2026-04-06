@@ -60,7 +60,10 @@ export async function GET(request: NextRequest) {
   const data = rows.map((r) => ({
     ...r,
     /** Alias for API consumers — same as `contactType` (immutable event category). */
-    eventType: r.contactType,
+    eventType:
+      r.metadata && typeof r.metadata === "object" && typeof (r.metadata as { eventType?: unknown }).eventType === "string"
+        ? ((r.metadata as { eventType?: string }).eventType ?? r.contactType)
+        : r.contactType,
     eventSlug: immoEventSlug(r.contactType),
     /** Same JSON as `metadata` — explicit name for clients. */
     metadataJson: r.metadata,

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Autocomplete, GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
 import { AiWriterToolbar } from "@/components/ai/AiWriterToolbar";
 import { SpellCheckField } from "@/components/spell/SpellCheckField";
 import { LegalReadinessPanel } from "@/components/legal/LegalReadinessPanel";
@@ -16,12 +17,240 @@ const STEPS = [
   "Review",
 ] as const;
 
+const DEFAULT_MAP_CENTER = { lat: 45.5017, lng: -73.5673 };
+const MAP_LIBRARIES: ("places")[] = ["places"];
+const mapContainerStyle = { width: "100%", height: "100%" };
+const listingMapOptions: google.maps.MapOptions = {
+  disableDefaultUI: false,
+  zoomControl: true,
+  mapTypeControl: false,
+  streetViewControl: false,
+  fullscreenControl: false,
+};
+
+type ListingFormData = {
+  title: string;
+  subtitle: string;
+  description: string;
+  propertyType: string;
+  roomType: string;
+  address: string;
+  city: string;
+  region: string;
+  country: string;
+  latitude: number | null;
+  longitude: number | null;
+  beds: string;
+  baths: string;
+  maxGuests: string;
+  amenities: string;
+  houseRules: string;
+  checkInTime: string;
+  checkOutTime: string;
+  cancellationPolicy: string;
+  photos: string;
+  nightPriceCents: string;
+  cleaningFeeCents: string;
+  securityDepositCents: string;
+  instantBookEnabled: boolean;
+  minStayNights: string;
+  maxStayNights: string;
+  listingStatus: "DRAFT" | "PUBLISHED";
+  conditionOfProperty: string;
+  knownIssues: string;
+};
+
+type AddressFields = Pick<ListingFormData, "address" | "city" | "region" | "country">;
+
+function getAddressComponent(
+  place: google.maps.places.PlaceResult,
+  type: string
+): string {
+  return (
+    place.address_components?.find((component) => component.types.includes(type))
+      ?.long_name ?? ""
+  );
+}
+
+function extractAddressFields(place: google.maps.places.PlaceResult): AddressFields {
+  const streetNumber = getAddressComponent(place, "street_number");
+  const route = getAddressComponent(place, "route");
+  const sublocality =
+    getAddressComponent(place, "sublocality") ||
+    getAddressComponent(place, "neighborhood");
+  const city =
+    getAddressComponent(place, "locality") ||
+    getAddressComponent(place, "postal_town") ||
+    getAddressComponent(place, "administrative_area_level_3") ||
+    sublocality;
+  const region =
+    getAddressComponent(place, "administrative_area_level_1") ||
+    getAddressComponent(place, "administrative_area_level_2");
+  const country = getAddressComponent(place, "country");
+  const address =
+    [streetNumber, route].filter(Boolean).join(" ") ||
+    place.name ||
+    place.formatted_address ||
+    "";
+
+  return {
+    address,
+    city,
+    region,
+    country,
+  };
+}
+
+function AddressMapPreview({
+  address,
+  city,
+  region,
+  country,
+  hasKey,
+  isLoaded,
+  loadError,
+  onAddressResolved,
+}: {
+  address: string;
+  city: string;
+  region: string;
+  country: string;
+  hasKey: boolean;
+  isLoaded: boolean;
+  loadError: Error | undefined;
+  onAddressResolved: (fields: Partial<AddressFields>, coords?: { lat: number; lng: number }) => void;
+}) {
+  const [coords, setCoords] = useState(DEFAULT_MAP_CENTER);
+  const [mapError, setMapError] = useState("");
+  const [dragging, setDragging] = useState(false);
+
+  const query = useMemo(
+    () => [address, city, region, country].map((part) => part.trim()).filter(Boolean).join(", "),
+    [address, city, region, country]
+  );
+  useEffect(() => {
+    if (!isLoaded || !query || typeof google === "undefined") return;
+
+    const geocoder = new google.maps.Geocoder();
+    geocoder.geocode({ address: query }, (results, status) => {
+      if (status === "OK" && results?.[0]?.geometry?.location) {
+        const location = results[0].geometry.location;
+        setCoords({ lat: location.lat(), lng: location.lng() });
+        setMapError("");
+        return;
+      }
+      if (status === "ZERO_RESULTS") {
+        setMapError("We could not place this address on the map yet.");
+        return;
+      }
+      setMapError("Map preview is unavailable right now.");
+    });
+  }, [isLoaded, query]);
+
+  if (!hasKey) {
+    return (
+      <div className="flex min-h-[260px] items-center justify-center rounded-2xl border border-dashed border-slate-700 bg-slate-950/40 p-6 text-center text-sm text-slate-500">
+        Add `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` to show the address map preview.
+      </div>
+    );
+  }
+
+  if (!query) {
+    return (
+      <div className="flex min-h-[260px] items-center justify-center rounded-2xl border border-dashed border-slate-700 bg-slate-950/40 p-6 text-center text-sm text-slate-500">
+        Enter the address details to preview the location on Google Maps.
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="flex min-h-[260px] items-center justify-center rounded-2xl border border-amber-500/30 bg-amber-500/5 p-6 text-center text-sm text-amber-200">
+        Google Maps failed to load. Check the API key and try again.
+      </div>
+    );
+  }
+
+  if (!isLoaded) {
+    return (
+      <div className="flex min-h-[260px] items-center justify-center rounded-2xl border border-slate-700 bg-slate-950/40 p-6 text-center text-sm text-slate-400">
+        Loading map…
+      </div>
+    );
+  }
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-slate-700 bg-slate-950/40">
+      <div className="h-[260px] w-full">
+        <GoogleMap
+          mapContainerStyle={mapContainerStyle}
+          center={coords}
+          zoom={15}
+          options={listingMapOptions}
+        >
+          <Marker
+            position={coords}
+            draggable
+            onDragStart={() => {
+              setDragging(true);
+              setMapError("");
+            }}
+            onDragEnd={(event) => {
+              setDragging(false);
+              const lat = event.latLng?.lat();
+              const lng = event.latLng?.lng();
+              if (lat == null || lng == null || typeof google === "undefined") {
+                setMapError("Could not read the new marker position.");
+                return;
+              }
+
+              const nextCoords = { lat, lng };
+              setCoords(nextCoords);
+
+              const geocoder = new google.maps.Geocoder();
+              geocoder.geocode({ location: nextCoords }, (results, status) => {
+                if (status === "OK" && results?.[0]) {
+                  const parsed = extractAddressFields(results[0]);
+                  onAddressResolved(parsed, nextCoords);
+                  setMapError("");
+                  return;
+                }
+                if (status === "ZERO_RESULTS") {
+                  setMapError("We could not match this map position to a nearby address.");
+                  return;
+                }
+                setMapError("Could not update the address from the marker position.");
+              });
+            }}
+          />
+        </GoogleMap>
+      </div>
+      <div className="border-t border-slate-800 px-4 py-3">
+        <p className="text-xs text-slate-400">{query}</p>
+        <p className="mt-1 text-xs text-slate-500">
+          Drag the marker to fine-tune the location and update the address fields.
+        </p>
+        {dragging ? <p className="mt-1 text-xs text-emerald-300">Updating address from marker…</p> : null}
+        {mapError ? <p className="mt-1 text-xs text-amber-300">{mapError}</p> : null}
+      </div>
+    </div>
+  );
+}
+
 export function CreateListingWizard() {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [data, setData] = useState({
+  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY?.trim() ?? "";
+  const hasGoogleMapsKey = apiKey.length > 0;
+  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+  const { isLoaded: mapsLoaded, loadError: mapsLoadError } = useJsApiLoader({
+    id: "bnhub-create-listing-map",
+    googleMapsApiKey: hasGoogleMapsKey ? apiKey : "",
+    libraries: MAP_LIBRARIES,
+  });
+  const [data, setData] = useState<ListingFormData>({
     title: "",
     subtitle: "",
     description: "",
@@ -31,6 +260,8 @@ export function CreateListingWizard() {
     city: "",
     region: "",
     country: "US",
+    latitude: null,
+    longitude: null,
     beds: "1",
     baths: "1",
     maxGuests: "2",
@@ -51,10 +282,29 @@ export function CreateListingWizard() {
     knownIssues: "",
   });
 
-  const update = (k: keyof typeof data, v: string | number | boolean) => {
+  const update = (k: keyof ListingFormData, v: string | number | boolean) => {
     setData((d) => ({ ...d, [k]: v }));
     setError("");
   };
+
+  function handlePlaceChanged() {
+    const place = autocompleteRef.current?.getPlace();
+    if (!place) return;
+    const parsed = extractAddressFields(place);
+    const lat = place.geometry?.location?.lat();
+    const lng = place.geometry?.location?.lng();
+
+    setData((current) => ({
+      ...current,
+      address: parsed.address || current.address,
+      city: parsed.city || current.city,
+      region: parsed.region || current.region,
+      country: parsed.country || current.country,
+      latitude: typeof lat === "number" ? lat : current.latitude,
+      longitude: typeof lng === "number" ? lng : current.longitude,
+    }));
+    setError("");
+  }
 
   async function handleSubmit() {
     setError("");
@@ -89,6 +339,8 @@ export function CreateListingWizard() {
         city: data.city.trim(),
         region: data.region.trim() || undefined,
         country: data.country,
+        latitude: data.latitude,
+        longitude: data.longitude,
         nightPriceCents: price,
         beds: parseInt(data.beds, 10) || 1,
         baths: parseFloat(data.baths) || 1,
@@ -213,13 +465,40 @@ export function CreateListingWizard() {
             <div className="mt-4 space-y-4">
               <div>
                 <label className="mb-1 block text-xs text-slate-400">Address</label>
-                <input
-                  type="text"
-                  value={data.address}
-                  onChange={(e) => update("address", e.target.value)}
-                  placeholder="Street address"
-                  className="w-full rounded-xl border border-slate-700 bg-slate-950/60 px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-500"
-                />
+                {hasGoogleMapsKey && mapsLoaded ? (
+                  <Autocomplete
+                    onLoad={(instance) => {
+                      autocompleteRef.current = instance;
+                    }}
+                    onUnmount={() => {
+                      autocompleteRef.current = null;
+                    }}
+                    onPlaceChanged={handlePlaceChanged}
+                    options={{
+                      fields: ["address_components", "formatted_address", "geometry", "name"],
+                      types: ["address"],
+                    }}
+                  >
+                    <input
+                      type="text"
+                      value={data.address}
+                      onChange={(e) => update("address", e.target.value)}
+                      placeholder="Start typing and choose an address"
+                      className="w-full rounded-xl border border-slate-700 bg-slate-950/60 px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-500"
+                    />
+                  </Autocomplete>
+                ) : (
+                  <input
+                    type="text"
+                    value={data.address}
+                    onChange={(e) => update("address", e.target.value)}
+                    placeholder="Street address"
+                    className="w-full rounded-xl border border-slate-700 bg-slate-950/60 px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-500"
+                  />
+                )}
+                <p className="mt-1 text-xs text-slate-500">
+                  Select a suggested address to auto-fill the city, region, and map.
+                </p>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
@@ -249,6 +528,29 @@ export function CreateListingWizard() {
                   value={data.country}
                   onChange={(e) => update("country", e.target.value)}
                   className="w-full rounded-xl border border-slate-700 bg-slate-950/60 px-3 py-2.5 text-sm text-slate-100"
+                />
+              </div>
+              <div>
+                <label className="mb-2 block text-xs text-slate-400">Google Maps preview</label>
+                <AddressMapPreview
+                  address={data.address}
+                  city={data.city}
+                  region={data.region}
+                  country={data.country}
+                  hasKey={hasGoogleMapsKey}
+                  isLoaded={mapsLoaded}
+                  loadError={mapsLoadError}
+                  onAddressResolved={(fields, coords) => {
+                    setData((current) => ({
+                      ...current,
+                      address: fields.address || current.address,
+                      city: fields.city || current.city,
+                      region: fields.region || current.region,
+                      country: fields.country || current.country,
+                      latitude: coords?.lat ?? current.latitude,
+                      longitude: coords?.lng ?? current.longitude,
+                    }));
+                  }}
                 />
               </div>
             </div>
@@ -446,25 +748,27 @@ export function CreateListingWizard() {
           <>
             <h2 className="text-lg font-semibold text-slate-100">Booking settings</h2>
             <div className="mt-4 space-y-4">
-              <div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
                 <label className="mb-1 block text-xs text-slate-400">Check-in time</label>
                 <input
-                  type="text"
+                  type="time"
                   value={data.checkInTime}
                   onChange={(e) => update("checkInTime", e.target.value)}
-                  placeholder="15:00"
                   className="w-full rounded-xl border border-slate-700 bg-slate-950/60 px-3 py-2.5 text-sm text-slate-100"
                 />
-              </div>
-              <div>
+                  <p className="mt-1 text-xs text-slate-500">Use the built-in picker to choose the host check-in time.</p>
+                </div>
+                <div>
                 <label className="mb-1 block text-xs text-slate-400">Check-out time</label>
                 <input
-                  type="text"
+                  type="time"
                   value={data.checkOutTime}
                   onChange={(e) => update("checkOutTime", e.target.value)}
-                  placeholder="11:00"
                   className="w-full rounded-xl border border-slate-700 bg-slate-950/60 px-3 py-2.5 text-sm text-slate-100"
                 />
+                  <p className="mt-1 text-xs text-slate-500">Guests will see this as the expected departure time.</p>
+                </div>
               </div>
               <div>
                 <label className="mb-1 block text-xs text-slate-400">Cancellation policy</label>

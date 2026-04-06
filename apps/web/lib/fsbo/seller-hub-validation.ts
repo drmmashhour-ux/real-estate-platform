@@ -1,4 +1,4 @@
-import type { FsboListing, FsboListingDocument } from "@prisma/client";
+import type { FsboListing, FsboListingDocument, SellerSupportingDocument } from "@prisma/client";
 import { assertFsboContractsSignedForActivation } from "@/lib/contracts/fsbo-seller-contracts";
 import { FSBO_HUB_REQUIRED_DOC_TYPES, type FsboHubDocType } from "@/lib/fsbo/seller-hub-doc-types";
 import {
@@ -88,7 +88,12 @@ function parseSellerDeclarationV2(
   }
 
   if (d.isCondo) {
-    if (!d.condoSyndicateDocumentsAvailable || !d.condoFinancialStatementsAvailable || !d.condoRulesReviewed) {
+    if (
+      !d.condoSyndicateDocumentsAvailable ||
+      !d.condoFinancialStatementsAvailable ||
+      !d.condoRulesReviewed ||
+      !nonEmpty(d.condoContingencyFundDetails, 12)
+    ) {
       return { ok: false, error: "Confirm condo / syndicate documents (section 9)." };
     }
   }
@@ -181,9 +186,59 @@ export function hubDocumentsSatisfied(docs: Pick<FsboListingDocument, "docType" 
   return { ok: missing.length === 0, missing };
 }
 
+function supportingCategoryCount(
+  docs: Pick<SellerSupportingDocument, "category" | "status">[],
+  category: SellerSupportingDocument["category"]
+): number {
+  return docs.filter((d) => d.category === category && d.status !== "REJECTED").length;
+}
+
+function supportingDocumentGate(args: {
+  listing: FsboListing;
+  supportingDocuments: Pick<SellerSupportingDocument, "category" | "status" | "declarationSectionKey">[];
+}): string[] {
+  const declaration = syncSellerFullNameFromParties(migrateLegacySellerDeclaration(args.listing.sellerDeclarationJson ?? null));
+  const docs = args.supportingDocuments;
+  const errors: string[] = [];
+
+  if (declaration.isCondo && supportingCategoryCount(docs, "CONDO_DOCUMENTS") < 1) {
+    errors.push("Upload condo / co-ownership supporting documents before approval (minutes, financials, bylaws, or equivalent).");
+  }
+
+  if (declaration.renovationInvoicesAvailable === true && supportingCategoryCount(docs, "RENOVATION_INVOICES") < 1) {
+    errors.push("Upload renovation invoices or proof of work because the declaration says invoices are available.");
+  }
+
+  if (declaration.isNewConstruction && supportingCategoryCount(docs, "CERTIFICATES_WARRANTIES") < 1) {
+    errors.push("Upload warranty or builder certificate documents for new construction / GCR context.");
+  }
+
+  const sensitiveNarrative = [
+    declaration.knownDefects,
+    declaration.pastIssues,
+    declaration.structuralConcerns,
+    declaration.additionalDeclarationsText,
+    ...(declaration.additionalDeclarationsHistory ?? []).map((entry) => entry.text),
+  ]
+    .join("\n")
+    .toLowerCase();
+
+  if (
+    /\b(flood|water|fire|mold|asbestos|foundation|structural|dispute|insurance claim|special assessment)\b/.test(
+      sensitiveNarrative
+    ) &&
+    docs.filter((d) => d.status !== "REJECTED").length < 1
+  ) {
+    errors.push("Upload at least one supporting document for the issues or clarifications disclosed in the declaration before approval.");
+  }
+
+  return errors;
+}
+
 export async function assertSellerHubSubmitReady(
   listing: FsboListing,
-  documents: FsboListingDocument[]
+  documents: Pick<FsboListingDocument, "docType" | "fileUrl" | "status">[],
+  supportingDocuments: Pick<SellerSupportingDocument, "category" | "status" | "declarationSectionKey">[] = []
 ): Promise<{ ok: true } | { ok: false; errors: string[] }> {
   const errors: string[] = [];
 
@@ -248,6 +303,7 @@ export async function assertSellerHubSubmitReady(
   if (!docCheck.ok) {
     errors.push(`Upload required documents: ${docCheck.missing.join(", ")}.`);
   }
+  errors.push(...supportingDocumentGate({ listing, supportingDocuments }));
 
   const contracts = await assertFsboContractsSignedForActivation(listing.id);
   if (!contracts.ok) {

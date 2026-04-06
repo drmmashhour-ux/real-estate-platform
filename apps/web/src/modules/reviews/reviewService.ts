@@ -1,7 +1,12 @@
 import { prisma } from "@/lib/db";
 import type { Prisma } from "@prisma/client";
+import { logGuestExperienceOutcome } from "@/lib/bnhub/guest-experience/log-signal";
 import { updatePropertyRating, updateHostPerformance } from "@/src/modules/reviews/aggregationService";
 import { scheduleFraudRecheck } from "@/src/workers/fraudDetectionWorker";
+import {
+  computeGuestStayEvaluation,
+  type GuestStayChecklist,
+} from "@/lib/bnhub/stay-evaluation-ai";
 
 const MAX_REVIEWS_PER_USER_PER_DAY = 20;
 
@@ -15,6 +20,9 @@ export type CreateBnhubReviewInput = {
   valueRating?: number;
   checkinRating?: number;
   comment?: string;
+  /** Structured checklist — amenities, beds, kitchen, etc. */
+  stayChecklist?: GuestStayChecklist;
+  amenitiesAsAdvertised?: boolean;
 };
 
 function assertRating(name: string, v: number | undefined, required: boolean) {
@@ -27,7 +35,7 @@ function assertRating(name: string, v: number | undefined, required: boolean) {
   }
 }
 
-function isBookingPaymentVerified(booking: {
+export function isBookingPaymentVerified(booking: {
   payment: { status: string } | null;
   bnhubReservationPayment: { paymentStatus: string } | null;
 }): boolean {
@@ -58,7 +66,8 @@ export async function createReview(
   bookingId: string,
   userId: string,
   listingId: string,
-  data: CreateBnhubReviewInput
+  data: CreateBnhubReviewInput,
+  options?: { skipIdentityVerification?: boolean }
 ) {
   assertRating("propertyRating", data.propertyRating, true);
   assertRating("hostRating", data.hostRating, false);
@@ -75,12 +84,14 @@ export async function createReview(
   });
   if (!user) throw new Error("User not found");
   if (!user.emailVerifiedAt) throw new Error("Verify your email before leaving a review");
-  const idv = await prisma.identityVerification.findUnique({
-    where: { userId },
-    select: { verificationStatus: true },
-  });
-  if (!idv || idv.verificationStatus !== "VERIFIED") {
-    throw new Error("Complete identity verification before leaving a review");
+  if (!options?.skipIdentityVerification) {
+    const idv = await prisma.identityVerification.findUnique({
+      where: { userId },
+      select: { verificationStatus: true },
+    });
+    if (!idv || idv.verificationStatus !== "VERIFIED") {
+      throw new Error("Complete identity verification before leaving a review");
+    }
   }
 
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
@@ -125,6 +136,18 @@ export async function createReview(
   const spamScore = computeReviewSpamScore(trimmed || undefined);
   const moderationHeld = spamScore >= 0.75;
 
+  const checklistJson =
+    data.stayChecklist && Object.keys(data.stayChecklist).length > 0
+      ? (data.stayChecklist as object)
+      : undefined;
+
+  const ai = await computeGuestStayEvaluation({
+    propertyRating: data.propertyRating,
+    checklist: data.stayChecklist,
+    amenitiesAsAdvertised: data.amenitiesAsAdvertised,
+    comment: trimmed || undefined,
+  });
+
   const review = await prisma.review.create({
     data: {
       bookingId,
@@ -139,6 +162,10 @@ export async function createReview(
       valueRating: data.valueRating ?? undefined,
       checkinRating: data.checkinRating ?? undefined,
       comment: trimmed || undefined,
+      stayChecklistJson: checklistJson === undefined ? undefined : checklistJson,
+      amenitiesAsAdvertised: data.amenitiesAsAdvertised,
+      aiCompositeScore: ai.score,
+      aiSummary: `[${ai.source}] ${ai.summary}`,
       spamScore,
       moderationHeld,
       createdAt: new Date(),
@@ -149,6 +176,15 @@ export async function createReview(
   await updateHostPerformance(booking.listing.ownerId);
 
   scheduleFraudRecheck("review", review.id);
+
+  void logGuestExperienceOutcome({
+    hostId: booking.listing.ownerId,
+    listingId: booking.listing.id,
+    bookingId,
+    guestId: userId,
+    outcomeType: "review_submitted",
+    metadata: { reviewId: review.id },
+  }).catch(() => {});
 
   return review;
 }

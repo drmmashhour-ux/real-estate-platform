@@ -1,6 +1,21 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 48" fill="none" aria-hidden="true">
-  <rect x="1" y="1" width="38" height="38" rx="9" fill="#0B0B0B" stroke="#D4AF37" stroke-width="1.5"/>
-  <path d="M9 30V14h3.5l5.25 8.75 5.25-8.75H26.5v16H23V18.5L17.75 30h-2.5L10 18.5V30H9z" fill="#D4AF37"/>
-  <text x="48" y="30" fill="#FFFFFF" font-family="Inter, system-ui, sans-serif" font-size="22" font-weight="700" letter-spacing="0.06em">LECIPM</text>
-  <text x="48" y="42" fill="#D4AF37" font-family="Inter, system-ui, sans-serif" font-size="9" font-weight="500" letter-spacing="0.12em">LE CARREFOUR IMMOBILIER PRESTIGE</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 92" fill="none" aria-hidden="true">
+  <rect width="420" height="92" rx="18" fill="#050505"/>
+  <defs>
+    <linearGradient id="gold-dark" x1="42" y1="12" x2="254" y2="74" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F8E7A1"/>
+      <stop offset="0.45" stop-color="#D4AF37"/>
+      <stop offset="1" stop-color="#B7861F"/>
+    </linearGradient>
+  </defs>
+  <text x="26" y="52" fill="url(#gold-dark)" font-family="Georgia, 'Times New Roman', serif" font-size="52" font-weight="700" letter-spacing="0.04em">
+    LECIPM
+  </text>
+  <path d="M39 67C57 74 71 77 89 77C106 77 120 73 136 68C148 64 157 62 166 62C175 62 184 64 196 68C212 73 226 77 243 77C261 77 275 74 293 67" stroke="url(#gold-dark)" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M166 62L176 75L186 62" stroke="url(#gold-dark)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="305" y="42" fill="#D4AF37" font-family="Inter, system-ui, sans-serif" font-size="10" font-weight="600" letter-spacing="0.16em">
+    LE CARREFOUR
+  </text>
+  <text x="305" y="58" fill="#D4AF37" font-family="Inter, system-ui, sans-serif" font-size="10" font-weight="600" letter-spacing="0.16em">
+    IMMOBILIER PRESTIGE
+  </text>
 </svg>

@@ -23,23 +23,22 @@ export const metadata: Metadata = {
   },
 };
 
-export { dynamic, revalidate } from "@/lib/auth/protected-route-segment";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default async function InvestmentPortfolioDashboardPage() {
   const { userId } = await requireAuthenticatedUser();
 
-  const [deals, user, feed, watchSummary, watchAlerts, bestProperties, bestLeads] = await Promise.all([
-    prisma.investmentDeal.findMany({
-      where: { userId },
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.user.findUnique({ where: { id: userId }, select: { plan: true } }),
-    getDailyDealFeed({ userId, limit: 18 }),
-    getWatchlistSummary(userId),
-    listWatchlistAlerts({ userId, limit: 6 }),
-    selectBestProperties(userId),
-    selectBestLeads(userId),
-  ]);
+  const deals = await prisma.investmentDeal.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+  });
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { plan: true } });
+  const feed = await getDailyDealFeed({ userId, limit: 18 });
+  const watchSummary = await getWatchlistSummary(userId);
+  const watchAlerts = await listWatchlistAlerts({ userId, limit: 6 });
+  const bestProperties = await selectBestProperties(userId);
+  const bestLeads = await selectBestLeads(userId);
 
   const monetization = buildMonetizationSnapshot(user?.plan ?? "free", deals.length);
 

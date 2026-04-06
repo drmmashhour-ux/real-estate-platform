@@ -3,7 +3,7 @@
  */
 import type { Lead } from "@prisma/client";
 
-export type FollowUpLocale = "en" | "fr" | "ar" | "es";
+export type FollowUpLocale = "en" | "fr" | "ar";
 
 const DEFAULT_PLATFORM = "LECIPM";
 
@@ -11,7 +11,6 @@ export function detectLocaleFromHint(hint?: string | null): FollowUpLocale {
   const h = (hint ?? "en").toLowerCase().slice(0, 5);
   if (h.startsWith("fr")) return "fr";
   if (h.startsWith("ar")) return "ar";
-  if (h.startsWith("es")) return "es";
   return "en";
 }
 
@@ -79,24 +78,6 @@ const BUILT_IN: Record<FollowUpLocale, Record<TemplateKey, string>> = {
       "مرحبًا{firstName}، حاولنا التواصل بخصوص استفسارك{listingRef}. أرسل نعم للاتصال.",
     voice_script_intro:
       "مرحبًا، معك المساعد الآلي لـ {platformName} بخصوص اهتمامك{listingRef}. يمكنني جمع بعض التفاصيل وربطك بالوسيط. هل الوقت مناسب؟",
-  },
-  es: {
-    assistant_disclosure_sms:
-      "Estás chateando con un asistente automático de {platformName}, no un corredor licenciado.",
-    immediate_response:
-      "Hola{firstName}, gracias por tu interés{listingRef}. Puedo dar detalles básicos y conectarte con un corredor rápido. ¿Buscas comprar pronto?",
-    no_response_follow_up:
-      "Hola{firstName}, seguimiento por tu interés{listingRef}. ¿Quieres que un corredor te llame o listings similares?",
-    viewing_invitation:
-      "Gracias por tu interés{listingRef}. ¿Quieres que un corredor te contacte para agendar una visita?",
-    broker_callback_confirmation:
-      "Listo{firstName}. Un corredor te contactará. Responde STOP para cancelar mensajes.",
-    price_drop_similar:
-      "Hola{firstName}, hay una novedad sobre una propiedad que viste{listingRef}. ¿Listados similares o llamada?",
-    missed_call_follow_up:
-      "Hola{firstName}, intentamos contactarte{listingRef}. Responde SÍ para un callback.",
-    voice_script_intro:
-      "Hola, soy el asistente virtual de {platformName} por tu interés{listingRef}. Puedo recopilar datos y conectarte con un corredor. ¿Es buen momento?",
   },
 };
 

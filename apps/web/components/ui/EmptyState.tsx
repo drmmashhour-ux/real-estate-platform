@@ -1,7 +1,10 @@
 import type { ReactNode } from "react";
 
+type Variant = "boxed" | "centered";
+
 /**
  * Shared empty state — supports both legacy (icon + children) and trust-dashboard (title + action) APIs.
+ * `centered` = minimal text block (premium admin / marketing strips).
  */
 export function EmptyState({
   title,
@@ -9,6 +12,7 @@ export function EmptyState({
   action,
   icon,
   children,
+  variant = "boxed",
 }: {
   title: string;
   description?: string;
@@ -16,7 +20,18 @@ export function EmptyState({
   action?: ReactNode;
   icon?: string;
   children?: ReactNode;
+  variant?: Variant;
 }) {
+  if (variant === "centered") {
+    return (
+      <div className="py-16 text-center text-white/60">
+        <div className="mb-2 text-lg text-white">{title}</div>
+        {description ? <div className="text-sm">{description}</div> : null}
+        {children ?? action ? <div className="mt-6 flex justify-center">{children ?? action}</div> : null}
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-2xl border border-dashed border-white/15 bg-white/[0.02] px-6 py-12 text-center">
       {icon ? <p className="text-2xl">{icon}</p> : null}

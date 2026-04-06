@@ -10,6 +10,7 @@ import { ProgressBar } from "@/components/ui/ProgressBar";
 import { TrustBreakdown } from "@/components/trust/TrustBreakdown";
 import { SellerDeclarationSummaryCard } from "@/components/trust/SellerDeclarationSummaryCard";
 import { ListingTrustGraphPanel } from "@/components/trust/ListingTrustGraphPanel";
+import { SellHubLegalChecklistCard } from "@/components/seller/SellHubLegalChecklistCard";
 import { isTrustGraphEnabled } from "@/lib/trustgraph/feature-flags";
 import {
   buildTrustBreakdownFromReasons,
@@ -37,6 +38,14 @@ import { calculateFraudScore } from "@/modules/fraud-risk/application/calculateF
 import { declarationSectionCounts, migrateLegacySellerDeclaration, missingDeclarationSections } from "@/lib/fsbo/seller-declaration-schema";
 import type { SellerDeclarationAiReview } from "@/lib/fsbo/seller-declaration-ai-review";
 import type { MissingItemRow } from "@/components/trust/MissingItemsList";
+import { getSellHubLegalChecklist } from "@/lib/fsbo/sell-hub-legal-checklist";
+import { syncFsboListingExpiryState } from "@/lib/fsbo/listing-expiry";
+import { SellerListingExpiryCard } from "@/components/seller/SellerListingExpiryCard";
+import { getListingTransactionFlag } from "@/lib/fsbo/listing-transaction-flag";
+import { ListingTransactionFlag } from "@/components/listings/ListingTransactionFlag";
+import { PrintPageButton } from "@/components/ui/PrintPageButton";
+import { suggestHostPrice } from "@/lib/listings/listing-demand-engine";
+import { refreshFsboListingAnalytics } from "@/lib/listings/listing-analytics-service";
 
 export const dynamic = "force-dynamic";
 
@@ -52,6 +61,7 @@ export default async function SellerHubListingDetailPage({ params }: { params: P
   if (!userId) redirect("/auth/login");
 
   const { id } = await params;
+  await syncFsboListingExpiryState(id, { sendReminder: true }).catch(() => null);
   const listing = await prisma.fsboListing.findFirst({
     where: { id, ownerId: userId },
     include: { verification: true },
@@ -131,6 +141,14 @@ export default async function SellerHubListingDetailPage({ params }: { params: P
   const fraudSnapshot = isDealAnalyzerEnabled() ? await calculateFraudScore(prisma, listing.id) : null;
   const pricingAdvisorDto =
     isDealAnalyzerPricingAdvisorEnabled() ? await getSellerPricingAdvisorDto(listing.id) : null;
+  const legalChecklist = await getSellHubLegalChecklist(listing.id);
+  const transactionFlag = await getListingTransactionFlag(listing.id, listing.status);
+
+  const demandAnalytics = await refreshFsboListingAnalytics(listing.id, listing.priceCents);
+  const hostPriceHint = suggestHostPrice({
+    currentPriceCents: listing.priceCents,
+    demandScore: demandAnalytics.demandScore,
+  });
 
   const scoreHistory = await prisma.listingAiScore.findMany({
     where: { fsboListingId: listing.id },
@@ -163,6 +181,11 @@ export default async function SellerHubListingDetailPage({ params }: { params: P
               <p className="mt-1 text-sm text-slate-500">
                 {listing.city} · {(listing.priceCents / 100).toLocaleString(undefined, { style: "currency", currency: "CAD" })}
               </p>
+              {transactionFlag ? (
+                <div className="mt-3">
+                  <ListingTransactionFlag flag={transactionFlag} />
+                </div>
+              ) : null}
               <p className="mt-4 text-sm text-slate-400">
                 Status: <span className="text-slate-200">{ux}</span>
               </p>
@@ -172,6 +195,56 @@ export default async function SellerHubListingDetailPage({ params }: { params: P
               <div className="mt-4">
                 <ListingImprovementBanner improvementPct={improvementPct} />
               </div>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-[#121212] p-5">
+              <h2 className="text-sm font-semibold text-white">Buyer demand signal</h2>
+              <p className="mt-1 text-xs text-slate-500">
+                Based on real views, saves, and contact interest (refreshed periodically — not live to the second).
+              </p>
+              <dl className="mt-4 grid gap-2 text-sm sm:grid-cols-2">
+                <div>
+                  <dt className="text-xs uppercase tracking-wide text-slate-500">Demand score</dt>
+                  <dd className="font-semibold text-premium-gold">{demandAnalytics.demandScore}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs uppercase tracking-wide text-slate-500">Views (24h)</dt>
+                  <dd className="text-slate-200">{demandAnalytics.views24hCached}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs uppercase tracking-wide text-slate-500">Saves</dt>
+                  <dd className="text-slate-200">{demandAnalytics.saves}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs uppercase tracking-wide text-slate-500">Contact taps</dt>
+                  <dd className="text-slate-200">{demandAnalytics.contactClicks}</dd>
+                </div>
+              </dl>
+              {hostPriceHint ? (
+                <div className="mt-4 rounded-xl border border-premium-gold/25 bg-premium-gold/5 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-premium-gold">Price suggestion</p>
+                  <p className="mt-2 text-sm text-slate-200">{hostPriceHint.reason}</p>
+                  <p className="mt-2 text-lg font-semibold text-white">
+                    {(hostPriceHint.suggestedPriceCents / 100).toLocaleString(undefined, {
+                      style: "currency",
+                      currency: "CAD",
+                    })}{" "}
+                    <span className="text-sm font-normal text-slate-400">
+                      ({hostPriceHint.pctChange > 0 ? "+" : ""}
+                      {hostPriceHint.pctChange.toFixed(0)}% vs list)
+                    </span>
+                  </p>
+                  <p className="mt-2 text-xs text-slate-500">
+                    Confidence: {Math.round(hostPriceHint.confidence * 100)}% (heuristic from demand signals, not a
+                    guarantee)
+                  </p>
+                  <p className="mt-2 text-sm leading-relaxed text-slate-400">{hostPriceHint.explanation}</p>
+                </div>
+              ) : (
+                <p className="mt-4 text-xs text-slate-500">
+                  No automated price adjustment suggested — demand is in a balanced range for now.
+                </p>
+              )}
             </div>
 
             <div className="flex flex-wrap gap-3">
@@ -187,6 +260,14 @@ export default async function SellerHubListingDetailPage({ params }: { params: P
               >
                 Public view
               </Link>
+              <Link
+                href={`/api/fsbo/listings/${listing.id}/export`}
+                target="_blank"
+                className="rounded-full border border-white/15 px-5 py-2.5 text-sm text-slate-200 transition duration-200 hover:scale-[1.02] hover:border-premium-gold/40 hover:bg-white/5"
+              >
+                Open legal packet
+              </Link>
+              <PrintPageButton label="Print seller packet" />
             </div>
 
             <SellerDeclarationSummaryCard
@@ -196,6 +277,17 @@ export default async function SellerHubListingDetailPage({ params }: { params: P
               readinessLabel={readinessLabel}
               editHref={`/dashboard/seller/create?id=${encodeURIComponent(listing.id)}`}
             />
+
+            <SellerListingExpiryCard
+              listingId={listing.id}
+              expiresAt={listing.expiresAt?.toISOString() ?? null}
+              archived={Boolean(listing.archivedAt) || listing.status === "ARCHIVED"}
+              expired={Boolean(listing.expiresAt && listing.expiresAt.getTime() <= Date.now())}
+              renewable={listing.listingOwnerType === "SELLER" && listing.status !== "SOLD"}
+              ownerType={listing.listingOwnerType}
+            />
+
+            {legalChecklist ? <SellHubLegalChecklistCard checklist={legalChecklist} /> : null}
 
             {isDealAnalyzerEnabled() ? (
               <DealAnalysisCard listingId={listing.id} analysis={dealAnalysisDto} showRunButton />

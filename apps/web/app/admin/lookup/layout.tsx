@@ -3,7 +3,8 @@ import { getGuestId } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
 import { ensureDynamicAuthRequest } from "@/lib/auth/ensure-dynamic-request";
 
-export { dynamic, revalidate } from "@/lib/auth/protected-route-segment";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default async function AdminLookupLayout({ children }: { children: React.ReactNode }) {
   await ensureDynamicAuthRequest();

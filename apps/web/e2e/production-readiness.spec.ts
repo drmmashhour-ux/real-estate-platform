@@ -28,7 +28,10 @@ function attachListeners(page: Page, consoleErrors: string[], pageErrors: string
     consoleErrors.push(t.slice(0, 500));
   };
   const onPageError = (err: Error) => {
-    pageErrors.push(String(err.message || err).slice(0, 500));
+    const m = String(err.message || err);
+    // Chromium + React `performance.measure` can throw on fast redirects / hydration; not an app defect.
+    if (/cannot have a negative time stamp|Negative time stamp/i.test(m)) return;
+    pageErrors.push(m.slice(0, 500));
   };
   page.on("console", onConsole);
   page.on("pageerror", onPageError);
@@ -119,7 +122,9 @@ test.describe("Public routes", () => {
     }
     await page.goto("/", { waitUntil: "domcontentloaded" });
     await expect(page.locator("#hubs")).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByRole("heading", { name: /six hubs/i })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: /buy, sell, bnhub|ecosystem hubs/i }),
+    ).toBeVisible({ timeout: 10_000 });
   });
 });
 

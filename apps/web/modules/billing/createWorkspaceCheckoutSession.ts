@@ -6,11 +6,15 @@ export type CreateWorkspaceCheckoutInput = {
   userEmail: string;
   successUrl: string;
   cancelUrl: string;
-  /** Defaults from STRIPE_PRICE_LECIPM_PRO */
+  /** Stripe Price lookup_key (alternative to priceId). */
+  lookupKey?: string;
+  /** Defaults from STRIPE_PRICE_LECIPM_PRO when neither lookupKey nor priceId set */
   priceId?: string;
   planCode?: string;
   /** Optional org/workspace scope — forwarded to Stripe + subscription metadata. */
   workspaceId?: string;
+  /** Merged into Checkout Session + subscription_data metadata (e.g. orchestration flags). */
+  extraSessionMetadata?: Record<string, string>;
 };
 
 /**
@@ -26,13 +30,30 @@ export async function createWorkspaceCheckoutSession(
   const stripe = getStripe();
   if (!stripe) return { error: "Stripe is not configured" };
 
-  const priceId = input.priceId?.trim() || process.env.STRIPE_PRICE_LECIPM_PRO?.trim();
+  let priceId = input.priceId?.trim() || "";
+  const lookupKey = input.lookupKey?.trim();
+  if (lookupKey) {
+    const listed = await stripe.prices.list({
+      lookup_keys: [lookupKey],
+      active: true,
+      limit: 1,
+    });
+    const resolved = listed.data[0]?.id;
+    if (!resolved) {
+      return { error: `No active Stripe price for lookup_key "${lookupKey}"` };
+    }
+    priceId = resolved;
+  }
   if (!priceId) {
-    return { error: "Missing STRIPE_PRICE_LECIPM_PRO or priceId for workspace subscription" };
+    priceId = process.env.STRIPE_PRICE_LECIPM_PRO?.trim() ?? "";
+  }
+  if (!priceId) {
+    return { error: "Provide priceId, lookupKey, or STRIPE_PRICE_LECIPM_PRO for workspace subscription" };
   }
 
   const planCode = input.planCode?.trim() || "pro";
   const workspaceId = input.workspaceId?.trim() ?? "";
+  const extra = input.extraSessionMetadata ?? {};
 
   try {
     const session = await stripe.checkout.sessions.create({
@@ -47,6 +68,7 @@ export async function createWorkspaceCheckoutSession(
         lecipmWorkspace: "true",
         planCode,
         ...(workspaceId ? { workspaceId } : {}),
+        ...extra,
       },
       subscription_data: {
         metadata: {
@@ -55,6 +77,7 @@ export async function createWorkspaceCheckoutSession(
           lecipmWorkspace: "true",
           planCode,
           ...(workspaceId ? { workspaceId } : {}),
+          ...extra,
         },
       },
     });

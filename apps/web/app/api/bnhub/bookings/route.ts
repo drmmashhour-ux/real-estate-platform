@@ -18,6 +18,8 @@ import { ENFORCEABLE_CONTRACT_TYPES } from "@/lib/legal/enforceable-contract-typ
 import { enforceableContractsRequired } from "@/lib/legal/enforceable-contracts-enforcement";
 import { requireContentLicenseAccepted } from "@/lib/legal/content-license-enforcement";
 import { logApiRouteError } from "@/lib/api/dev-log";
+import { logInfo } from "@/lib/logger";
+import { GuestIdentityRequiredError } from "@/lib/bnhub/guest-identity-gate";
 
 export async function POST(request: NextRequest) {
   try {
@@ -176,6 +178,15 @@ export async function POST(request: NextRequest) {
       specialRequestsJson:
         specialRequestsJson && typeof specialRequestsJson === "object" ? specialRequestsJson : undefined,
     });
+    logInfo("[booking] created", {
+      bookingId: booking.id,
+      listingId,
+      guestId,
+      status: booking.status,
+    });
+    void import("@/lib/listings/listing-analytics-service").then((m) =>
+      m.incrementBnhubBookingAttempt(listingId)
+    );
     void recordPlatformEvent({
       eventType: "booking_created",
       entityType: "BOOKING",
@@ -208,6 +219,9 @@ export async function POST(request: NextRequest) {
     }
     return Response.json(booking);
   } catch (e) {
+    if (e instanceof GuestIdentityRequiredError) {
+      return Response.json({ error: e.message, code: e.code }, { status: 403 });
+    }
     logApiRouteError("POST /api/bnhub/bookings", e);
     return Response.json(
       { error: "Booking could not be created. Try again or contact support." },

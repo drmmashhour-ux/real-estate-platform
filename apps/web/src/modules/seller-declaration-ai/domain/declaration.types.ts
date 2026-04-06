@@ -48,18 +48,29 @@ export type KnowledgeRiskHint = {
   pageNumber: number | null;
 };
 
+export type DeclarationContentIssue = {
+  sectionKey: string;
+  fieldKey: string;
+  severity: "warning" | "block";
+  message: string;
+  suggestion: string;
+};
+
 export type DeclarationValidationResult = {
   isValid: boolean;
   completenessPercent: number;
   missingFields: string[];
   contradictionFlags: string[];
   warningFlags: string[];
+  declarationVariant?: "DS" | "DSD" | null;
+  representationMode?: "fsbo" | "broker" | "unknown";
   sectionStatuses: Array<{ sectionKey: string; ready: boolean; missing: string[] }>;
   /** Deterministic platform rules (identity, declaration presence, completeness). */
   knowledgeRuleBlocks: string[];
   knowledgeRuleWarnings: string[];
   /** Retrieval-grounded risk hints from uploaded law/drafting books (never free-form legal advice). */
   knowledgeRiskHints: KnowledgeRiskHint[];
+  contentIssues: DeclarationContentIssue[];
 };
 
 export type DeclarationAiEventInput = {

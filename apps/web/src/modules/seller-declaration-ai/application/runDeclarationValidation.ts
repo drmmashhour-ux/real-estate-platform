@@ -1,5 +1,6 @@
 import { captureServerEvent } from "@/lib/analytics/posthog-server";
 import { getLegalContext } from "@/src/modules/knowledge/retrieval/legalContextRetrievalService";
+import { resolveSellerDeclarationVariant } from "@/src/modules/seller-declaration-ai/knowledge/sellerWorkflowPillarRules";
 import { runDeclarationValidationDeterministic } from "@/src/modules/seller-declaration-ai/validation/declarationValidationService";
 
 async function attachRetrievalRiskHints(
@@ -14,6 +15,7 @@ async function attachRetrievalRiskHints(
   const hits = await getLegalContext(query, { audience: "seller", limit: 5 }).catch(() => []);
   return {
     ...result,
+    declarationVariant: resolveSellerDeclarationVariant(payload),
     knowledgeRiskHints: hits.map((h) => ({
       content: h.content.length > 900 ? `${h.content.slice(0, 897)}...` : h.content,
       sourceTitle: h.source.title,

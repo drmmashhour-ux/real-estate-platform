@@ -1,5 +1,5 @@
 import { PDFDocument, StandardFonts } from "pdf-lib";
-import type { ContractType } from "@prisma/client";
+import type { ContractType } from "@/generated/prisma";
 import { PLATFORM_CARREFOUR_NAME, PLATFORM_NAME } from "@/lib/brand";
 
 const DISCLAIMER =

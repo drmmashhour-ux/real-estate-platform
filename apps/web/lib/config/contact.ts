@@ -12,7 +12,7 @@ export const BROKER_PHONE_LINK = "tel:+15144624457";
 /** @deprecated Use SUPPORT_PHONE — kept for imports that expect CONTACT_PHONE */
 export const CONTACT_PHONE = SUPPORT_PHONE;
 
-export const CONTACT_EMAIL = "contact@lecipm.com";
+export const CONTACT_EMAIL = "dr.m.mashhour@gmail.com";
 
 /** Street address shown in footer, contact page, and marketing blocks. Override with NEXT_PUBLIC_OFFICE_ADDRESS. */
 export const OFFICE_ADDRESS_DEFAULT = "207-805 boul. Chomedey, Laval, QC H7V 0B1";

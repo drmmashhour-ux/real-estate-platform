@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getGrowthCampaigns } from "@/lib/growth-acquisition";
+import { GrowthFunnelDashboard } from "./growth-funnel-dashboard";
 import { LaunchFirstCampaignPanel } from "./launch-first-campaign-panel";
 
 export const dynamic = "force-dynamic";
@@ -23,9 +24,27 @@ export default async function AdminGrowthPage() {
             <code className="text-slate-500">/api/admin/growth/campaigns</code> or use the launch
             panel below.
           </p>
-          <div className="mt-4">
+          <div className="mt-4 flex flex-wrap gap-4">
             <Link href="/admin" className="text-sm font-medium text-emerald-400 hover:text-emerald-300">
               ← Back to Admin
+            </Link>
+            <Link href="/admin/growth/brain" className="text-sm font-medium text-violet-400 hover:text-violet-300">
+              AI Growth Brain →
+            </Link>
+            <Link href="/admin/growth/pipeline" className="text-sm font-medium text-emerald-400 hover:text-emerald-300">
+              Growth CRM pipeline →
+            </Link>
+            <Link href="/admin/growth-metrics" className="text-sm font-medium text-amber-400 hover:text-amber-300">
+              Launch metrics (signups · bookings · referrals) →
+            </Link>
+            <Link href="/admin/growth/launch-playbook" className="text-sm font-medium text-sky-400 hover:text-sky-300">
+              Launch playbook (0→1000) →
+            </Link>
+            <Link href="/admin/bookings-ops" className="text-sm font-medium text-emerald-400 hover:text-emerald-300">
+              Booking ops →
+            </Link>
+            <Link href="/admin/reports/launch-quality" className="text-sm font-medium text-slate-400 hover:text-slate-300">
+              Localization & listing quality →
             </Link>
           </div>
         </div>
@@ -36,6 +55,7 @@ export default async function AdminGrowthPage() {
           <div className="mb-10 max-w-3xl">
             <LaunchFirstCampaignPanel baseUrl={baseUrl} />
           </div>
+          <GrowthFunnelDashboard />
           {campaigns.length === 0 ? (
             <p className="text-sm text-slate-500">No campaigns yet.</p>
           ) : (

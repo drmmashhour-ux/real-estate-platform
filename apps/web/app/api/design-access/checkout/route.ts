@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
 import { getStripe, isStripeConfigured } from "@/lib/stripe";
 import { DESIGN_ACCESS_AMOUNT } from "@/lib/design-access";
+import { getPublicAppUrl } from "@/lib/config/public-app-url";
 
 export const dynamic = "force-dynamic";
 
@@ -26,9 +27,7 @@ export async function POST(request: NextRequest) {
     }
 
     const baseUrl =
-      process.env.NEXT_PUBLIC_APP_URL ||
-      request.nextUrl?.origin ||
-      "http://localhost:3000";
+      process.env.NEXT_PUBLIC_APP_URL?.trim() || request.nextUrl?.origin || getPublicAppUrl();
     const successUrl = `${baseUrl}/design-templates?design_upgrade=success`;
     const cancelUrl = `${baseUrl}/design-templates?design_upgrade=cancelled`;
 

@@ -97,6 +97,9 @@ export type SellerDeclarationData = {
   condoSyndicateDocumentsAvailable: boolean;
   condoFinancialStatementsAvailable: boolean;
   condoRulesReviewed: boolean;
+  condoContingencyFundDetails: string;
+  condoSpecialAssessmentDetails: string;
+  condoCommonServicesNotes: string;
 
   /** 10 — New construction / GCR */
   isNewConstruction: boolean;
@@ -215,6 +218,9 @@ export function emptySellerDeclaration(): SellerDeclarationData {
     condoSyndicateDocumentsAvailable: false,
     condoFinancialStatementsAvailable: false,
     condoRulesReviewed: false,
+    condoContingencyFundDetails: "",
+    condoSpecialAssessmentDetails: "",
+    condoCommonServicesNotes: "",
     isNewConstruction: false,
     gcrWarrantyDetails: "",
     builderNameContact: "",
@@ -346,7 +352,8 @@ export function getSellerDeclarationSectionUiStatus(
     Boolean(
       d.condoSyndicateDocumentsAvailable &&
         d.condoFinancialStatementsAvailable &&
-        d.condoRulesReviewed
+        d.condoRulesReviewed &&
+        nonEmpty(d.condoContingencyFundDetails, 12)
     );
   const newOk =
     !d.isNewConstruction || (nonEmpty(d.gcrWarrantyDetails) && nonEmpty(d.builderNameContact));

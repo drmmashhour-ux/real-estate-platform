@@ -5,12 +5,22 @@ type Props = {
   values: Record<string, unknown>;
   sectionReady: boolean;
   sectionWarnings: string[];
+  sectionContentIssues?: Array<{ severity: "warning" | "block"; message: string; suggestion: string }>;
   onChange: (key: string, value: string | boolean) => void;
   onExplain: (sectionKey: string) => void;
   onSuggest: (sectionKey: string) => void;
 };
 
-export function DeclarationSectionCard({ section, values, sectionReady, sectionWarnings, onChange, onExplain, onSuggest }: Props) {
+export function DeclarationSectionCard({
+  section,
+  values,
+  sectionReady,
+  sectionWarnings,
+  sectionContentIssues = [],
+  onChange,
+  onExplain,
+  onSuggest,
+}: Props) {
   return (
     <div className="rounded-xl border border-white/10 bg-black/25 p-4">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -29,6 +39,19 @@ export function DeclarationSectionCard({ section, values, sectionReady, sectionW
 
       {sectionWarnings.length ? (
         <p className="mb-2 rounded-lg bg-amber-500/10 px-2 py-1 text-xs text-amber-100">{sectionWarnings.join(" | ")}</p>
+      ) : null}
+
+      {sectionContentIssues.length ? (
+        <div className="mb-2 rounded-lg border border-rose-400/20 bg-rose-500/10 px-2 py-2 text-xs text-rose-100">
+          <p className="font-medium">Content compliance</p>
+          <div className="mt-1 space-y-1">
+            {sectionContentIssues.slice(0, 3).map((issue) => (
+              <p key={`${issue.message}-${issue.suggestion}`}>
+                <span className="font-semibold uppercase">{issue.severity}</span>: {issue.message} {issue.suggestion}
+              </p>
+            ))}
+          </div>
+        </div>
       ) : null}
 
       <div className="space-y-2">

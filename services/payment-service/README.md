@@ -4,7 +4,7 @@ Booking payment processing with escrow-style hold, capture, refunds, payout prep
 
 ## Features
 
-- **Payment intent (escrow hold)** — Create an intent for a booking payment; provider holds funds. Returns `clientSecret` for frontend (e.g. Stripe Elements).
+- **Payment intent (removed, PCI)** — `POST /v1/payments/intent` returns **410 Gone**. Card data must never touch this service; the platform uses **Stripe Checkout Sessions** only.
 - **Confirm (capture)** — Capture a held intent; marks payment COMPLETED and creates a **payout preparation** record for the host.
 - **Refunds** — Full or partial refund; updates payment to REFUNDED and appends to transaction history.
 - **Transaction history** — List all transactions (INTENT_CREATED, INTENT_HELD, CAPTURED, REFUNDED, PAYOUT_PREPARED, PAYOUT_SENT) with filters by `paymentId`, `bookingId`, `type`, plus pagination.
@@ -13,7 +13,7 @@ Booking payment processing with escrow-style hold, capture, refunds, payout prep
 
 | Method | Path | Description |
 |--------|------|-------------|
-| POST | `/v1/payments/intent` | Create payment intent (body: `bookingId`, `paymentId`, `amountCents`, optional `currency`) |
+| POST | `/v1/payments/intent` | **Disabled (410)** — use Stripe Checkout from the platform app |
 | POST | `/v1/payments/confirm` | Capture payment (body: `paymentId`, optional `intentId`) |
 | POST | `/v1/payments/refund` | Refund (body: `paymentId`, optional `amountCents`, `reason`) |
 | GET | `/v1/payments/history` | Transaction history (query: `paymentId`, `bookingId`, `type`, `limit`, `offset`) |
@@ -22,8 +22,8 @@ Booking payment processing with escrow-style hold, capture, refunds, payout prep
 
 The service uses a **provider interface** (`src/provider/types.ts`). Two implementations are included:
 
-- **Mock provider** — Used when `STRIPE_SECRET_KEY` is not set. Simulates intent, capture, and refund in memory.
-- **Stripe provider** — Set `STRIPE_SECRET_KEY` to use Stripe. Requires `npm install stripe`. Uses Payment Intents with `capture_method: "manual"` for escrow-style hold, then capture on confirm.
+- **Mock provider** — Used when `STRIPE_SECRET_KEY` is not set. Simulates capture/refund in memory; `createIntent` throws (same PCI posture as Stripe mode).
+- **Stripe provider** — Set `STRIPE_SECRET_KEY` to use Stripe. `createIntent` is disabled (PCI); refunds/capture still use Stripe APIs on existing intents created via Checkout elsewhere.
 
 To plug in another provider (e.g. Adyen), implement `PaymentProvider` and register it in `src/provider/index.ts` (e.g. via env or config).
 

@@ -7,14 +7,14 @@ All email behaviour is driven by **environment variables**. No addresses or API 
 | Variable | Purpose | Example |
 |----------|---------|--------|
 | `RESEND_API_KEY` | Resend API key for sending | Your key from resend.com |
-| `EMAIL_FROM` | Sender shown to recipients | `LECIPM <info@mashhourinvestments.com>` |
+| `EMAIL_FROM` | Sender shown to recipients | `LECIPM <dr.m.mashhour@gmail.com>` |
 
 ## Optional (recommended for direct reply)
 
 | Variable | Purpose | Example |
 |----------|---------|--------|
-| `BROKER_EMAIL` | Where lead/reservation notifications are sent (team inbox) | `info@mashhourinvestments.com` |
-| `EMAIL_REPLY_TO` | Reply-To on client confirmation so client replies go to your inbox | `info@mashhourinvestments.com` |
+| `BROKER_EMAIL` | Where lead/reservation notifications are sent (team inbox) | `dr.m.mashhour@gmail.com` |
+| `EMAIL_REPLY_TO` | Reply-To on client confirmation so client replies go to your inbox | `dr.m.mashhour@gmail.com` |
 
 ## Behaviour
 

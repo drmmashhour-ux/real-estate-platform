@@ -1,10 +1,10 @@
-import express from "express";
+import express, { type Application } from "express";
 import { createIncidentsRouter } from "./routes/incidents.js";
 import { createFlagsRouter } from "./routes/flags.js";
 import { createSuspensionsRouter } from "./routes/suspensions.js";
 import { createModerationQueueRouter } from "./routes/moderationQueue.js";
 
-const app = express();
+const app: Application = express();
 app.use(express.json());
 
 app.use("/v1/incidents", createIncidentsRouter());

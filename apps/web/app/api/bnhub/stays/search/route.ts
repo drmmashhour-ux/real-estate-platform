@@ -1,8 +1,12 @@
 import { NextRequest } from "next/server";
+import { cookies } from "next/headers";
+import { SearchEventType } from "@prisma/client";
 import { searchListings } from "@/lib/bnhub/listings";
 import { hasValidMapBounds, parseGlobalSearchBody } from "@/components/search/FilterState";
 import { parseStaysFiltersFromBody } from "@/lib/bnhub/parse-stays-search-body";
 import { hasActiveStaysFilters } from "@/lib/bnhub/stays-filters";
+import { getGuestId } from "@/lib/auth/session";
+import { trackSearchEvent } from "@/lib/ai/search/trackSearchEvent";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +37,9 @@ export async function POST(request: NextRequest) {
       ? { north: f.north!, south: f.south!, east: f.east!, west: f.west! }
       : {};
 
+    const userId = await getGuestId();
+    const cookieStore = await cookies();
+    const sessionId = cookieStore.get("lecipm_behavior_sid")?.value ?? null;
     const listings = await searchListings({
       city: f.location.trim() || undefined,
       checkIn: f.checkIn?.trim() || undefined,
@@ -51,7 +58,22 @@ export async function POST(request: NextRequest) {
       staysFilters: hasActiveStaysFilters(staysFilters ?? undefined) ? staysFilters : null,
       ...bbox,
       sort:
-        f.sort === "priceAsc" || f.sort === "priceDesc" || f.sort === "recommended" ? f.sort : "newest",
+        f.sort === "priceAsc" || f.sort === "priceDesc" || f.sort === "recommended" || f.sort === "ai"
+          ? f.sort
+          : "newest",
+      userId,
+      sessionId,
+    });
+
+    void trackSearchEvent({
+      eventType: SearchEventType.SEARCH,
+      userId,
+      metadata: {
+        city: f.location.trim() || undefined,
+        sort: f.sort,
+        checkIn: f.checkIn,
+        checkOut: f.checkOut,
+      },
     });
 
     return Response.json({ data: listings, filters: f });

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { Search } from "lucide-react";
 import type { GlobalSearchFilterType, SearchEngineMode } from "@/components/search/FilterState";
 import {
@@ -123,6 +123,8 @@ export function SearchBar(props: SearchBarProps) {
   } = props;
 
   const { searchMode } = props;
+  const formId = useId();
+  const locationInputId = `${formId}-location`;
   const presets = searchMode === "short" ? STAY_PRICE_PRESETS : PROPERTY_PRICE_PRESETS;
   const effectivePreset = pricePresetId;
   const isStays = searchMode === "short";
@@ -176,11 +178,18 @@ export function SearchBar(props: SearchBarProps) {
   return (
     <div className={[shell, className].join(" ")}>
       <div className={`min-w-0 flex-1 ${light ? "sm:min-w-[280px]" : "sm:min-w-[200px]"}`}>
-        <label className={`mb-1 block text-[11px] font-semibold uppercase tracking-wide ${labelCls}`}>Location</label>
+        <label
+          htmlFor={locationInputId}
+          className={`mb-1 block text-[11px] font-semibold uppercase tracking-wide ${labelCls}`}
+        >
+          Location
+        </label>
         <input
+          id={locationInputId}
           type="text"
           value={location}
           onChange={(e) => onLocationChange(e.target.value)}
+          autoComplete="address-level2"
           placeholder={
             light
               ? "City, neighbourhood, region, address, or LEC- / LST- code"
@@ -310,6 +319,8 @@ export function SearchBar(props: SearchBarProps) {
         <button
           type="button"
           onClick={onFiltersClick}
+          aria-expanded={filtersOpen}
+          aria-controls="search-filters-panel"
           className={[
             "relative rounded-xl border px-4 py-2.5 text-sm font-semibold transition",
             filtersOpen || activeFilterCount > 0 ? filterActive : filterIdle,

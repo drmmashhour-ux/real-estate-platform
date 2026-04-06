@@ -4,9 +4,9 @@ import { redirect } from "next/navigation";
 export default async function SignupPage({
   searchParams,
 }: {
-  searchParams: Promise<{ ref?: string }>;
+  searchParams?: Promise<{ ref?: string }>;
 }) {
-  const params = await searchParams;
+  const params = (await searchParams) ?? {};
   const ref = params.ref?.trim();
   const q = ref ? `?ref=${encodeURIComponent(ref)}` : "";
   redirect(`/auth/signup${q}`);

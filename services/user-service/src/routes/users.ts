@@ -1,5 +1,5 @@
 import { Router, type Request, type Response } from "express";
-import { PrismaClient, type Prisma } from "@prisma/client";
+import { PrismaClient, type Prisma } from "../generated/prisma/index.js";
 import { patchMeBodySchema, patchSettingsBodySchema } from "../validation/schemas.js";
 import { validateBody, sendValidationError } from "../validation/validate.js";
 

@@ -1,6 +1,6 @@
 import { prisma } from "../db.js";
 import type { CreateIncidentBody, ListIncidentsQuery } from "../validation/schemas.js";
-import type { Prisma } from "@prisma/client";
+import type { Prisma } from "../generated/prisma/index.js";
 
 function toIncidentResponse(incident: {
   id: string;

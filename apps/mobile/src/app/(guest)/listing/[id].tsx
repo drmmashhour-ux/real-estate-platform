@@ -4,6 +4,7 @@ import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
 import { GoldButton } from "../../../components/ui/GoldButton";
 import { ScreenChrome } from "../../../components/ui/ScreenChrome";
 import { mobileFetch } from "../../../services/apiClient";
+import { recordContactOrBookingIntent } from "../../../lib/review";
 import { colors } from "../../../theme/colors";
 
 type Detail = {
@@ -94,6 +95,7 @@ export default function ListingDetail() {
           label={listing.safety.bookingAllowed ? "Book · price details" : "Unavailable"}
           onPress={() => {
             if (!listing.safety.bookingAllowed) return;
+            void recordContactOrBookingIntent();
             router.push(`/(guest)/booking/quote?id=${listing.id}`);
           }}
         />

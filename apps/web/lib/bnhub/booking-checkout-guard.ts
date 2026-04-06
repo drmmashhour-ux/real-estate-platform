@@ -8,7 +8,7 @@ import { evaluateGuestCheckout } from "@/lib/bnhub/bnhub-safety-rules";
 
 export type BookingCheckoutGate =
   | { ok: true; amountCents: number }
-  | { ok: false; httpStatus: 403 | 400 | 404; error: string };
+  | { ok: false; httpStatus: 403 | 400 | 404 | 409; error: string };
 
 /**
  * Ensures the signed-in guest may start checkout: booking exists, is PENDING, payment PENDING.
@@ -38,6 +38,10 @@ export async function assertGuestCanCheckoutBooking(
   }
   if (booking.payment.status !== "PENDING") {
     return { ok: false, httpStatus: 400, error: "Payment already processed" };
+  }
+  const exp = booking.pendingCheckoutExpiresAt;
+  if (exp && exp.getTime() < Date.now()) {
+    return { ok: false, httpStatus: 409, error: "Checkout window expired. Start a new booking." };
   }
 
   const fraud = await prisma.propertyFraudScore.findUnique({
@@ -78,6 +82,10 @@ export async function assertBookingStripeWebhookValid(params: {
   }
   if (booking.payment.status !== "PENDING") {
     return { ok: false, reason: "payment_not_pending" };
+  }
+  const exp = booking.pendingCheckoutExpiresAt;
+  if (exp && exp.getTime() < Date.now()) {
+    return { ok: false, reason: "checkout_expired" };
   }
   const delta = Math.abs(booking.payment.amountCents - params.amountTotalCents);
   /** Allow 1¢ drift for Stripe minor-unit rounding vs our quote snapshot. */

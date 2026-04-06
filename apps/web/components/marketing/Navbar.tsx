@@ -2,124 +2,90 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import Logo from "@/components/ui/Logo";
-import { marketingTheme } from "@/config/theme";
-import { BuyingNavGroup } from "@/components/layout/BuyingNavGroup";
-import { SellingNavGroup } from "@/components/layout/SellingNavGroup";
+import { BrandLogo } from "@/components/ui/Logo";
 
-const links = [
-  { href: "/#features", label: "Features" },
-  { href: "/#how-it-works", label: "How it works" },
-  { href: "/pricing", label: "Pricing" },
-  { href: "/about", label: "About" },
-  { href: "/contact", label: "Contact" },
-  { href: "/demo", label: "Demo" },
-];
-
-const signupEnabled = process.env.NEXT_PUBLIC_SIGNUP_ENABLED === "1";
+const navLinks = [
+  { href: "/buying", label: "Buy" },
+  { href: "/bnhub/stays", label: "Rent" },
+  { href: "/bnhub", label: "BNHub" },
+  { href: "/investors", label: "Invest" },
+  { href: "/list-your-property", label: "List Property" },
+] as const;
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
 
   return (
-    <header
-      className="sticky top-0 z-50 border-b border-white/10 backdrop-blur-md"
-      style={{ backgroundColor: `${marketingTheme.bg}e6` }}
-    >
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
-        <div className="min-w-0 shrink-0">
-          <Logo variant="nav" showName className="min-w-0" />
-        </div>
-        <nav className="hidden flex-wrap items-center gap-4 xl:gap-6 lg:flex">
-          {links.slice(0, 1).map((l) => (
+    <header className="sticky top-0 z-50 border-b border-[#D4AF37]/20 bg-black/95 backdrop-blur-md">
+      <div className="relative mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
+        <Link href="/" className="flex shrink-0 items-center gap-2" aria-label="LECIPM home">
+          <BrandLogo variant="icon" href={null} priority className="h-8 w-8 sm:h-9 sm:w-9" />
+          <span className="text-lg font-bold tracking-tight text-[#D4AF37]">LECIPM</span>
+        </Link>
+
+        <nav
+          className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-8 lg:flex"
+          aria-label="Primary"
+        >
+          {navLinks.map((l) => (
             <Link
               key={l.href}
               href={l.href}
-              className="text-sm font-medium text-slate-300 transition hover:text-premium-gold"
+              className="whitespace-nowrap text-sm font-medium text-white transition hover:text-[#D4AF37]"
             >
               {l.label}
             </Link>
           ))}
-          <BuyingNavGroup mode="marketing-desktop" />
-          <SellingNavGroup mode="marketing-desktop" />
-          {links.slice(1).map((l) => (
-            <Link
-              key={l.href}
-              href={l.href}
-              className="text-sm font-medium text-slate-300 transition hover:text-premium-gold"
-            >
-              {l.label}
-            </Link>
-          ))}
-          {signupEnabled ? (
-            <Link
-              href="/auth/register"
-              className="text-sm font-medium text-slate-400 transition hover:text-white"
-            >
-              Sign up
-            </Link>
-          ) : null}
-          <Link href="/auth/login" className="text-sm font-medium text-slate-400 transition hover:text-white">
+        </nav>
+
+        <div className="flex shrink-0 items-center gap-3">
+          <Link
+            href="/auth/login"
+            className="hidden min-h-[44px] items-center rounded-2xl border border-[#D4AF37]/50 px-5 py-2.5 text-sm font-semibold text-white transition hover:border-[#D4AF37] hover:bg-[#D4AF37]/10 lg:inline-flex"
+          >
             Login
           </Link>
-          <Link
-            href="/#cta"
-            className="rounded-full bg-premium-gold px-4 py-2 text-sm font-semibold text-black transition hover:brightness-110"
+          <button
+            type="button"
+            className="flex h-11 min-w-[44px] items-center justify-center rounded-2xl border border-[#D4AF37]/40 text-[#D4AF37] lg:hidden"
+            aria-expanded={open}
+            aria-label={open ? "Close menu" : "Open menu"}
+            onClick={() => setOpen((o) => !o)}
           >
-            Get Access
-          </Link>
-        </nav>
-        <button
-          type="button"
-          className="rounded-lg border border-white/15 px-3 py-2 text-sm text-white lg:hidden"
-          aria-expanded={open}
-          aria-label={open ? "Close menu" : "Open menu"}
-          onClick={() => setOpen((o) => !o)}
-        >
-          {open ? "Close" : "Menu"}
-        </button>
+            {open ? (
+              <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" />
+              </svg>
+            ) : (
+              <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                <path d="M4 6h16M4 12h16M4 18h16" strokeLinecap="round" />
+              </svg>
+            )}
+          </button>
+        </div>
       </div>
+
       {open ? (
-        <div className="border-t border-white/10 px-4 py-4 lg:hidden">
-          <div className="flex flex-col gap-3">
-            {links.slice(0, 1).map((l) => (
+        <div className="border-t border-[#D4AF37]/15 px-4 py-4 lg:hidden">
+          <nav className="flex flex-col gap-1" aria-label="Mobile primary">
+            {navLinks.map((l) => (
               <Link
                 key={l.href}
                 href={l.href}
-                className="text-sm text-slate-200"
+                className="min-h-[48px] rounded-2xl px-4 py-3 text-base font-medium text-white hover:bg-white/5"
                 onClick={() => setOpen(false)}
               >
                 {l.label}
               </Link>
             ))}
-            <BuyingNavGroup mode="marketing-mobile" onNavigate={() => setOpen(false)} />
-            <SellingNavGroup mode="marketing-mobile" onNavigate={() => setOpen(false)} />
-            {links.slice(1).map((l) => (
-              <Link
-                key={l.href}
-                href={l.href}
-                className="text-sm text-slate-200"
-                onClick={() => setOpen(false)}
-              >
-                {l.label}
-              </Link>
-            ))}
-            {signupEnabled ? (
-              <Link href="/auth/register" className="text-sm text-slate-400" onClick={() => setOpen(false)}>
-                Sign up
-              </Link>
-            ) : null}
-            <Link href="/auth/login" className="text-sm text-slate-400" onClick={() => setOpen(false)}>
-              Login
-            </Link>
             <Link
-              href="/#cta"
-              className="rounded-full bg-premium-gold px-4 py-2 text-center text-sm font-semibold text-black"
+              href="/auth/login"
+              className="mt-2 flex min-h-[52px] items-center justify-center rounded-2xl border-2 border-[#D4AF37] text-base font-semibold text-[#D4AF37]"
               onClick={() => setOpen(false)}
             >
-              Get Access
+              Login
             </Link>
-          </div>
+          </nav>
         </div>
       ) : null}
     </header>

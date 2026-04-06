@@ -1,78 +1,55 @@
-"use client";
-
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { AnimatedReveal } from "@/components/marketing/AnimatedReveal";
+import { InvestorDemoClient } from "@/components/demo/InvestorDemoClient";
+import { DEMO_LIVE_PATH_ORDER } from "@/src/modules/demo/demoConfig";
 
-/**
- * Product demo hub — guided tours run inside the authenticated app (staging / demo mode).
- */
-export default function DemoHubPage() {
-  const router = useRouter();
+export const dynamic = "force-dynamic";
 
+export default function DemoHomePage() {
   return (
-    <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
-      <AnimatedReveal>
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold">Product demo</p>
-        <h1 className="mt-3 font-serif text-4xl font-semibold text-white">Experience the platform</h1>
-        <p className="mt-4 text-slate-400">
-          Choose a guided path. The full interactive tour runs inside the authenticated app (staging or when demo
-          mode is enabled). This page sets your preference and sends you to sign in if needed.
+    <div className="space-y-10">
+      <div className="rounded-2xl border border-amber-500/20 bg-gradient-to-br from-amber-950/40 via-black to-slate-950 p-8 shadow-xl shadow-amber-950/20">
+        <h2 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">LECIPM + BNHub Investor Demo</h2>
+        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-400">
+          Follow this exact order live (footer <strong className="text-slate-300">Continue</strong> matches it). Step 3 uses{" "}
+          <code className="text-amber-400/90">/demo/property/[id]</code> — default id <code className="text-amber-400/90">bnhub</code>{" "}
+          from search, or open any card then continue.
         </p>
-        <ul className="mt-8 list-inside list-disc space-y-2 text-sm text-slate-400">
-          <li>Standard tour — CRM, offers, contracts, documents, messaging, finance.</li>
-          <li>Investor tour — platform breadth, integration, finance & oversight story.</li>
-        </ul>
-        <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-          <button
-            type="button"
-            className="rounded-full bg-premium-gold px-6 py-3 text-sm font-semibold text-black hover:brightness-110"
-            onClick={() => {
-              try {
-                localStorage.setItem("lecipm_demo_tour_id", "standard_user_tour");
-                localStorage.setItem("lecipm_demo_pending_autostart", "1");
-                localStorage.removeItem("lecipm_demo_autostart_done");
-              } catch {
-                /* ignore */
-              }
-              router.push("/auth/login?next=/dashboard/real-estate");
-            }}
-          >
-            Launch standard demo
-          </button>
-          <button
-            type="button"
-            className="rounded-full border border-white/20 px-6 py-3 text-sm font-semibold text-white hover:border-premium-gold/50"
-            onClick={() => {
-              try {
-                localStorage.setItem("lecipm_demo_tour_id", "investor_tour");
-                localStorage.setItem("lecipm_demo_pending_autostart", "1");
-                localStorage.removeItem("lecipm_demo_autostart_done");
-              } catch {
-                /* ignore */
-              }
-              router.push("/auth/login?next=/dashboard/real-estate?demoTour=investor");
-            }}
-          >
-            Launch investor demo
-          </button>
+        <ol className="mt-5 list-decimal space-y-1 pl-5 font-mono text-xs text-slate-500 sm:text-sm">
+          {DEMO_LIVE_PATH_ORDER.map((href, i) => (
+            <li key={href}>
+              {i === 2 ? (
+                <>
+                  <span className="text-slate-300">/demo/property/[id]</span>
+                  <span className="text-slate-600"> — default </span>
+                  <Link href={href} className="text-amber-400/90 hover:text-amber-300">
+                    {href}
+                  </Link>
+                </>
+              ) : (
+                <Link href={href} className="text-amber-400/90 hover:text-amber-300">
+                  {href}
+                </Link>
+              )}
+            </li>
+          ))}
+        </ol>
+        <div className="mt-6 flex flex-wrap gap-3">
           <Link
-            href="/#cta"
-            className="inline-flex items-center justify-center rounded-full border border-white/15 px-6 py-3 text-sm text-slate-300 hover:text-white"
+            href="/demo/search"
+            className="rounded-lg bg-amber-500 px-5 py-2.5 text-sm font-semibold text-black hover:bg-amber-400"
           >
-            Request access
+            Start demo
           </Link>
           <Link
-            href="/demo/dashboard"
-            className="inline-flex items-center justify-center rounded-full border border-white/10 px-6 py-3 text-sm text-slate-400 hover:text-white"
+            href="/demo/metrics"
+            className="rounded-lg border border-slate-600 px-5 py-2.5 text-sm font-medium text-slate-200 hover:bg-white/5"
           >
-            Open demo dashboard
+            Jump to metrics
           </Link>
         </div>
-        <p className="mt-8 text-xs text-slate-600">
-          Demo environments may use sample data only — no legal or payment finality is implied.
-        </p>
-      </AnimatedReveal>
+      </div>
+
+      <InvestorDemoClient highlightStep={null} />
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { PLATFORM_NAME, platformBrandGoldTextClass } from "@/lib/brand/platform";
 import { ConversionEducationStrip } from "@/components/marketing/ConversionEducationStrip";
 import { EvaluateClient } from "./evaluate-client";
@@ -36,6 +37,20 @@ export default function EvaluatePage() {
             <li className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-1.5">No obligation</li>
             <li className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-1.5">Instant results</li>
           </ul>
+          <div className="mt-8 flex flex-wrap justify-center gap-3">
+            <Link
+              href="/appraisal-calculator"
+              className="rounded-full border border-premium-gold/35 bg-premium-gold/10 px-5 py-2.5 text-sm font-semibold text-premium-gold transition hover:bg-premium-gold/15"
+            >
+              Open appraisal calculator page
+            </Link>
+            <Link
+              href="/start-listing"
+              className="rounded-full border border-white/15 px-5 py-2.5 text-sm font-semibold text-white transition hover:border-premium-gold/40 hover:bg-white/5"
+            >
+              Start your listing
+            </Link>
+          </div>
         </div>
       </section>
 

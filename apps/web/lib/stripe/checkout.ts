@@ -4,7 +4,13 @@
 
 import type Stripe from "stripe";
 import { getStripe, isStripeConfigured } from "@/lib/stripe";
+import { logInfo } from "@/lib/logger";
 import type { FsboPublishPlan } from "@/lib/fsbo/constants";
+import {
+  assertCoreCheckoutMetadata,
+  compactStripeMetadata,
+  validateBookingPaymentMetadata,
+} from "@/lib/stripe/checkoutMetadata";
 
 export type PaymentType =
   | "booking"
@@ -46,6 +52,11 @@ export type CreateCheckoutParams = {
     destinationAccountId: string;
     /** Stripe application fee (may be 0); remainder transfers to destination. */
     applicationFeeAmount: number;
+    /**
+     * Optional settlement merchant for destination charges.
+     * Use when Stripe requires `on_behalf_of` (for example some cross-region setups).
+     */
+    onBehalfOfAccountId?: string;
     /** Auditable BNHub split (may differ from applicationFeeAmount only in pathological rate config). */
     bnhubPlatformFeeCents?: number;
     bnhubHostPayoutCents?: number;
@@ -82,49 +93,63 @@ export async function createCheckoutSession(
     connect,
   } = params;
 
-  const metadataCombined: Record<string, string> = {
+  const metadataCombined = compactStripeMetadata({
     userId,
     paymentType,
     ...metadata,
-  };
-  if (paymentType === "fsbo_publish") {
-    metadataCombined.type = "fsbo_listing";
-    if (fsboPlan) metadataCombined.fsboPlan = fsboPlan;
-  }
-  if (listingId) metadataCombined.listingId = listingId;
-  if (projectId) metadataCombined.projectId = projectId;
-  if (bookingId) metadataCombined.bookingId = bookingId;
-  if (dealId) metadataCombined.dealId = dealId;
-  if (brokerId) metadataCombined.brokerId = brokerId;
-  if (mortgageRequestId) metadataCombined.mortgageRequestId = mortgageRequestId;
-  if (mortgageBrokerId) metadataCombined.mortgageBrokerId = mortgageBrokerId;
-  if (fsboListingId) metadataCombined.fsboListingId = fsboListingId;
-  if (connect) {
-    metadataCombined.applicationFeeCents = String(connect.applicationFeeAmount);
-    metadataCombined.connectDestination = connect.destinationAccountId;
-    if (typeof connect.bnhubPlatformFeeCents === "number") {
-      metadataCombined.bnhubPlatformFeeCents = String(connect.bnhubPlatformFeeCents);
-    }
-    if (typeof connect.bnhubHostPayoutCents === "number") {
-      metadataCombined.bnhubHostPayoutCents = String(connect.bnhubHostPayoutCents);
-    }
+    ...(paymentType === "fsbo_publish"
+      ? {
+          type: "fsbo_listing",
+          ...(fsboPlan ? { fsboPlan } : {}),
+        }
+      : {}),
+    ...(listingId ? { listingId } : {}),
+    ...(projectId ? { projectId } : {}),
+    ...(bookingId ? { bookingId } : {}),
+    ...(dealId ? { dealId } : {}),
+    ...(brokerId ? { brokerId } : {}),
+    ...(mortgageRequestId ? { mortgageRequestId } : {}),
+    ...(mortgageBrokerId ? { mortgageBrokerId } : {}),
+    ...(fsboListingId ? { fsboListingId } : {}),
+    ...(connect
+      ? {
+          applicationFeeCents: String(connect.applicationFeeAmount),
+          connectDestination: connect.destinationAccountId,
+          ...(connect.onBehalfOfAccountId
+            ? { onBehalfOfAccountId: connect.onBehalfOfAccountId }
+            : {}),
+          ...(typeof connect.bnhubPlatformFeeCents === "number"
+            ? { bnhubPlatformFeeCents: String(connect.bnhubPlatformFeeCents) }
+            : {}),
+          ...(typeof connect.bnhubHostPayoutCents === "number"
+            ? { bnhubHostPayoutCents: String(connect.bnhubHostPayoutCents) }
+            : {}),
+        }
+      : {}),
+  });
+
+  try {
+    assertCoreCheckoutMetadata(metadataCombined);
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Invalid checkout metadata" };
   }
 
-  if (paymentType === "booking") {
-    if (!bookingId?.trim()) {
-      return { error: "bookingId is required for booking checkout (metadata + webhook)" };
-    }
-    if (!listingId?.trim()) {
-      return { error: "listingId is required for booking checkout (metadata + webhook)" };
-    }
+  const bookingMetaErr = validateBookingPaymentMetadata(metadataCombined);
+  if (bookingMetaErr) {
+    return { error: bookingMetaErr };
   }
 
+  // BNHub marketplace: when `connect` is set, Stripe collects gross on platform and applies
+  // `application_fee_amount` + `transfer_data.destination` (host Connect account).
   const paymentIntentData: Stripe.Checkout.SessionCreateParams.PaymentIntentData = {
     metadata: metadataCombined,
     ...(connect && connect.destinationAccountId
       ? {
           application_fee_amount: connect.applicationFeeAmount,
           transfer_data: { destination: connect.destinationAccountId },
+          ...(connect.onBehalfOfAccountId
+            ? { on_behalf_of: connect.onBehalfOfAccountId }
+            : {}),
         }
       : {}),
   };
@@ -154,6 +179,9 @@ export async function createCheckoutSession(
 
     const url = session.url;
     if (!url) return { error: "Failed to get checkout URL" };
+    logInfo(
+      `[STRIPE] checkout created: bookingId=${bookingId ?? "n/a"} listingId=${listingId ?? "n/a"} sessionId=${session.id} paymentType=${paymentType}`
+    );
     return { url, sessionId: session.id };
   } catch (e) {
     console.error("[stripe] createCheckoutSession error:", e);

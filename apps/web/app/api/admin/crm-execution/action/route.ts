@@ -7,6 +7,7 @@ import {
   pushBooking,
   sendMessage,
 } from "@/src/modules/crm/actionEngine";
+import { isBrokerBillingBlockedMessage, parseBrokerBillingBlockReason } from "@/modules/billing/brokerLeadBilling";
 
 export const dynamic = "force-dynamic";
 
@@ -44,7 +45,18 @@ export async function POST(req: Request) {
     case "assign_broker": {
       const bid = typeof body.brokerUserId === "string" ? body.brokerUserId.trim() : "";
       if (!bid) return Response.json({ error: "brokerUserId required" }, { status: 400 });
-      await assignBroker(leadId, bid);
+      try {
+        await assignBroker(leadId, bid);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "";
+        if (isBrokerBillingBlockedMessage(msg)) {
+          return Response.json(
+            { error: "broker_billing_blocked", reason: parseBrokerBillingBlockReason(msg) },
+            { status: 403 }
+          );
+        }
+        throw e;
+      }
       break;
     }
     case "push_booking":

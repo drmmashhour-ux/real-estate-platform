@@ -4,7 +4,7 @@
  * Run daily via cron.
  */
 
-const PLATFORM_API_BASE = process.env.PLATFORM_API_BASE || "http://localhost:3000";
+const PLATFORM_API_BASE = process.env.PLATFORM_API_BASE || "http://localhost:3001";
 
 async function main(): Promise<void> {
   const res = await fetch(`${PLATFORM_API_BASE}/api/valuation/jobs/refresh-market`, {

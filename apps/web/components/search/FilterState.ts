@@ -416,7 +416,15 @@ export function urlParamsToGlobalFilters(sp: URLSearchParams): GlobalSearchFilte
     mapLayout: parseMapLayout(sp.get("mapLayout")),
     sort: (() => {
       const s = sp.get("sort");
-      if (s === "priceAsc" || s === "priceDesc" || s === "newest" || s === "recommended") return s;
+      if (
+        s === "priceAsc" ||
+        s === "priceDesc" ||
+        s === "newest" ||
+        s === "recommended" ||
+        s === "ai" ||
+        s === "aiScore"
+      )
+        return s;
       if (type === "new_listing") return "newest";
       return "recommended";
     })(),
@@ -492,7 +500,7 @@ export function globalFiltersToBnhubParams(f: GlobalSearchFiltersExtended): URLS
   if (f.features.includes("verified")) p.set("verifiedOnly", "true");
   if (f.features.includes("instant_book")) p.set("instantBook", "true");
   const sort = f.sort ?? "recommended";
-  if (sort === "newest" || sort === "priceAsc" || sort === "priceDesc" || sort === "recommended") {
+  if (sort === "newest" || sort === "priceAsc" || sort === "priceDesc" || sort === "recommended" || sort === "ai") {
     p.set("sort", sort);
   }
   return p;

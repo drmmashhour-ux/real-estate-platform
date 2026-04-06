@@ -45,7 +45,7 @@ Documented in `apps/web/docs/USER_FLOW_SIMULATION.md`.
 
 | Item | Status |
 |------|--------|
-| Test mode success/failure | Handlers present; manual test with 4242… / 4000… required |
+| Test mode success/failure | Handlers present; manual test on Stripe-hosted Checkout (see [Stripe Testing](https://stripe.com/docs/testing)) required |
 | Refunds | `charge.refunded` → Payment.status REFUNDED ✅ |
 | Commission split | `lib/stripe/commission.ts`: booking 12% platform; sale/deposit/closing 70% broker / 30% platform; subscription 90% platform; lead_unlock 20% broker ✅ |
 | Live mode | Use real API keys; webhooks active; verify amounts, no duplicates, data stored |

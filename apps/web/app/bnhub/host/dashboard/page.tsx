@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { subDays } from "date-fns";
 import { getListingsByOwner } from "@/lib/bnhub/listings";
 import { getBookingsForHost } from "@/lib/bnhub/booking";
 import { prisma } from "@/lib/db";
@@ -7,15 +8,16 @@ import { updateHostPerformance } from "@/src/modules/reviews/aggregationService"
 import Logo from "@/components/ui/Logo";
 import { HostDashboardClient } from "./host-dashboard-client";
 import { HostInsightsPanel } from "@/components/bnhub/HostInsightsPanel";
+import { PotentialIssuesPanel, type PotentialIssueRow } from "@/components/bnhub/PotentialIssuesPanel";
 import { DecisionCard } from "@/components/ai/DecisionCard";
 import { safeEvaluateDecision } from "@/modules/ai/decision-engine";
 
 export default async function HostDashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ ownerId?: string }>;
+  searchParams?: Promise<{ ownerId?: string }>;
 }) {
-  const { ownerId } = await searchParams;
+  const { ownerId } = (await searchParams) ?? {};
   const [sessionUserId, effectiveOwnerId] = await Promise.all([
     getGuestId(),
     Promise.resolve(ownerId ?? process.env.NEXT_PUBLIC_DEMO_HOST_ID ?? null),
@@ -90,6 +92,35 @@ export default async function HostDashboardPage({
           listingVariant: hostListingId ? "short_term" : undefined,
         })
       : null;
+
+  let potentialIssues: PotentialIssueRow[] = [];
+  if (effectiveOwnerId) {
+    const logs = await prisma.aiDisputeRiskLog.findMany({
+      where: {
+        booking: { listing: { ownerId: effectiveOwnerId } },
+        createdAt: { gte: subDays(new Date(), 21) },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 12,
+      include: {
+        booking: {
+          select: {
+            id: true,
+            listing: { select: { title: true } },
+          },
+        },
+      },
+    });
+    potentialIssues = logs.map((l) => ({
+      id: l.id,
+      bookingId: l.bookingId,
+      riskLevel: l.riskLevel,
+      signalType: l.signalType,
+      summary: l.summary,
+      createdAt: l.createdAt.toISOString(),
+      listingTitle: l.booking.listing.title,
+    }));
+  }
 
   return (
     <main className="min-h-screen bg-slate-950 text-slate-50">
@@ -190,8 +221,8 @@ export default async function HostDashboardPage({
                   <DecisionCard
                     title="AI Booking Summary"
                     result={hostDecision}
-                    actionHref={hostListingId ? `/bnhub/host/listings/${hostListingId}/edit` : "/bnhub/host/listings/new"}
-                    actionLabel={hostListingId ? "Review listing" : "New listing"}
+                    actionHref={hostListingId ? `/bnhub/host/listings/${hostListingId}/edit` : "/host/listings/new"}
+                    actionLabel={hostListingId ? "Review listing" : "Start listing"}
                   />
                 </div>
               ) : null}
@@ -199,6 +230,12 @@ export default async function HostDashboardPage({
               <div className="mb-10">
                 <HostInsightsPanel ownerId={effectiveOwnerId} />
               </div>
+
+              {potentialIssues.length > 0 ? (
+                <div className="mb-10">
+                  <PotentialIssuesPanel items={potentialIssues} />
+                </div>
+              ) : null}
 
               {hostTrust ? (
                 <div className="mb-10 rounded-2xl border border-emerald-500/25 bg-emerald-950/15 p-5">

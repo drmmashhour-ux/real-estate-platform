@@ -1,14 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { BadgeCheck } from "lucide-react";
 
 type Props = {
   images: string[];
   coverImage?: string | null;
   title: string;
+  /** Show a subtle “Verified listing” chip on the hero image */
+  verifiedListing?: boolean;
 };
 
-export function FsboListingGallery({ images, coverImage, title }: Props) {
+export function FsboListingGallery({ images, coverImage, title, verifiedListing }: Props) {
   const ordered = useMemo(
     () =>
       coverImage && images.includes(coverImage)
@@ -24,14 +27,29 @@ export function FsboListingGallery({ images, coverImage, title }: Props) {
 
   const [main, setMain] = useState<string | null>(ordered[0] ?? null);
   const [lightbox, setLightbox] = useState<string | null>(null);
+  const touchStartX = useRef<number | null>(null);
 
   useEffect(() => {
     const first =
       coverImage && images.includes(coverImage) ? coverImage : (images[0] ?? null);
     setMain(first);
-    // galleryKey encodes image URLs + cover; avoids resetting when parent re-renders with same gallery.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [galleryKey]);
+
+  const mainIndex = useMemo(() => {
+    const m = main ?? ordered[0];
+    const i = ordered.indexOf(m ?? "");
+    return i >= 0 ? i : 0;
+  }, [main, ordered]);
+
+  const goDelta = useCallback(
+    (delta: number) => {
+      if (ordered.length < 2) return;
+      const next = (mainIndex + delta + ordered.length) % ordered.length;
+      setMain(ordered[next] ?? null);
+    },
+    [mainIndex, ordered]
+  );
 
   const openLightbox = useCallback((url: string) => {
     setLightbox(url);
@@ -48,7 +66,7 @@ export function FsboListingGallery({ images, coverImage, title }: Props) {
 
   if (!ordered.length) {
     return (
-      <div className="flex aspect-[4/3] items-center justify-center rounded-xl border border-dashed border-white/20 text-sm text-slate-500">
+      <div className="flex aspect-[4/3] items-center justify-center rounded-2xl border border-dashed border-white/15 bg-[#111] text-sm text-slate-500 sm:aspect-[16/10]">
         No photos yet
       </div>
     );
@@ -60,7 +78,20 @@ export function FsboListingGallery({ images, coverImage, title }: Props) {
         <button
           type="button"
           onClick={() => main && openLightbox(main)}
-          className="relative w-full overflow-hidden rounded-xl border border-white/10 bg-[#1a1a1a] text-left outline-none ring-premium-gold/40 focus-visible:ring-2"
+          onTouchStart={(e) => {
+            touchStartX.current = e.changedTouches[0]?.screenX ?? null;
+          }}
+          onTouchEnd={(e) => {
+            const start = touchStartX.current;
+            touchStartX.current = null;
+            if (start == null || ordered.length < 2) return;
+            const end = e.changedTouches[0]?.screenX;
+            if (end == null) return;
+            const dx = end - start;
+            if (dx > 56) goDelta(-1);
+            else if (dx < -56) goDelta(1);
+          }}
+          className="relative w-full overflow-hidden rounded-2xl border border-white/10 bg-[#141414] text-left outline-none ring-[#D4AF37]/30 focus-visible:ring-2"
           aria-label={`Enlarge photo — ${title}`}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -69,7 +100,18 @@ export function FsboListingGallery({ images, coverImage, title }: Props) {
             alt={title}
             className="aspect-[4/3] w-full object-cover sm:aspect-[16/10]"
           />
-          <span className="sr-only">Open larger preview</span>
+          {verifiedListing ? (
+            <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full border border-[#D4AF37]/35 bg-black/55 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-[#E8D589] backdrop-blur-sm">
+              <BadgeCheck className="h-3.5 w-3.5 text-[#D4AF37]" aria-hidden />
+              Verified listing
+            </span>
+          ) : null}
+          {ordered.length > 1 ? (
+            <span className="absolute bottom-3 right-3 rounded-full border border-white/15 bg-black/60 px-2.5 py-1 text-xs font-medium text-white/90 backdrop-blur-sm">
+              {mainIndex + 1} / {ordered.length}
+            </span>
+          ) : null}
+          <span className="sr-only">Open larger preview. Swipe sideways to change photos.</span>
         </button>
 
         <ul className="flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex-wrap sm:overflow-x-visible">
@@ -81,8 +123,8 @@ export function FsboListingGallery({ images, coverImage, title }: Props) {
                   type="button"
                   onClick={() => setMain(src)}
                   className={[
-                    "overflow-hidden rounded-lg border-2 transition",
-                    active ? "border-premium-gold" : "border-transparent opacity-80 hover:opacity-100",
+                    "overflow-hidden rounded-xl border-2 transition",
+                    active ? "border-[#D4AF37]" : "border-transparent opacity-80 hover:opacity-100",
                   ].join(" ")}
                   aria-label="Show this photo"
                   aria-pressed={active}

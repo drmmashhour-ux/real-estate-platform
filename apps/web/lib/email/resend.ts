@@ -20,7 +20,7 @@ export function isResendConfigured(): boolean {
   return Boolean(process.env.RESEND_API_KEY && process.env.RESEND_API_KEY !== "your_key");
 }
 
-/** From address: use EMAIL_FROM (e.g. "LECIPM <info@mashhourinvestments.com>"). */
+/** From address: use EMAIL_FROM (e.g. "LECIPM <dr.m.mashhour@gmail.com>"). */
 export function getFromEmail(): string {
   return process.env.EMAIL_FROM || "onboarding@resend.dev";
 }

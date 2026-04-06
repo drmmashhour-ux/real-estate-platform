@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { isPlatformAdmin } from "@/lib/auth/is-platform-admin";
+import { isPlatformAdminSurface } from "@/lib/auth/is-platform-admin";
 import { prisma } from "@/lib/db";
 
 export async function GET() {
   const userId = await getGuestId();
-  if (!userId || !(await isPlatformAdmin(userId))) {
+  if (!userId || !(await isPlatformAdminSurface(userId))) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   const pending = await prisma.shortTermListing.findMany({

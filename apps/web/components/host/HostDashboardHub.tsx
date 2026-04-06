@@ -3,17 +3,33 @@
 import Link from "next/link";
 import { BookingCalendar, type CalendarBookingRow } from "@/components/calendar/BookingCalendar";
 import { PayoutCalendar } from "@/components/calendar/PayoutCalendar";
+import { HostStripeConnectCta } from "@/components/host/HostStripeConnectCta";
+import { HostConversionInsights } from "@/components/host/HostConversionInsights";
+import { HostReputationScore } from "@/components/host/HostReputationScore";
+import type { ListingConversionInsight } from "@/lib/ai/conversion/conversion-types";
+import type { HostReputationResult } from "@/lib/ai/reputation/reputation-types";
 
 export function HostDashboardHub({
   bookings,
   totalEarningsCents,
   pendingPayoutCents,
   canManage,
+  stripeAccountId = null,
+  stripeOnboardingComplete = false,
+  conversionInsights = [],
+  hostReputation = null,
+  listingRefs = [],
 }: {
   bookings: CalendarBookingRow[];
   totalEarningsCents: number;
   pendingPayoutCents: number;
   canManage: boolean;
+  stripeAccountId?: string | null;
+  stripeOnboardingComplete?: boolean;
+  conversionInsights?: ListingConversionInsight[];
+  hostReputation?: HostReputationResult | null;
+  /** BNHub listing codes for support, payouts, and wire references */
+  listingRefs?: { id: string; title: string; listingCode: string }[];
 }) {
   return (
     <div className="space-y-10">
@@ -37,8 +53,67 @@ export function HostDashboardHub({
           >
             Payouts & Stripe
           </Link>
+          <Link
+            href="/dashboard/host/autopilot"
+            className="rounded-xl border border-amber-500/50 px-4 py-2 text-sm font-medium text-amber-200 hover:bg-amber-950/40"
+          >
+            AI Autopilot
+          </Link>
         </div>
       </div>
+
+      {conversionInsights.length > 0 ? <HostConversionInsights insights={conversionInsights} /> : null}
+
+      {hostReputation ? <HostReputationScore data={hostReputation} /> : null}
+
+      {listingRefs.length > 0 ? (
+        <section className="rounded-2xl border border-emerald-500/25 bg-emerald-950/20 p-4">
+          <p className="text-xs font-medium uppercase tracking-wide text-emerald-400/90">
+            Host reference codes
+          </p>
+          <p className="mt-1 text-sm text-slate-400">
+            Quote your public listing code when you contact support or match bank transfers. Internal listing ID is the
+            stable UUID for accounting.
+          </p>
+          <ul className="mt-3 space-y-2 text-sm">
+            {listingRefs.map((l) => (
+              <li
+                key={l.id}
+                className="flex flex-wrap items-baseline justify-between gap-2 rounded-lg border border-slate-800/80 bg-slate-950/50 px-3 py-2"
+              >
+                <span className="font-medium text-slate-200">{l.title}</span>
+                <span className="font-mono text-xs text-emerald-300">
+                  {l.listingCode}
+                  <span className="ml-2 text-slate-500">· id {l.id.slice(0, 8)}…</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-2 text-xs text-slate-600">
+            Notifications for approvals and reminders appear in{" "}
+            <Link href="/dashboard/notifications" className="text-emerald-400 hover:text-emerald-300">
+              dashboard notifications
+            </Link>
+            .
+          </p>
+        </section>
+      ) : null}
+
+      <section className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
+        <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Stripe payouts</p>
+        <HostStripeConnectCta
+          initialHasAccount={Boolean(stripeAccountId)}
+          initialOnboardingComplete={Boolean(stripeOnboardingComplete)}
+          showSetupButton
+          className="mt-2"
+        />
+        <p className="mt-2 text-xs text-slate-600">
+          Full history and fees:{" "}
+          <Link href="/dashboard/host/payouts" className="text-emerald-400 hover:text-emerald-300">
+            Payouts &amp; Stripe
+          </Link>
+        </p>
+      </section>
 
       <section className="grid gap-4 sm:grid-cols-3">
         <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-5">

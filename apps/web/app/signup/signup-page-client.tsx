@@ -1,13 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PLATFORM_NAME, platformBrandGoldTextClass } from "@/lib/brand/platform";
 import { SignupAccountClient } from "@/components/auth/SignupAccountClient";
 import { track } from "@/lib/tracking";
+import { VIRAL_REF_COOKIE } from "@/lib/referrals/viral";
+
+function readViralRefCookie(): string {
+  if (typeof document === "undefined") return "";
+  const m = document.cookie.match(new RegExp(`(?:^|; )${encodeURIComponent(VIRAL_REF_COOKIE)}=([^;]*)`));
+  return m?.[1] ? decodeURIComponent(m[1]) : "";
+}
 
 export function SignupPageClient({ refCode }: { refCode: string }) {
-  const referralLink = refCode ? `/auth/signup?ref=${refCode}` : "/auth/signup";
+  const [cookieRef, setCookieRef] = useState("");
+  useEffect(() => {
+    setCookieRef(readViralRefCookie());
+  }, []);
+  const effectiveRef = useMemo(() => refCode.trim() || cookieRef.trim(), [refCode, cookieRef]);
   useEffect(() => {
     track("conversion_track", { meta: { event: "signup_started" } });
   }, []);
@@ -16,7 +27,7 @@ export function SignupPageClient({ refCode }: { refCode: string }) {
       <section className="rounded-2xl border border-premium-gold/25 bg-[#0B0B0B] p-6">
         <p className={`text-xs font-semibold uppercase tracking-[0.2em] ${platformBrandGoldTextClass}`}>{PLATFORM_NAME}</p>
         <h1 className="mt-2 text-3xl font-bold">Create your account</h1>
-        {refCode ? (
+        {effectiveRef ? (
           <p className="mt-3 text-sm text-premium-gold">You were invited by a partner.</p>
         ) : (
           <p className="mt-3 text-sm text-[#9CA3AF]">
@@ -24,9 +35,7 @@ export function SignupPageClient({ refCode }: { refCode: string }) {
             and open the dashboard.
           </p>
         )}
-        <p className="mt-2 text-xs text-[#737373]">Referral link: {referralLink}</p>
-
-        <SignupAccountClient referralRef={refCode} />
+        <SignupAccountClient referralRef={effectiveRef} />
 
         <div className="mt-6 border-t border-white/10 pt-6 text-center text-sm text-[#9CA3AF]">
           Already have an account?{" "}

@@ -9,6 +9,7 @@
 
 import { ImmoContactEventType } from "@prisma/client";
 import { hashPassword } from "../lib/auth/password";
+import { LEGAL_RENT_RIGHT_ATTESTATION_VERSION } from "../lib/bnhub/legal-rent-attestation-policy";
 import { prisma } from "../lib/db";
 
 const SEED_IDS = {
@@ -260,9 +261,16 @@ export async function runSeed(): Promise<void> {
   // ---------------------------------------------------------------------------
   // 3. Short-term listings (BNHub) – multiple cities and statuses
   // ---------------------------------------------------------------------------
+  const seedAttestAt = new Date();
   const listing1 = await prisma.shortTermListing.upsert({
     where: { id: SEED_IDS.listing1 },
-    update: { listingCode: "LEC-90001", instantBookEnabled: true },
+    update: {
+      listingCode: "LEC-90001",
+      instantBookEnabled: true,
+      listingVerificationStatus: "VERIFIED",
+      legalRentRightAttestedAt: seedAttestAt,
+      legalRentRightAttestationVersion: LEGAL_RENT_RIGHT_ATTESTATION_VERSION,
+    },
     create: {
       id: SEED_IDS.listing1,
       listingCode: "LEC-90001",
@@ -282,7 +290,10 @@ export async function runSeed(): Promise<void> {
       amenities: ["WiFi", "Kitchen", "AC"],
       listingStatus: "PUBLISHED",
       verificationStatus: "VERIFIED",
+      listingVerificationStatus: "VERIFIED",
       verifiedAt: new Date(),
+      legalRentRightAttestedAt: seedAttestAt,
+      legalRentRightAttestationVersion: LEGAL_RENT_RIGHT_ATTESTATION_VERSION,
       propertyIdentityId: propIdentity1.id,
       ownerId: host1.id,
       instantBookEnabled: true,
@@ -291,7 +302,13 @@ export async function runSeed(): Promise<void> {
 
   const listing2 = await prisma.shortTermListing.upsert({
     where: { id: SEED_IDS.listing2 },
-    update: { listingCode: "LEC-90002", instantBookEnabled: true },
+    update: {
+      listingCode: "LEC-90002",
+      instantBookEnabled: true,
+      listingVerificationStatus: "VERIFIED",
+      legalRentRightAttestedAt: seedAttestAt,
+      legalRentRightAttestationVersion: LEGAL_RENT_RIGHT_ATTESTATION_VERSION,
+    },
     create: {
       id: SEED_IDS.listing2,
       listingCode: "LEC-90002",
@@ -311,7 +328,10 @@ export async function runSeed(): Promise<void> {
       amenities: ["WiFi", "Kitchen", "Fireplace", "Parking"],
       listingStatus: "PUBLISHED",
       verificationStatus: "VERIFIED",
+      listingVerificationStatus: "VERIFIED",
       verifiedAt: new Date(),
+      legalRentRightAttestedAt: seedAttestAt,
+      legalRentRightAttestationVersion: LEGAL_RENT_RIGHT_ATTESTATION_VERSION,
       propertyIdentityId: propIdentity2.id,
       ownerId: host2.id,
       instantBookEnabled: true,
@@ -320,7 +340,12 @@ export async function runSeed(): Promise<void> {
 
   const listing3 = await prisma.shortTermListing.upsert({
     where: { id: SEED_IDS.listing3 },
-    update: { listingCode: "LEC-90003" },
+    update: {
+      listingCode: "LEC-90003",
+      listingVerificationStatus: "VERIFIED",
+      legalRentRightAttestedAt: seedAttestAt,
+      legalRentRightAttestationVersion: LEGAL_RENT_RIGHT_ATTESTATION_VERSION,
+    },
     create: {
       id: SEED_IDS.listing3,
       listingCode: "LEC-90003",
@@ -336,6 +361,11 @@ export async function runSeed(): Promise<void> {
       maxGuests: 2,
       photos: [],
       listingStatus: "PUBLISHED",
+      verificationStatus: "VERIFIED",
+      listingVerificationStatus: "VERIFIED",
+      verifiedAt: new Date(),
+      legalRentRightAttestedAt: seedAttestAt,
+      legalRentRightAttestationVersion: LEGAL_RENT_RIGHT_ATTESTATION_VERSION,
       ownerId: host1.id,
     },
   });
@@ -363,7 +393,12 @@ export async function runSeed(): Promise<void> {
 
   await prisma.shortTermListing.upsert({
     where: { id: SEED_IDS.listing5 },
-    update: { listingCode: "LEC-90006" },
+    update: {
+      listingCode: "LEC-90006",
+      listingVerificationStatus: "VERIFIED",
+      legalRentRightAttestedAt: seedAttestAt,
+      legalRentRightAttestationVersion: LEGAL_RENT_RIGHT_ATTESTATION_VERSION,
+    },
     create: {
       id: SEED_IDS.listing5,
       listingCode: "LEC-90006",
@@ -380,13 +415,23 @@ export async function runSeed(): Promise<void> {
       photos: ["https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?w=800"],
       amenities: ["WiFi", "Kitchen", "Parking"],
       listingStatus: "PUBLISHED",
+      verificationStatus: "VERIFIED",
+      listingVerificationStatus: "VERIFIED",
+      verifiedAt: new Date(),
+      legalRentRightAttestedAt: seedAttestAt,
+      legalRentRightAttestationVersion: LEGAL_RENT_RIGHT_ATTESTATION_VERSION,
       ownerId: host1.id,
     },
   });
 
   await prisma.shortTermListing.upsert({
     where: { id: SEED_IDS.listing6 },
-    update: { listingCode: "LEC-90007" },
+    update: {
+      listingCode: "LEC-90007",
+      listingVerificationStatus: "VERIFIED",
+      legalRentRightAttestedAt: seedAttestAt,
+      legalRentRightAttestationVersion: LEGAL_RENT_RIGHT_ATTESTATION_VERSION,
+    },
     create: {
       id: SEED_IDS.listing6,
       listingCode: "LEC-90007",
@@ -403,6 +448,11 @@ export async function runSeed(): Promise<void> {
       photos: ["https://images.unsplash.com/photo-1484154218962-a197022b5858?w=800"],
       amenities: ["WiFi", "Kitchen", "Washer", "Parking"],
       listingStatus: "PUBLISHED",
+      verificationStatus: "VERIFIED",
+      listingVerificationStatus: "VERIFIED",
+      verifiedAt: new Date(),
+      legalRentRightAttestedAt: seedAttestAt,
+      legalRentRightAttestationVersion: LEGAL_RENT_RIGHT_ATTESTATION_VERSION,
       ownerId: host2.id,
     },
   });
@@ -582,6 +632,9 @@ export async function runSeed(): Promise<void> {
       nightPriceCents: 12000,
       city: "Montreal",
       listingCode: "LEC-90005",
+      listingVerificationStatus: "VERIFIED",
+      legalRentRightAttestedAt: seedAttestAt,
+      legalRentRightAttestationVersion: LEGAL_RENT_RIGHT_ATTESTATION_VERSION,
     },
     create: {
       id: SEED_IDS.listingLuxuryMtl,
@@ -597,6 +650,11 @@ export async function runSeed(): Promise<void> {
       baths: 2,
       maxGuests: 4,
       listingStatus: "PUBLISHED",
+      verificationStatus: "VERIFIED",
+      listingVerificationStatus: "VERIFIED",
+      verifiedAt: new Date(),
+      legalRentRightAttestedAt: seedAttestAt,
+      legalRentRightAttestationVersion: LEGAL_RENT_RIGHT_ATTESTATION_VERSION,
       ownerId: host1.id,
     },
   });
@@ -779,6 +837,9 @@ export async function runSeed(): Promise<void> {
       programId: refProgram.id,
       referrerId: ambassadorUser.id,
       code: referralCode,
+      referralPublicCode: referralCode,
+      status: "joined",
+      rewardGiven: true,
       rewardCreditsCents: 1000,
       usedByUserId: guest.id,
       usedAt: new Date(),

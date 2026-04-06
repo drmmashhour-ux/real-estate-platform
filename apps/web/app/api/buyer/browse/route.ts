@@ -9,8 +9,12 @@ import {
   type PropertyBrowseFilters,
 } from "@/lib/buy/property-browse-filters";
 import { prisma } from "@/lib/db";
+import { buildFsboPublicVisibilityWhere } from "@/lib/fsbo/listing-expiry";
+import { getListingTransactionFlagsForListings } from "@/lib/fsbo/listing-transaction-flag";
 import type { GlobalSearchFiltersExtended } from "@/components/search/FilterState";
 import { parseGlobalSearchBody, urlParamsToGlobalFilters } from "@/components/search/FilterState";
+import { ListingAnalyticsKind } from "@prisma/client";
+import { buildFsboRecommendedBrowseSortUnit } from "@/lib/listings/marketplace-browse-sort";
 import { isAiRankingEngineEnabled } from "@/src/modules/ranking/rankingEnv";
 import { scoreRealEstateListingsForBrowse } from "@/src/modules/ranking/rankingService";
 
@@ -33,19 +37,26 @@ type UnifiedRow = {
   images: string[];
   propertyType: string | null;
   sortAt: number;
+  featuredUntil?: Date | null;
+  createdAt?: Date;
   latitude?: number | null;
   longitude?: number | null;
   address?: string | null;
   noiseLevel?: string | null;
   familyFriendly?: boolean;
   petsAllowed?: boolean;
+  transactionFlag?: {
+    key: "offer_received" | "offer_accepted" | "sold";
+    label: string;
+    tone: "amber" | "emerald" | "slate";
+  } | null;
 };
 
 function buildFsboWhere(
   f: GlobalSearchFiltersExtended,
   pf?: PropertyBrowseFilters | null
 ): Prisma.FsboListingWhereInput[] {
-  const fsboAnd: Prisma.FsboListingWhereInput[] = [{ status: "ACTIVE" }, { moderationStatus: "APPROVED" }];
+  const fsboAnd: Prisma.FsboListingWhereInput[] = [buildFsboPublicVisibilityWhere()];
 
   const cityRaw = f.location.trim();
   if (cityRaw) fsboAnd.push(fsboCityWhereFromParam(cityRaw));
@@ -272,6 +283,8 @@ async function runBrowse(
         coverImage: true,
         propertyType: true,
         updatedAt: true,
+        createdAt: true,
+        featuredUntil: true,
         latitude: true,
         longitude: true,
         noiseLevel: true,
@@ -285,6 +298,7 @@ async function runBrowse(
         petRules: true,
         experienceTags: true,
         servicesOffered: true,
+        status: true,
       },
     }),
     hasPF
@@ -306,6 +320,9 @@ async function runBrowse(
   fireAndForgetGeocodeFsbo(fsboRows);
 
   const fsboFiltered = applyFsboPropertyFilters(fsboRows, propertyFilters);
+  const transactionFlags = await getListingTransactionFlagsForListings(
+    fsboFiltered.map((row) => ({ id: row.id, status: row.status }))
+  );
 
   const fsboMapped: UnifiedRow[] = fsboFiltered.map((r) => ({
     kind: "fsbo" as const,
@@ -319,12 +336,15 @@ async function runBrowse(
     images: Array.isArray(r.images) ? r.images : [],
     propertyType: r.propertyType ?? null,
     sortAt: new Date(r.updatedAt).getTime(),
+    featuredUntil: r.featuredUntil ?? null,
+    createdAt: r.createdAt,
     latitude: r.latitude ?? null,
     longitude: r.longitude ?? null,
     address: r.address ?? null,
     noiseLevel: r.noiseLevel ?? null,
     familyFriendly: r.familyFriendly,
     petsAllowed: r.petsAllowed,
+    transactionFlag: transactionFlags.get(r.id) ?? null,
   }));
 
   const crmMapped: UnifiedRow[] = crmRows.map((r) => ({
@@ -347,21 +367,49 @@ async function runBrowse(
     merged.sort((a, b) => a.priceCents - b.priceCents);
   } else if (sortMode === "priceDesc") {
     merged.sort((a, b) => b.priceCents - a.priceCents);
-  } else if (sortMode === "recommended" && isAiRankingEngineEnabled()) {
+  } else if (sortMode === "recommended" || sortMode === "aiScore") {
     const fsboIds = merged.filter((m) => m.kind === "fsbo").map((m) => m.id);
     const effMinCad =
       f.type === "luxury_properties" || (f.type === "rent" && f.rentListingCategory === "luxury_properties")
         ? Math.max(f.priceMin, 1_000_000)
         : f.priceMin;
-    const scores = await scoreRealEstateListingsForBrowse(fsboIds, {
-      city: f.location.trim() || undefined,
-      propertyType: f.propertyType?.trim() || undefined,
-      budgetMinCents: effMinCad > 0 ? Math.round(effMinCad * 100) : undefined,
-      budgetMaxCents: f.priceMax > 0 ? Math.round(f.priceMax * 100) : undefined,
-    });
-    for (const row of merged) {
-      if (row.kind === "fsbo") {
-        row.sortAt = Math.round((scores.get(row.id) ?? 35) * 1_000_000);
+    const analyticsRows =
+      fsboIds.length > 0
+        ? await prisma.listingAnalytics.findMany({
+            where: { kind: ListingAnalyticsKind.FSBO, listingId: { in: fsboIds } },
+          })
+        : [];
+    const analyticsMap = new Map(analyticsRows.map((a) => [a.listingId, a]));
+    const nowMs = Date.now();
+
+    if (isAiRankingEngineEnabled()) {
+      const scores = await scoreRealEstateListingsForBrowse(fsboIds, {
+        city: f.location.trim() || undefined,
+        propertyType: f.propertyType?.trim() || undefined,
+        budgetMinCents: effMinCad > 0 ? Math.round(effMinCad * 100) : undefined,
+        budgetMaxCents: f.priceMax > 0 ? Math.round(f.priceMax * 100) : undefined,
+      });
+      for (const row of merged) {
+        if (row.kind === "fsbo") {
+          row.sortAt = Math.round((scores.get(row.id) ?? 35) * 1_000_000);
+        }
+      }
+    } else {
+      for (const row of merged) {
+        if (row.kind !== "fsbo") continue;
+        const a = analyticsMap.get(row.id);
+        const createdAt = row.createdAt ?? new Date(row.sortAt);
+        row.sortAt = Math.round(
+          buildFsboRecommendedBrowseSortUnit({
+            nowMs,
+            featuredUntil: row.featuredUntil ?? null,
+            createdAt,
+            demandScore: a?.demandScore ?? 0,
+            viewsTotal: a?.viewsTotal ?? 0,
+            unlockSuccesses: a?.unlockCheckoutSuccesses ?? 0,
+            imageCount: row.images.length,
+          }) * 1e15
+        );
       }
     }
     merged.sort((a, b) => b.sortAt - a.sortAt);

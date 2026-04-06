@@ -398,8 +398,8 @@ function LeadCardBody({
   const showFinancials = !contactLocked;
   const unlockLabel =
     isPro && (weeklyFreeUnlocksRemaining ?? 0) > 0
-      ? `Unlock contact (free · ${weeklyFreeUnlocksRemaining} left this week)`
-      : `Unlock contact (${formatCurrencyCAD(r.leadValue)})`;
+      ? `Unlock contact instantly (free · ${weeklyFreeUnlocksRemaining} left this week)`
+      : `Unlock contact instantly (${formatCurrencyCAD(r.leadValue)})`;
 
   return (
     <>

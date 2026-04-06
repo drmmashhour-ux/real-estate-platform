@@ -125,6 +125,45 @@ export const BLOG_POSTS: BlogPost[] = [
       },
     ],
   },
+  {
+    slug: "lecipm-growth-platform-overview",
+    title: "LECIPM in one page: AI trust, BNHub, and broker CRM",
+    description:
+      "How the platform fits together for buyers, hosts, and brokers — with links to listings, stays, and signup.",
+    publishedIso: "2026-03-28",
+    author: "LECIPM Growth",
+    keywords: ["LECIPM", "real estate platform Quebec", "BNHub", "real estate CRM"],
+    sections: [
+      {
+        heading: "Why one stack",
+        paragraphs: [
+          "Fragmented tools hide risk: spreadsheets for comps, inboxes for leads, and ad-hoc messages for short-term guests. LECIPM keeps trust signals, inventory, and pipeline context closer together.",
+          "You can start as a browser, host, or professional — the same identity layer powers deeper features when you upgrade.",
+        ],
+        links: [
+          { href: "/", label: "Marketing home" },
+          { href: "/auth/signup", label: "Create an account" },
+        ],
+      },
+      {
+        heading: "AI without the black box",
+        paragraphs: [
+          "Deal and trust summaries are designed to be explainable: what was checked, what is missing, and what to verify next with a notary or broker.",
+        ],
+        links: [{ href: "/evaluate", label: "Try the evaluation flow" }],
+      },
+      {
+        heading: "BNHub + CRM",
+        paragraphs: [
+          "BNHub focuses on short-term inventory and bookings; CRM lanes prioritize broker and team workflows. Together they reduce duplicate data entry for hybrid operators.",
+        ],
+        links: [
+          { href: "/bnhub", label: "Explore BNHub" },
+          { href: "/listings", label: "Browse resale listings" },
+        ],
+      },
+    ],
+  },
 ];
 
 export function getBlogPost(slug: string): BlogPost | undefined {

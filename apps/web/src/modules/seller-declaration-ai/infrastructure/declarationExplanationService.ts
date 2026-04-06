@@ -25,8 +25,8 @@ export async function explainDeclarationSection(sectionKey: string) {
   return {
     sectionKey,
     text: explanation ?? guidance ?? externalHint ?? "Disclose factual, material information relevant to this section.",
-    expectedAnswer: "Use neutral factual statements, include dates/areas/status where known.",
-    example: "Example: Issue observed in [month/year], affected [area], repaired by [party] on [date if known].",
+    expectedAnswer: "Use neutral factual statements only. Avoid promotional wording, blanket guarantees, and unsupported legal assurances. Include dates, areas, and status where known.",
+    example: "Example: Water infiltration observed in basement storage room in spring 2023. Area was dried and repaired by contractor in June 2023. Seller is not aware of recurrence since that repair.",
     sources,
   };
 }

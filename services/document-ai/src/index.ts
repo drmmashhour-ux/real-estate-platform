@@ -1,7 +1,7 @@
-import express from "express";
+import express, { type Application } from "express";
 import routes from "./routes/index.js";
 
-const app = express();
+const app: Application = express();
 const port = process.env.PORT ?? 4005;
 
 app.use(express.json({ limit: "1mb" }));

@@ -219,6 +219,12 @@ export function validateSellerDeclarationIntegrity(
   errors.push(...addrVsType.errors);
   warnings.push(...addrVsType.warnings);
 
+  if (isCondoPropertyType(propertyType) && !d.isCondo) {
+    const msg = "Listing property type is condo, so the divided co-ownership / DSD-style section must be confirmed.";
+    errors.push(msg);
+    fieldErrors["isCondo"] = "Confirm condo / divided co-ownership status";
+  }
+
   const { indices: dupIdxGroups } = findDuplicateSellerIds(sellers);
   if (dupIdxGroups.length > 0) {
     errors.push("Each seller must use a unique ID number.");
@@ -289,6 +295,16 @@ export function validateSellerDeclarationIntegrity(
     }
     if (!partyFieldsFilled(s)) {
       errors.push(`Seller ${i + 1}: complete all identity fields and ID document upload.`);
+    }
+  }
+
+  if (d.isCondo) {
+    if (!nonEmpty(d.condoContingencyFundDetails, 12)) {
+      errors.push("Add condo contingency-fund details or a short factual explanation.");
+      fieldErrors["condoContingencyFundDetails"] = "Required for condo / divided co-ownership";
+    }
+    if (!nonEmpty(d.condoCommonServicesNotes, 8)) {
+      warnings.push("Add condo rules or common-services notes for better co-ownership disclosure.");
     }
   }
 

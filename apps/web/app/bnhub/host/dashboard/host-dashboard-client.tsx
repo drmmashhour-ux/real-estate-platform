@@ -86,7 +86,9 @@ function ExternalSyncPanel({ listings }: { listings: Listing[] }) {
         </Link>
       </div>
       <p className="mt-3 text-xs text-slate-500">
-        Map external property IDs in <code className="text-slate-400">external_mapping</code> (admin / tooling). Sync
+        Map OTA IDs with{" "}
+        <code className="text-slate-400">POST /api/bnhub/host/ota-ai/parse</code> (AI + rules) then{" "}
+        <code className="text-slate-400">…/external-mapping</code>. Legacy: <code className="text-slate-400">external_mapping</code>. Sync
         errors are logged in <code className="text-slate-400">bnhub_channel_sync_logs</code>.
       </p>
     </section>
@@ -102,7 +104,13 @@ function PricingWidget({ listings }: { listings: Listing[] }) {
     demandLevel: string;
     factors: string[];
   } | null>(null);
+  const [hostInsight, setHostInsight] = useState<{
+    hostBullets: string[];
+    disclaimer: string;
+    aiEnhanced?: boolean;
+  } | null>(null);
   const [loading, setLoading] = useState(false);
+  const [loadingInsight, setLoadingInsight] = useState(false);
 
   useEffect(() => {
     if (!listingId) return;
@@ -112,6 +120,26 @@ function PricingWidget({ listings }: { listings: Listing[] }) {
       .then((data) => setRec(data.error ? null : data))
       .catch(() => setRec(null))
       .finally(() => setLoading(false));
+  }, [listingId]);
+
+  useEffect(() => {
+    if (!listingId) return;
+    setLoadingInsight(true);
+    fetch(`/api/bnhub/host/listings/${encodeURIComponent(listingId)}/market-insight`, { credentials: "same-origin" })
+      .then((r) => r.json())
+      .then((data) =>
+        setHostInsight(
+          data.error
+            ? null
+            : {
+                hostBullets: Array.isArray(data.hostBullets) ? data.hostBullets : [],
+                disclaimer: typeof data.disclaimer === "string" ? data.disclaimer : "",
+                aiEnhanced: Boolean(data.aiEnhanced),
+              }
+        )
+      )
+      .catch(() => setHostInsight(null))
+      .finally(() => setLoadingInsight(false));
   }, [listingId]);
 
   if (listings.length === 0) return null;
@@ -143,10 +171,26 @@ function PricingWidget({ listings }: { listings: Listing[] }) {
           <p className="text-slate-400">Current: ${(rec.currentPriceCents / 100).toFixed(0)} · Market avg: ${(rec.marketAvgCents / 100).toFixed(0)}</p>
           <p className="text-slate-400">Demand: <span className="capitalize">{rec.demandLevel}</span></p>
           <ul className="mt-2 list-inside list-disc text-xs text-slate-500">
-            {rec.factors.slice(0, 2).map((f, i) => (
+            {rec.factors.slice(0, 4).map((f, i) => (
               <li key={i}>{f}</li>
             ))}
           </ul>
+        </div>
+      )}
+      {loadingInsight && <p className="mt-3 text-xs text-slate-500">Loading market comparison…</p>}
+      {hostInsight && hostInsight.hostBullets.length > 0 && !loadingInsight && (
+        <div className="mt-4 border-t border-slate-800 pt-3">
+          <p className="text-xs font-medium text-slate-400">
+            vs BNHub market {hostInsight.aiEnhanced ? "(AI-polished copy)" : ""}
+          </p>
+          <ul className="mt-2 list-inside list-disc text-xs text-slate-300">
+            {hostInsight.hostBullets.map((b, i) => (
+              <li key={i}>{b}</li>
+            ))}
+          </ul>
+          {hostInsight.disclaimer ? (
+            <p className="mt-2 text-[10px] leading-snug text-slate-600">{hostInsight.disclaimer}</p>
+          ) : null}
         </div>
       )}
     </div>
@@ -277,8 +321,35 @@ type Booking = {
   specialRequestsJson?: unknown;
   listing: { id: string; title: string };
   guest: { name: string | null; email: string };
-  payment: { hostPayoutCents: number | null; status: string } | null;
+  payment: {
+    hostPayoutCents: number | null;
+    status: string;
+    platformFeeCents?: number | null;
+    scheduledHostPayoutAt?: Date | string | null;
+    hostPayoutReleasedAt?: Date | string | null;
+    payoutHoldReason?: string | null;
+    stripeReceiptUrl?: string | null;
+    stripeConnectAccountId?: string | null;
+  } | null;
+  bnhubReservationPayment?:
+    | {
+        paymentStatus: string;
+        amountCapturedCents: number | null;
+        amountRefundedCents: number | null;
+      }
+    | null;
 };
+
+function getHostPaymentSummary(booking: Booking) {
+  const mp = booking.bnhubReservationPayment?.paymentStatus;
+  if (mp === "PAID") return { label: "Guest paid", tone: "text-emerald-400" };
+  if (mp === "PROCESSING") return { label: "Checkout processing", tone: "text-sky-400" };
+  if (mp === "REQUIRES_ACTION") return { label: "Awaiting guest payment", tone: "text-amber-300" };
+  if (mp === "FAILED") return { label: "Payment failed", tone: "text-rose-400" };
+  if (booking.payment?.status === "COMPLETED") return { label: "Paid", tone: "text-emerald-400" };
+  if (booking.payment?.status === "PENDING") return { label: "Pending", tone: "text-amber-300" };
+  return { label: booking.payment?.status ?? "—", tone: "text-slate-400" };
+}
 
 function SpecialRequestsBlock({ booking }: { booking: Booking }) {
   const raw = booking.specialRequestsJson;
@@ -539,10 +610,16 @@ export function HostDashboardClient({
           <h2 className="text-lg font-semibold text-white">Your listings</h2>
           <div className="flex items-center gap-2">
             <Link
-              href="/bnhub/host/listings/new"
+              href="/host/listings/new"
               className="rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-slate-950 hover:bg-emerald-400"
             >
-              Create listing (wizard)
+              Start listing
+            </Link>
+            <Link
+              href="/bnhub/host/listings/new"
+              className="rounded-xl border border-slate-600 px-3 py-2.5 text-xs font-medium text-slate-300 hover:bg-slate-800"
+            >
+              Full editor
             </Link>
             <button
               type="button"
@@ -598,7 +675,13 @@ export function HostDashboardClient({
         <ul className="space-y-3">
           {listings.length === 0 && !showAddListing && (
             <li className="rounded-2xl border border-slate-800 bg-slate-900/40 p-6 text-center text-slate-500">
-              No listings yet. Add one above.
+              <p>No listings yet.</p>
+              <Link
+                href="/host/listings/new"
+                className="mt-3 inline-block text-sm font-semibold text-emerald-400 hover:text-emerald-300"
+              >
+                Start your first listing →
+              </Link>
             </li>
           )}
           {listings.map((l) => (
@@ -610,10 +693,12 @@ export function HostDashboardClient({
                 <p className="text-sm text-slate-500">{l.city} · ${(l.nightPriceCents / 100).toFixed(0)}/night</p>
                 {l.listingCode ? (
                   <div className="mt-1 flex flex-wrap items-center gap-2">
-                    <span className="font-mono text-xs text-slate-500">ID {l.listingCode}</span>
+                    <span className="font-mono text-xs text-slate-500">Code {l.listingCode}</span>
                     <CopyListingCodeButton listingCode={l.listingCode} variant="light" className="!py-1 !px-2" />
+                    <span className="text-[10px] text-slate-600">Support &amp; payout reference</span>
                   </div>
                 ) : null}
+                <p className="mt-0.5 font-mono text-[10px] text-slate-600">Internal id {l.id}</p>
                 <p className="text-xs text-slate-600">{l._count.bookings} bookings · {l._count.reviews} reviews</p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
@@ -667,7 +752,9 @@ export function HostDashboardClient({
               No bookings yet.
             </li>
           )}
-          {bookings.map((b) => (
+          {bookings.map((b) => {
+            const paymentSummary = getHostPaymentSummary(b);
+            return (
             <li key={b.id} className="rounded-2xl border border-slate-800 bg-slate-900/50 p-4 transition hover:border-slate-700">
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>
@@ -685,18 +772,7 @@ export function HostDashboardClient({
                     Booking: <span className="capitalize text-slate-300">{b.status.toLowerCase().replace(/_/g, " ")}</span>
                   </p>
                   <p className="mt-0.5 text-slate-500">
-                    Payment:{" "}
-                    <span
-                      className={
-                        b.payment?.status === "COMPLETED"
-                          ? "text-emerald-400"
-                          : b.payment?.status === "PENDING"
-                            ? "text-amber-300"
-                            : "text-slate-400"
-                      }
-                    >
-                      {(b.payment?.status ?? "—").toLowerCase()}
-                    </span>
+                    Payment: <span className={paymentSummary.tone}>{paymentSummary.label}</span>
                     {b.payment?.status === "COMPLETED" && b.payment.hostPayoutCents != null ? (
                       <span className="ml-1 text-emerald-400/90">
                         · Est. payout ${((b.payment.hostPayoutCents ?? 0) / 100).toFixed(0)}
@@ -706,8 +782,63 @@ export function HostDashboardClient({
                 </div>
               </div>
               <SpecialRequestsBlock booking={b} />
+              {(b.bnhubReservationPayment || b.payment) && (
+                <div className="mt-3 grid gap-2 rounded-lg border border-slate-800/80 bg-slate-950/40 p-3 text-xs text-slate-400 sm:grid-cols-2">
+                  {b.bnhubReservationPayment?.amountCapturedCents != null ? (
+                    <p>
+                      Guest charged:{" "}
+                      <span className="font-medium text-slate-200">
+                        ${(b.bnhubReservationPayment.amountCapturedCents / 100).toFixed(2)}
+                      </span>
+                    </p>
+                  ) : null}
+                  {b.payment?.platformFeeCents != null ? (
+                    <p>
+                      Platform fee:{" "}
+                      <span className="font-medium text-slate-200">
+                        ${(b.payment.platformFeeCents / 100).toFixed(2)}
+                      </span>
+                    </p>
+                  ) : null}
+                  {b.payment?.scheduledHostPayoutAt ? (
+                    <p>
+                      Scheduled payout:{" "}
+                      <span className="font-medium text-slate-200">
+                        {new Date(b.payment.scheduledHostPayoutAt).toLocaleDateString()}
+                      </span>
+                    </p>
+                  ) : null}
+                  {b.payment?.payoutHoldReason ? (
+                    <p>
+                      Payout hold:{" "}
+                      <span className="font-medium capitalize text-amber-300">
+                        {b.payment.payoutHoldReason.replace(/_/g, " ")}
+                      </span>
+                    </p>
+                  ) : null}
+                </div>
+              )}
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Link
+                  href={`/bnhub/booking/${b.id}`}
+                  className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-300 hover:bg-emerald-500/20"
+                >
+                  View booking
+                </Link>
+                {b.payment?.stripeReceiptUrl ? (
+                  <a
+                    href={b.payment.stripeReceiptUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="rounded-lg border border-slate-600 px-3 py-1.5 text-xs font-medium text-slate-300 hover:bg-slate-800"
+                  >
+                    Receipt
+                  </a>
+                ) : null}
+              </div>
             </li>
-          ))}
+            );
+          })}
         </ul>
       </section>
 

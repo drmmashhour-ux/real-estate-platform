@@ -1,4 +1,7 @@
 import { prisma } from "@/lib/db";
+import { ensureBrokerLeadOnAssignment } from "@/modules/billing/brokerLeadBilling";
+import { syncPlaybookExecutionForLead } from "@/src/modules/playbooks/playbookEngine";
+import { syncRevenueOpportunitiesForLead } from "@/src/modules/revenue/revenueEngine";
 import {
   computeFrictionScore,
   computeIntentScore,
@@ -128,4 +131,8 @@ export async function refreshLeadExecutionLayer(leadId: string): Promise<void> {
       lastActivityAt,
     },
   });
+
+  await syncPlaybookExecutionForLead(leadId).catch(() => {});
+  await syncRevenueOpportunitiesForLead(leadId).catch(() => {});
+  void ensureBrokerLeadOnAssignment(prisma, leadId).catch(() => {});
 }

@@ -34,22 +34,6 @@ export type CreatePaymentSessionResult =
   | { url: string; sessionId: string }
   | { error: string; code?: string };
 
-export type CreatePaymentIntentInput = {
-  amountCents: number;
-  currency: string;
-  metadata: Record<string, string>;
-  captureMethod?: "automatic" | "manual";
-  connect?: {
-    destinationAccountId: string;
-    applicationFeeAmount: number;
-  };
-  idempotencyKey?: string;
-};
-
-export type CreatePaymentIntentResult =
-  | { paymentIntentId: string; clientSecret: string | null }
-  | { error: string; code?: string };
-
 export type CapturePaymentInput = {
   paymentIntentId: string;
   amountCents?: number;
@@ -95,10 +79,6 @@ export interface MarketplacePaymentProcessorAdapter {
   getAccountStatus(accountId: string): Promise<AccountStatusResult | { error: string }>;
 
   createPaymentSession(input: CreatePaymentSessionInput): Promise<CreatePaymentSessionResult>;
-
-  createPaymentIntent(input: CreatePaymentIntentInput): Promise<CreatePaymentIntentResult>;
-
-  confirmPaymentIfNeeded(_paymentIntentId: string): Promise<{ ok: true } | { error: string }>;
 
   capturePayment(input: CapturePaymentInput): Promise<{ ok: true } | { error: string }>;
 

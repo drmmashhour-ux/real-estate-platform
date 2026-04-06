@@ -1,9 +1,9 @@
 import Link from "next/link";
 
-type Props = { searchParams: Promise<{ code?: string }> };
+type Props = { searchParams?: Promise<{ code?: string }> };
 
 export default async function ListingNotFoundPage({ searchParams }: Props) {
-  const { code } = await searchParams;
+  const { code } = (await searchParams) ?? {};
   const label = code?.trim() ? code.trim() : "that code";
 
   return (

@@ -24,6 +24,9 @@ export default async function AdminGrowthDashboardPage() {
         <Link href="/admin/enterprise-dashboard" className="text-emerald-400 hover:text-emerald-300">
           Enterprise dashboard →
         </Link>
+        <Link href="/admin/growth-cta" className="text-emerald-400 hover:text-emerald-300">
+          Broker & seller CTA report
+        </Link>
         <Link href="/admin/growth-crm" className="text-slate-400 hover:text-slate-300">
           Growth CRM
         </Link>

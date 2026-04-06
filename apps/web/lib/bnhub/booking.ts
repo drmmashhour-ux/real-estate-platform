@@ -2,6 +2,8 @@ import {
   BnhubBookingServiceLineStatus,
   BnhubBookingSource,
   BnhubServiceSelectedFrom,
+  ListingStatus,
+  ManualPaymentSettlement,
   NotificationType,
   Prisma,
 } from "@prisma/client";
@@ -13,7 +15,8 @@ import { generateBookingCode } from "@/lib/codes/generate-code";
 import { computeBookingPricing } from "./booking-pricing";
 import type { SelectedAddonInput } from "./hospitality-addons";
 import { triggerNewBooking, triggerBookingConfirmation, triggerBookingCancellation, triggerReviewReminder } from "./notifications";
-import { ESCROW_RELEASE_HOURS_AFTER_CHECKIN } from "@/lib/trust-safety/constants";
+import { getEscrowReleaseHoursAfterCheckin } from "@/lib/trust-safety/constants";
+import { recomputeGuestTrustMetrics, syncListingBnhubTrustSnapshot } from "@/lib/bnhub/two-sided-trust-sync";
 import { generateBookingConfirmationDraft } from "@/lib/document-drafting/generators/booking-confirmation";
 import { saveBookingAgreement } from "@/lib/agreements/platform-agreements";
 import { legalEnforcementDisabled } from "@/modules/legal/legal-enforcement";
@@ -27,6 +30,19 @@ import { syncTrustGraphOnBookingCreated } from "@/lib/trustgraph/application/int
 import { runBnhubPostBookingPaidAutomation, runBnhubStayCompletedAutomation } from "@/lib/bnhub/revenue-automation";
 import { evaluateListingForNewBooking } from "@/lib/bnhub/bnhub-safety-rules";
 import { onGrowthAiCheckoutCompleted } from "@/src/modules/messaging/triggers";
+import { createBnhubMobileNotification } from "@/lib/bnhub/mobile-push";
+import { assertGuestIdentityAllowedForBooking } from "@/lib/bnhub/guest-identity-gate";
+import { publishLecipmBookingEvent } from "@/lib/realtime/lecipm-booking-events";
+import { enqueueHostAutopilot } from "@/lib/ai/autopilot/triggers";
+import { getResolvedMarket } from "@/lib/markets";
+import { normalizeLocaleCode, translateServer } from "@/lib/i18n/server-translate";
+import { isPlatformAdmin } from "@/lib/auth/is-platform-admin";
+import { recordLecipmManagerGrowthEvent } from "@/lib/growth/manager-events";
+import {
+  expireStaleBnhubPendingBookings,
+  findOverlappingActiveBnhubBooking,
+} from "@/lib/bookings/checkAvailability";
+import { logGuestExperienceOutcome } from "@/lib/bnhub/guest-experience/log-signal";
 
 const GUEST_FEE_PERCENT = 12;
 const HOST_FEE_PERCENT = 3;
@@ -46,6 +62,27 @@ export function calculateFees(nightPriceCents: number, nights: number) {
     guestTotalCents,
     nights,
   };
+}
+
+async function appendManualPaymentAudit(
+  tx: Prisma.TransactionClient,
+  input: {
+    bookingId: string;
+    actorUserId: string | null;
+    from: ManualPaymentSettlement;
+    to: ManualPaymentSettlement;
+    note?: string | null;
+  }
+) {
+  await tx.bookingManualPaymentEvent.create({
+    data: {
+      bookingId: input.bookingId,
+      actorUserId: input.actorUserId,
+      fromSettlement: input.from,
+      toSettlement: input.to,
+      note: input.note ?? null,
+    },
+  });
 }
 
 async function recordBookingEvent(
@@ -75,6 +112,9 @@ export async function createBooking(data: {
   checkIn: string;
   checkOut: string;
   guestCount?: number;
+  guestContactEmail?: string;
+  guestContactName?: string;
+  guestContactPhone?: string;
   /** Optional hospitality add-ons (validated server-side against listing offers). */
   selectedAddons?: SelectedAddonInput[];
   guestNotes?: string;
@@ -112,6 +152,10 @@ export async function createBooking(data: {
     throw new Error("Bookings are not available for this listing");
   }
 
+  if (listing.listingStatus !== ListingStatus.PUBLISHED) {
+    throw new Error("This listing is not available for booking.");
+  }
+
   if (listing.minStayNights != null && nights < listing.minStayNights) {
     throw new Error(`Minimum stay is ${listing.minStayNights} nights`);
   }
@@ -139,30 +183,47 @@ export async function createBooking(data: {
     checkOut: data.checkOut,
     guestCount: data.guestCount,
     selectedAddons: data.selectedAddons,
+    guestUserId: data.guestId,
   });
   if (!pricing) throw new Error("Could not compute pricing");
   const b = pricing.breakdown;
 
-  const initialStatus = listing.instantBookEnabled ? "PENDING" : "AWAITING_HOST_APPROVAL";
+  await assertGuestIdentityAllowedForBooking({
+    prismaListingId: data.listingId,
+    guestTotalUsd: b.totalCents / 100,
+    prismaGuestUserId: data.guestId,
+  });
+
+  const market = await getResolvedMarket();
+  const requestOnly =
+    !market.onlinePaymentsEnabled || market.bookingMode === "manual_first";
+  const initialStatus = requestOnly
+    ? "AWAITING_HOST_APPROVAL"
+    : listing.instantBookEnabled
+      ? "PENDING"
+      : "AWAITING_HOST_APPROVAL";
   const confirmationCode = await allocateUniqueConfirmationCode();
 
-  const escrowReleaseAt = new Date(checkIn.getTime() + ESCROW_RELEASE_HOURS_AFTER_CHECKIN * 60 * 60 * 1000);
+  const escrowHours = getEscrowReleaseHoursAfterCheckin();
+  const escrowReleaseAt = new Date(checkIn.getTime() + escrowHours * 60 * 60 * 1000);
+
+  const guestCountResolved =
+    typeof data.guestCount === "number" && data.guestCount > 0
+      ? Math.min(50, Math.max(1, Math.floor(data.guestCount)))
+      : undefined;
+  if (guestCountResolved != null && guestCountResolved > listing.maxGuests) {
+    throw new Error(`This listing allows at most ${listing.maxGuests} guests.`);
+  }
+
+  const pendingExpiresAt =
+    initialStatus === "PENDING" ? new Date(Date.now() + 60 * 60 * 1000) : null;
 
   const booking = await prisma.$transaction(
     async (tx) => {
-      const overlapping = await tx.booking.findFirst({
-        where: {
-          listingId: data.listingId,
-          status: { in: ["CONFIRMED", "PENDING", "AWAITING_HOST_APPROVAL"] },
-          OR: [
-            { checkIn: { lte: checkIn }, checkOut: { gt: checkIn } },
-            { checkIn: { lt: checkOut }, checkOut: { gte: checkOut } },
-            { checkIn: { gte: checkIn }, checkOut: { lte: checkOut } },
-          ],
-        },
-      });
+      await expireStaleBnhubPendingBookings(tx, data.listingId);
+      const overlapping = await findOverlappingActiveBnhubBooking(tx, data.listingId, checkIn, checkOut);
       if (overlapping) {
-        throw new Error("Listing not available for selected dates");
+        throw new Error("Selected dates are no longer available.");
       }
 
       const rangeStart = utcDayStart(checkIn);
@@ -196,6 +257,11 @@ export async function createBooking(data: {
           specialRequestsJson: (data.specialRequestsJson ?? undefined) as Prisma.InputJsonValue | undefined,
           confirmationCode,
           bookingCode,
+          guestsCount: guestCountResolved ?? null,
+          guestContactEmail: data.guestContactEmail?.trim() || null,
+          guestContactName: data.guestContactName?.trim() || null,
+          guestContactPhone: data.guestContactPhone?.trim() || null,
+          pendingCheckoutExpiresAt: pendingExpiresAt,
         },
       });
 
@@ -272,26 +338,84 @@ export async function createBooking(data: {
 
   void syncTrustGraphOnBookingCreated({ bookingId: booking.id }).catch(() => {});
 
-  // In-app notification for host (booking request / awaiting payment)
   {
     const guestName =
       (await prisma.user.findUnique({ where: { id: data.guestId }, select: { name: true } }))?.name?.trim() ??
       "Guest";
-    void prisma.notification
-      .create({
-        data: {
-          userId: listing.ownerId,
-          type: NotificationType.SYSTEM,
-          title: initialStatus === "PENDING" ? "New booking — payment pending" : "New booking request",
-          message: `${guestName} booked “${listing.title.slice(0, 80)}”.`,
-          actionUrl: `/bnhub/booking/${booking.id}`,
-          actionLabel: "View reservation",
-          actorId: data.guestId,
-          metadata: { bookingId: booking.id, listingId: data.listingId } as object,
-        },
-      })
-      .catch(() => {});
+    const hostLocaleRow = await prisma.user.findUnique({
+      where: { id: listing.ownerId },
+      select: { preferredUiLocale: true },
+    });
+    const hostLocale = normalizeLocaleCode(hostLocaleRow?.preferredUiLocale);
+    const title =
+      initialStatus === "PENDING"
+        ? translateServer(hostLocale, "host.newBookingPaymentPending")
+        : translateServer(hostLocale, "host.newBookingReceived");
+    const message = translateServer(hostLocale, "host.bookingMessage", {
+      guestName,
+      listingTitle: listing.title.slice(0, 80),
+    });
+    void createBnhubMobileNotification({
+      userId: listing.ownerId,
+      type: NotificationType.SYSTEM,
+      title,
+      message,
+      actionUrl: `/bnhub/booking/${booking.id}`,
+      actionLabel: translateServer(hostLocale, "host.viewReservation"),
+      actorId: data.guestId,
+      listingId: data.listingId,
+      metadata: { bookingId: booking.id, listingId: data.listingId } as Prisma.InputJsonValue,
+      pushData: {
+        kind: "new_booking_host",
+        bookingId: booking.id,
+        listingId: data.listingId,
+      },
+    }).catch(() => {});
   }
+
+  void publishLecipmBookingEvent({
+    event: "new_booking",
+    bookingId: booking.id,
+    hostId: listing.ownerId,
+    guestId: data.guestId,
+    listingId: data.listingId,
+    status: initialStatus,
+  });
+  void publishLecipmBookingEvent({
+    event: "booking_created",
+    bookingId: booking.id,
+    hostId: listing.ownerId,
+    guestId: data.guestId,
+    listingId: data.listingId,
+    status: initialStatus,
+  });
+
+  enqueueHostAutopilot(listing.ownerId, {
+    type: "booking_created",
+    bookingId: booking.id,
+    listingId: data.listingId,
+    guestId: data.guestId,
+  });
+
+  void (async () => {
+    const priorCompleted = await prisma.booking.count({
+      where: {
+        guestId: data.guestId,
+        status: "COMPLETED",
+        id: { not: booking.id },
+      },
+    });
+    if (priorCompleted > 0) {
+      await logGuestExperienceOutcome({
+        hostId: listing.ownerId,
+        listingId: data.listingId,
+        bookingId: booking.id,
+        guestId: data.guestId,
+        outcomeType: "repeat_visit",
+        metadata: { priorCompletedStays: priorCompleted },
+      });
+    }
+  })().catch(() => {});
 
   // Auto-generate and save booking agreement to DB
   try {
@@ -350,6 +474,7 @@ export async function getBookingsForGuest(guestId: string) {
         },
       },
       payment: true,
+      bnhubReservationPayment: true,
       review: true,
     },
     orderBy: { checkIn: "desc" },
@@ -360,9 +485,10 @@ export async function getBookingsForHost(ownerId: string) {
   return prisma.booking.findMany({
     where: { listing: { ownerId } },
     include: {
-      listing: { select: { id: true, title: true, city: true } },
+      listing: { select: { id: true, title: true, city: true, listingCode: true } },
       guest: { select: { id: true, name: true, email: true } },
       payment: true,
+      bnhubReservationPayment: true,
     },
     orderBy: { checkIn: "desc" },
   });
@@ -401,39 +527,293 @@ export async function confirmBooking(bookingId: string) {
     hostId: updated.listing.ownerId,
   });
 
+  void import("@/lib/ai/messaging/engine")
+    .then(({ runHostLifecycleMessage }) =>
+      runHostLifecycleMessage({ bookingId, trigger: "booking_confirmed" })
+    )
+    .catch(() => {});
+
   void onGrowthAiCheckoutCompleted(updated.guestId).catch(() => {});
 
-  void prisma.notification
-    .create({
-      data: {
-        userId: updated.listing.ownerId,
-        type: NotificationType.SYSTEM,
-        title: "Payment received — booking confirmed",
-        message: `Payment for “${updated.listing.title.slice(0, 80)}” is complete.`,
-        actionUrl: `/bnhub/booking/${bookingId}`,
-        actionLabel: "View booking",
-        actorId: updated.guestId,
-        metadata: { bookingId, listingId: updated.listingId } as object,
-      },
-    })
-    .catch(() => {});
+  void createBnhubMobileNotification({
+    userId: updated.listing.ownerId,
+    type: NotificationType.SYSTEM,
+    title: "Payment received — booking confirmed",
+    message: `Payment for “${updated.listing.title.slice(0, 80)}” is complete.`,
+    actionUrl: `/bnhub/booking/${bookingId}`,
+    actionLabel: "View booking",
+    actorId: updated.guestId,
+    listingId: updated.listingId,
+    metadata: { bookingId, listingId: updated.listingId } as Prisma.InputJsonValue,
+    pushData: {
+      kind: "booking_confirmation_host",
+      bookingId,
+      listingId: updated.listingId,
+    },
+  }).catch(() => {});
 
-  void prisma.notification
-    .create({
-      data: {
-        userId: updated.guestId,
-        type: NotificationType.SYSTEM,
-        title: "Booking confirmed",
-        message: `Your stay at “${updated.listing.title.slice(0, 80)}” is confirmed.`,
-        actionUrl: `/bnhub/booking/${bookingId}`,
-        actionLabel: "View trip",
-        metadata: { bookingId } as object,
-      },
-    })
-    .catch(() => {});
+  void createBnhubMobileNotification({
+    userId: updated.guestId,
+    type: NotificationType.SYSTEM,
+    title: "Booking confirmed",
+    message: `Your stay at “${updated.listing.title.slice(0, 80)}” is confirmed.`,
+    actionUrl: `/bnhub/booking/${bookingId}`,
+    actionLabel: "View trip",
+    listingId: updated.listingId,
+    metadata: { bookingId } as Prisma.InputJsonValue,
+    pushData: {
+      kind: "booking_confirmation_guest",
+      bookingId,
+      listingId: updated.listingId,
+    },
+  }).catch(() => {});
 
   void runBnhubPostBookingPaidAutomation(bookingId).catch(() => {});
 
+  void publishLecipmBookingEvent({
+    event: "booking_confirmed",
+    bookingId,
+    hostId: updated.listing.ownerId,
+    guestId: updated.guestId,
+    listingId: updated.listingId,
+    status: "CONFIRMED",
+  });
+  void publishLecipmBookingEvent({
+    event: "booking_update",
+    bookingId,
+    hostId: updated.listing.ownerId,
+    guestId: updated.guestId,
+    listingId: updated.listingId,
+    status: "CONFIRMED",
+  });
+
+  return updated;
+}
+
+/**
+ * Host/admin confirms a booking after offline/manual payment (Syria-style markets).
+ * Does not create Stripe charges; mirrors post-confirmation side effects of `confirmBooking`.
+ */
+export async function confirmBookingManualSettlement(bookingId: string, actorUserId: string) {
+  const booking = await prisma.booking.findUniqueOrThrow({
+    where: { id: bookingId },
+    include: { listing: true, guest: true, payment: true },
+  });
+  const hostOk = booking.listing.ownerId === actorUserId;
+  const adminOk = !hostOk && (await isPlatformAdmin(actorUserId));
+  if (!hostOk && !adminOk) {
+    throw new Error("Only the host or an admin can confirm manual payment");
+  }
+  if (booking.status !== "PENDING") {
+    throw new Error("Booking cannot be confirmed manually in current state");
+  }
+  if (booking.manualPaymentSettlement !== "PENDING") {
+    throw new Error("Manual payment is not pending for this booking");
+  }
+
+  const fromSettlement = booking.manualPaymentSettlement;
+
+  const updated = await prisma.$transaction(async (tx) => {
+    await tx.payment.update({
+      where: { bookingId },
+      data: { status: "COMPLETED" },
+    });
+    const row = await tx.booking.update({
+      where: { id: bookingId },
+      data: {
+        status: "CONFIRMED",
+        manualPaymentSettlement: "RECEIVED",
+        manualPaymentUpdatedAt: new Date(),
+        manualPaymentUpdatedByUserId: actorUserId,
+      },
+      include: { listing: true, guest: true, payment: true },
+    });
+    await appendManualPaymentAudit(tx, {
+      bookingId,
+      actorUserId,
+      from: fromSettlement,
+      to: "RECEIVED",
+    });
+    return row;
+  });
+
+  await recordBookingEvent(bookingId, "confirmed", actorUserId, { via: "manual_settlement" });
+
+  try {
+    const { holdPaymentInEscrow } = await import("@/src/modules/bnhub/application/paymentService");
+    await holdPaymentInEscrow(bookingId);
+  } catch (e) {
+    console.warn("[booking] escrow hold after manual confirm:", e);
+  }
+
+  void triggerBookingConfirmation({
+    bookingId,
+    guestId: updated.guestId,
+    hostId: updated.listing.ownerId,
+  });
+
+  void import("@/lib/ai/messaging/engine")
+    .then(({ runHostLifecycleMessage }) =>
+      runHostLifecycleMessage({ bookingId, trigger: "booking_confirmed" })
+    )
+    .catch(() => {});
+
+  void onGrowthAiCheckoutCompleted(updated.guestId).catch(() => {});
+
+  const hostLocale = normalizeLocaleCode(
+    (await prisma.user.findUnique({
+      where: { id: updated.listing.ownerId },
+      select: { preferredUiLocale: true },
+    }))?.preferredUiLocale,
+  );
+  const guestLocale = normalizeLocaleCode(
+    (await prisma.user.findUnique({
+      where: { id: updated.guestId },
+      select: { preferredUiLocale: true },
+    }))?.preferredUiLocale,
+  );
+
+  void createBnhubMobileNotification({
+    userId: updated.listing.ownerId,
+    type: NotificationType.SYSTEM,
+    title: translateServer(hostLocale, "host.paymentReceivedConfirmed"),
+    message: translateServer(hostLocale, "host.paymentMessage", {
+      listingTitle: updated.listing.title.slice(0, 80),
+    }),
+    actionUrl: `/bnhub/booking/${bookingId}`,
+    actionLabel: translateServer(hostLocale, "host.viewBooking"),
+    actorId: updated.guestId,
+    listingId: updated.listingId,
+    metadata: { bookingId, listingId: updated.listingId } as Prisma.InputJsonValue,
+    pushData: {
+      kind: "booking_confirmation_host",
+      bookingId,
+      listingId: updated.listingId,
+    },
+  }).catch(() => {});
+
+  void createBnhubMobileNotification({
+    userId: updated.guestId,
+    type: NotificationType.SYSTEM,
+    title: translateServer(guestLocale, "host.guestBookingConfirmed"),
+    message: translateServer(guestLocale, "host.guestStayConfirmed", {
+      listingTitle: updated.listing.title.slice(0, 80),
+    }),
+    actionUrl: `/bnhub/booking/${bookingId}`,
+    actionLabel: translateServer(guestLocale, "host.viewTrip"),
+    listingId: updated.listingId,
+    metadata: { bookingId } as Prisma.InputJsonValue,
+    pushData: {
+      kind: "booking_confirmation_guest",
+      bookingId,
+      listingId: updated.listingId,
+    },
+  }).catch(() => {});
+
+  void runBnhubPostBookingPaidAutomation(bookingId).catch(() => {});
+
+  void publishLecipmBookingEvent({
+    event: "booking_confirmed",
+    bookingId,
+    hostId: updated.listing.ownerId,
+    guestId: updated.guestId,
+    listingId: updated.listingId,
+    status: "CONFIRMED",
+  });
+  void publishLecipmBookingEvent({
+    event: "booking_update",
+    bookingId,
+    hostId: updated.listing.ownerId,
+    guestId: updated.guestId,
+    listingId: updated.listingId,
+    status: "CONFIRMED",
+  });
+
+  void getResolvedMarket()
+    .then((m) =>
+      recordLecipmManagerGrowthEvent("manual_payment_marked_received", {
+        userId: actorUserId,
+        listingId: updated.listingId,
+        marketCode: m.code,
+        metadata: { bookingId },
+      }),
+    )
+    .catch(() => {});
+  void recordLecipmManagerGrowthEvent("booking_confirmed", {
+    userId: updated.guestId,
+    listingId: updated.listingId,
+    metadata: { bookingId, via: "manual_settlement" },
+  });
+
+  return updated;
+}
+
+export async function setManualPaymentFailed(bookingId: string, actorUserId: string, note?: string) {
+  const booking = await prisma.booking.findUniqueOrThrow({
+    where: { id: bookingId },
+    include: { listing: true },
+  });
+  const hostOk = booking.listing.ownerId === actorUserId;
+  const adminOk = !hostOk && (await isPlatformAdmin(actorUserId));
+  if (!hostOk && !adminOk) throw new Error("Only the host or an admin can update manual payment");
+  if (booking.manualPaymentSettlement !== "PENDING") {
+    throw new Error("Manual payment can only be marked failed while pending");
+  }
+  const fromSettlement = booking.manualPaymentSettlement;
+  const updated = await prisma.$transaction(async (tx) => {
+    const row = await tx.booking.update({
+      where: { id: bookingId },
+      data: {
+        manualPaymentSettlement: "FAILED",
+        manualPaymentUpdatedAt: new Date(),
+        manualPaymentUpdatedByUserId: actorUserId,
+      },
+      include: { listing: true, guest: true, payment: true },
+    });
+    await appendManualPaymentAudit(tx, {
+      bookingId,
+      actorUserId,
+      from: fromSettlement,
+      to: "FAILED",
+      note: note ?? null,
+    });
+    return row;
+  });
+  await recordBookingEvent(bookingId, "manual_payment_failed", actorUserId, { note });
+  return updated;
+}
+
+export async function resetManualPaymentPending(bookingId: string, actorUserId: string) {
+  const booking = await prisma.booking.findUniqueOrThrow({
+    where: { id: bookingId },
+    include: { listing: true },
+  });
+  const hostOk = booking.listing.ownerId === actorUserId;
+  const adminOk = !hostOk && (await isPlatformAdmin(actorUserId));
+  if (!hostOk && !adminOk) throw new Error("Only the host or an admin can update manual payment");
+  if (booking.manualPaymentSettlement !== "FAILED") {
+    throw new Error("Manual payment can only be reset from failed state");
+  }
+  const fromSettlement = booking.manualPaymentSettlement;
+  const updated = await prisma.$transaction(async (tx) => {
+    const row = await tx.booking.update({
+      where: { id: bookingId },
+      data: {
+        manualPaymentSettlement: "PENDING",
+        manualPaymentUpdatedAt: new Date(),
+        manualPaymentUpdatedByUserId: actorUserId,
+      },
+      include: { listing: true, guest: true, payment: true },
+    });
+    await appendManualPaymentAudit(tx, {
+      bookingId,
+      actorUserId,
+      from: fromSettlement,
+      to: "PENDING",
+    });
+    return row;
+  });
+  await recordBookingEvent(bookingId, "manual_payment_reset_pending", actorUserId);
   return updated;
 }
 
@@ -449,12 +829,60 @@ export async function approveBooking(bookingId: string, hostId: string) {
   if (booking.status !== "AWAITING_HOST_APPROVAL") {
     throw new Error("Booking is not awaiting host approval");
   }
+
+  const market = await getResolvedMarket();
+  const manualFirstPath =
+    !market.onlinePaymentsEnabled &&
+    market.manualPaymentTrackingEnabled &&
+    market.bookingMode === "manual_first";
+
+  if (manualFirstPath) {
+    const fromSettlement = booking.manualPaymentSettlement;
+    const updated = await prisma.$transaction(async (tx) => {
+      const row = await tx.booking.update({
+        where: { id: bookingId },
+        data: {
+          status: "PENDING",
+          manualPaymentSettlement: "PENDING",
+          manualPaymentUpdatedAt: new Date(),
+          manualPaymentUpdatedByUserId: hostId,
+        },
+        include: { listing: true, guest: true, payment: true },
+      });
+      await appendManualPaymentAudit(tx, {
+        bookingId,
+        actorUserId: hostId,
+        from: fromSettlement,
+        to: "PENDING",
+      });
+      return row;
+    });
+    await recordBookingEvent(bookingId, "approved", hostId, { manualFirst: true });
+    void publishLecipmBookingEvent({
+      event: "booking_update",
+      bookingId,
+      hostId: updated.listing.ownerId,
+      guestId: updated.guestId,
+      listingId: updated.listingId,
+      status: "PENDING",
+    });
+    return updated;
+  }
+
   const updated = await prisma.booking.update({
     where: { id: bookingId },
     data: { status: "PENDING" },
     include: { listing: true, guest: true, payment: true },
   });
   await recordBookingEvent(bookingId, "approved", hostId);
+  void publishLecipmBookingEvent({
+    event: "booking_update",
+    bookingId,
+    hostId: updated.listing.ownerId,
+    guestId: updated.guestId,
+    listingId: updated.listingId,
+    status: "PENDING",
+  });
   return updated;
 }
 
@@ -487,7 +915,8 @@ export async function declineBooking(bookingId: string, hostId: string, reason?:
 export async function cancelBooking(
   bookingId: string,
   actorId: string,
-  by: "guest" | "host" | "admin"
+  by: "guest" | "host" | "admin",
+  options?: { reason?: string | null }
 ) {
   const booking = await prisma.booking.findUniqueOrThrow({
     where: { id: bookingId },
@@ -495,7 +924,15 @@ export async function cancelBooking(
   });
   const status = booking.status;
   if (
-    ["DECLINED", "CANCELLED", "CANCELLED_BY_GUEST", "CANCELLED_BY_HOST", "COMPLETED"].includes(status)
+    [
+      "DECLINED",
+      "CANCELLED",
+      "CANCELLED_BY_GUEST",
+      "CANCELLED_BY_HOST",
+      "COMPLETED",
+      "DISPUTED",
+      "EXPIRED",
+    ].includes(status)
   ) {
     throw new Error("Booking cannot be cancelled in current state");
   }
@@ -505,22 +942,50 @@ export async function cancelBooking(
       : by === "host"
         ? "CANCELLED_BY_HOST"
         : "CANCELLED";
+  const now = new Date();
   const updated = await prisma.$transaction(async (tx) => {
     const row = await tx.booking.update({
       where: { id: bookingId },
-      data: { status: newStatus },
+      data: {
+        status: newStatus,
+        canceledAt: now,
+        cancellationReason: options?.reason?.trim() || null,
+      },
       include: { listing: true, guest: true, payment: true },
     });
     await releaseBookedSlotsForBooking(tx, bookingId);
     return row;
   });
   await recordBookingEvent(bookingId, "cancelled", actorId, { by, previousStatus: status });
+  void recomputeGuestTrustMetrics(updated.guestId).catch(() => {});
+  void syncListingBnhubTrustSnapshot(updated.listingId).catch(() => {});
   void triggerBookingCancellation({
     bookingId,
     guestId: updated.guestId,
     hostId: updated.listing.ownerId,
     cancelledBy: by,
   });
+  const guestMessage =
+    by === "guest"
+      ? `You cancelled your stay at “${updated.listing.title.slice(0, 80)}”.`
+      : `Your stay at “${updated.listing.title.slice(0, 80)}” was cancelled.`;
+  void createBnhubMobileNotification({
+    userId: updated.guestId,
+    type: NotificationType.SYSTEM,
+    title: "Booking cancelled",
+    message: guestMessage,
+    actionUrl: `/bnhub/booking/${bookingId}`,
+    actionLabel: "View trip",
+    listingId: updated.listingId,
+    actorId,
+    metadata: { bookingId, cancelledBy: by } as Prisma.InputJsonValue,
+    pushData: {
+      kind: "booking_cancellation",
+      bookingId,
+      cancelledBy: by,
+      listingId: updated.listingId,
+    },
+  }).catch(() => {});
   return updated;
 }
 
@@ -531,6 +996,8 @@ export async function completeBooking(bookingId: string) {
     include: { listing: true, payment: true },
   });
   await recordBookingEvent(bookingId, "completed", null);
+  void recomputeGuestTrustMetrics(updated.guestId).catch(() => {});
+  void syncListingBnhubTrustSnapshot(updated.listingId).catch(() => {});
   void triggerReviewReminder({
     bookingId,
     guestId: updated.guestId,
@@ -547,6 +1014,11 @@ export async function getBookingById(bookingId: string) {
       listing: true,
       guest: { select: { id: true, name: true, email: true } },
       payment: true,
+      bnhubReservationPayment: {
+        include: {
+          paymentQuote: true,
+        },
+      },
       review: true,
       checkinDetails: true,
       bnhubInvoice: true,

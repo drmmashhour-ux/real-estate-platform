@@ -1,7 +1,7 @@
 "use client";
 
 import { HEADER_SELECT } from "@/components/layout/header-action-classes";
-import { UI_LOCALES, type LocaleCode } from "@/lib/i18n/locales";
+import { UI_LOCALE_ENTRIES, type LocaleCode } from "@/lib/i18n/locales";
 import { useI18n } from "@/lib/i18n/I18nContext";
 
 export function LanguageSwitcher({
@@ -12,7 +12,7 @@ export function LanguageSwitcher({
   /** `header` = same model as Login / Menu (global nav). */
   variant?: "light" | "dark" | "header";
 }) {
-  const { locale, setLocale, t } = useI18n();
+  const { locale, setLocale, t, allowedLocales } = useI18n();
 
   const selectClass =
     variant === "header"
@@ -23,14 +23,14 @@ export function LanguageSwitcher({
 
   return (
     <label className={`flex items-center gap-1.5 ${className}`}>
-      <span className="sr-only">{t("a11y_selectLanguage")}</span>
+      <span className="sr-only">{t("common.a11y.selectLanguage")}</span>
       <select
         value={locale}
         onChange={(e) => setLocale(e.target.value as LocaleCode)}
         className={selectClass}
-        aria-label={t("a11y_selectLanguage")}
+        aria-label={t("common.a11y.selectLanguage")}
       >
-        {UI_LOCALES.map((l) => (
+        {UI_LOCALE_ENTRIES.filter((l) => allowedLocales.includes(l.code)).map((l) => (
           <option key={l.code} value={l.code}>
             {l.label}
           </option>

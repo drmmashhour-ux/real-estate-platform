@@ -3,6 +3,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { searchListingsPaginated } from "@/lib/bnhub/listings";
+import { CITY_SLUGS, type CitySlug } from "@/lib/geo/city-search";
+import { getCityInsights } from "@/lib/city-insights";
+import { CityInvestmentInsights } from "@/components/city/CityInvestmentInsights";
 import {
   growthCityDisplayName,
   growthCityRegion,
@@ -13,7 +16,12 @@ import {
 } from "@/lib/growth/geo-slugs";
 import type { CityIntentKind } from "@/lib/growth/city-intent-seo";
 import { intentBenefits, intentFaqs, faqJsonLd } from "@/lib/growth/city-intent-seo";
+import { buildGrowthSeoMeshLinks, otherGrowthCityLinks } from "@/lib/growth/city-internal-links";
 import { GrowthTestimonialsStrip, GrowthTrustStrip } from "@/components/growth/GrowthTrustStrip";
+import { GrowthSeoPageView } from "@/components/growth/GrowthSeoPageView";
+import { GrowthCityLeadCapture } from "@/components/growth/GrowthCityLeadCapture";
+import { CityAiMarketingSection } from "@/components/growth/CityAiMarketingSection";
+import { CityGeneratedContentSection } from "@/components/growth/CityGeneratedContentSection";
 
 const GOLD = "var(--color-premium-gold)";
 
@@ -23,6 +31,10 @@ function firstBnhubPhoto(photos: unknown): string | null {
     if (typeof p === "string") return p;
   }
   return null;
+}
+
+function toCitySlugIfSupported(s: GrowthCitySlug): CitySlug | null {
+  return (CITY_SLUGS as readonly string[]).includes(s) ? (s as CitySlug) : null;
 }
 
 function ListingThumb({
@@ -78,9 +90,12 @@ function ListingThumb({
 export async function CityIntentLanding({
   intent,
   cityParam,
+  pathVariant = "root",
 }: {
   intent: CityIntentKind;
   cityParam: string;
+  /** `city` = URLs under /city/[slug]/… (canonical SEO mesh). */
+  pathVariant?: "root" | "city";
 }) {
   const slug = parseGrowthCitySlugParam(cityParam);
   if (!slug) notFound();
@@ -90,7 +105,6 @@ export async function CityIntentLanding({
   const benefits = intentBenefits(intent, slug);
   const faqs = intentFaqs(intent, slug);
   const jsonLd = faqJsonLd(faqs);
-
   type FsboCard = {
     id: string;
     title: string;
@@ -102,15 +116,16 @@ export async function CityIntentLanding({
   };
   let fsboRows: FsboCard[] = [];
   let bnListings: Awaited<ReturnType<typeof searchListingsPaginated>>["listings"] = [];
+  let insights = null as Awaited<ReturnType<typeof getCityInsights>> | null;
 
-  if (intent === "buy") {
+  if (intent === "buy" || intent === "investment") {
     const [fs, bn] = await Promise.all([
       prisma.fsboListing.findMany({
         where: {
           AND: [{ status: "ACTIVE" }, { moderationStatus: "APPROVED" }, growthFsboWhereForSlug(slug)],
         },
         orderBy: [{ featuredUntil: { sort: "desc", nulls: "last" } }, { updatedAt: "desc" }],
-        take: 8,
+        take: intent === "investment" ? 8 : 8,
         select: {
           id: true,
           title: true,
@@ -121,9 +136,19 @@ export async function CityIntentLanding({
           coverImage: true,
         },
       }),
-      searchListingsPaginated({ city: q, page: 1, limit: 4, sort: "newest" }),
+      searchListingsPaginated({ city: q, page: 1, limit: intent === "investment" ? 6 : 4, sort: "newest" }),
     ]);
     fsboRows = fs;
+    bnListings = bn.listings;
+    if (intent === "investment") {
+      const cs = toCitySlugIfSupported(slug);
+      if (cs) {
+        insights = await getCityInsights(cs).catch(() => null);
+      }
+    }
+  } else if (intent === "stays") {
+    const bn = await searchListingsPaginated({ city: q, page: 1, limit: 12, sort: "newest" });
+    fsboRows = [];
     bnListings = bn.listings;
   } else if (intent === "rent") {
     const [fs, bn] = await Promise.all([
@@ -149,6 +174,39 @@ export async function CityIntentLanding({
     bnListings = bn.listings;
   }
 
+  const pageKind =
+    intent === "mortgage"
+      ? null
+      : intent === "investment"
+        ? ("investment" as const)
+        : intent === "buy" || intent === "rent"
+          ? intent
+          : intent === "stays"
+            ? ("rent" as const)
+            : null;
+
+  let seoProgrammatic: {
+    blockBestProperties: string;
+    blockTopInvestment: string;
+    blockRentVsBuy: string;
+  } | null = null;
+  if (pageKind) {
+    try {
+      const row = await prisma.seoPageContent.findUnique({
+        where: { citySlug_pageKind: { citySlug: slug, pageKind } },
+      });
+      if (row) {
+        seoProgrammatic = {
+          blockBestProperties: row.blockBestProperties,
+          blockTopInvestment: row.blockTopInvestment,
+          blockRentVsBuy: row.blockRentVsBuy,
+        };
+      }
+    } catch {
+      seoProgrammatic = null;
+    }
+  }
+
   const fsBrowse = `/sell?city=${encodeURIComponent(q)}`;
   const bnBrowse = `/search/bnhub?location=${encodeURIComponent(q)}`;
   const regionLabel = growthCityRegion(slug) === "US" ? " · USA" : " · Canada";
@@ -158,23 +216,47 @@ export async function CityIntentLanding({
       ? `Buy a home in ${city}`
       : intent === "rent"
         ? `Rent & stay in ${city}`
-        : `Mortgages & pre-approval in ${city}`;
+        : intent === "stays"
+          ? `Short-term stays in ${city}`
+          : intent === "investment"
+            ? `Invest in ${city} real estate`
+            : `Mortgages & pre-approval in ${city}`;
+
+  const heroEyebrow =
+    intent === "buy"
+      ? "Homes & FSBO"
+      : intent === "rent"
+        ? "BNHub rentals"
+        : intent === "stays"
+          ? "BNHub stays"
+          : intent === "investment"
+            ? "Yields & acquisitions"
+            : "Mortgage hub";
+
+  const meshLinks = buildGrowthSeoMeshLinks(slug);
+  const otherCities = otherGrowthCityLinks(slug);
+  const inventoryCount = fsboRows.length + bnListings.length;
 
   return (
     <div className="min-h-screen bg-[#0B0B0B] text-white">
+      <GrowthSeoPageView intent={intent} citySlug={slug} pathVariant={pathVariant} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
       <section className="border-b border-white/10 bg-gradient-to-b from-black to-[#0B0B0B]">
         <div className="mx-auto max-w-6xl px-4 py-14 sm:py-20">
           <p className="text-xs font-bold uppercase tracking-[0.25em]" style={{ color: GOLD }}>
-            {intent === "buy" ? "Homes & FSBO" : intent === "rent" ? "BNHub rentals" : "Mortgage hub"}
+            {heroEyebrow}
             {regionLabel}
           </p>
           <h1 className="mt-3 text-4xl font-bold tracking-tight text-white sm:text-5xl">{heroTitle}</h1>
           <p className="mt-4 max-w-2xl text-lg text-white/75">
             {intent === "mortgage"
               ? `Compare options, get matched with experts, and use free tools tailored to ${city}.`
-              : `Discover curated listings, structured FAQs, and tools — built to scale from Canada to the US.`}
+              : intent === "investment"
+                ? `Stack FSBO deals, BNHub performance, and rent vs buy context — then validate with licensed pros.`
+                : intent === "stays"
+                  ? `Browse nightly stays with dates-first search, clear pricing on listings, and a simple path to book on BNHub.`
+                  : `Discover curated listings, structured FAQs, and tools — built to scale from Canada to the US.`}
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             {intent === "mortgage" ? (
@@ -199,6 +281,28 @@ export async function CityIntentLanding({
                   Free mortgage estimate
                 </Link>
               </>
+            ) : intent === "investment" ? (
+              <>
+                <Link
+                  href={fsBrowse}
+                  className="rounded-xl px-6 py-3 text-sm font-semibold text-black transition hover:opacity-95"
+                  style={{ background: GOLD }}
+                >
+                  Browse FSBO inventory
+                </Link>
+                <Link
+                  href="/tools/deal-analyzer"
+                  className="rounded-xl border border-white/20 px-6 py-3 text-sm font-medium text-white hover:bg-white/5"
+                >
+                  Deal analyzer
+                </Link>
+                <Link
+                  href="/tools/roi-calculator"
+                  className="rounded-xl border border-premium-gold/40 px-6 py-3 text-sm text-premium-gold hover:bg-premium-gold/10"
+                >
+                  ROI calculator
+                </Link>
+              </>
             ) : (
               <>
                 <Link
@@ -217,6 +321,10 @@ export async function CityIntentLanding({
         </div>
       </section>
 
+      <CityAiMarketingSection slug={slug} intent={intent} city={city} inventoryCount={inventoryCount} />
+
+      <CityGeneratedContentSection city={city} category={intent} />
+
       <section className="mx-auto max-w-6xl px-4 py-12">
         <GrowthTrustStrip />
         <div className="mt-10 grid gap-6 md:grid-cols-3">
@@ -231,7 +339,33 @@ export async function CityIntentLanding({
         </div>
       </section>
 
-      {intent === "buy" && fsboRows.length > 0 ? (
+      <section className="border-t border-white/10 py-8">
+        <div className="mx-auto max-w-6xl px-4">
+          <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-white/50">Filters & search</h2>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Link
+              href={bnBrowse}
+              className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm text-white/90 hover:border-premium-gold/40"
+            >
+              BNHub — dates, guests, neighbourhood
+            </Link>
+            <Link
+              href={fsBrowse}
+              className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm text-white/90 hover:border-premium-gold/40"
+            >
+              FSBO — {city}
+            </Link>
+            <Link
+              href={`/city/${slug}`}
+              className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm text-white/90 hover:border-premium-gold/40"
+            >
+              City hub (map + mixed inventory)
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {(intent === "buy" || intent === "investment") && fsboRows.length > 0 ? (
         <section className="border-t border-white/10 bg-black/50 py-12">
           <div className="mx-auto max-w-6xl px-4">
             <h2 className="text-xl font-bold text-white">FSBO & homes in {city}</h2>
@@ -259,11 +393,18 @@ export async function CityIntentLanding({
         </section>
       ) : null}
 
-      {(intent === "rent" || intent === "buy") && bnListings.length > 0 ? (
+      {(intent === "rent" || intent === "buy" || intent === "investment" || intent === "stays") &&
+      bnListings.length > 0 ? (
         <section className="border-t border-white/10 py-12">
           <div className="mx-auto max-w-6xl px-4">
             <h2 className="text-xl font-bold text-white">
-              {intent === "rent" ? "Short-term stays" : "Featured stays nearby"}
+              {intent === "rent"
+                ? "Short-term stays"
+                : intent === "stays"
+                  ? `Stays in ${city}`
+                  : intent === "investment"
+                    ? "BNHub nightly comps"
+                    : "Featured stays nearby"}
             </h2>
             <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {bnListings.map((l) => (
@@ -284,6 +425,35 @@ export async function CityIntentLanding({
         </section>
       ) : null}
 
+      {intent === "investment" && insights ? (
+        <div className="border-t border-white/10 px-4 py-10">
+          <div className="mx-auto max-w-6xl">
+            <CityInvestmentInsights data={insights} bnhubHref={bnBrowse} fsboHref={fsBrowse} />
+          </div>
+        </div>
+      ) : null}
+
+      {seoProgrammatic ? (
+        <section className="border-t border-white/10 py-12">
+          <div className="mx-auto max-w-6xl space-y-10 px-4">
+            <article>
+              <h2 className="text-xl font-bold text-premium-gold">Best properties in {city}</h2>
+              <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-white/80">{seoProgrammatic.blockBestProperties}</p>
+            </article>
+            <article>
+              <h2 className="text-xl font-bold text-premium-gold">Top investment areas in {city}</h2>
+              <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-white/80">{seoProgrammatic.blockTopInvestment}</p>
+            </article>
+            <article>
+              <h2 className="text-xl font-bold text-premium-gold">Rent vs buy in {city}</h2>
+              <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-white/80">{seoProgrammatic.blockRentVsBuy}</p>
+            </article>
+          </div>
+        </section>
+      ) : null}
+
+      {intent !== "mortgage" ? <GrowthCityLeadCapture citySlug={slug} cityQuery={q} intent={intent} /> : null}
+
       <section className="border-t border-white/10 py-12">
         <div className="mx-auto max-w-6xl px-4">
           <h2 className="text-xl font-bold text-white">FAQ</h2>
@@ -295,21 +465,30 @@ export async function CityIntentLanding({
               </div>
             ))}
           </dl>
-          <div className="mt-10 flex flex-wrap gap-3 text-sm">
-            <Link href="/blog" className="text-premium-gold hover:underline">
-              Market guides (blog)
-            </Link>
-            <span className="text-white/30">|</span>
-            <Link href={`/buy/${slug}`} className="text-white/70 hover:text-white">
-              Buy in {city}
-            </Link>
-            <Link href={`/rent/${slug}`} className="text-white/70 hover:text-white">
-              Rent in {city}
-            </Link>
-            <Link href={`/mortgage/${slug}`} className="text-white/70 hover:text-white">
-              Mortgage in {city}
-            </Link>
-          </div>
+
+          <nav className="mt-10 flex flex-wrap gap-2 text-sm" aria-label="Related city and intent pages">
+            {meshLinks.map((l) => (
+              <Link
+                key={l.href}
+                href={l.href}
+                className="rounded-full border border-white/15 px-3 py-1 text-white/75 hover:border-premium-gold/40 hover:text-white"
+              >
+                {l.label}
+              </Link>
+            ))}
+          </nav>
+
+          <nav className="mt-6 text-sm text-white/60" aria-label="Other cities">
+            <span className="font-medium text-white/80">Other cities: </span>
+            {otherCities.map((l, i) => (
+              <span key={l.href}>
+                {i > 0 ? " · " : ""}
+                <Link href={l.href} className="text-premium-gold hover:underline">
+                  {l.label}
+                </Link>
+              </span>
+            ))}
+          </nav>
         </div>
       </section>
 

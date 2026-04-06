@@ -85,7 +85,7 @@ npm install
 npm run dev
 ```
 
-Opens the web app at [http://localhost:3000](http://localhost:3000).
+Opens the web app at [http://localhost:3001](http://localhost:3001).
 
 **Database:** Set `DATABASE_URL` in `apps/web/.env`, then:
 

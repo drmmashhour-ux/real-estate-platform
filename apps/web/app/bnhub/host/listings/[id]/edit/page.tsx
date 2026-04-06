@@ -6,6 +6,7 @@ import { VerificationChecklist } from "@/components/bnhub/VerificationChecklist"
 import { HostBnhubRatingPanel } from "@/components/bnhub/HostBnhubRatingPanel";
 import { prisma } from "@/lib/db";
 import type { ClassificationBreakdown } from "@/src/modules/bnhub-growth-engine/services/propertyClassificationService";
+import { AIAssistantPanel } from "@/components/ai/AIAssistantPanel";
 
 const DEMO_LISTINGS: Record<
   string,
@@ -103,6 +104,10 @@ export default async function HostEditListingPage({
       <section className="mx-auto max-w-2xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
         <VerificationChecklist listingId={listing.id} />
         <HostBnhubRatingPanel breakdown={hostBreakdown} />
+        <AIAssistantPanel
+          context={{ listingId: listing.id, role: "HOST" }}
+          agentKey="listing_optimization"
+        />
         <EditListingForm listing={listing as any} />
       </section>
     </main>

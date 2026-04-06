@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ImageUploader } from "@/components/fsbo/ImageUploader";
 import { ContractModal } from "@/components/contracts/ContractModal";
+import { SellerDocumentsPanel } from "@/components/seller/SellerDocumentsPanel";
 import { FSBO_HUB_DOC_TYPES, FSBO_HUB_REQUIRED_DOC_TYPES } from "@/lib/fsbo/seller-hub-doc-types";
 import { SellerDeclarationForm } from "@/components/seller/SellerDeclarationForm";
 import {
@@ -750,7 +751,9 @@ export function SellerListingWizard({
 
         {step === 5 && (
           <div className="space-y-4">
-            <p className="text-sm text-slate-400">Upload PDF or images. Required: proof of ownership and ID.</p>
+            <p className="text-sm text-slate-400">
+              Upload PDF or images. Required: proof of ownership and ID. Supporting documents below are also reviewed by the AI engine before approval.
+            </p>
             {FSBO_HUB_REQUIRED_DOC_TYPES.map((dt) => (
               <div key={dt} className="rounded-lg border border-white/10 p-3">
                 <p className="text-sm font-medium text-white capitalize">{dt.replace(/_/g, " ")} — required</p>
@@ -794,6 +797,22 @@ export function SellerListingWizard({
                 </div>
               </div>
             </div>
+            <div className="rounded-xl border border-sky-400/20 bg-sky-500/5 p-4 text-sm text-slate-300">
+              <p className="font-medium text-white">AI evidence gate before publish approval</p>
+              <ul className="mt-2 list-inside list-disc space-y-1">
+                <li>Condo / divided co-ownership listings should upload condo documents.</li>
+                <li>If renovation invoices are available, upload them.</li>
+                <li>If new construction or warranty applies, upload builder or warranty documents.</li>
+                <li>If the declaration mentions major issues or clarifications, upload supporting proof where available.</li>
+              </ul>
+            </div>
+            {listingId ? (
+              <SellerDocumentsPanel fsboListingId={listingId} canEdit />
+            ) : (
+              <div className="rounded-xl border border-white/10 bg-black/20 p-4 text-sm text-slate-400">
+                Save the draft first to unlock the full supporting document library.
+              </div>
+            )}
           </div>
         )}
 

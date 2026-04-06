@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { persistLaunchEvent } from "@/src/modules/launch/persistLaunchEvent";
 import { getGuestId } from "@/lib/auth/session";
 import { isFsboPubliclyVisible } from "@/lib/fsbo/constants";
+import { trackEvent } from "@/src/modules/analytics/eventTracker";
+import { refreshFsboListingAnalytics } from "@/lib/listings/listing-analytics-service";
 
 export const dynamic = "force-dynamic";
 
@@ -36,7 +39,14 @@ export async function POST(req: Request) {
 
   const listing = await prisma.fsboListing.findUnique({
     where: { id: fsboListingId },
-    select: { ownerId: true, status: true, moderationStatus: true },
+    select: {
+      ownerId: true,
+      status: true,
+      moderationStatus: true,
+      city: true,
+      propertyType: true,
+      priceCents: true,
+    },
   });
   if (!listing || !isFsboPubliclyVisible(listing)) {
     return NextResponse.json({ error: "Listing not available" }, { status: 404 });
@@ -54,5 +64,17 @@ export async function POST(req: Request) {
   await prisma.buyerSavedListing.create({
     data: { userId, fsboListingId },
   });
+  void refreshFsboListingAnalytics(fsboListingId, listing.priceCents).catch(() => {});
+  void trackEvent(
+    "favorite",
+    {
+      listingId: fsboListingId,
+      city: listing.city ?? undefined,
+      propertyType: listing.propertyType ?? undefined,
+      priceCents: listing.priceCents ?? undefined,
+    },
+    { userId }
+  ).catch(() => {});
+  void persistLaunchEvent("SAVE_PROPERTY", { userId, fsboListingId });
   return NextResponse.json({ saved: true });
 }

@@ -1,16 +1,8 @@
 import { NextRequest } from "next/server";
-import { prisma } from "@/lib/db";
 import { createListing } from "@/lib/bnhub/listings";
 import { getGuestId } from "@/lib/auth/session";
-import { createOrLink } from "@/lib/property-identity/create-or-link";
-import { canPublishListingMandatory } from "@/lib/bnhub/mandatory-verification";
-import { ensureHostListingContract } from "@/lib/contracts/bnhub-host-contracts";
 import { assertCanCreateListing } from "@/lib/compliance/professional-compliance";
-import { hasActiveEnforceableContract } from "@/lib/legal/enforceable-contract";
-import { ENFORCEABLE_CONTRACT_TYPES } from "@/lib/legal/enforceable-contract-types";
-import { enforceableContractsRequired } from "@/lib/legal/enforceable-contracts-enforcement";
-import { AnalyticsEvents } from "@/lib/analytics/events";
-import { captureServerEvent } from "@/lib/analytics/posthog-server";
+import { postCreateShortTermListingFlow } from "@/lib/bnhub/post-create-short-term-listing";
 
 export async function POST(request: NextRequest) {
   try {
@@ -131,98 +123,35 @@ export async function POST(request: NextRequest) {
       knownIssues: knownIssues != null ? String(knownIssues).trim() : undefined,
     });
 
-    try {
-      await ensureHostListingContract(listing.id);
-    } catch (e) {
-      console.warn("[listings] ensure host contract failed:", e);
-    }
-
-    if (address && city) {
-      try {
-        const result = await createOrLink({
-          listingId: listing.id,
-          listingType: "short_term_rental",
-          linkedByUserId: ownerId,
-          cadastreNumber: cadastreNumber ?? null,
-          officialAddress: address,
-          municipality: municipality ?? null,
-          province: province ?? null,
-          country: country ?? null,
-          latitude: latitude != null ? Number(latitude) : null,
-          longitude: longitude != null ? Number(longitude) : null,
-          propertyType: propertyType ?? null,
-        });
-        if (result.linkStatus === "active") {
-          await prisma.shortTermListing.update({
-            where: { id: listing.id },
-            data: { propertyIdentityId: result.propertyIdentityId },
-          });
-        }
-      } catch (e) {
-        console.warn("Property identity create-or-link failed (listing still created):", e);
-      }
-    }
-
-    if (listing.listingStatus === "PUBLISHED") {
-      const { allowed, reasons } = await canPublishListingMandatory(listing.id);
-      if (!allowed) {
-        await prisma.shortTermListing.update({
-          where: { id: listing.id },
-          data: { listingStatus: "DRAFT" },
-        });
-        const message =
-          reasons.length > 0
-            ? reasons.join(". ")
-            : "Cannot publish: complete owner verification (full name, ID verification, ownership confirmation) and property details (address, images).";
-        return Response.json(
-          { error: message, reasons, listingStatus: "DRAFT" },
-          { status: 400 }
-        );
-      }
-      if (enforceableContractsRequired()) {
-        const signed = await hasActiveEnforceableContract(ownerId, ENFORCEABLE_CONTRACT_TYPES.HOST, {
-          listingId: listing.id,
-        });
-        if (!signed) {
-          await prisma.shortTermListing.update({
-            where: { id: listing.id },
-            data: { listingStatus: "DRAFT" },
-          });
-          return Response.json(
-            {
-              error:
-                "Sign the BNHub host agreement before publishing (ContractSign kind=host with this listing id).",
-              reasons: ["enforceable_host"],
-              listingStatus: "DRAFT",
-            },
-            { status: 400 }
-          );
-        }
-      }
-      try {
-        const { createListingContract } = await import("@/lib/hubs/contracts");
-        await createListingContract({
-          listingId: listing.id,
-          userId: ownerId,
-          hub: "bnhub",
-        });
-      } catch (e) {
-        console.warn("[listings] Failed to create listing contract:", e);
-      }
-    }
-
-    captureServerEvent(ownerId, AnalyticsEvents.LISTING_CREATED, {
-      listingId: listing.id,
+    const flow = await postCreateShortTermListingFlow({
+      listing,
+      ownerId,
+      address,
+      city,
+      region,
+      country,
+      cadastreNumber: cadastreNumber ?? null,
+      municipality: municipality ?? null,
+      province: province ?? null,
+      latitude: latitude != null ? Number(latitude) : null,
+      longitude: longitude != null ? Number(longitude) : null,
+      propertyType: propertyType ?? null,
       source: "bnhub_create",
     });
-    if (listing.listingStatus === "PUBLISHED") {
-      captureServerEvent(ownerId, AnalyticsEvents.LISTING_PUBLISHED, {
-        listingId: listing.id,
-        source: "bnhub_create",
-      });
+
+    if (flow.publishError) {
+      return Response.json(
+        {
+          error: flow.publishError,
+          reasons: flow.publishReasons ?? [],
+          listingStatus: "DRAFT",
+          listing: flow.listing,
+        },
+        { status: 400 }
+      );
     }
 
-    return Response.json(listing);
+    return Response.json(flow.listing);
   } catch (e) {
     console.error(e);
     return Response.json(

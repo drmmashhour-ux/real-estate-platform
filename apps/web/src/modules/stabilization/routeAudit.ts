@@ -1,21 +1,18 @@
+import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { existsSync, readdirSync } from "node:fs";
 import type { AuditResult, StabilizationIssue } from "./types";
 import { readTextSafe, relWeb } from "./fsUtils";
+import { forEachChildEntry } from "./fileScanner";
 
 function collectPages(dir: string, suffix: string, out: string[]): void {
-  if (!existsSync(dir)) return;
-  const entries = readdirSync(dir, { withFileTypes: true });
-  for (const entry of entries) {
-    const entryName = String(entry.name);
-    const absPath = join(dir, entryName);
-    if (entry.isDirectory()) {
-      if (entryName === "node_modules" || entryName.startsWith(".")) continue;
+  forEachChildEntry(dir, ({ absPath, name, isDirectory }) => {
+    if (isDirectory) {
+      if (name === "node_modules" || name.startsWith(".")) return;
       collectPages(absPath, suffix, out);
-    } else if (entryName === suffix) {
+    } else if (name === suffix) {
       out.push(absPath);
     }
-  }
+  });
 }
 
 export function runRouteAudit(webRoot: string): AuditResult {

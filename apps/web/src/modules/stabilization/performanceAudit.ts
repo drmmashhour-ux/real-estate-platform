@@ -28,6 +28,16 @@ const HEAVY_PATTERNS: readonly {
   },
 ] as const;
 
+(() => {
+  const seen = new Set<string>();
+  for (const p of HEAVY_PATTERNS) {
+    if (seen.has(p.code)) {
+      throw new Error(`performanceAudit: duplicate HEAVY_PATTERNS code "${p.code}"`);
+    }
+    seen.add(p.code);
+  }
+})();
+
 const LISTING_PATH_RE = /app\/(bnhub|stays)\/|listing/i;
 
 export function runPerformanceAudit(webRoot: string): AuditResult {

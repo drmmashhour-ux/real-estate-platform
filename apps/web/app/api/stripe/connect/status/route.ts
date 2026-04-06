@@ -1,20 +1,14 @@
 /**
- * GET /api/stripe/connect/status — Sync Connect onboarding state from Stripe for the signed-in user.
+ * GET /api/stripe/connect/status — Sync onboarding from Stripe + persist requirements snapshot for host dashboard.
  */
 
-import Stripe from "stripe";
 import { prisma } from "@/lib/db";
 import { getGuestId } from "@/lib/auth/session";
-import { isStripeConfigured } from "@/lib/stripe";
-import { recordPlatformEvent } from "@/lib/observability";
+import { getStripe, isStripeConfigured } from "@/lib/stripe";
+import { syncHostOnboardingCompleteFromStripe } from "@/lib/stripe/hostConnectExpress";
+import { upsertHostStripeAccountSnapshot } from "@/lib/stripe/connect/persist-snapshot";
 
 export const dynamic = "force-dynamic";
-
-function getStripe(): Stripe | null {
-  const key = process.env.STRIPE_SECRET_KEY?.trim();
-  if (!key) return null;
-  return new Stripe(key);
-}
 
 export async function GET() {
   if (!isStripeConfigured()) {
@@ -34,41 +28,57 @@ export async function GET() {
     where: { id: userId },
     select: { stripeAccountId: true, stripeOnboardingComplete: true },
   });
-  if (!user?.stripeAccountId) {
+  if (!user?.stripeAccountId?.trim()) {
     return Response.json({
       connected: false,
       onboardingComplete: false,
       chargesEnabled: false,
+      payoutsEnabled: false,
+      detailsSubmitted: false,
+      missingRequirements: [] as string[],
+      disabledReason: null as string | null,
     });
   }
 
-  try {
-    const acct = await stripe.accounts.retrieve(user.stripeAccountId);
-    const chargesEnabled = Boolean(acct.charges_enabled);
-    const detailsSubmitted = Boolean(acct.details_submitted);
-    const onboardingComplete = chargesEnabled && detailsSubmitted;
+  const accountId = user.stripeAccountId.trim();
 
-    if (onboardingComplete !== user.stripeOnboardingComplete) {
-      await prisma.user.update({
-        where: { id: userId },
-        data: { stripeOnboardingComplete: onboardingComplete },
-      });
-      if (onboardingComplete) {
-        void recordPlatformEvent({
-          eventType: "stripe_connect_onboarding_completed",
-          sourceModule: "stripe",
-          entityType: "USER",
-          entityId: userId,
-        }).catch(() => {});
-      }
-    }
+  try {
+    const { detailsSubmitted, chargesEnabled, payoutsEnabled } = await syncHostOnboardingCompleteFromStripe(
+      stripe,
+      userId,
+      accountId
+    );
+
+    await upsertHostStripeAccountSnapshot(stripe, userId, accountId);
+
+    const snap = await prisma.hostStripeAccountSnapshot.findUnique({
+      where: { hostUserId: userId },
+      select: { rawRequirementsJson: true, onboardingComplete: true },
+    });
+
+    const raw = snap?.rawRequirementsJson;
+    const reqObj = raw && typeof raw === "object" && !Array.isArray(raw) ? (raw as Record<string, unknown>) : {};
+    const currentlyDue = Array.isArray(reqObj.currently_due)
+      ? (reqObj.currently_due as string[])
+      : ([] as string[]);
+    const pastDue = Array.isArray(reqObj.past_due) ? (reqObj.past_due as string[]) : [];
+    const disabledReason =
+      typeof reqObj.disabled_reason === "string" ? reqObj.disabled_reason : null;
+
+    const fresh = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { stripeOnboardingComplete: true },
+    });
 
     return Response.json({
       connected: true,
-      onboardingComplete,
+      onboardingComplete: Boolean(fresh?.stripeOnboardingComplete ?? snap?.onboardingComplete),
       chargesEnabled,
+      payoutsEnabled,
       detailsSubmitted,
-      accountId: user.stripeAccountId,
+      accountId,
+      missingRequirements: [...new Set([...currentlyDue, ...pastDue])],
+      disabledReason,
     });
   } catch (e) {
     console.error("[stripe/connect/status]", e);

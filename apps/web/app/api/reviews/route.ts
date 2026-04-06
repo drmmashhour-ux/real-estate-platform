@@ -25,6 +25,8 @@ export async function POST(request: NextRequest) {
       valueRating,
       checkinRating,
       comment,
+      stayChecklist,
+      amenitiesAsAdvertised,
     } = body;
 
     if (!bookingId || !listingId || propertyRating == null) {
@@ -62,6 +64,10 @@ export async function POST(request: NextRequest) {
       valueRating: valueRating != null ? Number(valueRating) : undefined,
       checkinRating: checkinRating != null ? Number(checkinRating) : undefined,
       comment: comment ?? undefined,
+      stayChecklist:
+        stayChecklist && typeof stayChecklist === "object" ? stayChecklist : undefined,
+      amenitiesAsAdvertised:
+        typeof amenitiesAsAdvertised === "boolean" ? amenitiesAsAdvertised : undefined,
     });
 
     return Response.json(review);
