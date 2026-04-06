@@ -10,6 +10,14 @@ export const dynamic = "force-dynamic";
  * Readiness: DB reachable + i18n bundles + market config. Use for load balancers / rollout gates.
  */
 export async function GET() {
+  if (process.env.VERCEL_DEBUG === "1" || process.env.NODE_ENV === "development") {
+    console.log("ENV CHECK", {
+      DATABASE_URL: !!process.env.DATABASE_URL,
+      SUPABASE_URL: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+      STRIPE: !!process.env.STRIPE_SECRET_KEY,
+    });
+  }
+
   try {
     await prisma.$queryRaw`SELECT 1`;
     const i18nBundles =
