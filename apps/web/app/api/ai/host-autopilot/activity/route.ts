@@ -2,6 +2,17 @@ import { NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
 
+type ActionLogRow = {
+  id: string;
+  actionKey: string;
+  targetEntityType: string;
+  targetEntityId: string;
+  status: string;
+  decisionMode: string | null;
+  createdAt: Date;
+  payload: unknown;
+};
+
 export const dynamic = "force-dynamic";
 
 async function requireHost(userId: string) {
@@ -68,7 +79,7 @@ export async function GET() {
   ]);
 
   return NextResponse.json({
-    actions: actions.map((a) => ({ ...a, createdAt: a.createdAt.toISOString() })),
+    actions: actions.map((a: ActionLogRow) => ({ ...a, createdAt: a.createdAt.toISOString() })),
     recommendations,
     approvals,
   });
