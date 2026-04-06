@@ -21,16 +21,14 @@ defaults:
 
 env:
   NEXT_TELEMETRY_DISABLED: 1
+  # Optional secret: Settings → Secrets and variables → Actions → DATABASE_URL. Fork PRs: secret absent → dummy.
+  DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://dummy' }}
 
 jobs:
   quality:
     name: Integrity, typecheck, build, validate
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    env:
-      # Optional: Settings → Secrets and variables → Actions → DATABASE_URL (e.g. same as Vercel).
-      # If unset (e.g. fork PRs), dummy is enough for prisma validate / generate (no DB connection).
-      DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://dummy' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -49,23 +47,22 @@ jobs:
         id: install
         run: pnpm install --frozen-lockfile
 
-      # Do not echo DATABASE_URL — real values come from Actions secrets and would leak in logs.
+      # Never echo DATABASE_URL — would leak real credentials when set from Actions secrets.
       - name: Verify DATABASE_URL for Prisma
         run: |
-          if [ -z "${DATABASE_URL:-}" ]; then
-            echo "::error::DATABASE_URL is empty (check job env / secrets.DATABASE_URL fallback)."
+          if [ -z "$DATABASE_URL" ]; then
+            echo "ERROR: DATABASE_URL is not set"
             exit 1
           fi
-          case "$DATABASE_URL" in
-            postgresql://dummy)
-              echo "CI: using dummy DATABASE_URL (no secret / fallback)"
-              ;;
-            *)
-              echo "CI: DATABASE_URL is set (value not printed)"
-              ;;
-          esac
+          if [ "$DATABASE_URL" = "postgresql://dummy" ]; then
+            echo "CI: using dummy DATABASE_URL"
+          else
+            echo "CI: DATABASE_URL is set (value hidden)"
+          fi
 
       - name: Prisma schema validate (@lecipm/web)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://dummy' }}
         run: pnpm --filter @lecipm/web exec prisma validate
 
       - name: Integrity gate (critical structure)
