@@ -1,11 +1,17 @@
 # BNHub / LECIPM — global ignores (apply in all subfolders; no leading slash = recursive)
 
 node_modules/
-# Prisma: default client cache (also covered by node_modules/)
-node_modules/.prisma/
 
-# Prisma: custom generator output (regenerate with `prisma generate` in each package)
-**/src/generated/prisma/
+# Prisma generated (never commit; regenerate on install/build — Linux on Vercel)
+node_modules/.prisma
+src/generated/prisma
+**/generated/prisma
+.prisma
+
+# Prisma engines (OS-specific)
+*.dylib
+*.so.node
+query-engine*
 
 .expo/
 # Regenerate: cd apps/mobile && pnpm run app-icon:export
