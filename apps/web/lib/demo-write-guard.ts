@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { isDemoMode } from "@/lib/demo-mode";
 
-/** Primary enforcement: `proxy.ts` (Next.js 16+) + `lib/demo-mode-api.ts`. */
+/** Primary enforcement: `middleware.ts` + `lib/demo-mode-api.ts`. */
 export { blockIfDemoWrite } from "@/lib/demo-mode-api";
 
 /** @deprecated Prefer `blockIfDemoWrite(request)` which logs + returns JSON. */

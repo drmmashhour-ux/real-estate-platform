@@ -92,10 +92,13 @@ function redirectWithRequestId(request: NextRequest, url: URL): NextResponse {
 }
 
 /**
- * Next.js 16+ network boundary: merges legacy staging/demo gates with auth redirects and API gates.
+ * Network boundary (middleware convention): staging/demo gates, auth redirects, API gates.
  * Injects `x-request-id` for structured logging downstream.
+ *
+ * Uses `middleware.ts` instead of `proxy.ts` so webpack emits `middleware.js.nft.json` during
+ * trace collection (Next 16.1.x + webpack can omit `proxy.js.nft.json` and fail the build).
  */
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   try {
     const pathname = request.nextUrl.pathname;
 
