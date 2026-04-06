@@ -21,8 +21,6 @@ defaults:
 
 env:
   NEXT_TELEMETRY_DISABLED: 1
-  # Quoted so YAML does not misparse colons in the URL. Prisma validate/generate do not open a connection.
-  DATABASE_URL: "postgresql://dummy"
 
 jobs:
   quality:
@@ -30,7 +28,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      DATABASE_URL: "postgresql://dummy"
+      # Optional: Settings → Secrets and variables → Actions → DATABASE_URL (e.g. same as Vercel).
+      # If unset (e.g. fork PRs), dummy is enough for prisma validate / generate (no DB connection).
+      DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://dummy' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -50,8 +50,6 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Prisma schema validate (@lecipm/web)
-        env:
-          DATABASE_URL: "postgresql://dummy"
         run: pnpm --filter @lecipm/web exec prisma validate
 
       - name: Integrity gate (critical structure)
