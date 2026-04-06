@@ -29,16 +29,22 @@ jobs:
             echo "exists=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
         if: steps.pkg.outputs.exists == 'true'
         with:
-          version: 9
+          node-version: "20"
+
+      - name: Enable Corepack (pnpm)
+        if: steps.pkg.outputs.exists == 'true'
+        run: |
+          corepack enable
+          corepack prepare pnpm@9.0.0 --activate
 
       - uses: actions/setup-node@v4
         if: steps.pkg.outputs.exists == 'true'
         with:
           node-version: "20"
-          cache: "pnpm"
+          cache: pnpm
 
       - name: Install monorepo
         if: steps.pkg.outputs.exists == 'true'
