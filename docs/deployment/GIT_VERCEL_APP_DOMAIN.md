@@ -10,7 +10,7 @@ In [Vercel Dashboard](https://vercel.com) → your **Next.js** project → **Set
 |---------|--------|
 | **Root Directory** | `apps/web` |
 | **Framework Preset** | Next.js |
-| **Install Command** | `cd ../.. && pnpm install --frozen-lockfile` |
+| **Install Command** | `cd ../.. && pnpm install --no-frozen-lockfile` (matches repo `vercel.json`; use `--frozen-lockfile` in CI only) |
 | **Build Command** | `cd ../.. && pnpm build:web` |
 
 These match `apps/web/vercel.json` (Vercel merges them when the file is inside the root directory).
