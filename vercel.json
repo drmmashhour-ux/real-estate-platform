@@ -2,7 +2,7 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
   "installCommand": "pnpm install --no-frozen-lockfile",
-  "buildCommand": "bash scripts/vercel-debug.sh",
+  "buildCommand": "pnpm --filter @lecipm/web build",
   "outputDirectory": "apps/web/.next",
   "env": {
     "HUSKY": "0",

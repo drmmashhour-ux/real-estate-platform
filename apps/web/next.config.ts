@@ -31,9 +31,6 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   transpilePackages: ["@lecipm/ui", "@lecipm/api-client"],
   reactStrictMode: true,
-  experimental: {
-    instrumentationHook: true,
-  },
   images: {
     remotePatterns: [{ protocol: "https", hostname: "images.unsplash.com", pathname: "/**" }],
   },
