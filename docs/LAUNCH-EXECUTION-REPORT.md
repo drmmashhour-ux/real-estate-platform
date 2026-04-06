@@ -9,7 +9,7 @@
 
 Live checks returned **503** for `/`, `/listings`, and `/api/ready`. **Cause:** the **root `app/layout.tsx`** always uses **Prisma** (`resolveLaunchFlags`, `resolveInitialLocale` / `getResolvedMarket`). Without a working **`DATABASE_URL`** on Vercel, **every page** can fail with 503.
 
-**Operator fix:** set **`DATABASE_URL`** (pooled Supabase URL) + **`NEXT_PUBLIC_APP_URL=https://app.lecipm.com`**, then **Redeploy**. Details: **`docs/deployment/APP_LECIPM_503.md`**.
+**Operator fix:** set **`DATABASE_URL`** (Supabase **transaction pooler** URI, usually **:6543**, `sslmode=require`, add **`pgbouncer=true`** if Prisma errors) + **`NEXT_PUBLIC_APP_URL=https://app.lecipm.com`**, then **Redeploy**. Details: **`docs/deployment/VERCEL_SUPABASE_DATABASE_URL.md`** and **`docs/deployment/APP_LECIPM_503.md`**.
 
 ---
 
