@@ -23,8 +23,9 @@ Separately, **`GET /api/ready`** returns **503** **by design** when its `try` bl
 
 1. Open **Vercel → Project (Next app) → Settings → Environment Variables → Production**.
 2. Set **`DATABASE_URL`** to a valid **PostgreSQL** URL your deployment can reach:
-   - Prefer **Supabase pooler** / **transaction** mode URL for serverless (see Supabase docs).
-   - Ensure **`?sslmode=require`** (or equivalent) if the provider requires SSL.
+   - **Step-by-step (Supabase pooler, Prisma, SSL, `pgbouncer`):** `docs/deployment/VERCEL_SUPABASE_DATABASE_URL.md`
+   - Prefer **Supabase transaction pooler** (usually port **6543**), not direct **5432** for serverless.
+   - Ensure **`?sslmode=require`** (and **`&pgbouncer=true`** if Prisma reports prepared-statement errors).
 3. Set **`NEXT_PUBLIC_APP_URL`** = **`https://app.lecipm.com`** (no `localhost`).
 4. Set Supabase public vars as used by code: **`NEXT_PUBLIC_SUPABASE_URL`**, **`NEXT_PUBLIC_SUPABASE_ANON_KEY`**, and server **`SUPABASE_SERVICE_ROLE_KEY`** if those features are on.
 5. **Redeploy** (Deployments → ⋮ → Redeploy) so the runtime picks up env.

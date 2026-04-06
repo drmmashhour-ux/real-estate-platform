@@ -16,7 +16,7 @@ Set in the Vercel project (or team) settings. Values are encrypted at rest; **re
 
 | Variable | Purpose |
 |----------|---------|
-| `DATABASE_URL` | **Pooled** Postgres URL (Supabase pooler / Supavisor) for Prisma at runtime. |
+| `DATABASE_URL` | **Pooled** Postgres URL (Supabase **transaction** pooler, often `:6543`) for Prisma at runtime. See **`docs/deployment/VERCEL_SUPABASE_DATABASE_URL.md`**. |
 | `DIRECT_URL` | (Optional in Prisma schema) Use in CI for `prisma migrate deploy` if migrations require a direct (non-pooler) connection — export when running migrations: `DATABASE_URL="$DIRECT_URL" npx prisma migrate deploy` or temporarily point `DATABASE_URL` to the direct host. |
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL (public). |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key (public; RLS still applies). |
