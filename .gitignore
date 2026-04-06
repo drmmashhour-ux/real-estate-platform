@@ -2,7 +2,10 @@
 
 node_modules/
 .expo/
+# Regenerate: cd apps/mobile && pnpm run app-icon:export
+apps/mobile/assets/icon-exports/
 .next/
+.vercel/
 dist/
 out/
 coverage/

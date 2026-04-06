@@ -33,12 +33,14 @@
     "db:migrate:reset": "npx tsx scripts/prisma-destructive-guard.ts migrate-reset && pnpm --filter @lecipm/web exec prisma migrate reset",
     "db:check": "npx tsx scripts/db-check-local.ts",
     "prelaunch": "npx tsx scripts/prelaunch.ts",
-    "env:check": "npx tsx scripts/check-env-production.ts",
+    "env:check": "pnpm --filter @lecipm/web exec -- tsx ../../scripts/check-env-production.ts",
+    "env:check:strict": "pnpm --filter @lecipm/web exec -- tsx ../../scripts/check-env-production.ts --strict",
     "assets:check": "npx tsx scripts/check-assets.ts",
     "prelaunch:check": "npx tsx scripts/prelaunch-check.ts",
     "db:seed": "pnpm --filter @lecipm/web exec prisma db seed",
     "ci:integrity": "pnpm --filter @lecipm/web run ci:integrity",
     "integrity:check": "pnpm --filter @lecipm/web run integrity:check",
+    "typecheck": "pnpm ci:typecheck && pnpm --filter @lecipm/mobile run typecheck",
     "ci:typecheck": "pnpm --filter @lecipm/web run ci:typecheck",
     "ci:build": "pnpm --filter @lecipm/web run ci:build",
     "ci:lint": "pnpm --filter @lecipm/web run ci:lint",
@@ -50,9 +52,12 @@
     "validate:stabilization": "pnpm --filter @lecipm/web run validate:stabilization",
     "validate:crm-upgrade": "pnpm --filter @lecipm/web run validate:crm-upgrade",
     "validate:flows": "pnpm --filter @lecipm/web run validate:flows",
+    "validate-core-flows": "pnpm validate:flows",
+    "db:migrate:deploy": "pnpm --filter @lecipm/web exec prisma migrate deploy",
     "validate:staging-stack": "pnpm validate:flows && pnpm --filter @lecipm/web run validate:executive-control && pnpm --filter @lecipm/web run validate:ranking-system && pnpm --filter @lecipm/web run validate:fraud",
     "inspect:executive-daily": "pnpm --filter @lecipm/web run inspect:executive-daily",
     "test:e2e": "pnpm --filter @lecipm/web run test:e2e",
+    "test:e2e:checklist": "node scripts/test-e2e-checklist.cjs",
     "test:e2e:production": "pnpm --filter @lecipm/web run test:e2e:production",
     "demo:full": "npx tsx scripts/generate-full-demo-data.ts",
     "backup:db": "npx tsx scripts/backup-db.ts",
@@ -94,5 +99,8 @@
       "@types/react": "19.2.14",
       "@types/react-dom": "19.2.3"
     }
+  },
+  "dependencies": {
+    "@expo/ngrok": "^4.1.3"
   }
 }

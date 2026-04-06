@@ -15,7 +15,7 @@
     },
     {
       "path": "/api/cron/auto-close-worker",
-      "schedule": "0 * * * *"
+      "schedule": "0 2 * * *"
     },
     {
       "path": "/api/cron/investor-metrics-daily",
@@ -28,6 +28,10 @@
     {
       "path": "/api/cron/ai-marketing-engine-daily",
       "schedule": "50 4 * * *"
+    },
+    {
+      "path": "/api/cron/marketing-publish-due",
+      "schedule": "45 4 * * *"
     }
   ]
 }
