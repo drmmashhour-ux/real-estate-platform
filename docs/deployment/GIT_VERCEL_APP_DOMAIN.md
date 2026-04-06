@@ -41,10 +41,14 @@ If `app.lecipm.com` shows **503** or wrong app:
 Set in **Vercel → Settings → Environment Variables** for **Production**.  
 **Redeploy** after changes.
 
+### Critical: `DATABASE_URL` (sitewide 503 if wrong)
+
+The **root layout** queries Prisma on **every** request (launch flags + locale/market). If **`DATABASE_URL`** is missing or unreachable, **`/`**, **`/listings`**, and **`/api/ready`** can all return **503**. Fix **`DATABASE_URL` first** — see **`docs/deployment/APP_LECIPM_503.md`**.
+
 | Variable | Notes |
 |----------|--------|
+| `DATABASE_URL` | **Required** — pooled Postgres (e.g. Supabase pooler); SSL as required |
 | `NEXT_PUBLIC_APP_URL` | **`https://app.lecipm.com`** (no trailing slash; not `localhost`) |
-| `DATABASE_URL` | Pooled Postgres (e.g. Supabase pooler) |
 | `STRIPE_SECRET_KEY` | Server-only |
 | `STRIPE_WEBHOOK_SECRET` | `whsec_…` from Stripe for **this** webhook URL |
 | `NEXT_PUBLIC_SUPABASE_URL` | Public Supabase URL (**code uses this name**, not `SUPABASE_URL`) |
