@@ -21,14 +21,16 @@ defaults:
 
 env:
   NEXT_TELEMETRY_DISABLED: 1
-  # Prisma schema uses env("DATABASE_URL"); CI does not connect — dummy is enough for validate/generate.
-  DATABASE_URL: postgresql://dummy
+  # Quoted so YAML does not misparse colons in the URL. Prisma validate/generate do not open a connection.
+  DATABASE_URL: "postgresql://dummy"
 
 jobs:
   quality:
     name: Integrity, typecheck, build, validate
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      DATABASE_URL: "postgresql://dummy"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -48,7 +50,9 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Prisma schema validate (@lecipm/web)
-        run: DATABASE_URL="postgresql://dummy" pnpm --filter @lecipm/web exec prisma validate
+        env:
+          DATABASE_URL: "postgresql://dummy"
+        run: pnpm --filter @lecipm/web exec prisma validate
 
       - name: Integrity gate (critical structure)
         id: integrity
