@@ -39,7 +39,7 @@ jobs:
       - name: Enable Corepack (pnpm)
         run: |
           corepack enable
-          corepack prepare pnpm@9.0.0 --activate
+          corepack prepare pnpm@9.15.4 --activate
 
       - name: Setup Node.js (pnpm cache)
         uses: actions/setup-node@v4
