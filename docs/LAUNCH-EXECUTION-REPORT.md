@@ -5,12 +5,24 @@
 
 ---
 
+## Git deploy (bypass CLI rate limit)
+
+| Action | Result |
+|--------|--------|
+| **Commit** | `6daf248` on `main` — Vercel Hobby-safe crons, `.vercel/` gitignore, **`docs/deployment/GIT_VERCEL_APP_DOMAIN.md`**, launch reports, root `package.json` deploy helpers. |
+| **Push** | **`origin/main`** updated (`github.com/drmmashhour-ux/real-estate-platform`). |
+
+**You must:** In Vercel, ensure this repo/branch is connected so the push **triggers a production build** (no CLI). Then complete **domain + env** steps in `docs/deployment/GIT_VERCEL_APP_DOMAIN.md`.
+
+---
+
 ## Final decision
 
 | | |
 |--|--|
-| **STATUS** | **BLOCKED** — production Next.js app is **not** confirmed live with payment + webhook on a single public URL in this run. |
-| **Blockers** | (1) **Vercel deploy** did not complete — free-tier **upload rate limit** (`api-upload-free`, retry after 24h). (2) **No verified production Next URL** — `https://lecipm.com/api/ready` → **404** (marketing/other stack); `https://app.lecipm.com` → **503**. (3) **Stripe checkout + webhook** on production **not executed**. |
+| **STATUS** | **BLOCKED** until `https://app.lecipm.com` returns **200** for `/`, `/listings`, and `/api/ready` after the Git deploy + domain mapping + env. |
+| **Blockers** | (1) **Post-push HTTP check:** `app.lecipm.com/listings` still **503**; `/api/ready` **timed out** — project/domain/env likely not fully wired or deploy still building. (2) **Stripe checkout + webhook** on production **not executed** here. |
+| **Resolved in repo** | CLI upload rate limit **bypassed** by **Git push**; Vercel **cron** config fixed for Hobby in `apps/web/vercel.json`. |
 
 ---
 
