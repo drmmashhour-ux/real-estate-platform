@@ -22,7 +22,7 @@ export async function POST(req: Request) {
   }
 
   const settings = await getManagerAiPlatformSettings();
-  if (!settings.automationsEnabled) {
+  if (settings.globalKillSwitch || !settings.automationsEnabled) {
     return NextResponse.json({ error: "automations_disabled" }, { status: 400 });
   }
 
