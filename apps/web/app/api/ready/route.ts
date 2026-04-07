@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { getDatabaseHostHint } from "@/lib/db/database-host-hint";
+import { getDatabaseHostHint, getDbHostKind } from "@/lib/db/database-host-hint";
 import { getPublicEnv } from "@/lib/runtime-env";
 import { MESSAGES } from "@/lib/i18n/messages";
 import { getResolvedMarket } from "@/lib/markets";
@@ -21,19 +21,22 @@ export async function GET() {
     });
   }
 
+  const hostHint = getDatabaseHostHint();
+  const hostKind = getDbHostKind(hostHint);
+
   try {
     await prisma.$queryRaw`SELECT 1`;
   } catch (e) {
-    const host = getDatabaseHostHint();
     console.error("[api/ready] DB ERROR:", e);
-    console.error("[api/ready] DB target host (no credentials):", host ?? "(none)");
+    console.error("[api/ready] DB target host (no credentials):", hostHint ?? "(none)");
     return NextResponse.json(
       {
         ok: false,
         status: "error",
         ready: false,
         db: "failed",
-        dbTargetHost: host,
+        dbTargetHost: hostHint,
+        dbHostKind: hostKind,
         env: getPublicEnv(),
         time: new Date().toISOString(),
       },
@@ -53,6 +56,8 @@ export async function GET() {
       ready: true,
       env: getPublicEnv(),
       db: "connected",
+      dbTargetHost: hostHint,
+      dbHostKind: hostKind,
       checks: {
         i18nBundles,
         marketCode: market.code,

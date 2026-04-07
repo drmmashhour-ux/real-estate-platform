@@ -12,3 +12,11 @@ export function getDatabaseHostHint(): string | null {
     return null;
   }
 }
+
+/** Classify host for /api/ready — never exposes credentials. */
+export function getDbHostKind(host: string | null): "neon" | "supabase" | "other" | "unset" {
+  if (!host) return "unset";
+  if (host.includes("neon.tech")) return "neon";
+  if (host.includes("supabase.co")) return "supabase";
+  return "other";
+}
