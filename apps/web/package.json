@@ -85,7 +85,6 @@
     "ai:run:host": "npx tsx scripts/run-unified-ai.ts --host"
   },
   "prisma": {
-    "schema": "./prisma/schema.prisma",
     "seed": "npx tsx prisma/seed-runner.ts"
   },
   "dependencies": {
