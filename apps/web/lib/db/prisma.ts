@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { normalizeDatabaseUrlForPrisma } from "./normalize-database-url";
 
 function getDbHost(url?: string) {
   try {
@@ -27,7 +28,7 @@ const prisma =
   new PrismaClient({
     datasources: {
       db: {
-        url: process.env.DATABASE_URL,
+        url: normalizeDatabaseUrlForPrisma(process.env.DATABASE_URL),
       },
     },
   });
