@@ -1,40 +1,20 @@
 import { PrismaClient } from "@prisma/client";
 import { normalizeDatabaseUrlForPrisma } from "./normalize-database-url";
 
-function getDbHost(url?: string) {
-  try {
-    if (!url) return "missing";
-    return new URL(url).host;
-  } catch {
-    return "invalid";
-  }
+/** Neon may append channel_binding=require; Prisma/pg often need it stripped. */
+const resolved = normalizeDatabaseUrlForPrisma(process.env.DATABASE_URL);
+if (resolved !== undefined) {
+  process.env.DATABASE_URL = resolved;
 }
 
-if (process.env.NODE_ENV !== "production") {
-  console.log("DB HOST:", getDbHost(process.env.DATABASE_URL));
-}
-
-/**
- * Dev-only global reuse avoids exhausting connections during HMR.
- * TODO: If serverless shows connection pressure in production, evaluate a broader
- * singleton or Prisma Accelerate — do not add alternate DATABASE_URL fallbacks.
- */
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
-const prisma =
+export const prisma =
   globalForPrisma.prisma ??
-  new PrismaClient({
-    datasources: {
-      db: {
-        url: normalizeDatabaseUrlForPrisma(process.env.DATABASE_URL),
-      },
-    },
-  });
+  new PrismaClient();
 
 if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prisma = prisma;
 }
-
-export default prisma;
