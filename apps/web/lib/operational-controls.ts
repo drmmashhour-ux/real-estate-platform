@@ -3,6 +3,7 @@
  * listing freezes, booking restrictions. All actions are audited.
  */
 import { prisma } from "@/lib/db";
+import { clearLaunchFlagsCache } from "@/lib/launch/resolve-launch-flags";
 import type { OperationalControlType, Prisma } from "@prisma/client";
 
 export type { OperationalControlType };
@@ -57,6 +58,9 @@ export async function setFeatureFlag(
       newValue: { enabled: flag.enabled },
     },
   });
+  if (key.startsWith("launch:")) {
+    clearLaunchFlagsCache();
+  }
   return flag;
 }
 
