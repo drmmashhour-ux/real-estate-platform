@@ -9,7 +9,9 @@ function getDbHost(url?: string) {
   }
 }
 
-console.log("DB HOST:", getDbHost(process.env.DATABASE_URL));
+if (process.env.NODE_ENV !== "production") {
+  console.log("DB HOST:", getDbHost(process.env.DATABASE_URL));
+}
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;

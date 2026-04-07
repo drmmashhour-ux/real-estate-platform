@@ -29,10 +29,6 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
-  /** Temporary: unblock Vercel while TS errors are fixed. */
-  typescript: {
-    ignoreBuildErrors: true,
-  },
   transpilePackages: ["@lecipm/ui", "@lecipm/api-client"],
   reactStrictMode: true,
   images: {
