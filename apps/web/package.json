@@ -6,6 +6,8 @@
     "node": "20.x"
   },
   "scripts": {
+    "prisma:validate": "prisma validate --schema=./prisma/schema.prisma",
+    "prisma:generate": "prisma generate --schema=./prisma/schema.prisma",
     "postinstall": "prisma generate --schema=./prisma/schema.prisma",
     "dev": "next dev -H 0.0.0.0 -p 3001 --webpack",
     "dev:3000": "next dev -H 0.0.0.0 -p 3000 --webpack",
