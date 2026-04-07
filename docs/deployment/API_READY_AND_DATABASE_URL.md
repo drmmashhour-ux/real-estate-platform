@@ -61,3 +61,32 @@ Runtime Prisma uses **`DATABASE_URL`** only (`schema.prisma` + `lib/db/prisma.ts
 ```
 
 Additional fields (`checks`, `env`, `time`, etc.) come from the full readiness logic.
+
+## When `db` is `"failed"`
+
+1. Confirm **`DATABASE_URL`** on the **correct** Vercel project and **Production** scope (see operator checklist above).
+2. Check deployment logs for structured lines with **`event":"api_ready_db_failure"`** — includes **`dbErrorKind`**: `auth` \| `network` \| `timeout` \| `schema` \| `unknown` (no credentials).
+3. **Auth** → wrong password / user / SSL params; rotate in Neon and update Vercel ([NEON_PROD_ROTATION_CHECKLIST.md](./NEON_PROD_ROTATION_CHECKLIST.md)).
+4. **Network / timeout** → Neon project paused, IP allowlist, or transient outage; retry after Neon/Vercel status is green.
+5. **Schema** → migrations not applied to this database; run `prisma migrate deploy` against the same Neon URL (from a secure runner, never log the URL).
+
+## Neon vs Supabase (Postgres)
+
+- **Prisma** uses **`DATABASE_URL` only**. For production on Neon, **`dbTargetHost`** should contain **`neon.tech`**.
+- **Supabase Auth / Storage** use **`NEXT_PUBLIC_SUPABASE_*`** and **`SUPABASE_SERVICE_ROLE_KEY`** — separate from Postgres; do not remove those when only migrating the database to Neon.
+
+## Implementation notes
+
+- **`GET /api/ready`** runs **`SELECT 1`** with a **small transient retry** (`apps/web/lib/db/with-db-retry.ts`) — not a global query wrapper.
+- DB errors are classified in **`apps/web/lib/db/db-error-classification.ts`** for logs only.
+
+## Monitoring and alerting (recommended)
+
+- **Vercel logs / APM**: alert on spikes of **`api_ready_db_failure`** or sustained **`503`** on `/api/ready`.
+- **Synthetic checks**: ping `/api/ready` every 1–5 minutes from an external monitor; alert when **`ready`** is not **`true`** or **`db`** is not **`connected`**.
+- **Prisma**: alert on elevated **`PrismaClientInitializationError`** or connection errors in serverless function logs.
+
+## Related
+
+- [NEON_PROD_ROTATION_CHECKLIST.md](./NEON_PROD_ROTATION_CHECKLIST.md)
+- [AUTOPILOT_ROLLOUT_PLAN.md](../ai/AUTOPILOT_ROLLOUT_PLAN.md)
