@@ -13,6 +13,11 @@ if (process.env.NODE_ENV !== "production") {
   console.log("DB HOST:", getDbHost(process.env.DATABASE_URL));
 }
 
+/**
+ * Dev-only global reuse avoids exhausting connections during HMR.
+ * TODO: If serverless shows connection pressure in production, evaluate a broader
+ * singleton or Prisma Accelerate — do not add alternate DATABASE_URL fallbacks.
+ */
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };

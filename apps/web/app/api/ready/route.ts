@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { classifyDbError } from "@/lib/db/db-error-classification";
 import { getDatabaseHostHint, getDbHostKind } from "@/lib/db/database-host-hint";
+import { withDbRetry } from "@/lib/db/with-db-retry";
 import { getPublicEnv } from "@/lib/runtime-env";
 import { MESSAGES } from "@/lib/i18n/messages";
 import { getResolvedMarket } from "@/lib/markets";
@@ -25,10 +27,20 @@ export async function GET() {
   }
 
   try {
-    await prisma.$queryRaw`SELECT 1`;
+    await withDbRetry(() => prisma.$queryRaw`SELECT 1`, { maxAttempts: 3, baseDelayMs: 200 });
   } catch (e) {
-    console.error("[api/ready] DB ERROR:", e);
-    console.error("[api/ready] DB target host (no credentials):", hostHint ?? "(none)");
+    const c = classifyDbError(e);
+    console.error(
+      JSON.stringify({
+        event: "api_ready_db_failure",
+        route: "/api/ready",
+        dbErrorKind: c.kind,
+        prismaCode: c.code ?? null,
+        messageSummary: c.summary,
+        dbHostKind: hostKind,
+        dbTargetHost: hostHint,
+      })
+    );
     return NextResponse.json(
       {
         ok: false,
