@@ -9,7 +9,7 @@ The JSON may include:
 | Field | Meaning |
 |--------|--------|
 | **`dbTargetHost`** | Hostname parsed from **`DATABASE_URL`** only (no user/password). From **`getDatabaseHostHint()`**. |
-| **`dbHostKind`** | **`neon`** \| **`supabase`** \| **`other`** \| **`unset`** — from **`getDbHostKind()`**. |
+| **`dbHostKind`** | **`neon`** \| **`unknown`** \| **`unset`** — from **`getDbHostKind()`** (hostname from **`DATABASE_URL` only). |
 | **`nodeEnv`** | `process.env.NODE_ENV` (e.g. `production`). |
 
 **Never** return or log the full **`DATABASE_URL`** in HTTP responses or generic logs.
@@ -18,12 +18,11 @@ The JSON may include:
 
 | Value | Meaning |
 |--------|--------|
-| **`neon`** | This deployment’s **`DATABASE_URL`** points at a host matching **Neon** (`*.neon.tech`). |
-| **`supabase`** | Still using **Supabase Postgres** as the Prisma DB host (`*.supabase.co`), or a pooler hostname that matches that pattern. |
-| **`other`** | Another provider (RDS, local, etc.). |
+| **`neon`** | Hostname matches **Neon** (`*.neon.tech`) — expected for production on Neon. |
+| **`unknown`** | URL is set and parseable, but the host is not Neon (wrong provider, typo, or legacy host). |
 | **`unset`** | **`DATABASE_URL`** missing or not parseable as a URL. |
 
-If you set Neon in Vercel but **`dbHostKind`** is still **`supabase`**, the runtime is **not** using the Neon string you expect. Typical causes:
+If you set Neon in Vercel but **`dbHostKind`** is not **`neon`**, the runtime is **not** using the Neon connection string you expect. Typical causes:
 
 1. **Wrong Vercel project** — the domain is attached to a different project than the one you edited.
 2. **Wrong environment scope** — Production vs Preview vs Development variables differ.

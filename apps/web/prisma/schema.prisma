@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  /// Postgres URL (Neon pooled/direct, Supabase, RDS, local). Use sslmode=require for hosted providers.
+  /// Postgres URL (Neon pooled/direct, RDS, local). Use sslmode=require for hosted providers.
   url      = env("DATABASE_URL")
 }
 

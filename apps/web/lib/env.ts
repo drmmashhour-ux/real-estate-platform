@@ -1,10 +1,7 @@
 import { z } from "zod";
 
-/** Production: set in Vercel / `.env`. Prisma reads `process.env.DATABASE_URL` directly. */
+/** Production: set in Vercel / `.env`. Prisma reads `process.env.DATABASE_URL` only. */
 export const DATABASE_URL = process.env.DATABASE_URL;
-
-/** Dev/CI tooling only — never use as the real production connection string. */
-export const DATABASE_URL_OR_DUMMY = process.env.DATABASE_URL || "postgresql://dummy";
 
 type EnvConfig = {
   DATABASE_URL: string;
@@ -17,10 +14,17 @@ type EnvConfig = {
 
 /**
  * Strict shape for server-side validation (e.g. deploy checks). Optional keys allow local dev
- * without Supabase/OpenAI; call {@link parseLecipmEnv} only when you need validated access.
+ * without every integration; call {@link parseLecipmEnv} only when you need validated access.
  */
+const postgresUrlRegex = /^postgresql(\+[a-z0-9]+)?:\/\/.+/i;
+
 export const lecipmEnvSchema = z.object({
-  DATABASE_URL: z.string().min(1),
+  DATABASE_URL: z
+    .string()
+    .min(1)
+    .refine((s) => postgresUrlRegex.test(s.trim()), {
+      message: "DATABASE_URL must be a postgresql:// or postgres:// connection string",
+    }),
   NEXT_PUBLIC_SUPABASE_URL: z.string().url().optional(),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1).optional(),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),

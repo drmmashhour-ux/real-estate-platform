@@ -39,8 +39,16 @@ export function getProductionEnvStatus(): ProductionEnvCheck {
     if (!v) warnings.push(key);
   }
 
-  if (PRODUCTION_HINT && !process.env.DATABASE_URL?.includes("pooler") && process.env.DATABASE_URL) {
-    warnings.push("DATABASE_URL may be direct (not pooled); use Supabase pooler URL for serverless runtime.");
+  const db = process.env.DATABASE_URL?.trim();
+  if (
+    PRODUCTION_HINT &&
+    db &&
+    db.includes("neon.tech") &&
+    !db.includes("-pooler")
+  ) {
+    warnings.push(
+      'DATABASE_URL may be a direct Neon host; prefer the pooled connection string for serverless (hostname usually contains "-pooler").'
+    );
   }
 
   const ok = missing.length === 0;
