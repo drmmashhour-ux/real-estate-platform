@@ -1,23 +1,27 @@
 import { PrismaClient } from "@prisma/client";
+import { getDatabaseHostHint } from "./database-host-hint";
 
-const globalForPrisma = global as unknown as {
+const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
-
-const databaseUrl = process.env.DATABASE_URL;
 
 const prisma =
   globalForPrisma.prisma ??
   new PrismaClient({
     datasources: {
       db: {
-        url: databaseUrl,
+        url: process.env.DATABASE_URL,
       },
     },
   });
 
 if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prisma = prisma;
+}
+
+/** Temporary: set VERCEL_DEBUG=1 on Vercel to log parsed DB hostname (no credentials). */
+if (process.env.VERCEL_DEBUG === "1") {
+  console.log("DATABASE_URL host:", getDatabaseHostHint() ?? "(unset or unparsable)");
 }
 
 export default prisma;

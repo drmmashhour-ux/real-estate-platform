@@ -6,14 +6,14 @@
     "node": "20.x"
   },
   "scripts": {
-    "postinstall": "prisma generate",
+    "postinstall": "prisma generate --schema=./prisma/schema.prisma",
     "dev": "next dev -H 0.0.0.0 -p 3001 --webpack",
     "dev:3000": "next dev -H 0.0.0.0 -p 3000 --webpack",
-    "build": "node -e \"try{require('fs').unlinkSync('.next/lock')}catch(e){}\" && prisma generate && NODE_OPTIONS=--max-old-space-size=8192 next build --webpack",
+    "build": "node -e \"try{require('fs').unlinkSync('.next/lock')}catch(e){}\" && prisma generate --schema=./prisma/schema.prisma && NODE_OPTIONS=--max-old-space-size=8192 next build --webpack",
     "ci:integrity": "npx tsx scripts/check-repo-integrity.ts",
     "integrity:check": "npx tsx scripts/check-repo-integrity.ts",
     "ci:typecheck": "NODE_OPTIONS=--max-old-space-size=8192 pnpm exec tsc --noEmit",
-    "ci:build": "node -e \"try{require('fs').unlinkSync('.next/lock')}catch(e){}\" && prisma generate && NODE_OPTIONS=--max-old-space-size=8192 next build --webpack",
+    "ci:build": "node -e \"try{require('fs').unlinkSync('.next/lock')}catch(e){}\" && prisma generate --schema=./prisma/schema.prisma && NODE_OPTIONS=--max-old-space-size=8192 next build --webpack",
     "ci:lint": "eslint .",
     "ci:validate:platform": "npx tsx scripts/ci-platform-validations.ts",
     "ci:all": "npx tsx scripts/ci-runner.ts",
@@ -85,6 +85,7 @@
     "ai:run:host": "npx tsx scripts/run-unified-ai.ts --host"
   },
   "prisma": {
+    "schema": "./prisma/schema.prisma",
     "seed": "npx tsx prisma/seed-runner.ts"
   },
   "dependencies": {
