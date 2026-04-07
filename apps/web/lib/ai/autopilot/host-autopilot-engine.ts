@@ -28,6 +28,7 @@ import {
 import { translateServer } from "@/lib/i18n/server-translate";
 import { getUserUiLocaleCode } from "@/lib/i18n/user-ui-locale";
 import { formatDateForUiLocale } from "@/lib/i18n/format-ui";
+import { applyRankingConfidenceBoost, shouldShowRecommendation } from "@/lib/ai/learning/decision-ranking";
 
 export { gateAutopilotRecommendation } from "@/lib/ai/autopilot/autopilot-gate";
 
@@ -105,6 +106,9 @@ async function runListingOptimization(hostId: string, cfg: HostAutopilotConfig, 
       targetEntityId: listingId,
     });
     if (!gate.ok) return;
+    const listingRank = await shouldShowRecommendation("host_autopilot_listing_optimization", hostId);
+    if (!listingRank.show) return;
+    const listingConf = applyRankingConfidenceBoost(gate.confidence, listingRank.reason);
     const autopilotTemplateKey = await reserveAutopilotTemplate("host_autopilot_listing_optimization", hostId);
     await prisma.managerAiRecommendation.create({
       data: {
@@ -117,7 +121,7 @@ async function runListingOptimization(hostId: string, cfg: HostAutopilotConfig, 
         targetEntityType: "short_term_listing",
         targetEntityId: listingId,
         suggestedAction: JSON.stringify({ patch, seoKeywords: out.seoKeywords, improvements: out.improvements }),
-        confidence: gate.confidence,
+        confidence: listingConf,
         payload: { mode: "assist", patch, autopilotTemplateKey } as object,
       },
     });
@@ -133,6 +137,7 @@ async function runListingOptimization(hostId: string, cfg: HostAutopilotConfig, 
         decisionReasons: gate.reasons,
         decisionBand: gate.band,
         decisionEngine: "multi_factor",
+        learningRankReason: listingRank.reason,
       },
     });
     await notifyHostAutopilot({
@@ -252,6 +257,10 @@ async function runBookingMessagingDraft(
   });
   if (!msgGate.ok) return;
 
+  const msgRank = await shouldShowRecommendation("host_autopilot_message_draft", hostId);
+  if (!msgRank.show) return;
+  const msgConf = applyRankingConfidenceBoost(msgGate.confidence, msgRank.reason);
+
   const msgTpl = await reserveAutopilotTemplate("host_autopilot_message_draft", hostId);
   await prisma.managerAiRecommendation.create({
     data: {
@@ -262,7 +271,7 @@ async function runBookingMessagingDraft(
       targetEntityType: "booking",
       targetEntityId: bookingId,
       suggestedAction: JSON.stringify({ draft, sendFromInbox: true }),
-      confidence: msgGate.confidence,
+      confidence: msgConf,
       payload: { listingId, autopilotTemplateKey: msgTpl } as object,
     },
   });
@@ -278,6 +287,7 @@ async function runBookingMessagingDraft(
       decisionReasons: msgGate.reasons,
       decisionBand: msgGate.band,
       decisionEngine: "multi_factor",
+      learningRankReason: msgRank.reason,
     },
   });
   await notifyHostAutopilot({
@@ -308,6 +318,10 @@ async function runPromotionSuggestion(hostId: string, cfg: HostAutopilotConfig, 
   });
   if (!promoGate.ok) return;
 
+  const promoRank = await shouldShowRecommendation("host_autopilot_promotion_suggestion", hostId);
+  if (!promoRank.show) return;
+  const promoConf = applyRankingConfidenceBoost(promoGate.confidence, promoRank.reason);
+
   const promoTpl = await reserveAutopilotTemplate("host_autopilot_promotion_suggestion", hostId);
   await prisma.managerAiRecommendation.create({
     data: {
@@ -318,7 +332,7 @@ async function runPromotionSuggestion(hostId: string, cfg: HostAutopilotConfig, 
       targetEntityType: "short_term_listing",
       targetEntityId: listingId,
       suggestedAction: JSON.stringify({ type: "weekday_discount", percent: 5 }),
-      confidence: promoGate.confidence,
+      confidence: promoConf,
       payload: { autopilot: true, autopilotTemplateKey: promoTpl } as object,
     },
   });
@@ -333,6 +347,7 @@ async function runPromotionSuggestion(hostId: string, cfg: HostAutopilotConfig, 
       decisionReasons: promoGate.reasons,
       decisionBand: promoGate.band,
       decisionEngine: "multi_factor",
+      learningRankReason: promoRank.reason,
     },
   });
   await notifyHostAutopilot({
@@ -369,6 +384,9 @@ async function runStalledBookings(hostId: string, cfg: HostAutopilotConfig): Pro
       targetEntityId: b.id,
     });
     if (!stalledGate.ok) continue;
+    const stalledRank = await shouldShowRecommendation("host_autopilot_stalled_booking", hostId);
+    if (!stalledRank.show) continue;
+    const stalledConf = applyRankingConfidenceBoost(stalledGate.confidence, stalledRank.reason);
     const stalledTpl = await reserveAutopilotTemplate("host_autopilot_stalled_booking", hostId);
     const stalledListingTitle = b.listing.title.slice(0, 60);
     const beforeDate = formatDateForUiLocale(cutoff, loc, "short");
@@ -384,7 +402,7 @@ async function runStalledBookings(hostId: string, cfg: HostAutopilotConfig): Pro
         targetEntityType: "booking",
         targetEntityId: b.id,
         suggestedAction: JSON.stringify({ action: "review_booking", bookingId: b.id }),
-        confidence: stalledGate.confidence,
+        confidence: stalledConf,
         payload: { listingId: b.listingId, autopilotTemplateKey: stalledTpl } as object,
       },
     });
@@ -399,6 +417,7 @@ async function runStalledBookings(hostId: string, cfg: HostAutopilotConfig): Pro
         decisionReasons: stalledGate.reasons,
         decisionBand: stalledGate.band,
         decisionEngine: "multi_factor",
+        learningRankReason: stalledRank.reason,
       },
     });
     const stalledNotifyTitle =
@@ -498,6 +517,9 @@ async function runLowPerformanceListings(hostId: string, cfg: HostAutopilotConfi
       targetEntityId: l.id,
     });
     if (!lowGate.ok) continue;
+    const lowRank = await shouldShowRecommendation("host_autopilot_low_performance", hostId);
+    if (!lowRank.show) continue;
+    const lowConf = applyRankingConfidenceBoost(lowGate.confidence, lowRank.reason);
     const lowTpl = await reserveAutopilotTemplate("host_autopilot_low_performance", hostId);
     await prisma.managerAiRecommendation.create({
       data: {
@@ -510,7 +532,7 @@ async function runLowPerformanceListings(hostId: string, cfg: HostAutopilotConfi
         targetEntityType: "short_term_listing",
         targetEntityId: l.id,
         suggestedAction: JSON.stringify({ reviewListing: true }),
-        confidence: lowGate.confidence,
+        confidence: lowConf,
         payload: { autopilotTemplateKey: lowTpl } as object,
       },
     });
@@ -525,6 +547,7 @@ async function runLowPerformanceListings(hostId: string, cfg: HostAutopilotConfi
         decisionReasons: lowGate.reasons,
         decisionBand: lowGate.band,
         decisionEngine: "multi_factor",
+        learningRankReason: lowRank.reason,
       },
     });
   }

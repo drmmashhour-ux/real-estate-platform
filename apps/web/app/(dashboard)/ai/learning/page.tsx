@@ -28,48 +28,50 @@ export default async function AiLearningPage() {
   }));
 
   return (
-    <div className="rounded-xl border border-white/10 bg-black p-6">
-      <h1 className="text-lg font-semibold text-white">AI rule learning</h1>
-      <p className="mt-1 text-sm text-white/50">
-        Host Autopilot feedback aggregates — which rules tend to succeed or fail after host actions.
-      </p>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-lg font-semibold text-white">Rule performance</h1>
+        <p className="mt-1 text-sm text-white/50">
+          Aggregated outcomes from learning signals (admin only). Counts are real database totals.
+        </p>
+      </div>
 
-      <div className="mt-6 overflow-x-auto">
-        <table className="w-full min-w-[640px] border-collapse text-left text-sm">
-          <thead>
-            <tr className="border-b border-white/15">
-              <th className="py-3 pr-4 font-semibold" style={{ color: GOLD }}>
-                Rule
+      <div className="overflow-x-auto rounded-xl border border-white/10">
+        <table className="min-w-full text-left text-sm text-white/80">
+          <thead className="border-b border-white/10 bg-[#141414] text-xs uppercase tracking-wider">
+            <tr>
+              <th className="px-4 py-3 font-semibold normal-case tracking-normal" style={{ color: GOLD }}>
+                ruleName
               </th>
-              <th className="py-3 pr-4 font-semibold" style={{ color: GOLD }}>
-                Total
+              <th className="px-4 py-3 font-semibold normal-case tracking-normal" style={{ color: GOLD }}>
+                total
               </th>
-              <th className="py-3 pr-4 font-semibold" style={{ color: GOLD }}>
-                Success
+              <th className="px-4 py-3 font-semibold normal-case tracking-normal" style={{ color: GOLD }}>
+                successCount
               </th>
-              <th className="py-3 pr-4 font-semibold" style={{ color: GOLD }}>
-                Failure
+              <th className="px-4 py-3 font-semibold normal-case tracking-normal" style={{ color: GOLD }}>
+                failureCount
               </th>
-              <th className="py-3 font-semibold" style={{ color: GOLD }}>
-                Success rate
+              <th className="px-4 py-3 font-semibold normal-case tracking-normal" style={{ color: GOLD }}>
+                successRate
               </th>
             </tr>
           </thead>
-          <tbody className="text-white/85">
+          <tbody>
             {withRate.length === 0 ? (
               <tr>
-                <td colSpan={5} className="py-8 text-center text-white/45">
-                  No learning data yet. Outcomes are recorded as hosts approve, reject, or act on Autopilot.
+                <td colSpan={5} className="px-4 py-8 text-center text-white/45">
+                  No rows in <span className="font-mono text-white/55">ai_rule_performance</span> yet.
                 </td>
               </tr>
             ) : (
               withRate.map((r) => (
-                <tr key={r.ruleName} className="border-b border-white/[0.06]">
-                  <td className="py-3 pr-4 font-mono text-xs text-white/90">{r.ruleName}</td>
-                  <td className="py-3 pr-4 tabular-nums">{r.total}</td>
-                  <td className="py-3 pr-4 tabular-nums text-emerald-400/90">{r.successCount}</td>
-                  <td className="py-3 pr-4 tabular-nums text-rose-400/90">{r.failureCount}</td>
-                  <td className="py-3 tabular-nums text-white/80">
+                <tr key={r.ruleName} className="border-b border-white/5 hover:bg-white/[0.03]">
+                  <td className="px-4 py-3 font-mono text-xs text-white/90">{r.ruleName}</td>
+                  <td className="px-4 py-3 tabular-nums">{r.total}</td>
+                  <td className="px-4 py-3 tabular-nums">{r.successCount}</td>
+                  <td className="px-4 py-3 tabular-nums">{r.failureCount}</td>
+                  <td className="px-4 py-3 tabular-nums text-white/85">
                     {r.successRatePct === null ? "—" : `${r.successRatePct}%`}
                   </td>
                 </tr>

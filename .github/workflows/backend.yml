@@ -29,16 +29,10 @@ jobs:
             echo "exists=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@v4
         if: steps.pkg.outputs.exists == 'true'
         with:
-          node-version: "20"
-
-      - name: Enable Corepack (pnpm)
-        if: steps.pkg.outputs.exists == 'true'
-        run: |
-          corepack enable
-          corepack prepare pnpm@9.15.4 --activate
+          version: 9.15.4
 
       - uses: actions/setup-node@v4
         if: steps.pkg.outputs.exists == 'true'

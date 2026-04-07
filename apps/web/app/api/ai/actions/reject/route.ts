@@ -4,6 +4,8 @@ import { getGuestId } from "@/lib/auth/session";
 import { isPlatformAdmin } from "@/lib/auth/is-platform-admin";
 import { prisma } from "@/lib/db";
 import { logManagerAction } from "@/lib/ai/logger";
+import { logOutcome } from "@/lib/ai/learning/outcome-signals";
+import { updateRulePerformance } from "@/lib/ai/learning/rule-performance";
 
 export const dynamic = "force-dynamic";
 
@@ -51,6 +53,23 @@ export async function POST(req: Request) {
     payload: { approvalId: row.id, note: parsed.data.note },
     approvalId: row.id,
   });
+
+  try {
+    const listingId = row.targetEntityType === "short_term_listing" ? row.targetEntityId : null;
+    const bookingId = row.targetEntityType === "booking" ? row.targetEntityId : null;
+    await logOutcome({
+      hostId: row.requesterId,
+      listingId,
+      bookingId,
+      ruleName: row.actionKey,
+      actionType: "platform_admin_approval",
+      outcomeType: "rejected",
+      metadata: { approvalId: row.id, reviewerId: userId },
+    });
+    await updateRulePerformance(row.actionKey, "rejected");
+  } catch {
+    /* learning must not affect approval flow */
+  }
 
   return NextResponse.json({ ok: true, approval: updated });
 }
