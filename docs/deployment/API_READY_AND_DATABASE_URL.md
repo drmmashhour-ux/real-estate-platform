@@ -36,9 +36,9 @@ If you set Neon in Vercel but **`dbHostKind`** is still **`supabase`**, the runt
 - **Import:** `@/lib/db` → re-exports this client.
 - **Behavior:** When **`DATABASE_URL`** is set, **`PrismaClient`** is constructed with **`datasources.db.url`** set from **`process.env.DATABASE_URL`** (aligned with `schema.prisma`).
 
-## Optional: `DIRECT_URL` in env schema
+## Migrations vs runtime
 
-`apps/web/lib/env.ts` may parse **`DIRECT_URL`** for tooling (e.g. migrations with a non-pooler URL). It is **not** wired into the runtime Prisma client; Prisma still uses **`DATABASE_URL`** only for the web app.
+Runtime Prisma uses **`DATABASE_URL`** only (`schema.prisma` + `lib/db/prisma.ts`). For **`prisma migrate deploy`** against a direct (non-pooler) host, set **`DATABASE_URL`** to that URL in the shell or CI for the command only — do not rely on alternate Vercel vars for the web app.
 
 ## Operator checklist (manual)
 

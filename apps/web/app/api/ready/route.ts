@@ -11,18 +11,18 @@ export const dynamic = "force-dynamic";
  * Readiness: DB reachable + i18n bundles + market config. Use for load balancers / rollout gates.
  */
 export async function GET() {
+  const hostHint = getDatabaseHostHint();
+  const hostKind = getDbHostKind(hostHint);
+
   if (process.env.VERCEL_DEBUG === "1" || process.env.NODE_ENV === "development") {
-    const host = getDatabaseHostHint();
     console.log("ENV CHECK", {
       DATABASE_URL: !!process.env.DATABASE_URL,
-      DB_HOST: host ?? "(unset or unparsable)",
+      DB_HOST: hostHint ?? "(unset or unparsable)",
+      dbHostKind: hostKind,
       SUPABASE_URL: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
       STRIPE: !!process.env.STRIPE_SECRET_KEY,
     });
   }
-
-  const hostHint = getDatabaseHostHint();
-  const hostKind = getDbHostKind(hostHint);
 
   try {
     await prisma.$queryRaw`SELECT 1`;
