@@ -34,6 +34,7 @@
     "test:e2e:scenarios": "playwright test e2e/scenarios/run-all.spec.ts",
     "test:e2e:launch": "playwright test e2e/launch.spec.ts",
     "test:e2e:production": "pnpm run build && PLAYWRIGHT_PRODUCTION=1 playwright test",
+    "prisma:migrate:deploy": "prisma migrate deploy",
     "seed": "prisma db seed",
     "db:seed": "prisma db seed",
     "seed:test": "npx tsx scripts/seed-test-data.ts",

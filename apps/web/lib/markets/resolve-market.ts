@@ -25,13 +25,27 @@ function derivePaymentMode(online: boolean, manualTracking: boolean): PaymentMod
  * Safe to call from server actions / Route Handlers; caches nothing (admin changes apply immediately).
  */
 export async function getResolvedMarket(): Promise<ResolvedMarket> {
-  const row = await prisma.platformMarketLaunchSettings.upsert({
-    where: { id: "default" },
-    create: { id: "default" },
-    update: {},
-  });
-
   const envHint = envMarketHint();
+
+  let row: {
+    syriaModeEnabled: boolean;
+    activeMarketCode: string;
+    onlinePaymentsEnabled: boolean;
+    manualPaymentTrackingEnabled: boolean;
+    contactFirstEmphasis: boolean;
+    defaultDisplayCurrency: string;
+  };
+  try {
+    row = await prisma.platformMarketLaunchSettings.upsert({
+      where: { id: "default" },
+      create: { id: "default" },
+      update: {},
+    });
+  } catch (err) {
+    console.error("[markets] getResolvedMarket: DB unavailable or schema out of date — using static market defaults", err);
+    return envHint === "syria" ? syriaMarketDefinition : defaultMarketDefinition;
+  }
+
   const useSyriaProfile = row.syriaModeEnabled || row.activeMarketCode === "syria" || envHint === "syria";
 
   const base = useSyriaProfile ? syriaMarketDefinition : defaultMarketDefinition;
