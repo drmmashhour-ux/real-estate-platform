@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { getDatabaseHostHint } from "@/lib/db/database-host-hint";
 import { getPublicEnv } from "@/lib/runtime-env";
 import { MESSAGES } from "@/lib/i18n/messages";
 import { getResolvedMarket } from "@/lib/markets";
@@ -11,8 +12,10 @@ export const dynamic = "force-dynamic";
  */
 export async function GET() {
   if (process.env.VERCEL_DEBUG === "1" || process.env.NODE_ENV === "development") {
+    const host = getDatabaseHostHint();
     console.log("ENV CHECK", {
       DATABASE_URL: !!process.env.DATABASE_URL,
+      DB_HOST: host ?? "(unset or unparsable)",
       SUPABASE_URL: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
       STRIPE: !!process.env.STRIPE_SECRET_KEY,
     });
@@ -20,6 +23,25 @@ export async function GET() {
 
   try {
     await prisma.$queryRaw`SELECT 1`;
+  } catch (e) {
+    const host = getDatabaseHostHint();
+    console.error("[api/ready] DB ERROR:", e);
+    console.error("[api/ready] DB target host (no credentials):", host ?? "(none)");
+    return NextResponse.json(
+      {
+        ok: false,
+        status: "error",
+        ready: false,
+        db: "failed",
+        dbTargetHost: host,
+        env: getPublicEnv(),
+        time: new Date().toISOString(),
+      },
+      { status: 503 }
+    );
+  }
+
+  try {
     const i18nBundles =
       Object.keys(MESSAGES.en).length > 0 &&
       Object.keys(MESSAGES.fr).length > 0 &&
@@ -37,14 +59,15 @@ export async function GET() {
       },
       time: new Date().toISOString(),
     });
-  } catch {
+  } catch (e) {
+    console.error("[api/ready] non-DB readiness error:", e);
     return NextResponse.json(
       {
         ok: false,
         status: "error",
         ready: false,
+        db: "connected",
         env: getPublicEnv(),
-        db: "unavailable",
         time: new Date().toISOString(),
       },
       { status: 503 }
