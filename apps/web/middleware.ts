@@ -42,6 +42,8 @@ function isPublicPathForStaging(pathname: string): boolean {
     return true;
   if (/\.(ico|png|svg|jpg|jpeg|gif|webp|json|txt|xml|webmanifest)$/i.test(pathname)) return true;
   if (pathname === "/api/health" || pathname === "/api/ready") return true;
+  /** Main browse surfaces — never force staging login gate (NEXT_PUBLIC_STAGING_REQUIRE_LOGIN). */
+  if (pathname === "/" || pathname.startsWith("/listings") || pathname.startsWith("/bnhub")) return true;
   return false;
 }
 
