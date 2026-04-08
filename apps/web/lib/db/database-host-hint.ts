@@ -7,17 +7,22 @@ export function getDatabaseHostHint(): string | null {
   try {
     const normalized = raw.replace(/^postgresql(\+[a-z0-9]+)?:/i, "http:");
     const host = new URL(normalized).hostname;
-    return host || null;
+    if (host) return host;
   } catch {
-    return null;
+    /* URL() fails on some connection strings (e.g. special chars in password) */
   }
+  const segment = raw.split("@")[1]?.split("/")[0]?.trim();
+  if (!segment) return null;
+  const hostOnly = segment.split(":")[0]?.trim();
+  return hostOnly || null;
 }
 
-export type DbHostKind = "neon" | "unknown" | "unset";
+export type DbHostKind = "neon" | "supabase" | "unknown" | "unset";
 
 /** Classify host for /api/ready — hostname only; never exposes credentials. */
 export function getDbHostKind(host: string | null): DbHostKind {
   if (!host) return "unset";
   if (host.includes("neon.tech")) return "neon";
+  if (host.includes("supabase.co")) return "supabase";
   return "unknown";
 }

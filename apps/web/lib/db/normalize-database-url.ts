@@ -33,3 +33,13 @@ export function normalizeDatabaseUrlForPrisma(raw: string | undefined): string |
   const next = params.toString();
   return next ? `${base}?${next}` : base;
 }
+
+/**
+ * Supabase direct DB host requires TLS; ensure sslmode=require if the URL omits it.
+ */
+export function ensureSslModeRequireForSupabase(url: string): string {
+  const t = url.trim();
+  if (!t || !/supabase\.co/i.test(t)) return t;
+  if (/[?&]sslmode=/i.test(t)) return t;
+  return t.includes("?") ? `${t}&sslmode=require` : `${t}?sslmode=require`;
+}
