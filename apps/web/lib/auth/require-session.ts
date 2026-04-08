@@ -9,6 +9,9 @@ import { getGuestId } from "@/lib/auth/session";
  * Server-only guard for authenticated dashboard routes.
  * Validates session cookie + User row (invalid/tampered IDs redirect to login).
  * Middleware already enforces cookie presence; this adds DB verification and deep-link `next`.
+ *
+ * Do not use on public browse surfaces (`/`, `/listings`, `/bnhub` — see `isPublicBrowseSurface`);
+ * those routes must not call this helper.
  */
 export async function requireAuthenticatedUser(): Promise<{ userId: string }> {
   await ensureDynamicAuthRequest();

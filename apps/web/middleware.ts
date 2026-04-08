@@ -25,6 +25,7 @@ import {
   jsonResponseRawCardBlocked,
 } from "@/lib/security/blockRawCardData";
 import { isSecureCookieContext } from "@/lib/runtime-env";
+import { isPublicBrowseSurface } from "@/lib/routing/public-browse-paths";
 import { HUB_USER_ROLE_COOKIE } from "@/lib/staging-middleware-config";
 
 /** Staging page gates only — do not mark `/api/*` public or protected API routes never run. */
@@ -37,13 +38,7 @@ function isPublicPathForStaging(pathname: string): boolean {
     return true;
   if (/\.(ico|png|svg|jpg|jpeg|gif|webp|json|txt|xml|webmanifest)$/i.test(pathname)) return true;
   if (pathname === "/api/health" || pathname === "/api/ready") return true;
-  if (
-    pathname === "/" ||
-    pathname.startsWith("/listings") ||
-    pathname.startsWith("/bnhub")
-  ) {
-    return true;
-  }
+  if (isPublicBrowseSurface(pathname)) return true;
   return false;
 }
 
