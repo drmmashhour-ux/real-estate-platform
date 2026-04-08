@@ -31,14 +31,15 @@ export async function POST(req: NextRequest) {
   const title = step?.title ?? "This step";
   const desc = step?.description ?? "";
 
-  if (!isOpenAiConfigured()) {
+  const client = openai;
+  if (!isOpenAiConfigured() || !client) {
     return NextResponse.json({
       explanation: FALLBACK[stepId] ?? `${title}: ${desc}`,
     });
   }
 
   try {
-    const completion = await openai.chat.completions.create({
+    const completion = await client.chat.completions.create({
       model: "gpt-4o-mini",
       max_tokens: 180,
       messages: [

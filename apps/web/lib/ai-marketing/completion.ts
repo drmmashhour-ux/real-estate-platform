@@ -8,9 +8,10 @@ export async function marketingCompleteText(params: {
   maxTokens?: number;
   temperature?: number;
 }): Promise<{ text: string; source: "openai" } | null> {
-  if (!isOpenAiConfigured()) return null;
+  const client = openai;
+  if (!isOpenAiConfigured() || !client) return null;
   try {
-    const res = await openai.chat.completions.create({
+    const res = await client.chat.completions.create({
       model: MODEL,
       temperature: params.temperature ?? 0.55,
       max_tokens: params.maxTokens ?? 700,
@@ -33,9 +34,10 @@ export async function marketingCompleteJson<T>(params: {
   maxTokens?: number;
   temperature?: number;
 }): Promise<{ data: T; source: "openai" } | null> {
-  if (!isOpenAiConfigured()) return null;
+  const client = openai;
+  if (!isOpenAiConfigured() || !client) return null;
   try {
-    const res = await openai.chat.completions.create({
+    const res = await client.chat.completions.create({
       model: MODEL,
       temperature: params.temperature ?? 0.45,
       max_tokens: params.maxTokens ?? 900,

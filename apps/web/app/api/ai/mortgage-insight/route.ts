@@ -37,13 +37,14 @@ export async function POST(req: NextRequest) {
 
   const fallback = buildRuleBasedMortgageInsight(input);
 
-  if (!isOpenAiConfigured()) {
+  const client = openai;
+  if (!isOpenAiConfigured() || !client) {
     logAiEvent("mortgage_insight", { source: "rules", reason: "no_openai" });
     return NextResponse.json({ ok: true, source: "rules" as const, text: fallback });
   }
 
   try {
-    const completion = await openai.chat.completions.create({
+    const completion = await client.chat.completions.create({
       model: "gpt-4o-mini",
       temperature: 0.35,
       messages: [

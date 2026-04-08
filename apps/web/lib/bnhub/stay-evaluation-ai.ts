@@ -94,9 +94,10 @@ export function deterministicHostGuestScore(input: {
 }
 
 async function openAiJson<T>(system: string, user: string): Promise<T | null> {
-  if (!isOpenAiConfigured()) return null;
+  const client = openai;
+  if (!isOpenAiConfigured() || !client) return null;
   try {
-    const res = await openai.chat.completions.create({
+    const res = await client.chat.completions.create({
       model: process.env.OPENAI_EVAL_MODEL ?? "gpt-4o-mini",
       temperature: 0.2,
       max_tokens: 400,

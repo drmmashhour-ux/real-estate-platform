@@ -141,8 +141,9 @@ async function handleListingDesignChat(body: Record<string, unknown>) {
     }
   }
 
-  if (isOpenAiConfigured()) {
-    const completion = await openai.chat.completions.create({
+  const client = openai;
+  if (isOpenAiConfigured() && client) {
+    const completion = await client.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
         {

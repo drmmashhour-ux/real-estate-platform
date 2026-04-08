@@ -102,9 +102,10 @@ If the user gives location + product (e.g. apartment in Montreal), acknowledge a
 
   const ctx = params.recentLines.slice(-8).join("\n");
 
-  if (isOpenAiConfigured()) {
+  const client = openai;
+  if (isOpenAiConfigured() && client) {
     try {
-      const completion = await openai.chat.completions.create({
+      const completion = await client.chat.completions.create({
         model: "gpt-4o-mini",
         messages: [
           { role: "system", content: sys },

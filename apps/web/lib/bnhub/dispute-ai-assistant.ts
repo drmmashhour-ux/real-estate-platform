@@ -113,7 +113,8 @@ export async function analyzeDisputeForAssistant(disputeId: string): Promise<Dis
     .join("\n");
   const disputeThread = thread.map((m) => m.body.slice(0, 500)).join("\n");
 
-  if (!isOpenAiConfigured()) {
+  const client = openai;
+  if (!isOpenAiConfigured() || !client) {
     return rulesFallback({
       description: dispute.description,
       checklistConfirmedRatio,
@@ -149,7 +150,7 @@ Dispute thread:
 ${disputeThread || "(none)"}`;
 
   try {
-    const res = await openai.chat.completions.create({
+    const res = await client.chat.completions.create({
       model: process.env.OPENAI_DISPUTE_MODEL ?? "gpt-4o-mini",
       temperature: 0.2,
       messages: [

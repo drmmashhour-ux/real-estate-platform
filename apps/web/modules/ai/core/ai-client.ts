@@ -7,8 +7,12 @@ import type { AiIntent, AiHub, RunAiTaskParams, RunAiTaskResult } from "./types"
 
 const MODEL = "gpt-4o-mini";
 
-async function completeOpenAi(system: string, user: string): Promise<{ text: string; model: string }> {
-  const completion = await openai.chat.completions.create({
+async function completeOpenAi(
+  client: NonNullable<typeof openai>,
+  system: string,
+  user: string
+): Promise<{ text: string; model: string }> {
+  const completion = await client.chat.completions.create({
     model: MODEL,
     temperature: 0.35,
     max_tokens: 1200,
@@ -26,7 +30,8 @@ export async function runAiTask(params: RunAiTaskParams): Promise<RunAiTaskResul
   const ctx = sanitizeContext(params.context);
   const { system, user } = buildMessagesForHub(params.hub, params.intent, params.feature, ctx);
 
-  if (!isOpenAiConfigured()) {
+  const client = openai;
+  if (!isOpenAiConfigured() || !client) {
     const text = assertNoAutoActionLanguage(offlineTextForHub(params.hub, params.feature, ctx));
     const logId = await persistAiInteractionLog({
       userId: params.userId,
@@ -44,7 +49,7 @@ export async function runAiTask(params: RunAiTaskParams): Promise<RunAiTaskResul
   }
 
   try {
-    const { text: raw, model } = await completeOpenAi(system, user);
+    const { text: raw, model } = await completeOpenAi(client, system, user);
     const text = assertNoAutoActionLanguage(raw || offlineTextForHub(params.hub, params.feature, ctx));
     const logId = await persistAiInteractionLog({
       userId: params.userId,

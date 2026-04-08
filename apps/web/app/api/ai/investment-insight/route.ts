@@ -62,7 +62,8 @@ export async function POST(req: NextRequest) {
 
   const fallback = buildRuleBasedInvestmentInsight(input);
 
-  if (!isOpenAiConfigured()) {
+  const client = openai;
+  if (!isOpenAiConfigured() || !client) {
     logAiEvent("investment_insight", { source: "rules", reason: "no_openai" });
     return NextResponse.json({
       ok: true,
@@ -87,7 +88,7 @@ export async function POST(req: NextRequest) {
       shortTermWinsOnRoi: input.shortTermWinsOnRoi,
     });
 
-    const completion = await openai.chat.completions.create({
+    const completion = await client.chat.completions.create({
       model: "gpt-4o-mini",
       temperature: 0.45,
       messages: [

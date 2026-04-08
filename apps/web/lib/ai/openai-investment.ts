@@ -11,9 +11,10 @@ async function safeJson<T>(text: string): Promise<T | null> {
 }
 
 async function callOpenAI(prompt: string) {
-  if (!isOpenAiConfigured()) return null;
+  const client = openai;
+  if (!isOpenAiConfigured() || !client) return null;
   try {
-    const res = await openai.chat.completions.create({
+    const res = await client.chat.completions.create({
       model: "gpt-4o-mini",
       temperature: 0.2,
       messages: [

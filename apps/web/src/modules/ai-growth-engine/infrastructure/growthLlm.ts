@@ -6,11 +6,12 @@ export async function growthJsonCompletion<T>(args: {
   /** Optional schema name for logging only */
   label?: string;
 }): Promise<{ ok: true; data: T } | { ok: false; error: string }> {
-  if (!isOpenAiConfigured()) {
+  const client = openai;
+  if (!isOpenAiConfigured() || !client) {
     return { ok: false, error: "OpenAI is not configured (OPENAI_API_KEY)." };
   }
   try {
-    const res = await openai.chat.completions.create({
+    const res = await client.chat.completions.create({
       model: "gpt-4o-mini",
       temperature: 0.5,
       response_format: { type: "json_object" },

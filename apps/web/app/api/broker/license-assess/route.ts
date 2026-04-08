@@ -27,9 +27,10 @@ export async function POST(request: NextRequest) {
   let assist: "looks_valid" | "suspicious" | null = assistHeuristic;
   let assistSource: "heuristic" | "openai" = "heuristic";
 
-  if (format.valid && isOpenAiConfigured()) {
+  const client = openai;
+  if (format.valid && isOpenAiConfigured() && client) {
     try {
-      const completion = await openai.chat.completions.create({
+      const completion = await client.chat.completions.create({
         model: "gpt-4o-mini",
         temperature: 0.2,
         max_tokens: 80,

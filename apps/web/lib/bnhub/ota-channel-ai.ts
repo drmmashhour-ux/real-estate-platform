@@ -144,9 +144,10 @@ export function ruleBasedParseOtaReference(input: { text?: string; url?: string 
 }
 
 async function openAiParseReference(blob: string): Promise<Partial<OtaReferenceParseResult> | null> {
-  if (!isOpenAiConfigured()) return null;
+  const client = openai;
+  if (!isOpenAiConfigured() || !client) return null;
   try {
-    const res = await openai.chat.completions.create({
+    const res = await client.chat.completions.create({
       model: process.env.OPENAI_OTA_PARSE_MODEL ?? "gpt-4o-mini",
       temperature: 0.1,
       max_tokens: 500,
@@ -267,7 +268,8 @@ export async function normalizeWebhookPayloadWithAi(raw: unknown): Promise<{
   };
 
   const fromRules = rulesNorm();
-  if (!isOpenAiConfigured()) {
+  const client = openai;
+  if (!isOpenAiConfigured() || !client) {
     return {
       normalized: fromRules,
       confidence: fromRules ? 0.55 : 0,
@@ -276,7 +278,7 @@ export async function normalizeWebhookPayloadWithAi(raw: unknown): Promise<{
   }
 
   try {
-    const res = await openai.chat.completions.create({
+    const res = await client.chat.completions.create({
       model: process.env.OPENAI_OTA_PARSE_MODEL ?? "gpt-4o-mini",
       temperature: 0,
       max_tokens: 600,

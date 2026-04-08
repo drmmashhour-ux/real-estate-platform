@@ -28,7 +28,8 @@ export async function answerClientTrustQuestion(args: {
     };
   }
 
-  if (!isOpenAiConfigured()) {
+  const client = openai;
+  if (!isOpenAiConfigured() || !client) {
     if (msg.includes("next") || msg.includes("step")) {
       return {
         reply:
@@ -50,7 +51,7 @@ export async function answerClientTrustQuestion(args: {
     };
   }
 
-  const completion = await openai.chat.completions.create({
+  const completion = await client.chat.completions.create({
     model: "gpt-4o-mini",
     temperature: 0.2,
     max_tokens: 400,

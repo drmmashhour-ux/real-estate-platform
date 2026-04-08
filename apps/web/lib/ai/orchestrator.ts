@@ -208,9 +208,10 @@ export async function runLecipmManagerChat(input: {
   let assistantText = "";
   let structured: StructuredAgentOutput | null = null;
 
-  if (isOpenAiConfigured()) {
+  const client = openai;
+  if (isOpenAiConfigured() && client) {
     try {
-      const completion = await openai.chat.completions.create({
+      const completion = await client.chat.completions.create({
         model: MANAGER_AI_CHAT_MODEL,
         messages: [{ role: "system", content: system }, ...openAiMessages],
         temperature: 0.35,

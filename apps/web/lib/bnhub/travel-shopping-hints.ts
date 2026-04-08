@@ -89,12 +89,13 @@ export async function generateTravelShoppingHints(input: {
 
   const baseFallback = fallbackHints(input.mode, summary);
 
-  if (!isOpenAiConfigured()) {
+  const client = openai;
+  if (!isOpenAiConfigured() || !client) {
     return baseFallback;
   }
 
   try {
-    const res = await openai.chat.completions.create({
+    const res = await client.chat.completions.create({
       model: "gpt-4o-mini",
       temperature: 0.45,
       max_tokens: 700,

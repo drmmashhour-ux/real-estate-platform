@@ -102,9 +102,10 @@ async function maybeEnhanceWithAi(input: {
   guestBullets: string[];
   hostBullets: string[];
 }): Promise<{ guestBullets: string[]; hostBullets: string[] } | null> {
-  if (!isOpenAiConfigured()) return null;
+  const client = openai;
+  if (!isOpenAiConfigured() || !client) return null;
   try {
-    const res = await openai.chat.completions.create({
+    const res = await client.chat.completions.create({
       model: "gpt-4o-mini",
       temperature: 0.35,
       max_tokens: 350,

@@ -204,11 +204,12 @@ export async function generateText(
   const system = buildSystemPrompt(type, action);
   const user = buildUserContent({ type, action, prompt, listingContext: options.listingContext ?? null });
 
-  if (!isOpenAiConfigured()) {
+  const client = openai;
+  if (!isOpenAiConfigured() || !client) {
     return buildOfflineWriterResponse(prompt, type, action, user);
   }
 
-  const completion = await openai.chat.completions.create({
+  const completion = await client.chat.completions.create({
     model: MODEL,
     temperature: action === "shorter" ? 0.35 : 0.65,
     max_tokens: 2000,

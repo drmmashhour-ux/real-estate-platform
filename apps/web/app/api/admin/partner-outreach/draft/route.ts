@@ -48,9 +48,10 @@ export async function POST(request: NextRequest) {
   const subject = mergeTemplate(template.subjectTemplate, vars);
   const bodyText = mergeTemplate(template.bodyTemplate, vars);
 
-  if (reqBody.polishWithAi && isOpenAiConfigured()) {
+  const client = openai;
+  if (reqBody.polishWithAi && isOpenAiConfigured() && client) {
     try {
-      const res = await openai.chat.completions.create({
+      const res = await client.chat.completions.create({
         model: "gpt-4o-mini",
         temperature: 0.35,
         max_tokens: 1200,

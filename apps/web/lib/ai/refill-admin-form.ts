@@ -43,10 +43,11 @@ export async function getAdminFormRefillSuggestions(
   formId: AdminFormId,
   currentState?: Record<string, unknown>
 ): Promise<RefillSuggestions> {
-  if (isOpenAiConfigured()) {
+  const client = openai;
+  if (isOpenAiConfigured() && client) {
     try {
       const prompt = getPromptForForm(formId, currentState);
-      const completion = await openai.chat.completions.create({
+      const completion = await client.chat.completions.create({
         model: "gpt-4o-mini",
         messages: [
           {
