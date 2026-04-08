@@ -9,26 +9,42 @@ import { getResolvedMarket } from "@/lib/markets";
 
 export const dynamic = "force-dynamic";
 
+/** Host:port segment after `@` in DATABASE_URL — debug only; never log full URL. */
+function dbTargetHostFromDatabaseUrl(): string | null {
+  const raw = process.env.DATABASE_URL?.trim();
+  if (!raw) return null;
+  const segment = raw.split("@")[1]?.split("/")[0]?.trim();
+  return segment || null;
+}
+
 /**
  * Readiness: DB reachable + i18n bundles + market config. Use for load balancers / rollout gates.
  */
 export async function GET() {
   const hostHint = getDatabaseHostHint();
   const hostKind = getDbHostKind(hostHint);
+  const dbTargetHost = dbTargetHostFromDatabaseUrl() ?? hostHint;
+  const hasOpenAI = Boolean(process.env.OPENAI_API_KEY);
+  const envName = process.env.NODE_ENV;
+  const time = new Date().toISOString();
 
-  if (process.env.VERCEL_DEBUG === "1" || process.env.NODE_ENV === "development") {
+  if (process.env.VERCEL_DEBUG === "1" || envName === "development") {
     console.log("ENV CHECK", {
       DATABASE_URL: !!process.env.DATABASE_URL,
       DB_HOST: hostHint ?? "(unset or unparsable)",
       dbHostKind: hostKind,
+      dbTargetHost,
       SUPABASE_URL: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
       STRIPE: !!process.env.STRIPE_SECRET_KEY,
+      hasOpenAI,
     });
   }
 
+  let dbStatus: "ok" | "failed" = "ok";
   try {
     await withDbRetry(() => prisma.$queryRaw`SELECT 1`, { maxAttempts: 3, baseDelayMs: 200 });
   } catch (e) {
+    dbStatus = "failed";
     const c = classifyDbError(e);
     console.error(
       JSON.stringify({
@@ -38,20 +54,22 @@ export async function GET() {
         prismaCode: c.code ?? null,
         messageSummary: c.summary,
         dbHostKind: hostKind,
-        dbTargetHost: hostHint,
+        dbTargetHost,
       })
     );
     return NextResponse.json(
       {
         ok: false,
-        status: "error",
         ready: false,
-        db: "failed",
-        dbTargetHost: hostHint,
+        status: "error",
+        db: dbStatus,
+        dbTargetHost,
         dbHostKind: hostKind,
-        nodeEnv: process.env.NODE_ENV,
-        env: getPublicEnv(),
-        time: new Date().toISOString(),
+        hasOpenAI,
+        env: envName,
+        nodeEnv: envName,
+        publicEnv: getPublicEnv(),
+        time,
       },
       { status: 503 }
     );
@@ -63,34 +81,39 @@ export async function GET() {
       Object.keys(MESSAGES.fr).length > 0 &&
       Object.keys(MESSAGES.ar).length > 0;
     const market = await getResolvedMarket();
+    const ok = true;
     return NextResponse.json({
-      ok: true,
+      ok,
+      ready: ok,
       status: "ok",
-      ready: true,
-      env: getPublicEnv(),
-      nodeEnv: process.env.NODE_ENV,
-      db: "connected",
-      dbTargetHost: hostHint,
+      db: "ok",
+      dbTargetHost,
       dbHostKind: hostKind,
+      hasOpenAI,
+      env: envName,
+      nodeEnv: envName,
+      publicEnv: getPublicEnv(),
       checks: {
         i18nBundles,
         marketCode: market.code,
       },
-      time: new Date().toISOString(),
+      time,
     });
   } catch (e) {
     console.error("[api/ready] non-DB readiness error:", e);
     return NextResponse.json(
       {
         ok: false,
-        status: "error",
         ready: false,
-        db: "connected",
-        dbTargetHost: hostHint,
+        status: "error",
+        db: "ok",
+        dbTargetHost,
         dbHostKind: hostKind,
-        nodeEnv: process.env.NODE_ENV,
-        env: getPublicEnv(),
-        time: new Date().toISOString(),
+        hasOpenAI,
+        env: envName,
+        nodeEnv: envName,
+        publicEnv: getPublicEnv(),
+        time,
       },
       { status: 503 }
     );
