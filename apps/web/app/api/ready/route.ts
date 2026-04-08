@@ -36,6 +36,9 @@ export async function GET() {
   const hasOpenAI = Boolean(process.env.OPENAI_API_KEY);
   const envName = process.env.NODE_ENV;
   const time = new Date().toISOString();
+  const projectId = process.env.VERCEL_PROJECT_ID || null;
+  const projectName = process.env.VERCEL_PROJECT_PRODUCTION_URL || null;
+  const vercelEnv = process.env.VERCEL_ENV || null;
 
   if (process.env.VERCEL_DEBUG === "1" || envName === "development") {
     // Never log connection strings — only which env slots are populated.
@@ -79,6 +82,9 @@ export async function GET() {
         dbHostKind: hostKind,
         rawDbUrlExists,
         dbUrlPreview,
+        projectId,
+        projectName,
+        vercelEnv,
         hasOpenAI,
         env: envName,
         nodeEnv: envName,
@@ -105,6 +111,9 @@ export async function GET() {
       dbHostKind: hostKind,
       rawDbUrlExists,
       dbUrlPreview,
+      projectId,
+      projectName,
+      vercelEnv,
       hasOpenAI,
       env: envName,
       nodeEnv: envName,
@@ -127,6 +136,9 @@ export async function GET() {
         dbHostKind: hostKind,
         rawDbUrlExists,
         dbUrlPreview,
+        projectId,
+        projectName,
+        vercelEnv,
         hasOpenAI,
         env: envName,
         nodeEnv: envName,
