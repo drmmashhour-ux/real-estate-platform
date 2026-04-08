@@ -25,12 +25,7 @@ import {
   jsonResponseRawCardBlocked,
 } from "@/lib/security/blockRawCardData";
 import { isSecureCookieContext } from "@/lib/runtime-env";
-import {
-  HUB_USER_ROLE_COOKIE,
-  stagingAllowedRoles,
-  stagingRequireLogin,
-  stagingRoleGateEnabled,
-} from "@/lib/staging-middleware-config";
+import { HUB_USER_ROLE_COOKIE } from "@/lib/staging-middleware-config";
 
 /** Staging page gates only — do not mark `/api/*` public or protected API routes never run. */
 function isPublicPathForStaging(pathname: string): boolean {
@@ -42,8 +37,13 @@ function isPublicPathForStaging(pathname: string): boolean {
     return true;
   if (/\.(ico|png|svg|jpg|jpeg|gif|webp|json|txt|xml|webmanifest)$/i.test(pathname)) return true;
   if (pathname === "/api/health" || pathname === "/api/ready") return true;
-  /** Main browse surfaces — never force staging login gate (NEXT_PUBLIC_STAGING_REQUIRE_LOGIN). */
-  if (pathname === "/" || pathname.startsWith("/listings") || pathname.startsWith("/bnhub")) return true;
+  if (
+    pathname === "/" ||
+    pathname.startsWith("/listings") ||
+    pathname.startsWith("/bnhub")
+  ) {
+    return true;
+  }
   return false;
 }
 
@@ -165,37 +165,15 @@ export async function middleware(request: NextRequest) {
       return applyAttributionCookie(request, withRequestId(request));
     }
 
-    if (process.env.NEXT_PUBLIC_ENV === "staging") {
-      const stagingLogin = stagingRequireLogin();
-      const roleGate = stagingRoleGateEnabled();
-      if (stagingLogin || roleGate) {
-        const sessionId = request.cookies.get(AUTH_SESSION_COOKIE_NAME)?.value?.trim();
-        const role = request.cookies.get(HUB_USER_ROLE_COOKIE)?.value?.trim()?.toUpperCase() ?? "";
+    const requireLogin =
+      process.env.NEXT_PUBLIC_ENV === "staging" &&
+      process.env.NEXT_PUBLIC_STAGING_REQUIRE_LOGIN === "1";
 
-        if (stagingLogin && !sessionId) {
-          const loginUrl = request.nextUrl.clone();
-          loginUrl.pathname = "/auth/login";
-          loginUrl.searchParams.set("next", pathname + (request.nextUrl.search || ""));
-          return redirectWithRequestId(request, loginUrl);
-        }
-
-        if (roleGate && sessionId) {
-          if (!role) {
-            const loginUrl = request.nextUrl.clone();
-            loginUrl.pathname = "/auth/login";
-            loginUrl.searchParams.set("next", pathname + (request.nextUrl.search || ""));
-            loginUrl.searchParams.set("reason", "session_refresh");
-            return redirectWithRequestId(request, loginUrl);
-          }
-          const allowed = stagingAllowedRoles();
-          if (!allowed.has(role)) {
-            const u = request.nextUrl.clone();
-            u.pathname = "/auth/staging-restricted";
-            u.search = "";
-            return redirectWithRequestId(request, u);
-          }
-        }
-      }
+    if (requireLogin && !isPublicPathForStaging(pathname)) {
+      const loginUrl = request.nextUrl.clone();
+      loginUrl.pathname = "/auth/login";
+      loginUrl.searchParams.set("next", pathname + (request.nextUrl.search || ""));
+      return redirectWithRequestId(request, loginUrl);
     }
 
     if (pathname.startsWith("/demo")) {
