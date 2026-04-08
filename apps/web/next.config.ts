@@ -28,6 +28,11 @@ const securityHeaders = [
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
 ];
 
+/** TEMP: strip edge/browser caching so fresh middleware/HTML is served after deploy. Remove after verification (hurts `_next/static` CDN caching). */
+const forceNoStoreDocumentCache = [
+  { key: "Cache-Control", value: "no-store, no-cache, must-revalidate" },
+] as const;
+
 const nextConfig: NextConfig = {
   transpilePackages: ["@lecipm/ui", "@lecipm/api-client"],
   reactStrictMode: true,
@@ -55,7 +60,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/:path*",
-        headers: securityHeaders,
+        headers: [...securityHeaders, ...forceNoStoreDocumentCache],
       },
     ];
   },
