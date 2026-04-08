@@ -3,7 +3,8 @@ import withPWAInit from "next-pwa";
 
 const withPWA = withPWAInit({
   dest: "public",
-  disable: process.env.NODE_ENV === "development",
+  /** TEMP: disable service worker so old builds are not served from cache; re-enable after verification. */
+  disable: true,
   register: true,
   skipWaiting: true,
   /** Avoid caching issues while iterating locally */
