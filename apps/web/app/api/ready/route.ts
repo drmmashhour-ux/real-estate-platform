@@ -23,9 +23,10 @@ function dbTargetHostFromDatabaseUrl(): string | null {
  */
 export async function GET() {
   const rawDbUrl = process.env.DATABASE_URL || null;
-  /** Mask userinfo before `@host` — works for `postgresql://u:p@` and `postgres:p@` (no `://`). */
   const dbUrlPreview = rawDbUrl
-    ? rawDbUrl.replace(/^[^@]+@/, "***:***@")
+    ? rawDbUrl
+        .replace(/:\/\/.*@/, "://***:***@")
+        .replace(/^[^@]+@/, "***:***@")
     : null;
   const rawDbUrlExists = Boolean(rawDbUrl?.trim());
 
