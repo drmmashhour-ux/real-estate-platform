@@ -1,6 +1,19 @@
 import Link from "next/link";
+import { ListingStatus, type Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import { ListingStatus } from "@prisma/client";
+
+const featuredListingSelect = {
+  id: true,
+  city: true,
+  nightPriceCents: true,
+  currency: true,
+  photos: true,
+  bedrooms: true,
+  beds: true,
+  baths: true,
+} satisfies Prisma.ShortTermListingSelect;
+
+type FeaturedListingRow = Prisma.ShortTermListingGetPayload<{ select: typeof featuredListingSelect }>;
 
 const fmt = (cents: number, currency: string) => {
   const amount = cents / 100;
@@ -19,26 +32,26 @@ function bedBathLabel(bedrooms: number | null, beds: number, baths: number) {
 
 /** Published short-term listings — real DB rows only. */
 export async function LandingFeaturedListings() {
-  const rows = await prisma.shortTermListing.findMany({
-    where: { listingStatus: ListingStatus.PUBLISHED },
-    select: {
-      id: true,
-      city: true,
-      nightPriceCents: true,
-      currency: true,
-      photos: true,
-      bedrooms: true,
-      beds: true,
-      baths: true,
-    },
-    orderBy: { updatedAt: "desc" },
-    take: 9,
-  });
+  let rows: FeaturedListingRow[];
+  let queryFailed = false;
+  try {
+    rows = await prisma.shortTermListing.findMany({
+      where: { listingStatus: ListingStatus.PUBLISHED },
+      select: featuredListingSelect,
+      orderBy: { updatedAt: "desc" },
+      take: 9,
+    });
+  } catch {
+    rows = [];
+    queryFailed = true;
+  }
 
   if (rows.length === 0) {
     return (
       <div className="rounded-2xl border border-[#D4AF37]/25 bg-white/[0.03] px-6 py-14 text-center">
-        <p className="text-lg font-medium text-white">No published stays yet</p>
+        <p className="text-lg font-medium text-white">
+          {queryFailed ? "Featured listings are temporarily unavailable" : "No published stays yet"}
+        </p>
         <p className="mt-2 text-sm text-white/60">
           <Link href="/bnhub/stays" className="font-semibold text-[#D4AF37] underline-offset-4 hover:underline">
             Browse BNHub stays
