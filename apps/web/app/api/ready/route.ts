@@ -22,6 +22,10 @@ function dbTargetHostFromDatabaseUrl(): string | null {
  * Readiness: DB reachable + i18n bundles + market config. Use for load balancers / rollout gates.
  */
 export async function GET() {
+  const rawDbUrl = process.env.DATABASE_URL?.trim() || null;
+  const dbUrlPreview = rawDbUrl ? rawDbUrl.replace(/:\/\/.*@/, "://***:***@") : null;
+  const rawDbUrlExists = Boolean(rawDbUrl);
+
   const hostHint = getDatabaseHostHint();
   const hostKind = getDbHostKind(hostHint);
   const dbTargetHost = dbTargetHostFromDatabaseUrl() ?? hostHint;
@@ -69,6 +73,8 @@ export async function GET() {
         db: dbStatus,
         dbTargetHost,
         dbHostKind: hostKind,
+        rawDbUrlExists,
+        dbUrlPreview,
         hasOpenAI,
         env: envName,
         nodeEnv: envName,
@@ -93,6 +99,8 @@ export async function GET() {
       db: "ok",
       dbTargetHost,
       dbHostKind: hostKind,
+      rawDbUrlExists,
+      dbUrlPreview,
       hasOpenAI,
       env: envName,
       nodeEnv: envName,
@@ -113,6 +121,8 @@ export async function GET() {
         db: "ok",
         dbTargetHost,
         dbHostKind: hostKind,
+        rawDbUrlExists,
+        dbUrlPreview,
         hasOpenAI,
         env: envName,
         nodeEnv: envName,
