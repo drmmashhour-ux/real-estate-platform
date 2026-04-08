@@ -22,9 +22,11 @@ function dbTargetHostFromDatabaseUrl(): string | null {
  * Readiness: DB reachable + i18n bundles + market config. Use for load balancers / rollout gates.
  */
 export async function GET() {
-  const raw = process.env.DATABASE_URL || "";
-  const dbUrlPreview = raw ? raw.replace(/:\/\/(.*):(.*)@/, "://***:***@") : null;
-  const rawDbUrlExists = Boolean(raw.trim());
+  const rawDbUrl = process.env.DATABASE_URL || null;
+  const dbUrlPreview = rawDbUrl
+    ? rawDbUrl.replace(/:\/\/.*@/, "://***:***@")
+    : null;
+  const rawDbUrlExists = Boolean(rawDbUrl?.trim());
 
   const hostHint = getDatabaseHostHint();
   const hostKind = getDbHostKind(hostHint);
