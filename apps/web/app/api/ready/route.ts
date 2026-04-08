@@ -8,6 +8,7 @@ import { MESSAGES } from "@/lib/i18n/messages";
 import { getResolvedMarket } from "@/lib/markets";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 /** Host:port segment after `@` in DATABASE_URL — debug only; never log full URL. */
 function dbTargetHostFromDatabaseUrl(): string | null {
@@ -29,8 +30,11 @@ export async function GET() {
   const time = new Date().toISOString();
 
   if (process.env.VERCEL_DEBUG === "1" || envName === "development") {
+    // Never log connection strings — only which env slots are populated.
     console.log("ENV CHECK", {
-      DATABASE_URL: !!process.env.DATABASE_URL,
+      DATABASE_URL: !!process.env.DATABASE_URL?.trim(),
+      POSTGRES_URL: !!process.env.POSTGRES_URL?.trim(),
+      PRISMA_DATABASE_URL: !!process.env.PRISMA_DATABASE_URL?.trim(),
       DB_HOST: hostHint ?? "(unset or unparsable)",
       dbHostKind: hostKind,
       dbTargetHost,

@@ -1,4 +1,21 @@
 /**
+ * Vercel Postgres / some templates expose `POSTGRES_URL` or `PRISMA_DATABASE_URL`
+ * instead of `DATABASE_URL`. Normalize to one value for Prisma.
+ */
+export function resolveDatabaseUrlFromEnv(): string | undefined {
+  const candidates = [
+    process.env.DATABASE_URL,
+    process.env.POSTGRES_URL,
+    process.env.PRISMA_DATABASE_URL,
+  ];
+  for (const c of candidates) {
+    const t = c?.trim();
+    if (t) return t;
+  }
+  return undefined;
+}
+
+/**
  * Neon connection strings sometimes include `channel_binding=require`.
  * That parameter breaks many Prisma + node-postgres stacks on Vercel/serverless.
  * Strip it while preserving other query params (e.g. sslmode=require).

@@ -1,8 +1,9 @@
 import { PrismaClient } from "@prisma/client";
-import { normalizeDatabaseUrlForPrisma } from "./normalize-database-url";
+import { normalizeDatabaseUrlForPrisma, resolveDatabaseUrlFromEnv } from "./normalize-database-url";
 
-/** Neon may append channel_binding=require; Prisma/pg often need it stripped. */
-const resolved = normalizeDatabaseUrlForPrisma(process.env.DATABASE_URL);
+/** Prefer DATABASE_URL; fall back to Vercel/common aliases, then normalize for Prisma. */
+const rawFromEnv = resolveDatabaseUrlFromEnv();
+const resolved = normalizeDatabaseUrlForPrisma(rawFromEnv);
 if (resolved !== undefined) {
   process.env.DATABASE_URL = resolved;
 }
