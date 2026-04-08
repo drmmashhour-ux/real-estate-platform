@@ -1,16 +1,10 @@
 import { PrismaClient } from "@prisma/client";
-import {
-  ensureSslModeRequireForSupabase,
-  normalizeDatabaseUrlForPrisma,
-  resolveDatabaseUrlFromEnv,
-} from "./normalize-database-url";
+import { normalizeDatabaseUrlForPrisma } from "./normalize-database-url";
 
-/** Prefer DATABASE_URL; fall back to Vercel/common aliases, normalize, then enforce Supabase SSL. */
-const rawFromEnv = resolveDatabaseUrlFromEnv();
-const resolved = normalizeDatabaseUrlForPrisma(rawFromEnv);
-const prismaDatasourceUrl = resolved ? ensureSslModeRequireForSupabase(resolved) : undefined;
-if (prismaDatasourceUrl !== undefined) {
-  process.env.DATABASE_URL = prismaDatasourceUrl;
+/** Neon may append channel_binding=require; Prisma/pg often need it stripped. */
+const resolved = normalizeDatabaseUrlForPrisma(process.env.DATABASE_URL);
+if (resolved !== undefined) {
+  process.env.DATABASE_URL = resolved;
 }
 
 const globalForPrisma = globalThis as unknown as {
@@ -21,9 +15,6 @@ export const prisma =
   globalForPrisma.prisma ??
   new PrismaClient({
     log: ["error", "warn"],
-    ...(prismaDatasourceUrl
-      ? { datasources: { db: { url: prismaDatasourceUrl } } }
-      : {}),
   });
 
 if (process.env.NODE_ENV !== "production") {
