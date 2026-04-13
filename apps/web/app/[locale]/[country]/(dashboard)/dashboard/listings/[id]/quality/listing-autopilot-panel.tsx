@@ -15,6 +15,15 @@ type Suggestion = {
   status: string;
 };
 
+type AppliedRow = {
+  id: string;
+  fieldType: string;
+  proposedValue: string | null;
+  reason: string | null;
+  riskLevel: string;
+  updatedAt: string;
+};
+
 export function ListingAutopilotPanel({
   listingId,
   qualityScoreBefore,
@@ -26,6 +35,7 @@ export function ListingAutopilotPanel({
   const [loading, setLoading] = useState(false);
   const [running, setRunning] = useState(false);
   const [pending, setPending] = useState<Suggestion[]>([]);
+  const [recentApplied, setRecentApplied] = useState<AppliedRow[]>([]);
   const [message, setMessage] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -35,8 +45,9 @@ export function ListingAutopilotPanel({
         credentials: "same-origin",
       });
       const data = await res.json().catch(() => ({}));
-      if (res.ok && Array.isArray(data.pending)) {
-        setPending(data.pending.filter((s: Suggestion) => s.status === "suggested"));
+      if (res.ok) {
+        if (Array.isArray(data.pending)) setPending(data.pending);
+        if (Array.isArray(data.recentApplied)) setRecentApplied(data.recentApplied);
       }
     } finally {
       setLoading(false);
@@ -133,29 +144,30 @@ export function ListingAutopilotPanel({
     }
   };
 
-  const riskLabel = (r: string, auto: boolean) => {
+  const riskLabel = (r: string, auto: boolean, fieldType: string) => {
+    if (fieldType === "night_price_cents") return "Requires approval — price not changed automatically";
     if (r === "high") return "Requires approval";
     if (auto) return "Safe to auto-apply";
     return "Suggested fix";
   };
 
   return (
-    <div className="mt-10 rounded-2xl border border-indigo-200 bg-indigo-50/40 p-6">
-      <h2 className="text-lg font-semibold text-slate-900">AI optimization (autopilot)</h2>
-      <p className="mt-1 text-sm text-slate-600">
-        Grounded rewrites only — no invented amenities or legal claims. Price changes are suggestions until you change
-        pricing in the editor.
+    <div className="mt-10 rounded-2xl border border-ds-border bg-ds-card p-6 shadow-ds-soft md:p-8">
+      <h2 className="font-[family-name:var(--font-serif)] text-xl font-semibold text-ds-text">Listing optimization</h2>
+      <p className="mt-2 max-w-2xl text-sm leading-relaxed text-ds-text-secondary">
+        Grounded edits only — no invented amenities or legal claims. Price rows are suggestions until you change pricing
+        in the editor.
         {qualityScoreBefore != null ? (
-          <span className="ml-1 font-medium text-slate-800">Current quality: {qualityScoreBefore}/100.</span>
+          <span className="mt-2 block font-medium text-ds-text">Listing quality score: {qualityScoreBefore}/100.</span>
         ) : null}
       </p>
 
-      <div className="mt-4 flex flex-wrap gap-2">
+      <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
         <button
           type="button"
           disabled={running}
           onClick={() => void runAutopilot()}
-          className="inline-flex min-h-[40px] items-center justify-center rounded-lg bg-indigo-600 px-4 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60"
+          className="inline-flex min-h-[44px] flex-1 items-center justify-center rounded-xl bg-ds-gold px-5 text-sm font-semibold text-ds-bg shadow-ds-glow transition hover:brightness-110 disabled:opacity-60 sm:flex-none"
         >
           {running ? "Working…" : "Run optimization"}
         </button>
@@ -163,72 +175,85 @@ export function ListingAutopilotPanel({
           type="button"
           disabled={running}
           onClick={() => void applySafe()}
-          className="inline-flex min-h-[40px] items-center justify-center rounded-lg border border-indigo-300 bg-white px-4 text-sm font-semibold text-indigo-900 hover:bg-indigo-50 disabled:opacity-60"
+          className="inline-flex min-h-[44px] flex-1 items-center justify-center rounded-xl border border-ds-border bg-ds-surface px-5 text-sm font-semibold text-ds-text transition hover:border-ds-gold/35 disabled:opacity-60 sm:flex-none"
         >
-          Apply all safe fixes
+          Apply safe fixes
         </button>
       </div>
-      {message ? <p className="mt-3 text-sm text-slate-700">{message}</p> : null}
+      {message ? <p className="mt-4 text-sm text-ds-text-secondary">{message}</p> : null}
 
-      <div className="mt-6 space-y-3">
-        <h3 className="text-sm font-semibold text-slate-800">Pending suggestions</h3>
-        {loading ? <p className="text-sm text-slate-500">Loading…</p> : null}
+      <div className="mt-8 space-y-3">
+        <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-ds-text-secondary">Pending suggestions</h3>
+        {loading ? <p className="text-sm text-ds-text-secondary">Loading…</p> : null}
         {!loading && pending.length === 0 ? (
-          <p className="text-sm text-slate-500">No open suggestions. Run optimization to generate fixes.</p>
+          <p className="text-sm text-ds-text-secondary">No open suggestions. Run optimization to generate fixes.</p>
         ) : null}
-        <ul className="space-y-3">
+        <ul className="space-y-4">
           {pending.map((s) => (
-            <li key={s.id} className="rounded-xl border border-white bg-white/90 p-4 shadow-sm">
+            <li key={s.id} className="rounded-xl border border-ds-border bg-ds-surface/80 p-4">
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>
-                  <span className="text-xs font-semibold uppercase tracking-wide text-indigo-700">
-                    {labelForField(s.fieldType)}
-                  </span>
-                  <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700">
-                    {riskLabel(s.riskLevel, s.autoApplyAllowed)}
+                  <span className="text-xs font-semibold uppercase tracking-wide text-ds-gold">{labelForField(s.fieldType)}</span>
+                  <span className="ml-2 rounded-full border border-ds-border bg-ds-card px-2 py-0.5 text-[11px] font-medium text-ds-text-secondary">
+                    {riskLabel(s.riskLevel, s.autoApplyAllowed, s.fieldType)}
                   </span>
                 </div>
-                <span className="text-[11px] text-slate-400">Confidence {s.confidenceScore}%</span>
+                <span className="text-[11px] text-ds-text-secondary">Confidence {s.confidenceScore}%</span>
               </div>
-              {s.reason ? <p className="mt-1 text-sm text-slate-600">{s.reason}</p> : null}
+              {s.reason ? <p className="mt-2 text-sm leading-relaxed text-ds-text-secondary">{s.reason}</p> : null}
               {s.fieldType === "photo_order" ? (
-                <p className="mt-2 font-mono text-[11px] text-slate-500">Photo order JSON updated (cover first).</p>
+                <p className="mt-2 font-mono text-[11px] text-ds-text-secondary">Photo order JSON updated (cover first).</p>
               ) : (
-                <div className="mt-2 grid gap-2 text-sm sm:grid-cols-2">
+                <div className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
                   <div>
-                    <p className="text-[11px] font-medium uppercase text-slate-400">Before</p>
-                    <p className="whitespace-pre-wrap text-slate-700 line-clamp-6">
+                    <p className="text-[11px] font-medium uppercase tracking-wide text-ds-text-secondary">Before</p>
+                    <p className="mt-1 whitespace-pre-wrap text-ds-text/90 line-clamp-6">
                       {(s.currentValue ?? "").slice(0, 1200) || "—"}
                     </p>
                   </div>
                   <div>
-                    <p className="text-[11px] font-medium uppercase text-slate-400">After</p>
-                    <p className="whitespace-pre-wrap text-slate-900 line-clamp-6">
+                    <p className="text-[11px] font-medium uppercase tracking-wide text-ds-text-secondary">Proposed</p>
+                    <p className="mt-1 whitespace-pre-wrap text-ds-text line-clamp-6">
                       {(s.proposedValue ?? "").slice(0, 1200) || "—"}
                     </p>
                   </div>
                 </div>
               )}
-              <div className="mt-3 flex flex-wrap gap-2">
+              <div className="mt-4 flex flex-wrap gap-2 border-t border-ds-border pt-4">
                 <button
                   type="button"
                   onClick={() => void approve(s.id)}
-                  className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700"
+                  className="rounded-lg bg-ds-gold px-4 py-2 text-xs font-semibold text-ds-bg hover:brightness-110"
                 >
-                  Approve & apply
+                  {s.fieldType === "night_price_cents" ? "Approve (audit only)" : "Approve & apply"}
                 </button>
                 <button
                   type="button"
                   onClick={() => void reject(s.id)}
-                  className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                  className="rounded-lg border border-ds-border px-4 py-2 text-xs font-semibold text-ds-text-secondary hover:border-ds-gold/35 hover:text-ds-text"
                 >
-                  Reject
+                  Dismiss
                 </button>
               </div>
             </li>
           ))}
         </ul>
       </div>
+
+      {recentApplied.length > 0 ? (
+        <div className="mt-10 border-t border-ds-border pt-8">
+          <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-ds-text-secondary">Recently applied</h3>
+          <ul className="mt-3 space-y-2 text-xs text-ds-text-secondary">
+            {recentApplied.map((a) => (
+              <li key={a.id}>
+                <span className="font-medium text-ds-text">{labelForField(a.fieldType)}</span>
+                <span className="text-ds-text-secondary/70"> · {new Date(a.updatedAt).toLocaleString()}</span>
+                {a.reason ? <span className="block text-ds-text-secondary/90">{a.reason}</span> : null}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
     </div>
   );
 }

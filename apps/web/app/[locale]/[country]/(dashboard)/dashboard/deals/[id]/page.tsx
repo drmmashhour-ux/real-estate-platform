@@ -122,9 +122,17 @@ export default async function DealDetailPage({
             <ul className="mt-2 space-y-2">
               {deal.documents.map((doc) => (
                 <li key={doc.id} className="text-sm">
-                  <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer" className="text-amber-400 hover:underline">
-                    {doc.type} · {doc.status}
-                  </a>
+                  {doc.fileUrl ? (
+                    <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer" className="text-amber-400 hover:underline">
+                      {doc.type} · {doc.status}
+                    </a>
+                  ) : (
+                    <span className="text-slate-300">
+                      {doc.type} · {doc.status}
+                      {doc.workflowStatus ? ` · ${doc.workflowStatus}` : ""}
+                      <span className="ml-2 text-xs text-slate-500">(no file — draft / structured)</span>
+                    </span>
+                  )}
                 </li>
               ))}
             </ul>

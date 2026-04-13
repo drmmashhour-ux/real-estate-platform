@@ -35,12 +35,15 @@ export default async function AdminRevenuePage() {
           <p className="mt-3 max-w-2xl text-sm text-slate-400">
             Platform ledger plus the monetization layer: tracked events, opportunities, and high-value user ranking.
           </p>
-          <div className="mt-4">
+          <div className="mt-4 flex flex-wrap gap-4">
             <Link
               href="/admin"
               className="text-sm font-medium text-emerald-400 hover:text-emerald-300"
             >
               ← Back to Admin
+            </Link>
+            <Link href="/admin/revenue-engine-v4" className="text-sm font-medium text-amber-300/90 hover:text-amber-200">
+              Revenue Engine v4 →
             </Link>
           </div>
         </div>

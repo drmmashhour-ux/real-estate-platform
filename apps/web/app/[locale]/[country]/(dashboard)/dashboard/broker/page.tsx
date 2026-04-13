@@ -38,7 +38,10 @@ export default async function BrokerHubPage() {
   const userId = await getGuestId();
   const role = await getUserRole();
   const theme = getHubTheme("broker");
-  const fallbacks = getAiFallbacksForHub("broker") as { nextAction?: { action: string; closeProbabilityPct: number }; closeProbability?: number };
+  const fallbacks = getAiFallbacksForHub("broker") as {
+    nextAction?: { action: string; closeProbabilityPct: number; leadFitScore?: number };
+    closeProbability?: number;
+  };
 
   const dbUser = userId
     ? await prisma.user.findUnique({ where: { id: userId }, select: { role: true } })
@@ -143,8 +146,8 @@ export default async function BrokerHubPage() {
     },
     {
       id: "2",
-      title: "Close probability",
-      description: `Estimated close rate: ${fallbacks.nextAction?.closeProbabilityPct ?? fallbacks.closeProbability ?? 50}%. Follow up within 24h for best results.`,
+      title: "Lead fit score",
+      description: `Rule-based fit scores (0–100) from lead signals — not a closing forecast. Example: ${fallbacks.nextAction?.leadFitScore ?? fallbacks.nextAction?.closeProbabilityPct ?? fallbacks.closeProbability ?? 50}. Follow up within 24h when fit is strong.`,
       urgency: "medium" as const,
       actionLabel: "View leads",
       actionHref: "/dashboard/leads",

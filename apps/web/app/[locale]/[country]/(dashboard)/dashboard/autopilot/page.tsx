@@ -18,7 +18,7 @@ export default async function DashboardAutopilotPage({
 
   const base = `/${locale}/${country}`;
 
-  const [settings, listings, pendingSuggestions, recentAudits] = await Promise.all([
+  const [settings, listings, pendingSuggestions, recentAppliedFixes, recentAudits] = await Promise.all([
     getOrCreateListingAutopilotSettings(userId),
     prisma.shortTermListing.findMany({
       where: { ownerId: userId },
@@ -40,6 +40,15 @@ export default async function DashboardAutopilotPage({
       orderBy: { createdAt: "desc" },
       take: 25,
       include: { listing: { select: { title: true, listingCode: true } } },
+    }),
+    prisma.listingOptimizationSuggestion.findMany({
+      where: {
+        listing: { ownerId: userId },
+        status: "applied",
+      },
+      orderBy: { updatedAt: "desc" },
+      take: 20,
+      include: { listing: { select: { title: true, listingCode: true, id: true } } },
     }),
     prisma.listingOptimizationAudit.findMany({
       where: { listing: { ownerId: userId } },
@@ -115,6 +124,29 @@ export default async function DashboardAutopilotPage({
                 <li key={s.id}>
                   <span className="font-medium text-slate-800">{s.listing.title}</span> · {s.fieldType} ·{" "}
                   {s.riskLevel} risk
+                </li>
+              ))
+            )}
+          </ul>
+        </section>
+
+        <section>
+          <h2 className="text-lg font-semibold text-slate-900">Applied safe fixes (recent)</h2>
+          <ul className="mt-3 space-y-2 text-sm text-slate-600">
+            {recentAppliedFixes.length === 0 ? (
+              <li className="text-slate-500">No applied AI fixes yet.</li>
+            ) : (
+              recentAppliedFixes.map((s) => (
+                <li key={s.id} className="flex flex-wrap items-baseline justify-between gap-2">
+                  <span>
+                    <span className="font-medium text-slate-800">{s.listing.title}</span> · {s.fieldType}
+                  </span>
+                  <Link
+                    href={`${base}/dashboard/listings/${s.listing.id}/quality`}
+                    className="text-sm font-semibold text-indigo-700 hover:underline"
+                  >
+                    Quality
+                  </Link>
                 </li>
               ))
             )}

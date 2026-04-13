@@ -152,6 +152,7 @@ export function MarketingAiClient() {
       totalClicks: number;
       totalConversions: number;
       totalOpens: number;
+      snapshotCount?: number;
       ctrPercent: number | null;
       conversionPercent: number | null;
       openRatePercent: number | null;
@@ -358,6 +359,7 @@ export function MarketingAiClient() {
           totalClicks: number;
           totalConversions: number;
           totalOpens: number;
+          snapshotCount?: number;
           ctrPercent: number | null;
           conversionPercent: number | null;
           openRatePercent: number | null;
@@ -429,7 +431,18 @@ export function MarketingAiClient() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      const data = (await res.json()) as Record<string, unknown>;
+      const rawText = await res.text();
+      let data: Record<string, unknown> = {};
+      if (rawText.trim()) {
+        try {
+          data = JSON.parse(rawText) as Record<string, unknown>;
+        } catch {
+          setError(`Invalid response (${res.status}) — expected JSON.`);
+          setOutput(rawText.slice(0, 2000));
+          setLastContentId(null);
+          return;
+        }
+      }
       if (!res.ok || data.ok === false) {
         const err =
           typeof data.error === "string" ? data.error : `Request failed (${res.status})`;
@@ -667,12 +680,12 @@ export function MarketingAiClient() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-8 text-slate-100">
-      <div className="rounded-xl border border-white/10 bg-black/30 p-5">
-        <h2 className="text-sm font-semibold text-white">Generate</h2>
-        <p className="mt-1 text-xs text-slate-500">
-          Check &quot;Save as draft&quot; to store in DB. Feedback fields nudge the model — paste real notes, no API keys
-          here.
+    <div className="mx-auto max-w-4xl space-y-8 text-ds-text">
+      <div className="rounded-xl border border-ds-border bg-ds-card p-5 shadow-ds-soft">
+        <h2 className="text-sm font-semibold text-ds-gold">Studio</h2>
+        <p className="mt-1 text-xs text-ds-text-secondary">
+          Save drafts to the database. Prompt fields should reference real performance or channel notes only — never paste
+          secrets or credentials.
         </p>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <label className="flex items-center gap-2 text-xs text-slate-400 sm:col-span-2">
@@ -855,7 +868,7 @@ export function MarketingAiClient() {
           type="button"
           disabled={loading}
           onClick={() => runPost("/api/ai/social-post", basePayload(), "Social post")}
-          className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500 disabled:opacity-50"
+          className="rounded-lg border border-ds-gold/40 bg-ds-gold/10 px-4 py-2 text-sm font-medium text-ds-gold hover:bg-ds-gold/15 disabled:opacity-50"
         >
           Generate post
         </button>
@@ -920,10 +933,10 @@ export function MarketingAiClient() {
       {loading && <p className="text-sm text-slate-400">Generating…</p>}
       {error && <p className="text-sm text-rose-400">{error}</p>}
 
-      <div className="rounded-xl border border-white/10 bg-black/40 p-4">
+      <div className="rounded-xl border border-ds-border bg-black/50 p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h2 className="text-sm font-semibold text-white">Output</h2>
+            <h2 className="text-sm font-semibold text-ds-gold">Output</h2>
             {meta.kind && (
               <p className="text-xs text-slate-500">
                 {meta.kind}
@@ -941,7 +954,7 @@ export function MarketingAiClient() {
             Copy
           </button>
         </div>
-        <pre className="mt-3 max-h-[360px] overflow-auto whitespace-pre-wrap font-sans text-sm leading-relaxed text-slate-200">
+        <pre className="mt-3 max-h-[360px] overflow-auto whitespace-pre-wrap rounded-lg border border-white/5 bg-black/40 p-3 font-sans text-sm leading-relaxed text-slate-200">
           {output || "—"}
         </pre>
       </div>
@@ -1231,6 +1244,11 @@ export function MarketingAiClient() {
                     {!analyticsLoading && analytics && (
                       <>
                         <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-400 sm:grid-cols-3">
+                          <div className="sm:col-span-2">
+                            Metric snapshots{" "}
+                            <span className="text-slate-200">{analytics.summary.snapshotCount ?? "—"}</span>{" "}
+                            <span className="text-slate-600">(manual + logged)</span>
+                          </div>
                           <div>
                             Views <span className="text-slate-200">{analytics.summary.totalViews}</span>
                           </div>

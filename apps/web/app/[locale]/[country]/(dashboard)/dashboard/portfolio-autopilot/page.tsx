@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getGuestId } from "@/lib/auth/session";
+import { prisma } from "@/lib/db";
 import { getPortfolioOverview } from "@/lib/portfolio-autopilot/get-portfolio-overview";
 import { PortfolioAutopilotRunPanel } from "./portfolio-autopilot-client";
 import { PortfolioAutopilotSettingsForm } from "./portfolio-autopilot-settings-form";
@@ -24,7 +25,13 @@ export default async function PortfolioAutopilotPage({
   if (!userId) notFound();
 
   const base = `/${locale}/${country}`;
-  const overview = await getPortfolioOverview(userId);
+  const [overview, viewer] = await Promise.all([
+    getPortfolioOverview(userId),
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: { role: true },
+    }),
+  ]);
 
   const rev = overview.health.revenue90dCents / 100;
 
@@ -35,9 +42,18 @@ export default async function PortfolioAutopilotPage({
       </Link>
       <h1 className="mt-4 text-2xl font-bold text-slate-900">Portfolio autopilot</h1>
       <p className="mt-1 text-sm text-slate-600">
-        One view across all your stays: health, winners, weak spots, and prioritized actions. Safe mode triggers listing
-        optimization runs — never auto-updates live prices from here.
+        One view across all BNHub stays you own: health, winners, weak spots, and prioritized actions. Hosts and
+        listing owners see their portfolio here; safe mode triggers listing optimization runs — never auto-updates live
+        prices from here. CRM-focused broker accounts without owned stays may see an empty portfolio until listings are
+        tied to this user.
       </p>
+      {overview.health.listingCount === 0 ? (
+        <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950">
+          No active stays found for this account. Publish BNHub listings or switch to the host account that owns them to
+          populate portfolio analytics
+          {viewer?.role === "BROKER" ? " (brokers often use a dedicated host login for inventory)." : "."}
+        </p>
+      ) : null}
       <p className="mt-2 text-sm">
         <Link href={`${base}/dashboard/revenue-autopilot`} className="font-semibold text-emerald-800 hover:underline">
           Revenue autopilot

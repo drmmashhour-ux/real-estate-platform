@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { HostAiSuggestionsSection } from "@/components/host/HostAiSuggestionsSection";
+import { PricingInsightCard } from "@/components/host/PricingInsightCard";
 import { getGuestId } from "@/lib/auth/session";
+import { revenueV4Flags } from "@/config/feature-flags";
 import {
   getHostAiSuggestions,
   getHostDashboardStats,
@@ -107,6 +109,13 @@ export default async function HostDashboardPage() {
           <p className="mt-1 text-xs text-zinc-500">Avg nightly ${(stats.averageNightlyRateCents / 100).toFixed(0)} CAD</p>
         </div>
       </section>
+
+      {revenueV4Flags.pricingEngineV2 && performance[0] ? (
+        <section className="space-y-3">
+          <h2 className="text-lg font-semibold text-white">Pricing insight</h2>
+          <PricingInsightCard listingId={performance[0].listingId} />
+        </section>
+      ) : null}
 
       <div className="grid gap-8 lg:grid-cols-3">
         <section className="lg:col-span-2 space-y-4">

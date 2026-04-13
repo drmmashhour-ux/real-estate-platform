@@ -58,6 +58,8 @@ type Listing = {
   learningRankScore?: number;
   learningExplanation?: string;
   learningExplanationDetail?: string;
+  /** From cached listing quality — short pill when thresholds are met. */
+  qualityBadgeLabel?: string | null;
 };
 
 const DEFAULT_STAY_FILTERS: StaysSearchFilters = {
@@ -560,6 +562,14 @@ export function StaysSearchResults() {
                   <p className="mt-2 line-clamp-2 text-sm text-neutral-500">{listing.description}</p>
                 ) : null}
                 <div className="mt-3 flex flex-wrap gap-2">
+                  {listing.qualityBadgeLabel ? (
+                    <span
+                      className="rounded-full border border-emerald-500/35 bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-200"
+                      title="Listing quality reflects content, pricing, performance, behavior, and trust signals."
+                    >
+                      {listing.qualityBadgeLabel}
+                    </span>
+                  ) : null}
                   {listing.verificationStatus === "VERIFIED" ? (
                     <span className="rounded-full border border-premium-gold/35 bg-premium-gold/10 px-2.5 py-1 text-xs font-semibold text-premium-gold">
                       Verified listing

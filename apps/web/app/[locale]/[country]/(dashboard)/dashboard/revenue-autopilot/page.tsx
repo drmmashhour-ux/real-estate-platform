@@ -31,9 +31,15 @@ export default async function RevenueAutopilotPage({
       </Link>
       <h1 className="mt-4 text-2xl font-bold text-slate-900">Revenue autopilot</h1>
       <p className="mt-1 text-sm text-slate-600">
-        Gross booking revenue signals, monetization gaps, and prioritized growth actions. Estimates are directional — not
-        tax or payout advice.
+        Gross booking revenue signals (BNHub short-term stays), monetization gaps, and prioritized growth actions.
+        Estimates are directional — not tax or payout advice.
       </p>
+      {overview.health.listingCount === 0 ? (
+        <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950">
+          No eligible stays on this account yet — publish BNHub listings or use the host login that owns inventory to see
+          revenue health.
+        </p>
+      ) : null}
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2">
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">

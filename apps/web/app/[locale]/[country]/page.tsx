@@ -12,6 +12,8 @@ import { getGuestId } from "@/lib/auth/session";
 import { getExperimentBrowserSessionId } from "@/lib/experiments/browser-session";
 import { EXPERIMENT_SURFACES } from "@/lib/experiments/constants";
 import { resolveExperimentSurface } from "@/lib/experiments/get-variant-config";
+import { marketingLandingFlags } from "@/config/feature-flags";
+import { LecipmMarketingLandingV1 } from "@/components/marketing/LecipmMarketingLandingV1";
 
 /** Public home — soft-launch landing: single search + trust. */
 export async function generateMetadata({
@@ -33,6 +35,11 @@ export async function generateMetadata({
 
 export default async function HomePage({ params }: { params: Promise<{ locale: string; country: string }> }) {
   const { locale, country } = await params;
+
+  if (marketingLandingFlags.landingV1) {
+    return <LecipmMarketingLandingV1 />;
+  }
+
   const sessionId = await getExperimentBrowserSessionId();
   const userId = await getGuestId();
   const [heroExperiment, searchExperiment] = await Promise.all([

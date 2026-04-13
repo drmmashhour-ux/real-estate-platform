@@ -174,6 +174,12 @@ export default async function SellerHubDashboardPage() {
             <Link href="/dashboard/seller/listings" className="text-premium-gold hover:underline">
               All listings
             </Link>
+            <Link href="/dashboard/seller/performance" className="text-premium-gold hover:underline">
+              Performance
+            </Link>
+            <Link href="/dashboard/seller/revenue" className="text-premium-gold hover:underline">
+              Revenue
+            </Link>
             {user?.sellerProfileAddress ? (
               <span className="text-slate-500">Profile address on file</span>
             ) : (

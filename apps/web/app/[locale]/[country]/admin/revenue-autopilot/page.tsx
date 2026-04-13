@@ -16,28 +16,50 @@ export default async function AdminRevenueAutopilotPage() {
 
   const since = subDays(new Date(), 90);
 
-  const [riskAlerts, platformHealth, bookingsByCity, topListingsRaw, pendingActions, recentOpps] =
-    await Promise.all([
-      getAdminRiskAlerts(),
-      computeRevenueHealth({ scopeType: "platform", scopeId: REVENUE_PLATFORM_SCOPE_ID }),
-      prisma.booking.findMany({
-        where: { status: "COMPLETED", createdAt: { gte: since } },
-        select: { totalCents: true, listing: { select: { city: true } } },
-      }),
-      prisma.booking.groupBy({
-        by: ["listingId"],
-        where: { status: "COMPLETED", createdAt: { gte: since } },
-        _sum: { totalCents: true },
-      }),
-      prisma.revenueAutopilotAction.count({
-        where: { scopeType: "platform", scopeId: REVENUE_PLATFORM_SCOPE_ID, status: "suggested" },
-      }),
-      prisma.revenueOpportunityLog.findMany({
-        where: { scopeType: "platform", scopeId: REVENUE_PLATFORM_SCOPE_ID },
-        orderBy: { createdAt: "desc" },
-        take: 12,
-      }),
-    ]);
+  const [
+    riskAlerts,
+    platformHealth,
+    bookingsByCity,
+    topListingsRaw,
+    pendingActions,
+    recentOpps,
+    actionStatusSummary,
+    opportunityLeaderboard,
+  ] = await Promise.all([
+    getAdminRiskAlerts(),
+    computeRevenueHealth({ scopeType: "platform", scopeId: REVENUE_PLATFORM_SCOPE_ID }),
+    prisma.booking.findMany({
+      where: { status: "COMPLETED", createdAt: { gte: since } },
+      select: { totalCents: true, listing: { select: { city: true } } },
+    }),
+    prisma.booking.groupBy({
+      by: ["listingId"],
+      where: { status: "COMPLETED", createdAt: { gte: since } },
+      _sum: { totalCents: true },
+    }),
+    prisma.revenueAutopilotAction.count({
+      where: { scopeType: "platform", scopeId: REVENUE_PLATFORM_SCOPE_ID, status: "suggested" },
+    }),
+    prisma.revenueOpportunityLog.findMany({
+      where: { scopeType: "platform", scopeId: REVENUE_PLATFORM_SCOPE_ID },
+      orderBy: { createdAt: "desc" },
+      take: 12,
+    }),
+    prisma.revenueAutopilotAction.groupBy({
+      by: ["status"],
+      where: { scopeType: "platform", scopeId: REVENUE_PLATFORM_SCOPE_ID },
+      _count: { _all: true },
+    }),
+    prisma.revenueOpportunityLog.findMany({
+      where: {
+        scopeType: "platform",
+        scopeId: REVENUE_PLATFORM_SCOPE_ID,
+        estimatedRevenueCents: { not: null },
+      },
+      orderBy: { estimatedRevenueCents: "desc" },
+      take: 15,
+    }),
+  ]);
 
   const cityMap = new Map<string, number>();
   for (const b of bookingsByCity) {
@@ -81,7 +103,8 @@ export default async function AdminRevenueAutopilotPage() {
           </Link>
           <h1 className="mt-4 text-2xl font-bold text-white">Revenue autopilot</h1>
           <p className="mt-1 text-sm text-zinc-500">
-            Platform-wide monetization snapshot (BNHub-heavy). See{" "}
+            Platform-wide monetization snapshot (BNHub short-term / `Booking` revenue). FSBO and other hubs are out of
+            scope for this MVP view. See{" "}
             <code className="text-zinc-400">docs/optimization/revenue-autopilot.md</code>.
           </p>
         </div>
@@ -94,6 +117,7 @@ export default async function AdminRevenueAutopilotPage() {
 
         <section>
           <h2 className="text-lg font-semibold text-white">Gross by city (90d, completed)</h2>
+          <p className="mt-1 text-xs text-zinc-500">Hub: BNHub short-term stays (`Booking` totals; same universe as health sample).</p>
           <ul className="mt-2 space-y-1 text-sm text-zinc-400">
             {cityRows.map(([city, cents]) => (
               <li key={city}>
@@ -133,8 +157,18 @@ export default async function AdminRevenueAutopilotPage() {
         </section>
 
         <section>
-          <h2 className="text-lg font-semibold text-white">Pending platform revenue actions</h2>
-          <p className="mt-1 text-2xl font-mono text-amber-300">{pendingActions}</p>
+          <h2 className="text-lg font-semibold text-white">Platform revenue actions (by status)</h2>
+          <ul className="mt-2 space-y-1 text-sm text-zinc-400">
+            {actionStatusSummary.map((r) => (
+              <li key={r.status}>
+                {r.status}: {r._count._all}
+              </li>
+            ))}
+            {actionStatusSummary.length === 0 ? <li>No platform actions yet.</li> : null}
+          </ul>
+          <p className="mt-3 text-xs text-zinc-500">
+            Pending (suggested only): <span className="font-mono text-amber-300">{pendingActions}</span>
+          </p>
         </section>
 
         <section>
@@ -146,6 +180,20 @@ export default async function AdminRevenueAutopilotPage() {
               </li>
             ))}
             {recentOpps.length === 0 ? <li>No platform opportunities logged yet — run platform analysis.</li> : null}
+          </ul>
+        </section>
+
+        <section>
+          <h2 className="text-lg font-semibold text-white">Opportunity leaderboard (estimated uplift)</h2>
+          <p className="mt-1 text-xs text-zinc-500">Platform-scope logs with highest `estimatedRevenueCents`.</p>
+          <ul className="mt-2 space-y-1 text-sm text-zinc-400">
+            {opportunityLeaderboard.map((o) => (
+              <li key={o.id}>
+                {o.opportunityType} · est. +{Math.round((o.estimatedRevenueCents ?? 0) / 100)} ·{" "}
+                {o.notes?.slice(0, 60) ?? "—"}
+              </li>
+            ))}
+            {opportunityLeaderboard.length === 0 ? <li>No estimated-uplift rows yet.</li> : null}
           </ul>
         </section>
 

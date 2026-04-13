@@ -10,7 +10,7 @@ export const revalidate = 0;
 export default async function AdminPortfolioAutopilotPage() {
   await requireAdminControlUserId();
 
-  const [riskAlerts, healthiest, struggling, actionSummary, topRevenue] = await Promise.all([
+  const [riskAlerts, healthiest, struggling, actionSummary, topRevenue, weakListingRows] = await Promise.all([
     getAdminRiskAlerts(),
     prisma.portfolioHealthScore.findMany({
       orderBy: { portfolioHealthScore: "desc" },
@@ -38,7 +38,31 @@ export default async function AdminPortfolioAutopilotPage() {
         owner: { select: { email: true, name: true, userCode: true } },
       },
     }),
+    prisma.shortTermListing.findMany({
+      where: {
+        listingStatus: { notIn: ["DRAFT", "REJECTED_FOR_FRAUD", "PERMANENTLY_REMOVED"] },
+        listingQualityScore: { qualityScore: { lt: 52 } },
+      },
+      select: { ownerId: true },
+    }),
   ]);
+
+  const weakCountByOwner = new Map<string, number>();
+  for (const row of weakListingRows) {
+    weakCountByOwner.set(row.ownerId, (weakCountByOwner.get(row.ownerId) ?? 0) + 1);
+  }
+  const ownersManyWeak = [...weakCountByOwner.entries()]
+    .filter(([, n]) => n >= 2)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 20);
+  const manyWeakMeta =
+    ownersManyWeak.length > 0
+      ? await prisma.user.findMany({
+          where: { id: { in: ownersManyWeak.map(([id]) => id) } },
+          select: { id: true, email: true, name: true, userCode: true },
+        })
+      : [];
+  const manyWeakById = new Map(manyWeakMeta.map((u) => [u.id, u]));
 
   const shellAlerts = riskAlerts.map((r) => ({
     id: r.id,
@@ -84,6 +108,24 @@ export default async function AdminPortfolioAutopilotPage() {
               </li>
             ))}
             {healthiest.length === 0 ? <li>No portfolio health rows — hosts need to run analysis.</li> : null}
+          </ul>
+        </section>
+
+        <section>
+          <h2 className="text-lg font-semibold text-white">Owners with multiple weak listings</h2>
+          <p className="mt-1 text-xs text-zinc-500">
+            Published/active stays with listing quality score &lt; 52; at least two such listings per owner.
+          </p>
+          <ul className="mt-2 space-y-1 text-sm text-zinc-400">
+            {ownersManyWeak.map(([ownerId, count]) => {
+              const u = manyWeakById.get(ownerId);
+              return (
+                <li key={ownerId}>
+                  {u?.userCode ?? ownerId.slice(0, 8)} · {u?.email ?? "—"} · {count} weak listing(s)
+                </li>
+              );
+            })}
+            {ownersManyWeak.length === 0 ? <li>No multi-weak portfolios match.</li> : null}
           </ul>
         </section>
 

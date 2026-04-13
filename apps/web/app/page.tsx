@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { LecipmHomeLanding } from "@/components/marketing/LecipmHomeLanding";
 import { HomeFeaturedListings } from "@/components/marketing/HomeFeaturedListings";
 import { HomeTrustBullets } from "@/components/marketing/HomeTrustBullets";
+import { LecipmMarketingLandingV1 } from "@/components/marketing/LecipmMarketingLandingV1";
+import { marketingLandingFlags } from "@/config/feature-flags";
 import { buildPageMetadata } from "@/lib/seo/page-metadata";
 import { seoConfig } from "@/lib/seo/config";
 import { OG_DEFAULT_PLATFORM } from "@/lib/seo/og-defaults";
@@ -20,6 +22,9 @@ export async function generateMetadata(): Promise<Metadata> {
 
 /** Fallback `/` when not rewritten — match default locale/country segment. */
 export default function HomePage() {
+  if (marketingLandingFlags.landingV1) {
+    return <LecipmMarketingLandingV1 />;
+  }
   return (
     <div className="flex flex-col">
       <LecipmHomeLanding />

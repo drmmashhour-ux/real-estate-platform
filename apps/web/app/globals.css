@@ -129,6 +129,62 @@ html {
   --font-size-bnhub-xl: 1.25rem;
   --font-size-bnhub-2xl: 1.5rem;
   --font-size-bnhub-3xl: 1.875rem;
+  /** Marketing landing v1 — Figma-aligned aliases (use `bg-landing-*`, `text-landing-text`, …) */
+  --color-landing-black: #000000;
+  --color-landing-gold: #d4af37;
+  --color-landing-dark: #121212;
+  --color-landing-gray: #2a2a2a;
+  --color-landing-text: #eaeaea;
+  --shadow-landing-soft: 0 8px 32px rgb(0 0 0 / 0.45);
+  --shadow-landing-glow: 0 0 48px rgb(212 175 55 / 0.14);
+  --font-size-landing-hero: clamp(2.25rem, 5vw + 1rem, 3.5rem);
+  /** LECIPM design system v1 — canonical app shell (Tailwind: bg-ds-bg, border-ds-border, …) */
+  --color-ds-bg: #000000;
+  --color-ds-surface: #121212;
+  --color-ds-card: #1a1a1a;
+  --color-ds-border: #2a2a2a;
+  --color-ds-gold: #d4af37;
+  --color-ds-gold-soft: rgb(212 175 55 / 0.2);
+  --color-ds-text: #ffffff;
+  --color-ds-text-secondary: #b0b0b0;
+  --shadow-ds-soft: 0 10px 40px rgb(0 0 0 / 0.45);
+  --shadow-ds-glow: 0 0 40px rgb(212 175 55 / 0.12);
+  --spacing-ds-1: 4px;
+  --spacing-ds-2: 8px;
+  --spacing-ds-3: 16px;
+  --spacing-ds-4: 24px;
+  --spacing-ds-5: 32px;
+  --spacing-ds-6: 48px;
+  --spacing-ds-7: 64px;
+}
+
+@keyframes ds-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes ds-pulse-gold {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(212 175 55 / 0.2);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgb(212 175 55 / 0.06);
+  }
+}
+
+.animate-ds-fade-in {
+  animation: ds-fade-in 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-ds-pulse-gold {
+  animation: ds-pulse-gold 2.4s ease-in-out infinite;
 }
 
 /* -------------------------------------------------------------------------- */
