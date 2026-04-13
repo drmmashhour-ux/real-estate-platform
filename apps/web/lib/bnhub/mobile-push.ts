@@ -57,7 +57,7 @@ export async function sendBnhubPushToUser(input: {
     });
 
     if (!response.ok) {
-      logWarn("BNHub mobile push request failed", {
+      logWarn("BNHUB mobile push request failed", {
         status: response.status,
         userId: input.userId,
       });
@@ -83,7 +83,7 @@ export async function sendBnhubPushToUser(input: {
       });
     }
 
-    logInfo("BNHub mobile push dispatched", {
+    logInfo("BNHUB mobile push dispatched", {
       userId: input.userId,
       tokenCount: validTokens.length,
       revokedCount: rowsToRevoke.length,
@@ -91,7 +91,7 @@ export async function sendBnhubPushToUser(input: {
 
     return { sent: validTokens.length, revoked: rowsToRevoke.length };
   } catch (error) {
-    logError("BNHub mobile push dispatch crashed", error);
+    logError("BNHUB mobile push dispatch crashed", error);
     return { sent: 0, revoked: 0 };
   }
 }

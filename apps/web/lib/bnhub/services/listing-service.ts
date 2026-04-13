@@ -1,5 +1,5 @@
 /**
- * BNHub ListingService — create, update, get, delete listings.
+ * BNHUB ListingService — create, update, get, delete listings.
  * Delegates to lib/bnhub/listings.
  */
 

@@ -11,7 +11,7 @@ export function TrustBadge({ score, tier }: { score: number; tier: Tier }) {
   return (
     <span
       className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ${colors}`}
-      title="BNHub trust score blends verification, reviews, and listing completeness."
+      title="BNHUB trust score blends verification, reviews, and listing completeness."
     >
       <span className="tabular-nums font-semibold">{score}</span>
       <span className="text-[10px] uppercase tracking-wide opacity-90">Trust</span>

@@ -225,6 +225,6 @@ export function isValidPlanSelection(hub: string | null, planId: string | null):
 export const HUB_DISPLAY_NAME: Record<PricingHubId, string> = {
   buyer: "Buyer",
   seller: "Seller",
-  bnhub: "BNHub host",
+  bnhub: "BNHUB host",
   broker: "Broker",
 };

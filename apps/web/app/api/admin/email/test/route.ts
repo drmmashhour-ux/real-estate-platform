@@ -44,9 +44,9 @@ export async function POST(request: NextRequest) {
 
   const ok = await sendTransactionalEmail({
     to,
-    subject: "BNHub — email test",
+    subject: "BNHUB — email test",
     template: "admin_test_ping",
-    html: `<p>This is a test from BNHub production email wiring.</p><p>If you received this, outbound mail is working.</p>`,
+    html: `<p>This is a test from BNHUB production email wiring.</p><p>If you received this, outbound mail is working.</p>`,
   });
 
   return Response.json({ ok, provider: process.env.EMAIL_PROVIDER ?? "auto" });

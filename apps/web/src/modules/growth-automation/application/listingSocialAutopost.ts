@@ -174,7 +174,7 @@ export async function queueSocialContentForPublishedListing(listingId: string): 
       channelLabel: channelLabel(platform),
       topic: `New stay: ${listing.title}`,
       contentFamily: "product_demo",
-      productOrFeature: "BNHub short-term rental listing",
+      productOrFeature: "BNHUB short-term rental listing",
       link: listingUrl,
       extraRules: `Listing code: ${listing.listingCode ?? "n/a"}. Location: ${loc || "n/a"}. Guests: ${listing.maxGuests ?? "n/a"}. Beds: ${listing.beds ?? "n/a"}. Baths: ${listing.baths ?? "n/a"}. Nightly from: ${price || "n/a"}. Highlight the stay and drive clicks to the link. Keep tone welcoming and professional.`,
     });

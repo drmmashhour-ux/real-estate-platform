@@ -1,5 +1,5 @@
 /**
- * BNHub-style **suggestions only** — never mutates listing prices without an explicit approval record.
+ * BNHUB-style **suggestions only** — never mutates listing prices without an explicit approval record.
  * Pair with `lib/approvals/service.ts` + `routeSideEffect` for `pricing_or_fee_change`.
  */
 

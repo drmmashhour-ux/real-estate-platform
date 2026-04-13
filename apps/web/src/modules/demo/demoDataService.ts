@@ -74,7 +74,7 @@ const FALLBACK_BNHUB_CARD: DemoListingCard = {
   location: "Montréal, QC",
   priceLabel: "$289 / night",
   imageUrl: HERO_STAY,
-  badges: ["BNHub", "Published", "Trust: verified host flow"],
+  badges: ["BNHUB", "Published", "Trust: verified host flow"],
   beds: 2,
   baths: 1,
   guests: 4,
@@ -122,7 +122,7 @@ function mapBnhubToCard(row: {
     location: [row.city, row.region, row.country].filter(Boolean).join(", "),
     priceLabel: `${row.currency === "USD" ? "$" : row.currency + " "}${nightly.toFixed(0)} / night`,
     imageUrl: HERO_STAY,
-    badges: ["BNHub", row.listingCode, "Live data"],
+    badges: ["BNHUB", row.listingCode, "Live data"],
     beds: row.beds,
     baths: row.baths,
     guests: row.maxGuests,
@@ -226,7 +226,7 @@ export async function getDemoBnhubListing(): Promise<DemoPropertyDetail> {
   return {
     ...bnhub,
     description:
-      "Investor demo narrative: guests discover BNHub stays with clear pricing, house rules, and a booking path that captures payment and commission. Seeded listing LST-INVDEMO1 when `pnpm seed:demo:investor` has run.",
+      "Investor demo narrative: guests discover BNHUB stays with clear pricing, house rules, and a booking path that captures payment and commission. Seeded listing LST-INVDEMO1 when `pnpm seed:demo:investor` has run.",
     trustLine: "Host verified · Guest protection policy · Platform-managed payout",
     publicPath: bnhub.id !== DEMO_PROPERTY_SLUGS.bnhub ? `/bnhub/${bnhub.id}` : undefined,
   };
@@ -342,7 +342,7 @@ export async function getDemoRevenuePreview(): Promise<DemoRevenuePreview> {
 
   return [
     {
-      label: "BNHub — demo booking (seed)",
+      label: "BNHUB — demo booking (seed)",
       amountLabel: demoBooking
         ? `Total $${(demoBooking.totalCents / 100).toFixed(2)} · fees $${(demoBooking.guestFeeCents / 100).toFixed(2)}`
         : "Run pnpm seed:demo:investor",
@@ -400,7 +400,7 @@ export async function getDemoMetricsSnapshot(): Promise<DemoMetricsSnapshot> {
     growthNote:
       "Platform-wide counts above are real DB totals; investor narrative uses LST-INVDEMO* rows only. No fabricated P&L.",
     monetizationLines: [
-      "Booking take-rate on BNHub nights",
+      "Booking take-rate on BNHUB nights",
       "Broker lead unlock + assisted transaction fees",
       "Premium listing & placement",
     ],

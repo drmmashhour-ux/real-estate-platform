@@ -2,6 +2,17 @@
 
 Concise reference for what GitHub Actions enforces and how to respond when it fails.
 
+## Security workflows (separate jobs)
+
+Security scanning runs in **dedicated workflows** (not merged into `ci.yml`) to keep failures visible and optional gates independent:
+
+- **CodeQL** — [`.github/workflows/codeql.yml`](../.github/workflows/codeql.yml)
+- **Snyk** — [`.github/workflows/snyk.yml`](../.github/workflows/snyk.yml) (requires `SNYK_TOKEN` for full runs)
+- **Gitleaks** — [`.github/workflows/gitleaks.yml`](../.github/workflows/gitleaks.yml)
+- **ZAP** — [`.github/workflows/security-zap.yml`](../.github/workflows/security-zap.yml) (scheduled / manual / post-merge; uses `ZAP_TARGET_URL` etc.)
+
+Policy for which checks block merges: [docs/security/pr-security-gates.md](./security/pr-security-gates.md).
+
 ## What CI blocks
 
 On every push to `main` / `develop` and on pull requests, the **CI** workflow fails the job if any of these fail:

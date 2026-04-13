@@ -1,33 +1,17 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Cormorant_Garamond, Inter, Noto_Sans_Arabic } from "next/font/google";
-import { cookies } from "next/headers";
-import { CookieConsentBanner } from "@/components/legal/CookieConsentBanner";
-import { HeaderGate } from "@/components/layout/HeaderGate";
-import { InvestmentShellChrome } from "@/components/layout/InvestmentShellChrome";
-import FooterClient from "@/components/layout/FooterClient";
-import FloatingContact from "@/components/ui/FloatingContact";
-import { BrowserHistoryNav } from "@/components/ui/BrowserHistoryNav";
-import { ImmoChatWidgetLazy } from "@/components/immo/ImmoChatWidgetLazy";
-import { AppProviders } from "@/app/providers";
+import { getLocale } from "next-intl/server";
 import { SkipLinks } from "@/components/accessibility/SkipLinks";
-import { DemoModeBanner } from "@/components/layout/DemoModeBanner";
-import { TestModeBanner } from "@/components/layout/TestModeBanner";
-import { DebugPanel } from "@/components/DebugPanel";
 import { UI_LOCALE_ENTRIES } from "@/lib/i18n/locales";
-import { resolveInitialLocale } from "@/lib/i18n/resolve-initial-locale";
-import { localeAllowListFromFlags, resolveLaunchFlags } from "@/lib/launch/resolve-launch-flags";
 import {
   PLATFORM_CARREFOUR_NAME,
   PLATFORM_DEFAULT_DESCRIPTION,
   PLATFORM_DEFAULT_SITE_TITLE,
   PLATFORM_NAME,
 } from "@/lib/brand/platform";
+import { OG_DEFAULT_PLATFORM } from "@/lib/seo/og-defaults";
 import { getSiteBaseUrl } from "@/modules/seo/lib/siteBaseUrl";
-
-if (process.env.NODE_ENV === "development") {
-  console.log("[API BASE]", process.env.NEXT_PUBLIC_APP_URL);
-}
 
 const inter = Inter({
   subsets: ["latin", "latin-ext"],
@@ -67,7 +51,7 @@ export const metadata: Metadata = {
     "Quebec real estate platform",
     "Montréal immobilier",
     "plateforme immobilière Québec",
-    "BNHub",
+    "BNHUB",
     "FSBO",
     PLATFORM_CARREFOUR_NAME,
     PLATFORM_NAME,
@@ -82,31 +66,34 @@ export const metadata: Metadata = {
     description: PLATFORM_DEFAULT_DESCRIPTION,
     siteName: PLATFORM_NAME,
     type: "website",
+    locale: "en_CA",
+    images: [
+      {
+        url: OG_DEFAULT_PLATFORM,
+        width: 1200,
+        height: 630,
+        alt: `${PLATFORM_NAME} — ${PLATFORM_CARREFOUR_NAME}`,
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: PLATFORM_DEFAULT_SITE_TITLE,
     description: PLATFORM_DEFAULT_DESCRIPTION,
+    images: [OG_DEFAULT_PLATFORM],
   },
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#0b0b0b",
+  themeColor: "#000000",
 };
 
-export default async function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const cookieStore = await cookies();
-  /** English default; `mi_locale` or saved profile locale when authenticated. */
-  const initialLocale = await resolveInitialLocale(cookieStore);
-  const launchFlags = await resolveLaunchFlags();
-  const allowedLocales = localeAllowListFromFlags(launchFlags);
-  const localeEntry = UI_LOCALE_ENTRIES.find((l) => l.code === initialLocale) ?? UI_LOCALE_ENTRIES[0];
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const activeLocale = await getLocale();
+  const localeEntry =
+    UI_LOCALE_ENTRIES.find((l) => l.code === activeLocale) ?? UI_LOCALE_ENTRIES[0];
   const arabicShell = localeEntry.code === "ar";
 
   return (
@@ -114,30 +101,13 @@ export default async function RootLayout({
       lang={localeEntry.bcp47}
       dir={localeEntry.rtl ? "rtl" : "ltr"}
       className={`${inter.variable} ${cormorant.variable}${arabicShell ? ` ${notoArabic.variable}` : ""}`}
+      suppressHydrationWarning
     >
       <body
         className={`${inter.className} min-h-screen bg-[#0B0B0B] text-white antialiased`}
       >
-        <AppProviders initialLocale={initialLocale} allowedLocales={allowedLocales}>
-          <div className="flex min-h-screen flex-col">
-            <HeaderGate />
-            <DemoModeBanner />
-            <TestModeBanner />
-
-            <main id="main-content" className="flex min-h-0 flex-1 flex-col overflow-x-hidden pb-28">
-              <InvestmentShellChrome>{children}</InvestmentShellChrome>
-            </main>
-
-            <CookieConsentBanner />
-
-            <FooterClient />
-
-            <FloatingContact />
-            <ImmoChatWidgetLazy />
-            <BrowserHistoryNav />
-            <DebugPanel />
-          </div>
-        </AppProviders>
+        <SkipLinks />
+        {children}
       </body>
     </html>
   );

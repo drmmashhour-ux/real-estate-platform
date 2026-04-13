@@ -14,7 +14,7 @@ export type HubBookingStatus =
 export type HubQuoteRequest = {
   hubKey: string;
   entityId: string;
-  /** Opaque window — BNHub: checkIn/checkOut ISO; CarHub: pickup/return */
+  /** Opaque window — BNHUB: checkIn/checkOut ISO; CarHub: pickup/return */
   window: Record<string, string>;
   guestCount?: number;
   metadata?: Record<string, unknown>;

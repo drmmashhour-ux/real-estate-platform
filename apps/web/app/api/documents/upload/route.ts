@@ -21,6 +21,7 @@ import { sanitizeFileNameForStorage } from "@/modules/documents/services/sanitiz
 import { uploadDocumentFile, getStorageProviderName } from "@/modules/documents/services/storage-adapter";
 import { serializeDocumentFile } from "@/modules/documents/services/serialize-file";
 import type { ContextKind } from "@/modules/messaging/services/messaging-permissions";
+import { scanBufferBeforeStorage } from "@/lib/security/malware-scan";
 
 export const dynamic = "force-dynamic";
 
@@ -140,6 +141,18 @@ export async function POST(request: NextRequest) {
     const rawName = (file.name || "file").replace(/[/\\]/g, "");
     const originalName = sanitizeFileNameForStorage(rawName);
     const buffer = Buffer.from(await file.arrayBuffer());
+
+    const scan = await scanBufferBeforeStorage({
+      bytes: buffer,
+      mimeType: mime,
+      context: "workspace_document",
+    });
+    if (!scan.ok) {
+      return NextResponse.json(
+        { error: scan.userMessage },
+        { status: scan.status ?? 422 }
+      );
+    }
 
     const uploaded = await uploadDocumentFile({
       buffer,

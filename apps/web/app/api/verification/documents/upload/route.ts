@@ -1,17 +1,21 @@
 import { NextRequest } from "next/server";
-import { getGuestId } from "@/lib/auth/session";
+import { headers } from "next/headers";
+import { requireApiSession } from "@/lib/auth/require-api-session";
 import { prisma } from "@/lib/db";
 import { savePropertyDocument } from "@/lib/verification/document-storage";
 import type { PropertyDocumentType } from "@prisma/client";
+import { safeApiError, toSafeErrorMessage } from "@/lib/security/api-error";
+import { REQUEST_ID_HEADER } from "@/lib/middleware/request-logger";
 
 const ALLOWED_TYPES: PropertyDocumentType[] = ["LAND_REGISTRY_EXTRACT", "BROKER_AUTHORIZATION"];
 
 export async function POST(request: NextRequest) {
   try {
-    const userId = await getGuestId();
-    if (!userId) {
-      return Response.json({ error: "Sign in required" }, { status: 401 });
+    const session = await requireApiSession();
+    if (!session.ok) {
+      return session.response;
     }
+    const { userId } = session;
 
     const formData = await request.formData();
     const listingId = formData.get("listingId") as string | null;
@@ -82,10 +86,11 @@ export async function POST(request: NextRequest) {
       uploadedAt: doc.uploadedAt,
     });
   } catch (e) {
-    console.error(e);
-    return Response.json(
-      { error: e instanceof Error ? e.message : "Upload failed" },
-      { status: 500 }
-    );
+    const h = await headers();
+    const requestId = h.get(REQUEST_ID_HEADER);
+    return safeApiError(500, toSafeErrorMessage(e, "Upload failed"), {
+      cause: e,
+      requestId,
+    });
   }
 }

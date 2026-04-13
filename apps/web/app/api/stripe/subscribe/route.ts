@@ -11,6 +11,7 @@ import { stripeAppBaseUrl } from "@/lib/stripe/app-base-url";
 import {
   getStripeMortgageSubscriptionPriceId,
   MORTGAGE_EXPERT_CHECKOUT_PAYMENT_SUB,
+  parseMortgageExpertCheckoutPlan,
   parseMortgageExpertPlanFromMetadata,
 } from "@/lib/stripe/mortgage-expert-billing";
 
@@ -38,23 +39,15 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json().catch(() => ({}));
-  const plan = parseMortgageExpertPlanFromMetadata(body.plan);
-  if (plan === "basic") {
-    return NextResponse.json(
-      {
-        error:
-          "Basic is the free tier. Subscribe to Pro or Premium, or use the billing portal to cancel/downgrade a paid plan.",
-      },
-      { status: 400 }
-    );
-  }
+  const plan =
+    parseMortgageExpertCheckoutPlan(body.plan) ?? parseMortgageExpertPlanFromMetadata(body.plan);
 
   const priceId = getStripeMortgageSubscriptionPriceId(plan);
   if (!priceId) {
     return NextResponse.json(
       {
         error:
-          "Subscription price not configured. Set STRIPE_PRICE_MORTGAGE_PRO_MONTHLY and STRIPE_PRICE_MORTGAGE_PREMIUM_MONTHLY (and Basic if used) in .env.",
+          "Subscription price not configured for this tier. Set STRIPE_PRICE_MORTGAGE_BASIC_MONTHLY (Gold), STRIPE_PRICE_MORTGAGE_PRO_MONTHLY (Platinum), STRIPE_PRICE_MORTGAGE_PREMIUM_MONTHLY, and STRIPE_PRICE_MORTGAGE_AMBASSADOR_MONTHLY in .env.",
       },
       { status: 503 }
     );

@@ -186,7 +186,7 @@ export async function recordBnhubActivityToInternalCrm(params: {
 }
 
 /**
- * Called after BNHub booking is paid — telemetry + optional delayed thank-you email job.
+ * Called after BNHUB booking is paid — telemetry + optional delayed thank-you email job.
  */
 export async function onBnhubBookingPaymentConfirmed(bookingId: string): Promise<void> {
   const booking = await prisma.booking.findUnique({

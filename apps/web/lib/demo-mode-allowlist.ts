@@ -35,13 +35,13 @@ const DEMO_MODE_API_MUTATION_ALLOWLIST: AllowRule[] = [
   /** In-app conversations + messages */
   { path: "/api/conversations", methods: ["GET", "POST"] },
   { path: "/api/messages", methods: ["PATCH", "DELETE"] },
-  /** BNHub — search, listings, bookings, host flows (investor demo) */
+  /** BNHUB — search, listings, bookings, host flows (investor demo) */
   { path: "/api/bnhub", methods: ["GET", "POST", "PUT", "PATCH", "DELETE"] },
   /** Contracts — view + e-sign */
   { path: "/api/contracts", methods: ["GET", "POST", "PUT", "PATCH", "DELETE"] },
   /** Marketplace seller contract sign */
   { path: "/api/marketplace", methods: ["GET", "POST", "PUT", "PATCH", "DELETE"] },
-  /** BNHub search UX — analytics + intent (safe, no payments) */
+  /** BNHUB search UX — analytics + intent (safe, no payments) */
   { path: "/api/ai/activity", methods: ["POST"] },
   { path: "/api/ai/search", methods: ["GET", "POST"] },
 ];

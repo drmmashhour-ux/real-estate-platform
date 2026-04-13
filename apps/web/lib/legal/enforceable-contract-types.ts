@@ -4,7 +4,7 @@ export const ENFORCEABLE_CONTRACT_TYPES = {
   SELLER: "enforceable_seller",
   RENTAL: "enforceable_rental",
   SHORT_TERM: "enforceable_short_term",
-  /** BNHub host — listing publish / activation acknowledgment. */
+  /** BNHUB host — listing publish / activation acknowledgment. */
   HOST: "enforceable_host",
   BROKER: "enforceable_broker",
 } as const;

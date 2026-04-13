@@ -22,7 +22,7 @@ export async function generateRecommendationsForListing(listingId: string, campa
       type: "PHOTO_UPGRADE",
       priority: "HIGH",
       title: "Upgrade listing photos",
-      description: "Strong photography lifts conversion on BNHub and external previews.",
+      description: "Strong photography lifts conversion on BNHUB and external previews.",
       actionLabel: "Open listing editor",
       payload: { href: `/bnhub/host/listings/${listingId}/edit` },
     });
@@ -51,7 +51,7 @@ export async function generateRecommendationsForListing(listingId: string, campa
     type: "CHANNEL",
     priority: "LOW",
     title: "Start with internal channels",
-    description: "Use BNHub homepage, search boost, and email card before external adapters.",
+    description: "Use BNHUB homepage, search boost, and email card before external adapters.",
     actionLabel: "Open marketing",
     payload: { href: "/bnhub/host/marketing" },
   });

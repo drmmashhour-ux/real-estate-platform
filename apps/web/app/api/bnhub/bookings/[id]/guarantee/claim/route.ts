@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
 import { claimGuarantee } from "@/lib/bnhub/bnhub-guarantee";
 
-/** POST /api/bnhub/bookings/:id/guarantee/claim — Guest claims BNHub guarantee (mismatch / issue). */
+/** POST /api/bnhub/bookings/:id/guarantee/claim — Guest claims BNHUB guarantee (mismatch / issue). */
 export async function POST(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

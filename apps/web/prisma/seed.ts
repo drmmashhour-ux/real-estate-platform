@@ -1,6 +1,6 @@
 /**
  * Realistic simulation seed for the full platform.
- * Covers: Users, BNHub (listings, bookings, payments, reviews, disputes),
+ * Covers: Users, BNHUB (listings, bookings, payments, reviews, disputes),
  * Projects (units, favorites, alerts, reservations), Leads, Referrals/Ambassador,
  * Real Estate Transactions (offers, timeline), Trust & Safety, Billing/Subscriptions.
  *
@@ -259,7 +259,7 @@ export async function runSeed(): Promise<void> {
   console.log("  Property identities created");
 
   // ---------------------------------------------------------------------------
-  // 3. Short-term listings (BNHub) – multiple cities and statuses
+  // 3. Short-term listings (BNHUB) – multiple cities and statuses
   // ---------------------------------------------------------------------------
   const seedAttestAt = new Date();
   const listing1 = await prisma.shortTermListing.upsert({
@@ -623,7 +623,7 @@ export async function runSeed(): Promise<void> {
   console.log("  Pending payment row for checkout test booking");
 
   // ---------------------------------------------------------------------------
-  // 5b. BNHub dashboard demo: 1 listing + 3 bookings (bookings > 0, occupancy > 0, revenue > 0)
+  // 5b. BNHUB dashboard demo: 1 listing + 3 bookings (bookings > 0, occupancy > 0, revenue > 0)
   // ---------------------------------------------------------------------------
   const luxuryListing = await prisma.shortTermListing.upsert({
     where: { id: SEED_IDS.listingLuxuryMtl },
@@ -751,7 +751,7 @@ export async function runSeed(): Promise<void> {
     },
   });
 
-  console.log("  BNHub dashboard demo: Luxury Apartment Montreal + 3 bookings (revenue > 0)");
+  console.log("  BNHUB dashboard demo: Luxury Apartment Montreal + 3 bookings (revenue > 0)");
 
   // ---------------------------------------------------------------------------
   // 6. Review for completed booking
@@ -1223,7 +1223,7 @@ export async function runSeed(): Promise<void> {
     },
   }).catch(() => null);
 
-  // Keep PostgreSQL sequence past max LEC suffix (BNHub + CRM Listing)
+  // Keep PostgreSQL sequence past max LEC suffix (BNHUB + CRM Listing)
   await prisma.$executeRawUnsafe(`
     CREATE SEQUENCE IF NOT EXISTS lec_listing_code_seq START WITH 10001 INCREMENT BY 1;
   `);
@@ -1839,24 +1839,27 @@ export async function runSeed(): Promise<void> {
   }
 
   // ---------------------------------------------------------------------------
-  // BNHub Marketing Engine (demo campaigns, EN/FR assets, internal publish)
+  // BNHUB Marketing Engine (demo campaigns, EN/FR assets, internal publish)
   // ---------------------------------------------------------------------------
   const { seedBnhubMarketingDemo } = await import("./seed-bnhub-marketing");
   await seedBnhubMarketingDemo(SEED_IDS.host1);
 
   // ---------------------------------------------------------------------------
-  // BNHub Autonomous Growth & Lead Engine (demo)
+  // BNHUB Autonomous Growth & Lead Engine (demo)
   // ---------------------------------------------------------------------------
   const { seedBnhubGrowthDemo } = await import("./seed-bnhub-growth");
   await seedBnhubGrowthDemo(SEED_IDS.host1);
 
   // ---------------------------------------------------------------------------
-  // BNHub hospitality add-ons catalog (+ demo listing offers)
+  // BNHUB hospitality add-ons catalog (+ demo listing offers)
   // ---------------------------------------------------------------------------
   const { seedBnhubHospitalityCatalog } = await import("./seed-bnhub-hospitality-catalog");
   await seedBnhubHospitalityCatalog(SEED_IDS.listing1);
   const { seedBnhubHospitalityEcosystemV2 } = await import("./seed-bnhub-hospitality-ecosystem-v2");
   await seedBnhubHospitalityEcosystemV2();
+
+  const { seedDefaultExperiments } = await import("./seed-experiments");
+  await seedDefaultExperiments();
 
   // ---------------------------------------------------------------------------
   // Summary
@@ -1873,7 +1876,7 @@ export async function runSeed(): Promise<void> {
   console.log(
     "Sign-in: guest@demo.com / DemoGuest2024! · demo@platform.com & host*, broker, ambassador, investor / Demo123! (verified)"
   );
-  console.log("BNHub: 4 listings, 4 bookings (confirmed/completed/pending/disputed), payments, review, dispute");
+  console.log("BNHUB: 4 listings, 4 bookings (confirmed/completed/pending/disputed), payments, review, dispute");
   console.log("Projects: 2 projects, units, favorite, alert, reservation, 2 leads");
   console.log("Referrals: program, referral code DEMO-REF-001, ambassador, commission");
   console.log("Transaction: 1 real estate transaction with offer and timeline");

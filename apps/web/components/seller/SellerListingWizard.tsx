@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ImageUploader } from "@/components/fsbo/ImageUploader";
+import { PhotoListingExamplesGuide } from "@/components/fsbo/PhotoListingExamplesGuide";
 import { ContractModal } from "@/components/contracts/ContractModal";
 import { SellerDocumentsPanel } from "@/components/seller/SellerDocumentsPanel";
 import { FSBO_HUB_DOC_TYPES, FSBO_HUB_REQUIRED_DOC_TYPES } from "@/lib/fsbo/seller-hub-doc-types";
@@ -15,12 +16,25 @@ import {
   type SellerDeclarationData,
 } from "@/lib/fsbo/seller-declaration-schema";
 import {
+  buildDemoListingBasics,
+  buildDemoSellerDeclaration,
+  isSellerDemoToolsEnabled,
+  type DemoRepresentationMode,
+} from "@/lib/fsbo/seller-declaration-demo-fill";
+import {
   parseSellerDeclarationAiReview,
   type SellerDeclarationAiReview,
 } from "@/lib/fsbo/seller-declaration-ai-review";
 import type { ListingAiScoresResult } from "@/lib/fsbo/listing-ai-scores";
 import { getFsboMaxPhotosForSellerPlan, type FsboPhotoType } from "@/lib/fsbo/photo-limits";
 import { ListingTrustGraphPanel } from "@/components/trust/ListingTrustGraphPanel";
+import { WritingCorrectionButton } from "@/components/ui/WritingCorrectionButton";
+import { ListingDescriptionAiCopilot } from "@/components/seller/ListingDescriptionAiCopilot";
+import { SellerAiAssistResult, type SellerAiAssistPanel } from "@/components/seller/SellerAiAssistResult";
+import { useSuppressFooterHistoryNav } from "@/components/layout/FooterHistoryNavContext";
+
+/** Prevents duplicate auto demo seeds (e.g. React Strict Mode double mount). */
+const FSBO_AUTO_DEMO_SEED_IN_FLIGHT = new Set<string>();
 
 function parseListingAiScoresFromApi(raw: unknown): ListingAiScoresResult | null {
   if (!raw || typeof raw !== "object") return null;
@@ -99,10 +113,12 @@ export function SellerListingWizard({
   pageTitle = "Create listing",
   trustGraph,
 }: SellerListingWizardProps = {}) {
+  useSuppressFooterHistoryNav(true);
   const tg = trustGraph ?? { listingBadge: false, declarationWidget: false };
   const router = useRouter();
   const searchParams = useSearchParams();
   const qId = searchParams.get("id");
+  const fromListingId = searchParams.get("from");
   const routeListingId = initialListingId ?? qId;
 
   const [listingId, setListingId] = useState<string | null>(routeListingId);
@@ -127,10 +143,10 @@ export function SellerListingWizard({
   const [contracts, setContracts] = useState<{ id: string; type: string; title: string; status: string }[]>([]);
   const [modalId, setModalId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [declarationSaveBusy, setDeclarationSaveBusy] = useState(false);
+  const [draftSaveBusy, setDraftSaveBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [aiBusy, setAiBusy] = useState<string | null>(null);
-  const [aiHint, setAiHint] = useState<string | null>(null);
+  const [aiAssistPanel, setAiAssistPanel] = useState<SellerAiAssistPanel | null>(null);
   const [legalAccepted, setLegalAccepted] = useState(false);
   const [declarationAiReview, setDeclarationAiReview] = useState<SellerDeclarationAiReview | null>(null);
   const [listingAiScores, setListingAiScores] = useState<ListingAiScoresResult | null>(null);
@@ -142,9 +158,14 @@ export function SellerListingWizard({
   const [photoLimit, setPhotoLimit] = useState(5);
   const [photoConfirmed, setPhotoConfirmed] = useState(false);
   const [photoVerificationStatus, setPhotoVerificationStatus] = useState<"PENDING" | "VERIFIED" | "FLAGGED">("PENDING");
+  const [listingConsistencyWarnings, setListingConsistencyWarnings] = useState<string[]>([]);
   const [streetViewUrl, setStreetViewUrl] = useState<string | null>(null);
   const [photoMismatchDetected, setPhotoMismatchDetected] = useState(false);
   const [photoSimilarityScore, setPhotoSimilarityScore] = useState<number | null>(null);
+  const [listingCode, setListingCode] = useState<string | null>(null);
+  const [demoPhotoBusy, setDemoPhotoBusy] = useState<null | "seed" | "food">(null);
+  const [photoDemoNotice, setPhotoDemoNotice] = useState<string | null>(null);
+  const [prefilledFromPrevious, setPrefilledFromPrevious] = useState(false);
 
   const load = useCallback(async (id: string) => {
     const res = await fetch(`/api/fsbo/listings/${id}`, { credentials: "same-origin" });
@@ -152,6 +173,7 @@ export function SellerListingWizard({
     if (!res.ok) return;
     const l = data.listing;
     if (!l) return;
+    setListingCode(typeof l.listingCode === "string" && l.listingCode.trim() ? l.listingCode.trim() : null);
     setLegalAccepted(!!l.legalAccuracyAcceptedAt);
     setPhotoConfirmed(Boolean(l.photoConfirmationAcceptedAt));
     setPhotoVerificationStatus(
@@ -214,6 +236,75 @@ export function SellerListingWizard({
     setPhotoTypes(normalized);
   }, []);
 
+  const templateHydratedRef = useRef(false);
+
+  /** New listing prefilled from another FSBO listing (same pattern as BNHUB `?from=`). */
+  useEffect(() => {
+    const routeId = initialListingId ?? qId;
+    if (routeId || !fromListingId?.trim() || templateHydratedRef.current) return;
+    templateHydratedRef.current = true;
+    let cancelled = false;
+    void (async () => {
+      const res = await fetch(`/api/fsbo/listings/${encodeURIComponent(fromListingId.trim())}`, {
+        credentials: "same-origin",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (cancelled || !res.ok || !data.listing) return;
+      const l = data.listing as Record<string, unknown>;
+      const decl = emptySellerDeclaration();
+      const addr = typeof l.address === "string" ? l.address : "";
+      const cityRaw = typeof l.city === "string" ? l.city : "";
+      decl.propertyAddressStructured = {
+        street: addr.trim() && addr !== "TBD" ? addr.trim() : "",
+        unit: "",
+        city: cityRaw.trim() && cityRaw !== "TBD" ? cityRaw.trim() : "",
+        postalCode: "",
+      };
+      const titleBase = typeof l.title === "string" ? l.title.trim() : "";
+      setForm({
+        title: titleBase ? `${titleBase} (copy)` : "",
+        price: typeof l.priceCents === "number" ? String(l.priceCents / 100) : "",
+        address: addr,
+        city: cityRaw,
+        cadastreNumber: typeof l.cadastreNumber === "string" ? l.cadastreNumber : "",
+        description: typeof l.description === "string" ? l.description : "",
+        propertyType: typeof l.propertyType === "string" ? l.propertyType : "",
+        bedrooms: l.bedrooms != null ? String(l.bedrooms as number) : "",
+        bathrooms: l.bathrooms != null ? String(l.bathrooms as number) : "",
+        surfaceSqft: l.surfaceSqft != null ? String(l.surfaceSqft as number) : "",
+        yearBuilt: l.yearBuilt != null ? String(l.yearBuilt as number) : "",
+        annualTaxes: l.annualTaxesCents != null ? String((l.annualTaxesCents as number) / 100) : "",
+        condoFees: l.condoFeesCents != null ? String((l.condoFeesCents as number) / 100) : "",
+        images: Array.isArray(l.images) ? [...(l.images as string[])] : [],
+        declaration: decl,
+      });
+      const images = Array.isArray(l.images) ? (l.images as string[]) : [];
+      const rawTags = l.photoTagsJson;
+      const derived = Array.isArray(rawTags)
+        ? rawTags.filter((t: unknown): t is string => typeof t === "string")
+        : [];
+      const normalized: FsboPhotoType[] =
+        images.length > 0
+          ? Array.from({ length: images.length }).map((_, i) => {
+              const t = derived[i];
+              const upper = typeof t === "string" ? t.toUpperCase() : "";
+              const v =
+                upper === "EXTERIOR" || upper === "INTERIOR" || upper === "STREET_VIEW" || upper === "OTHER"
+                  ? upper
+                  : "";
+              return (v as FsboPhotoType) || (i === 0 ? "EXTERIOR" : "OTHER");
+            })
+          : [];
+      if (normalized.length > 0) normalized[0] = "EXTERIOR";
+      setPhotoTypes(normalized);
+      setPrefilledFromPrevious(true);
+      router.replace(createPath, { scroll: false });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [fromListingId, initialListingId, qId, createPath, router]);
+
   const loadContracts = useCallback(async (id: string) => {
     const res = await fetch(`/api/fsbo/listings/${encodeURIComponent(id)}/seller-contracts`, {
       credentials: "same-origin",
@@ -261,13 +352,20 @@ export function SellerListingWizard({
       const id = typeof data.id === "string" ? data.id : null;
       if (!id) return null;
       setListingId(id);
+      if (typeof data.listingCode === "string" && data.listingCode.trim()) {
+        setListingCode(data.listingCode.trim());
+      }
       router.replace(`${createPath}?id=${encodeURIComponent(id)}`, { scroll: false });
       void loadContracts(id);
+      void load(id);
       return id;
     } finally {
       setLoading(false);
     }
   }
+
+  const ensureDraftRef = useRef(ensureDraft);
+  ensureDraftRef.current = ensureDraft;
 
   async function patchHub(body: Record<string, unknown>) {
     const id = listingId ?? (await ensureDraft());
@@ -351,6 +449,13 @@ export function SellerListingWizard({
         contradictionCount: tg.declarationReadiness.contradictionCount ?? 0,
         blockingIssuesCount: tg.declarationReadiness.blockingIssuesCount ?? 0,
       });
+    }
+    if (Array.isArray(data.listingConsistencyWarnings) && data.listingConsistencyWarnings.length > 0) {
+      setListingConsistencyWarnings(
+        data.listingConsistencyWarnings.filter((x: unknown): x is string => typeof x === "string")
+      );
+    } else {
+      setListingConsistencyWarnings([]);
     }
     setErr(null);
     return true;
@@ -454,11 +559,45 @@ export function SellerListingWizard({
     setStep((s) => Math.max(1, s - 1));
   }
 
+  async function saveDeclarationProgress() {
+    setErr(null);
+    setDraftSaveBusy(true);
+    try {
+      await saveStep4(false);
+    } finally {
+      setDraftSaveBusy(false);
+    }
+  }
+
+  async function saveCurrentDraft() {
+    if (step === 4) {
+      await saveDeclarationProgress();
+      return;
+    }
+    setErr(null);
+    setDraftSaveBusy(true);
+    try {
+      if (step === 1) {
+        await saveStep1();
+        return;
+      }
+      if (step === 2) {
+        await saveStep2();
+        return;
+      }
+      if (step === 3) {
+        await patchHub({ images: form.images, photoTagsJson: photoTypes });
+      }
+    } finally {
+      setDraftSaveBusy(false);
+    }
+  }
+
   async function runAi(kind: "price" | "description" | "completeness") {
     const id = listingId ?? (await ensureDraft());
     if (!id) return;
     setAiBusy(kind);
-    setAiHint(null);
+    setAiAssistPanel(null);
     try {
       const res = await fetch("/api/seller/ai-assist", {
         method: "POST",
@@ -467,13 +606,27 @@ export function SellerListingWizard({
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setAiHint(typeof data.error === "string" ? data.error : "AI assist failed");
+        setAiAssistPanel({
+          variant: "error",
+          message: typeof data.error === "string" ? data.error : "We couldn’t retrieve that insight. Please try again.",
+        });
         return;
       }
-      setAiHint(JSON.stringify(data, null, 2));
       if (kind === "description" && typeof data.suggestedDescription === "string") {
         setForm((f) => ({ ...f, description: data.suggestedDescription as string }));
+        setAiAssistPanel({
+          variant: "description",
+          data: {
+            summary:
+              typeof data.summary === "string"
+                ? data.summary
+                : "Your description has been updated from your saved listing.",
+            updated: true,
+          },
+        });
+        return;
       }
+      setAiAssistPanel({ variant: kind, data: data as Record<string, unknown> });
     } finally {
       setAiBusy(null);
     }
@@ -511,7 +664,15 @@ export function SellerListingWizard({
         setErr(typeof msg === "string" ? msg : "Submit failed");
         return;
       }
-      router.push(listingsHref);
+      const submittedCode =
+        typeof data.listingCode === "string" && data.listingCode.trim()
+          ? data.listingCode.trim()
+          : listingCode;
+      const q =
+        submittedCode != null
+          ? `?submitted=1&code=${encodeURIComponent(submittedCode)}`
+          : "?submitted=1";
+      router.push(`${listingsHref}${q}`);
       router.refresh();
     } finally {
       setLoading(false);
@@ -519,6 +680,168 @@ export function SellerListingWizard({
   }
 
   const progress = ((step - 1) / (STEPS.length - 1)) * 100;
+  const demoTools = isSellerDemoToolsEnabled();
+
+  function applyDemoDeclaration(mode: DemoRepresentationMode) {
+    setErr(null);
+    setForm((f) => {
+      const pt = f.propertyType || "SINGLE_FAMILY";
+      const decl = buildDemoSellerDeclaration(pt, {
+        representation: mode,
+        address: {
+          street: f.address.trim() || undefined,
+          city: f.city.trim() || undefined,
+        },
+      });
+      return { ...f, declaration: decl };
+    });
+  }
+
+  function applyDemoListingBasics(kind: "house" | "condo") {
+    setErr(null);
+    const b = buildDemoListingBasics(kind);
+    setForm((f) => ({
+      ...f,
+      title: b.title,
+      price: b.price,
+      address: b.address,
+      city: b.city,
+      cadastreNumber: b.cadastreNumber,
+      description: b.description,
+      propertyType: b.propertyType,
+      bedrooms: b.bedrooms,
+      bathrooms: b.bathrooms,
+      surfaceSqft: b.surfaceSqft,
+      yearBuilt: b.yearBuilt,
+      annualTaxes: b.annualTaxes,
+      condoFees: b.condoFees,
+    }));
+  }
+
+  async function seedDemoPropertyPhotos() {
+    setPhotoDemoNotice(null);
+    const id = listingId ?? (await ensureDraft());
+    if (!id) return;
+    setDemoPhotoBusy("seed");
+    setErr(null);
+    try {
+      const res = await fetch(`/api/fsbo/listings/${encodeURIComponent(id)}/seed-demo-photos`, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: "property" }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setErr(typeof data.error === "string" ? data.error : "Could not add example photos");
+        return;
+      }
+      setListingId(id);
+      void load(id);
+      const n = typeof data.added === "number" ? data.added : 0;
+      setPhotoDemoNotice(
+        n > 0
+          ? `Added ${n} example listing photo(s). Replace them with your own shots before publishing.`
+          : "Example photos were requested."
+      );
+    } finally {
+      setDemoPhotoBusy(null);
+    }
+  }
+
+  async function runDemoFoodPhotoCheck() {
+    setPhotoDemoNotice(null);
+    const id = listingId ?? (await ensureDraft());
+    if (!id) return;
+    setDemoPhotoBusy("food");
+    setErr(null);
+    try {
+      const res = await fetch(`/api/fsbo/listings/${encodeURIComponent(id)}/seed-demo-photos`, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: "food_test" }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setErr(typeof data.error === "string" ? data.error : "Food photo check failed");
+        return;
+      }
+      setListingId(id);
+      const msg = typeof data.userMessage === "string" ? data.userMessage : "Check completed.";
+      const rejected = data.rejected === true;
+      setPhotoDemoNotice(
+        rejected ? `Rejected — ${msg}` : `Accepted by current rules — ${msg}`
+      );
+    } finally {
+      setDemoPhotoBusy(null);
+    }
+  }
+
+  /** Demo / dev: when Photos step opens with an empty gallery, load bundled sample images once (session). */
+  useEffect(() => {
+    if (!demoTools || step !== 3) return;
+
+    const timer = window.setTimeout(() => {
+      void (async () => {
+        try {
+          const id = listingId ?? (await ensureDraftRef.current());
+          if (!id) return;
+
+          if (typeof sessionStorage !== "undefined" && sessionStorage.getItem(`fsbo-demo-seeded-${id}`)) {
+            return;
+          }
+          if (FSBO_AUTO_DEMO_SEED_IN_FLIGHT.has(id)) return;
+
+          const listRes = await fetch(`/api/fsbo/listings/${encodeURIComponent(id)}`, {
+            credentials: "same-origin",
+          });
+          const listData = await listRes.json().catch(() => ({}));
+          const imgs = Array.isArray(listData?.listing?.images) ? listData.listing.images : [];
+          if (imgs.length > 0) return;
+
+          FSBO_AUTO_DEMO_SEED_IN_FLIGHT.add(id);
+          setDemoPhotoBusy("seed");
+          setErr(null);
+          try {
+            const res = await fetch(`/api/fsbo/listings/${encodeURIComponent(id)}/seed-demo-photos`, {
+              method: "POST",
+              credentials: "same-origin",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ mode: "property" }),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+              setErr(
+                typeof data.error === "string"
+                  ? data.error
+                  : "Demo photos could not load automatically (e.g. accept the content license first)."
+              );
+              return;
+            }
+            if (typeof sessionStorage !== "undefined") {
+              sessionStorage.setItem(`fsbo-demo-seeded-${id}`, "1");
+            }
+            setListingId(id);
+            void load(id);
+            const n = typeof data.added === "number" ? data.added : 0;
+            setPhotoDemoNotice(
+              n > 0
+                ? `Demo: loaded ${n} sample photo(s) automatically. Replace with your own before publishing.`
+                : "Demo photos loaded."
+            );
+          } finally {
+            FSBO_AUTO_DEMO_SEED_IN_FLIGHT.delete(id);
+            setDemoPhotoBusy(null);
+          }
+        } catch {
+          // ignore auto demo failures
+        }
+      })();
+    }, 450);
+
+    return () => window.clearTimeout(timer);
+  }, [step, listingId, demoTools, load]);
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
@@ -536,7 +859,76 @@ export function SellerListingWizard({
       </div>
 
       <h1 className="text-2xl font-semibold text-white">{pageTitle}</h1>
-      <p className="mt-1 text-sm text-slate-400">Step-by-step — declaration, documents, and contracts before submission.</p>
+      <p className="mt-1 text-sm text-slate-400">
+        {prefilledFromPrevious
+          ? "Prefilled from a previous listing — review each step. Seller Declaration starts fresh for this property. Use Save / Continue as you go."
+          : "Basics → details → photos → declaration & documents → submit. Save a draft anytime; finish compliance before you publish."}
+      </p>
+      {prefilledFromPrevious ? (
+        <div
+          className="mt-4 rounded-xl border border-emerald-500/35 bg-emerald-950/25 px-4 py-3 text-sm text-emerald-100/95"
+          role="status"
+        >
+          <p className="font-medium text-emerald-50">Faster second listing</p>
+          <p className="mt-1 text-xs leading-relaxed text-emerald-100/85">
+            Same full workflow as your first listing — we copied property details and photos as a starting point. Update
+            anything that differs, then save your draft and continue.
+          </p>
+        </div>
+      ) : null}
+      {listingId && listingCode ? (
+        <div className="mt-4 rounded-xl border border-premium-gold/35 bg-premium-gold/5 px-4 py-3 text-sm">
+          <p className="font-medium text-premium-gold">Listing code (save this)</p>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <span className="font-mono text-lg tracking-wide text-white">{listingCode}</span>
+            <button
+              type="button"
+              className="rounded-lg border border-white/15 px-2 py-1 text-xs text-slate-300 hover:bg-white/10"
+              onClick={() => {
+                void navigator.clipboard.writeText(listingCode).catch(() => null);
+              }}
+            >
+              Copy
+            </button>
+          </div>
+          <p className="mt-2 text-xs leading-relaxed text-slate-500">
+            Use this code with support or in emails. Signed in, you can always continue from{" "}
+            <Link href={listingsHref} className="text-premium-gold hover:underline">
+              My listings
+            </Link>{" "}
+            — no code required. Forgot? Use &quot;Email my listing codes&quot; on that page.
+          </p>
+        </div>
+      ) : null}
+      {demoTools ? (
+        <div
+          role="region"
+          aria-label="QA demo fills"
+          className="mt-4 rounded-xl border border-amber-500/35 bg-amber-950/20 px-4 py-3 text-xs text-amber-100/95"
+        >
+          <p className="font-semibold text-amber-50">QA / demo fills (dev or NEXT_PUBLIC_SELLER_DEMO_TOOLS=1)</p>
+          <p className="mt-1 leading-relaxed text-amber-100/85">
+            Prefill listing fields and the full seller declaration (FSBO vs with-broker notes) to test validation, buyer
+            interest, and submission flows. Replace the placeholder ID URL with a real upload before production.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => applyDemoListingBasics("house")}
+              className="rounded-lg border border-amber-400/40 bg-black/30 px-3 py-1.5 text-[11px] font-medium text-amber-50 hover:bg-amber-500/15"
+            >
+              Fill steps 1–2: demo house
+            </button>
+            <button
+              type="button"
+              onClick={() => applyDemoListingBasics("condo")}
+              className="rounded-lg border border-amber-400/40 bg-black/30 px-3 py-1.5 text-[11px] font-medium text-amber-50 hover:bg-amber-500/15"
+            >
+              Fill steps 1–2: demo condo
+            </button>
+          </div>
+        </div>
+      ) : null}
       <ListingTrustGraphPanel listingId={listingId} enabled={tg.listingBadge} />
 
       <div className="mt-6 h-2 w-full overflow-hidden rounded-full bg-white/10">
@@ -660,20 +1052,95 @@ export function SellerListingWizard({
                 className="mt-1 w-full rounded-lg border border-white/10 bg-black/50 px-3 py-2 text-white"
               />
             </label>
-            <label className="block text-sm">
-              <span className="text-slate-400">Description</span>
+            <label className="block text-sm text-slate-300">
+              <div className="mb-1 flex flex-wrap items-end justify-between gap-2">
+                <span className="text-slate-400">Description</span>
+                <div className="flex flex-wrap items-center justify-end gap-2">
+                  <ListingDescriptionAiCopilot
+                    form={form}
+                    currentDescription={form.description}
+                    onApply={(v) => setForm((f) => ({ ...f, description: v }))}
+                  />
+                  <WritingCorrectionButton
+                    text={form.description}
+                    onApply={(v) => setForm((f) => ({ ...f, description: v }))}
+                  />
+                </div>
+              </div>
+              <p className="mb-2 text-[11px] leading-relaxed text-slate-500">
+                <span className="font-medium text-slate-400">AI copilot:</span> &quot;Generate&quot; drafts from your
+                title, address, type, and stats (step 1–2). Type notes or bullets first if you want specific points
+                included. &quot;Correct writing&quot; fixes spelling and grammar only. Review everything before
+                publishing.
+              </p>
               <textarea
                 value={form.description}
                 onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-                rows={6}
-                className="mt-1 w-full rounded-lg border border-white/10 bg-black/50 px-3 py-2 text-white"
+                rows={8}
+                placeholder="Optional: jot keywords or rough points, then use Generate description — or write freely and use Correct writing."
+                className="mt-1 w-full rounded-lg border border-white/10 bg-black/50 px-3 py-2 text-white placeholder:text-slate-600"
               />
             </label>
           </div>
         )}
 
         {step === 3 && (
-          <div>
+          <div className="space-y-4">
+            <PhotoListingExamplesGuide />
+            {form.propertyType === "CONDO" ? (
+              <p className="mb-3 rounded-lg border border-sky-500/30 bg-sky-950/25 px-3 py-2.5 text-xs leading-relaxed text-sky-100/95">
+                <span className="font-semibold text-sky-50">Condo listing:</span> upload photos of your unit, balcony,
+                the condominium building, lobby, corridors, or amenities. Images that look like a detached suburban house
+                or a mobile home as the main subject may be rejected.
+              </p>
+            ) : form.propertyType === "SINGLE_FAMILY" || form.propertyType === "TOWNHOUSE" ? (
+              <p className="mb-3 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2.5 text-xs leading-relaxed text-slate-300">
+                <span className="font-semibold text-white/90">House / townhouse:</span> show this property — exterior,
+                yard, and interior rooms. Photos that look like only a high-rise apartment unrelated to a house may be
+                rejected.
+              </p>
+            ) : form.propertyType === "LAND" ? (
+              <p className="mb-3 rounded-lg border border-amber-500/25 bg-amber-950/20 px-3 py-2.5 text-xs text-amber-100/95">
+                <span className="font-semibold text-amber-50">Land / lot:</span> prefer terrain, frontage, and lot
+                context. Unrelated interior room photos may be rejected.
+              </p>
+            ) : null}
+            {demoTools ? (
+              <div
+                role="region"
+                aria-label="Demo listing photos"
+                className="rounded-xl border border-amber-500/30 bg-amber-950/15 px-3 py-2.5 text-xs text-amber-100/90"
+              >
+                <p className="font-medium text-amber-50">Simulation — example uploads</p>
+                <p className="mt-1 leading-relaxed text-amber-100/80">
+                  On <span className="font-medium text-amber-50">Photos (step 3)</span>, five bundled JPEGs load{" "}
+                  <span className="font-medium text-amber-50">automatically once per browser session</span> if the gallery
+                  is empty (same upload path as real files). You can also use the button below, or run the food-image check.
+                  Content license required to store photos.
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    disabled={!!demoPhotoBusy}
+                    onClick={() => void seedDemoPropertyPhotos()}
+                    className="rounded-lg border border-white/15 bg-black/40 px-3 py-1.5 text-xs font-medium text-amber-100 hover:bg-amber-500/10 disabled:opacity-50"
+                  >
+                    {demoPhotoBusy === "seed" ? "Adding…" : "Load demo photos (bundled)"}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!!demoPhotoBusy}
+                    onClick={() => void runDemoFoodPhotoCheck()}
+                    className="rounded-lg border border-white/15 bg-black/40 px-3 py-1.5 text-xs font-medium text-amber-100 hover:bg-amber-500/10 disabled:opacity-50"
+                  >
+                    {demoPhotoBusy === "food" ? "Checking…" : "Test food photo (reject?)"}
+                  </button>
+                </div>
+                {photoDemoNotice ? (
+                  <p className="mt-2 text-[11px] leading-relaxed text-amber-50/95">{photoDemoNotice}</p>
+                ) : null}
+              </div>
+            ) : null}
             <ImageUploader
               listingId={listingId}
               images={form.images}
@@ -688,10 +1155,41 @@ export function SellerListingWizard({
 
         {step === 4 && (
           <div className="space-y-3">
+            {listingConsistencyWarnings.length > 0 ? (
+              <div
+                role="status"
+                className="rounded-xl border border-amber-500/40 bg-amber-950/25 px-4 py-3 text-sm text-amber-100/95"
+              >
+                <p className="font-medium text-amber-50">Listing vs declaration</p>
+                <ul className="mt-2 list-inside list-disc space-y-1 text-xs leading-relaxed text-amber-100/90">
+                  {listingConsistencyWarnings.map((w, i) => (
+                    <li key={`lcw-${i}`}>{w}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
             <p className="text-sm text-amber-200/90">
               Seller declaration — required for submission. This is a platform disclosure checklist; it does not replace
               the official DS/DSD forms used with a licensed brokerage contract. Not legal advice.
             </p>
+            {demoTools ? (
+              <div className="flex flex-wrap gap-2 rounded-lg border border-amber-500/30 bg-amber-950/15 px-3 py-2">
+                <button
+                  type="button"
+                  onClick={() => applyDemoDeclaration("fsbo")}
+                  className="rounded-lg border border-white/15 bg-black/40 px-3 py-1.5 text-xs font-medium text-amber-100 hover:bg-amber-500/10"
+                >
+                  Fill all sections — FSBO (no broker notes)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => applyDemoDeclaration("broker")}
+                  className="rounded-lg border border-white/15 bg-black/40 px-3 py-1.5 text-xs font-medium text-amber-100 hover:bg-amber-500/10"
+                >
+                  Fill all sections — with broker (DS path note)
+                </button>
+              </div>
+            ) : null}
             {!isAdditionalDeclarationsSectionComplete(form.declaration) ? (
               <div
                 role="status"
@@ -722,30 +1220,13 @@ export function SellerListingWizard({
                 return Number.isFinite(n) ? Math.round(n * 100) : 0;
               })()}
               propertyType={form.propertyType}
+              onSectionSave={saveDeclarationProgress}
+              sectionSaveBusy={draftSaveBusy}
             />
-            <div className="flex flex-wrap gap-3">
-              <button
-                type="button"
-                disabled={declarationSaveBusy || loading}
-                onClick={() => {
-                  void (async () => {
-                    setDeclarationSaveBusy(true);
-                    setErr(null);
-                    try {
-                      await saveStep4(false);
-                    } finally {
-                      setDeclarationSaveBusy(false);
-                    }
-                  })();
-                }}
-                className="rounded-xl border border-white/20 px-4 py-2 text-sm text-slate-200 hover:bg-white/5 disabled:opacity-50"
-              >
-                {declarationSaveBusy ? "Saving…" : "Save declaration progress"}
-              </button>
-              <p className="text-xs text-slate-500 self-center">
-                Next validates and marks the declaration complete (all required sections).
-              </p>
-            </div>
+            <p className="text-xs text-slate-500">
+              Use <span className="text-slate-400">Continue</span> below to finish the checklist when all sections are
+              complete — that validates and marks the declaration complete.
+            </p>
           </div>
         )}
 
@@ -910,29 +1391,38 @@ export function SellerListingWizard({
 
         {err ? <p className="mt-4 text-sm text-red-400">{err}</p> : null}
 
-        <div className="mt-6 flex flex-wrap items-center gap-3">
+        <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-white/10 pt-6">
           {step > 1 ? (
             <button
               type="button"
+              disabled={draftSaveBusy}
               onClick={() => void onBack()}
-              className="rounded-xl border border-white/20 px-4 py-2 text-sm text-slate-200"
+              className="rounded-xl border border-white/20 px-4 py-2 text-sm text-slate-200 disabled:opacity-50"
             >
               Back
             </button>
           ) : null}
+          <button
+            type="button"
+            disabled={loading || draftSaveBusy}
+            onClick={() => void saveCurrentDraft()}
+            className="rounded-xl border border-premium-gold/40 bg-premium-gold/10 px-4 py-2 text-sm font-medium text-premium-gold hover:bg-premium-gold/15 disabled:opacity-50"
+          >
+            {draftSaveBusy ? "Saving…" : "Save"}
+          </button>
           {step < 7 ? (
             <button
               type="button"
-              disabled={loading}
+              disabled={loading || draftSaveBusy}
               onClick={() => void onNext()}
               className="rounded-xl bg-premium-gold px-5 py-2.5 text-sm font-semibold text-black disabled:opacity-50"
             >
-              {loading ? "…" : "Next"}
+              {loading ? "…" : "Continue"}
             </button>
           ) : (
             <button
               type="button"
-              disabled={loading}
+              disabled={loading || draftSaveBusy}
               onClick={() => void submitFinal()}
               className="rounded-xl bg-premium-gold px-5 py-2.5 text-sm font-semibold text-black disabled:opacity-50"
             >
@@ -940,40 +1430,43 @@ export function SellerListingWizard({
             </button>
           )}
         </div>
+        <p className="mt-2 text-[11px] text-slate-500">
+          Save keeps this step without advancing. Continue moves to the next wizard step (declaration step validates completion).
+        </p>
       </div>
 
-      <div className="mt-8 rounded-2xl border border-premium-gold/30 bg-[#1a1508]/40 p-4">
-        <p className="text-xs font-semibold uppercase tracking-wide text-premium-gold">Use AI assistance</p>
-        <p className="mt-1 text-xs text-slate-500">Heuristic hints only — not legal or appraisal advice.</p>
-        <div className="mt-3 flex flex-wrap gap-2">
+      <div className="mt-8 rounded-2xl border border-premium-gold/25 bg-gradient-to-b from-[#1e1a12]/90 to-[#14110c]/95 p-5 shadow-[inset_0_1px_0_0_rgba(212,175,55,0.06)]">
+        <p className="font-serif text-lg font-medium tracking-tight text-premium-gold/95">Listing insights</p>
+        <p className="mt-1.5 max-w-prose text-xs leading-relaxed text-slate-400">
+          Guidance for your consideration—this is not legal, tax, or appraisal advice.
+        </p>
+        <div className="mt-4 flex flex-wrap gap-2">
           <button
             type="button"
             disabled={!!aiBusy}
             onClick={() => void runAi("price")}
-            className="rounded-lg border border-white/15 px-3 py-1.5 text-xs text-slate-200"
+            className="rounded-full border border-white/12 bg-white/[0.03] px-3.5 py-1.5 text-xs font-medium text-slate-200 transition hover:border-premium-gold/35 hover:bg-premium-gold/5 hover:text-white disabled:opacity-40"
           >
-            {aiBusy === "price" ? "…" : "Suggest price band"}
+            {aiBusy === "price" ? "…" : "Price positioning"}
           </button>
           <button
             type="button"
             disabled={!!aiBusy}
             onClick={() => void runAi("description")}
-            className="rounded-lg border border-white/15 px-3 py-1.5 text-xs text-slate-200"
+            className="rounded-full border border-white/12 bg-white/[0.03] px-3.5 py-1.5 text-xs font-medium text-slate-200 transition hover:border-premium-gold/35 hover:bg-premium-gold/5 hover:text-white disabled:opacity-40"
           >
-            {aiBusy === "description" ? "…" : "Improve description"}
+            {aiBusy === "description" ? "…" : "Refresh description"}
           </button>
           <button
             type="button"
             disabled={!!aiBusy}
             onClick={() => void runAi("completeness")}
-            className="rounded-lg border border-white/15 px-3 py-1.5 text-xs text-slate-200"
+            className="rounded-full border border-white/12 bg-white/[0.03] px-3.5 py-1.5 text-xs font-medium text-slate-200 transition hover:border-premium-gold/35 hover:bg-premium-gold/5 hover:text-white disabled:opacity-40"
           >
-            {aiBusy === "completeness" ? "…" : "Check completeness"}
+            {aiBusy === "completeness" ? "…" : "Readiness check"}
           </button>
         </div>
-        {aiHint ? (
-          <pre className="mt-3 max-h-40 overflow-auto whitespace-pre-wrap text-xs text-slate-400">{aiHint}</pre>
-        ) : null}
+        {aiAssistPanel ? <SellerAiAssistResult panel={aiAssistPanel} /> : null}
       </div>
 
       <ContractModal

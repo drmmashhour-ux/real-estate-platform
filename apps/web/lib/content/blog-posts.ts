@@ -65,7 +65,7 @@ export const BLOG_POSTS: BlogPost[] = [
     slug: "rent-prices-laval-2026",
     title: "Rent prices in Laval 2026 — trends for tenants & hosts",
     description:
-      "Snapshot of rent dynamics around Laval, what travelers pay on short-term channels, and how BNHub fits your search.",
+      "Snapshot of rent dynamics around Laval, what travelers pay on short-term channels, and how BNHUB fits your search.",
     publishedIso: "2026-01-14",
     author: "LECIPM Editorial",
     keywords: ["Laval rent 2026", "Laval rental market", "short-term rental Laval"],
@@ -78,7 +78,7 @@ export const BLOG_POSTS: BlogPost[] = [
         ],
         links: [
           { href: "/rent/laval", label: "Rent & stays hub — Laval" },
-          { href: "/search/bnhub?location=laval", label: "Open BNHub search for Laval" },
+          { href: "/search/bnhub?location=laval", label: "Open BNHUB search for Laval" },
         ],
       },
       {
@@ -86,7 +86,7 @@ export const BLOG_POSTS: BlogPost[] = [
         paragraphs: [
           "Look at nightly rate, minimum nights, cancellation policy, and total price after taxes and platform fees. Photos and host responsiveness are strong quality signals.",
         ],
-        links: [{ href: "/bnhub", label: "Discover BNHub" }],
+        links: [{ href: "/bnhub", label: "Discover BNHUB" }],
       },
     ],
   },
@@ -127,12 +127,12 @@ export const BLOG_POSTS: BlogPost[] = [
   },
   {
     slug: "lecipm-growth-platform-overview",
-    title: "LECIPM in one page: AI trust, BNHub, and broker CRM",
+    title: "LECIPM in one page: AI trust, BNHUB, and broker CRM",
     description:
       "How the platform fits together for buyers, hosts, and brokers — with links to listings, stays, and signup.",
     publishedIso: "2026-03-28",
     author: "LECIPM Growth",
-    keywords: ["LECIPM", "real estate platform Quebec", "BNHub", "real estate CRM"],
+    keywords: ["LECIPM", "real estate platform Quebec", "BNHUB", "real estate CRM"],
     sections: [
       {
         heading: "Why one stack",
@@ -153,12 +153,12 @@ export const BLOG_POSTS: BlogPost[] = [
         links: [{ href: "/evaluate", label: "Try the evaluation flow" }],
       },
       {
-        heading: "BNHub + CRM",
+        heading: "BNHUB + CRM",
         paragraphs: [
-          "BNHub focuses on short-term inventory and bookings; CRM lanes prioritize broker and team workflows. Together they reduce duplicate data entry for hybrid operators.",
+          "BNHUB focuses on short-term inventory and bookings; CRM lanes prioritize broker and team workflows. Together they reduce duplicate data entry for hybrid operators.",
         ],
         links: [
-          { href: "/bnhub", label: "Explore BNHub" },
+          { href: "/bnhub", label: "Explore BNHUB" },
           { href: "/listings", label: "Browse resale listings" },
         ],
       },

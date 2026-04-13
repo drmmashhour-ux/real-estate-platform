@@ -1,5 +1,5 @@
 /**
- * BNHub stay availability: date overlap + stale unpaid pending expiration.
+ * BNHUB stay availability: date overlap + stale unpaid pending expiration.
  * Listing model in DB is `ShortTermListing`; overlap targets `Booking` rows.
  */
 

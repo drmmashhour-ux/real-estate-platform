@@ -117,7 +117,9 @@ test.describe("BNHub Stripe Checkout (browser)", () => {
 
     await dismissCommonOverlays(page);
     await page
-      .getByRole("button", { name: /pay securely with stripe|complete demo payment|pay now|payer maintenant|stripe/i })
+      .getByRole("button", {
+        name: /continue to payment|pay securely with stripe|complete demo payment|pay now|payer maintenant|stripe/i,
+      })
       .click({ timeout: 30_000 });
 
     await waitForStripeHostedCheckout(page);
@@ -148,7 +150,9 @@ test.describe("BNHub Stripe Checkout (browser)", () => {
     await page.waitForURL(`**/bnhub/booking/${BOOKING_CHECKOUT_ID}`, { timeout: 30_000 });
     await dismissCommonOverlays(page);
     await page
-      .getByRole("button", { name: /pay securely with stripe|complete demo payment|pay now|payer maintenant|stripe/i })
+      .getByRole("button", {
+        name: /continue to payment|pay securely with stripe|complete demo payment|pay now|payer maintenant|stripe/i,
+      })
       .click({ timeout: 30_000 });
     await expect(
       page.getByText(/Host payout is not configured yet\. Booking checkout is temporarily unavailable/i)

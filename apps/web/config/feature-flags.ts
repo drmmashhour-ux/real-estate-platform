@@ -7,9 +7,37 @@ export const featureFlags = {
   tenantIsolation: process.env.FEATURE_TENANT_ISOLATION === "true",
   /** Demo mode (staging / guided tours) */
   demoMode: process.env.NEXT_PUBLIC_DEMO_MODE === "true",
+  /**
+   * Deal coordination hub — also check DB `featureFlag` keys:
+   * document_request_autopilot_v1, bank_coordination_v1, notary_coordination_hub_v1,
+   * request_communications_v1, closing_request_validation_v1
+   * @see lib/deals/coordination-feature-flags.ts
+   */
+  documentRequestAutopilotV1: process.env.FEATURE_DOCUMENT_REQUEST_AUTOPILOT_V1 === "true",
+  bankCoordinationV1: process.env.FEATURE_BANK_COORDINATION_V1 === "true",
+  notaryCoordinationHubV1: process.env.FEATURE_NOTARY_COORDINATION_HUB_V1 === "true",
+  requestCommunicationsV1: process.env.FEATURE_REQUEST_COMMUNICATIONS_V1 === "true",
+  closingRequestValidationV1: process.env.FEATURE_CLOSING_REQUEST_VALIDATION_V1 === "true",
 } as const;
 
 export type FeatureFlagKey = keyof typeof featureFlags;
+
+/**
+ * LECIPM engine foundations (ranking, core autopilot, growth) — env-backed; default off in production unless set.
+ * TODO v2: per-tenant overrides in DB; experiments / A-B testing integration.
+ */
+export const engineFlags = {
+  rankingV1: process.env.FEATURE_RANKING_V1 === "true" || process.env.FEATURE_RANKING_V1 === "1",
+  listingQualityV1: process.env.FEATURE_LISTING_QUALITY_V1 === "true" || process.env.FEATURE_LISTING_QUALITY_V1 === "1",
+  listingAutopilotV1: process.env.FEATURE_LISTING_AUTOPILOT_V1 === "true" || process.env.FEATURE_LISTING_AUTOPILOT_V1 === "1",
+  growthAutopilotV1: process.env.FEATURE_GROWTH_AUTOPILOT_V1 === "true" || process.env.FEATURE_GROWTH_AUTOPILOT_V1 === "1",
+  seoCandidateGenerationV1:
+    process.env.FEATURE_SEO_CANDIDATE_GENERATION_V1 === "true" || process.env.FEATURE_SEO_CANDIDATE_GENERATION_V1 === "1",
+  reengagementCandidatesV1:
+    process.env.FEATURE_REENGAGEMENT_CANDIDATES_V1 === "true" || process.env.FEATURE_REENGAGEMENT_CANDIDATES_V1 === "1",
+} as const;
+
+export type EngineFlagKey = keyof typeof engineFlags;
 
 /** Soft-launch toggles (default: locales on; risky automation off unless env enables). */
 export const launchFlags = {

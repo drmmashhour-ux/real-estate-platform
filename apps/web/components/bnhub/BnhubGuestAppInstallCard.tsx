@@ -36,10 +36,10 @@ export function BnhubGuestAppInstallCard() {
     <section className="rounded-3xl border border-premium-gold/20 bg-[radial-gradient(circle_at_top,#241c08,transparent_32%),linear-gradient(180deg,#0d0d0d,#121212)] p-5">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="max-w-2xl">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold">Install BNHub guest app</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold">Install BNHUB guest app</p>
           <h2 className="mt-2 text-2xl font-semibold text-white">Keep reservations, alerts, and booking actions on your phone.</h2>
           <p className="mt-3 text-sm leading-relaxed text-slate-400">
-            Add BNHub to your home screen for faster access to trips, reservation confirmations, payment details, and notifications.
+            Add BNHUB to your home screen for faster access to trips, reservation confirmations, payment details, and notifications.
           </p>
         </div>
         {installEvent ? (

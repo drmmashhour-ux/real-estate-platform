@@ -1,5 +1,5 @@
 /**
- * Display helpers — settlement still uses listing/host currency in BNHub.
+ * Display helpers — settlement still uses listing/host currency in BNHUB.
  */
 export function formatMoney(amountCents: number, currency: string, locale?: string): string {
   const cur = currency.toUpperCase();

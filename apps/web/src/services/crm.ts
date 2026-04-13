@@ -4,7 +4,7 @@ import { assertBrokerCanReceiveNewLead, formatBrokerBillingBlockReason } from "@
 export type CreateGrowthLeadInput = {
   userId?: string | null;
   listingId?: string | null;
-  /** BNHub stay id when distinct from generic listingId */
+  /** BNHUB stay id when distinct from generic listingId */
   shortTermListingId?: string | null;
   name?: string;
   email?: string;

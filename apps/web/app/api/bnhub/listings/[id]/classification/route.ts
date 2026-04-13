@@ -5,7 +5,7 @@ import { isPlatformAdmin } from "@/lib/auth/is-platform-admin";
 import { ListingStatus } from "@prisma/client";
 import { recomputePropertyClassificationForListing } from "@/src/modules/bnhub-growth-engine/services/propertyClassificationService";
 
-/** GET — BNHub classification for a listing (public when published; host/admin for drafts). */
+/** GET — BNHUB classification for a listing (public when published; host/admin for drafts). */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

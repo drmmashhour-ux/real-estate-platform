@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
       { status: 400 }
     );
   }
-  // Web session has no Supabase host id here; BNHub listing count is not applied (use mobile Connect API for full eligibility).
+  // Web session has no Supabase host id here; BNHUB listing count is not applied (use mobile Connect API for full eligibility).
   if (!isBnhubHostConnectEligible(user.role, user._count.shortTermListings, 0)) {
     return Response.json({ error: "Not allowed" }, { status: 403 });
   }

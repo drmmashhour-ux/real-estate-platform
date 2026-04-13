@@ -11,7 +11,7 @@ const SCRIPTS: Record<DemoStepKey, ScriptBundle> = {
   search: {
     title: "Discovery",
     script:
-      "A user starts here and finds a property — same search experience for BNHub stays and sale listings, without jumping to another product.",
+      "A user starts here and finds a property — same search experience for BNHUB stays and sale listings, without jumping to another product.",
     talkingPoints: [
       "Unified discovery: rentals + real estate in one platform.",
       "Filters are real patterns we use in production.",
@@ -39,7 +39,7 @@ const SCRIPTS: Record<DemoStepKey, ScriptBundle> = {
     ],
   },
   booking: {
-    title: "BNHub — booking",
+    title: "BNHUB — booking",
     script:
       "Short-term flow is structured: dates, price breakdown, and a clear path to payment — commission-ready when checkout completes.",
     talkingPoints: [
@@ -65,7 +65,7 @@ const SCRIPTS: Record<DemoStepKey, ScriptBundle> = {
     talkingPoints: [
       "Separate marketplace activity from conversion story.",
       "Label demo vs live when numbers are illustrative.",
-      "Tie back to the three engines: BNHub, brokerage, listings.",
+      "Tie back to the three engines: BNHUB, brokerage, listings.",
     ],
   },
 };

@@ -1,20 +1,14 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
+import { gateDistributedRateLimit } from "@/lib/rate-limit-enforcement";
 import { persistLaunchEvent } from "@/src/modules/launch/persistLaunchEvent";
 
 export const dynamic = "force-dynamic";
 
 /** POST /api/waitlist — growth engine email capture → `growth_waitlist`. */
 export async function POST(req: Request) {
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? req.headers.get("x-real-ip") ?? "anon";
-  const limit = checkRateLimit(`growth:waitlist:${ip}`, { windowMs: 60_000, max: 15 });
-  if (!limit.allowed) {
-    return NextResponse.json(
-      { error: "Too many requests. Try again shortly." },
-      { status: 429, headers: getRateLimitHeaders(limit) }
-    );
-  }
+  const gate = await gateDistributedRateLimit(req, "growth:waitlist", { windowMs: 60_000, max: 15 });
+  if (!gate.allowed) return gate.response;
 
   let body: unknown;
   try {
@@ -40,5 +34,5 @@ export async function POST(req: Request) {
 
   void persistLaunchEvent("WAITLIST_SIGNUP", { email });
 
-  return NextResponse.json({ ok: true }, { headers: getRateLimitHeaders(limit) });
+  return NextResponse.json({ ok: true }, { headers: gate.responseHeaders });
 }

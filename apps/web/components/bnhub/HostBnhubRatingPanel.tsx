@@ -24,7 +24,7 @@ export function HostBnhubRatingPanel({
 
   return (
     <section className="rounded-xl border border-slate-800 bg-slate-900/40 p-4">
-      <h2 className="text-sm font-semibold text-white">BNHub star estimate</h2>
+      <h2 className="text-sm font-semibold text-white">BNHUB star estimate</h2>
       <p className="mt-1 text-xs text-slate-500">
         Shown to guests as guidance only. Improve your listing to raise your score.
       </p>

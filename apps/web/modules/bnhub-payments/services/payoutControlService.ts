@@ -20,7 +20,7 @@ export function computeHostNetPayout(params: {
 
 /**
  * Escrow-like payout control: record expected host transfer; release is gated (cron/admin), not blind automation here.
- * For Stripe Connect destination charges, funds already route to the connected account — this row is operational truth for BNHub release policy.
+ * For Stripe Connect destination charges, funds already route to the connected account — this row is operational truth for BNHUB release policy.
  */
 export async function createPendingPayoutAfterGuestPaid(params: {
   reservationPaymentId: string;

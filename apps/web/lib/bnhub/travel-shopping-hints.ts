@@ -70,7 +70,7 @@ function fallbackHints(mode: TravelShoppingMode, summary: string): TravelShoppin
     whyBookEarly:
       "Planning further ahead usually means more flight times and room types to choose from — especially around holidays and school breaks.",
     staysHook:
-      "Bookending a package with a night or two near the airport or downtown? Browse BNHub stays for flexible local hosts.",
+      "Bookending a package with a night or two near the airport or downtown? Browse BNHUB stays for flexible local hosts.",
     disclaimer: DISCLAIMER,
     source: "fallback",
   };
@@ -103,7 +103,7 @@ export async function generateTravelShoppingHints(input: {
       messages: [
         {
           role: "system",
-          content: `You are the travel planning assistant for a real-estate and short-term rental platform (BNHub) that also helps users plan trips ethically.
+          content: `You are the travel planning assistant for a real-estate and short-term rental platform (BNHUB) that also helps users plan trips ethically.
 
 Hard rules:
 - Never invent current prices, fare classes, or claim you browsed a website.
@@ -119,7 +119,7 @@ Return JSON only:
   "checklist": string[] (5-6 short items to tick before paying),
   "searchPhrases": string[] (3-4 phrases they can paste into search boxes on airline or package sites; include origin/destination/dates from their summary when known),
   "whyBookEarly": string (one sentence; no fake percentages),
-  "staysHook": string (one sentence suggesting a BNHub stay for pre/post trip nights near hub cities or resorts — do not claim BNHub has flights)
+  "staysHook": string (one sentence suggesting a BNHUB stay for pre/post trip nights near hub cities or resorts — do not claim BNHUB has flights)
 }`,
         },
         {

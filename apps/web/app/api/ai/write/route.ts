@@ -17,6 +17,7 @@ const ACTIONS = new Set<WriterAction>([
   "persuasive",
   "translate_fr",
   "translate_en",
+  "correct_writing",
 ]);
 
 const MAX_PROMPT = 12_000;

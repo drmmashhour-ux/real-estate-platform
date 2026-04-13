@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { headers } from "next/headers";
+import { mergeTrafficAttributionIntoMetadata } from "@/lib/attribution/social-traffic";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
 import { getGuestId } from "@/lib/auth/session";
 import { trackEvent } from "@/src/services/analytics";
@@ -37,6 +38,12 @@ export async function POST(req: NextRequest) {
 
   const userId = await getGuestId();
   const normalized = eventType === "property_viewed" ? "listing_view" : eventType;
-  await trackEvent(normalized, body.metadata ?? {}, { userId });
+  const h = await headers();
+  const meta =
+    body.metadata && typeof body.metadata === "object" && !Array.isArray(body.metadata)
+      ? (body.metadata as Record<string, unknown>)
+      : {};
+  const merged = mergeTrafficAttributionIntoMetadata(h.get("cookie"), meta);
+  await trackEvent(normalized, merged, { userId });
   return Response.json({ ok: true }, { headers: getRateLimitHeaders(rl) });
 }

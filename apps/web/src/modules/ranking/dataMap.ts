@@ -1,7 +1,7 @@
 /**
  * DATA SOURCE MAP — ranking uses only persisted entities in this repo.
  *
- * BNHub (listingType: "bnhub")
+ * BNHUB (listingType: "bnhub")
  * - ShortTermListing (`bnhub_listings`): id, city, region, nightPriceCents, maxGuests, propertyType, roomType,
  *   amenities (Json), photos (Json), description, verificationStatus, listingVerificationStatus, listingStatus,
  *   ownerId, createdAt, updatedAt, instantBookEnabled, houseRules, checkInInstructions, latitude/longitude
@@ -28,7 +28,7 @@
  *
  * Config
  * - RankingConfig (`ranking_configs`): weightsJson per listingType
- * - SearchRankingConfig — legacy BNHub search weights; kept for backward compatibility when AI engine is off
+ * - SearchRankingConfig — legacy BNHUB search weights; kept for backward compatibility when AI engine is off
  *
  * Executive
  * - ExecutiveRecommendation — anomalies surfaced via rankingExecutiveBridge + feedbackEngine

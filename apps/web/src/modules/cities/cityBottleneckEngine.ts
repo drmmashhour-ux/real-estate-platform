@@ -40,7 +40,7 @@ export async function detectCitySupplyBottlenecks(cityKey: string): Promise<City
     out.push({
       type: "thin_dual_supply",
       severity: "medium",
-      summary: "Both BNHub and FSBO published counts are very low.",
+      summary: "Both BNHUB and FSBO published counts are very low.",
       evidence: { bnhub: n(m, "activeBnhubListingCount"), fsbo: n(m, "activeRealEstateListingCount") },
     });
   }
@@ -93,7 +93,7 @@ export async function detectCityConversionBottlenecks(cityKey: string): Promise<
     out.push({
       type: "views_without_bookings",
       severity: "medium",
-      summary: "FSBO views are present but completed BNHub stays are scarce (check funnel alignment).",
+      summary: "FSBO views are present but completed BNHUB stays are scarce (check funnel alignment).",
       evidence: { listingViews: n(m, "listingViews"), completedBookings: n(m, "completedBookings") },
     });
   }
@@ -139,7 +139,7 @@ export async function detectCityRankingBottlenecks(cityKey: string): Promise<Cit
     out.push({
       type: "weak_ranking_distribution",
       severity: "medium",
-      summary: "Average persisted BNHub ranking score is low for in-city listings.",
+      summary: "Average persisted BNHUB ranking score is low for in-city listings.",
       evidence: { avgListingRankingScore: avg },
     });
   }

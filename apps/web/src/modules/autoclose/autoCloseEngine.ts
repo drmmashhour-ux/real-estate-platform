@@ -238,7 +238,7 @@ export async function runAutoCloseHourlyPass(options?: {
     }
   }
 
-  // --- booking_reminder: PENDING BNHub booking — internal CRM signal for operators (no guest auto-message) ---
+  // --- booking_reminder: PENDING BNHUB booking — internal CRM signal for operators (no guest auto-message) ---
   const nowMs = Date.now();
   const pendingCutoff = new Date(nowMs - 12 * 3600 * 1000);
   const pendingNotAncient = new Date(nowMs - 14 * 24 * 3600 * 1000);

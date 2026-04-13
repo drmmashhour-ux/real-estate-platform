@@ -152,7 +152,7 @@ export async function canAccessConversationContext(
   return true;
 }
 
-/** Direct thread: only broker↔linked CRM client (or admin). */
+/** Direct thread: broker↔linked CRM client, buyer↔assigned broker, or admin. */
 export async function canCreateDirectConversation(
   user: UserForMessaging,
   otherUserId: string
@@ -169,6 +169,16 @@ export async function canCreateDirectConversation(
     select: { id: true },
   });
   if (crm) return true;
+  const buyerBroker = await prisma.buyerRequest.findFirst({
+    where: {
+      OR: [
+        { userId: user.id, assignedBrokerId: otherUserId },
+        { userId: otherUserId, assignedBrokerId: user.id },
+      ],
+    },
+    select: { id: true },
+  });
+  if (buyerBroker) return true;
   if (isBrokerLikeRole(user.role)) {
     const clientRow = await prisma.brokerClient.findFirst({
       where: { brokerId: user.id, userId: otherUserId },

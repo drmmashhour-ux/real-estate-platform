@@ -10,6 +10,14 @@ import {
   ensureDemoBookings,
   ensurePlatformDemoBookings,
 } from "@/lib/bnhub/dashboard";
+import {
+  getActiveListingsCount,
+  getAvgNightlyPriceCents,
+  getBookingStatusBreakdown,
+  getHostActivityFeed,
+  getRevenueByDay,
+  getTotalEarningsCents,
+} from "@/lib/bnhub/dashboard-analytics";
 
 export const dynamic = "force-dynamic";
 
@@ -35,6 +43,12 @@ export async function GET(request: NextRequest) {
         revenueThisMonth: 0,
         revenueLastMonth: 0,
         revenueYTD: 0,
+        totalEarningsCents: 0,
+        activeListings: 0,
+        avgNightlyPriceCents: 0,
+        revenueByDay: [],
+        bookingStatusBreakdown: [],
+        activityFeed: [],
       });
     }
 
@@ -42,19 +56,33 @@ export async function GET(request: NextRequest) {
     await ensureDemoBookings(ownerId);
 
     const now = new Date();
-    const [bookingsThisMonth, upcomingGuests, revenueMTD, occupancyRate, revenueLastMonth, revenueYTD] =
-      await Promise.all([
-        getBookingsThisMonth(ownerId),
-        getUpcomingGuests(ownerId),
-        getRevenueMTD(ownerId),
-        getOccupancyRateLast30(ownerId),
-        getRevenueForMonth(
-          ownerId,
-          now.getFullYear(),
-          now.getMonth() - 1
-        ),
-        getRevenueYTD(ownerId),
-      ]);
+    const [
+      bookingsThisMonth,
+      upcomingGuests,
+      revenueMTD,
+      occupancyRate,
+      revenueLastMonth,
+      revenueYTD,
+      totalEarningsCents,
+      activeListings,
+      avgNightlyPriceCents,
+      revenueByDay,
+      bookingStatusBreakdown,
+      activityFeed,
+    ] = await Promise.all([
+      getBookingsThisMonth(ownerId),
+      getUpcomingGuests(ownerId),
+      getRevenueMTD(ownerId),
+      getOccupancyRateLast30(ownerId),
+      getRevenueForMonth(ownerId, now.getFullYear(), now.getMonth() - 1),
+      getRevenueYTD(ownerId),
+      getTotalEarningsCents(ownerId),
+      getActiveListingsCount(ownerId),
+      getAvgNightlyPriceCents(ownerId),
+      getRevenueByDay(ownerId, 14),
+      getBookingStatusBreakdown(ownerId),
+      getHostActivityFeed(ownerId, 12),
+    ]);
 
     return NextResponse.json({
       bookingsThisMonth,
@@ -64,6 +92,12 @@ export async function GET(request: NextRequest) {
       revenueThisMonth: revenueMTD,
       revenueLastMonth: revenueLastMonth,
       revenueYTD,
+      totalEarningsCents,
+      activeListings,
+      avgNightlyPriceCents,
+      revenueByDay,
+      bookingStatusBreakdown,
+      activityFeed,
     });
   } catch (e) {
     console.error("GET /api/bnhub/dashboard:", e);
@@ -76,6 +110,12 @@ export async function GET(request: NextRequest) {
         revenueThisMonth: 0,
         revenueLastMonth: 0,
         revenueYTD: 0,
+        totalEarningsCents: 0,
+        activeListings: 0,
+        avgNightlyPriceCents: 0,
+        revenueByDay: [],
+        bookingStatusBreakdown: [],
+        activityFeed: [],
       },
       { status: 200 }
     );

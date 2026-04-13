@@ -9,11 +9,15 @@ export type RedisClient = {
   get: (key: string) => Promise<string | null>;
   set: (key: string, value: string, options?: { ex?: number }) => Promise<void>;
   del: (key: string) => Promise<void>;
+  /** INCR key; set TTL (seconds) when count becomes 1. Returns new count. */
+  incrWithExpire: (key: string, windowSeconds: number) => Promise<number>;
+  ttl: (key: string) => Promise<number>;
 };
 
 let client: RedisClient | null = null;
 
-async function getClient(): Promise<RedisClient | null> {
+/** Shared Redis client for cache and distributed rate limits. */
+export async function getRedisClient(): Promise<RedisClient | null> {
   if (!REDIS_URL) return null;
   if (client) return client;
   try {
@@ -32,6 +36,14 @@ async function getClient(): Promise<RedisClient | null> {
       async del(key: string) {
         await redis.del(key);
       },
+      async incrWithExpire(key: string, windowSeconds: number) {
+        const n = await redis.incr(key);
+        if (n === 1) await redis.expire(key, Math.max(1, windowSeconds));
+        return Number(n);
+      },
+      async ttl(key: string) {
+        return redis.ttl(key);
+      },
     };
     return client;
   } catch {
@@ -43,7 +55,7 @@ async function getClient(): Promise<RedisClient | null> {
  * Get a cached string. Returns null if Redis not configured or key missing.
  */
 export async function cacheGet(key: string): Promise<string | null> {
-  const c = await getClient();
+  const c = await getRedisClient();
   if (!c) return null;
   return c.get(key);
 }
@@ -52,7 +64,7 @@ export async function cacheGet(key: string): Promise<string | null> {
  * Set a cached string. TTL optional (seconds). No-op if Redis not configured.
  */
 export async function cacheSet(key: string, value: string, ttlSeconds?: number): Promise<void> {
-  const c = await getClient();
+  const c = await getRedisClient();
   if (!c) return;
   await c.set(key, value, ttlSeconds ? { ex: ttlSeconds } : undefined);
 }
@@ -61,7 +73,7 @@ export async function cacheSet(key: string, value: string, ttlSeconds?: number):
  * Delete a key. No-op if Redis not configured.
  */
 export async function cacheDel(key: string): Promise<void> {
-  const c = await getClient();
+  const c = await getRedisClient();
   if (!c) return;
   await c.del(key);
 }

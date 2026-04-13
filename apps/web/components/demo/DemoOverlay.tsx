@@ -150,7 +150,7 @@ export function DemoOverlay() {
             onClick={nextStep}
             className="rounded-lg bg-premium-gold px-3 py-2 text-xs font-semibold text-black hover:brightness-110"
           >
-            {currentStepIndex >= totalSteps - 1 ? "Finish" : "Next"}
+            {currentStepIndex >= totalSteps - 1 ? "Finish" : "Continue"}
           </button>
           <button
             type="button"

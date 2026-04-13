@@ -1,10 +1,11 @@
 /**
- * Live BNHub quote in major currency units (floats) for public APIs / UI.
+ * Live BNHUB quote in major currency units (floats) for public APIs / UI.
  * Authoritative money remains cents in `computeBookingPricing`.
  */
 
 import { computeBookingPricing, type PricingBreakdown } from "@/lib/bnhub/booking-pricing";
 import { isListingAvailable } from "@/lib/bnhub/listings";
+import { softDemandLineForQuoteRange } from "@/lib/bnhub/soft-demand-signals";
 import { prisma } from "@/lib/db";
 import { ListingStatus } from "@prisma/client";
 
@@ -31,6 +32,8 @@ export type BookingQuoteDollars = {
     | "lodgingDiscountAppliedCents"
     | "lodgingDiscountSource"
   >;
+  /** Optional soft demand hint for selected dates (calendar-backed when possible). */
+  softDemandLine?: string | null;
 };
 
 function centsToAmount(cents: number): number {
@@ -95,6 +98,12 @@ export async function calculateBookingQuote(
     return { ok: false, httpStatus: 409, error: "Selected dates are no longer available." };
   }
 
+  const softDemandLine = await softDemandLineForQuoteRange(
+    input.listingId,
+    input.checkIn,
+    input.checkOut
+  );
+
   const b = priced.breakdown;
   const lodgingBaseCents = b.lodgingSubtotalAfterDiscountCents;
   const quote: BookingQuoteDollars = {
@@ -117,6 +126,7 @@ export async function calculateBookingQuote(
       lodgingDiscountAppliedCents: b.lodgingDiscountAppliedCents,
       lodgingDiscountSource: b.lodgingDiscountSource,
     },
+    softDemandLine,
   };
 
   return { ok: true, quote };

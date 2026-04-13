@@ -43,7 +43,7 @@ export function suggestFixForType(type: E2EFailureType, errorSnippet: string): S
     case "stripe_webhook":
       return {
         likelyRootCause: `Webhook verified but booking/payment state did not converge (${snip})`,
-        suggestedFixZones: ["webhook idempotency", "metadata bookingId", "payment row upsert", "BNHub reservation payment"],
+        suggestedFixZones: ["webhook idempotency", "metadata bookingId", "payment row upsert", "BNHUB reservation payment"],
         filesLikelyInvolved: [
           "apps/web/app/api/stripe/webhook/route.ts",
           "apps/web/lib/bnhub/booking.ts",
@@ -72,7 +72,7 @@ export function suggestFixForType(type: E2EFailureType, errorSnippet: string): S
     case "market_resolution":
       return {
         likelyRootCause: `Market-derived CTAs or payment mode mismatch (${snip})`,
-        suggestedFixZones: ["getResolvedMarket", "platform_market_launch_settings", "BNHub booking create branching"],
+        suggestedFixZones: ["getResolvedMarket", "platform_market_launch_settings", "BNHUB booking create branching"],
         filesLikelyInvolved: [
           "apps/web/lib/markets/",
           "apps/web/app/api/admin/market-settings/route.ts",

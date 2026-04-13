@@ -6,7 +6,7 @@
 export type OutreachPersona = "host" | "guest";
 
 export const OUTREACH_TEMPLATES: Record<OutreachPersona | "followup" | "close", string> = {
-  host: `Hi{{NAME}}! We're launching BNHub in {{AREA}} and promoting a small group of early hosts.
+  host: `Hi{{NAME}}! We're launching BNHUB in {{AREA}} and promoting a small group of early hosts.
 
 We bring extra visibility, lower fees, and active marketing.
 

@@ -8,6 +8,7 @@ import { getGuestId } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
 import { recordDealCrmStageChange } from "@/lib/ai/automation-triggers";
 import { hintCrmStageFromDealStatus } from "@/lib/ai/lifecycle/deal-actions";
+import { notifyDealClosedCelebrationIfNeeded } from "@/lib/listing-lifecycle/notify-deal-closed-celebration";
 
 export const dynamic = "force-dynamic";
 
@@ -97,6 +98,7 @@ export async function PATCH(
   }
 
   const prevCrm = deal.crmStage ?? null;
+  const prevStatus = deal.status;
   const updated = await prisma.deal.update({
     where: { id },
     data,
@@ -109,6 +111,10 @@ export async function PATCH(
       payments: true,
     },
   });
+
+  if (updated.status === "closed" && prevStatus !== "closed") {
+    void notifyDealClosedCelebrationIfNeeded(id).catch(() => {});
+  }
 
   const newCrm = updated.crmStage ?? null;
   if (newCrm !== prevCrm && userId) {

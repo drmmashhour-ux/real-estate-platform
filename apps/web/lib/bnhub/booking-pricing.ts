@@ -1,5 +1,5 @@
 /**
- * BNHub booking pricing engine.
+ * BNHUB booking pricing engine.
  * Computes full price breakdown: nightly rates, cleaning, taxes, fees, deposit, total.
  * Reusable across listing page, checkout, booking service, and admin.
  */
@@ -70,7 +70,7 @@ export type ComputePricingParams = {
   checkIn: string; // ISO date
   checkOut: string;
   guestCount?: number;
-  /** Optional BNHub hospitality add-ons (listing service row ids + qty) */
+  /** Optional BNHUB hospitality add-ons (listing service row ids + qty) */
   selectedAddons?: SelectedAddonInput[];
   /** Server “today” for lead-time rules (tests) */
   pricingAsOf?: Date;

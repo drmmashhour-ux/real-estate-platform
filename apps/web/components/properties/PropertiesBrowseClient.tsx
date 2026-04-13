@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { BROWSE_EMPTY_LISTINGS } from "@/lib/listings/browse-empty-copy";
 import type { BrowsePropertyCard } from "@/lib/simulation/browse-properties";
 
 type Props = { initial: BrowsePropertyCard[] };
@@ -100,7 +102,28 @@ export function PropertiesBrowseClient({ initial }: Props) {
             ))}
           </div>
           {filtered.length === 0 ? (
-            <p className="py-8 text-center text-sm text-slate-500">No listings match these filters.</p>
+            <div className="mt-6">
+              <EmptyState title={BROWSE_EMPTY_LISTINGS.title} description={BROWSE_EMPTY_LISTINGS.description}>
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCity("All cities");
+                      setMaxBudget("");
+                    }}
+                    className="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-emerald-500 px-6 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400"
+                  >
+                    Reset filters
+                  </button>
+                  <Link
+                    href="/explore"
+                    className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-emerald-500/50 px-6 py-2.5 text-sm font-semibold text-emerald-300 transition hover:border-emerald-400 hover:bg-emerald-500/10"
+                  >
+                    Browse featured listings
+                  </Link>
+                </>
+              </EmptyState>
+            </div>
           ) : null}
         </div>
       </section>

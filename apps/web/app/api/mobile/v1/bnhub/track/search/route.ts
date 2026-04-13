@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 export const dynamic = "force-dynamic";
 
 /**
- * POST — persist a BNHub search query for personalization & funnels.
+ * POST — persist a BNHUB search query for personalization & funnels.
  */
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => ({}))) as {

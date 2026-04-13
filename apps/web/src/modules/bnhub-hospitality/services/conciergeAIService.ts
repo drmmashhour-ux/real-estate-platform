@@ -1,5 +1,5 @@
 /**
- * BNHub Concierge AI — mock / deterministic / provider-ready.
+ * BNHUB Concierge AI — mock / deterministic / provider-ready.
  * Does not promise third-party fulfillment; recommendations are informational.
  */
 import type { BnhubConciergeAiMode, BnhubConciergeRoleContext } from "@prisma/client";
@@ -65,13 +65,13 @@ export async function generateGuestRecommendations(args: { sessionId: string; us
   }
 
   const textFr =
-    `Réponse (IA) — informatif seulement; rien n'est garanti par BNHub.\n` +
+    `Réponse (IA) — informatif seulement; rien n'est garanti par BNHUB.\n` +
     `Services disponibles pour ce séjour: ${available.map((s) => s.name).join(", ") || "aucun configuré"}.\n` +
     `Forfaits: ${bundles.map((b) => b.name).join(", ") || "aucun"}.\n` +
     `Demande: ${args.userMessage.slice(0, 200)}`;
 
   const textEn =
-    `AI reply — informational only; BNHub does not guarantee third-party services.\n` +
+    `AI reply — informational only; BNHUB does not guarantee third-party services.\n` +
     `Available add-ons: ${available.map((s) => s.name).join(", ") || "none configured"}.\n` +
     `Bundles: ${bundles.map((b) => b.name).join(", ") || "none"}.\n` +
     `Your note: ${args.userMessage.slice(0, 200)}`;
@@ -100,7 +100,7 @@ export async function generateHostSuggestions(listingId: string) {
   const offers = await listPublicServicesForListing(listingId);
   return {
     message:
-      "Consider enabling breakfast and cleaning for higher attach rate. BNHub does not guarantee guest uptake.",
+      "Consider enabling breakfast and cleaning for higher attach rate. BNHUB does not guarantee guest uptake.",
     enabledCount: offers.length,
   };
 }

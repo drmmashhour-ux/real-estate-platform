@@ -45,6 +45,7 @@ export function ImageUploader({
 
   const canAdd = images.length < maxImages;
   const blocked = disabled || !listingId || !canAdd;
+  const galleryFull = listingId && !canAdd && !disabled;
 
   const validateFile = (file: File): string | null => {
     const type = (file.type || "").toLowerCase();
@@ -180,12 +181,38 @@ export function ImageUploader({
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-xs text-[#B3B3B3]">
-          Photos{" "}
-          <span className="text-white">
-            {images.length}/{maxImages}
-          </span>
-        </p>
+        <div className="min-w-0 flex-1">
+          <p className="text-xs text-[#B3B3B3]">
+            Photos{" "}
+            <span className={galleryFull ? "font-semibold text-premium-gold" : "text-white"}>
+              {images.length}/{maxImages}
+            </span>
+            {galleryFull ? (
+              <span className="ml-1.5 text-[10px] font-normal uppercase tracking-wide text-premium-gold/90">
+                Full
+              </span>
+            ) : null}
+          </p>
+          {/* Upload progress line — one segment per slot */}
+          <div
+            className="mt-2 flex gap-1.5"
+            role="progressbar"
+            aria-valuenow={images.length}
+            aria-valuemin={0}
+            aria-valuemax={maxImages}
+            aria-label={`${images.length} of ${maxImages} photo slots used`}
+          >
+            {Array.from({ length: maxImages }).map((_, i) => (
+              <div
+                key={`slot-${i}`}
+                className={[
+                  "h-1.5 min-w-[12px] flex-1 rounded-full transition-colors",
+                  i < images.length ? "bg-premium-gold shadow-[0_0_8px_rgba(212,175,55,0.35)]" : "bg-white/[0.12]",
+                ].join(" ")}
+              />
+            ))}
+          </div>
+        </div>
         {listingId ? null : (
           <p className="text-xs font-medium text-amber-200/90">
             Save draft once to enable uploads — we store files under your listing folder.
@@ -239,9 +266,23 @@ export function ImageUploader({
           onChange={onInputChange}
         />
         <p className="text-sm font-medium text-[#E8E8E8]">
-          {uploading ? "Uploading…" : "Drop photos here or click to browse"}
+          {uploading
+            ? "Uploading…"
+            : galleryFull
+              ? "Gallery full — remove a photo below to add another"
+              : "Drop photos here or click to browse"}
         </p>
-        <p className="mt-2 text-xs text-[#888]">JPG, PNG, WebP · up to 5MB each · max {maxImages} images</p>
+        <p className="mt-2 text-xs text-[#888]">
+          JPG, PNG, WebP · up to 5MB each · max {maxImages} images
+          {galleryFull ? (
+            <span className="block pt-1 text-premium-gold/90">You are using all {maxImages} slots.</span>
+          ) : null}
+        </p>
+        <p className="mt-3 text-xs leading-relaxed text-[#9CA3AF]">
+          First photo must be an <span className="text-white/90">exterior</span> with a visible{" "}
+          <span className="text-white/90">street or building number</span> (facade, door, mailbox, or entrance plaque).
+          Other slots: rooms, yard, amenities. Non-property images may be rejected.
+        </p>
       </div>
 
       {error ? <p className="text-xs text-red-400">{error}</p> : null}
@@ -258,7 +299,7 @@ export function ImageUploader({
               <img src={src} alt="" className="aspect-square w-full object-cover" />
               {i === 0 ? (
                 <span className="absolute left-2 top-2 rounded bg-black/70 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-premium-gold">
-                  Exterior (required)
+                  Cover: exterior + number
                 </span>
               ) : null}
               {onPhotoTypesChange ? (

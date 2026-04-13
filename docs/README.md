@@ -30,6 +30,8 @@ This folder is the **LECIPM Project Architecture Workspace**: the canonical loca
 
 ## Production operations
 
+- **Security hardening (authz, webhooks, RLS notes, kill switches):** [security/README.md](security/README.md)
+- **Vercel (preview-first, envs, rollback, logs):** [dev/README.md](dev/README.md)
 - **Backups:** [BACKUP_STRATEGY.md](BACKUP_STRATEGY.md) · **Restore:** [RESTORE_PROCEDURE.md](RESTORE_PROCEDURE.md)
 - **Deploy / rollback:** [DEPLOYMENT.md](DEPLOYMENT.md) · **Checklist:** [PRODUCTION_CHECKLIST.md](PRODUCTION_CHECKLIST.md)
 - **Env & security:** [ENVIRONMENT_SETUP.md](ENVIRONMENT_SETUP.md)

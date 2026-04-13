@@ -1,0 +1,15 @@
+# ZAP Baseline rule configuration
+# Docs: https://www.zaproxy.org/docs/docker/baseline-scan/
+#
+# Tab-separated columns: RULE_ID	ACTION	(optional description)
+# Actions: IGNORE | WARN | FAIL | INFO
+#
+# URL-scoped suppressions (regex):
+#   RULE_ID	OUTOFSCOPE	<regex>
+#   *	OUTOFSCOPE	.*\.js
+#
+# Generate a full default file locally:
+#   docker run -v "$(pwd):/zap/wrk/:rw" -t ghcr.io/zaproxy/zaproxy:stable \
+#     zap-baseline.py -t https://YOUR_URL -g .zap/rules-generated.tsv
+#
+# After triage, add real lines below (must be tab-separated, not spaces).

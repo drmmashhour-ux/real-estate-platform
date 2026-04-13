@@ -1,5 +1,5 @@
 /**
- * Prisma integration checks for BNHub + core user/admin flows (no HTTP server).
+ * Prisma integration checks for BNHUB + core user/admin flows (no HTTP server).
  * Safe: creates ephemeral rows and deletes them in a finally block.
  *
  * Run: pnpm --filter @lecipm/web run validate:flows

@@ -71,5 +71,5 @@ export async function POST() {
   await ensureFsboListingDocumentSlots(row.id);
   await ensureSellerContractsForFsboListing(row.id).catch(() => {});
 
-  return Response.json({ id: row.id });
+  return Response.json({ id: row.id, listingCode: row.listingCode });
 }

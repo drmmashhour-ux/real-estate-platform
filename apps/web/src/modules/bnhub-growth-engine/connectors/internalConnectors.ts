@@ -2,7 +2,7 @@ import type { GrowthConnectorAdapter, ConnectorResult, ConnectorContext } from "
 
 const internalMetrics = (code: string, distributionId: string): ConnectorResult => ({
   ok: true,
-  summary: `${code}: internal channel — aggregate metrics via BNHub analytics (connector sync stub; not paid ads).`,
+  summary: `${code}: internal channel — aggregate metrics via BNHUB analytics (connector sync stub; not paid ads).`,
   raw: { distributionId, internalMeasured: true },
 });
 
@@ -16,7 +16,7 @@ abstract class InternalGrowthConnector implements GrowthConnectorAdapter {
   }
 
   async validateSetup() {
-    return { ok: true, message: "Internal BNHub connector — no third-party OAuth." };
+    return { ok: true, message: "Internal BNHUB connector — no third-party OAuth." };
   }
 
   async healthCheck() {
@@ -38,7 +38,7 @@ abstract class InternalGrowthConnector implements GrowthConnectorAdapter {
   async pauseCampaign(ctx: ConnectorContext) {
     return {
       ok: true,
-      summary: "Pause/resume is driven by campaign status in BNHub (internal slot released on pause).",
+      summary: "Pause/resume is driven by campaign status in BNHUB (internal slot released on pause).",
       raw: { campaignId: ctx.campaignId, internal: true },
     };
   }
@@ -46,7 +46,7 @@ abstract class InternalGrowthConnector implements GrowthConnectorAdapter {
   async resumeCampaign(ctx: ConnectorContext) {
     return {
       ok: true,
-      summary: "Internal connector — resume follows campaign ACTIVE status in BNHub.",
+      summary: "Internal connector — resume follows campaign ACTIVE status in BNHUB.",
       raw: { campaignId: ctx.campaignId, internal: true },
     };
   }
@@ -83,7 +83,7 @@ export class InternalHomepageConnector extends InternalGrowthConnector {
     return {
       ok: true,
       externalRef: `internal:homepage:${ctx.listingId}`,
-      summary: "Internal homepage feature (measured on BNHub).",
+      summary: "Internal homepage feature (measured on BNHUB).",
       raw: { listingId: ctx.listingId, internal: true },
     };
   }

@@ -3,7 +3,10 @@
 import { useEffect, useRef, useCallback, useState } from "react";
 import type { Map as LeafletMap } from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { PLATFORM_NAME } from "@/lib/brand/platform";
+import { priceVsMedianLabel } from "@/lib/search/map-search-analytics";
 
+const PLATFORM_MAP_PIN_ICON_SRC = "/branding/logo-icon.svg";
 const FEATURED_GOLD = "#C9A96E";
 const MONTREAL_CENTER = { lat: 45.5017, lng: -73.5673 };
 const ZOOM = 11;
@@ -36,6 +39,18 @@ type Props = {
   className?: string;
 };
 
+function medianStartingPrice(projectList: Project[]): number {
+  const prices = projectList.map((p) => p.startingPrice).filter((n) => typeof n === "number" && Number.isFinite(n) && n > 0);
+  if (prices.length === 0) return 0;
+  const sorted = [...prices].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[mid]! : (sorted[mid - 1]! + sorted[mid]!) / 2;
+}
+
+function formatFromPrice(n: number): string {
+  return n >= 1000 ? `From $${(n / 1000).toFixed(0)}k` : `$${n.toLocaleString("en-CA")}`;
+}
+
 export function ProjectsMap({ projects, className = "" }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<LeafletMap | null>(null);
@@ -51,38 +66,52 @@ export function ProjectsMap({ projects, className = "" }: Props) {
       attribution: "© OpenStreetMap",
     }).addTo(map);
 
-    const goldIcon = L.divIcon({
-      className: "custom-marker featured",
-      html: `<div style="width:24px;height:24px;border-radius:50%;background:${FEATURED_GOLD};border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.3);"></div>`,
-      iconSize: [24, 24],
-      iconAnchor: [12, 12],
-    });
-    const defaultIcon = L.divIcon({
-      className: "custom-marker",
-      html: `<div style="width:18px;height:18px;border-radius:50%;background:#14b8a6;border:2px solid #fff;box-shadow:0 2px 4px rgba(0,0,0,0.2);"></div>`,
-      iconSize: [18, 18],
-      iconAnchor: [9, 9],
-    });
+    const median = medianStartingPrice(projects);
 
     projects.forEach((p) => {
       const { lat, lng } = getCoords(p);
-      const marker = L.marker([lat, lng], {
-        icon: p.featured ? goldIcon : defaultIcon,
-      }).addTo(map);
+      const priceMini = formatFromPrice(p.startingPrice);
+      const ring = p.featured
+        ? `box-shadow:0 0 0 2px ${FEATURED_GOLD},0 2px 8px rgba(0,0,0,.35)`
+        : "box-shadow:0 2px 8px rgba(0,0,0,.25)";
+      const pinHtml = `<div style="display:flex;align-items:center;gap:4px;${ring};border-radius:10px;border:1px solid rgba(255,255,255,.9);background:rgba(15,23,42,.92);padding:3px 7px 3px 4px">
+        <img src="${escapeAttr(PLATFORM_MAP_PIN_ICON_SRC)}" alt="" width="16" height="16" style="width:16px;height:16px;object-fit:contain;flex-shrink:0;border-radius:3px" />
+        <span style="font-size:10px;font-weight:700;color:#f8fafc;white-space:nowrap">${escapeHtml(priceMini)}</span>
+      </div>`;
+      const markerIcon = L.divIcon({
+        className: "projects-map-pin",
+        html: pinHtml,
+        iconSize: [118, 28],
+        iconAnchor: [59, 28],
+      });
 
-      const priceStr =
-        p.startingPrice >= 1000
-          ? `From $${(p.startingPrice / 1000).toFixed(0)}k`
-          : `$${p.startingPrice.toLocaleString()}`;
+      const marker = L.marker([lat, lng], { icon: markerIcon }).addTo(map);
+
+      const priceStr = formatFromPrice(p.startingPrice);
+      const vsMedian =
+        median > 0 && p.startingPrice > 0 ? priceVsMedianLabel(p.startingPrice, median) : "";
+      const medianLine =
+        median > 0
+          ? `<p class="text-sm font-semibold text-slate-800 mt-2 tabular-nums">Median in this view: ${escapeHtml(formatFromPrice(median).replace(/^From /, ""))}</p>`.replace(
+              "Median in this view: $",
+              "Median in this view: From $"
+            )
+          : "";
 
       marker.bindPopup(
-        `<div class="min-w-[180px] p-2">
-          <p class="font-semibold text-slate-900">${escapeHtml(p.name)}</p>
-          <p class="text-sm text-slate-600">${escapeHtml(p.city ?? "")} · ${priceStr}</p>
-          <p class="mt-2 text-xs text-slate-500">AI Insight: High demand area, strong rental zone.</p>
-          <a href="/projects/${p.id}" class="mt-2 inline-block rounded bg-teal-500 px-3 py-1.5 text-xs font-semibold text-white no-underline hover:bg-teal-600">View Project</a>
+        `<div class="min-w-[200px] max-w-[280px] p-2 text-slate-900">
+          <div class="flex items-center gap-2 mb-2 pb-2 border-b border-amber-200/90">
+            <img src="${escapeAttr(PLATFORM_MAP_PIN_ICON_SRC)}" alt="" width="18" height="18" style="width:18px;height:18px;object-fit:contain;border-radius:3px" />
+            <span class="text-xs font-bold uppercase tracking-wide text-amber-900">${escapeHtml(PLATFORM_NAME)} project</span>
+          </div>
+          <p class="font-semibold">${escapeHtml(p.name)}</p>
+          <p class="text-sm text-slate-600">${escapeHtml(p.city ?? "")}</p>
+          <p class="text-sm font-semibold text-slate-800 mt-1 tabular-nums">Starting from: ${escapeHtml(priceStr)}</p>
+          ${median > 0 ? `<p class="text-sm font-semibold text-slate-800 mt-1 tabular-nums">Median in this view: ${escapeHtml(priceStr.includes("From") ? formatFromPrice(median) : `$${Math.round(median).toLocaleString("en-CA")}`)}</p>` : ""}
+          ${vsMedian ? `<p class="text-xs text-slate-600 mt-1.5 leading-snug">${escapeHtml(vsMedian)}</p>` : ""}
+          <a href="/projects/${escapeAttr(p.id)}" class="mt-2 inline-block rounded bg-teal-600 px-3 py-1.5 text-xs font-semibold text-white no-underline hover:bg-teal-700">View project</a>
         </div>`,
-        { maxWidth: 260 }
+        { maxWidth: 300 }
       );
     });
 

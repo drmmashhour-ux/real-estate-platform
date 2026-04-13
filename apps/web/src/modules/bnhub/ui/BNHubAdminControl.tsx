@@ -5,6 +5,12 @@ import Link from "next/link";
 
 type Summary = {
   openDisputes: number;
+  /** PENDING bookings older than ~3d (guest may be stuck at checkout). */
+  bookingsPendingStale?: number;
+  /** Host has not approved / declined yet. */
+  bookingsAwaitingHost?: number;
+  /** Open BNHUB booking issues (refund requests, access, etc.). */
+  openBookingIssues?: number;
   fraudAlerts: {
     id: string;
     message: string;
@@ -82,7 +88,7 @@ export function BNHubAdminControl() {
   return (
     <div className="mx-auto max-w-6xl space-y-10 px-4 py-8 text-slate-100">
       <header>
-        <p className="text-xs font-semibold uppercase tracking-wide text-emerald-400/90">BNHub</p>
+        <p className="text-xs font-semibold uppercase tracking-wide text-emerald-400/90">BNHUB</p>
         <h1 className="text-2xl font-semibold">Trust & safety control</h1>
         <p className="mt-1 text-sm text-slate-400">
           Fraud alerts, disputes, trust monitoring, and listing approval queue (read-only counts — use moderation for approvals).
@@ -100,7 +106,7 @@ export function BNHubAdminControl() {
       {loading && !summary ? <p className="text-slate-500">Loading…</p> : null}
 
       {summary ? (
-        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
             <p className="text-xs text-slate-500">Open disputes</p>
             <p className="text-2xl font-semibold text-amber-200">{summary.openDisputes}</p>
@@ -109,7 +115,20 @@ export function BNHubAdminControl() {
             <p className="text-xs text-slate-500">Pending approvals</p>
             <p className="text-2xl font-semibold text-slate-100">{summary.pendingListingApprovals}</p>
           </div>
-          <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4 sm:col-span-2">
+          <div className="rounded-xl border border-rose-900/40 bg-rose-950/20 p-4">
+            <p className="text-xs text-slate-500">Stale unpaid bookings (&gt;3d)</p>
+            <p className="text-2xl font-semibold text-rose-200">{summary.bookingsPendingStale ?? 0}</p>
+            <p className="mt-1 text-[11px] text-slate-500">Still PENDING — guest may need a nudge or checkout fix.</p>
+          </div>
+          <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
+            <p className="text-xs text-slate-500">Awaiting host action</p>
+            <p className="text-2xl font-semibold text-slate-100">{summary.bookingsAwaitingHost ?? 0}</p>
+          </div>
+          <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
+            <p className="text-xs text-slate-500">Open booking issues</p>
+            <p className="text-2xl font-semibold text-slate-100">{summary.openBookingIssues ?? 0}</p>
+          </div>
+          <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4 lg:col-span-3">
             <p className="text-xs text-slate-500">High fraud listings (score ≥ 60)</p>
             <ul className="mt-2 max-h-28 space-y-1 overflow-y-auto text-xs text-slate-300">
               {summary.highFraudListings.length === 0 ? <li>None flagged.</li> : null}

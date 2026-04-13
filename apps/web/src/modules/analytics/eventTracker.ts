@@ -29,6 +29,8 @@ const EVENT_MAP: Record<string, UserEventType> = {
   inquiry_sent: "INQUIRY",
   generate_lead: "INQUIRY",
   booking_started: "BOOKING_START",
+  /** BNHUB stay paid / confirmed — same product milestone as `payment_success`. */
+  booking_completed: "PAYMENT_SUCCESS",
   checkout_started: "CHECKOUT_START",
   payment_success: "PAYMENT_SUCCESS",
   payment_failed: "PAYMENT_FAILED",

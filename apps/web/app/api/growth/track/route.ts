@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { mergeTrafficAttributionIntoMetadata } from "@/lib/attribution/social-traffic";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
 import { getGuestId } from "@/lib/auth/session";
 import { recordGrowthEventWithFunnel } from "@/lib/growth/events";
@@ -37,14 +38,16 @@ export async function POST(req: NextRequest) {
       ? (body.meta as Record<string, unknown>)
       : {};
 
-  if (name === "view_listing" && typeof meta.listingId !== "string") {
+  const metaWithAttr = mergeTrafficAttributionIntoMetadata(req.headers.get("cookie"), meta);
+
+  if (name === "view_listing" && typeof metaWithAttr.listingId !== "string") {
     return NextResponse.json({ ok: false, error: "listingId required" }, { status: 400 });
   }
 
   if (name === "view_listing") {
-    await recordGrowthEventWithFunnel("view_listing", { userId, metadata: meta });
+    await recordGrowthEventWithFunnel("view_listing", { userId, metadata: metaWithAttr });
   } else {
-    await recordGrowthEventWithFunnel("booking_start", { userId, metadata: meta });
+    await recordGrowthEventWithFunnel("booking_start", { userId, metadata: metaWithAttr });
   }
 
   return NextResponse.json({ ok: true });

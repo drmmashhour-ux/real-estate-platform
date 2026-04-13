@@ -2,7 +2,7 @@ import { prisma } from "@/lib/db";
 import { ENFORCEABLE_CONTRACT_TYPES } from "@/lib/legal/enforceable-contract-types";
 
 /**
- * Resolve the guest's signed enforceable short-term contract for BNHub booking money linkage.
+ * Resolve the guest's signed enforceable short-term contract for BNHUB booking money linkage.
  */
 export async function resolveGuestEnforceableContractForBooking(bookingId: string): Promise<{
   contractId: string;

@@ -65,7 +65,7 @@ export async function POST(req: Request) {
         price_data: {
           currency: "cad",
           product_data: {
-            name: "Featured BNHub listing (30 days)",
+            name: "Featured BNHUB listing (30 days)",
           },
           unit_amount: PRICING.featuredListingPriceCents,
         },

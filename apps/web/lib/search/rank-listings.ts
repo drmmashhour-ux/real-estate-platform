@@ -75,7 +75,7 @@ export function rankListingsForQuery(
     }
 
     const uniq = [...new Set(reasons)].slice(0, 4);
-    return { ...L, score, reasons: uniq.length ? uniq : ["Listed on BNHub"] };
+    return { ...L, score, reasons: uniq.length ? uniq : ["Listed on BNHUB"] };
   });
 
   scored.sort((a, b) => b.score - a.score);

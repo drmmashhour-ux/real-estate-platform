@@ -19,7 +19,7 @@ function isPkTest(k: string): boolean {
 }
 
 /**
- * Log clear warnings when Stripe env is incomplete for local BNHub + webhook validation.
+ * Log clear warnings when Stripe env is incomplete for local BNHUB + webhook validation.
  */
 export function logStripeIntegrationEnvWarnings(): void {
   if (process.env.NODE_ENV === "test") return;
@@ -30,7 +30,7 @@ export function logStripeIntegrationEnvWarnings(): void {
 
   if (!sk) {
     logWarn(
-      "[lecipm][stripe] STRIPE_SECRET_KEY is unset — payments and BNHub checkout are disabled (see docs/STRIPE_CONNECT_VALIDATION.md)."
+      "[lecipm][stripe] STRIPE_SECRET_KEY is unset — payments and BNHUB checkout are disabled (see docs/STRIPE_CONNECT_VALIDATION.md)."
     );
     return;
   }
@@ -61,7 +61,7 @@ export function logStripeIntegrationEnvWarnings(): void {
 
   if (isSkTest(sk)) {
     logWarn(
-      "[lecipm][stripe] BNHub booking checkout requires Stripe Connect enabled in the Dashboard + host Connect accounts. If Connect is off, checkout returns 409 with HOST_PAYOUT / STRIPE_CONNECT_PLATFORM_UNAVAILABLE codes (see docs/STRIPE_CONNECT_VALIDATION.md)."
+      "[lecipm][stripe] BNHUB booking checkout requires Stripe Connect enabled in the Dashboard + host Connect accounts. If Connect is off, checkout returns 409 with HOST_PAYOUT / STRIPE_CONNECT_PLATFORM_UNAVAILABLE codes (see docs/STRIPE_CONNECT_VALIDATION.md)."
     );
   }
 }

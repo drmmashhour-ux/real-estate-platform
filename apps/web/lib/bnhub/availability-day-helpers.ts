@@ -1,7 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { BnhubDayAvailabilityStatus } from "@prisma/client";
 
-/** UTC midnight for calendar day keys (matches existing BNHub availability patterns). */
+/** UTC midnight for calendar day keys (matches existing BNHUB availability patterns). */
 export function utcDayStart(d: Date): Date {
   const x = new Date(d);
   x.setUTCHours(0, 0, 0, 0);

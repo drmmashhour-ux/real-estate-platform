@@ -3,7 +3,7 @@ import { getGuestId } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
 
 /**
- * POST /api/host/apply – Submit host application (BNHub).
+ * POST /api/host/apply – Submit host application (BNHUB).
  * Body: fullName, email, phone, documentUrl.
  * Sets accountStatus = PENDING_VERIFICATION until admin approval.
  */

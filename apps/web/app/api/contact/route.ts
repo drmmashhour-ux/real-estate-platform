@@ -14,19 +14,15 @@ import {
 } from "@/lib/email/notifications";
 import { sendGrowthLeadFollowUpEmail } from "@/lib/growth/lead-nurture";
 import { triggerAiFollowUpForLead } from "@/lib/ai/follow-up/orchestrator";
-import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
+import { gateDistributedRateLimit } from "@/lib/rate-limit-enforcement";
 import { getLeadAttributionFromRequest } from "@/lib/attribution/lead-attribution";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   try {
-    const rateKey =
-      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? req.headers.get("x-real-ip") ?? "anonymous";
-    const limit = checkRateLimit(`public:contact:${rateKey}`, { windowMs: 60_000, max: 15 });
-    if (!limit.allowed) {
-      return NextResponse.json({ error: "Too many submissions. Try again shortly." }, { status: 429, headers: getRateLimitHeaders(limit) });
-    }
+    const gate = await gateDistributedRateLimit(req, "public:contact", { windowMs: 60_000, max: 15 });
+    if (!gate.allowed) return gate.response;
     const body = await req.json().catch(() => ({}));
     const name = String(body.name ?? "").trim();
     const email = String(body.email ?? "").trim();

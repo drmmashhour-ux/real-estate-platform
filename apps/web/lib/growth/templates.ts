@@ -43,15 +43,15 @@ If you’d like another compliant channel for qualified inquiries, we can walk y
   },
   {
     key: "host_bnhub",
-    label: "BNHub host",
+    label: "BNHUB host",
     subject: "Direct bookings — lower friction than typical OTAs",
     body: `Hi {{name}},
 
-BNHub on LECIPM is built for hosts who want clearer pricing and secure checkout. We don’t scrape or import your listing from other platforms — you confirm what you publish.
+BNHUB on LECIPM is built for hosts who want clearer pricing and secure checkout. We don’t scrape or import your listing from other platforms — you confirm what you publish.
 
 Explore: ${BASE}/bnhub/stays
 
-— LECIPM BNHub`,
+— LECIPM BNHUB`,
   },
   {
     key: "buyer_early_access",

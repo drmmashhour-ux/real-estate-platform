@@ -4,10 +4,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { BRAND } from "@/config/branding";
-import { PLATFORM_NAME, platformBrandGoldTextClass } from "@/lib/brand/platform";
+import { PLATFORM_NAME, platformBrandWordmarkClass } from "@/lib/brand/platform";
 
-const LOGO_DARK = "/branding/lecipm-logo-gold.png";
-const LOGO_LIGHT = "/branding/lecipm-logo-gold.png";
+/** Vector wordmarks — strict identity colors in SVG source. */
+const LOGO_DARK = "/branding/logo-dark.svg";
+const LOGO_LIGHT = "/branding/logo-light.svg";
 const LOGO_ICON = "/branding/logo-icon.svg";
 const LOGO_PNG_FALLBACK = "/branding/lecipm-logo-gold.png";
 
@@ -20,7 +21,9 @@ export type BrandLogoProps = {
 };
 
 function LogoTextFallback({ className = "" }: { className?: string }) {
-  return <span className={`font-bold tracking-[0.12em] text-premium-gold ${className}`.trim()}>LECIPM</span>;
+  return (
+    <span className={`${platformBrandWordmarkClass} ${className}`.trim()}>{PLATFORM_NAME}</span>
+  );
 }
 
 /**
@@ -43,7 +46,7 @@ export function BrandLogo({
   const inner =
     failed ? (
       <LogoTextFallback
-        className={variant === "icon" ? "text-base sm:text-lg" : "text-xl sm:text-2xl"}
+        className={variant === "icon" ? "!text-base sm:!text-lg" : "!text-xl sm:!text-2xl"}
       />
     ) : (
       <Image
@@ -51,10 +54,11 @@ export function BrandLogo({
         alt={variant === "icon" ? `${BRAND.shortName} mark` : `${BRAND.shortName} logo`}
         width={w}
         height={h}
+        unoptimized
         className={
           variant === "icon"
             ? `h-9 w-9 shrink-0 object-contain drop-shadow-[0_2px_14px_rgba(0,0,0,0.5)] sm:h-10 sm:w-10 ${className}`.trim()
-            : `h-10 w-auto max-w-[min(100%,320px)] object-contain object-left sm:h-11 ${className}`.trim()
+            : `h-10 w-auto max-w-[min(100%,min(100vw-5rem,480px))] object-contain object-left sm:h-11 ${className}`.trim()
         }
         priority={priority}
         onError={() => {
@@ -107,8 +111,8 @@ export default function Logo({ showName = true, className = "", variant = "defau
 
 export function LogoText() {
   return (
-    <Link href="/" className="transition hover:opacity-80" aria-label="Go to home">
-      <span className={`text-lg font-extrabold ${platformBrandGoldTextClass}`}>{PLATFORM_NAME}</span>
+    <Link href="/" className="transition hover:opacity-90" aria-label="Go to home">
+      <span className={`text-lg ${platformBrandWordmarkClass}`}>{PLATFORM_NAME}</span>
     </Link>
   );
 }

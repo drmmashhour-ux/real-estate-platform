@@ -85,17 +85,25 @@ export function SellerDashboardTrustOverview({
           <SectionHeader title="Your listings" subtitle="Status, trust, and quick links." />
           {listings.length === 0 ? (
             <EmptyState
+              defaultIcon="generic"
               title="No listings yet"
-              description="Create your first listing to run verification and readiness checks."
-              action={
+              description="Add a listing to unlock trust scoring, readiness checks, and syndication prep — start with create, then we’ll verify step by step."
+            >
+              <>
                 <Link
                   href="/dashboard/seller/create"
                   className="rounded-full bg-premium-gold px-5 py-2.5 text-sm font-bold text-[#0B0B0B]"
                 >
                   Create listing
                 </Link>
-              }
-            />
+                <Link
+                  href="/explore"
+                  className="rounded-full border border-white/15 px-5 py-2.5 text-sm font-medium text-white/70 transition hover:border-premium-gold/35 hover:text-white"
+                >
+                  See featured listings
+                </Link>
+              </>
+            </EmptyState>
           ) : (
             <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#121212]">
               <table className="w-full min-w-[520px] border-collapse text-left text-sm">

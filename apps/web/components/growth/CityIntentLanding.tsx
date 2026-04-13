@@ -22,6 +22,7 @@ import { GrowthSeoPageView } from "@/components/growth/GrowthSeoPageView";
 import { GrowthCityLeadCapture } from "@/components/growth/GrowthCityLeadCapture";
 import { CityAiMarketingSection } from "@/components/growth/CityAiMarketingSection";
 import { CityGeneratedContentSection } from "@/components/growth/CityGeneratedContentSection";
+import { bnhubStaysMapSearchUrl, listingsMapSearchUrl } from "@/lib/search/public-map-search-urls";
 
 const GOLD = "var(--color-premium-gold)";
 
@@ -208,14 +209,15 @@ export async function CityIntentLanding({
   }
 
   const fsBrowse = `/sell?city=${encodeURIComponent(q)}`;
-  const bnBrowse = `/search/bnhub?location=${encodeURIComponent(q)}`;
+  const bnBrowse = bnhubStaysMapSearchUrl({ city: q });
+  const homesMapBrowse = listingsMapSearchUrl({ city: q });
   const regionLabel = growthCityRegion(slug) === "US" ? " · USA" : " · Canada";
 
   const heroTitle =
     intent === "buy"
       ? `Buy a home in ${city}`
       : intent === "rent"
-        ? `Rent & stay in ${city}`
+        ? `Rent in ${city}: apartments, homes & short stays`
         : intent === "stays"
           ? `Short-term stays in ${city}`
           : intent === "investment"
@@ -226,9 +228,9 @@ export async function CityIntentLanding({
     intent === "buy"
       ? "Homes & FSBO"
       : intent === "rent"
-        ? "BNHub rentals"
+        ? "BNHUB rentals"
         : intent === "stays"
-          ? "BNHub stays"
+          ? "BNHUB stays"
           : intent === "investment"
             ? "Yields & acquisitions"
             : "Mortgage hub";
@@ -253,10 +255,12 @@ export async function CityIntentLanding({
             {intent === "mortgage"
               ? `Compare options, get matched with experts, and use free tools tailored to ${city}.`
               : intent === "investment"
-                ? `Stack FSBO deals, BNHub performance, and rent vs buy context — then validate with licensed pros.`
+                ? `Stack FSBO deals, BNHUB performance, and rent vs buy context — then validate with licensed pros.`
                 : intent === "stays"
-                  ? `Browse nightly stays with dates-first search, clear pricing on listings, and a simple path to book on BNHub.`
-                  : `Discover curated listings, structured FAQs, and tools — built to scale from Canada to the US.`}
+                  ? `Browse nightly stays with dates-first search, clear pricing on listings, and a simple path to book on BNHUB.`
+                  : intent === "rent"
+                    ? `Compare FSBO listings and verified BNHUB stays in ${city}: clear pricing, traveler FAQs, and fast booking on the map.`
+                    : `Discover curated listings, structured FAQs, and tools — built to scale from Canada to the US.`}
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             {intent === "mortgage" ? (
@@ -347,7 +351,7 @@ export async function CityIntentLanding({
               href={bnBrowse}
               className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm text-white/90 hover:border-premium-gold/40"
             >
-              BNHub — dates, guests, neighbourhood
+              BNHUB — dates, guests, neighbourhood
             </Link>
             <Link
               href={fsBrowse}
@@ -356,10 +360,10 @@ export async function CityIntentLanding({
               FSBO — {city}
             </Link>
             <Link
-              href={`/city/${slug}`}
+              href={homesMapBrowse}
               className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm text-white/90 hover:border-premium-gold/40"
             >
-              City hub (map + mixed inventory)
+              Homes on map — {city}
             </Link>
           </div>
         </div>
@@ -403,7 +407,7 @@ export async function CityIntentLanding({
                 : intent === "stays"
                   ? `Stays in ${city}`
                   : intent === "investment"
-                    ? "BNHub nightly comps"
+                    ? "BNHUB nightly comps"
                     : "Featured stays nearby"}
             </h2>
             <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -419,7 +423,7 @@ export async function CityIntentLanding({
               ))}
             </div>
             <Link href={bnBrowse} className="mt-6 inline-block text-sm font-semibold text-premium-gold hover:underline">
-              Open BNHub search →
+              Open BNHUB search →
             </Link>
           </div>
         </section>

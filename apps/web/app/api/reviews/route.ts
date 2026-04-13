@@ -4,7 +4,7 @@ import { createReview } from "@/lib/bnhub/reviews";
 import { canLeaveReview } from "@/lib/policy-engine";
 import { prisma } from "@/lib/db";
 
-/** POST /api/reviews — authenticated guest submits a BNHub stay review. */
+/** POST /api/reviews — authenticated guest submits a BNHUB stay review. */
 export async function POST(request: NextRequest) {
   try {
     const userId = await getGuestId();

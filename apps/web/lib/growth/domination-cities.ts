@@ -29,7 +29,7 @@ export const DOMINATION_CITIES: Record<DominationCityKey, DominationCityConfig> 
     slug: "montreal",
     displayName: "Montreal",
     country: "CA",
-    metaTitle: "BNHub Stays in Montreal | Verified short-term rentals",
+    metaTitle: "BNHUB Stays in Montreal | Verified short-term rentals",
     metaDescription:
       "Search stays in Montreal — verified hosts, clear pricing, book with confidence. List your property and reach travelers.",
     listingWhere: published({
@@ -44,7 +44,7 @@ export const DOMINATION_CITIES: Record<DominationCityKey, DominationCityConfig> 
     slug: "laval",
     displayName: "Laval",
     country: "CA",
-    metaTitle: "BNHub Stays in Laval | Short-term rentals near Montreal",
+    metaTitle: "BNHUB Stays in Laval | Short-term rentals near Montreal",
     metaDescription: "Discover stays in Laval — family-friendly homes and commutable to Montreal. Hosts: list with launch support.",
     listingWhere: published({
       city: { contains: "Laval", mode: "insensitive" },
@@ -55,7 +55,7 @@ export const DOMINATION_CITIES: Record<DominationCityKey, DominationCityConfig> 
     slug: "quebec-city",
     displayName: "Quebec City",
     country: "CA",
-    metaTitle: "BNHub Stays in Quebec City | Short-term rentals",
+    metaTitle: "BNHUB Stays in Quebec City | Short-term rentals",
     metaDescription: "Stays in Québec City — culture, history, verified listings. Hosts welcome.",
     listingWhere: published({
       OR: [
@@ -70,8 +70,8 @@ export const DOMINATION_CITIES: Record<DominationCityKey, DominationCityConfig> 
     slug: "toronto",
     displayName: "Toronto",
     country: "CA",
-    metaTitle: "BNHub Stays in Toronto | Short-term rentals",
-    metaDescription: "Find verified short-term rentals in Toronto. Strong demand — list your space on BNHub.",
+    metaTitle: "BNHUB Stays in Toronto | Short-term rentals",
+    metaDescription: "Find verified short-term rentals in Toronto. Strong demand — list your space on BNHUB.",
     listingWhere: published({
       OR: [
         { city: { contains: "Toronto", mode: "insensitive" } },
@@ -84,7 +84,7 @@ export const DOMINATION_CITIES: Record<DominationCityKey, DominationCityConfig> 
     slug: "vancouver",
     displayName: "Vancouver",
     country: "CA",
-    metaTitle: "BNHub Stays in Vancouver | Short-term rentals",
+    metaTitle: "BNHUB Stays in Vancouver | Short-term rentals",
     metaDescription: "Stays in Vancouver and Lower Mainland — mountains, coast, verified hosts.",
     listingWhere: published({
       OR: [

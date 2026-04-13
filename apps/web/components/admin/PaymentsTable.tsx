@@ -10,7 +10,7 @@ export type PaymentsTableRow = {
   status: "paid" | "pending" | "failed";
   /** When set, "View" navigates here (platform / orchestration / booking ledger). */
   viewHref?: string;
-  /** When set, "Refund" opens BNHub finance refunds (or similar). */
+  /** When set, "Refund" opens BNHUB finance refunds (or similar). */
   refundHref?: string;
 };
 

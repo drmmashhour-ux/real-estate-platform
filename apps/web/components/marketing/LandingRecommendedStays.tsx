@@ -46,7 +46,7 @@ export function LandingRecommendedStays() {
       <h2 id="recommended-stays-heading" className="text-2xl font-semibold text-white">
         Recommended for you
       </h2>
-      <p className="mt-2 text-sm text-white/70">Based on your recent BNHub activity and preferences.</p>
+      <p className="mt-2 text-sm text-white/70">Based on your recent BNHUB activity and preferences.</p>
       <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {rows.slice(0, 6).map((l) => (
           <Link

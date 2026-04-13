@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 type BulkAction = "approve" | "reject" | "unlist" | "feature" | "unfeature";
 
 /**
- * Admin bulk actions on BNHub short-term listings.
+ * Admin bulk actions on BNHUB short-term listings.
  * Body: { ids: string[], action: BulkAction, reason?: string }
  */
 export async function POST(req: NextRequest) {

@@ -1,5 +1,8 @@
-import Logo from "@/components/ui/Logo";
+import type { ReactNode } from "react";
+import { LecipmBrandLockup } from "@/components/brand/LecipmBrandLockup";
+import { PlatformHubFooter } from "@/components/layout/PlatformHubFooter";
 import { HubSwitcher } from "./HubSwitcher";
+import { HubLogoutButton } from "./HubLogoutButton";
 import type { HubKey } from "@/lib/hub/router";
 import { getHubTheme } from "@/lib/hub/themes";
 import type { NavItem } from "@/lib/hub/navigation";
@@ -9,7 +12,7 @@ import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { WorkspaceTenantBadge } from "@/components/tenancy/WorkspaceTenantBadge";
 
 type HubLayoutProps = {
-  title: string;
+  title: ReactNode;
   hubKey: HubKey;
   theme?: ReturnType<typeof getHubTheme>;
   navigation: NavItem[];
@@ -57,7 +60,7 @@ export function HubLayout({
           className={`w-full shrink-0 border-b py-4 lg:w-60 lg:border-b-0 lg:border-r ${bannerBorder}`}
           style={{ backgroundColor: "var(--hub-sidebar)" }}
         >
-          <HubSidebarNav items={navItems} theme={theme} isDark />
+          <HubSidebarNav items={navItems} theme={theme} isDark hubKey={hubKey} />
         </aside>
         <div className="flex min-w-0 flex-1 flex-col">
           <div className="h-1 w-full shrink-0" style={{ backgroundColor: theme.accent }} aria-hidden />
@@ -67,17 +70,23 @@ export function HubLayout({
             style={{ backgroundColor: "var(--hub-sidebar)" }}
           >
             <div className="flex min-w-0 flex-1 items-center gap-4">
-              <Logo showName={true} className="shrink-0 text-white [&_span]:text-white" />
+              <LecipmBrandLockup
+                href="/"
+                variant="dark"
+                density="compact"
+                logoClassName="[&_img]:max-h-8 sm:[&_img]:max-h-9"
+              />
               <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-center sm:gap-3">
-                <h1 className="truncate text-xl font-semibold text-white">
+                <h1 className="min-w-0 text-2xl font-semibold tracking-tight text-white [overflow-wrap:anywhere]">
                   {title}
                 </h1>
                 {showWorkspaceBadge ? <WorkspaceTenantBadge /> : null}
               </div>
             </div>
-            <div className="flex shrink-0 items-center gap-2">
+            <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
               <NotificationBell />
               <HubSwitcher showAdmin={showAdminInSwitcher} currentHubKey={hubKey} />
+              <HubLogoutButton />
             </div>
           </header>
           {quickActions ? (
@@ -89,10 +98,13 @@ export function HubLayout({
             </div>
           ) : null}
           <main
-            className="flex-1 p-4 sm:p-6 page-enter"
+            className="flex min-h-0 flex-1 flex-col p-4 sm:p-6 page-enter"
             style={{ backgroundColor: "var(--hub-bg)" }}
           >
-            {children}
+            <div className="flex-1">{children}</div>
+            {hubKey === "admin" ? (
+              <PlatformHubFooter variant="compact" className="-mx-4 mt-10 sm:-mx-6" />
+            ) : null}
           </main>
         </div>
       </div>

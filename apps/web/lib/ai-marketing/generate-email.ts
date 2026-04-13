@@ -13,9 +13,9 @@ function fallbackEmail(input: EmailInput): EmailResult {
 
   switch (input.emailKind) {
     case "partnership":
-      subject = `Partnership idea: BNHub × ${partner}`;
+      subject = `Partnership idea: BNHUB × ${partner}`;
       body = [
-        `Hi — I'm reaching out from BNHub (LECIPM's stays marketplace).`,
+        `Hi — I'm reaching out from BNHUB (LECIPM's stays marketplace).`,
         ``,
         `We're connecting verified hosts with travelers who book with confidence. ${input.topic}`,
         input.context?.trim() ? `\nContext: ${input.context.trim()}` : "",
@@ -30,28 +30,28 @@ function fallbackEmail(input: EmailInput): EmailResult {
       cta = "Reply with a good week to connect.";
       break;
     case "onboarding":
-      subject = "Welcome to BNHub — 3 quick wins";
+      subject = "Welcome to BNHUB — 3 quick wins";
       body = [
-        `Thanks for joining BNHub.`,
+        `Thanks for joining BNHUB.`,
         ``,
         `1) Browse curated stays in your favorite area.`,
         `2) Save listings you love.`,
         `3) Book when you're ready — hosts are verified.`,
         input.context?.trim() ? `\nTip: ${input.context.trim()}` : "",
       ].join("\n");
-      cta = "Open BNHub and explore stays.";
+      cta = "Open BNHUB and explore stays.";
       break;
     default:
-      subject = `${input.topic} — something new on BNHub`;
+      subject = `${input.topic} — something new on BNHUB`;
       body = [
         `Hi —`,
         ``,
         `Quick note on ${input.topic} for ${input.audience}.`,
-        input.context?.trim() ? `\n${input.context.trim()}` : "\nDiscover curated stays and host tools on BNHub.",
+        input.context?.trim() ? `\n${input.context.trim()}` : "\nDiscover curated stays and host tools on BNHUB.",
         ``,
         `[Campaign details here — keep pricing truthful.]`,
       ].join("\n");
-      cta = "See featured stays on BNHub.";
+      cta = "See featured stays on BNHUB.";
   }
 
   return { subject, body, cta, source: "fallback" };
@@ -61,7 +61,7 @@ function fallbackEmail(input: EmailInput): EmailResult {
  * Marketing / lifecycle email: subject, body, single primary CTA line.
  */
 export async function generateEmail(input: EmailInput): Promise<EmailResult> {
-  const system = `You write marketing emails for BNHub (hospitality stays) and LECIPM (real estate ecosystem).
+  const system = `You write marketing emails for BNHUB (hospitality stays) and LECIPM (real estate ecosystem).
 Rules:
 - ${emailKindInstructions(input.emailKind)}
 - Audience: ${input.audience}. Tone: ${input.tone}.

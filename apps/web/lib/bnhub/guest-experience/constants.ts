@@ -1,4 +1,4 @@
-/** Outcome types stored on `AiOutcomeSignal` for BNHub guest experience (retention / reviews). */
+/** Outcome types stored on `AiOutcomeSignal` for BNHUB guest experience (retention / reviews). */
 export const BNHUB_GUEST_EXPERIENCE_RULE = "bnhub_guest_experience" as const;
 
 export type GuestExperienceOutcomeType =

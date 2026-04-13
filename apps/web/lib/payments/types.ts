@@ -38,7 +38,7 @@ export type CreatePaymentSessionInput = {
   successUrl: string;
   cancelUrl: string;
   description?: string;
-  /** Stripe Connect (BNHub booking) — required when `paymentType === "booking"` and using Stripe. */
+  /** Stripe Connect (BNHUB booking) — required when `paymentType === "booking"` and using Stripe. */
   stripeConnect?: {
     destinationAccountId: string;
     applicationFeeAmount: number;
@@ -63,7 +63,7 @@ export type CreatePaymentSessionResult =
     }
   | { ok: false; error: string; orchestratedPaymentId?: string };
 
-/** BNHub market-derived rail: card checkout vs offline/manual settlement tracking. */
+/** BNHUB market-derived rail: card checkout vs offline/manual settlement tracking. */
 export type ActivePaymentMode = "online" | "manual";
 
 export interface PaymentResolutionContext {

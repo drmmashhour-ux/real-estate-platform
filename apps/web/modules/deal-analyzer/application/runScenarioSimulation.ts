@@ -14,7 +14,7 @@ export async function runScenarioSimulation(args: {
   listingId: string;
   analysisId?: string;
   financing?: { loanPrincipalCents: number | null; annualRate?: number; termYears?: number } | null;
-  /** When set and BNHub mode is enabled, appends short-term scenarios (persisted alongside rental). */
+  /** When set and BNHUB mode is enabled, appends short-term scenarios (persisted alongside rental). */
   shortTermListingId?: string | null;
 }) {
   if (!isDealAnalyzerScenariosEnabled()) {

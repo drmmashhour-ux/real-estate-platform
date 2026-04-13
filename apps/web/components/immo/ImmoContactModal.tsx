@@ -69,6 +69,8 @@ export function ImmoContactModal({
   } | null>(null);
   const [licenseOpen, setLicenseOpen] = useState(false);
   const [licenseVersion, setLicenseVersion] = useState<string>(CONTENT_LICENSE_VERSION);
+  const [usedAiAssist, setUsedAiAssist] = useState(false);
+  const [composeBusy, setComposeBusy] = useState(false);
 
   const reset = useCallback(() => {
     setName("");
@@ -83,6 +85,8 @@ export function ImmoContactModal({
     setError(null);
     setDone(null);
     setLicenseOpen(false);
+    setUsedAiAssist(false);
+    setComposeBusy(false);
   }, []);
 
   const handleClose = () => {
@@ -106,6 +110,7 @@ export function ImmoContactModal({
       consentVoice: consentVoice,
       locale: typeof navigator !== "undefined" ? navigator.language : "en",
       sourcePage: typeof window !== "undefined" ? window.location.pathname : "",
+      aiAssistUsed: usedAiAssist,
     }),
     [
       name,
@@ -120,8 +125,44 @@ export function ImmoContactModal({
       preApproved,
       consentSms,
       consentVoice,
+      usedAiAssist,
     ]
   );
+
+  const composeMessageAi = useCallback(async () => {
+    setComposeBusy(true);
+    setError(null);
+    try {
+      const draftNotes =
+        message.trim() ||
+        "I am interested in this property and would like to arrange a visit or discuss next steps.";
+      const res = await fetch("/api/immo/compose-message-ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          audience: source === "contact_broker" ? "licensed broker" : "listing contact",
+          intent: TITLES[source],
+          listingTitle,
+          location,
+          listingCode: listingCode ?? undefined,
+          draftNotes,
+          tone: "polite",
+        }),
+      });
+      const data = (await res.json()) as { message?: string; error?: string; configured?: boolean };
+      if (!res.ok) {
+        throw new Error(data.error ?? "Could not draft message");
+      }
+      if (data.message) {
+        setMessage(data.message);
+        setUsedAiAssist(true);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "AI draft failed");
+    } finally {
+      setComposeBusy(false);
+    }
+  }, [listingCode, listingTitle, location, message, source]);
 
   const submit = useCallback(
     async (e?: React.FormEvent) => {
@@ -297,11 +338,25 @@ export function ImmoContactModal({
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-medium text-slate-400">Message (optional)</label>
+                <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+                  <label className="block text-xs font-medium text-slate-400">Message (optional)</label>
+                  <button
+                    type="button"
+                    onClick={() => void composeMessageAi()}
+                    disabled={composeBusy}
+                    className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-semibold text-emerald-200 hover:bg-emerald-500/15 disabled:opacity-50"
+                  >
+                    {composeBusy ? "Drafting…" : "AI polish (Gemini)"}
+                  </button>
+                </div>
+                <p className="mb-2 text-[10px] text-slate-600">
+                  Add rough notes, or leave blank — AI drafts a polite message you can edit. Requires server{" "}
+                  <code className="text-slate-500">GEMINI_API_KEY</code>.
+                </p>
                 <textarea
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  rows={3}
+                  rows={5}
                   className="w-full rounded-xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-sm text-white placeholder:text-slate-600 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                   placeholder="Questions, preferred visit times…"
                 />

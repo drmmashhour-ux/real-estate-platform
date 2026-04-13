@@ -5,7 +5,7 @@ import { recomputeRankingForListing } from "@/src/modules/ranking/rankingService
 import { RANKING_LISTING_TYPE_BNHUB } from "@/src/modules/ranking/dataMap";
 
 const TOP_N = 5;
-/** Extra weight on BNHub search review signal for winning hosts (clamped in signal engine). */
+/** Extra weight on BNHUB search review signal for winning hosts (clamped in signal engine). */
 export const HOST_LISTING_REPUTATION_BOOST = 0.1;
 
 function ymBounds(periodYearMonth: string): { start: Date; end: Date } {

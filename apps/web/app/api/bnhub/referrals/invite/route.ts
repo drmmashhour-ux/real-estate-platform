@@ -4,7 +4,7 @@ import { inviteGuest, inviteHost } from "@/lib/bnhub/referral-invite";
 
 /**
  * POST /api/bnhub/referrals/invite
- * Body: { "type": "host" | "guest" } — creates referral code; rewards use BNHub-specific programs when present.
+ * Body: { "type": "host" | "guest" } — creates referral code; rewards use BNHUB-specific programs when present.
  */
 export async function POST(request: NextRequest) {
   try {

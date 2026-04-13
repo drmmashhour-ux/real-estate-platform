@@ -18,7 +18,7 @@ export type HostEarningsPayload =
   | { summary: HostEarningsSummary; recentPaid: HostEarningsRecentRow[]; weeklyRevenue: WeeklyRevenueBar[] };
 
 /**
- * @param supabaseHostUserId — BNHub Supabase `listings.host_user_id` (same as authenticated user id when synced).
+ * @param supabaseHostUserId — BNHUB Supabase `listings.host_user_id` (same as authenticated user id when synced).
  */
 export async function loadHostEarningsPayload(supabaseHostUserId: string): Promise<HostEarningsPayload> {
   const summaryResult = await getHostEarningsSummaryFromSupabase(supabaseHostUserId);

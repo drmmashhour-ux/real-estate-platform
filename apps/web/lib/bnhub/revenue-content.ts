@@ -1,9 +1,9 @@
 /**
- * Deterministic “daily content” pack for BNHub social/growth (no external LLM required).
+ * Deterministic “daily content” pack for BNHUB social/growth (no external LLM required).
  */
 
 const HASHTAG_POOL = [
-  "#BNHub",
+  "#BNHUB",
   "#ShortTermRental",
   "#TravelCanada",
   "#Staycation",
@@ -38,7 +38,7 @@ export function generateBnhubDailyContentPack(forDate: Date = new Date()): Bnhub
 
   const themes = [
     {
-      title: "Why guests book direct on BNHub",
+      title: "Why guests book direct on BNHUB",
       body: "Skip opaque fees: transparent pricing, local hosts, and secure payments — all in one place.",
     },
     {

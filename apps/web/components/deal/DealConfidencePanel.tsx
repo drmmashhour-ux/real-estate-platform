@@ -25,7 +25,7 @@ export function DealConfidencePanel({ phase2 }: { phase2: NonNullable<DealAnalys
           <dd className="font-medium text-white">{scen ?? "—"}</dd>
         </div>
         <div className="flex justify-between gap-4">
-          <dt>BNHub</dt>
+          <dt>BNHUB</dt>
           <dd className="font-medium text-white">{bn ?? "—"}</dd>
         </div>
       </dl>

@@ -20,7 +20,7 @@ export async function getApprovedHost(userId: string) {
   return host?.status === "approved" ? host : null;
 }
 
-/** Bump when host-facing BNHub short-term rental terms change (re-acceptance required). */
+/** Bump when host-facing BNHUB short-term rental terms change (re-acceptance required). */
 const HOST_AGREEMENT_VERSION = "2025-03-22";
 
 export async function getHostAgreement(hostId: string) {

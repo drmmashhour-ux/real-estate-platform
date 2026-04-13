@@ -1,6 +1,6 @@
 import type { BnhubTravelConnector } from "./travelConnectorTypes";
 
-const notLive = "Partner-managed inventory is not live on BNHub yet — request-only or coming soon.";
+const notLive = "Partner-managed inventory is not live on BNHUB yet — request-only or coming soon.";
 
 function stub(key: string): BnhubTravelConnector {
   return {

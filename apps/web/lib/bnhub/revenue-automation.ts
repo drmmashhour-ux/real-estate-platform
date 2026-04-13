@@ -57,7 +57,7 @@ export async function runBnhubPostSignupAutomation(userId: string, role: Platfor
   if (!recorded) return;
   await notifyGrowth(
     userId,
-    "Find your next stay on BNHub",
+    "Find your next stay on BNHUB",
     "Browse curated short-term stays and save your favorites.",
     "/bnhub",
     "Browse stays"
@@ -137,9 +137,9 @@ export async function processBnhubNoBookingReminders(options?: { olderThanDays?:
     await notifyGrowth(
       u.id,
       "Still planning a trip?",
-      "Discover BNHub stays — flexible dates and instant book options.",
+      "Discover BNHUB stays — flexible dates and instant book options.",
       "/bnhub",
-      "Explore BNHub"
+      "Explore BNHUB"
     );
     sent += 1;
   }

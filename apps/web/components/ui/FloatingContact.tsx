@@ -3,12 +3,25 @@
 import { usePathname } from "next/navigation";
 import { getContactTelHref, getContactWhatsAppUrl } from "@/lib/config/contact";
 
+const LISTINGS_HUB_SEGMENTS = new Set(["saved", "top", "luxury", "affordable"]);
+
+/** True for `/listings/{id}` public detail (not browse hubs like /listings/saved). */
+function isPublicListingDetailPath(pathname: string): boolean {
+  if (!pathname.startsWith("/listings/")) return false;
+  const segments = pathname.slice("/listings/".length).split("/").filter(Boolean);
+  if (segments.length !== 1) return false;
+  return !LISTINGS_HUB_SEGMENTS.has(segments[0]);
+}
+
 /**
  * Global floating call + WhatsApp actions (mobile + desktop).
  */
 export default function FloatingContact() {
   const pathname = usePathname() ?? "";
   if (pathname.startsWith("/admin")) {
+    return null;
+  }
+  if (isPublicListingDetailPath(pathname)) {
     return null;
   }
 

@@ -41,7 +41,7 @@ export function generateTitleSlide(metrics: PitchMetrics): PitchSlideSpec {
     type: "title",
     title: "LECIPM",
     content: {
-      subtitle: "Quebec real estate, BNHub stays, and broker-grade CRM — one platform.",
+      subtitle: "Quebec real estate, BNHUB stays, and broker-grade CRM — one platform.",
       asOf: metrics.snapshotDate ?? new Date().toISOString().slice(0, 10),
       bullets: ["Data-driven investor narrative", "Numbers refresh from live platform telemetry"],
     },
@@ -70,7 +70,7 @@ export function generateSolutionSlide(): PitchSlideSpec {
     title: "Our solution",
     content: {
       bullets: [
-        "Single LECIPM surface: marketplace + BNHub + broker workspace",
+        "Single LECIPM surface: marketplace + BNHUB + broker workspace",
         "Trust-forward flows, ranking, and operational dashboards",
         "Measurable pipeline: leads, bookings, and monetization events in one ledger",
       ],
@@ -86,7 +86,7 @@ export function generateProductSlide(): PitchSlideSpec {
     content: {
       bullets: [
         "FSBO & assisted listings, buyer hub, mortgage / expert modules",
-        "BNHub: published stays, bookings, payouts, and host growth tools",
+        "BNHUB: published stays, bookings, payouts, and host growth tools",
         "CRM: pipeline, playbooks, revenue opportunities, and admin intelligence",
       ],
     },
@@ -102,7 +102,7 @@ export function generateTractionSlide(metrics: PitchMetrics): PitchSlideSpec {
       bullets: [
         `Total users: ${metrics.totalUsers.toLocaleString()}`,
         `Active users (30d touch): ${metrics.activeUsers.toLocaleString()}`,
-        `Listings (BNHub + FSBO active): ${metrics.listings.toLocaleString()}`,
+        `Listings (BNHUB + FSBO active): ${metrics.listings.toLocaleString()}`,
         `Bookings (30d, confirmed/completed): ${metrics.bookings30d.toLocaleString()}`,
         `Platform revenue (30d, attributed events): $${metrics.revenue30d.toLocaleString(undefined, { maximumFractionDigits: 0 })}`,
         `Lead conversion (won ÷ won+lost, 30d): ${(metrics.conversionRate * 100).toFixed(1)}%`,

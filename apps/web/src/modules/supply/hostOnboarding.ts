@@ -18,7 +18,7 @@ export type HostOnboardingSnapshot = {
 };
 
 /**
- * Supply-side host readiness (BNHub) — payouts and trust.
+ * Supply-side host readiness (BNHUB) — payouts and trust.
  */
 export async function getHostOnboardingSnapshot(userId: string): Promise<HostOnboardingSnapshot | null> {
   const user = await prisma.user.findUnique({

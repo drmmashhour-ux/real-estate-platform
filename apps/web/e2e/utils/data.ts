@@ -1,5 +1,5 @@
 /**
- * Realistic seeded personas and listing handles — requires `prisma db seed` for BNHub demo data.
+ * Realistic seeded personas and listing handles — requires `prisma db seed` for BNHUB demo data.
  * Dynamic users (Stripe path) are created in `scenarios/lib/bnhub-stripe-paid-flow.ts`.
  */
 

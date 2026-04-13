@@ -4,7 +4,7 @@ import { resolveShortTermListingRef } from "@/lib/listing-code";
 export type BnhubLeadListingSnapshot = { listingId: string; listingCode: string };
 
 /**
- * Resolve a BNHub listing ref (UUID or `LEC-#####`) for Lead denormalization.
+ * Resolve a BNHUB listing ref (UUID or `LEC-#####`) for Lead denormalization.
  * Ensures `listingId` is always the canonical row id and `listingCode` matches DB.
  */
 export async function snapshotBnhubListingForLead(

@@ -77,8 +77,14 @@ export async function GET() {
     prisma.demoEvent.count(),
     prisma.demoEvent.count({ where: { event: DemoEvents.SESSION_START } }),
     prisma.demoEvent.count({ where: { event: DemoEvents.BLOCKED_ACTION } }),
-    prisma.$queryRawUnsafe<Array<{ event: string; count: number }>>(
-      `SELECT "event", COUNT(*)::int AS count FROM "demo_events" GROUP BY "event" ORDER BY count DESC LIMIT 60`
+    prisma.$queryRaw<Array<{ event: string; count: number }>>(
+      Prisma.sql`
+        SELECT "event", COUNT(*)::int AS count
+        FROM "demo_events"
+        GROUP BY "event"
+        ORDER BY count DESC
+        LIMIT 60
+      `
     ),
     prisma.demoEvent.findMany({
       where: { createdAt: { gte: since24h } },

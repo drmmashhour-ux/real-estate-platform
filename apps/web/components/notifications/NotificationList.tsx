@@ -117,9 +117,32 @@ export function NotificationList({ initial, compact, onChanged, defaultTab = "un
             ))}
           </div>
         ) : null}
-        <p className={`text-slate-500 ${compact ? "text-xs" : "text-sm"}`}>
-          {tab === "unread" ? "No unread notifications." : "Nothing here yet."}
-        </p>
+        <div
+          className={`rounded-xl border border-white/10 bg-white/[0.02] p-5 text-center ${compact ? "text-xs" : "text-sm"}`}
+        >
+          <p className="font-medium text-slate-300">
+            {tab === "unread" ? "You’re all caught up" : "No notifications in this tab"}
+          </p>
+          <p className="mt-2 text-slate-500">
+            {tab === "unread"
+              ? "We’ll show listing, booking, and account updates here when something needs your attention."
+              : "Switch tabs or check back after you save listings, book stays, or post a property."}
+          </p>
+          <div className="mt-4 flex flex-col items-stretch justify-center gap-2 sm:flex-row sm:flex-wrap sm:justify-center">
+            <Link
+              href="/explore"
+              className="inline-flex min-h-[40px] items-center justify-center rounded-lg bg-emerald-500/20 px-4 py-2 text-xs font-medium text-emerald-200 hover:bg-emerald-500/30"
+            >
+              Browse featured listings
+            </Link>
+            <Link
+              href="/bnhub/stays"
+              className="inline-flex min-h-[40px] items-center justify-center rounded-lg border border-white/10 px-4 py-2 text-xs text-slate-400 hover:border-white/20 hover:text-slate-200"
+            >
+              Browse stays
+            </Link>
+          </div>
+        </div>
       </div>
     );
   }

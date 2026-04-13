@@ -28,6 +28,7 @@ export const hubThemes: Record<string, HubTheme> = {
   servicehub: { ...LECIPM_PREMIUM_HUB },
   investorhub: { ...LECIPM_PREMIUM_HUB },
   realEstate: { ...LECIPM_PREMIUM_HUB },
+  financialHub: { ...LECIPM_PREMIUM_HUB },
   luxury: { ...LECIPM_PREMIUM_HUB },
   broker: { ...LECIPM_PREMIUM_HUB },
   investments: { ...LECIPM_PREMIUM_HUB, cardBg: "rgb(var(--premium-gold-channels) / 0.07)" },

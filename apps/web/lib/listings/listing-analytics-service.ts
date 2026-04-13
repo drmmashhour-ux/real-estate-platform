@@ -20,6 +20,9 @@ export type ListingDemandUiPayload = {
   priceMovementNote: string | null;
   badge: string | null;
   hasSignal: boolean;
+  /** FSBO peer aggregate mean when sample ≥ 3; CRM/other flows may omit. */
+  comparableMarketEstimateCents: number | null;
+  comparablePeerCount: number | null;
 };
 
 const REFRESH_MIN_MS = 120_000;
@@ -258,12 +261,12 @@ async function refreshBnhubListingAnalytics(shortTermListingId: string, priceCen
   }
 }
 
-async function fsboMarketAvgCents(params: {
+async function fsboMarketPeerStats(params: {
   city: string;
   bedrooms: number | null;
   propertyType: string | null;
   excludeId: string;
-}): Promise<number | null> {
+}): Promise<{ avgCents: number | null; peerCount: number }> {
   const baseWhere: Prisma.FsboListingWhereInput = {
     ...buildFsboPublicVisibilityWhere(),
     city: { equals: params.city, mode: "insensitive" },
@@ -280,8 +283,11 @@ async function fsboMarketAvgCents(params: {
     _avg: { priceCents: true },
     _count: { id: true },
   });
-  if (!agg._avg.priceCents || (agg._count.id ?? 0) < 3) return null;
-  return Math.round(agg._avg.priceCents);
+  const peerCount = agg._count.id ?? 0;
+  if (!agg._avg.priceCents || peerCount < 3) {
+    return { avgCents: null, peerCount };
+  }
+  return { avgCents: Math.round(agg._avg.priceCents), peerCount };
 }
 
 export async function buildFsboPublicDemandUi(
@@ -297,18 +303,28 @@ export async function buildFsboPublicDemandUi(
   const row = await prisma.listingAnalytics.findUnique({
     where: { kind_listingId: { kind: ListingAnalyticsKind.FSBO, listingId: fsboListingId } },
   });
+  const peerStatsPromise = fsboMarketPeerStats({
+    city: listing.city,
+    bedrooms: listing.bedrooms,
+    propertyType: listing.propertyType,
+    excludeId: fsboListingId,
+  });
+
   if (!row) {
+    const peerStatsEarly = await peerStatsPromise;
     return {
       demandScore: 0,
       urgency: null,
       pricingInsight: getPricingInsight({
         listingPriceCents: listing.priceCents,
-        marketAvgCents: null,
+        marketAvgCents: peerStatsEarly.avgCents,
         demandScore: 0,
       }),
       priceMovementNote: null,
       badge: null,
       hasSignal: false,
+      comparableMarketEstimateCents: peerStatsEarly.avgCents,
+      comparablePeerCount: peerStatsEarly.peerCount,
     };
   }
 
@@ -319,12 +335,8 @@ export async function buildFsboPublicDemandUi(
     bookingAttempts: row.bookingAttempts,
     saves: row.saves,
   };
-  const marketAvg = await fsboMarketAvgCents({
-    city: listing.city,
-    bedrooms: listing.bedrooms,
-    propertyType: listing.propertyType,
-    excludeId: fsboListingId,
-  });
+  const peerStats = await peerStatsPromise;
+  const marketAvg = peerStats.avgCents;
   const pricingInsight = getPricingInsight({
     listingPriceCents: listing.priceCents,
     marketAvgCents: marketAvg,
@@ -350,6 +362,8 @@ export async function buildFsboPublicDemandUi(
     priceMovementNote,
     badge: hasSignal ? urgency?.badge ?? null : null,
     hasSignal,
+    comparableMarketEstimateCents: marketAvg,
+    comparablePeerCount: peerStats.peerCount,
   };
 }
 
@@ -373,6 +387,8 @@ export async function buildCrmPublicDemandUi(
       priceMovementNote: null,
       badge: null,
       hasSignal: false,
+      comparableMarketEstimateCents: null,
+      comparablePeerCount: null,
     };
   }
   const inputs: DemandInputs = {
@@ -396,6 +412,8 @@ export async function buildCrmPublicDemandUi(
     priceMovementNote: null,
     badge: hasSignal ? urgency?.badge ?? null : null,
     hasSignal,
+    comparableMarketEstimateCents: null,
+    comparablePeerCount: null,
   };
 }
 

@@ -1,5 +1,5 @@
 /**
- * BNHub booking fee calculation – explicit, testable logic.
+ * BNHUB booking fee calculation – explicit, testable logic.
  * Aligns with lib/bnhub/booking-pricing.ts (Quebec GST + compound QST on lodging base).
  */
 

@@ -19,11 +19,14 @@ export function NotificationBell() {
   const ref = useRef<HTMLDivElement>(null);
 
   const refresh = useCallback(async () => {
-    const [c, list] = await Promise.all([
+    const [c, m, list] = await Promise.all([
       fetch("/api/notifications/unread-count", { credentials: "same-origin" }).then((r) => r.json()),
+      fetch("/api/messaging/unread-total", { credentials: "same-origin" }).then((r) => r.json()),
       fetch("/api/notifications?unread=1&limit=6", { credentials: "same-origin" }).then((r) => r.json()),
     ]);
-    setCount(typeof c.count === "number" ? c.count : 0);
+    const notif = typeof c.count === "number" ? c.count : 0;
+    const msg = typeof m.total === "number" ? m.total : 0;
+    setCount(notif + msg);
     setPreview(Array.isArray(list.notifications) ? list.notifications : []);
   }, []);
 

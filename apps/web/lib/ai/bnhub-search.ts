@@ -1,5 +1,5 @@
 /**
- * Search ranking for BNHub: marketplace quality / performance / availability / freshness,
+ * Search ranking for BNHUB: marketplace quality / performance / availability / freshness,
  * plus lightweight labels for UI. Core scoring lives in `lib/bnhub/ranking/listing-ranking.ts`.
  */
 

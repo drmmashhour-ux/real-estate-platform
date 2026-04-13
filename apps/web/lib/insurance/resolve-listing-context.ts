@@ -16,7 +16,7 @@ export async function resolveInsuranceListingContext(listingId: string): Promise
       select: { title: true, listingCode: true },
     }),
   ]);
-  if (st) return `BNHub stay: ${st.title} · ${st.city} (${st.listingCode})`;
+  if (st) return `BNHUB stay: ${st.title} · ${st.city} (${st.listingCode})`;
   if (fsbo) return `Property listing: ${fsbo.title} · ${fsbo.city} (${fsbo.listingCode ?? listingId})`;
   if (crm) return `CRM listing: ${crm.title} (${crm.listingCode})`;
   return null;

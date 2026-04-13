@@ -5,7 +5,7 @@ import { getSoftLaunchStatus } from "@/lib/ops/soft-launch-status";
 export const dynamic = "force-dynamic";
 
 /**
- * Soft-launch gate: infra + inventory heuristics for BNHub guest bookings.
+ * Soft-launch gate: infra + inventory heuristics for BNHUB guest bookings.
  * See `getSoftLaunchStatus` in `lib/ops/soft-launch-status.ts` (also used by CLI).
  */
 export async function GET() {

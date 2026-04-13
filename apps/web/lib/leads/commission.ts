@@ -1,6 +1,6 @@
 /**
  * Broker commission on residential deals (listing side — configurable).
- * BNHub / short-stay platform fee (e.g. 15%) is unrelated and tracked separately.
+ * BNHUB / short-stay platform fee (e.g. 15%) is unrelated and tracked separately.
  */
 
 export const DEFAULT_BROKER_COMMISSION_RATE = 0.025;

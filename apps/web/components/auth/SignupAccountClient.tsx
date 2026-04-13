@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { getRegisterTrafficFieldsForBody } from "@/lib/attribution/register-attribution-client";
 
-type Props = { referralRef?: string };
+type Props = { referralRef?: string; acquisitionSrc?: string };
 
-export function SignupAccountClient({ referralRef = "" }: Props) {
+export function SignupAccountClient({ referralRef = "", acquisitionSrc = "" }: Props) {
   const router = useRouter();
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(false);
@@ -28,17 +29,22 @@ export function SignupAccountClient({ referralRef = "" }: Props) {
       setLoading(false);
       return;
     }
+    const traffic = getRegisterTrafficFieldsForBody();
     const body = {
       email: String(fd.get("email") ?? "").trim(),
       password,
       confirmPassword,
       acceptLegal: true,
       ...(referralRef ? { ref: referralRef } : {}),
+      ...traffic,
+      ...(acquisitionSrc ? { acquisitionChannel: acquisitionSrc } : {}),
     };
     try {
-      const url = referralRef
-        ? `/api/auth/register?ref=${encodeURIComponent(referralRef)}`
-        : "/api/auth/register";
+      const regParams = new URLSearchParams();
+      if (referralRef) regParams.set("ref", referralRef);
+      if (acquisitionSrc) regParams.set("src", acquisitionSrc);
+      const qs = regParams.toString();
+      const url = qs ? `/api/auth/register?${qs}` : "/api/auth/register";
       const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -69,7 +75,11 @@ export function SignupAccountClient({ referralRef = "" }: Props) {
       onSubmit={onSubmit}
       className="mt-6 space-y-4 rounded-2xl border border-white/10 bg-[#121212] p-6 text-left"
     >
-      {err ? <p className="text-sm text-red-400">{err}</p> : null}
+      {err ? (
+        <p className="text-sm text-red-400" role="alert">
+          {err}
+        </p>
+      ) : null}
       <div>
         <label className="text-xs font-semibold text-premium-gold/90">Email</label>
         <input
@@ -77,8 +87,12 @@ export function SignupAccountClient({ referralRef = "" }: Props) {
           type="email"
           required
           autoComplete="email"
+          aria-describedby="signup-email-hint"
           className="mt-1 w-full rounded-xl border border-white/15 bg-[#0B0B0B] px-3 py-2 text-sm text-white"
         />
+        <p id="signup-email-hint" className="mt-1.5 text-[11px] leading-snug text-slate-500">
+          We’ll send a verification link — you’ll finish sign-in on the next screen. Same email works across hubs.
+        </p>
       </div>
       <div>
         <label className="text-xs font-semibold text-premium-gold/90">Password (min 8 characters)</label>
@@ -130,7 +144,7 @@ export function SignupAccountClient({ referralRef = "" }: Props) {
         disabled={loading || !legalOk}
         className="w-full rounded-xl bg-premium-gold py-3 text-sm font-bold text-[#0B0B0B] disabled:opacity-50"
       >
-        {loading ? "Creating account…" : "Create account"}
+        {loading ? "Creating account…" : "Create account — verify email next"}
       </button>
     </form>
   );

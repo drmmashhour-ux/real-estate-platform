@@ -30,7 +30,7 @@ export async function seedBnhubHospitalityEcosystemV2(): Promise<void> {
     {
       id: "bnhub-plan-plus",
       membershipCode: "BNHUB_PLUS",
-      name: "BNHub Plus",
+      name: "BNHUB Plus",
       audienceType: "GUEST" as const,
       description: "Service discounts and early bundle access (staged billing).",
       priceCents: 999,
@@ -40,7 +40,7 @@ export async function seedBnhubHospitalityEcosystemV2(): Promise<void> {
     {
       id: "bnhub-plan-premium-traveler",
       membershipCode: "BNHUB_PREMIUM_TRAVELER",
-      name: "BNHub Premium Traveler",
+      name: "BNHUB Premium Traveler",
       audienceType: "GUEST" as const,
       description: "Larger discounts and premium concierge surfaces.",
       priceCents: 2499,
@@ -50,7 +50,7 @@ export async function seedBnhubHospitalityEcosystemV2(): Promise<void> {
     {
       id: "bnhub-plan-elite-host",
       membershipCode: "BNHUB_ELITE_HOST",
-      name: "BNHub Elite Host",
+      name: "BNHUB Elite Host",
       audienceType: "HOST" as const,
       description: "Marketing tools and priority review hooks (staged).",
       priceCents: 4999,

@@ -1,0 +1,666 @@
+"use client";
+
+import Link from "next/link";
+import { useCallback, useEffect, useRef, useState } from "react";
+
+const AUTOPILOT_REPLY_PREFILL = "lecipm_autopilot_reply_prefill";
+
+type AutopilotSnapshot = {
+  leadId: string;
+  hot: boolean;
+  followUpOverdue: boolean;
+  followUpDueToday: boolean;
+  openActions: Array<{
+    id: string;
+    title: string;
+    actionType: string;
+    status: string;
+    draftMessage: string | null;
+  }>;
+};
+
+type LeadPayload = {
+  lead: {
+    id: string;
+    status: string;
+    source: string;
+    priorityLabel: string;
+    priorityScore: number;
+    guestName: string | null;
+    guestEmail: string | null;
+    customer: { name: string | null; email: string | null } | null;
+    listing: { id: string; title: string; listingCode: string; price: number } | null;
+    threadId: string | null;
+    nextFollowUpAt: string | null;
+    lastContactAt: string | null;
+  };
+  messages: Array<{ id: string; body: string; senderRole: string; senderName: string | null; createdAt: string }>;
+  notes: Array<{ id: string; body: string; createdAt: string }>;
+  tags: Array<{ id: string; tag: string }>;
+  latestInsight: {
+    summary: string | null;
+    suggestedReply: string | null;
+    nextBestAction: string | null;
+    intentScore: number | null;
+    urgencyScore: number | null;
+    confidenceScore: number | null;
+  } | null;
+};
+
+function toDatetimeLocalValue(iso: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+const STATUSES = [
+  "new",
+  "contacted",
+  "qualified",
+  "visit_scheduled",
+  "negotiating",
+  "closed",
+  "lost",
+] as const;
+
+export function BrokerCrmLeadDetailClient({ leadId }: { leadId: string }) {
+  const [data, setData] = useState<LeadPayload | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [noteBody, setNoteBody] = useState("");
+  const [tag, setTag] = useState("");
+  const [followUp, setFollowUp] = useState("");
+  const [replyDraft, setReplyDraft] = useState("");
+  const [busy, setBusy] = useState<string | null>(null);
+  const [autopilotSnapshot, setAutopilotSnapshot] = useState<AutopilotSnapshot | null>(null);
+  const [autopilotNext, setAutopilotNext] = useState<{ nextBestAction: string; reason: string } | null>(null);
+  const pendingAutopilotActionId = useRef<string | null>(null);
+  const prefillApplied = useRef(false);
+  const [visitRows, setVisitRows] = useState<{
+    requests: Array<{
+      id: string;
+      status: string;
+      requestedStart: string;
+      requestedEnd: string;
+      listing: { title: string } | null;
+    }>;
+    visits: Array<{
+      id: string;
+      status: string;
+      startDateTime: string;
+      endDateTime: string;
+      listing: { title: string } | null;
+    }>;
+  } | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [leadRes, snapRes] = await Promise.all([
+        fetch(`/api/broker-crm/leads/${encodeURIComponent(leadId)}`, { credentials: "same-origin" }),
+        fetch(`/api/broker-autopilot/leads/${encodeURIComponent(leadId)}/snapshot`, { credentials: "same-origin" }),
+      ]);
+      const j = (await leadRes.json()) as LeadPayload & { error?: string };
+      if (!leadRes.ok) throw new Error(j.error ?? "Load failed");
+      let snap: AutopilotSnapshot | null = null;
+      if (snapRes.ok) {
+        snap = (await snapRes.json()) as AutopilotSnapshot;
+      }
+      setData(j);
+      setAutopilotSnapshot(snap);
+      setFollowUp(toDatetimeLocalValue(j.lead.nextFollowUpAt));
+      setReplyDraft(j.latestInsight?.suggestedReply ?? "");
+    } catch (e) {
+      setAutopilotSnapshot(null);
+      setError(e instanceof Error ? e.message : "Error");
+    } finally {
+      setLoading(false);
+    }
+  }, [leadId]);
+
+  useEffect(() => {
+    prefillApplied.current = false;
+  }, [leadId]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        const res = await fetch(`/api/broker-crm/leads/${encodeURIComponent(leadId)}/visits`, {
+          credentials: "same-origin",
+        });
+        const j = (await res.json()) as typeof visitRows;
+        if (res.ok && j && typeof j === "object") setVisitRows(j);
+      } catch {
+        /* optional */
+      }
+    })();
+  }, [leadId]);
+
+  useEffect(() => {
+    if (loading || prefillApplied.current) return;
+    try {
+      const raw = typeof window !== "undefined" ? sessionStorage.getItem(AUTOPILOT_REPLY_PREFILL) : null;
+      if (!raw) return;
+      const p = JSON.parse(raw) as { leadId: string; draft: string; actionId?: string };
+      if (p.leadId !== leadId) return;
+      prefillApplied.current = true;
+      if (p.draft) setReplyDraft(p.draft);
+      pendingAutopilotActionId.current = p.actionId ?? null;
+      sessionStorage.removeItem(AUTOPILOT_REPLY_PREFILL);
+    } catch {
+      prefillApplied.current = true;
+    }
+  }, [leadId, loading]);
+
+  async function post(path: string, body?: object) {
+    const res = await fetch(`/api/broker-crm/leads/${encodeURIComponent(leadId)}${path}`, {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    const j = (await res.json()) as { error?: string };
+    if (!res.ok) throw new Error(j.error ?? "Request failed");
+    return j;
+  }
+
+  if (loading) return <p className="text-sm text-slate-500">Loading lead…</p>;
+  if (error || !data) return <p className="text-sm text-red-400">{error ?? "Not found"}</p>;
+
+  const { lead, messages, notes, tags, latestInsight } = data;
+  const contactName = lead.customer?.name?.trim() || lead.guestName || "Lead";
+  const contactEmail = lead.customer?.email || lead.guestEmail;
+
+  return (
+    <div className="space-y-8">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <Link href="/dashboard/crm" className="text-xs text-premium-gold hover:underline">
+            ← Back to Inquiry CRM
+          </Link>
+          <h2 className="mt-2 text-2xl font-semibold text-white">{contactName}</h2>
+          <p className="text-sm text-slate-400">{contactEmail ?? "—"}</p>
+          <p className="mt-2 text-xs text-slate-500">
+            Source: {lead.source} · Priority: {lead.priorityLabel} ({lead.priorityScore})
+          </p>
+        </div>
+        <div className="flex flex-col gap-2 sm:items-end">
+          <label className="text-xs text-slate-500">Status</label>
+          <select
+            className="rounded-lg border border-white/15 bg-black/50 px-3 py-2 text-sm text-white"
+            value={lead.status}
+            disabled={!!busy}
+            onChange={async (e) => {
+              setBusy("status");
+              try {
+                await post("/status", { status: e.target.value });
+                await load();
+              } catch (err) {
+                setError(err instanceof Error ? err.message : "Failed");
+              } finally {
+                setBusy(null);
+              }
+            }}
+          >
+            {STATUSES.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {lead.listing ? (
+        <section className="rounded-xl border border-white/10 bg-black/30 p-4">
+          <h3 className="text-sm font-semibold text-slate-200">Listing</h3>
+          <Link href={`/listings/${lead.listing.id}`} className="mt-1 text-premium-gold hover:underline">
+            {lead.listing.title}
+          </Link>
+          <p className="text-xs text-slate-500">{lead.listing.listingCode}</p>
+        </section>
+      ) : null}
+
+      <section className="rounded-xl border border-cyan-500/20 bg-cyan-950/20 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h3 className="text-sm font-semibold text-cyan-100">AI insight</h3>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              disabled={!!busy}
+              onClick={async () => {
+                setBusy("ai-sum");
+                try {
+                  await post("/ai-summary");
+                  await load();
+                } catch (err) {
+                  setError(err instanceof Error ? err.message : "Failed");
+                } finally {
+                  setBusy(null);
+                }
+              }}
+              className="rounded-lg bg-cyan-600/30 px-3 py-1.5 text-xs font-medium text-cyan-50 hover:bg-cyan-600/50"
+            >
+              Summarize conversation
+            </button>
+            <button
+              type="button"
+              disabled={!!busy}
+              onClick={async () => {
+                setBusy("ai-next");
+                try {
+                  await post("/next-action");
+                  await load();
+                } catch (err) {
+                  setError(err instanceof Error ? err.message : "Failed");
+                } finally {
+                  setBusy(null);
+                }
+              }}
+              className="rounded-lg bg-white/10 px-3 py-1.5 text-xs text-white hover:bg-white/15"
+            >
+              Next best action
+            </button>
+            <button
+              type="button"
+              disabled={!!busy}
+              onClick={async () => {
+                setBusy("ai-reply");
+                try {
+                  const res = await fetch(`/api/broker-crm/leads/${encodeURIComponent(leadId)}/ai-reply`, {
+                    method: "POST",
+                    credentials: "same-origin",
+                  });
+                  const j = (await res.json()) as { draft?: string; error?: string };
+                  if (!res.ok) throw new Error(j.error ?? "Failed");
+                  if (j.draft) setReplyDraft(j.draft);
+                  await load();
+                } catch (err) {
+                  setError(err instanceof Error ? err.message : "Failed");
+                } finally {
+                  setBusy(null);
+                }
+              }}
+              className="rounded-lg bg-premium-gold px-3 py-1.5 text-xs font-semibold text-black"
+            >
+              Generate reply
+            </button>
+          </div>
+        </div>
+        {latestInsight?.summary ? (
+          <p className="mt-3 whitespace-pre-wrap text-sm text-slate-200">{latestInsight.summary}</p>
+        ) : (
+          <p className="mt-3 text-sm text-slate-500">No summary yet — generate one from the conversation.</p>
+        )}
+        {latestInsight?.nextBestAction ? (
+          <p className="mt-2 text-sm text-amber-100/90">
+            <span className="font-medium">Next:</span> {latestInsight.nextBestAction}
+          </p>
+        ) : null}
+        <div className="mt-3 flex flex-wrap gap-3 text-[11px] text-slate-400">
+          <span>Intent {latestInsight?.intentScore ?? "—"}</span>
+          <span>Urgency {latestInsight?.urgencyScore ?? "—"}</span>
+          <span>Confidence {latestInsight?.confidenceScore ?? "—"}</span>
+        </div>
+      </section>
+
+      {autopilotSnapshot ? (
+        <section className="rounded-xl border border-amber-500/25 bg-amber-950/15 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h3 className="text-sm font-semibold text-amber-100">CRM Autopilot</h3>
+            <Link href="/dashboard/crm/autopilot" className="text-xs text-amber-200/90 hover:underline">
+              Queue &amp; settings →
+            </Link>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2 text-xs">
+            {autopilotSnapshot.hot ? (
+              <span className="rounded-full bg-rose-500/25 px-2 py-0.5 font-medium text-rose-100">Hot lead</span>
+            ) : (
+              <span className="rounded-full bg-white/10 px-2 py-0.5 text-slate-300">Steady</span>
+            )}
+            {autopilotSnapshot.followUpOverdue ? (
+              <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-amber-100">Follow up overdue</span>
+            ) : null}
+            {autopilotSnapshot.followUpDueToday && !autopilotSnapshot.followUpOverdue ? (
+              <span className="rounded-full bg-sky-500/20 px-2 py-0.5 text-sky-100">Follow up due today</span>
+            ) : null}
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              disabled={!!busy}
+              onClick={async () => {
+                setBusy("ap-draft");
+                try {
+                  const res = await fetch(`/api/broker-autopilot/leads/${encodeURIComponent(leadId)}/followup-draft`, {
+                    method: "POST",
+                    credentials: "same-origin",
+                  });
+                  const j = (await res.json()) as { draft?: string; error?: string };
+                  if (!res.ok) throw new Error(j.error ?? "Failed");
+                  if (j.draft) {
+                    setReplyDraft(j.draft);
+                    pendingAutopilotActionId.current = null;
+                  }
+                } catch (err) {
+                  setError(err instanceof Error ? err.message : "Failed");
+                } finally {
+                  setBusy(null);
+                }
+              }}
+              className="rounded-lg bg-premium-gold px-3 py-1.5 text-xs font-semibold text-black"
+            >
+              AI follow-up draft
+            </button>
+            <button
+              type="button"
+              disabled={!!busy}
+              onClick={async () => {
+                setBusy("ap-next");
+                try {
+                  const res = await fetch(`/api/broker-autopilot/leads/${encodeURIComponent(leadId)}/next-action`, {
+                    method: "POST",
+                    credentials: "same-origin",
+                  });
+                  const j = (await res.json()) as {
+                    nextBestAction?: string;
+                    reason?: string;
+                    error?: string;
+                  };
+                  if (!res.ok) throw new Error(j.error ?? "Failed");
+                  if (j.nextBestAction && j.reason) {
+                    setAutopilotNext({ nextBestAction: j.nextBestAction, reason: j.reason });
+                  }
+                } catch (err) {
+                  setError(err instanceof Error ? err.message : "Failed");
+                } finally {
+                  setBusy(null);
+                }
+              }}
+              className="rounded-lg border border-white/15 px-3 py-1.5 text-xs text-white hover:bg-white/5"
+            >
+              Next best action (AI)
+            </button>
+          </div>
+          {autopilotNext ? (
+            <p className="mt-3 text-sm text-slate-200">
+              <span className="font-medium text-amber-100/90">Next:</span> {autopilotNext.nextBestAction}
+              <span className="mt-1 block text-xs text-slate-500">{autopilotNext.reason}</span>
+            </p>
+          ) : null}
+          {autopilotSnapshot.openActions.length > 0 ? (
+            <ul className="mt-4 space-y-3">
+              {autopilotSnapshot.openActions.map((a) => (
+                <li key={a.id} className="rounded-lg border border-white/10 bg-black/25 p-3 text-sm">
+                  <p className="font-medium text-white">{a.title}</p>
+                  <p className="text-[10px] uppercase text-slate-500">
+                    {a.actionType} · {a.status}
+                  </p>
+                  {a.draftMessage ? (
+                    <p className="mt-2 line-clamp-2 text-xs text-slate-400">Draft: {a.draftMessage}</p>
+                  ) : null}
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {a.status === "suggested" ? (
+                      <button
+                        type="button"
+                        disabled={busy === a.id}
+                        onClick={async () => {
+                          setBusy(a.id);
+                          try {
+                            const res = await fetch(`/api/broker-autopilot/actions/${encodeURIComponent(a.id)}/approve`, {
+                              method: "POST",
+                              credentials: "same-origin",
+                            });
+                            const j = (await res.json()) as { error?: string };
+                            if (!res.ok) throw new Error(j.error ?? "Approve failed");
+                            await load();
+                          } catch (err) {
+                            setError(err instanceof Error ? err.message : "Failed");
+                          } finally {
+                            setBusy(null);
+                          }
+                        }}
+                        className="rounded bg-emerald-600/80 px-2 py-1 text-[11px] font-medium text-white"
+                      >
+                        Approve
+                      </button>
+                    ) : null}
+                    {(a.status === "approved" || a.status === "queued") && lead.threadId ? (
+                      <button
+                        type="button"
+                        disabled={busy === `ex-${a.id}`}
+                        onClick={async () => {
+                          setBusy(`ex-${a.id}`);
+                          try {
+                            const res = await fetch(`/api/broker-autopilot/actions/${encodeURIComponent(a.id)}/execute`, {
+                              method: "POST",
+                              credentials: "same-origin",
+                            });
+                            const j = (await res.json()) as { draftMessage?: string; error?: string };
+                            if (!res.ok) throw new Error(j.error ?? "Failed");
+                            if (typeof j.draftMessage === "string") setReplyDraft(j.draftMessage);
+                            pendingAutopilotActionId.current = a.id;
+                          } catch (err) {
+                            setError(err instanceof Error ? err.message : "Failed");
+                          } finally {
+                            setBusy(null);
+                          }
+                        }}
+                        className="rounded bg-premium-gold px-2 py-1 text-[11px] font-semibold text-black"
+                      >
+                        Load draft to send
+                      </button>
+                    ) : null}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-3 text-xs text-slate-500">No open autopilot actions for this lead.</p>
+          )}
+          <p className="mt-3 text-[10px] text-slate-600">
+            AI-generated text is labeled in APIs; edit every draft before sending.
+          </p>
+        </section>
+      ) : null}
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <section className="rounded-xl border border-white/10 p-4">
+          <h3 className="text-sm font-semibold text-white">Conversation</h3>
+          <ul className="mt-3 max-h-[360px] space-y-3 overflow-y-auto text-sm">
+            {messages.map((m) => (
+              <li key={m.id} className="rounded-lg border border-white/5 bg-black/30 px-3 py-2">
+                <p className="text-[10px] uppercase text-slate-500">
+                  {m.senderRole} {m.senderName ? `· ${m.senderName}` : ""}
+                </p>
+                <p className="mt-1 whitespace-pre-wrap text-slate-200">{m.body}</p>
+                <p className="mt-1 text-[10px] text-slate-600">{new Date(m.createdAt).toLocaleString()}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <section className="space-y-4">
+          <div className="rounded-xl border border-white/10 p-4">
+            <h3 className="text-sm font-semibold text-white">Reply (edit before sending)</h3>
+            <textarea
+              className="mt-2 min-h-[120px] w-full rounded-lg border border-white/15 bg-black/40 px-3 py-2 text-sm text-white"
+              value={replyDraft}
+              onChange={(e) => setReplyDraft(e.target.value)}
+              placeholder="Generate a draft or write your own…"
+            />
+            <button
+              type="button"
+              disabled={!!busy || !replyDraft.trim() || !lead.threadId}
+              onClick={async () => {
+                setBusy("send");
+                try {
+                  const res = await fetch(`/api/broker-crm/leads/${encodeURIComponent(leadId)}/send-message`, {
+                    method: "POST",
+                    credentials: "same-origin",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      body: replyDraft.trim(),
+                      fromAiDraft: true,
+                      ...(pendingAutopilotActionId.current
+                        ? { autopilotActionId: pendingAutopilotActionId.current }
+                        : {}),
+                    }),
+                  });
+                  const j = (await res.json()) as { error?: string };
+                  if (!res.ok) throw new Error(j.error ?? "Failed");
+                  setReplyDraft("");
+                  pendingAutopilotActionId.current = null;
+                  await load();
+                } catch (err) {
+                  setError(err instanceof Error ? err.message : "Failed");
+                } finally {
+                  setBusy(null);
+                }
+              }}
+              className="mt-2 rounded-lg bg-premium-gold px-4 py-2 text-sm font-semibold text-black disabled:opacity-40"
+            >
+              Send message
+            </button>
+            {!lead.threadId ? <p className="mt-2 text-xs text-amber-200/90">No thread linked.</p> : null}
+          </div>
+
+          <div className="rounded-xl border border-white/10 p-4">
+            <h3 className="text-sm font-semibold text-white">Follow-up</h3>
+            <input
+              type="datetime-local"
+              className="mt-2 w-full rounded-lg border border-white/15 bg-black/40 px-3 py-2 text-sm text-white"
+              value={followUp}
+              onChange={(e) => setFollowUp(e.target.value)}
+            />
+            <button
+              type="button"
+              disabled={!!busy}
+              onClick={async () => {
+                setBusy("fu");
+                try {
+                  await post("/follow-up", {
+                    nextFollowUpAt: followUp ? new Date(followUp).toISOString() : null,
+                  });
+                  await load();
+                } catch (err) {
+                  setError(err instanceof Error ? err.message : "Failed");
+                } finally {
+                  setBusy(null);
+                }
+              }}
+              className="mt-2 rounded-lg border border-white/20 px-4 py-2 text-sm text-white hover:bg-white/5"
+            >
+              Save follow-up
+            </button>
+          </div>
+        </section>
+      </div>
+
+      <section className="rounded-xl border border-white/10 p-4">
+        <h3 className="text-sm font-semibold text-white">Notes</h3>
+        <div className="mt-2 flex gap-2">
+          <textarea
+            className="min-h-[72px] flex-1 rounded-lg border border-white/15 bg-black/40 px-3 py-2 text-sm"
+            value={noteBody}
+            onChange={(e) => setNoteBody(e.target.value)}
+            placeholder="Add a note…"
+          />
+          <button
+            type="button"
+            disabled={!!busy || !noteBody.trim()}
+            onClick={async () => {
+              setBusy("note");
+              try {
+                await post("/notes", { body: noteBody.trim() });
+                setNoteBody("");
+                await load();
+              } catch (err) {
+                setError(err instanceof Error ? err.message : "Failed");
+              } finally {
+                setBusy(null);
+              }
+            }}
+            className="self-end rounded-lg bg-white/10 px-4 py-2 text-sm"
+          >
+            Save
+          </button>
+        </div>
+        <ul className="mt-3 space-y-2 text-sm text-slate-300">
+          {notes.map((n) => (
+            <li key={n.id} className="border-l-2 border-premium-gold/40 pl-3">
+              {n.body}
+              <span className="ml-2 text-[10px] text-slate-600">{new Date(n.createdAt).toLocaleString()}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="rounded-xl border border-white/10 p-4">
+        <h3 className="text-sm font-semibold text-white">Tags</h3>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {tags.map((t) => (
+            <span key={t.id} className="rounded-full bg-white/10 px-3 py-1 text-xs">
+              {t.tag}
+            </span>
+          ))}
+        </div>
+        <div className="mt-3 flex gap-2">
+          <input
+            className="flex-1 rounded-lg border border-white/15 bg-black/40 px-3 py-2 text-sm"
+            value={tag}
+            onChange={(e) => setTag(e.target.value)}
+            placeholder="investor, urgent, visit requested…"
+          />
+          <button
+            type="button"
+            disabled={!!busy || !tag.trim()}
+            onClick={async () => {
+              setBusy("tag");
+              try {
+                await post("/tags", { tag: tag.trim() });
+                setTag("");
+                await load();
+              } catch (err) {
+                setError(err instanceof Error ? err.message : "Failed");
+              } finally {
+                setBusy(null);
+              }
+            }}
+            className="rounded-lg bg-white/10 px-4 py-2 text-sm"
+          >
+            Add tag
+          </button>
+        </div>
+      </section>
+
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          disabled={!!busy}
+          onClick={async () => {
+            setBusy("score");
+            try {
+              await post("/score");
+              await load();
+            } catch (err) {
+              setError(err instanceof Error ? err.message : "Failed");
+            } finally {
+              setBusy(null);
+            }
+          }}
+          className="rounded-lg border border-white/20 px-4 py-2 text-sm text-slate-200"
+        >
+          Recalculate priority
+        </button>
+      </div>
+    </div>
+  );
+}

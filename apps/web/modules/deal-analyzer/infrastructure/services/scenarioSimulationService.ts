@@ -122,7 +122,7 @@ export function buildRentalScenarios(args: {
   return out;
 }
 
-/** Three BNHub short-term scenarios (conservative / expected / aggressive) — illustrative, not booking data. */
+/** Three BNHUB short-term scenarios (conservative / expected / aggressive) — illustrative, not booking data. */
 export function buildBnhubScenarios(args: { nightPriceCents: number; cleaningFeeCents: number }): BnhubScenarioMetrics[] {
   const cfg = dealAnalyzerConfig.bnhub;
   const weak = args.nightPriceCents <= 0;

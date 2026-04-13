@@ -4,7 +4,7 @@ import { getMortgagePlanDefaults } from "@/modules/mortgage/services/subscriptio
 export const MORTGAGE_EXPERT_CHECKOUT_PAYMENT_SUB = "mortgage_expert_subscription";
 export const MORTGAGE_EXPERT_CHECKOUT_PAYMENT_CREDITS = "mortgage_expert_credits";
 
-export type MortgageExpertPlanKey = "basic" | "pro" | "premium";
+export type MortgageExpertPlanKey = "basic" | "pro" | "premium" | "ambassador";
 
 export function getStripeMortgageSubscriptionPriceId(plan: string): string | null {
   const p = plan.toLowerCase().trim() as MortgageExpertPlanKey;
@@ -12,8 +12,9 @@ export function getStripeMortgageSubscriptionPriceId(plan: string): string | nul
     basic: process.env.STRIPE_PRICE_MORTGAGE_BASIC_MONTHLY?.trim(),
     pro: process.env.STRIPE_PRICE_MORTGAGE_PRO_MONTHLY?.trim(),
     premium: process.env.STRIPE_PRICE_MORTGAGE_PREMIUM_MONTHLY?.trim(),
+    ambassador: process.env.STRIPE_PRICE_MORTGAGE_AMBASSADOR_MONTHLY?.trim(),
   };
-  const id = map[p] ?? map.basic;
+  const id = map[p];
   return id || null;
 }
 
@@ -21,10 +22,29 @@ export function getStripeMortgageLeadCreditPriceId(): string | null {
   return process.env.STRIPE_PRICE_MORTGAGE_LEAD_CREDIT_UNIT?.trim() || null;
 }
 
+/** Normalize Stripe / checkout metadata to internal subscription keys. */
 export function parseMortgageExpertPlanFromMetadata(plan: string | undefined): MortgageExpertPlanKey {
   const p = (plan ?? "basic").toLowerCase().trim();
-  if (p === "pro" || p === "premium" || p === "basic") return p;
+  if (p === "gold" || p === "basic") return "basic";
+  if (p === "platinum" || p === "pro") return "pro";
+  if (p === "premium") return "premium";
+  if (p === "ambassador") return "ambassador";
   return "basic";
+}
+
+/**
+ * Parse dashboard / API body (accepts marketing slugs).
+ * @returns null if unknown
+ */
+export function parseMortgageExpertCheckoutPlan(raw: unknown): MortgageExpertPlanKey | null {
+  const p = String(raw ?? "")
+    .toLowerCase()
+    .trim();
+  if (p === "gold" || p === "basic") return "basic";
+  if (p === "platinum" || p === "pro") return "pro";
+  if (p === "premium") return "premium";
+  if (p === "ambassador") return "ambassador";
+  return null;
 }
 
 export async function applyExpertSubscriptionFromStripe(args: {
@@ -83,9 +103,16 @@ export async function applyExpertSubscriptionFromStripe(args: {
     });
 
     if (isPaidActive) {
+      const me = await tx.mortgageExpert.findUnique({
+        where: { id: args.expertId },
+        select: { expertVerificationStatus: true },
+      });
       await tx.mortgageExpert.update({
         where: { id: args.expertId },
-        data: { isAvailable: true },
+        data: {
+          isAvailable: true,
+          ...(me?.expertVerificationStatus === "verified" ? { isActive: true } : {}),
+        },
       });
     }
   });

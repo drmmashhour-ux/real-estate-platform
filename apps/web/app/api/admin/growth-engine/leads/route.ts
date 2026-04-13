@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
+  GrowthEngineBrokerRoute,
   GrowthEngineLeadRole,
   GrowthEngineLeadSource,
   GrowthEngineLeadStage,
+  GrowthEngineLeadUrgency,
   GrowthEnginePermissionStatus,
 } from "@prisma/client";
 import { z } from "zod";
@@ -27,12 +29,23 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const stage = searchParams.get("stage");
   const follow = searchParams.get("needsFollowUp");
+  const brokerRoute = searchParams.get("brokerRoute");
+  const leadUrgency = searchParams.get("leadUrgency");
+
+  const ROUTES: GrowthEngineBrokerRoute[] = ["unspecified", "real_estate", "mortgage", "both"];
+  const URG: GrowthEngineLeadUrgency[] = ["unspecified", "hot", "mid", "long_term"];
 
   const leads = await listGrowthLeads({
     ...(stage && STAGES.includes(stage as GrowthEngineLeadStage)
       ? { stage: stage as GrowthEngineLeadStage }
       : {}),
     ...(follow === "1" ? { needsFollowUp: true } : {}),
+    ...(brokerRoute && ROUTES.includes(brokerRoute as GrowthEngineBrokerRoute)
+      ? { brokerRoute: brokerRoute as GrowthEngineBrokerRoute }
+      : {}),
+    ...(leadUrgency && URG.includes(leadUrgency as GrowthEngineLeadUrgency)
+      ? { leadUrgency: leadUrgency as GrowthEngineLeadUrgency }
+      : {}),
   });
 
   return NextResponse.json({ leads });

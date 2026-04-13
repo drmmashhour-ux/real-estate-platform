@@ -45,7 +45,7 @@ export function FinanceHubTabs() {
         href="/admin/payouts"
         className="rounded-lg border border-slate-700 bg-slate-900/60 px-3 py-1.5 text-sm text-slate-300 hover:border-amber-700/50 hover:text-amber-200"
       >
-        Host payouts (BNHub)
+        Host payouts (BNHUB)
       </Link>
     </nav>
   );

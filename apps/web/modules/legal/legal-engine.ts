@@ -166,9 +166,9 @@ export type ComplianceSnapshot = {
   fsboSellerDeclarationComplete?: boolean;
   /** FSBO seller agreement + platform terms contracts signed */
   fsboSellerContractsComplete?: boolean;
-  /** BNHub short-term publish gates (host + seller agreements, disclosure, etc.) */
+  /** BNHUB short-term publish gates (host + seller agreements, disclosure, etc.) */
   bnhubShortTermPublishAllowed?: boolean;
-  /** Long-term rental: use BNHub listing gates when wired */
+  /** Long-term rental: use BNHUB listing gates when wired */
   bnhubLongTermPublishAllowed?: boolean;
   /** `LegalAgreement` broker_terms for hub broker */
   brokerPlatformAgreementAccepted?: boolean;

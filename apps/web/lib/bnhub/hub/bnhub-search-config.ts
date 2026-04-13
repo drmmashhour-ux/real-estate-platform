@@ -1,5 +1,5 @@
 /**
- * BNHub search configuration — sourced from hub registry for a single source of truth.
+ * BNHUB search configuration — sourced from hub registry for a single source of truth.
  */
 
 import { getHubConfig } from "@/lib/hub/core/hub-registry";

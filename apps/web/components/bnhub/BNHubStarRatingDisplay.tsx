@@ -23,14 +23,14 @@ export function BNHubStarRatingDisplay({
   if (!breakdown) {
     return (
       <p className="text-xs text-slate-500">
-        BNHub rating is being calculated — refresh in a moment.
+        BNHUB rating is being calculated — refresh in a moment.
       </p>
     );
   }
 
   return (
     <div className="rounded-lg border border-amber-500/25 bg-amber-950/20 px-3 py-2">
-      <p className="text-[11px] font-medium uppercase tracking-wide text-amber-200/90">BNHub Rating</p>
+      <p className="text-[11px] font-medium uppercase tracking-wide text-amber-200/90">BNHUB Rating</p>
       <div className="mt-1 flex flex-wrap items-center gap-2">
         <span className="text-lg tracking-tight text-amber-300" aria-label={`${breakdown.starRating} out of 5 stars`}>
           {starsVisual(breakdown.starRating)}

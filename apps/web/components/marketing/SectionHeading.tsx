@@ -4,7 +4,7 @@ import { platformBrandGoldTextClass } from "@/config/branding";
 
 type Props = {
   eyebrow?: string;
-  title: string;
+  title: ReactNode;
   subtitle?: ReactNode;
   align?: "left" | "center";
 };

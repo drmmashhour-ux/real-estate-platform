@@ -9,7 +9,7 @@ export function ScheduleCampaignModal({
   children,
   onClose,
   onConfirm,
-  confirmLabel = "Confirm",
+  confirmLabel = "Continue",
   busy,
 }: {
   open: boolean;

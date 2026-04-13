@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 const GOLD = "var(--color-premium-gold)";
 const STORAGE_KEY = "lecipm_immo_guest_session";
@@ -25,6 +26,7 @@ function getOrCreateGuestId(): string {
 type ChatMessage = { id?: string; sender: string; content: string; createdAt?: string };
 
 export function ImmoChatWidget() {
+  const pathname = usePathname() ?? "";
   const [open, setOpen] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -36,6 +38,12 @@ export function ImmoChatWidget() {
 
   useEffect(() => {
     setGuestId(getOrCreateGuestId());
+  }, []);
+
+  useEffect(() => {
+    const onToggle = () => setOpen((o) => !o);
+    window.addEventListener("lecipm-immo-chat-toggle", onToggle);
+    return () => window.removeEventListener("lecipm-immo-chat-toggle", onToggle);
   }, []);
 
   const scrollToBottom = () => {
@@ -133,21 +141,14 @@ export function ImmoChatWidget() {
     }
   }
 
+  if (pathname.startsWith("/admin") || pathname.startsWith("/embed")) {
+    return null;
+  }
+
   return (
     <>
-      <button
-        type="button"
-        aria-expanded={open}
-        aria-label="Open chat"
-        onClick={() => setOpen((o) => !o)}
-        className="pointer-events-auto fixed bottom-6 left-4 z-50 flex h-14 w-14 items-center justify-center rounded-full border-2 border-premium-gold/50 bg-[#121212] text-xl shadow-[0_12px_40px_rgb(var(--premium-gold-channels) / 0.25)] transition hover:scale-105 hover:border-premium-gold md:bottom-8 md:left-8"
-        style={{ color: GOLD }}
-      >
-        💬
-      </button>
-
       <div
-        className={`fixed bottom-24 left-4 z-50 flex w-[min(100vw-2rem,380px)] flex-col overflow-hidden rounded-2xl border border-premium-gold/35 bg-[#0B0B0B]/98 shadow-[0_24px_80px_rgba(0,0,0,0.65)] backdrop-blur-lg transition-all duration-300 md:bottom-28 md:left-8 ${
+        className={`fixed bottom-[calc(6.25rem+env(safe-area-inset-bottom))] left-1/2 z-[55] flex w-[min(100vw-2rem,380px)] -translate-x-1/2 flex-col overflow-hidden rounded-2xl border border-premium-gold/35 bg-[#0B0B0B]/98 shadow-[0_24px_80px_rgba(0,0,0,0.65)] backdrop-blur-lg transition-all duration-300 sm:left-auto sm:right-4 sm:translate-x-0 ${
           open ? "pointer-events-auto max-h-[min(70vh,520px)] translate-y-0 opacity-100" : "pointer-events-none max-h-0 translate-y-4 opacity-0"
         }`}
       >

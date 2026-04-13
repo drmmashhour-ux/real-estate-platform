@@ -1,5 +1,6 @@
 export type AutomationRuleKey =
   | "listing_completion"
+  | "listing_visibility_gap"
   | "stalled_booking"
   | "pricing_opportunity"
   | "host_payout_readiness"
@@ -20,6 +21,13 @@ export const AUTOMATION_RULE_DEFINITIONS: {
     name: "Listing completion",
     description: "Detect missing STR fields; create AI recommendations for drafts.",
     frequency: "event",
+  },
+  {
+    key: "listing_visibility_gap",
+    name: "Listing visibility gap",
+    description:
+      "Published stays with thin copy, no photos, or unapproved images — suggest improvements before promotion spend.",
+    frequency: "daily",
   },
   {
     key: "stalled_booking",

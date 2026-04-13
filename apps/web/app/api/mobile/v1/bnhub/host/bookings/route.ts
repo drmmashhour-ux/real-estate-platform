@@ -31,7 +31,7 @@ function rowToDto(b: HostBnhubBookingRow) {
 
 /**
  * GET /api/mobile/v1/bnhub/host/bookings
- * BNHub Supabase bookings for listings owned by the host (`listings.host_user_id` = JWT sub).
+ * BNHUB Supabase bookings for listings owned by the host (`listings.host_user_id` = JWT sub).
  */
 export async function GET(request: Request) {
   const user = await getMobileAuthUser(request);

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useProductHealth } from "@/components/analytics/ProductHealthProvider";
-import Logo from "@/components/ui/Logo";
+import { LecipmBrandLockup } from "@/components/brand/LecipmBrandLockup";
 import { shouldHighlightAnalyzeNav, shouldHighlightDashboardNav } from "@/lib/investment/activation-storage";
 import { HubNavLinks } from "@/components/hubs/HubNavLinks";
 import { MarketplaceHubLinks } from "@/components/marketplace/MarketplaceHubLinks";
@@ -49,8 +49,8 @@ export function MvpNav({ variant = "live" }: { variant?: "live" | "demo" }) {
         className="mx-auto flex max-w-6xl flex-col items-center justify-center gap-3 px-4 py-3 sm:gap-4 lg:flex-row lg:flex-wrap lg:px-5"
         aria-label="LECIPM investment"
       >
-        <div className="flex min-w-0 flex-wrap items-center justify-center gap-2 sm:gap-3">
-          <Logo variant="nav" showName />
+        <div className="flex shrink-0 flex-wrap items-center justify-center gap-2 sm:gap-3">
+          <LecipmBrandLockup href="/" variant="dark" align="center" density="compact" priority />
           {variant === "demo" ? (
             <span className="rounded-full border border-amber-500/40 bg-amber-950/40 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-200">
               Demo

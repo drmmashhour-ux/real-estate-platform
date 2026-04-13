@@ -1,11 +1,11 @@
 /**
- * Commission rules and creation after payment. Defaults: BNHub booking 15% platform (see bnhub-connect); FSBO publish 100% platform; sale 70% broker / 30% platform; etc.
+ * Commission rules and creation after payment. Defaults: BNHUB booking 15% platform (see bnhub-connect); FSBO publish 100% platform; sale 70% broker / 30% platform; etc.
  */
 
 import { prisma } from "@/lib/db";
 
 const DEFAULTS: Record<string, { brokerPercent: number; platformPercent: number }> = {
-  /** Align with BNHub Stripe Connect `application_fee_amount` (`bnhub-connect` rate). */
+  /** Align with BNHUB Stripe Connect `application_fee_amount` (`bnhub-connect` rate). */
   booking: { brokerPercent: 0, platformPercent: 15 },
   sale: { brokerPercent: 70, platformPercent: 30 },
   subscription: { brokerPercent: 0, platformPercent: 90 },

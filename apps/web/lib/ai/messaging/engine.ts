@@ -78,7 +78,7 @@ async function appendLog(input: {
 }
 
 /**
- * Host-controlled BNHub lifecycle messaging. Does not override safety rules; logs all attempts.
+ * Host-controlled BNHUB lifecycle messaging. Does not override safety rules; logs all attempts.
  */
 export async function runHostLifecycleMessage(input: {
   bookingId: string;
@@ -128,7 +128,7 @@ export async function runHostLifecycleMessage(input: {
     await createBnhubMobileNotification({
       userId: hostId,
       type: NotificationType.SYSTEM,
-      title: "BNHub checklist (internal)",
+      title: "BNHUB checklist (internal)",
       message: `${body}\n\n— ${PLATFORM_LIABILITY_DISCLAIMER_AUTOMATION}`,
       actionUrl: `/bnhub/booking/${booking.id}`,
       actionLabel: "Open booking",

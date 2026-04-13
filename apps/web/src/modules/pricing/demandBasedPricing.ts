@@ -3,7 +3,7 @@ import { computeRecommendedPrice } from "@/src/modules/bnhub-growth-engine/servi
 export type DemandBasedQuote = Awaited<ReturnType<typeof computeRecommendedPrice>>;
 
 /**
- * Demand-based nightly pricing — delegates to BNHub dynamic pricing engine (signals + guardrails).
+ * Demand-based nightly pricing — delegates to BNHUB dynamic pricing engine (signals + guardrails).
  */
 export async function quoteDemandBasedNightlyPrice(listingId: string): Promise<DemandBasedQuote> {
   return computeRecommendedPrice(listingId);

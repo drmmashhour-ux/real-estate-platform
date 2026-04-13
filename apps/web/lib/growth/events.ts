@@ -4,6 +4,7 @@
  */
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { mergeTrafficAttributionIntoMetadata } from "@/lib/attribution/social-traffic";
 import { logError } from "@/lib/logger";
 import { persistLaunchEvent } from "@/src/modules/launch/persistLaunchEvent";
 
@@ -101,14 +102,18 @@ export function fireViewListingGrowth(input: {
   listingId: string;
   city?: string | null;
   listingKind: string;
+  /** Optional `Cookie` header — attach utm_source / utm_campaign / social_source for social traffic */
+  cookieHeader?: string | null;
 }): void {
+  const base = {
+    listingId: input.listingId,
+    city: input.city ?? undefined,
+    listingKind: input.listingKind,
+  };
+  const metadata = mergeTrafficAttributionIntoMetadata(input.cookieHeader ?? null, base);
   void recordGrowthEventWithFunnel("view_listing", {
     userId: input.userId ?? undefined,
-    metadata: {
-      listingId: input.listingId,
-      city: input.city ?? undefined,
-      listingKind: input.listingKind,
-    },
+    metadata,
   });
 }
 

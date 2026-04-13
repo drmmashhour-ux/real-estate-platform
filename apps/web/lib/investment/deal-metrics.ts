@@ -20,11 +20,16 @@ export {
 
 export {
   compareDealToMarket,
+  getMarketBenchmarkForCity,
   getMarketComparisonTone,
   getMarketComparisonToneFromString,
   isMarketCity,
   marketData,
   MARKET_CITIES,
+  normalizeLegacyMarketCity,
+  QUEBEC_CITY_GROUPS,
+  resolveMarketCityInput,
   type MarketCity,
   type MarketComparisonLabel,
+  type QuebecRegionGroup,
 } from "./market-data";

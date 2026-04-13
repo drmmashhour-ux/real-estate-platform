@@ -15,7 +15,7 @@ async function main() {
     "../lib/bookings/validate-bookings-integrity"
   );
 
-  console.log("BNHub DB validation (Supabase guest bookings)\n");
+  console.log("BNHUB DB validation (Supabase guest bookings)\n");
   console.log(
     "Note: Overlap prevention at booking time is enforced by create_guest_booking RPC. This scan is an audit backstop.\n"
   );

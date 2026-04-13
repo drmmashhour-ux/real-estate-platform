@@ -49,7 +49,7 @@ export function SaveSearchButton({ tone = "gold" }: { tone?: "gold" | "slate" | 
   const gold =
     "rounded-xl border border-white/15 bg-black/30 px-3 py-2 text-xs font-semibold text-slate-200 hover:border-premium-gold/45 hover:text-white disabled:opacity-50";
   const slate =
-    "rounded-xl border border-slate-600 bg-slate-800/60 px-3 py-2 text-xs font-semibold text-slate-200 hover:border-emerald-500/40 hover:text-white disabled:opacity-50";
+    "rounded-xl border border-premium-gold/30 bg-black/40 px-3 py-2 text-xs font-semibold text-neutral-200 hover:border-premium-gold/50 hover:text-premium-gold disabled:opacity-50";
   const light =
     "rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700 hover:border-premium-gold/50 hover:bg-white disabled:opacity-50";
 

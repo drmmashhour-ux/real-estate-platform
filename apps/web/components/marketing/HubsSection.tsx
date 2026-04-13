@@ -11,10 +11,17 @@ import {
   Sparkles,
 } from "lucide-react";
 import Link from "next/link";
+import { BnHubLogoMark } from "@/components/bnhub/BnHubLogoMark";
 import { SectionHeading } from "@/components/marketing/SectionHeading";
+import { PUBLIC_MAP_SEARCH_URL } from "@/lib/search/public-map-search-urls";
 import { AnimatedReveal } from "@/components/marketing/AnimatedReveal";
+import {
+  PLATFORM_CARREFOUR_NAME,
+  PLATFORM_FINANCIAL_HUB_NAME,
+  PLATFORM_IMMOBILIER_HUB_NAME,
+} from "@/lib/brand/platform";
 
-type Hub = {
+export type MarketingHubCard = {
   name: string;
   line: string;
   href?: string;
@@ -23,11 +30,12 @@ type Hub = {
   layer?: boolean;
 };
 
-const hubs: Hub[] = [
+/** Shared list for marketing landing + hubs section. */
+export const MARKETING_HUB_CARDS: MarketingHubCard[] = [
   {
     name: "Buy hub",
     line: "Search listings, filters, and deal context — the main purchase workspace.",
-    href: "/listings",
+    href: PUBLIC_MAP_SEARCH_URL.listingsBuy,
     Icon: Search,
   },
   {
@@ -37,15 +45,15 @@ const hubs: Hub[] = [
     Icon: Home,
   },
   {
-    name: "BNHub",
-    line: "Short-term stays, trips, and host tools (dashboard after sign-in).",
+    name: "Short-term stays",
+    line: "BNHUB — trips, host tools, and guest dashboard (after sign-in).",
     href: "/bnhub",
     Icon: Building2,
   },
   {
-    name: "Mortgage hub",
-    line: "Financing paths and specialist matching.",
-    href: "/mortgage",
+    name: PLATFORM_FINANCIAL_HUB_NAME,
+    line: "Mortgage page & calculator, specialist desk, AI pricing, and buyer calculators.",
+    href: "/financial-hub",
     Icon: Landmark,
   },
   {
@@ -81,8 +89,9 @@ const hubs: Hub[] = [
   },
 ];
 
-function HubCard({ hub, delayMs }: { hub: Hub; delayMs: number }) {
+function HubCard({ hub, delayMs }: { hub: MarketingHubCard; delayMs: number }) {
   const { Icon } = hub;
+  const isBnHubCard = hub.href === "/bnhub";
 
   const inner = (
     <>
@@ -95,10 +104,17 @@ function HubCard({ hub, delayMs }: { hub: Hub; delayMs: number }) {
           }}
           aria-hidden
         >
-          <Icon className="h-6 w-6 text-premium-gold" strokeWidth={1.75} />
+          {isBnHubCard ? (
+            <BnHubLogoMark size="xs" className="!h-7 max-w-[72px] sm:!h-8 sm:max-w-[80px]" />
+          ) : (
+            <Icon className="h-6 w-6 text-premium-gold" strokeWidth={1.75} />
+          )}
         </div>
         <div className="min-w-0 flex-1">
-          <h3 className="text-lg font-semibold text-white">{hub.name}</h3>
+          <h3 className="text-lg font-semibold text-white">
+            {isBnHubCard ? <span className="sr-only">BNHUB · </span> : null}
+            {hub.name}
+          </h3>
           <p className="mt-2 text-sm leading-relaxed text-slate-400">
             <span
               className="mr-1.5 font-medium text-premium-gold/80"
@@ -150,17 +166,52 @@ function HubCard({ hub, delayMs }: { hub: Hub; delayMs: number }) {
 }
 
 export function HubsSection() {
-  const productHubs = hubs.filter((h) => !h.layer);
-  const aiLayer = hubs.find((h) => h.layer)!;
+  const productHubs = MARKETING_HUB_CARDS.filter((h) => !h.layer);
+  const aiLayer = MARKETING_HUB_CARDS.find((h) => h.layer)!;
 
   return (
     <section id="hubs" className="scroll-mt-24 bg-brand-background px-4 py-20 sm:px-6">
       <div className="mx-auto max-w-6xl">
         <SectionHeading
           eyebrow="Ecosystem hubs"
-          title="Buy, sell, BNHub, finance, AI — one platform"
-          subtitle="Public hubs below; broker, finance, and BNHub dashboards open after sign-in. Use the Hubs menu in the header for a full link map."
+          title={
+            <span className="flex flex-col items-center gap-5 sm:gap-6">
+              <BnHubLogoMark size="md" className="max-h-14 sm:max-h-16" />
+              <span className="block">Two product hubs — {PLATFORM_IMMOBILIER_HUB_NAME}</span>
+            </span>
+          }
+          subtitle={`BNHUB covers short stays, trips, and travel AI. ${PLATFORM_IMMOBILIER_HUB_NAME} (${PLATFORM_CARREFOUR_NAME}) covers long-term rent and every sales path — with a broker, platform broker, or on your own (FSBO).`}
         />
+        <div className="mb-10 grid gap-4 lg:grid-cols-2">
+          <AnimatedReveal delayMs={0}>
+            <Link
+              href="/bnhub"
+              className="block h-full rounded-2xl border border-premium-gold/35 bg-gradient-to-br from-premium-gold/14 via-premium-gold/6 to-transparent p-6 shadow-[0_0_48px_rgb(var(--premium-gold-channels)/0.12)] transition hover:border-premium-gold/55"
+              style={{ borderColor: "rgb(var(--premium-gold-channels) / 0.45)" }}
+            >
+              <BnHubLogoMark size="sm" className="max-w-[200px]" />
+              <h3 className="mt-3 text-xl font-semibold text-white">Short-term stays hub</h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-400">
+                Guest dashboard, host / hotel / motel mode on one host dashboard, trips, and Travel AI — all in BNHUB.
+              </p>
+              <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-premium-gold/75">Open BNHUB →</p>
+            </Link>
+          </AnimatedReveal>
+          <AnimatedReveal delayMs={80}>
+            <Link
+              href="/dashboard/real-estate"
+              className="block h-full rounded-2xl border border-white/12 bg-premium-card p-6 shadow-[0_0_32px_rgb(var(--premium-gold-channels)/0.08)] transition hover:border-premium-gold/40"
+            >
+              <p className="text-xs font-semibold uppercase tracking-wide text-premium-gold/90">{PLATFORM_IMMOBILIER_HUB_NAME}</p>
+              <h3 className="mt-2 text-xl font-semibold text-white">Rent &amp; sales</h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-400">
+                Long-term rent, buyer workspace, broker-guided sale, independent broker tools, and FSBO — sign in for your workspace.
+              </p>
+              <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-premium-gold/75">Open Immobilier Hub →</p>
+            </Link>
+          </AnimatedReveal>
+        </div>
+        <p className="mb-6 text-center text-sm text-slate-500">More entry points by role — browse below.</p>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {productHubs.map((hub, i) => (
             <HubCard key={hub.name} hub={hub} delayMs={i * 50} />

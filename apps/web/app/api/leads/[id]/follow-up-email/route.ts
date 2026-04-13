@@ -60,7 +60,7 @@ export async function POST(
     return NextResponse.json({ error: "Lead email unavailable" }, { status: 400 });
   }
 
-  const base = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? "https://mashhourinvestments.com";
+  const base = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? "https://lecipm.com";
   const { subject, html } = getEvaluationFollowUpEmail(templateId, {
     recipientName: lead.name,
     baseUrl: base,

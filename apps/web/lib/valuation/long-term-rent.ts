@@ -4,7 +4,7 @@ import { computeConfidenceScore, getDataConfidenceNote } from "./confidence";
 
 /**
  * Long-term rental valuation: estimate monthly rent from comparables.
- * Uses BNHub nightly * 30 as proxy when no long-term rental comps.
+ * Uses BNHUB nightly * 30 as proxy when no long-term rental comps.
  */
 export async function computeLongTermRentValuation(input: PropertyInput): Promise<LongTermRentValuationResult> {
   const comparables = await findComparableListings(input, 10);

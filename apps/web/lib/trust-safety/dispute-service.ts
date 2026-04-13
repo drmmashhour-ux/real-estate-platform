@@ -1,5 +1,5 @@
 /**
- * Short-Term Rental Service Dispute (BNHub):
+ * Short-Term Rental Service Dispute (BNHUB):
  * Guest submits complaint within 24h of check-in → freeze host payout → host response → resolution.
  */
 

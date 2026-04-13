@@ -12,7 +12,7 @@ type Props = {
 };
 
 /**
- * BNHub host: API-only Connect onboarding (create-account → create-account-link → Stripe-hosted flow).
+ * BNHUB host: API-only Connect onboarding (create-account → create-account-link → Stripe-hosted flow).
  */
 export function HostStripeConnectCta({
   initialHasAccount,

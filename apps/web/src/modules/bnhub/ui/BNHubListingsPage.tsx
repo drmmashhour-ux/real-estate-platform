@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BnHubLogoMark } from "@/components/bnhub/BnHubLogoMark";
 import { prisma } from "@/lib/db";
 import { generateListingTrustScore } from "@/src/modules/bnhub/application/trustService";
 
@@ -15,7 +16,11 @@ export async function BNHubListingsPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold text-white">BNHub listings</h1>
+      <h1 className="flex flex-col gap-3 text-2xl font-semibold text-white sm:flex-row sm:items-center">
+        <BnHubLogoMark size="sm" className="max-w-[200px]" />
+        <span className="sr-only">BNHUB </span>
+        <span>listings</span>
+      </h1>
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {listingsWithTrust.map((l) => (
           <article key={l.id} className="rounded-xl border border-white/10 bg-black/20 p-4 text-sm">

@@ -67,7 +67,7 @@ export async function getInvestorHubAnalytics(days: 7 | 30 = 7): Promise<{
     {
       hub: "nbhub",
       label: "NBHub",
-      /** Short-term stays only — CRM `listing` rows belong to broker inventory, not BNHub. */
+      /** Short-term stays only — CRM `listing` rows belong to broker inventory, not BNHUB. */
       listingsCreated: stCreated,
       dealsOrLeads: offers,
       rentalsOrBookings: bookings,

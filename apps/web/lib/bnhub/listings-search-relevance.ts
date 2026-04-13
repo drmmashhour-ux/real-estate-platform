@@ -1,5 +1,5 @@
 /**
- * Basic relevance scoring for GET /api/listings (BNHub search results).
+ * Basic relevance scoring for GET /api/listings (BNHUB search results).
  * Sorts by score when filters help ranking; falls back to rating + balanced price when none.
  */
 

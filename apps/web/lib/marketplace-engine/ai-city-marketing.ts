@@ -15,7 +15,7 @@ function templateCopy(city: string, intent: CityIntentKind, inventoryCount: numb
   if (intent === "mortgage") {
     return {
       headline: `Smarter financing in ${city}`,
-      body: `Compare pre-approval paths, stress-test payments, and keep BNHub stays or FSBO buys in one workspace — built to reduce back-and-forth.`,
+      body: `Compare pre-approval paths, stress-test payments, and keep BNHUB stays or FSBO buys in one workspace — built to reduce back-and-forth.`,
     };
   }
   if (intent === "investment") {
@@ -27,18 +27,18 @@ function templateCopy(city: string, intent: CityIntentKind, inventoryCount: numb
   if (intent === "rent") {
     return {
       headline: `Stays in ${city}, without the noise`,
-      body: `BNHub filters by dates, guests, and neighbourhood intent. ${inv}`,
+      body: `BNHUB filters by dates, guests, and neighbourhood intent. ${inv}`,
     };
   }
   if (intent === "stays") {
     return {
       headline: `Book a stay in ${city}`,
-      body: `Short-term inventory on BNHub with dates-first search. ${inv}`,
+      body: `Short-term inventory on BNHUB with dates-first search. ${inv}`,
     };
   }
   return {
     headline: `Buy & browse ${city} with guardrails`,
-    body: `FSBO transparency plus BNHub stays in one mesh. ${inv}`,
+    body: `FSBO transparency plus BNHUB stays in one mesh. ${inv}`,
   };
 }
 

@@ -76,7 +76,7 @@ export function FilterPanel({
   const light = tone === "light";
   const surface = light
     ? "border-slate-200/95 bg-white text-slate-900 shadow-[0_24px_80px_-16px_rgba(0,0,0,0.22)]"
-    : "border-white/10 bg-[#121212] text-white shadow-[0_24px_80px_-12px_rgba(0,0,0,0.75)]";
+    : "border-premium-gold/20 bg-[#0a0a0a] text-neutral-100 shadow-[0_24px_80px_-12px_rgba(0,0,0,0.75)]";
 
   return (
     <>
@@ -107,7 +107,7 @@ export function FilterPanel({
         <div
           className={[
             "flex shrink-0 items-center justify-between border-b px-4 py-3 sm:hidden",
-            light ? "border-slate-200 bg-white" : "border-white/10 bg-[#121212]",
+            light ? "border-slate-200 bg-white" : "border-premium-gold/15 bg-[#080808]",
           ].join(" ")}
         >
           <h2 className="text-base font-semibold text-inherit">Filters</h2>
@@ -116,7 +116,7 @@ export function FilterPanel({
             onClick={onClose}
             className={[
               "rounded-lg px-3 py-1.5 text-sm font-semibold",
-              light ? "text-slate-600 hover:bg-slate-100" : "text-slate-300 hover:bg-white/10",
+              light ? "text-slate-600 hover:bg-slate-100" : "text-premium-gold/90 hover:bg-premium-gold/10",
             ].join(" ")}
           >
             Close
@@ -126,7 +126,7 @@ export function FilterPanel({
         <div
           className={[
             "min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5 sm:py-5",
-            light ? "bg-white" : "",
+            light ? "bg-white" : "bg-[#080808]",
           ].join(" ")}
         >
           {children}
@@ -136,7 +136,7 @@ export function FilterPanel({
           <div
             className={[
               "shrink-0 border-t px-4 py-3 sm:px-5",
-              light ? "border-slate-200 bg-slate-50/95" : "border-white/10 bg-[#0f0f0f]/95",
+              light ? "border-slate-200 bg-slate-50/95" : "border-premium-gold/15 bg-black/90",
             ].join(" ")}
           >
             {footer}

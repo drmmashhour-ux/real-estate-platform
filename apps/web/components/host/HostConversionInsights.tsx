@@ -13,14 +13,14 @@ export function HostConversionInsights({ insights }: { insights: ListingConversi
           <p className="text-xs font-medium uppercase tracking-wide text-sky-400/90">Conversion insights</p>
           <p className="mt-1 text-sm text-slate-400">
             Based on real views, booking outcomes, and messages from the last 30 days — no artificial urgency or demand
-            estimates.
+            estimates. Rates are heuristic (e.g. completed stays ÷ views), not financial advice.
           </p>
         </div>
         <Link
           href="/bnhub/host/dashboard"
           className="shrink-0 rounded-lg border border-slate-600 px-3 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-800"
         >
-          BNHub listing tools
+          BNHUB listing tools
         </Link>
       </div>
 
@@ -41,6 +41,22 @@ export function HostConversionInsights({ insights }: { insights: ListingConversi
                   Within expected range
                 </span>
               )}
+            </div>
+
+            <div className="mt-3 rounded-lg border border-slate-800/90 bg-slate-950/80 px-3 py-2 text-[11px] text-slate-400 sm:text-xs">
+              <p className="font-medium text-slate-500">Funnel (same window)</p>
+              <p className="mt-1 tabular-nums text-slate-300">
+                Views <span className="text-slate-500">→</span> starts <span className="text-slate-500">→</span> completed
+              </p>
+              <p className="mt-0.5 tabular-nums text-slate-200">
+                {row.metrics.listingViews} → {row.metrics.bookingStarts} → {row.metrics.bookingsCompleted}
+              </p>
+              {row.metrics.bookingStarts > 0 && row.metrics.bookingsCompleted < row.metrics.bookingStarts ? (
+                <p className="mt-1 text-amber-200/90">
+                  Uncompleted starts in window: {row.metrics.bookingStarts - row.metrics.bookingsCompleted} (see
+                  abandonment % for explicit abandoned events)
+                </p>
+              ) : null}
             </div>
 
             <dl className="mt-3 grid gap-2 text-xs sm:grid-cols-2">

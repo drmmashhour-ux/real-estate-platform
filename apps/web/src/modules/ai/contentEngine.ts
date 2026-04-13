@@ -20,7 +20,7 @@ function autopilotTable(): AutopilotDelegate | null {
 }
 
 const ROTATING_SOCIAL_TOPICS = [
-  "Montreal BNHub stay highlights",
+  "Montreal BNHUB stay highlights",
   "Quebec real estate — what hosts should know",
   "Winter booking trends on LECIPM",
 ];
@@ -50,7 +50,7 @@ export async function generateSocial(topicHint?: string): Promise<string> {
 
 /** Email subject + HTML; optional brief for the campaign. */
 export async function generateEmail(brief?: string) {
-  return generateEmailCopy(brief ?? "Weekly LECIPM + BNHub digest for subscribers.");
+  return generateEmailCopy(brief ?? "Weekly LECIPM + BNHUB digest for subscribers.");
 }
 
 export type DailyAutopilotContentResult = {

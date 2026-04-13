@@ -9,7 +9,7 @@ const TONE_CLASS: Record<ListingTransactionFlagValue["tone"], string> = {
 export function ListingTransactionFlag({ flag }: { flag: ListingTransactionFlagValue }) {
   return (
     <span
-      className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] ${TONE_CLASS[flag.tone]}`}
+      className={`inline-flex max-w-full items-center rounded-full border px-3 py-1.5 text-xs font-semibold leading-snug tracking-wide ${TONE_CLASS[flag.tone]}`}
     >
       {flag.label}
     </span>

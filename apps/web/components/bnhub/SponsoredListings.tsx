@@ -1,7 +1,9 @@
 import Link from "next/link";
+import { ListingCodeBadge } from "@/components/bnhub/ListingCodeBadge";
 import { getActivePromotedListingIds } from "@/lib/promotions";
 import { prisma } from "@/lib/db";
-import { ListingStatus } from "@prisma/client";
+import { ListingStatus, VerificationStatus } from "@prisma/client";
+import { VerifiedListingBadge } from "@/components/listings/VerifiedListingBadge";
 
 function photoFirst(photos: unknown): string | null {
   if (!Array.isArray(photos)) return null;
@@ -26,6 +28,7 @@ export async function SponsoredListings({ variant = "dark" }: { variant?: "dark"
       city: true,
       nightPriceCents: true,
       photos: true,
+      verificationStatus: true,
     },
   });
 
@@ -33,27 +36,36 @@ export async function SponsoredListings({ variant = "dark" }: { variant?: "dark"
 
   if (variant === "booking") {
     return (
-      <div className="col-span-full rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="col-span-full rounded-lg border border-premium-gold/25 bg-black/40 p-4 backdrop-blur-sm">
         <div className="mb-3 flex items-center gap-2">
-          <h3 className="text-sm font-bold text-slate-900">Sponsored</h3>
-          <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold uppercase text-slate-600">Ad</span>
+          <h3 className="text-sm font-bold text-premium-gold">Sponsored</h3>
+          <span className="rounded border border-premium-gold/30 bg-premium-gold/10 px-1.5 py-0.5 text-[10px] font-bold uppercase text-premium-gold/90">
+            Ad
+          </span>
         </div>
         <ul className="flex gap-3 overflow-x-auto pb-1">
           {listings.map((l) => {
             const href = `/bnhub/stays/${l.listingCode || l.id}`;
             const img = photoFirst(l.photos);
             return (
-              <li key={l.id} className="w-40 shrink-0">
-                <Link href={href} className="block overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-                  <div className="aspect-[4/3] bg-slate-100">
+              <li key={l.id} className="w-44 shrink-0">
+                <Link
+                  href={href}
+                  className="block overflow-hidden rounded-lg border border-premium-gold/20 bg-black/50 shadow-sm transition hover:border-premium-gold/50"
+                >
+                  <div className="relative aspect-[4/3] bg-neutral-900">
+                    {l.verificationStatus === VerificationStatus.VERIFIED ? <VerifiedListingBadge variant="light" /> : null}
                     {img ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={img} alt="" className="h-full w-full object-cover" />
                     ) : null}
                   </div>
                   <div className="p-2">
-                    <p className="line-clamp-2 text-xs font-semibold text-slate-900">{l.title}</p>
-                    <p className="mt-1 text-xs font-bold text-slate-800">${(l.nightPriceCents / 100).toFixed(0)}/nt</p>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <p className="line-clamp-2 text-xs font-semibold text-neutral-100">{l.title}</p>
+                      <ListingCodeBadge code={l.listingCode} className="!text-[9px]" />
+                    </div>
+                    <p className="mt-1 text-xs font-bold text-premium-gold">${(l.nightPriceCents / 100).toFixed(0)} / nt</p>
                   </div>
                 </Link>
               </li>
@@ -79,14 +91,18 @@ export async function SponsoredListings({ variant = "dark" }: { variant?: "dark"
           return (
             <li key={l.id} className="w-44 shrink-0">
               <Link href={href} className="block rounded-lg border border-slate-800 bg-slate-950/60">
-                <div className="aspect-[4/3] overflow-hidden rounded-t-lg bg-slate-800">
+                <div className="relative aspect-[4/3] overflow-hidden rounded-t-lg bg-slate-800">
+                  {l.verificationStatus === VerificationStatus.VERIFIED ? <VerifiedListingBadge variant="dark" /> : null}
                   {img ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={img} alt="" className="h-full w-full object-cover" />
                   ) : null}
                 </div>
                 <div className="p-2">
-                  <p className="line-clamp-2 text-xs font-medium text-slate-200">{l.title}</p>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <p className="line-clamp-2 text-xs font-medium text-slate-200">{l.title}</p>
+                    <ListingCodeBadge code={l.listingCode} className="!text-[9px]" />
+                  </div>
                   <p className="mt-1 text-xs text-emerald-400">${(l.nightPriceCents / 100).toFixed(0)} / nt</p>
                 </div>
               </Link>

@@ -12,7 +12,7 @@ export const BROKER_PHONE_LINK = "tel:+15144624457";
 /** @deprecated Use SUPPORT_PHONE — kept for imports that expect CONTACT_PHONE */
 export const CONTACT_PHONE = SUPPORT_PHONE;
 
-export const CONTACT_EMAIL = "dr.m.mashhour@gmail.com";
+export const CONTACT_EMAIL = "info@lecipm.com";
 
 /** Street address shown in footer, contact page, and marketing blocks. Override with NEXT_PUBLIC_OFFICE_ADDRESS. */
 export const OFFICE_ADDRESS_DEFAULT = "207-805 boul. Chomedey, Laval, QC H7V 0B1";
@@ -60,7 +60,7 @@ export function getContactEmail(): string {
 }
 
 /**
- * Platform support click-to-call (BNHub “call us”, header, etc.).
+ * Platform support click-to-call (BNHUB “call us”, header, etc.).
  * @deprecated Prefer getSupportTelHref — name kept for older call sites.
  */
 export function getContactTelHref(): string {

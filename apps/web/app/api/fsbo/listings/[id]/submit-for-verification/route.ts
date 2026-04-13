@@ -4,6 +4,8 @@ import { FSBO_STATUS } from "@/lib/fsbo/constants";
 import { assertSellerHubSubmitReady } from "@/lib/fsbo/seller-hub-validation";
 import { ensureFsboListingDocumentSlots } from "@/lib/fsbo/seller-hub-seed-documents";
 import { persistSellerDeclarationAiReview } from "@/lib/fsbo/seller-declaration-ai-review";
+import { ensureFsboListingListingCode } from "@/lib/fsbo/ensure-fsbo-listing-code";
+import { notifyFsboListingSubmittedForReview } from "@/lib/listing-lifecycle/notify-fsbo-listing-submitted";
 import type { RiskAlertSeverity } from "@prisma/client";
 import { isTrustGraphEnabled } from "@/lib/trustgraph/config";
 import { assertListingPublishTrustGate } from "@/lib/trustgraph/application/integrations/listingPublishIntegration";
@@ -84,14 +86,24 @@ export async function POST(_request: Request, context: { params: Promise<{ id: s
     }
   }
 
-  await prisma.fsboListing.update({
-    where: { id },
-    data: {
-      status: FSBO_STATUS.PENDING_VERIFICATION,
-      moderationStatus: "PENDING",
-      rejectReason: null,
-    },
+  let listingCodeOut: string | null = null;
+  await prisma.$transaction(async (tx) => {
+    listingCodeOut = await ensureFsboListingListingCode(tx, id);
+    await tx.fsboListing.update({
+      where: { id },
+      data: {
+        status: FSBO_STATUS.PENDING_VERIFICATION,
+        moderationStatus: "PENDING",
+        rejectReason: null,
+      },
+    });
   });
 
-  return Response.json({ ok: true, status: FSBO_STATUS.PENDING_VERIFICATION });
+  void notifyFsboListingSubmittedForReview(id).catch(() => null);
+
+  return Response.json({
+    ok: true,
+    status: FSBO_STATUS.PENDING_VERIFICATION,
+    listingCode: listingCodeOut,
+  });
 }

@@ -16,15 +16,15 @@ const SEED_LISTINGS = [
   { id: "seed-listing-004", name: "Scenic getaway" },
 ] as const;
 
-/** Idempotent demo rows for BNHub Marketing Engine (after main seed). */
+/** Idempotent demo rows for BNHUB Marketing Engine (after main seed). */
 export async function seedBnhubMarketingDemo(hostUserId: string): Promise<void> {
   const existing = await prisma.bnhubMarketingCampaign.count().catch(() => -1);
   if (existing === -1) {
-    console.log("  (skip BNHub marketing seed — tables not migrated)");
+    console.log("  (skip BNHUB marketing seed — tables not migrated)");
     return;
   }
   if (existing > 0) {
-    console.log("  BNHub marketing demo already present");
+    console.log("  BNHUB marketing demo already present");
     return;
   }
 
@@ -56,5 +56,5 @@ export async function seedBnhubMarketingDemo(hostUserId: string): Promise<void> 
     if (home) await publishToInternalHomepageMock(home.id);
     if (boost) await publishToInternalSearchBoostMock(boost.id, 8);
   }
-  console.log("  BNHub marketing demo: campaigns + EN/FR assets + internal publish (luxury + 3 listings when present)");
+  console.log("  BNHUB marketing demo: campaigns + EN/FR assets + internal publish (luxury + 3 listings when present)");
 }

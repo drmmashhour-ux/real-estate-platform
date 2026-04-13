@@ -63,7 +63,7 @@ export async function runGrowthAutomation(options?: { limitPerTrigger?: number }
       triggerKey: GrowthTriggerKey.LISTING_INCOMPLETE,
       idempotencyKey: idem,
       subject: "Complete your listing to improve trust — LECIPM",
-      body: `Hi,\n\nYour BNHub listing "${row.title?.slice(0, 80) ?? "listing"}" is still in draft. Complete photos, description, and verification to improve trust and visibility.\n\n— LECIPM`,
+      body: `Hi,\n\nYour BNHUB listing "${row.title?.slice(0, 80) ?? "listing"}" is still in draft. Complete photos, description, and verification to improve trust and visibility.\n\n— LECIPM`,
     });
     if (r.ok && r.skipped) skipped += 1;
     else if (r.ok) sent += 1;

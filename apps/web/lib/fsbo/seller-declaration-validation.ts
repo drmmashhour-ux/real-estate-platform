@@ -3,7 +3,13 @@
  * Used for mark-complete and optional client-side hints.
  */
 
-import type { PartyIdentity, SellerDeclarationData, StructuredPropertyAddress } from "@/lib/fsbo/seller-declaration-schema";
+import {
+  effectiveSectionApplies,
+  needsAuthoritySupplementalPath,
+  type PartyIdentity,
+  type SellerDeclarationData,
+  type StructuredPropertyAddress,
+} from "@/lib/fsbo/seller-declaration-schema";
 
 const CA_POSTAL_RE = /^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -57,20 +63,6 @@ export type SellerDeclarationValidationResult = {
 
 function nonEmpty(s: unknown, min = 2): boolean {
   return typeof s === "string" && s.trim().length >= min;
-}
-
-function partyFieldsFilled(p: PartyIdentity): boolean {
-  return (
-    p.idType !== "" &&
-    nonEmpty(p.idNumber) &&
-    nonEmpty(p.fullName) &&
-    nonEmpty(p.dateOfBirth) &&
-    nonEmpty(p.occupation) &&
-    nonEmpty(p.annualIncome) &&
-    nonEmpty(p.phone) &&
-    nonEmpty(p.email) &&
-    Boolean(p.idDocumentUrl?.trim())
-  );
 }
 
 function structuredAddressFilled(a: StructuredPropertyAddress): boolean {
@@ -196,13 +188,24 @@ export function validateSellerDeclarationIntegrity(
   const sellers = d.sellers ?? [];
   const addr = d.propertyAddressStructured ?? { street: "", unit: "", city: "", postalCode: "" };
 
-  if (!d.hasAuthorityToSell) {
-    errors.push("Confirm you have authority to sell (Identity section).");
-    fieldErrors["hasAuthorityToSell"] = "Required";
-  }
-  if (!nonEmpty(d.identityNotes, 2)) {
-    errors.push("Add identity / authority notes.");
-    fieldErrors["identityNotes"] = "Add a short note (co-owners, mandate, etc.)";
+  if (needsAuthoritySupplementalPath(d)) {
+    if (!d.hasAuthorityToSell) {
+      errors.push("Confirm you have authority to sell (required when a selling capacity option is selected).");
+      fieldErrors["hasAuthorityToSell"] = "Required";
+    }
+    if (!nonEmpty(d.identityNotes, 2)) {
+      errors.push("Add identity / authority notes for the selected selling capacity.");
+      fieldErrors["identityNotes"] = "Add a short note (co-owners, mandate, file numbers, etc.)";
+    }
+    const docs = d.authoritySupplementalDocs ?? [];
+    const hasFile = docs.some((x) => x?.fileUrl && String(x.fileUrl).trim().length > 0);
+    if (!hasFile) {
+      errors.push(
+        "For a company, lawyer/notary, or representative under mandate, upload at least one document evidencing your authority (e.g. PoA, corporate resolution, or professional status)."
+      );
+      fieldErrors["authoritySupplementalDocs"] =
+        "Upload at least one PDF or image (mandate, corporate authorization, or professional ID).";
+    }
   }
 
   if (!structuredAddressFilled(addr)) {
@@ -293,12 +296,26 @@ export function validateSellerDeclarationIntegrity(
       fieldErrors[`sellers.${i}.phone`] = fieldErrors[`sellers.${i}.phone`] ?? "Enter a valid phone number (include area code)";
       errors.push(`Seller ${i + 1}: invalid phone format.`);
     }
-    if (!partyFieldsFilled(s)) {
+    const idFieldsReady =
+      s.idType !== "" &&
+      nonEmpty(s.idNumber) &&
+      nonEmpty(s.fullName) &&
+      nonEmpty(s.dateOfBirth) &&
+      nonEmpty(s.occupation) &&
+      nonEmpty(s.annualIncome) &&
+      nonEmpty(s.phone) &&
+      nonEmpty(s.email) &&
+      Boolean(s.idDocumentUrl?.trim());
+    if (!idFieldsReady) {
       errors.push(`Seller ${i + 1}: complete all identity fields and ID document upload.`);
+    } else if (!s.idDetailsConfirmed) {
+      fieldErrors[`sellers.${i}.idDetailsConfirmed`] =
+        "Confirm your ID type, number, and uploaded document match before continuing.";
+      errors.push(`Seller ${i + 1}: confirm ID details (checkbox below).`);
     }
   }
 
-  if (d.isCondo) {
+  if (d.isCondo && effectiveSectionApplies(d, "condo", propertyType) !== false) {
     if (!nonEmpty(d.condoContingencyFundDetails, 12)) {
       errors.push("Add condo contingency-fund details or a short factual explanation.");
       fieldErrors["condoContingencyFundDetails"] = "Required for condo / divided co-ownership";

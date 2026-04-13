@@ -5,7 +5,7 @@ import { getOrCreateUserLoyaltyProfile } from "@/lib/loyalty/loyalty-service";
 
 export const dynamic = "force-dynamic";
 
-/** GET /api/bnhub/loyalty/me — current guest BNHub loyalty tier (requires session). */
+/** GET /api/bnhub/loyalty/me — current guest BNHUB loyalty tier (requires session). */
 export async function GET() {
   const userId = await getGuestId();
   if (!userId) {

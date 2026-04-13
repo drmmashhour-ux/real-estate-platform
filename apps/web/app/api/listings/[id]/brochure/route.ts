@@ -78,8 +78,8 @@ export async function GET(
   if (resolved.kind === "bnhub") {
     const html = buildBrandedDocumentHtml({
       title: resolved.slug,
-      subtitle: `${resolved.city ?? "BNHub"} · ${asText(resolved.propertyType ?? "Short stay")} · Guest brochure`,
-      badge: "BNHub listing",
+      subtitle: `${resolved.city ?? "BNHUB"} · ${asText(resolved.propertyType ?? "Short stay")} · Guest brochure`,
+      badge: "BNHUB listing",
       sections: [
         {
           title: "Listing summary",
@@ -92,13 +92,13 @@ export async function GET(
         {
           title: "Booking and safety",
           bodyHtml: renderBulletList([
-            "Use the live BNHub listing page for current photos, availability, pricing, and host verification details.",
+            "Use the live BNHUB listing page for current photos, availability, pricing, and host verification details.",
             "Always complete booking and payment through the platform workflow to preserve auditability and guest protections.",
             "Report suspicious listing, payment, or communication behavior through the platform support and trust-safety flows.",
           ]),
         },
       ],
-      footerNote: "Generated from the live BNHub listing reference. Use browser Print > Save as PDF for a branded brochure.",
+      footerNote: "Generated from the live BNHUB listing reference. Use browser Print > Save as PDF for a branded brochure.",
     });
 
     return new NextResponse(html, {

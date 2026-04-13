@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 type SortKey = "ai" | "price_low" | "price_high" | "newest" | "recommended";
 
 /**
- * POST — BNHub stays search with AI scores on each listing (`ai`, `recommended` sorts).
+ * POST — BNHUB stays search with AI scores on each listing (`ai`, `recommended` sorts).
  */
 export async function POST(request: NextRequest) {
   try {

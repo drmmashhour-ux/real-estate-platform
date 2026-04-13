@@ -3,14 +3,14 @@
  * Usage: DEAL_ANALYZER_ENABLED=true LISTING_ID=<fsbo id> npx tsx prisma/seed-deal-analyzer-demo.ts
  * Optional Phase 2: DEAL_ANALYZER_COMPS_ENABLED=true DEAL_ANALYZER_SCENARIOS_ENABLED=true
  *   npx tsx prisma/seed-deal-analyzer-demo.ts
- * Optional BNHub overlay: SHORT_TERM_LISTING_ID=<bnhub uuid> DEAL_ANALYZER_BNHUB_MODE_ENABLED=true
+ * Optional BNHUB overlay: SHORT_TERM_LISTING_ID=<bnhub uuid> DEAL_ANALYZER_BNHUB_MODE_ENABLED=true
  *
  * Manual QA matrix (pick listings in your DB that match each profile):
  * - Strong rental cash-flow: high investment score, rental scenarios non-low confidence.
  * - Overpriced vs comps: list price above_comparable_range when enough comps exist.
  * - High trust, weak comps: high trustScore but comparablesSummary insufficient_comparable_data.
- * - BNHub strong short-term: SHORT_TERM_LISTING_ID with verified listing + positive net in bnhub overlay.
- * - BNHub insufficient data: SHORT_TERM_LISTING_ID with nightPriceCents=0 or invalid.
+ * - BNHUB strong short-term: SHORT_TERM_LISTING_ID with verified listing + positive net in bnhub overlay.
+ * - BNHUB insufficient data: SHORT_TERM_LISTING_ID with nightPriceCents=0 or invalid.
  * - Mixed portfolio: GET portfolio-status with multiple compareIds after Phase 2 on each.
  * - Value-add: Phase 1 value_add_candidate + Phase 2 review.
  * - High risk / TrustGraph: low trust or high riskScore with Phase 2 caution / insufficient_data.

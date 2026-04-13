@@ -3,7 +3,7 @@ import { fetchGuestSupabaseBookingStatusOnly } from "@/lib/bookings/guest-supaba
 export const dynamic = "force-dynamic";
 
 /**
- * GET /api/bookings/guest/[bookingId]/status — BNHub Supabase guest booking status (platform-owned; replaces direct mobile anon reads).
+ * GET /api/bookings/guest/[bookingId]/status — BNHUB Supabase guest booking status (platform-owned; replaces direct mobile anon reads).
  */
 export async function GET(_req: Request, context: { params: Promise<{ bookingId: string }> }) {
   const { bookingId } = await context.params;

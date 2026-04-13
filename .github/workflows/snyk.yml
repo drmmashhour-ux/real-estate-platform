@@ -1,0 +1,101 @@
+# Snyk CLI — dependency & manifest vulnerability scan (`pnpm dlx snyk`).
+# Secret: SNYK_TOKEN — https://docs.snyk.io/snyk-api-info/authentication-for-api
+# Fork PRs: no secrets → test job skips with notice (same as before).
+name: Snyk
+
+permissions:
+  contents: read
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 7 * * 1"
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main]
+
+concurrency:
+  group: snyk-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  test:
+    name: Snyk test (all projects)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Snyk test
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: |
+          if [ -z "${SNYK_TOKEN:-}" ]; then
+            echo "::notice title=Snyk skipped::Set SNYK_TOKEN in repo Secrets to enable dependency scanning."
+            exit 0
+          fi
+          set -euo pipefail
+          pnpm dlx snyk@latest test --all-projects \
+            --severity-threshold=high \
+            --json-file-output=snyk-report.json
+
+      - name: Upload Snyk JSON report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: snyk-report
+          path: snyk-report.json
+          if-no-files-found: ignore
+
+  monitor:
+    name: Snyk monitor (main only)
+    needs: [test]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Snyk monitor
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: |
+          if [ -z "${SNYK_TOKEN:-}" ]; then
+            echo "::notice title=Snyk monitor skipped::Set SNYK_TOKEN to enable continuous monitoring in Snyk UI."
+            exit 0
+          fi
+          set -euo pipefail
+          pnpm dlx snyk@latest monitor --all-projects

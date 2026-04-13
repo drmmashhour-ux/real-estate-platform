@@ -1,5 +1,5 @@
 /**
- * Verifies Prisma can read BNHub money-layer columns/tables (migration applied).
+ * Verifies Prisma can read BNHUB money-layer columns/tables (migration applied).
  * Run from apps/web: `pnpm exec tsx scripts/bnhub-money-layer-schema-verify.ts`
  */
 import { prisma } from "../lib/db";

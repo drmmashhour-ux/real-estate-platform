@@ -6,7 +6,7 @@
 
 import { sendEmail, getNotificationEmail, getReplyToEmail } from "./resend";
 
-/** Public BNHub listing URL for emails (uses app base URL + slug). */
+/** Public BNHUB listing URL for emails (uses app base URL + slug). */
 export function bnhubListingPublicUrl(listingCodeOrId: string | null | undefined): string | undefined {
   const slug = listingCodeOrId?.trim();
   if (!slug) return undefined;
@@ -28,7 +28,7 @@ const LEGAL_EMAIL_FOOTER_COMPANY = "LECIPM";
 
 /** Legal footer for all outgoing emails: company, contact, and links to Terms & Privacy. */
 export function getLegalEmailFooter(): string {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL?.trim() || "https://mashhourinvestments.com";
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL?.trim() || "https://lecipm.com";
   const termsUrl = `${baseUrl.replace(/\/$/, "")}/legal/terms`;
   const privacyUrl = `${baseUrl.replace(/\/$/, "")}/legal/privacy`;
   const footerEmail = getContactEmail();
@@ -56,7 +56,7 @@ function getEmailFooter(): string {
     `Broker: ${getBrokerPhoneDisplay()}`,
     `✉️ ${email && email.includes("@") ? `<a href="mailto:${email}" style="color:#666;">${email}</a>` : email}`,
   ];
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL?.trim() || "https://mashhourinvestments.com";
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL?.trim() || "https://lecipm.com";
   const termsUrl = `${baseUrl.replace(/\/$/, "")}/legal/terms`;
   const privacyUrl = `${baseUrl.replace(/\/$/, "")}/legal/privacy`;
   const links = `<a href="${termsUrl}" style="color:#666;">Terms</a> &middot; <a href="${privacyUrl}" style="color:#666;">Privacy Policy</a>`;
@@ -357,7 +357,7 @@ export async function sendPropertyEstimateEmailToUser(params: {
   maxValue: number;
 }): Promise<boolean> {
   if (!params.clientEmail || !params.clientEmail.includes("@")) return false;
-  const base = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? "https://mashhourinvestments.com";
+  const base = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? "https://lecipm.com";
   const consultUrl = `${base}/sell#sell-consultation`;
   const name = params.clientName?.trim() || params.clientEmail.split("@")[0] || "there";
   const fmt = (n: number) =>

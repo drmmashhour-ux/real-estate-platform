@@ -67,30 +67,36 @@ export function buildCityIntentMetadata(
   }
 
   if (intent === "stays") {
-    const title = `BNHub stays in ${city} (${region}) | Short-term rentals | LECIPM`;
-    const description = `Discover short-term stays and nightly rentals in ${city}. Filter by dates and guests on BNHub — book with clear pricing on LECIPM.`;
+    const title = `BNHUB stays in ${city} (${region}) | Short-term rentals | LECIPM`;
+    const description = `Discover short-term stays and nightly rentals in ${city}. Filter by dates and guests on BNHUB — book with clear pricing on LECIPM.`;
     return programmaticSeoMeta({
       path,
       title,
       description,
-      keywords: [`${city} vacation rental`, `short term stay ${city}`, "BNHub", "LECIPM"],
+      keywords: [`${city} vacation rental`, `short term stay ${city}`, "BNHUB", "LECIPM"],
     });
   }
 
   if (intent === "rent") {
-    const title = `Rent & short-term stays in ${city} | LECIPM BNHub`;
-    const description = `Find verified stays and rentals in ${city}. Local benefits, traveler FAQs, and fast booking on LECIPM BNHub.`;
+    const title = `Rent in ${city}, ${region} | Apartments, homes & BNHUB stays | LECIPM`;
+    const description = `Find rentals and short-term stays in ${city}: browse verified BNHUB listings with nightly rates, FSBO inventory where available, and local FAQs on LECIPM.`;
     return programmaticSeoMeta({
       path,
       title,
       description,
-      keywords: [`rent ${city}`, `short term rental ${city}`, "BNHub", "LECIPM"],
+      keywords: [
+        `rent ${city}`,
+        `apartments ${city}`,
+        `short term rental ${city}`,
+        "BNHUB",
+        "LECIPM",
+      ],
     });
   }
 
   if (intent === "investment") {
     const title = `Real estate investment in ${city} (${region}) | Market snapshot | LECIPM`;
-    const description = `Explore investment angles in ${city}: FSBO inventory, BNHub yields, and rent vs buy context. Tools and FAQs on LECIPM.`;
+    const description = `Explore investment angles in ${city}: FSBO inventory, BNHUB yields, and rent vs buy context. Tools and FAQs on LECIPM.`;
     return programmaticSeoMeta({
       path,
       title,
@@ -121,20 +127,20 @@ export function intentBenefits(intent: CityIntentKind, slug: GrowthCitySlug): st
   if (intent === "rent") {
     return [
       `Curated stays and nightly rentals in ${city}`,
-      "Verified BNHub hosts with clear pricing",
+      "Verified BNHUB hosts with clear pricing",
       "Guest protections and simple booking flow",
     ];
   }
   if (intent === "stays") {
     return [
-      `Nightly stays in ${city} with BNHub filters for dates and guests`,
+      `Nightly stays in ${city} with BNHUB filters for dates and guests`,
       "See pricing upfront before you commit",
       "Secure booking flow and clear listing detail pages",
     ];
   }
   if (intent === "investment") {
     return [
-      `Blend FSBO acquisitions with BNHub yield benchmarks in ${city}`,
+      `Blend FSBO acquisitions with BNHUB yield benchmarks in ${city}`,
       "Deal analyzer + ROI tools on-platform",
       "Structured content: best pockets, rent vs buy, liquidity",
     ];
@@ -173,12 +179,12 @@ export function intentFaqs(
     return [
       {
         question: `How do I book a stay in ${city}?`,
-        answer: `Open BNHub search for ${city}, pick your dates and guest count, then review house rules and cancellation terms on each listing before you book.`,
+        answer: `Open BNHUB search for ${city}, pick your dates and guest count, then review house rules and cancellation terms on each listing before you book.`,
       },
       {
         question: "Are prices shown per night?",
         answer:
-          "BNHub listings show nightly rates; taxes and fees may be summarized at checkout depending on the listing. Always confirm the final total before paying.",
+          "BNHUB listings show nightly rates; taxes and fees may be summarized at checkout depending on the listing. Always confirm the final total before paying.",
       },
       {
         question: "Can I share a listing with someone I’m traveling with?",
@@ -190,7 +196,7 @@ export function intentFaqs(
     return [
       {
         question: `What can I rent in ${city}?`,
-        answer: `BNHub offers short-term and travel stays in and near ${city}. Use filters for dates, guests, and neighbourhood preferences.`,
+        answer: `BNHUB offers short-term and travel stays in and near ${city}. Use filters for dates, guests, and neighbourhood preferences.`,
       },
       {
         question: "Are hosts verified?",
@@ -207,7 +213,7 @@ export function intentFaqs(
     return [
       {
         question: `Where do investors start in ${city}?`,
-        answer: `Review the market snapshot, compare FSBO ask prices with BNHub nightly rates, then stress-test assumptions in the deal analyzer.`,
+        answer: `Review the market snapshot, compare FSBO ask prices with BNHUB nightly rates, then stress-test assumptions in the deal analyzer.`,
       },
       {
         question: "Are yield figures guaranteed?",

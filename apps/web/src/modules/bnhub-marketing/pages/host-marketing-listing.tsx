@@ -169,7 +169,7 @@ export function HostMarketingListing({ listingId }: { listingId: string }) {
         confirmLabel="Submit note (copy for admin)"
         onConfirm={async () => {
           await navigator.clipboard.writeText(
-            `BNHub boost review\nListing: ${listingId}\nHost note: ${boostNote || "(none)"}\n— sent via BNHub Marketing UI`
+            `BNHUB boost review\nListing: ${listingId}\nHost note: ${boostNote || "(none)"}\n— sent via BNHUB Marketing UI`
           );
           setBoostOpen(false);
           setBoostNote("");

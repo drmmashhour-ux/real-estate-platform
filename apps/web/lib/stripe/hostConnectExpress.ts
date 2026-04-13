@@ -1,5 +1,5 @@
 /**
- * BNHub host Stripe Connect Express — create account + Account Links (API onboarding only).
+ * BNHUB host Stripe Connect Express — create account + Account Links (API onboarding only).
  */
 
 import type Stripe from "stripe";
@@ -9,7 +9,7 @@ import { logInfo } from "@/lib/logger";
 
 const DEFAULT_COUNTRY = (process.env.STRIPE_CONNECT_DEFAULT_COUNTRY ?? "CA").toUpperCase();
 
-/** BNHub Supabase `listings.host_user_id` counts toward host eligibility when Prisma short-term count is zero. */
+/** BNHUB Supabase `listings.host_user_id` counts toward host eligibility when Prisma short-term count is zero. */
 export function isBnhubHostConnectEligible(
   role: string,
   shortTermListingCount: number,

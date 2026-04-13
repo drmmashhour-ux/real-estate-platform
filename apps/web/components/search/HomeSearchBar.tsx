@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { Search } from "lucide-react";
 import { globalFiltersToUrlParams, listingTypeForSaleBrowseHref } from "@/components/search/FilterState";
 import {
@@ -11,6 +11,7 @@ import {
   type BrowseMode,
 } from "@/components/search/home-search-modes";
 import { PriceRangeSlider } from "@/components/search/PriceRangeSlider";
+import { QuebecLocationInput } from "@/components/search/QuebecLocationInput";
 import { propertyPresetFromPrices } from "@/components/search/SearchBar";
 import { SEARCH_BTN_PRIMARY, SEARCH_BTN_SECONDARY, SEARCH_JOURNEY } from "@/components/search/search-bar-classes";
 import { useSearchEngineContext } from "@/components/search/SearchEngine";
@@ -29,6 +30,7 @@ type HomeSearchBarProps = {
 };
 
 export function HomeSearchBar({ tone, heroBrowseMode, onHeroBrowseModeChange, onSearchClick }: HomeSearchBarProps) {
+  const homeLocationId = useId();
   const {
     draft,
     setDraft,
@@ -110,11 +112,14 @@ export function HomeSearchBar({ tone, heroBrowseMode, onHeroBrowseModeChange, on
       }
     >
       <div className="min-w-0 w-full">
-        <label className={`mb-1 block text-[11px] font-semibold uppercase tracking-wide ${labelCls}`}>Location</label>
-        <input
-          type="text"
+        <label htmlFor={homeLocationId} className={`mb-1 block text-[11px] font-semibold uppercase tracking-wide ${labelCls}`}>
+          Location
+        </label>
+        <QuebecLocationInput
+          id={homeLocationId}
           value={draft.location}
-          onChange={(e) => setDraft((d) => ({ ...d, location: e.target.value }))}
+          onChange={(v) => setDraft((d) => ({ ...d, location: v }))}
+          tone={light ? "light" : "dark"}
           placeholder="City, area, or LEC- / LST- code"
           className={`w-full rounded-lg border ${inputCls}`}
         />

@@ -6,6 +6,7 @@ import { getPhoneTelLink } from "@/lib/phone";
 import { ClientCommunicationChat } from "@/components/ai/ClientCommunicationChat";
 import { ImmoContactTrustRow } from "@/components/immo/ImmoContactTrustRow";
 import { IMMO_OPEN_CHAT_EVENT, type ImmoOpenChatDetail } from "@/lib/immo/immo-chat-events";
+import { LISTING_EXPLORE_NO_PAYMENT_LINE } from "@/lib/listings/listing-ad-trust-copy";
 import { CTA_PRIMARY_LG } from "@/lib/ui/cta-classes";
 
 export type ImmoContactSource = "contact_broker" | "book_visit" | "more_info" | "ask_question";
@@ -74,6 +75,13 @@ function ContactButtons({
 
   return (
     <div className={`flex ${flex} items-stretch`}>
+      <a
+        href="#availability"
+        className={primaryClass}
+        onClick={() => logContact(listingId, "book_now_sticky")}
+      >
+        Reserve now
+      </a>
       {useImmo ? (
         <button
           type="button"
@@ -81,7 +89,7 @@ function ContactButtons({
             logContact(listingId, "immo_contact_broker");
             onImmoOpen("contact_broker");
           }}
-          className={primaryClass}
+          className={secondaryOutline}
         >
           Contact broker
         </button>
@@ -89,7 +97,7 @@ function ContactButtons({
         <Link
           href={messagesHref}
           onClick={() => logContact(listingId, "contact_host")}
-          className={primaryClass}
+          className={secondaryOutline}
         >
           {contactLabel}
         </Link>
@@ -164,6 +172,8 @@ export function ListingStickyContactBar({
   contactLabel,
   immoListing,
   introducedByBrokerId,
+  /** When true, skip the dark mobile bottom dock (e.g. BNHub uses `BnhubMobileStickyBookingBar` instead). */
+  suppressMobileFixed = false,
 }: {
   listingId: string;
   listingCode?: string | null;
@@ -172,8 +182,9 @@ export function ListingStickyContactBar({
   supportTel?: string;
   contactLabel: string;
   immoListing?: ImmoListingProps;
-  /** BNHub listing owner (broker) for AI handoff + scoring. */
+  /** BNHUB listing owner (broker) for AI handoff + scoring. */
   introducedByBrokerId?: string | null;
+  suppressMobileFixed?: boolean;
 }) {
   const [immoOpen, setImmoOpen] = useState(false);
 
@@ -236,26 +247,33 @@ export function ListingStickyContactBar({
         </div>
       ) : null}
 
-      <div
-        className="fixed inset-x-0 bottom-0 z-50 border-t border-slate-800 bg-slate-950/95 px-3 py-3 shadow-[0_-8px_32px_rgba(0,0,0,0.45)] backdrop-blur-md pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:hidden"
-        role="region"
-        aria-label="Contact"
-      >
-        <div className="mx-auto flex max-w-lg flex-col items-stretch justify-center gap-2">
-          {immoListing ? <ImmoContactTrustRow /> : null}
-          <ContactButtons
-            listingId={listingId}
-            listingCode={listingCode}
-            hostId={hostId}
-            hostPhone={hostPhone}
-            supportTel={supportTel}
-            contactLabel={contactLabel}
-            layout="row"
-            immo={immoListing}
-            onImmoOpen={onImmoOpen}
-          />
+      {!suppressMobileFixed ? (
+        <div
+          className="fixed inset-x-0 bottom-0 z-50 border-t border-slate-800 bg-slate-950/95 px-3 py-3 shadow-[0_-8px_32px_rgba(0,0,0,0.45)] backdrop-blur-md pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:hidden"
+          role="region"
+          aria-label="Contact"
+        >
+          <div className="mx-auto flex max-w-lg flex-col items-stretch justify-center gap-2">
+            {!immoListing ? (
+              <p className="text-center text-[11px] font-semibold leading-tight text-emerald-200/85">
+                {LISTING_EXPLORE_NO_PAYMENT_LINE}
+              </p>
+            ) : null}
+            {immoListing ? <ImmoContactTrustRow /> : null}
+            <ContactButtons
+              listingId={listingId}
+              listingCode={listingCode}
+              hostId={hostId}
+              hostPhone={hostPhone}
+              supportTel={supportTel}
+              contactLabel={contactLabel}
+              layout="row"
+              immo={immoListing}
+              onImmoOpen={onImmoOpen}
+            />
+          </div>
         </div>
-      </div>
+      ) : null}
       <div
         className="pointer-events-none fixed bottom-8 right-6 z-40 hidden lg:block"
         role="region"

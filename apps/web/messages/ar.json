@@ -1,0 +1,266 @@
+{
+  "home": {
+    "headline": "اعثر على إقامتك أو عقارك أو استثمارك",
+    "subhead": "إعلانات موثّقة في كندا",
+    "searchAria": "البحث عن العقارات والإقامات",
+    "searchLabel": "ابحث بالمدينة أو العنوان أو رقم الإعلان",
+    "searchPlaceholder": "ابحث بالمدينة أو العنوان أو رقم الإعلان",
+    "searchButton": "بحث",
+    "featuredTitle": "إعلانات مميّزة",
+    "viewAllListings": "عرض كل الإعلانات",
+    "trustSectionAria": "الثقة والأمان",
+    "trustVerified": "إعلانات موثّقة",
+    "trustPayments": "مدفوعات آمنة",
+    "trustPricing": "تسعير شفاف",
+    "cityShortcutsAria": "مدن شائعة للإقامات",
+    "exploreStaysIntro": "استكشف الإقامات في",
+    "shortcutMontreal": "مونتريال",
+    "shortcutLaval": "لافال",
+    "shortcutToronto": "تورونتو"
+  },
+  "common": {
+    "a11y": {
+      "selectLanguage": "اختر اللغة",
+      "hubNavigation": "تنقل الوحدات",
+      "toggleMenu": "قائمة",
+      "searchStays": "ابحث عن إقامة"
+    },
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "close": "إغلاق"
+  },
+  "nav": {
+    "bnHub": "BNHub",
+    "realEstate": "عقارات",
+    "luxury": "فاخر",
+    "projects": "مشاريع",
+    "broker": "وسيط"
+  },
+  "auth": {
+    "login": "تسجيل الدخول",
+    "signup": "إنشاء حساب",
+    "dashboard": "لوحة التحكم"
+  },
+  "footer": {
+    "copyright": "© {year} LECIPM. جميع الحقوق محفوظة.",
+    "tagline": "عقارات مميزة. رؤى شفافة.",
+    "terms": "الشروط",
+    "privacy": "الخصوصية",
+    "legalCenter": "قانوني",
+    "copyrightPage": "حقوق الملكية",
+    "callUs": "اتصل بنا"
+  },
+  "search": {
+    "heroTitle": "اعثر على إقامتك التالية",
+    "heroSubtitle": "اعثر على إقامتك التالية بسهولة",
+    "placeholder": "المدينة، العنوان أو رقم الإعلان",
+    "button": "بحث",
+    "searching": "جاري البحث…",
+    "recent": "الأخيرة",
+    "saveThisSearch": "احفظ هذا البحث",
+    "savedSearches": "عمليات البحث المحفوظة",
+    "buyRentProjects": "شراء / إيجار (مشاريع) ←",
+    "alertsNote": "التنبيهات: فعّل الإشعارات في إعدادات الحساب عند إضافة ملخصات البريد لعمليات بحث BNHub المحفوظة.",
+    "noProperties": "لم يتم العثور على عقارات",
+    "browseAll": "تصفح كل العقارات",
+    "clearFilters": "مسح المرشحات"
+  },
+  "filters": {
+    "location": "الموقع",
+    "locationSummaryPlaceholder": "المدينة، الرمز البريدي أو LEC",
+    "dates": "التواريخ",
+    "addDates": "أضف التواريخ",
+    "guests": "الضيوف",
+    "addGuests": "أضف الضيوف",
+    "guestsCount": "{count} ضيوف",
+    "price": "السعر",
+    "addPrice": "أضف السعر",
+    "priceAny": "أي",
+    "filters": "مرشحات",
+    "filtersOn": "مرشحات مفعّلة",
+    "advanced": "متقدم"
+  },
+  "sellerDeclaration": {
+    "title": "إقرار البائع",
+    "statusCompleted": "تم إكمال {title}",
+    "statusDeclined": "تم رفض {title}",
+    "declineConfirm": "إذا رفضت، لا يمكن نشر هذا الإعلان قبل إكمال {title}. هل تريد المتابعة؟",
+    "mustCompletePublishing": "لا يمكن نشر هذا الإعلان قبل إكمال {title}."
+  },
+  "listings": {
+    "detailContactHost": "تواصل مع المضيف",
+    "detailRequestToBook": "طلب حجز",
+    "detailAskQuestion": "اطرح سؤالاً"
+  },
+  "bookings": {
+    "requestSent": "تم إرسال الطلب — بانتظار موافقة المضيف",
+    "payToConfirm": "تأمين حجزك",
+    "manualPaymentTitle": "رتّب الدفع مع المضيف",
+    "manualPaymentBody": "الدفع الإلكتروني غير مفعّل لهذا السوق. نسّق الدفع مباشرة مع المضيف. سيؤكد المضيف بعد استلام الدفع.",
+    "hostMarkPaymentReceived": "تسجيل استلام الدفع",
+    "hostMarkPaymentFailed": "تسجيل فشل الدفع",
+    "hostMarkPaymentPending": "إعادة إلى انتظار الدفع",
+    "statusManualPending": "دفع يدوي قيد الانتظار",
+    "statusManualReceived": "تم استلام الدفع (يدوي)",
+    "statusManualFailed": "فشل الدفع (يدوي)",
+    "contactHost": "مراسلة المضيف",
+    "askQuestion": "اطرح سؤالاً",
+    "oneStepToConfirm": "مراجعة الحجز",
+    "totalDue": "المستحق الإجمالي · يشمل الضرائب والرسوم عند الاقتضاء"
+  },
+  "host": {
+    "newBookingPaymentPending": "حجز جديد — الدفع قيد الانتظار",
+    "newBookingReceived": "تم استلام حجز جديد",
+    "bookingMessage": "{guestName} حجز «{listingTitle}».",
+    "viewReservation": "عرض الحجز",
+    "paymentReceivedConfirmed": "تم استلام الدفع — تأكيد الحجز",
+    "paymentMessage": "دفع «{listingTitle}» مكتمل.",
+    "viewBooking": "عرض الحجز",
+    "guestBookingConfirmed": "تم تأكيد الحجز",
+    "guestStayConfirmed": "إقامتك في «{listingTitle}» مؤكدة.",
+    "viewTrip": "عرض الرحلة"
+  },
+  "admin": {
+    "marketSettingsTitle": "إعدادات إطلاق السوق",
+    "marketSettingsIntro": "تحكّم في الحجز اليدوي وأسلوب التواصل أولاً دون تفريع المنتج.",
+    "saved": "تم حفظ الإعدادات"
+  },
+  "errors": {
+    "generic": "حدث خطأ. يُرجى المحاولة مرة أخرى.",
+    "network": "خطأ في الشبكة. تحقق من الاتصال وحاول مجددًا.",
+    "unauthorized": "يلزم تسجيل الدخول.",
+    "forbidden": "ليس لديك صلاحية لهذا الإجراء.",
+    "notFound": "المحتوى غير موجود.",
+    "validation": "يُرجى مراجعة الحقول المحددة والمحاولة مرة أخرى."
+  },
+  "ai": {
+    "outputDisclaimer": "قد يكون محتوى الذكاء الاصطناعي غير دقيق. تحقق من التفاصيل المهمة قبل التصرف أو إرسال رسائل.",
+    "assistantOff": "تم إيقاف مساعد الذكاء الاصطناعي من إعدادات المنصة.",
+    "chatUnavailable": "خدمة الذكاء الاصطناعي غير متاحة مؤقتًا. يُرجى المحاولة لاحقًا. تم حفظ رسالتك؛ لم يُتخذ أي إجراء آلي.",
+    "providerNotConfiguredSummary": "مزود الذكاء الاصطناعي غير مهيأ. استخدم صفحات الإعلان والحجز للحالة الفعلية؛ تواصل مع الدعم للاسترداد أو النزاعات.",
+    "providerNotConfiguredReason": "OpenAI غير مهيأ",
+    "chatEmptyState": "اسأل عن هذا الإعلان أو الحجوزات أو عمليات المضيف. لا أرقام وهمية.",
+    "chatInputPlaceholder": "رسالة إلى مدير LECIPM…",
+    "chatSend": "إرسال",
+    "chatThinking": "جارٍ التفكير…",
+    "chatPanelOpen": "فتح",
+    "chatPanelHide": "إخفاء"
+  },
+  "notifications": {
+    "openAutopilot": "فتح الطيار الآلي"
+  },
+  "autopilot": {
+    "notifyDefaultAction": "راجع في الطيار الآلي",
+    "listingOptimizationReadyTitle": "تحسين الإعلان جاهز",
+    "listingOptimizationReadyDescription": "اقتراح لعنوان ووصف. أفكار SEO: {keywords}.",
+    "listingOptimizationNotifyTitle": "اقتراح الذكاء الاصطناعي: نص الإعلان",
+    "listingOptimizationNotifyMessage": "افتح الطيار الآلي لمراجعة تحسينات العنوان والوصف المقترحة.",
+    "listingAutoUpdatedTitle": "حدّث الذكاء الاصطناعي إعلانك",
+    "listingAutoUpdatedMessage": "تم تحديث العنوان والوصف بواسطة الطيار الآلي (الوضع الآمن). يمكنك التعديل في أي وقت.",
+    "listingApprovalTitle": "مطلوب موافقة: نص الإعلان",
+    "listingApprovalMessage": "أعدّ الذكاء الاصطناعي تحديثات. وافق أو ارفض في الطيار الآلي للمضيف.",
+    "pricingExperimentTitle": "تجربة تسعير (مقترحة)",
+    "pricingExperimentDescription": "سعر الليلة الحالي (بالسنت): {currentCents}. تجربة مقترحة: زيادة ٣٪ ({suggestedCents} سنت) إذا كانت الطلبة قوية — لا تُطبَّق تلقائيًا.",
+    "pricingNotifyTitle": "اقتراح تسعير من الذكاء الاصطناعي",
+    "pricingNotifyMessage": "راجع فكرة السعر لـ «{listingTitle}».",
+    "pricingApprovalNotifyTitle": "موافقة: ملاحظة تسعير",
+    "pricingApprovalNotifyMessage": "سجّل الذكاء الاصطناعي تجربة تسعير لمراجعتك (لا تغيير تلقائي للسعر).",
+    "dynamicPricingIncreaseTitle": "مراجعة سعر الليلة (طلب قوي)",
+    "dynamicPricingIncreaseSummary": "تشير الإشارات إلى حجوزات جيدة أو إشغال مرتفع وليالٍ مفتوحة محدودة أمامك. فكّر في زيادة يدوية ضمن نطاق {minRate}–{maxRate} (الحالي ≈ {currentRate})؛ لا يُطبَّق تلقائيًا.",
+    "dynamicPricingDecreaseTitle": "مراجعة سعر الليلة (طلب أضعف)",
+    "dynamicPricingDecreaseSummary": "الحجوزات الأخيرة خفيفة والتوفر أمامك واسع. راجع يدويًا نحو {minRate}–{maxRate} (الحالي ≈ {currentRate})؛ لا يُطبَّق تلقائيًا.",
+    "dynamicPricingQualityFirstTitle": "حسّن الإعلان قبل تغيير السعر",
+    "dynamicPricingQualityFirstSummary": "إشارات الجودة ضعيفة بينما يبدو الطلب أخف. قوِّ الصور والوصف أولًا؛ إذا عدّلت السعر لاحقًا، قد تكون المراجعة اليدوية قرب {minRate}–{maxRate} (الحالي ≈ {currentRate}) — اقتراح فقط.",
+    "guestDraftTitle": "مسودة رسالة للضيف",
+    "guestDraftTemplate": "مرحبًا{guestGreeting}، شكرًا لحجز «{listingTitle}». أنا مضيفك — أخبرني بوقت وصولك التقريبي.",
+    "guestDraftNotifyTitle": "أعدّ الذكاء الاصطناعي ردًا للضيف",
+    "guestDraftNotifyMessage": "راجع الرسالة المقترحة قبل الإرسال من صندوق الوارد.",
+    "promotionIdeaTitle": "فكرة عرض ترويجي",
+    "promotionIdeaDescription": "فكّر في خصم قصير في منتصف الأسبوع ٥–٧٪ أو حد أدنى ٣ ليالٍ بخصم بسيط لزيادة الإشغال. لا تُنشأ العروض تلقائيًا.",
+    "promotionNotifyTitle": "اقتراح عرض ترويجي من الذكاء الاصطناعي",
+    "promotionNotifyMessage": "فكرة خصم غير ملزمة في الطيار الآلي — لم يُجرَ أي تغيير.",
+    "stalledBookingRecTitle": "حجز بانتظار ردك",
+    "stalledBookingRecDescription": "طلب «{listingTitle}» معلق منذ قبل {beforeDate}. وافق أو ارفض لحماية وقت الاستجابة.",
+    "stalledBookingNotifyTitle": "تذكير: حجز متوقف",
+    "stalledBookingNotifyMessage": "طلب ضيف لـ «{listingTitle}» يحتاج قرارًا.",
+    "payoutIncompleteTitle": "إعداد المدفوعات غير مكتمل",
+    "payoutIncompleteDescription": "أكمل Stripe Connect لاستلام المدفوعات. لن يغيّر الطيار الآلي المدفوعات أو الاسترداد أو الإعدادات المصرفية.",
+    "payoutNotifyTitle": "المدفوعات: إجراء مطلوب",
+    "payoutNotifyMessage": "أكمل تسجيل Stripe للحصول على أموالك. لم يُعدّل الذكاء الاصطناعي أي إعدادات مالية.",
+    "lowBookingsTitle": "قليل من الحجوزات الأخيرة",
+    "lowBookingsDescription": "لا حجوزات مؤكدة خلال ٩٠ يومًا لـ «{listingTitle}». فكّر في الصور والتسعير والحجز الفوري.",
+    "revenuePromotionApprovalNotifyTitle": "موافقة: فكرة عرض ترويجي للإيرادات",
+    "approvalAppliedNotifyTitle": "تم تطبيق تغيير الطيار الآلي",
+    "approvalAppliedNotifyMessage": "تم تطبيق التغييرات المعتمدة من الذكاء الاصطناعي حيثما أمكن. التسعير ما زال يتطلب تعديلًا يدويًا.",
+    "approvalRecordedNotifyTitle": "تم تسجيل موافقة الطيار الآلي",
+    "approvalRecordedNotifyMessage": "تم حفظ الموافقة؛ تعذر تطبيق تحديث الإعلان — راجع الإعلان في المحرر.",
+    "revenue": {
+      "listingQualityTitle": "حسّن جودة الإعلان لرفع التحويل",
+      "listingQualitySummary": "الصور أو الوصف أو الاكتمال أدنى من الإعلانات الناجحة عادة. قوِّ الإعلان قبل الخصومات.",
+      "listingQualityAction": "أضف صورًا، وسّع الوصف بالمرافق والقواعد، وأكمل الحقول الناقصة. ثم راجع التسعير والعروض.",
+      "copyRefreshTitle": "حدّث نص الإعلان",
+      "copyRefreshSummary": "قليل من الإقامات الأخيرة مقارنة بعمر الإعلان. تحديث العنوان والوصف قد يحسّن الظهور والثقة.",
+      "copyRefreshAction": "أعد صياغة العنوان والفقرة الأولى؛ أبرز المميزات والحي. لا تغييرات أسعار مباشرة.",
+      "copyRefreshSummaryAlt": "الإعلان هادئ منذ فترة. ادمج تحسين الجودة مع وصف وعنوان محدثين.",
+      "copyRefreshActionAlt": "عدّل النص ليعكس الصور والمرافق الحالية. توصية فقط — لا نشر تلقائي.",
+      "promotionTitle": "فكّر في عرض محدود الوقت",
+      "promotionSummary": "حجم الحجوزات الأخير منخفض. نافذة ترويجية قصيرة قد تزيد الظهور دون تغيير السعر الأساسي تلقائيًا.",
+      "promotionAction": "اقترح خصمًا معتدلًا ومحددًا (مثلًا في منتصف الأسبوع) في أدوات المضيف — لن ينشئ الطيار الآلي عروضًا دون موافقتك عند الاقتضاء.",
+      "pricingReviewTitle": "راجع سعر الليلة مقابل الطلب",
+      "pricingReviewSummary": "السعر الأساسي {rate} (وحدات صغرى). حجم الحجز خلال ٩٠ يومًا متواضع — راجع التسعير يدويًا (بدون تطبيق تلقائي).",
+      "pricingReviewAction": "قارن مع إقامات مشابهة في سوقك واضبط السعر أو الحد الأدنى للإقامة في المحرر إن لزم."
+    }
+  },
+  "legal": {
+    "shortDisclaimer": "توفر LECIPM أدوات سوقية فقط؛ لا يُعد هذا استشارة قانونية أو ضريبية أو استثمارية."
+  },
+  "market": {
+    "syriaRibbon": "وضع إطلاق سوريا: حجز يبدأ بالتواصل؛ قد يُرتب الدفع خارج المنصة وفق سياسة المضيف.",
+    "contactFirstBanner": "تفضّل الحوار أولاً؟ تواصل مع المضيف أو اسأل سؤالاً قبل إتمام طلب الحجز."
+  },
+  "investor": {},
+  "contentEngine": {
+    "constraints": {
+      "standardMarket": "سوق قياسي: صِف مسار الحجز بدقة. لا تضمن التوفر أو السعر أو الدفع دون تأكيد من المضيف والمنصة.",
+      "contactFirstMarket": "سوق يبدأ بالتواصل: استخدم «طلب حجز» و«تواصل مع المضيف» وتأكيدًا يدويًا. لا تعد بدفع فوري أو قنوات دفع آلية."
+    },
+    "prompts": {
+      "listingSeoSystem": "تكتب نصوص إعلان وSEO دقيقة. لا تخترع مرافقًا أو ادعاءات قانونية أو تقييمات أو مسافات غير موجودة في المدخلات.",
+      "cityPageSystem": "تكتب صفحات مدينة أو حي مُحلّاة من مدخلات موثقة فقط. لا تخترع إحصاءات.",
+      "hostCopySystem": "تقترح نصوصًا للمضيف. لا تغيّر التزامات الدفع أو الضرائب أو القانون؛ لا تعد بنتائج منصة.",
+      "notificationCopySystem": "تكتب إشعارات أو لافتات. لا تؤكد استلام دفع أو استرداد أو نتيجة نزاع دون حقائق موثقة."
+    },
+    "template": {
+      "listingSeoDescriptionFallback": "استكشف الإقامات في {place}. التفاصيل تعكس معلومات المضيف فقط.",
+      "genericPlace": "هذه المنطقة",
+      "cityH1": "إقامات في {place}",
+      "neighborhoodH1": "إقامات قرب {place}",
+      "cityHeroSubtitle": "تصفح الإقامات والمعلومات المحلية.",
+      "cityIntro": "اعثر على أماكن إقامة بمعلومات مضيف واضحة. يُؤكد التوفر والسعر عند الحجز.",
+      "cityFaqQ1": "كيف أحجز؟",
+      "cityFaqA1": "أرسل طلب حجز أو تواصل مع المضيف؛ يؤكد التفاصيل معك.",
+      "growthListingNoDescription": "الإعلان بلا وصف للضيوف.",
+      "growthWeakSeoTitle": "عنوان SEO يحتاج إلى وضوح أكبر.",
+      "growthMissingLocaleCopy": "الترجمة ناقصة لهذه اللغة.",
+      "growthSyriaBanner": "سوق سوريا: أظهر لافتة التواصل أولًا في الصفحات الأكثر زيارة.",
+      "hostAmenitiesLine": "ما ذكره المضيف قد يشمل: {list}.",
+      "hostNoAmenitiesLine": "أضف مرافقًا منظمة في المحرر لضمان دقة الاقتراحات.",
+      "hostWhyGuests": "زاوية مقترحة لـ «{title}»: أبرز ما شاركه المضيف فعليًا؛ لا تخترع ميزات.",
+      "hostRecTitle": "توصية للمضيف (مسودة)",
+      "notificationTitle": "تحديث: {topic}",
+      "notificationBody": "افتح التطبيق لتفاصيل {topic}. لا يُفهم منه تأكيد دفع أو نتيجة قانونية.",
+      "bannerContactFirstTitle": "احجز مع المضيف مباشرة",
+      "bannerContactFirstBody": "أرسل طلب حجز أو رسالة. التأكيد والدفع يتبعان قواعد المضيف والسوق — ليس دفعًا فوريًا مضمونًا.",
+      "bannerStandardTitle": "اعثر على إقامتك التالية",
+      "bannerStandardBody": "تصفح الإعلانات وقارن وأكمل الخطوات في التطبيق.",
+      "investorSnippetTitle": "لمحة سوق LECIPM",
+      "investorSnippetBody": "منصة موحدة للإقامات وسير العقار؛ أسواق الإطلاق قد تستخدم حجزًا يبدأ بالتواصل وتتبعًا يدويًا للدفع."
+    }
+  },
+  "marketingEngine": {
+    "optimization": {
+      "noHistory": "لا يوجد سجل — مزيج استكشاف افتراضي.",
+      "weightedScores": "النتائج تُرجّح التحويلات ثم التفاعل ثم النقرات. عدّل الأوزان في الكود مع نضج التحليلات."
+    }
+  }
+}

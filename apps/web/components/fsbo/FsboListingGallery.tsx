@@ -98,6 +98,9 @@ export function FsboListingGallery({ images, coverImage, title, verifiedListing 
           <img
             src={main ?? ordered[0]}
             alt={title}
+            decoding="async"
+            fetchPriority="high"
+            loading="eager"
             className="aspect-[4/3] w-full object-cover sm:aspect-[16/10]"
           />
           {verifiedListing ? (
@@ -130,7 +133,13 @@ export function FsboListingGallery({ images, coverImage, title, verifiedListing 
                   aria-pressed={active}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={src} alt="" className="h-16 w-20 object-cover sm:h-20 sm:w-28" />
+                  <img
+                    src={src}
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                    className="h-16 w-20 object-cover sm:h-20 sm:w-28"
+                  />
                 </button>
               </li>
             );

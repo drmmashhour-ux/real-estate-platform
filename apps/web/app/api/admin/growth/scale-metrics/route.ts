@@ -9,7 +9,7 @@ import { getGrowthTrackingDashboard } from "@/modules/analytics/services/growth-
 
 export const dynamic = "force-dynamic";
 
-/** Combined LECIPM traffic funnel + BNHub marketplace liquidity for 10K scaling. */
+/** Combined LECIPM traffic funnel + BNHUB marketplace liquidity for 10K scaling. */
 export async function GET(req: NextRequest) {
   const userId = await getGuestId();
   const admin = await requireAdminUser(userId);

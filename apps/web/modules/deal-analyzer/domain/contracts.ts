@@ -38,7 +38,7 @@ export type ScenarioSummaryDto = {
   warnings: string[];
   mortgageUnavailableReason: string | null;
   confidenceLevel: string | null;
-  /** BNHub short-term rows — populated when scenarioMode is bnhub. */
+  /** BNHUB short-term rows — populated when scenarioMode is bnhub. */
   nightlyRateCents?: number | null;
   monthlyGrossRevenueCents?: number | null;
   monthlyNetOperatingCents?: number | null;

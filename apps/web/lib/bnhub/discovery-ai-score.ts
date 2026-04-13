@@ -63,7 +63,7 @@ export function normalizeAiScoreTo100(raw: number | undefined | null): number | 
 }
 
 /**
- * Ensures every BNHub search row has integer `aiScore` 0–100 for map pins, badges, and sorting.
+ * Ensures every BNHUB search row has integer `aiScore` 0–100 for map pins, badges, and sorting.
  * Preserves `aiBreakdown` / `aiLabels` from `applyAiSearchRankingToBnhubResults` when present.
  */
 export async function attachIntegerAiScoresToBnhubSearchResults<

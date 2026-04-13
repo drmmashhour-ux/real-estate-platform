@@ -126,7 +126,7 @@ function CityRow({ row: r }: { row: CityDashboardRow }) {
         </span>
       </td>
       <td className="px-3 py-3 tabular-nums">{m.usersInMarket}</td>
-      <td className="px-3 py-3 tabular-nums" title="FSBO + BNHub published">
+      <td className="px-3 py-3 tabular-nums" title="FSBO + BNHUB published">
         {listingsTotal}
         <span className="block text-xs text-slate-500">
           {m.activeFsboListings} FSBO · {m.publishedBnhubListings} BNH

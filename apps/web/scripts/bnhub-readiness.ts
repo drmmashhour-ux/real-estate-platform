@@ -1,5 +1,5 @@
 /**
- * Single entry: runs BNHub API smoke + DB validation, prints READY / NOT READY.
+ * Single entry: runs BNHUB API smoke + DB validation, prints READY / NOT READY.
  * Does not modify underlying scripts; does not print env or secrets.
  */
 import { spawnSync } from "node:child_process";
@@ -18,7 +18,7 @@ function runStep(name: string, script: string): boolean {
 
 function main() {
   console.log("");
-  console.log("  BNHub soft launch readiness");
+  console.log("  BNHUB soft launch readiness");
   console.log("  ───────────────────────────");
   console.log("");
 

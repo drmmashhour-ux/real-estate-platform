@@ -92,5 +92,5 @@ export async function markVerificationState(
 
 /** Placeholder: production creates Custom account via Stripe API + persists id. */
 export async function createHostConnectedAccount(_userId: string): Promise<{ error: string }> {
-  return { error: "Use existing BNHub host Stripe Connect onboarding; account creation stays on platform user record." };
+  return { error: "Use existing BNHUB host Stripe Connect onboarding; account creation stays on platform user record." };
 }

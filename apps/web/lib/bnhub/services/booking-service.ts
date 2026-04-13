@@ -1,5 +1,5 @@
 /**
- * BNHub BookingService — check availability, create/cancel booking, get booking.
+ * BNHUB BookingService — check availability, create/cancel booking, get booking.
  * Delegates to lib/bnhub/booking and lib/bnhub/listings.
  */
 

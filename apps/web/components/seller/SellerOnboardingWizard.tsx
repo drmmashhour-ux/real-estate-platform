@@ -4,10 +4,13 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+import { useSuppressFooterHistoryNav } from "@/components/layout/FooterHistoryNavContext";
+
 const STEPS = ["Basic info", "Property address", "Ownership", "ID check", "Selling mode"] as const;
 type SellHubMode = "FREE_HUB" | "PLATFORM_BROKER" | "PREFERRED_BROKER";
 
 export function SellerOnboardingWizard() {
+  useSuppressFooterHistoryNav(true);
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -259,7 +262,7 @@ export function SellerOnboardingWizard() {
             {idPlaceholderDone ? (
               <p className="text-emerald-400/90">Recorded — you can proceed.</p>
             ) : (
-              <p className="text-slate-500">Click Next to mark this placeholder step complete.</p>
+              <p className="text-slate-500">Click Continue to mark this placeholder step complete.</p>
             )}
           </div>
         )}
@@ -323,7 +326,7 @@ export function SellerOnboardingWizard() {
             onClick={() => void onNext()}
             className="rounded-xl bg-premium-gold px-5 py-2.5 text-sm font-semibold text-black disabled:opacity-50"
           >
-            {loading ? "…" : step === 5 ? "Finish" : "Next"}
+            {loading ? "…" : step === 5 ? "Finish" : "Continue"}
           </button>
         </div>
       </div>

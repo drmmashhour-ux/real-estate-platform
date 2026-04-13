@@ -11,7 +11,7 @@ export function responseForIntent(
   switch (intent) {
     case "booking_help":
       return [
-        "For BNHub stays: pick your check-in and check-out dates first — the total updates with taxes and fees before you pay.",
+        "For BNHUB stays: pick your check-in and check-out dates first — the total updates with taxes and fees before you pay.",
         "Complete guest details, then pay securely through checkout. You’ll receive confirmation with next steps.",
       ].join(" ");
 
@@ -29,7 +29,7 @@ export function responseForIntent(
       return "Mortgage tools and expert requests live under Finance / Mortgage in the app when enabled for your account. I can’t quote rates — speak to a licensed broker.";
 
     case "host_help":
-      return "To list a stay or property: open Host / List your property from BNHub or the seller hub, complete verification, then publish when ready.";
+      return "To list a stay or property: open Host / List your property from BNHUB or the seller hub, complete verification, then publish when ready.";
 
     case "listing_explainer":
       if (context.stayId) {
@@ -49,7 +49,7 @@ export function responseForIntent(
       return "Open a listing to ask about that property. I can explain platform steps without inventing listing facts.";
 
     case "general_platform_help":
-      return "Try: search by city and price, save listings, or use BNHub for short stays. Ask how booking or contact unlock works anytime.";
+      return "Try: search by city and price, save listings, or use BNHUB for short stays. Ask how booking or contact unlock works anytime.";
 
     case "compare_listings":
       return "To compare, open two listings or use Save — then ask again. I can contrast price, beds, and size when both are available.";

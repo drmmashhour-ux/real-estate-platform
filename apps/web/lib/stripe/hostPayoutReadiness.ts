@@ -1,5 +1,5 @@
 /**
- * Single source of truth for BNHub host payout + platform Stripe Connect readiness
+ * Single source of truth for BNHUB host payout + platform Stripe Connect readiness
  * before creating a Checkout Session with transfer_data.destination.
  */
 
@@ -10,7 +10,7 @@ import { logWarn } from "@/lib/logger";
 export const BNHUB_HOST_CHECKOUT_UNAVAILABLE_MESSAGE =
   "Host payout is not configured yet. Booking checkout is temporarily unavailable.";
 
-/** Single stable HTTP JSON `code` for any BNHub payout/Connect block (see `detailCode` for diagnostics). */
+/** Single stable HTTP JSON `code` for any BNHUB payout/Connect block (see `detailCode` for diagnostics). */
 export const BNHUB_CHECKOUT_BLOCKED_RESPONSE_CODE = "HOST_PAYOUT_NOT_READY" as const;
 
 export type HostStripePayoutBlockedCode =
@@ -111,7 +111,7 @@ export type HostStripePayoutReadinessInput = {
 };
 
 /**
- * Validates BNHub booking checkout: connected account must be fully enabled in Stripe
+ * Validates BNHUB booking checkout: connected account must be fully enabled in Stripe
  * (`details_submitted`, `charges_enabled`, `payouts_enabled`) plus platform Connect probe.
  */
 export async function validateHostStripePayoutReadiness(
@@ -192,5 +192,5 @@ export async function validateHostStripePayoutReadiness(
   return { ok: true, code: "READY", userMessage: "", logDetail: "" };
 }
 
-/** @deprecated Use validateHostStripePayoutReadiness — alias for BNHub naming consistency in routes. */
+/** @deprecated Use validateHostStripePayoutReadiness — alias for BNHUB naming consistency in routes. */
 export const validateBnHubHostPayoutReadiness = validateHostStripePayoutReadiness;

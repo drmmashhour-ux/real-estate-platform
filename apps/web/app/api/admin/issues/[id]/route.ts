@@ -64,7 +64,7 @@ export async function PATCH(
 
     // Notify guest when approved/rejected: use email if configured, else log only (safe fallback).
     try {
-      console.info("[BNHub Issue] Status updated", {
+      console.info("[BNHUB Issue] Status updated", {
         issueId,
         status,
         guestEmail: issue.booking?.guest?.email ?? "(not set)",

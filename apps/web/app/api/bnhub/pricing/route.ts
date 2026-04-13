@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
         : listing.nightPriceCents;
 
     const factors: string[] = [
-      `BNHub peer sample in ${listing.city}: ~$${(marketAvgCents / 100).toFixed(0)}/night (${smart.peerListingCount} listings)`,
+      `BNHUB peer sample in ${listing.city}: ~$${(marketAvgCents / 100).toFixed(0)}/night (${smart.peerListingCount} listings)`,
       `Model confidence: ${smart.confidence} (${smart.confidenceScore}/100)`,
       `Demand signal: ${smart.demandLevel} · seasonality ×${smart.factors.seasonality.toFixed(2)}`,
     ];

@@ -3,6 +3,12 @@
  * Sentinels: priceMin/priceMax === 0 mean “no bound” for that side.
  */
 
+/**
+ * Query flag (?openFilters=1): open the full SearchEngine property filter panel once, then strip from URL.
+ * Used when linking from /listings to /buy so filters match the Buy hub.
+ */
+export const OPEN_FULL_PROPERTY_FILTERS_PARAM = "openFilters";
+
 /** Long-term rent — listing segment (deal stays RENT; see `rentListingCategory`). */
 export type RentListingCategory = "residential" | "commercial" | "luxury_properties" | "new_construction";
 
@@ -47,7 +53,7 @@ export type GlobalSearchFiltersExtended = GlobalSearchFilters & {
   yearBuiltMin?: number | null;
   yearBuiltMax?: number | null;
   page?: number;
-  /** When `type` is `short` (BNHub stays). */
+  /** When `type` is `short` (BNHUB stays). */
   checkIn?: string;
   checkOut?: string;
   guests?: number | null;
@@ -95,7 +101,8 @@ export const DEFAULT_GLOBAL_FILTERS: GlobalSearchFiltersExtended = {
   south: null,
   east: null,
   west: null,
-  mapLayout: "list",
+  /** Default split view so map acts as a search tool (viewport → URL bbox) on browse surfaces. */
+  mapLayout: "split",
 };
 
 export const DEFAULT_STAYS_FILTERS: GlobalSearchFiltersExtended = {
@@ -211,7 +218,7 @@ function floatOrNull(v: unknown): number | null {
 export function parseMapLayout(v: unknown): "list" | "split" | "map" {
   const s = typeof v === "string" ? v.trim().toLowerCase() : "";
   if (s === "split" || s === "map" || s === "list") return s;
-  return "list";
+  return "split";
 }
 
 /** True when all bbox corners are set and form a valid non-degenerate box (no dateline handling). */
@@ -301,7 +308,7 @@ export function globalFiltersToUrlParams(f: GlobalSearchFiltersExtended): URLSea
     p.set("east", String(f.east));
     p.set("west", String(f.west));
   }
-  if (f.mapLayout && f.mapLayout !== "list") p.set("mapLayout", f.mapLayout);
+  if (f.mapLayout && f.mapLayout !== "split") p.set("mapLayout", f.mapLayout);
   if (f.sort && f.sort !== "recommended") p.set("sort", f.sort);
   return p;
 }
@@ -431,7 +438,7 @@ export function urlParamsToGlobalFilters(sp: URLSearchParams): GlobalSearchFilte
   };
 }
 
-/** BNHub amenity / host flags stored in `features` when `type === "short"`. */
+/** BNHUB amenity / host flags stored in `features` when `type === "short"`. */
 export const BNHUB_AMENITY_KEYS = ["wifi", "kitchen", "ac", "parking", "washer", "pet_friendly"] as const;
 export type BnhubAmenityKey = (typeof BNHUB_AMENITY_KEYS)[number];
 
@@ -475,7 +482,7 @@ export function countActiveGlobalFilters(f: GlobalSearchFiltersExtended, mode: S
     return n;
   }
 
-  // short — BNHub
+  // short — BNHUB
   if (f.priceMin > 0 || f.priceMax > 0) n++;
   if (f.checkIn?.trim()) n++;
   if (f.checkOut?.trim()) n++;
@@ -484,7 +491,7 @@ export function countActiveGlobalFilters(f: GlobalSearchFiltersExtended, mode: S
   return n;
 }
 
-/** BNHub short-term listings — maps global filters to existing GET `/api/bnhub/listings` params. */
+/** BNHUB short-term listings — maps global filters to existing GET `/api/bnhub/listings` params. */
 export function globalFiltersToBnhubParams(f: GlobalSearchFiltersExtended): URLSearchParams {
   const p = new URLSearchParams();
   if (f.location.trim()) p.set("city", f.location.trim());

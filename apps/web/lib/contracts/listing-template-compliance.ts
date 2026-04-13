@@ -33,5 +33,5 @@ export async function assertSellerAgreementTemplateAnswers(
   return { ok: true };
 }
 
-/** When saving answers, default contract type to SELLER_AGREEMENT for BNHub listing flow. */
+/** When saving answers, default contract type to SELLER_AGREEMENT for BNHUB listing flow. */
 export const BNHUB_LISTING_TEMPLATE_CONTRACT_TYPE = MARKETPLACE_CONTRACT_TYPES.SELLER_AGREEMENT;

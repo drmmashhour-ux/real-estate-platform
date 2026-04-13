@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getGuestId } from "@/lib/auth/session";
 import { immoEventSlug } from "@/lib/timeline/immo-event-labels";
+import { getImmoResolutionFromMetadata } from "@/lib/immo/immo-contact-resolution-metadata";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +14,9 @@ export async function GET(request: NextRequest) {
   if (me?.role !== "ADMIN") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const { searchParams } = new URL(request.url);
-  const take = Math.min(500, Math.max(20, parseInt(searchParams.get("take") ?? "100", 10) || 100));
+  const pendingOnly = searchParams.get("pendingAction") === "1" || searchParams.get("pendingAction") === "true";
+  const takeCap = pendingOnly ? 500 : 500;
+  const take = Math.min(takeCap, Math.max(20, parseInt(searchParams.get("take") ?? (pendingOnly ? "300" : "100"), 10) || 100));
   const listingId = (searchParams.get("listingId") ?? "").trim();
   const filterUserId = (searchParams.get("userId") ?? "").trim();
   const orderParam = (searchParams.get("order") ?? "desc").toLowerCase();
@@ -30,14 +33,14 @@ export async function GET(request: NextRequest) {
         }
       : {};
 
-  const rows = await prisma.immoContactLog.findMany({
+  let rows = await prisma.immoContactLog.findMany({
     where: {
       ...(listingId ? { listingId } : {}),
       ...(filterUserId ? { userId: filterUserId } : {}),
       ...actionRange,
     },
     orderBy: { actionAt: orderDir },
-    take,
+    take: pendingOnly ? Math.min(800, take * 2) : take,
     select: {
       id: true,
       userId: true,
@@ -56,6 +59,14 @@ export async function GET(request: NextRequest) {
       adminNotedById: true,
     },
   });
+
+  if (pendingOnly) {
+    rows = rows.filter((r) => {
+      const res = getImmoResolutionFromMetadata(r.metadata);
+      if (!res) return false;
+      return res.actionRequired && !res.actionCompleted;
+    }).slice(0, take);
+  }
 
   const data = rows.map((r) => ({
     ...r,

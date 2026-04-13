@@ -1,12 +1,12 @@
 /**
- * BNHub broker collaboration & commission agreement — leads, splits, and platform rules.
+ * BNHUB broker collaboration & commission agreement — leads, splits, and platform rules.
  * Counsel should review before production reliance. Fallback when no admin legal override exists.
  * Structure aligns with drafting-book sections; dispute wording is balanced (no “override the law”).
  */
 export const NBHUB_BROKER_COLLABORATION_AGREEMENT_HTML = `
 <h2>1. Identification of parties</h2>
 <ul>
-<li><strong>Platform</strong>: BNHub</li>
+<li><strong>Platform</strong>: BNHUB</li>
 <li><strong>Broker</strong>: licensed real estate professional</li>
 </ul>
 

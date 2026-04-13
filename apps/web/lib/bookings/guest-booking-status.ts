@@ -1,5 +1,5 @@
 /**
- * Guest Supabase `bookings.status` lifecycle (BNHub mobile).
+ * Guest Supabase `bookings.status` lifecycle (BNHUB mobile).
  * `paid` is set only by Stripe webhook. `processing` = checkout session created.
  */
 

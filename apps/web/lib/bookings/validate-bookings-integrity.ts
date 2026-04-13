@@ -1,5 +1,5 @@
 /**
- * Read-only integrity checks for Supabase guest `bookings` (BNHub).
+ * Read-only integrity checks for Supabase guest `bookings` (BNHUB).
  * Used by scripts and ops — does not mutate data.
  *
  * **Overlap prevention** is enforced by `create_guest_booking` RPC (and server rules).

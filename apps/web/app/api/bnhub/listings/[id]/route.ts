@@ -114,7 +114,7 @@ async function assertCanPublish(listingId: string) {
       return {
         ok: false as const,
         error:
-          "Sign the BNHub host agreement before publishing (ContractSign kind=host with this listing id).",
+          "Sign the BNHUB host agreement before publishing (ContractSign kind=host with this listing id).",
         reasons: ["enforceable_host"],
       };
     }

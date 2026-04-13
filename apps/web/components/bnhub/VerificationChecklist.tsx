@@ -27,12 +27,15 @@ type Props = {
   listingId?: string;
   onStatusLoad?: (data: VerificationStatusResponse) => void;
   compact?: boolean;
+  /** Dark panel for BNHUB host wizard / dashboards on slate backgrounds */
+  tone?: "light" | "dark";
 };
 
 export function VerificationChecklist({
   listingId,
   onStatusLoad,
   compact = false,
+  tone = "light",
 }: Props) {
   const [data, setData] = useState<VerificationStatusResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -90,7 +93,13 @@ export function VerificationChecklist({
 
   if (loading || !data) {
     return (
-      <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
+      <div
+        className={
+          tone === "dark"
+            ? "rounded-xl border border-white/15 bg-white/[0.06] p-4 text-sm text-slate-400"
+            : "rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500"
+        }
+      >
         Loading verification status…
       </div>
     );
@@ -101,31 +110,53 @@ export function VerificationChecklist({
   const propertyComplete = property ? property.canPublish : true;
   const canPublish = ownerComplete && propertyComplete;
 
+  const isDark = tone === "dark";
+
   function Check({ done, rejected }: { done: boolean; rejected?: boolean }) {
     if (rejected)
       return (
-        <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-red-100 text-red-600">
+        <span
+          className={`inline-flex h-5 w-5 items-center justify-center rounded-full ${
+            isDark ? "bg-red-500/20 text-red-300" : "bg-red-100 text-red-600"
+          }`}
+        >
           ✕
         </span>
       );
     if (done)
       return (
-        <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+        <span
+          className={`inline-flex h-5 w-5 items-center justify-center rounded-full ${
+            isDark ? "bg-emerald-500/25 text-emerald-300" : "bg-emerald-100 text-emerald-600"
+          }`}
+        >
           ✓
         </span>
       );
     return (
-      <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-100 text-amber-600">
+      <span
+        className={`inline-flex h-5 w-5 items-center justify-center rounded-full ${
+          isDark ? "bg-amber-500/20 text-amber-200" : "bg-amber-100 text-amber-600"
+        }`}
+      >
         —
       </span>
     );
   }
 
+  const linkClass = isDark ? "text-premium-gold hover:underline" : "text-blue-600 hover:underline";
+
   if (compact) {
     return (
-      <div className="rounded-lg border border-slate-200 bg-white p-3 text-sm">
-        <p className="font-medium text-slate-700">Publish requirements</p>
-        <p className={canPublish ? "text-emerald-600" : "text-amber-600"}>
+      <div
+        className={
+          isDark
+            ? "rounded-lg border border-white/15 bg-white/[0.06] p-3 text-sm text-slate-200"
+            : "rounded-lg border border-slate-200 bg-white p-3 text-sm"
+        }
+      >
+        <p className={`font-medium ${isDark ? "text-white" : "text-slate-700"}`}>Publish requirements</p>
+        <p className={canPublish ? (isDark ? "text-emerald-400" : "text-emerald-600") : isDark ? "text-amber-300" : "text-amber-600"}>
           {canPublish
             ? "All requirements met. You can publish."
             : "Complete the items below to publish."}
@@ -135,16 +166,22 @@ export function VerificationChecklist({
   }
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5">
-      <h3 className="text-base font-semibold text-slate-900">
+    <div
+      className={
+        isDark
+          ? "rounded-xl border border-white/15 bg-white/[0.06] p-5 text-slate-200"
+          : "rounded-xl border border-slate-200 bg-white p-5"
+      }
+    >
+      <h3 className={`text-base font-semibold ${isDark ? "text-white" : "text-slate-900"}`}>
         Mandatory verification
       </h3>
-      <p className="mt-1 text-sm text-slate-500">
+      <p className={`mt-1 text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>
         Complete all steps before publishing a listing.
       </p>
 
       <div className="mt-4 space-y-3">
-        <p className="text-sm font-medium text-slate-700">Owner</p>
+        <p className={`text-sm font-medium ${isDark ? "text-slate-200" : "text-slate-700"}`}>Owner</p>
         <ul className="space-y-2 text-sm">
           <li className="flex items-center gap-2">
             <Check done={owner.fullNameProvided} />
@@ -158,15 +195,12 @@ export function VerificationChecklist({
             <span>
               ID verification{" "}
               {owner.idVerificationStatus === "pending" && (
-                <Link
-                  href="/bnhub/verify-id"
-                  className="text-blue-600 hover:underline"
-                >
+                <Link href="/bnhub/verify-id" className={linkClass}>
                   Submit ID
                 </Link>
               )}
               {owner.idVerificationStatus === "rejected" && (
-                <span className="text-red-600">Rejected</span>
+                <span className={isDark ? "text-red-400" : "text-red-600"}>Rejected</span>
               )}
             </span>
           </li>
@@ -182,7 +216,7 @@ export function VerificationChecklist({
                   type="button"
                   onClick={handleConfirmOwnership}
                   disabled={confirmingOwnership}
-                  className="text-blue-600 hover:underline disabled:opacity-50"
+                  className={`${linkClass} disabled:opacity-50`}
                 >
                   {confirmingOwnership ? "Confirming…" : "Confirm now"}
                 </button>
@@ -193,8 +227,8 @@ export function VerificationChecklist({
       </div>
 
       {property && (
-        <div className="mt-4 space-y-3 border-t border-slate-100 pt-4">
-          <p className="text-sm font-medium text-slate-700">Property</p>
+        <div className={`mt-4 space-y-3 border-t pt-4 ${isDark ? "border-white/10" : "border-slate-100"}`}>
+          <p className={`text-sm font-medium ${isDark ? "text-slate-200" : "text-slate-700"}`}>Property</p>
           <ul className="space-y-2 text-sm">
             <li className="flex items-center gap-2">
               <Check done={property.hasAddress} />
@@ -209,7 +243,11 @@ export function VerificationChecklist({
       )}
 
       {!canPublish && owner.reasons.length > 0 && (
-        <p className="mt-4 text-xs text-slate-500">
+        <p
+          className={`mt-4 rounded-lg px-3 py-2 text-xs ${
+            isDark ? "bg-rose-500/15 text-rose-100" : "text-slate-500"
+          }`}
+        >
           {owner.reasons.slice(0, 3).join(". ")}
         </p>
       )}

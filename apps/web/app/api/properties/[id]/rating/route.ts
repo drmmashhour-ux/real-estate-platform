@@ -1,6 +1,6 @@
 import { getListingRatingSummary } from "@/src/modules/reviews/reviewService";
 
-/** GET /api/properties/:id/rating — aggregate rating row for a BNHub listing. */
+/** GET /api/properties/:id/rating — aggregate rating row for a BNHUB listing. */
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }

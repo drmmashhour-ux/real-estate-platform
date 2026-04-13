@@ -122,8 +122,8 @@ export function generateDeterministicAssetPack(
   const verified =
     input.verificationStatus === VerificationStatus.VERIFIED
       ? langs[0] === "fr"
-        ? "Vérifié BNHub"
-        : "BNHub verified"
+        ? "Vérifié BNHUB"
+        : "BNHUB verified"
       : langs[0] === "fr"
         ? "Profil à compléter"
         : "Complete verification for trust badge";
@@ -154,8 +154,8 @@ export function generateDeterministicAssetPack(
       title: lang === "fr" ? "Légende courte" : "Short caption",
       content:
         lang === "fr"
-          ? `${L} à ${city}. ${price}. ${highlights}. Réservez sur BNHub.`
-          : `${L} in ${city}. ${price}. ${highlights}. Book on BNHub.`,
+          ? `${L} à ${city}. ${price}. ${highlights}. Réservez sur BNHUB.`
+          : `${L} in ${city}. ${price}. ${highlights}. Book on BNHUB.`,
     });
     drafts.push({
       assetType: "LONG_DESCRIPTION",
@@ -174,8 +174,8 @@ export function generateDeterministicAssetPack(
       title: null,
       content:
         lang === "fr"
-          ? `${title} | Location courte durée ${city} | BNHub`
-          : `${title} | Short-term rental ${city} | BNHub`,
+          ? `${title} | Location courte durée ${city} | BNHUB`
+          : `${title} | Short-term rental ${city} | BNHUB`,
     });
     drafts.push({
       assetType: "SEO_META",
@@ -184,8 +184,8 @@ export function generateDeterministicAssetPack(
       title: null,
       content:
         lang === "fr"
-          ? `${L} à ${city}. À partir de ${price}. Réservez un séjour vérifié sur BNHub.`
-          : `${L} in ${city}. From ${price}. Book a verified stay on BNHub.`,
+          ? `${L} à ${city}. À partir de ${price}. Réservez un séjour vérifié sur BNHUB.`
+          : `${L} in ${city}. From ${price}. Book a verified stay on BNHUB.`,
     });
     drafts.push({
       assetType: "EMAIL_COPY",
@@ -194,8 +194,8 @@ export function generateDeterministicAssetPack(
       title: null,
       content:
         lang === "fr"
-          ? `Objet: Nouveau coup de cœur à ${city}\n\n${title} — ${price}\n${highlights}\nCTA: Voir l’annonce BNHub${code ? ` (${code})` : ""}`
-          : `Subject: New spotlight in ${city}\n\n${title} — ${price}\n${highlights}\nCTA: View on BNHub${code ? ` (${code})` : ""}`,
+          ? `Objet: Nouveau coup de cœur à ${city}\n\n${title} — ${price}\n${highlights}\nCTA: Voir l’annonce BNHUB${code ? ` (${code})` : ""}`
+          : `Subject: New spotlight in ${city}\n\n${title} — ${price}\n${highlights}\nCTA: View on BNHUB${code ? ` (${code})` : ""}`,
     });
     drafts.push({
       assetType: "SOCIAL_POST",
@@ -204,8 +204,8 @@ export function generateDeterministicAssetPack(
       title: null,
       content:
         lang === "fr"
-          ? `✨ ${title} · ${city}\n${L} · ${price}\n#BNHub #${city.replace(/\s/g, "")}`
-          : `✨ ${title} · ${city}\n${L} · ${price}\n#BNHub #${city.replace(/\s/g, "")}`,
+          ? `✨ ${title} · ${city}\n${L} · ${price}\n#BNHUB #${city.replace(/\s/g, "")}`
+          : `✨ ${title} · ${city}\n${L} · ${price}\n#BNHUB #${city.replace(/\s/g, "")}`,
       metadataJson: { variant: "feed_square" },
     });
     drafts.push({
@@ -236,8 +236,8 @@ export function generateDeterministicAssetPack(
       title: lang === "fr" ? `Séjours d’exception à ${city}` : `Top stays in ${city}`,
       content:
         lang === "fr"
-          ? `Carte éditoriale: ${title} — angle ${L}. (Aperçu interne BNHub)`
-          : `Editorial card: ${title} — ${L} angle. (Internal BNHub preview)`,
+          ? `Carte éditoriale: ${title} — angle ${L}. (Aperçu interne BNHUB)`
+          : `Editorial card: ${title} — ${L} angle. (Internal BNHUB preview)`,
       metadataJson: { slug: `top-stays-${city.toLowerCase().replace(/\s+/g, "-")}`, internalOnly: true },
     });
   }
@@ -253,8 +253,8 @@ export function buildCampaignStrategySummary(
   const L = ANGLE_LABELS[angle][lang];
   if (MARKETING_AI_MOCK) {
     return lang === "fr"
-      ? `[Mode déterministe — mock IA] Prioriser ${L} pour ${input.title} (${input.city}). Mettre en avant prix ${money(input.nightPriceCents, "fr")}, confiance ${input.verificationStatus}, et canaux internes BNHub avant toute diffusion externe (conformité en attente).`
-      : `[Deterministic mock — AI slot] Lead with ${L} for ${input.title} (${input.city}). Emphasize ${money(input.nightPriceCents, "en")}, trust ${input.verificationStatus}, and BNHub internal surfaces before any external channel (compliance pending).`;
+      ? `[Mode déterministe — mock IA] Prioriser ${L} pour ${input.title} (${input.city}). Mettre en avant prix ${money(input.nightPriceCents, "fr")}, confiance ${input.verificationStatus}, et canaux internes BNHUB avant toute diffusion externe (conformité en attente).`
+      : `[Deterministic mock — AI slot] Lead with ${L} for ${input.title} (${input.city}). Emphasize ${money(input.nightPriceCents, "en")}, trust ${input.verificationStatus}, and BNHUB internal surfaces before any external channel (compliance pending).`;
   }
   return lang === "fr"
     ? `Stratégie LLM (à brancher): ${L} · ${input.city}`

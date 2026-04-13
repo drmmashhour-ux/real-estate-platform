@@ -10,7 +10,7 @@ import {
   Headphones,
   MapPin,
   Maximize2,
-  Share2,
+  Shield,
   ShieldCheck,
   Sparkles,
   Zap,
@@ -18,6 +18,10 @@ import {
 import { FsboListingGallery } from "@/components/fsbo/FsboListingGallery";
 import { ListingFinancialSnapshot } from "@/components/listings/ListingFinancialSnapshot";
 import { ListingMortgageCalculator } from "@/components/listings/ListingMortgageCalculator";
+import {
+  ListingAiInvestmentScoreCard,
+  ListingAiMarketInsightCard,
+} from "@/components/listings/ListingAiInsightPanels";
 import { getTrackingSessionId, track } from "@/lib/tracking";
 import { LegalAcknowledgmentModal } from "@/components/legal/LegalAcknowledgmentModal";
 import { ContentLicenseModal } from "@/components/legal/ContentLicenseModal";
@@ -27,14 +31,21 @@ import { CONTENT_LICENSE_VERSION } from "@/modules/legal/content-license";
 import { trackImmoContactClient } from "@/lib/immo/track-client";
 import { ImmoContactEventType } from "@prisma/client";
 import { LEGAL_FORM_KEYS } from "@/modules/legal/legal-engine";
+import { INSURANCE_LEAD_CONSENT_LABEL } from "@/lib/insurance/consent-text";
 import { BuyerPropertyAiCards } from "@/components/ai/BuyerPropertyAiCards";
 import { ListingTransactionFlag } from "@/components/listings/ListingTransactionFlag";
 import { ContactLock } from "@/components/listing/contact-lock";
+import { RequestVisitModal } from "@/components/visits/RequestVisitModal";
 import { BuyerListingSimilar } from "@/components/listings/BuyerListingSimilar";
+import { ListingLocationMiniMap } from "@/components/listings/ListingLocationMiniMap";
+import { ListingViewedBeacon } from "@/components/analytics/ListingViewedBeacon";
+import { ListingVisitAvailabilityHint } from "@/components/listings/ListingVisitAvailabilityHint";
 import { ShareListingActions } from "@/components/sharing/ShareListingActions";
 import { ViralShareCallout } from "@/components/sharing/ViralShareCallout";
 import { UrgencyBadge } from "@/components/listings/UrgencyBadge";
+import { useToast } from "@/components/ui/ToastProvider";
 import type { ListingDemandUiPayload } from "@/lib/listings/listing-analytics-service";
+import { LISTING_EXPLORE_NO_PAYMENT_LINE } from "@/lib/listings/listing-ad-trust-copy";
 
 export type BuyerListingPayload = {
   id: string;
@@ -76,6 +87,9 @@ export type BuyerListingPayload = {
     label: string;
     tone: "amber" | "emerald" | "slate";
   } | null;
+  /** FSBO geocoordinates — powers LECIPM map pin on listing detail */
+  latitude?: number | null;
+  longitude?: number | null;
 };
 
 export type ListingContactGateProps = {
@@ -84,11 +98,22 @@ export type ListingContactGateProps = {
   targetKind: "FSBO_LISTING" | "CRM_LISTING";
 };
 
-type Modal = null | "contact" | "platform" | "immo" | "advisory" | "mortgage";
+type Modal = null | "contact" | "platform" | "immo" | "advisory" | "mortgage" | "insurance";
 
 const TIMELINES = ["immediate", "1-3 months", "3+ months"] as const;
 
 const DESCRIPTION_CLAMP_CHARS = 560;
+
+/**
+ * Illustrative monthly premium band from list price (order-of-magnitude only).
+ * Not underwriting — shown so buyers can plan; a licensed broker sets real numbers.
+ */
+function illustrativeInsuranceMonthlyRange(priceCents: number): { low: number; high: number } {
+  const value = priceCents / 100;
+  const low = Math.round(Math.max(45, value * 0.0002));
+  const high = Math.round(Math.max(70, value * 0.0003));
+  return { low: Math.min(low, high), high: Math.max(low, high) };
+}
 
 function ListingDescriptionClamp({ text }: { text: string }) {
   const [open, setOpen] = useState(false);
@@ -98,7 +123,7 @@ function ListingDescriptionClamp({ text }: { text: string }) {
     long && !open ? `${normalized.slice(0, DESCRIPTION_CLAMP_CHARS).trim()}…` : normalized;
   return (
     <section
-      className="rounded-2xl border border-white/10 bg-[#0c0c0c] p-6 sm:p-8"
+      className="rounded-2xl border border-white/10 bg-[#0c0c0c] p-4 md:p-5"
       aria-labelledby="about-heading"
     >
       <h2 id="about-heading" className="text-lg font-semibold tracking-tight text-white">
@@ -137,15 +162,30 @@ export function BuyerListingDetail({
   listing,
   listingContactGate,
   demandUi = null,
+  funnelVariant = "a",
+  shareUrl,
+  shareSummary,
 }: {
   listing: BuyerListingPayload;
   listingContactGate?: ListingContactGateProps;
   demandUi?: ListingDemandUiPayload | null;
+  /** Deterministic A/B copy test (server passes from `funnelVariantForListing`). */
+  funnelVariant?: "a" | "b";
+  /** Canonical `/listings/{id}` URL for copy + native share */
+  shareUrl?: string;
+  /** Line shown in SMS / share sheet (include price + city) */
+  shareSummary?: string;
 }) {
+  const { showToast } = useToast();
   const [modal, setModal] = useState<Modal>(null);
   const [submitting, setSubmitting] = useState(false);
   const [leadCheckoutBusy, setLeadCheckoutBusy] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
+  /** Set when CRM contact also opens a LECIPM messaging thread — link to `/account/messages`. */
+  const [contactInboxThreadId, setContactInboxThreadId] = useState<string | null>(null);
+  /** CRM inquiry lead id — returned by contact API; required to request a visit. */
+  const [contactLeadId, setContactLeadId] = useState<string | null>(null);
+  const [visitModalOpen, setVisitModalOpen] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [saved, setSaved] = useState<boolean | null>(null);
 
@@ -172,11 +212,16 @@ export function BuyerListingDetail({
   const [mgCredit, setMgCredit] = useState("");
   const [mgTimeline, setMgTimeline] = useState<(typeof TIMELINES)[number]>("1-3 months");
 
+  const [insName, setInsName] = useState("");
+  const [insEmail, setInsEmail] = useState("");
+  const [insPhone, setInsPhone] = useState("");
+  const [insMessage, setInsMessage] = useState("");
+  const [insConsent, setInsConsent] = useState(false);
+
   const [legalKind, setLegalKind] = useState<null | "buyer" | "mortgage">(null);
   const afterLegal = useRef<(() => void) | null>(null);
   const [contentLicenseOpen, setContentLicenseOpen] = useState(false);
   const [contentLicenseVersion, setContentLicenseVersion] = useState<string>(CONTENT_LICENSE_VERSION);
-  const [shareHint, setShareHint] = useState<string | null>(null);
   const [showViralShare, setShowViralShare] = useState(false);
   const afterContentLicense = useRef<(() => void) | null>(null);
   const [platformLegalWarnOpen, setPlatformLegalWarnOpen] = useState(false);
@@ -258,6 +303,12 @@ export function BuyerListingDetail({
       setSaved(nowSaved);
       if (nowSaved) setShowViralShare(true);
       else setShowViralShare(false);
+      showToast(
+        nowSaved
+          ? "Saved to your list — open “My saved” anytime from the top bar."
+          : "Removed from your saved list.",
+        "success"
+      );
     } catch (e) {
       setFormError(e instanceof Error ? e.message : "Save failed");
     } finally {
@@ -293,6 +344,8 @@ export function BuyerListingDetail({
         code?: string;
         missing?: string[];
         requiredVersion?: string;
+        messagingThreadId?: string | null;
+        leadId?: string;
       };
       if (r.status === 402 && j.code === "LEAD_PAYMENT_REQUIRED") {
         await startListingContactCheckout();
@@ -316,7 +369,13 @@ export function BuyerListingDetail({
       }
       if (!r.ok) throw new Error(typeof j.error === "string" ? j.error : "Request failed");
       track("contact_listing_broker", { meta: { fsboListingId: listing.id } });
-      setFeedback("Message sent. The listing representative will get back to you.");
+      setContactInboxThreadId(typeof j.messagingThreadId === "string" ? j.messagingThreadId : null);
+      setContactLeadId(typeof j.leadId === "string" ? j.leadId : null);
+      setFeedback(
+        listing.listingKind === "crm"
+          ? "Message sent. The broker will reply as soon as possible."
+          : "Message sent. The listing representative will get back to you."
+      );
       setShowViralShare(true);
       setModal(null);
     } catch (e) {
@@ -506,6 +565,52 @@ export function BuyerListingDetail({
     }
   }
 
+  async function submitInsurance() {
+    const email = insEmail.trim().toLowerCase();
+    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    if (!emailOk) {
+      setFormError("Valid email is required.");
+      return;
+    }
+    if (!insConsent) {
+      setFormError("Consent is required to request an insurance quote.");
+      return;
+    }
+    setSubmitting(true);
+    setFormError(null);
+    try {
+      const r = await fetch("/api/insurance/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({
+          consentGiven: true,
+          email,
+          fullName: insName.trim() || undefined,
+          phone: insPhone.trim() || undefined,
+          leadType: "property",
+          source: "listing",
+          listingId: listing.id,
+          message:
+            insMessage.trim() ||
+            `Property insurance quote request for listing ${listing.id} (${listing.city}).`,
+        }),
+      });
+      const j = (await r.json().catch(() => ({}))) as { error?: string; leadId?: string };
+      if (!r.ok) throw new Error(typeof j.error === "string" ? j.error : "Request failed");
+      track("insurance_lead_request", { meta: { fsboListingId: listing.id } });
+      setFeedback(
+        "Request received. A licensed broker partner may contact you — this is not a bound quote until underwriting completes."
+      );
+      setModal(null);
+      setInsConsent(false);
+    } catch (e) {
+      setFormError(e instanceof Error ? e.message : "Something went wrong");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   async function submitAdvisory(plan: "one_time" | "subscription") {
     setSubmitting(true);
     setFormError(null);
@@ -562,17 +667,25 @@ export function BuyerListingDetail({
     const q = mapListingSearchQuery(listing);
     if (!q) return null;
     return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
-  }, [listing.address, listing.city]);
+  }, [listing]);
 
   const showVerifiedBadge = representative.licenseVerified || listing.listingKind === "crm";
+  const listingDetailsDisclaimer = isBrokerListing
+    ? "Information provided by the listing representative. Verification recommended."
+    : "Information provided by seller. Verification recommended.";
   const primaryCtaLabel =
     listingContactGate?.active && !listingContactGate.unlocked
-      ? "Unlock contact instantly"
+      ? "Unlock contact"
       : isBrokerListing
-        ? "Contact broker"
-        : "Contact owner";
+        ? funnelVariant === "b"
+          ? "Message broker — fast reply"
+          : "Contact broker"
+        : "Contact seller";
   const primaryCtaButtonClass =
     "relative z-10 rounded-full bg-[#D4AF37] font-semibold text-black shadow-[0_10px_35px_rgba(212,175,55,0.4)] ring-2 ring-[#D4AF37]/30 transition hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60 disabled:hover:scale-100 disabled:active:scale-100 min-h-[52px] text-base";
+  /** Secondary actions — one primary gold CTA only; everything else uses this. */
+  const secondaryActionBtnClass =
+    "rounded-full border border-white/12 bg-transparent px-4 py-2.5 text-sm font-medium text-white/50 transition hover:border-white/18 hover:bg-white/[0.04] hover:text-white/75 disabled:opacity-50 min-h-[44px]";
   const pricePerSqftLabel =
     listing.surfaceSqft != null && listing.surfaceSqft > 0
       ? `$${Math.round(listing.priceCents / 100 / listing.surfaceSqft).toLocaleString("en-CA")} / sq ft`
@@ -590,7 +703,18 @@ export function BuyerListingDetail({
   }, [priceInsightHeadline, du?.pricingInsight.detail, du?.priceMovementNote, pricePerSqftLabel]);
   const unifiedFrictionRiskLine = "No commitment • Takes 30 seconds • No hidden fees";
 
+  const transactionFlag = listing.transactionFlag ?? null;
+  const isSold = transactionFlag?.key === "sold";
+  const isCpp = transactionFlag?.key === "offer_accepted";
+  /** Green “live” pulse when the listing is still publicly active (not CPP milestone, not sold). */
+  const showActivePlatformPulse = !isSold && !isCpp;
+  const insuranceMonthlyEst = useMemo(
+    () => illustrativeInsuranceMonthlyRange(listing.priceCents),
+    [listing.priceCents]
+  );
+
   function openPrimaryContact() {
+    if (isSold) return;
     void fetch("/api/listings/analytics/event", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -625,38 +749,22 @@ export function BuyerListingDetail({
     return { ...item, Icon };
   });
 
-  async function shareListing() {
-    const url = typeof window !== "undefined" ? window.location.href : "";
-    const kind = listing.listingKind === "crm" ? "CRM" : "FSBO";
-    const postShare = () =>
-      void fetch("/api/listings/analytics/event", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ kind, listingId: listing.id, event: "share" }),
-      }).catch(() => {});
-    if (typeof navigator !== "undefined" && navigator.share) {
-      try {
-        await navigator.share({ title: listing.title, text: listing.title, url });
-        postShare();
-        return;
-      } catch {
-        /* user cancelled or share failed */
-      }
-    }
-    try {
-      await navigator.clipboard.writeText(url);
-      postShare();
-      setShareHint("Link copied to clipboard");
-      window.setTimeout(() => setShareHint(null), 2500);
-    } catch {
-      setShareHint("Copy the URL from your browser’s address bar");
-      window.setTimeout(() => setShareHint(null), 4000);
-    }
-  }
+  const moreDetailsHref =
+    listing.listingKind === "crm" ? "#listing-contact" : `/sell/${listing.id}#seller-documents`;
+  const moreDetailsTitle =
+    listing.listingKind === "crm"
+      ? "Contact the listing broker for the full information package and documents"
+      : "Open the full seller listing page with declaration summary and seller-listed details";
 
   return (
     <main className="min-h-screen bg-[#080808] pb-[calc(6.75rem+env(safe-area-inset-bottom))] text-white lg:pb-12">
-      <div className="mx-auto max-w-6xl px-4 pt-5 sm:px-6 lg:px-8 lg:pt-8">
+      <ListingViewedBeacon
+        listingId={listing.id}
+        surface="unified_listings"
+        city={listing.city}
+        listingKind={listing.listingKind ?? undefined}
+      />
+      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <Link
             href="/listings"
@@ -664,33 +772,15 @@ export function BuyerListingDetail({
           >
             ← All listings
           </Link>
-          <div className="flex flex-wrap items-center gap-2">
-            <a
-              href={`/api/listings/${encodeURIComponent(listing.id)}/brochure`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hidden rounded-full border border-white/12 px-3 py-2 text-sm text-white/85 transition hover:border-[#D4AF37]/40 hover:bg-white/[0.04] sm:inline-flex"
-            >
-              Brochure
-            </a>
-            <button
-              type="button"
-              onClick={() => void toggleSave()}
-              disabled={submitting || saved === null}
-              className="rounded-full border border-white/12 bg-black/30 px-4 py-2 text-sm font-medium text-white/90 backdrop-blur-sm transition hover:border-[#D4AF37]/35 hover:bg-white/[0.06] disabled:opacity-50"
-            >
-              {saved === null ? "…" : saved ? "★ Saved" : "☆ Save"}
-            </button>
-            <Link
-              href="/listings/saved"
-              className="rounded-full border border-white/12 px-4 py-2 text-sm font-medium text-white/75 transition hover:border-[#D4AF37]/35 hover:text-white"
-            >
-              My saved
-            </Link>
-          </div>
+          <Link
+            href="/listings/saved"
+            className="text-xs font-medium text-white/40 transition hover:text-[#D4AF37]/90"
+          >
+            Saved listings
+          </Link>
         </div>
 
-        <div className="mt-6 lg:grid lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-10 xl:gap-12">
+        <div className="mt-4 lg:grid lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-4">
           <div className="min-w-0">
             <FsboListingGallery
               images={listing.images}
@@ -699,21 +789,54 @@ export function BuyerListingDetail({
               verifiedListing={showVerifiedBadge}
             />
 
+            {!isSold ? (
+              <div className="mt-6">
+                <ListingAiMarketInsightCard
+                  listingId={listing.id}
+                  city={listing.city}
+                  listPriceCents={listing.priceCents}
+                  demandUi={demandUi}
+                />
+              </div>
+            ) : null}
+
             <ul className="mt-4 flex flex-wrap justify-center gap-2 sm:justify-start" aria-label="Trust stack">
-              {showVerifiedBadge ? (
-                <li className="inline-flex items-center gap-1.5 rounded-full border border-[#D4AF37]/30 bg-black/45 px-3 py-1.5 text-xs font-semibold text-[#E8D589]">
-                  <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-[#D4AF37]" aria-hidden />
-                  Verified listing
+              {isSold ? (
+                <li className="rounded-full border border-white/15 bg-white/[0.06] px-3 py-1.5 text-xs font-medium text-white/75">
+                  Sold — congratulations
+                </li>
+              ) : isCpp ? (
+                <li className="rounded-full border border-amber-400/25 bg-amber-500/10 px-3 py-1.5 text-xs font-medium text-amber-100/95">
+                  Offer accepted (CPP)
+                </li>
+              ) : showVerifiedBadge ? (
+                <li className="inline-flex items-center gap-2 rounded-full border border-[#D4AF37]/30 bg-white/[0.06] px-3 py-1.5 text-xs font-medium text-[#E8D589]">
+                  {showActivePlatformPulse ? (
+                    <span className="relative flex h-2 w-2 shrink-0" aria-hidden title="Active on platform">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400/40" />
+                      <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(52,211,153,0.85)]" />
+                    </span>
+                  ) : null}
+                  Verified listing · LECIPM
                 </li>
               ) : (
-                <li className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1.5 text-xs font-medium text-white/80">
-                  Active listing on LECIPM
+                <li className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-3 py-1.5 text-xs font-medium text-white/80">
+                  {showActivePlatformPulse ? (
+                    <span className="relative flex h-2 w-2 shrink-0" aria-hidden title="Active on platform">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400/40" />
+                      <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(52,211,153,0.85)]" />
+                    </span>
+                  ) : null}
+                  Active on platform · LECIPM
                 </li>
               )}
               {isBrokerListing ? (
                 <li className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1.5 text-xs font-medium text-white/80">
                   Broker-assisted
                 </li>
+              ) : null}
+              {listing.listingKind === "crm" ? (
+                <ListingVisitAvailabilityHint listingId={listing.id} />
               ) : null}
               <li className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1.5 text-xs text-white/75">
                 Secure inquiry
@@ -730,11 +853,36 @@ export function BuyerListingDetail({
             <div className="mt-6 h-px w-full max-w-xl bg-white/10 sm:max-w-none" aria-hidden />
 
             <header className="mt-8 border-b border-white/10 pb-8">
-              <h1 className="text-balance text-3xl font-bold tracking-tight text-white sm:text-4xl">{listing.title}</h1>
+              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-start sm:gap-x-4">
+                <h1 className="text-balance text-3xl font-bold tracking-tight text-white sm:text-4xl">{listing.title}</h1>
+                {!isSold && showVerifiedBadge ? (
+                  <span className="inline-flex shrink-0 items-center gap-1.5 self-start rounded-full border border-[#D4AF37]/35 bg-black/45 px-3 py-1.5 text-xs font-semibold text-[#E8D589]">
+                    <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-[#D4AF37]" aria-hidden />
+                    Verified listing
+                  </span>
+                ) : null}
+              </div>
+              <p className="mt-2 max-w-2xl text-xs font-normal leading-snug text-white/45">Explore with confidence</p>
               {listing.transactionFlag ? (
                 <div className="mt-4">
                   <ListingTransactionFlag flag={listing.transactionFlag} />
                 </div>
+              ) : null}
+              {isSold ? (
+                <div className="mt-5 rounded-2xl border border-emerald-500/25 bg-emerald-950/30 p-5 shadow-[0_12px_40px_-20px_rgba(16,185,129,0.35)]">
+                  <p className="text-lg font-semibold tracking-tight text-emerald-100">Congratulations — this property is sold.</p>
+                  <p className="mt-2 text-sm leading-relaxed text-emerald-100/85">
+                    LECIPM celebrates with you: buyers, sellers, and brokers receive a digital congratulations from the
+                    platform when a sale completes. Sellers and brokers who list here get listing confirmations and
+                    dashboard updates for every step; enable app or email alerts to follow movement on your file.
+                  </p>
+                </div>
+              ) : null}
+              {isCpp ? (
+                <p className="mt-4 max-w-2xl text-sm leading-relaxed text-white/72">
+                  <span className="font-semibold text-[#E8D589]">(CPP)</span> — conditional promise to purchase: a sale is
+                  underway subject to the usual conditions (financing, inspection, etc.).
+                </p>
               ) : null}
               {listing.listingCode ? (
                 <p className="mt-3 font-mono text-xs tracking-wide text-white/45">ID {listing.listingCode}</p>
@@ -774,48 +922,166 @@ export function BuyerListingDetail({
                 ) : null}
               </div>
 
-              <div className="mt-6 flex flex-wrap gap-2">
-                {mapUrl ? (
-                  <a
-                    href={mapUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 rounded-xl border border-white/12 bg-white/[0.04] px-4 py-2.5 text-sm font-medium text-white transition hover:border-[#D4AF37]/35"
-                  >
-                    <MapPin className="h-4 w-4 shrink-0 text-[#D4AF37]" aria-hidden />
-                    Map
-                    <ExternalLink className="h-3.5 w-3.5 opacity-60" aria-hidden />
-                  </a>
-                ) : null}
-                <button
-                  type="button"
-                  onClick={() => void shareListing()}
-                  className="inline-flex items-center gap-2 rounded-xl border border-white/12 bg-white/[0.04] px-4 py-2.5 text-sm font-medium text-white transition hover:border-[#D4AF37]/35"
+              {!isSold ? (
+                <div className="mt-6">
+                  <ListingAiInvestmentScoreCard
+                    listingId={listing.id}
+                    city={listing.city}
+                    listPriceCents={listing.priceCents}
+                    demandUi={demandUi}
+                  />
+                </div>
+              ) : null}
+
+              {!isSold && isBrokerListing ? (
+                <section
+                  className="mt-6 rounded-2xl border border-[#D4AF37]/25 bg-gradient-to-br from-emerald-950/50 to-black/30 p-5 shadow-[0_12px_40px_rgba(0,0,0,0.35)]"
+                  aria-labelledby="broker-contact-card-title"
                 >
-                  <Share2 className="h-4 w-4 shrink-0 text-[#D4AF37]" aria-hidden />
-                  Share
-                </button>
-              </div>
-              <div className="mt-4">
-                <ShareListingActions
-                  shareTitle={listing.title}
-                  variant="compact"
-                  listingAnalytics={{
-                    kind: listing.listingKind === "crm" ? "CRM" : "FSBO",
-                    listingId: listing.id,
-                  }}
-                />
-              </div>
-              {shareHint ? (
-                <p className="mt-2 text-xs text-emerald-400/90" role="status">
-                  {shareHint}
-                </p>
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="flex gap-3">
+                      <ShieldCheck className="h-9 w-9 shrink-0 text-[#D4AF37]" aria-hidden />
+                      <div>
+                        <p id="broker-contact-card-title" className="text-xs font-semibold uppercase tracking-wide text-[#D4AF37]/90">
+                          Contact broker
+                        </p>
+                        <p className="mt-1 text-lg font-semibold text-white">{representative.name}</p>
+                        <p className="mt-2 max-w-xl text-sm leading-relaxed text-white/75">
+                          Ask about this listing here—the broker replies on LECIPM. We don&apos;t show your email on the page;
+                          you control what you share in the conversation.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
+                      {listing.listingKind === "crm" && contactLeadId ? (
+                        <button
+                          type="button"
+                          onClick={() => setVisitModalOpen(true)}
+                          className={`${primaryCtaButtonClass} px-6 py-2.5 text-sm whitespace-nowrap`}
+                        >
+                          Request a visit
+                        </button>
+                      ) : null}
+                      <button
+                        type="button"
+                        onClick={openPrimaryContact}
+                        disabled={leadCheckoutBusy}
+                        className={`${
+                          listing.listingKind === "crm" && contactLeadId
+                            ? secondaryActionBtnClass
+                            : primaryCtaButtonClass
+                        } px-6 py-2.5 text-sm whitespace-nowrap`}
+                      >
+                        {leadCheckoutBusy ? "Securing checkout…" : "Contact broker"}
+                      </button>
+                    </div>
+                  </div>
+                </section>
+              ) : null}
+
+              {!isSold ? (
+                <div className="mt-6 space-y-3">
+                  <p className="text-center text-sm font-medium text-emerald-100/95 lg:text-left">
+                    {LISTING_EXPLORE_NO_PAYMENT_LINE}
+                  </p>
+                  {isBrokerListing && listing.listingKind === "crm" && contactLeadId ? (
+                    <button
+                      type="button"
+                      onClick={() => setVisitModalOpen(true)}
+                      className={`${primaryCtaButtonClass} flex w-full items-center justify-center px-8 lg:inline-flex lg:max-w-md lg:justify-center`}
+                    >
+                      Request a visit
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={openPrimaryContact}
+                    disabled={leadCheckoutBusy}
+                    className={`${
+                      isBrokerListing && listing.listingKind === "crm" && contactLeadId
+                        ? secondaryActionBtnClass
+                        : primaryCtaButtonClass
+                    } flex w-full items-center justify-center px-8 lg:inline-flex lg:max-w-md lg:justify-center`}
+                  >
+                    {leadCheckoutBusy ? "Securing checkout…" : primaryCtaLabel}
+                  </button>
+                  <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
+                    <button
+                      type="button"
+                      onClick={() => void toggleSave()}
+                      disabled={submitting || saved === null}
+                      title={
+                        saved === null
+                          ? "Loading save status…"
+                          : saved
+                            ? "Remove from saved"
+                            : "Save this listing"
+                      }
+                      className={`${secondaryActionBtnClass} w-full sm:w-auto sm:min-w-[7.5rem]`}
+                    >
+                      {saved === null ? "…" : saved ? "Saved" : "Save"}
+                    </button>
+                    <ShareListingActions
+                      shareTitle={listing.title}
+                      shareText={shareSummary}
+                      url={shareUrl}
+                      variant="unified"
+                      className="w-full max-w-md lg:max-w-none"
+                      listingAnalytics={{
+                        kind: listing.listingKind === "crm" ? "CRM" : "FSBO",
+                        listingId: listing.id,
+                      }}
+                    />
+                  </div>
+                  <nav
+                    className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-[10px] text-white/32 lg:justify-start"
+                    aria-label="Listing tools"
+                  >
+                    {mapUrl ? (
+                      <>
+                        <a
+                          href={mapUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 hover:text-[#D4AF37]/75"
+                        >
+                          <MapPin className="h-3 w-3 shrink-0 opacity-70" aria-hidden />
+                          Map
+                        </a>
+                        <span className="text-white/20" aria-hidden>
+                          ·
+                        </span>
+                      </>
+                    ) : null}
+                    <a
+                      href={`/api/listings/${encodeURIComponent(listing.id)}/brochure`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:text-[#D4AF37]/75"
+                    >
+                      Print
+                    </a>
+                    <span className="text-white/20" aria-hidden>
+                      ·
+                    </span>
+                    <a href="#property-details" className="hover:text-[#D4AF37]/75">
+                      Property details
+                    </a>
+                    <span className="text-white/20" aria-hidden>
+                      ·
+                    </span>
+                    <Link href={moreDetailsHref} title={moreDetailsTitle} className="hover:text-[#D4AF37]/75">
+                      Full listing
+                    </Link>
+                  </nav>
+                </div>
               ) : null}
             </header>
 
-            <div className="mt-10 space-y-10">
+            <div className="mt-8 space-y-8">
               <section
-                className="rounded-2xl border border-white/10 bg-gradient-to-b from-black/50 to-[#0c0c0c] p-6 shadow-[0_24px_60px_-30px_rgba(0,0,0,0.9)] backdrop-blur-md sm:p-8"
+                id={featureRows.length === 0 ? "property-details" : undefined}
+                className={`rounded-2xl border border-white/10 bg-gradient-to-b from-black/50 to-[#0c0c0c] p-4 shadow-[0_24px_60px_-30px_rgba(0,0,0,0.9)] backdrop-blur-md md:p-5${featureRows.length === 0 ? " scroll-mt-28" : ""}`}
                 aria-labelledby="availability-heading"
               >
                 <h2
@@ -833,9 +1099,44 @@ export function BuyerListingDetail({
               <ListingFinancialSnapshot priceCents={listing.priceCents} />
               <ListingMortgageCalculator listPriceCents={listing.priceCents} />
 
+              {!isSold ? (
+                <section
+                  className="rounded-2xl border border-[#D4AF37]/20 bg-[#0c0c0c] p-4 md:p-5"
+                  aria-labelledby="insurance-estimate-heading"
+                >
+                  <div className="flex items-start gap-3">
+                    <Shield className="mt-0.5 h-5 w-5 shrink-0 text-[#D4AF37]" aria-hidden />
+                    <div className="min-w-0 flex-1">
+                      <h2 id="insurance-estimate-heading" className="text-lg font-semibold tracking-tight text-white">
+                        Estimated Insurance Cost
+                      </h2>
+                      <p className="mt-3 text-2xl font-semibold text-[#E8D589] tabular-nums">
+                        ${insuranceMonthlyEst.low.toLocaleString()}–${insuranceMonthlyEst.high.toLocaleString()} / month
+                      </p>
+                      <p className="mt-2 text-xs leading-relaxed text-white/45">
+                        Illustrative range based on list price — not a quote. Coverage, deductible, and insurer choice
+                        change what you pay; a licensed broker confirms numbers after underwriting.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setModal("insurance");
+                          setFeedback(null);
+                          setFormError(null);
+                        }}
+                        className="mt-5 w-full rounded-xl bg-premium-gold px-4 py-3 text-sm font-semibold text-black transition hover:brightness-110 sm:w-auto"
+                      >
+                        Request insurance quote
+                      </button>
+                    </div>
+                  </div>
+                </section>
+              ) : null}
+
               {featureRows.length > 0 ? (
                 <section
-                  className="rounded-2xl border border-white/10 bg-[#0c0c0c] p-6 sm:p-8"
+                  id="property-details"
+                  className="scroll-mt-28 rounded-2xl border border-white/10 bg-[#0c0c0c] p-4 md:p-5"
                   aria-labelledby="features-heading"
                 >
                   <h2 id="features-heading" className="text-lg font-semibold tracking-tight text-white">
@@ -858,11 +1159,33 @@ export function BuyerListingDetail({
                       );
                     })}
                   </div>
+                  <div className="mt-6">
+                    <Link
+                      href={moreDetailsHref}
+                      title={moreDetailsTitle}
+                      className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-transparent px-4 py-2.5 text-sm font-medium text-white/55 transition hover:border-white/20 hover:text-white/80"
+                    >
+                      More details
+                      <ExternalLink className="h-3.5 w-3.5 opacity-60" aria-hidden />
+                    </Link>
+                    {listing.listingKind === "crm" ? (
+                      <p className="mt-2 text-xs text-white/45">
+                        Broker listings: request the full disclosure package through your representative below.
+                      </p>
+                    ) : (
+                      <p className="mt-2 text-xs text-white/45">
+                        Opens the public seller listing with declaration summary and documents the seller chose to show.
+                      </p>
+                    )}
+                  </div>
+                  <p className="mt-6 border-t border-white/10 pt-4 text-[11px] leading-relaxed text-white/50">
+                    {listingDetailsDisclaimer}
+                  </p>
                 </section>
               ) : null}
 
               <section
-                className="rounded-2xl border border-white/10 bg-[#0c0c0c] p-6 sm:p-8"
+                className="rounded-2xl border border-white/10 bg-[#0c0c0c] p-4 md:p-5"
                 aria-labelledby="financial-heading"
               >
                 <h2 id="financial-heading" className="text-lg font-semibold tracking-tight text-white">
@@ -893,9 +1216,14 @@ export function BuyerListingDetail({
               </section>
 
               <ListingDescriptionClamp text={listing.description} />
+              {featureRows.length === 0 ? (
+                <p className="mt-4 max-w-3xl text-[11px] leading-relaxed text-white/50 sm:mt-6">
+                  {listingDetailsDisclaimer}
+                </p>
+              ) : null}
 
               <section
-                className="rounded-2xl border border-white/10 bg-[#0c0c0c] p-6 sm:p-8"
+                className="rounded-2xl border border-white/10 bg-[#0c0c0c] p-4 md:p-5"
                 id="location"
                 aria-labelledby="location-heading"
               >
@@ -904,24 +1232,65 @@ export function BuyerListingDetail({
                 </h2>
                 <p className="mt-2 text-sm leading-relaxed text-white/70">
                   {mapUrl
-                    ? `Explore the area around ${listing.city}. Exact address details may be shared after you connect with the listing representative.`
+                    ? `LECIPM map uses Québec flag pins (same as search). Approximate position — exact address and documents are shared through your representative after you connect.`
                     : `${listing.city} — use search to explore the wider market on the map.`}
                 </p>
+                {(mapListingSearchQuery(listing) != null || (listing.latitude != null && listing.longitude != null)) ? (
+                  <ListingLocationMiniMap
+                    title={listing.title}
+                    priceLabel={priceLabel}
+                    latitude={listing.latitude ?? null}
+                    longitude={listing.longitude ?? null}
+                    geocodeFallbackQuery={mapListingSearchQuery(listing)}
+                    onRequestVisit={openPrimaryContact}
+                  />
+                ) : null}
                 {mapUrl ? (
                   <a
                     href={mapUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-4 inline-flex items-center gap-2 rounded-full border border-[#D4AF37]/40 bg-[#D4AF37]/10 px-5 py-2.5 text-sm font-semibold text-[#E8D589] transition hover:bg-[#D4AF37]/15"
+                    className="mt-4 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-5 py-2.5 text-sm font-semibold text-white/90 transition hover:border-[#D4AF37]/35"
                   >
-                    <MapPin className="h-4 w-4" aria-hidden />
-                    Open in Google Maps
+                    <MapPin className="h-4 w-4 text-[#D4AF37]" aria-hidden />
+                    Open in Google Maps (directions)
+                    <ExternalLink className="h-3.5 w-3.5 opacity-60" aria-hidden />
                   </a>
                 ) : null}
               </section>
 
               <section
-                className="rounded-2xl border border-white/10 bg-[#0c0c0c] p-6 sm:p-8"
+                className="rounded-2xl border border-[#D4AF37]/20 bg-gradient-to-b from-[#141008]/90 to-[#0c0c0c] p-4 md:p-5"
+                aria-labelledby="transaction-docs-heading"
+              >
+                <h2 id="transaction-docs-heading" className="text-lg font-semibold tracking-tight text-[#E8D589]">
+                  Next step: visit &amp; transaction documents
+                </h2>
+                <p className="mt-2 text-sm leading-relaxed text-white/75">
+                  When you are ready to move forward, your broker or the platform can coordinate a showing and share
+                  what Québec transactions typically require — for example seller declaration updates, municipal tax
+                  statements, condo syndicate minutes or assessments, and other disclosures. Nothing here is legal
+                  advice; your representative guides due diligence.
+                </p>
+                <ul className="mt-4 list-inside list-disc space-y-1.5 text-sm text-white/70">
+                  <li>Schedule a visit or virtual walkthrough</li>
+                  <li>Request seller declaration and property disclosure context</li>
+                  <li>Tax rolls, condo fees / syndicate information (where applicable)</li>
+                  <li>Introduction to financing or notary timelines as needed</li>
+                </ul>
+                {isSold ? (
+                  <p className="mt-5 text-sm text-white/55">This listing has sold — new visits and inquiries are closed.</p>
+                ) : (
+                  <p className="mt-5 text-sm leading-relaxed text-white/55">
+                    Use the primary <span className="font-medium text-white/75">Contact</span> button at the top to
+                    message the representative and coordinate visits or documents.
+                  </p>
+                )}
+              </section>
+
+              <section
+                className="scroll-mt-24 rounded-2xl border border-white/10 bg-[#0c0c0c] p-4 md:p-5"
+                id="listing-contact"
                 aria-labelledby="rep-heading"
               >
                 <h2 id="rep-heading" className="text-lg font-semibold tracking-tight text-white">
@@ -933,8 +1302,31 @@ export function BuyerListingDetail({
                     <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/40">Trust stack</p>
                     <ul className="mt-2 space-y-1.5 text-sm text-white/80">
                       <li className="flex items-start gap-2">
-                        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#D4AF37]" aria-hidden />
-                        <span>{showVerifiedBadge ? "Verified listing path on LECIPM" : "Active listing on LECIPM"}</span>
+                        {isSold ? (
+                          <>
+                            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-white/40" aria-hidden />
+                            <span>Sold — this file is complete on the platform</span>
+                          </>
+                        ) : isCpp ? (
+                          <>
+                            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-amber-400/90" aria-hidden />
+                            <span>Offer accepted (CPP) — transaction in progress</span>
+                          </>
+                        ) : (
+                          <>
+                            {showActivePlatformPulse ? (
+                              <span className="relative mt-1.5 flex h-2 w-2 shrink-0" aria-hidden title="Active on platform">
+                                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400/40" />
+                                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(52,211,153,0.85)]" />
+                              </span>
+                            ) : (
+                              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#D4AF37]" aria-hidden />
+                            )}
+                            <span>
+                              {showVerifiedBadge ? "Verified listing path on LECIPM" : "Active on platform — live on LECIPM"}
+                            </span>
+                          </>
+                        )}
                       </li>
                       {isBrokerListing ? (
                         <li className="flex items-start gap-2">
@@ -985,85 +1377,66 @@ export function BuyerListingDetail({
                     ) : null}
                   </div>
                   <div className="w-full shrink-0 sm:w-auto sm:min-w-[220px]" aria-label="Call to action">
-                    {listingContactGate?.active && !listingContactGate.unlocked ? (
-                      <div className="mb-4">
-                        <ContactLock
-                          isPaid={false}
-                          onUnlock={() => void startListingContactCheckout()}
-                          busy={leadCheckoutBusy}
-                        />
-                      </div>
-                    ) : null}
-                    <button
-                      type="button"
-                      onClick={openPrimaryContact}
-                      disabled={leadCheckoutBusy}
-                      className={`w-full px-6 py-3 ${primaryCtaButtonClass}`}
-                    >
-                      {leadCheckoutBusy ? "Securing checkout…" : primaryCtaLabel}
-                    </button>
-                    {paywallActive ? (
-                      <p className="mt-2 text-center text-[11px] text-[#E8D589]/90 sm:text-left">
-                        Access phone &amp; email instantly after unlock
+                    {isSold ? (
+                      <p className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-white/65">
+                        This listing has sold. Thank you for your interest — browse other homes in {listing.city}.
                       </p>
-                    ) : null}
-                    <div className="mt-4 space-y-2" aria-label="Urgency">
-                      {showDemandMessaging && du?.badge && du.urgency ? (
-                        <div className="flex flex-col gap-2">
-                          <UrgencyBadge text={du.badge} level={du.urgency.level} />
-                          <p className="text-xs text-white/70">{du.urgency.label}</p>
+                    ) : (
+                      <>
+                        {listingContactGate?.active && !listingContactGate.unlocked ? (
+                          <div className="mb-4">
+                            <ContactLock
+                              isPaid={false}
+                              onUnlock={() => void startListingContactCheckout()}
+                              busy={leadCheckoutBusy}
+                            />
+                          </div>
+                        ) : null}
+                        <p className="text-sm text-white/60">
+                          Main action on this page: the gold <strong className="font-semibold text-[#E8D589]">Contact</strong>{" "}
+                          button above{paywallActive ? " (unlock first if your listing requires it)" : ""}.
+                        </p>
+                        {paywallActive ? (
+                          <p className="mt-2 text-center text-[11px] text-[#E8D589]/90 sm:text-left">
+                            Access phone &amp; email instantly after unlock
+                          </p>
+                        ) : null}
+                        <div className="mt-4 space-y-2" aria-label="Urgency">
+                          {showDemandMessaging && du?.badge && du.urgency ? (
+                            <div className="flex flex-col gap-2">
+                              <UrgencyBadge text={du.badge} level={du.urgency.level} />
+                              <p className="text-xs text-white/70">{du.urgency.label}</p>
+                            </div>
+                          ) : null}
                         </div>
-                      ) : null}
-                    </div>
-                    <p
-                      className="mt-4 text-center text-[11px] text-white/60 sm:text-left"
-                      aria-label="Friction and reassurance"
-                    >
-                      {unifiedFrictionRiskLine}
-                    </p>
-                    <p className="mt-2 text-center text-[10px] text-white/45 sm:text-left">
-                      Representative typically replies within one business day
-                    </p>
-                    <div className="mt-4 flex flex-wrap justify-center gap-2 sm:justify-start" aria-label="Soft actions">
+                      </>
+                    )}
+                    {!isSold ? (
+                      <>
+                        <p
+                          className="mt-4 text-center text-[11px] text-white/60 sm:text-left"
+                          aria-label="Friction and reassurance"
+                        >
+                          {unifiedFrictionRiskLine}
+                        </p>
+                        <p className="mt-2 text-center text-[10px] text-white/45 sm:text-left">
+                          Representative typically replies within one business day
+                        </p>
+                      </>
+                    ) : null}
+                    <p className="mt-3 text-center text-[11px] text-white/40 sm:text-left">
+                      Prefer a platform broker?{" "}
                       <button
                         type="button"
-                        onClick={() => void toggleSave()}
-                        disabled={submitting || saved === null}
-                        className="rounded-lg border border-white/12 px-3 py-2 text-xs font-medium text-white/75 transition hover:border-[#D4AF37]/35 disabled:opacity-50"
-                      >
-                        {saved === null ? "…" : saved ? "★ Saved" : "☆ Save"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => void shareListing()}
-                        className="rounded-lg border border-white/12 px-3 py-2 text-xs font-medium text-white/75 transition hover:border-[#D4AF37]/35"
-                      >
-                        Share
-                      </button>
-                      <button
-                        type="button"
+                        className="font-medium text-[#D4AF37]/80 underline decoration-[#D4AF37]/30 underline-offset-2 hover:text-[#E8D589]"
                         onClick={() => {
                           setModal("platform");
                           setFeedback(null);
                           setFormError(null);
                         }}
-                        className="rounded-lg border border-white/12 px-3 py-2 text-xs font-medium text-white/55 transition hover:border-[#D4AF37]/25 hover:text-white/75"
                       >
-                        Platform broker
+                        Request one here
                       </button>
-                    </div>
-                    <div className="mt-3">
-                      <ShareListingActions
-                        shareTitle={listing.title}
-                        variant="compact"
-                        listingAnalytics={{
-                          kind: listing.listingKind === "crm" ? "CRM" : "FSBO",
-                          listingId: listing.id,
-                        }}
-                      />
-                    </div>
-                    <p className="mt-2 text-center text-[10px] text-white/45 sm:text-left">
-                      Save to compare later · Share with someone searching
                     </p>
                   </div>
                 </div>
@@ -1080,73 +1453,108 @@ export function BuyerListingDetail({
               <BuyerListingSimilar excludeId={listing.id} city={listing.city} />
 
               <section
-                className="rounded-2xl border border-white/10 bg-[#0c0c0c] p-6 sm:p-8"
+                className="rounded-2xl border border-white/10 bg-[#0c0c0c] p-4 md:p-5"
                 id="listing-more-help"
                 aria-labelledby="more-help-heading"
               >
                 <h2 id="more-help-heading" className="text-lg font-semibold text-white">
                   More ways we can help
                 </h2>
-                <p className="mt-1 text-sm text-white/55">
-                  Optional — same secure standards. Platform, monitored contact, or financing.
-                </p>
-                <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                <p className="mt-2 text-sm leading-relaxed text-white/50">
+                  Optional add-ons — same inquiry standards.{" "}
                   <button
                     type="button"
+                    className="font-medium text-[#D4AF37]/85 underline decoration-[#D4AF37]/25 underline-offset-2 hover:text-[#E8D589]"
                     onClick={() => {
                       setModal("platform");
                       setFeedback(null);
                       setFormError(null);
                     }}
-                    className="rounded-xl border border-white/12 bg-white/[0.04] px-4 py-3 text-left text-sm font-semibold text-white transition hover:border-[#D4AF37]/35"
                   >
                     Platform broker
                   </button>
+                  {" · "}
                   <button
                     type="button"
+                    className="font-medium text-[#D4AF37]/85 underline decoration-[#D4AF37]/25 underline-offset-2 hover:text-[#E8D589]"
                     onClick={() => {
                       setModal("immo");
                       setFeedback(null);
                       setFormError(null);
                     }}
-                    className="rounded-xl border border-white/12 bg-white/[0.04] px-4 py-3 text-left text-sm font-semibold text-white transition hover:border-[#D4AF37]/35"
                   >
                     ImmoContact
                   </button>
+                  {" · "}
                   <button
                     type="button"
+                    className="font-medium text-[#D4AF37]/85 underline decoration-[#D4AF37]/25 underline-offset-2 hover:text-[#E8D589]"
                     onClick={() => {
                       setModal("mortgage");
                       setFeedback(null);
                       setFormError(null);
                     }}
-                    className="rounded-xl border border-white/12 bg-white/[0.04] px-4 py-3 text-left text-sm font-semibold text-white transition hover:border-[#D4AF37]/35"
                   >
-                    Mortgage advice
+                    Mortgage
                   </button>
+                  {" · "}
                   <button
                     type="button"
+                    className="font-medium text-[#D4AF37]/85 underline decoration-[#D4AF37]/25 underline-offset-2 hover:text-[#E8D589]"
+                    onClick={() => {
+                      setModal("insurance");
+                      setFeedback(null);
+                      setFormError(null);
+                    }}
+                  >
+                    Insurance quote
+                  </button>
+                  {" · "}
+                  <button
+                    type="button"
+                    className="font-medium text-[#D4AF37]/85 underline decoration-[#D4AF37]/25 underline-offset-2 hover:text-[#E8D589]"
                     onClick={() => {
                       setModal("advisory");
                       setFeedback(null);
                       setFormError(null);
                     }}
-                    className="rounded-xl border border-white/12 bg-white/[0.04] px-4 py-3 text-left text-sm font-semibold text-white transition hover:border-[#D4AF37]/35"
                   >
-                    Expert advisory
+                    Advisory
                   </button>
-                </div>
+                </p>
               </section>
             </div>
           </div>
 
           <aside className="hidden lg:block lg:sticky lg:top-24 lg:self-start">
-            <div className="rounded-2xl border border-white/10 bg-black/55 p-6 shadow-[0_28px_70px_-36px_rgba(0,0,0,0.95)] backdrop-blur-xl">
+            <div className="rounded-2xl border border-white/10 bg-black/55 p-4 shadow-[0_28px_70px_-36px_rgba(0,0,0,0.95)] backdrop-blur-xl md:p-5">
               <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/45">Trust stack</p>
               <ul className="mt-2 space-y-2 text-sm text-white/82" aria-label="Trust stack">
                 <li className="flex items-start gap-2">
-                  <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[#D4AF37]" aria-hidden />
-                  <span>{showVerifiedBadge ? "Verified listing" : "Active listing on LECIPM"}</span>
+                  {isSold ? (
+                    <>
+                      <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-white/35" aria-hidden />
+                      <span>Sold — congratulations</span>
+                    </>
+                  ) : isCpp ? (
+                    <>
+                      <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-amber-400/90" aria-hidden />
+                      <span>Offer accepted (CPP)</span>
+                    </>
+                  ) : (
+                    <>
+                      <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[#D4AF37]" aria-hidden />
+                      <span className="inline-flex items-center gap-2">
+                        {showVerifiedBadge ? "Verified listing" : "Active on platform · LECIPM"}
+                        {showActivePlatformPulse ? (
+                          <span className="relative inline-flex h-2 w-2 shrink-0" aria-hidden title="Live on platform">
+                            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400/40" />
+                            <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(52,211,153,0.85)]" />
+                          </span>
+                        ) : null}
+                      </span>
+                    </>
+                  )}
                 </li>
                 {isBrokerListing ? (
                   <li className="flex items-start gap-2">
@@ -1185,7 +1593,7 @@ export function BuyerListingDetail({
                 Compare in {listing.city}, ask questions, line up a tour before you decide.
               </p>
 
-              {listingContactGate?.active && !listingContactGate.unlocked ? (
+              {!isSold && listingContactGate?.active && !listingContactGate.unlocked ? (
                 <div className="mt-5">
                   <ContactLock
                     isPaid={false}
@@ -1194,86 +1602,43 @@ export function BuyerListingDetail({
                   />
                 </div>
               ) : null}
-              <button
-                type="button"
-                onClick={openPrimaryContact}
-                disabled={leadCheckoutBusy}
-                className={`mt-5 w-full px-4 py-3 ${primaryCtaButtonClass}`}
-              >
-                {leadCheckoutBusy ? "Securing checkout…" : primaryCtaLabel}
-              </button>
-              {paywallActive ? (
+              {isSold ? (
+                <p className="mt-5 text-sm text-white/55">This listing has sold.</p>
+              ) : (
+                <p className="mt-5 text-center text-[11px] text-white/40 sm:text-left">
+                  Save and share are next to the primary contact button above.
+                </p>
+              )}
+              {!isSold && paywallActive ? (
                 <p className="mt-2 text-[11px] text-[#E8D589]/90">Access phone &amp; email instantly after unlock</p>
               ) : null}
 
-              <div className="mt-4 space-y-2" aria-label="Urgency">
-                {showDemandMessaging && du?.badge && du.urgency ? (
-                  <>
-                    <UrgencyBadge text={du.badge} level={du.urgency.level} />
-                    <p className="text-xs text-white/70">{du.urgency.label}</p>
-                  </>
-                ) : null}
-              </div>
-
-              <p className="mt-4 text-xs text-white/60" aria-label="Friction and reassurance">
-                {unifiedFrictionRiskLine}
-              </p>
-              <p className="mt-2 text-[10px] text-white/45">
-                Representative typically replies within one business day
-              </p>
-
-              <div className="mt-4 border-t border-white/10 pt-4" aria-label="Soft actions">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/40">More actions</p>
-                <div className="mt-3 flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => void toggleSave()}
-                    disabled={submitting || saved === null}
-                    className="flex-1 rounded-lg border border-white/10 bg-transparent py-2.5 text-xs font-medium text-white/55 transition hover:border-white/20 hover:text-white/75 disabled:opacity-50"
-                  >
-                    {saved === null ? "…" : saved ? "Saved" : "Save"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void shareListing()}
-                    className="flex-1 rounded-lg border border-white/10 bg-transparent py-2.5 text-xs font-medium text-white/55 transition hover:border-white/20 hover:text-white/75"
-                  >
-                    Share
-                  </button>
-                </div>
-                <div className="mt-3">
-                  <ShareListingActions
-                    shareTitle={listing.title}
-                    variant="compact"
-                    listingAnalytics={{
-                      kind: listing.listingKind === "crm" ? "CRM" : "FSBO",
-                      listingId: listing.id,
-                    }}
-                  />
-                </div>
-                <p className="mt-2 text-[10px] text-white/45">
-                  Save to compare later · Share with someone searching
-                </p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setModal("platform");
-                    setFeedback(null);
-                    setFormError(null);
-                  }}
-                  className="mt-3 w-full rounded-xl border border-white/12 py-2.5 text-xs font-medium text-white/55 transition hover:border-[#D4AF37]/25 hover:bg-white/[0.04] hover:text-white/75"
-                >
-                  Prefer a platform broker?
-                </button>
-              </div>
+              {!isSold ? (
+                <>
+                  <p className="mt-4 text-xs text-white/60" aria-label="Friction and reassurance">
+                    {unifiedFrictionRiskLine}
+                  </p>
+                  <p className="mt-2 text-[10px] text-white/45">
+                    Representative typically replies within one business day
+                  </p>
+                </>
+              ) : null}
             </div>
           </aside>
         </div>
 
         {feedback && !modal ? (
-          <p className="mt-8 rounded-xl border border-emerald-500/30 bg-emerald-950/30 px-4 py-3 text-sm text-emerald-100">
-            {feedback}
-          </p>
+          <div className="mt-8 rounded-xl border border-emerald-500/30 bg-emerald-950/30 px-4 py-3 text-sm text-emerald-100">
+            <p>{feedback}</p>
+            {contactInboxThreadId ? (
+              <Link
+                href={`/account/messages?threadId=${encodeURIComponent(contactInboxThreadId)}`}
+                className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-emerald-300 underline decoration-emerald-500/50 underline-offset-2 hover:text-emerald-200"
+              >
+                Open your inbox
+              </Link>
+            ) : null}
+          </div>
         ) : null}
         <ViralShareCallout
           shareTitle={listing.title}
@@ -1290,32 +1655,50 @@ export function BuyerListingDetail({
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#070707]/95 px-4 py-3 shadow-[0_-12px_40px_rgba(0,0,0,0.45)] backdrop-blur-lg pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:hidden">
         <div className="mx-auto max-w-lg">
           <div className="h-px w-full bg-white/10 opacity-80" aria-hidden />
-          <div className="mt-2 flex items-center gap-3">
+          <div className="mt-2 flex items-center justify-between gap-3">
             <div className="min-w-0 flex-1">
               <p className="truncate text-lg font-bold text-white">{priceLabel}</p>
               <p className="truncate text-xs text-white/50">{listing.city}</p>
             </div>
-            <button
-              type="button"
-              onClick={openPrimaryContact}
-              disabled={leadCheckoutBusy}
-              className={`shrink-0 px-5 ${primaryCtaButtonClass}`}
-            >
-              {leadCheckoutBusy ? "…" : primaryCtaLabel}
-            </button>
+            {isSold ? (
+              <span className="shrink-0 rounded-full border border-white/15 px-3 py-2 text-xs font-semibold text-white/60">
+                Sold
+              </span>
+            ) : null}
           </div>
-          {paywallActive ? (
+          {!isSold ? (
+            <>
+              <p className="mt-3 text-center text-[13px] font-semibold leading-snug text-emerald-100/90">
+                {LISTING_EXPLORE_NO_PAYMENT_LINE}
+              </p>
+              {isBrokerListing && listing.listingKind === "crm" && contactLeadId ? (
+                <button
+                  type="button"
+                  onClick={() => setVisitModalOpen(true)}
+                  className={`${primaryCtaButtonClass} mt-2 flex w-full items-center justify-center px-6`}
+                >
+                  Request a visit
+                </button>
+              ) : null}
+              <button
+                type="button"
+                onClick={openPrimaryContact}
+                disabled={leadCheckoutBusy}
+                className={`${
+                  isBrokerListing && listing.listingKind === "crm" && contactLeadId
+                    ? `${secondaryActionBtnClass} mt-2`
+                    : `${primaryCtaButtonClass} mt-2`
+                } flex w-full items-center justify-center px-6`}
+              >
+                {leadCheckoutBusy ? "Securing checkout…" : primaryCtaLabel}
+              </button>
+            </>
+          ) : null}
+          {!isSold && paywallActive ? (
             <p className="mt-1.5 text-center text-[10px] text-[#E8D589]/90">
               Access phone &amp; email instantly after unlock
             </p>
           ) : null}
-          {showDemandMessaging && du?.urgency ? (
-            <div className="mt-2 flex flex-col items-center gap-1.5">
-              {du.badge ? <UrgencyBadge text={du.badge} level={du.urgency.level} /> : null}
-              <p className="text-center text-xs text-white/70">{du.urgency.label}</p>
-            </div>
-          ) : null}
-          <p className="mt-2 text-center text-[11px] text-white/60">Instant access • No commitment • Secure</p>
         </div>
       </div>
 
@@ -1328,7 +1711,7 @@ export function BuyerListingDetail({
           onClick={(e) => e.target === e.currentTarget && setModal(null)}
         >
           <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl border border-white/10 bg-[#121212] p-6 shadow-2xl">
-            <h3 className="text-lg font-semibold text-white">{isBrokerListing ? "Contact broker" : "Contact owner"}</h3>
+            <h3 className="text-lg font-semibold text-white">{isBrokerListing ? "Contact broker" : "Contact seller"}</h3>
             <p className="mt-2 text-sm text-slate-400">Your message is sent to the {representativeLabel.toLowerCase()}.</p>
             <div className="mt-4 space-y-3">
               <input
@@ -1614,6 +1997,92 @@ export function BuyerListingDetail({
         </div>
       ) : null}
 
+      {modal === "insurance" ? (
+        <div
+          className="fixed inset-0 z-[80] flex items-end justify-center bg-black/70 p-4 sm:items-center"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="insurance-modal-title"
+          onClick={(e) => e.target === e.currentTarget && setModal(null)}
+        >
+          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl border border-[#D4AF37]/25 bg-[#121212] p-6 shadow-2xl">
+            <h3 id="insurance-modal-title" className="text-lg font-semibold text-white">
+              Request insurance quote
+            </h3>
+            <p className="mt-2 text-sm text-slate-400">
+              Connects you with a licensed broker partner for property coverage — not a bound policy until underwriting.
+            </p>
+            <div className="mt-4 space-y-3">
+              <label className="block text-xs text-slate-500">
+                Full name
+                <input
+                  className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
+                  value={insName}
+                  onChange={(e) => setInsName(e.target.value)}
+                  autoComplete="name"
+                />
+              </label>
+              <label className="block text-xs text-slate-500">
+                Email *
+                <input
+                  className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
+                  type="email"
+                  value={insEmail}
+                  onChange={(e) => setInsEmail(e.target.value)}
+                  autoComplete="email"
+                />
+              </label>
+              <label className="block text-xs text-slate-500">
+                Phone (optional)
+                <input
+                  className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
+                  value={insPhone}
+                  onChange={(e) => setInsPhone(e.target.value)}
+                  autoComplete="tel"
+                />
+              </label>
+              <label className="block text-xs text-slate-500">
+                Notes (optional)
+                <textarea
+                  className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
+                  rows={2}
+                  value={insMessage}
+                  onChange={(e) => setInsMessage(e.target.value)}
+                  placeholder="Coverage questions, closing timeline, etc."
+                />
+              </label>
+              <label className="flex cursor-pointer items-start gap-2 text-xs text-slate-300">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 h-4 w-4 rounded border-white/20 bg-white/5"
+                  checked={insConsent}
+                  onChange={(e) => setInsConsent(e.target.checked)}
+                />
+                <span>{INSURANCE_LEAD_CONSENT_LABEL}</span>
+              </label>
+            </div>
+            <div className="mt-6 flex gap-2">
+              <button
+                type="button"
+                onClick={() => setModal(null)}
+                className="flex-1 rounded-lg border border-white/15 py-2.5 text-sm font-medium text-white transition hover:bg-white/5"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={submitting}
+                onClick={() => void submitInsurance()}
+                className="flex-1 rounded-lg bg-premium-gold py-2.5 text-sm font-bold text-black disabled:opacity-50"
+              >
+                {submitting ? "Sending…" : "Submit request"}
+              </button>
+            </div>
+            {formError && modal === "insurance" ? <p className="mt-3 text-sm text-red-400">{formError}</p> : null}
+          </div>
+        </div>
+      ) : null}
+
       <LegalAcknowledgmentModal
         open={legalKind !== null}
         kind={legalKind === "mortgage" ? "mortgage" : "buyer"}
@@ -1712,6 +2181,17 @@ export function BuyerListingDetail({
             ) : null}
           </div>
         </div>
+      ) : null}
+
+      {contactLeadId ? (
+        <RequestVisitModal
+          open={visitModalOpen}
+          onClose={() => setVisitModalOpen(false)}
+          listingId={listing.id}
+          listingTitle={listing.title}
+          leadId={contactLeadId}
+          threadId={contactInboxThreadId}
+        />
       ) : null}
     </main>
   );

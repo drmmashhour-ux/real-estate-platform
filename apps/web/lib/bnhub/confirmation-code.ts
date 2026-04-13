@@ -23,5 +23,5 @@ export async function allocateUniqueConfirmationCode(): Promise<string> {
     });
     if (!clash) return code;
   }
-  throw new Error("Could not allocate a unique BNHub confirmation code");
+  throw new Error("Could not allocate a unique BNHUB confirmation code");
 }

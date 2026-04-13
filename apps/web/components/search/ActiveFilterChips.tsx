@@ -143,8 +143,8 @@ export function ActiveFilterChips({ tone = "default" }: { tone?: "default" | "he
     <div className="flex flex-wrap items-center gap-2 pt-1">
       <span
         className={[
-          "text-[10px] font-semibold uppercase tracking-wide",
-          hero ? "text-white/70" : "text-slate-500",
+          "text-[10px] font-semibold uppercase tracking-[0.18em]",
+          hero ? "text-white/70" : "text-premium-gold/65",
         ].join(" ")}
       >
         Active
@@ -155,15 +155,17 @@ export function ActiveFilterChips({ tone = "default" }: { tone?: "default" | "he
           type="button"
           onClick={() => remove(c.clear)}
           className={[
-            "group inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs transition",
+            "group inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold transition",
             hero
               ? "border-slate-200/90 bg-white text-slate-900 shadow-sm hover:border-slate-300"
-              : "border-white/15 bg-black/40 text-slate-200 hover:border-premium-gold/40",
+              : "border-white/28 bg-black/50 lecipm-neon-white-muted hover:border-white/45 hover:bg-black/60",
           ].join(" ")}
         >
           <span>{c.label}</span>
           <span
-            className={hero ? "text-slate-400 group-hover:text-slate-700" : "text-slate-500 group-hover:text-white"}
+            className={
+              hero ? "text-slate-400 group-hover:text-slate-700" : "text-white/45 group-hover:text-white/85"
+            }
             aria-hidden
           >
             ×

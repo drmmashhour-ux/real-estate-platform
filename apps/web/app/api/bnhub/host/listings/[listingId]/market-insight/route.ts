@@ -5,7 +5,7 @@ import { getBnhubMarketInsightForListing } from "@/lib/bnhub/market-price-insigh
 export const dynamic = "force-dynamic";
 
 /**
- * Host-only: market comparison vs BNHub peers + optional AI-polished copy.
+ * Host-only: market comparison vs BNHUB peers + optional AI-polished copy.
  * Works for draft or published listings owned by the caller.
  */
 export async function GET(

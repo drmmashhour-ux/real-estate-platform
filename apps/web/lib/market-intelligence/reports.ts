@@ -26,7 +26,7 @@ export async function generateReportForRegion(marketRegionId: string, reportPeri
   const reportSummary = [
     latestPrice && `Sale price index: avg ${formatCents(latestPrice.averagePrice)}, trend ${latestPrice.trendDirection ?? "n/a"}.`,
     latestRent && `Rent index: avg ${formatCents(latestRent.averageRent)}/mo, trend ${latestRent.trendDirection ?? "n/a"}.`,
-    latestBnhub && `BNHub: nightly ${formatCents(latestBnhub.averageNightlyRate)}, occupancy ${(latestBnhub.averageOccupancy ?? 0) * 100}%, revenue ${formatCents(latestBnhub.averageMonthlyRevenue)}/mo.`,
+    latestBnhub && `BNHUB: nightly ${formatCents(latestBnhub.averageNightlyRate)}, occupancy ${(latestBnhub.averageOccupancy ?? 0) * 100}%, revenue ${formatCents(latestBnhub.averageMonthlyRevenue)}/mo.`,
     latestDemand && `Demand: score ${latestDemand.demandScore ?? "n/a"}, bookings ${latestDemand.bookingVolume ?? 0}, inventory ${latestDemand.inventoryLevel ?? 0}.`,
   ]
     .filter(Boolean)

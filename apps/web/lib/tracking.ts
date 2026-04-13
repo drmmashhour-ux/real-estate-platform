@@ -1,6 +1,9 @@
+import { getClientTrafficAttributionMeta } from "@/lib/attribution/social-traffic";
+
 /**
  * LECIPM ads & funnel tracking — client-side beacons to /api/analytics/track.
- * Attribution (source/campaign/medium) comes from the first-touch cookie set by middleware.
+ * Attribution (utm_*, social_source) comes from the first-touch cookie (middleware) plus current URL;
+ * `social_source` is also stored in sessionStorage for the tab.
  */
 
 export const TRACKING_SESSION_KEY = "lecipm_traffic_session";
@@ -13,8 +16,8 @@ export const TrackingEvent = {
   CTA_CLICKED: "CTA_clicked",
   CALL_CLICKED: "call_clicked",
   WHATSAPP_CLICKED: "whatsapp_clicked",
-  /** Legacy alias — still accepted server-side for older clients */
-  CTA_CLICK_LEGACY: "cta_click",
+  /** BNHUB stay funnel — primary CTA (Reserve, See availability, sticky). Stored as `TrafficEvent.event_type`. */
+  CTA_CLICK: "cta_click",
   /** User clicked through to /analyze (e.g. from homepage or Wix) — legacy; prefer CTA / RUN below */
   INVESTMENT_ANALYZE_CLICK: "investment_analyze_click",
   /** Homepage / nav “Start analysis” — funnel: visit → analyze intent */
@@ -53,6 +56,18 @@ export const TrackingEvent = {
   SUBSCRIPTION_PURCHASED: "subscription_purchased",
   LEAD_CHECKOUT_STARTED: "lead_checkout_started",
   SUBSCRIPTION_CHECKOUT_STARTED: "subscription_checkout_started",
+  /** Paid/organic ad click-through landed on listing URL (UTM present); pairs with `listing_view`. */
+  AD_CLICK: "ad_click",
+  /** Guest scrolled ≥50% of page height (engagement / drop-off signal). */
+  SCROLL_50: "scroll_50",
+  /** Clicked a listing card/link (BNHUB stays, unified listings). */
+  LISTING_CLICK: "listing_click",
+  /** Primary booking CTA — guest submitted the stay booking form (before checkout session). */
+  BOOKING_CLICK: "booking_click",
+  /** Checkout session created or booking placed (synced with product `booking_started`). */
+  BOOKING_STARTED: "booking_started",
+  /** Payment/booking confirmed (synced with product `booking_completed`). */
+  BOOKING_COMPLETED: "booking_completed",
 } as const;
 
 export type TrackingEventType =
@@ -81,19 +96,41 @@ export type TrackOptions = {
   meta?: Record<string, unknown>;
 };
 
+const TRAFFIC_ATTRIBUTION_EVENTS = new Set([
+  "ad_click",
+  "listing_view",
+  "scroll_50",
+  "cta_click",
+  "booking_started",
+  "booking_completed",
+  "booking_click",
+  "listing_click",
+]);
+
 /**
  * Fire-and-forget event. Uses `keepalive` so clicks/nav still send.
  */
-export function track(eventType: string, extra?: TrackOptions): void {
+/**
+ * Record a `TrafficEvent` only (no GA / Meta / Plausible) — use when the same user action
+ * is already reported to third parties elsewhere (e.g. `reportProductEvent`).
+ */
+export function trackServerAnalytics(eventType: string, extra?: TrackOptions): void {
   if (typeof window === "undefined") return;
   const path =
     extra?.path ?? `${window.location.pathname}${window.location.search}`;
   const sessionId = getTrackingSessionId();
+  let meta = extra?.meta ?? undefined;
+  if (TRAFFIC_ATTRIBUTION_EVENTS.has(eventType) && meta && typeof meta === "object" && !Array.isArray(meta)) {
+    const attr = getClientTrafficAttributionMeta() as Record<string, unknown>;
+    meta = { ...attr, ...meta };
+  } else if (TRAFFIC_ATTRIBUTION_EVENTS.has(eventType)) {
+    meta = getClientTrafficAttributionMeta() as Record<string, unknown>;
+  }
   const body = JSON.stringify({
     eventType,
     path: path.slice(0, 2048),
     sessionId,
-    meta: extra?.meta ?? undefined,
+    meta,
   });
   try {
     void fetch("/api/analytics/track", {
@@ -105,13 +142,34 @@ export function track(eventType: string, extra?: TrackOptions): void {
   } catch {
     /* ignore */
   }
+}
+
+export function track(eventType: string, extra?: TrackOptions): void {
+  trackServerAnalytics(eventType, extra);
   void import("@/modules/analytics/services/gtag").then(({ gtagReportEvent }) => {
     if (eventType === TrackingEvent.PAGE_VIEW) return;
     gtagReportEvent(eventType, (extra?.meta ?? {}) as Record<string, unknown>);
   });
-  void import("@/modules/analytics/services/meta-pixel").then(({ fbqReportEvent }) => {
+  void import("@/modules/analytics/services/meta-pixel").then((m) => {
     if (eventType === TrackingEvent.PAGE_VIEW) return;
-    fbqReportEvent(eventType, (extra?.meta ?? {}) as Record<string, unknown>);
+    const payload = (extra?.meta ?? {}) as Record<string, unknown>;
+    if (eventType === "listing_view") {
+      m.metaPixelTrackViewContent(payload);
+      return;
+    }
+    if (eventType === "booking_click") {
+      m.metaPixelTrackAddToCart(payload);
+      return;
+    }
+    if (eventType === "booking_started") {
+      m.metaPixelTrackInitiateCheckout(payload);
+      return;
+    }
+    if (eventType === "booking_completed") {
+      m.metaPixelTrackPurchase(payload);
+      return;
+    }
+    m.fbqReportEvent(eventType, payload);
   });
 }
 

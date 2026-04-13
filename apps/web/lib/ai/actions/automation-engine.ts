@@ -83,6 +83,59 @@ export async function runAutomationRule(ruleKey: AutomationRuleKey): Promise<Aut
         }
         break;
       }
+      case "listing_visibility_gap": {
+        const published = await prisma.shortTermListing.findMany({
+          where: { listingStatus: "PUBLISHED" },
+          take: 55,
+          select: {
+            id: true,
+            ownerId: true,
+            title: true,
+            description: true,
+            photos: true,
+            missingApprovedImages: true,
+            _count: { select: { listingPhotos: true } },
+          },
+        });
+        for (const l of published) {
+          const descLen = (l.description ?? "").trim().length;
+          const legacyPhotos = Array.isArray(l.photos) ? (l.photos as unknown[]).length : 0;
+          const photoCount = legacyPhotos + l._count.listingPhotos;
+          const weak =
+            descLen < 120 || photoCount === 0 || l.missingApprovedImages === true;
+          if (!weak) continue;
+          const exists = await prisma.managerAiRecommendation.findFirst({
+            where: {
+              userId: l.ownerId,
+              targetEntityId: l.id,
+              agentKey: "listing_optimization",
+              title: { contains: "visibility" },
+              createdAt: { gt: new Date(Date.now() - 14 * 86400000) },
+            },
+          });
+          if (exists) continue;
+          const reasons: string[] = [];
+          if (descLen < 120) reasons.push("description under ~120 characters");
+          if (photoCount === 0) reasons.push("no listing photos");
+          if (l.missingApprovedImages) reasons.push("images not approved for discovery");
+          await prisma.managerAiRecommendation.create({
+            data: {
+              userId: l.ownerId,
+              agentKey: "listing_optimization",
+              title: "Improve listing visibility",
+              description: `Published listing “${l.title.slice(0, 56)}” may underperform: ${reasons.join("; ")}.`,
+              confidence: 0.62,
+              targetEntityType: "short_term_listing",
+              targetEntityId: l.id,
+              suggestedAction: "strengthen_listing_page",
+              status: "active",
+              payload: { reasons } as object,
+            },
+          });
+          created += 1;
+        }
+        break;
+      }
       case "stalled_booking": {
         const stale = new Date(Date.now() - 48 * 3600 * 1000);
         const bookings = await prisma.booking.findMany({

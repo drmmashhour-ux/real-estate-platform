@@ -1,5 +1,5 @@
 /**
- * Hub-scoped AI layer — types shared across buyer, seller, BNHub, broker, mortgage, investor, admin.
+ * Hub-scoped AI layer — types shared across buyer, seller, BNHUB, broker, mortgage, investor, admin.
  */
 
 export type AiHub = "buyer" | "seller" | "bnhub" | "rent" | "broker" | "mortgage" | "investor" | "admin";

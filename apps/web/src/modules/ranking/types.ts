@@ -108,6 +108,9 @@ export type BnhubListingRankingInput = {
   medianNightPriceCents: number | null;
   /** Monthly top-host program — added to review signal (capped in engine). */
   reputationRankBoost: number;
+  /** 0–1 platform trust layer (`platform_trust_scores`) — modest ranking blend */
+  platformListingTrust01?: number | null;
+  platformHostTrust01?: number | null;
 };
 
 export type FsboListingRankingInput = {

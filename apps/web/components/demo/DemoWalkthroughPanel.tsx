@@ -39,7 +39,12 @@ export function DemoWalkthroughPanel({ data, showStagingTools }: Props) {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-white">Demo walkthrough (Prestige story)</h1>
+        <p className="text-sm text-slate-500">
+          <Link href="/demos" className="font-medium text-emerald-400/90 hover:text-emerald-300">
+            ← All demos &amp; tours
+          </Link>
+        </p>
+        <h1 className="mt-3 text-xl font-semibold text-white">Demo walkthrough (Prestige story)</h1>
         <p className="mt-2 text-sm text-slate-400">
           Quick links after{" "}
           <code className="rounded bg-white/10 px-1">npm run demo:full</code> in{" "}

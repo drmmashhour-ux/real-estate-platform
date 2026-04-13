@@ -21,7 +21,7 @@ export async function generateBookingAgreement(bookingId: string, options?: { do
   const total = booking.payment?.amountCents ?? subtotal + guestFee;
 
   const lines = [
-    `# BNHub reservation agreement`,
+    `# BNHUB reservation agreement`,
     ``,
     `**Property:** ${l.title}`,
     `**Address:** ${l.address}, ${l.city}, ${l.country}`,

@@ -1,7 +1,9 @@
 /**
- * BNHub notifications — trigger events for new booking, confirmation, cancellation, message, review reminder.
+ * BNHUB notifications — trigger events for new booking, confirmation, cancellation, message, review reminder.
  * Implementations can push to a queue, send email, or call a webhook. This module provides the hooks.
  */
+
+import { prisma } from "@/lib/db";
 
 export type BNHubNotificationEvent =
   | { type: "new_booking"; bookingId: string; listingId: string; guestId: string; hostId: string }
@@ -15,7 +17,7 @@ type NotificationHandler = (event: BNHubNotificationEvent) => void | Promise<voi
 const handlers: NotificationHandler[] = [];
 
 /**
- * Register a handler for BNHub notification events (e.g. send email, push to queue).
+ * Register a handler for BNHUB notification events (e.g. send email, push to queue).
  */
 export function onBNHubNotification(handler: NotificationHandler) {
   handlers.push(handler);
@@ -30,7 +32,7 @@ export async function triggerBNHubNotification(event: BNHubNotificationEvent) {
     try {
       await Promise.resolve(h(event));
     } catch (e) {
-      console.error("[BNHub notification]", event.type, e);
+      console.error("[BNHUB notification]", event.type, e);
     }
   }
 }
@@ -97,3 +99,32 @@ export function triggerReviewReminder(payload: {
   });
   /** Timed review asks + reminders run via `runBnhubGuestExperienceEngine` (cron: /api/internal/bnhub/guest-experience/run). */
 }
+
+onBNHubNotification(async (event) => {
+  if (event.type !== "new_message") return;
+  try {
+    const booking = await prisma.booking.findUnique({
+      where: { id: event.bookingId },
+      select: {
+        listing: { select: { id: true, title: true } },
+      },
+    });
+    const preview =
+      booking?.listing?.title?.trim().slice(0, 120) ?? "You have a new message about a stay.";
+    await prisma.notification.create({
+      data: {
+        userId: event.recipientId,
+        type: "MESSAGE",
+        title: "New booking message",
+        message: preview,
+        priority: "NORMAL",
+        actionUrl: `/bnhub/booking/${encodeURIComponent(event.bookingId)}`,
+        actionLabel: "Open booking",
+        listingId: booking?.listing?.id,
+        metadata: { bookingId: event.bookingId, channel: "bnhub_booking_chat" } as object,
+      },
+    });
+  } catch (e) {
+    console.error("[BNHUB in-app notification] new_message", e);
+  }
+});

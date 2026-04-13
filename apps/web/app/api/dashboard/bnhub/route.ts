@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { suggestBnHubPricing } from "@/lib/ai/brain";
 
-/** BNHub dashboard AI data only. Keeps BNHub page light. */
+/** BNHUB dashboard AI data only. Keeps BNHUB page light. */
 export const dynamic = "force-dynamic";
 
 export async function GET() {

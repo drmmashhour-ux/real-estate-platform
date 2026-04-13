@@ -7,7 +7,7 @@ export function DealPhase2RerunButton({
   shortTermListingId,
 }: {
   listingId: string;
-  /** Optional BNHub listing to merge into this FSBO analysis. */
+  /** Optional BNHUB listing to merge into this FSBO analysis. */
   shortTermListingId?: string | null;
 }) {
   const [loading, setLoading] = useState(false);

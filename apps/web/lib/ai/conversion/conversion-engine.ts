@@ -106,14 +106,17 @@ export function computeListingConversionMetrics(
     highTraffic &&
     (bookingsCompleted === 0 || weakCompletionRate);
 
+  const ratePct = conversionRate === null ? null : conversionRate * 100;
   const explanation = sufficientData
     ? lowConversion
-      ? `In the selected window this listing had ${listingViews} measured views and ${bookingsCompleted} completed booking${
-          bookingsCompleted === 1 ? "" : "s"
-        }. The completion rate is below typical for similar traffic, based only on platform events we recorded.`
-      : `We have enough view data (${listingViews} views) to compare funnel steps. Completion rate is ${
-          conversionRate === null ? "n/a" : (conversionRate * 100).toFixed(2)
-        }% (completed stays ÷ views).`
+      ? `In the selected window: ${listingViews} measured views, ${bookingStarts} booking start${
+          bookingStarts === 1 ? "" : "s"
+        }, ${bookingsCompleted} completed stay${bookingsCompleted === 1 ? "" : "s"}. Completion ${
+          ratePct == null ? "n/a" : `${ratePct.toFixed(2)}%`
+        } (completed ÷ views) — below our high-traffic heuristic threshold; based only on platform events we recorded.`
+      : `Enough view data (${listingViews} views) to read the funnel. Completion ${
+          ratePct == null ? "n/a" : `${ratePct.toFixed(2)}%`
+        } (completed stays ÷ views); booking starts ${bookingStarts}, abandoned after start ${bookingsAbandoned}.`
     : `Not enough recorded views (${listingViews}) yet to compare conversion fairly — keep the listing published so we can learn from real traffic.`;
 
   return {
@@ -202,10 +205,10 @@ export function buildConversionOptimizationRecommendations(
   out.push({
     type: "pricing_review",
     listingId: listing.id,
-    summary: "Review nightly price and rules in the BNHub pricing tools.",
+    summary: "Review nightly price and rules in the BNHUB pricing tools.",
     reasons: [
       "Conversion is weak relative to measured views — price and minimum stay are common levers worth revisiting with real comps.",
-      "Open BNHub listing editor → pricing to align with your calendar and the dynamic pricing suggestions there.",
+      "Open BNHUB listing editor → pricing to align with your calendar and the dynamic pricing suggestions there.",
     ],
     priority: priorityFor("pricing_review"),
   });

@@ -175,6 +175,10 @@ export async function createReview(
   await updatePropertyRating(booking.listing.id);
   await updateHostPerformance(booking.listing.ownerId);
 
+  void import("@/lib/quality/schedule-listing-quality")
+    .then((m) => m.scheduleListingQualityRecompute(booking.listing.id))
+    .catch(() => {});
+
   scheduleFraudRecheck("review", review.id);
 
   void logGuestExperienceOutcome({

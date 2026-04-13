@@ -2,7 +2,7 @@ import {
   compareDealToMarket,
   computeDealMetrics,
   computeInvestmentInsights,
-  isMarketCity,
+  normalizeLegacyMarketCity,
 } from "@/lib/investment/deal-metrics";
 import type { SerializableInvestmentDeal } from "@/lib/investment/investment-deal-types";
 import { compareRentalStrategies } from "@/lib/investment/rental-strategy-compare";
@@ -17,7 +17,7 @@ const SAMPLE_INPUTS: Array<{
   occupancyRate: number;
 }> = [
   {
-    city: "Montreal",
+    city: "Montréal",
     propertyPrice: 485_000,
     monthlyRent: 3_200,
     monthlyExpenses: 2_100,
@@ -33,11 +33,11 @@ const SAMPLE_INPUTS: Array<{
     occupancyRate: 62,
   },
   {
-    city: "Toronto",
-    propertyPrice: 825_000,
-    monthlyRent: 4_100,
-    monthlyExpenses: 3_200,
-    nightlyRate: 195,
+    city: "Québec",
+    propertyPrice: 425_000,
+    monthlyRent: 2_650,
+    monthlyExpenses: 1_720,
+    nightlyRate: 145,
     occupancyRate: 55,
   },
 ];
@@ -45,7 +45,7 @@ const SAMPLE_INPUTS: Array<{
 /** Build 2–3 realistic sample deals for demo mode (deterministic IDs). */
 export function buildSampleDemoDeals(): SerializableInvestmentDeal[] {
   return SAMPLE_INPUTS.map((s, i) => {
-    const city = isMarketCity(s.city) ? s.city : "Montreal";
+    const city = normalizeLegacyMarketCity(typeof s.city === "string" ? s.city : "Montréal");
     const dual = compareRentalStrategies(s.propertyPrice, s.monthlyRent, s.monthlyExpenses, s.nightlyRate, s.occupancyRate);
     const preferred = dual.preferredStrategy;
     const preferredIncome =

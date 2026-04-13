@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { classifyDbError } from "@/lib/db/db-error-classification";
-import { getDatabaseHostHint, getDbHostKind } from "@/lib/db/database-host-hint";
+import {
+  databaseUrlHasLiteralHostPlaceholder,
+  getDatabaseHostHint,
+  getDbHostKind,
+} from "@/lib/db/database-host-hint";
 import { withDbRetry } from "@/lib/db/with-db-retry";
 import { getPublicEnv } from "@/lib/runtime-env";
 import { MESSAGES } from "@/lib/i18n/messages";
@@ -33,6 +37,8 @@ export async function GET() {
   const hostHint = getDatabaseHostHint();
   const hostKind = getDbHostKind(hostHint);
   const dbTargetHost = dbTargetHostFromDatabaseUrl() ?? hostHint;
+  const databaseUrlLooksLikeTemplate =
+    hostKind === "placeholder" || databaseUrlHasLiteralHostPlaceholder(rawDbUrl ?? undefined);
   const hasOpenAI = Boolean(process.env.OPENAI_API_KEY);
   const envName = process.env.NODE_ENV;
   const time = new Date().toISOString();
@@ -80,6 +86,7 @@ export async function GET() {
         db: dbStatus,
         dbTargetHost,
         dbHostKind: hostKind,
+        databaseUrlLooksLikeTemplate,
         rawDbUrlExists,
         dbUrlPreview,
         projectId,
@@ -109,6 +116,7 @@ export async function GET() {
       db: "ok",
       dbTargetHost,
       dbHostKind: hostKind,
+      databaseUrlLooksLikeTemplate,
       rawDbUrlExists,
       dbUrlPreview,
       projectId,
@@ -134,6 +142,7 @@ export async function GET() {
         db: "ok",
         dbTargetHost,
         dbHostKind: hostKind,
+        databaseUrlLooksLikeTemplate,
         rawDbUrlExists,
         dbUrlPreview,
         projectId,

@@ -69,11 +69,13 @@ describe("computeListingConversionMetrics", () => {
         searchViews: HIGH_VIEWS_THRESHOLD + 10,
         behaviorImpressions: 0,
         bookingsCompleted: 0,
+        bookingAttempts: 4,
       }),
     );
     expect(m.sufficientData).toBe(true);
     expect(m.listingViews).toBeGreaterThanOrEqual(MIN_VIEWS_FOR_CONFIDENCE);
     expect(m.lowConversion).toBe(true);
+    expect(m.explanation.toLowerCase()).toMatch(/booking start/);
   });
 
   it("does not invent bookings — only real completed rows count", () => {

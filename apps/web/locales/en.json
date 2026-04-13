@@ -75,7 +75,7 @@
   },
   "bookings": {
     "requestSent": "Request sent — waiting for host to approve",
-    "payToConfirm": "Pay to confirm",
+    "payToConfirm": "Secure your booking",
     "manualPaymentTitle": "Arrange payment with the host",
     "manualPaymentBody": "Online checkout is not enabled for this market. Coordinate payment directly with your host. They will confirm once payment is received.",
     "hostMarkPaymentReceived": "Mark payment received",
@@ -86,7 +86,7 @@
     "statusManualFailed": "Manual payment failed",
     "contactHost": "Message host",
     "askQuestion": "Ask a question",
-    "oneStepToConfirm": "One step to confirm",
+    "oneStepToConfirm": "Review booking",
     "totalDue": "Total due · includes taxes & fees where applicable"
   },
   "host": {

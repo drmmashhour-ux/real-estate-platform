@@ -25,7 +25,7 @@ export function AdminGrowthDashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-white">BNHub Growth & Lead Engine</h1>
+        <h1 className="text-2xl font-bold text-white">BNHUB Growth & Lead Engine</h1>
         <p className={g.sub}>
           Autopilot safety caps (env + per-host prefs), connector readiness, centralized leads. ROI on the wire is{" "}
           <span className="text-amber-200/90">attributed / estimated</span> until paid channels sync real spend.

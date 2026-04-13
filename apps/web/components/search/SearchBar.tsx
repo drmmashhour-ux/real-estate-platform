@@ -11,6 +11,7 @@ import {
   type BrowseMode,
 } from "@/components/search/home-search-modes";
 import { PriceRangeSlider } from "@/components/search/PriceRangeSlider";
+import { QuebecLocationInput } from "@/components/search/QuebecLocationInput";
 import { SEARCH_JOURNEY } from "@/components/search/search-bar-classes";
 
 function browseModeFromFilterType(ft: GlobalSearchFilterType): BrowseMode {
@@ -156,7 +157,7 @@ export function SearchBar(props: SearchBarProps) {
       ? "flex flex-col gap-3 rounded-none border-0 bg-transparent p-0 shadow-none sm:flex-row sm:flex-wrap sm:items-end sm:gap-3"
       : [
           "flex flex-col gap-3 rounded-2xl border border-white/10 bg-[#141414]/90 p-3 shadow-lg shadow-black/30 backdrop-blur-sm sm:flex-row sm:flex-wrap sm:items-end sm:gap-3 sm:p-4",
-          isStays ? "border-slate-700/80 bg-slate-900/70" : "",
+          isStays ? "border-premium-gold/25 bg-[#0a0a0a]/95 shadow-[0_12px_48px_-12px_rgba(212,175,55,0.12)]" : "",
         ].join(" ");
 
   const labelCls = light ? "text-slate-500" : "text-slate-500";
@@ -175,6 +176,8 @@ export function SearchBar(props: SearchBarProps) {
     ? "border-premium-gold/60 bg-premium-gold/10 text-[#8a6a1e]"
     : "border-premium-gold/50 bg-premium-gold/10 text-premium-gold";
 
+  const locationSuggestTone = light && !isStays ? "light" : "dark";
+
   return (
     <div className={[shell, className].join(" ")}>
       <div className={`min-w-0 flex-1 ${light ? "sm:min-w-[280px]" : "sm:min-w-[200px]"}`}>
@@ -184,11 +187,11 @@ export function SearchBar(props: SearchBarProps) {
         >
           Location
         </label>
-        <input
+        <QuebecLocationInput
           id={locationInputId}
-          type="text"
           value={location}
-          onChange={(e) => onLocationChange(e.target.value)}
+          onChange={onLocationChange}
+          tone={locationSuggestTone}
           autoComplete="address-level2"
           placeholder={
             light
@@ -267,7 +270,7 @@ export function SearchBar(props: SearchBarProps) {
       ) : (
         <div className="w-full sm:w-auto">
           <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">Type</label>
-          <div className="rounded-xl border border-slate-600 bg-slate-950/50 px-3 py-2 text-center text-xs font-medium text-emerald-400">
+          <div className="rounded-xl border border-premium-gold/35 bg-black/50 px-3 py-2 text-center text-xs font-semibold uppercase tracking-wide text-premium-gold">
             Short-term
           </div>
         </div>
@@ -326,8 +329,8 @@ export function SearchBar(props: SearchBarProps) {
             filtersOpen || activeFilterCount > 0 ? filterActive : filterIdle,
             isStays &&
               (filtersOpen || activeFilterCount > 0
-                ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-300"
-                : "border-slate-600 bg-slate-800/60 text-slate-200 hover:bg-slate-700/60"),
+                ? "border-premium-gold/55 bg-premium-gold/12 text-premium-gold"
+                : "border-premium-gold/25 bg-black/40 text-neutral-200 hover:border-premium-gold/40 hover:bg-premium-gold/5"),
           ].join(" ")}
         >
           Filters
@@ -349,7 +352,7 @@ export function SearchBar(props: SearchBarProps) {
             "inline-flex items-center justify-center gap-2 rounded-xl font-bold transition",
             light ? "min-h-[46px] min-w-[46px] px-4 py-3 sm:min-w-[52px]" : "px-5 py-2.5 text-sm",
             isStays
-              ? "bg-emerald-500 text-slate-950 hover:bg-emerald-400"
+              ? "bg-premium-gold text-[#0a0a0a] hover:brightness-110"
               : "text-black hover:brightness-110",
           ].join(" ")}
           style={isGoldBar ? { background: "var(--color-premium-gold)" } : undefined}

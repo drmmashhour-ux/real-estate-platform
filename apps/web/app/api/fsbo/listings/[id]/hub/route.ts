@@ -8,6 +8,10 @@ import { persistSellerDeclarationAiReview } from "@/lib/fsbo/seller-declaration-
 import { getFsboMaxPhotosForSellerPlan } from "@/lib/fsbo/photo-limits";
 import { isTrustGraphEnabled } from "@/lib/trustgraph/config";
 import { refreshListingTrustGraphOnSave } from "@/lib/trustgraph/application/integrations/sellerDeclarationIntegration";
+import { isOpenAiConfigured } from "@/lib/ai/openai";
+import { assessListingPhotoForPropertyUse } from "@/lib/fsbo/assess-listing-photo-relevance";
+import { fetchRemoteImageBufferForAssessment } from "@/lib/fsbo/fetch-remote-image-buffer";
+import { getDeclarationListingConsistencyWarnings } from "@/lib/fsbo/listing-property-consistency";
 
 export const dynamic = "force-dynamic";
 
@@ -37,7 +41,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
   const isAdmin = await isPlatformAdmin(userId);
   const existing = await prisma.fsboListing.findUnique({
     where: { id },
-    select: { ownerId: true, status: true, propertyType: true },
+    select: { ownerId: true, status: true, propertyType: true, images: true },
   });
   if (!existing) {
     return Response.json({ error: "Not found" }, { status: 404 });
@@ -62,6 +66,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
 
   const data: Parameters<typeof prisma.fsboListing.update>[0]["data"] = {};
   let runDeclarationAiReview = false;
+  let listingConsistencyWarnings: string[] | undefined;
 
   // DIY seller tier limits for photo uploads (not publish plan).
   let maxPhotos = 50;
@@ -113,10 +118,37 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
   }
 
   if (Array.isArray(body.images)) {
-    data.images = body.images
+    const nextImages = body.images
       .filter((u): u is string => typeof u === "string" && u.trim().length > 0)
       .map((u) => u.trim().slice(0, 2048))
       .slice(0, maxPhotos);
+    const oldArr = Array.isArray(existing.images) ? (existing.images as string[]) : [];
+    const oldFirst = oldArr[0] ?? null;
+    const newFirst = nextImages[0] ?? null;
+
+    if (
+      newFirst &&
+      newFirst !== oldFirst &&
+      process.env.FSBO_LISTING_PHOTO_AI_CHECK !== "false" &&
+      isOpenAiConfigured()
+    ) {
+      const buf = await fetchRemoteImageBufferForAssessment(newFirst);
+      if (!buf) {
+        return Response.json(
+          { error: "Could not verify the cover photo. Re-upload the first image or try again." },
+          { status: 400 }
+        );
+      }
+      const coverCheck = await assessListingPhotoForPropertyUse(buf, {
+        propertyType: existing.propertyType,
+        role: "cover",
+      });
+      if (!coverCheck.ok) {
+        return Response.json({ error: coverCheck.userMessage }, { status: 400 });
+      }
+    }
+
+    data.images = nextImages;
     const imgs = data.images as string[];
     data.coverImage = imgs[0] ?? null;
 
@@ -161,6 +193,8 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
         typeof body.propertyType === "string" && body.propertyType.trim()
           ? body.propertyType.trim().slice(0, 64)
           : existing?.propertyType ?? null;
+      const warn = getDeclarationListingConsistencyWarnings(normalized, effectivePropertyType);
+      if (warn.length > 0) listingConsistencyWarnings = warn;
       if (body.markDeclarationComplete === true) {
         const parsed = parseSellerDeclarationJson(normalized, { propertyType: effectivePropertyType });
         if (!parsed.ok) {
@@ -220,6 +254,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
 
   return Response.json({
     ok: true,
+    ...(listingConsistencyWarnings ? { listingConsistencyWarnings } : {}),
     ...(insights
       ? { sellerDeclarationAiReview: insights.review, listingAiScores: insights.scores }
       : {}),

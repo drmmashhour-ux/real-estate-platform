@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 export type ListingRec = { id: string; listingCode: string; title: string; city: string; nightPriceCents: number };
 
 /**
- * Hybrid recs: saved favorites (projects), geo proximity (BNHub), recent behavior (`user_events` LISTING_VIEW).
+ * Hybrid recs: saved favorites (projects), geo proximity (BNHUB), recent behavior (`user_events` LISTING_VIEW).
  */
 export async function getRecommendedStaysForUser(userId: string, take = 8): Promise<ListingRec[]> {
   const [favProjects, views, profile] = await Promise.all([

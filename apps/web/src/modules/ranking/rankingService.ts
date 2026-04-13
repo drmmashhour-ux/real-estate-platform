@@ -8,8 +8,6 @@ import {
 import {
   computeBnhubRankingScore,
   computeRealEstateRankingScore,
-  loadActiveRankingConfig,
-  loadRankingWeightsForContext,
 } from "@/src/modules/ranking/scoringEngine";
 import type { RankingScoreResult, RankingSearchContext, BnhubListingRankingInput, FsboListingRankingInput } from "./types";
 import { logRankingImpressions } from "@/src/modules/ranking/tracking";
@@ -18,6 +16,11 @@ import {
   getBnhubListingFraudRankingAdjustment,
 } from "@/src/modules/fraud/fraudRankingIntegration";
 import { augmentRankingSearchContextWithCityProfile } from "@/src/modules/cities/cityRankingBridge";
+import { buildBnhubSignalBundle, buildFsboSignalBundle } from "@/src/modules/ranking/signalEngine";
+import { computeBnhubFinalSearchScore } from "@/lib/ranking/compute-bnhub-score";
+import { computeRealEstateFinalBrowseScore } from "@/lib/ranking/compute-real-estate-score";
+import { diversifyByAreaAndType, diversifyByHost } from "@/lib/ranking/diversity";
+import { performanceBandFromTotalScore } from "@/src/modules/ranking/v1/ranking.labels";
 
 function photoCountFromListing(photos: unknown): number {
   if (!Array.isArray(photos)) return 0;
@@ -29,6 +32,20 @@ function median(nums: number[]): number | null {
   const s = [...nums].sort((a, b) => a - b);
   const m = Math.floor(s.length / 2);
   return s.length % 2 ? s[m]! : (s[m - 1]! + s[m]!) / 2;
+}
+
+async function medianFsboPriceInCity(city: string, excludeListingId?: string): Promise<number | null> {
+  const rows = await prisma.fsboListing.findMany({
+    where: {
+      status: "ACTIVE",
+      moderationStatus: "APPROVED",
+      city: { equals: city, mode: "insensitive" },
+      ...(excludeListingId ? { id: { not: excludeListingId } } : {}),
+    },
+    select: { priceCents: true },
+    take: 500,
+  });
+  return median(rows.map((r) => r.priceCents));
 }
 
 export async function buildBnhubRankingInputs(
@@ -61,38 +78,54 @@ export async function buildBnhubRankingInputs(
   const ids = listings.map((l) => l.id);
   const ownerIds = [...new Set(listings.map((l) => l.ownerId))];
 
-  const [aggRows, hostRows, badgeRows, disputeRows, favRows, completedRows] = await Promise.all([
-    prisma.propertyRatingAggregate.findMany({
-      where: { listingId: { in: ids } },
-      select: { listingId: true, avgRating: true, totalReviews: true },
-    }),
-    prisma.hostPerformance.findMany({
-      where: { hostId: { in: ownerIds } },
-      select: { hostId: true, score: true },
-    }),
-    prisma.hostBadge.findMany({
-      where: { hostId: { in: ownerIds }, badgeType: { in: ["fast_responder", "reliable_host"] } },
-      select: { hostId: true, badgeType: true },
-    }),
-    prisma.dispute.groupBy({
-      by: ["listingId"],
-      where: { listingId: { in: ids } },
-      _count: { _all: true },
-    }),
-    prisma.bnhubGuestFavorite.groupBy({
-      by: ["listingId"],
-      where: { listingId: { in: ids } },
-      _count: { _all: true },
-    }),
-    prisma.booking.groupBy({
-      by: ["listingId"],
-      where: { listingId: { in: ids }, status: "COMPLETED" },
-      _count: { _all: true },
-    }),
-  ]);
+  const [aggRows, hostRows, badgeRows, disputeRows, favRows, completedRows, platformTrustRows] =
+    await Promise.all([
+      prisma.propertyRatingAggregate.findMany({
+        where: { listingId: { in: ids } },
+        select: { listingId: true, avgRating: true, totalReviews: true },
+      }),
+      prisma.hostPerformance.findMany({
+        where: { hostId: { in: ownerIds } },
+        select: { hostId: true, score: true },
+      }),
+      prisma.hostBadge.findMany({
+        where: { hostId: { in: ownerIds }, badgeType: { in: ["fast_responder", "reliable_host"] } },
+        select: { hostId: true, badgeType: true },
+      }),
+      prisma.dispute.groupBy({
+        by: ["listingId"],
+        where: { listingId: { in: ids } },
+        _count: { _all: true },
+      }),
+      prisma.bnhubGuestFavorite.groupBy({
+        by: ["listingId"],
+        where: { listingId: { in: ids } },
+        _count: { _all: true },
+      }),
+      prisma.booking.groupBy({
+        by: ["listingId"],
+        where: { listingId: { in: ids }, status: "COMPLETED" },
+        _count: { _all: true },
+      }),
+      prisma.platformTrustScore.findMany({
+        where: {
+          OR: [
+            { entityType: "listing", entityId: { in: ids } },
+            { entityType: "host", entityId: { in: ownerIds } },
+          ],
+        },
+        select: { entityType: true, entityId: true, score: true },
+      }),
+    ]);
 
   const aggMap = new Map(aggRows.map((r) => [r.listingId, r]));
   const hostMap = new Map(hostRows.map((r) => [r.hostId, r.score]));
+  const platListingTrust = new Map<string, number>();
+  const platHostTrust = new Map<string, number>();
+  for (const r of platformTrustRows) {
+    if (r.entityType === "listing") platListingTrust.set(r.entityId, r.score);
+    if (r.entityType === "host") platHostTrust.set(r.entityId, r.score);
+  }
   const fast = new Set(badgeRows.filter((b) => b.badgeType === "fast_responder").map((b) => b.hostId));
   const reliable = new Set(badgeRows.filter((b) => b.badgeType === "reliable_host").map((b) => b.hostId));
   const disputeMap = new Map(disputeRows.map((d) => [d.listingId, d._count._all]));
@@ -137,6 +170,8 @@ export async function buildBnhubRankingInputs(
       hostHasReliable: reliable.has(l.ownerId),
       medianNightPriceCents: med,
       reputationRankBoost: l.reputationRankBoost ?? 0,
+      platformListingTrust01: platListingTrust.has(l.id) ? platListingTrust.get(l.id)! / 100 : null,
+      platformHostTrust01: platHostTrust.has(l.ownerId) ? platHostTrust.get(l.ownerId)! / 100 : null,
     };
   });
 }
@@ -157,6 +192,8 @@ export async function persistRankingScore(result: RankingScoreResult): Promise<v
       }
     : { weightsUsed: result.weightsUsed };
   const metadataJson = { ...baseMeta, ...fraudAdj.metadataPatch };
+  const band = performanceBandFromTotalScore(totalScore);
+  const calculatedAt = new Date();
 
   await prisma.listingRankingScore.upsert({
     where: {
@@ -179,6 +216,8 @@ export async function persistRankingScore(result: RankingScoreResult): Promise<v
       priceCompetitivenessScore: result.priceCompetitivenessScore,
       availabilityScore: result.availabilityScore,
       metadataJson,
+      performanceBand: band,
+      rankingLastCalculatedAt: calculatedAt,
     },
     update: {
       city: result.city,
@@ -195,8 +234,21 @@ export async function persistRankingScore(result: RankingScoreResult): Promise<v
       priceCompetitivenessScore: result.priceCompetitivenessScore,
       availabilityScore: result.availabilityScore,
       metadataJson,
+      performanceBand: band,
+      rankingLastCalculatedAt: calculatedAt,
     },
   });
+
+  if (result.listingType === RANKING_LISTING_TYPE_REAL_ESTATE) {
+    await prisma.fsboListing.updateMany({
+      where: { id: result.listingId },
+      data: {
+        rankingTotalScoreCache: totalScore,
+        rankingPerformanceBand: band,
+        rankingCachedAt: calculatedAt,
+      },
+    });
+  }
 }
 
 export async function recomputeRankingForListing(
@@ -239,6 +291,13 @@ export async function recomputeRankingForListing(
       },
     });
     if (!row) return null;
+    const [demandRow, med] = await Promise.all([
+      prisma.listingAnalytics.findFirst({
+        where: { kind: ListingAnalyticsKind.FSBO, listingId: row.id },
+        select: { demandScore: true },
+      }),
+      medianFsboPriceInCity(row.city, row.id),
+    ]);
     const ver = row.verification;
     const allVerified =
       ver &&
@@ -265,7 +324,8 @@ export async function recomputeRankingForListing(
       viewCount: row._count.buyerListingViews,
       saveCount: row._count.buyerSavedListings,
       leadCount: row._count.leads,
-      medianPriceCents: null,
+      demandScoreFromAnalytics: demandRow?.demandScore ?? 0,
+      medianPriceCents: med,
     };
     const res = await computeRealEstateRankingScore(input, baseCtx);
     await persistRankingScore(res);
@@ -469,7 +529,7 @@ type BnhubSearchRow = {
 };
 
 /**
- * Final-pass BNHub search ordering: explainable engine score (0–100) + real boost maps (marketing/growth/etc.).
+ * Final-pass BNHUB search ordering: explainable engine score (0–100) + real boost maps (marketing/growth/etc.).
  */
 export async function orderBnhubListingsByRankingEngine<T extends BnhubSearchRow>(
   listings: T[],
@@ -484,18 +544,30 @@ export async function orderBnhubListingsByRankingEngine<T extends BnhubSearchRow
     ...ctx,
   };
   const cityAugmented = await augmentRankingSearchContextWithCityProfile(fullCtx);
-  const weights = await loadRankingWeightsForContext(RANKING_LISTING_TYPE_BNHUB, cityAugmented);
   const boost = extraBoost ?? (() => 0);
   const fraudPenalties = await getBnhubFraudPenaltyMap(listings.map((l) => l.id));
+  const metricsRows = await prisma.listingSearchMetrics.findMany({
+    where: { listingId: { in: listings.map((l) => l.id) } },
+  });
+  const metricsMap = new Map(metricsRows.map((m) => [m.listingId, m]));
   const scored: { listing: T; total: number }[] = [];
   for (let i = 0; i < listings.length; i++) {
-    const res = await computeBnhubRankingScore(inputs[i]!, cityAugmented, weights);
+    const signals = buildBnhubSignalBundle(inputs[i]!, cityAugmented);
+    const m = metricsMap.get(listings[i]!.id) ?? null;
+    const { final0to100 } = computeBnhubFinalSearchScore(signals, inputs[i]!, m);
     const x = boost(listings[i]!.id);
     const fp = fraudPenalties.get(listings[i]!.id) ?? 0;
-    scored.push({ listing: listings[i]!, total: res.totalScore + x - fp });
+    scored.push({ listing: listings[i]!, total: final0to100 + x - fp });
   }
   scored.sort((a, b) => b.total - a.total);
-  return scored.map((s) => s.listing);
+  let ordered = scored.map((s) => s.listing);
+  const prefix = Math.min(28, ordered.length);
+  ordered = diversifyByHost(ordered, (row) => row.ownerId, { maxPerHostInPrefix: 2, prefixLength: prefix });
+  ordered = diversifyByAreaAndType(ordered, (row) => `${row.city}|${row.region ?? ""}|${row.propertyType ?? ""}`, {
+    maxPerBucketInPrefix: 3,
+    prefixLength: Math.min(22, ordered.length),
+  });
+  return ordered;
 }
 
 export async function maybeLogBnhubSearchImpressions(
@@ -539,7 +611,6 @@ export async function scoreRealEstateListingsForBrowse(
     budgetMinCents: ctx.budgetMinCents,
     budgetMaxCents: ctx.budgetMaxCents,
   };
-  const weights = await loadActiveRankingConfig(RANKING_LISTING_TYPE_REAL_ESTATE);
   for (const row of rows) {
     const ver = row.verification;
     const allVerified =
@@ -570,8 +641,9 @@ export async function scoreRealEstateListingsForBrowse(
       demandScoreFromAnalytics: demandMap.get(row.id) ?? 0,
       medianPriceCents: med,
     };
-    const res = await computeRealEstateRankingScore(input, fullCtx, weights);
-    map.set(row.id, res.totalScore);
+    const signals = buildFsboSignalBundle(input, fullCtx);
+    const { final0to100 } = computeRealEstateFinalBrowseScore(signals, input);
+    map.set(row.id, final0to100);
   }
   return map;
 }

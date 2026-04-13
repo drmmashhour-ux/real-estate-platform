@@ -16,7 +16,7 @@ export type LeadNotificationData = {
   email: string;
   phone: string;
   message: string;
-  /** Immutable public BNHub listing id (LEC-#####) when inquiry is listing-scoped */
+  /** Immutable public BNHUB listing id (LEC-#####) when inquiry is listing-scoped */
   listingCode?: string | null;
   /** Deep link to the listing (optional) */
   listingUrl?: string | null;

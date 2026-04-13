@@ -9,7 +9,7 @@ import {
 type Body = { bookingId?: string; action?: string; note?: string };
 
 /**
- * PATCH /api/bookings/manual-payment — alias for BNHub manual settlement (host-facing).
+ * PATCH /api/bookings/manual-payment — alias for BNHUB manual settlement (host-facing).
  * Body: `{ bookingId, action: "received" | "failed" | "reset_pending", note? }`
  */
 export async function PATCH(request: NextRequest) {

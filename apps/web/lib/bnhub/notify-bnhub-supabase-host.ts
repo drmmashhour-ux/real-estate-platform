@@ -126,7 +126,7 @@ export async function notifyHostForGuestCheckoutStarted(params: {
     title: "Checkout started",
     message: msg,
     bookingId: params.bookingId,
-    emailSubject: `BNHub: guest checking out — ${params.listingTitle}`,
+    emailSubject: `BNHUB: guest checking out — ${params.listingTitle}`,
     emailHtml: `<p>${escapeHtml(msg)}</p><ul><li><strong>Booking:</strong> ${escapeHtml(params.bookingId)}</li><li><strong>Listing:</strong> ${escapeHtml(params.listingTitle)}</li></ul>`,
   });
 }
@@ -145,7 +145,7 @@ export async function notifyHostForGuestPaymentCaptured(params: {
     title: "Payment received",
     message: msg,
     bookingId: params.bookingId,
-    emailSubject: `BNHub: booking paid — ${params.listingTitle}`,
+    emailSubject: `BNHUB: booking paid — ${params.listingTitle}`,
     emailHtml: `<p><strong>Payment received</strong> for your listing.</p>
       <ul>
         <li><strong>Booking:</strong> ${escapeHtml(params.bookingId)}</li>
@@ -153,6 +153,6 @@ export async function notifyHostForGuestPaymentCaptured(params: {
         <li><strong>Total:</strong> ${escapeHtml(params.totalDisplay)}</li>
         <li><strong>Dates:</strong> ${escapeHtml(params.datesSummary)}</li>
       </ul>
-      <p style="color:#666;font-size:12px;">Payout timing follows your BNHub / Stripe setup.</p>`,
+      <p style="color:#666;font-size:12px;">Payout timing follows your BNHUB / Stripe setup.</p>`,
   });
 }

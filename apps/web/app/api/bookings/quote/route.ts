@@ -63,6 +63,7 @@ export async function POST(request: NextRequest) {
       totalAmount: q.totalAmount,
       currency: q.currency,
       breakdown: q.breakdown,
+      softDemandLine: q.softDemandLine ?? null,
     });
   } catch (e) {
     logApiRouteError("POST /api/bookings/quote", e);

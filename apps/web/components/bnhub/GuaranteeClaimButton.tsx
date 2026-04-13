@@ -9,7 +9,7 @@ export function GuaranteeClaimButton({ bookingId }: { bookingId: string }) {
   const [message, setMessage] = useState<string | null>(null);
 
   async function claim() {
-    if (!window.confirm("Start a BNHub guarantee claim? Our team will review your case.")) return;
+    if (!window.confirm("Start a BNHUB guarantee claim? Our team will review your case.")) return;
     setBusy(true);
     setMessage(null);
     try {
@@ -30,7 +30,7 @@ export function GuaranteeClaimButton({ bookingId }: { bookingId: string }) {
 
   return (
     <div className="mt-4 rounded-xl border border-emerald-500/30 bg-emerald-950/20 p-4">
-      <p className="text-sm font-medium text-emerald-200">BNHub guarantee</p>
+      <p className="text-sm font-medium text-emerald-200">BNHUB guarantee</p>
       <p className="mt-1 text-xs text-slate-400">
         If the stay does not match what was advertised, you can open a guarantee claim after check-in issues are
         documented.

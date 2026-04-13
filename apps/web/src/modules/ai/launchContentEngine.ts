@@ -33,7 +33,7 @@ export async function generateBlogPost(input: BlogPostInput = {}) {
 }
 
 export async function generateAdCopy(campaignBrief: string): Promise<string> {
-  return generatePost(campaignBrief.trim() || "LECIPM + BNHub");
+  return generatePost(campaignBrief.trim() || "LECIPM + BNHUB");
 }
 
 export { runDailyAutopilotContent };

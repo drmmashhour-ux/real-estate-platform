@@ -5,7 +5,7 @@ const LABELS: Record<FeedBucket, string> = {
   hidden_gems: "Hidden gems",
   needs_review: "Needs review",
   risky_watchouts: "Risky watchouts",
-  bnhub_candidates: "BNHub candidates",
+  bnhub_candidates: "BNHUB candidates",
 };
 
 export function assignFeedBucket(item: RankedDailyDealItem): FeedBucket {

@@ -1,0 +1,74 @@
+import { NextResponse } from "next/server";
+import { mkdir, writeFile } from "fs/promises";
+import path from "path";
+import { prisma } from "@/lib/db";
+import { requireMortgageExpertWithTerms } from "@/modules/mortgage/services/expert-guard";
+import { scanBufferBeforeStorage } from "@/lib/security/malware-scan";
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
+const MAX_BYTES = 5_000_000;
+const ALLOWED = new Set(["image/jpeg", "image/png", "image/webp", "application/pdf"]);
+
+function extFromMime(mime: string): string {
+  if (mime === "image/jpeg") return "jpg";
+  if (mime === "image/png") return "png";
+  if (mime === "image/webp") return "webp";
+  if (mime === "application/pdf") return "pdf";
+  return "bin";
+}
+
+export async function POST(req: Request) {
+  const session = await requireMortgageExpertWithTerms();
+  if ("error" in session) return session.error;
+  const { expert } = session;
+
+  let form: FormData;
+  try {
+    form = await req.formData();
+  } catch {
+    return NextResponse.json({ error: "Invalid form data" }, { status: 400 });
+  }
+  const file = form.get("file");
+  if (!(file instanceof File)) {
+    return NextResponse.json({ error: "file field required" }, { status: 400 });
+  }
+  const mime = file.type || "application/octet-stream";
+  if (!ALLOWED.has(mime)) {
+    return NextResponse.json({ error: "Only JPEG, PNG, WebP, or PDF allowed" }, { status: 400 });
+  }
+  const buf = Buffer.from(await file.arrayBuffer());
+  if (buf.length > MAX_BYTES) {
+    return NextResponse.json({ error: "File too large (max 5 MB)" }, { status: 400 });
+  }
+
+  const scan = await scanBufferBeforeStorage({
+    bytes: buf,
+    mimeType: mime,
+    context: "mortgage_expert_id_document",
+  });
+  if (!scan.ok) {
+    return NextResponse.json({ error: scan.userMessage }, { status: scan.status ?? 422 });
+  }
+
+  const ext = extFromMime(mime);
+  const relative = `/uploads/mortgage-experts/${expert.id}/id.${ext}`;
+  const dir = path.join(process.cwd(), "public", "uploads", "mortgage-experts", expert.id);
+  const fsPath = path.join(process.cwd(), "public", relative.replace(/^\//, ""));
+
+  try {
+    await mkdir(dir, { recursive: true });
+    await writeFile(fsPath, buf);
+  } catch (e) {
+    console.error(e);
+    return NextResponse.json({ error: "Could not save file" }, { status: 500 });
+  }
+
+  const updated = await prisma.mortgageExpert.update({
+    where: { id: expert.id },
+    data: { idDocumentPath: relative },
+  });
+
+  return NextResponse.json({ ok: true, idDocumentPath: updated.idDocumentPath });
+}

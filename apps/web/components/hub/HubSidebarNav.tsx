@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import type { HubKey } from "@/lib/hub/router";
 import type { HubTheme } from "@/lib/hub/themes";
 import type { NavItem } from "@/lib/hub/navigation";
 
@@ -35,6 +36,18 @@ function NavGlyph({ href }: { href: string }) {
       </svg>
     );
   }
+  if (p.includes("/insurance")) {
+    return (
+      <svg className="h-4 w-4 shrink-0 opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.5}
+          d="M12 3l7 4v5c0 5-3.5 9-7 10-3.5-1-7-5-7-10V7l7-4z"
+        />
+      </svg>
+    );
+  }
   if (p.includes("dispute") || p.includes("issue") || p.includes("trust") || p.includes("fraud")) {
     return (
       <svg className="h-4 w-4 shrink-0 opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
@@ -53,10 +66,13 @@ type Props = {
   items: NavItem[];
   theme: HubTheme;
   isDark: boolean;
+  /** Tighter BNHub spacing + gold active rail (host dashboard). */
+  hubKey?: HubKey;
 };
 
-export function HubSidebarNav({ items, theme, isDark }: Props) {
+export function HubSidebarNav({ items, theme, isDark, hubKey }: Props) {
   const pathname = usePathname();
+  const bnhub = hubKey === "bnhub";
 
   /**
    * Never `flex-wrap` long admin lists: it fills the viewport with chips and feels “broken”.
@@ -64,7 +80,11 @@ export function HubSidebarNav({ items, theme, isDark }: Props) {
    */
   return (
     <nav
-      className="flex max-h-[min(38vh,320px)] flex-col gap-0.5 overflow-y-auto overflow-x-hidden px-3 pb-2 sm:max-h-[min(44vh,400px)] lg:max-h-[calc(100vh-5.5rem)] lg:pb-4"
+      className={
+        bnhub
+          ? "flex max-h-[min(38vh,320px)] flex-col gap-1 overflow-y-auto overflow-x-hidden px-3 pb-2 sm:max-h-[min(44vh,400px)] lg:max-h-[calc(100vh-5.5rem)] lg:pb-4"
+          : "flex max-h-[min(38vh,320px)] flex-col gap-0.5 overflow-y-auto overflow-x-hidden px-3 pb-2 sm:max-h-[min(44vh,400px)] lg:max-h-[calc(100vh-5.5rem)] lg:pb-4"
+      }
       aria-label="Hub"
     >
       {items.map((item, index) => {
@@ -78,19 +98,30 @@ export function HubSidebarNav({ items, theme, isDark }: Props) {
             key={`${item.href}-${item.label}-${index}`}
             href={item.href}
             prefetch={false}
-            className="flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 hover:opacity-95"
+            className={
+              bnhub
+                ? "flex min-h-[44px] shrink-0 items-center gap-3 rounded-[12px] px-3 py-2.5 text-sm font-medium transition-colors duration-200 hover:bg-white/[0.06]"
+                : "flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 hover:opacity-95"
+            }
             style={{
               color: isDark ? "rgba(255,255,255,0.92)" : theme.text ?? "#111",
               backgroundColor: active
                 ? isDark
-                  ? "rgba(255,255,255,0.08)"
+                  ? bnhub
+                    ? "rgba(212, 175, 55, 0.08)"
+                    : "rgba(255,255,255,0.08)"
                   : `${accent}14`
                 : "transparent",
               borderLeft: active ? `3px solid ${accent}` : "3px solid transparent",
-              boxShadow: active ? `inset 0 0 0 1px ${isDark ? "rgba(255,255,255,0.06)" : `${accent}25`}` : undefined,
+              boxShadow: active
+                ? `inset 0 0 0 1px ${isDark ? (bnhub ? "rgba(212,175,55,0.12)" : "rgba(255,255,255,0.06)") : `${accent}25`}`
+                : undefined,
             }}
           >
-            <span style={{ color: active ? accent : isDark ? "rgba(255,255,255,0.55)" : theme.textMuted }}>
+            <span
+              className={bnhub ? "flex h-5 w-5 shrink-0 items-center justify-center" : undefined}
+              style={{ color: active ? accent : isDark ? "rgba(255,255,255,0.55)" : theme.textMuted }}
+            >
               <NavGlyph href={item.href} />
             </span>
             <span className="min-w-0 truncate">{item.label}</span>

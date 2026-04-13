@@ -1,5 +1,5 @@
 /**
- * Investor demo mode — minimal deterministic rows for LECIPM + BNHub demo paths.
+ * Investor demo mode — minimal deterministic rows for LECIPM + BNHUB demo paths.
  * Run from apps/web: pnpm seed:demo:investor
  *
  * Requires DATABASE_URL and a DB schema in sync with Prisma (run migrations first).
@@ -69,7 +69,7 @@ async function main() {
       listingVerificationStatus: ListingVerificationStatus.VERIFIED,
       legalRentRightAttestedAt: new Date(),
       legalRentRightAttestationVersion: LEGAL_RENT_RIGHT_ATTESTATION_VERSION,
-      description: "Premium demo stay for investor sessions — waterfront views, curated for BNHub booking narrative.",
+      description: "Premium demo stay for investor sessions — waterfront views, curated for BNHUB booking narrative.",
     },
     update: {
       title: "Skyline Loft — Investor Demo Stay",

@@ -1,5 +1,5 @@
 /**
- * BNHub adapter — maps generic hub engines to short-term stay primitives.
+ * BNHUB adapter — maps generic hub engines to short-term stay primitives.
  */
 
 import { computeBookingPricing, type PricingBreakdown } from "@/lib/bnhub/booking-pricing";
@@ -46,7 +46,7 @@ export function getBnhubBookingEngine(): HubBookingEngine {
       return { ok: false, error: "Create stays via /api/bnhub/bookings or booking service" };
     },
     async transitionReservationStatus() {
-      return { ok: false, error: "Use BNHub payment and booking modules" };
+      return { ok: false, error: "Use BNHUB payment and booking modules" };
     },
   };
   return bookingSingleton;

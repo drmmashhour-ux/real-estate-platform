@@ -11,7 +11,7 @@ function normTitle(t: string): string {
 }
 
 /**
- * Raw BNHub listing + host account signals — all from Prisma counts / fields.
+ * Raw BNHUB listing + host account signals — all from Prisma counts / fields.
  * Used by the deterministic scorer only (no fabricated metrics).
  */
 export type ShortTermListingFraudRawSignals = {

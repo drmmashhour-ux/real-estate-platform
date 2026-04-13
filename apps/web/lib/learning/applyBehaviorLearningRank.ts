@@ -16,7 +16,7 @@ function isLearningSort(sort?: string | null): boolean {
 }
 
 /**
- * Re-ranks BNHub search rows using cached learning stats + optional preference profile.
+ * Re-ranks BNHUB search rows using cached learning stats + optional preference profile.
  * No-op when env disabled or non-AI sort — preserves all existing flows.
  */
 export async function applyBehaviorLearningToBnhubSearchResults<

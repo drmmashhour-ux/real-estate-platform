@@ -5,20 +5,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
 import { createOrGetImmoContactSession } from "@/lib/immo/init-immo-contact";
-import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
+import { gateDistributedRateLimit } from "@/lib/rate-limit-enforcement";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
-  const rateKey =
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? req.headers.get("x-real-ip") ?? "anonymous";
-  const limit = checkRateLimit(`public:immo-init-contact:${rateKey}`, { windowMs: 60_000, max: 20 });
-  if (!limit.allowed) {
-    return NextResponse.json(
-      { error: "Too many requests. Try again shortly." },
-      { status: 429, headers: getRateLimitHeaders(limit) }
-    );
-  }
+  const gate = await gateDistributedRateLimit(req, "public:immo-init-contact", { windowMs: 60_000, max: 20 });
+  if (!gate.allowed) return gate.response;
 
   let body: Record<string, unknown>;
   try {

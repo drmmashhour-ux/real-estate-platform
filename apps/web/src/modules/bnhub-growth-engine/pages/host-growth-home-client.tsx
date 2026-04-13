@@ -46,7 +46,7 @@ export function HostGrowthHomeClient() {
         <div className={`${g.card} border-amber-500/20`}>
           <p className={g.title}>No listings yet</p>
           <p className={g.sub}>
-            Publish a BNHub listing first. Growth campaigns attach to a live property; internal placements never spend on
+            Publish a BNHUB listing first. Growth campaigns attach to a live property; internal placements never spend on
             external ads.
           </p>
         </div>

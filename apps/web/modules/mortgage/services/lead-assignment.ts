@@ -95,6 +95,7 @@ export async function assignMortgageExpertForNewLead(
           isActive: true,
           acceptedTerms: true,
           isAvailable: true,
+          expertVerificationStatus: "verified",
         },
         include: { expertSubscription: true, expertCredits: true, expertBilling: true },
       });
@@ -119,7 +120,8 @@ export async function assignMortgageExpertForNewLead(
         const priorityWeight = sub?.isActive ? sub.priorityWeight : 0;
         const planName = sub?.isActive ? sub.plan : "basic";
 
-        if (revenueTier === "HIGH" && planName.toLowerCase().trim() !== "premium") continue;
+        const pn = planName.toLowerCase().trim();
+        if (revenueTier === "HIGH" && pn !== "premium" && pn !== "ambassador") continue;
 
         if (e.expertCredits) {
           if (e.expertCredits.credits < creditCost) continue;

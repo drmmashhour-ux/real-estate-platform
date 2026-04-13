@@ -7,8 +7,8 @@ function fallbackSocialPost(input: SocialPostInput): string {
   const theme: ContentTheme = input.theme ?? "platform_awareness";
   const hook =
     input.tone.toLowerCase().includes("viral")
-      ? "Stop scrolling — this is how stays should feel on BNHub."
-      : "Book curated stays with confidence on BNHub (LECIPM).";
+      ? "Stop scrolling — this is how stays should feel on BNHUB."
+      : "Book curated stays with confidence on BNHUB (LECIPM).";
   const body = [
     hook,
     "",
@@ -18,7 +18,7 @@ function fallbackSocialPost(input: SocialPostInput): string {
     "",
     input.context?.trim() ? `Note: ${input.context.trim()}` : "Discover verified listings and host-ready tools.",
     "",
-    `#BNHub #Stays #RealEstate`,
+    `#BNHUB #Stays #RealEstate`,
   ].join("\n");
   return body.slice(0, 2200);
 }
@@ -29,7 +29,7 @@ function fallbackSocialPost(input: SocialPostInput): string {
 export async function generateSocialPost(input: SocialPostInput): Promise<TextResult> {
   const theme: ContentTheme = input.theme ?? "platform_awareness";
   const tone = normalizeTone(input.tone);
-  const system = `You write organic social posts for BNHub (short-term stays / hospitality) within LECIPM (real estate platform).
+  const system = `You write organic social posts for BNHUB (short-term stays / hospitality) within LECIPM (real estate platform).
 Rules:
 - No invented statistics, user counts, revenue, or fake reviews.
 - Keep it short and scannable for ${input.platform}.

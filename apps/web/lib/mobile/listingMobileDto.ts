@@ -86,7 +86,7 @@ export function toPublicListingCard(row: ListingWithQualityRow) {
     checkInInstructions: row.checkInInstructions,
     starRating: row.bnhubPropertyClassification?.starRating ?? null,
     ratingLabel:
-      row.bnhubPropertyClassification?.ratingLabel ?? "BNHub Star Rating (internal platform estimate)",
+      row.bnhubPropertyClassification?.ratingLabel ?? "BNHUB Star Rating (internal platform estimate)",
     luxuryTierPublic: tier,
     safety: {
       guestMessage: safety.guestMessage,

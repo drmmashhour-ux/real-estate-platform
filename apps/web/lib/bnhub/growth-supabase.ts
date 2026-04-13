@@ -1,5 +1,5 @@
 /**
- * Supabase inserts for BNHub growth tables (feedback, events, host leads).
+ * Supabase inserts for BNHUB growth tables (feedback, events, host leads).
  * Uses same service client as guest bookings — tables must exist (see docs/bnhub/supabase-growth-tables.sql).
  */
 

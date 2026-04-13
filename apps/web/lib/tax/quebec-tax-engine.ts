@@ -112,7 +112,7 @@ export function calculateTaxForAmount(params: {
 }
 
 // ---------------------------------------------------------------------------
-// Standard Québec retail rates — single source for BNHub + platform invoices
+// Standard Québec retail rates — single source for BNHUB + platform invoices
 // ---------------------------------------------------------------------------
 
 /** Federal GST in Québec — 5% as decimal (e.g. 0.05). */

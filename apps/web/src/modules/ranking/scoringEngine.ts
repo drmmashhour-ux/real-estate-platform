@@ -242,7 +242,7 @@ export async function computeListingRankingScore(
     return computeBnhubRankingScore(listing as BnhubListingRankingInput, ctx);
   }
   if (listingType === RANKING_LISTING_TYPE_CRM) {
-    throw new Error("CRM listing ranking is not wired; use FSBO or BNHub inputs.");
+    throw new Error("CRM listing ranking is not wired; use FSBO or BNHUB inputs.");
   }
   return computeRealEstateRankingScore(listing as FsboListingRankingInput, ctx);
 }

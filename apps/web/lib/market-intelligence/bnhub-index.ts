@@ -1,5 +1,5 @@
 /**
- * BNHub (short-term rental) index – nightly rate, occupancy, revenue, rating by region/period.
+ * BNHUB (short-term rental) index – nightly rate, occupancy, revenue, rating by region/period.
  */
 
 import { prisma } from "@/lib/db";

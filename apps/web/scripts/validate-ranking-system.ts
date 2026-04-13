@@ -37,7 +37,7 @@ async function main() {
     throw e;
   }
 
-  console.info("[validate-ranking] 2) BNHub sample score");
+  console.info("[validate-ranking] 2) BNHUB sample score");
   const bnListing = await prisma.shortTermListing.findFirst({
     where: { listingStatus: "PUBLISHED" },
     include: {
@@ -71,7 +71,7 @@ async function main() {
     );
     console.info("[validate-ranking]    order check same id:", ordered[0]?.id === bnListing.id);
   } else {
-    console.info("[validate-ranking]    no published BNHub listing — skip BNHub sample");
+    console.info("[validate-ranking]    no published BNHUB listing — skip BNHUB sample");
   }
 
   console.info("[validate-ranking] 3) FSBO sample score");

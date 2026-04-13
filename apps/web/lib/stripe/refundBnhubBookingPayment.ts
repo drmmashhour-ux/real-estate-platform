@@ -1,5 +1,5 @@
 /**
- * Stripe refund for BNHub `Payment` linked to a booking (PaymentIntent id on `stripePaymentId`).
+ * Stripe refund for BNHUB `Payment` linked to a booking (PaymentIntent id on `stripePaymentId`).
  */
 
 import Stripe from "stripe";

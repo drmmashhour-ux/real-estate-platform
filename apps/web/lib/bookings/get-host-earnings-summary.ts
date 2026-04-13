@@ -1,5 +1,5 @@
 /**
- * Host-facing earnings rollup from Supabase BNHub data (gross paid bookings per `host_user_id`).
+ * Host-facing earnings rollup from Supabase BNHUB data (gross paid bookings per `host_user_id`).
  * Automated Connect payouts are not triggered here.
  */
 export {

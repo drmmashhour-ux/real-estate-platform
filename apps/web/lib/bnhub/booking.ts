@@ -318,6 +318,16 @@ export async function createBooking(data: {
     }
   );
 
+  void import("@/lib/fraud/compute-booking-risk")
+    .then((m) =>
+      m.evaluateBookingFraudAfterCreate({
+        bookingId: booking.id,
+        guestId: data.guestId,
+        listingId: data.listingId,
+      })
+    )
+    .catch(() => {});
+
   await recordBookingEvent(
     booking.id,
     initialStatus === "PENDING" ? "created" : "awaiting_host_approval",
@@ -337,6 +347,10 @@ export async function createBooking(data: {
   });
 
   void syncTrustGraphOnBookingCreated({ bookingId: booking.id }).catch(() => {});
+
+  void import("@/lib/quality/schedule-listing-quality")
+    .then((m) => m.scheduleListingQualityRecompute(data.listingId))
+    .catch(() => {});
 
   {
     const guestName =
@@ -486,7 +500,16 @@ export async function getBookingsForHost(ownerId: string) {
     where: { listing: { ownerId } },
     include: {
       listing: { select: { id: true, title: true, city: true, listingCode: true } },
-      guest: { select: { id: true, name: true, email: true } },
+      guest: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          homeCity: true,
+          homeRegion: true,
+          homeCountry: true,
+        },
+      },
       payment: true,
       bnhubReservationPayment: true,
     },

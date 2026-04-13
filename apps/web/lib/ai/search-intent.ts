@@ -21,7 +21,7 @@ export type SearchIntentResult = {
 };
 
 /**
- * @param context - `sale` = whole-property price bands (USD cents). `nightly_stay` = per-night caps for BNHub-style search.
+ * @param context - `sale` = whole-property price bands (USD cents). `nightly_stay` = per-night caps for BNHUB-style search.
  */
 export function parseSearchIntent(text: string, context: SearchIntentContext = "sale"): SearchIntentResult {
   const q = text.trim().toLowerCase();

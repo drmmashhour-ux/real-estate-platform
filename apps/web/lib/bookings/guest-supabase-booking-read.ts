@@ -22,7 +22,7 @@ export type GuestBookingSnapshot = {
 };
 
 /**
- * BNHub Supabase `bookings` row + listing title (service role). Used by guest mobile via platform API — not direct anon DB reads.
+ * BNHUB Supabase `bookings` row + listing title (service role). Used by guest mobile via platform API — not direct anon DB reads.
  */
 export async function fetchGuestSupabaseBookingSnapshot(
   bookingId: string

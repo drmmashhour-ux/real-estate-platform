@@ -41,7 +41,7 @@ export async function buildComplianceSnapshotForBroker(userId: string): Promise<
   return { signedFormKeys, brokerPlatformAgreementAccepted };
 }
 
-/** BNHub short-term: reuse publish mandatory gate as single legal bundle. */
+/** BNHUB short-term: reuse publish mandatory gate as single legal bundle. */
 export async function buildComplianceSnapshotForBnhubShortPublish(listingId: string): Promise<ComplianceSnapshot> {
   const signedFormKeys = new Set<string>();
   const { allowed } = await canPublishListingMandatory(listingId);
@@ -51,7 +51,7 @@ export async function buildComplianceSnapshotForBnhubShortPublish(listingId: str
   };
 }
 
-/** Long-term rental listing publish (same BNHub listing model when type is long_term_rental) — optional gate. */
+/** Long-term rental listing publish (same BNHUB listing model when type is long_term_rental) — optional gate. */
 export async function buildComplianceSnapshotForBnhubLongPublish(listingId: string): Promise<ComplianceSnapshot> {
   const signedFormKeys = new Set<string>();
   const { allowed } = await canPublishListingMandatory(listingId);

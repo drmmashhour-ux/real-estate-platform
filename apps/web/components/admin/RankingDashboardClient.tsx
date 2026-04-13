@@ -21,6 +21,15 @@ type ScoreRow = {
   city: string | null;
 };
 
+type Snapshot = {
+  topBnhub: Array<{ listingId: string; totalScore: number; city: string | null }>;
+  topRealEstate: Array<{ listingId: string; totalScore: number; city: string | null }>;
+  weakBnhub: Array<{ listingId: string; totalScore: number; city: string | null }>;
+  weakRealEstate: Array<{ listingId: string; totalScore: number; city: string | null }>;
+  overexposedBnhub: { listingId: string; views30d: number; ctr: number | null }[];
+  explorationCandidatesBnhub: { listingId: string; totalScore: number; views30d: number }[];
+};
+
 export function RankingDashboardClient({
   initialLegacyWeights,
 }: {
@@ -30,18 +39,21 @@ export function RankingDashboardClient({
   const [topBnhub, setTopBnhub] = useState<ScoreRow[]>([]);
   const [topRe, setTopRe] = useState<ScoreRow[]>([]);
   const [insights, setInsights] = useState<unknown>(null);
+  const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const [c, b, r] = await Promise.all([
+    const [c, b, r, snap] = await Promise.all([
       fetch("/api/admin/ranking/configs").then((x) => x.json()),
       fetch("/api/admin/ranking/listings?listingType=bnhub&take=15").then((x) => x.json()),
       fetch("/api/admin/ranking/listings?listingType=real_estate&take=15").then((x) => x.json()),
+      fetch("/api/admin/ranking/snapshot").then((x) => x.json()).catch(() => null),
     ]);
     setConfigs(Array.isArray(c.configs) ? c.configs : []);
     setTopBnhub(Array.isArray(b.listings) ? b.listings : []);
     setTopRe(Array.isArray(r.listings) ? r.listings : []);
+    if (snap && typeof snap === "object" && "topBnhub" in snap) setSnapshot(snap as Snapshot);
   }, []);
 
   useEffect(() => {
@@ -73,7 +85,7 @@ export function RankingDashboardClient({
         body: JSON.stringify({ scope: "all" }),
       });
       const data = await res.json();
-      if (res.ok) setMsg(`Recomputed — BNHub: ${data.bnhub ?? 0}, FSBO: ${data.realEstate ?? 0}`);
+      if (res.ok) setMsg(`Recomputed — BNHUB: ${data.bnhub ?? 0}, FSBO: ${data.realEstate ?? 0}`);
       else setMsg(data.error ?? "Failed");
       await load();
     } finally {
@@ -96,8 +108,9 @@ export function RankingDashboardClient({
       <section className="rounded-xl border border-slate-800 bg-slate-900/50 p-6">
         <h2 className="text-lg font-semibold text-white">Ranking engine (AI_RANKING_ENGINE_ENABLED)</h2>
         <p className="mt-1 text-sm text-slate-400">
-          Explainable scores from real DB signals. BNHub stays search uses this when sort = Recommended and the env flag
-          is on.
+          Explainable scores from real DB signals. BNHUB stays search uses unified ranking (relevance, quality, trust,
+          performance, price, freshness, availability + exploration blend) when sort = Recommended and{" "}
+          <code className="rounded bg-slate-800 px-1">AI_RANKING_ENGINE_ENABLED</code> is on.
         </p>
         <div className="mt-4 flex flex-wrap gap-3">
           <button
@@ -143,9 +156,77 @@ export function RankingDashboardClient({
         </ul>
       </section>
 
+      {snapshot ? (
+        <div className="grid gap-6 lg:grid-cols-2">
+          <section className="rounded-xl border border-slate-800 bg-slate-900/50 p-6">
+            <h2 className="text-lg font-semibold text-white">Weak BNHUB (persisted)</h2>
+            <ul className="mt-3 space-y-2 text-sm">
+              {snapshot.weakBnhub.map((r) => (
+                <li key={r.listingId} className="flex justify-between gap-2 border-b border-slate-800/80 py-1">
+                  <Link href={`/bnhub/${r.listingId}`} className="truncate text-rose-300/90 hover:underline">
+                    {r.listingId.slice(0, 8)}…
+                  </Link>
+                  <span className="shrink-0 text-slate-200">{r.totalScore.toFixed(1)}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+          <section className="rounded-xl border border-slate-800 bg-slate-900/50 p-6">
+            <h2 className="text-lg font-semibold text-white">Weak FSBO (persisted)</h2>
+            <ul className="mt-3 space-y-2 text-sm">
+              {snapshot.weakRealEstate.map((r) => (
+                <li key={r.listingId} className="flex justify-between gap-2 border-b border-slate-800/80 py-1">
+                  <Link href={`/listings/${r.listingId}`} className="truncate text-rose-300/90 hover:underline">
+                    {r.listingId.slice(0, 8)}…
+                  </Link>
+                  <span className="shrink-0 text-slate-200">{r.totalScore.toFixed(1)}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        </div>
+      ) : null}
+
+      {snapshot ? (
+        <div className="grid gap-6 lg:grid-cols-2">
+          <section className="rounded-xl border border-slate-800 bg-slate-900/50 p-6">
+            <h2 className="text-lg font-semibold text-white">Overexposed BNHUB (high views, low CTR)</h2>
+            <p className="mt-1 text-xs text-slate-500">Possible mismatch or bait pricing — see anti-gaming rules in docs.</p>
+            <ul className="mt-3 space-y-2 text-sm">
+              {snapshot.overexposedBnhub.map((r) => (
+                <li key={r.listingId} className="flex flex-wrap justify-between gap-2 border-b border-slate-800/80 py-1">
+                  <Link href={`/bnhub/${r.listingId}`} className="truncate text-amber-300 hover:underline">
+                    {r.listingId.slice(0, 8)}…
+                  </Link>
+                  <span className="text-slate-400">
+                    views {r.views30d} · ctr {r.ctr != null ? r.ctr.toFixed(3) : "—"}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+          <section className="rounded-xl border border-slate-800 bg-slate-900/50 p-6">
+            <h2 className="text-lg font-semibold text-white">Exploration candidates (high score, low views)</h2>
+            <p className="mt-1 text-xs text-slate-500">Inventory that may deserve more surface area.</p>
+            <ul className="mt-3 space-y-2 text-sm">
+              {snapshot.explorationCandidatesBnhub.map((r) => (
+                <li key={r.listingId} className="flex justify-between gap-2 border-b border-slate-800/80 py-1">
+                  <Link href={`/bnhub/${r.listingId}`} className="truncate text-emerald-300/90 hover:underline">
+                    {r.listingId.slice(0, 8)}…
+                  </Link>
+                  <span className="text-slate-400">
+                    score {r.totalScore.toFixed(1)} · views {r.views30d}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        </div>
+      ) : null}
+
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="rounded-xl border border-slate-800 bg-slate-900/50 p-6">
-          <h2 className="text-lg font-semibold text-white">Top BNHub (persisted scores)</h2>
+          <h2 className="text-lg font-semibold text-white">Top BNHUB (persisted scores)</h2>
           <ul className="mt-3 space-y-2 text-sm">
             {topBnhub.map((r) => (
               <li key={r.listingId} className="flex justify-between gap-2 border-b border-slate-800/80 py-1">
@@ -180,7 +261,7 @@ export function RankingDashboardClient({
       </section>
 
       <section className="rounded-xl border border-slate-800 bg-slate-900/50 p-6">
-        <h2 className="text-lg font-semibold text-white">Legacy BNHub search weights (SearchRankingConfig)</h2>
+        <h2 className="text-lg font-semibold text-white">Legacy BNHUB search weights (SearchRankingConfig)</h2>
         <p className="mt-1 text-sm text-slate-500">Used when AI ranking engine is off.</p>
         <RankingConfigClient initialWeights={initialLegacyWeights} />
       </section>

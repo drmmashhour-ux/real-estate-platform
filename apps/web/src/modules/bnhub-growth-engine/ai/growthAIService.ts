@@ -92,7 +92,7 @@ export function generateAssetPack(
       content: isFr
         ? `${input.title} — ${angle.replace(/_/g, " ")} à ${city} · dès ${price}$ / nuit`
         : `${input.title} — ${angle.replace(/_/g, " ")} in ${city} · from $${price}/night`,
-      ctaText: isFr ? "Réserver sur BNHub" : "Book on BNHub",
+      ctaText: isFr ? "Réserver sur BNHUB" : "Book on BNHUB",
       platformHint: "bnhub",
     });
     out.push({
@@ -110,8 +110,8 @@ export function generateAssetPack(
       lang,
       title: null,
       content: isFr
-        ? `Bonjour! ${input.title} à ${city} — ${price}$/nuit. Infos: BNHub ${input.listingCode}`
-        : `Hi! ${input.title} in ${city} — $${price}/night. More info on BNHub ${input.listingCode}`,
+        ? `Bonjour! ${input.title} à ${city} — ${price}$/nuit. Infos: BNHUB ${input.listingCode}`
+        : `Hi! ${input.title} in ${city} — $${price}/night. More info on BNHUB ${input.listingCode}`,
       ctaText: null,
       platformHint: "whatsapp_template_pending",
     });

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BnHubLogoMark } from "@/components/bnhub/BnHubLogoMark";
 import { lecipmDesignTokens } from "@/lib/ui/lecipmDesignTokens";
 
 const { black, card } = lecipmDesignTokens.color;
@@ -150,21 +151,21 @@ export function LecipmMarketingLanding() {
         </div>
       </section>
 
-      {/* BNHub — secondary */}
+      {/* BNHUB — secondary */}
       <section className="border-t border-white/10 px-6 py-12">
         <div
           className="mx-auto max-w-4xl rounded-2xl border border-white/10 p-8 text-center"
           style={{ backgroundColor: card }}
         >
-          <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: GOLD }}>
-            BNHub
-          </p>
-          <p className="mt-2 text-sm text-slate-400">Short-term stays — same trust lens, different use case.</p>
+          <div className="flex justify-center">
+            <BnHubLogoMark size="sm" className="max-w-[200px]" />
+          </div>
+          <p className="mt-3 text-sm text-slate-400">Short-term stays — same trust lens, different use case.</p>
           <Link
             href="/bnhub"
             className="mt-5 inline-block rounded-lg border border-white/20 px-6 py-2.5 text-sm font-medium text-white hover:border-premium-gold/50"
           >
-            Explore BNHub
+            Explore BNHUB
           </Link>
         </div>
       </section>

@@ -1,4 +1,4 @@
-/** LECIPM / BNHub premium black + gold surface tokens (Tailwind). */
+/** LECIPM / BNHUB premium black + gold surface tokens (Tailwind). */
 export const bnhubPremium = {
   panel: "rounded-2xl border border-amber-500/20 bg-zinc-950/90 shadow-lg shadow-black/40",
   heading: "text-lg font-semibold text-amber-100",

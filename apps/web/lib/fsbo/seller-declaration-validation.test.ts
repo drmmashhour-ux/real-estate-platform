@@ -14,8 +14,8 @@ function baseDeclaration() {
     city: "Montreal",
     postalCode: "H2X1Y1",
   };
-  d.hasAuthorityToSell = true;
-  d.identityNotes = "Owner on title.";
+  d.hasAuthorityToSell = false;
+  d.identityNotes = "";
   d.sharedContactResponsibilityConfirmed = false;
   return d;
 }
@@ -82,6 +82,7 @@ describe("validateSellerDeclarationIntegrity", () => {
         sharedContact: false,
         idDocumentUrl: "https://x",
         idDocumentVerificationStatus: "none",
+        idDetailsConfirmed: true,
       },
     ];
     const v = validateSellerDeclarationIntegrity(d, "SINGLE_FAMILY");
@@ -103,8 +104,16 @@ describe("validateSellerDeclarationIntegrity", () => {
       sharedContact: false,
       idDocumentUrl: "https://x",
       idDocumentVerificationStatus: "none" as const,
+      idDetailsConfirmed: true,
     };
-    const q = { ...p, id: emptyParty().id, fullName: "Bob", email: "b@example.com", phone: "5145550102" };
+    const q = {
+      ...p,
+      id: emptyParty().id,
+      fullName: "Bob",
+      email: "b@example.com",
+      phone: "5145550102",
+      idDetailsConfirmed: true,
+    };
     d.sellers = [p, q];
     const v = validateSellerDeclarationIntegrity(d, "SINGLE_FAMILY");
     expect(v.ok).toBe(false);
@@ -126,6 +135,7 @@ describe("validateSellerDeclarationIntegrity", () => {
       sharedContact: true,
       idDocumentUrl: "https://x",
       idDocumentVerificationStatus: "none" as const,
+      idDetailsConfirmed: true,
     };
     const q = {
       ...p,
@@ -134,9 +144,62 @@ describe("validateSellerDeclarationIntegrity", () => {
       fullName: "Bob",
       email: "b@example.com",
       sharedContact: true,
+      idDetailsConfirmed: true,
     };
     d.sellers = [p, q];
     d.sharedContactResponsibilityConfirmed = true;
+    const v = validateSellerDeclarationIntegrity(d, "SINGLE_FAMILY");
+    expect(v.ok).toBe(true);
+  });
+
+  it("invalid: company / mandate path without supplemental upload", () => {
+    const d = baseDeclaration();
+    d.authorityMandateRepresentative = true;
+    d.sellers = [
+      {
+        ...emptyParty(),
+        idType: "PASSPORT",
+        idNumber: "P1",
+        fullName: "Ann",
+        dateOfBirth: "1990-01-01",
+        occupation: "Eng",
+        annualIncome: "80000",
+        phone: "5145550100",
+        email: "a@example.com",
+        sharedContact: false,
+        idDocumentUrl: "https://x",
+        idDocumentVerificationStatus: "none",
+        idDetailsConfirmed: true,
+      },
+    ];
+    const v = validateSellerDeclarationIntegrity(d, "SINGLE_FAMILY");
+    expect(v.ok).toBe(false);
+    expect(v.fieldErrors["authoritySupplementalDocs"]).toBeTruthy();
+  });
+
+  it("valid: mandate path with supplemental doc", () => {
+    const d = baseDeclaration();
+    d.authorityMandateRepresentative = true;
+    d.hasAuthorityToSell = true;
+    d.identityNotes = "Representative under registered power of attorney; file ref. in notes.";
+    d.authoritySupplementalDocs = [{ id: "doc-1", kind: "mandate_poa", fileUrl: "https://example.com/mandate.pdf" }];
+    d.sellers = [
+      {
+        ...emptyParty(),
+        idType: "PASSPORT",
+        idNumber: "P1",
+        fullName: "Ann",
+        dateOfBirth: "1990-01-01",
+        occupation: "Eng",
+        annualIncome: "80000",
+        phone: "5145550100",
+        email: "a@example.com",
+        sharedContact: false,
+        idDocumentUrl: "https://x",
+        idDocumentVerificationStatus: "none",
+        idDetailsConfirmed: true,
+      },
+    ];
     const v = validateSellerDeclarationIntegrity(d, "SINGLE_FAMILY");
     expect(v.ok).toBe(true);
   });

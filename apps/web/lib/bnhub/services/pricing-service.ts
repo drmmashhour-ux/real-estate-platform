@@ -1,5 +1,5 @@
 /**
- * BNHub PricingService — calculate nightly cost, cleaning fee, taxes, platform fee, total.
+ * BNHUB PricingService — calculate nightly cost, cleaning fee, taxes, platform fee, total.
  * Returns full price breakdown.
  */
 

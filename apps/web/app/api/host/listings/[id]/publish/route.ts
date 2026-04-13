@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 type Ctx = { params: Promise<{ id: string }> };
 
-/** Host publishes a draft (runs same gates as BNHub create). */
+/** Host publishes a draft (runs same gates as BNHUB create). */
 export async function POST(_req: NextRequest, ctx: Ctx) {
   const userId = await getGuestId();
   if (!userId) return Response.json({ error: "Sign in required" }, { status: 401 });

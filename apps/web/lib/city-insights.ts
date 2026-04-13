@@ -1,5 +1,5 @@
 /**
- * Aggregated market stats for LECIPM city pages (BNHub + FSBO).
+ * Aggregated market stats for LECIPM city pages (BNHUB + FSBO).
  * Cached via Next unstable_cache — safe for server components.
  */
 
@@ -15,11 +15,11 @@ export type CityInsightsPayload = {
   slug: CitySlug;
   /** Average FSBO ask (full property), cents */
   avgPropertyPriceCents: number | null;
-  /** Average BNHub nightly rate, cents */
+  /** Average BNHUB nightly rate, cents */
   avgNightlyPriceCents: number | null;
   activeBnhubCount: number;
   activeFsboCount: number;
-  /** Blended avg bedrooms (FSBO bedrooms + BNHub beds) */
+  /** Blended avg bedrooms (FSBO bedrooms + BNHUB beds) */
   avgBedrooms: number | null;
   /**
    * Simple model: (avgNight * 365 * occupancy) / avg FSBO price.
@@ -111,7 +111,7 @@ async function computeCityInsightsUncached(slug: CitySlug): Promise<CityInsights
   } else {
     yieldNote =
       activeBnhubCount === 0 || activeFsboCount === 0
-        ? "Not enough overlapping FSBO and BNHub data for a yield estimate."
+        ? "Not enough overlapping FSBO and BNHUB data for a yield estimate."
         : null;
   }
 
@@ -169,7 +169,7 @@ export function getWhyInvestContent(slug: CitySlug): WhyInvestContent {
         bullets: [
           "Diverse employment base and major universities",
           "Strong hospitality and events calendar for short-term demand",
-          "Compare FSBO asks with BNHub nightly rates before you buy",
+          "Compare FSBO asks with BNHUB nightly rates before you buy",
         ],
       };
     case "laval":
@@ -181,7 +181,7 @@ export function getWhyInvestContent(slug: CitySlug): WhyInvestContent {
         bullets: [
           "Growing residential stock and highway/transit links",
           "Family-oriented demand supports longer leases",
-          "Review local FSBO inventory alongside regional BNHub rates",
+          "Review local FSBO inventory alongside regional BNHUB rates",
         ],
       };
     case "quebec":

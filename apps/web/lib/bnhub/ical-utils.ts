@@ -163,7 +163,7 @@ export function buildICalDocument(vevents: { uid: string; summary: string; dtSta
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//BNHub//Channel Manager//EN",
+    "PRODID:-//BNHUB//Channel Manager//EN",
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
   ];

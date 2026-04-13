@@ -1,5 +1,5 @@
 /**
- * Hub search / discovery — configuration-driven; BNHub maps filters to existing search API.
+ * Hub search / discovery — configuration-driven; BNHUB maps filters to existing search API.
  */
 
 import type { HubDefinition, HubSearchConfig } from "./hub-types";

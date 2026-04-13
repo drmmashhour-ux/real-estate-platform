@@ -1,5 +1,5 @@
 /**
- * Server-side shape for Supabase `public.bookings` (guest mobile BNHub).
+ * Server-side shape for Supabase `public.bookings` (guest mobile BNHUB).
  * Prisma `Booking` is separate; this is for service-role Supabase access only.
  */
 export type GuestSupabaseBookingRow = {

@@ -20,7 +20,12 @@ export type PublicMortgageExpertCard = {
 
 export async function getPublicMortgageExpertsList(): Promise<PublicMortgageExpertCard[]> {
   const rows = await prisma.mortgageExpert.findMany({
-    where: { isActive: true, acceptedTerms: true, isAvailable: true },
+    where: {
+      isActive: true,
+      acceptedTerms: true,
+      isAvailable: true,
+      expertVerificationStatus: "verified",
+    },
     orderBy: { createdAt: "asc" },
     include: { expertSubscription: true },
   });

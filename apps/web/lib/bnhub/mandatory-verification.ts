@@ -1,5 +1,5 @@
 /**
- * Mandatory verification for BNHub listing publish.
+ * Mandatory verification for BNHUB listing publish.
  * Owner: full name, ID verification, ownership confirmation → pending | verified | rejected
  * Property: address, images required; ownership proof optional.
  */

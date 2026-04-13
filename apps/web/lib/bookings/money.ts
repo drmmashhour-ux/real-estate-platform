@@ -45,7 +45,7 @@ export function buildBookingMoneyBreakdown(input: BuildBookingMoneyInput): Booki
   };
 }
 
-/** Maps the BNHub pricing engine breakdown into the canonical money shape (single source for persisted JSON). */
+/** Maps the BNHUB pricing engine breakdown into the canonical money shape (single source for persisted JSON). */
 export function bookingMoneyBreakdownFromPricingBreakdown(
   bookingId: string,
   b: PricingBreakdown

@@ -3,7 +3,7 @@ import { dismissCommonOverlays } from "../helpers/overlays";
 import { e2eStep } from "./_log";
 import { getOrigin } from "./_context";
 
-/** BNHub demo login (real route, real session cookie). */
+/** BNHUB demo login (real route, real session cookie). */
 export async function bnhubLoginAs(page: Page, email: string, nextPath?: string): Promise<void> {
   const origin = getOrigin();
   const next = nextPath ?? "/bnhub/stays";

@@ -29,7 +29,7 @@ export async function allocateUniqueLSTListingCode(tx: Tx): Promise<string> {
 /** @deprecated Prefer `allocateUniqueLSTListingCode` — kept for import compatibility. */
 export const allocateNextListingCode = allocateUniqueLSTListingCode;
 
-/** Resolve BNHub listing by internal UUID or by public listing code (LEC or LST). */
+/** Resolve BNHUB listing by internal UUID or by public listing code (LEC or LST). */
 export async function resolveShortTermListingRef(
   ref: string | null | undefined
 ): Promise<ResolvedShortTermListing | null> {

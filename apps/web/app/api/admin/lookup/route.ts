@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
     ]);
     if (st) {
       results.push({
-        label: `BNHub · ${st.listingCode} · ${st.title}`,
+        label: `BNHUB · ${st.listingCode} · ${st.title}`,
         href: `/bnhub/${st.id}`,
       });
     }

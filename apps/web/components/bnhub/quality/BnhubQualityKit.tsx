@@ -20,7 +20,7 @@ export function LuxuryTierBadge({ code }: { code: string }) {
         : "border-sky-400/50 text-sky-100";
   return (
     <span className={`inline-block rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${tone}`}>
-      BNHub {code.toLowerCase()}
+      BNHUB {code.toLowerCase()}
     </span>
   );
 }

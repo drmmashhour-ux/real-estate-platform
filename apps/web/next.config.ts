@@ -1,5 +1,9 @@
 import type { NextConfig } from "next";
+import createNextIntlPlugin from "next-intl/plugin";
 import withPWAInit from "next-pwa";
+import { buildHttpSecurityHeaders } from "./lib/security/http-security-headers";
+
+const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 
 const withPWA = withPWAInit({
   dest: "public",
@@ -13,21 +17,7 @@ const withPWA = withPWAInit({
 
 const isProd = process.env.NODE_ENV === "production" || process.env.VERCEL === "1";
 
-const securityHeaders = [
-  ...(isProd
-    ? ([
-        {
-          key: "Strict-Transport-Security",
-          value: "max-age=31536000; includeSubDomains",
-        },
-      ] as const)
-    : []),
-  { key: "X-DNS-Prefetch-Control", value: "on" },
-  { key: "X-Frame-Options", value: "SAMEORIGIN" },
-  { key: "X-Content-Type-Options", value: "nosniff" },
-  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
-];
+const securityHeaders = buildHttpSecurityHeaders({ isProductionLike: isProd });
 
 /** TEMP: strip edge/browser caching so fresh middleware/HTML is served after deploy. Remove after verification (hurts `_next/static` CDN caching). */
 const forceNoStoreDocumentCache = [
@@ -35,6 +25,8 @@ const forceNoStoreDocumentCache = [
 ] as const;
 
 const nextConfig: NextConfig = {
+  /** Next.js 16 defaults to Turbopack; `next-pwa` injects webpack config — empty Turbopack block opts in explicitly. */
+  turbopack: {},
   transpilePackages: ["@lecipm/ui", "@lecipm/api-client"],
   reactStrictMode: true,
   images: {
@@ -44,17 +36,17 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ["@react-pdf/renderer", "nspell"],
   /** Legacy admin URLs from docs / bookmarks → real App Router pages. */
   async redirects() {
+    const L = "/en/ca";
     return [
-      { source: "/admin/payments", destination: "/admin/finance/overview", permanent: false },
-      { source: "/admin/payments/:path*", destination: "/admin/finance/overview", permanent: false },
-      { source: "/admin/settings", destination: "/admin/controls", permanent: false },
-      { source: "/admin/settings/:path*", destination: "/admin/controls", permanent: false },
+      { source: "/admin/payments", destination: `${L}/admin/payments`, permanent: false },
+      { source: "/admin/settings", destination: `${L}/admin/controls`, permanent: false },
+      { source: "/admin/settings/:path*", destination: `${L}/admin/controls`, permanent: false },
       /** Legacy / marketing URLs → current App Router paths (E2E + bookmarks). */
-      { source: "/map-search", destination: "/bnhub/stays", permanent: false },
-      { source: "/property/:id", destination: "/listings/:id", permanent: false },
-      { source: "/broker-dashboard", destination: "/broker/dashboard", permanent: false },
-      { source: "/favorites", destination: "/projects", permanent: false },
-      { source: "/saved-searches", destination: "/projects", permanent: false },
+      { source: "/map-search", destination: `${L}/bnhub/stays`, permanent: false },
+      { source: "/property/:id", destination: `${L}/listings/:id`, permanent: false },
+      { source: "/broker-dashboard", destination: `${L}/broker/dashboard`, permanent: false },
+      { source: "/favorites", destination: `${L}/projects`, permanent: false },
+      { source: "/saved-searches", destination: `${L}/projects`, permanent: false },
     ];
   },
   async headers() {
@@ -67,4 +59,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withPWA(nextConfig);
+export default withNextIntl(withPWA(nextConfig));

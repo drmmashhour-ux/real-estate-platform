@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET(_request: Request, context: { params: Promise<{ id: string }> }) {
   if (!isDealAnalyzerEnabled() || !isDealAnalyzerBnhubModeEnabled()) {
-    return NextResponse.json({ error: "Deal Analyzer BNHub mode disabled" }, { status: 503 });
+    return NextResponse.json({ error: "Deal Analyzer BNHUB mode disabled" }, { status: 503 });
   }
 
   const { id } = await context.params;
@@ -39,6 +39,6 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
     bnhub,
     message: bnhub
       ? null
-      : "No BNHub overlay on file. Run Phase 2 with a short-term listing id to attach BNHub metrics.",
+      : "No BNHUB overlay on file. Run Phase 2 with a short-term listing id to attach BNHUB metrics.",
   });
 }

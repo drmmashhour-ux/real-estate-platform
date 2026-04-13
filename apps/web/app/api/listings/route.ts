@@ -11,7 +11,7 @@ import {
 } from "@/lib/bnhub/listings-search-relevance";
 
 /**
- * GET /api/listings — Search listings (MVP alias for BNHub search).
+ * GET /api/listings — Search listings (MVP alias for BNHUB search).
  * Query: city, country, checkIn, checkOut, minPrice, maxPrice, guests, verifiedOnly, sort.
  * Default / newest: results are re-sorted by basic relevance (location, price fit, rating, completeness);
  * `sort=priceAsc|priceDesc|recommended` keeps the search layer order.

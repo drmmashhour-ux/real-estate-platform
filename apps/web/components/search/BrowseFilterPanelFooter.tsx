@@ -57,16 +57,19 @@ export function BrowseFilterPanelFooter() {
 
   return (
     <div className="space-y-3">
+      <p className="text-[11px] leading-snug text-slate-600">
+        Update filters, then apply to refresh results. Count is an estimate from your current criteria.
+      </p>
       <div className="flex flex-wrap gap-2">
         <button type="button" onClick={() => reset()} className={outline}>
-          Reset
+          Clear all filters
         </button>
         <button type="button" onClick={() => cancelFilters()} className={outline}>
-          Close
+          Close panel
         </button>
       </div>
       <button type="button" onClick={() => apply()} className={primary}>
-        Search ({countPart})
+        Apply &amp; view results ({countPart})
       </button>
     </div>
   );

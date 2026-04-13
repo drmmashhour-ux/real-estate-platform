@@ -77,7 +77,9 @@ import {
 import { fulfillListingContactLeadFromWebhook } from "@/lib/leads/fulfill-from-webhook";
 import { fulfillFeaturedListingFromWebhook } from "@/lib/featured/fulfill-featured-checkout-webhook";
 import { trackRevenueEvent } from "@/lib/monetization/events";
+import { recordAnalyticsFunnelEvent } from "@/lib/funnel/analytics-events";
 import { trackFunnelEvent } from "@/lib/funnel/tracker";
+import { securityLog } from "@/lib/security/security-logger";
 
 export const dynamic = "force-dynamic";
 
@@ -185,6 +187,13 @@ export async function POST(req: NextRequest) {
     event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
+    void securityLog({
+      event: "webhook_signature_invalid",
+      detail: "stripe_construct_event",
+      persist: true,
+      entityId: "stripe_webhook",
+      payload: { verified: false },
+    });
     logError(
       "[STRIPE] webhook signature verification failed",
       `${message} — Local dev: STRIPE_WEBHOOK_SECRET must exactly match the whsec_* printed when you started stripe listen (same Stripe account as STRIPE_SECRET_KEY); restart pnpm dev after editing .env.`,
@@ -372,6 +381,9 @@ export async function POST(req: NextRequest) {
         paymentIntentId: pi.id,
       });
     }
+    void import("@/lib/fraud/compute-payment-risk")
+      .then((m) => m.evaluatePaymentFraudFromStripePaymentIntent(pi))
+      .catch(() => {});
     return Response.json({ received: true });
   }
 
@@ -403,6 +415,12 @@ export async function POST(req: NextRequest) {
   if (event.type === "checkout.session.expired") {
     const expiredSession = event.data.object as Stripe.Checkout.Session;
     const em = expiredSession.metadata ?? {};
+    logInfo("[STRIPE] checkout.session.expired — no charge", {
+      sessionId: expiredSession.id,
+      paymentType: typeof em.paymentType === "string" ? em.paymentType : null,
+      type: typeof em.type === "string" ? em.type : null,
+      bookingId: typeof em.bookingId === "string" ? em.bookingId : null,
+    });
     void persistLaunchEvent("CHECKOUT_EXPIRED", {
       sessionId: expiredSession.id,
       userId: typeof em.userId === "string" ? em.userId : null,
@@ -439,6 +457,11 @@ export async function POST(req: NextRequest) {
     void markStripeWebhookProcessed(event.id, BnhubMpWebhookInboxStatus.FAILED).catch((e) =>
       logError("Webhook: inbox mark failed failed", e)
     );
+    logWarn("[STRIPE] [PAYMENT] async_payment_failed — booking not confirmed", {
+      sessionId: session.id,
+      bookingId: typeof session.metadata?.bookingId === "string" ? session.metadata.bookingId : null,
+      paymentType: typeof session.metadata?.paymentType === "string" ? session.metadata.paymentType : null,
+    });
     return Response.json({ received: true, asyncPaymentFailed: true });
   }
 
@@ -532,7 +555,7 @@ export async function POST(req: NextRequest) {
 
   if (event.type === "payment_intent.succeeded") {
     /**
-     * BNHub booking confirmation + PAYMENT_SUCCESS are applied from `checkout.session.completed`
+     * BNHUB booking confirmation + PAYMENT_SUCCESS are applied from `checkout.session.completed`
      * (session metadata, platformPayment row, idempotency). This handler acknowledges the PI so
      * Stripe retries stop; DB remains single-writer via session + `payment.updateMany` where status=PENDING.
      */
@@ -642,7 +665,7 @@ export async function POST(req: NextRequest) {
   const referralAttributionCode = referralRow ? await getPublicCodeForReferralRow(referralRow) : null;
 
   /**
-   * PAYMENT_SUCCESS / CHECKOUT_SUCCESS for BNHub bookings are emitted only after DB confirms
+   * PAYMENT_SUCCESS / CHECKOUT_SUCCESS for BNHUB bookings are emitted only after DB confirms
    * booking + payment (see platform payment branch). Non-booking paid checkouts record here.
    */
   if (
@@ -834,14 +857,17 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    logInfo("[payment] marked paid", {
+    logInfo("[STRIPE] [PAYMENT] platform_payment recorded (awaiting type-specific fulfillment)", {
       platformPaymentId: platformPayment.id,
       userId,
       bookingId: bookingId ?? null,
       listingId: listingId ?? null,
       paymentType,
+      type: typeof session.metadata?.type === "string" ? session.metadata.type : null,
       amountCents: sessionAmountTotal,
+      currency: sessionCurrency,
       stripeSessionId: sessionId,
+      stripePaymentIntentId: piId,
     });
 
     await prisma.stripeLedgerEntry
@@ -988,7 +1014,7 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      void applyGuarantee(bookingId).catch((e) => logError("Webhook: BNHub guarantee apply failed", e));
+      void applyGuarantee(bookingId).catch((e) => logError("Webhook: BNHUB guarantee apply failed", e));
 
       const paymentUpdate = await prisma.payment
         .updateMany({
@@ -1088,6 +1114,17 @@ export async function POST(req: NextRequest) {
             listingId: payListingId,
             platformFeeCents: platformFeeResolved,
           });
+          void recordAnalyticsFunnelEvent({
+            name: "payment_completed",
+            listingId: payListingId,
+            userId: payUserId,
+            source: "stripe_checkout_session",
+            metadata: {
+              journey: "bnhub",
+              bookingId: payBookingId,
+              amountCents: sessionAmountTotal,
+            },
+          });
           void grantReferrerVisibilityBoostOnGuestBookingComplete(payUserId);
           logInfo(`[STRIPE] webhook_verified booking_updated: bookingId=${payBookingId} userId=${payUserId} paymentRowsUpdated=${paymentUpdate.count}`);
           void schedulePayoutFromBooking(payBookingId, hostPayoutResolved ?? undefined).catch((e) =>
@@ -1144,9 +1181,33 @@ export async function POST(req: NextRequest) {
           data: {
             linkedContractId: enforceableLink?.contractId ?? null,
             linkedContractType: enforceableLink?.contractType ?? null,
+            platformFeeCents: platformFeeResolved,
+            hostPayoutCents: hostPayoutResolved,
           },
         })
-        .catch((e) => logError("Webhook: platformPayment contract link failed", e));
+        .catch((e) => logError("Webhook: platformPayment booking fee + contract link failed", e));
+
+      logInfo("[STRIPE] [PAYMENT] SUCCESS", {
+        event: "checkout.session.completed",
+        stripeEventId: event.id,
+        sessionId,
+        paymentIntentId: piId,
+        bookingId,
+        listingId,
+        userId,
+        amountCents: sessionAmountTotal,
+        currency: sessionCurrency,
+        platformFeeCents: platformFeeResolved,
+        hostPayoutCents: hostPayoutResolved,
+        paymentType: "booking",
+      });
+
+      console.log("[REVENUE]", {
+        type: "booking",
+        amount: sessionAmountTotal / 100,
+        platformFee: platformFeeResolved / 100,
+        bookingId,
+      });
 
       if (bookingRow && confirmationCode) {
         await prisma.bnhubBookingInvoice
@@ -1205,7 +1266,12 @@ export async function POST(req: NextRequest) {
         })
         .catch((e) => logError("Webhook: platform commission record failed", e));
 
-      void sendBnhubPostPaymentEmails(bookingId).catch((e) => logError("Webhook: BNHub lifecycle emails failed", e));
+      void sendBnhubPostPaymentEmails(bookingId).catch((e) => logError("Webhook: BNHUB lifecycle emails failed", e));
+      void import("@/lib/bnhub/bnhub-retention-followups")
+        .then(({ createBnhubPostBookingRetentionNotification }) =>
+          createBnhubPostBookingRetentionNotification(bookingId),
+        )
+        .catch((e) => logError("Webhook: BNHUB retention notification failed", e));
 
       void trackEvent(
         "payment_success",
@@ -1266,10 +1332,19 @@ export async function POST(req: NextRequest) {
         }).catch(() => {});
       }
       if (paymentType === "closing_fee") {
-        await prisma.deal.update({
-          where: { id: dealId },
-          data: { status: "closed" },
-        }).catch((e) => logError("Webhook: deal close failed", e));
+        const prevDeal = await prisma.deal
+          .findUnique({ where: { id: dealId }, select: { status: true } })
+          .catch(() => null);
+        await prisma.deal
+          .update({
+            where: { id: dealId },
+            data: { status: "closed" },
+          })
+          .catch((e) => logError("Webhook: deal close failed", e));
+        if (prevDeal && prevDeal.status !== "closed") {
+          const { notifyDealClosedCelebrationIfNeeded } = await import("@/lib/listing-lifecycle/notify-deal-closed-celebration");
+          void notifyDealClosedCelebrationIfNeeded(dealId).catch(() => null);
+        }
       }
     }
 
@@ -1405,7 +1480,7 @@ export async function POST(req: NextRequest) {
               errors: submitGate.errors,
             });
           } else {
-            await prisma.fsboListing
+            const activated = await prisma.fsboListing
               .updateMany({
                 where: { id: fsboListingId, ownerId: userId, status: "DRAFT" },
                 data: {
@@ -1418,7 +1493,10 @@ export async function POST(req: NextRequest) {
                   featuredUntil,
                 },
               })
-              .catch((e) => logError("Webhook: fsbo publish activation failed", e));
+              .catch((e) => {
+                logError("Webhook: fsbo publish activation failed", e);
+                return { count: 0 };
+              });
             void recordPlatformEvent({
               eventType: "listing_activated",
               sourceModule: "fsbo",
@@ -1427,6 +1505,10 @@ export async function POST(req: NextRequest) {
               payload: { publishPlan, source: "stripe_webhook" },
             }).catch(() => {});
             await syncFsboListingExpiryState(fsboListingId, { sendReminder: false }).catch(() => null);
+            if (activated && activated.count > 0) {
+              const { notifyFsboListingActivatedIfNeeded } = await import("@/lib/listing-lifecycle/notify-fsbo-listing-activated");
+              void notifyFsboListingActivatedIfNeeded(fsboListingId).catch(() => null);
+            }
           }
         }
       }

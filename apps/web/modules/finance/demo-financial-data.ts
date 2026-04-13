@@ -53,7 +53,7 @@ export function applyDemoFinancialFallback(payload: FinancialModelPayload): Fina
         : source === "seller"
           ? "Seller"
           : source === "bnhub"
-            ? "BNHub"
+            ? "BNHUB"
             : source === "broker"
               ? "Broker"
               : source === "rent"

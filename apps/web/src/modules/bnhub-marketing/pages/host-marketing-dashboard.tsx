@@ -137,7 +137,7 @@ export function HostMarketingDashboard() {
               ))}
             </ul>
             {data.listings.length === 0 ? (
-              <p className="text-sm text-zinc-500">No listings — create a BNHub listing first.</p>
+              <p className="text-sm text-zinc-500">No listings — create a BNHUB listing first.</p>
             ) : null}
           </div>
 

@@ -10,7 +10,7 @@ In [Vercel Dashboard](https://vercel.com) → your **Next.js** project → **Set
 |---------|--------|
 | **Root Directory** | `apps/web` |
 | **Framework Preset** | Next.js |
-| **Install Command** | `cd ../.. && pnpm install --no-frozen-lockfile` (matches repo `vercel.json`; use `--frozen-lockfile` in CI only) |
+| **Install Command** | `cd ../.. && pnpm install --frozen-lockfile` (matches `apps/web/vercel.json`) |
 | **Build Command** | `cd ../.. && pnpm build:web` |
 
 These match `apps/web/vercel.json` (Vercel merges them when the file is inside the root directory).
@@ -20,6 +20,8 @@ These match `apps/web/vercel.json` (Vercel merges them when the file is inside t
 1. **Settings → Git** — connect this repository; production branch = `main` (or your default).
 2. Push commits to the connected branch — Vercel builds automatically.
 3. Do **not** rely on `vercel deploy` CLI until rate limit resets or you use **Pro**.
+
+**Using the Vercel CLI** (link, `env pull`, migrate, `vercel --prod`): **`docs/deployment/VERCEL_CLI_LINK_AND_DEPLOY.md`**.
 
 ## 3. Domains
 

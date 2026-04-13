@@ -47,7 +47,7 @@ const TIER_OPTIONS: { value: "" | "LOW" | "MEDIUM" | "HIGH"; label: string }[] =
 ];
 
 const TEMPLATES = {
-  host: `Hi! We're launching BNHub in your area and promoting a small group of early hosts.
+  host: `Hi! We're launching BNHUB in your area and promoting a small group of early hosts.
 
 We bring extra visibility, lower fees, and active marketing.
 

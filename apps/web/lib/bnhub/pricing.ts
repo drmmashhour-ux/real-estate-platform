@@ -10,7 +10,7 @@ export type PricingRecommendation = {
 };
 
 /**
- * BNHub pricing intelligence: recommend nightly price from market and demand.
+ * BNHUB pricing intelligence: recommend nightly price from market and demand.
  * Optionally applies pricing rules (seasonality, min stay). Stores recommendation for history.
  */
 export async function getPricingRecommendation(

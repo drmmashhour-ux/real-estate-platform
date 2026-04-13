@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { LeadContactOrigin, NotificationType } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
+import { gateDistributedRateLimit } from "@/lib/rate-limit-enforcement";
 import { parseFsboContactBody } from "@/lib/fsbo/validation";
 import { isFsboPubliclyVisible } from "@/lib/fsbo/constants";
 import { sendFsboLeadEmailToOwner } from "@/lib/email/fsbo-lead-email";
 import { sendTransactionalEmail } from "@/lib/email/provider";
-import { headers } from "next/headers";
 import { getGuestId } from "@/lib/auth/session";
 import { getDefaultTenantId } from "@/lib/buyer/tenant-context";
 import { recordBuyerGrowthEvent } from "@/lib/buyer/buyer-analytics";
@@ -19,21 +18,17 @@ import { logBusinessMilestone, trackEvent } from "@/src/services/analytics";
 import { persistLaunchEvent } from "@/src/modules/launch/persistLaunchEvent";
 import { getPublicAppUrl } from "@/lib/config/public-app-url";
 import { buyerHasPaidListingContact, isListingContactPaywallEnabled } from "@/lib/leads";
+import { recordAnalyticsFunnelEvent } from "@/lib/funnel/analytics-events";
+import { funnelVariantForListing } from "@/lib/funnel/listing-ab";
 import { trackFunnelEvent } from "@/lib/funnel/tracker";
 import { PRICING } from "@/lib/monetization/pricing";
+import { createLecipmBrokerThread } from "@/lib/messages/create-thread";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
-  const h = await headers();
-  const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim() ?? h.get("x-real-ip") ?? "unknown";
-  const limit = checkRateLimit(`buyer:contact-listing:${ip}`, { windowMs: 60_000, max: 10 });
-  if (!limit.allowed) {
-    return NextResponse.json(
-      { error: "Too many requests. Try again shortly." },
-      { status: 429, headers: getRateLimitHeaders(limit) }
-    );
-  }
+  const gate = await gateDistributedRateLimit(request, "buyer:contact-listing", { windowMs: 60_000, max: 10 });
+  if (!gate.allowed) return gate.response;
 
   let body: unknown;
   try {
@@ -186,6 +181,13 @@ async function handleFsboContact(opts: {
   if (paywallBlockFsbo) return paywallBlockFsbo;
 
   void trackFunnelEvent("contact_click", { listingId, flow: "fsbo" });
+  void recordAnalyticsFunnelEvent({
+    name: "contact_click",
+    listingId,
+    userId: userId ?? undefined,
+    source: "fsbo_inquiry",
+    variant: funnelVariantForListing(listingId),
+  });
 
   const fsboLead = await prisma.fsboLead.create({
     data: {
@@ -358,6 +360,13 @@ async function handleCrmContact(opts: {
   if (paywallBlockCrm) return paywallBlockCrm;
 
   void trackFunnelEvent("contact_click", { listingId: listing.id, flow: "crm" });
+  void recordAnalyticsFunnelEvent({
+    name: "contact_click",
+    listingId: listing.id,
+    userId: userId ?? undefined,
+    source: "crm_inquiry",
+    variant: funnelVariantForListing(listing.id),
+  });
 
   const priceInt = Number.isFinite(listing.price) ? Math.round(listing.price) : null;
 
@@ -463,7 +472,32 @@ ${phone ? `<p><strong>Phone:</strong> ${escapeHtml(phone)}</p>` : ""}
     ...(userId ? { userId } : {}),
   });
 
-  return NextResponse.json({ ok: true, leadId: crmLead.id });
+  let messagingThreadId: string | null = null;
+  try {
+    const threadResult = userId
+      ? await createLecipmBrokerThread({
+          listingId: listing.id,
+          source: "listing_contact",
+          body: message,
+          customerUserId: userId,
+          subject: null,
+        })
+      : await createLecipmBrokerThread({
+          listingId: listing.id,
+          source: "listing_contact",
+          body: message,
+          guestName: name,
+          guestEmail: email,
+          subject: null,
+        });
+    if (threadResult.ok) {
+      messagingThreadId = threadResult.threadId;
+    }
+  } catch (e) {
+    console.error("[contact-listing] lecipm messaging thread", e);
+  }
+
+  return NextResponse.json({ ok: true, leadId: crmLead.id, messagingThreadId });
 }
 
 function escapeHtml(s: string): string {

@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 
 /**
  * GET /api/property-identity/by-listing/:id
- * Query: listing_type (optional, default short_term_rental for BNHub).
+ * Query: listing_type (optional, default short_term_rental for BNHUB).
  * Returns property identity linked to this listing.
  */
 export async function GET(

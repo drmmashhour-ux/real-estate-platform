@@ -25,6 +25,13 @@ const prisma = new PrismaClient();
 const PHOTO =
   "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80";
 
+/** Approximate centroids so browse map + listing detail show Québec-flag pins without waiting on geocode. */
+const CITY_COORDS: Record<string, { latitude: number; longitude: number }> = {
+  Montreal: { latitude: 45.5088, longitude: -73.5616 },
+  "Quebec City": { latitude: 46.8139, longitude: -71.208 },
+  Laval: { latitude: 45.6067, longitude: -73.7124 },
+};
+
 const IDS = {
   admin: "e2e11111111-1111-4111-8111-111111111101",
   host: "e2e11111111-1111-4111-8111-111111111102",
@@ -260,6 +267,8 @@ async function seedFsbo() {
         expiresAt: exp,
         photoConfirmationAcceptedAt: new Date(),
         propertyType: "SINGLE_FAMILY",
+        latitude: CITY_COORDS[r.city]?.latitude ?? 45.5,
+        longitude: CITY_COORDS[r.city]?.longitude ?? -73.57,
       },
       create: {
         id: r.id,
@@ -285,6 +294,8 @@ async function seedFsbo() {
         expiresAt: exp,
         photoConfirmationAcceptedAt: new Date(),
         propertyType: "SINGLE_FAMILY",
+        latitude: CITY_COORDS[r.city]?.latitude ?? 45.5,
+        longitude: CITY_COORDS[r.city]?.longitude ?? -73.57,
       },
     });
   }
@@ -340,7 +351,7 @@ async function seedStays() {
       where: { id: s.id },
       update: {
         title: s.title,
-        description: `E2E BNHub seed stay in ${s.city}. Test-only description.`,
+        description: `E2E BNHUB seed stay in ${s.city}. Test-only description.`,
         address: `${200 + stays.indexOf(s)} E2E Stay Ave`,
         city: s.city,
         country: "CA",
@@ -364,7 +375,7 @@ async function seedStays() {
         listingCode: s.code,
         title: s.title,
         subtitle: "E2E test stay",
-        description: `E2E BNHub seed stay in ${s.city}. Test-only description.`,
+        description: `E2E BNHUB seed stay in ${s.city}. Test-only description.`,
         address: `${200 + stays.indexOf(s)} E2E Stay Ave`,
         city: s.city,
         country: "CA",
@@ -519,7 +530,7 @@ async function main() {
   await seedCrmListings();
   console.log("[seed:test] 4 CRM listings OK");
   await seedStays();
-  console.log("[seed:test] 6 BNHub stays OK");
+  console.log("[seed:test] 6 BNHUB stays OK");
   await seedAcquisitionPipeline();
   console.log("[seed:test] acquisition leads + supply draft/review FSBO OK");
   console.log("\nDone. Set NEXT_PUBLIC_APP_MODE=test and use Stripe test keys for checkout E2E.\n");

@@ -7,7 +7,7 @@
  * - query event log via event-log
  *
  * Connected modules: property lifecycle, AI brain, document drafting,
- * BNHub, escrow, trust score, transaction timeline, notary integration.
+ * BNHUB, escrow, trust score, transaction timeline, notary integration.
  */
 
 export * from "./types";

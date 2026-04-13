@@ -5,7 +5,7 @@ import type { CreatePaymentSessionInput } from "@/lib/payments/types";
 
 /**
  * Clover secondary provider — Hosted Checkout when `CLOVER_MERCHANT_ID` + `CLOVER_PRIVATE_TOKEN` are set.
- * **Marketplace / BNHub booking payouts remain Stripe Connect–only** (Clover does not execute host transfers here).
+ * **Marketplace / BNHUB booking payouts remain Stripe Connect–only** (Clover does not execute host transfers here).
  */
 export async function cloverCreateCheckoutSession(
   input: CreatePaymentSessionInput,

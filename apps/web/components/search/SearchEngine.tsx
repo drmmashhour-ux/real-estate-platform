@@ -46,7 +46,7 @@ export type SearchEngineBarProps = {
   /** Homepage only — structured Rent / Buy / Sell + journey + property row. */
   heroBrowseMode?: "buy" | "rent";
   onHeroBrowseModeChange?: (m: "buy" | "rent") => void;
-  /** Replaces the default SearchBar row; chips + FilterPanel still render (e.g. BNHub guest booking hero). */
+  /** Replaces the default SearchBar row; chips + FilterPanel still render (e.g. BNHUB guest booking hero). */
   customBar?: ReactNode;
 };
 
@@ -197,14 +197,14 @@ export function SearchEngineBar({
       <button
         type="button"
         onClick={reset}
-        className="rounded-xl border border-slate-600 px-4 py-2.5 text-sm font-medium text-slate-300 hover:bg-slate-800"
+        className="rounded-xl border border-premium-gold/35 bg-black/30 px-4 py-2.5 text-sm font-semibold text-neutral-300 hover:border-premium-gold/50 hover:bg-premium-gold/5"
       >
         Reset
       </button>
       <button
         type="button"
         onClick={() => apply()}
-        className="rounded-xl bg-emerald-500 px-6 py-2.5 text-sm font-bold text-slate-950 hover:bg-emerald-400"
+        className="rounded-xl bg-premium-gold px-6 py-2.5 text-sm font-bold text-[#0a0a0a] hover:brightness-110"
       >
         Apply
       </button>
@@ -251,7 +251,10 @@ export function SearchEngineBar({
           tone={isShort ? "dark" : "light"}
           className={
             isShort
-              ? ["border-slate-700/90 bg-slate-900/98 shadow-black/50", filterPanelClassName].join(" ")
+              ? [
+                  "border-premium-gold/25 bg-[#080808] text-neutral-100 shadow-[0_24px_80px_-12px_rgba(0,0,0,0.85)]",
+                  filterPanelClassName,
+                ].join(" ")
               : filterPanelClassName
           }
           footer={isShort ? footerSlate : <BrowseFilterPanelFooter />}
@@ -1022,7 +1025,7 @@ const STAYS_AMENITY_LABELS: Record<string, string> = {
   instant_book: "Instant book",
 };
 
-/** BNHub — dates, guests, amenities. */
+/** BNHUB — dates, guests, amenities. */
 function ShortFilterFields() {
   const { draft, setDraft } = useSearchEngineContext();
 
@@ -1037,35 +1040,35 @@ function ShortFilterFields() {
 
   return (
     <>
-      <p className="mb-4 text-xs text-slate-500">
+      <p className="mb-4 font-sans text-xs leading-relaxed text-neutral-500">
         Short-term stays — dates and guest count; nightly price presets are on the bar. Amenities match listing data.
       </p>
       <div className="space-y-3">
         <FilterCategory title="Dates" defaultOpen variant="slate">
           <div className="grid gap-3 sm:grid-cols-2">
-            <label className="block text-xs text-slate-400">
+            <label className="block text-xs font-medium text-neutral-400">
               Check-in
               <input
                 type="date"
                 value={draft.checkIn ?? ""}
                 onChange={(e) => setDraft((d) => ({ ...d, checkIn: e.target.value }))}
-                className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-950/80 px-2 py-2 text-sm text-slate-100"
+                className="mt-1 w-full rounded-lg border border-premium-gold/25 bg-[#121212] px-2 py-2 text-sm text-neutral-100 focus:border-premium-gold/50 focus:outline-none focus:ring-1 focus:ring-premium-gold/30"
               />
             </label>
-            <label className="block text-xs text-slate-400">
+            <label className="block text-xs font-medium text-neutral-400">
               Check-out
               <input
                 type="date"
                 value={draft.checkOut ?? ""}
                 onChange={(e) => setDraft((d) => ({ ...d, checkOut: e.target.value }))}
-                className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-950/80 px-2 py-2 text-sm text-slate-100"
+                className="mt-1 w-full rounded-lg border border-premium-gold/25 bg-[#121212] px-2 py-2 text-sm text-neutral-100 focus:border-premium-gold/50 focus:outline-none focus:ring-1 focus:ring-premium-gold/30"
               />
             </label>
           </div>
         </FilterCategory>
 
         <FilterCategory title="Guests" variant="slate">
-          <label className="block text-xs text-slate-400">
+          <label className="block text-xs font-medium text-neutral-400">
             Number of guests
             <input
               type="number"
@@ -1079,20 +1082,20 @@ function ShortFilterFields() {
                   guests: raw === "" ? null : parseInt(raw, 10) || null,
                 }));
               }}
-              className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-950/80 px-2 py-2 text-sm text-slate-100"
+              className="mt-1 w-full rounded-lg border border-premium-gold/25 bg-[#121212] px-2 py-2 text-sm text-neutral-100 placeholder:text-neutral-600 focus:border-premium-gold/50 focus:outline-none focus:ring-1 focus:ring-premium-gold/30"
             />
           </label>
         </FilterCategory>
 
         <FilterCategory title="Amenities" variant="slate">
-          <div className="flex flex-col gap-2.5 text-sm text-slate-300">
+          <div className="flex flex-col gap-2.5 text-sm text-neutral-200">
             {staysKeys.map((key) => (
               <label key={key} className="flex cursor-pointer items-center gap-2">
                 <input
                   type="checkbox"
                   checked={draft.features.includes(key)}
                   onChange={() => toggleStaysFeature(key)}
-                  className="h-4 w-4 rounded border-slate-600 bg-slate-800 text-emerald-500 focus:ring-emerald-500"
+                  className="h-4 w-4 rounded border-neutral-600 bg-[#1a1a1a] text-premium-gold focus:ring-premium-gold focus:ring-offset-0"
                 />
                 {STAYS_AMENITY_LABELS[key] ?? key}
               </label>

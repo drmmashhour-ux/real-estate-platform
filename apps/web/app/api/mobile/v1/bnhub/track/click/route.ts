@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 export const dynamic = "force-dynamic";
 
 /**
- * POST — BNHub / marketplace click attribution (CTAs, cards, chips).
+ * POST — BNHUB / marketplace click attribution (CTAs, cards, chips).
  */
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => ({}))) as {

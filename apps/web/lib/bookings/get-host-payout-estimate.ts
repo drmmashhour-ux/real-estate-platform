@@ -1,7 +1,7 @@
 import { getSupabaseServiceForGuestBookings } from "@/lib/stripe/guestSupabaseBooking";
 
 /**
- * Gross paid booking volume attributable to a BNHub Supabase host (`listings.host_user_id`).
+ * Gross paid booking volume attributable to a BNHUB Supabase host (`listings.host_user_id`).
  * Automated Stripe transfers to Connect are not run here — this is reporting groundwork only.
  */
 export type HostPayoutEstimate = {

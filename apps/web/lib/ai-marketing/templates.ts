@@ -7,13 +7,13 @@ import type { ContentTheme, EmailKind, ToneId } from "./types";
 /** Short system context per theme — injected into prompts for platform-optimized copy */
 export const THEME_PROMPT_SNIPPETS: Record<ContentTheme, string> = {
   bnhub_listings:
-    "Focus on curated short-term stays on BNHub: booking flow, host quality, standout amenities, location. No fake discounts or invented review scores.",
+    "Focus on curated short-term stays on BNHUB: booking flow, host quality, standout amenities, location. No fake discounts or invented review scores.",
   travel_inspiration:
-    "Inspire travel and discovery: weekend getaways, local gems, slow travel. Tie naturally to booking a verified stay on BNHub when relevant.",
+    "Inspire travel and discovery: weekend getaways, local gems, slow travel. Tie naturally to booking a verified stay on BNHUB when relevant.",
   re_investment:
     "Connect travel-stay demand and hospitality yield to serious investors: diversification, occupancy themes, professional hosting — no guaranteed returns.",
   platform_awareness:
-    "Explain LECIPM / BNHub as the real-estate + stays ecosystem: trust, brokers, listings, BNHub for stays. Clear, credible, not hypey.",
+    "Explain LECIPM / BNHUB as the real-estate + stays ecosystem: trust, brokers, listings, BNHUB for stays. Clear, credible, not hypey.",
   trust_reviews:
     "Emphasize verified guests, transparent reviews, host accountability, and safe bookings. No fabricated testimonials.",
 };

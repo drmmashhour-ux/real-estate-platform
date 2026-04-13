@@ -36,7 +36,7 @@ export type BnhubPricingSignals = {
   /** From `ListingSearchMetrics` when present. */
   recentViews7d: number | null;
   recentViews30d: number | null;
-  /** BNHub leads tied to the listing in the last 30 days. */
+  /** BNHUB leads tied to the listing in the last 30 days. */
   inquiryCount30d: number | null;
   /**
    * 0–1 variability of internal historical booking nights by calendar month; null if insufficient data.

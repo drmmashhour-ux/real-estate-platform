@@ -35,7 +35,7 @@ function buildAiSummary(
   projections: GrowthProjection[]
 ): string {
   const top = [...payload.revenueBySource].sort((a, b) => b.totalCents - a.totalCents)[0];
-  const topLabel = top?.label ?? "BNHub";
+  const topLabel = top?.label ?? "BNHUB";
   const y2 = projections[1];
   const parts = [
     `Platform recorded about ${formatCad(payload.totalRevenueCents)} in attributed platform revenue for ${payload.period.label}.`,

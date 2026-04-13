@@ -238,7 +238,7 @@ export type HostAiSuggestion = {
   body: string;
   actionLabel?: string;
   href?: string;
-  /** Persisted BNHub AI suggestion — enables Apply / Dismiss in UI */
+  /** Persisted BNHUB AI suggestion — enables Apply / Dismiss in UI */
   suggestionId?: string;
   confidence?: number | null;
 };

@@ -14,14 +14,14 @@ html {
   max-width: 1200px;
   margin-left: auto;
   margin-right: auto;
-  padding-left: 1rem;
-  padding-right: 1rem;
+  padding-left: max(1.25rem, env(safe-area-inset-left, 0px));
+  padding-right: max(1.25rem, env(safe-area-inset-right, 0px));
 }
 
 @media (min-width: 640px) {
   .container {
-    padding-left: 1.25rem;
-    padding-right: 1.25rem;
+    padding-left: max(1.5rem, env(safe-area-inset-left, 0px));
+    padding-right: max(1.5rem, env(safe-area-inset-right, 0px));
   }
 }
 
@@ -52,6 +52,30 @@ html {
   animation: lecipm-save-pulse 2.2s ease-in-out infinite;
 }
 
+/* /sell hero — slow drift + light shimmer (sea-like motion without heavy video assets) */
+@keyframes sell-hero-drift {
+  0% {
+    transform: scale(1.06) translate3d(-1.2%, -0.6%, 0);
+  }
+  100% {
+    transform: scale(1.1) translate3d(0.8%, 0.4%, 0);
+  }
+}
+
+.sell-hero-drift {
+  animation: sell-hero-drift 36s ease-in-out infinite alternate;
+}
+
+@keyframes sell-hero-shimmer {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
 /* Tailwind v4 — premium palette (black / gold luxury shell) */
 @theme {
   --color-premium-bg: #0b0b0b;
@@ -69,6 +93,42 @@ html {
   --color-brand-accent: #d4af37;
   /** Alias for `text-brand-gold` / `bg-brand-gold` / `border-brand-gold` utilities (same as premium-gold). */
   --color-brand-gold: #d4af37;
+  /** Logo lockup — strict identity (see `LECIPM_IDENTITY_COLORS` in `@/lib/brand/platform`). */
+  --color-brand-identity-black: #000000;
+  --color-brand-identity-white: #ffffff;
+  --color-brand-soft-gold: #c9a646;
+  /** BNHub — canonical palette (Tailwind: bg-bnhub-main, text-bnhub-text-secondary, border-bnhub-border, …) */
+  --color-bnhub-main: #000000;
+  --color-bnhub-card: #0f0f0f;
+  --color-bnhub-elevated: #161616;
+  --color-bnhub-gold: #d4af37;
+  --color-bnhub-gold-hover: #c29b2f;
+  --color-bnhub-text: #ffffff;
+  --color-bnhub-text-secondary: #a0a0a0;
+  --color-bnhub-text-muted: #6b6b6b;
+  --color-bnhub-border: #1f1f1f;
+  /** BNHub — spacing scale (4–40px) */
+  --spacing-bnhub-1: 4px;
+  --spacing-bnhub-2: 8px;
+  --spacing-bnhub-3: 12px;
+  --spacing-bnhub-4: 16px;
+  --spacing-bnhub-5: 20px;
+  --spacing-bnhub-6: 24px;
+  --spacing-bnhub-8: 32px;
+  --spacing-bnhub-10: 40px;
+  /** BNHub — radii */
+  --radius-bnhub-sm: 8px;
+  --radius-bnhub-card: 12px;
+  --radius-bnhub-lg: 16px;
+  /** BNHub — type scale */
+  --font-size-bnhub-xs: 0.6875rem;
+  --font-size-bnhub-sm: 0.8125rem;
+  --font-size-bnhub-base: 0.875rem;
+  --font-size-bnhub-md: 1rem;
+  --font-size-bnhub-lg: 1.125rem;
+  --font-size-bnhub-xl: 1.25rem;
+  --font-size-bnhub-2xl: 1.5rem;
+  --font-size-bnhub-3xl: 1.875rem;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -104,14 +164,61 @@ html {
   --color-surface-inverse: #0b0b0b;
   --color-border: #2a2a2a;
   --color-border-strong: #3f3f3f;
-  --shadow-card: 0 2px 8px rgb(0 0 0 / 0.45), 0 12px 40px rgb(0 0 0 / 0.35);
-  --shadow-card-hover: 0 8px 24px rgb(0 0 0 / 0.5), 0 20px 50px rgb(212 175 55 / 0.1);
+  --shadow-card: 0 2px 10px rgb(0 0 0 / 0.4), 0 14px 44px rgb(0 0 0 / 0.32);
+  --shadow-card-hover: 0 10px 28px rgb(0 0 0 / 0.48), 0 24px 56px rgb(0 0 0 / 0.38), 0 0 0 1px rgb(var(--premium-gold-channels) / 0.08);
   --radius-lg: 1rem;
   --radius-xl: 1.25rem;
+  /** Vertical rhythm — sections 32–48px, stacks 12–16px, cards 16–20px (premium shell) */
+  --lecipm-section-gap: clamp(2rem, 4vw, 3rem);
+  --lecipm-stack-gap: clamp(0.75rem, 1.5vw, 1rem);
+  --lecipm-card-padding: clamp(1rem, 2.25vw, 1.25rem);
+  --lecipm-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --lecipm-duration: 0.32s;
+  /** Light UI (marketing + BNHub light columns) — one border + off-white surfaces */
+  --lecipm-light-border: #e5e5e5;
+  --lecipm-light-bg-page: #fafaf9;
+  --lecipm-light-bg-surface: #f5f5f4;
+  --lecipm-light-bg-elevated: #f4f4f5;
+  /**
+   * BNHub — semantic tokens (use in CSS/components as var(--bg-main), var(--gold-primary), …).
+   * Mirrors @theme `--color-bnhub-*` for Tailwind utilities.
+   */
+  --bg-main: #000000;
+  --bg-card: #0f0f0f;
+  --bg-elevated: #161616;
+  --gold-primary: #d4af37;
+  --gold-hover: #c29b2f;
+  --text-primary: #ffffff;
+  --text-secondary: #a0a0a0;
+  --text-muted: #6b6b6b;
+  --border-subtle: #1f1f1f;
+  --bnhub-space-1: 4px;
+  --bnhub-space-2: 8px;
+  --bnhub-space-3: 12px;
+  --bnhub-space-4: 16px;
+  --bnhub-space-5: 20px;
+  --bnhub-space-6: 24px;
+  --bnhub-space-8: 32px;
+  --bnhub-space-10: 40px;
+  --bnhub-radius-card: 12px;
+  --bnhub-radius-sm: 8px;
+  --bnhub-radius-lg: 16px;
 }
 
 /* Brand wordmarks + UI accents — same gold as `--color-premium-gold`. */
 @layer utilities {
+  /**
+   * LECIPM text wordmark — luxury serif + tracked caps + canonical gold (#D4AF37).
+   * Cormorant Garamond from root layout (`--font-serif`).
+   */
+  .lecipm-wordmark {
+    font-family: var(--font-serif), ui-serif, Georgia, "Times New Roman", serif;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    color: #d4af37;
+    text-transform: none;
+  }
+
   .text-brand-gold {
     color: var(--color-premium-gold);
   }
@@ -125,26 +232,596 @@ html {
     --tw-ring-color: var(--color-premium-gold);
   }
 
+  /**
+   * BNHub — strict surface + actions (padding 16px, radius 12px, `#0F0F0F` + `#1F1F1F` border).
+   */
+  .bnhub-card {
+    padding: var(--bnhub-space-4);
+    border-radius: var(--bnhub-radius-card);
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    box-shadow: 0 8px 28px rgb(0 0 0 / 0.42);
+  }
+  .bnhub-card--elevated {
+    background-color: var(--bg-elevated);
+  }
+  .bnhub-page {
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+  }
+  .bnhub-kpi-title {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: color-mix(in srgb, var(--gold-primary) 88%, transparent);
+  }
+  .bnhub-kpi-value {
+    font-size: 1.5rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+    color: var(--text-primary);
+  }
+  .bnhub-kpi-hint {
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+  }
+  .bnhub-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--bnhub-space-2);
+    min-height: 44px;
+    padding-left: var(--bnhub-space-5);
+    padding-right: var(--bnhub-space-5);
+    border-radius: var(--bnhub-radius-card);
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1.2;
+    transition:
+      background-color 0.2s ease,
+      border-color 0.2s ease,
+      color 0.2s ease,
+      opacity 0.2s ease;
+  }
+  .bnhub-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .bnhub-btn--primary {
+    background-color: var(--gold-primary);
+    border: 1px solid var(--gold-primary);
+    color: #0a0a0a;
+  }
+  .bnhub-btn--primary:hover:not(:disabled) {
+    background-color: var(--gold-hover);
+    border-color: var(--gold-hover);
+  }
+  .bnhub-btn--secondary {
+    background-color: transparent;
+    border: 1px solid var(--border-subtle);
+    color: var(--text-primary);
+  }
+  .bnhub-btn--secondary:hover:not(:disabled) {
+    border-color: color-mix(in srgb, var(--gold-primary) 45%, var(--border-subtle));
+    color: var(--gold-primary);
+  }
+
   /** Standard luxury surface — use for dashboard + marketing cards. */
   .lecipm-card {
     border-radius: var(--radius-xl);
     border: 1px solid rgb(255 255 255 / 0.1);
     background-color: var(--color-premium-card);
     box-shadow: var(--shadow-card);
-    padding: 1.25rem;
+    padding: var(--lecipm-card-padding);
     transition:
-      border-color 0.2s ease,
-      box-shadow 0.2s ease;
+      border-color var(--lecipm-duration) var(--lecipm-ease-out),
+      box-shadow var(--lecipm-duration) var(--lecipm-ease-out),
+      background-color var(--lecipm-duration) var(--lecipm-ease-out),
+      transform var(--lecipm-duration) var(--lecipm-ease-out);
   }
 
   .lecipm-card:hover {
-    border-color: rgb(var(--premium-gold-channels) / 0.22);
+    border-color: rgb(var(--premium-gold-channels) / 0.24);
     box-shadow: var(--shadow-card-hover);
+    transform: translateY(-2px);
+  }
+
+  /** Extra breathing room between major page blocks (never crowd stacked sections). */
+  .lecipm-section-y {
+    margin-top: var(--lecipm-section-gap);
+  }
+  .lecipm-section-y:first-child {
+    margin-top: 0;
+  }
+
+  /** Section vertical padding — 32px mobile → 48px md+ (marketing + BNHub + listing shells). */
+  .lecipm-page-section-y {
+    @apply py-8 md:py-12;
+  }
+
+  /** Consistent vertical stack inside shells — prefer over ad-hoc space-y-4 */
+  .lecipm-stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--lecipm-stack-gap);
+  }
+
+  /** Flex/grid gap — 12–16px between sibling elements in a region */
+  .lecipm-content-gap {
+    @apply gap-3 md:gap-4;
+  }
+
+  /** Page / region titles — clear hierarchy on dark UI */
+  .lecipm-heading-page {
+    font-size: clamp(1.625rem, 2.6vw, 2.25rem);
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    line-height: 1.18;
+    color: var(--premium-text);
+  }
+
+  /** Section titles (h2) — title tier below page headline */
+  .lecipm-heading-section {
+    font-size: clamp(1.375rem, 2.2vw, 1.875rem);
+    font-weight: 600;
+    letter-spacing: -0.022em;
+    line-height: 1.3;
+    color: var(--premium-text);
+  }
+
+  /** Eyebrow / label row above a headline — restrained luxury */
+  .lecipm-heading-label {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    line-height: 1.4;
+    text-transform: uppercase;
+    color: rgb(var(--premium-gold-channels) / 0.85);
+  }
+
+  .lecipm-subtitle {
+    font-size: 0.9375rem;
+    line-height: 1.68;
+    font-weight: 400;
+    color: rgb(255 255 255 / 0.55);
+  }
+
+  /** Body under title/subtitle — readable, calm */
+  .lecipm-content {
+    font-size: 0.9375rem;
+    line-height: 1.7;
+    font-weight: 400;
+    color: rgb(255 255 255 / 0.8);
+  }
+
+  /** Smooth default for surfaces + controls (respect reduced motion) */
+  .lecipm-transition {
+    transition-property: color, background-color, border-color, box-shadow, transform, opacity;
+    transition-duration: var(--lecipm-duration);
+    transition-timing-function: var(--lecipm-ease-out);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .lecipm-transition {
+      transition-duration: 0.01ms;
+    }
+  }
+
+  /** Muted text links + ghost controls — intentional hover (use on nav rows, footer links) */
+  .lecipm-interactive-muted {
+    transition:
+      color var(--lecipm-duration) var(--lecipm-ease-out),
+      border-color var(--lecipm-duration) var(--lecipm-ease-out),
+      background-color var(--lecipm-duration) var(--lecipm-ease-out),
+      opacity var(--lecipm-duration) var(--lecipm-ease-out);
+  }
+
+  .lecipm-interactive-muted:hover {
+    color: rgb(255 255 255 / 0.88);
   }
 
   .lecipm-card-static:hover {
     border-color: rgb(255 255 255 / 0.1);
     box-shadow: var(--shadow-card);
+    transform: none;
+  }
+
+  /**
+   * Prestige “stamp” panels — gold radial wash on near-black (empty states, toolbars, callouts).
+   * Use with `.lecipm-prestige-surface__inner` for content above the overlays.
+   */
+  .lecipm-prestige-surface {
+    position: relative;
+    overflow: hidden;
+    background-color: #0a0a0a;
+    border: 1px solid rgb(var(--premium-gold-channels) / 0.22);
+  }
+  .lecipm-prestige-surface::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(
+      ellipse 100% 55% at 50% 0%,
+      rgb(var(--premium-gold-channels) / 0.14),
+      transparent 52%
+    );
+  }
+  .lecipm-prestige-surface::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(180deg, transparent 38%, rgb(0 0 0 / 0.52));
+  }
+  .lecipm-prestige-surface__inner {
+    position: relative;
+    z-index: 1;
+  }
+
+  /** Subtle top glow for site footer — same family as prestige surfaces */
+  .lecipm-footer-glow {
+    position: relative;
+  }
+  .lecipm-footer-glow::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background: radial-gradient(
+      ellipse 85% 42% at 50% 0%,
+      rgb(var(--premium-gold-channels) / 0.1),
+      transparent 58%
+    );
+  }
+
+  /** Full-width band (BNHub mini-footer) — top gold rule + wash, no side frame */
+  .lecipm-prestige-band {
+    position: relative;
+    overflow: hidden;
+    background-color: #080808;
+    border-top: 1px solid rgb(var(--premium-gold-channels) / 0.22);
+  }
+  .lecipm-prestige-band::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(
+      ellipse 100% 48% at 50% 0%,
+      rgb(var(--premium-gold-channels) / 0.12),
+      transparent 50%
+    );
+  }
+  .lecipm-prestige-band::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(180deg, transparent 42%, rgb(0 0 0 / 0.48));
+  }
+  .lecipm-prestige-band__inner {
+    position: relative;
+    z-index: 1;
+  }
+
+  /**
+   * “Neon” white type — stays Inter; glow from layered shadows (gold + white).
+   * Use on pill labels and key nav; respect reduced motion below.
+   */
+  .lecipm-neon-white {
+    color: #fafafa;
+    text-shadow:
+      0 0 14px rgba(255, 255, 255, 0.5),
+      0 0 32px rgba(212, 175, 55, 0.28),
+      0 1px 2px rgba(0, 0, 0, 0.9);
+  }
+  .lecipm-neon-white-muted {
+    color: rgba(250, 250, 250, 0.94);
+    text-shadow:
+      0 0 12px rgba(255, 255, 255, 0.28),
+      0 0 28px rgba(212, 175, 55, 0.16);
+  }
+  .lecipm-neon-gold {
+    color: var(--color-premium-gold);
+    text-shadow:
+      0 0 16px rgba(212, 175, 55, 0.55),
+      0 0 32px rgba(212, 175, 55, 0.25);
+  }
+
+  /** Gold-rim pill control — matches BNHub quick-filter / chip language */
+  .lecipm-prestige-pill {
+    display: inline-flex;
+    min-height: 2.5rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    border: 1px solid rgb(var(--premium-gold-channels) / 0.4);
+    background-color: rgb(0 0 0 / 0.52);
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1.25;
+    transition:
+      border-color 0.25s ease,
+      background-color 0.25s ease,
+      box-shadow 0.25s ease;
+  }
+  .lecipm-prestige-pill:hover {
+    border-color: rgb(var(--premium-gold-channels) / 0.78);
+    background-color: rgb(var(--premium-gold-channels) / 0.12);
+    box-shadow: 0 0 28px rgb(var(--premium-gold-channels) / 0.2);
+  }
+  .lecipm-prestige-pill:focus-visible {
+    outline: 2px solid rgb(var(--premium-gold-channels) / 0.55);
+    outline-offset: 2px;
+  }
+  .lecipm-prestige-pill.lecipm-neon-white-muted:hover {
+    color: #fafafa;
+    text-shadow:
+      0 0 18px rgba(255, 255, 255, 0.52),
+      0 0 38px rgba(212, 175, 55, 0.32),
+      0 1px 2px rgba(0, 0, 0, 0.9);
+  }
+
+  /** Smaller pill — search quick filters + active chips */
+  .lecipm-prestige-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    border: 1px solid rgb(var(--premium-gold-channels) / 0.38);
+    background-color: rgb(0 0 0 / 0.5);
+    padding: 0.35rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.2;
+    transition:
+      border-color 0.25s ease,
+      background-color 0.25s ease,
+      box-shadow 0.25s ease;
+  }
+  .lecipm-prestige-chip:hover {
+    border-color: rgb(var(--premium-gold-channels) / 0.75);
+    background-color: rgb(var(--premium-gold-channels) / 0.11);
+    box-shadow: 0 0 22px rgb(var(--premium-gold-channels) / 0.18);
+  }
+  .lecipm-prestige-chip:focus-visible {
+    outline: 2px solid rgb(var(--premium-gold-channels) / 0.5);
+    outline-offset: 2px;
+  }
+  .lecipm-prestige-chip.lecipm-neon-white-muted:hover {
+    color: #fafafa;
+    text-shadow:
+      0 0 16px rgba(255, 255, 255, 0.48),
+      0 0 34px rgba(212, 175, 55, 0.28),
+      0 1px 2px rgba(0, 0, 0, 0.9);
+  }
+  .lecipm-prestige-chip--on {
+    border-color: rgb(var(--premium-gold-channels) / 0.65);
+    background-color: rgb(var(--premium-gold-channels) / 0.14);
+    box-shadow: 0 0 20px rgb(var(--premium-gold-channels) / 0.15);
+  }
+
+  /**
+   * Canonical conversion CTAs — solid gold primary + gold-rim outline (marketing hero, strips, tools).
+   * Prefer these over ad-hoc `border-white/*` ghost buttons on dark shells.
+   */
+  .lecipm-cta-gold-solid {
+    display: inline-flex;
+    min-height: 3rem;
+    min-width: 2.75rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.75rem;
+    background-color: var(--color-premium-gold);
+    padding: 0.75rem 1.75rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1.25;
+    color: #0a0a0a;
+    transition:
+      background-color 150ms ease,
+      box-shadow 150ms ease,
+      transform 150ms ease,
+      filter 150ms ease;
+  }
+  .lecipm-cta-gold-solid:hover {
+    filter: brightness(1.05);
+    transform: scale(1.01);
+    box-shadow: 0 0 28px rgb(var(--premium-gold-channels) / 0.38);
+  }
+  .lecipm-cta-gold-solid:active {
+    transform: scale(0.98);
+    filter: brightness(1);
+  }
+  .lecipm-cta-gold-solid:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+  .lecipm-cta-gold-solid:focus-visible {
+    outline: 2px solid rgb(var(--premium-gold-channels) / 0.65);
+    outline-offset: 2px;
+  }
+
+  .lecipm-cta-gold-outline {
+    display: inline-flex;
+    min-height: 3rem;
+    min-width: 2.75rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.75rem;
+    border: 1px solid rgb(var(--premium-gold-channels) / 0.52);
+    background-color: rgb(var(--premium-gold-channels) / 0.07);
+    padding: 0.75rem 1.75rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1.25;
+    color: var(--color-premium-gold);
+    transition:
+      border-color 150ms ease,
+      background-color 150ms ease,
+      box-shadow 150ms ease,
+      color 150ms ease,
+      transform 150ms ease,
+      filter 150ms ease;
+  }
+  .lecipm-cta-gold-outline:hover {
+    filter: brightness(1.05);
+    transform: scale(1.01);
+    border-color: rgb(var(--premium-gold-channels) / 0.88);
+    background-color: rgb(var(--premium-gold-channels) / 0.16);
+    box-shadow: 0 0 30px rgb(var(--premium-gold-channels) / 0.2);
+    color: var(--color-premium-gold-hover);
+  }
+  .lecipm-cta-gold-outline:active {
+    transform: scale(0.98);
+    filter: brightness(1);
+  }
+  .lecipm-cta-gold-outline:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+  .lecipm-cta-gold-outline:focus-visible {
+    outline: 2px solid rgb(var(--premium-gold-channels) / 0.55);
+    outline-offset: 2px;
+  }
+
+  /** Phone ergonomics — same model as marketing Navbar mobile menu */
+  /**
+   * Light shell — consistent borders (neutral-200) + no harsh #fff (stone/neutral ramps).
+   * Prefer these over ad-hoc `border-slate-*` / `bg-white` in light sections.
+   */
+  .lecipm-border-light {
+    border-color: var(--lecipm-light-border);
+  }
+  .lecipm-bg-light-page {
+    background-color: var(--lecipm-light-bg-page);
+  }
+  .lecipm-bg-light-surface {
+    background-color: var(--lecipm-light-bg-surface);
+  }
+  .lecipm-bg-light-elevated {
+    background-color: var(--lecipm-light-bg-elevated);
+  }
+  /**
+   * Horizontal gutter with safe-area (notched phones). Mirrors common `px-4 sm:px-6 lg:px-8`.
+   */
+  .lecipm-safe-gutter-x {
+    padding-left: max(1rem, env(safe-area-inset-left, 0px));
+    padding-right: max(1rem, env(safe-area-inset-right, 0px));
+  }
+  @media (min-width: 640px) {
+    .lecipm-safe-gutter-x {
+      padding-left: max(1.5rem, env(safe-area-inset-left, 0px));
+      padding-right: max(1.5rem, env(safe-area-inset-right, 0px));
+    }
+  }
+  @media (min-width: 1024px) {
+    .lecipm-safe-gutter-x {
+      padding-left: max(2rem, env(safe-area-inset-left, 0px));
+      padding-right: max(2rem, env(safe-area-inset-right, 0px));
+    }
+  }
+
+  .lecipm-touch {
+    touch-action: manipulation;
+  }
+  .lecipm-mobile-nav-scroll {
+    max-height: min(32rem, calc(100dvh - 5.5rem));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /**
+   * BNHub host / stays — same language as `lecipm-prestige-band` + search strip: gold rim, near-black fill.
+   * Use `bnhub-stripe-panel` for Stripe Connect only (stricter rim, finance-grade feel).
+   */
+  .bnhub-panel {
+    border-radius: 1rem;
+    border: 1px solid rgb(var(--premium-gold-channels) / 0.22);
+    background: linear-gradient(180deg, rgb(0 0 0 / 0.48), rgb(8 8 8 / 0.9));
+    box-shadow: inset 0 1px 0 rgb(var(--premium-gold-channels) / 0.07);
+  }
+  .bnhub-panel-muted {
+    border-radius: 1rem;
+    border: 1px solid rgb(255 255 255 / 0.1);
+    background-color: rgb(0 0 0 / 0.38);
+  }
+  .bnhub-stripe-panel {
+    border-radius: 1rem;
+    border: 1px solid rgb(var(--premium-gold-channels) / 0.38);
+    background: linear-gradient(165deg, rgb(0 0 0 / 0.78), rgb(5 5 5 / 0.98));
+    box-shadow:
+      0 0 0 1px rgb(var(--premium-gold-channels) / 0.06),
+      0 16px 48px rgb(0 0 0 / 0.55);
+  }
+  .bnhub-input {
+    border-radius: 0.5rem;
+    border: 1px solid rgb(var(--premium-gold-channels) / 0.22);
+    background-color: rgb(0 0 0 / 0.55);
+    color: #f5f5f4;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    line-height: 1.4;
+  }
+  .bnhub-input::placeholder {
+    color: rgb(163 163 163 / 0.85);
+  }
+  .bnhub-input:focus {
+    outline: none;
+    border-color: rgb(var(--premium-gold-channels) / 0.45);
+    box-shadow: 0 0 0 2px rgb(var(--premium-gold-channels) / 0.12);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lecipm-neon-white,
+  .lecipm-neon-white-muted,
+  .lecipm-neon-gold {
+    text-shadow: none;
+  }
+  .lecipm-card:hover {
+    transform: none;
+  }
+  .lecipm-prestige-pill,
+  .lecipm-prestige-chip,
+  .lecipm-cta-gold-solid,
+  .lecipm-cta-gold-outline {
+    transition: none;
+  }
+  .btn-primary {
+    transition: none;
+  }
+  .lecipm-prestige-pill:hover,
+  .lecipm-prestige-chip:hover {
+    box-shadow: none;
+  }
+  .lecipm-cta-gold-solid:hover,
+  .lecipm-cta-gold-outline:hover {
+    box-shadow: none;
+    transform: none;
+    filter: none;
+  }
+  .lecipm-cta-gold-solid:active,
+  .lecipm-cta-gold-outline:active {
+    transform: none;
+  }
+  .btn-primary:hover,
+  .btn-primary:active {
+    transform: none;
+    filter: none;
+  }
+  .lecipm-prestige-pill.lecipm-neon-white-muted:hover,
+  .lecipm-prestige-chip.lecipm-neon-white-muted:hover {
+    text-shadow: none;
   }
 }
 
@@ -164,11 +841,13 @@ html {
 body {
   font-family: var(--font-sans);
   font-size: var(--font-size-body);
+  line-height: 1.58;
   color: #ffffff;
   background-color: #0b0b0b;
   min-height: 100vh;
   max-width: 100%;
   overflow-x: hidden;
+  text-rendering: optimizeLegibility;
 }
 
 /* Display titles — serif (Cormorant Garamond via layout) */
@@ -181,15 +860,19 @@ body {
   text-align: start;
 }
 
-/* Premium UI — dark cards (marketing + hubs): rounded-xl, shadow-lg, subtle border, hover lift */
+/* Premium UI — dark cards (marketing + hubs): rounded-xl, shadow-lg, subtle border, calm hover lift */
 .card-premium {
-  @apply rounded-xl border border-white/10 shadow-lg transition-all duration-300 ease-out;
+  @apply rounded-xl border border-white/10 shadow-lg;
   background-color: var(--premium-card);
   box-shadow: var(--shadow-card);
+  transition:
+    border-color var(--lecipm-duration) var(--lecipm-ease-out),
+    box-shadow var(--lecipm-duration) var(--lecipm-ease-out),
+    transform var(--lecipm-duration) var(--lecipm-ease-out);
 }
 @media (prefers-reduced-motion: no-preference) {
   .card-premium:hover {
-    @apply scale-[1.01] border-[#D4AF37]/28;
+    @apply -translate-y-0.5 border-[#D4AF37]/28;
     box-shadow: var(--shadow-card-hover);
   }
 }
@@ -197,17 +880,22 @@ body {
   .card-premium:hover {
     @apply border-[#D4AF37]/35;
     box-shadow: var(--shadow-card-hover);
+    transform: none;
   }
 }
 
 .property-card-premium {
-  @apply flex flex-col overflow-hidden rounded-xl border border-white/10 shadow-lg transition duration-300 ease-out;
+  @apply flex flex-col overflow-hidden rounded-xl border border-white/10 shadow-lg;
   background-color: var(--premium-card);
   box-shadow: var(--shadow-card);
+  transition:
+    border-color var(--lecipm-duration) var(--lecipm-ease-out),
+    box-shadow var(--lecipm-duration) var(--lecipm-ease-out),
+    transform var(--lecipm-duration) var(--lecipm-ease-out);
 }
 @media (prefers-reduced-motion: no-preference) {
   .property-card-premium:hover {
-    @apply scale-[1.01] border-[#D4AF37]/35;
+    @apply -translate-y-0.5 border-[#D4AF37]/32;
     box-shadow: var(--shadow-card-hover);
   }
 }
@@ -215,11 +903,12 @@ body {
   .property-card-premium:hover {
     @apply border-[#D4AF37]/35;
     box-shadow: var(--shadow-card-hover);
+    transform: none;
   }
 }
 
 .dashboard-stat-card {
-  @apply rounded-xl border p-5 transition duration-200 ease-out;
+  @apply rounded-xl border p-6 transition duration-200 ease-out;
   border-color: color-mix(in srgb, var(--color-brand) 22%, transparent);
   background: color-mix(in srgb, var(--color-surface) 92%, transparent);
   box-shadow: var(--shadow-card);
@@ -244,18 +933,33 @@ body {
 }
 .ds-table th,
 .ds-table td {
-  @apply border-b border-white/10 px-4 py-3 text-left;
+  @apply border-b border-white/10 px-4 py-3.5 text-left;
 }
 .ds-table tbody tr:hover {
   @apply bg-white/[0.03];
 }
 .ds-glass-panel {
-  @apply rounded-xl border border-white/10 bg-[#111111]/85 shadow-[var(--shadow-card)] backdrop-blur-md;
+  @apply rounded-xl border border-white/10 bg-[#111111]/85 p-[var(--lecipm-card-padding)] shadow-[var(--shadow-card)] backdrop-blur-md;
+  transition:
+    border-color var(--lecipm-duration) var(--lecipm-ease-out),
+    box-shadow var(--lecipm-duration) var(--lecipm-ease-out);
+}
+.ds-glass-panel:hover {
+  border-color: rgb(255 255 255 / 0.14);
+  box-shadow: var(--shadow-card-hover);
 }
 
 /* Dashboard pages — single shell for hierarchy + spacing */
 .dashboard-shell {
-  @apply min-h-screen bg-premium-bg px-4 py-10 text-premium-text antialiased;
+  @apply min-h-screen bg-premium-bg py-16 text-premium-text antialiased sm:py-24;
+  padding-left: max(1rem, env(safe-area-inset-left, 0px));
+  padding-right: max(1rem, env(safe-area-inset-right, 0px));
+}
+@media (min-width: 640px) {
+  .dashboard-shell {
+    padding-left: max(1.5rem, env(safe-area-inset-left, 0px));
+    padding-right: max(1.5rem, env(safe-area-inset-right, 0px));
+  }
 }
 
 /* Section labels — strong hierarchy, investor-ready */
@@ -264,22 +968,28 @@ body {
 }
 
 .btn-primary {
-  @apply inline-flex min-h-[44px] items-center justify-center rounded-xl px-4 py-3 text-sm font-bold text-[#0b0b0b] shadow-md transition duration-300 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b0b0b] disabled:pointer-events-none disabled:opacity-45;
+  @apply inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl px-4 py-3 text-sm font-semibold text-[#0b0b0b] shadow-md transition-all duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b0b0b] disabled:pointer-events-none disabled:opacity-45 disabled:hover:scale-100 disabled:hover:brightness-100;
   background: linear-gradient(135deg, #e5c158 0%, #d4af37 48%, #b8942e 100%);
   box-shadow: 0 4px 24px rgb(212 175 55 / 0.32);
 }
 .btn-primary:hover {
+  filter: brightness(1.05);
+  transform: scale(1.01);
   background: linear-gradient(135deg, #d4af37 0%, #e5c158 45%, #d4af37 100%);
   box-shadow:
     0 10px 36px rgb(212 175 55 / 0.42),
     0 0 28px rgb(212 175 55 / 0.22);
+}
+.btn-primary:active {
+  transform: scale(0.98);
+  filter: brightness(1);
 }
 .btn-primary:focus-visible {
   --tw-ring-color: var(--premium-gold);
 }
 
 .btn-secondary {
-  @apply inline-flex min-h-[44px] items-center justify-center rounded-xl border-2 border-[#D4AF37] bg-[#111111] px-4 py-3 text-sm font-bold text-[#D4AF37] transition duration-300 ease-out hover:border-[#e5c158] hover:bg-[#161616] hover:text-[#d4af37] hover:shadow-[0_0_24px_rgba(212,175,55,0.22)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b0b0b] disabled:pointer-events-none disabled:opacity-45;
+  @apply inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border-2 border-[#D4AF37] bg-[#111111] px-4 py-3 text-sm font-semibold text-[#D4AF37] transition duration-300 ease-out hover:border-[#e5c158] hover:bg-[#161616] hover:text-[#d4af37] hover:shadow-[0_0_24px_rgba(212,175,55,0.22)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b0b0b] active:scale-[0.98] disabled:pointer-events-none disabled:opacity-45 disabled:active:scale-100;
 }
 
 .input-premium {
@@ -287,7 +997,7 @@ body {
 }
 
 .invoice-doc-row {
-  @apply flex flex-wrap items-center justify-between gap-3 rounded-xl border border-stone-200 bg-white p-4 transition hover:border-stone-300;
+  @apply flex flex-wrap items-center justify-between gap-3 rounded-xl border border-neutral-200 bg-neutral-50 p-4 transition hover:border-neutral-300;
   box-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
 }
 

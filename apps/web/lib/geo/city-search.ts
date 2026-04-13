@@ -33,7 +33,7 @@ export function normalizeCitySlug(input: string | null | undefined): CitySlug | 
   return null;
 }
 
-/** BNHub / ShortTermListing city OR (accent / naming variants). */
+/** BNHUB / ShortTermListing city OR (accent / naming variants). */
 export function shortTermListingCityOrConditions(
   slug: CitySlug
 ): Prisma.ShortTermListingWhereInput[] {
@@ -55,7 +55,7 @@ export function shortTermListingCityOrConditions(
 }
 
 /**
- * If `raw` matches a known slug, return OR clauses for BNHub; else null (use plain contains).
+ * If `raw` matches a known slug, return OR clauses for BNHUB; else null (use plain contains).
  */
 export function getShortTermCityOrFromParam(
   raw: string
@@ -125,7 +125,7 @@ export function getCityPageConfig(slug: CitySlug): CityPageConfig {
         exploreTitle: "Explore Quebec",
         heroTitle: "Explore Quebec",
         description:
-          "Québec offers stability, quality of life, and strong real estate opportunities. From Quebec City to the wider region, LECIPM connects you with verified stays (BNHub) and direct-sale homes (FSBO).",
+          "Québec offers stability, quality of life, and strong real estate opportunities. From Quebec City to the wider region, LECIPM connects you with verified stays (BNHUB) and direct-sale homes (FSBO).",
         heroImage: "/images/laval/laval-city.jpg",
         heroImageAlt: "Quebec landscape and cities",
         metaTitle: "Real Estate in Quebec | LECIPM",

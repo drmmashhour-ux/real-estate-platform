@@ -1,6 +1,6 @@
 /**
  * Weighted marketplace ranking (0–1 scale inputs). Used for browse “recommended” when the AI ranking flag is off,
- * and documented alongside the BNHub / FSBO scoring engines.
+ * and documented alongside the BNHUB / FSBO scoring engines.
  */
 export type MarketplaceRankingInputs01 = {
   demand01: number;

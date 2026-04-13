@@ -1,6 +1,6 @@
 /**
  * LECIPM Hub Engine — core types (domain-agnostic contracts).
- * BNHub and future hubs implement adapters against these shapes.
+ * BNHUB and future hubs implement adapters against these shapes.
  */
 
 export type HubStatus = "enabled" | "beta" | "disabled" | "internal";

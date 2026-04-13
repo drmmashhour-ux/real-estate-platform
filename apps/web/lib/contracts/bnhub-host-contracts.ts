@@ -9,7 +9,7 @@ const HOST_AGREEMENT_VERSION = "2025-03-22";
 const HOST_TYPE = MARKETPLACE_CONTRACT_TYPES.HOST_AGREEMENT;
 
 /**
- * Ensure a pending HOST_AGREEMENT contract exists for this BNHub short-term listing.
+ * Ensure a pending HOST_AGREEMENT contract exists for this BNHUB short-term listing.
  */
 export async function ensureHostListingContract(listingId: string): Promise<void> {
   const listing = await prisma.shortTermListing.findUnique({
@@ -29,7 +29,7 @@ export async function ensureHostListingContract(listingId: string): Promise<void
       userId: listing.ownerId,
       listingId,
       status: "pending",
-      title: "BNHub short-term host agreement",
+      title: "BNHUB short-term host agreement",
       contentHtml: NBHUB_SHORT_TERM_RENTAL_AGREEMENT_HTML,
       version: HOST_AGREEMENT_VERSION,
       hub: "bnhub",
@@ -56,7 +56,7 @@ export async function assertHostAgreementSignedForPublish(
   if (row.status !== "signed" || !row.signedAt) {
     return {
       ok: false,
-      reasons: ["Sign the BNHub host agreement before publishing (Dashboard → Contracts or complete host onboarding)."],
+      reasons: ["Sign the BNHUB host agreement before publishing (Dashboard → Contracts or complete host onboarding)."],
     };
   }
   return { ok: true };

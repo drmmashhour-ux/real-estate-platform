@@ -7,6 +7,7 @@ import {
   FSBO_IMAGE_EXTENSION_BY_MIME,
   FSBO_STORAGE_FOLDER_SEGMENT,
 } from "@/lib/fsbo/media-config";
+import { scanBufferBeforeStorage } from "@/lib/security/malware-scan";
 
 function getBucketName(): string {
   return process.env.FSBO_SUPABASE_BUCKET?.trim() || "fsbo-media";
@@ -20,6 +21,8 @@ function appPublicOrigin(): string {
   return "";
 }
 
+export type FsboImageUploadResult = { url: string } | { error: string; status?: number };
+
 /**
  * Upload a single validated image buffer. Returns a URL suitable to store in `FsboListing.images`.
  * Supabase: when `SUPABASE_SERVICE_ROLE_KEY` is set (server-only), uses Storage; else writes under `public/uploads/fsbo/{listingId}/`.
@@ -28,13 +31,22 @@ export async function uploadFsboListingImage(params: {
   listingId: string;
   buffer: Buffer;
   contentType: string;
-}): Promise<{ url: string }> {
+}): Promise<FsboImageUploadResult> {
   const { listingId, buffer, contentType } = params;
   if (!FSBO_ALLOWED_IMAGE_MIME.has(contentType)) {
-    throw new Error("Unsupported image type");
+    return { error: "Unsupported image type", status: 400 };
   }
   const ext = FSBO_IMAGE_EXTENSION_BY_MIME[contentType];
-  if (!ext) throw new Error("Unsupported image type");
+  if (!ext) return { error: "Unsupported image type", status: 400 };
+
+  const scan = await scanBufferBeforeStorage({
+    bytes: buffer,
+    mimeType: contentType,
+    context: "fsbo_listing_image",
+  });
+  if (!scan.ok) {
+    return { error: scan.userMessage, status: scan.status };
+  }
 
   const objectName = `${randomUUID()}.${ext}`;
   const relativePath = `${FSBO_STORAGE_FOLDER_SEGMENT}/${listingId}/${objectName}`;
@@ -52,21 +64,26 @@ export async function uploadFsboListingImage(params: {
       upsert: false,
     });
     if (error) {
-      throw new Error(error.message || "Storage upload failed");
+      return { error: error.message || "Storage upload failed", status: 500 };
     }
     const { data } = admin.storage.from(bucket).getPublicUrl(relativePath);
     if (!data?.publicUrl) {
-      throw new Error("Could not build public URL for upload");
+      return { error: "Could not build public URL for upload", status: 500 };
     }
     return { url: data.publicUrl };
   }
 
-  const dir = path.join(process.cwd(), "public", "uploads", FSBO_STORAGE_FOLDER_SEGMENT, listingId);
-  await mkdir(dir, { recursive: true });
-  const diskPath = path.join(dir, objectName);
-  await writeFile(diskPath, buffer);
+  try {
+    const dir = path.join(process.cwd(), "public", "uploads", FSBO_STORAGE_FOLDER_SEGMENT, listingId);
+    await mkdir(dir, { recursive: true });
+    const diskPath = path.join(dir, objectName);
+    await writeFile(diskPath, buffer);
 
-  const origin = appPublicOrigin();
-  const publicPath = `/uploads/${FSBO_STORAGE_FOLDER_SEGMENT}/${listingId}/${objectName}`;
-  return { url: origin ? `${origin}${publicPath}` : publicPath };
+    const origin = appPublicOrigin();
+    const publicPath = `/uploads/${FSBO_STORAGE_FOLDER_SEGMENT}/${listingId}/${objectName}`;
+    return { url: origin ? `${origin}${publicPath}` : publicPath };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Upload failed";
+    return { error: msg, status: 500 };
+  }
 }

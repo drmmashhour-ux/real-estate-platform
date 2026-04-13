@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { Prisma } from "@prisma/client";
 import { evaluateVerifiedEligibility, evaluatePremiumEligibility, evaluateEliteEligibility } from "./luxuryTierService";
-import { applyGuardrails } from "./dynamicPricingService";
+import { applyGuardrails, applyQualityAdjustments } from "./dynamicPricingService";
 
 describe("luxury tier eligibility", () => {
   it("verified requires 3★ and basics", () => {
@@ -32,6 +32,16 @@ describe("luxury tier eligibility", () => {
       openUnresolvedRisk: false,
     });
     expect(ok.ok).toBe(true);
+  });
+});
+
+describe("applyQualityAdjustments", () => {
+  it("clamps wild star and classification inputs", () => {
+    const a = Number(applyQualityAdjustments(-10, 999));
+    const b = Number(applyQualityAdjustments(3, 60));
+    expect(a).toBeGreaterThan(0.9);
+    expect(a).toBeLessThan(1.1);
+    expect(Number.isFinite(b)).toBe(true);
   });
 });
 

@@ -5,7 +5,7 @@ import { getUserPreferenceHints } from "@/lib/ai/user-preference-hints";
 
 export const dynamic = "force-dynamic";
 
-/** GET /api/ai/recommendations/for-you — signed-in users; BNHub-style listings. */
+/** GET /api/ai/recommendations/for-you — signed-in users; BNHUB-style listings. */
 export async function GET(request: NextRequest) {
   const userId = await getGuestId();
   if (!userId) return Response.json({ error: "Sign in required" }, { status: 401 });

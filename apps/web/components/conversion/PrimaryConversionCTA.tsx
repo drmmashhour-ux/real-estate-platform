@@ -23,10 +23,7 @@ export function PrimaryConversionCTA({
         track(event, { meta: { label, ...meta } });
         void trackLaunchEvent("CTA_CLICK", { ...meta, href, label, event });
       }}
-      className={
-        className ??
-        "inline-flex rounded-xl bg-premium-gold px-5 py-2.5 text-sm font-semibold text-black hover:bg-premium-gold"
-      }
+      className={className ?? "lecipm-cta-gold-solid px-5 py-2.5 text-sm"}
     >
       {label}
     </a>

@@ -1,7 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
+import * as Linking from "expo-linking";
 import { Link } from "expo-router";
 import { FlatList, Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { ScreenChrome } from "../../components/ui/ScreenChrome";
+import { WEB_APP_ORIGIN } from "../../config";
 import { mobileFetch } from "../../services/apiClient";
 import { colors } from "../../theme/colors";
 
@@ -39,6 +41,12 @@ export default function GuestHome() {
         )}
         ListFooterComponent={
           <View style={styles.nav}>
+            <Pressable
+              style={styles.link}
+              onPress={() => Linking.openURL(`${WEB_APP_ORIGIN}/list-your-property`)}
+            >
+              <Text style={styles.linkT}>List property</Text>
+            </Pressable>
             <Link href="/(guest)/search" style={styles.link}>
               <Text style={styles.linkT}>Search</Text>
             </Link>

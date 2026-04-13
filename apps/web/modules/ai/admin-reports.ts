@@ -77,7 +77,7 @@ function buildFinanceInsights(
     out.push(`${inv.unpaidCount} invoices in period still tied to non-paid payment status — follow up collections.`);
   }
   if (payout.hostPayoutsPendingCount > 10) {
-    out.push(`${payout.hostPayoutsPendingCount} BNHub host transfers pending release — check disputes / holds.`);
+    out.push(`${payout.hostPayoutsPendingCount} BNHUB host transfers pending release — check disputes / holds.`);
   }
   if (payout.brokerPayoutsPendingCount > 3) {
     out.push(`${payout.brokerPayoutsPendingCount} broker payout batches awaiting approval/payment.`);

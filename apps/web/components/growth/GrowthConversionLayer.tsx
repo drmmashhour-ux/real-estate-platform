@@ -68,7 +68,7 @@ export function GrowthConversionLayer() {
                 setPopupOpen(true);
                 fireCta("sticky_estimate_open", "/evaluate");
               }}
-              className="rounded-lg border border-white/20 px-4 py-2 text-xs font-medium text-white sm:text-sm"
+              className="rounded-lg border border-premium-gold/50 bg-premium-gold/5 px-4 py-2 text-xs font-semibold text-premium-gold transition hover:border-premium-gold/75 hover:bg-premium-gold/12 sm:text-sm"
             >
               Free estimate
             </button>

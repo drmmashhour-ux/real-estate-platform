@@ -49,7 +49,7 @@ export async function BnhubDominationCityPage({ cityKey }: { cityKey: Domination
       <header className="border-b border-slate-800/80 bg-slate-950/95 backdrop-blur-sm">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
           <Link href="/bnhub" className="text-lg font-semibold tracking-tight text-white">
-            BNHub
+            BNHUB
           </Link>
           <nav className="flex flex-wrap items-center gap-4 text-sm">
             <Link href="/bnhub/stays" className="text-emerald-400">
@@ -67,7 +67,7 @@ export async function BnhubDominationCityPage({ cityKey }: { cityKey: Domination
 
       <section className="border-b border-slate-800 bg-gradient-to-b from-emerald-950/50 to-slate-950 px-4 py-14 sm:px-6">
         <div className="mx-auto max-w-6xl">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-400">BNHub · {cfg.country}</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-400">BNHUB · {cfg.country}</p>
           <h1 className="mt-3 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
             Short-term stays in {cfg.displayName}
           </h1>
@@ -165,7 +165,7 @@ export async function BnhubDominationCityPage({ cityKey }: { cityKey: Domination
                 .
               </>
             ) : (
-              <>National expansion — city investment pages rolling out alongside BNHub supply.</>
+              <>National expansion — city investment pages rolling out alongside BNHUB supply.</>
             )}
           </p>
         </div>

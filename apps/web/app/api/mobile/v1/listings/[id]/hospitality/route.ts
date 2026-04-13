@@ -20,6 +20,6 @@ export async function GET(
     offers,
     bundles,
     disclaimer:
-      "Add-ons are offered by hosts or partners. BNHub does not guarantee fulfillment of third-party services.",
+      "Add-ons are offered by hosts or partners. BNHUB does not guarantee fulfillment of third-party services.",
   });
 }

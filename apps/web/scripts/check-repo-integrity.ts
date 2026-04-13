@@ -1,5 +1,5 @@
 /**
- * Deterministic structural integrity gate for BNHub + stays + core app wiring.
+ * Deterministic structural integrity gate for BNHUB + stays + core app wiring.
  * Does not touch git working tree (no destructive cleanup).
  *
  * Run: pnpm --filter @lecipm/web run ci:integrity
@@ -79,7 +79,7 @@ function contentChecks(): CheckResult[] {
         reason: `missing expected UI symbols: ${missing.join(", ")}`,
       });
     } else {
-      out.push({ path: `${view} (BNHub UI)`, ok: true });
+      out.push({ path: `${view} (BNHUB UI)`, ok: true });
     }
   } catch (e) {
     out.push({ path: view, ok: false, reason: String(e) });

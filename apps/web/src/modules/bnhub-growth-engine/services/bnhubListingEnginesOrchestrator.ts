@@ -53,6 +53,11 @@ export async function refreshAllBnhubListingEngines(listingId: string): Promise<
   await refreshTrustProfileForListing(listingId);
   await refreshLuxuryTierForListing(listingId);
   await refreshDynamicPricingForListing(listingId);
+  await import("@/lib/quality/update-listing-quality")
+    .then((m) => m.updateListingQuality(listingId))
+    .catch((err) => {
+      console.warn("[bnhub-engines] listing quality refresh failed", listingId, err);
+    });
 }
 
 export function scheduleBnhubListingEngineRefresh(listingId: string, delayMs = 2000): void {

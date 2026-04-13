@@ -7,7 +7,7 @@ import { isStripeConfigured } from "@/lib/stripe";
 export const dynamic = "force-dynamic";
 
 /**
- * POST — Demo-only: confirm a pending BNHub booking without Stripe (when Stripe is not configured).
+ * POST — Demo-only: confirm a pending BNHUB booking without Stripe (when Stripe is not configured).
  */
 export async function POST(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   if (isStripeConfigured()) {

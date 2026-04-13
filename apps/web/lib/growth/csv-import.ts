@@ -79,7 +79,8 @@ export function parseGrowthCsv(text: string): CsvImportResult {
   return { rows, errors };
 }
 
-function splitCsvLine(line: string): string[] {
+/** Exported for admin bulk stay import — quoted-field safe. */
+export function splitCsvLine(line: string): string[] {
   const out: string[] = [];
   let cur = "";
   let q = false;

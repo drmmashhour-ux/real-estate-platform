@@ -36,7 +36,7 @@ export async function getBrokerProfessionalCompliance(userId: string): Promise<C
   return { ok: reasons.length === 0, reasons };
 }
 
-/** Owner path: ID + ownership confirmation (BNHub mandatory pipeline). */
+/** Owner path: ID + ownership confirmation (BNHUB mandatory pipeline). */
 export async function getOwnerProfessionalCompliance(userId: string): Promise<ComplianceResult> {
   const o = await getOwnerVerificationStatus(userId);
   if (o.overall === "verified") return { ok: true, reasons: [] };
@@ -44,7 +44,7 @@ export async function getOwnerProfessionalCompliance(userId: string): Promise<Co
 }
 
 /**
- * Before creating a BNHub-style listing: owner listings require verified owner; broker listings require verified broker + license metadata.
+ * Before creating a BNHUB-style listing: owner listings require verified owner; broker listings require verified broker + license metadata.
  */
 export async function assertCanCreateListing(params: {
   userId: string;

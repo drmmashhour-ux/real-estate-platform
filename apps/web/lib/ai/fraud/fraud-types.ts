@@ -1,5 +1,5 @@
 /**
- * BNHub fraud detection — types only. No enforcement actions here.
+ * BNHUB fraud detection — types only. No enforcement actions here.
  */
 
 export type FraudEntityType = "short_term_listing" | "booking" | "user";

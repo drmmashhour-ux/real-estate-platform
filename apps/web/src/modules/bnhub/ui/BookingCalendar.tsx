@@ -22,11 +22,11 @@ export function BookingCalendar({ listingId }: { listingId: string }) {
     <div className="rounded-xl border border-white/10 bg-black/20 p-4 text-sm text-slate-200">
       <h3 className="font-semibold text-white">Availability</h3>
       <p className="mt-2 text-xs text-slate-400">
-        BNHub reservations: {booked.length} night(s) shown · Other-channel holds: {external.length} · Open next 30
+        BNHUB reservations: {booked.length} night(s) shown · Other-channel holds: {external.length} · Open next 30
         days: {available.length}
       </p>
       <p className="mt-1 text-[11px] text-slate-500">
-        Calendar syncs from the host&apos;s channel manager; BNHub does not guarantee third-party accuracy.
+        Calendar syncs from the host&apos;s channel manager; BNHUB does not guarantee third-party accuracy.
       </p>
     </div>
   );

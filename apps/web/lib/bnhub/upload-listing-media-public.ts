@@ -1,5 +1,6 @@
 import { randomUUID } from "crypto";
 import { getSupabaseServiceForGuestBookings } from "@/lib/stripe/guestSupabaseBooking";
+import { scanBufferBeforeStorage } from "@/lib/security/malware-scan";
 
 const BUCKET = "listing-media";
 
@@ -16,10 +17,19 @@ export async function uploadStayListingImagePublicUrl(params: {
   listingId: string;
   bytes: Buffer;
   contentType: string;
-}): Promise<{ url: string } | { error: string }> {
+}): Promise<{ url: string } | { error: string; status?: number }> {
   const { listingId, bytes, contentType } = params;
   if (!listingId.trim()) return { error: "listingId is required." };
   if (!contentType.toLowerCase().startsWith("image/")) return { error: "Only image uploads are allowed." };
+
+  const scan = await scanBufferBeforeStorage({
+    bytes,
+    mimeType: contentType,
+    context: "bnhub_stay_listing_public",
+  });
+  if (!scan.ok) {
+    return { error: scan.userMessage, status: scan.status };
+  }
 
   const sb = getSupabaseServiceForGuestBookings();
   if (!sb) return { error: "Storage is not configured." };

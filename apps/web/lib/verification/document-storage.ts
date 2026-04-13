@@ -6,6 +6,7 @@
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import { randomUUID } from "crypto";
+import { scanBufferBeforeStorage } from "@/lib/security/malware-scan";
 
 const PDF_MIME = "application/pdf";
 const MAX_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
@@ -37,6 +38,15 @@ export async function savePropertyDocument(params: {
   }
   if (params.buffer.length === 0) {
     return { ok: false, error: "File is empty" };
+  }
+
+  const scan = await scanBufferBeforeStorage({
+    bytes: params.buffer,
+    mimeType: params.mimeType,
+    context: "property_verification_pdf",
+  });
+  if (!scan.ok) {
+    return { ok: false, error: scan.userMessage };
   }
 
   const dir = path.join(UPLOAD_DIR, params.listingId);
@@ -76,6 +86,15 @@ export async function saveVerificationImage(params: {
   }
   if (params.buffer.length === 0) {
     return { ok: false, error: "File is empty" };
+  }
+
+  const scan = await scanBufferBeforeStorage({
+    bytes: params.buffer,
+    mimeType: params.mimeType,
+    context: `identity_${params.kind}`,
+  });
+  if (!scan.ok) {
+    return { ok: false, error: scan.userMessage };
   }
 
   const dir = path.join(IDENTITY_UPLOAD_DIR, params.userId);

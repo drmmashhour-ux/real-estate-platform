@@ -1,5 +1,5 @@
 /**
- * BNHub ReviewService — create review, list reviews for listing.
+ * BNHUB ReviewService — create review, list reviews for listing.
  */
 
 import { createReview, getListingReviews, getListingAverageRating } from "@/lib/bnhub/reviews";

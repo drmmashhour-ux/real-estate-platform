@@ -9,7 +9,7 @@ const SELLER_TYPE = MARKETPLACE_CONTRACT_TYPES.SELLER_AGREEMENT;
 const TEMPLATE_VERSION = "2026-03-23";
 
 /**
- * Ensure a pending SELLER_AGREEMENT exists for this BNHub short-term listing (idempotent).
+ * Ensure a pending SELLER_AGREEMENT exists for this BNHUB short-term listing (idempotent).
  */
 export async function ensureSellerListingAgreementForBnhub(listingId: string): Promise<void> {
   const listing = await prisma.shortTermListing.findUnique({

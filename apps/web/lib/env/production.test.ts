@@ -28,4 +28,14 @@ describe("production env status", () => {
     const s = getProductionEnvStatus();
     expect(s.ok).toBe(true);
   });
+
+  it("warns when DATABASE_URL uses literal HOST as hostname (Vercel template mistake)", () => {
+    process.env.VERCEL = "1";
+    process.env.DATABASE_URL = "postgresql://USER:PASSWORD@HOST:5432/dbname";
+    process.env.STRIPE_SECRET_KEY = "sk_test";
+    process.env.STRIPE_WEBHOOK_SECRET = "whsec_test";
+    const s = getProductionEnvStatus();
+    expect(s.ok).toBe(true);
+    expect(s.warnings.some((w) => w.includes("literal hostname HOST"))).toBe(true);
+  });
 });

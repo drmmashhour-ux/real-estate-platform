@@ -3,22 +3,29 @@
 import { useCallback, useId, useMemo, useState, type ReactNode } from "react";
 import { resolveSellerDeclarationVariant } from "@/src/modules/seller-declaration-ai/knowledge/sellerWorkflowPillarRules";
 import {
+  DECLARATION_SECTION_IDS,
   declarationCompletionPercent,
   emptyParty,
   emptyStructuredAddress,
   getSellerDeclarationSectionUiStatus,
   missingDeclarationSections,
+  needsAuthoritySupplementalPath,
+  nextDeclarationSectionId,
   syncSellerFullNameFromParties,
   type DeclarationSectionId,
   type DeclarationUiStatus,
   type SellerDeclarationData,
 } from "@/lib/fsbo/seller-declaration-schema";
+import { DeclarationSectionAppliesGate } from "@/components/seller/DeclarationSectionAppliesGate";
 import { SELLER_DECLARATION_HELP } from "@/lib/fsbo/seller-declaration-help";
 import { ExplainSectionButton, SellerChecklistIndex } from "@/components/seller/SellerChecklistIndex";
+import { AuthoritySupplementalDocs } from "@/components/seller/AuthoritySupplementalDocs";
 import { PartyIdentityFields } from "@/components/seller/PartyIdentityFields";
 import { DsDsdRegulatoryNotice } from "@/components/seller/DsDsdRegulatoryNotice";
 import { AdditionalDeclarationsFields } from "@/components/seller/AdditionalDeclarationsFields";
+import { WritingCorrectionLabelRow } from "@/components/ui/WritingCorrectionButton";
 import { SellerDeclarationAiReviewPanel } from "@/components/seller/SellerDeclarationAiReviewPanel";
+import { SellerTaxesAssistantPanel } from "@/components/seller/SellerTaxesAssistantPanel";
 import { ListingAiScoresCard } from "@/components/seller/ListingAiScoresCard";
 import { SellerDeclarationReadiness } from "@/components/legal/SellerDeclarationReadiness";
 import { DECLARATION_SECTION_LABELS } from "@/components/seller/SellerChecklistIndex";
@@ -96,6 +103,8 @@ export function SellerDeclarationForm({
   listingAiScores = null,
   showTrustGraphDeclarationWidget = false,
   trustGraphEngineMetrics = null,
+  onSectionSave,
+  sectionSaveBusy = false,
 }: {
   value: SellerDeclarationData;
   onChange: (next: SellerDeclarationData) => void;
@@ -114,6 +123,9 @@ export function SellerDeclarationForm({
     contradictionCount: number;
     blockingIssuesCount: number;
   } | null;
+  /** When set, section footer shows Save (e.g. persist declaration draft to listing). */
+  onSectionSave?: () => void | Promise<void>;
+  sectionSaveBusy?: boolean;
 }) {
   const modalTitleId = useId();
   const [help, setHelp] = useState<(typeof SELLER_DECLARATION_HELP)[DeclarationSectionId] | null>(null);
@@ -187,6 +199,32 @@ export function SellerDeclarationForm({
     queueMicrotask(() => {
       document.getElementById(`decl-section-${id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
+  }
+
+  function continueToNextSection(fromId: DeclarationSectionId) {
+    const n = nextDeclarationSectionId(fromId);
+    if (n) openSectionAndScroll(n);
+  }
+
+  const sectionOrder = DECLARATION_SECTION_IDS;
+  const currentSectionIndex = openSection ? sectionOrder.indexOf(openSection) : 0;
+  const safeIdx = currentSectionIndex < 0 ? 0 : currentSectionIndex;
+  const canSectionBack = safeIdx > 0;
+  const canSectionContinue = safeIdx < sectionOrder.length - 1;
+
+  function goAdjacentSection(delta: -1 | 1) {
+    const start = openSection ?? sectionOrder[0];
+    let i = sectionOrder.indexOf(start);
+    if (i < 0) i = 0;
+    const j = Math.min(sectionOrder.length - 1, Math.max(0, i + delta));
+    if (j === i && delta !== 0) return;
+    const next = sectionOrder[j];
+    openSectionAndScroll(next);
+  }
+
+  async function handleSectionSave() {
+    if (!onSectionSave) return;
+    await onSectionSave();
   }
 
   return (
@@ -377,6 +415,7 @@ export function SellerDeclarationForm({
                   idNumber: fieldErrors[`sellers.${i}.idNumber`],
                   phone: fieldErrors[`sellers.${i}.phone`],
                   email: fieldErrors[`sellers.${i}.email`],
+                  idDetailsConfirmed: fieldErrors[`sellers.${i}.idDetailsConfirmed`],
                 }}
                 phoneDuplicateConflict={(() => {
                   if (!sellerSharesPhoneWithAnother(value.sellers, i)) return false;
@@ -449,43 +488,93 @@ export function SellerDeclarationForm({
             </label>
           ) : null}
 
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Known buyers (optional)</p>
-          <p className="text-xs text-slate-500">
-            If the buyer is already known, add identity details for each buyer party. Leave empty if not applicable.
-          </p>
-          {value.buyers.map((b, i) => (
-            <div key={b.id} className="rounded-lg border border-white/10 p-3">
-              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                <span className="text-sm text-slate-300">Buyer {i + 1}</span>
-                <button
-                  type="button"
-                  className="text-xs text-red-400 hover:underline"
-                  onClick={() => {
-                    patch({ buyers: value.buyers.filter((x) => x.id !== b.id) });
-                  }}
-                >
-                  Remove
-                </button>
-              </div>
-              <PartyIdentityFields
-                label={`Buyer ${i + 1}`}
-                party={b}
-                listingId={listingId}
-                onChange={(next) => {
-                  const buyers = [...value.buyers];
-                  buyers[i] = next;
-                  patch({ buyers });
-                }}
+          <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-premium-gold">Selling capacity</p>
+            <p className="mt-1 text-xs text-slate-500">
+              Check all that apply. If any is checked, use the supplemental identification block below (aligned with
+              transparency norms in Québec brokerage practice — not legal advice).
+            </p>
+            <label className="mt-3 flex cursor-pointer items-start gap-2 text-sm text-slate-300">
+              <input
+                type="checkbox"
+                checked={value.authoritySellerIsCompany}
+                onChange={(e) => patch({ authoritySellerIsCompany: e.target.checked })}
+                className="mt-0.5 rounded border-white/20"
               />
+              <span>
+                A <strong className="font-medium text-slate-200">company</strong> (legal person) is on title or is signing
+                for this sale
+              </span>
+            </label>
+            <label className="mt-2 flex cursor-pointer items-start gap-2 text-sm text-slate-300">
+              <input
+                type="checkbox"
+                checked={value.authorityLawyerOrNotary}
+                onChange={(e) => patch({ authorityLawyerOrNotary: e.target.checked })}
+                className="mt-0.5 rounded border-white/20"
+              />
+              <span>
+                I act as a <strong className="font-medium text-slate-200">lawyer or notary</strong> for the seller(s) in
+                this listing
+              </span>
+            </label>
+            <label className="mt-2 flex cursor-pointer items-start gap-2 text-sm text-slate-300">
+              <input
+                type="checkbox"
+                checked={value.authorityMandateRepresentative}
+                onChange={(e) => patch({ authorityMandateRepresentative: e.target.checked })}
+                className="mt-0.5 rounded border-white/20"
+              />
+              <span>
+                I act under a <strong className="font-medium text-slate-200">mandate / power of attorney</strong> and am
+                not the registered owner in my own name
+              </span>
+            </label>
+          </div>
+
+          {needsAuthoritySupplementalPath(value) ? (
+            <div
+              className={`rounded-xl border p-4 ${
+                fieldErrors["authoritySupplementalDocs"] ? "border-red-500/40 bg-red-950/15" : "border-premium-gold/35 bg-premium-gold/[0.04]"
+              }`}
+            >
+              <p className="text-sm font-semibold text-premium-gold/95">Enhanced seller identification</p>
+              <p className="mt-2 text-xs leading-relaxed text-slate-400">
+                For listings involving a legal person, a professional acting for sellers, or a non-owner representative,
+                the platform asks for PDF or image evidence of your authority (e.g. power of attorney, minute or
+                resolution, NEQ or corporate excerpt, Barreau / Chambre des notaires identification). This supports the
+                same transparency goals as standard brokerage disclosure rules in Québec (OACIQ-style practice). General
+                principles on representation and mandate in the{" "}
+                <span className="text-slate-300">Civil Code of Québec</span> apply between parties; confirm scope with
+                your notary or counsel — this is not legal advice.
+              </p>
+              <p className="mt-2 text-xs text-slate-500">
+                Keep individual government ID for natural-person sellers in the seller rows above; use this section for
+                corporate or mandate documents.
+              </p>
+              <div className="mt-4">
+                <AuthoritySupplementalDocs
+                  listingId={listingId}
+                  docs={value.authoritySupplementalDocs ?? []}
+                  onChange={(authoritySupplementalDocs) => patch({ authoritySupplementalDocs })}
+                  fieldError={fieldErrors["authoritySupplementalDocs"]}
+                />
+              </div>
             </div>
-          ))}
-          <button
-            type="button"
-            onClick={() => patch({ buyers: [...value.buyers, emptyParty()] })}
-            className="rounded-lg border border-dashed border-white/20 px-4 py-2 text-sm text-slate-300 hover:bg-white/5"
-          >
-            + Add buyer identity
-          </button>
+          ) : null}
+
+          {needsAuthoritySupplementalPath(value) ? (
+            <p className="mt-3 text-xs font-medium text-amber-200/90">
+              Authority attestation — required with your selling capacity selection: confirm below and add notes (co-owners,
+              mandate, corporate file references, etc.).
+            </p>
+          ) : (
+            <p className="mt-3 text-xs text-slate-500">
+              If you use a selling capacity option above (company, lawyer/notary, or mandate), you will be asked to confirm
+              authority and add notes. For a standard individual owner with none of those checked, these fields are
+              optional.
+            </p>
+          )}
 
           <label className="mt-3 flex items-center gap-2 text-sm text-slate-300">
             <input
@@ -500,7 +589,11 @@ export function SellerDeclarationForm({
             <p className="mt-1 text-xs text-red-400">{fieldErrors["hasAuthorityToSell"]}</p>
           ) : null}
           <label className="mt-3 block text-sm text-slate-300">
-            Notes (authority, co-owners, mandate, etc.)
+            <WritingCorrectionLabelRow
+              label="Notes (authority, co-owners, mandate, etc.)"
+              textValue={value.identityNotes}
+              onApply={(v) => patch({ identityNotes: v })}
+            />
             <textarea
               value={value.identityNotes}
               onChange={(e) => patch({ identityNotes: e.target.value })}
@@ -524,6 +617,13 @@ export function SellerDeclarationForm({
         onToggle={() => setOpenSection((s) => (s === "conflict" ? null : "conflict"))}
         onShowHelp={setHelp}
       >
+        <DeclarationSectionAppliesGate
+          sectionId="conflict"
+          value={value}
+          patch={patch}
+          propertyType={propertyType}
+          onContinueToNext={() => continueToNextSection("conflict")}
+        >
         <label className="flex items-center gap-2 text-sm text-slate-300">
           <input
             type="checkbox"
@@ -549,6 +649,7 @@ export function SellerDeclarationForm({
           />
           I confirm I have disclosed any relationship or interest that could affect this sale.
         </label>
+        </DeclarationSectionAppliesGate>
       </CollapsibleSection>
 
       <CollapsibleSection
@@ -559,6 +660,13 @@ export function SellerDeclarationForm({
         onToggle={() => setOpenSection((s) => (s === "description" ? null : "description"))}
         onShowHelp={setHelp}
       >
+        <DeclarationSectionAppliesGate
+          sectionId="description"
+          value={value}
+          patch={patch}
+          propertyType={propertyType}
+          onContinueToNext={() => continueToNextSection("description")}
+        >
         <label className="flex items-center gap-2 text-sm text-slate-300">
           <input
             type="checkbox"
@@ -568,7 +676,11 @@ export function SellerDeclarationForm({
           The listing description fairly reflects what I know about the property.
         </label>
         <label className="mt-3 block text-sm text-slate-300">
-          Notes (boundaries, easements, shared elements…)
+          <WritingCorrectionLabelRow
+            label="Notes (boundaries, easements, shared elements…)"
+            textValue={value.propertyDescriptionNotes}
+            onApply={(v) => patch({ propertyDescriptionNotes: v })}
+          />
           <textarea
             value={value.propertyDescriptionNotes}
             onChange={(e) => patch({ propertyDescriptionNotes: e.target.value })}
@@ -576,6 +688,7 @@ export function SellerDeclarationForm({
             className="mt-1 w-full rounded-lg border border-white/10 bg-black/50 px-3 py-2 text-white"
           />
         </label>
+        </DeclarationSectionAppliesGate>
       </CollapsibleSection>
 
       <CollapsibleSection
@@ -586,11 +699,22 @@ export function SellerDeclarationForm({
         onToggle={() => setOpenSection((s) => (s === "inclusions" ? null : "inclusions"))}
         onShowHelp={setHelp}
       >
+        <DeclarationSectionAppliesGate
+          sectionId="inclusions"
+          value={value}
+          patch={patch}
+          propertyType={propertyType}
+          onContinueToNext={() => continueToNextSection("inclusions")}
+        >
         <p className="mb-2 text-xs text-slate-500">
           Appliances, fixtures, furniture, equipment — be specific to avoid disputes.
         </p>
         <label className="block text-sm text-slate-300">
-          Included items
+          <WritingCorrectionLabelRow
+            label="Included items"
+            textValue={value.includedItems}
+            onApply={(v) => patch({ includedItems: v })}
+          />
           <textarea
             value={value.includedItems}
             onChange={(e) => patch({ includedItems: e.target.value })}
@@ -599,7 +723,11 @@ export function SellerDeclarationForm({
           />
         </label>
         <label className="mt-3 block text-sm text-slate-300">
-          Excluded items
+          <WritingCorrectionLabelRow
+            label="Excluded items"
+            textValue={value.excludedItems}
+            onApply={(v) => patch({ excludedItems: v })}
+          />
           <textarea
             value={value.excludedItems}
             onChange={(e) => patch({ excludedItems: e.target.value })}
@@ -607,6 +735,7 @@ export function SellerDeclarationForm({
             className="mt-1 w-full rounded-lg border border-white/10 bg-black/50 px-3 py-2 text-white"
           />
         </label>
+        </DeclarationSectionAppliesGate>
       </CollapsibleSection>
 
       <CollapsibleSection
@@ -617,8 +746,19 @@ export function SellerDeclarationForm({
         onToggle={() => setOpenSection((s) => (s === "condition" ? null : "condition"))}
         onShowHelp={setHelp}
       >
+        <DeclarationSectionAppliesGate
+          sectionId="condition"
+          value={value}
+          patch={patch}
+          propertyType={propertyType}
+          onContinueToNext={() => continueToNextSection("condition")}
+        >
         <label className="block text-sm text-slate-300">
-          Known defects (write &quot;None known&quot; if applicable)
+          <WritingCorrectionLabelRow
+            label='Known defects (write "None known" if applicable)'
+            textValue={value.knownDefects}
+            onApply={(v) => patch({ knownDefects: v })}
+          />
           <textarea
             value={value.knownDefects}
             onChange={(e) => patch({ knownDefects: e.target.value })}
@@ -627,7 +767,11 @@ export function SellerDeclarationForm({
           />
         </label>
         <label className="mt-3 block text-sm text-slate-300">
-          Past issues (water, fire, insurance claims…)
+          <WritingCorrectionLabelRow
+            label="Past issues (water, fire, insurance claims…)"
+            textValue={value.pastIssues}
+            onApply={(v) => patch({ pastIssues: v })}
+          />
           <textarea
             value={value.pastIssues}
             onChange={(e) => patch({ pastIssues: e.target.value })}
@@ -636,7 +780,11 @@ export function SellerDeclarationForm({
           />
         </label>
         <label className="mt-3 block text-sm text-slate-300">
-          Structural concerns
+          <WritingCorrectionLabelRow
+            label="Structural concerns"
+            textValue={value.structuralConcerns}
+            onApply={(v) => patch({ structuralConcerns: v })}
+          />
           <textarea
             value={value.structuralConcerns}
             onChange={(e) => patch({ structuralConcerns: e.target.value })}
@@ -644,6 +792,7 @@ export function SellerDeclarationForm({
             className="mt-1 w-full rounded-lg border border-white/10 bg-black/50 px-3 py-2 text-white"
           />
         </label>
+        </DeclarationSectionAppliesGate>
       </CollapsibleSection>
 
       <CollapsibleSection
@@ -654,8 +803,19 @@ export function SellerDeclarationForm({
         onToggle={() => setOpenSection((s) => (s === "renovations" ? null : "renovations"))}
         onShowHelp={setHelp}
       >
+        <DeclarationSectionAppliesGate
+          sectionId="renovations"
+          value={value}
+          patch={patch}
+          propertyType={propertyType}
+          onContinueToNext={() => continueToNextSection("renovations")}
+        >
         <label className="block text-sm text-slate-300">
-          List renovations (with years if known)
+          <WritingCorrectionLabelRow
+            label="List renovations (with years if known)"
+            textValue={value.renovationsDetail}
+            onApply={(v) => patch({ renovationsDetail: v })}
+          />
           <textarea
             value={value.renovationsDetail}
             onChange={(e) => patch({ renovationsDetail: e.target.value })}
@@ -684,6 +844,7 @@ export function SellerDeclarationForm({
             No
           </label>
         </div>
+        </DeclarationSectionAppliesGate>
       </CollapsibleSection>
 
       <CollapsibleSection
@@ -694,6 +855,13 @@ export function SellerDeclarationForm({
         onToggle={() => setOpenSection((s) => (s === "pool" ? null : "pool"))}
         onShowHelp={setHelp}
       >
+        <DeclarationSectionAppliesGate
+          sectionId="pool"
+          value={value}
+          patch={patch}
+          propertyType={propertyType}
+          onContinueToNext={() => continueToNextSection("pool")}
+        >
         <p className="mb-3 text-xs text-slate-500">Select one option. The checklist stays neutral until you answer.</p>
         <div className="space-y-2 text-sm text-slate-300">
           <label className="flex items-center gap-2">
@@ -730,7 +898,11 @@ export function SellerDeclarationForm({
               />
             </label>
             <label className="mt-3 block text-sm text-slate-300">
-              Safety / compliance (fence, cover, municipal rules…)
+              <WritingCorrectionLabelRow
+                label="Safety / compliance (fence, cover, municipal rules…)"
+                textValue={value.poolSafetyCompliance}
+                onApply={(v) => patch({ poolSafetyCompliance: v })}
+              />
               <textarea
                 value={value.poolSafetyCompliance}
                 onChange={(e) => patch({ poolSafetyCompliance: e.target.value })}
@@ -740,6 +912,7 @@ export function SellerDeclarationForm({
             </label>
           </>
         ) : null}
+        </DeclarationSectionAppliesGate>
       </CollapsibleSection>
 
       <CollapsibleSection
@@ -750,6 +923,13 @@ export function SellerDeclarationForm({
         onToggle={() => setOpenSection((s) => (s === "inspection" ? null : "inspection"))}
         onShowHelp={setHelp}
       >
+        <DeclarationSectionAppliesGate
+          sectionId="inspection"
+          value={value}
+          patch={patch}
+          propertyType={propertyType}
+          onContinueToNext={() => continueToNextSection("inspection")}
+        >
         <label className="flex items-start gap-2 text-sm text-slate-300">
           <input
             type="checkbox"
@@ -759,6 +939,7 @@ export function SellerDeclarationForm({
           />
           I accept that the buyer may conduct inspections, subject to reasonable access and agreement on timing.
         </label>
+        </DeclarationSectionAppliesGate>
       </CollapsibleSection>
 
       <CollapsibleSection
@@ -769,6 +950,13 @@ export function SellerDeclarationForm({
         onToggle={() => setOpenSection((s) => (s === "condo" ? null : "condo"))}
         onShowHelp={setHelp}
       >
+        <DeclarationSectionAppliesGate
+          sectionId="condo"
+          value={value}
+          patch={patch}
+          propertyType={propertyType}
+          onContinueToNext={() => continueToNextSection("condo")}
+        >
         <label className="flex items-center gap-2 text-sm text-slate-300">
           <input
             type="checkbox"
@@ -809,8 +997,12 @@ export function SellerDeclarationForm({
               />
               I have reviewed (or will provide access to) the co-ownership rules.
             </label>
-            <label className="block">
-              Contingency fund / reserve details
+            <label className="block text-sm text-slate-300">
+              <WritingCorrectionLabelRow
+                label="Contingency fund / reserve details"
+                textValue={value.condoContingencyFundDetails}
+                onApply={(v) => patch({ condoContingencyFundDetails: v })}
+              />
               <textarea
                 value={value.condoContingencyFundDetails}
                 onChange={(e) => patch({ condoContingencyFundDetails: e.target.value })}
@@ -828,8 +1020,12 @@ export function SellerDeclarationForm({
                 </p>
               )}
             </label>
-            <label className="block">
-              Special assessments
+            <label className="block text-sm text-slate-300">
+              <WritingCorrectionLabelRow
+                label="Special assessments"
+                textValue={value.condoSpecialAssessmentDetails}
+                onApply={(v) => patch({ condoSpecialAssessmentDetails: v })}
+              />
               <textarea
                 value={value.condoSpecialAssessmentDetails}
                 onChange={(e) => patch({ condoSpecialAssessmentDetails: e.target.value })}
@@ -838,8 +1034,12 @@ export function SellerDeclarationForm({
                 placeholder="Describe any known special assessments, timing, amount, or whether none are known."
               />
             </label>
-            <label className="block">
-              Common services / rules notes
+            <label className="block text-sm text-slate-300">
+              <WritingCorrectionLabelRow
+                label="Common services / rules notes"
+                textValue={value.condoCommonServicesNotes}
+                onApply={(v) => patch({ condoCommonServicesNotes: v })}
+              />
               <textarea
                 value={value.condoCommonServicesNotes}
                 onChange={(e) => patch({ condoCommonServicesNotes: e.target.value })}
@@ -850,6 +1050,7 @@ export function SellerDeclarationForm({
             </label>
           </div>
         ) : null}
+        </DeclarationSectionAppliesGate>
       </CollapsibleSection>
 
       <CollapsibleSection
@@ -860,6 +1061,13 @@ export function SellerDeclarationForm({
         onToggle={() => setOpenSection((s) => (s === "newConstruction" ? null : "newConstruction"))}
         onShowHelp={setHelp}
       >
+        <DeclarationSectionAppliesGate
+          sectionId="newConstruction"
+          value={value}
+          patch={patch}
+          propertyType={propertyType}
+          onContinueToNext={() => continueToNextSection("newConstruction")}
+        >
         <label className="flex items-center gap-2 text-sm text-slate-300">
           <input
             type="checkbox"
@@ -871,7 +1079,11 @@ export function SellerDeclarationForm({
         {value.isNewConstruction ? (
           <>
             <label className="mt-3 block text-sm text-slate-300">
-              GCR / warranty details
+              <WritingCorrectionLabelRow
+                label="GCR / warranty details"
+                textValue={value.gcrWarrantyDetails}
+                onApply={(v) => patch({ gcrWarrantyDetails: v })}
+              />
               <textarea
                 value={value.gcrWarrantyDetails}
                 onChange={(e) => patch({ gcrWarrantyDetails: e.target.value })}
@@ -880,7 +1092,11 @@ export function SellerDeclarationForm({
               />
             </label>
             <label className="mt-3 block text-sm text-slate-300">
-              Builder name & contact
+              <WritingCorrectionLabelRow
+                label="Builder name & contact"
+                textValue={value.builderNameContact}
+                onApply={(v) => patch({ builderNameContact: v })}
+              />
               <textarea
                 value={value.builderNameContact}
                 onChange={(e) => patch({ builderNameContact: e.target.value })}
@@ -890,6 +1106,7 @@ export function SellerDeclarationForm({
             </label>
           </>
         ) : null}
+        </DeclarationSectionAppliesGate>
       </CollapsibleSection>
 
       <CollapsibleSection
@@ -900,6 +1117,13 @@ export function SellerDeclarationForm({
         onToggle={() => setOpenSection((s) => (s === "taxes" ? null : "taxes"))}
         onShowHelp={setHelp}
       >
+        <DeclarationSectionAppliesGate
+          sectionId="taxes"
+          value={value}
+          patch={patch}
+          propertyType={propertyType}
+          onContinueToNext={() => continueToNextSection("taxes")}
+        >
         <div className="rounded-lg border border-white/10 bg-black/40 p-3 text-sm text-slate-300">
           <p>
             <span className="text-slate-500">Annual taxes (from your listing):</span>{" "}
@@ -916,6 +1140,7 @@ export function SellerDeclarationForm({
             with a professional.
           </p>
         </div>
+        <SellerTaxesAssistantPanel listingId={listingId ?? null} value={value} patch={patch} />
         <label className="mt-3 flex items-center gap-2 text-sm text-slate-300">
           <input
             type="checkbox"
@@ -940,6 +1165,7 @@ export function SellerDeclarationForm({
             className="mt-1 w-full rounded-lg border border-white/10 bg-black/50 px-3 py-2 text-white"
           />
         </label>
+        </DeclarationSectionAppliesGate>
       </CollapsibleSection>
 
       <CollapsibleSection
@@ -950,7 +1176,15 @@ export function SellerDeclarationForm({
         onToggle={() => setOpenSection((s) => (s === "additionalDeclarations" ? null : "additionalDeclarations"))}
         onShowHelp={setHelp}
       >
-        <AdditionalDeclarationsFields value={value} patch={patch} listingId={listingId} />
+        <DeclarationSectionAppliesGate
+          sectionId="additionalDeclarations"
+          value={value}
+          patch={patch}
+          propertyType={propertyType}
+          onContinueToNext={() => continueToNextSection("additionalDeclarations")}
+        >
+          <AdditionalDeclarationsFields value={value} patch={patch} listingId={listingId} />
+        </DeclarationSectionAppliesGate>
       </CollapsibleSection>
 
       <CollapsibleSection
@@ -987,6 +1221,38 @@ export function SellerDeclarationForm({
           professionals as needed.
         </label>
       </CollapsibleSection>
+
+      <div className="sticky bottom-0 z-20 mt-8 flex flex-wrap items-center gap-2 border-t border-white/10 bg-[#0a0a0a]/95 px-1 py-4 backdrop-blur-sm">
+        <button
+          type="button"
+          disabled={!canSectionBack || sectionSaveBusy}
+          onClick={() => goAdjacentSection(-1)}
+          className="rounded-xl border border-white/20 px-4 py-2 text-sm text-slate-200 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          Back
+        </button>
+        {onSectionSave ? (
+          <button
+            type="button"
+            disabled={sectionSaveBusy}
+            onClick={() => void handleSectionSave()}
+            className="rounded-xl border border-premium-gold/40 bg-premium-gold/10 px-4 py-2 text-sm font-medium text-premium-gold hover:bg-premium-gold/15 disabled:opacity-50"
+          >
+            {sectionSaveBusy ? "Saving…" : "Save"}
+          </button>
+        ) : null}
+        <button
+          type="button"
+          disabled={!canSectionContinue || sectionSaveBusy}
+          onClick={() => goAdjacentSection(1)}
+          className="rounded-xl bg-premium-gold px-4 py-2 text-sm font-semibold text-black disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          Continue
+        </button>
+      </div>
+      <p className="text-center text-[11px] text-slate-500">
+        Save stores your declaration draft. Continue moves to the next section.
+      </p>
 
       {help ? (
         <div

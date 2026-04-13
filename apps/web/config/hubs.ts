@@ -85,7 +85,7 @@ export function getHubConfig(hub: string): HubConfig | null {
   return HUB_CONFIGS[key] ?? null;
 }
 
-/** Hub accent colors for UI standardization (BNHub → red, Real Estate → blue, etc.) */
+/** Hub accent colors for UI standardization (BNHUB → red, Real Estate → blue, etc.) */
 export const HUB_COLORS: Record<string, { primary: string; name: string }> = {
   bnhub: { primary: "#ff5a5f", name: "red" },
   realEstate: { primary: "#1e3a8a", name: "blue" },

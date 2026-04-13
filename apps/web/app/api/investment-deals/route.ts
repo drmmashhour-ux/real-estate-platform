@@ -5,7 +5,7 @@ import {
   compareDealToMarket,
   computeDealMetrics,
   computeInvestmentInsights,
-  isMarketCity,
+  resolveMarketCityInput,
 } from "@/lib/investment/deal-metrics";
 import { compareRentalStrategies } from "@/lib/investment/rental-strategy-compare";
 import { RENTAL_TYPE, type RentalType } from "@/lib/investment/rental-model";
@@ -48,7 +48,7 @@ export async function POST(request: Request) {
   const monthlyExpenses = Number(b.monthlyExpenses);
   const nightlyRate = Number(b.nightlyRate);
   const occupancyRate = Number(b.occupancyRate);
-  const cityRaw = typeof b.city === "string" ? b.city.trim() : "Montreal";
+  const cityRaw = typeof b.city === "string" ? b.city.trim() : "";
 
   if (
     !Number.isFinite(propertyPrice) ||
@@ -77,8 +77,13 @@ export async function POST(request: Request) {
   if (occupancyRate < 0 || occupancyRate > 100) {
     return NextResponse.json({ error: "occupancyRate must be between 0 and 100" }, { status: 400 });
   }
-  if (!isMarketCity(cityRaw)) {
-    return NextResponse.json({ error: "city must be Montreal, Laval, Toronto, or Vancouver" }, { status: 400 });
+  const city =
+    cityRaw === "" ? "Montréal" : resolveMarketCityInput(cityRaw);
+  if (!city) {
+    return NextResponse.json(
+      { error: "city must be a Québec locality from the platform list (see analyze deal form)." },
+      { status: 400 }
+    );
   }
 
   const [user, existingCount] = await Promise.all([
@@ -105,7 +110,7 @@ export async function POST(request: Request) {
   const roi = preferredStrategy === RENTAL_TYPE.SHORT_TERM ? dual.roiShortTerm : dual.roiLongTerm;
   const { monthlyCashFlow } = computeDealMetrics(propertyPrice, preferredMonthlyIncome, monthlyExpenses);
   const { riskScore, rating } = computeInvestmentInsights(roi, monthlyCashFlow);
-  const { marketComparison } = compareDealToMarket(roi, cityRaw);
+  const { marketComparison } = compareDealToMarket(roi, city);
 
   const deal = await prisma.investmentDeal.create({
     data: {
@@ -122,7 +127,7 @@ export async function POST(request: Request) {
       roi,
       riskScore,
       rating,
-      city: cityRaw,
+      city,
       marketComparison,
     },
   });

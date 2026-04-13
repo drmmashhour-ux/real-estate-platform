@@ -1,5 +1,6 @@
 import { SearchEventType } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { emitPlatformAutonomyEvent } from "@/lib/autonomy/emit-platform-event";
 
 export type TrackSearchEventInput = {
   eventType: SearchEventType;
@@ -67,4 +68,47 @@ export async function trackSearchEvent(input: TrackSearchEventInput): Promise<vo
   } catch {
     /* non-fatal */
   }
+
+  if (eventType === "VIEW" && userId) {
+    void (async () => {
+      try {
+        const prof = await prisma.userSearchProfile.findUnique({
+          where: { userId },
+          select: { updatedAt: true },
+        });
+        if (prof && Date.now() - prof.updatedAt.getTime() < 3600000) return;
+        const { buildUserSearchProfileFromEvents } = await import("./buildUserProfile");
+        await buildUserSearchProfileFromEvents(userId);
+      } catch {
+        /* non-fatal */
+      }
+    })();
+  }
+
+  void (async () => {
+    try {
+      if (eventType === SearchEventType.BOOK && listingId) {
+        const bookingId = metadata && typeof metadata.bookingId === "string" ? metadata.bookingId : undefined;
+        await emitPlatformAutonomyEvent({
+          eventType: "BOOKING_CREATED",
+          entityType: "booking",
+          entityId: bookingId ?? listingId,
+          userId,
+          payload: { listingId, bookingId },
+        });
+      } else if (eventType === SearchEventType.VIEW && userId && listingId && Math.random() < 0.04) {
+        const hourBucket = new Date().toISOString().slice(0, 13);
+        await emitPlatformAutonomyEvent({
+          eventType: "USER_ACTIVITY",
+          entityType: "short_term_listing",
+          entityId: listingId,
+          userId,
+          dedupeKey: `ua:${userId}:${hourBucket}`,
+          payload: { listingId, kind: "view_sample" },
+        });
+      }
+    } catch {
+      /* non-fatal */
+    }
+  })();
 }

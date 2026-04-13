@@ -28,7 +28,7 @@ export function buildPhase2DecisionReasons(args: {
   }
 
   if (args.bnhubRecommendation) {
-    reasons.push(`BNHub short-term overlay: ${args.bnhubRecommendation}.`);
+    reasons.push(`BNHUB short-term overlay: ${args.bnhubRecommendation}.`);
   }
 
   if (typeof args.trustComponent === "number" && args.trustComponent < 45) {

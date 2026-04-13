@@ -1,3 +1,10 @@
+/** True when the URL still uses the template hostname `HOST` (e.g. copied from an example before substitution). */
+export function databaseUrlHasLiteralHostPlaceholder(raw: string | undefined | null): boolean {
+  const db = raw?.trim();
+  if (!db) return false;
+  return /@[Hh][Oo][Ss][Tt](?=[:/?#]|$)/.test(db);
+}
+
 /**
  * Hostname from DATABASE_URL only (no credentials). For logs / readiness when comparing Vercel vs local.
  */
@@ -17,11 +24,12 @@ export function getDatabaseHostHint(): string | null {
   return hostOnly || null;
 }
 
-export type DbHostKind = "neon" | "supabase" | "unknown" | "unset";
+export type DbHostKind = "neon" | "supabase" | "placeholder" | "unknown" | "unset";
 
 /** Classify host for /api/ready — hostname only; never exposes credentials. */
 export function getDbHostKind(host: string | null): DbHostKind {
   if (!host) return "unset";
+  if (host.toLowerCase() === "host") return "placeholder";
   if (host.includes("neon.tech")) return "neon";
   if (host.includes("supabase.co")) return "supabase";
   return "unknown";

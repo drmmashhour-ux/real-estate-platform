@@ -1,5 +1,5 @@
 /**
- * Deterministic demand / competition / seasonality scores (0–1) for BNHub pricing.
+ * Deterministic demand / competition / seasonality scores (0–1) for BNHUB pricing.
  */
 
 export type DemandScoreInput = {

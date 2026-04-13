@@ -18,7 +18,7 @@ export function UpgradeModal({ open, onClose, reason }: Props) {
         <div className="mt-4 flex gap-3">
           <a
             href="/pricing"
-            className="rounded-lg bg-amber-400 px-4 py-2 text-sm font-semibold text-black hover:bg-amber-300"
+            className="rounded-xl bg-amber-400 px-4 py-2 text-sm font-semibold text-black transition-all duration-150 hover:brightness-105 hover:scale-[1.01] hover:bg-amber-300 active:scale-[0.98] active:brightness-100"
           >
             Upgrade now
           </a>

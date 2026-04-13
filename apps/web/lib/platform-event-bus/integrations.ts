@@ -57,7 +57,7 @@ export function registerPlatformEventConsumers(): void {
     }
   );
 
-  // BNHub
+  // BNHUB
   subscribeMany(["rental_booking_created", "rental_payment_received", "rental_completed"], (event) => {
     noop(event);
     // e.g. escrow engine, trust score, analytics

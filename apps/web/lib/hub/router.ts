@@ -10,6 +10,11 @@ export function getDefaultHub(user: UserWithRole): string {
 
   const r = String(user.role || "").toUpperCase();
   switch (r) {
+    case "CONTENT_OPERATOR":
+    case "LISTING_OPERATOR":
+    case "OUTREACH_OPERATOR":
+    case "SUPPORT_AGENT":
+      return "/admin/team";
     case "ADMIN":
       return "/admin";
     case "TESTER":
@@ -21,6 +26,8 @@ export function getDefaultHub(user: UserWithRole): string {
     case "MORTGAGE_EXPERT":
     case "MORTGAGE_BROKER":
       return "/dashboard/expert";
+    case "INSURANCE_BROKER":
+      return "/dashboard/insurance";
     case "BUYER":
       return "/dashboard/buyer";
     case "SELLER_DIRECT":
@@ -38,6 +45,7 @@ export type HubKey =
   | "servicehub"
   | "investorhub"
   | "realEstate"
+  | "financialHub"
   | "luxury"
   | "broker"
   | "investments"
@@ -47,9 +55,13 @@ export type HubKey =
 
 /** Hubs the user is allowed to see in the switcher. Admin only for admin role; others get role-relevant + realEstate. */
 export function getAccessibleHubs(user: UserWithRole): HubKey[] {
-  const base: HubKey[] = ["bnhub", "realEstate", "luxury", "broker", "investments", "referrals", "projects"];
+  const base: HubKey[] = ["bnhub", "realEstate", "financialHub", "luxury", "broker", "investments", "referrals", "projects"];
   if (!user) return [];
-  if (String(user.role || "").toUpperCase() === "ADMIN") return [...base, "admin"];
+  const role = String(user.role || "").toUpperCase();
+  if (role === "ADMIN") return [...base, "admin"];
+  if (["CONTENT_OPERATOR", "LISTING_OPERATOR", "OUTREACH_OPERATOR", "SUPPORT_AGENT"].includes(role)) {
+    return [...base, "admin"];
+  }
   return [...base];
 }
 
@@ -59,6 +71,7 @@ export const HUB_PATHS: Record<HubKey, string> = {
   servicehub: "/hub/servicehub",
   investorhub: "/hub/investorhub",
   realEstate: "/dashboard/real-estate",
+  financialHub: "/financial-hub",
   luxury: "/dashboard/luxury",
   broker: "/dashboard/broker",
   investments: "/dashboard/investments",

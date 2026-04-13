@@ -8,7 +8,7 @@ const NON_TERMINAL = ["pending", "requires_action"] as const;
 /**
  * Sync `OrchestratedPayment` from Stripe Checkout session id (e.g. after `checkout.session.completed`).
  * Idempotent: duplicate Stripe deliveries use `updateMany` with non-terminal status only — no double emits.
- * Emits `PAYMENT_SUCCESS` with `source: orchestration_stripe` for non-booking rows (booking success stays on BNHub path).
+ * Emits `PAYMENT_SUCCESS` with `source: orchestration_stripe` for non-booking rows (booking success stays on BNHUB path).
  */
 export async function markOrchestratedPaymentFromStripeSession(args: {
   sessionId: string;

@@ -90,5 +90,5 @@ export async function recordAcceptance(
 /** Redirect path when platform terms not accepted. */
 export const ACCEPTANCE_ROUTE = "/legal/accept";
 
-/** Redirect path when host agreement not accepted (BNHub). */
+/** Redirect path when host agreement not accepted (BNHUB). */
 export const BNHUB_HOST_AGREEMENT_ROUTE = "/bnhub/host-agreement";

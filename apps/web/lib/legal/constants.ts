@@ -1,5 +1,5 @@
 /**
- * Legal document types – reusable across BNHub and future hubs.
+ * Legal document types – reusable across BNHUB and future hubs.
  */
 export const LEGAL_DOCUMENT_TYPES = {
   TERMS: "terms",
@@ -9,7 +9,7 @@ export const LEGAL_DOCUMENT_TYPES = {
   BNHUB_HOST_AGREEMENT: "host_agreement",
   /** Long-term (monthly) landlord–tenant terms; public legal page + optional admin CMS. */
   BNHUB_LONG_TERM_RENTAL_AGREEMENT: "bnhub_long_term_rental_agreement",
-  /** BNHub brokers: leads, commission splits, referral fees; public legal page + optional admin CMS. */
+  /** BNHUB brokers: leads, commission splits, referral fees; public legal page + optional admin CMS. */
   BNHUB_BROKER_COLLABORATION_AGREEMENT: "bnhub_broker_collaboration_agreement",
   BNHUB_GUEST_POLICY: "guest_policy",
   BROKER_AGREEMENT: "broker_agreement",
@@ -30,7 +30,7 @@ export const REQUIRED_FOR_PLATFORM: LegalDocumentType[] = [
   LEGAL_DOCUMENT_TYPES.PRIVACY,
 ];
 
-/** Documents required for BNHub host (before listing creation / host dashboard). */
+/** Documents required for BNHUB host (before listing creation / host dashboard). */
 export const REQUIRED_FOR_BNHUB_HOST: LegalDocumentType[] = [
   LEGAL_DOCUMENT_TYPES.BNHUB_HOST_AGREEMENT,
 ];

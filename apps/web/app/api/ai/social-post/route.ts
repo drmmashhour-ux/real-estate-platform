@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     const feedback = await feedbackFromBodyWithAnalytics(d);
     const vc = Math.min(Math.max(d.variantCount ?? 1, 1), 3);
     const baseInput = {
-      topic: d.topic?.trim() || "BNHub / LECIPM",
+      topic: d.topic?.trim() || "BNHUB / LECIPM",
       platform: d.platform?.trim() || "Instagram",
       tone: d.tone?.trim() || "professional",
       audience: d.audience?.trim() || "travelers and hosts",
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
           type: "social_post",
           shared: {
             platform: d.platform?.trim() || null,
-            topic: d.topic?.trim() || "BNHub / LECIPM",
+            topic: d.topic?.trim() || "BNHUB / LECIPM",
             tone: d.tone?.trim() || "professional",
             audience: d.audience?.trim() || "travelers and hosts",
             theme: d.theme ?? null,
@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
         type: "social_post",
         shared: {
           platform: d.platform?.trim() || null,
-          topic: d.topic?.trim() || "BNHub / LECIPM",
+          topic: d.topic?.trim() || "BNHUB / LECIPM",
           tone: d.tone?.trim() || "professional",
           audience: d.audience?.trim() || "travelers and hosts",
           theme: d.theme ?? null,

@@ -14,6 +14,7 @@ import { enforceableContractsRequired } from "@/lib/legal/enforceable-contracts-
 import { isTrustGraphEnabled } from "@/lib/trustgraph/config";
 import { assertListingPublishTrustGate } from "@/lib/trustgraph/application/integrations/listingPublishIntegration";
 import { getPublicAppUrl } from "@/lib/config/public-app-url";
+import { notifyFsboListingActivatedIfNeeded } from "@/lib/listing-lifecycle/notify-fsbo-listing-activated";
 
 export type FsboPublishCheckoutTrustGraphError = {
   blocking: Array<{ ruleCode: string; message: string }>;
@@ -119,6 +120,7 @@ export async function startFsboListingPublishCheckout(
         payload: { publishPlan: plan, freePublish: true },
       }).catch(() => {});
       await syncFsboListingExpiryState(listingId, { sendReminder: false }).catch(() => null);
+      void notifyFsboListingActivatedIfNeeded(listingId).catch(() => null);
       return { ok: true, freePublish: true };
     }
     return {

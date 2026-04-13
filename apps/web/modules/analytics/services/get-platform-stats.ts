@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 
 /**
  * Platform listing split (no `createdByRole` on CRM Listing):
- * - Broker: CRM listings created that day with any broker_listing_access, plus BNHub stays with listingAuthorityType = BROKER.
+ * - Broker: CRM listings created that day with any broker_listing_access, plus BNHUB stays with listingAuthorityType = BROKER.
  * - Self: FSBO (non-DRAFT) created that day, plus short-term listings with OWNER or unset authority (host / self-serve).
  */
 export type PlatformDailyPoint = {

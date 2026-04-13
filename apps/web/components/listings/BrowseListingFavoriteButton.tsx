@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useToast } from "@/components/ui/ToastProvider";
 
 type Props = {
   listingId: string;
@@ -10,6 +11,7 @@ type Props = {
 
 /** Heart control for FSBO rows — uses buyer saved-listings API when signed in. */
 export function BrowseListingFavoriteButton({ listingId, kind, className = "" }: Props) {
+  const { showToast } = useToast();
   const [saved, setSaved] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -41,14 +43,25 @@ export function BrowseListingFavoriteButton({ listingId, kind, className = "" }:
           window.location.href = `/auth/login?returnUrl=${encodeURIComponent("/listings/saved")}`;
           return;
         }
-        if (!r.ok) return;
+        if (!r.ok) {
+          const j = (await r.json().catch(() => ({}))) as { error?: string };
+          showToast(j.error?.trim() || "Could not update saved listings. Try again.", "error");
+          return;
+        }
         const j = (await r.json()) as { saved?: boolean };
-        setSaved(Boolean(j.saved));
+        const next = Boolean(j.saved);
+        setSaved(next);
+        showToast(
+          next
+            ? "Saved — view all in My saved."
+            : "Removed from your saved list.",
+          "success"
+        );
       } finally {
         setBusy(false);
       }
     },
-    [kind, listingId, busy]
+    [kind, listingId, busy, showToast]
   );
 
   if (kind !== "fsbo") return null;

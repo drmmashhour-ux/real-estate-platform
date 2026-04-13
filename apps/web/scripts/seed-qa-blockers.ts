@@ -1,5 +1,5 @@
 /**
- * Minimal deterministic rows to unblock functional QA: public FSBO browse + BNHub stay card.
+ * Minimal deterministic rows to unblock functional QA: public FSBO browse + BNHUB stay card.
  * Run from apps/web: pnpm seed:qa-blockers
  *
  * Requires DATABASE_URL and migrations applied. Safe to re-run (upserts by fixed ids).
@@ -128,7 +128,7 @@ async function main() {
     create: {
       id: QA_IDS.host,
       email: "qa-bnhub-host@lecipm.test",
-      name: "QA BNHub Host",
+      name: "QA BNHUB Host",
       role: PlatformRole.HOST,
       passwordHash: pw,
       emailVerifiedAt: new Date(),
@@ -193,7 +193,7 @@ async function main() {
       id: QA_IDS.stay,
       listingCode: "LST-QA-STAY01",
       title: "Test Stay",
-      description: "Seeded BNHub stay for QA — booking and checkout flow.",
+      description: "Seeded BNHUB stay for QA — booking and checkout flow.",
       address: "100 QA Stay Street",
       city: "Montreal",
       region: "Quebec",
@@ -243,7 +243,7 @@ async function main() {
       status: "signed",
       signed: true,
       signedAt: new Date(),
-      title: "BNHub short-term host agreement",
+      title: "BNHUB short-term host agreement",
       contentHtml: "<p>QA seed</p>",
       version: "2025-03-22",
       hub: "bnhub",
@@ -367,7 +367,7 @@ async function main() {
 
   console.log("seed:qa-blockers OK");
   console.log("  FSBO listing:", QA_IDS.fsbo, "— browse /listings → detail");
-  console.log("  BNHub stay:", QA_IDS.stay, "— /bnhub/stays → /bnhub/" + QA_IDS.stay);
+  console.log("  BNHUB stay:", QA_IDS.stay, "— /bnhub/stays → /bnhub/" + QA_IDS.stay);
   console.log("  Guest: guest@demo.com / DemoGuest2024!");
   console.log("  Admin E2E: admin@demo.com / AdminDemo2024! or admin@test.com / password (E2E_ADMIN_*)");
   console.log(

@@ -9,7 +9,7 @@ const MAX_EMAIL = 320;
 const MAX_SCREEN = 200;
 
 /**
- * POST /api/bnhub/feedback — BNHub app feedback (message + optional email/context).
+ * POST /api/bnhub/feedback — BNHUB app feedback (message + optional email/context).
  */
 export async function POST(request: Request) {
   const ip =

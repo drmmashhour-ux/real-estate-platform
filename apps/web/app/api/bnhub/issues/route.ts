@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
       });
       const guestEmail = booking.guest?.email;
       const hostEmail = host?.email;
-      console.info("[BNHub Issue] New issue reported", {
+      console.info("[BNHUB Issue] New issue reported", {
         issueId: issue.id,
         bookingId,
         issueType,

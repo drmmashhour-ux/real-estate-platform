@@ -1,12 +1,10 @@
 import Link from "next/link";
-import {
-  PLATFORM_COPYRIGHT_LINE,
-  PLATFORM_CARREFOUR_NAME,
-  PLATFORM_NAME,
-} from "@/config/branding";
+import { LecipmBrandLockup } from "@/components/brand/LecipmBrandLockup";
+import { PLATFORM_COPYRIGHT_LINE } from "@/config/branding";
 import { getPublicContactEmail, getPublicContactMailto } from "@/lib/marketing-contact";
 import { HUB_LINKS_FOOTER } from "@/lib/marketing/platform-hub-links";
 import { TrackedMarketingLink } from "@/components/marketing/TrackedMarketingLink";
+import { FooterTrustSignals } from "@/components/layout/FooterTrustSignals";
 
 /** Site footer — shared across marketing surfaces. */
 export function Footer() {
@@ -14,21 +12,23 @@ export function Footer() {
   const contactEmail = getPublicContactEmail();
   const mailto = getPublicContactMailto();
   return (
-    <footer className="border-t border-[#D4AF37]/25 bg-black px-4 py-12 sm:px-6">
-      <div className="mx-auto flex max-w-6xl flex-col gap-10 md:flex-row md:justify-between">
+    <footer className="lecipm-footer-glow border-t border-premium-gold/25 bg-black px-4 pt-16 sm:px-6 pb-[calc(3rem+env(safe-area-inset-bottom,0px))]">
+      <div className="relative z-[1] mx-auto flex max-w-6xl flex-col gap-12 md:flex-row md:justify-between">
         <div>
-          <p className="font-serif text-xl font-semibold text-white">{PLATFORM_NAME}</p>
-          <p className="mt-1 text-sm text-[#D4AF37]">{PLATFORM_CARREFOUR_NAME}</p>
+          <LecipmBrandLockup href="/" variant="dark" logoClassName="[&_img]:max-h-10" />
           <p className="mt-4 max-w-sm text-sm text-white/70">
             Buy, rent, and invest with AI-backed clarity — one platform for serious real estate.
           </p>
           <p className="mt-3 text-sm text-white/70">
-            <a href={mailto} className="font-medium text-[#D4AF37] hover:underline">
+            <a
+              href={mailto}
+              className="lecipm-touch inline-flex min-h-[48px] items-center font-medium text-[#D4AF37] hover:underline sm:min-h-0"
+            >
               {contactEmail}
             </a>
           </p>
         </div>
-        <div className="grid grid-cols-2 gap-10 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-10 sm:grid-cols-2 lg:grid-cols-4 [&_a]:lecipm-touch max-sm:[&_li>a]:flex max-sm:[&_li>a]:min-h-[48px] max-sm:[&_li>a]:items-center max-sm:[&_li>a]:rounded-lg max-sm:[&_li>a]:active:bg-white/5">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-[#D4AF37]/90">Hubs</p>
             <ul className="mt-3 space-y-2 text-sm text-white/70">
@@ -42,7 +42,7 @@ export function Footer() {
               ))}
               <li>
                 <Link href="/bnhub" className="hover:text-[#D4AF37]">
-                  BNHub →
+                  BNHUB →
                 </Link>
               </li>
             </ul>
@@ -58,11 +58,6 @@ export function Footer() {
               <li>
                 <Link href="/pricing" className="hover:text-[#D4AF37]">
                   Pricing
-                </Link>
-              </li>
-              <li>
-                <Link href="/demo" className="hover:text-[#D4AF37]">
-                  Demo
                 </Link>
               </li>
               <li>
@@ -137,6 +132,13 @@ export function Footer() {
               </li>
             </ul>
           </div>
+        </div>
+      </div>
+      <div className="mx-auto mt-10 max-w-6xl space-y-4 text-center sm:text-left">
+        <FooterTrustSignals />
+        <div className="space-y-1 text-[11px] leading-relaxed text-white/50">
+          <p>Designed for Quebec real estate standards.</p>
+          <p>Privacy Law 25 compliant.</p>
         </div>
       </div>
       <div className="mx-auto mt-12 max-w-6xl border-t border-[#D4AF37]/20 pt-8 text-center text-xs text-white/45">

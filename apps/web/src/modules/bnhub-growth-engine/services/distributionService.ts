@@ -55,5 +55,5 @@ export async function queueInternalEmailCampaign(campaignId: string, listingId: 
     actionSummary: `Internal email card queued for listing ${listingId}`,
     afterJson: { listingId, mock: true },
   });
-  return { ok: true as const, mock: true as const, message: "BNHub email queue — wire to bnhub_email_campaign_queue when enabled" };
+  return { ok: true as const, mock: true as const, message: "BNHUB email queue — wire to bnhub_email_campaign_queue when enabled" };
 }

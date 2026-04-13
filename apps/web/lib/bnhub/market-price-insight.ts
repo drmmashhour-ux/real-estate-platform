@@ -1,15 +1,15 @@
 /**
- * BNHub market-rate context for hosts and guests.
+ * BNHUB market-rate context for hosts and guests.
  * Uses aggregate prices from published listings on this marketplace only — not live OTA scraping.
  */
 
 import { ListingStatus } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import { generateSmartPrice } from "@/lib/bnhub/smart-pricing";
+import { generateSmartPrice, MAX_PERCENT_VS_PEER_DISPLAY } from "@/lib/bnhub/smart-pricing";
 import { isOpenAiConfigured, openai } from "@/lib/ai/openai";
 
 const DISCLAIMER =
-  "Estimate based on other published stays in this city on BNHub. Not a quote or appraisal; external sites may differ.";
+  "Estimate based on other published stays in this city on BNHUB. Not a quote or appraisal; external sites may differ.";
 
 export type BnhubMarketInsightPayload = {
   listingId: string;
@@ -19,6 +19,10 @@ export type BnhubMarketInsightPayload = {
   yourNightCents: number;
   peerAvgNightCents: number | null;
   peerListingCount: number;
+  /** BNHUB booking count last 30d across published stays in this city (demand signal). */
+  peerBookingsLast30dInCity: number;
+  /** Bookings for this listing in the last 30d (active pipeline statuses). */
+  listingBookingsLast30d: number;
   recommendedNightCents: number;
   confidenceLabel: "low" | "medium" | "high";
   demandLevel: "low" | "medium" | "high";
@@ -52,7 +56,7 @@ function templateBullets(input: {
   demand: "low" | "medium" | "high";
   recommended: number;
 }): { guest: string[]; host: string[] } {
-  const { city, currency, yourNightCents, peerAvg, peerCount, pct, demand, recommended } = input;
+  const { city, currency, peerAvg, peerCount, pct, demand, recommended } = input;
   const guest: string[] = [];
   const host: string[] = [];
 
@@ -60,20 +64,20 @@ function templateBullets(input: {
     const absPct = pct != null ? Math.abs(Math.round(pct)) : 0;
     if (pct != null && pct < -3) {
       guest.push(
-        `This nightly rate is about ${absPct}% below the typical published range in ${city} on BNHub — strong value if the listing fits your trip.`,
+        `This nightly rate is about ${absPct}% below the typical published range in ${city} on BNHUB — strong value if the listing fits your trip.`,
       );
     } else if (pct != null && pct > 3) {
       guest.push(
-        `This rate is about ${absPct}% above the typical published range in ${city} on BNHub — compare amenities, location, and reviews before you book.`,
+        `This rate is about ${absPct}% above the typical published range in ${city} on BNHUB — compare amenities, location, and reviews before you book.`,
       );
     } else {
-      guest.push(`This rate is close to the typical range for ${city} on BNHub (${money(peerAvg, currency)}/night across ${peerCount} published stays).`);
+      guest.push(`This rate is close to the typical range for ${city} on BNHUB (${money(peerAvg, currency)}/night across ${peerCount} published stays).`);
     }
   } else {
     guest.push(
       peerCount < 2
-        ? `There are few comparable published stays in ${city} on BNHub yet — use reviews and photos to judge value.`
-        : `We don’t have enough peer pricing in ${city} on BNHub to compare — check similar listings manually.`,
+        ? `There are few comparable published stays in ${city} on BNHUB yet — use reviews and photos to judge value.`
+        : `We don’t have enough peer pricing in ${city} on BNHUB to compare — check similar listings manually.`,
     );
   }
 
@@ -81,17 +85,17 @@ function templateBullets(input: {
     demand === "high"
       ? "Demand looks elevated in this city recently — earlier dates can fill faster."
       : demand === "medium"
-        ? "Booking a bit ahead of peak weekends often gives you more choice on BNHub."
-        : "Softer demand signal in this city on BNHub — hosts may be open to questions on longer stays.",
+        ? "Booking a bit ahead of peak weekends often gives you more choice on BNHUB."
+        : "Softer demand signal in this city on BNHUB — hosts may be open to questions on longer stays.",
   );
 
   if (peerAvg != null && peerAvg > 0) {
     host.push(
-      `Peer average in ${city} on BNHub: ${money(peerAvg, currency)}/night across ${peerCount} published listings.`,
+      `Peer average in ${city} on BNHUB: ${money(peerAvg, currency)}/night across ${peerCount} published listings.`,
     );
     host.push(`Suggested nightly anchor from demand + seasonality: ${money(recommended, currency)} (informational).`);
   } else {
-    host.push(`Not enough peer listings in ${city} on BNHub to compute a city average — set price from your costs and OTA comps you paste into channel tools.`);
+    host.push(`Not enough peer listings in ${city} on BNHUB to compute a city average — set price from your costs and OTA comps you paste into channel tools.`);
   }
   host.push("If you list on other channels, keep nightly rates in sync to avoid double-bookings.");
 
@@ -113,7 +117,7 @@ async function maybeEnhanceWithAi(input: {
       messages: [
         {
           role: "system",
-          content: `You refine bullet points about short-term rental pricing on one marketplace (BNHub). Rules:
+          content: `You refine bullet points about short-term rental pricing on one marketplace (BNHUB). Rules:
 - Do not claim live prices from Airbnb, Booking.com, airlines, or other OTAs.
 - Preserve facts and numbers; tighten wording only.
 - JSON: {"guestBullets": string[], "hostBullets": string[]} — at most 2 strings per array.`,
@@ -163,18 +167,33 @@ export async function getBnhubMarketInsightForListing(
   });
   if (!listing) return null;
 
-  const smart = await generateSmartPrice(listingId);
+  const since = new Date();
+  since.setDate(since.getDate() - 30);
+
+  const [smart, listingBookingsLast30d] = await Promise.all([
+    generateSmartPrice(listingId),
+    prisma.booking.count({
+      where: {
+        listingId,
+        createdAt: { gte: since },
+        status: { in: ["CONFIRMED", "COMPLETED", "AWAITING_HOST_APPROVAL", "PENDING"] },
+      },
+    }),
+  ]);
   const cur = (listing.currency ?? "USD").toUpperCase();
   const peerAvg = smart.marketAvgCents;
+  const yourNight = Number.isFinite(listing.nightPriceCents) ? listing.nightPriceCents : 0;
+  const rawPct =
+    peerAvg != null && peerAvg > 0 ? ((yourNight - peerAvg) / peerAvg) * 100 : null;
   const pct =
-    peerAvg != null && peerAvg > 0
-      ? ((listing.nightPriceCents - peerAvg) / peerAvg) * 100
+    rawPct != null && Number.isFinite(rawPct)
+      ? Math.max(-MAX_PERCENT_VS_PEER_DISPLAY, Math.min(MAX_PERCENT_VS_PEER_DISPLAY, rawPct))
       : null;
 
   let { guest, host } = templateBullets({
     city: listing.city,
     currency: cur,
-    yourNightCents: listing.nightPriceCents,
+    yourNightCents: yourNight,
     peerAvg,
     peerCount: smart.peerListingCount,
     pct,
@@ -200,9 +219,11 @@ export async function getBnhubMarketInsightForListing(
     city: listing.city,
     country: listing.country,
     currency: cur,
-    yourNightCents: listing.nightPriceCents,
+    yourNightCents: yourNight,
     peerAvgNightCents: peerAvg,
     peerListingCount: smart.peerListingCount,
+    peerBookingsLast30dInCity: smart.peerBookingsLast30d,
+    listingBookingsLast30d,
     recommendedNightCents: smart.recommendedPriceCents,
     confidenceLabel: smart.confidence,
     demandLevel: smart.demandLevel,
@@ -219,4 +240,36 @@ export async function getBnhubMarketInsightForPublishedListing(
   options?: { useAi?: boolean }
 ): Promise<BnhubMarketInsightPayload | null> {
   return getBnhubMarketInsightForListing(listingId, options);
+}
+
+const PEER_COMPARE_THRESHOLD_PCT = 3;
+
+/**
+ * Single factual line for booking price breakdown (BNHUB peer listings only; not date-adjusted).
+ * Uses the same ±threshold band as template guest bullets.
+ */
+export function bnhubBookingPriceInsightDecisionLine(
+  insight: Pick<
+    BnhubMarketInsightPayload,
+    "city" | "peerAvgNightCents" | "peerListingCount" | "percentVsPeerAvg"
+  >
+): string {
+  const { peerAvgNightCents, peerListingCount, percentVsPeerAvg } = insight;
+  if (
+    peerAvgNightCents == null ||
+    peerAvgNightCents <= 0 ||
+    peerListingCount < 2 ||
+    percentVsPeerAvg == null ||
+    !Number.isFinite(percentVsPeerAvg)
+  ) {
+    return "Not enough comparable stays in this area on BNHUB to benchmark — use photos, reviews, and amenities to decide.";
+  }
+  const pct = percentVsPeerAvg;
+  if (pct > PEER_COMPARE_THRESHOLD_PCT) {
+    return "This price is above typical for this area compared with similar published stays on BNHUB.";
+  }
+  if (pct < -PEER_COMPARE_THRESHOLD_PCT) {
+    return "This price is below typical for this area compared with similar published stays on BNHUB.";
+  }
+  return "This price is typical for this area.";
 }

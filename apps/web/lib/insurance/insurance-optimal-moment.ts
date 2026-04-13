@@ -8,7 +8,7 @@ export type InsurancePresentationHint = {
 };
 
 /**
- * Uses BNHub client view events to suggest when to surface insurance (checkout vs listing).
+ * Uses BNHUB client view events to suggest when to surface insurance (checkout vs listing).
  */
 export async function getInsurancePresentationHintForUser(userId: string): Promise<InsurancePresentationHint> {
   const uid = userId.trim();

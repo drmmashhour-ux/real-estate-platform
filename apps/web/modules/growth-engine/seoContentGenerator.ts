@@ -32,7 +32,7 @@ export function generateSeoPageContentDraft(
     pageKind === "buy"
       ? " Focus this month on resale listings and FSBO introductions with clear pricing history."
       : pageKind === "rent"
-        ? " Short-term BNHub inventory updates frequently — set alerts for your travel dates."
+        ? " Short-term BNHUB inventory updates frequently — set alerts for your travel dates."
         : " Income-focused buyers should stress-test vacancy and interest-rate shocks on every scenario.";
 
   const keywords = [
@@ -110,7 +110,7 @@ export async function ensureWeeklyGrowthBlogPost(db: PrismaClient, citySlug: Gro
   const body = [
     `This week we're tracking buyer and guest demand signals across ${city}.`,
     `Start on the city hub: /city/${citySlug} — then open Buy, Rent, or Investment guides for structured FAQs and listings.`,
-    `Best properties: compare FSBO detail pages with BNHub stays if you're weighing a purchase against flexible housing.`,
+    `Best properties: compare FSBO detail pages with BNHUB stays if you're weighing a purchase against flexible housing.`,
     `Investment: use the ROI calculator and deal analyzer from the blog footer before you underwrite.`,
     `Related: /city/${citySlug}/buy · /city/${citySlug}/rent · /city/${citySlug}/investment`,
   ].join("\n\n");

@@ -15,6 +15,8 @@ export type AuditDateTimeOptions = {
    * `false`: 24-hour clock for strict audit readouts.
    */
   hour12?: boolean;
+  /** Include seconds in the time segment (audit / compliance). */
+  includeSeconds?: boolean;
 };
 
 function relativeFromNow(d: Date, now = Date.now()): string {
@@ -55,6 +57,7 @@ export function formatAuditDateTime(
   const timePart = new Intl.DateTimeFormat("en-US", {
     hour: "numeric",
     minute: "2-digit",
+    ...(opts.includeSeconds ? { second: "2-digit" as const } : {}),
     hour12,
     ...base,
   }).format(d);

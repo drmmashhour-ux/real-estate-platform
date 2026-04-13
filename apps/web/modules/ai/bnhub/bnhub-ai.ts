@@ -67,7 +67,7 @@ export function buildBnhubAiMessages(intent: AiIntent, feature: string, context:
         system:
           system +
           " For a short-term stay booking: note if dates, guest count, or house-rule conflicts could create disputes or cancellation exposure under typical platform content rules. Keep brief; not legal advice.",
-        user: `Task: BNHub booking content-license risk hint.\nContext:\n${userJson}`,
+        user: `Task: BNHUB booking content-license risk hint.\nContext:\n${userJson}`,
       };
     default:
       return null;
@@ -95,6 +95,6 @@ export function bnhubOfflineFallback(feature: string, _context: Record<string, u
     case "legal_action_risk":
       return "Offline mode: Confirm dates, guest count, and house rules match the listing before booking — mismatches are a common source of disputes.";
     default:
-      return "Offline AI: use BNHub booking and listing screens for authoritative details.";
+      return "Offline AI: use BNHUB booking and listing screens for authoritative details.";
   }
 }

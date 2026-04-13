@@ -80,7 +80,7 @@ export function buildInvoiceForPlatformPayment(params: {
   /** Admin/accountant JSON on payment — overrides per-side tax application. */
   taxOverrideJson?: unknown | null;
 }): BuiltInvoicePayload {
-  /** Aligned with BNHub lodging tax: statutory Québec GST + QST via `quebec-tax-engine`. */
+  /** Aligned with BNHUB lodging tax: statutory Québec GST + QST via `quebec-tax-engine`. */
   const { gstRate, qstRate } = quebecRetailTaxRates();
   const { applyTaxToPlatformServices, applyTaxToBrokerCommissions, resolvedFrom } = resolveTaxFlagsForPaymentType({
     settings: params.settings,

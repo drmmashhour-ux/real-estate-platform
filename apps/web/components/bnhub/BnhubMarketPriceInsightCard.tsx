@@ -80,7 +80,7 @@ export function BnhubMarketPriceInsightCard({ listingId }: { listingId: string }
 
   return (
     <div className="mt-4 rounded-xl border border-emerald-500/20 bg-emerald-950/15 px-3 py-3">
-      <p className="text-xs font-semibold uppercase tracking-wide text-emerald-400/90">Market rate on BNHub</p>
+      <p className="text-xs font-semibold uppercase tracking-wide text-emerald-400/90">Market rate on BNHUB</p>
       <p className="mt-1 text-sm text-slate-200">
         This listing:{" "}
         <span className="font-semibold text-white">{formatMoney(data.yourNightCents, data.currency)}/night</span>
@@ -91,7 +91,7 @@ export function BnhubMarketPriceInsightCard({ listingId }: { listingId: string }
             in {data.city})
           </>
         ) : (
-          <> · Limited peer data in {data.city} on BNHub</>
+          <> · Limited peer data in {data.city} on BNHUB</>
         )}
       </p>
       <ul className="mt-2 list-inside list-disc space-y-1 text-xs text-slate-400">

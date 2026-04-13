@@ -67,7 +67,7 @@ function strategyNotes(opportunityType: string, scenarioModes: (string | null | 
     notes.push("Strategy: buy-to-flip — pricing gap and renovation risk weigh more in this mode.");
   }
   if (o.includes("bnhub")) {
-    notes.push("Strategy: BNHub — occupancy and trust signals weigh more in this mode.");
+    notes.push("Strategy: BNHUB — occupancy and trust signals weigh more in this mode.");
   }
   return notes;
 }

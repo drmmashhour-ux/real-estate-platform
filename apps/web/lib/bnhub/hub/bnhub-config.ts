@@ -1,5 +1,5 @@
 /**
- * BNHub — static reference into the LECIPM Hub Engine registry.
+ * BNHUB — static reference into the LECIPM Hub Engine registry.
  */
 
 import { getHubConfig } from "@/lib/hub/core/hub-registry";

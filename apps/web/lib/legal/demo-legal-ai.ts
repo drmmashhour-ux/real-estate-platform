@@ -40,6 +40,6 @@ export const demoContractExplain = {
 
 export const demoLegalRiskReport = {
   report:
-    "Legal Risk Report (demo): 12 legal-context AI events in 7 days. Top themes: thin listing descriptions with photos (4), BNHub date edge cases (2), broker requests under 20 characters (2). Recommend reviewing moderation queue for listings with score <50 readiness and repeat flags.",
+    "Legal Risk Report (demo): 12 legal-context AI events in 7 days. Top themes: thin listing descriptions with photos (4), BNHUB date edge cases (2), broker requests under 20 characters (2). Recommend reviewing moderation queue for listings with score <50 readiness and repeat flags.",
   disclaimer: AI_LEGAL_DISCLAIMER,
 };

@@ -16,6 +16,22 @@ const LABEL_TO_AMENITY: Record<AmenityKey, string> = {
   ac: "AC",
 };
 
+/** Response shape from GET `/api/host/listings/[id]/template` — used to prefill a new listing */
+export type HostListingTemplateSnapshot = {
+  title: string;
+  address: string;
+  city: string;
+  description: string;
+  propertyType: string;
+  roomType: string;
+  maxGuests: number;
+  bedrooms: number;
+  beds: number;
+  baths: number;
+  price: number;
+  amenities: string[];
+};
+
 export type HostNewListingPersisted = {
   step: number;
   draftListingId: string | null;
@@ -23,6 +39,8 @@ export type HostNewListingPersisted = {
   city: string;
   address: string;
   propertyType: string;
+  /** Booking / hosting room filter — same options as BNHUB create listing */
+  roomType: string;
   maxGuests: number;
   bedrooms: number;
   beds: number;
@@ -47,6 +65,7 @@ const initialPersisted: HostNewListingPersisted = {
   city: "",
   address: "",
   propertyType: "Apartment",
+  roomType: "Entire place",
   maxGuests: 4,
   bedrooms: 1,
   beds: 1,
@@ -82,10 +101,25 @@ export type HostNewListingStore = HostNewListingPersisted & {
   /** Create / update draft on server, upload photos when leaving step 3, then advance. */
   saveAndGoNext: () => Promise<void>;
   reset: () => void;
+  /** Replace wizard state from another listing (new draft); clears photos and step 1. */
+  applyTemplateSnapshot: (data: HostListingTemplateSnapshot) => void;
 };
 
 function amenitiesToList(m: Record<AmenityKey, boolean>): string[] {
   return AMENITY_KEYS.filter((k) => m[k]).map((k) => LABEL_TO_AMENITY[k]);
+}
+
+/** Map stored amenity labels (from DB / template API) onto wizard toggles */
+export function amenityLabelsToRecord(labels: string[]): Record<AmenityKey, boolean> {
+  const lower = labels.map((l) => l.toLowerCase());
+  const next: Record<AmenityKey, boolean> = { ...initialAmenities };
+  for (const key of AMENITY_KEYS) {
+    const label = LABEL_TO_AMENITY[key].toLowerCase();
+    if (lower.some((l) => l === label || l.includes(label) || label.includes(l))) {
+      next[key] = true;
+    }
+  }
+  return next;
 }
 
 export const useHostNewListingWizard = create<HostNewListingStore>()(
@@ -162,6 +196,11 @@ export const useHostNewListingWizard = create<HostNewListingStore>()(
                   city: s.city.trim(),
                   address: s.address.trim() || undefined,
                   propertyType: s.propertyType,
+                  roomType: s.roomType,
+                  maxGuests: s.maxGuests,
+                  bedrooms: s.bedrooms,
+                  beds: s.beds,
+                  baths: s.baths,
                 }),
               });
               const j = (await r.json()) as { id?: string; error?: string };
@@ -176,6 +215,11 @@ export const useHostNewListingWizard = create<HostNewListingStore>()(
                   city: s.city.trim(),
                   address: s.address.trim() || undefined,
                   propertyType: s.propertyType,
+                  roomType: s.roomType,
+                  maxGuests: s.maxGuests,
+                  bedrooms: s.bedrooms,
+                  beds: s.beds,
+                  baths: s.baths,
                 }),
               });
               const j = (await r.json()) as { error?: string };
@@ -271,6 +315,32 @@ export const useHostNewListingWizard = create<HostNewListingStore>()(
           /* ignore */
         }
       },
+
+      applyTemplateSnapshot: (data: HostListingTemplateSnapshot) => {
+        revokeAll(get().previewUrls);
+        const amenities = amenityLabelsToRecord(data.amenities);
+        set({
+          ...initialPersisted,
+          step: 1,
+          draftListingId: null,
+          title: data.title,
+          address: data.address,
+          city: data.city,
+          description: data.description,
+          propertyType: data.propertyType,
+          roomType: data.roomType,
+          maxGuests: data.maxGuests,
+          bedrooms: data.bedrooms,
+          beds: data.beds,
+          baths: data.baths,
+          price: data.price,
+          amenities,
+          photos: [],
+          previewUrls: [],
+          saveError: null,
+          busy: false,
+        });
+      },
     }),
     {
       name: STORAGE_KEY,
@@ -282,6 +352,7 @@ export const useHostNewListingWizard = create<HostNewListingStore>()(
         city: s.city,
         address: s.address,
         propertyType: s.propertyType,
+        roomType: s.roomType,
         maxGuests: s.maxGuests,
         bedrooms: s.bedrooms,
         beds: s.beds,
@@ -290,18 +361,22 @@ export const useHostNewListingWizard = create<HostNewListingStore>()(
         description: s.description,
         amenities: s.amenities,
       }),
-      merge: (p, c) => ({
-        ...c,
-        ...(p as HostNewListingPersisted),
-        photos: [],
-        previewUrls: [],
-        saveError: null,
-        busy: false,
-        amenities: {
-          ...initialAmenities,
-          ...((p as HostNewListingPersisted)?.amenities ?? {}),
-        },
-      }),
+      merge: (p, c) => {
+        const persisted = p as HostNewListingPersisted | undefined;
+        return {
+          ...c,
+          ...persisted,
+          roomType: persisted?.roomType ?? "Entire place",
+          photos: [],
+          previewUrls: [],
+          saveError: null,
+          busy: false,
+          amenities: {
+            ...initialAmenities,
+            ...(persisted?.amenities ?? {}),
+          },
+        };
+      },
     }
   )
 );

@@ -1,5 +1,5 @@
 /**
- * BNHub guest conversion optimizer — honest, signal-based suggestions only.
+ * BNHUB guest conversion optimizer — honest, signal-based suggestions only.
  */
 
 export type ConversionEventType =

@@ -50,6 +50,11 @@ function resolveApiBase(url: string): string {
 
 export const API_BASE_URL = resolveApiBase(rawApiBase());
 
+/** Marketing / seller flows that still live on the Next.js web app (open in browser). */
+export const WEB_APP_ORIGIN = (
+  process.env.EXPO_PUBLIC_WEB_APP_ORIGIN?.trim() || "https://lecipm.com"
+).replace(/\/$/, "");
+
 /** Socket.IO bridge (`apps/web` `pnpm run realtime:socket`). Empty = realtime disabled. */
 export const REALTIME_URL = (
   process.env.EXPO_PUBLIC_REALTIME_URL?.trim() ??

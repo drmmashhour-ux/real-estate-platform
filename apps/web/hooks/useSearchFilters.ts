@@ -8,6 +8,7 @@ import {
   DEFAULT_GLOBAL_FILTERS,
   DEFAULT_STAYS_FILTERS,
   globalFiltersToUrlParams,
+  OPEN_FULL_PROPERTY_FILTERS_PARAM,
   type GlobalSearchFiltersExtended,
   type GlobalSearchFilterType,
   type SearchEngineMode,
@@ -19,6 +20,7 @@ import {
   propertyPresetFromPrices,
   stayPresetFromPrices,
 } from "@/components/search/SearchBar";
+import { ProductAnalyticsEvents, reportProductEvent } from "@/lib/analytics/product-analytics";
 
 export type { SearchEngineMode } from "@/components/search/FilterState";
 
@@ -94,6 +96,18 @@ export function useSearchFilters(mode: SearchEngineMode): UseSearchFiltersResult
     setPricePresetId(propertyPresetFromPrices(sp.get("minPrice") ?? "", sp.get("maxPrice") ?? ""));
   }, [mode, spKey]);
 
+  /** Deep link from /listings → /buy: open full filter panel once, remove flag from URL. */
+  useEffect(() => {
+    if (!isBrowseMode(mode)) return;
+    const sp = new URLSearchParams(spKey);
+    if (sp.get(OPEN_FULL_PROPERTY_FILTERS_PARAM) !== "1") return;
+    sp.delete(OPEN_FULL_PROPERTY_FILTERS_PARAM);
+    setFiltersOpen(true);
+    const next = sp.toString();
+    const url = next ? `${pathname}?${next}` : pathname;
+    router.replace(url, { scroll: false });
+  }, [mode, pathname, spKey, router]);
+
   const activeFilterCount = useMemo(() => countActiveGlobalFilters(draft, mode), [draft, mode]);
 
   const applyPricePresetBrowse = useCallback((presetId: string) => {
@@ -127,11 +141,23 @@ export function useSearchFilters(mode: SearchEngineMode): UseSearchFiltersResult
       const qs = p.toString();
       router.push(qs ? `${pathname}?${qs}` : pathname);
       setFiltersOpen(false);
+      reportProductEvent(ProductAnalyticsEvents.SEARCH_USAGE, {
+        action: "apply",
+        mode,
+        listing_type: next.type,
+        has_location: Boolean(next.location?.trim()),
+      });
     } else {
       const next = { ...draft, type: "short" as const };
       setApplied(next);
       setPricePresetId(stayPresetFromPrices(String(next.priceMin), String(next.priceMax)));
       setFiltersOpen(false);
+      reportProductEvent(ProductAnalyticsEvents.SEARCH_USAGE, {
+        action: "apply",
+        mode: "short",
+        price_min: next.priceMin,
+        price_max: next.priceMax,
+      });
     }
   }, [mode, draft, pathname, router]);
 
@@ -146,6 +172,11 @@ export function useSearchFilters(mode: SearchEngineMode): UseSearchFiltersResult
           return next;
         });
         setFiltersOpen(false);
+        reportProductEvent(ProductAnalyticsEvents.SEARCH_USAGE, {
+          action: "apply_patch",
+          mode,
+          patch_keys: Object.keys(patch).join(",").slice(0, 160),
+        });
       } else {
         setDraft((d) => {
           const next = { ...d, ...patch, type: "short" as const };
@@ -156,6 +187,11 @@ export function useSearchFilters(mode: SearchEngineMode): UseSearchFiltersResult
           return next;
         });
         setFiltersOpen(false);
+        reportProductEvent(ProductAnalyticsEvents.SEARCH_USAGE, {
+          action: "apply_patch",
+          mode: "short",
+          patch_keys: Object.keys(patch).join(",").slice(0, 160),
+        });
       }
     },
     [mode, pathname, router]
@@ -174,12 +210,14 @@ export function useSearchFilters(mode: SearchEngineMode): UseSearchFiltersResult
       setPricePresetId("any");
       router.push(pathname);
       setFiltersOpen(false);
+      reportProductEvent(ProductAnalyticsEvents.SEARCH_USAGE, { action: "reset", mode });
     } else {
       const next = { ...DEFAULT_STAYS_FILTERS };
       setDraft(next);
       setApplied(next);
       setPricePresetId("any");
       setFiltersOpen(false);
+      reportProductEvent(ProductAnalyticsEvents.SEARCH_USAGE, { action: "reset", mode: "short" });
     }
   }, [mode, pathname, router]);
 

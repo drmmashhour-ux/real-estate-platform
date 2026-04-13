@@ -1,6 +1,6 @@
 import { getSupabaseServiceForGuestBookings } from "@/lib/stripe/guestSupabaseBooking";
 
-/** Count of BNHub `listings` rows where `host_user_id` matches the Supabase auth user id. */
+/** Count of BNHUB `listings` rows where `host_user_id` matches the Supabase auth user id. */
 export async function getBnhubHostListingCountForUser(supabaseUserId: string): Promise<number> {
   const sb = getSupabaseServiceForGuestBookings();
   if (!sb || !supabaseUserId.trim()) return 0;

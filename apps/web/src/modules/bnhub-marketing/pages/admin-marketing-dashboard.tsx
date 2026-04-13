@@ -66,7 +66,7 @@ export function AdminMarketingDashboard() {
     <div className="space-y-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">BNHub Marketing Engine</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-white">BNHUB Marketing Engine</h1>
           <p className={m.subtitle}>Global distribution & AI content — internal-first, external adapters mocked.</p>
         </div>
         <div className="flex flex-wrap gap-2">

@@ -1,5 +1,5 @@
 /**
- * BNHub review pipeline smoke test: aggregation, host performance, badges, optional createReview.
+ * BNHUB review pipeline smoke test: aggregation, host performance, badges, optional createReview.
  * pnpm run validate:review-system
  */
 import { prisma } from "../lib/db";
@@ -21,8 +21,8 @@ async function main() {
     select: { id: true, ownerId: true },
   });
   if (!listing) {
-    console.warn("[validate-review]    No BNHub listings in DB — skipping aggregation.");
-    console.info("BNHub Review System Active");
+    console.warn("[validate-review]    No BNHUB listings in DB — skipping aggregation.");
+    console.info("BNHUB Review System Active");
     return;
   }
 
@@ -45,7 +45,7 @@ async function main() {
       console.warn(
         "[validate-review]    DB schema out of date (missing columns or tables) — run: pnpm exec prisma migrate deploy"
       );
-      console.info("BNHub Review System Active");
+      console.info("BNHUB Review System Active");
       return;
     }
     throw e;
@@ -88,7 +88,7 @@ async function main() {
         locationRating: 5,
         valueRating: 5,
         checkinRating: 5,
-        comment: "BNHub validate-review-system smoke test (safe to delete).",
+        comment: "BNHUB validate-review-system smoke test (safe to delete).",
       });
       createdReviewId = rev.id;
       console.info("[validate-review]    created review", rev.id);
@@ -106,7 +106,7 @@ async function main() {
     console.info("[validate-review]    removed smoke review; aggregates restored");
   }
 
-  console.info("BNHub Review System Active");
+  console.info("BNHUB Review System Active");
 }
 
 main()

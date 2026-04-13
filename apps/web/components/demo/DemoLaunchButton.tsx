@@ -29,7 +29,7 @@ export function DemoLaunchButton() {
           Investor
         </button>
       </div>
-      <Link href="/demo" className="text-[11px] text-slate-500 underline hover:text-slate-300">
+      <Link href="/demos" className="text-[11px] text-slate-500 underline hover:text-slate-300">
         Demo overview
       </Link>
       <button type="button" onClick={dismissForSession} className="text-left text-[11px] text-slate-500 hover:text-slate-400">

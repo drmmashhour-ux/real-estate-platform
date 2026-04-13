@@ -1,5 +1,5 @@
 /**
- * BNHub guest loyalty — deterministic tiers, no points, no discount stacking with promos (max wins).
+ * BNHUB guest loyalty — deterministic tiers, no points, no discount stacking with promos (max wins).
  */
 
 export type LoyaltyTierCode = "NONE" | "BRONZE" | "SILVER" | "GOLD";

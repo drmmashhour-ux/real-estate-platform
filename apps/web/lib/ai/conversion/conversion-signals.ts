@@ -12,6 +12,31 @@ export const CONVERSION_SIGNAL_EVENT_TYPES: readonly ConversionEventType[] = [
   "message_response_received",
 ] as const;
 
+/** Prevent oversized JSON blobs in `AiConversionSignal.metadata`. */
+const MAX_METADATA_KEYS = 24;
+const MAX_METADATA_STRING_LEN = 2000;
+
+function sanitizeConversionMetadata(meta: Record<string, unknown> | undefined): Prisma.InputJsonValue {
+  if (!meta || typeof meta !== "object") return {};
+  const out: Record<string, unknown> = {};
+  let n = 0;
+  for (const [k, v] of Object.entries(meta)) {
+    if (n >= MAX_METADATA_KEYS) break;
+    const key = k.slice(0, 64);
+    if (typeof v === "string") {
+      out[key] = v.length > MAX_METADATA_STRING_LEN ? `${v.slice(0, MAX_METADATA_STRING_LEN)}…` : v;
+    } else if (typeof v === "number" && Number.isFinite(v)) {
+      out[key] = v;
+    } else if (typeof v === "boolean") {
+      out[key] = v;
+    } else if (v === null) {
+      out[key] = null;
+    }
+    n += 1;
+  }
+  return out as Prisma.InputJsonValue;
+}
+
 export type AggregatedConversionCounts = {
   searchViews: number;
   searchClicks: number;
@@ -45,7 +70,7 @@ export async function recordAiConversionSignal(
       listingId: input.listingId,
       guestId: input.guestId ?? undefined,
       eventType: input.eventType,
-      metadata: (input.metadata ?? {}) as Prisma.InputJsonValue,
+      metadata: sanitizeConversionMetadata(input.metadata),
     },
     select: { id: true },
   });

@@ -117,35 +117,30 @@ export function QuickFilterChips({ tone = "gold" }: { tone?: "gold" | "slate" | 
     applyPatch({ features: nextFeatures });
   };
 
-  const gold = "border-white/15 bg-black/30 text-slate-300 hover:border-premium-gold/40 hover:text-white";
-  const goldOn = "border-premium-gold/50 bg-premium-gold/15 text-premium-gold";
-  const slate = "border-slate-600 bg-slate-800/60 text-slate-300 hover:border-emerald-500/40";
-  const slateOn = "border-emerald-500/50 bg-emerald-500/10 text-emerald-200";
+  const darkChip = "lecipm-prestige-chip lecipm-neon-white-muted";
+  const darkChipOn = "lecipm-prestige-chip lecipm-prestige-chip--on lecipm-neon-gold";
   const hero = "border-slate-200/80 bg-white/95 text-slate-800 shadow-sm hover:border-slate-300";
   const heroOn = "border-premium-gold bg-premium-gold/15 text-slate-900";
+  const heroBase = "rounded-full border px-3 py-1.5 text-xs font-semibold transition";
 
   return (
     <div className="flex flex-wrap gap-2 pt-1">
       {defs.map((def) => {
         const on = isActive(def);
         const cls =
-          tone === "slate"
+          tone === "hero"
             ? on
-              ? slateOn
-              : slate
-            : tone === "hero"
-              ? on
-                ? heroOn
-                : hero
-              : on
-                ? goldOn
-                : gold;
+              ? heroOn
+              : hero
+            : on
+              ? darkChipOn
+              : darkChip;
         return (
           <button
             key={def.id}
             type="button"
             onClick={() => toggle(def)}
-            className={["rounded-full border px-3 py-1.5 text-xs font-semibold transition", cls].join(" ")}
+            className={tone === "hero" ? [heroBase, cls].join(" ") : cls}
           >
             {def.label}
           </button>

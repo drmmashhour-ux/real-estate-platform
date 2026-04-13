@@ -7,7 +7,7 @@ import { postCreateShortTermListingFlow } from "@/lib/bnhub/post-create-short-te
 export const dynamic = "force-dynamic";
 
 /**
- * Fast host wizard — minimal payload. Creates a BNHub `ShortTermListing` draft (or publish attempt).
+ * Fast host wizard — minimal payload. Creates a BNHUB `ShortTermListing` draft (or publish attempt).
  * Body: { title?, city, price (CAD/night), description?, amenities?, listingStatus?: "DRAFT" | "PUBLISHED" }
  */
 export async function POST(req: NextRequest) {

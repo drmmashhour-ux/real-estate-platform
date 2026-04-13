@@ -127,7 +127,7 @@ export function computeReadinessFromListingRow(row: {
   if (photos.length < 4) missing.push("Add at least 4 high-quality photos");
   if (!exteriorHint) missing.push("Add a cover or exterior image for trust");
   if (desc.length < 200) missing.push("Expand description (target 200+ characters)");
-  if (!verified) missing.push("Complete BNHub listing verification");
+  if (!verified) missing.push("Complete BNHUB listing verification");
   if (!row.instantBookEnabled) missing.push("Consider enabling instant book for conversion tests");
   if (amenities.length < 3) missing.push("Add more amenity tags");
 

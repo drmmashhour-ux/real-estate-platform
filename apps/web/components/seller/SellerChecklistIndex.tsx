@@ -86,8 +86,9 @@ export function SellerChecklistIndex({
         })}
       </ul>
       <p className="mt-3 text-[11px] text-slate-500">
-        Click a row to open that section. ○ not started · ◐ in progress · ✓ complete · — not applicable. Publishing is
-        blocked until every required section is complete.
+        Click a row to open that section. For sections 2–12, choose Yes (complete the questions) or No (skip as N/A),
+        then use Save / Continue. ○ not started · ◐ in progress · ✓ complete · — not applicable. Sections 1 and 13 are
+        always required for submission.
       </p>
     </div>
   );

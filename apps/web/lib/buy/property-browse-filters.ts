@@ -1,6 +1,6 @@
 import type { FsboListing } from "@prisma/client";
 
-/** Same semantics as BNHub stays filters — applied to FSBO rows (Buy / long-term rent). */
+/** Same semantics as BNHUB stays filters — applied to FSBO rows (Buy / long-term rent). */
 export type PropertyBrowseFilters = {
   noiseLevel?: "quiet" | "moderate" | "lively" | null;
   familyFriendly?: boolean;

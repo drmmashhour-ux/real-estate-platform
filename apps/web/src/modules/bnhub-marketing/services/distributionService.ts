@@ -82,7 +82,7 @@ export async function publishToInternalHomepageMock(distributionId: string) {
     include: { campaign: true, channel: true },
   });
   if (d.channel.code !== "internal_homepage") throw new Error("Wrong channel");
-  return publishInternal(distributionId, "Published to BNHub homepage featured queue (internal).", {
+  return publishInternal(distributionId, "Published to BNHUB homepage featured queue (internal).", {
     listingId: d.campaign.listingId,
     campaignId: d.campaignId,
     slotWeight: 1,
@@ -119,7 +119,7 @@ export async function publishToInternalEmailMock(distributionId: string) {
     data: {
       campaignId: d.campaignId,
       listingId: d.campaign.listingId,
-      subject: `BNHub spotlight: ${listing.title}`,
+      subject: `BNHUB spotlight: ${listing.title}`,
       bodyHtml: html,
       status: "QUEUED",
       scheduledAt: new Date(Date.now() + 86400000),
@@ -193,7 +193,7 @@ export async function exportWhatsappPromo(listingId: string, baseUrl?: string) {
 💰 From $${(l.nightPriceCents / 100).toFixed(0)}/night · ${l.maxGuests} guests
 ✨ ${am.join(", ") || "Great stay"}
 👉 Book: ${link}
-_Sent via BNHub marketing export (internal)._`;
+_Sent via BNHUB marketing export (internal)._`;
 }
 
 export async function recordDistributionResult(

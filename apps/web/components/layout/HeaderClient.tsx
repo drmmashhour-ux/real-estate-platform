@@ -1,16 +1,19 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { usePathname } from "next/navigation";
-import Logo from "@/components/ui/Logo";
+import { Link, usePathname } from "@/i18n/navigation";
+import { LecipmBrandLockup } from "@/components/brand/LecipmBrandLockup";
 import { QuebecFlagIcon } from "@/components/brand/QuebecFlagIcon";
 import { getPhoneNumber, getPhoneTelLink } from "@/lib/phone";
 import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
+import { CountrySelector } from "@/components/i18n/CountrySelector";
+import { appPathnameFromUrl } from "@/i18n/pathname";
 import { HEADER_CONTROL, HEADER_CONTROL_CTA } from "@/components/layout/header-action-classes";
 import { useI18n } from "@/lib/i18n/I18nContext";
 import { BuyingNavGroup } from "@/components/layout/BuyingNavGroup";
+import { CentrisStyleNavDrawer } from "@/components/layout/CentrisStyleNavDrawer";
 import { SellingNavGroup } from "@/components/layout/SellingNavGroup";
+import { isMarketingHomePath } from "@/lib/layout/marketing-home";
 
 export default function HeaderClient({
   loggedIn,
@@ -25,18 +28,18 @@ export default function HeaderClient({
   const [mobileOpen, setMobileOpen] = useState(false);
   const [solidNav, setSolidNav] = useState(false);
 
-  const normalizedPath = useMemo(
-    () => (pathname ? pathname.replace(/\/$/, "") || "/" : "/"),
-    [pathname]
-  );
+  const appPath = useMemo(() => appPathnameFromUrl(pathname ?? "/"), [pathname]);
+  const clutterFreeHome = isMarketingHomePath(pathname);
 
   const dashboardHref = loggedIn ? "/dashboard" : "/demo/dashboard";
   const compareHref = loggedIn ? "/compare" : "/demo/compare";
 
-  const analyzeActive = normalizedPath.startsWith("/analyze");
-  const dashboardActive =
-    normalizedPath === "/dashboard" || normalizedPath.startsWith("/demo/dashboard");
-  const compareActive = normalizedPath.startsWith("/compare");
+  const searchActive = appPath.startsWith("/search");
+  const listingsHubActive = appPath.startsWith("/listings");
+  const analyzeActive = appPath.startsWith("/analyze");
+  const exploreActive = appPath.startsWith("/explore");
+  const dashboardActive = appPath === "/dashboard" || appPath.startsWith("/demo/dashboard");
+  const compareActive = appPath.startsWith("/compare");
 
   useEffect(() => {
     const onScroll = () => setSolidNav(window.scrollY > 12);
@@ -76,8 +79,8 @@ export default function HeaderClient({
     ) : null;
 
   const actionRow = (
-    <div className="flex flex-wrap items-center justify-end gap-4 sm:gap-6">
-      {phoneTel ? (
+    <div className="flex flex-wrap items-center justify-end gap-3 sm:gap-6">
+      {phoneTel && !clutterFreeHome ? (
         <a
           href={phoneTel}
           className={`${HEADER_CONTROL} max-w-[11rem]`}
@@ -98,6 +101,7 @@ export default function HeaderClient({
           <span className="truncate whitespace-nowrap">{phoneDisplay}</span>
         </a>
       ) : null}
+      <CountrySelector variant="header" className="items-center" />
       <LanguageSwitcher variant="header" className="items-center" />
       {!loggedIn ? (
         <>
@@ -114,7 +118,7 @@ export default function HeaderClient({
         onClick={() => setMobileOpen((o) => !o)}
         className={`${HEADER_CONTROL} lg:hidden`}
         aria-expanded={mobileOpen}
-        aria-controls="mobile-menu"
+        aria-controls="centris-nav-drawer"
       >
         <span className="sr-only">{t("common.a11y.toggleMenu")}</span>
         <svg
@@ -137,129 +141,94 @@ export default function HeaderClient({
 
   return (
     <header className={`sticky top-0 z-50 transition-all duration-300 ${headerShell}`}>
-      <div className="mx-auto max-w-7xl px-4 py-3.5 sm:px-6 lg:px-8">
-        <div className="flex flex-col gap-3">
+      <div
+        className={`mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 ${clutterFreeHome ? "py-2 sm:py-2.5" : "py-3.5"}`}
+      >
+        <div className={`flex flex-col ${clutterFreeHome ? "gap-2" : "gap-3"}`}>
           <div className="flex items-center justify-center gap-2 sm:gap-3">
             <QuebecFlagIcon className="h-4 w-6 shrink-0 rounded-sm sm:h-5 sm:w-7" aria-hidden />
-            <Logo variant="nav" showName className="min-w-0" />
-            <span className="hidden rounded-full border border-premium-gold/35 bg-white/5 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-premium-gold xl:inline">
-              Quebec Platform
-            </span>
+            <LecipmBrandLockup href="/" variant="dark" align="center" density="compact" priority />
+            {!clutterFreeHome ? (
+              <span className="hidden rounded-full border border-premium-gold/35 bg-white/5 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-premium-gold xl:inline">
+                Quebec Platform
+              </span>
+            ) : null}
           </div>
 
           <div className="hidden items-center justify-center gap-8 lg:flex" aria-hidden={false}>
-            <nav className="flex flex-wrap items-center justify-center gap-6" aria-label="Primary navigation">
-              <Link
-                href="/analyze"
-                aria-current={analyzeActive ? "page" : undefined}
-                className={navLink(analyzeActive)}
-              >
-                Analyze
-                <NavUnderline active={analyzeActive} />
-              </Link>
-              <BuyingNavGroup mode="header-desktop" />
-              <SellingNavGroup mode="header-desktop" />
-              <Link
-                href={dashboardHref}
-                aria-current={dashboardActive ? "page" : undefined}
-                className={navLink(dashboardActive)}
-              >
-                Dashboard
-                <NavUnderline active={dashboardActive} />
-              </Link>
-              <Link
-                href={compareHref}
-                aria-current={compareActive ? "page" : undefined}
-                className={navLink(compareActive)}
-              >
-                Compare
-                <NavUnderline active={compareActive} />
-              </Link>
-            </nav>
+            {clutterFreeHome ? (
+              <nav className="flex flex-wrap items-center justify-center gap-10" aria-label="Primary navigation">
+                <Link
+                  href="/search"
+                  aria-current={searchActive ? "page" : undefined}
+                  className={navLink(searchActive)}
+                >
+                  Search
+                  <NavUnderline active={searchActive} />
+                </Link>
+                <Link
+                  href="/listings"
+                  aria-current={listingsHubActive ? "page" : undefined}
+                  className={navLink(listingsHubActive)}
+                >
+                  Listings
+                  <NavUnderline active={listingsHubActive} />
+                </Link>
+              </nav>
+            ) : (
+              <nav className="flex flex-wrap items-center justify-center gap-6" aria-label="Primary navigation">
+                <Link
+                  href="/analyze"
+                  aria-current={analyzeActive ? "page" : undefined}
+                  className={navLink(analyzeActive)}
+                >
+                  Analyze
+                  <NavUnderline active={analyzeActive} />
+                </Link>
+                <Link
+                  href="/explore"
+                  aria-current={exploreActive ? "page" : undefined}
+                  className={navLink(exploreActive)}
+                >
+                  Explore
+                  <NavUnderline active={exploreActive} />
+                </Link>
+                <BuyingNavGroup mode="header-desktop" />
+                <SellingNavGroup mode="header-desktop" />
+                <Link
+                  href={dashboardHref}
+                  aria-current={dashboardActive ? "page" : undefined}
+                  className={navLink(dashboardActive)}
+                >
+                  Dashboard
+                  <NavUnderline active={dashboardActive} />
+                </Link>
+                <Link
+                  href={compareHref}
+                  aria-current={compareActive ? "page" : undefined}
+                  className={navLink(compareActive)}
+                >
+                  Compare
+                  <NavUnderline active={compareActive} />
+                </Link>
+              </nav>
+            )}
           </div>
 
           {actionRow}
         </div>
       </div>
 
-      {mobileOpen && (
-        <div
-          id="mobile-menu"
-          className="border-t border-white/10 bg-[#0B0B0B]/98 backdrop-blur-md lg:hidden"
-        >
-          <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6">
-            <nav className="flex flex-col gap-1" aria-label="Primary navigation">
-              <Link
-                href="/analyze"
-                onClick={() => setMobileOpen(false)}
-                className={[
-                  "rounded-lg px-3 py-3 text-sm font-semibold transition",
-                  analyzeActive
-                    ? "bg-premium-gold/15 text-premium-gold"
-                    : "text-[#B3B3B3] hover:bg-white/5 hover:text-white",
-                ].join(" ")}
-              >
-                Analyze
-              </Link>
-              <BuyingNavGroup mode="header-mobile" onNavigate={() => setMobileOpen(false)} />
-              <SellingNavGroup mode="header-mobile" onNavigate={() => setMobileOpen(false)} />
-              <Link
-                href={dashboardHref}
-                onClick={() => setMobileOpen(false)}
-                className={[
-                  "rounded-lg px-3 py-3 text-sm font-semibold transition",
-                  dashboardActive
-                    ? "bg-premium-gold/15 text-premium-gold"
-                    : "text-[#B3B3B3] hover:bg-white/5 hover:text-white",
-                ].join(" ")}
-              >
-                Dashboard
-              </Link>
-              <Link
-                href={compareHref}
-                onClick={() => setMobileOpen(false)}
-                className={[
-                  "rounded-lg px-3 py-3 text-sm font-semibold transition",
-                  compareActive
-                    ? "bg-premium-gold/15 text-premium-gold"
-                    : "text-[#B3B3B3] hover:bg-white/5 hover:text-white",
-                ].join(" ")}
-              >
-                Compare
-              </Link>
-            </nav>
-
-            <div className="mt-4 border-t border-white/10 pt-4">
-              <div className="mb-3 flex flex-col gap-3 sm:hidden">
-                {phoneTel ? (
-                  <a href={phoneTel} className={`${HEADER_CONTROL} w-full justify-center`}>
-                    {phoneDisplay}
-                  </a>
-                ) : null}
-                <LanguageSwitcher variant="header" className="[&_label]:block [&_label]:w-full [&_select]:w-full" />
-              </div>
-              {!loggedIn ? (
-                <div className="flex flex-col gap-4 lg:hidden">
-                  <Link
-                    href="/auth/login"
-                    onClick={() => setMobileOpen(false)}
-                    className={`${HEADER_CONTROL} w-full`}
-                  >
-                    {t("auth.login")}
-                  </Link>
-                  <Link
-                    href="/auth/signup"
-                    onClick={() => setMobileOpen(false)}
-                    className={`${HEADER_CONTROL_CTA} w-full`}
-                  >
-                    {t("auth.signup")}
-                  </Link>
-                </div>
-              ) : null}
-            </div>
-          </div>
-        </div>
-      )}
+      <CentrisStyleNavDrawer
+        open={mobileOpen}
+        onClose={() => setMobileOpen(false)}
+        loggedIn={loggedIn}
+        loginLabel={t("auth.login")}
+        signupLabel={t("auth.signup")}
+        dashboardHref={dashboardHref}
+        compareHref={compareHref}
+        minimalHome={clutterFreeHome}
+      />
     </header>
   );
 }

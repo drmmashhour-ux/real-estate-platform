@@ -113,7 +113,7 @@ export async function importExternalCalendar(connectionId: string) {
   return syncConnection(connectionId);
 }
 
-/** Build iCal string for BNHub bookings + blocked slots (export to OTAs). */
+/** Build iCal string for BNHUB bookings + blocked slots (export to OTAs). */
 export async function exportBNHubCalendar(listingId: string): Promise<string> {
   const bookings = await prisma.booking.findMany({
     where: {
@@ -148,7 +148,7 @@ export async function exportBNHubCalendar(listingId: string): Promise<string> {
     const endEx = utcDayStart(b.checkOut);
     vevents.push({
       uid: `bnhub-booking-${b.id}@bnhub`,
-      summary: `Booked (BNHub)${b.guest?.name ? ` — ${b.guest.name}` : ""}`,
+      summary: `Booked (BNHUB)${b.guest?.name ? ` — ${b.guest.name}` : ""}`,
       dtStart: start,
       dtEndExclusive: endEx,
     });
@@ -159,7 +159,7 @@ export async function exportBNHubCalendar(listingId: string): Promise<string> {
     const endEx = new Date(d.getTime() + 86400000);
     vevents.push({
       uid: `bnhub-slot-${d.toISOString().slice(0, 10)}-${s.dayStatus}@bnhub`,
-      summary: s.dayStatus === "BLOCKED" ? "Blocked (BNHub)" : "External / blocked (BNHub)",
+      summary: s.dayStatus === "BLOCKED" ? "Blocked (BNHUB)" : "External / blocked (BNHUB)",
       dtStart: d,
       dtEndExclusive: endEx,
     });
@@ -170,7 +170,7 @@ export async function exportBNHubCalendar(listingId: string): Promise<string> {
 
 export type ConflictRow = { date: string; reason: string };
 
-/** Dates where a confirmed BNHub booking overlaps external channel event (informational). */
+/** Dates where a confirmed BNHUB booking overlaps external channel event (informational). */
 export async function detectConflicts(listingId: string): Promise<ConflictRow[]> {
   const bookings = await prisma.booking.findMany({
     where: {
@@ -204,12 +204,12 @@ export async function detectConflicts(listingId: string): Promise<ConflictRow[]>
 
   return [...conflictDates].sort().map((date) => ({
     date,
-    reason: "BNHub reservation and external calendar both occupy this night",
+    reason: "BNHUB reservation and external calendar both occupy this night",
   }));
 }
 
 /**
- * Placeholder: production would merge rules (priority BNHub vs OTA) and notify host.
+ * Placeholder: production would merge rules (priority BNHUB vs OTA) and notify host.
  */
 export async function resolveConflicts(
   listingId: string,
@@ -231,6 +231,6 @@ export async function resolveConflicts(
   }
   return {
     ok: true,
-    message: "Conflict resolution is manual in MVP; review calendar and adjust OTAs or BNHub.",
+    message: "Conflict resolution is manual in MVP; review calendar and adjust OTAs or BNHUB.",
   };
 }

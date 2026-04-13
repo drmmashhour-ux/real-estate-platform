@@ -1,64 +1,53 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
-import { requireBrokerOrAdminApi } from "@/modules/crm/services/require-broker-api";
-import { normalizeDayOfWeek, normalizeMinuteRange } from "@/modules/scheduling/services/validate-availability";
+import { requireBrokerCrmApiUser } from "@/lib/broker-crm/api-auth";
+import { getBrokerAvailabilityRows } from "@/lib/visits/get-availability";
+import { replaceBrokerAvailability, type AvailabilityInputRow } from "@/lib/visits/set-availability";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(request: NextRequest) {
-  const gate = await requireBrokerOrAdminApi();
-  if (!gate.ok) return gate.response;
-  const { session } = gate;
-  const brokerId =
-    session.role === "ADMIN"
-      ? new URL(request.url).searchParams.get("brokerId")?.trim() || null
-      : session.id;
-  if (!brokerId) {
-    return NextResponse.json({ error: "brokerId query required for admin" }, { status: 400 });
-  }
-  const rules = await prisma.availabilityRule.findMany({
-    where: { brokerId },
-    orderBy: [{ dayOfWeek: "asc" }, { startMinute: "asc" }],
-  });
-  return NextResponse.json({ ok: true, rules });
+export async function GET() {
+  const auth = await requireBrokerCrmApiUser();
+  if (!auth.user) return NextResponse.json({ error: auth.error }, { status: auth.status });
+
+  const rows = await getBrokerAvailabilityRows(auth.user.id);
+  return NextResponse.json({ availability: rows });
 }
 
 export async function POST(request: NextRequest) {
-  const gate = await requireBrokerOrAdminApi();
-  if (!gate.ok) return gate.response;
-  const { session } = gate;
-  const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
+  const auth = await requireBrokerCrmApiUser();
+  if (!auth.user) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
-  let brokerId = session.id;
-  if (session.role === "ADMIN") {
-    const raw = typeof body.brokerId === "string" ? body.brokerId.trim() : "";
-    if (!raw) return NextResponse.json({ error: "brokerId required" }, { status: 400 });
-    const b = await prisma.user.findUnique({ where: { id: raw }, select: { id: true, role: true } });
-    if (!b || b.role !== "BROKER") return NextResponse.json({ error: "Invalid broker" }, { status: 400 });
-    brokerId = b.id;
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+  const o = body && typeof body === "object" ? (body as Record<string, unknown>) : {};
+  const raw = o.availability ?? o.rows;
+  if (!Array.isArray(raw)) {
+    return NextResponse.json({ error: "availability must be an array" }, { status: 400 });
   }
 
-  const dow = typeof body.dayOfWeek === "number" ? body.dayOfWeek : parseInt(String(body.dayOfWeek), 10);
-  const d = normalizeDayOfWeek(dow);
-  if (!d.ok) return NextResponse.json({ error: d.error }, { status: 400 });
+  const rows: AvailabilityInputRow[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== "object") continue;
+    const r = item as Record<string, unknown>;
+    rows.push({
+      dayOfWeek: typeof r.dayOfWeek === "number" ? r.dayOfWeek : parseInt(String(r.dayOfWeek), 10),
+      startTime: String(r.startTime ?? ""),
+      endTime: String(r.endTime ?? ""),
+      isActive: r.isActive === undefined ? true : Boolean(r.isActive),
+      timeZone: typeof r.timeZone === "string" ? r.timeZone : undefined,
+    });
+  }
 
-  const sm = typeof body.startMinute === "number" ? body.startMinute : parseInt(String(body.startMinute), 10);
-  const em = typeof body.endMinute === "number" ? body.endMinute : parseInt(String(body.endMinute), 10);
-  const mr = normalizeMinuteRange(sm, em);
-  if (!mr.ok) return NextResponse.json({ error: mr.error }, { status: 400 });
-
-  const timezone = typeof body.timezone === "string" ? body.timezone.trim() || null : null;
-  const isActive = body.isActive === false ? false : true;
-
-  const rule = await prisma.availabilityRule.create({
-    data: {
-      brokerId,
-      dayOfWeek: d.value,
-      startMinute: mr.startMinute,
-      endMinute: mr.endMinute,
-      isActive,
-      timezone,
-    },
-  });
-  return NextResponse.json({ ok: true, rule });
+  try {
+    await replaceBrokerAvailability(auth.user.id, rows);
+    const availability = await getBrokerAvailabilityRows(auth.user.id);
+    return NextResponse.json({ ok: true, availability });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Error";
+    return NextResponse.json({ error: msg }, { status: 400 });
+  }
 }

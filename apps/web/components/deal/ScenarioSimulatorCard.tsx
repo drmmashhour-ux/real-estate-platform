@@ -39,7 +39,7 @@ export function ScenarioSimulatorCard({ scenarios }: { scenarios: ScenarioSummar
 
       {bnhub.length > 0 ? (
         <div className="mt-6">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-cyan-200/80">Short-term (BNHub)</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-cyan-200/80">Short-term (BNHUB)</p>
           <div className="mt-2 grid gap-3 sm:grid-cols-3">
             {bnhub.map((s) => (
               <div key={`bnhub-${s.scenarioType}`} className="rounded-xl border border-cyan-500/20 bg-cyan-500/[0.03] p-3">

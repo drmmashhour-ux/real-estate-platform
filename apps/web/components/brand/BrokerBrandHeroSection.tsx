@@ -48,25 +48,14 @@ export function BrokerBrandHeroSection() {
 
           <div className="grid gap-4">
             <div className="rounded-3xl border border-premium-gold/25 bg-[radial-gradient(circle_at_top,#2a2108,transparent_34%),linear-gradient(180deg,#0c0c0c,#121212)] p-5">
-              <div className="grid gap-4 md:grid-cols-[0.85fr,1.15fr]">
-                <div className="overflow-hidden rounded-2xl border border-white/10 bg-black/20">
-                  <Image
-                    src="/branding/mohamed-portrait.png"
-                    alt="Mohamed Al Mashhour portrait"
-                    width={900}
-                    height={1200}
-                    className="h-full w-full object-cover"
-                  />
-                </div>
-                <div className="overflow-hidden rounded-2xl border border-white/10 bg-black/20">
-                  <Image
-                    src="/branding/mohamed-broker-card.png"
-                    alt="Mohamed Al Mashhour broker card"
-                    width={1200}
-                    height={900}
-                    className="h-full w-full object-cover"
-                  />
-                </div>
+              <div className="overflow-hidden rounded-2xl border border-white/10 bg-black/40">
+                <Image
+                  src="/branding/mohamed-broker-card.png"
+                  alt="Mohamed Al Mashhour — residential broker card (OACIQ)"
+                  width={1200}
+                  height={675}
+                  className="h-auto w-full object-contain object-top"
+                />
               </div>
             </div>
 

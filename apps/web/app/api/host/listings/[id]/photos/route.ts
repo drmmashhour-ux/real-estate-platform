@@ -35,7 +35,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
   const contentType = file.type || "image/jpeg";
   const buf = Buffer.from(await file.arrayBuffer());
   const up = await uploadStayListingImagePublicUrl({ listingId, bytes: buf, contentType });
-  if ("error" in up) return Response.json({ error: up.error }, { status: 400 });
+  if ("error" in up) return Response.json({ error: up.error }, { status: up.status ?? 400 });
 
   const existing = await prisma.bnhubListingPhoto.findMany({
     where: { listingId },

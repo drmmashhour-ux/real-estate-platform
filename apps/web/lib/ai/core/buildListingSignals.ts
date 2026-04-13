@@ -40,7 +40,7 @@ function qualityFromListing(l: {
 }
 
 /**
- * Load normalized BNHub listing signals — shared input for search, pricing, autopilot, recommendations.
+ * Load normalized BNHUB listing signals — shared input for search, pricing, autopilot, recommendations.
  */
 export async function buildListingSignals(listingId: string): Promise<ListingSignals | null> {
   const listing = await prisma.shortTermListing.findUnique({

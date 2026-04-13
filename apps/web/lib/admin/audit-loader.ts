@@ -8,7 +8,7 @@ export type AdminAuditRow = {
   at: Date;
 };
 
-/** Best-effort audit trail from BNHub engine logs (extend with dedicated admin_audit table later). */
+/** Best-effort audit trail from BNHUB engine logs (extend with dedicated admin_audit table later). */
 export async function getAdminAuditLog(take = 60): Promise<AdminAuditRow[]> {
   const rows = await prisma.bnhubEngineAuditLog.findMany({
     orderBy: { createdAt: "desc" },

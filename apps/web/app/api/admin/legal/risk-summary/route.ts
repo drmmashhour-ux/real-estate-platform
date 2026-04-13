@@ -49,7 +49,7 @@ export async function GET() {
 
   const summary = [
     `Last 24h — ImmoContact: views ${views}, contact clicks ${contactClicks}, messages ${messages}, booking requests ${bookings}.`,
-    `Open legal/dispute queue (platform + BNHub booking): ${openPlatformDisputes + openBnhubDisputes} open case(s) — review /admin/disputes.`,
+    `Open legal/dispute queue (platform + BNHUB booking): ${openPlatformDisputes + openBnhubDisputes} open case(s) — review /admin/disputes.`,
     disputes > 0
       ? `Trust & safety incidents opened: ${disputes} — review /admin/moderation.`
       : "No new trust & safety incidents in the last 24h (snapshot).",

@@ -12,6 +12,32 @@ import {
   validateBookingPaymentMetadata,
 } from "@/lib/stripe/checkoutMetadata";
 
+/**
+ * Short Stripe metadata `type` for dashboards / logs (maps to paymentType).
+ * booking | fsbo | lead | …
+ */
+export function revenueFlowTypeLabel(paymentType: PaymentType): string {
+  switch (paymentType) {
+    case "booking":
+      return "booking";
+    case "fsbo_publish":
+      return "fsbo";
+    case "lead_unlock":
+    case "mortgage_contact_unlock":
+      return "lead";
+    case "featured_listing":
+      return "featured";
+    case "deposit":
+      return "deposit";
+    case "closing_fee":
+      return "closing";
+    case "subscription":
+      return "subscription";
+    default:
+      return paymentType;
+  }
+}
+
 export type PaymentType =
   | "booking"
   | "subscription"
@@ -45,7 +71,7 @@ export type CreateCheckoutParams = {
   /** Merged into Stripe Session metadata (server-controlled keys only). */
   metadata?: Record<string, string>;
   /**
-   * Stripe Connect: destination charge with application fee (BNHub host payout).
+   * Stripe Connect: destination charge with application fee (BNHUB host payout).
    * When set, `payment_intent_data.application_fee_amount` + `transfer_data.destination` are applied.
    */
   connect?: {
@@ -57,7 +83,7 @@ export type CreateCheckoutParams = {
      * Use when Stripe requires `on_behalf_of` (for example some cross-region setups).
      */
     onBehalfOfAccountId?: string;
-    /** Auditable BNHub split (may differ from applicationFeeAmount only in pathological rate config). */
+    /** Auditable BNHUB split (may differ from applicationFeeAmount only in pathological rate config). */
     bnhubPlatformFeeCents?: number;
     bnhubHostPayoutCents?: number;
   };
@@ -97,6 +123,8 @@ export async function createCheckoutSession(
     userId,
     paymentType,
     ...metadata,
+    /** Canonical short label — must not be overridden by caller `metadata`. */
+    type: revenueFlowTypeLabel(paymentType),
     ...(paymentType === "fsbo_publish"
       ? {
           type: "fsbo_listing",
@@ -139,7 +167,7 @@ export async function createCheckoutSession(
     return { error: bookingMetaErr };
   }
 
-  // BNHub marketplace: when `connect` is set, Stripe collects gross on platform and applies
+  // BNHUB marketplace: when `connect` is set, Stripe collects gross on platform and applies
   // `application_fee_amount` + `transfer_data.destination` (host Connect account).
   const paymentIntentData: Stripe.Checkout.SessionCreateParams.PaymentIntentData = {
     metadata: metadataCombined,
@@ -180,7 +208,7 @@ export async function createCheckoutSession(
     const url = session.url;
     if (!url) return { error: "Failed to get checkout URL" };
     logInfo(
-      `[STRIPE] checkout created: bookingId=${bookingId ?? "n/a"} listingId=${listingId ?? "n/a"} sessionId=${session.id} paymentType=${paymentType}`
+      `[STRIPE] [CHECKOUT] session created sessionId=${session.id} paymentType=${paymentType} type=${revenueFlowTypeLabel(paymentType)} currency=${currency.toLowerCase()} amountCents=${amountCents} userId=${userId} bookingId=${bookingId ?? "n/a"} listingId=${listingId ?? "n/a"}`
     );
     return { url, sessionId: session.id };
   } catch (e) {

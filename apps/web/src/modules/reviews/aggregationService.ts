@@ -21,7 +21,7 @@ export function normalizeHostScore(linear: number): number {
 }
 
 /**
- * Recompute denormalized averages for a BNHub listing from public (non-held) guest reviews.
+ * Recompute denormalized averages for a BNHUB listing from public (non-held) guest reviews.
  */
 export async function updatePropertyRating(listingId: string) {
   const reviews = await prisma.review.findMany({

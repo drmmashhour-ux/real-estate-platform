@@ -113,7 +113,7 @@ export function buildRecommendationFromBottleneck(b: ExecutiveBottleneck): Execu
         recommendationType: "host_sla",
         priorityScore: base,
         title: `Host ${b.affectedEntity.entityId.slice(0, 8)}… responsiveness is weak`,
-        summary: "Review BNHub host alerts and orchestration host assignment; optional safe deprioritization when enabled.",
+        summary: "Review BNHUB host alerts and orchestration host assignment; optional safe deprioritization when enabled.",
         detailsJson: { bottleneckType: b.type, areas: b.suggestedResponseAreas },
         evidenceJson: b.evidence as Prisma.InputJsonValue,
         targetEntityType: "host",
@@ -126,7 +126,7 @@ export function buildRecommendationFromBottleneck(b: ExecutiveBottleneck): Execu
         priorityScore: base + 5,
         title: `City ${b.affectedEntity.entityId}: strong interest, weak conversion`,
         summary:
-          "Prioritize trust and payment clarity on BNHub flows for this city; consider localized template experiments.",
+          "Prioritize trust and payment clarity on BNHUB flows for this city; consider localized template experiments.",
         detailsJson: { bottleneckType: b.type, areas: b.suggestedResponseAreas },
         evidenceJson: b.evidence as Prisma.InputJsonValue,
         targetEntityType: "city",

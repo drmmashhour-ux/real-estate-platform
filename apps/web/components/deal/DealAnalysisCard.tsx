@@ -13,7 +13,7 @@ const OPP_LABEL: Record<string, string> = {
   cash_flow_candidate: "Cash-flow candidate",
   appreciation_candidate: "Appreciation candidate",
   value_add_candidate: "Value-add candidate",
-  bnhub_candidate: "BNHub candidate",
+  bnhub_candidate: "BNHUB candidate",
   overpriced: "Overpriced signal",
   high_risk: "High risk",
   insufficient_data: "Insufficient data",

@@ -96,7 +96,7 @@ export class StripeConnectAdapter implements MarketplacePaymentProcessorAdapter 
             price_data: {
               currency: input.currency.toLowerCase(),
               unit_amount: input.amountCents,
-              product_data: { name: "BNHub stay" },
+              product_data: { name: "BNHUB stay" },
             },
             quantity: 1,
           },

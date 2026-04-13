@@ -26,7 +26,7 @@ export function GrowthTestimonialsStrip() {
       who: "Buyer — verified flow",
     },
     {
-      quote: "BNHub booking was smooth; host communication was excellent.",
+      quote: "BNHUB booking was smooth; host communication was excellent.",
       who: "Travel guest",
     },
     {

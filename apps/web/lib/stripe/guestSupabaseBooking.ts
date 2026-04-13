@@ -31,7 +31,7 @@ export function getSupabaseServiceForGuestBookings(): SupabaseClient | null {
 }
 
 /**
- * BNHub Supabase booking checkout: `bookingId` + optional app deep-link URLs.
+ * BNHUB Supabase booking checkout: `bookingId` + optional app deep-link URLs.
  * Optional `successUrl` / `cancelUrl` are validated server-side (no open redirects).
  */
 export function isGuestSupabaseOnlyCheckoutBody(body: Record<string, unknown>): boolean {
@@ -86,7 +86,7 @@ export async function fetchGuestSupabaseBookingForCheckout(bookingId: string): P
     return { ok: false, error: lErr.message, status: 502 };
   }
 
-  const listingTitle = typeof listing?.title === "string" && listing.title.trim() ? listing.title.trim() : "BNHub stay";
+  const listingTitle = typeof listing?.title === "string" && listing.title.trim() ? listing.title.trim() : "BNHUB stay";
 
   return { ok: true, row, listingTitle };
 }
@@ -291,7 +291,7 @@ export async function markGuestSupabaseBookingPaidFromStripeSession(session: Str
   const listingTitle =
     listingRow && typeof (listingRow as { title?: string }).title === "string"
       ? (listingRow as { title: string }).title
-      : "BNHub stay";
+      : "BNHUB stay";
 
   const { data: updatedRow, error: upErr } = await sb
     .from("bookings")

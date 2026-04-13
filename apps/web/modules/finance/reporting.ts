@@ -206,7 +206,7 @@ export type RevenueSummary = {
 };
 
 const PAYMENT_TYPE_HUB: Record<string, string> = {
-  booking: "BNHub",
+  booking: "BNHUB",
   fsbo_publish: "Seller",
   subscription: "Subscriptions",
   lead_unlock: "Broker",

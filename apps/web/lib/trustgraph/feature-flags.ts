@@ -50,7 +50,7 @@ export type TrustGraphFeatureFlags = {
   rankingBoost: boolean;
   /** Phase 5 — trust-aware broker / mortgage routing */
   leadRouting: boolean;
-  /** Phase 5 — BNHub host/guest/booking pipelines */
+  /** Phase 5 — BNHUB host/guest/booking pipelines */
   bnhubRisk: boolean;
   /** Phase 5 — investor opportunity filters */
   investorFilters: boolean;

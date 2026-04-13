@@ -10,7 +10,7 @@ function templateForType(type: GrowthEmailQueueType, payload: Record<string, unk
   switch (type) {
     case "WELCOME":
       return {
-        subject: "Welcome to LECIPM + BNHub",
+        subject: "Welcome to LECIPM + BNHUB",
         html: "<p>Thanks for signing up — browse stays, listings, and tools in one place.</p>",
       };
     case "REMINDER":
@@ -21,7 +21,7 @@ function templateForType(type: GrowthEmailQueueType, payload: Record<string, unk
     case "FOLLOWUP":
       return {
         subject: "How was your stay?",
-        html: "<p>We’d love a quick review — it helps hosts and guests trust BNHub.</p>",
+        html: "<p>We’d love a quick review — it helps hosts and guests trust BNHUB.</p>",
       };
     default:
       return { subject: "LECIPM update", html: "<p>Update from LECIPM.</p>" };

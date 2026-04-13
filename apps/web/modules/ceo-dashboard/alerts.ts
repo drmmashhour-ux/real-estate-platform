@@ -46,7 +46,7 @@ export function deriveCeoAlerts(i: CeoAlertInput): CeoAlert[] {
       id: "no_bookings_today",
       severity: "info",
       title: "No new bookings today (UTC day)",
-      detail: "Still early or a quiet day — confirm BNHub checkout and host availability if this persists.",
+      detail: "Still early or a quiet day — confirm BNHUB checkout and host availability if this persists.",
     });
   }
 

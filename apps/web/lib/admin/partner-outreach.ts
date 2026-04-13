@@ -28,7 +28,7 @@ export const PARTNER_READINESS_CHECKLIST: ReadinessItem[] = [
   },
   {
     id: "product",
-    label: "Live product URL & BNHub travel hub",
+    label: "Live product URL & BNHUB travel hub",
     hint: "https://…/bnhub/travel/compare and stays search — partners will click through.",
   },
   {
@@ -105,7 +105,7 @@ Best regards,
     subjectTemplate: "Materials for partnership review — {{PLATFORM_NAME}}",
     bodyTemplate: `Hello{{CONTACT_LINE}}
 
-Happy to share a one-pager on {{PLATFORM_NAME}} (audience, BNHub stays + travel assistant) and our compliance posture. Could you share your standard partner overview or rate card for the track we discussed (affiliate vs API)?
+Happy to share a one-pager on {{PLATFORM_NAME}} (audience, BNHUB stays + travel assistant) and our compliance posture. Could you share your standard partner overview or rate card for the track we discussed (affiliate vs API)?
 
 Thanks,
 {{YOUR_NAME}}
@@ -128,7 +128,7 @@ export const PARTNER_RESOURCE_LINKS: ResourceLink[] = [
     note: "Alternative partner network; brand-dependent.",
   },
   {
-    label: "BNHub Travel AI (your public hub)",
+    label: "BNHUB Travel AI (your public hub)",
     href: "/bnhub/travel/compare",
     note: "Relative path — share full URL in emails.",
   },

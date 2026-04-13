@@ -3,6 +3,7 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import { FSBO_STORAGE_FOLDER_SEGMENT } from "@/lib/fsbo/media-config";
+import { scanBufferBeforeStorage } from "@/lib/security/malware-scan";
 
 export const FSBO_DOC_MAX_BYTES = 12 * 1024 * 1024;
 
@@ -48,6 +49,15 @@ export async function uploadFsboListingDoc(params: {
   }
   const ext = EXT[contentType];
   if (!ext) throw new Error("Unsupported file type");
+
+  const scan = await scanBufferBeforeStorage({
+    bytes: buffer,
+    mimeType: contentType,
+    context: "fsbo_listing_doc",
+  });
+  if (!scan.ok) {
+    throw new Error(scan.userMessage);
+  }
 
   const objectName = `${randomUUID()}.${ext}`;
   const relativePath = `${FSBO_STORAGE_FOLDER_SEGMENT}/${listingId}/${folder}/${objectName}`;

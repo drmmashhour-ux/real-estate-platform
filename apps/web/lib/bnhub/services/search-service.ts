@@ -1,5 +1,5 @@
 /**
- * BNHub SearchService — search listings by location, price, guests, amenities.
+ * BNHUB SearchService — search listings by location, price, guests, amenities.
  * Delegates to lib/bnhub/listings.
  */
 

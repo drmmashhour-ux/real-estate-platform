@@ -1,6 +1,6 @@
 /**
- * BNHub booking ledger — canonical TypeScript views over `Payment` + `OrchestratedPayout` (+ manual queue).
- * Amounts are always in minor units (cents). Currency is CAD for BNHub v1.
+ * BNHUB booking ledger — canonical TypeScript views over `Payment` + `OrchestratedPayout` (+ manual queue).
+ * Amounts are always in minor units (cents). Currency is CAD for BNHUB v1.
  */
 
 export type BookingPaymentStatus =

@@ -143,7 +143,7 @@ const TEMPLATES: Array<{
     segment: "host",
     ctaType: "inquiry",
     content:
-      "Hi {{name}} — we're opening BNHub to a small host group in {{city}} to test real bookings end-to-end. Want to start with one listing and keep setup simple?",
+      "Hi {{name}} — we're opening BNHUB to a small host group in {{city}} to test real bookings end-to-end. Want to start with one listing and keep setup simple?",
   },
   {
     templateKey: "generic_clarify",

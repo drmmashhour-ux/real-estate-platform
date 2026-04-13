@@ -1,5 +1,5 @@
 /**
- * Dynamic Pricing Agent – recommends pricing for sale, LTR, and BNHub.
+ * Dynamic Pricing Agent – recommends pricing for sale, LTR, and BNHUB.
  */
 
 import { prisma } from "@/lib/db";

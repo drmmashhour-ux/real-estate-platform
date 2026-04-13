@@ -6,7 +6,7 @@
 export type HubLocale = "en" | "fr" | "ar";
 
 const DICT: Record<string, Record<HubLocale, string>> = {
-  "hub.bnhub.label": { en: "BNHub", fr: "BNHub", ar: "BNHub" },
+  "hub.bnhub.label": { en: "BNHUB", fr: "BNHUB", ar: "BNHUB" },
   "hub.bnhub.description": {
     en: "Short-term stays and hospitality.",
     fr: "Séjours de courte durée et hospitalité.",

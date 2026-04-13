@@ -177,7 +177,7 @@ async function addPromotion(cookie: string, id: string): Promise<void> {
   log("Promotion added");
 }
 
-/** BNHub Prisma booking — requires LECIPM session cookie. */
+/** BNHUB Prisma booking — requires LECIPM session cookie. */
 async function createBooking(
   cookie: string,
   listingId: string,

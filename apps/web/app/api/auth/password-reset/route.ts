@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isDemoAuthAllowed } from "@/lib/auth/demo-auth-allowed";
-import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
+import { gateDistributedRateLimit } from "@/lib/rate-limit-enforcement";
 
 /**
  * POST /api/auth/password-reset — Request password reset (MVP stub).
@@ -8,11 +8,8 @@ import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
  */
 export async function POST(request: NextRequest) {
   try {
-    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? request.headers.get("x-real-ip") ?? "anonymous";
-    const limit = checkRateLimit(`auth:password-reset:${ip}`, { windowMs: 60_000, max: 12 });
-    if (!limit.allowed) {
-      return NextResponse.json({ error: "Too many requests. Try again later." }, { status: 429, headers: getRateLimitHeaders(limit) });
-    }
+    const gate = await gateDistributedRateLimit(request, "auth:password-reset", { windowMs: 60_000, max: 12 });
+    if (!gate.allowed) return gate.response;
     const body = await request.json();
     const email = typeof body?.email === "string" ? body.email.trim() : null;
     if (!email) {
@@ -20,7 +17,7 @@ export async function POST(request: NextRequest) {
     }
     // MVP: do not send email; return ok to avoid leaking existence of account
     const tail = isDemoAuthAllowed()
-      ? " For local development, BNHub demo sign-in may be available."
+      ? " For local development, BNHUB demo sign-in may be available."
       : " Contact support if you need access.";
     return Response.json({
       ok: true,

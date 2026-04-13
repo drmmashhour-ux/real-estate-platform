@@ -20,13 +20,13 @@ function mapDealStatusToFlag(status: string): ListingTransactionFlag | null {
     case "accepted":
       return {
         key: "offer_accepted",
-        label: "Offer accepted",
+        label: "Offer accepted (CPP)",
         tone: "emerald",
       };
     case "closed":
       return {
         key: "sold",
-        label: "Sold",
+        label: "Sold — congratulations",
         tone: "slate",
       };
     default:
@@ -39,7 +39,7 @@ export async function getListingTransactionFlag(
   listingStatus?: string | null
 ): Promise<ListingTransactionFlag | null> {
   if (listingStatus === "SOLD") {
-    return { key: "sold", label: "Sold", tone: "slate" };
+    return { key: "sold", label: "Sold — congratulations", tone: "slate" };
   }
 
   const deal = await prisma.deal.findFirst({
@@ -61,7 +61,7 @@ export async function getListingTransactionFlagsForListings(
 
   for (const listing of listings) {
     if (listing.status === "SOLD") {
-      flags.set(listing.id, { key: "sold", label: "Sold", tone: "slate" });
+      flags.set(listing.id, { key: "sold", label: "Sold — congratulations", tone: "slate" });
     }
   }
 

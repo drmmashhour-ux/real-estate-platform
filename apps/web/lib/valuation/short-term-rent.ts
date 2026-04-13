@@ -8,7 +8,7 @@ const HIGH_SEASON_MULTIPLIER = 1.15;
 const LOW_SEASON_MULTIPLIER = 0.85;
 
 /**
- * Short-term rental (BNHub) valuation: nightly rate, occupancy, revenue.
+ * Short-term rental (BNHUB) valuation: nightly rate, occupancy, revenue.
  */
 export async function computeShortTermRentValuation(
   input: PropertyInput,

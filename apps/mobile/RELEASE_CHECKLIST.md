@@ -20,7 +20,7 @@ This checklist covers the Expo mobile app in `apps/mobile` for App Store and Goo
 - [ ] Short app description
 - [ ] Full app description
 - [ ] Keywords / search terms
-- [x] Support email: `dr.m.mashhour@gmail.com`
+- [x] Support email: `info@lecipm.com`
 - [ ] Support URL on `https://lecipm.com`
 - [ ] Privacy policy URL on `https://lecipm.com`
 

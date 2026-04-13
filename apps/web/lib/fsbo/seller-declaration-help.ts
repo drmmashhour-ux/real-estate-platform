@@ -7,8 +7,9 @@ export const SELLER_DECLARATION_HELP: Record<
   identity: {
     title: "Seller identity & authority",
     explain:
-      "You must confirm you are the registered owner or have legal authority to sell. This mirrors disclosure expectations under Québec brokerage rules (OACIQ-style transparency).",
-    whatToFill: "Your full legal name, confirmation of authority, and any relevant notes (e.g. power of attorney file number, co-owner consent).",
+      "You must confirm you are the registered owner or have legal authority to sell. This mirrors disclosure expectations under Québec brokerage rules (OACIQ-style transparency). If a legal person (company), a lawyer or notary acting for sellers, or a representative under mandate signs or lists, Québec practice expects the scope of authority to be clear—upload supporting documents (mandate, corporate resolution, professional registration) where applicable. This platform checklist is not the official DS/DSD annex; not legal advice.",
+    whatToFill:
+      "Natural-person sellers: ID and contact per seller row. Company / lawyer / mandate path: check the capacity boxes, upload PDF or images evidencing authority, then complete the authority checkbox and notes (required only when a capacity option is selected). Standard individual owners with no capacity option may leave the authority attestation and notes empty.",
     example: "Jane Doe — sole owner per land registry; no pending litigation affecting title.",
   },
   conflict: {

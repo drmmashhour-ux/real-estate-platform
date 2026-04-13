@@ -19,11 +19,11 @@ export function evaluateVerifiedEligibility(input: {
   openCriticalFraud: boolean;
 }): { ok: boolean; reasons: string[] } {
   const reasons: string[] = [];
-  if (input.starRating < 3) reasons.push("BNHub internal star estimate is below 3 — improve listing quality.");
+  if (input.starRating < 3) reasons.push("BNHUB internal star estimate is below 3 — improve listing quality.");
   if (input.trustScore < 45) reasons.push("Trust score is below the Verified threshold.");
   if (input.photoCount < MIN_LISTING_PHOTOS_FOR_VERIFICATION) {
     reasons.push(
-      `At least ${MIN_LISTING_PHOTOS_FOR_VERIFICATION} photos are required for BNHub Verified.`
+      `At least ${MIN_LISTING_PHOTOS_FOR_VERIFICATION} photos are required for BNHUB Verified.`
     );
   }
   if (!input.verificationOk) reasons.push("Listing verification should be completed where supported.");
@@ -195,8 +195,8 @@ export async function computeLuxuryTier(listingId: string): Promise<void> {
     premium,
     elite,
     labels: {
-      star: "BNHub Star Rating (internal platform estimate)",
-      tier: "BNHub Luxury Tier (internal)",
+      star: "BNHUB Star Rating (internal platform estimate)",
+      tier: "BNHUB Luxury Tier (internal)",
     },
   };
 

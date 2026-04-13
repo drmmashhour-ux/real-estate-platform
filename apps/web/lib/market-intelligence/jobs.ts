@@ -63,7 +63,7 @@ export async function jobRentIndexUpdate(period?: string): Promise<{ updated: nu
   return { updated, errors };
 }
 
-/** Run BNHub index for all regions. */
+/** Run BNHUB index for all regions. */
 export async function jobBnhubIndexUpdate(period?: string): Promise<{ updated: number; errors: string[] }> {
   const p = period ?? currentPeriodMonthly();
   const regions = await listRegions();
@@ -148,7 +148,7 @@ export async function jobMarketReports(period?: string): Promise<{ updated: numb
   return { updated, errors };
 }
 
-/** Run all weekly analytics (price, rent, BNHub, demand, then reports). */
+/** Run all weekly analytics (price, rent, BNHUB, demand, then reports). */
 export async function runWeeklyAnalytics(period?: string) {
   const p = period ?? currentPeriodMonthly();
   const [price, rent, bnhub, demand, reports] = await Promise.all([

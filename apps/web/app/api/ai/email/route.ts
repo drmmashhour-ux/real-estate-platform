@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     const feedback = await feedbackFromBodyWithAnalytics(d);
     const vc = Math.min(Math.max(d.variantCount ?? 1, 1), 3);
     const baseInput = {
-      topic: d.topic?.trim() || "BNHub / LECIPM",
+      topic: d.topic?.trim() || "BNHUB / LECIPM",
       tone: d.tone?.trim() || "professional",
       audience: d.audience?.trim() || "prospective partners",
       context: d.context?.trim() || undefined,
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
           type: "email",
           content: flatContent,
           contentJson: { emailKind: d.emailKind ?? "promotional" },
-          topic: d.topic?.trim() || "BNHub / LECIPM",
+          topic: d.topic?.trim() || "BNHUB / LECIPM",
           tone: d.tone?.trim() || "professional",
           audience: d.audience?.trim() || "prospective partners",
           aiSource: result.source,
@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
         userId,
         type: "email",
         shared: {
-          topic: d.topic?.trim() || "BNHub / LECIPM",
+          topic: d.topic?.trim() || "BNHUB / LECIPM",
           tone: d.tone?.trim() || "professional",
           audience: d.audience?.trim() || "prospective partners",
           contentJson: { emailKind: d.emailKind ?? "promotional", variantCount: vc },

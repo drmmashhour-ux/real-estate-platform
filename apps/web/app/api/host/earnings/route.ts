@@ -6,7 +6,7 @@ import { resolveActivePaymentModeFromMarket } from "@/lib/payments/resolve-payme
 
 export const dynamic = "force-dynamic";
 
-/** GET /api/host/earnings — Supabase guest-booking slice + Prisma BNHub ledger snapshot. */
+/** GET /api/host/earnings — Supabase guest-booking slice + Prisma BNHUB ledger snapshot. */
 export async function GET(request: Request) {
   let userId: string;
   try {

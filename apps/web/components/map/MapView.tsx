@@ -28,7 +28,7 @@ const DEFAULT_ZOOM = 10;
 /**
  * Reusable map view. Uses Leaflet + OSM (no API key required).
  * When disabled or no valid coordinates, shows "Map unavailable".
- * For use in BNHub, real-estate, projects, luxury hubs.
+ * For use in BNHUB, real-estate, projects, luxury hubs.
  */
 export function MapView({
   listings,

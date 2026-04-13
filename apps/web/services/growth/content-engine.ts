@@ -21,7 +21,7 @@ const ROTATION: ContentIdea[] = [
     caption: "Verified stays + clear pricing. Save this for your next trip.",
     videoScript: [
       "Hook: 3-second problem (bad listings).",
-      "Show: open BNHub search, toggle verified / price filter.",
+      "Show: open BNHUB search, toggle verified / price filter.",
       "CTA: Link in bio — early access.",
     ],
   },
@@ -54,7 +54,7 @@ const ROTATION: ContentIdea[] = [
     videoScript: [
       "B-roll: neighborhood.",
       "Voice: 2 listing types (studio / family).",
-      "CTA: Search [CITY] on BNHub.",
+      "CTA: Search [CITY] on BNHUB.",
     ],
   },
   {

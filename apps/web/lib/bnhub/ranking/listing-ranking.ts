@@ -1,5 +1,5 @@
 /**
- * Marketplace listing ranking for BNHub search/browse (explainable, deterministic).
+ * Marketplace listing ranking for BNHUB search/browse (explainable, deterministic).
  * Uses only fields present on the listing / context — no fabricated reviews or metrics.
  */
 
@@ -23,7 +23,7 @@ export type ListingForMarketplaceRank = {
   updatedAt?: string | Date | null;
   _count?: { reviews?: number; bookings?: number };
   reviews?: { propertyRating?: number }[];
-  /** Denormalized BNHub fields when selected */
+  /** Denormalized BNHUB fields when selected */
   bnhubListingRatingAverage?: number | null;
   bnhubListingReviewCount?: number | null;
   bnhubListingCompletedStays?: number | null;
@@ -41,7 +41,7 @@ export type ListingForMarketplaceRank = {
 export type ListingSearchRankContext = {
   checkIn?: string;
   checkOut?: string;
-  /** Logged-in guest BNHub tier — tiny ranking nudge for repeat guests (no price override). */
+  /** Logged-in guest BNHUB tier — tiny ranking nudge for repeat guests (no price override). */
   guestLoyaltyTier?: LoyaltyTier;
 };
 

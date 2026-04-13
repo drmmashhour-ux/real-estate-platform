@@ -556,14 +556,22 @@ export function PortfolioDashboardClient({
           <EmptyState
             icon="📊"
             title="No saved deals yet"
-            description="Run the investment analyzer and save a property to build your portfolio here."
+            description="Analyze a listing and save it — your deals table, compare view, and share links all build from saved opportunities."
           >
-            <Link
-              href={analyzeHref}
-              className="rounded-xl bg-premium-gold px-6 py-3 text-sm font-bold text-[#0B0B0B] shadow-lg shadow-premium-gold/25 transition hover:bg-premium-gold"
-            >
-              Open Analyze
-            </Link>
+            <>
+              <Link
+                href={analyzeHref}
+                className="rounded-xl bg-premium-gold px-6 py-3 text-sm font-bold text-[#0B0B0B] shadow-lg shadow-premium-gold/25 transition hover:bg-premium-gold"
+              >
+                Open Analyze
+              </Link>
+              <Link
+                href="/explore"
+                className="rounded-xl border border-white/15 px-6 py-3 text-sm font-medium text-white/80 transition hover:border-premium-gold/35 hover:text-white"
+              >
+                Browse featured listings
+              </Link>
+            </>
           </EmptyState>
         ) : (
           <>

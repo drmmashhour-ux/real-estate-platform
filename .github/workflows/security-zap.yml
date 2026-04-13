@@ -1,0 +1,108 @@
+# OWASP ZAP — baseline (passive + spider) and optional OpenAPI-driven API scan against a **preview or staging** URL.
+# Configure repository Variable `ZAP_TARGET_URL` (preferred). For PR/preview-specific URLs, use workflow_dispatch
+# with `target_url` or set `ZAP_PREVIEW_URL` when wiring deployment webhooks later.
+#
+# Reports: HTML artifact + optional JSON. `ZAP_FAIL_ON_FINDINGS=true` fails the job after triage.
+# Docs: https://www.zaproxy.org/docs/docker/baseline-scan/ · https://www.zaproxy.org/docs/docker/api-scan/
+name: Security — ZAP
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      target_url:
+        description: "Base URL (no trailing slash), e.g. Vercel preview URL"
+        required: false
+        default: ""
+  schedule:
+    - cron: "0 8 * * 1"
+
+concurrency:
+  group: security-zap-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  baseline:
+    name: ZAP baseline
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve target URL
+        id: target
+        run: |
+          MANUAL="${{ github.event.inputs.target_url }}"
+          VAR="${{ vars.ZAP_TARGET_URL }}"
+          PREVIEW="${{ vars.ZAP_PREVIEW_URL }}"
+          if [ -n "$MANUAL" ]; then
+            echo "url=$MANUAL" >> "$GITHUB_OUTPUT"
+          elif [ -n "$VAR" ]; then
+            echo "url=$VAR" >> "$GITHUB_OUTPUT"
+          elif [ -n "$PREVIEW" ]; then
+            echo "url=$PREVIEW" >> "$GITHUB_OUTPUT"
+          else
+            echo "url=https://app.lecipm.com" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: ZAP Baseline Scan
+        uses: zaproxy/action-baseline@v0.15.0
+        with:
+          target: ${{ steps.target.outputs.url }}
+          fail_action: ${{ vars.ZAP_FAIL_ON_FINDINGS == 'true' }}
+          rules_file_name: ".zap/rules.tsv"
+          cmd_options: "-a"
+          allow_issue_writing: false
+
+      - name: Upload ZAP baseline report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-baseline-report-${{ github.run_id }}
+          path: report_html.html
+          if-no-files-found: ignore
+
+  api-scan:
+    name: ZAP API scan (optional)
+    needs: [baseline]
+    if: hashFiles('apps/web/openapi.json') != '' || hashFiles('openapi.json') != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve OpenAPI file
+        id: spec
+        run: |
+          if [ -f "apps/web/openapi.json" ]; then
+            echo "file=apps/web/openapi.json" >> "$GITHUB_OUTPUT"
+          elif [ -f "openapi.json" ]; then
+            echo "file=openapi.json" >> "$GITHUB_OUTPUT"
+          else
+            echo "file=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: ZAP API Scan
+        if: steps.spec.outputs.file != ''
+        uses: zaproxy/action-api-scan@v0.10.0
+        with:
+          target: ${{ steps.spec.outputs.file }}
+          format: openapi
+          rules_file_name: ".zap/rules.tsv"
+          fail_action: ${{ vars.ZAP_API_FAIL_ON_FINDINGS == 'true' }}
+          artifact_name: zap-api-report
+          allow_issue_writing: false
+
+      - name: Upload ZAP API report
+        if: always() && steps.spec.outputs.file != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-api-report-${{ github.run_id }}
+          path: report_html.html
+          if-no-files-found: ignore

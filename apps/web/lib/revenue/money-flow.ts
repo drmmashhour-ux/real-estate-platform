@@ -1,7 +1,7 @@
 /**
  * Platform revenue & payout model (source of truth: Stripe + Prisma).
  *
- * BNHub (short stays)
+ * BNHUB (short stays)
  * -------------------
  * Guest pays total via Stripe Checkout (Connect destination charge).
  * - platformFeeCents ≈ round(total × BNHUB_COMMISSION_RATE), default 15%

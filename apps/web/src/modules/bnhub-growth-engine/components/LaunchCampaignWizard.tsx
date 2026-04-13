@@ -81,7 +81,7 @@ export function LaunchCampaignWizard({ listings }: { listings: ListingOpt[] }) {
       <h2 className={g.title}>Launch campaign wizard</h2>
       <p className={g.sub}>
         Pick listing → objective → autonomy → create. External channels are labeled mock/pending until connectors are
-        production-ready; internal channels are real placements on BNHub.
+        production-ready; internal channels are real placements on BNHUB.
       </p>
       <div className="mt-4 flex gap-2 text-xs text-zinc-500">
         {["Listing", "Objective", "Autonomy", "Review"].map((l, i) => (
@@ -153,7 +153,7 @@ export function LaunchCampaignWizard({ listings }: { listings: ListingOpt[] }) {
           disabled={step >= 3}
           onClick={() => setStep((s) => Math.min(3, s + 1))}
         >
-          Next
+          Continue
         </button>
         {step === 3 ? (
           <button type="button" className={g.btn} disabled={busy} onClick={() => void submit()}>

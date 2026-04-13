@@ -35,7 +35,7 @@ function supabaseAdmin() {
 /**
  * Validates `Authorization: Bearer <access_token>` via Supabase (service role).
  * Maps to Prisma `User` by id first, then email; otherwise returns a **Supabase-only** profile
- * (BNHub hybrid guest + account) so `/api/mobile/v1/me` works without a Prisma row.
+ * (BNHUB hybrid guest + account) so `/api/mobile/v1/me` works without a Prisma row.
  * `app_metadata.bnhub_admin === true` elevates to ADMIN for API RBAC without Prisma.
  */
 export async function getMobileAuthUser(request: Request): Promise<MobileAuthUser | null> {
@@ -95,8 +95,8 @@ export async function getMobileAuthUser(request: Request): Promise<MobileAuthUse
 }
 
 /**
- * Resolves dashboard role using Prisma host listings + BNHub `listings.host_user_id`
- * (uses Supabase Auth id from JWT for BNHub, not Prisma id when they differ).
+ * Resolves dashboard role using Prisma host listings + BNHUB `listings.host_user_id`
+ * (uses Supabase Auth id from JWT for BNHUB, not Prisma id when they differ).
  */
 export async function resolveMobileAppRoleFromRequest(
   request: Request,
@@ -134,7 +134,7 @@ function httpError(status: number, message: string): never {
   throw err;
 }
 
-/** Host or admin (Prisma/Supabase metadata) or BNHub listing ownership. */
+/** Host or admin (Prisma/Supabase metadata) or BNHUB listing ownership. */
 export async function assertBnhubHostOrAdmin(request: Request): Promise<MobileAuthUser> {
   const u = await getMobileAuthUser(request);
   if (!u) httpError(401, "Unauthorized");

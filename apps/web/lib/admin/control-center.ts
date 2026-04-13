@@ -1,5 +1,5 @@
 /**
- * LECIPM / BNHub admin control center — re-exports loaders for `/admin` hub pages.
+ * LECIPM / BNHUB admin control center — re-exports loaders for `/admin` hub pages.
  */
 export {
   getAdminDashboardStats,

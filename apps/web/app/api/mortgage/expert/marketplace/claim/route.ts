@@ -26,6 +26,12 @@ export async function POST(req: NextRequest) {
     include: { expertSubscription: true, expertCredits: true, expertBilling: true },
   });
   if (!expertFull) return NextResponse.json({ error: "Expert not found" }, { status: 404 });
+  if (expertFull.expertVerificationStatus !== "verified") {
+    return NextResponse.json(
+      { error: "Complete professional verification before claiming marketplace leads." },
+      { status: 403 }
+    );
+  }
 
   const cap = mortgageExpertDailyCap(expertFull);
   if (!mortgageExpertHasMonthlyCapacity(expertFull, expertFull.expertBilling)) {

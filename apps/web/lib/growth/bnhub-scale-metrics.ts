@@ -7,7 +7,7 @@ function rangeStart(days: number): Date {
   return d;
 }
 
-/** BNHub marketplace KPIs for 1K → 10K scaling dashboard. */
+/** BNHUB marketplace KPIs for 1K → 10K scaling dashboard. */
 export async function getBnhubScaleMetrics(days = 30) {
   const start = rangeStart(days);
   const bookingSuccess: BookingStatus[] = [BookingStatus.CONFIRMED, BookingStatus.COMPLETED];

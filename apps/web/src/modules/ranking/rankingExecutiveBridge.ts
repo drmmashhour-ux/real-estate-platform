@@ -26,7 +26,7 @@ export async function buildRankingExecutiveRecommendations(): Promise<ExecutiveR
     out.push({
       recommendationType: "ranking",
       priorityScore: 72,
-      title: `BNHub listing ${topBnhub.listingId.slice(0, 8)}… high impressions, low CTR`,
+      title: `BNHUB listing ${topBnhub.listingId.slice(0, 8)}… high impressions, low CTR`,
       summary:
         "Search ranking telemetry shows strong exposure but weak click-through. Review cover photo, title, and price positioning before changing rank weights.",
       detailsJson: {

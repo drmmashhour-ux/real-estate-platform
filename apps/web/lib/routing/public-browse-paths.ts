@@ -1,5 +1,7 @@
+import { appPathnameFromUrl } from "@/i18n/pathname";
+
 /**
- * Pathnames that must stay reachable without a session (homepage redirect target, listings, BNHub).
+ * Pathnames that must stay reachable without a session (homepage redirect target, listings, BNHUB).
  * Used by middleware for the staging login bypass; do not add `requireAuthenticatedUser()` to pages
  * under these paths.
  *
@@ -8,9 +10,10 @@
  */
 export function isPublicBrowseSurface(pathname: string): boolean {
   if (!pathname) return false;
-  if (pathname === "/") return true;
-  if (pathname.startsWith("/listings")) return true;
-  if (pathname.startsWith("/bnhub")) return true;
+  const path = appPathnameFromUrl(pathname);
+  if (path === "/") return true;
+  if (path.startsWith("/listings")) return true;
+  if (path.startsWith("/bnhub")) return true;
   return false;
 }
 

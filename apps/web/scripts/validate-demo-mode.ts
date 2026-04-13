@@ -112,13 +112,13 @@ async function main() {
     console.warn("WARN: Investor demo listings not in DB — run pnpm seed:demo:investor for LST-INVDEMO1/2.");
   } else if (!featured.bnhub.badges.includes(INVESTOR_DEMO_IDS.BNHUB_LISTING_CODE)) {
     // eslint-disable-next-line no-console
-    console.warn("WARN: BNHub demo card missing expected listing code badge.");
+    console.warn("WARN: BNHUB demo card missing expected listing code badge.");
   }
 
   // eslint-disable-next-line no-console
   console.log("\nData source mode:", featured.source, "| seeded flag:", seededFlag);
   // eslint-disable-next-line no-console
-  console.log("Sample BNHub card:", featured.bnhub.title, "|", featured.bnhub.priceLabel);
+  console.log("Sample BNHUB card:", featured.bnhub.title, "|", featured.bnhub.priceLabel);
   // eslint-disable-next-line no-console
   console.log("Sample resale card:", featured.resale.title, "|", featured.resale.priceLabel);
   // eslint-disable-next-line no-console

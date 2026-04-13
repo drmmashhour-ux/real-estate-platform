@@ -9,13 +9,14 @@ type CardProps = HTMLAttributes<HTMLDivElement> & {
 };
 
 export function Card({ children, className = "", hoverable = false, glow = false, ...rest }: CardProps) {
-  const hover = hoverable ? "transition duration-200 ease-out hover:scale-[1.02] hover:border-premium-gold/35 hover:shadow-[0_0_32px_rgb(var(--premium-gold-channels) / 0.12)]" : "";
-  const gl = glow ? "border-premium-gold/30 shadow-[0_0_40px_rgb(var(--premium-gold-channels) / 0.12)]" : "border-white/10";
+  const base =
+    "lecipm-transition rounded-2xl border bg-[#121212] p-[var(--lecipm-card-padding)]";
+  const hover = hoverable
+    ? "hover:-translate-y-0.5 hover:border-premium-gold/35 hover:shadow-[var(--shadow-card-hover)] motion-reduce:hover:translate-y-0"
+    : "";
+  const gl = glow ? "border-premium-gold/30 shadow-[0_0_40px_rgb(var(--premium-gold-channels)_/_0.12)]" : "border-white/10";
   return (
-    <div
-      className={`rounded-2xl border bg-[#121212] p-6 ${gl} ${hover} ${className}`.trim()}
-      {...rest}
-    >
+    <div className={`${base} ${gl} ${hover} ${className}`.trim()} {...rest}>
       {children}
     </div>
   );

@@ -6,10 +6,10 @@ export function isDemoModeEnabled(): boolean {
   return readDemoModeEnabled();
 }
 
-/** Redirect to home when demo mode is off (use in demo layout / pages). */
+/** Redirect to the public demos hub when demo mode is off (use in demo layout / pages). */
 export function requireDemoMode(): void {
   if (!isDemoModeEnabled()) {
-    redirect("/");
+    redirect("/demos");
   }
 }
 

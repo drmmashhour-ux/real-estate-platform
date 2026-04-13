@@ -1,4 +1,4 @@
-/** Shared BNHub / LECIPM marketing surfaces: black + gold premium. */
+/** Shared BNHUB / LECIPM marketing surfaces: black + gold premium. */
 export const m = {
   page: "min-h-screen bg-zinc-950 text-zinc-100",
   card: "rounded-2xl border border-amber-500/20 bg-zinc-900/60 p-5 shadow-lg shadow-black/40 backdrop-blur-sm",

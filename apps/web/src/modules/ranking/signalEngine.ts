@@ -75,8 +75,12 @@ export function getTrustSignalsBnhub(listing: BnhubListingRankingInput): number 
   if (listing.verificationStatus === "VERIFIED") t += 0.35;
   else if (listing.verificationStatus === "PENDING") t += 0.15;
   if (listing.listingVerificationStatus === "VERIFIED") t += 0.1;
-  else if (listing.listingVerificationStatus === "APPROVED") t += 0.08;
+  else if (listing.listingVerificationStatus === "PENDING_VERIFICATION") t += 0.06;
   t -= Math.min(0.35, listing.disputeCount * 0.07);
+  const pl = listing.platformListingTrust01;
+  const ph = listing.platformHostTrust01;
+  if (pl != null && Number.isFinite(pl)) t += clamp01(pl) * 0.06;
+  if (ph != null && Number.isFinite(ph)) t += clamp01(ph) * 0.05;
   return clamp01(t);
 }
 
@@ -197,7 +201,7 @@ export function getAvailabilitySignals(ctx: RankingSearchContext): number {
   return 0.72;
 }
 
-/** Aggregate all BNHub signals */
+/** Aggregate all BNHUB signals */
 export function buildBnhubSignalBundle(
   listing: BnhubListingRankingInput,
   ctx: RankingSearchContext

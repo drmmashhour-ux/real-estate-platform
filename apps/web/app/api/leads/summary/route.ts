@@ -393,7 +393,7 @@ export async function GET() {
   const wonBrokerCommission = aggWon._sum.finalCommission ?? 0;
   const avgDealSize =
     aggWon._avg.finalSalePrice != null ? Math.round(aggWon._avg.finalSalePrice) : 0;
-  /** Reference only — BNHub / stays are billed separately in finance modules. */
+  /** Reference only — BNHUB / stays are billed separately in finance modules. */
   const platformBnhubReferenceCut = Math.round(pipelineDealValue * PLATFORM_BNHUB_HOST_FEE_RATE);
 
   const leadsByStage: Record<string, number> = {};

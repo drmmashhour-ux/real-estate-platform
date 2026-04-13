@@ -1,5 +1,5 @@
 /**
- * Real BNHub booking → Stripe Checkout Session → signed checkout.session.completed webhook.
+ * Real BNHUB booking → Stripe Checkout Session → signed checkout.session.completed webhook.
  * Adapted from scripts/validate-bnhub-stripe-e2e.ts (no PAN; uses Stripe test API + app webhook).
  */
 import Stripe from "stripe";

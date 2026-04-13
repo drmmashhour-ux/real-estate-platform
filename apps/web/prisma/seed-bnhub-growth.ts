@@ -17,11 +17,11 @@ const DEMO_LISTINGS = [
 export async function seedBnhubGrowthDemo(hostUserId: string): Promise<void> {
   const n = await prisma.bnhubGrowthCampaign.count().catch(() => -1);
   if (n === -1) {
-    console.log("  (skip BNHub growth seed — tables not migrated)");
+    console.log("  (skip BNHUB growth seed — tables not migrated)");
     return;
   }
   if (n > 0) {
-    console.log("  BNHub growth demo already present");
+    console.log("  BNHUB growth demo already present");
     return;
   }
 
@@ -82,5 +82,5 @@ export async function seedBnhubGrowthDemo(hostUserId: string): Promise<void> {
     },
   });
 
-  console.log("  BNHub growth demo: campaigns + assets + internal publish + sample leads + global rule");
+  console.log("  BNHUB growth demo: campaigns + assets + internal publish + sample leads + global rule");
 }

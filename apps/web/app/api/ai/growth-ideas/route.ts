@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     const feedback = await feedbackFromBodyWithAnalytics(d);
     const vc = Math.min(Math.max(d.variantCount ?? 1, 1), 3);
     const baseInput = {
-      topic: d.topic?.trim() || "BNHub growth",
+      topic: d.topic?.trim() || "BNHUB growth",
       audience: d.audience?.trim() || "hosts and travelers in EU markets",
       tone: d.tone?.trim() || undefined,
       context: d.context?.trim() || undefined,
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
           userId,
           type: "growth_idea",
           shared: {
-            topic: d.topic?.trim() || "BNHub growth",
+            topic: d.topic?.trim() || "BNHUB growth",
             tone: d.tone?.trim() || "professional",
             audience: d.audience?.trim() || "hosts and travelers in EU markets",
             contentJson: { stage: d.stage ?? "early" },
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
         userId,
         type: "growth_idea",
         shared: {
-          topic: d.topic?.trim() || "BNHub growth",
+          topic: d.topic?.trim() || "BNHUB growth",
           tone: d.tone?.trim() || "professional",
           audience: d.audience?.trim() || "hosts and travelers in EU markets",
           contentJson: { stage: d.stage ?? "early", variantCount: vc },

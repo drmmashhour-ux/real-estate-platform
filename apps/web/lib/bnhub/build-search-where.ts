@@ -35,7 +35,7 @@ function isCanadianPostalToken(s: string): boolean {
 }
 
 /**
- * Shared WHERE for published BNHub listing search (paginated + non-paginated).
+ * Shared WHERE for published BNHUB listing search (paginated + non-paginated).
  */
 export function buildPublishedListingSearchWhere(params: BuildSearchWhereInput): Prisma.ShortTermListingWhereInput {
   const where: Prisma.ShortTermListingWhereInput = {};

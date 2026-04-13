@@ -16,6 +16,6 @@ export async function GET(
     const rows = await getBnhubIndex(regionId, { limit });
     return Response.json({ bnhubIndex: rows });
   } catch (e) {
-    return Response.json({ error: "Failed to load BNHub index" }, { status: 500 });
+    return Response.json({ error: "Failed to load BNHUB index" }, { status: 500 });
   }
 }

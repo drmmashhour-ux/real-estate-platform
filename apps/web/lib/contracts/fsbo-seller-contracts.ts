@@ -10,7 +10,7 @@ import { contractEnforcementDisabled } from "@/lib/contracts/enforcement-flags";
 import { NBHUB_LONG_TERM_RENTAL_AGREEMENT_HTML } from "@/lib/bnhub/nbhub-long-term-rental-agreement";
 import { NBHUB_BROKER_COLLABORATION_AGREEMENT_HTML } from "@/lib/bnhub/nbhub-broker-collaboration-agreement";
 
-/** Shared HTML for marketplace seller listing agreement (FSBO + BNHub listing attach). */
+/** Shared HTML for marketplace seller listing agreement (FSBO + BNHUB listing attach). */
 export const SELLER_AGREEMENT_HTML = `
 <h2>Seller listing agreement</h2>
 <p>By signing, you confirm you have authority to market this property, that listing details are accurate to the best of your knowledge,

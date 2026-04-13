@@ -1,5 +1,5 @@
 /**
- * Validates BNHub booking payment plumbing using **Stripe Checkout Sessions only** (PCI):
+ * Validates BNHUB booking payment plumbing using **Stripe Checkout Sessions only** (PCI):
  * creates a real Checkout Session via the Stripe API, then posts a signed
  * `checkout.session.completed` payload to the running Next app (same shape as Stripe after a guest
  * pays on checkout.stripe.com). No PaymentIntent.create / confirm / raw card data in this script.
@@ -68,7 +68,7 @@ function buildBnhubE2eCheckoutSessionParams(args: {
         price_data: {
           currency: "cad",
           unit_amount: grandTotalCents,
-          product_data: { name: `BNHub E2E ${productLabel} ${runId}` },
+          product_data: { name: `BNHUB E2E ${productLabel} ${runId}` },
         },
         quantity: 1,
       },
@@ -161,7 +161,7 @@ async function main() {
   const listing = await prisma.shortTermListing.create({
     data: {
       listingCode: `LST-${runId}`,
-      title: `BNHub E2E ${runId}`,
+      title: `BNHUB E2E ${runId}`,
       address: "1 Rue Test",
       city: "Montreal",
       region: "QC",

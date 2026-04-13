@@ -36,7 +36,7 @@ export function CityWhyInvestSection({
       <p className="mt-8 text-sm text-slate-600">
         Explore live inventory:{" "}
         <Link href={bnhubHref} className="font-semibold text-rose-600 hover:text-rose-700">
-          BNHub stays
+          BNHUB stays
         </Link>
         {" · "}
         <Link href={fsboHref} className="font-semibold text-[#B8941F] hover:underline">

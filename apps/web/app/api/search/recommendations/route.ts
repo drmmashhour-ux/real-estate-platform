@@ -4,7 +4,7 @@ import { getPersonalizedRecommendations } from "@/lib/ai/search/getPersonalizedR
 export const dynamic = "force-dynamic";
 
 /**
- * GET — personalized BNHub recommendations for the current session user.
+ * GET — personalized BNHUB recommendations for the current session user.
  */
 export async function GET() {
   const userId = await getGuestId();

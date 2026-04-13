@@ -1,5 +1,5 @@
 /**
- * End-to-end demo seed: published BNHub stays (Prisma → `bnhub_listings`), photos,
+ * End-to-end demo seed: published BNHUB stays (Prisma → `bnhub_listings`), photos,
  * optional insurance partner + sample lead. Idempotent via fixed row ids.
  *
  * Database: set `DATABASE_URL` to your Postgres URL (e.g. Neon dashboard → connection string).
@@ -530,7 +530,7 @@ async function main() {
 
   console.log("—".repeat(60));
   console.log(`Demo seed complete. Tagged published listings: ${publishedDemoCount}`);
-  console.log(`Total published BNHub listings in DB: ${publishedAny}`);
+  console.log(`Total published BNHUB listings in DB: ${publishedAny}`);
   console.log(
     `Upsert path: ${inserted} listing(s) were new in this process; all ${LISTING_SPECS.length} rows are up to date.`
   );

@@ -17,11 +17,15 @@ function shouldSuppressAutoPrompt(): boolean {
   return Date.now() - t < 7 * 86400000;
 }
 
+type FeedbackFloatButtonProps = {
+  /** When false, only programmatic opens (timer, events); dock or other UI supplies the entry. */
+  showLauncherButton?: boolean;
+};
+
 /**
- * Global feedback entry — bottom-left (call/WhatsApp stay bottom-right).
- * POST /api/feedback with rating + optional message. Triggers after analysis, save, or ~2 min on site.
+ * Global feedback modal. Optional floating "Feedback" pill; otherwise opened via `lecipm-open-feedback` or timer.
  */
-export function FeedbackFloatButton() {
+export function FeedbackFloatButton({ showLauncherButton = true }: FeedbackFloatButtonProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   /** 0 = not chosen */
@@ -122,18 +126,20 @@ export function FeedbackFloatButton() {
 
   return (
     <>
-      <div className="pointer-events-auto fixed bottom-6 start-6 z-50 sm:bottom-8 sm:start-8">
-        <button
-          type="button"
-          onClick={() => {
-            setErrMsg(null);
-            setOpen(true);
-          }}
-          className="pointer-events-auto z-50 rounded-full border border-emerald-500/40 bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-900/40 transition-all duration-200 hover:scale-105 hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:ring-offset-2 focus:ring-offset-[#0B0B0B]"
-        >
-          Feedback
-        </button>
-      </div>
+      {showLauncherButton ? (
+        <div className="pointer-events-auto fixed bottom-6 start-6 z-50 sm:bottom-8 sm:start-8">
+          <button
+            type="button"
+            onClick={() => {
+              setErrMsg(null);
+              setOpen(true);
+            }}
+            className="pointer-events-auto z-50 rounded-full border border-emerald-500/40 bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-900/40 transition-all duration-200 hover:scale-105 hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:ring-offset-2 focus:ring-offset-[#0B0B0B]"
+          >
+            Feedback
+          </button>
+        </div>
+      ) : null}
 
       {open ? (
         <div

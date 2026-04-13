@@ -13,6 +13,7 @@ import {
   parseOfferedPrice,
   parseScenario,
 } from "@/modules/offers/services/offer-validation";
+import { recordAnalyticsFunnelEvent } from "@/lib/funnel/analytics-events";
 import { notifyOfferEvent } from "@/modules/offers/services/offer-notifications";
 import { assertBuyerOfferAllowed } from "@/modules/legal/assert-legal";
 import { legalEnforcementDisabled } from "@/modules/legal/legal-enforcement";
@@ -132,6 +133,13 @@ export async function POST(request: NextRequest) {
     { listingId: offer.listingId, offeredPrice: offer.offeredPrice },
     userId
   );
+  void recordAnalyticsFunnelEvent({
+    name: "deal_started",
+    listingId: offer.listingId,
+    userId,
+    source: "offer_submitted",
+    metadata: { offerId: offer.id },
+  });
   notifyOfferEvent("offer_submitted", {
     offerId: offer.id,
     listingId: offer.listingId,

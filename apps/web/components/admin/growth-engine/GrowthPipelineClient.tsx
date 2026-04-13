@@ -53,6 +53,22 @@ function defaultTemplateForRole(role: string): GrowthTemplateKey {
   }
 }
 
+const ROUTE_FILTER_OPTS = [
+  { id: "all", label: "All routes" },
+  { id: "unspecified", label: "Unspecified" },
+  { id: "real_estate", label: "Real estate" },
+  { id: "mortgage", label: "Mortgage" },
+  { id: "both", label: "Both" },
+] as const;
+
+const URGENCY_FILTER_OPTS = [
+  { id: "all", label: "All urgency" },
+  { id: "unspecified", label: "Unspecified" },
+  { id: "hot", label: "Hot" },
+  { id: "mid", label: "Mid (1–3 mo)" },
+  { id: "long_term", label: "Long (6+ mo)" },
+] as const;
+
 export function GrowthPipelineClient({ initialLeads, metrics }: Props) {
   const [leads, setLeads] = useState<LeadRow[]>(initialLeads);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -60,21 +76,31 @@ export function GrowthPipelineClient({ initialLeads, metrics }: Props) {
   const [templateByLead, setTemplateByLead] = useState<Record<string, GrowthTemplateKey>>({});
   const [csvText, setCsvText] = useState("");
   const [importMsg, setImportMsg] = useState<string | null>(null);
+  const [routeFilter, setRouteFilter] = useState<string>("all");
+  const [urgencyFilter, setUrgencyFilter] = useState<string>("all");
 
   function tplFor(lead: LeadRow): GrowthTemplateKey {
     return templateByLead[lead.id] ?? defaultTemplateForRole(lead.role);
   }
 
+  const filteredLeads = useMemo(() => {
+    return leads.filter((l) => {
+      if (routeFilter !== "all" && l.brokerRoute !== routeFilter) return false;
+      if (urgencyFilter !== "all" && l.leadUrgency !== urgencyFilter) return false;
+      return true;
+    });
+  }, [leads, routeFilter, urgencyFilter]);
+
   const byColumn = useMemo(() => {
     const m = new Map<PipelineStage, LeadRow[]>();
     for (const s of PIPELINE_STAGES) m.set(s, []);
-    for (const l of leads) {
+    for (const l of filteredLeads) {
       if (l.archivedAt) continue;
       const st = l.stage as PipelineStage;
       if (m.has(st)) m.get(st)!.push(l);
     }
     return m;
-  }, [leads]);
+  }, [filteredLeads]);
 
   async function refresh() {
     const res = await fetch("/api/admin/growth-engine/leads", { cache: "no-store" });
@@ -171,6 +197,40 @@ export function GrowthPipelineClient({ initialLeads, metrics }: Props) {
 
   return (
     <div className="space-y-10">
+      <section className="flex flex-wrap items-end gap-3 rounded-xl border border-slate-800 bg-slate-900/40 p-4">
+        <label className="text-xs text-slate-400">
+          Leads Hub route
+          <select
+            value={routeFilter}
+            onChange={(e) => setRouteFilter(e.target.value)}
+            className="ml-2 rounded border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm text-slate-100"
+          >
+            {ROUTE_FILTER_OPTS.map((o) => (
+              <option key={o.id} value={o.id}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="text-xs text-slate-400">
+          Urgency
+          <select
+            value={urgencyFilter}
+            onChange={(e) => setUrgencyFilter(e.target.value)}
+            className="ml-2 rounded border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm text-slate-100"
+          >
+            {URGENCY_FILTER_OPTS.map((o) => (
+              <option key={o.id} value={o.id}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <p className="text-[11px] text-slate-500">
+          Filters apply to the board below (client-side). Total loaded: {leads.length} · Showing: {filteredLeads.length}
+        </p>
+      </section>
+
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard label="New leads today" value={String(metrics.leadsCreatedToday)} />
         <MetricCard label="Conversion rate" value={`${metrics.conversionRate}%`} />
@@ -273,6 +333,23 @@ export function GrowthPipelineClient({ initialLeads, metrics }: Props) {
                         <p className="text-[10px] text-slate-500">
                           {lead.role} · {lead.source}
                         </p>
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {lead.brokerRoute && lead.brokerRoute !== "unspecified" ? (
+                            <span className="rounded bg-sky-600/25 px-1.5 py-0.5 text-[9px] font-medium uppercase text-sky-200/95">
+                              {lead.brokerRoute.replace("_", " ")}
+                            </span>
+                          ) : null}
+                          {lead.leadUrgency && lead.leadUrgency !== "unspecified" ? (
+                            <span className="rounded bg-amber-600/25 px-1.5 py-0.5 text-[9px] font-medium uppercase text-amber-200/95">
+                              {lead.leadUrgency.replace("_", " ")}
+                            </span>
+                          ) : null}
+                          {lead.preferPlatformMortgageExpert ? (
+                            <span className="rounded bg-emerald-700/30 px-1.5 py-0.5 text-[9px] text-emerald-200/95">
+                              Platform mortgage first
+                            </span>
+                          ) : null}
+                        </div>
                         {lead.city ? <p className="text-slate-500">{lead.city}</p> : null}
                       </div>
                       {lead.needsFollowUp ? (
@@ -424,14 +501,14 @@ export function GrowthPipelineClient({ initialLeads, metrics }: Props) {
       <section className="rounded-xl border border-amber-900/40 bg-amber-950/20 p-4">
         <h2 className="text-sm font-semibold text-amber-200/90">Needs follow-up</h2>
         <ul className="mt-2 space-y-1 text-xs text-slate-400">
-          {leads
+          {filteredLeads
             .filter((l) => l.needsFollowUp && !l.archivedAt)
             .map((l) => (
               <li key={l.id}>
                 {l.name ?? l.email} — {l.followUpReason ?? "Review"}
               </li>
             ))}
-          {leads.every((l) => !l.needsFollowUp || l.archivedAt) ? (
+          {filteredLeads.every((l) => !l.needsFollowUp || l.archivedAt) ? (
             <li className="text-slate-600">None flagged.</li>
           ) : null}
         </ul>

@@ -34,12 +34,12 @@ export async function getCityLaunchChecklist(cityKey: string): Promise<LaunchChe
     {
       id: "listings",
       ok: n(m, "activeListingCount") >= minListings,
-      detail: `Active listings (BNHub+FSBO): ${n(m, "activeListingCount")} (min ${minListings})`,
+      detail: `Active listings (BNHUB+FSBO): ${n(m, "activeListingCount")} (min ${minListings})`,
     },
     {
       id: "hosts",
       ok: n(m, "verifiedHostCount") >= minHosts,
-      detail: `Hosts with published BNHub: ${n(m, "verifiedHostCount")} (min ${minHosts})`,
+      detail: `Hosts with published BNHUB: ${n(m, "verifiedHostCount")} (min ${minHosts})`,
     },
     {
       id: "trust_score",

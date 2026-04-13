@@ -84,7 +84,7 @@ export function AdminInvestorMetricsCharts({ data }: { data: InvestorSnapshotCha
       </div>
       <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
         <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">Listings scale</h3>
-        <p className="mt-0.5 text-[11px] text-slate-600">BNHub published + FSBO active at snapshot</p>
+        <p className="mt-0.5 text-[11px] text-slate-600">BNHUB published + FSBO active at snapshot</p>
         <div className="mt-3 h-64">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={data}>

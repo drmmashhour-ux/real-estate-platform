@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useFooterHistoryNavSuppressed } from "@/components/layout/FooterHistoryNavContext";
+import { FooterHistoryNavPair } from "@/components/layout/FooterHistoryNavPair";
 
 const icon = (d: string) => (
   <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
@@ -41,6 +43,7 @@ const ProfileIcon = () =>
 export function InvestmentMobileBottomNav() {
   const pathname = usePathname();
   const p = pathname ? pathname.replace(/\/$/, "") || "/" : "/";
+  const historyNavSuppressed = useFooterHistoryNavSuppressed();
 
   const [demo, setDemo] = useState(p.startsWith("/demo"));
 
@@ -106,9 +109,14 @@ export function InvestmentMobileBottomNav() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-[60] border-t border-white/10 bg-[#0B0B0B]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-lg lg:hidden"
+      className="fixed bottom-0 left-0 right-0 z-[70] border-t border-white/10 bg-[#0B0B0B] pb-[env(safe-area-inset-bottom)] shadow-[0_-10px_36px_rgba(0,0,0,1)] lg:hidden"
       aria-label="Primary"
     >
+      {historyNavSuppressed ? null : (
+        <div className="mx-auto border-b border-white/10">
+          <FooterHistoryNavPair variant="investmentStrip" className="mx-auto" />
+        </div>
+      )}
       <ul className="mx-auto flex max-w-2xl items-stretch justify-around gap-0 overflow-x-auto px-0.5 pt-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {items.map(({ href, label, Icon, active }) => (
           <li key={href} className="min-w-0 flex-1">

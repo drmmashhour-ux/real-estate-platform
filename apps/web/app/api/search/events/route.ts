@@ -14,7 +14,7 @@ const ALLOWED = new Set<SearchEventType>([
 ]);
 
 /**
- * POST — record BNHub search / listing interaction for ranking & profiles.
+ * POST — record BNHUB search / listing interaction for ranking & profiles.
  */
 export async function POST(request: NextRequest) {
   const body = (await request.json().catch(() => ({}))) as {

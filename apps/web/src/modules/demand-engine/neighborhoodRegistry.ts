@@ -4,7 +4,7 @@ export type NeighborhoodEntry = {
   slug: string;
   title: string;
   description: string;
-  /** Optional search hint for BNHub / FSBO */
+  /** Optional search hint for BNHUB / FSBO */
   searchHint: string;
 };
 
@@ -15,7 +15,7 @@ export const NEIGHBORHOODS_BY_CITY: Record<CitySlug, NeighborhoodEntry[]> = {
       slug: "plateau",
       title: "Plateau Mont-Royal",
       description:
-        "Walkable streets, cafés, and strong short-term demand — a core BNHub corridor for guests and investors.",
+        "Walkable streets, cafés, and strong short-term demand — a core BNHUB corridor for guests and investors.",
       searchHint: "plateau",
     },
     {

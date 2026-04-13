@@ -5,7 +5,7 @@ import { pushAvailabilityToChannels } from "@/lib/bnhub/channel-integration";
 
 export const dynamic = "force-dynamic";
 
-/** Toggle external OTA sync for a BNHub listing (host-only). */
+/** Toggle external OTA sync for a BNHUB listing (host-only). */
 export async function PATCH(req: NextRequest) {
   const userId = await getGuestId();
   if (!userId) {

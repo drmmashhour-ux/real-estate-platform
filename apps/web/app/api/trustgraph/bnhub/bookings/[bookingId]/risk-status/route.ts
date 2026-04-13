@@ -15,7 +15,7 @@ const paramsSchema = z.object({
 
 export async function GET(_request: Request, context: { params: Promise<{ bookingId: string }> }) {
   if (!isTrustGraphEnabled() || !isTrustGraphBnhubRiskEnabled()) {
-    return trustgraphJsonError("BNHub TrustGraph disabled", 503);
+    return trustgraphJsonError("BNHUB TrustGraph disabled", 503);
   }
 
   const raw = await context.params;

@@ -96,7 +96,7 @@ export function predictInvestmentPotential(_listingId: string): InvestmentPredic
   };
 }
 
-// ─── BNHub pricing ─────────────────────────────────────────────────────────
+// ─── BNHUB pricing ─────────────────────────────────────────────────────────
 
 export type BnHubPricingSuggestion = {
   recommendedCents: number;

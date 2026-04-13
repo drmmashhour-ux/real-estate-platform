@@ -1,5 +1,5 @@
 /**
- * BNHub invoice PDF — server-only via `@react-pdf/renderer`.
+ * BNHUB invoice PDF — server-only via `@react-pdf/renderer`.
  * Guest rows: total paid only. Host/admin: platform fee + host payout.
  */
 import { Document, Page, Text, View, StyleSheet, Image } from "@react-pdf/renderer";
@@ -90,7 +90,7 @@ export function BnhubInvoicePdfDocument({ data }: { data: BookingInvoiceJson }) 
             <Image style={styles.logo} src={logoSrc()} />
             <View style={styles.brandBlock}>
               <Text style={styles.brand}>LECIPM</Text>
-              <Text style={styles.tag}>BNHub · Booking confirmation & invoice</Text>
+              <Text style={styles.tag}>BNHUB · Booking confirmation & invoice</Text>
             </View>
           </View>
           <View style={styles.metaRight}>
@@ -176,7 +176,7 @@ export function BnhubInvoicePdfDocument({ data }: { data: BookingInvoiceJson }) 
         ) : null}
 
         <Text style={styles.footer}>
-          LECIPM — BNHub. This document reflects your booking payment. Card receipts may
+          LECIPM — BNHUB. This document reflects your booking payment. Card receipts may
           also be available from Stripe. For support, use the confirmation code when contacting us.
         </Text>
       </Page>

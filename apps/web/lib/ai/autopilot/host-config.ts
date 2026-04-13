@@ -23,7 +23,7 @@ export type HostAutopilotConfig = {
   autopilotMode: HostAutopilotMode;
   preferences: HostAutopilotPreferences;
   lastAutopilotRunAt: Date | null;
-  /** BNHub: host-controlled guest lifecycle messaging (separate from generic “message drafts”). */
+  /** BNHUB: host-controlled guest lifecycle messaging (separate from generic “message drafts”). */
   guestMessaging: {
     autoGuestMessagingEnabled: boolean;
     guestMessageMode: GuestMessageMode;

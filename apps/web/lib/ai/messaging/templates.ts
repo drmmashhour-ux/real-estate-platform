@@ -1,5 +1,5 @@
 /**
- * BNHub host-controlled lifecycle message templates (EN / FR / AR).
+ * BNHUB host-controlled lifecycle message templates (EN / FR / AR).
  * Variables: guestName, listingTitle, checkInLabel, checkOutLabel, nights
  */
 

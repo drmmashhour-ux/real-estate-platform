@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useSearchEngineContext } from "@/components/search/SearchEngine";
 
 /**
- * Deep-link assistant / shared URLs into BNHub stays search (`?city=&guests=&checkIn=&checkOut=&maxPrice=&minBeds=`).
+ * Deep-link assistant / shared URLs into BNHUB stays search (`?city=&guests=&checkIn=&checkOut=&maxPrice=&minBeds=`).
  */
 function BnhubStaysQuerySyncInner() {
   const sp = useSearchParams();

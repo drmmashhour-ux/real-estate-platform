@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import { MessageCircle, Mic, Send, Volume2, X } from "lucide-react";
+import { Mic, Send, Volume2, X } from "lucide-react";
 import { getAssistantConfig } from "@/lib/ai/assistant-config";
 import {
   buildPropertySearchHref,
@@ -31,7 +31,7 @@ const QUICK = [
   "Find me a 2-bedroom condo in Montreal under 650k",
   "Short stays in Laval this weekend for 2 guests",
   "Rental with parking under 1800",
-  "How do I book a BNHub stay?",
+  "How do I book a BNHUB stay?",
   "How does owner contact unlock work?",
   "List my property",
 ];
@@ -65,6 +65,12 @@ export function PlatformAssistant() {
     if (!open) return;
     trackAssistantEvent("assistant_opened");
   }, [open]);
+
+  useEffect(() => {
+    const onToggle = () => toggle();
+    window.addEventListener("lecipm-platform-assistant-toggle", onToggle);
+    return () => window.removeEventListener("lecipm-platform-assistant-toggle", onToggle);
+  }, [toggle]);
 
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
@@ -210,18 +216,9 @@ export function PlatformAssistant() {
 
   if (!cfg.assistantEnabled) return null;
 
+  /** Launcher lives in GlobalFooterDock (chat menu) to avoid a second floating bubble overlapping Immo AI. */
   const panel = (
     <>
-      <button
-        type="button"
-        onClick={() => toggle()}
-        className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] right-4 z-[190] flex h-14 w-14 items-center justify-center rounded-full border-2 border-[#D4AF37] bg-[#0a0a0a] text-[#D4AF37] shadow-[0_0_24px_rgba(212,175,55,0.35)] transition hover:shadow-[0_0_36px_rgba(212,175,55,0.55)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B0B0B] md:bottom-8"
-        aria-label={open ? "Close assistant" : "Open platform assistant"}
-        aria-expanded={open}
-      >
-        {open ? <X className="h-6 w-6" aria-hidden /> : <MessageCircle className="h-6 w-6" aria-hidden />}
-      </button>
-
       {open ? (
         <div
           role="dialog"
@@ -260,7 +257,7 @@ export function PlatformAssistant() {
             <div ref={listRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-3">
               {messages.length === 0 ? (
                 <p className="text-sm leading-relaxed text-white/75">
-                  Ask in plain language or tap a prompt. I can search, explain BNHub booking, and describe platform
+                  Ask in plain language or tap a prompt. I can search, explain BNHUB booking, and describe platform
                   steps — without inventing listing facts.
                 </p>
               ) : null}

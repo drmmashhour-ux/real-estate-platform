@@ -25,7 +25,7 @@ const TITLES = {
   seller: "Seller listing agreement — accuracy & compliance",
   rental: "Long-term rental — platform acknowledgment",
   shortTerm: "Short-term stay — guest acknowledgment",
-  host: "BNHub host — listing & payouts acknowledgment",
+  host: "BNHUB host — listing & payouts acknowledgment",
   broker: "Broker collaboration — platform acknowledgment",
 } as const;
 

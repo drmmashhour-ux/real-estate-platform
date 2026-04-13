@@ -109,7 +109,7 @@ async function sendPreventionNotifications(input: {
   risk: ReturnType<typeof detectRisksForBooking>[number];
 }): Promise<boolean> {
   const url = `/bnhub/booking/${input.bookingId}`;
-  const title = "BNHub: potential issue — guidance only";
+  const title = "BNHUB: potential issue — guidance only";
   const meta = {
     kind: "bnhub_dispute_prevention",
     bookingId: input.bookingId,
@@ -184,7 +184,7 @@ async function sendPreventionNotifications(input: {
       await createNotification({
         userId: adminUserId,
         type: "SYSTEM",
-        title: "BNHub: review suggested (risk signal)",
+        title: "BNHUB: review suggested (risk signal)",
         message: `${input.risk.summary} — Booking ${input.bookingId}. Recommended: ${input.risk.recommendedAction}`,
         priority: "HIGH",
         actionUrl: `/admin/bnhub/dispute-prevention`,
@@ -207,7 +207,7 @@ export type RunBnhubDisputePreventionResult = {
 };
 
 /**
- * Scans active BNHub bookings, persists `AiDisputeRiskLog` rows, and queues neutral in-app reminders (no auto-resolution).
+ * Scans active BNHUB bookings, persists `AiDisputeRiskLog` rows, and queues neutral in-app reminders (no auto-resolution).
  */
 export async function runBnhubDisputePreventionScan(
   prisma: PrismaClient,

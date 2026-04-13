@@ -74,7 +74,7 @@ export async function BNHubTrustLayer({ listingId }: { listingId: string }) {
   return (
     <section className="space-y-4 rounded-xl border border-white/10 bg-slate-950/40 p-4">
       <div>
-        <p className="text-xs font-semibold uppercase tracking-wider text-emerald-400/90">BNHub trust layer</p>
+        <p className="text-xs font-semibold uppercase tracking-wider text-emerald-400/90">BNHUB trust layer</p>
         <p className="mt-1 text-sm text-slate-400">
           Transparency for guests: verification, reviews, and pricing context in one place.
         </p>
@@ -109,7 +109,7 @@ export async function BNHubTrustLayer({ listingId }: { listingId: string }) {
       </div>
 
       <p className="text-xs text-slate-500">
-        Paid stays include the BNHub guarantee (see your booking after confirmation). If something does not match the
+        Paid stays include the BNHUB guarantee (see your booking after confirmation). If something does not match the
         listing, you can start a claim from the booking page.
       </p>
     </section>

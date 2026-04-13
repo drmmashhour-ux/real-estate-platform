@@ -15,7 +15,7 @@ export type PlatformModule = {
   name: string;
   tagline: string;
   href: string;
-  /** Short label for badges (e.g. "BNHub stays") */
+  /** Short label for badges (e.g. "BNHUB stays") */
   styleLabel: string;
   /** If true, highlight as platform differentiator */
   uniqueFeature?: boolean;
@@ -24,10 +24,10 @@ export type PlatformModule = {
 export const PLATFORM_MODULES: PlatformModule[] = [
   {
     key: "bnhub",
-    name: "BNHub",
+    name: "BNHUB",
     tagline: "Short-term rentals & stays",
     href: "/search/bnhub",
-    styleLabel: "BNHub stays",
+    styleLabel: "BNHUB stays",
   },
   {
     key: "hotelHub",

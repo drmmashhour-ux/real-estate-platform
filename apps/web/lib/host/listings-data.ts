@@ -11,6 +11,8 @@ export type HostListingManageRow = {
   coverUrl: string | null;
   views: number;
   bookings: number;
+  /** For sort / “recently updated” in host grid */
+  updatedAt: Date;
   /** Heuristic occupancy label */
   occupancyLabel: string;
   /** AI-style badges for host grid */
@@ -28,6 +30,7 @@ export async function getHostListings(hostId: string): Promise<HostListingManage
       city: true,
       listingStatus: true,
       nightPriceCents: true,
+      updatedAt: true,
       description: true,
       bnhubListingCompletedStays: true,
       listingPhotos: { take: 8, orderBy: { sortOrder: "asc" }, select: { url: true } },
@@ -69,6 +72,7 @@ export async function getHostListings(hostId: string): Promise<HostListingManage
       city: l.city,
       listingStatus: l.listingStatus,
       nightPriceCents: l.nightPriceCents,
+      updatedAt: l.updatedAt,
       coverUrl: cover,
       views,
       bookings,

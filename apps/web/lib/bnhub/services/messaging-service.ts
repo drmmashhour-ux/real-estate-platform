@@ -1,5 +1,5 @@
 /**
- * BNHub MessagingService — send message, retrieve booking chat.
+ * BNHUB MessagingService — send message, retrieve booking chat.
  */
 
 import { prisma } from "@/lib/db";

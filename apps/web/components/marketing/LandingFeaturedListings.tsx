@@ -54,7 +54,7 @@ export async function LandingFeaturedListings() {
         </p>
         <p className="mt-2 text-sm text-white/60">
           <Link href="/bnhub/stays" className="font-semibold text-[#D4AF37] underline-offset-4 hover:underline">
-            Browse BNHub stays
+            Browse BNHUB stays
           </Link>{" "}
           or{" "}
           <Link href="/host/listings/new" className="font-semibold text-[#D4AF37] underline-offset-4 hover:underline">

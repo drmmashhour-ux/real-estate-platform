@@ -53,7 +53,7 @@ function mapIntelligenceToLegacyBreakdown(s: IntelligenceScores): AiScoreBreakdo
 }
 
 /**
- * Re-ranks BNHub search results using unified intelligence (`buildListingSignals` + `computeCompositeScore`).
+ * Re-ranks BNHUB search results using unified intelligence (`buildListingSignals` + `computeCompositeScore`).
  */
 export async function applyAiSearchRankingToBnhubResults<T extends BnhubListingLike>(
   listings: T[],

@@ -9,7 +9,7 @@ import { prisma } from "@/lib/db";
 export const dynamic = "force-dynamic";
 
 /**
- * GET /api/booking/[id]/invoice — BNHub invoice payload (JSON).
+ * GET /api/booking/[id]/invoice — BNHUB invoice payload (JSON).
  * Guest viewers receive total paid only; platform fee / host payout are omitted (internal settlement).
  */
 export async function GET(

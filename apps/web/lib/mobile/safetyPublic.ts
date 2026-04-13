@@ -4,7 +4,7 @@ import type { BnhubListingSafetyProfile, BnhubSafetyReviewStatus } from "@prisma
 export function publicMessageFromSafetyKey(key: string | null | undefined): string {
   switch (key) {
     case "approved":
-      return "This listing is available on BNHub.";
+      return "This listing is available on BNHUB.";
     case "safety_review_in_progress":
       return "Safety review in progress — some actions may be limited until verification completes.";
     case "listing_unavailable":

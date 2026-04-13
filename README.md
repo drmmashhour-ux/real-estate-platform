@@ -157,5 +157,6 @@ The **LECIPM Project Architecture Workspace** lives in `docs/`:
 - [docs/architecture/MODULES-REGISTRY.md](docs/architecture/MODULES-REGISTRY.md) — Platform modules: purpose, location, APIs, dependencies
 - [docs/architecture/ARCHITECTURE-DIAGRAM.md](docs/architecture/ARCHITECTURE-DIAGRAM.md) — High-level architecture diagram
 - [docs/BUILD-READINESS-CHECKLIST.md](docs/BUILD-READINESS-CHECKLIST.md) — Build readiness checklist
+- [docs/dev/README.md](docs/dev/README.md) — Vercel deployment safety (preview-first, envs, rollback, logs, incidents)
 
 Other key docs: [Development Setup](docs/engineering/DEVELOPMENT-SETUP.md), [Project Overview](docs/vision/PROJECT-OVERVIEW.md), [Build Order](docs/engineering/LECIPM-BUILD-ORDER.md), [API Architecture](docs/architecture/LECIPM-API-ARCHITECTURE-BLUEPRINT.md), [API Standards](docs/api/API-STANDARDS.md).

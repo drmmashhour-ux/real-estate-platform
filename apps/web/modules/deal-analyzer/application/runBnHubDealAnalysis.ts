@@ -18,14 +18,14 @@ function bnhubRiskScore(r: { recommendation: string }): number {
 }
 
 /**
- * @param attachToListingId — optional FSBO listing id to merge BNHub overlay into latest Phase 1 analysis summary.
+ * @param attachToListingId — optional FSBO listing id to merge BNHUB overlay into latest Phase 1 analysis summary.
  */
 export async function runBnHubDealAnalysis(args: {
   shortTermListingId: string;
   attachToListingId?: string;
 }) {
   if (!isDealAnalyzerBnhubModeEnabled()) {
-    return { ok: false as const, error: "BNHub deal analysis mode is disabled" };
+    return { ok: false as const, error: "BNHUB deal analysis mode is disabled" };
   }
 
   const r = await analyzeBnhubListingRevenue(args.shortTermListingId);
@@ -96,7 +96,7 @@ export async function runBnHubDealAnalysis(args: {
       opportunityType: "bnhub_candidate",
       summary: {
         phase2: { bnhub: sanitized },
-        reasons: ["BNHub short-term rules-based snapshot (not income guarantee)."],
+        reasons: ["BNHUB short-term rules-based snapshot (not income guarantee)."],
         warnings: r.warnings,
       } as object,
     },

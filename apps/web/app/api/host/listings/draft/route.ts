@@ -27,6 +27,12 @@ export async function POST(req: NextRequest) {
       typeof body.propertyType === "string" && body.propertyType.trim()
         ? body.propertyType.trim()
         : "Apartment";
+    const roomType =
+      typeof body.roomType === "string" && body.roomType.trim() ? body.roomType.trim() : "Entire place";
+    const maxGuests = body.maxGuests != null ? Math.max(1, parseInt(String(body.maxGuests), 10) || 2) : 2;
+    const bedrooms = body.bedrooms != null ? Math.max(0, parseInt(String(body.bedrooms), 10) || 1) : 1;
+    const beds = body.beds != null ? Math.max(1, parseInt(String(body.beds), 10) || 1) : 1;
+    const baths = body.baths != null ? Math.max(0.5, Number(body.baths) || 1) : 1;
 
     const gate = await assertCanCreateListing({
       userId: ownerId,
@@ -51,10 +57,11 @@ export async function POST(req: NextRequest) {
       country: "CA",
       currency: "CAD",
       nightPriceCents: 13_900,
-      beds: 1,
-      bedrooms: 1,
-      baths: 1,
-      maxGuests: 2,
+      roomType,
+      beds,
+      bedrooms,
+      baths,
+      maxGuests,
       photos: [],
       amenities: [],
       propertyType,

@@ -11,9 +11,65 @@ export const SELLER_DECLARATION_VERSION = 3 as const;
 /** Legacy v2 — still migrated on read */
 export const SELLER_DECLARATION_VERSION_LEGACY = 2 as const;
 
+/** Section ids for checklist UI (order matches wizard flow). */
+export const DECLARATION_SECTION_IDS = [
+  "identity",
+  "conflict",
+  "description",
+  "inclusions",
+  "condition",
+  "renovations",
+  "pool",
+  "inspection",
+  "condo",
+  "newConstruction",
+  "taxes",
+  "additionalDeclarations",
+  "final",
+] as const;
+
+export type DeclarationSectionId = (typeof DECLARATION_SECTION_IDS)[number];
+
+/** Per-section Yes/No: `true` = must complete fields, `false` = skipped (N/A). Omitted keys = not answered yet. */
+export type SectionAppliesState = Partial<Record<DeclarationSectionId, boolean>>;
+
+/** Sections 2–12 — sellers choose whether each applies (identity & final are always required). */
+export const DECLARATION_SECTIONS_WITH_APPLICABILITY_GATE: DeclarationSectionId[] = [
+  "conflict",
+  "description",
+  "inclusions",
+  "condition",
+  "renovations",
+  "pool",
+  "inspection",
+  "condo",
+  "newConstruction",
+  "taxes",
+  "additionalDeclarations",
+];
+
+export function nextDeclarationSectionId(id: DeclarationSectionId): DeclarationSectionId | null {
+  const i = DECLARATION_SECTION_IDS.indexOf(id);
+  if (i < 0 || i >= DECLARATION_SECTION_IDS.length - 1) return null;
+  return DECLARATION_SECTION_IDS[i + 1];
+}
+
 export type IdDocumentType = "PASSPORT" | "DRIVERS_LICENSE" | "NATIONAL_ID" | "OTHER";
 
 export type IdVerificationStatus = "none" | "pending" | "verified";
+
+/** Supplemental PDF/image for company / lawyer / mandate authority (not a substitute for legal advice). */
+export type AuthoritySupplementalDocKind =
+  | "mandate_poa"
+  | "company_resolution"
+  | "professional_license"
+  | "other";
+
+export type AuthoritySupplementalDoc = {
+  id: string;
+  kind: AuthoritySupplementalDocKind;
+  fileUrl: string | null;
+};
 
 export type PartyIdentity = {
   id: string;
@@ -29,6 +85,14 @@ export type PartyIdentity = {
   sharedContact: boolean;
   idDocumentUrl: string | null;
   idDocumentVerificationStatus: IdVerificationStatus;
+  /** Confirmed by seller: ID type, number, and uploaded document are accurate (required to treat identity as complete). */
+  idDetailsConfirmed: boolean;
+  /** Last AI-assisted comparison of typed identity vs uploaded ID image (optional). */
+  idAiCheck?: {
+    checkedAt: string;
+    status: "match" | "mismatch" | "inconclusive";
+    message: string;
+  } | null;
 };
 
 /** Property address as declared by the seller (must align with listing property type where applicable). */
@@ -43,7 +107,9 @@ export type SellerDeclarationData = {
   version: typeof SELLER_DECLARATION_VERSION;
   /** Structured identity — at least one seller required for completion */
   sellers: PartyIdentity[];
-  /** Optional known buyers (e.g. conflict-of-interest context); each entry must be complete if present */
+  /**
+   * Legacy field — always empty in seller hub. Buyer identity is captured in offers / promise to purchase / transactions, not here.
+   */
   buyers: PartyIdentity[];
 
   /** Structured civic address (must match property type rules; synced to listing address fields on save). */
@@ -54,8 +120,23 @@ export type SellerDeclarationData = {
    */
   sharedContactResponsibilityConfirmed: boolean;
 
+  /**
+   * Optional sections 2–12: whether each applies. When `undefined`, legacy declarations treat all as applicable.
+   * New drafts use `{}` so sellers must choose Yes/No per section.
+   */
+  sectionApplies?: SectionAppliesState;
+
   /** 1 — Seller identity & authority (narrative) */
   sellerFullName: string;
+  /**
+   * Enhanced path: a legal person, professional acting for sellers, or representative under mandate/PoA must upload
+   * evidence (see `authoritySupplementalDocs`). Aligns with Québec transparency expectations in brokerage practice (OACIQ-style disclosure).
+   */
+  authoritySellerIsCompany: boolean;
+  authorityLawyerOrNotary: boolean;
+  authorityMandateRepresentative: boolean;
+  /** PDF/images: mandate, corporate resolution, professional society card, etc. */
+  authoritySupplementalDocs: AuthoritySupplementalDoc[];
   hasAuthorityToSell: boolean;
   identityNotes: string;
 
@@ -108,6 +189,12 @@ export type SellerDeclarationData = {
 
   /** 11 — Taxes & costs */
   municipalSchoolTaxAcknowledged: boolean;
+  /** Optional: municipal / city portion estimate (from tax bill) — free text e.g. "$1,800 / year". */
+  cityTaxEstimateYearly: string;
+  /** Optional: school tax portion estimate — free text. */
+  schoolTaxEstimateYearly: string;
+  /** Uploaded seller-supporting document ids tagged for the taxes section (tax bills, etc.). */
+  taxSupportingDocumentIds: string[];
   gstQstMayApply: boolean;
   gstQstNotes: string;
 
@@ -143,6 +230,34 @@ function newPartyId(): string {
     return crypto.randomUUID();
   }
   return `party-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+function normalizeAuthoritySupplementalDocs(raw: unknown): AuthoritySupplementalDoc[] {
+  if (!Array.isArray(raw)) return [];
+  const kinds = new Set<AuthoritySupplementalDocKind>([
+    "mandate_poa",
+    "company_resolution",
+    "professional_license",
+    "other",
+  ]);
+  return raw
+    .map((r) => {
+      if (!r || typeof r !== "object") return null;
+      const o = r as Record<string, unknown>;
+      const id = typeof o.id === "string" && o.id ? o.id : newPartyId();
+      const k = o.kind;
+      const kind = kinds.has(k as AuthoritySupplementalDocKind) ? (k as AuthoritySupplementalDocKind) : "other";
+      const fileUrl = typeof o.fileUrl === "string" && o.fileUrl.trim() ? o.fileUrl : null;
+      return { id, kind, fileUrl };
+    })
+    .filter((x): x is AuthoritySupplementalDoc => x !== null);
+}
+
+/** True when listing involves a company, lawyer/notary, or non-owner representative — supplemental uploads expected. */
+export function needsAuthoritySupplementalPath(d: Partial<SellerDeclarationData>): boolean {
+  return Boolean(
+    d.authoritySellerIsCompany || d.authorityLawyerOrNotary || d.authorityMandateRepresentative
+  );
 }
 
 export function newAdditionalDeclarationEntryId(): string {
@@ -181,6 +296,8 @@ export function emptyParty(): PartyIdentity {
     sharedContact: false,
     idDocumentUrl: null,
     idDocumentVerificationStatus: "none",
+    idDetailsConfirmed: false,
+    idAiCheck: null,
   };
 }
 
@@ -195,7 +312,12 @@ export function emptySellerDeclaration(): SellerDeclarationData {
     buyers: [],
     propertyAddressStructured: emptyStructuredAddress(),
     sharedContactResponsibilityConfirmed: false,
+    sectionApplies: {},
     sellerFullName: "",
+    authoritySellerIsCompany: false,
+    authorityLawyerOrNotary: false,
+    authorityMandateRepresentative: false,
+    authoritySupplementalDocs: [],
     hasAuthorityToSell: false,
     identityNotes: "",
     sellingToFamilyMember: false,
@@ -225,6 +347,9 @@ export function emptySellerDeclaration(): SellerDeclarationData {
     gcrWarrantyDetails: "",
     builderNameContact: "",
     municipalSchoolTaxAcknowledged: false,
+    cityTaxEstimateYearly: "",
+    schoolTaxEstimateYearly: "",
+    taxSupportingDocumentIds: [],
     gstQstMayApply: false,
     gstQstNotes: "",
     additionalDeclarationsText: "",
@@ -252,7 +377,8 @@ export function isPartyIdentityComplete(p: PartyIdentity): boolean {
     nonEmpty(p.annualIncome) &&
     nonEmpty(p.phone) &&
     nonEmpty(p.email) &&
-    Boolean(p.idDocumentUrl?.trim())
+    Boolean(p.idDocumentUrl?.trim()) &&
+    p.idDetailsConfirmed === true
   );
 }
 
@@ -270,19 +396,16 @@ function partyIdentityStarted(p: PartyIdentity): boolean {
   );
 }
 
-/** Full declaration “identity” gate including optional buyers (publish / mark complete). */
+/** Full declaration “identity” gate (sellers only — buyer parties are not collected in FSBO declaration). */
 export function isIdentityDeclarationComplete(
   d: Partial<SellerDeclarationData>,
   propertyType?: string | null
 ): boolean {
-  const buyers = d.buyers ?? [];
-  if (buyers.length > 0 && !buyers.every((b) => isPartyIdentityComplete(b))) return false;
   return isIdentityDeclarationCompleteForUi(d, propertyType ?? "");
 }
 
 function identitySectionStarted(d: Partial<SellerDeclarationData>): boolean {
   const sellers = d.sellers ?? [];
-  const buyers = d.buyers ?? [];
   const pa = d.propertyAddressStructured;
   if (
     pa &&
@@ -290,11 +413,14 @@ function identitySectionStarted(d: Partial<SellerDeclarationData>): boolean {
   ) {
     return true;
   }
+  const sup = d.authoritySupplementalDocs;
+  const hasSupDocs = Array.isArray(sup) && sup.some((x) => x?.fileUrl && String(x.fileUrl).trim().length > 0);
   return (
     sellers.some((s) => partyIdentityStarted(s)) ||
-    buyers.some((b) => partyIdentityStarted(b)) ||
     Boolean(d.hasAuthorityToSell) ||
-    nonEmpty(d.identityNotes, 1)
+    nonEmpty(d.identityNotes, 1) ||
+    needsAuthoritySupplementalPath(d) ||
+    hasSupDocs
   );
 }
 
@@ -308,24 +434,31 @@ function poolSectionStarted(d: Partial<SellerDeclarationData>): boolean {
   return d.poolExists !== null;
 }
 
-/** Section ids for checklist UI */
-export const DECLARATION_SECTION_IDS = [
-  "identity",
-  "conflict",
-  "description",
-  "inclusions",
-  "condition",
-  "renovations",
-  "pool",
-  "inspection",
-  "condo",
-  "newConstruction",
-  "taxes",
-  "additionalDeclarations",
-  "final",
-] as const;
+function isCondoListingPropertyType(propertyType: string | null | undefined): boolean {
+  return (propertyType ?? "").toUpperCase() === "CONDO";
+}
 
-export type DeclarationSectionId = (typeof DECLARATION_SECTION_IDS)[number];
+/**
+ * `true` = section applies (must complete when marking complete).
+ * `false` = seller chose N/A (skip).
+ * `null` = not answered yet (new flow with `sectionApplies` object present).
+ * Legacy: `sectionApplies` undefined → all sections except built-in NA behave as applicable (`true`).
+ */
+export function effectiveSectionApplies(
+  d: Partial<SellerDeclarationData>,
+  id: DeclarationSectionId,
+  propertyType?: string | null
+): boolean | null {
+  if (id === "identity" || id === "final") return true;
+  if (id === "condo" && isCondoListingPropertyType(propertyType)) return true;
+
+  const m = d.sectionApplies;
+  if (m === undefined) return true;
+
+  if (m[id] === true) return true;
+  if (m[id] === false) return false;
+  return null;
+}
 
 /** Legacy — kept for any external imports */
 export type SectionStatus = "complete" | "incomplete" | "na";
@@ -358,37 +491,81 @@ export function getSellerDeclarationSectionUiStatus(
   const newOk =
     !d.isNewConstruction || (nonEmpty(d.gcrWarrantyDetails) && nonEmpty(d.builderNameContact));
 
+  function gated(
+    id: DeclarationSectionId,
+    complete: boolean,
+    started: boolean,
+    legacyNa?: boolean
+  ): DeclarationUiStatus {
+    const eff = effectiveSectionApplies(d, id, propertyType);
+    if (DECLARATION_SECTIONS_WITH_APPLICABILITY_GATE.includes(id)) {
+      if (eff === null) return "NOT_STARTED";
+      if (eff === false) return "NA";
+    }
+    if (legacyNa) return toUi(complete, started, true);
+    return toUi(complete, started);
+  }
+
   return {
     identity: toUi(isIdentityDeclarationCompleteForUi(d, propertyType ?? ""), identitySectionStarted(d)),
-    conflict: toUi(
+    conflict: gated(
+      "conflict",
       Boolean(d.conflictInterestDisclosureConfirmed),
       Boolean(d.sellingToFamilyMember || d.relatedToBuyer || d.conflictInterestDisclosureConfirmed)
     ),
-    description: toUi(
+    description: gated(
+      "description",
       Boolean(d.propertyDescriptionAccurate) && nonEmpty(d.propertyDescriptionNotes, 10),
       Boolean(d.propertyDescriptionAccurate) || nonEmpty(d.propertyDescriptionNotes, 1)
     ),
-    inclusions: toUi(
+    inclusions: gated(
+      "inclusions",
       nonEmpty(d.includedItems) && nonEmpty(d.excludedItems),
       nonEmpty(d.includedItems, 1) || nonEmpty(d.excludedItems, 1)
     ),
-    condition: toUi(
+    condition: gated(
+      "condition",
       nonEmpty(d.knownDefects) && nonEmpty(d.pastIssues) && nonEmpty(d.structuralConcerns),
       nonEmpty(d.knownDefects, 1) || nonEmpty(d.pastIssues, 1) || nonEmpty(d.structuralConcerns, 1)
     ),
-    renovations: toUi(
+    renovations: gated(
+      "renovations",
       nonEmpty(d.renovationsDetail) && d.renovationInvoicesAvailable !== null,
       nonEmpty(d.renovationsDetail, 1) || d.renovationInvoicesAvailable !== null
     ),
-    pool: toUi(poolFieldsComplete(d), poolSectionStarted(d)),
-    inspection: toUi(Boolean(d.buyerInspectionAccepted), Boolean(d.buyerInspectionAccepted)),
-    condo: toUi(condoOk, Boolean(d.isCondo), !d.isCondo),
-    newConstruction: toUi(newOk, Boolean(d.isNewConstruction), !d.isNewConstruction),
-    taxes: toUi(
+    pool: (() => {
+      const eff = effectiveSectionApplies(d, "pool", propertyType);
+      if (eff === null) return "NOT_STARTED";
+      if (eff === false) return "NA";
+      return toUi(poolFieldsComplete(d), poolSectionStarted(d));
+    })(),
+    inspection: gated("inspection", Boolean(d.buyerInspectionAccepted), Boolean(d.buyerInspectionAccepted)),
+    condo: (() => {
+      const eff = effectiveSectionApplies(d, "condo", propertyType);
+      if (eff === null) return "NOT_STARTED";
+      if (eff === false) return "NA";
+      if (!d.isCondo) return toUi(true, false, true);
+      return toUi(condoOk, true, false);
+    })(),
+    newConstruction: (() => {
+      const eff = effectiveSectionApplies(d, "newConstruction", propertyType);
+      if (eff === null) return "NOT_STARTED";
+      if (eff === false) return "NA";
+      if (!d.isNewConstruction) return toUi(true, false, true);
+      return toUi(newOk, true, false);
+    })(),
+    taxes: gated(
+      "taxes",
       Boolean(d.municipalSchoolTaxAcknowledged),
-      Boolean(d.municipalSchoolTaxAcknowledged) || Boolean(d.gstQstMayApply) || nonEmpty(d.gstQstNotes, 1)
+      Boolean(d.municipalSchoolTaxAcknowledged) ||
+        Boolean(d.gstQstMayApply) ||
+        nonEmpty(d.gstQstNotes, 1) ||
+        nonEmpty(d.cityTaxEstimateYearly, 1) ||
+        nonEmpty(d.schoolTaxEstimateYearly, 1) ||
+        (Array.isArray(d.taxSupportingDocumentIds) && d.taxSupportingDocumentIds.length > 0)
     ),
-    additionalDeclarations: toUi(
+    additionalDeclarations: gated(
+      "additionalDeclarations",
       isAdditionalDeclarationsSectionComplete(d),
       additionalDeclarationsSectionStarted(d)
     ),
@@ -486,6 +663,20 @@ export function missingDeclarationSections(
   return DECLARATION_SECTION_IDS.filter((id) => ui[id] === "IN_PROGRESS" || ui[id] === "NOT_STARTED");
 }
 
+function normalizeSectionApplies(raw: unknown): SectionAppliesState | undefined {
+  if (raw === undefined) return undefined;
+  if (raw === null || typeof raw !== "object") return undefined;
+  const o = raw as Record<string, unknown>;
+  const out: SectionAppliesState = {};
+  for (const id of DECLARATION_SECTIONS_WITH_APPLICABILITY_GATE) {
+    if (id in o) {
+      if (o[id] === true) out[id] = true;
+      else if (o[id] === false) out[id] = false;
+    }
+  }
+  return out;
+}
+
 /** Merge legacy 6-field JSON or v2 into v3 shape for editing */
 export function migrateLegacySellerDeclaration(raw: unknown): SellerDeclarationData {
   const base = emptySellerDeclaration();
@@ -501,16 +692,15 @@ export function migrateLegacySellerDeclaration(raw: unknown): SellerDeclarationD
             ...s,
             id: s.id || newPartyId(),
             sharedContact: Boolean((s as PartyIdentity).sharedContact),
+            idDetailsConfirmed: Boolean((s as PartyIdentity).idDetailsConfirmed),
+            idAiCheck:
+              (s as PartyIdentity).idAiCheck &&
+              typeof (s as PartyIdentity).idAiCheck === "object" &&
+              (s as PartyIdentity).idAiCheck !== null
+                ? (s as PartyIdentity).idAiCheck
+                : null,
           }))
         : [emptyParty()];
-    const buyers = Array.isArray(v3.buyers)
-      ? v3.buyers.map((b) => ({
-          ...emptyParty(),
-          ...b,
-          id: b.id || newPartyId(),
-          sharedContact: Boolean((b as PartyIdentity).sharedContact),
-        }))
-      : [];
     const hist = Array.isArray(v3.additionalDeclarationsHistory)
       ? v3.additionalDeclarationsHistory
           .map(normalizeAdditionalHistoryEntry)
@@ -531,7 +721,7 @@ export function migrateLegacySellerDeclaration(raw: unknown): SellerDeclarationD
       ...v3,
       version: SELLER_DECLARATION_VERSION,
       sellers,
-      buyers,
+      buyers: [],
       propertyAddressStructured,
       sharedContactResponsibilityConfirmed: Boolean(v3.sharedContactResponsibilityConfirmed),
       poolExists:
@@ -546,6 +736,11 @@ export function migrateLegacySellerDeclaration(raw: unknown): SellerDeclarationD
         : [],
       additionalDeclarationsLegalAck: Boolean(v3.additionalDeclarationsLegalAck),
       additionalDeclarationsHistory: hist,
+      authoritySellerIsCompany: Boolean(v3.authoritySellerIsCompany),
+      authorityLawyerOrNotary: Boolean(v3.authorityLawyerOrNotary),
+      authorityMandateRepresentative: Boolean(v3.authorityMandateRepresentative),
+      authoritySupplementalDocs: normalizeAuthoritySupplementalDocs(v3.authoritySupplementalDocs),
+      sectionApplies: normalizeSectionApplies((v3 as Record<string, unknown>).sectionApplies),
     };
   }
 

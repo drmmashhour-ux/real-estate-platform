@@ -3,16 +3,23 @@
 import confetti from "canvas-confetti";
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import type { ComponentProps, ReactNode } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   AMENITY_KEYS,
   type AmenityKey,
+  type HostListingTemplateSnapshot,
   useHostNewListingWizard,
 } from "@/stores/useHostNewListingWizard";
+import { VerificationChecklist } from "@/components/bnhub/VerificationChecklist";
+import { useSuppressFooterHistoryNav } from "@/components/layout/FooterHistoryNavContext";
 
 const TOTAL_STEPS = 7;
+
+/** Same options as BNHUB `/bnhub/host/listings/new` create listing — property + hosting room type */
+const LISTING_PROPERTY_TYPES = ["House", "Apartment", "Villa", "Cabin", "Other"] as const;
+const BOOKING_ROOM_TYPES = ["Entire place", "Private room", "Shared room"] as const;
 
 const STEPS = [
   "Basics",
@@ -23,8 +30,6 @@ const STEPS = [
   "Description",
   "Publish",
 ] as const;
-
-const PROPERTY_TYPES = ["Apartment", "House", "Condo", "Other"] as const;
 
 const AMENITY_LABELS: Record<AmenityKey, string> = {
   wifi: "WiFi",
@@ -195,7 +200,11 @@ async function compressImageFile(file: File, maxW = 1920, quality = 0.82): Promi
 }
 
 export function HostSevenStepWizard() {
+  useSuppressFooterHistoryNav(true);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const templateFromId = searchParams.get("from");
+
   const step = useHostNewListingWizard((s) => s.step);
   const busy = useHostNewListingWizard((s) => s.busy);
   const saveError = useHostNewListingWizard((s) => s.saveError);
@@ -209,6 +218,24 @@ export function HostSevenStepWizard() {
   const [celebrate, setCelebrate] = useState<{ id: string; title: string } | null>(null);
 
   const draftId = useHostNewListingWizard((s) => s.draftListingId);
+
+  useEffect(() => {
+    if (!templateFromId?.trim()) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`/api/host/listings/${encodeURIComponent(templateFromId)}/template`);
+        const data = (await res.json()) as { error?: string } & HostListingTemplateSnapshot;
+        if (!res.ok || data.error || cancelled) return;
+        useHostNewListingWizard.getState().applyTemplateSnapshot(data);
+      } catch {
+        /* ignore */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [templateFromId]);
 
   const finishDraft = useCallback(async () => {
     if (!draftId) return;
@@ -312,20 +339,34 @@ export function HostSevenStepWizard() {
 
         <WizardProgressBar step={step} />
 
-        <p className="text-center text-[11px] font-medium uppercase tracking-[0.2em] text-emerald-400/90">
-          Auto-saves · No commitment
-        </p>
+        {step === 7 ? (
+          <div className="mt-4">
+            <h1 className="text-2xl font-bold text-white sm:text-3xl">Ready to publish?</h1>
+            <p className="mt-1 text-sm text-slate-400">Check the preview, then go live.</p>
+          </div>
+        ) : (
+          <div className="mt-4 space-y-4">
+            <div>
+              <h1 className="text-xl font-semibold text-white">New listing</h1>
+              <p className="mt-1 text-sm text-slate-400">
+                Manage your stay details — we save as you go. Listings must comply with platform standards and local
+                regulations.
+              </p>
+            </div>
 
-        <h1 className="mt-2 text-2xl font-bold sm:text-3xl">
-          {step === 7 ? "Ready to publish?" : "List your place"}
-        </h1>
-        <p className="mt-1 text-sm text-slate-400">
-          {step === 1
-            ? "A few quick taps — we save as you go."
-            : step === 7
-              ? "Check the preview, then go live."
-              : STEPS[step - 1]}
-        </p>
+            <section className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <VerificationChecklist listingId={draftId ?? undefined} tone="dark" />
+            </section>
+
+            {step === 1 ? <ListingPropertyBasicsGrid /> : null}
+
+            {step > 1 ? (
+              <p className="text-center text-[11px] font-medium uppercase tracking-[0.2em] text-emerald-400/90">
+                {STEPS[step - 1]}
+              </p>
+            ) : null}
+          </div>
+        )}
 
         {saveError ? (
           <motion.p
@@ -388,7 +429,7 @@ export function HostSevenStepWizard() {
                     Saving…
                   </>
                 ) : (
-                  "Continue"
+                  "Save & continue"
                 )}
               </MotionButton>
             </div>
@@ -457,7 +498,7 @@ export function HostSevenStepWizard() {
                     Saving…
                   </>
                 ) : (
-                  "Next"
+                  "Save & continue"
                 )}
               </MotionButton>
             </div>
@@ -501,11 +542,101 @@ export function HostSevenStepWizard() {
   );
 }
 
+/** Mirrors BNHUB `CreateListingWizard` step “Property basics” + hosting room type filter */
+function ListingPropertyBasicsGrid() {
+  const propertyType = useHostNewListingWizard((s) => s.propertyType);
+  const roomType = useHostNewListingWizard((s) => s.roomType);
+  const maxGuests = useHostNewListingWizard((s) => s.maxGuests);
+  const beds = useHostNewListingWizard((s) => s.beds);
+  const bedrooms = useHostNewListingWizard((s) => s.bedrooms);
+  const baths = useHostNewListingWizard((s) => s.baths);
+  const update = useHostNewListingWizard((s) => s.update);
+
+  return (
+    <section className="space-y-3">
+      <h2 className="text-lg font-semibold text-slate-100">Property basics</h2>
+      <p className="text-xs leading-relaxed text-slate-500">
+        Same property and room-type fields as BNHUB listing create — used for search, booking, and hosting filters.
+      </p>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Property type">
+          <select
+            className={INPUT_CLASS}
+            value={propertyType}
+            onChange={(e) => update("propertyType", e.target.value)}
+          >
+            {LISTING_PROPERTY_TYPES.map((p) => (
+              <option key={p} value={p}>
+                {p}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Room type (hosting)">
+          <select
+            className={INPUT_CLASS}
+            value={roomType}
+            onChange={(e) => update("roomType", e.target.value)}
+          >
+            {BOOKING_ROOM_TYPES.map((p) => (
+              <option key={p} value={p}>
+                {p}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Beds">
+          <input
+            type="number"
+            min={1}
+            inputMode="numeric"
+            className={INPUT_CLASS}
+            value={beds}
+            onChange={(e) => update("beds", Math.max(1, parseInt(e.target.value, 10) || 1))}
+          />
+        </Field>
+        <Field label="Bathrooms">
+          <select
+            className={INPUT_CLASS}
+            value={String(baths)}
+            onChange={(e) => update("baths", Number(e.target.value))}
+          >
+            {[1, 1.5, 2, 2.5, 3, 3.5, 4].map((b) => (
+              <option key={b} value={b}>
+                {b}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Bedrooms">
+          <input
+            type="number"
+            min={0}
+            inputMode="numeric"
+            className={INPUT_CLASS}
+            value={bedrooms}
+            onChange={(e) => update("bedrooms", Math.max(0, parseInt(e.target.value, 10) || 0))}
+          />
+        </Field>
+        <Field label="Max guests">
+          <input
+            type="number"
+            min={1}
+            inputMode="numeric"
+            className={INPUT_CLASS}
+            value={maxGuests}
+            onChange={(e) => update("maxGuests", Math.max(1, parseInt(e.target.value, 10) || 1))}
+          />
+        </Field>
+      </div>
+    </section>
+  );
+}
+
 function StepBasics() {
   const title = useHostNewListingWizard((s) => s.title);
   const city = useHostNewListingWizard((s) => s.city);
   const address = useHostNewListingWizard((s) => s.address);
-  const propertyType = useHostNewListingWizard((s) => s.propertyType);
   const update = useHostNewListingWizard((s) => s.update);
   const [showStreet, setShowStreet] = useState(() => Boolean(address.trim()));
 
@@ -528,19 +659,6 @@ function StepBasics() {
           placeholder="Montreal"
           autoComplete="address-level2"
         />
-      </Field>
-      <Field label="Type">
-        <select
-          className={INPUT_CLASS}
-          value={propertyType}
-          onChange={(e) => update("propertyType", e.target.value)}
-        >
-          {PROPERTY_TYPES.map((p) => (
-            <option key={p} value={p}>
-              {p}
-            </option>
-          ))}
-        </select>
       </Field>
       {!showStreet ? (
         <motion.button

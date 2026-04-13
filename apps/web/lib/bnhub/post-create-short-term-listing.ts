@@ -27,7 +27,7 @@ type FlowOpts = {
 };
 
 /**
- * Property identity, contracts, publish gates, and analytics — shared by BNHub create + fast wizard.
+ * Property identity, contracts, publish gates, and analytics — shared by BNHUB create + fast wizard.
  */
 export async function postCreateShortTermListingFlow(
   opts: FlowOpts
@@ -100,7 +100,7 @@ export async function postCreateShortTermListingFlow(
         return {
           listing,
           publishError:
-            "Sign the BNHub host agreement before publishing (ContractSign kind=host with this listing id).",
+            "Sign the BNHUB host agreement before publishing (ContractSign kind=host with this listing id).",
           publishReasons: ["enforceable_host"],
         };
       }

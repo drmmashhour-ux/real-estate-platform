@@ -32,7 +32,7 @@ export function CityInvestmentInsights({
             Investment insights
           </h2>
           <p className="mt-2 max-w-2xl text-sm text-[#B3B3B3]">
-            Aggregated from active BNHub stays and FSBO listings in this city. Figures are indicative — consult a{" "}
+            Aggregated from active BNHUB stays and FSBO listings in this city. Figures are indicative — consult a{" "}
             <Link href={brokerHref} className="font-medium text-premium-gold hover:text-premium-gold">
               licensed broker
             </Link>{" "}
@@ -44,7 +44,7 @@ export function CityInvestmentInsights({
             href={bnhubHref}
             className="rounded-full border border-premium-gold/40 px-3 py-1.5 font-medium text-premium-gold hover:bg-premium-gold/10"
           >
-            BNHub listings
+            BNHUB listings
           </Link>
           <Link
             href={fsboHref}
@@ -71,7 +71,7 @@ export function CityInvestmentInsights({
         <InsightCard
           label="Avg nightly rate"
           value={fmtMoney(data.avgNightlyPriceCents, { perNight: true })}
-          sub="BNHub published"
+          sub="BNHUB published"
           icon={<IconMoon />}
         />
         <InsightCard

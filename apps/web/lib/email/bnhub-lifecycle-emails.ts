@@ -1,5 +1,5 @@
 /**
- * BNHub booking lifecycle emails after Stripe payment completes.
+ * BNHUB booking lifecycle emails after Stripe payment completes.
  * Fire-and-forget from webhook; failures must not affect booking state.
  */
 
@@ -52,6 +52,7 @@ export async function sendBnhubPostPaymentEmails(bookingId: string): Promise<voi
   const origin = appOrigin();
   const bookingUrl = `${origin}/bnhub/booking/${bookingId}`;
   const invoicePdfUrl = `${origin}/api/booking/${bookingId}/invoice/pdf`;
+  const findReservationUrl = `${origin}/bnhub/find-reservation`;
   const checkIn = new Date(booking.checkIn).toLocaleString();
   const checkOut = new Date(booking.checkOut).toLocaleString();
   const totalCents = booking.payment.stripeCheckoutAmountCents ?? booking.payment.amountCents;
@@ -80,6 +81,7 @@ export async function sendBnhubPostPaymentEmails(bookingId: string): Promise<voi
         confirmationCode: code,
         bookingUrl,
         invoicePdfUrl,
+        findReservationUrl,
       }),
     });
     if (ok) updates.guestConfirmationEmailSentAt = new Date();
@@ -102,6 +104,7 @@ export async function sendBnhubPostPaymentEmails(bookingId: string): Promise<voi
         confirmationCode: code,
         invoicePdfUrl,
         stripeReceiptUrl: booking.payment.stripeReceiptUrl,
+        findReservationUrl,
       }),
     });
     if (ok) updates.guestInvoiceEmailSentAt = new Date();

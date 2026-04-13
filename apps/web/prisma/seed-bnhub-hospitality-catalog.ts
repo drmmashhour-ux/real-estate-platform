@@ -135,7 +135,7 @@ const CATALOG: Row[] = [
 ];
 
 /**
- * Upserts global BNHub hospitality catalog. Optionally seeds demo listing offers.
+ * Upserts global BNHUB hospitality catalog. Optionally seeds demo listing offers.
  */
 export async function seedBnhubHospitalityCatalog(demoListingId?: string): Promise<void> {
   for (const row of CATALOG) {

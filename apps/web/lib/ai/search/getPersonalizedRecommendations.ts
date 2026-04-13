@@ -2,7 +2,7 @@ import { deriveAiUiLabels } from "./computeListingScore";
 import { getUnifiedRecommendations } from "@/lib/ai/recommendations/getUnifiedRecommendations";
 
 /**
- * Personalized BNHub stays — thin wrapper around unified recommendations + UI labels.
+ * Personalized BNHUB stays — thin wrapper around unified recommendations + UI labels.
  */
 export async function getPersonalizedRecommendations(userId: string, limit = 12) {
   const rows = await getUnifiedRecommendations(userId, limit);

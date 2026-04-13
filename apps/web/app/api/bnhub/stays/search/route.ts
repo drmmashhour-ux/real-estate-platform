@@ -11,7 +11,7 @@ import { trackSearchEvent } from "@/lib/ai/search/trackSearchEvent";
 export const dynamic = "force-dynamic";
 
 /**
- * POST — global search payload for short-term (BNHub) stays.
+ * POST — global search payload for short-term (BNHUB) stays.
  * Body matches `GlobalSearchFilters` with `type: "short"`.
  */
 export async function POST(request: NextRequest) {

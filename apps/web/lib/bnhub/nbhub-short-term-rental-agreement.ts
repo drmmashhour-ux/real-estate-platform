@@ -1,12 +1,12 @@
 /**
- * BNHub short-term rental agreement — host/guest marketplace terms.
+ * BNHUB short-term rental agreement — host/guest marketplace terms.
  * Counsel should review before production reliance. Shown on `/bnhub/host-agreement` and stored on acceptance when no admin legal override exists.
  */
 export const NBHUB_SHORT_TERM_RENTAL_AGREEMENT_HTML = `
 <h2>1. Parties</h2>
 <p>This agreement is entered into between:</p>
 <ul>
-<li><strong>Platform</strong>: BNHub (the &ldquo;Platform&rdquo;)</li>
+<li><strong>Platform</strong>: BNHUB (the &ldquo;Platform&rdquo;)</li>
 <li><strong>Host</strong>: The property owner or authorized representative (the &ldquo;Host&rdquo;)</li>
 <li><strong>Guest</strong>: The individual booking the property (the &ldquo;Guest&rdquo;)</li>
 </ul>

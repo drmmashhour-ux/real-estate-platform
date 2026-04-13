@@ -1,5 +1,5 @@
 /**
- * Batch BNHub intelligence evaluation (snapshots + autopilot pipeline).
+ * Batch BNHUB intelligence evaluation (snapshots + autopilot pipeline).
  * Usage: pnpm ai:run  |  BNHUB_HOST_USER_ID=<hostUserId> pnpm ai:run:host
  */
 

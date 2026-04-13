@@ -9,7 +9,7 @@ export type FulfillFeaturedListingResult =
   | { ok: false; reason: string };
 
 /**
- * After Stripe `featured_listing` checkout: create/extend BNHub promotion order for the host listing.
+ * After Stripe `featured_listing` checkout: create/extend BNHUB promotion order for the host listing.
  */
 export async function fulfillFeaturedListingFromWebhook(
   db: PrismaClient,

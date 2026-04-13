@@ -1,5 +1,5 @@
 /**
- * BNHub / LECIPM AI marketing — shared types.
+ * BNHUB / LECIPM AI marketing — shared types.
  */
 
 export type ContentTheme =

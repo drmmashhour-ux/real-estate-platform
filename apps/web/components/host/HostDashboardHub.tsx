@@ -28,7 +28,7 @@ export function HostDashboardHub({
   stripeOnboardingComplete?: boolean;
   conversionInsights?: ListingConversionInsight[];
   hostReputation?: HostReputationResult | null;
-  /** BNHub listing codes for support, payouts, and wire references */
+  /** BNHUB listing codes for support, payouts, and wire references */
   listingRefs?: { id: string; title: string; listingCode: string }[];
 }) {
   return (
@@ -45,7 +45,7 @@ export function HostDashboardHub({
             href="/bnhub/host/dashboard"
             className="rounded-xl border border-slate-600 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800"
           >
-            BNHub host dashboard
+            BNHUB host dashboard
           </Link>
           <Link
             href="/dashboard/host/payouts"
@@ -162,7 +162,7 @@ export function HostDashboardHub({
             </li>
           ))}
           {bookings.length === 0 && (
-            <li className="py-8 text-center text-sm text-slate-500">No bookings yet. Publish a listing from BNHub.</li>
+            <li className="py-8 text-center text-sm text-slate-500">No bookings yet. Publish a listing from BNHUB.</li>
           )}
         </ul>
       </section>

@@ -21,6 +21,7 @@ describe("computeSmartPrice", () => {
     expect(r.confidence).toBe("high");
     expect(r.demandLevel).toBe("high");
     expect(r.peerListingCount).toBe(20);
+    expect(r.peerBookingsLast30d).toBe(20);
   });
 
   it("falls back when no market average", () => {
@@ -34,6 +35,7 @@ describe("computeSmartPrice", () => {
     expect(r.recommendedPriceCents).toBeGreaterThanOrEqual(100);
     expect(r.confidence).toBe("low");
     expect(r.peerListingCount).toBe(2);
+    expect(r.peerBookingsLast30d).toBe(0);
   });
 });
 

@@ -3,7 +3,7 @@ import { fetchGuestSupabaseBookingSnapshot } from "@/lib/bookings/guest-supabase
 export const dynamic = "force-dynamic";
 
 /**
- * GET /api/bookings/guest/[bookingId] — full guest-visible BNHub booking snapshot (service role; UUID is the capability).
+ * GET /api/bookings/guest/[bookingId] — full guest-visible BNHUB booking snapshot (service role; UUID is the capability).
  */
 export async function GET(_req: Request, context: { params: Promise<{ bookingId: string }> }) {
   const { bookingId } = await context.params;

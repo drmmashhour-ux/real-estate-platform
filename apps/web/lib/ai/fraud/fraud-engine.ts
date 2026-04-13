@@ -239,7 +239,7 @@ export async function persistBnhubListingFraudAssessment(assessment: FraudAssess
     await recordAiHealthEvent({
       level: assessment.riskLevel === "HIGH" ? "error" : "warn",
       source: "bnhub_fraud_detection",
-      message: `BNHub fraud risk ${assessment.riskLevel} for ${assessment.entityType} ${assessment.entityId} (score ${assessment.riskScore}). Review only — no automatic enforcement.`,
+      message: `BNHUB fraud risk ${assessment.riskLevel} for ${assessment.entityType} ${assessment.entityId} (score ${assessment.riskScore}). Review only — no automatic enforcement.`,
       payload: {
         entityId: assessment.entityId,
         entityType: assessment.entityType,

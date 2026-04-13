@@ -24,7 +24,7 @@ export async function GET(
     prisma.bnhubTrustProfile.findUnique({ where: { listingId: id } }),
   ]);
 
-  let trustGuestMessage = "Listing is visible on BNHub.";
+  let trustGuestMessage = "Listing is visible on BNHUB.";
   if (trust?.status === BnhubTrustProfileStatus.REVIEW_REQUIRED) {
     trustGuestMessage = "Additional validation may be in progress — this is not a safety guarantee.";
   }
@@ -42,10 +42,10 @@ export async function GET(
 
   return Response.json({
     starRating: cls?.starRating ?? null,
-    ratingLabel: cls?.ratingLabel ?? "BNHub Star Rating (internal platform estimate)",
+    ratingLabel: cls?.ratingLabel ?? "BNHUB Star Rating (internal platform estimate)",
     luxuryTierPublic,
     trustGuestMessage,
     pricingNote:
-      "Nightly price shown on the listing is set by the host unless BNHub autopricing is explicitly enabled by policy.",
+      "Nightly price shown on the listing is set by the host unless BNHUB autopricing is explicitly enabled by policy.",
   });
 }

@@ -15,13 +15,20 @@ import {
   shouldScheduleFullEngineRecompute,
 } from "@/src/modules/bnhub-growth-engine/services/bnhubListingEnginesOrchestrator";
 import { scheduleFraudRecheck } from "@/src/workers/fraudDetectionWorker";
+import { emitPlatformAutonomyEvent } from "@/lib/autonomy/emit-platform-event";
 import { enqueueHostAutopilot } from "@/lib/ai/autopilot/triggers";
 import { getActivePromotedListingIds } from "@/lib/promotions";
 import { getApprovedHost, hasAcceptedHostAgreement } from "./host";
 import { buildPublishedListingSearchWhere, searchOrderBy } from "./build-search-where";
 import { applyStaysFilters, hasActiveStaysFilters, type StaysSearchFilters } from "@/lib/bnhub/stays-filters";
 import { geocodeAddressLine } from "@/lib/geo/geocode-nominatim";
-import { getLuxuryTierSearchBoostMapForIds, getTrustRiskPenaltyMapForIds } from "@/lib/bnhub/bnhubSearchRankSignals";
+import {
+  getListingQualitySearchAdjustMapForIds,
+  getLuxuryTierSearchBoostMapForIds,
+  getPlatformTrustSearchBoostMapForListings,
+  getReputationSearchAdjustMapForListings,
+  getTrustRiskPenaltyMapForIds,
+} from "@/lib/bnhub/bnhubSearchRankSignals";
 import { isAiRankingEngineEnabled } from "@/src/modules/ranking/rankingEnv";
 import {
   maybeLogBnhubSearchImpressions,
@@ -32,6 +39,7 @@ import {
   findOverlappingActiveBnhubBooking,
 } from "@/lib/bookings/checkAvailability";
 import { applyAiSearchRankingToBnhubResults } from "@/lib/ai/search/applyAiSearchRanking";
+import { getWinnerSearchBoostMapForIds } from "@/lib/bnhub/winner-search-boost";
 
 export type ListingSearchParams = {
   city?: string;
@@ -55,7 +63,7 @@ export type ListingSearchParams = {
   sort?: string;
   page?: number;
   limit?: number;
-  /** BNHub — listing `amenities` JSON must match these (e.g. wifi → WiFi). */
+  /** BNHUB — listing `amenities` JSON must match these (e.g. wifi → WiFi). */
   amenitySlugs?: string[];
   /** Map bbox (all four, WGS84). */
   north?: number;
@@ -64,7 +72,7 @@ export type ListingSearchParams = {
   west?: number;
   /** Description/title keyword filters (waterfront, hot_tub, self_checkin). */
   discoveryFeatures?: string[];
-  /** Lifestyle / pets / experience / services (BNHub stays). */
+  /** Lifestyle / pets / experience / services (BNHUB stays). */
   staysFilters?: StaysSearchFilters | null;
   /** When true (default), background-geocode rows missing coordinates (rate-limited). */
   geocodeMissingCoordinates?: boolean;
@@ -248,9 +256,17 @@ export async function searchListings(params: ListingSearchParams) {
     const marketingBoost = await getMarketingSearchBoostByListingId();
     const growthBoost = await getGrowthSearchBoostByListingId();
     const ids = result.map((l) => l.id);
-    const starBoost = await getClassificationSearchBoostMapForIds(ids);
-    const tierBoost = await getLuxuryTierSearchBoostMapForIds(ids);
-    const riskPen = await getTrustRiskPenaltyMapForIds(ids);
+    const platformRows = result.map((l) => ({ id: l.id, ownerId: l.ownerId }));
+    const [starBoost, tierBoost, riskPen, winnerBoost, platformTrustBoost, repAdjust, qualityAdjust] =
+      await Promise.all([
+        getClassificationSearchBoostMapForIds(ids),
+        getLuxuryTierSearchBoostMapForIds(ids),
+        getTrustRiskPenaltyMapForIds(ids),
+        getWinnerSearchBoostMapForIds(ids),
+        getPlatformTrustSearchBoostMapForListings(platformRows),
+        getReputationSearchAdjustMapForListings(platformRows),
+        getListingQualitySearchAdjustMapForIds(ids),
+      ]);
     result = [...result].sort((a, b) => {
       const baseB = scoreListingForSearch(b, rankCtx).score * 100;
       const baseA = scoreListingForSearch(a, rankCtx).score * 100;
@@ -259,14 +275,22 @@ export async function searchListings(params: ListingSearchParams) {
         (marketingBoost.get(b.id) ?? 0) +
         (growthBoost.get(b.id) ?? 0) +
         (starBoost.get(b.id) ?? 0) +
-        (tierBoost.get(b.id) ?? 0) -
+        (tierBoost.get(b.id) ?? 0) +
+        (winnerBoost.get(b.id) ?? 0) +
+        (platformTrustBoost.get(b.id) ?? 0) +
+        (repAdjust.get(b.id) ?? 0) +
+        (qualityAdjust.get(b.id) ?? 0) -
         (riskPen.get(b.id) ?? 0);
       const sa =
         baseA +
         (marketingBoost.get(a.id) ?? 0) +
         (growthBoost.get(a.id) ?? 0) +
         (starBoost.get(a.id) ?? 0) +
-        (tierBoost.get(a.id) ?? 0) -
+        (tierBoost.get(a.id) ?? 0) +
+        (winnerBoost.get(a.id) ?? 0) +
+        (platformTrustBoost.get(a.id) ?? 0) +
+        (repAdjust.get(a.id) ?? 0) +
+        (qualityAdjust.get(a.id) ?? 0) -
         (riskPen.get(a.id) ?? 0);
       return sb - sa;
     });
@@ -328,18 +352,20 @@ export async function searchListings(params: ListingSearchParams) {
 
   if (useAiRanking && result.length > 0) {
     const ids = result.map((l) => l.id);
-    const [marketingBoost, growthBoost, starBoost, tierBoost, riskPen] = await Promise.all([
+    const [marketingBoost, growthBoost, starBoost, tierBoost, riskPen, winnerBoost] = await Promise.all([
       getMarketingSearchBoostByListingId(),
       getGrowthSearchBoostByListingId(),
       getClassificationSearchBoostMapForIds(ids),
       getLuxuryTierSearchBoostMapForIds(ids),
       getTrustRiskPenaltyMapForIds(ids),
+      getWinnerSearchBoostMapForIds(ids),
     ]);
     const boost = (id: string) =>
       (marketingBoost.get(id) ?? 0) +
       (growthBoost.get(id) ?? 0) +
       (starBoost.get(id) ?? 0) +
-      (tierBoost.get(id) ?? 0) -
+      (tierBoost.get(id) ?? 0) +
+      (winnerBoost.get(id) ?? 0) -
       (riskPen.get(id) ?? 0);
     result = await orderBnhubListingsByRankingEngine(result, {
       city,
@@ -477,9 +503,17 @@ export async function searchListingsPaginated(
     const marketingBoost = await getMarketingSearchBoostByListingId();
     const growthBoost = await getGrowthSearchBoostByListingId();
     const pids = result.map((l) => l.id);
-    const starBoost = await getClassificationSearchBoostMapForIds(pids);
-    const tierBoost = await getLuxuryTierSearchBoostMapForIds(pids);
-    const riskPen = await getTrustRiskPenaltyMapForIds(pids);
+    const platformRowsPage = result.map((l) => ({ id: l.id, ownerId: l.ownerId }));
+    const [starBoost, tierBoost, riskPen, winnerBoost, platformTrustBoost, repAdjust, qualityAdjust] =
+      await Promise.all([
+        getClassificationSearchBoostMapForIds(pids),
+        getLuxuryTierSearchBoostMapForIds(pids),
+        getTrustRiskPenaltyMapForIds(pids),
+        getWinnerSearchBoostMapForIds(pids),
+        getPlatformTrustSearchBoostMapForListings(platformRowsPage),
+        getReputationSearchAdjustMapForListings(platformRowsPage),
+        getListingQualitySearchAdjustMapForIds(pids),
+      ]);
     result = [...result].sort((a, b) => {
       const baseB = scoreListingForSearch(b, rankCtx).score * 100;
       const baseA = scoreListingForSearch(a, rankCtx).score * 100;
@@ -488,14 +522,22 @@ export async function searchListingsPaginated(
         (marketingBoost.get(b.id) ?? 0) +
         (growthBoost.get(b.id) ?? 0) +
         (starBoost.get(b.id) ?? 0) +
-        (tierBoost.get(b.id) ?? 0) -
+        (tierBoost.get(b.id) ?? 0) +
+        (winnerBoost.get(b.id) ?? 0) +
+        (platformTrustBoost.get(b.id) ?? 0) +
+        (repAdjust.get(b.id) ?? 0) +
+        (qualityAdjust.get(b.id) ?? 0) -
         (riskPen.get(b.id) ?? 0);
       const sa =
         baseA +
         (marketingBoost.get(a.id) ?? 0) +
         (growthBoost.get(a.id) ?? 0) +
         (starBoost.get(a.id) ?? 0) +
-        (tierBoost.get(a.id) ?? 0) -
+        (tierBoost.get(a.id) ?? 0) +
+        (winnerBoost.get(a.id) ?? 0) +
+        (platformTrustBoost.get(a.id) ?? 0) +
+        (repAdjust.get(a.id) ?? 0) +
+        (qualityAdjust.get(a.id) ?? 0) -
         (riskPen.get(a.id) ?? 0);
       return sb - sa;
     });
@@ -522,18 +564,37 @@ export async function searchListingsPaginated(
 
   if (useAiRankingPage && result.length > 0) {
     const pids = result.map((l) => l.id);
-    const [marketingBoost, growthBoost, starBoost, tierBoost, riskPen] = await Promise.all([
+    const platformRowsAi = result.map((l) => ({ id: l.id, ownerId: l.ownerId }));
+    const [
+      marketingBoost,
+      growthBoost,
+      starBoost,
+      tierBoost,
+      riskPen,
+      winnerBoost,
+      platformTrustBoost,
+      repAdjust,
+      qualityAdjust,
+    ] = await Promise.all([
       getMarketingSearchBoostByListingId(),
       getGrowthSearchBoostByListingId(),
       getClassificationSearchBoostMapForIds(pids),
       getLuxuryTierSearchBoostMapForIds(pids),
       getTrustRiskPenaltyMapForIds(pids),
+      getWinnerSearchBoostMapForIds(pids),
+      getPlatformTrustSearchBoostMapForListings(platformRowsAi),
+      getReputationSearchAdjustMapForListings(platformRowsAi),
+      getListingQualitySearchAdjustMapForIds(pids),
     ]);
     const boost = (id: string) =>
       (marketingBoost.get(id) ?? 0) +
       (growthBoost.get(id) ?? 0) +
       (starBoost.get(id) ?? 0) +
-      (tierBoost.get(id) ?? 0) -
+      (tierBoost.get(id) ?? 0) +
+      (winnerBoost.get(id) ?? 0) +
+      (platformTrustBoost.get(id) ?? 0) +
+      (repAdjust.get(id) ?? 0) +
+      (qualityAdjust.get(id) ?? 0) -
       (riskPen.get(id) ?? 0);
     result = await orderBnhubListingsByRankingEngine(result, {
       city,
@@ -810,11 +871,16 @@ export async function createListing(
     });
   });
   scheduleBnhubListingEngineRefresh(listing.id);
+  void import("@/lib/fraud/compute-listing-risk")
+    .then((m) => m.evaluateListingFraudAfterCreate(listing.id))
+    .catch(() => {});
   const { recordGrowthEventWithFunnel } = await import("@/lib/growth/events");
   void recordGrowthEventWithFunnel("create_listing", {
     userId: data.ownerId,
     metadata: { listingId: listing.id, city: listing.city, listingStatus: listing.listingStatus },
   });
+  const { enqueueListingContentPipeline } = await import("@/lib/bnhub/content-pipeline/enqueue");
+  enqueueListingContentPipeline(listing.id, "create");
   return listing;
 }
 
@@ -897,6 +963,11 @@ export async function updateListing(id: string, data: UpdateListingData) {
   if (shouldRecompute) scheduleBnhubListingEngineRefresh(id);
   scheduleFraudRecheck("listing", id);
   enqueueHostAutopilot(updated.ownerId, { type: "listing_updated", listingId: id });
+  const { enqueueListingContentPipeline } = await import("@/lib/bnhub/content-pipeline/enqueue");
+  enqueueListingContentPipeline(id, "update");
+  void import("@/lib/quality/schedule-listing-quality")
+    .then((m) => m.scheduleListingQualityRecompute(id))
+    .catch(() => {});
   return updated;
 }
 
@@ -922,6 +993,23 @@ export async function setListingPhotos(
   });
   scheduleBnhubListingEngineRefresh(listingId);
   scheduleFraudRecheck("listing", listingId);
+  const { enqueueListingContentPipeline } = await import("@/lib/bnhub/content-pipeline/enqueue");
+  enqueueListingContentPipeline(listingId, "update");
+  const listing = await prisma.shortTermListing.findUnique({
+    where: { id: listingId },
+    select: { ownerId: true, listingStatus: true },
+  });
+  if (listing) {
+    const hourBucket = Math.floor(Date.now() / 3600000);
+    void emitPlatformAutonomyEvent({
+      eventType: "LISTING_UPDATED",
+      entityType: "short_term_listing",
+      entityId: listingId,
+      userId: listing.ownerId,
+      payload: { listingId, listingStatus: listing.listingStatus, source: "bnhub_photos" },
+      dedupeKey: `lu:${listingId}:photos:${hourBucket}`,
+    });
+  }
   return rows;
 }
 

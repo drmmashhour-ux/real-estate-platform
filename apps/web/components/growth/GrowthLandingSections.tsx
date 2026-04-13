@@ -9,9 +9,9 @@ const FEATURES = [
     tag: "AI",
   },
   {
-    title: "BNHub stays",
+    title: "BNHUB stays",
     body: "Short-term inventory, host tools, and booking flows wired into the same trust and ops fabric.",
-    tag: "BNHub",
+    tag: "BNHUB",
   },
   {
     title: "Broker CRM",
@@ -27,7 +27,7 @@ const TESTIMONIALS = [
     role: "Buyer · Montreal",
   },
   {
-    quote: "BNHub bookings and CRM leads in one stack reduced our tool sprawl overnight.",
+    quote: "BNHUB bookings and CRM leads in one stack reduced our tool sprawl overnight.",
     name: "Samira K.",
     role: "Host & investor",
   },

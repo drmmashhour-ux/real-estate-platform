@@ -12,3 +12,4 @@ export * from "./investment";
 export * from "./reports";
 export * from "./heatmap";
 export * from "./jobs";
+export * from "./platform-signals";

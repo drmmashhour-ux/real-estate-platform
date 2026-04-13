@@ -35,7 +35,7 @@ const STAGES: { value: string; label: string }[] = [
   { value: "CLOSED_LOST", label: "Closed — lost" },
 ];
 
-const INITIAL_OUTREACH = `Hi, I'm reaching out because we're launching BNHub, a platform designed to help property managers increase visibility and bookings while simplifying operations.
+const INITIAL_OUTREACH = `Hi, I'm reaching out because we're launching BNHUB, a platform designed to help property managers increase visibility and bookings while simplifying operations.
 
 We're onboarding a select group of partners and would like to explore if it could fit your portfolio.`;
 

@@ -11,6 +11,8 @@ export function StaysRecommendationGrid({
   viewAllHref,
   viewAllLabel,
   sectionId = "stays-recommendations",
+  /** e.g. `/en/ca` — omit for root-relative `/bnhub/...` */
+  hrefPrefix = "",
 }: {
   title: string;
   subtitle?: string;
@@ -20,6 +22,7 @@ export function StaysRecommendationGrid({
   viewAllLabel?: string;
   /** Stable id for heading / a11y */
   sectionId?: string;
+  hrefPrefix?: string;
 }) {
   if (!items.length) return null;
 
@@ -33,12 +36,12 @@ export function StaysRecommendationGrid({
 
   return (
     <section className="scroll-mt-8" aria-labelledby={sectionId}>
-      <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
-        <div>
+      <div className={`mb-4 flex flex-wrap items-end justify-between gap-2`}>
+        <div className={title.trim() ? "" : "sr-only"}>
           <h2 id={sectionId} className={`text-lg font-semibold ${titleCls}`}>
-            {title}
+            {title.trim() ? title : "Recommendations"}
           </h2>
-          {subtitle ? <p className={`mt-1 text-xs ${subCls}`}>{subtitle}</p> : null}
+          {subtitle && title.trim() ? <p className={`mt-1 text-xs ${subCls}`}>{subtitle}</p> : null}
         </div>
         {viewAllHref ? (
           <Link href={viewAllHref} className={`text-sm font-medium ${priceCls} hover:underline`}>
@@ -50,7 +53,7 @@ export function StaysRecommendationGrid({
         {items.map((l) => (
           <li key={l.id}>
             <Link
-              href={`/bnhub/${l.listingCode}`}
+              href={`${hrefPrefix}/bnhub/${l.listingCode}`}
               className={`group flex gap-3 rounded-2xl border p-3 transition ${cardBorder}`}
             >
               <div className="relative h-24 w-32 shrink-0 overflow-hidden rounded-xl bg-slate-200">

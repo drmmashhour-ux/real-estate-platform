@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
 
   const result = await uploadListingImageAndAttach({ listingId, bytes: buf, contentType });
   if ("error" in result) {
-    return Response.json({ error: result.error }, { status: 400 });
+    return Response.json({ error: result.error }, { status: result.status ?? 400 });
   }
 
   return Response.json({ url: result.url, imageId: result.imageId, listingId });

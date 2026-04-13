@@ -3,9 +3,9 @@ import Link from "next/link";
 const SHORTCUTS: readonly { href: string; label: string; hint: string }[] = [
   { href: "/admin/listings", label: "Listings", hint: "Browse, review, and open listing tools" },
   { href: "/admin/listings/new", label: "New listing", hint: "Create a long-term / sale listing" },
-  { href: "/admin/bnhub/stays/new", label: "New stay", hint: "Add a BNHub short-term stay" },
-  { href: "/admin/bookings", label: "Bookings", hint: "BNHub reservations and payment status" },
-  { href: "/admin/bnhub/finance/payments", label: "BNHub finance", hint: "Payments, payouts, holds" },
+  { href: "/admin/bnhub/stays/new", label: "New stay", hint: "Add a BNHUB short-term stay" },
+  { href: "/admin/bookings", label: "Bookings", hint: "BNHUB reservations and payment status" },
+  { href: "/admin/bnhub/finance/payments", label: "BNHUB finance", hint: "Payments, payouts, holds" },
   { href: "/admin/users", label: "Users", hint: "Accounts and roles" },
   { href: "/admin/leads", label: "Leads", hint: "Lead pipeline and CRM" },
   { href: "/admin/insurance", label: "Insurance leads", hint: "Travel / property / mortgage partner handoffs" },

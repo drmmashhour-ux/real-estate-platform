@@ -1,5 +1,5 @@
 /**
- * BNHub AI capability flags — align with host autopilot + conversion + trust stack.
+ * BNHUB AI capability flags — align with host autopilot + conversion + trust stack.
  */
 
 import { getHubConfig } from "@/lib/hub/core/hub-registry";

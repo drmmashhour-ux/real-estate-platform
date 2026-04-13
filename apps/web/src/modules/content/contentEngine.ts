@@ -13,18 +13,18 @@ export async function generateSEOPage(city: string, type: SeoPageType): Promise<
   const c = city.trim() || "Montreal";
   const titles: Record<SeoPageType, string> = {
     invest: `${c} real estate investment outlook | LECIPM`,
-    bnb: `${c} short-term stays & BNHub hosts | LECIPM`,
+    bnb: `${c} short-term stays & BNHUB hosts | LECIPM`,
     buy: `Buying in ${c} with verified data | LECIPM`,
     neighborhood: `${c} neighborhoods — demand & supply | LECIPM`,
   };
-  const meta = `${c} — ${type} insights, listings, and trust-forward workflows on LECIPM + BNHub.`;
+  const meta = `${c} — ${type} insights, listings, and trust-forward workflows on LECIPM + BNHUB.`;
   const body = `<article><h1>${titles[type].split(" | ")[0]}</h1><p>${meta}</p></article>`;
   return { title: titles[type], bodyHtml: body, metaDescription: meta.slice(0, 158) };
 }
 
 export async function generatePost(topic: string): Promise<string> {
   const t = topic.trim() || "LECIPM marketplace update";
-  return `${t} — Verified stays, real estate workflows, and Quebec-first trust signals. #LECIPM #BNHub`;
+  return `${t} — Verified stays, real estate workflows, and Quebec-first trust signals. #LECIPM #BNHUB`;
 }
 
 export async function generateEmail(brief: string): Promise<{ subject: string; html: string }> {

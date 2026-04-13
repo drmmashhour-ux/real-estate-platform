@@ -9,7 +9,9 @@ export type WriterAction =
   | "shorter"
   | "persuasive"
   | "translate_fr"
-  | "translate_en";
+  | "translate_en"
+  /** Spelling / grammar only — same language, preserve facts */
+  | "correct_writing";
 
 export type ListingContext = {
   propertyType?: string;
@@ -21,8 +23,18 @@ export type ListingContext = {
 const MODEL = "gpt-4o-mini";
 
 function buildSystemPrompt(type: WriterType, action: WriterAction): string {
-  const base = `You are a senior copywriter for LECIPM, a Quebec real estate marketplace (Montreal, Laval, BNHub stays, mortgages).
+  const base = `You are a senior copywriter for LECIPM, a Quebec real estate marketplace (Montreal, Laval, BNHUB stays, mortgages).
 Output only the requested text — no quotes, no preamble, no markdown code fences unless formatting clearly helps readability.`;
+
+  if (action === "correct_writing") {
+    return (
+      `You proofread real-estate and legal disclosure text for a Quebec marketplace.\n` +
+      `Fix spelling, grammar, punctuation, and capitalization only.\n` +
+      `Keep the same language as the input (English or French, including Canadian French).\n` +
+      `Do not change names, numbers, dates, addresses, dollar amounts, or factual claims.\n` +
+      `Preserve paragraph breaks and list-like lines. Output only the corrected full text — no preamble or explanation.`
+    );
+  }
 
   if (action === "translate_fr") {
     return `${base}\nTranslate the user's text into natural Canadian French. Preserve meaning and tone.`;
@@ -56,6 +68,10 @@ function buildUserContent(params: {
   listingContext?: ListingContext | null;
 }): string {
   const { type, action, prompt, listingContext } = params;
+
+  if (action === "correct_writing") {
+    return `Correct spelling, grammar, and punctuation in the text below. Preserve meaning and layout as much as possible.\n\n---\n${prompt.trim()}\n---`;
+  }
 
   if (action === "professional" || action === "shorter" || action === "persuasive") {
     const hint =
@@ -166,11 +182,31 @@ function offlineClientMessageRewrite(prompt: string, action: WriterAction): stri
   );
 }
 
+/** Readable preview when OpenAI is not configured — avoids injecting “set API key” copy into listing textareas. */
+function buildOfflineListingDescription(ctx: ListingContext | null, prompt: string): string {
+  const propertyType = ctx?.propertyType?.trim() || "residential property";
+  const location = ctx?.location?.trim() || "the Greater Montréal area";
+  const price = ctx?.price?.trim();
+  const features = ctx?.features?.trim();
+  const notes = prompt.trim();
+
+  const lead = `Welcome to this ${propertyType} in ${location}.${price ? ` Offered at ${price}.` : ""}`;
+  const mid = features ? `Highlights include ${features}.` : "";
+  const weave =
+    notes.length > 0
+      ? `Details from your notes: ${notes.slice(0, 500)}${notes.length > 500 ? "…" : ""}`
+      : "";
+  const close = `Schedule a visit to see the space and neighbourhood. Contact the seller through LECIPM to learn more.`;
+
+  return [lead, mid, weave, close].filter((p) => p.length > 0).join("\n\n");
+}
+
 function buildOfflineWriterResponse(
   prompt: string,
   type: WriterType,
   action: WriterAction,
-  user: string
+  user: string,
+  listingContext?: ListingContext | null
 ): string {
   /** Client message polish — return only the rewrite so the textarea updates cleanly (hint comes from API). */
   if (type === "message" && (action === "professional" || action === "shorter" || action === "persuasive")) {
@@ -179,6 +215,13 @@ function buildOfflineWriterResponse(
   /** Without API, keep original text; UI shows offline hint for translation. */
   if (action === "translate_fr" || action === "translate_en") {
     return prompt.trim();
+  }
+  if (action === "correct_writing") {
+    return prompt.trim();
+  }
+
+  if (type === "listing" && action === "generate") {
+    return buildOfflineListingDescription(listingContext ?? null, prompt);
   }
 
   return (
@@ -201,18 +244,22 @@ export async function generateText(
   } = {}
 ): Promise<string> {
   const action = options.action ?? (type === "listing" ? "generate" : "professional");
+  if (action === "correct_writing" && !prompt.trim()) {
+    return "";
+  }
   const system = buildSystemPrompt(type, action);
   const user = buildUserContent({ type, action, prompt, listingContext: options.listingContext ?? null });
 
   const client = openai;
   if (!isOpenAiConfigured() || !client) {
-    return buildOfflineWriterResponse(prompt, type, action, user);
+    return buildOfflineWriterResponse(prompt, type, action, user, options.listingContext ?? null);
   }
 
   const completion = await client.chat.completions.create({
     model: MODEL,
-    temperature: action === "shorter" ? 0.35 : 0.65,
-    max_tokens: 2000,
+    temperature:
+      action === "correct_writing" ? 0.12 : action === "shorter" ? 0.35 : 0.65,
+    max_tokens: action === "correct_writing" ? 8000 : 2000,
     messages: [
       { role: "system", content: system },
       { role: "user", content: user },

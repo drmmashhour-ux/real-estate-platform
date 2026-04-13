@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { FsboCollectionCard } from "@/lib/listings/fsbo-collection-queries";
 import { ShareListingActions } from "@/components/sharing/ShareListingActions";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { getSiteBaseUrl } from "@/modules/seo/lib/siteBaseUrl";
 
 function firstImage(images: unknown, cover: string | null): string | null {
@@ -41,7 +42,28 @@ export function ListingsCollectionGrid({
         </div>
 
         {items.length === 0 ? (
-          <p className="mt-12 text-center text-sm text-white/60">No public listings match this collection right now.</p>
+          <div className="mt-10">
+            <EmptyState
+              defaultIcon="generic"
+              title="No listings in this collection"
+              description="This curated set has no public listings yet — explore the map or open search to keep browsing."
+            >
+              <>
+                <Link
+                  href="/explore"
+                  className="lecipm-cta-gold-solid inline-flex min-h-[44px] items-center justify-center px-6 py-2.5 text-sm"
+                >
+                  Browse all listings
+                </Link>
+                <Link
+                  href="/"
+                  className="lecipm-cta-gold-outline inline-flex min-h-[44px] items-center justify-center px-6 py-2.5 text-sm"
+                >
+                  Back to home
+                </Link>
+              </>
+            </EmptyState>
+          </div>
         ) : (
           <ul className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {items.map((l) => {

@@ -1,5 +1,5 @@
 /**
- * iCal import: fetch, parse, persist events, block BNHub availability.
+ * iCal import: fetch, parse, persist events, block BNHUB availability.
  */
 import {
   BnhubChannelEventKind,

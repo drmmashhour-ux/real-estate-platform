@@ -1,5 +1,5 @@
 import type { MarketCity } from "@/lib/investment/deal-metrics";
-import { isMarketCity } from "@/lib/investment/deal-metrics";
+import { normalizeLegacyMarketCity } from "@/lib/investment/deal-metrics";
 export const LAST_DRAFT_KEY = "lecipm_investment_last_draft_v2";
 export const FIRST_ANALYSIS_MILESTONE_KEY = "lecipm_first_analysis_milestone_shown_v1";
 export const ACTIVATION_ANALYZED_KEY = "lecipm_activation_analyzed_v1";
@@ -31,7 +31,7 @@ export function readLastDraft(): LastDraftPayload | null {
     if (!raw) return null;
     const j = JSON.parse(raw) as Record<string, unknown>;
     const city =
-      typeof j.city === "string" && isMarketCity(j.city) ? (j.city as MarketCity) : "Montreal";
+      typeof j.city === "string" ? normalizeLegacyMarketCity(j.city) : "Montréal";
     return {
       city,
       propertyPrice: typeof j.propertyPrice === "string" ? j.propertyPrice : "",

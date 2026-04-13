@@ -39,7 +39,7 @@ export async function canLaunchPremiumMarketingCampaign(listingId: string): Prom
   }
   const stars = cls?.starRating ?? 0;
   if (!isPremiumCampaignStarEligible(stars)) {
-    reasons.push("Premium campaigns require BNHub internal estimate of 4★ or higher.");
+    reasons.push("Premium campaigns require BNHUB internal estimate of 4★ or higher.");
   }
   if (trust?.overallRiskLevel === BnhubTrustRiskLevel.HIGH || trust?.overallRiskLevel === BnhubTrustRiskLevel.CRITICAL) {
     reasons.push("Elevated trust risk — automatic campaign launch is blocked pending review.");
@@ -61,7 +61,7 @@ export async function canLaunchLuxuryMarketingCampaign(listingId: string): Promi
   const reasons: string[] = [];
   const tier = await prisma.bnhubLuxuryTier.findUnique({ where: { listingId } });
   if (!tier || (tier.tierCode !== BnhubLuxuryTierCode.PREMIUM && tier.tierCode !== BnhubLuxuryTierCode.ELITE)) {
-    reasons.push("Luxury campaign slots require BNHub Premium or Elite internal tier.");
+    reasons.push("Luxury campaign slots require BNHUB Premium or Elite internal tier.");
   }
   if (tier?.eligibilityStatus === BnhubLuxuryEligibilityStatus.SUSPENDED) {
     reasons.push("Luxury tier suspended for this listing.");

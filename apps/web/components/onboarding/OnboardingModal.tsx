@@ -122,7 +122,7 @@ export function OnboardingModal() {
                 [
                   ["buy", "Buy property", "Browse listings and connect with professionals"],
                   ["sell", "Sell property", "FSBO or broker — your choice"],
-                  ["rent", "Rent / short stays (BNHub)", "Search, book, pay securely"],
+                  ["rent", "Rent / short stays (BNHUB)", "Search, book, pay securely"],
                   ["evaluate", "Get a free evaluation", "AI estimate + optional broker follow-up"],
                 ] as const
               ).map(([k, title, sub]) => (

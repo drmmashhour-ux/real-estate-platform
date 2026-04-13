@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 const BNHUB_MODE = "short" as const;
 
 /**
- * GET — BNHub saved searches (stored as SearchEngineMode `short`).
+ * GET — BNHUB saved searches (stored as SearchEngineMode `short`).
  */
 export async function GET(request: Request) {
   const user = await getMobileAuthUser(request);
@@ -32,7 +32,7 @@ export async function GET(request: Request) {
 }
 
 /**
- * POST — save BNHub filters (city, dates, guests, etc.) for alerts + retention.
+ * POST — save BNHUB filters (city, dates, guests, etc.) for alerts + retention.
  */
 export async function POST(request: Request) {
   const user = await getMobileAuthUser(request);

@@ -5,7 +5,7 @@ import { listRegions } from "@/lib/market-intelligence";
 
 /**
  * GET /api/admin/market/overview
- * Regional price/rent/BNHub summary and anomaly hints for admin console.
+ * Regional price/rent/BNHUB summary and anomaly hints for admin console.
  */
 export async function GET(request: NextRequest) {
   try {

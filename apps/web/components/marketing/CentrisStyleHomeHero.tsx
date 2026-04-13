@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { QuickPropertySearchForm } from "@/app/components/home/QuickPropertySearchForm";
+import { PLATFORM_CARREFOUR_NAME } from "@/lib/brand/platform";
 
 const HERO_IMAGE =
   "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2400&auto=format&fit=crop";
@@ -50,17 +51,18 @@ export function CentrisStyleHomeHero() {
           <p
             className="
               mt-3
+              max-w-xl
               text-center
-              text-[10px]
-              font-light
-              uppercase
-              tracking-[0.3em]
+              text-xs
+              font-medium
+              leading-snug
+              tracking-wide
               text-[#D4AF37]
-              opacity-80
-              sm:text-xs
+              opacity-90
+              sm:text-sm
             "
           >
-            AI-DRIVEN REAL ESTATE MARKETPLACE
+            {PLATFORM_CARREFOUR_NAME}
           </p>
         </div>
 

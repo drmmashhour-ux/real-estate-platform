@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 
 /**
  * POST /api/admin/listing-acquisition/[id]/convert
- * Creates a draft FSBO or BNHub stay — never auto-published.
+ * Creates a draft FSBO or BNHUB stay — never auto-published.
  * Body: { ownerUserId: string, target?: "fsbo" | "stay" }
  */
 export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {

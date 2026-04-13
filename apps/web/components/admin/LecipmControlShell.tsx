@@ -3,27 +3,19 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { CONTROL_TOWER_NAV_FLAT, CONTROL_TOWER_NAV_GROUPS } from "@/lib/admin/control-tower-nav";
 
 const GOLD = "#D4AF37";
 
-export const LECIPM_CONTROL_NAV: { label: string; href: string }[] = [
-  { label: "Dashboard", href: "/admin" },
-  { label: "Listings", href: "/admin/listings" },
-  { label: "Bookings", href: "/admin/bookings" },
-  { label: "Users", href: "/admin/users" },
-  { label: "Hosts", href: "/admin/hosts" },
-  { label: "Payouts", href: "/admin/payouts" },
-  { label: "Disputes", href: "/admin/disputes" },
-  { label: "Promotions", href: "/admin/promotions" },
-  { label: "AI Control", href: "/admin/ai" },
-  { label: "Analytics", href: "/admin/analytics" },
-  { label: "Settings", href: "/admin/settings" },
-];
+/** @deprecated Use CONTROL_TOWER_NAV_FLAT — kept for older imports. */
+export const LECIPM_CONTROL_NAV = CONTROL_TOWER_NAV_FLAT;
 
 export type ControlAlert = { id: string; title: string; detail: string; href: string; severity?: "low" | "medium" | "high" };
 
 function activeFor(pathname: string, href: string) {
-  if (href === "/admin") return pathname === "/admin";
+  if (href === "/admin/overview") {
+    return pathname === "/admin/overview" || pathname === "/admin";
+  }
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
@@ -57,8 +49,8 @@ export function LecipmControlShell({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
-          <Link href="/admin" className="shrink-0 text-lg font-bold tracking-tight" style={{ color: GOLD }}>
-            LECIPM Control
+          <Link href="/admin/overview" className="shrink-0 text-lg font-bold tracking-tight" style={{ color: GOLD }}>
+            Control tower
           </Link>
           {showSearch ? (
             <form action="/admin/search" method="get" className="mx-auto hidden min-w-0 max-w-xl flex-1 md:block">
@@ -91,7 +83,7 @@ export function LecipmControlShell({
               Export report
             </Link>
             <Link
-              href="/admin#admin-alerts"
+              href="/admin/alerts"
               className="hidden rounded-xl border border-zinc-700 px-3 py-2 text-xs font-medium text-zinc-200 hover:bg-zinc-900 sm:inline-block"
             >
               View alerts
@@ -137,11 +129,11 @@ export function LecipmControlShell({
                     </ul>
                   )}
                   <Link
-                    href="/admin"
+                    href="/admin/alerts"
                     className="mt-2 block text-center text-xs text-zinc-500 hover:text-zinc-300"
                     onClick={() => setBellOpen(false)}
                   >
-                    Dashboard overview →
+                    All alerts →
                   </Link>
                 </div>
               ) : null}
@@ -163,24 +155,31 @@ export function LecipmControlShell({
         <aside
           className={`${navOpen ? "translate-x-0" : "-translate-x-full"} fixed inset-y-0 left-0 z-40 w-64 border-r border-zinc-800 bg-black pt-[4.5rem] transition lg:static lg:translate-x-0 lg:border-r lg:bg-transparent lg:pt-0`}
         >
-          <nav className="space-y-1 px-3 py-4 lg:sticky lg:top-20">
-            {LECIPM_CONTROL_NAV.map((item) => {
-              const active = activeFor(pathname, item.href);
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setNavOpen(false)}
-                  className="block rounded-xl px-3 py-2.5 text-sm font-medium transition"
-                  style={{
-                    color: active ? GOLD : "rgb(161 161 170)",
-                    backgroundColor: active ? "rgba(212, 175, 55, 0.12)" : "transparent",
-                  }}
-                >
-                  {item.label}
-                </Link>
-              );
-            })}
+          <nav className="space-y-4 px-3 py-4 lg:sticky lg:top-20">
+            {CONTROL_TOWER_NAV_GROUPS.map((group) => (
+              <div key={group.title}>
+                <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">{group.title}</p>
+                <div className="space-y-1">
+                  {group.items.map((item) => {
+                    const active = activeFor(pathname, item.href);
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setNavOpen(false)}
+                        className="block rounded-xl px-3 py-2 text-sm font-medium transition"
+                        style={{
+                          color: active ? GOLD : "rgb(161 161 170)",
+                          backgroundColor: active ? "rgba(212, 175, 55, 0.12)" : "transparent",
+                        }}
+                      >
+                        {item.label}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
             <Link
               href="/admin/reports/audit"
               className="mt-4 block rounded-xl px-3 py-2.5 text-sm text-zinc-500 hover:text-zinc-300"

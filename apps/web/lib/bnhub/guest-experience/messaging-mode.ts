@@ -1,7 +1,7 @@
 import type { HostAutopilotConfig } from "@/lib/ai/autopilot/host-config";
 
 /**
- * How outbound guest-facing copy may be delivered for BNHub retention flows.
+ * How outbound guest-facing copy may be delivered for BNHUB retention flows.
  * - `off`: no automated host-thread messages (platform nudges may still use neutral system notifications).
  * - `draft_only`: host sees a Manager AI recommendation; optional safe platform reminder to guest.
  * - `auto_send_safe`: host identity may post templated safe messages in booking chat when gate passes.

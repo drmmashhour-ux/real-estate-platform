@@ -3,7 +3,7 @@ import type { BnhubGuaranteeStatus } from "@prisma/client";
 
 const DEFAULT_TYPE = "trust_backed";
 
-/** Eligible paid / confirmed BNHub bookings get an active guarantee (idempotent). */
+/** Eligible paid / confirmed BNHUB bookings get an active guarantee (idempotent). */
 export async function applyGuarantee(bookingId: string) {
   const booking = await prisma.booking.findUnique({
     where: { id: bookingId },

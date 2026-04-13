@@ -5,7 +5,7 @@ import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
-/** GET /api/admin/payouts — orchestrated + manual BNHub payout queues (filters optional). */
+/** GET /api/admin/payouts — orchestrated + manual BNHUB payout queues (filters optional). */
 export async function GET(request: NextRequest) {
   const userId = await getGuestId();
   if (!userId) return NextResponse.json({ error: "Sign in required" }, { status: 401 });

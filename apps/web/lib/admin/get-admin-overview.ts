@@ -18,11 +18,11 @@ export type AdminOverviewStats = {
   /** Paid platform checkouts — last 7 / 30 days (rolling from server “now”). */
   revenueWeekCents: number;
   revenueMonthCents: number;
-  /** BNHub-style bookings not terminal (guest flow still active). */
+  /** BNHUB-style bookings not terminal (guest flow still active). */
   activeBookingsCount: number;
-  /** BNHub booking disputes still active + platform legal disputes open. */
+  /** BNHUB booking disputes still active + platform legal disputes open. */
   openDisputesCount: number;
-  /** BNHub host payouts not yet released (completed guest payment, no host release). */
+  /** BNHUB host payouts not yet released (completed guest payment, no host release). */
   pendingPayoutsCount: number;
 };
 

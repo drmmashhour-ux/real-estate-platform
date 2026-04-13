@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
-/** GET — compliance review queue (BNHub listings). */
+/** GET — compliance review queue (BNHUB listings). */
 export async function GET() {
   const userId = await getGuestId();
   if (!userId) return Response.json({ error: "Unauthorized" }, { status: 401 });

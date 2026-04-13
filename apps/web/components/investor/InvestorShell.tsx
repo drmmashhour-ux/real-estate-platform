@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LecipmBrandLockup } from "@/components/brand/LecipmBrandLockup";
 import { InvestorLogoutButton } from "@/components/investor/InvestorLogoutButton";
 
 const GOLD = "var(--color-premium-gold)";
@@ -17,9 +18,12 @@ export function InvestorShell({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-[#050505] text-slate-100">
       <header className="border-b border-white/10 bg-black/80 backdrop-blur">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-6">
-          <Link href="/investor/dashboard" className="text-lg font-semibold tracking-tight" style={{ color: GOLD }}>
-            LECIPM Investor
-          </Link>
+          <div className="flex min-w-0 flex-wrap items-center gap-3">
+            <LecipmBrandLockup href="/investor/dashboard" variant="dark" density="compact" />
+            <span className="text-xs font-bold uppercase tracking-[0.2em]" style={{ color: GOLD }}>
+              Investor
+            </span>
+          </div>
           <nav className="flex flex-wrap gap-2">
             {links.map((l) => (
               <Link

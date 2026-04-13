@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { verifyPassword } from "@/lib/auth/password";
-import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
+import {
+  checkRateLimitDistributed,
+  getRateLimitHeadersFromResult,
+  isIpRateLimitBlocked,
+  maybeBlockIpAfterRateLimitDenied,
+} from "@/lib/rate-limit-distributed";
 import { isDemoAuthAllowed } from "@/lib/auth/demo-auth-allowed";
 import { recordPlatformEvent } from "@/lib/observability";
 import { allocateUniqueUserCode } from "@/lib/user-code";
@@ -11,6 +16,10 @@ import { isMortgageExpertRole } from "@/lib/marketplace/mortgage-role";
 import { trackEvent } from "@/src/services/analytics";
 import { persistLaunchEvent } from "@/src/modules/launch/persistLaunchEvent";
 import { isTestMode } from "@/lib/config/app-mode";
+import { logSecurityEvent } from "@/lib/observability/security-events";
+import { REQUEST_ID_HEADER } from "@/lib/middleware/request-logger";
+import { fingerprintClientIp, getClientIpFromRequest } from "@/lib/security/ip-fingerprint";
+import { isSecurityIpBlocked } from "@/lib/security/ip-block";
 
 function maskEmail(email: string): string {
   const [a, d] = email.split("@");
@@ -22,11 +31,41 @@ function maskEmail(email: string): string {
 /** POST /api/auth/login — Authenticate and set session. */
 export async function POST(request: NextRequest) {
   try {
-    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? request.headers.get("x-real-ip") ?? "anonymous";
+    const ip = getClientIpFromRequest(request);
+    const ipFp = fingerprintClientIp(ip);
+    const requestId = request.headers.get(REQUEST_ID_HEADER);
+    if (await isSecurityIpBlocked(ipFp)) {
+      logSecurityEvent({
+        event: "suspicious_request",
+        detail: "blocked_ip_security_list",
+        subjectHint: ipFp,
+        requestId,
+      });
+      return NextResponse.json({ error: "Access denied." }, { status: 403 });
+    }
+    if (await isIpRateLimitBlocked(ipFp)) {
+      logSecurityEvent({
+        event: "rate_limit_exceeded",
+        detail: "blocked_ip_auth_login",
+        subjectHint: ipFp,
+        requestId,
+      });
+      return NextResponse.json({ error: "Too many attempts. Try again later." }, { status: 429 });
+    }
     const rateKey = `auth:login:${ip}`;
-    const limit = checkRateLimit(rateKey, { windowMs: 60 * 1000, max: 20 });
+    const limit = await checkRateLimitDistributed(rateKey, { windowMs: 60 * 1000, max: 20 });
     if (!limit.allowed) {
-      return NextResponse.json({ error: "Too many attempts. Try again later." }, { status: 429, headers: getRateLimitHeaders(limit) });
+      void maybeBlockIpAfterRateLimitDenied(ipFp);
+      logSecurityEvent({
+        event: "rate_limit_exceeded",
+        detail: "auth_login",
+        subjectHint: ipFp,
+        requestId,
+      });
+      return NextResponse.json(
+        { error: "Too many attempts. Try again later." },
+        { status: 429, headers: getRateLimitHeadersFromResult(limit) }
+      );
     }
     const body = await request.json();
     const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : null;
@@ -36,6 +75,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Email and password required" }, { status: 400 });
     }
 
+    void recordPlatformEvent({
+      eventType: "auth_login_attempt",
+      sourceModule: "auth",
+      entityType: "AUTH",
+      entityId: `fp:${ipFp}`,
+      payload: {},
+    }).catch(() => {});
+
     const prodLike = process.env.NODE_ENV === "production" || process.env.VERCEL === "1";
     if (prodLike && process.env.ALLOW_SEED_ADMIN_LOGIN !== "1" && email === "admin@test.com") {
       return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
@@ -43,18 +90,50 @@ export async function POST(request: NextRequest) {
 
     let user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
+      logSecurityEvent({
+        event: "auth_login_failure",
+        detail: "unknown_user",
+        subjectHint: ipFp,
+        requestId,
+      });
+      void recordPlatformEvent({
+        eventType: "auth_login_failure",
+        sourceModule: "auth",
+        entityType: "AUTH",
+        entityId: `fp:${ipFp}`,
+        payload: { reason: "unknown_user" },
+      }).catch(() => {});
+      void import("@/lib/fraud/compute-user-risk")
+        .then((m) => m.evaluateUserFraudAfterFailedLogin({ ipFingerprint: ipFp }))
+        .catch(() => {});
       return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
     }
 
     if (!user.passwordHash) {
       const hint = isDemoAuthAllowed()
-        ? "Account has no password yet; use BNHub demo sign-in in development or set a password via support."
+        ? "Account has no password yet; use BNHUB demo sign-in in development or set a password via support."
         : "Account has no password set. Use password reset or contact support to activate password login.";
       return NextResponse.json({ error: hint }, { status: 400 });
     }
 
     const valid = await verifyPassword(password, user.passwordHash);
     if (!valid) {
+      logSecurityEvent({
+        event: "auth_login_failure",
+        detail: "invalid_password",
+        subjectHint: ipFp,
+        requestId,
+      });
+      void recordPlatformEvent({
+        eventType: "auth_login_failure",
+        sourceModule: "auth",
+        entityType: "AUTH",
+        entityId: `fp:${ipFp}`,
+        payload: { reason: "invalid_password" },
+      }).catch(() => {});
+      void import("@/lib/fraud/compute-user-risk")
+        .then((m) => m.evaluateUserFraudAfterFailedLogin({ userId: user.id, ipFingerprint: ipFp }))
+        .catch(() => {});
       return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
     }
 

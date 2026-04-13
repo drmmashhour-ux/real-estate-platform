@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { AdditionalDeclarationHistoryEntry, SellerDeclarationData } from "@/lib/fsbo/seller-declaration-schema";
 import { newAdditionalDeclarationEntryId } from "@/lib/fsbo/seller-declaration-schema";
+import { WritingCorrectionLabelRow } from "@/components/ui/WritingCorrectionButton";
 
 const RELATED_TAG_OPTIONS: { id: string; label: string }[] = [
   { id: "renovations", label: "Renovations" },
@@ -143,7 +144,14 @@ export function AdditionalDeclarationsFields({
       </p>
 
       <label className="block text-sm text-slate-300">
-        <span className="mb-1 block font-medium text-white">Details &amp; clarifications</span>
+        <WritingCorrectionLabelRow
+          label={<span className="font-medium text-white">Details &amp; clarifications</span>}
+          textValue={value.additionalDeclarationsText}
+          onApply={(v) => {
+            setLocalError(null);
+            patch({ additionalDeclarationsText: v });
+          }}
+        />
         <textarea
           value={value.additionalDeclarationsText}
           onChange={(e) => {

@@ -1,5 +1,5 @@
 /**
- * BNHub / LECIPM notification entry points (email first; push/SMS later).
+ * BNHUB / LECIPM notification entry points (email first; push/SMS later).
  *
  * Implemented:
  * - `booking-emails` — guest + ops copy when a Supabase guest booking is marked paid (Stripe webhook).

@@ -6,7 +6,7 @@ import type { CaptionInput, ContentTheme, TextResult } from "./types";
 function fallbackCaption(input: CaptionInput): string {
   const theme: ContentTheme = input.theme ?? "bnhub_listings";
   const lines = [
-    `✨ ${input.topic} — curated on BNHub.`,
+    `✨ ${input.topic} — curated on BNHUB.`,
     `${THEME_PROMPT_SNIPPETS[theme].split(".")[0]}.`,
     input.context?.trim() ? `More: ${input.context.trim().slice(0, 120)}` : "Tap to explore stays.",
   ];
@@ -19,7 +19,7 @@ function fallbackCaption(input: CaptionInput): string {
 export async function generateCaption(input: CaptionInput): Promise<TextResult> {
   const theme: ContentTheme = input.theme ?? "bnhub_listings";
   const tone = normalizeTone(input.tone);
-  const system = `You write ultra-short social captions for BNHub (stays) / LECIPM.
+  const system = `You write ultra-short social captions for BNHUB (stays) / LECIPM.
 Rules:
 - 1–3 short lines; strong hook first.
 - Fits ${input.platform} (character limits: be conservative).

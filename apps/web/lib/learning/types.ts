@@ -1,5 +1,5 @@
 /**
- * Normalized listing features for learning + future ML export (BNHub-first).
+ * Normalized listing features for learning + future ML export (BNHUB-first).
  */
 export type ListingLearningFeatures = {
   listingId: string;

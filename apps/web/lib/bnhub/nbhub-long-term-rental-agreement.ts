@@ -1,11 +1,11 @@
 /**
- * BNHub long-term rental agreement — landlord/tenant terms for monthly leases.
+ * BNHUB long-term rental agreement — landlord/tenant terms for monthly leases.
  * Counsel should review before production reliance. Fallback when no admin legal override exists.
  */
 export const NBHUB_LONG_TERM_RENTAL_AGREEMENT_HTML = `
 <h2>1. Parties</h2>
 <ul>
-<li><strong>Platform</strong>: BNHub</li>
+<li><strong>Platform</strong>: BNHUB</li>
 <li><strong>Landlord</strong> (owner)</li>
 <li><strong>Tenant</strong> (renter)</li>
 </ul>

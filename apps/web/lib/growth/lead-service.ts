@@ -1,9 +1,11 @@
 import {
   Prisma,
+  type GrowthEngineBrokerRoute,
   type GrowthEngineLead,
   type GrowthEngineLeadRole,
   type GrowthEngineLeadSource,
   type GrowthEngineLeadStage,
+  type GrowthEngineLeadUrgency,
   type GrowthEnginePermissionStatus,
   type ListingAcquisitionSourceType,
 } from "@prisma/client";
@@ -54,6 +56,46 @@ export async function createGrowthLeadFromListingAcquisition(input: {
     }
     throw e;
   }
+}
+
+/** Public Leads Hub — seller / financing visitors (list-your-property, etc.). */
+export async function createLeadHubVisitor(input: {
+  email: string;
+  name?: string | null;
+  phone?: string | null;
+  city?: string | null;
+  brokerRoute: GrowthEngineBrokerRoute;
+  leadUrgency: GrowthEngineLeadUrgency;
+  propertySegmentLabel?: string | null;
+  sourcePage?: string;
+}): Promise<void> {
+  const email = input.email.trim().toLowerCase();
+  const route = input.brokerRoute;
+  const role: GrowthEngineLeadRole = route === "mortgage" ? "buyer" : "owner";
+  const preferMortgage = route === "mortgage" || route === "both";
+  const intent = `hub:${route}:${input.leadUrgency}`;
+  const category = [input.propertySegmentLabel?.trim(), "leads_hub"].filter(Boolean).join(" · ") || "leads_hub";
+
+  await prisma.growthEngineLead.create({
+    data: {
+      role,
+      name: input.name?.trim() || null,
+      email,
+      phone: input.phone?.trim() || null,
+      city: input.city?.trim() || null,
+      category: category.slice(0, 120),
+      intent: intent.slice(0, 64),
+      source: "form",
+      permissionStatus: "granted",
+      stage: "new",
+      consentAt: new Date(),
+      brokerRoute: route,
+      leadUrgency: input.leadUrgency,
+      preferPlatformMortgageExpert: preferMortgage,
+      needsFollowUp: input.leadUrgency === "hot",
+      followUpReason: input.leadUrgency === "hot" ? "Hot — visitor flagged urgent" : null,
+    },
+  });
 }
 
 export async function createGrowthLeadFromCapture(input: {
@@ -187,6 +229,8 @@ export async function updateLeadStage(
 export type GrowthLeadListFilter = {
   stage?: GrowthEngineLeadStage;
   needsFollowUp?: boolean;
+  brokerRoute?: GrowthEngineBrokerRoute;
+  leadUrgency?: GrowthEngineLeadUrgency;
 };
 
 export async function listGrowthLeads(filter: GrowthLeadListFilter): Promise<GrowthEngineLead[]> {
@@ -195,6 +239,8 @@ export async function listGrowthLeads(filter: GrowthLeadListFilter): Promise<Gro
       archivedAt: null,
       ...(filter.stage ? { stage: filter.stage } : {}),
       ...(filter.needsFollowUp != null ? { needsFollowUp: filter.needsFollowUp } : {}),
+      ...(filter.brokerRoute ? { brokerRoute: filter.brokerRoute } : {}),
+      ...(filter.leadUrgency ? { leadUrgency: filter.leadUrgency } : {}),
     },
     orderBy: { updatedAt: "desc" },
     take: 500,

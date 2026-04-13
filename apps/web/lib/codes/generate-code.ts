@@ -72,6 +72,12 @@ export async function generateInvoiceNumber(tx: CodeTx, year: number): Promise<s
   return `INV-${year}-${String(n).padStart(PAD, "0")}`;
 }
 
+/** Free listing acquisition intake reference (F-000001) — stored on `ListingAcquisitionLead` and optionally on linked FSBO draft. */
+export async function generateFreeAcquisitionIntakeCode(tx: CodeTx): Promise<string> {
+  const n = await nextSequenceValue(tx, "F_ACQ");
+  return formatPadded("F", n);
+}
+
 /** For backfills / scripts using the root client (each call is its own transaction). */
 export async function generateListingCodeStandalone(prisma: PrismaClient): Promise<string> {
   return prisma.$transaction((tx) => generateListingCode(tx));

@@ -1,5 +1,5 @@
 /**
- * Server-side rules for BNHub booking checkout and Stripe webhook completion.
+ * Server-side rules for BNHUB booking checkout and Stripe webhook completion.
  * Payment confirmation must only happen via Stripe webhook after a valid checkout session.
  */
 

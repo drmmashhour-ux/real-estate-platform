@@ -1,5 +1,5 @@
 /**
- * Batch BNHub AI autopilot evaluation (run via cron or CI).
+ * Batch BNHUB AI autopilot evaluation (run via cron or CI).
  * Usage: pnpm --filter @lecipm/web exec tsx scripts/run-ai-autopilot.ts
  */
 

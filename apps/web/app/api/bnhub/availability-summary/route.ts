@@ -64,7 +64,7 @@ export async function GET(req: Request) {
       externalBlockedDates,
       conflictDates,
       calendarLegend: {
-        bnhub: "Reservation on BNHub",
+        bnhub: "Reservation on BNHUB",
         external: "Unavailable (imported calendar / other channel)",
         conflict: "Overlap — review in Channel Manager",
       },

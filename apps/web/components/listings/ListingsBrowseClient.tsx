@@ -11,6 +11,7 @@ import { ListingsGridSkeleton } from "@/components/ui/SkeletonBlock";
 import { SearchEngineBar, SearchFiltersProvider, useSearchEngineContext } from "@/components/search/SearchEngine";
 import { hasValidMapBounds, urlParamsToGlobalFilters } from "@/components/search/FilterState";
 import { MapSearch } from "@/components/search/MapSearch";
+import { SmartMapInsightsPanel } from "@/components/search/SmartMapInsightsPanel";
 import type { MapListing } from "@/components/map/MapListing";
 import { hasValidCoordinates } from "@/components/map/MapListing";
 import {
@@ -21,10 +22,18 @@ import { buildFsboPublicListingPath } from "@/lib/seo/public-urls";
 import { trackLaunchEvent } from "@/src/modules/launch/LaunchTracker";
 import { ListingTransactionFlag } from "@/components/listings/ListingTransactionFlag";
 import { SearchSmartComparePanel } from "@/components/compare/SearchSmartComparePanel";
+import { LISTINGS_MAP_SEARCH_ID } from "@/lib/search/public-map-search-urls";
+import { scrollToMapSearchRegion } from "@/lib/ui/scroll-to-map-search";
+import { useGeocodedMapFocus } from "@/hooks/useGeocodedMapFocus";
+import { computeMapSearchStats } from "@/lib/search/map-search-analytics";
+import { BROWSE_EMPTY_LISTINGS } from "@/lib/listings/browse-empty-copy";
 
 /** Luxury residential hero — Unsplash (modern home, dusk). */
 const LISTINGS_HERO_BG =
   "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2400&auto=format&fit=crop";
+
+/** Match server MAX_LIMIT — load more rows for map pins than the gallery page size. */
+const MAP_BROWSE_LIMIT = 60;
 
 type Row = {
   kind?: "fsbo" | "crm";
@@ -48,7 +57,16 @@ type Row = {
     label: string;
     tone: "amber" | "emerald" | "slate";
   } | null;
+  verifiedListing?: boolean;
+  /** FSBO featured window — when active, may show “Top listing” micro-badge */
+  featuredUntil?: string | null;
 };
+
+function isFeaturedListingActive(featuredUntil: string | null | undefined): boolean {
+  if (featuredUntil == null || featuredUntil === "") return false;
+  const t = new Date(featuredUntil).getTime();
+  return Number.isFinite(t) && t > Date.now();
+}
 
 const EMPTY_PF: PropertyBrowseFilters = {
   noiseLevel: null,
@@ -76,9 +94,10 @@ function listingPublicHref(row: Row): string {
   return `/listings/${row.id}`;
 }
 
-function toMapListing(row: Row): MapListing | null {
+function toMapListing(row: Row, dealKind: "sale" | "rent"): MapListing | null {
   if (!hasValidCoordinates(row)) return null;
   const img = row.coverImage || row.images[0] || null;
+  const tf = row.transactionFlag;
   return {
     id: row.id,
     latitude: row.latitude as number,
@@ -87,6 +106,14 @@ function toMapListing(row: Row): MapListing | null {
     title: row.title,
     image: img ?? undefined,
     href: listingPublicHref(row),
+    dealKind,
+    transactionKey: tf?.key,
+    transactionLabel: tf?.label,
+    platformListing: row.kind == null || row.kind === "fsbo" || row.kind === "crm",
+    mapRatingNote:
+      row.kind === "crm"
+        ? "Broker hub listing — connect with your agent for buyer feedback and comparables."
+        : null,
   };
 }
 
@@ -106,7 +133,9 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
   const [propertyFilters, setPropertyFilters] = useState<PropertyBrowseFilters>(EMPTY_PF);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [smartCompareIds, setSmartCompareIds] = useState<string[]>([]);
+  const [mapFeedRows, setMapFeedRows] = useState<Row[]>([]);
   const listRef = useRef<HTMLDivElement>(null);
+  const mapDeepLinkScrollKey = useRef<string | null>(null);
 
   const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10) || 1);
 
@@ -121,8 +150,9 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
     if (hubMode === "rent") return { ...base, type: "rent" as const };
     return base;
   }, [searchParams, hubMode]);
-  const mapLayout = appliedFromUrl.mapLayout ?? "list";
+  const mapLayout = appliedFromUrl.mapLayout ?? "split";
   const listSort = appliedFromUrl.sort ?? "recommended";
+  const prevMapLayoutRef = useRef<"list" | "split" | "map">(mapLayout);
 
   const fetchList = useCallback(async () => {
     setLoading(true);
@@ -158,9 +188,57 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
     }
   }, [searchParams, page, propertyFilters, hubMode]);
 
+  const fetchMapFeed = useCallback(async () => {
+    try {
+      const params = new URLSearchParams(queryString);
+      const base = urlParamsToGlobalFilters(params);
+      const f = hubMode === "rent" ? { ...base, type: "rent" as const } : base;
+      const r = await fetch("/api/buyer/browse", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...f, page: 1, limit: MAP_BROWSE_LIMIT, propertyFilters }),
+        cache: "no-store",
+      });
+      if (!r.ok) return;
+      const j = await r.json();
+      setMapFeedRows(Array.isArray(j.data) ? j.data : []);
+    } catch {
+      setMapFeedRows([]);
+    }
+  }, [queryString, hubMode, propertyFilters]);
+
   useEffect(() => {
     void fetchList();
   }, [fetchList]);
+
+  useEffect(() => {
+    if (mapLayout !== "map" && mapLayout !== "split") return;
+    void fetchMapFeed();
+  }, [mapLayout, fetchMapFeed]);
+
+  useEffect(() => {
+    const prev = prevMapLayoutRef.current;
+    let t: ReturnType<typeof setTimeout> | undefined;
+    if (prev === "list" && (mapLayout === "map" || mapLayout === "split") && !loading && !fetchError && total > 0) {
+      t = window.setTimeout(() => {
+        scrollToMapSearchRegion(LISTINGS_MAP_SEARCH_ID, { delayMs: 60, behavior: "smooth" });
+      }, 400);
+    }
+    prevMapLayoutRef.current = mapLayout;
+    return () => {
+      if (t !== undefined) clearTimeout(t);
+    };
+  }, [mapLayout, loading, fetchError, total]);
+
+  useEffect(() => {
+    const ml = searchParams.get("mapLayout");
+    if (ml !== "map" && ml !== "split") return;
+    if (loading || fetchError) return;
+    if (total === 0) return;
+    if (mapDeepLinkScrollKey.current === spKey) return;
+    mapDeepLinkScrollKey.current = spKey;
+    scrollToMapSearchRegion(LISTINGS_MAP_SEARCH_ID, { delayMs: 480 });
+  }, [loading, fetchError, total, spKey, searchParams]);
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -208,7 +286,19 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
         }
       : null;
 
-  const mapPins = data.map(toMapListing).filter((x): x is MapListing => x != null);
+  const mapBoundsActive = hasValidMapBounds(appliedFromUrl);
+  const locationMapFocus = useGeocodedMapFocus(appliedFromUrl.location, mapBoundsActive);
+
+  const dealKindForMap: "sale" | "rent" = hubMode === "rent" ? "rent" : "sale";
+  const rowsForMap = useMemo(() => {
+    if (mapLayout !== "map" && mapLayout !== "split") return data;
+    return mapFeedRows.length > 0 ? mapFeedRows : data;
+  }, [mapLayout, mapFeedRows, data]);
+  const mapPins = useMemo(
+    () => rowsForMap.map((row) => toMapListing(row, dealKindForMap)).filter((x): x is MapListing => x != null),
+    [rowsForMap, dealKindForMap]
+  );
+  const mapStats = useMemo(() => computeMapSearchStats(mapPins), [mapPins]);
 
   const setLayout = (layout: "list" | "split" | "map") => {
     applyPatch({ mapLayout: layout });
@@ -227,7 +317,7 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
 
   const listGrid = useMemo(
     () => (
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
         {data.map((row) => {
           const img = row.coverImage || row.images[0] || null;
           const price = `$${(row.priceCents / 100).toLocaleString("en-CA")}`;
@@ -239,7 +329,7 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
               href={listingPublicHref(row)}
               onMouseEnter={() => setSelectedId(row.id)}
               onMouseLeave={() => setSelectedId(null)}
-              className={`group block overflow-hidden rounded-2xl border bg-white/[0.03] shadow-[var(--shadow-card)] transition duration-300 hover:-translate-y-0.5 hover:border-premium-gold/35 hover:shadow-[var(--shadow-card-hover)] ${
+              className={`group block overflow-hidden rounded-2xl border bg-white/[0.03] shadow-[0_8px_30px_-12px_rgba(0,0,0,0.55)] transition-all duration-200 ease-out hover:scale-[1.015] hover:border-premium-gold/40 hover:shadow-[0_16px_40px_-12px_rgba(0,0,0,0.65)] ${
                 selectedId === row.id ? "border-premium-gold/50 ring-1 ring-premium-gold/30" : "border-white/10"
               }`}
             >
@@ -251,7 +341,7 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
                     alt=""
                     loading="lazy"
                     decoding="async"
-                    className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
+                    className="h-full w-full object-cover transition-transform duration-200 ease-out group-hover:scale-[1.02]"
                   />
                 ) : (
                   <div className="flex h-full flex-col items-center justify-center gap-1 text-xs text-slate-600">
@@ -263,15 +353,33 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
                     <span>No photo</span>
                   </div>
                 )}
+                {img ? (
+                  <div
+                    className="pointer-events-none absolute inset-x-0 bottom-0 top-[35%] bg-gradient-to-t from-black/80 via-black/30 to-transparent"
+                    aria-hidden
+                  />
+                ) : null}
+                <div className="pointer-events-none absolute bottom-3 left-3 z-[2] flex flex-wrap items-center gap-1.5">
+                  {row.verifiedListing ? (
+                    <span className="rounded-full bg-black/50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white ring-1 ring-white/20 backdrop-blur-sm">
+                      Verified
+                    </span>
+                  ) : null}
+                  {isFeaturedListingActive(row.featuredUntil) ? (
+                    <span className="rounded-full bg-[#D4AF37]/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#E8D589] ring-1 ring-[#D4AF37]/35 backdrop-blur-sm">
+                      Top listing
+                    </span>
+                  ) : null}
+                </div>
               </div>
-              <div className="p-4 sm:p-5">
+              <div className="p-5 sm:p-6">
                 {row.transactionFlag ? (
                   <div className="mb-3">
                     <ListingTransactionFlag flag={row.transactionFlag} />
                   </div>
                 ) : null}
                 <p className="line-clamp-2 text-sm font-semibold text-white">{row.title}</p>
-                <p className="mt-1 text-lg font-bold text-premium-gold">{price}</p>
+                <p className="mt-1 text-xl font-bold tracking-tight text-premium-gold">{price}</p>
                 <p className="mt-1 text-xs text-slate-500">
                   {row.city}
                   {row.address ? ` · ${row.address}` : ""}
@@ -325,15 +433,27 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
     <MapSearch
       listings={mapPins}
       initialBounds={initialBounds}
+      focusPoint={locationMapFocus}
       suppressAutoFit={Boolean(initialBounds)}
       onBoundsChange={onBoundsChange}
       selectedId={selectedId}
+      marketMedianPrice={mapStats?.medianPrice ?? null}
       onMarkerClick={(ml) => {
         setSelectedId(ml.id);
         document.getElementById(`listing-card-${ml.id}`)?.scrollIntoView({ behavior: "smooth", block: "nearest" });
       }}
       variant="dark"
       className="h-[420px] w-full"
+    />
+  );
+
+  const smartMapPanel = (
+    <SmartMapInsightsPanel
+      listings={mapPins}
+      dealKind={dealKindForMap}
+      cityHint={appliedFromUrl.location}
+      totalListed={total}
+      variant="dark"
     />
   );
 
@@ -523,6 +643,12 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
         <div className="hidden lg:block lg:flex-1" aria-hidden />
       )}
 
+      {(mapLayout === "split" || mapLayout === "map") && !loading && total > 0 ? (
+        <p className="w-full text-center text-xs text-slate-500 lg:text-left">
+          Tap <span className="font-medium text-premium-gold/90">Map</span> to jump here. Pan or zoom to search this area — up to {MAP_BROWSE_LIMIT} pins match your filters. Tap a flag for ask price vs median on the map.
+        </p>
+      ) : null}
+
       <div className="flex items-center gap-2 lg:min-w-[200px] lg:justify-end">
         <label className="sr-only" htmlFor="listings-sort">
           Sort results
@@ -605,8 +731,18 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
 
   const grid = (
     <>
-      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+      <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
         {resultsToolbar}
+
+        {!loading && !fetchError && total > 0 ? (
+          <div className="mt-5 rounded-2xl border border-premium-gold/25 bg-gradient-to-br from-premium-gold/[0.06] to-white/[0.02] px-4 py-3.5 sm:px-5">
+            <h2 className="text-sm font-semibold tracking-tight text-premium-gold">AI Recommended listings</h2>
+            <p className="mt-1 max-w-2xl text-xs leading-relaxed text-slate-400">
+              Results are ranked for fit against your filters and platform signals. Change location or filters to refresh
+              suggestions.
+            </p>
+          </div>
+        ) : null}
 
         {data.length > 1 ? (
           <div className="mt-6">
@@ -643,12 +779,21 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
             {mapLayout === "split" && (
               <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(360px,480px)]">
                 <div className="min-w-0">{listGrid}</div>
-                <div className="min-h-[420px] lg:order-2">{mapSearchEl}</div>
+                <div
+                  id={LISTINGS_MAP_SEARCH_ID}
+                  className="space-y-4 scroll-mt-28 lg:order-2 lg:scroll-mt-24"
+                >
+                  {smartMapPanel}
+                  {mapSearchEl}
+                </div>
               </div>
             )}
             {mapLayout === "map" && (
               <div className="space-y-4">
-                <div className="min-h-[420px] w-full">{mapSearchEl}</div>
+                <div id={LISTINGS_MAP_SEARCH_ID} className="w-full space-y-4 scroll-mt-28 lg:scroll-mt-24">
+                  {smartMapPanel}
+                  {mapSearchEl}
+                </div>
                 {listGrid}
               </div>
             )}
@@ -657,26 +802,18 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
 
         {!loading && !fetchError && data.length === 0 ? (
           <div className="mt-12">
-            <EmptyState
-              icon="🏠"
-              title="No listings match these filters"
-              description="Try widening the city, price range, or property type — or clear filters to see everything available."
-            >
-              <div className="flex flex-col items-center gap-3 sm:flex-row sm:flex-wrap sm:justify-center">
-                <button
-                  type="button"
-                  onClick={reset}
-                  className="min-h-[44px] rounded-xl bg-premium-gold px-6 py-2.5 text-sm font-bold text-[#0B0B0B] transition hover:bg-premium-gold"
-                >
-                  Clear search filters
+            <EmptyState title={BROWSE_EMPTY_LISTINGS.title} description={BROWSE_EMPTY_LISTINGS.description}>
+              <>
+                <button type="button" onClick={reset} className="lecipm-cta-gold-solid min-h-[44px] px-6 py-2.5 text-sm">
+                  Reset filters
                 </button>
                 <Link
-                  href="/bnhub/stays"
-                  className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-white/20 px-6 py-2.5 text-sm font-semibold text-white/90 transition hover:border-premium-gold/40 hover:text-white"
+                  href="/explore"
+                  className="lecipm-cta-gold-outline inline-flex min-h-[44px] items-center justify-center px-6 py-2.5 text-sm"
                 >
-                  Browse short-term stays
+                  Browse featured listings
                 </Link>
-              </div>
+              </>
             </EmptyState>
           </div>
         ) : null}
@@ -707,7 +844,8 @@ export function ListingsBrowseClient({
               <h2 className="text-lg font-semibold text-white">
                 {hubMode === "rent" ? "Search rentals" : "Search properties"}
               </h2>
-              <p className="mt-1 text-sm text-slate-500">Filters sync to the URL — share or bookmark your results.</p>
+              <p className="mt-1 text-xs font-normal leading-snug text-white/50">Find the right property faster</p>
+              <p className="mt-1 text-xs text-slate-500">Filters sync to the URL — share or bookmark your results.</p>
               <div className="mt-4">
                 <SearchEngineBar />
               </div>
@@ -733,6 +871,9 @@ export function ListingsBrowseClient({
                   ? "Find your next long-term rental"
                   : "Step into your next home in Québec"}
               </h1>
+              <p className="mx-auto mt-3 max-w-xl text-center text-xs font-normal leading-snug text-white/55 sm:text-sm sm:text-white/60">
+                Find the right property faster
+              </p>
               <p className="mx-auto mt-5 max-w-2xl text-center text-base leading-relaxed text-white/90 sm:text-lg">
                 Public catalog — no sign-in required. Filters sync to the URL so you can share or bookmark your search.
               </p>

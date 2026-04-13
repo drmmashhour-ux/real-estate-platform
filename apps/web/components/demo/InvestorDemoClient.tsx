@@ -12,9 +12,9 @@ export type InvestorDemoClientProps = {
 
 const FLOW: { key: DemoStepKey; label: string; hint: string }[] = [
   { key: "search", label: "Start Search Demo", hint: "Discovery — two paths" },
-  { key: "property", label: "Show Property Page", hint: "BNHub + resale CTAs" },
+  { key: "property", label: "Show Property Page", hint: "BNHUB + resale CTAs" },
   { key: "contact", label: "Contact / Inquiry Flow", hint: "Lead capture" },
-  { key: "booking", label: "BNHub Booking Flow", hint: "Dates → price → checkout preview" },
+  { key: "booking", label: "BNHUB Booking Flow", hint: "Dates → price → checkout preview" },
   { key: "ops", label: "CRM / AI / Close Layer", hint: "Ops proof" },
   { key: "revenue", label: "Revenue / Metrics Layer", hint: "Monetization story" },
 ];

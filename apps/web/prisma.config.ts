@@ -2,11 +2,14 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { config as loadDotenv } from "dotenv";
 import { defineConfig } from "prisma/config";
+import { resolveDatabaseUrlIntoEnv } from "./lib/db/resolve-database-url";
 
 // Prisma CLI skips default .env loading when prisma.config.ts exists — load explicitly.
 const root = path.dirname(fileURLToPath(import.meta.url));
 loadDotenv({ path: path.join(root, ".env") });
 loadDotenv({ path: path.join(root, ".env.local") });
+
+resolveDatabaseUrlIntoEnv();
 
 /** Generate/validate only need a syntactically valid URL; runtime must set a real DATABASE_URL. */
 const PRISMA_CLI_PLACEHOLDER =

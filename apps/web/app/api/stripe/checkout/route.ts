@@ -35,6 +35,7 @@ import {
 } from "@/lib/stripe/hostPayoutReadiness";
 import { onCheckoutStartAutomation } from "@/src/services/automation";
 import { onMessagingTriggerCheckoutStarted } from "@/src/modules/messaging/triggers";
+import { mergeTrafficAttributionIntoMetadata } from "@/lib/attribution/social-traffic";
 import { recordInternalCrmEvent } from "@/lib/crm/internal-crm-telemetry";
 import { BNHUB_BOOKING_CHECKOUT_SKIPS_HOST_CONNECT } from "@/lib/stripe/bnhubCheckoutConnectMode";
 import { parseUpsellsFromBody } from "@/lib/monetization/bnhub-checkout-pricing";
@@ -42,8 +43,11 @@ import {
   createGuestSupabaseBookingCheckoutSession,
   isGuestSupabaseOnlyCheckoutBody,
 } from "@/lib/stripe/guestSupabaseBooking";
+import { getCountryBySlug } from "@/config/countries";
 import { getResolvedMarket } from "@/lib/markets";
+import { isStripeEnabledForCountry } from "@/lib/payments/stripe-by-country";
 import { resolveActivePaymentModeFromMarket } from "@/lib/payments/resolve-payment-mode";
+import { getRequestCountrySlug } from "@/lib/region/request-country";
 import { computeBookingPricing } from "@/lib/bnhub/booking-pricing";
 import { bookingMoneyBreakdownFromPricingBreakdown } from "@/lib/bookings/money";
 import { persistMoneyEvent } from "@/lib/payments/money-events";
@@ -103,6 +107,18 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const requestCountrySlug = await getRequestCountrySlug();
+  const requestCountryDef = getCountryBySlug(requestCountrySlug);
+  if (!isStripeEnabledForCountry(requestCountryDef)) {
+    return Response.json(
+      {
+        error:
+          "Online card checkout is not available in this region. Use the manual or cash arrangement offered on the listing.",
+      },
+      { status: 403 }
+    );
+  }
+
   if (!isStripeConfigured()) {
     return Response.json(
       { error: "Payments are not configured. Please try again later." },
@@ -123,7 +139,7 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  /** Mobile guest BNHub: Supabase `bookings` only — no LECIPM session; server loads amount from DB. */
+  /** Mobile guest BNHUB: Supabase `bookings` only — no LECIPM session; server loads amount from DB. */
   if (isGuestSupabaseOnlyCheckoutBody(body)) {
     const bookingId = typeof body.bookingId === "string" ? body.bookingId.trim() : "";
     const guestLimit = checkRateLimit(`stripe:guest-supabase-checkout:ip:${ip}`, { windowMs: 60_000, max: 30 });
@@ -370,7 +386,7 @@ export async function POST(request: NextRequest) {
       const applicationFeeAmount = bnhubStripeApplicationFeeCents(chargeAmountCents);
       if (applicationFeeAmount >= chargeAmountCents && chargeAmountCents > 0) {
         return Response.json(
-          { error: "Invalid BNHub fee split for Stripe Connect." },
+          { error: "Invalid BNHUB fee split for Stripe Connect." },
           { status: 400 }
         );
       }
@@ -555,7 +571,12 @@ export async function POST(request: NextRequest) {
   ).catch(() => {});
   if (paymentType === "booking" && typeof body.bookingId === "string" && body.bookingId) {
     const bid = body.bookingId.trim();
-    void trackEvent("booking_started", { bookingId: bid, sessionId: result.sessionId }, { userId }).catch(() => {});
+    const cookieHeader = req.headers.get("cookie");
+    const bookingStartMeta = mergeTrafficAttributionIntoMetadata(cookieHeader, {
+      bookingId: bid,
+      sessionId: result.sessionId,
+    });
+    void trackEvent("booking_started", bookingStartMeta, { userId }).catch(() => {});
     void prisma.booking
       .findUnique({
         where: { id: bid },
@@ -569,7 +590,11 @@ export async function POST(request: NextRequest) {
           userId,
           shortTermListingId: b.listingId,
           bookingId: bid,
-          metadata: { source: "stripe_checkout", sessionId: result.sessionId },
+          metadata: mergeTrafficAttributionIntoMetadata(cookieHeader, {
+            source: "stripe_checkout",
+            sessionId: result.sessionId,
+            listingId: b.listingId,
+          }),
         });
       })
       .catch(() => {});
@@ -595,18 +620,26 @@ export async function POST(request: NextRequest) {
           : null,
   });
 
-  logInfo("[checkout] session created", {
-    paymentType,
-    sessionId: result.sessionId,
-    amountCents: chargeAmountCents,
-    bookingId: typeof body.bookingId === "string" ? body.bookingId.trim() : null,
-    listingId:
-      paymentType === "booking" && serverBookingListingId
-        ? serverBookingListingId
-        : typeof body.listingId === "string"
-          ? body.listingId
-          : null,
-  });
+  logInfo(
+    paymentType === "booking"
+      ? "[STRIPE] [BOOKING] checkout session ready — redirect guest to Stripe"
+      : "[STRIPE] checkout session ready",
+    {
+      paymentType,
+      sessionId: result.sessionId,
+      amountCents: chargeAmountCents,
+      currency: typeof body.currency === "string" ? String(body.currency).toLowerCase() : "cad",
+      bookingId: typeof body.bookingId === "string" ? body.bookingId.trim() : null,
+      listingId:
+        paymentType === "booking" && serverBookingListingId
+          ? serverBookingListingId
+          : typeof body.listingId === "string"
+            ? body.listingId
+            : null,
+      platformFeeCents: auditSplit?.platformFeeCents,
+      hostPayoutCents: auditSplit?.hostPayoutCents,
+    }
+  );
 
   return Response.json({ url: result.url, sessionId: result.sessionId });
 }

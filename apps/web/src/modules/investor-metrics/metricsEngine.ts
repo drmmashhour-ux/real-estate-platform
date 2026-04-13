@@ -219,7 +219,7 @@ export function formatInvestorReportText(p: {
     "Snapshot (30d window where noted)",
     `  Total users: ${p.snapshot.totalUsers}`,
     `  Active users (30d touch): ${p.snapshot.activeUsers}`,
-    `  Total live listings (BNHub + FSBO): ${p.snapshot.totalListings}`,
+    `  Total live listings (BNHUB + FSBO): ${p.snapshot.totalListings}`,
     `  Bookings (confirmed/completed, 30d): ${p.snapshot.bookings}`,
     `  Revenue events sum (30d): ${p.snapshot.revenue.toFixed(2)}`,
     `  Lead win conversion (won/(won+lost), 30d): ${(p.snapshot.conversionRate * 100).toFixed(1)}%`,

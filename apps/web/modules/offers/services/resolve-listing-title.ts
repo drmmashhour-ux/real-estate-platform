@@ -10,7 +10,7 @@ const DEMO_TITLE: Record<string, string> = {
 
 /**
  * Resolves a display title for a listing id used on offers and CRM.
- * Tries broker CRM `Listing` first, then BNHub `ShortTermListing` (vacation rentals).
+ * Tries broker CRM `Listing` first, then BNHUB `ShortTermListing` (vacation rentals).
  */
 export async function resolveListingTitle(listingId: string): Promise<string | null> {
   const demo = DEMO_TITLE[listingId];

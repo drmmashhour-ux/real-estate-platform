@@ -307,6 +307,25 @@ export function MortgageUserHub({
         Share a few numbers — we&apos;ll route you to a licensed mortgage partner (informational; not a commitment).
       </p>
 
+      {variant === "analyze" ? (
+        <div className="mt-4 flex flex-col gap-2 border-t border-white/10 pt-4 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-6 sm:gap-y-2">
+          {isLoggedIn ? (
+            <Link
+              href="/dashboard#mortgage-hub"
+              className="text-sm font-semibold text-premium-gold underline decoration-premium-gold/50 underline-offset-2 hover:text-premium-gold"
+            >
+              Open mortgage dashboard
+            </Link>
+          ) : null}
+          <Link
+            href="/mortgage?from=analyze#request-contact"
+            className="text-sm font-medium text-slate-300 underline decoration-white/20 underline-offset-2 hover:text-white"
+          >
+            Mortgage hub — request contact
+          </Link>
+        </div>
+      ) : null}
+
       {!isLoggedIn ? (
         <div className="mt-4 rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-slate-300">
           <Link

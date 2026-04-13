@@ -194,7 +194,7 @@ test("booking pre-stripe (stays)", async ({ page }) => {
   expect(bookingId, lastBookingError).toBeTruthy();
   await page.waitForURL(new RegExp(`/bnhub/booking/${bookingId}`), { timeout: 20_000 });
 
-  const pay = page.getByRole("button", { name: /pay securely|complete demo payment/i }).first();
+  const pay = page.getByRole("button", { name: /continue to payment|pay securely|complete demo payment/i }).first();
   await expect(pay).toBeVisible({ timeout: 15_000 });
   await dismissCommonOverlays(page);
 

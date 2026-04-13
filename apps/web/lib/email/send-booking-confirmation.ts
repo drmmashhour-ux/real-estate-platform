@@ -22,7 +22,7 @@ export type BookingConfirmationEmailParams = {
 };
 
 /**
- * Guest BNHub: sends guest receipt (if email on file) + internal ops copy when Resend is configured.
+ * Guest BNHUB: sends guest receipt (if email on file) + internal ops copy when Resend is configured.
  * TODO: Restrict guest body for CAN-SPAM / locale; wire BNHUB_BOOKING_CONFIRMATION_TO override.
  */
 export async function sendBookingConfirmationEmail(params: BookingConfirmationEmailParams): Promise<void> {
@@ -82,22 +82,22 @@ export async function sendBookingConfirmationEmail(params: BookingConfirmationEm
     </ul>`;
 
   if (guestOk) {
-    const guestSubject = `Your BNHub stay is confirmed — ${listingTitle.replace(/[\r\n]/g, " ").slice(0, 80)}`;
+    const guestSubject = `Your BNHUB stay is confirmed — ${listingTitle.replace(/[\r\n]/g, " ").slice(0, 80)}`;
     const guestHtml = `
       <p>Thank you — your payment was received.</p>
       ${guestSummaryLines}
-      <p style="color:#666;font-size:12px;">LECIPM BNHub · This email was sent because you booked a stay on our platform.</p>
+      <p style="color:#666;font-size:12px;">LECIPM BNHUB · This email was sent because you booked a stay on our platform.</p>
     `;
     await sendEmail({ to: guestTo, subject: guestSubject, html: guestHtml });
   }
 
   if (ops.includes("@")) {
-    const opsSubject = `BNHub booking paid — ${listingTitle}`;
+    const opsSubject = `BNHUB booking paid — ${listingTitle}`;
     const opsHtml = `
       <p>A guest booking was marked <strong>paid</strong> in Supabase.</p>
       ${opsSummaryLines}
       ${guestOk ? `<p><strong>Guest email on file:</strong> ${escapeHtml(guestTo)}</p>` : "<p><em>No guest email on this booking row.</em></p>"}
-      <p style="color:#666;font-size:12px;">Automated message from LECIPM BNHub webhook.</p>
+      <p style="color:#666;font-size:12px;">Automated message from LECIPM BNHUB webhook.</p>
     `;
     await sendEmail({ to: ops, subject: opsSubject, html: opsHtml });
   } else {

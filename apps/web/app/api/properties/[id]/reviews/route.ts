@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { getPublicListingReviews } from "@/src/modules/reviews/reviewService";
 
-/** GET /api/properties/:id/reviews — public guest reviews for a BNHub listing (listing id = :id). */
+/** GET /api/properties/:id/reviews — public guest reviews for a BNHUB listing (listing id = :id). */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

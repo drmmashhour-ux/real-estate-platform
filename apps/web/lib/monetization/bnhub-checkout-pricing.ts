@@ -1,5 +1,5 @@
 /**
- * BNHub guest checkout: dynamic service fee (base + peak) and optional upsells.
+ * BNHUB guest checkout: dynamic service fee (base + peak) and optional upsells.
  * Enable itemized Stripe lines + webhook v2 validation with BNHUB_CHECKOUT_ITEMIZED_FEES=1.
  */
 

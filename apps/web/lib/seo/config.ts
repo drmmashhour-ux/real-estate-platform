@@ -6,7 +6,7 @@ import {
 import { getSiteBaseUrl } from "@/modules/seo/lib/siteBaseUrl";
 
 /**
- * Global SEO defaults for LECIPM + BNHub (metadata, sitemap, JSON-LD).
+ * Global SEO defaults for LECIPM + BNHUB (metadata, sitemap, JSON-LD).
  */
 export const seoConfig = {
   siteName: "LECIPM" as const,

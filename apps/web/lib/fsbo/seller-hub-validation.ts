@@ -2,9 +2,10 @@ import type { FsboListing, FsboListingDocument, SellerSupportingDocument } from 
 import { assertFsboContractsSignedForActivation } from "@/lib/contracts/fsbo-seller-contracts";
 import { FSBO_HUB_REQUIRED_DOC_TYPES, type FsboHubDocType } from "@/lib/fsbo/seller-hub-doc-types";
 import {
+  DECLARATION_SECTIONS_WITH_APPLICABILITY_GATE,
+  effectiveSectionApplies,
   isAdditionalDeclarationsSectionComplete,
   isIdentityDeclarationComplete,
-  isPartyIdentityComplete,
   migrateLegacySellerDeclaration,
   missingDeclarationSections,
   SELLER_DECLARATION_VERSION,
@@ -38,14 +39,24 @@ function parseSellerDeclarationV2(
     return { ok: false, error: "Complete the full seller declaration (all sections)." };
   }
 
+  const pt = (propertyType ?? "").toUpperCase();
+  const listingIsCondo = pt === "CONDO";
+  if (listingIsCondo && !d.isCondo) {
+    return {
+      ok: false,
+      error:
+        "This listing is a condominium — enable divided co-ownership in the declaration (section 9) and use photos that show your condo unit or building.",
+    };
+  }
+  if (pt && !listingIsCondo && d.isCondo) {
+    return {
+      ok: false,
+      error:
+        "Your declaration indicates condo / divided co-ownership, but the listing type is not condominium. Update the property type (step 2) or adjust the declaration before marking complete.",
+    };
+  }
+
   if (!isIdentityDeclarationComplete(d, propertyType)) {
-    const buyers = d.buyers ?? [];
-    if (buyers.length > 0 && !buyers.every((b) => isPartyIdentityComplete(b))) {
-      return {
-        ok: false,
-        error: "Complete identity for each buyer you listed (ID fields and document upload).",
-      };
-    }
     const v = validateSellerDeclarationIntegrity(d, propertyType);
     return {
       ok: false,
@@ -53,41 +64,67 @@ function parseSellerDeclarationV2(
     };
   }
 
-  if (!d.conflictInterestDisclosureConfirmed) {
-    return { ok: false, error: "Confirm conflict-of-interest disclosure (checkbox)." };
-  }
-
-  if (!d.propertyDescriptionAccurate || !nonEmpty(d.propertyDescriptionNotes, 10)) {
-    return { ok: false, error: "Confirm property description accuracy and add notes." };
-  }
-
-  if (!nonEmpty(d.includedItems) || !nonEmpty(d.excludedItems)) {
-    return { ok: false, error: "Complete inclusions and exclusions." };
-  }
-
-  if (!nonEmpty(d.knownDefects) || !nonEmpty(d.pastIssues) || !nonEmpty(d.structuralConcerns)) {
-    return { ok: false, error: "Complete property condition (defects, past issues, structural)." };
-  }
-
-  if (!nonEmpty(d.renovationsDetail) || d.renovationInvoicesAvailable === null) {
-    return { ok: false, error: "Describe renovations and whether invoices are available." };
-  }
-
-  if (d.poolExists === null) {
-    return { ok: false, error: "Answer the swimming pool section (no pool vs pool details)." };
-  }
-
-  if (d.poolExists === true) {
-    if (!nonEmpty(d.poolType) || !nonEmpty(d.poolSafetyCompliance)) {
-      return { ok: false, error: "Complete pool type and safety compliance, or select no pool." };
+  if (d.sectionApplies !== undefined) {
+    for (const id of DECLARATION_SECTIONS_WITH_APPLICABILITY_GATE) {
+      if (id === "condo" && listingIsCondo) continue;
+      if (effectiveSectionApplies(d, id, propertyType) === null) {
+        return {
+          ok: false,
+          error:
+            "Choose Yes or No for each declaration section (sections 2–12) before marking the declaration complete.",
+        };
+      }
     }
   }
 
-  if (!d.buyerInspectionAccepted) {
-    return { ok: false, error: "Accept that the buyer may conduct inspections." };
+  if (effectiveSectionApplies(d, "conflict", propertyType) === true) {
+    if (!d.conflictInterestDisclosureConfirmed) {
+      return { ok: false, error: "Confirm conflict-of-interest disclosure (checkbox)." };
+    }
   }
 
-  if (d.isCondo) {
+  if (effectiveSectionApplies(d, "description", propertyType) === true) {
+    if (!d.propertyDescriptionAccurate || !nonEmpty(d.propertyDescriptionNotes, 10)) {
+      return { ok: false, error: "Confirm property description accuracy and add notes." };
+    }
+  }
+
+  if (effectiveSectionApplies(d, "inclusions", propertyType) === true) {
+    if (!nonEmpty(d.includedItems) || !nonEmpty(d.excludedItems)) {
+      return { ok: false, error: "Complete inclusions and exclusions." };
+    }
+  }
+
+  if (effectiveSectionApplies(d, "condition", propertyType) === true) {
+    if (!nonEmpty(d.knownDefects) || !nonEmpty(d.pastIssues) || !nonEmpty(d.structuralConcerns)) {
+      return { ok: false, error: "Complete property condition (defects, past issues, structural)." };
+    }
+  }
+
+  if (effectiveSectionApplies(d, "renovations", propertyType) === true) {
+    if (!nonEmpty(d.renovationsDetail) || d.renovationInvoicesAvailable === null) {
+      return { ok: false, error: "Describe renovations and whether invoices are available." };
+    }
+  }
+
+  if (effectiveSectionApplies(d, "pool", propertyType) === true) {
+    if (d.poolExists === null) {
+      return { ok: false, error: "Answer the swimming pool section (no pool vs pool details)." };
+    }
+    if (d.poolExists === true) {
+      if (!nonEmpty(d.poolType) || !nonEmpty(d.poolSafetyCompliance)) {
+        return { ok: false, error: "Complete pool type and safety compliance, or select no pool." };
+      }
+    }
+  }
+
+  if (effectiveSectionApplies(d, "inspection", propertyType) === true) {
+    if (!d.buyerInspectionAccepted) {
+      return { ok: false, error: "Accept that the buyer may conduct inspections." };
+    }
+  }
+
+  if (effectiveSectionApplies(d, "condo", propertyType) === true && d.isCondo) {
     if (
       !d.condoSyndicateDocumentsAvailable ||
       !d.condoFinancialStatementsAvailable ||
@@ -98,22 +135,26 @@ function parseSellerDeclarationV2(
     }
   }
 
-  if (d.isNewConstruction) {
+  if (effectiveSectionApplies(d, "newConstruction", propertyType) === true && d.isNewConstruction) {
     if (!nonEmpty(d.gcrWarrantyDetails) || !nonEmpty(d.builderNameContact)) {
       return { ok: false, error: "Complete new construction / GCR and builder details." };
     }
   }
 
-  if (!d.municipalSchoolTaxAcknowledged) {
-    return { ok: false, error: "Acknowledge municipal and school tax disclosure (section 11)." };
+  if (effectiveSectionApplies(d, "taxes", propertyType) === true) {
+    if (!d.municipalSchoolTaxAcknowledged) {
+      return { ok: false, error: "Acknowledge municipal and school tax disclosure (section 11)." };
+    }
   }
 
-  if (!isAdditionalDeclarationsSectionComplete(d)) {
-    return {
-      ok: false,
-      error:
-        "Additional declarations are required to ensure full transparency: complete section 12 (save at least one entry with the required text and legal confirmation).",
-    };
+  if (effectiveSectionApplies(d, "additionalDeclarations", propertyType) === true) {
+    if (!isAdditionalDeclarationsSectionComplete(d)) {
+      return {
+        ok: false,
+        error:
+          "Additional declarations are required to ensure full transparency: complete section 12 (save at least one entry with the required text and legal confirmation).",
+      };
+    }
   }
 
   if (!d.informationCompleteAndAccurate || !d.platformNotLawyerOrInspectorAck) {

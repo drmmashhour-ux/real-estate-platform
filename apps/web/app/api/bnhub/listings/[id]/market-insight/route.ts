@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import { getBnhubMarketInsightForPublishedListing } from "@/lib/bnhub/market-price-insight";
 
 /**
- * Public market context for a published stay (BNHub peer listings only).
+ * Public market context for a published stay (BNHUB peer listings only).
  * Does not scrape external OTAs.
  */
 export async function GET(

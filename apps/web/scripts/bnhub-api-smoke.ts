@@ -1,5 +1,5 @@
 /**
- * BNHub API smoke tests (no Vitest). Exit 0 = all required checks passed.
+ * BNHUB API smoke tests (no Vitest). Exit 0 = all required checks passed.
  *
  * Run: pnpm run test:bnhub:api
  *
@@ -49,7 +49,7 @@ function addDays(iso: string, n: number): string {
 }
 
 async function main() {
-  console.log(`BNHub API smoke — ${BASE}\n`);
+  console.log(`BNHUB API smoke — ${BASE}\n`);
   let failed = 0;
 
   const run = async (name: string, fn: () => Promise<{ ok: boolean; detail?: string }>) => {

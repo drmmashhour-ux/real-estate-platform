@@ -4,6 +4,12 @@ export const PLATFORM_NAME = "LECIPM";
 /** French luxury descriptor — use as a tagline under LECIPM, not merged with an en-dash. */
 export const PLATFORM_CARREFOUR_NAME = "Le Carrefour Immobilier Prestige";
 
+/** App shell name for the rent & resale hub (buyer/seller/broker workspaces) — distinct from BNHUB stays. */
+export const PLATFORM_IMMOBILIER_HUB_NAME = "Immobilier Hub";
+
+/** Mortgage, calculators, AI pricing, and customer finance tools — one hub entry. */
+export const PLATFORM_FINANCIAL_HUB_NAME = "Financial Hub";
+
 /** Operator / legal entity (footer, copyright, legal copy). */
 export const PLATFORM_OPERATOR = "Mashhour Investments";
 
@@ -25,6 +31,23 @@ export const PLATFORM_COPYRIGHT_LINE = `${PLATFORM_NAME} · ${PLATFORM_OPERATOR}
 
 /** Matches `--color-premium-gold` in `app/globals.css` (#d4af37). */
 export const PLATFORM_BRAND_GOLD_HEX = "#D4AF37";
+
+/**
+ * LECIPM logo / lockup palette — luxury real estate + AI; trust, precision, premium.
+ * Use only these hues on wordmarks, favicon, map pins, and formal brand surfaces.
+ */
+export const LECIPM_IDENTITY_COLORS = {
+  gold: "#D4AF37",
+  black: "#000000",
+  white: "#FFFFFF",
+  softGold: "#C9A646",
+} as const;
+
+/**
+ * Text wordmark fallback when image logo fails: elegant serif + letterspacing + canonical gold.
+ * Pairs with `.lecipm-wordmark` in `globals.css` (Cormorant Garamond via `--font-serif`).
+ */
+export const platformBrandWordmarkClass = "lecipm-wordmark";
 
 /**
  * Single solid gold for LECIPM + Le Carrefour Immobilier Prestige (no multi-stop gradient).

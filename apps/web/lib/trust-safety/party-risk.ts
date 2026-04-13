@@ -1,5 +1,5 @@
 /**
- * Party and nuisance control for BNHub: signals and suggested actions.
+ * Party and nuisance control for BNHUB: signals and suggested actions.
  */
 
 import { prisma } from "@/lib/db";

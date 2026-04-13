@@ -4,13 +4,15 @@ import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { HUB_PATHS, type HubKey } from "@/lib/hub/router";
 import { getHubTheme } from "@/lib/hub/themes";
+import { PLATFORM_FINANCIAL_HUB_NAME, PLATFORM_IMMOBILIER_HUB_NAME } from "@/lib/brand/platform";
 
 const HUB_LABELS: Record<HubKey, string> = {
-  bnhub: "BNHub",
+  bnhub: "BNHUB",
   carhub: "CarHub",
   servicehub: "ServiceHub",
   investorhub: "InvestorHub",
-  realEstate: "Real Estate",
+  realEstate: PLATFORM_IMMOBILIER_HUB_NAME,
+  financialHub: PLATFORM_FINANCIAL_HUB_NAME,
   luxury: "Luxury",
   broker: "Broker",
   investments: "Investments",
@@ -32,7 +34,29 @@ function pathToHubKey(pathname: string): HubKey | null {
   if (pathname.startsWith("/dashboard/bnhub") || pathname.startsWith("/search/bnhub") || pathname.startsWith("/bnhub")) {
     return "bnhub";
   }
-  if (pathname.startsWith("/dashboard/real-estate")) return "realEstate";
+  if (
+    pathname.startsWith("/financial-hub") ||
+    pathname.startsWith("/mortgage") ||
+    pathname.startsWith("/dashboard/mortgage") ||
+    pathname.startsWith("/dashboard/insurance") ||
+    pathname.startsWith("/dashboard/expert") ||
+    pathname.startsWith("/appraisal-calculator") ||
+    pathname.startsWith("/tools/roi-calculator") ||
+    pathname.startsWith("/evaluate")
+  ) {
+    return "financialHub";
+  }
+  if (
+    pathname.startsWith("/rent") ||
+    pathname.startsWith("/sell") ||
+    pathname.startsWith("/compare") ||
+    pathname.startsWith("/dashboard/real-estate") ||
+    pathname.startsWith("/dashboard/buyer") ||
+    pathname.startsWith("/dashboard/fsbo") ||
+    (pathname.startsWith("/city/") && pathname.includes("/rent"))
+  ) {
+    return "realEstate";
+  }
   if (pathname.startsWith("/dashboard/luxury")) return "luxury";
   if (pathname.startsWith("/dashboard/broker")) return "broker";
   if (pathname.startsWith("/dashboard/investments")) return "investments";
@@ -78,6 +102,7 @@ export function HubSwitcher({ showAdmin = false, currentHubKey: controlledHub }:
     "bnhub",
     ...engineHubs,
     "realEstate",
+    "financialHub",
     "luxury",
     "broker",
     ...(investmentHubEnabled ? (["investments"] as const) : []),

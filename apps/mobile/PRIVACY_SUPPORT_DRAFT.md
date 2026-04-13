@@ -75,7 +75,7 @@ Depending on your location, you may have rights to request access, correction, o
 For privacy questions, contact:
 
 - Support URL: `https://lecipm.com/support`
-- Support email: dr.m.mashhour@gmail.com
+- Support email: info@lecipm.com
 
 ## Support Page Draft
 
@@ -97,7 +97,7 @@ We can help with:
 ### Contact Methods
 
 - Support website: `https://lecipm.com/support`
-- Support email: dr.m.mashhour@gmail.com
+- Support email: info@lecipm.com
 
 If you are contacting support, include:
 

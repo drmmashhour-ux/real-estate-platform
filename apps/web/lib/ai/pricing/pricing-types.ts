@@ -1,5 +1,5 @@
 /**
- * BNHub dynamic pricing — structured outputs (suggestion-only; no live apply here).
+ * BNHUB dynamic pricing — structured outputs (suggestion-only; no live apply here).
  */
 
 export type DynamicPricingRecommendationType =

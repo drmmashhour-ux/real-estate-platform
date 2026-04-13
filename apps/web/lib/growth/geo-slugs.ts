@@ -64,7 +64,7 @@ export function growthCityDisplayName(slug: GrowthCitySlug): string {
   }
 }
 
-/** Query string passed to BNHub search & city filters. */
+/** Query string passed to BNHUB search & city filters. */
 export function growthCitySearchQuery(slug: GrowthCitySlug): string {
   switch (slug) {
     case "montreal":

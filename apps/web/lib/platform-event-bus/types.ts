@@ -29,7 +29,7 @@ export const TRANSACTION_EVENTS = [
   "transaction_closed",
 ] as const;
 
-// BNHub events
+// BNHUB events
 export const BNHUB_EVENTS = [
   "rental_booking_created",
   "rental_payment_received",

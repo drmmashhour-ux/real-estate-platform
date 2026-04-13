@@ -68,7 +68,7 @@ function ruleBasedReply(message: string, intent: NonNullable<CrmConversationMeta
   }
   if (intent === "rent") {
     return (
-      "For rentals and short-stays, you can browse curated listings on BNHub. " +
+      "For rentals and short-stays, you can browse curated listings on BNHUB. " +
         "Tell me your dates, city, and budget — I'll point you to the right search."
     );
   }
@@ -95,7 +95,7 @@ export async function generateImmoChatReply(params: {
   recentLines: string[];
 }): Promise<string> {
   const sys = `You are Immo AI, a concise assistant for LECIPM (Montreal, Laval, Québec real estate).
-Topics: buying, renting, short-term stays (BNHub), mortgages (experts, not licensed advice).
+Topics: buying, renting, short-term stays (BNHUB), mortgages (experts, not licensed advice).
 Always: be warm, practical, 2–4 short sentences max. Offer to connect with a verified expert when relevant.
 Never: promise specific rates or legal advice. Use English unless the user writes in French — then reply in French.
 If the user gives location + product (e.g. apartment in Montreal), acknowledge and ask budget + timeline, offer expert connection (like: "I can also connect you with a verified expert.").`;

@@ -16,7 +16,7 @@ import { applyDemoFinancialFallback } from "./demo-financial-data";
 const SOURCE_LABELS: Record<RevenueSourceKey, string> = {
   buyer: "Buyer",
   seller: "Seller",
-  bnhub: "BNHub",
+  bnhub: "BNHUB",
   broker: "Broker",
   rent: "Rent / deals",
   other: "Other",

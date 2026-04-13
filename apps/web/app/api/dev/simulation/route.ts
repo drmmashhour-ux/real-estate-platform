@@ -21,7 +21,7 @@ export async function GET() {
     run: "npm run seed or npx prisma db seed (from apps/web)",
     sections: [
       "Users (guest, hosts, broker, ambassador, investor)",
-      "BNHub: listings, bookings (confirmed/completed/pending/disputed), payments, review, dispute",
+      "BNHUB: listings, bookings (confirmed/completed/pending/disputed), payments, review, dispute",
       "Projects: 2 projects, units, subscription, favorites, alerts, reservations",
       "Leads (project context)",
       "Referrals: program, code DEMO-REF-001, ambassador, commission",

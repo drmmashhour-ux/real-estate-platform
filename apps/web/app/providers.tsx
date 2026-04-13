@@ -13,6 +13,8 @@ import { ToastProvider } from "@/components/ui/ToastProvider";
 import { TrafficPageViewBeacon } from "@/components/traffic/TrafficPageViewBeacon";
 import { OrganicAttributionLocalMirror } from "@/components/organic/OrganicAttributionLocalMirror";
 import { GoogleAnalyticsLoader } from "@/components/analytics/GoogleAnalyticsLoader";
+import { PlausibleLoader } from "@/components/analytics/PlausibleLoader";
+import { ProductAnalyticsPageView } from "@/components/analytics/ProductAnalyticsPageView";
 import { MetaPixelLoader } from "@/components/analytics/MetaPixelLoader";
 import { GrowthConversionLayer } from "@/components/growth/GrowthConversionLayer";
 import { PlatformVisitTracker } from "@/components/analytics/PlatformVisitTracker";
@@ -30,18 +32,17 @@ import { PostHogPageView, PostHogProvider } from "@/components/analytics/PostHog
 import { AccessibilityPreferencesProvider } from "@/components/accessibility/AccessibilityPreferencesContext";
 import { PlatformAssistantProvider } from "@/components/ai/PlatformAssistantContext";
 import { PlatformAssistantLazy } from "@/components/ai/PlatformAssistantLazy";
+import { ListingNavigationClickTracker } from "@/components/analytics/ListingNavigationClickTracker";
 
 export function AppProviders({
   children,
-  initialLocale,
   allowedLocales,
 }: {
   children: ReactNode;
-  initialLocale: LocaleCode;
   allowedLocales?: LocaleCode[];
 }) {
   return (
-    <I18nProvider initialLocale={initialLocale} allowedLocales={allowedLocales}>
+    <I18nProvider allowedLocales={allowedLocales}>
       <AccessibilityPreferencesProvider>
       <PostHogProvider>
         <DemoProvider>
@@ -50,9 +51,13 @@ export function AppProviders({
           <DemoStagingWelcomeModal />
         </Suspense>
         <GoogleAnalyticsLoader />
+        <PlausibleLoader />
         <MetaPixelLoader />
         <Suspense fallback={null}>
           <PostHogPageView />
+        </Suspense>
+        <Suspense fallback={null}>
+          <ProductAnalyticsPageView />
         </Suspense>
         <Suspense fallback={null}>
           <InvestmentWelcomeModal />
@@ -61,10 +66,13 @@ export function AppProviders({
           <OnboardingModal />
         </Suspense>
         <Suspense fallback={null}>
-          <FeedbackFloatButton />
+          <FeedbackFloatButton showLauncherButton={false} />
         </Suspense>
         <Suspense fallback={null}>
           <TrafficPageViewBeacon />
+        </Suspense>
+        <Suspense fallback={null}>
+          <ListingNavigationClickTracker />
         </Suspense>
         <Suspense fallback={null}>
           <PlatformVisitTracker />

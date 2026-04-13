@@ -30,6 +30,7 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
   if (typeof body.city === "string") patch.city = body.city.trim();
   if (typeof body.address === "string") patch.address = body.address.trim();
   if (typeof body.propertyType === "string") patch.propertyType = body.propertyType.trim();
+  if (typeof body.roomType === "string") patch.roomType = body.roomType.trim();
   if (body.maxGuests != null) patch.maxGuests = Math.max(1, parseInt(String(body.maxGuests), 10) || 1);
   if (body.bedrooms != null) patch.bedrooms = Math.max(0, parseInt(String(body.bedrooms), 10) || 0);
   if (body.beds != null) patch.beds = Math.max(1, parseInt(String(body.beds), 10) || 1);

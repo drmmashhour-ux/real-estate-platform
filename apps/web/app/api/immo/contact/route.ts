@@ -21,25 +21,50 @@ import { triggerAiFollowUpForLead } from "@/lib/ai/follow-up/orchestrator";
 import { appendLeadTimeline } from "@/lib/ai/follow-up/timeline";
 import { recordHotLeadAlert } from "@/lib/ai/automation-triggers";
 import { LEAD_PIPELINE } from "@/lib/ai/follow-up/pipeline";
-import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
+import { gateDistributedRateLimit, getClientIpFromRequest } from "@/lib/rate-limit-enforcement";
+import { REQUEST_ID_HEADER } from "@/lib/middleware/request-logger";
+import { fingerprintClientIp } from "@/lib/security/ip-fingerprint";
+import { trackMessagingAbuse } from "@/lib/security/security-events";
 import { getLeadAttributionFromRequest } from "@/lib/attribution/lead-attribution";
 import { trackDemoEvent } from "@/lib/demo-analytics";
 import { DemoEvents } from "@/lib/demo-event-types";
 import { logImmoContactEvent } from "@/lib/immo/immo-contact-log";
+import { defaultImmoResolutionForNewLead } from "@/lib/immo/immo-contact-resolution-metadata";
 import { ImmoContactEventType } from "@prisma/client";
 import { requireContentLicenseAccepted } from "@/lib/legal/content-license-enforcement";
 import { getImmoContactRestriction } from "@/lib/immo/immo-contact-enforcement";
+import { isPublicContactDisabled, maintenanceMessage } from "@/lib/security/kill-switches";
+import { securityLog } from "@/lib/security/security-logger";
 
 export const dynamic = "force-dynamic";
 
 const SOURCES = new Set(["contact_broker", "book_visit", "chat", "form"]);
 
 export async function POST(req: NextRequest) {
-  const rateKey =
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? req.headers.get("x-real-ip") ?? "anonymous";
-  const limit = checkRateLimit(`public:immo-contact:${rateKey}`, { windowMs: 60_000, max: 12 });
-  if (!limit.allowed) {
-    return NextResponse.json({ error: "Too many requests. Try again shortly." }, { status: 429, headers: getRateLimitHeaders(limit) });
+  if (isPublicContactDisabled()) {
+    void securityLog({
+      event: "contact_blocked_kill_switch",
+      persist: true,
+      entityId: "immo_contact",
+      detail: "public_contact_forms",
+    });
+    return NextResponse.json(
+      { error: maintenanceMessage() ?? "Contact form is temporarily unavailable." },
+      { status: 503 }
+    );
+  }
+  const gate = await gateDistributedRateLimit(req, "public:immo-contact", { windowMs: 60_000, max: 12 });
+  if (!gate.allowed) {
+    const fp = fingerprintClientIp(getClientIpFromRequest(req));
+    trackMessagingAbuse({
+      detail: "immo_contact_rate_limited",
+      ipFingerprint: fp,
+      requestId: req.headers.get(REQUEST_ID_HEADER),
+    });
+    void import("@/lib/fraud/compute-user-risk")
+      .then((m) => m.evaluateUserFraudFromMessagingSignals(fp))
+      .catch(() => {});
+    return gate.response;
   }
 
   let body: Record<string, unknown>;
@@ -64,6 +89,7 @@ export async function POST(req: NextRequest) {
 
   const consentSmsWhatsapp = body.consentSmsWhatsapp === true;
   const consentVoice = body.consentVoice === true;
+  const aiAssistUsed = body.aiAssistUsed === true;
   const localePref = typeof body.locale === "string" ? body.locale.slice(0, 12) : undefined;
 
   if (!name || !email || !phone) {
@@ -141,7 +167,11 @@ export async function POST(req: NextRequest) {
       listingId: snapshot.listingId,
       listingKind: snapshot.kind,
       contactType: ImmoContactEventType.MESSAGE,
-      metadata: { source: "immo_contact_duplicate", formSource: source },
+      metadata: {
+        source: "immo_contact_duplicate",
+        formSource: source,
+        immoResolution: { ...defaultImmoResolutionForNewLead(), aiAssistUsed },
+      },
       policy: { sourceHub: "buyer", channel: "form", feature: "immo_duplicate" },
     });
     return NextResponse.json({
@@ -288,7 +318,12 @@ export async function POST(req: NextRequest) {
     listingId: snapshot.listingId,
     listingKind: snapshot.kind,
     contactType: ImmoContactEventType.MESSAGE,
-    metadata: { source: "immo_contact", formSource: source, leadId: dbLead.id },
+    metadata: {
+      source: "immo_contact",
+      formSource: source,
+      leadId: dbLead.id,
+      immoResolution: { ...defaultImmoResolutionForNewLead(), aiAssistUsed },
+    },
     policy: {
       sourceHub: "buyer",
       channel: "form",

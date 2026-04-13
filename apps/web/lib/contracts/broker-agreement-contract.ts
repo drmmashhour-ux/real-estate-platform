@@ -20,7 +20,7 @@ export async function ensureBrokerAgreementContract(userId: string): Promise<voi
       type: T,
       userId,
       status: "pending",
-      title: "BNHub broker collaboration & commission agreement",
+      title: "BNHUB broker collaboration & commission agreement",
       contentHtml: NBHUB_BROKER_COLLABORATION_AGREEMENT_HTML,
       version: VERSION,
       hub: "broker",

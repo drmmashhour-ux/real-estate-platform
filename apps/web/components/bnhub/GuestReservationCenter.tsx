@@ -101,7 +101,7 @@ export function GuestReservationCenter({
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-premium-gold">Guest reservation center</p>
           <h2 className="mt-2 text-2xl font-semibold text-white">Follow bookings, confirmations, and travel updates in one place.</h2>
           <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-400">
-            This is the mobile-first BNHub guest control layer for reservation progress, payment confirmation, and latest notifications.
+            This is the mobile-first BNHUB guest control layer for reservation progress, payment confirmation, and latest notifications.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">

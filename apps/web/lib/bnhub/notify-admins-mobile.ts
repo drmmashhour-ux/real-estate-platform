@@ -2,7 +2,7 @@ import { NotificationPriority, NotificationType, PlatformRole } from "@prisma/cl
 import { prisma } from "@/lib/db";
 import { createBnhubMobileNotification } from "@/lib/bnhub/mobile-push";
 
-/** Push + in-app notification for active admin users (BNHub mobile / bell). */
+/** Push + in-app notification for active admin users (BNHUB mobile / bell). */
 export async function notifyActiveAdmins(input: {
   title: string;
   message: string;

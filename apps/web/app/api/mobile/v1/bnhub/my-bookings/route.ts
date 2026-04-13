@@ -48,7 +48,7 @@ function mergeById(rows: BookingRow[]): BookingRow[] {
 
 /**
  * GET /api/mobile/v1/bnhub/my-bookings
- * BNHub Supabase bookings: `user_id` = JWT sub, plus legacy guest rows with matching `guest_email` and null `user_id`.
+ * BNHUB Supabase bookings: `user_id` = JWT sub, plus legacy guest rows with matching `guest_email` and null `user_id`.
  */
 export async function GET(request: Request) {
   const authUser = await getMobileAuthUser(request);

@@ -6,7 +6,7 @@ import { createNotification } from "@/modules/notifications/services/create-noti
 
 export const dynamic = "force-dynamic";
 
-/** Authenticated users open a cross-cutting legal/financial dispute (non-BNHub-only). */
+/** Authenticated users open a cross-cutting legal/financial dispute (non-BNHUB-only). */
 export async function POST(request: NextRequest) {
   const userId = await getGuestId();
   if (!userId) return NextResponse.json({ error: "Sign in required" }, { status: 401 });

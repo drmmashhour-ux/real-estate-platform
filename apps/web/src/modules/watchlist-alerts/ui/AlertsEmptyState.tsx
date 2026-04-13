@@ -1,19 +1,37 @@
+import Link from "next/link";
+import { Bell } from "lucide-react";
+import { EmptyState } from "@/components/ui/EmptyState";
+
 export function AlertsEmptyState({ onRefresh }: { onRefresh?: () => void }) {
   return (
-    <div className="rounded-xl border border-dashed border-white/20 bg-black/20 p-4 text-center">
-      <p className="text-sm font-semibold text-white">No alerts yet</p>
-      <p className="mt-1 text-xs text-slate-400">
-        We'll notify you when something meaningful changes on a saved property.
-      </p>
-      {onRefresh ? (
-        <button
-          type="button"
-          onClick={onRefresh}
-          className="mt-3 rounded-lg border border-premium-gold/40 px-3 py-1.5 text-xs text-premium-gold hover:bg-premium-gold/10"
+    <EmptyState
+      icon={<Bell className="h-7 w-7" strokeWidth={1.5} />}
+      title="No alerts yet"
+      description="Alerts appear when something meaningful changes on a saved property. Save a listing first, then check back after market or listing updates."
+    >
+      <>
+        <Link
+          href="/listings/saved"
+          className="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-premium-gold px-5 py-2.5 text-sm font-semibold text-black hover:bg-premium-gold"
         >
-          Refresh watchlist
-        </button>
-      ) : null}
-    </div>
+          View saved listings
+        </Link>
+        <Link
+          href="/explore"
+          className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-white/15 px-5 py-2.5 text-sm font-medium text-white/75 transition hover:border-premium-gold/35 hover:text-white"
+        >
+          Browse featured listings
+        </Link>
+        {onRefresh ? (
+          <button
+            type="button"
+            onClick={onRefresh}
+            className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-premium-gold/30 px-5 py-2.5 text-sm text-premium-gold transition hover:bg-premium-gold/10"
+          >
+            Refresh
+          </button>
+        ) : null}
+      </>
+    </EmptyState>
   );
 }

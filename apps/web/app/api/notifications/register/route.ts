@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 /**
  * Registers an Expo / FCM push token for the authenticated user (same storage as `/api/mobile/bnhub/devices`).
- * Accepts BNHub session Bearer or Supabase JWT (see `requireMobileGuestUser`).
+ * Accepts BNHUB session Bearer or Supabase JWT (see `requireMobileGuestUser`).
  */
 export async function POST(request: NextRequest) {
   const user = await requireMobileGuestUser(request);

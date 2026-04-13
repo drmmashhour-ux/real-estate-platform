@@ -1,5 +1,5 @@
 /**
- * BNHub host reputation — explainable, bounded, real signals only.
+ * BNHUB host reputation — explainable, bounded, real signals only.
  * Does not hide listings or block accounts by score alone.
  */
 

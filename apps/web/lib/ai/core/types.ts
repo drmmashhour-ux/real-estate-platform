@@ -2,7 +2,7 @@
  * Shared AI domain types — one normalized contract for search, pricing, autopilot, recommendations.
  */
 
-/** Mirrors BNHub stays search filters (shared with search ranking). */
+/** Mirrors BNHUB stays search filters (shared with search ranking). */
 export type AiSearchFilters = {
   city?: string;
   minPrice?: number;

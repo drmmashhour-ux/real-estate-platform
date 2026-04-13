@@ -18,7 +18,7 @@ export function InvestmentShellChrome({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="min-h-0 flex-1 overflow-x-hidden pb-[calc(4.25rem+env(safe-area-inset-bottom))] lg:pb-0">
+    <div className="min-h-0 flex-1 overflow-x-hidden pb-[calc(7.25rem+env(safe-area-inset-bottom))] lg:pb-0">
       {children}
       <InvestmentMobileBottomNav />
     </div>

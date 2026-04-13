@@ -73,7 +73,7 @@ async function maybeEmailGuest(email: string | null | undefined, name: string | 
   if (!email?.trim()) return;
   await sendEmail({
     to: email,
-    subject: "How was your BNHub stay?",
+    subject: "How was your BNHUB stay?",
     html,
   });
 }

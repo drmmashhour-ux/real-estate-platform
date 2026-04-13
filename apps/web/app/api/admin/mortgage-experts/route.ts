@@ -55,6 +55,19 @@ export async function PATCH(req: NextRequest) {
   if (typeof body.rating === "number" && body.rating >= 1 && body.rating <= 5) {
     data.rating = body.rating;
   }
+  if (typeof body.expertVerificationStatus === "string") {
+    const v = body.expertVerificationStatus.trim().toLowerCase();
+    if (["profile_incomplete", "pending_review", "verified", "rejected"].includes(v)) {
+      data.expertVerificationStatus = v;
+      if (v === "verified") {
+        data.isActive = true;
+        data.isAvailable = true;
+      }
+      if (v === "rejected") {
+        data.isActive = false;
+      }
+    }
+  }
 
   const hasExpertFields = Object.keys(data).length > 0;
   const subscriptionPlan =
@@ -75,7 +88,7 @@ export async function PATCH(req: NextRequest) {
       updated = await prisma.mortgageExpert.update({ where: { id }, data });
     }
 
-    if (subscriptionPlan && ["basic", "pro", "premium"].includes(subscriptionPlan)) {
+    if (subscriptionPlan && ["basic", "pro", "premium", "ambassador"].includes(subscriptionPlan)) {
       const defs = getMortgagePlanDefaults(subscriptionPlan);
       await prisma.expertSubscription.upsert({
         where: { expertId: id },

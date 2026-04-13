@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
-/** Latest unified intelligence snapshot for a BNHub stay listing. */
+/** Latest unified intelligence snapshot for a BNHUB stay listing. */
 export async function GET(_request: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   const { id } = await ctx.params;
   const listingId = typeof id === "string" ? id.trim() : "";

@@ -55,7 +55,7 @@ export function ConciergeChatPanel({
     <div className={`flex flex-col gap-3 p-4 ${bnhubPremium.panel}`}>
       <p className={bnhubPremium.heading}>Concierge</p>
       <p className={bnhubPremium.subtext}>
-        Informational only — BNHub does not guarantee third-party services. EN/FR replies in mock mode.
+        Informational only — BNHUB does not guarantee third-party services. EN/FR replies in mock mode.
       </p>
       <div className="max-h-48 space-y-2 overflow-y-auto text-sm text-zinc-300">
         {log.map((line, i) => (

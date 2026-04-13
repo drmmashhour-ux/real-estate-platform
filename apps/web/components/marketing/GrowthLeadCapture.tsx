@@ -184,7 +184,7 @@ export function GrowthLeadCapture({ className = "" }: Props) {
             required
           />
           <span>
-            I agree to be contacted about LECIPM / BNHub updates in line with the privacy policy. I can unsubscribe
+            I agree to be contacted about LECIPM / BNHUB updates in line with the privacy policy. I can unsubscribe
             anytime.
           </span>
         </label>

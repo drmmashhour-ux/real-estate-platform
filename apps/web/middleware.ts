@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import createIntlMiddleware from "next-intl/middleware";
 import {
   ATTRIBUTION_COOKIE_MAX_AGE_SEC,
   LECIPM_ATTRIBUTION_COOKIE,
@@ -27,17 +28,92 @@ import {
 import { isSecureCookieContext } from "@/lib/runtime-env";
 import { isPublicBrowseSurface } from "@/lib/routing/public-browse-paths";
 import { HUB_USER_ROLE_COOKIE } from "@/lib/staging-middleware-config";
+import {
+  appPathnameFromUrl,
+  countryFromPathname,
+  ensureCountryInPathname,
+  localeCountryMismatchRedirect,
+  localeFromPathname,
+  resolveCountrySlugOrDefault,
+} from "@/i18n/pathname";
+import { COUNTRY_COOKIE } from "@/lib/region/country-cookie";
+import { LECIPM_COUNTRY_HEADER } from "@/lib/region/request-country";
+import {
+  DEFAULT_COUNTRY_SLUG,
+  isCountrySlug,
+  ROUTED_COUNTRY_SLUGS,
+  type CountryCodeLower,
+} from "@/config/countries";
+import { routing } from "@/i18n/routing";
+import { EXPERIMENT_SESSION_COOKIE_NAME, EXPERIMENT_SESSION_HEADER } from "@/lib/experiments/constants";
+
+/** Must match `next-intl` internal header so `getLocale()` stays in sync when we rebuild `NextResponse.next`. */
+const NEXT_INTL_LOCALE_HEADER = "X-NEXT-INTL-LOCALE";
+
+const intlMiddleware = createIntlMiddleware(routing);
+
+function defaultCountryFromRequest(request: NextRequest): CountryCodeLower {
+  const fromCookie = request.cookies.get(COUNTRY_COOKIE)?.value?.toLowerCase();
+  if (fromCookie && isCountrySlug(fromCookie) && ROUTED_COUNTRY_SLUGS.includes(fromCookie as CountryCodeLower)) {
+    return fromCookie as CountryCodeLower;
+  }
+  const geo = request.headers.get("x-vercel-ip-country")?.toUpperCase();
+  if (geo === "CA") return "ca";
+  if (geo === "SY") return "sy";
+  return DEFAULT_COUNTRY_SLUG;
+}
+
+function finalizePageResponse(
+  request: NextRequest,
+  intlResponse: NextResponse,
+  extraRequestHeaders?: Record<string, string>,
+): NextResponse {
+  const rewrite = intlResponse.headers.get("x-middleware-rewrite");
+  if (rewrite) {
+    return attachRequestIdToResponse(request, intlResponse);
+  }
+  const locale = localeFromPathname(request.nextUrl.pathname);
+  const countrySlug = resolveCountrySlugOrDefault(request.nextUrl.pathname);
+  const h = new Headers(request.headers);
+  h.set(NEXT_INTL_LOCALE_HEADER, locale);
+  h.set(LECIPM_COUNTRY_HEADER, countrySlug);
+  const id = ensureRequestIdHeader(request).get(REQUEST_ID_HEADER);
+  if (id) h.set(REQUEST_ID_HEADER, id);
+  if (extraRequestHeaders) {
+    for (const [k, v] of Object.entries(extraRequestHeaders)) {
+      h.set(k, v);
+    }
+  }
+  const existingExp = request.cookies.get(EXPERIMENT_SESSION_COOKIE_NAME)?.value?.trim();
+  const expSessionId = existingExp && existingExp.length >= 8 ? existingExp : crypto.randomUUID();
+  h.set(EXPERIMENT_SESSION_HEADER, expSessionId);
+  const res = NextResponse.next({ request: { headers: h } });
+  if (!existingExp || existingExp.length < 8) {
+    res.cookies.set({
+      name: EXPERIMENT_SESSION_COOKIE_NAME,
+      value: expSessionId,
+      maxAge: 60 * 60 * 24 * 400,
+      path: "/",
+      sameSite: "lax",
+      secure: isSecureCookieContext(),
+      httpOnly: true,
+    });
+  }
+  return res;
+}
 
 /** Staging page gates only — do not mark `/api/*` public or protected API routes never run. */
 function isPublicPathForStaging(pathname: string): boolean {
-  if (pathname.startsWith("/_next")) return true;
-  if (pathname.startsWith("/auth")) return true;
-  if (pathname.startsWith("/embed")) return true;
-  if (pathname === "/favicon.ico" || pathname === "/manifest.json" || pathname === "/robots.txt") return true;
-  if (pathname.startsWith("/images/") || pathname.startsWith("/brand/") || pathname.startsWith("/branding/"))
-    return true;
+  const p = pathname.startsWith("/api/")
+    ? pathname
+    : appPathnameFromUrl(pathname);
+  if (p.startsWith("/_next")) return true;
+  if (p.startsWith("/auth")) return true;
+  if (p.startsWith("/embed")) return true;
+  if (p === "/favicon.ico" || p === "/manifest.json" || p === "/robots.txt") return true;
+  if (p.startsWith("/images/") || p.startsWith("/brand/") || p.startsWith("/branding/")) return true;
   if (/\.(ico|png|svg|jpg|jpeg|gif|webp|json|txt|xml|webmanifest)$/i.test(pathname)) return true;
-  if (pathname === "/api/health" || pathname === "/api/ready") return true;
+  if (p === "/api/health" || p === "/api/ready") return true;
   if (isPublicBrowseSurface(pathname)) return true;
   return false;
 }
@@ -88,12 +164,15 @@ function redirectWithRequestId(request: NextRequest, url: URL): NextResponse {
   return res;
 }
 
+function attachRequestIdToResponse(request: NextRequest, response: NextResponse): NextResponse {
+  const id = ensureRequestIdHeader(request).get(REQUEST_ID_HEADER);
+  if (id) response.headers.set(REQUEST_ID_HEADER, id);
+  return response;
+}
+
 /**
- * Network boundary (middleware convention): staging/demo gates, auth redirects, API gates.
+ * Network boundary (middleware convention): next-intl locale routing, staging/demo gates, auth redirects, API gates.
  * Injects `x-request-id` for structured logging downstream.
- *
- * Uses `middleware.ts` instead of `proxy.ts` so webpack emits `middleware.js.nft.json` during
- * trace collection (Next 16.1.x + webpack can omit `proxy.js.nft.json` and fail the build).
  */
 export async function middleware(request: NextRequest) {
   try {
@@ -156,8 +235,146 @@ export async function middleware(request: NextRequest) {
       }
     }
 
-    if (isPublicPathForStaging(pathname)) {
+    if (pathname.startsWith("/api/")) {
+      if (pathname.startsWith("/api/experiments/track")) {
+        return applyAttributionCookie(request, withRequestId(request));
+      }
+      if (isPublicPathForStaging(pathname)) {
+        return applyAttributionCookie(request, withRequestId(request));
+      }
+
+      const requireLogin =
+        process.env.NEXT_PUBLIC_ENV === "staging" &&
+        process.env.NEXT_PUBLIC_STAGING_REQUIRE_LOGIN === "1";
+
+      if (requireLogin && !isPublicPathForStaging(pathname)) {
+        const loginUrl = request.nextUrl.clone();
+        loginUrl.pathname = `/${routing.defaultLocale}/${DEFAULT_COUNTRY_SLUG}/auth/login`;
+        loginUrl.searchParams.set("next", pathname + (request.nextUrl.search || ""));
+        return redirectWithRequestId(request, loginUrl);
+      }
+
+      if (pathname.startsWith("/api/dashboard")) {
+        const session = parseSessionUserId(request.cookies.get(AUTH_SESSION_COOKIE_NAME)?.value);
+        if (!session) {
+          const res = NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+          const id = ensureRequestIdHeader(request).get(REQUEST_ID_HEADER);
+          if (id) res.headers.set(REQUEST_ID_HEADER, id);
+          return res;
+        }
+        return withRequestId(request);
+      }
+
+      if (pathname.startsWith("/api/documents")) {
+        const session = parseSessionUserId(request.cookies.get(AUTH_SESSION_COOKIE_NAME)?.value);
+        if (!session) {
+          const res = NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+          const id = ensureRequestIdHeader(request).get(REQUEST_ID_HEADER);
+          if (id) res.headers.set(REQUEST_ID_HEADER, id);
+          return res;
+        }
+        return withRequestId(request);
+      }
+
+      if (pathname.startsWith("/api/intake")) {
+        const session = parseSessionUserId(request.cookies.get(AUTH_SESSION_COOKIE_NAME)?.value);
+        if (!session) {
+          const res = NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+          const id = ensureRequestIdHeader(request).get(REQUEST_ID_HEADER);
+          if (id) res.headers.set(REQUEST_ID_HEADER, id);
+          return res;
+        }
+        return withRequestId(request);
+      }
+
+      if (pathname.startsWith("/api/notifications") || pathname.startsWith("/api/action-queue")) {
+        const session = parseSessionUserId(request.cookies.get(AUTH_SESSION_COOKIE_NAME)?.value);
+        if (!session) {
+          const res = NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+          const id = ensureRequestIdHeader(request).get(REQUEST_ID_HEADER);
+          if (id) res.headers.set(REQUEST_ID_HEADER, id);
+          return res;
+        }
+        return withRequestId(request);
+      }
+
+      if (pathname.startsWith("/api/admin")) {
+        const cron = process.env.CRON_SECRET?.trim();
+        const authHeader = request.headers.get("authorization") ?? "";
+        const bearer = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
+        if (cron && bearer === cron) {
+          return withRequestId(request);
+        }
+        const session = parseSessionUserId(request.cookies.get(AUTH_SESSION_COOKIE_NAME)?.value);
+        if (!session) {
+          const res = NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+          const id = ensureRequestIdHeader(request).get(REQUEST_ID_HEADER);
+          if (id) res.headers.set(REQUEST_ID_HEADER, id);
+          return res;
+        }
+        return withRequestId(request);
+      }
+
+      if (pathname.startsWith("/api/investment-deals")) {
+        const session = parseSessionUserId(request.cookies.get(AUTH_SESSION_COOKIE_NAME)?.value);
+        if (!session) {
+          const res = NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+          const id = ensureRequestIdHeader(request).get(REQUEST_ID_HEADER);
+          if (id) res.headers.set(REQUEST_ID_HEADER, id);
+          return res;
+        }
+        return withRequestId(request);
+      }
+
+      if (pathname.startsWith("/api/tenants") || pathname.startsWith("/api/finance")) {
+        const session = parseSessionUserId(request.cookies.get(AUTH_SESSION_COOKIE_NAME)?.value);
+        if (!session) {
+          const res = NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+          const id = ensureRequestIdHeader(request).get(REQUEST_ID_HEADER);
+          if (id) res.headers.set(REQUEST_ID_HEADER, id);
+          return res;
+        }
+        return withRequestId(request);
+      }
+
       return applyAttributionCookie(request, withRequestId(request));
+    }
+
+    const intlResponse = intlMiddleware(request);
+    if (intlResponse.headers.get("location")) {
+      return applyAttributionCookie(request, attachRequestIdToResponse(request, intlResponse));
+    }
+
+    const defaultCountry = defaultCountryFromRequest(request);
+    const missingCountryRedirect = ensureCountryInPathname(pathname, defaultCountry);
+    if (missingCountryRedirect) {
+      const url = request.nextUrl.clone();
+      url.pathname = missingCountryRedirect;
+      const res = redirectWithRequestId(request, url);
+      res.cookies.set({
+        name: COUNTRY_COOKIE,
+        value: defaultCountry,
+        path: "/",
+        maxAge: 60 * 60 * 24 * 365,
+        sameSite: "lax",
+        secure: isSecureCookieContext(),
+      });
+      return applyAttributionCookie(request, res);
+    }
+
+    const localeFix = localeCountryMismatchRedirect(pathname);
+    if (localeFix) {
+      const url = request.nextUrl.clone();
+      url.pathname = localeFix;
+      return applyAttributionCookie(request, redirectWithRequestId(request, url));
+    }
+
+    const logicalPath = appPathnameFromUrl(pathname);
+    const localeSeg = localeFromPathname(pathname);
+    const countrySeg = countryFromPathname(pathname) ?? DEFAULT_COUNTRY_SLUG;
+
+    if (isPublicPathForStaging(pathname)) {
+      return applyAttributionCookie(request, finalizePageResponse(request, intlResponse));
     }
 
     const requireLogin =
@@ -166,139 +383,70 @@ export async function middleware(request: NextRequest) {
 
     if (requireLogin && !isPublicPathForStaging(pathname)) {
       const loginUrl = request.nextUrl.clone();
-      loginUrl.pathname = "/auth/login";
+      loginUrl.pathname = `/${localeSeg}/${countrySeg}/auth/login`;
       loginUrl.searchParams.set("next", pathname + (request.nextUrl.search || ""));
       return redirectWithRequestId(request, loginUrl);
     }
 
-    if (pathname.startsWith("/demo")) {
-      const requestHeaders = ensureRequestIdHeader(request);
-      requestHeaders.set(LECIPM_PATH_HEADER, pathname + request.nextUrl.search);
-      return applyAttributionCookie(request, NextResponse.next({ request: { headers: requestHeaders } }));
+    const pathHeaderValue = pathname + request.nextUrl.search;
+
+    if (logicalPath.startsWith("/demo")) {
+      return applyAttributionCookie(
+        request,
+        finalizePageResponse(request, intlResponse, { [LECIPM_PATH_HEADER]: pathHeaderValue }),
+      );
     }
 
-    if (pathname.startsWith("/compare") && !pathname.startsWith("/compare/fsbo")) {
+    if (logicalPath.startsWith("/compare") && !logicalPath.startsWith("/compare/fsbo")) {
       const session = parseSessionUserId(request.cookies.get(AUTH_SESSION_COOKIE_NAME)?.value);
       if (!session) {
         const login = new URL("/auth/login", request.url);
+        login.pathname = `/${localeSeg}/${countrySeg}/auth/login`;
         login.searchParams.set("next", pathname + request.nextUrl.search);
         return redirectWithRequestId(request, login);
       }
-      const requestHeaders = ensureRequestIdHeader(request);
-      requestHeaders.set(LECIPM_PATH_HEADER, pathname + request.nextUrl.search);
-      return applyAttributionCookie(request, NextResponse.next({ request: { headers: requestHeaders } }));
+      return applyAttributionCookie(
+        request,
+        finalizePageResponse(request, intlResponse, { [LECIPM_PATH_HEADER]: pathHeaderValue }),
+      );
     }
 
-    if (pathname.startsWith("/dashboard")) {
+    if (logicalPath.startsWith("/dashboard")) {
       const session = parseSessionUserId(request.cookies.get(AUTH_SESSION_COOKIE_NAME)?.value);
       if (!session) {
         const login = new URL("/auth/login", request.url);
+        login.pathname = `/${localeSeg}/${countrySeg}/auth/login`;
         login.searchParams.set("next", pathname + request.nextUrl.search);
         return redirectWithRequestId(request, login);
       }
-      const requestHeaders = ensureRequestIdHeader(request);
-      requestHeaders.set(LECIPM_PATH_HEADER, pathname + request.nextUrl.search);
-      return applyAttributionCookie(request, NextResponse.next({ request: { headers: requestHeaders } }));
+      return applyAttributionCookie(
+        request,
+        finalizePageResponse(request, intlResponse, { [LECIPM_PATH_HEADER]: pathHeaderValue }),
+      );
     }
 
-    if (pathname.startsWith("/admin")) {
+    if (logicalPath.startsWith("/admin")) {
       const session = parseSessionUserId(request.cookies.get(AUTH_SESSION_COOKIE_NAME)?.value);
       if (!session) {
         const login = new URL("/auth/login", request.url);
+        login.pathname = `/${localeSeg}/${countrySeg}/auth/login`;
         login.searchParams.set("next", pathname + request.nextUrl.search);
         return redirectWithRequestId(request, login);
       }
-      /** Edge gate (cookie mirrors DB role at login). Layout still enforces Prisma role. */
       const role = request.cookies.get(HUB_USER_ROLE_COOKIE_NAME)?.value?.trim().toUpperCase() ?? "";
       if (role !== "ADMIN" && role !== "ACCOUNTANT") {
         const dash = request.nextUrl.clone();
-        dash.pathname = "/dashboard";
+        dash.pathname = `/${localeSeg}/${countrySeg}/dashboard`;
         dash.search = "";
         return redirectWithRequestId(request, dash);
       }
-      const requestHeaders = ensureRequestIdHeader(request);
-      requestHeaders.set(LECIPM_PATH_HEADER, pathname + request.nextUrl.search);
-      return applyAttributionCookie(request, NextResponse.next({ request: { headers: requestHeaders } }));
+      return applyAttributionCookie(
+        request,
+        finalizePageResponse(request, intlResponse, { [LECIPM_PATH_HEADER]: pathHeaderValue }),
+      );
     }
 
-    if (pathname.startsWith("/api/dashboard")) {
-      const session = parseSessionUserId(request.cookies.get(AUTH_SESSION_COOKIE_NAME)?.value);
-      if (!session) {
-        const res = NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        const id = ensureRequestIdHeader(request).get(REQUEST_ID_HEADER);
-        if (id) res.headers.set(REQUEST_ID_HEADER, id);
-        return res;
-      }
-      return withRequestId(request);
-    }
-
-    if (pathname.startsWith("/api/documents")) {
-      const session = parseSessionUserId(request.cookies.get(AUTH_SESSION_COOKIE_NAME)?.value);
-      if (!session) {
-        const res = NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        const id = ensureRequestIdHeader(request).get(REQUEST_ID_HEADER);
-        if (id) res.headers.set(REQUEST_ID_HEADER, id);
-        return res;
-      }
-      return withRequestId(request);
-    }
-
-    if (pathname.startsWith("/api/intake")) {
-      const session = parseSessionUserId(request.cookies.get(AUTH_SESSION_COOKIE_NAME)?.value);
-      if (!session) {
-        const res = NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        const id = ensureRequestIdHeader(request).get(REQUEST_ID_HEADER);
-        if (id) res.headers.set(REQUEST_ID_HEADER, id);
-        return res;
-      }
-      return withRequestId(request);
-    }
-
-    if (pathname.startsWith("/api/notifications") || pathname.startsWith("/api/action-queue")) {
-      const session = parseSessionUserId(request.cookies.get(AUTH_SESSION_COOKIE_NAME)?.value);
-      if (!session) {
-        const res = NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        const id = ensureRequestIdHeader(request).get(REQUEST_ID_HEADER);
-        if (id) res.headers.set(REQUEST_ID_HEADER, id);
-        return res;
-      }
-      return withRequestId(request);
-    }
-
-    if (pathname.startsWith("/api/admin/analytics")) {
-      const session = parseSessionUserId(request.cookies.get(AUTH_SESSION_COOKIE_NAME)?.value);
-      if (!session) {
-        const res = NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        const id = ensureRequestIdHeader(request).get(REQUEST_ID_HEADER);
-        if (id) res.headers.set(REQUEST_ID_HEADER, id);
-        return res;
-      }
-      return withRequestId(request);
-    }
-
-    if (pathname.startsWith("/api/investment-deals")) {
-      const session = parseSessionUserId(request.cookies.get(AUTH_SESSION_COOKIE_NAME)?.value);
-      if (!session) {
-        const res = NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        const id = ensureRequestIdHeader(request).get(REQUEST_ID_HEADER);
-        if (id) res.headers.set(REQUEST_ID_HEADER, id);
-        return res;
-      }
-      return withRequestId(request);
-    }
-
-    if (pathname.startsWith("/api/tenants") || pathname.startsWith("/api/finance")) {
-      const session = parseSessionUserId(request.cookies.get(AUTH_SESSION_COOKIE_NAME)?.value);
-      if (!session) {
-        const res = NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        const id = ensureRequestIdHeader(request).get(REQUEST_ID_HEADER);
-        if (id) res.headers.set(REQUEST_ID_HEADER, id);
-        return res;
-      }
-      return withRequestId(request);
-    }
-
-    return applyAttributionCookie(request, withRequestId(request));
+    return applyAttributionCookie(request, finalizePageResponse(request, intlResponse));
   } catch {
     return withRequestId(request);
   }

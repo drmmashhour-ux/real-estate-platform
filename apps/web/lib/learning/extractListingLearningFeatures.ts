@@ -25,7 +25,7 @@ function freshnessBucket(createdAt: Date): ListingLearningFeatures["freshnessBuc
 }
 
 /**
- * Build a normalized feature object from a BNHub short-term listing row.
+ * Build a normalized feature object from a BNHUB short-term listing row.
  */
 export function extractListingLearningFeatures(
   listing: Pick<

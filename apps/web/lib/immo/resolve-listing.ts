@@ -13,7 +13,7 @@ export type ImmoListingSnapshot = {
 };
 
 /**
- * Resolve listing context for ImmoContact (BNHub stay or CRM sale listing).
+ * Resolve listing context for ImmoContact (BNHUB stay or CRM sale listing).
  */
 export async function resolveImmoListing(params: {
   listingKind: ImmoListingKind;

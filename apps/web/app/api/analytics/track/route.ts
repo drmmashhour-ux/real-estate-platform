@@ -4,6 +4,7 @@ import { recordTrafficEventServer } from "@/lib/traffic/record-server-event";
 import { prisma } from "@/lib/db";
 import { getGuestId } from "@/lib/auth/session";
 import { bumpLeadEngagement, dispatchAutomation } from "@/lib/automation/engine";
+import { mergeTrafficAttributionIntoMetadata } from "@/lib/attribution/social-traffic";
 import { trackEvent } from "@/src/modules/analytics/eventTracker";
 
 export const dynamic = "force-dynamic";
@@ -68,6 +69,24 @@ const ALLOWED = new Set([
   "assistant_compare_used",
   "assistant_help_intent_used",
   "assistant_tts_used",
+  /** BNHUB + listings funnel — first-party traffic + user_events */
+  "ad_click",
+  "listing_click",
+  "booking_click",
+  "scroll_50",
+  "cta_click",
+  "booking_started",
+  "booking_completed",
+  /** LECIPM content automation + social attribution */
+  "social_listing_landing",
+  "booking_started_from_social",
+  "booking_completed_from_social",
+  "content_automation_client_event",
+  "content_generated",
+  "video_generated",
+  "social_post_scheduled",
+  "social_post_published",
+  "social_post_failed",
 ]);
 
 export async function POST(req: NextRequest) {
@@ -85,7 +104,8 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json().catch(() => ({}));
   let eventType = typeof body.eventType === "string" ? body.eventType.trim() : "";
-  if (eventType === "cta_click") eventType = "CTA_clicked";
+  /** Funnel alias — store as `booking_started` (same row as product analytics). */
+  if (eventType === "booking_start") eventType = "booking_started";
 
   if (!ALLOWED.has(eventType)) {
     return NextResponse.json({ ok: false, error: "Invalid eventType" }, { status: 400 });
@@ -99,10 +119,12 @@ export async function POST(req: NextRequest) {
       : null;
   const userId = await getGuestId().catch(() => null);
 
+  const metaWithAttr = mergeTrafficAttributionIntoMetadata(req.headers.get("cookie"), meta ?? {}, body);
+
   await recordTrafficEventServer({
     eventType,
     path,
-    meta,
+    meta: metaWithAttr,
     sessionId,
     headers: req.headers,
     body,
@@ -110,17 +132,26 @@ export async function POST(req: NextRequest) {
 
   const trackableMap: Record<string, string> = {
     page_view: "page_view",
+    ad_click: "ad_click",
     listing_view: "listing_view",
+    scroll_50: "scroll_50",
+    cta_click: "cta_click",
     contact_listing_broker: "inquiry_sent",
     request_platform_broker: "inquiry_sent",
+    booking_started: "booking_started",
+    booking_completed: "booking_completed",
+    listing_click: "listing_click",
+    booking_click: "booking_click",
   };
   const mapped = trackableMap[eventType];
   if (mapped) {
-    void trackEvent(mapped, meta ?? {}, { userId, sessionId }).catch(() => {});
+    void trackEvent(mapped, metaWithAttr, { userId, sessionId }).catch(() => {});
   }
 
   const leadIdFromMeta =
-    meta && typeof meta.leadId === "string" ? meta.leadId.trim().slice(0, 32) : "";
+    metaWithAttr && typeof metaWithAttr.leadId === "string"
+      ? metaWithAttr.leadId.trim().slice(0, 32)
+      : "";
   if (
     leadIdFromMeta &&
     (eventType === "call_clicked" || eventType === "whatsapp_clicked")
@@ -136,7 +167,9 @@ export async function POST(req: NextRequest) {
   if (leadIdFromMeta && !leadIdFromMeta.startsWith("mem-")) {
     if (eventType === "CTA_clicked") {
       const ctaKind =
-        meta && typeof meta.ctaKind === "string" ? meta.ctaKind.slice(0, 64) : undefined;
+        metaWithAttr && typeof metaWithAttr.ctaKind === "string"
+          ? metaWithAttr.ctaKind.slice(0, 64)
+          : undefined;
       void dispatchAutomation("CTA_clicked", { leadId: leadIdFromMeta, channel: ctaKind }).catch(
         () => {}
       );

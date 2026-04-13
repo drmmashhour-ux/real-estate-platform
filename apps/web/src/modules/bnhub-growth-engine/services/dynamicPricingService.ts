@@ -52,7 +52,9 @@ export async function applyDemandAdjustments(listingId: string, city: string): P
 }
 
 export function applyQualityAdjustments(starRating: number, overallClassification: number): Prisma.Decimal {
-  const bump = (starRating - 3) * 0.012 + (overallClassification - 60) / 2000;
+  const sr = Number.isFinite(starRating) ? Math.min(5, Math.max(1, starRating)) : 3;
+  const oc = Number.isFinite(overallClassification) ? Math.min(100, Math.max(0, overallClassification)) : 50;
+  const bump = (sr - 3) * 0.012 + (oc - 60) / 2000;
   return D(1 + Math.max(-0.06, Math.min(0.08, bump)));
 }
 
@@ -113,7 +115,8 @@ export async function computeRecommendedPrice(listingId: string): Promise<{
     prisma.bnhubLuxuryTier.findUnique({ where: { listingId } }),
   ]);
 
-  const base = computeBasePrice(listing.nightPriceCents);
+  const safeNightCents = Math.max(100, Math.round(listing.nightPriceCents));
+  const base = computeBasePrice(safeNightCents);
   const { appliedWeekendMult } = applyWeekdayWeekendAdjustments(base, listing.city);
   const seasonalM = await applySeasonalAdjustments(listingId, listing.city);
   const demandM = await applyDemandAdjustments(listingId, listing.city);
@@ -191,7 +194,7 @@ export async function upsertDynamicPricingProfile(listingId: string): Promise<vo
   const ww = applyWeekdayWeekendAdjustments(base, listing.city);
 
   const explanation = {
-    label: "BNHub dynamic pricing (AI-assisted recommendation)",
+    label: "BNHUB dynamic pricing (AI-assisted recommendation)",
     adjustments,
     note: "Recommendation is informational unless autopricing is explicitly enabled by policy.",
   };

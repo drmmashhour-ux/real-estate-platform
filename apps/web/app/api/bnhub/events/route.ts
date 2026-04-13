@@ -20,7 +20,7 @@ const ALLOWED = new Set([
 const MAX_META_JSON = 4000;
 
 /**
- * POST /api/bnhub/events — lightweight BNHub product events (no third-party SDK).
+ * POST /api/bnhub/events — lightweight BNHUB product events (no third-party SDK).
  */
 export async function POST(request: Request) {
   const ip =

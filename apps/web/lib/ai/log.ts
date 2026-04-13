@@ -21,6 +21,7 @@ export type AiLogEvent =
   | "immo_chat_message"
   | "investment_insight"
   | "mortgage_insight"
+  | "map_search_insight"
   | "lecipm_manager_run"
   | "lecipm_manager_action";
 

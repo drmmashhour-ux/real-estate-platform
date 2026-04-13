@@ -5,8 +5,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { BrowseListingFavoriteButton } from "@/components/listings/BrowseListingFavoriteButton";
 import { MapSearch } from "@/components/search/MapSearch";
+import { SmartMapInsightsPanel } from "@/components/search/SmartMapInsightsPanel";
 import { SearchFiltersProvider, useSearchEngineContext } from "@/components/search/SearchEngine";
-import { hasValidMapBounds, urlParamsToGlobalFilters } from "@/components/search/FilterState";
+import {
+  hasValidMapBounds,
+  OPEN_FULL_PROPERTY_FILTERS_PARAM,
+  urlParamsToGlobalFilters,
+} from "@/components/search/FilterState";
 import type { MapListing } from "@/components/map/MapListing";
 import { hasValidCoordinates } from "@/components/map/MapListing";
 import { buildFsboPublicListingPath } from "@/lib/seo/public-urls";
@@ -14,6 +19,21 @@ import { parseListingCodeFromSearchQuery } from "@/lib/listing-code-public";
 import { ListingsGridSkeleton } from "@/components/ui/SkeletonBlock";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
+import { QuebecLocationInput } from "@/components/search/QuebecLocationInput";
+import { LISTINGS_MAP_SEARCH_ID } from "@/lib/search/public-map-search-urls";
+import { scrollToMapSearchRegion } from "@/lib/ui/scroll-to-map-search";
+import { useGeocodedMapFocus } from "@/hooks/useGeocodedMapFocus";
+import { computeMapSearchStats } from "@/lib/search/map-search-analytics";
+import { BROWSE_EMPTY_LISTINGS } from "@/lib/listings/browse-empty-copy";
+
+const SEARCH_REASSURANCE_LINE =
+  "Verified listings where marked · Clear prices · Secure platform";
+
+function isFeaturedListingActive(featuredUntil: string | null | undefined): boolean {
+  if (featuredUntil == null || featuredUntil === "") return false;
+  const t = new Date(featuredUntil).getTime();
+  return Number.isFinite(t) && t > Date.now();
+}
 
 const ACCENT = "#D4AF37";
 const CARD_BG = "#111";
@@ -34,6 +54,13 @@ type Row = {
   latitude?: number | null;
   longitude?: number | null;
   address?: string | null;
+  transactionFlag?: {
+    key: "offer_received" | "offer_accepted" | "sold";
+    label: string;
+    tone: "amber" | "emerald" | "slate";
+  } | null;
+  verifiedListing?: boolean;
+  featuredUntil?: string | null;
 };
 
 function listingPublicHref(row: Row): string {
@@ -47,9 +74,10 @@ function listingPublicHref(row: Row): string {
   return `/listings/${row.id}`;
 }
 
-function toMapListing(row: Row): MapListing | null {
+function toMapListing(row: Row, dealKind: "sale" | "rent"): MapListing | null {
   if (!hasValidCoordinates(row)) return null;
   const img = row.coverImage || row.images[0] || null;
+  const tf = row.transactionFlag;
   return {
     id: row.id,
     latitude: row.latitude as number,
@@ -58,13 +86,15 @@ function toMapListing(row: Row): MapListing | null {
     title: row.title,
     image: img ?? undefined,
     href: listingPublicHref(row),
+    dealKind,
+    transactionKey: tf?.key,
+    transactionLabel: tf?.label,
+    platformListing: row.kind == null || row.kind === "fsbo" || row.kind === "crm",
+    mapRatingNote:
+      row.kind === "crm"
+        ? "Broker hub listing — connect with your agent for buyer feedback and comparables."
+        : null,
   };
-}
-
-function listingAiScoreDisplay(id: string): number {
-  let h = 0;
-  for (let i = 0; i < id.length; i++) h = (Math.imul(31, h) + id.charCodeAt(i)) | 0;
-  return 68 + (Math.abs(h) % 31);
 }
 
 function mergeFeatures(features: string[], key: string, on: boolean): string[] {
@@ -87,9 +117,7 @@ function LecipmListingsExplorerInner() {
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [searchDraft, setSearchDraft] = useState("");
-  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [mobileTab, setMobileTab] = useState<"list" | "map">("list");
-  const defaultLayoutDone = useRef(false);
   const [mqLg, setMqLg] = useState(false);
 
   useEffect(() => {
@@ -104,20 +132,12 @@ function LecipmListingsExplorerInner() {
 
   const appliedFromUrl = useMemo(() => urlParamsToGlobalFilters(new URLSearchParams(searchParams.toString())), [searchParams]);
 
-  const mapLayout = appliedFromUrl.mapLayout ?? "list";
+  const mapLayout = appliedFromUrl.mapLayout ?? "split";
 
   useEffect(() => {
     const city = searchParams.get("city") ?? "";
     setSearchDraft(city);
   }, [searchParams]);
-
-  useEffect(() => {
-    if (defaultLayoutDone.current) return;
-    defaultLayoutDone.current = true;
-    if (!searchParams.get("mapLayout")) {
-      applyPatch({ mapLayout: "split" });
-    }
-  }, [searchParams, applyPatch]);
 
   const [priceMinL, setPriceMinL] = useState(appliedFromUrl.priceMin);
   const [priceMaxL, setPriceMaxL] = useState(appliedFromUrl.priceMax > 0 ? appliedFromUrl.priceMax : PRICE_MAX_SLIDER);
@@ -196,21 +216,50 @@ function LecipmListingsExplorerInner() {
         }
       : null;
 
-  const mapPins = useMemo(() => data.map(toMapListing).filter((x): x is MapListing => x != null), [data]);
+  const mapBoundsActive = hasValidMapBounds(appliedFromUrl);
+  const locationMapFocus = useGeocodedMapFocus(appliedFromUrl.location, mapBoundsActive);
+
+  const dealKindForMap: "sale" | "rent" = appliedFromUrl.type === "rent" ? "rent" : "sale";
+  const mapPins = useMemo(
+    () => data.map((row) => toMapListing(row, dealKindForMap)).filter((x): x is MapListing => x != null),
+    [data, dealKindForMap]
+  );
+  const mapStats = useMemo(() => computeMapSearchStats(mapPins), [mapPins]);
+
+  /** Same SearchEngine + full filter panel as Buy hub (/buy); preserves current URL filters. */
+  const buyHubFullFiltersHref = useMemo(() => {
+    const p = new URLSearchParams(searchParams.toString());
+    p.set(OPEN_FULL_PROPERTY_FILTERS_PARAM, "1");
+    return `/buy?${p.toString()}`;
+  }, [searchParams]);
+
+  const focusListingsMap = () => scrollToMapSearchRegion(LISTINGS_MAP_SEARCH_ID, { delayMs: 220 });
 
   const mapSearchEl = (
     <MapSearch
       listings={mapPins}
       initialBounds={initialBounds}
+      focusPoint={locationMapFocus}
       suppressAutoFit={Boolean(initialBounds)}
       onBoundsChange={onBoundsChange}
       selectedId={selectedId}
+      marketMedianPrice={mapStats?.medianPrice ?? null}
       onMarkerClick={(ml) => {
         setSelectedId(ml.id);
         document.getElementById(`lecipm-card-${ml.id}`)?.scrollIntoView({ behavior: "smooth", block: "nearest" });
       }}
       variant="dark"
       className="h-[min(52vh,420px)] w-full lg:h-[calc(100vh-5.5rem)] lg:min-h-[480px]"
+    />
+  );
+
+  const smartMapPanel = (
+    <SmartMapInsightsPanel
+      listings={mapPins}
+      dealKind={dealKindForMap}
+      cityHint={appliedFromUrl.location}
+      totalListed={total}
+      variant="dark"
     />
   );
 
@@ -486,37 +535,12 @@ function LecipmListingsExplorerInner() {
     </div>
   );
 
-  const aiInsightsPanel = (
-    <div className="pointer-events-auto absolute right-2 top-2 z-[500] max-w-[220px] rounded-2xl border border-[#D4AF37]/30 bg-[#111]/95 p-4 text-left shadow-lg backdrop-blur-md sm:right-3 sm:top-3 sm:max-w-[260px]">
-      <p className="text-xs font-bold uppercase tracking-wide" style={{ color: ACCENT }}>
-        AI insights
-      </p>
-      <ul className="mt-3 space-y-2 text-xs leading-snug text-white/75">
-        <li>
-          <span className="font-semibold text-white/90">Price outlook: </span>
-          Listings in this set skew toward fair asks versus similar inventory.
-        </li>
-        <li>
-          <span className="font-semibold text-white/90">Activity: </span>
-          {appliedFromUrl.location.trim()
-            ? `Searches are active around ${appliedFromUrl.location.trim()}.`
-            : "Refine location to localize demand signals."}
-        </li>
-        <li>
-          <span className="font-semibold text-white/90">Fit: </span>
-          Results reflect your current filters and sort order.
-        </li>
-      </ul>
-    </div>
-  );
-
   const listingsGrid = (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-      {data.map((row) => {
+      {data.map((row, cardIndex) => {
         const img = row.coverImage || row.images[0] || null;
         const price = `$${(row.priceCents / 100).toLocaleString("en-CA")}`;
         const addr = [row.address, row.city].filter(Boolean).join(", ") || row.city;
-        const score = listingAiScoreDisplay(row.id);
         return (
           <Link
             key={row.id}
@@ -524,7 +548,7 @@ function LecipmListingsExplorerInner() {
             href={listingPublicHref(row)}
             onMouseEnter={() => setSelectedId(row.id)}
             onMouseLeave={() => setSelectedId(null)}
-            className={`group relative flex flex-col overflow-hidden rounded-2xl border text-left transition duration-300 hover:-translate-y-1 ${
+            className={`group relative flex flex-col overflow-hidden rounded-2xl border text-left shadow-[0_8px_30px_-12px_rgba(0,0,0,0.55)] transition-all duration-200 ease-out hover:scale-[1.015] hover:shadow-[0_16px_40px_-12px_rgba(0,0,0,0.65)] ${
               selectedId === row.id ? "border-[#D4AF37]/55 ring-1 ring-[#D4AF37]/25" : "border-[#D4AF37]/20"
             }`}
             style={{ backgroundColor: CARD_BG }}
@@ -540,24 +564,37 @@ function LecipmListingsExplorerInner() {
                 <img
                   src={img}
                   alt=""
-                  loading="lazy"
+                  loading={cardIndex < 3 ? "eager" : "lazy"}
                   decoding="async"
-                  className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
+                  fetchPriority={cardIndex === 0 ? "high" : undefined}
+                  className="h-full w-full object-cover transition-transform duration-200 ease-out group-hover:scale-[1.02]"
                 />
               ) : (
                 <div className="flex h-full items-center justify-center bg-gradient-to-br from-[#1a1a1a] to-black text-sm text-white/40">
                   No photo
                 </div>
               )}
-              <span
-                className="absolute bottom-2 left-2 rounded-2xl px-2 py-1 text-[10px] font-bold uppercase tracking-wide"
-                style={{ backgroundColor: "rgba(17,17,17,0.92)", color: ACCENT }}
-              >
-                AI score: {score}
-              </span>
+              {img ? (
+                <div
+                  className="pointer-events-none absolute inset-x-0 bottom-0 top-[35%] bg-gradient-to-t from-black/80 via-black/30 to-transparent"
+                  aria-hidden
+                />
+              ) : null}
+              <div className="pointer-events-none absolute bottom-3 left-3 z-[2] flex max-w-[calc(100%-5rem)] flex-wrap items-center gap-1.5">
+                {row.verifiedListing ? (
+                  <span className="rounded-full bg-black/50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white ring-1 ring-white/20 backdrop-blur-sm">
+                    Verified
+                  </span>
+                ) : null}
+                {isFeaturedListingActive(row.featuredUntil) ? (
+                  <span className="rounded-full border border-[#D4AF37]/40 bg-[#D4AF37]/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#E8D589] backdrop-blur-sm">
+                    Top listing
+                  </span>
+                ) : null}
+              </div>
             </div>
-            <div className="flex flex-1 flex-col p-4">
-              <p className="text-xl font-bold" style={{ color: ACCENT }}>
+            <div className="flex flex-1 flex-col p-5">
+              <p className="text-2xl font-bold tracking-tight" style={{ color: ACCENT }}>
                 {price}
               </p>
               <p className="mt-2 line-clamp-2 text-sm font-medium text-white/90">{addr}</p>
@@ -576,12 +613,19 @@ function LecipmListingsExplorerInner() {
   return (
     <div className="min-h-screen bg-black text-white">
       <header className="sticky top-0 z-40 border-b border-[#D4AF37]/20 bg-black/95 backdrop-blur-md">
+        <div className="mx-auto max-w-[1920px] px-4 pt-2 sm:px-6">
+          <p className="text-[11px] font-normal leading-snug text-white/40 sm:text-xs sm:text-white/45">
+            {SEARCH_REASSURANCE_LINE}
+          </p>
+        </div>
         <div className="mx-auto flex max-w-[1920px] flex-col gap-3 px-4 py-3 sm:px-6 lg:flex-row lg:items-center lg:gap-4">
           <form onSubmit={handleSearchSubmit} className="flex w-full flex-1 flex-col gap-2 sm:flex-row sm:items-stretch sm:gap-2">
-            <input
-              type="search"
+            <QuebecLocationInput
+              id="lecipm-location-search"
               value={searchDraft}
-              onChange={(e) => setSearchDraft(e.target.value)}
+              onChange={setSearchDraft}
+              tone="light"
+              inputType="search"
               placeholder="Search by city, address, or listing ID"
               className="min-h-[48px] w-full flex-1 rounded-2xl border-2 border-[#D4AF37]/35 bg-white px-4 py-2 text-base text-black placeholder:text-neutral-500 focus:border-[#D4AF37] focus:outline-none focus:ring-4 focus:ring-[#D4AF37]/15"
               autoComplete="off"
@@ -596,13 +640,12 @@ function LecipmListingsExplorerInner() {
           </form>
 
           <div className="flex flex-wrap items-center gap-2 lg:shrink-0">
-            <button
-              type="button"
-              className="min-h-[48px] rounded-2xl border border-[#D4AF37]/40 px-4 text-sm font-semibold text-[#D4AF37] lg:hidden"
-              onClick={() => setMobileFiltersOpen(true)}
+            <Link
+              href={buyHubFullFiltersHref}
+              className="inline-flex min-h-[48px] items-center justify-center rounded-2xl border border-[#D4AF37]/40 px-4 text-sm font-semibold text-[#D4AF37] lg:hidden"
             >
               Filters
-            </button>
+            </Link>
             <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-[#D4AF37]/25 p-1">
               <button
                 type="button"
@@ -618,7 +661,10 @@ function LecipmListingsExplorerInner() {
               </button>
               <button
                 type="button"
-                onClick={() => applyPatch({ mapLayout: "split" })}
+                onClick={() => {
+                  applyPatch({ mapLayout: "split" });
+                  focusListingsMap();
+                }}
                 className={`min-h-[44px] rounded-xl px-3 text-sm font-semibold sm:px-4 ${
                   mapLayout === "split" ? "bg-[#D4AF37]/20 text-[#D4AF37]" : "text-white/60"
                 }`}
@@ -630,6 +676,7 @@ function LecipmListingsExplorerInner() {
                 onClick={() => {
                   applyPatch({ mapLayout: "map" });
                   setMobileTab("map");
+                  focusListingsMap();
                 }}
                 className={`min-h-[44px] rounded-xl px-3 text-sm font-semibold sm:px-4 ${
                   mapLayout === "map" ? "bg-[#D4AF37]/20 text-[#D4AF37]" : "text-white/60"
@@ -669,7 +716,10 @@ function LecipmListingsExplorerInner() {
           </button>
           <button
             type="button"
-            onClick={() => setMobileTab("map")}
+            onClick={() => {
+              setMobileTab("map");
+              focusListingsMap();
+            }}
             className={`min-h-[48px] flex-1 rounded-2xl text-sm font-semibold ${
               mobileTab === "map" ? "bg-[#D4AF37]/20 text-[#D4AF37]" : "bg-[#111] text-white/60"
             }`}
@@ -680,7 +730,24 @@ function LecipmListingsExplorerInner() {
       ) : null}
 
       <div className={`mx-auto grid max-w-[1920px] gap-4 px-4 py-4 sm:px-6 lg:gap-6 ${mainGridClass}`}>
-        <aside className="hidden rounded-2xl border border-[#D4AF37]/20 bg-[#111] p-4 lg:block">{filterPanelInner}</aside>
+        <aside className="hidden space-y-4 rounded-2xl border border-[#D4AF37]/20 bg-[#111] p-4 lg:block">
+          <div className="rounded-2xl border border-[#D4AF37]/30 bg-black/30 p-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-[#D4AF37]/90">Full property filters</p>
+            <p className="mt-1 text-[11px] leading-snug text-white/55">
+              Same filter panel as the Buy hub — bedrooms, building style, size, features, and more.
+            </p>
+            <Link
+              href={buyHubFullFiltersHref}
+              className="mt-3 inline-flex min-h-[44px] w-full items-center justify-center rounded-xl bg-[#D4AF37] px-4 text-sm font-bold text-black transition hover:brightness-110"
+            >
+              Open full filters
+            </Link>
+          </div>
+          <div>
+            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-white/45">Quick adjust</p>
+            {filterPanelInner}
+          </div>
+        </aside>
 
         {showListPane ? (
           <section className="min-w-0">
@@ -692,19 +759,24 @@ function LecipmListingsExplorerInner() {
             ) : loading ? (
               <ListingsGridSkeleton count={6} />
             ) : data.length === 0 ? (
-              <EmptyState
-                icon="🏠"
-                title="No listings match"
-                description="Adjust filters or clear search to see more results."
-              >
-                <button
-                  type="button"
-                  onClick={() => reset()}
-                  className="mt-4 min-h-[48px] rounded-2xl px-6 font-semibold text-black"
-                  style={{ backgroundColor: ACCENT }}
-                >
-                  Reset filters
-                </button>
+              <EmptyState title={BROWSE_EMPTY_LISTINGS.title} description={BROWSE_EMPTY_LISTINGS.description}>
+                <>
+                  <button
+                    type="button"
+                    onClick={() => reset()}
+                    className="min-h-[48px] rounded-2xl px-6 font-semibold text-black"
+                    style={{ backgroundColor: ACCENT }}
+                  >
+                    Reset filters
+                  </button>
+                  <Link
+                    href="/explore"
+                    className="inline-flex min-h-[48px] items-center justify-center rounded-2xl border-2 px-6 font-semibold transition hover:bg-white/[0.06]"
+                    style={{ borderColor: ACCENT, color: ACCENT }}
+                  >
+                    Browse featured listings
+                  </Link>
+                </>
               </EmptyState>
             ) : (
               listingsGrid
@@ -737,36 +809,16 @@ function LecipmListingsExplorerInner() {
         ) : null}
 
         {showMapPane ? (
-          <section className="relative min-h-0 w-full">
-            {aiInsightsPanel}
+          <section
+            id={LISTINGS_MAP_SEARCH_ID}
+            className="flex min-h-0 w-full scroll-mt-28 flex-col gap-4 lg:scroll-mt-24"
+          >
+            {smartMapPanel}
             {mapSearchEl}
           </section>
         ) : null}
       </div>
 
-      {mobileFiltersOpen ? (
-        <div className="fixed inset-0 z-50 flex flex-col bg-black/70 lg:hidden" role="dialog" aria-modal="true" aria-label="Filters">
-          <button
-            type="button"
-            className="flex-1 cursor-default"
-            aria-label="Close filters"
-            onClick={() => setMobileFiltersOpen(false)}
-          />
-          <div className="max-h-[85vh] overflow-y-auto rounded-t-2xl border border-[#D4AF37]/25 bg-[#111] p-6">
-            <div className="mb-4 flex items-center justify-between">
-              <p className="text-lg font-bold text-[#D4AF37]">Filters</p>
-              <button
-                type="button"
-                onClick={() => setMobileFiltersOpen(false)}
-                className="min-h-[44px] min-w-[44px] rounded-2xl border border-white/20 text-white"
-              >
-                ✕
-              </button>
-            </div>
-            {filterPanelInner}
-          </div>
-        </div>
-      ) : null}
     </div>
   );
 }

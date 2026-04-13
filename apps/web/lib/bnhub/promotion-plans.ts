@@ -31,7 +31,7 @@ const DEFAULT_PLANS: PlanSeed[] = [
     placement: "featured_listing",
     billingPeriod: "weekly",
     priceCents: 7_900,
-    description: "Highlight a BNHub listing in featured collections for one week.",
+    description: "Highlight a BNHUB listing in featured collections for one week.",
   },
   {
     sku: "featured_listing_monthly",
@@ -63,7 +63,7 @@ const DEFAULT_PLANS: PlanSeed[] = [
     placement: "category",
     billingPeriod: "weekly",
     priceCents: 5_900,
-    description: "Top placement within a BNHub category for one week.",
+    description: "Top placement within a BNHUB category for one week.",
   },
   {
     sku: "category_slot_monthly",
@@ -79,7 +79,7 @@ const DEFAULT_PLANS: PlanSeed[] = [
     placement: "local_ad",
     billingPeriod: "weekly",
     priceCents: 3_900,
-    description: "Promote a local business or service on BNHub for one week.",
+    description: "Promote a local business or service on BNHUB for one week.",
   },
   {
     sku: "local_ad_monthly",
@@ -92,7 +92,7 @@ const DEFAULT_PLANS: PlanSeed[] = [
 ];
 
 /**
- * Idempotent catalog seed for BNHub promotion products (admin dashboard + checkout later).
+ * Idempotent catalog seed for BNHUB promotion products (admin dashboard + checkout later).
  */
 export async function ensureDefaultPromotionPlans(tx: PromotionDb = prisma) {
   for (const p of DEFAULT_PLANS) {

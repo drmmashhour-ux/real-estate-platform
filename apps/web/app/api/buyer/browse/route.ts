@@ -17,6 +17,7 @@ import { ListingAnalyticsKind } from "@prisma/client";
 import { buildFsboRecommendedBrowseSortUnit } from "@/lib/listings/marketplace-browse-sort";
 import { isAiRankingEngineEnabled } from "@/src/modules/ranking/rankingEnv";
 import { scoreRealEstateListingsForBrowse } from "@/src/modules/ranking/rankingService";
+import { resolvedBrowseCoverAndImages } from "@/lib/listings/browse-listing-images";
 
 export const dynamic = "force-dynamic";
 
@@ -50,6 +51,8 @@ type UnifiedRow = {
     label: string;
     tone: "amber" | "emerald" | "slate";
   } | null;
+  /** Broker CRM rows, or FSBO published under a broker with license verification on file (matches public listing detail). */
+  verifiedListing: boolean;
 };
 
 function buildFsboWhere(
@@ -299,6 +302,16 @@ async function runBrowse(
         experienceTags: true,
         servicesOffered: true,
         status: true,
+        listingOwnerType: true,
+        owner: {
+          select: {
+            brokerVerifications: {
+              orderBy: { updatedAt: "desc" },
+              take: 1,
+              select: { verificationStatus: true },
+            },
+          },
+        },
       },
     }),
     hasPF
@@ -324,7 +337,16 @@ async function runBrowse(
     fsboFiltered.map((row) => ({ id: row.id, status: row.status }))
   );
 
-  const fsboMapped: UnifiedRow[] = fsboFiltered.map((r) => ({
+  const fsboMapped: UnifiedRow[] = fsboFiltered.map((r) => {
+    const { coverImage, images } = resolvedBrowseCoverAndImages({
+      id: r.id,
+      coverImage: r.coverImage,
+      images: Array.isArray(r.images) ? r.images : [],
+    });
+    const brokerV = r.owner.brokerVerifications[0];
+    const verifiedListing =
+      r.listingOwnerType === "BROKER" && brokerV?.verificationStatus === "VERIFIED";
+    return {
     kind: "fsbo" as const,
     id: r.id,
     title: r.title,
@@ -332,8 +354,8 @@ async function runBrowse(
     city: r.city,
     bedrooms: r.bedrooms ?? null,
     bathrooms: r.bathrooms ?? null,
-    coverImage: r.coverImage,
-    images: Array.isArray(r.images) ? r.images : [],
+    coverImage,
+    images,
     propertyType: r.propertyType ?? null,
     sortAt: new Date(r.updatedAt).getTime(),
     featuredUntil: r.featuredUntil ?? null,
@@ -345,9 +367,17 @@ async function runBrowse(
     familyFriendly: r.familyFriendly,
     petsAllowed: r.petsAllowed,
     transactionFlag: transactionFlags.get(r.id) ?? null,
-  }));
+    verifiedListing,
+  };
+  });
 
-  const crmMapped: UnifiedRow[] = crmRows.map((r) => ({
+  const crmMapped: UnifiedRow[] = crmRows.map((r) => {
+    const { coverImage, images } = resolvedBrowseCoverAndImages({
+      id: r.id,
+      coverImage: null,
+      images: [],
+    });
+    return {
     kind: "crm" as const,
     id: r.id,
     title: r.title,
@@ -355,11 +385,13 @@ async function runBrowse(
     city: "Marketplace",
     bedrooms: null,
     bathrooms: null,
-    coverImage: null,
-    images: [] as string[],
+    coverImage,
+    images,
     propertyType: "CRM",
     sortAt: new Date(r.createdAt).getTime(),
-  }));
+    verifiedListing: true,
+  };
+  });
 
   const sortMode = f.sort ?? "recommended";
   const merged = [...fsboMapped, ...crmMapped];
@@ -418,11 +450,46 @@ async function runBrowse(
   }
   const total = hasPF ? fsboFiltered.length : fsboTotal + crmTotal;
   const skip = (page - 1) * limit;
-  const pageRows = merged.slice(skip, skip + limit).map((row) => {
+  const sliced = merged.slice(skip, skip + limit).map((row) => {
     const { sortAt: _sortAt, ...rest } = row;
     void _sortAt;
     return rest;
   });
+
+  /** First-paint map pins: geocode FSBO rows on this page missing coordinates (bounded; persists to DB). */
+  const pageRows: Omit<UnifiedRow, "sortAt">[] = [];
+  let geocodeBudget = 10;
+  for (const row of sliced) {
+    if (row.kind !== "fsbo") {
+      pageRows.push(row);
+      continue;
+    }
+    if ((row.latitude != null && row.longitude != null) || geocodeBudget <= 0) {
+      pageRows.push(row);
+      continue;
+    }
+    const addr = row.address?.trim() ?? "";
+    const city = row.city?.trim() ?? "";
+    const line = [addr, city].filter(Boolean).join(", ").trim();
+    if (!line) {
+      pageRows.push(row);
+      continue;
+    }
+    geocodeBudget--;
+    const q = await geocodeAddressLine(line);
+    if (q) {
+      void prisma.fsboListing
+        .update({
+          where: { id: row.id },
+          data: { latitude: q.latitude, longitude: q.longitude },
+        })
+        .catch(() => {});
+      pageRows.push({ ...row, latitude: q.latitude, longitude: q.longitude });
+      await new Promise((r) => setTimeout(r, 350));
+    } else {
+      pageRows.push(row);
+    }
+  }
 
   return Response.json({
     data: pageRows,
@@ -438,7 +505,7 @@ async function runBrowse(
 /** Fast total for filter panel footer (same DB predicates as browse, no pool merge). */
 async function runBrowseCountOnly(f: GlobalSearchFiltersExtended, propertyFilters: PropertyBrowseFilters | null) {
   if (f.type === "short") {
-    return Response.json({ error: "Use BNHub for short-term count", code: "USE_BNHUB" }, { status: 400 });
+    return Response.json({ error: "Use BNHUB for short-term count", code: "USE_BNHUB" }, { status: 400 });
   }
   if (f.type === "sell") {
     return Response.json({ total: 0, fsboTotal: 0, crmTotal: 0 });

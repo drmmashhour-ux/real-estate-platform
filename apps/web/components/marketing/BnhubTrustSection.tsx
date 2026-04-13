@@ -15,7 +15,7 @@ export function BnhubTrustSection() {
         <AnimatedReveal>
           <div className="rounded-3xl border border-premium-gold/25 bg-gradient-to-br from-premium-gold/[0.12] via-black/40 to-black p-8 shadow-[0_0_60px_rgb(var(--premium-gold-channels) / 0.12)] sm:p-12">
             <SectionHeading
-              eyebrow="BNHub"
+              eyebrow="BNHUB"
               title="Short-term rentals you can actually trust"
               subtitle="Safer than traditional platforms — verification and risk signals built in."
             />
@@ -32,7 +32,7 @@ export function BnhubTrustSection() {
               href="/rent"
               className="mt-8 inline-flex items-center justify-center rounded-full border border-premium-gold/50 bg-premium-gold/10 px-6 py-3 text-sm font-semibold text-white transition hover:border-premium-gold hover:bg-premium-gold/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-premium-gold/50"
             >
-              Explore BNHub rentals →
+              Explore BNHUB rentals →
             </Link>
           </div>
         </AnimatedReveal>

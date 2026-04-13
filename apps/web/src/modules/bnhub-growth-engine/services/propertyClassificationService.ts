@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 
-/** Capped extra points applied in “recommended” search sort from BNHub star estimate. */
+/** Capped extra points applied in “recommended” search sort from BNHUB star estimate. */
 export const BNHUB_STAR_SEARCH_BOOST_CAP = 8;
 
 export type ListingForClassification = {
@@ -71,7 +71,7 @@ function collectPhotoUrls(listing: ListingForClassification): string[] {
 }
 
 /**
- * Map 0–100 overall score to 1–5 stars (BNHub estimate).
+ * Map 0–100 overall score to 1–5 stars (BNHUB estimate).
  */
 export function convertScoreToStars(score: number): 1 | 2 | 3 | 4 | 5 {
   const s = Math.max(0, Math.min(100, Math.round(score)));
@@ -283,7 +283,7 @@ export function computePropertyScore(listing: ListingForClassification): Classif
   const starRating = convertScoreToStars(overallScore);
 
   const core: ClassificationBreakdownCore = {
-    label: "BNHub Star Rating (internal platform estimate)",
+    label: "BNHUB Star Rating (internal platform estimate)",
     amenities: { earned: amenitiesEarned, max: 25, items: amenitiesItems },
     comfort: { earned: comfortEarned, max: 20, items: comfortItems },
     services: { earned: servicesEarned, max: 15, items: servicesItems },

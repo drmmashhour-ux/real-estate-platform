@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
   });
 
   void notifyActiveAdmins({
-    title: "New BNHub dispute",
+    title: "New BNHUB dispute",
     message: `Guest opened a dispute on “${booking.listing.title}”.`,
     actionUrl: `/admin/bnhub-disputes/${updated.id}`,
   });

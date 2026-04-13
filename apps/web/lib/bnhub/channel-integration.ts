@@ -1,5 +1,5 @@
 /**
- * BNHub OTA / channel manager integration — push availability, ingest webhooks.
+ * BNHUB OTA / channel manager integration — push availability, ingest webhooks.
  * Concrete channel APIs are stubbed; wiring is ready for Booking.com / Airbnb / Expedia.
  */
 
@@ -120,7 +120,7 @@ export type WebhookIngestResult =
 
 /**
  * Handle inbound reservation / cancellation from external channel (e.g. channel manager webhook).
- * Blocks calendar nights without creating a BNHub Booking row (external-only booking).
+ * Blocks calendar nights without creating a BNHUB Booking row (external-only booking).
  */
 export async function ingestExternalReservationWebhook(
   payload: Record<string, unknown>

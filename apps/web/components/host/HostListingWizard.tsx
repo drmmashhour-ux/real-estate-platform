@@ -7,10 +7,12 @@ import { StepPhotos } from "@/components/host/steps/StepPhotos";
 import { StepPricing } from "@/components/host/steps/StepPricing";
 import { StepReview } from "@/components/host/steps/StepReview";
 import { useListingWizard } from "@/stores/useListingWizard";
+import { useSuppressFooterHistoryNav } from "@/components/layout/FooterHistoryNavContext";
 
 const STEP_LABELS = ["Basic", "Photos", "Pricing", "AI fill", "Review"];
 
 export function HostListingWizard() {
+  useSuppressFooterHistoryNav(true);
   const step = useListingWizard((s) => s.step);
 
   return (

@@ -11,7 +11,7 @@ export const DEFAULT_MESSAGE_TEMPLATES: {
     subject: "Quick favor — LECIPM",
     content: `Hi {{name}},
 
-I just launched a real estate + booking platform (LECIPM + BNHub) and need honest feedback.
+I just launched a real estate + booking platform (LECIPM + BNHUB) and need honest feedback.
 
 Can you try one thing today — browse, send an inquiry, or test a booking? It takes 2–3 minutes.
 
@@ -70,10 +70,10 @@ Open to testing it? We need quick response times to validate the system.`,
   {
     segment: "host",
     type: "first_message",
-    subject: "BNHub — list your stay",
+    subject: "BNHUB — list your stay",
     content: `Hi {{name}},
 
-We're onboarding hosts on BNHub (short-term) with early exposure.
+We're onboarding hosts on BNHUB (short-term) with early exposure.
 
 Want to list one property and test bookings with us this week?`,
   },
@@ -88,7 +88,7 @@ Following up — we're only onboarding a few brokers in this phase. Want me to s
   {
     segment: "host",
     type: "follow_up",
-    subject: "Activate your BNHub listing",
+    subject: "Activate your BNHUB listing",
     content: `Hi {{name}},
 
 Let's activate your listing and test bookings this week — reply if you want a quick setup walkthrough.`,

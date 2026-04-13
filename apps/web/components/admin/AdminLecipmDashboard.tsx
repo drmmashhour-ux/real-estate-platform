@@ -65,14 +65,19 @@ export function AdminLecipmDashboard(props: {
   bookingHealth: AdminBookingHealth;
   aiOps: AdminAiOpsSummary;
   riskAlerts: AdminRiskAlert[];
+  /** When set (e.g. control tower), replaces default “Platform overview” heading. */
+  headingTitle?: string;
+  headingSubtitle?: string;
 }) {
-  const { stats, activity, listingsHealth, bookingHealth, aiOps, riskAlerts } = props;
+  const { stats, activity, listingsHealth, bookingHealth, aiOps, riskAlerts, headingTitle, headingSubtitle } = props;
 
   return (
     <div className="space-y-10">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-white">Platform overview</h1>
-        <p className="mt-1 text-sm text-zinc-500">BNHub + LECIPM — live health snapshot.</p>
+        <h1 className="text-2xl font-bold tracking-tight text-white">{headingTitle ?? "Platform overview"}</h1>
+        <p className="mt-1 text-sm text-zinc-500">
+          {headingSubtitle ?? "BNHUB + LECIPM — live health snapshot."}
+        </p>
       </div>
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">

@@ -5,7 +5,12 @@ import { hashPassword } from "@/lib/auth/password";
 import { createDbSession } from "@/lib/auth/db-session";
 import { setGuestIdCookie, setUserRoleCookie } from "@/lib/auth/session";
 import { createReferralIfNeeded, ensureReferralCode, resolveReferralAttribution } from "@/lib/referrals";
-import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
+import {
+  checkRateLimitDistributed,
+  getRateLimitHeadersFromResult,
+  isIpRateLimitBlocked,
+  maybeBlockIpAfterRateLimitDenied,
+} from "@/lib/rate-limit-distributed";
 import { sendAccountVerificationEmail, sendSignupEmail } from "@/lib/email/send";
 import type { PlatformRole } from "@prisma/client";
 import { getMortgagePlanDefaults } from "@/modules/mortgage/services/subscription-plans";
@@ -21,6 +26,14 @@ import { recordGrowthEventWithFunnel } from "@/lib/growth/events";
 import { onSignupAutomation } from "@/src/services/automation";
 import { onMessagingTriggerSignup } from "@/src/modules/messaging/triggers";
 import { getPublicAppUrl } from "@/lib/config/public-app-url";
+import { recordPlatformEvent } from "@/lib/observability";
+import { REQUEST_ID_HEADER } from "@/lib/middleware/request-logger";
+import { fingerprintClientIp, getClientIpFromRequest } from "@/lib/security/ip-fingerprint";
+import { isSecurityIpBlocked } from "@/lib/security/ip-block";
+import { isPublicSignupDisabled, maintenanceMessage } from "@/lib/security/kill-switches";
+import { securityLog } from "@/lib/security/security-logger";
+import { trackRepeatedSignupAttempt } from "@/lib/security/security-events";
+import { buildSignupAttributionPayload } from "@/lib/attribution/signup-attribution";
 
 const VERIFY_TTL_MS = 48 * 60 * 60 * 1000;
 
@@ -31,10 +44,37 @@ function appBaseUrl(): string {
 /** POST /api/auth/register — Create account; USER must verify email before session (see /auth/verify-email). */
 export async function POST(request: NextRequest) {
   try {
-    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? request.headers.get("x-real-ip") ?? "anonymous";
-    const limit = checkRateLimit(`auth:register:${ip}`, { windowMs: 60 * 1000, max: 10 });
+    const ip = getClientIpFromRequest(request);
+    const ipFp = fingerprintClientIp(ip);
+    const requestId = request.headers.get(REQUEST_ID_HEADER);
+    if (await isSecurityIpBlocked(ipFp)) {
+      return NextResponse.json({ error: "Access denied." }, { status: 403 });
+    }
+    if (isPublicSignupDisabled()) {
+      void securityLog({
+        event: "signup_blocked_kill_switch",
+        requestId,
+        subjectHint: ipFp,
+        persist: true,
+        entityId: `fp:${ipFp}`,
+      });
+      return NextResponse.json(
+        { error: maintenanceMessage() ?? "Registration is temporarily unavailable." },
+        { status: 503 }
+      );
+    }
+    if (await isIpRateLimitBlocked(ipFp)) {
+      trackRepeatedSignupAttempt({ ipFingerprint: ipFp, requestId });
+      return NextResponse.json({ error: "Too many signup attempts. Try again later." }, { status: 429 });
+    }
+    const limit = await checkRateLimitDistributed(`auth:register:${ip}`, { windowMs: 60 * 1000, max: 10 });
     if (!limit.allowed) {
-      return NextResponse.json({ error: "Too many signup attempts. Try again later." }, { status: 429, headers: getRateLimitHeaders(limit) });
+      void maybeBlockIpAfterRateLimitDenied(ipFp);
+      trackRepeatedSignupAttempt({ ipFingerprint: ipFp, requestId });
+      return NextResponse.json(
+        { error: "Too many signup attempts. Try again later." },
+        { status: 429, headers: getRateLimitHeadersFromResult(limit) }
+      );
     }
     const body = await request.json();
     const refCodeFromBody = typeof body?.ref === "string" ? body.ref.trim() : null;
@@ -55,6 +95,14 @@ export async function POST(request: NextRequest) {
     if (!password || password.length < 8) {
       return NextResponse.json({ error: "Password must be at least 8 characters" }, { status: 400 });
     }
+
+    void recordPlatformEvent({
+      eventType: "auth_signup_attempt",
+      sourceModule: "auth",
+      entityType: "AUTH",
+      entityId: `fp:${ipFp}`,
+      payload: {},
+    }).catch(() => {});
 
     const acceptLegal =
       body?.acceptLegal === true ||
@@ -106,6 +154,11 @@ export async function POST(request: NextRequest) {
     const verificationToken = randomBytes(32).toString("hex");
     const verificationExpires = new Date(Date.now() + VERIFY_TTL_MS);
     const derivedName = name || email.split("@")[0] || null;
+    const signupAttributionJson = buildSignupAttributionPayload(
+      request.headers.get("cookie"),
+      body,
+      request.nextUrl.searchParams.get("src")
+    );
 
     const user =
       validRole === "MORTGAGE_EXPERT"
@@ -133,9 +186,10 @@ export async function POST(request: NextRequest) {
                 company,
                 licenseNumber,
                 title: "Mortgage expert",
-                isActive: true,
+                isActive: false,
                 acceptedTerms: false,
                 commissionRate: 0.3,
+                expertVerificationStatus: "profile_incomplete",
               },
             });
             const plan = getMortgagePlanDefaults("basic");
@@ -147,7 +201,7 @@ export async function POST(request: NextRequest) {
                 maxLeadsPerDay: plan.maxLeadsPerDay,
                 maxLeadsPerMonth: plan.maxLeadsPerMonth,
                 priorityWeight: plan.priorityWeight,
-                isActive: true,
+                isActive: false,
               },
             });
             return u;
@@ -164,11 +218,15 @@ export async function POST(request: NextRequest) {
                 emailVerifiedAt: null,
                 emailVerificationToken: verificationToken,
                 emailVerificationExpires: verificationExpires,
+                ...(signupAttributionJson ? { signupAttributionJson } : {}),
               },
             });
           });
 
     const referralCode = await ensureReferralCode(user.id);
+    void import("@/lib/fraud/compute-user-risk")
+      .then((m) => m.evaluateUserFraudAfterSignup({ userId: user.id, ipFingerprint: ipFp }))
+      .catch(() => {});
     void trackEvent("signup", { role: validRole }, { userId: user.id }).catch(() => {});
     void persistLaunchEvent("USER_SIGNUP", {
       userId: user.id,

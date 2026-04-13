@@ -47,7 +47,7 @@ export async function GET(
 
 /**
  * PUT { platform: string, externalId: string }
- * Upsert BNHub ↔ OTA property id (after AI parse or manual entry).
+ * Upsert BNHUB ↔ OTA property id (after AI parse or manual entry).
  */
 export async function PUT(
   request: NextRequest,

@@ -67,7 +67,7 @@ export async function onMessagingTriggerCheckoutStarted(userId: string): Promise
   await sendTemplatedUserMessage(userId, "buyer", "conversion_push", vars, { triggerEvent: "checkout_started" });
 }
 
-/** BNHub / booking payment confirmed — funnel outcome. */
+/** BNHUB / booking payment confirmed — funnel outcome. */
 export async function onGrowthAiCheckoutCompleted(userId: string): Promise<void> {
   await updateOutcomeForOpenConversation(userId, "checkout_completed");
 }

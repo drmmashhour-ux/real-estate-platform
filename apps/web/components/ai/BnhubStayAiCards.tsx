@@ -28,7 +28,7 @@ export function BnhubStayAiCards({ listing }: { listing: BnhubAiListingContext }
 
   return (
     <div className="mt-4 space-y-4 border-t border-slate-800 pt-4">
-      <p className="text-xs font-semibold uppercase tracking-wide text-emerald-500/90">BNHub AI</p>
+      <p className="text-xs font-semibold uppercase tracking-wide text-emerald-500/90">BNHUB AI</p>
       <HubAiInsightWidget
         hub="bnhub"
         feature="guest_match"

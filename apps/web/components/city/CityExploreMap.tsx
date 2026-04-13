@@ -10,7 +10,7 @@ type Props = {
 };
 
 /**
- * BNHub map with markers vs price-intensity (heatmap-style circles).
+ * BNHUB map with markers vs price-intensity (heatmap-style circles).
  */
 export function CityExploreMap({ listings, cityLabel }: Props) {
   const [mode, setMode] = useState<MapDisplayMode>("markers");

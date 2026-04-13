@@ -1,5 +1,5 @@
 /**
- * Heatmap data for visualization – demand, price, rent, BNHub revenue by region.
+ * Heatmap data for visualization – demand, price, rent, BNHUB revenue by region.
  */
 
 import { prisma } from "@/lib/db";

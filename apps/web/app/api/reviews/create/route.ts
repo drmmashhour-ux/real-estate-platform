@@ -4,7 +4,7 @@ import { getMobileAuthUser } from "@/lib/mobile/mobileAuth";
 import { createSupabaseGuestReview } from "@/lib/reviews/create-supabase-guest-review";
 
 /**
- * POST /api/reviews/create — BNHub review (guest email + paid stay; optional account link via Bearer).
+ * POST /api/reviews/create — BNHUB review (guest email + paid stay; optional account link via Bearer).
  */
 export async function POST(req: NextRequest) {
   let body: Record<string, unknown>;

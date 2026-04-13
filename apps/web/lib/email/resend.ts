@@ -20,9 +20,9 @@ export function isResendConfigured(): boolean {
   return Boolean(process.env.RESEND_API_KEY && process.env.RESEND_API_KEY !== "your_key");
 }
 
-/** From address: use EMAIL_FROM (e.g. "LECIPM <dr.m.mashhour@gmail.com>"). */
+/** From address: `EMAIL_FROM`, or default transactional sender for LECIPM. */
 export function getFromEmail(): string {
-  return process.env.EMAIL_FROM || "onboarding@resend.dev";
+  return process.env.EMAIL_FROM?.trim() || "LECIPM <info@lecipm.com>";
 }
 
 /** Company reply-to address for client-facing emails (replies from client come here). */

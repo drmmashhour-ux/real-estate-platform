@@ -20,6 +20,10 @@ vi.mock("@/lib/referrals", () => ({
   ensureReferralCode: vi.fn().mockResolvedValue(undefined),
 }));
 
+vi.mock("@/lib/observability", () => ({
+  recordPlatformEvent: vi.fn().mockResolvedValue(undefined),
+}));
+
 import { prisma } from "@/lib/db";
 import { verifyPassword } from "@/lib/auth/password";
 

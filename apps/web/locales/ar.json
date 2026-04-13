@@ -75,7 +75,7 @@
   },
   "bookings": {
     "requestSent": "تم إرسال الطلب — بانتظار موافقة المضيف",
-    "payToConfirm": "ادفع لتأكيد الحجز",
+    "payToConfirm": "تأمين حجزك",
     "manualPaymentTitle": "رتّب الدفع مع المضيف",
     "manualPaymentBody": "الدفع الإلكتروني غير مفعّل لهذا السوق. نسّق الدفع مباشرة مع المضيف. سيؤكد المضيف بعد استلام الدفع.",
     "hostMarkPaymentReceived": "تسجيل استلام الدفع",
@@ -86,7 +86,7 @@
     "statusManualFailed": "فشل الدفع (يدوي)",
     "contactHost": "مراسلة المضيف",
     "askQuestion": "اطرح سؤالاً",
-    "oneStepToConfirm": "خطوة واحدة للتأكيد",
+    "oneStepToConfirm": "مراجعة الحجز",
     "totalDue": "المستحق الإجمالي · يشمل الضرائب والرسوم عند الاقتضاء"
   },
   "host": {

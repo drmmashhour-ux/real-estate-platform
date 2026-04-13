@@ -4,6 +4,7 @@ import {
   FSBO_ALLOWED_IMAGE_MIME,
   FSBO_MAX_IMAGE_BYTES,
 } from "@/lib/fsbo/media-config";
+import { assessListingPhotoForPropertyUse } from "@/lib/fsbo/assess-listing-photo-relevance";
 import { uploadFsboListingImage } from "@/lib/fsbo/upload-fsbo-listing-image";
 import { requireContentLicenseAccepted } from "@/lib/legal/content-license-enforcement";
 import { getFsboMaxPhotosForSellerPlan } from "@/lib/fsbo/photo-limits";
@@ -27,7 +28,7 @@ export async function POST(
 
   const listing = await prisma.fsboListing.findUnique({
     where: { id },
-    select: { ownerId: true, status: true, images: true },
+    select: { ownerId: true, status: true, images: true, propertyType: true },
   });
   if (!listing || listing.ownerId !== userId) {
     return Response.json({ error: "Not found" }, { status: 404 });
@@ -96,12 +97,23 @@ export async function POST(
 
   try {
     const { buffer: finalBuffer, contentType } = await resolveImage();
-    const { url } = await uploadFsboListingImage({
+    const existingImages = Array.isArray(listing.images) ? (listing.images as string[]) : [];
+    const relevance = await assessListingPhotoForPropertyUse(finalBuffer, {
+      propertyType: listing.propertyType,
+      role: existingImages.length === 0 ? "cover" : "additional",
+    });
+    if (!relevance.ok) {
+      return Response.json({ error: relevance.userMessage }, { status: 400 });
+    }
+    const up = await uploadFsboListingImage({
       listingId: id,
       buffer: finalBuffer,
       contentType,
     });
-    return Response.json({ url });
+    if ("error" in up) {
+      return Response.json({ error: up.error }, { status: up.status ?? 400 });
+    }
+    return Response.json({ url: up.url });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Upload failed";
     if (message === "Unsupported image format") {

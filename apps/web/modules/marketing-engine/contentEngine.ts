@@ -22,7 +22,7 @@ export function generatePropertyHighlights(input: {
   const path = input.listingPath?.trim() || "/buy";
   const url = `${APP_URL()}${path.startsWith("/") ? path : `/${path}`}`;
   return [
-    `${title} in ${city} — verified presentation, clear pricing context, and BNHub-compatible travel demand signals on LECIPM.`,
+    `${title} in ${city} — verified presentation, clear pricing context, and BNHUB-compatible travel demand signals on LECIPM.`,
     `Browse similar homes and short stays in one stack: ${url}`,
     `Tip: compare carrying costs vs. flexible stays before you lock a closing date.`,
   ].join("\n\n");
@@ -60,7 +60,7 @@ export function generateMarketUpdate(citySlug: GrowthCitySlug): string {
   return [
     `Market update — ${name} — ${week} (UTC)`,
     `Buyer demand: ${d.blockBestProperties.slice(0, 380)}${d.blockBestProperties.length > 380 ? "…" : ""}`,
-    `Listing discovery: ${APP_URL()}/city/${citySlug} · FSBO + BNHub inventory refreshes daily.`,
+    `Listing discovery: ${APP_URL()}/city/${citySlug} · FSBO + BNHUB inventory refreshes daily.`,
     `Run ID: ${randomUUID().slice(0, 8)}`,
   ].join("\n\n");
 }

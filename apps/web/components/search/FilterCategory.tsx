@@ -34,22 +34,27 @@ export function FilterCategory({ title, defaultOpen = false, children, variant =
     );
   }
 
-  const border = variant === "slate" ? "border-slate-700/80" : "border-white/10";
-  const summaryText = variant === "slate" ? "text-slate-100" : "text-white";
-  const chevron = "text-slate-500";
+  const border = variant === "slate" ? "border-premium-gold/20" : "border-white/10";
+  const summaryText = variant === "slate" ? "text-premium-gold" : "text-white";
+  const chevron = variant === "slate" ? "text-premium-gold/60" : "text-slate-500";
+  const cardSurface =
+    variant === "slate"
+      ? "bg-black/25 open:bg-premium-gold/[0.04]"
+      : "bg-white/[0.02] open:bg-white/[0.04]";
 
   return (
-    <details
-      open={defaultOpen}
-      className={`group rounded-xl border ${border} bg-white/[0.02] open:bg-white/[0.04]`}
-    >
+    <details open={defaultOpen} className={`group rounded-xl border ${border} ${cardSurface}`}>
       <summary
         className={`flex cursor-pointer list-none items-center justify-between gap-2 px-3 py-2.5 text-sm font-semibold ${summaryText} [&::-webkit-details-marker]:hidden`}
       >
         {title}
         <span className={`text-xs transition group-open:rotate-180 ${chevron}`}>▾</span>
       </summary>
-      <div className="border-t border-white/5 px-3 pb-3 pt-2">{children}</div>
+      <div
+        className={`border-t px-3 pb-3 pt-2 ${variant === "slate" ? "border-premium-gold/10" : "border-white/5"}`}
+      >
+        {children}
+      </div>
     </details>
   );
 }

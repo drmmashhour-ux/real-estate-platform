@@ -88,7 +88,7 @@ export const DEFAULT_CONTRACT_TEMPLATES: ContractTemplateRecord[] = [
   },
   {
     contractType: MARKETPLACE_CONTRACT_TYPES.HOST_AGREEMENT,
-    name: "BNHub host agreement (structured metadata)",
+    name: "BNHUB host agreement (structured metadata)",
     definition: hostAgreementDefinition(),
   },
 ];

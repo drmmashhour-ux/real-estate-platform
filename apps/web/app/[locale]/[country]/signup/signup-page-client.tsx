@@ -1,0 +1,73 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
+import { PLATFORM_NAME, platformBrandGoldTextClass } from "@/lib/brand/platform";
+import { AuthAccountValueCallout } from "@/components/auth/AuthAccountValueCallout";
+import { SignupAccountClient } from "@/components/auth/SignupAccountClient";
+import { track } from "@/lib/tracking";
+import { VIRAL_REF_COOKIE } from "@/lib/referrals/viral";
+
+function readViralRefCookie(): string {
+  if (typeof document === "undefined") return "";
+  const m = document.cookie.match(new RegExp(`(?:^|; )${encodeURIComponent(VIRAL_REF_COOKIE)}=([^;]*)`));
+  return m?.[1] ? decodeURIComponent(m[1]) : "";
+}
+
+const ACQUISITION_SRC = new Set(["tiktok", "instagram", "facebook", "outreach"]);
+
+export function SignupPageClient({ refCode, acquisitionSrc = "" }: { refCode: string; acquisitionSrc?: string }) {
+  const tAuth = useTranslations("auth");
+  const [cookieRef, setCookieRef] = useState("");
+  useEffect(() => {
+    setCookieRef(readViralRefCookie());
+  }, []);
+  const effectiveRef = useMemo(() => refCode.trim() || cookieRef.trim(), [refCode, cookieRef]);
+  const normalizedSrc = ACQUISITION_SRC.has(acquisitionSrc) ? acquisitionSrc : "";
+  useEffect(() => {
+    track("conversion_track", { meta: { event: "signup_started" } });
+  }, []);
+  return (
+    <main className="mx-auto max-w-2xl p-6 text-white">
+      <section className="rounded-2xl border border-premium-gold/25 bg-[#0B0B0B] p-6">
+        <p className={`text-xs font-semibold uppercase tracking-[0.2em] ${platformBrandGoldTextClass}`}>{PLATFORM_NAME}</p>
+        <h1 className="mt-2 text-3xl font-bold">Create your account</h1>
+        <p className="mt-2 text-sm font-medium text-[#C4B5A0]">{tAuth("signupBookingLeadIn")}</p>
+        {effectiveRef ? (
+          <p className="mt-3 text-sm text-premium-gold">You were invited by a partner.</p>
+        ) : (
+          <p className="mt-3 text-sm text-[#9CA3AF]">
+            Email and password only. Confirm via the link we send, then sign in — you can finish profile details from the
+            dashboard.
+          </p>
+        )}
+        <p className="mt-2 text-xs text-[#6B7280]">{tAuth("signupGoogleSoon")}</p>
+        <AuthAccountValueCallout variant="signup" />
+        <SignupAccountClient referralRef={effectiveRef} acquisitionSrc={normalizedSrc} />
+
+        <div className="mt-6 border-t border-white/10 pt-6 text-center text-sm text-[#9CA3AF]">
+          Already have an account?{" "}
+          <Link href="/auth/login?next=/dashboard" className="font-semibold text-premium-gold hover:underline">
+            Sign in
+          </Link>
+        </div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <Link
+            href="/onboarding"
+            onClick={() => track("conversion_track", { meta: { event: "signup_skip_to_onboarding" } })}
+            className="rounded-xl border border-premium-gold/40 bg-premium-gold/5 px-4 py-3 text-center text-sm font-semibold text-premium-gold transition hover:border-premium-gold/60 hover:bg-premium-gold/10"
+          >
+            Skip to onboarding
+          </Link>
+          <Link
+            href="/projects"
+            className="rounded-xl border border-premium-gold/40 bg-premium-gold/5 px-4 py-3 text-center text-sm font-semibold text-premium-gold transition hover:border-premium-gold/60 hover:bg-premium-gold/10"
+          >
+            Explore projects
+          </Link>
+        </div>
+      </section>
+    </main>
+  );
+}

@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
-/** BNHub guest payment rows — host payout scheduling & holds. */
+/** BNHUB guest payment rows — host payout scheduling & holds. */
 export async function GET(request: NextRequest) {
   const userId = await getGuestId();
   if (!userId) return NextResponse.json({ error: "Sign in required" }, { status: 401 });

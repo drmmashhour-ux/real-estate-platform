@@ -1,5 +1,5 @@
 /**
- * BNHub dashboard — sections resolved via registry + roles.
+ * BNHUB dashboard — sections resolved via registry + roles.
  */
 
 import { getHubConfig } from "@/lib/hub/core/hub-registry";

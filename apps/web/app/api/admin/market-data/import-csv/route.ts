@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getGuestId } from "@/lib/auth/session";
+import { scanBufferBeforeStorage } from "@/lib/security/malware-scan";
+
+const CSV_IMPORT_MAX_BYTES = 8 * 1024 * 1024;
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +30,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Missing file field" }, { status: 400 });
   }
 
-  const text = await file.text();
+  const buf = Buffer.from(await file.arrayBuffer());
+  if (buf.length > CSV_IMPORT_MAX_BYTES) {
+    return NextResponse.json({ error: "CSV file too large (max 8MB)" }, { status: 413 });
+  }
+  const scan = await scanBufferBeforeStorage({
+    bytes: buf,
+    mimeType: "text/csv",
+    context: "admin_market_data_csv",
+  });
+  if (!scan.ok) {
+    return NextResponse.json({ error: scan.userMessage }, { status: scan.status ?? 422 });
+  }
+
+  const text = buf.toString("utf8");
   const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
   if (lines.length < 2) {
     return NextResponse.json({ error: "CSV must have header and at least one row" }, { status: 400 });

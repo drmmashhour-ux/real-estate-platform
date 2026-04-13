@@ -6,16 +6,17 @@
 export type HubLink = { href: string; label: string; hint?: string };
 
 export const HUB_LINKS_PUBLIC: HubLink[] = [
-  { href: "/listings", label: "Buy hub", hint: "Search listings" },
+  { href: "/demos", label: "Demos & tours", hint: "Try the platform" },
+  { href: "/listings?mapLayout=map", label: "Buy hub", hint: "Map search" },
   { href: "/sell", label: "Seller hub", hint: "FSBO & seller tools" },
-  { href: "/bnhub", label: "BNHub", hint: "Short-term stays" },
-  { href: "/bnhub/stays", label: "Find a stay", hint: "Guest search" },
+  { href: "/bnhub", label: "BNHUB", hint: "Short-term stays" },
+  { href: "/bnhub/stays?mapLayout=map", label: "Find a stay", hint: "Map search" },
   { href: "/mortgage", label: "Mortgage hub", hint: "Financing & experts" },
 ];
 
 export const HUB_LINKS_TOOLS: HubLink[] = [
   { href: "/analyze", label: "Analyze a property", hint: "AI insights" },
-  { href: "/search/bnhub", label: "Smart BNHub search", hint: "AI-ranked stays" },
+  { href: "/search/bnhub", label: "Smart BNHUB search", hint: "AI-ranked stays" },
   { href: "/tools/deal-analyzer", label: "Deal analyzer", hint: "Tools" },
 ];
 
@@ -24,7 +25,7 @@ export const HUB_LINKS_DASHBOARDS: HubLink[] = [
   { href: "/dashboard", label: "Main dashboard", hint: "Portfolio & hub" },
   { href: "/dashboard/buyer", label: "Buyer dashboard", hint: "" },
   { href: "/dashboard/seller", label: "Seller dashboard", hint: "" },
-  { href: "/dashboard/bnhub", label: "BNHub host hub", hint: "" },
+  { href: "/dashboard/bnhub", label: "BNHUB host hub", hint: "" },
   { href: "/dashboard/finance", label: "Finance hub", hint: "Payments & invoices" },
   { href: "/dashboard/ai", label: "AI hub", hint: "Copilot & control center" },
   { href: "/broker/dashboard", label: "Broker dashboard", hint: "CRM & pipeline" },
@@ -36,9 +37,10 @@ export const HUB_LINKS_ADMIN: HubLink[] = [{ href: "/admin", label: "Admin conso
 
 /** Short list for marketing footer — mirrors the Hubs menu. */
 export const HUB_LINKS_FOOTER: HubLink[] = [
-  { href: "/listings", label: "Buy hub" },
+  { href: "/demos", label: "Demos & tours", hint: "Guided" },
+  { href: "/listings?mapLayout=map", label: "Buy hub" },
   { href: "/sell", label: "Seller hub" },
-  { href: "/bnhub", label: "BNHub" },
+  { href: "/bnhub", label: "BNHUB" },
   { href: "/mortgage", label: "Mortgage hub" },
   { href: "/dashboard/finance", label: "Finance hub", hint: "Sign in" },
   { href: "/analyze", label: "AI analysis" },

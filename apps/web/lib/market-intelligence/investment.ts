@@ -1,5 +1,5 @@
 /**
- * Investment opportunity scoring – per property in a region using price/rent/BNHub/demand signals.
+ * Investment opportunity scoring – per property in a region using price/rent/BNHUB/demand signals.
  */
 
 import { prisma } from "@/lib/db";

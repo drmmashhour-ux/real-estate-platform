@@ -86,7 +86,7 @@ export async function GET(request: NextRequest) {
     rows.push({
       sortAt: p.updatedAt,
       source: "payment_link",
-      label: `Linked BNHub payment (${p.status})`,
+      label: `Linked BNHUB payment (${p.status})`,
       detail: { paymentId: p.id, bookingId: p.bookingId },
     });
   }

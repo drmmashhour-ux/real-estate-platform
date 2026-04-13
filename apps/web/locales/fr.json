@@ -75,7 +75,7 @@
   },
   "bookings": {
     "requestSent": "Demande envoyée — en attente de l’approbation de l’hôte",
-    "payToConfirm": "Payez pour confirmer",
+    "payToConfirm": "Sécuriser votre réservation",
     "manualPaymentTitle": "Organiser le paiement avec l’hôte",
     "manualPaymentBody": "Le paiement en ligne n’est pas activé pour ce marché. Coordonnez le paiement directement avec votre hôte. Il confirmera une fois le paiement reçu.",
     "hostMarkPaymentReceived": "Marquer le paiement comme reçu",
@@ -86,7 +86,7 @@
     "statusManualFailed": "Paiement manuel échoué",
     "contactHost": "Écrire à l’hôte",
     "askQuestion": "Poser une question",
-    "oneStepToConfirm": "Une étape pour confirmer",
+    "oneStepToConfirm": "Examiner la réservation",
     "totalDue": "Total dû · taxes et frais le cas échéant"
   },
   "host": {

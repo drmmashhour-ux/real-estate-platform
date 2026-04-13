@@ -1,4 +1,4 @@
-/** Internal connector codes — real BNHub-side behavior (measured on platform). */
+/** Internal connector codes — real BNHUB-side behavior (measured on platform). */
 export const BNHUB_INTERNAL_CONNECTOR_CODES = [
   "internal_homepage",
   "internal_search_boost",
@@ -27,7 +27,7 @@ export const GROWTH_AUTONOMY_LABELS: Record<string, string> = {
 };
 
 export const METRIC_ATTRIBUTION_LABELS = {
-  internalMeasured: "Internal — measured on BNHub",
+  internalMeasured: "Internal — measured on BNHUB",
   connectorSynced: "Connector — synced from ad platform",
   estimated: "Estimated / model attribution",
   mockExternal: "Mock / pending external API",

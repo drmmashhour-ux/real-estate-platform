@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import HeaderClient from "./HeaderClient";
+import { isSelfContainedToolChromePath } from "@/lib/layout/self-contained-tool-paths";
 import { isInvestmentShellPath } from "@/lib/product-focus";
 
 /**
@@ -31,6 +32,11 @@ export function HeaderGate() {
 
   /** Admin uses its own shell; global marketing header overlaps nav and confuses clicks. */
   if (pathname?.startsWith("/admin")) {
+    return null;
+  }
+
+  /** ToolShell pages ship a unified LECIPM header (logo + title); skip the global bar. */
+  if (isSelfContainedToolChromePath(pathname)) {
     return null;
   }
 

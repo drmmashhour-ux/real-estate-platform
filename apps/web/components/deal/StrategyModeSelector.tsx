@@ -4,7 +4,7 @@ const OPTIONS: { value: string; label: string }[] = [
   { value: "buy_to_live", label: "Buy to live" },
   { value: "buy_to_rent", label: "Buy to rent" },
   { value: "buy_to_flip", label: "Buy to flip" },
-  { value: "buy_for_bnhub", label: "Buy for BNHub" },
+  { value: "buy_for_bnhub", label: "Buy for BNHUB" },
   { value: "hold_long_term", label: "Hold long term" },
 ];
 

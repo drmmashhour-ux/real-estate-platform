@@ -28,7 +28,7 @@ export function PricingCard({
         <button
           type="button"
           onClick={onSelect}
-          className="mt-4 w-full rounded-lg bg-premium-gold py-2 text-sm font-semibold text-black hover:brightness-110"
+          className="mt-4 w-full rounded-xl bg-premium-gold py-2 text-sm font-semibold text-black transition-all duration-150 hover:brightness-105 hover:scale-[1.01] active:scale-[0.98] active:brightness-100 disabled:pointer-events-none disabled:opacity-50 disabled:hover:scale-100"
         >
           {ctaLabel}
         </button>

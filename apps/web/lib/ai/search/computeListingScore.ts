@@ -1,5 +1,5 @@
 /**
- * BNHub AI search — weighted listing score with fairness caps and small jitter.
+ * BNHUB AI search — weighted listing score with fairness caps and small jitter.
  */
 
 import type { ListingSearchMetrics, UserSearchProfile } from "@prisma/client";

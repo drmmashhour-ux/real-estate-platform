@@ -1,5 +1,5 @@
 /**
- * Optional demo rows for BNHub mobile + safety engine.
+ * Optional demo rows for BNHUB mobile + safety engine.
  * Run: npx tsx prisma/seed-bnhub-mobile-demo.ts
  * Requires existing published `ShortTermListing` rows.
  */
@@ -14,7 +14,7 @@ async function main() {
     take: 8,
   });
   if (listings.length === 0) {
-    console.log("No published listings — skip BNHub mobile demo seed.");
+    console.log("No published listings — skip BNHUB mobile demo seed.");
     return;
   }
 
@@ -85,7 +85,7 @@ async function main() {
     });
   }
 
-  console.log("BNHub mobile demo safety profiles upserted.");
+  console.log("BNHUB mobile demo safety profiles upserted.");
 }
 
 main()

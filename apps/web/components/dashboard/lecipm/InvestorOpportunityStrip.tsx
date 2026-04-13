@@ -34,7 +34,7 @@ export function InvestorOpportunityStrip({ opportunities, watchlist, risk, bnhub
       {col("Top opportunities", opportunities)}
       {col("Watchlist changes", watchlist)}
       {col("Risk increases", risk)}
-      {col("BNHub candidates", bnhub)}
+      {col("BNHUB candidates", bnhub)}
     </div>
   );
 }

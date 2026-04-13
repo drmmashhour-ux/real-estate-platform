@@ -65,9 +65,26 @@ export function HostMyListingsClient({ listings }: { listings: HostListingRow[] 
   return (
     <div className="space-y-4">
       {listings.length === 0 ? (
-        <p className="rounded-2xl border border-white/10 bg-white/5 p-8 text-center text-slate-400">
-          No listings yet. Create one in about two minutes.
-        </p>
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-8 text-center">
+          <p className="font-medium text-white">No published stays yet</p>
+          <p className="mt-2 text-sm text-slate-400">
+            Create a draft, add photos and pricing, then submit for review — most hosts finish in a few minutes.
+          </p>
+          <div className="mt-6 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:flex-wrap sm:justify-center">
+            <Link
+              href="/host/listings/new"
+              className="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-slate-950 hover:bg-emerald-400"
+            >
+              Create a listing
+            </Link>
+            <Link
+              href="/bnhub/stays"
+              className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-white/15 px-5 py-2.5 text-sm font-medium text-slate-300 hover:border-emerald-400/40 hover:text-white"
+            >
+              See guest search
+            </Link>
+          </div>
+        </div>
       ) : (
         <ul className="space-y-3">
           {listings.map((l) => (

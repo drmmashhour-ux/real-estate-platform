@@ -7,7 +7,7 @@ export type ListingRatingSummary = {
 };
 
 /**
- * Aggregate guest reviews for a BNHub stay (demand-side trust signal).
+ * Aggregate guest reviews for a BNHUB stay (demand-side trust signal).
  */
 export async function getListingRatingSummary(listingId: string): Promise<ListingRatingSummary> {
   const agg = await prisma.review.aggregate({

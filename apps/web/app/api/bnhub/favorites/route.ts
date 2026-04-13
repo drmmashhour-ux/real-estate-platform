@@ -6,7 +6,7 @@ import { trackSearchEvent } from "@/lib/ai/search/trackSearchEvent";
 
 export const dynamic = "force-dynamic";
 
-/** Web session — list BNHub saved stays (Prisma listing ids). */
+/** Web session — list BNHUB saved stays (Prisma listing ids). */
 export async function GET() {
   const userId = await getGuestId();
   if (!userId) {

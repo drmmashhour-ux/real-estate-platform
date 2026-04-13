@@ -1,0 +1,34 @@
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/db";
+import { requireListingOwnerOrAdmin } from "@/lib/autopilot/listing-guard";
+
+export const dynamic = "force-dynamic";
+
+export async function GET(_req: Request, ctx: { params: Promise<{ listingId: string }> }) {
+  const { listingId } = await ctx.params;
+  const gate = await requireListingOwnerOrAdmin(listingId);
+  if (!gate.ok) {
+    return NextResponse.json({ error: gate.error }, { status: gate.status });
+  }
+
+  const [pending, recentRuns, audits] = await Promise.all([
+    prisma.listingOptimizationSuggestion.findMany({
+      where: { listingId, status: { in: ["suggested", "approved"] } },
+      orderBy: { createdAt: "desc" },
+      take: 40,
+    }),
+    prisma.listingOptimizationRun.findMany({
+      where: { listingId },
+      orderBy: { createdAt: "desc" },
+      take: 8,
+      select: { id: true, status: true, summary: true, createdAt: true },
+    }),
+    prisma.listingOptimizationAudit.findMany({
+      where: { listingId },
+      orderBy: { createdAt: "desc" },
+      take: 25,
+    }),
+  ]);
+
+  return NextResponse.json({ pending, recentRuns, audits });
+}

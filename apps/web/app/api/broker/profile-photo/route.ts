@@ -3,6 +3,7 @@ import { mkdir, writeFile } from "fs/promises";
 import path from "path";
 import { prisma } from "@/lib/db";
 import { getMortgageBrokerOwnerSession } from "@/modules/mortgage/services/mortgage-broker-owner-session";
+import { scanBufferBeforeStorage } from "@/lib/security/malware-scan";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -40,6 +41,15 @@ export async function POST(req: Request) {
   const buf = Buffer.from(await file.arrayBuffer());
   if (buf.length > MAX_BYTES) {
     return NextResponse.json({ error: "Image too large (max 2.5 MB)" }, { status: 400 });
+  }
+
+  const scan = await scanBufferBeforeStorage({
+    bytes: buf,
+    mimeType: mime,
+    context: "mortgage_broker_profile_photo",
+  });
+  if (!scan.ok) {
+    return NextResponse.json({ error: scan.userMessage }, { status: scan.status ?? 422 });
   }
 
   const ext = extFromMime(mime);

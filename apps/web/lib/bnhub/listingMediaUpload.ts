@@ -1,5 +1,7 @@
 import { randomUUID } from "crypto";
 import { getSupabaseServiceForGuestBookings } from "@/lib/stripe/guestSupabaseBooking";
+import { isAllowedListingImageMime, LISTING_IMAGE_MAX_BYTES } from "@/lib/security/upload-policy";
+import { scanBufferBeforeStorage } from "@/lib/security/malware-scan";
 
 const BUCKET = "listing-media";
 
@@ -19,13 +21,28 @@ export async function uploadListingImageAndAttach(params: {
   listingId: string;
   bytes: Buffer;
   contentType: string;
-}): Promise<{ url: string; imageId: string } | { error: string }> {
+}): Promise<{ url: string; imageId: string } | { error: string; status?: number }> {
   const { listingId, bytes, contentType } = params;
   if (!listingId.trim()) {
     return { error: "listingId is required." };
   }
-  if (!contentType.toLowerCase().startsWith("image/")) {
-    return { error: "Only image uploads are allowed." };
+  if (!isAllowedListingImageMime(contentType)) {
+    return { error: "Only JPEG, PNG, WebP, or GIF images are allowed." };
+  }
+  if (bytes.length > LISTING_IMAGE_MAX_BYTES) {
+    return { error: `Image must be under ${LISTING_IMAGE_MAX_BYTES / 1024 / 1024} MB.` };
+  }
+  if (bytes.length === 0) {
+    return { error: "Empty file." };
+  }
+
+  const scan = await scanBufferBeforeStorage({
+    bytes,
+    mimeType: contentType,
+    context: "bnhub_listing_image",
+  });
+  if (!scan.ok) {
+    return { error: scan.userMessage, status: scan.status };
   }
 
   const sb = getSupabaseServiceForGuestBookings();

@@ -32,16 +32,21 @@ export async function POST(req: NextRequest) {
 
   const urls: string[] = [];
   const errors: string[] = [];
+  let allFailedStatus = 400;
   for (const file of files) {
     const contentType = file.type || "image/jpeg";
     const buf = Buffer.from(await file.arrayBuffer());
     const r = await uploadStayListingImagePublicUrl({ listingId, bytes: buf, contentType });
-    if ("error" in r) errors.push(r.error);
-    else urls.push(r.url);
+    if ("error" in r) {
+      errors.push(r.error);
+      if (errors.length === 1 && r.status) allFailedStatus = r.status;
+    } else {
+      urls.push(r.url);
+    }
   }
 
   if (!urls.length) {
-    return Response.json({ error: errors[0] ?? "Upload failed" }, { status: 400 });
+    return Response.json({ error: errors[0] ?? "Upload failed", errors }, { status: allFailedStatus });
   }
   return Response.json({ urls, errors: errors.length ? errors : undefined });
 }

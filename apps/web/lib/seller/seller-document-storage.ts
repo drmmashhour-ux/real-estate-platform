@@ -2,6 +2,7 @@ import { mkdir, unlink, writeFile } from "fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
+import { scanBufferBeforeStorage } from "@/lib/security/malware-scan";
 
 /** Max 10MB per file (product requirement). */
 export const SELLER_DOC_MAX_BYTES = 10 * 1024 * 1024;
@@ -56,6 +57,15 @@ export async function uploadSellerDocumentToStorage(params: {
   }
   const ext = sellerDocExtension(contentType);
   if (!ext) throw new Error("Unsupported file type");
+
+  const scan = await scanBufferBeforeStorage({
+    bytes: buffer,
+    mimeType: contentType,
+    context: "seller_supporting_document",
+  });
+  if (!scan.ok) {
+    throw new Error(scan.userMessage);
+  }
 
   const storedFileName = `${randomUUID()}.${ext}`;
   const storagePath = `${userId}/${fsboListingId}/${storedFileName}`;

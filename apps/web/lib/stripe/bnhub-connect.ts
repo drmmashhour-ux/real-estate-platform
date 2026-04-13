@@ -1,5 +1,5 @@
 /**
- * BNHub short-term rental commission — single platform fee model.
+ * BNHUB short-term rental commission — single platform fee model.
  *
  * - Guest pays `totalAmountCents`.
  * - `platformFeeCents = round(totalAmountCents * commissionRate)` (default rate 15%).

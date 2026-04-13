@@ -55,7 +55,7 @@ export async function getCeoDashboardPayload(): Promise<CeoDashboardPayload> {
   ]);
 
   const premiumRecs = [
-    { product: "BNHub host boost", rationale: "Surface triple-verified stays in high-view corridors." },
+    { product: "BNHUB host boost", rationale: "Surface triple-verified stays in high-view corridors." },
     { product: "Broker workspace seats", rationale: "Attach CRM automation to active lead funnels." },
     { product: "Expert mortgage unlocks", rationale: "Convert warm listing viewers with pre-approval nudges." },
   ];
