@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="800"
+  height="800"
+  viewBox="0 0 800 800"
+  role="img"
+  aria-labelledby="title desc"
+>
+  <title id="title">Download Icon</title>
+  <desc id="desc">A rounded square with a stylized download arrow.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f97316" />
+      <stop offset="100%" stop-color="#ea580c" />
+    </linearGradient>
+  </defs>
+
+  <rect x="70" y="70" width="660" height="660" rx="110" fill="url(#bg)" />
+
+  <path
+    d="M400 190c22.091 0 40 17.909 40 40v205.431l65.716-65.715c15.621-15.621 40.947-15.621 56.568 0s15.621 40.947 0 56.568L428.284 560.284c-15.621 15.621-40.947 15.621-56.568 0L237.716 426.284c-15.621-15.621-15.621-40.947 0-56.568s40.947-15.621 56.568 0L360 435.431V230c0-22.091 17.909-40 40-40z"
+    fill="#ffffff"
+  />
+
+  <rect x="220" y="595" width="360" height="55" rx="27.5" fill="#ffffff" />
+</svg>

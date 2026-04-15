@@ -1,0 +1,44 @@
+%!PS-Adobe-3.0 EPSF-3.0
+%%Creator: Cursor Cloud Agent
+%%Title: Ex_4_YourName.ai
+%%BoundingBox: 0 0 1000 800
+%%HiResBoundingBox: 0 0 1000 800
+%%LanguageLevel: 2
+%%Pages: 1
+%%EndComments
+
+/drawRect {
+  /h exch def /w exch def /y exch def /x exch def
+  newpath
+  x y moveto
+  w 0 rlineto
+  0 h rlineto
+  w neg 0 rlineto
+  closepath
+} def
+
+gsave
+% Background
+1.0 0.97 0.93 setrgbcolor
+0 0 1000 800 drawRect fill
+
+% Overlapping circles (ellipse/shape-builder style exercise)
+0.96 0.45 0.09 setrgbcolor
+newpath 370 360 190 0 360 arc closepath fill
+
+0.98 0.58 0.24 setrgbcolor
+newpath 500 280 190 0 360 arc closepath fill
+
+0.99 0.72 0.45 setrgbcolor
+newpath 630 360 190 0 360 arc closepath fill
+
+0.92 0.34 0.05 setrgbcolor
+newpath 500 470 190 0 360 arc closepath fill
+
+% Cutout ring center
+1.0 0.97 0.93 setrgbcolor
+newpath 500 420 110 0 360 arc closepath fill
+
+grestore
+showpage
+%%EOF

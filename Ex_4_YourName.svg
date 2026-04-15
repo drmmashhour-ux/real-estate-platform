@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="1000"
+  height="800"
+  viewBox="0 0 1000 800"
+  role="img"
+  aria-labelledby="title desc"
+>
+  <title id="title">Exercise 4 - Shape Builder Practice</title>
+  <desc id="desc">Overlapping circles merged into a decorative shape.</desc>
+
+  <rect width="1000" height="800" fill="#fff7ed" />
+
+  <g opacity="0.3">
+    <ellipse cx="370" cy="360" rx="190" ry="190" fill="#f97316" />
+    <ellipse cx="500" cy="280" rx="190" ry="190" fill="#fb923c" />
+    <ellipse cx="630" cy="360" rx="190" ry="190" fill="#fdba74" />
+    <ellipse cx="500" cy="470" rx="190" ry="190" fill="#ea580c" />
+  </g>
+
+  <path
+    d="M500 140
+       C650 140, 790 270, 790 420
+       C790 570, 650 700, 500 700
+       C350 700, 210 570, 210 420
+       C210 270, 350 140, 500 140 Z
+       M500 235
+       C400 235, 315 320, 315 420
+       C315 520, 400 605, 500 605
+       C600 605, 685 520, 685 420
+       C685 320, 600 235, 500 235 Z"
+    fill="#9a3412"
+    fill-rule="evenodd"
+  />
+
+  <circle cx="500" cy="420" r="110" fill="#ffedd5" />
+</svg>
