@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="800" height="500">
+  <g id="bird" transform="translate(30 10)">
+    <!-- Beak -->
+    <path
+      id="beak"
+      d="M320 180 L140 185 L320 198 Z"
+      fill="#B9B9BF"
+    />
+
+    <!-- Body construction with ellipses -->
+    <ellipse
+      id="body-base"
+      cx="365"
+      cy="205"
+      rx="58"
+      ry="54"
+      transform="rotate(-22 365 205)"
+      fill="#5B2CFF"
+    />
+    <ellipse
+      id="body-mid"
+      cx="366"
+      cy="204"
+      rx="45"
+      ry="42"
+      transform="rotate(-22 366 204)"
+      fill="#4A22E0"
+    />
+    <ellipse
+      id="body-highlight"
+      cx="378"
+      cy="191"
+      rx="21"
+      ry="18"
+      transform="rotate(-22 378 191)"
+      fill="#6F4CFF"
+    />
+
+    <!-- Head ellipse -->
+    <ellipse
+      id="head"
+      cx="372"
+      cy="194"
+      rx="26"
+      ry="24"
+      transform="rotate(-22 372 194)"
+      fill="#5D35F4"
+    />
+
+    <!-- Eye -->
+    <circle id="eye-white" cx="352" cy="187" r="6.5" fill="#FFE8A6" />
+    <circle id="eye-pupil" cx="352" cy="187" r="3.2" fill="#FF9E2A" />
+
+    <!-- Upper wing (simple leaf-like shapes) -->
+    <path
+      id="upper-wing-base"
+      d="M390 332 C468 256 520 170 620 114 C638 171 620 256 527 314 C472 348 430 350 390 332 Z"
+      fill="#F7EA45"
+    />
+    <path
+      id="upper-wing-band-1"
+      d="M392 323 C466 252 518 169 613 118 C611 140 602 162 586 186 C523 220 471 274 421 330 Z"
+      fill="#F8C64A"
+    />
+    <path
+      id="upper-wing-band-2"
+      d="M414 330 C473 270 524 217 582 183 C565 214 538 245 503 276 C476 300 445 321 414 330 Z"
+      fill="#F79C42"
+    />
+    <path
+      id="upper-wing-band-3"
+      d="M432 334 C485 286 533 240 567 209 C548 241 520 272 488 300 C467 318 448 329 432 334 Z"
+      fill="#F97A43"
+    />
+    <path
+      id="upper-wing-tip"
+      d="M503 133 C551 107 590 92 620 86 C620 110 614 132 603 153 C568 155 536 147 503 133 Z"
+      fill="#FF5F55"
+    />
+
+    <!-- Lower wing -->
+    <path
+      id="lower-wing-base"
+      d="M372 333 C344 404 321 450 277 478 C273 430 289 381 325 338 C342 319 357 320 372 333 Z"
+      fill="#0DB5C1"
+    />
+    <path
+      id="lower-wing-band-1"
+      d="M367 338 C343 398 322 442 286 467 C286 448 292 428 302 407 C327 382 347 357 367 338 Z"
+      fill="#17C8B8"
+    />
+    <path
+      id="lower-wing-band-2"
+      d="M360 345 C339 394 320 432 292 454 C295 439 301 423 311 407 C329 387 345 367 360 345 Z"
+      fill="#0DBBD2"
+    />
+    <path
+      id="lower-wing-band-3"
+      d="M351 355 C333 398 318 427 297 446 C301 431 307 417 316 403 C329 388 341 372 351 355 Z"
+      fill="#10A7E0"
+    />
+  </g>
+</svg>
