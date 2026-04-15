@@ -43,6 +43,136 @@ def add_organic_cutout(path, cx: float, cy: float, rx: float, ry: float, wobble:
     path.close()
 
 
+def organic_points(cx: float, cy: float, rx: float, ry: float, wobble: float = 0.22):
+    points = []
+    for i in range(12):
+        a = (math.pi * 2.0 * i) / 12.0
+        mod = 1 + wobble * math.sin(3 * a + 0.7) + (wobble * 0.45) * math.cos(5 * a + 1.1)
+        points.append((cx + (rx * mod) * math.cos(a), cy + (ry * mod) * math.sin(a)))
+    return points
+
+
+def svg_rounded_rect_subpath(x: float, y: float, w: float, h: float, r: float) -> str:
+    """Rounded rectangle subpath in SVG coordinates (y down)."""
+    y_top = HEIGHT - y - h
+    x0, y0 = x, y_top
+    x1, y1 = x + w, y_top + h
+    return (
+        f"M {x0 + r:.2f} {y0:.2f} "
+        f"H {x1 - r:.2f} "
+        f"A {r:.2f} {r:.2f} 0 0 1 {x1:.2f} {y0 + r:.2f} "
+        f"V {y1 - r:.2f} "
+        f"A {r:.2f} {r:.2f} 0 0 1 {x1 - r:.2f} {y1:.2f} "
+        f"H {x0 + r:.2f} "
+        f"A {r:.2f} {r:.2f} 0 0 1 {x0:.2f} {y1 - r:.2f} "
+        f"V {y0 + r:.2f} "
+        f"A {r:.2f} {r:.2f} 0 0 1 {x0 + r:.2f} {y0:.2f} Z"
+    )
+
+
+def svg_organic_subpath(cx: float, cy: float, rx: float, ry: float, wobble: float = 0.22) -> str:
+    points = organic_points(cx, cy, rx, ry, wobble)
+    coords = [f"{x:.2f} {HEIGHT - y:.2f}" for x, y in points]
+    return "M " + " L ".join(coords) + " Z"
+
+
+def generate_svg(output_path: Path):
+    left_x, left_y = 22, 18
+    left_w, left_h = WIDTH * 0.52, HEIGHT - 36
+
+    layer_specs = [
+        (left_x + 10, left_y + 16, left_w - 20, left_h - 20, (0, 0), "#93c5fd"),
+        (left_x + 24, left_y + 30, left_w - 44, left_h - 44, (-8, 10), "#a5b4fc"),
+        (left_x + 38, left_y + 44, left_w - 68, left_h - 68, (5, -6), "#c4b5fd"),
+        (left_x + 52, left_y + 58, left_w - 92, left_h - 92, (-7, -4), "#ddd6fe"),
+        (left_x + 66, left_y + 72, left_w - 116, left_h - 116, (4, 6), "#fae8ff"),
+        (left_x + 80, left_y + 86, left_w - 140, left_h - 140, (-3, -3), "#ffffff"),
+    ]
+
+    right_x = WIDTH * 0.58
+    right_w = WIDTH * 0.36
+    right_y = 24
+    right_h = HEIGHT - 48
+
+    clip_y_top = HEIGHT - left_y - left_h
+    right_outer_y_top = HEIGHT - right_y - right_h
+    right_inner_y_top = HEIGHT - (right_y + 8) - (right_h - 16)
+
+    lines = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<svg xmlns="http://www.w3.org/2000/svg" width="7in" height="5in" viewBox="0 0 504 360">',
+        "  <defs>",
+        '    <clipPath id="leftClip">',
+        f'      <rect x="{left_x:.2f}" y="{clip_y_top:.2f}" width="{left_w:.2f}" height="{left_h:.2f}" />',
+        "    </clipPath>",
+        '    <linearGradient id="panelGradient" x1="0%" y1="0%" x2="0%" y2="100%">',
+        '      <stop offset="0%" stop-color="#f3e8ff" />',
+        '      <stop offset="100%" stop-color="#c7d2fe" />',
+        "    </linearGradient>",
+        '    <filter id="paperShadow" x="-20%" y="-20%" width="160%" height="160%">',
+        '      <feDropShadow dx="3" dy="3" stdDeviation="2.2" flood-color="#000000" flood-opacity="0.22"/>',
+        "    </filter>",
+        "  </defs>",
+        '  <rect x="0" y="0" width="504" height="360" fill="#f8fafc" />',
+        f'  <g clip-path="url(#leftClip)">',
+    ]
+
+    for x, y, w, h, offset, color in layer_specs:
+        dx, dy = offset
+        cutout_cx = x + w * 0.54 + dx
+        cutout_cy = y + h * 0.52 + dy
+        cutout_rx = w * 0.22
+        cutout_ry = h * 0.27
+
+        shadow_outer = svg_rounded_rect_subpath(x + 4, y - 4, w, h, 14)
+        shadow_inner = svg_organic_subpath(cutout_cx + 4, cutout_cy - 4, cutout_rx, cutout_ry, 0.26)
+        layer_outer = svg_rounded_rect_subpath(x, y, w, h, 14)
+        layer_inner = svg_organic_subpath(cutout_cx, cutout_cy, cutout_rx, cutout_ry, 0.26)
+
+        lines.append(
+            f'    <path d="{shadow_outer} {shadow_inner}" fill="#000000" fill-opacity="0.17" fill-rule="evenodd" />'
+        )
+        lines.append(
+            f'    <path d="{layer_outer} {layer_inner}" fill="{color}" fill-rule="evenodd" filter="url(#paperShadow)" />'
+        )
+
+    lines.extend(
+        [
+            "  </g>",
+            (
+                f'  <rect x="{right_x:.2f}" y="{right_outer_y_top:.2f}" width="{right_w:.2f}" '
+                f'height="{right_h:.2f}" rx="14" fill="#e5e7eb" />'
+            ),
+            (
+                f'  <rect x="{right_x + 8:.2f}" y="{right_inner_y_top:.2f}" width="{right_w - 16:.2f}" '
+                f'height="{right_h - 16:.2f}" rx="8" fill="url(#panelGradient)" />'
+            ),
+            (
+                f'  <text x="{right_x + 22:.2f}" y="{HEIGHT - (right_y + right_h - 74):.2f}" '
+                'font-family="Helvetica, Arial, sans-serif" font-size="22" font-weight="700" fill="#1f2937">'
+                "Papercut Art</text>"
+            ),
+            (
+                f'  <text x="{right_x + 22:.2f}" y="{HEIGHT - (right_y + right_h - 98):.2f}" '
+                'font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#374151">Exercise 6</text>'
+            ),
+            (
+                f'  <text x="{right_x + 22:.2f}" y="{HEIGHT - (right_y + right_h - 116):.2f}" '
+                'font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#374151">'
+                "Vector postcard design</text>"
+            ),
+            (
+                f'  <text x="{right_x + 22:.2f}" y="{HEIGHT - (right_y + right_h - 134):.2f}" '
+                'font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#374151">'
+                "Made for Adobe Illustrator</text>"
+            ),
+            "</svg>",
+        ]
+    )
+
+    output_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
 def draw_papercut_layer(
     c: canvas.Canvas,
     x: float,
@@ -113,6 +243,7 @@ def main():
     output_dir.mkdir(parents=True, exist_ok=True)
     pdf_path = output_dir / "Exer_6_Codex.pdf"
     ai_path = output_dir / "Exer_6_Codex.ai"
+    svg_path = output_dir / "Exer_6_Codex.svg"
 
     c = canvas.Canvas(str(pdf_path), pagesize=PAGE_SIZE)
 
@@ -160,8 +291,10 @@ def main():
 
     # Illustrator can open PDF-based AI files.
     shutil.copyfile(pdf_path, ai_path)
+    generate_svg(svg_path)
     print(f"Created: {pdf_path}")
     print(f"Created: {ai_path}")
+    print(f"Created: {svg_path}")
 
 
 if __name__ == "__main__":
