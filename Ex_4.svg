@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1200" viewBox="0 0 1200 1200">
+  <rect x="0" y="0" width="1200" height="1200" fill="#f7f7f7" stroke="#d9d9d9" stroke-width="4"/>
+
+  <rect x="160" y="160" width="880" height="880" rx="44" fill="#ffffff" stroke="#333333" stroke-width="8"/>
+  <rect x="230" y="230" width="310" height="310" fill="#ff6f61" stroke="#a93b32" stroke-width="8"/>
+  <circle cx="805" cy="385" r="155" fill="#4fc3f7" stroke="#1f7aa7" stroke-width="8"/>
+
+  <path d="M230 650 L 540 650 L 385 960 Z" fill="#ffd166" stroke="#b68b2f" stroke-width="8"/>
+  <path d="M650 650 C 770 560, 920 565, 965 700 C 995 790, 945 880, 855 920 C 750 965, 635 920, 610 820 C 590 745, 610 680, 650 650 Z"
+        fill="#7bd389" stroke="#3f8b4f" stroke-width="8"/>
+
+  <path d="M255 1020 L 945 1020" fill="none" stroke="#555555" stroke-width="6"/>
+  <path d="M160 600 L 1040 600" fill="none" stroke="#c4c4c4" stroke-width="4"/>
+  <path d="M600 160 L 600 1040" fill="none" stroke="#c4c4c4" stroke-width="4"/>
+
+  <circle cx="600" cy="600" r="38" fill="#ffffff" stroke="#222222" stroke-width="6"/>
+</svg>
