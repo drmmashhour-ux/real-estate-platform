@@ -1,0 +1,233 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="11in" height="8.5in" viewBox="0 0 1100 850">
+  <defs>
+    <linearGradient id="sky-gradient" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2f0d5b"/>
+      <stop offset="52%" stop-color="#d85ea4"/>
+      <stop offset="100%" stop-color="#f28a2f"/>
+    </linearGradient>
+    <linearGradient id="ghost-gradient" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#dcd7ef"/>
+    </linearGradient>
+    <linearGradient id="pumpkin-gradient" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffa537"/>
+      <stop offset="100%" stop-color="#dc6f11"/>
+    </linearGradient>
+    <linearGradient id="cat-gradient" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1b1125"/>
+      <stop offset="100%" stop-color="#09060f"/>
+    </linearGradient>
+    <linearGradient id="glass-gradient" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#e8f7ff" stop-opacity="0.48"/>
+      <stop offset="100%" stop-color="#b9e8ff" stop-opacity="0.16"/>
+    </linearGradient>
+    <linearGradient id="potion-gradient" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#9fff73"/>
+      <stop offset="100%" stop-color="#2db649"/>
+    </linearGradient>
+    <linearGradient id="skull-gradient" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fff8de"/>
+      <stop offset="100%" stop-color="#e8dcbc"/>
+    </linearGradient>
+    <polygon id="star-shape" points="0,-12 3,-4 12,-4 5,1 8,10 0,4 -8,10 -5,1 -12,-4 -3,-4"/>
+
+    <!-- Block glyphs so the title is already outlined as vector shapes -->
+    <g id="glyph-H">
+      <rect x="0" y="0" width="14" height="90"/>
+      <rect x="56" y="0" width="14" height="90"/>
+      <rect x="0" y="38" width="70" height="14"/>
+    </g>
+    <g id="glyph-A">
+      <rect x="0" y="0" width="14" height="90"/>
+      <rect x="56" y="0" width="14" height="90"/>
+      <rect x="0" y="0" width="70" height="14"/>
+      <rect x="0" y="38" width="70" height="14"/>
+    </g>
+    <g id="glyph-P">
+      <rect x="0" y="0" width="14" height="90"/>
+      <rect x="0" y="0" width="70" height="14"/>
+      <rect x="56" y="0" width="14" height="46"/>
+      <rect x="0" y="38" width="70" height="14"/>
+    </g>
+    <g id="glyph-Y">
+      <rect x="0" y="0" width="14" height="46"/>
+      <rect x="56" y="0" width="14" height="46"/>
+      <rect x="28" y="38" width="14" height="52"/>
+    </g>
+    <g id="glyph-L">
+      <rect x="0" y="0" width="14" height="90"/>
+      <rect x="0" y="76" width="70" height="14"/>
+    </g>
+    <g id="glyph-O" fill-rule="evenodd">
+      <path d="M0,0 H70 V90 H0 Z M14,14 H56 V76 H14 Z"/>
+    </g>
+    <g id="glyph-W">
+      <rect x="0" y="0" width="12" height="90"/>
+      <rect x="58" y="0" width="12" height="90"/>
+      <rect x="22" y="36" width="12" height="54"/>
+      <rect x="36" y="36" width="12" height="54"/>
+    </g>
+    <g id="glyph-E">
+      <rect x="0" y="0" width="14" height="90"/>
+      <rect x="0" y="0" width="70" height="14"/>
+      <rect x="0" y="38" width="58" height="14"/>
+      <rect x="0" y="76" width="70" height="14"/>
+    </g>
+    <g id="glyph-N">
+      <rect x="0" y="0" width="14" height="90"/>
+      <rect x="56" y="0" width="14" height="90"/>
+      <polygon points="14,0 34,0 56,90 36,90"/>
+    </g>
+  </defs>
+
+  <g id="REFERENCE" opacity="0.3">
+    <!-- Keep this layer for manual reference placement in Illustrator if needed -->
+  </g>
+
+  <g id="BACKGROUND">
+    <rect x="0" y="0" width="1100" height="850" fill="url(#sky-gradient)"/>
+    <ellipse cx="550" cy="760" rx="620" ry="145" fill="#3d184f" opacity="0.38"/>
+
+    <g fill="#ffeaa8">
+      <use href="#star-shape" transform="translate(86 66) scale(0.82) rotate(12)"/>
+      <use href="#star-shape" transform="translate(164 120) scale(0.58) rotate(-18)"/>
+      <use href="#star-shape" transform="translate(238 82) scale(0.74) rotate(28)"/>
+      <use href="#star-shape" transform="translate(308 146) scale(0.52) rotate(-12)"/>
+      <use href="#star-shape" transform="translate(385 84) scale(0.92) rotate(5)"/>
+      <use href="#star-shape" transform="translate(452 130) scale(0.45) rotate(31)"/>
+      <use href="#star-shape" transform="translate(532 64) scale(0.7) rotate(-4)"/>
+      <use href="#star-shape" transform="translate(610 116) scale(0.55) rotate(16)"/>
+      <use href="#star-shape" transform="translate(686 82) scale(0.76) rotate(-26)"/>
+      <use href="#star-shape" transform="translate(762 144) scale(0.5) rotate(8)"/>
+      <use href="#star-shape" transform="translate(840 74) scale(0.88) rotate(20)"/>
+      <use href="#star-shape" transform="translate(928 126) scale(0.53) rotate(-11)"/>
+      <use href="#star-shape" transform="translate(1008 86) scale(0.67) rotate(34)"/>
+    </g>
+    <g fill="#fff4bd" opacity="0.75">
+      <circle cx="128" cy="176" r="3.4"/>
+      <circle cx="276" cy="196" r="2.4"/>
+      <circle cx="434" cy="184" r="3"/>
+      <circle cx="584" cy="180" r="2.8"/>
+      <circle cx="742" cy="194" r="2.5"/>
+      <circle cx="902" cy="182" r="3.2"/>
+      <circle cx="1038" cy="172" r="2.6"/>
+    </g>
+  </g>
+
+  <g id="OBJECTS">
+    <g id="bat" transform="translate(548 230)">
+      <path d="M0,32 C-20,8 -60,6 -98,22 C-122,30 -143,24 -164,6 C-153,34 -146,56 -152,78 C-124,66 -104,66 -88,80 C-74,64 -58,58 -40,60 C-28,48 -14,40 0,32 Z" fill="#1e1225"/>
+      <path d="M0,32 C20,8 60,6 98,22 C122,30 143,24 164,6 C153,34 146,56 152,78 C124,66 104,66 88,80 C74,64 58,58 40,60 C28,48 14,40 0,32 Z" fill="#1e1225"/>
+      <circle cx="0" cy="28" r="13" fill="#160d1e"/>
+      <polygon points="-10,14 -2,0 2,0 10,14" fill="#160d1e"/>
+    </g>
+
+    <g id="witch-hat" transform="translate(184 274)">
+      <ellipse cx="84" cy="160" rx="112" ry="24" fill="#2b1132"/>
+      <path d="M42,156 L94,24 L146,156 Z" fill="#1e1228"/>
+      <rect x="52" y="118" width="84" height="18" fill="#6b2ea2"/>
+      <rect x="104" y="118" width="24" height="18" fill="none" stroke="#f5ca4b" stroke-width="6"/>
+    </g>
+
+    <g id="ghost" transform="translate(126 392)">
+      <ellipse cx="72" cy="178" rx="78" ry="20" fill="#2d1444" opacity="0.42"/>
+      <path d="M0,72 C0,30 30,0 70,0 C110,0 140,30 140,72 L140,160 C126,148 112,148 98,160 C84,148 70,148 56,160 C42,148 28,148 14,160 C6,148 2,148 0,160 Z" fill="url(#ghost-gradient)"/>
+      <ellipse cx="48" cy="70" rx="10" ry="13" fill="#342145"/>
+      <ellipse cx="92" cy="70" rx="10" ry="13" fill="#342145"/>
+      <path d="M56,102 C62,116 78,116 84,102" fill="none" stroke="#342145" stroke-width="6" stroke-linecap="round"/>
+    </g>
+
+    <g id="pumpkin" transform="translate(366 492)">
+      <ellipse cx="128" cy="208" rx="150" ry="28" fill="#2d1444" opacity="0.4"/>
+      <ellipse cx="128" cy="114" rx="136" ry="112" fill="url(#pumpkin-gradient)"/>
+      <ellipse cx="76" cy="114" rx="44" ry="104" fill="#f28927" opacity="0.72"/>
+      <ellipse cx="180" cy="114" rx="44" ry="104" fill="#f28927" opacity="0.72"/>
+      <ellipse cx="128" cy="114" rx="38" ry="109" fill="#ffaf48" opacity="0.48"/>
+      <polygon points="88,94 110,128 66,128" fill="#2a0f1b"/>
+      <polygon points="146,94 168,128 124,128" fill="#2a0f1b"/>
+      <path d="M64,170 C92,146 120,190 148,162 C160,148 182,150 198,172 C172,198 132,208 92,198 C78,194 68,184 64,170 Z" fill="#2a0f1b"/>
+      <path d="M122,0 C114,-22 130,-42 150,-34 C138,-18 140,-2 146,12 Z" fill="#5b7a2a"/>
+    </g>
+
+    <g id="cat" transform="translate(612 428)">
+      <ellipse cx="140" cy="290" rx="182" ry="30" fill="#24113a" opacity="0.42"/>
+      <path d="M28,214 C20,142 66,78 142,76 C214,78 254,130 252,202 C226,232 190,246 140,248 C86,246 50,236 28,214 Z" fill="url(#cat-gradient)"/>
+      <circle cx="140" cy="92" r="70" fill="#120a1a"/>
+      <polygon points="94,42 118,-16 136,42" fill="#120a1a"/>
+      <polygon points="146,42 166,-16 186,42" fill="#120a1a"/>
+      <path d="M40,180 C10,164 -14,128 -24,86" fill="none" stroke="#120a1a" stroke-width="28" stroke-linecap="round"/>
+      <ellipse cx="116" cy="92" rx="11" ry="16" fill="#a6f46a"/>
+      <ellipse cx="164" cy="92" rx="11" ry="16" fill="#a6f46a"/>
+      <line x1="78" y1="118" x2="16" y2="108" stroke="#2a173e" stroke-width="4" stroke-linecap="round"/>
+      <line x1="80" y1="130" x2="16" y2="138" stroke="#2a173e" stroke-width="4" stroke-linecap="round"/>
+      <line x1="202" y1="118" x2="264" y2="108" stroke="#2a173e" stroke-width="4" stroke-linecap="round"/>
+      <line x1="200" y1="130" x2="264" y2="138" stroke="#2a173e" stroke-width="4" stroke-linecap="round"/>
+    </g>
+
+    <g id="skull" transform="translate(842 338)">
+      <ellipse cx="84" cy="162" rx="86" ry="22" fill="#2d1444" opacity="0.4"/>
+      <circle cx="84" cy="92" r="74" fill="url(#skull-gradient)"/>
+      <rect x="28" y="118" width="112" height="62" rx="18" fill="url(#skull-gradient)"/>
+      <circle cx="58" cy="84" r="15" fill="#2a1a2d"/>
+      <circle cx="110" cy="84" r="15" fill="#2a1a2d"/>
+      <polygon points="84,102 72,126 96,126" fill="#2a1a2d"/>
+      <line x1="56" y1="138" x2="56" y2="172" stroke="#d2c39b" stroke-width="4"/>
+      <line x1="74" y1="138" x2="74" y2="172" stroke="#d2c39b" stroke-width="4"/>
+      <line x1="92" y1="138" x2="92" y2="172" stroke="#d2c39b" stroke-width="4"/>
+      <line x1="110" y1="138" x2="110" y2="172" stroke="#d2c39b" stroke-width="4"/>
+    </g>
+
+    <g id="potion-bottle" transform="translate(898 498)">
+      <ellipse cx="76" cy="206" rx="78" ry="20" fill="#2d1444" opacity="0.4"/>
+      <path d="M44,16 H108 V44 C108,62 120,72 132,88 C150,112 152,158 140,184 C128,210 102,224 76,224 C50,224 24,210 12,184 C0,158 2,112 20,88 C32,72 44,62 44,44 Z" fill="url(#glass-gradient)" stroke="#b8f0ff" stroke-opacity="0.5" stroke-width="3"/>
+      <path d="M22,138 C28,176 48,198 76,198 C104,198 124,176 130,138 C116,132 96,130 76,130 C56,130 36,132 22,138 Z" fill="url(#potion-gradient)" opacity="0.9"/>
+      <rect x="50" y="-10" width="52" height="24" rx="6" fill="#5c4c2f"/>
+      <circle cx="56" cy="116" r="7" fill="#afff83" opacity="0.8"/>
+      <circle cx="98" cy="108" r="5" fill="#afff83" opacity="0.8"/>
+      <circle cx="84" cy="94" r="4" fill="#afff83" opacity="0.8"/>
+      <path d="M34,44 C34,68 24,74 18,88" fill="none" stroke="#ffffff" stroke-opacity="0.34" stroke-width="5" stroke-linecap="round"/>
+    </g>
+
+    <g id="candies" transform="translate(322 688)">
+      <g transform="translate(0 0)">
+        <ellipse cx="30" cy="24" rx="28" ry="20" fill="#ff3f76"/>
+        <polygon points="0,24 -16,12 -16,36" fill="#ffd460"/>
+        <polygon points="60,24 76,12 76,36" fill="#ffd460"/>
+      </g>
+      <g transform="translate(88 -18)">
+        <ellipse cx="30" cy="24" rx="28" ry="20" fill="#62d3ff"/>
+        <polygon points="0,24 -16,12 -16,36" fill="#f5ff7d"/>
+        <polygon points="60,24 76,12 76,36" fill="#f5ff7d"/>
+      </g>
+      <g transform="translate(170 12)">
+        <ellipse cx="30" cy="24" rx="28" ry="20" fill="#9f78ff"/>
+        <polygon points="0,24 -16,12 -16,36" fill="#8cff96"/>
+        <polygon points="60,24 76,12 76,36" fill="#8cff96"/>
+      </g>
+    </g>
+  </g>
+
+  <g id="TEXT" fill="#2a1038">
+    <g id="title" transform="translate(122 42)">
+      <g id="happy" transform="translate(0 0)">
+        <use href="#glyph-H" x="0" y="0"/>
+        <use href="#glyph-A" x="84" y="0"/>
+        <use href="#glyph-P" x="168" y="0"/>
+        <use href="#glyph-P" x="252" y="0"/>
+        <use href="#glyph-Y" x="336" y="0"/>
+      </g>
+      <g id="halloween" transform="translate(0 112)">
+        <use href="#glyph-H" x="0" y="0"/>
+        <use href="#glyph-A" x="84" y="0"/>
+        <use href="#glyph-L" x="168" y="0"/>
+        <use href="#glyph-L" x="252" y="0"/>
+        <use href="#glyph-O" x="336" y="0"/>
+        <use href="#glyph-W" x="420" y="0"/>
+        <use href="#glyph-E" x="504" y="0"/>
+        <use href="#glyph-E" x="588" y="0"/>
+        <use href="#glyph-N" x="672" y="0"/>
+      </g>
+      <rect x="-18" y="-16" width="774" height="236" fill="none" stroke="#ffd17e" stroke-opacity="0.36" stroke-width="6"/>
+    </g>
+  </g>
+</svg>
