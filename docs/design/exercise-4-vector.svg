@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="11in"
+  height="8.5in"
+  viewBox="0 0 1100 850"
+  version="1.1"
+>
+  <title>Exercise 4 - Vector Only</title>
+  <desc>Bird, grapes, and orange rebuilt using editable vector paths and shapes.</desc>
+
+  <!-- VECTOR layer -->
+  <g id="VECTOR">
+    <!-- Bird group (left) -->
+    <g id="BIRD" transform="translate(0,10)">
+      <!-- Head -->
+      <circle cx="210" cy="300" r="95" fill="#6E3DC6" />
+
+      <!-- Eye -->
+      <circle cx="245" cy="270" r="17" fill="#F6EEF9" />
+      <circle cx="248" cy="273" r="7" fill="#2C1B57" />
+
+      <!-- Beak -->
+      <path d="M300 305 L360 290 L304 338 Z" fill="#F39B24" />
+
+      <!-- Wing 1 -->
+      <path
+        d="M145 320
+           C105 355, 112 420, 175 445
+           C245 472, 318 430, 316 356
+           C262 368, 216 354, 145 320 Z"
+        fill="#8D63D8"
+      />
+
+      <!-- Wing 2 (duplicated/reflected style) -->
+      <path
+        d="M162 298
+           C134 321, 132 358, 172 379
+           C216 403, 260 385, 276 347
+           C237 348, 205 336, 162 298 Z"
+        fill="#9F7CE1"
+      />
+
+      <!-- Body details -->
+      <path d="M163 242 C178 217, 209 202, 239 206 C207 230, 181 251, 163 242 Z" fill="#9F7CE1" />
+      <path d="M120 430 L162 416 L153 458 Z" fill="#5C2FAE" />
+
+      <!-- Feet -->
+      <path d="M176 490 L160 530 L187 512 Z" fill="#2C1B57" />
+      <path d="M220 498 L210 534 L236 515 Z" fill="#2C1B57" />
+    </g>
+
+    <!-- Grapes group (middle) -->
+    <g id="GRAPES">
+      <!-- Grape circles -->
+      <circle cx="540" cy="270" r="40" fill="#7C3AED" />
+      <circle cx="590" cy="295" r="40" fill="#6D28D9" />
+      <circle cx="490" cy="300" r="40" fill="#6D28D9" />
+      <circle cx="540" cy="330" r="40" fill="#5B21B6" />
+      <circle cx="590" cy="360" r="40" fill="#7C3AED" />
+      <circle cx="490" cy="360" r="40" fill="#7C3AED" />
+      <circle cx="540" cy="395" r="40" fill="#6D28D9" />
+      <circle cx="590" cy="425" r="40" fill="#5B21B6" />
+      <circle cx="490" cy="425" r="40" fill="#5B21B6" />
+      <circle cx="540" cy="455" r="40" fill="#7C3AED" />
+
+      <!-- Leaf -->
+      <path
+        d="M507 198
+           C451 166, 412 197, 406 248
+           C448 274, 489 271, 521 247
+           C543 229, 537 209, 507 198 Z"
+        fill="#3BA55D"
+      />
+
+      <!-- Stem -->
+      <path
+        d="M548 178
+           C560 151, 587 137, 616 141
+           C596 149, 579 167, 571 189 Z"
+        fill="#6B4F2A"
+      />
+    </g>
+
+    <!-- Orange group (right) -->
+    <g id="ORANGE">
+      <!-- Main orange -->
+      <circle cx="875" cy="350" r="140" fill="#F28C18" />
+
+      <!-- Texture dots -->
+      <circle cx="812" cy="300" r="8" fill="#D9710D" />
+      <circle cx="845" cy="280" r="7" fill="#D9710D" />
+      <circle cx="903" cy="292" r="9" fill="#D9710D" />
+      <circle cx="945" cy="320" r="8" fill="#D9710D" />
+      <circle cx="926" cy="370" r="7" fill="#D9710D" />
+      <circle cx="870" cy="395" r="9" fill="#D9710D" />
+      <circle cx="820" cy="355" r="7" fill="#D9710D" />
+      <circle cx="855" cy="335" r="6" fill="#D9710D" />
+      <circle cx="900" cy="350" r="6" fill="#D9710D" />
+
+      <!-- Leaves -->
+      <path
+        d="M864 202
+           C827 173, 781 181, 759 218
+           C792 231, 833 230, 864 202 Z"
+        fill="#3FAE63"
+      />
+      <path
+        d="M892 199
+           C928 170, 975 173, 1000 208
+           C971 225, 929 228, 892 199 Z"
+        fill="#379A57"
+      />
+
+      <!-- Stem -->
+      <path d="M874 214 C876 193, 889 177, 910 171 C897 187, 893 203, 892 218 Z" fill="#6B4F2A" />
+    </g>
+  </g>
+</svg>
