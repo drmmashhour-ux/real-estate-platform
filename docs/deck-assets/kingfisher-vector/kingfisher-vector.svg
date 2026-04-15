@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="11in"
+  height="8.5in"
+  viewBox="0 0 1100 850"
+  version="1.1"
+>
+  <title>Kingfisher Vector Study</title>
+  <desc>Fully vector kingfisher built from layered paths and shapes.</desc>
+
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#f1f7ff" />
+      <stop offset="100%" stop-color="#ffffff" />
+    </linearGradient>
+
+    <linearGradient id="branchGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#89694d" />
+      <stop offset="45%" stop-color="#a67f5b" />
+      <stop offset="100%" stop-color="#6e533d" />
+    </linearGradient>
+
+    <linearGradient id="beakGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffc16b" />
+      <stop offset="100%" stop-color="#ee7d1f" />
+    </linearGradient>
+
+    <linearGradient id="headGradient" x1="30%" y1="0%" x2="85%" y2="100%">
+      <stop offset="0%" stop-color="#6fd2ff" />
+      <stop offset="50%" stop-color="#2995d3" />
+      <stop offset="100%" stop-color="#145b94" />
+    </linearGradient>
+
+    <linearGradient id="bodyGradient" x1="20%" y1="15%" x2="90%" y2="95%">
+      <stop offset="0%" stop-color="#ffd89a" />
+      <stop offset="45%" stop-color="#ffab53" />
+      <stop offset="100%" stop-color="#e8731b" />
+    </linearGradient>
+
+    <linearGradient id="bodyShadeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#cf5c11" />
+      <stop offset="100%" stop-color="#9b3f0a" />
+    </linearGradient>
+
+    <linearGradient id="wingGradient" x1="25%" y1="0%" x2="75%" y2="100%">
+      <stop offset="0%" stop-color="#3f78be" />
+      <stop offset="100%" stop-color="#102d58" />
+    </linearGradient>
+
+    <linearGradient id="tailGradient" x1="25%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2f8ac6" />
+      <stop offset="100%" stop-color="#0c2b58" />
+    </linearGradient>
+
+    <linearGradient id="feetGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f9b26f" />
+      <stop offset="100%" stop-color="#d86e1f" />
+    </linearGradient>
+  </defs>
+
+  <g id="BACKGROUND">
+    <rect x="0" y="0" width="1100" height="850" fill="url(#bgGradient)" />
+  </g>
+
+  <g id="REFERENCE" opacity="0.3" display="none">
+    <rect x="80" y="60" width="940" height="730" fill="#d8e4f2" />
+  </g>
+
+  <g id="VECTOR">
+    <g id="Shadow">
+      <ellipse cx="560" cy="663" rx="218" ry="40" fill="#4e5e6f" opacity="0.26" />
+    </g>
+
+    <g id="Branch Group">
+      <rect
+        x="170"
+        y="572"
+        width="760"
+        height="92"
+        rx="20"
+        fill="url(#branchGradient)"
+        transform="rotate(-6 550 618)"
+      />
+      <rect
+        x="192"
+        y="610"
+        width="706"
+        height="26"
+        rx="13"
+        fill="#5b4432"
+        opacity="0.2"
+        transform="rotate(-6 545 623)"
+      />
+    </g>
+
+    <g id="Bird">
+      <g id="Tail">
+        <path
+          d="M690 501 C776 532 843 588 878 664 C833 649 793 630 759 598 C723 563 695 532 690 501 Z"
+          fill="url(#tailGradient)"
+        />
+        <path
+          d="M724 543 C785 565 830 601 853 644 C819 634 787 617 757 592 C740 579 730 563 724 543 Z"
+          fill="#112e58"
+          opacity="0.3"
+        />
+      </g>
+
+      <g id="Body Group">
+        <path
+          id="Body Main"
+          d="M469 360 C560 319 671 350 706 441 C737 515 701 601 621 629 C536 656 446 616 413 545 C382 479 403 394 469 360 Z"
+          fill="url(#bodyGradient)"
+        />
+        <path
+          id="Body Shade"
+          d="M496 401 C576 376 650 409 678 473 C700 526 673 584 617 607 C562 631 502 609 469 565 C435 522 441 437 496 401 Z"
+          fill="url(#bodyShadeGradient)"
+          opacity="0.26"
+        />
+      </g>
+
+      <g id="Neck">
+        <path
+          d="M451 388 C501 371 553 379 592 415 C622 445 629 496 606 529 C582 567 530 580 481 568 C438 557 411 523 403 486 C396 450 417 401 451 388 Z"
+          fill="#f8f2e6"
+        />
+      </g>
+
+      <g id="Head Group">
+        <path
+          id="Head Main"
+          d="M430 300 C472 246 565 228 625 265 C674 294 697 350 684 403 C671 459 617 496 558 494 C506 492 458 456 438 410 C419 364 406 330 430 300 Z"
+          fill="url(#headGradient)"
+        />
+        <path
+          id="Head Highlight"
+          d="M469 292 C506 264 565 258 611 281 C568 271 520 280 480 310 C468 316 462 304 469 292 Z"
+          fill="#8de3ff"
+          opacity="0.52"
+        />
+      </g>
+
+      <g id="Wing Group">
+        <path
+          id="Wing Main"
+          d="M560 360 C652 360 729 425 738 512 C746 590 695 661 619 688 C646 628 629 570 598 516 C568 463 535 418 560 360 Z"
+          fill="url(#wingGradient)"
+        />
+        <path
+          id="Wing Shade"
+          d="M602 421 C661 434 703 478 712 537 C719 583 696 627 655 653 C665 606 652 561 624 513 C609 486 597 457 602 421 Z"
+          fill="#0f264c"
+          opacity="0.35"
+        />
+        <path
+          d="M576 414 C624 460 648 521 645 591"
+          fill="none"
+          stroke="#93b4db"
+          stroke-width="3"
+          stroke-linecap="round"
+          opacity="0.45"
+        />
+        <path
+          d="M603 405 C648 455 672 512 673 573"
+          fill="none"
+          stroke="#7ea2d1"
+          stroke-width="2.6"
+          stroke-linecap="round"
+          opacity="0.42"
+        />
+        <path
+          d="M629 410 C667 455 691 504 697 556"
+          fill="none"
+          stroke="#7ea2d1"
+          stroke-width="2.2"
+          stroke-linecap="round"
+          opacity="0.38"
+        />
+      </g>
+
+      <g id="Beak">
+        <path
+          id="Top Beak"
+          d="M418 318 C354 292 270 292 188 316 C247 333 318 338 389 347 C403 347 414 338 418 318 Z"
+          fill="url(#beakGradient)"
+        />
+        <path
+          id="Bottom Beak"
+          d="M391 347 C311 355 248 377 193 417 C263 405 329 390 392 372 C404 367 409 356 391 347 Z"
+          fill="url(#beakGradient)"
+        />
+        <path
+          d="M210 325 C268 316 330 319 381 334"
+          fill="none"
+          stroke="#ffd7a5"
+          stroke-width="3"
+          stroke-linecap="round"
+          opacity="0.5"
+        />
+      </g>
+
+      <g id="Eye">
+        <circle cx="560" cy="350" r="22" fill="none" stroke="#9eafc3" stroke-width="2.5" />
+        <circle cx="560" cy="350" r="17" fill="#111111" />
+        <circle cx="566" cy="344" r="6" fill="#ffffff" />
+      </g>
+
+      <g id="Feet">
+        <path
+          d="M542 590 C522 612 508 629 496 651 C511 646 523 638 537 620 C548 604 553 598 542 590 Z"
+          fill="url(#feetGradient)"
+        />
+        <path
+          d="M575 592 C565 610 552 629 541 650 C556 646 570 637 583 620 C591 609 594 599 575 592 Z"
+          fill="url(#feetGradient)"
+        />
+        <path
+          d="M613 586 C602 603 591 620 578 640 C594 637 607 628 618 611 C625 601 629 591 613 586 Z"
+          fill="url(#feetGradient)"
+        />
+      </g>
+    </g>
+  </g>
+</svg>
