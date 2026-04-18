@@ -1,4 +1,4 @@
-# id: darlink_strict_isolation_system
+id: darlink_strict_isolation_system
 
 You are working in ONE Next.js app at a time inside this monorepo.
 
@@ -13,6 +13,22 @@ packages/* MUST stay generic — no Canadian/Syrian/UAE business logic, pricing,
 Shared code MUST live only in explicit packages under packages/* (generic utilities).
 
 If a change would import across country apps → STOP and correct before continuing.
+
+---
+
+Short prompt (paste at top of Cursor chats):
+
+You are working in ONE app only.
+
+If in apps/syria:
+- do NOT import from apps/web
+
+If in apps/web:
+- do NOT import from apps/syria
+
+If violation occurs → STOP and correct.
+
+---
 
 ## Business logic vs shared layer (country apps must not reuse each other’s business logic)
 

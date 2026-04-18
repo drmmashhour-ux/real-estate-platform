@@ -3,8 +3,12 @@
  * Never pass end-user listing descriptions through assertDarlinkContext(); use it for internal labels/env only.
  */
 
+/** Same baseline copy as `rules/isolation-constants.mjs` — runtime env misuse breaks isolation. */
 export const ISOLATION_VIOLATION_MSG =
-  "❌ Cross-app import detected: country apps must remain isolated";
+  "❌ Cross-app import detected: This breaks Darlink/LECIPM isolation";
+
+/** User-facing prefix when forbidden tokens appear in internal context strings. */
+export const FORBIDDEN_CROSS_PLATFORM_LOGIC_MSG = "❌ Forbidden cross-platform logic detected";
 
 const FORBIDDEN_CROSS_PLATFORM = ["quebec", "oaciq", "lecipm"] as const;
 
@@ -16,7 +20,7 @@ export function assertDarlinkContext(context: string): void {
   const lower = context.toLowerCase().normalize("NFKC");
   for (const token of FORBIDDEN_CROSS_PLATFORM) {
     if (lower.includes(token)) {
-      throw new Error(`${ISOLATION_VIOLATION_MSG} — forbidden token (${token})`);
+      throw new Error(`${FORBIDDEN_CROSS_PLATFORM_LOGIC_MSG} (${token})`);
     }
   }
 }

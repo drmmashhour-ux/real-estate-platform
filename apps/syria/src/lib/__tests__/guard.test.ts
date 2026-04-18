@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeEach, afterEach } from "vitest";
+import { describe, expect, it, afterEach } from "vitest";
 import { assertDarlinkContext, assertDarlinkRuntimeEnv } from "@/lib/guard";
 
 describe("guard", () => {
@@ -11,8 +11,8 @@ describe("guard", () => {
   });
 
   it("assertDarlinkContext rejects forbidden tokens", () => {
-    expect(() => assertDarlinkContext("qc quebec")).toThrow(/country apps must remain isolated/);
-    expect(() => assertDarlinkContext("OACIQ rule")).toThrow(/country apps must remain isolated/);
+    expect(() => assertDarlinkContext("qc quebec")).toThrow(/Forbidden cross-platform logic detected/);
+    expect(() => assertDarlinkContext("OACIQ rule")).toThrow(/Forbidden cross-platform logic detected/);
   });
 
   it("assertDarlinkRuntimeEnv allows unset APP_CONTEXT in development", () => {

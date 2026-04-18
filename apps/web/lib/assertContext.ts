@@ -2,8 +2,9 @@
  * LECIPM (`apps/web`) — APP_CONTEXT gate. Pair with `apps/syria/src/lib/assertContext.ts`.
  */
 
+/** Align with `rules/isolation-constants.mjs`. */
 export const ISOLATION_VIOLATION_MSG =
-  "❌ Cross-app import detected: country apps must remain isolated";
+  "❌ Cross-app import detected: This breaks Darlink/LECIPM isolation";
 
 /**
  * Ensures this Node process is marked as LECIPM web when `APP_CONTEXT` is set.

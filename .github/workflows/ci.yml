@@ -49,8 +49,8 @@ jobs:
         id: install
         run: pnpm install --frozen-lockfile
 
-      - name: Multi-country isolation (web / syria / uae / packages)
-        run: pnpm check:isolation
+      - name: Multi-country isolation (Darlink scan + web / syria / uae / packages)
+        run: pnpm check:darlink-isolation
 
       # Never echo DATABASE_URL — would leak real credentials when set from Actions secrets.
       - name: Verify DATABASE_URL for Prisma

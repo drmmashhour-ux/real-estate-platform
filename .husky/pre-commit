@@ -26,5 +26,5 @@ done <"$staged"
 echo "Running lint-staged..."
 pnpm exec lint-staged
 
-echo "Multi-country isolation scan..."
-pnpm check:isolation
+echo "Multi-country isolation scan (Darlink token scan + full monorepo)..."
+pnpm check:darlink-isolation

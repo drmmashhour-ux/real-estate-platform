@@ -17,7 +17,9 @@
     "prisma:push": "prisma db push --schema=./prisma/schema.prisma",
     "db:seed": "prisma db seed --schema=./prisma/schema.prisma",
     "brand:rasters": "node scripts/generate-brand-rasters.mjs",
-    "check:isolation": "tsx ../../scripts/check-isolation.ts"
+    "check:isolation": "tsx ../../scripts/check-isolation.ts",
+    "check:cross-contamination": "pnpm exec tsx ../../scripts/check-cross-contamination.ts",
+    "check:darlink": "pnpm check:cross-contamination && pnpm check:isolation"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"

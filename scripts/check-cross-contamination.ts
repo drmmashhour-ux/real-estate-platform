@@ -1,11 +1,12 @@
 /**
- * Scan Darlink (`apps/syria`) for accidental Canada-product / web-app coupling.
- * Run: `pnpm check:darlink-isolation` (repo root) or `pnpm check:isolation` from `apps/syria`.
+ * Scan Darlink (`apps/syria/src`) for forbidden tokens and cross-app imports.
+ * Run from monorepo root: `pnpm check:cross-contamination` (also part of `pnpm check:darlink-isolation`).
  * Exit 1 if violations found.
  */
 
 import fs from "fs";
 import path from "path";
+import { ISOLATION_BOUNDARY_VIOLATION } from "../rules/isolation-constants.mjs";
 
 function resolveSyriaAppRoot(): string {
   const cwd = process.cwd();
@@ -102,7 +103,7 @@ function main(): void {
       /from\s+["'][^"']*apps\/web/.test(content) ||
       /@lecipm\/web\//.test(content)
     ) {
-      violations.push(`❌ Cross-app import toward Canada web app in ${relCwd}`);
+      violations.push(`${ISOLATION_BOUNDARY_VIOLATION} — import toward apps/web in ${relCwd}`);
     }
 
     if (isAllowlistedSyriaPath(relFromSyria)) {
@@ -110,11 +111,13 @@ function main(): void {
     }
 
     if (lower.includes("quebec") || lower.includes("oaciq")) {
-      violations.push(`❌ Forbidden jurisdiction token in ${relCwd}`);
+      violations.push(`${ISOLATION_BOUNDARY_VIOLATION} — forbidden jurisdiction token in ${relCwd}`);
     }
 
     if (lower.includes("lecipm")) {
-      violations.push(`❌ Forbidden "lecipm" token in ${relCwd} (Darlink code/comments must stay neutral)`);
+      violations.push(
+        `${ISOLATION_BOUNDARY_VIOLATION} — forbidden "lecipm" token in ${relCwd} (Darlink code/comments must stay neutral)`,
+      );
     }
   }
 

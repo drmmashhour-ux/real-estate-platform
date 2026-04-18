@@ -7,8 +7,9 @@
 import fs from "fs";
 import path from "path";
 
-const ERR =
-  "❌ Cross-app import detected: country apps must remain isolated";
+import { ISOLATION_BOUNDARY_VIOLATION } from "../rules/isolation-constants.mjs";
+
+const ERR = ISOLATION_BOUNDARY_VIOLATION;
 
 const SKIP_DIR = new Set([
   "node_modules",
@@ -81,6 +82,7 @@ function webDarlinkAllowlisted(relFromRepo: string): boolean {
   return (
     n.endsWith("README_GUARD.md") ||
     n.endsWith(".env.example") ||
+    n === "apps/web/lib/assertContext.ts" ||
     n.includes("/docs/architecture/") ||
     n.includes("/.cursor/rules/") ||
     n.includes("/scripts/check-isolation.ts") ||
@@ -168,6 +170,12 @@ function scanWeb(repoRoot: string, violations: string[]): void {
   }
 }
 
+/** UAE: allow unified isolation copy in runtime guard (may name other products). */
+function uaeProductTokenAllowlisted(relFromRepo: string): boolean {
+  const n = relFromRepo.replace(/\\/g, "/");
+  return n === "apps/uae/lib/assertContext.ts";
+}
+
 function scanUae(repoRoot: string, violations: string[]): void {
   const uaeRoot = path.join(repoRoot, "apps", "uae");
   if (!fs.existsSync(uaeRoot)) return;
@@ -200,6 +208,8 @@ function scanUae(repoRoot: string, violations: string[]): void {
       violations.push(`${ERR} — cross-app import in ${rel}`);
     }
 
+    if (uaeProductTokenAllowlisted(rel)) continue;
+
     const scanBody = stripTsComments(content);
     const lower = scanBody.toLowerCase();
     if (lower.includes("darlink") || /\blecipm\b/.test(lower)) {
@@ -207,6 +217,9 @@ function scanUae(repoRoot: string, violations: string[]): void {
     }
     if (lower.includes("quebec") || lower.includes("oaciq")) {
       violations.push(`${ERR} — forbidden non-UAE jurisdiction token in ${rel}`);
+    }
+    if (/\bsyria\b/i.test(scanBody) && /\bdarlink\b/i.test(scanBody)) {
+      violations.push(`${ERR} — embedded Syria/Darlink product coupling in ${rel}`);
     }
   }
 }

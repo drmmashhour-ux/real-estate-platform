@@ -8,10 +8,11 @@
  * - `package` — shared packages cannot import any `apps/*` product code
  */
 
+import { ISOLATION_BOUNDARY_VIOLATION } from "../isolation-constants.mjs";
+
 const MSG = "no-cross-app-imports";
 
-export const ISOLATION_ESLINT_MESSAGE =
-  "❌ Cross-app import detected: country apps must remain isolated — forbidden path \"{{path}}\"";
+export const ISOLATION_ESLINT_MESSAGE = `${ISOLATION_BOUNDARY_VIOLATION} — forbidden path \"{{path}}\"`;
 
 /** @param {string} s */
 function lower(s) {
