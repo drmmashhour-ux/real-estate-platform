@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { ImageUploader } from "@/components/fsbo/ImageUploader";
 import { ContentLicenseModal } from "@/components/legal/ContentLicenseModal";
 import { LegalActionWarningModal } from "@/components/legal/LegalActionWarningModal";
+import { LegalHubNeedsAttention } from "@/components/legal/LegalHubNeedsAttention";
 import { LegalReadinessPanel } from "@/components/legal/LegalReadinessPanel";
 import { CONTENT_LICENSE_ERROR } from "@/lib/legal/content-license-client";
 import { CONTENT_LICENSE_VERSION } from "@/modules/legal/content-license";
@@ -523,6 +524,7 @@ export function FsboCreateClient({
       <div className="mt-6">
         <LegalReadinessPanel listing={bodyFromForm()} />
       </div>
+      <LegalHubNeedsAttention listingId={listingId} />
 
       {msg ? <p className="mt-4 text-sm text-emerald-400">{msg}</p> : null}
       {err ? <p className="mt-4 text-sm text-red-400">{err}</p> : null}

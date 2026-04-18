@@ -13,6 +13,8 @@ import {
   recordGrowthEventWithFunnel,
 } from "@/lib/growth/events";
 import { recordLecipmManagerGrowthEvent } from "@/lib/growth/manager-events";
+import { GrowthEventName } from "@/modules/growth/event-types";
+import { recordGrowthEvent } from "@/modules/growth/tracking.service";
 import { getPublicCodeForReferralRow } from "@/lib/referrals/viral";
 import { createCommissionsForPayment, getOrCreateCommissionRules } from "@/lib/stripe/commission";
 import { recordPlatformEvent } from "@/lib/observability";
@@ -59,10 +61,8 @@ import type { SelectedAddonInput } from "@/lib/bnhub/hospitality-addons";
 import { bookingMoneyBreakdownFromPricingBreakdown } from "@/lib/bookings/money";
 import { persistMoneyEvent } from "@/lib/payments/money-events";
 import { queueBnhubManualHostPayout } from "@/lib/payouts/manual-bnhub";
-import {
-  markStripeWebhookProcessed,
-  recordStripeWebhookReceived,
-} from "@/modules/bnhub-payments/infrastructure/stripeWebhookInbox";
+import { markStripeWebhookProcessed } from "@/modules/bnhub-payments/infrastructure/stripeWebhookInbox";
+import { gateStripeWebhookProcessing } from "@/modules/stripe/stripe-webhook.service";
 import { BnhubMpWebhookInboxStatus } from "@prisma/client";
 import { captureStripeEventForGrowthEngine } from "@/src/modules/stripe/growthWebhook";
 import { onPaymentFailedAutomation, onPaymentSuccessAutomation } from "@/src/services/automation";
@@ -76,10 +76,15 @@ import {
 } from "@/lib/stripe/guestSupabaseBooking";
 import { fulfillListingContactLeadFromWebhook } from "@/lib/leads/fulfill-from-webhook";
 import { fulfillFeaturedListingFromWebhook } from "@/lib/featured/fulfill-featured-checkout-webhook";
+import { fulfillFsboFeaturedFromStripeSession } from "@/lib/featured/fulfill-fsbo-featured-webhook";
+import { reconcileFeaturedListingAfterDuplicatePayment } from "@/lib/featured/reconcile-featured-checkout";
 import { trackRevenueEvent } from "@/lib/monetization/events";
+import { recordRevenueEventLedger } from "@/modules/revenue/revenue-event.service";
 import { recordAnalyticsFunnelEvent } from "@/lib/funnel/analytics-events";
 import { trackFunnelEvent } from "@/lib/funnel/tracker";
 import { securityLog } from "@/lib/security/security-logger";
+import { auditStripePaymentEventIfApplicable } from "@/modules/stripe/validation.service";
+import { onLeadUnlockPaymentRecorded } from "@/modules/leads/lead-monetization-monitoring.service";
 
 export const dynamic = "force-dynamic";
 
@@ -207,9 +212,22 @@ export async function POST(req: NextRequest) {
   logInfo("[webhook] event received", { type: event.type, id: event.id });
   logInfo(`[STRIPE] webhook received: type=${event.type} id=${event.id}`);
 
+  void auditStripePaymentEventIfApplicable(event).catch((e) =>
+    logError("stripe payment audit log failed", e),
+  );
+
   void captureStripeEventForGrowthEngine(event).catch((e) => logError("growth stripe observability failed", e));
 
-  void recordStripeWebhookReceived(event).catch((e) => logError("bnhub webhook inbox record failed", e));
+  try {
+    const gate = await gateStripeWebhookProcessing(event);
+    if (gate === "skip_duplicate") {
+      logInfo("[webhook] duplicate processed event skipped (idempotent)", { id: event.id });
+      return Response.json({ received: true, duplicate: true });
+    }
+  } catch (e) {
+    logError("bnhub webhook idempotency gate failed", e);
+    return Response.json({ error: "Webhook inbox error" }, { status: 500 });
+  }
 
   if (event.type === "charge.refunded") {
     const charge = event.data.object as Stripe.Charge;
@@ -753,6 +771,20 @@ export async function POST(req: NextRequest) {
       where: { stripeSessionId: sessionId },
     });
     if (existingPayment) {
+      if (paymentType === "featured_listing" && userId) {
+        try {
+          await reconcileFeaturedListingAfterDuplicatePayment(prisma, {
+            session,
+            userId: userId as string,
+            existingPayment: {
+              id: existingPayment.id,
+              amountCents: existingPayment.amountCents,
+            },
+          });
+        } catch (e) {
+          logError("Webhook: featured listing reconcile on duplicate session failed", e);
+        }
+      }
       return Response.json({ received: true, duplicate: true });
     }
 
@@ -955,7 +987,7 @@ export async function POST(req: NextRequest) {
           guestsCount: true,
           bnhubBookingServices: { select: { listingServiceId: true, quantity: true } },
           guest: { select: { name: true } },
-          listing: { select: { title: true } },
+          listing: { select: { title: true, ownerId: true } },
         },
       });
 
@@ -1047,6 +1079,30 @@ export async function POST(req: NextRequest) {
         const payListingId = typeof listingId === "string" ? listingId.trim() : "";
         const payBookingId = typeof bookingId === "string" ? bookingId.trim() : "";
         if (payBookingId && bookingRow?.guestId) {
+          void recordGrowthEvent({
+            eventName: GrowthEventName.BOOKING_COMPLETED,
+            userId: bookingRow.guestId,
+            idempotencyKey: `booking_paid:${payBookingId}`,
+            metadata: {
+              bookingId: payBookingId,
+              listingId: bookingRow.listingId,
+              amountCents: sessionAmountTotal ?? null,
+              verifiedBy: "stripe_webhook",
+            },
+          }).catch(() => {});
+          if (bookingRow.listingId && bookingRow.listing?.ownerId) {
+            void import("@/modules/marketing-intelligence/activation.service")
+              .then((m) =>
+                m.emitBnhubBookingCompletedMarketing({
+                  bookingId: payBookingId,
+                  listingId: bookingRow.listingId,
+                  guestUserId: bookingRow.guestId,
+                  hostUserId: bookingRow.listing.ownerId,
+                  amountCents: sessionAmountTotal ?? null,
+                })
+              )
+              .catch(() => {});
+          }
           void applyLoyaltyCreditForPaidBooking(prisma, {
             bookingId: payBookingId,
             guestUserId: bookingRow.guestId,
@@ -1302,7 +1358,7 @@ export async function POST(req: NextRequest) {
         },
       }).catch(() => {});
 
-      void markStripeWebhookProcessed(event.id, BnhubMpWebhookInboxStatus.PROCESSED).catch((e) =>
+      await markStripeWebhookProcessed(event.id, BnhubMpWebhookInboxStatus.PROCESSED).catch((e) =>
         logError("Webhook: inbox mark processed failed", e)
       );
 
@@ -1348,14 +1404,53 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    if (paymentType === "lead_unlock" && projectId && leadId) {
-      await prisma.projectLeadPayment.create({
-        data: { projectId, leadId, amount: amountDollars },
-      }).catch(() => {});
-      await prisma.lead.update({
-        where: { id: leadId },
-        data: { contactUnlockedAt: new Date() },
-      }).catch(() => {});
+    if (paymentType === "lead_unlock" && leadId) {
+      if (projectId) {
+        await prisma.projectLeadPayment.create({
+          data: { projectId, leadId, amount: amountDollars },
+        }).catch(() => {});
+        await prisma.lead.update({
+          where: { id: leadId },
+          data: { contactUnlockedAt: new Date() },
+        }).catch(() => {});
+        void onLeadUnlockPaymentRecorded({
+          leadId,
+          brokerUserId: typeof userId === "string" ? userId : "",
+          amountCents,
+        });
+      } else {
+        const brokerMeta =
+          typeof session.metadata?.brokerId === "string" ? session.metadata.brokerId.trim() : "";
+        const prev = await prisma.lead
+          .findUnique({
+            where: { id: leadId },
+            select: { introducedByBrokerId: true },
+          })
+          .catch(() => null);
+        await prisma.lead
+          .update({
+            where: { id: leadId },
+            data: {
+              contactUnlockedAt: new Date(),
+              contactUnlockedByUserId: userId as string,
+              ...(prev && !prev.introducedByBrokerId && brokerMeta
+                ? { introducedByBrokerId: brokerMeta }
+                : {}),
+            },
+          })
+          .catch((e) => logError("Webhook: CRM lead_unlock apply failed", e));
+        await recordRevenueEventLedger({
+          type: "lead_unlock",
+          amountCents,
+          userId: userId as string,
+          metadata: { leadId, brokerId: brokerMeta || userId, source: "stripe_webhook" },
+        }).catch(() => {});
+        void onLeadUnlockPaymentRecorded({
+          leadId,
+          brokerUserId: (brokerMeta || (userId as string)) as string,
+          amountCents,
+        });
+      }
     }
 
     if (paymentType === "lead_marketplace") {
@@ -1510,6 +1605,51 @@ export async function POST(req: NextRequest) {
               void notifyFsboListingActivatedIfNeeded(fsboListingId).catch(() => null);
             }
           }
+        }
+      }
+    }
+
+    if (paymentType === "featured_listing" && userId) {
+      const fsboListingId = session.metadata?.fsboListingId as string | undefined;
+      const featuredPlanKey = (session.metadata?.featuredPlanKey as string | undefined) ?? "featured_fsbo_30d";
+      const bnhubListingId = session.metadata?.listingId as string | undefined;
+      const custRaw = session.customer;
+      const stripeCustomerId =
+        typeof custRaw === "string"
+          ? custRaw
+          : custRaw && typeof custRaw === "object" && custRaw !== null && "id" in custRaw
+            ? String((custRaw as { id: string }).id)
+            : null;
+      if (fsboListingId) {
+        const r = await fulfillFsboFeaturedFromStripeSession(prisma, {
+          payerUserId: userId,
+          fsboListingId,
+          amountCents: sessionAmountTotal,
+          stripeCheckoutSessionId: sessionId,
+          stripePaymentIntentId: piId,
+          stripeCustomerId,
+          featuredPlanKey,
+        });
+        if (!r.ok) {
+          logError("Webhook: FSBO featured listing fulfillment failed", {
+            reason: r.reason,
+            fsboListingId,
+            sessionId,
+          });
+        }
+      } else if (bnhubListingId) {
+        const r = await fulfillFeaturedListingFromWebhook(prisma, {
+          payerUserId: userId,
+          shortTermListingId: bnhubListingId,
+          amountCents: sessionAmountTotal,
+          platformPaymentId: platformPayment.id,
+        });
+        if (!r.ok) {
+          logError("Webhook: BNHub featured listing fulfillment failed", {
+            reason: r.reason,
+            listingId: bnhubListingId,
+            sessionId,
+          });
         }
       }
     }
@@ -1896,6 +2036,16 @@ export async function POST(req: NextRequest) {
       },
     });
     await sendPaymentSuccessEmail(userId);
+    void import("@/modules/marketing-intelligence/activation.service")
+      .then((m) =>
+        m.emitStripeCheckoutCompletedMarketing({
+          userId,
+          amountCents: Math.round(amountDollars * 100),
+          stripeSessionId: sessionId,
+          feature: "design_access",
+        })
+      )
+      .catch(() => {});
     return Response.json({ received: true, designAccessPaid: updated.count > 0 });
   }
 

@@ -1,0 +1,442 @@
+{
+  "meta": {
+    "version": "lecipm-platform-validation-v1",
+    "generatedAt": "2026-04-15T14:37:55.585Z",
+    "baseUrl": "http://127.0.0.1:3001",
+    "hostname": "127.0.0.1",
+    "mode": "smoke",
+    "evidenceNote": "HTTP probes use Node fetch (no browser console capture). Playwright E2E is separate. Failed network calls include error message."
+  },
+  "routeMapSummary": {
+    "totalDiscovered": 830,
+    "categories": {
+      "marketing": 31,
+      "public": 260,
+      "booking": 6,
+      "admin": 299,
+      "auth": 6,
+      "bnhub": 76,
+      "listings": 12,
+      "dashboard": 140
+    }
+  },
+  "launchEvents": {
+    "ran": true,
+    "ready": true,
+    "counts": {
+      "USER_SIGNUP": 14,
+      "USER_LOGIN": 102,
+      "VIEW_LISTING": 431,
+      "CONTACT_BROKER": 20,
+      "CREATE_BOOKING": 1,
+      "PAYMENT_SUCCESS": 34,
+      "CHECKOUT_BLOCKED": 2
+    },
+    "issues": []
+  },
+  "pages": [
+    {
+      "route": "/en/ca",
+      "status": "pass",
+      "httpStatus": 200,
+      "errors": [],
+      "warnings": [],
+      "loadTimeMs": 275,
+      "evidence": {
+        "url": "http://127.0.0.1:3001/en/ca",
+        "bytes": 218991
+      }
+    },
+    {
+      "route": "/en/ca/listings",
+      "status": "pass",
+      "httpStatus": 200,
+      "errors": [],
+      "warnings": [],
+      "loadTimeMs": 314,
+      "evidence": {
+        "url": "http://127.0.0.1:3001/en/ca/listings",
+        "bytes": 191075
+      }
+    },
+    {
+      "route": "/en/ca/bnhub",
+      "status": "pass",
+      "httpStatus": 200,
+      "errors": [],
+      "warnings": [],
+      "loadTimeMs": 661,
+      "evidence": {
+        "url": "http://127.0.0.1:3001/en/ca/bnhub",
+        "bytes": 256992
+      }
+    },
+    {
+      "route": "/en/ca/search",
+      "status": "pass",
+      "httpStatus": 200,
+      "errors": [],
+      "warnings": [],
+      "loadTimeMs": 118,
+      "evidence": {
+        "url": "http://127.0.0.1:3001/en/ca/search",
+        "bytes": 190510
+      }
+    },
+    {
+      "route": "/en/ca/dashboard/host",
+      "status": "pass",
+      "httpStatus": 200,
+      "errors": [],
+      "warnings": [],
+      "loadTimeMs": 112,
+      "evidence": {
+        "url": "http://127.0.0.1:3001/en/ca/dashboard/host",
+        "bytes": 155786
+      }
+    },
+    {
+      "route": "/en/ca/bnhub/host/dashboard",
+      "status": "pass",
+      "httpStatus": 200,
+      "errors": [],
+      "warnings": [],
+      "loadTimeMs": 166,
+      "evidence": {
+        "url": "http://127.0.0.1:3001/en/ca/bnhub/host/dashboard",
+        "bytes": 198939
+      }
+    },
+    {
+      "route": "/en/ca/dashboard/broker",
+      "status": "pass",
+      "httpStatus": 200,
+      "errors": [],
+      "warnings": [],
+      "loadTimeMs": 70,
+      "evidence": {
+        "url": "http://127.0.0.1:3001/en/ca/dashboard/broker",
+        "bytes": 155782
+      }
+    },
+    {
+      "route": "/en/ca/dashboard/broker/clients",
+      "status": "pass",
+      "httpStatus": 200,
+      "errors": [],
+      "warnings": [],
+      "loadTimeMs": 73,
+      "evidence": {
+        "url": "http://127.0.0.1:3001/en/ca/dashboard/broker/clients",
+        "bytes": 155812
+      }
+    },
+    {
+      "route": "/en/ca/admin",
+      "status": "pass",
+      "httpStatus": 200,
+      "errors": [],
+      "warnings": [],
+      "loadTimeMs": 46,
+      "evidence": {
+        "url": "http://127.0.0.1:3001/en/ca/admin",
+        "bytes": 155757
+      }
+    },
+    {
+      "route": "/en/ca/admin/fraud",
+      "status": "pass",
+      "httpStatus": 200,
+      "errors": [],
+      "warnings": [],
+      "loadTimeMs": 41,
+      "evidence": {
+        "url": "http://127.0.0.1:3001/en/ca/admin/fraud",
+        "bytes": 155781
+      }
+    },
+    {
+      "route": "/en/ca/admin/growth",
+      "status": "pass",
+      "httpStatus": 200,
+      "errors": [],
+      "warnings": [],
+      "loadTimeMs": 42,
+      "evidence": {
+        "url": "http://127.0.0.1:3001/en/ca/admin/growth",
+        "bytes": 155781
+      }
+    },
+    {
+      "route": "/en/ca/admin/users",
+      "status": "pass",
+      "httpStatus": 200,
+      "errors": [],
+      "warnings": [],
+      "loadTimeMs": 51,
+      "evidence": {
+        "url": "http://127.0.0.1:3001/en/ca/admin/users",
+        "bytes": 155785
+      }
+    },
+    {
+      "route": "/en/ca/admin/security",
+      "status": "pass",
+      "httpStatus": 200,
+      "errors": [],
+      "warnings": [],
+      "loadTimeMs": 40,
+      "evidence": {
+        "url": "http://127.0.0.1:3001/en/ca/admin/security",
+        "bytes": 155780
+      }
+    },
+    {
+      "route": "/en/ca/pricing",
+      "status": "pass",
+      "httpStatus": 200,
+      "errors": [],
+      "warnings": [],
+      "loadTimeMs": 85,
+      "evidence": {
+        "url": "http://127.0.0.1:3001/en/ca/pricing",
+        "bytes": 234612
+      }
+    },
+    {
+      "route": "/en/ca/admin/seo-blog",
+      "status": "pass",
+      "httpStatus": 200,
+      "errors": [],
+      "warnings": [],
+      "loadTimeMs": 53,
+      "evidence": {
+        "url": "http://127.0.0.1:3001/en/ca/admin/seo-blog",
+        "bytes": 155792
+      }
+    }
+  ],
+  "apis": [
+    {
+      "name": "ready",
+      "method": "GET",
+      "path": "/api/ready",
+      "status": "pass",
+      "expectedMin": 200,
+      "expectedMax": 299,
+      "httpStatus": 200,
+      "errors": [],
+      "warnings": [],
+      "responseTimeMs": 162
+    },
+    {
+      "name": "health",
+      "method": "GET",
+      "path": "/api/health",
+      "status": "pass",
+      "expectedMin": 200,
+      "expectedMax": 299,
+      "httpStatus": 200,
+      "errors": [],
+      "warnings": [],
+      "responseTimeMs": 9
+    },
+    {
+      "name": "auth_login_rejects_empty",
+      "method": "POST",
+      "path": "/api/auth/login",
+      "status": "pass",
+      "expectedMin": 400,
+      "expectedMax": 422,
+      "httpStatus": 400,
+      "errors": [],
+      "warnings": [],
+      "responseTimeMs": 62
+    }
+  ],
+  "security": [
+    {
+      "name": "dashboard_api_without_cookie",
+      "status": "pass",
+      "errors": [],
+      "warnings": [],
+      "evidence": {
+        "httpStatus": 401
+      }
+    },
+    {
+      "name": "stripe_checkout_rejects_bad_payload_or_auth",
+      "status": "pass",
+      "errors": [],
+      "warnings": [],
+      "evidence": {
+        "httpStatus": 401
+      }
+    },
+    {
+      "name": "ready_endpoint_under_burst",
+      "status": "pass",
+      "errors": [],
+      "warnings": [],
+      "evidence": {
+        "statuses": [
+          200,
+          200,
+          200,
+          200,
+          200
+        ]
+      }
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "guest_marketplace",
+      "label": "Guest: home → listings → BNHub → search",
+      "status": "pass",
+      "steps": [
+        {
+          "name": "home",
+          "ok": true,
+          "ms": 443
+        },
+        {
+          "name": "listings",
+          "ok": true,
+          "ms": 53
+        },
+        {
+          "name": "bnhub",
+          "ok": true,
+          "ms": 103
+        },
+        {
+          "name": "search",
+          "ok": true,
+          "ms": 115
+        }
+      ],
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "id": "host_surfaces",
+      "label": "Host: dashboard hub surfaces (auth walls expected)",
+      "status": "pass",
+      "steps": [
+        {
+          "name": "host_dashboard",
+          "ok": true,
+          "ms": 129
+        },
+        {
+          "name": "bnhub_host",
+          "ok": true,
+          "ms": 101
+        }
+      ],
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "id": "broker_surfaces",
+      "label": "Broker: CRM / deals entry (auth walls expected)",
+      "status": "pass",
+      "steps": [
+        {
+          "name": "broker_home",
+          "ok": true,
+          "ms": 139
+        },
+        {
+          "name": "broker_leads",
+          "ok": true,
+          "ms": 78
+        }
+      ],
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "id": "admin_surfaces",
+      "label": "Admin: fraud → growth → users (auth walls expected)",
+      "status": "pass",
+      "steps": [
+        {
+          "name": "admin_root",
+          "ok": true,
+          "ms": 57
+        },
+        {
+          "name": "admin_fraud",
+          "ok": true,
+          "ms": 62
+        },
+        {
+          "name": "admin_growth",
+          "ok": true,
+          "ms": 48
+        },
+        {
+          "name": "admin_users",
+          "ok": true,
+          "ms": 44
+        },
+        {
+          "name": "admin_security",
+          "ok": true,
+          "ms": 45
+        }
+      ],
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "id": "marketing_surfaces",
+      "label": "Marketing: pricing → blog pipeline",
+      "status": "pass",
+      "steps": [
+        {
+          "name": "pricing",
+          "ok": true,
+          "ms": 78
+        },
+        {
+          "name": "seo_blog_admin",
+          "ok": true,
+          "ms": 69
+        }
+      ],
+      "errors": [],
+      "warnings": []
+    }
+  ],
+  "stripeBooking": {
+    "ran": true,
+    "ok": true,
+    "detail": "exit_0"
+  },
+  "dataIntegrity": {
+    "ran": true,
+    "ok": false,
+    "issues": [
+      "SUPABASE_UNAVAILABLE:Supabase service env (NEXT_PUBLIC_SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY) is not configured."
+    ],
+    "scanned": 0
+  },
+  "performance": {
+    "slowWarnings": [],
+    "pageP95Ms": 661,
+    "apiP95Ms": 162
+  },
+  "launch": {
+    "decision": "GO_WITH_WARNINGS",
+    "reasons": [
+      "launch_events_counts_ok"
+    ],
+    "blockers": [],
+    "warnings": [
+      "data_integrity:supabase_not_configured_skipped"
+    ]
+  }
+}

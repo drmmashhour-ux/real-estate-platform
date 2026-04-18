@@ -1,4 +1,6 @@
 import { prisma } from "@/lib/db";
+import { GrowthEventName } from "@/modules/growth/event-types";
+import { recordGrowthEvent } from "@/modules/growth/tracking.service";
 import { BnhubDayAvailabilityStatus, ListingStatus, type LoyaltyTier, type Prisma } from "@prisma/client";
 import type { BnhubListingForRanking } from "@/lib/ai/bnhub-search";
 import { allocateUniqueLSTListingCode } from "@/lib/listing-code";
@@ -22,6 +24,7 @@ import { getApprovedHost, hasAcceptedHostAgreement } from "./host";
 import { buildPublishedListingSearchWhere, searchOrderBy } from "./build-search-where";
 import { applyStaysFilters, hasActiveStaysFilters, type StaysSearchFilters } from "@/lib/bnhub/stays-filters";
 import { geocodeAddressLine } from "@/lib/geo/geocode-nominatim";
+import { listingQualityBadgeLabelFromRow } from "@/lib/quality/validators";
 import {
   getListingQualitySearchAdjustMapForIds,
   getLuxuryTierSearchBoostMapForIds,
@@ -127,6 +130,10 @@ function listingMatchesDiscovery(
 
 type SearchListingWithReviewAvg<T extends { id: string }> = T & {
   reviews: { propertyRating: number }[];
+  /** 0–1 from cached `listing_quality_scores.quality_score`, when present. */
+  cachedListingQuality01: number | null;
+  /** Short label for result cards when quality thresholds are met. */
+  qualityBadgeLabel: string | null;
 };
 
 /**
@@ -139,25 +146,40 @@ export async function attachReviewAggregatesForSearch<T extends { id: string }>(
 ): Promise<SearchListingWithReviewAvg<T>[]> {
   if (listings.length === 0) return [];
   const ids = listings.map((l) => l.id);
-  const grouped = await prisma.review.groupBy({
-    by: ["listingId"],
-    where: { listingId: { in: ids } },
-    _avg: { propertyRating: true },
-  });
+  const [grouped, qualityRows] = await Promise.all([
+    prisma.review.groupBy({
+      by: ["listingId"],
+      where: { listingId: { in: ids } },
+      _avg: { propertyRating: true },
+    }),
+    prisma.listingQualityScore.findMany({
+      where: { listingId: { in: ids } },
+      select: { listingId: true, qualityScore: true, level: true, healthStatus: true },
+    }),
+  ]);
   const avgByListingId = new Map(
     grouped.map((g) => [g.listingId, g._avg.propertyRating] as const)
   );
+  const qualityById = new Map(qualityRows.map((r) => [r.listingId, r]));
   return listings.map((l) => {
     const avg = avgByListingId.get(l.id);
     const rawOwner = l as { owner?: { hostPerformanceMetrics?: { score: number } | null } };
     const hrs = rawOwner.owner?.hostPerformanceMetrics?.score;
     const hostReputationScore =
       hrs != null && Number.isFinite(hrs) ? hrs : null;
+    const qRow = qualityById.get(l.id);
+    const cachedListingQuality01 =
+      qRow != null && Number.isFinite(qRow.qualityScore)
+        ? Math.min(1, Math.max(0, qRow.qualityScore / 100))
+        : null;
+    const qualityBadgeLabel = qRow ? listingQualityBadgeLabelFromRow(qRow) : null;
     return {
       ...l,
       reviews:
         avg != null && Number.isFinite(avg) ? [{ propertyRating: avg as number }] : [],
       hostReputationScore,
+      cachedListingQuality01,
+      qualityBadgeLabel,
     };
   });
 }
@@ -352,20 +374,37 @@ export async function searchListings(params: ListingSearchParams) {
 
   if (useAiRanking && result.length > 0) {
     const ids = result.map((l) => l.id);
-    const [marketingBoost, growthBoost, starBoost, tierBoost, riskPen, winnerBoost] = await Promise.all([
+    const platformRowsAiFull = result.map((l) => ({ id: l.id, ownerId: l.ownerId }));
+    const [
+      marketingBoost,
+      growthBoost,
+      starBoost,
+      tierBoost,
+      riskPen,
+      winnerBoost,
+      platformTrustBoost,
+      repAdjust,
+      qualityAdjust,
+    ] = await Promise.all([
       getMarketingSearchBoostByListingId(),
       getGrowthSearchBoostByListingId(),
       getClassificationSearchBoostMapForIds(ids),
       getLuxuryTierSearchBoostMapForIds(ids),
       getTrustRiskPenaltyMapForIds(ids),
       getWinnerSearchBoostMapForIds(ids),
+      getPlatformTrustSearchBoostMapForListings(platformRowsAiFull),
+      getReputationSearchAdjustMapForListings(platformRowsAiFull),
+      getListingQualitySearchAdjustMapForIds(ids),
     ]);
     const boost = (id: string) =>
       (marketingBoost.get(id) ?? 0) +
       (growthBoost.get(id) ?? 0) +
       (starBoost.get(id) ?? 0) +
       (tierBoost.get(id) ?? 0) +
-      (winnerBoost.get(id) ?? 0) -
+      (winnerBoost.get(id) ?? 0) +
+      (platformTrustBoost.get(id) ?? 0) +
+      (repAdjust.get(id) ?? 0) +
+      (qualityAdjust.get(id) ?? 0) -
       (riskPen.get(id) ?? 0);
     result = await orderBnhubListingsByRankingEngine(result, {
       city,
@@ -879,6 +918,16 @@ export async function createListing(
     userId: data.ownerId,
     metadata: { listingId: listing.id, city: listing.city, listingStatus: listing.listingStatus },
   });
+  void recordGrowthEvent({
+    eventName: GrowthEventName.LISTING_CREATED,
+    userId: data.ownerId,
+    idempotencyKey: `listing_created:${listing.id}`,
+    metadata: {
+      listingId: listing.id,
+      city: listing.city,
+      listingStatus: listing.listingStatus,
+    },
+  }).catch(() => {});
   const { enqueueListingContentPipeline } = await import("@/lib/bnhub/content-pipeline/enqueue");
   enqueueListingContentPipeline(listing.id, "create");
   return listing;

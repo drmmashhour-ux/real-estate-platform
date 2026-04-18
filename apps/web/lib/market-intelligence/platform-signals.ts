@@ -321,7 +321,7 @@ export async function getPlatformMarketIntelligence(): Promise<PlatformMarketInt
       performanceScore: scoreRow(r, r.listing.city, r.listing.nightPriceCents),
     }));
 
-  const weakListings = weakCandidates
+  const weakListings = weakPool
     .filter((r) => r.listing.listingStatus === ListingStatus.PUBLISHED)
     .map((r) => ({
       listingId: r.listingId,

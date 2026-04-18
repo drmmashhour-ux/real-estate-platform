@@ -1,6 +1,9 @@
 import { PrismaClient } from "@prisma/client";
 import { databaseUrlHasLiteralHostPlaceholder } from "./database-host-hint";
-import { normalizeDatabaseUrlForPrisma } from "./normalize-database-url";
+import {
+  mergeDatabaseConnectionLimit,
+  normalizeDatabaseUrlForPrisma,
+} from "./normalize-database-url";
 import { resolveDatabaseUrlIntoEnv } from "./resolve-database-url";
 
 resolveDatabaseUrlIntoEnv();
@@ -16,9 +19,13 @@ if (
 }
 
 /** Neon may append channel_binding=require; Prisma/pg often need it stripped. */
-const resolved = normalizeDatabaseUrlForPrisma(rawDatabaseUrl);
-if (resolved !== undefined) {
-  process.env.DATABASE_URL = resolved;
+let resolvedUrl = rawDatabaseUrl;
+const stripped = normalizeDatabaseUrlForPrisma(resolvedUrl);
+if (stripped !== undefined) resolvedUrl = stripped;
+const withPool = mergeDatabaseConnectionLimit(resolvedUrl);
+if (withPool !== undefined) resolvedUrl = withPool;
+if (resolvedUrl !== undefined && resolvedUrl !== rawDatabaseUrl) {
+  process.env.DATABASE_URL = resolvedUrl;
 }
 
 const globalForPrisma = globalThis as unknown as {
@@ -31,6 +38,4 @@ export const prisma =
     log: ["error", "warn"],
   });
 
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
-}
+globalForPrisma.prisma = prisma;

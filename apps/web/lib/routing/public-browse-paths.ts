@@ -14,6 +14,7 @@ export function isPublicBrowseSurface(pathname: string): boolean {
   if (path === "/") return true;
   if (path.startsWith("/listings")) return true;
   if (path.startsWith("/bnhub")) return true;
+  if (path.startsWith("/lp")) return true;
   return false;
 }
 

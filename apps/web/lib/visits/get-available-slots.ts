@@ -104,10 +104,10 @@ export async function getAvailableVisitSlots(opts: {
 
       const windowStart = utcAtLocalWall(ymd, win.startTime, winTz);
       const windowEnd = utcAtLocalWall(ymd, win.endTime, winTz);
-      const capEnd = min(windowEnd, rangeTo);
+      const capEnd = min([windowEnd, rangeTo]);
       const lastStart = addMinutes(capEnd, -duration);
 
-      let cursor = max(windowStart, rangeFrom);
+      let cursor = max([windowStart, rangeFrom]);
       while (!isAfter(cursor, lastStart)) {
         const slotEnd = addMinutes(cursor, duration);
         if (isAfter(slotEnd, capEnd)) break;

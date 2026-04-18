@@ -152,6 +152,10 @@ export function ProjectsMap({ projects, className = "" }: Props) {
   );
 }
 
+function escapeAttr(s: string): string {
+  return escapeHtml(s);
+}
+
 function escapeHtml(s: string): string {
   return String(s)
     .replace(/&/g, "&amp;")

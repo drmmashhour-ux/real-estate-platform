@@ -7,6 +7,8 @@ import { prisma } from "@/lib/db";
 import { IDENTITY_MANUAL_REVIEW_DISCLAIMER } from "@/modules/mortgage/services/broker-verification";
 import { AdminBrokersClient } from "./AdminBrokersClient";
 import { AdminMortgageBrokersClient } from "./AdminMortgageBrokersClient";
+import { brokerMarketplaceRankingFlags } from "@/config/feature-flags";
+import { BrokerMarketplaceRankingPanel } from "@/components/broker/BrokerMarketplaceRankingPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -138,6 +140,8 @@ export default async function AdminBrokersPage() {
           Approve or reject broker applications. When approved, user becomes BROKER with brokerStatus verified.
         </p>
         <AdminBrokersClient applications={applications} />
+
+        {brokerMarketplaceRankingFlags.brokerMarketplaceRankingV1 ? <BrokerMarketplaceRankingPanel /> : null}
 
         <section className="mt-14 border-t border-slate-800 pt-10">
           <h2 className="text-lg font-medium text-slate-200">Assigned-lead billing (LECIPM)</h2>

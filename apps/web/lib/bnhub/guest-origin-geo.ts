@@ -119,7 +119,7 @@ export function aggregateGuestOrigins(
     const iso = normalizeCountryCode(row.guest.homeCountry ?? undefined);
     if (!iso) {
       const e =
-        map.get("UNKNOWN") ?? ({ count: 0, sampleLabel: "Profile country not set", iso: "UNKNOWN" } as const);
+        map.get("UNKNOWN") ?? { count: 0, sampleLabel: "Profile country not set", iso: "UNKNOWN" as const };
       e.count += 1;
       map.set("UNKNOWN", e);
       continue;

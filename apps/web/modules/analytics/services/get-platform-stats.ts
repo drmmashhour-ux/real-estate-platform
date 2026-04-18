@@ -101,11 +101,46 @@ async function countTransactionsClosedDay(start: Date, end: Date): Promise<numbe
   return ids.size;
 }
 
+/**
+ * Same methodology as {@link getPlatformStats} but for any day count (1–366).
+ * Used by admin metrics / command center custom ranges.
+ */
+export async function getPlatformStatsForDayCount(days: number): Promise<PlatformStatsResult> {
+  const d = Math.min(366, Math.max(1, Math.floor(days)));
+  const now = new Date();
+  const todayStart = startOfUtcDay(now);
+  const rangeStart = addUtcDays(todayStart, -(d - 1));
+  const rangeEndExclusive = addUtcDays(todayStart, 1);
+  return computePlatformStatsForRange(rangeStart, rangeEndExclusive, d);
+}
+
+/** Rolling window anchored on explicit UTC calendar days (for custom admin date ranges). */
+export async function getPlatformStatsForDateRange(
+  fromIso: string,
+  toIsoExclusive: string
+): Promise<PlatformStatsResult> {
+  const rangeStart = new Date(`${fromIso}T00:00:00.000Z`);
+  const rangeEndExclusive = new Date(`${toIsoExclusive}T00:00:00.000Z`);
+  const days = Math.max(
+    1,
+    Math.min(366, Math.round((rangeEndExclusive.getTime() - rangeStart.getTime()) / 86_400_000))
+  );
+  return computePlatformStatsForRange(rangeStart, rangeEndExclusive, days);
+}
+
 export async function getPlatformStats(days: 1 | 7 | 14 | 30): Promise<PlatformStatsResult> {
   const now = new Date();
   const todayStart = startOfUtcDay(now);
   const rangeStart = addUtcDays(todayStart, -(days - 1));
   const rangeEndExclusive = addUtcDays(todayStart, 1);
+  return computePlatformStatsForRange(rangeStart, rangeEndExclusive, days);
+}
+
+async function computePlatformStatsForRange(
+  rangeStart: Date,
+  rangeEndExclusive: Date,
+  days: number
+): Promise<PlatformStatsResult> {
 
   const analyticsRows = await prisma.platformAnalytics.findMany({
     where: {

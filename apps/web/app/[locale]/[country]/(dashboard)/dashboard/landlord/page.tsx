@@ -5,6 +5,7 @@ import { generateRentalListingCode } from "@/lib/codes/generate-code";
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
 import { RentDecisionAiCard } from "@/components/rental/RentDecisionAiCard";
 import { LandlordRentApplications } from "./landlord-rent-client";
+import { HubJourneyBanner } from "@/components/journey/HubJourneyBanner";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +13,12 @@ function money(cents: number) {
   return new Intl.NumberFormat("en-CA", { style: "currency", currency: "CAD" }).format(cents / 100);
 }
 
-export default async function LandlordRentDashboardPage() {
+export default async function LandlordRentDashboardPage({
+  params,
+}: {
+  params: Promise<{ locale: string; country: string }>;
+}) {
+  const { locale, country } = await params;
   const { userId } = await requireAuthenticatedUser();
 
   const [listings, applications] = await Promise.all([
@@ -36,6 +42,7 @@ export default async function LandlordRentDashboardPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-10 px-4 py-10 text-slate-100">
+      <HubJourneyBanner hub="landlord" locale={locale} country={country} userId={userId} />
       <header>
         <p className="text-xs font-semibold uppercase tracking-wide text-amber-500/90">Rent Hub</p>
         <h1 className="mt-1 text-3xl font-semibold">Landlord dashboard</h1>

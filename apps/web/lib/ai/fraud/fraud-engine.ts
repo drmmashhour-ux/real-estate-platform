@@ -35,9 +35,28 @@ export const FRAUD_WEIGHTS = {
 } as const;
 
 export const FRAUD_SCORE_THRESHOLDS = {
-  mediumMin: 36,
-  highMin: 68,
+  /** Raised to reduce borderline MEDIUM noise (still logged; see health event policy below). */
+  mediumMin: 42,
+  highMin: 70,
 } as const;
+
+const FRAUD_SIGNAL_LABELS: Record<string, string> = {
+  sparse_listing_copy: "Short title or description",
+  few_photos: "Few photos",
+  duplicate_title_other_accounts: "Duplicate title (other accounts)",
+  open_bnhub_fraud_flags: "Open BNHUB fraud flags",
+  open_bnhub_safety_flags: "Open BNHUB safety flags",
+  failed_verification_steps_90d: "Failed verification steps (90d)",
+  listing_edit_while_fraud_flag_open: "Edited listing while fraud flag open",
+  host_manager_overrides_90d: "Host/manager overrides (90d)",
+  trust_safety_incidents_90d: "Trust & safety incidents (90d)",
+  duplicate_phone_other_users: "Phone number shared with other users",
+  failed_payments_on_listing: "Failed payments on listing",
+  high_repeat_guest_bookings_same_listing_90d: "High repeat guest bookings (same listing, 90d)",
+  elevated_cancellations_90d: "Elevated cancellations (90d)",
+  review_burst_7d: "Review burst (7d)",
+  duplicate_review_bodies_on_listing: "Duplicate review text on listing",
+};
 
 /** Explicit: this module never performs bans, refunds, or listing removal. */
 export const FRAUD_NO_AUTO_ENFORCEMENT = true as const;
@@ -141,7 +160,10 @@ export function scoreShortTermListingFraud(raw: ShortTermListingFraudRawSignals)
 
   const riskScore = Math.min(100, hits.reduce((s, h) => s + h.weight, 0));
   const riskLevel = levelFromScore(riskScore);
-  const reasons = hits.map((h) => (h.detail ? `${h.key}:${h.detail}` : h.key));
+  const reasons = hits.map((h) => {
+    const label = FRAUD_SIGNAL_LABELS[h.key] ?? h.key.replace(/_/g, " ");
+    return h.detail ? `${label} (${h.detail})` : `${label} (+${h.weight})`;
+  });
 
   return {
     entityType: "short_term_listing",
@@ -162,7 +184,8 @@ export function planFraudSafeActions(riskLevel: FraudRiskLevel): {
 } {
   return {
     appendRiskLog: true,
-    emitAdminHealthEvent: riskLevel === "MEDIUM" || riskLevel === "HIGH",
+    /** HIGH only — MEDIUM remains in DB + manager logs; reduces alert fatigue. */
+    emitAdminHealthEvent: riskLevel === "HIGH",
     emitOverrideRequired: riskLevel === "HIGH",
     reduceAutopilotAggression: FRAUD_AUTOPILOT_SUPPRESSION_LEVELS.includes(riskLevel),
   };
@@ -305,7 +328,7 @@ export async function runBnhubFraudScanForListing(listingId: string): Promise<Fr
   if (last && Date.now() - last.createdAt.getTime() < sixHoursMs) {
     if (
       last.riskLevel === assessment.riskLevel &&
-      Math.abs(last.riskScore - assessment.riskScore) < 6
+      Math.abs(last.riskScore - assessment.riskScore) < 8
     ) {
       return assessment;
     }

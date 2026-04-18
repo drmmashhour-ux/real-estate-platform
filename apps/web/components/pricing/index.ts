@@ -3,3 +3,7 @@ export { PricingToggle } from "./PricingToggle";
 export { PricingFeatureList } from "./PricingFeatureList";
 export { PricingComparisonTable } from "./PricingComparisonTable";
 export { PricingCatalogSection } from "./PricingCatalogSection";
+export { FeeBreakdown } from "./FeeBreakdown";
+export { BrokerFeeTransparency } from "./BrokerFeeTransparency";
+export { ROIWidget } from "./ROIWidget";
+export { ComparisonTable } from "./ComparisonTable";

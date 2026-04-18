@@ -52,7 +52,7 @@ export async function computeListingTrustScore(listingId: string): Promise<Listi
   }
 
   let raw = 24;
-  const reasons: Record<string, number | string | boolean> = {};
+  const reasons: Record<string, Prisma.JsonValue> = {};
 
   if (listing.verificationStatus === VerificationStatus.VERIFIED) {
     raw += 18;

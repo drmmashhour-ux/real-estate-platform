@@ -195,7 +195,7 @@ async function maybePostReadyAutomation(jobId: string): Promise<void> {
       contentJobId: jobId,
       eventType: "auto_publish_attempt",
       message: "Direct TikTok (scheduler) / Instagram (Meta) publish.",
-      metadataJson: { tiktok: tt, instagram: ig },
+      metadataJson: { tiktok: tt, instagram: ig } as Prisma.InputJsonValue,
     });
   }
 }

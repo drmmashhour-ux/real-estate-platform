@@ -3,6 +3,44 @@ import { getGuestId } from "@/lib/auth/session";
 import { submitComplaint } from "@/lib/trust-safety/dispute-service";
 import { DISPUTE_COMPLAINT_CATEGORIES } from "@/lib/trust-safety/constants";
 import type { ComplaintCategory } from "@/lib/trust-safety/constants";
+import { prisma } from "@/lib/db";
+
+/**
+ * GET /api/bnhub/bookings/:id — booking detail for guest or host (no card data).
+ */
+export async function GET(_request: NextRequest, context: { params: Promise<{ id: string }> }) {
+  const userId = await getGuestId();
+  if (!userId) {
+    return Response.json({ error: "Sign in required" }, { status: 401 });
+  }
+  const { id } = await context.params;
+  const booking = await prisma.booking.findUnique({
+    where: { id },
+    include: {
+      listing: {
+        select: {
+          id: true,
+          title: true,
+          listingCode: true,
+          city: true,
+          ownerId: true,
+          address: true,
+        },
+      },
+      guest: { select: { id: true, name: true, email: true } },
+      payment: { select: { id: true, status: true, stripePaymentId: true, stripeCheckoutSessionId: true } },
+    },
+  });
+  if (!booking) {
+    return Response.json({ error: "Not found" }, { status: 404 });
+  }
+  const isGuest = booking.guestId === userId;
+  const isHost = booking.listing.ownerId === userId;
+  if (!isGuest && !isHost) {
+    return Response.json({ error: "Forbidden" }, { status: 403 });
+  }
+  return Response.json({ booking });
+}
 
 /**
  * POST /api/bnhub/bookings/:bookingId/report-issue

@@ -48,5 +48,5 @@ export const trackBodySchema = z.object({
   experimentId: z.string().uuid(),
   variantId: z.string().uuid(),
   eventName: z.string().refine((n) => EVENT_NAME_SET.has(n), "invalid experiment event name"),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });

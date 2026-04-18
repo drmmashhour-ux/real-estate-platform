@@ -571,12 +571,23 @@ export async function POST(request: NextRequest) {
   ).catch(() => {});
   if (paymentType === "booking" && typeof body.bookingId === "string" && body.bookingId) {
     const bid = body.bookingId.trim();
-    const cookieHeader = req.headers.get("cookie");
+    const cookieHeader = request.headers.get("cookie");
     const bookingStartMeta = mergeTrafficAttributionIntoMetadata(cookieHeader, {
       bookingId: bid,
       sessionId: result.sessionId,
     });
     void trackEvent("booking_started", bookingStartMeta, { userId }).catch(() => {});
+    void import("@/modules/revenue/revenue-events.service").then((m) =>
+      m.trackRevenueEvent({
+        type: "booking_started",
+        userId,
+        metadata: {
+          source: "bnhub",
+          bookingId: bid,
+          sessionId: result.sessionId,
+        },
+      }),
+    );
     void prisma.booking
       .findUnique({
         where: { id: bid },
@@ -619,6 +630,30 @@ export async function POST(request: NextRequest) {
           ? body.listingId
           : null,
   });
+
+  void prisma.user
+    .findUnique({ where: { id: userId }, select: { createdAt: true } })
+    .then((uRow) =>
+      import("@/modules/fraud/fraud-engine.service").then((m) =>
+        m.evaluateLaunchFraudEngine(
+          {
+            user: uRow ? { id: userId, createdAt: uRow.createdAt } : { id: userId },
+            payment: {
+              id: result.sessionId,
+              amountCents: chargeAmountCents,
+              currency: typeof body.currency === "string" ? body.currency : "cad",
+              userId,
+            },
+            booking:
+              paymentType === "booking" && typeof body.bookingId === "string"
+                ? { id: body.bookingId.trim() }
+                : undefined,
+          },
+          { persist: true, actionType: "stripe_checkout_start_v1" }
+        )
+      )
+    )
+    .catch((e) => logWarn("[launch-fraud] checkout eval skipped", { message: String(e) }));
 
   logInfo(
     paymentType === "booking"

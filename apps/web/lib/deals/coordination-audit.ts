@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { asOptionalInputJsonValue } from "@/lib/prisma/as-input-json";
 
 export type CoordinationAuditAction =
   | "request_created"
@@ -29,7 +30,7 @@ export async function logCoordinationAudit(input: {
       actorUserId: input.actorUserId ?? undefined,
       entityType: input.entityType ?? undefined,
       entityId: input.entityId ?? undefined,
-      payload: input.payload ?? undefined,
+      payload: asOptionalInputJsonValue(input.payload ?? undefined),
     },
   });
 }

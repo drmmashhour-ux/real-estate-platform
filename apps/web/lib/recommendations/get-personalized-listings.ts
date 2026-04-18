@@ -1,4 +1,4 @@
-import { ListingStatus } from "@prisma/client";
+import { ListingStatus, type Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { buildUserSignals } from "@/lib/ai/core/buildUserSignals";
 import { normLog } from "@/lib/ranking/normalize-metrics";
@@ -171,7 +171,7 @@ export async function getPersonalizedBnhubListings(userId: string | null, limit 
   );
 }
 
-function cardSelect() {
+function cardSelect(): Prisma.ShortTermListingSelect {
   return {
     id: true,
     ownerId: true,
@@ -192,5 +192,5 @@ function cardSelect() {
       orderBy: [{ isCover: "desc" }, { sortOrder: "asc" }],
       select: { url: true },
     },
-  } as const;
+  };
 }

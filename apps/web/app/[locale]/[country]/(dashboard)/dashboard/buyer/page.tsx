@@ -6,6 +6,7 @@ import { DashboardBnhubRecommendations } from "@/components/recommendations/Dash
 import { BuyerHubAiSection } from "@/components/ai/BuyerHubAiSection";
 import { DecisionCard } from "@/components/ai/DecisionCard";
 import { safeEvaluateDecision } from "@/modules/ai/decision-engine";
+import { HubJourneyBanner } from "@/components/journey/HubJourneyBanner";
 
 export const dynamic = "force-dynamic";
 
@@ -163,6 +164,7 @@ export default async function BuyerDashboardPage({
   return (
     <main className="dashboard-shell">
       <div className="mx-auto max-w-4xl space-y-10">
+        <HubJourneyBanner hub="buyer" locale={locale} country={country} userId={userId} />
         <DashboardBnhubRecommendations userId={userId} hrefPrefix={`/${locale}/${country}`} />
 
         <div className="flex flex-col justify-between gap-6 border-b border-white/10 pb-8 sm:flex-row sm:items-end">

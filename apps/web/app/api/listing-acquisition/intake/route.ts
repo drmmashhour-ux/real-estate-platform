@@ -443,7 +443,7 @@ async function handleMultipart(req: Request, limit: ReturnType<typeof checkRateL
   if (canAutoLinkFsbo) {
     const linked = await maybeCreateFsboDraftFromIntake({
       leadId: row.id,
-      intakeCode: row.intakeCode,
+      intakeCode: row.intakeCode!,
       ownerUserId: sessionUserId,
       contactEmail,
       contactPhone: contactPhone || null,

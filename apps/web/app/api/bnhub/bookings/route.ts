@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { createBooking } from "@/lib/bnhub/booking";
 import { isListingAvailable } from "@/lib/bnhub/listings";
-import { getGuestId } from "@/lib/auth/session";
+import { requireUser } from "@/modules/security/access-guard.service";
 import { prisma } from "@/lib/db";
 import { isBookingRestrictedFor } from "@/lib/operational-controls";
 import { canConfirmBooking } from "@/lib/policy-engine";
@@ -20,16 +20,14 @@ import { requireContentLicenseAccepted } from "@/lib/legal/content-license-enfor
 import { logApiRouteError } from "@/lib/api/dev-log";
 import { logInfo } from "@/lib/logger";
 import { GuestIdentityRequiredError } from "@/lib/bnhub/guest-identity-gate";
+import { GrowthEventName } from "@/modules/growth/event-types";
+import { trackGrowthSystemEvent } from "@/modules/growth/tracking.service";
 
 export async function POST(request: NextRequest) {
   try {
-    const guestId = await getGuestId();
-    if (!guestId) {
-      return Response.json(
-        { error: "Sign in required to book" },
-        { status: 401 }
-      );
-    }
+    const auth = await requireUser();
+    if (!auth.ok) return auth.response;
+    const guestId = auth.userId;
     const licenseBlock = await requireContentLicenseAccepted(guestId);
     if (licenseBlock) return licenseBlock;
     const restriction = await isUserRestricted(guestId);
@@ -184,6 +182,14 @@ export async function POST(request: NextRequest) {
       guestId,
       status: booking.status,
     });
+    void import("@/modules/fraud/fraud-engine.service")
+      .then((m) =>
+        m.evaluateLaunchFraudEngine(
+          { user: { id: guestId }, booking: { id: booking.id } },
+          { persist: true, actionType: "booking_created_v1" }
+        )
+      )
+      .catch((e) => logInfo("[launch-fraud] booking eval failed", { message: String(e) }));
     void import("@/lib/listings/listing-analytics-service").then((m) =>
       m.incrementBnhubBookingAttempt(listingId)
     );
@@ -194,6 +200,18 @@ export async function POST(request: NextRequest) {
       payload: { listingId, guestId, status: booking.status },
       region,
     });
+    void trackGrowthSystemEvent(
+      GrowthEventName.BOOKING_STARTED,
+      { listingId, bookingId: booking.id, surface: "bnhub_booking_create" },
+      {
+        userId: guestId,
+        idempotencyKey: `booking_started:${booking.id}`,
+        cookieHeader: request.headers.get("cookie"),
+        body,
+        pageUrl: request.url,
+        referrerHeader: request.headers.get("referer"),
+      },
+    );
     void logImmoContactEvent({
       userId: guestId,
       listingId,

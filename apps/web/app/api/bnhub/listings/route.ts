@@ -3,6 +3,8 @@ import { searchListings, createListing } from "@/lib/bnhub/listings";
 import { prisma } from "@/lib/db";
 import { getGuestId } from "@/lib/auth/session";
 import { requireContentLicenseAccepted } from "@/lib/legal/content-license-enforcement";
+import { bnhubV2Flags } from "@/config/feature-flags";
+import { computeBnhubRankingBundle } from "@/modules/bnhub-ranking/ranking-engine.service";
 
 export async function GET(request: NextRequest) {
   try {
@@ -81,7 +83,28 @@ export async function GET(request: NextRequest) {
         ...l,
         photos: Array.isArray(l.photos) ? (l.photos.filter((p: unknown): p is string => typeof p === "string") as string[]) : [],
       }));
+      const includeScores = request.nextUrl.searchParams.get("includeScores") === "true";
+      if (includeScores && bnhubV2Flags.bnhubV2 && bnhubV2Flags.bnhubRankingV1) {
+        const enriched = await Promise.all(
+          normalized.map(async (l: { id: string }) => ({
+            ...l,
+            bnhubV2: await computeBnhubRankingBundle(l.id),
+          })),
+        );
+        return Response.json(enriched);
+      }
       return Response.json(normalized);
+    }
+
+    const includeScores = searchParams.get("includeScores") === "true";
+    if (includeScores && bnhubV2Flags.bnhubV2 && bnhubV2Flags.bnhubRankingV1) {
+      const enriched = await Promise.all(
+        (listings as { id: string }[]).map(async (l) => ({
+          ...l,
+          bnhubV2: await computeBnhubRankingBundle(l.id),
+        })),
+      );
+      return Response.json(enriched);
     }
 
     return Response.json(listings);
@@ -159,6 +182,15 @@ export async function POST(request: NextRequest) {
       photos: images,
       listingStatus: "PUBLISHED",
     });
+
+    void import("@/modules/fraud/fraud-engine.service")
+      .then((m) =>
+        m.evaluateLaunchFraudEngine(
+          { user: { id: ownerId }, listing: { id: listing.id } },
+          { persist: true, actionType: "listing_created_v1" }
+        )
+      )
+      .catch(() => {});
 
     return Response.json(listing, { status: 201 });
   } catch (e) {

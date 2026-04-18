@@ -7,12 +7,23 @@ import {
   LAUNCH_DM_FIRST_CONTACT,
   personalizeLaunchTemplate,
 } from "@/lib/launch/sales-scripts";
+import { LeadDisclaimer } from "@/components/legal/LeadDisclaimer";
+import { BrokerLeadTrustStrip } from "@/components/legal/BrokerLeadTrustStrip";
+
+type LeadPricing = {
+  leadValue: "low" | "medium" | "high";
+  leadScore: number;
+  leadPrice: number;
+  leadPriceCents: number;
+};
 
 type LeadRow = {
   id: string;
   name: string;
   email: string;
   phone: string;
+  leadPricing?: LeadPricing;
+  revenueMonetizationEnabled?: boolean;
   city?: string;
   propertyType?: string | null;
   estimatedValue?: number | null;
@@ -136,6 +147,7 @@ export function LeadsCrmClient({ isAdmin }: { isAdmin: boolean }) {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [authError, setAuthError] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [unlockingId, setUnlockingId] = useState<string | null>(null);
 
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("");
@@ -187,6 +199,33 @@ export function LeadsCrmClient({ isAdmin }: { isAdmin: boolean }) {
   useEffect(() => {
     load();
   }, [load]);
+
+  const startLeadUnlockCheckout = useCallback(async (leadId: string) => {
+    setUnlockingId(leadId);
+    try {
+      const res = await fetch(`/api/leads/${encodeURIComponent(leadId)}/unlock-checkout`, {
+        method: "POST",
+        credentials: "same-origin",
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        url?: string;
+        error?: string;
+        softBlock?: boolean;
+        message?: string;
+      };
+      if (data.softBlock) {
+        window.alert(data.message ?? "Unlock this lead to continue.");
+        return;
+      }
+      if (!res.ok) {
+        window.alert(data.error ?? "Checkout unavailable");
+        return;
+      }
+      if (data.url) window.location.href = data.url;
+    } finally {
+      setUnlockingId(null);
+    }
+  }, []);
 
   const topLeads = useMemo(() => [...leads].sort((a, b) => b.score - a.score).slice(0, 10), [leads]);
 
@@ -324,6 +363,11 @@ export function LeadsCrmClient({ isAdmin }: { isAdmin: boolean }) {
             ) : null}
           </div>
         </div>
+
+        <section className="mt-6 space-y-3" aria-label="Trust and legal">
+          <BrokerLeadTrustStrip />
+          <LeadDisclaimer />
+        </section>
 
         {summary?.dmActions &&
           (summary.dmActions.newToMessage > 0 || summary.dmActions.followUpsDue > 0) && (
@@ -848,8 +892,16 @@ export function LeadsCrmClient({ isAdmin }: { isAdmin: boolean }) {
                   return (
                   <tr key={l.id} className="border-b border-white/5 hover:bg-white/[0.03]">
                     <td className="px-4 py-3 font-medium text-white">{l.name}</td>
-                    <td className="px-4 py-3 text-[#B3B3B3]">{l.email}</td>
-                    <td className="px-4 py-3 text-[#B3B3B3]">{l.phone}</td>
+                    <td
+                      className={`px-4 py-3 text-[#B3B3B3] ${l.email === "[Locked]" ? "blur-sm select-none" : ""}`}
+                    >
+                      {l.email}
+                    </td>
+                    <td
+                      className={`px-4 py-3 text-[#B3B3B3] ${l.phone === "[Locked]" ? "blur-sm select-none" : ""}`}
+                    >
+                      {l.phone}
+                    </td>
                     <td className="px-4 py-3 text-[#B3B3B3]">{l.city ?? "—"}</td>
                     <td className="px-4 py-3 text-[#B3B3B3]">{l.propertyType ?? "—"}</td>
                     <td className="px-4 py-3 tabular-nums text-white">
@@ -939,6 +991,23 @@ export function LeadsCrmClient({ isAdmin }: { isAdmin: boolean }) {
                         >
                           Open
                         </Link>
+                        {l.email === "[Locked]" && l.leadPricing ? (
+                          <button
+                            type="button"
+                            disabled={unlockingId === l.id}
+                            onClick={() => void startLeadUnlockCheckout(l.id)}
+                            className="rounded-lg border border-amber-500/50 bg-amber-500/10 px-2 py-1 text-xs font-semibold text-amber-200 hover:bg-amber-500/20 disabled:opacity-50"
+                            title={
+                              l.revenueMonetizationEnabled
+                                ? "Pay to reveal email and phone"
+                                : "Pay to reveal contact (optional)"
+                            }
+                          >
+                            {unlockingId === l.id
+                              ? "Redirecting…"
+                              : `Unlock $${l.leadPricing.leadPrice.toFixed(2)}`}
+                          </button>
+                        ) : null}
                         <button
                           type="button"
                           onClick={() => patchLead(l.id, "contacted")}

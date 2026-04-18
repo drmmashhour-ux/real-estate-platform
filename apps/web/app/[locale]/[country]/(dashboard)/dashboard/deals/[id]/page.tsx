@@ -6,6 +6,8 @@ import { isStripeConfigured } from "@/lib/stripe";
 import { DealDetailClient } from "./deal-detail-client";
 import { DealLegalTimelineClient } from "./deal-legal-timeline-client";
 import { getDealLegalTimeline } from "@/lib/deals/legal-timeline";
+import { DealReviewSurfaceSection } from "@/components/review-integration/DealReviewSurfaceSection";
+import { getDealReviewSurfaceForViewer } from "@/modules/qa-review/review-surface.service";
 
 export const dynamic = "force-dynamic";
 
@@ -48,6 +50,14 @@ export default async function DealDetailPage({
   const viewer = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
   const legalTimeline = await getDealLegalTimeline(deal.id);
   const canEditLegalTimeline = viewer?.role === "ADMIN" || viewer?.role === "BROKER" || deal.brokerId === userId;
+  const reviewSurface =
+    viewer?.role != null
+      ? await getDealReviewSurfaceForViewer({
+          dealId: id,
+          viewerUserId: userId,
+          viewerRole: viewer.role,
+        })
+      : { enabled: false as const };
 
   return (
     <main className="min-h-screen bg-slate-950 text-slate-50">
@@ -55,18 +65,26 @@ export default async function DealDetailPage({
         <Link href="/dashboard/deals" className="text-sm text-amber-400 hover:text-amber-300">
           ← Deals
         </Link>
-        <p className="mt-3">
+        <p className="mt-3 flex flex-wrap gap-4">
           <Link
             href={`/dashboard/deals/${id}/coordination`}
             className="text-sm font-medium text-emerald-400 hover:text-emerald-300"
           >
             Coordination hub →
           </Link>
+          <Link
+            href={`/dashboard/deals/${id}/execution`}
+            className="text-sm font-medium text-amber-400 hover:text-amber-300"
+          >
+            Execution &amp; document copilot →
+          </Link>
         </p>
         <h1 className="mt-4 text-2xl font-semibold">Deal</h1>
         <p className="mt-1 text-slate-400">
           Status: {STATUS_LABELS[deal.status] ?? deal.status} · ${(deal.priceCents / 100).toLocaleString()}
         </p>
+
+        <DealReviewSurfaceSection surface={reviewSurface} />
 
         {(deal.leadContactOrigin === "IMMO_CONTACT" || deal.commissionSource === "IMMO_CONTACT") && (
           <div className="mt-4 rounded-xl border border-amber-500/35 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">

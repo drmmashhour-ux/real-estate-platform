@@ -4,6 +4,10 @@ import { HubLayout } from "@/components/hub/HubLayout";
 import { getGuestId, getUserRole, isHubAdminRole } from "@/lib/auth/session";
 import { hubNavigation } from "@/lib/hub/navigation";
 import { prisma } from "@/lib/db";
+import { SyriaRegionPanel } from "@/components/global/admin/SyriaRegionPanel";
+import { SyriaPreviewPanel } from "@/components/global/admin/SyriaPreviewPanel";
+import { engineFlags } from "@/config/feature-flags";
+import { autonomousMarketplaceEngine } from "@/modules/autonomous-marketplace/execution/autonomous-marketplace.engine";
 import { getIntelligenceDashboardPayload } from "@/src/modules/ai/intelligenceSnapshot";
 
 export const dynamic = "force-dynamic";
@@ -12,7 +16,11 @@ function maxCount(cells: { count: number }[]) {
   return Math.max(1, ...cells.map((c) => c.count));
 }
 
-export default async function AdminIntelligencePage() {
+export default async function AdminIntelligencePage({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const userId = await getGuestId();
   if (!userId) redirect("/auth/login?next=/admin/intelligence");
   const me = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
@@ -20,6 +28,20 @@ export default async function AdminIntelligencePage() {
   const role = await getUserRole();
   const data = await getIntelligenceDashboardPayload();
   const heatMax = maxCount(data.heatmap);
+
+  const sp = searchParams ? await searchParams : {};
+  const rawListing = sp.syriaListing;
+  const syriaListingParam = typeof rawListing === "string" ? rawListing.trim() : "";
+
+  let syriaPreview = null as Awaited<ReturnType<typeof autonomousMarketplaceEngine.previewForListing>> | null;
+  if (engineFlags.syriaRegionAdapterV1 && engineFlags.syriaPreviewV1 && syriaListingParam) {
+    syriaPreview = await autonomousMarketplaceEngine.previewForListing({
+      listingId: syriaListingParam,
+      source: "syria",
+      regionCode: "sy",
+      dryRun: true,
+    });
+  }
 
   return (
     <HubLayout title="Intelligence" hubKey="admin" navigation={hubNavigation.admin} showAdminInSwitcher={isHubAdminRole(role)}>
@@ -36,6 +58,12 @@ export default async function AdminIntelligencePage() {
             ).
           </p>
         </div>
+
+        <SyriaRegionPanel />
+
+        {engineFlags.syriaRegionAdapterV1 && engineFlags.syriaPreviewV1 ? (
+          <SyriaPreviewPanel listingId={syriaListingParam} preview={syriaPreview} />
+        ) : null}
 
         <section className="rounded-2xl border border-white/10 bg-[#0a0a0a] p-6">
           <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500">Search &amp; browse heatmap</h2>

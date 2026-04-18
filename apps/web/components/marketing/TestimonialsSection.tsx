@@ -1,50 +1,30 @@
-import { SectionHeading } from "@/components/marketing/SectionHeading";
-import { AnimatedReveal } from "@/components/marketing/AnimatedReveal";
+import { Container } from "@/components/ui/Container";
+import { Card } from "@/components/ui/Card";
 
-const quotes = [
-  {
-    quote:
-      "We finally stopped losing context between email, drive folders, and three CRMs. One pipeline for the whole deal.",
-    name: "Alex M.",
-    role: "Managing broker",
-  },
-  {
-    quote:
-      "Offers and documents living in the same room as the client conversation — that alone paid for the switch.",
-    name: "Sarah L.",
-    role: "Agency operations",
-  },
-  {
-    quote:
-      "Finance and commissions in the same workspace as the file means fewer surprises at month-end.",
-    name: "Jordan P.",
-    role: "Team lead",
-  },
-];
+const PLACEHOLDERS = [
+  { quote: "Placeholder — host quote forthcoming.", attribution: "Host, Québec" },
+  { quote: "Placeholder — buyer quote forthcoming.", attribution: "Buyer, Montréal" },
+] as const;
 
 export function TestimonialsSection() {
   return (
-    <section id="testimonials" className="scroll-mt-24 border-y border-white/10 bg-white/[0.02] px-4 py-20 sm:px-6">
-      <div className="mx-auto max-w-6xl">
-        <SectionHeading
-          eyebrow="Trust"
-          title="Teams run calmer when the workflow is unified"
-          subtitle="Representative feedback from early partners — replace with live testimonials when available."
-        />
-        <div className="grid gap-6 md:grid-cols-3">
-          {quotes.map((q, i) => (
-            <AnimatedReveal key={q.name} delayMs={i * 70}>
-              <blockquote className="flex h-full flex-col rounded-2xl border border-white/10 bg-black/40 p-6 shadow-lg shadow-black/30">
-                <p className="text-sm leading-relaxed text-slate-300">&ldquo;{q.quote}&rdquo;</p>
-                <footer className="mt-6 border-t border-white/10 pt-4">
-                  <p className="text-sm font-semibold text-white">{q.name}</p>
-                  <p className="text-xs text-premium-gold/90">{q.role}</p>
-                </footer>
-              </blockquote>
-            </AnimatedReveal>
+    <section className="border-b border-white/5 bg-landing-black py-14 sm:py-20">
+      <Container>
+        <h2 className="text-center font-[family-name:var(--font-serif)] text-3xl font-semibold text-white sm:text-4xl">
+          What people say
+        </h2>
+        <p className="mx-auto mt-3 max-w-xl text-center text-xs text-white/45">
+          Testimonials will be replaced with verified reviews — not fabricated endorsements.
+        </p>
+        <div className="mt-10 grid gap-6 md:grid-cols-2">
+          {PLACEHOLDERS.map((t) => (
+            <Card key={t.quote} className="border-white/10 bg-landing-dark/50">
+              <p className="text-sm italic leading-relaxed text-landing-text/90">&ldquo;{t.quote}&rdquo;</p>
+              <p className="mt-4 text-xs font-medium text-white/50">{t.attribution}</p>
+            </Card>
           ))}
         </div>
-      </div>
+      </Container>
     </section>
   );
 }

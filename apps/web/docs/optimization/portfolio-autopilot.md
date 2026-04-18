@@ -1,6 +1,8 @@
 # Portfolio autopilot
 
-Hosts and listing owners with multiple BNHub stays (`ShortTermListing`) get a **portfolio-level** layer on top of [listing autopilot](./auto-fix-autopilot.md) and the [listing quality system](./listing-quality-system.md). It computes **portfolio health**, surfaces **top / weak / opportunity** listings, generates **prioritized actions**, and can **trigger listing optimization runs** safely (respecting toggles and listing-level autopilot settings).
+**Hosts**, **listing owners**, and any signed-in user who **owns** BNHub stays (`ShortTermListing.ownerId`) get a **portfolio-level** layer on top of [listing autopilot](./auto-fix-autopilot.md) and the [listing quality system](./listing-quality-system.md). It computes **portfolio health**, surfaces **top / weak / opportunity** listings, generates **prioritized actions**, and can **trigger listing optimization runs** safely (respecting toggles and listing-level autopilot settings).
+
+**Brokers:** Real-estate CRM brokers often use a **host account** that owns inventory. Portfolio metrics key off `ownerId` on stays; a broker user with no owned listings will see an empty portfolio until those listings exist under that account (or use admin `ownerUserId` inspection).
 
 ## Health score (0–100)
 
@@ -81,3 +83,15 @@ Portfolio actions call `runListingAutopilot` per target listing when toggles all
 ## Migration
 
 Apply `20260404140000_portfolio_autopilot`.
+
+## QA checklist
+
+- Run **POST** `/api/portfolio-autopilot/run` with portfolio mode not `off` — health row upserts, suggested actions appear.
+- With **safe_autopilot**, downstream listing runs fire only when listing autopilot is not `off` and toggles allow.
+- **Approve** / **reject** single actions update status and log `IntelligenceDecisionLog` (`domain: AUTOPILOT`).
+- **GET** overview matches bands: overall score within 0–100; weak/top lists non-empty when listings exist.
+- Admin **multi-weak** list matches owners with ≥2 listings under quality threshold.
+
+## Admin dashboard
+
+`/admin/portfolio-autopilot` surfaces: global action counts by status, healthiest and struggling cached portfolios, **owners with multiple weak listings** (quality &lt; 52, ≥2 stays), and top **revenue health** component scores.

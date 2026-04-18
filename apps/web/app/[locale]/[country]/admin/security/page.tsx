@@ -8,6 +8,8 @@ import { getActiveAlerts, getPlatformHealthSnapshot } from "@/lib/observability"
 import { listSecurityIpBlocks } from "@/lib/security/ip-block";
 import { getLoginFailureHourlySeries, getTopFailedLoginFingerprints } from "@/lib/security/security-analytics";
 import { getSecurityDashboardSummary } from "@/lib/security/security-dashboard";
+import { securityHardeningV1Flags } from "@/config/feature-flags";
+import { verifyRlsPoliciesAndAppLayerExpectations } from "@/modules/security/rls-enforcer.service";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -55,6 +57,14 @@ export default async function AdminSecurityPage() {
     listSecurityIpBlocks(30),
     getPlatformHealthSnapshot(),
   ]);
+
+  const rlsSnapshot = await verifyRlsPoliciesAndAppLayerExpectations().catch(() => null);
+  const hardeningEvents = securityHardeningV1Flags.securityLoggingV1
+    ? await prisma.securityEvent.findMany({
+        orderBy: { createdAt: "desc" },
+        take: 80,
+      })
+    : [];
 
   const scanNote =
     process.env.SECURITY_LAST_SCAN_SUMMARY?.trim() ||
@@ -252,6 +262,54 @@ export default async function AdminSecurityPage() {
         ) : (
           <p className="text-sm text-zinc-500">No unresolved system alerts.</p>
         )}
+
+        {rlsSnapshot ? (
+          <div className="rounded-xl border border-zinc-800 bg-zinc-950/40 p-4">
+            <h2 className="text-lg font-semibold text-white">RLS policy check (Postgres)</h2>
+            <p className="mt-1 text-xs text-zinc-500">{rlsSnapshot.message}</p>
+            <p className="mt-2 text-sm text-zinc-400">
+              Status: <span className="font-mono text-emerald-300/90">{rlsSnapshot.status}</span> — app server uses a
+              privileged DB role; enforce tenant isolation in API routes.
+            </p>
+          </div>
+        ) : null}
+
+        {securityHardeningV1Flags.securityLoggingV1 ? (
+          <div>
+            <h2 className="text-lg font-semibold text-white">Security hardening events (v1)</h2>
+            <p className="mt-1 text-xs text-zinc-500">
+              Rows from <code className="text-zinc-400">security_events</code> — middleware blocks + API audit hooks.
+            </p>
+            {hardeningEvents.length === 0 ? (
+              <p className="mt-3 text-sm text-zinc-500">No audit rows yet — blocked requests can be logged here when wired.</p>
+            ) : (
+              <div className="mt-3 overflow-x-auto rounded-xl border border-zinc-800">
+                <table className="min-w-full text-left text-xs text-zinc-300">
+                  <thead className="bg-zinc-900/80 text-zinc-500">
+                    <tr>
+                      <th className="px-3 py-2">Time</th>
+                      <th className="px-3 py-2">Type</th>
+                      <th className="px-3 py-2">Severity</th>
+                      <th className="px-3 py-2">IP</th>
+                      <th className="px-3 py-2">Path</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-800 bg-[#111]">
+                    {hardeningEvents.map((e: (typeof hardeningEvents)[number]) => (
+                      <tr key={e.id}>
+                        <td className="whitespace-nowrap px-3 py-2 text-zinc-500">{e.createdAt.toISOString()}</td>
+                        <td className="px-3 py-2 font-mono text-amber-200/90">{e.type}</td>
+                        <td className="px-3 py-2">{e.severity}</td>
+                        <td className="px-3 py-2 font-mono text-zinc-500">{e.ip ?? "—"}</td>
+                        <td className="max-w-[240px] truncate px-3 py-2 text-zinc-500">{e.path ?? "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        ) : null}
 
         <div>
           <h2 className="text-lg font-semibold text-white">Recent security & auth events</h2>

@@ -39,7 +39,7 @@ export async function buildInvestorReportPdfBuffer(bundle: InvestorReportSection
   doc.setFontSize(9);
   const disclaimer =
     "Internal metrics summary for investor relations. Funnel and projections use platform definitions documented in the admin investor hub; projections are illustrative, not GAAP or audited forecasts.";
-  doc.splitTextToSize(disclaimer, maxW).forEach((line) => {
+  doc.splitTextToSize(disclaimer, maxW).forEach((line: string) => {
     ensureSpace(12);
     doc.text(line, margin, y);
     y += 11;

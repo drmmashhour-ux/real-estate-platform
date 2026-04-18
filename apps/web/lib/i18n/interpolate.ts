@@ -1,3 +1,7 @@
+/**
+ * Replaces `{key}` placeholders only — keeps unrelated `{` intact.
+ * Pass **numeric** values as numbers so callers preserve formatting across locales (FR/AR copy uses same keys).
+ */
 export function interpolateMessage(
   template: string,
   vars?: Record<string, string | number>,

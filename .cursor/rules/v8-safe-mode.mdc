@@ -1,0 +1,52 @@
+---
+description: LECIPM V8 — non-destructive, additive-only engineering for live revenue-critical systems
+alwaysApply: true
+---
+
+# V8 Safe Mode (LECIPM)
+
+## Absolute rule
+
+- **No deletion** of code, files, schema columns, or stable APIs unless the user writes exactly: `AUTHORIZED DELETION: [exact target]`.
+- **Additive changes only**: new files, new functions, wrappers, adapters, flags, optional schema, tests, docs.
+- **Do not replace or rewrite** production-critical logic in place. Prefer **wrapper**, **parallel/shadow**, **feature flag**, **patch/guard layer**.
+
+## Protected domains (do not modify directly)
+
+- Brain / adaptive learning / weights (`brain-*`, outcome ingestion, before/after metrics).
+- Ads attribution and campaign truth.
+- Booking, checkout, Stripe webhooks, financial calculations.
+- Historical analytics and attribution records.
+- Marketplace flows that affect money, trust, or compliance.
+
+**Interaction pattern:** bridges, adapters, observers, shadow evaluators, gated new paths.
+
+## Safe patterns (mandatory for risky work)
+
+1. **Wrapper** — `legacyResult = existing(...); return enhance(legacyResult, ...)`.
+2. **Feature flag** — new behavior behind env/flag; default preserves current behavior.
+3. **Parallel / shadow** — new logic runs alongside; log/compare; no forced cutover.
+4. **Patch layer** — guards, validation, retries, safe defaults **around** legacy code, not a rewrite of stable branches.
+
+## Database (Prisma)
+
+- Allowed: new models, optional fields, indexes, audit/shadow tables.
+- Forbidden: drops, renames, semantic changes to existing fields, non-backward-compatible migrations.
+
+## Rollout (medium/high risk)
+
+Observe → shadow → recommend → gated execution → expand. Never skip straight to full replacement.
+
+## Self-improvement / self-healing
+
+- Improve by **adding** evaluators, metrics, fallbacks, and resilience — not by deleting “old” paths.
+- Reversibility: prefer disabling a flag over irreversible code removal.
+
+## Output discipline
+
+When shipping work, state: what was added, where, why, safety model used, rollout phase, and confirm **no existing code was modified or deleted** — or list minimal exceptions with file + reason.
+
+## Governance vs runtime (no contradiction)
+
+- This rule governs **how** changes are made (additive, reversible, reviewable).
+- **Product behavior** is controlled separately by per-module `FEATURE_*` / env flags and server guards — not by this Markdown file alone.

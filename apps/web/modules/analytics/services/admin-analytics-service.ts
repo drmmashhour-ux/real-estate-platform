@@ -71,6 +71,9 @@ export function parseAdminRange(params: {
   if (r === "7d") {
     preset = "7d";
     start = addUtcDays(end, -6);
+  } else if (r === "90d") {
+    preset = "90d";
+    start = addUtcDays(end, -89);
   } else {
     preset = "30d";
     start = addUtcDays(end, -29);

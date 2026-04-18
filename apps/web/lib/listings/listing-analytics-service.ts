@@ -20,6 +20,8 @@ export type ListingDemandUiPayload = {
   priceMovementNote: string | null;
   badge: string | null;
   hasSignal: boolean;
+  /** Real 24h view signal when analytics row exists (no fabricated counts). */
+  activityHint: string | null;
   /** FSBO peer aggregate mean when sample ≥ 3; CRM/other flows may omit. */
   comparableMarketEstimateCents: number | null;
   comparablePeerCount: number | null;
@@ -65,7 +67,6 @@ export async function refreshFsboListingAnalytics(fsboListingId: string, current
 
   const contactClicks = existing?.contactClicks ?? 0;
   const bookingAttempts = existing?.bookingAttempts ?? 0;
-  const bookings = existing?.bookings ?? 0;
 
   const inputs: DemandInputs = {
     views24h: rows24h,
@@ -323,6 +324,7 @@ export async function buildFsboPublicDemandUi(
       priceMovementNote: null,
       badge: null,
       hasSignal: false,
+      activityHint: null,
       comparableMarketEstimateCents: peerStatsEarly.avgCents,
       comparablePeerCount: peerStatsEarly.peerCount,
     };
@@ -355,6 +357,12 @@ export async function buildFsboPublicDemandUi(
   const urgency = getUrgencyPresentation(inputs, row.demandScore);
   const hasSignal = hasReliableDemandSignal(inputs, row.demandScore);
 
+  const u24 = row.uniqueViews24hCached ?? 0;
+  const activityHint =
+    u24 >= 2
+      ? `${u24} people viewed this listing in the last 24 hours (unique sessions)`
+      : null;
+
   return {
     demandScore: row.demandScore,
     urgency: hasSignal ? urgency : null,
@@ -362,6 +370,7 @@ export async function buildFsboPublicDemandUi(
     priceMovementNote,
     badge: hasSignal ? urgency?.badge ?? null : null,
     hasSignal,
+    activityHint,
     comparableMarketEstimateCents: marketAvg,
     comparablePeerCount: peerStats.peerCount,
   };
@@ -387,6 +396,7 @@ export async function buildCrmPublicDemandUi(
       priceMovementNote: null,
       badge: null,
       hasSignal: false,
+      activityHint: null,
       comparableMarketEstimateCents: null,
       comparablePeerCount: null,
     };
@@ -405,6 +415,9 @@ export async function buildCrmPublicDemandUi(
   });
   const urgency = getUrgencyPresentation(inputs, row.demandScore);
   const hasSignal = hasReliableDemandSignal(inputs, row.demandScore);
+  const u24c = row.uniqueViews24hCached ?? 0;
+  const activityHintCrm =
+    u24c >= 2 ? `Strong interest — ${u24c}+ unique views in the last 24 hours on LECIPM` : null;
   return {
     demandScore: row.demandScore,
     urgency: hasSignal ? urgency : null,
@@ -412,6 +425,7 @@ export async function buildCrmPublicDemandUi(
     priceMovementNote: null,
     badge: hasSignal ? urgency?.badge ?? null : null,
     hasSignal,
+    activityHint: activityHintCrm,
     comparableMarketEstimateCents: null,
     comparablePeerCount: null,
   };

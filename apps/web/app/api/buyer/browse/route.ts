@@ -15,8 +15,10 @@ import type { GlobalSearchFiltersExtended } from "@/components/search/FilterStat
 import { parseGlobalSearchBody, urlParamsToGlobalFilters } from "@/components/search/FilterState";
 import { ListingAnalyticsKind } from "@prisma/client";
 import { buildFsboRecommendedBrowseSortUnit } from "@/lib/listings/marketplace-browse-sort";
+import { engineFlags } from "@/config/feature-flags";
 import { isAiRankingEngineEnabled } from "@/src/modules/ranking/rankingEnv";
 import { scoreRealEstateListingsForBrowse } from "@/src/modules/ranking/rankingService";
+import { scoreRealEstateListingsForBrowseV2 } from "@/src/modules/ranking/v2/browse-scores";
 import { resolvedBrowseCoverAndImages } from "@/lib/listings/browse-listing-images";
 
 export const dynamic = "force-dynamic";
@@ -303,6 +305,7 @@ async function runBrowse(
         servicesOffered: true,
         status: true,
         listingOwnerType: true,
+        rankingTotalScoreCache: true,
         owner: {
           select: {
             brokerVerifications: {
@@ -399,6 +402,46 @@ async function runBrowse(
     merged.sort((a, b) => a.priceCents - b.priceCents);
   } else if (sortMode === "priceDesc") {
     merged.sort((a, b) => b.priceCents - a.priceCents);
+  } else if (sortMode === "newest") {
+    merged.sort((a, b) => {
+      const tb = b.createdAt ? new Date(b.createdAt).getTime() : b.sortAt;
+      const ta = a.createdAt ? new Date(a.createdAt).getTime() : a.sortAt;
+      return tb - ta;
+    });
+  } else if (sortMode === "ranking") {
+    const fsboIdsRank = merged.filter((m) => m.kind === "fsbo").map((m) => m.id);
+    const cacheById = new Map(
+      fsboFiltered.map((r) => [r.id, r.rankingTotalScoreCache ?? 0])
+    );
+    const effMinCadR =
+      f.type === "luxury_properties" || (f.type === "rent" && f.rentListingCategory === "luxury_properties")
+        ? Math.max(f.priceMin, 1_000_000)
+        : f.priceMin;
+    let liveScores: Map<string, number> | null = null;
+    const needLive =
+      isAiRankingEngineEnabled() &&
+      fsboIdsRank.length > 0 &&
+      (!engineFlags.rankingV1 || fsboIdsRank.some((id) => (cacheById.get(id) ?? 0) <= 0));
+    if (needLive) {
+      liveScores = await scoreRealEstateListingsForBrowse(fsboIdsRank, {
+        city: f.location.trim() || undefined,
+        propertyType: f.propertyType?.trim() || undefined,
+        budgetMinCents: effMinCadR > 0 ? Math.round(effMinCadR * 100) : undefined,
+        budgetMaxCents: f.priceMax > 0 ? Math.round(f.priceMax * 100) : undefined,
+      });
+    }
+    for (const row of merged) {
+      if (row.kind !== "fsbo") continue;
+      const cached = cacheById.get(row.id) ?? 0;
+      if (engineFlags.rankingV1 && cached > 0) {
+        row.sortAt = Math.round(cached * 1_000_000);
+      } else if (liveScores) {
+        row.sortAt = Math.round((liveScores.get(row.id) ?? 35) * 1_000_000);
+      } else {
+        row.sortAt = Math.round((cached > 0 ? cached : 35) * 1_000_000);
+      }
+    }
+    merged.sort((a, b) => b.sortAt - a.sortAt);
   } else if (sortMode === "recommended" || sortMode === "aiScore") {
     const fsboIds = merged.filter((m) => m.kind === "fsbo").map((m) => m.id);
     const effMinCad =
@@ -415,7 +458,8 @@ async function runBrowse(
     const nowMs = Date.now();
 
     if (isAiRankingEngineEnabled()) {
-      const scores = await scoreRealEstateListingsForBrowse(fsboIds, {
+      const scoreFn = engineFlags.rankingV2 ? scoreRealEstateListingsForBrowseV2 : scoreRealEstateListingsForBrowse;
+      const scores = await scoreFn(fsboIds, {
         city: f.location.trim() || undefined,
         propertyType: f.propertyType?.trim() || undefined,
         budgetMinCents: effMinCad > 0 ? Math.round(effMinCad * 100) : undefined,

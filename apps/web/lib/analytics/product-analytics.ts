@@ -9,6 +9,7 @@ import posthog, { initPosthog } from "@/lib/posthogClient";
 import { gtagReportEvent } from "@/modules/analytics/services/gtag";
 import { ProductAnalyticsEvents, type ProductAnalyticsEventName } from "@/lib/analytics/product-events";
 import { trackServerAnalytics } from "@/lib/tracking";
+import { reportGoogleAdsBookingConversion } from "@/modules/analytics/services/google-ads-conversions";
 
 export { ProductAnalyticsEvents, type ProductAnalyticsEventName } from "@/lib/analytics/product-events";
 
@@ -48,6 +49,17 @@ function syncFirstPartyTraffic(name: string, properties?: Record<string, unknown
   }
   if (name === ProductAnalyticsEvents.BOOKING_COMPLETED) {
     trackServerAnalytics("booking_completed", { meta });
+    const pay =
+      meta && typeof meta.payment_confirmed === "boolean" ? meta.payment_confirmed : false;
+    const bookingId =
+      meta && typeof meta.booking_id === "string" ? meta.booking_id.trim() : undefined;
+    const valueCents =
+      meta && typeof meta.value_cents === "number" && Number.isFinite(meta.value_cents)
+        ? meta.value_cents
+        : null;
+    if (pay) {
+      reportGoogleAdsBookingConversion({ bookingId, valueCents });
+    }
     return;
   }
   if (name === ProductAnalyticsEvents.LISTING_VIEWED) {

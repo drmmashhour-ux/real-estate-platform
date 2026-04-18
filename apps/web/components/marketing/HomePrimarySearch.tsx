@@ -8,6 +8,7 @@ import { DEFAULT_GLOBAL_FILTERS, globalFiltersToUrlParams } from "@/components/s
 import { reportProductEvent } from "@/lib/analytics/product-analytics";
 import { ProductAnalyticsEvents } from "@/lib/analytics/product-events";
 import type { ResolvedExperimentSurface } from "@/lib/experiments/get-variant-config";
+import { getTrackingSessionId, track, TrackingEvent } from "@/lib/tracking";
 
 const STAY_CITY_SHORTCUTS = [
   { slug: "Montreal", labelKey: "shortcutMontreal" as const },
@@ -40,6 +41,18 @@ export function HomePrimarySearch({
     reportProductEvent(ProductAnalyticsEvents.SEARCH_USAGE, {
       surface: "home_hero",
       location: location || null,
+    });
+    const sid = getTrackingSessionId();
+    track(TrackingEvent.SEARCH, {
+      meta: {
+        surface: "home_hero",
+        location: location || null,
+        type: "buy",
+        growthDedupeKey: sid
+          ? `search:home:${location || "all"}:${sid}:${Date.now()}`
+          : `search:home:${location || "all"}:${Date.now()}`,
+      },
+      path: typeof window !== "undefined" ? `${window.location.pathname}${window.location.search}` : "/",
     });
     if (searchExperiment) {
       void fetch("/api/experiments/track", {

@@ -1,4 +1,4 @@
-import { BnhubListingView } from "@/app/bnhub/bnhub-listing-view";
+import { BnhubListingView } from "@/app/[locale]/[country]/bnhub/bnhub-listing-view";
 import { hasAdUtmParams } from "@/lib/marketing/bnhub-ad-landing-url";
 
 export const dynamic = "force-dynamic";

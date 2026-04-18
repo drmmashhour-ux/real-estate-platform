@@ -7,6 +7,8 @@ import { GROWTH_CITY_SLUGS } from "@/lib/growth/geo-slugs";
 import { RentHubBrowse } from "./rent-hub-browse";
 import { LongTermRentBrowse } from "./long-term-rent-browse";
 import { PUBLIC_MAP_SEARCH_URL } from "@/lib/search/public-map-search-urls";
+import { getGuestId } from "@/lib/auth/session";
+import { HubJourneyBanner } from "@/components/journey/HubJourneyBanner";
 
 export const metadata: Metadata = {
   title: `Rent Hub — Long-term & short-term | ${PLATFORM_CARREFOUR_NAME}`,
@@ -16,13 +18,22 @@ export const metadata: Metadata = {
 
 const GOLD = "var(--color-premium-gold)";
 
-export default function RentHubPage() {
+export default async function RentHubPage({
+  params,
+}: {
+  params: Promise<{ locale: string; country: string }>;
+}) {
+  const { locale, country } = await params;
+  const guestId = await getGuestId().catch(() => null);
   const sampleCity = GROWTH_CITY_SLUGS[0];
 
   return (
     <div className="min-h-screen bg-[#0B0B0B] text-white">
       <MvpNav variant="live" />
       <main>
+        <div className="mx-auto max-w-4xl px-4 pt-8">
+          <HubJourneyBanner hub="rent" locale={locale} country={country} userId={guestId} />
+        </div>
         <section className="border-b border-white/10">
           <div className="mx-auto max-w-4xl px-4 py-14 text-center sm:px-6">
             <p className="text-[11px] font-bold uppercase tracking-[0.2em]" style={{ color: GOLD }}>

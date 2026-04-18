@@ -84,6 +84,21 @@ Toggles: `autoPromoteTopListings`, `autoGenerateRevenueActions`, `allowPriceReco
 
 Apply `20260404150000_revenue_autopilot` (or the migration that creates `revenue_*` tables in your branch).
 
+## Integrations (MVP)
+
+- **Listing quality** — `ListingQualityScore` pricing/quality sub-scores feed conversion and pricing efficiency.
+- **Portfolio autopilot** — `ACTION_TRIGGER_PORTFOLIO` can call `runPortfolioAutopilot` from safe-apply (owner scope).
+- **Listing autopilot** — Most owner actions delegate to `runListingAutopilot` (never auto live price).
+- **Ranking / search** — Indirect: optimization runs refresh copy and signals that feed ranking inputs.
+- **Admin** — Platform scope uses sampled listings + full booking aggregates by city; safe-apply logs only (no mass host writes).
+
+## QA checklist
+
+- Owner **GET** overview shows scores, `listingCount`, and actions after at least one **POST** `/api/revenue-autopilot/run` (mode not `off`).
+- **safe_autopilot** runs `applySafeRevenueActions`; platform scope marks actions applied without host listing automation.
+- **RevenueOpportunityLog** rows appear after a run (up to 20 per run).
+- Estimated uplift sums are finite and non-negative in normal data.
+
 ## Future extensions
 
 - Payout-net revenue and fee modeling  

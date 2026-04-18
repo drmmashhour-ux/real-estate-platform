@@ -1,4 +1,7 @@
 import Link from "next/link";
+import { rankingV8ShadowFlags } from "@/config/feature-flags";
+import { RankingV8GovernanceBlock } from "@/modules/ranking/components/RankingV8GovernanceBlock";
+import { GrowthRoiDashboard } from "@/components/admin/GrowthRoiDashboard";
 import { AdminAnalyticsCharts } from "@/components/admin/AdminAnalyticsCharts";
 import { LecipmControlShell } from "@/components/admin/LecipmControlShell";
 import { getAdminRiskAlerts } from "@/lib/admin/control-center";
@@ -49,6 +52,12 @@ export default async function AdminAnalyticsHubPage() {
           </p>
         </div>
 
+        <GrowthRoiDashboard />
+
+        {rankingV8ShadowFlags.rankingV8GovernanceDashboardV1 ? (
+          <RankingV8GovernanceBlock />
+        ) : null}
+
         <div className="flex flex-wrap gap-3 text-sm">
           <Link href="/admin/analytics/product" className="rounded-xl border border-zinc-700 px-3 py-2 text-zinc-300 hover:bg-zinc-900">
             Product insights →
@@ -61,6 +70,9 @@ export default async function AdminAnalyticsHubPage() {
           </Link>
           <Link href="/admin/growth-funnel-data" className="rounded-xl border border-zinc-700 px-3 py-2 text-zinc-300 hover:bg-zinc-900">
             Growth funnel data →
+          </Link>
+          <Link href="/admin/campaigns" className="rounded-xl border border-zinc-700 px-3 py-2 text-zinc-300 hover:bg-zinc-900">
+            {"Campaigns & UTM →"}
           </Link>
         </div>
 

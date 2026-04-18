@@ -202,7 +202,7 @@ export function ContentGeneratorClient({ listings }: { listings: ListingOption[]
                     </div>
                     <div>
                       <p className="text-[10px] font-semibold uppercase text-slate-500">Visual</p>
-                      <p className="mt-0.5 leading-relaxed text-slate-300">{s.visual}</p>
+                      <p className="mt-0.5 leading-relaxed text-slate-300">{s.middle}</p>
                     </div>
                     <div>
                       <p className="text-[10px] font-semibold uppercase text-slate-500">Value</p>

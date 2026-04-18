@@ -31,7 +31,7 @@ export async function postToPlatform(args: {
   const videoUrl = args.payload.mediaUrl;
 
   if (args.platform === "instagram") {
-    if (!videoUrl?.trim() && !thumb?.trim()) {
+    if (!videoUrl?.trim() && !args.payload.thumbnailUrl?.trim()) {
       return { ok: false, channel: "manual", error: "No image or video URL for Instagram" };
     }
   } else if (args.platform === "tiktok") {

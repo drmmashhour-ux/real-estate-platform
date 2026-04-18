@@ -15,8 +15,29 @@ import { resolveEarlyBookingDiscount } from "@/lib/bnhub/early-booking-discount"
 import { pickBestLodgingDiscount, type LoyaltyTierCode } from "@/lib/loyalty/loyalty-engine";
 import { getLoyaltyLodgingDiscountForGuest } from "@/lib/loyalty/loyalty-service";
 
-const GUEST_SERVICE_FEE_PERCENT = 12;
-const HOST_FEE_PERCENT = 3;
+/** Guest-facing service fee on lodging (percent). Kept in sync with pricing-model fee calculator. */
+export const BNHUB_GUEST_SERVICE_FEE_PERCENT = 12;
+/** Host platform fee on lodging (percent). */
+export const BNHUB_HOST_FEE_PERCENT = 3;
+
+const GUEST_SERVICE_FEE_PERCENT = BNHUB_GUEST_SERVICE_FEE_PERCENT;
+const HOST_FEE_PERCENT = BNHUB_HOST_FEE_PERCENT;
+
+async function resolveHostFeePercentForBooking(): Promise<number> {
+  try {
+    const row = await prisma.platformFinancialSettings.findUnique({
+      where: { id: "default" },
+      select: { bnhubHostFeePercentOverride: true },
+    });
+    if (row?.bnhubHostFeePercentOverride != null) {
+      const n = Number(row.bnhubHostFeePercentOverride);
+      if (Number.isFinite(n) && n >= 0 && n <= 50) return n;
+    }
+  } catch {
+    /* use default */
+  }
+  return HOST_FEE_PERCENT;
+}
 
 export type PricingBreakdown = {
   /** Per-night amounts in cents (for date-based overrides) */
@@ -93,6 +114,8 @@ export async function computeBookingPricing(
     (checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24)
   );
   if (nights < 1) return null;
+
+  const hostFeePercent = await resolveHostFeePercentForBooking();
 
   const listing = await prisma.shortTermListing.findUnique({
     where: { id: listingId },
@@ -172,7 +195,7 @@ export async function computeBookingPricing(
     (lodgingSubtotalAfterDiscountCents * GUEST_SERVICE_FEE_PERCENT) / 100
   );
   const hostFeeCents = Math.round(
-    (lodgingSubtotalAfterDiscountCents * HOST_FEE_PERCENT) / 100
+    (lodgingSubtotalAfterDiscountCents * hostFeePercent) / 100
   );
   const lodgingTotalBeforeAddonsCents =
     lodgingSubtotalAfterDiscountCents + cleaningFeeCents + taxCents + serviceFeeCents;
@@ -198,7 +221,7 @@ export async function computeBookingPricing(
     addonsSubtotalCents = resolved.addonsSubtotalCents;
   }
 
-  const addonsHostFeeCents = Math.round((addonsSubtotalCents * HOST_FEE_PERCENT) / 100);
+  const addonsHostFeeCents = Math.round((addonsSubtotalCents * hostFeePercent) / 100);
   const totalCents = lodgingTotalBeforeAddonsCents + addonsSubtotalCents;
   const hostPayoutCents = lodgingHostPayoutCents + addonsSubtotalCents - addonsHostFeeCents;
 

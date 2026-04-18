@@ -34,6 +34,9 @@ import { isPublicSignupDisabled, maintenanceMessage } from "@/lib/security/kill-
 import { securityLog } from "@/lib/security/security-logger";
 import { trackRepeatedSignupAttempt } from "@/lib/security/security-events";
 import { buildSignupAttributionPayload } from "@/lib/attribution/signup-attribution";
+import { recordTrafficEventServer } from "@/lib/traffic/record-server-event";
+import { GrowthEventName } from "@/modules/growth/event-types";
+import { recordGrowthEvent } from "@/modules/growth/tracking.service";
 
 const VERIFY_TTL_MS = 48 * 60 * 60 * 1000;
 
@@ -157,7 +160,8 @@ export async function POST(request: NextRequest) {
     const signupAttributionJson = buildSignupAttributionPayload(
       request.headers.get("cookie"),
       body,
-      request.nextUrl.searchParams.get("src")
+      request.nextUrl.searchParams.get("src"),
+      request.nextUrl.search
     );
 
     const user =
@@ -227,6 +231,20 @@ export async function POST(request: NextRequest) {
     void import("@/lib/fraud/compute-user-risk")
       .then((m) => m.evaluateUserFraudAfterSignup({ userId: user.id, ipFingerprint: ipFp }))
       .catch(() => {});
+    void import("@/modules/fraud/fraud-engine.service")
+      .then((m) =>
+        m.evaluateLaunchFraudEngine(
+          {
+            user: {
+              id: user.id,
+              createdAt: user.createdAt,
+              emailVerifiedAt: user.emailVerifiedAt,
+            },
+          },
+          { persist: true, actionType: "signup_fraud_v1" }
+        )
+      )
+      .catch(() => {});
     void trackEvent("signup", { role: validRole }, { userId: user.id }).catch(() => {});
     void persistLaunchEvent("USER_SIGNUP", {
       userId: user.id,
@@ -240,17 +258,41 @@ export async function POST(request: NextRequest) {
     void onSignupAutomation(user.id).catch(() => {});
     void onMessagingTriggerSignup(user.id).catch(() => {});
     captureServerEvent(user.id, AnalyticsEvents.SIGNUP_COMPLETED, { role: validRole });
-    await prisma.trafficEvent
-      .create({
-        data: {
-          eventType: "signup_completed",
-          path: "/auth/signup",
-          source: "auth",
-          medium: "product",
-          meta: { userId: user.id, role: validRole } as object,
-        },
-      })
-      .catch(() => {});
+    await recordTrafficEventServer({
+      eventType: "signup_completed",
+      path: "/auth/signup",
+      meta: { userId: user.id, role: validRole },
+      sessionId: null,
+      headers: request.headers,
+      body,
+    }).catch(() => {});
+    if (validRole === "HOST") {
+      await recordTrafficEventServer({
+        eventType: "host_signup",
+        path: "/auth/signup",
+        meta: { userId: user.id },
+        sessionId: null,
+        headers: request.headers,
+        body,
+      }).catch(() => {});
+      void recordGrowthEvent({
+        eventName: GrowthEventName.HOST_SIGNUP,
+        userId: user.id,
+        idempotencyKey: `host_signup:${user.id}`,
+        metadata: { role: validRole },
+        cookieHeader: request.headers.get("cookie"),
+        body,
+      }).catch(() => {});
+    }
+
+    void recordGrowthEvent({
+      eventName: GrowthEventName.SIGNUP_SUCCESS,
+      userId: user.id,
+      idempotencyKey: `signup_success:${user.id}`,
+      metadata: { role: validRole },
+      cookieHeader: request.headers.get("cookie"),
+      body,
+    }).catch(() => {});
     const tracked = await trackConversionEvent(prisma, { userId: user.id, event: "signup" }).catch(() => null);
     if (tracked?.triggers?.length) {
       await runFollowUpAutomation(prisma, { userId: user.id, triggers: tracked.triggers }).catch(() => {});

@@ -36,6 +36,11 @@ export type ListingForMarketplaceRank = {
   bookingsLast90d?: number | null;
   /** Host reputation 0–100 — optional small marketplace nudge; never used to hide listings. */
   hostReputationScore?: number | null;
+  /**
+   * 0–1 from cached `listing_quality_scores` (see `lib/quality`). When set, blended into the
+   * on-page quality heuristic so ranking reflects long-run quality, pricing fit, and trust.
+   */
+  cachedListingQuality01?: number | null;
 };
 
 export type ListingSearchRankContext = {
@@ -156,6 +161,14 @@ export function computeQualityScore(listing: ListingForMarketplaceRank): number 
   return clamp01((q1 + q2 + q3 + q4) / 4);
 }
 
+/** Blends fast on-page heuristics with persisted listing quality score when available. */
+export function blendedListingQuality01(listing: ListingForMarketplaceRank): number {
+  const heuristic = computeQualityScore(listing);
+  const c = listing.cachedListingQuality01;
+  if (c == null || !Number.isFinite(c)) return heuristic;
+  return clamp01(heuristic * 0.42 + c * 0.58);
+}
+
 function avgReviewRating(listing: ListingForMarketplaceRank): number | null {
   if (listing.bnhubListingRatingAverage != null && Number.isFinite(listing.bnhubListingRatingAverage)) {
     return listing.bnhubListingRatingAverage;
@@ -249,7 +262,7 @@ export function scoreListingForSearch(
   }
 
   const weights = effectiveMarketplaceWeights(context);
-  const quality = computeQualityScore(listing);
+  const quality = blendedListingQuality01(listing);
   const performance = computePerformanceScore(listing);
   const availability = computeAvailabilityScore(listing, context);
   const freshness = computeFreshnessScore(listing);
@@ -289,7 +302,7 @@ export function explainListingScore(
     return reasons;
   }
 
-  const q = computeQualityScore(listing);
+  const q = blendedListingQuality01(listing);
   const photos = countListingPhotos(listing.photos);
   const am = countListingAmenities(listing.amenities);
   const descLen = (listing.description ?? "").trim().length;

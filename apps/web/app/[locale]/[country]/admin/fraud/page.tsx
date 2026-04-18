@@ -24,7 +24,7 @@ export default async function AdminFraudPage({ searchParams }: { searchParams: P
     ...(status ? { status } : {}),
   };
 
-  const [riskAlerts, cases, recentSignals, dist, topRisk] = await Promise.all([
+  const [riskAlerts, cases, recentSignals, dist, topRisk, fraudEventRows] = await Promise.all([
     getAdminRiskAlerts(),
     prisma.fraudCase.findMany({
       where,
@@ -44,6 +44,7 @@ export default async function AdminFraudPage({ searchParams }: { searchParams: P
       orderBy: { score: "desc" },
       take: 24,
     }),
+    prisma.fraudEvent.findMany({ orderBy: { createdAt: "desc" }, take: 40 }).catch(() => []),
   ]);
 
   const shellAlerts = riskAlerts.map((r) => ({
@@ -136,6 +137,41 @@ export default async function AdminFraudPage({ searchParams }: { searchParams: P
               </Link>
             ))}
             {cases.length === 0 ? <p className="text-sm text-zinc-500">No cases match filters.</p> : null}
+          </div>
+        </div>
+
+        <div>
+          <h2 className="text-lg font-semibold text-white">Fraud events log (v1)</h2>
+          <p className="mt-1 text-xs text-zinc-500">
+            Explainable rows from <code className="text-zinc-400">fraud_events</code> — set{" "}
+            <code className="text-zinc-400">FEATURE_LAUNCH_FRAUD_PROTECTION_V1=1</code> and run migrations.
+          </p>
+          <div className="mt-2 overflow-x-auto rounded-xl border border-zinc-800">
+            <table className="min-w-full text-left text-xs text-zinc-300">
+              <thead className="bg-zinc-900/80 text-zinc-500">
+                <tr>
+                  <th className="px-3 py-2">Time</th>
+                  <th className="px-3 py-2">Action</th>
+                  <th className="px-3 py-2">User</th>
+                  <th className="px-3 py-2">Score</th>
+                  <th className="px-3 py-2">Level</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-800">
+                {fraudEventRows.map((ev) => (
+                  <tr key={ev.id}>
+                    <td className="whitespace-nowrap px-3 py-2 text-zinc-500">{ev.createdAt.toISOString()}</td>
+                    <td className="px-3 py-2 font-mono text-emerald-400/90">{ev.actionType}</td>
+                    <td className="px-3 py-2 font-mono">{ev.userId?.slice(0, 12) ?? "—"}</td>
+                    <td className="px-3 py-2">{ev.riskScore}</td>
+                    <td className="px-3 py-2">{ev.riskLevel}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {fraudEventRows.length === 0 ? (
+              <p className="p-4 text-center text-sm text-zinc-500">No rows yet — fraud engine runs on signup, checkout, booking, listing.</p>
+            ) : null}
           </div>
         </div>
 

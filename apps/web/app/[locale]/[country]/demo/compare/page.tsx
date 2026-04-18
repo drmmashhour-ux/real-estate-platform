@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { DealCompareClient } from "@/app/compare/deal-compare-client";
+import { DealCompareClient } from "@/app/[locale]/[country]/compare/deal-compare-client";
 import { ensureDemoDealsSeeded } from "@/lib/investment/demo-deals-storage";
 import type { SerializableInvestmentDeal } from "@/lib/investment/investment-deal-types";
 

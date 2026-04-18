@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getGuestId } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
@@ -87,6 +88,34 @@ export default async function AdminOperationsPage({
         actionLabel="Open daily report"
         className="border-premium-gold/30 bg-black/40"
       />
+
+      <section
+        className="rounded-2xl border border-premium-gold/25 bg-black/35 p-5"
+        aria-label="Growth shortcuts"
+      >
+        <h2 className="text-sm font-semibold text-white">Growth &amp; conversion</h2>
+        <p className="mt-1 text-xs text-[#737373]">
+          Daily lead heat, campaigns, and autopilot suggestions are in the growth admin — same tracking as listings and BNHub
+          funnels.
+        </p>
+        <ul className="mt-4 flex flex-col gap-2 text-sm text-white/90 sm:flex-row sm:flex-wrap sm:gap-x-6">
+          <li>
+            <Link href="/admin/growth-dashboard" className="font-medium text-premium-gold hover:underline">
+              Growth dashboard
+            </Link>
+          </li>
+          <li>
+            <Link href="/admin/growth-metrics" className="font-medium text-premium-gold hover:underline">
+              Campaigns &amp; metrics
+            </Link>
+          </li>
+          <li>
+            <Link href="/admin/growth-autopilot-v2" className="font-medium text-premium-gold hover:underline">
+              Autopilot
+            </Link>
+          </li>
+        </ul>
+      </section>
 
       <section>
         <h2 className="mb-3 text-sm font-semibold text-white">Key metrics</h2>

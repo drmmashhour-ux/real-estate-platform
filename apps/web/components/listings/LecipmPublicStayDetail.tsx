@@ -1,4 +1,4 @@
-import { BnhubListingView } from "@/app/bnhub/bnhub-listing-view";
+import { BnhubListingView } from "@/app/[locale]/[country]/bnhub/bnhub-listing-view";
 
 /**
  * BNHUB stay on the unified `/listings/[id]` route — same UX as `/bnhub/listings/[id]` with LECIPM canonical path.

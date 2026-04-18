@@ -22,9 +22,9 @@ No fabricated demand, competitor, or off-platform data.
 ## Risk levels and scoring
 
 - **Score** is the sum of **weighted** signal hits, capped at **100**.
-- **LOW**: score &lt; `FRAUD_SCORE_THRESHOLDS.mediumMin` (36)
-- **MEDIUM**: 36–67
-- **HIGH**: ≥ 68
+- **LOW**: score &lt; `FRAUD_SCORE_THRESHOLDS.mediumMin` (42)
+- **MEDIUM**: 42–69
+- **HIGH**: ≥ 70
 
 Weights are defined in `FRAUD_WEIGHTS` in `fraud-engine.ts` (single source of truth).
 

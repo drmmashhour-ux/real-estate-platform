@@ -3,10 +3,12 @@ import { FeaturedListings } from "@/components/bnhub/FeaturedListings";
 import { SponsoredListings } from "@/components/bnhub/SponsoredListings";
 import { BnhubPersonalizedForYou } from "@/components/bnhub/BnhubPersonalizedForYou";
 import { StaysGuestBookingDashboard } from "@/components/bnhub/stays-guest-booking-dashboard";
+import { GuestPersonalizationFeed } from "@/components/bnhub-guest/GuestPersonalizationFeed";
 import { buildPageMetadata } from "@/lib/seo/page-metadata";
 import { seoConfig } from "@/lib/seo/config";
 import { OG_DEFAULT_BNHUB } from "@/lib/seo/og-defaults";
 import { getGuestId } from "@/lib/auth/session";
+import { bnhubV2Flags } from "@/config/feature-flags";
 
 export async function generateMetadata({
   params,
@@ -25,11 +27,22 @@ export async function generateMetadata({
   });
 }
 
-export default async function BNHubStaysPage() {
+export default async function BNHubStaysPage({
+  params,
+}: {
+  params: Promise<{ locale: string; country: string }>;
+}) {
+  const { locale, country } = await params;
   const guestId = await getGuestId();
+  const basePath = `/${locale}/${country}`;
   return (
     <>
       {guestId ? <BnhubPersonalizedForYou userId={guestId} /> : null}
+      {bnhubV2Flags.bnhubV2 ? (
+        <div className="mx-auto max-w-7xl px-4 pb-6 pt-2">
+          <GuestPersonalizationFeed basePath={basePath} />
+        </div>
+      ) : null}
       <StaysGuestBookingDashboard activeMode="stays">
         <FeaturedListings variant="booking" />
         <SponsoredListings variant="booking" />

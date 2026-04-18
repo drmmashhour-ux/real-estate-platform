@@ -8,6 +8,7 @@ import { DecisionCard } from "@/components/ai/DecisionCard";
 import { safeEvaluateDecision } from "@/modules/ai/decision-engine";
 import { ListingAiScoresCard } from "@/components/seller/ListingAiScoresCard";
 import { SellerDashboardTrustOverview } from "@/components/seller/SellerDashboardTrustOverview";
+import { HubJourneyBanner } from "@/components/journey/HubJourneyBanner";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +26,12 @@ function badgeLabel(ux: ReturnType<typeof fsboListingLifecycleUx>) {
   return "PENDING_VERIFICATION";
 }
 
-export default async function SellerHubDashboardPage() {
+export default async function SellerHubDashboardPage({
+  params,
+}: {
+  params: Promise<{ locale: string; country: string }>;
+}) {
+  const { locale, country } = await params;
   const userId = await getGuestId();
   if (!userId) redirect("/auth/login?next=/dashboard/seller");
 
@@ -152,6 +158,7 @@ export default async function SellerHubDashboardPage() {
   return (
     <main className="dashboard-shell">
       <div className="mx-auto max-w-6xl space-y-10">
+        <HubJourneyBanner hub="seller" locale={locale} country={country} userId={userId} />
         <SellerDashboardTrustOverview
           firstName={firstName}
           stats={{

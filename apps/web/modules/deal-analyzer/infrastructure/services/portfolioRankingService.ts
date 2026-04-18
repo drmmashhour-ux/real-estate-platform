@@ -83,7 +83,7 @@ export function rankPortfolioItems(
       const compositeScore = computeCompositeScore(r);
       const bucket = bucketForScore(compositeScore, r.riskScore);
       const reasons = [
-        `Composite ${compositeScore.toFixed(1)} (investment ${r.investmentScore}, risk ${r.riskScore}).`,
+        `Composite ${compositeScore.toFixed(1)} (investment ${r.investmentScore}, risk ${r.riskScore}) — rules-based estimate, not an appraisal.`,
       ];
       return { listingId: r.listingId, compositeScore, bucket, investmentScore: r.investmentScore, riskScore: r.riskScore, reasons };
     })

@@ -1,8 +1,12 @@
-import type { Prisma, PrismaClient } from "@prisma/client";
+import { Prisma, type PrismaClient } from "@prisma/client";
 import { getActiveExperimentForSurface } from "@/lib/experiments/get-active-experiment";
 import { assignVariantForSession } from "@/lib/experiments/assign-variant";
 
 type Db = PrismaClient | Prisma.TransactionClient;
+
+function isMissingExperimentsSchemaError(e: unknown): boolean {
+  return e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2021";
+}
 
 export async function getExistingAssignment(
   db: Db,
@@ -30,30 +34,37 @@ export async function getOrCreateAssignmentForSurface(
   db: Db,
   params: { targetSurface: string; sessionId: string; userId: string | null },
 ) {
-  const exp = await getActiveExperimentForSurface(db, params.targetSurface);
-  if (!exp) return { experiment: null as const, assignment: null as const };
+  try {
+    const exp = await getActiveExperimentForSurface(db, params.targetSurface);
+    if (!exp) return { experiment: null, assignment: null };
 
-  const existing = await getExistingAssignment(db, exp.id, params.sessionId, params.userId);
-  if (existing) {
-    if (params.userId && !existing.userId) {
-      const updated = await db.experimentAssignment.update({
-        where: { id: existing.id },
-        data: { userId: params.userId },
-        include: { variant: true },
-      });
-      return { experiment: exp, assignment: updated };
+    const existing = await getExistingAssignment(db, exp.id, params.sessionId, params.userId);
+    if (existing) {
+      if (params.userId && !existing.userId) {
+        const updated = await db.experimentAssignment.update({
+          where: { id: existing.id },
+          data: { userId: params.userId },
+          include: { variant: true },
+        });
+        return { experiment: exp, assignment: updated };
+      }
+      return { experiment: exp, assignment: existing };
     }
-    return { experiment: exp, assignment: existing };
+
+    const assignment = await assignVariantForSession(db, {
+      experimentId: exp.id,
+      sessionId: params.sessionId,
+      userId: params.userId,
+      trafficSplitJson: exp.trafficSplitJson,
+      variants: exp.variants.map((v) => ({ id: v.id, variantKey: v.variantKey })),
+      stoppedVariantKeys: exp.stoppedVariantKeys,
+    });
+
+    return { experiment: exp, assignment };
+  } catch (e) {
+    if (isMissingExperimentsSchemaError(e)) {
+      return { experiment: null, assignment: null };
+    }
+    throw e;
   }
-
-  const assignment = await assignVariantForSession(db, {
-    experimentId: exp.id,
-    sessionId: params.sessionId,
-    userId: params.userId,
-    trafficSplitJson: exp.trafficSplitJson,
-    variants: exp.variants.map((v) => ({ id: v.id, variantKey: v.variantKey })),
-    stoppedVariantKeys: exp.stoppedVariantKeys,
-  });
-
-  return { experiment: exp, assignment };
 }

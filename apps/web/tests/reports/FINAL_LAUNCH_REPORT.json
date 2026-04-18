@@ -1,0 +1,189 @@
+{
+  "version": "lecipm-final-prelaunch-validation-v1",
+  "generatedAt": "2026-04-14T23:15:04.404Z",
+  "environment": [
+    {
+      "id": "node_version",
+      "ok": false,
+      "severity": "warning",
+      "detail": "Node v25.8.1 — repo expects 20.x (got major 25).",
+      "evidence": {
+        "version": "v25.8.1",
+        "wantedMajor": 20
+      }
+    },
+    {
+      "id": "database_url",
+      "ok": true,
+      "severity": "info",
+      "detail": "DATABASE_URL is set (host redacted).",
+      "evidence": {
+        "hostHint": "db.lmqslzmoyyiaesykeirs.supabase.co:5432"
+      }
+    },
+    {
+      "id": "prisma_client_generated",
+      "ok": true,
+      "severity": "info",
+      "detail": "Prisma client present (node_modules/.prisma/client or @prisma/client).",
+      "evidence": {
+        "checkedDotPrisma": "/Users/mohamedalmashhour/real-estate-platform/apps/web/node_modules/.prisma/client",
+        "checkedPackage": "/Users/mohamedalmashhour/real-estate-platform/apps/web/node_modules/@prisma/client"
+      }
+    },
+    {
+      "id": "stripe_secret_key",
+      "ok": true,
+      "severity": "info",
+      "detail": "STRIPE_SECRET_KEY present (sk_test_51TB…).",
+      "evidence": {
+        "prefix": "sk_test"
+      }
+    },
+    {
+      "id": "stripe_webhook_secret",
+      "ok": true,
+      "severity": "info",
+      "detail": "STRIPE_WEBHOOK_SECRET present (whsec_…)."
+    },
+    {
+      "id": "growth_flags_default_off",
+      "ok": true,
+      "severity": "info",
+      "detail": "Soft-launch / first-users / ads engine env flags are not enabled (good for staged rollout).",
+      "evidence": {
+        "FEATURE_SOFT_LAUNCH_V1": "(unset)",
+        "FEATURE_FIRST_USERS_V1": "(unset)",
+        "FEATURE_ADS_ENGINE_V1": "(unset)"
+      }
+    },
+    {
+      "id": "security_hardening_note",
+      "ok": true,
+      "severity": "info",
+      "detail": "FEATURE_SECURITY_GLOBAL_V1 defaults to ON when unset (opt-out with false). Current: enabled_or_default_on",
+      "evidence": {
+        "FEATURE_SECURITY_GLOBAL_V1": "(unset → on)"
+      }
+    }
+  ],
+  "build": {
+    "steps": [
+      {
+        "step": "prisma_validate",
+        "ok": true,
+        "durationMs": 1097,
+        "severity": "info"
+      },
+      {
+        "step": "prisma_generate",
+        "ok": true,
+        "durationMs": 15437,
+        "severity": "info"
+      },
+      {
+        "step": "typescript_tsc",
+        "ok": false,
+        "durationMs": 153834,
+        "logTail": "undefined\n ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL  Command was killed with SIGABRT (Aborted): tsc --noEmit -p tsconfig.json\n\n<--- Last few GCs --->\n\n[77674:0x7e080c000]   146438 ms: Scavenge (during sweeping) 8155.3 (8206.2) -> 8148.8 (8206.5) MB, pooled: 0.0 MB, 26.74 / 0.00 ms (average mu = 0.357, current mu = 0.320) allocation failure; \n[77674:0x7e080c000]   153376 ms: Mark-Compact 8157.2 (8207.7) -> 8135.7 (8202.5) MB, pooled: 4.8 MB, 6823.97 / 0.04 ms (average mu = 0.261, current mu = 0.180) allocation failure; scavenge might not succeed\n\nFATAL ERROR: Ineffective mark-compacts near heap limit Allocation failed - JavaScript heap out of memory\n----- Native stack trace -----\n\n 1: 0x10669e7ec node::OOMErrorHandler(char const*, v8::OOMDetails const&) [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n 2: 0x1069b6b4c v8::Utils::ReportOOMFailure(v8::internal::Isolate*, char const*, v8::OOMDetails const&) [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n 3: 0x1069b6b04 v8::internal::V8::FatalProcessOutOfMemory(v8::internal::Isolate*, char const*, v8::OOMDetails const&) [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n 4: 0x106b62d90 v8::internal::Heap::ShouldOptimizeForLoadTime() const [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n 5: 0x106b6531c v8::internal::Heap::OldGenerationConsumedBytes() const [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n 6: 0x106b651c4 v8::internal::Heap::RecomputeLimits(v8::internal::GarbageCollector, v8::base::TimeTicks) [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n 7: 0x106b72c64 v8::internal::Heap::CollectGarbage(v8::internal::AllocationSpace, v8::internal::GarbageCollectionReason, v8::GCCallbackFlags, v8::internal::PerformHeapLimitCheck)::$_1::operator()() const [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n 8: 0x106b72908 void heap::base::Stack::SetMarkerAndCallbackImpl<v8::internal::Heap::CollectGarbage(v8::internal::AllocationSpace, v8::internal::GarbageCollectionReason, v8::GCCallbackFlags, v8::internal::PerformHeapLimitCheck)::$_1>(heap::base::Stack*, void*, void const*) [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n 9: 0x107188070 PushAllRegistersAndIterateStack [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n10: 0x106b61510 v8::internal::Heap::CollectGarbage(v8::internal::AllocationSpace, v8::internal::GarbageCollectionReason, v8::GCCallbackFlags, v8::internal::PerformHeapLimitCheck) [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n11: 0x106b59b20 std::__1::invoke_result<v8::internal::HeapAllocator::AllocateRawWithRetryOrFailSlowPath(int, v8::internal::AllocationType, v8::internal::AllocationOrigin, v8::internal::AllocationAlignment, v8::internal::AllocationHint)::$_0&>::type v8::internal::HeapAllocator::CollectGarbageAndRetryAllocation<v8::internal::HeapAllocator::AllocateRawWithRetryOrFailSlowPath(int, v8::internal::AllocationType, v8::internal::AllocationOrigin, v8::internal::AllocationAlignment, v8::internal::AllocationHint)::$_0&>(v8::internal::HeapAllocator::AllocateRawWithRetryOrFailSlowPath(int, v8::internal::AllocationType, v8::internal::AllocationOrigin, v8::internal::AllocationAlignment, v8::internal::AllocationHint)::$_0&, v8::internal::AllocationType) [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n12: 0x106b5898c v8::internal::HeapAllocator::AllocateRawWithRetryOrFailSlowPath(int, v8::internal::AllocationType, v8::internal::AllocationOrigin, v8::internal::AllocationAlignment, v8::internal::AllocationHint) [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n13: 0x106b40dd8 v8::internal::Factory::NewFillerObject(int, v8::internal::AllocationAlignment, v8::internal::AllocationType, v8::internal::AllocationOrigin) [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n14: 0x106e4c3f4 v8::internal::Runtime_AllocateInYoungGeneration(int, unsigned long*, v8::internal::Isolate*) [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n15: 0x1064b9474 Builtins_CEntry_Return1_ArgvOnStack_NoBuiltinExit [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n16: 0x12c8f90dc \n17: 0x12cc10280 \n18: 0x12cb5b3f0 \n19: 0x12cc82348 \n20: 0x12bf3b73c \n21: 0x12cb55f7c \n22: 0x12c28ddf8 \n23: 0x12c2fa81c \n24: 0x12cb64f18 \n25: 0x12cc2272c \n26: 0x12ccfcecc \n27: 0x12c2fb058 \n28: 0x12cb64f18 \n29: 0x12cc2272c \n30: 0x12c2fbfcc \n31: 0x12cb64f18 \n32: 0x12cc2272c \n33: 0x12ccfcecc \n34: 0x12c2fb058 \n35: 0x12cb64f18 \n36: 0x12c2b9884 \n37: 0x12c2b9b58 \n38: 0x12c2b9d4c \n39: 0x12ca8f8bc \n40: 0x12c7aff4c \n41: 0x12c2ba2d4 \n42: 0x12bfb9464 \n43: 0x12cace194 \n44: 0x12ca4c9e4 \n45: 0x12ca41638 \n46: 0x12c70db54 \n47: 0x12cab3800 \n48: 0x12c0b3334 \n49: 0x12c2bcff4 \n50: 0x12c2847ec \n51: 0x12c2bd790 \n52: 0x12c29d10c \n53: 0x12c7937f8 \n54: 0x12c794a84 \n55: 0x12cb74dd8 \n56: 0x12c560168 \n57: 0x12c7629ac \n58: 0x12c87abcc \n59: 0x12ccf8834 \n60: 0x12c7cab7c \n61: 0x12c5e28fc \n62: 0x12c674974 \n63: 0x12cd40164 \n64: 0x12c539550 \n65: 0x1064195ec Builtins_InterpreterEntryTrampoline [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n66: 0x1064195ec Builtins_InterpreterEntryTrampoline [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n67: 0x1064195ec Builtins_InterpreterEntryTrampoline [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n68: 0x1064195ec Builtins_InterpreterEntryTrampoline [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n69: 0x1064195ec Builtins_InterpreterEntryTrampoline [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n70: 0x1064195ec Builtins_InterpreterEntryTrampoline [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n71: 0x1064195ec Builtins_InterpreterEntryTrampoline [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n72: 0x1064195ec Builtins_InterpreterEntryTrampoline [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n73: 0x1064195ec Builtins_InterpreterEntryTrampoline [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n74: 0x1064195ec Builtins_InterpreterEntryTrampoline [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n75: 0x1064195ec Builtins_InterpreterEntryTrampoline [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n76: 0x1064195ec Builtins_InterpreterEntryTrampoline [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n77: 0x1064195ec Builtins_InterpreterEntryTrampoline [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n78: 0x1064195ec Builtins_InterpreterEntryTrampoline [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n79: 0x1064195ec Builtins_InterpreterEntryTrampoline [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n80: 0x1064195ec Builtins_InterpreterEntryTrampoline [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n81: 0x1064195ec Builtins_InterpreterEntryTrampoline [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n82: 0x1064195ec Builtins_InterpreterEntryTrampoline [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n83: 0x1064195ec Builtins_InterpreterEntryTrampoline [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n84: 0x1064195ec Builtins_InterpreterEntryTrampoline [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n85: 0x1064195ec Builtins_InterpreterEntryTrampoline [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n86: 0x1064195ec Builtins_InterpreterEntryTrampoline [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n87: 0x1064195ec Builtins_InterpreterEntryTrampoline [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n88: 0x1064195ec Builtins_InterpreterEntryTrampoline [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n89: 0x1064195ec Builtins_InterpreterEntryTrampoline [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n90: 0x1064195ec Builtins_InterpreterEntryTrampoline [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n91: 0x1064195ec Builtins_InterpreterEntryTrampoline [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n92: 0x1064195ec Builtins_InterpreterEntryTrampoline [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n93: 0x1064195ec Builtins_InterpreterEntryTrampoline [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n94: 0x1064195ec Builtins_InterpreterEntryTrampoline [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n95: 0x10641696c Builtins_JSEntryTrampoline [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n96: 0x106416610 Builtins_JSEntry [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n97: 0x106acde14 v8::internal::(anonymous namespace)::Invoke(v8::internal::Isolate*, v8::internal::(anonymous namespace)::InvokeParams const&) [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n98: 0x106acd7f8 v8::internal::Execution::Call(v8::internal::Isolate*, v8::internal::DirectHandle<v8::internal::Object>, v8::internal::DirectHandle<v8::internal::Object>, v8::base::Vector<v8::internal::DirectHandle<v8::internal::Object> const>) [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n99: 0x1076dca40 v8::Function::Call(v8::Isolate*, v8::Local<v8::Context>, v8::Local<v8::Value>, int, v8::Local<v8::Value>*) [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n100: 0x106682808 node::builtins::BuiltinLoader::CompileAndCall(v8::Local<v8::Context>, char const*, node::Realm*) [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n101: 0x10765dbdc node::Realm::ExecuteBootstrapper(char const*) [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n102: 0x107620d8c node::StartExecution(node::Environment*, char const*) (.cold.1) [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n103: 0x10666e1b8 node::StartExecution(node::Environment*, char const*) [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n104: 0x10666e150 node::StartExecution(node::Environment*, std::__1::function<v8::MaybeLocal<v8::Value> (node::StartExecutionCallbackInfoWithModule const&)>) [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n105: 0x1065fcf68 node::LoadEnvironment(node::Environment*, std::__1::function<v8::MaybeLocal<v8::Value> (node::StartExecutionCallbackInfoWithModule const&)>, std::__1::function<void (node::Environment*, v8::Local<v8::Value>, v8::Local<v8::Value>)>) [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n106: 0x1066cce18 node::NodeMainInstance::Run(node::ExitCode*, node::Environment*) [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n107: 0x1066ccba8 node::NodeMainInstance::Run() [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n108: 0x106670cd0 node::Start(int, char**) [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n109: 0x1928add54 start [/usr/lib/dyld]\n",
+        "severity": "blocking"
+      },
+      {
+        "step": "next_build",
+        "ok": false,
+        "durationMs": 241581,
+        "logTail": "1/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js\n../../node_modules/.pnpm/@opentelemetry+instrumentation@0.57.2_@opentelemetry+api@1.9.1/node_modules/@opentelemetry/instrumentation/build/esm/index.js\n../../node_modules/.pnpm/@sentry+node@9.47.1/node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js\n../../node_modules/.pnpm/@sentry+node@9.47.1/node_modules/@sentry/node/build/cjs/index.js\n../../node_modules/.pnpm/@sentry+nextjs@9.47.1_@opentelemetry+context-async-hooks@1.30.1_@opentelemetry+api@1.9.1__@op_mvatk4rvzbvwuy42sowtbqou2e/node_modules/@sentry/nextjs/build/cjs/index.server.js\n./sentry.server.config.ts\n\n./app/[locale]/[country]/admin/campaigns/page.tsx\nAttempted import error: 'MONTREAL_READY_CAMPAIGNS' is not exported from '@/modules/ads' (imported as 'MONTREAL_READY_CAMPAIGNS').\n\nImport trace for requested module:\n./app/[locale]/[country]/admin/campaigns/page.tsx\n\n./app/[locale]/[country]/admin/campaigns/page.tsx\nAttempted import error: 'buildTrackedLandingUrl' is not exported from '@/modules/ads' (imported as 'buildTrackedLandingUrl').\n\nImport trace for requested module:\n./app/[locale]/[country]/admin/campaigns/page.tsx\n\n./app/[locale]/[country]/admin/campaigns/page.tsx\nAttempted import error: 'buildTrackedLandingUrl' is not exported from '@/modules/ads' (imported as 'buildTrackedLandingUrl').\n\nImport trace for requested module:\n./app/[locale]/[country]/admin/campaigns/page.tsx\n\n./app/[locale]/[country]/admin/growth-launch/page.tsx\nAttempted import error: 'generateDailyLaunchActions' is not exported from '@/modules/launch/first-100-users.service' (imported as 'generateDailyLaunchActions').\n\nImport trace for requested module:\n./app/[locale]/[country]/admin/growth-launch/page.tsx\n\n./app/api/admin/alerts/route.ts\nAttempted import error: 'getCommandCenterAlerts' is not exported from '@/modules/alerts/alert.service' (imported as 'getCommandCenterAlerts').\n\nImport trace for requested module:\n./app/api/admin/alerts/route.ts\n\n./app/api/ads/montreal-presets/route.ts\nAttempted import error: 'MONTREAL_READY_CAMPAIGNS' is not exported from '@/modules/ads' (imported as 'MONTREAL_READY_CAMPAIGNS').\n\nImport trace for requested module:\n./app/api/ads/montreal-presets/route.ts\n\n./app/api/ads/montreal-presets/route.ts\nAttempted import error: 'buildTrackedLandingUrl' is not exported from '@/modules/ads' (imported as 'buildTrackedLandingUrl').\n\nImport trace for requested module:\n./app/api/ads/montreal-presets/route.ts\n\n./app/api/ads/montreal-presets/route.ts\nAttempted import error: 'buildTrackedLandingUrl' is not exported from '@/modules/ads' (imported as 'buildTrackedLandingUrl').\n\nImport trace for requested module:\n./app/api/ads/montreal-presets/route.ts\n\n./app/api/ads/montreal-presets/route.ts\nAttempted import error: 'MONTREAL_KEYWORD_BANK' is not exported from '@/modules/ads' (imported as 'MONTREAL_KEYWORD_BANK').\n\nImport trace for requested module:\n./app/api/ads/montreal-presets/route.ts\n\n./app/api/internal/growth-v3/events/ingest/route.ts\nAttempted import error: 'GROWTH_EVENT_NAMES' is not exported from '@/src/modules/events/event.types' (imported as 'GROWTH_EVENT_NAMES').\n\nImport trace for requested module:\n./app/api/internal/growth-v3/events/ingest/route.ts\n\n./app/api/internal/growth-v3/events/ingest/route.ts\nAttempted import error: 'GROWTH_EVENT_NAMES' is not exported from '@/src/modules/events/event.types' (imported as 'GROWTH_EVENT_NAMES').\n\nImport trace for requested module:\n./app/api/internal/growth-v3/events/ingest/route.ts\n\n\n<--- Last few GCs --->\n\n[78365:0x87080c000]    17456 ms: Scavenge 4072.2 (4101.0) -> 4071.2 (4106.5) MB, pooled: 0.0 MB, 5.54 / 0.00 ms (average mu = 0.707, current mu = 0.573) allocation failure; \n[78365:0x87080c000]    17803 ms: Mark-Compact (reduce) 4088.1 (4117.8) -> 4080.9 (4103.8) MB, pooled: 0.0 MB, 288.75 / 0.00 ms (+ 4.7 ms in 228 steps since start of marking, biggest step 2.6 ms, walltime since start of marking 347 ms) (average mu = 0.604,\nFATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory\n----- Native stack trace -----\n\n 1: 0x10898e7ec node::OOMErrorHandler(char const*, v8::OOMDetails const&) [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n 2: 0x108ca6b4c v8::Utils::ReportOOMFailure(v8::internal::Isolate*, char const*, v8::OOMDetails const&) [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n 3: 0x108ca6b04 v8::internal::V8::FatalProcessOutOfMemory(v8::internal::Isolate*, char const*, v8::OOMDetails const&) [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n 4: 0x108e52d90 v8::internal::Heap::ShouldOptimizeForLoadTime() const [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n 5: 0x108e5244c v8::internal::Heap::EagerlyFreeExternalMemoryAndWasmCode() [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n 6: 0x108e515e0 v8::internal::Heap::CollectGarbage(v8::internal::AllocationSpace, v8::internal::GarbageCollectionReason, v8::GCCallbackFlags, v8::internal::PerformHeapLimitCheck) [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n 7: 0x108e49b20 std::__1::invoke_result<v8::internal::HeapAllocator::AllocateRawWithRetryOrFailSlowPath(int, v8::internal::AllocationType, v8::internal::AllocationOrigin, v8::internal::AllocationAlignment, v8::internal::AllocationHint)::$_0&>::type v8::internal::HeapAllocator::CollectGarbageAndRetryAllocation<v8::internal::HeapAllocator::AllocateRawWithRetryOrFailSlowPath(int, v8::internal::AllocationType, v8::internal::AllocationOrigin, v8::internal::AllocationAlignment, v8::internal::AllocationHint)::$_0&>(v8::internal::HeapAllocator::AllocateRawWithRetryOrFailSlowPath(int, v8::internal::AllocationType, v8::internal::AllocationOrigin, v8::internal::AllocationAlignment, v8::internal::AllocationHint)::$_0&, v8::internal::AllocationType) [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n 8: 0x108e4898c v8::internal::HeapAllocator::AllocateRawWithRetryOrFailSlowPath(int, v8::internal::AllocationType, v8::internal::AllocationOrigin, v8::internal::AllocationAlignment, v8::internal::AllocationHint) [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n 9: 0x108e1f73c v8::internal::FactoryBase<v8::internal::Factory>::AllocateRawArray(int, v8::internal::AllocationType, v8::internal::AllocationHint) [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n10: 0x108e1f424 v8::internal::FactoryBase<v8::internal::Factory>::NewFixedArrayWithFiller(v8::internal::DirectHandle<v8::internal::Map>, int, v8::internal::DirectHandle<v8::internal::HeapObject>, v8::internal::AllocationType) [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n11: 0x109078778 v8::internal::OrderedHashTable<v8::internal::OrderedHashMap, 2>::Allocate(v8::internal::Isolate*, int, v8::internal::AllocationType) [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n12: 0x109077fd8 v8::internal::DirectHandle<v8::internal::OrderedHashMap>::MaybeType v8::internal::OrderedHashTable<v8::internal::OrderedHashMap, 2>::Rehash<v8::internal::DirectHandle>(v8::internal::Isolate*, v8::internal::DirectHandle<v8::internal::OrderedHashMap>, int) [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n13: 0x109133f9c v8::internal::Runtime_MapGrow(int, unsigned long*, v8::internal::Isolate*) [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n14: 0x1087a9474 Builtins_CEntry_Return1_ArgvOnStack_NoBuiltinExit [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n15: 0x108770790 Builtins_MapPrototypeSet [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n16: 0x13024926c \n17: 0x1300bbfcc \n18: 0x1300507cc \n19: 0x1300ac008 \n20: 0x130252cc0 \n21: 0x1300b418c \n22: 0x130248210 \n23: 0x130255438 \n24: 0x1300bd904 \n25: 0x13024daec \n26: 0x1300b4854 \n27: 0x13039a748 \n28: 0x1300bd904 \n29: 0x13024daec \n30: 0x1300b3750 \n31: 0x1302470f4 \n32: 0x130040464 \n33: 0x1300be02c \n34: 0x13024e2e8 \n35: 0x1300b4854 \n36: 0x1301351cc \n37: 0x1300bd904 \n38: 0x13024daec \n39: 0x1300b3750 \n40: 0x1302470f4 \n41: 0x130040464 \n42: 0x1300be0f0 \n43: 0x13024e2e8 \n44: 0x1300b4854 \n45: 0x1301cb17c \n46: 0x130141390 \n47: 0x1301c3a04 \n48: 0x1087095ec Builtins_InterpreterEntryTrampoline [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n49: 0x1087095ec Builtins_InterpreterEntryTrampoline [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n50: 0x1087095ec Builtins_InterpreterEntryTrampoline [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n51: 0x1087095ec Builtins_InterpreterEntryTrampoline [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n52: 0x1087095ec Builtins_InterpreterEntryTrampoline [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n53: 0x1087095ec Builtins_InterpreterEntryTrampoline [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n54: 0x1087095ec Builtins_InterpreterEntryTrampoline [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n55: 0x1087095ec Builtins_InterpreterEntryTrampoline [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n56: 0x1087474c4 Builtins_AsyncFunctionAwaitResolveClosure [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n57: 0x10881e058 Builtins_PromiseFulfillReactionJob [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n58: 0x108736920 Builtins_RunMicrotasks [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n59: 0x108706850 Builtins_JSRunMicrotasksEntry [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n60: 0x108dbdde4 v8::internal::(anonymous namespace)::Invoke(v8::internal::Isolate*, v8::internal::(anonymous namespace)::InvokeParams const&) [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n61: 0x108dbe494 v8::internal::(anonymous namespace)::InvokeWithTryCatch(v8::internal::Isolate*, v8::internal::(anonymous namespace)::InvokeParams const&) [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n62: 0x108dbe584 v8::internal::Execution::TryRunMicrotasks(v8::internal::Isolate*, v8::internal::MicrotaskQueue*) [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n63: 0x108ddfa74 v8::internal::MicrotaskQueue::RunMicrotasks(v8::internal::Isolate*) [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n64: 0x108ddf890 v8::internal::MicrotaskQueue::PerformCheckpointInternal(v8::Isolate*) [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n65: 0x1088e7d78 node::InternalCallbackScope::Close() [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n66: 0x1088e7c08 node::InternalCallbackScope::~InternalCallbackScope() [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n67: 0x109927ad4 node::fs::FileHandle::CloseReq::Resolve() [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n68: 0x109938540 node::fs::FileHandle::ClosePromise()::$_0::__invoke(uv_fs_s*) (.cold.2) [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n69: 0x108997e18 node::fs::FileHandle::ClosePromise()::$_0::__invoke(uv_fs_s*) [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n70: 0x108988018 node::MakeLibuvRequestCallback<uv_fs_s, void (*)(uv_fs_s*)>::Wrapper(uv_fs_s*) [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n71: 0x1046b2e64 uv__work_done [/opt/homebrew/Cellar/libuv/1.52.1/lib/libuv.1.0.0.dylib]\n72: 0x1046b63cc uv__async_io [/opt/homebrew/Cellar/libuv/1.52.1/lib/libuv.1.0.0.dylib]\n73: 0x1046c51b0 uv__io_poll [/opt/homebrew/Cellar/libuv/1.52.1/lib/libuv.1.0.0.dylib]\n74: 0x1046b6b64 uv_run [/opt/homebrew/Cellar/libuv/1.52.1/lib/libuv.1.0.0.dylib]\n75: 0x1088e8dfc node::SpinEventLoopInternal(node::Environment*) [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n76: 0x1089bce74 node::NodeMainInstance::Run(node::ExitCode*, node::Environment*) [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n77: 0x1089bcba8 node::NodeMainInstance::Run() [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n78: 0x108960cd0 node::Start(int, char**) [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]\n79: 0x1928add54 start [/usr/lib/dyld]\nNext.js build worker exited with code: null and signal: SIGABRT\n",
+        "severity": "blocking"
+      }
+    ],
+    "blockingFailures": [
+      "typescript_tsc:failed",
+      "next_build:failed"
+    ]
+  },
+  "platformValidation": null,
+  "simulation": null,
+  "growthApis": [],
+  "performance": {},
+  "featureFlagRolloutPlan": [
+    {
+      "order": 1,
+      "envKey": "FEATURE_SECURITY_GLOBAL_V1",
+      "description": "Security middleware layer",
+      "note": "Keep on; opt-out only if debugging.",
+      "rawEnv": "(unset)",
+      "interpreted": "default_on_when_unset"
+    },
+    {
+      "order": 2,
+      "envKey": "FEATURE_AI_AUTOPILOT_V1",
+      "description": "AI Autopilot (assist / gated execute)",
+      "note": "Enable with FEATURE_AI_AUTOPILOT_SAFE_ACTIONS_V1 for safe mode.",
+      "rawEnv": "(unset)",
+      "interpreted": "off_when_unset"
+    },
+    {
+      "order": 3,
+      "envKey": "FEATURE_SOFT_LAUNCH_V1",
+      "description": "Soft launch engine + plans",
+      "note": "Requires review of launch APIs.",
+      "rawEnv": "(unset)",
+      "interpreted": "off_when_unset"
+    },
+    {
+      "order": 4,
+      "envKey": "FEATURE_FIRST_USERS_V1",
+      "description": "First-users acquisition pack",
+      "note": "Depends on soft launch surfaces.",
+      "rawEnv": "(unset)",
+      "interpreted": "off_when_unset"
+    },
+    {
+      "order": 5,
+      "envKey": "FEATURE_ADS_ENGINE_V1",
+      "description": "Internal ads draft generator",
+      "note": "No auto-spend; copy review only.",
+      "rawEnv": "(unset)",
+      "interpreted": "off_when_unset"
+    },
+    {
+      "order": 6,
+      "envKey": "FEATURE_MARKETING_INTELLIGENCE_V1",
+      "description": "Funnel + marketing intelligence",
+      "note": "Powers funnel-visualization + beacons.",
+      "rawEnv": "(unset)",
+      "interpreted": "off_when_unset"
+    },
+    {
+      "order": 7,
+      "envKey": "FEATURE_REPUTATION_ENGINE_V1",
+      "description": "Reputation engine (internal)",
+      "note": "Roll out internal/admin first.",
+      "rawEnv": "(unset)",
+      "interpreted": "off_when_unset"
+    },
+    {
+      "order": 8,
+      "envKey": "FEATURE_RANKING_ENGINE_V1",
+      "description": "Ranking engine (test)",
+      "note": "Internal test before public ranking changes.",
+      "rawEnv": "(unset)",
+      "interpreted": "off_when_unset"
+    }
+  ],
+  "dashboardUrlsProbed": [],
+  "decision": "NO_GO",
+  "blockers": [
+    "build:typescript_tsc:failed",
+    "build:next_build:failed"
+  ],
+  "warnings": [
+    "platform_validation_skipped_due_to_build_failure",
+    "simulation_skipped_build_or_flag",
+    "env:node_version:Node v25.8.1 — repo expects 20.x (got major 25).",
+    "build_log:typescript_tsc",
+    "build_log:next_build",
+    "platform_validation_missing"
+  ],
+  "evidenceNote": "All checks use real commands and network calls where applicable. Growth GET APIs without PRELAUNCH_AUTH_COOKIE expect 401/403 (auth enforced). Enable PRELAUNCH_AUTH_COOKIE for full JSON responses."
+}

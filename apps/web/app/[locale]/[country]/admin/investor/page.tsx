@@ -1,9 +1,15 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { InvestorAssistantPanel } from "@/components/investor-hub/InvestorAssistantPanel";
+import { InvestorPitchPanel } from "@/components/investor-hub/InvestorPitchPanel";
 import { getGuestId } from "@/lib/auth/session";
 import { isPlatformAdmin } from "@/lib/auth/is-platform-admin";
 import { loadAdminInvestorHubData } from "@/lib/investor/load-admin-investor-hub";
+import { assessInvestorReadiness } from "@/modules/investor/pitch-format";
+import {
+  buildPitchDeckFromContext,
+  loadPitchDeckContextFull,
+} from "@/modules/investor/pitch-generator.service";
 
 export const dynamic = "force-dynamic";
 
@@ -66,6 +72,10 @@ export default async function AdminInvestorHomePage() {
             <p className="mt-1 text-2xl font-semibold text-amber-200">{(d.conversionRate * 100).toFixed(1)}%</p>
           </div>
         </div>
+
+        <section className="rounded-2xl border border-amber-500/20 bg-zinc-950/40 p-6">
+          <InvestorPitchPanel decks={decks} readiness={readiness} risks={risks} />
+        </section>
 
         <div className="grid gap-8 lg:grid-cols-3">
           <div className="lg:col-span-2">

@@ -6,6 +6,8 @@ import { HomePrimarySearch } from "@/components/marketing/HomePrimarySearch";
 import { JourneyLandingBeacon } from "@/components/journey/JourneyLandingBeacon";
 import { ExperimentExposureTracker } from "@/components/experiments/ExperimentExposureTracker";
 import type { ResolvedExperimentSurface } from "@/lib/experiments/get-variant-config";
+import { conversionEngineFlags } from "@/config/feature-flags";
+import { ConversionHomeBoost } from "@/components/conversion/ConversionHomeBoost";
 
 /**
  * Marketing home top: [Hero] → [Search] as stacked sections (featured + trust follow in `page.tsx`).
@@ -54,6 +56,8 @@ export function LecipmHomeLanding({
           </p>
         </div>
       </section>
+
+      {conversionEngineFlags.conversionUpgradeV1 ? <ConversionHomeBoost /> : null}
 
       <section id="home-search" className="border-t border-white/10 bg-black pb-10 pt-8 md:pb-12 md:pt-10">
         <div className="mx-auto w-full max-w-5xl px-4 sm:px-6">

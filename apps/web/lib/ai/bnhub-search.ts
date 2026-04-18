@@ -31,6 +31,7 @@ export type BnhubListingForRanking = {
   title?: string;
   listingCode?: string | null;
   city?: string;
+  region?: string | null;
   nightPriceCents: number;
   maxGuests?: number;
   beds?: number;
@@ -53,6 +54,10 @@ export type BnhubListingForRanking = {
   reviews?: { propertyRating?: number }[];
   /** When owner host performance is joined — small ranking nudge only */
   hostReputationScore?: number | null;
+  /** From `attachReviewAggregatesForSearch` — blends into marketplace quality in ranking. */
+  cachedListingQuality01?: number | null;
+  /** Optional pill for search UI when quality thresholds are met. */
+  qualityBadgeLabel?: string | null;
 };
 
 export type BnhubListingLabel = "Best Match" | "Great Price" | "High Demand";

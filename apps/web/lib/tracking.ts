@@ -68,6 +68,8 @@ export const TrackingEvent = {
   BOOKING_STARTED: "booking_started",
   /** Payment/booking confirmed (synced with product `booking_completed`). */
   BOOKING_COMPLETED: "booking_completed",
+  /** Product search submitted (home, search, BNHub). */
+  SEARCH: "search",
 } as const;
 
 export type TrackingEventType =
@@ -105,6 +107,9 @@ const TRAFFIC_ATTRIBUTION_EVENTS = new Set([
   "booking_completed",
   "booking_click",
   "listing_click",
+  "host_signup",
+  "broker_lead",
+  "search",
 ]);
 
 /**
@@ -173,9 +178,10 @@ export function track(eventType: string, extra?: TrackOptions): void {
   });
 }
 
-export function trackPageView(overridePath?: string): void {
+export function trackPageView(overridePath?: string, meta?: Record<string, unknown>): void {
   track(TrackingEvent.PAGE_VIEW, {
     path: overridePath,
+    ...(meta && Object.keys(meta).length > 0 ? { meta } : {}),
   });
   const p =
     overridePath ??

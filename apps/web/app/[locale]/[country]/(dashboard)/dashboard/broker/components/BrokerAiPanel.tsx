@@ -11,12 +11,12 @@ export function BrokerAiPanel({ leadContext }: BrokerAiPanelProps) {
   const suggestion = suggestBrokerNextAction(leadContext ?? {});
 
   return (
-    <div className="rounded-xl border border-ds-border bg-ds-card p-5 shadow-ds-soft">
+    <div className="rounded-xl border border-ds-border bg-ds-card p-4 shadow-ds-soft sm:p-5">
       <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-ds-gold">Broker copilot</h3>
-      <p className="mt-2 text-[11px] leading-snug text-ds-text-secondary">
-        Rule-based hints from this lead&apos;s text and contact fields — not a prediction of closing.
+      <p className="mt-2 text-[11px] leading-relaxed text-ds-text-secondary">
+        Rule-based hints from this lead&apos;s text and contact fields — not a prediction of closing probability.
       </p>
-      <ul className="mt-4 space-y-3 text-sm">
+      <ul className="mt-4 space-y-3.5 text-sm leading-snug">
         <li>
           <span className="text-ds-text-secondary">Priority band:</span>{" "}
           <span className="font-medium capitalize text-ds-text">{suggestion.priority}</span>

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { SectionHeading } from "@/components/marketing/SectionHeading";
 import { AnimatedReveal } from "@/components/marketing/AnimatedReveal";
 import { PricingCatalogSection } from "@/components/pricing/PricingCatalogSection";
@@ -12,6 +13,8 @@ import { PLATFORM_NAME } from "@/config/branding";
 import { InlineUpgradeBanner } from "@/components/conversion/InlineUpgradeBanner";
 import { PrimaryConversionCTA } from "@/components/conversion/PrimaryConversionCTA";
 import { conversionCopy } from "@/src/design/conversionCopy";
+import { ComparisonTable } from "@/components/pricing/ComparisonTable";
+import { revenueV4Flags } from "@/config/feature-flags";
 
 const title = "Pricing";
 const description = `Plans for buyers, sellers, hosts, and brokers — ${PLATFORM_NAME}.`;
@@ -103,11 +106,44 @@ export default function PricingOverviewPage() {
           </AnimatedReveal>
         </div>
 
+        {revenueV4Flags.pricingEngineV1 ? (
+          <AnimatedReveal delayMs={200}>
+            <div className="mt-16">
+              <h2 className="font-serif text-2xl font-semibold text-white">How we talk about fees</h2>
+              <p className="mt-2 max-w-2xl text-sm text-slate-400">
+                No fabricated “savings vs Airbnb” — checkout shows line items; competitor comparisons in ROI tools use{" "}
+                <strong className="text-slate-200">your</strong> inputs.
+              </p>
+              <div className="mt-8">
+                <ComparisonTable
+                  rows={[
+                    {
+                      label: "Guest checkout",
+                      lecipm: "Stripe + line-item fees before pay",
+                      notes: "BNHub service fee % on lodging subtotal after discounts.",
+                    },
+                    {
+                      label: "Host net",
+                      lecipm: "Plan-based booking fee + optional subscription",
+                      notes: "Configured in product (`LECIPM_*` env) — shown in host dashboard.",
+                    },
+                    {
+                      label: "Broker economics",
+                      lecipm: "Pay-per-lead anchor + deal commissions",
+                      notes: "See CRM billing — not a guaranteed income model.",
+                    },
+                  ]}
+                />
+              </div>
+            </div>
+          </AnimatedReveal>
+        ) : null}
+
         <p className="mt-16 text-center text-sm text-slate-500">
           {conversionCopy.upgrade.trustLine}. Taxes may apply. Enterprise or brokerage-wide rollouts —{" "}
-          <a href="/contact" className="text-premium-gold hover:underline">
+          <Link href="/contact" className="text-premium-gold hover:underline">
             contact sales
-          </a>
+          </Link>
           .
         </p>
         <div className="mt-6 text-center">

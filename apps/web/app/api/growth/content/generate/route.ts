@@ -1,121 +1,42 @@
 import { NextResponse } from "next/server";
-import { GrowthMarketingPlatform } from "@prisma/client";
-import { generateContentForChannel } from "@/src/modules/growth-automation/application/generateContentForChannel";
-import type { BlogPostDraft } from "@/src/modules/growth-automation/application/generateBlogPost";
-import { createContentDraft } from "@/src/modules/growth-automation/application/createContentDraft";
-import type { EmailDraft } from "@/src/modules/growth-automation/application/generateEmailDraft";
-import type { ShortVideoScript } from "@/src/modules/growth-automation/application/generateShortVideoScript";
-import type { YouTubeScript } from "@/src/modules/growth-automation/application/generateYouTubeScript";
-import type { DraftPayload } from "@/src/modules/growth-automation/domain/growth-automation.types";
-import { isContentFamily } from "@/src/modules/growth-automation/domain/contentFamilies";
-import { requireGrowthAutomationAdmin } from "@/src/modules/growth-automation/infrastructure/growthApiAuth";
+import { z } from "zod";
+import { generateGrowthContentDrafts } from "@/modules/growth-machine";
+import { requireGrowthMachineActor } from "@/modules/growth-machine/growth-api-context";
 
 export const dynamic = "force-dynamic";
 
-const PLATFORMS = new Set(Object.values(GrowthMarketingPlatform));
-
-type GeneratedBundle =
-  | { kind: "post"; payload: DraftPayload }
-  | { kind: "caption"; payload: DraftPayload }
-  | { kind: "article"; payload: BlogPostDraft }
-  | { kind: "email"; payload: EmailDraft }
-  | { kind: "long_script"; payload: YouTubeScript }
-  | { kind: "short_script+caption"; payload: { script: ShortVideoScript; caption: DraftPayload } };
-
-function toDraftPayload(
-  productOrFeature: string,
-  generated: GeneratedBundle,
-): DraftPayload {
-  switch (generated.kind) {
-    case "post":
-    case "caption":
-      return generated.payload;
-    case "article": {
-      const p = generated.payload;
-      return {
-        hook: p.title,
-        body: p.bodyMarkdown,
-        cta: p.cta,
-        sourceProductOrFeature: p.sourceProductOrFeature || productOrFeature,
-        title: p.title,
-        metadata: { metaDescription: p.metaDescription, slugSuggestion: p.slugSuggestion },
-      };
-    }
-    case "email": {
-      const p = generated.payload;
-      return {
-        hook: p.subject,
-        body: p.bodyHtml,
-        cta: p.ctaLabel,
-        sourceProductOrFeature: p.sourceProductOrFeature || productOrFeature,
-        metadata: { preheader: p.preheader, ctaUrl: p.ctaUrl },
-      };
-    }
-    case "long_script": {
-      const p = generated.payload;
-      return {
-        hook: p.title,
-        body: p.sections.map((s) => `## ${s.heading}\n${s.script}`).join("\n\n"),
-        cta: p.cta,
-        sourceProductOrFeature: productOrFeature,
-        title: p.title,
-        metadata: { description: p.description, tags: p.suggestedTags },
-      };
-    }
-    case "short_script+caption": {
-      const p = generated.payload;
-      return {
-        hook: p.caption.hook,
-        body: `${p.script.beats.join(" → ")}\n\n${p.caption.body}`,
-        cta: p.script.cta,
-        sourceProductOrFeature: productOrFeature,
-        metadata: { script: p.script, caption: p.caption },
-      };
-    }
-  }
-}
+const bodySchema = z.object({
+  audience: z.enum(["host", "buyer", "investor"]),
+  city: z.string().min(1).max(120),
+  listingId: z.string().optional(),
+  campaignGoal: z.enum(["awareness", "conversion", "retention"]),
+  tone: z.enum(["luxury", "modern", "direct", "bnb"]),
+  offerType: z.string().optional(),
+});
 
 export async function POST(req: Request) {
-  const auth = await requireGrowthAutomationAdmin();
+  const auth = await requireGrowthMachineActor();
   if (!auth.ok) return auth.response;
 
-  const body = await req.json().catch(() => ({}));
-  const platform = body.platform as GrowthMarketingPlatform;
-  const topic = typeof body.topic === "string" ? body.topic.trim() : "";
-  const contentFamily = typeof body.contentFamily === "string" ? body.contentFamily : "";
-  const productOrFeature =
-    typeof body.productOrFeature === "string" ? body.productOrFeature.trim() : "LECIPM workspace";
-  const link = typeof body.link === "string" ? body.link.trim() : undefined;
-  const saveDraft = Boolean(body.saveDraft);
-
-  if (!topic || !PLATFORMS.has(platform) || !isContentFamily(contentFamily)) {
-    return NextResponse.json(
-      { error: "topic, valid platform, and contentFamily (see LECIPM content families) are required" },
-      { status: 400 },
-    );
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+  const parsed = bodySchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.issues.map((i) => i.message).join("; ") }, { status: 400 });
   }
 
-  const generated = (await generateContentForChannel({
-    platform,
-    topic,
-    contentFamily,
-    productOrFeature,
-    link,
-  })) as GeneratedBundle;
-
-  if (!saveDraft) {
-    return NextResponse.json({ generated });
-  }
-
-  const draftPayload = toDraftPayload(productOrFeature, generated);
-
-  const item = await createContentDraft({
-    contentType: generated.kind,
-    topic,
-    platform,
-    draftPayload,
-    marketingChannelId: typeof body.marketingChannelId === "string" ? body.marketingChannelId : null,
+  const drafts = generateGrowthContentDrafts({
+    audience: parsed.data.audience,
+    city: parsed.data.city,
+    listingId: parsed.data.listingId,
+    campaignGoal: parsed.data.campaignGoal,
+    tone: parsed.data.tone,
+    offerType: parsed.data.offerType,
   });
 
-  return NextResponse.json({ generated, itemId: item.id, status: item.status });
+  return NextResponse.json({ drafts, generatedBy: auth.userId });
 }

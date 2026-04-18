@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 
-const KEYS = ["trustSecureBooking", "trustVerifiedListings", "trustSupport"] as const;
+const KEYS = ["trustVerifiedListings", "trustSecureBooking", "trustSupport"] as const;
 
 /** Three bullets below featured listings — minimal, fast scan. */
 export async function HomeTrustBullets() {

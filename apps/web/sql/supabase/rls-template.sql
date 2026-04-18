@@ -1,5 +1,7 @@
 -- Supabase Row Level Security — OPTIONAL templates when using Supabase Auth + direct PostgREST.
 -- The Next.js app uses Prisma with DATABASE_URL (often service role) and bypasses RLS.
+-- **Production rule:** all authorization for Prisma-backed APIs must be enforced in Next.js (guards, services),
+-- not assumed from RLS, unless you also expose the same tables via Supabase Data API.
 -- Enable these only if you expose tables to anon/authenticated clients via Supabase Data API.
 
 -- Example: legacy Property table (adjust UUID vs text to match your column types)

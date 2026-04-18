@@ -8,12 +8,14 @@ export function SkipLinks({
   links,
   className = "",
 }: {
-  links: readonly { href: string; label: string }[];
+  /** When omitted (e.g. root layout), render nothing — callers may pass explicit skip targets. */
+  links?: readonly { href: string; label: string }[] | null;
   className?: string;
 }) {
+  const items = links ?? [];
   return (
     <div className={["lecipm-skip-links", className].filter(Boolean).join(" ")}>
-      {links.map((l) => (
+      {items.map((l) => (
         <a key={l.href} href={l.href} className="lecipm-skip-link">
           {l.label}
         </a>

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { EvaluateClient } from "@/app/evaluate/evaluate-client";
+import { EvaluateClient } from "@/app/[locale]/[country]/evaluate/evaluate-client";
 
 export const dynamic = "force-dynamic";
 

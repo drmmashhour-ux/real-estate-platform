@@ -34,7 +34,8 @@ export async function fulfillFeaturedListingFromWebhook(
   });
   if (!listing) return { ok: false, reason: "listing_not_found" };
   if (listing.ownerId !== input.payerUserId) return { ok: false, reason: "owner_mismatch" };
-  if (input.amountCents < PRICING.featuredListingPriceCents) {
+  /** Allow admin-configured boost prices (see `getRevenueControlSettings`); still block trivial abuse. */
+  if (input.amountCents < 100) {
     return { ok: false, reason: "amount_too_low" };
   }
 

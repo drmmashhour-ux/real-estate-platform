@@ -428,6 +428,7 @@ export function urlParamsToGlobalFilters(sp: URLSearchParams): GlobalSearchFilte
         s === "priceDesc" ||
         s === "newest" ||
         s === "recommended" ||
+        s === "ranking" ||
         s === "ai" ||
         s === "aiScore"
       )
@@ -507,7 +508,14 @@ export function globalFiltersToBnhubParams(f: GlobalSearchFiltersExtended): URLS
   if (f.features.includes("verified")) p.set("verifiedOnly", "true");
   if (f.features.includes("instant_book")) p.set("instantBook", "true");
   const sort = f.sort ?? "recommended";
-  if (sort === "newest" || sort === "priceAsc" || sort === "priceDesc" || sort === "recommended" || sort === "ai") {
+  if (
+    sort === "newest" ||
+    sort === "priceAsc" ||
+    sort === "priceDesc" ||
+    sort === "recommended" ||
+    sort === "ranking" ||
+    sort === "ai"
+  ) {
     p.set("sort", sort);
   }
   return p;

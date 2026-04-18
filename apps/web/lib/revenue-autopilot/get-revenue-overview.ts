@@ -54,6 +54,7 @@ export async function getRevenueOverview(input: { scopeType: "owner" | "platform
       totalRevenueCentsPrev90: computed.totalRevenueCentsPrev90,
       lastPersistedAt: healthRow?.updatedAt ?? null,
       portfolioHealthScore,
+      listingCount: computed.listings.length,
     },
     topEarners,
     weakMonetizers,

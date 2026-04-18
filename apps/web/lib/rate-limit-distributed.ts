@@ -34,12 +34,17 @@ export async function checkRateLimitDistributed(
 
   const rkey = `rl:${key}`;
   const ws = windowSeconds(options);
-  const count = await redis.incrWithExpire(rkey, ws);
-  const ttl = await redis.ttl(rkey);
-  const resetAt = Date.now() + (ttl > 0 ? ttl * 1000 : windowMs);
-  const remaining = Math.max(0, max - count);
-  const allowed = count <= max;
-  return { allowed, remaining, resetAt, distributed: true };
+  try {
+    const count = await redis.incrWithExpire(rkey, ws);
+    const ttl = await redis.ttl(rkey);
+    const resetAt = Date.now() + (ttl > 0 ? ttl * 1000 : windowMs);
+    const remaining = Math.max(0, max - count);
+    const allowed = count <= max;
+    return { allowed, remaining, resetAt, distributed: true };
+  } catch {
+    const r = checkRateLimit(key, options);
+    return { ...r, distributed: false };
+  }
 }
 
 export function getRateLimitHeadersFromResult(result: RateLimitResult): Record<string, string> {

@@ -62,11 +62,25 @@ This supports traceability; **reversibility** is operational (restore from audit
 
 **Authorization:** listing owner (host/broker context) or **admin**; admins can inspect across listings where implemented.
 
+## UI labels (product copy)
+
+| Label | Meaning |
+| ----- | ------- |
+| **Suggested fix** | AI produced a change; waiting for host action (assist / approval_required, or low-risk with auto-apply off). |
+| **Safe to auto-apply** | Low-risk field + mode `safe_autopilot` + toggles allow automatic apply after a run or via “Apply all safe fixes”. |
+| **Requires approval** | High-risk (e.g. pricing) or mode requires human confirmation before any write. |
+| **Requires approval — price not changed automatically** | Nightly price suggestion only; live `nightPriceCents` is never updated by autopilot in MVP. |
+| **Approve (audit only)** | For price: records approval in audit; adjust price manually in the listing editor if desired. |
+| **Applied** | Suggestion row moved to `applied` after a successful field update (or price acknowledgment flow for high-risk price). |
+| **Rejected** | Host dismissed the suggestion; audit entry recorded. |
+
 ## UI
 
-- Host: `/dashboard/autopilot` — overview, pending items, settings
-- Listing: `/dashboard/listings/[id]/quality` — suggestions panel, approve/reject, apply safe fixes, before/after where shown
-- Admin: `/admin/autopilot` — aggregate runs, applied fixes, pending high-risk-style items, repeat-flagged listings
+- Host: `/dashboard/autopilot` — settings, weak listings, **pending** suggestions, **applied** fixes, audit tail
+- Listing: `/dashboard/listings/[id]/quality` — run optimization, pending suggestions with before/after, approve/reject, apply safe fixes, **recent applied** list
+- Admin: `/admin/autopilot` — aggregate runs, applied fixes, pending high-risk suggestions, repeat-flagged listings
+
+`GET /api/autopilot/listings/[listingId]/suggestions` returns `pending` (only `suggested`), `recentApplied`, `recentRuns`, and `audits`.
 
 ## Score feedback loop
 

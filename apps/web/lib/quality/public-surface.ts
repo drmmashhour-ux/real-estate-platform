@@ -1,5 +1,6 @@
 import type { ListingQualityLevel } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { listingQualityBadgeLabelFromRow } from "@/lib/quality/validators";
 
 export type PublicListingQualityBadge = {
   label: string;
@@ -16,15 +17,8 @@ export async function getPublicListingQualityBadge(
     select: { level: true, qualityScore: true, healthStatus: true },
   });
   if (!row) return null;
-  if (row.level !== "excellent" && row.level !== "good") return null;
-  if (row.qualityScore < 62) return null;
-
-  const label =
-    row.level === "excellent"
-      ? "Top quality"
-      : row.healthStatus === "healthy" || row.healthStatus === "top_performer"
-        ? "High quality"
-        : "Quality stay";
+  const label = listingQualityBadgeLabelFromRow(row);
+  if (!label) return null;
 
   return {
     label,

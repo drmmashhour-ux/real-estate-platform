@@ -58,6 +58,18 @@ import {
   automationOnPipelineStageChange,
   dispatchAutomation,
 } from "@/lib/automation/engine";
+import { computeLeadValueAndPrice } from "@/modules/revenue/lead-pricing.service";
+import { getRevenueControlSettings } from "@/modules/revenue/revenue-control-settings";
+import {
+  inferLeadIntentLabel,
+  isLeadMonetizationV1Enabled,
+  maskLeadDisplayName,
+  redactLeadMessagePreview,
+} from "@/modules/leads/lead-monetization.service";
+import { buildLeadQualitySummary } from "@/modules/leads/lead-quality.service";
+import { dynamicPricingFlags, leadQualityFlags } from "@/config/feature-flags";
+import { computeLeadDemandLevel } from "@/modules/leads/lead-demand.service";
+import { computeBrokerInterestLevel, computeDynamicLeadPrice } from "@/modules/leads/dynamic-pricing.service";
 
 export const dynamic = "force-dynamic";
 
@@ -188,6 +200,8 @@ export async function GET(req: Request) {
     const where: Prisma.LeadWhereInput =
       andParts.length === 1 ? andParts[0]! : { AND: andParts };
 
+    const revenueSettings = await getRevenueControlSettings();
+
     const dbLeads = await prisma.lead.findMany({
       where,
       orderBy: { createdAt: "desc" },
@@ -199,6 +213,7 @@ export async function GET(req: Request) {
         fsboListing: { select: { id: true, listingCode: true, title: true } },
         deal: { select: { id: true, status: true } },
         crmConversation: { select: { id: true, updatedAt: true } },
+        _count: { select: { crmInteractions: true, leadTimelineEvents: true } },
       },
     });
 
@@ -244,6 +259,14 @@ export async function GET(req: Request) {
       );
     }
 
+    const cityKeyForLead = (l: (typeof filtered)[number]) =>
+      extractLeadCity({ aiExplanation: l.aiExplanation, message: l.message }).toLowerCase().trim() || "unknown";
+    const cityCounts = new Map<string, number>();
+    for (const l of filtered) {
+      const k = cityKeyForLead(l);
+      cityCounts.set(k, (cityCounts.get(k) ?? 0) + 1);
+    }
+
     const fromDb = await Promise.all(
       filtered.map(async (l) => {
         const snap = extractEvaluationSnapshot(l.aiExplanation);
@@ -281,12 +304,81 @@ export async function GET(req: Request) {
         const messagesHref = l.platformConversationId
           ? `/dashboard/messages?conversationId=${encodeURIComponent(l.platformConversationId)}`
           : null;
+        const leadPricing = computeLeadValueAndPrice(
+          {
+            message: l.message,
+            leadSource: l.leadSource,
+            leadType: l.leadType,
+            score: l.score,
+            engagementScore: l.engagementScore,
+            interactionCount: l._count.crmInteractions + l._count.leadTimelineEvents,
+            hasCompleteContact: Boolean(l.email?.trim() && l.phone?.trim()),
+          },
+          {
+            basePriceCents: l.dynamicLeadPriceCents ?? undefined,
+            minCents: revenueSettings.leadUnlockMinCents,
+            maxCents: revenueSettings.leadUnlockMaxCents,
+            defaultLeadPriceCents: revenueSettings.leadDefaultPriceCents,
+          },
+        );
+        const monetizationV1 = isLeadMonetizationV1Enabled();
+        const locked = !l.contactUnlockedAt;
+        const displayName = monetizationV1 && locked ? maskLeadDisplayName(l.name) : l.name;
+        const displayMessage = monetizationV1 && locked ? redactLeadMessagePreview(l.message) : l.message;
+        const leadQualityV1 = leadQualityFlags.leadQualityV1
+          ? buildLeadQualitySummary({
+              id: l.id,
+              name: l.name,
+              email: l.email,
+              phone: l.phone,
+              message: l.message,
+              score: l.score,
+              engagementScore: l.engagementScore,
+              leadSource: l.leadSource,
+              leadType: l.leadType ?? normalizeCrmLeadType(l.leadSource),
+              aiExplanation: l.aiExplanation,
+              purchaseRegion: l.purchaseRegion,
+              highIntent: l.highIntent,
+              dealValue,
+            })
+          : undefined;
+
+        const cityK = cityKeyForLead(l);
+        const regionPeerLeadCount = Math.max(0, (cityCounts.get(cityK) ?? 1) - 1);
+        const interactionTotal = l._count.crmInteractions + l._count.leadTimelineEvents;
+        const demandLevel = computeLeadDemandLevel({
+          interactionCount: interactionTotal,
+          engagementScore: l.engagementScore,
+          highIntent: l.highIntent,
+          conversionProbability: l.conversionProbability,
+          regionPeerLeadCount,
+        });
+        const brokerInterestLevel = computeBrokerInterestLevel({
+          engagementScore: l.engagementScore,
+          highIntent: l.highIntent,
+          score: l.score,
+        });
+        const qualityScoreForDynamic = leadQualityV1?.score ?? l.score;
+        const dynamicPricingV1 = dynamicPricingFlags.dynamicPricingV1
+          ? computeDynamicLeadPrice({
+              leadId: l.id,
+              basePrice: leadPricing.leadPrice,
+              qualityScore: qualityScoreForDynamic,
+              demandLevel,
+              brokerInterestLevel,
+              historicalConversion:
+                l.conversionProbability != null && Number.isFinite(l.conversionProbability)
+                  ? l.conversionProbability
+                  : undefined,
+            })
+          : undefined;
+
         return {
           id: l.id,
-          name: l.name,
+          name: displayName,
           email: l.contactUnlockedAt ? l.email : "[Locked]",
           phone: l.contactUnlockedAt ? l.phone : "[Locked]",
-          message: l.message,
+          message: displayMessage,
           listingId: l.listingId,
           listingCode: l.fsboListing?.listingCode ?? l.listingCode,
           projectId: l.projectId,
@@ -322,6 +414,11 @@ export async function GET(req: Request) {
           aiMeta: ai.aiMeta,
           createdAt: l.createdAt,
           isLocked: !l.contactUnlockedAt,
+          leadMonetizationV1: monetizationV1,
+          accessLevel: locked ? ("preview" as const) : ("full" as const),
+          intentLabel: inferLeadIntentLabel(l),
+          leadPricing,
+          revenueMonetizationEnabled: revenueSettings.monetizationEnabled,
           introducedByBroker: l.introducedByBroker ?? undefined,
           lastFollowUpByBroker: l.lastFollowUpByBroker ?? undefined,
           leadSource: l.leadSource,
@@ -336,6 +433,8 @@ export async function GET(req: Request) {
           launchSalesContacted: l.launchSalesContacted,
           launchLastContactDate: l.launchLastContactDate,
           launchNotes: l.launchNotes,
+          leadQualityV1,
+          dynamicPricingV1,
         };
       })
     );

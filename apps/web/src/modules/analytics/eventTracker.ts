@@ -29,9 +29,13 @@ const EVENT_MAP: Record<string, UserEventType> = {
   inquiry_sent: "INQUIRY",
   generate_lead: "INQUIRY",
   booking_started: "BOOKING_START",
-  /** BNHUB stay paid / confirmed — same product milestone as `payment_success`. */
+  /** BNHub stay paid / confirmed — same product milestone as `payment_success`. */
   booking_completed: "PAYMENT_SUCCESS",
+  /** Client `checkout` — same milestone as `checkout_started`. */
+  checkout: "CHECKOUT_START",
   checkout_started: "CHECKOUT_START",
+  /** Funnel label; use `metadata.rawEventType` = landing_view when ingested via track(). */
+  landing_view: "VISIT_PAGE",
   payment_success: "PAYMENT_SUCCESS",
   payment_failed: "PAYMENT_FAILED",
   stripe_webhook: "STRIPE_WEBHOOK",

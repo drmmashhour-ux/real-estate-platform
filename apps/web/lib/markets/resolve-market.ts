@@ -1,4 +1,3 @@
-import { prisma } from "@/lib/db";
 import { defaultMarketDefinition } from "./default";
 import { syriaMarketDefinition } from "./syria";
 import type { BookingMode, ContactDisplayMode, MarketCode, PaymentMode, ResolvedMarket } from "./types";
@@ -26,6 +25,14 @@ function derivePaymentMode(online: boolean, manualTracking: boolean): PaymentMod
  */
 export async function getResolvedMarket(): Promise<ResolvedMarket> {
   const envHint = envMarketHint();
+
+  let prisma: Awaited<typeof import("@/lib/db")>["prisma"];
+  try {
+    ({ prisma } = await import("@/lib/db"));
+  } catch (err) {
+    console.error("[markets] getResolvedMarket: Prisma module unavailable — using static market defaults", err);
+    return envHint === "syria" ? syriaMarketDefinition : defaultMarketDefinition;
+  }
 
   let row: {
     syriaModeEnabled: boolean;

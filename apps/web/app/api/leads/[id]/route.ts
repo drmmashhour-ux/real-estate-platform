@@ -9,6 +9,29 @@ import {
 import { getLeadRevenueSnapshot } from "@/src/modules/revenue/revenueEngine";
 import { canBrokerOrAdminAccessLead } from "@/lib/leads/can-access-lead";
 import { getDealLegalTimeline } from "@/lib/deals/legal-timeline";
+import { trackRevenueEvent } from "@/modules/revenue/revenue-events.service";
+import {
+  inferLeadIntentLabel,
+  isLeadMonetizationV1Enabled,
+  maskLeadDisplayName,
+  redactLeadMessagePreview,
+} from "@/modules/leads/lead-monetization.service";
+import { recordLeadMonetizationView } from "@/modules/leads/lead-monetization-monitoring.service";
+import { buildLeadQualitySummary } from "@/modules/leads/lead-quality.service";
+import {
+  dynamicPricingFlags,
+  leadMonetizationControlFlags,
+  leadQualityFlags,
+} from "@/config/feature-flags";
+import { buildLeadMonetizationControlSummary } from "@/modules/leads/lead-monetization-control.service";
+import { normalizeCrmLeadType } from "@/lib/leads/crm-constants";
+import { extractEvaluationSnapshot } from "@/lib/leads/timeline-helpers";
+import { computeLeadValueAndPrice } from "@/modules/revenue/lead-pricing.service";
+import { getRevenueControlSettings } from "@/modules/revenue/revenue-control-settings";
+import { computeLeadDemandLevel, computeLeadDemandScore } from "@/modules/leads/lead-demand.service";
+import { computeBrokerInterestLevel, computeDynamicLeadPrice } from "@/modules/leads/dynamic-pricing.service";
+import { buildLeadRoutingSummary } from "@/modules/broker/routing/broker-routing.service";
+import type { DynamicPricingSuggestion } from "@/modules/leads/dynamic-pricing.types";
 
 export const dynamic = "force-dynamic";
 
@@ -61,6 +84,7 @@ export async function GET(
           orderBy: [{ status: "asc" }, { dueAt: "asc" }],
           take: 60,
         },
+        _count: { select: { crmInteractions: true, leadTimelineEvents: true } },
       },
     });
     if (!lead) {
@@ -71,11 +95,155 @@ export async function GET(
       return Response.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    trackRevenueEvent({
+      type: "lead_viewed",
+      userId: viewerId,
+      leadId: id,
+      metadata: { source: "leads", context: "lead_detail_get" },
+    });
+    if (isLeadMonetizationV1Enabled()) {
+      recordLeadMonetizationView();
+    }
+    if (lead.contactUnlockedAt) {
+      trackRevenueEvent({
+        type: "contact_revealed",
+        userId: viewerId,
+        leadId: id,
+        metadata: { source: "leads", context: "lead_detail_get" },
+      });
+    }
+
     const revenueSnapshot = await getLeadRevenueSnapshot(id);
     const legalTimeline = lead.deal?.id ? await getDealLegalTimeline(lead.deal.id).catch(() => null) : null;
 
+    const snapDeal = extractEvaluationSnapshot(lead.aiExplanation);
+    const dealValueForQuality = lead.dealValue ?? snapDeal?.estimate ?? null;
+    const leadQualityV1 = leadQualityFlags.leadQualityV1
+      ? buildLeadQualitySummary(
+          {
+            id: lead.id,
+            name: lead.name,
+            email: lead.email,
+            phone: lead.phone,
+            message: lead.message,
+            score: lead.score,
+            engagementScore: lead.engagementScore,
+            leadSource: lead.leadSource,
+            leadType: lead.leadType ?? normalizeCrmLeadType(lead.leadSource),
+            aiExplanation: lead.aiExplanation,
+            purchaseRegion: lead.purchaseRegion,
+            highIntent: lead.highIntent,
+            dealValue: dealValueForQuality,
+          },
+          { recordMonitoring: true },
+        )
+      : undefined;
+
+    const revenueSettings = await getRevenueControlSettings();
+    const interactionTotal =
+      (lead._count?.crmInteractions ?? 0) + (lead._count?.leadTimelineEvents ?? 0);
+
+    let regionPeerLeadCount = 0;
+    if (lead.purchaseRegion?.trim()) {
+      const since = new Date(Date.now() - 30 * 86400000);
+      regionPeerLeadCount = await prisma.lead.count({
+        where: {
+          purchaseRegion: lead.purchaseRegion,
+          createdAt: { gte: since },
+          NOT: { id: lead.id },
+        },
+      });
+    }
+
+    const needRoutingSignals =
+      dynamicPricingFlags.dynamicPricingV1 ||
+      (viewer.role === "ADMIN" && leadMonetizationControlFlags.monetizationControlV1);
+    let routingFitCandidateCount: number | undefined;
+    if (needRoutingSignals) {
+      const routing = await buildLeadRoutingSummary(id).catch(() => null);
+      if (routing) {
+        routingFitCandidateCount = routing.topCandidates.filter(
+          (c) => c.fitBand === "good" || c.fitBand === "strong",
+        ).length;
+      }
+    }
+
+    const leadPricing = computeLeadValueAndPrice(
+      {
+        message: lead.message,
+        leadSource: lead.leadSource,
+        leadType: lead.leadType,
+        score: lead.score,
+        engagementScore: lead.engagementScore,
+        interactionCount: interactionTotal,
+        hasCompleteContact: Boolean(lead.email?.trim() && lead.phone?.trim()),
+      },
+      {
+        basePriceCents: lead.dynamicLeadPriceCents ?? undefined,
+        minCents: revenueSettings.leadUnlockMinCents,
+        maxCents: revenueSettings.leadUnlockMaxCents,
+        defaultLeadPriceCents: revenueSettings.leadDefaultPriceCents,
+      },
+    );
+
+    const demandSignals = {
+      interactionCount: interactionTotal,
+      engagementScore: lead.engagementScore,
+      highIntent: lead.highIntent,
+      conversionProbability: lead.conversionProbability,
+      regionPeerLeadCount,
+      routingFitCandidateCount,
+    };
+    const demandLevel = computeLeadDemandLevel(demandSignals);
+    const demandScore = computeLeadDemandScore(demandSignals);
+
+    const brokerInterestLevel = computeBrokerInterestLevel({
+      routingStrongOrGoodCount: routingFitCandidateCount,
+      engagementScore: lead.engagementScore,
+      highIntent: lead.highIntent,
+      score: lead.score,
+    });
+
+    const qualityScoreForDynamic = leadQualityV1?.score ?? lead.score;
+    const dynamicPricingV1 = dynamicPricingFlags.dynamicPricingV1
+      ? computeDynamicLeadPrice({
+          leadId: lead.id,
+          basePrice: leadPricing.leadPrice,
+          qualityScore: qualityScoreForDynamic,
+          demandLevel,
+          brokerInterestLevel,
+          historicalConversion:
+            lead.conversionProbability != null && Number.isFinite(lead.conversionProbability)
+              ? lead.conversionProbability
+              : undefined,
+        })
+      : undefined;
+
+    const leadMonetizationControlV1 =
+      viewer.role === "ADMIN" && leadMonetizationControlFlags.monetizationControlV1
+        ? buildLeadMonetizationControlSummary({
+            leadId: lead.id,
+            leadPricing,
+            leadQuality: leadQualityV1,
+            dynamicPricing: dynamicPricingV1,
+            demandLevel,
+            demandScore,
+            brokerInterestLevel,
+            interactionCount: interactionTotal,
+            regionPeerLeadCount,
+            conversionProbability: lead.conversionProbability,
+          })
+        : undefined;
+
+    const monetizationV1 = isLeadMonetizationV1Enabled();
+    const locked = !lead.contactUnlockedAt;
+    const displayName = monetizationV1 && locked ? maskLeadDisplayName(lead.name) : lead.name;
+    const displayMessage = monetizationV1 && locked ? redactLeadMessagePreview(lead.message) : lead.message;
+
     const response = {
       ...lead,
+      name: displayName,
+      message: displayMessage,
       contactOriginLabel:
         lead.contactOrigin === LeadContactOrigin.IMMO_CONTACT
           ? "ImmoContact"
@@ -87,6 +255,9 @@ export async function GET(
       email: lead.contactUnlockedAt ? lead.email : "[Locked]",
       phone: lead.contactUnlockedAt ? lead.phone : "[Locked]",
       isLocked: !lead.contactUnlockedAt,
+      leadMonetizationV1: monetizationV1,
+      accessLevel: locked ? "preview" : "full",
+      intentLabel: inferLeadIntentLabel(lead),
       status: lead.pipelineStatus || lead.status,
       automation: {
         dmSuggestions: getDmAutomationSuggestions({
@@ -118,6 +289,10 @@ export async function GET(
             })),
           }
         : null,
+      leadQualityV1,
+      leadPricing,
+      dynamicPricingV1,
+      leadMonetizationControlV1,
     };
     return Response.json(response);
   } catch (e) {

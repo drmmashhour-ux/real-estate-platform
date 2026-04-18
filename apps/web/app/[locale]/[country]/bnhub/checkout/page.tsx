@@ -90,6 +90,7 @@ export default async function BNHubCheckoutPage({
         <BNHubCheckoutClient
           listingId={listingId}
           listingTitle={listing.title}
+          listingVerified={listing.verificationStatus === "VERIFIED"}
           maxGuests={listing.maxGuests}
           checkIn={checkIn}
           checkOut={checkOut}

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { QuickPropertySearchForm } from "@/app/components/home/QuickPropertySearchForm";
+import { QuickPropertySearchForm } from "@/app/[locale]/[country]/components/home/QuickPropertySearchForm";
 import { PLATFORM_CARREFOUR_NAME } from "@/lib/brand/platform";
 
 const HERO_IMAGE =

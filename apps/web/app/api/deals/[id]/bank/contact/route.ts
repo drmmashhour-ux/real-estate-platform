@@ -25,6 +25,6 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
   }
   if (!body.name?.trim()) return Response.json({ error: "name required" }, { status: 400 });
 
-  const row = await registerLenderContact(dealId, body, userId);
+  const row = await registerLenderContact(dealId, { ...body, name: body.name!.trim() }, userId);
   return Response.json({ contact: row });
 }

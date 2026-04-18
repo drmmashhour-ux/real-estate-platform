@@ -178,7 +178,7 @@ async function runCopilotCore(input: RunCopilotInput): Promise<CopilotResult> {
         const block = out.block;
         const actions: CopilotActionItem[] =
           block.type === "ranked_deals"
-            ? block.items.slice(0, 8).flatMap((it) => [
+            ? block.items.slice(0, 10).flatMap((it) => [
                 {
                   id: `open-${it.listingId}`,
                   label: `${it.title.slice(0, 42)}${it.title.length > 42 ? "…" : ""}`,
@@ -191,7 +191,7 @@ async function runCopilotCore(input: RunCopilotInput): Promise<CopilotResult> {
           intent,
           summary: out.summaryLine,
           actions,
-          insights: block.type === "ranked_deals" ? block.items.slice(0, 5).flatMap((i) => i.reasons.slice(0, 2)) : [],
+          insights: block.type === "ranked_deals" ? block.items.slice(0, 6).flatMap((i) => i.reasons.slice(0, 2)) : [],
           warnings: baseWarnings(),
           confidence: detected.confidence,
           data: { plan, block, query: { cityRaw, maxPriceCents } },
@@ -300,7 +300,7 @@ async function runCopilotCore(input: RunCopilotInput): Promise<CopilotResult> {
             summary: b.summaryLine,
             actions: items.map((it) => ({
               id: it.listingId,
-              label: `${it.title.slice(0, 36)}…`,
+              label: it.title.length > 40 ? `${it.title.slice(0, 40)}…` : it.title,
               href: `/dashboard/seller/listings/${it.listingId}`,
               kind: "navigate" as const,
             })),

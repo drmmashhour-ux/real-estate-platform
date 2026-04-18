@@ -1,6 +1,6 @@
 /** Admin operations & KPI analytics (read-only aggregates). */
 
-export type AdminDateRangePreset = "7d" | "30d" | "custom";
+export type AdminDateRangePreset = "7d" | "30d" | "90d" | "custom";
 
 export type AdminDateRange = {
   preset: AdminDateRangePreset;

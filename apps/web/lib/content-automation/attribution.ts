@@ -1,6 +1,7 @@
 /**
  * UTM params for social → listing landing attribution (carry through booking / leads).
- * Convention: utm_campaign=listing_[listingId], utm_content=[style]_[jobId]
+ * Convention: utm_campaign=listing_[listingId], utm_content=[style]_[contentJobId]
+ * (URL segments use `/admin/content/[id]` — same id as the content job row.)
  */
 export function buildListingShareUrlWithUtm(args: {
   baseUrl: string;

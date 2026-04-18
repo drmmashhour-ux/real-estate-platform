@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import type { CitySupplyDemandSnapshot } from "@/modules/multi-city/cityMetrics";
-import { launchCityAction, refreshCityScoresAction, type CityAdminActionState } from "@/app/admin/cities/actions";
+import { launchCityAction, refreshCityScoresAction, type CityAdminActionState } from "@/app/[locale]/[country]/admin/cities/actions";
 
 export type CityDashboardRow = {
   id: string;

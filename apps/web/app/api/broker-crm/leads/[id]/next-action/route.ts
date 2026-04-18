@@ -16,7 +16,7 @@ export async function POST(_request: Request, context: Params) {
   if (!lead) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   try {
-    const out = await generateNextBestAction(id, auth.user.id);
+    const out = await generateNextBestAction(id, auth.user.id, auth.user.role);
     return NextResponse.json(out);
   } catch (e) {
     const msg = e instanceof Error ? e.message : "AI failed";

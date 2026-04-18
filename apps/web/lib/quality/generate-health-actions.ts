@@ -102,7 +102,7 @@ export async function generateHealthActionsForListing(listingId: string): Promis
       description: "Guests book faster when hosts reply within a few hours. Enable notifications and saved replies.",
     });
   }
-  if (typeof behDetail.hostCancellationRate === "number" && behDetail.hostCancellationRate > 0.08) {
+  if (typeof behDetail.cancellationRate === "number" && behDetail.cancellationRate > 0.08) {
     actions.push({
       type: "reduce_cancellations",
       priority: "high",

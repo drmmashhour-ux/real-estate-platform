@@ -12,6 +12,7 @@ import {
   UNIFIED_WEIGHTS_WITHOUT_EXPLORATION,
 } from "./compute-rank-score";
 import { blendPerformanceAndExploration, computeExplorationScore } from "./exploration";
+import { applyRevenueRankingBlendFsbo } from "@/src/modules/revenue/revenue.ranking-bridge";
 
 export function buildRealEstateSignals(
   listing: FsboListingRankingInput,
@@ -74,7 +75,8 @@ export function computeRealEstateFinalBrowseScore(
   });
 
   const mix = opts?.explorationMix ?? 0.15;
-  const final0to100 = blendPerformanceAndExploration(performance0to100, exploration01, mix);
+  let final0to100 = blendPerformanceAndExploration(performance0to100, exploration01, mix);
+  final0to100 = applyRevenueRankingBlendFsbo(final0to100, listing, components);
 
   return { final0to100, performance0to100, exploration01, components };
 }

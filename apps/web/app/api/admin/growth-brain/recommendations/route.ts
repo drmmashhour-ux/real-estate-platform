@@ -23,6 +23,7 @@ export async function GET() {
     prisma.growthBrainOutcomeEvent.findMany({
       orderBy: { createdAt: "desc" },
       take: 40,
+      include: { recommendation: { select: { title: true, domain: true, priority: true } } },
     }),
   ]);
 

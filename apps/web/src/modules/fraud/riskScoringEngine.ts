@@ -10,6 +10,7 @@ import {
   type ReviewFraudContext,
   type ReviewFraudInput,
 } from "@/src/modules/fraud/reviewFraudSignals";
+import { FRAUD_RISK_THRESHOLDS } from "@/src/modules/fraud/fraud.rules";
 import {
   FRAUD_SCORE_VERSION,
   type ExplainableFraudSignal,
@@ -36,9 +37,9 @@ const REVIEW_WEIGHTS: Record<string, number> = {
 };
 
 export function classifyRiskLevel(score: number): FraudRiskLevel {
-  if (score >= 0.75) return "critical";
-  if (score >= 0.5) return "high";
-  if (score >= 0.25) return "medium";
+  if (score >= FRAUD_RISK_THRESHOLDS.critical) return "critical";
+  if (score >= FRAUD_RISK_THRESHOLDS.high) return "high";
+  if (score >= FRAUD_RISK_THRESHOLDS.medium) return "medium";
   return "low";
 }
 

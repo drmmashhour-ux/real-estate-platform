@@ -12,7 +12,9 @@ export function GrowthBrainDashboardClient({ initialMode }: Props) {
   const [runLoading, setRunLoading] = useState(false);
   const [recs, setRecs] = useState<GrowthBrainRecommendation[]>([]);
   const [pending, setPending] = useState<(GrowthBrainApproval & { recommendation: GrowthBrainRecommendation })[]>([]);
-  const [outcomes, setOutcomes] = useState<GrowthBrainOutcomeEvent[]>([]);
+  const [outcomes, setOutcomes] = useState<
+    (GrowthBrainOutcomeEvent & { recommendation: { title: string; domain: string; priority: string } })[]
+  >([]);
   const [msg, setMsg] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -22,7 +24,9 @@ export function GrowthBrainDashboardClient({ initialMode }: Props) {
       const data = (await res.json()) as {
         recommendations?: GrowthBrainRecommendation[];
         pendingApprovals?: (GrowthBrainApproval & { recommendation: GrowthBrainRecommendation })[];
-        recentOutcomes?: GrowthBrainOutcomeEvent[];
+        recentOutcomes?: (GrowthBrainOutcomeEvent & {
+          recommendation: { title: string; domain: string; priority: string };
+        })[];
       };
       setRecs(data.recommendations ?? []);
       setPending(data.pendingApprovals ?? []);
@@ -67,6 +71,10 @@ export function GrowthBrainDashboardClient({ initialMode }: Props) {
         <div>
           <p className="text-xs text-slate-500">Automation mode (env)</p>
           <p className="font-mono text-sm text-amber-200">{initialMode}</p>
+          <p className="mt-2 max-w-xl text-xs text-slate-500">
+            Side-effecting actions stay approval-first. Kill switch: <code className="text-slate-400">GROWTH_AUTONOMY_KILL_SWITCH=1</code>{" "}
+            or autonomy mode OFF.
+          </p>
         </div>
         <button
           type="button"
@@ -91,8 +99,11 @@ export function GrowthBrainDashboardClient({ initialMode }: Props) {
             >
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <p className="font-medium text-slate-100">{r.title}</p>
-                <span className="rounded bg-slate-800 px-2 py-0.5 text-xs text-slate-400">
-                  {r.domain} · {r.priority} · {(r.confidence * 100).toFixed(0)}%
+                <span
+                  className="rounded bg-slate-800 px-2 py-0.5 text-xs text-slate-400"
+                  title="domain · priority · model confidence"
+                >
+                  {r.domain} · {r.priority} · {(r.confidence * 100).toFixed(0)}% conf
                 </span>
               </div>
               <p className="mt-2 text-xs leading-relaxed text-slate-500">{r.reasoning}</p>
@@ -130,10 +141,14 @@ export function GrowthBrainDashboardClient({ initialMode }: Props) {
 
       <section>
         <h2 className="text-lg font-semibold text-slate-100">Pending approvals</h2>
-        <ul className="mt-3 space-y-2 text-sm text-slate-400">
+        <ul className="mt-3 space-y-3 text-sm text-slate-400">
           {pending.map((p) => (
-            <li key={p.id}>
-              {p.recommendation.title} — {p.status}
+            <li key={p.id} className="rounded-lg border border-slate-800/80 bg-slate-950/40 px-3 py-2">
+              <p className="font-medium text-slate-200">{p.recommendation.title}</p>
+              <p className="mt-1 text-xs text-slate-500">
+                {p.recommendation.domain} · {p.recommendation.priority} · {(p.recommendation.confidence * 100).toFixed(0)}% ·{" "}
+                <span className="text-amber-200/90">{p.status}</span>
+              </p>
             </li>
           ))}
           {pending.length === 0 ? <li className="text-slate-600">None.</li> : null}
@@ -142,10 +157,11 @@ export function GrowthBrainDashboardClient({ initialMode }: Props) {
 
       <section>
         <h2 className="text-lg font-semibold text-slate-100">Recent outcomes</h2>
-        <ul className="mt-3 max-h-48 overflow-y-auto font-mono text-xs text-slate-500">
+        <ul className="mt-3 max-h-56 overflow-y-auto space-y-1.5 text-xs text-slate-500">
           {outcomes.map((o) => (
-            <li key={o.id}>
-              {o.eventType} · {o.recommendationId.slice(0, 8)}…
+            <li key={o.id} className="border-b border-slate-800/60 pb-1.5 font-mono last:border-0">
+              <span className="text-slate-400">{o.eventType}</span> · {o.recommendation.title.slice(0, 72)}
+              {o.recommendation.title.length > 72 ? "…" : ""}
             </li>
           ))}
         </ul>

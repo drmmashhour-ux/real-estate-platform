@@ -6,7 +6,10 @@ export type LocalizedStrings = {
   ar?: string | null;
 };
 
-/** Picks best copy for UI locale with fallback to English. */
+/**
+ * Picks best copy for UI locale with fallback to English.
+ * Placeholders `{name}` in templates should remain intact across locales; callers pass numeric vars as numbers via `interpolateMessage`.
+ */
 export function pickLocalizedField(
   locale: LocaleCode,
   en: string,

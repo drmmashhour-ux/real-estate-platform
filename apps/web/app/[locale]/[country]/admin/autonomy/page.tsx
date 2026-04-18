@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { AutonomyMode } from "@/lib/autonomy/types";
+import { ControlledExecutionPanel } from "@/components/autonomy/admin/ControlledExecutionPanel";
 import { getManagerAiPlatformSettings } from "@/lib/manager-ai/platform-settings";
 import { AutonomyControlsClient } from "./autonomy-controls-client";
 
@@ -80,6 +81,8 @@ export default async function AdminAutonomyPage() {
           </p>
         </section>
 
+        <ControlledExecutionPanel />
+
         <section className="mt-8 rounded-xl border border-slate-800 bg-slate-900/60 p-6">
           <h2 className="text-lg font-semibold text-slate-200">Related surfaces</h2>
           <ul className="mt-4 flex flex-col gap-2 text-sm text-emerald-400">
@@ -102,6 +105,15 @@ export default async function AdminAutonomyPage() {
               <Link href="/admin/intelligence" className="hover:text-emerald-300">
                 Autopilot intelligence
               </Link>
+            </li>
+            <li>
+              <Link href="/admin/fraud" className="hover:text-emerald-300">
+                Fraud & legal risk console
+              </Link>
+            </li>
+            <li className="text-slate-500">
+              GET <code className="text-slate-400">/api/admin/dashboard-intelligence</code> (set{" "}
+              <code className="text-slate-400">FEATURE_MARKETPLACE_DASHBOARD_V1</code>)
             </li>
             <li>
               <Link href="/admin/revenue" className="hover:text-emerald-300">

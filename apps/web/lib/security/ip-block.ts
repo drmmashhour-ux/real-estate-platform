@@ -1,6 +1,7 @@
 /**
  * Persistent IP denylist (fingerprinted). Checked on auth and rate-limited public routes.
  */
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { recordPlatformEvent } from "@/lib/observability";
 import { fingerprintClientIp } from "@/lib/security/ip-fingerprint";
@@ -12,15 +13,22 @@ export function parseIpOrFingerprint(input: string): string {
 }
 
 export async function isSecurityIpBlocked(ipFingerprint: string): Promise<boolean> {
-  const row = await prisma.securityIpBlock.findUnique({
-    where: { ipFingerprint },
-  });
-  if (!row) return false;
-  if (row.expiresAt && row.expiresAt.getTime() <= Date.now()) {
-    await prisma.securityIpBlock.delete({ where: { id: row.id } }).catch(() => {});
-    return false;
+  try {
+    const row = await prisma.securityIpBlock.findUnique({
+      where: { ipFingerprint },
+    });
+    if (!row) return false;
+    if (row.expiresAt && row.expiresAt.getTime() <= Date.now()) {
+      await prisma.securityIpBlock.delete({ where: { id: row.id } }).catch(() => {});
+      return false;
+    }
+    return true;
+  } catch (e) {
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2021") {
+      return false;
+    }
+    throw e;
   }
-  return true;
 }
 
 export async function blockSecurityIp(params: {

@@ -79,6 +79,7 @@ export async function getPlatformContext(args: {
           id: true,
           title: true,
           listingCode: true,
+          price: true,
         },
       });
       if (crm) {

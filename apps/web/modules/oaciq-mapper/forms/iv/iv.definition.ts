@@ -1,0 +1,131 @@
+import type { FormDefinition } from "../../form-definition.types";
+
+const identityBlock = (idx: number) => {
+  const base = `iv.p1.party${idx}`;
+  return [
+    { fieldKey: `${base}.fullName`, label: `Party ${idx} — name`, fieldType: "text" as const, required: idx === 1, sourcePaths: [`deal.identityVerification.parties[${idx - 1}].fullName`], displayGroup: `party_${idx}`, validationRuleRefs: [] },
+    { fieldKey: `${base}.address`, label: `Party ${idx} — address`, fieldType: "textarea" as const, required: false, sourcePaths: [`deal.identityVerification.parties[${idx - 1}].address`], displayGroup: `party_${idx}`, validationRuleRefs: [] },
+    { fieldKey: `${base}.phone`, label: `Party ${idx} — phone`, fieldType: "text" as const, required: false, sourcePaths: [`deal.identityVerification.parties[${idx - 1}].phone`], displayGroup: `party_${idx}`, validationRuleRefs: [] },
+  ];
+};
+
+export const ivDefinition: FormDefinition = {
+  formKey: "IV",
+  officialCode: "IV",
+  title: "Identity verification — specimen mapping",
+  mandatoryOrRecommended: "conditional",
+  versionLabel: "mapper-v1",
+  principalOrRelated: "annex",
+  baseWorkflow: "identity_verification",
+  sections: [
+    {
+      sectionKey: "iv.p1",
+      sectionLabel: "IV — Principal reference & parties",
+      order: 1,
+      fields: [
+        {
+          fieldKey: "iv.p1.principalFormRef",
+          label: "Reference to principal form",
+          fieldType: "text",
+          required: true,
+          sourcePaths: ["deal.meta.principalFormNumber", "deal.documents.ppFormNumber"],
+          displayGroup: "ref",
+          validationRuleRefs: ["iv.principal_ref"],
+        },
+        {
+          fieldKey: "iv.p1.immovableRef",
+          label: "Immovable reference",
+          fieldType: "textarea",
+          required: false,
+          sourcePaths: ["deal.immovable.fullAddress"],
+          displayGroup: "ref",
+          validationRuleRefs: [],
+        },
+        {
+          fieldKey: "iv.p1.partyRole",
+          label: "Party role selection",
+          fieldType: "text",
+          required: false,
+          sourcePaths: ["deal.identityVerification.partyRole"],
+          displayGroup: "ref",
+          validationRuleRefs: [],
+        },
+        ...identityBlock(1),
+        ...identityBlock(2),
+        ...identityBlock(3),
+        ...identityBlock(4),
+        {
+          fieldKey: "iv.p1.documentType",
+          label: "Document type",
+          fieldType: "text",
+          required: true,
+          sourcePaths: ["deal.identityVerification.documentType"],
+          displayGroup: "document",
+          validationRuleRefs: ["iv.document_bundle"],
+        },
+        {
+          fieldKey: "iv.p1.documentNumber",
+          label: "Document number",
+          fieldType: "text",
+          required: true,
+          sourcePaths: ["deal.identityVerification.documentNumber"],
+          displayGroup: "document",
+          validationRuleRefs: ["iv.document_bundle"],
+        },
+        {
+          fieldKey: "iv.p1.birthDate",
+          label: "Birth date",
+          fieldType: "date",
+          required: false,
+          sourcePaths: ["deal.identityVerification.birthDate"],
+          displayGroup: "document",
+          validationRuleRefs: [],
+        },
+        {
+          fieldKey: "iv.p1.profession",
+          label: "Profession / principal activity",
+          fieldType: "text",
+          required: false,
+          sourcePaths: ["deal.identityVerification.profession"],
+          displayGroup: "document",
+          validationRuleRefs: [],
+        },
+        {
+          fieldKey: "iv.p1.issuingJurisdiction",
+          label: "Issuing jurisdiction",
+          fieldType: "text",
+          required: true,
+          sourcePaths: ["deal.identityVerification.issuingJurisdiction"],
+          displayGroup: "document",
+          validationRuleRefs: ["iv.document_bundle"],
+        },
+        {
+          fieldKey: "iv.p1.expiry",
+          label: "Expiry",
+          fieldType: "date",
+          required: false,
+          sourcePaths: ["deal.identityVerification.expiry"],
+          displayGroup: "document",
+          validationRuleRefs: ["iv.document_bundle"],
+        },
+        {
+          fieldKey: "iv.p1.representativeRelation",
+          label: "Representative relation (if applicable)",
+          fieldType: "textarea",
+          required: false,
+          sourcePaths: ["deal.identityVerification.representativeRelation"],
+          displayGroup: "document",
+          validationRuleRefs: [],
+        },
+      ],
+    },
+  ],
+  dependencies: [
+    { ruleId: "iv.attach_principal", description: "May attach to PP / BC / PL / other principal", dependsOnFormKeys: [] },
+  ],
+  validationRules: [
+    { ruleId: "iv.principal_ref", description: "Principal form reference expected" },
+    { ruleId: "iv.document_bundle", description: "Document type/number/jurisdiction/expiry consistency" },
+  ],
+  previewOrder: ["iv.p1"],
+};

@@ -22,12 +22,30 @@ import { buildMonthlyHostFinance } from "@/lib/bnhub/host-monthly-finance";
 import { HostFinanceBars } from "@/components/bnhub/HostFinanceBars";
 import { HostGuestOriginsMap } from "@/components/bnhub/HostGuestOriginsMap";
 import { BnHubOfferSectionsPlaybook } from "@/components/bnhub/BnHubOfferSectionsPlaybook";
+import {
+  bnhubAutopilotExecutionFlags,
+  bnhubConversionLayerFlags,
+  bnhubGuestConversionFlags,
+  bnhubMissionControlFlags,
+  bnhubV2Flags,
+} from "@/config/feature-flags";
+import { buildHostPerformanceSummary } from "@/modules/bnhub/host-performance/host-performance.service";
+import type { BNHubHostPerformanceSummary } from "@/modules/bnhub/host-performance/host-performance.types";
+import { HostPerformanceDashboard } from "@/components/bnhub/host/HostPerformanceDashboard";
+import { buildGuestConversionSummary } from "@/modules/bnhub/guest-conversion/guest-conversion.service";
+import type { BNHubGuestConversionSummary } from "@/modules/bnhub/guest-conversion/guest-conversion.types";
+import { buildListingConversionSummary } from "@/modules/bnhub/conversion/bnhub-listing-conversion.service";
+import type { BNHubListingConversionSummaryV1 } from "@/modules/bnhub/conversion/bnhub-guest-conversion.types";
+import { HubJourneyBanner } from "@/components/journey/HubJourneyBanner";
 
 export default async function HostDashboardPage({
   searchParams,
+  params,
 }: {
   searchParams?: Promise<{ ownerId?: string }>;
+  params: Promise<{ locale: string; country: string }>;
 }) {
+  const { locale, country } = await params;
   const { ownerId: ownerIdParam } = (await searchParams) ?? {};
   const sessionUserId = await getGuestId();
 
@@ -149,6 +167,59 @@ export default async function HostDashboardPage({
   const guestOrigins = effectiveOwnerId ? aggregateGuestOrigins(bookings) : [];
   const monthlyFinance = effectiveOwnerId ? buildMonthlyHostFinance(bookings) : [];
 
+  let hostPerformanceSummary: BNHubHostPerformanceSummary | null = null;
+  if (effectiveOwnerId && bnhubV2Flags.bnhubHostPerformanceV1) {
+    try {
+      hostPerformanceSummary = await buildHostPerformanceSummary(effectiveOwnerId);
+    } catch {
+      hostPerformanceSummary = null;
+    }
+  }
+
+  let guestConversionByListingId: Record<string, BNHubGuestConversionSummary> = {};
+  if (
+    effectiveOwnerId &&
+    bnhubGuestConversionFlags.guestConversionV1 &&
+    hostPerformanceSummary &&
+    bnhubV2Flags.bnhubHostPerformanceV1
+  ) {
+    const ids = hostPerformanceSummary.listings.slice(0, 8).map((l) => l.listingId);
+    const rows = await Promise.all(
+      ids.map(async (id) => {
+        try {
+          return [id, await buildGuestConversionSummary(id)] as const;
+        } catch {
+          return null;
+        }
+      }),
+    );
+    guestConversionByListingId = Object.fromEntries(
+      rows.filter((x): x is readonly [string, BNHubGuestConversionSummary] => x != null),
+    );
+  }
+
+  let conversionLayerByListingId: Record<string, BNHubListingConversionSummaryV1> = {};
+  if (
+    effectiveOwnerId &&
+    bnhubConversionLayerFlags.conversionV1 &&
+    hostPerformanceSummary &&
+    bnhubV2Flags.bnhubHostPerformanceV1
+  ) {
+    const ids = hostPerformanceSummary.listings.slice(0, 8).map((l) => l.listingId);
+    const rows = await Promise.all(
+      ids.map(async (id) => {
+        try {
+          return [id, await buildListingConversionSummary(id)] as const;
+        } catch {
+          return null;
+        }
+      }),
+    );
+    conversionLayerByListingId = Object.fromEntries(
+      rows.filter((x): x is readonly [string, BNHubListingConversionSummaryV1] => x != null),
+    );
+  }
+
   const navItems = [
     { href: "/bnhub", label: "BNHUB home" },
     { href: "/dashboard/bnhub", label: "Guest dashboard" },
@@ -181,6 +252,7 @@ export default async function HostDashboardPage({
         ) : null
       }
     >
+      <HubJourneyBanner hub="bnhub_host" locale={locale} country={country} userId={sessionUserId ?? null} />
       {!effectiveOwnerId ? (
         <>
           <div id="bnhub-offer-playbook" className="mb-10 scroll-mt-28">
@@ -291,11 +363,41 @@ export default async function HostDashboardPage({
             ]}
           />
 
+          {hostPerformanceSummary && bnhubV2Flags.bnhubHostPerformanceV1 ? (
+            <div className="mb-10">
+              <HostPerformanceDashboard
+                summary={hostPerformanceSummary}
+                showRecommendations={bnhubV2Flags.bnhubHostRecommendationsV1}
+                guestConversionByListingId={
+                  bnhubGuestConversionFlags.guestConversionV1 ? guestConversionByListingId : undefined
+                }
+                conversionLayerByListingId={
+                  bnhubConversionLayerFlags.conversionV1 ? conversionLayerByListingId : undefined
+                }
+                guestConversionShowFriction={bnhubGuestConversionFlags.bookingFrictionV1}
+                guestConversionShowRecommendations={bnhubGuestConversionFlags.recommendationsV1}
+                missionControlByListingId={
+                  bnhubMissionControlFlags.missionControlV1 ? missionControlByListingId : undefined
+                }
+                bnhubAutopilot={
+                  bnhubAutopilotExecutionFlags.autopilotV1
+                    ? {
+                        autopilotV1: true,
+                        executionV1: bnhubAutopilotExecutionFlags.executionV1,
+                        rollbackV1: bnhubAutopilotExecutionFlags.rollbackV1,
+                      }
+                    : undefined
+                }
+              />
+            </div>
+          ) : null}
+
           <HostDashboardClient
             ownerId={effectiveOwnerId}
             listings={listings}
             bookings={bookings}
             canManageStripe={sessionUserId === effectiveOwnerId}
+            bnhubV2={bnhubV2Flags.bnhubV2}
             hostStripe={
               hostStripe ?? {
                 stripeAccountId: null,

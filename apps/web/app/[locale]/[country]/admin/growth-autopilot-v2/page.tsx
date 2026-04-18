@@ -33,15 +33,16 @@ export default async function GrowthAutopilotV2AdminPage() {
   ]);
 
   return (
-    <main className="min-h-screen bg-[#050505] px-4 py-8 text-slate-50">
+    <main className="min-h-screen bg-ds-bg px-4 py-8 text-ds-text sm:px-6">
       <div className="mx-auto max-w-5xl">
         <Link href="/admin" className="text-sm text-ds-gold hover:text-amber-200">
           ← Admin
         </Link>
-        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white">Growth Autopilot v2</h1>
+        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-ds-text">Growth Autopilot v2</h1>
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-ds-text-secondary">
           Candidates and drafts are review-first. No bulk email or social posting from this surface. Suppression logs
-          record cooldowns and policy blocks (not every dedupe skip, to avoid log spam).
+          record cooldowns and a <span className="text-ds-text/90">sample</span> of duplicate-window skips (full dedupe
+          still increments scan <code className="text-ds-gold/90">suppressed</code>).
         </p>
 
         <section className="mt-8 grid gap-4 sm:grid-cols-2">
@@ -60,34 +61,34 @@ export default async function GrowthAutopilotV2AdminPage() {
           </div>
           <div className="rounded-xl border border-ds-border bg-ds-card p-5 shadow-ds-soft">
             <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-ds-gold">Queues (source: DB)</h2>
-            <ul className="mt-3 space-y-1.5 text-sm text-slate-300">
-              <li className="flex justify-between gap-2 border-b border-white/5 pb-1">
+            <ul className="mt-3 space-y-1.5 text-sm text-ds-text/95">
+              <li className="flex justify-between gap-2 border-b border-ds-border pb-1">
                 <span className="text-ds-text-secondary">SEO opportunities</span>
-                <span className="tabular-nums text-white">{seoOpps}</span>
+                <span className="tabular-nums text-ds-text">{seoOpps}</span>
               </li>
-              <li className="flex justify-between gap-2 border-b border-white/5 pb-1">
+              <li className="flex justify-between gap-2 border-b border-ds-border pb-1">
                 <span className="text-ds-text-secondary">SEO drafts</span>
-                <span className="tabular-nums text-white">{seoDrafts}</span>
+                <span className="tabular-nums text-ds-text">{seoDrafts}</span>
               </li>
-              <li className="flex justify-between gap-2 border-b border-white/5 pb-1">
+              <li className="flex justify-between gap-2 border-b border-ds-border pb-1">
                 <span className="text-ds-text-secondary">Social content candidates</span>
-                <span className="tabular-nums text-white">{socialCand}</span>
+                <span className="tabular-nums text-ds-text">{socialCand}</span>
               </li>
-              <li className="flex justify-between gap-2 border-b border-white/5 pb-1">
+              <li className="flex justify-between gap-2 border-b border-ds-border pb-1">
                 <span className="text-ds-text-secondary">Campaign candidates (v2)</span>
-                <span className="tabular-nums text-white">{campaignCand}</span>
+                <span className="tabular-nums text-ds-text">{campaignCand}</span>
               </li>
-              <li className="flex justify-between gap-2 border-b border-white/5 pb-1">
+              <li className="flex justify-between gap-2 border-b border-ds-border pb-1">
                 <span className="text-ds-text-secondary">Referral attributions (v2)</span>
-                <span className="tabular-nums text-white">{refAttr}</span>
+                <span className="tabular-nums text-ds-text">{refAttr}</span>
               </li>
-              <li className="flex justify-between gap-2 border-b border-white/5 pb-1">
+              <li className="flex justify-between gap-2 border-b border-ds-border pb-1">
                 <span className="text-ds-text-secondary">Experiment snapshots</span>
-                <span className="tabular-nums text-white">{expSnaps}</span>
+                <span className="tabular-nums text-ds-text">{expSnaps}</span>
               </li>
-              <li className="flex justify-between gap-2 border-b border-white/5 pb-1">
+              <li className="flex justify-between gap-2 border-b border-ds-border pb-1">
                 <span className="text-ds-text-secondary">Campaign suppression logs</span>
-                <span className="tabular-nums text-amber-200/90">{suppressionLogs}</span>
+                <span className="tabular-nums text-ds-gold/95">{suppressionLogs}</span>
               </li>
               <li className="flex justify-between gap-2 pt-0.5">
                 <span className="text-ds-text-secondary">FSBO Autopilot v2 (pending)</span>
@@ -97,9 +98,9 @@ export default async function GrowthAutopilotV2AdminPage() {
           </div>
         </section>
 
-        <section className="mt-8 rounded-xl border border-ds-border bg-black/40 p-5 text-sm leading-relaxed text-ds-text-secondary">
+        <section className="mt-8 rounded-xl border border-ds-border bg-ds-surface/80 p-5 text-sm leading-relaxed text-ds-text-secondary shadow-ds-soft">
           <p>
-            Internal cron (Bearer <code className="text-slate-400">CRON_SECRET</code>):{" "}
+            Internal cron (Bearer <code className="text-ds-gold/80">CRON_SECRET</code>):{" "}
             <code className="text-ds-gold/90">POST /api/internal/growth-v2/orchestrator</code>,{" "}
             <code className="text-ds-gold/90">/api/internal/growth-v2/seo/scan</code>,{" "}
             <code className="text-ds-gold/90">/api/internal/growth-v2/seo/generate-drafts</code>,{" "}
@@ -107,7 +108,7 @@ export default async function GrowthAutopilotV2AdminPage() {
             <code className="text-ds-gold/90">/api/internal/growth-v2/campaigns/scan</code>,{" "}
             <code className="text-ds-gold/90">/api/internal/growth-v2/referrals/scan</code>,{" "}
             <code className="text-ds-gold/90">POST /api/internal/experiments/aggregate</code> with{" "}
-            <code className="text-slate-400">experimentId</code>.
+            <code className="text-ds-gold/80">experimentId</code>.
           </p>
         </section>
       </div>

@@ -1,0 +1,277 @@
+import type { FormCategory, FormDefinition } from "./form-engine.types";
+
+/**
+ * Initial registry — maps common Québec residential brokerage form *codes* to structured metadata.
+ * Aligns with specimen materials in the knowledge base; execution forms are publisher/broker-authorized.
+ */
+const FORMS: FormDefinition[] = [
+  {
+    formKey: "pp_mandatory_residential_immovable",
+    formCode: "PP",
+    title: "Promise to Purchase — mandatory (residential immovable)",
+    formCategory: "principal",
+    mandatoryOrRecommended: "mandatory",
+    jurisdiction: "QC",
+    transactionDomain: "residential_sale",
+    mainUseCase: "Binding offer on immovable — principal instrument family",
+    sourceDocument: "OACIQ specimen / publisher PP (residential)",
+    sectionDefinitions: [
+      { sectionKey: "parties", title: "Parties & broker", fieldKeys: ["buyer_name", "seller_name", "broker_agency"] },
+      { sectionKey: "immovable", title: "Immovable", fieldKeys: ["cadastral", "address", "lot"] },
+      { sectionKey: "financial", title: "Price & deposit", fieldKeys: ["price", "deposit", "payment_terms"] },
+      { sectionKey: "conditions", title: "Conditions", fieldKeys: ["financing_deadline", "inspection_deadline"] },
+    ],
+    fieldDefinitions: [
+      { key: "buyer_name", label: "Buyer", family: "party", required: true },
+      { key: "seller_name", label: "Seller", family: "party", required: true },
+      { key: "broker_agency", label: "Brokerage identification", family: "broker", required: true },
+      { key: "cadastral", label: "Cadastral designation", family: "property", required: true },
+      { key: "address", label: "Property address", family: "property", required: true },
+      { key: "price", label: "Offer price", family: "price", required: true },
+      { key: "deposit", label: "Deposit", family: "deposit", required: true },
+      { key: "financing_deadline", label: "Financing condition deadline", family: "condition", required: false },
+      { key: "inspection_deadline", label: "Inspection deadline", family: "condition", required: false },
+    ],
+    dependencyRules: ["Deposit schedule must align with payment annex if annex selected", "Financing clause requires deadline"],
+    reviewWarnings: ["Confirm official publisher form version before signing", "Cross-check annexes to principal offer"],
+    scenarioTags: ["residential_sale", "promise_to_purchase"],
+  },
+  {
+    formKey: "ppg_recommended_immovable",
+    formCode: "PPG",
+    title: "Promise to Purchase — recommended (immovable)",
+    formCategory: "principal",
+    mandatoryOrRecommended: "recommended",
+    jurisdiction: "QC",
+    transactionDomain: "residential_sale",
+    mainUseCase: "Recommended PP variant where applicable",
+    sourceDocument: "OACIQ specimen / publisher PPG",
+    sectionDefinitions: [
+      { sectionKey: "parties", title: "Parties", fieldKeys: ["buyer_name", "seller_name"] },
+      { sectionKey: "financial", title: "Financial", fieldKeys: ["price", "deposit"] },
+    ],
+    fieldDefinitions: [
+      { key: "buyer_name", label: "Buyer", family: "party", required: true },
+      { key: "seller_name", label: "Seller", family: "party", required: true },
+      { key: "price", label: "Price", family: "price", required: true },
+      { key: "deposit", label: "Deposit", family: "deposit", required: true },
+    ],
+    dependencyRules: ["If optional schedules attached, reference in principal"],
+    reviewWarnings: ["Verify whether mandatory vs recommended PP applies to file"],
+    scenarioTags: ["residential_sale", "recommended_pp"],
+  },
+  {
+    formKey: "cp_counter_proposal",
+    formCode: "CP",
+    title: "Counter-proposal",
+    formCategory: "principal",
+    mandatoryOrRecommended: "conditional",
+    jurisdiction: "QC",
+    transactionDomain: "amendment",
+    mainUseCase: "Counter terms to prior promise or offer",
+    sourceDocument: "OACIQ specimen counter-proposal",
+    sectionDefinitions: [
+      { sectionKey: "reference", title: "Prior instrument", fieldKeys: ["prior_reference", "prior_date"] },
+      { sectionKey: "changes", title: "Amended terms", fieldKeys: ["price_change", "condition_changes"] },
+    ],
+    fieldDefinitions: [
+      { key: "prior_reference", label: "Reference to principal form", family: "other", required: true },
+      { key: "prior_date", label: "Date of prior instrument", family: "date", required: true },
+      { key: "price_change", label: "Counter price", family: "price", required: false },
+      { key: "condition_changes", label: "Condition changes", family: "condition", required: false },
+    ],
+    dependencyRules: ["Must reference principal promise / accepted offer"],
+    reviewWarnings: ["Counter-proposal chain must remain traceable for brokerage file"],
+    scenarioTags: ["counter_proposal", "negotiation"],
+  },
+  {
+    formKey: "ds_seller_declaration",
+    formCode: "DS",
+    title: "Seller's Declaration",
+    formCategory: "disclosure",
+    mandatoryOrRecommended: "conditional",
+    jurisdiction: "QC",
+    transactionDomain: "residential_sale",
+    mainUseCase: "Seller disclosure obligations",
+    sourceDocument: "OACIQ DS specimen",
+    sectionDefinitions: [{ sectionKey: "disclosures", title: "Declarations", fieldKeys: ["defects", "renovations"] }],
+    fieldDefinitions: [
+      { key: "defects", label: "Known defects", family: "other", required: false },
+      { key: "renovations", label: "Renovations / latent defects context", family: "other", required: false },
+    ],
+    dependencyRules: ["Some workflows require DS before or with offer package"],
+    reviewWarnings: ["Disclosure completeness is a broker supervision matter"],
+    scenarioTags: ["seller_declaration", "disclosure"],
+  },
+  {
+    formKey: "dsd_seller_declaration_divided",
+    formCode: "DSD",
+    title: "Seller's Declaration — divided co-ownership",
+    formCategory: "disclosure",
+    mandatoryOrRecommended: "conditional",
+    jurisdiction: "QC",
+    transactionDomain: "coownership",
+    mainUseCase: "Condo / divided co-ownership disclosure",
+    sourceDocument: "OACIQ DSD specimen",
+    sectionDefinitions: [{ sectionKey: "condo", title: "Co-ownership", fieldKeys: ["condo_fees", "special_assessment"] }],
+    fieldDefinitions: [
+      { key: "condo_fees", label: "Common expenses", family: "price", required: false },
+      { key: "special_assessment", label: "Special contributions", family: "other", required: false },
+    ],
+    dependencyRules: ["Often paired with syndicate information requests"],
+    reviewWarnings: ["Confirm syndicate doc access where relevant"],
+    scenarioTags: ["divided_coownership", "condo"],
+  },
+  {
+    formKey: "iv_identity_verification",
+    formCode: "IV",
+    title: "Identity verification",
+    formCategory: "identity",
+    mandatoryOrRecommended: "ancillary",
+    jurisdiction: "QC",
+    transactionDomain: "multi",
+    mainUseCase: "Brokerage identity verification workflow",
+    sourceDocument: "OACIQ IV specimen",
+    sectionDefinitions: [{ sectionKey: "id", title: "Identification", fieldKeys: ["party_role", "id_method"] }],
+    fieldDefinitions: [
+      { key: "party_role", label: "Party", family: "party", required: true },
+      { key: "id_method", label: "Verification method", family: "other", required: false },
+    ],
+    dependencyRules: ["Brokerage policy may require IV before certain steps"],
+    reviewWarnings: ["IV does not replace notarial or lender KYC"],
+    scenarioTags: ["identity", "compliance"],
+  },
+  {
+    formKey: "rh_mortgage_information_request",
+    formCode: "RH",
+    title: "Mortgage information request",
+    formCategory: "due_diligence",
+    mandatoryOrRecommended: "conditional",
+    jurisdiction: "QC",
+    transactionDomain: "residential_purchase",
+    mainUseCase: "Lender / financing information coordination",
+    sourceDocument: "OACIQ RH specimen",
+    sectionDefinitions: [{ sectionKey: "financing", title: "Financing", fieldKeys: ["lender", "rate_hold"] }],
+    fieldDefinitions: [
+      { key: "lender", label: "Lender", family: "other", required: false },
+      { key: "rate_hold", label: "Rate / commitment dates", family: "date", required: false },
+    ],
+    dependencyRules: ["Align deadlines with financing condition in PP"],
+    reviewWarnings: ["Financing remains subject to lender approval"],
+    scenarioTags: ["financing", "mortgage"],
+  },
+  {
+    formKey: "ris_syndicate_information_request",
+    formCode: "RIS",
+    title: "Syndicate information request",
+    formCategory: "due_diligence",
+    mandatoryOrRecommended: "conditional",
+    jurisdiction: "QC",
+    transactionDomain: "coownership",
+    mainUseCase: "Condo syndicate records",
+    sourceDocument: "OACIQ RIS specimen",
+    sectionDefinitions: [{ sectionKey: "syndicate", title: "Syndicate", fieldKeys: ["minutes", "reserve"] }],
+    fieldDefinitions: [
+      { key: "minutes", label: "Minutes / assembly", family: "other", required: false },
+      { key: "reserve", label: "Reserve fund information", family: "other", required: false },
+    ],
+    dependencyRules: ["Often required in divided co-ownership sales"],
+    reviewWarnings: ["Access delays can affect deadlines — calendar risk"],
+    scenarioTags: ["condo", "syndicate"],
+  },
+  {
+    formKey: "nf_notice_conditions",
+    formCode: "NF",
+    title: "Notice / follow-up — fulfilment of conditions",
+    formCategory: "follow_up",
+    mandatoryOrRecommended: "conditional",
+    jurisdiction: "QC",
+    transactionDomain: "multi",
+    mainUseCase: "Condition tracking and notices",
+    sourceDocument: "OACIQ NF specimen",
+    sectionDefinitions: [{ sectionKey: "conditions", title: "Conditions", fieldKeys: ["condition_ref", "fulfilment_date"] }],
+    fieldDefinitions: [
+      { key: "condition_ref", label: "Condition reference", family: "condition", required: true },
+      { key: "fulfilment_date", label: "Fulfilment / waiver date", family: "date", required: false },
+    ],
+    dependencyRules: ["Must reference condition text in principal or amendment"],
+    reviewWarnings: ["Waiver vs fulfilment — broker clarity required"],
+    scenarioTags: ["conditions", "follow_up"],
+  },
+  {
+    formKey: "ntce_sbub_notice_unrepresented_buyer",
+    formCode: "NTCE-SBUB",
+    title: "Seller broker notice to unrepresented buyer",
+    formCategory: "notice",
+    mandatoryOrRecommended: "conditional",
+    jurisdiction: "QC",
+    transactionDomain: "residential_sale",
+    mainUseCase: "Fairness / disclosure when buyer unrepresented",
+    sourceDocument: "OACIQ NTCE-SBUB specimen",
+    sectionDefinitions: [{ sectionKey: "notice", title: "Notice", fieldKeys: ["recipient", "acknowledgement"] }],
+    fieldDefinitions: [
+      { key: "recipient", label: "Recipient identification", family: "party", required: true },
+      { key: "acknowledgement", label: "Acknowledgement path", family: "other", required: false },
+    ],
+    dependencyRules: ["Trigger depends on representation facts"],
+    reviewWarnings: ["Representation status must be verified — not inferred by software"],
+    scenarioTags: ["notice", "unrepresented_buyer"],
+  },
+  {
+    formKey: "bcp_brokerage_contract_purchase",
+    formCode: "BCP",
+    title: "Brokerage contract — purchase",
+    formCategory: "brokerage_contract",
+    mandatoryOrRecommended: "mandatory",
+    jurisdiction: "QC",
+    transactionDomain: "residential_purchase",
+    mainUseCase: "Buyer brokerage contract",
+    sourceDocument: "OACIQ BCP family (specimen)",
+    sectionDefinitions: [{ sectionKey: "mandate", title: "Mandate", fieldKeys: ["remuneration", "term"] }],
+    fieldDefinitions: [
+      { key: "remuneration", label: "Remuneration", family: "price", required: true },
+      { key: "term", label: "Mandate term", family: "date", required: true },
+    ],
+    dependencyRules: ["Must align with agency policy"],
+    reviewWarnings: ["Remuneration disclosure rules apply"],
+    scenarioTags: ["brokerage_contract", "purchase"],
+  },
+  {
+    formKey: "annex_inspection",
+    formCode: "ANNEX-INSP",
+    title: "Inspection annex / schedule",
+    formCategory: "annex",
+    mandatoryOrRecommended: "conditional",
+    jurisdiction: "QC",
+    transactionDomain: "residential_sale",
+    mainUseCase: "Inspection condition detail",
+    sourceDocument: "Publisher inspection annex specimen",
+    sectionDefinitions: [{ sectionKey: "insp", title: "Inspection", fieldKeys: ["inspector", "access"] }],
+    fieldDefinitions: [
+      { key: "inspector", label: "Inspector / scope", family: "other", required: false },
+      { key: "access", label: "Access arrangements", family: "other", required: false },
+    ],
+    dependencyRules: ["Must attach to principal PP reference"],
+    reviewWarnings: ["Deadlines must mirror or extend principal condition"],
+    scenarioTags: ["inspection", "annex"],
+  },
+];
+
+const byKey = new Map(FORMS.map((f) => [f.formKey, f]));
+const byCode = new Map(FORMS.map((f) => [f.formCode, f]));
+
+export function listRegisteredForms(): FormDefinition[] {
+  return FORMS;
+}
+
+export function getFormByKey(formKey: string): FormDefinition | null {
+  return byKey.get(formKey) ?? null;
+}
+
+export function getFormByCode(formCode: string): FormDefinition | null {
+  return byCode.get(formCode) ?? null;
+}
+
+export function listFormsByCategory(category: FormCategory): FormDefinition[] {
+  return FORMS.filter((f) => f.formCategory === category);
+}

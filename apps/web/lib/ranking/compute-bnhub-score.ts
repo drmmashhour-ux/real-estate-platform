@@ -13,6 +13,7 @@ import {
   UNIFIED_WEIGHTS_WITHOUT_EXPLORATION,
 } from "./compute-rank-score";
 import { blendPerformanceAndExploration, computeExplorationScore } from "./exploration";
+import { applyRevenueRankingBlendBnhub } from "@/src/modules/revenue/revenue.ranking-bridge";
 
 export type BnhubScoreOptions = {
   /** Default 0.2 — 80% performance / 20% exploration */
@@ -69,7 +70,8 @@ export function computeBnhubFinalSearchScore(
   });
 
   const mix = opts?.explorationMix ?? 0.2;
-  const final0to100 = blendPerformanceAndExploration(performance0to100, exploration01, mix);
+  let final0to100 = blendPerformanceAndExploration(performance0to100, exploration01, mix);
+  final0to100 = applyRevenueRankingBlendBnhub(final0to100, input, components);
 
   return { final0to100, performance0to100, exploration01, components };
 }

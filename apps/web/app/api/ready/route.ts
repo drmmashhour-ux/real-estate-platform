@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
 import { classifyDbError } from "@/lib/db/db-error-classification";
 import {
   databaseUrlHasLiteralHostPlaceholder,
@@ -10,6 +9,8 @@ import { withDbRetry } from "@/lib/db/with-db-retry";
 import { getPublicEnv } from "@/lib/runtime-env";
 import { MESSAGES } from "@/lib/i18n/messages";
 import { getResolvedMarket } from "@/lib/markets";
+import { describeStripeSecretKeyError } from "@/lib/stripe/stripeEnvGate";
+import { supabaseConfigStatus } from "@/lib/supabase/health";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -26,6 +27,31 @@ function dbTargetHostFromDatabaseUrl(): string | null {
  * Readiness: DB reachable + i18n bundles + market config. Use for load balancers / rollout gates.
  */
 export async function GET() {
+  try {
+    return await getReadyHandler();
+  } catch (e) {
+    console.error(
+      JSON.stringify({
+        event: "api_ready_unhandled",
+        route: "/api/ready",
+        message: e instanceof Error ? e.message : String(e),
+      })
+    );
+    return NextResponse.json(
+      {
+        ok: false,
+        ready: false,
+        status: "error",
+        error: "readiness_unhandled",
+        time: new Date().toISOString(),
+        publicEnv: getPublicEnv(),
+      },
+      { status: 503 }
+    );
+  }
+}
+
+async function getReadyHandler() {
   const rawDbUrl = process.env.DATABASE_URL || null;
   const dbUrlPreview = rawDbUrl
     ? rawDbUrl
@@ -62,6 +88,45 @@ export async function GET() {
   }
 
   let dbStatus: "ok" | "failed" = "ok";
+  let prisma: Awaited<typeof import("@/lib/db")>["prisma"];
+  try {
+    ({ prisma } = await import("@/lib/db"));
+  } catch (e) {
+    dbStatus = "failed";
+    console.error(
+      JSON.stringify({
+        event: "api_ready_prisma_module_failure",
+        route: "/api/ready",
+        message: e instanceof Error ? e.message : String(e),
+        dbHostKind: hostKind,
+        dbTargetHost,
+      })
+    );
+    return NextResponse.json(
+      {
+        ok: false,
+        ready: false,
+        status: "error",
+        db: dbStatus,
+        dbTargetHost,
+        dbHostKind: hostKind,
+        databaseUrlLooksLikeTemplate,
+        rawDbUrlExists,
+        dbUrlPreview,
+        projectId,
+        projectName,
+        vercelEnv,
+        hasOpenAI,
+        env: envName,
+        nodeEnv: envName,
+        publicEnv: getPublicEnv(),
+        time,
+        error: "prisma_module_unavailable",
+      },
+      { status: 503 }
+    );
+  }
+
   try {
     await withDbRetry(() => prisma.$queryRaw`SELECT 1`, { maxAttempts: 3, baseDelayMs: 200 });
   } catch (e) {
@@ -109,11 +174,14 @@ export async function GET() {
       Object.keys(MESSAGES.ar).length > 0;
     const market = await getResolvedMarket();
     const ok = true;
+    const stripeOk = !describeStripeSecretKeyError();
     return NextResponse.json({
       ok,
       ready: ok,
       status: "ok",
       db: "ok",
+      stripe: stripeOk ? "ready" : "invalid",
+      supabase: supabaseConfigStatus(),
       dbTargetHost,
       dbHostKind: hostKind,
       databaseUrlLooksLikeTemplate,

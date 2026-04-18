@@ -1,9 +1,10 @@
 -- BNHUB pre-booking inquiry threads + booking chat read receipts / host response stats
 
-ALTER TABLE "bookings" ADD COLUMN IF NOT EXISTS "guest_last_read_booking_messages_at" TIMESTAMP(3);
-ALTER TABLE "bookings" ADD COLUMN IF NOT EXISTS "host_last_read_booking_messages_at" TIMESTAMP(3);
-ALTER TABLE "bookings" ADD COLUMN IF NOT EXISTS "bnhub_host_avg_booking_response_ms" INTEGER;
-ALTER TABLE "bookings" ADD COLUMN IF NOT EXISTS "bnhub_host_booking_response_samples" INTEGER NOT NULL DEFAULT 0;
+-- Prisma model `Booking` maps to table "Booking" (see baseline), not "bookings".
+ALTER TABLE "Booking" ADD COLUMN IF NOT EXISTS "guest_last_read_booking_messages_at" TIMESTAMP(3);
+ALTER TABLE "Booking" ADD COLUMN IF NOT EXISTS "host_last_read_booking_messages_at" TIMESTAMP(3);
+ALTER TABLE "Booking" ADD COLUMN IF NOT EXISTS "bnhub_host_avg_booking_response_ms" INTEGER;
+ALTER TABLE "Booking" ADD COLUMN IF NOT EXISTS "bnhub_host_booking_response_samples" INTEGER NOT NULL DEFAULT 0;
 
 CREATE TABLE IF NOT EXISTS "bnhub_inquiry_threads" (
     "id" TEXT NOT NULL,

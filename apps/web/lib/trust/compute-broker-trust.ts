@@ -31,7 +31,7 @@ export async function computeBrokerTrustScore(brokerUserId: string): Promise<Bro
   ]);
 
   let raw = 25;
-  const reasons: Record<string, number | string | boolean> = {};
+  const reasons: Record<string, Prisma.JsonValue> = {};
 
   if (profile?.brokerVerified || brokerRow?.verificationStatus === "VERIFIED") {
     raw += 28;

@@ -33,13 +33,14 @@ function baseRaw(over: Partial<ShortTermListingFraudRawSignals> = {}): ShortTerm
 }
 
 describe("scoreShortTermListingFraud", () => {
-  it("flags suspicious incomplete listing (sparse + few photos + open flag crosses medium)", () => {
+  it("flags suspicious incomplete listing (sparse + few photos + open flag + duplicate title crosses medium)", () => {
     const a = scoreShortTermListingFraud(
-      baseRaw({ titleLen: 4, descLen: 10, photoCount: 1, openBnhubFraudFlags: 1 }),
+      baseRaw({ titleLen: 4, descLen: 10, photoCount: 1, openBnhubFraudFlags: 1, duplicateTitleOtherOwners: 1 }),
     );
     expect(a.riskScore).toBeGreaterThanOrEqual(FRAUD_SCORE_THRESHOLDS.mediumMin);
     expect(["MEDIUM", "HIGH"]).toContain(a.riskLevel);
-    expect(a.reasons.some((r) => r.includes("sparse"))).toBe(true);
+    expect(a.reasons.some((r) => r.includes("Short title") || r.includes("Few photos"))).toBe(true);
+    expect(a.reasons.some((r) => r.includes("Duplicate title"))).toBe(true);
   });
 
   it("increases risk when failed payment and repeat guest patterns stack", () => {
@@ -51,8 +52,8 @@ describe("scoreShortTermListingFraud", () => {
       }),
     );
     expect(withFailures.riskScore).toBeGreaterThan(low.riskScore);
-    expect(withFailures.reasons.some((r) => r.includes("failed_payments"))).toBe(true);
-    expect(withFailures.reasons.some((r) => r.includes("repeat_guest"))).toBe(true);
+    expect(withFailures.reasons.some((r) => r.includes("Failed payments"))).toBe(true);
+    expect(withFailures.reasons.some((r) => r.includes("repeat guest"))).toBe(true);
   });
 
   it("HIGH when duplicate title and duplicate phone both present", () => {
@@ -61,6 +62,7 @@ describe("scoreShortTermListingFraud", () => {
         duplicateTitleOtherOwners: 1,
         duplicatePhoneOtherUsers: 1,
         openBnhubFraudFlags: 2,
+        cancelledBookings90dOnListing: 4,
       }),
     );
     expect(a.riskLevel).toBe("HIGH");
@@ -69,9 +71,9 @@ describe("scoreShortTermListingFraud", () => {
 });
 
 describe("planFraudSafeActions", () => {
-  it("emits admin alert for medium and high", () => {
+  it("emits admin health events for HIGH only (MEDIUM stays in logs)", () => {
     expect(planFraudSafeActions("LOW").emitAdminHealthEvent).toBe(false);
-    expect(planFraudSafeActions("MEDIUM").emitAdminHealthEvent).toBe(true);
+    expect(planFraudSafeActions("MEDIUM").emitAdminHealthEvent).toBe(false);
     expect(planFraudSafeActions("HIGH").emitAdminHealthEvent).toBe(true);
   });
 

@@ -231,6 +231,11 @@
   },
   "investor": {},
   "contentEngine": {
+    "glossary": {
+      "platformBrand": "LECIPM",
+      "reviewDisclaimer": "Les informations viennent de l’hôte ; disponibilité et prix confirmés à la réservation.",
+      "localeFallbackNote": "Langue de secours : l’anglais peut s’afficher si une traduction manque pour un fragment."
+    },
     "constraints": {
       "standardMarket": "Marché standard : décrivez le parcours de réservation avec exactitude. Ne garantissez jamais disponibilité, prix ou paiement sans confirmation hôte et plateforme.",
       "contactFirstMarket": "Marché contact d’abord : utilisez « demande de réservation », « contactez l’hôte » et une confirmation manuelle. Ne promettez pas de paiement instantané ni de rails automatisés."
@@ -252,7 +257,7 @@
       "cityFaqA1": "Envoyez une demande ou contactez l’hôte ; il confirme les détails avec vous.",
       "growthListingNoDescription": "L’annonce n’a pas de description pour les voyageurs.",
       "growthWeakSeoTitle": "Le titre SEO pourrait être plus clair.",
-      "growthMissingLocaleCopy": "Traduction manquante pour cette langue.",
+      "growthMissingLocaleCopy": "Il manque un texte adapté pour cette langue (hors anglais).",
       "growthSyriaBanner": "Marché Syrie : afficher une bannière contact d’abord sur les pages à fort trafic.",
       "hostAmenitiesLine": "Points fournis par l’hôte : {list}.",
       "hostNoAmenitiesLine": "Ajoutez des équipements structurés dans l’éditeur pour des suggestions exactes.",

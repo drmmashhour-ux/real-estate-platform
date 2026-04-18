@@ -1,0 +1,341 @@
+app/[locale]/[country]/(dashboard)/dashboard/deals/[id]/page.tsx(177,53): error TS2322: Type '{ dealId: string; dealCode: string | null; status: string; currentStage: "counter_proposal" | "conditions_pending" | "cancelled" | "offer_accepted" | "closing_scheduled" | "notary_review" | "promise_received" | "conditions_satisfied" | "deed_signed"; ... 5 more ...; availableActions: { ...; }[]; }' is not assignable to type 'Timeline'.
+  Types of property 'documents' are incompatible.
+    Type '({ id: string; type: string; status: string; fileUrl: string | null; createdAt: Date; source: "deal_document"; } | { id: string; type: string; status: string; fileUrl: string; createdAt: Date; source: "offer_document"; })[]' is not assignable to type '{ id: string; type: string; status: string; fileUrl: string; createdAt: string | Date; source: "deal_document" | "offer_document"; }[]'.
+      Type '{ id: string; type: string; status: string; fileUrl: string | null; createdAt: Date; source: "deal_document"; } | { id: string; type: string; status: string; fileUrl: string; createdAt: Date; source: "offer_document"; }' is not assignable to type '{ id: string; type: string; status: string; fileUrl: string; createdAt: string | Date; source: "deal_document" | "offer_document"; }'.
+        Type '{ id: string; type: string; status: string; fileUrl: string | null; createdAt: Date; source: "deal_document"; }' is not assignable to type '{ id: string; type: string; status: string; fileUrl: string; createdAt: string | Date; source: "deal_document" | "offer_document"; }'.
+          Types of property 'fileUrl' are incompatible.
+            Type 'string | null' is not assignable to type 'string'.
+              Type 'null' is not assignable to type 'string'.
+app/[locale]/[country]/admin/assistant/page.tsx(55,9): error TS2322: Type '{ id: string; createdAt: Date; title: string; metadataJson: JsonValue; entityType: AdminAiEntityType | null; entityId: string | null; body: string; type: AdminAiInsightType; priority: AdminAiInsightPriority; }[]' is not assignable to type 'InsightRow[]'.
+  Type '{ id: string; createdAt: Date; title: string; metadataJson: JsonValue; entityType: AdminAiEntityType | null; entityId: string | null; body: string; type: AdminAiInsightType; priority: AdminAiInsightPriority; }' is not assignable to type 'InsightRow'.
+    Type '{ id: string; createdAt: Date; title: string; metadataJson: JsonValue; entityType: AdminAiEntityType | null; entityId: string | null; body: string; type: AdminAiInsightType; priority: AdminAiInsightPriority; }' is not assignable to type '{ createdAt: string; }'.
+      Types of property 'createdAt' are incompatible.
+        Type 'Date' is not assignable to type 'string'.
+app/[locale]/[country]/admin/assistant/page.tsx(56,9): error TS2322: Type '{ id: string; createdAt: Date; status: AdminAiRunStatus; summary: string | null; completedAt: Date | null; startedAt: Date | null; runType: string; }[]' is not assignable to type 'RunRow[]'.
+  Type '{ id: string; createdAt: Date; status: AdminAiRunStatus; summary: string | null; completedAt: Date | null; startedAt: Date | null; runType: string; }' is not assignable to type 'RunRow'.
+    Type '{ id: string; createdAt: Date; status: AdminAiRunStatus; summary: string | null; completedAt: Date | null; startedAt: Date | null; runType: string; }' is not assignable to type '{ createdAt: string; startedAt: string | null; completedAt: string | null; }'.
+      Types of property 'createdAt' are incompatible.
+        Type 'Date' is not assignable to type 'string'.
+app/[locale]/[country]/admin/autopilot/page.tsx(26,28): error TS2322: Type '{ _count: { _all: string; }; }' is not assignable to type 'ListingOptimizationAuditOrderByWithAggregationInput | ListingOptimizationAuditOrderByWithAggregationInput[] | undefined'.
+  Types of property '_count' are incompatible.
+    Object literal may only specify known properties, and '_all' does not exist in type 'ListingOptimizationAuditCountOrderByAggregateInput'.
+app/[locale]/[country]/admin/autopilot/page.tsx(103,73): error TS18048: 't._count' is possibly 'undefined'.
+app/[locale]/[country]/admin/autopilot/page.tsx(103,82): error TS2339: Property '_all' does not exist on type 'true | { id?: number | undefined; listingId?: number | undefined; suggestionId?: number | undefined; action?: number | undefined; oldValue?: number | undefined; newValue?: number | undefined; performedByUserId?: number | undefined; createdAt?: number | undefined; _all?: number | undefined; }'.
+  Property '_all' does not exist on type 'true'.
+app/[locale]/[country]/admin/security/page.tsx(258,10): error TS2304: Cannot find name 'rlsSnapshot'.
+app/[locale]/[country]/admin/security/page.tsx(261,56): error TS2304: Cannot find name 'rlsSnapshot'.
+app/[locale]/[country]/admin/security/page.tsx(263,72): error TS2304: Cannot find name 'rlsSnapshot'.
+app/[locale]/[country]/admin/security/page.tsx(275,14): error TS2304: Cannot find name 'hardeningEvents'.
+app/[locale]/[country]/admin/security/page.tsx(290,22): error TS2304: Cannot find name 'hardeningEvents'.
+app/[locale]/[country]/admin/security/page.tsx(290,43): error TS7006: Parameter 'e' implicitly has an 'any' type.
+app/[locale]/[country]/bnhub/bnhub-listing-view.tsx(583,24): error TS2367: This comparison appears to be unintentional because the types '2' and '1' have no overlap.
+app/[locale]/[country]/bnhub/bnhub-listing-view.tsx(1109,45): error TS2367: This comparison appears to be unintentional because the types '2' and '1' have no overlap.
+app/[locale]/[country]/broker/office/billing/page.tsx(19,22): error TS2304: Cannot find name 'prisma'.
+app/[locale]/[country]/broker/office/commissions/page.tsx(21,22): error TS2304: Cannot find name 'prisma'.
+app/[locale]/[country]/city/[city]/page.tsx(125,27): error TS2339: Property 'region' does not exist on type 'BnhubListingForRanking'.
+app/[locale]/[country]/founder/briefings/[id]/page.tsx(65,32): error TS2322: Type '{ id: string; createdAt: Date; title: string; content: JsonValue; sectionKey: string; briefingId: string; ordering: number; }[]' is not assignable to type 'Section[]'.
+  Type '{ id: string; createdAt: Date; title: string; content: JsonValue; sectionKey: string; briefingId: string; ordering: number; }' is not assignable to type 'Section'.
+    Types of property 'content' are incompatible.
+      Type 'JsonValue' is not assignable to type 'Record<string, unknown>'.
+        Type 'null' is not assignable to type 'Record<string, unknown>'.
+app/[locale]/[country]/listings/[id]/page.tsx(121,18): error TS2339: Property 'coverImage' does not exist on type '{ id: string; updatedAt: Date; createdAt: Date; price: number; ownerId: string | null; listingCode: string; title: string; titleFr: string | null; titleAr: string | null; tenantId: string | null; commissionCategory: ListingCommissionCategory; commissionRate: number | null; } & { ...; }'.
+app/[locale]/[country]/listings/[id]/page.tsx(121,51): error TS2339: Property 'images' does not exist on type '{ id: string; updatedAt: Date; createdAt: Date; price: number; ownerId: string | null; listingCode: string; title: string; titleFr: string | null; titleAr: string | null; tenantId: string | null; commissionCategory: ListingCommissionCategory; commissionRate: number | null; } & { ...; }'.
+app/[locale]/[country]/listings/[id]/page.tsx(121,65): error TS2339: Property 'images' does not exist on type '{ id: string; updatedAt: Date; createdAt: Date; price: number; ownerId: string | null; listingCode: string; title: string; titleFr: string | null; titleAr: string | null; tenantId: string | null; commissionCategory: ListingCommissionCategory; commissionRate: number | null; } & { ...; }'.
+app/api/admin/investor-metrics/export/route.ts(55,25): error TS2345: Argument of type 'Buffer<ArrayBufferLike>' is not assignable to parameter of type 'BodyInit | null | undefined'.
+  Type 'Buffer<ArrayBufferLike>' is missing the following properties from type 'URLSearchParams': size, append, delete, get, and 2 more.
+app/api/admin/investor-metrics/export/route.ts(79,25): error TS2345: Argument of type 'Buffer<ArrayBufferLike>' is not assignable to parameter of type 'BodyInit | null | undefined'.
+  Type 'Buffer<ArrayBufferLike>' is missing the following properties from type 'URLSearchParams': size, append, delete, get, and 2 more.
+app/api/auth/login/route.ts(137,68): error TS18047: 'user' is possibly 'null'.
+app/api/broker-autopilot/leads/[id]/followup-draft/route.ts(15,63): error TS2345: Argument of type 'string' is not assignable to parameter of type 'PlatformRole'.
+app/api/broker-autopilot/leads/[id]/next-action/route.ts(15,63): error TS2345: Argument of type 'string' is not assignable to parameter of type 'PlatformRole'.
+app/api/broker-autopilot/leads/[id]/snapshot/route.ts(14,69): error TS2345: Argument of type 'string' is not assignable to parameter of type 'PlatformRole'.
+app/api/broker-crm/leads/[id]/ai-reply/route.ts(15,63): error TS2345: Argument of type 'string' is not assignable to parameter of type 'PlatformRole'.
+app/api/broker-crm/leads/[id]/ai-summary/route.ts(15,63): error TS2345: Argument of type 'string' is not assignable to parameter of type 'PlatformRole'.
+app/api/broker-crm/leads/[id]/follow-up/route.ts(15,63): error TS2345: Argument of type 'string' is not assignable to parameter of type 'PlatformRole'.
+app/api/broker-crm/leads/[id]/next-action/route.ts(15,63): error TS2345: Argument of type 'string' is not assignable to parameter of type 'PlatformRole'.
+app/api/broker-crm/leads/[id]/next-action/route.ts(19,64): error TS2345: Argument of type 'string' is not assignable to parameter of type 'PlatformRole'.
+app/api/broker-crm/leads/[id]/notes/route.ts(16,63): error TS2345: Argument of type 'string' is not assignable to parameter of type 'PlatformRole'.
+app/api/broker-crm/leads/[id]/route.ts(15,63): error TS2345: Argument of type 'string' is not assignable to parameter of type 'PlatformRole'.
+app/api/broker-crm/leads/[id]/score/route.ts(15,63): error TS2345: Argument of type 'string' is not assignable to parameter of type 'PlatformRole'.
+app/api/broker-crm/leads/[id]/send-message/route.ts(18,63): error TS2345: Argument of type 'string' is not assignable to parameter of type 'PlatformRole'.
+app/api/broker-crm/leads/[id]/status/route.ts(16,63): error TS2345: Argument of type 'string' is not assignable to parameter of type 'PlatformRole'.
+app/api/broker-crm/leads/[id]/tags/route.ts(16,63): error TS2345: Argument of type 'string' is not assignable to parameter of type 'PlatformRole'.
+app/api/deals/[id]/bank/contact/route.ts(28,51): error TS2345: Argument of type '{ name?: string | undefined; email?: string | undefined; phone?: string | undefined; organization?: string | undefined; region?: string | undefined; roleMetadata?: Record<string, unknown> | undefined; }' is not assignable to parameter of type '{ name: string; email?: string | undefined; phone?: string | undefined; organization?: string | undefined; region?: string | undefined; roleMetadata?: Record<string, unknown> | undefined; }'.
+  Types of property 'name' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+app/api/deals/[id]/notary/contact/route.ts(28,51): error TS2345: Argument of type '{ name?: string | undefined; email?: string | undefined; phone?: string | undefined; organization?: string | undefined; region?: string | undefined; }' is not assignable to parameter of type '{ name: string; email?: string | undefined; phone?: string | undefined; organization?: string | undefined; region?: string | undefined; }'.
+  Types of property 'name' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+app/api/founder/actions/route.ts(38,75): error TS2345: Argument of type '{ sourceType: FounderActionSourceType; sourceId: string | undefined; title: string; summary: string; priority: string | undefined; }' is not assignable to parameter of type 'CreateFounderActionInput'.
+  Type '{ sourceType: FounderActionSourceType; sourceId: string | undefined; title: string; summary: string; priority: string | undefined; }' is missing the following properties from type 'CreateFounderActionInput': scopeKind, scopeOfficeIdsJson
+app/api/internal/autopilot/run/route.ts(37,26): error TS2783: 'ok' is specified more than once, so this usage will be overwritten.
+app/api/internal/roi/save/route.ts(43,7): error TS2322: Type 'Record<string, unknown>' is not assignable to type 'JsonNull | InputJsonValue | undefined'.
+  Type 'Record<string, unknown>' is missing the following properties from type 'readonly (InputJsonValue | null)[]': length, concat, join, slice, and 26 more.
+app/api/internal/roi/save/route.ts(44,7): error TS2322: Type 'Record<string, unknown>' is not assignable to type 'JsonNull | InputJsonValue | undefined'.
+  Type 'Record<string, unknown>' is missing the following properties from type 'readonly (InputJsonValue | null)[]': length, concat, join, slice, and 26 more.
+app/api/listing-acquisition/intake/route.ts(446,7): error TS2322: Type 'string | null' is not assignable to type 'string'.
+  Type 'null' is not assignable to type 'string'.
+app/api/stripe/create-checkout-session/route.ts(52,15): error TS2554: Expected 2-3 arguments, but got 1.
+app/api/stripe/create-checkout-session/route.ts(112,5): error TS2322: Type 'Record<string, unknown> | undefined' is not assignable to type 'Record<string, string> | undefined'.
+  Type 'Record<string, unknown>' is not assignable to type 'Record<string, string>'.
+    'string' index signatures are incompatible.
+      Type 'unknown' is not assignable to type 'string'.
+components/ads/AdsLandingPageClient.tsx(305,113): error TS2304: Cannot find name 'path'.
+components/growth/FunnelChart.tsx(42,57): error TS2339: Property 'afterStep' does not exist on type '{ from: string; to: string; rate: number; }'.
+components/listings/ListingsBrowseClient.tsx(224,7): error TS2322: Type 'number' is not assignable to type 'Timeout'.
+components/marketing/CentrisStyleHomeHero.tsx(2,41): error TS2307: Cannot find module '@/app/components/home/QuickPropertySearchForm' or its corresponding type declarations.
+components/marketing/PricingSection.tsx(78,29): error TS2339: Property 'popular' does not exist on type '{ readonly key: "free"; readonly name: "Free"; readonly fee: "Low platform fee (configurable)"; readonly bullets: readonly ["Core listing", "Standard visibility", "Foundational analytics"]; } | { ...; } | { ...; }'.
+  Property 'popular' does not exist on type '{ readonly key: "free"; readonly name: "Free"; readonly fee: "Low platform fee (configurable)"; readonly bullets: readonly ["Core listing", "Standard visibility", "Foundational analytics"]; }'.
+components/marketing/PricingSection.tsx(79,32): error TS2339: Property 'popular' does not exist on type '{ readonly key: "free"; readonly name: "Free"; readonly fee: "Low platform fee (configurable)"; readonly bullets: readonly ["Core listing", "Standard visibility", "Foundational analytics"]; } | { ...; } | { ...; }'.
+  Property 'popular' does not exist on type '{ readonly key: "free"; readonly name: "Free"; readonly fee: "Low platform fee (configurable)"; readonly bullets: readonly ["Core listing", "Standard visibility", "Foundational analytics"]; }'.
+components/marketing/PricingSection.tsx(81,22): error TS2339: Property 'popular' does not exist on type '{ readonly key: "free"; readonly name: "Free"; readonly fee: "Low platform fee (configurable)"; readonly bullets: readonly ["Core listing", "Standard visibility", "Foundational analytics"]; } | { ...; } | { ...; }'.
+  Property 'popular' does not exist on type '{ readonly key: "free"; readonly name: "Free"; readonly fee: "Low platform fee (configurable)"; readonly bullets: readonly ["Core listing", "Standard visibility", "Foundational analytics"]; }'.
+components/projects/ProjectsMap.tsx(78,21): error TS2304: Cannot find name 'escapeAttr'.
+components/projects/ProjectsMap.tsx(104,25): error TS2304: Cannot find name 'escapeAttr'.
+components/projects/ProjectsMap.tsx(112,32): error TS2304: Cannot find name 'escapeAttr'.
+components/seller/SellerDeclarationForm.tsx(220,20): error TS2367: This comparison appears to be unintentional because the types '1 | -1' and '0' have no overlap.
+lib/admin/get-smart-dashboard.ts(85,7): error TS2739: Type '{ listing_view: string; contact_click: string; visit_request: string; visit_confirmed: string; deal_started: string; payment_completed: string; }' is missing the following properties from type 'Record<AnalyticsFunnelEventName, string>': landing_visit, search_used, listing_click, booking_started
+lib/admin/get-smart-dashboard.ts(208,59): error TS2353: Object literal may only specify known properties, and 'city' does not exist in type 'ListingSelect<DefaultArgs>'.
+lib/admin/get-smart-dashboard.ts(310,16): error TS2448: Block-scoped variable 'needsDocsListings' used before its declaration.
+lib/admin/get-smart-dashboard.ts(310,16): error TS2454: Variable 'needsDocsListings' is used before being assigned.
+lib/admin/get-smart-dashboard.ts(416,21): error TS2339: Property 'city' does not exist on type '{ id: string; updatedAt: Date; createdAt: Date; price: number; ownerId: string | null; listingCode: string; title: string; titleFr: string | null; titleAr: string | null; tenantId: string | null; commissionCategory: ListingCommissionCategory; commissionRate: number | null; }'.
+lib/bnhub/content-pipeline/run-pipeline.ts(107,21): error TS2352: Conversion of type 'string[]' to type 'object[]' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type 'string' is not comparable to type 'object'.
+lib/bnhub/content-pipeline/run-pipeline.ts(108,21): error TS2352: Conversion of type 'string[]' to type 'object[]' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type 'string' is not comparable to type 'object'.
+lib/bnhub/guest-origin-geo.ts(123,9): error TS2540: Cannot assign to 'count' because it is a read-only property.
+lib/content-automation/post-to-platform.ts(34,31): error TS2304: Cannot find name 'thumb'.
+lib/content-automation/run-job.ts(198,7): error TS2322: Type '{ tiktok: PostToPlatformResult; instagram: PostToPlatformResult; }' is not assignable to type 'InputJsonValue | undefined'.
+  Types of property 'tiktok' are incompatible.
+    Type 'PostToPlatformResult' is not assignable to type 'InputJsonValue | null | undefined'.
+      Type '{ ok: true; channel: "manual" | "meta_instagram" | "meta_facebook" | "scheduler"; externalPostId?: string | undefined; externalPlatformId?: string | undefined; detail?: unknown; }' is not assignable to type 'InputJsonValue | null | undefined'.
+        Type '{ ok: true; channel: "manual" | "meta_instagram" | "meta_facebook" | "scheduler"; externalPostId?: string | undefined; externalPlatformId?: string | undefined; detail?: unknown; }' is not assignable to type 'InputJsonObject'.
+          Property 'detail' is incompatible with index signature.
+            Type 'unknown' is not assignable to type 'InputJsonValue | null | undefined'.
+lib/content-machine/optimization.ts(13,12): error TS2552: Cannot find name 'ExtendedOptimizationSignals'. Did you mean 'ContentOptimizationSignals'?
+lib/deals/coordination-audit.ts(32,7): error TS2322: Type 'Record<string, unknown> | undefined' is not assignable to type 'NullableJsonNullValueInput | InputJsonValue | undefined'.
+  Type 'Record<string, unknown>' is not assignable to type 'NullableJsonNullValueInput | InputJsonValue | undefined'.
+    Type 'Record<string, unknown>' is missing the following properties from type 'readonly (InputJsonValue | null)[]': length, concat, join, slice, and 26 more.
+lib/deals/legal-timeline.ts(283,9): error TS2322: Type '({ id: string; type: string; status: string; fileUrl: string | null; source: "deal_document"; } | { id: string; type: string; status: string; fileUrl: string; source: "offer_document"; })[]' is not assignable to type 'LegalAttachment[]'.
+  Type '{ id: string; type: string; status: string; fileUrl: string | null; source: "deal_document"; } | { id: string; type: string; status: string; fileUrl: string; source: "offer_document"; }' is not assignable to type 'LegalAttachment'.
+    Type '{ id: string; type: string; status: string; fileUrl: string | null; source: "deal_document"; }' is not assignable to type 'LegalAttachment'.
+      Types of property 'fileUrl' are incompatible.
+        Type 'string | null' is not assignable to type 'string'.
+          Type 'null' is not assignable to type 'string'.
+lib/experiments/assign-variant.ts(1,15): error TS2300: Duplicate identifier 'Prisma'.
+lib/experiments/assign-variant.ts(2,10): error TS2300: Duplicate identifier 'Prisma'.
+lib/experiments/assign-variant.ts(69,22): error TS1361: 'Prisma' cannot be used as a value because it was imported using 'import type'.
+lib/experiments/get-assignment.ts(39,36): error TS1355: A 'const' assertions can only be applied to references to enum members, or string, number, boolean, array, or object literals.
+lib/experiments/get-assignment.ts(39,63): error TS1355: A 'const' assertions can only be applied to references to enum members, or string, number, boolean, array, or object literals.
+lib/experiments/get-assignment.ts(66,28): error TS1355: A 'const' assertions can only be applied to references to enum members, or string, number, boolean, array, or object literals.
+lib/experiments/get-assignment.ts(66,55): error TS1355: A 'const' assertions can only be applied to references to enum members, or string, number, boolean, array, or object literals.
+lib/experiments/validators.ts(51,15): error TS2554: Expected 2-3 arguments, but got 1.
+lib/forms/sources/get-platform-context.ts(92,39): error TS2339: Property 'price' does not exist on type '{ id: string; listingCode: string; title: string; }'.
+lib/founder-simulation-run.ts(20,43): error TS2552: Cannot find name 'FounderMetricsSummary'. Did you mean 'FounderMetricsSummaryRow'?
+lib/fraud/compute-payment-risk.ts(6,17): error TS2339: Property 'charges' does not exist on type 'PaymentIntent'.
+lib/fraud/compute-payment-risk.ts(7,3): error TS2322: Type '{ risk_level?: string | undefined; risk_score?: number | undefined; } | null' is not assignable to type '{ riskLevel?: string | undefined; riskScore?: number | undefined; } | null'.
+  Type '{ risk_level?: string | undefined; risk_score?: number | undefined; }' has no properties in common with type '{ riskLevel?: string | undefined; riskScore?: number | undefined; }'.
+lib/fraud/compute-payment-risk.ts(18,11): error TS2551: Property 'risk_level' does not exist on type '{ riskLevel?: string | undefined; riskScore?: number | undefined; }'. Did you mean 'riskLevel'?
+lib/fraud/compute-payment-risk.ts(18,44): error TS2551: Property 'risk_level' does not exist on type '{ riskLevel?: string | undefined; riskScore?: number | undefined; }'. Did you mean 'riskLevel'?
+lib/market-intelligence/platform-signals.ts(324,24): error TS2304: Cannot find name 'weakCandidates'.
+lib/market-intelligence/platform-signals.ts(325,14): error TS7006: Parameter 'r' implicitly has an 'any' type.
+lib/market-intelligence/platform-signals.ts(326,11): error TS7006: Parameter 'r' implicitly has an 'any' type.
+lib/market-intelligence/platform-signals.ts(335,12): error TS7006: Parameter 'a' implicitly has an 'any' type.
+lib/market-intelligence/platform-signals.ts(335,15): error TS7006: Parameter 'b' implicitly has an 'any' type.
+lib/mobile/broker-mobile-preferences.ts(12,61): error TS2339: Property 'id' does not exist on type 'string | number | boolean | JsonObject | JsonArray'.
+  Property 'id' does not exist on type 'string'.
+lib/mobile/broker-mobile-preferences.ts(12,90): error TS2339: Property 'until' does not exist on type 'string | number | boolean | JsonObject | JsonArray'.
+  Property 'until' does not exist on type 'string'.
+lib/monetization/lecipm-financial-operations.ts(25,7): error TS2322: Type 'Record<string, unknown> | undefined' is not assignable to type 'NullableJsonNullValueInput | InputJsonValue | undefined'.
+  Type 'Record<string, unknown>' is not assignable to type 'NullableJsonNullValueInput | InputJsonValue | undefined'.
+    Type 'Record<string, unknown>' is missing the following properties from type 'readonly (InputJsonValue | null)[]': length, concat, join, slice, and 26 more.
+lib/portfolio-autopilot/run-portfolio-autopilot.ts(49,7): error TS2322: Type '{ ownerUserId: string; actionType: string; title: string; description: string; priority: PortfolioAutopilotActionPriority; metadataJson: Record<string, unknown>; }[]' is not assignable to type 'PortfolioAutopilotActionCreateManyInput | PortfolioAutopilotActionCreateManyInput[]'.
+  Type '{ ownerUserId: string; actionType: string; title: string; description: string; priority: PortfolioAutopilotActionPriority; metadataJson: Record<string, unknown>; }[]' is not assignable to type 'PortfolioAutopilotActionCreateManyInput[]'.
+    Type '{ ownerUserId: string; actionType: string; title: string; description: string; priority: $Enums.PortfolioAutopilotActionPriority; metadataJson: Record<string, unknown>; }' is not assignable to type 'PortfolioAutopilotActionCreateManyInput'.
+      Types of property 'metadataJson' are incompatible.
+        Type 'Record<string, unknown>' is not assignable to type 'JsonNull | InputJsonValue | undefined'.
+          Type 'Record<string, unknown>' is missing the following properties from type 'readonly (InputJsonValue | null)[]': length, concat, join, slice, and 26 more.
+lib/recommendations/get-personalized-listings.ts(72,7): error TS2322: Type '{ readonly id: true; readonly ownerId: true; readonly createdAt: true; readonly listingCode: true; readonly title: true; readonly city: true; readonly region: true; readonly country: true; ... 6 more ...; readonly listingPhotos: { ...; }; }' is not assignable to type 'ShortTermListingSelect<DefaultArgs>'.
+  Types of property 'listingPhotos' are incompatible.
+    Type '{ readonly take: 1; readonly orderBy: readonly [{ readonly isCover: "desc"; }, { readonly sortOrder: "asc"; }]; readonly select: { readonly url: true; }; }' is not assignable to type 'boolean | ShortTermListing$listingPhotosArgs<DefaultArgs> | undefined'.
+      Type '{ readonly take: 1; readonly orderBy: readonly [{ readonly isCover: "desc"; }, { readonly sortOrder: "asc"; }]; readonly select: { readonly url: true; }; }' is not assignable to type 'ShortTermListing$listingPhotosArgs<DefaultArgs>'.
+        Types of property 'orderBy' are incompatible.
+          Type 'readonly [{ readonly isCover: "desc"; }, { readonly sortOrder: "asc"; }]' is not assignable to type 'BnhubListingPhotoOrderByWithRelationInput | BnhubListingPhotoOrderByWithRelationInput[] | undefined'.
+            The type 'readonly [{ readonly isCover: "desc"; }, { readonly sortOrder: "asc"; }]' is 'readonly' and cannot be assigned to the mutable type 'BnhubListingPhotoOrderByWithRelationInput[]'.
+lib/recommendations/get-personalized-listings.ts(74,34): error TS2345: Argument of type '{ id: string; updatedAt: Date; city: string; createdAt: Date; address: string; beds: number; baths: number; propertyType: string | null; ownerId: string; listingCode: string; title: string; ... 80 more ...; rankingCachedAt: Date | null; }[]' is not assignable to parameter of type '{ id: string; listingCode: string; title: string; city: string; country: string; beds: number; baths: number; nightPriceCents: number; propertyType: string | null; photos: unknown; listingPhotos: { url: string; }[]; }[]'.
+  Property 'listingPhotos' is missing in type '{ id: string; updatedAt: Date; city: string; createdAt: Date; address: string; beds: number; baths: number; propertyType: string | null; ownerId: string; listingCode: string; title: string; ... 80 more ...; rankingCachedAt: Date | null; }' but required in type '{ id: string; listingCode: string; title: string; city: string; country: string; beds: number; baths: number; nightPriceCents: number; propertyType: string | null; photos: unknown; listingPhotos: { url: string; }[]; }'.
+lib/recommendations/get-personalized-listings.ts(114,5): error TS2322: Type '{ readonly id: true; readonly ownerId: true; readonly createdAt: true; readonly listingCode: true; readonly title: true; readonly city: true; readonly region: true; readonly country: true; ... 6 more ...; readonly listingPhotos: { ...; }; }' is not assignable to type 'ShortTermListingSelect<DefaultArgs>'.
+  Types of property 'listingPhotos' are incompatible.
+    Type '{ readonly take: 1; readonly orderBy: readonly [{ readonly isCover: "desc"; }, { readonly sortOrder: "asc"; }]; readonly select: { readonly url: true; }; }' is not assignable to type 'boolean | ShortTermListing$listingPhotosArgs<DefaultArgs> | undefined'.
+      Type '{ readonly take: 1; readonly orderBy: readonly [{ readonly isCover: "desc"; }, { readonly sortOrder: "asc"; }]; readonly select: { readonly url: true; }; }' is not assignable to type 'ShortTermListing$listingPhotosArgs<DefaultArgs>'.
+        Types of property 'orderBy' are incompatible.
+          Type 'readonly [{ readonly isCover: "desc"; }, { readonly sortOrder: "asc"; }]' is not assignable to type 'BnhubListingPhotoOrderByWithRelationInput | BnhubListingPhotoOrderByWithRelationInput[] | undefined'.
+            The type 'readonly [{ readonly isCover: "desc"; }, { readonly sortOrder: "asc"; }]' is 'readonly' and cannot be assigned to the mutable type 'BnhubListingPhotoOrderByWithRelationInput[]'.
+lib/recommendations/get-personalized-listings.ts(169,24): error TS2339: Property 'listingPhotos' does not exist on type '{ id: string; updatedAt: Date; city: string; createdAt: Date; address: string; beds: number; baths: number; propertyType: string | null; ownerId: string; listingCode: string; title: string; ... 80 more ...; rankingCachedAt: Date | null; }'.
+lib/supabase/server.ts(22,14): error TS7006: Parameter 'cookiesToSet' implicitly has an 'any' type.
+lib/trust/compute-broker-trust.ts(73,28): error TS2322: Type 'string[]' is not assignable to type 'string | number | boolean'.
+lib/trust/compute-listing-trust.ts(79,5): error TS2322: Type '{ contact: boolean; address: boolean; photo: boolean; content: boolean; level: $Enums.VerificationLevel; }' is not assignable to type 'string | number | boolean'.
+lib/trust/compute-listing-trust.ts(109,28): error TS2322: Type 'string[]' is not assignable to type 'string | number | boolean'.
+lib/trust/compute-user-trust.ts(91,28): error TS2322: Type 'string[]' is not assignable to type 'string | number | boolean'.
+lib/visits/get-available-slots.ts(107,26): error TS2345: Argument of type 'Date' is not assignable to parameter of type 'DateArg<Date>[]'.
+  Type 'Date' is missing the following properties from type 'DateArg<Date>[]': length, pop, push, concat, and 35 more.
+lib/visits/get-available-slots.ts(110,24): error TS2345: Argument of type 'Date' is not assignable to parameter of type 'DateArg<Date>[]'.
+  Type 'Date' is missing the following properties from type 'DateArg<Date>[]': length, pop, push, concat, and 35 more.
+modules/alerts/index.ts(3,1): error TS2308: Module "./alert.types" has already exported a member named 'AlertSeverity'. Consider explicitly re-exporting to resolve the ambiguity.
+modules/analytics/signature-closing-analytics.service.ts(13,7): error TS2322: Type 'Record<string, unknown>' is not assignable to type 'JsonNull | InputJsonValue | undefined'.
+  Type 'Record<string, unknown>' is missing the following properties from type 'readonly (InputJsonValue | null)[]': length, concat, join, slice, and 26 more.
+modules/broker-growth/broker-growth-aggregation.service.ts(7,8): error TS2459: Module '"../broker-kpis/broker-kpi-aggregation.service"' declares 'KpiDateRange' locally, but it is not exported.
+modules/broker-growth/broker-growth-aggregation.service.ts(257,19): error TS2304: Cannot find name 'BrokerKpiSnapshot'.
+modules/broker-kpis/broker-kpi-aggregation.service.ts(132,47): error TS2322: Type '{ notIn: readonly ["closed", "cancelled"]; }' is not assignable to type 'string | StringFilter<"Deal"> | undefined'.
+  Type '{ notIn: readonly ["closed", "cancelled"]; }' is not assignable to type 'StringFilter<"Deal">'.
+    Types of property 'notIn' are incompatible.
+      Type 'readonly ["closed", "cancelled"]' is not assignable to type 'string[] | FieldRef<"Deal", "String[]"> | undefined'.
+        The type 'readonly ["closed", "cancelled"]' is 'readonly' and cannot be assigned to the mutable type 'string[]'.
+modules/broker-kpis/broker-kpi-aggregation.service.ts(143,9): error TS2322: Type '{ notIn: readonly ["closed", "cancelled"]; }' is not assignable to type 'string | StringFilter<"Deal"> | undefined'.
+  Type '{ notIn: readonly ["closed", "cancelled"]; }' is not assignable to type 'StringFilter<"Deal">'.
+    Types of property 'notIn' are incompatible.
+      Type 'readonly ["closed", "cancelled"]' is not assignable to type 'string[] | FieldRef<"Deal", "String[]"> | undefined'.
+        The type 'readonly ["closed", "cancelled"]' is 'readonly' and cannot be assigned to the mutable type 'string[]'.
+modules/broker-kpis/broker-kpi-aggregation.service.ts(151,9): error TS2322: Type '{ notIn: readonly ["closed", "cancelled"]; }' is not assignable to type 'string | StringFilter<"Deal"> | undefined'.
+  Type '{ notIn: readonly ["closed", "cancelled"]; }' is not assignable to type 'StringFilter<"Deal">'.
+    Types of property 'notIn' are incompatible.
+      Type 'readonly ["closed", "cancelled"]' is not assignable to type 'string[] | FieldRef<"Deal", "String[]"> | undefined'.
+        The type 'readonly ["closed", "cancelled"]' is 'readonly' and cannot be assigned to the mutable type 'string[]'.
+modules/broker-kpis/broker-kpi-aggregation.service.ts(158,9): error TS2322: Type '{ notIn: readonly ["closed", "cancelled"]; }' is not assignable to type 'string | StringFilter<"Deal"> | undefined'.
+  Type '{ notIn: readonly ["closed", "cancelled"]; }' is not assignable to type 'StringFilter<"Deal">'.
+    Types of property 'notIn' are incompatible.
+      Type 'readonly ["closed", "cancelled"]' is not assignable to type 'string[] | FieldRef<"Deal", "String[]"> | undefined'.
+        The type 'readonly ["closed", "cancelled"]' is 'readonly' and cannot be assigned to the mutable type 'string[]'.
+modules/broker-kpis/broker-kpi-aggregation.service.ts(165,9): error TS2322: Type '{ notIn: readonly ["closed", "cancelled"]; }' is not assignable to type 'string | StringFilter<"Deal"> | undefined'.
+  Type '{ notIn: readonly ["closed", "cancelled"]; }' is not assignable to type 'StringFilter<"Deal">'.
+    Types of property 'notIn' are incompatible.
+      Type 'readonly ["closed", "cancelled"]' is not assignable to type 'string[] | FieldRef<"Deal", "String[]"> | undefined'.
+        The type 'readonly ["closed", "cancelled"]' is 'readonly' and cannot be assigned to the mutable type 'string[]'.
+modules/broker-kpis/broker-kpi-aggregation.service.ts(182,85): error TS2322: Type '{ notIn: readonly ["closed", "cancelled"]; }' is not assignable to type 'string | StringFilter<"Deal"> | undefined'.
+  Type '{ notIn: readonly ["closed", "cancelled"]; }' is not assignable to type 'StringFilter<"Deal">'.
+    Types of property 'notIn' are incompatible.
+      Type 'readonly ["closed", "cancelled"]' is not assignable to type 'string[] | FieldRef<"Deal", "String[]"> | undefined'.
+        The type 'readonly ["closed", "cancelled"]' is 'readonly' and cannot be assigned to the mutable type 'string[]'.
+modules/broker-residential-copilot/broker-residential-copilot.service.ts(10,24): error TS2322: Type '{ notIn: readonly ["closed", "cancelled"]; }' is not assignable to type 'string | StringFilter<"Deal"> | undefined'.
+  Type '{ notIn: readonly ["closed", "cancelled"]; }' is not assignable to type 'StringFilter<"Deal">'.
+    Types of property 'notIn' are incompatible.
+      Type 'readonly ["closed", "cancelled"]' is not assignable to type 'string[] | FieldRef<"Deal", "String[]"> | undefined'.
+        The type 'readonly ["closed", "cancelled"]' is 'readonly' and cannot be assigned to the mutable type 'string[]'.
+modules/closing/closing.service.ts(56,5): error TS2322: Type '"closing_confirmed"' is not assignable to type 'ExecutionTransitionReason'.
+modules/company-metrics/company-metrics-aggregation.service.ts(78,47): error TS2322: Type '{ notIn: readonly ["closed", "cancelled"]; }' is not assignable to type 'string | StringFilter<"Deal"> | undefined'.
+  Type '{ notIn: readonly ["closed", "cancelled"]; }' is not assignable to type 'StringFilter<"Deal">'.
+    Types of property 'notIn' are incompatible.
+      Type 'readonly ["closed", "cancelled"]' is not assignable to type 'string[] | FieldRef<"Deal", "String[]"> | undefined'.
+        The type 'readonly ["closed", "cancelled"]' is 'readonly' and cannot be assigned to the mutable type 'string[]'.
+modules/company-metrics/company-metrics-aggregation.service.ts(147,36): error TS2322: Type '{ notIn: readonly ["closed", "cancelled"]; }' is not assignable to type 'string | StringFilter<"Deal"> | undefined'.
+  Type '{ notIn: readonly ["closed", "cancelled"]; }' is not assignable to type 'StringFilter<"Deal">'.
+    Types of property 'notIn' are incompatible.
+      Type 'readonly ["closed", "cancelled"]' is not assignable to type 'string[] | FieldRef<"Deal", "String[]"> | undefined'.
+        The type 'readonly ["closed", "cancelled"]' is 'readonly' and cannot be assigned to the mutable type 'string[]'.
+modules/company-metrics/company-metrics-aggregation.service.ts(190,25): error TS2345: Argument of type '{ by: "status"[]; where: { status: { notIn: string[]; }; AND?: Prisma.DealWhereInput | Prisma.DealWhereInput[]; OR?: Prisma.DealWhereInput[]; ... 75 more ...; lecipmFormInstances?: Prisma.LecipmFormInstanceListRelationFilter; }; _count: { ...; }; take: 20; }' is not assignable to parameter of type '{ by: "status"[]; where: { status: { notIn: string[]; }; AND?: DealWhereInput | DealWhereInput[] | undefined; OR?: DealWhereInput[] | undefined; ... 75 more ...; lecipmFormInstances?: LecipmFormInstanceListRelationFilter | undefined; }; _count: { ...; }; take: 20; } & { ...; } & "Error: If you provide \"take\", you ...'.
+  Property 'orderBy' is missing in type '{ by: "status"[]; where: { status: { notIn: string[]; }; AND?: Prisma.DealWhereInput | Prisma.DealWhereInput[]; OR?: Prisma.DealWhereInput[]; ... 75 more ...; lecipmFormInstances?: Prisma.LecipmFormInstanceListRelationFilter; }; _count: { ...; }; take: 20; }' but required in type '{ orderBy: DealOrderByWithAggregationInput | DealOrderByWithAggregationInput[] | undefined; }'.
+modules/company-metrics/company-metrics-aggregation.service.ts(288,40): error TS2339: Property 'map' does not exist on type '"Error: If you provide \"take\", you also need to provide \"orderBy\""'.
+modules/company-metrics/company-metrics-aggregation.service.ts(288,45): error TS7006: Parameter 'p' implicitly has an 'any' type.
+modules/compliance-admin/compliance-command-center.service.ts(75,5): error TS18004: No value exists in scope for the shorthand property 'checklistStats'. Either declare one or provide an initializer.
+modules/daily-action-center/daily-action-center.service.ts(56,5): error TS2322: Type '{ readonly brokerId: string; readonly status: { readonly not: "cancelled"; }; readonly OR: readonly [{ readonly dealExecutionType: { readonly in: $Enums.DealExecutionType[]; }; }, { readonly dealExecutionType: null; }]; }' is not assignable to type 'DealWhereInput'.
+  Types of property 'OR' are incompatible.
+    The type 'readonly [{ readonly dealExecutionType: { readonly in: DealExecutionType[]; }; }, { readonly dealExecutionType: null; }]' is 'readonly' and cannot be assigned to the mutable type 'DealWhereInput[]'.
+modules/deal-execution/deal-execution.service.ts(26,5): error TS2322: Type '"partially_signed"' is not assignable to type '"awaiting_signature"'.
+modules/deal-execution/deal-execution.service.ts(28,5): error TS2322: Type '"fully_signed"' is not assignable to type '"awaiting_signature"'.
+modules/deal-intelligence/deal-analyzer.service.ts(33,55): error TS2304: Cannot find name 'DealParty'.
+modules/document-request-autopilot/document-request-autopilot.service.ts(12,20): error TS2304: Cannot find name 'expectedCategoriesForStage'.
+modules/e2e-simulation/playwright-browser.service.ts(79,56): error TS2304: Cannot find name 'BrowserPlaywrightMeta'.
+modules/e2e-simulation/simulation-runner.service.ts(31,5): error TS2353: Object literal may only specify known properties, and 'summary' does not exist in type 'Omit<SimulationScenarioResult, "status" | "summary">'.
+modules/execution-bridge/bridge-audit.service.ts(21,7): error TS2322: Type 'Record<string, unknown>' is not assignable to type 'JsonNull | InputJsonValue | undefined'.
+  Type 'Record<string, unknown>' is missing the following properties from type 'readonly (InputJsonValue | null)[]': length, concat, join, slice, and 26 more.
+modules/execution/execution.service.ts(14,45): error TS2322: Type 'Record<string, unknown>' is not assignable to type 'JsonNull | InputJsonValue | undefined'.
+  Type 'Record<string, unknown>' is missing the following properties from type 'readonly (InputJsonValue | null)[]': length, concat, join, slice, and 26 more.
+modules/executive-analytics/executive-analytics.service.ts(45,69): error TS2339: Property 'priority' does not exist on type '{ status: FounderActionStatus; scopeKind: string; scopeOfficeIdsJson: JsonValue; }'.
+modules/executive-briefing/executive-briefing.types.ts(39,18): error TS2724: '"/Users/mohamedalmashhour/real-estate-platform/node_modules/.pnpm/@prisma+client@6.19.3_prisma@6.19.3_typescript@5.9.3__typescript@5.9.3/node_modules/.prisma/client/index".Prisma' has no exported member named 'ExecutiveBriefingStatus'. Did you mean 'ExecutiveBriefingSelect'?
+modules/fraud/fraud-event-log.service.ts(27,7): error TS2322: Type 'Record<string, unknown> | undefined' is not assignable to type 'NullableJsonNullValueInput | InputJsonValue | undefined'.
+  Type 'Record<string, unknown>' is not assignable to type 'NullableJsonNullValueInput | InputJsonValue | undefined'.
+    Type 'Record<string, unknown>' is missing the following properties from type 'readonly (InputJsonValue | null)[]': length, concat, join, slice, and 26 more.
+modules/funnel/funnel.service.ts(66,7): error TS2322: Type 'Record<string, unknown> | undefined' is not assignable to type 'NullableJsonNullValueInput | InputJsonValue | undefined'.
+  Type 'Record<string, unknown>' is not assignable to type 'NullableJsonNullValueInput | InputJsonValue | undefined'.
+    Type 'Record<string, unknown>' is missing the following properties from type 'readonly (InputJsonValue | null)[]': length, concat, join, slice, and 26 more.
+modules/growth/tracking.service.ts(123,5): error TS2322: Type '{ clientMeta?: Record<string, unknown> | undefined; path: string | null; }' is not assignable to type 'InputJsonValue | undefined'.
+  Type '{ clientMeta?: Record<string, unknown> | undefined; path: string | null; }' is not assignable to type 'undefined'.
+modules/investor-pitch/narrative.service.ts(7,27): error TS2339: Property 'summary' does not exist on type 'GrowthNarrative'.
+modules/investor-pitch/pitch.service.ts(8,46): error TS2345: Argument of type 'string' is not assignable to parameter of type 'CompetitorId | undefined'.
+modules/investor-pitch/slide-generator.service.ts(32,74): error TS2339: Property 'summary' does not exist on type 'GrowthNarrative'.
+modules/launch/first-users-engine.service.ts(108,7): error TS2322: Type 'number' is not assignable to type 'string'.
+modules/launch/first-users-engine.service.ts(108,15): error TS2362: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
+modules/launch/first-users-engine.service.ts(108,24): error TS2304: Cannot find name 'ads'.
+modules/launch/first-users-engine.service.ts(108,28): error TS2304: Cannot find name 'buy'.
+modules/lead-gen/lead-capture.service.ts(76,11): error TS2322: Type 'string | null | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+modules/negotiation-autopilot/negotiation-autopilot.engine.ts(19,45): error TS2345: Argument of type 'DealForNeg' is not assignable to parameter of type '{ id: string; updatedAt: Date; createdAt: Date; listingCode: string | null; status: string; listingId: string | null; brokerId: string | null; buyerId: string; sellerId: string; ... 17 more ...; brokerageOfficeId: string | null; } & { ...; }'.
+  Type 'DealForNeg' is not assignable to type '{ buyer?: Pick<{ name: string | null; id: string; updatedAt: Date; email: string; passwordHash: string | null; role: PlatformRole; brokerStatus: BrokerStatus; ... 40 more ...; investmentMvpFirstAnalyzeAt: Date | null; }, "name" | ... 2 more ... | "sellerProfileAddress"> | undefined; seller?: Pick<...> | undefined; b...'.
+    The types of 'buyer.email' are incompatible between these types.
+      Type 'string | null' is not assignable to type 'string'.
+        Type 'null' is not assignable to type 'string'.
+modules/negotiation-copilot/negotiation-audit.service.ts(10,66): error TS2322: Type 'Record<string, unknown>' is not assignable to type 'JsonNull | InputJsonValue | undefined'.
+  Type 'Record<string, unknown>' is missing the following properties from type 'readonly (InputJsonValue | null)[]': length, concat, join, slice, and 26 more.
+modules/negotiation-copilot/negotiation-strategies.service.ts(13,67): error TS2339: Property 'price' does not exist on type 'CanonicalDealShape'.
+modules/negotiation-copilot/negotiation-strategies.service.ts(159,12): error TS2345: Argument of type 'NegotiationEngineOutput | null' is not assignable to parameter of type 'NegotiationEngineOutput'.
+  Type 'null' is not assignable to type 'NegotiationEngineOutput'.
+modules/oaciq-parser/pdf-field-extractor.ts(55,14): error TS2352: Conversion of type 'PDFField' to type '{ getFullyQualifiedName: () => string; }' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Property 'getFullyQualifiedName' is missing in type 'PDFField' but required in type '{ getFullyQualifiedName: () => string; }'.
+modules/payments-ops/payments-ops-audit.service.ts(14,7): error TS2322: Type 'Record<string, unknown>' is not assignable to type 'JsonNull | InputJsonValue | undefined'.
+  Type 'Record<string, unknown>' is missing the following properties from type 'readonly (InputJsonValue | null)[]': length, concat, join, slice, and 26 more.
+modules/pr-review/pr-review.service.ts(31,65): error TS2339: Property 'toString' does not exist on type 'never'.
+modules/pr-review/pr-review.service.ts(32,65): error TS2339: Property 'toString' does not exist on type 'never'.
+modules/security/security-log.service.ts(27,7): error TS2322: Type 'Record<string, unknown> | undefined' is not assignable to type 'NullableJsonNullValueInput | InputJsonValue | undefined'.
+  Type 'Record<string, unknown>' is not assignable to type 'NullableJsonNullValueInput | InputJsonValue | undefined'.
+    Type 'Record<string, unknown>' is missing the following properties from type 'readonly (InputJsonValue | null)[]': length, concat, join, slice, and 26 more.
+modules/signature/webhooks/signature-webhook-handler.ts(9,51): error TS2322: Type 'Record<string, unknown>' is not assignable to type 'JsonNull | InputJsonValue | undefined'.
+  Type 'Record<string, unknown>' is missing the following properties from type 'readonly (InputJsonValue | null)[]': length, concat, join, slice, and 26 more.
+scripts/postdeploy-test.ts(14,7): error TS2451: Cannot redeclare block-scoped variable 'origin'.
+scripts/predeploy-check.ts(185,21): error TS2304: Cannot find name 'checkStripeDeploy'.
+scripts/predeploy-check.ts(194,20): error TS2304: Cannot find name 'isCiOrVercel'.
+scripts/validate-five-hub-transactions.ts(65,15): error TS2322: Type 'Promise<void | { id: string; updatedAt: Date; city: string; createdAt: Date; address: string; beds: number; baths: number; propertyType: string | null; ownerId: string; listingCode: string; ... 81 more ...; rankingCachedAt: Date | null; }>' is not assignable to type 'Promise<void>'.
+  Type 'void | { id: string; updatedAt: Date; city: string; createdAt: Date; address: string; beds: number; baths: number; propertyType: string | null; ownerId: string; listingCode: string; ... 81 more ...; rankingCachedAt: Date | null; }' is not assignable to type 'void'.
+    Type '{ id: string; updatedAt: Date; city: string; createdAt: Date; address: string; beds: number; baths: number; propertyType: string | null; ownerId: string; listingCode: string; title: string; ... 80 more ...; rankingCachedAt: Date | null; }' is not assignable to type 'void'.
+scripts/validate-five-hub-transactions.ts(83,15): error TS2322: Type 'Promise<void | { id: string; updatedAt: Date; createdAt: Date; status: BookingStatus; listingId: string; bookingCode: string | null; confirmationCode: string | null; ... 33 more ...; bnhubHostBookingResponseSamples: number; }>' is not assignable to type 'Promise<void>'.
+  Type 'void | { id: string; updatedAt: Date; createdAt: Date; status: BookingStatus; listingId: string; bookingCode: string | null; confirmationCode: string | null; ... 33 more ...; bnhubHostBookingResponseSamples: number; }' is not assignable to type 'void'.
+    Type '{ id: string; updatedAt: Date; createdAt: Date; status: BookingStatus; listingId: string; bookingCode: string | null; confirmationCode: string | null; checkIn: Date; ... 32 more ...; bnhubHostBookingResponseSamples: number; }' is not assignable to type 'void'.
+scripts/validate-five-hub-transactions.ts(106,15): error TS2322: Type 'Promise<void | { name: string; id: string; updatedAt: Date; nextBestAction: string | null; message: string; email: string; phone: string; createdAt: Date; userId: string | null; listingCode: string | null; ... 88 more ...; workspaceId: string | null; }>' is not assignable to type 'Promise<void>'.
+  Type 'void | { name: string; id: string; updatedAt: Date; nextBestAction: string | null; message: string; email: string; phone: string; createdAt: Date; userId: string | null; listingCode: string | null; ... 88 more ...; workspaceId: string | null; }' is not assignable to type 'void'.
+    Type '{ name: string; id: string; updatedAt: Date; nextBestAction: string | null; message: string; email: string; phone: string; createdAt: Date; userId: string | null; listingCode: string | null; ... 88 more ...; workspaceId: string | null; }' is not assignable to type 'void'.
+scripts/validate-five-hub-transactions.ts(124,17): error TS2322: Type 'Promise<void | { name: string | null; id: string; message: string | null; email: string; phone: string | null; createdAt: Date; source: string; company: string | null; planSlug: string; }>' is not assignable to type 'Promise<void>'.
+  Type 'void | { name: string | null; id: string; message: string | null; email: string; phone: string | null; createdAt: Date; source: string; company: string | null; planSlug: string; }' is not assignable to type 'void'.
+    Type '{ name: string | null; id: string; message: string | null; email: string; phone: string | null; createdAt: Date; source: string; company: string | null; planSlug: string; }' is not assignable to type 'void'.
+scripts/validate-five-hub-transactions.ts(144,17): error TS2322: Type 'Promise<void | { name: string; id: string; updatedAt: Date; nextBestAction: string | null; message: string; email: string; phone: string; createdAt: Date; userId: string | null; listingCode: string | null; ... 88 more ...; workspaceId: string | null; }>' is not assignable to type 'Promise<void>'.
+  Type 'void | { name: string; id: string; updatedAt: Date; nextBestAction: string | null; message: string; email: string; phone: string; createdAt: Date; userId: string | null; listingCode: string | null; ... 88 more ...; workspaceId: string | null; }' is not assignable to type 'void'.
+    Type '{ name: string; id: string; updatedAt: Date; nextBestAction: string | null; message: string; email: string; phone: string; createdAt: Date; userId: string | null; listingCode: string | null; ... 88 more ...; workspaceId: string | null; }' is not assignable to type 'void'.
+scripts/validate-five-hub-transactions.ts(169,15): error TS2322: Type 'Promise<void | { id: string; updatedAt: Date; city: string; createdAt: Date; address: string; propertyType: string | null; ownerId: string; listingCode: string | null; title: string; ... 67 more ...; rewrittenDescriptionReviewed: boolean; }>' is not assignable to type 'Promise<void>'.
+  Type 'void | { id: string; updatedAt: Date; city: string; createdAt: Date; address: string; propertyType: string | null; ownerId: string; listingCode: string | null; title: string; ... 67 more ...; rewrittenDescriptionReviewed: boolean; }' is not assignable to type 'void'.
+    Type '{ id: string; updatedAt: Date; city: string; createdAt: Date; address: string; propertyType: string | null; ownerId: string; listingCode: string | null; title: string; titleFr: string | null; ... 66 more ...; rewrittenDescriptionReviewed: boolean; }' is not assignable to type 'void'.
+scripts/validate-five-hub-transactions.ts(187,15): error TS2322: Type 'Promise<void | { name: string; id: string; message: string | null; email: string; phone: string | null; createdAt: Date; listingId: string; leadSource: string | null; commissionEligible: boolean; tenantId: string | null; dealOriginTag: string | null; }>' is not assignable to type 'Promise<void>'.
+  Type 'void | { name: string; id: string; message: string | null; email: string; phone: string | null; createdAt: Date; listingId: string; leadSource: string | null; commissionEligible: boolean; tenantId: string | null; dealOriginTag: string | null; }' is not assignable to type 'void'.
+    Type '{ name: string; id: string; message: string | null; email: string; phone: string | null; createdAt: Date; listingId: string; leadSource: string | null; commissionEligible: boolean; tenantId: string | null; dealOriginTag: string | null; }' is not assignable to type 'void'.
+scripts/validate-five-hub-transactions.ts(205,15): error TS2322: Type 'Promise<void | { id: string; updatedAt: Date; createdAt: Date; listingCode: string | null; status: string; listingId: string | null; brokerId: string | null; buyerId: string; sellerId: string; ... 17 more ...; brokerageOfficeId: string | null; }>' is not assignable to type 'Promise<void>'.
+  Type 'void | { id: string; updatedAt: Date; createdAt: Date; listingCode: string | null; status: string; listingId: string | null; brokerId: string | null; buyerId: string; sellerId: string; ... 17 more ...; brokerageOfficeId: string | null; }' is not assignable to type 'void'.
+    Type '{ id: string; updatedAt: Date; createdAt: Date; listingCode: string | null; status: string; listingId: string | null; brokerId: string | null; buyerId: string; sellerId: string; ... 17 more ...; brokerageOfficeId: string | null; }' is not assignable to type 'void'.
+src/modules/autopilot/autopilot.service.ts(125,7): error TS2322: Type '{ engine: string; metadata: Record<string, unknown>; }' is not assignable to type 'JsonNull | InputJsonValue | undefined'.
+  Types of property 'metadata' are incompatible.
+    Type 'Record<string, unknown>' is not assignable to type 'InputJsonValue | null | undefined'.
+      Type 'Record<string, unknown>' is missing the following properties from type 'readonly (InputJsonValue | null)[]': length, concat, join, slice, and 26 more.
+src/modules/autopilot/autopilot.service.ts(184,11): error TS2322: Type 'Record<string, unknown>' is not assignable to type 'NullableJsonNullValueInput | InputJsonValue | undefined'.
+  Type 'Record<string, unknown>' is missing the following properties from type 'readonly (InputJsonValue | null)[]': length, concat, join, slice, and 26 more.
+src/modules/autopilot/autopilot.service.ts(210,11): error TS2322: Type 'Record<string, unknown>' is not assignable to type 'JsonNull | InputJsonValue | undefined'.
+  Type 'Record<string, unknown>' is missing the following properties from type 'readonly (InputJsonValue | null)[]': length, concat, join, slice, and 26 more.
+src/modules/events/event.storage.ts(12,7): error TS2322: Type 'Record<string, unknown>' is not assignable to type 'JsonNull | InputJsonValue | undefined'.
+  Type 'Record<string, unknown>' is missing the following properties from type 'readonly (InputJsonValue | null)[]': length, concat, join, slice, and 26 more.
+src/modules/growth-brain/growth-brain.decision.ts(39,9): error TS2322: Type 'string[]' is not assignable to type 'string'.
+src/modules/investor-metrics/investorPdfReport.ts(42,50): error TS7006: Parameter 'line' implicitly has an 'any' type.
+src/modules/revenue/revenue.logger.ts(32,7): error TS2322: Type 'Record<string, unknown> | undefined' is not assignable to type 'NullableJsonNullValueInput | InputJsonValue | undefined'.
+  Type 'Record<string, unknown>' is not assignable to type 'NullableJsonNullValueInput | InputJsonValue | undefined'.
+    Type 'Record<string, unknown>' is missing the following properties from type 'readonly (InputJsonValue | null)[]': length, concat, join, slice, and 26 more.
+src/modules/revenue/revenue.logger.ts(33,7): error TS2322: Type 'Record<string, unknown> | undefined' is not assignable to type 'NullableJsonNullValueInput | InputJsonValue | undefined'.
+  Type 'Record<string, unknown>' is not assignable to type 'NullableJsonNullValueInput | InputJsonValue | undefined'.
+    Type 'Record<string, unknown>' is missing the following properties from type 'readonly (InputJsonValue | null)[]': length, concat, join, slice, and 26 more.
+src/modules/trust/trust.logger.ts(20,7): error TS2322: Type 'Record<string, unknown>' is not assignable to type 'NullableJsonNullValueInput | InputJsonValue | undefined'.
+  Type 'Record<string, unknown>' is missing the following properties from type 'readonly (InputJsonValue | null)[]': length, concat, join, slice, and 26 more.

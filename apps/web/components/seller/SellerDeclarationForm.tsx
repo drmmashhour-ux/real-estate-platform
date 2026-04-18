@@ -217,7 +217,7 @@ export function SellerDeclarationForm({
     let i = sectionOrder.indexOf(start);
     if (i < 0) i = 0;
     const j = Math.min(sectionOrder.length - 1, Math.max(0, i + delta));
-    if (j === i && delta !== 0) return;
+    if (j === i) return;
     const next = sectionOrder[j];
     openSectionAndScroll(next);
   }

@@ -248,6 +248,15 @@ export async function persistRankingScore(result: RankingScoreResult): Promise<v
         rankingCachedAt: calculatedAt,
       },
     });
+  } else if (result.listingType === RANKING_LISTING_TYPE_BNHUB) {
+    await prisma.shortTermListing.updateMany({
+      where: { id: result.listingId },
+      data: {
+        rankingTotalScoreCache: totalScore,
+        rankingPerformanceBand: band,
+        rankingCachedAt: calculatedAt,
+      },
+    });
   }
 }
 

@@ -5,6 +5,8 @@ import { getAdminRiskAlerts } from "@/lib/admin/control-center";
 import { requireAdminControlUserId } from "@/lib/admin/guard";
 import { prisma } from "@/lib/db";
 import { countBnhubViewedNotBookedPairs } from "@/lib/bnhub/bnhub-retargeting-queries";
+import { bnhubConversionLayerFlags } from "@/config/feature-flags";
+import { BNHubConversionOverviewPanel } from "@/components/admin/bnhub/BNHubConversionOverviewPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -56,6 +58,12 @@ export default async function AdminBnhubBookingGrowthPage() {
             for cross-product funnel events.
           </p>
         </div>
+
+        {bnhubConversionLayerFlags.adminV1 ? (
+          <div className="max-w-4xl">
+            <BNHubConversionOverviewPanel />
+          </div>
+        ) : null}
 
         <section className="rounded-2xl border border-zinc-800 bg-[#111] p-5">
           <h2 className="text-sm font-semibold text-zinc-200">Retargeting (30d)</h2>

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { CopyListingCodeButton } from "@/components/bnhub/CopyListingCodeButton";
 import { HubAiDock } from "@/components/ai/HubAiDock";
 import { HostVenueModeBar } from "@/components/bnhub/HostVenueModeBar";
+import { HostDashboardV2 } from "@/components/bnhub-host/HostDashboardV2";
 
 type Listing = {
   id: string;
@@ -560,12 +561,14 @@ export function HostDashboardClient({
   bookings,
   canManageStripe,
   hostStripe,
+  bnhubV2,
 }: {
   ownerId: string;
   listings: Listing[];
   bookings: Booking[];
   canManageStripe: boolean;
   hostStripe: { stripeAccountId: string | null; stripeOnboardingComplete: boolean };
+  bnhubV2?: boolean;
 }) {
   const [showAddListing, setShowAddListing] = useState(false);
   const [addSuccess, setAddSuccess] = useState(false);
@@ -650,6 +653,8 @@ export function HostDashboardClient({
       <HostVenueModeBar />
 
       <StripeConnectPanel canManage={canManageStripe} initial={hostStripe} />
+
+      {bnhubV2 ? <HostDashboardV2 ownerId={ownerId} /> : null}
 
       <ExternalSyncPanel listings={listings} />
 

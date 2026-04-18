@@ -2,8 +2,11 @@ import type Stripe from "stripe";
 import { POINTS } from "@/lib/fraud/rules";
 import { recordFraudSignal } from "@/lib/fraud/record-signal";
 
-function radarOutcome(pi: Stripe.PaymentIntent): { riskLevel?: string; riskScore?: number } | null {
-  const ch = pi.charges?.data?.[0] as { outcome?: { risk_level?: string; risk_score?: number } } | undefined;
+function radarOutcome(pi: Stripe.PaymentIntent): { risk_level?: string; risk_score?: number } | null {
+  const expanded = pi as Stripe.PaymentIntent & {
+    charges?: { data?: Array<{ outcome?: { risk_level?: string; risk_score?: number } }> };
+  };
+  const ch = expanded.charges?.data?.[0];
   return ch?.outcome ?? null;
 }
 

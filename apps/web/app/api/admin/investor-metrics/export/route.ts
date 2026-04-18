@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
   if (format === "pdf") {
     const bundle = await loadInvestorReportBundle(now);
     const buf = await buildInvestorReportPdfBuffer(bundle);
-    return new Response(buf, {
+    return new Response(new Uint8Array(buf), {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="lecipm-investor-report-${dayStamp}.pdf"`,
@@ -76,7 +76,7 @@ export async function GET(req: NextRequest) {
     const { year, month } = parseYearMonth(req.nextUrl.searchParams, now);
     const rollup = await loadMonthlyInvestorRollup(year, month);
     const buf = await buildMonthlySummaryPdfBuffer(rollup);
-    return new Response(buf, {
+    return new Response(new Uint8Array(buf), {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="lecipm-investor-monthly-${rollup.monthLabel}.pdf"`,

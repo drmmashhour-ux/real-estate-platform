@@ -1,7 +1,7 @@
 {
   "home": {
-    "headline": "Book a stay. Find a home. List with confidence.",
-    "subhead": "One search for cities, addresses, and listings — then explore stays or homes in a few clicks.",
+    "headline": "Find smarter stays in Montreal — better than Airbnb",
+    "subhead": "Verified listings. Better pricing. AI-powered platform.",
     "searchAria": "Search properties and stays",
     "searchLabel": "Search by city, address, or listing",
     "searchPlaceholder": "Search by city, address, or listing",
@@ -19,8 +19,8 @@
     "emptyFeaturedCta": "Browse stays in Montreal",
     "trustSectionAria": "Trust and safety",
     "trustSecureBooking": "Secure booking",
-    "trustVerifiedListings": "Verified listings where shown",
-    "trustSupport": "Customer support available",
+    "trustVerifiedListings": "Verified listings",
+    "trustSupport": "Early access pricing",
     "cityShortcutsAria": "Popular cities for stays",
     "exploreStaysIntro": "Popular:",
     "shortcutMontreal": "Montreal",
@@ -231,6 +231,11 @@
   },
   "investor": {},
   "contentEngine": {
+    "glossary": {
+      "platformBrand": "LECIPM",
+      "reviewDisclaimer": "Information is host-provided; availability and pricing are confirmed at booking.",
+      "localeFallbackNote": "If a translated string is missing, English may appear for that fragment."
+    },
     "constraints": {
       "standardMarket": "Standard market: describe booking flow accurately. Never guarantee availability, price, or payment without host and platform confirmation.",
       "contactFirstMarket": "Contact-first market: use “request to book”, “contact the host”, and manual confirmation language. Do not promise instant checkout or automated payment rails."

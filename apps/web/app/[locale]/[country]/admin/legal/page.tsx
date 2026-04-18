@@ -12,6 +12,8 @@ import {
   allRequiredCorporateDocsSigned,
   buildCorporateComplianceRows,
 } from "@/lib/legal-management/compliance";
+import { legalIntelligenceFlags } from "@/config/feature-flags";
+import { LegalIntelligenceAdminSection } from "@/components/legal/admin/LegalIntelligenceAdminSection";
 import { AdminLegalClient } from "./AdminLegalClient";
 import { LecipmLegalDashboard } from "./LecipmLegalDashboard";
 
@@ -102,6 +104,18 @@ export default async function AdminLegalPage() {
           complianceRows={complianceRows}
           allSigned={allSigned}
         />
+
+        {legalIntelligenceFlags.legalIntelligenceV1 || legalIntelligenceFlags.legalReviewPriorityV1 ? (
+          <section className="rounded-xl border border-slate-800/80 bg-slate-950/30 p-4">
+            <h2 className="text-sm font-semibold text-slate-200">Legal intelligence & review priority</h2>
+            <p className="mt-1 text-xs text-slate-500">
+              Deterministic advisory signals and queue ordering — enable flags in env to populate data.
+            </p>
+            <div className="mt-4">
+              <LegalIntelligenceAdminSection />
+            </div>
+          </section>
+        ) : null}
 
         <section className="rounded-xl border border-slate-800/80 bg-slate-950/30 p-4">
           <h2 className="text-sm font-semibold text-slate-300">Platform legal documents</h2>

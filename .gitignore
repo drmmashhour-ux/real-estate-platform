@@ -32,6 +32,8 @@ coverage/
 apps/web/e2e-report/
 apps/web/playwright-report/
 apps/web/test-results/
+tests/reports/final-report.json
+tests/reports/ux-simulation-report.json
 apps/web/.integrity-report.json
 apps/web/.stabilization-report.json
 debug_git_status.txt

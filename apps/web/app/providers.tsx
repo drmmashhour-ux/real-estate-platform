@@ -11,6 +11,7 @@ import { ProductHealthProvider } from "@/components/analytics/ProductHealthProvi
 import { ReturnVisitTracker } from "@/components/analytics/ReturnVisitTracker";
 import { ToastProvider } from "@/components/ui/ToastProvider";
 import { TrafficPageViewBeacon } from "@/components/traffic/TrafficPageViewBeacon";
+import { UtmSessionInitializer } from "@/components/growth/UtmSessionInitializer";
 import { OrganicAttributionLocalMirror } from "@/components/organic/OrganicAttributionLocalMirror";
 import { GoogleAnalyticsLoader } from "@/components/analytics/GoogleAnalyticsLoader";
 import { PlausibleLoader } from "@/components/analytics/PlausibleLoader";
@@ -71,6 +72,7 @@ export function AppProviders({
         <Suspense fallback={null}>
           <TrafficPageViewBeacon />
         </Suspense>
+        <UtmSessionInitializer />
         <Suspense fallback={null}>
           <ListingNavigationClickTracker />
         </Suspense>

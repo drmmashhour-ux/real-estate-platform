@@ -3,16 +3,23 @@ import { redirect } from "next/navigation";
 import { getGuestId } from "@/lib/auth/session";
 import { requireAdminUser } from "@/modules/analytics/services/require-admin";
 import { GrowthDashboardClient } from "@/components/admin/growth-dashboard/GrowthDashboardClient";
+import { HubJourneyBanner } from "@/components/journey/HubJourneyBanner";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminGrowthDashboardPage() {
+export default async function AdminGrowthDashboardPage({
+  params,
+}: {
+  params: Promise<{ locale: string; country: string }>;
+}) {
+  const { locale, country } = await params;
   const uid = await getGuestId();
   const admin = await requireAdminUser(uid);
   if (!admin) redirect("/admin");
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-10 text-slate-100">
+      <HubJourneyBanner hub="admin" locale={locale} country={country} userId={uid} />
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-premium-gold">Scale — 10K</p>
       <h1 className="mt-2 text-3xl font-semibold">Growth dashboard</h1>
       <p className="mt-2 max-w-2xl text-sm text-slate-400">

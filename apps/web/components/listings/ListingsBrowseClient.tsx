@@ -27,6 +27,7 @@ import { scrollToMapSearchRegion } from "@/lib/ui/scroll-to-map-search";
 import { useGeocodedMapFocus } from "@/hooks/useGeocodedMapFocus";
 import { computeMapSearchStats } from "@/lib/search/map-search-analytics";
 import { BROWSE_EMPTY_LISTINGS } from "@/lib/listings/browse-empty-copy";
+import { ListingBadges } from "@/components/listings/ListingBadges";
 
 /** Luxury residential hero — Unsplash (modern home, dusk). */
 const LISTINGS_HERO_BG =
@@ -218,15 +219,15 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
 
   useEffect(() => {
     const prev = prevMapLayoutRef.current;
-    let t: ReturnType<typeof setTimeout> | undefined;
+    let timeoutId: number | undefined;
     if (prev === "list" && (mapLayout === "map" || mapLayout === "split") && !loading && !fetchError && total > 0) {
-      t = window.setTimeout(() => {
+      timeoutId = window.setTimeout(() => {
         scrollToMapSearchRegion(LISTINGS_MAP_SEARCH_ID, { delayMs: 60, behavior: "smooth" });
       }, 400);
     }
     prevMapLayoutRef.current = mapLayout;
     return () => {
-      if (t !== undefined) clearTimeout(t);
+      if (timeoutId !== undefined) window.clearTimeout(timeoutId);
     };
   }, [mapLayout, loading, fetchError, total]);
 
@@ -359,17 +360,12 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
                     aria-hidden
                   />
                 ) : null}
-                <div className="pointer-events-none absolute bottom-3 left-3 z-[2] flex flex-wrap items-center gap-1.5">
-                  {row.verifiedListing ? (
-                    <span className="rounded-full bg-black/50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white ring-1 ring-white/20 backdrop-blur-sm">
-                      Verified
-                    </span>
-                  ) : null}
-                  {isFeaturedListingActive(row.featuredUntil) ? (
-                    <span className="rounded-full bg-[#D4AF37]/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#E8D589] ring-1 ring-[#D4AF37]/35 backdrop-blur-sm">
-                      Top listing
-                    </span>
-                  ) : null}
+                <div className="pointer-events-none absolute bottom-3 left-3 z-[2] max-w-[calc(100%-1.5rem)]">
+                  <ListingBadges
+                    verified={Boolean(row.verifiedListing)}
+                    featuredActive={isFeaturedListingActive(row.featuredUntil)}
+                    className="drop-shadow-[0_1px_8px_rgba(0,0,0,0.65)]"
+                  />
                 </div>
               </div>
               <div className="p-5 sm:p-6">
@@ -417,7 +413,7 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
                     {inSmartCompare ? "Selected" : "Smart compare"}
                   </button>
                   <span className="text-xs font-medium text-premium-gold transition group-hover:text-[#E8D5A0]">
-                    View full listing →
+                    View property →
                   </span>
                 </div>
               </div>

@@ -17,6 +17,7 @@ import { ProductAnalyticsEvents, reportProductEvent } from "@/lib/analytics/prod
 import { track, TrackingEvent } from "@/lib/tracking";
 import { LISTING_EXPLORE_NO_PAYMENT_LINE } from "@/lib/listings/listing-ad-trust-copy";
 import { buildBnhubAuthContinueUrl } from "@/lib/bnhub/bnhub-auth-continue-url";
+import { trackBookingStarted } from "@/modules/bnhub/conversion/bnhub-guest-conversion-tracker";
 
 function formatMoneyCents(cents: number) {
   const n = cents / 100;
@@ -466,6 +467,7 @@ export function BookingForm({
         listing_id: listingId,
         source: "bnhub_booking_form",
       });
+      trackBookingStarted(listingId);
 
       if (data.summary?.status === "PENDING" && stripeConfigured && hostPayoutReady) {
         const ck = await fetch("/api/stripe/checkout", {

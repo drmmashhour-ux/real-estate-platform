@@ -49,7 +49,7 @@ export async function archiveExperimentAction(id: string) {
   await guard();
   await prisma.experiment.update({
     where: { id },
-    data: { archivedAt: new Date(), status: "completed" },
+    data: { archivedAt: new Date(), status: "archived" },
   });
   revalidateExperimentsPages(id);
 }

@@ -12,6 +12,16 @@ import { getContactWhatsAppUrl } from "@/lib/config/contact";
 import { ImmoPlatformCollaborationClause } from "@/components/immo/ImmoPlatformCollaborationClause";
 import { ViralMomentPrompt } from "@/components/referral/ViralMomentPrompt";
 import { DealLegalTimelineSummaryCard } from "@/components/deal/DealLegalTimelineSummaryCard";
+import { RevenueUnlockCTA } from "@/components/revenue/RevenueUnlockCTA";
+import { LeadRoutingPanel } from "@/components/broker/routing/LeadRoutingPanel";
+import { LeadRoutingControlPanel } from "@/components/broker/routing/LeadRoutingControlPanel";
+import { LeadQualityPanel } from "@/components/leads/LeadQualityPanel";
+import { DynamicPricingPanel } from "@/components/leads/DynamicPricingPanel";
+import { LeadMonetizationControlPanel } from "@/components/leads/LeadMonetizationControlPanel";
+import { inferLeadIntentLabel } from "@/modules/leads/lead-monetization.service";
+import type { LeadQualitySummary } from "@/modules/leads/lead-quality.types";
+import type { DynamicPricingSuggestion } from "@/modules/leads/dynamic-pricing.types";
+import type { LeadMonetizationControlSummary } from "@/modules/leads/lead-monetization-control.types";
 
 type AutomationTaskRow = {
   id: string;
@@ -91,6 +101,9 @@ type LeadDetail = {
   };
   revenuePotential?: number;
   revenuePushActions?: { key: string; label: string; reason: string }[];
+  leadQualityV1?: LeadQualitySummary | null;
+  leadPricing?: { leadPrice: number; leadPriceCents: number };
+  dynamicPricingV1?: DynamicPricingSuggestion | null;
   crmInteractions: {
     id: string;
     type: string;
@@ -110,9 +123,21 @@ type TimelineEvent = {
 export function LeadDetailClient({
   leadId,
   viralInviteUrl,
+  showRoutingPanel,
+  showRoutingControlV2,
+  showLeadQualityPanel,
+  showDynamicPricingPanel,
 }: {
   leadId: string;
   viralInviteUrl?: string;
+  /** Admin-only advisory routing (feature-flagged on server). */
+  showRoutingPanel?: boolean;
+  /** Admin-only routing V2 decision + approve/reject (feature-flagged on server). */
+  showRoutingControlV2?: boolean;
+  /** Admin-only quality + advisory pricing panel (feature-flagged on server). */
+  showLeadQualityPanel?: boolean;
+  /** Admin-only dynamic pricing panel (feature-flagged on server). */
+  showDynamicPricingPanel?: boolean;
 }) {
   const [lead, setLead] = useState<LeadDetail | null>(null);
   const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
@@ -264,10 +289,70 @@ export function LeadDetailClient({
           ← All leads
         </Link>
 
+        {showRoutingPanel ? (
+          <LeadRoutingPanel
+            leadId={leadId}
+            leadIntent={inferLeadIntentLabel({ leadType: lead.leadSource, message: lead.message })}
+            leadCity={city || "—"}
+            leadScore={lead.score}
+          />
+        ) : null}
+
+        {showRoutingControlV2 ? <LeadRoutingControlPanel leadId={leadId} /> : null}
+
+        {showMonetizationControlPanel && lead.leadMonetizationControlV1 ? (
+          <div className="mt-6">
+            <LeadMonetizationControlPanel summary={lead.leadMonetizationControlV1} />
+          </div>
+        ) : null}
+
+        {showMonetizationControlPanel &&
+        ((showLeadQualityPanel && lead.leadQualityV1) || (showDynamicPricingPanel && lead.dynamicPricingV1)) ? (
+          <details className="mt-6 rounded-xl border border-white/10 bg-[#121212] p-4">
+            <summary className="cursor-pointer text-sm font-medium text-slate-400">
+              Technical detail layers (quality &amp; dynamic pricing)
+            </summary>
+            <div className="mt-4 space-y-6">
+              {showLeadQualityPanel && lead.leadQualityV1 ? (
+                <LeadQualityPanel summary={lead.leadQualityV1} />
+              ) : null}
+              {showDynamicPricingPanel && lead.dynamicPricingV1 ? (
+                <DynamicPricingPanel suggestion={lead.dynamicPricingV1} />
+              ) : null}
+            </div>
+          </details>
+        ) : (
+          <>
+            {showLeadQualityPanel && lead.leadQualityV1 ? (
+              <div className="mt-6">
+                <LeadQualityPanel summary={lead.leadQualityV1} />
+              </div>
+            ) : null}
+            {showDynamicPricingPanel && lead.dynamicPricingV1 ? (
+              <div className="mt-6">
+                <DynamicPricingPanel suggestion={lead.dynamicPricingV1} />
+              </div>
+            ) : null}
+          </>
+        )}
+
         <h1 className="mt-6 text-2xl font-bold">{lead.name}</h1>
-        <p className="text-sm text-[#B3B3B3]">
+        <p
+          className={`text-sm text-[#B3B3B3] ${lead.isLocked || lead.email === "[Locked]" ? "blur-sm select-none" : ""}`}
+        >
           {lead.email} · {lead.phone}
         </p>
+        {lead.isLocked || lead.email === "[Locked]" ? (
+          <div className="mt-4 max-w-lg">
+            <RevenueUnlockCTA
+              title="Unlock this lead"
+              description="Reveal email and phone for follow-up. Pay-per-contact via Stripe — you choose which leads to buy."
+              featureType="lead_unlock"
+              leadId={lead.id}
+              primaryLabel="Unlock Lead"
+            />
+          </div>
+        ) : null}
         {lead.contactOrigin === "IMMO_CONTACT" ? (
           <div className="mt-4 rounded-xl border border-premium-gold/35 bg-[#1a1508] px-4 py-3 text-xs leading-relaxed text-premium-gold">
             <p>

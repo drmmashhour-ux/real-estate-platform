@@ -1,5 +1,4 @@
-import type { Prisma, PrismaClient } from "@prisma/client";
-import { Prisma } from "@prisma/client";
+import { Prisma, type PrismaClient } from "@prisma/client";
 import { normalizeTrafficSplit, parseTrafficSplitJson } from "@/lib/experiments/validators";
 
 type Db = PrismaClient | Prisma.TransactionClient;

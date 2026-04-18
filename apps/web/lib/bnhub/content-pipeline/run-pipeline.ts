@@ -103,9 +103,9 @@ export async function runListingContentPipeline(
     data: {
       listingId,
       trigger,
-      scriptsJson: pack.scripts as object[],
-      captionsJson: pack.captions as object[],
-      hashtagsJson: pack.hashtags as object[],
+      scriptsJson: pack.scripts as unknown as object[],
+      captionsJson: pack.captions as unknown as object[],
+      hashtagsJson: pack.hashtags as unknown as object[],
       generationSource: source,
       videoTool: videoTool === "none" ? null : videoTool,
       videoPayloadJson: videoPayload as object,

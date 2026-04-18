@@ -25,6 +25,7 @@ import {
   hasRawCardLikePayload,
   jsonResponseRawCardBlocked,
 } from "@/lib/security/blockRawCardData";
+import { runApiSecurityLayer } from "@/modules/security/security-middleware";
 import { isSecureCookieContext } from "@/lib/runtime-env";
 import { isPublicBrowseSurface } from "@/lib/routing/public-browse-paths";
 import { HUB_USER_ROLE_COOKIE } from "@/lib/staging-middleware-config";
@@ -177,6 +178,13 @@ function attachRequestIdToResponse(request: NextRequest, response: NextResponse)
 export async function middleware(request: NextRequest) {
   try {
     const pathname = request.nextUrl.pathname;
+
+    if (pathname.startsWith("/api/")) {
+      const blocked = runApiSecurityLayer(request);
+      if (blocked) {
+        return blocked;
+      }
+    }
 
     if (request.method === "POST" && pathname.startsWith("/api/") && !pathname.includes("webhook")) {
       const ct = request.headers.get("content-type") ?? "";

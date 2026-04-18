@@ -40,12 +40,17 @@ import { BuyerListingSimilar } from "@/components/listings/BuyerListingSimilar";
 import { ListingLocationMiniMap } from "@/components/listings/ListingLocationMiniMap";
 import { ListingViewedBeacon } from "@/components/analytics/ListingViewedBeacon";
 import { ListingVisitAvailabilityHint } from "@/components/listings/ListingVisitAvailabilityHint";
+import { ListingWhyOpportunitySection } from "@/components/listings/ListingWhyOpportunitySection";
 import { ShareListingActions } from "@/components/sharing/ShareListingActions";
 import { ViralShareCallout } from "@/components/sharing/ViralShareCallout";
 import { UrgencyBadge } from "@/components/listings/UrgencyBadge";
 import { useToast } from "@/components/ui/ToastProvider";
 import type { ListingDemandUiPayload } from "@/lib/listings/listing-analytics-service";
 import { LISTING_EXPLORE_NO_PAYMENT_LINE } from "@/lib/listings/listing-ad-trust-copy";
+import { TrustStrip } from "@/components/shared/TrustStrip";
+import { conversionEngineFlags } from "@/config/feature-flags";
+import type { PropertyConversionSurface } from "@/modules/conversion/property-conversion-surface";
+import { recordPropertyCtaClick } from "@/modules/conversion/conversion-monitoring.service";
 
 export type BuyerListingPayload = {
   id: string;
@@ -162,6 +167,7 @@ export function BuyerListingDetail({
   listing,
   listingContactGate,
   demandUi = null,
+  conversionSurface = null,
   funnelVariant = "a",
   shareUrl,
   shareSummary,
@@ -169,6 +175,8 @@ export function BuyerListingDetail({
   listing: BuyerListingPayload;
   listingContactGate?: ListingContactGateProps;
   demandUi?: ListingDemandUiPayload | null;
+  /** Instant value + urgency (server-built when conversion flags are on). */
+  conversionSurface?: PropertyConversionSurface | null;
   /** Deterministic A/B copy test (server passes from `funnelVariantForListing`). */
   funnelVariant?: "a" | "b";
   /** Canonical `/listings/{id}` URL for copy + native share */
@@ -790,6 +798,71 @@ export function BuyerListingDetail({
             />
 
             {!isSold ? (
+              <div className="mt-5 space-y-3">
+                {du?.activityHint ? (
+                  <p className="text-sm font-medium text-amber-200/95" data-testid="listing-activity-hint">
+                    {du.activityHint}
+                  </p>
+                ) : null}
+                {du?.urgency && du.urgency.level !== "low" ? (
+                  <p className="text-xs text-rose-200/85" data-testid="listing-limited-availability">
+                    Limited availability on comparable inventory — confirm dates with the representative.
+                  </p>
+                ) : null}
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-xs text-white/55">
+                    {showVerifiedBadge ? "Verified listing · LECIPM" : "Active listing · LECIPM"}
+                  </p>
+                  <button
+                    id="property-contact-cta"
+                    type="button"
+                    onClick={openPrimaryContact}
+                    className="inline-flex min-h-[52px] w-full items-center justify-center rounded-2xl bg-[#D4AF37] px-8 text-base font-bold text-black shadow-lg shadow-[#D4AF37]/25 transition hover:brightness-110 sm:w-auto sm:min-w-[220px]"
+                  >
+                    {primaryCtaLabel}
+                  </button>
+                </div>
+                {(du?.pricingInsight?.headline?.toLowerCase().includes("early") ||
+                  du?.badge?.toLowerCase().includes("early")) && (
+                  <p className="text-[11px] text-white/45" data-testid="listing-early-access-note">
+                    Early access pricing may apply — ask the representative for current terms.
+                  </p>
+                )}
+              </div>
+            ) : null}
+
+            {!isSold && conversionSurface ? (
+              <section
+                className="mt-5 rounded-2xl border border-[#D4AF37]/25 bg-gradient-to-br from-black/60 to-[#0f0f0f] p-4 sm:p-5"
+                aria-labelledby="instant-value-heading"
+              >
+                <p id="instant-value-heading" className="text-xs font-bold uppercase tracking-wide text-[#D4AF37]">
+                  Value at a glance
+                </p>
+                <h2 className="mt-1 text-lg font-semibold tracking-tight text-white sm:text-xl">
+                  {conversionSurface.summary.headline}
+                </h2>
+                <p className="mt-1 text-sm text-white/65">{conversionSurface.summary.subheadline}</p>
+                <ul className="mt-4 space-y-2">
+                  {conversionSurface.summary.insights.slice(0, 4).map((i) => (
+                    <li key={i.id} className="text-sm">
+                      <span className="font-medium text-white/90">{i.title}</span>
+                      <span className="text-white/50"> — {i.description}</span>
+                    </li>
+                  ))}
+                </ul>
+                {conversionSurface.urgencyLines.length ? (
+                  <ul className="mt-3 space-y-1 border-t border-white/10 pt-3 text-xs text-amber-200/85">
+                    {conversionSurface.urgencyLines.map((line, idx) => (
+                      <li key={idx}>{line}</li>
+                    ))}
+                  </ul>
+                ) : null}
+                <TrustStrip lines={conversionSurface.summary.trustLines} className="mt-4 justify-start text-white/45" />
+              </section>
+            ) : null}
+
+            {!isSold ? (
               <div className="mt-6">
                 <ListingAiMarketInsightCard
                   listingId={listing.id}
@@ -799,6 +872,8 @@ export function BuyerListingDetail({
                 />
               </div>
             ) : null}
+
+            {!isSold ? <ListingWhyOpportunitySection city={listing.city} demandUi={demandUi} /> : null}
 
             <ul className="mt-4 flex flex-wrap justify-center gap-2 sm:justify-start" aria-label="Trust stack">
               {isSold ? (
@@ -2192,6 +2267,50 @@ export function BuyerListingDetail({
           leadId={contactLeadId}
           threadId={contactInboxThreadId}
         />
+      ) : null}
+
+      {!isSold ? (
+        <div
+          className="fixed inset-x-0 bottom-0 z-[100] border-t border-white/10 bg-[#080808]/95 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur-md lg:hidden"
+          role="region"
+          aria-label="Contact listing"
+        >
+          {conversionSurface ? (
+            <div className="mx-auto flex max-w-lg gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  if (conversionEngineFlags.conversionUpgradeV1) {
+                    recordPropertyCtaClick({ listingId: listing.id, surface: "mobile_sticky", label: "contact_now" });
+                  }
+                  openPrimaryContact();
+                }}
+                className="flex min-h-[52px] flex-1 items-center justify-center rounded-xl bg-[#D4AF37] text-sm font-bold text-black transition hover:brightness-110"
+              >
+                Contact now
+              </button>
+              <Link
+                href="/get-leads"
+                className="flex min-h-[52px] flex-1 items-center justify-center rounded-xl border border-[#D4AF37]/45 bg-transparent text-sm font-bold text-[#E8D589] transition hover:bg-white/[0.04]"
+                onClick={() => {
+                  if (conversionEngineFlags.conversionUpgradeV1) {
+                    recordPropertyCtaClick({ listingId: listing.id, surface: "mobile_sticky", label: "get_matched" });
+                  }
+                }}
+              >
+                Get matched
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={openPrimaryContact}
+              className="flex w-full min-h-[52px] items-center justify-center rounded-xl bg-[#D4AF37] text-base font-bold text-black transition hover:brightness-110"
+            >
+              Contact about this property
+            </button>
+          )}
+        </div>
       ) : null}
     </main>
   );

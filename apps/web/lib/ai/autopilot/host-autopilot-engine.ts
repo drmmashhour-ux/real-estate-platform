@@ -43,7 +43,8 @@ function photosFromJson(photos: unknown): string[] {
 }
 
 async function recentDuplicateRecommendation(userId: string, targetId: string, agentKey: string): Promise<boolean> {
-  const since = new Date(Date.now() - 60 * 60 * 1000);
+  /** Wider cooldown reduces noisy repeat suggestions for the same listing/rule pair. */
+  const since = new Date(Date.now() - 90 * 60 * 1000);
   const hit = await prisma.managerAiRecommendation.findFirst({
     where: {
       userId,

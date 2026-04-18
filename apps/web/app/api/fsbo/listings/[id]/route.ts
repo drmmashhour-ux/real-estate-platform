@@ -121,7 +121,7 @@ export async function PATCH(
 
   const existing = await prisma.fsboListing.findUnique({
     where: { id },
-    select: { ownerId: true, status: true },
+    select: { ownerId: true, status: true, priceCents: true },
   });
   if (!existing || existing.ownerId !== userId) {
     return Response.json({ error: "Not found" }, { status: 404 });
@@ -154,10 +154,27 @@ export async function PATCH(
     delete (data as { publishPlan?: unknown }).publishPlan;
   }
 
+  const prevPrice = existing.priceCents;
+  const nextPrice =
+    typeof (data as { priceCents?: number }).priceCents === "number"
+      ? (data as { priceCents: number }).priceCents
+      : prevPrice;
+
   await prisma.fsboListing.update({
     where: { id },
     data,
   });
+
+  if (typeof (data as { priceCents?: number }).priceCents === "number" && nextPrice !== prevPrice) {
+    const { recordFsboListingPriceChange } = await import("@/lib/listings/fsbo-price-change");
+    await recordFsboListingPriceChange({
+      listingId: id,
+      previousPriceCents: prevPrice,
+      newPriceCents: nextPrice,
+      changedByUserId: userId,
+      reason: "seller_patch",
+    }).catch(() => null);
+  }
 
   let trustGraph: Awaited<ReturnType<typeof refreshListingTrustGraphOnSave>> = null;
   if (isTrustGraphEnabled()) {

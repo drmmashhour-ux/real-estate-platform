@@ -1,8 +1,11 @@
 import type { ContentMachineStyle } from "@prisma/client";
 import { analyzeOptimizationSignals } from "@/lib/content-intelligence";
-import type { ContentOptimizationSignals } from "@/lib/content-intelligence/types";
+import type {
+  ContentOptimizationSignals,
+  ExtendedOptimizationSignals,
+} from "@/lib/content-intelligence/types";
 
-export type { ContentOptimizationSignals, ExtendedOptimizationSignals } from "@/lib/content-intelligence/types";
+export type { ContentOptimizationSignals, ExtendedOptimizationSignals };
 
 /**
  * @deprecated Prefer `analyzeOptimizationSignals` from `@/lib/content-intelligence`.

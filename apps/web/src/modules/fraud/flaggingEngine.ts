@@ -1,11 +1,13 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { FRAUD_FLAG_STRENGTH_FLOOR, FRAUD_RISK_THRESHOLDS } from "@/src/modules/fraud/fraud.rules";
 import type { FraudEntityType, FraudScoreComputation } from "@/src/modules/fraud/types";
 
+/** Per-signal severity — aligned with aggregate `classifyRiskLevel` bands. */
 function severityFromStrength(strength: number): "low" | "medium" | "high" | "critical" {
-  if (strength >= 0.75) return "critical";
-  if (strength >= 0.5) return "high";
-  if (strength >= 0.28) return "medium";
+  if (strength >= FRAUD_RISK_THRESHOLDS.critical) return "critical";
+  if (strength >= FRAUD_RISK_THRESHOLDS.high) return "high";
+  if (strength >= FRAUD_RISK_THRESHOLDS.medium) return "medium";
   return "low";
 }
 
@@ -18,7 +20,7 @@ export async function createOrUpdateFraudFlags(
   scoreResult: FraudScoreComputation
 ): Promise<void> {
   for (const s of scoreResult.signals) {
-    if (s.normalizedStrength < 0.18) continue;
+    if (s.normalizedStrength < FRAUD_FLAG_STRENGTH_FLOOR) continue;
     const severity = severityFromStrength(s.normalizedStrength);
     const existing = await prisma.fraudFlag.findFirst({
       where: {
@@ -34,6 +36,10 @@ export async function createOrUpdateFraudFlags(
       details: s.details,
       overallRiskLevel: scoreResult.riskLevel,
       overallRiskScore: scoreResult.riskScore,
+      reviewHint:
+        scoreResult.riskLevel === "critical" || scoreResult.riskLevel === "high"
+          ? "Escalate if payment or identity-adjacent."
+          : "Pattern signal — confirm context before enforcement.",
     };
     if (existing) {
       await prisma.fraudFlag.update({

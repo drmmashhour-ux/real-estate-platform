@@ -3,8 +3,8 @@ import { normalizeConfidence } from "@/lib/ai/confidence";
 import type { OutcomeType } from "./feedback-score";
 
 const MIN_SAMPLES = 5;
-const LOW_RATE = 0.35;
-const HIGH_RATE = 0.65;
+const LOW_RATE = 0.33;
+const HIGH_RATE = 0.62;
 
 export function confidenceToBucket(confidence: number): string {
   const c = normalizeConfidence(confidence);
@@ -24,8 +24,9 @@ function isSuccessOutcome(outcomeType: OutcomeType): boolean {
 export function adjustConfidenceByRate(raw: number, successRate: number | null, total: number): number {
   const r = normalizeConfidence(raw);
   if (total < MIN_SAMPLES || successRate === null || !Number.isFinite(successRate)) return r;
-  if (successRate < LOW_RATE) return Math.max(0, r * 0.85);
-  if (successRate > HIGH_RATE) return Math.min(1, r * 1.05);
+  /** Bounded nudges — avoid large single-bucket swings when outcomes shift. */
+  if (successRate < LOW_RATE) return Math.max(0, r * 0.92);
+  if (successRate > HIGH_RATE) return Math.min(1, r * 1.025);
   return r;
 }
 

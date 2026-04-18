@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { RankingConfigClient } from "@/app/admin/ranking/ranking-config-client";
+import { RankingConfigClient } from "@/app/[locale]/[country]/admin/ranking/ranking-config-client";
 
 type RankingConfigRow = {
   id: string;

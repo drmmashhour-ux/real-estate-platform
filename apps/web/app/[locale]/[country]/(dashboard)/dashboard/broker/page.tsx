@@ -28,13 +28,22 @@ import { NextActionPanel } from "@/components/conversion/NextActionPanel";
 import { AIInsightPanel } from "@/components/conversion/AIInsightPanel";
 import { InlineUpgradeBanner } from "@/components/conversion/InlineUpgradeBanner";
 import { conversionCopy } from "@/src/design/conversionCopy";
+import { brokerClosingFlags, brokerPerformanceFlags } from "@/config/feature-flags";
+import { BrokerClosingSection } from "@/components/broker/BrokerClosingSection";
+import { BrokerPerformancePanel } from "@/components/broker/BrokerPerformancePanel";
+import { HubJourneyBanner } from "@/components/journey/HubJourneyBanner";
 
 function fmtCommissionCents(cents: number | null | undefined): string {
   if (cents == null || cents <= 0) return "—";
   return `$${(cents / 100).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
 }
 
-export default async function BrokerHubPage() {
+export default async function BrokerHubPage({
+  params,
+}: {
+  params: Promise<{ locale: string; country: string }>;
+}) {
+  const { locale, country } = await params;
   const userId = await getGuestId();
   const role = await getUserRole();
   const theme = getHubTheme("broker");
@@ -163,6 +172,7 @@ export default async function BrokerHubPage() {
       showWorkspaceBadge
     >
       <div className="space-y-8">
+        <HubJourneyBanner hub="broker" locale={locale} country={country} userId={userId} />
         <div className="flex flex-wrap items-center justify-end gap-2 text-sm text-slate-400">
           <PhoneCallUs showLabel={true} />
         </div>
@@ -182,6 +192,12 @@ export default async function BrokerHubPage() {
             dealsWorthReviewing={commissionStats.pendingDeals}
             revenueOrMrr={commissionStats.estimatedOpen}
           />
+        ) : null}
+        {brokerClosingFlags.brokerClosingV1 && userId && dbUser?.role === "BROKER" ? (
+          <BrokerClosingSection accent={theme.accent} />
+        ) : null}
+        {brokerPerformanceFlags.brokerPerformanceV1 && userId && dbUser?.role === "BROKER" ? (
+          <BrokerPerformancePanel accent={theme.accent} />
         ) : null}
         <section className="grid gap-4 lg:grid-cols-2">
           <RecommendationBanner
@@ -309,7 +325,7 @@ export default async function BrokerHubPage() {
         </section>
 
         <div className="grid gap-6 lg:grid-cols-1">
-          <BrokerAiPanel accent={theme.accent} />
+          <BrokerAiPanel />
         </div>
 
         <BrokerLeadSummaryAiCard

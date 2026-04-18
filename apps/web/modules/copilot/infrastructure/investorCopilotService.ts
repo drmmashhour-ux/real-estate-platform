@@ -3,10 +3,46 @@ import { prisma } from "@/lib/db";
 import { fsboCityWhereFromParam } from "@/lib/geo/city-search";
 import { rankInvestorPortfolio } from "@/modules/deal-analyzer/application/rankInvestorPortfolio";
 import { isDealAnalyzerEnabled, isDealAnalyzerPortfolioEnabled } from "@/modules/deal-analyzer/config";
+import { PortfolioBucket } from "@/modules/deal-analyzer/domain/portfolio";
 import type { CopilotBlock, RankedDealItemDto } from "@/modules/copilot/domain/copilotTypes";
 import { ensureDealAnalysesForListings } from "@/modules/copilot/infrastructure/ensureDealAnalyses";
 
-const MAX_LISTINGS = 20;
+const MAX_LISTINGS = 24;
+/** Skip inventory that is clearly low-trust in the FSBO row (null = unknown, still ranked but deprioritized in filter pass). */
+const MIN_LISTING_TRUST = 46;
+const MAX_PER_CITY_FIRST_PASS = 2;
+const OUTPUT_CAP = 12;
+
+/**
+ * Prefer geographic diversity while preserving score order: take up to `maxPerCity`
+ * per city first, then backfill from the remainder so shortlists are not empty.
+ */
+function diversifyByCityOrdered(items: RankedDealItemDto[], maxPerCity: number, cap: number): RankedDealItemDto[] {
+  const counts = new Map<string, number>();
+  const chosen: RankedDealItemDto[] = [];
+  const skipped: RankedDealItemDto[] = [];
+  for (const it of items) {
+    const key = (it.city || "?").toLowerCase();
+    if ((counts.get(key) ?? 0) < maxPerCity) {
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+      chosen.push(it);
+    } else {
+      skipped.push(it);
+    }
+  }
+  for (const it of skipped) {
+    if (chosen.length >= cap) break;
+    chosen.push(it);
+  }
+  return chosen.slice(0, cap);
+}
+
+function filterInvestorCopilotNoise(items: RankedDealItemDto[]): RankedDealItemDto[] {
+  return items.filter((it) => {
+    if (it.bucket === PortfolioBucket.SPECULATIVE && it.compositeScore < 38) return false;
+    return true;
+  });
+}
 
 export async function runInvestorDealSearch(args: {
   cityRaw: string | null;
@@ -16,7 +52,13 @@ export async function runInvestorDealSearch(args: {
     return { ok: false, error: "Deal Analyzer portfolio ranking is required for this Copilot path." };
   }
 
-  const and: Prisma.FsboListingWhereInput[] = [{ status: "ACTIVE" }, { moderationStatus: "APPROVED" }];
+  const and: Prisma.FsboListingWhereInput[] = [
+    { status: "ACTIVE" },
+    { moderationStatus: "APPROVED" },
+    {
+      OR: [{ trustScore: null }, { trustScore: { gte: MIN_LISTING_TRUST } }],
+    },
+  ];
 
   if (args.cityRaw?.trim()) {
     and.push(fsboCityWhereFromParam(args.cityRaw.trim()));
@@ -56,8 +98,9 @@ export async function runInvestorDealSearch(args: {
   }
 
   const meta = new Map(rows.map((r) => [r.id, r] as const));
-  const items: RankedDealItemDto[] = ranked.ranked.map((r) => {
+  let items: RankedDealItemDto[] = ranked.ranked.map((r) => {
     const m = meta.get(r.listingId);
+    const reasons = [...r.reasons.slice(0, 4), "Not investment advice — verify with your own diligence."];
     return {
       listingId: r.listingId,
       title: m?.title ?? "Listing",
@@ -65,21 +108,30 @@ export async function runInvestorDealSearch(args: {
       priceCents: m?.priceCents ?? 0,
       compositeScore: r.compositeScore,
       bucket: r.bucket,
-      reasons: r.reasons.slice(0, 6),
+      reasons,
     };
   });
+
+  const noiseFiltered = filterInvestorCopilotNoise(items);
+  items = noiseFiltered.length > 0 ? noiseFiltered : items;
+  items = diversifyByCityOrdered(items, MAX_PER_CITY_FIRST_PASS, OUTPUT_CAP);
 
   const parts: string[] = [];
   if (args.cityRaw) parts.push(`city ${args.cityRaw}`);
   if (args.maxPriceCents != null) parts.push(`max price ~$${Math.round(args.maxPriceCents / 100).toLocaleString()}`);
   const queryNote = [
-    parts.length ? `Filters: ${parts.join(", ")}.` : "Filters: broad catalog (add filters in your message).",
-    ensure.ran > 0 ? ` Ran ${ensure.ran} deterministic analysis run(s) to fill missing scores.` : "",
+    parts.length ? `Filters: ${parts.join(", ")}.` : "",
+    !args.cityRaw?.trim() && (args.maxPriceCents == null || args.maxPriceCents <= 0)
+      ? "Add a city or max price in your message to sharpen results."
+      : "",
+    parts.length === 0 ? "Broad catalog — scores use on-platform listing + analyzer data only." : "",
+    ensure.ran > 0 ? `Filled ${ensure.ran} missing analyzer snapshot(s).` : "",
   ]
     .filter(Boolean)
-    .join(" ");
+    .join(" ")
+    .trim() || "Active FSBO inventory with minimum trust on the listing row.";
 
-  const summaryLine = `Ranked ${items.length} opportunity snapshot(s) using deterministic Deal Analyzer scores (not investment advice).`;
+  const summaryLine = `Ranked ${items.length} listing snapshot(s) with deterministic Deal Analyzer scores — advisory only, not investment advice.`;
 
   return {
     ok: true,

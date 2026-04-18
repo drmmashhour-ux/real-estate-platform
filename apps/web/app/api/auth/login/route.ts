@@ -20,6 +20,8 @@ import { logSecurityEvent } from "@/lib/observability/security-events";
 import { REQUEST_ID_HEADER } from "@/lib/middleware/request-logger";
 import { fingerprintClientIp, getClientIpFromRequest } from "@/lib/security/ip-fingerprint";
 import { isSecurityIpBlocked } from "@/lib/security/ip-block";
+import { GrowthEventName } from "@/modules/growth/event-types";
+import { recordGrowthEvent } from "@/modules/growth/tracking.service";
 
 function maskEmail(email: string): string {
   const [a, d] = email.split("@");
@@ -67,9 +69,15 @@ export async function POST(request: NextRequest) {
         { status: 429, headers: getRateLimitHeadersFromResult(limit) }
       );
     }
-    const body = await request.json();
-    const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : null;
-    const password = typeof body?.password === "string" ? body.password : null;
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    }
+    const raw = body as Record<string, unknown>;
+    const email = typeof raw.email === "string" ? raw.email.trim().toLowerCase() : null;
+    const password = typeof raw.password === "string" ? raw.password : null;
 
     if (!email || !password) {
       return NextResponse.json({ error: "Email and password required" }, { status: 400 });
@@ -118,6 +126,7 @@ export async function POST(request: NextRequest) {
 
     const valid = await verifyPassword(password, user.passwordHash);
     if (!valid) {
+      const failedLoginUserId = user.id;
       logSecurityEvent({
         event: "auth_login_failure",
         detail: "invalid_password",
@@ -132,7 +141,7 @@ export async function POST(request: NextRequest) {
         payload: { reason: "invalid_password" },
       }).catch(() => {});
       void import("@/lib/fraud/compute-user-risk")
-        .then((m) => m.evaluateUserFraudAfterFailedLogin({ userId: user.id, ipFingerprint: ipFp }))
+        .then((m) => m.evaluateUserFraudAfterFailedLogin({ userId: failedLoginUserId, ipFingerprint: ipFp }))
         .catch(() => {});
       return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
     }
@@ -186,6 +195,13 @@ export async function POST(request: NextRequest) {
     }).catch(() => {});
 
     void trackEvent("login", { path: "/api/auth/login" }, { userId: user.id }).catch(() => {});
+    void recordGrowthEvent({
+      eventName: GrowthEventName.LOGIN,
+      userId: user.id,
+      cookieHeader: request.headers.get("cookie"),
+      body: undefined,
+      referrerHeader: request.headers.get("referer"),
+    }).catch(() => {});
     void persistLaunchEvent("USER_LOGIN", { userId: user.id, role: user.role });
 
     let expertTermsAccepted: boolean | undefined;

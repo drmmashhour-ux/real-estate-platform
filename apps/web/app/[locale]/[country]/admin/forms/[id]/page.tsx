@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ControlsDashboardClient } from "@/app/admin/controls/controls-dashboard-client";
-import { PoliciesDashboardClient } from "@/app/admin/policies/policies-dashboard-client";
-import { PropertyIdentityConsoleClient } from "@/app/admin/property-identities/property-identity-console-client";
+import { ControlsDashboardClient } from "@/app/[locale]/[country]/admin/controls/controls-dashboard-client";
+import { PoliciesDashboardClient } from "@/app/[locale]/[country]/admin/policies/policies-dashboard-client";
+import { PropertyIdentityConsoleClient } from "@/app/[locale]/[country]/admin/property-identities/property-identity-console-client";
 import { AdminFormRefillBar } from "./AdminFormRefillBar";
 import { AdminFormSubmissionView } from "../AdminFormSubmissionView";
 import { getAllFeatureFlags, getActiveControls, getControlAuditLog } from "@/lib/operational-controls";

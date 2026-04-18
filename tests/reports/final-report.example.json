@@ -1,0 +1,11 @@
+{
+  "generatedAt": "2026-04-14T00:00:00.000Z",
+  "totalTests": 9,
+  "passed": 0,
+  "failed": 0,
+  "warnings": 0,
+  "criticalFailures": [],
+  "results": [],
+  "recommendation": "NO_GO",
+  "notes": ["Run pnpm --filter @lecipm/web run validate:lecipm-system to generate final-report.json"]
+}

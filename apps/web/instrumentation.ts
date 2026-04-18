@@ -7,6 +7,8 @@ export async function register() {
     validateProductionEnvAtStartup();
     const { logStripeIntegrationEnvWarnings } = await import("@/lib/stripe/envWarnings");
     logStripeIntegrationEnvWarnings();
+    const { assertStrictServerEnvIfProduction } = await import("@/lib/env.server");
+    assertStrictServerEnvIfProduction();
   } else if (process.env.NEXT_RUNTIME === "edge") {
     await import("./sentry.edge.config");
   }

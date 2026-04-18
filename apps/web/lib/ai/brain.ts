@@ -153,18 +153,70 @@ export function getLuxuryInsights(_listingId?: string): LuxuryInsights {
 export type BrokerNextAction = {
   action: string;
   messageSuggestion: string;
-  closeProbabilityPct: number;
+  /** 0–100 rule-based lead fit from message + contact fields — not a closing forecast. */
+  leadFitScore: number;
+  /** Short reason from the same scoring rules (explainable). */
+  rationale: string;
   priority: "high" | "medium" | "low";
+  /**
+   * @deprecated Use `leadFitScore`. Kept for older UI; equals `leadFitScore` (never implied closing %).
+   */
+  closeProbabilityPct: number;
 };
 
+/**
+ * Deterministic broker nudges from `scoreLead` — no fabricated win rates.
+ * Persisted CRM flows should emit `broker_crm_next_action_generated` (see `lib/broker-crm/generate-next-action.ts`).
+ * This panel is client-only unless you wire the same events from the dashboard.
+ */
 export function suggestBrokerNextAction(lead: LeadInput): BrokerNextAction {
-  const score = scoreLead(lead).score;
-  const priority = score >= 70 ? "high" : score >= 40 ? "medium" : "low";
+  const { score, explanation } = scoreLead(lead);
+  const message = typeof lead?.message === "string" ? lead.message.trim() : "";
+  const hasEmail = !!lead?.email && String(lead.email).trim().length > 0;
+  const hasPhone = !!lead?.phone && String(lead.phone).trim().length > 0;
+  /** Narrow “high” priority: strong score plus at least one contact path (fewer noisy highs). */
+  const priority =
+    score >= 80 && (hasEmail || hasPhone)
+      ? "high"
+      : score >= 52
+        ? "medium"
+        : "low";
+
+  let action: string;
+  let messageSuggestion: string;
+
+  if (message.length < 4 && !hasEmail && !hasPhone) {
+    action = "Send one short qualifying reply";
+    messageSuggestion =
+      "Thanks for reaching out — what area are you focused on, and what’s the best way to reach you (email or phone)?";
+  } else if (score < 32) {
+    action = "Gather contact details and preferred times";
+    messageSuggestion =
+      "Thanks for your message — what’s the best number to reach you, and do mornings or afternoons work better for a quick call?";
+  } else if (score < 52) {
+    action = "Reply with two concrete time windows";
+    messageSuggestion =
+      "Thanks for reaching out. I can offer a short call Tuesday 10–11am or Thursday 2–4pm — which suits you?";
+  } else if (score < 75) {
+    action = "Schedule a qualified discovery call or showing";
+    messageSuggestion =
+      "Thanks — I’d love to learn your criteria and walk you through next steps. Are you available for a 15-minute call this week?";
+  } else {
+    action = "Fast-track: confirm showing or offer package within 48h";
+    messageSuggestion =
+      "Thanks — you look well qualified. I can hold two showing slots this week; reply with your top two times and I’ll confirm.";
+  }
+
+  const rationale =
+    explanation.length > 120 ? `${explanation.slice(0, 117)}…` : explanation;
+
   return {
-    action: "Follow up with a personalized message",
-    messageSuggestion: "Thank you for your interest. I’d be happy to arrange a viewing at your convenience.",
-    closeProbabilityPct: Math.min(90, score + 10),
+    action,
+    messageSuggestion,
+    leadFitScore: score,
+    rationale,
     priority,
+    closeProbabilityPct: score,
   };
 }
 

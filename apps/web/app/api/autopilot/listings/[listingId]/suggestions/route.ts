@@ -11,11 +11,25 @@ export async function GET(_req: Request, ctx: { params: Promise<{ listingId: str
     return NextResponse.json({ error: gate.error }, { status: gate.status });
   }
 
-  const [pending, recentRuns, audits] = await Promise.all([
+  const [pending, recentApplied, recentRuns, audits] = await Promise.all([
     prisma.listingOptimizationSuggestion.findMany({
-      where: { listingId, status: { in: ["suggested", "approved"] } },
+      where: { listingId, status: "suggested" },
       orderBy: { createdAt: "desc" },
       take: 40,
+    }),
+    prisma.listingOptimizationSuggestion.findMany({
+      where: { listingId, status: "applied" },
+      orderBy: { updatedAt: "desc" },
+      take: 12,
+      select: {
+        id: true,
+        fieldType: true,
+        currentValue: true,
+        proposedValue: true,
+        reason: true,
+        riskLevel: true,
+        updatedAt: true,
+      },
     }),
     prisma.listingOptimizationRun.findMany({
       where: { listingId },
@@ -30,5 +44,10 @@ export async function GET(_req: Request, ctx: { params: Promise<{ listingId: str
     }),
   ]);
 
-  return NextResponse.json({ pending, recentRuns, audits });
+  return NextResponse.json({
+    pending,
+    recentApplied,
+    recentRuns,
+    audits,
+  });
 }

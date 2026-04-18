@@ -1,10 +1,17 @@
 import { NextRequest } from "next/server";
+import { ListingStatus } from "@prisma/client";
 import { createBooking } from "@/lib/bnhub/booking";
-import { getGuestId } from "@/lib/auth/session";
+import {
+  logBnhubBookingCreate,
+  precheckBnhubBookingAvailability,
+  validateBnhubBookingDateStrings,
+  validateBnhubListingStructureForBooking,
+} from "@/lib/bnhub/booking-create-validation";
 import { prisma } from "@/lib/db";
-import { logInfo } from "@/lib/logger";
+import { requireUser } from "@/modules/security/access-guard.service";
 import { logApiRouteError } from "@/lib/api/dev-log";
 import { GuestIdentityRequiredError } from "@/lib/bnhub/guest-identity-gate";
+import { computeBookingPricing } from "@/lib/bnhub/booking-pricing";
 
 export const dynamic = "force-dynamic";
 
@@ -13,10 +20,9 @@ export const dynamic = "force-dynamic";
  */
 export async function POST(request: NextRequest) {
   try {
-    const guestId = await getGuestId();
-    if (!guestId) {
-      return Response.json({ error: "Sign in required to book." }, { status: 401 });
-    }
+    const auth = await requireUser();
+    if (!auth.ok) return auth.response;
+    const guestId = auth.userId;
 
     const body = (await request.json()) as {
       listingId?: string;
@@ -35,24 +41,96 @@ export async function POST(request: NextRequest) {
     const checkIn = typeof body.checkIn === "string" ? body.checkIn.trim() : "";
     const checkOut = typeof body.checkOut === "string" ? body.checkOut.trim() : "";
     if (!listingId || !checkIn || !checkOut) {
+      logBnhubBookingCreate({ phase: "reject", reason: "missing_fields", listingId: listingId || null });
       return Response.json({ error: "listingId, checkIn, and checkOut are required." }, { status: 400 });
+    }
+
+    const dateVal = validateBnhubBookingDateStrings(checkIn, checkOut);
+    if (!dateVal.ok) {
+      logBnhubBookingCreate({ phase: "reject", reason: "date_validation", detail: dateVal.error, listingId });
+      return Response.json({ error: dateVal.error }, { status: 400 });
     }
 
     const checkInD = new Date(checkIn);
     const checkOutD = new Date(checkOut);
-    const today = new Date();
-    today.setUTCHours(0, 0, 0, 0);
-    if (!(checkInD < checkOutD)) {
-      return Response.json({ error: "Check-out must be after check-in." }, { status: 400 });
+
+    const listing = await prisma.shortTermListing.findUnique({
+      where: { id: listingId },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        nightPriceCents: true,
+        maxGuests: true,
+        photos: true,
+        amenities: true,
+        listingStatus: true,
+        listingPhotos: { select: { id: true } },
+      },
+    });
+    if (!listing) {
+      logBnhubBookingCreate({ phase: "reject", reason: "listing_not_found", listingId });
+      return Response.json({ error: "Listing not found." }, { status: 404 });
     }
-    if (checkInD < today) {
-      return Response.json({ error: "Check-in cannot be in the past." }, { status: 400 });
+
+    if (listing.listingStatus === ListingStatus.PUBLISHED) {
+      const struct = validateBnhubListingStructureForBooking(listing);
+      if (!struct.ok) {
+        logBnhubBookingCreate({
+          phase: "reject",
+          reason: "listing_structure",
+          listingId,
+          errors: struct.errors,
+        });
+        return Response.json(
+          { error: struct.errors[0] ?? "Listing does not meet booking requirements.", errors: struct.errors },
+          { status: 400 },
+        );
+      }
+    }
+
+    const availability = await precheckBnhubBookingAvailability(listingId, checkInD, checkOutD);
+    if (!availability.available) {
+      logBnhubBookingCreate({
+        phase: "reject",
+        reason: availability.reason,
+        listingId,
+        checkIn,
+        checkOut,
+      });
+      return Response.json(
+        { error: "Selected dates are no longer available.", code: availability.reason },
+        { status: 409 },
+      );
     }
 
     const guestsCount =
       typeof body.guestsCount === "number" && body.guestsCount > 0
         ? Math.min(50, Math.max(1, Math.floor(body.guestsCount)))
         : undefined;
+
+    const pricingCheck = await computeBookingPricing({
+      listingId,
+      checkIn,
+      checkOut,
+      guestCount: guestsCount,
+      guestUserId: guestId,
+    });
+    if (!pricingCheck) {
+      logBnhubBookingCreate({ phase: "reject", reason: "pricing_unavailable", listingId });
+      return Response.json({ error: "Could not compute pricing for these dates." }, { status: 400 });
+    }
+    const b = pricingCheck.breakdown;
+    logBnhubBookingCreate({
+      phase: "pricing_preview",
+      listingId,
+      nights: b.nights,
+      nightlySubtotalCents: b.subtotalCents,
+      cleaningFeeCents: b.cleaningFeeCents,
+      serviceFeeCents: b.serviceFeeCents,
+      totalCents: b.totalCents,
+      currency: b.currency,
+    });
 
     const booking = await createBooking({
       listingId,
@@ -71,11 +149,14 @@ export async function POST(request: NextRequest) {
           : undefined,
     });
 
-    logInfo("[booking/create]", {
+    logBnhubBookingCreate({
+      phase: "created",
       bookingId: booking.id,
       listingId,
       guestId,
       status: booking.status,
+      nights: booking.nights,
+      confirmationCode: booking.confirmationCode,
     });
 
     const pay = await prisma.payment.findUnique({

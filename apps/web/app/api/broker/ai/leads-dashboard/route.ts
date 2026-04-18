@@ -3,6 +3,8 @@ import { prisma } from "@/lib/db";
 import { getGuestId } from "@/lib/auth/session";
 import { enrichLeadForBrokerDashboard } from "@/lib/ai/merge-lead-display";
 import { tierFromScore } from "@/lib/ai/lead-tier";
+import { isLecipmAiInsightsPremiumUser } from "@/lib/revenue/insights-premium";
+import { getRevenueControlSettings } from "@/modules/revenue/revenue-control-settings";
 
 export const dynamic = "force-dynamic";
 
@@ -36,6 +38,12 @@ export async function GET(_request: NextRequest) {
       introducedByBroker: { select: { id: true, name: true } },
     },
   });
+
+  const [insightsPremium, revenueSettings] = await Promise.all([
+    isLecipmAiInsightsPremiumUser(userId),
+    getRevenueControlSettings(),
+  ]);
+  const insightsLocked = revenueSettings.monetizationEnabled && !insightsPremium;
 
   const enriched = await Promise.all(
     leads.map(async (l) => {
@@ -89,20 +97,34 @@ export async function GET(_request: NextRequest) {
 
   return Response.json({
     leads: enriched,
-    hotLeads: hot,
-    warmLeads: warm,
-    coldLeads: cold,
+    hotLeads: insightsLocked ? [] : hot,
+    warmLeads: insightsLocked ? [] : warm,
+    coldLeads: insightsLocked ? [] : cold,
     tierSummary,
     recentActivity,
-    scoringRules: {
-      windowDays: 30,
-      tiers: [
-        { name: "hot", minScore: 80, emoji: "🔥" },
-        { name: "warm", minScore: 50, emoji: "🌡️" },
-        { name: "cold", minScore: 0, emoji: "❄️" },
-      ],
-      signals: ["search_frequency", "listing_views", "saved_listings", "messages_sent", "repeat_visits", "time_on_site"],
-    },
-    disclaimer: "Scores are rule-based and explainable — not ML predictions. Validate with your CRM process.",
+    insightsPremium,
+    insightsLocked,
+    insightsUpgradeHint: insightsLocked ? "Unlock full AI insights (premium)" : null,
+    scoringRules: insightsLocked
+      ? []
+      : {
+          windowDays: 30,
+          tiers: [
+            { name: "hot", minScore: 80, emoji: "🔥" },
+            { name: "warm", minScore: 50, emoji: "🌡️" },
+            { name: "cold", minScore: 0, emoji: "❄️" },
+          ],
+          signals: [
+            "search_frequency",
+            "listing_views",
+            "saved_listings",
+            "messages_sent",
+            "repeat_visits",
+            "time_on_site",
+          ],
+        },
+    disclaimer: insightsLocked
+      ? "Premium AI tier lists are hidden — upgrade to see ranked buckets."
+      : "Scores are rule-based and explainable — not ML predictions. Validate with your CRM process.",
   });
 }

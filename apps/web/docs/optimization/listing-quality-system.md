@@ -63,11 +63,13 @@ Hosts and admins can **POST** `/api/quality/recompute/{listingId}`.
 
 ## Ranking
 
-`getListingQualitySearchAdjustMapForIds` in `lib/bnhub/bnhubSearchRankSignals.ts` applies a modest signed adjustment from cached `listing_quality_scores` in recommended / non-AI-engine ranking paths (`lib/bnhub/listings.ts`). Missing rows → neutral (0).
+1. **Marketplace sub-score** — `scoreListingForSearch` in `lib/bnhub/ranking/listing-ranking.ts` blends on-page content heuristics with `cachedListingQuality01` (from `attachReviewAggregatesForSearch`) using `blendedListingQuality01` (~42% heuristic / ~58% cached when a row exists).
+
+2. **Search boost map** — `getListingQualitySearchAdjustMapForIds` in `lib/bnhub/bnhubSearchRankSignals.ts` applies a modest signed adjustment from level + health status in recommended sorts and in the **AI ranking engine** ordering (`orderBnhubListingsByRankingEngine` extra boost). Missing rows → neutral (0).
 
 ## Public UI
 
-Excellent/good listings with sufficient score may show a subtle **quality** pill on the BNHub listing page (`getPublicListingQualityBadge`).
+Excellent/good listings with sufficient score may show a subtle **quality** pill on the BNHub listing page (`getPublicListingQualityBadge`). Stays search result cards show the same label when present (`qualityBadgeLabel` on search rows).
 
 ## Admin & host UI
 

@@ -4,6 +4,7 @@ System and technical architecture. All blueprints and the master index live in t
 
 | Doc | Description |
 |-----|-------------|
+| [LECIPM-ARCHITECTURE-V1-PRODUCTION.md](LECIPM-ARCHITECTURE-V1-PRODUCTION.md) | **v1 production rules** — modules, APIs, migration without big-bang refactors. |
 | [master-index.md](master-index.md) | **Start here** — links to all major docs and reading order. |
 | [ARCHITECTURE-DIAGRAM.md](ARCHITECTURE-DIAGRAM.md) | Simplified diagram: users → apps → services → APIs → data / AI / defense → infrastructure. |
 | [MODULES-REGISTRY.md](MODULES-REGISTRY.md) | Platform modules: purpose, location, APIs, dependencies. |

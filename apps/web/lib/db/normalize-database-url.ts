@@ -16,3 +16,23 @@ export function normalizeDatabaseUrlForPrisma(raw: string | undefined): string |
   const next = params.toString();
   return next ? `${base}?${next}` : base;
 }
+
+/**
+ * Optional Prisma/pg pool cap via `DATABASE_CONNECTION_LIMIT` (e.g. `5`).
+ * Merged as `connection_limit` query param on the Postgres URL to reduce "too many clients" spikes.
+ */
+export function mergeDatabaseConnectionLimit(url: string | undefined): string | undefined {
+  const trimmed = url?.trim();
+  if (!trimmed) return undefined;
+  const limRaw = process.env.DATABASE_CONNECTION_LIMIT?.trim();
+  if (!limRaw) return trimmed;
+  const n = Number(limRaw);
+  if (!Number.isFinite(n) || n < 1) return trimmed;
+  try {
+    const u = new URL(trimmed);
+    u.searchParams.set("connection_limit", String(Math.min(256, Math.floor(n))));
+    return u.toString();
+  } catch {
+    return trimmed;
+  }
+}

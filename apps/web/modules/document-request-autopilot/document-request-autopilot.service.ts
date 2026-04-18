@@ -1,6 +1,7 @@
 import { DealRequestCategory, DealRequestStatus } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { logCoordinationAudit } from "@/lib/deals/coordination-audit";
+import { expectedCategoriesForStage } from "@/modules/document-requests/request-dependency.service";
 import { defaultRequestPolicy } from "@/modules/document-requests/request-policy.service";
 import { getTemplateForCategory } from "@/modules/document-requests/request-template.service";
 import type { AutopilotSuggestion } from "./document-request-autopilot.types";

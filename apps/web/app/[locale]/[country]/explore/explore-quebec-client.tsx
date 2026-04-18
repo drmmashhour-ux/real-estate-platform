@@ -19,7 +19,7 @@ import { ExploreQaListingHint } from "@/components/explore/ExploreQaListingHint"
 import { SearchFiltersProvider } from "@/components/search/SearchEngine";
 import { LISTINGS_MAP_SEARCH_ID, PUBLIC_MAP_SEARCH_URL } from "@/lib/search/public-map-search-urls";
 import { PLATFORM_IMMOBILIER_HUB_NAME, PLATFORM_NAME } from "@/lib/brand/platform";
-import { ExploreQuebecHeroSearch, useExploreListingsMapHref } from "@/app/explore/explore-quebec-hero-search";
+import { ExploreQuebecHeroSearch, useExploreListingsMapHref } from "@/app/[locale]/[country]/explore/explore-quebec-hero-search";
 
 const GOLD = "#d4af37";
 

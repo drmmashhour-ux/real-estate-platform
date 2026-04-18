@@ -66,12 +66,17 @@ import { BnhubHostCredibilityStrip } from "@/components/bnhub/BnhubHostCredibili
 import { FraudAlertBanner } from "@/components/bnhub/FraudAlertBanner";
 import { loyaltyTierFromCompletedBookings } from "@/lib/loyalty/loyalty-engine";
 import { ListingViewedBeacon } from "@/components/analytics/ListingViewedBeacon";
+import { BnhubGuestConversionPropertyBoost } from "@/components/bnhub/BnhubGuestConversionPropertyBoost";
+import { BnhubListingConversionBeacon } from "@/components/bnhub/BnhubListingConversionBeacon";
 import { SocialAdLandingBeacon } from "@/components/analytics/SocialAdLandingBeacon";
 import { BnhubListingContentAttribution } from "@/components/content-machine/BnhubListingContentAttribution";
 import { BnhubStayScrollDepthBeacon } from "@/components/analytics/BnhubStayFunnelBeacons";
 import { FunnelCtaAnchor } from "@/components/analytics/FunnelCtaAnchor";
 import { ShareListingActions } from "@/components/sharing/ShareListingActions";
 import { VerifiedListingBadge } from "@/components/listings/VerifiedListingBadge";
+import { CroListingConversionTrustBlock } from "@/components/bnhub/CroListingConversionTrustBlock";
+import { abTestingFlags, bnhubConversionLayerFlags, engineFlags } from "@/config/feature-flags";
+import { resolveBnhubListingCtas } from "@/modules/cro/cta-optimizer.service";
 import { getPublicBadgesForListing } from "@/lib/trust/get-public-badges";
 import { getReputationSurfaceForBnhubListing } from "@/lib/reputation/public-surface";
 import { getPublicListingQualityBadge } from "@/lib/quality/public-surface";
@@ -358,7 +363,7 @@ export async function BnhubListingView(opts: {
     maximumFractionDigits: 2,
   });
   /** Sample 2-night total for above-the-fold estimate (matches booking form service-fee heuristic). */
-  const SAMPLE_STAY_NIGHTS = 2;
+  const SAMPLE_STAY_NIGHTS: number = 2;
   const sampleLodgingCents = listing.nightPriceCents * SAMPLE_STAY_NIGHTS;
   const sampleCleaningCents = listing.cleaningFeeCents ?? 0;
   const sampleServiceFeeCents = Math.round((sampleLodgingCents * 12) / 100);
@@ -367,7 +372,13 @@ export async function BnhubListingView(opts: {
   const formatListingMoney = (cents: number) =>
     (cents / 100).toLocaleString(undefined, { style: "currency", currency: currencyCode });
   const stripeCheckoutAvailable = isStripeConfigured() && hostPayoutReady;
-  const primaryBookCta = expListingCta?.config.ctaText?.trim() || "Book now";
+  const resolvedHeroCtas = resolveBnhubListingCtas({
+    listingId: listing.id,
+    experimentPrimary: expListingCta?.config.ctaText ?? null,
+    rotationEnabled: engineFlags.croEngineV1 || abTestingFlags.abTestingV1,
+  });
+  const primaryBookCta = resolvedHeroCtas.primary;
+  const secondaryHeroCta = resolvedHeroCtas.secondary;
   const trustLineExperimentActive = Boolean(expTrustLine);
   const showStripeTrustLine = trustLineExperimentActive
     ? expTrustLine!.config.showTrustLine === true
@@ -391,7 +402,7 @@ export async function BnhubListingView(opts: {
           url: absUrl,
           name: displayTitle,
           description:
-            (displayDescription || listing.description ?? "").replace(/\s+/g, " ").trim().slice(0, 500) ||
+            (displayDescription || (listing.description ?? "")).replace(/\s+/g, " ").trim().slice(0, 500) ||
             `Vacation rental in ${listing.city}.`,
           city: listing.city,
           region: listing.region ?? listing.province,
@@ -412,7 +423,7 @@ export async function BnhubListingView(opts: {
           "@type": "Product",
           name: displayTitle,
           description:
-            (displayDescription || listing.description ?? "").replace(/\s+/g, " ").trim().slice(0, 500) ||
+            (displayDescription || (listing.description ?? "")).replace(/\s+/g, " ").trim().slice(0, 500) ||
             `Short-term stay in ${listing.city}.`,
           url: absUrl,
           ...(galleryAbsForLd.length ? { image: galleryAbsForLd } : {}),
@@ -528,6 +539,7 @@ export async function BnhubListingView(opts: {
                   viewsToday={viewsToday}
                   limitedAvailability={limitedAvailability}
                   bookingsThisWeek={bookingsThisWeek}
+                  showEarlyAccessPricing={isNew}
                   compact
                 />
               </div>
@@ -620,7 +632,7 @@ export async function BnhubListingView(opts: {
                       href="#availability"
                       className="inline-flex min-h-[58px] w-full items-center justify-center rounded-xl bg-gradient-to-b from-amber-400 via-amber-500 to-amber-700 px-8 text-base font-extrabold tracking-tight text-slate-900 shadow-[0_4px_14px_rgba(180,83,9,0.45)] ring-2 ring-amber-300/90 ring-offset-2 ring-offset-white transition hover:from-amber-300 hover:via-amber-400 hover:to-amber-600 hover:shadow-[0_6px_20px_rgba(180,83,9,0.5)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700 active:scale-[0.99] sm:min-w-[220px]"
                     >
-                      Book now
+                      {primaryBookCta}
                     </FunnelCtaAnchor>
                     <FunnelCtaAnchor
                       listingId={listing.id}
@@ -628,7 +640,7 @@ export async function BnhubListingView(opts: {
                       href="#availability"
                       className="inline-flex min-h-[48px] w-full items-center justify-center rounded-xl border-2 border-slate-300 bg-white px-6 text-sm font-bold text-slate-800 shadow-sm transition hover:bg-slate-50"
                     >
-                      Check availability
+                      {secondaryHeroCta}
                     </FunnelCtaAnchor>
                     <p className="text-center text-[12px] font-semibold leading-snug text-slate-700 sm:text-left">
                       {reassuranceUnderCta}
@@ -648,6 +660,22 @@ export async function BnhubListingView(opts: {
                 <div className="mt-4 border-t border-slate-100 pt-4">
                   <BnhubTrustSignals stripeCheckoutAvailable={stripeCheckoutAvailable} variant="light" />
                 </div>
+                {engineFlags.croEngineV1 || engineFlags.conversionOptimizationV1 ? (
+                  <CroListingConversionTrustBlock
+                    listingVerified={listing.verificationStatus === "VERIFIED"}
+                    stripeCheckoutAvailable={stripeCheckoutAvailable}
+                  />
+                ) : null}
+                {bnhubConversionLayerFlags.conversionV1 ? (
+                  <BnhubGuestConversionPropertyBoost
+                    verified={tripleVerified || listing.verificationStatus === "VERIFIED"}
+                    highDemandArea={bnhubMarketInsight?.demandLevel === "high"}
+                    recentlyViewed={viewsToday > 0}
+                    recentlyBooked={bookingsThisWeek > 0}
+                    bookNowLabel="Book now"
+                    reserveLabel="Reserve this stay"
+                  />
+                ) : null}
               </div>
 
               <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -1091,6 +1119,8 @@ export async function BnhubListingView(opts: {
                 <BnhubListingUrgencyStrip
                   viewsToday={viewsToday}
                   limitedAvailability={limitedAvailability}
+                  bookingsThisWeek={bookingsThisWeek}
+                  showEarlyAccessPricing={isNew}
                   compact
                 />
                 <dl className="mt-3 space-y-2.5 rounded-xl border border-neutral-200 bg-white px-3 py-3 text-sm">

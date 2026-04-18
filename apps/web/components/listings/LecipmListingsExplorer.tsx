@@ -25,6 +25,11 @@ import { scrollToMapSearchRegion } from "@/lib/ui/scroll-to-map-search";
 import { useGeocodedMapFocus } from "@/hooks/useGeocodedMapFocus";
 import { computeMapSearchStats } from "@/lib/search/map-search-analytics";
 import { BROWSE_EMPTY_LISTINGS } from "@/lib/listings/browse-empty-copy";
+import { getListingCardDeterministicInsights } from "@/lib/listings/listing-card-deterministic-insights";
+import { track } from "@/lib/tracking";
+import { conversionEngineFlags } from "@/config/feature-flags";
+import { buildInstantValueSummary } from "@/modules/conversion/instant-value.service";
+import { recordListingCtaClick } from "@/modules/conversion/conversion-monitoring.service";
 
 const SEARCH_REASSURANCE_LINE =
   "Verified listings where marked · Clear prices · Secure platform";
@@ -307,6 +312,19 @@ function LecipmListingsExplorerInner() {
 
   const listSort = appliedFromUrl.sort ?? "recommended";
 
+  const medianForCards = mapStats?.medianPrice ?? null;
+
+  const dealIsRent = appliedFromUrl.type === "rent";
+
+  const listingsInstantSummary = useMemo(() => {
+    if (!conversionEngineFlags.conversionUpgradeV1 || !conversionEngineFlags.instantValueV1) return null;
+    return buildInstantValueSummary({
+      page: "listings",
+      intent: dealIsRent ? "rent" : "buy",
+      listingsContext: { resultCount: total, dealType: dealIsRent ? "rent" : "sale" },
+    });
+  }, [dealIsRent, total]);
+
   const goToPage = (nextPage: number) => {
     const p = new URLSearchParams(searchParams.toString());
     if (nextPage <= 1) p.delete("page");
@@ -541,11 +559,28 @@ function LecipmListingsExplorerInner() {
         const img = row.coverImage || row.images[0] || null;
         const price = `$${(row.priceCents / 100).toLocaleString("en-CA")}`;
         const addr = [row.address, row.city].filter(Boolean).join(", ") || row.city;
+        const detailHref = listingPublicHref(row);
+        const insights = getListingCardDeterministicInsights({
+          priceCents: row.priceCents,
+          city: row.city,
+          bedrooms: row.bedrooms,
+          medianPriceDollars: medianForCards,
+        });
+        const microCta =
+          insights.some((line) => line.includes("Below median")) ? "Get this deal" : "Contact now";
+        const primaryOpportunityCta = conversionEngineFlags.conversionUpgradeV1 ? "Get this opportunity" : microCta;
+        const fireListingClick = () => {
+          track("listing_click", {
+            meta: { listingId: row.id, surface: "lecipm_grid", city: row.city },
+          });
+          if (conversionEngineFlags.conversionUpgradeV1) {
+            recordListingCtaClick({ listingId: row.id, surface: "lecipm_grid" });
+          }
+        };
         return (
-          <Link
+          <article
             key={row.id}
             id={`lecipm-card-${row.id}`}
-            href={listingPublicHref(row)}
             onMouseEnter={() => setSelectedId(row.id)}
             onMouseLeave={() => setSelectedId(null)}
             className={`group relative flex flex-col overflow-hidden rounded-2xl border text-left shadow-[0_8px_30px_-12px_rgba(0,0,0,0.55)] transition-all duration-200 ease-out hover:scale-[1.015] hover:shadow-[0_16px_40px_-12px_rgba(0,0,0,0.65)] ${
@@ -558,7 +593,11 @@ function LecipmListingsExplorerInner() {
               kind={row.kind === "crm" ? "crm" : "fsbo"}
               className="absolute right-2 top-2 z-10"
             />
-            <div className="relative aspect-[4/3] overflow-hidden bg-black">
+            <Link
+              href={detailHref}
+              onClick={fireListingClick}
+              className="relative block aspect-[4/3] overflow-hidden bg-black outline-none ring-[#D4AF37]/30 focus-visible:ring-2"
+            >
               {img ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -592,7 +631,7 @@ function LecipmListingsExplorerInner() {
                   </span>
                 ) : null}
               </div>
-            </div>
+            </Link>
             <div className="flex flex-1 flex-col p-5">
               <p className="text-2xl font-bold tracking-tight" style={{ color: ACCENT }}>
                 {price}
@@ -602,18 +641,214 @@ function LecipmListingsExplorerInner() {
                 {row.bedrooms != null ? `${row.bedrooms} bd` : "— bd"}
                 {" · "}
                 {row.bathrooms != null ? `${row.bathrooms} ba` : "— ba"}
+                {row.propertyType ? ` · ${row.propertyType}` : ""}
               </p>
+              {insights.length ? (
+                <ul className="mt-3 space-y-1 text-[11px] leading-snug text-[#E8D589]/90">
+                  {insights.map((line) => (
+                    <li key={line} className="flex gap-1.5">
+                      <span className="text-[#D4AF37]" aria-hidden>
+                        ·
+                      </span>
+                      <span>{line}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-stretch">
+                <Link
+                  href={detailHref}
+                  onClick={fireListingClick}
+                  className="inline-flex min-h-[48px] flex-1 items-center justify-center rounded-xl border border-[#D4AF37]/50 bg-[#D4AF37]/10 px-4 text-center text-sm font-bold text-[#E8D589] transition hover:bg-[#D4AF37]/20"
+                >
+                  View details
+                </Link>
+                <Link
+                  href={`${detailHref}#property-contact-cta`}
+                  onClick={() => {
+                    track("cta_click", {
+                      meta: { label: "contact_now", listingId: row.id, surface: "lecipm_grid" },
+                    });
+                    if (conversionEngineFlags.conversionUpgradeV1) {
+                      recordListingCtaClick({ listingId: row.id, surface: "lecipm_grid", label: "opportunity" });
+                    }
+                  }}
+                  className="inline-flex min-h-[48px] flex-1 items-center justify-center rounded-xl px-4 text-center text-sm font-bold text-black transition hover:brightness-110"
+                  style={{ backgroundColor: ACCENT }}
+                >
+                  {primaryOpportunityCta}
+                </Link>
+              </div>
             </div>
-          </Link>
+          </article>
         );
       })}
     </div>
   );
 
+  const topFilterStrip = (
+    <section
+      className="border-b border-[#D4AF37]/15 bg-black/90"
+      aria-label="Listing filters"
+    >
+      <div className="mx-auto max-w-6xl px-4 py-4 sm:px-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:flex-wrap lg:items-center">
+          <div className="flex flex-wrap gap-2">
+            <span className="w-full text-[10px] font-semibold uppercase tracking-wide text-white/40 lg:w-auto lg:pr-2">
+              Deal type
+            </span>
+            <button
+              type="button"
+              onClick={() => applyPatch({ type: "buy" })}
+              className={`min-h-[44px] rounded-2xl border px-4 text-sm font-semibold ${
+                !dealIsRent ? "border-[#D4AF37] bg-[#D4AF37]/15 text-[#D4AF37]" : "border-white/15 text-white/70"
+              }`}
+            >
+              Buy
+            </button>
+            <button
+              type="button"
+              onClick={() => applyPatch({ type: "rent" })}
+              className={`min-h-[44px] rounded-2xl border px-4 text-sm font-semibold ${
+                dealIsRent ? "border-[#D4AF37] bg-[#D4AF37]/15 text-[#D4AF37]" : "border-white/15 text-white/70"
+              }`}
+            >
+              Rent
+            </button>
+          </div>
+
+          <div className="min-w-0 flex-1 lg:max-w-xs">
+            <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-white/40">City</label>
+            <input
+              type="text"
+              value={appliedFromUrl.location}
+              onChange={(e) => applyPatch({ location: e.target.value })}
+              placeholder="City or area"
+              className="min-h-[44px] w-full rounded-2xl border border-[#D4AF37]/25 bg-[#111] px-3 py-2 text-sm text-white placeholder:text-white/35 focus:border-[#D4AF37] focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/20"
+            />
+          </div>
+
+          <div className="grid w-full grid-cols-2 gap-2 sm:max-w-xs lg:w-64">
+            <div>
+              <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-white/40">Min price</label>
+              <input
+                type="number"
+                min={0}
+                step={1000}
+                value={priceMinL || ""}
+                onChange={(e) => {
+                  const v = Math.max(0, parseInt(e.target.value, 10) || 0);
+                  setPriceMinL(v);
+                  queuePriceApply(v, priceMaxL >= PRICE_MAX_SLIDER ? 0 : priceMaxL);
+                }}
+                className="min-h-[44px] w-full rounded-2xl border border-[#D4AF37]/25 bg-[#111] px-2 py-2 text-sm text-white"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-white/40">Max price</label>
+              <input
+                type="number"
+                min={0}
+                step={1000}
+                value={priceMaxL >= PRICE_MAX_SLIDER ? "" : priceMaxL}
+                placeholder="Any"
+                onChange={(e) => {
+                  const raw = e.target.value.trim();
+                  if (!raw) {
+                    setPriceMaxL(PRICE_MAX_SLIDER);
+                    queuePriceApply(priceMinL, 0);
+                    return;
+                  }
+                  const v = Math.max(0, parseInt(raw, 10) || 0);
+                  setPriceMaxL(v);
+                  queuePriceApply(priceMinL, v);
+                }}
+                className="min-h-[44px] w-full rounded-2xl border border-[#D4AF37]/25 bg-[#111] px-2 py-2 text-sm text-white placeholder:text-white/35"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-white/40">Bedrooms</label>
+            <select
+              value={appliedFromUrl.bedrooms ?? ""}
+              onChange={(e) => {
+                const v = e.target.value;
+                applyPatch({ bedrooms: v === "" ? null : parseInt(v, 10) });
+              }}
+              className="min-h-[44px] w-full min-w-[8rem] rounded-2xl border border-[#D4AF37]/25 bg-[#111] px-3 py-2 text-sm text-white lg:w-36"
+            >
+              <option value="">Any</option>
+              {[1, 2, 3, 4, 5].map((n) => (
+                <option key={n} value={n}>
+                  {n}+
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="w-full lg:w-auto lg:min-w-[14rem]">
+            <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-white/40">Property type</p>
+            <div className="flex flex-wrap gap-1.5">
+              {(
+                [
+                  ["", "Any"],
+                  ["HOUSE", "House"],
+                  ["CONDO", "Condo"],
+                  ["APARTMENT", "Apt"],
+                ] as const
+              ).map(([val, label]) => (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => setPropertyType(val)}
+                  className={`min-h-[40px] rounded-xl border px-2.5 text-xs font-medium sm:text-sm ${
+                    (val === "" && !selectedPropertyTypes) || selectedPropertyTypes === val
+                      ? "border-[#D4AF37] bg-[#D4AF37]/15 text-[#D4AF37]"
+                      : "border-white/15 text-white/75"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-1 flex-wrap gap-2 lg:justify-end">
+            <span className="w-full text-[10px] font-semibold uppercase tracking-wide text-white/40 lg:w-auto lg:self-end lg:pb-3 lg:pr-1">
+              AI sort
+            </span>
+            {(
+              [
+                ["priceAsc", "Best deals"] as const,
+                ["recommended", "High ROI"] as const,
+                ["aiScore", "High demand"] as const,
+              ] as const
+            ).map(([sort, label]) => {
+              const active = listSort === sort;
+              return (
+                <button
+                  key={sort}
+                  type="button"
+                  onClick={() => applyPatch({ sort })}
+                  className={`min-h-[44px] rounded-2xl border px-3 text-xs font-semibold sm:text-sm ${
+                    active ? "border-[#D4AF37] bg-[#D4AF37]/15 text-[#D4AF37]" : "border-white/15 text-white/75"
+                  }`}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+
   return (
     <div className="min-h-screen bg-black text-white">
       <header className="sticky top-0 z-40 border-b border-[#D4AF37]/20 bg-black/95 backdrop-blur-md">
-        <div className="mx-auto max-w-[1920px] px-4 pt-2 sm:px-6">
+        <div className="mx-auto max-w-6xl px-4 pt-2 sm:px-6">
           <p className="text-[11px] font-normal leading-snug text-white/40 sm:text-xs sm:text-white/45">
             {SEARCH_REASSURANCE_LINE}
           </p>
@@ -692,19 +927,29 @@ function LecipmListingsExplorerInner() {
                 onChange={(e) => applyPatch({ sort: e.target.value })}
                 className="min-h-[40px] flex-1 bg-transparent py-1 text-sm text-white focus:outline-none"
               >
-                <option value="priceAsc">Price (low–high)</option>
-                <option value="priceDesc">Price (high–low)</option>
-                <option value="newest">Newest</option>
-                <option value="aiScore">AI score</option>
                 <option value="recommended">Recommended</option>
+                <option value="priceAsc">Best value (price ↑)</option>
+                <option value="priceDesc">Price (high → low)</option>
+                <option value="aiScore">High demand</option>
+                <option value="newest">Newest</option>
               </select>
             </label>
           </div>
         </div>
       </header>
 
+      {topFilterStrip}
+
+      {listingsInstantSummary ? (
+        <section className="mx-auto max-w-6xl border-b border-[#D4AF37]/20 bg-black/40 px-4 py-4 sm:px-6">
+          <p className="text-xs font-bold uppercase tracking-wide text-[#D4AF37]">Recommended opportunities</p>
+          <p className="mt-1 text-sm font-medium text-white">{listingsInstantSummary.headline}</p>
+          <p className="mt-1 text-xs text-white/55">{listingsInstantSummary.subheadline}</p>
+        </section>
+      ) : null}
+
       {mapLayout === "split" ? (
-        <div className="mx-auto flex max-w-[1920px] gap-2 border-b border-[#D4AF37]/15 px-4 pb-2 lg:hidden">
+        <div className="mx-auto flex max-w-6xl gap-2 border-b border-[#D4AF37]/15 px-4 pb-2 lg:hidden">
           <button
             type="button"
             onClick={() => setMobileTab("list")}
@@ -729,7 +974,9 @@ function LecipmListingsExplorerInner() {
         </div>
       ) : null}
 
-      <div className={`mx-auto grid max-w-[1920px] gap-4 px-4 py-4 sm:px-6 lg:gap-6 ${mainGridClass}`}>
+      <div
+        className={`mx-auto grid max-w-7xl gap-4 px-4 py-8 sm:px-6 sm:py-12 lg:gap-6 lg:py-16 ${mainGridClass}`}
+      >
         <aside className="hidden space-y-4 rounded-2xl border border-[#D4AF37]/20 bg-[#111] p-4 lg:block">
           <div className="rounded-2xl border border-[#D4AF37]/30 bg-black/30 p-3">
             <p className="text-xs font-semibold uppercase tracking-wide text-[#D4AF37]/90">Full property filters</p>

@@ -37,7 +37,7 @@ export async function computeUserTrustScore(userId: string): Promise<UserTrustCo
   ]);
 
   let raw = 22;
-  const reasons: Record<string, number | string | boolean> = {};
+  const reasons: Record<string, Prisma.JsonValue> = {};
 
   if (profile?.emailVerified) {
     raw += 14;

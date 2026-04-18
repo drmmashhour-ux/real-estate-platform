@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { getRegisterTrafficFieldsForBody } from "@/lib/attribution/register-attribution-client";
+import { trackEvent } from "@/lib/tracking/events";
 
 type Props = { referralRef?: string; acquisitionSrc?: string };
 
@@ -58,6 +59,7 @@ export function SignupAccountClient({ referralRef = "", acquisitionSrc = "" }: P
         setErr(j.error ?? "Could not create account");
         return;
       }
+      trackEvent("signup");
       if (j.needsEmailVerification) {
         router.push("/auth/login?registered=1");
         router.refresh();

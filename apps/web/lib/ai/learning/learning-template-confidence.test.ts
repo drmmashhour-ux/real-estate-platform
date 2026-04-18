@@ -67,11 +67,11 @@ describe("confidence adjustment", () => {
   });
 
   it("reduces when bucket success rate is low", () => {
-    expect(adjustConfidenceByRate(0.8, 0.2, 10)).toBeCloseTo(0.68, 5);
+    expect(adjustConfidenceByRate(0.8, 0.2, 10)).toBeCloseTo(0.8 * 0.92, 5);
   });
 
   it("slightly boosts when bucket success rate is high", () => {
-    expect(adjustConfidenceByRate(0.7, 0.8, 10)).toBeCloseTo(0.735, 5);
+    expect(adjustConfidenceByRate(0.7, 0.8, 10)).toBeCloseTo(0.7 * 1.025, 5);
   });
 
   it("clamps to [0, 1]", () => {

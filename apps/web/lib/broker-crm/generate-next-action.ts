@@ -1,3 +1,4 @@
+import type { PlatformRole } from "@prisma/client";
 import { isOpenAiConfigured, openai } from "@/lib/ai/openai";
 import { appendBrokerCrmAiInsight } from "@/lib/broker-crm/ai-merge-insight";
 import { trackBrokerCrm } from "@/lib/broker-crm/analytics";
@@ -5,9 +6,16 @@ import { getBrokerCrmLeadDetail } from "@/lib/broker-crm/get-lead";
 
 const MODEL = "gpt-4o-mini";
 
-export async function generateNextBestAction(leadId: string, brokerUserId: string): Promise<{ nextBestAction: string }> {
+export async function generateNextBestAction(
+  leadId: string,
+  brokerUserId: string,
+  brokerRole: PlatformRole
+): Promise<{ nextBestAction: string }> {
   const detail = await getBrokerCrmLeadDetail(leadId);
   if (!detail?.thread) throw new Error("Lead or thread not found");
+  if (brokerRole !== "ADMIN" && detail.brokerUserId !== brokerUserId) {
+    throw new Error("Not found");
+  }
 
   const messagesText = detail.thread.messages
     .map((m) => `${m.senderRole}: ${m.body}`)

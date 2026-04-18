@@ -16,10 +16,16 @@ import { InvestorOpportunityStrip } from "@/components/dashboard/lecipm/Investor
 import { TrustDealSummaryCard } from "@/components/conversion/TrustDealSummaryCard";
 import { NextActionPanel } from "@/components/conversion/NextActionPanel";
 import { InlineUpgradeBanner } from "@/components/conversion/InlineUpgradeBanner";
+import { HubJourneyBanner } from "@/components/journey/HubJourneyBanner";
 
 export const dynamic = "force-dynamic";
 
-export default async function InvestorDashboardPage() {
+export default async function InvestorDashboardPage({
+  params,
+}: {
+  params: Promise<{ locale: string; country: string }>;
+}) {
+  const { locale, country } = await params;
   const userId = await getGuestId();
   if (!userId) redirect("/auth/login?returnUrl=/dashboard/investor");
 
@@ -69,6 +75,7 @@ export default async function InvestorDashboardPage() {
   return (
     <HubLayout title="Investor" hubKey="investments" navigation={hubNavigation.investments} showAdminInSwitcher={false}>
       <div className="space-y-8">
+        <HubJourneyBanner hub="investor" locale={locale} country={country} userId={userId} />
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="text-xs uppercase tracking-wider text-premium-gold">Portfolio workspace</p>

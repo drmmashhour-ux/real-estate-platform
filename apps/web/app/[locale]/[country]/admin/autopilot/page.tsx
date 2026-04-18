@@ -22,8 +22,8 @@ export default async function AdminAutopilotPage() {
     }),
     prisma.listingOptimizationAudit.groupBy({
       by: ["listingId"],
-      _count: { _all: true },
-      orderBy: { _count: { _all: "desc" } },
+      _count: { id: true },
+      orderBy: { _count: { id: "desc" } },
       take: 12,
     }),
     prisma.listingOptimizationRun.groupBy({
@@ -100,7 +100,7 @@ export default async function AdminAutopilotPage() {
               const meta = titleById.get(t.listingId);
               return (
                 <li key={t.listingId}>
-                  {meta?.listingCode} · {meta?.title ?? t.listingId} · {t._count._all} audit events
+                  {meta?.listingCode} · {meta?.title ?? t.listingId} · {t._count.id} audit events
                 </li>
               );
             })}

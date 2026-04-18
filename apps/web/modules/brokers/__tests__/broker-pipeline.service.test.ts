@@ -1,0 +1,57 @@
+import { afterEach, describe, expect, it } from "vitest";
+import {
+  __resetBrokerPipelineStoreForTests,
+  addBrokerNote,
+  buildBrokerPipelineSummary,
+  createBrokerProspect,
+  listBrokerPipeline,
+  updateBrokerStage,
+} from "@/modules/brokers/broker-pipeline.service";
+import { resetBrokerMonitoringForTests } from "@/modules/brokers/broker-monitoring.service";
+
+describe("broker-pipeline.service", () => {
+  afterEach(() => {
+    __resetBrokerPipelineStoreForTests();
+    resetBrokerMonitoringForTests();
+  });
+
+  it("creates a prospect and lists pipeline newest-first", () => {
+    const p = createBrokerProspect({
+      name: "Alex Broker",
+      email: "alex@example.com",
+      source: "linkedin",
+    });
+    expect(p.id).toBeTruthy();
+    expect(p.stage).toBe("new");
+    expect(p.notes === undefined || Array.isArray(p.notes)).toBe(true);
+    const list = listBrokerPipeline();
+    expect(list).toHaveLength(1);
+    expect(list[0]!.name).toBe("Alex Broker");
+  });
+
+  it("updates stage and appends notes as array entries", () => {
+    const p = createBrokerProspect({ name: "Jamie", phone: "+15145550199" });
+    const moved = updateBrokerStage(p.id, "contacted");
+    expect(moved?.stage).toBe("contacted");
+    const noted = addBrokerNote(p.id, "Called — interested in demo");
+    expect(noted?.notes?.some((n) => n.includes("Called — interested in demo"))).toBe(true);
+  });
+
+  it("buildBrokerPipelineSummary counts stages", () => {
+    createBrokerProspect({ name: "A", email: "a@x.com" });
+    const b = createBrokerProspect({ name: "B", email: "b@x.com" });
+    updateBrokerStage(b.id, "converted");
+    const s = buildBrokerPipelineSummary();
+    expect(s.total).toBe(2);
+    expect(s.byStage.new).toBe(1);
+    expect(s.byStage.converted).toBe(1);
+    expect(s.conversionRate).toBe(50);
+  });
+
+  it("does not mutate create input", () => {
+    const input = { name: "Z", notes: ["n1"] as string[] };
+    const copy = { ...input, notes: [...input.notes] };
+    createBrokerProspect(input);
+    expect(input).toEqual(copy);
+  });
+});

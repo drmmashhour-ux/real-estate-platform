@@ -5,7 +5,7 @@ import { notFound, permanentRedirect } from "next/navigation";
 import { getCachedBnhubListingById } from "@/lib/bnhub/cached-listing";
 import { buildPageMetadata } from "@/lib/seo/page-metadata";
 import { buildBnhubStaySeoSlug, stayPathLookupKeys } from "@/lib/seo/public-urls";
-import { BnhubListingView, bnhubGalleryUrls } from "@/app/bnhub/bnhub-listing-view";
+import { BnhubListingView, bnhubGalleryUrls } from "@/app/[locale]/[country]/bnhub/bnhub-listing-view";
 import { getGuestId } from "@/lib/auth/session";
 import { trackEvent } from "@/src/services/analytics";
 import { onMessagingTriggerListingView } from "@/src/modules/messaging/triggers";

@@ -43,7 +43,8 @@ const RULES: Rule[] = [
     weight: 4,
     test: (q) =>
       /\b(?:improve|fix|boost|complete|missing|missing items|verification)\b/i.test(q) &&
-      /\b(?:listing|property)\b/i.test(q),
+      /\b(?:listing|property)\b/i.test(q) &&
+      !/\b(?:marketing|newsletter|campaign|email blast)\b/i.test(q),
   },
   {
     intent: CopilotUserIntent.PRICING_HELP,

@@ -27,7 +27,7 @@ import { BnhubLoyaltyRibbon } from "@/components/bnhub/BnhubLoyaltyRibbon";
 import { SearchEngineBar, SearchFiltersProvider, useSearchEngineContext } from "@/components/search/SearchEngine";
 import { STAY_PRICE_PRESETS } from "@/components/search/SearchBar";
 import { parseListingCodeFromSearchQuery } from "@/lib/listing-code-public";
-import { StaysSearchResults } from "@/app/bnhub/stays/stays-search-client";
+import { StaysSearchResults } from "@/app/[locale]/[country]/bnhub/stays/stays-search-client";
 import { SkipLinks } from "@/components/accessibility/SkipLinks";
 import { BnhubStripeTrustHint } from "@/components/bnhub/BnhubStripeTrustHint";
 import { BnhubStaysQuerySync } from "@/components/bnhub/BnhubStaysQuerySync";

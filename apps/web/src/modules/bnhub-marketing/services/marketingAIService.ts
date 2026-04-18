@@ -164,8 +164,8 @@ export function generateDeterministicAssetPack(
       title: null,
       content:
         lang === "fr"
-          ? `Découvrez ${title} à ${city}. Idéal pour: ${L}. Capacité ${input.maxGuests} invités, ${input.beds} chambres. Points forts: ${highlights}. Politique d’annulation: ${input.cancellationPolicy ?? "standard"}. ${verified}.`
-          : `Discover ${title} in ${city}. Ideal for: ${L}. Sleeps ${input.maxGuests}, ${input.beds} beds. Highlights: ${highlights}. Cancellation: ${input.cancellationPolicy ?? "standard"}. ${verified}.`,
+          ? `${title} — ${city}. Angle: ${L}. ${input.maxGuests} invités · ${input.beds} chambres. ${highlights}. Annulation: ${input.cancellationPolicy ?? "standard"}. ${verified}.`
+          : `${title} — ${city}. ${L} stay. Sleeps ${input.maxGuests} · ${input.beds} beds. Highlights: ${highlights}. Cancellation: ${input.cancellationPolicy ?? "standard"}. ${verified}.`,
     });
     drafts.push({
       assetType: "SEO_TITLE",

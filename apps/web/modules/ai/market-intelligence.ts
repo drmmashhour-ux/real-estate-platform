@@ -16,6 +16,8 @@ export type MarketIntelligenceResult = {
   newsSources: string[];
   newsFetchedAt: string;
   generatedAt: string;
+  /** Shown above the fold — all metrics are internal aggregates, not external forecasts. */
+  estimateDisclaimer: string;
 };
 
 /**
@@ -39,13 +41,17 @@ export async function generateMarketSummary(): Promise<{ dailySummary: string; i
       : "Listing intake softened slightly vs. the prior interval — monitor conversion.",
   ].join(" ");
 
+  const signups14 = inv.usersGrowth.reduce((a, p) => a + p.value, 0);
   const insights = [
     inv.kpis.activeListings > 0
-      ? `${inv.kpis.activeListings.toLocaleString()} listings are live across marketplaces.`
+      ? `${inv.kpis.activeListings.toLocaleString()} listings are live across marketplaces (FSBO + short-term + CRM totals).`
       : "Listing inventory is still ramping — focus on seller onboarding.",
     inv.kpis.totalTransactions > 0
-      ? `${inv.kpis.totalTransactions} offer/booking/deal events recorded (composite).`
+      ? `${inv.kpis.totalTransactions} offer/booking/deal events recorded (composite, trailing window).`
       : "Transaction volume is still early — emphasize trust and liquidity programs.",
+    signups14 > 0
+      ? `${signups14.toLocaleString()} new account sign-ups in the same ${platform.series.length}-day window (internal count).`
+      : "Net new sign-ups in this window are minimal — review acquisition channels.",
   ];
 
   return { dailySummary, insights };
@@ -93,12 +99,25 @@ export async function detectTrends(): Promise<MarketTrend[]> {
   }
 
   trends.push({
-    label: "Macro (informational)",
+    label: "Macro context (qualitative)",
     direction: "flat",
-    detail: "Interest rates and affordability continue to shape buyer urgency — pair with local MLS context.",
+    detail:
+      "Rates and affordability affect buyer urgency in general — validate any thesis with your own MLS and lender data.",
   });
 
-  return trends;
+  return dedupeTrendLabels(trends);
+}
+
+function dedupeTrendLabels(trends: MarketTrend[]): MarketTrend[] {
+  const seen = new Set<string>();
+  const out: MarketTrend[] = [];
+  for (const t of trends) {
+    const k = `${t.label}:${t.direction}`;
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push(t);
+  }
+  return out;
 }
 
 export async function summarizeNews(): Promise<{ lines: string[] }> {
@@ -113,6 +132,9 @@ export async function getFullMarketIntelligence(): Promise<MarketIntelligenceRes
     fetchInvestorNewsSummaries(),
   ]);
 
+  const estimateDisclaimer =
+    "All numeric figures are LECIPM internal aggregates (listings, transactions, users). News lines come only from your configured RSS URLs. Nothing here is investment advice, a rate forecast, or a third-party market guarantee.";
+
   return {
     dailySummary: summary.dailySummary,
     trends,
@@ -121,5 +143,6 @@ export async function getFullMarketIntelligence(): Promise<MarketIntelligenceRes
     newsSources: news.sources,
     newsFetchedAt: news.fetchedAt,
     generatedAt: new Date().toISOString(),
+    estimateDisclaimer,
   };
 }

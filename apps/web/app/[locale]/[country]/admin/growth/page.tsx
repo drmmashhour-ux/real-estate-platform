@@ -1,5 +1,8 @@
 import Link from "next/link";
 import { getGrowthCampaigns } from "@/lib/growth-acquisition";
+import { montrealGrowthEngineFlags } from "@/config/feature-flags";
+import { GrowthDashboard } from "@/components/growth/GrowthDashboard";
+import { GrowthSystemMetricsPanel } from "@/components/admin/GrowthSystemMetricsPanel";
 import { GrowthFunnelDashboard } from "./growth-funnel-dashboard";
 import { LaunchFirstCampaignPanel } from "./launch-first-campaign-panel";
 
@@ -55,6 +58,20 @@ export default async function AdminGrowthPage() {
           <div className="mb-10 max-w-3xl">
             <LaunchFirstCampaignPanel baseUrl={baseUrl} />
           </div>
+          {montrealGrowthEngineFlags.montrealGrowthEngineV1 ? (
+            <div className="mb-12">
+              <h2 className="mb-4 text-lg font-semibold text-slate-100">
+                Montréal growth engine (v1)
+              </h2>
+              <GrowthDashboard
+                showSupply={montrealGrowthEngineFlags.supplyAcquisitionV1}
+                showDemand={montrealGrowthEngineFlags.demandAcquisitionV1}
+                showReferrals={montrealGrowthEngineFlags.referralEngineV1}
+                showDomination={montrealGrowthEngineFlags.dominationStrategyV1}
+              />
+            </div>
+          ) : null}
+          <GrowthSystemMetricsPanel />
           <GrowthFunnelDashboard />
           {campaigns.length === 0 ? (
             <p className="text-sm text-slate-500">No campaigns yet.</p>

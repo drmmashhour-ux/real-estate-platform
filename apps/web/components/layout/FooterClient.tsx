@@ -22,6 +22,10 @@ import { useFooterHistoryNavSuppressed } from "@/components/layout/FooterHistory
 import { FooterHistoryNavPair } from "@/components/layout/FooterHistoryNavPair";
 import { FooterTrustSignals } from "@/components/layout/FooterTrustSignals";
 import { isMarketingHomePath } from "@/lib/layout/marketing-home";
+
+const LANDING_V1_PUBLIC =
+  process.env.NEXT_PUBLIC_FEATURE_LANDING_V1 === "true" || process.env.NEXT_PUBLIC_FEATURE_LANDING_V1 === "1";
+
 const BRAND_SLOGAN = "Where Prestige Meets Smart Real Estate";
 const PRIMARY_PHONE_DISPLAY = "+1 844 441 5444";
 const PRIMARY_PHONE_HREF = "tel:+18444415444";
@@ -33,6 +37,10 @@ export default function FooterClient() {
   const historyNavSuppressed = useFooterHistoryNavSuppressed();
 
   if (pathname.startsWith("/admin")) {
+    return null;
+  }
+
+  if (LANDING_V1_PUBLIC && isMarketingHomePath(pathname)) {
     return null;
   }
 

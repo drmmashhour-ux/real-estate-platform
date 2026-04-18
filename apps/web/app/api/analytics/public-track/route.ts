@@ -38,7 +38,6 @@ export async function POST(req: NextRequest) {
 
   const userId = await getGuestId();
   const normalized = eventType === "property_viewed" ? "listing_view" : eventType;
-  const h = await headers();
   const meta =
     body.metadata && typeof body.metadata === "object" && !Array.isArray(body.metadata)
       ? (body.metadata as Record<string, unknown>)

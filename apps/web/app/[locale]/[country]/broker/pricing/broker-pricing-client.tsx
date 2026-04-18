@@ -3,8 +3,26 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useToast } from "@/components/ui/ToastProvider";
+import { BrokerFeeTransparency } from "@/components/pricing/BrokerFeeTransparency";
+import { ComparisonTable } from "@/components/pricing/ComparisonTable";
+import { ROIQuickTool } from "@/components/sales/ROIQuickTool";
 
-export function BrokerPricingClient() {
+type PlatformFeeTransparency = {
+  brokerage: {
+    payPerLeadCents: number;
+    featuredListingMonthlyCents: number;
+    promotedListingCents: number;
+  };
+  disclaimers: string[];
+} | null;
+
+export function BrokerPricingClient({
+  platformFeeTransparency = null,
+  showBrokerRoi = false,
+}: {
+  platformFeeTransparency?: PlatformFeeTransparency;
+  showBrokerRoi?: boolean;
+}) {
   const { showToast } = useToast();
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -130,6 +148,49 @@ export function BrokerPricingClient() {
           front of every lead, not just the newest three.
         </p>
       </section>
+
+      {platformFeeTransparency ? (
+        <div className="space-y-6">
+          <BrokerFeeTransparency
+            brokerage={platformFeeTransparency.brokerage}
+            disclaimers={platformFeeTransparency.disclaimers}
+          />
+          <div>
+            <h2 className="text-lg font-semibold text-white">Fee stance</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              We don&apos;t publish fake “vs competitor” savings. Checkout and CRM billing show line items; ROI tools use your inputs only.
+            </p>
+            <div className="mt-4">
+              <ComparisonTable
+                rows={[
+                  {
+                    label: "Mortgage leads (this page)",
+                    lecipm: "Free vs Pro — as shown above",
+                    notes: "Mock upgrade today; Stripe-backed billing when enabled for your workspace.",
+                  },
+                  {
+                    label: "Residential CRM (when active)",
+                    lecipm: "Pay-per-lead anchor + optional boosts",
+                    notes: "See reference card — not a promise of deal volume.",
+                  },
+                  {
+                    label: "Success / platform fee on commission",
+                    lecipm: "Configurable in ROI model",
+                    notes: "Use the estimate below — figures are illustrative, not guarantees.",
+                  },
+                ]}
+              />
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {showBrokerRoi ? (
+        <div className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Model (not advice)</p>
+          <ROIQuickTool />
+        </div>
+      ) : null}
     </div>
   );
 }

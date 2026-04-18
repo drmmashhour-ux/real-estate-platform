@@ -74,19 +74,27 @@ export type SmartDashboardData = {
 };
 
 const FUNNEL_ORDER: AnalyticsFunnelEventName[] = [
+  "landing_visit",
+  "search_used",
+  "listing_click",
   "listing_view",
   "contact_click",
   "visit_request",
   "visit_confirmed",
+  "booking_started",
   "deal_started",
   "payment_completed",
 ];
 
 const FUNNEL_LABELS: Record<AnalyticsFunnelEventName, string> = {
+  landing_visit: "Landing visits",
+  search_used: "Searches",
+  listing_click: "Listing clicks",
   listing_view: "Listing views",
   contact_click: "Contact clicks",
   visit_request: "Visit requests",
   visit_confirmed: "Visits confirmed",
+  booking_started: "Bookings started",
   deal_started: "Deals started",
   payment_completed: "Payments",
 };
@@ -205,7 +213,7 @@ export async function getSmartDashboardData(): Promise<SmartDashboardData | null
       prisma.listing.findMany({
         orderBy: { createdAt: "desc" },
         take: 4,
-        select: { id: true, title: true, createdAt: true, city: true },
+        select: { id: true, title: true, createdAt: true, listingCode: true },
       }),
       prisma.booking.findMany({
         orderBy: { createdAt: "desc" },
@@ -268,6 +276,8 @@ export async function getSmartDashboardData(): Promise<SmartDashboardData | null
         ORDER BY 1 ASC
       `.catch(() => [] as { d: Date; c: bigint }[]),
     ]);
+
+    const needsDocsListings = needsDocsBnhub + needsDocsFsbo;
 
     const personaMap = new Map<MarketplacePersona, number>(
       personaGroups.map((g) => [g.marketplacePersona, g._count._all])
@@ -413,7 +423,7 @@ export async function getSmartDashboardData(): Promise<SmartDashboardData | null
         type: "listing",
         id: l.id,
         title: l.title ?? "Listing",
-        subtitle: l.city ?? "CRM",
+        subtitle: l.listingCode ?? "CRM",
         at: l.createdAt.toISOString(),
         kind: "crm",
       });
@@ -492,7 +502,6 @@ export async function getSmartDashboardData(): Promise<SmartDashboardData | null
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([date, v]) => ({ date: date.slice(5), ...v }));
 
-    const needsDocsListings = needsDocsBnhub + needsDocsFsbo;
     const documentRequests = oaciqPending + brokerTaxPending + fsboDocPending;
 
     return {

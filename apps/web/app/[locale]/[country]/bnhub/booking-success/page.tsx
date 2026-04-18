@@ -8,6 +8,7 @@ import { trackSearchEvent } from "@/lib/ai/search/trackSearchEvent";
 import { BookingCompletedBeacon } from "@/components/analytics/BookingCompletedBeacon";
 import { ContentPerformanceConversionBeacon } from "@/components/content-machine/ContentPerformanceConversionBeacon";
 import { BookingSuccessNextSteps, BookingSuccessRecommendedRow } from "@/components/bnhub/BookingSuccessRetention";
+import { BnhubBookingCompletedConversionBeacon } from "@/components/bnhub/BnhubBookingCompletedConversionBeacon";
 
 export const dynamic = "force-dynamic";
 
@@ -60,6 +61,9 @@ export default async function BookingSuccessPage({ searchParams }: Props) {
         listingId={booking.listingId}
         valueCents={booking.payment?.amountCents ?? null}
       />
+      {paid ? (
+        <BnhubBookingCompletedConversionBeacon listingId={booking.listingId} paymentConfirmed={paid} />
+      ) : null}
       {paid ? (
         <ContentPerformanceConversionBeacon listingId={booking.listingId} paymentConfirmed={paid} />
       ) : null}

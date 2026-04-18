@@ -7,6 +7,9 @@
  *
  * Configure rate with env (primary): BNHUB_COMMISSION_RATE=0.15
  * Legacy alias: BNHUB_PLATFORM_COMMISSION_RATE (still read if primary unset).
+ *
+ * Revenue reporting: `platformFeeCents` is persisted on bookings / Stripe webhook reconciliation — auditable in admin finance flows.
+ * For market tests in the 5%–10% range, lower the env rate in a controlled rollout (do not hardcode in UI).
  */
 
 /** Canonical default when env is missing or invalid — 15% platform fee. */

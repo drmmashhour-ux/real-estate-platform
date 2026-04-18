@@ -1,5 +1,19 @@
 import type { ListingHealthStatus, ListingQualityLevel } from "@prisma/client";
 
+/** Public pill label for search cards / listing hero — only when thresholds match. */
+export function listingQualityBadgeLabelFromRow(row: {
+  level: ListingQualityLevel;
+  qualityScore: number;
+  healthStatus: ListingHealthStatus;
+}): string | null {
+  if (row.level !== "excellent" && row.level !== "good") return null;
+  if (row.qualityScore < 62) return null;
+  if (row.level === "excellent") return "Top quality";
+  return row.healthStatus === "healthy" || row.healthStatus === "top_performer"
+    ? "High quality"
+    : "Quality stay";
+}
+
 export function clampInt(n: number, min: number, max: number): number {
   if (!Number.isFinite(n)) return min;
   return Math.max(min, Math.min(max, Math.round(n)));

@@ -20,8 +20,14 @@ import { AdminHubAiSection } from "@/components/ai/AdminHubAiSection";
 import { AdminDailyAiReportCard } from "@/components/ai/AdminDailyAiReportCard";
 import { BrandGuidelineStrip } from "@/components/brand/BrandGuidelineStrip";
 import { AISummaryWidget } from "@/components/ai/AISummaryWidget";
+import { HubJourneyBanner } from "@/components/journey/HubJourneyBanner";
 
-export default async function AdminHubDashboardPage() {
+export default async function AdminHubDashboardPage({
+  params,
+}: {
+  params: Promise<{ locale: string; country: string }>;
+}) {
+  const { locale, country } = await params;
   const role = await getUserRole();
   const theme = getHubTheme("admin");
   const guestId = await getGuestId();
@@ -114,6 +120,7 @@ export default async function AdminHubDashboardPage() {
       showAdminInSwitcher={isHubAdminRole(role)}
     >
       <div className="space-y-8">
+        <HubJourneyBanner hub="admin" locale={locale} country={country} userId={guestId} />
         {smartDashboard && (
           <section className="rounded-2xl border border-premium-gold/25 bg-[#050505] p-6 shadow-[0_0_40px_rgba(212,175,55,0.06)]">
             <SmartAdminDashboard data={smartDashboard} />

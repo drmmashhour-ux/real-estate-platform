@@ -1,13 +1,11 @@
-/** High-risk families — always require human approval before side effects. */
+/**
+ * Whether an action should stay in a human/owner approval queue before side effects.
+ * Only internal candidate tags may skip approval; everything else stays review-first.
+ * Execution policy (`execution.policy.ts`) still gates SAFE_AUTOPILOT auto-apply to a tiny allowlist.
+ */
 export function actionRequiresApproval(actionType: string): boolean {
-  const highRisk = new Set([
-    "suggest_price_adjustment",
-    "flag_for_review",
-    "suggest_title_improvement",
-    "suggest_description_improvement",
-    "suggest_add_photos",
-    "suggest_add_amenities",
-    "suggest_verification_completion",
-  ]);
-  return highRisk.has(actionType);
+  const noApproval = new Set(["mark_growth_candidate", "mark_featured_candidate"]);
+  if (noApproval.has(actionType)) return false;
+  if (actionType === "queue_trust_safety_review") return true;
+  return true;
 }

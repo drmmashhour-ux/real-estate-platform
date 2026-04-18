@@ -7,6 +7,17 @@ import type { BrokerAttentionItemDto, CopilotBlock } from "@/modules/copilot/dom
 const LOW_TRUST_MAX = 55;
 const TAKE = 25;
 
+/** Drop “nice to have” photo nudges when listing is already active, approved, and moderately trusted. */
+function isCosmeticOnlyBrokerNudge(
+  row: { trustScore: number | null; moderationStatus: string; status: string },
+  issues: string[]
+): boolean {
+  if (row.moderationStatus !== "APPROVED" || row.status !== "ACTIVE") return false;
+  if ((row.trustScore ?? 0) < 62) return false;
+  if (issues.length === 0) return false;
+  return issues.every((line) => /photo|image|cover|more pictures/i.test(line));
+}
+
 export async function runBrokerListingsFix(): Promise<{
   ok: true;
   block: CopilotBlock;
@@ -66,6 +77,11 @@ export async function runBrokerListingsFix(): Promise<{
       }
     }
 
+    const issueSlice = issues.slice(0, 8);
+    if (isCosmeticOnlyBrokerNudge(row, issueSlice)) {
+      continue;
+    }
+
     items.push({
       listingId: row.id,
       title: row.title,
@@ -73,7 +89,7 @@ export async function runBrokerListingsFix(): Promise<{
       trustScore: row.trustScore,
       moderationStatus: row.moderationStatus,
       status: row.status,
-      issues: issues.slice(0, 8),
+      issues: issueSlice,
     });
   }
 

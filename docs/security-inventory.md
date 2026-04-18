@@ -33,15 +33,23 @@ High-level map of security-relevant surfaces. Use with `docs/security-checklist.
 - Resend (email)
 - Maps / analytics as configured per env
 
-## Supabase RLS
+## Supabase RLS (LECIPM RLS Security Enforcement v1)
 
-**This repository does not ship SQL migrations under `supabase/migrations` for RLS.** Row Level Security and table policies are expected to be defined in the **Supabase project** (dashboard or linked migrations). Treat as **manual audit required**:
+RLS **SQL is versioned in the repo** (not only in the Supabase dashboard):
 
-- Enable RLS on all user-owned and financial tables exposed to the anon/authenticated roles.
-- Avoid broad `USING (true)` policies on sensitive tables.
-- Service role bypasses RLS — use only in trusted server code (`apps/web` server routes, Edge functions with secrets).
+| Artifact | Purpose |
+|----------|---------|
+| `apps/web/sql/supabase/enable-rls.sql` | Enable RLS on `"Booking"`, `bnhub_listings`, `"User"`, `deals`, `payments` |
+| `apps/web/sql/supabase/rls-policies.sql` | `lecipm_*` policies for `anon` / `authenticated` (`auth.uid()`) |
+| `apps/web/sql/supabase/rls-rollback.sql` | Drop policies + disable RLS (staging / rollback only) |
 
-Document your live policies in Supabase and mirror summaries here when stable.
+**Apply** after Prisma migrations, via Supabase SQL editor or `psql` (see `apps/web/sql/supabase/README.md`).
+
+**Verify**: `cd apps/web && pnpm run verify:rls` — asserts RLS flags and non-zero policy counts on critical tables (`modules/security/rls-table-matrix.service.ts`).
+
+**Prisma / service role**: the app’s Prisma connection typically **bypasses RLS**. RLS protects direct Supabase client access; **API authorization remains mandatory** in application code. See `docs/rls-policies.md` (“Prisma and service role caveat”).
+
+Tables intentionally **not** given broad policies here (e.g. admin-wide SQL) rely on **server-only** routes and session checks, not on Postgres policies alone.
 
 ## Current risks (rolling)
 

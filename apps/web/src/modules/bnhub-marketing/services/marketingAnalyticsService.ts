@@ -62,6 +62,7 @@ export async function getCampaignOverviewStats() {
     revenueAttributedCents: b._sum.revenueAttributedCents ?? 0,
   }));
 
+  /** Heuristic multiplier on raw impressions — not a third-party reach guarantee; label surfaced in `labels.reach`. */
   const estimatedReach = byChannel.reduce((s, b) => s + (b._sum.impressions ?? 0), 0) * 1.15;
 
   return {

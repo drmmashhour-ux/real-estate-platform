@@ -67,6 +67,8 @@ export type CreateCheckoutParams = {
   /** Mortgage broker dashboard: unlock borrower contact on a `MortgageRequest`. */
   mortgageRequestId?: string;
   mortgageBrokerId?: string;
+  /** CRM lead unlock (`paymentType: lead_unlock`) — stored in session metadata for webhooks. */
+  leadId?: string;
   description?: string;
   /** Merged into Stripe Session metadata (server-controlled keys only). */
   metadata?: Record<string, string>;
@@ -114,6 +116,7 @@ export async function createCheckoutSession(
     fsboPlan,
     mortgageRequestId,
     mortgageBrokerId,
+    leadId,
     description,
     metadata = {},
     connect,
@@ -138,6 +141,7 @@ export async function createCheckoutSession(
     ...(brokerId ? { brokerId } : {}),
     ...(mortgageRequestId ? { mortgageRequestId } : {}),
     ...(mortgageBrokerId ? { mortgageBrokerId } : {}),
+    ...(leadId ? { leadId } : {}),
     ...(fsboListingId ? { fsboListingId } : {}),
     ...(connect
       ? {

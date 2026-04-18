@@ -1,82 +1,92 @@
-# Deployment and rollback
+# LECIPM Safe Deployment System v1
 
-This document describes a **controlled** deploy flow for `apps/web` (Next.js + Prisma).
+Production target: **Vercel** + **Next.js** + **Prisma** + **Supabase** + **Stripe**.
 
-## 1. Build
+## Pre-deploy gate
 
-```bash
-cd apps/web
-npm ci
-npm run build
-```
-
-Fix any **TypeScript** or **lint** errors before merging to the release branch.
-
-## 2. Database migrations
-
-Apply migrations **before** or **as part of** the deploy (same order every time):
+Run locally or in CI before merging to production:
 
 ```bash
-cd apps/web
-npx prisma migrate deploy
+pnpm --filter @lecipm/web run predeploy:check
 ```
 
-- **Never** use `prisma migrate dev` in production.
-- **Backup** before destructive migrations (see [BACKUP_STRATEGY.md](./BACKUP_STRATEGY.md)).
+Checks (see `apps/web/scripts/predeploy-check.ts`):
 
-## 3. Seed (optional)
+| Check | Notes |
+|--------|--------|
+| TypeScript | `pnpm run typecheck` (`tsc --noEmit` + higher heap). **Not skippable** on CI/Vercel (`CI` / `VERCEL`). |
+| Prisma | `prisma validate` |
+| Migrations | Optional: `LECIPM_ENFORCE_DB_MIGRATIONS=1` runs `prisma migrate status` (fails if pending) |
+| API routes | Every `app/api/**/route.ts` must export at least one HTTP handler |
+| Env | `DATABASE_URL` required |
+| Stripe | **`STRIPE_SECRET_KEY`** + **`STRIPE_WEBHOOK_SECRET`** (`whsec_…`) — always validated (no bypass) |
+| Build | `pnpm run build` — **Not skippable** on CI/Vercel. Local only: `LECIPM_SKIP_BUILD=1` (unsafe for prod) |
+| Local only | `LECIPM_SKIP_TYPECHECK=1` — same rules as build skip |
 
-Seeding is **not** automatic in production unless explicitly enabled:
+## PR review assistant (risk heuristics)
+
+Local / CI (requires git):
+
+- Module: `apps/web/modules/pr-review/`
+- HTTP (protected on deployed envs): `GET /api/dev/pr-review?base=origin/main&head=HEAD` with header `x-pr-review-secret: $PR_REVIEW_SECRET` when `PR_REVIEW_SECRET` is set.
+
+Returns JSON: `riskLevel`, `criticalChanges`, `warnings`, `recommendation` (`SAFE` | `REVIEW_REQUIRED` | `BLOCK`), plus `summaryMarkdown`.
+
+## Release readiness (remote)
+
+- `GET /api/dev/release-readiness?origin=https://your-domain.com` — same auth as PR review; returns `go`, `blocked`, `reasons`, `checks`.
+- Programmatic: `evaluateRemoteReleaseReadiness()` in `apps/web/modules/deployment/release-blocker.service.ts`.
+
+**Never deploy** if predeploy fails.
+
+## Health endpoints
+
+| Route | Purpose |
+|-------|---------|
+| `GET /api/health` | Liveness + Stripe config snapshot; cheap probes |
+| `GET /api/health?deep=1` | DB ping + Stripe — use post-deploy smoke tests |
+| `GET /api/ready` | Full readiness (DB, i18n, market) |
+
+## Post-deploy smoke tests
 
 ```bash
-npx prisma db seed
+POSTDEPLOY_BASE_URL=https://your-domain.com pnpm --filter @lecipm/web run postdeploy:test
 ```
 
-Use only in **controlled** environments (staging or first-time bootstrap).
+Probes include `/`, `/listings`, `/api/health?deep=1`, `/api/ready`, a protected broker route (401/403), a **safe** `POST /api/stripe/checkout` with an empty body (must not return 5xx), and Stripe readiness from `/api/health`. Set `POSTDEPLOY_TIMEOUT_MS` to tune fetch timeouts.
 
-## 4. Environment verification
+## Rollback (Vercel)
 
-- [ ] `NEXT_PUBLIC_ENV=production` (or staging).
-- [ ] `DATABASE_URL` points to the intended database.
-- [ ] Secrets present (auth, Stripe, cron, storage).
+1. **Instant:** Vercel Dashboard → Project → Deployments → select previous **Production** deployment → **Promote to Production** (or **Rollback**).
+2. **Flags:** Toggle risky behavior off in `apps/web/config/feature-flags.ts` (env-backed) — no redeploy required for many switches.
+3. **Git:** Revert the merge commit on `main` and push; Vercel builds the previous code state.
 
-## 5. Start / platform deploy
+## Feature flags
 
-- **Vercel / similar:** deploy the built artifact; ensure **build command** and **output** match the repo.
-- **Node:** `npm run start` after `next build`.
+Risky areas (AI, pricing, new flows) must use **centralized flags** in `config/feature-flags.ts`. Prefer env vars so ops can disable without code.
 
-## 6. Post-deploy checks
+Deployment-oriented aliases (see `deploymentSafetyFlags` in that file): `FEATURE_ENABLE_NEW_PRICING_ENGINE`, `FEATURE_ENABLE_AI_CONTRACTS_V2`, `FEATURE_ENABLE_AUTOPILOT_ACTIONS`, `FEATURE_ENABLE_EXPERIMENTAL_FEATURES` — these OR existing engine flags; set explicitly in Vercel during incidents for clarity.
 
-1. `GET /api/health` — **200**, `status: ok`.
-2. `GET /api/ready` — **200**, DB `connected` (or **503** if DB down — investigate).
-3. Smoke test **login** and one **tenant-scoped** read.
+## Rollback helpers (code)
 
----
+- `getRollbackPlaybook()` — `apps/web/modules/deployment/rollback.service.ts` (Vercel steps + env keys to disable).
 
-## Rollback strategy
+## Monitoring
 
-### Application rollback
+- **Sentry:** `SENTRY_DSN` — configured in `sentry.server.config.ts` / `instrumentation*.ts`.
+- **Alerts module:** `apps/web/modules/alerts/alert.service.ts` — optional `ALERT_WEBHOOK_URL` for POST JSON on warning/critical events.
+- **Deployment log:** `apps/web/modules/deployment/deployment-log.service.ts` — call `logDeploymentEvent()` from CI after promote (optional).
 
-- **Revert** the deployment to the **previous Git commit / image** that was known good.
-- Redeploy; **no DB change** unless the bad release ran migrations.
+## Release blockers
 
-### Database rollback
+Block production promote if:
 
-- **Code rollback ≠ DB rollback.** Migrations may have applied forward-only changes.
-- If data is wrong **after** a bad migration, options are:
-  1. **Forward fix** — new migration + data repair script.
-  2. **Restore from backup** — follow [RESTORE_PROCEDURE.md](./RESTORE_PROCEDURE.md).
-
-### When to restore vs rollback
-
-| Situation | Action |
-|-----------|--------|
-| Bug in **application code** only | Roll back **deployment**. |
-| Bad **data** or failed migration | **Restore** DB or run fix scripts; coordinate with ops. |
-
----
+- `predeploy:check` fails
+- `postdeploy:test` fails
+- `/api/ready` returns non-200 on production URL
+- Stripe webhook or payment smoke tests fail in staging
 
 ## Related
 
-- [PRODUCTION_CHECKLIST.md](./PRODUCTION_CHECKLIST.md)
-- [POST_LAUNCH_MONITORING.md](./POST_LAUNCH_MONITORING.md)
+- [infrastructure/README.md](./infrastructure/README.md) — Supabase, env, Vercel, RLS, QA
+- [release-checklist.md](./release-checklist.md)

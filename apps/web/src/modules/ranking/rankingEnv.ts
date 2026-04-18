@@ -1,8 +1,11 @@
+import { engineFlags } from "@/config/feature-flags";
+
 /**
  * Feature flags for the LECIPM ranking engine.
- * Default off until explicitly enabled in an environment.
+ * `FEATURE_RANKING_V1` enables the v1 pipeline; legacy `AI_RANKING_ENGINE_ENABLED` remains supported.
  */
 export function isAiRankingEngineEnabled(): boolean {
+  if (engineFlags.rankingV1) return true;
   return process.env.AI_RANKING_ENGINE_ENABLED === "1" || process.env.AI_RANKING_ENGINE_ENABLED === "true";
 }
 

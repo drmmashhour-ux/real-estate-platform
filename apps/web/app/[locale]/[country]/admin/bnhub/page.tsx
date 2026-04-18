@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { LecipmControlShell } from "@/components/admin/LecipmControlShell";
+import { BNHubDashboard } from "@/components/admin-bnhub/BNHubDashboard";
 import { getAdminRiskAlerts } from "@/lib/admin/control-center";
 import { requireAdminControlUserId } from "@/lib/admin/guard";
+import { bnhubV2Flags } from "@/config/feature-flags";
 
 export const dynamic = "force-dynamic";
 
@@ -40,6 +42,7 @@ export default async function AdminBnhubTowerPage() {
             Short-term inventory, bookings, and host economics — grouped shortcuts into existing admin hubs.
           </p>
         </div>
+        {bnhubV2Flags.bnhubV2 && bnhubV2Flags.bnhubAdminControlV1 ? <BNHubDashboard /> : null}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {BNHUB_LINKS.map((item) => (
             <Link

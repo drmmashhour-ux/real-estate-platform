@@ -1,8 +1,10 @@
 import { NextRequest } from "next/server";
 import Stripe from "stripe";
+import { paymentsV8SafetyFlags } from "@/config/feature-flags";
 import { getGuestId } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
 import { PAID_STORAGE_PLAN_KEYS, plans, type PlanKey } from "@/lib/billing/plans";
+import { assertCheckoutSessionIdShape, runV8SafePaymentOperation } from "@/lib/payments/v8-safety";
 
 export const dynamic = "force-dynamic";
 
@@ -44,9 +46,26 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const session = await stripe.checkout.sessions.retrieve(sessionId, {
-      expand: ["payment_intent"],
-    });
+    if (paymentsV8SafetyFlags.paymentsV8SafetyV1) {
+      try {
+        assertCheckoutSessionIdShape(sessionId);
+      } catch {
+        return Response.json({ error: "Invalid session_id format" }, { status: 400 });
+      }
+    }
+
+    const session = await runV8SafePaymentOperation(
+      "stripe.confirm.retrieveCheckoutSession",
+      () =>
+        stripe.checkout.sessions.retrieve(sessionId, {
+          expand: ["payment_intent"],
+        }),
+      {
+        idempotencyKey: `stripe.confirm:${sessionId}`,
+        timeoutMs: 15_000,
+        maxRetries: 1,
+      },
+    );
 
     if (session.payment_status !== "paid") {
       return Response.json(

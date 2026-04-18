@@ -39,6 +39,7 @@ import {
   buildFsboPublicDemandUi,
   incrementCrmListingView,
 } from "@/lib/listings/listing-analytics-service";
+import { buildPropertyConversionSurface } from "@/modules/conversion/property-conversion-surface";
 
 export const dynamic = "force-dynamic";
 
@@ -118,7 +119,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     path: canonicalPath,
     locale,
     country,
-    ogImage: row.coverImage ?? (Array.isArray(row.images) ? row.images[0] : null) ?? null,
+    ogImage: null,
     ogImageFallback: OG_DEFAULT_LISTINGS,
     ogImageAlt: `${row.title} — marketplace listing`,
     ogProduct: { amount: crmAmount, currency: "CAD" },
@@ -289,6 +290,14 @@ export default async function PublicListingRoute({ params }: Props) {
       bedrooms: row.bedrooms,
       propertyType: row.propertyType,
     });
+    const conversionSurfaceFsbo = buildPropertyConversionSurface({
+      priceCents: row.priceCents,
+      city: row.city,
+      verified: ownerBrokerVerification?.verificationStatus === "VERIFIED",
+      featured: row.featuredUntil != null && new Date(row.featuredUntil).getTime() > Date.now(),
+      listingUpdatedAt: row.updatedAt,
+      demandUi: demandUiFsbo,
+    });
     return (
       <>
         <JsonLdScript data={productLd} />
@@ -297,6 +306,7 @@ export default async function PublicListingRoute({ params }: Props) {
         <BuyerListingDetail
           listing={fsboPayloadFinal}
           demandUi={demandUiFsbo}
+          conversionSurface={conversionSurfaceFsbo}
           funnelVariant={funnelVariantForListing(row.id)}
           shareUrl={absUrl}
           shareSummary={`${row.title} — ${(row.priceCents / 100).toLocaleString("en-CA", { style: "currency", currency: "CAD" })} · ${row.city}`}
@@ -393,6 +403,14 @@ export default async function PublicListingRoute({ params }: Props) {
   await incrementCrmListingView(payload.id);
   const demandUiCrm = await buildCrmPublicDemandUi(payload.id, { priceCents: payload.priceCents });
   const transactionFlagCrm = await getListingTransactionFlag(payload.id, null);
+  const conversionSurfaceCrm = buildPropertyConversionSurface({
+    priceCents: payload.priceCents,
+    city: payload.city,
+    verified: payload.representative?.licenseVerified ?? false,
+    featured: false,
+    listingUpdatedAt: resolved.row.updatedAt,
+    demandUi: demandUiCrm,
+  });
 
   return (
     <>
@@ -401,6 +419,7 @@ export default async function PublicListingRoute({ params }: Props) {
       <BuyerListingDetail
         listing={{ ...crmPayload, listingKind: "crm", transactionFlag: transactionFlagCrm }}
         demandUi={demandUiCrm}
+        conversionSurface={conversionSurfaceCrm}
         funnelVariant={funnelVariantForListing(payload.id)}
         shareUrl={absUrl}
         shareSummary={`${payload.title} — ${(payload.priceCents / 100).toLocaleString("en-CA", { style: "currency", currency: "CAD" })} · ${payload.city}`}

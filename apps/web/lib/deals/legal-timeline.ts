@@ -41,7 +41,7 @@ type LegalAttachment = {
   id: string;
   type: string;
   status: string;
-  fileUrl: string;
+  fileUrl: string | null;
   source: "deal_document" | "offer_document";
 };
 

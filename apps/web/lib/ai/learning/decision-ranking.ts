@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 
-const MIN_SAMPLES = 5;
+/** Require more outcomes before we suppress or boost — reduces flip-flop on thin histories. */
+const MIN_SAMPLES = 8;
 
 const SUCCESS_OUTCOMES = new Set(["approved", "applied", "success"]);
 
@@ -35,10 +36,11 @@ export async function shouldShowRecommendation(
   }
 
   const successRate = successes / total;
+  /** Deadband: suppress clearly weak rules; boost only sustained winners (fewer noisy highs). */
   if (successRate < 0.3) {
     return { show: false, reason: "low performance suppressed" };
   }
-  if (successRate > 0.6) {
+  if (successRate > 0.65) {
     return { show: true, reason: "high performance boosted" };
   }
   return { show: true, reason: "normal" };
@@ -47,5 +49,5 @@ export async function shouldShowRecommendation(
 /** Apply a small confidence bump when boosted (priority only; capped below 1). */
 export function applyRankingConfidenceBoost(base: number, reason: RecommendationRankingResult["reason"]): number {
   if (reason !== "high performance boosted") return base;
-  return Math.min(0.99, base * 1.06);
+  return Math.min(0.99, base * 1.025);
 }

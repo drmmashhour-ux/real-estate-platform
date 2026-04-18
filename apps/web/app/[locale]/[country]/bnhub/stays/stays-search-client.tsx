@@ -20,6 +20,7 @@ import { scrollToMapSearchRegion } from "@/lib/ui/scroll-to-map-search";
 import { useGeocodedMapFocus } from "@/hooks/useGeocodedMapFocus";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { BROWSE_EMPTY_LISTINGS } from "@/lib/listings/browse-empty-copy";
+import { trackListingClick, trackSearchView } from "@/modules/bnhub/conversion/bnhub-guest-conversion-tracker";
 
 type Listing = {
   id: string;
@@ -198,6 +199,10 @@ export function StaysSearchResults() {
     },
     []
   );
+
+  useEffect(() => {
+    trackSearchView();
+  }, []);
 
   useEffect(() => {
     if (sugTimer.current) clearTimeout(sugTimer.current);
@@ -477,6 +482,7 @@ export function StaysSearchResults() {
                   priceCents: listing.nightPriceCents,
                   aiScoreSnapshot: listing.aiScore ?? null,
                 });
+                trackListingClick(listing.id);
               }}
               title={
                 listing.aiBreakdown
@@ -604,7 +610,7 @@ export function StaysSearchResults() {
                 <div className="space-y-2">
                   <p className="text-xs font-medium text-premium-gold/90">Free cancellation</p>
                   <span className="inline-flex w-full items-center justify-center rounded-lg bg-premium-gold px-4 py-3 text-sm font-bold text-[#0a0a0a] transition hover:brightness-110">
-                    See availability
+                    Book now — check dates
                   </span>
                 </div>
               </div>

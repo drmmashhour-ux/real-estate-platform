@@ -3,6 +3,7 @@ import { isCityFeatureEnabled } from "@/src/modules/cities/cityConfigService";
 import { isMultiCityOperationsEnabled } from "@/src/modules/cities/cityEnv";
 import { normalizeCityKey } from "@/src/modules/cities/cityNormalizer";
 import { isFraudDetectionEnabled, isFraudReviewHoldEnabled } from "@/src/modules/fraud/fraudEnv";
+import { FRAUD_RISK_THRESHOLDS } from "@/src/modules/fraud/fraud.rules";
 import { createOrUpdateFraudFlags } from "@/src/modules/fraud/flaggingEngine";
 import { computeFraudRiskScore, saveFraudRiskScore } from "@/src/modules/fraud/riskScoringEngine";
 import type { FraudEntityType } from "@/src/modules/fraud/types";
@@ -28,7 +29,7 @@ export async function runFullFraudPipeline(
   await saveFraudRiskScore(result);
   await createOrUpdateFraudFlags(entityType, entityId, result);
 
-  if (entityType === "review" && isFraudReviewHoldEnabled() && result.riskScore >= 0.5) {
+  if (entityType === "review" && isFraudReviewHoldEnabled() && result.riskScore >= FRAUD_RISK_THRESHOLDS.high) {
     await prisma.review.update({
       where: { id: entityId },
       data: { moderationHeld: true },

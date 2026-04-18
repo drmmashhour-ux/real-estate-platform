@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
 import { getRecentlyViewedBnhubListings } from "@/lib/bnhub/recently-viewed";
 import { getUnifiedRecommendations } from "@/lib/ai/recommendations/getUnifiedRecommendations";
+import { HubJourneyBanner } from "@/components/journey/HubJourneyBanner";
 
 export const metadata: Metadata = {
   title: "Guest hub",
@@ -24,7 +25,12 @@ function coverStay(listing: {
   return Array.isArray(raw) && typeof raw[0] === "string" ? raw[0] : null;
 }
 
-export default async function GuestHubDashboardPage() {
+export default async function GuestHubDashboardPage({
+  params,
+}: {
+  params: Promise<{ locale: string; country: string }>;
+}) {
+  const { locale, country } = await params;
   const { userId } = await requireAuthenticatedUser();
 
   const [favs, bookings, buyerSaved, recentViews, forYou] = await Promise.all([
@@ -94,6 +100,7 @@ export default async function GuestHubDashboardPage() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 text-slate-100">
+      <HubJourneyBanner hub="bnhub_guest" locale={locale} country={country} userId={userId} />
       <h1 className="text-2xl font-semibold text-white">Guest hub</h1>
       <p className="mt-1 text-sm text-slate-400">
         Shortcuts for stays and resale browsing. Full lists:{" "}

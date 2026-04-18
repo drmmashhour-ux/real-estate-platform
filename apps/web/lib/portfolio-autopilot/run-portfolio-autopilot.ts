@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { asInputJsonValue } from "@/lib/prisma/as-input-json";
 import { computePortfolioHealth, upsertPortfolioHealthRecord } from "./compute-portfolio-health";
 import { generatePortfolioActions } from "./generate-portfolio-actions";
 import { getOpportunities } from "./get-opportunities";
@@ -52,7 +53,7 @@ export async function runPortfolioAutopilot(input: {
         title: g.title,
         description: g.description,
         priority: g.priority,
-        metadataJson: g.metadataJson,
+        metadataJson: asInputJsonValue(g.metadataJson),
       })),
     });
   }

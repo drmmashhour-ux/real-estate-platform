@@ -11,14 +11,20 @@ type Timeline = {
     createdAt: string | Date;
     note: string | null;
     stage: string | null;
-    documents?: Array<{ id: string; type: string; status: string; fileUrl: string; source: "deal_document" | "offer_document" }>;
+    documents?: Array<{
+      id: string;
+      type: string;
+      status: string;
+      fileUrl: string | null;
+      source: "deal_document" | "offer_document";
+    }>;
   }>;
   availableActions: Array<{ key: string; label: string; stage: string }>;
   documents?: Array<{
     id: string;
     type: string;
     status: string;
-    fileUrl: string;
+    fileUrl: string | null;
     createdAt: string | Date;
     source: "deal_document" | "offer_document";
   }>;
@@ -124,7 +130,12 @@ export function DealLegalTimelineClient({
                       />
                       <span>
                         {doc.type} · {doc.status} · {doc.source === "offer_document" ? "offer draft" : "uploaded file"}
-                        <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer" className="ml-2 text-xs text-premium-gold hover:underline">
+                        <a
+                          href={doc.fileUrl ?? "#"}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="ml-2 text-xs text-premium-gold hover:underline"
+                        >
                           Open
                         </a>
                       </span>
@@ -166,7 +177,7 @@ export function DealLegalTimelineClient({
                       {event.documents.map((doc) => (
                         <a
                           key={doc.id}
-                          href={doc.fileUrl}
+                          href={doc.fileUrl ?? "#"}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="block text-sm text-premium-gold hover:underline"

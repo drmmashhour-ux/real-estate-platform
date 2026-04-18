@@ -72,22 +72,22 @@ Host-triggered jobs (`POST /api/bnhub/listings/[id]/content-jobs`) never bypass 
 | `POST /api/content-automation/retry` | Admin — body `{ jobId, skipVideo? }` |
 | `POST /api/content-automation/schedule` | Admin — body `{ jobId, scheduledAt?, platforms?, captionAssetId? }` |
 | `POST /api/content-automation/publish/direct` | Admin — body `{ jobId, platform: tiktok \| instagram, mode? }` |
-| `POST /api/content-automation/jobs/[jobId]/retry` | Deprecated alias → use `/retry` |
-| `POST /api/content-automation/jobs/[jobId]/schedule` | Deprecated alias → use `/schedule` |
+| `POST /api/content-automation/jobs/[id]/retry` | Deprecated alias → use `/retry` |
+| `POST /api/content-automation/jobs/[id]/schedule` | Deprecated alias → use `/schedule` |
 | `POST /api/bnhub/listings/[id]/content-jobs` | Owner or admin |
 | `POST /api/content-automation/webhooks/*` | Webhook secret |
 
 ### Admin UI
 
 - **Growth automation (jobs):** `/admin/content`
-- **Job detail:** `/admin/content/[jobId]`
+- **Job detail:** `/admin/content/[id]` (content job id)
 - **Legacy i18n generated content:** `/admin/content/generated`
 
 Host: `/bnhub/host/listings/[id]/edit` — generate content + **copy share link (UTM)**.
 
 ### Attribution
 
-`lib/content-automation/attribution.ts` — `utm_campaign=listing_[listingId]`, optional `utm_content=[style]_[jobId]`.
+`lib/content-automation/attribution.ts` — `utm_campaign=listing_[listingId]`, optional `utm_content=[style]_[contentJobId]`.
 
 ### Failure handling
 
@@ -125,7 +125,7 @@ Older BNHUB `content_generated` rows may still exist. Prefer **`content_jobs` / 
 ### Dashboard pages
 
 - `/admin/content` — job list (filters: status, platform)
-- `/admin/content/[jobId]` — detail, logs, actions
+- `/admin/content/[id]` — detail, logs, actions
 - `/admin/content/generated` — previous “Generated content” i18n table
 
 ### Provider integrations — live-ready vs pending
@@ -142,6 +142,6 @@ Older BNHUB `content_generated` rows may still exist. Prefer **`content_jobs` / 
 
 1. `pnpm prisma migrate deploy` — new columns/tables apply.
 2. Host `POST /api/bnhub/listings/{id}/content-jobs` → job `READY`, assets include `METADATA` + per-style rows.
-3. `/admin/content/[jobId]` shows logs and invalid `price_shock` when price missing.
+3. `/admin/content/[id]` shows logs and invalid `price_shock` when price missing.
 4. `POST .../schedule` creates scheduled or draft `social_posts` with clear warnings if Metricool missing.
 5. `POST .../publish/direct` records attempts and logs stub errors until APIs are wired.

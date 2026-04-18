@@ -30,8 +30,16 @@ export default async function AdminAssistantPage() {
     }),
   ]);
 
-  const initialInsights = JSON.parse(JSON.stringify(insights)) as typeof insights;
-  const initialRuns = JSON.parse(JSON.stringify(runs)) as typeof runs;
+  const initialInsights = insights.map((i) => ({
+    ...i,
+    createdAt: i.createdAt.toISOString(),
+  }));
+  const initialRuns = runs.map((r) => ({
+    ...r,
+    createdAt: r.createdAt.toISOString(),
+    startedAt: r.startedAt?.toISOString() ?? null,
+    completedAt: r.completedAt?.toISOString() ?? null,
+  }));
 
   return (
     <main className="min-h-screen bg-slate-950">

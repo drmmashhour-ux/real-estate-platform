@@ -17,6 +17,7 @@ import { BookingServicesSummary } from "@/components/bnhub/services/BookingServi
 import type { GuestOfferCard } from "@/components/bnhub/services/ServiceCard";
 import { ProductAnalyticsEvents, reportProductEvent } from "@/lib/analytics/product-analytics";
 import { track, TrackingEvent } from "@/lib/tracking";
+import { buildBnhubStayTrustPack } from "@/modules/cro/trust-signals.service";
 
 type Breakdown = {
   subtotalCents: number;
@@ -50,6 +51,7 @@ type Breakdown = {
 export function BNHubCheckoutClient({
   listingId,
   listingTitle,
+  listingVerified = false,
   maxGuests,
   checkIn,
   checkOut,
@@ -63,6 +65,8 @@ export function BNHubCheckoutClient({
 }: {
   listingId: string;
   listingTitle: string;
+  /** For CRO trust bullets — never fabricated */
+  listingVerified?: boolean;
   maxGuests: number;
   checkIn: string;
   checkOut: string;
@@ -187,7 +191,7 @@ export function BNHubCheckoutClient({
 
   async function submitBooking() {
     if (!guestId) {
-      setError("Sign in required.");
+      setError("Sign in or create a free account to continue — booking confirmation requires a guest profile.");
       return;
     }
     if (hasRules && !agreed) {
@@ -284,8 +288,48 @@ export function BNHubCheckoutClient({
     return `/bnhub/login?next=${encodeURIComponent(`/bnhub/checkout?${p.toString()}`)}`;
   }, [listingId, checkIn, checkOut, guestCount, maxGuests]);
 
+  const signUpHref = useMemo(() => {
+    const p = new URLSearchParams({
+      listingId,
+      checkIn,
+      checkOut,
+      guestCount: String(Math.min(maxGuests, Math.max(1, guestCount))),
+    });
+    return `/auth/signup?next=${encodeURIComponent(`/bnhub/checkout?${p.toString()}`)}`;
+  }, [listingId, checkIn, checkOut, guestCount, maxGuests]);
+
+  const trustPack = useMemo(
+    () =>
+      buildBnhubStayTrustPack({
+        listingVerified,
+        stripeCheckoutAvailable: isStripeConfigured() && hostPayoutReady,
+      }),
+    [listingVerified, hostPayoutReady]
+  );
+
   return (
     <form onSubmit={handleSubmit} className="animate-fade-in space-y-6">
+      <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-4">
+        <p className="text-xs font-semibold uppercase tracking-wide text-emerald-400/90">{trustPack.secureCheckoutLabel}</p>
+        <ol className="mt-3 flex flex-wrap gap-2 text-xs font-medium text-slate-300">
+          <li className="rounded-lg border border-emerald-500/35 bg-emerald-950/40 px-2.5 py-1.5 text-emerald-100">
+            1 · Dates <span className="text-emerald-400">✓</span>
+          </li>
+          <li className="rounded-lg border border-slate-600 bg-slate-950/60 px-2.5 py-1.5">2 · Guest &amp; add-ons</li>
+          <li className="rounded-lg border border-slate-700/80 bg-slate-950/40 px-2.5 py-1.5 text-slate-400">
+            3 · Secure payment
+          </li>
+        </ol>
+        <p className="mt-3 text-sm font-medium text-slate-200">{trustPack.noHiddenFeesLine}</p>
+        <ul className="mt-2 space-y-1 text-xs text-slate-500">
+          {trustPack.bullets
+            .filter((b) => b.visible)
+            .map((b) => (
+              <li key={b.id}>{b.text}</li>
+            ))}
+        </ul>
+      </div>
+
       {!hostPayoutReady && (
         <div className="rounded-2xl border border-amber-500/40 bg-amber-950/35 p-4 text-sm text-amber-100">
           <span className="font-semibold text-amber-200">Host not ready to receive payments</span>
@@ -479,12 +523,27 @@ export function BNHubCheckoutClient({
 
       <div className="flex flex-wrap gap-3">
         {!guestId ? (
-          <Link
-            href={signInHref}
-            className="rounded-xl bg-emerald-500 px-6 py-3 text-sm font-semibold text-slate-950 hover:bg-emerald-400"
-          >
-            Sign in to continue
-          </Link>
+          <div className="w-full space-y-3 rounded-xl border border-slate-700/80 bg-slate-900/40 p-4">
+            <p className="text-sm text-slate-300">
+              Continue with a <span className="font-semibold text-slate-100">free account</span> — required to confirm
+              your booking and pay securely (Stripe). Same flow as guest checkout on major travel sites: minimal fields,
+              then payment.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Link
+                href={signInHref}
+                className="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-slate-950 hover:bg-emerald-400"
+              >
+                Sign in
+              </Link>
+              <Link
+                href={signUpHref}
+                className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-slate-500 px-5 py-2.5 text-sm font-semibold text-slate-100 hover:bg-slate-800"
+              >
+                Create free account
+              </Link>
+            </div>
+          </div>
         ) : (
           <button
             type="submit"
