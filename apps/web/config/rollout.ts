@@ -1,11 +1,34 @@
 /**
  * Conversion engine rollout discipline — kill switch, mode, and effective flags.
+ *
+ * ## Traceability (explicit inputs)
+ *
+ * | Control | Env vars |
+ * |--------|----------|
+ * | Kill switch | `FEATURE_CONVERSION_KILL_SWITCH`, `NEXT_PUBLIC_FEATURE_CONVERSION_KILL_SWITCH` |
+ * | Rollout mode | `CONVERSION_ROLLOUT_MODE`, `NEXT_PUBLIC_CONVERSION_ROLLOUT_MODE` |
+ * | Partial routes | `CONVERSION_ROLLOUT_PARTIAL_PATHS`, `NEXT_PUBLIC_CONVERSION_ROLLOUT_PARTIAL_PATHS` |
+ * | Raw features | `FEATURE_CONVERSION_UPGRADE_V1`, `FEATURE_INSTANT_VALUE_V1`, `FEATURE_REAL_URGENCY_V1` |
+ *
+ * **Partial mode** = path allowlist only (comma-separated prefixes after locale normalization).
+ * Percentage-based rollout is not implemented here — use `partial` with narrow paths or `internal` first.
+ *
  * Does not alter conversion copy/math; only gates whether features apply.
  */
 
 import { conversionEngineFlags } from "@/config/feature-flags";
 
 export type RolloutMode = "off" | "internal" | "partial" | "full";
+
+/** Canonical rollout modes — use with `parseRolloutMode()` for traceable comparisons. */
+export const CONVERSION_ROLLOUT_MODES = ["off", "internal", "partial", "full"] as const satisfies readonly RolloutMode[];
+
+/** Env keys read by this module (for audits and runbooks). */
+export const CONVERSION_ROLLOUT_ENV_KEYS = {
+  killSwitch: ["FEATURE_CONVERSION_KILL_SWITCH", "NEXT_PUBLIC_FEATURE_CONVERSION_KILL_SWITCH"],
+  rolloutMode: ["CONVERSION_ROLLOUT_MODE", "NEXT_PUBLIC_CONVERSION_ROLLOUT_MODE"],
+  partialPaths: ["CONVERSION_ROLLOUT_PARTIAL_PATHS", "NEXT_PUBLIC_CONVERSION_ROLLOUT_PARTIAL_PATHS"],
+} as const;
 
 export type ConversionRolloutContext = {
   /** Normalized pathname e.g. /en/ca/get-leads or /get-leads */
@@ -126,4 +149,35 @@ export function effectiveFlagsToDisplayMode(flags: EffectiveConversionFlags): "B
   if (!flags.instantValueV1) return "Conversion only";
   if (!flags.realUrgencyV1) return "Conversion + Instant Value";
   return "Full (with urgency)";
+}
+
+/**
+ * Structured snapshot for logs or admin tools — pure, no side effects.
+ */
+export function traceConversionRolloutDecision(context?: ConversionRolloutContext): {
+  killSwitchActive: boolean;
+  mode: RolloutMode;
+  pathnameNormalized: string | undefined;
+  isPrivilegedUser: boolean | undefined;
+  partialAllowlistPrefixes: string[];
+  effectiveFlags: EffectiveConversionFlags;
+} {
+  const pathnameNormalized =
+    context?.pathname != null && context.pathname !== ""
+      ? normalizePathForRollout(context.pathname)
+      : undefined;
+  const rawAllow =
+    process.env.CONVERSION_ROLLOUT_PARTIAL_PATHS || process.env.NEXT_PUBLIC_CONVERSION_ROLLOUT_PARTIAL_PATHS || "";
+  const partialAllowlistPrefixes = rawAllow
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return {
+    killSwitchActive: isConversionKillSwitchActive(),
+    mode: parseRolloutMode(),
+    pathnameNormalized,
+    isPrivilegedUser: context?.isPrivilegedUser,
+    partialAllowlistPrefixes,
+    effectiveFlags: getConversionEngineFlagsEffective(context),
+  };
 }

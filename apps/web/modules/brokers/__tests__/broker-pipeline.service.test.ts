@@ -73,6 +73,14 @@ describe("broker-pipeline.service", () => {
     expect(getBrokerMonitoringSnapshot().conversionsMarked).toBe(1);
   });
 
+  it("updateBrokerStage to converted does not increment conversion monitoring if purchase already attributed", () => {
+    const p = createBrokerProspect({ name: "PurchasedFirst", email: "pf@x.com" });
+    markBrokerPurchaseOnProspect(p.id, { firstPurchaseDate: "2026-02-15", moveToConverted: false });
+    expect(getBrokerMonitoringSnapshot().conversionsMarked).toBe(0);
+    updateBrokerStage(p.id, "converted");
+    expect(getBrokerMonitoringSnapshot().conversionsMarked).toBe(0);
+  });
+
   it("getBrokerPipelinePersistenceMeta reflects BROKER_PIPELINE_JSON_PATH", () => {
     const prev = process.env.BROKER_PIPELINE_JSON_PATH;
     delete process.env.BROKER_PIPELINE_JSON_PATH;

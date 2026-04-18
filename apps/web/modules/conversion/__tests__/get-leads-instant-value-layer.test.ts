@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildInstantValueSummary } from "@/modules/conversion/instant-value.service";
+import { resolveGetLeadsIvSummaryLayer } from "@/modules/conversion/get-leads-conversion-summary";
 
 /**
  * Mirrors GetLeadsPageClient ivSummary behaviour: when instant value flag is off,
@@ -7,14 +7,13 @@ import { buildInstantValueSummary } from "@/modules/conversion/instant-value.ser
  */
 describe("get-leads instant value layer", () => {
   it("strips insights when simulating conversion-only tier", () => {
-    const full = buildInstantValueSummary({ page: "leads", intent: "buy" });
-    expect(full.trustLines?.length).toBeGreaterThan(0);
-    const conversionOnly = { ...full, insights: [] as typeof full.insights };
-    expect(conversionOnly.insights).toHaveLength(0);
+    const conversionOnly = resolveGetLeadsIvSummaryLayer(true, false, "buy");
+    expect(conversionOnly?.trustLines?.length).toBeGreaterThan(0);
+    expect(conversionOnly?.insights).toHaveLength(0);
   });
 
   it("keeps insights when full instant value is enabled", () => {
-    const full = buildInstantValueSummary({ page: "leads", intent: "buy" });
-    expect(full.insights.length).toBeGreaterThan(0);
+    const full = resolveGetLeadsIvSummaryLayer(true, true, "buy");
+    expect(full?.insights.length).toBeGreaterThan(0);
   });
 });

@@ -43,6 +43,16 @@ describe("broker-pipeline-export", () => {
     expect((parsed[0] as { notesCount: number }).notesCount).toBe(2);
   });
 
+  it("exportProspectsAsCsv header lists stage, notesCount, lastContactAt, purchase fields", () => {
+    const csv = exportProspectsAsCsv([sample]);
+    const header = csv.split("\n")[0] ?? "";
+    expect(header).toContain("stage");
+    expect(header).toContain("notesCount");
+    expect(header).toContain("lastContactAt");
+    expect(header).toContain("firstPurchaseDate");
+    expect(header).toContain("totalSpent");
+  });
+
   it("exportProspectsAsCsv includes header and escaped fields", () => {
     const tricky: BrokerProspect = {
       ...sample,

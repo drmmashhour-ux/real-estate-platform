@@ -58,10 +58,6 @@ type PriorityTarget = {
 
 type ApiPayload = {
   prospects: BrokerProspect[];
-  persistence?: {
-    jsonPathConfigured: boolean;
-    persistenceMode: "memory" | "json_file";
-  };
   summary: BrokerPipelineSummary | null;
   dailyActions: string[];
   monitoring: {
@@ -104,7 +100,6 @@ export function BrokerPipelineDashboard() {
       if (!res.ok) throw new Error(j.error ?? "Failed to load");
       setData({
         prospects: j.prospects ?? [],
-        persistence: j.persistence,
         summary: j.summary ?? null,
         dailyActions: j.dailyActions ?? [],
         monitoring: j.monitoring ?? {
@@ -355,28 +350,6 @@ export function BrokerPipelineDashboard() {
   const mon = data?.monitoring;
   const scriptList = data?.scriptList ?? [];
 
-  const persist = data?.persistence;
-  const persistenceBanner =
-    persist?.persistenceMode === "json_file" && persist.jsonPathConfigured ? (
-      <div className="rounded-xl border border-emerald-800/60 bg-emerald-950/40 px-4 py-3 text-sm text-emerald-100">
-        <strong className="text-emerald-200">Persistent JSON storage enabled</strong>
-        <span className="text-emerald-100/90">
-          {" "}
-          — <code className="rounded bg-black/30 px-1 text-xs">BROKER_PIPELINE_JSON_PATH</code> is set; prospects survive
-          process restarts when the path is writable.
-        </span>
-      </div>
-    ) : (
-      <div className="rounded-xl border border-amber-700/50 bg-amber-950/35 px-4 py-3 text-sm text-amber-100">
-        <strong className="text-amber-200">In-memory only (data may reset)</strong>
-        <span className="text-amber-100/90">
-          {" "}
-          — set <code className="rounded bg-black/30 px-1 text-xs">BROKER_PIPELINE_JSON_PATH</code> to a writable file for
-          durable JSON snapshots across deploys/restarts.
-        </span>
-      </div>
-    );
-
   return (
     <div className="space-y-8">
       <div className="rounded-xl border border-slate-700 bg-slate-950/60 px-4 py-3 text-sm text-slate-200">
@@ -390,8 +363,6 @@ export function BrokerPipelineDashboard() {
           .
         </p>
       </div>
-
-      {persistenceBanner}
 
       <section className="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
         <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Operator checklist</p>

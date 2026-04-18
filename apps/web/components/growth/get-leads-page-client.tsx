@@ -9,7 +9,6 @@ import {
   recordFormSubmit,
   recordLandingView,
 } from "@/modules/growth/simple-conversion-tracker";
-import { buildInstantValueSummary } from "@/modules/conversion/instant-value.service";
 import {
   recordConversionSurfaceView,
   recordLeadFormStart,
@@ -31,6 +30,7 @@ import type { InstantValueIntent } from "@/modules/conversion/instant-value.type
 import { LeadDisclaimer } from "@/components/legal/LeadDisclaimer";
 import { BrokerLeadTrustStrip } from "@/components/legal/BrokerLeadTrustStrip";
 import type { ConversionExperienceTier } from "@/modules/conversion/conversion-rollout-helpers";
+import { resolveGetLeadsIvSummaryLayer } from "@/modules/conversion/get-leads-conversion-summary";
 import { ConversionMonitoringLivePanel } from "@/components/conversion/ConversionMonitoringLivePanel";
 
 type Status = "idle" | "submitting" | "analyzing" | "success" | "error";
@@ -318,7 +318,7 @@ export function GetLeadsPageClient({
           {conversionUpgradeV1
             ? "Clear next step: intent → contact → we route you to matching inventory."
             : scaleInboundV1
-              ? "⏱ Same-day routing on business days — submit before slots fill."
+              ? "⏱ We aim for same-business-day routing when inbound volume allows."
               : "Tell us what you need — we match when suitable listings and capacity align."}
         </p>
         {conversionDebugUi ? (
@@ -329,13 +329,12 @@ export function GetLeadsPageClient({
               {String(instantValueV1)} · tier={conversionTierKey ?? "—"}
             </p>
             {conversionTierLabel ? <p className="mt-2 text-slate-300">{conversionTierLabel}</p> : null}
+            {conversionUpgradeV1 && !instantValueV1 ? (
+              <p className="mt-2 text-cyan-200/85">
+                Instant-value insight row hidden — enable FEATURE_INSTANT_VALUE_V1 for the three-card strip under the hero.
+              </p>
+            ) : null}
           </div>
-        ) : null}
-        {conversionUpgradeV1 && !instantValueV1 ? (
-          <p className="mx-auto mt-5 max-w-xl text-center text-xs leading-relaxed text-slate-500">
-            Insight tiles use <span className="font-mono text-slate-400">FEATURE_INSTANT_VALUE_V1</span> — off means a
-            tighter hero without the three-card insight row; trust strip and form below stay the same.
-          </p>
         ) : null}
         {scaleInboundV1 && scarcity ? (
           <p className="mx-auto mt-3 max-w-xl text-xs leading-relaxed text-amber-200/90">{scarcity.leadsAvailableLine}</p>

@@ -48,4 +48,19 @@ describe("broker-conversion.service", () => {
     });
     expect(getBrokerMonitoringSnapshot().conversionsMarked).toBe(1);
   });
+
+  it("markBrokerConverted then tryMarkProspectConvertedByBrokerEmail does not double-count monitoring", () => {
+    const p = createBrokerProspect({ name: "Cross", email: "cross@x.com" });
+    markBrokerConverted({
+      prospectId: p.id,
+      firstPurchaseDate: "2026-04-10",
+      totalSpent: 49,
+    });
+    expect(getBrokerMonitoringSnapshot().conversionsMarked).toBe(1);
+    tryMarkProspectConvertedByBrokerEmail({
+      email: "cross@x.com",
+      firstPurchaseDate: "2026-05-01",
+    });
+    expect(getBrokerMonitoringSnapshot().conversionsMarked).toBe(1);
+  });
 });

@@ -5,10 +5,7 @@ import {
   getConversionMonitoringRecentEvents,
   getConversionMonitoringSnapshot,
 } from "@/modules/conversion/conversion-monitoring.service";
-import {
-  isConversionKillSwitchActive,
-  parseRolloutMode,
-} from "@/config/rollout";
+import { isConversionKillSwitchActive, parseRolloutMode, traceConversionRolloutDecision } from "@/config/rollout";
 import {
   computeFunnelDropoffs,
   computeFunnelRates,
@@ -38,6 +35,8 @@ export async function GET() {
     rollout: {
       killSwitch: isConversionKillSwitchActive(),
       mode: parseRolloutMode(),
+      /** Explicit server-side rollout inputs (pathname not set on this aggregate endpoint). */
+      trace: traceConversionRolloutDecision(),
     },
     funnel: {
       snapshot: getFunnelSnapshot(),

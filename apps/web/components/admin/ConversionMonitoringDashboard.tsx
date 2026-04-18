@@ -27,7 +27,17 @@ type ApiPayload = {
   snapshot: Snapshot;
   alerts: Alert[];
   recentEvents: { ts: string; kind: string; meta?: Record<string, unknown> }[];
-  rollout: { killSwitch: boolean; mode: string };
+  rollout: {
+    killSwitch: boolean;
+    mode: string;
+    trace?: {
+      killSwitchActive: boolean;
+      mode: string;
+      pathnameNormalized?: string;
+      partialAllowlistPrefixes: string[];
+      effectiveFlags: { conversionUpgradeV1: boolean; instantValueV1: boolean; realUrgencyV1: boolean };
+    };
+  };
   funnel?: {
     snapshot: Record<string, Record<string, number>>;
     rates: FunnelRates;
@@ -87,10 +97,15 @@ export function ConversionMonitoringDashboard() {
       </div>
 
       <div className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-xs text-slate-300">
-        <p className="font-semibold text-white">Rollout</p>
+        <p className="font-semibold text-white">Rollout (traceable)</p>
         <p className="mt-1 font-mono text-[11px]">
           killSwitch={String(data.rollout.killSwitch)} · mode={data.rollout.mode}
         </p>
+        {data.rollout.trace ? (
+          <pre className="mt-2 max-h-40 overflow-auto rounded-lg bg-black/50 p-2 text-[9px] leading-relaxed text-slate-400">
+            {JSON.stringify(data.rollout.trace, null, 2)}
+          </pre>
+        ) : null}
       </div>
 
       {data.funnel ? (

@@ -9,6 +9,10 @@ import {
   isConversionKillSwitchActive,
   parseRolloutMode,
 } from "@/config/rollout";
+import {
+  conversionExperienceTierLabel,
+  deriveConversionExperienceTier,
+} from "@/modules/conversion/conversion-rollout-helpers";
 
 /**
  * Dev / debug-only: raw env flags, rollout mode, path-effective flags, and display tier.
@@ -34,6 +38,13 @@ export function ConversionFlagsPanel() {
   );
 
   const modeLabel = effectiveFlagsToDisplayMode(effective);
+  const envTierLabel = conversionExperienceTierLabel(
+    deriveConversionExperienceTier({
+      conversionUpgradeV1: conversionEngineFlags.conversionUpgradeV1,
+      instantValueV1: conversionEngineFlags.instantValueV1,
+      realUrgencyV1: conversionEngineFlags.realUrgencyV1,
+    }),
+  );
 
   return (
     <div className="pointer-events-none fixed bottom-0 left-0 z-[100] max-w-[min(100vw,420px)] p-2 text-left">
@@ -53,6 +64,7 @@ export function ConversionFlagsPanel() {
           {String(effective.realUrgencyV1)}
         </p>
         <p className="mt-1 text-emerald-300/90">Current mode: {modeLabel}</p>
+        <p className="mt-1 text-slate-400">Env tier (FEATURE_*): {envTierLabel}</p>
       </div>
     </div>
   );

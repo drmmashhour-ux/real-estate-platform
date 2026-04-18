@@ -13,7 +13,7 @@ export default function AdminConversionMonitoringPage() {
           <code className="rounded bg-white/10 px-1 py-0.5 font-mono text-[11px]">[conversion]</code> structured logs and
           the rollout checklist in{" "}
           <code className="rounded bg-white/10 px-1 py-0.5 font-mono text-[11px]">
-            docs/conversion/rollout-checklist.md
+            docs/conversion/conversion-rollout-checklist.md
           </code>
           .
         </p>

@@ -1,5 +1,9 @@
 # Conversion engine rollout checklist
 
+**Authoritative checklist:** [`conversion-rollout-checklist.md`](./conversion-rollout-checklist.md) (required flags, QA matrix, monitoring events, caveats).
+
+---
+
 Use this before toggling conversion flags or rollout modes in production. The conversion engine adds UX layers only; business rules and APIs stay unchanged.
 
 ## Required flags (see `apps/web/.env.example`)

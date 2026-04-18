@@ -36,3 +36,21 @@ export function formatConversionMonitoringSnapshot(s: ConversionMonitoringSnapsh
   lines.push(`surfaceViewsByKey: ${JSON.stringify(s.surfaceViewsByKey ?? {})}`);
   return lines.join("\n");
 }
+
+/** Plain-text guide for QA docs and admin smoke checks (no PII). */
+export function formatConversionMonitoringVerificationGuide(): string {
+  return CONVERSION_MONITORING_KEYS.map((k) => {
+    const row = CONVERSION_EVENT_VERIFICATION_MAP[k];
+    return `${k}: ${row.firesOn} — typical: ${row.typicalSurface}`;
+  }).join("\n");
+}
+
+/** Returns missing numeric keys — empty array means snapshot matches expected shape. */
+export function assertMonitoringSnapshotNumericKeys(s: Partial<ConversionMonitoringSnapshot>): string[] {
+  return CONVERSION_MONITORING_KEYS.filter((k) => typeof s[k] !== "number");
+}
+
+/** Compact line for debug logs / tests without structured logging. */
+export function summarizeMonitoringLine(s: ConversionMonitoringSnapshot): string {
+  return CONVERSION_MONITORING_KEYS.map((k) => `${k}=${s[k]}`).join(" · ");
+}

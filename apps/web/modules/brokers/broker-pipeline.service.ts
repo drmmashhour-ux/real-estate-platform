@@ -199,7 +199,12 @@ export function updateBrokerStage(id: string, stage: BrokerStage): BrokerProspec
   if (prev.stage === stage) return prev;
   const from = prev.stage;
   recordBrokerStageChange(from, stage);
-  if (stage === "converted" && from !== "converted") recordBrokerConversion();
+  if (stage === "converted" && from !== "converted") {
+    /** Same guard as purchase path — avoid double-count with mark_purchase / email matcher when already attributed. */
+    if (!conversionMonitoringAlreadyRecorded(prev)) {
+      recordBrokerConversion();
+    }
+  }
   if (stage === "lost" && from !== "lost") recordBrokerLost();
 
   const next: BrokerProspect = { ...prev, stage, updatedAt: nowIso() };

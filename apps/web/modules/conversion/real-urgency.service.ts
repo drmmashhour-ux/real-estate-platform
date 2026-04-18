@@ -38,7 +38,7 @@ export function buildRealUrgencySignals(input: RealUrgencyInput): string[] {
   }
 
   if (input.verifiedInventoryLimited) {
-    out.push("Verified opportunities in this search are limited — act while listings match.");
+    out.push("Verified listings in this segment may be few — prioritize the listings that fit your criteria.");
   }
 
   return out.slice(0, 3);

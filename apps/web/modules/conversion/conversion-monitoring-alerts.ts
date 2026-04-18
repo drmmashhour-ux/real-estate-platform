@@ -17,6 +17,16 @@ export function computeConversionMonitoringAlerts(snapshot: ConversionMonitoring
   const surfaceTraffic = Object.values(snapshot.surfaceViewsByKey).reduce((a, n) => a + n, 0);
   const engaged = snapshot.leadFormStarts > 0 || surfaceTraffic >= 2;
 
+  /** Traffic exists (surface impressions) but no successful lead submit yet. */
+  if (surfaceTraffic >= 5 && snapshot.leadSubmits === 0) {
+    alerts.push({
+      level: "warn",
+      code: "lead_submit_zero_with_surface_traffic",
+      message:
+        "leadSubmits is 0 while conversion surfaces recorded impressions — confirm POST success path, API errors, or rollout blocking real users.",
+    });
+  }
+
   if (engaged && snapshot.leadSubmits === 0 && snapshot.leadFormStarts >= 1) {
     alerts.push({
       level: "warn",
@@ -35,10 +45,20 @@ export function computeConversionMonitoringAlerts(snapshot: ConversionMonitoring
     });
   }
 
+  const ratio =
+    snapshot.leadSubmits > 0 ? snapshot.leadFormStarts / snapshot.leadSubmits : Number.POSITIVE_INFINITY;
+  if (snapshot.leadFormStarts >= 12 && snapshot.leadSubmits >= 1 && ratio >= 10) {
+    alerts.push({
+      level: "warn",
+      code: "lead_form_submit_ratio_high",
+      message: `leadFormStarts (${snapshot.leadFormStarts}) vs leadSubmits (${snapshot.leadSubmits}) implies heavy drop-off — review validation UX and errors.`,
+    });
+  }
+
   const ctaSum =
     snapshot.listingCtaClicks + snapshot.propertyCtaClicks + snapshot.brokerPreviewCtaClicks;
 
-  if (surfaceTraffic >= 10 && ctaSum === 0 && snapshot.leadFormStarts >= 3) {
+  if (surfaceTraffic >= 8 && ctaSum === 0 && (snapshot.leadFormStarts >= 2 || surfaceTraffic >= 12)) {
     alerts.push({
       level: "warn",
       code: "cta_zero_with_traffic",
@@ -47,5 +67,16 @@ export function computeConversionMonitoringAlerts(snapshot: ConversionMonitoring
     });
   }
 
-  return alerts;
+  return dedupeAlertsByCode(alerts);
+}
+
+function dedupeAlertsByCode(alerts: ConversionMonitoringAlert[]): ConversionMonitoringAlert[] {
+  const seen = new Set<string>();
+  const out: ConversionMonitoringAlert[] = [];
+  for (const a of alerts) {
+    if (seen.has(a.code)) continue;
+    seen.add(a.code);
+    out.push(a);
+  }
+  return out;
 }
