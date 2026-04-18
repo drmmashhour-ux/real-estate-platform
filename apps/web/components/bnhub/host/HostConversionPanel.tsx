@@ -1,11 +1,25 @@
 "use client";
 
-import type { BNHubListingConversionSummaryV1 } from "@/modules/bnhub/conversion/bnhub-guest-conversion.types";
+import type {
+  BNHubListingConversionSummaryV1,
+  BnhubWeakestFunnelStep,
+} from "@/modules/bnhub/conversion/bnhub-guest-conversion.types";
 import { hostActionLineForWeakest } from "@/modules/bnhub/conversion/bnhub-conversion-funnel-diagnostics";
 
 function pct(n: number): string {
   if (!Number.isFinite(n)) return "—";
   return `${(n * 100).toFixed(1)}%`;
+}
+
+function rateHighlight(step: BnhubWeakestFunnelStep | null, key: "ctr" | "view" | "start" | "paid"): boolean {
+  if (!step) return false;
+  const map: Record<Exclude<BnhubWeakestFunnelStep, null>, typeof key> = {
+    search_click: "ctr",
+    click_view: "view",
+    view_start: "start",
+    start_paid: "paid",
+  };
+  return map[step] === key;
 }
 
 /**
@@ -15,6 +29,9 @@ export function HostConversionPanel({ summary }: { summary: BNHubListingConversi
   const m = summary.metrics;
   const parity = summary.trackingParity;
   const biggest = summary.biggestIssue;
+  const w = summary.weakestStep;
+  const topThreeActions =
+    summary.quickWins.length > 0 ? summary.quickWins.slice(0, 3) : summary.recommendations.slice(0, 3);
 
   return (
     <div className="mt-4 rounded-xl border border-sky-500/25 bg-sky-500/5 p-3">
@@ -44,10 +61,27 @@ export function HostConversionPanel({ summary }: { summary: BNHubListingConversi
       </div>
 
       <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <Metric label="Click rate (search→click)" value={pct(m.ctr)} highlight />
-        <Metric label="Listing view rate (click→view)" value={pct(m.viewRate)} highlight />
-        <Metric label="Start rate (view→start)" value={pct(m.viewToStartRate)} highlight />
-        <Metric label="Completion rate (start→paid)" value={pct(m.startToPaidRate)} highlight />
+        <Metric label="Click rate (search→click)" value={pct(m.ctr)} highlight weakest={rateHighlight(w, "ctr")} />
+        <Metric label="Listing view rate (click→view)" value={pct(m.viewRate)} highlight weakest={rateHighlight(w, "view")} />
+        <Metric label="Start rate (view→start)" value={pct(m.viewToStartRate)} highlight weakest={rateHighlight(w, "start")} />
+        <Metric label="Completion rate (start→paid)" value={pct(m.startToPaidRate)} highlight weakest={rateHighlight(w, "paid")} />
+      </div>
+
+      {summary.issueLabel ? (
+        <div className="mt-3 rounded-lg border border-rose-500/35 bg-rose-950/25 px-2.5 py-2">
+          <p className="text-[9px] font-semibold uppercase tracking-wide text-rose-200/90">Main issue for this listing</p>
+          <p className="mt-1 text-sm font-semibold text-rose-50">{summary.issueLabel}</p>
+          {summary.dropOffAtWeakestStep != null ? (
+            <p className="mt-1 text-[10px] text-rose-200/80">
+              Estimated drop-off at weakest step: {(summary.dropOffAtWeakestStep * 100).toFixed(1)}% (from tracked counts)
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
+      <div className="mt-3 rounded-lg border border-violet-500/25 bg-violet-950/20 px-2.5 py-2">
+        <p className="text-[9px] font-semibold uppercase tracking-wide text-violet-300/90">What to fix first</p>
+        <p className="mt-1 text-[11px] leading-snug text-neutral-200">{hostActionLineForWeakest(summary.weakestStep)}</p>
       </div>
 
       <div className="mt-3 rounded-lg border border-white/10 bg-black/25 px-2.5 py-2">
@@ -55,7 +89,7 @@ export function HostConversionPanel({ summary }: { summary: BNHubListingConversi
         <p className="mt-1 text-xs font-semibold text-white">
           {summary.weakestStepLabel ?? "Not enough volume yet"}
         </p>
-        <p className="mt-1 text-[11px] text-neutral-400">{hostActionLineForWeakest(summary.weakestStep)}</p>
+        <p className="mt-1 text-[11px] text-neutral-400">Largest relative drop-off in your current signal window.</p>
       </div>
 
       {biggest ? (
@@ -113,11 +147,11 @@ export function HostConversionPanel({ summary }: { summary: BNHubListingConversi
         </div>
       ) : null}
 
-      {summary.recommendations.length > 0 ? (
+      {topThreeActions.length > 0 ? (
         <div className="mt-4 border-t border-white/10 pt-3">
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-200/90">Top actions</p>
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-200/90">Top 3 actions</p>
           <ol className="mt-2 list-decimal space-y-1 pl-4 text-[11px] text-neutral-300">
-            {summary.recommendations.map((r, idx) => (
+            {topThreeActions.map((r, idx) => (
               <li key={idx}>{r}</li>
             ))}
           </ol>
@@ -127,11 +161,25 @@ export function HostConversionPanel({ summary }: { summary: BNHubListingConversi
   );
 }
 
-function Metric({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
+function Metric({
+  label,
+  value,
+  highlight,
+  weakest,
+}: {
+  label: string;
+  value: string;
+  highlight?: boolean;
+  weakest?: boolean;
+}) {
   return (
     <div
       className={`rounded-lg border px-2 py-1.5 ${
-        highlight ? "border-emerald-500/25 bg-emerald-500/10" : "border-white/10 bg-black/20"
+        weakest
+          ? "border-amber-500/50 bg-amber-950/30 ring-1 ring-amber-500/30"
+          : highlight
+            ? "border-emerald-500/25 bg-emerald-500/10"
+            : "border-white/10 bg-black/20"
       }`}
     >
       <p className="text-[9px] uppercase tracking-wide text-neutral-500">{label}</p>

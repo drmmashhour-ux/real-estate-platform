@@ -5,6 +5,27 @@ import { recordBnhubAnalyzerRun, recordBnhubInsightsGenerated } from "./bnhub-co
 import { bnhubConversionMetricsFromRawCounts } from "./bnhub-guest-conversion-metrics";
 import { computeWeakestStep } from "./bnhub-conversion-funnel-diagnostics";
 
+function funnelRatesFromTotals(args: {
+  searchViews: number;
+  listingClicks: number;
+  listingViews: number;
+  bookingStarted: number;
+  bookingCompleted: number;
+}) {
+  const { searchViews, listingClicks, listingViews, bookingStarted, bookingCompleted } = args;
+  return {
+    searchToClick: searchViews > 0 ? listingClicks / searchViews : null,
+    clickToView: listingClicks > 0 ? listingViews / listingClicks : null,
+    viewToBookingStart: listingViews > 0 ? bookingStarted / listingViews : null,
+    startToCompleted: bookingStarted > 0 ? bookingCompleted / bookingStarted : null,
+  };
+}
+
+function deltaPctPoints(cur: number | null, prev: number | null): number | null {
+  if (cur == null || prev == null || !Number.isFinite(cur) || !Number.isFinite(prev)) return null;
+  return (cur - prev) * 100;
+}
+
 /**
  * Read-only marketplace rollup from `AiConversionSignal` (last N days).
  */
@@ -209,6 +230,8 @@ export async function loadBnhubConversionAdminOverview(windowDays = 30): Promise
       startToCompleted,
       searchToClick,
     },
+    globalDropOff,
+    measurementComparison,
     topByBookings,
     weakestByViews,
     listingFunnelRows,

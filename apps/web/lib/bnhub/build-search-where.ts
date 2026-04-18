@@ -144,6 +144,9 @@ export function searchOrderBy(
       return [{ nightPriceCents: "desc" }];
     case "popular":
       return [{ reviews: { _count: "desc" } }, { createdAt: "desc" }];
+    case "best_value":
+    case "top_conversion":
+      return paginated ? [{ createdAt: "desc" }] : [];
     case "newest":
     default:
       return [{ createdAt: "desc" }];

@@ -14,7 +14,23 @@ export async function GET() {
   if (!auth.ok) return auth.response;
 
   if (!revenueEnforcementFlags.revenueDashboardV1 && !engineFlags.growthRevenuePanelV1) {
-    return NextResponse.json({ error: "Revenue dashboard disabled" }, { status: 403 });
+    return NextResponse.json(
+      {
+        error: "Revenue dashboard disabled",
+        code: "REVENUE_FLAGS_DISABLED",
+        requiredFlags: [
+          {
+            env: "FEATURE_REVENUE_DASHBOARD_V1",
+            hint: "Primary dashboard data path (`revenue-dashboard.service` aggregates).",
+          },
+          {
+            env: "FEATURE_GROWTH_REVENUE_PANEL_V1",
+            hint: "Growth Machine revenue strip — enable if dashboard flag is off but operators need `/api/growth/revenue`.",
+          },
+        ],
+      },
+      { status: 403 },
+    );
   }
 
   try {

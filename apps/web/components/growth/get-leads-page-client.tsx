@@ -121,6 +121,9 @@ export function GetLeadsPageClient({
   const [ctaVariant, setCtaVariant] = useState<ConversionAbVariant>("a");
   const [showStayNudge, setShowStayNudge] = useState(false);
   const [listingClickCount, setListingClickCount] = useState(0);
+  /** Progressive disclosure: keep step 2 to name + contact unless user expands notes (or URL prefilled area). */
+  const [notesExpanded, setNotesExpanded] = useState(() => Boolean(locationHint?.trim()));
+  const [restoredIntentSession, setRestoredIntentSession] = useState(false);
 
   const ensuredStartRef = useRef(false);
   const nameInputRef = useRef<HTMLInputElement>(null);
@@ -453,6 +456,11 @@ export function GetLeadsPageClient({
                 <p className="mb-3 text-center text-xs font-medium uppercase tracking-wide text-gray-500">
                   What are you looking for?
                 </p>
+                {restoredIntentSession ? (
+                  <p className="mb-3 text-center text-xs text-emerald-400/90">
+                    You can change your goal below — we kept your last choice to save a step.
+                  </p>
+                ) : null}
                 {conversionUpgradeV1 ? (
                   <IntentSelector
                     value={toInstantIntent(intent)}
@@ -563,23 +571,35 @@ export function GetLeadsPageClient({
                   className={inputClass}
                 />
 
-                <textarea
-                  name="notes"
-                  rows={3}
-                  defaultValue={locationHint?.trim() ? `Area focus: ${locationHint.trim().slice(0, 280)}` : undefined}
-                  placeholder="Optional message (area, budget, timing…)"
-                  disabled={status === "submitting" || status === "analyzing"}
-                  onFocus={() => ensureFormStartTracked()}
-                  className={`${inputClass} resize-y min-h-[96px]`}
-                />
+                {notesExpanded ? (
+                  <textarea
+                    name="notes"
+                    rows={3}
+                    defaultValue={locationHint?.trim() ? `Area focus: ${locationHint.trim().slice(0, 280)}` : undefined}
+                    placeholder="Optional message (area, budget, timing…)"
+                    disabled={status === "submitting" || status === "analyzing"}
+                    onFocus={() => ensureFormStartTracked()}
+                    className={`${inputClass} resize-y min-h-[96px]`}
+                  />
+                ) : (
+                  <button
+                    type="button"
+                    disabled={status === "submitting" || status === "analyzing"}
+                    onClick={() => {
+                      setNotesExpanded(true);
+                      ensureFormStartTracked();
+                    }}
+                    className="w-full rounded-xl border border-dashed border-gray-700 bg-transparent px-4 py-3 text-sm font-medium text-[#D4AF37] hover:border-[#D4AF37]/50 hover:bg-white/[0.03]"
+                  >
+                    + Add details (area, budget, timing) — optional
+                  </button>
+                )}
 
                 {status === "error" && errorMsg ? (
                   <p className="text-sm text-red-400" role="alert">
                     {errorMsg}
                   </p>
                 ) : null}
-
-                <p className="text-center text-[11px] text-slate-500">No spam · Free · Fast reply</p>
 
                 <button
                   type="submit"
@@ -593,6 +613,10 @@ export function GetLeadsPageClient({
                       ? "Analyzing…"
                       : submitPrimaryLabel}
                 </button>
+
+                <p className="text-center text-[11px] text-slate-400">
+                  No spam · Free · Fast response on business days
+                </p>
 
                 <div className="mt-4 space-y-3">
                   <BrokerLeadTrustStrip className="text-center sm:text-left" />

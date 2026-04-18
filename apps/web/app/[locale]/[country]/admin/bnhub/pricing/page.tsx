@@ -5,6 +5,8 @@ import { getGuestId } from "@/lib/auth/session";
 import { isPlatformAdmin } from "@/lib/auth/is-platform-admin";
 import { hubNavigation } from "@/lib/hub/navigation";
 import { prisma } from "@/lib/db";
+import { revenueV4Flags } from "@/config/feature-flags";
+import { computeBnhubAdvisoryPricing } from "@/modules/bnhub/pricing/bnhub-dynamic-pricing.service";
 
 export const dynamic = "force-dynamic";
 
@@ -93,6 +95,31 @@ export default async function Page() {
           ))}
         </ul>
       </div>
+
+        {advisoryRows.length > 0 ? (
+          <div className="rounded-xl border border-zinc-800 bg-zinc-950/50 p-4">
+            <h2 className="text-sm font-semibold text-white">Advisory pricing snapshot (sample)</h2>
+            <p className="mt-1 text-xs text-zinc-500">
+              Read-only preview when <code className="text-zinc-400">FEATURE_BNHUB_DYNAMIC_PRICING_V1</code> is on — not
+              applied to live prices.
+            </p>
+            <ul className="mt-3 divide-y divide-zinc-800 text-sm">
+              {advisoryRows.map(({ listing, advisory }) =>
+                advisory ? (
+                  <li key={listing.id} className="flex flex-wrap justify-between gap-2 py-2">
+                    <span className="text-zinc-300">
+                      {listing.title ?? listing.id.slice(0, 8)} · {listing.city}
+                    </span>
+                    <span className="font-mono text-xs text-zinc-400">
+                      {(listing.nightPriceCents / 100).toFixed(0)} → {(advisory.suggestedPriceCents / 100).toFixed(0)}{" "}
+                      · {advisory.confidenceLabel} · {advisory.noChangeRecommended ? "hold" : "review"}
+                    </span>
+                  </li>
+                ) : null,
+              )}
+            </ul>
+          </div>
+        ) : null}
     </HubLayout>
   );
 }

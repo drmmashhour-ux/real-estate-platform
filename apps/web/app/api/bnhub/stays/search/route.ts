@@ -58,7 +58,14 @@ export async function POST(request: NextRequest) {
       staysFilters: hasActiveStaysFilters(staysFilters ?? undefined) ? staysFilters : null,
       ...bbox,
       sort:
-        f.sort === "priceAsc" || f.sort === "priceDesc" || f.sort === "recommended" || f.sort === "ai"
+        f.sort === "priceAsc" ||
+        f.sort === "priceDesc" ||
+        f.sort === "recommended" ||
+        f.sort === "ai" ||
+        f.sort === "aiScore" ||
+        f.sort === "best_value" ||
+        f.sort === "top_conversion" ||
+        f.sort === "ranking"
           ? f.sort
           : "newest",
       userId,

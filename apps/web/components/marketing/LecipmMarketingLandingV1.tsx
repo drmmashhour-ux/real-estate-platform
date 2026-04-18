@@ -13,6 +13,7 @@ import { Footer } from "@/components/marketing/Footer";
 import { LandingScrollDepth } from "@/components/marketing/LandingScrollDepth";
 import { useConversionEngineFlags } from "@/lib/conversion/use-conversion-engine-flags";
 import { ConversionHomeBoost } from "@/components/conversion/ConversionHomeBoost";
+import { HomeMarketingFunnelPv } from "@/components/marketing/HomeMarketingFunnelPv";
 
 const HostsSection = dynamic(() => import("@/components/marketing/HostsSection").then((m) => m.HostsSection));
 const ClientsSection = dynamic(() => import("@/components/marketing/ClientsSection").then((m) => m.ClientsSection));
@@ -25,6 +26,7 @@ export function LecipmMarketingLandingV1() {
   const conversionEngineFlags = useConversionEngineFlags();
   return (
     <div className="flex min-h-screen flex-col bg-landing-black text-landing-text">
+      <HomeMarketingFunnelPv />
       <LandingScrollDepth />
       <LandingNavbar />
       <main className="flex-1">

@@ -56,6 +56,11 @@ describe("buildRevenueDashboardSummary", () => {
     expect(s.bookingCompletionRate).toBeLessThanOrEqual(1);
     expect(Array.isArray(s.notes)).toBe(true);
     expect(Array.isArray(s.alerts)).toBe(true);
+    expect(typeof s.weekPositiveRevenueEvents).toBe("number");
+    expect(s.sparseDisplay.tier).toBeDefined();
+    expect(Array.isArray(s.operatorRecommendations)).toBe(true);
+    expect(s.operatorChecklist.topActions.length).toBeLessThanOrEqual(3);
+    expect(s.bnhub.weekBookingFeeRevenue).toBeDefined();
   });
 
   it("uses safe denominator when no lead views (unlock rate 0–1)", async () => {

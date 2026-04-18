@@ -4,6 +4,7 @@ import { Link } from "@/i18n/navigation";
 import { Container } from "@/components/ui/Container";
 import { MarketingAnalyticsEvents, trackMarketingEvent } from "@/lib/analytics";
 import { getLandingRoiHref } from "@/lib/marketing/landing-roi-href";
+import { recordFunnelEvent } from "@/modules/conversion/funnel-metrics.service";
 
 export function FinalCTA() {
   const roiHref = getLandingRoiHref();
@@ -32,7 +33,10 @@ export function FinalCTA() {
           </Link>
           <Link
             href={roiHref}
-            onClick={() => trackMarketingEvent(MarketingAnalyticsEvents.roiCta, { surface: "final_cta" })}
+            onClick={() => {
+              recordFunnelEvent("homepage", "CTA_click");
+              trackMarketingEvent(MarketingAnalyticsEvents.roiCta, { surface: "final_cta" });
+            }}
             className="inline-flex min-h-[52px] items-center justify-center rounded-full border border-white/25 px-10 py-3 text-sm font-semibold text-white hover:border-premium-gold/50"
           >
             Open ROI calculator

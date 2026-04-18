@@ -31,6 +31,9 @@ import { GrowthKnowledgeGraphPanel } from "./GrowthKnowledgeGraphPanel";
 import { GrowthDecisionJournalPanel } from "./GrowthDecisionJournalPanel";
 import { GrowthMemoryPanel } from "./GrowthMemoryPanel";
 import { GrowthPolicyEnforcementPanel } from "./GrowthPolicyEnforcementPanel";
+import { GrowthPolicyEnforcementStatusStrip } from "./GrowthPolicyEnforcementStatusStrip";
+import { GrowthPolicyEnforcementRolloutDebugStrip } from "./GrowthPolicyEnforcementRolloutDebugStrip";
+import { GrowthAutonomyPanel } from "./GrowthAutonomyPanel";
 import { GrowthGovernanceFeedbackPanel } from "./GrowthGovernanceFeedbackPanel";
 import { GrowthOperatingReviewPanel } from "./GrowthOperatingReviewPanel";
 import { GrowthRevenuePanel } from "./GrowthRevenuePanel";
@@ -73,7 +76,10 @@ import { GrowthScalePanels } from "./GrowthScalePanels";
 import { CompanyCommandCenterV7 } from "./CompanyCommandCenterV7";
 import { CompanyCommandCenterV8 } from "./CompanyCommandCenterV8";
 import { BrokerCompetitionPanel } from "../brokers/BrokerCompetitionPanel";
+import type { GrowthAutonomyRolloutStage } from "@/modules/growth/growth-autonomy.types";
 import type { GrowthPolicyEnforcementSnapshot } from "@/modules/growth/growth-policy-enforcement.types";
+import type { GrowthPolicyEnforcementGetResponse } from "@/modules/growth/growth-policy-enforcement-api.types";
+import { isGrowthPolicyEnforcementEnabledResponse } from "@/modules/growth/growth-policy-enforcement-api.types";
 import type { GrowthContentHubSnapshot } from "@/modules/growth/ai-autopilot-content.types";
 import type { InfluenceSnapshot } from "@/modules/growth/ai-autopilot-influence.service";
 import type { FunnelReport } from "@/modules/growth-funnel/funnel.types";
@@ -150,6 +156,7 @@ export function GrowthMachineDashboard({
   growthDecisionJournal,
   growthGovernancePolicy,
   growthPolicyEnforcement,
+  growthAutonomy,
   growthGovernanceFeedback,
   growthOperatingReviewPanel,
   growthRevenuePanelV1,
@@ -189,6 +196,9 @@ export function GrowthMachineDashboard({
   growthScaleV1,
   growth100kV1,
   growth1mV1,
+  viewerIsAdmin,
+  viewerGrowthAutonomyPilotAccess,
+  growthAutonomyEnforcementLayerFlag,
 }: {
   locale: string;
   country: string;
@@ -233,6 +243,19 @@ export function GrowthMachineDashboard({
   growthGovernancePolicy?: { enabled: boolean; panel: boolean; panelBadges?: boolean };
   /** Bounded advisory enforcement snapshot (feature-gated; default off). */
   growthPolicyEnforcement?: { enabled: boolean; panel: boolean };
+  /** Growth autonomy orchestration — OFF / ASSIST / SAFE_AUTOPILOT (advisory-only). */
+  growthAutonomy?: {
+    enabled: boolean;
+    panel: boolean;
+    killSwitch: boolean;
+    rolloutStage: GrowthAutonomyRolloutStage;
+  };
+  /** Viewer can bypass internal-rollout gate for autonomy API (admin). */
+  viewerIsAdmin?: boolean;
+  /** Server-computed: eligible for internal autonomy pilot (admin, allowlist, non-prod, internal UI env). */
+  viewerGrowthAutonomyPilotAccess?: boolean;
+  /** FEATURE_GROWTH_POLICY_ENFORCEMENT_V1 — surfaced on autonomy rollout strip. */
+  growthAutonomyEnforcementLayerFlag?: boolean;
   /** Governance feedback memory (advisory; default off). */
   growthGovernanceFeedback?: { enabled: boolean; panel: boolean; bridge: boolean };
   /** Weekly operating review panel — requires `FEATURE_GROWTH_OPERATING_REVIEW_V1` for API data. */
@@ -311,24 +334,33 @@ export function GrowthMachineDashboard({
   const [funnel, setFunnel] = React.useState<FunnelJson | null>(null);
   const [err, setErr] = React.useState<string | null>(null);
   const [enforcementSnapshot, setEnforcementSnapshot] = React.useState<GrowthPolicyEnforcementSnapshot | null>(null);
+  const [enforcementSnapshotReady, setEnforcementSnapshotReady] = React.useState(
+    () => !growthPolicyEnforcement?.enabled,
+  );
 
   React.useEffect(() => {
     if (!growthPolicyEnforcement?.enabled) {
       setEnforcementSnapshot(null);
+      setEnforcementSnapshotReady(true);
       return;
     }
     let cancelled = false;
+    setEnforcementSnapshotReady(false);
     void fetch("/api/growth/policy-enforcement", { credentials: "same-origin" })
       .then(async (r) => {
-        const j = (await r.json()) as { snapshot?: GrowthPolicyEnforcementSnapshot | null };
+        const j = (await r.json()) as GrowthPolicyEnforcementGetResponse;
         if (!r.ok) return null;
-        return j.snapshot ?? null;
+        if (!isGrowthPolicyEnforcementEnabledResponse(j)) return null;
+        return j.snapshot;
       })
       .then((s) => {
         if (!cancelled) setEnforcementSnapshot(s);
       })
       .catch(() => {
         if (!cancelled) setEnforcementSnapshot(null);
+      })
+      .finally(() => {
+        if (!cancelled) setEnforcementSnapshotReady(true);
       });
     return () => {
       cancelled = true;
@@ -586,6 +618,36 @@ export function GrowthMachineDashboard({
 
       <GrowthBlockersPanel lines={summary.blockers} />
 
+      <GrowthPolicyEnforcementStatusStrip
+        enforcementEnabled={!!growthPolicyEnforcement?.enabled}
+        panelEnabled={!!growthPolicyEnforcement?.panel}
+      />
+
+      <GrowthPolicyEnforcementRolloutDebugStrip
+        enforcementLayerFlagOn={!!growthPolicyEnforcement?.enabled}
+        panelFlagOn={!!growthPolicyEnforcement?.panel}
+        enforcementSnapshot={growthPolicyEnforcement?.enabled ? enforcementSnapshot : null}
+        enforcementSnapshotReady={
+          !!growthPolicyEnforcement?.enabled ? enforcementSnapshotReady : true
+        }
+        simulationSectionMounted={!!(growthSimulation?.enabled && growthSimulation?.panel)}
+      />
+
+      {growthAutonomy ? (
+        <GrowthAutonomyPanel
+          locale={locale}
+          country={country}
+          autonomyEnabled={growthAutonomy.enabled}
+          panelEnabled={growthAutonomy.panel}
+          killSwitch={growthAutonomy.killSwitch}
+          rolloutStage={growthAutonomy.rolloutStage}
+          enforcementEnabled={!!growthPolicyEnforcement?.enabled}
+          enforcementLayerFlagOn={!!growthAutonomyEnforcementLayerFlag}
+          viewerIsAdmin={!!viewerIsAdmin}
+          viewerGrowthAutonomyPilotAccess={!!viewerGrowthAutonomyPilotAccess}
+        />
+      ) : null}
+
       {growthLearningAdvisory && (growthExecutive || growthDailyBrief) ? <GrowthLearningAdvisoryStrip /> : null}
 
       {growthCadence ? <GrowthCadencePanel /> : null}
@@ -611,6 +673,8 @@ export function GrowthMachineDashboard({
 
       {growthSimulation?.enabled && growthSimulation?.panel ? (
         <GrowthSimulationPanel
+          enforcementLayerEnabled={!!growthPolicyEnforcement?.enabled}
+          enforcementSnapshotReady={!!growthPolicyEnforcement?.enabled ? enforcementSnapshotReady : true}
           enforcementSnapshot={growthPolicyEnforcement?.enabled ? enforcementSnapshot : null}
         />
       ) : null}

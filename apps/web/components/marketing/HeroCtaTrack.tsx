@@ -2,6 +2,7 @@
 
 import { Link } from "@/i18n/navigation";
 import { trackMarketingEvent } from "@/lib/analytics";
+import { recordFunnelEvent } from "@/modules/conversion/funnel-metrics.service";
 
 export function HeroCtaTrack({
   href,
@@ -25,7 +26,10 @@ export function HeroCtaTrack({
     <Link
       href={href}
       className={base}
-      onClick={() => trackMarketingEvent(event, { surface: "hero", ...meta })}
+      onClick={() => {
+        recordFunnelEvent("homepage", "CTA_click");
+        trackMarketingEvent(event, { surface: "hero", ...meta });
+      }}
     >
       {label}
     </Link>

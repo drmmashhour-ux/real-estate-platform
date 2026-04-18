@@ -96,6 +96,17 @@ export function ConversionMonitoringDashboard() {
         </p>
       </div>
 
+      <div className="rounded-xl border border-slate-800 bg-slate-950/50 px-4 py-3 text-xs text-slate-300">
+        <p className="font-semibold text-slate-200">Funnel steps tracked (deduped per session where noted)</p>
+        <ul className="mt-2 list-inside list-disc space-y-1 font-mono text-[10px] leading-relaxed text-slate-400">
+          <li>homepage — page_view · CTA_click</li>
+          <li>get_leads — page_view · form_start · form_submit</li>
+          <li>listings — listing_view · CTA_click</li>
+          <li>property — property_view · contact_click</li>
+          <li>broker_preview — preview_view · CTA_click</li>
+        </ul>
+      </div>
+
       <div className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-xs text-slate-300">
         <p className="font-semibold text-white">Rollout (traceable)</p>
         <p className="mt-1 font-mono text-[11px]">
@@ -125,7 +136,7 @@ export function ConversionMonitoringDashboard() {
               <span className="text-white">{pct(data.funnel.rates.listings_ctr)}</span>
             </li>
             <li>
-              Property (contact / view):{" "}
+              Property (contact / property_view):{" "}
               <span className="text-white">{pct(data.funnel.rates.property_contact_rate)}</span>
             </li>
             <li className="sm:col-span-2">

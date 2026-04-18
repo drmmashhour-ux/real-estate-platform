@@ -22,6 +22,7 @@ import {
 import type {
   GrowthEnforcementMode,
   GrowthEnforcementTarget,
+  GrowthPolicyInputCompleteness,
   GrowthPolicyEnforcementRule,
   GrowthPolicyEnforcementSnapshot,
 } from "./growth-policy-enforcement.types";
@@ -155,6 +156,9 @@ export function assembleGrowthPolicyEnforcementSnapshot(input: AssembleGrowthPol
   }
   notes.push("Enforcement applies to non-critical advisory/orchestration paths only — not payments, bookings, ads core, or CRO core.");
 
+  const completeness: GrowthPolicyInputCompleteness =
+    input.missingDataWarnings.length > 0 ? "partial" : "complete";
+
   return {
     rules,
     blockedTargets: [...new Set(blockedTargets)],
@@ -162,6 +166,8 @@ export function assembleGrowthPolicyEnforcementSnapshot(input: AssembleGrowthPol
     approvalRequiredTargets: [...new Set(approvalRequiredTargets)],
     notes: notes.slice(0, 8),
     createdAt: ts(),
+    inputCompleteness: completeness,
+    missingDataWarnings: input.missingDataWarnings.slice(0, 12),
   };
 }
 

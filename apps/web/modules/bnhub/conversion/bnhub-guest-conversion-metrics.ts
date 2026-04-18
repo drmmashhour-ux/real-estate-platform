@@ -1,6 +1,30 @@
 import type { BNHubListingConversionMetrics, BNHubSearchConversionMetrics } from "../guest-conversion/guest-conversion.types";
 import type { BNHubConversionMetrics } from "./bnhub-guest-conversion.types";
 
+/** Stage conversion rates derived from aggregated signal counts (read-only analytics). */
+export type BnhubFunnelStageRates = {
+  /** Search impression → listing click */
+  searchToClickRate: number;
+  /** Listing click → listing detail view */
+  clickToListingViewRate: number;
+  /** Listing view → booking_started signal */
+  listingViewToBookingStartRate: number;
+  /** booking_started → booking_completed */
+  bookingStartToCompletionRate: number;
+};
+
+/**
+ * Explicit funnel step rates (same math as `BNHubConversionMetrics` ctr / viewRate / viewToStartRate / startToPaidRate).
+ */
+export function computeFunnelStageRates(m: BNHubConversionMetrics): BnhubFunnelStageRates {
+  return {
+    searchToClickRate: m.ctr,
+    clickToListingViewRate: m.viewRate,
+    listingViewToBookingStartRate: m.viewToStartRate,
+    bookingStartToCompletionRate: m.startToPaidRate,
+  };
+}
+
 /** Builds V1 funnel metrics from raw counts (e.g. admin rollups). */
 export function bnhubConversionMetricsFromRawCounts(raw: {
   impressions: number;

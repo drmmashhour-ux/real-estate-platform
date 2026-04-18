@@ -59,6 +59,10 @@ export type BNHubListingConversionSummaryV1 = {
   /** Highest-loss funnel stage for this window (rule-based). */
   weakestStep: BnhubWeakestFunnelStep;
   weakestStepLabel: string | null;
+  /** Estimated drop-off at weakest step (0–1), from real counts + volume guards; null if not enough volume. */
+  dropOffAtWeakestStep: number | null;
+  /** Single-line diagnosis for hosts (from analyzer insight title or weakest-step mapping). */
+  issueLabel: string | null;
   /** Single prioritized issue for host attention */
   biggestIssue: BNHubConversionInsight | null;
   /** Rule-based host fixes (photos, price, copy) */
@@ -87,6 +91,28 @@ export type BNHubConversionAdminOverview = {
     startToCompleted: number | null;
     searchToClick: number | null;
   };
+  /** Marketplace-wide weakest funnel step from aggregated counts (volume guards inside analyzer). */
+  globalDropOff: {
+    weakestStep: BnhubWeakestFunnelStep;
+    weakestStepLabel: string | null;
+    dropOffRate: number | null;
+  } | null;
+  /** Prior vs current window of equal length — real signals only (no new tracking instrumentation). */
+  measurementComparison: {
+    previousWindowLabel: string;
+    previous: {
+      searchToClick: number | null;
+      clickToView: number | null;
+      viewToBookingStart: number | null;
+      startToCompleted: number | null;
+    };
+    deltaPercentagePoints: {
+      searchToClick: number | null;
+      clickToView: number | null;
+      viewToBookingStart: number | null;
+      startToCompleted: number | null;
+    };
+  };
   topByBookings: { listingId: string; title: string | null; city: string | null; count: number }[];
   weakestByViews: { listingId: string; title: string | null; city: string | null; views: number; completed: number }[];
   /** Per-listing funnel slice for operators (volume thresholds inside builder). */
@@ -113,4 +139,6 @@ export type BNHubListingFunnelAdminRow = {
   completionRate: number;
   weakestStep: BnhubWeakestFunnelStep;
   weakestStepLabel: string | null;
+  /** Drop-off fraction at weakest step (0–1), when volume guards pass. */
+  dropOffRate: number | null;
 };

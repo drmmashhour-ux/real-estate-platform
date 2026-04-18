@@ -3,6 +3,11 @@
 import * as React from "react";
 import type { GrowthSimulationBundle, GrowthSimulationResult } from "@/modules/growth/growth-simulation.types";
 import type { GrowthPolicyEnforcementSnapshot } from "@/modules/growth/growth-policy-enforcement.types";
+import {
+  GROWTH_POLICY_DEBUG_QUERY,
+  shouldShowGrowthPolicyEnforcementDebugUi,
+} from "@/modules/growth/growth-policy-enforcement-debug";
+import { simulationEnforcementSnapshotDebugLabel } from "@/modules/growth/growth-simulation-enforcement-ui";
 import { getEnforcementForTarget } from "@/modules/growth/growth-policy-enforcement-query.service";
 
 function recBadge(r: GrowthSimulationResult["recommendation"]): string {
@@ -13,12 +18,25 @@ function recBadge(r: GrowthSimulationResult["recommendation"]): string {
 
 export function GrowthSimulationPanel({
   enforcementSnapshot,
+  enforcementLayerEnabled = false,
+  enforcementSnapshotReady = true,
 }: {
   enforcementSnapshot?: GrowthPolicyEnforcementSnapshot | null;
+  /** True when FEATURE_GROWTH_POLICY_ENFORCEMENT_V1 is on at page render; gates debug copy and snapshot expectations. */
+  enforcementLayerEnabled?: boolean;
+  /** False while parent is fetching `/api/growth/policy-enforcement` for shared snapshot state. */
+  enforcementSnapshotReady?: boolean;
 }) {
   const [bundle, setBundle] = React.useState<GrowthSimulationBundle | null>(null);
   const [err, setErr] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(true);
+  const [debugUi, setDebugUi] = React.useState(false);
+
+  React.useEffect(() => {
+    const q =
+      typeof window !== "undefined" ? new URLSearchParams(window.location.search).get(GROWTH_POLICY_DEBUG_QUERY) : null;
+    setDebugUi(shouldShowGrowthPolicyEnforcementDebugUi(q));
+  }, []);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -60,16 +78,46 @@ export function GrowthSimulationPanel({
     ? getEnforcementForTarget("simulation_recommendation_promotion", enforcementSnapshot)
     : null;
 
+  const snapshotDebugLabel = simulationEnforcementSnapshotDebugLabel({
+    enforcementLayerEnabled,
+    enforcementSnapshotReady,
+    enforcementSnapshot,
+  });
+
   return (
     <div className="rounded-xl border border-fuchsia-900/35 bg-fuchsia-950/15 p-4">
       <h3 className="text-sm font-semibold text-fuchsia-100">
         <span aria-hidden>🔮</span> Growth Simulations
       </h3>
+
+      {!enforcementLayerEnabled ? (
+        <p className="mt-1 text-[11px] text-zinc-500">
+          Policy enforcement layer disabled — simulation promotion gates are not applied here.
+        </p>
+      ) : null}
+
+      {enforcementLayerEnabled && !enforcementSnapshotReady ? (
+        <p className="mt-1 text-[11px] text-zinc-500">Loading shared policy enforcement snapshot…</p>
+      ) : null}
+
+      {enforcementLayerEnabled && enforcementSnapshotReady && !enforcementSnapshot ? (
+        <p className="mt-1 text-[11px] text-amber-200/85">
+          Policy enforcement snapshot unavailable — treat promotion hints as incomplete until the snapshot loads.
+        </p>
+      ) : null}
+
       {simEnf && simEnf.mode !== "allow" ? (
         <p className="mt-1 text-[11px] text-amber-200/90">
           Policy: simulation recommendations are not auto-promoted ({simEnf.mode}).
         </p>
       ) : null}
+
+      {debugUi ? (
+        <p className="mt-1 font-mono text-[10px] leading-relaxed text-zinc-600">
+          Debug (simulation): enforcementSnapshot=<span className="text-zinc-400">{snapshotDebugLabel}</span>
+        </p>
+      ) : null}
+
       <p className="mt-1 text-xs text-zinc-500">
         Simulation only — estimates for planning, not guaranteed outcomes.
       </p>

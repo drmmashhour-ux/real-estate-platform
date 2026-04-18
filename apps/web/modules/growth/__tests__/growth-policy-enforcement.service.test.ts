@@ -24,9 +24,24 @@ describe("assembleGrowthPolicyEnforcementSnapshot", () => {
     };
     const s = assembleGrowthPolicyEnforcementSnapshot(input);
     expect(s.rules.length).toBeGreaterThan(0);
+    expect(s.inputCompleteness).toBe("partial");
+    expect(s.missingDataWarnings).toContain("policy_unavailable");
     expect(s.notes.some((n) => n.includes("Partial inputs"))).toBe(true);
     expect(s.notes.some((n) => n.includes("non-critical"))).toBe(true);
     expect(s.createdAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+  });
+
+  it("marks inputs complete when no warnings", () => {
+    const input: AssembleGrowthPolicyEnforcementInput = {
+      policySnapshot: null,
+      governance: null,
+      learningControl: null,
+      autopilotExecutionEnabled: false,
+      missingDataWarnings: [],
+    };
+    const s = assembleGrowthPolicyEnforcementSnapshot(input);
+    expect(s.inputCompleteness).toBe("complete");
+    expect(s.missingDataWarnings).toEqual([]);
   });
 
   it("freezes learning_adjustments when learning control recommends freeze", () => {

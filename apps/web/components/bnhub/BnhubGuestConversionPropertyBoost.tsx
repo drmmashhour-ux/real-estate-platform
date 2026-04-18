@@ -7,8 +7,8 @@ export function BnhubGuestConversionPropertyBoost({
   highDemandArea,
   recentlyViewed,
   recentlyBooked,
-  bookNowLabel = "Book now in seconds",
-  reserveLabel = "Secure your stay instantly",
+  bookNowLabel = "Book instantly — no waiting",
+  reserveLabel = "Secure booking — review your total before checkout",
   frictionMode = "default",
   conversionAligned = true,
   sampleStayNights = 2,
@@ -46,8 +46,10 @@ export function BnhubGuestConversionPropertyBoost({
 
   const microTrust =
     frictionMode === "reassurance"
-      ? ["Secure payment", "Instant confirmation after checkout"]
-      : ["No hidden fees in the price summary", "Instant confirmation when eligible"];
+      ? ["Secure payment", "No hidden fees in your summary", "Instant confirmation when eligible"]
+      : frictionMode === "social_proof"
+        ? ["Secure booking", "Instant confirmation"]
+        : ["Secure booking", "Instant confirmation"];
 
   const formattedTotal = (sampleTotalEstimateCents / 100).toLocaleString(undefined, {
     style: "currency",
@@ -59,7 +61,10 @@ export function BnhubGuestConversionPropertyBoost({
   });
 
   return (
-    <div className="mt-3 space-y-2 rounded-xl border border-emerald-200/80 bg-emerald-50/50 px-3 py-2.5 text-[12px] leading-snug text-emerald-950">
+    <div
+      id="bnhub_conversion_optimizer_listing"
+      className="mt-3 space-y-3 rounded-xl border border-emerald-200/80 bg-emerald-50/50 px-3 py-3 text-[12px] leading-snug text-emerald-950"
+    >
       {!conversionAligned ? (
         <p className="rounded-lg border border-amber-300/80 bg-amber-50 px-2 py-1.5 text-[11px] font-medium text-amber-950">
           Conversion insights need aligned tracking flags — hero tips stay generic until both server and client BNHub
@@ -88,16 +93,17 @@ export function BnhubGuestConversionPropertyBoost({
           </li>
         ))}
       </ul>
-      <p className="text-[11px] font-medium text-emerald-900/90">
-        <span className="font-bold">{bookNowLabel}</span>
-        {" · "}
-        <span>{reserveLabel}</span>
-      </p>
+      <div className="rounded-lg border border-emerald-300/70 bg-white/85 px-3 py-2.5 shadow-sm">
+        <p className="text-base font-bold leading-tight text-emerald-950">{bookNowLabel}</p>
+        <p className="mt-1 text-[13px] font-semibold text-emerald-900">{reserveLabel}</p>
+      </div>
       <div className="rounded-lg border border-emerald-200/70 bg-white/70 px-2.5 py-2 text-[11px] text-emerald-950">
         <p className="font-semibold text-emerald-900">Price clarity</p>
+        <p className="mt-1 tabular-nums font-medium">
+          {sampleStayNights} nights × {nightly}/night
+        </p>
         <p className="mt-1 tabular-nums">
-          {sampleStayNights} nights × {nightly}/night + fees →{" "}
-          <span className="font-bold">{formattedTotal}</span> estimated total before taxes (sample dates).
+          + fees → <span className="font-bold">{formattedTotal}</span> sample total before taxes (example dates).
         </p>
         {cleaningFeeCents > 0 ? (
           <p className="mt-1 text-[10px] text-emerald-900/75">

@@ -6,8 +6,18 @@
 import { AccountStatus, PlatformRole } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { getRevenueMonitoringSnapshot } from "@/modules/revenue/revenue-monitoring.service";
-import type { RevenueDashboardSummary, RevenueSource } from "./revenue-dashboard.types";
+import type {
+  RevenueDashboardSummary,
+  RevenueSource,
+  RevenueSourceBreakdownItem,
+} from "./revenue-dashboard.types";
 import { detectRevenueAlerts } from "./revenue-dashboard-alerts.service";
+import {
+  buildOperatorActionRecommendations,
+  buildOperatorChecklist,
+  computeSparseDisplayState,
+} from "./revenue-dashboard-operator-guidance";
+import { computeDailyTargetProgress, getEffectiveDailyRevenueTargetCad } from "./revenue-dashboard-target";
 import {
   recordMissingDataWarning,
   recordRevenueDashboardAlertsGenerated,
@@ -42,6 +52,24 @@ function emptyBySource(): Record<RevenueSource, number> {
   };
 }
 
+function buildSourceDetail(
+  bySource: Record<RevenueSource, number>,
+  countBySource: Record<RevenueSource, number>,
+): Record<RevenueSource, RevenueSourceBreakdownItem> {
+  const keys: RevenueSource[] = ["lead_unlock", "booking_fee", "boost", "subscription", "other"];
+  const out = {} as Record<RevenueSource, RevenueSourceBreakdownItem>;
+  for (const k of keys) {
+    const amount = bySource[k];
+    const eventCount = countBySource[k];
+    out[k] = {
+      amount,
+      eventCount,
+      avgAmount: eventCount > 0 ? amount / eventCount : null,
+    };
+  }
+  return out;
+}
+
 function mapEventTypeToSource(eventType: string): RevenueSource {
   const t = eventType.toLowerCase();
   if (t === "lead_unlock" || t === "lead_purchased" || t === "lead_unlocked") return "lead_unlock";
@@ -51,10 +79,16 @@ function mapEventTypeToSource(eventType: string): RevenueSource {
   return "other";
 }
 
-async function sumRevenueBySourceInRange(
+/** Exported for Money OS trend windows — same rules as dashboard aggregates. */
+export async function aggregateRevenueInRange(
   from: Date,
   toExclusive: Date,
-): Promise<{ total: number; bySource: Record<RevenueSource, number> }> {
+): Promise<{
+  total: number;
+  bySource: Record<RevenueSource, number>;
+  countBySource: Record<RevenueSource, number>;
+  positiveAmountEventCount: number;
+}> {
   const rows = await prisma.revenueEvent.findMany({
     where: {
       createdAt: { gte: from, lt: toExclusive },
@@ -64,14 +98,19 @@ async function sumRevenueBySourceInRange(
   });
 
   const bySource = emptyBySource();
+  const countBySource = emptyBySource();
   let total = 0;
+  let positiveAmountEventCount = 0;
   for (const r of rows) {
     const a = Number(r.amount);
     if (!Number.isFinite(a) || a <= 0) continue;
+    positiveAmountEventCount += 1;
     total += a;
-    bySource[mapEventTypeToSource(r.eventType)] += a;
+    const src = mapEventTypeToSource(r.eventType);
+    bySource[src] += a;
+    countBySource[src] += 1;
   }
-  return { total, bySource };
+  return { total, bySource, countBySource, positiveAmountEventCount };
 }
 
 /**
@@ -101,9 +140,9 @@ export async function buildRevenueDashboardSummary(): Promise<RevenueDashboardSu
     bookingCompleted,
     monitoring,
   ] = await Promise.all([
-    sumRevenueBySourceInRange(todayStart, tomorrowStart),
-    sumRevenueBySourceInRange(weekStart, tomorrowStart),
-    sumRevenueBySourceInRange(monthStart, tomorrowStart),
+    aggregateRevenueInRange(todayStart, tomorrowStart),
+    aggregateRevenueInRange(weekStart, tomorrowStart),
+    aggregateRevenueInRange(monthStart, tomorrowStart),
     prisma.revenueEvent
       .count({
         where: {
@@ -180,6 +219,16 @@ export async function buildRevenueDashboardSummary(): Promise<RevenueDashboardSu
   }
 
   const revenuePerBroker = weekAgg.total / Math.max(1, payingBrokers);
+  const avgRevenuePerActiveBroker7d = weekAgg.total / Math.max(1, activeBrokers);
+  const revenueBySourceDetail = buildSourceDetail(weekAgg.bySource, weekAgg.countBySource);
+  const bookingDetail = revenueBySourceDetail.booking_fee;
+  const bnhubSummary = {
+    weekBookingFeeRevenue: weekAgg.bySource.booking_fee,
+    bookingFeeEventsWeek: bookingDetail.eventCount,
+    avgBookingFee: bookingDetail.avgAmount,
+  };
+  const dailyTargetCad = getEffectiveDailyRevenueTargetCad();
+  const { pctToGoal: pctToDailyTarget } = computeDailyTargetProgress(todayAgg.total);
 
   if (todayAgg.total === 0) {
     recordZeroRevenueDayDetected();
@@ -209,21 +258,39 @@ export async function buildRevenueDashboardSummary(): Promise<RevenueDashboardSu
     revenueWeek: weekAgg.total,
     revenueMonth: monthAgg.total,
     revenueBySource: weekAgg.bySource,
+    weekPositiveRevenueEvents: weekAgg.positiveAmountEventCount,
+    revenueBySourceDetail,
+    bnhub: bnhubSummary,
     leadsViewed,
     leadsUnlocked,
     leadUnlockRate,
     activeBrokers,
     payingBrokers,
+    brokersGeneratingRevenue: payingBrokers,
+    unlockedLeadsWeek: leadsUnlocked,
     revenuePerBroker,
+    avgRevenuePerActiveBroker7d,
     bookingStarts,
     bookingCompleted,
     bookingCompletionRate,
     alerts: [],
     notes,
+    dailyTargetCad,
+    pctToDailyTarget,
+    sparseDisplay: { tier: "ok", messages: [] },
+    operatorRecommendations: [],
+    operatorChecklist: { todayFocus: "", topActions: [] },
     createdAt: new Date().toISOString(),
   };
 
   summary.alerts = detectRevenueAlerts(summary);
+  summary.sparseDisplay = computeSparseDisplayState(summary);
+  summary.operatorRecommendations = buildOperatorActionRecommendations(summary);
+  summary.operatorChecklist = buildOperatorChecklist(
+    summary,
+    summary.alerts,
+    summary.operatorRecommendations,
+  );
   recordRevenueDashboardAlertsGenerated(summary.alerts.length);
 
   return summary;

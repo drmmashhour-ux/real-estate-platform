@@ -10,6 +10,7 @@ import { buildTopBnhubConversionRecommendations } from "./bnhub-conversion-recom
 import {
   buildBnhubAlerts,
   buildBnhubQuickWins,
+  buildConversionIssueLabel,
   computeWeakestStep,
   pickBiggestIssue,
 } from "./bnhub-conversion-funnel-diagnostics";
@@ -52,6 +53,7 @@ export async function buildListingConversionSummary(
   const recommendations = buildTopBnhubConversionRecommendations(insights);
   const weakest = computeWeakestStep(metrics);
   const biggestIssue = pickBiggestIssue(metrics, insights);
+  const issueLabel = buildConversionIssueLabel(weakest.step, biggestIssue);
   const quickWins = buildBnhubQuickWins(metrics, insights, hints);
   const alerts = buildBnhubAlerts(metrics, insights);
 
@@ -62,6 +64,8 @@ export async function buildListingConversionSummary(
     recommendations,
     weakestStep: weakest.step,
     weakestStepLabel: weakest.label,
+    dropOffAtWeakestStep: weakest.dropOffRate,
+    issueLabel,
     biggestIssue,
     quickWins,
     alerts,

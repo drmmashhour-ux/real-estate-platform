@@ -632,6 +632,22 @@ export const FEATURE_GROWTH_POLICY_ENFORCEMENT_V1 = growthPolicyEnforcementFlags
 export const FEATURE_GROWTH_POLICY_ENFORCEMENT_PANEL_V1 = growthPolicyEnforcementFlags.growthPolicyEnforcementPanelV1;
 
 /**
+ * Growth autonomy framework — OFF / ASSIST / SAFE_AUTOPILOT orchestration (advisory-only; default off).
+ * Does not control payments, bookings core, ads core, or CRO core. Pair with policy enforcement for production.
+ */
+export const growthAutonomyFlags = {
+  growthAutonomyV1: envTrue("FEATURE_GROWTH_AUTONOMY_V1"),
+  growthAutonomyPanelV1: envTrue("FEATURE_GROWTH_AUTONOMY_PANEL_V1"),
+  growthAutonomyKillSwitch: envTrue("FEATURE_GROWTH_AUTONOMY_KILL_SWITCH"),
+} as const;
+
+export type GrowthAutonomyFlagKey = keyof typeof growthAutonomyFlags;
+
+export const FEATURE_GROWTH_AUTONOMY_V1 = growthAutonomyFlags.growthAutonomyV1;
+export const FEATURE_GROWTH_AUTONOMY_PANEL_V1 = growthAutonomyFlags.growthAutonomyPanelV1;
+export const FEATURE_GROWTH_AUTONOMY_KILL_SWITCH = growthAutonomyFlags.growthAutonomyKillSwitch;
+
+/**
  * Governance memory + enforcement feedback — advisory patterns & review hints only (default off).
  * Does not relax policy, unfreeze, or change execution.
  */
@@ -1156,6 +1172,14 @@ export const revenueEnforcementFlags = {
 export const FEATURE_REVENUE_DASHBOARD_V1 = revenueEnforcementFlags.revenueDashboardV1;
 
 /**
+ * Revenue automation — suggest / assisted copy / safe triggers only (`modules/revenue/revenue-automation-engine`).
+ */
+export const revenueAutomationFlags = {
+  revenueAutomationV1: envTrue("FEATURE_REVENUE_AUTOMATION_V1"),
+  globalMosV1: envTrue("FEATURE_GLOBAL_MOS_V1"),
+};
+
+/**
  * Instant value + conversion UX (V1) — additive copy/components; no payment core changes.
  */
 export const conversionEngineFlags = {
@@ -1195,6 +1219,8 @@ export const revenueV4Flags = {
   /** Explainable scenarios, percentiles, BNHub-aware wrapper — recommendation-only. */
   pricingEngineV2: envTrue("FEATURE_PRICING_ENGINE_V2"),
   bnhubDynamicPricingV1: envTrue("FEATURE_BNHUB_DYNAMIC_PRICING_V1"),
+  /** Never auto-enabled — manual host/admin apply + audits only when all guardrails allow. */
+  bnhubDynamicPricingApplyV1: envTrue("FEATURE_BNHUB_DYNAMIC_PRICING_APPLY_V1"),
   investorInsightsV1: envTrue("FEATURE_INVESTOR_INSIGHTS_V1"),
   monetizationEngineV1: envTrue("FEATURE_MONETIZATION_ENGINE_V1"),
   /** Go-to-market scripts + sales assistant APIs (`/api/gtm/*`). */

@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Shield } from "lucide-react";
+import { BnhubBookingExitIntentBanner } from "@/components/bnhub/BnhubBookingExitIntentBanner";
 import { BnhubStripeTrustHint } from "@/components/bnhub/BnhubStripeTrustHint";
 import { BnhubPriceMayIncreaseHint } from "@/components/bnhub/BnhubPriceMayIncreaseHint";
 import { BnhubTrustSignals } from "@/components/bnhub/BnhubTrustSignals";
@@ -539,6 +540,30 @@ export function BookingForm({
         </li>
         <li className={stepClass(3)}>3 · Payment</li>
       </ol>
+      {bookingFlowStep === 3 && guestId && stripeConfigured && hostPayoutReady ? (
+        <div className="space-y-2">
+          <div className="rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-[11px] leading-snug text-sky-950">
+            <span className="font-semibold">Secure checkout:</span> Payment is processed by Stripe · Review the total in the
+            summary below before continuing ·{" "}
+            {instantBookEnabled
+              ? "Instant confirmation when checkout completes."
+              : "You’ll get confirmation after the host accepts your request."}
+          </div>
+          <div className="flex flex-wrap gap-2 text-[10px] font-semibold text-slate-700">
+            <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1">Secure payment</span>
+            <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1">No hidden fees</span>
+            {instantBookEnabled ? (
+              <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1">
+                No charge until you finish checkout
+              </span>
+            ) : (
+              <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1">
+                No charge until the host confirms your request
+              </span>
+            )}
+          </div>
+        </div>
+      ) : null}
       {!hostPayoutReady && (
         <div className="rounded-xl border border-amber-600/50 bg-amber-950/40 px-3 py-2 text-xs font-medium text-amber-100">
           <span className="rounded bg-amber-500/20 px-2 py-0.5 text-amber-200">
@@ -549,46 +574,60 @@ export function BookingForm({
           </p>
         </div>
       )}
-      <div>
-        <label id="bnhub-booking-check-in-label" className="mb-1 block text-xs font-medium text-slate-600">
-          Check-in
-        </label>
-        <input
-          type="date"
-          aria-labelledby="bnhub-booking-check-in-label"
-          value={checkIn}
-          onChange={(e) => setCheckIn(e.target.value)}
-          min={new Date().toISOString().slice(0, 10)}
-          className="w-full rounded-xl border border-neutral-300 bg-neutral-100 px-3 py-2.5 text-sm text-slate-900 focus:border-[#006ce4] focus:outline-none focus:ring-2 focus:ring-[#006ce4]/20"
-        />
-      </div>
-      <div>
-        <label id="bnhub-booking-check-out-label" className="mb-1 block text-xs font-medium text-slate-600">
-          Check-out
-        </label>
-        <input
-          type="date"
-          aria-labelledby="bnhub-booking-check-out-label"
-          value={checkOut}
-          onChange={(e) => setCheckOut(e.target.value)}
-          min={checkIn || new Date().toISOString().slice(0, 10)}
-          className="w-full rounded-xl border border-neutral-300 bg-neutral-100 px-3 py-2.5 text-sm text-slate-900 focus:border-[#006ce4] focus:outline-none focus:ring-2 focus:ring-[#006ce4]/20"
-        />
-      </div>
-      <div>
-        <label className="mb-1 block text-xs font-medium text-slate-600">Guests</label>
-        <input
-          type="number"
-          min={1}
-          max={maxGuests}
-          value={guestCount}
-          onChange={(e) =>
-            setGuestCount(Math.min(maxGuests, Math.max(1, parseInt(e.target.value, 10) || 1)))
-          }
-          className="w-full rounded-xl border border-neutral-300 bg-neutral-100 px-3 py-2.5 text-sm text-slate-900 focus:border-[#006ce4] focus:outline-none focus:ring-2 focus:ring-[#006ce4]/20"
-        />
-        <p className="mt-1 text-[11px] text-slate-500">Maximum {maxGuests} guests for this listing.</p>
-      </div>
+      <fieldset className="space-y-4 rounded-xl border border-neutral-200/90 bg-neutral-50/80 p-4">
+        <legend className="px-1 text-xs font-semibold uppercase tracking-wide text-slate-500">Stay details</legend>
+        <div>
+          <label id="bnhub-booking-check-in-label" className="mb-1 block text-xs font-medium text-slate-600">
+            Check-in
+          </label>
+          <input
+            type="date"
+            aria-labelledby="bnhub-booking-check-in-label"
+            value={checkIn}
+            onChange={(e) => setCheckIn(e.target.value)}
+            min={new Date().toISOString().slice(0, 10)}
+            className="w-full rounded-xl border border-neutral-300 bg-neutral-100 px-3 py-2.5 text-sm text-slate-900 focus:border-[#006ce4] focus:outline-none focus:ring-2 focus:ring-[#006ce4]/20"
+          />
+        </div>
+        <div>
+          <label id="bnhub-booking-check-out-label" className="mb-1 block text-xs font-medium text-slate-600">
+            Check-out
+          </label>
+          <input
+            type="date"
+            aria-labelledby="bnhub-booking-check-out-label"
+            value={checkOut}
+            onChange={(e) => setCheckOut(e.target.value)}
+            min={checkIn || new Date().toISOString().slice(0, 10)}
+            className="w-full rounded-xl border border-neutral-300 bg-neutral-100 px-3 py-2.5 text-sm text-slate-900 focus:border-[#006ce4] focus:outline-none focus:ring-2 focus:ring-[#006ce4]/20"
+          />
+        </div>
+        <div>
+          <label className="mb-1 block text-xs font-medium text-slate-600">Guests</label>
+          <input
+            type="number"
+            min={1}
+            max={maxGuests}
+            value={guestCount}
+            onChange={(e) =>
+              setGuestCount(Math.min(maxGuests, Math.max(1, parseInt(e.target.value, 10) || 1)))
+            }
+            className="w-full rounded-xl border border-neutral-300 bg-neutral-100 px-3 py-2.5 text-sm text-slate-900 focus:border-[#006ce4] focus:outline-none focus:ring-2 focus:ring-[#006ce4]/20"
+          />
+          <p className="mt-1 text-[11px] text-slate-500">Maximum {maxGuests} guests for this listing.</p>
+        </div>
+      </fieldset>
+      {nights >= 1 ? (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-emerald-200/90 bg-emerald-50/95 px-3 py-2.5">
+          <span className="text-sm font-semibold text-emerald-950">Estimated total before payment</span>
+          <span className="tabular-nums text-base font-bold text-emerald-950">
+            {(displayBreakdown.totalCents / 100).toLocaleString(undefined, {
+              style: "currency",
+              currency: bdCurrency,
+            })}
+          </span>
+        </div>
+      ) : null}
       <BnhubTrustSignals
         stripeCheckoutAvailable={Boolean(stripeConfigured && hostPayoutReady)}
         variant="formCompact"
@@ -989,18 +1028,24 @@ export function BookingForm({
         </details>
       ) : null}
 
-      <div>
-        <label className="mb-1 block text-xs font-medium text-slate-400">
-          Notes for the host (optional)
-        </label>
-        <textarea
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          rows={2}
-          placeholder="e.g. late check-in window, accessibility, anything else"
-          className="w-full rounded-xl border border-slate-700 bg-slate-950/60 px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-400/40"
-        />
-      </div>
+      <details className="rounded-xl border border-slate-700/80 bg-slate-900/35 open:border-emerald-600/40">
+        <summary className="cursor-pointer list-none px-3 py-2.5 text-sm font-medium text-slate-300 [&::-webkit-details-marker]:hidden">
+          <span className="text-slate-400">▸</span> Notes for the host{" "}
+          <span className="font-normal text-slate-500">(optional)</span>
+        </summary>
+        <div className="border-t border-slate-700/60 px-3 pb-3 pt-2">
+          <label className="mb-1 block text-xs font-medium text-slate-400">
+            Message
+          </label>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={2}
+            placeholder="e.g. late check-in window, accessibility, anything else"
+            className="w-full rounded-xl border border-slate-700 bg-slate-950/60 px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-400/40"
+          />
+        </div>
+      </details>
       {error ? (
         <p className="text-sm text-red-600" role="alert">
           {error}
@@ -1125,6 +1170,7 @@ export function BookingForm({
         </div>
       </div>
     </form>
+      <BnhubBookingExitIntentBanner active={nights >= 1 && !loading} />
     </div>
   );
 }

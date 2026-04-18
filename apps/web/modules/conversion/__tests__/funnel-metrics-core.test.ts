@@ -18,4 +18,13 @@ describe("funnel-metrics visibility", () => {
     expect(r.homepage_ctr).toBeCloseTo(50);
     expect(r.get_leads_form_conversion).toBeCloseTo(100);
   });
+
+  it("property conversion uses property_view as denominator", () => {
+    resetFunnelMetricsForTests();
+    recordFunnelEvent("property", "property_view");
+    recordFunnelEvent("property", "property_view");
+    recordFunnelEvent("property", "contact_click");
+    const r = computeFunnelRates();
+    expect(r.property_contact_rate).toBeCloseTo(50);
+  });
 });

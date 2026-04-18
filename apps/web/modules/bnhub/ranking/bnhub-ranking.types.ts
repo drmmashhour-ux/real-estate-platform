@@ -1,56 +1,64 @@
 /**
- * BNHub listing ranking (advisory ordering + explainability; no listing mutations).
+ * BNHub stays ranking (V1) — explainable, deterministic scoring.
  */
 
-export type BNHubRankingSignalStrength = "low" | "medium" | "strong";
+export type BnhubSortMode =
+  | "recommended"
+  | "newest"
+  | "price_low_high"
+  | "price_high_low"
+  | "best_value"
+  | "top_conversion";
 
-export type BNHubListingScoreBreakdown = {
-  conversionScore: number;
-  qualityScore: number;
-  trustScore: number;
-  freshnessScore: number;
-  priceCompetitivenessScore: number;
+export type BnhubRankingSignalBreakdown = {
+  conversionQuality: number;
+  listingQuality: number;
+  freshness: number;
+  priceCompetitiveness: number;
+  trustCompleteness: number;
+  featuredBoost: number;
+  coldStartDampingApplied: boolean;
+  /** Small additive lift for recent listings in cold-start traffic (discovery, not compensation for quality). */
+  newListingDiscoveryBoost: number;
 };
 
-export type BNHubListingRanking = {
+export type BnhubRankingScore = {
   listingId: string;
   finalScore: number;
-  breakdown: BNHubListingScoreBreakdown;
-  signalStrength: BNHubRankingSignalStrength;
-  why: string[];
+  signalBreakdown: BnhubRankingSignalBreakdown;
+  /** Short, factual lines — only when signals support them */
+  explanations: string[];
 };
 
-/** Minimal listing snapshot for deterministic scoring (search / admin / fusion). */
-export type BNHubListingRankingInput = {
+export type BnhubRankingSignals = {
   listingId: string;
-  nightPriceCents: number;
-  maxGuests: number;
-  description: string | null;
-  amenities: unknown;
-  photos: unknown;
-  updatedAt: Date;
-  createdAt: Date;
-  city: string;
-  _count: { reviews: number; bookings: number };
-  /** Search attaches aggregated review row when present. */
-  reviews?: { propertyRating: number }[];
+  /** Days since publish */
+  listingAgeDays: number;
+  photoCount: number;
+  amenityCount: number;
+  descriptionLen: number;
+  verified: boolean;
+  /** From AiConversionSignal aggregates (window), optional */
+  searchViews: number;
+  clicks: number;
+  listingViews: number;
+  bookingStarts: number;
+  bookingsCompleted: number;
+  ctr: number;
+  viewToStartRate: number;
+  startToPaidRate: number;
+  /** 0–1 host responsiveness proxy when available */
+  hostResponsiveness01: number | null;
+  /** Night price vs peer median in city (ratio < 1 = cheaper); null if no peers */
+  priceVsPeerMedian: number | null;
+  /** Peer median night cents in city (same guest band when possible) */
+  peerMedianNightCents: number | null;
+  peerSampleSize: number;
+  /** Synthetic cold-start traffic score 0–1 */
+  trafficVolumeScore: number;
 };
 
-export type BNHubRankingContext = {
-  city?: string;
-  checkIn?: string;
-  checkOut?: string;
-  guests?: number;
-  /** Median night price (cents) across the cohort for competitiveness. */
-  cohortMedianNightCents: number;
-  /** Max night price in cohort (for safe normalization). */
-  cohortMaxNightCents: number;
-};
-
-export type BNHubRankingMarketSummary = {
-  sampleSize: number;
-  avgFinalScore: number;
-  strongPct: number;
-  weakCount: number;
-  computedAt: string;
+export type BnhubRankingExplanation = {
+  listingId: string;
+  lines: string[];
 };

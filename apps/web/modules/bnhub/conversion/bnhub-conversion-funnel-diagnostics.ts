@@ -12,13 +12,17 @@ type ListingHint = {
   nightPriceCents: number;
 };
 
+export type WeakestStepDiagnostics = {
+  step: BnhubWeakestFunnelStep;
+  label: string | null;
+  /** Fraction of users lost at this transition (0–1), same criterion used to rank weakest step. */
+  dropOffRate: number | null;
+};
+
 /**
  * Picks the funnel step with the largest *drop* (1 - step conversion), with volume guards.
  */
-export function computeWeakestStep(m: BNHubConversionMetrics): {
-  step: BnhubWeakestFunnelStep;
-  label: string | null;
-} {
+export function computeWeakestStep(m: BNHubConversionMetrics): WeakestStepDiagnostics {
   const stages: { key: BnhubWeakestFunnelStep; l: number; w: number }[] = [
     { key: "search_click", l: m.impressions >= 20 ? loss(m.ctr) : 0, w: m.impressions },
     { key: "click_view", l: m.clicks >= 8 ? loss(m.viewRate) : 0, w: m.clicks },
@@ -26,7 +30,7 @@ export function computeWeakestStep(m: BNHubConversionMetrics): {
     { key: "start_paid", l: m.bookingStarts >= 3 ? loss(m.startToPaidRate) : 0, w: m.bookingStarts },
   ];
   const ranked = stages.filter((s) => s.l > 0).sort((a, b) => b.l - a.l);
-  if (ranked.length === 0) return { step: null, label: null };
+  if (ranked.length === 0) return { step: null, label: null, dropOffRate: null };
   const top = ranked[0]!;
   const labels: Record<NonNullable<BnhubWeakestFunnelStep>, string> = {
     search_click: "Search → click (discovery)",
@@ -34,7 +38,31 @@ export function computeWeakestStep(m: BNHubConversionMetrics): {
     view_start: "Listing view → booking start",
     start_paid: "Booking start → paid completion",
   };
-  return { step: top.key, label: top.key != null ? labels[top.key] : null };
+  return {
+    step: top.key,
+    label: top.key != null ? labels[top.key] : null,
+    dropOffRate: top.l,
+  };
+}
+
+/** Short listing-level label for hosts — derived from tracked metrics + analyzer output (no fabricated numbers). */
+export function buildConversionIssueLabel(
+  step: BnhubWeakestFunnelStep,
+  insight: BNHubConversionInsight | null,
+): string | null {
+  if (insight?.title?.trim()) return insight.title.trim();
+  switch (step) {
+    case "search_click":
+      return "Low discovery click-through";
+    case "click_view":
+      return "Clicks not converting to listing views";
+    case "view_start":
+      return "Low booking start rate";
+    case "start_paid":
+      return "Users drop off before completing payment";
+    default:
+      return null;
+  }
 }
 
 const STEP_TO_INSIGHT: Record<Exclude<BnhubWeakestFunnelStep, null>, BNHubConversionInsight["type"]> = {

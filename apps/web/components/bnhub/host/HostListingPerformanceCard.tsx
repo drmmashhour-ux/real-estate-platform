@@ -8,6 +8,7 @@ import type { BNHubHostListingPerformance } from "@/modules/bnhub/host-performan
 import type { BNHubGuestConversionSummary } from "@/modules/bnhub/guest-conversion/guest-conversion.types";
 import type { BNHubListingConversionSummaryV1 } from "@/modules/bnhub/conversion/bnhub-guest-conversion.types";
 import { HostConversionPanel } from "./HostConversionPanel";
+import { BnhubPricingAdvisoryCard } from "./BnhubPricingAdvisoryCard";
 import type { BNHubMissionControlSummary } from "@/modules/bnhub/mission-control/mission-control.types";
 
 function statusBadgeClass(status: BNHubHostListingPerformance["performanceStatus"]): string {
@@ -115,6 +116,8 @@ export function HostListingPerformanceCard({
       ) : null}
 
       {conversionLayerSummary ? <HostConversionPanel summary={conversionLayerSummary} /> : null}
+
+      <BnhubPricingAdvisoryCard listingId={row.listingId} />
 
       {bnhubAutopilot?.autopilotV1 ? (
         <BNHubAutopilotPanel

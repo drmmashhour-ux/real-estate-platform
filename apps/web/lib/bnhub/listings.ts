@@ -43,6 +43,8 @@ import {
 } from "@/lib/bookings/checkAvailability";
 import { applyAiSearchRankingToBnhubResults } from "@/lib/ai/search/applyAiSearchRanking";
 import { getWinnerSearchBoostMapForIds } from "@/lib/bnhub/winner-search-boost";
+import { bnhubV2Flags } from "@/config/feature-flags";
+import { applyBnhubStaysRanking } from "@/modules/bnhub/ranking/bnhub-ranking-integration";
 
 export type ListingSearchParams = {
   city?: string;
@@ -272,8 +274,17 @@ export async function searchListings(params: ListingSearchParams) {
 
   const sortIsAi = sort === "recommended" || sort === "ai";
   const useAiRanking = sortIsAi && isAiRankingEngineEnabled();
+  const sortUsesBnhubRankingEngine =
+    sort === "recommended" ||
+    sort === "ai" ||
+    sort === "aiScore" ||
+    sort === "best_value" ||
+    sort === "top_conversion" ||
+    sort === "ranking";
+  const useBnhubRankingV1 =
+    bnhubV2Flags.bnhubRankingV1 && !useAiRanking && sortUsesBnhubRankingEngine;
 
-  if (sortIsAi && !useAiRanking) {
+  if (sortIsAi && !useAiRanking && !useBnhubRankingV1) {
     const rankCtx = await guestMarketplaceRankContext(userId, checkIn, checkOut);
     const marketingBoost = await getMarketingSearchBoostByListingId();
     const growthBoost = await getGrowthSearchBoostByListingId();
@@ -370,6 +381,10 @@ export async function searchListings(params: ListingSearchParams) {
       if (isAvailable) available.push(listing);
     }
     result = available;
+  }
+
+  if (useBnhubRankingV1 && result.length > 1) {
+    result = await applyBnhubStaysRanking(result, { sort, attachMeta: false });
   }
 
   if (useAiRanking && result.length > 0) {
@@ -536,8 +551,17 @@ export async function searchListingsPaginated(
 
   const sortIsAiPage = sort === "recommended" || sort === "ai";
   const useAiRankingPage = sortIsAiPage && isAiRankingEngineEnabled();
+  const sortUsesBnhubRankingEnginePage =
+    sort === "recommended" ||
+    sort === "ai" ||
+    sort === "aiScore" ||
+    sort === "best_value" ||
+    sort === "top_conversion" ||
+    sort === "ranking";
+  const useBnhubRankingV1Page =
+    bnhubV2Flags.bnhubRankingV1 && !useAiRankingPage && sortUsesBnhubRankingEnginePage;
 
-  if (sortIsAiPage && !useAiRankingPage) {
+  if (sortIsAiPage && !useAiRankingPage && !useBnhubRankingV1Page) {
     const rankCtx = await guestMarketplaceRankContext(userId, checkIn, checkOut);
     const marketingBoost = await getMarketingSearchBoostByListingId();
     const growthBoost = await getGrowthSearchBoostByListingId();
@@ -599,6 +623,10 @@ export async function searchListingsPaginated(
       result.map((listing) => isListingAvailable(listing.id, checkInDate, checkOutDate))
     );
     result = result.filter((_, i) => flags[i]);
+  }
+
+  if (useBnhubRankingV1Page && result.length > 1) {
+    result = await applyBnhubStaysRanking(result, { sort, attachMeta: false });
   }
 
   if (useAiRankingPage && result.length > 0) {

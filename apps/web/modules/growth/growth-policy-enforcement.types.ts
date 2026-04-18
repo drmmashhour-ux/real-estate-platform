@@ -33,6 +33,9 @@ export type GrowthPolicyEnforcementRule = {
   createdAt: string;
 };
 
+/** Whether upstream inputs were fully available when the snapshot was assembled. */
+export type GrowthPolicyInputCompleteness = "complete" | "partial";
+
 export type GrowthPolicyEnforcementSnapshot = {
   rules: GrowthPolicyEnforcementRule[];
   blockedTargets: GrowthEnforcementTarget[];
@@ -40,6 +43,10 @@ export type GrowthPolicyEnforcementSnapshot = {
   approvalRequiredTargets: GrowthEnforcementTarget[];
   notes: string[];
   createdAt: string;
+  /** Present when policy/governance/learning inputs were missing or failed — treat conclusions as weaker. */
+  inputCompleteness: GrowthPolicyInputCompleteness;
+  /** Codes/warnings collected while building inputs (subset may appear in notes). */
+  missingDataWarnings: string[];
 };
 
 export type GrowthPolicyEnforcementDecision = {

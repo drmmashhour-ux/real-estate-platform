@@ -1,5 +1,7 @@
 # Growth Policy Enforcement Layer (V1)
 
+**Rollout / QA / operator checklist:** [`growth-policy-enforcement-rollout.md`](./growth-policy-enforcement-rollout.md)
+
 ## Purpose
 
 A **bounded, additive** layer that maps governance / policy / learning-control state into **non-critical advisory gating** for the Growth Machine. It answers: which surfaces stay full, which downgrade to read-only, which require approval, and which block promotion — **without** changing payments, bookings, checkout, ads execution core, or CRO rendering core.

@@ -20,6 +20,7 @@ import {
   growthDecisionJournalFlags,
   growthGovernancePolicyFlags,
   growthPolicyEnforcementFlags,
+  growthAutonomyFlags,
   growthGovernanceFeedbackFlags,
   growthOperatingReviewFlags,
   autonomousGrowthFlags,
@@ -34,6 +35,8 @@ import {
   platformCoreFlags,
   swarmSystemFlags,
 } from "@/config/feature-flags";
+import { parseGrowthAutonomyRolloutFromEnv } from "@/modules/growth/growth-autonomy-config";
+import { computeGrowthAutonomyViewerPilotAccess } from "@/modules/growth/growth-autonomy-internal-access";
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
 import { prisma } from "@/lib/db";
 import { buildAssistantRecommendationFeed } from "@/modules/operator/assistant-aggregator.service";
@@ -56,6 +59,8 @@ import { HubJourneyBanner } from "@/components/journey/HubJourneyBanner";
 import { GrowthMachineDashboard } from "@/components/growth/GrowthMachineDashboard";
 import { GrowthRetargetingEngineSection } from "@/components/growth/GrowthRetargetingEngineSection";
 import { MarketplaceIntelligenceSection } from "@/components/growth/MarketplaceIntelligenceSection";
+import { MarketplaceFlywheelSection } from "@/components/growth/MarketplaceFlywheelSection";
+import { SwarmSystemSection } from "@/components/growth/SwarmSystemSection";
 import { PlatformCoreSectionWithBrainV8Overlay } from "@/components/growth/PlatformCoreSectionWithBrainV8Overlay";
 import { AutonomousGrowthSystemSection } from "@/components/growth/AutonomousGrowthSystemSection";
 
@@ -74,6 +79,10 @@ export default async function GrowthMachineHubPage({
   const canApproveAssistant =
     operatorLayerFlags.operatorApprovalsV1 && userRow?.role === PlatformRole.ADMIN;
   const isAdmin = userRow?.role === PlatformRole.ADMIN;
+  const viewerGrowthAutonomyPilotAccess = computeGrowthAutonomyViewerPilotAccess({
+    userId,
+    role: userRow?.role,
+  });
   const platformCoreMutate = !!isAdmin && platformCoreFlags.platformCoreV1;
   const platformCoreApprove = platformCoreMutate && platformCoreFlags.platformCoreApprovalsV1;
   const platformCoreExecute = platformCoreMutate && platformCoreFlags.platformCoreExecutionV1;
@@ -218,6 +227,15 @@ export default async function GrowthMachineHubPage({
           enabled: growthPolicyEnforcementFlags.growthPolicyEnforcementV1,
           panel: growthPolicyEnforcementFlags.growthPolicyEnforcementPanelV1,
         }}
+        growthAutonomy={{
+          enabled: growthAutonomyFlags.growthAutonomyV1,
+          panel: growthAutonomyFlags.growthAutonomyPanelV1,
+          killSwitch: growthAutonomyFlags.growthAutonomyKillSwitch,
+          rolloutStage: parseGrowthAutonomyRolloutFromEnv(),
+        }}
+        viewerIsAdmin={!!isAdmin}
+        viewerGrowthAutonomyPilotAccess={viewerGrowthAutonomyPilotAccess}
+        growthAutonomyEnforcementLayerFlag={growthPolicyEnforcementFlags.growthPolicyEnforcementV1}
         growthGovernanceFeedback={{
           enabled: growthGovernanceFeedbackFlags.growthGovernanceFeedbackV1,
           panel: growthGovernanceFeedbackFlags.growthGovernanceFeedbackPanelV1,

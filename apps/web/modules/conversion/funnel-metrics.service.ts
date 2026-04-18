@@ -7,9 +7,10 @@ import { logInfo } from "@/lib/logger";
 
 export type FunnelId = "homepage" | "get_leads" | "listings" | "property" | "broker_preview";
 
-/** Standard step keys per STEP 1 spec */
+/** Standard step keys per STEP 1 spec (`property` funnel uses property_view + contact_click). */
 export type FunnelStep =
   | "page_view"
+  | "property_view"
   | "CTA_click"
   | "form_start"
   | "form_submit"
@@ -105,11 +106,13 @@ export function computeFunnelRates(): FunnelRates {
   const pr = funnel.property;
   const br = funnel.broker_preview;
 
+  const propertyViews = pr.property_view ?? pr.page_view ?? 0;
+
   return {
     homepage_ctr: pct(h.CTA_click ?? 0, h.page_view ?? 0),
     get_leads_form_conversion: pct(gl.form_submit ?? 0, gl.form_start ?? 0),
     listings_ctr: pct(li.CTA_click ?? 0, li.listing_view ?? 0),
-    property_contact_rate: pct(pr.contact_click ?? 0, pr.page_view ?? 0),
+    property_contact_rate: pct(pr.contact_click ?? 0, propertyViews),
     broker_preview_ctr: pct(br.CTA_click ?? 0, br.preview_view ?? 0),
   };
 }
@@ -271,7 +274,7 @@ export function recordPropertyDetailViewOnce(listingId: string): void {
   } catch {
     /* ignore */
   }
-  recordFunnelEvent("property", "page_view");
+  recordFunnelEvent("property", "property_view");
 }
 
 export function recordBrokerPreviewSurfaceOnce(): void {
