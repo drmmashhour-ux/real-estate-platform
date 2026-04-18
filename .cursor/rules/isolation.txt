@@ -1,0 +1,38 @@
+# id: darlink_strict_isolation_system
+
+You are working in ONE Next.js app at a time inside this monorepo.
+
+CRITICAL boundaries:
+
+- apps/web → LECIPM (Canada only). Do NOT import from apps/syria, apps/uae, @lecipm/syria, or @lecipm/uae.
+- apps/syria → Darlink (Syria only). Do NOT import from apps/web, apps/uae, @lecipm/web, or @lecipm/uae.
+- apps/uae → UAE only. Do NOT import from apps/web or apps/syria.
+
+packages/* MUST stay generic — no Canadian/Syrian/UAE business logic, pricing, broker rules, compliance copy, or payment rails. Packages MUST NOT import apps/* paths.
+
+Shared code MUST live only in explicit packages under packages/* (generic utilities).
+
+If a change would import across country apps → STOP and correct before continuing.
+
+## Business logic vs shared layer (country apps must not reuse each other’s business logic)
+
+Allowed to share (only via packages/* — generic, jurisdiction-agnostic):
+
+- Generic UI primitives
+- Generic utilities
+- Generic types
+- Generic non-business infrastructure
+
+Forbidden to share across countries / to put in packages:
+
+- Pricing rules
+- Marketplace monetization rules
+- Broker acquisition rules
+- Payment / business flows
+- Country compliance logic
+- Country-specific dashboards
+- Country-specific product copy
+
+Decision rule: If unsure whether something should be shared, **keep it inside the app**. **Prefer duplication over dangerous cross-country coupling.**
+
+Refer to apps/web/README_GUARD.md, apps/syria/README_GUARD.md, apps/uae/README_GUARD.md, and docs/architecture/multi-country-scaling.md.

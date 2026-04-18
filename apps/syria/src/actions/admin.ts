@@ -6,8 +6,10 @@ import { revalidateSyriaPaths } from "@/lib/revalidate-locale";
 import { syriaPlatformConfig } from "@/config/syria-platform.config";
 import { trackSyriaGrowthEvent } from "@/lib/growth-events";
 import { persistAutonomyPreview } from "@/lib/autonomy-recommendations";
+import { assertDarlinkRuntimeEnv } from "@/lib/guard";
 
 export async function approveProperty(formData: FormData): Promise<void> {
+  assertDarlinkRuntimeEnv();
   await requireAdmin();
   const id = String(formData.get("propertyId") ?? "").trim();
   if (!id) return;
@@ -72,6 +74,7 @@ export async function approveProperty(formData: FormData): Promise<void> {
 }
 
 export async function rejectProperty(formData: FormData): Promise<void> {
+  assertDarlinkRuntimeEnv();
   await requireAdmin();
   const id = String(formData.get("propertyId") ?? "").trim();
   if (!id) return;
@@ -85,6 +88,7 @@ export async function rejectProperty(formData: FormData): Promise<void> {
 }
 
 export async function verifyListingPayment(formData: FormData): Promise<void> {
+  assertDarlinkRuntimeEnv();
   await requireAdmin();
   const id = String(formData.get("paymentId") ?? "").trim();
   if (!id) return;
@@ -98,6 +102,7 @@ export async function verifyListingPayment(formData: FormData): Promise<void> {
 }
 
 export async function verifyGuestBookingPayment(formData: FormData): Promise<void> {
+  assertDarlinkRuntimeEnv();
   await requireAdmin();
   const bookingId = String(formData.get("bookingId") ?? "").trim();
   if (!bookingId) return;
@@ -124,6 +129,7 @@ export async function verifyGuestBookingPayment(formData: FormData): Promise<voi
 }
 
 export async function approvePayout(formData: FormData): Promise<void> {
+  assertDarlinkRuntimeEnv();
   await requireAdmin();
   const payoutId = String(formData.get("payoutId") ?? "").trim();
   if (!payoutId) return;
@@ -147,6 +153,7 @@ export async function approvePayout(formData: FormData): Promise<void> {
 }
 
 export async function markPayoutPaid(formData: FormData): Promise<void> {
+  assertDarlinkRuntimeEnv();
   await requireAdmin();
   const payoutId = String(formData.get("payoutId") ?? "").trim();
   if (!payoutId) return;
@@ -171,6 +178,7 @@ export async function markPayoutPaid(formData: FormData): Promise<void> {
 }
 
 export async function setPropertyFraudFlag(formData: FormData): Promise<void> {
+  assertDarlinkRuntimeEnv();
   await requireAdmin();
   const id = String(formData.get("propertyId") ?? "").trim();
   const fraud = String(formData.get("fraud") ?? "") === "true";
@@ -186,6 +194,7 @@ export async function setPropertyFraudFlag(formData: FormData): Promise<void> {
 }
 
 export async function setBookingFraudFlag(formData: FormData): Promise<void> {
+  assertDarlinkRuntimeEnv();
   await requireAdmin();
   const id = String(formData.get("bookingId") ?? "").trim();
   const fraud = String(formData.get("fraud") ?? "") === "true";
@@ -201,6 +210,7 @@ export async function setBookingFraudFlag(formData: FormData): Promise<void> {
 }
 
 export async function setUserRole(formData: FormData): Promise<void> {
+  assertDarlinkRuntimeEnv();
   await requireAdmin();
   const userId = String(formData.get("userId") ?? "").trim();
   const role = String(formData.get("role") ?? "USER").toUpperCase();
@@ -216,6 +226,7 @@ export async function setUserRole(formData: FormData): Promise<void> {
 }
 
 export async function setFeaturedPlacementActive(formData: FormData): Promise<void> {
+  assertDarlinkRuntimeEnv();
   await requireAdmin();
   const placementId = String(formData.get("placementId") ?? "").trim();
   const active = String(formData.get("active") ?? "true") !== "false";
@@ -230,6 +241,7 @@ export async function setFeaturedPlacementActive(formData: FormData): Promise<vo
 }
 
 export async function regenerateAutonomyRecommendations(formData: FormData): Promise<void> {
+  assertDarlinkRuntimeEnv();
   await requireAdmin();
   const propertyId = String(formData.get("propertyId") ?? "").trim();
   if (!propertyId) return;
@@ -243,6 +255,7 @@ export async function regenerateAutonomyRecommendations(formData: FormData): Pro
 }
 
 export async function resolveAutonomyRecommendation(formData: FormData): Promise<void> {
+  assertDarlinkRuntimeEnv();
   await requireAdmin();
   const id = String(formData.get("id") ?? "").trim();
   const statusRaw = String(formData.get("status") ?? "").toUpperCase();

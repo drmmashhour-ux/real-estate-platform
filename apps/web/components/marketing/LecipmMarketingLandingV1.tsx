@@ -11,7 +11,7 @@ import { TestimonialsSection } from "@/components/marketing/TestimonialsSection"
 import { FinalCTA } from "@/components/marketing/FinalCTA";
 import { Footer } from "@/components/marketing/Footer";
 import { LandingScrollDepth } from "@/components/marketing/LandingScrollDepth";
-import { conversionEngineFlags } from "@/config/feature-flags";
+import { useConversionEngineFlags } from "@/lib/conversion/use-conversion-engine-flags";
 import { ConversionHomeBoost } from "@/components/conversion/ConversionHomeBoost";
 
 const HostsSection = dynamic(() => import("@/components/marketing/HostsSection").then((m) => m.HostsSection));
@@ -22,6 +22,7 @@ const ClientsSection = dynamic(() => import("@/components/marketing/ClientsSecti
  * Pair with `NEXT_PUBLIC_FEATURE_LANDING_V1` to hide global header/footer on home for a standalone shell.
  */
 export function LecipmMarketingLandingV1() {
+  const conversionEngineFlags = useConversionEngineFlags();
   return (
     <div className="flex min-h-screen flex-col bg-landing-black text-landing-text">
       <LandingScrollDepth />

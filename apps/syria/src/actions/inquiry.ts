@@ -5,8 +5,10 @@ import { getSessionUser } from "@/lib/auth";
 import { revalidateSyriaPaths } from "@/lib/revalidate-locale";
 import { parseUtmFromFormData } from "@/lib/utm";
 import { trackSyriaGrowthEvent } from "@/lib/growth-events";
+import { assertDarlinkRuntimeEnv } from "@/lib/guard";
 
 export async function createPropertyInquiry(formData: FormData): Promise<{ ok: boolean; error?: string }> {
+  assertDarlinkRuntimeEnv();
   const propertyId = String(formData.get("propertyId") ?? "").trim();
   const name = String(formData.get("name") ?? "").trim();
   const phone = String(formData.get("phone") ?? "").trim();

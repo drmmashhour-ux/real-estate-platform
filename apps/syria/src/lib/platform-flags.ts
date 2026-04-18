@@ -2,7 +2,7 @@
  * Syria app flags — env-backed, safe defaults (no auto payout).
  */
 
-/** Darlink product lane — independent of LECIPM flags; default on unless explicitly disabled. */
+/** Darlink product lane — independent of other monorepo apps; default on unless explicitly disabled. */
 export const DARLINK_PLATFORM_ENABLED = process.env.DARLINK_PLATFORM_ENABLED !== "false";
 
 export function isDarlinkEnabled(): boolean {

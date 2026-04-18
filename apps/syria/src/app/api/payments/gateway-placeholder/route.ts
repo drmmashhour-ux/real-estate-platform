@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
+import { assertDarlinkRuntimeEnv } from "@/lib/guard";
 
 /**
  * Local / regional gateway placeholder — replace with real PSP integration.
  * Does not move money; returns a synthetic reference for tracing.
  */
 export async function POST(req: Request) {
+  assertDarlinkRuntimeEnv();
   let body: Record<string, unknown> = {};
   try {
     body = (await req.json()) as Record<string, unknown>;

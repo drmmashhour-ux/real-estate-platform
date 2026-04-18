@@ -1,11 +1,23 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { BNHubConversionAdminOverview } from "@/modules/bnhub/conversion/bnhub-guest-conversion.types";
 
 function pct(n: number | null): string {
   if (n == null || !Number.isFinite(n)) return "—";
   return `${(n * 100).toFixed(1)}%`;
+}
+
+function weakestShort(label: string | null): string {
+  if (!label) return "—";
+  const map: Record<string, string> = {
+    "Search → click (discovery)": "Search→click",
+    "Click → listing view": "Click→view",
+    "Listing view → booking start": "View→start",
+    "Booking start → paid completion": "Start→paid",
+  };
+  return map[label] ?? label;
 }
 
 export function BNHubConversionOverviewPanel() {

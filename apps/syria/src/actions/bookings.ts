@@ -9,6 +9,7 @@ import { redirect } from "@/i18n/navigation";
 import { revalidateSyriaPaths } from "@/lib/revalidate-locale";
 import { parseUtmFromFormData } from "@/lib/utm";
 import { trackSyriaGrowthEvent } from "@/lib/growth-events";
+import { assertDarlinkRuntimeEnv } from "@/lib/guard";
 
 function nightsBetween(checkIn: Date, checkOut: Date): number {
   const ms = checkOut.getTime() - checkIn.getTime();
@@ -17,6 +18,7 @@ function nightsBetween(checkIn: Date, checkOut: Date): number {
 }
 
 export async function createBnhubBooking(formData: FormData): Promise<void> {
+  assertDarlinkRuntimeEnv();
   if (!syriaFlags.BNHUB_ENABLED) {
     return;
   }

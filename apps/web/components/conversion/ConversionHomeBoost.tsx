@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { conversionEngineFlags } from "@/config/feature-flags";
+import { useConversionEngineFlags } from "@/lib/conversion/use-conversion-engine-flags";
 import { buildInstantValueSummary } from "@/modules/conversion/instant-value.service";
 import type { InstantValueIntent } from "@/modules/conversion/instant-value.types";
 import { TrustStrip } from "@/components/shared/TrustStrip";
@@ -13,12 +13,13 @@ import { recordConversionHeroClick } from "@/modules/conversion/conversion-monit
  * Above-the-fold boost for default marketing home — only when FEATURE_CONVERSION_UPGRADE_V1.
  */
 export function ConversionHomeBoost() {
+  const conversionEngineFlags = useConversionEngineFlags();
   const [intent, setIntent] = useState<InstantValueIntent>("buy");
 
   const summary = useMemo(() => {
     if (!conversionEngineFlags.instantValueV1) return null;
     return buildInstantValueSummary({ page: "home", intent });
-  }, [intent]);
+  }, [intent, conversionEngineFlags.instantValueV1]);
 
   if (!conversionEngineFlags.conversionUpgradeV1) return null;
 

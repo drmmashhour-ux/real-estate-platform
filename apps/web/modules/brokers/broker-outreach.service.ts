@@ -9,6 +9,9 @@ export type BrokerOutreachScripts = {
   followUp: string;
   demoPitch: string;
   closeMessage: string;
+  closingScript: string;
+  featuredUpsell: string;
+  leadUnlockPitch: string;
 };
 
 export type BrokerOutreachScriptMeta = {
@@ -36,5 +39,8 @@ export function getBrokerOutreachScriptList(namePlaceholder = "[Name]"): BrokerO
     { id: "follow_up", label: "Follow-up", body: s.followUp },
     { id: "demo_pitch", label: "Demo pitch", body: s.demoPitch },
     { id: "close", label: "Close", body: s.closeMessage },
+    { id: "closing", label: "Closing script", body: s.closingScript },
+    { id: "featured_upsell", label: "Upsell featured", body: s.featuredUpsell },
+    { id: "lead_unlock_pitch", label: "Lead unlock pitch", body: s.leadUnlockPitch },
   ];
 }

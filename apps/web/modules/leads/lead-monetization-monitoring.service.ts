@@ -1,8 +1,10 @@
 /**
  * Lead monetization monitoring — bounded counters; never throws.
+ * On confirmed Stripe payment, also attributes unlock revenue to broker-acquisition prospects (email match).
  */
 
 import { logInfo } from "@/lib/logger";
+import { prisma } from "@/lib/db";
 
 const LOG = "[leads:monetization]";
 
@@ -59,11 +61,35 @@ export function recordLeadMonetizationUnlocked(): void {
 
 /**
  * Called after Stripe webhook confirms CRM lead_unlock (additive; does not replace ledger).
+ * Resolves paying user email and updates in-memory broker pipeline + assignment log when the prospect exists.
  */
-export function onLeadUnlockPaymentRecorded(_args: { leadId: string; brokerUserId: string; amountCents: number }): void {
+export async function onLeadUnlockPaymentRecorded(args: {
+  leadId: string;
+  brokerUserId: string;
+  amountCents: number;
+}): Promise<void> {
   try {
     recordLeadMonetizationUnlocked();
-    logInfo(`${LOG} payment_recorded lead=${_args.leadId}`);
+    logInfo(`${LOG} payment_recorded lead=${args.leadId}`);
+
+    const uid = args.brokerUserId?.trim();
+    if (!uid) return;
+
+    const user = await prisma.user
+      .findUnique({
+        where: { id: uid },
+        select: { email: true },
+      })
+      .catch(() => null);
+    const email = user?.email?.trim();
+    if (!email) return;
+
+    const amountCad = Math.max(0, args.amountCents) / 100;
+    const { applyLeadUnlockToProspectByBrokerEmail } = await import("@/modules/brokers/broker-performance.service");
+    applyLeadUnlockToProspectByBrokerEmail(email, amountCad);
+
+    const { markLeadAssignmentUnlocked } = await import("@/modules/brokers/broker-leads.service");
+    markLeadAssignmentUnlocked(args.leadId);
   } catch {
     /* noop */
   }

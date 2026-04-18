@@ -1,8 +1,10 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
+import { recordBrokerPreviewSurfaceOnce } from "@/modules/conversion/funnel-metrics.service";
 import { TrustStrip } from "@/components/shared/TrustStrip";
-import { conversionEngineFlags } from "@/config/feature-flags";
+import { useConversionEngineFlags } from "@/lib/conversion/use-conversion-engine-flags";
 import { buildInstantValueSummary } from "@/modules/conversion/instant-value.service";
 import { recordBrokerPreviewCtaClick } from "@/modules/conversion/conversion-monitoring.service";
 import {
@@ -32,12 +34,17 @@ export function BrokerLeadPreview({
   conversionBoost = false,
   leadPreviewPayload: payloadProp,
 }: Props) {
+  const conversionEngineFlags = useConversionEngineFlags();
   const payload = payloadProp ?? buildBrokerLeadPreview();
   const boosted =
     conversionBoost &&
     conversionEngineFlags.conversionUpgradeV1 &&
     conversionEngineFlags.instantValueV1;
   const instant = boosted ? buildInstantValueSummary({ page: "broker_preview", intent: "buy" }) : null;
+
+  useEffect(() => {
+    recordBrokerPreviewSurfaceOnce();
+  }, []);
 
   return (
     <section className="rounded-xl border border-emerald-900/40 bg-emerald-950/20 p-5">

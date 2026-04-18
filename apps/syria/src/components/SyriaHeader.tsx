@@ -6,7 +6,7 @@ import { MobileNavMenu } from "@/components/MobileNavMenu";
 import { DARLINK_COPY } from "@/lib/brand/darlink-copy";
 import { DarlinkWordmark } from "@/components/brand/DarlinkWordmark";
 
-/** Darlink shell header — Syria product lane only; no LECIPM chrome. */
+/** Darlink shell header — Syria product lane only. */
 export async function SyriaHeader() {
   const t = await getTranslations("nav");
   const locale = await getLocale();

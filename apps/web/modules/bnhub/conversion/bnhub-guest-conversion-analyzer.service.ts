@@ -4,6 +4,7 @@ import { recordBnhubAnalyzerRun, recordBnhubInsightsGenerated } from "./bnhub-co
 const CTR_LOW = 0.08;
 const VIEW_RATE_LOW = 0.35;
 const BOOKING_RATE_LOW = 0.02;
+const VIEW_TO_START_LOW = 0.055;
 const CTR_STRONG = 0.18;
 const VIEW_RATE_STRONG = 0.55;
 const BOOKING_RATE_STRONG = 0.08;
@@ -21,7 +22,17 @@ export function analyzeBNHubConversion(metrics: BNHubConversionMetrics): BNHubCo
   recordBnhubAnalyzerRun();
   const out: BNHubConversionInsight[] = [];
 
-  const { impressions, clicks, views, bookingStarts, bookingsCompleted, ctr, viewRate, bookingRate } = metrics;
+  const {
+    impressions,
+    clicks,
+    views,
+    bookingStarts,
+    bookingsCompleted,
+    ctr,
+    viewRate,
+    bookingRate,
+    viewToStartRate,
+  } = metrics;
 
   if (impressions >= 20 && ctr < CTR_LOW) {
     out.push({
@@ -42,6 +53,17 @@ export function analyzeBNHubConversion(metrics: BNHubConversionMetrics): BNHubCo
       description:
         "Some discovery clicks may not be turning into listing page views — check deep links and mobile navigation.",
       severity: viewRate < VIEW_RATE_LOW / 2 ? "high" : "medium",
+    });
+  }
+
+  if (views >= 15 && viewToStartRate < VIEW_TO_START_LOW) {
+    out.push({
+      id: nextId("vs"),
+      type: "low_booking_start_rate",
+      title: "Low booking start rate vs listing views",
+      description:
+        "Guests open the listing but rarely start a booking — strengthen price clarity, trust chips, and minimum-night expectations above the fold.",
+      severity: viewToStartRate < VIEW_TO_START_LOW / 2 ? "high" : "medium",
     });
   }
 

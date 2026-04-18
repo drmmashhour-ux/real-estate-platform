@@ -21,6 +21,7 @@ defaults:
 
 env:
   NEXT_TELEMETRY_DISABLED: 1
+  APP_CONTEXT: lecipm
 
 jobs:
   quality:
@@ -47,6 +48,9 @@ jobs:
       - name: Install dependencies
         id: install
         run: pnpm install --frozen-lockfile
+
+      - name: Multi-country isolation (web / syria / uae / packages)
+        run: pnpm check:isolation
 
       # Never echo DATABASE_URL — would leak real credentials when set from Actions secrets.
       - name: Verify DATABASE_URL for Prisma

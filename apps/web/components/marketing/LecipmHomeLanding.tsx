@@ -6,7 +6,9 @@ import { HomePrimarySearch } from "@/components/marketing/HomePrimarySearch";
 import { JourneyLandingBeacon } from "@/components/journey/JourneyLandingBeacon";
 import { ExperimentExposureTracker } from "@/components/experiments/ExperimentExposureTracker";
 import type { ResolvedExperimentSurface } from "@/lib/experiments/get-variant-config";
-import { conversionEngineFlags } from "@/config/feature-flags";
+import { useEffect } from "react";
+import { useConversionEngineFlags } from "@/lib/conversion/use-conversion-engine-flags";
+import { recordHomepagePageViewOnce } from "@/modules/conversion/funnel-metrics.service";
 import { ConversionHomeBoost } from "@/components/conversion/ConversionHomeBoost";
 
 /**
@@ -19,7 +21,12 @@ export function LecipmHomeLanding({
   heroExperiment?: ResolvedExperimentSurface | null;
   searchExperiment?: ResolvedExperimentSurface | null;
 } = {}) {
+  const conversionEngineFlags = useConversionEngineFlags();
   const t = useTranslations("home");
+
+  useEffect(() => {
+    recordHomepagePageViewOnce();
+  }, []);
   const headline = heroExperiment?.config.headline?.trim() || t("headline");
   const subhead = heroExperiment?.config.subhead?.trim() || t("subhead");
   const trackSurfaces = [heroExperiment, searchExperiment].filter(Boolean) as ResolvedExperimentSurface[];

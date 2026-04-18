@@ -20,6 +20,7 @@ import { trackEvent } from "@/src/services/analytics";
 import { persistLaunchEvent } from "@/src/modules/launch/persistLaunchEvent";
 import { mergeTrafficAttributionIntoMetadata } from "@/lib/attribution/social-traffic";
 import { fireViewListingGrowth } from "@/lib/growth/events";
+import { PlatformRole } from "@prisma/client";
 import { getListingTransactionFlag } from "@/lib/fsbo/listing-transaction-flag";
 import { DeferredListingInsuranceLeadSection } from "@/components/insurance/DeferredListingInsuranceLeadSection";
 import { LecipmPublicStayDetail } from "@/components/listings/LecipmPublicStayDetail";
@@ -40,6 +41,7 @@ import {
   incrementCrmListingView,
 } from "@/lib/listings/listing-analytics-service";
 import { buildPropertyConversionSurface } from "@/modules/conversion/property-conversion-surface";
+import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -182,6 +184,20 @@ export default async function PublicListingRoute({ params }: Props) {
   const absUrl = `${base}${listingPath}`;
   const marketCitySlug = resolved.kind === "fsbo" ? cityToSlug(resolved.row.city) : null;
 
+  const guestListingRollout = await getGuestId();
+  let listingRolloutPrivileged = false;
+  if (guestListingRollout) {
+    const ur = await prisma.user.findUnique({
+      where: { id: guestListingRollout },
+      select: { role: true, accountStatus: true },
+    });
+    listingRolloutPrivileged = Boolean(
+      ur?.accountStatus === "ACTIVE" &&
+        ur?.role != null &&
+        (ur.role === PlatformRole.ADMIN || ur.role === PlatformRole.ACCOUNTANT),
+    );
+  }
+
   if (resolved.kind === "fsbo") {
     const row = resolved.row;
     if (!isFsboPubliclyVisible(row)) {
@@ -215,7 +231,7 @@ export default async function PublicListingRoute({ params }: Props) {
       { name: "Listings", path: "/listings" },
       { name: row.title, path: listingPath },
     ]);
-    const guestFsbo = await getGuestId();
+    const guestFsbo = guestListingRollout;
     void trackEvent(
       "listing_view",
       mergeTrafficAttributionIntoMetadata(cookieHeader, {
@@ -297,6 +313,8 @@ export default async function PublicListingRoute({ params }: Props) {
       featured: row.featuredUntil != null && new Date(row.featuredUntil).getTime() > Date.now(),
       listingUpdatedAt: row.updatedAt,
       demandUi: demandUiFsbo,
+      pathname: listingPath,
+      isPrivilegedUser: listingRolloutPrivileged,
     });
     return (
       <>
@@ -356,7 +374,7 @@ export default async function PublicListingRoute({ params }: Props) {
     { name: "Listings", path: "/listings" },
     { name: payload.title, path: listingPath },
   ]);
-  const guestCrm = await getGuestId();
+  const guestCrm = guestListingRollout;
   void trackEvent(
     "listing_view",
     mergeTrafficAttributionIntoMetadata(cookieHeader, {
@@ -410,6 +428,8 @@ export default async function PublicListingRoute({ params }: Props) {
     featured: false,
     listingUpdatedAt: resolved.row.updatedAt,
     demandUi: demandUiCrm,
+    pathname: listingPath,
+    isPrivilegedUser: listingRolloutPrivileged,
   });
 
   return (

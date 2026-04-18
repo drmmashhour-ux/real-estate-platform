@@ -1284,6 +1284,21 @@ export type BnhubConversionLayerFlagKey = keyof typeof bnhubConversionLayerFlags
 export const FEATURE_BNHUB_CONVERSION_V1 = bnhubConversionLayerFlags.conversionV1;
 export const FEATURE_BNHUB_CONVERSION_ADMIN_V1 = bnhubConversionLayerFlags.adminV1;
 
+/** Client beacon (`bnhub-guest-conversion-tracker`) reads this at build/runtime in the browser bundle. */
+export function readPublicBnhubConversionV1(): boolean {
+  if (typeof process === "undefined") return false;
+  const v = process.env.NEXT_PUBLIC_FEATURE_BNHUB_CONVERSION_V1;
+  return v === "1" || v === "true";
+}
+
+/**
+ * Revenue/funnel conclusions need **both** server UI flag and public tracking flag.
+ * If only one is on, DB aggregates and client local signals disagree — treat as misconfigured.
+ */
+export function isBnhubConversionLayerFullyAligned(): boolean {
+  return bnhubConversionLayerFlags.conversionV1 && readPublicBnhubConversionV1();
+}
+
 /**
  * BNHub Mission Control V1 — unified read-only operational dashboard (ranking + host + guest + booking + trust + pricing signals).
  */

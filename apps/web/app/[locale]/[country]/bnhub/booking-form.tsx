@@ -171,6 +171,18 @@ export function BookingForm({
   const leadDays = checkIn ? nightsUntilCheckInUtc(checkIn) : null;
   const earlyHint = earlyBookingHintForLeadDays(leadDays);
 
+  const sampleNightsPreview = 2;
+  const samplePreviewSubtotal = sampleNightsPreview * nightPriceCents;
+  const samplePreviewService = Math.round((samplePreviewSubtotal * 12) / 100);
+  const samplePreviewTotal = samplePreviewSubtotal + cleaningFeeCents + samplePreviewService;
+
+  const bookingFlowStep = useMemo((): 1 | 2 | 3 => {
+    if (nights < 1) return 1;
+    if (hasRulesToConfirm && !agreedToRules) return 2;
+    if (!guestId) return 2;
+    return 3;
+  }, [nights, hasRulesToConfirm, agreedToRules, guestId]);
+
   useEffect(() => {
     if (!listingId || !checkIn || !checkOut || nights < 1) {
       setBreakdown(null);
@@ -502,22 +514,30 @@ export function BookingForm({
     }
   }
 
+  const stepClass = (step: 1 | 2 | 3) =>
+    bookingFlowStep === step
+      ? "rounded-lg bg-[#006ce4] px-2.5 py-1 text-white shadow-sm ring-1 ring-[#006ce4]/40"
+      : bookingFlowStep > step
+        ? "rounded-lg bg-emerald-50 px-2.5 py-1 text-emerald-950 ring-1 ring-emerald-200"
+        : "rounded-lg bg-neutral-100 px-2.5 py-1 text-slate-600 ring-1 ring-neutral-200";
+
   return (
-    <form id="bnhub-booking-form" onSubmit={handleSubmit} className="mt-6 space-y-4">
+    <div id="bnhub_conversion_optimizer_engine" className="mt-6 space-y-4">
+    <form id="bnhub-booking-form" onSubmit={handleSubmit} className="space-y-4">
       <p className="rounded-lg border border-emerald-200/90 bg-emerald-50/90 px-3 py-2 text-center text-[11px] leading-relaxed text-emerald-950 sm:text-left">
         <span className="font-semibold">Fast booking:</span> pick dates and guests, review the total, then pay securely — or
         request to book if the host must approve first.
       </p>
       <ol className="flex flex-wrap items-center justify-center gap-2 text-[10px] font-semibold text-slate-700 sm:justify-start">
-        <li className="rounded-lg bg-white px-2.5 py-1 shadow-sm ring-1 ring-slate-200">1 · Dates &amp; guests</li>
+        <li className={stepClass(1)}>1 · Details</li>
         <li className="text-slate-400" aria-hidden>
           →
         </li>
-        <li className="rounded-lg bg-neutral-100 px-2.5 py-1 text-slate-600 ring-1 ring-neutral-200">2 · Review price</li>
+        <li className={stepClass(2)}>2 · Confirm</li>
         <li className="text-slate-400" aria-hidden>
           →
         </li>
-        <li className="rounded-lg bg-neutral-100 px-2.5 py-1 text-slate-600 ring-1 ring-neutral-200">3 · Pay or request</li>
+        <li className={stepClass(3)}>3 · Payment</li>
       </ol>
       {!hostPayoutReady && (
         <div className="rounded-xl border border-amber-600/50 bg-amber-950/40 px-3 py-2 text-xs font-medium text-amber-100">
@@ -589,6 +609,10 @@ export function BookingForm({
             <div className="flex justify-between gap-3 border-t border-neutral-200 pt-2.5">
               <dt className="font-semibold text-slate-800">Total before payment</dt>
               <dd className="text-slate-500">—</dd>
+            </div>
+            <div className="flex justify-between gap-3 border-t border-dashed border-neutral-200 pt-2.5">
+              <dt className="text-slate-600">Example ({sampleNightsPreview} nights)</dt>
+              <dd className="tabular-nums font-semibold text-slate-900">{formatMoneyCents(samplePreviewTotal)}</dd>
             </div>
           </dl>
           <p className="mt-3 text-[11px] leading-relaxed text-slate-500">
@@ -1101,5 +1125,6 @@ export function BookingForm({
         </div>
       </div>
     </form>
+    </div>
   );
 }

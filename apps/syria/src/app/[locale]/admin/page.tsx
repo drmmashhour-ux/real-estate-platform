@@ -62,6 +62,13 @@ export default async function AdminHomePage() {
         <h2 className="text-lg font-semibold text-stone-900">{t("tileAutonomy")}</h2>
         <p className="mt-2 text-sm text-stone-600">{t("homeAutonomyDesc")}</p>
       </Link>
+      <Link
+        href="/admin/listing-assistant"
+        className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm hover:border-stone-300"
+      >
+        <h2 className="text-lg font-semibold text-stone-900">{t("tileListingAssistant")}</h2>
+        <p className="mt-2 text-sm text-stone-600">{t("homeListingAssistantDesc")}</p>
+      </Link>
     </div>
   );
 }

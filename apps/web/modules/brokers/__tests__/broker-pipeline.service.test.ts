@@ -4,10 +4,12 @@ import {
   addBrokerNote,
   buildBrokerPipelineSummary,
   createBrokerProspect,
+  getBrokerPipelinePersistenceMeta,
   listBrokerPipeline,
+  markBrokerPurchaseOnProspect,
   updateBrokerStage,
 } from "@/modules/brokers/broker-pipeline.service";
-import { resetBrokerMonitoringForTests } from "@/modules/brokers/broker-monitoring.service";
+import { getBrokerMonitoringSnapshot, resetBrokerMonitoringForTests } from "@/modules/brokers/broker-monitoring.service";
 
 describe("broker-pipeline.service", () => {
   afterEach(() => {
@@ -53,5 +55,33 @@ describe("broker-pipeline.service", () => {
     const copy = { ...input, notes: [...input.notes] };
     createBrokerProspect(input);
     expect(input).toEqual(copy);
+  });
+
+  it("markBrokerPurchaseOnProspect does not double-count conversion monitoring", () => {
+    const p = createBrokerProspect({ name: "Dup", email: "dup@x.com" });
+    markBrokerPurchaseOnProspect(p.id, { firstPurchaseDate: "2026-01-01", moveToConverted: true });
+    expect(getBrokerMonitoringSnapshot().conversionsMarked).toBe(1);
+    markBrokerPurchaseOnProspect(p.id, { firstPurchaseDate: "2026-02-01", moveToConverted: true });
+    expect(getBrokerMonitoringSnapshot().conversionsMarked).toBe(1);
+  });
+
+  it("markBrokerPurchase after manual convert does not increment conversion again", () => {
+    const p = createBrokerProspect({ name: "StageFirst", email: "sf@x.com" });
+    updateBrokerStage(p.id, "converted");
+    expect(getBrokerMonitoringSnapshot().conversionsMarked).toBe(1);
+    markBrokerPurchaseOnProspect(p.id, { firstPurchaseDate: "2026-03-01", moveToConverted: true });
+    expect(getBrokerMonitoringSnapshot().conversionsMarked).toBe(1);
+  });
+
+  it("getBrokerPipelinePersistenceMeta reflects BROKER_PIPELINE_JSON_PATH", () => {
+    const prev = process.env.BROKER_PIPELINE_JSON_PATH;
+    delete process.env.BROKER_PIPELINE_JSON_PATH;
+    expect(getBrokerPipelinePersistenceMeta().persistenceMode).toBe("memory");
+    expect(getBrokerPipelinePersistenceMeta().jsonPathConfigured).toBe(false);
+    process.env.BROKER_PIPELINE_JSON_PATH = "/tmp/broker-pipeline-test.json";
+    expect(getBrokerPipelinePersistenceMeta().persistenceMode).toBe("json_file");
+    expect(getBrokerPipelinePersistenceMeta().jsonPathConfigured).toBe(true);
+    if (prev === undefined) delete process.env.BROKER_PIPELINE_JSON_PATH;
+    else process.env.BROKER_PIPELINE_JSON_PATH = prev;
   });
 });

@@ -47,6 +47,8 @@
     "ci:integrity": "pnpm --filter @lecipm/web run ci:integrity",
     "integrity:check": "pnpm --filter @lecipm/web run integrity:check",
     "validate:v8": "node scripts/v8-validate-nondestructive.js",
+    "check:isolation": "pnpm --filter @lecipm/web exec tsx ../../scripts/check-isolation.ts",
+    "check:darlink-isolation": "pnpm check:isolation",
     "typecheck": "pnpm ci:typecheck && pnpm --filter @lecipm/mobile run typecheck",
     "ci:typecheck": "pnpm --filter @lecipm/web run ci:typecheck",
     "ci:build": "pnpm --filter @lecipm/web run ci:build",

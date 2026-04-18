@@ -32,6 +32,7 @@ import {
 import { buildHostPerformanceSummary } from "@/modules/bnhub/host-performance/host-performance.service";
 import type { BNHubHostPerformanceSummary } from "@/modules/bnhub/host-performance/host-performance.types";
 import { HostPerformanceDashboard } from "@/components/bnhub/host/HostPerformanceDashboard";
+import { HostConversionAlerts } from "@/components/bnhub/host/HostConversionAlerts";
 import { buildGuestConversionSummary } from "@/modules/bnhub/guest-conversion/guest-conversion.service";
 import type { BNHubGuestConversionSummary } from "@/modules/bnhub/guest-conversion/guest-conversion.types";
 import { buildListingConversionSummary } from "@/modules/bnhub/conversion/bnhub-listing-conversion.service";
@@ -271,6 +272,15 @@ export default async function HostDashboardPage({
             attentionSignalCount={potentialIssues.length}
             stripePayoutsReady={Boolean(hostStripe?.stripeAccountId && hostStripe?.stripeOnboardingComplete)}
           />
+
+          {bnhubConversionLayerFlags.conversionV1 &&
+          bnhubV2Flags.bnhubHostPerformanceV1 &&
+          Object.keys(conversionLayerByListingId).length > 0 ? (
+            <HostConversionAlerts
+              conversionByListingId={conversionLayerByListingId}
+              listings={listings.map((l) => ({ id: l.id, title: l.title }))}
+            />
+          ) : null}
 
           <div id="bnhub-offer-playbook" className="mb-10 scroll-mt-28">
             <BnHubOfferSectionsPlaybook embedded />

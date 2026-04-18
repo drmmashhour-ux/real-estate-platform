@@ -1,7 +1,7 @@
 "use client";
 
 import type { InstantValueIntent } from "@/modules/conversion/instant-value.types";
-import { conversionEngineFlags } from "@/config/feature-flags";
+import { useConversionEngineFlags } from "@/lib/conversion/use-conversion-engine-flags";
 import { recordIntentSelection } from "@/modules/conversion/conversion-monitoring.service";
 
 const OPTIONS: { id: InstantValueIntent; label: string }[] = [
@@ -19,6 +19,7 @@ type Props = {
 };
 
 export function IntentSelector({ value, onChange, className = "", size = "default" }: Props) {
+  const conversionEngineFlags = useConversionEngineFlags();
   const pad = size === "compact" ? "px-3 py-2 text-xs" : "px-4 py-2.5 text-sm";
 
   return (

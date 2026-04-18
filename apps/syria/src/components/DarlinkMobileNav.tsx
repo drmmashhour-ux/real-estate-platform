@@ -2,7 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { getSessionUser } from "@/lib/auth";
 
-/** Fixed bottom navigation — visible on small screens only; Darlink shell (not LECIPM). */
+/** Fixed bottom navigation — visible on small screens only; Darlink shell only. */
 export async function DarlinkMobileNav() {
   const t = await getTranslations("nav");
   const user = await getSessionUser();

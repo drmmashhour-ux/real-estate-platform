@@ -37,9 +37,9 @@ function intentHeadline(intent: InstantValueIntent, page: BuildInstantValueInput
     default:
       if (page === "leads") {
         return {
-          h: "Get matched to serious opportunities",
-          s: "One intake — we route you to verified inventory and brokers when relevant.",
-          cta: "Submit intake",
+          h: "Get matched with real listings — faster",
+          s: "One short intake: we route you to verified inventory and brokers when it fits your goals.",
+          cta: "Get matched with properties now",
         };
       }
       if (page === "listings") {

@@ -6,6 +6,6 @@ export function assertDarlinkIsolation() {
   return {
     namespace: DARLINK_THEME_NAMESPACE,
     forbidden: DARLINK_FORBIDDEN_IMPORTS,
-    note: "Darlink must remain isolated from LECIPM branding and tokens",
+    note: "Darlink must remain isolated from other regional product lanes in this repo",
   };
 }

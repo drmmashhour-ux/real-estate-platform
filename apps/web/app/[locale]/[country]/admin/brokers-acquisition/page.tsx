@@ -43,7 +43,8 @@ export default async function BrokerAcquisitionPage() {
       </div>
       <h1 className="text-2xl font-bold text-white">Broker Acquisition</h1>
       <p className="mt-1 text-sm text-slate-400">
-        Track prospects, run outreach, and convert paying brokers — V1 pipeline (in-memory / optional JSON file).
+        Operator pipeline <span className="text-slate-300">V1</span> — lightweight stage board (not the legacy Prisma CRM).
+        Persistence and export controls are shown on the dashboard below.
       </p>
       <div className="mt-8">
         <BrokerPipelineDashboard />

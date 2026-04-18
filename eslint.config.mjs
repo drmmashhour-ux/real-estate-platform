@@ -1,5 +1,6 @@
 import js from "@eslint/js";
 import tseslint from "typescript-eslint";
+import monorepoIsolation from "./rules/eslint/monorepo-isolation-plugin.mjs";
 
 /** Shared ESLint config for LECIPM monorepo. Apps (e.g. Next) use their own config. */
 export default tseslint.config(
@@ -18,6 +19,7 @@ export default tseslint.config(
       "apps/mobile-app/**",
       "apps/carrefour-prestige/**",
       "apps/web-next14-starter/**",
+      "apps/uae/**",
       "carrefour-immobilier/**",
       "immobilier-prestige/**",
     ],
@@ -45,6 +47,16 @@ export default tseslint.config(
       "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
       "@typescript-eslint/no-explicit-any": "warn",
       "@typescript-eslint/no-require-imports": "off",
+    },
+  },
+  {
+    files: ["packages/**/*.{ts,tsx,mjs}"],
+    ignores: ["**/node_modules/**", "**/dist/**"],
+    plugins: {
+      "monorepo-isolation": monorepoIsolation,
+    },
+    rules: {
+      "monorepo-isolation/no-cross-app-imports": ["error", { mode: "package" }],
     },
   },
   // Express `declare global { namespace Express { ... } }` pattern

@@ -1,5 +1,7 @@
 export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
+    const { assertLecipmRuntimeEnv } = await import("./lib/assertContext");
+    assertLecipmRuntimeEnv();
     await import("./sentry.server.config");
     const { warnIfLiveStripeKeyWhileTestMode } = await import("@/lib/stripe/test-mode-stripe-guard");
     warnIfLiveStripeKeyWhileTestMode();

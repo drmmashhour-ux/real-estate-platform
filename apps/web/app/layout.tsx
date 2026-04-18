@@ -3,6 +3,7 @@ import "./globals.css";
 import { Cormorant_Garamond, Inter, Noto_Sans_Arabic } from "next/font/google";
 import { getLocale } from "next-intl/server";
 import { SkipLinks } from "@/components/accessibility/SkipLinks";
+import { ConversionFlagsPanel } from "@/components/dev/ConversionFlagsPanel";
 import { UI_LOCALE_ENTRIES } from "@/lib/i18n/locales";
 import {
   PLATFORM_CARREFOUR_NAME,
@@ -107,6 +108,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         className={`${inter.className} min-h-screen bg-[#0B0B0B] text-white antialiased`}
       >
         <SkipLinks />
+        <ConversionFlagsPanel />
         {children}
       </body>
     </html>

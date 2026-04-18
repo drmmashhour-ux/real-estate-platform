@@ -1417,7 +1417,7 @@ export async function POST(req: NextRequest) {
           leadId,
           brokerUserId: typeof userId === "string" ? userId : "",
           amountCents,
-        });
+        }).catch(() => {});
       } else {
         const brokerMeta =
           typeof session.metadata?.brokerId === "string" ? session.metadata.brokerId.trim() : "";
@@ -1449,7 +1449,7 @@ export async function POST(req: NextRequest) {
           leadId,
           brokerUserId: (brokerMeta || (userId as string)) as string,
           amountCents,
-        });
+        }).catch(() => {});
       }
     }
 

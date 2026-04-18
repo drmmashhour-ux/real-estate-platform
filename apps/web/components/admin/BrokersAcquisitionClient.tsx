@@ -220,6 +220,19 @@ export function BrokersAcquisitionClient() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-10 px-4 py-10 text-white sm:px-6">
+      <aside className="rounded-2xl border border-zinc-600/50 bg-zinc-900/90 p-4 text-sm text-zinc-300">
+        <p className="font-semibold text-amber-200">Legacy Prisma CRM</p>
+        <p className="mt-1 text-xs leading-relaxed text-zinc-400">
+          This page reads/writes <strong className="text-zinc-300">database-backed</strong> broker prospects (first-10 style
+          outreach). It is separate from the <strong className="text-zinc-300">V1 operator pipeline</strong> (in-memory /
+          optional JSON file). For the current V1 board, open{" "}
+          <a href="/admin/brokers-acquisition" className="font-semibold text-emerald-400 hover:underline">
+            /admin/brokers-acquisition
+          </a>
+          .
+        </p>
+      </aside>
+
       <header>
         <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-500/90">Acquisition</p>
         <h1 className="mt-2 text-3xl font-bold">First 10 brokers</h1>

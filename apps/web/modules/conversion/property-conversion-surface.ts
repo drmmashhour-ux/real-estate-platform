@@ -1,5 +1,5 @@
-import { conversionEngineFlags } from "@/config/feature-flags";
 import type { ListingDemandUiPayload } from "@/lib/listings/listing-analytics-service";
+import { getConversionEngineFlagsEffective } from "@/config/rollout";
 import { buildInstantValueSummary } from "@/modules/conversion/instant-value.service";
 import type { InstantValueSummary } from "@/modules/conversion/instant-value.types";
 import { buildRealUrgencySignals } from "@/modules/conversion/real-urgency.service";
@@ -31,23 +31,30 @@ export function buildPropertyConversionSurface(opts: {
   featured: boolean;
   listingUpdatedAt: Date | null;
   demandUi: ListingDemandUiPayload | null;
+  /** For rollout partial/internal gating */
+  pathname?: string;
+  isPrivilegedUser?: boolean;
 }): PropertyConversionSurface | null {
-  if (!conversionEngineFlags.conversionUpgradeV1) return null;
+  try {
+    const flags = getConversionEngineFlagsEffective({
+      pathname: opts.pathname,
+      isPrivilegedUser: opts.isPrivilegedUser,
+    });
+    if (!flags.conversionUpgradeV1) return null;
 
-  const summary = buildInstantValueSummary({
-    page: "property",
-    intent: "buy",
-    listing: {
-      priceCents: opts.priceCents,
-      city: opts.city,
-      verified: opts.verified,
-      dealType: "sale",
-      featured: opts.featured,
-    },
-  });
+    const summary = buildInstantValueSummary({
+      page: "property",
+      intent: "buy",
+      listing: {
+        priceCents: opts.priceCents,
+        city: opts.city,
+        verified: opts.verified,
+        dealType: "sale",
+        featured: opts.featured,
+      },
+    });
 
-  const urgencyLines =
-    conversionEngineFlags.realUrgencyV1
+    const urgencyLines = flags.realUrgencyV1
       ? buildRealUrgencySignals({
           listingUpdatedAt: opts.listingUpdatedAt ? opts.listingUpdatedAt.toISOString() : undefined,
           highIntentSignal: Boolean(opts.demandUi?.activityHint),
@@ -55,5 +62,8 @@ export function buildPropertyConversionSurface(opts: {
         })
       : [];
 
-  return { summary, urgencyLines };
+    return { summary, urgencyLines };
+  } catch {
+    return null;
+  }
 }

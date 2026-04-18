@@ -3,6 +3,7 @@ import { getGuestId } from "@/lib/auth/session";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
 import { logError } from "@/lib/logger";
 import { initiateLeadUnlockCheckout } from "@/modules/leads/lead-monetization.service";
+import { assignLeadFromCrmLeadId } from "@/modules/brokers/broker-leads.service";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +31,7 @@ export async function POST(
   }
 
   try {
+    void assignLeadFromCrmLeadId(leadId).catch(() => {});
     const result = await initiateLeadUnlockCheckout({ userId, leadId, recordMonetizationAttempt: false });
     if (!result.ok) {
       if (result.softBlock) {

@@ -1,8 +1,16 @@
 import type { Metadata } from "next";
 import { GetLeadsPageClient } from "@/components/growth/get-leads-page-client";
 import { PLATFORM_NAME } from "@/lib/brand/platform";
-import { conversionEngineFlags, engineFlags } from "@/config/feature-flags";
+import { PlatformRole } from "@prisma/client";
+import { engineFlags } from "@/config/feature-flags";
+import { getConversionEngineFlagsEffective } from "@/config/rollout";
+import { prisma } from "@/lib/db";
+import { getGuestId } from "@/lib/auth/session";
 import { buildLeadScarcityLines } from "@/modules/growth/lead-scarcity.service";
+import {
+  conversionExperienceTierLabel,
+  deriveConversionExperienceTier,
+} from "@/modules/conversion/conversion-rollout-helpers";
 
 /**
  * Public /get-leads landing. Markup and interaction live in `GetLeadsPageClient`
@@ -33,14 +41,51 @@ export default async function GetLeadsPage({
   };
   const scarcity = engineFlags.growthScaleV1 ? await buildLeadScarcityLines() : null;
 
+  const guestId = await getGuestId();
+  let isPrivilegedUser = false;
+  if (guestId) {
+    const u = await prisma.user.findUnique({
+      where: { id: guestId },
+      select: { role: true, accountStatus: true },
+    });
+    isPrivilegedUser = Boolean(
+      u?.accountStatus === "ACTIVE" &&
+        u?.role != null &&
+        (u.role === PlatformRole.ADMIN || u.role === PlatformRole.ACCOUNTANT),
+    );
+  }
+  const effectiveConversion = getConversionEngineFlagsEffective({
+    pathname: "/get-leads",
+    isPrivilegedUser,
+  });
+  const conversionTier = deriveConversionExperienceTier(effectiveConversion);
+  const conversionTierLabel = conversionExperienceTierLabel(conversionTier);
+  const conversionDebugUi =
+    process.env.NEXT_PUBLIC_CONVERSION_DEBUG_UI === "1" || firstParam(sp?.conversion_debug) === "1";
+  const showConversionMonitoringPanel = process.env.NEXT_PUBLIC_CONVERSION_MONITORING_DEBUG === "1";
+
+  const intentRaw = firstParam(sp?.intent)?.toLowerCase();
+  const allowedIntent =
+    intentRaw === "buy" || intentRaw === "rent" || intentRaw === "invest" || intentRaw === "host"
+      ? intentRaw
+      : undefined;
+  const locationHint =
+    firstParam(sp?.q)?.slice(0, 500) ?? firstParam(sp?.city)?.slice(0, 120) ?? undefined;
+
   return (
     <GetLeadsPageClient
       whatsappUrl={wa}
       utm={utm}
       scaleInboundV1={engineFlags.growthScaleV1}
       scarcity={scarcity}
-      conversionUpgradeV1={conversionEngineFlags.conversionUpgradeV1}
-      instantValueV1={conversionEngineFlags.instantValueV1}
+      conversionUpgradeV1={effectiveConversion.conversionUpgradeV1}
+      instantValueV1={effectiveConversion.instantValueV1}
+      conversionTierKey={conversionTier}
+      conversionTierLabel={conversionTierLabel}
+      conversionDebugUi={conversionDebugUi}
+      showConversionMonitoringPanel={showConversionMonitoringPanel}
+      initialIntent={allowedIntent}
+      locationHint={locationHint}
     />
   );
 }

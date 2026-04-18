@@ -27,7 +27,8 @@ import { computeMapSearchStats } from "@/lib/search/map-search-analytics";
 import { BROWSE_EMPTY_LISTINGS } from "@/lib/listings/browse-empty-copy";
 import { getListingCardDeterministicInsights } from "@/lib/listings/listing-card-deterministic-insights";
 import { track } from "@/lib/tracking";
-import { conversionEngineFlags } from "@/config/feature-flags";
+import { useConversionEngineFlags } from "@/lib/conversion/use-conversion-engine-flags";
+import { recordListingsExplorerViewOnce } from "@/modules/conversion/funnel-metrics.service";
 import { buildInstantValueSummary } from "@/modules/conversion/instant-value.service";
 import { recordListingCtaClick } from "@/modules/conversion/conversion-monitoring.service";
 
@@ -111,6 +112,7 @@ function mergeFeatures(features: string[], key: string, on: boolean): string[] {
 }
 
 function LecipmListingsExplorerInner() {
+  const conversionEngineFlags = useConversionEngineFlags();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -132,6 +134,10 @@ function LecipmListingsExplorerInner() {
     m.addEventListener("change", fn);
     return () => m.removeEventListener("change", fn);
   }, []);
+
+  useEffect(() => {
+    recordListingsExplorerViewOnce(pathname || "listings");
+  }, [pathname]);
 
   const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10) || 1);
 

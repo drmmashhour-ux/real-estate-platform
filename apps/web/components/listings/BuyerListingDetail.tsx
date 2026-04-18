@@ -48,7 +48,8 @@ import { useToast } from "@/components/ui/ToastProvider";
 import type { ListingDemandUiPayload } from "@/lib/listings/listing-analytics-service";
 import { LISTING_EXPLORE_NO_PAYMENT_LINE } from "@/lib/listings/listing-ad-trust-copy";
 import { TrustStrip } from "@/components/shared/TrustStrip";
-import { conversionEngineFlags } from "@/config/feature-flags";
+import { useConversionEngineFlags } from "@/lib/conversion/use-conversion-engine-flags";
+import { recordPropertyDetailViewOnce } from "@/modules/conversion/funnel-metrics.service";
 import type { PropertyConversionSurface } from "@/modules/conversion/property-conversion-surface";
 import { recordPropertyCtaClick } from "@/modules/conversion/conversion-monitoring.service";
 
@@ -184,6 +185,7 @@ export function BuyerListingDetail({
   /** Line shown in SMS / share sheet (include price + city) */
   shareSummary?: string;
 }) {
+  const conversionEngineFlags = useConversionEngineFlags();
   const { showToast } = useToast();
   const [modal, setModal] = useState<Modal>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -236,6 +238,10 @@ export function BuyerListingDetail({
   const [platformLegalWarnMessage, setPlatformLegalWarnMessage] = useState("");
   const pendingPlatformLegalRef = useRef<(() => void) | null>(null);
   const skipPlatformLegalRef = useRef(false);
+
+  useEffect(() => {
+    recordPropertyDetailViewOnce(listing.id);
+  }, [listing.id]);
 
   useEffect(() => {
     const sid = getTrackingSessionId();

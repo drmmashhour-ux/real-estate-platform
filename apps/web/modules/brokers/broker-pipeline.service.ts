@@ -5,7 +5,13 @@
 
 import fs from "fs";
 import path from "path";
-import type { BrokerMessageScriptKind, BrokerPipelineSummary, BrokerProspect, BrokerStage } from "@/modules/brokers/broker-pipeline.types";
+import type {
+  BrokerMessageScriptKind,
+  BrokerOperatorTag,
+  BrokerPipelineSummary,
+  BrokerProspect,
+  BrokerStage,
+} from "@/modules/brokers/broker-pipeline.types";
 import {
   recordBrokerConversion,
   recordBrokerLost,
@@ -40,6 +46,12 @@ function normalizeProspectRow(raw: unknown): BrokerProspect | null {
     notes = r.notes.split("\n").map((l) => l.trim()).filter(Boolean);
   }
 
+  const tags = Array.isArray(r.operatorTags)
+    ? (r.operatorTags.filter((x): x is BrokerOperatorTag =>
+        x === "paying" || x === "active" || x === "high_value",
+      ) as BrokerOperatorTag[])
+    : undefined;
+
   return {
     id,
     name,
@@ -56,6 +68,16 @@ function normalizeProspectRow(raw: unknown): BrokerProspect | null {
     firstPurchaseDate: typeof r.firstPurchaseDate === "string" ? r.firstPurchaseDate : undefined,
     totalSpent: typeof r.totalSpent === "number" && Number.isFinite(r.totalSpent) ? r.totalSpent : undefined,
     demoLeadPreviewShown: r.demoLeadPreviewShown === true,
+    listingsCount: typeof r.listingsCount === "number" && Number.isFinite(r.listingsCount) ? r.listingsCount : undefined,
+    leadsReceived: typeof r.leadsReceived === "number" && Number.isFinite(r.leadsReceived) ? r.leadsReceived : undefined,
+    leadsUnlocked: typeof r.leadsUnlocked === "number" && Number.isFinite(r.leadsUnlocked) ? r.leadsUnlocked : undefined,
+    closedDealsCount:
+      typeof r.closedDealsCount === "number" && Number.isFinite(r.closedDealsCount) ? r.closedDealsCount : undefined,
+    revenueGenerated:
+      typeof r.revenueGenerated === "number" && Number.isFinite(r.revenueGenerated) ? r.revenueGenerated : undefined,
+    lastActivityAt: typeof r.lastActivityAt === "string" ? r.lastActivityAt : undefined,
+    territoryRegion: typeof r.territoryRegion === "string" ? r.territoryRegion : undefined,
+    operatorTags: tags?.length ? tags : undefined,
   };
 }
 
@@ -102,6 +124,26 @@ function nowIso(): string {
   return new Date().toISOString();
 }
 
+/** Whether purchase/conversion has already been attributed for monitoring (avoid double-counting). */
+function conversionMonitoringAlreadyRecorded(prev: BrokerProspect): boolean {
+  return prev.stage === "converted" || Boolean(prev.firstPurchaseDate?.trim());
+}
+
+/**
+ * Operator-facing persistence hint (safe to expose to admin UI — no raw path).
+ * When `BROKER_PIPELINE_JSON_PATH` is unset, restarts wipe the in-memory store unless another replica shares state (they do not).
+ */
+export function getBrokerPipelinePersistenceMeta(): {
+  jsonPathConfigured: boolean;
+  persistenceMode: "memory" | "json_file";
+} {
+  const jsonPathConfigured = Boolean(process.env.BROKER_PIPELINE_JSON_PATH?.trim());
+  return {
+    jsonPathConfigured,
+    persistenceMode: jsonPathConfigured ? "json_file" : "memory",
+  };
+}
+
 export type CreateBrokerProspectInput = {
   name: string;
   email?: string;
@@ -137,6 +179,12 @@ export function createBrokerProspect(data: CreateBrokerProspectInput): BrokerPro
     stage: data.stage ?? "new",
     createdAt: t,
     updatedAt: t,
+    listingsCount: 0,
+    leadsReceived: 0,
+    leadsUnlocked: 0,
+    closedDealsCount: 0,
+    revenueGenerated: 0,
+    lastActivityAt: t,
   };
   store.set(id, row);
   recordBrokerProspectAdded();
@@ -222,17 +270,76 @@ export function markBrokerPurchaseOnProspect(id: string, input: MarkPurchaseInpu
   ensureLoaded();
   const prev = store.get(id);
   if (!prev) return null;
+  const moveToConverted = input.moveToConverted !== false;
   let stage = prev.stage;
-  if (input.moveToConverted !== false && stage !== "converted") {
-    recordBrokerStageChange(stage, "converted");
-    if (stage !== "converted") recordBrokerConversion();
+
+  if (moveToConverted && prev.stage !== "converted") {
+    recordBrokerStageChange(prev.stage, "converted");
+    if (!conversionMonitoringAlreadyRecorded(prev)) {
+      recordBrokerConversion();
+    }
     stage = "converted";
   }
+
   const next: BrokerProspect = {
     ...prev,
     stage,
     firstPurchaseDate: input.firstPurchaseDate,
     totalSpent: input.totalSpent ?? prev.totalSpent,
+    updatedAt: nowIso(),
+  };
+  store.set(id, next);
+  persistToDisk();
+  return next;
+}
+
+/**
+ * Increment numeric acquisition counters + optional revenue (CAD). Bumps `lastActivityAt`.
+ * Used by broker-performance hooks and optional operator PATCH.
+ */
+export function incrementBrokerAcquisitionMetrics(
+  id: string,
+  deltas: Partial<{
+    listingsCount: number;
+    leadsReceived: number;
+    leadsUnlocked: number;
+    closedDealsCount: number;
+    revenueCad: number;
+  }>,
+): BrokerProspect | null {
+  ensureLoaded();
+  const prev = store.get(id);
+  if (!prev) return null;
+  const t = nowIso();
+  const next: BrokerProspect = {
+    ...prev,
+    listingsCount: Math.max(0, (prev.listingsCount ?? 0) + (deltas.listingsCount ?? 0)),
+    leadsReceived: Math.max(0, (prev.leadsReceived ?? 0) + (deltas.leadsReceived ?? 0)),
+    leadsUnlocked: Math.max(0, (prev.leadsUnlocked ?? 0) + (deltas.leadsUnlocked ?? 0)),
+    closedDealsCount: Math.max(0, (prev.closedDealsCount ?? 0) + (deltas.closedDealsCount ?? 0)),
+    revenueGenerated: Math.max(0, (prev.revenueGenerated ?? 0) + (deltas.revenueCad ?? 0)),
+    lastActivityAt: t,
+    updatedAt: t,
+  };
+  store.set(id, next);
+  persistToDisk();
+  return next;
+}
+
+export type BrokerTerritoryMetaInput = {
+  territoryRegion?: string;
+  operatorTags?: BrokerOperatorTag[];
+};
+
+export function updateBrokerTerritoryAndTags(id: string, input: BrokerTerritoryMetaInput): BrokerProspect | null {
+  ensureLoaded();
+  const prev = store.get(id);
+  if (!prev) return null;
+  const next: BrokerProspect = {
+    ...prev,
+    territoryRegion:
+      input.territoryRegion !== undefined ? input.territoryRegion.trim() || undefined : prev.territoryRegion,
+    operatorTags: input.operatorTags !== undefined ? input.operatorTags : prev.operatorTags,
     updatedAt: nowIso(),
   };
   store.set(id, next);

@@ -4,7 +4,7 @@ import {
   __resetBrokerPipelineStoreForTests,
   createBrokerProspect,
 } from "@/modules/brokers/broker-pipeline.service";
-import { resetBrokerMonitoringForTests } from "@/modules/brokers/broker-monitoring.service";
+import { getBrokerMonitoringSnapshot, resetBrokerMonitoringForTests } from "@/modules/brokers/broker-monitoring.service";
 
 describe("broker-conversion.service", () => {
   afterEach(() => {
@@ -33,5 +33,19 @@ describe("broker-conversion.service", () => {
     });
     expect(out?.id).toBe(p.id);
     expect(out?.totalSpent).toBe(49);
+  });
+
+  it("tryMarkProspectConvertedByBrokerEmail does not increment conversion monitoring twice", () => {
+    const p = createBrokerProspect({ name: "Z", email: "z@dup.com" });
+    tryMarkProspectConvertedByBrokerEmail({
+      email: "z@dup.com",
+      firstPurchaseDate: "2026-04-01",
+    });
+    expect(getBrokerMonitoringSnapshot().conversionsMarked).toBe(1);
+    tryMarkProspectConvertedByBrokerEmail({
+      email: "z@dup.com",
+      firstPurchaseDate: "2026-05-01",
+    });
+    expect(getBrokerMonitoringSnapshot().conversionsMarked).toBe(1);
   });
 });

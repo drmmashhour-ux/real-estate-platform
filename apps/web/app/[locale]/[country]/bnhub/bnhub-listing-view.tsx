@@ -75,7 +75,14 @@ import { FunnelCtaAnchor } from "@/components/analytics/FunnelCtaAnchor";
 import { ShareListingActions } from "@/components/sharing/ShareListingActions";
 import { VerifiedListingBadge } from "@/components/listings/VerifiedListingBadge";
 import { CroListingConversionTrustBlock } from "@/components/bnhub/CroListingConversionTrustBlock";
-import { abTestingFlags, bnhubConversionLayerFlags, engineFlags } from "@/config/feature-flags";
+import {
+  abTestingFlags,
+  bnhubConversionLayerFlags,
+  engineFlags,
+  isBnhubConversionLayerFullyAligned,
+} from "@/config/feature-flags";
+import { buildListingConversionSummary } from "@/modules/bnhub/conversion/bnhub-listing-conversion.service";
+import { conversionBoostFrictionMode } from "@/modules/bnhub/conversion/bnhub-conversion-funnel-diagnostics";
 import { resolveBnhubListingCtas } from "@/modules/cro/cta-optimizer.service";
 import { getPublicBadgesForListing } from "@/lib/trust/get-public-badges";
 import { getReputationSurfaceForBnhubListing } from "@/lib/reputation/public-surface";
@@ -369,6 +376,13 @@ export async function BnhubListingView(opts: {
   const sampleServiceFeeCents = Math.round((sampleLodgingCents * 12) / 100);
   const sampleTotalEstimateCents = sampleLodgingCents + sampleCleaningCents + sampleServiceFeeCents;
   const currencyCode = (listing.currency ?? "CAD").toUpperCase();
+  const conversionAligned = isBnhubConversionLayerFullyAligned();
+  const conversionFrictionMode = conversionBoostFrictionMode(
+    bnhubConversionLayerFlags.conversionV1 && conversionAligned
+      ? (await buildListingConversionSummary(listing.id).catch(() => null))?.metrics ?? null
+      : null,
+    conversionAligned,
+  );
   const formatListingMoney = (cents: number) =>
     (cents / 100).toLocaleString(undefined, { style: "currency", currency: currencyCode });
   const stripeCheckoutAvailable = isStripeConfigured() && hostPayoutReady;
@@ -672,8 +686,13 @@ export async function BnhubListingView(opts: {
                     highDemandArea={bnhubMarketInsight?.demandLevel === "high"}
                     recentlyViewed={viewsToday > 0}
                     recentlyBooked={bookingsThisWeek > 0}
-                    bookNowLabel="Book now"
-                    reserveLabel="Reserve this stay"
+                    frictionMode={conversionFrictionMode}
+                    conversionAligned={conversionAligned}
+                    sampleStayNights={SAMPLE_STAY_NIGHTS}
+                    nightPriceCents={listing.nightPriceCents}
+                    cleaningFeeCents={listing.cleaningFeeCents ?? 0}
+                    sampleTotalEstimateCents={sampleTotalEstimateCents}
+                    currencyCode={currencyCode}
                   />
                 ) : null}
               </div>

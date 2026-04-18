@@ -27,6 +27,10 @@ export type BrokerDailyActionsInput = {
    * When omitted, rules that depend on “today” use stage heuristics only.
    */
   contactedTodayCount?: number;
+  /** CRM leads assigned in pipeline but not yet unlocked (checkout completed). */
+  leadsWaitingUnlock?: number;
+  /** Stripe-confirmed unlocks attributed in assignment log today (UTC date on unlockedAt). */
+  leadsUnlockedToday?: number;
 };
 
 /**
@@ -62,5 +66,15 @@ export function getBrokerDailyActions(input: BrokerDailyActionsInput): string[] 
     lines.push("Close another paying broker from your Demo column when ready.");
   }
 
-  return lines.slice(0, 5);
+  const waiting = input.leadsWaitingUnlock ?? 0;
+  if (waiting >= 1) {
+    lines.push(`Follow up on ${waiting} assigned lead(s) still waiting for broker unlock checkout.`);
+  }
+
+  const unlockedToday = input.leadsUnlockedToday ?? 0;
+  if (unlockedToday === 0 && waiting >= 3) {
+    lines.push("Revenue opportunity: several leads are assigned — prompt brokers to complete unlock.");
+  }
+
+  return lines.slice(0, 8);
 }

@@ -29,6 +29,10 @@ export function buildTopBnhubConversionRecommendations(insights: BNHubConversion
         push("Review calendar, minimum nights, and total price clarity before checkout.");
         push("Strengthen trust signals (reviews, verification) on the listing page.");
         break;
+      case "low_booking_start_rate":
+        push("Put total price (nights × rate + fees) near the primary book button.");
+        push("Confirm instant-book eligibility and calendar blocks are obvious before guests tap book.");
+        break;
       case "friction_detected":
         push("Walk the booking flow as a guest and note where drop-off happens before payment.");
         break;

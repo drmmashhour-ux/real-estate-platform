@@ -10,6 +10,7 @@ import { getLocale } from "next-intl/server";
 import { revalidateSyriaPaths } from "@/lib/revalidate-locale";
 import { trackSyriaGrowthEvent } from "@/lib/growth-events";
 import { validateListingGovernorateCityArea } from "@/lib/syria-location-catalog";
+import { assertDarlinkRuntimeEnv } from "@/lib/guard";
 
 function parseImages(raw: string): string[] {
   return raw
@@ -28,6 +29,7 @@ function parseAmenities(raw: string): string[] {
 }
 
 export async function createPropertyListing(formData: FormData): Promise<void> {
+  assertDarlinkRuntimeEnv();
   const user = await requireSessionUser();
 
   const titleAr = String(formData.get("title_ar") ?? "").trim();
