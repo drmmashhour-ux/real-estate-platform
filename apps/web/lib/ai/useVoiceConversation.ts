@@ -11,7 +11,9 @@ export type VoiceConversationPhase =
   | "speaking"
   | "paused";
 
-export type VoiceLang = "en-CA" | "fr-CA";
+export type VoiceLang = "en-CA" | "fr-CA" | "ar";
+
+const LANG_ORDER: VoiceLang[] = ["fr-CA", "en-CA", "ar"];
 
 type Opts = {
   onTranscript: (text: string) => string | undefined;
@@ -164,7 +166,10 @@ export function useVoiceConversation({ onTranscript, enabled }: Opts) {
   }, [start, stop]);
 
   const toggleLang = useCallback(() => {
-    setLang((prev) => (prev === "en-CA" ? "fr-CA" : "en-CA"));
+    setLang((prev) => {
+      const idx = LANG_ORDER.indexOf(prev);
+      return LANG_ORDER[(idx + 1) % LANG_ORDER.length];
+    });
   }, []);
 
   useEffect(() => {
