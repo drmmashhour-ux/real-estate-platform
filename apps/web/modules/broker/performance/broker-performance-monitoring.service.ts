@@ -13,6 +13,10 @@ export type BrokerPerformanceMonitoringSnapshot = {
   weakBrokerCount: number;
   recommendationsGenerated: number;
   missingDataWarnings: number;
+  engineSnapshotsBuilt: number;
+  leaderboardsGenerated: number;
+  insufficientDataCases: number;
+  insightsGenerated: number;
 };
 
 let state: BrokerPerformanceMonitoringSnapshot = {
@@ -22,6 +26,10 @@ let state: BrokerPerformanceMonitoringSnapshot = {
   weakBrokerCount: 0,
   recommendationsGenerated: 0,
   missingDataWarnings: 0,
+  engineSnapshotsBuilt: 0,
+  leaderboardsGenerated: 0,
+  insufficientDataCases: 0,
+  insightsGenerated: 0,
 };
 
 export function getBrokerPerformanceMonitoringSnapshot(): BrokerPerformanceMonitoringSnapshot {
@@ -36,6 +44,10 @@ export function resetBrokerPerformanceMonitoringForTests(): void {
     weakBrokerCount: 0,
     recommendationsGenerated: 0,
     missingDataWarnings: 0,
+    engineSnapshotsBuilt: 0,
+    leaderboardsGenerated: 0,
+    insufficientDataCases: 0,
+    insightsGenerated: 0,
   };
 }
 
@@ -61,6 +73,38 @@ export function recordRankingsBuilt(count: number): void {
   try {
     state.rankingsBuilt += 1;
     logInfo(`${LOG} rankings`, { count });
+  } catch {
+    /* noop */
+  }
+}
+
+export function recordEngineSnapshotBuilt(meta: {
+  band: string;
+  confidence: string;
+  insufficient: boolean;
+}): void {
+  try {
+    state.engineSnapshotsBuilt += 1;
+    if (meta.insufficient) state.insufficientDataCases += 1;
+    logInfo(`${LOG} engine_snapshot`, meta);
+  } catch {
+    /* noop */
+  }
+}
+
+export function recordLeaderboardGenerated(rowCount: number, insufficientRows: number): void {
+  try {
+    state.leaderboardsGenerated += 1;
+    logInfo(`${LOG} leaderboard`, { rowCount, insufficientRows });
+  } catch {
+    /* noop */
+  }
+}
+
+export function recordInsightsGenerated(count: number): void {
+  try {
+    state.insightsGenerated += count;
+    logInfo(`${LOG} insights`, { count });
   } catch {
     /* noop */
   }

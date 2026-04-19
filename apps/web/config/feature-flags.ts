@@ -880,6 +880,40 @@ export type BrokerPerformanceFlagKey = keyof typeof brokerPerformanceFlags;
 export const FEATURE_BROKER_PERFORMANCE_V1 = brokerPerformanceFlags.brokerPerformanceV1;
 
 /**
+ * Broker incentives V1 — recognition, streaks, milestones (no money; default off).
+ */
+export const brokerIncentivesFlags = {
+  brokerIncentivesV1: envTrue("FEATURE_BROKER_INCENTIVES_V1"),
+} as const;
+
+export type BrokerIncentivesFlagKey = keyof typeof brokerIncentivesFlags;
+
+/** @see brokerIncentivesFlags.brokerIncentivesV1 */
+export const FEATURE_BROKER_INCENTIVES_V1 = brokerIncentivesFlags.brokerIncentivesV1;
+
+/**
+ * Broker AI assist — advisory suggestions + draft angles (requires closing V1; default off).
+ */
+export const brokerAiAssistFlags = {
+  brokerAiAssistV1: envTrue("FEATURE_BROKER_AI_ASSIST_V1"),
+} as const;
+
+/** Broker manager / team dashboard — internal coaching visibility only (default off). */
+export const brokerTeamViewFlags = {
+  brokerTeamViewV1: envTrue("FEATURE_BROKER_TEAM_VIEW_V1"),
+} as const;
+
+export type BrokerTeamViewFlagKey = keyof typeof brokerTeamViewFlags;
+
+/** @see brokerTeamViewFlags.brokerTeamViewV1 */
+export const FEATURE_BROKER_TEAM_VIEW_V1 = brokerTeamViewFlags.brokerTeamViewV1;
+
+export type BrokerAiAssistFlagKey = keyof typeof brokerAiAssistFlags;
+
+/** @see brokerAiAssistFlags.brokerAiAssistV1 */
+export const FEATURE_BROKER_AI_ASSIST_V1 = brokerAiAssistFlags.brokerAiAssistV1;
+
+/**
  * Broker marketplace ranking V1 — internal/admin visibility only (default off).
  */
 export const brokerMarketplaceRankingFlags = {

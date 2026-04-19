@@ -5,6 +5,11 @@ import type { DealRoomDocumentKind } from "@/modules/deal-room/deal-room.types";
 
 export const dynamic = "force-dynamic";
 
+const noStore = {
+  "Cache-Control": "private, no-store, max-age=0",
+  Pragma: "no-cache",
+} as const;
+
 const KINDS = new Set<DealRoomDocumentKind>(["placeholder", "upload", "external_link"]);
 
 export async function POST(req: Request, ctx: { params: Promise<{ roomId: string }> }) {
@@ -34,6 +39,11 @@ export async function POST(req: Request, ctx: { params: Promise<{ roomId: string
     url,
   });
 
-  if (!res.ok) return NextResponse.json({ error: res.error }, { status: res.error === "Unauthorized." ? 401 : 403 });
-  return NextResponse.json({ documentId: res.documentId });
+  if (!res.ok) {
+    return NextResponse.json(
+      { error: res.error },
+      { status: res.error === "Unauthorized." ? 401 : 403, headers: noStore }
+    );
+  }
+  return NextResponse.json({ documentId: res.documentId }, { headers: noStore });
 }

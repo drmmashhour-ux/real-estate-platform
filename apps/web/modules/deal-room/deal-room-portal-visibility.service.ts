@@ -1,5 +1,9 @@
 /**
  * Filters server-side payload for external portal viewers — deny-by-default.
+ *
+ * Safety (V1): internal notes/tasks/activity/meetings/requirements stay hidden unless
+ * explicitly flagged for portal (`audience === "portal"`, `visibility === "portal"`,
+ * `portalVisible`, `portalShared`). Undefined legacy fields default to internal/not shared.
  */
 
 import type { DealRoomActivity } from "./deal-room.types";
@@ -79,7 +83,7 @@ export function buildPortalParticipantView(participant: DealRoomParticipant): De
 
   const tasks = participantHasCapability(caps, "view_tasks")
     ? tasksForRoom(roomId)
-        .filter((t) => t.visibility === "portal")
+        .filter((t) => (t.visibility ?? "internal") === "portal")
         .map((t) => ({
           id: t.id,
           title: t.title,
@@ -89,7 +93,7 @@ export function buildPortalParticipantView(participant: DealRoomParticipant): De
     : [];
 
   const reqs = participantHasCapability(caps, "view_documents")
-    ? requirementsForRoom(roomId).filter((r) => r.portalShared === true)
+    ? requirementsForRoom(roomId).filter((r) => (r.portalShared ?? false) === true)
     : [];
 
   const documentRequirements = reqs.map((r) => ({
@@ -130,7 +134,7 @@ export function buildPortalParticipantView(participant: DealRoomParticipant): De
 
   const portalNotes = showPortalNotes
     ? notesForRoom(roomId)
-        .filter((n) => n.audience === "portal")
+        .filter((n) => (n.audience ?? "internal") === "portal")
         .map((n) => ({
           id: n.id,
           body: n.body,

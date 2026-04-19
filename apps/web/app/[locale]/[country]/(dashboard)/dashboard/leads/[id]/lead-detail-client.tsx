@@ -140,6 +140,7 @@ export function LeadDetailClient({
   /** Admin-only dynamic pricing panel (feature-flagged on server). */
   showDynamicPricingPanel?: boolean;
 }) {
+  const searchParams = useSearchParams();
   const [lead, setLead] = useState<LeadDetail | null>(null);
   const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
   const [note, setNote] = useState("");
@@ -168,6 +169,25 @@ export function LeadDetailClient({
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const hint = new URLSearchParams(window.location.search).get("closingDraftHint");
+    if (!hint?.trim()) return;
+    void fetch("/api/broker/closing/metrics", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ event: "followup_draft_opened" }),
+    }).catch(() => {});
+    const t = window.setTimeout(() => {
+      document.getElementById("broker-closing-draft-anchor")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 450);
+    return () => window.clearTimeout(t);
+  }, [leadId]);
 
   const patch = async (body: Record<string, unknown>) => {
     const res = await fetch("/api/leads", {
@@ -702,33 +722,35 @@ export function LeadDetailClient({
           </details>
         </section>
 
-        <SalesAssistantPanel
-          lead={{
-            id: lead.id,
-            name: lead.name,
-            email: lead.email,
-            phone: lead.phone,
-            score: lead.score,
-            pipelineStatus: lead.pipelineStatus,
-            leadSource: lead.leadSource,
-            dealValue: lead.dealValue ?? null,
-            lastContactedAt: lead.lastContactedAt ?? null,
-            nextFollowUpAt: lead.nextFollowUpAt ?? null,
-            meetingAt: lead.meetingAt ?? null,
-            meetingCompleted: lead.meetingCompleted ?? false,
-            postMeetingOutcome: lead.postMeetingOutcome ?? null,
-            finalSalePrice: lead.finalSalePrice ?? null,
-          }}
-          city={city}
-          propertyType={snap?.propertyType}
-          snapEstimate={snap?.estimate}
-          timeline={timeline}
-          onPatch={patch}
-          onReload={load}
-          sendFollowUpEmail={sendFollowUpEmail}
-          sendingEmail={sending}
-          isEvaluationLead={lead.leadSource === "evaluation_lead"}
-        />
+        <div id="broker-closing-draft-anchor" className="scroll-mt-28">
+          <SalesAssistantPanel
+            lead={{
+              id: lead.id,
+              name: lead.name,
+              email: lead.email,
+              phone: lead.phone,
+              score: lead.score,
+              pipelineStatus: lead.pipelineStatus,
+              leadSource: lead.leadSource,
+              dealValue: lead.dealValue ?? null,
+              lastContactedAt: lead.lastContactedAt ?? null,
+              nextFollowUpAt: lead.nextFollowUpAt ?? null,
+              meetingAt: lead.meetingAt ?? null,
+              meetingCompleted: lead.meetingCompleted ?? false,
+              postMeetingOutcome: lead.postMeetingOutcome ?? null,
+              finalSalePrice: lead.finalSalePrice ?? null,
+            }}
+            city={city}
+            propertyType={snap?.propertyType}
+            snapEstimate={snap?.estimate}
+            timeline={timeline}
+            onPatch={patch}
+            onReload={load}
+            sendFollowUpEmail={sendFollowUpEmail}
+            sendingEmail={sending}
+            isEvaluationLead={lead.leadSource === "evaluation_lead"}
+          />
+        </div>
 
         {/* Status actions */}
         <section className="mt-8 rounded-2xl border border-white/10 bg-[#121212] p-5">

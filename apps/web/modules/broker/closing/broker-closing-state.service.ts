@@ -8,6 +8,30 @@ import { canBrokerOrAdminAccessLead } from "@/lib/leads/can-access-lead";
 import { normalizePipelineStage } from "@/lib/leads/pipeline-stage";
 import { brokerClosingFlags } from "@/config/feature-flags";
 import type { LeadClosingStage, LeadClosingState, PersistedBrokerClosingV1 } from "./broker-closing.types";
+
+const STAGE_ORDER: LeadClosingStage[] = [
+  "new",
+  "contacted",
+  "responded",
+  "meeting_scheduled",
+  "negotiation",
+  "closed_won",
+  "closed_lost",
+];
+
+/** Deterministic ordering for idempotent “mark contacted / responded” guards. */
+export function closingStageRank(stage: LeadClosingStage): number {
+  const i = STAGE_ORDER.indexOf(stage);
+  return i >= 0 ? i : 0;
+}
+
+export function shouldSkipMarkContacted(current: LeadClosingState): boolean {
+  return closingStageRank(current.stage) >= closingStageRank("contacted");
+}
+
+export function shouldSkipMarkResponded(current: LeadClosingState): boolean {
+  return closingStageRank(current.stage) >= closingStageRank("responded");
+}
 import { mergeBrokerClosingIntoAiExplanation, parseBrokerClosingV1 } from "./broker-closing-persist";
 import {
   recordDealClosedMonitored,
@@ -144,6 +168,11 @@ export async function getLeadClosingState(leadId: string, brokerId: string): Pro
 
 type MutateResult = { ok: true } | { ok: false; error: string };
 
+type MarkAppliedResult =
+  | { ok: true; applied: true }
+  | { ok: true; applied: false }
+  | { ok: false; error: string };
+
 async function mutateLead(
   leadId: string,
   brokerId: string,
@@ -240,14 +269,78 @@ export async function updateLeadStage(
   return { ok: true };
 }
 
-export async function markLeadContacted(leadId: string, brokerId: string): Promise<MutateResult> {
+export async function markLeadContacted(leadId: string, brokerId: string): Promise<MarkAppliedResult> {
+  if (!brokerClosingFlags.brokerClosingV1) {
+    return { ok: false, error: "Broker closing V1 is disabled" };
+  }
+
+  const user = await prisma.user.findUnique({ where: { id: brokerId }, select: { role: true } });
+  if (!user || (user.role !== "BROKER" && user.role !== "ADMIN")) {
+    return { ok: false, error: "Forbidden" };
+  }
+
+  const lead = await prisma.lead.findUnique({
+    where: { id: leadId },
+    select: {
+      introducedByBrokerId: true,
+      lastFollowUpByBrokerId: true,
+      leadSource: true,
+      aiExplanation: true,
+      lastContactedAt: true,
+      firstContactAt: true,
+      pipelineStage: true,
+      pipelineStatus: true,
+      wonAt: true,
+      lostAt: true,
+      dmStatus: true,
+      createdAt: true,
+    },
+  });
+  if (!lead) return { ok: false, error: "Lead not found" };
+  if (!canBrokerOrAdminAccessLead(user.role, brokerId, lead)) return { ok: false, error: "Forbidden" };
+
+  const current = buildLeadClosingStateFromLeadRecord(leadId, brokerId, lead);
+  if (shouldSkipMarkContacted(current)) return { ok: true, applied: false };
+
   const r = await mutateLead(leadId, brokerId, { stage: "contacted" }, {});
   if (r.ok) recordLeadContactedMonitored();
-  return r;
+  return r.ok ? { ok: true, applied: true } : r;
 }
 
-export async function markLeadResponded(leadId: string, brokerId: string): Promise<MutateResult> {
+export async function markLeadResponded(leadId: string, brokerId: string): Promise<MarkAppliedResult> {
+  if (!brokerClosingFlags.brokerClosingV1) {
+    return { ok: false, error: "Broker closing V1 is disabled" };
+  }
+
+  const user = await prisma.user.findUnique({ where: { id: brokerId }, select: { role: true } });
+  if (!user || (user.role !== "BROKER" && user.role !== "ADMIN")) {
+    return { ok: false, error: "Forbidden" };
+  }
+
+  const lead = await prisma.lead.findUnique({
+    where: { id: leadId },
+    select: {
+      introducedByBrokerId: true,
+      lastFollowUpByBrokerId: true,
+      leadSource: true,
+      aiExplanation: true,
+      lastContactedAt: true,
+      firstContactAt: true,
+      pipelineStage: true,
+      pipelineStatus: true,
+      wonAt: true,
+      lostAt: true,
+      dmStatus: true,
+      createdAt: true,
+    },
+  });
+  if (!lead) return { ok: false, error: "Lead not found" };
+  if (!canBrokerOrAdminAccessLead(user.role, brokerId, lead)) return { ok: false, error: "Forbidden" };
+
+  const current = buildLeadClosingStateFromLeadRecord(leadId, brokerId, lead);
+  if (shouldSkipMarkResponded(current)) return { ok: true, applied: false };
+
   const r = await mutateLead(leadId, brokerId, { stage: "responded", responseReceived: true }, {});
   if (r.ok) recordLeadRespondedMonitored();
-  return r;
+  return r.ok ? { ok: true, applied: true } : r;
 }

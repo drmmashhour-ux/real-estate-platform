@@ -12,6 +12,10 @@ export type BrokerClosingMonitoringSnapshot = {
   meetingsScheduled: number;
   dealsClosed: number;
   followUpsGenerated: number;
+  nextActionsComputed: number;
+  quickActionsUsed: number;
+  followUpDraftsOpened: number;
+  topThreeListsGenerated: number;
 };
 
 let state: BrokerClosingMonitoringSnapshot = {
@@ -20,6 +24,10 @@ let state: BrokerClosingMonitoringSnapshot = {
   meetingsScheduled: 0,
   dealsClosed: 0,
   followUpsGenerated: 0,
+  nextActionsComputed: 0,
+  quickActionsUsed: 0,
+  followUpDraftsOpened: 0,
+  topThreeListsGenerated: 0,
 };
 
 export function getBrokerClosingMonitoringSnapshot(): BrokerClosingMonitoringSnapshot {
@@ -33,6 +41,10 @@ export function resetBrokerClosingMonitoringForTests(): void {
     meetingsScheduled: 0,
     dealsClosed: 0,
     followUpsGenerated: 0,
+    nextActionsComputed: 0,
+    quickActionsUsed: 0,
+    followUpDraftsOpened: 0,
+    topThreeListsGenerated: 0,
   };
 }
 
@@ -76,6 +88,42 @@ export function recordFollowUpsGeneratedMonitored(n: number): void {
   try {
     if (n > 0) state.followUpsGenerated += n;
     logInfo(`${LOG} followups_generated`, { n });
+  } catch {
+    /* noop */
+  }
+}
+
+export function recordNextActionsComputedMonitored(n: number): void {
+  try {
+    if (n > 0) state.nextActionsComputed += n;
+    logInfo(`${LOG} next_actions_computed`, { n });
+  } catch {
+    /* noop */
+  }
+}
+
+export function recordQuickActionUsedMonitored(action: string): void {
+  try {
+    state.quickActionsUsed += 1;
+    logInfo(`${LOG} quick_action`, { action });
+  } catch {
+    /* noop */
+  }
+}
+
+export function recordFollowUpDraftOpenedMonitored(): void {
+  try {
+    state.followUpDraftsOpened += 1;
+    logInfo(`${LOG} followup_draft_opened`);
+  } catch {
+    /* noop */
+  }
+}
+
+export function recordTopThreeGeneratedMonitored(): void {
+  try {
+    state.topThreeListsGenerated += 1;
+    logInfo(`${LOG} top_three_generated`);
   } catch {
     /* noop */
   }

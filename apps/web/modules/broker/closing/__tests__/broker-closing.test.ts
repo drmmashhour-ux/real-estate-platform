@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { buildFollowUpSuggestions } from "@/modules/broker/closing/broker-followup.service";
 import { computeResponseSpeedScore } from "@/modules/broker/closing/broker-response.service";
-import { deriveLeadClosingStageFromRow } from "@/modules/broker/closing/broker-closing-state.service";
+import {
+  deriveLeadClosingStageFromRow,
+  shouldSkipMarkContacted,
+  shouldSkipMarkResponded,
+} from "@/modules/broker/closing/broker-closing-state.service";
 import { mergeBrokerClosingIntoAiExplanation, parseBrokerClosingV1 } from "@/modules/broker/closing/broker-closing-persist";
 import type { LeadClosingState } from "@/modules/broker/closing/broker-closing.types";
 
@@ -74,5 +78,17 @@ describe("broker closing V1", () => {
         nowMs: Date.now(),
       }),
     ).toBe("average");
+  });
+
+  it("shouldSkipMarkContacted avoids duplicate moves when already past contacted", () => {
+    expect(shouldSkipMarkContacted(state({ stage: "new" }))).toBe(false);
+    expect(shouldSkipMarkContacted(state({ stage: "contacted" }))).toBe(true);
+    expect(shouldSkipMarkContacted(state({ stage: "responded" }))).toBe(true);
+  });
+
+  it("shouldSkipMarkResponded avoids duplicate when already at responded+", () => {
+    expect(shouldSkipMarkResponded(state({ stage: "contacted" }))).toBe(false);
+    expect(shouldSkipMarkResponded(state({ stage: "responded" }))).toBe(true);
+    expect(shouldSkipMarkResponded(state({ stage: "meeting_scheduled" }))).toBe(true);
   });
 });

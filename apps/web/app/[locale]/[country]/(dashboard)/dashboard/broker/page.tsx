@@ -28,8 +28,15 @@ import { NextActionPanel } from "@/components/conversion/NextActionPanel";
 import { AIInsightPanel } from "@/components/conversion/AIInsightPanel";
 import { InlineUpgradeBanner } from "@/components/conversion/InlineUpgradeBanner";
 import { conversionCopy } from "@/src/design/conversionCopy";
-import { brokerClosingFlags, brokerPerformanceFlags } from "@/config/feature-flags";
-import { BrokerClosingSection } from "@/components/broker/BrokerClosingSection";
+import {
+  brokerAiAssistFlags,
+  brokerClosingFlags,
+  brokerIncentivesFlags,
+  brokerPerformanceFlags,
+} from "@/config/feature-flags";
+import { BrokerAiAssistDailyPanel } from "@/components/broker/BrokerAiAssistDailyPanel";
+import { BrokerDealConversionConsole } from "@/components/broker/BrokerDealConversionConsole";
+import { BrokerIncentivesPanel } from "@/components/broker/BrokerIncentivesPanel";
 import { BrokerPerformancePanel } from "@/components/broker/BrokerPerformancePanel";
 import { HubJourneyBanner } from "@/components/journey/HubJourneyBanner";
 import { CollaborationStrip } from "@/components/collaboration/CollaborationStrip";
@@ -204,10 +211,19 @@ export default async function BrokerHubPage({
           />
         ) : null}
         {brokerClosingFlags.brokerClosingV1 && userId && dbUser?.role === "BROKER" ? (
-          <BrokerClosingSection accent={theme.accent} />
+          <BrokerDealConversionConsole accent={theme.accent} />
+        ) : null}
+        {brokerClosingFlags.brokerClosingV1 &&
+        brokerAiAssistFlags.brokerAiAssistV1 &&
+        userId &&
+        dbUser?.role === "BROKER" ? (
+          <BrokerAiAssistDailyPanel accent={theme.accent} />
         ) : null}
         {brokerPerformanceFlags.brokerPerformanceV1 && userId && dbUser?.role === "BROKER" ? (
           <BrokerPerformancePanel accent={theme.accent} />
+        ) : null}
+        {brokerIncentivesFlags.brokerIncentivesV1 && userId && dbUser?.role === "BROKER" ? (
+          <BrokerIncentivesPanel accent={theme.accent} />
         ) : null}
         <section className="grid gap-4 lg:grid-cols-2">
           <RecommendationBanner

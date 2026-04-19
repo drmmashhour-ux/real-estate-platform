@@ -4,6 +4,11 @@ import { portalAddLimitedNote } from "@/modules/deal-room/deal-room-portal.servi
 
 export const dynamic = "force-dynamic";
 
+const noStore = {
+  "Cache-Control": "private, no-store, max-age=0",
+  Pragma: "no-cache",
+} as const;
+
 export async function POST(req: Request, ctx: { params: Promise<{ roomId: string }> }) {
   const { roomId } = await ctx.params;
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
@@ -12,7 +17,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ roomId: string
   const noteBody = typeof body?.body === "string" ? body.body : "";
 
   if (!token.trim() || !participantId.trim()) {
-    return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+    return NextResponse.json({ error: "Invalid payload" }, { status: 400, headers: noStore });
   }
 
   const res = portalAddLimitedNote({
@@ -22,6 +27,11 @@ export async function POST(req: Request, ctx: { params: Promise<{ roomId: string
     body: noteBody,
   });
 
-  if (!res.ok) return NextResponse.json({ error: res.error }, { status: res.error === "Unauthorized." ? 401 : 403 });
-  return NextResponse.json({ ok: true });
+  if (!res.ok) {
+    return NextResponse.json(
+      { error: res.error },
+      { status: res.error === "Unauthorized." ? 401 : 403, headers: noStore }
+    );
+  }
+  return NextResponse.json({ ok: true }, { headers: noStore });
 }

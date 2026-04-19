@@ -1,5 +1,9 @@
 /**
- * Client portal sessions — opaque token auth, tightly scoped mutations.
+ * Client portal — V1 limited external access only.
+ *
+ * - Auth: opaque per-participant token + room id (no room listing; token invalidates on revoke).
+ * - Mutations: document attach / optional portal notes only; no status changes, approvals, or payments.
+ * - Internal notes and non–portal-flagged content never leave internal visibility rules here.
  */
 
 import { randomUUID } from "crypto";
@@ -183,7 +187,7 @@ export function portalAttachDocument(args: {
   }
 
   const req = requirementsForRoom(args.roomId).find((r) => r.id === args.requirementId);
-  if (!req || req.portalShared !== true) {
+  if (!req || (req.portalShared ?? false) !== true) {
     recordPortalAccessDenied("requirement_not_shared");
     return { ok: false, error: "This item is not available for submission." };
   }

@@ -13,6 +13,7 @@ import type {
   BrokerPerformanceBreakdown,
   BrokerPerformanceSummary,
 } from "./broker-performance.types";
+import type { BrokerPerformanceMetricsInput } from "./broker-performance-scoring.service";
 
 const MS_HOUR = 60 * 60 * 1000;
 
@@ -157,7 +158,10 @@ function overallFromBreakdown(b: BrokerPerformanceBreakdown): number {
   return Math.round(clamp(v, 0, 100));
 }
 
-export async function buildBrokerPerformanceSummary(brokerId: string): Promise<BrokerPerformanceSummary | null> {
+export async function buildBrokerPerformanceSummary(
+  brokerId: string,
+  options?: { emitMonitoring?: boolean },
+): Promise<BrokerPerformanceSummary | null> {
   const user = await prisma.user.findUnique({ where: { id: brokerId }, select: { role: true } });
   if (!user || user.role !== "BROKER") return null;
 
@@ -249,12 +253,131 @@ export async function buildBrokerPerformanceSummary(brokerId: string): Promise<B
   };
   base.recommendations = buildBrokerPerformanceRecommendations(base);
 
-  recordPerformanceSummaryBuilt({
-    band,
-    weakCount: weakSignals.length,
-    recCount: base.recommendations.length,
-    missingData: weakSignals.some((w) => w.includes("No ") || w.includes("neutral") || w.includes("not ")),
-  });
+  if (options?.emitMonitoring !== false) {
+    recordPerformanceSummaryBuilt({
+      band,
+      weakCount: weakSignals.length,
+      recCount: base.recommendations.length,
+      missingData: weakSignals.some((w) => w.includes("No ") || w.includes("neutral") || w.includes("not ")),
+    });
+  }
 
   return base;
+}
+
+function idleHoursLead(
+  lead: { lastContactAt: Date | null; lastContactedAt: Date | null; createdAt: Date },
+  nowMs: number,
+): number {
+  const t = lead.lastContactAt ?? lead.lastContactedAt ?? lead.createdAt;
+  return (nowMs - t.getTime()) / MS_HOUR;
+}
+
+/** Lead row shape used by `aggregateBrokerPerformanceMetrics` / team aggregation (bounded query). */
+export type BrokerPerformanceLeadRow = {
+  aiExplanation: unknown;
+  pipelineStage: string | null;
+  pipelineStatus: string | null;
+  wonAt: Date | null;
+  lostAt: Date | null;
+  contactUnlockedAt: Date | null;
+  firstContactAt: Date | null;
+  lastContactedAt: Date | null;
+  lastContactAt: Date | null;
+  dmStatus: string;
+  engagementScore: number | null;
+  lastFollowUpAt: Date | null;
+  createdAt: Date;
+  meetingScheduledAt: Date | null;
+  meetingAt: Date | null;
+};
+
+/**
+ * Pure CRM rollup for one broker sample — used by DB-backed aggregate and team views (single lead fetch).
+ */
+export function computeBrokerPerformanceMetricsInputFromLeads(
+  brokerId: string,
+  leads: BrokerPerformanceLeadRow[],
+  nowMs: number,
+): BrokerPerformanceMetricsInput {
+  let contactedOrBetter = 0;
+  let respondedOrBetter = 0;
+  let meetingOrBetter = 0;
+  let closedWon = 0;
+  let closedLost = 0;
+  let followUpsDue = 0;
+  let followUpsCompleted = 0;
+  const unlockContactPairs: { hours: number }[] = [];
+
+  for (const lead of leads) {
+    const stage = deriveLeadClosingStageFromRow(lead);
+    if (isContactedPlus(stage)) contactedOrBetter += 1;
+    if (isRespondedPlus(stage)) respondedOrBetter += 1;
+    if (isMeetingPlus(stage)) meetingOrBetter += 1;
+    if (stage === "closed_won") closedWon += 1;
+    if (stage === "closed_lost") closedLost += 1;
+    if (lead.lastFollowUpAt) followUpsCompleted += 1;
+
+    if (lead.contactUnlockedAt && lead.firstContactAt) {
+      const h = (lead.firstContactAt.getTime() - lead.contactUnlockedAt.getTime()) / MS_HOUR;
+      if (h >= 0 && h < 24 * 120) unlockContactPairs.push({ hours: h });
+    }
+
+    if (stage === "contacted" && !isRespondedPlus(stage) && idleHoursLead(lead, nowMs) >= 48) {
+      followUpsDue += 1;
+    }
+  }
+
+  let avgResponseDelayHours: number | undefined;
+  if (unlockContactPairs.length >= 1) {
+    avgResponseDelayHours =
+      unlockContactPairs.reduce((a, x) => a + x.hours, 0) / unlockContactPairs.length;
+  }
+
+  return {
+    brokerId,
+    leadsAssigned: leads.length,
+    leadsContacted: contactedOrBetter,
+    leadsResponded: respondedOrBetter,
+    meetingsMarked: meetingOrBetter,
+    wonDeals: closedWon,
+    lostDeals: closedLost,
+    followUpsDue,
+    followUpsCompleted,
+    avgResponseDelayHours,
+  };
+}
+
+/** Raw CRM-derived counts for the performance engine (bounded query). */
+export async function aggregateBrokerPerformanceMetrics(brokerId: string): Promise<BrokerPerformanceMetricsInput | null> {
+  const user = await prisma.user.findUnique({ where: { id: brokerId }, select: { role: true } });
+  if (!user || user.role !== "BROKER") return null;
+
+  const nowMs = Date.now();
+
+  const leads = await prisma.lead.findMany({
+    where: {
+      OR: [{ introducedByBrokerId: brokerId }, { lastFollowUpByBrokerId: brokerId }],
+    },
+    select: {
+      aiExplanation: true,
+      pipelineStage: true,
+      pipelineStatus: true,
+      wonAt: true,
+      lostAt: true,
+      contactUnlockedAt: true,
+      firstContactAt: true,
+      lastContactedAt: true,
+      lastContactAt: true,
+      dmStatus: true,
+      engagementScore: true,
+      lastFollowUpAt: true,
+      createdAt: true,
+      meetingScheduledAt: true,
+      meetingAt: true,
+    },
+    take: 500,
+  });
+
+  return computeBrokerPerformanceMetricsInputFromLeads(brokerId, leads, nowMs);
 }

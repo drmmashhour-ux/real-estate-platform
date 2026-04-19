@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
 import { brokerPerformanceFlags } from "@/config/feature-flags";
+import { buildBrokerPerformanceEngineSnapshot } from "@/modules/broker/performance/broker-performance-engine.service";
 import { buildBrokerPerformanceSummary } from "@/modules/broker/performance/broker-performance.service";
 
 export const dynamic = "force-dynamic";
@@ -19,8 +20,11 @@ export async function GET() {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const summary = await buildBrokerPerformanceSummary(userId);
+  const [engine, summary] = await Promise.all([
+    buildBrokerPerformanceEngineSnapshot(userId),
+    buildBrokerPerformanceSummary(userId, { emitMonitoring: false }),
+  ]);
   if (!summary) return NextResponse.json({ error: "Unable to build summary" }, { status: 500 });
 
-  return NextResponse.json({ summary });
+  return NextResponse.json({ summary, engine });
 }
