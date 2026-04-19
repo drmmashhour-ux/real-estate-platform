@@ -18,6 +18,7 @@ import { compareListings } from "@/lib/ai/assistant-compare";
 import { trackAssistantEvent } from "@/lib/ai/assistant-analytics";
 import { isSpeechRecognitionSupported, startVoiceSearch } from "@/lib/ai/assistantVoice";
 import { useVoiceConversation } from "@/lib/ai/useVoiceConversation";
+import { speakPremium, cancelPremiumSpeech, warmBrowserVoices } from "@/lib/ai/premiumVoice";
 import { VoiceWaveform } from "@/components/ai/VoiceWaveform";
 import {
   DEFAULT_GLOBAL_FILTERS,
@@ -200,14 +201,16 @@ export function PlatformAssistant() {
     voiceRef.current = ctrl;
   }, [cfg.voiceInputEnabled, pushAssistant]);
 
+  useEffect(() => {
+    warmBrowserVoices();
+  }, []);
+
   const speakLast = useCallback(() => {
-    if (!cfg.textToSpeechEnabled || typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    if (!cfg.textToSpeechEnabled) return;
     const last = [...messages].reverse().find((m) => m.role === "assistant");
     if (!last?.text) return;
-    window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(last.text);
-    u.lang = "en-CA";
-    window.speechSynthesis.speak(u);
+    cancelPremiumSpeech();
+    void speakPremium({ text: last.text, lang: "en-CA" });
     trackAssistantEvent("assistant_tts_used");
   }, [cfg.textToSpeechEnabled, messages]);
 
@@ -344,25 +347,36 @@ export function PlatformAssistant() {
 
               {voiceMode ? (
                 <div className="flex flex-col items-center gap-4 py-6" aria-live="polite">
-                  <VoiceWaveform phase={voiceConversation.phase} size={48} />
-                  <p className="text-sm font-medium text-white/90">
-                    {voiceConversation.phase === "listening" && "Listening… speak now"}
-                    {voiceConversation.phase === "processing" && "Processing…"}
-                    {voiceConversation.phase === "speaking" && "Speaking…"}
-                    {voiceConversation.phase === "idle" && "Voice mode ready — tap the mic to begin"}
+                  <div className="relative">
+                    <div className="absolute -inset-4 animate-pulse rounded-full bg-[#D4AF37]/10" />
+                    <div className="relative rounded-full border-2 border-[#D4AF37]/40 bg-black/60 p-4">
+                      <VoiceWaveform phase={voiceConversation.phase} size={56} />
+                    </div>
+                  </div>
+                  <p className="text-base font-semibold text-white">
+                    {voiceConversation.phase === "listening" && "I'm listening…"}
+                    {voiceConversation.phase === "processing" && "One moment…"}
+                    {voiceConversation.phase === "speaking" && "Here's what I found"}
+                    {voiceConversation.phase === "idle" && "Ready to help"}
                     {voiceConversation.phase === "paused" && "Paused"}
                   </p>
-                  <p className="text-xs text-white/50">
+                  <p className="text-sm text-white/60">
+                    {voiceConversation.phase === "listening" && "Speak naturally — I understand property searches and platform questions"}
+                    {voiceConversation.phase === "processing" && "Processing your request…"}
+                    {voiceConversation.phase === "speaking" && "Listen to my response, then ask your next question"}
+                    {voiceConversation.phase === "idle" && "Tap the microphone above to start a conversation"}
+                    {voiceConversation.phase === "paused" && "Conversation paused"}
+                  </p>
+                  <p className="text-xs text-white/40">
                     {voiceConversation.lang === "en-CA" ? "English (Canada)" : "Français (Canada)"}
-                    {" · "}
-                    Say anything to search or ask a question
+                    {" · Premium voice"}
                   </p>
                   <button
                     type="button"
                     onClick={toggleVoiceMode}
-                    className="mt-2 rounded-full border border-red-400/40 bg-red-500/10 px-4 py-2 text-xs font-medium text-red-300 transition hover:bg-red-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+                    className="mt-2 rounded-full border border-red-400/30 bg-red-500/10 px-5 py-2.5 text-xs font-medium text-red-300 transition hover:bg-red-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
                   >
-                    End voice conversation
+                    End conversation
                   </button>
                 </div>
               ) : (

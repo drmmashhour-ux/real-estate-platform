@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { isSpeechRecognitionSupported, startVoiceSearch } from "@/lib/search/voiceSearch";
+import { speakPremium, cancelPremiumSpeech, warmBrowserVoices } from "@/lib/ai/premiumVoice";
 
 export type VoiceConversationPhase =
   | "idle"
@@ -18,18 +19,20 @@ type Opts = {
 };
 
 /**
- * Hands-free voice conversation loop.
+ * Hands-free voice conversation loop with premium TTS.
  *
  * Phase cycle: idle → listening → processing → speaking → listening → …
  * The caller supplies `onTranscript` which receives the spoken text and
  * returns the assistant reply (or undefined to skip TTS).
+ *
+ * Uses ElevenLabs when configured, browser speechSynthesis as fallback.
  */
 export function useVoiceConversation({ onTranscript, enabled }: Opts) {
   const [phase, setPhase] = useState<VoiceConversationPhase>("idle");
   const [lang, setLang] = useState<VoiceLang>("en-CA");
   const [active, setActive] = useState(false);
   const recognitionRef = useRef<{ stop: () => void } | null>(null);
-  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const cancelSpeechRef = useRef<(() => void) | null>(null);
   const activeRef = useRef(false);
   const onTranscriptRef = useRef(onTranscript);
   const langRef = useRef(lang);
@@ -43,11 +46,14 @@ export function useVoiceConversation({ onTranscript, enabled }: Opts) {
     langRef.current = lang;
   }, [lang]);
 
+  useEffect(() => {
+    warmBrowserVoices();
+  }, []);
+
   const stopSpeaking = useCallback(() => {
-    if (typeof window !== "undefined" && "speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
-    }
-    utteranceRef.current = null;
+    cancelPremiumSpeech();
+    cancelSpeechRef.current?.();
+    cancelSpeechRef.current = null;
   }, []);
 
   const stopRecognition = useCallback(() => {
@@ -79,34 +85,31 @@ export function useVoiceConversation({ onTranscript, enabled }: Opts) {
 
         const reply = onTranscriptRef.current(text);
 
-        if (
-          reply &&
-          typeof window !== "undefined" &&
-          "speechSynthesis" in window
-        ) {
+        if (reply) {
           setPhase("speaking");
-          window.speechSynthesis.cancel();
-          const u = new SpeechSynthesisUtterance(reply);
-          u.lang = langRef.current;
-          u.rate = 0.95;
-          utteranceRef.current = u;
-          u.onend = () => {
-            utteranceRef.current = null;
-            if (activeRef.current) {
-              scheduleRestart();
-            } else {
-              setPhase("idle");
-            }
-          };
-          u.onerror = () => {
-            utteranceRef.current = null;
-            if (activeRef.current) {
-              scheduleRestart();
-            } else {
-              setPhase("idle");
-            }
-          };
-          window.setTimeout(() => window.speechSynthesis.speak(u), 80);
+
+          void speakPremium({
+            text: reply,
+            lang: langRef.current,
+            onEnd: () => {
+              cancelSpeechRef.current = null;
+              if (activeRef.current) {
+                scheduleRestart();
+              } else {
+                setPhase("idle");
+              }
+            },
+            onError: () => {
+              cancelSpeechRef.current = null;
+              if (activeRef.current) {
+                scheduleRestart();
+              } else {
+                setPhase("idle");
+              }
+            },
+          }).then((handle) => {
+            cancelSpeechRef.current = handle.cancel;
+          });
         } else {
           if (activeRef.current) {
             scheduleRestart();
