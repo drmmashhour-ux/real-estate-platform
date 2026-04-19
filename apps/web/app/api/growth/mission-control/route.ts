@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { growthMissionControlFlags } from "@/config/feature-flags";
 import { requireGrowthMachineActor } from "@/modules/growth-machine/growth-api-context";
 import { buildGrowthMissionControlSummary } from "@/modules/growth/growth-mission-control.service";
+import { buildMissionControlActionBundle } from "@/modules/growth/growth-mission-control-action.service";
 
 export const dynamic = "force-dynamic";
 
@@ -18,5 +19,7 @@ export async function GET() {
     return NextResponse.json({ error: "Mission control summary unavailable" }, { status: 503 });
   }
 
-  return NextResponse.json({ summary });
+  const actionBundle = buildMissionControlActionBundle(summary);
+
+  return NextResponse.json({ summary, actionBundle });
 }

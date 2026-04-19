@@ -2,7 +2,11 @@
 
 import * as React from "react";
 import Link from "next/link";
-import type { BrokerTeamDashboardPayload, BrokerTeamRow } from "@/modules/broker/team/broker-team.types";
+import type {
+  BrokerTeamDashboardPayload,
+  BrokerTeamOpsRoutingCompact,
+  BrokerTeamRow,
+} from "@/modules/broker/team/broker-team.types";
 
 type Props = {
   /** e.g. `/en/ch` — used for admin + dashboard deep links */
@@ -21,6 +25,28 @@ function riskClass(r: string): string {
   if (r === "high") return "text-amber-200 bg-amber-500/15 border-amber-500/35";
   if (r === "medium") return "text-sky-100 bg-sky-500/10 border-sky-500/30";
   return "text-slate-300 bg-white/5 border-white/10";
+}
+
+function OpsRoutingCells({ ops }: { ops?: BrokerTeamOpsRoutingCompact }) {
+  if (!ops) {
+    return (
+      <>
+        <td className="py-2 pr-3 text-slate-600">—</td>
+        <td className="py-2 pr-3 text-slate-600">—</td>
+        <td className="py-2 pr-3 text-slate-600">—</td>
+      </>
+    );
+  }
+  return (
+    <>
+      <td className="py-2 pr-3 capitalize text-slate-300">{ops.availabilityStatus}</td>
+      <td className="py-2 pr-3 text-slate-300">
+        <span className="tabular-nums">{ops.capacityScore}</span>{" "}
+        <span className="text-slate-500">({ops.capacityBand})</span>
+      </td>
+      <td className="py-2 pr-3 capitalize text-slate-300">{ops.slaHealth.replace(/_/g, " ")}</td>
+    </>
+  );
 }
 
 function formatShort(iso: string | null): string {
@@ -134,6 +160,7 @@ export function BrokerTeamDashboard({ pathPrefix }: Props) {
   }
 
   const { summary } = data;
+  const showOpsRouting = data.rows.some((r) => Boolean(r.opsRouting));
 
   return (
     <div className="space-y-8 text-white">
@@ -196,16 +223,26 @@ export function BrokerTeamDashboard({ pathPrefix }: Props) {
       <section className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
         <h2 className="text-sm font-semibold text-white">Team roster</h2>
         <div className="mt-3 overflow-x-auto">
-          <table className="w-full min-w-[880px] border-collapse text-left text-xs">
+          <table className={`w-full ${showOpsRouting ? "min-w-[1480px]" : "min-w-[1220px]"} border-collapse text-left text-xs`}>
             <thead>
               <tr className="border-b border-white/10 text-[11px] uppercase tracking-wide text-slate-500">
                 <th className="py-2 pr-3 font-medium">Name</th>
+                <th className="py-2 pr-3 font-medium max-w-[200px]">Routing profile</th>
+                {showOpsRouting ? (
+                  <>
+                    <th className="py-2 pr-3 font-medium">Avail.</th>
+                    <th className="py-2 pr-3 font-medium">Capacity</th>
+                    <th className="py-2 pr-3 font-medium">SLA</th>
+                  </>
+                ) : null}
                 <th className="py-2 pr-3 font-medium">Score</th>
                 <th className="py-2 pr-3 font-medium">Band</th>
                 <th className="py-2 pr-3 font-medium">Active leads</th>
                 <th className="py-2 pr-3 font-medium">Overdue F/U</th>
                 <th className="py-2 pr-3 font-medium">Last active</th>
-                <th className="py-2 font-medium">Support signal</th>
+                <th className="py-2 pr-3 font-medium">Support signal</th>
+                <th className="py-2 pr-3 font-medium max-w-[140px]">Strength</th>
+                <th className="py-2 font-medium max-w-[140px]">Focus area</th>
               </tr>
             </thead>
             <tbody>
@@ -219,6 +256,24 @@ export function BrokerTeamDashboard({ pathPrefix }: Props) {
                       {r.displayName}
                     </Link>
                   </td>
+                  <td className="py-2 pr-3 max-w-[200px] align-top text-[10px] leading-snug text-slate-400">
+                    {r.profileCompact ? (
+                      <>
+                        <span className="text-slate-200">{r.profileCompact.topServiceArea ?? "—"}</span>
+                        {" · "}
+                        <span className="capitalize">{r.profileCompact.topSpecialization ?? "—"}</span>
+                        {" · "}
+                        <span>{r.profileCompact.acceptingNewLeads ? "accepting" : "paused"}</span>
+                        {" · "}
+                        <span className="capitalize text-slate-500">{r.profileCompact.profileConfidence}</span>
+                      </>
+                    ) : (
+                      "—"
+                    )}
+                  </td>
+                  {showOpsRouting ? (
+                    <OpsRoutingCells ops={r.opsRouting} />
+                  ) : null}
                   <td className="py-2 pr-3 tabular-nums text-slate-200">{r.performanceScore}</td>
                   <td className="py-2 pr-3">
                     <span
@@ -230,12 +285,18 @@ export function BrokerTeamDashboard({ pathPrefix }: Props) {
                   <td className="py-2 pr-3 tabular-nums text-slate-300">{r.leadsActive}</td>
                   <td className="py-2 pr-3 tabular-nums text-slate-300">{r.followUpsOverdue}</td>
                   <td className="py-2 pr-3 text-slate-400">{formatShort(r.lastActiveAt)}</td>
-                  <td className="py-2">
+                  <td className="py-2 pr-3">
                     <span
                       className={`inline-block rounded-full border px-2 py-0.5 text-[10px] font-semibold capitalize ${riskClass(r.riskLevel)}`}
                     >
                       {r.riskLevel}
                     </span>
+                  </td>
+                  <td className="py-2 pr-3 max-w-[140px] truncate text-slate-400" title={r.topStrength}>
+                    {r.topStrength}
+                  </td>
+                  <td className="py-2 max-w-[140px] truncate text-slate-400" title={r.topWeakness}>
+                    {r.topWeakness}
                   </td>
                 </tr>
               ))}

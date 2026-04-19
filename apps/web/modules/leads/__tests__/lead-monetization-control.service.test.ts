@@ -105,6 +105,46 @@ describe("buildLeadMonetizationControlSummary", () => {
     expect(s.missingSignals.length).toBeGreaterThan(0);
   });
 
+  it("does not emit dynamic and quality as conflicting primary modes", () => {
+    const dynamic = computeDynamicLeadPrice({
+      leadId: "lx",
+      basePrice: baseLeadPricing.leadPrice,
+      qualityScore: 80,
+      demandLevel: "high",
+      brokerInterestLevel: 70,
+    });
+    const s = buildLeadMonetizationControlSummary({
+      leadId: "lx",
+      leadPricing: baseLeadPricing,
+      leadQuality: {
+        leadId: "lx",
+        score: 80,
+        band: "high",
+        breakdown: {
+          completenessScore: 70,
+          intentScore: 70,
+          budgetScore: 70,
+          urgencyScore: 70,
+          engagementScore: 70,
+        },
+        strongSignals: [],
+        weakSignals: [],
+        suggestedPrice: 44,
+        createdAt: new Date().toISOString(),
+      },
+      dynamicPricing: dynamic,
+      demandLevel: "high",
+      demandScore: 70,
+      brokerInterestLevel: 70,
+      interactionCount: 5,
+      regionPeerLeadCount: 2,
+      conversionProbability: 0.15,
+    });
+    expect(s.priceSourceMode).toBe("dynamic_advisory");
+    expect(s.suggestedPrice).toBe(dynamic.suggestedPrice);
+    expect(s.explanation).not.toMatch(/quality model alone/i);
+  });
+
   it("produces non-conflicting explanation for mode", () => {
     const exDyn = buildLeadMonetizationExplanation({
       mode: "dynamic_advisory",

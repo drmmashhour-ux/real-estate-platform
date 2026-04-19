@@ -25,7 +25,20 @@ function saveSet(key: string, ids: Set<string>): void {
   }
 }
 
-function CopyButton({ text }: { text: string }) {
+async function postExecutionTelemetry(suggestionId: string, action: "view" | "copy" | "ack" | "ignore"): Promise<void> {
+  try {
+    await fetch("/api/growth/execution-results/telemetry", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ suggestionId, action }),
+    });
+  } catch {
+    /* measurement optional */
+  }
+}
+
+function CopyButton({ text, suggestionId }: { text: string; suggestionId: string }) {
   const [done, setDone] = React.useState(false);
   return (
     <button
@@ -34,6 +47,7 @@ function CopyButton({ text }: { text: string }) {
       onClick={async () => {
         try {
           await navigator.clipboard.writeText(text);
+          void postExecutionTelemetry(suggestionId, "copy");
           setDone(true);
           window.setTimeout(() => setDone(false), 1500);
         } catch {
@@ -53,11 +67,20 @@ export function AiExecutionPanel() {
   const [acknowledged, setAcknowledged] = React.useState<Set<string>>(new Set());
   const [err, setErr] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(true);
+  const viewedOnce = React.useRef(new Set<string>());
 
   React.useEffect(() => {
     setDismissed(loadSet(`${STORAGE_PREFIX}:dismissed`));
     setAcknowledged(loadSet(`${STORAGE_PREFIX}:ack`));
   }, []);
+
+  React.useEffect(() => {
+    for (const s of suggestions) {
+      if (viewedOnce.current.has(s.id)) continue;
+      viewedOnce.current.add(s.id);
+      void postExecutionTelemetry(s.id, "view");
+    }
+  }, [suggestions]);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -88,6 +111,7 @@ export function AiExecutionPanel() {
   }, []);
 
   function ignore(id: string) {
+    void postExecutionTelemetry(id, "ignore");
     setDismissed((prev) => {
       const next = new Set(prev);
       next.add(id);
@@ -97,6 +121,7 @@ export function AiExecutionPanel() {
   }
 
   function acknowledge(id: string) {
+    void postExecutionTelemetry(id, "ack");
     setAcknowledged((prev) => {
       const next = new Set(prev);
       next.add(id);
@@ -160,7 +185,7 @@ export function AiExecutionPanel() {
                 <p className="mt-2 text-[11px] text-emerald-500/90">Acknowledged locally — no server action.</p>
               ) : null}
               <div className="mt-2 flex flex-wrap gap-2">
-                <CopyButton text={s.suggestion} />
+                <CopyButton text={s.suggestion} suggestionId={s.id} />
                 <button
                   type="button"
                   className="rounded-md border border-emerald-800/60 bg-emerald-950/40 px-2 py-1 text-xs text-emerald-200 hover:bg-emerald-900/50"

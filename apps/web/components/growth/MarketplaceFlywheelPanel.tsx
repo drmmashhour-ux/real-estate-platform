@@ -1,4 +1,5 @@
 import type { MarketplaceFlywheelInsight } from "@/modules/marketplace/flywheel.types";
+import type { FlywheelLearningSummary } from "@/modules/growth/flywheel-learning.service";
 
 function impactStyle(impact: MarketplaceFlywheelInsight["impact"]): string {
   if (impact === "high") return "border-rose-500/35 bg-rose-950/20 text-rose-100";
@@ -27,11 +28,14 @@ export function MarketplaceFlywheelPanel({
   insights,
   actions,
   priorities,
+  learningSummary,
 }: {
   insights: MarketplaceFlywheelInsight[];
   actions: string[];
   /** Same as sorted insights — explicit priority order for UI. */
   priorities: MarketplaceFlywheelInsight[];
+  /** Historical action/outcome evidence — optional when tracking flags off. */
+  learningSummary?: FlywheelLearningSummary | null;
 }) {
   return (
     <section className="rounded-2xl border border-cyan-500/25 bg-[#0a1214] p-5">
@@ -78,6 +82,42 @@ export function MarketplaceFlywheelPanel({
                   </span>
                 </div>
                 <p className="mt-2 text-xs leading-relaxed opacity-95">{ins.description}</p>
+                {learningSummary?.byInsightType[ins.type] ? (
+                  <div className="mt-3 rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-[11px] text-slate-400">
+                    <p className="font-semibold text-slate-300">Evidence (tracked actions)</p>
+                    <p className="mt-1">
+                      Similar actions recorded:{" "}
+                      <span className="text-white">{learningSummary.byInsightType[ins.type]!.similarActionsCount}</span> ·
+                      Completed (status):{" "}
+                      <span className="text-white">{learningSummary.byInsightType[ins.type]!.completedActionsCount}</span>
+                    </p>
+                    <p className="mt-1">
+                      Success rate (positive / scored outcomes):{" "}
+                      {learningSummary.byInsightType[ins.type]!.successRate != null ? (
+                        <span className="text-white">
+                          {(learningSummary.byInsightType[ins.type]!.successRate * 100).toFixed(0)}%
+                        </span>
+                      ) : (
+                        <span className="text-slate-500">—</span>
+                      )}
+                      <span className="text-slate-600">
+                        {" "}
+                        · confidence{" "}
+                        <span className="text-slate-400">{learningSummary.byInsightType[ins.type]!.confidence}</span>
+                      </span>
+                    </p>
+                    {learningSummary.byInsightType[ins.type]!.lastOutcomeExplanation ? (
+                      <p className="mt-2 border-t border-white/5 pt-2 text-[10px] leading-relaxed text-slate-500">
+                        Last outcome snapshot:{" "}
+                        <span className="text-slate-400">{learningSummary.byInsightType[ins.type]!.lastOutcomeScore}</span>
+                        {" — "}
+                        {learningSummary.byInsightType[ins.type]!.lastOutcomeExplanation}
+                      </p>
+                    ) : (
+                      <p className="mt-2 text-[10px] text-slate-600">No outcome evaluations yet for this insight family.</p>
+                    )}
+                  </div>
+                ) : null}
               </li>
             ))}
           </ul>

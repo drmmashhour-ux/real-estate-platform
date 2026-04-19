@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import {
   extractEvaluationSnapshot,
@@ -15,14 +16,24 @@ import { ViralMomentPrompt } from "@/components/referral/ViralMomentPrompt";
 import { DealLegalTimelineSummaryCard } from "@/components/deal/DealLegalTimelineSummaryCard";
 import { RevenueUnlockCTA } from "@/components/revenue/RevenueUnlockCTA";
 import { LeadRoutingPanel } from "@/components/broker/routing/LeadRoutingPanel";
+import { BrokerLeadRoutingPanel } from "@/components/broker/BrokerLeadRoutingPanel";
 import { LeadRoutingControlPanel } from "@/components/broker/routing/LeadRoutingControlPanel";
 import { LeadQualityPanel } from "@/components/leads/LeadQualityPanel";
 import { DynamicPricingPanel } from "@/components/leads/DynamicPricingPanel";
 import { LeadMonetizationControlPanel } from "@/components/leads/LeadMonetizationControlPanel";
+import { LeadPricingExperimentsPanel } from "@/components/leads/LeadPricingExperimentsPanel";
+import { LeadPricingOverridePanel } from "@/components/leads/LeadPricingOverridePanel";
 import { inferLeadIntentLabel } from "@/modules/leads/lead-monetization.service";
 import type { LeadQualitySummary } from "@/modules/leads/lead-quality.types";
 import type { DynamicPricingSuggestion } from "@/modules/leads/dynamic-pricing.types";
 import type { LeadMonetizationControlSummary } from "@/modules/leads/lead-monetization-control.types";
+import type { InternalLeadPricingDisplayResult } from "@/modules/leads/lead-pricing-display.service";
+import type {
+  LeadPricingComparisonSummary,
+  LeadPricingOverride,
+} from "@/modules/leads/lead-pricing-experiments.types";
+import type { LeadPricingResultsAdminPayload } from "@/modules/leads/lead-pricing-results.types";
+import { LeadPricingResultsPanel } from "@/components/leads/LeadPricingResultsPanel";
 
 type AutomationTaskRow = {
   id: string;
@@ -105,6 +116,16 @@ type LeadDetail = {
   leadQualityV1?: LeadQualitySummary | null;
   leadPricing?: { leadPrice: number; leadPriceCents: number };
   dynamicPricingV1?: DynamicPricingSuggestion | null;
+  /** Admin-only unified monetization readout when FEATURE_LEAD_MONETIZATION_CONTROL_V1 is on. */
+  leadMonetizationControlV1?: LeadMonetizationControlSummary | null;
+  /** Admin-only pricing experiment bundle when FEATURE_LEAD_PRICING_EXPERIMENTS_V1 is on. */
+  leadPricingComparisonV1?: LeadPricingComparisonSummary | null;
+  /** Admin-only active override row when FEATURE_LEAD_PRICING_OVERRIDE_V1 is on. */
+  leadPricingActiveOverrideV1?: LeadPricingOverride | null;
+  /** Admin-only resolved internal advisory emphasis (display precedence). */
+  leadPricingInternalDisplayV1?: InternalLeadPricingDisplayResult | null;
+  /** Admin-only measurement layer when FEATURE_LEAD_PRICING_RESULTS_V1 is on. */
+  leadPricingResultsV1?: LeadPricingResultsAdminPayload | null;
   crmInteractions: {
     id: string;
     type: string;
@@ -125,20 +146,35 @@ export function LeadDetailClient({
   leadId,
   viralInviteUrl,
   showRoutingPanel,
+  showLeadDistributionPanel,
   showRoutingControlV2,
   showLeadQualityPanel,
   showDynamicPricingPanel,
+  showMonetizationControlPanel,
+  showLeadPricingExperimentsPanel,
+  showLeadPricingOverridePanel,
+  showLeadPricingResultsPanel,
 }: {
   leadId: string;
   viralInviteUrl?: string;
   /** Admin-only advisory routing (feature-flagged on server). */
   showRoutingPanel?: boolean;
+  /** Admin-only fair distribution + assignment audit (feature-flagged on server). */
+  showLeadDistributionPanel?: boolean;
   /** Admin-only routing V2 decision + approve/reject (feature-flagged on server). */
   showRoutingControlV2?: boolean;
   /** Admin-only quality + advisory pricing panel (feature-flagged on server). */
   showLeadQualityPanel?: boolean;
   /** Admin-only dynamic pricing panel (feature-flagged on server). */
   showDynamicPricingPanel?: boolean;
+  /** Admin-only monetization control panel (feature-flagged on server). */
+  showMonetizationControlPanel?: boolean;
+  /** Admin-only pricing experiments panel (feature-flagged on server). */
+  showLeadPricingExperimentsPanel?: boolean;
+  /** Admin-only operator override panel (feature-flagged on server). */
+  showLeadPricingOverridePanel?: boolean;
+  /** Admin-only lead pricing outcome measurement (feature-flagged on server). */
+  showLeadPricingResultsPanel?: boolean;
 }) {
   const searchParams = useSearchParams();
   const [lead, setLead] = useState<LeadDetail | null>(null);
@@ -327,12 +363,40 @@ export function LeadDetailClient({
           />
         ) : null}
 
+        {showLeadDistributionPanel ? (
+          <BrokerLeadRoutingPanel
+            leadId={leadId}
+            leadSummary={{ name: lead.name, city: city || undefined, score: lead.score }}
+          />
+        ) : null}
+
         {showRoutingControlV2 ? <LeadRoutingControlPanel leadId={leadId} /> : null}
 
         {showMonetizationControlPanel && lead.leadMonetizationControlV1 ? (
           <div className="mt-6">
             <LeadMonetizationControlPanel summary={lead.leadMonetizationControlV1} />
           </div>
+        ) : null}
+
+        {showLeadPricingExperimentsPanel && lead.leadPricingComparisonV1 ? (
+          <LeadPricingExperimentsPanel
+            comparison={lead.leadPricingComparisonV1}
+            internalDisplay={lead.leadPricingInternalDisplayV1 ?? undefined}
+          />
+        ) : null}
+
+        {showLeadPricingOverridePanel && lead.leadMonetizationControlV1 ? (
+          <LeadPricingOverridePanel
+            leadId={leadId}
+            monetization={lead.leadMonetizationControlV1}
+            leadPricing={lead.leadPricing}
+            activeOverride={lead.leadPricingActiveOverrideV1 ?? null}
+            onChanged={load}
+          />
+        ) : null}
+
+        {showLeadPricingResultsPanel ? (
+          <LeadPricingResultsPanel leadId={leadId} payload={lead.leadPricingResultsV1} onRefresh={load} />
         ) : null}
 
         {showMonetizationControlPanel &&

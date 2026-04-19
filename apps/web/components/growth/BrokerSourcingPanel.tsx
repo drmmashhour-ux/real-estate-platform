@@ -3,8 +3,17 @@
 import * as React from "react";
 
 import { getBrokerSourcingInstructions } from "@/modules/growth/broker-sourcing.service";
+import { postFastDealSourceEventLog } from "@/lib/growth/fast-deal-client-log";
 
-function CopyButton({ text, label = "Copy" }: { text: string; label?: string }) {
+function CopyButton({
+  text,
+  label = "Copy",
+  onAfterCopy,
+}: {
+  text: string;
+  label?: string;
+  onAfterCopy?: () => void;
+}) {
   const [done, setDone] = React.useState(false);
   return (
     <button
@@ -13,6 +22,7 @@ function CopyButton({ text, label = "Copy" }: { text: string; label?: string }) 
       onClick={async () => {
         try {
           await navigator.clipboard.writeText(text);
+          onAfterCopy?.();
           setDone(true);
           window.setTimeout(() => setDone(false), 1500);
         } catch {
@@ -25,7 +35,14 @@ function CopyButton({ text, label = "Copy" }: { text: string; label?: string }) 
   );
 }
 
-export function BrokerSourcingPanel({ defaultCity = "Montréal" }: { defaultCity?: string }) {
+export function BrokerSourcingPanel({
+  defaultCity = "Montréal",
+  enableFastDealLogging = false,
+}: {
+  defaultCity?: string;
+  /** When true, best-effort log to Fast Deal results (admin session only). */
+  enableFastDealLogging?: boolean;
+}) {
   const [city, setCity] = React.useState(defaultCity);
   const instructions = React.useMemo(() => getBrokerSourcingInstructions(city), [city]);
 
@@ -55,7 +72,24 @@ export function BrokerSourcingPanel({ defaultCity = "Montréal" }: { defaultCity
       <ul className="mt-4 space-y-4">
         {instructions.map((block) => (
           <li key={block.platform} className="rounded-lg border border-zinc-800/90 bg-black/25 p-3">
-            <p className="text-sm font-semibold text-cyan-200/90">{block.title}</p>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-sm font-semibold text-cyan-200/90">{block.title}</p>
+              {enableFastDealLogging ? (
+                <button
+                  type="button"
+                  className="rounded-md border border-cyan-800/60 bg-cyan-950/40 px-2 py-1 text-[11px] font-medium text-cyan-200 hover:bg-cyan-900/40"
+                  onClick={() =>
+                    void postFastDealSourceEventLog({
+                      sourceType: "broker_sourcing",
+                      sourceSubType: "session_started",
+                      metadata: { platform: block.platform, city },
+                    })
+                  }
+                >
+                  Log session (this channel)
+                </button>
+              ) : null}
+            </div>
             <ol className="mt-2 list-inside list-decimal space-y-1 text-sm text-zinc-300">
               {block.steps.map((s) => (
                 <li key={s}>{s}</li>
@@ -67,7 +101,20 @@ export function BrokerSourcingPanel({ defaultCity = "Montréal" }: { defaultCity
                 {block.searchQueries.map((q) => (
                   <li key={q} className="flex items-center gap-1 rounded-md bg-zinc-800/80 px-2 py-1 font-mono text-[11px] text-zinc-300">
                     {q}
-                    <CopyButton text={q} label="Copy" />
+                    <CopyButton
+                      text={q}
+                      label="Copy"
+                      onAfterCopy={
+                        enableFastDealLogging
+                          ? () =>
+                              void postFastDealSourceEventLog({
+                                sourceType: "broker_sourcing",
+                                sourceSubType: "query_copied",
+                                metadata: { platform: block.platform, query: q, city },
+                              })
+                          : undefined
+                      }
+                    />
                   </li>
                 ))}
               </ul>

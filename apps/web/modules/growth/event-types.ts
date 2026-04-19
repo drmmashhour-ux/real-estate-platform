@@ -20,6 +20,11 @@ export const GrowthEventName = {
   LEAD_CAPTURE: "lead_capture",
   DEAL_CREATED: "deal_created",
   CTA_CLICK: "cta_click",
+  /** Growth Machine — AI execution panel (measurement-only telemetry; server POST). */
+  GROWTH_EXECUTION_AI_VIEW: "growth_execution_ai_view",
+  GROWTH_EXECUTION_AI_COPY: "growth_execution_ai_copy",
+  GROWTH_EXECUTION_AI_ACK: "growth_execution_ai_ack",
+  GROWTH_EXECUTION_AI_IGNORE: "growth_execution_ai_ignore",
 } as const;
 
 export type GrowthEventNameType = (typeof GrowthEventName)[keyof typeof GrowthEventName];

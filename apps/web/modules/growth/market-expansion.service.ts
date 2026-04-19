@@ -1,105 +1,127 @@
 /**
- * Multi-market expansion signals — read-only; revenue-by-market is estimated from lead mix when metadata lacks region.
+ * Market expansion recommendations from city comparison + real supply/demand proxies.
  */
 
-import { AccountStatus, PlatformRole } from "@prisma/client";
+import { engineFlags } from "@/config/feature-flags";
 import { prisma } from "@/lib/db";
+import { buildCityComparison } from "@/modules/growth/fast-deal-city-comparison.service";
+import { selectTopPerformingCity } from "@/modules/growth/city-playbook-selector.service";
+import { buildSignalsForCity } from "@/modules/growth/market-expansion-signals.service";
+import { computeCitySimilarity } from "@/modules/growth/market-expansion-similarity.service";
+import { scoreExpansionCandidate } from "@/modules/growth/market-expansion-scoring.service";
+import { generateMarketExpansionInsights } from "@/modules/growth/market-expansion-insights.service";
+import { monitorMarketExpansionBuilt } from "@/modules/growth/market-expansion-monitoring.service";
+import type {
+  MarketExpansionCandidate,
+  MarketExpansionRecommendation,
+  MarketExpansionRejected,
+} from "@/modules/growth/market-expansion.types";
 
-function startOfUtcDay(d: Date): Date {
-  const x = new Date(d);
-  x.setUTCHours(0, 0, 0, 0);
-  return x;
-}
+export async function buildMarketExpansionRecommendations(
+  cities: string[],
+  windowDays: number,
+): Promise<MarketExpansionRecommendation | null> {
+  if (!engineFlags.marketExpansionV1 || !engineFlags.fastDealCityComparisonV1 || cities.length === 0) {
+    return null;
+  }
 
-function addUtcDays(d: Date, n: number): Date {
-  const x = new Date(d);
-  x.setUTCDate(x.getUTCDate() + n);
-  return x;
-}
+  const comparison = await buildCityComparison(cities, windowDays);
+  if (!comparison?.rankedCities.length) return null;
 
-export type MarketPerformanceRow = {
-  marketKey: string;
-  leads30d: number;
-  /** Allocated from active broker pool × lead share (proxy). */
-  brokersAllocated: number;
-  revenueCad30dEstimated: number;
-  performance: "high" | "mid" | "low";
-};
-
-export async function getMarketExpansionSnapshot(): Promise<{
-  markets: MarketPerformanceRow[];
-  globalRevenueCad30d: number;
-  totalLeads30d: number;
-  activeBrokersTotal: number;
-  underperforming: string[];
-  highPerforming: string[];
-  note: string;
-}> {
-  const to = addUtcDays(startOfUtcDay(new Date()), 1);
-  const from = addUtcDays(to, -30);
-
-  const [leads, activeBrokersTotal, revRows] = await Promise.all([
-    prisma.lead.findMany({
-      where: { createdAt: { gte: from, lt: to } },
-      select: { purchaseRegion: true },
-      take: 40_000,
+  const since = new Date(Date.now() - windowDays * 86400000);
+  const [events, outcomes] = await Promise.all([
+    prisma.fastDealSourceEvent.findMany({
+      where: { createdAt: { gte: since } },
+      select: { sourceType: true, sourceSubType: true, metadataJson: true },
     }),
-    prisma.user.count({
-      where: { role: PlatformRole.BROKER, accountStatus: AccountStatus.ACTIVE },
-    }),
-    prisma.revenueEvent.findMany({
-      where: { createdAt: { gte: from, lt: to }, amount: { gt: 0 } },
-      select: { amount: true },
-      take: 50_000,
+    prisma.fastDealOutcome.findMany({
+      where: { createdAt: { gte: since } },
+      select: { outcomeType: true, metadataJson: true },
     }),
   ]);
 
-  let globalRevenueCad30d = 0;
-  for (const r of revRows) {
-    const a = Number(r.amount);
-    if (Number.isFinite(a) && a > 0) globalRevenueCad30d += a;
+  const signalsList = await Promise.all(
+    cities.map((city) => buildSignalsForCity(city, windowDays, events, outcomes)),
+  );
+
+  const picked = selectTopPerformingCity(comparison);
+  const anchorRow = picked.top ?? comparison.rankedCities[0];
+  const referenceCity = anchorRow?.city ?? null;
+  const topSig = signalsList.find((s) => referenceCity && s.city === referenceCity) ?? signalsList[0];
+
+  const demands = signalsList.map((s) => s.demandSignal ?? 0);
+  const comps = signalsList.map((s) => s.competitionSignal ?? 0);
+  const maxDemand = Math.max(1, ...demands);
+  const maxComp = Math.max(1, ...comps);
+  const topDs = topSig?.demandSupplyRatio;
+
+  const ranked: MarketExpansionCandidate[] = [];
+  const rejected: MarketExpansionRejected[] = [];
+
+  for (const sig of signalsList) {
+    if (referenceCity && sig.city === referenceCity) continue;
+
+    const sim = computeCitySimilarity(topSig!, sig);
+
+    const scored = scoreExpansionCandidate({
+      signals: sig,
+      similarityScore: sim.similarityScore,
+      maxDemandAmongCities: maxDemand,
+      maxCompetitionAmongCities: maxComp,
+      topDemandSupply: topDs,
+    });
+
+    const rationaleParts = [
+      `${sim.explanation}`,
+      `Composite score integrates similarity (HIGH), demand proxy (HIGH), demand/supply gap vs reference (MEDIUM when available), inverted competition density (MEDIUM).`,
+      `Demand proxy=${sig.demandSignal ?? "n/a"}, FSBO ACTIVE supply=${sig.supplyListingCount ?? "n/a"}, competition proxy=${sig.competitionSignal ?? "n/a"}.`,
+    ];
+
+    ranked.push({
+      city: sig.city,
+      score: scored.score,
+      demandSignal: sig.demandSignal,
+      supplySignal: sig.supplyListingCount,
+      competitionSignal: sig.competitionSignal,
+      similarityToTopCity: sim.similarityScore,
+      readiness: scored.readiness,
+      confidence: scored.confidence,
+      rationale: rationaleParts.join(" "),
+      warnings: scored.warnings,
+    });
+
+    if ((scored.score < 32 && scored.confidence === "low") || sig.metrics.meta.sampleSize < 8) {
+      rejected.push({
+        city: sig.city,
+        reason:
+          sig.metrics.meta.sampleSize < 8
+            ? "Insufficient Fast Deal sample for expansion scoring."
+            : "Low composite score with low confidence tier.",
+      });
+    }
   }
-  globalRevenueCad30d = Math.round(globalRevenueCad30d * 100) / 100;
 
-  const leadByMarket = new Map<string, number>();
-  for (const l of leads) {
-    const key = (l.purchaseRegion?.trim() || "unspecified").slice(0, 120);
-    leadByMarket.set(key, (leadByMarket.get(key) ?? 0) + 1);
-  }
+  ranked.sort((a, b) => b.score - a.score);
 
-  const totalLeads30d = leads.length;
-  const denom = Math.max(1, totalLeads30d);
-
-  const markets: MarketPerformanceRow[] = [...leadByMarket.entries()].map(([marketKey, n]) => {
-    const share = n / denom;
-    const revenueCad30dEstimated = Math.round(globalRevenueCad30d * share * 100) / 100;
-    const brokersAllocated = Math.max(0, Math.round(activeBrokersTotal * share));
-
-    let performance: MarketPerformanceRow["performance"] = "mid";
-    if (share >= 0.12 && n >= 8) performance = "high";
-    if (share < 0.03 || n < 2) performance = "low";
-
-    return {
-      marketKey,
-      leads30d: n,
-      brokersAllocated,
-      revenueCad30dEstimated,
-      performance,
-    };
+  const insights = generateMarketExpansionInsights({
+    referenceCity,
+    topCandidates: ranked.slice(0, 6),
   });
 
-  markets.sort((a, b) => b.revenueCad30dEstimated - a.revenueCad30dEstimated);
-
-  const highPerforming = markets.filter((m) => m.performance === "high").map((m) => m.marketKey);
-  const underperforming = markets.filter((m) => m.performance === "low").map((m) => m.marketKey);
+  const lowConf = ranked.filter((r) => r.confidence === "low").length;
+  monitorMarketExpansionBuilt({
+    windowDays,
+    candidateCount: ranked.length,
+    lowConfidence: lowConf,
+    referenceSet: !!referenceCity,
+  });
 
   return {
-    markets: markets.slice(0, 24),
-    globalRevenueCad30d,
-    totalLeads30d,
-    activeBrokersTotal,
-    underperforming,
-    highPerforming,
-    note: "Revenue-by-market is estimated (global RevenueEvent × lead share). Enrich RevenueEvent.metadata with region for exact allocation.",
+    referenceCity,
+    topCandidates: ranked.slice(0, 8),
+    rejectedCandidates: rejected.slice(0, 12),
+    insights,
+    generatedAt: new Date().toISOString(),
+    windowDays,
   };
 }

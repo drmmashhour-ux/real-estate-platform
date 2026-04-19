@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { PlatformRole } from "@prisma/client";
 import { getGuestId } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
-import { brokerTeamViewFlags } from "@/config/feature-flags";
+import { brokerTeamViewFlags, brokerTeamViewPanelFlags } from "@/config/feature-flags";
 import { buildBrokerTeamManagerDetail } from "@/modules/broker/team/broker-team.service";
 
 const ADMIN_SURFACE_ROLES = new Set<PlatformRole>(["ADMIN", "ACCOUNTANT"]);
@@ -10,7 +10,7 @@ const ADMIN_SURFACE_ROLES = new Set<PlatformRole>(["ADMIN", "ACCOUNTANT"]);
 export const dynamic = "force-dynamic";
 
 export async function GET(_req: Request, ctx: { params: Promise<{ brokerId: string }> }) {
-  if (!brokerTeamViewFlags.brokerTeamViewV1) {
+  if (!brokerTeamViewFlags.brokerTeamViewV1 || !brokerTeamViewPanelFlags.brokerTeamViewPanelV1) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 

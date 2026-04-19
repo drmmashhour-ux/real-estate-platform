@@ -30,8 +30,10 @@ export function LeadMonetizationControlPanel({ summary }: { summary: LeadMonetiz
           </p>
         </div>
         <div className="rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-right text-xs">
-          <p className="text-slate-500">Confidence</p>
-          <p className="font-semibold text-emerald-200">{confidenceLabel(summary.confidenceLevel)}</p>
+          <p className="font-semibold text-emerald-200">
+            Confidence: {confidenceLabel(summary.confidenceLevel)}
+          </p>
+          <p className="mt-0.5 text-[10px] text-slate-600">Advisory readout — not a quote</p>
         </div>
       </div>
 

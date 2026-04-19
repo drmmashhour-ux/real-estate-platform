@@ -7,31 +7,37 @@ import type { MarketplaceFlywheelInsight, MarketplaceFlywheelInsightType } from 
 
 const WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
 
-function impactOrder(i: MarketplaceFlywheelInsight["impact"]): number {
-  if (i === "high") return 2;
-  if (i === "medium") return 1;
-  return 0;
-}
-
-/** Sort high → low impact, then type for stability. */
-export function prioritizeFlywheelInsights(insights: MarketplaceFlywheelInsight[]): MarketplaceFlywheelInsight[] {
-  return [...insights].sort((a, b) => {
-    const d = impactOrder(b.impact) - impactOrder(a.impact);
-    if (d !== 0) return d;
-    return a.type.localeCompare(b.type);
-  });
-}
-
-function makeId(type: MarketplaceFlywheelInsightType, key: string): string {
-  return `flywheel-${type}-${key}`.replace(/[^a-z0-9-_]/gi, "-").slice(0, 120);
-}
+/** Rolling 30d marketplace counts + derived rates — same definitions for insights and outcome baselines. */
+export type FlywheelMarketplaceMetrics = {
+  brokerCount: number;
+  leadCount30: number;
+  hotLeads30: number;
+  activeListings: number;
+  leadsUnlocked30: number;
+  wonLeads30: number;
+  leadsPerBroker: number;
+  unlockRate: number;
+  hotShare: number;
+  winRate: number;
+};
 
 /**
- * Aggregates 30d leads, brokers, listings, and simple ratios — advisory signals only.
+ * Snapshot current flywheel metrics (30d window) — deterministic; safe on DB errors (returns zeros).
  */
-export async function analyzeMarketplaceGrowth(): Promise<MarketplaceFlywheelInsight[]> {
+export async function collectFlywheelMarketplaceMetrics(): Promise<FlywheelMarketplaceMetrics> {
   const since = new Date(Date.now() - WINDOW_MS);
-  const insights: MarketplaceFlywheelInsight[] = [];
+  const empty: FlywheelMarketplaceMetrics = {
+    brokerCount: 0,
+    leadCount30: 0,
+    hotLeads30: 0,
+    activeListings: 0,
+    leadsUnlocked30: 0,
+    wonLeads30: 0,
+    leadsPerBroker: 0,
+    unlockRate: 0,
+    hotShare: 0,
+    winRate: 0,
+  };
 
   try {
     const [
@@ -63,6 +69,60 @@ export async function analyzeMarketplaceGrowth(): Promise<MarketplaceFlywheelIns
     const unlockRate = leadCount30 > 0 ? leadsUnlocked30 / leadCount30 : 0;
     const hotShare = leadCount30 > 0 ? hotLeads30 / leadCount30 : 0;
     const winRate = leadCount30 > 0 ? wonLeads30 / leadCount30 : 0;
+
+    return {
+      brokerCount,
+      leadCount30,
+      hotLeads30,
+      activeListings,
+      leadsUnlocked30,
+      wonLeads30,
+      leadsPerBroker,
+      unlockRate,
+      hotShare,
+      winRate,
+    };
+  } catch {
+    return empty;
+  }
+}
+
+function impactOrder(i: MarketplaceFlywheelInsight["impact"]): number {
+  if (i === "high") return 2;
+  if (i === "medium") return 1;
+  return 0;
+}
+
+/** Sort high → low impact, then type for stability. */
+export function prioritizeFlywheelInsights(insights: MarketplaceFlywheelInsight[]): MarketplaceFlywheelInsight[] {
+  return [...insights].sort((a, b) => {
+    const d = impactOrder(b.impact) - impactOrder(a.impact);
+    if (d !== 0) return d;
+    return a.type.localeCompare(b.type);
+  });
+}
+
+function makeId(type: MarketplaceFlywheelInsightType, key: string): string {
+  return `flywheel-${type}-${key}`.replace(/[^a-z0-9-_]/gi, "-").slice(0, 120);
+}
+
+/**
+ * Aggregates 30d leads, brokers, listings, and simple ratios — advisory signals only.
+ */
+export async function analyzeMarketplaceGrowth(): Promise<MarketplaceFlywheelInsight[]> {
+  const insights: MarketplaceFlywheelInsight[] = [];
+
+  try {
+    const {
+      brokerCount,
+      leadCount30,
+      hotLeads30,
+      activeListings,
+      leadsPerBroker,
+      unlockRate,
+      hotShare,
+      winRate,
+    } = await collectFlywheelMarketplaceMetrics();
 
     // Broker gap: high lead volume per broker — capacity strain (advisory framing).
     if (brokerCount >= 1 && leadsPerBroker >= 18) {

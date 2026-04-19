@@ -64,6 +64,7 @@ export type BrokerLeaderboardRow = {
   band: BrokerExecutionBand;
   keyStrength: string;
   keyWeakness: string;
+  confidenceLevel?: BrokerPerformanceConfidence;
 };
 
 /** Internal incentive-ready flags — no rewards wired (structure only). */

@@ -4,7 +4,7 @@
 
 import type { DynamicPricingSuggestion, LeadPricingContext } from "@/modules/leads/dynamic-pricing.types";
 
-const MAX_MULT = 2;
+export const LEAD_DYNAMIC_PRICING_MAX_MULT = 2;
 
 function clamp(n: number, lo: number, hi: number): number {
   if (!Number.isFinite(n)) return lo;
@@ -54,8 +54,8 @@ export function computeDynamicLeadPrice(context: LeadPricingContext): DynamicPri
   const cm = conversionNudge(context.historicalConversion);
 
   const raw = qm * dm * bm * cm;
-  const priceMultiplier = clamp(raw, 1, MAX_MULT);
-  const suggestedPrice = Math.round(clamp(base * priceMultiplier, base, base * MAX_MULT));
+  const priceMultiplier = clamp(raw, 1, LEAD_DYNAMIC_PRICING_MAX_MULT);
+  const suggestedPrice = Math.round(clamp(base * priceMultiplier, base, base * LEAD_DYNAMIC_PRICING_MAX_MULT));
 
   const reason: string[] = [];
   reason.push(
@@ -66,7 +66,9 @@ export function computeDynamicLeadPrice(context: LeadPricingContext): DynamicPri
   if (context.historicalConversion != null && Number.isFinite(context.historicalConversion)) {
     reason.push(`Conversion probability nudge ×${cm.toFixed(2)}.`);
   }
-  reason.push(`Capped total multiplier at ×${MAX_MULT} — advisory only; checkout uses standard unlock pricing.`);
+  reason.push(
+    `Capped total multiplier at ×${LEAD_DYNAMIC_PRICING_MAX_MULT} — advisory only; checkout uses standard unlock pricing.`,
+  );
 
   return {
     basePrice: base,
@@ -75,6 +77,45 @@ export function computeDynamicLeadPrice(context: LeadPricingContext): DynamicPri
     reason,
     demandLevel: context.demandLevel,
   };
+}
+
+/** Layer multipliers used by dynamic pricing and pricing experiments — same signals as `computeDynamicLeadPrice`. */
+export type LeadPricingLayerMultipliers = {
+  base: number;
+  qm: number;
+  dm: number;
+  bm: number;
+  cm: number;
+};
+
+export function getLeadPricingLayerMultipliers(context: LeadPricingContext): LeadPricingLayerMultipliers {
+  const base = Math.max(0, Math.round(context.basePrice));
+  return {
+    base,
+    qm: qualityMultiplier(context.qualityScore),
+    dm: demandMultiplier(context.demandLevel),
+    bm: brokerInterestMultiplier(context.brokerInterestLevel),
+    cm: conversionNudge(context.historicalConversion),
+  };
+}
+
+/**
+ * Combine layers with per-layer exponents (deterministic) and cap total multiplier — for experiment modes only.
+ */
+export function combineLayerMultipliers(
+  layers: LeadPricingLayerMultipliers,
+  powers: { qm: number; dm: number; bm: number; cm: number },
+  maxMultiplier: number,
+): { multiplier: number; suggestedPrice: number } {
+  const raw =
+    Math.pow(layers.qm, powers.qm) *
+    Math.pow(layers.dm, powers.dm) *
+    Math.pow(layers.bm, powers.bm) *
+    Math.pow(layers.cm, powers.cm);
+  const multiplier = clamp(raw, 1, maxMultiplier);
+  const capTop = layers.base * maxMultiplier;
+  const suggestedPrice = Math.round(clamp(layers.base * multiplier, layers.base, capTop));
+  return { multiplier: Math.round(multiplier * 1000) / 1000, suggestedPrice };
 }
 
 export type BrokerInterestInput = {

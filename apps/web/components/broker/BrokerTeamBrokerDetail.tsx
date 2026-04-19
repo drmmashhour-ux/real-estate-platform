@@ -2,6 +2,8 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { brokerServiceProfileFlags } from "@/config/feature-flags";
+import { BrokerServiceProfileAdminPanel } from "@/components/broker/BrokerServiceProfileAdminPanel";
 import type { BrokerTeamManagerBrokerDetail } from "@/modules/broker/team/broker-team.types";
 
 type Props = {
@@ -170,6 +172,12 @@ export function BrokerTeamBrokerDetail({ brokerId, pathPrefix }: Props) {
             </div>
           </div>
         </section>
+      ) : null}
+
+      {brokerServiceProfileFlags.brokerServiceProfileV1 ||
+      brokerServiceProfileFlags.brokerServiceProfilePanelV1 ||
+      brokerServiceProfileFlags.brokerSpecializationRoutingV1 ? (
+        <BrokerServiceProfileAdminPanel brokerId={brokerId} />
       ) : null}
 
       {data.performance?.insights?.length ? (

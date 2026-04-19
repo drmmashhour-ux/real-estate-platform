@@ -25,7 +25,15 @@ function saveDone(done: Record<string, boolean>): void {
   }
 }
 
-export function MontrealDominationPanel() {
+type MontrealDominationPanelProps = {
+  executionAccountabilitySync?: boolean;
+  viewerUserId?: string;
+};
+
+export function MontrealDominationPanel({
+  executionAccountabilitySync,
+  viewerUserId,
+}: MontrealDominationPanelProps = {}) {
   const plan = React.useMemo(() => buildMontrealDominationPlan(), []);
   const [done, setDone] = React.useState<Record<string, boolean>>({});
 
@@ -37,6 +45,31 @@ export function MontrealDominationPanel() {
     setDone((prev) => {
       const next = { ...prev, [id]: !prev[id] };
       saveDone(next);
+      const wm = /^w(\d+)-/.exec(id);
+      const weekNum = wm ? Number(wm[1]) : undefined;
+      if (executionAccountabilitySync && viewerUserId) {
+        const completed = !!next[id];
+        void fetch("/api/growth/execution-accountability", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(
+            completed
+              ? {
+                  action: "record",
+                  surfaceType: "city_domination_mtl",
+                  itemId: id,
+                  completed: true,
+                  weekNumber: weekNum,
+                }
+              : {
+                  action: "clear",
+                  surfaceType: "city_domination_mtl",
+                  itemId: id,
+                },
+          ),
+        }).catch(() => {});
+      }
       return next;
     });
   };

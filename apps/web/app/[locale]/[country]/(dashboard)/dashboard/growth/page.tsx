@@ -30,6 +30,7 @@ import {
   landingConversionFlags,
   marketplaceIntelligenceFlags,
   marketplaceFlywheelFlags,
+  leadPricingResultsFlags,
   operatorLayerFlags,
   operatorV2Flags,
   platformCoreFlags,
@@ -61,6 +62,7 @@ import { GrowthMachineDashboard } from "@/components/growth/GrowthMachineDashboa
 import { GrowthRetargetingEngineSection } from "@/components/growth/GrowthRetargetingEngineSection";
 import { MarketplaceIntelligenceSection } from "@/components/growth/MarketplaceIntelligenceSection";
 import { MarketplaceFlywheelSection } from "@/components/growth/MarketplaceFlywheelSection";
+import { LeadPricingModePerformancePanel } from "@/components/growth/LeadPricingModePerformancePanel";
 import { SwarmSystemSection } from "@/components/growth/SwarmSystemSection";
 import { PlatformCoreSectionWithBrainV8Overlay } from "@/components/growth/PlatformCoreSectionWithBrainV8Overlay";
 import { AutonomousGrowthSystemSection } from "@/components/growth/AutonomousGrowthSystemSection";
@@ -157,6 +159,7 @@ export default async function GrowthMachineHubPage({
       {engineFlags.growthEngineV4 ? <GrowthEngineV4Section userId={userId} /> : null}
       {marketplaceIntelligenceFlags.marketplaceIntelligenceV1 ? <MarketplaceIntelligenceSection /> : null}
       {marketplaceFlywheelFlags.marketplaceFlywheelV1 && isAdmin ? <MarketplaceFlywheelSection /> : null}
+      {leadPricingResultsFlags.leadPricingResultsV1 && isAdmin ? <LeadPricingModePerformancePanel /> : null}
       <GrowthAdsPerformanceSection locale={locale} country={country} />
       <GrowthAutomationLoopSection />
       <GrowthFusionSystemSection />
@@ -267,6 +270,16 @@ export default async function GrowthMachineHubPage({
         growthBrokerSourcingV1={engineFlags.brokerSourcingV1}
         growthLandingPageV1={engineFlags.landingPageV1}
         growthClosingPlaybookV1={engineFlags.closingPlaybookV1}
+        growthFastDealResultsLoggingV1={engineFlags.fastDealResultsV1}
+        growthFastDealResultsPanelV1={engineFlags.fastDealResultsV1 && engineFlags.fastDealResultsPanelV1}
+        growthFastDealCityComparisonPanelV1={
+          engineFlags.fastDealCityComparisonV1 && engineFlags.fastDealCityComparisonPanelV1
+        }
+        growthCityPlaybookAdaptationPanelV1={
+          engineFlags.cityPlaybookAdaptationV1 &&
+          engineFlags.cityPlaybookAdaptationPanelV1 &&
+          engineFlags.fastDealCityComparisonV1
+        }
         growthLeadFollowupV1={engineFlags.leadFollowupV1}
         growthBrokerClosingAdvancedV1={engineFlags.brokerClosingAdvancedV1}
         growthScalingBlueprintV1={engineFlags.scalingBlueprintV1}
@@ -276,7 +289,50 @@ export default async function GrowthMachineHubPage({
         growthAiAssistExecutionV1={engineFlags.aiAssistExecutionV1}
         growthBrokerCompetitionV1={engineFlags.brokerCompetitionV1}
         growthScaleSystemV1={engineFlags.scaleSystemV1}
+        growthExecutionResultsPanelV1={
+          engineFlags.growthExecutionResultsV1 && engineFlags.growthExecutionResultsPanelV1
+        }
+        growthMarketExpansionPanelV1={
+          engineFlags.marketExpansionV1 &&
+          engineFlags.growthMarketExpansionPanelV1 &&
+          engineFlags.fastDealCityComparisonV1
+        }
+        growthWeeklyReviewPanelV1={
+          engineFlags.weeklyReviewV1 && engineFlags.growthWeeklyReviewPanelV1
+        }
+        growthCapitalAllocationPanelV1={
+          engineFlags.capitalAllocationV1 && engineFlags.capitalAllocationPanelV1
+        }
+        growthAdaptiveIntelligencePanelV1={
+          engineFlags.adaptiveIntelligenceV1 && engineFlags.adaptiveIntelligencePanelV1
+        }
+        growthExecutionPlannerPanelV1={
+          engineFlags.executionPlannerV1 && engineFlags.executionPlannerPanelV1
+        }
+        growthTeamCoordinationPanelV1={
+          engineFlags.teamCoordinationV1 && engineFlags.teamCoordinationPanelV1
+        }
+        growthExecutionAccountabilityPanelV1={
+          engineFlags.executionAccountabilityV1 && engineFlags.executionAccountabilityPanelV1
+        }
+        growthExecutionAccountabilitySyncV1={engineFlags.executionAccountabilityV1}
+        growthWeeklyTeamReviewPanelV1={
+          engineFlags.weeklyTeamReviewV1 && engineFlags.weeklyTeamReviewPanelV1
+        }
+        growthRevenueForecastPanelV1={
+          engineFlags.revenueForecastV1 && engineFlags.revenueForecastPanelV1
+        }
+        viewerUserId={userId}
         autonomousMarketplaceV1={engineFlags.autonomousMarketplaceV1}
+        growthInvestorDashboardPanelV1={
+          engineFlags.investorDashboardV1 && engineFlags.investorDashboardPanelV1
+        }
+        growthInvestorSharePanelV1={
+          engineFlags.investorShareLinkV1 &&
+          engineFlags.investorSharePanelV1 &&
+          engineFlags.investorDashboardV1 &&
+          engineFlags.investorDashboardPanelV1
+        }
         investorPitchV1={engineFlags.investorPitchV1}
         cityDominationV1={engineFlags.cityDominationV1}
         scaleRoadmapV1={engineFlags.scaleRoadmapV1}

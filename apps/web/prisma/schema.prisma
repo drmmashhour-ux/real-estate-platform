@@ -355,6 +355,7 @@ model User {
   identityVerifications                IdentityVerification[]
   bnhubTrustSimpleDisputesReported     BnhubTrustSimpleDispute[]             @relation("BnhubTrustSimpleDisputeReporter")
   brokerVerifications                  BrokerVerification[]
+  brokerServiceProfile                 BrokerServiceProfile?
   brokerActivityScores                 BrokerActivityScore[]
   transactionsAsBuyer                  RealEstateTransaction[]               @relation("TransactionBuyer")
   transactionsAsSeller                 RealEstateTransaction[]               @relation("TransactionSeller")
@@ -458,6 +459,9 @@ model User {
   brokerTaxReviewsPerformed            BrokerTaxRegistration[]               @relation("BrokerTaxReviewedBy")
   partyRevenueLedgerEntries            PartyRevenueLedgerEntry[]
   leadsAsPlatformUser                  Lead[]                                @relation("LeadPlatformUser")
+  leadPricingOverridesCreated          LeadPricingOverride[]                 @relation("LeadPricingOverrideCreator")
+  leadPricingOverridesCleared          LeadPricingOverride[]                 @relation("LeadPricingOverrideClearer")
+  marketplaceFlywheelActionsCreated    MarketplaceFlywheelAction[]           @relation("MarketplaceFlywheelActionCreator")
   internalCrmTelemetryEvents           InternalCrmEvent[]
   aiUserActivityLogs                   AiUserActivityLog[]
   aiInteractionLogs                    AiInteractionLog[]
@@ -7395,6 +7399,19 @@ model BrokerVerification {
   updatedAt          DateTime           @updatedAt @map("updated_at")
 
   @@map("broker_verifications")
+}
+
+/// Structured service areas / specializations / languages for routing — explicit broker or admin edits only (JSON payload).
+model BrokerServiceProfile {
+  id        String   @id @default(cuid())
+  brokerId  String   @unique @map("broker_id")
+  broker    User     @relation(fields: [brokerId], references: [id], onDelete: Cascade)
+  payload   Json     @map("payload")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([brokerId])
+  @@map("broker_service_profiles")
 }
 
 // Quebec / Canada broker tax registration (BN, GST, QST) — provided by broker; format-checked only.
@@ -16983,6 +17000,8 @@ model Lead {
   workspace                  EnterpriseWorkspace?        @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
   playbookExecutions         PlaybookExecution[]
   revenueOpportunities       RevenueOpportunity[]
+  leadPricingOverrides       LeadPricingOverride[]
+  leadPricingResultObservations LeadPricingResultObservation[]
   brokerBillingLead          BrokerLead?
   salesAssignment            SalesAssignment?
   lecipmCrmPipelineLeads     LecipmCrmPipelineLead[]     @relation("LecipmCrmPipelinePlatformLead")
@@ -17024,6 +17043,126 @@ model Lead {
   @@index([executionStage])
   @@index([aiPriority])
   @@index([aiScore])
+}
+
+/**
+ * Internal operator advisory override for lead pricing review — does not change Stripe, unlock price, or public surfaces.
+ */
+model LeadPricingOverride {
+  id                   String    @id @default(cuid())
+  leadId               String    @map("lead_id")
+  lead                 Lead      @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  /** Revenue-engine reference (CAD dollars) at time of decision. */
+  basePrice            Int       @map("base_price")
+  /** Monetization control primary suggested price (CAD dollars) at time of decision. */
+  systemSuggestedPrice Int       @map("system_suggested_price")
+  /** Operator-entered advisory figure (CAD dollars). */
+  overridePrice        Int       @map("override_price")
+  reason               String    @db.Text
+  createdByUserId      String    @map("created_by_user_id")
+  createdBy            User      @relation("LeadPricingOverrideCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  status               String    @default("active") @db.VarChar(16)
+  clearedAt            DateTime? @map("cleared_at")
+  clearedByUserId      String?   @map("cleared_by_user_id")
+  clearedBy            User?     @relation("LeadPricingOverrideClearer", fields: [clearedByUserId], references: [id], onDelete: SetNull)
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+
+  @@index([leadId, status])
+  @@index([leadId, createdAt])
+  @@map("lead_pricing_overrides")
+}
+
+/**
+ * Internal lead pricing advisory outcome tracking — not used for live pricing; no payment side effects.
+ */
+model LeadPricingResultObservation {
+  id                     String    @id @default(cuid())
+  leadId                 String    @map("lead_id")
+  lead                   Lead      @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  /** baseline | quality_weighted | demand_weighted | conservative | aggressive | override */
+  pricingModeUsed        String    @map("pricing_mode_used") @db.VarChar(32)
+  displayedAdvisoryPrice Int       @map("displayed_advisory_price")
+  basePrice              Int       @map("base_price")
+  confidenceLevel        String    @map("confidence_level") @db.VarChar(16)
+  measuredAt             DateTime  @default(now()) @map("measured_at")
+  /** used | ignored | overridden | cleared */
+  operatorActionTaken    String?   @map("operator_action_taken") @db.VarChar(24)
+  baselineSnapshotJson   Json      @map("baseline_snapshot_json")
+  evaluatedAt            DateTime? @map("evaluated_at")
+  /** positive | neutral | negative | insufficient_data */
+  outcomeBand            String?   @map("outcome_band") @db.VarChar(24)
+  outcomeExplanation     String?   @map("outcome_explanation") @db.Text
+  outcomeWarningsJson    Json?     @map("outcome_warnings_json")
+
+  @@index([leadId, measuredAt])
+  @@index([pricingModeUsed, outcomeBand])
+  @@map("lead_pricing_result_observations")
+}
+
+/**
+ * Operator-tracked flywheel action linked to a flywheel insight — tracking & learning only; no campaign execution.
+ */
+model MarketplaceFlywheelAction {
+  id                       String                           @id @default(cuid())
+  /**
+   * broker_acquisition | demand_generation | supply_growth | conversion_fix | pricing_adjustment
+   */
+  type                     String                           @db.VarChar(40)
+  /** Stable insight id from flywheel analysis (same string shown in UI). */
+  insightId                String                           @map("insight_id") @db.VarChar(140)
+  /**
+   * broker_gap | demand_gap | supply_gap | conversion_opportunity | pricing_opportunity
+   */
+  insightType              String                           @map("insight_type") @db.VarChar(40)
+  /**
+   * proposed | acknowledged | in_progress | completed | abandoned
+   */
+  status                   String                           @db.VarChar(24)
+  note                     String?                          @db.Text
+  createdByUserId          String                           @map("created_by_user_id")
+  createdBy                User                             @relation("MarketplaceFlywheelActionCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  /** Rolling 30d baseline at creation — see `collectFlywheelMarketplaceMetrics`. */
+  baselineBrokers          Int                              @map("baseline_brokers")
+  baselineLeads30          Int                              @map("baseline_leads_30")
+  baselineListings         Int                              @map("baseline_listings")
+  /** Pipeline win rate (won|closed / leads30) at baseline. */
+  baselineConversionRate   Float                            @map("baseline_conversion_rate")
+  baselineUnlockRate       Float                            @map("baseline_unlock_rate")
+  /** Minimum days before first outcome evaluation is considered meaningful (advisory). */
+  evaluationWindowDays     Int                              @default(14) @map("evaluation_window_days")
+  createdAt                DateTime                         @default(now()) @map("created_at")
+  updatedAt                DateTime                         @updatedAt @map("updated_at")
+  outcomes                 MarketplaceFlywheelActionOutcome[]
+
+  @@index([insightId])
+  @@index([insightType, status])
+  @@index([createdAt])
+  @@map("marketplace_flywheel_actions")
+}
+
+/** One evaluated outcome snapshot for an action — auditable comparison vs baseline. */
+model MarketplaceFlywheelActionOutcome {
+  id                    String                   @id @default(cuid())
+  actionId              String                   @map("action_id")
+  action                MarketplaceFlywheelAction  @relation(fields: [actionId], references: [id], onDelete: Cascade)
+  measuredAt            DateTime                 @default(now()) @map("measured_at")
+  brokerCountDelta      Int                      @map("broker_count_delta")
+  leadCountDelta        Int                      @map("lead_count_delta")
+  listingCountDelta     Int                      @map("listing_count_delta")
+  /** Δ win rate (pipeline), same definition as baseline. */
+  conversionRateDelta   Float                    @map("conversion_rate_delta")
+  unlockRateDelta       Float                    @map("unlock_rate_delta")
+  /** Reserved — always null in v1 (no revenue engine coupling). */
+  revenueDelta          Int?                     @map("revenue_delta")
+  /**
+   * positive | neutral | negative | insufficient_data
+   */
+  outcomeScore          String                   @map("outcome_score") @db.VarChar(24)
+  explanation           String                   @db.Text
+
+  @@index([actionId, measuredAt])
+  @@map("marketplace_flywheel_action_outcomes")
 }
 
 /// Unified telemetry for internal CRM (BNHub + LECIPM): views, clicks, bookings — complements `TrafficEvent` and `AiUserActivityLog`.
@@ -19124,6 +19263,34 @@ model FormActivity {
   createdAt        DateTime       @default(now())
 
   @@index([formSubmissionId])
+}
+
+/// Fast Deal Engine — operator-attributed measurement only (no outreach automation).
+model FastDealSourceEvent {
+  id              String   @id @default(cuid())
+  sourceType      String   @map("source_type") @db.VarChar(32)
+  sourceSubType   String   @map("source_sub_type") @db.VarChar(80)
+  createdAt       DateTime @default(now()) @map("created_at")
+  metadataJson    Json?    @map("metadata_json")
+
+  @@index([sourceType, createdAt])
+  @@index([sourceSubType, createdAt])
+  @@map("fast_deal_source_events")
+}
+
+/// Fast Deal Engine — downstream outcome tags (manual / traceable; not causal proof).
+model FastDealOutcome {
+  id            String    @id @default(cuid())
+  sourceEventId String?   @map("source_event_id")
+  leadId        String?   @map("lead_id")
+  brokerId      String?   @map("broker_id")
+  outcomeType   String    @map("outcome_type") @db.VarChar(48)
+  createdAt     DateTime  @default(now()) @map("created_at")
+  metadataJson  Json?     @map("metadata_json")
+
+  @@index([outcomeType, createdAt])
+  @@index([leadId])
+  @@map("fast_deal_outcomes")
 }
 
 /// Client quotes for marketing / trust sections (admin-moderated).

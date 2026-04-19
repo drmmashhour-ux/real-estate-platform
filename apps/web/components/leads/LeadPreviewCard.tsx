@@ -108,10 +108,12 @@ export function LeadPreviewCard({
             <span aria-hidden>🔒</span>
             <span className="text-sm font-semibold">Unlock this lead</span>
           </div>
-          <p className="mt-1 text-lg font-bold text-white">
+          <p className="mt-1 text-[10px] font-medium uppercase tracking-wide text-slate-500">Base price</p>
+          <p className="mt-0.5 text-lg font-bold text-white">
             ${unlockPriceCad.toLocaleString(undefined, { maximumFractionDigits: 0 })}{" "}
             <span className="text-xs font-normal text-slate-400">CAD</span>
           </p>
+          <p className="mt-1 text-[10px] text-slate-500">Checkout uses this anchor — advisory suggestions above do not auto-apply.</p>
           <div className="mt-3">
             <LeadUnlockButton leadId={leadId} useMonetizationUnlockApi={useMonetizationUnlockApi} />
           </div>

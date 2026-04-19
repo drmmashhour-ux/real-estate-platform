@@ -38,7 +38,7 @@ export function buildLeadMonetizationReasons(input: {
     if (input.demandLevel === "high") {
       out.push({
         type: "demand",
-        label: "Demand signal",
+        label: "High demand lead",
         description: "High recent demand signals support a higher advisory range — still not a guaranteed market price.",
       });
     } else if (input.demandLevel === "medium") {

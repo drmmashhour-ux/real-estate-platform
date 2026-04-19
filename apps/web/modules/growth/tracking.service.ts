@@ -28,6 +28,10 @@ export const GROWTH_SERVER_ONLY_EVENTS = new Set<GrowthEventNameType>([
   GrowthEventName.LISTING_CREATED,
   GrowthEventName.DEAL_CREATED,
   GrowthEventName.LEAD_CAPTURE,
+  GrowthEventName.GROWTH_EXECUTION_AI_VIEW,
+  GrowthEventName.GROWTH_EXECUTION_AI_COPY,
+  GrowthEventName.GROWTH_EXECUTION_AI_ACK,
+  GrowthEventName.GROWTH_EXECUTION_AI_IGNORE,
 ]);
 
 /** Subset allowed from `/api/analytics/track` ingest (deterministic, non-repudiation marketing signals). */

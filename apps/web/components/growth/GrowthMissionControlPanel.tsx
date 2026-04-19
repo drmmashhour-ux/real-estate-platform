@@ -3,9 +3,60 @@
 import * as React from "react";
 import Link from "next/link";
 import type { GrowthMissionControlSummary } from "@/modules/growth/growth-mission-control.types";
+import type { MissionControlActionBundle, MissionControlActionItem } from "@/modules/growth/growth-mission-control-action.types";
 import type { GrowthPolicyEnforcementSnapshot } from "@/modules/growth/growth-policy-enforcement.types";
 import { applyPolicyToMissionControlPromotion } from "@/modules/growth/growth-policy-enforcement-bridge.service";
+import { buildMissionControlHref } from "@/modules/growth/growth-mission-control-nav.constants";
+import { growthMissionControlFlags } from "@/config/feature-flags";
 import { GrowthGovernancePolicyDomainBadge } from "./GrowthGovernancePolicyDomainBadge";
+import { GrowthMissionSessionPanel } from "./GrowthMissionSessionPanel";
+
+function fireMissionControlActionTelemetry(
+  navTarget: MissionControlActionItem["navTarget"],
+  actionId: string,
+  role: "top" | "list",
+): void {
+  try {
+    void fetch("/api/growth/mission-control/action-click", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ navTarget, actionId, role }),
+    });
+  } catch {
+    /* noop */
+  }
+}
+
+function MissionControlActionLink({
+  locale,
+  country,
+  action,
+  role,
+  compact,
+}: {
+  locale: string;
+  country: string;
+  action: MissionControlActionItem;
+  role: "top" | "list";
+  compact?: boolean;
+}) {
+  const href = buildMissionControlHref(locale, country, action.navTarget, action.queryParams);
+  const label = action.navTarget === "broker_team_admin" ? "Open admin" : "Go";
+  return (
+    <Link
+      href={href}
+      onClick={() => fireMissionControlActionTelemetry(action.navTarget, action.id, role)}
+      className={
+        compact
+          ? "shrink-0 rounded-md border border-violet-500/45 bg-violet-950/50 px-2.5 py-1 text-[11px] font-semibold text-violet-100 hover:bg-violet-900/60"
+          : "inline-flex rounded-md border border-zinc-600 bg-zinc-900/80 px-2 py-1 text-[11px] font-medium text-zinc-100 hover:border-zinc-500"
+      }
+    >
+      {label}
+    </Link>
+  );
+}
 
 function statusBadge(status: GrowthMissionControlSummary["status"]): string {
   if (status === "strong") return "border-emerald-500/50 bg-emerald-950/35 text-emerald-100";
@@ -35,6 +86,7 @@ export function GrowthMissionControlPanel({
 }) {
   const base = `/${locale}/${country}/dashboard/growth`;
   const [summary, setSummary] = React.useState<GrowthMissionControlSummary | null>(null);
+  const [actionBundle, setActionBundle] = React.useState<MissionControlActionBundle | null>(null);
   const [err, setErr] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(true);
 
@@ -42,13 +94,18 @@ export function GrowthMissionControlPanel({
     let cancelled = false;
     void fetch("/api/growth/mission-control", { credentials: "same-origin" })
       .then(async (r) => {
-        const j = (await r.json()) as { error?: string; summary?: GrowthMissionControlSummary };
+        const j = (await r.json()) as {
+          error?: string;
+          summary?: GrowthMissionControlSummary;
+          actionBundle?: MissionControlActionBundle;
+        };
         if (!r.ok) throw new Error(j.error ?? "Mission control unavailable");
-        return j.summary ?? null;
+        return { summary: j.summary ?? null, actionBundle: j.actionBundle ?? null };
       })
-      .then((s) => {
+      .then((payload) => {
         if (!cancelled) {
-          setSummary(s);
+          setSummary(payload.summary);
+          setActionBundle(payload.actionBundle);
           setLoading(false);
         }
       })
@@ -97,6 +154,64 @@ export function GrowthMissionControlPanel({
         <p className="mt-2 rounded border border-amber-500/35 bg-amber-950/25 px-2 py-1.5 text-[11px] text-amber-100/95">
           {promoGate.note}
         </p>
+      ) : null}
+
+      {actionBundle?.topAction ? (
+        <div className="mt-3 rounded-lg border border-amber-500/30 bg-amber-950/20 p-3">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-amber-200/90">Top operator action</p>
+          <p className="mt-1 text-sm font-semibold text-white">{actionBundle.topAction.title}</p>
+          <p className="mt-1 text-[11px] leading-relaxed text-zinc-300">{actionBundle.topAction.rationale}</p>
+          <div className="mt-2 flex flex-wrap items-start justify-between gap-2">
+            <p className="min-w-0 flex-1 text-[10px] text-zinc-500">
+              Look for: {actionBundle.topAction.operatorHint}
+            </p>
+            <MissionControlActionLink
+              locale={locale}
+              country={country}
+              action={actionBundle.topAction}
+              role="top"
+              compact
+            />
+          </div>
+          <p className="mt-1 text-[10px] text-zinc-600">Done means: {actionBundle.topAction.doneHint}</p>
+        </div>
+      ) : null}
+
+      {actionBundle && actionBundle.actionItems.length > 0 ? (
+        <div className="mt-3 rounded-lg border border-zinc-700/80 bg-zinc-950/40 p-3">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">Next actions</p>
+          <ul className="mt-2 space-y-2">
+            {actionBundle.actionItems.map((a) => (
+              <li
+                key={a.id}
+                className="flex flex-wrap items-start justify-between gap-2 border-b border-zinc-800/90 pb-2 last:border-b-0 last:pb-0"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-medium text-zinc-100">{a.title}</p>
+                  <p className="mt-0.5 text-[10px] text-zinc-500">{a.rationale}</p>
+                  <p className="mt-0.5 text-[10px] text-zinc-600">
+                    Verify: {a.operatorHint} · Done: {a.doneHint}
+                  </p>
+                </div>
+                <MissionControlActionLink locale={locale} country={country} action={a} role="list" />
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {growthMissionControlFlags.growthMissionSessionPanelV1 ? (
+        <GrowthMissionSessionPanel
+          locale={locale}
+          country={country}
+          summary={summary}
+          actionBundle={
+            actionBundle ?? {
+              actionItems: [],
+              generatedAt: new Date().toISOString(),
+            }
+          }
+        />
       ) : null}
 
       {summary.missionFocus ? (

@@ -3,9 +3,13 @@ import { getGuestId } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
 import { LeadDetailClient } from "./lead-detail-client";
 import {
+  brokerLeadDistributionFlags,
   brokerRoutingFlags,
   dynamicPricingFlags,
   leadMonetizationControlFlags,
+  leadPricingExperimentsFlags,
+  leadPricingOverrideFlags,
+  leadPricingResultsFlags,
   leadQualityFlags,
   smartRoutingV2Flags,
 } from "@/config/feature-flags";
@@ -42,6 +46,12 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
     brokerRoutingFlags.brokerRoutingV1 &&
     brokerRoutingFlags.brokerRoutingPanelV1;
 
+  const showLeadDistributionPanel =
+    user?.role === "ADMIN" &&
+    brokerLeadDistributionFlags.brokerLeadDistributionV1 &&
+    brokerLeadDistributionFlags.brokerLeadDistributionPanelV1 &&
+    brokerRoutingFlags.brokerRoutingV1;
+
   const showLeadQualityPanel = user?.role === "ADMIN" && leadQualityFlags.leadQualityV1;
   const showDynamicPricingPanel = user?.role === "ADMIN" && dynamicPricingFlags.dynamicPricingV1;
   const showRoutingControlV2 =
@@ -49,15 +59,32 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   const showMonetizationControlPanel =
     user?.role === "ADMIN" && leadMonetizationControlFlags.monetizationControlV1;
 
+  const showLeadPricingExperimentsPanel =
+    user?.role === "ADMIN" && leadPricingExperimentsFlags.leadPricingExperimentsV1;
+
+  const showLeadPricingOverridePanel =
+    user?.role === "ADMIN" &&
+    leadPricingOverrideFlags.leadPricingOverrideV1 &&
+    leadPricingOverrideFlags.leadPricingOverridePanelV1;
+
+  const showLeadPricingResultsPanel =
+    user?.role === "ADMIN" &&
+    leadPricingResultsFlags.leadPricingResultsV1 &&
+    leadPricingResultsFlags.leadPricingResultsPanelV1;
+
   return (
     <LeadDetailClient
       leadId={id}
       viralInviteUrl={viralInviteUrl}
       showRoutingPanel={showRoutingPanel}
+      showLeadDistributionPanel={showLeadDistributionPanel}
       showRoutingControlV2={showRoutingControlV2}
       showLeadQualityPanel={showLeadQualityPanel}
       showDynamicPricingPanel={showDynamicPricingPanel}
       showMonetizationControlPanel={showMonetizationControlPanel}
+      showLeadPricingExperimentsPanel={showLeadPricingExperimentsPanel}
+      showLeadPricingOverridePanel={showLeadPricingOverridePanel}
+      showLeadPricingResultsPanel={showLeadPricingResultsPanel}
     />
   );
 }

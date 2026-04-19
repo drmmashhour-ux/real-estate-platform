@@ -25,6 +25,7 @@ export function extractLeadCity(lead: { aiExplanation: unknown; message: string 
 
 export function extractEvaluationSnapshot(aiExplanation: unknown): {
   city?: string;
+  province?: string;
   address?: string;
   propertyType?: string;
   estimate?: number;
@@ -42,6 +43,7 @@ export function extractEvaluationSnapshot(aiExplanation: unknown): {
   if (!prop && !valuation) return null;
   return {
     city: typeof prop?.city === "string" ? prop.city : undefined,
+    province: typeof prop?.province === "string" ? prop.province : undefined,
     address: typeof prop?.address === "string" ? prop.address : undefined,
     propertyType: typeof prop?.propertyType === "string" ? prop.propertyType : undefined,
     sqft: typeof prop?.surfaceSqft === "number" ? prop.surfaceSqft : undefined,

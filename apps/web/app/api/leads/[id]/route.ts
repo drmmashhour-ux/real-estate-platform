@@ -21,6 +21,9 @@ import { buildLeadQualitySummary } from "@/modules/leads/lead-quality.service";
 import {
   dynamicPricingFlags,
   leadMonetizationControlFlags,
+  leadPricingExperimentsFlags,
+  leadPricingOverrideFlags,
+  leadPricingResultsFlags,
   leadQualityFlags,
 } from "@/config/feature-flags";
 import { buildLeadMonetizationControlSummary } from "@/modules/leads/lead-monetization-control.service";
@@ -32,6 +35,13 @@ import { computeLeadDemandLevel, computeLeadDemandScore } from "@/modules/leads/
 import { computeBrokerInterestLevel, computeDynamicLeadPrice } from "@/modules/leads/dynamic-pricing.service";
 import { buildLeadRoutingSummary } from "@/modules/broker/routing/broker-routing.service";
 import type { DynamicPricingSuggestion } from "@/modules/leads/dynamic-pricing.types";
+import {
+  buildLeadPricingComparisonSummary,
+  buildLeadPricingExperiments,
+} from "@/modules/leads/lead-pricing-experiments.service";
+import { resolveInternalLeadPricingDisplay } from "@/modules/leads/lead-pricing-display.service";
+import { getActiveLeadPricingOverride } from "@/modules/leads/lead-pricing-override.service";
+import { getLeadPricingResultsForAdmin } from "@/modules/leads/lead-pricing-results.service";
 
 export const dynamic = "force-dynamic";
 
@@ -219,19 +229,66 @@ export async function GET(
         })
       : undefined;
 
-    const leadMonetizationControlV1 =
-      viewer.role === "ADMIN" && leadMonetizationControlFlags.monetizationControlV1
-        ? buildLeadMonetizationControlSummary({
+    const adminMonetizationBundle =
+      viewer.role === "ADMIN" &&
+      (leadMonetizationControlFlags.monetizationControlV1 ||
+        leadPricingExperimentsFlags.leadPricingExperimentsV1 ||
+        leadPricingOverrideFlags.leadPricingOverrideV1);
+
+    const leadMonetizationControlV1 = adminMonetizationBundle
+      ? buildLeadMonetizationControlSummary({
+          leadId: lead.id,
+          leadPricing,
+          leadQuality: leadQualityV1,
+          dynamicPricing: dynamicPricingV1,
+          demandLevel,
+          demandScore,
+          brokerInterestLevel,
+          interactionCount: interactionTotal,
+          regionPeerLeadCount,
+          conversionProbability: lead.conversionProbability,
+        })
+      : undefined;
+
+    let activeLeadPricingOverride = null as Awaited<ReturnType<typeof getActiveLeadPricingOverride>>;
+    if (
+      viewer.role === "ADMIN" &&
+      (leadPricingOverrideFlags.leadPricingOverrideV1 ||
+        leadPricingExperimentsFlags.leadPricingExperimentsV1)
+    ) {
+      activeLeadPricingOverride = await getActiveLeadPricingOverride(lead.id);
+    }
+
+    const leadPricingComparisonV1 =
+      viewer.role === "ADMIN" &&
+      leadPricingExperimentsFlags.leadPricingExperimentsV1 &&
+      leadMonetizationControlV1
+        ? buildLeadPricingComparisonSummary({
             leadId: lead.id,
-            leadPricing,
-            leadQuality: leadQualityV1,
-            dynamicPricing: dynamicPricingV1,
-            demandLevel,
-            demandScore,
-            brokerInterestLevel,
-            interactionCount: interactionTotal,
-            regionPeerLeadCount,
-            conversionProbability: lead.conversionProbability,
+            monetization: leadMonetizationControlV1,
+            experimentResults: buildLeadPricingExperiments({
+              leadId: lead.id,
+              basePrice: leadMonetizationControlV1.basePrice,
+              monetization: leadMonetizationControlV1,
+              quality: leadQualityV1,
+              dynamic: dynamicPricingV1,
+              historicalConversion: lead.conversionProbability,
+            }),
+            activeOverride: activeLeadPricingOverride,
+          })
+        : undefined;
+
+    const leadPricingActiveOverrideV1 =
+      viewer.role === "ADMIN" && leadPricingOverrideFlags.leadPricingOverrideV1
+        ? activeLeadPricingOverride
+        : undefined;
+
+    const leadPricingInternalDisplayV1 =
+      viewer.role === "ADMIN" && leadMonetizationControlV1
+        ? resolveInternalLeadPricingDisplay({
+            basePrice: leadMonetizationControlV1.basePrice,
+            monetizationSuggestedPrice: leadMonetizationControlV1.suggestedPrice,
+            activeOverride: activeLeadPricingOverride ?? undefined,
           })
         : undefined;
 
@@ -293,6 +350,14 @@ export async function GET(
       leadPricing,
       dynamicPricingV1,
       leadMonetizationControlV1,
+      ...(viewer.role === "ADMIN"
+        ? {
+            leadPricingComparisonV1,
+            leadPricingActiveOverrideV1,
+            leadPricingInternalDisplayV1,
+            leadPricingResultsV1,
+          }
+        : {}),
     };
     return Response.json(response);
   } catch (e) {

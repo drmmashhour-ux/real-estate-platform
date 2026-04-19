@@ -71,6 +71,12 @@ export function ImmoContactModal({
   const [licenseVersion, setLicenseVersion] = useState<string>(CONTENT_LICENSE_VERSION);
   const [usedAiAssist, setUsedAiAssist] = useState(false);
   const [composeBusy, setComposeBusy] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [preferredCity, setPreferredCity] = useState("");
+  const [preferredProvince, setPreferredProvince] = useState("");
+  const [propertyType, setPropertyType] = useState("");
+  const [timeline, setTimeline] = useState("");
+  const [preferredLanguage, setPreferredLanguage] = useState("");
 
   const reset = useCallback(() => {
     setName("");
@@ -87,6 +93,12 @@ export function ImmoContactModal({
     setLicenseOpen(false);
     setUsedAiAssist(false);
     setComposeBusy(false);
+    setDetailsOpen(false);
+    setPreferredCity("");
+    setPreferredProvince("");
+    setPropertyType("");
+    setTimeline("");
+    setPreferredLanguage("");
   }, []);
 
   const handleClose = () => {
@@ -111,6 +123,11 @@ export function ImmoContactModal({
       locale: typeof navigator !== "undefined" ? navigator.language : "en",
       sourcePage: typeof window !== "undefined" ? window.location.pathname : "",
       aiAssistUsed: usedAiAssist,
+      ...(preferredCity.trim() ? { preferredCity: preferredCity.trim() } : {}),
+      ...(preferredProvince.trim() ? { preferredProvince: preferredProvince.trim() } : {}),
+      ...(propertyType.trim() ? { propertyType: propertyType.trim() } : {}),
+      ...(timeline.trim() ? { timeline: timeline.trim() } : {}),
+      ...(preferredLanguage.trim() ? { preferredLanguage: preferredLanguage.trim() } : {}),
     }),
     [
       name,
@@ -126,6 +143,11 @@ export function ImmoContactModal({
       consentSms,
       consentVoice,
       usedAiAssist,
+      preferredCity,
+      preferredProvince,
+      propertyType,
+      timeline,
+      preferredLanguage,
     ]
   );
 
@@ -335,6 +357,70 @@ export function ImmoContactModal({
                     </select>
                   </div>
                 </div>
+              </div>
+
+              <div className="rounded-xl border border-slate-800 bg-slate-950/40">
+                <button
+                  type="button"
+                  onClick={() => setDetailsOpen((v) => !v)}
+                  className="flex w-full items-center justify-between px-3 py-2.5 text-left text-xs font-medium text-slate-400 hover:bg-slate-900/80"
+                >
+                  <span>Location & preferences (optional — improves routing)</span>
+                  <span className="text-slate-600">{detailsOpen ? "−" : "+"}</span>
+                </button>
+                {detailsOpen ? (
+                  <div className="space-y-3 border-t border-slate-800 px-3 pb-3 pt-2">
+                    <div>
+                      <label className="mb-1 block text-xs text-slate-500">
+                        City or neighbourhood you are focused on
+                      </label>
+                      <input
+                        value={preferredCity}
+                        onChange={(e) => setPreferredCity(e.target.value)}
+                        className="min-h-11 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 text-sm text-white placeholder:text-slate-600"
+                        placeholder="e.g. Quebec City, Old Montreal"
+                        autoComplete="address-level2"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs text-slate-500">Province / state</label>
+                      <input
+                        value={preferredProvince}
+                        onChange={(e) => setPreferredProvince(e.target.value)}
+                        className="min-h-11 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 text-sm text-white placeholder:text-slate-600"
+                        placeholder="e.g. QC, ON"
+                        autoComplete="address-level1"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs text-slate-500">Property type</label>
+                      <input
+                        value={propertyType}
+                        onChange={(e) => setPropertyType(e.target.value)}
+                        className="min-h-11 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 text-sm text-white placeholder:text-slate-600"
+                        placeholder="Condo, single-family…"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs text-slate-500">Timeline</label>
+                      <input
+                        value={timeline}
+                        onChange={(e) => setTimeline(e.target.value)}
+                        className="min-h-11 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 text-sm text-white placeholder:text-slate-600"
+                        placeholder="When you hope to move"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs text-slate-500">Preferred language</label>
+                      <input
+                        value={preferredLanguage}
+                        onChange={(e) => setPreferredLanguage(e.target.value)}
+                        className="min-h-11 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 text-sm text-white placeholder:text-slate-600"
+                        placeholder="French, English…"
+                      />
+                    </div>
+                  </div>
+                ) : null}
               </div>
 
               <div>

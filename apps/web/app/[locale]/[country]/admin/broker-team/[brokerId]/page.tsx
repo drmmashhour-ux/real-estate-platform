@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { BrokerTeamBrokerDetail } from "@/components/broker/BrokerTeamBrokerDetail";
+import { brokerTeamViewFlags, brokerTeamViewPanelFlags } from "@/config/feature-flags";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -11,6 +12,23 @@ export default async function AdminBrokerTeamDetailPage({
 }) {
   const { locale, country, brokerId } = await params;
   const pathPrefix = `/${locale}/${country}`;
+
+  if (!brokerTeamViewFlags.brokerTeamViewV1 || !brokerTeamViewPanelFlags.brokerTeamViewPanelV1) {
+    return (
+      <div className="mx-auto max-w-2xl px-4 py-16 text-center text-sm text-slate-400">
+        <p className="text-white">Broker team coaching is disabled.</p>
+        <p className="mt-2">
+          Enable <code className="rounded bg-white/10 px-1 py-0.5 text-xs">FEATURE_BROKER_TEAM_VIEW_V1</code> and{" "}
+          <code className="rounded bg-white/10 px-1 py-0.5 text-xs">FEATURE_BROKER_TEAM_VIEW_PANEL_V1</code>.
+        </p>
+        <div className="mt-6">
+          <Link href={`${pathPrefix}/admin`} className="text-sky-300 hover:underline">
+            ← Admin home
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 text-white">

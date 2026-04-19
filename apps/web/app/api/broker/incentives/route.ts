@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
-import { brokerIncentivesFlags } from "@/config/feature-flags";
+import { brokerIncentivesFlags, brokerIncentivesPanelFlags } from "@/config/feature-flags";
 import { buildBrokerIncentiveSummary } from "@/modules/broker/incentives/broker-incentives-summary.service";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  if (!brokerIncentivesFlags.brokerIncentivesV1) {
+  if (!brokerIncentivesFlags.brokerIncentivesV1 || !brokerIncentivesPanelFlags.brokerIncentivesPanelV1) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 

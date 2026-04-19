@@ -32,7 +32,10 @@ import {
   brokerAiAssistFlags,
   brokerClosingFlags,
   brokerIncentivesFlags,
+  brokerIncentivesPanelFlags,
   brokerPerformanceFlags,
+  brokerPerformancePanelFlags,
+  brokerServiceProfileFlags,
 } from "@/config/feature-flags";
 import { BrokerAiAssistDailyPanel } from "@/components/broker/BrokerAiAssistDailyPanel";
 import { BrokerDealConversionConsole } from "@/components/broker/BrokerDealConversionConsole";
@@ -41,6 +44,7 @@ import { BrokerPerformancePanel } from "@/components/broker/BrokerPerformancePan
 import { HubJourneyBanner } from "@/components/journey/HubJourneyBanner";
 import { CollaborationStrip } from "@/components/collaboration/CollaborationStrip";
 import { ImmoDealRoomEntry } from "@/components/immo-deal-room/ImmoDealRoomEntry";
+import { BrokerServiceProfilePanel } from "@/components/broker/BrokerServiceProfilePanel";
 
 function fmtCommissionCents(cents: number | null | undefined): string {
   if (cents == null || cents <= 0) return "—";
@@ -219,10 +223,16 @@ export default async function BrokerHubPage({
         dbUser?.role === "BROKER" ? (
           <BrokerAiAssistDailyPanel accent={theme.accent} />
         ) : null}
-        {brokerPerformanceFlags.brokerPerformanceV1 && userId && dbUser?.role === "BROKER" ? (
+        {brokerPerformanceFlags.brokerPerformanceV1 &&
+        brokerPerformancePanelFlags.brokerPerformancePanelV1 &&
+        userId &&
+        dbUser?.role === "BROKER" ? (
           <BrokerPerformancePanel accent={theme.accent} />
         ) : null}
-        {brokerIncentivesFlags.brokerIncentivesV1 && userId && dbUser?.role === "BROKER" ? (
+        {brokerIncentivesFlags.brokerIncentivesV1 &&
+        brokerIncentivesPanelFlags.brokerIncentivesPanelV1 &&
+        userId &&
+        dbUser?.role === "BROKER" ? (
           <BrokerIncentivesPanel accent={theme.accent} />
         ) : null}
         <section className="grid gap-4 lg:grid-cols-2">
@@ -307,6 +317,11 @@ export default async function BrokerHubPage({
           <div className="mt-6 max-w-lg">
             <BrokerCityMarketSnapshot />
           </div>
+          {brokerServiceProfileFlags.brokerServiceProfilePanelV1 && dbUser?.role === "BROKER" ? (
+            <div className="mt-10">
+              <BrokerServiceProfilePanel />
+            </div>
+          ) : null}
         </section>
 
         {/* AI Action Center */}

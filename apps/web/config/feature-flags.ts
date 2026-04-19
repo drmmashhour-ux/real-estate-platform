@@ -118,6 +118,55 @@ export const engineFlags = {
   landingPageV1: envTrue("FEATURE_LANDING_PAGE_V1"),
   /** Fast Deal V2 — 48h human closing checklist. */
   closingPlaybookV1: envTrue("FEATURE_CLOSING_PLAYBOOK_V1"),
+  /** Fast Deal — measure sourcing / landing / playbook signals + outcomes (internal; no outreach automation). */
+  fastDealResultsV1: envTrue("FEATURE_FAST_DEAL_RESULTS_V1"),
+  /** Growth Machine dashboard panel for Fast Deal results loop (`FEATURE_FAST_DEAL_RESULTS_V1`). */
+  fastDealResultsPanelV1: envTrue("FEATURE_FAST_DEAL_RESULTS_PANEL_V1"),
+  /** Fast Deal city-by-city comparison engine (internal/admin). */
+  fastDealCityComparisonV1: envTrue("FEATURE_FAST_DEAL_CITY_COMPARISON_V1"),
+  /** Growth Machine panel for Fast Deal city comparison (`FEATURE_FAST_DEAL_CITY_COMPARISON_V1`). */
+  fastDealCityComparisonPanelV1: envTrue("FEATURE_FAST_DEAL_CITY_COMPARISON_PANEL_V1"),
+  /** Internal city playbook adaptation from Fast Deal comparison — guided suggestions only (`FEATURE_FAST_DEAL_CITY_COMPARISON_V1`). */
+  cityPlaybookAdaptationV1: envTrue("FEATURE_CITY_PLAYBOOK_ADAPTATION_V1"),
+  /** Growth Machine panel for city playbook adaptation (`FEATURE_CITY_PLAYBOOK_ADAPTATION_V1`). */
+  cityPlaybookAdaptationPanelV1: envTrue("FEATURE_CITY_PLAYBOOK_ADAPTATION_PANEL_V1"),
+  /** Measurement layer for AI assist / broker competition / scale panels — read-only aggregates (`FEATURE_GROWTH_*`). */
+  growthExecutionResultsV1: envTrue("FEATURE_GROWTH_EXECUTION_RESULTS_V1"),
+  /** Growth Machine panel for execution results summary (`FEATURE_GROWTH_EXECUTION_RESULTS_V1`). */
+  growthExecutionResultsPanelV1: envTrue("FEATURE_GROWTH_EXECUTION_RESULTS_PANEL_V1"),
+  /** Internal market expansion intelligence from city comparison (`FEATURE_FAST_DEAL_CITY_COMPARISON_V1`). */
+  marketExpansionV1: envTrue("FEATURE_MARKET_EXPANSION_V1"),
+  growthMarketExpansionPanelV1: envTrue("FEATURE_MARKET_EXPANSION_PANEL_V1"),
+  weeklyReviewV1: envTrue("FEATURE_WEEKLY_REVIEW_V1"),
+  growthWeeklyReviewPanelV1: envTrue("FEATURE_WEEKLY_REVIEW_PANEL_V1"),
+  /**
+   * Internal capital allocation engine — where to focus time/effort/budget (advisory; no money movement).
+   * @see docs/growth/capital-allocation-engine.md
+   */
+  capitalAllocationV1: envTrue("FEATURE_CAPITAL_ALLOCATION_V1"),
+  /** Growth Machine panel for capital allocation plan (`FEATURE_CAPITAL_ALLOCATION_V1`). */
+  capitalAllocationPanelV1: envTrue("FEATURE_CAPITAL_ALLOCATION_PANEL_V1"),
+  /** Approval-only execution planner — merges growth signals into Today / This week lists (`FEATURE_EXECUTION_PLANNER_V1`). */
+  executionPlannerV1: envTrue("FEATURE_EXECUTION_PLANNER_V1"),
+  /** Growth Machine panel for execution planner (`FEATURE_EXECUTION_PLANNER_V1`). */
+  executionPlannerPanelV1: envTrue("FEATURE_EXECUTION_PLANNER_PANEL_V1"),
+  /** Internal team coordination + assignments (`FEATURE_TEAM_COORDINATION_V1`). */
+  teamCoordinationV1: envTrue("FEATURE_TEAM_COORDINATION_V1"),
+  /** Growth Machine coordination panel (`FEATURE_TEAM_COORDINATION_V1`). */
+  teamCoordinationPanelV1: envTrue("FEATURE_TEAM_COORDINATION_PANEL_V1"),
+  /**
+   * Internal execution accountability store (read-only tracking; in-memory; no automation).
+   * @see docs/growth/execution-accountability-layer.md
+   */
+  executionAccountabilityV1: envTrue("FEATURE_EXECUTION_ACCOUNTABILITY_V1"),
+  /** Growth Machine panel for shared execution accountability summary. */
+  executionAccountabilityPanelV1: envTrue("FEATURE_EXECUTION_ACCOUNTABILITY_PANEL_V1"),
+  /** Weekly team operating review API — internal leadership summary. */
+  weeklyTeamReviewV1: envTrue("FEATURE_WEEKLY_TEAM_REVIEW_V1"),
+  weeklyTeamReviewPanelV1: envTrue("FEATURE_WEEKLY_TEAM_REVIEW_PANEL_V1"),
+  /** Revenue forecast illustration — CRM-based, advisory only. */
+  revenueForecastV1: envTrue("FEATURE_REVENUE_FORECAST_V1"),
+  revenueForecastPanelV1: envTrue("FEATURE_REVENUE_FORECAST_PANEL_V1"),
   /** Closing Engine V1 — lead follow-up copy cadence (manual send). */
   leadFollowupV1: envTrue("FEATURE_LEAD_FOLLOWUP_V1"),
   /** Closing Engine V1 — broker activation / urgency scripts (manual). */
@@ -150,6 +199,16 @@ export const engineFlags = {
   marketDominationV1: envTrue("FEATURE_MARKET_DOMINATION_V1"),
   /** Investor pitch V1 — static narrative slides (review before external use). */
   investorPitchV1: envTrue("FEATURE_INVESTOR_PITCH_V1"),
+  /** Auto-generated investor dashboard API — CRM + growth signals only (`FEATURE_INVESTOR_DASHBOARD_V1`). */
+  investorDashboardV1: envTrue("FEATURE_INVESTOR_DASHBOARD_V1"),
+  /** Growth Machine investor dashboard panel (pairs with investor dashboard API). */
+  investorDashboardPanelV1: envTrue("FEATURE_INVESTOR_DASHBOARD_PANEL_V1"),
+  /** Secure read-only investor share links — create/list/revoke API (pairs with investor dashboard). */
+  investorShareLinkV1: envTrue("FEATURE_INVESTOR_SHARE_LINK_V1"),
+  /** Internal Growth Machine panel to manage investor share links. */
+  investorSharePanelV1: envTrue("FEATURE_INVESTOR_SHARE_PANEL_V1"),
+  /** Public `/investor/share/[token]` read-only dashboard route. */
+  investorSharePublicV1: envTrue("FEATURE_INVESTOR_SHARE_PUBLIC_V1"),
   /** City domination V1 — 30-day human execution checklist. */
   cityDominationV1: envTrue("FEATURE_CITY_DOMINATION_V1"),
   /** Scale roadmap V1 — $0 → $10K → $100K → $1M milestones (advisory; local progress). */
@@ -198,6 +257,10 @@ export const engineFlags = {
   hubJourneyV1: envTrue("FEATURE_HUB_JOURNEY_V1"),
   /** Hub copilot — 1–3 explainable suggestions from journey + signals (no auto-send / no auto-exec; default off). */
   hubCopilotV1: envTrue("FEATURE_HUB_COPILOT_V1"),
+  /** Unified adaptive growth suggestions API (read-only, approval-based; no auto-exec). */
+  adaptiveIntelligenceV1: envTrue("FEATURE_ADAPTIVE_INTELLIGENCE_V1"),
+  /** Growth Machine panel for adaptive intelligence (requires API flag). */
+  adaptiveIntelligencePanelV1: envTrue("FEATURE_ADAPTIVE_INTELLIGENCE_PANEL_V1"),
 } as const;
 
 /** Alias grouping for CRO / retargeting durable learning (reads same env keys as engineFlags). */
@@ -250,12 +313,32 @@ export const marketplaceIntelligenceFlags = {
  */
 export const marketplaceFlywheelFlags = {
   marketplaceFlywheelV1: envTrue("FEATURE_MARKETPLACE_FLYWHEEL_V1"),
+  /** Operator-tracked flywheel actions + baseline snapshots (admin only). */
+  marketplaceFlywheelActionsV1: envTrue("FEATURE_MARKETPLACE_FLYWHEEL_ACTIONS_V1"),
+  /** Persisted outcome evaluations vs baseline metrics (admin only). */
+  marketplaceFlywheelOutcomesV1: envTrue("FEATURE_MARKETPLACE_FLYWHEEL_OUTCOMES_V1"),
+  /** Evidence-based growth action suggestions (read-only; no auto-execution). */
+  marketplaceFlywheelAutoSuggestV1: envTrue("FEATURE_MARKETPLACE_FLYWHEEL_AUTO_SUGGEST_V1"),
+  marketplaceFlywheelAutoSuggestPanelV1: envTrue("FEATURE_MARKETPLACE_FLYWHEEL_AUTO_SUGGEST_PANEL_V1"),
 } as const;
 
 export type MarketplaceFlywheelFlagKey = keyof typeof marketplaceFlywheelFlags;
 
 /** @see marketplaceFlywheelFlags.marketplaceFlywheelV1 */
 export const FEATURE_MARKETPLACE_FLYWHEEL_V1 = marketplaceFlywheelFlags.marketplaceFlywheelV1;
+
+/** @see marketplaceFlywheelFlags.marketplaceFlywheelActionsV1 */
+export const FEATURE_MARKETPLACE_FLYWHEEL_ACTIONS_V1 = marketplaceFlywheelFlags.marketplaceFlywheelActionsV1;
+
+/** @see marketplaceFlywheelFlags.marketplaceFlywheelOutcomesV1 */
+export const FEATURE_MARKETPLACE_FLYWHEEL_OUTCOMES_V1 = marketplaceFlywheelFlags.marketplaceFlywheelOutcomesV1;
+
+/** @see marketplaceFlywheelFlags.marketplaceFlywheelAutoSuggestV1 */
+export const FEATURE_MARKETPLACE_FLYWHEEL_AUTO_SUGGEST_V1 = marketplaceFlywheelFlags.marketplaceFlywheelAutoSuggestV1;
+
+/** @see marketplaceFlywheelFlags.marketplaceFlywheelAutoSuggestPanelV1 */
+export const FEATURE_MARKETPLACE_FLYWHEEL_AUTO_SUGGEST_PANEL_V1 =
+  marketplaceFlywheelFlags.marketplaceFlywheelAutoSuggestPanelV1;
 
 /**
  * LECIPM Reputation + Ranking Engine v1 — additive to existing BNHub ranking / ListingRankingScore.
@@ -768,6 +851,9 @@ export type GrowthSimulationFlagKey = keyof typeof growthSimulationFlags;
 export const growthMissionControlFlags = {
   growthMissionControlV1: envTrue("FEATURE_GROWTH_MISSION_CONTROL_V1"),
   growthMissionControlPanelV1: envTrue("FEATURE_GROWTH_MISSION_CONTROL_PANEL_V1"),
+  /** Focused operator session (guidance + progress, no autopilot) — default off. */
+  growthMissionSessionV1: envTrue("FEATURE_GROWTH_MISSION_SESSION_V1"),
+  growthMissionSessionPanelV1: envTrue("FEATURE_GROWTH_MISSION_SESSION_PANEL_V1"),
 } as const;
 
 export type GrowthMissionControlFlagKey = keyof typeof growthMissionControlFlags;
@@ -856,6 +942,47 @@ export const FEATURE_LEAD_MONETIZATION_CONTROL_V1 =
   leadMonetizationControlFlags.monetizationControlV1;
 
 /**
+ * Internal lead pricing experiments + operator override records (admin only; advisory; default off).
+ */
+export const leadPricingExperimentsFlags = {
+  leadPricingExperimentsV1: envTrue("FEATURE_LEAD_PRICING_EXPERIMENTS_V1"),
+} as const;
+
+export type LeadPricingExperimentsFlagKey = keyof typeof leadPricingExperimentsFlags;
+
+/** @see leadPricingExperimentsFlags.leadPricingExperimentsV1 */
+export const FEATURE_LEAD_PRICING_EXPERIMENTS_V1 = leadPricingExperimentsFlags.leadPricingExperimentsV1;
+
+export const leadPricingOverrideFlags = {
+  leadPricingOverrideV1: envTrue("FEATURE_LEAD_PRICING_OVERRIDE_V1"),
+  leadPricingOverridePanelV1: envTrue("FEATURE_LEAD_PRICING_OVERRIDE_PANEL_V1"),
+} as const;
+
+export type LeadPricingOverrideFlagKey = keyof typeof leadPricingOverrideFlags;
+
+/** @see leadPricingOverrideFlags.leadPricingOverrideV1 */
+export const FEATURE_LEAD_PRICING_OVERRIDE_V1 = leadPricingOverrideFlags.leadPricingOverrideV1;
+
+/** @see leadPricingOverrideFlags.leadPricingOverridePanelV1 */
+export const FEATURE_LEAD_PRICING_OVERRIDE_PANEL_V1 = leadPricingOverrideFlags.leadPricingOverridePanelV1;
+
+/**
+ * Lead pricing results measurement (observations + internal outcome readouts) — admin only; no payment changes.
+ */
+export const leadPricingResultsFlags = {
+  leadPricingResultsV1: envTrue("FEATURE_LEAD_PRICING_RESULTS_V1"),
+  leadPricingResultsPanelV1: envTrue("FEATURE_LEAD_PRICING_RESULTS_PANEL_V1"),
+} as const;
+
+export type LeadPricingResultsFlagKey = keyof typeof leadPricingResultsFlags;
+
+/** @see leadPricingResultsFlags.leadPricingResultsV1 */
+export const FEATURE_LEAD_PRICING_RESULTS_V1 = leadPricingResultsFlags.leadPricingResultsV1;
+
+/** @see leadPricingResultsFlags.leadPricingResultsPanelV1 */
+export const FEATURE_LEAD_PRICING_RESULTS_PANEL_V1 = leadPricingResultsFlags.leadPricingResultsPanelV1;
+
+/**
  * Broker closing V1 — pipeline stages, follow-up suggestions, deal summary (additive; default off).
  */
 export const brokerClosingFlags = {
@@ -880,6 +1007,34 @@ export type BrokerPerformanceFlagKey = keyof typeof brokerPerformanceFlags;
 export const FEATURE_BROKER_PERFORMANCE_V1 = brokerPerformanceFlags.brokerPerformanceV1;
 
 /**
+ * Broker performance panel on broker hub — constructive self-view (default off; requires performance V1 for data).
+ */
+export const brokerPerformancePanelFlags = {
+  brokerPerformancePanelV1: envTrue("FEATURE_BROKER_PERFORMANCE_PANEL_V1"),
+} as const;
+
+export type BrokerPerformancePanelFlagKey = keyof typeof brokerPerformancePanelFlags;
+
+/** @see brokerPerformancePanelFlags.brokerPerformancePanelV1 */
+export const FEATURE_BROKER_PERFORMANCE_PANEL_V1 = brokerPerformancePanelFlags.brokerPerformancePanelV1;
+
+/**
+ * Growth Engine V2 — unified internal operating snapshot + admin panel (default off).
+ */
+export const growthEngineV2Flags = {
+  growthEngineV2: envTrue("FEATURE_GROWTH_ENGINE_V2"),
+  growthEngineV2Panel: envTrue("FEATURE_GROWTH_ENGINE_V2_PANEL"),
+} as const;
+
+export type GrowthEngineV2FlagKey = keyof typeof growthEngineV2Flags;
+
+/** @see growthEngineV2Flags.growthEngineV2 */
+export const FEATURE_GROWTH_ENGINE_V2 = growthEngineV2Flags.growthEngineV2;
+
+/** @see growthEngineV2Flags.growthEngineV2Panel */
+export const FEATURE_GROWTH_ENGINE_V2_PANEL = growthEngineV2Flags.growthEngineV2Panel;
+
+/**
  * Broker incentives V1 — recognition, streaks, milestones (no money; default off).
  */
 export const brokerIncentivesFlags = {
@@ -890,6 +1045,18 @@ export type BrokerIncentivesFlagKey = keyof typeof brokerIncentivesFlags;
 
 /** @see brokerIncentivesFlags.brokerIncentivesV1 */
 export const FEATURE_BROKER_INCENTIVES_V1 = brokerIncentivesFlags.brokerIncentivesV1;
+
+/**
+ * Broker incentives panel on broker hub — recognition UI (default off; requires incentives V1 for data).
+ */
+export const brokerIncentivesPanelFlags = {
+  brokerIncentivesPanelV1: envTrue("FEATURE_BROKER_INCENTIVES_PANEL_V1"),
+} as const;
+
+export type BrokerIncentivesPanelFlagKey = keyof typeof brokerIncentivesPanelFlags;
+
+/** @see brokerIncentivesPanelFlags.brokerIncentivesPanelV1 */
+export const FEATURE_BROKER_INCENTIVES_PANEL_V1 = brokerIncentivesPanelFlags.brokerIncentivesPanelV1;
 
 /**
  * Broker AI assist — advisory suggestions + draft angles (requires closing V1; default off).
@@ -907,6 +1074,18 @@ export type BrokerTeamViewFlagKey = keyof typeof brokerTeamViewFlags;
 
 /** @see brokerTeamViewFlags.brokerTeamViewV1 */
 export const FEATURE_BROKER_TEAM_VIEW_V1 = brokerTeamViewFlags.brokerTeamViewV1;
+
+/**
+ * Admin broker team coaching dashboard UI (default off; requires team view V1 for data).
+ */
+export const brokerTeamViewPanelFlags = {
+  brokerTeamViewPanelV1: envTrue("FEATURE_BROKER_TEAM_VIEW_PANEL_V1"),
+} as const;
+
+export type BrokerTeamViewPanelFlagKey = keyof typeof brokerTeamViewPanelFlags;
+
+/** @see brokerTeamViewPanelFlags.brokerTeamViewPanelV1 */
+export const FEATURE_BROKER_TEAM_VIEW_PANEL_V1 = brokerTeamViewPanelFlags.brokerTeamViewPanelV1;
 
 export type BrokerAiAssistFlagKey = keyof typeof brokerAiAssistFlags;
 
@@ -939,6 +1118,85 @@ export type BrokerRoutingFlagKey = keyof typeof brokerRoutingFlags;
 export const FEATURE_BROKER_ROUTING_V1 = brokerRoutingFlags.brokerRoutingV1;
 /** @see brokerRoutingFlags.brokerRoutingPanelV1 */
 export const FEATURE_BROKER_ROUTING_PANEL_V1 = brokerRoutingFlags.brokerRoutingPanelV1;
+
+/**
+ * Lead distribution AI — fair explainable routing + admin assignment audit (default off).
+ */
+export const brokerLeadDistributionFlags = {
+  brokerLeadDistributionV1: envTrue("FEATURE_BROKER_LEAD_DISTRIBUTION_V1"),
+  brokerLeadDistributionPanelV1: envTrue("FEATURE_BROKER_LEAD_DISTRIBUTION_PANEL_V1"),
+  /** Future: gated internal auto-route only — reserved; does not execute in V1 UI. */
+  brokerLeadDistributionAutoInternalV1: envTrue("FEATURE_BROKER_LEAD_DISTRIBUTION_AUTO_INTERNAL_V1"),
+} as const;
+
+export type BrokerLeadDistributionFlagKey = keyof typeof brokerLeadDistributionFlags;
+
+/** @see brokerLeadDistributionFlags.brokerLeadDistributionV1 */
+export const FEATURE_BROKER_LEAD_DISTRIBUTION_V1 = brokerLeadDistributionFlags.brokerLeadDistributionV1;
+
+/** @see brokerLeadDistributionFlags.brokerLeadDistributionPanelV1 */
+export const FEATURE_BROKER_LEAD_DISTRIBUTION_PANEL_V1 =
+  brokerLeadDistributionFlags.brokerLeadDistributionPanelV1;
+
+/** @see brokerLeadDistributionFlags.brokerLeadDistributionAutoInternalV1 */
+export const FEATURE_BROKER_LEAD_DISTRIBUTION_AUTO_INTERNAL_V1 =
+  brokerLeadDistributionFlags.brokerLeadDistributionAutoInternalV1;
+
+/**
+ * Broker service areas + specialization profiles — explicit JSON persistence (default off).
+ */
+export const brokerServiceProfileFlags = {
+  brokerServiceProfileV1: envTrue("FEATURE_BROKER_SERVICE_PROFILE_V1"),
+  brokerServiceProfilePanelV1: envTrue("FEATURE_BROKER_SERVICE_PROFILE_PANEL_V1"),
+  brokerSpecializationRoutingV1: envTrue("FEATURE_BROKER_SPECIALIZATION_ROUTING_V1"),
+} as const;
+
+/** Availability / capacity / SLA soft routing — additive; default off. */
+export const brokerAvailabilityRoutingFlags = {
+  brokerAvailabilityRoutingV1: envTrue("FEATURE_BROKER_AVAILABILITY_ROUTING_V1"),
+  brokerCapacityRoutingV1: envTrue("FEATURE_BROKER_CAPACITY_ROUTING_V1"),
+  brokerSlaRoutingV1: envTrue("FEATURE_BROKER_SLA_ROUTING_V1"),
+} as const;
+
+export type BrokerAvailabilityRoutingFlagKey = keyof typeof brokerAvailabilityRoutingFlags;
+
+/** @see brokerAvailabilityRoutingFlags.brokerAvailabilityRoutingV1 */
+export const FEATURE_BROKER_AVAILABILITY_ROUTING_V1 = brokerAvailabilityRoutingFlags.brokerAvailabilityRoutingV1;
+/** @see brokerAvailabilityRoutingFlags.brokerCapacityRoutingV1 */
+export const FEATURE_BROKER_CAPACITY_ROUTING_V1 = brokerAvailabilityRoutingFlags.brokerCapacityRoutingV1;
+/** @see brokerAvailabilityRoutingFlags.brokerSlaRoutingV1 */
+export const FEATURE_BROKER_SLA_ROUTING_V1 = brokerAvailabilityRoutingFlags.brokerSlaRoutingV1;
+
+export type BrokerServiceProfileFlagKey = keyof typeof brokerServiceProfileFlags;
+
+/** @see brokerServiceProfileFlags.brokerServiceProfileV1 */
+export const FEATURE_BROKER_SERVICE_PROFILE_V1 = brokerServiceProfileFlags.brokerServiceProfileV1;
+
+/** @see brokerServiceProfileFlags.brokerServiceProfilePanelV1 */
+export const FEATURE_BROKER_SERVICE_PROFILE_PANEL_V1 = brokerServiceProfileFlags.brokerServiceProfilePanelV1;
+
+/** @see brokerServiceProfileFlags.brokerSpecializationRoutingV1 */
+export const FEATURE_BROKER_SPECIALIZATION_ROUTING_V1 = brokerServiceProfileFlags.brokerSpecializationRoutingV1;
+
+/**
+ * Lead enrichment + geo routing — defaults ON unless explicitly disabled (`false` / `0`).
+ * Strict same-city prioritization remains OFF unless `FEATURE_STRICT_GEO_ROUTING_V1=true`.
+ */
+export const leadGeoRoutingFlags = {
+  leadEnrichmentV1:
+    process.env.FEATURE_LEAD_ENRICHMENT_V1 !== "false" && process.env.FEATURE_LEAD_ENRICHMENT_V1 !== "0",
+  geoRoutingV1: process.env.FEATURE_GEO_ROUTING_V1 !== "false" && process.env.FEATURE_GEO_ROUTING_V1 !== "0",
+  strictGeoRoutingV1: envTrue("FEATURE_STRICT_GEO_ROUTING_V1"),
+} as const;
+
+export type LeadGeoRoutingFlagKey = keyof typeof leadGeoRoutingFlags;
+
+/** @see leadGeoRoutingFlags.leadEnrichmentV1 */
+export const FEATURE_LEAD_ENRICHMENT_V1 = leadGeoRoutingFlags.leadEnrichmentV1;
+/** @see leadGeoRoutingFlags.geoRoutingV1 */
+export const FEATURE_GEO_ROUTING_V1 = leadGeoRoutingFlags.geoRoutingV1;
+/** @see leadGeoRoutingFlags.strictGeoRoutingV1 */
+export const FEATURE_STRICT_GEO_ROUTING_V1 = leadGeoRoutingFlags.strictGeoRoutingV1;
 
 /**
  * Smart lead routing V2 — decision + optional gated auto-assign on top of V1 (default off; never silent without policy).
@@ -1201,6 +1459,54 @@ export const FEATURE_ADS_STARTER_PLAN_V1 = engineFlags.adsStarterPlanV1;
 export const FEATURE_BROKER_SOURCING_V1 = engineFlags.brokerSourcingV1;
 export const FEATURE_LANDING_PAGE_V1 = engineFlags.landingPageV1;
 export const FEATURE_CLOSING_PLAYBOOK_V1 = engineFlags.closingPlaybookV1;
+/** @see engineFlags.fastDealResultsV1 */
+export const FEATURE_FAST_DEAL_RESULTS_V1 = engineFlags.fastDealResultsV1;
+/** @see engineFlags.fastDealResultsPanelV1 */
+export const FEATURE_FAST_DEAL_RESULTS_PANEL_V1 = engineFlags.fastDealResultsPanelV1;
+/** @see engineFlags.fastDealCityComparisonV1 */
+export const FEATURE_FAST_DEAL_CITY_COMPARISON_V1 = engineFlags.fastDealCityComparisonV1;
+/** @see engineFlags.fastDealCityComparisonPanelV1 */
+export const FEATURE_FAST_DEAL_CITY_COMPARISON_PANEL_V1 = engineFlags.fastDealCityComparisonPanelV1;
+/** @see engineFlags.cityPlaybookAdaptationV1 */
+export const FEATURE_CITY_PLAYBOOK_ADAPTATION_V1 = engineFlags.cityPlaybookAdaptationV1;
+/** @see engineFlags.cityPlaybookAdaptationPanelV1 */
+export const FEATURE_CITY_PLAYBOOK_ADAPTATION_PANEL_V1 = engineFlags.cityPlaybookAdaptationPanelV1;
+/** @see engineFlags.growthExecutionResultsV1 */
+export const FEATURE_GROWTH_EXECUTION_RESULTS_V1 = engineFlags.growthExecutionResultsV1;
+/** @see engineFlags.growthExecutionResultsPanelV1 */
+export const FEATURE_GROWTH_EXECUTION_RESULTS_PANEL_V1 = engineFlags.growthExecutionResultsPanelV1;
+/** @see engineFlags.marketExpansionV1 */
+export const FEATURE_MARKET_EXPANSION_V1 = engineFlags.marketExpansionV1;
+/** @see engineFlags.growthMarketExpansionPanelV1 */
+export const FEATURE_MARKET_EXPANSION_PANEL_V1 = engineFlags.growthMarketExpansionPanelV1;
+/** @see engineFlags.weeklyReviewV1 */
+export const FEATURE_WEEKLY_REVIEW_V1 = engineFlags.weeklyReviewV1;
+/** @see engineFlags.growthWeeklyReviewPanelV1 */
+export const FEATURE_WEEKLY_REVIEW_PANEL_V1 = engineFlags.growthWeeklyReviewPanelV1;
+/** @see engineFlags.capitalAllocationV1 */
+export const FEATURE_CAPITAL_ALLOCATION_V1 = engineFlags.capitalAllocationV1;
+/** @see engineFlags.capitalAllocationPanelV1 */
+export const FEATURE_CAPITAL_ALLOCATION_PANEL_V1 = engineFlags.capitalAllocationPanelV1;
+/** @see engineFlags.executionPlannerV1 */
+export const FEATURE_EXECUTION_PLANNER_V1 = engineFlags.executionPlannerV1;
+/** @see engineFlags.executionPlannerPanelV1 */
+export const FEATURE_EXECUTION_PLANNER_PANEL_V1 = engineFlags.executionPlannerPanelV1;
+/** @see engineFlags.teamCoordinationV1 */
+export const FEATURE_TEAM_COORDINATION_V1 = engineFlags.teamCoordinationV1;
+/** @see engineFlags.teamCoordinationPanelV1 */
+export const FEATURE_TEAM_COORDINATION_PANEL_V1 = engineFlags.teamCoordinationPanelV1;
+/** @see engineFlags.executionAccountabilityV1 */
+export const FEATURE_EXECUTION_ACCOUNTABILITY_V1 = engineFlags.executionAccountabilityV1;
+/** @see engineFlags.executionAccountabilityPanelV1 */
+export const FEATURE_EXECUTION_ACCOUNTABILITY_PANEL_V1 = engineFlags.executionAccountabilityPanelV1;
+/** @see engineFlags.weeklyTeamReviewV1 */
+export const FEATURE_WEEKLY_TEAM_REVIEW_V1 = engineFlags.weeklyTeamReviewV1;
+/** @see engineFlags.weeklyTeamReviewPanelV1 */
+export const FEATURE_WEEKLY_TEAM_REVIEW_PANEL_V1 = engineFlags.weeklyTeamReviewPanelV1;
+/** @see engineFlags.revenueForecastV1 */
+export const FEATURE_REVENUE_FORECAST_V1 = engineFlags.revenueForecastV1;
+/** @see engineFlags.revenueForecastPanelV1 */
+export const FEATURE_REVENUE_FORECAST_PANEL_V1 = engineFlags.revenueForecastPanelV1;
 export const FEATURE_LEAD_FOLLOWUP_V1 = engineFlags.leadFollowupV1;
 export const FEATURE_BROKER_CLOSING_ADVANCED_V1 = engineFlags.brokerClosingAdvancedV1;
 export const FEATURE_SCALING_BLUEPRINT_V1 = engineFlags.scalingBlueprintV1;
@@ -1209,6 +1515,16 @@ export const FEATURE_BROKER_COMPETITION_V1 = engineFlags.brokerCompetitionV1;
 export const FEATURE_SCALE_SYSTEM_V1 = engineFlags.scaleSystemV1;
 export const FEATURE_AUTONOMOUS_MARKETPLACE_V1 = engineFlags.autonomousMarketplaceV1;
 export const FEATURE_INVESTOR_PITCH_V1 = engineFlags.investorPitchV1;
+/** @see engineFlags.investorDashboardV1 */
+export const FEATURE_INVESTOR_DASHBOARD_V1 = engineFlags.investorDashboardV1;
+/** @see engineFlags.investorDashboardPanelV1 */
+export const FEATURE_INVESTOR_DASHBOARD_PANEL_V1 = engineFlags.investorDashboardPanelV1;
+/** @see engineFlags.investorShareLinkV1 */
+export const FEATURE_INVESTOR_SHARE_LINK_V1 = engineFlags.investorShareLinkV1;
+/** @see engineFlags.investorSharePanelV1 */
+export const FEATURE_INVESTOR_SHARE_PANEL_V1 = engineFlags.investorSharePanelV1;
+/** @see engineFlags.investorSharePublicV1 */
+export const FEATURE_INVESTOR_SHARE_PUBLIC_V1 = engineFlags.investorSharePublicV1;
 export const FEATURE_CITY_DOMINATION_V1 = engineFlags.cityDominationV1;
 export const FEATURE_SCALE_ROADMAP_V1 = engineFlags.scaleRoadmapV1;
 export const FEATURE_FUNDRAISING_V1 = engineFlags.fundraisingV1;
@@ -1226,6 +1542,10 @@ export const FEATURE_BROKER_LOCKIN_V1 = engineFlags.brokerLockinV1;
 export const FEATURE_GROWTH_POLICY_V1 = engineFlags.growthPolicyV1;
 export const FEATURE_HUB_JOURNEY_V1 = engineFlags.hubJourneyV1;
 export const FEATURE_HUB_COPILOT_V1 = engineFlags.hubCopilotV1;
+/** @see engineFlags.adaptiveIntelligenceV1 */
+export const FEATURE_ADAPTIVE_INTELLIGENCE_V1 = engineFlags.adaptiveIntelligenceV1;
+/** @see engineFlags.adaptiveIntelligencePanelV1 */
+export const FEATURE_ADAPTIVE_INTELLIGENCE_PANEL_V1 = engineFlags.adaptiveIntelligencePanelV1;
 
 /** @see engineFlags.syriaRegionAdapterV1 — Syria regional read path for global intelligence / dashboards. */
 export const FEATURE_SYRIA_REGION_ADAPTER_V1 = engineFlags.syriaRegionAdapterV1;

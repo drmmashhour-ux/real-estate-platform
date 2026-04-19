@@ -16,13 +16,16 @@ Summaries combine these with **highlights** (what is going well) and **next targ
 - Not guarantees of income or closing.
 - Not peer shaming rankings for brokers.
 
-## Feature flag
+## Feature flags
 
 | Variable | Effect |
 |---------|--------|
-| `FEATURE_BROKER_INCENTIVES_V1=1` | Broker dashboard recognition panel; `GET /api/broker/incentives`; admin observability |
+| `FEATURE_BROKER_INCENTIVES_V1=1` | Engine: badges, streaks, milestones, summary builders, admin incentive observability (`/api/admin/broker-incentives-overview`). |
+| `FEATURE_BROKER_INCENTIVES_PANEL_V1=1` | Broker-facing hub panel + `GET /api/broker/incentives` (requires both flags). |
 
-Depends on CRM data existing (same lead assignment scope as performance engine).
+Depends on CRM data existing (same lead assignment scope as performance engine). Defaults off.
+
+**Team coaching:** Manager drill-down includes incentive summaries only when `FEATURE_BROKER_INCENTIVES_V1` is on (via `broker-incentives-team-bridge.service.ts`); team UI uses separate team-view flags.
 
 ## APIs
 

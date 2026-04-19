@@ -2,8 +2,6 @@
  * In-process counters for monetization control layer — [lead:monetization-control] logs; never throws.
  */
 
-import { logInfo } from "@/lib/logger";
-
 const LOG = "[lead:monetization-control]";
 
 export type LeadMonetizationControlMonitoringSnapshot = {
@@ -47,7 +45,7 @@ export function recordLeadMonetizationControlSummary(meta: {
     else if (meta.mode === "quality_advisory") state.qualityOnlyFallbackCount += 1;
     if (meta.confidence === "low") state.lowConfidenceCount += 1;
     if (meta.sparseWarnings > 0) state.sparseWarningCount += 1;
-    logInfo(`${LOG} summary`, meta);
+    console.info(`${LOG} summary built`, meta);
   } catch {
     /* noop */
   }

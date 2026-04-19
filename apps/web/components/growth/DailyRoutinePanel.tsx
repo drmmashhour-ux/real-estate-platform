@@ -25,7 +25,16 @@ function saveDone(done: Record<string, boolean>): void {
   }
 }
 
-export function DailyRoutinePanel() {
+type DailyRoutinePanelProps = {
+  /** When true and `viewerUserId` is set, POST completion to shared accountability (flag-gated server-side). */
+  executionAccountabilitySync?: boolean;
+  viewerUserId?: string;
+};
+
+export function DailyRoutinePanel({
+  executionAccountabilitySync,
+  viewerUserId,
+}: DailyRoutinePanelProps = {}) {
   const days = React.useMemo(() => build14DayRoutine(), []);
   const [selectedDay, setSelectedDay] = React.useState(1);
   const [done, setDone] = React.useState<Record<string, boolean>>({});
@@ -40,6 +49,33 @@ export function DailyRoutinePanel() {
     setDone((prev) => {
       const next = { ...prev, [key]: !prev[key] };
       saveDone(next);
+      const dayMatch = /^d(\d+)-/.exec(key);
+      const dayNum = dayMatch ? Number(dayMatch[1]) : routine.day;
+      if (executionAccountabilitySync && viewerUserId) {
+        const completed = !!next[key];
+        void fetch("/api/growth/execution-accountability", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(
+            completed
+              ? {
+                  action: "record",
+                  surfaceType: "daily_routine",
+                  itemId: key,
+                  completed: true,
+                  dayNumber: dayNum,
+                }
+              : {
+                  action: "clear",
+                  surfaceType: "daily_routine",
+                  itemId: key,
+                },
+          ),
+        }).catch(() => {
+          /* offline / flag off server */
+        });
+      }
       return next;
     });
   };

@@ -13,13 +13,17 @@ import { scoreBrokerPerformanceMetrics } from "@/modules/broker/performance/brok
 import { buildBrokerPerformanceInsights } from "@/modules/broker/performance/broker-performance-insights.service";
 import { buildBrokerPerformanceEngineSnapshot } from "@/modules/broker/performance/broker-performance-engine.service";
 import type { BrokerPerformanceInsight } from "@/modules/broker/performance/broker-performance.types";
-import { buildBrokerIncentiveSummary } from "@/modules/broker/incentives/broker-incentives-summary.service";
-import { brokerAiAssistFlags } from "@/config/feature-flags";
+import { maybeBuildBrokerIncentiveSummaryForTeamView } from "@/modules/broker/incentives/broker-incentives-team-bridge.service";
+import { brokerAiAssistFlags, brokerAvailabilityRoutingFlags, brokerServiceProfileFlags } from "@/config/feature-flags";
+import { buildProfileConfidenceAndMergeNotes } from "@/modules/broker/profile/broker-profile-confidence.service";
+import { emptyStoredProfile } from "@/modules/broker/profile/broker-profile-payload";
+import { getDeclaredStoredProfilesByBrokerIds } from "@/modules/broker/profile/broker-service-profile.service";
 
 import type {
   BrokerTeamDashboardPayload,
   BrokerTeamManagerBrokerDetail,
   BrokerTeamPipelineStageCount,
+  BrokerTeamProfileCompact,
   BrokerTeamRow,
   BrokerTeamSummary,
 } from "./broker-team.types";
@@ -34,6 +38,9 @@ import {
   recordBrokerTeamDashboardViewed,
   recordBrokerTeamInsightsGenerated,
 } from "./broker-team-monitoring.service";
+import { buildBrokerAvailabilitySnapshot } from "@/modules/broker/availability/broker-availability.service";
+import { buildBrokerCapacitySnapshot } from "@/modules/broker/availability/broker-capacity.service";
+import { buildBrokerSlaSnapshotFromEngineMetrics } from "@/modules/broker/availability/broker-sla.service";
 
 const MS_DAY = 86400000;
 
@@ -129,6 +136,11 @@ export async function buildBrokerTeamDashboardPayload(options?: {
     orderBy: { createdAt: "desc" },
   });
 
+  const profileById =
+    brokerServiceProfileFlags.brokerServiceProfileV1 || brokerServiceProfileFlags.brokerSpecializationRoutingV1
+      ? await getDeclaredStoredProfilesByBrokerIds(brokers.map((b) => b.id))
+      : null;
+
   const rows: BrokerTeamRow[] = [];
 
   let sumScore = 0;
@@ -180,6 +192,47 @@ export async function buildBrokerTeamDashboardPayload(options?: {
     const displayName = (b.name?.trim() || b.email?.trim() || "Broker").slice(0, 120);
     const lastIso = rollup.lastTouchMs > 0 ? new Date(rollup.lastTouchMs).toISOString() : null;
 
+    let profileCompact: BrokerTeamProfileCompact | undefined;
+    if (profileById) {
+      const stored = profileById.get(b.id) ?? emptyStoredProfile();
+      const { profileConfidence } = buildProfileConfidenceAndMergeNotes(stored);
+      const primary = stored.serviceAreas.find((a) => a.priorityLevel === "primary") ?? stored.serviceAreas[0];
+      const spec = stored.specializations.find((s) => s.enabled);
+      profileCompact = {
+        topServiceArea: primary?.city ?? null,
+        topSpecialization: spec?.propertyType ?? null,
+        acceptingNewLeads: stored.capacity.acceptingNewLeads,
+        profileConfidence,
+      };
+    }
+
+    let opsRouting: BrokerTeamRow["opsRouting"];
+    if (anyOpsRouting) {
+      const storedForOps = profileById?.get(b.id) ?? emptyStoredProfile();
+      const avail = buildBrokerAvailabilitySnapshot({
+        brokerId: b.id,
+        profileLoaded: Boolean(profileById),
+        stored: profileById ? storedForOps : null,
+        inactiveDaysApprox: inactiveDays,
+      });
+      const cap = buildBrokerCapacitySnapshot({
+        brokerId: b.id,
+        activeLeads: rollup.leadsActive,
+        overdueFollowUps: rollup.followUpsOverdue,
+        recentAssignments: 0,
+        maxActiveLeadsHint: storedForOps.capacity.maxActiveLeads ?? null,
+        preferredRange: storedForOps.capacity.preferredActiveRange ?? null,
+        sparseFallback: !profileById,
+      });
+      const sla = buildBrokerSlaSnapshotFromEngineMetrics(metrics);
+      opsRouting = {
+        availabilityStatus: avail.status,
+        capacityScore: cap.capacityScore,
+        capacityBand: cap.status,
+        slaHealth: sla.slaHealth,
+      };
+    }
+
     rows.push({
       brokerId: b.id,
       displayName,
@@ -193,6 +246,8 @@ export async function buildBrokerTeamDashboardPayload(options?: {
       riskLevel,
       topStrength: strength,
       topWeakness: weakness,
+      profileCompact,
+      opsRouting,
     });
 
     sumScore += metrics.overallScore;
@@ -262,10 +317,7 @@ export async function buildBrokerTeamManagerDetail(
   if (!user || user.role !== "BROKER") return null;
 
   const snapshot = await buildBrokerPerformanceEngineSnapshot(brokerId, { emitMonitoring: false });
-  const incentives = await buildBrokerIncentiveSummary(brokerId, {
-    nowMs,
-    emitMonitoring: false,
-  });
+  const incentives = await maybeBuildBrokerIncentiveSummaryForTeamView(brokerId, { nowMs });
 
   const leads = await prisma.lead.findMany({
     where: {

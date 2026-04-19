@@ -74,6 +74,7 @@ export async function buildInternalBrokerLeaderboard(options?: {
       band: metrics.executionBand,
       keyStrength: strength,
       keyWeakness: weakness,
+      confidenceLevel: metrics.confidenceLevel,
     });
   }
 

@@ -47,14 +47,28 @@ import { BrokerClosingPanel } from "./BrokerClosingPanel";
 import { BrokerSourcingPanel } from "./BrokerSourcingPanel";
 import { LeadCaptureLandingPage } from "./LeadCaptureLandingPage";
 import { ClosingPlaybookPanel } from "./ClosingPlaybookPanel";
+import { FastDealResultsPanel } from "./FastDealResultsPanel";
+import { FastDealCityComparisonPanel } from "./FastDealCityComparisonPanel";
+import { CityPlaybookAdaptationPanel } from "./CityPlaybookAdaptationPanel";
 import { AiExecutionPanel } from "./AiExecutionPanel";
 import { ScaleSystemPanel } from "./ScaleSystemPanel";
+import { MarketExpansionPanel } from "./MarketExpansionPanel";
+import { WeeklyOperatorReviewPanel } from "./WeeklyOperatorReviewPanel";
+import { CapitalAllocationPanel } from "./CapitalAllocationPanel";
+import { ExecutionPlannerPanel } from "./ExecutionPlannerPanel";
+import { TeamCoordinationPanel } from "./TeamCoordinationPanel";
 import { AutonomousMissionControlPanel } from "./AutonomousMissionControlPanel";
 import { CityDominationPanel } from "./CityDominationPanel";
 import { ScaleRoadmapPanel } from "./ScaleRoadmapPanel";
 import { MoatPanel } from "./MoatPanel";
 import { DailyRoutinePanel } from "./DailyRoutinePanel";
+import { ExecutionAccountabilityPanel } from "./ExecutionAccountabilityPanel";
+import { DealPerformancePanel } from "./DealPerformancePanel";
+import { WeeklyTeamReviewPanel } from "./WeeklyTeamReviewPanel";
+import { RevenueForecastPanel } from "./RevenueForecastPanel";
 import { MontrealDominationPanel } from "./MontrealDominationPanel";
+import { AdaptiveIntelligencePanel } from "./AdaptiveIntelligencePanel";
+import { InvestorDashboardPanel } from "../investors/InvestorDashboardPanel";
 import { InvestorPitchPanel } from "../investors/InvestorPitchPanel";
 import { FundraisingPanel } from "../investors/FundraisingPanel";
 import { PitchScriptPanel } from "../investors/PitchScriptPanel";
@@ -168,13 +182,31 @@ export function GrowthMachineDashboard({
   growthBrokerSourcingV1,
   growthLandingPageV1,
   growthClosingPlaybookV1,
+  growthFastDealResultsLoggingV1,
+  growthFastDealResultsPanelV1,
+  growthFastDealCityComparisonPanelV1,
+  growthCityPlaybookAdaptationPanelV1,
   growthLeadFollowupV1,
   growthBrokerClosingAdvancedV1,
   growthScalingBlueprintV1,
   growthAiAssistExecutionV1,
   growthBrokerCompetitionV1,
   growthScaleSystemV1,
+  growthExecutionResultsPanelV1,
+  growthMarketExpansionPanelV1,
+  growthWeeklyReviewPanelV1,
+  growthCapitalAllocationPanelV1,
+  growthAdaptiveIntelligencePanelV1,
+  growthExecutionPlannerPanelV1,
+  growthTeamCoordinationPanelV1,
+  growthExecutionAccountabilityPanelV1,
+  growthExecutionAccountabilitySyncV1,
+  growthWeeklyTeamReviewPanelV1,
+  growthRevenueForecastPanelV1,
+  viewerUserId,
   autonomousMarketplaceV1,
+  growthInvestorDashboardPanelV1,
+  growthInvestorSharePanelV1,
   investorPitchV1,
   cityDominationV1,
   scaleRoadmapV1,
@@ -291,6 +323,14 @@ export function GrowthMachineDashboard({
   growthBrokerSourcingV1?: boolean;
   growthLandingPageV1?: boolean;
   growthClosingPlaybookV1?: boolean;
+  /** FEATURE_FAST_DEAL_RESULTS_V1 — log broker/landing/playbook checkpoints to the results store. */
+  growthFastDealResultsLoggingV1?: boolean;
+  /** FEATURE_FAST_DEAL_RESULTS_PANEL_V1 — dashboard panel for Fast Deal aggregates. */
+  growthFastDealResultsPanelV1?: boolean;
+  /** FEATURE_FAST_DEAL_CITY_COMPARISON_PANEL_V1 — city comparison panel (requires city comparison V1). */
+  growthFastDealCityComparisonPanelV1?: boolean;
+  /** FEATURE_CITY_PLAYBOOK_ADAPTATION_PANEL_V1 — playbook adaptation panel (requires adaptation + city comparison V1). */
+  growthCityPlaybookAdaptationPanelV1?: boolean;
   /** FEATURE_LEAD_FOLLOWUP_V1 — lead follow-up copy panel. */
   growthLeadFollowupV1?: boolean;
   /** FEATURE_BROKER_CLOSING_ADVANCED_V1 — broker pressure scripts panel. */
@@ -303,8 +343,34 @@ export function GrowthMachineDashboard({
   growthBrokerCompetitionV1?: boolean;
   /** FEATURE_SCALE_SYSTEM_V1 — $100K scale system panel. */
   growthScaleSystemV1?: boolean;
+  /** FEATURE_GROWTH_EXECUTION_RESULTS_PANEL_V1 — measurement summary (requires execution results V1). */
+  growthExecutionResultsPanelV1?: boolean;
+  /** FEATURE_MARKET_EXPANSION_PANEL_V1 — market expansion (requires market expansion + city comparison V1). */
+  growthMarketExpansionPanelV1?: boolean;
+  /** FEATURE_WEEKLY_REVIEW_PANEL_V1 — weekly operator review (requires weekly review V1). */
+  growthWeeklyReviewPanelV1?: boolean;
+  /** FEATURE_CAPITAL_ALLOCATION_PANEL_V1 — strategic allocation summary (requires capital allocation V1). */
+  growthCapitalAllocationPanelV1?: boolean;
+  /** FEATURE_EXECUTION_PLANNER_PANEL_V1 — approval-only Today / This week planner (`FEATURE_EXECUTION_PLANNER_V1`). */
+  growthExecutionPlannerPanelV1?: boolean;
+  /** FEATURE_TEAM_COORDINATION_PANEL_V1 — team ownership + status (`FEATURE_TEAM_COORDINATION_V1`). */
+  growthTeamCoordinationPanelV1?: boolean;
+  /** FEATURE_EXECUTION_ACCOUNTABILITY_V1 + PANEL — shared execution rollup (read-only). */
+  growthExecutionAccountabilityPanelV1?: boolean;
+  /** FEATURE_EXECUTION_ACCOUNTABILITY_V1 — POST checklist sync from routine / Montréal / pitch panels. */
+  growthExecutionAccountabilitySyncV1?: boolean;
+  /** FEATURE_WEEKLY_TEAM_REVIEW_V1 + panel — leadership weekly team review. */
+  growthWeeklyTeamReviewPanelV1?: boolean;
+  /** FEATURE_REVENUE_FORECAST_V1 + panel — illustrative CRM-based forecast. */
+  growthRevenueForecastPanelV1?: boolean;
+  /** Current user id for “my tasks” filters in coordination (optional). */
+  viewerUserId?: string;
   /** FEATURE_AUTONOMOUS_MARKETPLACE_V1 — draft decisions + approval + logs. */
   autonomousMarketplaceV1?: boolean;
+  /** FEATURE_INVESTOR_DASHBOARD_V1 + panel — auto-generated investor snapshot. */
+  growthInvestorDashboardPanelV1?: boolean;
+  /** FEATURE_INVESTOR_SHARE_* — read-only public share link management (internal; requires share link + panel flags). */
+  growthInvestorSharePanelV1?: boolean;
   /** FEATURE_INVESTOR_PITCH_V1 — static investor slides. */
   investorPitchV1?: boolean;
   /** FEATURE_CITY_DOMINATION_V1 — 30-day city checklist. */
@@ -459,6 +525,38 @@ export function GrowthMachineDashboard({
 
   return (
     <div className="space-y-8">
+      {growthAdaptiveIntelligencePanelV1 ? <AdaptiveIntelligencePanel /> : null}
+
+      {growthExecutionPlannerPanelV1 ? (
+        <div id="growth-mc-execution-planner" className="scroll-mt-24">
+          <ExecutionPlannerPanel locale={locale} country={country} />
+        </div>
+      ) : null}
+
+      {growthTeamCoordinationPanelV1 ? (
+        <div id="growth-mc-team-coordination" className="scroll-mt-24">
+          <TeamCoordinationPanel locale={locale} country={country} viewerUserId={viewerUserId} />
+        </div>
+      ) : null}
+
+      {growthExecutionAccountabilityPanelV1 ? (
+        <div id="growth-mc-execution-accountability" className="scroll-mt-24">
+          <ExecutionAccountabilityPanel />
+        </div>
+      ) : null}
+
+      {growthExecutionResultsPanelV1 ? <DealPerformancePanel /> : null}
+
+      {growthWeeklyTeamReviewPanelV1 ? <WeeklyTeamReviewPanel /> : null}
+
+      {growthRevenueForecastPanelV1 ? <RevenueForecastPanel /> : null}
+
+      {growthCapitalAllocationPanelV1 ? (
+        <div id="growth-mc-capital-allocation" className="scroll-mt-24">
+          <CapitalAllocationPanel />
+        </div>
+      ) : null}
+
       {showAdsPlaybook && adFlags ? (
         <div className="rounded-xl border border-emerald-900/50 bg-emerald-950/20 p-4">
           <h3 className="text-sm font-semibold text-emerald-200">Ads & landing playbook (v1)</h3>
@@ -590,7 +688,11 @@ export function GrowthMachineDashboard({
         simulationSectionMounted={!!(growthSimulation?.enabled && growthSimulation?.panel)}
       />
 
-      {growthRevenuePanelV1 || revenueDashboardV1 ? <GrowthRevenuePanel /> : null}
+      {growthRevenuePanelV1 || revenueDashboardV1 ? (
+        <div id="growth-mc-revenue" className="scroll-mt-24">
+          <GrowthRevenuePanel />
+        </div>
+      ) : null}
 
       {growth1kPlanV1 ? <Growth1KPlanPanel /> : null}
 
@@ -598,13 +700,45 @@ export function GrowthMachineDashboard({
 
       {growthAdsStarterPlanV1 ? <AdsStarterPlanPanel /> : null}
 
-      {growthBrokerClosingV1 ? <BrokerClosingPanel /> : null}
+      {growthBrokerClosingV1 ? (
+        <div id="growth-mc-broker-closing" className="scroll-mt-24">
+          <BrokerClosingPanel />
+        </div>
+      ) : null}
 
-      {growthBrokerSourcingV1 ? <BrokerSourcingPanel /> : null}
+      {growthBrokerSourcingV1 ? (
+        <BrokerSourcingPanel enableFastDealLogging={!!growthFastDealResultsLoggingV1} />
+      ) : null}
 
-      {growthLandingPageV1 ? <LeadCaptureLandingPage locale={locale} country={country} /> : null}
+      {growthLandingPageV1 ? (
+        <LeadCaptureLandingPage
+          locale={locale}
+          country={country}
+          enableFastDealLogging={!!growthFastDealResultsLoggingV1}
+        />
+      ) : null}
 
-      {growthClosingPlaybookV1 ? <ClosingPlaybookPanel /> : null}
+      {growthClosingPlaybookV1 ? (
+        <ClosingPlaybookPanel enableFastDealLogging={!!growthFastDealResultsLoggingV1} />
+      ) : null}
+
+      {growthFastDealResultsPanelV1 ? <FastDealResultsPanel /> : null}
+
+      {growthFastDealCityComparisonPanelV1 ? (
+        <div id="growth-mc-fast-deal-city" className="scroll-mt-24">
+          <FastDealCityComparisonPanel />
+        </div>
+      ) : null}
+
+      {growthCityPlaybookAdaptationPanelV1 ? <CityPlaybookAdaptationPanel /> : null}
+
+      {growthMarketExpansionPanelV1 ? (
+        <div id="growth-mc-market-expansion" className="scroll-mt-24">
+          <MarketExpansionPanel />
+        </div>
+      ) : null}
+
+      {growthWeeklyReviewPanelV1 ? <WeeklyOperatorReviewPanel /> : null}
 
       {growthLeadFollowupV1 ? <LeadFollowUpPanel /> : null}
 
@@ -625,14 +759,36 @@ export function GrowthMachineDashboard({
       {growthScaleSystemV1 ? <ScaleSystemPanel /> : null}
 
       {autonomousMarketplaceV1 ? <AutonomousMissionControlPanel /> : null}
+      {growthInvestorDashboardPanelV1 ? (
+        <InvestorDashboardPanel sharePanelEnabled={!!growthInvestorSharePanelV1} />
+      ) : null}
       {investorPitchV1 ? <InvestorPitchPanel /> : null}
-      {cityDominationV1 ? <CityDominationPanel /> : null}
+      {cityDominationV1 ? (
+        <div id="growth-mc-city-domination" className="scroll-mt-24">
+          <CityDominationPanel />
+        </div>
+      ) : null}
       {scaleRoadmapV1 ? <ScaleRoadmapPanel /> : null}
       {fundraisingV1 ? <FundraisingPanel /> : null}
       {moatEngineV1 ? <MoatPanel /> : null}
-      {dailyRoutineV1 ? <DailyRoutinePanel /> : null}
-      {pitchScriptV1 ? <PitchScriptPanel /> : null}
-      {cityDominationMtlV1 ? <MontrealDominationPanel /> : null}
+      {dailyRoutineV1 ? (
+        <DailyRoutinePanel
+          executionAccountabilitySync={!!growthExecutionAccountabilitySyncV1}
+          viewerUserId={viewerUserId}
+        />
+      ) : null}
+      {pitchScriptV1 ? (
+        <PitchScriptPanel
+          executionAccountabilitySync={!!growthExecutionAccountabilitySyncV1}
+          viewerUserId={viewerUserId}
+        />
+      ) : null}
+      {cityDominationMtlV1 ? (
+        <MontrealDominationPanel
+          executionAccountabilitySync={!!growthExecutionAccountabilitySyncV1}
+          viewerUserId={viewerUserId}
+        />
+      ) : null}
       {dealClosingV1 ? <LeadClosingPanel /> : null}
       {dealClosingV1 ? <BrokerDealClosingPanel /> : null}
       {compoundingV1 ? <CompoundingPanel /> : null}
@@ -678,9 +834,17 @@ export function GrowthMachineDashboard({
 
       {growthLearningAdvisory && (growthExecutive || growthDailyBrief) ? <GrowthLearningAdvisoryStrip /> : null}
 
-      {growthCadence ? <GrowthCadencePanel /> : null}
+      {growthCadence ? (
+        <div id="growth-mc-cadence" className="scroll-mt-24">
+          <GrowthCadencePanel />
+        </div>
+      ) : null}
 
-      {growthPolicyEnforcement?.enabled && growthPolicyEnforcement?.panel ? <GrowthPolicyEnforcementPanel /> : null}
+      {growthPolicyEnforcement?.enabled && growthPolicyEnforcement?.panel ? (
+        <div id="growth-mc-policy-enforcement" className="scroll-mt-24">
+          <GrowthPolicyEnforcementPanel />
+        </div>
+      ) : null}
 
       {growthGovernanceFeedback?.enabled && growthGovernanceFeedback?.panel ? <GrowthGovernanceFeedbackPanel /> : null}
 
@@ -693,61 +857,99 @@ export function GrowthMachineDashboard({
         />
       ) : null}
 
-      {growthOperatingReviewPanel ? <GrowthOperatingReviewPanel /> : null}
+      {growthOperatingReviewPanel ? (
+        <div id="growth-mc-operating-review" className="scroll-mt-24">
+          <GrowthOperatingReviewPanel />
+        </div>
+      ) : null}
 
-      {growthMemory?.enabled && growthMemory?.panel ? <GrowthMemoryPanel /> : null}
+      {growthMemory?.enabled && growthMemory?.panel ? (
+        <div id="growth-mc-memory" className="scroll-mt-24">
+          <GrowthMemoryPanel />
+        </div>
+      ) : null}
 
-      {growthKnowledgeGraph?.enabled && growthKnowledgeGraph?.panel ? <GrowthKnowledgeGraphPanel /> : null}
+      {growthKnowledgeGraph?.enabled && growthKnowledgeGraph?.panel ? (
+        <div id="growth-mc-graph" className="scroll-mt-24">
+          <GrowthKnowledgeGraphPanel />
+        </div>
+      ) : null}
 
       {growthSimulation?.enabled && growthSimulation?.panel ? (
-        <GrowthSimulationPanel
-          enforcementLayerEnabled={!!growthPolicyEnforcement?.enabled}
-          enforcementSnapshotReady={!!growthPolicyEnforcement?.enabled ? enforcementSnapshotReady : true}
-          enforcementSnapshot={growthPolicyEnforcement?.enabled ? enforcementSnapshot : null}
-        />
+        <div id="growth-mc-simulation" className="scroll-mt-24">
+          <GrowthSimulationPanel
+            enforcementLayerEnabled={!!growthPolicyEnforcement?.enabled}
+            enforcementSnapshotReady={!!growthPolicyEnforcement?.enabled ? enforcementSnapshotReady : true}
+            enforcementSnapshot={growthPolicyEnforcement?.enabled ? enforcementSnapshot : null}
+          />
+        </div>
       ) : null}
 
       {growthExecutive ? (
-        <GrowthExecutivePanel
-          showLearningControlReviewLine={!!growthLearning && !!growthExecutive}
-        />
+        <div id="growth-mc-executive" className="scroll-mt-24">
+          <GrowthExecutivePanel
+            showLearningControlReviewLine={!!growthLearning && !!growthExecutive}
+          />
+        </div>
       ) : null}
 
-      {growthDailyBrief ? <GrowthDailyBriefPanel /> : null}
+      {growthDailyBrief ? (
+        <div id="growth-mc-daily-brief" className="scroll-mt-24">
+          <GrowthDailyBriefPanel />
+        </div>
+      ) : null}
 
       {growthStrategy?.enabled ? (
-        <GrowthStrategyPanel
-          experimentsEnabled={!!growthStrategy.experiments}
-          roadmapEnabled={!!growthStrategy.roadmap}
-          enforcementSnapshot={growthPolicyEnforcement?.enabled ? enforcementSnapshot : null}
-        />
+        <div id="growth-mc-strategy" className="scroll-mt-24">
+          <GrowthStrategyPanel
+            experimentsEnabled={!!growthStrategy.experiments}
+            roadmapEnabled={!!growthStrategy.roadmap}
+            enforcementSnapshot={growthPolicyEnforcement?.enabled ? enforcementSnapshot : null}
+          />
+        </div>
       ) : null}
 
       {growthLearning ? (
-        <GrowthLearningPanel
-          policyBadgeEnabled={!!growthGovernancePolicy?.enabled && !!growthGovernancePolicy?.panelBadges}
-          enforcementSnapshot={growthPolicyEnforcement?.enabled ? enforcementSnapshot : null}
-          decisionJournalBridge={
-            !!growthDecisionJournal?.enabled &&
-            !!growthDecisionJournal?.panel &&
-            !!growthDecisionJournal?.bridge
-          }
-        />
+        <div id="growth-mc-learning" className="scroll-mt-24">
+          <GrowthLearningPanel
+            policyBadgeEnabled={!!growthGovernancePolicy?.enabled && !!growthGovernancePolicy?.panelBadges}
+            enforcementSnapshot={growthPolicyEnforcement?.enabled ? enforcementSnapshot : null}
+            decisionJournalBridge={
+              !!growthDecisionJournal?.enabled &&
+              !!growthDecisionJournal?.panel &&
+              !!growthDecisionJournal?.bridge
+            }
+          />
+        </div>
       ) : null}
 
       {growthLearning ? <GrowthLearningControlPanel /> : null}
 
-      {growthMultiAgent ? <GrowthMultiAgentPanel /> : null}
-
-      {growthFusion ? (
-        <GrowthFusionPanel enforcementSnapshot={growthPolicyEnforcement?.enabled ? enforcementSnapshot : null} />
+      {growthMultiAgent ? (
+        <div id="growth-mc-multi-agent" className="scroll-mt-24">
+          <GrowthMultiAgentPanel />
+        </div>
       ) : null}
 
-      {growthGovernance ? <GrowthGovernancePanel /> : null}
+      {growthFusion ? (
+        <div id="growth-mc-fusion" className="scroll-mt-24">
+          <GrowthFusionPanel enforcementSnapshot={growthPolicyEnforcement?.enabled ? enforcementSnapshot : null} />
+        </div>
+      ) : null}
+
+      {growthGovernance ? (
+        <div id="growth-mc-governance" className="scroll-mt-24">
+          <GrowthGovernancePanel />
+        </div>
+      ) : null}
 
       {growthPolicyV1 ? <GrowthPolicyPanel /> : null}
 
-      {growthGovernancePolicy?.enabled && growthGovernancePolicy?.panel ? <GrowthGovernanceConsolePanel /> : null}
+      {growthGovernancePolicy?.enabled && growthGovernancePolicy?.panel ? (
+        <div id="growth-mc-governance-console" className="scroll-mt-24">
+          <GrowthGovernanceConsolePanel />
+        </div>
+      ) : null}
 
       {influence ? (
         <GrowthInfluencePanel
@@ -781,7 +983,9 @@ export function GrowthMachineDashboard({
 
       <div className="grid gap-4 md:grid-cols-3">
         <ListingGrowthCard basePath={base} />
-        <HostGrowthCard locale={locale} country={country} />
+        <div id="growth-mc-host-bnhub" className="scroll-mt-24">
+          <HostGrowthCard locale={locale} country={country} />
+        </div>
         <BrokerGrowthCard locale={locale} country={country} />
       </div>
 

@@ -86,6 +86,11 @@ export async function POST(req: NextRequest) {
   const buyingSoon = typeof body.buyingSoon === "string" ? body.buyingSoon.slice(0, 32) : "";
   const budgetRange = typeof body.budgetRange === "string" ? body.budgetRange.slice(0, 32) : "";
   const preApproved = typeof body.preApproved === "string" ? body.preApproved.slice(0, 24) : "";
+  const preferredCity = typeof body.preferredCity === "string" ? body.preferredCity.slice(0, 120) : "";
+  const preferredProvince = typeof body.preferredProvince === "string" ? body.preferredProvince.slice(0, 64) : "";
+  const propertyTypePref = typeof body.propertyType === "string" ? body.propertyType.slice(0, 80) : "";
+  const timelinePref = typeof body.timeline === "string" ? body.timeline.slice(0, 64) : "";
+  const preferredLanguage = typeof body.preferredLanguage === "string" ? body.preferredLanguage.slice(0, 32) : "";
 
   const consentSmsWhatsapp = body.consentSmsWhatsapp === true;
   const consentVoice = body.consentVoice === true;
@@ -136,6 +141,11 @@ export async function POST(req: NextRequest) {
     buyingSoon ? `Buying soon: ${buyingSoon}` : "",
     budgetRange ? `Budget: ${budgetRange}` : "",
     preApproved ? `Pre-approved: ${preApproved}` : "",
+    preferredCity ? `Preferred city / area: ${preferredCity}` : "",
+    preferredProvince ? `Province / region: ${preferredProvince}` : "",
+    propertyTypePref ? `Property type: ${propertyTypePref}` : "",
+    timelinePref ? `Timeline: ${timelinePref}` : "",
+    preferredLanguage ? `Language preference: ${preferredLanguage}` : "",
   ]
     .filter(Boolean)
     .join("\n");
@@ -215,6 +225,15 @@ export async function POST(req: NextRequest) {
       aiExplanation: {
         immoContact: immoPayload,
         formLine: scored.explanation,
+        ...(preferredCity || preferredProvince
+          ? {
+              property: {
+                ...(preferredCity ? { city: preferredCity } : {}),
+                ...(preferredProvince ? { province: preferredProvince } : {}),
+                ...(propertyTypePref ? { propertyType: propertyTypePref } : {}),
+              },
+            }
+          : {}),
       } as object,
       contactUnlockedAt: new Date(),
       introducedByBrokerId,

@@ -127,7 +127,11 @@ async function loadPerformanceMap(brokerIds: string[]): Promise<Map<string, Brok
   return map;
 }
 
-export async function buildLeadRoutingSummary(leadId: string): Promise<LeadRoutingSummary | null> {
+export async function buildLeadRoutingSummary(
+  leadId: string,
+  options?: { topN?: number },
+): Promise<LeadRoutingSummary | null> {
+  const topN = Math.min(Math.max(options?.topN ?? 5, 1), 120);
   const lead = await prisma.lead.findUnique({
     where: { id: leadId },
     select: {
@@ -187,7 +191,7 @@ export async function buildLeadRoutingSummary(leadId: string): Promise<LeadRouti
     });
   }
 
-  const ranked = rankBrokerRoutingCandidates(candidates);
+  const ranked = rankBrokerRoutingCandidates(candidates, topN);
   const top = ranked[0];
   if (top && top.rankScore < 55) {
     routingNotes.push("Top candidate score is modest — separation between brokers is weak in this snapshot.");

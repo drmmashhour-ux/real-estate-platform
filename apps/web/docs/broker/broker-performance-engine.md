@@ -55,6 +55,15 @@ Brokers see **only their own** snapshot on the dashboard (`BrokerPerformancePane
 
 In-process logs and counters under **`[broker:performance]`**: `engine_snapshot`, `leaderboard`, `insights`, plus legacy `summary`. Never throws.
 
-## Feature flag
+## Feature flags
 
-`FEATURE_BROKER_PERFORMANCE_V1` gates broker API and admin leaderboard.
+| Env | Meaning |
+|-----|---------|
+| `FEATURE_BROKER_PERFORMANCE_V1` | `GET /api/broker/performance`, engine snapshots, internal leaderboard inputs, Growth Engine V2 broker bridge |
+| `FEATURE_BROKER_PERFORMANCE_PANEL_V1` | Broker-facing `BrokerPerformancePanel` on `/dashboard/broker` (constructive self-view only) |
+
+Both default **off**. The panel flag prevents surfacing scores in the broker hub until you explicitly enable it; engine data can still power admin/bridge when only the base flag is on.
+
+## Leaderboard row metadata
+
+Internal `BrokerLeaderboardRow` includes optional **`confidenceLevel`** (same scale as engine metrics) for admin sorting context — not shown on public surfaces.

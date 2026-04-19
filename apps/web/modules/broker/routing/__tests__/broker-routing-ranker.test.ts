@@ -29,6 +29,17 @@ describe("rankBrokerRoutingCandidates", () => {
     expect(r[1]?.brokerId).toBe("b");
   });
 
+  it("caps via max parameter", () => {
+    const input: BrokerRoutingCandidate[] = [
+      mk({ brokerId: "a", rankScore: 90 }),
+      mk({ brokerId: "b", rankScore: 89 }),
+      mk({ brokerId: "c", rankScore: 88 }),
+    ];
+    const r = rankBrokerRoutingCandidates(input, 2);
+    expect(r).toHaveLength(2);
+    expect(r.map((x) => x.brokerId).join(",")).toBe("a,b");
+  });
+
   it("does not mutate input array order in place", () => {
     const input = [mk({ brokerId: "z", rankScore: 1 })];
     const copy = [...input];

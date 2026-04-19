@@ -38,6 +38,11 @@ Scores blend contact coverage, progression, discipline, conversion signals, and 
 - Do **not** treat AI assist or insights as autopilot — execution stays with humans.
 - Do **not** use “bottom broker” language; use “needs support”, “quiet workspace”, “pipeline risk”.
 
-## Feature flag
+## Feature flags
 
-Set `FEATURE_BROKER_TEAM_VIEW_V1=true` for internal rollout. Defaults off until deliberately enabled.
+| Variable | Effect |
+|---------|--------|
+| `FEATURE_BROKER_TEAM_VIEW_V1=1` | Aggregation, risk/insight engines, APIs (`GET /api/admin/broker-team`, drill-down). |
+| `FEATURE_BROKER_TEAM_VIEW_PANEL_V1=1` | Admin routes + dashboard UI — requires both flags. |
+
+Defaults off until deliberately enabled.

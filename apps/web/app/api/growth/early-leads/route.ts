@@ -5,6 +5,8 @@ import { prisma } from "@/lib/db";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
 import { sendFormSubmissionNotificationToAdmin } from "@/lib/email/notifications";
 import { formatFormActivityNote } from "@/lib/forms/form-activity";
+import { engineFlags } from "@/config/feature-flags";
+import { logLeadSubmitted } from "@/modules/growth/fast-deal-landing-results.service";
 
 export const dynamic = "force-dynamic";
 
@@ -39,6 +41,9 @@ const bodySchema = z
         utm_medium: z.string().max(200).optional(),
       })
       .optional(),
+    /** Growth Machine preview only — optional attribution for Fast Deal results (ignored if absent). */
+    growthDashMarket: z.string().max(120).optional(),
+    growthDashChannel: z.string().max(80).optional(),
   })
   .superRefine((data, ctx) => {
     const emailRaw = data.email?.trim() ?? "";
@@ -132,6 +137,19 @@ export async function POST(req: Request) {
       clientName: submission.clientName ?? undefined,
       clientEmail: clientEmail ?? undefined,
     }).catch((e) => console.error("[early-leads] Admin notification failed:", e));
+
+    const dashMarket = b.growthDashMarket?.trim();
+    if (
+      engineFlags.fastDealResultsV1 &&
+      dashMarket &&
+      dashMarket.length > 0
+    ) {
+      void logLeadSubmitted({
+        marketVariant: dashMarket,
+        formSubmissionId: submission.id,
+        cta: b.growthDashChannel?.trim(),
+      });
+    }
 
     return NextResponse.json({ ok: true, submissionId: submission.id }, { headers: getRateLimitHeaders(rl) });
   } catch (e) {

@@ -7,6 +7,12 @@ import type {
   BrokerPerformanceEngineSnapshot,
 } from "@/modules/broker/performance/broker-performance.types";
 import type { BrokerIncentiveSummary } from "@/modules/broker/incentives/broker-incentives.types";
+import type { BrokerProfileConfidenceLevel } from "@/modules/broker/profile/broker-profile.types";
+import type {
+  BrokerAvailabilityStatus,
+  BrokerCapacityBand,
+  BrokerSlaHealth,
+} from "@/modules/broker/availability/broker-availability.types";
 
 /** Aggregate follow-up posture for the cohort (advisory). */
 export type BrokerTeamFollowUpHealth = "good" | "moderate" | "poor";
@@ -33,6 +39,14 @@ export type BrokerTeamSummary = {
   followUpHealth: BrokerTeamFollowUpHealth;
 };
 
+/** Compact declared profile — optional when service-profile flags are off. */
+export type BrokerTeamProfileCompact = {
+  topServiceArea: string | null;
+  topSpecialization: string | null;
+  acceptingNewLeads: boolean;
+  profileConfidence: BrokerProfileConfidenceLevel;
+};
+
 export type BrokerTeamRow = {
   brokerId: string;
   displayName: string;
@@ -46,6 +60,8 @@ export type BrokerTeamRow = {
   riskLevel: BrokerTeamRiskLevel;
   topStrength: string;
   topWeakness: string;
+  profileCompact?: BrokerTeamProfileCompact;
+  opsRouting?: BrokerTeamOpsRoutingCompact;
 };
 
 export type BrokerTeamInsight = {

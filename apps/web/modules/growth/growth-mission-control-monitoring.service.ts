@@ -16,6 +16,12 @@ export type GrowthMissionControlMonitoringState = {
   missingDataWarnings: number;
   /** Sum of checklist + risk + review dedupe collapses in a build (advisory metric). */
   dedupeEvents: number;
+  /** Action bridge: candidates before dedupe in a bundle build. */
+  actionBundlesGenerated: number;
+  actionsGeneratedTotal: number;
+  topActionsGenerated: number;
+  missionActionClicks: number;
+  missionActionNavByTarget: Record<string, number>;
 };
 
 let state: GrowthMissionControlMonitoringState = {
@@ -29,10 +35,15 @@ let state: GrowthMissionControlMonitoringState = {
   reviewItemsMerged: 0,
   missingDataWarnings: 0,
   dedupeEvents: 0,
+  actionBundlesGenerated: 0,
+  actionsGeneratedTotal: 0,
+  topActionsGenerated: 0,
+  missionActionClicks: 0,
+  missionActionNavByTarget: {},
 };
 
 export function getGrowthMissionControlMonitoringSnapshot(): GrowthMissionControlMonitoringState {
-  return { ...state };
+  return { ...state, missionActionNavByTarget: { ...state.missionActionNavByTarget } };
 }
 
 export function resetGrowthMissionControlMonitoringForTests(): void {
@@ -47,6 +58,11 @@ export function resetGrowthMissionControlMonitoringForTests(): void {
     reviewItemsMerged: 0,
     missingDataWarnings: 0,
     dedupeEvents: 0,
+    actionBundlesGenerated: 0,
+    actionsGeneratedTotal: 0,
+    topActionsGenerated: 0,
+    missionActionClicks: 0,
+    missionActionNavByTarget: {},
   };
 }
 
@@ -84,6 +100,41 @@ export function recordGrowthMissionControlBuild(args: {
     const notes = args.noteCount ?? 0;
     console.info(
       `${LOG_PREFIX} build completed status=${args.status} focus=${args.missionFocusTitle ?? "(none)"} checklist=${args.checklistCount} risks=${args.riskCount} reviews=${args.reviewCount} warnings=${args.missingDataWarningCount} dedupe=${dedupe} notes=${notes}`,
+    );
+  } catch {
+    /* noop */
+  }
+}
+
+export function recordMissionControlActionsBuilt(args: {
+  candidateCount: number;
+  rankedCount: number;
+  topGenerated: boolean;
+  listCount: number;
+}): void {
+  try {
+    state.actionBundlesGenerated += 1;
+    state.actionsGeneratedTotal += args.listCount + (args.topGenerated ? 1 : 0);
+    if (args.topGenerated) state.topActionsGenerated += 1;
+    console.info(
+      `${LOG_PREFIX} actions bundle candidates=${args.candidateCount} ranked=${args.rankedCount} top=${args.topGenerated ? "y" : "n"} list=${args.listCount}`,
+    );
+  } catch {
+    /* noop */
+  }
+}
+
+export function recordMissionControlActionClick(args: {
+  navTarget: string;
+  actionId: string;
+  role: "top" | "list";
+}): void {
+  try {
+    state.missionActionClicks += 1;
+    const k = args.navTarget;
+    state.missionActionNavByTarget[k] = (state.missionActionNavByTarget[k] ?? 0) + 1;
+    console.info(
+      `${LOG_PREFIX} action click role=${args.role} id=${args.actionId} nav=${args.navTarget}`,
     );
   } catch {
     /* noop */

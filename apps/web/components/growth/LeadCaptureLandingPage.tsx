@@ -3,6 +3,7 @@
 import * as React from "react";
 
 import { buildBuyerLandingPage } from "@/modules/growth/landing-page.service";
+import { postFastDealSourceEventLog } from "@/lib/growth/fast-deal-client-log";
 
 type Status = "idle" | "submitting" | "success" | "error";
 
@@ -10,10 +11,12 @@ export function LeadCaptureLandingPage({
   locale,
   country,
   defaultCity = "Montréal",
+  enableFastDealLogging = false,
 }: {
   locale: string;
   country: string;
   defaultCity?: string;
+  enableFastDealLogging?: boolean;
 }) {
   void locale;
   void country;
@@ -21,6 +24,19 @@ export function LeadCaptureLandingPage({
   const template = React.useMemo(() => buildBuyerLandingPage(city), [city]);
   const [status, setStatus] = React.useState<Status>("idle");
   const [errorMsg, setErrorMsg] = React.useState("");
+  const formStartedRef = React.useRef(false);
+
+  React.useEffect(() => {
+    if (!enableFastDealLogging || typeof window === "undefined") return;
+    const key = `fd_lp_pv_${city}`;
+    if (sessionStorage.getItem(key)) return;
+    sessionStorage.setItem(key, "1");
+    void postFastDealSourceEventLog({
+      sourceType: "landing_capture",
+      sourceSubType: "landing_preview_shown",
+      metadata: { marketVariant: city },
+    });
+  }, [city, enableFastDealLogging]);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -60,6 +76,12 @@ export function LeadCaptureLandingPage({
           phone: phone || undefined,
           propertyLinkOrAddress,
           notes,
+          ...(enableFastDealLogging
+            ? {
+                growthDashMarket: city.trim() || "—",
+                growthDashChannel: "growth_dashboard_preview",
+              }
+            : {}),
         }),
       });
       const data = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
@@ -115,7 +137,19 @@ export function LeadCaptureLandingPage({
           ))}
         </div>
 
-        <form className="mx-auto mt-8 max-w-md space-y-3" onSubmit={onSubmit}>
+        <form
+          className="mx-auto mt-8 max-w-md space-y-3"
+          onFocusCapture={() => {
+            if (!enableFastDealLogging || formStartedRef.current) return;
+            formStartedRef.current = true;
+            void postFastDealSourceEventLog({
+              sourceType: "landing_capture",
+              sourceSubType: "lead_form_started",
+              metadata: { marketVariant: city },
+            });
+          }}
+          onSubmit={onSubmit}
+        >
           <div>
             <label className="text-xs text-zinc-500" htmlFor="fast-deal-name">
               Name
