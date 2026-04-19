@@ -7,6 +7,7 @@ export type AssistantFeatureFlags = {
   assistantEnabled: boolean;
   voiceInputEnabled: boolean;
   textToSpeechEnabled: boolean;
+  voiceConversationEnabled: boolean;
   compareEnabled: boolean;
   bnhubHelpEnabled: boolean;
   propertyHelpEnabled: boolean;
@@ -24,6 +25,7 @@ export function getAssistantConfig(): AssistantFeatureFlags {
     assistantEnabled: flag("NEXT_PUBLIC_PLATFORM_ASSISTANT_ENABLED", true),
     voiceInputEnabled: flag("NEXT_PUBLIC_PLATFORM_ASSISTANT_VOICE", true),
     textToSpeechEnabled: flag("NEXT_PUBLIC_PLATFORM_ASSISTANT_TTS", true),
+    voiceConversationEnabled: flag("NEXT_PUBLIC_PLATFORM_ASSISTANT_VOICE_CONVERSATION", true),
     compareEnabled: flag("NEXT_PUBLIC_PLATFORM_ASSISTANT_COMPARE", true),
     bnhubHelpEnabled: flag("NEXT_PUBLIC_PLATFORM_ASSISTANT_BNHUB_HELP", true),
     propertyHelpEnabled: flag("NEXT_PUBLIC_PLATFORM_ASSISTANT_PROPERTY_HELP", true),

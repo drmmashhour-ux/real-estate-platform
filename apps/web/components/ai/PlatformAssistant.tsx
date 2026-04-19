@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import { MessageCircle, Mic, Send, Volume2, X } from "lucide-react";
+import { Globe, MessageCircle, Mic, MicOff, Send, Volume2, X } from "lucide-react";
 import { getAssistantConfig } from "@/lib/ai/assistant-config";
 import {
   buildPropertySearchHref,
@@ -17,6 +17,8 @@ import { responseForIntent } from "@/lib/ai/assistant-responses";
 import { compareListings } from "@/lib/ai/assistant-compare";
 import { trackAssistantEvent } from "@/lib/ai/assistant-analytics";
 import { isSpeechRecognitionSupported, startVoiceSearch } from "@/lib/ai/assistantVoice";
+import { useVoiceConversation } from "@/lib/ai/useVoiceConversation";
+import { VoiceWaveform } from "@/components/ai/VoiceWaveform";
 import {
   DEFAULT_GLOBAL_FILTERS,
   globalFiltersToUrlParams,
@@ -51,6 +53,7 @@ export function PlatformAssistant() {
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [voiceState, setVoiceState] = useState<"idle" | "listening" | "unsupported" | "denied">("idle");
+  const [voiceMode, setVoiceMode] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
   const voiceRef = useRef<{ stop: () => void } | null>(null);
   const titleId = useId();
@@ -208,6 +211,45 @@ export function PlatformAssistant() {
     trackAssistantEvent("assistant_tts_used");
   }, [cfg.textToSpeechEnabled, messages]);
 
+  const runPipelineRef = useRef(runPipeline);
+  runPipelineRef.current = runPipeline;
+  const messagesRef = useRef(messages);
+  messagesRef.current = messages;
+
+  const voiceConversation = useVoiceConversation({
+    enabled: cfg.voiceConversationEnabled && cfg.voiceInputEnabled && cfg.textToSpeechEnabled,
+    onTranscript: useCallback((text: string) => {
+      runPipelineRef.current(text);
+      const latest = messagesRef.current;
+      const last = [...latest].reverse().find((m) => m.role === "assistant");
+      return last?.text;
+    }, []),
+  });
+
+  const toggleVoiceMode = useCallback(() => {
+    if (voiceMode) {
+      voiceConversation.stop();
+      setVoiceMode(false);
+      trackAssistantEvent("assistant_voice_conversation_ended");
+    } else {
+      setVoiceMode(true);
+      voiceConversation.start();
+      trackAssistantEvent("assistant_voice_conversation_started");
+    }
+  }, [voiceMode, voiceConversation]);
+
+  const onLangToggle = useCallback(() => {
+    voiceConversation.toggleLang();
+    trackAssistantEvent("assistant_voice_language_changed", { lang: voiceConversation.lang === "en-CA" ? "fr-CA" : "en-CA" });
+  }, [voiceConversation]);
+
+  useEffect(() => {
+    if (!open && voiceMode) {
+      voiceConversation.stop();
+      setVoiceMode(false);
+    }
+  }, [open, voiceMode, voiceConversation]);
+
   if (!cfg.assistantEnabled) return null;
 
   const panel = (
@@ -235,8 +277,32 @@ export function PlatformAssistant() {
               <h2 id={titleId} className="text-lg font-semibold text-white">
                 LECIPM Assistant
               </h2>
-              <div className="flex items-center gap-2">
-                {cfg.textToSpeechEnabled ? (
+              <div className="flex items-center gap-1.5">
+                {cfg.voiceConversationEnabled && cfg.voiceInputEnabled && cfg.textToSpeechEnabled ? (
+                  <button
+                    type="button"
+                    onClick={toggleVoiceMode}
+                    className={`rounded-lg p-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37] ${voiceMode ? "bg-[#D4AF37]/20 text-[#D4AF37]" : "text-white/60 hover:bg-white/10 hover:text-[#D4AF37]"}`}
+                    aria-label={voiceMode ? "Exit voice conversation" : "Start voice conversation"}
+                    aria-pressed={voiceMode}
+                    title={voiceMode ? "Exit voice mode" : "Voice conversation mode"}
+                  >
+                    {voiceMode ? <MicOff className="h-5 w-5" aria-hidden /> : <Mic className="h-5 w-5" aria-hidden />}
+                  </button>
+                ) : null}
+                {voiceMode ? (
+                  <button
+                    type="button"
+                    onClick={onLangToggle}
+                    className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-white/70 hover:bg-white/10 hover:text-[#D4AF37] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37]"
+                    aria-label={`Switch language to ${voiceConversation.lang === "en-CA" ? "French" : "English"}`}
+                    title={`Currently: ${voiceConversation.lang === "en-CA" ? "English" : "Français"}`}
+                  >
+                    <Globe className="h-4 w-4" aria-hidden />
+                    {voiceConversation.lang === "en-CA" ? "EN" : "FR"}
+                  </button>
+                ) : null}
+                {cfg.textToSpeechEnabled && !voiceMode ? (
                   <button
                     type="button"
                     onClick={speakLast}
@@ -258,7 +324,7 @@ export function PlatformAssistant() {
             </div>
 
             <div ref={listRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-3">
-              {messages.length === 0 ? (
+              {messages.length === 0 && !voiceMode ? (
                 <p className="text-sm leading-relaxed text-white/75">
                   Ask in plain language or tap a prompt. I can search, explain BNHub booking, and describe platform
                   steps — without inventing listing facts.
@@ -275,20 +341,46 @@ export function PlatformAssistant() {
                 </div>
               ))}
               {busy ? <p className="text-xs text-[#D4AF37]">Thinking…</p> : null}
-              <div className="flex flex-wrap gap-2 pt-1">
-                {QUICK.map((q) => (
+
+              {voiceMode ? (
+                <div className="flex flex-col items-center gap-4 py-6" aria-live="polite">
+                  <VoiceWaveform phase={voiceConversation.phase} size={48} />
+                  <p className="text-sm font-medium text-white/90">
+                    {voiceConversation.phase === "listening" && "Listening… speak now"}
+                    {voiceConversation.phase === "processing" && "Processing…"}
+                    {voiceConversation.phase === "speaking" && "Speaking…"}
+                    {voiceConversation.phase === "idle" && "Voice mode ready — tap the mic to begin"}
+                    {voiceConversation.phase === "paused" && "Paused"}
+                  </p>
+                  <p className="text-xs text-white/50">
+                    {voiceConversation.lang === "en-CA" ? "English (Canada)" : "Français (Canada)"}
+                    {" · "}
+                    Say anything to search or ask a question
+                  </p>
                   <button
-                    key={q}
                     type="button"
-                    onClick={() => {
-                      void runPipeline(q);
-                    }}
-                    className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-left text-xs text-white/90 hover:border-[#D4AF37]/40"
+                    onClick={toggleVoiceMode}
+                    className="mt-2 rounded-full border border-red-400/40 bg-red-500/10 px-4 py-2 text-xs font-medium text-red-300 transition hover:bg-red-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
                   >
-                    {q}
+                    End voice conversation
                   </button>
-                ))}
-              </div>
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {QUICK.map((q) => (
+                    <button
+                      key={q}
+                      type="button"
+                      onClick={() => {
+                        void runPipeline(q);
+                      }}
+                      className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-left text-xs text-white/90 hover:border-[#D4AF37]/40"
+                    >
+                      {q}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="border-t border-white/10 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">

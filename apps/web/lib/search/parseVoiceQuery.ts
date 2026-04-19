@@ -180,3 +180,23 @@ export function voiceFeedbackEnglish(p: ParsedVoiceQuery): string {
   if (parts.length <= 1) return "Search updated.";
   return parts.join(" ") + ".";
 }
+
+/** Short spoken summary for speechSynthesis (French). */
+export function voiceFeedbackFrench(p: ParsedVoiceQuery): string {
+  const parts: string[] = ["Affichage des"];
+  if (p.propertyTypes?.includes("CONDO") && p.propertyTypes.length === 1) {
+    parts.push("condos");
+  } else if (p.propertyTypes?.includes("SINGLE_FAMILY")) {
+    parts.push("maisons");
+  } else {
+    parts.push("propriétés");
+  }
+  if (p.city) parts.push(`à ${p.city}`);
+  if (p.beds) parts.push(`${p.beds} chambre${p.beds === 1 ? "" : "s"}`);
+  if (p.maxPrice && p.maxPrice >= 1000) {
+    const k = Math.round(p.maxPrice / 1000);
+    parts.push(`moins de ${k} mille dollars`);
+  }
+  if (parts.length <= 1) return "Recherche mise à jour.";
+  return parts.join(" ") + ".";
+}
