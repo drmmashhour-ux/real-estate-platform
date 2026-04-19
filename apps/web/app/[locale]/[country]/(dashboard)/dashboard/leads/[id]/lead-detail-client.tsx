@@ -9,6 +9,7 @@ import {
 import { SalesAssistantPanel } from "./sales-assistant";
 import { getDmTemplateForLead, type DmTemplateKey } from "@/lib/leads/dm-templates";
 import { getContactWhatsAppUrl } from "@/lib/config/contact";
+import { CollaborationStrip } from "@/components/collaboration/CollaborationStrip";
 import { ImmoPlatformCollaborationClause } from "@/components/immo/ImmoPlatformCollaborationClause";
 import { ViralMomentPrompt } from "@/components/referral/ViralMomentPrompt";
 import { DealLegalTimelineSummaryCard } from "@/components/deal/DealLegalTimelineSummaryCard";
@@ -288,6 +289,14 @@ export function LeadDetailClient({
         <Link href="/dashboard/leads" className="text-sm font-medium text-premium-gold hover:underline">
           ← All leads
         </Link>
+
+        <div className="mt-6">
+          <CollaborationStrip entityType="lead" entityId={leadId} headline="Call this lead" />
+        </div>
+
+        <div className="mt-4 max-w-2xl">
+          <ImmoDealRoomEntry entityType="lead" entityId={leadId} titleHint={lead.name} />
+        </div>
 
         {showRoutingPanel ? (
           <LeadRoutingPanel

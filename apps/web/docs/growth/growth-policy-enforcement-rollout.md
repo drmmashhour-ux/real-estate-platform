@@ -8,7 +8,8 @@ Operational guide for enabling the **Growth Policy Enforcement** layer safely. T
 |------|---------|
 | `FEATURE_GROWTH_MACHINE_V1` | Prerequisite — growth machine hub and `/api/growth/policy-enforcement` actor checks. |
 | `FEATURE_GROWTH_POLICY_ENFORCEMENT_V1` | **Master switch** — when `true`, the layer builds snapshots and exposes advisory gates to downstream callers. When `false`, GET `/api/growth/policy-enforcement` returns HTTP **200** with `enforcementLayerEnabled: false` (no silent 403); UI shows operator copy. |
-| `FEATURE_GROWTH_POLICY_ENFORCEMENT_PANEL_V1` | Shows the detailed **Policy enforcement** panel on the Growth Machine dashboard **in addition** to the always-visible status strip (when enforcement is enabled). |
+| `FEATURE_GROWTH_POLICY_ENFORCEMENT_PANEL_V1` | Shows the detailed **Policy enforcement** panel on the Growth Machine dashboard **in addition** to the always-visible status strip. When the layer is off, the strip still shows layer/panel flags and operator copy. |
+| `NEXT_PUBLIC_GROWTH_POLICY_ENFORCEMENT_DEBUG` (optional) | In **production** only, allow client debug surfaces (rollout debug strip, panel debug, `?growthPolicyDebug=1` on fetches) when set to `1`. Dev/staging: debug is on by default without this. |
 
 Optional upstream modules (partial snapshots if unavailable — see monitoring / partial inputs):
 
@@ -37,7 +38,7 @@ Nothing in this layer **charges**, **captures bookings**, **executes ads**, or *
 This layer **does not enforce**:
 
 - **Payments** — billing and Stripe flows are unchanged.
-- **Bookings core** — BNHub / booking execution is unchanged.
+- **Booking core** — BNHub / booking execution is unchanged.
 - **Ads core** — paid media execution and core ad plumbing are unchanged.
 - **CRO core** — primary conversion experiments and core CRO paths are unchanged.
 

@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "rooms": {
+    "dr_7dd5d40d-64f7-4228-8154-7e1743f6fd6f": {
+      "id": "dr_7dd5d40d-64f7-4228-8154-7e1743f6fd6f",
+      "entityType": "lead",
+      "entityId": "z",
+      "title": "Deal Room · Lead z",
+      "status": "open",
+      "createdBy": "broker_x",
+      "createdAt": "2026-04-19T01:24:06.058Z",
+      "updatedAt": "2026-04-19T01:24:06.058Z"
+    }
+  },
+  "participantIdsByRoom": {
+    "dr_7dd5d40d-64f7-4228-8154-7e1743f6fd6f": [
+      "drp_4821298c-8cf4-4e0f-a99a-d0a66a1c1a00"
+    ]
+  },
+  "participants": {
+    "drp_4821298c-8cf4-4e0f-a99a-d0a66a1c1a00": {
+      "id": "drp_4821298c-8cf4-4e0f-a99a-d0a66a1c1a00",
+      "dealRoomId": "dr_7dd5d40d-64f7-4228-8154-7e1743f6fd6f",
+      "userId": "broker_x",
+      "displayName": "BX",
+      "role": "broker",
+      "accessLevel": "manage",
+      "joinedAt": "2026-04-19T01:24:06.058Z"
+    }
+  },
+  "notes": [],
+  "tasks": [],
+  "activities": [
+    {
+      "id": "dra_7e0b4eae-9c9a-41a6-85f2-3806154af031",
+      "dealRoomId": "dr_7dd5d40d-64f7-4228-8154-7e1743f6fd6f",
+      "type": "created",
+      "actorId": "broker_x",
+      "summary": "Deal room created — Deal Room · Lead z",
+      "metadata": {
+        "entityType": "lead",
+        "entityId": "z"
+      },
+      "createdAt": "2026-04-19T01:24:06.058Z"
+    }
+  ],
+  "meetings": [],
+  "documents": [],
+  "documentRequirements": [],
+  "updatedAt": "2026-04-19T01:24:06.058Z"
+}

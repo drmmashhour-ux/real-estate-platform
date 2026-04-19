@@ -32,6 +32,8 @@ import { brokerClosingFlags, brokerPerformanceFlags } from "@/config/feature-fla
 import { BrokerClosingSection } from "@/components/broker/BrokerClosingSection";
 import { BrokerPerformancePanel } from "@/components/broker/BrokerPerformancePanel";
 import { HubJourneyBanner } from "@/components/journey/HubJourneyBanner";
+import { CollaborationStrip } from "@/components/collaboration/CollaborationStrip";
+import { ImmoDealRoomEntry } from "@/components/immo-deal-room/ImmoDealRoomEntry";
 
 function fmtCommissionCents(cents: number | null | undefined): string {
   if (cents == null || cents <= 0) return "—";
@@ -176,6 +178,14 @@ export default async function BrokerHubPage({
         <div className="flex flex-wrap items-center justify-end gap-2 text-sm text-slate-400">
           <PhoneCallUs showLabel={true} />
         </div>
+        {userId && (dbUser?.role === "BROKER" || dbUser?.role === "ADMIN") ? (
+          <>
+            <CollaborationStrip entityType="broker" entityId={userId} headline="Start broker call" />
+            <div className="mt-4 max-w-2xl">
+              <ImmoDealRoomEntry entityType="broker" entityId={userId} titleHint="Broker workspace" />
+            </div>
+          </>
+        ) : null}
         {userId ? (
           <section>
             <h2 className="text-xl font-semibold tracking-tight text-white">Inbox</h2>

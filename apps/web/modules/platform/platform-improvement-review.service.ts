@@ -11,6 +11,7 @@ import { buildPlatformMonetizationReview } from "./platform-monetization-review.
 import { buildPlatformOpsReview } from "./platform-ops-review.service";
 import { getDefaultPlatformReviewSnapshot, type PlatformReviewSnapshot } from "./platform-review-snapshot";
 import { buildPlatformTrustReview } from "./platform-trust-review.service";
+import { getUtcIsoWeekKey } from "./platform-improvement-weekly-focus.service";
 
 export function buildFullPlatformImprovementBundle(
   snapshot: PlatformReviewSnapshot = getDefaultPlatformReviewSnapshot(),
@@ -28,6 +29,8 @@ export function buildFullPlatformImprovementBundle(
     dataMoat,
     snapshot,
   });
+  const createdAt = new Date();
+  const weekKey = getUtcIsoWeekKey(createdAt);
 
   const opsIssueCount =
     ops.duplicatePanels.length + ops.missingShortcuts.length + ops.overloadedPages.length;
@@ -47,6 +50,7 @@ export function buildFullPlatformImprovementBundle(
     ops,
     dataMoat,
     priorities,
-    createdAt: new Date().toISOString(),
+    weekKey,
+    createdAt: createdAt.toISOString(),
   };
 }

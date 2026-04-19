@@ -4,16 +4,30 @@
  */
 
 import { growthAutonomyFlags, growthPolicyEnforcementFlags } from "@/config/feature-flags";
+import { enrichGrowthAutonomySuggestionsWithAutoExecution } from "./growth-autonomy-auto-execution.service";
+import { buildGrowthAutonomyTrialSnapshotEmbed } from "./growth-autonomy-trial-orchestration.service";
+import { parseGrowthAutonomyAutoLowRiskRolloutFromEnv } from "./growth-autonomy-auto-config";
+import type {
+  GrowthAutonomyAutoCohortBucket,
+  GrowthAutonomyAutoLowRiskRolloutStage,
+  GrowthAutonomyAutoLowRiskUiContext,
+} from "./growth-autonomy-auto.types";
+import { applyGrowthAutonomyLearning } from "./growth-autonomy-learning-apply.service";
+import {
+  buildGrowthAutonomyLearningSnapshotForEmbed,
+  loadGrowthAutonomyLearningOrchestrationContext,
+} from "./growth-autonomy-learning.service";
 import { GROWTH_AUTONOMY_CATALOG, type GrowthAutonomyCatalogEntry } from "./growth-autonomy-catalog";
 import { parseGrowthAutonomyModeFromEnv, parseGrowthAutonomyRolloutFromEnv } from "./growth-autonomy-config";
 import { buildAutonomyExplanation } from "./growth-autonomy-explanation.service";
 import { recordGrowthAutonomySnapshotBuild } from "./growth-autonomy-monitoring.service";
-import type {
-  GrowthAutonomyDisposition,
-  GrowthAutonomyMode,
-  GrowthAutonomyPrefill,
-  GrowthAutonomySnapshot,
-  GrowthAutonomySuggestion,
+import {
+  isGrowthAutonomyPrefilledDisposition,
+  type GrowthAutonomyDisposition,
+  type GrowthAutonomyMode,
+  type GrowthAutonomyPrefill,
+  type GrowthAutonomySnapshot,
+  type GrowthAutonomySuggestion,
 } from "./growth-autonomy.types";
 import { getEnforcementForTarget } from "./growth-policy-enforcement-query.service";
 import { buildGrowthPolicyEnforcementSnapshot } from "./growth-policy-enforcement.service";
@@ -59,7 +73,7 @@ function resolveDisposition(
     case "advisory_only":
       return "suggest_only";
     case "allow":
-      if (autonomyMode === "SAFE_AUTOPILOT") return "prefilled_action";
+      if (autonomyMode === "SAFE_AUTOPILOT") return "prefilled_only";
       return "suggest_only";
     default:
       return "suggest_only";
@@ -126,6 +140,15 @@ export type BuildGrowthAutonomyContext = {
   growthDashboardPath: string;
   /** When true, OFF mode still surfaces suggestions for internal/debug validation (API-controlled). */
   surfaceDebug: boolean;
+  /**
+   * Required for cohort-aware low-risk auto metadata (pass from authenticated API routes).
+   * When omitted, auto-low-risk rollout stage still reflects env; promotion defaults to conservative (no cohort auto).
+   */
+  autoLowRiskContext?: {
+    cohortBucket: GrowthAutonomyAutoCohortBucket | null;
+    viewerMayReceiveAutoExecution: boolean;
+    autoRolloutStage: GrowthAutonomyAutoLowRiskRolloutStage;
+  } | null;
 };
 
 export async function buildGrowthAutonomySnapshot(ctx: BuildGrowthAutonomyContext): Promise<GrowthAutonomySnapshot> {
@@ -225,7 +248,7 @@ export async function buildGrowthAutonomySnapshot(ctx: BuildGrowthAutonomyContex
     const confidence = confidenceFor({ enforcementAvailable, snapshotPartial: enforcementInputPartial });
 
     let prefill: GrowthAutonomyPrefill | undefined;
-    if (disposition === "prefilled_action" && autonomyMode === "SAFE_AUTOPILOT") {
+    if (isGrowthAutonomyPrefilledDisposition(disposition) && autonomyMode === "SAFE_AUTOPILOT") {
       prefill = prefillFor(entry, ctx.growthDashboardPath);
     }
 
@@ -236,6 +259,7 @@ export async function buildGrowthAutonomySnapshot(ctx: BuildGrowthAutonomyContex
       actionType: entry.actionType,
       label: entry.label,
       targetKey: entry.enforcementTarget,
+      category: "baseline_catalog",
       explanation,
       confidence,
       enforcementTargetMode: enf.mode,
@@ -243,6 +267,17 @@ export async function buildGrowthAutonomySnapshot(ctx: BuildGrowthAutonomyContex
       disposition,
       allowed,
       policyNote: enf.rationale,
+      allowedReason:
+        disposition === "blocked" || disposition === "hidden"
+          ? undefined
+          : "Baseline catalog entry — bounded to enforcement target; catalog does not widen in this phase.",
+      disallowedReason:
+        disposition === "blocked" || disposition === "hidden"
+          ? enf.rationale || "Policy or mode constraint."
+          : null,
+      reversibilityNote: "Dismiss or ignore — baseline rows never auto-write.",
+      baselineAllowlisted: true,
+      trialBased: false,
       prefill,
     };
 
@@ -253,7 +288,7 @@ export async function buildGrowthAutonomySnapshot(ctx: BuildGrowthAutonomyContex
     else if (disposition === "approval_required") approvalRequired += 1;
     else {
       surfaced += 1;
-      if (disposition === "prefilled_action") prefilled += 1;
+      if (isGrowthAutonomyPrefilledDisposition(disposition)) prefilled += 1;
     }
   }
 
@@ -265,6 +300,65 @@ export async function buildGrowthAutonomySnapshot(ctx: BuildGrowthAutonomyContex
     partialSnapshot: enforcementInputPartial,
   });
 
+  let suggestionsOut = suggestions;
+  let countsOut = {
+    surfaced,
+    blocked,
+    approvalRequired,
+    hidden,
+    prefilled,
+  };
+
+  const learnCtx = await loadGrowthAutonomyLearningOrchestrationContext({ killSwitchActive: false });
+  if (growthAutonomyFlags.growthAutonomyLearningV1 && learnCtx.adaptiveInfluenceAllowed) {
+    const applied = applyGrowthAutonomyLearning({
+      suggestions: suggestionsOut,
+      counts: countsOut,
+      weightDeltasByCategory: learnCtx.weightDeltasByCategory,
+      suppressedUntilByCategory: learnCtx.suppressedUntilByCategory,
+      learningActive: true,
+    });
+    suggestionsOut = applied.suggestions;
+    countsOut = applied.counts;
+  }
+
+  const learningEmbed = growthAutonomyFlags.growthAutonomyLearningV1
+    ? await buildGrowthAutonomyLearningSnapshotForEmbed({ killSwitchActive: false })
+    : undefined;
+
+  const arc =
+    ctx.autoLowRiskContext ?? {
+      cohortBucket: null,
+      viewerMayReceiveAutoExecution: false,
+      autoRolloutStage: parseGrowthAutonomyAutoLowRiskRolloutFromEnv(),
+    };
+
+  let autoLowRiskEmbed: GrowthAutonomyAutoLowRiskUiContext | undefined;
+  if (growthAutonomyFlags.growthAutonomyAutoLowRiskV1) {
+    const enriched = await enrichGrowthAutonomySuggestionsWithAutoExecution({
+      suggestions: suggestionsOut,
+      autonomyMode,
+      autonomyRolloutStage: rolloutStage,
+      killSwitchActive: false,
+      autoRolloutStage: arc.autoRolloutStage,
+      autoLowRiskFlagOn: growthAutonomyFlags.growthAutonomyAutoLowRiskV1,
+      enforcementInputPartial,
+      learnCtx,
+      viewerMayReceiveAutoExecution: arc.viewerMayReceiveAutoExecution,
+      cohortBucket: arc.cohortBucket,
+    });
+    suggestionsOut = enriched.suggestions;
+    autoLowRiskEmbed = enriched.autoLowRisk;
+  }
+
+  const trialEmbed = await buildGrowthAutonomyTrialSnapshotEmbed({
+    enforcementSnapshot,
+    enforcementInputPartial,
+    autonomyMode,
+    rolloutStage,
+    killSwitch: false,
+  });
+
   return {
     autonomyLayerEnabled: true,
     autonomyMode,
@@ -273,16 +367,13 @@ export async function buildGrowthAutonomySnapshot(ctx: BuildGrowthAutonomyContex
     enforcementSnapshotPresent,
     enforcementLayerFlagOn: growthPolicyEnforcementFlags.growthPolicyEnforcementV1,
     enforcementInputPartial,
-    suggestions,
-    counts: {
-      surfaced,
-      blocked,
-      approvalRequired,
-      hidden,
-      prefilled,
-    },
+    suggestions: suggestionsOut,
+    counts: countsOut,
+    learning: learningEmbed,
+    autoLowRisk: autoLowRiskEmbed,
     operatorNotes,
     scopeExclusions: [...SCOPE_EXCLUSIONS],
     createdAt: ts(),
+    trial: trialEmbed,
   };
 }

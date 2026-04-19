@@ -45,6 +45,20 @@ import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
+async function collaborationForListingViewer(viewerId: string | null): Promise<{
+  enabled: boolean;
+  viewerId: string | null;
+}> {
+  if (!viewerId) return { enabled: false, viewerId: null };
+  const u = await prisma.user.findUnique({
+    where: { id: viewerId },
+    select: { role: true },
+  });
+  const enabled =
+    u?.role === PlatformRole.BROKER || u?.role === PlatformRole.ADMIN;
+  return { enabled, viewerId };
+}
+
 type Props = { params: Promise<{ id: string; locale: string; country: string }> };
 
 async function resolveListingFromParam(param: string) {
@@ -316,6 +330,7 @@ export default async function PublicListingRoute({ params }: Props) {
       pathname: listingPath,
       isPrivilegedUser: listingRolloutPrivileged,
     });
+    const collaborationFsbo = await collaborationForListingViewer(guestFsbo);
     return (
       <>
         <JsonLdScript data={productLd} />
@@ -332,6 +347,11 @@ export default async function PublicListingRoute({ params }: Props) {
             active: paywallFsbo && !isOwnerFsbo,
             unlocked: contactUnlockedFsbo,
             targetKind: "FSBO_LISTING",
+          }}
+          collaboration={{
+            listingId: fsboPayloadFinal.id,
+            enabled: collaborationFsbo.enabled,
+            viewerId: collaborationFsbo.viewerId,
           }}
         />
         <DeferredListingInsuranceLeadSection listingId={fsboPayloadFinal.id} />
@@ -447,6 +467,11 @@ export default async function PublicListingRoute({ params }: Props) {
           active: paywallCrm && !isOwnerCrm,
           unlocked: contactUnlockedCrm,
           targetKind: "CRM_LISTING",
+        }}
+        collaboration={{
+          listingId: payload.id,
+          enabled: collaborationCrm.enabled,
+          viewerId: collaborationCrm.viewerId,
         }}
       />
       <DeferredListingInsuranceLeadSection listingId={payload.id} />

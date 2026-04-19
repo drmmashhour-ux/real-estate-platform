@@ -13,6 +13,16 @@ Practical rollout guide for **`FEATURE_GROWTH_AUTONOMY_*`** alongside existing g
 | `FEATURE_GROWTH_AUTONOMY_MODE` | `OFF` \| `ASSIST` \| `SAFE_AUTOPILOT` |
 | `FEATURE_GROWTH_POLICY_ENFORCEMENT_V1` | Recommended before widening autonomy in production — provides policy gates for catalog targets. |
 
+### Single adjacent internal trial (optional)
+
+| Env | Meaning |
+|-----|---------|
+| `FEATURE_GROWTH_AUTONOMY_TRIAL_V1` | Enables eligibility + audit embed (`snapshot.trial`). |
+| `FEATURE_GROWTH_AUTONOMY_TRIAL_PANEL_V1` | Shows approval / rollback UI inside the autonomy panel. |
+| `FEATURE_GROWTH_AUTONOMY_TRIAL_FREEZE` | Blocks **new** trial approvals — read-only messaging may continue. |
+
+Trial **activation is limited to `FEATURE_GROWTH_AUTONOMY_ROLLOUT=internal`** for this phase. Detail: `growth-autonomy-internal-trial.md`.
+
 ### Optional debug / staging
 
 | Env | Meaning |
@@ -44,8 +54,9 @@ No changes to Stripe, bookings, ads execution, or CRO core through this mechanis
 2. **Kill switch on** — Same suppression message; `/api/growth/autonomy` returns kill payload.
 3. **Enforcement off, autonomy on** — Snapshot builds with advisory fallback; UI warns **reduced guardrails**.
 4. **Partial enforcement inputs** — Banner / notes reference partial state; explanations stay deterministic.
-5. **Modes** — Rotate `FEATURE_GROWTH_AUTONOMY_MODE`: OFF hides catalog rows from normal visibility; ASSIST surfaces suggestions; SAFE_AUTOPILOT yields **prefill** rows where enforcement allows.
+5. **Modes** — Rotate `FEATURE_GROWTH_AUTONOMY_MODE`: OFF hides catalog rows from normal visibility; ASSIST surfaces suggestions; SAFE_AUTOPILOT yields **prefill** rows (`prefilled_only`) where enforcement allows.
 6. **Internal rollout** — As non-admin in prod with `ROLLOUT=internal`, expect gate message and optional monitoring with `growthAutonomyDebug=1`.
+7. **Adjacent trial** — With trial flags + `ROLLOUT=internal` + `MODE=SAFE_AUTOPILOT`, approve once via `POST /api/growth/autonomy/trial`; verify audit marker appears, then rollback clears state.
 
 ## Monitoring / logs
 
@@ -57,3 +68,4 @@ Operational monitoring payload (optional on debug/non-prod requests) aggregates 
 
 - Does **not** integrate new external providers or send channels.
 - Prefills are **URLs and copy text** — operators trigger navigation and paste; no webhook execution.
+- Trial approval state is **in-process** (same limitation as autonomy monitoring aggregates) until a durable store lands.

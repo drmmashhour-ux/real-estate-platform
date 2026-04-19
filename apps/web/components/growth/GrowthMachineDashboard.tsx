@@ -76,6 +76,7 @@ import { GrowthScalePanels } from "./GrowthScalePanels";
 import { CompanyCommandCenterV7 } from "./CompanyCommandCenterV7";
 import { CompanyCommandCenterV8 } from "./CompanyCommandCenterV8";
 import { BrokerCompetitionPanel } from "../brokers/BrokerCompetitionPanel";
+import type { GrowthAutonomyAutoLowRiskRolloutStage } from "@/modules/growth/growth-autonomy-auto.types";
 import type { GrowthAutonomyRolloutStage } from "@/modules/growth/growth-autonomy.types";
 import type { GrowthPolicyEnforcementSnapshot } from "@/modules/growth/growth-policy-enforcement.types";
 import type { GrowthPolicyEnforcementGetResponse } from "@/modules/growth/growth-policy-enforcement-api.types";
@@ -199,6 +200,9 @@ export function GrowthMachineDashboard({
   viewerIsAdmin,
   viewerGrowthAutonomyPilotAccess,
   growthAutonomyEnforcementLayerFlag,
+  growthAutonomyLearning,
+  growthAutonomyAutoLowRisk,
+  growthAutonomyExpansion,
 }: {
   locale: string;
   country: string;
@@ -249,6 +253,8 @@ export function GrowthMachineDashboard({
     panel: boolean;
     killSwitch: boolean;
     rolloutStage: GrowthAutonomyRolloutStage;
+    trialEnabled?: boolean;
+    trialPanel?: boolean;
   };
   /** Viewer can bypass internal-rollout gate for autonomy API (admin). */
   viewerIsAdmin?: boolean;
@@ -256,6 +262,19 @@ export function GrowthMachineDashboard({
   viewerGrowthAutonomyPilotAccess?: boolean;
   /** FEATURE_GROWTH_POLICY_ENFORCEMENT_V1 — surfaced on autonomy rollout strip. */
   growthAutonomyEnforcementLayerFlag?: boolean;
+  /** Bounded autonomy learning loop — FEATURE_GROWTH_AUTONOMY_LEARNING_* */
+  growthAutonomyLearning?: { enabled: boolean; panel: boolean };
+  /** Allowlisted internal auto-actions — FEATURE_GROWTH_AUTONOMY_AUTO_LOW_RISK_* */
+  growthAutonomyAutoLowRisk?: {
+    enabled: boolean;
+    panel: boolean;
+    rolloutStage: GrowthAutonomyAutoLowRiskRolloutStage;
+  };
+  /** Evidence-based adjacent low-risk expansion governance */
+  growthAutonomyExpansion?: {
+    enabled: boolean;
+    panel: boolean;
+  };
   /** Governance feedback memory (advisory; default off). */
   growthGovernanceFeedback?: { enabled: boolean; panel: boolean; bridge: boolean };
   /** Weekly operating review panel — requires `FEATURE_GROWTH_OPERATING_REVIEW_V1` for API data. */
@@ -556,6 +575,21 @@ export function GrowthMachineDashboard({
         </Link>
       </div>
 
+      <GrowthPolicyEnforcementStatusStrip
+        enforcementEnabled={!!growthPolicyEnforcement?.enabled}
+        panelEnabled={!!growthPolicyEnforcement?.panel}
+      />
+
+      <GrowthPolicyEnforcementRolloutDebugStrip
+        enforcementLayerFlagOn={!!growthPolicyEnforcement?.enabled}
+        panelFlagOn={!!growthPolicyEnforcement?.panel}
+        enforcementSnapshot={growthPolicyEnforcement?.enabled ? enforcementSnapshot : null}
+        enforcementSnapshotReady={
+          !!growthPolicyEnforcement?.enabled ? enforcementSnapshotReady : true
+        }
+        simulationSectionMounted={!!(growthSimulation?.enabled && growthSimulation?.panel)}
+      />
+
       {growthRevenuePanelV1 || revenueDashboardV1 ? <GrowthRevenuePanel /> : null}
 
       {growth1kPlanV1 ? <Growth1KPlanPanel /> : null}
@@ -618,21 +652,6 @@ export function GrowthMachineDashboard({
 
       <GrowthBlockersPanel lines={summary.blockers} />
 
-      <GrowthPolicyEnforcementStatusStrip
-        enforcementEnabled={!!growthPolicyEnforcement?.enabled}
-        panelEnabled={!!growthPolicyEnforcement?.panel}
-      />
-
-      <GrowthPolicyEnforcementRolloutDebugStrip
-        enforcementLayerFlagOn={!!growthPolicyEnforcement?.enabled}
-        panelFlagOn={!!growthPolicyEnforcement?.panel}
-        enforcementSnapshot={growthPolicyEnforcement?.enabled ? enforcementSnapshot : null}
-        enforcementSnapshotReady={
-          !!growthPolicyEnforcement?.enabled ? enforcementSnapshotReady : true
-        }
-        simulationSectionMounted={!!(growthSimulation?.enabled && growthSimulation?.panel)}
-      />
-
       {growthAutonomy ? (
         <GrowthAutonomyPanel
           locale={locale}
@@ -645,6 +664,15 @@ export function GrowthMachineDashboard({
           enforcementLayerFlagOn={!!growthAutonomyEnforcementLayerFlag}
           viewerIsAdmin={!!viewerIsAdmin}
           viewerGrowthAutonomyPilotAccess={!!viewerGrowthAutonomyPilotAccess}
+          learningFeatureEnabled={!!growthAutonomyLearning?.enabled}
+          learningPanelVisible={!!growthAutonomyLearning?.panel}
+          autoLowRiskFeatureEnabled={!!growthAutonomyAutoLowRisk?.enabled}
+          autoLowRiskPanelVisible={!!growthAutonomyAutoLowRisk?.panel}
+          autoLowRiskRolloutStage={growthAutonomyAutoLowRisk?.rolloutStage ?? "off"}
+          expansionFeatureEnabled={!!growthAutonomyExpansion?.enabled}
+          expansionPanelVisible={!!growthAutonomyExpansion?.panel}
+          trialFeatureEnabled={!!growthAutonomy?.trialEnabled}
+          trialPanelVisible={!!growthAutonomy?.trialPanel}
         />
       ) : null}
 

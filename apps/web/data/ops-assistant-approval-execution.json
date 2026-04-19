@@ -1,0 +1,85 @@
+{
+  "version": 1,
+  "requests": {
+    "areq_aa8d8a10d0478e6f41447c35": {
+      "id": "areq_aa8d8a10d0478e6f41447c35",
+      "suggestionId": "ccc349c5aee3",
+      "priorityId": "085fd7e33b9001",
+      "actionType": "createInternalDraft",
+      "description": "Draft clearer primary CTA copy — Stores an internal draft record (not published to any surface).",
+      "prefillData": {
+        "draftText": "[Draft CTA — review before publish]\nPrimary action: align with \"Clarify primary CTA on key surfaces\".\nSuggested hook (localize region): Search properties across Syria instantly\nSupporting line: reduce friction noted in diagnostics: Hero competes with secondary actions."
+      },
+      "riskLevel": "low",
+      "requiresApproval": true,
+      "status": "cancelled",
+      "createdAt": "2026-04-18T22:57:05.560Z",
+      "approvedAt": "2026-04-18T22:57:05.560Z",
+      "artifactRefs": {
+        "draftId": "draft_a5fc1982e43a26bd"
+      },
+      "executedAt": "2026-04-18T22:57:05.560Z",
+      "undoneAt": "2026-04-18T22:57:05.560Z"
+    }
+  },
+  "internalTags": {},
+  "tasks": [],
+  "drafts": [
+    {
+      "id": "draft_a5fc1982e43a26bd",
+      "priorityId": "085fd7e33b9001",
+      "title": "Draft clearer primary CTA copy — Stores an internal draft record (not published to any surface).",
+      "body": "[Draft CTA — review before publish]\nPrimary action: align with \"Clarify primary CTA on key surfaces\".\nSuggested hook (localize region): Search properties across Syria instantly\nSupporting line: reduce friction noted in diagnostics: Hero competes with secondary actions.",
+      "createdAt": "2026-04-18T22:57:05.560Z",
+      "sourceRequestId": "areq_aa8d8a10d0478e6f41447c35",
+      "status": "discarded"
+    }
+  ],
+  "configDrafts": [],
+  "reminders": [],
+  "audit": [
+    {
+      "id": "audit_0f2c273abbd628826f7f",
+      "kind": "request_created",
+      "at": "2026-04-18T22:57:05.560Z",
+      "actionType": "createInternalDraft",
+      "priorityId": "085fd7e33b9001",
+      "requestId": "areq_aa8d8a10d0478e6f41447c35",
+      "explanation": "Approval request created for suggestion ccc349c5aee3",
+      "meta": {
+        "suggestionTitle": "Draft clearer primary CTA copy"
+      }
+    },
+    {
+      "id": "audit_7643240f0bf2f54c3692",
+      "kind": "request_approved",
+      "at": "2026-04-18T22:57:05.560Z",
+      "actionType": "createInternalDraft",
+      "priorityId": "085fd7e33b9001",
+      "requestId": "areq_aa8d8a10d0478e6f41447c35",
+      "explanation": "Operator approved execution (not yet run)."
+    },
+    {
+      "id": "audit_c8e17bd2bc8e1a580c17",
+      "kind": "request_executed",
+      "at": "2026-04-18T22:57:05.560Z",
+      "actionType": "createInternalDraft",
+      "priorityId": "085fd7e33b9001",
+      "requestId": "areq_aa8d8a10d0478e6f41447c35",
+      "explanation": "Stored internal draft draft_a5fc1982e43a26bd",
+      "meta": {
+        "draftId": "draft_a5fc1982e43a26bd"
+      }
+    },
+    {
+      "id": "audit_b47bc5efcd56726326d7",
+      "kind": "request_undone",
+      "at": "2026-04-18T22:57:05.560Z",
+      "actionType": "createInternalDraft",
+      "priorityId": "085fd7e33b9001",
+      "requestId": "areq_aa8d8a10d0478e6f41447c35",
+      "explanation": "Discarded draft draft_a5fc1982e43a26bd"
+    }
+  ],
+  "updatedAt": "2026-04-18T22:57:05.560Z"
+}

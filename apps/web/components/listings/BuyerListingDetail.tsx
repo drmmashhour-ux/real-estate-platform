@@ -41,6 +41,8 @@ import { ListingLocationMiniMap } from "@/components/listings/ListingLocationMin
 import { ListingViewedBeacon } from "@/components/analytics/ListingViewedBeacon";
 import { ListingVisitAvailabilityHint } from "@/components/listings/ListingVisitAvailabilityHint";
 import { ListingWhyOpportunitySection } from "@/components/listings/ListingWhyOpportunitySection";
+import { CollaborationStrip } from "@/components/collaboration/CollaborationStrip";
+import { ImmoDealRoomEntry } from "@/components/immo-deal-room/ImmoDealRoomEntry";
 import { ShareListingActions } from "@/components/sharing/ShareListingActions";
 import { ViralShareCallout } from "@/components/sharing/ViralShareCallout";
 import { UrgencyBadge } from "@/components/listings/UrgencyBadge";
@@ -172,6 +174,7 @@ export function BuyerListingDetail({
   funnelVariant = "a",
   shareUrl,
   shareSummary,
+  collaboration = undefined,
 }: {
   listing: BuyerListingPayload;
   listingContactGate?: ListingContactGateProps;
@@ -184,6 +187,12 @@ export function BuyerListingDetail({
   shareUrl?: string;
   /** Line shown in SMS / share sheet (include price + city) */
   shareSummary?: string;
+  /** Broker/admin collaboration strip + ImmoContact deal room entry (listing context). */
+  collaboration?: {
+    listingId: string;
+    enabled: boolean;
+    viewerId: string | null;
+  } | null;
 }) {
   const conversionEngineFlags = useConversionEngineFlags();
   const { showToast } = useToast();
@@ -1114,6 +1123,20 @@ export function BuyerListingDetail({
                       }}
                     />
                   </div>
+                  {collaboration?.enabled && collaboration.viewerId ? (
+                    <div className="mt-4 w-full max-w-xl">
+                      <CollaborationStrip
+                        entityType="listing"
+                        entityId={collaboration.listingId}
+                        headline="Discuss this property"
+                      />
+                    </div>
+                  ) : null}
+                  {collaboration?.enabled && collaboration.viewerId ? (
+                    <div className="mt-3 w-full max-w-xl">
+                      <ImmoDealRoomEntry entityType="listing" entityId={collaboration.listingId} titleHint={listing.title} />
+                    </div>
+                  ) : null}
                   <nav
                     className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-[10px] text-white/32 lg:justify-start"
                     aria-label="Listing tools"

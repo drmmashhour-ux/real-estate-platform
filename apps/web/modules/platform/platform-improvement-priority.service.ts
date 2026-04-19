@@ -6,10 +6,13 @@ import type {
   PlatformClarityReviewResult,
   PlatformDataMoatReviewResult,
   PlatformImprovementPriority,
+  PlatformImprovementPriorityCore,
   PlatformMonetizationReviewResult,
   PlatformOpsReviewResult,
+  PlatformPriorityStatus,
   PlatformTrustReviewResult,
 } from "./platform-improvement.types";
+import { enrichPlatformImprovementPriority } from "./platform-improvement-priority-meta.service";
 import type { PlatformReviewSnapshot } from "./platform-review-snapshot";
 import { getDefaultPlatformReviewSnapshot } from "./platform-review-snapshot";
 
@@ -21,7 +24,7 @@ function scoreCategory(c: PlatformImprovementPriority["category"]): number {
   return c === "revenue" ? 5 : c === "conversion" ? 4 : c === "trust" ? 3 : c === "data" ? 2 : 1;
 }
 
-function rank(p: PlatformImprovementPriority): number {
+function rank(p: PlatformImprovementPriorityCore): number {
   return scoreUrgency(p.urgency) * 10 + scoreCategory(p.category);
 }
 
@@ -34,7 +37,7 @@ export function buildPlatformImprovementPriorities(input: {
   snapshot?: PlatformReviewSnapshot;
 }): PlatformImprovementPriority[] {
   const snap = input.snapshot ?? getDefaultPlatformReviewSnapshot();
-  const out: PlatformImprovementPriority[] = [];
+  const out: PlatformImprovementPriorityCore[] = [];
 
   for (const gap of input.monetization.highPriorityMonetizationGaps.slice(0, 3)) {
     out.push({
@@ -108,7 +111,7 @@ export function buildPlatformImprovementPriorities(input: {
   }
 
   const seen = new Set<string>();
-  const deduped: PlatformImprovementPriority[] = [];
+  const deduped: PlatformImprovementPriorityCore[] = [];
   for (const p of out.sort((a, b) => rank(b) - rank(a))) {
     const k = `${p.category}:${p.title}:${p.why.slice(0, 40)}`;
     if (seen.has(k)) continue;
@@ -117,5 +120,34 @@ export function buildPlatformImprovementPriorities(input: {
     if (deduped.length >= 5) break;
   }
 
-  return deduped.slice(0, 5);
+  return deduped.slice(0, 5).map((core) => enrichPlatformImprovementPriority(core));
+}
+
+function impactProxyScore(expectedImpact: string): number {
+  return Math.min(40, Math.floor(expectedImpact.length / 5));
+}
+
+/**
+ * Weekly focus — max 3, highest urgency × category × impact proxy; excludes done/dismissed.
+ * Deterministic tie-break on title.
+ */
+export function buildWeeklyFocusList(
+  priorities: PlatformImprovementPriority[],
+  statusById: Record<string, PlatformPriorityStatus | undefined>,
+): PlatformImprovementPriority[] {
+  const active = priorities.filter((p) => {
+    const s = statusById[p.id] ?? "new";
+    return s !== "done" && s !== "dismissed";
+  });
+  const ranked = [...active].sort((a, b) => {
+    const ra = weeklyFocusScore(a);
+    const rb = weeklyFocusScore(b);
+    if (rb !== ra) return rb - ra;
+    return a.title.localeCompare(b.title);
+  });
+  return ranked.slice(0, 3);
+}
+
+function weeklyFocusScore(p: PlatformImprovementPriority): number {
+  return scoreUrgency(p.urgency) * 100 + scoreCategory(p.category) * 10 + impactProxyScore(p.expectedImpact);
 }

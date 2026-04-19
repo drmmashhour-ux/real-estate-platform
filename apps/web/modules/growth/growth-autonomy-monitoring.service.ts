@@ -17,6 +17,13 @@ export type GrowthAutonomyMonitoringState = {
   prefillTelemetryEvents: number;
   validationChecklistCompletions: number;
   validationTelemetryEvents: number;
+  trialSnapshotsEvaluated: number;
+  trialActivationsCompleted: number;
+  trialApprovalsRecorded: number;
+  trialDenialsRecorded: number;
+  trialRollbacksStarted: number;
+  trialRollbacksCompleted: number;
+  trialKillFreezeBlocks: number;
 };
 
 let state: GrowthAutonomyMonitoringState = {
@@ -30,6 +37,13 @@ let state: GrowthAutonomyMonitoringState = {
   prefillTelemetryEvents: 0,
   validationChecklistCompletions: 0,
   validationTelemetryEvents: 0,
+  trialSnapshotsEvaluated: 0,
+  trialActivationsCompleted: 0,
+  trialApprovalsRecorded: 0,
+  trialDenialsRecorded: 0,
+  trialRollbacksStarted: 0,
+  trialRollbacksCompleted: 0,
+  trialKillFreezeBlocks: 0,
 };
 
 export function getGrowthAutonomyMonitoringSnapshot(): GrowthAutonomyMonitoringState {
@@ -48,7 +62,70 @@ export function resetGrowthAutonomyMonitoringForTests(): void {
     prefillTelemetryEvents: 0,
     validationChecklistCompletions: 0,
     validationTelemetryEvents: 0,
+    trialSnapshotsEvaluated: 0,
+    trialActivationsCompleted: 0,
+    trialApprovalsRecorded: 0,
+    trialDenialsRecorded: 0,
+    trialRollbacksStarted: 0,
+    trialRollbacksCompleted: 0,
+    trialKillFreezeBlocks: 0,
   };
+}
+
+export function recordGrowthAutonomyTrialSnapshotEvaluated(): void {
+  try {
+    state.trialSnapshotsEvaluated += 1;
+  } catch {
+    /* noop */
+  }
+}
+
+export function recordGrowthAutonomyTrialActivationCompleted(): void {
+  try {
+    state.trialActivationsCompleted += 1;
+  } catch {
+    /* noop */
+  }
+}
+
+export function recordGrowthAutonomyTrialApprovalRecorded(): void {
+  try {
+    state.trialApprovalsRecorded += 1;
+  } catch {
+    /* noop */
+  }
+}
+
+export function recordGrowthAutonomyTrialDenialRecorded(): void {
+  try {
+    state.trialDenialsRecorded += 1;
+  } catch {
+    /* noop */
+  }
+}
+
+export function recordGrowthAutonomyTrialRollbackStarted(): void {
+  try {
+    state.trialRollbacksStarted += 1;
+  } catch {
+    /* noop */
+  }
+}
+
+export function recordGrowthAutonomyTrialRollbackCompleted(): void {
+  try {
+    state.trialRollbacksCompleted += 1;
+  } catch {
+    /* noop */
+  }
+}
+
+export function recordGrowthAutonomyTrialKillFreezeBlock(): void {
+  try {
+    state.trialKillFreezeBlocks += 1;
+  } catch {
+    /* noop */
+  }
 }
 
 export function recordGrowthAutonomyApiRead(): void {

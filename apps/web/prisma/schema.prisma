@@ -22197,6 +22197,64 @@ model GrowthUsageCounter {
   @@map("growth_usage_counters")
 }
 
+/// Bounded autonomy learning loop — ordering + suppression hints only (no execution domain expansion).
+model GrowthAutonomyLearningState {
+  id                        String    @id @default("singleton")
+  updatedAt                 DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  weightDeltasByCategory    Json      @default("{}") @map("weight_deltas_by_category") @db.JsonB
+  suppressedUntilByCategory Json      @default("{}") @map("suppressed_until_by_category") @db.JsonB
+  aggregatesByCategory      Json      @default("{}") @map("aggregates_by_category") @db.JsonB
+  controlFlags              Json      @default("{}") @map("control_flags") @db.JsonB
+  lastLearningRunAt         DateTime? @map("last_learning_run_at") @db.Timestamptz(6)
+
+  @@map("growth_autonomy_learning_state")
+}
+
+model GrowthAutonomyLearningRecord {
+  id              String   @id @default(cuid())
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  suggestionId    String   @map("suggestion_id")
+  categoryId      String   @map("category_id")
+  targetKey       String   @map("target_key")
+  operatorUserId  String?  @map("operator_user_id")
+  interactionKind String   @map("interaction_kind")
+  payload         Json     @default("{}") @db.JsonB
+
+  @@index([categoryId, createdAt], map: "idx_ga_learning_cat_time")
+  @@index([createdAt], map: "idx_ga_learning_time")
+  @@map("growth_autonomy_learning_records")
+}
+
+/// Bounded audit trail for allowlisted growth autonomy low-risk internal actions only.
+model GrowthAutonomyLowRiskExecution {
+  id                   String    @id @default(cuid())
+  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  operatorUserId       String?   @map("operator_user_id")
+  catalogEntryId       String    @map("catalog_entry_id")
+  lowRiskActionKey     String    @map("low_risk_action_key")
+  dispositionLabel     String    @map("disposition_label")
+  explanation          String    @db.Text
+  operatorVisibleResult String   @map("operator_visible_result") @db.Text
+  undoAvailable        Boolean   @default(true) @map("undo_available")
+  reversedAt           DateTime? @map("reversed_at") @db.Timestamptz(6)
+  payload              Json      @default("{}") @db.JsonB
+
+  @@index([operatorUserId, createdAt], map: "idx_ga_auto_exec_user_time")
+  @@index([catalogEntryId, createdAt], map: "idx_ga_auto_exec_cat_time")
+  @@map("growth_autonomy_low_risk_executions")
+}
+
+/// Evidence-based allowlist expansion governance — proposals/activations are manual; freeze stops new activations.
+model GrowthAutonomyExpansionState {
+  id                   String   @id @default("singleton")
+  updatedAt            DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  freeze               Boolean  @default(false)
+  pendingJson          Json     @default("[]") @map("pending_json") @db.JsonB
+  activatedTrialsJson  Json     @default("[]") @map("activated_trials_json") @db.JsonB
+
+  @@map("growth_autonomy_expansion_state")
+}
+
 // ---------------------------------------------------------------------------
 // LECIPM — Billing conversion (plans, entitlements, usage, Stripe-backed sub)
 // ---------------------------------------------------------------------------

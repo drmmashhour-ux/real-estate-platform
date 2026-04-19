@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "proposals": {
+    "flrp_a87cfe4a-fd47-42a4-a7be-e5e487539b27": {
+      "id": "flrp_a87cfe4a-fd47-42a4-a7be-e5e487539b27",
+      "title": "R",
+      "proposedActionType": "underRev",
+      "category": "reminders",
+      "description": "Summarize internal draft diffs for operators.",
+      "whyAdjacentToExistingLowRiskScope": "Same artifact types as createInternalDraft.",
+      "whyReversible": "Draft-only; discard draft id.",
+      "whyInternalOnly": "No buyer-facing surface.",
+      "expectedOperatorBenefit": "Faster triage.",
+      "expectedSafetyProfile": "Low blast radius; draft scope only.",
+      "explicitNonGoals": "No listing publish, no payments.",
+      "requiredEvidenceBeforeConsideration": "10 dry-run executions in staging.",
+      "proposedRollbackMethod": "Feature flag off + draft purge script.",
+      "riskProfile": {
+        "headline": "Low — draft namespace only"
+      },
+      "reviewChecklist": {
+        "internalOnlyConfirmed": true,
+        "reversibleConfirmed": true,
+        "noPaymentImpact": true,
+        "noBookingCoreImpact": true,
+        "noAdsCoreImpact": true,
+        "noCroCoreImpact": true,
+        "noExternalSendImpact": true,
+        "noLivePricingImpact": true,
+        "adjacentToCurrentLowRiskScope": true,
+        "clearRollbackExists": true,
+        "clearAuditabilityExists": true
+      },
+      "currentStatus": "accepted_to_registry",
+      "createdAt": "2026-04-18T23:55:25.826Z",
+      "updatedAt": "2026-04-18T23:55:25.828Z",
+      "notes": "2026-04-18T23:55:25.828Z: Accepted to future-review registry only — not enabled."
+    }
+  },
+  "updatedAt": "2026-04-18T23:55:25.829Z"
+}

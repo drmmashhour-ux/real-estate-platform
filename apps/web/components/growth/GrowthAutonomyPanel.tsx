@@ -15,6 +15,12 @@ import type { GrowthAutonomyMonitoringState } from "@/modules/growth/growth-auto
 import { GrowthAutonomyRolloutStatusPanel } from "./GrowthAutonomyRolloutStatusPanel";
 import { GrowthAutonomyValidationChecklist } from "./GrowthAutonomyValidationChecklist";
 import { GrowthAutonomyTestScenariosPanel } from "./GrowthAutonomyTestScenariosPanel";
+import type { GrowthAutonomyAutoLowRiskRolloutStage } from "@/modules/growth/growth-autonomy-auto.types";
+import { GrowthAutonomyAutoLowRiskPanel } from "./GrowthAutonomyAutoLowRiskPanel";
+import { GrowthAutonomyExpansionPanel } from "./GrowthAutonomyExpansionPanel";
+import { GrowthAutonomyLearningPanel } from "./GrowthAutonomyLearningPanel";
+import { GrowthAutonomyTrialApprovalPanel } from "./GrowthAutonomyTrialApprovalPanel";
+import { GrowthAutonomyTrialResultsPanel } from "./GrowthAutonomyTrialResultsPanel";
 
 /** Badge text — freeze stays explicit (never collapsed into generic “blocked”). */
 function dispositionBadgeLabel(s: GrowthAutonomySnapshot["suggestions"][0]): string {
@@ -37,6 +43,7 @@ function dispositionStyles(d: GrowthAutonomySnapshot["suggestions"][0]["disposit
     case "approval_required":
       return "border-amber-700/50 bg-amber-950/35 text-amber-100";
     case "prefilled_action":
+    case "prefilled_only":
       return "border-emerald-800/45 bg-emerald-950/25 text-emerald-100";
     case "suggest_only":
       return "border-sky-800/45 bg-sky-950/25 text-sky-100";
@@ -65,6 +72,15 @@ export function GrowthAutonomyPanel({
   enforcementLayerFlagOn,
   viewerIsAdmin,
   viewerGrowthAutonomyPilotAccess,
+  learningFeatureEnabled = false,
+  learningPanelVisible = false,
+  autoLowRiskFeatureEnabled = false,
+  autoLowRiskPanelVisible = false,
+  autoLowRiskRolloutStage = "off" as GrowthAutonomyAutoLowRiskRolloutStage,
+  expansionFeatureEnabled = false,
+  expansionPanelVisible = false,
+  trialFeatureEnabled = false,
+  trialPanelVisible = false,
 }: {
   locale: string;
   country: string;
@@ -78,6 +94,15 @@ export function GrowthAutonomyPanel({
   viewerIsAdmin: boolean;
   /** Server: admin, allowlisted internal operator, or non-production equivalent. */
   viewerGrowthAutonomyPilotAccess: boolean;
+  learningFeatureEnabled?: boolean;
+  learningPanelVisible?: boolean;
+  autoLowRiskFeatureEnabled?: boolean;
+  autoLowRiskPanelVisible?: boolean;
+  autoLowRiskRolloutStage?: GrowthAutonomyAutoLowRiskRolloutStage;
+  expansionFeatureEnabled?: boolean;
+  expansionPanelVisible?: boolean;
+  trialFeatureEnabled?: boolean;
+  trialPanelVisible?: boolean;
 }) {
   const [snapshot, setSnapshot] = React.useState<GrowthAutonomySnapshot | null>(null);
   const [internalGate, setInternalGate] = React.useState<string | null>(null);
@@ -171,10 +196,18 @@ export function GrowthAutonomyPanel({
     };
   }, [autonomyEnabled, killSwitch, locale, country, showDebug]);
 
-  async function copyText(text: string) {
+  async function copyText(text: string, meta?: { suggestionId: string; categoryId: string; targetKey: string }) {
     try {
       await navigator.clipboard.writeText(text);
       sendAutonomyTelemetry("prefill_copy");
+      if (learningFeatureEnabled && !killSwitch && meta) {
+        void postGrowthAutonomyLearningEvent({
+          suggestionId: meta.suggestionId,
+          categoryId: meta.categoryId,
+          targetKey: meta.targetKey,
+          kind: "interaction",
+        });
+      }
     } catch {
       /* noop */
     }
@@ -358,8 +391,11 @@ export function GrowthAutonomyPanel({
         </div>
 
         <p className="mt-2 text-[11px] leading-relaxed text-zinc-500">
-          <span className="font-semibold text-zinc-400">Suggestion vs execution:</span> everything here is advisory or
-          navigation/copy — nothing auto-applies in core growth systems. You confirm changes manually in target panels.
+          <span className="font-semibold text-zinc-400">Suggestion vs execution:</span> most rows stay advisory or
+          navigation/copy. When{" "}
+          <code className="rounded bg-black/30 px-1 font-mono text-[10px]">FEATURE_GROWTH_AUTONOMY_AUTO_LOW_RISK_V1</code>{" "}
+          is on, a tiny allowlisted set may auto-create internal-only records (tasks / drafts / reminders) — never
+          payments, bookings core, ads, CRO, pricing, external sends, or listing publication.
         </p>
         <p className="mt-2 text-[11px] leading-relaxed text-zinc-500">
           Advisory-first — reversible rollout via flags. This system does <span className="text-zinc-400">not</span> control
@@ -407,6 +443,46 @@ export function GrowthAutonomyPanel({
           (navigate or copy only).
         </p>
 
+        {learningPanelVisible && snapshot.learning ? (
+          <div className="mt-3">
+            <GrowthAutonomyLearningPanel
+              learning={snapshot.learning}
+              viewerIsAdmin={viewerIsAdmin}
+              killSwitch={killSwitch}
+              debugMode={showDebug}
+            />
+          </div>
+        ) : null}
+
+        {autoLowRiskFeatureEnabled && autoLowRiskPanelVisible ? (
+          <GrowthAutonomyAutoLowRiskPanel
+            locale={locale}
+            country={country}
+            rolloutStage={autoLowRiskRolloutStage}
+            viewerIsAdmin={viewerIsAdmin}
+          />
+        ) : null}
+
+        {expansionFeatureEnabled && expansionPanelVisible ? (
+          <GrowthAutonomyExpansionPanel viewerIsAdmin={viewerIsAdmin} />
+        ) : null}
+
+        {trialFeatureEnabled && trialPanelVisible && snapshot.trial ?
+          <GrowthAutonomyTrialApprovalPanel
+            trial={snapshot.trial}
+            rolloutStage={snapshot.rolloutStage}
+            viewerMayMutate={viewerIsAdmin || viewerGrowthAutonomyPilotAccess}
+          />
+        : null}
+
+        {trialFeatureEnabled && trialPanelVisible ? <GrowthAutonomyTrialResultsPanel /> : null}
+
+        {showDebug && snapshot.trial ?
+          <pre className="mt-3 max-h-48 overflow-auto rounded border border-zinc-800 p-2 font-mono text-[10px] text-zinc-500">
+            autonomy_trial_debug={JSON.stringify(snapshot.trial, null, 0)}
+          </pre>
+        : null}
+
         {snapshot.operatorNotes.length > 0 ? (
           <ul className="mt-3 list-inside list-disc space-y-1 text-[11px] text-zinc-400">
             {snapshot.operatorNotes.map((n) => (
@@ -442,7 +518,16 @@ export function GrowthAutonomyPanel({
                 </div>
                 <p className="mt-1 font-mono text-[10px] text-zinc-500">
                   {s.actionType} · target:{s.targetKey} · enf:{s.enforcementTargetMode} · conf:{s.confidence.toFixed(2)}
+                  {s.execution ?
+                    <>
+                      {" "}
+                      · exec:{s.execution.resolvedExecutionClass}
+                    </>
+                  : null}
                 </p>
+                {s.execution?.downgradeExplanation ?
+                  <p className="mt-1 text-[10px] text-zinc-500">{s.execution.downgradeExplanation}</p>
+                : null}
                 <div className="mt-2 space-y-1 text-[11px] text-zinc-400">
                   <p>
                     <span className="font-semibold text-zinc-300">Why suggested:</span> {s.explanation.whySuggested}
@@ -455,6 +540,58 @@ export function GrowthAutonomyPanel({
                     <span className="font-semibold text-zinc-300">Next step:</span> {s.explanation.whatNext}
                   </p>
                   <p className="text-zinc-500">Policy signal: {s.policyNote}</p>
+                  {s.learningNote ? (
+                    <p className="text-[10px] text-violet-300/90">
+                      <span className="font-semibold text-violet-400">Learning:</span> {s.learningNote}
+                    </p>
+                  ) : null}
+                  {learningFeatureEnabled && !killSwitch && s.disposition !== "hidden" ? (
+                    <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-zinc-800/80 pt-2">
+                      <span className="text-[10px] text-zinc-500">Was this helpful?</span>
+                      <button
+                        type="button"
+                        className="rounded border border-emerald-800/50 px-2 py-0.5 text-[10px] text-emerald-200 hover:bg-emerald-950/40"
+                        onClick={() =>
+                          void postGrowthAutonomyLearningEvent({
+                            suggestionId: s.id,
+                            categoryId: s.id,
+                            targetKey: s.targetKey,
+                            kind: "feedback_helpful",
+                          })
+                        }
+                      >
+                        Yes
+                      </button>
+                      <button
+                        type="button"
+                        className="rounded border border-zinc-700 px-2 py-0.5 text-[10px] text-zinc-300 hover:bg-zinc-900"
+                        onClick={() =>
+                          void postGrowthAutonomyLearningEvent({
+                            suggestionId: s.id,
+                            categoryId: s.id,
+                            targetKey: s.targetKey,
+                            kind: "feedback_not_helpful",
+                          })
+                        }
+                      >
+                        No
+                      </button>
+                      <button
+                        type="button"
+                        className="rounded border border-amber-900/45 px-2 py-0.5 text-[10px] text-amber-200 hover:bg-amber-950/25"
+                        onClick={() =>
+                          void postGrowthAutonomyLearningEvent({
+                            suggestionId: s.id,
+                            categoryId: s.id,
+                            targetKey: s.targetKey,
+                            kind: "confusion",
+                          })
+                        }
+                      >
+                        Confusing
+                      </button>
+                    </div>
+                  ) : null}
                 </div>
                 {s.disposition === "approval_required" ? (
                   <p className="mt-2 border-t border-amber-900/30 pt-2 text-[11px] leading-relaxed text-amber-100/90">
@@ -501,7 +638,17 @@ export function GrowthAutonomyPanel({
                         <Link
                           href={s.prefill.href}
                           className="inline-flex rounded-md border border-indigo-700/50 bg-indigo-950/40 px-2 py-1 text-[11px] text-indigo-100 hover:bg-indigo-900/50"
-                          onClick={() => sendAutonomyTelemetry("prefill_navigate")}
+                          onClick={() => {
+                            sendAutonomyTelemetry("prefill_navigate");
+                            if (learningFeatureEnabled && !killSwitch) {
+                              void postGrowthAutonomyLearningEvent({
+                                suggestionId: s.id,
+                                categoryId: s.id,
+                                targetKey: s.targetKey,
+                                kind: "prefill_used",
+                              });
+                            }
+                          }}
                         >
                           {s.prefill.label}
                         </Link>
@@ -510,7 +657,13 @@ export function GrowthAutonomyPanel({
                         <button
                           type="button"
                           className="rounded-md border border-zinc-700 px-2 py-1 text-[11px] text-zinc-200 hover:bg-zinc-900"
-                          onClick={() => void copyText(s.prefill!.copyText!)}
+                          onClick={() =>
+                            void copyText(s.prefill!.copyText!, {
+                              suggestionId: s.id,
+                              categoryId: s.id,
+                              targetKey: s.targetKey,
+                            })
+                          }
                         >
                           {s.prefill.label}
                         </button>

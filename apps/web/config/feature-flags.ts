@@ -639,6 +639,28 @@ export const growthAutonomyFlags = {
   growthAutonomyV1: envTrue("FEATURE_GROWTH_AUTONOMY_V1"),
   growthAutonomyPanelV1: envTrue("FEATURE_GROWTH_AUTONOMY_PANEL_V1"),
   growthAutonomyKillSwitch: envTrue("FEATURE_GROWTH_AUTONOMY_KILL_SWITCH"),
+  /** Bounded prioritization from observed operator behavior — advisory-only; independently disableable. */
+  growthAutonomyLearningV1: envTrue("FEATURE_GROWTH_AUTONOMY_LEARNING_V1"),
+  growthAutonomyLearningPanelV1: envTrue("FEATURE_GROWTH_AUTONOMY_LEARNING_PANEL_V1"),
+  /**
+   * Allowlisted low-risk internal auto-execution (separate env rollout) — does not include payments, external sends, or core product state.
+   * Never bypasses policy; must be used with FEATURE_GROWTH_AUTONOMY_AUTO_LOW_RISK_ROLLOUT.
+   */
+  growthAutonomyAutoLowRiskV1: envTrue("FEATURE_GROWTH_AUTONOMY_AUTO_LOW_RISK_V1"),
+  growthAutonomyAutoLowRiskPanelV1: envTrue("FEATURE_GROWTH_AUTONOMY_AUTO_LOW_RISK_PANEL_V1"),
+  /** Evidence-based adjacent low-risk expansion proposals — manual approval only; never widens risky domains. */
+  growthAutonomyExpansionV1: envTrue("FEATURE_GROWTH_AUTONOMY_EXPANSION_V1"),
+  growthAutonomyExpansionPanelV1: envTrue("FEATURE_GROWTH_AUTONOMY_EXPANSION_PANEL_V1"),
+  /** When on, blocks new expansion trial activations (read-only evaluation may continue). */
+  growthAutonomyExpansionFreeze: envTrue("FEATURE_GROWTH_AUTONOMY_EXPANSION_FREEZE"),
+  /**
+   * Single adjacent internal low-risk trial — operator-approved only; internal rollout; reversible audit artifact.
+   * Independent from expansion proposals.
+   */
+  growthAutonomyTrialV1: envTrue("FEATURE_GROWTH_AUTONOMY_TRIAL_V1"),
+  growthAutonomyTrialPanelV1: envTrue("FEATURE_GROWTH_AUTONOMY_TRIAL_PANEL_V1"),
+  /** Blocks new trial approvals/activations while allowing read-only visibility of prior state. */
+  growthAutonomyTrialFreeze: envTrue("FEATURE_GROWTH_AUTONOMY_TRIAL_FREEZE"),
 } as const;
 
 export type GrowthAutonomyFlagKey = keyof typeof growthAutonomyFlags;
@@ -646,6 +668,16 @@ export type GrowthAutonomyFlagKey = keyof typeof growthAutonomyFlags;
 export const FEATURE_GROWTH_AUTONOMY_V1 = growthAutonomyFlags.growthAutonomyV1;
 export const FEATURE_GROWTH_AUTONOMY_PANEL_V1 = growthAutonomyFlags.growthAutonomyPanelV1;
 export const FEATURE_GROWTH_AUTONOMY_KILL_SWITCH = growthAutonomyFlags.growthAutonomyKillSwitch;
+export const FEATURE_GROWTH_AUTONOMY_LEARNING_V1 = growthAutonomyFlags.growthAutonomyLearningV1;
+export const FEATURE_GROWTH_AUTONOMY_LEARNING_PANEL_V1 = growthAutonomyFlags.growthAutonomyLearningPanelV1;
+export const FEATURE_GROWTH_AUTONOMY_AUTO_LOW_RISK_V1 = growthAutonomyFlags.growthAutonomyAutoLowRiskV1;
+export const FEATURE_GROWTH_AUTONOMY_AUTO_LOW_RISK_PANEL_V1 = growthAutonomyFlags.growthAutonomyAutoLowRiskPanelV1;
+export const FEATURE_GROWTH_AUTONOMY_EXPANSION_V1 = growthAutonomyFlags.growthAutonomyExpansionV1;
+export const FEATURE_GROWTH_AUTONOMY_EXPANSION_PANEL_V1 = growthAutonomyFlags.growthAutonomyExpansionPanelV1;
+export const FEATURE_GROWTH_AUTONOMY_EXPANSION_FREEZE = growthAutonomyFlags.growthAutonomyExpansionFreeze;
+export const FEATURE_GROWTH_AUTONOMY_TRIAL_V1 = growthAutonomyFlags.growthAutonomyTrialV1;
+export const FEATURE_GROWTH_AUTONOMY_TRIAL_PANEL_V1 = growthAutonomyFlags.growthAutonomyTrialPanelV1;
+export const FEATURE_GROWTH_AUTONOMY_TRIAL_FREEZE = growthAutonomyFlags.growthAutonomyTrialFreeze;
 
 /**
  * Governance memory + enforcement feedback — advisory patterns & review hints only (default off).
@@ -751,6 +783,28 @@ export type PlatformImprovementFlagKey = keyof typeof platformImprovementFlags;
 
 /** @see platformImprovementFlags.platformImprovementReviewV1 */
 export const FEATURE_PLATFORM_IMPROVEMENT_REVIEW_V1 = platformImprovementFlags.platformImprovementReviewV1;
+
+/**
+ * Ops assistant — approval-based execution & panel (default off). Kill switch blocks execution even when execution flag is on.
+ */
+export const opsAssistantApprovalFlags = {
+  opsAssistantApprovalExecutionV1: envTrue("FEATURE_OPS_ASSISTANT_APPROVAL_EXECUTION_V1"),
+  opsAssistantApprovalPanelV1: envTrue("FEATURE_OPS_ASSISTANT_APPROVAL_PANEL_V1"),
+  opsAssistantApprovalKillSwitch: envTrue("FEATURE_OPS_ASSISTANT_APPROVAL_KILL_SWITCH"),
+} as const;
+
+export type OpsAssistantApprovalFlagKey = keyof typeof opsAssistantApprovalFlags;
+
+/** @see opsAssistantApprovalFlags.opsAssistantApprovalExecutionV1 */
+export const FEATURE_OPS_ASSISTANT_APPROVAL_EXECUTION_V1 =
+  opsAssistantApprovalFlags.opsAssistantApprovalExecutionV1;
+
+/** @see opsAssistantApprovalFlags.opsAssistantApprovalPanelV1 */
+export const FEATURE_OPS_ASSISTANT_APPROVAL_PANEL_V1 = opsAssistantApprovalFlags.opsAssistantApprovalPanelV1;
+
+/** @see opsAssistantApprovalFlags.opsAssistantApprovalKillSwitch */
+export const FEATURE_OPS_ASSISTANT_APPROVAL_KILL_SWITCH =
+  opsAssistantApprovalFlags.opsAssistantApprovalKillSwitch;
 
 /**
  * Lead monetization V1 — preview/partial vs full unlock, Stripe checkout reuse (additive; default off).

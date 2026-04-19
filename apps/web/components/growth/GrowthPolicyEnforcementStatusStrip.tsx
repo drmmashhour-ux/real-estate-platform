@@ -65,8 +65,8 @@ export function GrowthPolicyEnforcementStatusStrip({
       ) : null}
 
       <p className="mt-3 text-[10px] leading-relaxed text-zinc-500">
-        This layer does <span className="text-zinc-400">not</span> enforce payments, bookings core, ads execution core,
-        or CRO core — only bounded advisory/orchestration signals.
+        This layer does <span className="text-zinc-400">not</span> enforce payments, booking core, ads core, or CRO core
+        — only bounded advisory/orchestration signals.
       </p>
     </section>
   );

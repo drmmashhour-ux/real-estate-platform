@@ -16,7 +16,11 @@ Autonomy **does not replace** the Growth Policy Enforcement Layer; it **consumes
 |------|-----------|
 | **OFF** | Non-critical catalog rows are **hidden** so autonomy stays quiet — but **policy block, freeze, and approval-required** targets **remain visible** as `blocked` / `approval_required` so operators are never blind to enforcement posture. Debug surfacing uses `surfaceDebug`. |
 | **ASSIST** | Shows **suggestions only** (`suggest_only`) plus review/approval states — **no automatic execution**. |
-| **SAFE_AUTOPILOT** | Allows **bounded prefilled operator actions**: navigation/query links and copy-to-clipboard text **only**. Still **no** risky execution. Prefills appear when enforcement allows (`allow`; `advisory_only` stays suggestion-only except where catalog maps to safer promotion paths — see orchestrator code). |
+| **SAFE_AUTOPILOT** | Allows **bounded prefilled operator actions** (`prefilled_only`): navigation/query links and copy-to-clipboard text **only**. Still **no** risky execution. Prefills appear when enforcement allows (`allow`; `advisory_only` stays suggestion-only except where catalog maps to safer promotion paths — see orchestrator code). |
+
+### Optional single adjacent internal trial
+
+Independent flags (`FEATURE_GROWTH_AUTONOMY_TRIAL_*`) may expose **one** evidence-gated, **operator-approved** internal trial that records a **reversible audit marker** — never payments, bookings core, ads core, CRO, or outbound messaging. Default **off**. Full detail: `growth-autonomy-internal-trial.md`.
 
 ## Bounded catalog
 
@@ -42,7 +46,10 @@ Each catalog row maps to **one existing** enforcement target (`GrowthEnforcement
 
 | Endpoint | Purpose |
 |---------|---------|
-| `GET /api/growth/autonomy?locale=&country=` | Builds **GrowthAutonomySnapshot** (requires Growth Machine actor). Optional `growthAutonomyDebug=1` adds operational monitoring (see rollout doc). |
+| `GET /api/growth/autonomy?locale=&country=` | Builds **GrowthAutonomySnapshot** (requires Growth Machine actor). Optional `growthAutonomyDebug=1` adds operational monitoring (see rollout doc). Embeds **trial** metadata when `FEATURE_GROWTH_AUTONOMY_TRIAL_V1` is on. |
+| `POST /api/growth/autonomy/trial` | Approve / deny / rollback the single adjacent trial (admin or internal pilot; rollout must be `internal`). |
+| `GET /api/growth/autonomy/trial/results` | Computes/refreshes **trial measurement** summary (requires trial execution in audit). |
+| `POST /api/growth/autonomy/trial/feedback` | Normalized operator feedback for usefulness scoring (`docs/growth/growth-autonomy-trial-results.md`). |
 
 ## Monitoring
 

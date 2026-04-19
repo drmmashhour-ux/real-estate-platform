@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { growthAutonomyFlags, growthPolicyEnforcementFlags } from "@/config/feature-flags";
 import { requireGrowthMachineActor } from "@/modules/growth-machine/growth-api-context";
+import { computeLowRiskAutoViewerGate } from "@/modules/growth/growth-autonomy-auto-gate";
+import { parseGrowthAutonomyAutoLowRiskRolloutFromEnv } from "@/modules/growth/growth-autonomy-auto-config";
 import { growthAutonomyApiRequestHasDebug } from "@/modules/growth/growth-autonomy-debug";
 import { parseGrowthAutonomyRolloutFromEnv } from "@/modules/growth/growth-autonomy-config";
 import {
@@ -108,9 +110,23 @@ export async function GET(req: Request) {
     });
   }
 
+  const autoRolloutStage = parseGrowthAutonomyAutoLowRiskRolloutFromEnv();
+  const gate = computeLowRiskAutoViewerGate({
+    autoRolloutStage,
+    autonomyRolloutStage: rolloutStage,
+    userId: auth.userId,
+    role: auth.role,
+    debugRequest: debugReq,
+  });
+
   const snapshot = await buildGrowthAutonomySnapshot({
     growthDashboardPath,
     surfaceDebug,
+    autoLowRiskContext: {
+      cohortBucket: gate.cohortBucket,
+      viewerMayReceiveAutoExecution: gate.mayReceiveAutoExecution,
+      autoRolloutStage,
+    },
   });
 
   const withMon =

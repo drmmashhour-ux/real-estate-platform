@@ -2,11 +2,12 @@
  * Deterministic operator copy — derived from autonomy mode, enforcement mode, and disposition only.
  */
 
-import type {
-  GrowthAutonomyActionType,
-  GrowthAutonomyDisposition,
-  GrowthAutonomyExplanation,
-  GrowthAutonomyMode,
+import {
+  isGrowthAutonomyPrefilledDisposition,
+  type GrowthAutonomyActionType,
+  type GrowthAutonomyDisposition,
+  type GrowthAutonomyExplanation,
+  type GrowthAutonomyMode,
 } from "./growth-autonomy.types";
 import type { GrowthEnforcementMode } from "./growth-policy-enforcement.types";
 
@@ -79,7 +80,7 @@ export function buildAutonomyExplanation(args: {
     };
   }
 
-  if (args.disposition === "prefilled_action") {
+  if (isGrowthAutonomyPrefilledDisposition(args.disposition)) {
     return {
       whySuggested: args.whyInCatalog,
       whyBlockedOrAllowed:

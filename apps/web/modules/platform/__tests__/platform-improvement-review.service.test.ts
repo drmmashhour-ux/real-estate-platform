@@ -8,6 +8,7 @@ describe("buildFullPlatformImprovementBundle", () => {
     expect(b.priorities.length).toBeLessThanOrEqual(5);
     expect(b.createdAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
     expect(b.clarity.surfaces.length).toBe(6);
+    expect(b.weekKey).toMatch(/^\d{4}-W\d{2}$/);
   });
 
   it("does not mutate injected snapshot", () => {

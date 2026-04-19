@@ -39,6 +39,27 @@ vi.mock("@/config/feature-flags", async (importOriginal) => {
       get growthAutonomyKillSwitch() {
         return autonomyFlags.kill;
       },
+      get growthAutonomyLearningV1() {
+        return false;
+      },
+      get growthAutonomyLearningPanelV1() {
+        return false;
+      },
+      get growthAutonomyAutoLowRiskV1() {
+        return false;
+      },
+      get growthAutonomyAutoLowRiskPanelV1() {
+        return false;
+      },
+      get growthAutonomyExpansionV1() {
+        return false;
+      },
+      get growthAutonomyExpansionPanelV1() {
+        return false;
+      },
+      get growthAutonomyExpansionFreeze() {
+        return false;
+      },
     },
     growthPolicyEnforcementFlags: {
       ...a.growthPolicyEnforcementFlags,
@@ -51,6 +72,10 @@ vi.mock("@/config/feature-flags", async (importOriginal) => {
 
 vi.mock("../growth-policy-enforcement.service", () => ({
   buildGrowthPolicyEnforcementSnapshot: (...args: unknown[]) => buildEnf(...args),
+}));
+
+vi.mock("../growth-autonomy-trial-orchestration.service", () => ({
+  buildGrowthAutonomyTrialSnapshotEmbed: async () => undefined,
 }));
 
 vi.mock("../growth-autonomy-config", () => ({
@@ -151,7 +176,7 @@ describe("buildGrowthAutonomySnapshot", () => {
       surfaceDebug: false,
     });
     const strat = s.suggestions.find((x) => x.id === "cat-strategy-promo");
-    expect(strat?.disposition).toBe("prefilled_action");
+    expect(strat?.disposition).toBe("prefilled_only");
     expect(strat?.prefill?.href).toContain("growthAutonomyFocus=strategy");
   });
 

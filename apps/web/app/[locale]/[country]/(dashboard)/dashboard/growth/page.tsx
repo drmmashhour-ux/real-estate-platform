@@ -35,6 +35,7 @@ import {
   platformCoreFlags,
   swarmSystemFlags,
 } from "@/config/feature-flags";
+import { parseGrowthAutonomyAutoLowRiskRolloutFromEnv } from "@/modules/growth/growth-autonomy-auto-config";
 import { parseGrowthAutonomyRolloutFromEnv } from "@/modules/growth/growth-autonomy-config";
 import { computeGrowthAutonomyViewerPilotAccess } from "@/modules/growth/growth-autonomy-internal-access";
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
@@ -232,6 +233,21 @@ export default async function GrowthMachineHubPage({
           panel: growthAutonomyFlags.growthAutonomyPanelV1,
           killSwitch: growthAutonomyFlags.growthAutonomyKillSwitch,
           rolloutStage: parseGrowthAutonomyRolloutFromEnv(),
+          trialEnabled: growthAutonomyFlags.growthAutonomyTrialV1,
+          trialPanel: growthAutonomyFlags.growthAutonomyTrialPanelV1,
+        }}
+        growthAutonomyLearning={{
+          enabled: growthAutonomyFlags.growthAutonomyLearningV1,
+          panel: growthAutonomyFlags.growthAutonomyLearningPanelV1,
+        }}
+        growthAutonomyAutoLowRisk={{
+          enabled: growthAutonomyFlags.growthAutonomyAutoLowRiskV1,
+          panel: growthAutonomyFlags.growthAutonomyAutoLowRiskPanelV1,
+          rolloutStage: parseGrowthAutonomyAutoLowRiskRolloutFromEnv(),
+        }}
+        growthAutonomyExpansion={{
+          enabled: growthAutonomyFlags.growthAutonomyExpansionV1,
+          panel: growthAutonomyFlags.growthAutonomyExpansionPanelV1,
         }}
         viewerIsAdmin={!!isAdmin}
         viewerGrowthAutonomyPilotAccess={viewerGrowthAutonomyPilotAccess}

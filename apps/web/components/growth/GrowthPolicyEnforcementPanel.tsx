@@ -89,6 +89,7 @@ export function GrowthPolicyEnforcementPanel() {
   const [err, setErr] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [showDebugPanel, setShowDebugPanel] = React.useState(false);
+  const [panelFlagFromApi, setPanelFlagFromApi] = React.useState<boolean | null>(null);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -150,11 +151,34 @@ export function GrowthPolicyEnforcementPanel() {
         className="rounded-xl border border-amber-900/45 bg-amber-950/20 p-4"
         aria-label="Growth policy enforcement disabled"
       >
-        <h3 className="text-sm font-semibold text-amber-100">Policy enforcement (layer off)</h3>
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <h3 className="text-sm font-semibold text-amber-100">Policy enforcement</h3>
+          <div className="flex flex-wrap gap-1.5 text-[10px]">
+            <span className="rounded-full border border-zinc-600 bg-zinc-900/75 px-2 py-0.5 font-medium text-zinc-300">
+              Layer: off
+            </span>
+            <span
+              className={`rounded-full border px-2 py-0.5 font-medium ${
+                layerDisabled.panelFlag
+                  ? "border-sky-800/55 bg-sky-950/25 text-sky-100"
+                  : "border-zinc-600 bg-zinc-900/75 text-zinc-400"
+              }`}
+            >
+              Panel flag: {layerDisabled.panelFlag ? "on" : "off"}
+            </span>
+            <span className="rounded-full border border-amber-800/45 bg-amber-950/25 px-2 py-0.5 font-medium text-amber-100">
+              Advisory-only scope
+            </span>
+          </div>
+        </div>
         <p className="mt-2 text-xs leading-relaxed text-amber-100/90">{layerDisabled.message}</p>
+        <p className="mt-2 text-[10px] leading-relaxed text-zinc-500">
+          Internal: enforcement is disabled — no advisory snapshot is emitted for this response. Dependent surfaces fall back
+          to legacy behavior until the layer flag is enabled.
+        </p>
         <p className="mt-2 text-[10px] text-zinc-500">
-          Panel flag: {layerDisabled.panelFlag ? "on" : "off"} — UI may still hide this block if the panel flag is off at
-          the page level.
+          Page-level UI may still hide this block when <span className="font-mono">FEATURE_GROWTH_POLICY_ENFORCEMENT_PANEL_V1</span>{" "}
+          is off even though this panel route rendered.
         </p>
       </section>
     );
@@ -212,15 +236,16 @@ export function GrowthPolicyEnforcementPanel() {
       </div>
 
       <p className="mt-2 text-[11px] leading-relaxed text-zinc-500">
-        <span className="text-zinc-400">Out of scope for this layer:</span> payments, bookings core, ads execution
-        core, CRO core — this surface is bounded advisory/orchestration only.
+        <span className="text-zinc-400">Out of scope for this layer:</span> payments, booking core, ads core, CRO core —
+        this surface is bounded advisory/orchestration only.
       </p>
 
       {partial ? (
         <div className="mt-3 rounded-lg border border-amber-800/40 bg-black/30 p-2.5">
-          <p className="text-[11px] font-semibold text-amber-100/95">Partial data</p>
+          <p className="text-[11px] font-semibold text-amber-100/95">Partial / incomplete inputs</p>
           <p className="mt-1 text-[11px] leading-relaxed text-amber-100/80">
-            Snapshot built with gaps — treat modes as directional, not definitive. Review warnings below before acting.
+            Snapshot reflects missing or degraded upstream inputs — treat modes as directional only, not guaranteed
+            outcomes. Review notes and warning codes below before relying on gates.
           </p>
           {snapshot.missingDataWarnings.length > 0 ? (
             <ul className="mt-2 list-inside list-disc space-y-0.5 font-mono text-[10px] text-amber-200/80">

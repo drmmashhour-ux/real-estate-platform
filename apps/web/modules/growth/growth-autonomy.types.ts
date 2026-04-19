@@ -3,6 +3,12 @@
  * Does not expand enforcement domains; orchestrates visibility + readiness only (no risky execution).
  */
 
+import type {
+  GrowthAutonomyAutoLowRiskUiContext,
+  GrowthAutonomyExecutionMeta,
+} from "./growth-autonomy-auto.types";
+import type { GrowthAutonomyLearningSnapshot } from "./growth-autonomy-learning.types";
+import type { GrowthAutonomyTrialSnapshot } from "./growth-autonomy-trial.types";
 import type { GrowthEnforcementMode } from "./growth-policy-enforcement.types";
 
 /** Operator-facing autonomy tier for growth surfaces. */
@@ -12,9 +18,16 @@ export type GrowthAutonomyMode = "OFF" | "ASSIST" | "SAFE_AUTOPILOT";
 export type GrowthAutonomyDisposition =
   | "hidden"
   | "suggest_only"
-  | "prefilled_action"
+  | /** @deprecated prefer prefilled_only */ "prefilled_action"
+  | "prefilled_only"
   | "approval_required"
-  | "blocked";
+  | "blocked"
+  | "trial_eligible"
+  | "trial_active";
+
+export function isGrowthAutonomyPrefilledDisposition(d: GrowthAutonomyDisposition): boolean {
+  return d === "prefilled_action" || d === "prefilled_only";
+}
 
 /** Bounded catalog types for this phase — no payments, bookings core, ads core, CRO core, or unsafe sends. */
 export type GrowthAutonomyActionType =
@@ -72,6 +85,12 @@ export type GrowthAutonomySuggestion = {
   allowed: boolean;
   policyNote: string;
   prefill?: GrowthAutonomyPrefill;
+  /** Learning loop ordering score (confidence + bounded delta); advisory-only. */
+  learningRankScore?: number;
+  /** Operator-readable note when learning adjusts ordering or soft-suppresses advisory rows. */
+  learningNote?: string | null;
+  /** Phase-1 low-risk auto-eligibility metadata (bounded allowlist — never expands domains). */
+  execution?: GrowthAutonomyExecutionMeta;
 };
 
 export type GrowthAutonomySnapshot = {
@@ -95,4 +114,10 @@ export type GrowthAutonomySnapshot = {
   operatorNotes: string[];
   scopeExclusions: string[];
   createdAt: string;
+  /** Populated when FEATURE_GROWTH_AUTONOMY_LEARNING_V1 is on — bounded prioritization summary. */
+  learning?: GrowthAutonomyLearningSnapshot;
+  /** Populated when auto-low-risk flag is on — cohort + rollout hints for operators. */
+  autoLowRisk?: GrowthAutonomyAutoLowRiskUiContext;
+  /** Single adjacent internal trial metadata — FEATURE_GROWTH_AUTONOMY_TRIAL_V1. */
+  trial?: GrowthAutonomyTrialSnapshot;
 };
