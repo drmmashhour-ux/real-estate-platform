@@ -1,5 +1,6 @@
 import type { ProposedAction } from "../types/autonomy.types";
 
+import { logAutonomy } from "../lib/autonomy-log";
 import { evaluateAutonomyPolicies } from "../policy/autonomy-policy.service";
 
 export function createProposedAction(input: {

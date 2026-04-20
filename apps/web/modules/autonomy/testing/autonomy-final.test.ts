@@ -9,25 +9,33 @@ vi.mock("@/modules/autonomy/lib/autonomy-layer-gate", () => ({
   isAutonomyOsLayerCoreEnabled: () => true,
 }));
 
-import { allocatePortfolioCapital } from "./portfolio/capital-allocator.service";
-import { executeAutonomyAction } from "./actions/autonomy-actions.service";
-import { buildLearningSnapshot } from "./learning/learning-engine.service";
+vi.mock("../api/autonomy-os-persist.service", async (importOriginal) => {
+  const mod = await importOriginal<typeof import("../api/autonomy-os-persist.service")>();
+  return {
+    ...mod,
+    persistCriticalPolicyEvaluationResults: vi.fn(),
+  };
+});
+
+import { allocatePortfolioCapital } from "../portfolio/capital-allocator.service";
+import { executeAutonomyAction } from "../actions/autonomy-actions.service";
+import { buildLearningSnapshot } from "../learning/learning-engine.service";
 import {
   approveProposedAction,
   createProposedAction,
   markExecuted,
-} from "./engine/autonomy-orchestrator.service";
+} from "../engine/autonomy-orchestrator.service";
 import {
   getAutonomousSystemHealth,
   pauseAutonomy,
   resetAutonomyGovernanceForTests,
   resumeAutonomy,
-} from "./engine/autonomy-governance.service";
-import { evaluateAutonomyPolicies } from "./policy/autonomy-policy.service";
-import { resetAutonomyPolicyMonitoringForTests } from "./policy/autonomy-policy-monitoring.service";
-import type { OutcomeEvent } from "./types/autonomy.types";
+} from "../engine/autonomy-governance.service";
+import { evaluateAutonomyPolicies } from "../policy/autonomy-policy.service";
+import { resetAutonomyPolicyMonitoringForTests } from "../policy/autonomy-policy-monitoring.service";
+import type { OutcomeEvent } from "../types/autonomy.types";
 
-describe("autonomy OS layer", () => {
+describe("autonomy OS layer (final)", () => {
   beforeEach(() => {
     resetAutonomyPolicyMonitoringForTests();
     resetAutonomyGovernanceForTests();
@@ -42,9 +50,7 @@ describe("autonomy OS layer", () => {
   });
 
   it("pricing respects max price cap", async () => {
-    const { buildDynamicPricingDecision } = await import(
-      "@/modules/autonomy/pricing/dynamic-pricing.service"
-    );
+    const { buildDynamicPricingDecision } = await import("../pricing/dynamic-pricing.service");
     const decision = buildDynamicPricingDecision(
       {
         listingId: "1",
@@ -103,6 +109,18 @@ describe("autonomy OS layer", () => {
     expect(action.status).toBe("PENDING_APPROVAL");
   });
 
+  it("FULL_AUTOPILOT_APPROVAL queues for human approval", () => {
+    const action = createProposedAction({
+      domain: "LEADS",
+      type: "route",
+      title: "t",
+      description: "d",
+      mode: "FULL_AUTOPILOT_APPROVAL",
+      payload: {},
+    });
+    expect(action.status).toBe("PENDING_APPROVAL");
+  });
+
   it("capital allocator ranks buildings", () => {
     const dec = allocatePortfolioCapital(
       [
@@ -138,5 +156,16 @@ describe("autonomy OS layer", () => {
     const run = await executeAutonomyAction(a);
     expect(run.success).toBe(true);
     expect(markExecuted(a).status).toBe("EXECUTED");
+  });
+
+  it("dashboard snapshot shape (module-level)", () => {
+    const events: OutcomeEvent[] = [];
+    const health = getAutonomousSystemHealth(events);
+    expect(health).toMatchObject({
+      mode: expect.any(String),
+      isPaused: expect.any(Boolean),
+      pendingApprovals: expect.any(Number),
+      lastUpdatedAt: expect.any(String),
+    });
   });
 });

@@ -1,4 +1,4 @@
-export type AutonomyMode = "OFF" | "ASSIST" | "SAFE_AUTOPILOT" | "FULL_AUTOPILOT_APPROVAL";
+export type { AutonomyMode } from "./types/autonomy.types";
 
 export type { AutonomyConfig } from "@prisma/client";
 

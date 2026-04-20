@@ -1,6 +1,6 @@
 /** Outcome-based self-improving autonomy layer types (LECIPM governed OS — not unrestricted ML). */
 
-export type { AutonomyMode } from "../autonomy.types";
+export type AutonomyMode = "OFF" | "ASSIST" | "SAFE_AUTOPILOT" | "FULL_AUTOPILOT_APPROVAL";
 
 export type AutonomyDomain =
   | "PRICING"
@@ -39,7 +39,7 @@ export interface ProposedAction {
   type: string;
   title: string;
   description: string;
-  mode: import("../autonomy.types").AutonomyMode;
+  mode: AutonomyMode;
   status: ActionStatus;
   payload: Record<string, unknown>;
   policyResults: AutonomyPolicyResult[];
@@ -119,7 +119,7 @@ export interface CapitalAllocationDecision {
 }
 
 export interface AutonomousSystemHealth {
-  mode: import("../autonomy.types").AutonomyMode;
+  mode: AutonomyMode;
   isPaused: boolean;
   activeDomains: AutonomyDomain[];
   pendingApprovals: number;

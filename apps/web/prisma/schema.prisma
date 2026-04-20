@@ -728,6 +728,10 @@ model User {
   salesAgentProfile                    SalesAgent?
   salesAssignmentsAsProspect           SalesAssignment[]                     @relation("SalesAssignmentProspect")
   insuranceLeads                       InsuranceLead[]
+  /// FARCIQ-style broker E&O coverage (LECIPM compliance layer — not legal advice).
+  brokerInsurances                     BrokerInsurance[]                     @relation("BrokerFARCIQInsurance")
+  brokerInsuranceClaims                InsuranceClaim[]                      @relation("BrokerInsuranceClaims")
+  brokerComplianceEvents               BrokerComplianceEvent[]
   shareSessionsAsGuest                 ShareSession[]                        @relation("ShareSessionGuest")
   userLoyaltyProfile                   UserLoyaltyProfile?
   loyaltyRewardEvents                  LoyaltyRewardEvent[]
@@ -10180,6 +10184,16 @@ model Deal {
   brokerageCommissionCases       BrokerageCommissionCase[]
   officeInvoices                 OfficeInvoice[]
   lecipmFormInstances            LecipmFormInstance[]
+  /**
+   * Deal Intelligence engine — advisory scores; refreshed on interactions and cron.
+   */
+  dealScore                  Float?   @map("deal_score")
+  closeProbability           Float?   @map("close_probability")
+  riskLevel                  String?  @map("risk_level") @db.VarChar(16)
+  /// Pipeline lens: VIEWING | OFFER | NEGOTIATION | CLOSED (distinct from legal `status`).
+  intelligenceStage          String?  @map("intelligence_stage") @db.VarChar(24)
+  lastIntelligenceComputedAt DateTime? @map("last_intelligence_computed_at")
+  dealIntelligenceEvents     DealIntelligenceEvent[]
 
   @@index([buyerId])
   @@index([sellerId])
@@ -10193,6 +10207,21 @@ model Deal {
   @@index([lecipmExecutionPipelineState])
   @@index([brokerageOfficeId])
   @@map("deals")
+}
+
+/// Telemetry for Deal Intelligence scoring (distinct from negotiation / legal audit tables).
+model DealIntelligenceEvent {
+  id        String   @id @default(cuid())
+  dealId    String   @map("deal_id")
+  deal      Deal     @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  /// VIEW | VISIT | OFFER | MESSAGE — broker/automation increments
+  type      String   @db.VarChar(32)
+  metadata  Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([dealId])
+  @@index([dealId, createdAt])
+  @@map("deal_intelligence_events")
 }
 
 // —— LECIPM deal-file payments / trust workflow / negotiation (v1) — broker-controlled; not a regulated trust unless configured. ——
@@ -24557,6 +24586,55 @@ model InsuranceRevenueLog {
 
   @@index([leadId])
   @@map("insurance_revenue_logs")
+}
+
+/// Broker professional liability (FARCIQ policy parameters — illustrative limits; bind coverage with your carrier).
+model BrokerInsurance {
+  id              String   @id @default(cuid())
+  brokerId        String   @map("broker_id")
+  broker          User     @relation("BrokerFARCIQInsurance", fields: [brokerId], references: [id], onDelete: Cascade)
+  policyNumber    String?  @map("policy_number")
+  provider        String   @default("FARCIQ")
+  coveragePerLoss Int      @default(2000000) @map("coverage_per_loss")
+  coveragePerYear Int      @default(2000000) @map("coverage_per_year")
+  startDate       DateTime @map("start_date")
+  endDate         DateTime @map("end_date")
+  status          String   @db.VarChar(24)
+  deductibleLevel Int      @map("deductible_level")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@index([brokerId, status])
+  @@index([brokerId, endDate])
+  @@map("broker_insurances")
+}
+
+/// Claim intake — store short summary only; attach sensitive documents via `privateFileId` when wired to storage.
+model InsuranceClaim {
+  id            String   @id @default(cuid())
+  brokerId      String   @map("broker_id")
+  broker        User     @relation("BrokerInsuranceClaims", fields: [brokerId], references: [id], onDelete: Cascade)
+  description   String   @db.VarChar(2000)
+  /// Optional `StorageFileRecord.id` for encrypted / access-controlled narrative (never paste full legal text in `description`).
+  privateFileId String?  @map("private_file_id")
+  status        String   @db.VarChar(24)
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([brokerId, createdAt])
+  @@map("broker_insurance_claims")
+}
+
+/// FARCIQ compliance / risk ledger for brokers (distinct from syndicate co-ownership checklist events).
+model BrokerComplianceEvent {
+  id        String   @id @default(cuid())
+  brokerId  String   @map("broker_id")
+  broker    User     @relation(fields: [brokerId], references: [id], onDelete: Cascade)
+  type      String   @db.VarChar(24)
+  message   String   @db.Text
+  severity  String   @db.VarChar(16)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([brokerId, createdAt])
+  @@map("broker_compliance_events")
 }
 
 // ---------------------------------------------------------------------------

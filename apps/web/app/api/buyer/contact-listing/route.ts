@@ -23,7 +23,6 @@ import { funnelVariantForListing } from "@/lib/funnel/listing-ab";
 import { trackFunnelEvent } from "@/lib/funnel/tracker";
 import { PRICING } from "@/lib/monetization/pricing";
 import { createLecipmBrokerThread } from "@/lib/messages/create-thread";
-import { resolveLeadDistributionChannel } from "@/modules/distribution/distribution.service";
 
 export const dynamic = "force-dynamic";
 
@@ -47,6 +46,8 @@ export async function POST(request: NextRequest) {
   if (!message || message.trim().length < 5) {
     return NextResponse.json({ error: "Message must be at least 5 characters" }, { status: 400 });
   }
+
+  const distributionChannelResolved = distributionChannel === "CENTRIS" ? "CENTRIS" : "LECIPM";
 
   const tenantId = await getDefaultTenantId();
   const userId = await getGuestId();
@@ -75,6 +76,7 @@ export async function POST(request: NextRequest) {
       message,
       tenantId,
       userId,
+      distributionChannel: distributionChannelResolved,
     });
   }
 
@@ -87,6 +89,7 @@ export async function POST(request: NextRequest) {
       message,
       tenantId,
       userId,
+      distributionChannel: distributionChannelResolved,
     });
   }
 
@@ -143,8 +146,10 @@ async function handleFsboContact(opts: {
   message: string;
   tenantId: string | null;
   userId: string | null;
+  distributionChannel?: "CENTRIS" | "LECIPM";
 }) {
-  const { listing, name, email, phone, message, tenantId, userId } = opts;
+  const { listing, name, email, phone, message, tenantId, userId, distributionChannel } = opts;
+  const distributionChannelResolved = distributionChannel ?? "LECIPM";
   const listingId = listing.id;
 
   if (!legalEnforcementDisabled()) {
@@ -324,8 +329,10 @@ async function handleCrmContact(opts: {
   message: string;
   tenantId: string | null;
   userId: string | null;
+  distributionChannel?: "CENTRIS" | "LECIPM";
 }) {
-  const { listing, name, email, phone, message, tenantId, userId } = opts;
+  const { listing, name, email, phone, message, tenantId, userId, distributionChannel } = opts;
+  const distributionChannelResolved = distributionChannel ?? "LECIPM";
 
   if (!legalEnforcementDisabled()) {
     if (!userId) {
@@ -392,7 +399,7 @@ async function handleCrmContact(opts: {
       commissionEligible: true,
       source: "buyer_hub",
       highIntent: true,
-      distributionChannel: "LECIPM",
+      distributionChannel: distributionChannelResolved,
       ...(priceInt != null ? { dealValue: priceInt, estimatedValue: priceInt } : {}),
     },
   });

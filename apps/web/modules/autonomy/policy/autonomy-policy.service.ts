@@ -1,3 +1,4 @@
+import { persistCriticalPolicyEvaluationResults } from "../api/autonomy-os-persist.service";
 import type { AutonomyPolicyResult } from "../types/autonomy.types";
 import { logAutonomy } from "../lib/autonomy-log";
 import { trackAutonomyPolicyEvaluation } from "./autonomy-policy-monitoring.service";
@@ -45,6 +46,29 @@ export function evaluateAutonomyPolicies(context: AutonomyPolicyContext): Autono
       allowed: true,
       requiresHumanApproval: true,
       reason: "ASSIST mode only allows draft recommendations.",
+    });
+  }
+
+  if (context.mode === "FULL_AUTOPILOT_APPROVAL") {
+    addResult(results, {
+      id: "full-autopilot-human-queue",
+      domain: context.domain,
+      severity: "INFO",
+      allowed: true,
+      requiresHumanApproval: true,
+      reason:
+        "Full autopilot approval mode prepares decisions but requires explicit human approval before execution.",
+    });
+  }
+
+  if (context.domain === "MARKETING") {
+    addResult(results, {
+      id: "marketing-no-auto-send",
+      domain: context.domain,
+      severity: "WARNING",
+      allowed: true,
+      requiresHumanApproval: true,
+      reason: "Marketing stays draft-only — no unsupervised outbound or guest messaging.",
     });
   }
 
@@ -107,6 +131,12 @@ export function evaluateAutonomyPolicies(context: AutonomyPolicyContext): Autono
     allowed: !disallowed,
     requiresHumanApproval,
     resultCount: results.length,
+  });
+
+  persistCriticalPolicyEvaluationResults(results, {
+    mode: context.mode,
+    domain: context.domain,
+    payloadKeys: context.payload ? Object.keys(context.payload) : [],
   });
 
   return {

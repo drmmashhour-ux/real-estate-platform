@@ -16,6 +16,11 @@ import {
 import { getSiteBaseUrl } from "@/modules/seo/lib/siteBaseUrl";
 import { cityToSlug } from "@/lib/market/slug";
 import { getGuestId } from "@/lib/auth/session";
+import { cookies } from "next/headers";
+import {
+  CENTRIS_ATTRIBUTION_COOKIE,
+  resolveCentrisFromSearchParams,
+} from "@/modules/centris-conversion/centris-attribution";
 import { trackEvent } from "@/src/services/analytics";
 import { persistLaunchEvent } from "@/src/modules/launch/persistLaunchEvent";
 import { mergeTrafficAttributionIntoMetadata } from "@/lib/attribution/social-traffic";
@@ -42,6 +47,7 @@ import {
 } from "@/lib/listings/listing-analytics-service";
 import { buildPropertyConversionSurface } from "@/modules/conversion/property-conversion-surface";
 import { prisma } from "@/lib/db";
+import { isBrokerInsuranceActive } from "@/modules/compliance/insurance/insurance.service";
 
 export const dynamic = "force-dynamic";
 
@@ -149,10 +155,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function PublicListingRoute({ params, searchParams }: Props) {
   const { id: param, locale, country } = await params;
   const sp = await searchParams;
-  const rawDist = sp.dist;
-  const distFirst = Array.isArray(rawDist) ? rawDist[0] : rawDist;
+  const cookieStore = await cookies();
+  const fromParams = resolveCentrisFromSearchParams(sp);
+  const cookieCentris = cookieStore.get(CENTRIS_ATTRIBUTION_COOKIE)?.value === "1";
   const inquiryDistributionChannel =
-    typeof distFirst === "string" && distFirst.toLowerCase() === "centris" ? ("CENTRIS" as const) : ("LECIPM" as const);
+    fromParams === "CENTRIS" || cookieCentris ? ("CENTRIS" as const) : ("LECIPM" as const);
+  if (fromParams === "CENTRIS") {
+    cookieStore.set(CENTRIS_ATTRIBUTION_COOKIE, "1", {
+      path: "/",
+      maxAge: 60 * 60 * 24 * 90,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+    });
+  }
   const cookieHeader = (await headers()).get("cookie");
   const resolved = await resolveListingFromParam(param);
   if (!resolved) {
@@ -288,6 +303,8 @@ export default async function PublicListingRoute({ params, searchParams }: Props
       logInfo("[listing_view]", { listingId: row.id, userId: guestFsbo ?? null, kind: "fsbo" });
     }
     const ownerBrokerVerification = row.owner.brokerVerifications[0] ?? null;
+    const insuredBroker =
+      row.listingOwnerType === "BROKER" ? await isBrokerInsuranceActive(row.ownerId) : false;
     const transactionFlag = await getListingTransactionFlag(row.id, row.status);
     const fsboPayload = {
       ...row,
@@ -312,6 +329,7 @@ export default async function PublicListingRoute({ params, searchParams }: Props
         { label: "Country", value: row.country ?? null },
         { label: "Publishing path", value: row.listingOwnerType === "BROKER" ? "Sell Hub with broker" : "Sell Hub Free" },
       ],
+      insuredBroker,
     };
     const paywallFsbo = isListingContactPaywallEnabled();
     const viewerFsbo = guestFsbo;
@@ -346,6 +364,7 @@ export default async function PublicListingRoute({ params, searchParams }: Props
         <JsonLdScript data={crumbLd} />
         <BuyerListingDetail
           listing={fsboPayloadFinal}
+          inquiryDistributionChannel={inquiryDistributionChannel}
           demandUi={demandUiFsbo}
           conversionSurface={conversionSurfaceFsbo}
           funnelVariant={funnelVariantForListing(row.id)}
@@ -468,7 +487,7 @@ export default async function PublicListingRoute({ params, searchParams }: Props
       <JsonLdScript data={crumbLd} />
       <BuyerListingDetail
         listing={{ ...crmPayload, listingKind: "crm", transactionFlag: transactionFlagCrm }}
-        inquiryDistributionChannel="LECIPM"
+        inquiryDistributionChannel={inquiryDistributionChannel}
         demandUi={demandUiCrm}
         conversionSurface={conversionSurfaceCrm}
         funnelVariant={funnelVariantForListing(payload.id)}

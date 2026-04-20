@@ -8,6 +8,7 @@ import { listRecentAutonomyPricingDecisions } from "@/modules/autonomy/api/auton
 import { getAutonomousSystemHealth } from "@/modules/autonomy/engine/autonomy-governance.service";
 import { buildLearningSnapshot } from "@/modules/autonomy/learning/learning-engine.service";
 import { listOutcomeEvents } from "@/modules/autonomy/learning/outcome-tracking.service";
+import { getAutonomyPolicyMonitoringSnapshot } from "@/modules/autonomy/policy/autonomy-policy-monitoring.service";
 
 export async function GET() {
   const admin = await requireAdminSession();
@@ -36,5 +37,6 @@ export async function GET() {
     learning: buildLearningSnapshot(events),
     impact: buildAutonomyImpactSummary(events),
     pricing,
+    policyMonitoring: getAutonomyPolicyMonitoringSnapshot(),
   });
 }

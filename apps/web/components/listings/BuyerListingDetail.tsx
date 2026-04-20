@@ -54,6 +54,7 @@ import { useConversionEngineFlags } from "@/lib/conversion/use-conversion-engine
 import { recordPropertyDetailViewOnce } from "@/modules/conversion/funnel-metrics.service";
 import type { PropertyConversionSurface } from "@/modules/conversion/property-conversion-surface";
 import { recordPropertyCtaClick } from "@/modules/conversion/conversion-monitoring.service";
+import { CentrisConversionStrip } from "@/components/listings/CentrisConversionStrip";
 
 export type BuyerListingPayload = {
   id: string;
@@ -89,6 +90,8 @@ export type BuyerListingPayload = {
     licenseVerified: boolean;
     address: string | null;
   } | null;
+  /** FARCIQ broker liability coverage active (broker-owned listings only). */
+  insuredBroker?: boolean;
   propertyDetails?: Array<{ label: string; value: string | null }>;
   transactionFlag?: {
     key: "offer_received" | "offer_accepted" | "sold";
@@ -818,6 +821,12 @@ export function BuyerListingDetail({
               verifiedListing={showVerifiedBadge}
             />
 
+            {inquiryDistributionChannel === "CENTRIS" ? (
+              <div className="mt-5">
+                <CentrisConversionStrip listingId={listing.id} />
+              </div>
+            ) : null}
+
             {!isSold ? (
               <div className="mt-5 space-y-3">
                 {du?.activityHint ? (
@@ -1474,6 +1483,14 @@ export function BuyerListingDetail({
                     </ul>
                     <p className="mt-4 text-lg font-semibold text-white">{representative.name}</p>
                     <p className="mt-1 text-sm text-white/70">{representative.roleLabel}</p>
+                    {listing.insuredBroker ? (
+                      <p
+                        className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-emerald-500/35 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-100"
+                        title="Broker maintains active professional liability coverage on file"
+                      >
+                        <span aria-hidden>🛡️</span> Insured Broker
+                      </p>
+                    ) : null}
                     {representative.company ? (
                       <p className="mt-1 text-sm text-white/50">{representative.company}</p>
                     ) : null}
