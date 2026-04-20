@@ -21,6 +21,8 @@ const FRAUD_PATTERN_TYPES = new Set<LegalIntelligenceSignalType>([
   "cross_entity_conflict",
   "suspicious_resubmission_pattern",
   "high_risk_submission_burst",
+  "conflicting_records",
+  "suspicious_data_pattern",
 ]);
 
 const ANOMALY_TYPES = new Set<LegalIntelligenceSignalType>([
@@ -29,6 +31,9 @@ const ANOMALY_TYPES = new Set<LegalIntelligenceSignalType>([
   "review_delay_risk",
   "missing_required_cluster",
   "high_rejection_rate",
+  "missing_required_fields",
+  "inconsistent_legal_data",
+  "incomplete_declaration",
 ]);
 
 function dedupeSignals(signals: LegalIntelligenceSignal[]): LegalIntelligenceSignal[] {

@@ -1,3 +1,4 @@
+import { brokerAiFlags } from "@/config/feature-flags";
 import type { HubJourneyContext, HubKey } from "./hub-journey.types";
 
 /**
@@ -20,6 +21,15 @@ export function detectHubBlockers(hub: HubKey, ctx: HubJourneyContext): string[]
         out.push("Listing needs more photos before buyers trust the ad.");
       }
       if (ctx.sellerListingStarted && !ctx.sellerPublished) out.push("Listing is not published yet — visibility stays low.");
+      if (
+        brokerAiFlags.brokerAiCertificateOfLocationV2 &&
+        ctx.sellerPublished &&
+        ctx.sellerCertificateLocationSatisfied === false
+      ) {
+        out.push(
+          "Certificate-of-location structured coverage is incomplete for at least one active listing — review uploads or optional certificate slot.",
+        );
+      }
       break;
     case "rent":
       if (!ctx.rentCriteriaSet) out.push("Search or rental intent not recorded yet — run a search or open listings.");
@@ -51,6 +61,15 @@ export function detectHubBlockers(hub: HubKey, ctx: HubJourneyContext): string[]
       if (!ctx.brokerProfileComplete) out.push("Broker profile missing phone or display name.");
       if ((ctx.brokerLeadsUnlocked ?? 0) > 0 && (ctx.brokerLeadsContacted ?? 0) === 0) {
         out.push("Unlocked leads need a first touch — contact within minutes.");
+      }
+      if (
+        brokerAiFlags.brokerAiCertificateOfLocationV2 &&
+        (ctx.brokerLeadsUnlocked ?? 0) > 0 &&
+        ctx.brokerCertificateLocationSatisfied === false
+      ) {
+        out.push(
+          "Certificate workflow has no audited request/review entry yet — log an action when you engage certificate coverage.",
+        );
       }
       break;
     case "investor":

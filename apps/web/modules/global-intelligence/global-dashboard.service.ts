@@ -3,11 +3,29 @@
  */
 import { prisma } from "@/lib/db";
 import { engineFlags } from "@/config/feature-flags";
+import {
+  buildGlobalMarketplaceSummary,
+  buildGlobalRegionSummary,
+  getGlobalUnifiedIntelligenceSnapshot,
+} from "@/modules/global-intelligence/global-unified-intelligence.service";
+import type {
+  GlobalExecutionSummary,
+  GlobalMarketplaceSummary,
+  GlobalRegionSummary,
+  GlobalRiskSummary,
+  GlobalTrustSummary,
+  GlobalGrowthSummary,
+} from "@/modules/global-intelligence/global-intelligence.types";
+import { getJurisdictionPolicyPack } from "@/modules/legal/jurisdiction/jurisdiction-policy-pack-registry";
+import { isRegionCapabilityEnabled, REGION_REGISTRY } from "@lecipm/platform-core";
+import { listAvailableRegionAdapters } from "@/modules/integrations/regions/region-adapter-registry";
 import type {
   MarketplaceGrowthSummary,
   MarketplaceKpiSummary,
   MarketplaceRiskSummary,
   RegionComparisonRow,
+  SyriaGovernanceDashboardSlice,
+  SyriaPolicySummarySlice,
   SyriaSignalDashboardRollup,
 } from "@/modules/dashboard-intelligence/dashboard-intelligence.types";
 import { listListingsSummary } from "@/modules/integrations/regions/syria/syria-region-adapter.service";
@@ -29,7 +47,44 @@ export type SyriaDashboardAugmentation = {
   growthSyria: MarketplaceGrowthSummary["syria"];
   regionComparison: RegionComparisonRow[];
   syriaSignalRollup: SyriaSignalDashboardRollup | null;
+  syriaPolicySummary: SyriaPolicySummarySlice | null;
+  syriaGovernanceSlice: SyriaGovernanceDashboardSlice | null;
 };
+
+/** Aggregate dashboard proxy — maps SQL counts to same decision literals as listing preview policy (heuristic). */
+function buildSyriaPolicySummarySlice(summary: SyriaRegionSummary): SyriaPolicySummarySlice {
+  let worstCasePolicy: SyriaPolicySummarySlice["worstCasePolicy"] = "allow_preview";
+  if (summary.fraudFlaggedListings > 0) worstCasePolicy = "requires_local_approval";
+  else if (summary.pendingReviewListings > 0) worstCasePolicy = "requires_local_approval";
+
+  return {
+    worstCasePolicy,
+    liveExecutionBlocked: true,
+    notes: [
+      "dashboard_syria_policy_summary_uses_aggregate_sql_proxies",
+      `fraud_flagged_listings=${summary.fraudFlaggedListings}`,
+      `pending_review_listings=${summary.pendingReviewListings}`,
+    ],
+  };
+}
+
+function buildSyriaGovernanceDashboardSlice(summary: SyriaRegionSummary): SyriaGovernanceDashboardSlice {
+  const fraud = summary.fraudFlaggedListings;
+  const pending = summary.pendingReviewListings;
+  const total = summary.totalListings;
+  return {
+    requiresApprovalCount: pending + fraud,
+    fraudFlaggedCount: fraud,
+    blockedForRegionCount: total,
+    previewableCount: total,
+    notes: [
+      "governance_slice_uses_regional_sql_aggregates",
+      "requiresApprovalCount_may_double_count_overlapping_fraud_and_pending",
+      "blockedForRegionCount_equals_totalListings_execution_path_blocked_for_region_phase",
+      "previewableCount_equals_totalListings_dry_run_preview_scope",
+    ],
+  };
+}
 
 function buildSyriaSignalRollup(summary: SyriaRegionSummary, payoutStress: boolean): SyriaSignalDashboardRollup {
   const fraud = summary.fraudFlaggedListings;
@@ -60,6 +115,8 @@ export async function buildSyriaDashboardAugmentation(): Promise<SyriaDashboardA
       growthSyria: undefined,
       regionComparison: [],
       syriaSignalRollup: null,
+      syriaPolicySummary: null,
+      syriaGovernanceSlice: null,
     };
   }
 
@@ -110,6 +167,14 @@ export async function buildSyriaDashboardAugmentation(): Promise<SyriaDashboardA
 
     return {
       kpisSyria: emptyKpi,
+      syriaPolicySummary: null,
+      syriaGovernanceSlice: {
+        requiresApprovalCount: 0,
+        fraudFlaggedCount: 0,
+        blockedForRegionCount: 0,
+        previewableCount: 0,
+        notes: ["syria_adapter_no_aggregate_snapshot"],
+      },
       riskSyria: {
         fraudFlaggedListings: 0,
         elevatedFraudHint: false,
@@ -204,5 +269,135 @@ export async function buildSyriaDashboardAugmentation(): Promise<SyriaDashboardA
     growthSyria,
     regionComparison: comparison.sort((a, b) => a.regionCode.localeCompare(b.regionCode)),
     syriaSignalRollup: buildSyriaSignalRollup(summary, payoutStress),
+    syriaPolicySummary: buildSyriaPolicySummarySlice(summary),
+    syriaGovernanceSlice: buildSyriaGovernanceDashboardSlice(summary),
   };
+}
+
+export type GlobalInvestorDashboard = {
+  marketplace: GlobalMarketplaceSummary | null;
+  syriaAugmentation: SyriaDashboardAugmentation;
+  regionRows: GlobalRegionSummary[];
+  freshness: string;
+  availabilityNotes: readonly string[];
+};
+
+export async function buildGlobalInvestorDashboard(): Promise<GlobalInvestorDashboard> {
+  const freshness = new Date().toISOString();
+  const notes: string[] = [];
+  let marketplace: GlobalMarketplaceSummary | null = null;
+  try {
+    if (engineFlags.globalDashboardV1) {
+      marketplace = await buildGlobalMarketplaceSummary();
+    }
+  } catch {
+    notes.push("global_marketplace_summary_failed");
+  }
+
+  let syriaAugmentation: SyriaDashboardAugmentation = {
+    kpisSyria: undefined,
+    riskSyria: undefined,
+    growthSyria: undefined,
+    regionComparison: [],
+    syriaSignalRollup: null,
+    syriaPolicySummary: null,
+    syriaGovernanceSlice: null,
+  };
+  try {
+    syriaAugmentation = await buildSyriaDashboardAugmentation();
+  } catch {
+    notes.push("syria_dashboard_augmentation_failed");
+  }
+
+  const regionRows: GlobalRegionSummary[] = [];
+  try {
+    if (engineFlags.regionAdaptersV1) {
+      for (const b of listAvailableRegionAdapters()) {
+        const row = await buildGlobalRegionSummary(String(b.regionCode));
+        regionRows.push(row);
+      }
+      regionRows.sort((a, b) => a.regionCode.localeCompare(b.regionCode));
+    }
+  } catch {
+    notes.push("region_summaries_partial_failure");
+  }
+
+  return {
+    marketplace,
+    syriaAugmentation,
+    regionRows,
+    freshness,
+    availabilityNotes: notes,
+  };
+}
+
+export async function buildRegionComparisonSummary(): Promise<GlobalMarketplaceSummary | null> {
+  try {
+    return await buildGlobalMarketplaceSummary();
+  } catch {
+    return null;
+  }
+}
+
+export async function buildRegionRiskComparison(): Promise<GlobalRiskSummary> {
+  const snap = await getGlobalUnifiedIntelligenceSnapshot().catch(() => null);
+  const freshness = new Date().toISOString();
+  if (!snap) {
+    return { regions: [], freshness };
+  }
+  const fraudCount = snap.syria.regionSummary?.fraudFlaggedListings ?? 0;
+  const flaggedElevated = snap.syria.flaggedListingRefs.filter((x) => x.riskScore > 0).length;
+  const regions = [
+    {
+      regionCode: "sy",
+      elevatedCount: Math.max(fraudCount, flaggedElevated),
+      notes: [...snap.syria.availabilityNotes],
+    },
+  ].sort((a, b) => a.regionCode.localeCompare(b.regionCode));
+  return { regions, freshness };
+}
+
+export async function buildRegionGrowthComparison(): Promise<GlobalGrowthSummary> {
+  const freshness = new Date().toISOString();
+  try {
+    const aug = await buildSyriaDashboardAugmentation();
+    const opp =
+      aug.growthSyria?.bookingVolumeHint != null ? Math.min(100, aug.growthSyria.bnhubStaysListings + 1) : 0;
+    return {
+      regions: [{ regionCode: "sy", opportunityUnits: opp, notes: aug.growthSyria?.notes ?? [] }],
+      freshness,
+    };
+  } catch {
+    return { regions: [], freshness };
+  }
+}
+
+export async function buildTrustComparisonSummary(): Promise<GlobalTrustSummary> {
+  const freshness = new Date().toISOString();
+  const regions: GlobalTrustSummary["regions"] = [];
+  try {
+    for (const b of listAvailableRegionAdapters()) {
+      const enabled = isRegionCapabilityEnabled(String(b.regionCode), "trustScoring");
+      regions.push({
+        regionCode: String(b.regionCode),
+        trustAvailability: enabled && b.adapter !== null,
+        notes: enabled ? ["trust_capability_on"] : ["trust_capability_off"],
+      });
+    }
+  } catch {
+    /* empty */
+  }
+  regions.sort((a, b) => a.regionCode.localeCompare(b.regionCode));
+  return { regions, freshness };
+}
+
+export async function buildGlobalExecutionSummary(): Promise<GlobalExecutionSummary> {
+  const freshness = new Date().toISOString();
+  const regions: GlobalExecutionSummary["regions"] = REGION_REGISTRY.map((def) => ({
+    regionCode: def.code,
+    autonomousPreview: def.capabilities.autonomousPreview,
+    controlledExecution: def.capabilities.controlledExecution,
+    notes: [...getJurisdictionPolicyPack(def.code).notes],
+  })).sort((a, b) => a.regionCode.localeCompare(b.regionCode));
+  return { regions, freshness };
 }

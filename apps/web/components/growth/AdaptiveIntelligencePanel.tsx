@@ -6,6 +6,7 @@
 
 import * as React from "react";
 import type { AdaptiveDecision } from "@/modules/growth/adaptive-intelligence.types";
+import { presetAndScrollToActionSimulation } from "./growth-action-simulation-preset";
 
 type Snapshot = {
   decisions: AdaptiveDecision[];
@@ -19,7 +20,20 @@ const priorityBadge: Record<string, string> = {
   medium: "bg-slate-800/80 text-slate-200 border-slate-700",
 };
 
-export function AdaptiveIntelligencePanel() {
+type PanelProps = { simulateOutcomeEnabled?: boolean };
+
+const ADAPTIVE_TO_SIM: Record<
+  AdaptiveDecision["category"],
+  "demand_generation" | "timing_focus" | "retention_focus" | "routing_shift" | "city_domination"
+> = {
+  growth: "demand_generation",
+  timing: "timing_focus",
+  retention: "retention_focus",
+  routing: "routing_shift",
+  closing: "demand_generation",
+};
+
+export function AdaptiveIntelligencePanel({ simulateOutcomeEnabled = false }: PanelProps) {
   const [data, setData] = React.useState<Snapshot | null>(null);
   const [err, setErr] = React.useState<string | null>(null);
   const [copiedId, setCopiedId] = React.useState<string | null>(null);
@@ -142,6 +156,23 @@ export function AdaptiveIntelligencePanel() {
                 >
                   {copiedId === d.id ? "Copied" : "Copy"}
                 </button>
+                {simulateOutcomeEnabled ? (
+                  <button
+                    type="button"
+                    className="rounded border border-violet-800/70 px-2 py-1 text-[11px] text-violet-200/90 hover:bg-violet-950/50"
+                    onClick={() =>
+                      presetAndScrollToActionSimulation({
+                        title: d.action.slice(0, 200),
+                        category: ADAPTIVE_TO_SIM[d.category],
+                        rationale: d.reason.slice(0, 800),
+                        windowDays: 14,
+                        intensity: d.priority === "critical" ? "high" : d.priority === "high" ? "medium" : "low",
+                      })
+                    }
+                  >
+                    Simulate outcome
+                  </button>
+                ) : null}
                 <label className="flex cursor-pointer items-center gap-2 text-[11px] text-zinc-400">
                   <input
                     type="checkbox"

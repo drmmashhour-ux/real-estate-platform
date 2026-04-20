@@ -1,11 +1,33 @@
 import { autonomyConfig } from "../config/autonomy.config";
 import type {
   AutonomyMode,
+  GovernanceDisposition,
   GovernanceResolution,
   PolicyDecision,
+  PolicyDisposition,
+  PolicyRuleEvaluation,
   ProposedAction,
   RiskLevel,
 } from "../types/domain.types";
+
+/** Legal-domain soft warnings do not halt autonomous eligibility — still logged via policy warnings. */
+function policyHasOnlyLegalSoftWarnings(policy: PolicyDecision): boolean {
+  if (policy.disposition !== "ALLOW_WITH_APPROVAL") return false;
+  if (policy.violations.length > 0) return false;
+  const nonPass = policy.ruleResults.filter((r: PolicyRuleEvaluation) => r.result !== "passed");
+  if (nonPass.length === 0) return false;
+  return nonPass.every((r) => {
+    const meta =
+      r.metadata && typeof r.metadata === "object" ? (r.metadata as Record<string, unknown>) : null;
+    const domain = meta?.domain;
+    const severity = meta?.severity;
+    return (
+      r.result === "warning" &&
+      domain === "legal" &&
+      severity !== "critical"
+    );
+  });
+}
 
 function dispositionForElevatedRisk(mode: AutonomyMode, risk: RiskLevel): "REQUIRE_APPROVAL" | null {
   if (mode === "SAFE_AUTOPILOT" && risk !== "LOW") {
@@ -50,7 +72,10 @@ export function resolveGovernance(input: {
     };
   }
 
-  if (policy.disposition === "BLOCK") {
+  const legalSoftOnly = policyHasOnlyLegalSoftWarnings(policy);
+  const effectiveDisposition: PolicyDisposition = legalSoftOnly ? "ALLOW" : policy.disposition;
+
+  if (effectiveDisposition === "BLOCK") {
     return {
       disposition: "RECOMMEND_ONLY",
       reason: "Policy blocked this action.",
@@ -59,7 +84,7 @@ export function resolveGovernance(input: {
     };
   }
 
-  if (policy.disposition === "ALLOW_DRY_RUN" || dryRunRequested) {
+  if (effectiveDisposition === "ALLOW_DRY_RUN" || dryRunRequested) {
     return {
       disposition: "DRY_RUN",
       reason: dryRunRequested
@@ -70,7 +95,7 @@ export function resolveGovernance(input: {
     };
   }
 
-  if (policy.disposition === "ALLOW_WITH_APPROVAL") {
+  if (effectiveDisposition === "ALLOW_WITH_APPROVAL") {
     return {
       disposition: "REQUIRE_APPROVAL",
       reason: "Policy requires explicit human approval.",
@@ -79,7 +104,7 @@ export function resolveGovernance(input: {
     };
   }
 
-  // policy.disposition === "ALLOW"
+  // effectiveDisposition === "ALLOW"
   if (mode === "ASSIST") {
     return {
       disposition: "RECOMMEND_ONLY",
@@ -137,5 +162,21 @@ export function resolveGovernance(input: {
     reason: "Unhandled mode — conservative recommendation-only path.",
     allowExecution: false,
     allowDryRun: baseDryRun(),
+  };
+}
+
+/** Serializable facts for Phase 4.5 timeline correlation (events are recorded from the execution engine). */
+export function extractGovernanceTimelineFacts(input: {
+  policy: PolicyDecision;
+  governance: GovernanceResolution;
+}): {
+  policyDisposition: PolicyDisposition;
+  governanceDisposition: GovernanceDisposition;
+  blockedByPolicy: boolean;
+} {
+  return {
+    policyDisposition: input.policy.disposition,
+    governanceDisposition: input.governance.disposition,
+    blockedByPolicy: input.policy.disposition === "BLOCK",
   };
 }

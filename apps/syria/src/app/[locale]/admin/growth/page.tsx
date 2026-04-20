@@ -11,6 +11,10 @@ import {
 import { money } from "@/lib/format";
 import { getSyriaAutonomyMode } from "@/config/syria-platform.config";
 import { SYRIA_PRICING } from "@/lib/pricing";
+import { getDarlinkAutonomyFlags } from "@/lib/platform-flags";
+import { buildMarketplaceSnapshot } from "@/modules/autonomy/darlink-marketplace-snapshot.service";
+import { buildMarketplaceSignals } from "@/modules/autonomy/darlink-signal-builder.service";
+import { autonomySignalsForGrowthHints } from "@/modules/autonomy/integrations/darlink-growth-bridge.service";
 
 function daysAgo(n: number): Date {
   return new Date(Date.now() - n * 86400000);
@@ -56,6 +60,17 @@ export default async function AdminGrowthPage() {
 
   const defaultCurrency = revenue.verifiedByCurrency[0]?.currency ?? SYRIA_PRICING.currency;
 
+  let autonomyGrowthHints: string[] = [];
+  if (getDarlinkAutonomyFlags().AUTONOMY_ENABLED) {
+    try {
+      const snap = await buildMarketplaceSnapshot({ portfolio: true });
+      const sigs = buildMarketplaceSignals(snap);
+      autonomyGrowthHints = [...autonomySignalsForGrowthHints(sigs)];
+    } catch {
+      autonomyGrowthHints = [];
+    }
+  }
+
   return (
     <div className="space-y-8">
       <div>
@@ -64,6 +79,16 @@ export default async function AdminGrowthPage() {
         <p className="mt-2 text-xs text-stone-500">
           {t("growthAutonomyMode", { mode: getSyriaAutonomyMode() })}
         </p>
+        {autonomyGrowthHints.length > 0 ? (
+          <div className="mt-3 rounded-xl border border-indigo-100 bg-indigo-50/60 p-3 text-xs text-indigo-950">
+            <p className="font-semibold text-indigo-950">Autonomy × growth (hints only)</p>
+            <ul className="mt-2 list-inside list-disc space-y-1">
+              {autonomyGrowthHints.map((h) => (
+                <li key={h}>{h}</li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

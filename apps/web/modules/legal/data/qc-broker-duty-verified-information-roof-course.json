@@ -1,0 +1,121 @@
+{
+  "cases": [
+    {
+      "slug": "qc-broker-duty-verified-information-roof-case",
+      "title": "Broker Duty — Verified Information & Seller Misrepresentation",
+      "category": "BROKER_DUTY",
+      "jurisdiction": "QC",
+      "sourceType": "COURSE",
+      "sourceReference": "Broker liability and professional practice",
+      "summary": "The court held the seller liable for misrepresentation regarding the condition of the roof. The broker was not held liable because proper verification steps and warnings were issued.",
+      "facts": "Seller provided inaccurate information about the roof. Broker attempted to verify, relied on seller information, and warned that data was subject to verification. Seller failed to cooperate.",
+      "legalIssues": "1. Seller liability for false information. 2. Broker duty to verify. 3. Professional obligations in documentation and disclosure.",
+      "decision": "Seller liable. Broker not liable.",
+      "reasoning": "The broker fulfilled an obligation of means by attempting verification, documenting actions, and warning the buyer when verification was not possible. The seller was the source of false information.",
+      "outcome": "Seller ordered to pay $47,829 plus interest, indemnity, and costs (20% depreciation admitted).",
+      "sellerLiable": true,
+      "brokerLiable": false,
+      "latentDefect": true,
+      "badFaith": true,
+      "tags": ["broker duty", "verification", "misrepresentation", "documentation", "QC"]
+    }
+  ],
+  "rules": [
+    {
+      "code": "QC_BROKER_VERIFY_INFORMATION",
+      "title": "Broker must verify and document information",
+      "category": "BROKER_DUTY",
+      "description": "Broker must ensure that all information entered in the description sheet is accurate, verifiable, and supported by documents.",
+      "conditions": {
+        "informationEntered": true
+      },
+      "outcome": "requireVerification=true",
+      "severity": "HIGH"
+    },
+    {
+      "code": "QC_NO_UNVERIFIED_INFORMATION",
+      "title": "No unverifiable information allowed",
+      "category": "BROKER_DUTY",
+      "description": "Information that cannot be verified or documented must not be included in the listing description.",
+      "conditions": {
+        "cannotVerify": true
+      },
+      "outcome": "blockOrWarn=true;riskScore+=40",
+      "severity": "CRITICAL"
+    },
+    {
+      "code": "QC_DOCUMENT_RETENTION_REQUIREMENT",
+      "title": "Broker must retain supporting documents",
+      "category": "BROKER_DUTY",
+      "description": "Broker must keep all documents proving the accuracy of information and seller declarations in the agency record.",
+      "conditions": {
+        "documentsMissing": true
+      },
+      "outcome": "riskScore+=30;flag=DOCUMENTATION_GAP",
+      "severity": "HIGH"
+    },
+    {
+      "code": "QC_SELLER_DECLARATION_VERIFICATION",
+      "title": "Broker must question seller declarations",
+      "category": "SELLER_DISCLOSURE",
+      "description": "Broker must question and validate seller statements and attempt to obtain supporting documents.",
+      "conditions": {
+        "sellerStatement": true
+      },
+      "outcome": "requireFollowUp=true",
+      "severity": "HIGH"
+    },
+    {
+      "code": "QC_SELLER_NON_COOPERATION",
+      "title": "Seller non-cooperation increases risk",
+      "category": "MISREPRESENTATION",
+      "description": "If the seller refuses to provide documents or cooperate, broker must warn buyer and legal risk increases.",
+      "conditions": {
+        "sellerUncooperative": true
+      },
+      "outcome": "riskScore+=50;flag=SELLER_NON_COOPERATION",
+      "severity": "CRITICAL"
+    },
+    {
+      "code": "QC_BUYER_WARNING_REQUIREMENT",
+      "title": "Broker must warn buyer if info not verified",
+      "category": "BROKER_DUTY",
+      "description": "Broker must clearly warn buyer when information is based only on seller allegations and not verified.",
+      "conditions": {
+        "infoUnverified": true
+      },
+      "outcome": "requireWarning=true",
+      "severity": "HIGH"
+    },
+    {
+      "code": "QC_BROKER_PROTECTION_DOCUMENTATION",
+      "title": "Proper documentation protects broker",
+      "category": "BROKER_DUTY",
+      "description": "Broker avoids liability when verification attempts, warnings, and documentation are properly recorded.",
+      "conditions": {
+        "verificationLogged": true,
+        "warningIssued": true
+      },
+      "outcome": "brokerLiability=false",
+      "severity": "MEDIUM"
+    }
+  ],
+  "mappings": [
+    {
+      "caseSlug": "qc-broker-duty-verified-information-roof-case",
+      "ruleCode": "QC_BROKER_VERIFY_INFORMATION"
+    },
+    {
+      "caseSlug": "qc-broker-duty-verified-information-roof-case",
+      "ruleCode": "QC_NO_UNVERIFIED_INFORMATION"
+    },
+    {
+      "caseSlug": "qc-broker-duty-verified-information-roof-case",
+      "ruleCode": "QC_SELLER_NON_COOPERATION"
+    },
+    {
+      "caseSlug": "qc-broker-duty-verified-information-roof-case",
+      "ruleCode": "QC_BROKER_PROTECTION_DOCUMENTATION"
+    }
+  ]
+}

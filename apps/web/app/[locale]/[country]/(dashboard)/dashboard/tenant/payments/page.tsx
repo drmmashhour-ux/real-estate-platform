@@ -3,6 +3,8 @@ import { prisma } from "@/lib/db";
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
 import { RentDecisionAiCard } from "@/components/rental/RentDecisionAiCard";
 import { RentLifecycleTimeline } from "@/components/rental/RentLifecycleTimeline";
+import { legalHubFlags } from "@/config/feature-flags";
+import { LegalHubEntryCard } from "@/components/legal/LegalHubEntryCard";
 
 export const dynamic = "force-dynamic";
 
@@ -62,6 +64,10 @@ export default async function TenantRentPaymentsPage({
           Track applications, leases, and monthly rent status (demo tracking — not a bank transfer).
         </p>
       </header>
+
+      {legalHubFlags.legalHubV1 ? (
+        <LegalHubEntryCard href={`/${locale}/${country}/legal?actor=tenant`} locale={locale} country={country} />
+      ) : null}
 
       {showApplied ? (
         <p className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">

@@ -1,5 +1,6 @@
 /**
  * Orchestrates adaptive intelligence snapshot — read-only suggestions.
+ * Safety: no auto-execution, no messaging, no pricing writes; max 5 decisions; `requiresApproval` always true.
  */
 
 import { buildAdaptiveContext } from "@/modules/growth/adaptive-context.service";

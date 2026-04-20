@@ -68,6 +68,8 @@ import { WeeklyTeamReviewPanel } from "./WeeklyTeamReviewPanel";
 import { RevenueForecastPanel } from "./RevenueForecastPanel";
 import { MontrealDominationPanel } from "./MontrealDominationPanel";
 import { AdaptiveIntelligencePanel } from "./AdaptiveIntelligencePanel";
+import { ActionSimulationComparisonPanel } from "./ActionSimulationComparisonPanel";
+import { ActionSimulationPanel } from "./ActionSimulationPanel";
 import { InvestorDashboardPanel } from "../investors/InvestorDashboardPanel";
 import { InvestorPitchPanel } from "../investors/InvestorPitchPanel";
 import { FundraisingPanel } from "../investors/FundraisingPanel";
@@ -82,7 +84,9 @@ import { DealConversationFlow } from "./DealConversationFlow";
 import { ClosingPsychologyPanel } from "./ClosingPsychologyPanel";
 import { TimingOptimizerPanel } from "./TimingOptimizerPanel";
 import { BrokerLockInPanel } from "../brokers/BrokerLockInPanel";
+import { GrowthPolicyHistoryPanel } from "./GrowthPolicyHistoryPanel";
 import { GrowthPolicyPanel } from "./GrowthPolicyPanel";
+import { GrowthPolicyTrendPanel } from "./GrowthPolicyTrendPanel";
 import { LeadFollowUpPanel } from "./LeadFollowUpPanel";
 import { BrokerClosingAdvancedPanel } from "./BrokerClosingAdvancedPanel";
 import { ScalingBlueprintPanel } from "./ScalingBlueprintPanel";
@@ -165,6 +169,7 @@ export function GrowthMachineDashboard({
   growthStrategy,
   growthCadence,
   growthSimulation,
+  growthActionSimulation,
   growthMissionControl,
   growthMemory,
   growthKnowledgeGraph,
@@ -223,6 +228,13 @@ export function GrowthMachineDashboard({
   timingOptimizerV1,
   brokerLockinV1,
   growthPolicyV1,
+  growthPolicyActionsV1,
+  growthPolicyActionsPanelV1,
+  growthPolicyHistoryV1,
+  growthPolicyHistoryPanelV1,
+  growthPolicyReviewV1,
+  growthPolicyTrendsV1,
+  growthPolicyTrendsPanelV1,
   growthBrokerAcquisitionV1,
   growthAdsEngineV1,
   growthFunnelSystemV1,
@@ -267,6 +279,8 @@ export function GrowthMachineDashboard({
   growthCadence?: boolean;
   /** Growth simulations — what-if panel (requires simulation + panel flags). */
   growthSimulation?: { enabled: boolean; panel: boolean };
+  /** Scenario-based outcome simulation — internal/admin; read-only APIs. */
+  growthActionSimulation?: { enabled: boolean; panel: boolean; comparison?: boolean };
   /** Mission control console (requires mission control + panel flags). */
   growthMissionControl?: { enabled: boolean; panel: boolean };
   /** Growth memory panel (requires memory + panel flags). */
@@ -403,6 +417,16 @@ export function GrowthMachineDashboard({
   brokerLockinV1?: boolean;
   /** FEATURE_GROWTH_POLICY_V1 — advisory policy evaluation panel. */
   growthPolicyV1?: boolean;
+  /** FEATURE_GROWTH_POLICY_ACTIONS_V1 — map findings → navigation actions (bundled on policy API). */
+  growthPolicyActionsV1?: boolean;
+  /** FEATURE_GROWTH_POLICY_ACTIONS_PANEL_V1 — actionable UI (top step + links) inside GrowthPolicyPanel. */
+  growthPolicyActionsPanelV1?: boolean;
+  /** FEATURE_GROWTH_POLICY_HISTORY_V1 — fingerprint history + hints on policy API. */
+  growthPolicyHistoryV1?: boolean;
+  /** FEATURE_GROWTH_POLICY_HISTORY_PANEL_V1 — policy history table + recurring strip. */
+  growthPolicyHistoryPanelV1?: boolean;
+  /** FEATURE_GROWTH_POLICY_REVIEW_V1 — manual review records + nested review form. */
+  growthPolicyReviewV1?: boolean;
   /** FEATURE_BROKER_ACQUISITION_V1 — broker pipeline strip + link to admin CRM. */
   growthBrokerAcquisitionV1?: boolean;
   growthAdsEngineV1?: boolean;
@@ -525,11 +549,26 @@ export function GrowthMachineDashboard({
 
   return (
     <div className="space-y-8">
-      {growthAdaptiveIntelligencePanelV1 ? <AdaptiveIntelligencePanel /> : null}
+      {growthAdaptiveIntelligencePanelV1 ? (
+        <AdaptiveIntelligencePanel
+          simulateOutcomeEnabled={!!(growthActionSimulation?.enabled && growthActionSimulation?.panel)}
+        />
+      ) : null}
+
+      {growthActionSimulation?.enabled && growthActionSimulation?.panel ? (
+        <div className="space-y-4">
+          <ActionSimulationPanel />
+          {growthActionSimulation.comparison ? <ActionSimulationComparisonPanel /> : null}
+        </div>
+      ) : null}
 
       {growthExecutionPlannerPanelV1 ? (
         <div id="growth-mc-execution-planner" className="scroll-mt-24">
-          <ExecutionPlannerPanel locale={locale} country={country} />
+          <ExecutionPlannerPanel
+            locale={locale}
+            country={country}
+            simulateOutcomeEnabled={!!(growthActionSimulation?.enabled && growthActionSimulation?.panel)}
+          />
         </div>
       ) : null}
 
@@ -553,7 +592,9 @@ export function GrowthMachineDashboard({
 
       {growthCapitalAllocationPanelV1 ? (
         <div id="growth-mc-capital-allocation" className="scroll-mt-24">
-          <CapitalAllocationPanel />
+          <CapitalAllocationPanel
+            simulateOutcomeEnabled={!!(growthActionSimulation?.enabled && growthActionSimulation?.panel)}
+          />
         </div>
       ) : null}
 
@@ -734,7 +775,9 @@ export function GrowthMachineDashboard({
 
       {growthMarketExpansionPanelV1 ? (
         <div id="growth-mc-market-expansion" className="scroll-mt-24">
-          <MarketExpansionPanel />
+          <MarketExpansionPanel
+            simulateOutcomeEnabled={!!(growthActionSimulation?.enabled && growthActionSimulation?.panel)}
+          />
         </div>
       ) : null}
 
@@ -943,7 +986,28 @@ export function GrowthMachineDashboard({
         </div>
       ) : null}
 
-      {growthPolicyV1 ? <GrowthPolicyPanel /> : null}
+      {growthPolicyV1 ? (
+        <GrowthPolicyPanel
+          locale={locale}
+          country={country}
+          actionsBridgeEnabled={!!growthPolicyActionsV1}
+          actionsPanelUiEnabled={!!growthPolicyActionsPanelV1}
+          historyLayerEnabled={!!growthPolicyHistoryV1}
+          historyPanelEnabled={!!growthPolicyHistoryPanelV1}
+        />
+      ) : null}
+
+      {growthPolicyV1 && growthPolicyHistoryPanelV1 ? (
+        <div id="growth-mc-policy-history" className="scroll-mt-24">
+          <GrowthPolicyHistoryPanel reviewUiEnabled={!!growthPolicyReviewV1} />
+        </div>
+      ) : null}
+
+      {growthPolicyV1 && growthPolicyTrendsV1 && growthPolicyTrendsPanelV1 ? (
+        <div id="growth-mc-policy-trends" className="scroll-mt-24">
+          <GrowthPolicyTrendPanel />
+        </div>
+      ) : null}
 
       {growthGovernancePolicy?.enabled && growthGovernancePolicy?.panel ? (
         <div id="growth-mc-governance-console" className="scroll-mt-24">

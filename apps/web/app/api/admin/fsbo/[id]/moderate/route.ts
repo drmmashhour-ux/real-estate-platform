@@ -4,6 +4,7 @@ import { FSBO_STATUS } from "@/lib/fsbo/constants";
 import { syncFsboListingExpiryState } from "@/lib/fsbo/listing-expiry";
 import { persistSellerDeclarationAiReview } from "@/lib/fsbo/seller-declaration-ai-review";
 import { notifyFsboListingActivatedIfNeeded } from "@/lib/listing-lifecycle/notify-fsbo-listing-activated";
+import { maybeBlockRequestWithLegalGate } from "@/modules/legal/legal-api-gate";
 
 export const dynamic = "force-dynamic";
 
@@ -37,7 +38,7 @@ export async function POST(
 
   const row = await prisma.fsboListing.findUnique({
     where: { id },
-    select: { id: true, status: true },
+    select: { id: true, status: true, ownerId: true },
   });
   if (!row) {
     return Response.json({ error: "Not found" }, { status: 404 });
@@ -45,6 +46,13 @@ export async function POST(
 
   if (action === "approve") {
     if (row.status === FSBO_STATUS.PENDING_VERIFICATION) {
+      const legalBlock = await maybeBlockRequestWithLegalGate({
+        action: "publish_listing",
+        userId: row.ownerId,
+        actorType: "seller",
+      });
+      if (legalBlock) return legalBlock;
+
       await prisma.fsboListing.update({
         where: { id },
         data: {

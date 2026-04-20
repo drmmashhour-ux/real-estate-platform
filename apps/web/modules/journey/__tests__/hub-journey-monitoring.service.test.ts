@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   bumpJourneyMetric,
   getHubJourneyMonitoringSnapshot,
+  logJourneyOutcomeEvent,
   resetHubJourneyMonitoringForTests,
 } from "../hub-journey-monitoring.service";
 import { buildHubJourneyPlan } from "../hub-journey-state.service";
@@ -17,5 +18,14 @@ describe("hub journey monitoring", () => {
 
   it("bumpJourneyMetric never throws", () => {
     expect(() => bumpJourneyMetric("suggestionsGenerated", 2)).not.toThrow();
+  });
+
+  it("logJourneyOutcomeEvent never throws", () => {
+    expect(() =>
+      logJourneyOutcomeEvent({
+        event: "journey_banner_viewed",
+        hub: "buyer",
+      }),
+    ).not.toThrow();
   });
 });

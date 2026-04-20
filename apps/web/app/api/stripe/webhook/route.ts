@@ -291,6 +291,10 @@ export async function POST(req: NextRequest) {
         listingId: piMeta.listingId ?? null,
       });
 
+      void import("@/modules/legal/stripe-legal-hooks")
+        .then((m) => m.observeStripeRefundForCompliance({ paymentIntentId, refundCents }))
+        .catch(() => {});
+
       const payRow = await prisma.payment
         .findFirst({
           where: { stripePaymentId: paymentIntentId },
@@ -1575,34 +1579,81 @@ export async function POST(req: NextRequest) {
               errors: submitGate.errors,
             });
           } else {
-            const activated = await prisma.fsboListing
-              .updateMany({
-                where: { id: fsboListingId, ownerId: userId, status: "DRAFT" },
-                data: {
-                  status: "ACTIVE",
-                  moderationStatus: "APPROVED",
-                  rejectReason: null,
-                  publishPlan,
-                  publishPriceCents: sessionAmountTotal,
-                  paidPublishAt: new Date(),
-                  featuredUntil,
-                },
-              })
-              .catch((e) => {
-                logError("Webhook: fsbo publish activation failed", e);
-                return { count: 0 };
-              });
-            void recordPlatformEvent({
-              eventType: "listing_activated",
-              sourceModule: "fsbo",
-              entityType: "FSBO_LISTING",
-              entityId: fsboListingId,
-              payload: { publishPlan, source: "stripe_webhook" },
-            }).catch(() => {});
-            await syncFsboListingExpiryState(fsboListingId, { sendReminder: false }).catch(() => null);
-            if (activated && activated.count > 0) {
-              const { notifyFsboListingActivatedIfNeeded } = await import("@/lib/listing-lifecycle/notify-fsbo-listing-activated");
-              void notifyFsboListingActivatedIfNeeded(fsboListingId).catch(() => null);
+            let skipFsboActivationForCompliance = false;
+            const { complianceFlags } = await import("@/config/feature-flags");
+            const publishGateEnabled =
+              complianceFlags.quebecComplianceV1 === true &&
+              (complianceFlags.complianceAutoBlockV1 === true || complianceFlags.listingPrepublishAutoBlockV1 === true);
+            if (publishGateEnabled) {
+              const { evaluateFsboActivationComplianceGate } = await import(
+                "@/modules/legal/compliance/fsbo-publish-compliance-gate.service"
+              );
+              const { recordEventSafe } = await import("@/modules/events/event-helpers");
+              const { recordEvent } = await import("@/modules/events/event.service");
+              const gate = await evaluateFsboActivationComplianceGate(fsboListingId);
+              if (gate.blocked) {
+                logError("Webhook: FSBO publish blocked by compliance gate", {
+                  fsboListingId,
+                  blockingIssues: gate.blockingIssues,
+                });
+                await recordEventSafe(async () =>
+                  recordEvent({
+                    entityType: "listing",
+                    entityId: fsboListingId,
+                    eventType: "listing_publish_blocked_compliance",
+                    actorId: userId,
+                    actorType: "system",
+                    metadata: {
+                      source: "stripe_webhook",
+                      readinessScore: gate.readinessScore,
+                      legalRiskScore: gate.legalRiskScore,
+                    },
+                  }),
+                );
+                skipFsboActivationForCompliance = true;
+              } else {
+                await recordEventSafe(async () =>
+                  recordEvent({
+                    entityType: "listing",
+                    entityId: fsboListingId,
+                    eventType: "listing_publish_allowed_compliance",
+                    actorId: userId,
+                    actorType: "system",
+                    metadata: { source: "stripe_webhook" },
+                  }),
+                );
+              }
+            }
+            if (!skipFsboActivationForCompliance) {
+              const activated = await prisma.fsboListing
+                .updateMany({
+                  where: { id: fsboListingId, ownerId: userId, status: "DRAFT" },
+                  data: {
+                    status: "ACTIVE",
+                    moderationStatus: "APPROVED",
+                    rejectReason: null,
+                    publishPlan,
+                    publishPriceCents: sessionAmountTotal,
+                    paidPublishAt: new Date(),
+                    featuredUntil,
+                  },
+                })
+                .catch((e) => {
+                  logError("Webhook: fsbo publish activation failed", e);
+                  return { count: 0 };
+                });
+              void recordPlatformEvent({
+                eventType: "listing_activated",
+                sourceModule: "fsbo",
+                entityType: "FSBO_LISTING",
+                entityId: fsboListingId,
+                payload: { publishPlan, source: "stripe_webhook" },
+              }).catch(() => {});
+              await syncFsboListingExpiryState(fsboListingId, { sendReminder: false }).catch(() => null);
+              if (activated && activated.count > 0) {
+                const { notifyFsboListingActivatedIfNeeded } = await import("@/lib/listing-lifecycle/notify-fsbo-listing-activated");
+                void notifyFsboListingActivatedIfNeeded(fsboListingId).catch(() => null);
+              }
             }
           }
         }

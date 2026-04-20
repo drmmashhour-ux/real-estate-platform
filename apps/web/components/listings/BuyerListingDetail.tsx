@@ -98,6 +98,8 @@ export type BuyerListingPayload = {
   /** FSBO geocoordinates — powers LECIPM map pin on listing detail */
   latitude?: number | null;
   longitude?: number | null;
+  /** Centris syndication badge — only when connector marked SYNCED. */
+  listedOnCentris?: boolean;
 };
 
 export type ListingContactGateProps = {
@@ -168,6 +170,7 @@ function mapListingSearchQuery(listing: BuyerListingPayload): string | null {
 
 export function BuyerListingDetail({
   listing,
+  inquiryDistributionChannel = "LECIPM",
   listingContactGate,
   demandUi = null,
   conversionSurface = null,
@@ -177,6 +180,8 @@ export function BuyerListingDetail({
   collaboration = undefined,
 }: {
   listing: BuyerListingPayload;
+  /** Qualified traffic hint: use `?dist=centris` on listing URLs from authorized Centris landing flows. */
+  inquiryDistributionChannel?: "CENTRIS" | "LECIPM";
   listingContactGate?: ListingContactGateProps;
   demandUi?: ListingDemandUiPayload | null;
   /** Instant value + urgency (server-built when conversion flags are on). */
@@ -360,6 +365,7 @@ export function BuyerListingDetail({
           email: contactEmail,
           phone: contactPhone.trim() || undefined,
           message: contactMessage.trim(),
+          distributionChannel: inquiryDistributionChannel,
         }),
       });
       const j = (await r.json().catch(() => ({}))) as {
@@ -923,6 +929,11 @@ export function BuyerListingDetail({
               {isBrokerListing ? (
                 <li className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1.5 text-xs font-medium text-white/80">
                   Broker-assisted
+                </li>
+              ) : null}
+              {listing.listedOnCentris ? (
+                <li className="rounded-full border border-sky-400/25 bg-sky-500/10 px-3 py-1.5 text-xs font-medium text-sky-100/95">
+                  📡 Also listed on Centris
                 </li>
               ) : null}
               {listing.listingKind === "crm" ? (

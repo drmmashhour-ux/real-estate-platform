@@ -1,107 +1,277 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { HostCalendarBlockedEvent, HostCalendarBookingEvent } from "@/lib/host/calendar-data";
+import { useRouter } from "next/navigation";
+import type { BnhubChannelPlatform } from "@prisma/client";
+import type { EventClickArg, EventDropArg } from "@fullcalendar/core";
+import BnCalendar, { type BnCalendarEventInput } from "@/components/calendar/BnCalendar";
+import type {
+  HostCalendarBlockedEvent,
+  HostCalendarBookingEventSerialized,
+  HostChannelCalendarEventSerialized,
+} from "@/lib/host/calendar-data";
 
 const GOLD = "#D4AF37";
 
 type Props = {
-  listings: { id: string; title: string }[];
-  bookings: HostCalendarBookingEvent[];
+  listings: { id: string; title: string; calendarColor?: string | null }[];
+  bookings: HostCalendarBookingEventSerialized[];
   blocked: HostCalendarBlockedEvent[];
+  channelEvents: HostChannelCalendarEventSerialized[];
   initialListingId?: string;
 };
 
-function statusColor(status: string, pay: string | null) {
-  if (status.includes("CANCEL") || status === "DECLINED" || status === "EXPIRED") return "bg-red-500/30 border-red-500/50";
-  if (status === "CONFIRMED" && pay === "COMPLETED") return "bg-emerald-500/25 border-emerald-500/50";
-  if (status === "PENDING" || pay === "PENDING") return "bg-amber-500/20 border-amber-500/45";
-  return "bg-zinc-500/20 border-zinc-500/40";
+function bookingBadge(status: string, paymentStatus: string | null): string {
+  const st = status.toUpperCase();
+  if (st.includes("CANCEL") || st === "DECLINED") return "Canceled";
+  if (st === "PENDING") return "Pending payment";
+  if (paymentStatus === "PENDING") return "Pending payment";
+  if (st === "AWAITING_HOST_APPROVAL") return "Awaiting approval";
+  if (st === "CONFIRMED" && paymentStatus === "COMPLETED") return "Confirmed";
+  if (st === "CONFIRMED") return "Confirmed";
+  return status;
 }
 
-export function HostCalendarClient({ listings, bookings, blocked, initialListingId }: Props) {
-  const [listingFilter, setListingFilter] = useState(initialListingId ?? "");
-  const [cursor, setCursor] = useState(() => {
-    const d = new Date();
-    return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1));
-  });
-  const [detail, setDetail] = useState<HostCalendarBookingEvent | null>(null);
+function bookingBarColors(b: HostCalendarBookingEventSerialized): { bg: string; border: string } {
+  const base = b.listingColor?.trim() || GOLD;
+  if (b.status.includes("CANCEL") || b.status === "DECLINED") {
+    return { bg: "#991b1b", border: "#7f1d1d" };
+  }
+  if (b.status === "CONFIRMED" && b.paymentStatus === "COMPLETED") {
+    return { bg: base, border: base };
+  }
+  if (b.status === "PENDING" || b.paymentStatus === "PENDING" || b.status === "AWAITING_HOST_APPROVAL") {
+    return { bg: "#b45309", border: "#92400e" };
+  }
+  return { bg: base, border: base };
+}
 
-  const year = cursor.getUTCFullYear();
-  const month = cursor.getUTCMonth();
-  const firstDow = new Date(Date.UTC(year, month, 1)).getUTCDay();
-  const daysInMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+function externalIcsColors(sourceName: string | null | undefined): { bg: string; border: string } {
+  const s = (sourceName ?? "").toLowerCase();
+  if (s.includes("airbnb")) return { bg: "#FF5A5F", border: "#e11d48" };
+  if (s.includes("booking")) return { bg: "#003580", border: "#001a4d" };
+  if (s.includes("vrbo")) return { bg: "#7c3aed", border: "#5b21b6" };
+  return { bg: "#6B7280", border: "#57534e" };
+}
+
+function channelPlatformColors(platform: BnhubChannelPlatform): { bg: string; border: string } {
+  switch (platform) {
+    case "AIRBNB":
+      return { bg: "#FF5A5F", border: "#dc2626" };
+    case "BOOKING_COM":
+      return { bg: "#003580", border: "#0c4a6e" };
+    case "VRBO":
+      return { bg: "#a855f7", border: "#7e22ce" };
+    case "EXPEDIA":
+      return { bg: "#0ea5e9", border: "#0369a1" };
+    default:
+      return { bg: "#64748b", border: "#475569" };
+  }
+}
+
+function addOneCalendarDayUtc(yyyyMmDd: string): string {
+  const [y, m, d] = yyyyMmDd.split("-").map(Number);
+  const next = new Date(Date.UTC(y, m - 1, d + 1));
+  return next.toISOString().slice(0, 10);
+}
+
+export function HostCalendarClient({
+  listings,
+  bookings,
+  blocked,
+  channelEvents,
+  initialListingId,
+}: Props) {
+  const router = useRouter();
+  const [listingFilter, setListingFilter] = useState(initialListingId ?? "");
+  const [detail, setDetail] = useState<HostCalendarBookingEventSerialized | null>(null);
 
   const filteredBookings = useMemo(
-    () =>
-      listingFilter
-        ? bookings.filter((b) => b.listingId === listingFilter)
-        : bookings,
+    () => (listingFilter ? bookings.filter((b) => b.listingId === listingFilter) : bookings),
     [bookings, listingFilter]
   );
   const filteredBlocked = useMemo(
-    () =>
-      listingFilter ? blocked.filter((b) => b.listingId === listingFilter) : blocked,
+    () => (listingFilter ? blocked.filter((b) => b.listingId === listingFilter) : blocked),
     [blocked, listingFilter]
   );
+  const filteredChannel = useMemo(
+    () =>
+      listingFilter ? channelEvents.filter((c) => c.listingId === listingFilter) : channelEvents,
+    [channelEvents, listingFilter]
+  );
 
-  const byDay = useMemo(() => {
-    const m: Record<string, { bookings: HostCalendarBookingEvent[]; blocked: HostCalendarBlockedEvent[] }> = {};
-    for (let d = 1; d <= daysInMonth; d++) {
-      const key = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-      m[key] = { bookings: [], blocked: [] };
-    }
-    for (const b of filteredBookings) {
-      for (let d = 1; d <= daysInMonth; d++) {
-        const dayStart = new Date(Date.UTC(year, month, d));
-        const dayEnd = new Date(Date.UTC(year, month, d + 1));
-        if (b.start < dayEnd && b.end > dayStart) {
-          const key = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-          m[key]?.bookings.push(b);
-        }
-      }
-    }
-    for (const s of filteredBlocked) {
-      if (s.date.startsWith(`${year}-${String(month + 1).padStart(2, "0")}`)) {
-        m[s.date]?.blocked.push(s);
-      }
-    }
-    return m;
-  }, [filteredBookings, filteredBlocked, year, month, daysInMonth]);
+  const fcEvents: BnCalendarEventInput[] = useMemo(() => {
+    const bookEvents: BnCalendarEventInput[] = filteredBookings.map((b) => {
+      const { bg, border } = bookingBarColors(b);
+      const badge = bookingBadge(b.status, b.paymentStatus);
+      return {
+        id: b.id,
+        title: `${b.listingTitle} · ${b.title} (${badge})`,
+        start: b.start,
+        end: b.end,
+        kind: "booking",
+        backgroundColor: bg,
+        borderColor: border,
+        editable: true,
+        extendedProps: {
+          eventType: "booking",
+          listingId: b.listingId,
+        },
+      };
+    });
 
-  const cells: (number | null)[] = [...Array(firstDow).fill(null)];
-  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+    const blockedEvents: BnCalendarEventInput[] = filteredBlocked.map((s) => {
+      const fromSlot = Boolean(s.fromAvailabilitySlot);
+      const colors = fromSlot
+        ? { bg: "#3f3f46", border: "#52525b" }
+        : externalIcsColors(s.icsSourceName);
+      const label = fromSlot ? "Blocked (calendar)" : `External ICS · ${s.icsSourceName ?? "OTA"}`;
+      return {
+        id: fromSlot ? `blocked-slot-${s.listingId}-${s.date}` : `blocked-ics-${s.listingId}-${s.date}`,
+        title: `${s.listingTitle} — ${label}`,
+        start: s.date,
+        end: addOneCalendarDayUtc(s.date),
+        kind: "blocked",
+        allDay: true,
+        backgroundColor: colors.bg,
+        borderColor: colors.border,
+        editable: false,
+        display: "background",
+        extendedProps: {
+          eventType: fromSlot ? "blocked_slot" : "external_ics",
+          listingId: s.listingId,
+          sourceName: s.icsSourceName ?? null,
+        },
+      };
+    });
+
+    const channelFc: BnCalendarEventInput[] = filteredChannel.map((c) => {
+      const { bg, border } = channelPlatformColors(c.platform);
+      return {
+        id: `channel-${c.id}`,
+        title: `${c.listingTitle} · ${c.summary}`,
+        start: c.start,
+        end: c.endExclusive,
+        kind: "blocked",
+        allDay: true,
+        backgroundColor: bg,
+        borderColor: border,
+        editable: false,
+        display: "background",
+        extendedProps: {
+          eventType: "channel",
+          listingId: c.listingId,
+          platform: c.platform,
+        },
+      };
+    });
+
+    return [...bookEvents, ...blockedEvents, ...channelFc];
+  }, [filteredBlocked, filteredBookings, filteredChannel]);
+
+  const handleDateClick = async (dateStr: string) => {
+    const listingId = listingFilter.trim();
+    if (!listingId) {
+      window.alert("Pick a listing in the dropdown to block a night (not “All listings”).");
+      return;
+    }
+
+    const res = await fetch("/api/host/calendar/blocks", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ listingId, date: dateStr }),
+    });
+
+    if (res.ok) {
+      router.refresh();
+      return;
+    }
+    if (res.status === 409) {
+      window.alert("That night is already booked or blocked.");
+      return;
+    }
+    window.alert("Could not block that date.");
+  };
+
+  const handleEventClick = (info: EventClickArg) => {
+    const type = info.event.extendedProps.eventType as string | undefined;
+    const id = info.event.id;
+
+    if (type === "booking") {
+      const b = bookings.find((x) => x.id === id);
+      if (b) setDetail(b);
+      return;
+    }
+    if (type === "external_ics") {
+      window.alert(`External ICS block\n${info.event.title}`);
+      return;
+    }
+    if (type === "channel") {
+      window.alert(`Channel manager (imported calendar)\n${info.event.title}`);
+      return;
+    }
+    if (type === "blocked_slot") {
+      window.alert("Blocked on BNHub calendar (manual or availability rule).");
+    }
+  };
+
+  const handleEventDrop = async (info: EventDropArg) => {
+    const bookingId = info.event.id;
+    const newStart = info.event.start;
+    const newEnd = info.event.end;
+    if (!newStart || !newEnd) {
+      info.revert();
+      return;
+    }
+
+    const res = await fetch(`/api/host/calendar/bookings/${bookingId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        checkIn: newStart.toISOString(),
+        checkOut: newEnd.toISOString(),
+      }),
+    });
+
+    if (!res.ok) {
+      info.revert();
+      if (res.status === 409) window.alert("Those dates conflict with another booking.");
+      else window.alert("Could not move this booking.");
+      return;
+    }
+    router.refresh();
+  };
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap gap-6 rounded-xl border border-zinc-800 bg-zinc-950/60 px-4 py-3 text-sm text-zinc-200">
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            className="rounded-lg border border-zinc-700 px-3 py-1.5 text-sm text-zinc-300"
-            onClick={() => setCursor(new Date(Date.UTC(year, month - 1, 1)))}
-          >
-            ←
-          </button>
-          <span className="text-sm font-semibold text-white">
-            {new Date(Date.UTC(year, month, 1)).toLocaleString("en-CA", {
-              month: "long",
-              year: "numeric",
-              timeZone: "UTC",
-            })}
-          </span>
-          <button
-            type="button"
-            className="rounded-lg border border-zinc-700 px-3 py-1.5 text-sm text-zinc-300"
-            onClick={() => setCursor(new Date(Date.UTC(year, month + 1, 1)))}
-          >
-            →
-          </button>
+          <span className="h-3 w-3 rounded-sm" style={{ backgroundColor: GOLD }} />
+          <span>BNHub booking</span>
         </div>
+        <div className="flex items-center gap-2">
+          <span className="h-3 w-3 rounded-sm bg-[#FF5A5F]" />
+          <span>External ICS · Airbnb-style</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="h-3 w-3 rounded-sm bg-[#003580]" />
+          <span>External ICS · Booking-style</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="h-3 w-3 rounded-sm bg-zinc-600" />
+          <span>Manual / slot block</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="h-3 w-3 rounded-sm bg-purple-500" />
+          <span>Channel manager feed</span>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <select
           value={listingFilter}
           onChange={(e) => setListingFilter(e.target.value)}
-          className="rounded-xl border border-zinc-700 bg-black px-3 py-2 text-sm text-white"
+          className="mb-0 rounded-xl border border-zinc-700 bg-black px-3 py-2 text-sm text-white"
         >
           <option value="">All listings</option>
           {listings.map((l) => (
@@ -110,61 +280,29 @@ export function HostCalendarClient({ listings, bookings, blocked, initialListing
             </option>
           ))}
         </select>
+        <p className="text-xs text-zinc-500">
+          Mobile: week view · Desktop: month. Pick a listing, click a free day to block. Drag bookings to reschedule.
+        </p>
       </div>
 
-      <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-medium uppercase text-zinc-500 sm:text-xs">
-        {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
-          <div key={d} className="py-2">
-            {d}
-          </div>
-        ))}
-        {cells.map((d, i) => {
-          if (d == null) return <div key={`e-${i}`} className="min-h-[72px] rounded-lg bg-transparent sm:min-h-[88px]" />;
-          const key = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-          const cell = byDay[key] ?? { bookings: [], blocked: [] };
-          return (
-            <div
-              key={key}
-              className="min-h-[72px] rounded-lg border border-zinc-800 bg-[#111] p-1 text-left sm:min-h-[88px]"
-            >
-              <div className="text-xs font-semibold text-zinc-400">{d}</div>
-              <div className="mt-1 space-y-0.5">
-                {cell.blocked.length > 0 ? (
-                  <div className="truncate rounded border border-zinc-600 bg-zinc-800/80 px-1 py-0.5 text-[9px] text-zinc-300">
-                    Blocked
-                  </div>
-                ) : null}
-                {cell.bookings.slice(0, 2).map((b) => (
-                  <button
-                    key={b.id + key}
-                    type="button"
-                    onClick={() => setDetail(b)}
-                    className={`block w-full truncate rounded border px-1 py-0.5 text-left text-[9px] text-white sm:text-[10px] ${statusColor(b.status, b.paymentStatus)}`}
-                  >
-                    {b.title}
-                  </button>
-                ))}
-                {cell.bookings.length > 2 ? (
-                  <div className="text-[9px] text-zinc-500">+{cell.bookings.length - 2}</div>
-                ) : null}
-              </div>
-            </div>
-          );
-        })}
+      <div className="fc-dark HostCalendar-root rounded-xl border border-zinc-800 bg-zinc-950/40 p-2 [&_.fc]:text-zinc-100 [&_.fc-button]:border-zinc-600 [&_.fc-button]:bg-zinc-900 [&_.fc-col-header-cell]:border-zinc-800 [&_.fc-daygrid-day]:border-zinc-800 [&_.fc-bg-event]:opacity-40">
+        <BnCalendar
+          events={fcEvents}
+          onDateClick={handleDateClick}
+          onEventClick={handleEventClick}
+          onEventDrop={handleEventDrop}
+        />
       </div>
 
       <div className="flex flex-wrap gap-3 text-xs text-zinc-500">
         <span className="inline-flex items-center gap-1">
-          <span className="h-2 w-2 rounded-full bg-emerald-500/50" /> Paid / confirmed
+          <span className="h-2 w-2 rounded-full" style={{ backgroundColor: GOLD }} /> Confirmed / listing color
         </span>
         <span className="inline-flex items-center gap-1">
-          <span className="h-2 w-2 rounded-full bg-amber-500/50" /> Pending
+          <span className="h-2 w-2 rounded-full bg-amber-600" /> Pending / approval
         </span>
         <span className="inline-flex items-center gap-1">
-          <span className="h-2 w-2 rounded-full bg-red-500/50" /> Canceled
-        </span>
-        <span className="inline-flex items-center gap-1">
-          <span className="h-2 w-2 rounded-full bg-zinc-600" /> Blocked night
+          <span className="h-2 w-2 rounded-full bg-red-700" /> Canceled
         </span>
       </div>
 
@@ -178,7 +316,7 @@ export function HostCalendarClient({ listings, bookings, blocked, initialListing
             <p className="text-sm font-semibold text-white">{detail.title}</p>
             <p className="mt-1 text-xs text-zinc-500">{detail.listingTitle}</p>
             <p className="mt-3 text-sm text-zinc-300">
-              {detail.start.toISOString().slice(0, 10)} → {detail.end.toISOString().slice(0, 10)}
+              {detail.start.slice(0, 10)} → {detail.end.slice(0, 10)}
             </p>
             <p className="mt-2 text-xs text-zinc-500">
               {detail.status} · {detail.paymentStatus ?? "—"}

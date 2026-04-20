@@ -47,12 +47,19 @@ export type HubJourneyStep = {
   completedAt?: string;
 };
 
+/** Deterministic signal completeness — no ML. */
+export type JourneyConfidence = "high" | "medium" | "low";
+/** @deprecated prefer JourneyConfidence */
+export type HubJourneySignalConfidence = JourneyConfidence;
+
 export type HubJourneyPlan = {
   hub: HubKey;
   title: string;
   description: string;
   steps: HubJourneyStep[];
   progressPercent: number;
+  /** Lower when DB/context signals are sparse — UI and copilot may soften assertions. */
+  confidence: JourneyConfidence;
   currentStepId?: string;
   nextStepId?: string;
   blockedStepIds: string[];
@@ -76,8 +83,20 @@ export type HubCopilotState = {
   nextStepTitle?: string;
   suggestions: HubCopilotSuggestion[];
   blockers: string[];
+  signalConfidence?: HubJourneySignalConfidence;
   createdAt: string;
 };
+
+/** Product analytics outcome events — no PII (see server validation). */
+export type JourneyOutcomeEventName =
+  | "journey_banner_viewed"
+  | "journey_next_cta_clicked"
+  | "journey_copilot_suggestion_viewed"
+  | "journey_copilot_suggestion_clicked"
+  | "journey_blocker_viewed";
+
+/** Analytics / monitoring actor bucket — no PII. */
+export type JourneyActorType = "guest" | "user" | "admin";
 
 /** Read-only signals for journey resolution — no DB rows mutated. */
 export type HubJourneyContext = {
@@ -100,6 +119,8 @@ export type HubJourneyContext = {
   sellerPublished?: boolean;
   sellerInquiryCount?: number;
   sellerDealStage?: boolean;
+  /** Certificate-of-location journey step (V2 / feature-flagged). */
+  sellerCertificateLocationSatisfied?: boolean;
   /** Rent (tenant) */
   rentCriteriaSet?: boolean;
   rentShortlistCount?: number;
@@ -133,6 +154,7 @@ export type HubJourneyContext = {
   brokerLeadsContacted?: number;
   brokerPipelineMoved?: boolean;
   brokerClosedCount?: number;
+  brokerCertificateLocationSatisfied?: boolean;
   /** Investor */
   investorGoalsSet?: boolean;
   investorBrowseCount?: number;

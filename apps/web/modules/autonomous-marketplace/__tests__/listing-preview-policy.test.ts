@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { autonomyConfig } from "../config/autonomy.config";
 import { listingPreviewPolicyRuleEvaluators } from "../policy/listing-preview-policy-rules";
-import { evaluateListingPreviewPolicy } from "../policy/policy-engine";
+import { evaluateListingPreviewPolicyFromContext } from "../policy/policy-engine";
 import type { PolicyContext } from "../policy/policy-context";
 
 function baseCtx(overrides: Partial<PolicyContext> = {}): PolicyContext {
@@ -36,11 +36,11 @@ function baseCtx(overrides: Partial<PolicyContext> = {}): PolicyContext {
   };
 }
 
-describe("listing preview policy (four rules)", () => {
-  it("evaluates exactly four rule results per action", () => {
-    const d = evaluateListingPreviewPolicy(baseCtx());
+describe("listing preview policy (core rules + certificate readiness)", () => {
+  it("evaluates one rule result per registered rule", () => {
+    const d = evaluateListingPreviewPolicyFromContext(baseCtx());
     expect(d.ruleResults).toHaveLength(listingPreviewPolicyRuleEvaluators.length);
-    expect(listingPreviewPolicyRuleEvaluators).toHaveLength(4);
+    expect(listingPreviewPolicyRuleEvaluators).toHaveLength(5);
   });
 
   it("blocks APPLY_PRICE_CHANGE when delta exceeds guardrail", () => {
@@ -52,7 +52,7 @@ describe("listing preview policy (four rules)", () => {
         metadata: { deltaPct: autonomyConfig.pricing.maxIncreasePctPerRun + 2 },
       },
     });
-    const d = evaluateListingPreviewPolicy(ctx);
+    const d = evaluateListingPreviewPolicyFromContext(ctx);
     const pricing = d.ruleResults.find((r) => r.ruleCode === "pricing_guardrail");
     expect(pricing?.result).toBe("blocked");
     expect(["BLOCK", "ALLOW_WITH_APPROVAL"]).toContain(d.disposition);
@@ -66,7 +66,7 @@ describe("listing preview policy (four rules)", () => {
         type: "START_PROMOTION",
       },
     });
-    const d = evaluateListingPreviewPolicy(ctx);
+    const d = evaluateListingPreviewPolicyFromContext(ctx);
     const activeRule = d.ruleResults.find((r) => r.ruleCode === "target_active");
     expect(activeRule?.result).toBe("blocked");
     expect(d.disposition).toBe("BLOCK");
@@ -80,7 +80,7 @@ describe("listing preview policy (four rules)", () => {
         type: "START_PROMOTION",
       },
     });
-    const d = evaluateListingPreviewPolicy(ctx);
+    const d = evaluateListingPreviewPolicyFromContext(ctx);
     const dup = d.ruleResults.find((r) => r.ruleCode === "duplicate_promotion");
     expect(dup?.result).toBe("blocked");
   });
@@ -93,7 +93,7 @@ describe("listing preview policy (four rules)", () => {
         metadata: { deltaPct: 1 },
       },
     });
-    const d = evaluateListingPreviewPolicy(ctx);
+    const d = evaluateListingPreviewPolicyFromContext(ctx);
     const hr = d.ruleResults.find((r) => r.ruleCode === "high_risk_approval");
     expect(hr?.result).toBe("warning");
     expect(d.disposition).toBe("ALLOW_WITH_APPROVAL");
@@ -107,7 +107,7 @@ describe("listing preview policy (four rules)", () => {
         risk: "HIGH",
       },
     });
-    const d = evaluateListingPreviewPolicy(ctx);
+    const d = evaluateListingPreviewPolicyFromContext(ctx);
     const hr = d.ruleResults.find((r) => r.ruleCode === "high_risk_approval");
     expect(hr?.result).toBe("warning");
   });

@@ -2,7 +2,9 @@
  * Listing-level unified intelligence — routes Syria through regional adapter only (read-only).
  */
 import { prisma } from "@/lib/db";
-import { engineFlags } from "@/config/feature-flags";
+import { engineFlags, eventTimelineFlags } from "@/config/feature-flags";
+import { getRegionDefinition } from "@lecipm/platform-core";
+import { getJurisdictionPolicyPack } from "@/modules/legal/jurisdiction/jurisdiction-policy-pack-registry";
 import {
   buildRegionListingKey,
   buildRegionListingRef,
@@ -18,9 +20,16 @@ import {
 import { getSyriaCapabilityNotes } from "@/modules/integrations/regions/syria/syria-region-capabilities.service";
 import type {
   ListingSourceAvailability,
+  UnifiedEntityIntelligence,
+  UnifiedEntityType,
+  UnifiedIntelligenceSourceStatus,
+  UnifiedIntelligenceSummary,
   UnifiedListingIntelligence,
+  UnifiedListingReadModel,
   UnifiedListingSource,
 } from "./unified-intelligence.types";
+import { getCanonicalRunsForListingTarget, listUnifiedRecentListingIds } from "./unified-intelligence.repository";
+import { buildEntityTimeline } from "@/modules/events/event-timeline.service";
 
 export type GetUnifiedListingIntelligenceParams = {
   listingId?: string;
@@ -76,8 +85,19 @@ function finalize(
   for (const n of cap) {
     if (!availabilityNotes.includes(n)) availabilityNotes.push(n);
   }
+
+  const rc =
+    intel.regionCode ??
+    refParams.regionCode ??
+    (intel.source === "syria" ? SYRIA_REGION_CODE : DEFAULT_WEB_REGION_CODE);
+  const regDef = getRegionDefinition(rc);
+  const pack = getJurisdictionPolicyPack(rc);
+
   return {
     ...intel,
+    sourceApp: intel.source,
+    regionCapabilities: regDef ? { ...regDef.capabilities } : undefined,
+    jurisdictionNotes: [...pack.notes],
     availabilityNotes,
     regionListingRef: resolveRegionListingRef(refParams),
   };
@@ -342,3 +362,226 @@ export async function getUnifiedListingIntelligence(
     );
   }
 }
+
+function emptySourceStatus(partial?: Partial<UnifiedIntelligenceSourceStatus>): UnifiedIntelligenceSourceStatus {
+  return {
+    canonicalRuns: partial?.canonicalRuns ?? "missing",
+    eventTimeline: partial?.eventTimeline ?? "missing",
+    legalTrust: partial?.legalTrust ?? "partial",
+    notes: partial?.notes ?? [],
+  };
+}
+
+function dedupeNotes(notes: string[]): string[] {
+  return [...new Set(notes)];
+}
+
+/** Validates optional `source` query param for admin unified-intelligence APIs. */
+export function parseOptionalListingSource(raw: string | null): UnifiedListingSource | undefined {
+  if (!raw) return undefined;
+  const v = raw.trim().toLowerCase();
+  if (v === "web" || v === "syria" || v === "external") return v;
+  return undefined;
+}
+
+/**
+ * Canonical unified listing read model — merges CRM/regional signals, autonomy runs, and (when enabled) event timeline counts.
+ * Read-only; never triggers execution or preview writes.
+ */
+export async function buildUnifiedListingReadModel(
+  params: GetUnifiedListingIntelligenceParams,
+): Promise<UnifiedListingReadModel> {
+  const freshness = new Date().toISOString();
+  const intel = await getUnifiedListingIntelligence(params);
+  const canonical = await getCanonicalRunsForListingTarget(intel.listingId);
+
+  let eventTimelineStatus: UnifiedIntelligenceSourceStatus["eventTimeline"] = "missing";
+  const timelineNotes: string[] = [];
+  let eventSummary: { eventCount: number; byType: Record<string, number> } | null = null;
+
+  if (intel.listingId && eventTimelineFlags.eventTimelineV1) {
+    try {
+      const tl = await buildEntityTimeline("listing", intel.listingId);
+      eventSummary = { eventCount: tl.events.length, byType: tl.byType };
+      if (tl.events.length > 0) {
+        eventTimelineStatus = "available";
+      } else {
+        eventTimelineStatus = "partial";
+        timelineNotes.push("event_timeline_empty");
+      }
+    } catch {
+      eventTimelineStatus = "partial";
+      timelineNotes.push("event_timeline_query_failed");
+    }
+  } else if (intel.listingId) {
+    timelineNotes.push("event_timeline_feature_off");
+  }
+
+  const canonicalRunsStatus: UnifiedIntelligenceSourceStatus["canonicalRuns"] =
+    canonical.runs.length > 0 ? "available" : canonical.notes.length > 0 ? "partial" : "missing";
+
+  const legalTrustStatus: UnifiedIntelligenceSourceStatus["legalTrust"] =
+    (intel.jurisdictionNotes?.length ?? 0) > 0 ? "available" : "partial";
+
+  const observation: Record<string, unknown> = {
+    regionCode: intel.regionCode ?? null,
+    regionListingRef: intel.regionListingRef,
+    priceHint: intel.priceHint,
+    currencyHint: intel.currencyHint,
+    statusHint: intel.statusHint,
+    featuredHint: intel.featuredHint,
+    regionCapabilities: intel.regionCapabilities ?? null,
+    jurisdictionNotes: [...(intel.jurisdictionNotes ?? [])],
+  };
+
+  const trust: Record<string, unknown> = {
+    fraudFlag: intel.fraudFlag,
+    bookingCounts: intel.bookingCounts,
+    payoutPipeline: intel.payoutPipeline,
+    sourceStatus: intel.sourceStatus,
+  };
+
+  const growth: Record<string, unknown> = {
+    syriaRegionSummaryAttached: intel.syriaRegionSummaryAttached,
+  };
+
+  const execution: Record<string, unknown> = {
+    recentRuns: canonical.runs.map((r) => ({
+      runId: r.id,
+      createdAt: r.createdAt.toISOString(),
+      dryRun: r.dryRun,
+      status: r.status,
+      autonomyMode: r.autonomyMode,
+      actionSummaries: r.actions,
+    })),
+    repositoryNotes: canonical.notes,
+  };
+
+  const governance: Record<string, unknown> = {
+    actionGovernanceHints: canonical.runs.flatMap((r) =>
+      r.actions.map((a) => ({
+        runId: r.id,
+        actionType: a.actionType,
+        governanceDisposition: a.governanceDisposition,
+        executionStatus: a.executionStatus,
+      })),
+    ),
+  };
+
+  const auditSummary: Record<string, unknown> = {
+    canonicalRunCount: canonical.runs.length,
+    eventTimelineEventCount: eventSummary?.eventCount ?? null,
+    hint: "canonical_autonomous_marketplace_runs_primary_source",
+  };
+
+  const preview: Record<string, unknown> | undefined = engineFlags.autonomyExplainabilityV1
+    ? {
+        note: "explainability_available_admin_preview_endpoints_are_read_only_dry_run",
+        listingId: intel.listingId,
+      }
+    : undefined;
+
+  const compliance: Record<string, unknown> | undefined =
+    intel.jurisdictionNotes && intel.jurisdictionNotes.length > 0
+      ? { packNotes: [...intel.jurisdictionNotes] }
+      : undefined;
+
+  const legalRisk: Record<string, unknown> = {
+    advisoryOnly: true,
+    resolutionPath: intel.source === "web" ? "crm_row_minimal" : "region_adapter",
+  };
+
+  const ranking: Record<string, unknown> = {
+    advisoryOnly: true,
+    legalTrustRankingV1Enabled: engineFlags.legalTrustRankingV1,
+    note: "deterministic_ranking_follows_trust_and_legal_services",
+  };
+
+  const sourceStatus: UnifiedIntelligenceSourceStatus = emptySourceStatus({
+    canonicalRuns: canonicalRunsStatus,
+    eventTimeline: eventTimelineStatus,
+    legalTrust: legalTrustStatus,
+    notes: dedupeNotes([...canonical.notes, ...timelineNotes]),
+  });
+
+  const availabilityNotes = dedupeNotes([...intel.availabilityNotes, ...canonical.notes, ...timelineNotes]);
+
+  return {
+    listingId: intel.listingId,
+    source: intel.source,
+    observation,
+    preview,
+    compliance,
+    legalRisk,
+    trust,
+    ranking,
+    growth,
+    governance,
+    execution,
+    auditSummary,
+    freshness,
+    availabilityNotes,
+    sourceStatus,
+  };
+}
+
+export async function buildUnifiedIntelligenceSummary(): Promise<UnifiedIntelligenceSummary> {
+  const recent = await listUnifiedRecentListingIds(30);
+  let canonicalRunCountHint = 0;
+  try {
+    if (engineFlags.autonomousMarketplaceV1) {
+      canonicalRunCountHint = await prisma.autonomousMarketplaceRun.count();
+    }
+  } catch {
+    canonicalRunCountHint = 0;
+  }
+
+  return {
+    freshness: new Date().toISOString(),
+    recentListingIds: recent.ids,
+    canonicalRunCountHint,
+    flags: {
+      autonomousMarketplace: engineFlags.autonomousMarketplaceV1 === true,
+      controlledExecution: engineFlags.controlledExecutionV1 === true,
+      unifiedReadModel: engineFlags.unifiedIntelligenceV1 === true,
+    },
+    availabilityNotes: dedupeNotes([...recent.notes]),
+  };
+}
+
+export async function buildUnifiedEntityIntelligence(params: {
+  entityType: UnifiedEntityType;
+  entityId: string;
+  listingParams?: Pick<GetUnifiedListingIntelligenceParams, "source" | "regionListingKey" | "regionCode">;
+}): Promise<UnifiedEntityIntelligence> {
+  const freshness = new Date().toISOString();
+  if (params.entityType === "listing") {
+    const model = await buildUnifiedListingReadModel({
+      listingId: params.entityId,
+      ...params.listingParams,
+    });
+    return {
+      entityType: "listing",
+      entityId: params.entityId,
+      facets: { listing: model as unknown as Record<string, unknown> },
+      freshness,
+      availabilityNotes: model.availabilityNotes,
+      sourceStatus: model.sourceStatus,
+    };
+  }
+
+  return {
+    entityType: params.entityType,
+    entityId: params.entityId,
+    facets: {},
+    freshness,
+    availabilityNotes: ["entity_type_not_in_unified_read_model_v1"],
+    sourceStatus: emptySourceStatus({
+      canonicalRuns: "missing",
+      eventTimeline: "missing",
+      legalTrust: "missing",
+      notes: ["unsupported_entity_kind"],
+    }),
+  };
+}
+

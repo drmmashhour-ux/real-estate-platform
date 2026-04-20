@@ -53,6 +53,10 @@ export async function POST(req: Request) {
       summary: run.summary,
       actionsProposed: run.summary.actionsProposed,
       actionCount: run.actions.length,
+      hints: {
+        regionCode: parsed.data.regionCode ?? null,
+        source: parsed.data.source ?? null,
+      },
     });
   } catch (e) {
     return NextResponse.json({ error: "run_failed", message: String(e) }, { status: 500 });

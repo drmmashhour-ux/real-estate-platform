@@ -37,6 +37,9 @@ export default async function AdminGrowthDashboardPage({
         <Link href="/admin/growth-crm" className="text-slate-400 hover:text-slate-300">
           Growth CRM
         </Link>
+        <Link href="/admin/unified-intelligence" className="text-emerald-400 hover:text-emerald-300">
+          Unified listing intelligence →
+        </Link>
         <Link href="/api/analytics/growth-dashboard?days=30" className="text-slate-500 hover:text-slate-300">
           Raw JSON (legacy funnel)
         </Link>

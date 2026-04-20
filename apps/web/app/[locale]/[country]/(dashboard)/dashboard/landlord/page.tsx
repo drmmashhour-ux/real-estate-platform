@@ -6,6 +6,8 @@ import { requireAuthenticatedUser } from "@/lib/auth/require-session";
 import { RentDecisionAiCard } from "@/components/rental/RentDecisionAiCard";
 import { LandlordRentApplications } from "./landlord-rent-client";
 import { HubJourneyBanner } from "@/components/journey/HubJourneyBanner";
+import { legalHubFlags } from "@/config/feature-flags";
+import { LegalHubEntryCard } from "@/components/legal/LegalHubEntryCard";
 
 export const dynamic = "force-dynamic";
 
@@ -43,6 +45,9 @@ export default async function LandlordRentDashboardPage({
   return (
     <div className="mx-auto max-w-4xl space-y-10 px-4 py-10 text-slate-100">
       <HubJourneyBanner hub="landlord" locale={locale} country={country} userId={userId} />
+      {legalHubFlags.legalHubV1 ? (
+        <LegalHubEntryCard href={`/${locale}/${country}/legal?actor=landlord`} locale={locale} country={country} />
+      ) : null}
       <header>
         <p className="text-xs font-semibold uppercase tracking-wide text-amber-500/90">Rent Hub</p>
         <h1 className="mt-1 text-3xl font-semibold">Landlord dashboard</h1>

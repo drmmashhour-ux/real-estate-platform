@@ -5,6 +5,7 @@ import { requireSessionUser } from "@/lib/auth";
 import { money } from "@/lib/format";
 import { pickListingTitle } from "@/lib/listing-localized";
 import { analyzeListingQuality } from "@/lib/listing-quality";
+import { DarlinkSellerAutopilotHints } from "@/components/dashboard/DarlinkSellerAutopilotHints";
 
 export default async function DashboardListingsPage() {
   const t = await getTranslations("Dashboard");
@@ -19,6 +20,8 @@ export default async function DashboardListingsPage() {
 
   return (
     <div className="space-y-4">
+      <DarlinkSellerAutopilotHints listingIds={listings.map((l) => l.id)} />
+
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h2 className="text-lg font-semibold text-[color:var(--darlink-text)]">{t("listingsTitle")}</h2>

@@ -82,7 +82,9 @@ export default async function LocaleLayout({ children, params }: Props) {
 
   return (
     <html lang={locale} dir={dir} data-theme="darlink" className={`${cairo.variable} ${inter.variable}`}>
-      <body className="flex min-h-screen flex-col bg-[color:var(--darlink-surface)] antialiased [--font-darlink-ar:var(--font-darlink-cairo)] [--font-darlink-en:var(--font-darlink-inter)]">
+      <body
+        className={`flex min-h-screen flex-col bg-[color:var(--darlink-surface)] antialiased [--font-darlink-ar:var(--font-darlink-cairo)] [--font-darlink-en:var(--font-darlink-inter)] ${dir === "rtl" ? "darlink-root-rtl" : "darlink-root-ltr"}`}
+      >
         <NextIntlClientProvider messages={messages}>
           <SyriaHeader />
           <main className="darlink-main-pad mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6 sm:py-10">{children}</main>

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ListingStatus } from "@prisma/client";
+import { adminOpsFlags, engineFlags } from "@/config/feature-flags";
 import { LecipmControlShell } from "@/components/admin/LecipmControlShell";
 import { getAdminListings } from "@/lib/admin/control-center";
 import { requireAdminControlUserId } from "@/lib/admin/guard";
@@ -58,6 +59,18 @@ export default async function AdminListingsControlPage({ searchParams }: { searc
             </Link>
           </div>
         </div>
+
+        {engineFlags.autonomyRealPreviewV1 ||
+        engineFlags.autonomousMarketplaceV1 ||
+        adminOpsFlags.adminAuditPanelV1 ? (
+          <section className="rounded-2xl border border-zinc-700 bg-black/35 px-4 py-3 text-xs text-zinc-400">
+            Operational review: FSBO autonomy preview + audit tooling lives on{" "}
+            <Link href="/admin/legal" className="underline" style={{ color: GOLD }}>
+              Admin Legal
+            </Link>{" "}
+            when feature flags are enabled.
+          </section>
+        ) : null}
 
         <section className="rounded-2xl border border-amber-900/35 bg-amber-950/15 px-4 py-4 text-sm text-amber-100/90">
           <p className="font-medium text-amber-200">AI suggestions</p>

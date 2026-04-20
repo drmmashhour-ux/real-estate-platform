@@ -115,9 +115,20 @@ export const HUB_JOURNEY_DEFINITIONS: Record<HubKey, HubJourneyStepDefinition[]>
       actionLabel: "Add media",
     },
     {
-      id: "seller-4-pricing",
+      id: "seller-3b-certificate-location",
       hub: "seller",
       order: 4,
+      title: "Certificate of location coverage",
+      description:
+        "Structured certificate-of-location readiness for active listings — workflow metadata only.",
+      why: "Cross-checks listing fields against verified certificate extracts when configured.",
+      route: "dashboard/seller/listings",
+      actionLabel: "Review certificate",
+    },
+    {
+      id: "seller-4-pricing",
+      hub: "seller",
+      order: 5,
       title: "Review pricing guidance",
       description: "Use platform guidance to align list price with the market.",
       why: "Right pricing balances speed and proceeds.",
@@ -127,7 +138,7 @@ export const HUB_JOURNEY_DEFINITIONS: Record<HubKey, HubJourneyStepDefinition[]>
     {
       id: "seller-5-publish",
       hub: "seller",
-      order: 5,
+      order: 6,
       title: "Publish or request broker help",
       description: "Go live or engage a broker for representation.",
       why: "Visibility or expert help moves you toward qualified interest.",
@@ -137,7 +148,7 @@ export const HUB_JOURNEY_DEFINITIONS: Record<HubKey, HubJourneyStepDefinition[]>
     {
       id: "seller-6-inquiries",
       hub: "seller",
-      order: 6,
+      order: 7,
       title: "Manage inquiries",
       description: "Respond to buyer and agent questions promptly.",
       why: "Speed signals seriousness and protects conversion.",
@@ -147,7 +158,7 @@ export const HUB_JOURNEY_DEFINITIONS: Record<HubKey, HubJourneyStepDefinition[]>
     {
       id: "seller-7-closing",
       hub: "seller",
-      order: 7,
+      order: 8,
       title: "Move toward offer / closing",
       description: "Negotiate offers and prepare for closing milestones.",
       why: "Structured progression reduces fall-through risk.",
@@ -465,9 +476,19 @@ export const HUB_JOURNEY_DEFINITIONS: Record<HubKey, HubJourneyStepDefinition[]>
       actionLabel: "Review leads",
     },
     {
-      id: "broker-4-contact",
+      id: "broker-3b-certificate-workflow",
       hub: "broker",
       order: 4,
+      title: "Certificate of location checks",
+      description: "Log requests, reviews, or admin escalations for certificate coverage (metadata only).",
+      why: "Structured title and lot checks reduce avoidable surprises before offers.",
+      route: "dashboard/broker",
+      actionLabel: "Certificate workflow",
+    },
+    {
+      id: "broker-4-contact",
+      hub: "broker",
+      order: 5,
       title: "Contact leads fast",
       description: "Reach out within minutes with a clear next step.",
       why: "First response time correlates with wins.",
@@ -477,7 +498,7 @@ export const HUB_JOURNEY_DEFINITIONS: Record<HubKey, HubJourneyStepDefinition[]>
     {
       id: "broker-5-pipeline",
       hub: "broker",
-      order: 5,
+      order: 6,
       title: "Move leads through pipeline",
       description: "Update stages, tasks, and follow-ups.",
       why: "Pipeline hygiene prevents leakage.",
@@ -487,7 +508,7 @@ export const HUB_JOURNEY_DEFINITIONS: Record<HubKey, HubJourneyStepDefinition[]>
     {
       id: "broker-6-closings",
       hub: "broker",
-      order: 6,
+      order: 7,
       title: "Track closings",
       description: "Monitor active deals toward closing.",
       why: "Closing focus protects revenue.",
@@ -497,7 +518,7 @@ export const HUB_JOURNEY_DEFINITIONS: Record<HubKey, HubJourneyStepDefinition[]>
     {
       id: "broker-7-rank",
       hub: "broker",
-      order: 7,
+      order: 8,
       title: "Improve ranking / performance",
       description: "Review metrics and platform guidance to improve.",
       why: "Performance feeds future lead flow.",

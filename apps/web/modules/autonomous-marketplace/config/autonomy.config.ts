@@ -112,6 +112,7 @@ export const autonomyConfig = {
     CREATE_TASK: envBool("AUTONOMY_EXEC_CREATE_TASK", true),
     FLAG_REVIEW: envBool("AUTONOMY_EXEC_FLAG_REVIEW", true),
     REQUEST_HUMAN_APPROVAL: envBool("AUTONOMY_EXEC_REQUEST_HUMAN_APPROVAL", true),
+    LEGAL_COMPLIANCE_GATE: envBool("AUTONOMY_EXEC_LEGAL_COMPLIANCE_GATE", false),
   } satisfies Record<ActionType, boolean>,
 } as const;
 

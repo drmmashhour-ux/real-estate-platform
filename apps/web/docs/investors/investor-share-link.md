@@ -1,5 +1,20 @@
 # Investor share link (read-only)
 
+## Security contract (implementation reminder)
+
+**Do not**
+
+- Expose admin-only data, raw internal notes, or identifiers (UUIDs/CUIDs, Stripe-like ids, emails).
+- Allow edits, execution actions, or hidden query paths to broader internal data from the shared route.
+- Weaken revocation or expiry: inactive links must behave like unknown tokens with a **generic** message.
+
+**Do**
+
+- Filter aggressively in `filterInvestorDashboardForShare` / `scrubInvestorShareText` before any public render.
+- Keep the public view polished and disclaimers clear.
+- Keep uncertainty honest (confidence tiers, missing-data warnings in investor-safe language).
+- Keep links revocable (explicit `revoked` status) and auditable (`[investor-share]` logs, view counts on valid opens).
+
 ## What it is
 
 A **secure, revocable URL** (`/investor/share/[token]`) that shows a **filtered snapshot** of the auto-generated investor dashboard. It is **view-only**: no admin UI, no edits, no execution actions, no hidden APIs to broader internal data. The rendered payload **does not include internal share/database IDs**; text is scrubbed for UUID-like and CUID-like identifiers before display.

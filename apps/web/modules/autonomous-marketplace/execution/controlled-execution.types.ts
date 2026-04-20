@@ -24,7 +24,12 @@ export type ControlledExecutionReason =
   | "risk_block"
   | "execution_success"
   | "execution_failure"
-  | "rollback_applied";
+  | "rollback_applied"
+  /** Regional capability / jurisdiction posture — mirrors `SafeExecutionGateInput.regionExecutionProfile`. */
+  | "region_capability_block"
+  | "region_recommend_only"
+  /** @deprecated prefer region_capability_block — retained for serialized audit compatibility */
+  | "region_execution_blocked";
 
 export type ComplianceGateSnapshot = {
   blocked: boolean;
@@ -65,4 +70,27 @@ export type ControlledExecutionBatchResult = {
 export type ControlledApprovalRequirement = {
   required: boolean;
   reasons: ControlledExecutionReason[];
+};
+
+/** Single-action explainability / API payload — no side effects. */
+export type ControlledExecutionDecision = {
+  actionId: string;
+  actionType: string;
+  status: ControlledExecutionStatus;
+  reasons: ControlledExecutionReason[];
+  allowExecution: boolean;
+  requiresApproval: boolean;
+  regionCode?: string;
+  source?: string;
+};
+
+/** Redacted audit row shape — mirrors persistence, not full DB model. */
+export type ControlledExecutionAuditShape = {
+  eventKind: "attempt" | "decision" | "outcome" | "approval" | "rollback";
+  runId: string;
+  actionId: string;
+  actionType?: string;
+  gateAllowed?: boolean;
+  executionStatus?: string;
+  dispositionSummary?: string;
 };

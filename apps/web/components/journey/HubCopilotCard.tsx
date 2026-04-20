@@ -1,16 +1,73 @@
 "use client";
 
 import Link from "next/link";
-import type { HubCopilotState } from "@/modules/journey/hub-journey.types";
+import { postJourneyOutcome } from "@/lib/journey/post-journey-outcome";
+import type {
+  HubCopilotState,
+  HubJourneySignalConfidence,
+  HubKey,
+  JourneyActorType,
+} from "@/modules/journey/hub-journey.types";
+import { useJourneyCorrelationId } from "./JourneyCorrelationProvider";
 
 export function HubCopilotCard({
   state,
   basePath,
+  analyticsEnabled,
+  hub,
+  locale,
+  country,
+  actorType,
+  progressPercent,
+  currentStepId,
+  nextStepId,
+  blockerCount,
 }: {
   state: HubCopilotState | null;
   basePath: string;
+  analyticsEnabled?: boolean;
+  hub?: HubKey;
+  locale?: string;
+  country?: string;
+  actorType?: JourneyActorType;
+  progressPercent?: number;
+  currentStepId?: string;
+  nextStepId?: string;
+  blockerCount?: number;
 }) {
+  const correlationId = useJourneyCorrelationId();
+
   if (!state || state.suggestions.length === 0) return null;
+
+  const confidence: HubJourneySignalConfidence | undefined = state.signalConfidence;
+
+  const trackSuggestionClick = (suggestionId: string) => {
+    if (
+      !analyticsEnabled ||
+      !hub ||
+      !locale ||
+      !country ||
+      actorType === undefined ||
+      typeof progressPercent !== "number"
+    ) {
+      return;
+    }
+    void postJourneyOutcome({
+      event: "journey_copilot_suggestion_clicked",
+      hub,
+      locale,
+      country,
+      actorType,
+      progressPercent,
+      currentStepId: currentStepId ?? null,
+      nextStepId: nextStepId ?? null,
+      blockerCount,
+      confidence,
+      suggestionIds: [suggestionId],
+      correlationId: correlationId ?? undefined,
+    });
+  };
+
   return (
     <div
       id="hub-copilot-anchor"
@@ -51,6 +108,7 @@ export function HubCopilotCard({
                 <Link
                   href={href}
                   className="mt-2 inline-block text-xs font-semibold text-amber-400 hover:text-amber-300"
+                  onClick={() => trackSuggestionClick(s.id)}
                 >
                   Go →
                 </Link>

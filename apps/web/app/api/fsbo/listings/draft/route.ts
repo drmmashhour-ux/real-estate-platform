@@ -7,6 +7,8 @@ import { ensureSellerContractsForFsboListing } from "@/lib/contracts/fsbo-seller
 import { ensureFsboListingDocumentSlots } from "@/lib/fsbo/seller-hub-seed-documents";
 import { allocateUniqueLSTListingCode } from "@/lib/listing-code";
 import { isBrokerVerified } from "@/lib/verification/broker";
+import { legalRiskAlertMessage } from "@/modules/legal/engine/legal-engine.service";
+import { evaluateAndPersistFsboListing } from "@/modules/legal/legal-orchestration.service";
 
 export const dynamic = "force-dynamic";
 
@@ -71,5 +73,13 @@ export async function POST() {
   await ensureFsboListingDocumentSlots(row.id);
   await ensureSellerContractsForFsboListing(row.id).catch(() => {});
 
-  return Response.json({ id: row.id, listingCode: row.listingCode });
+  const legalCompliance = await evaluateAndPersistFsboListing(row.id, userId, true);
+
+  return Response.json({
+    id: row.id,
+    listingCode: row.listingCode,
+    legalRisk: legalCompliance.engine,
+    legalRiskAlert: legalRiskAlertMessage(legalCompliance.engine),
+    legalCompliance,
+  });
 }

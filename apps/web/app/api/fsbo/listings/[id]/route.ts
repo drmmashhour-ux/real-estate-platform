@@ -8,6 +8,7 @@ import { requireContentLicenseAccepted } from "@/lib/legal/content-license-enfor
 import { getFsboListingTrustSummary } from "@/lib/fsbo/listing-trust-summary";
 import { refreshListingTrustGraphOnSave } from "@/lib/trustgraph/application/integrations/sellerDeclarationIntegration";
 import { isTrustGraphEnabled } from "@/lib/trustgraph/config";
+import { CENTRIS_PLATFORM } from "@/modules/distribution/centris.service";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +27,10 @@ export async function GET(
       _count: { select: { leads: true } },
       documents: true,
       verification: true,
+      externalListings: {
+        where: { platform: CENTRIS_PLATFORM },
+        take: 1,
+      },
     },
   });
   if (!row) {
@@ -40,6 +45,26 @@ export async function GET(
 
   const trust =
     isOwner || isAdmin ? await getFsboListingTrustSummary(id).catch(() => null) : null;
+
+  const centrisRow = row.externalListings?.[0];
+  const centrisDistribution =
+    isOwner || isAdmin
+      ? centrisRow
+        ? {
+            enabled: true,
+            status: centrisRow.status,
+            externalId: centrisRow.externalId,
+            lastSyncAt: centrisRow.lastSyncAt?.toISOString() ?? null,
+            errorMessage: centrisRow.errorMessage,
+          }
+        : {
+            enabled: false,
+            status: null as string | null,
+            externalId: null as string | null,
+            lastSyncAt: null as string | null,
+            errorMessage: null as string | null,
+          }
+      : undefined;
 
   return Response.json({
     listing: {
@@ -95,6 +120,7 @@ export async function GET(
             archivedAt: row.archivedAt,
             paymentLabel:
               row.status === "DRAFT" ? "unpaid" : row.paidPublishAt ? "paid" : "active_no_timestamp",
+            ...(centrisDistribution ? { centrisDistribution } : {}),
           }
         : {}),
       ...(publicOk

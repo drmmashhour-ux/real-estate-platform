@@ -16,6 +16,7 @@ export function SellerOnboardingWizard() {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
+  const [legalRiskAlert, setLegalRiskAlert] = useState<string | null>(null);
   const [brokerVerified, setBrokerVerified] = useState(false);
   const [basicInfo, setBasicInfo] = useState({ fullName: "", phone: "" });
   const [propertyAddress, setPropertyAddress] = useState({
@@ -67,6 +68,7 @@ export function SellerOnboardingWizard() {
     setLoading(true);
     setErr(null);
     setInfo(null);
+    setLegalRiskAlert(null);
     try {
       const res = await fetch("/api/seller/onboarding", {
         method: "POST",
@@ -81,6 +83,9 @@ export function SellerOnboardingWizard() {
       }
       if (typeof data.warning === "string" && data.warning.trim()) {
         setInfo(data.warning);
+      }
+      if (typeof data.legalRiskAlert === "string" && data.legalRiskAlert.trim()) {
+        setLegalRiskAlert(data.legalRiskAlert.trim());
       }
       if (typeof data.brokerVerified === "boolean") {
         setBrokerVerified(data.brokerVerified);
@@ -309,6 +314,11 @@ export function SellerOnboardingWizard() {
 
         {err ? <p className="mt-4 text-sm text-red-400">{err}</p> : null}
         {info ? <p className="mt-4 text-sm text-amber-300">{info}</p> : null}
+        {legalRiskAlert ? (
+          <p className="mt-4 rounded-lg border border-amber-500/40 bg-red-950/40 px-3 py-2 text-sm text-amber-200">
+            {legalRiskAlert}
+          </p>
+        ) : null}
 
         <div className="mt-6 flex flex-wrap gap-3">
           {step > 1 ? (

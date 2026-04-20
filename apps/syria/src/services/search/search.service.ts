@@ -16,8 +16,14 @@ export type SerializedBrowseListing = {
   id: string;
   titleAr: string;
   titleEn: string | null;
+  descriptionAr: string;
+  descriptionEn: string | null;
   city: string;
+  cityAr: string | null;
+  cityEn: string | null;
   area: string | null;
+  districtAr: string | null;
+  districtEn: string | null;
   price: string;
   currency: string;
   type: string;
@@ -50,8 +56,14 @@ function serialize(p: SyriaProperty): SerializedBrowseListing {
     id: p.id,
     titleAr: p.titleAr,
     titleEn: p.titleEn,
+    descriptionAr: p.descriptionAr,
+    descriptionEn: p.descriptionEn,
     city: p.city,
+    cityAr: p.cityAr ?? null,
+    cityEn: p.cityEn ?? null,
     area: p.area,
+    districtAr: p.districtAr ?? null,
+    districtEn: p.districtEn ?? null,
     price: p.price.toString(),
     currency: p.currency,
     type: p.type,

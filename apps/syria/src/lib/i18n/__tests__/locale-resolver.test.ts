@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveDarlinkLocale } from "../locale-resolver";
+import { resolveDarlinkLocale, resolveSyriaLocale } from "../locale-resolver";
 
 describe("resolveDarlinkLocale", () => {
   it("prefers pathname locale", () => {
@@ -16,5 +16,10 @@ describe("resolveDarlinkLocale", () => {
         cookieHeader: "foo=bar; DARLINK_LOCALE=en; x=1",
       }),
     ).toBe("en");
+  });
+
+  it("reads lang query param", () => {
+    expect(resolveDarlinkLocale({ searchParams: { lang: "en" } })).toBe("en");
+    expect(resolveSyriaLocale({ searchParams: { lang: "en" } })).toBe("en");
   });
 });

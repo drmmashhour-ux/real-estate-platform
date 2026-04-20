@@ -112,6 +112,48 @@ export function generateAdaptiveDecisions(ctx: AdaptiveContext): AdaptiveDecisio
     );
   }
 
+  // Deal performance / execution measurement (counts only — no broker or lead IDs)
+  if (ctx.dealPerformance?.sparseAiTelemetry && ctx.dealPerformance.aiRows <= 8) {
+    push(
+      "growth",
+      "medium",
+      "Log more AI execution interactions (copy / local approve) so measurement windows are statistically usable",
+      `Deal-performance aggregate shows sparse AI telemetry (${ctx.dealPerformance.aiRows} rows in ${ctx.dealPerformance.windowDays}d window).`,
+      [`ai_rows=${ctx.dealPerformance.aiRows}`, "sparse_ai_telemetry=true"],
+      3,
+    );
+  }
+
+  if (
+    ctx.dealPerformance &&
+    ctx.dealPerformance.brokerRows >= 3 &&
+    ctx.dealPerformance.brokerPositiveBands === 0
+  ) {
+    push(
+      "retention",
+      "medium",
+      "Review broker-side narratives — competition measurement rows show no positive bands in-window",
+      `${ctx.dealPerformance.brokerRows} broker comparison rows in ${ctx.dealPerformance.windowDays}d; none classified positive — may be thin data, not necessarily poor performance.`,
+      [`broker_rows=${ctx.dealPerformance.brokerRows}`, "broker_positive_bands=0"],
+      2,
+    );
+  }
+
+  if (ctx.revenueForecastInsufficientData && ctx.topLead && ctx.topLead.score >= 55) {
+    push(
+      "closing",
+      "high",
+      "Validate pipeline assumptions manually — illustrative revenue forecast flagged insufficient data while a high-scored lead is active",
+      `Forecast layer reports insufficient backing data; top CRM score ${ctx.topLead.score} — avoid over-weighting illustrative ranges.`,
+      [
+        "forecast_insufficient_data=true",
+        `lead_score=${ctx.topLead.score}`,
+        ctx.revenueForecastConfidence ? `forecast_confidence=${ctx.revenueForecastConfidence}` : "",
+      ].filter(Boolean),
+      3,
+    );
+  }
+
   // Pipeline bottleneck
   if (ctx.weakestStage && ctx.weakestStage.count >= 3) {
     push(

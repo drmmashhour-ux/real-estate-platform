@@ -5,6 +5,7 @@ import { LegalIntelligenceSignalsTable } from "./LegalIntelligenceSignalsTable";
 import { LegalIntelligenceSummaryCard } from "./LegalIntelligenceSummaryCard";
 import { LegalReviewPriorityTable } from "./LegalReviewPriorityTable";
 import { LegalRiskEscalationCard } from "./LegalRiskEscalationCard";
+import { EventTimeline } from "./EventTimeline";
 import type { LegalIntelligenceSignal } from "@/modules/legal/legal-intelligence.types";
 import type { LegalIntelligenceSummary } from "@/modules/legal/legal-intelligence.types";
 import type { LegalQueueItemScore } from "@/modules/legal/legal-intelligence.types";
@@ -73,6 +74,9 @@ export function LegalIntelligenceAdminSection({ listingId }: { listingId?: strin
           {intel?.flags?.scoped === false ? "platform aggregate" : listingId ?? "listing"}
         </p>
         <LegalIntelligenceSignalsTable signals={Array.isArray(intel?.signals) ? intel!.signals : []} />
+        {listingId ? (
+          <EventTimeline entityType="listing" entityId={listingId} title="Listing event timeline" />
+        ) : null}
       </section>
 
       <section className="space-y-3">

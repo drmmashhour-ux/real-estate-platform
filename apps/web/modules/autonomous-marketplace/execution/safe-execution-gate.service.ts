@@ -16,6 +16,11 @@ export type SafeExecutionGateInput = {
   trust?: TrustRiskSnapshot;
   runDryRun: boolean;
   actionTypeEnabledInConfig: boolean;
+  /** When `recommend_only` or `blocked`, autonomous execution is suppressed for unsupported regions. */
+  regionExecutionProfile?: {
+    executionMode: "full" | "recommend_only" | "blocked";
+    notes: readonly string[];
+  };
 };
 
 export type SafeExecutionGateOutput = {
@@ -35,6 +40,17 @@ function hasTrustBlock(tags: readonly string[] | undefined): boolean {
  */
 export function evaluateSafeExecutionGate(input: SafeExecutionGateInput): SafeExecutionGateOutput {
   const reasons: ControlledExecutionReason[] = [];
+
+  const rep = input.regionExecutionProfile;
+  if (rep?.executionMode === "blocked") {
+    reasons.push("region_capability_block");
+    reasons.push("region_execution_blocked");
+    return { allowed: false, status: "blocked", reasons, requiresApproval: false };
+  }
+  if (rep?.executionMode === "recommend_only") {
+    reasons.push("region_recommend_only");
+    return { allowed: false, status: "skipped", reasons, requiresApproval: false };
+  }
 
   if (input.compliance.blocked) {
     reasons.push("compliance_block");

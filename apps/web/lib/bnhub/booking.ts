@@ -41,6 +41,7 @@ import { recordLecipmManagerGrowthEvent } from "@/lib/growth/manager-events";
 import {
   expireStaleBnhubPendingBookings,
   findOverlappingActiveBnhubBooking,
+  findOverlappingExternalIcsBlock,
 } from "@/lib/bookings/checkAvailability";
 import { logGuestExperienceOutcome } from "@/lib/bnhub/guest-experience/log-signal";
 
@@ -239,6 +240,11 @@ export async function createBooking(data: {
         throw new Error("Listing not available for selected dates");
       }
 
+      const icsBlock = await findOverlappingExternalIcsBlock(tx, data.listingId, checkIn, checkOut);
+      if (icsBlock) {
+        throw new Error("Listing not available for selected dates");
+      }
+
       const bookingCode = await generateBookingCode(tx);
       const created = await tx.booking.create({
         data: {
@@ -317,6 +323,10 @@ export async function createBooking(data: {
       isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
     }
   );
+
+  void import("@/modules/pricing/pricing-engine.service")
+    .then((m) => m.generatePricing(data.listingId))
+    .catch(() => {});
 
   void import("@/lib/fraud/compute-booking-risk")
     .then((m) =>

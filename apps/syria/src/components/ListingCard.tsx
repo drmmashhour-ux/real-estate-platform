@@ -3,8 +3,12 @@
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { money } from "@/lib/format";
-import { pickListingTitle } from "@/lib/listing-localized";
-import { resolveCityLabel } from "@/lib/syria-locations";
+import { backfillLocalizedPropertyShape } from "@/lib/property-legacy-compat";
+import {
+  getLocalizedPropertyCity,
+  getLocalizedPropertyDistrict,
+  getLocalizedPropertyTitle,
+} from "@/lib/property-localization";
 import { Badge } from "@/components/ui/Badge";
 import type { SyriaProperty } from "@/generated/prisma";
 import type { SerializedBrowseListing } from "@/services/search/search.service";
@@ -14,13 +18,19 @@ type CardListing = Pick<
   | "id"
   | "titleAr"
   | "titleEn"
+  | "descriptionAr"
+  | "descriptionEn"
   | "city"
+  | "cityAr"
+  | "cityEn"
   | "price"
   | "currency"
   | "type"
   | "isFeatured"
   | "images"
   | "area"
+  | "districtAr"
+  | "districtEn"
   | "bedrooms"
   | "bathrooms"
   | "guestsMax"
@@ -50,9 +60,11 @@ export function ListingCard({
   priority?: boolean;
 }) {
   const t = useTranslations("Listing");
-  const title = pickListingTitle(listing, locale);
-  const cityDisplay = resolveCityLabel(listing.city, locale);
-  const areaLine = listing.area?.trim() ? listing.area : null;
+  const resolved = backfillLocalizedPropertyShape(listing);
+  const title = getLocalizedPropertyTitle(listing, locale);
+  const cityDisplay = getLocalizedPropertyCity(resolved, locale);
+  const districtLine = getLocalizedPropertyDistrict(resolved, locale);
+  const areaLine = districtLine ?? (listing.area?.trim() ? listing.area : null);
   const numberLoc = locale.startsWith("ar") ? "ar-SY" : "en-US";
   const img = firstImage(listing.images);
   const guests = listing.guestsMax ?? null;

@@ -1,6 +1,9 @@
 import { PlatformRole } from "@prisma/client";
 import { redirect } from "next/navigation";
-import { brokerOpsFlags } from "@/config/feature-flags";
+import { brokerAiFlags, brokerOpsFlags } from "@/config/feature-flags";
+import { CertificateOfLocationHelperPanel } from "@/components/broker-ai/CertificateOfLocationHelperPanel";
+import { getCertificateOfLocationBlockerImpact } from "@/modules/broker-ai/certificate-of-location/certificate-of-location-blocker.service";
+import { loadCertificateOfLocationPresentation } from "@/modules/broker-ai/certificate-of-location/certificate-of-location-view-model.service";
 import { getGuestId } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
 import { ListingGrowthWorkspace } from "@/components/listing-growth/ListingGrowthWorkspace";
@@ -49,6 +52,11 @@ export default async function ListingMarketingPage({
   const title = listing.title;
   const listingId = listing.id;
 
+  const certificateCol =
+    brokerAiFlags.brokerAiCertificateOfLocationV1
+      ? await loadCertificateOfLocationPresentation({ listingId, brokerFlow: true })
+      : null;
+
   return (
     <div className="space-y-4">
       <div>
@@ -58,6 +66,13 @@ export default async function ListingMarketingPage({
           {listing?.city} · {listing?.listingCode ?? listingId}
         </p>
       </div>
+      {certificateCol ? (
+        <CertificateOfLocationHelperPanel
+          listingId={listingId}
+          viewModel={certificateCol.viewModel}
+          blockerImpact={getCertificateOfLocationBlockerImpact(certificateCol.summary)}
+        />
+      ) : null}
       <ListingGrowthWorkspace listingId={listingId} basePath={basePath} />
     </div>
   );

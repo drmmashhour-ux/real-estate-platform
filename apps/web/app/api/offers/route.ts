@@ -20,6 +20,7 @@ import { legalEnforcementDisabled } from "@/modules/legal/legal-enforcement";
 import { hasActiveEnforceableContract } from "@/lib/legal/enforceable-contract";
 import { ENFORCEABLE_CONTRACT_TYPES } from "@/lib/legal/enforceable-contract-types";
 import { enforceableContractsRequired } from "@/lib/legal/enforceable-contracts-enforcement";
+import { maybeBlockRequestWithLegalGate } from "@/modules/legal/legal-api-gate";
 
 export const dynamic = "force-dynamic";
 
@@ -39,6 +40,13 @@ export async function POST(request: NextRequest) {
   if (!listingCheck.ok) {
     return NextResponse.json({ error: listingCheck.error }, { status: listingCheck.status });
   }
+
+  const phase3Gate = await maybeBlockRequestWithLegalGate({
+    action: "submit_offer",
+    userId,
+    actorType: "buyer",
+  });
+  if (phase3Gate) return phase3Gate;
 
   if (!legalEnforcementDisabled()) {
     const legal = await assertBuyerOfferAllowed(userId, listingId);

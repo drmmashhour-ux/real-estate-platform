@@ -1,21 +1,23 @@
 import { randomUUID } from "crypto";
-import { engineFlags } from "@/config/feature-flags";
+import { complianceFlags, engineFlags, legalHubFlags } from "@/config/feature-flags";
+import { buildCertificateOfLocationPreviewLines } from "@/modules/broker-ai/certificate-of-location/certificate-of-location-preview-bridge.service";
+import { buildLegalPreviewOverlayForListing } from "@/modules/legal/records/legal-record-preview.service";
+import { recordAutonomousMarketplaceGovernanceTimeline } from "@/modules/events/marketplace-timeline.integration";
 import { autonomyConfig } from "../config/autonomy.config";
 import { defaultDetectorRegistry } from "../detectors/detector-registry";
 import { resolveGovernance } from "../governance/governance-resolver";
 import { autonomyLog } from "../internal/autonomy-log";
-import { evaluateActionPolicy, evaluateListingPreviewPolicy } from "../policy/policy-engine";
+import { evaluateActionPolicy } from "../policy/policy-engine";
 import { persistAutonomousRun } from "../persistence/autonomy-repository";
-import { runPreviewDetectors } from "../detectors/preview-detector-registry";
-import {
-  buildListingObservationSnapshot,
-  buildObservationForCampaign,
-  buildObservationForLead,
-  buildObservationForListing,
-} from "../signals/observation-builder";
+import { runListingPreviewDetectors } from "../detectors/preview-detector-registry";
+import { buildObservationForCampaign, buildObservationForLead, buildObservationForListing } from "../signals/observation-builder";
+import { buildUnifiedListingObservation } from "../signals/listing-observation-builder.service";
 import { buildSyriaListingObservationSnapshot } from "@/modules/integrations/regions/syria/syria-preview-adapter.service";
 import { buildSyriaOpportunities } from "@/modules/integrations/regions/syria/syria-opportunity-builder.service";
 import { buildSyriaPreviewNoteLines } from "@/modules/integrations/regions/syria/syria-preview-notes.service";
+import { evaluateSyriaApprovalBoundary } from "@/modules/integrations/regions/syria/syria-approval-boundary.service";
+import { buildSyriaGovernanceExplainabilityLines } from "@/modules/integrations/regions/syria/syria-governance-explainability.service";
+import { resolveSyriaGovernanceReviewType } from "@/modules/integrations/regions/syria/syria-governance-review.service";
 import { evaluateSyriaPreviewPolicyFromSignals } from "@/modules/integrations/regions/syria/syria-policy.service";
 import { buildSyriaSignals } from "@/modules/integrations/regions/syria/syria-signal-builder.service";
 import { explainSyriaSignals } from "@/modules/integrations/regions/syria/syria-signal-explainability.service";
@@ -27,29 +29,39 @@ import type {
   ListingPreviewResponse,
   PreviewListingInput,
 } from "../types/listing-preview.types";
+import type { TrustScore } from "@/modules/trust/trust.types";
 import type {
   AutonomyMode,
   AutonomousRun,
   AutonomousRunSummary,
   ExecutionResult,
+  MarketplaceSignal,
   ObservationSnapshot,
   Opportunity,
   ProposedAction,
+  RiskLevel,
 } from "../types/domain.types";
-import { buildSignalsSummary } from "../signals/signal-normalizer";
+import { aggregateSignalsForTarget, buildSignalsSummary } from "../signals/signal-normalizer";
+import { buildPreviewSignalsForListing } from "../signals/preview-signal-builder.service";
+import { buildPreviewOpportunitiesFromSignals } from "./preview-opportunity-builder.service";
+import { evaluateListingPreviewPolicy } from "../policy/preview-policy.service";
+import { filterPreviewActionsByPolicy } from "./preview-action-filter.service";
+import {
+  buildPreviewExplanation,
+  emptyListingPreviewExplanation,
+} from "../explainability/preview-explainability-builder.service";
+import { buildSyriaPreviewStructuredExplainability } from "../explainability/syria-preview-explainability.service";
+import type { ListingPreviewExplanation } from "../explainability/preview-explainability.types";
 import { buildPolicyContext } from "./policy-context-builder";
 import { findRecentRunByIdempotencyKey } from "./idempotency.service";
-import { applyControlledAction } from "./action-application.service";
-import { requestActionApproval } from "./action-approval.service";
 import { dispatchExecution } from "./action-dispatch";
+import { DEFAULT_PLATFORM_REGION_CODE } from "@lecipm/platform-core";
+import { runControlledExecutionStep } from "./controlled-execution-orchestrator.service";
 import {
-  recordExecutionAttempt,
-  recordExecutionDecision,
-  recordExecutionOutcome,
-} from "./execution-audit.service";
-import { verifyActionOutcome } from "./execution-verification.service";
-import { rollbackControlledAction } from "./rollback.service";
-import { evaluateSafeExecutionGate } from "./safe-execution-gate.service";
+  buildListingExplanation,
+  buildUserSafeListingReasoning,
+} from "../explainability/explainability-builder.service";
+import type { ExplanationLevel, ListingExplanation } from "../explainability/explainability.types";
 
 export type RunOptions = {
   mode?: AutonomyMode;
@@ -74,11 +86,68 @@ function dedupeActions(actions: ProposedAction[]): ProposedAction[] {
   return out;
 }
 
+/** Preview-only — never implies executor dispatch. */
+function tagPreviewDryRunOpportunities(opportunities: Opportunity[]): Opportunity[] {
+  return opportunities.map((o) => ({
+    ...o,
+    proposedActions: o.proposedActions.map((a) => ({
+      ...a,
+      metadata: {
+        ...a.metadata,
+        previewExecution: "DRY_RUN" as const,
+      },
+    })),
+  }));
+}
+
+function riskBucketsFromProposedActions(actions: ProposedAction[]): Record<RiskLevel, number> {
+  const b: Record<RiskLevel, number> = { LOW: 0, MEDIUM: 0, HIGH: 0, CRITICAL: 0 };
+  for (const a of actions) {
+    const r = a.risk;
+    if (r === "LOW" || r === "MEDIUM" || r === "HIGH" || r === "CRITICAL") {
+      b[r]++;
+    }
+  }
+  return b;
+}
+
+function buildPreviewExplanationBundle(params: {
+  listingId: string;
+  signals: MarketplaceSignal[];
+  observation: ObservationSnapshot;
+  opportunities: Opportunity[];
+  proposedActions: ProposedAction[];
+  policyDecisions: ListingPreviewResponse["policyDecisions"];
+  levelOverride?: ExplanationLevel;
+}): { explanation: ListingExplanation | null; userSafeReasoningSummary: string | null } {
+  if (!engineFlags.autonomyExplainabilityV1) {
+    return { explanation: null, userSafeReasoningSummary: null };
+  }
+  try {
+    const level: ExplanationLevel =
+      params.levelOverride ??
+      (engineFlags.autonomyExplainabilityDebugV1 === true ? "debug" : "detailed");
+    const explanation = buildListingExplanation({
+      listingId: params.listingId,
+      signals: params.signals,
+      opportunities: params.opportunities,
+      policyDecisions: params.policyDecisions,
+      proposedActions: params.proposedActions,
+      observation: params.observation,
+      level,
+      includeDebugRuleRefs: engineFlags.autonomyExplainabilityDebugV1 === true,
+    });
+    const userSafeReasoningSummary = buildUserSafeListingReasoning(explanation).summary;
+    return { explanation, userSafeReasoningSummary };
+  } catch {
+    return { explanation: null, userSafeReasoningSummary: null };
+  }
+}
+
 export class AutonomousMarketplaceEngine {
   /**
-   * Preview-only: read-only metrics + observation snapshot, then `previewDetectorRegistry`.
-   * - `string` / `{ source: web }` → FSBO path.
-   * - `{ source: "syria" }` → Syria read-adapter path (DRY_RUN only; no execution).
+   * Preview-only: read-only observation + detectors + policy evaluate — never executes.
+   * With `FEATURE_AUTONOMY_PREVIEW_REAL_V1`: full detector registry + full policy rules (still DRY_RUN).
    */
   async previewForListing(listingIdOrInput: string | PreviewListingInput): Promise<ListingPreviewResponse> {
     if (typeof listingIdOrInput === "string") {
@@ -88,10 +157,14 @@ export class AutonomousMarketplaceEngine {
     if (listingIdOrInput.source === "syria") {
       return this.previewForSyriaListing(rawId);
     }
+    if (listingIdOrInput.source === "external") {
+      return this.previewExternalListingPlaceholder(rawId);
+    }
     return this.previewForWebFsboListing(rawId);
   }
 
   private async buildPreviewEvaluations(
+    listingId: string,
     observation: ObservationSnapshot,
     opportunities: Opportunity[],
     autonomyMode: AutonomyMode,
@@ -100,21 +173,33 @@ export class AutonomousMarketplaceEngine {
     policyDecisions: ListingPreviewResponse["policyDecisions"];
     opportunityEvaluations: ListingPreviewOpportunityEvaluation[];
   }> {
-    const proposedActions = opportunities.flatMap((o) => o.proposedActions);
-    const opportunityEvaluations: ListingPreviewOpportunityEvaluation[] = [];
-    const policyDecisions: ListingPreviewResponse["policyDecisions"] = [];
+    const proposedActionsFlat = opportunities.flatMap((o) => o.proposedActions);
+    const policyDecisions = await evaluateListingPreviewPolicy({
+      listingId,
+      observation,
+      opportunities,
+      proposedActions: proposedActionsFlat,
+      autonomyMode,
+    });
+    const filteredFull = filterPreviewActionsByPolicy({
+      proposedActions: proposedActionsFlat,
+      policyDecisions,
+    });
+    const proposedActions = filteredFull.slice(0, 5);
+    const annotatedById = new Map(filteredFull.map((a) => [a.id, a]));
+    const outputIds = new Set(proposedActions.map((a) => a.id));
 
+    let pi = 0;
+    const opportunityEvaluations: ListingPreviewOpportunityEvaluation[] = [];
     for (const opp of opportunities) {
       const actions: ListingPreviewOpportunityEvaluation["actions"] = [];
       for (const action of opp.proposedActions) {
-        const policyCtx = await buildPolicyContext({
-          action,
-          observation,
-          autonomyMode,
-        });
-        const policy = evaluateListingPreviewPolicy(policyCtx);
-        actions.push({ proposedAction: action, policy });
-        policyDecisions.push(policy);
+        const policy = policyDecisions[pi];
+        pi += 1;
+        if (!policy) continue;
+        const ann = annotatedById.get(action.id);
+        if (!ann || !outputIds.has(action.id)) continue;
+        actions.push({ proposedAction: ann, policy });
       }
       opportunityEvaluations.push({
         opportunityId: opp.id,
@@ -131,14 +216,24 @@ export class AutonomousMarketplaceEngine {
     console.info("[autonomous-marketplace] preview run");
     const builtAt = new Date().toISOString();
     const autonomyMode: AutonomyMode = "OFF";
+    const realPreview = engineFlags.autonomyPreviewRealV1 === true;
 
-    const [metrics, observationForDetectors] = await Promise.all([
-      buildListingObservationSnapshot(listingId),
-      buildObservationForListing(listingId),
+    const [{ snapshot: metrics, observation: observationRaw }, quebecCompliancePreview] = await Promise.all([
+      buildUnifiedListingObservation(listingId),
+      (async () => {
+        try {
+          if (!complianceFlags.quebecComplianceV1) return null;
+          const { buildListingQuebecCompliancePreview } = await import(
+            "@/modules/legal/compliance/listing-publish-compliance.service"
+          );
+          return await buildListingQuebecCompliancePreview(listingId);
+        } catch {
+          return null;
+        }
+      })(),
     ]);
 
-    const opportunities = observationForDetectors ? runPreviewDetectors(observationForDetectors) : [];
-
+    const observationForDetectors = observationRaw;
     const observation: ListingPreviewResponse["observation"] = observationForDetectors ?? {
       id: `preview-obs-${listingId}`,
       target: {
@@ -164,7 +259,122 @@ export class AutonomousMarketplaceEngine {
       };
     }
 
-    const ev = await this.buildPreviewEvaluations(observation, opportunities, autonomyMode);
+    const realPipelineV1 = engineFlags.autonomyRealPreviewV1 === true;
+    const previewExplainabilityV1 = engineFlags.autonomyPreviewExplainabilityV1 === true;
+
+    let signals: MarketplaceSignal[] = observation.signals;
+    let opportunities: Opportunity[];
+    let ev: {
+      proposedActions: ProposedAction[];
+      policyDecisions: ListingPreviewResponse["policyDecisions"];
+      opportunityEvaluations: ListingPreviewOpportunityEvaluation[];
+    };
+
+    let previewExplanationPayload: ListingPreviewExplanation | null = null;
+
+    if (realPipelineV1) {
+      const previewSignals = await buildPreviewSignalsForListing(listingId, observation);
+      observation.signals = previewSignals;
+      observation.aggregates = aggregateSignalsForTarget(previewSignals);
+
+      const previewOppsUntagged = buildPreviewOpportunitiesFromSignals(previewSignals, observation);
+      opportunities = tagPreviewDryRunOpportunities(previewOppsUntagged);
+
+      const flatActions = opportunities.flatMap((o) => o.proposedActions);
+      const previewPolicyDecisions = await evaluateListingPreviewPolicy({
+        listingId,
+        observation,
+        opportunities,
+        proposedActions: flatActions,
+        autonomyMode,
+      });
+      const filteredFull = filterPreviewActionsByPolicy({
+        proposedActions: flatActions,
+        policyDecisions: previewPolicyDecisions,
+      });
+      const filteredActions = filteredFull.slice(0, 5);
+      const annotatedById = new Map(filteredFull.map((a) => [a.id, a]));
+      const outputIds = new Set(filteredActions.map((a) => a.id));
+
+      let pi = 0;
+      const opportunityEvaluationsReal: ListingPreviewOpportunityEvaluation[] = [];
+      for (const opp of opportunities) {
+        const actions: ListingPreviewOpportunityEvaluation["actions"] = [];
+        for (const action of opp.proposedActions) {
+          const policy = previewPolicyDecisions[pi];
+          pi += 1;
+          if (!policy) continue;
+          const ann = annotatedById.get(action.id);
+          if (!ann || !outputIds.has(action.id)) continue;
+          actions.push({ proposedAction: ann, policy });
+        }
+        opportunityEvaluationsReal.push({
+          opportunityId: opp.id,
+          detectorId: opp.detectorId,
+          title: opp.title,
+          actions,
+        });
+      }
+
+      ev = {
+        proposedActions: filteredActions,
+        policyDecisions: previewPolicyDecisions,
+        opportunityEvaluations: opportunityEvaluationsReal,
+      };
+
+      signals = previewSignals;
+
+      const legalOverlay =
+        previewExplainabilityV1 && legalHubFlags.legalAiLogicV1 && legalHubFlags.legalRecordImportV1 ?
+          await buildLegalPreviewOverlayForListing(listingId)
+        : { readinessLines: [], ruleImpacts: [] };
+
+      const certificateOfLocationLines = await buildCertificateOfLocationPreviewLines(listingId);
+
+      const quebecComplianceLines: string[] = [];
+      if (quebecCompliancePreview?.appliesToJurisdiction) {
+        quebecComplianceLines.push(
+          `Québec compliance readiness index: ${quebecCompliancePreview.readinessScore}/100 (preview only — no writes).`,
+          quebecCompliancePreview.allowed
+            ? "Required compliance checks for this snapshot are satisfied for publishing eligibility."
+            : "Publishing would be blocked until missing or invalid items are addressed or verified.",
+        );
+        for (const line of quebecCompliancePreview.userSafeReasons.slice(0, 6)) {
+          quebecComplianceLines.push(line);
+        }
+      } else if (quebecCompliancePreview && !quebecCompliancePreview.appliesToJurisdiction) {
+        quebecComplianceLines.push(
+          "Québec publish checklist applies to CA listings in Québec — this preview target is outside that scope.",
+        );
+      }
+
+      previewExplanationPayload =
+        previewExplainabilityV1 ?
+          buildPreviewExplanation({
+            listingId,
+            metrics,
+            observation,
+            signals: previewSignals,
+            opportunities,
+            proposedActions: filteredActions,
+            policyDecisions: previewPolicyDecisions,
+            legalReadinessLines: legalOverlay.readinessLines,
+            legalRuleImpacts: legalOverlay.ruleImpacts,
+            quebecComplianceLines,
+            certificateOfLocationLines,
+          })
+        : emptyListingPreviewExplanation(listingId);
+    } else {
+      const opportunitiesUntagged =
+        observationForDetectors ?
+          runListingPreviewDetectors(observationForDetectors, { fullRegistry: realPreview })
+        : [];
+      opportunities = tagPreviewDryRunOpportunities(opportunitiesUntagged);
+      ev = await this.buildPreviewEvaluations(listingId, observation, opportunities, autonomyMode);
+    }
+
+    const riskBuckets = riskBucketsFromProposedActions(ev.proposedActions);
+    const skippedIds = [...ev.proposedActions].sort((a, b) => a.id.localeCompare(b.id)).map((a) => a.id);
     const regionListingRef =
       engineFlags.regionListingKeyV1 && listingId
         ? buildRegionListingRef(
@@ -176,29 +386,138 @@ export class AutonomousMarketplaceEngine {
           )
         : null;
 
+    const reasoning = buildPreviewExplanationBundle({
+      listingId,
+      signals,
+      observation,
+      opportunities,
+      proposedActions: ev.proposedActions,
+      policyDecisions: ev.policyDecisions,
+    });
+
+    let propertyPublishCompliance: ListingPreviewResponse["propertyPublishCompliance"] = null;
+    let propertyLegalRiskOut: ListingPreviewResponse["propertyLegalRisk"] = null;
+    let legalTrustRanking: ListingPreviewResponse["legalTrustRanking"] = null;
+    if (complianceFlags.quebecListingComplianceV1 === true && complianceFlags.quebecComplianceV1 === true) {
+      try {
+        const { loadQuebecComplianceEvaluatorInput } = await import(
+          "@/modules/legal/compliance/listing-publish-compliance.service",
+        );
+        const { evaluateQuebecListingCompliance, buildPropertyPublishComplianceSummary } = await import(
+          "@/modules/legal/compliance/quebec-listing-compliance-evaluator.service",
+        );
+        const { computePropertyLegalRiskScore } = await import("@/modules/legal/scoring/property-legal-risk-score.service");
+        const { computeLegalTrustRankingImpact } = await import("@/modules/trust-ranking/legal-trust-ranking.service");
+        const { brokerAiFlags } = await import("@/config/feature-flags");
+        const inp = await loadQuebecComplianceEvaluatorInput(listingId);
+        if (inp) {
+          const ce = evaluateQuebecListingCompliance({ evaluatorInput: inp });
+          let certificateSignals:
+            | { readinessPenalty01: number; mismatchCount: number; timelineFlagged?: boolean }
+            | undefined;
+          if (brokerAiFlags.brokerAiCertificateOfLocationV2) {
+            try {
+              const { buildCertificateLocationObservationFacts } = await import(
+                "@/modules/broker-ai/certificate-of-location/certificate-of-location-observation-bridge.service",
+              );
+              const certFacts = await buildCertificateLocationObservationFacts(listingId);
+              if (certFacts) {
+                certificateSignals = {
+                  readinessPenalty01: certFacts.readinessPenalty01,
+                  mismatchCount: certFacts.consistencyMismatchCount,
+                  timelineFlagged: certFacts.timelineFlagged,
+                };
+              }
+            } catch {
+              certificateSignals = undefined;
+            }
+          }
+          const lr = computePropertyLegalRiskScore({
+            listingId,
+            complianceEvaluation: ce,
+            manualReviewCompleted: false,
+            identityVerifiedStrong:
+              inp.listing.verificationIdentityStage === "VERIFIED" ||
+              inp.listing.verificationIdentityStage === "APPROVED",
+            ownershipRecordValidated: (inp.legalRecords ?? []).some(
+              (r) => r.recordType === "proof_of_ownership" && r.status === "validated",
+            ),
+            rejectionCycles: inp.documentRejectionLoop ? 3 : 0,
+            ...(certificateSignals ? { certificateSignals } : {}),
+          });
+          propertyPublishCompliance = buildPropertyPublishComplianceSummary({
+            listingId,
+            evaluation: ce,
+            legalRiskScore: lr.score,
+          });
+          propertyLegalRiskOut = lr;
+          const trustStub: TrustScore = {
+            score: 58,
+            level: "medium",
+            confidence: "low",
+            factors: [],
+          };
+          legalTrustRanking = computeLegalTrustRankingImpact({
+            listingId,
+            trustScore: trustStub,
+            publishSummary: propertyPublishCompliance,
+            prepublishBlocked: !ce.requiredChecklistPassed,
+            isPublishedVisible: false,
+          });
+        }
+      } catch {
+        propertyPublishCompliance = null;
+        propertyLegalRiskOut = null;
+        legalTrustRanking = null;
+      }
+    }
+
     return {
       listingId,
       autonomyMode,
       metrics,
+      signals,
       observation,
       opportunities,
       proposedActions: ev.proposedActions,
       policyDecisions: ev.policyDecisions,
       opportunityEvaluations: ev.opportunityEvaluations,
+      ...(reasoning.explanation !== null ?
+        {
+          explanation: reasoning.explanation,
+          userSafeReasoningSummary: reasoning.userSafeReasoningSummary,
+        }
+      : {}),
+      ...(previewExplanationPayload !== null ? { previewExplanation: previewExplanationPayload } : {}),
+      flags: {
+        realPreviewEnabled: realPipelineV1,
+        explainabilityEnabled:
+          previewExplainabilityV1 || engineFlags.autonomyExplainabilityV1 === true,
+      },
       executionResult: {
         status: "DRY_RUN",
         startedAt: builtAt,
         finishedAt: builtAt,
-        detail: "Preview only — no execution performed.",
-        metadata: { mock: true },
+        detail:
+          realPipelineV1 ? "Real preview simulation — deterministic signals and policies; no execution performed."
+          : realPreview ? "Real-data preview — policy evaluated; no execution performed."
+          : "Preview only — no execution performed.",
+        executedActions: [],
+        skippedActions: skippedIds,
+        reasons: ["preview mode"],
+        metadata: {
+          previewMode: true,
+          autonomyPreviewRealV1: realPreview,
+          autonomyRealPreviewV1: realPipelineV1,
+          mock: metrics === null,
+        },
       },
-      riskBuckets: {
-        LOW: 0,
-        MEDIUM: 0,
-        HIGH: 0,
-        CRITICAL: 0,
-      },
+      riskBuckets,
       ...(regionListingRef !== null ? { regionListingRef } : {}),
+      quebecCompliancePreview,
+      ...(propertyPublishCompliance !== null ? { propertyPublishCompliance } : {}),
+      ...(propertyLegalRiskOut !== null ? { propertyLegalRisk: propertyLegalRiskOut } : {}),
+      ...(legalTrustRanking !== null ? { legalTrustRanking } : {}),
     };
   }
 
@@ -233,8 +552,13 @@ export class AutonomousMarketplaceEngine {
     const snap = await buildSyriaListingObservationSnapshot(listingId);
     previewNotes.push(...snap.availabilityNotes);
 
+    const realPreview = engineFlags.autonomyPreviewRealV1 === true;
     const observationForDetectors = snap.observation;
-    const opportunities = observationForDetectors ? runPreviewDetectors(observationForDetectors) : [];
+    const opportunitiesUntagged =
+      observationForDetectors ?
+        runListingPreviewDetectors(observationForDetectors, { fullRegistry: realPreview })
+      : [];
+    const opportunities = tagPreviewDryRunOpportunities(opportunitiesUntagged);
 
     const observation: ListingPreviewResponse["observation"] =
       observationForDetectors ??
@@ -255,14 +579,31 @@ export class AutonomousMarketplaceEngine {
     const syriaSignals = buildSyriaSignals(observation);
     const syriaOpportunities = buildSyriaOpportunities(syriaSignals);
     const syriaSignalExplainability = explainSyriaSignals(syriaSignals);
-    const syriaPolicyPreview = evaluateSyriaPreviewPolicyFromSignals(syriaSignals);
+    const syriaPolicyPreview = evaluateSyriaPreviewPolicyFromSignals(syriaSignals, observation);
+    const syriaApprovalBoundary = evaluateSyriaApprovalBoundary({ policy: syriaPolicyPreview });
+
+    const factRecord =
+      observation.facts && typeof observation.facts === "object" ?
+        (observation.facts as Record<string, unknown>)
+      : {};
+    const reviewType = resolveSyriaGovernanceReviewType({
+      policy: syriaPolicyPreview,
+      facts: factRecord,
+      signals: syriaSignals,
+    });
+    const syriaPolicyDecision = {
+      decision: syriaPolicyPreview.decision,
+      rationale: syriaPolicyPreview.rationale,
+      reviewType,
+    };
 
     previewNotes.length = 0;
     previewNotes.push(
       ...buildSyriaPreviewNoteLines([...capabilityNotes, ...snap.availabilityNotes], syriaSignals, syriaPolicyPreview),
     );
 
-    const ev = await this.buildPreviewEvaluations(observation, opportunities, autonomyMode);
+    const ev = await this.buildPreviewEvaluations(listingId, observation, opportunities, autonomyMode);
+    const skippedIds = [...ev.proposedActions].sort((a, b) => a.id.localeCompare(b.id)).map((a) => a.id);
 
     const riskBuckets = {
       LOW: syriaSignals.filter((s) => s.severity === "info").length,
@@ -270,6 +611,26 @@ export class AutonomousMarketplaceEngine {
       HIGH: syriaSignals.filter((s) => s.severity === "warning").length,
       CRITICAL: syriaSignals.filter((s) => s.severity === "critical").length,
     };
+
+    const syriaStructuredExplain = buildSyriaPreviewStructuredExplainability({
+      policy: syriaPolicyPreview,
+      boundary: syriaApprovalBoundary,
+      signalCounts: {
+        critical: riskBuckets.CRITICAL,
+        warning: riskBuckets.HIGH,
+        info: riskBuckets.LOW,
+      },
+    });
+
+    const hasPayoutSignal = syriaSignals.some((s) => s.type === "payout_anomaly");
+    const syriaGovernanceExplainability = buildSyriaGovernanceExplainabilityLines({
+      policyDecision: syriaPolicyPreview.decision,
+      reviewType,
+      boundary: syriaApprovalBoundary,
+      facts: factRecord,
+      hasPayoutSignal,
+    });
+    const syriaPreviewNotes = [...previewNotes] as readonly string[];
 
     const regionListingRef =
       engineFlags.regionListingKeyV1 && listingId
@@ -286,26 +647,64 @@ export class AutonomousMarketplaceEngine {
       summary: `${syriaPolicyPreview.rationale} Syria region preview (read-only). FSBO detectors stay separate; Syria opportunities reflect Syria signals only. Execution is unavailable for this region in this phase.`,
       notes: [
         ...previewNotes,
+        ...syriaStructuredExplain.bullets,
         ...syriaSignalExplainability,
         ...(observation.facts?.detectorsFsboOnlyNote ? [String(observation.facts.detectorsFsboOnlyNote)] : []),
       ] as readonly string[],
     };
 
+    const reasoning = buildPreviewExplanationBundle({
+      listingId,
+      signals: observation.signals,
+      observation,
+      opportunities,
+      proposedActions: ev.proposedActions,
+      policyDecisions: ev.policyDecisions,
+    });
+
+    const previewExplanationPayload: ListingPreviewExplanation | undefined =
+      engineFlags.autonomyPreviewExplainabilityV1 === true ?
+        buildPreviewExplanation({
+          listingId,
+          metrics: snap.metrics,
+          observation,
+          signals: observation.signals,
+          opportunities,
+          proposedActions: ev.proposedActions,
+          policyDecisions: ev.policyDecisions,
+          syriaStructuredLines: syriaStructuredExplain.structuredLines,
+          syriaExplainabilityBullets: syriaStructuredExplain.bullets,
+        })
+      : undefined;
+
     return {
       listingId,
       autonomyMode,
       metrics: snap.metrics,
+      signals: observation.signals,
       observation,
       opportunities,
       proposedActions: ev.proposedActions,
       policyDecisions: ev.policyDecisions,
       opportunityEvaluations: ev.opportunityEvaluations,
+      ...(reasoning.explanation !== null ?
+        {
+          explanation: reasoning.explanation,
+          userSafeReasoningSummary: reasoning.userSafeReasoningSummary,
+        }
+      : {}),
+      ...(previewExplanationPayload !== undefined ? { previewExplanation: previewExplanationPayload } : {}),
       executionResult: {
         status: "DRY_RUN",
         startedAt: builtAt,
         finishedAt: builtAt,
         detail: "Syria preview — DRY_RUN only. No execution or governance path.",
+        executedActions: [],
+        skippedActions: skippedIds,
+        reasons: ["preview mode"],
         metadata: {
+          previewMode: true,
+          autonomyPreviewRealV1: realPreview,
           mock: snap.metrics === null,
           syriaPreview: true,
           execution_unavailable_for_syria_region: true,
@@ -317,10 +716,52 @@ export class AutonomousMarketplaceEngine {
       capabilityNotes,
       executionUnavailableForSyria: true,
       explainability,
+      syriaPolicyDecision,
+      syriaPreviewNotes,
+      syriaGovernanceExplainability,
       syriaSignals,
       syriaOpportunities,
       syriaSignalExplainability,
       syriaPolicyPreview,
+      syriaApprovalBoundary,
+    };
+  }
+
+  /** Explicit external source — no cross-region resolver in apps/web (read-only stub). */
+  private previewExternalListingPlaceholder(listingId: string): ListingPreviewResponse {
+    const builtAt = new Date().toISOString();
+    const observation: ObservationSnapshot = {
+      id: `preview-external-${listingId || "none"}-${builtAt}`,
+      target: { type: "fsbo_listing", id: listingId || null, label: undefined },
+      signals: [],
+      aggregates: {},
+      facts: { preview: true, externalPreview: true, appsWebScopeOnly: true },
+      builtAt,
+    };
+    return {
+      listingId,
+      autonomyMode: "OFF",
+      metrics: null,
+      signals: [],
+      observation,
+      opportunities: [],
+      proposedActions: [],
+      policyDecisions: [],
+      opportunityEvaluations: [],
+      executionResult: {
+        status: "DRY_RUN",
+        startedAt: builtAt,
+        finishedAt: builtAt,
+        detail:
+          "External listing preview is not executed in apps/web — use explicit web (FSBO) or Syria sources for real snapshots.",
+        executedActions: [],
+        skippedActions: [],
+        reasons: ["preview mode"],
+        metadata: { previewMode: true, externalPreview: true },
+      },
+      riskBuckets: { LOW: 0, MEDIUM: 0, HIGH: 0, CRITICAL: 0 },
+      previewNotes: ["external_listing_preview_not_configured_in_web_app"],
+      capabilityNotes: [],
     };
   }
 
@@ -343,6 +784,7 @@ export class AutonomousMarketplaceEngine {
       listingId,
       autonomyMode: "OFF",
       metrics: null,
+      signals: [],
       observation,
       opportunities: [],
       proposedActions: [],
@@ -353,7 +795,14 @@ export class AutonomousMarketplaceEngine {
         startedAt: builtAt,
         finishedAt: builtAt,
         detail: summary,
-        metadata: { syriaPreview: true, execution_unavailable_for_syria_region: true },
+        executedActions: [],
+        skippedActions: [],
+        reasons: ["preview mode"],
+        metadata: {
+          previewMode: true,
+          syriaPreview: true,
+          execution_unavailable_for_syria_region: true,
+        },
       },
       riskBuckets: { LOW: 0, MEDIUM: 0, HIGH: 0, CRITICAL: 0 },
       previewNotes,
@@ -443,12 +892,22 @@ export class AutonomousMarketplaceEngine {
     const warnings: string[] = [];
     const errors: string[] = [];
 
+    const regionCode =
+      typeof observation.facts?.platformRegionCode === "string"
+        ? String(observation.facts.platformRegionCode)
+        : observation.target.type === "syria_listing"
+          ? SYRIA_REGION_CODE
+          : DEFAULT_PLATFORM_REGION_CODE;
+
+    const listingSource = observation.target.type === "syria_listing" ? "syria" : undefined;
+
     for (const proposed of proposedActions) {
       try {
         const policyCtx = await buildPolicyContext({
           action: proposed,
           observation,
           autonomyMode: mode,
+          createdByUserId: opts.createdByUserId ?? null,
         });
         const policy = evaluateActionPolicy(policyCtx);
         const governance = resolveGovernance({
@@ -464,100 +923,19 @@ export class AutonomousMarketplaceEngine {
         let execution: ExecutionResult;
 
         if (engineFlags.controlledExecutionV1) {
-          await recordExecutionAttempt({
-            runId,
-            actionId: proposed.id,
-            actionType: proposed.type,
-            actorUserId: opts.createdByUserId ?? null,
-          });
-
-          const gate = evaluateSafeExecutionGate({
-            policy,
-            governance,
-            compliance: { blocked: false },
-            legalRisk: { score: 0 },
-            trust: { tags: [] },
-            runDryRun: dryRun,
-            actionTypeEnabledInConfig: autonomyConfig.actionExecutionAllowed[proposed.type] === true,
-          });
-
-          await recordExecutionDecision({
-            runId,
-            actionId: proposed.id,
-            dispositionSummary: `${policy.disposition}/${governance.disposition}`,
-            gateAllowed: gate.allowed,
-            actorUserId: opts.createdByUserId ?? null,
-          });
-
-          if (gate.requiresApproval && engineFlags.autonomyApprovalsV1) {
-            const appr = await requestActionApproval({
+          const step = await runControlledExecutionStep(
+            {
               runId,
-              proposed,
-              policy,
-              governance,
-              requestedByUserId: opts.createdByUserId ?? null,
-            });
-            const now = new Date().toISOString();
-            if (appr.ok) {
-              execution = {
-                status: "REQUIRES_APPROVAL",
-                startedAt: now,
-                finishedAt: now,
-                detail: "Pending human approval",
-                metadata: {
-                  approvalRequestId: appr.id,
-                },
-              };
-            } else {
-              execution = await dispatchExecution(proposed, { dryRun: true, allowExecute: false });
-              execution = {
-                ...execution,
-                metadata: {
-                  ...execution.metadata,
-                  approvalEnqueueFailed: appr.error,
-                },
-              };
-            }
-          } else if (gate.requiresApproval && !engineFlags.autonomyApprovalsV1) {
-            execution = await dispatchExecution(proposed, { dryRun: true, allowExecute: false });
-          } else if (gate.allowed) {
-            const app = await applyControlledAction({ proposed, gate });
-            execution =
-              app.executionResult ??
-              ({
-                status: "FAILED",
-                startedAt: new Date().toISOString(),
-                finishedAt: new Date().toISOString(),
-                detail: app.errorMessage ?? "applyControlledAction returned no execution",
-                metadata: {},
-              } satisfies ExecutionResult);
-            if (
-              engineFlags.autopilotHardeningV1 &&
-              app.executionResult &&
-              app.executionResult.status === "EXECUTED"
-            ) {
-              const v = verifyActionOutcome({ proposed, execution: app.executionResult });
-              if (!v.verified && v.reversible) {
-                await rollbackControlledAction({
-                  runId,
-                  proposed,
-                  execution: app.executionResult,
-                  actorUserId: opts.createdByUserId ?? null,
-                });
-              }
-            }
-          } else {
-            execution = await dispatchExecution(proposed, { dryRun: true, allowExecute: false });
-          }
+              dryRun,
+              createdByUserId: opts.createdByUserId ?? null,
+              regionCode,
+              listingSource,
+            },
+            { proposed, policy, governance },
+          );
+          execution = step.execution;
 
-          await recordExecutionOutcome({
-            runId,
-            actionId: proposed.id,
-            executionStatus: execution.status,
-            actorUserId: opts.createdByUserId ?? null,
-          });
-
-          if (!gate.allowed && governance.disposition !== "DRY_RUN") {
+          if (!step.gate.allowed && governance.disposition !== "DRY_RUN") {
             govSkipped++;
           }
         } else {
@@ -576,6 +954,18 @@ export class AutonomousMarketplaceEngine {
         if (execution.status === "DRY_RUN") dryRuns++;
         if (execution.status === "EXECUTED") executed++;
         if (execution.status === "FAILED") execFailures++;
+
+        try {
+          await recordAutonomousMarketplaceGovernanceTimeline({
+            proposed,
+            policy,
+            governance,
+            execution,
+            actorUserId: opts.createdByUserId ?? null,
+          });
+        } catch {
+          /* timeline must not break engine */
+        }
 
         traces.push({
           proposed,

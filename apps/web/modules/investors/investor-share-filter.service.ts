@@ -1,12 +1,15 @@
 /**
  * Strip internal-only language from investor dashboard payloads — public share must never echo admin/debug lines.
+ *
+ * Contract: aggressive filtering; preserve honest uncertainty (missing data, low confidence) in investor-safe wording.
+ * Never pass through raw IDs, operator notes, routing/tooling internals, or fabricated metrics.
  */
 
 import type { InvestorDashboard, InvestorMetric, InvestorNarrative, InvestorSection } from "@/modules/investors/investor-dashboard.types";
 import type { InvestorShareVisibility } from "@/modules/investors/investor-share.types";
 
 const INTERNAL_PATTERNS =
-  /\b(Growth Machine|execution planner|FEATURE_|operator telemetry|internal tool|admin panel|sparse.*telemetry|broker-tier rows|CRM rows unlocked|idempotency|\/api\/|prisma|postgres)/i;
+  /\b(Growth Machine|execution planner|execution assignments?|FEATURE_|operator telemetry|internal tool|admin panel|sparse.*telemetry|broker-tier rows|CRM rows unlocked|idempotency|\/api\/|prisma|postgres|\b(?:lead|broker|user)\s*id\b|team assignment|internal routing|debug\s*metadata)/i;
 
 /** UUID / CUID-style ids — never echo on public share surface. */
 const UUID_RE = /\b[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b/gi;
@@ -16,6 +19,8 @@ const CUID_LIKE_RE = /\bc[a-z0-9]{24}\b/gi;
 export function scrubInvestorShareText(s: string): string {
   let t = s.replace(UUID_RE, "").replace(CUID_LIKE_RE, "");
   t = t.replace(/\b(clx|cus|txn)_[a-z0-9_]{6,}\b/gi, "");
+  /** Accidental PII — never echo on public share. */
+  t = t.replace(/\b[^\s@]{1,80}@[^\s@]{1,80}\.[^\s]{2,24}\b/g, "");
   t = t.replace(/\s{2,}/g, " ").trim();
   return t;
 }

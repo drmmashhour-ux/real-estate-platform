@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { getGuestId } from "@/lib/auth/session";
 import { getHostPricingOverview } from "@/lib/host/getHostPricingOverview";
+import { prisma } from "@/lib/db";
+import { HostBnhubPricingSuggestionsPanel } from "@/components/host/HostBnhubPricingSuggestionsPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -12,14 +14,84 @@ export default async function HostSmartPricingPage() {
 
   const overview = await getHostPricingOverview(hostId);
 
+  const [dailySuggestions, executionLogs, listingModes] = await Promise.all([
+    prisma.bnhubPricingSuggestion.findMany({
+      where: { listing: { ownerId: hostId } },
+      orderBy: { date: "asc" },
+      take: 120,
+      include: { listing: { select: { title: true, currency: true } } },
+    }),
+    prisma.bnhubPricingExecutionLog.findMany({
+      where: { listing: { ownerId: hostId } },
+      orderBy: { createdAt: "desc" },
+      take: 40,
+      include: { listing: { select: { title: true } } },
+    }),
+    prisma.shortTermListing.findMany({
+      where: { ownerId: hostId },
+      select: {
+        id: true,
+        title: true,
+        pricingMode: true,
+        autoApplyMaxChange: true,
+        pricingSuggestionsEnabled: true,
+      },
+    }),
+  ]);
+
+  const serializedSuggestions = dailySuggestions.map((s) => ({
+    id: s.id,
+    date: s.date.toISOString().slice(0, 10),
+    listingTitle: s.listing.title,
+    currency: s.listing.currency ?? "USD",
+    suggested: s.suggested,
+    basePrice: s.basePrice,
+    demandScore: s.demandScore,
+    reason: s.reason,
+    status: s.status,
+    appliedAt: s.appliedAt?.toISOString() ?? null,
+  }));
+
   return (
     <div className="space-y-10">
       <div>
         <h1 className="text-2xl font-bold text-white">Smart pricing</h1>
         <p className="mt-1 text-sm text-zinc-500">
-          Suggested by AI — review before applying. Uses demand, occupancy, and your autopilot guardrails.
+          Rule-based nightly suggestions — approve or reject, then Apply to publish the new nightly rate
+          (<code className="font-mono text-zinc-400">nightPriceCents</code>). Auto modes only act within your safety
+          bounds; every apply is logged.
         </p>
       </div>
+
+      {listingModes.length > 0 ? (
+        <section className="rounded-2xl border border-zinc-800 bg-[#111] p-4">
+          <h2 className="text-sm font-semibold text-white">Listing pricing modes</h2>
+          <ul className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {listingModes.map((l) => (
+              <li key={l.id} className="rounded-xl border border-zinc-800/80 bg-black/40 px-3 py-2 text-xs">
+                <p className="font-medium text-white">{l.title}</p>
+                <p className="mt-1 text-zinc-500">
+                  Mode: <span className="text-zinc-300">{l.pricingMode}</span>
+                  {l.autoApplyMaxChange != null ? (
+                    <>
+                      {" "}
+                      · max Δ{" "}
+                      <span className="text-zinc-300">{(l.autoApplyMaxChange * 100).toFixed(0)}%</span>
+                    </>
+                  ) : null}
+                  {!l.pricingSuggestionsEnabled ? (
+                    <span className="mt-1 block text-amber-600/90">Suggestions disabled for this listing</span>
+                  ) : null}
+                </p>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-3 text-xs text-zinc-600">
+            OFF / MANUAL → suggestions stay pending until you approve. AUTO_APPROVE_SAFE → rows auto-approve when within
+            max Δ; FULL_AUTOPILOT → rows pre-approved (safe cron still applies **tonight only** once per run).
+          </p>
+        </section>
+      ) : null}
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-2xl border border-zinc-800 bg-[#111] p-5">
@@ -39,6 +111,65 @@ export default async function HostSmartPricingPage() {
         <div className="rounded-2xl border border-zinc-800 bg-[#111] p-5">
           <p className="text-xs uppercase text-zinc-500">Avg demand score</p>
           <p className="mt-2 text-2xl font-bold text-white">{(overview.demandScoreAvg * 100).toFixed(0)}%</p>
+        </div>
+      </section>
+
+      <section className="overflow-hidden rounded-2xl border border-zinc-800 bg-[#111]">
+        <div className="border-b border-zinc-800 px-4 py-3">
+          <h2 className="text-lg font-semibold text-white">Next 30 nights — suggestions & approvals</h2>
+          <p className="mt-1 text-xs text-zinc-500">
+            Batch refresh: <code className="font-mono text-zinc-400">GET /api/pricing/generate</code> +{" "}
+            <code className="font-mono text-zinc-400">Authorization: Bearer CRON_SECRET</code>. Approve → Apply writes to
+            the audit log below.
+          </p>
+        </div>
+        <HostBnhubPricingSuggestionsPanel rows={serializedSuggestions} />
+      </section>
+
+      <section className="overflow-hidden rounded-2xl border border-zinc-800 bg-[#111]">
+        <div className="border-b border-zinc-800 px-4 py-3">
+          <h2 className="text-lg font-semibold text-white">Execution log (append-only)</h2>
+          <p className="text-xs text-zinc-500">Every apply attempt is recorded — success, skipped, or rejected.</p>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-left text-sm">
+            <thead className="border-b border-zinc-800 bg-black/40 text-xs uppercase text-zinc-500">
+              <tr>
+                <th className="px-4 py-3">When</th>
+                <th className="px-4 py-3">Listing</th>
+                <th className="px-4 py-3">Date</th>
+                <th className="px-4 py-3">Old → New</th>
+                <th className="px-4 py-3">Mode</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3">Reason</th>
+              </tr>
+            </thead>
+            <tbody>
+              {executionLogs.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-4 py-8 text-center text-zinc-500">
+                    No execution events yet.
+                  </td>
+                </tr>
+              ) : (
+                executionLogs.map((log) => (
+                  <tr key={log.id} className="border-b border-zinc-800/80">
+                    <td className="whitespace-nowrap px-4 py-3 text-zinc-400">
+                      {log.createdAt.toISOString().slice(0, 19)} UTC
+                    </td>
+                    <td className="px-4 py-3 text-white">{log.listing.title}</td>
+                    <td className="px-4 py-3 text-zinc-400">{log.date.toISOString().slice(0, 10)}</td>
+                    <td className="px-4 py-3 text-zinc-300">
+                      ${log.oldPrice.toFixed(2)} → ${log.newPrice.toFixed(2)}
+                    </td>
+                    <td className="px-4 py-3 text-zinc-500">{log.mode}</td>
+                    <td className="px-4 py-3 text-zinc-400">{log.status}</td>
+                    <td className="max-w-lg px-4 py-3 text-xs text-zinc-500">{log.reason ?? "—"}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
       </section>
 

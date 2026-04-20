@@ -11,6 +11,7 @@ export default defineConfig({
       "modules/**/*.test.ts",
       "src/modules/**/*.test.ts",
       "components/**/*.test.ts",
+      "components/**/*.test.tsx",
       "tests/**/*.test.ts",
       "services/**/*.test.ts",
     ],

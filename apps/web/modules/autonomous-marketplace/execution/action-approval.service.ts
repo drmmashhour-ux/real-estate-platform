@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { engineFlags } from "@/config/feature-flags";
 import type { GovernanceResolution, PolicyDecision } from "../types/domain.types";
 import type { ProposedAction } from "../types/domain.types";
+import { recordExecutionApproval } from "./execution-audit.service";
 
 export type RequestActionApprovalParams = {
   runId: string;
@@ -67,6 +68,13 @@ export async function approvePendingAction(params: ResolveApprovalParams): Promi
         resolvedAt: new Date(),
       },
     });
+    await recordExecutionApproval({
+      runId: row.runId,
+      actionId: row.proposedActionId,
+      approvalId: params.approvalId,
+      resolution: "approved",
+      actorUserId: params.actorUserId,
+    });
     return { ok: true, status: "approved" };
   } catch {
     return { ok: false };
@@ -90,6 +98,13 @@ export async function rejectPendingAction(params: ResolveApprovalParams & { reas
         resolvedAt: new Date(),
         rejectionReason: params.reason,
       },
+    });
+    await recordExecutionApproval({
+      runId: row.runId,
+      actionId: row.proposedActionId,
+      approvalId: params.approvalId,
+      resolution: "rejected",
+      actorUserId: params.actorUserId,
     });
     return { ok: true, status: "rejected" };
   } catch {

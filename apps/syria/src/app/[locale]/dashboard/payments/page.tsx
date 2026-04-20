@@ -1,10 +1,12 @@
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/db";
 import { requireSessionUser } from "@/lib/auth";
 import { money } from "@/lib/format";
+import { pickListingTitle } from "@/lib/listing-localized";
 
 export default async function DashboardPaymentsPage() {
   const t = await getTranslations("Dashboard");
+  const locale = await getLocale();
   const user = await requireSessionUser();
 
   const payments = await prisma.syriaListingPayment.findMany({
@@ -36,7 +38,7 @@ export default async function DashboardPaymentsPage() {
             <tbody>
               {payments.map((p) => (
                 <tr key={p.id} className="border-t border-stone-100">
-                  <td className="px-4 py-3 font-medium text-stone-900">{p.property.title}</td>
+                  <td className="px-4 py-3 font-medium text-stone-900">{pickListingTitle(p.property, locale)}</td>
                   <td className="px-4 py-3 text-stone-700">{p.purpose}</td>
                   <td className="px-4 py-3">{money(p.amount, p.currency)}</td>
                   <td className="px-4 py-3 text-stone-700">{p.status}</td>

@@ -16,6 +16,36 @@ Consumer marketplace for Syria under the **Darlink / دارلينك** product id
 - Prisma 6 with **custom client output** `src/generated/prisma` (does not replace `@lecipm/web`’s Prisma client)
 - PostgreSQL via `DATABASE_URL` — tables are prefixed/mapped as `syria_*`
 
+## i18n (Arabic-first, English optional)
+
+- **Default locale:** Arabic (`ar`). Routes use next-intl with **locale prefix** `/ar/...` and `/en/...`.
+- **English (`en`):** UI copy loads from `messages/en.json`; listing **English title/description are optional**. When missing, the UI falls back to Arabic fields (`titleAr`, `descriptionAr`) — Arabic is never substituted by English for authoring rules.
+- **RTL:** `<html lang dir>` plus `[dir="rtl"]` utilities in `src/app/globals.css`; body gets `darlink-root-rtl` / `darlink-root-ltr`.
+- **Locale toggle:** `LocaleToggle` switches locale while staying on the current path (next-intl router).
+- **Server helpers:** `src/lib/i18n/helpers.ts` (`getLocalizedValue`, `normalizeSyriaLocale`), `locale-resolver.ts` supports `?lang=` / `?locale=` query (used by server utilities; primary UX is path prefix).
+- **Types:** `SyriaLocale`, `LocalizedText`, `SYRIA_I18N_CONFIG` in `src/lib/i18n/types.ts` / `config.ts`.
+
+## Bilingual property fields (Prisma)
+
+`SyriaProperty` stores:
+
+- Required: `titleAr`, `descriptionAr`; optional: `titleEn`, `descriptionEn` (existing).
+- Location display: optional `cityAr`, `cityEn`, `districtAr`, `districtEn`; legacy **`city`** remains the canonical English catalog key for search; **`area`** remains legacy district/area storage.
+
+Apply migration (non-destructive):
+
+```bash
+pnpm --filter @lecipm/syria exec prisma migrate deploy
+# or during dev:
+pnpm --filter @lecipm/syria prisma:push
+```
+
+Then re-seed sample rows if needed:
+
+```bash
+pnpm --filter @lecipm/syria db:seed
+```
+
 ## Setup
 
 From repository root:

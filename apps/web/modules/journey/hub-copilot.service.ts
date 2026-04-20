@@ -1,12 +1,24 @@
-import { bumpJourneyMetric } from "./hub-journey-monitoring.service";
+import { bumpJourneyMetric, logJourneyStructuredKind } from "./hub-journey-monitoring.service";
 import { buildHubJourneyPlan } from "./hub-journey-state.service";
 import type {
   HubCopilotState,
   HubCopilotSuggestion,
   HubJourneyContext,
   HubJourneyPlan,
+  HubJourneySignalConfidence,
   HubKey,
 } from "./hub-journey.types";
+
+function softenCopilotExplanation(confidence: JourneyConfidence | undefined, explanation: string): string {
+  if (confidence !== "low") return explanation;
+  return `${explanation} Limited signals in this session — confirm details in the product before acting.`;
+}
+
+function softenSuggestedAction(confidence: JourneyConfidence | undefined, action: string): string {
+  if (confidence !== "low") return action;
+  if (/^(consider|you might|optional)/i.test(action.trim())) return action;
+  return `Consider: ${action.charAt(0).toLowerCase()}${action.slice(1)}`;
+}
 
 function suggestion(
   hub: HubKey,
@@ -175,12 +187,33 @@ export function buildHubCopilotState(
   }
 
   const capped = suggestions.slice(0, 3);
+  const confidence = plan.confidence;
+  const softened = capped.map((s) => ({
+    ...s,
+    explanation: softenCopilotExplanation(confidence, s.explanation),
+    suggestedAction: softenSuggestedAction(confidence, s.suggestedAction),
+  }));
+
+  try {
+    if (softened.length > 0) {
+      logJourneyStructuredKind("copilot_suggestions_generated", {
+        hub,
+        confidence,
+        suggestionCount: softened.length,
+        suggestionIds: softened.map((s) => s.id),
+      });
+    }
+  } catch {
+    /* noop */
+  }
+
   return {
     hub,
     currentStepTitle: current?.title,
     nextStepTitle: next?.title,
-    suggestions: capped,
+    suggestions: softened,
     blockers,
+    confidence,
     createdAt,
   };
 }

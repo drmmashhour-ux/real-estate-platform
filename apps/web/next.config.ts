@@ -27,7 +27,7 @@ const forceNoStoreDocumentCache = [
 const nextConfig: NextConfig = {
   /** Next.js 16 defaults to Turbopack; `next-pwa` injects webpack config — empty Turbopack block opts in explicitly. */
   turbopack: {},
-  transpilePackages: ["@lecipm/ui", "@lecipm/api-client"],
+  transpilePackages: ["@lecipm/ui", "@lecipm/api-client", "@lecipm/platform-core"],
   reactStrictMode: true,
   images: {
     remotePatterns: [{ protocol: "https", hostname: "images.unsplash.com", pathname: "/**" }],

@@ -2,6 +2,13 @@ import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
 import { getApprovedHost, hasAcceptedHostAgreement } from "@/lib/bnhub/host";
 import { prisma } from "@/lib/db";
+import { legalRiskAlertMessage } from "@/modules/legal/engine/legal-engine.service";
+import { buildLegalRiskInputFromBnhubCreate } from "@/modules/legal/engine/legal-risk-input";
+import {
+  evaluateLegalCompliance,
+  persistLegalComplianceArtifacts,
+  syncPropertyAndSellerProfiles,
+} from "@/modules/legal/legal-orchestration.service";
 
 export async function GET(request: NextRequest) {
   const userId = await getGuestId();
@@ -82,7 +89,43 @@ export async function POST(request: NextRequest) {
         images: Array.isArray(images) ? images : [],
       },
     });
-    return Response.json(listing, { status: 201 });
+    const base = buildLegalRiskInputFromBnhubCreate({
+      title: String(title),
+      description: description ?? null,
+      price: Number(price),
+      location: String(location),
+    });
+    const legalCompliance = evaluateLegalCompliance({
+      ...base,
+      sellerFraud: {
+        listingDescription: `${String(title)}\n${(description ?? "").trim()}`,
+        sellerDeclarationJson: null,
+      },
+    });
+    await syncPropertyAndSellerProfiles(legalCompliance, {
+      listingScope: "BNHUB",
+      listingId: listing.id,
+      sellerUserId: userId,
+      persistAlerts: true,
+      actorUserId: userId,
+    });
+    await persistLegalComplianceArtifacts(legalCompliance, {
+      listingScope: "BNHUB",
+      listingId: listing.id,
+      sellerUserId: userId,
+      persistAlerts: true,
+      actorUserId: userId,
+    });
+
+    return Response.json(
+      {
+        ...listing,
+        legalRisk: legalCompliance.engine,
+        legalRiskAlert: legalRiskAlertMessage(legalCompliance.engine),
+        legalCompliance,
+      },
+      { status: 201 },
+    );
   } catch (e) {
     console.error("POST /api/bnhub/host/listings:", e);
     return Response.json(

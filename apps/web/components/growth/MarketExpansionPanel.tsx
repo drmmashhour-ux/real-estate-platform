@@ -2,8 +2,13 @@
 
 import * as React from "react";
 import type { MarketExpansionRecommendation } from "@/modules/growth/market-expansion.types";
+import { presetAndScrollToActionSimulation } from "./growth-action-simulation-preset";
 
-export function MarketExpansionPanel() {
+export function MarketExpansionPanel({
+  simulateOutcomeEnabled = false,
+}: {
+  simulateOutcomeEnabled?: boolean;
+}) {
   const [data, setData] = React.useState<MarketExpansionRecommendation | null | "err" | "loading">("loading");
   const [disclaimer, setDisclaimer] = React.useState("");
 
@@ -52,6 +57,24 @@ export function MarketExpansionPanel() {
         <p className="text-xs font-semibold uppercase tracking-[0.15em] text-emerald-300/90">Expansion</p>
         <h3 className="mt-1 text-lg font-semibold text-zinc-100">Market expansion (internal)</h3>
         <p className="mt-1 max-w-3xl text-[11px] text-zinc-500">{disclaimer}</p>
+        {simulateOutcomeEnabled ? (
+          <button
+            type="button"
+            className="mt-2 text-[11px] text-emerald-400/90 hover:underline"
+            onClick={() =>
+              presetAndScrollToActionSimulation({
+                title: `Expansion focus (${data.referenceCity ?? "reference market"})`,
+                category: "city_domination",
+                targetCity: data.referenceCity ?? undefined,
+                rationale: "Opened from market expansion — directional effects only.",
+                windowDays: 30,
+                intensity: "medium",
+              })
+            }
+          >
+            Simulate outcome →
+          </button>
+        ) : null}
       </div>
 
       <p className="mt-3 text-sm text-zinc-400">

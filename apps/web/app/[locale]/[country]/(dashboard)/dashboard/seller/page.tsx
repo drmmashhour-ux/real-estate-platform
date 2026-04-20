@@ -9,6 +9,8 @@ import { safeEvaluateDecision } from "@/modules/ai/decision-engine";
 import { ListingAiScoresCard } from "@/components/seller/ListingAiScoresCard";
 import { SellerDashboardTrustOverview } from "@/components/seller/SellerDashboardTrustOverview";
 import { HubJourneyBanner } from "@/components/journey/HubJourneyBanner";
+import { legalHubFlags } from "@/config/feature-flags";
+import { LegalHubEntryCard } from "@/components/legal/LegalHubEntryCard";
 
 export const dynamic = "force-dynamic";
 
@@ -159,6 +161,9 @@ export default async function SellerHubDashboardPage({
     <main className="dashboard-shell">
       <div className="mx-auto max-w-6xl space-y-10">
         <HubJourneyBanner hub="seller" locale={locale} country={country} userId={userId} />
+        {legalHubFlags.legalHubV1 ? (
+          <LegalHubEntryCard href={`/${locale}/${country}/legal`} locale={locale} country={country} />
+        ) : null}
         <SellerDashboardTrustOverview
           firstName={firstName}
           stats={{

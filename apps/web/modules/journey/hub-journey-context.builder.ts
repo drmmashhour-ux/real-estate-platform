@@ -93,6 +93,15 @@ export async function buildHubJourneyContextFromDb(
         const inquiryCount = await prisma.fsboLead.count({
           where: { fsboListing: { ownerId: uid } },
         });
+        let sellerCertificateLocationSatisfied = true;
+        try {
+          const { sellerCertificateLocationJourneySatisfied } = await import(
+            "@/modules/broker-ai/certificate-of-location/certificate-of-location-journey.service",
+          );
+          sellerCertificateLocationSatisfied = await sellerCertificateLocationJourneySatisfied(uid);
+        } catch {
+          sellerCertificateLocationSatisfied = true;
+        }
         return {
           ...base,
           sellerListingStarted: listings.length > 0,
@@ -102,6 +111,7 @@ export async function buildHubJourneyContextFromDb(
           sellerPublished: active > 0,
           sellerInquiryCount: inquiryCount,
           sellerDealStage: listings.some((l) => l.status === "PENDING_VERIFICATION" || l.status === "ACTIVE"),
+          sellerCertificateLocationSatisfied,
         };
       }
       case "rent": {
@@ -226,6 +236,15 @@ export async function buildHubJourneyContextFromDb(
           where: { id: uid },
           select: { name: true, phone: true },
         });
+        let brokerCertificateLocationSatisfied = true;
+        try {
+          const { brokerCertificateLocationJourneySatisfied } = await import(
+            "@/modules/broker-ai/certificate-of-location/certificate-of-location-journey.service",
+          );
+          brokerCertificateLocationSatisfied = await brokerCertificateLocationJourneySatisfied(uid, unlocked);
+        } catch {
+          brokerCertificateLocationSatisfied = true;
+        }
         return {
           ...base,
           brokerProfileComplete: Boolean(profile?.name?.trim()),
@@ -233,6 +252,7 @@ export async function buildHubJourneyContextFromDb(
           brokerLeadsContacted: contacted,
           brokerPipelineMoved: pipeline > 0,
           brokerClosedCount: closed,
+          brokerCertificateLocationSatisfied,
         };
       }
       case "investor": {

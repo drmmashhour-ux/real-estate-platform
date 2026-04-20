@@ -185,6 +185,12 @@ describe("scrubInvestorShareText", () => {
     const s = scrubInvestorShareText("Score 11111111-1111-4111-8111-111111111111 is up");
     expect(s).not.toMatch(/[0-9a-f]{8}-/i);
   });
+
+  it("strips email-shaped strings", () => {
+    const s = scrubInvestorShareText("Contact ops@example.com for details");
+    expect(s).not.toMatch(/@/);
+    expect(s).toMatch(/Contact/);
+  });
 });
 
 describe("filterInvestorDashboardForShare", () => {

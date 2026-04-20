@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getGuestId } from "@/lib/auth/session";
 import { isBrokerVerified } from "@/lib/verification/broker";
+import { evaluateLegalRisk, legalRiskAlertMessage } from "@/modules/legal/engine/legal-engine.service";
+import { buildLegalRiskInputFromSellerOnboarding } from "@/modules/legal/engine/legal-risk-input";
 
 export const dynamic = "force-dynamic";
 
@@ -105,6 +107,9 @@ export async function POST(request: NextRequest) {
     data,
   });
 
+  const legalRiskInput = buildLegalRiskInputFromSellerOnboarding(merged as Record<string, unknown>);
+  const legalRisk = evaluateLegalRisk(legalRiskInput);
+
   return NextResponse.json({
     ok: true,
     onboarding: merged,
@@ -114,5 +119,7 @@ export async function POST(request: NextRequest) {
       requestedBrokerMode && !brokerVerified
         ? "Broker license is not verified. Listing remains in Sell Hub free / non-broker mode until verification is approved."
         : null,
+    legalRisk,
+    legalRiskAlert: legalRiskAlertMessage(legalRisk),
   });
 }

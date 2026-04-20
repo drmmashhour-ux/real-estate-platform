@@ -1,9 +1,9 @@
 /**
  * Resolves Darlink locale from Next.js search params + cookies (best-effort, no throws).
  */
-import { DARLINK_DEFAULT_LOCALE, DARLINK_LOCALE_COOKIE } from "./config";
-import { normalizeLocale } from "./helpers";
-import type { DarlinkLocale } from "./types";
+import { DARLINK_DEFAULT_LOCALE, DARLINK_LOCALE_COOKIE, SYRIA_I18N_CONFIG } from "./config";
+import { normalizeLocale, normalizeSyriaLocale } from "./helpers";
+import type { DarlinkLocale, SyriaLocale } from "./types";
 
 export type LocaleResolverInput = {
   pathnameLocale?: string | null;
@@ -34,4 +34,10 @@ export function resolveDarlinkLocale(input: LocaleResolverInput): DarlinkLocale 
   if (fromCookie) return normalizeLocale(fromCookie);
 
   return DARLINK_DEFAULT_LOCALE;
+}
+
+/** Explicit Syria locale resolver (same precedence as Darlink resolver). */
+export function resolveSyriaLocale(input: LocaleResolverInput): SyriaLocale {
+  const resolved = resolveDarlinkLocale(input);
+  return normalizeSyriaLocale(resolved ?? SYRIA_I18N_CONFIG.defaultLocale);
 }

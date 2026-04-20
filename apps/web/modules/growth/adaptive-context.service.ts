@@ -5,9 +5,11 @@
 import { engineFlags } from "@/config/feature-flags";
 import { prisma } from "@/lib/db";
 import { buildBrokerLockInSignals } from "@/modules/brokers/broker-lockin.service";
-import type { AdaptiveContext } from "@/modules/growth/adaptive-intelligence.types";
+import type { AdaptiveConfidence, AdaptiveContext } from "@/modules/growth/adaptive-intelligence.types";
 import { getClosingTactics } from "@/modules/growth/closing-psychology.service";
 import { buildExecutionPlan } from "@/modules/growth/execution-planner.service";
+import { buildGrowthExecutionResultsSummary } from "@/modules/growth/growth-execution-results.service";
+import { buildRevenueForecast } from "@/modules/growth/revenue-forecast.service";
 import { getBestActionTiming } from "@/modules/growth/timing-optimizer.service";
 
 function pickWeakestStage(
@@ -51,6 +53,8 @@ export async function buildAdaptiveContext(): Promise<AdaptiveContext> {
     won14,
     lockSignals,
     plan,
+    executionResults,
+    revenueForecast,
   ] = await Promise.all([
     prisma.lead.findFirst({
       orderBy: { score: "desc" },
@@ -70,6 +74,10 @@ export async function buildAdaptiveContext(): Promise<AdaptiveContext> {
     engineFlags.executionPlannerV1
       ? buildExecutionPlan(14).catch(() => null)
       : Promise.resolve(null),
+    engineFlags.growthExecutionResultsV1
+      ? buildGrowthExecutionResultsSummary(14).catch(() => null)
+      : Promise.resolve(null),
+    engineFlags.revenueForecastV1 ? buildRevenueForecast(14).catch(() => null) : Promise.resolve(null),
   ]);
 
   const timing = getBestActionTiming();
@@ -117,6 +125,29 @@ export async function buildAdaptiveContext(): Promise<AdaptiveContext> {
 
   const sparseSignals = totalStages < 5 && leadCount14 < 3;
 
+  let dealPerformance: AdaptiveContext["dealPerformance"];
+  if (executionResults) {
+    const sparseAiTelemetry = executionResults.sparseDataWarnings.some((w) =>
+      /sparse|thin/i.test(w),
+    );
+    dealPerformance = {
+      windowDays: executionResults.windowDays,
+      aiRows: executionResults.aiAssistResults.length,
+      aiPositiveBands: executionResults.aiAssistResults.filter((r) => r.outcomeBand === "positive").length,
+      sparseAiTelemetry,
+      brokerRows: executionResults.brokerCompetitionResults.length,
+      brokerPositiveBands: executionResults.brokerCompetitionResults.filter((r) => r.outcomeBand === "positive")
+        .length,
+    };
+  }
+
+  let revenueForecastConfidence: AdaptiveConfidence | undefined;
+  let revenueForecastInsufficientData: boolean | undefined;
+  if (revenueForecast) {
+    revenueForecastConfidence = revenueForecast.meta.confidence as AdaptiveConfidence;
+    revenueForecastInsufficientData = revenueForecast.meta.insufficientData;
+  }
+
   return {
     generatedAt: now.toISOString(),
     topLead,
@@ -131,6 +162,9 @@ export async function buildAdaptiveContext(): Promise<AdaptiveContext> {
     executionStatus,
     closingPsychologyAxis,
     revenueSignalSummary,
+    dealPerformance,
+    revenueForecastConfidence,
+    revenueForecastInsufficientData,
     sparseSignals,
   };
 }

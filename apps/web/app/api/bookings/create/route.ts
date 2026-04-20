@@ -12,6 +12,8 @@ import { requireUser } from "@/modules/security/access-guard.service";
 import { logApiRouteError } from "@/lib/api/dev-log";
 import { GuestIdentityRequiredError } from "@/lib/bnhub/guest-identity-gate";
 import { computeBookingPricing } from "@/lib/bnhub/booking-pricing";
+import { maybeBlockRequestWithLegalGate } from "@/modules/legal/legal-api-gate";
+import { syncAvailability } from "@/modules/channel-manager/channel-sync.service";
 
 export const dynamic = "force-dynamic";
 
@@ -89,6 +91,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const legalGate = await maybeBlockRequestWithLegalGate({
+      action: "start_booking",
+      userId: guestId,
+      actorType: "buyer",
+    });
+    if (legalGate) return legalGate;
+
     const availability = await precheckBnhubBookingAvailability(listingId, checkInD, checkOutD);
     if (!availability.available) {
       logBnhubBookingCreate({
@@ -158,6 +167,10 @@ export async function POST(request: NextRequest) {
       nights: booking.nights,
       confirmationCode: booking.confirmationCode,
     });
+
+    void syncAvailability(listingId).catch((err) =>
+      logApiRouteError("syncAvailability after POST /api/bookings/create", err)
+    );
 
     const pay = await prisma.payment.findUnique({
       where: { bookingId: booking.id },

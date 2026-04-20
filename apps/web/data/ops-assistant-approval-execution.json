@@ -1,8 +1,8 @@
 {
   "version": 1,
   "requests": {
-    "areq_aa8d8a10d0478e6f41447c35": {
-      "id": "areq_aa8d8a10d0478e6f41447c35",
+    "areq_bd83d7f79b6d6e404cce2afe": {
+      "id": "areq_bd83d7f79b6d6e404cce2afe",
       "suggestionId": "ccc349c5aee3",
       "priorityId": "085fd7e33b9001",
       "actionType": "createInternalDraft",
@@ -13,25 +13,25 @@
       "riskLevel": "low",
       "requiresApproval": true,
       "status": "cancelled",
-      "createdAt": "2026-04-18T22:57:05.560Z",
-      "approvedAt": "2026-04-18T22:57:05.560Z",
+      "createdAt": "2026-04-19T22:04:15.972Z",
+      "approvedAt": "2026-04-19T22:04:15.973Z",
       "artifactRefs": {
-        "draftId": "draft_a5fc1982e43a26bd"
+        "draftId": "draft_7ba72034a43e1397"
       },
-      "executedAt": "2026-04-18T22:57:05.560Z",
-      "undoneAt": "2026-04-18T22:57:05.560Z"
+      "executedAt": "2026-04-19T22:04:15.975Z",
+      "undoneAt": "2026-04-19T22:04:15.977Z"
     }
   },
   "internalTags": {},
   "tasks": [],
   "drafts": [
     {
-      "id": "draft_a5fc1982e43a26bd",
+      "id": "draft_7ba72034a43e1397",
       "priorityId": "085fd7e33b9001",
       "title": "Draft clearer primary CTA copy — Stores an internal draft record (not published to any surface).",
       "body": "[Draft CTA — review before publish]\nPrimary action: align with \"Clarify primary CTA on key surfaces\".\nSuggested hook (localize region): Search properties across Syria instantly\nSupporting line: reduce friction noted in diagnostics: Hero competes with secondary actions.",
-      "createdAt": "2026-04-18T22:57:05.560Z",
-      "sourceRequestId": "areq_aa8d8a10d0478e6f41447c35",
+      "createdAt": "2026-04-19T22:04:15.974Z",
+      "sourceRequestId": "areq_bd83d7f79b6d6e404cce2afe",
       "status": "discarded"
     }
   ],
@@ -39,47 +39,47 @@
   "reminders": [],
   "audit": [
     {
-      "id": "audit_0f2c273abbd628826f7f",
+      "id": "audit_507e94490ebc4fb426a6",
       "kind": "request_created",
-      "at": "2026-04-18T22:57:05.560Z",
+      "at": "2026-04-19T22:04:15.972Z",
       "actionType": "createInternalDraft",
       "priorityId": "085fd7e33b9001",
-      "requestId": "areq_aa8d8a10d0478e6f41447c35",
+      "requestId": "areq_bd83d7f79b6d6e404cce2afe",
       "explanation": "Approval request created for suggestion ccc349c5aee3",
       "meta": {
         "suggestionTitle": "Draft clearer primary CTA copy"
       }
     },
     {
-      "id": "audit_7643240f0bf2f54c3692",
+      "id": "audit_af83967ef124a099451b",
       "kind": "request_approved",
-      "at": "2026-04-18T22:57:05.560Z",
+      "at": "2026-04-19T22:04:15.973Z",
       "actionType": "createInternalDraft",
       "priorityId": "085fd7e33b9001",
-      "requestId": "areq_aa8d8a10d0478e6f41447c35",
+      "requestId": "areq_bd83d7f79b6d6e404cce2afe",
       "explanation": "Operator approved execution (not yet run)."
     },
     {
-      "id": "audit_c8e17bd2bc8e1a580c17",
+      "id": "audit_8f867673a10fc86fb693",
       "kind": "request_executed",
-      "at": "2026-04-18T22:57:05.560Z",
+      "at": "2026-04-19T22:04:15.975Z",
       "actionType": "createInternalDraft",
       "priorityId": "085fd7e33b9001",
-      "requestId": "areq_aa8d8a10d0478e6f41447c35",
-      "explanation": "Stored internal draft draft_a5fc1982e43a26bd",
+      "requestId": "areq_bd83d7f79b6d6e404cce2afe",
+      "explanation": "Stored internal draft draft_7ba72034a43e1397",
       "meta": {
-        "draftId": "draft_a5fc1982e43a26bd"
+        "draftId": "draft_7ba72034a43e1397"
       }
     },
     {
-      "id": "audit_b47bc5efcd56726326d7",
+      "id": "audit_ce1a639e2ee5ecff1af9",
       "kind": "request_undone",
-      "at": "2026-04-18T22:57:05.560Z",
+      "at": "2026-04-19T22:04:15.977Z",
       "actionType": "createInternalDraft",
       "priorityId": "085fd7e33b9001",
-      "requestId": "areq_aa8d8a10d0478e6f41447c35",
-      "explanation": "Discarded draft draft_a5fc1982e43a26bd"
+      "requestId": "areq_bd83d7f79b6d6e404cce2afe",
+      "explanation": "Discarded draft draft_7ba72034a43e1397"
     }
   ],
-  "updatedAt": "2026-04-18T22:57:05.560Z"
+  "updatedAt": "2026-04-19T22:04:15.977Z"
 }

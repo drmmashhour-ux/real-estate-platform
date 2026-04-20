@@ -47,16 +47,40 @@ export function normalizeSyriaListing(
   if (!row?.id) return null;
   const stats = bookingStats ?? null;
   const bookingCountHint = typeof row.bookingCount === "number" ? row.bookingCount : stats?.bookingCount ?? null;
+  const titleAr =
+    typeof row.titleAr === "string" ? row.titleAr : typeof row.title === "string" ? row.title : "";
+  const descriptionAr =
+    typeof row.descriptionAr === "string"
+      ? row.descriptionAr
+      : typeof row.description === "string"
+        ? row.description
+        : "";
+  const notes: string[] = [];
+  if (row.titleEn?.trim()) notes.push("en_title_present");
+  else notes.push("en_title_absent");
+  if (row.descriptionEn?.trim()) notes.push("en_description_present");
+  else notes.push("en_description_absent");
+  if (row.cityAr?.trim()) notes.push("city_ar_present");
+  if (row.cityEn?.trim()) notes.push("city_en_present");
   return {
     id: row.id,
     source: "syria",
     regionCode: "sy",
-    title: typeof row.title === "string" ? row.title : "",
-    description: typeof row.description === "string" ? row.description : "",
+    title: titleAr,
+    description: descriptionAr,
+    titleAr,
+    titleEn: row.titleEn ?? null,
+    descriptionAr,
+    descriptionEn: row.descriptionEn ?? null,
     price: num(row.price),
     currency: typeof row.currency === "string" && row.currency ? row.currency : "SYP",
     listingType: typeof row.type === "string" ? row.type : "UNKNOWN",
     city: typeof row.city === "string" ? row.city : "",
+    cityAr: row.cityAr ?? null,
+    cityEn: row.cityEn ?? null,
+    districtAr: row.districtAr ?? null,
+    districtEn: row.districtEn ?? null,
+    localizationNotes: notes,
     ownerId: typeof row.ownerId === "string" ? row.ownerId : "",
     status: typeof row.status === "string" ? row.status : "UNKNOWN",
     fraudFlag: Boolean(row.fraudFlag),

@@ -34,13 +34,22 @@ export type SyriaReadResult<T> = {
 
 export type SyriaListingReadRow = {
   id: string;
+  /** Arabic-first display (same as `titleAr` in current schema). */
   title: string;
   description: string;
+  titleAr: string;
+  titleEn: string | null;
+  descriptionAr: string;
+  descriptionEn: string | null;
   price: unknown;
   currency: string;
   /** SyriaPropertyType enum as text */
   type: string;
   city: string;
+  cityAr: string | null;
+  cityEn: string | null;
+  districtAr: string | null;
+  districtEn: string | null;
   ownerId: string;
   status: string;
   fraudFlag: boolean;
@@ -102,12 +111,18 @@ export async function getSyriaListingById(listingId: string): Promise<SyriaReadR
     const rows = await prisma.$queryRaw<
       {
         id: string;
-        title: string;
-        description: string;
+        title_ar: string;
+        title_en: string | null;
+        description_ar: string;
+        description_en: string | null;
         price: unknown;
         currency: string;
         type: string;
         city: string;
+        city_ar: string | null;
+        city_en: string | null;
+        district_ar: string | null;
+        district_en: string | null;
         owner_id: string;
         status: string;
         fraud_flag: boolean;
@@ -120,12 +135,18 @@ export async function getSyriaListingById(listingId: string): Promise<SyriaReadR
     >(Prisma.sql`
       SELECT
         p.id,
-        p.title,
-        p.description,
+        p.title_ar,
+        p.title_en,
+        p.description_ar,
+        p.description_en,
         p.price,
         p.currency,
         p.type::text AS type,
         p.city,
+        p.city_ar,
+        p.city_en,
+        p.district_ar,
+        p.district_en,
         p.owner_id,
         p.status::text AS status,
         p.fraud_flag,
@@ -143,15 +164,25 @@ export async function getSyriaListingById(listingId: string): Promise<SyriaReadR
       notes.push("syria_listing_not_found");
       return { data: null, availabilityNotes: notes };
     }
+    const titleAr = typeof r.title_ar === "string" ? r.title_ar : "";
+    const descriptionAr = typeof r.description_ar === "string" ? r.description_ar : "";
     return {
       data: {
         id: r.id,
-        title: r.title,
-        description: r.description,
+        title: titleAr,
+        description: descriptionAr,
+        titleAr,
+        titleEn: r.title_en ?? null,
+        descriptionAr,
+        descriptionEn: r.description_en ?? null,
         price: r.price,
         currency: r.currency ?? "SYP",
         type: r.type,
         city: r.city,
+        cityAr: r.city_ar ?? null,
+        cityEn: r.city_en ?? null,
+        districtAr: r.district_ar ?? null,
+        districtEn: r.district_en ?? null,
         ownerId: r.owner_id,
         status: r.status,
         fraudFlag: Boolean(r.fraud_flag),
@@ -390,7 +421,7 @@ export async function listSyriaFlaggedListings(limit = 20): Promise<SyriaReadRes
     const rows = await prisma.$queryRaw<
       {
         id: string;
-        title: string;
+        title_ar: string;
         city: string;
         fraud_flag: boolean;
         fraud_bookings: bigint | number | null;
@@ -399,7 +430,7 @@ export async function listSyriaFlaggedListings(limit = 20): Promise<SyriaReadRes
     >(Prisma.sql`
       SELECT
         p.id,
-        p.title,
+        p.title_ar,
         p.city,
         p.fraud_flag,
         (SELECT COUNT(*)::bigint FROM syria_bookings b WHERE b.property_id = p.id AND b.fraud_flag = true)::bigint AS fraud_bookings,
@@ -416,7 +447,7 @@ export async function listSyriaFlaggedListings(limit = 20): Promise<SyriaReadRes
     return {
       data: rows.map((r) => ({
         id: r.id,
-        title: r.title,
+        title: typeof r.title_ar === "string" ? r.title_ar : "",
         city: r.city,
         fraudFlag: Boolean(r.fraud_flag),
         fraudBookingCount: toInt(r.fraud_bookings ?? 0),

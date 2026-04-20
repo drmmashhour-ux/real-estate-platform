@@ -4,6 +4,7 @@ import { acceptOffer } from "@/lib/transactions/offers";
 import { verifyTransactionParties } from "@/lib/transactions/verification";
 import { prisma } from "@/lib/db";
 import { autoRecordDealLegalActionFromOffer } from "@/lib/deals/legal-timeline-bridge";
+import { maybeBlockRequestWithLegalGate } from "@/modules/legal/legal-api-gate";
 
 /**
  * POST /api/offers/accept
@@ -26,11 +27,20 @@ export async function POST(request: NextRequest) {
 
     const offer = await prisma.offer.findUnique({
       where: { id: offerId },
-      select: { listingId: true, buyerId: true, status: true },
+      select: { listingId: true, buyerId: true, brokerId: true, status: true },
     });
     if (!offer) {
       return Response.json({ error: "Offer not found" }, { status: 404 });
     }
+
+    const actorType =
+      offer.buyerId === userId ? "buyer" : offer.brokerId === userId ? "broker" : "seller";
+    const phase3Gate = await maybeBlockRequestWithLegalGate({
+      action: "accept_offer",
+      userId,
+      actorType,
+    });
+    if (phase3Gate) return phase3Gate;
 
     const result = await acceptOffer({
       offerId,

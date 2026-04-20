@@ -8,6 +8,7 @@ import { ENFORCEABLE_CONTRACT_TYPES } from "@/lib/legal/enforceable-contract-typ
 import { enforceableContractsRequired } from "@/lib/legal/enforceable-contracts-enforcement";
 import { AnalyticsEvents } from "@/lib/analytics/events";
 import { captureServerEvent } from "@/lib/analytics/posthog-server";
+import { maybeBlockRequestWithLegalGate } from "@/modules/legal/legal-api-gate";
 
 function clientIp(request: NextRequest): string {
   return (
@@ -122,6 +123,19 @@ async function assertCanPublish(listingId: string) {
   return { ok: true as const };
 }
 
+async function legalGateHostListingPublish(listingId: string): Promise<Response | null> {
+  const row = await prisma.shortTermListing.findUnique({
+    where: { id: listingId },
+    select: { ownerId: true },
+  });
+  if (!row) return null;
+  return maybeBlockRequestWithLegalGate({
+    action: "activate_host_listing",
+    userId: row.ownerId,
+    actorType: "host",
+  });
+}
+
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -131,6 +145,8 @@ export async function PUT(
     const body = await request.json();
     const data = buildUpdateData(body);
     if (data.listingStatus === "PUBLISHED") {
+      const lg = await legalGateHostListingPublish(id);
+      if (lg) return lg;
       const result = await assertCanPublish(id);
       if (!result.ok) {
         return Response.json(
@@ -167,6 +183,8 @@ export async function PATCH(
     const body = await request.json();
     const data = buildUpdateData(body);
     if (data.listingStatus === "PUBLISHED") {
+      const lg = await legalGateHostListingPublish(id);
+      if (lg) return lg;
       const result = await assertCanPublish(id);
       if (!result.ok) {
         return Response.json(

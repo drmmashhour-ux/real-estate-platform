@@ -64,13 +64,24 @@ describe("Syria preview signal pipeline", () => {
     expect(
       evaluateSyriaPreviewPolicyFromSignals([
         {
-          type: "inactive_listing",
+          type: "listing_stale",
           severity: "info",
           message: "",
           contributingMetrics: {},
         },
       ]).decision,
     ).toBe("allow_preview");
+
+    expect(
+      evaluateSyriaPreviewPolicyFromSignals([
+        {
+          type: "inactive_listing",
+          severity: "info",
+          message: "",
+          contributingMetrics: {},
+        },
+      ]).decision,
+    ).toBe("caution_preview");
 
     expect(
       evaluateSyriaPreviewPolicyFromSignals([

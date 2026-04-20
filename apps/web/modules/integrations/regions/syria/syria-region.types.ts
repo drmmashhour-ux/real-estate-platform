@@ -4,12 +4,23 @@ export type SyriaNormalizedListing = {
   id: string;
   source: "syria";
   regionCode: "sy";
+  /** Primary / Arabic-first display (for global cards; use `titleEn` for English when present). */
   title: string;
   description: string;
+  titleAr: string;
+  titleEn: string | null;
+  descriptionAr: string;
+  descriptionEn: string | null;
   price: number | null;
   currency: string;
   listingType: string;
   city: string;
+  cityAr: string | null;
+  cityEn: string | null;
+  districtAr: string | null;
+  districtEn: string | null;
+  /** e.g. en_title_present, en_description_absent */
+  localizationNotes: string[];
   ownerId: string;
   status: string;
   fraudFlag: boolean;

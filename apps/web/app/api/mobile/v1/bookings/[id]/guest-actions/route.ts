@@ -1,6 +1,7 @@
 import { BookingStatus, PaymentStatus } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { completeBooking } from "@/lib/bnhub/booking";
+import { maybeBlockRequestWithLegalGate } from "@/modules/legal/legal-api-gate";
 import { requireMobileUser } from "@/lib/mobile/mobileAuth";
 
 export const dynamic = "force-dynamic";
@@ -47,6 +48,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
           { status: 400 }
         );
       }
+      const legalGate = await maybeBlockRequestWithLegalGate({
+        action: "complete_booking",
+        userId: user.id,
+        actorType: "buyer",
+      });
+      if (legalGate) return legalGate;
+
       await completeBooking(id);
       return Response.json({ ok: true, status: BookingStatus.COMPLETED });
     }

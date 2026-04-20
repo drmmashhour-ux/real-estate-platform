@@ -7,6 +7,8 @@ import { BuyerHubAiSection } from "@/components/ai/BuyerHubAiSection";
 import { DecisionCard } from "@/components/ai/DecisionCard";
 import { safeEvaluateDecision } from "@/modules/ai/decision-engine";
 import { HubJourneyBanner } from "@/components/journey/HubJourneyBanner";
+import { legalHubFlags } from "@/config/feature-flags";
+import { LegalHubEntryCard } from "@/components/legal/LegalHubEntryCard";
 
 export const dynamic = "force-dynamic";
 
@@ -165,6 +167,9 @@ export default async function BuyerDashboardPage({
     <main className="dashboard-shell">
       <div className="mx-auto max-w-4xl space-y-10">
         <HubJourneyBanner hub="buyer" locale={locale} country={country} userId={userId} />
+        {legalHubFlags.legalHubV1 ? (
+          <LegalHubEntryCard href={`/${locale}/${country}/legal`} locale={locale} country={country} />
+        ) : null}
         <DashboardBnhubRecommendations userId={userId} hrefPrefix={`/${locale}/${country}`} />
 
         <div className="flex flex-col justify-between gap-6 border-b border-white/10 pb-8 sm:flex-row sm:items-end">

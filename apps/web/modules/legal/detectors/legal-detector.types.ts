@@ -11,7 +11,8 @@ export type LegalDetectorId =
   | "cross_entity_conflict"
   | "metadata_anomaly"
   | "review_delay_risk"
-  | "high_risk_submission_burst";
+  | "high_risk_submission_burst"
+  | "legal_record_compliance";
 
 export type LegalDetector = {
   id: LegalDetectorId;

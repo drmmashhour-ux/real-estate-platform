@@ -26,6 +26,15 @@ html[lang="en"] body {
   font-family: var(--font-darlink-inter), "Inter", system-ui, sans-serif;
 }
 
+/* Root direction helpers — `<html dir>` remains source of truth; body class mirrors for nested styling */
+.darlink-root-rtl {
+  text-align: start;
+}
+
+.darlink-root-ltr {
+  text-align: start;
+}
+
 /* RTL — locale layout sets dir on <html> */
 [dir="rtl"] .darlink-header-bar {
   flex-direction: row-reverse;

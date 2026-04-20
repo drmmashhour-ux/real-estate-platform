@@ -11,8 +11,11 @@ export const highRejectionRateDetector: LegalDetector = {
   run(snapshot): LegalIntelligenceSignal[] {
     const out: LegalIntelligenceSignal[] = [];
     const listingId = snapshot.fsboListingId ?? snapshot.entityId;
-    const total = snapshot.aggregates.supportingTotalInWindow;
-    const rejected = snapshot.aggregates.supportingRejectedInWindow;
+    const tl = snapshot.timeline;
+    const totalRaw = snapshot.aggregates.supportingTotalInWindow;
+    const rejectedRaw = snapshot.aggregates.supportingRejectedInWindow;
+    const rejected = tl ? Math.max(rejectedRaw, tl.rejectionEventsInWindow) : rejectedRaw;
+    const total = Math.max(totalRaw, rejected);
     if (total <= 0 || rejected < HIGH_REJECTION_RATE_MIN_REJECTED) return out;
     const ratio = rejected / total;
     if (ratio < HIGH_REJECTION_RATE_RATIO_THRESHOLD) return out;

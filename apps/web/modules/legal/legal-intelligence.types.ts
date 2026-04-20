@@ -13,7 +13,12 @@ export type LegalIntelligenceSignalType =
   | "cross_entity_conflict"
   | "metadata_anomaly"
   | "review_delay_risk"
-  | "high_risk_submission_burst";
+  | "high_risk_submission_burst"
+  | "missing_required_fields"
+  | "inconsistent_legal_data"
+  | "suspicious_data_pattern"
+  | "incomplete_declaration"
+  | "conflicting_records";
 
 export type LegalIntelligenceSeverity = "info" | "warning" | "critical";
 
@@ -68,6 +73,20 @@ export type LegalVerificationCaseRow = {
   identitySignalCount: number;
 };
 
+/** Summarized imported legal hub records — no raw document content. */
+export type LegalImportedRecordRow = {
+  id: string;
+  recordType: string;
+  status: string;
+  missingFieldCount: number;
+  inconsistentFieldCount: number;
+  warningCount: number;
+  criticalRuleCount: number;
+  requiresReviewRuleCount: number;
+  /** Normalized parcel identifier when `recordType` is ownership-related (for cross-record checks). */
+  parcelIdFingerprint?: string | null;
+};
+
 export type LegalIntelligenceSnapshot = {
   builtAt: string;
   windowStart: string;
@@ -95,6 +114,14 @@ export type LegalIntelligenceSnapshot = {
     slotPendingReviewCount: number;
     slotMissingCriticalCount: number;
   };
+  /** Phase 4.5 — optional facts from append-only timeline (listing + actor scope). */
+  timeline?: {
+    rejectionEventsInWindow: number;
+    submissionEventsInWindow: number;
+    rapidResubmitClusterCount: number;
+  };
+  /** Legal Hub record import pipeline — aggregates only. */
+  legalImportedRecords?: LegalImportedRecordRow[];
 };
 
 export type LegalReviewPriorityLevel = "low" | "normal" | "high" | "urgent";

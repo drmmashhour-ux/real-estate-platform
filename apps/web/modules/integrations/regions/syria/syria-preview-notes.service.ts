@@ -1,7 +1,7 @@
 /**
  * Augments Syria preview note lines with signal and policy context — deterministic, no throws.
  */
-import type { SyriaPreviewPolicyResult } from "./syria-policy.service";
+import type { SyriaPreviewPolicyResult } from "./syria-policy.types";
 import type { SyriaSignal } from "./syria-signal.types";
 
 function uniqPreserveOrder(items: string[]): string[] {
@@ -22,7 +22,9 @@ export function buildSyriaPreviewNoteLines(
 ): string[] {
   const extra: string[] = [];
 
-  if (policy.decision === "requires_local_approval") {
+  if (policy.decision === "blocked_for_region") {
+    extra.push("Preview unavailable or blocked for this regional scope.");
+  } else if (policy.decision === "requires_local_approval") {
     extra.push("Manual review recommended due to risk signals.");
   } else if (policy.decision === "caution_preview") {
     extra.push("Preview flagged with caution-level signals.");

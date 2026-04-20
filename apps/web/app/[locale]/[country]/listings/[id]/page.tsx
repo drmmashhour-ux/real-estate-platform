@@ -59,7 +59,10 @@ async function collaborationForListingViewer(viewerId: string | null): Promise<{
   return { enabled, viewerId };
 }
 
-type Props = { params: Promise<{ id: string; locale: string; country: string }> };
+type Props = {
+  params: Promise<{ id: string; locale: string; country: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
 
 async function resolveListingFromParam(param: string) {
   for (const key of publicListingPathLookupKeys(param)) {
@@ -143,8 +146,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   });
 }
 
-export default async function PublicListingRoute({ params }: Props) {
+export default async function PublicListingRoute({ params, searchParams }: Props) {
   const { id: param, locale, country } = await params;
+  const sp = await searchParams;
+  const rawDist = sp.dist;
+  const distFirst = Array.isArray(rawDist) ? rawDist[0] : rawDist;
+  const inquiryDistributionChannel =
+    typeof distFirst === "string" && distFirst.toLowerCase() === "centris" ? ("CENTRIS" as const) : ("LECIPM" as const);
   const cookieHeader = (await headers()).get("cookie");
   const resolved = await resolveListingFromParam(param);
   if (!resolved) {
@@ -452,12 +460,15 @@ export default async function PublicListingRoute({ params }: Props) {
     isPrivilegedUser: listingRolloutPrivileged,
   });
 
+  const collaborationCrm = await collaborationForListingViewer(guestCrm);
+
   return (
     <>
       <JsonLdScript data={productLd} />
       <JsonLdScript data={crumbLd} />
       <BuyerListingDetail
         listing={{ ...crmPayload, listingKind: "crm", transactionFlag: transactionFlagCrm }}
+        inquiryDistributionChannel="LECIPM"
         demandUi={demandUiCrm}
         conversionSurface={conversionSurfaceCrm}
         funnelVariant={funnelVariantForListing(payload.id)}

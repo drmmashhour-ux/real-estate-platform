@@ -19,7 +19,9 @@ export const highRiskSubmissionBurstDetector: LegalDetector = {
       const t = Date.parse(d.createdAt);
       if (!Number.isNaN(t) && t >= startMs && t <= endMs) n += 1;
     }
-    if (n < SUBMISSION_BURST_MIN_COUNT) return out;
+    const tl = snapshot.timeline;
+    const nEff = tl ? Math.max(n, tl.submissionEventsInWindow) : n;
+    if (nEff < SUBMISSION_BURST_MIN_COUNT) return out;
 
     out.push({
       id: stableSignalId(["high_risk_submission_burst", listingId]),
@@ -33,7 +35,7 @@ export const highRiskSubmissionBurstDetector: LegalDetector = {
       explanation:
         "Volume spike: supporting uploads created in a short interval exceed the configured burst threshold — allocate review capacity; not a determination of intent.",
       metadata: {
-        uploadsInBurstWindow: n,
+        uploadsInBurstWindow: nEff,
         windowMinutes: Math.round(SUBMISSION_BURST_WINDOW_MS / 60000),
       },
     });

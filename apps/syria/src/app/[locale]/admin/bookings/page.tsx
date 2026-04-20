@@ -5,6 +5,7 @@ import { verifyGuestBookingPayment, setBookingFraudFlag } from "@/actions/admin"
 import { markBookingCheckedIn } from "@/actions/bookings";
 import { money } from "@/lib/format";
 import { pickListingTitle } from "@/lib/listing-localized";
+import { getDarlinkAutonomyFlags } from "@/lib/platform-flags";
 
 export default async function AdminBookingsPage() {
   const t = await getTranslations("Admin");
@@ -20,12 +21,22 @@ export default async function AdminBookingsPage() {
     take: 80,
   });
 
+  const autonomyQuickLink = getDarlinkAutonomyFlags().AUTONOMY_ENABLED ?
+    <div className="rounded-2xl border border-indigo-100 bg-indigo-50/60 p-4 text-sm text-indigo-950">
+      <Link href="/admin/autonomy" className="font-semibold underline underline-offset-2 hover:text-indigo-900">
+        Marketplace autonomy dashboard
+      </Link>
+      <p className="mt-2 text-xs text-indigo-900/80">Booking friction signals and dry-run execution controls.</p>
+    </div>
+  : null;
+
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-lg font-semibold text-stone-900">{t("tileBookings")}</h2>
         <p className="text-sm text-stone-600">{t("bookingsIntro")}</p>
       </div>
+      {autonomyQuickLink}
       <ul className="space-y-4">
         {bookings.map((b) => (
           <li key={b.id} className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">

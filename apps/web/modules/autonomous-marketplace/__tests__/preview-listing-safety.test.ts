@@ -54,6 +54,8 @@ describe("previewForListing safety", () => {
     expect(p.executionResult.status).toBe("DRY_RUN");
     expect(p.executionResult.detail).toMatch(/Preview only/i);
     expect(p.executionResult.metadata?.mock).toBe(true);
+    expect(p.signals).toEqual(p.observation.signals);
+    expect(Array.isArray(p.executionResult.skippedActions)).toBe(true);
   });
 
   it("creates task-shaped actions only as proposals — preview does not call listing executor apply path", async () => {

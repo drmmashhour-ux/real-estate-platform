@@ -21,4 +21,12 @@ describe("buildHubCopilotState", () => {
     const copilot = buildHubCopilotState("buyer", ctx, plan);
     expect(copilot.suggestions.some((s) => s.id === "buy-shortlist-contact")).toBe(true);
   });
+
+  it("softens explanations when signal confidence is low", () => {
+    const plan = buildHubJourneyPlan("buyer", baseCtx);
+    expect(plan.signalConfidence).toBe("low");
+    const copilot = buildHubCopilotState("buyer", baseCtx, plan);
+    expect(copilot.signalConfidence).toBe("low");
+    expect(copilot.suggestions[0]?.explanation).toContain("Limited signals");
+  });
 });

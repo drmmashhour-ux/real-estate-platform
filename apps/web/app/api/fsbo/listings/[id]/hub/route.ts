@@ -12,6 +12,9 @@ import { isOpenAiConfigured } from "@/lib/ai/openai";
 import { assessListingPhotoForPropertyUse } from "@/lib/fsbo/assess-listing-photo-relevance";
 import { fetchRemoteImageBufferForAssessment } from "@/lib/fsbo/fetch-remote-image-buffer";
 import { getDeclarationListingConsistencyWarnings } from "@/lib/fsbo/listing-property-consistency";
+import { setCentrisDistributionIntent } from "@/modules/distribution/distribution.service";
+import { CENTRIS_PLATFORM } from "@/modules/distribution/centris.service";
+import { safeRunFsboListingLegalCompliance } from "@/modules/legal/legal-compliance-runner";
 
 export const dynamic = "force-dynamic";
 
@@ -63,6 +66,8 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
   } catch {
     return Response.json({ error: "Invalid JSON" }, { status: 400 });
   }
+
+  const publishOnCentris = typeof body.publishOnCentris === "boolean" ? body.publishOnCentris : undefined;
 
   const data: Parameters<typeof prisma.fsboListing.update>[0]["data"] = {};
   let runDeclarationAiReview = false;
@@ -222,14 +227,20 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
     }
   }
 
-  if (Object.keys(data).length === 0) {
+  if (Object.keys(data).length === 0 && publishOnCentris === undefined) {
     return Response.json({ error: "No valid fields" }, { status: 400 });
   }
 
-  await prisma.fsboListing.update({
-    where: { id },
-    data,
-  });
+  if (Object.keys(data).length > 0) {
+    await prisma.fsboListing.update({
+      where: { id },
+      data,
+    });
+  }
+
+  if (publishOnCentris !== undefined) {
+    await setCentrisDistributionIntent({ prisma, listingId: id, enabled: publishOnCentris });
+  }
 
   if (body.legalAccuracyAccepted === true && isOwner) {
     await prisma.user.update({
@@ -252,8 +263,29 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
     }
   }
 
+  const centrisRow = await prisma.externalListing.findUnique({
+    where: { listingId_platform: { listingId: id, platform: CENTRIS_PLATFORM } },
+  });
+  const centrisDistribution = centrisRow
+    ? {
+        enabled: true,
+        status: centrisRow.status,
+        externalId: centrisRow.externalId,
+        lastSyncAt: centrisRow.lastSyncAt?.toISOString() ?? null,
+        errorMessage: centrisRow.errorMessage,
+      }
+    : {
+        enabled: false,
+        status: null as string | null,
+        externalId: null as string | null,
+        lastSyncAt: null as string | null,
+        errorMessage: null as string | null,
+      };
+
   return Response.json({
     ok: true,
+    centrisDistribution,
+    ...(legalCompliance ? { legalCompliance } : {}),
     ...(listingConsistencyWarnings ? { listingConsistencyWarnings } : {}),
     ...(insights
       ? { sellerDeclarationAiReview: insights.review, listingAiScores: insights.scores }

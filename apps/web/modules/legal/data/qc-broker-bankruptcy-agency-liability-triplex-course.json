@@ -1,0 +1,79 @@
+{
+  "cases": [
+    {
+      "slug": "qc-broker-bankruptcy-agency-liability-triplex-case",
+      "title": "Broker Bankruptcy & Agency Liability — Unauthorized Dwelling Case",
+      "category": "BROKER_DUTY",
+      "jurisdiction": "QC",
+      "sourceType": "COURSE",
+      "sourceReference": "Zoning verification & agency liability — triplex / municipal compliance",
+      "summary": "Broker failed to verify zoning compliance of a triplex. The third dwelling was unauthorized. Broker later declared bankruptcy. Court held the agency liable.",
+      "facts": "Property sold as triplex based on leases, tax bills, and certificate of location. No verification with municipality. City later confirmed third dwelling illegal.",
+      "legalIssues": "1. Broker duty to verify zoning compliance. 2. Agency liability. 3. Effect of broker bankruptcy.",
+      "decision": "Broker committed a fault. Agency liable. Broker protected by bankruptcy stay.",
+      "reasoning": "A prudent broker would have verified with the municipality. Documents relied upon did not confirm legality. Bankruptcy does not eliminate liability but prevents enforcement.",
+      "outcome": "Agency may bear full condemnation.",
+      "sellerLiable": false,
+      "brokerLiable": true,
+      "latentDefect": false,
+      "badFaith": false,
+      "tags": ["zoning", "triplex", "verification failure", "bankruptcy", "agency liability"]
+    }
+  ],
+  "rules": [
+    {
+      "code": "QC_BROKER_ZONING_VERIFICATION",
+      "title": "Broker must verify zoning/legal use",
+      "category": "BROKER_DUTY",
+      "description": "Broker must verify legal compliance of property use with municipality when marketing number of dwellings.",
+      "conditions": {
+        "propertyUseClaim": true
+      },
+      "outcome": "requireMunicipalVerification=true",
+      "severity": "CRITICAL"
+    },
+    {
+      "code": "QC_INVALID_VERIFICATION_SOURCES",
+      "title": "Leases and tax bills are insufficient proof",
+      "category": "BROKER_DUTY",
+      "description": "Leases, tax accounts, and certificates of location do not confirm zoning compliance.",
+      "conditions": {
+        "reliedOnWeakDocuments": true
+      },
+      "outcome": "riskScore+=40;flag=INVALID_VERIFICATION",
+      "severity": "HIGH"
+    },
+    {
+      "code": "QC_AGENCY_VICARIOUS_LIABILITY",
+      "title": "Agency liable for broker faults",
+      "category": "BROKER_DUTY",
+      "description": "Agency is liable for faults committed by brokers under its supervision.",
+      "conditions": {
+        "brokerFault": true
+      },
+      "outcome": "agencyLiability=true",
+      "severity": "CRITICAL"
+    },
+    {
+      "code": "QC_BANKRUPTCY_LIMITATION",
+      "title": "Bankruptcy stays enforcement only",
+      "category": "FRAUD",
+      "description": "Broker bankruptcy prevents enforcement but does not eliminate liability.",
+      "conditions": {
+        "brokerBankrupt": true
+      },
+      "outcome": "enforcementStayed=true",
+      "severity": "MEDIUM"
+    }
+  ],
+  "mappings": [
+    {
+      "caseSlug": "qc-broker-bankruptcy-agency-liability-triplex-case",
+      "ruleCode": "QC_BROKER_ZONING_VERIFICATION"
+    },
+    {
+      "caseSlug": "qc-broker-bankruptcy-agency-liability-triplex-case",
+      "ruleCode": "QC_AGENCY_VICARIOUS_LIABILITY"
+    }
+  ]
+}

@@ -15,6 +15,10 @@ import { isTrustGraphEnabled } from "@/lib/trustgraph/config";
 import { assertListingPublishTrustGate } from "@/lib/trustgraph/application/integrations/listingPublishIntegration";
 import { getPublicAppUrl } from "@/lib/config/public-app-url";
 import { notifyFsboListingActivatedIfNeeded } from "@/lib/listing-lifecycle/notify-fsbo-listing-activated";
+import { complianceFlags } from "@/config/feature-flags";
+import { evaluateListingPublishComplianceDecision } from "@/modules/legal/compliance/listing-publish-compliance.service";
+import { recordEventSafe } from "@/modules/events/event-helpers";
+import { recordEvent } from "@/modules/events/event.service";
 
 export type FsboPublishCheckoutTrustGraphError = {
   blocking: Array<{ ruleCode: string; message: string }>;
@@ -24,7 +28,20 @@ export type FsboPublishCheckoutTrustGraphError = {
 export type FsboPublishCheckoutResult =
   | { ok: true; url: string }
   | { ok: true; freePublish: true }
-  | { ok: false; error: string; status: number; trustGraph?: FsboPublishCheckoutTrustGraphError };
+  | {
+      ok: false;
+      error: "COMPLIANCE_BLOCK" | string;
+      status: number;
+      trustGraph?: FsboPublishCheckoutTrustGraphError;
+      compliance?: {
+        reasons: string[];
+        blockingIssues: string[];
+        readinessScore: number;
+        legalRiskScore?: number;
+        reviewRequired?: boolean;
+        adminReasons?: string[];
+      };
+    };
 
 /**
  * Start Stripe Checkout for publishing a draft FSBO listing, or free publish in dev when allowed.
@@ -55,6 +72,192 @@ export async function startFsboListingPublishCheckout(
   const gate = await assertSellerHubSubmitReady(listing, listing.documents, listing.sellerSupportingDocuments);
   if (!gate.ok) {
     return { ok: false, error: gate.errors.join(" · "), status: 400 };
+  }
+
+  const publishGateEnabled =
+    complianceFlags.quebecComplianceV1 &&
+    (complianceFlags.complianceAutoBlockV1 || complianceFlags.listingPrepublishAutoBlockV1);
+
+  const usePhase8Evaluator =
+    complianceFlags.quebecListingComplianceV1 ||
+    complianceFlags.listingPrepublishAutoBlockV1 ||
+    complianceFlags.propertyLegalRiskScoreV1;
+
+  if (publishGateEnabled) {
+    const { loadQuebecComplianceEvaluatorInput, shouldApplyQuebecComplianceForListing } = await import(
+      "@/modules/legal/compliance/listing-publish-compliance.service",
+    );
+
+    const inp = await loadQuebecComplianceEvaluatorInput(listingId);
+    const applies =
+      inp !== null &&
+      shouldApplyQuebecComplianceForListing({ country: inp.listing.country ?? "", region: inp.listing.region ?? "" });
+
+    if (applies) {
+      if (usePhase8Evaluator) {
+        const { evaluateListingPrepublishBlock, buildPrepublishBlockResponse } = await import(
+          "@/modules/legal/compliance/prepublish-auto-block.service",
+        );
+        const ev = evaluateListingPrepublishBlock({ listingId, evaluatorInput: inp });
+
+        if (complianceFlags.propertyLegalRiskScoreV1 && ev.legalRisk != null) {
+          await prisma.fsboListing
+            .update({
+              where: { id: listingId },
+              data: { riskScore: ev.legalRisk.score },
+            })
+            .catch(() => null);
+        }
+
+        await recordEventSafe(async () =>
+          recordEvent({
+            entityType: "listing",
+            entityId: listingId,
+            eventType: "quebec_compliance_evaluated",
+            actorId: userId,
+            actorType: "seller",
+            metadata: {
+              readinessScore: ev.readinessScore,
+              allowed: ev.allowed,
+              phase: "listing_compliance_v1",
+            },
+          }),
+        );
+
+        if (ev.legalRisk != null) {
+          await recordEventSafe(async () =>
+            recordEvent({
+              entityType: "listing",
+              entityId: listingId,
+              eventType: "property_legal_risk_scored",
+              actorId: userId,
+              actorType: "seller",
+              metadata: {
+                score: ev.legalRisk.score,
+                level: ev.legalRisk.level,
+                blocking: ev.legalRisk.blocking,
+              },
+            }),
+          );
+        }
+
+        if (!ev.allowed) {
+          const riskBlock =
+            complianceFlags.propertyLegalRiskScoreV1 === true &&
+            ev.legalRisk != null &&
+            (ev.legalRisk.blocking === true || ev.legalRisk.score >= 80);
+
+          await recordEventSafe(async () =>
+            recordEvent({
+              entityType: "listing",
+              entityId: listingId,
+              eventType:
+                riskBlock === true ? "listing_publish_blocked_legal_risk" : "listing_publish_blocked_compliance",
+              actorId: userId,
+              actorType: "seller",
+              metadata: {
+                readinessScore: ev.readinessScore,
+                legalRiskScore: ev.legalRiskScore,
+                blockingIssues: ev.blockingIssues.slice(0, 24),
+              },
+            }),
+          );
+
+          const payload = buildPrepublishBlockResponse(ev);
+          return {
+            ok: false,
+            error: "COMPLIANCE_BLOCK",
+            status: 403,
+            compliance: {
+              reasons: payload.reasons,
+              blockingIssues: payload.blockingIssues,
+              readinessScore: payload.readinessScore,
+              legalRiskScore: payload.legalRiskScore,
+              reviewRequired: payload.reviewRequired,
+              adminReasons: payload.adminReasons,
+            },
+          };
+        }
+
+        await recordEventSafe(async () =>
+          recordEvent({
+            entityType: "listing",
+            entityId: listingId,
+            eventType: "listing_publish_allowed_compliance",
+            actorId: userId,
+            actorType: "seller",
+            metadata: { readinessScore: ev.readinessScore, legalRiskScore: ev.legalRiskScore },
+          }),
+        );
+      } else {
+        const qc = await evaluateListingPublishComplianceDecision(listingId);
+        if (qc.apply && !qc.decision.allowed) {
+          await recordEventSafe(async () =>
+            recordEvent({
+              entityType: "listing",
+              entityId: listingId,
+              eventType: "listing_publish_blocked_compliance",
+              actorId: userId,
+              actorType: "seller",
+              metadata: {
+                readinessScore: qc.decision.readinessScore,
+                blockingIssues: qc.decision.blockingIssues,
+              },
+            }),
+          );
+          await recordEventSafe(async () =>
+            recordEvent({
+              entityType: "listing",
+              entityId: listingId,
+              eventType: "quebec_compliance_evaluated",
+              actorId: userId,
+              actorType: "seller",
+              metadata: {
+                readinessScore: qc.decision.readinessScore,
+                allowed: false,
+                phase: "legacy_publish_gate",
+              },
+            }),
+          );
+          return {
+            ok: false,
+            error: "COMPLIANCE_BLOCK",
+            status: 403,
+            compliance: {
+              reasons: qc.decision.reasons,
+              blockingIssues: qc.decision.blockingIssues,
+              readinessScore: qc.decision.readinessScore,
+            },
+          };
+        }
+        if (qc.apply && qc.decision.allowed) {
+          await recordEventSafe(async () =>
+            recordEvent({
+              entityType: "listing",
+              entityId: listingId,
+              eventType: "listing_publish_allowed_compliance",
+              actorId: userId,
+              actorType: "seller",
+              metadata: { readinessScore: qc.decision.readinessScore },
+            }),
+          );
+          await recordEventSafe(async () =>
+            recordEvent({
+              entityType: "listing",
+              entityId: listingId,
+              eventType: "quebec_compliance_evaluated",
+              actorId: userId,
+              actorType: "seller",
+              metadata: {
+                readinessScore: qc.decision.readinessScore,
+                allowed: true,
+                phase: "legacy_publish_gate",
+              },
+            }),
+          );
+        }
+      }
+    }
   }
 
   await persistSellerDeclarationAiReview(listingId);

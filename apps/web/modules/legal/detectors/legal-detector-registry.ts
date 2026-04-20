@@ -11,6 +11,7 @@ import { missingRequiredClusterDetector } from "./missing-required-cluster.detec
 import type { LegalDetector } from "./legal-detector.types";
 import { reviewDelayRiskDetector } from "./review-delay-risk.detector";
 import { suspiciousResubmissionDetector } from "./suspicious-resubmission.detector";
+import { legalRecordComplianceDetector } from "./legal-record-compliance.detector";
 
 /** Fixed order — deterministic evaluation. */
 export const legalDetectorRegistry: LegalDetector[] = [
@@ -24,6 +25,7 @@ export const legalDetectorRegistry: LegalDetector[] = [
   metadataAnomalyDetector,
   reviewDelayRiskDetector,
   highRiskSubmissionBurstDetector,
+  legalRecordComplianceDetector,
 ];
 
 export function runLegalDetectors(snapshot: LegalIntelligenceSnapshot): LegalIntelligenceSignal[] {

@@ -8,6 +8,12 @@ import { LegalPacketHeader } from "@/components/admin/LegalPacketHeader";
 import { LegalPacketOverviewSection } from "@/components/admin/LegalPacketOverviewSection";
 import { LegalPacketRecordListSection } from "@/components/admin/LegalPacketRecordListSection";
 import { getSellHubLegalChecklist } from "@/lib/fsbo/sell-hub-legal-checklist";
+import { getQuebecComplianceAdminView } from "@/modules/legal/compliance/listing-publish-compliance.service";
+import { QuebecComplianceChecklistCard } from "@/components/legal/compliance/QuebecComplianceChecklistCard";
+import { brokerAiFlags } from "@/config/feature-flags";
+import { CertificateOfLocationHelperPanel } from "@/components/broker-ai/CertificateOfLocationHelperPanel";
+import { getCertificateOfLocationBlockerImpact } from "@/modules/broker-ai/certificate-of-location/certificate-of-location-blocker.service";
+import { loadCertificateOfLocationPresentation } from "@/modules/broker-ai/certificate-of-location/certificate-of-location-view-model.service";
 import { getListingTransactionFlag } from "@/lib/fsbo/listing-transaction-flag";
 import { ListingTransactionFlag } from "@/components/listings/ListingTransactionFlag";
 
@@ -26,7 +32,31 @@ export default async function AdminFsboLegalChecklistPage({ params }: { params: 
 
   const checklist = await getSellHubLegalChecklist(id);
   if (!checklist) notFound();
+  const qcAdmin = await getQuebecComplianceAdminView(id);
+  const cl = qcAdmin.checklist;
+  const qcCardModel =
+    qcAdmin.decision && cl ?
+      {
+        readinessScore: qcAdmin.decision.readinessScore,
+        allowed: qcAdmin.decision.allowed,
+        blockingIssueIds: qcAdmin.decision.blockingIssues,
+        checklistSummary: cl.items.map((item) => {
+          const res = cl.results.find((r) => r.itemId === item.id);
+          return {
+            itemId: item.id,
+            passed: res?.passed ?? false,
+            label: item.label,
+            severity: item.severity,
+            blocking: item.blocking,
+          };
+        }),
+      }
+    : null;
   const transactionFlag = await getListingTransactionFlag(id);
+  const certificateCol =
+    brokerAiFlags.brokerAiCertificateOfLocationV1
+      ? await loadCertificateOfLocationPresentation({ listingId: id, brokerFlow: true })
+      : null;
   const packetData = {
     generatedAt: new Date().toISOString(),
     checklist,
@@ -67,6 +97,23 @@ export default async function AdminFsboLegalChecklistPage({ params }: { params: 
           htmlHref={packetHtmlHref}
           htmlDownload={`fsbo-${checklist.listingId}-legal-packet.html`}
         />
+
+        <QuebecComplianceChecklistCard model={qcCardModel} />
+
+        {certificateCol ? (
+          <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-6">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-400/90">
+              Broker AI helper — certificate of location
+            </p>
+            <div className="mt-4">
+              <CertificateOfLocationHelperPanel
+                listingId={id}
+                viewModel={certificateCol.viewModel}
+                blockerImpact={getCertificateOfLocationBlockerImpact(certificateCol.summary)}
+              />
+            </div>
+          </div>
+        ) : null}
 
         <LegalPacketOverviewSection
           heading={`Listing overview: ${checklist.title}`}

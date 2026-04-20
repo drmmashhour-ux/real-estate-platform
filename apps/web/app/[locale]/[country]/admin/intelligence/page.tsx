@@ -55,6 +55,10 @@ export default async function AdminIntelligencePage({
             <Link href="/admin/growth-dashboard" className="text-premium-gold hover:underline">
               growth dashboard
             </Link>
+            ) ·{" "}
+            <Link href="/admin/unified-intelligence" className="text-emerald-400 hover:underline">
+              unified listing read model
+            </Link>
             ).
           </p>
         </div>

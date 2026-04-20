@@ -22,6 +22,7 @@ import { BrokerCityMarketSnapshot } from "@/components/broker/BrokerCityMarketSn
 import { InboxSummaryCards } from "@/components/notifications/InboxSummaryCards";
 import { DecisionCard } from "@/components/ai/DecisionCard";
 import { BrokerExecutiveSnapshot } from "@/components/dashboard/lecipm/BrokerExecutiveSnapshot";
+import { BrokerDistributionPerformance } from "@/components/broker/BrokerDistributionPerformance";
 import { safeEvaluateDecision } from "@/modules/ai/decision-engine";
 import { RecommendationBanner } from "@/components/conversion/RecommendationBanner";
 import { NextActionPanel } from "@/components/conversion/NextActionPanel";
@@ -42,9 +43,13 @@ import { BrokerDealConversionConsole } from "@/components/broker/BrokerDealConve
 import { BrokerIncentivesPanel } from "@/components/broker/BrokerIncentivesPanel";
 import { BrokerPerformancePanel } from "@/components/broker/BrokerPerformancePanel";
 import { HubJourneyBanner } from "@/components/journey/HubJourneyBanner";
+import { legalHubFlags } from "@/config/feature-flags";
+import { LegalHubEntryCard } from "@/components/legal/LegalHubEntryCard";
+import { TrustGrowthPrompt } from "@/components/growth/TrustGrowthPrompt";
 import { CollaborationStrip } from "@/components/collaboration/CollaborationStrip";
 import { ImmoDealRoomEntry } from "@/components/immo-deal-room/ImmoDealRoomEntry";
 import { BrokerServiceProfilePanel } from "@/components/broker/BrokerServiceProfilePanel";
+import { BrokerLegalComplianceStrip } from "@/components/broker/BrokerLegalComplianceStrip";
 
 function fmtCommissionCents(cents: number | null | undefined): string {
   if (cents == null || cents <= 0) return "—";
@@ -186,6 +191,13 @@ export default async function BrokerHubPage({
     >
       <div className="space-y-8">
         <HubJourneyBanner hub="broker" locale={locale} country={country} userId={userId} />
+        {userId ? <BrokerLegalComplianceStrip locale={locale} country={country} /> : null}
+        {legalHubFlags.legalHubV1 ? (
+          <LegalHubEntryCard href={`/${locale}/${country}/legal`} locale={locale} country={country} />
+        ) : null}
+        {userId && dbUser?.role === "BROKER" ? (
+          <TrustGrowthPrompt variant="broker" locale={locale} country={country} />
+        ) : null}
         <div className="flex flex-wrap items-center justify-end gap-2 text-sm text-slate-400">
           <PhoneCallUs showLabel={true} />
         </div>
@@ -213,6 +225,9 @@ export default async function BrokerHubPage({
             dealsWorthReviewing={commissionStats.pendingDeals}
             revenueOrMrr={commissionStats.estimatedOpen}
           />
+        ) : null}
+        {userId && dbUser?.role === "BROKER" ? (
+          <BrokerDistributionPerformance accent={theme.accent} brokerUserId={userId} />
         ) : null}
         {brokerClosingFlags.brokerClosingV1 && userId && dbUser?.role === "BROKER" ? (
           <BrokerDealConversionConsole accent={theme.accent} />

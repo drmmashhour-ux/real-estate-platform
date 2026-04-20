@@ -87,5 +87,7 @@ export async function buildMarketplaceDashboardSummary(): Promise<MarketplaceDas
     ...(typeof syriaPreviewAvailable === "boolean" ? { syriaPreviewAvailable } : {}),
     ...(engineFlags.syriaRegionAdapterV1 ? { executionUnavailableForSyria: true as const } : {}),
     ...(aug.syriaSignalRollup !== null ? { syriaSignalRollup: aug.syriaSignalRollup } : {}),
+    ...(engineFlags.syriaRegionAdapterV1 ? { syriaPolicySummary: aug.syriaPolicySummary } : {}),
+    ...(engineFlags.syriaRegionAdapterV1 ? { syriaGovernanceSlice: aug.syriaGovernanceSlice } : {}),
   };
 }

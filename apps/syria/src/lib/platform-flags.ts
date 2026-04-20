@@ -19,3 +19,22 @@ export const syriaFlags = {
 export function assertSyriaEnabled(): boolean {
   return syriaFlags.SYRIA_PLATFORM_ENABLED;
 }
+
+/**
+ * Darlink full autonomy OS — conservative defaults:
+ * autonomy off, approvals on, auto-execute off, optimization off.
+ */
+export const darlinkAutonomyFlags = {
+  /** Master switch — default false. */
+  AUTONOMY_ENABLED: process.env.DARLINK_AUTONOMY_ENABLED === "true",
+  /** Approval queue for gated actions — default true. */
+  APPROVALS_ENABLED: process.env.DARLINK_AUTONOMY_APPROVALS_ENABLED !== "false",
+  /** Low-risk internal auto-execute — default false. */
+  AUTO_EXECUTE_ENABLED: process.env.DARLINK_AUTONOMY_AUTO_EXECUTE_ENABLED === "true",
+  /** Adjustment / optimization recommendations — default false. */
+  OPTIMIZATION_ENABLED: process.env.DARLINK_AUTONOMY_OPTIMIZATION_ENABLED === "true",
+} as const;
+
+export function getDarlinkAutonomyFlags(): typeof darlinkAutonomyFlags {
+  return darlinkAutonomyFlags;
+}

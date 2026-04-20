@@ -8,6 +8,7 @@ export function HostCreateListingForm() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [legalRiskAlert, setLegalRiskAlert] = useState<string | null>(null);
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -21,6 +22,7 @@ export function HostCreateListingForm() {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setLegalRiskAlert(null);
     try {
       const price = parseFloat(form.price);
       if (Number.isNaN(price) || price < 0) {
@@ -144,6 +146,11 @@ export function HostCreateListingForm() {
       {error && (
         <div className="rounded-xl border border-red-400/30 bg-red-400/10 px-4 py-3 text-sm text-red-200">
           {error}
+        </div>
+      )}
+      {legalRiskAlert && (
+        <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+          {legalRiskAlert}
         </div>
       )}
 

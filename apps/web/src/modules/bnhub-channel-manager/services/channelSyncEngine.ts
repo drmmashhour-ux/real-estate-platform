@@ -62,6 +62,9 @@ export async function syncConnection(connectionId: string): Promise<{ ok: boolea
         status: BnhubChannelConnectionStatus.ACTIVE,
       },
     });
+    void import("@/modules/channel-manager/channel-sync.service")
+      .then((m) => m.syncAvailability(mapping.listingId))
+      .catch(() => {});
     return { ok: true, message: `Imported ${result.eventsImported} events` };
   }
 

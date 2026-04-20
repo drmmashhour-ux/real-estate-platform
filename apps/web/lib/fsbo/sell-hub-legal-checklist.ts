@@ -1,5 +1,10 @@
 import type { VerificationStatus } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { complianceFlags } from "@/config/feature-flags";
+import {
+  evaluateListingPublishComplianceDecision,
+  shouldApplyQuebecComplianceForListing,
+} from "@/modules/legal/compliance/listing-publish-compliance.service";
 import {
   assertSellerHubSubmitReady,
   hubDocumentsSatisfied,
@@ -45,6 +50,13 @@ export type SellHubLegalChecklist = {
     block: number;
   };
   publishReady: boolean;
+  /** FEATURE_QUEBEC_COMPLIANCE_V1 — safe seller copy only (no fraud/policy codes). */
+  quebecPublishReadiness?: {
+    applies: boolean;
+    readinessScore: number;
+    publishAllowedByCompliance: boolean;
+    missingItemsUserSafe: string[];
+  } | null;
 };
 
 function normalizeVerification(status: VerificationStatus | null | undefined): ChecklistStatus {
@@ -196,6 +208,32 @@ export async function getSellHubLegalChecklist(listingId: string): Promise<SellH
     { pass: 0, warning: 0, block: 0 }
   );
 
+  let quebecPublishReadiness: SellHubLegalChecklist["quebecPublishReadiness"] = null;
+  if (complianceFlags.quebecComplianceV1) {
+    try {
+      if (shouldApplyQuebecComplianceForListing({ country: listing.country, region: listing.region })) {
+        const qc = await evaluateListingPublishComplianceDecision(listingId);
+        if (qc.apply) {
+          quebecPublishReadiness = {
+            applies: true,
+            readinessScore: qc.decision.readinessScore,
+            publishAllowedByCompliance: qc.decision.allowed,
+            missingItemsUserSafe: qc.decision.reasons,
+          };
+        }
+      } else {
+        quebecPublishReadiness = {
+          applies: false,
+          readinessScore: 100,
+          publishAllowedByCompliance: true,
+          missingItemsUserSafe: [],
+        };
+      }
+    } catch {
+      quebecPublishReadiness = null;
+    }
+  }
+
   return {
     listingId: listing.id,
     listingCode: listing.listingCode,
@@ -215,5 +253,6 @@ export async function getSellHubLegalChecklist(listingId: string): Promise<SellH
     items,
     counts,
     publishReady: submitGate.ok,
+    quebecPublishReadiness,
   };
 }

@@ -54,3 +54,20 @@ Future phases may introduce a Syria-local execution boundary (policies, approval
 ## Preview detectors and signals
 
 Listing-level Syria signals, opportunities, and signal-driven policy hints are documented in [`syria-region-detectors.md`](./syria-region-detectors.md).
+
+## Preview policy & approval boundary (listing-level)
+
+Each Syria listing preview computes:
+
+1. **`syriaPolicyPreview`** — signal-severity policy (`evaluateSyriaPreviewPolicyFromSignals`), types in `syria-policy.types.ts`.
+2. **`syriaApprovalBoundary`** — execution / human-review posture (`evaluateSyriaApprovalBoundary`), types in `syria-approval-boundary.types.ts`. Live autonomous execution remains blocked for Syria in default web posture.
+
+Structured explainability lines are produced by `syria-preview-explainability.service.ts` (tags in `syria-preview-explainability-rules.ts`) and merged into preview `explainability.notes` and, when enabled, the preview explanation graph.
+
+Admin API `GET /api/admin/autonomy/preview` adds **`syriaPreviewEnrichment`** when `source=syria`, carrying policy, boundary, and explainability pointers without duplicating the full `preview` object.
+
+See also [`syria-policy-and-approval-boundary.md`](./syria-policy-and-approval-boundary.md).
+
+## Dashboard policy summary (aggregate)
+
+The marketplace dashboard exposes **`syriaPolicySummary`** — a deterministic **worst-case** label inferred from Syria aggregate KPIs (not per-listing preview). Use listing preview for authoritative per-id policy.

@@ -17,6 +17,7 @@ import { TrustDealSummaryCard } from "@/components/conversion/TrustDealSummaryCa
 import { NextActionPanel } from "@/components/conversion/NextActionPanel";
 import { InlineUpgradeBanner } from "@/components/conversion/InlineUpgradeBanner";
 import { HubJourneyBanner } from "@/components/journey/HubJourneyBanner";
+import { InvestorComplianceSnapshot } from "@/components/investor/InvestorComplianceSnapshot";
 
 export const dynamic = "force-dynamic";
 
@@ -82,12 +83,20 @@ export default async function InvestorDashboardPage({
             <h1 className="text-2xl font-bold text-white">Saved scenarios & tools</h1>
             <p className="mt-1 text-sm text-slate-500">Estimates only — not advice.</p>
           </div>
-          <Link
-            href="/invest/portfolio"
-            className="rounded-xl bg-premium-gold px-5 py-2.5 text-sm font-bold text-black"
-          >
-            Open portfolio planner
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href="/invest/portfolio"
+              className="rounded-xl bg-premium-gold px-5 py-2.5 text-sm font-bold text-black"
+            >
+              Open portfolio planner
+            </Link>
+            <Link
+              href={`/${locale}/${country}/dashboard/investor/acquisition`}
+              className="rounded-xl border border-white/15 px-5 py-2.5 text-sm font-semibold text-white hover:bg-white/5"
+            >
+              BNHub acquisition simulator
+            </Link>
+          </div>
         </div>
 
         <DecisionCard
@@ -117,6 +126,8 @@ export default async function InvestorDashboardPage({
           />
         </section>
         <InlineUpgradeBanner text="Unlock premium investor insights for deeper confidence and faster decisions." />
+
+        <InvestorComplianceSnapshot />
 
         {isCopilotEnabled() ? <CopilotFloatingDock /> : null}
 

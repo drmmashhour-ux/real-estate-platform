@@ -1,6 +1,9 @@
 import Link from "next/link";
 import type { AutonomyMode } from "@/lib/autonomy/types";
+import { engineFlags } from "@/config/feature-flags";
 import { ControlledExecutionPanel } from "@/components/autonomy/admin/ControlledExecutionPanel";
+import { RegionExecutionCapabilityNote } from "@/components/autonomy/admin/RegionExecutionCapabilityNote";
+import { getRegionExecutionAvailabilityNote } from "@/modules/autonomous-marketplace/execution/region-safe-execution.service";
 import { getManagerAiPlatformSettings } from "@/lib/manager-ai/platform-settings";
 import { AutonomyControlsClient } from "./autonomy-controls-client";
 
@@ -82,6 +85,17 @@ export default async function AdminAutonomyPage() {
         </section>
 
         <ControlledExecutionPanel />
+
+        {engineFlags.controlledExecutionV1 ? (
+          <section className="mt-8">
+            <RegionExecutionCapabilityNote
+              note={getRegionExecutionAvailabilityNote({
+                regionCode: "ca_qc",
+                actionType: "CREATE_TASK",
+              })}
+            />
+          </section>
+        ) : null}
 
         <section className="mt-8 rounded-xl border border-slate-800 bg-slate-900/60 p-6">
           <h2 className="text-lg font-semibold text-slate-200">Related surfaces</h2>

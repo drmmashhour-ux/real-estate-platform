@@ -426,5 +426,42 @@
     "listingAssistantCopyBundle": "Copy all fields",
     "listingAssistantGoSell": "Open sell form",
     "listingAssistantMapHint": "Map pin and payment steps are still required on the sell form — coordinates are not guessed here."
+  },
+  "common": {
+    "signOut": "Sign out",
+    "loading": "Loading…",
+    "save": "Save",
+    "cancel": "Cancel",
+    "localeAr": "العربية",
+    "localeEn": "English"
+  },
+  "listing": {
+    "title": "Listing",
+    "price": "Price",
+    "city": "City",
+    "district": "District",
+    "description": "Description"
+  },
+  "sell": {
+    "title": "Post a property",
+    "subtitle": "Arabic fields are required; English is optional."
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "listings": "Your listings"
+  },
+  "admin": {
+    "title": "Admin",
+    "overview": "Overview"
+  },
+  "booking": {
+    "title": "Booking",
+    "status": "Status",
+    "pending": "Pending"
+  },
+  "payments": {
+    "title": "Payments",
+    "amount": "Amount",
+    "reference": "Reference"
   }
 }

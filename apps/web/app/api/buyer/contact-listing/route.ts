@@ -23,6 +23,7 @@ import { funnelVariantForListing } from "@/lib/funnel/listing-ab";
 import { trackFunnelEvent } from "@/lib/funnel/tracker";
 import { PRICING } from "@/lib/monetization/pricing";
 import { createLecipmBrokerThread } from "@/lib/messages/create-thread";
+import { resolveLeadDistributionChannel } from "@/modules/distribution/distribution.service";
 
 export const dynamic = "force-dynamic";
 
@@ -42,7 +43,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: parsed.error }, { status: 400 });
   }
 
-  const { listingId, name, email, phone, message } = parsed.data;
+  const { listingId, name, email, phone, message, distributionChannel } = parsed.data;
   if (!message || message.trim().length < 5) {
     return NextResponse.json({ error: "Message must be at least 5 characters" }, { status: 400 });
   }
@@ -222,6 +223,7 @@ async function handleFsboContact(opts: {
       commissionEligible: true,
       source: "buyer_hub",
       highIntent: true,
+      distributionChannel: distributionChannelResolved,
     },
   });
 
@@ -390,6 +392,7 @@ async function handleCrmContact(opts: {
       commissionEligible: true,
       source: "buyer_hub",
       highIntent: true,
+      distributionChannel: "LECIPM",
       ...(priceInt != null ? { dealValue: priceInt, estimatedValue: priceInt } : {}),
     },
   });

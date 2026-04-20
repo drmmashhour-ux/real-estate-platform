@@ -4,8 +4,10 @@ import {
   resolveStepRoute,
 } from "./hub-journey-definitions";
 import { detectHubBlockers } from "./hub-blockers.service";
+import { computeHubJourneySignalConfidence } from "./hub-journey-confidence.service";
 import {
   bumpJourneyMetric,
+  logJourneyStructuredKind,
   recordHubVisited,
 } from "./hub-journey-monitoring.service";
 import type {
@@ -14,7 +16,21 @@ import type {
   HubJourneyStep,
   HubJourneyStepStatus,
   HubKey,
+  JourneyConfidence,
 } from "./hub-journey.types";
+
+/** Re-export for callers that import confidence typing from the state module. */
+export type { JourneyConfidence };
+
+/**
+ * Deterministic confidence from context + hub (plan hub must match resolution target).
+ */
+export function computeJourneyConfidence(
+  ctx: HubJourneyContext,
+  plan: Pick<HubJourneyPlan, "hub">,
+): JourneyConfidence {
+  return computeHubJourneySignalConfidence(plan.hub, ctx);
+}
 
 function isStepCompleted(
   hub: HubKey,
@@ -49,6 +65,8 @@ function isStepCompleted(
           return ctx.sellerDetailsComplete === true;
         case "seller-3-media":
           return (ctx.sellerPhotosCount ?? 0) >= 3;
+        case "seller-3b-certificate-location":
+          return ctx.sellerCertificateLocationSatisfied === true;
         case "seller-4-pricing":
           return ctx.sellerPricingViewed === true;
         case "seller-5-publish":
@@ -145,6 +163,8 @@ function isStepCompleted(
           return ctx.brokerProfileComplete === true;
         case "broker-3-unlocked":
           return (ctx.brokerLeadsUnlocked ?? 0) > 0;
+        case "broker-3b-certificate-workflow":
+          return ctx.brokerCertificateLocationSatisfied === true;
         case "broker-4-contact":
           return (ctx.brokerLeadsContacted ?? 0) > 0;
         case "broker-5-pipeline":
@@ -267,12 +287,28 @@ export function buildHubJourneyPlan(hub: HubKey, ctx: HubJourneyContext): HubJou
     }
   }
 
+  const confidence = computeJourneyConfidence(ctx, { hub });
+
+  try {
+    if (confidence === "low") {
+      logJourneyStructuredKind("weak_signal_detected", {
+        hub,
+        locale: ctx.locale,
+        country: ctx.country,
+        progressPercent,
+      });
+    }
+  } catch {
+    /* noop */
+  }
+
   return {
     hub,
     title: meta.title,
     description: meta.description,
     steps,
     progressPercent,
+    confidence,
     currentStepId,
     nextStepId,
     blockedStepIds,

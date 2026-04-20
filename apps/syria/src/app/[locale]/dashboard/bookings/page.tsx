@@ -47,7 +47,7 @@ export default async function DashboardBookingsPage() {
                       {isHost ? t("roleHosting") : t("roleGuest")}
                     </p>
                     <Link href={`/listing/${b.propertyId}`} className="text-lg font-semibold text-stone-900 hover:underline">
-                      {b.property.title}
+                      {pickListingTitle(b.property, locale)}
                     </Link>
                     <p className="text-sm text-stone-600">
                       {b.checkIn.toISOString().slice(0, 10)} → {b.checkOut.toISOString().slice(0, 10)}

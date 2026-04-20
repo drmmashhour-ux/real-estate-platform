@@ -3,13 +3,19 @@
  * No throws; safe for admin surfaces and API envelopes.
  */
 
+import { engineFlags } from "@/config/feature-flags";
+
 // Darlink (Syria) operates as an independent product lane.
 // Execution is handled only inside apps/syria and is not triggered from apps/web.
 
 export type SyriaTrustOverlayCapability = "off" | "limited_summary";
 
 export function canSyriaUsePreview(): boolean {
-  return true;
+  try {
+    return engineFlags.syriaRegionAdapterV1 === true && engineFlags.syriaPreviewV1 === true;
+  } catch {
+    return false;
+  }
 }
 
 export function canSyriaUseAutonomy(): boolean {

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { HubLayout } from "@/components/hub/HubLayout";
 import { hubNavigation } from "@/lib/hub/navigation";
 import { loadAutonomousSystemBriefing } from "@/lib/autonomy/briefing-data";
+import { LegalPolicyViolationsPanel } from "@/components/admin/LegalPolicyViolationsPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -62,6 +63,17 @@ export default async function AdminAutonomousSystemPage() {
                 Manual = OFF / ASSIST; assist = suggestions; auto = SAFE_AUTOPILOT or FULL_WITH_APPROVAL per policy — see
                 autonomy page for the full matrix.
               </p>
+            </section>
+
+            <section className="rounded-xl border border-zinc-800 bg-zinc-950/60 p-6">
+              <h2 className="text-lg font-semibold text-zinc-200">Legal policy violations (autonomy)</h2>
+              <p className="mt-2 text-sm text-zinc-500">
+                Deterministic Legal Hub rules materialize as policy records with <code className="text-zinc-400">domain: legal</code> when
+                the autonomous marketplace engine evaluates actions.
+              </p>
+              <div className="mt-4">
+                <LegalPolicyViolationsPanel />
+              </div>
             </section>
 
             <section className="rounded-xl border border-zinc-800 bg-zinc-950/60 p-6">

@@ -3,6 +3,7 @@ import type { PolicyDecision, PolicyDisposition, PolicyRuleEvaluation, PolicyVio
 import { autonomyLog } from "../internal/autonomy-log";
 import type { PolicyContext } from "./policy-context";
 import { allPolicyRuleEvaluators } from "./all-rules";
+import { legalCompliancePolicyEvaluators } from "./rules/legal.rules";
 import { listingPreviewPolicyRuleEvaluators } from "./listing-preview-policy-rules";
 
 export type EvaluatePolicyOptions = {
@@ -28,7 +29,7 @@ function aggregateDisposition(evals: PolicyRuleEvaluation[]): PolicyDisposition 
   return "ALLOW";
 }
 
-function evaluatePolicyWithRules(
+export function evaluatePolicyWithRules(
   ctx: PolicyContext,
   rules: Array<(c: PolicyContext) => PolicyRuleEvaluation>,
   options?: EvaluatePolicyOptions,
@@ -98,7 +99,13 @@ export function evaluateActionPolicy(ctx: PolicyContext): PolicyDecision {
 /**
  * Listing preview — four rules only (pricing guardrail, active listing, duplicate promotion, high-risk approval).
  * Evaluate-only; does not execute actions.
+ * Batch listing preview uses `evaluateListingPreviewPolicy` in `preview-policy.service.ts`.
  */
-export function evaluateListingPreviewPolicy(ctx: PolicyContext): PolicyDecision {
+export function evaluateListingPreviewPolicyFromContext(ctx: PolicyContext): PolicyDecision {
   return evaluatePolicyWithRules(ctx, listingPreviewPolicyRuleEvaluators, { logDecision: false });
+}
+
+/** Legal Hub policy rules only — used by HTTP pre-gates (no pricing / promotion side effects). */
+export function evaluateLegalCompliancePolicyOnly(ctx: PolicyContext): PolicyDecision {
+  return evaluatePolicyWithRules(ctx, legalCompliancePolicyEvaluators, { logDecision: false });
 }

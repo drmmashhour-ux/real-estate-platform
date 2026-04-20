@@ -9,6 +9,10 @@ export const adminAutonomyExecuteBodySchema = z.object({
   detectorIds: z.array(z.string()).optional(),
   actionTypes: z.array(z.string()).optional(),
   idempotencyKey: z.string().max(256).optional(),
+  /** Optional correlation — Québec web listings default to ca_qc when omitted at engine layer. */
+  regionCode: z.string().min(2).max(32).optional(),
+  /** Optional listing source hint (e.g. syria) for capability audit trails / clients. */
+  source: z.enum(["web", "syria", "external"]).optional(),
 });
 
 export const adminAutonomyApprovalIdSchema = z.object({

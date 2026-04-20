@@ -96,3 +96,12 @@ export function calculateBrokerPricing(input: {
     ],
   };
 }
+
+/** BNHub nightly suggestion rows (30-day horizon); apply path updates `nightPriceCents` via `pricing-apply.service`. */
+export {
+  generatePricing,
+  generatePricingForEnabledListings,
+  type BnhubPricingSuggestionRow,
+} from "./bnhub-dynamic-pricing-suggestions.service";
+
+export { applyPricingSuggestion } from "./pricing-apply.service";

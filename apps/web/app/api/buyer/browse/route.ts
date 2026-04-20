@@ -15,7 +15,10 @@ import type { GlobalSearchFiltersExtended } from "@/components/search/FilterStat
 import { parseGlobalSearchBody, urlParamsToGlobalFilters } from "@/components/search/FilterState";
 import { ListingAnalyticsKind } from "@prisma/client";
 import { buildFsboRecommendedBrowseSortUnit } from "@/lib/listings/marketplace-browse-sort";
-import { engineFlags } from "@/config/feature-flags";
+import { engineFlags, trustFlags } from "@/config/feature-flags";
+import { batchTrustBrowseAugmentation } from "@/modules/trust/trust-browse";
+import type { TrustBrowseAugmentation } from "@/modules/trust/trust-browse";
+import type { TrustBadge } from "@/modules/trust/trust.types";
 import { isAiRankingEngineEnabled } from "@/src/modules/ranking/rankingEnv";
 import { scoreRealEstateListingsForBrowse } from "@/src/modules/ranking/rankingService";
 import { scoreRealEstateListingsForBrowseV2 } from "@/src/modules/ranking/v2/browse-scores";
@@ -55,7 +58,19 @@ type UnifiedRow = {
   } | null;
   /** Broker CRM rows, or FSBO published under a broker with license verification on file (matches public listing detail). */
   verifiedListing: boolean;
+  /** FSBO listing owner — used for deterministic trust augmentation when flags are on */
+  ownerId?: string;
+  trustBadges?: TrustBadge[];
 };
+
+function applyTrustRankingSortMultiplier(rows: UnifiedRow[], aug: TrustBrowseAugmentation | null) {
+  if (!trustFlags.trustRankingV1 || !aug) return;
+  for (const row of rows) {
+    if (row.kind !== "fsbo" || !row.ownerId) continue;
+    const m = aug.rankingBoost.get(row.ownerId) ?? 1;
+    row.sortAt = Math.round(row.sortAt * m);
+  }
+}
 
 function buildFsboWhere(
   f: GlobalSearchFiltersExtended,
@@ -347,11 +362,12 @@ async function runBrowse(
       images: Array.isArray(r.images) ? r.images : [],
     });
     const brokerV = r.owner.brokerVerifications[0];
-    const verifiedListing =
+    const     verifiedListing =
       r.listingOwnerType === "BROKER" && brokerV?.verificationStatus === "VERIFIED";
     return {
     kind: "fsbo" as const,
     id: r.id,
+    ownerId: r.ownerId,
     title: r.title,
     priceCents: r.priceCents,
     city: r.city,
@@ -441,6 +457,7 @@ async function runBrowse(
         row.sortAt = Math.round((cached > 0 ? cached : 35) * 1_000_000);
       }
     }
+    applyTrustRankingSortMultiplier(merged, trustAug);
     merged.sort((a, b) => b.sortAt - a.sortAt);
   } else if (sortMode === "recommended" || sortMode === "aiScore") {
     const fsboIds = merged.filter((m) => m.kind === "fsbo").map((m) => m.id);
@@ -488,8 +505,10 @@ async function runBrowse(
         );
       }
     }
+    applyTrustRankingSortMultiplier(merged, trustAug);
     merged.sort((a, b) => b.sortAt - a.sortAt);
   } else {
+    applyTrustRankingSortMultiplier(merged, trustAug);
     merged.sort((a, b) => b.sortAt - a.sortAt);
   }
   const total = hasPF ? fsboFiltered.length : fsboTotal + crmTotal;

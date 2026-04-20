@@ -11,6 +11,10 @@ import { TrustBreakdown } from "@/components/trust/TrustBreakdown";
 import { SellerDeclarationSummaryCard } from "@/components/trust/SellerDeclarationSummaryCard";
 import { ListingTrustGraphPanel } from "@/components/trust/ListingTrustGraphPanel";
 import { SellHubLegalChecklistCard } from "@/components/seller/SellHubLegalChecklistCard";
+import { CertificateOfLocationHelperPanel } from "@/components/broker-ai/CertificateOfLocationHelperPanel";
+import { brokerAiFlags } from "@/config/feature-flags";
+import { loadCertificateOfLocationPresentation } from "@/modules/broker-ai/certificate-of-location/certificate-of-location-view-model.service";
+import { getCertificateOfLocationBlockerImpact } from "@/modules/broker-ai/certificate-of-location/certificate-of-location-blocker.service";
 import { isTrustGraphEnabled } from "@/lib/trustgraph/feature-flags";
 import {
   buildTrustBreakdownFromReasons,
@@ -142,6 +146,10 @@ export default async function SellerHubListingDetailPage({ params }: { params: P
   const pricingAdvisorDto =
     isDealAnalyzerPricingAdvisorEnabled() ? await getSellerPricingAdvisorDto(listing.id) : null;
   const legalChecklist = await getSellHubLegalChecklist(listing.id);
+  const certificateCol =
+    brokerAiFlags.brokerAiCertificateOfLocationV1
+      ? await loadCertificateOfLocationPresentation({ listingId: listing.id })
+      : null;
   const transactionFlag = await getListingTransactionFlag(listing.id, listing.status);
 
   const demandAnalytics = await refreshFsboListingAnalytics(listing.id, listing.priceCents);
@@ -288,6 +296,19 @@ export default async function SellerHubListingDetailPage({ params }: { params: P
             />
 
             {legalChecklist ? <SellHubLegalChecklistCard checklist={legalChecklist} /> : null}
+
+            {certificateCol ? (
+              <div className="space-y-2">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-premium-gold/80">
+                  Broker AI helper — certificate of location
+                </p>
+                <CertificateOfLocationHelperPanel
+                  listingId={listing.id}
+                  viewModel={certificateCol.viewModel}
+                  blockerImpact={getCertificateOfLocationBlockerImpact(certificateCol.summary)}
+                />
+              </div>
+            ) : null}
 
             {isDealAnalyzerEnabled() ? (
               <DealAnalysisCard listingId={listing.id} analysis={dealAnalysisDto} showRunButton />

@@ -426,5 +426,42 @@
     "listingAssistantCopyBundle": "نسخ كل الحقول",
     "listingAssistantGoSell": "فتح نموذج النشر",
     "listingAssistantMapHint": "لا يزال يجب تحديد الخريطة وخطوات الدفع في صفحة النشر — لا نخمّن الإحداثيات هنا."
+  },
+  "common": {
+    "signOut": "تسجيل الخروج",
+    "loading": "جاري التحميل…",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "localeAr": "العربية",
+    "localeEn": "English"
+  },
+  "listing": {
+    "title": "إعلان",
+    "price": "السعر",
+    "city": "المدينة",
+    "district": "المنطقة",
+    "description": "الوصف"
+  },
+  "sell": {
+    "title": "إدراج عقار",
+    "subtitle": "حقول بالعربية مطلوبة؛ الإنجليزية اختيارية."
+  },
+  "dashboard": {
+    "title": "لوحة التحكم",
+    "listings": "إعلاناتك"
+  },
+  "admin": {
+    "title": "الإدارة",
+    "overview": "نظرة عامة"
+  },
+  "booking": {
+    "title": "حجز",
+    "status": "الحالة",
+    "pending": "قيد الانتظار"
+  },
+  "payments": {
+    "title": "المدفوعات",
+    "amount": "المبلغ",
+    "reference": "المرجع"
   }
 }

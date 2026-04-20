@@ -60,6 +60,55 @@ describe("generateAdaptiveDecisions", () => {
       expect(x.requiresApproval).toBe(true);
     }
   });
+
+  it("uses deal-performance sparse AI signal for a growth suggestion", () => {
+    const d = generateAdaptiveDecisions(
+      baseCtx({
+        sparseSignals: false,
+        pipelineStatus: "12 leads in 14d",
+        dealPerformance: {
+          windowDays: 14,
+          aiRows: 4,
+          aiPositiveBands: 0,
+          sparseAiTelemetry: true,
+          brokerRows: 0,
+          brokerPositiveBands: 0,
+        },
+      }),
+    );
+    expect(d.some((x) => x.category === "growth" && /AI execution/i.test(x.action))).toBe(true);
+  });
+
+  it("uses broker competition bands for retention when rows lack positives", () => {
+    const d = generateAdaptiveDecisions(
+      baseCtx({
+        sparseSignals: false,
+        pipelineStatus: "ok",
+        dealPerformance: {
+          windowDays: 14,
+          aiRows: 10,
+          aiPositiveBands: 1,
+          sparseAiTelemetry: false,
+          brokerRows: 4,
+          brokerPositiveBands: 0,
+        },
+      }),
+    );
+    expect(d.some((x) => x.category === "retention" && /broker/i.test(x.reason))).toBe(true);
+  });
+
+  it("flags illustrative forecast gaps when revenue meta is insufficient and lead score is high", () => {
+    const d = generateAdaptiveDecisions(
+      baseCtx({
+        sparseSignals: false,
+        pipelineStatus: "ok",
+        topLead: { score: 72, pipelineStage: "negotiation", hoursSinceTouch: 4 },
+        revenueForecastInsufficientData: true,
+        revenueForecastConfidence: "low",
+      }),
+    );
+    expect(d.some((x) => x.category === "closing" && /insufficient/i.test(x.reason))).toBe(true);
+  });
 });
 
 describe("prioritizeAdaptiveDecisions", () => {

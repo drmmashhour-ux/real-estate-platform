@@ -150,9 +150,12 @@ export function ChannelManagerClient({
       </div>
 
       <form onSubmit={addConnection} className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
-        <h2 className="text-sm font-semibold text-white">OTA → BNHUB (iCal import)</h2>
+        <h2 className="text-sm font-semibold text-white">OTA → BNHUB (ICS / iCal import)</h2>
         <p className="mt-2 text-sm text-slate-400">
-          Paste the private calendar URL from Airbnb, Booking.com, or Vrbo.
+          Paste the private calendar URL (.ics feed) from Airbnb, Booking.com, or Vrbo. Use &quot;Sync now&quot;
+          anytime; production can also schedule <code className="text-slate-300">GET /api/channel/sync</code> with{" "}
+          <code className="text-slate-300">Authorization: Bearer CRON_SECRET</code> to pull ICS on an interval then push
+          availability to mapped channels.
         </p>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <div>

@@ -1,51 +1,49 @@
 import { NextResponse } from "next/server";
-import { engineFlags } from "@/config/feature-flags";
-import { requireAdminSession } from "@/lib/admin/require-admin";
-import { previewBodySchema } from "@/modules/autonomous-marketplace/api/zod-schemas";
-import { autonomousMarketplaceEngine } from "@/modules/autonomous-marketplace/execution/autonomous-marketplace.engine";
+import { getGuestId } from "@/lib/auth/session";
+import { prisma } from "@/lib/db";
+import { runAutonomyCycle } from "@/modules/autonomy/autonomy-orchestrator.service";
+import { canInvokeAutonomyCycle } from "@/modules/autonomy/autonomy-access.service";
 
 export const dynamic = "force-dynamic";
 
-/** Generic POST — same body as `/api/autonomy/preview`; default dryRun=false for explicit runs. */
 export async function POST(req: Request) {
-  if (!engineFlags.autonomousMarketplaceV1) {
-    return NextResponse.json({ error: "Autonomous marketplace disabled" }, { status: 403 });
-  }
-  const auth = await requireAdminSession();
-  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
-
-  let json: unknown;
+  let body: { scopeType?: string; scopeId?: string };
   try {
-    json = await req.json();
+    body = await req.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
-  const parsed = previewBodySchema.safeParse(json);
-  if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid body", issues: parsed.error.flatten() }, { status: 400 });
+
+  const scopeType = typeof body.scopeType === "string" ? body.scopeType.trim() : "";
+  const scopeId = typeof body.scopeId === "string" ? body.scopeId.trim() : "";
+
+  if (!scopeType || !scopeId || !["portfolio", "listing"].includes(scopeType)) {
+    return NextResponse.json(
+      { error: "scopeType must be portfolio | listing and scopeId is required" },
+      { status: 400 }
+    );
+  }
+
+  const userId = await getGuestId();
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const ok = await canInvokeAutonomyCycle(userId, scopeType, scopeId);
+  if (!ok) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
-    const opts = {
-      mode: parsed.data.mode,
-      dryRun: parsed.data.dryRun ?? false,
-      detectorIds: parsed.data.detectorIds,
-      actionTypes: parsed.data.actionTypes,
-      idempotencyKey: parsed.data.idempotencyKey,
-      createdByUserId: auth.userId,
-    };
-
-    let run;
-    if (parsed.data.targetType === "fsbo_listing") {
-      run = await autonomousMarketplaceEngine.runForListing(parsed.data.targetId, opts);
-    } else if (parsed.data.targetType === "lead") {
-      run = await autonomousMarketplaceEngine.runForLead(parsed.data.targetId, opts);
-    } else {
-      run = await autonomousMarketplaceEngine.runForCampaign(parsed.data.targetId, opts);
-    }
-
-    return NextResponse.json({ ok: true, run });
+    const result = await runAutonomyCycle(scopeType, scopeId);
+    return NextResponse.json({ success: true, result });
   } catch (e) {
-    return NextResponse.json({ error: String(e) }, { status: 500 });
+    const msg = e instanceof Error ? e.message : "Autonomy cycle failed";
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

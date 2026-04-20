@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getGrowthCampaigns } from "@/lib/growth-acquisition";
-import { montrealGrowthEngineFlags } from "@/config/feature-flags";
+import { engineFlags, montrealGrowthEngineFlags } from "@/config/feature-flags";
+import { ListingPreviewPanel } from "@/components/autonomy/admin/ListingPreviewPanel";
 import { GrowthDashboard } from "@/components/growth/GrowthDashboard";
 import { GrowthSystemMetricsPanel } from "@/components/admin/GrowthSystemMetricsPanel";
 import { GrowthFunnelDashboard } from "./growth-funnel-dashboard";
@@ -72,6 +73,14 @@ export default async function AdminGrowthPage() {
             </div>
           ) : null}
           <GrowthSystemMetricsPanel />
+          {engineFlags.autonomyRealPreviewV1 || engineFlags.autonomousMarketplaceV1 ? (
+            <section className="mt-12 rounded-xl border border-zinc-800 bg-[#111]/80 p-4">
+              <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                Autonomy · listing preview (admin)
+              </p>
+              <ListingPreviewPanel />
+            </section>
+          ) : null}
           <GrowthFunnelDashboard />
           {campaigns.length === 0 ? (
             <p className="text-sm text-slate-500">No campaigns yet.</p>

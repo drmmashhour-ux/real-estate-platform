@@ -2,8 +2,13 @@
 
 import * as React from "react";
 import type { CapitalAllocationPlan } from "@/modules/growth/capital-allocation.types";
+import { presetAndScrollToActionSimulation } from "./growth-action-simulation-preset";
 
-export function CapitalAllocationPanel() {
+export function CapitalAllocationPanel({
+  simulateOutcomeEnabled = false,
+}: {
+  simulateOutcomeEnabled?: boolean;
+}) {
   const [state, setState] = React.useState<CapitalAllocationPlan | null | "err" | "loading">("loading");
   const [disclaimer, setDisclaimer] = React.useState("");
 
@@ -50,6 +55,23 @@ export function CapitalAllocationPanel() {
         <p className="text-xs font-semibold uppercase tracking-[0.15em] text-emerald-300/90">Strategy</p>
         <h3 className="mt-1 text-lg font-semibold text-zinc-100">Capital allocation (internal)</h3>
         <p className="mt-1 max-w-3xl text-[11px] text-zinc-500">{disclaimer}</p>
+        {simulateOutcomeEnabled ? (
+          <button
+            type="button"
+            className="mt-2 text-[11px] text-emerald-400/90 hover:underline"
+            onClick={() =>
+              presetAndScrollToActionSimulation({
+                title: "Stress-test current allocation priorities",
+                category: "demand_generation",
+                rationale: "Opened from capital allocation — compare directional effects before shifting focus.",
+                windowDays: 14,
+                intensity: "medium",
+              })
+            }
+          >
+            Simulate outcome →
+          </button>
+        ) : null}
       </div>
 
       <p className="mt-2 text-[11px] text-zinc-500">

@@ -1,39 +1,39 @@
 {
   "version": 1,
   "rooms": {
-    "dr_7dd5d40d-64f7-4228-8154-7e1743f6fd6f": {
-      "id": "dr_7dd5d40d-64f7-4228-8154-7e1743f6fd6f",
+    "dr_fd704531-67e0-45af-8a8b-cf52ba57e19f": {
+      "id": "dr_fd704531-67e0-45af-8a8b-cf52ba57e19f",
       "entityType": "lead",
       "entityId": "z",
       "title": "Deal Room · Lead z",
       "status": "open",
       "createdBy": "broker_x",
-      "createdAt": "2026-04-19T01:24:06.058Z",
-      "updatedAt": "2026-04-19T01:24:06.058Z"
+      "createdAt": "2026-04-19T22:04:21.725Z",
+      "updatedAt": "2026-04-19T22:04:21.725Z"
     }
   },
   "participantIdsByRoom": {
-    "dr_7dd5d40d-64f7-4228-8154-7e1743f6fd6f": [
-      "drp_4821298c-8cf4-4e0f-a99a-d0a66a1c1a00"
+    "dr_fd704531-67e0-45af-8a8b-cf52ba57e19f": [
+      "drp_2bfb6f85-a1bb-46c7-9112-eef74b0ee671"
     ]
   },
   "participants": {
-    "drp_4821298c-8cf4-4e0f-a99a-d0a66a1c1a00": {
-      "id": "drp_4821298c-8cf4-4e0f-a99a-d0a66a1c1a00",
-      "dealRoomId": "dr_7dd5d40d-64f7-4228-8154-7e1743f6fd6f",
+    "drp_2bfb6f85-a1bb-46c7-9112-eef74b0ee671": {
+      "id": "drp_2bfb6f85-a1bb-46c7-9112-eef74b0ee671",
+      "dealRoomId": "dr_fd704531-67e0-45af-8a8b-cf52ba57e19f",
       "userId": "broker_x",
       "displayName": "BX",
       "role": "broker",
       "accessLevel": "manage",
-      "joinedAt": "2026-04-19T01:24:06.058Z"
+      "joinedAt": "2026-04-19T22:04:21.725Z"
     }
   },
   "notes": [],
   "tasks": [],
   "activities": [
     {
-      "id": "dra_7e0b4eae-9c9a-41a6-85f2-3806154af031",
-      "dealRoomId": "dr_7dd5d40d-64f7-4228-8154-7e1743f6fd6f",
+      "id": "dra_8ef630f9-d788-4bed-83d4-9e672ee216d4",
+      "dealRoomId": "dr_fd704531-67e0-45af-8a8b-cf52ba57e19f",
       "type": "created",
       "actorId": "broker_x",
       "summary": "Deal room created — Deal Room · Lead z",
@@ -41,11 +41,11 @@
         "entityType": "lead",
         "entityId": "z"
       },
-      "createdAt": "2026-04-19T01:24:06.058Z"
+      "createdAt": "2026-04-19T22:04:21.725Z"
     }
   ],
   "meetings": [],
   "documents": [],
   "documentRequirements": [],
-  "updatedAt": "2026-04-19T01:24:06.058Z"
+  "updatedAt": "2026-04-19T22:04:21.725Z"
 }

@@ -1,8 +1,15 @@
 "use client";
 
 import * as React from "react";
-import type { BlockedExecutionTask, ExecutionPlan, ExecutionTask } from "@/modules/growth/execution-planner.types";
+import type {
+  BlockedExecutionTask,
+  ExecutionPlan,
+  ExecutionTask,
+  ExecutionTaskCategory,
+} from "@/modules/growth/execution-planner.types";
 import type { ApprovalRecord } from "@/modules/growth/execution-planner-approval.service";
+import type { SimulationActionInput } from "@/modules/growth/action-simulation.types";
+import { presetAndScrollToActionSimulation } from "./growth-action-simulation-preset";
 import { buildExecutionPlannerNavigationHref } from "@/modules/growth/growth-task-navigation";
 import { trackTaskSurfaceOpened } from "@/modules/growth/execution-planner-approval.service";
 
@@ -32,7 +39,38 @@ function sourceLabel(s: ExecutionTask["source"]): string {
   }
 }
 
-export function ExecutionPlannerPanel({ locale, country }: { locale: string; country: string }) {
+function simCategoryFromPlanner(cat: ExecutionTaskCategory): SimulationActionInput["category"] {
+  switch (cat) {
+    case "broker":
+      return "broker_acquisition";
+    case "conversion":
+      return "conversion_fix";
+    case "expansion":
+      return "city_domination";
+    case "scaling":
+      return "supply_growth";
+    case "revenue":
+      return "demand_generation";
+    case "bnhub":
+      return "supply_growth";
+    case "ops":
+      return "timing_focus";
+    case "sourcing":
+      return "broker_acquisition";
+    default:
+      return "demand_generation";
+  }
+}
+
+export function ExecutionPlannerPanel({
+  locale,
+  country,
+  simulateOutcomeEnabled = false,
+}: {
+  locale: string;
+  country: string;
+  simulateOutcomeEnabled?: boolean;
+}) {
   const [plan, setPlan] = React.useState<EnrichedPlan | null | "err" | "loading">("loading");
   const [disclaimer, setDisclaimer] = React.useState("");
 
@@ -129,6 +167,23 @@ export function ExecutionPlannerPanel({ locale, country }: { locale: string; cou
             >
               Open surface
             </a>
+            {simulateOutcomeEnabled ? (
+              <button
+                type="button"
+                className="rounded-lg border border-violet-800/60 px-2 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-violet-200/90 hover:bg-violet-950/40"
+                onClick={() =>
+                  presetAndScrollToActionSimulation({
+                    title: t.title.slice(0, 200),
+                    category: simCategoryFromPlanner(t.category),
+                    rationale: `${t.rationale.slice(0, 400)} · target: ${t.target}`,
+                    windowDays: 14,
+                    intensity: t.effort === "high" ? "high" : t.effort === "medium" ? "medium" : "low",
+                  })
+                }
+              >
+                Simulate outcome
+              </button>
+            ) : null}
             {ap === "pending_approval" ? (
               <div className="flex gap-1">
                 <button

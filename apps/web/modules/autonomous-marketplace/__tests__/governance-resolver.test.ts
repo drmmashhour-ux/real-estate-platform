@@ -132,4 +132,28 @@ describe("resolveGovernance", () => {
     expect(g.disposition).toBe("RECOMMEND_ONLY");
     expect(g.allowExecution).toBe(false);
   });
+
+  it("legal-only soft warnings → treated as ALLOW for governance progression", () => {
+    const g = resolveGovernance({
+      action: baseAction("CREATE_TASK", "LOW"),
+      policy: {
+        id: "p-legal-soft",
+        actionId: "pa1",
+        disposition: "ALLOW_WITH_APPROVAL",
+        violations: [],
+        warnings: [{ code: "legal_hub_compliance", message: "advisory", ruleCode: "legal_hub_compliance" }],
+        evaluatedAt: new Date().toISOString(),
+        ruleResults: [
+          {
+            ruleCode: "legal_hub_compliance",
+            result: "warning",
+            metadata: { domain: "legal", severity: "warning" },
+          },
+        ],
+      },
+      mode: "SAFE_AUTOPILOT",
+      dryRunRequested: false,
+    });
+    expect(g.disposition).toBe("AUTO_EXECUTE");
+  });
 });

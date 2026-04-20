@@ -31,6 +31,16 @@ export type AdaptiveTopLeadSnapshot = {
   hoursSinceTouch: number;
 };
 
+/** Counts-only snapshot from deal / execution measurement — no broker or lead IDs. */
+export type AdaptiveDealPerformanceSignals = {
+  windowDays: number;
+  aiRows: number;
+  aiPositiveBands: number;
+  sparseAiTelemetry: boolean;
+  brokerRows: number;
+  brokerPositiveBands: number;
+};
+
 export type AdaptiveContext = {
   generatedAt: string;
   topLead?: AdaptiveTopLeadSnapshot;
@@ -51,6 +61,11 @@ export type AdaptiveContext = {
   closingPsychologyAxis?: string;
   /** Correlational revenue / pipeline note (not cash truth). */
   revenueSignalSummary?: string;
+  /** Growth execution / “deal performance” measurement layer — optional when flag enabled. */
+  dealPerformance?: AdaptiveDealPerformanceSignals;
+  /** Mapped from illustrative revenue forecast meta — advisory only, not bookings. */
+  revenueForecastConfidence?: AdaptiveConfidence;
+  revenueForecastInsufficientData?: boolean;
   /** True when few rows support inferences. */
   sparseSignals: boolean;
 };

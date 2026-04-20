@@ -66,3 +66,21 @@ export async function findOverlappingActiveBnhubBooking(
     select: { id: true, status: true },
   });
 }
+
+/** ICS-imported blocks stored in `ExternalCalendarEvent` (never replaces BNHub bookings). */
+export async function findOverlappingExternalIcsBlock(
+  tx: Prisma.TransactionClient,
+  listingId: string,
+  checkIn: Date,
+  checkOut: Date
+) {
+  return tx.externalCalendarEvent.findFirst({
+    where: {
+      listingId,
+      status: "blocked",
+      startDate: { lt: checkOut },
+      endDate: { gt: checkIn },
+    },
+    select: { id: true },
+  });
+}

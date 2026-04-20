@@ -1,6 +1,41 @@
 "use client";
 
-export function HubJourneyNextCta() {
+import { postJourneyOutcome } from "@/lib/journey/post-journey-outcome";
+import type {
+  HubJourneySignalConfidence,
+  HubKey,
+  JourneyActorType,
+} from "@/modules/journey/hub-journey.types";
+import { useJourneyCorrelationId } from "./JourneyCorrelationProvider";
+
+export type HubJourneyNextCtaProps = {
+  analyticsEnabled?: boolean;
+  hub?: HubKey;
+  locale?: string;
+  country?: string;
+  actorType?: JourneyActorType;
+  progressPercent?: number;
+  currentStepId?: string;
+  nextStepId?: string;
+  blockerCount?: number;
+  confidence?: HubJourneySignalConfidence;
+};
+
+export function HubJourneyNextCta(props: HubJourneyNextCtaProps = {}) {
+  const correlationId = useJourneyCorrelationId();
+  const {
+    analyticsEnabled,
+    hub,
+    locale,
+    country,
+    actorType,
+    progressPercent,
+    currentStepId,
+    nextStepId,
+    blockerCount,
+    confidence,
+  } = props;
+
   return (
     <button
       type="button"
@@ -11,6 +46,29 @@ export function HubJourneyNextCta() {
         const section = document.getElementById("hub-journey-anchor");
         const target = copilot ?? nextStep ?? section;
         target?.scrollIntoView({ behavior: "smooth", block: "start" });
+
+        if (
+          analyticsEnabled &&
+          hub &&
+          locale &&
+          country &&
+          actorType !== undefined &&
+          typeof progressPercent === "number"
+        ) {
+          void postJourneyOutcome({
+            event: "journey_next_cta_clicked",
+            hub,
+            locale,
+            country,
+            actorType,
+            progressPercent,
+            currentStepId: currentStepId ?? null,
+            nextStepId: nextStepId ?? null,
+            blockerCount,
+            confidence,
+            correlationId: correlationId ?? undefined,
+          });
+        }
       }}
     >
       What should I do next?

@@ -75,6 +75,20 @@ export function SellHubLegalChecklistCard({
         </div>
       ) : null}
 
+      {checklist.quebecPublishReadiness?.applies && !checklist.quebecPublishReadiness.publishAllowedByCompliance ? (
+        <div className="mt-6 rounded-xl border border-amber-500/25 bg-amber-500/10 p-4">
+          <p className="text-sm font-semibold text-amber-100">Complete required information before publishing</p>
+          <p className="mt-1 text-xs text-amber-200/90">
+            Readiness index {checklist.quebecPublishReadiness.readinessScore}/100 — address the items below to meet Québec publish requirements.
+          </p>
+          <ul className="mt-3 space-y-2 text-sm text-amber-50">
+            {checklist.quebecPublishReadiness.missingItemsUserSafe.map((msg) => (
+              <li key={msg}>• {msg}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
       <div className="mt-6 grid gap-4 lg:grid-cols-2">
         <div className="rounded-xl border border-white/10 bg-black/20 p-4">
           <p className="text-sm font-semibold text-white">Authority summary</p>

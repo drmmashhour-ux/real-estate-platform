@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/db";
 import { regenerateAutonomyRecommendations, resolveAutonomyRecommendation } from "@/actions/admin";
 import { getSyriaAutonomyMode, syriaPlatformConfig } from "@/config/syria-platform.config";
+import { DarlinkMarketplaceAutonomySection } from "@/components/admin/DarlinkMarketplaceAutonomySection";
 
 export default async function AdminAutonomyPage() {
   const t = await getTranslations("Admin");
@@ -19,11 +20,13 @@ export default async function AdminAutonomyPage() {
         <p className="text-sm text-stone-600">{t("autonomyIntro")}</p>
         <ul className="mt-3 list-inside list-disc text-xs text-stone-600">
           <li>{t("autonomyModeLabel", { mode: getSyriaAutonomyMode() })}</li>
-          <li>{t("autonomyExternalMessaging", { allowed: syriaPlatformConfig.communications.externalMessagingAllowed })}</li>
-          <li>{t("autonomyAutoPayout", { enabled: syriaPlatformConfig.payouts.autoPayoutEnabled })}</li>
+          <li>{t("autonomyExternalMessaging", { allowed: String(syriaPlatformConfig.communications.externalMessagingAllowed) })}</li>
+          <li>{t("autonomyAutoPayout", { enabled: String(syriaPlatformConfig.payouts.autoPayoutEnabled) })}</li>
         </ul>
         <p className="mt-3 text-xs text-stone-500">{t("autonomyPreviewHint")}</p>
       </div>
+
+      <DarlinkMarketplaceAutonomySection />
 
       <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
         <h3 className="text-sm font-semibold text-stone-900">{t("autonomyGenerateTitle")}</h3>

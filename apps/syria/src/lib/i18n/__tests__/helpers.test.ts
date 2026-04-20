@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeLocale, localeDirection, fallbackLocaleChain } from "../helpers";
+import { normalizeLocale, localeDirection, fallbackLocaleChain, getLocalizedValue } from "../helpers";
 
 describe("i18n helpers", () => {
   it("normalizes unknown locale to Arabic", () => {
@@ -20,5 +20,11 @@ describe("i18n helpers", () => {
   it("fallback chain starts with normalized locale", () => {
     expect(fallbackLocaleChain("en")).toEqual(["en", "ar"]);
     expect(fallbackLocaleChain("xx")[0]).toBe("ar");
+  });
+
+  it("getLocalizedValue EN falls back to AR", () => {
+    expect(getLocalizedValue({ ar: "مرحبا", en: null }, "en")).toBe("مرحبا");
+    expect(getLocalizedValue({ ar: "أ", en: "B" }, "en")).toBe("B");
+    expect(getLocalizedValue({ ar: "أ", en: "B" }, "ar")).toBe("أ");
   });
 });

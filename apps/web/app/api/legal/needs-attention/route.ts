@@ -47,7 +47,9 @@ export async function GET(req: NextRequest) {
       workflowType: "fsbo_seller_documents",
     });
 
-    let items = toUserSafeAttentionItems(signals);
+    let items = toUserSafeAttentionItems(signals, {
+      expandedMapping: legalIntelligenceFlags.legalFraudEngineV1 === true,
+    });
 
     const rejectedSlots = await prisma.fsboListingDocument.count({
       where: { fsboListingId: listingId, status: "rejected" },

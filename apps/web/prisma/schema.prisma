@@ -408,6 +408,8 @@ model User {
   bnhubMobileNotifications             BnhubMobileNotificationQueue[]
   userAgreements                       UserAgreement[]
   legalFormSignatures                  LegalFormSignature[]
+  legalHubSubmissionDocuments          LegalHubSubmissionDocument[]
+  legalHubWorkflowSubmissions          LegalWorkflowSubmission[]
   introducedLeads                      Lead[]                                @relation("IntroducedBy")
   leadsContactUnlocked                 Lead[]                                @relation("LeadContactUnlockedBy")
   lastFollowUpLeads                    Lead[]                                @relation("LastFollowUpBy")
@@ -2139,6 +2141,8 @@ model FsboListing {
   pricingInsightSnapshots        PricingInsightSnapshot[]         @relation("FsboPricingInsights")
   listingMarketingDrafts         ListingMarketingDraft[]
   listingMarketingSuggestions    ListingMarketingSuggestion[]
+  /// Optional syndication rows (e.g. Centris) — authorized connector only; never scraped.
+  externalListings               ExternalListing[]
 
   @@index([ownerId])
   @@index([tenantId])
@@ -2154,6 +2158,24 @@ model FsboListing {
   @@index([updatedAt(sort: Desc)], map: "idx_fsbo_listings_updated_at_desc")
   @@index([rankingTotalScoreCache(sort: Desc)])
   @@map("fsbo_listings")
+}
+
+/// External MLS / portal syndication tracking (connector-based; no scraping).
+model ExternalListing {
+  id           String      @id @default(cuid())
+  listingId    String      @map("listing_id")
+  listing      FsboListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  platform     String
+  externalId   String?     @map("external_id")
+  status       String
+  lastSyncAt   DateTime?   @map("last_sync_at")
+  errorMessage String?     @map("error_message") @db.Text
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+
+  @@unique([listingId, platform])
+  @@index([platform, status])
+  @@map("external_listings")
 }
 
 /// Denormalized LECIPM decision metrics for FSBO listings (0–100 scores; internal data only).
@@ -4184,7 +4206,17 @@ model ShortTermListing {
   latitude                           Float?
   longitude                          Float?
   nightPriceCents                    Int // Base nightly price in cents
-  currency                           String                            @default("USD")
+  /// When false, nightly pricing suggestion jobs skip this listing (never auto-updates `nightPriceCents`).
+  pricingSuggestionsEnabled          Boolean                           @default(true) @map("pricing_suggestions_enabled")
+  /// Optional floor for suggested nightly rate (major currency units; base remains `nightPriceCents`).
+  pricingMinNightDollars               Float?                            @map("pricing_min_night_dollars")
+  /// Optional cap for suggested nightly rate (major currency units).
+  pricingMaxNightDollars               Float?                            @map("pricing_max_night_dollars")
+  /// OFF | MANUAL | AUTO_APPROVE_SAFE | FULL_AUTOPILOT — controls auto-approval / safe auto-apply.
+  pricingMode                          String                            @default("MANUAL") @map("pricing_mode") @db.VarChar(32)
+  /// Max fractional change for AUTO_APPROVE_SAFE (e.g. 0.25 = 25%). Null = no cap in engine (still risky).
+  autoApplyMaxChange                   Float?                            @map("auto_apply_max_change")
+  currency                             String                            @default("USD")
   maxGuests                          Int                               @default(4)
   bedrooms                           Int? // Optional alias for beds
   beds                               Int
@@ -4295,6 +4327,11 @@ model ShortTermListing {
   bnhubChannelListingMappings        BnhubChannelListingMapping[]
   bnhubOtaAiTraces                   BnhubOtaAiTrace[]
   bnhubChannelCalendarEvents         BnhubChannelCalendarEvent[]
+  /// ICS layer: token-based export + optional external URL imports (`modules/calendar/ics`).
+  listingIcsFeed                     ListingIcsFeed?
+  listingIcsImports                  ListingIcsImport[]
+  icsExternalCalendarEvents          ExternalCalendarEvent[]
+  calendarSyncLogs                   CalendarSyncLog[]
   bnhubOtaSyncLogs                   BnhubOtaSyncLog[]
   bnhubPaymentQuotes                 BnhubPaymentQuote[]
   bnhubReservationPayments           BnhubReservationPayment[]
@@ -4346,6 +4383,8 @@ model ShortTermListing {
   bnhubInquiryThreads                BnhubInquiryThread[]
   bnhubHostListingPromotions         BnhubHostListingPromotion[]
   listingPricingSnapshots            ListingPricingSnapshot[]
+  bnhubPricingSuggestions            BnhubPricingSuggestion[]
+  bnhubPricingExecutionLogs          BnhubPricingExecutionLog[]
   bnhubAiSuggestions                 AiSuggestion[]                    @relation("AiSuggestionListing")
   bnhubAiAutopilotActions            AiAutopilotAction[]               @relation("AiAutopilotActionListing")
   /// Optional 1:1 — stay created from safe intake (`ListingAcquisitionLead`).
@@ -4367,6 +4406,14 @@ model ShortTermListing {
   rankingTotalScoreCache             Float                             @default(0) @map("ranking_total_score_cache")
   rankingPerformanceBand             String?                           @map("ranking_performance_band") @db.VarChar(32)
   rankingCachedAt                    DateTime?                         @map("ranking_cached_at")
+  /// Host BNHub calendar color (FullCalendar multi-listing view).
+  calendarColor                      String?                           @default("#D4AF37") @map("calendar_color") @db.VarChar(16)
+  /// Optional underwriting inputs for deterministic investment overlay (major currency units; nullable if unknown).
+  investmentPurchasePriceMajor        Float?                            @map("investment_purchase_price_major")
+  investmentEstimatedValueMajor       Float?                            @map("investment_estimated_value_major")
+  investmentOperatingCostMonthlyMajor Float?                            @map("investment_operating_cost_monthly_major")
+  /// Include in bulk BNHub recommendation jobs (hosts can disable per listing).
+  investmentAnalyticsActive          Boolean                           @default(true) @map("investment_analytics_active")
 
   @@index([city, verificationStatus])
   @@index([city, listingStatus])
@@ -4380,6 +4427,82 @@ model ShortTermListing {
   @@index([cadastreNumber])
   @@index([rankingTotalScoreCache(sort: Desc)])
   @@map("bnhub_listings")
+}
+
+/// Secret token for public `GET /api/calendar/ics/:token` (no listing id in URL).
+model ListingIcsFeed {
+  id        String           @id @default(cuid())
+  listingId String           @unique @map("listing_id")
+  listing   ShortTermListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  token     String           @unique @db.VarChar(128)
+  isEnabled Boolean          @default(true) @map("is_enabled")
+  createdAt DateTime         @default(now()) @map("created_at")
+  updatedAt DateTime         @updatedAt @map("updated_at")
+
+  @@map("listing_ics_feeds")
+}
+
+/// External ICS calendar URL (Airbnb / Booking / Vrbo export links).
+model ListingIcsImport {
+  id           String           @id @default(cuid())
+  listingId    String           @map("listing_id")
+  listing      ShortTermListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  sourceName   String           @map("source_name") @db.VarChar(128)
+  icsUrl       String           @map("ics_url") @db.Text
+  isEnabled    Boolean          @default(true) @map("is_enabled")
+  lastSyncedAt DateTime?        @map("last_synced_at")
+  createdAt    DateTime         @default(now()) @map("created_at")
+  updatedAt    DateTime         @updatedAt @map("updated_at")
+
+  externalEvents ExternalCalendarEvent[]
+  syncLogs       CalendarSyncLog[]
+
+  @@index([listingId])
+  @@map("listing_ics_imports")
+}
+
+/// Imported VEVENT rows (BNHub bookings are never modified from ICS).
+model ExternalCalendarEvent {
+  id          String            @id @default(cuid())
+  listingId   String            @map("listing_id")
+  listing     ShortTermListing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  importId    String?           @map("import_id")
+  import      ListingIcsImport? @relation(fields: [importId], references: [id], onDelete: Cascade)
+  externalUid String            @map("external_uid") @db.VarChar(512)
+  title       String?         @db.VarChar(500)
+  startDate   DateTime          @map("start_date")
+  endDate     DateTime          @map("end_date")
+  /// blocked | confirmed | tentative
+  status      String            @default("blocked") @db.VarChar(32)
+  sourceName  String?           @map("source_name") @db.VarChar(128)
+  rawData     Json?             @map("raw_data")
+  createdAt   DateTime          @default(now()) @map("created_at")
+  updatedAt   DateTime          @updatedAt @map("updated_at")
+
+  @@unique([listingId, externalUid])
+  @@index([listingId])
+  @@index([importId])
+  @@map("external_calendar_events")
+}
+
+model CalendarSyncLog {
+  id        String            @id @default(cuid())
+  listingId String?           @map("listing_id")
+  listing   ShortTermListing? @relation(fields: [listingId], references: [id], onDelete: SetNull)
+  importId  String?           @map("import_id")
+  import    ListingIcsImport? @relation(fields: [importId], references: [id], onDelete: SetNull)
+  /// import | export
+  direction String            @db.VarChar(16)
+  /// success | failed
+  status    String            @db.VarChar(16)
+  message   String?           @db.Text
+  meta      Json?
+  createdAt DateTime          @default(now()) @map("created_at")
+
+  @@index([listingId])
+  @@index([importId])
+  @@index([createdAt])
+  @@map("calendar_sync_logs")
 }
 
 /// BNHUB listing → TikTok scripts (OpenAI) + video tool payload + scheduler + metrics
@@ -5951,6 +6074,433 @@ model BnhubPricingHistory {
   @@index([listingId])
   @@index([createdAt])
   @@map("bnhub_pricing_history")
+}
+
+/// Rule-based nightly suggestions — apply flow updates listing `nightPriceCents` via `pricing-apply.service`.
+model BnhubPricingSuggestion {
+  id          String           @id @default(cuid())
+  listingId   String           @map("listing_id")
+  listing     ShortTermListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  /// Calendar night (UTC date) this row applies to.
+  date        DateTime         @db.Date
+  suggested   Float
+  basePrice   Float            @map("base_price")
+  demandScore Float            @map("demand_score")
+  reason      String           @db.Text
+  /// pending | approved | rejected | applied
+  status      String           @default("pending") @db.VarChar(24)
+  appliedAt   DateTime?        @map("applied_at")
+  createdAt   DateTime         @default(now()) @map("created_at")
+
+  @@unique([listingId, date])
+  @@index([listingId, date])
+  @@index([listingId, status])
+  @@map("bnhub_pricing_suggestions")
+}
+
+/// Append-only audit of pricing applies (never delete rows).
+model BnhubPricingExecutionLog {
+  id            String           @id @default(cuid())
+  listingId     String           @map("listing_id")
+  listing       ShortTermListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  date          DateTime         @db.Date
+  oldPrice      Float            @map("old_price")
+  newPrice      Float            @map("new_price")
+  /// cron_auto | host_ui | manual_approve_auto (source label)
+  mode          String           @db.VarChar(32)
+  /// success | rejected | skipped
+  status        String           @db.VarChar(24)
+  reason        String?          @db.Text
+  suggestionId  String?          @map("suggestion_id")
+  createdAt     DateTime         @default(now()) @map("created_at")
+
+  @@index([listingId, createdAt])
+  @@map("bnhub_pricing_execution_logs")
+}
+
+/// BNHub-only revenue KPI snapshots (listing or host portfolio scope). Distinct from SaaS `RevenueSnapshot`.
+model BnhubRevenueMetricSnapshot {
+  id              String   @id @default(cuid())
+  scopeType       String   @map("scope_type") @db.VarChar(24)
+  scopeId         String   @map("scope_id")
+  snapshotDate    DateTime @map("snapshot_date") @db.Date
+  grossRevenue    Float    @map("gross_revenue")
+  bookingCount    Int      @map("booking_count")
+  occupiedNights  Int      @map("occupied_nights")
+  availableNights Int      @map("available_nights")
+  occupancyRate   Float    @map("occupancy_rate")
+  adr             Float
+  revpar          Float
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@unique([scopeType, scopeId, snapshotDate])
+  @@index([scopeType, scopeId, snapshotDate])
+  @@map("bnhub_revenue_metric_snapshots")
+}
+
+/// BNHub dashboard / analytics events (refresh, anomalies, pricing jobs).
+model BnhubDashboardEventLog {
+  id        String   @id @default(cuid())
+  type      String   @db.VarChar(48)
+  scopeType String?  @map("scope_type") @db.VarChar(24)
+  scopeId   String?  @map("scope_id")
+  status    String   @db.VarChar(24)
+  message   String?  @db.Text
+  meta      Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([type, createdAt])
+  @@map("bnhub_dashboard_event_logs")
+}
+
+/// Deterministic (rules-based) revenue narrative snapshots — v1 is not LLM-generated prose.
+model BnhubDashboardNarrativeSnapshot {
+  id                String   @id @default(cuid())
+  scopeType         String   @map("scope_type") @db.VarChar(24)
+  scopeId           String   @map("scope_id")
+  periodLabel       String   @map("period_label") @db.VarChar(32)
+  summaryText       String   @map("summary_text") @db.Text
+  factsJson         Json?    @map("facts_json")
+  risksJson         Json?    @map("risks_json")
+  opportunitiesJson Json?    @map("opportunities_json")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@index([scopeType, scopeId, periodLabel, createdAt])
+  @@map("bnhub_dashboard_narrative_snapshots")
+}
+
+/// External read access to a BNHub **host** or **portfolio** scope (email must match the signed-in user).
+model InvestorAccess {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  /// portfolio | host
+  scopeType String   @map("scope_type") @db.VarChar(24)
+  scopeId   String   @map("scope_id")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([scopeType, scopeId])
+  @@map("investor_access")
+}
+
+/// Durable log of generated investor/BNHub reports; `meta` stores point-in-time KPIs for history charts.
+model ReportDeliveryLog {
+  id        String   @id @default(cuid())
+  scopeType String   @map("scope_type") @db.VarChar(24)
+  scopeId   String   @map("scope_id")
+  /// pending | success | failed
+  status    String   @default("pending") @db.VarChar(24)
+  /// email | scheduled | api | manual
+  channel   String?  @db.VarChar(32)
+  /// Server-only path or private object key; never expose in public JSON.
+  pdfPath   String?  @map("pdf_path") @db.Text
+  meta      Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([scopeType, scopeId, status, createdAt])
+  @@map("report_delivery_logs")
+}
+
+/// Rules-based BNHub investment stance for a listing or portfolio scope (auditable JSON payloads).
+model InvestmentRecommendation {
+  id              String                       @id @default(cuid())
+  scopeType       String                       @map("scope_type") @db.VarChar(24)
+  scopeId         String                       @map("scope_id")
+  recommendation  String                       @db.VarChar(24)
+  confidenceScore Float                        @map("confidence_score")
+  score           Float
+  reasonsJson     Json?                        @map("reasons_json")
+  risksJson       Json?                        @map("risks_json")
+  actionsJson     Json?                        @map("actions_json")
+  metricsJson     Json?                        @map("metrics_json")
+  status          String                       @default("active") @db.VarChar(24)
+  createdAt       DateTime                     @default(now()) @map("created_at")
+  updatedAt       DateTime                     @updatedAt @map("updated_at")
+  logs            InvestmentRecommendationLog[]
+
+  @@index([scopeType, scopeId, createdAt])
+  @@map("investment_recommendations")
+}
+
+model InvestmentRecommendationLog {
+  id               String                   @id @default(cuid())
+  recommendationId String                   @map("recommendation_id")
+  recommendation   InvestmentRecommendation @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
+  actionType       String                   @map("action_type") @db.VarChar(24)
+  message          String?
+  meta             Json?
+  createdAt        DateTime                 @default(now()) @map("created_at")
+
+  @@index([recommendationId, createdAt])
+  @@map("investment_recommendation_logs")
+}
+
+/// Deterministic acquisition / what-if run (user-supplied inputs; not a market appraisal).
+model AcquisitionAnalysis {
+  id                   String   @id @default(cuid())
+  userId               String?  @map("user_id")
+  title                String?
+  location             String?
+  purchasePrice        Float    @map("purchase_price")
+  estimatedADR         Float    @map("estimated_adr")
+  estimatedOccupancy   Float    @map("estimated_occupancy")
+  operatingCostMonthly Float    @map("operating_cost_monthly")
+  financingRate        Float?   @map("financing_rate")
+  downPayment          Float?   @map("down_payment")
+  resultsJson          Json?    @map("results_json")
+  scenariosJson        Json?    @map("scenarios_json")
+  recommendation       String   @db.VarChar(24)
+  score                  Float
+  confidenceScore      Float    @map("confidence_score")
+  createdAt            DateTime @default(now()) @map("created_at")
+
+  @@index([userId, createdAt])
+  @@map("acquisition_analyses")
+}
+
+/// BNHub asset-manager autonomy: one config per listing or host portfolio scope.
+model AutonomyConfig {
+  id                        String   @id @default(cuid())
+  scopeType                 String   @map("scope_type") @db.VarChar(24)
+  scopeId                   String   @map("scope_id")
+  /// OFF | ASSIST | SAFE_AUTOPILOT | FULL_AUTOPILOT_APPROVAL
+  mode                      String   @default("ASSIST") @db.VarChar(32)
+  autoPricing               Boolean  @default(true) @map("auto_pricing")
+  autoPromotions            Boolean  @default(false) @map("auto_promotions")
+  autoMessaging             Boolean  @default(false) @map("auto_messaging")
+  autoListingOptimization   Boolean  @default(true) @map("auto_listing_optimization")
+  maxPriceChangePct         Float?   @map("max_price_change_pct")
+  maxDiscountPct            Float?   @map("max_discount_pct")
+  minOccupancyThreshold     Float?   @map("min_occupancy_threshold")
+  anomalyDropThreshold      Float?   @map("anomaly_drop_threshold")
+  quietHoursStartUtc        Int?     @map("quiet_hours_start_utc")
+  quietHoursEndUtc          Int?     @map("quiet_hours_end_utc")
+  isEnabled                 Boolean  @default(true) @map("is_enabled")
+  /// Days to wait before evaluating outcomes vs current metrics (deterministic window).
+  learningWindowDays        Int?     @default(7) @map("learning_window_days")
+  /// Max candidate actions passed to execution per autonomy cycle (UCB1 bandit ranks candidates first).
+  maxActionsPerCycle        Int?     @default(2) @map("max_actions_per_cycle")
+  createdAt                 DateTime @default(now()) @map("created_at")
+  updatedAt                 DateTime @updatedAt @map("updated_at")
+
+  @@unique([scopeType, scopeId])
+  @@index([scopeType, scopeId])
+  @@map("autonomy_configs")
+}
+
+/// Proposed or completed autonomy action (auditable).
+model AutonomyAction {
+  id          String    @id @default(cuid())
+  scopeType   String    @map("scope_type") @db.VarChar(24)
+  scopeId     String    @map("scope_id")
+  domain      String    @db.VarChar(32)
+  actionType  String    @map("action_type") @db.VarChar(48)
+  signalKey   String?   @map("signal_key") @db.VarChar(48)
+  baselineMetricsJson Json? @map("baseline_metrics_json")
+  learningEligible Boolean @default(true) @map("learning_eligible")
+  /// Deterministic context feature buckets at selection time (Contextual Bandit audit trail).
+  contextFeaturesJson Json? @map("context_features_json")
+  payloadJson Json      @map("payload_json")
+  status      String    @db.VarChar(24)
+  reason      String?
+  confidence  Float?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  executedAt  DateTime? @map("executed_at")
+  outcome                   AutonomyOutcome?
+  counterfactualEvaluation  CounterfactualEvaluation?
+
+  @@index([scopeType, scopeId, createdAt])
+  @@map("autonomy_actions")
+}
+
+model AutonomyOutcome {
+  id                 String   @id @default(cuid())
+  actionId           String   @unique @map("action_id")
+  action             AutonomyAction @relation(fields: [actionId], references: [id], onDelete: Cascade)
+  scopeType          String   @map("scope_type") @db.VarChar(24)
+  scopeId            String   @map("scope_id")
+  evaluatedAt        DateTime @default(now()) @map("evaluated_at")
+
+  baselineRevenue    Float?   @map("baseline_revenue")
+  baselineOccupancy  Float?   @map("baseline_occupancy")
+  baselineBookings   Int?     @map("baseline_bookings")
+  baselineAdr        Float?   @map("baseline_adr")
+  baselineRevpar     Float?   @map("baseline_revpar")
+
+  observedRevenue    Float?   @map("observed_revenue")
+  observedOccupancy  Float?   @map("observed_occupancy")
+  observedBookings   Int?     @map("observed_bookings")
+  observedAdr        Float?   @map("observed_adr")
+  observedRevpar     Float?   @map("observed_revpar")
+
+  revenueDelta       Float?   @map("revenue_delta")
+  occupancyDelta     Float?   @map("occupancy_delta")
+  bookingDelta       Float?   @map("booking_delta")
+  adrDelta           Float?   @map("adr_delta")
+  revparDelta        Float?   @map("revpar_delta")
+
+  rewardScore             Float?   @map("reward_score")
+  /// Counterfactual baseline expectation for reward (estimate; not causal proof).
+  expectedRewardScore     Float?   @map("expected_reward_score")
+  /// Learning signal blending raw outcome reward with uplift estimate (deterministic).
+  upliftAdjustedReward    Float?   @map("uplift_adjusted_reward")
+  counterfactualEvalId    String?  @unique @map("counterfactual_eval_id")
+  counterfactualEval      CounterfactualEvaluation? @relation(fields: [counterfactualEvalId], references: [id], onDelete: SetNull)
+  outcomeLabel       String?  @map("outcome_label") @db.VarChar(24)
+  outcomeWindowDays  Int      @default(7) @map("outcome_window_days")
+  notes              String?
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  @@index([scopeType, scopeId, createdAt])
+  @@map("autonomy_outcomes")
+}
+
+/// Deterministic counterfactual / uplift estimate (internal data only; not randomized trial).
+model CounterfactualEvaluation {
+  id                 String   @id @default(cuid())
+  actionId           String   @unique @map("action_id")
+  action             AutonomyAction @relation(fields: [actionId], references: [id], onDelete: Cascade)
+  scopeType          String   @map("scope_type") @db.VarChar(24)
+  scopeId            String   @map("scope_id")
+
+  baselineWindowDays Int      @default(14) @map("baseline_window_days")
+  outcomeWindowDays  Int      @default(7) @map("outcome_window_days")
+
+  observedRevenue    Float?   @map("observed_revenue")
+  observedOccupancy  Float?   @map("observed_occupancy")
+  observedBookings   Int?     @map("observed_bookings")
+  observedAdr        Float?   @map("observed_adr")
+  observedRevpar     Float?   @map("observed_revpar")
+
+  expectedRevenue    Float?   @map("expected_revenue")
+  expectedOccupancy  Float?   @map("expected_occupancy")
+  expectedBookings   Float?   @map("expected_bookings")
+  expectedAdr        Float?   @map("expected_adr")
+  expectedRevpar     Float?   @map("expected_revpar")
+
+  upliftRevenue      Float?   @map("uplift_revenue")
+  upliftOccupancy    Float?   @map("uplift_occupancy")
+  upliftBookings     Float?   @map("uplift_bookings")
+  upliftAdr          Float?   @map("uplift_adr")
+  upliftRevpar       Float?   @map("uplift_revpar")
+
+  upliftScore        Float?   @map("uplift_score")
+  confidenceScore    Float?   @map("confidence_score")
+  estimateMethod     String?  @map("estimate_method") @db.VarChar(32)
+  notes              String?
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  outcome            AutonomyOutcome?
+
+  @@index([scopeType, scopeId, createdAt])
+  @@map("counterfactual_evaluations")
+}
+
+model CounterfactualMatchLog {
+  id           String   @id @default(cuid())
+  actionId     String   @map("action_id")
+  featureKey   String   @map("feature_key") @db.VarChar(48)
+  featureValue String   @map("feature_value") @db.VarChar(64)
+  matchedCount Int      @default(0) @map("matched_count")
+  averageReward Float   @default(0) @map("average_reward")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([actionId, createdAt])
+  @@map("counterfactual_match_logs")
+}
+
+model UpliftLearningLog {
+  id          String   @id @default(cuid())
+  actionId    String?  @map("action_id")
+  scopeType   String   @map("scope_type") @db.VarChar(24)
+  scopeId     String   @map("scope_id")
+  eventType   String   @map("event_type") @db.VarChar(32)
+  message     String?
+  meta        Json?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([scopeType, scopeId, createdAt])
+  @@map("uplift_learning_logs")
+}
+
+model AutonomyRuleWeight {
+  id              String    @id @default(cuid())
+  scopeType       String    @map("scope_type") @db.VarChar(24)
+  scopeId         String    @map("scope_id")
+  domain          String    @db.VarChar(32)
+  signalKey       String    @map("signal_key") @db.VarChar(48)
+  actionType      String    @map("action_type") @db.VarChar(48)
+  weight          Float     @default(1)
+  successCount    Int       @default(0) @map("success_count")
+  failureCount    Int       @default(0) @map("failure_count")
+  totalReward     Float     @default(0) @map("total_reward")
+  /// Bandit (UCB1): times this arm was selected for execution after policy pass.
+  selectionCount  Int       @default(0) @map("selection_count")
+  /// Running mean of observed rewardScore (outcome evaluation), auditable tie-in to selectionCount.
+  averageReward   Float     @default(0) @map("average_reward")
+  /// Optional serialized feature affinity profile (reserved for future LinUCB / explainability dumps).
+  featureProfileJson Json? @map("feature_profile_json")
+  contextSuccessCount Int   @default(0) @map("context_success_count")
+  contextFailureCount Int   @default(0) @map("context_failure_count")
+  lastOutcomeAt   DateTime? @map("last_outcome_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@unique([scopeType, scopeId, domain, signalKey, actionType])
+  @@index([scopeType, scopeId])
+  @@map("autonomy_rule_weights")
+}
+
+model ContextualActionStat {
+  id             String   @id @default(cuid())
+  scopeType      String   @map("scope_type") @db.VarChar(24)
+  scopeId        String   @map("scope_id")
+  domain         String   @db.VarChar(32)
+  signalKey      String   @map("signal_key") @db.VarChar(48)
+  actionType     String   @map("action_type") @db.VarChar(48)
+  featureKey     String   @map("feature_key") @db.VarChar(48)
+  featureBucket  String   @map("feature_bucket") @db.VarChar(48)
+  successCount   Int      @default(0) @map("success_count")
+  failureCount   Int      @default(0) @map("failure_count")
+  averageReward  Float    @default(0) @map("average_reward")
+  totalReward    Float    @default(0) @map("total_reward")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@unique([scopeType, scopeId, domain, signalKey, actionType, featureKey, featureBucket])
+  @@index([scopeType, scopeId, updatedAt])
+  @@map("contextual_action_stats")
+}
+
+model AutonomyLearningLog {
+  id           String   @id @default(cuid())
+  scopeType    String   @map("scope_type") @db.VarChar(24)
+  scopeId      String   @map("scope_id")
+  actionId     String?  @map("action_id")
+  ruleWeightId String?  @map("rule_weight_id")
+  eventType    String   @map("event_type") @db.VarChar(32)
+  message      String?
+  meta         Json?
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([scopeType, scopeId, createdAt])
+  @@map("autonomy_learning_logs")
+}
+
+model AutonomyEventLog {
+  id        String   @id @default(cuid())
+  scopeType String   @map("scope_type") @db.VarChar(24)
+  scopeId   String   @map("scope_id")
+  eventType String   @map("event_type") @db.VarChar(32)
+  message   String?
+  meta      Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([scopeType, scopeId, createdAt])
+  @@map("autonomy_event_logs")
 }
 
 model BnhubHostQualityProfile {
@@ -16741,6 +17291,10 @@ model Lead {
    */
   leadSource                 String?                     @map("lead_source")
   /**
+   * Distribution attribution: LECIPM (platform) vs CENTRIS (syndicated) when known.
+   */
+  distributionChannel        String?                     @map("distribution_channel") @db.VarChar(32)
+  /**
    * Funnel label: mortgage | null for legacy CRM rows
    */
   leadType                   String?                     @map("lead_type")
@@ -26475,4 +27029,264 @@ model AutonomyExecutionAuditLog {
   @@index([eventKind, createdAt])
   @@index([runId])
   @@map("autonomy_execution_audit_logs")
+}
+
+// ---------------------------------------------------------------------------
+// Legal Hub Phase 2 — user submission documents (distinct from CMS `LegalDocument`).
+// Explicit human review only.
+// ---------------------------------------------------------------------------
+
+model LegalHubSubmissionDocument {
+  id                   String                   @id @default(cuid())
+  userId               String?                  @map("user_id")
+  user                 User?                    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  actorType            String                   @map("actor_type")
+  workflowType         String                   @map("workflow_type")
+  requirementId        String                   @map("requirement_id")
+  workflowSubmissionId String?                  @map("workflow_submission_id")
+  workflowSubmission   LegalWorkflowSubmission? @relation(fields: [workflowSubmissionId], references: [id], onDelete: SetNull)
+  /// Bucket-relative storage path or `local:…` fallback — not a public URL by default.
+  fileUrl              String                   @map("file_url") @db.Text
+  fileName             String                   @map("file_name")
+  fileType             String                   @map("file_type")
+  /// uploaded | submitted | approved | rejected
+  status               String                   @map("status")
+  uploadedAt           DateTime                 @default(now()) @map("uploaded_at")
+  submittedAt          DateTime?                @map("submitted_at")
+  reviewedAt           DateTime?                @map("reviewed_at")
+  reviewedBy           String?                  @map("reviewed_by")
+  rejectionReason      String?                  @map("rejection_reason") @db.Text
+  createdAt            DateTime                 @default(now()) @map("created_at")
+  updatedAt            DateTime                 @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([workflowType, userId])
+  @@index([status])
+  @@index([workflowSubmissionId])
+  @@map("legal_hub_submission_documents")
+}
+
+model LegalWorkflowSubmission {
+  id           String                       @id @default(cuid())
+  userId       String?                      @map("user_id")
+  user         User?                        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  actorType    String                       @map("actor_type")
+  workflowType String                       @map("workflow_type")
+  /// draft | submitted | under_review | approved | rejected
+  status       String                       @map("status")
+  submittedAt  DateTime?                    @map("submitted_at")
+  reviewedAt   DateTime?                    @map("reviewed_at")
+  reviewedBy   String?                      @map("reviewed_by")
+  notes        String?                      @db.Text
+  createdAt    DateTime                     @default(now()) @map("created_at")
+  updatedAt    DateTime                     @updatedAt @map("updated_at")
+  documents    LegalHubSubmissionDocument[]
+
+  @@unique([userId, workflowType])
+  @@index([status])
+  @@map("legal_workflow_submissions")
+}
+
+model LegalAuditLog {
+  id         String   @id @default(cuid())
+  entityType String   @map("entity_type")
+  entityId   String   @map("entity_id")
+  action     String   @map("action")
+  actorId    String?  @map("actor_id")
+  actorType  String   @map("actor_type")
+  metadata   Json?    @map("metadata")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("legal_audit_logs")
+}
+
+/// Phase 4.5 — append-only compliance timeline (insert-only via application code).
+model EventRecord {
+  id          String   @id @default(cuid())
+  entityType  String   @map("entity_type")
+  entityId    String   @map("entity_id")
+  eventType   String   @map("event_type")
+  actorId     String?  @map("actor_id")
+  actorType   String   @map("actor_type")
+  metadata    Json?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([entityType, entityId])
+  @@index([eventType])
+  @@index([createdAt])
+  @@map("event_records")
+}
+
+/// Annotated decisions / teaching cases for Legal Hub (QC-focused library).
+model LegalCase {
+  id             String   @id @default(cuid())
+  title          String
+  jurisdiction   String   @default("QC")
+  category       String? // optional taxonomy filter (e.g. LATENT_DEFECT)
+  summary        String   @db.Text
+  facts          String   @db.Text
+  legalIssues    String   @map("legal_issues") @db.Text
+  decision       String   @db.Text
+  reasoning      String   @db.Text
+  outcome        String   @db.Text
+  sellerLiable   Boolean  @default(false) @map("seller_liable")
+  brokerLiable   Boolean  @default(false) @map("broker_liable")
+  latentDefect   Boolean  @default(false) @map("latent_defect")
+  badFaith       Boolean  @default(false) @map("bad_faith")
+  linkedRuleIds  Json?    @map("linked_rule_ids")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@index([jurisdiction])
+  @@index([category])
+  @@map("legal_cases")
+}
+
+/// Deterministic compliance rules for legal risk scoring (reference library).
+model LegalRule {
+  id           String   @id @default(cuid())
+  title        String
+  category     String
+  description  String   @db.Text
+  conditions   Json
+  outcome      String   @db.Text
+  severity     String
+  enabled      Boolean  @default(true)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([category])
+  @@index([enabled])
+  @@map("legal_rules")
+}
+
+/// Imported legal records — metadata and schema-driven parse/validation only (no raw file storage here).
+model LegalRecord {
+  id          String   @id @default(cuid())
+  entityType  String   @map("entity_type")
+  entityId    String   @map("entity_id")
+  recordType  String   @map("record_type")
+  fileId      String   @map("file_id")
+  parsedData  Json?    @map("parsed_data")
+  validation  Json?    @map("validation")
+  status      String
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([entityType, entityId], map: "legal_records_entity_idx")
+  @@index([recordType], map: "legal_records_type_idx")
+  @@map("legal_records")
+}
+
+/// Persisted legal risk evaluations (audit / fraud detection trail).
+model LegalRiskEvent {
+  id          String   @id @default(cuid())
+  entityType  String   @map("entity_type")
+  entityId    String   @map("entity_id")
+  riskType    String   @map("risk_type")
+  score       Float
+  flags       Json
+  explanation String   @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("legal_risk_events")
+}
+
+/// Operational alerts for compliance review (distinct from declaration AI RiskAlert).
+model LegalAlert {
+  id                   String    @id @default(cuid())
+  entityType           String    @map("entity_type")
+  entityId             String    @map("entity_id")
+  riskLevel            String    @map("risk_level")
+  status               String    @default("OPEN")
+  title                String
+  detail               String    @db.Text
+  signals              Json      @default("{}")
+  acknowledgedAt       DateTime? @map("acknowledged_at")
+  acknowledgedByUserId String?   @map("acknowledged_by_user_id")
+  resolvedAt           DateTime? @map("resolved_at")
+  resolvedByUserId     String?   @map("resolved_by_user_id")
+  dismissedAt          DateTime? @map("dismissed_at")
+  dismissedByUserId    String?   @map("dismissed_by_user_id")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@index([riskLevel])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("legal_alerts")
+}
+
+/// Broker diligence log (verification attempts, warnings issued).
+model BrokerVerificationLog {
+  id                          String   @id @default(cuid())
+  brokerUserId                String   @map("broker_user_id")
+  fsboListingId               String?  @map("fsbo_listing_id")
+  bnhubHostListingId          String?  @map("bnhub_host_listing_id")
+  actionKey                   String   @map("action_key")
+  sourceDisclosed             Boolean  @default(false) @map("source_disclosed")
+  verificationAttempted       Boolean  @default(false) @map("verification_attempted")
+  warningIssued               Boolean  @default(false) @map("warning_issued")
+  sellerMarkedUncooperative   Boolean  @default(false) @map("seller_marked_uncooperative")
+  notes                       String?  @db.Text
+  metadata                    Json?
+  createdAt                   DateTime @default(now()) @map("created_at")
+
+  @@index([brokerUserId])
+  @@index([fsboListingId])
+  @@map("broker_verification_logs")
+}
+
+/// Aggregated seller-side disclosure / misrepresentation signals (FSBO seller user).
+model SellerDisclosureProfile {
+  id                      String    @id @default(cuid())
+  sellerUserId            String    @unique @map("seller_user_id")
+  misrepresentationScore  Float     @default(0) @map("misrepresentation_score")
+  recurringPatternCount   Int       @default(0) @map("recurring_pattern_count")
+  signals                 Json      @default("{}")
+  lastEvaluatedAt         DateTime? @map("last_evaluated_at")
+  updatedAt               DateTime  @updatedAt @map("updated_at")
+
+  @@index([misrepresentationScore])
+  @@map("seller_disclosure_profiles")
+}
+
+/// Per-listing legal risk aggregates (FSBO or BNHub host listing).
+model PropertyLegalProfile {
+  id                     String    @id @default(cuid())
+  listingScope           String    @map("listing_scope")
+  listingId              String    @map("listing_id")
+  latentDefectRiskScore  Float     @default(0) @map("latent_defect_risk_score")
+  disclosureRiskScore    Float     @default(0) @map("disclosure_risk_score")
+  fraudRiskScore         Float     @default(0) @map("fraud_risk_score")
+  overallLegalRiskScore  Float     @default(0) @map("overall_legal_risk_score")
+  latestRiskLevel        String    @default("MEDIUM") @map("latest_risk_level")
+  lastEvaluatedAt        DateTime? @map("last_evaluated_at")
+  signals                Json      @default("{}")
+  createdAt              DateTime  @default(now()) @map("created_at")
+  updatedAt              DateTime  @updatedAt @map("updated_at")
+
+  @@unique([listingScope, listingId])
+  @@index([overallLegalRiskScore])
+  @@map("property_legal_profiles")
+}
+
+/// Commission / payout compliance trail (no payment holds enforced here).
+model CommissionLegalEvent {
+  id          String   @id @default(cuid())
+  entityType  String   @map("entity_type")
+  entityId    String   @map("entity_id")
+  reasonKey   String   @map("reason_key")
+  severity    String
+  detail      String   @db.Text
+  metadata    Json?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([entityType, entityId])
+  @@index([reasonKey])
+  @@index([createdAt])
+  @@map("commission_legal_events")
 }

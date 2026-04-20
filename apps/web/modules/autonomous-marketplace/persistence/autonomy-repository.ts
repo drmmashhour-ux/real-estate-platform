@@ -49,6 +49,8 @@ export async function persistAutonomousRun(input: {
           executionResultJson: t.execution as unknown as object,
           outcomeJson: {
             governanceReason: t.governance.reason,
+            governanceJson: t.governance as unknown as object,
+            policyDisposition: t.policy.disposition,
           } as object,
           idempotencyKey: `${input.summary.runId}:${t.proposed.id}`,
           errorMessage: t.execution.errorCode ?? undefined,

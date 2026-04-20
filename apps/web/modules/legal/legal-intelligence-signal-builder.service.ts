@@ -1,5 +1,7 @@
 import { VerificationEntityType, VerificationSignalCategory } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { eventTimelineFlags, legalHubFlags } from "@/config/feature-flags";
+import { legalRecordToImportedRow } from "./records/legal-record-snapshot.helpers";
 import { LEGAL_INTEL_DEFAULT_WINDOW_MS } from "./legal-intelligence.constants";
 import type {
   LegalDocumentRow,
@@ -7,6 +9,73 @@ import type {
   LegalSupportingDocRow,
   LegalVerificationCaseRow,
 } from "./legal-intelligence.types";
+
+async function attachLegalTimelineFacts(snapshot: LegalIntelligenceSnapshot, windowStartMs: number): Promise<void> {
+  if (!eventTimelineFlags.eventTimelineV1) return;
+  const listingId = snapshot.fsboListingId;
+  const ownerId = snapshot.ownerUserId;
+  if (!listingId || !ownerId) return;
+  try {
+    const rows = await prisma.eventRecord.findMany({
+      where: {
+        createdAt: { gte: new Date(windowStartMs) },
+        OR: [
+          { entityType: "listing", entityId: listingId },
+          {
+            actorId: ownerId,
+            entityType: { in: ["document", "workflow"] },
+          },
+        ],
+      },
+      select: { eventType: true, createdAt: true },
+      orderBy: { createdAt: "asc" },
+      take: 800,
+    });
+
+    let rejectionEventsInWindow = 0;
+    let submissionEventsInWindow = 0;
+    const submitTimes: number[] = [];
+    for (const r of rows) {
+      if (r.eventType === "document_rejected") rejectionEventsInWindow += 1;
+      if (r.eventType === "document_submitted") {
+        submissionEventsInWindow += 1;
+        submitTimes.push(r.createdAt.getTime());
+      }
+    }
+    submitTimes.sort((a, b) => a - b);
+    let rapidResubmitClusterCount = 0;
+    const burstMs = 15 * 60 * 1000;
+    for (let i = 1; i < submitTimes.length; i++) {
+      if (submitTimes[i]! - submitTimes[i - 1]! < burstMs) rapidResubmitClusterCount += 1;
+    }
+
+    snapshot.timeline = {
+      rejectionEventsInWindow,
+      submissionEventsInWindow,
+      rapidResubmitClusterCount,
+    };
+  } catch {
+    /* snapshot remains without timeline */
+  }
+}
+
+async function attachLegalImportedRecordsForListing(
+  snapshot: LegalIntelligenceSnapshot,
+  listingId: string,
+): Promise<void> {
+  if (!legalHubFlags.legalRecordImportV1 || !legalHubFlags.legalHubV1) return;
+  try {
+    const rows = await prisma.legalRecord.findMany({
+      where: { entityType: "fsbo_listing", entityId: listingId },
+      select: { id: true, recordType: true, status: true, parsedData: true, validation: true },
+      orderBy: { createdAt: "desc" },
+      take: 200,
+    });
+    snapshot.legalImportedRecords = rows.map(legalRecordToImportedRow);
+  } catch {
+    /* optional enrichment */
+  }
+}
 
 export type BuildLegalIntelligenceSnapshotParams = {
   entityType: string;
@@ -217,7 +286,7 @@ export async function buildLegalIntelligenceSnapshot(
       if (critical.has(d.docType) && (d.status === "missing" || !d.status)) slotMissingCriticalCount += 1;
     }
 
-    return {
+    const snapshot: LegalIntelligenceSnapshot = {
       builtAt: nowIso,
       windowStart: windowStartIso,
       windowEnd: nowIso,
@@ -244,6 +313,11 @@ export async function buildLegalIntelligenceSnapshot(
         slotMissingCriticalCount,
       },
     };
+
+    await attachLegalImportedRecordsForListing(snapshot, listingId);
+    await attachLegalTimelineFacts(snapshot, windowStartMs);
+
+    return snapshot;
   } catch {
     const sparse = emptySnapshot(params, nowIso);
     sparse.windowStart = windowStartIso;

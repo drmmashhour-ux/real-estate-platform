@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
+import { maybeBlockRequestWithLegalGate } from "@/modules/legal/legal-api-gate";
 
 /**
  * POST /api/broker/apply – Submit broker certification application (OACIQ-style).
@@ -44,6 +45,13 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    const legalGate = await maybeBlockRequestWithLegalGate({
+      action: "become_broker",
+      userId,
+      actorType: "broker",
+    });
+    if (legalGate) return legalGate;
 
     const application = await prisma.brokerApplication.create({
       data: {

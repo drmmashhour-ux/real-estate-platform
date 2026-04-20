@@ -10,12 +10,17 @@ import { getHubTheme } from "@/lib/hub/themes";
 import { HubLayout } from "@/components/hub/HubLayout";
 import { VerificationChecklist } from "@/components/bnhub/VerificationChecklist";
 import { prisma } from "@/lib/db";
+import { legalHubFlags } from "@/config/feature-flags";
+import { LegalHubEntryCard } from "@/components/legal/LegalHubEntryCard";
 
 export default async function BNHubHostDashboardPage({
   searchParams,
+  params,
 }: {
   searchParams?: Promise<{ ownerId?: string; applied?: string }>;
+  params: Promise<{ locale: string; country: string }>;
 }) {
+  const { locale, country } = await params;
   const role = await getUserRole();
   const theme = getHubTheme("bnhub");
   const { ownerId: ownerIdFromQuery, applied } = (await searchParams) ?? {};
@@ -274,6 +279,10 @@ export default async function BNHubHostDashboardPage({
             Listings must comply with platform standards and local regulations.
           </p>
         </div>
+
+        {legalHubFlags.legalHubV1 ? (
+          <LegalHubEntryCard href={`/${locale}/${country}/legal`} locale={locale} country={country} />
+        ) : null}
 
         {/* Mandatory verification: required before publishing any listing */}
         <section className="rounded-2xl border border-white/10 bg-white/5 p-4">

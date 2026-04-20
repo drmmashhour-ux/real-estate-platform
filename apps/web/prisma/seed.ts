@@ -1861,6 +1861,9 @@ export async function runSeed(): Promise<void> {
   const { seedDefaultExperiments } = await import("./seed-experiments");
   await seedDefaultExperiments();
 
+  const { runSeedLegal } = await import("./seed-legal");
+  await runSeedLegal();
+
   // ---------------------------------------------------------------------------
   // Summary
   // ---------------------------------------------------------------------------

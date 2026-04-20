@@ -4,6 +4,8 @@ import { Link } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { pickListingDescription, pickListingTitle } from "@/lib/listing-localized";
+import { backfillLocalizedPropertyShape } from "@/lib/property-legacy-compat";
+import { getLocalizedPropertyCity, getLocalizedPropertyDistrict } from "@/lib/property-localization";
 import { money } from "@/lib/format";
 import { getSessionUser } from "@/lib/auth";
 import { createBnhubBooking } from "@/actions/bookings";
@@ -18,7 +20,6 @@ import { trackSyriaGrowthEvent } from "@/lib/growth-events";
 import { PropertyImageGallery } from "@/components/PropertyImageGallery";
 import { VerifiedBadge } from "@/components/ds/VerifiedBadge";
 import { RelatedListings } from "@/components/listing/RelatedListings";
-import { resolveCityLabel } from "@/lib/syria-locations";
 import { fuzzLatLngForDisplay } from "@/lib/geo";
 import { ListingApproximateMap } from "@/components/listing/ListingApproximateMap";
 import { ListingMobileBookingBar } from "@/components/listing/ListingMobileBookingBar";
@@ -84,10 +85,12 @@ export default async function ListingDetailPage(props: Props) {
     },
   });
 
+  const localized = backfillLocalizedPropertyShape(listing);
   const titleDisplay = pickListingTitle(listing, locale);
   const displayDescription = pickListingDescription(listing, locale);
-  const cityDisplay = resolveCityLabel(listing.city, locale);
-  const areaDisplay = listing.area ?? listing.neighborhood ?? null;
+  const cityDisplay = getLocalizedPropertyCity(localized, locale);
+  const districtDisplay = getLocalizedPropertyDistrict(localized, locale);
+  const areaDisplay = districtDisplay ?? listing.area ?? listing.neighborhood ?? null;
   const fuzz =
     listing.latitude != null && listing.longitude != null
       ? fuzzLatLngForDisplay(listing.id, listing.latitude, listing.longitude)

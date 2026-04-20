@@ -135,7 +135,18 @@ export function parseFsboListingBody(body: unknown):
 }
 
 export function parseFsboContactBody(body: unknown):
-  | { ok: true; data: { listingId: string; name: string; email: string; phone: string | null; message: string | null } }
+  | {
+      ok: true;
+      data: {
+        listingId: string;
+        name: string;
+        email: string;
+        phone: string | null;
+        message: string | null;
+        /** Buyer-traffic hint: CENTRIS deep link (`?dist=centris`) vs default LECIPM site. */
+        distributionChannel?: "CENTRIS" | "LECIPM";
+      };
+    }
   | { ok: false; error: string } {
   if (!body || typeof body !== "object") return { ok: false, error: "Invalid JSON" };
   const o = body as Record<string, unknown>;
@@ -148,12 +159,17 @@ export function parseFsboContactBody(body: unknown):
     typeof o.message === "string" && o.message.trim()
       ? trimStr(o.message, MAX_MSG)
       : null;
+  let distributionChannel: "CENTRIS" | "LECIPM" | undefined;
+  if (typeof o.distributionChannel === "string") {
+    const u = o.distributionChannel.toUpperCase();
+    if (u === "CENTRIS" || u === "LECIPM") distributionChannel = u;
+  }
 
   if (!listingId) return { ok: false, error: "listingId required" };
   if (!name) return { ok: false, error: "Name required" };
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { ok: false, error: "Valid email required" };
 
-  return { ok: true, data: { listingId, name, email, phone, message } };
+  return { ok: true, data: { listingId, name, email, phone, message, distributionChannel } };
 }
 
 export function toFsboCreateData(

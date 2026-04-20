@@ -10,6 +10,7 @@ describe("SyriaPreviewPanel", () => {
       listingId: "lst_1",
       autonomyMode: "OFF",
       metrics: null,
+      signals: [],
       observation: {
         id: "obs",
         target: { type: "syria_listing", id: "lst_1" },

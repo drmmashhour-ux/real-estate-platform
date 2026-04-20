@@ -91,6 +91,33 @@ export type MarketplaceRankingSummary = {
   notes?: string[];
 };
 
+/**
+ * Dashboard-level proxy for Syria preview policy posture (aggregates, not per-listing `evaluateSyriaPreviewPolicyFromSignals`).
+ */
+export type SyriaPolicySummarySlice = {
+  worstCasePolicy:
+    | "blocked_for_region"
+    | "requires_local_approval"
+    | "caution_preview"
+    | "allow_preview";
+  liveExecutionBlocked: true;
+  notes: readonly string[];
+};
+
+/**
+ * Governance-oriented Syria counts from regional SQL aggregates — decision visibility, not workflow execution.
+ * `requiresApprovalCount` sums pending-review + fraud-flagged and may double-count if both apply to one listing.
+ */
+export type SyriaGovernanceDashboardSlice = {
+  requiresApprovalCount: number;
+  fraudFlaggedCount: number;
+  /** Listings treated as execution-blocked for the Syria region in this phase (mirrors `executionUnavailableForSyria`). */
+  blockedForRegionCount: number;
+  /** Listings covered by read-only preview / dry-run (adapter scope). */
+  previewableCount: number;
+  notes?: readonly string[];
+};
+
 /** Aggregate Syria signal-class proxies from regional SQL — not a sum of per-listing preview signals. */
 export type SyriaSignalDashboardRollup = {
   signalsBySeverity: { info: number; warning: number; critical: number };
@@ -119,4 +146,8 @@ export type MarketplaceDashboardSummary = {
   syriaPreviewAvailable?: boolean;
   executionUnavailableForSyria?: true;
   syriaSignalRollup?: SyriaSignalDashboardRollup | null;
+  /** Aggregate proxy aligned with Syria preview policy semantics (deterministic heuristic). */
+  syriaPolicySummary?: SyriaPolicySummarySlice | null;
+  /** Syria governance lane visibility (aggregate SQL proxies — modeled only). */
+  syriaGovernanceSlice?: SyriaGovernanceDashboardSlice | null;
 };

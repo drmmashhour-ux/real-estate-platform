@@ -1,3 +1,4 @@
+import { engineFlags } from "@/config/feature-flags";
 import { recordRollbackOutcome } from "./execution-audit.service";
 import type { ProposedAction } from "../types/domain.types";
 import type { ExecutionResult } from "../types/domain.types";
@@ -17,6 +18,10 @@ export async function rollbackControlledAction(
   const reversible =
     isControlledSafeActionType(params.proposed.type) &&
     params.execution.status === "EXECUTED";
+
+  if (!engineFlags.autopilotHardeningV1 && !engineFlags.autonomyRollbackV1) {
+    return { ok: true, reversible };
+  }
 
   await recordRollbackOutcome({
     runId: params.runId,

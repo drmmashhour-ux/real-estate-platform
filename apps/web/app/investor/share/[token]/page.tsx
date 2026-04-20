@@ -1,3 +1,8 @@
+/**
+ * Public read-only investor summary — no mutations, no admin chrome, no internal payloads.
+ * Invalid/expired/revoked tokens share one generic UI (no existence leaks).
+ */
+
 import type { Metadata } from "next";
 import { InvestorSharedDashboardPanel } from "@/components/investors/InvestorSharedDashboardPanel";
 import { engineFlags } from "@/config/feature-flags";

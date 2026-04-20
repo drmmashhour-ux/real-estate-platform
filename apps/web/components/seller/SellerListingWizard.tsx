@@ -145,6 +145,7 @@ export function SellerListingWizard({
   const [loading, setLoading] = useState(false);
   const [draftSaveBusy, setDraftSaveBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [legalRiskAlert, setLegalRiskAlert] = useState<string | null>(null);
   const [aiBusy, setAiBusy] = useState<string | null>(null);
   const [aiAssistPanel, setAiAssistPanel] = useState<SellerAiAssistPanel | null>(null);
   const [legalAccepted, setLegalAccepted] = useState(false);
@@ -163,6 +164,8 @@ export function SellerListingWizard({
   const [photoMismatchDetected, setPhotoMismatchDetected] = useState(false);
   const [photoSimilarityScore, setPhotoSimilarityScore] = useState<number | null>(null);
   const [listingCode, setListingCode] = useState<string | null>(null);
+  const [publishOnCentris, setPublishOnCentris] = useState(false);
+  const [centrisStatus, setCentrisStatus] = useState<string | null>(null);
   const [demoPhotoBusy, setDemoPhotoBusy] = useState<null | "seed" | "food">(null);
   const [photoDemoNotice, setPhotoDemoNotice] = useState<string | null>(null);
   const [prefilledFromPrevious, setPrefilledFromPrevious] = useState(false);
@@ -348,6 +351,11 @@ export function SellerListingWizard({
       if (!res.ok) {
         setErr(typeof data.error === "string" ? data.error : "Could not start draft");
         return null;
+      }
+      if (typeof data.legalRiskAlert === "string" && data.legalRiskAlert.trim()) {
+        setLegalRiskAlert(data.legalRiskAlert.trim());
+      } else {
+        setLegalRiskAlert(null);
       }
       const id = typeof data.id === "string" ? data.id : null;
       if (!id) return null;
@@ -1358,6 +1366,35 @@ export function SellerListingWizard({
                 I confirm that uploaded photos represent the actual property (Exterior first).
               </span>
             </label>
+            <div className="rounded-lg border border-white/10 bg-black/25 p-3">
+              <label className="flex cursor-pointer items-start gap-2">
+                <input
+                  type="checkbox"
+                  checked={publishOnCentris}
+                  onChange={(e) => void saveCentrisToggle(e.target.checked)}
+                  disabled={draftSaveBusy}
+                  className="mt-1 disabled:opacity-50"
+                />
+                <span className="text-slate-200">
+                  Publish on Centris{" "}
+                  <span className="text-slate-500">
+                    (authorized syndication workflow only — LECIPM never scrapes Centris)
+                  </span>
+                </span>
+              </label>
+              {publishOnCentris ? (
+                <p className="mt-2 text-xs text-slate-400">
+                  Status:{" "}
+                  {centrisStatus === "SYNCED"
+                    ? "Synced ✅"
+                    : centrisStatus === "PENDING"
+                      ? "Pending ⏳"
+                      : centrisStatus === "ERROR"
+                        ? "Error ❌"
+                        : "—"}
+                </p>
+              ) : null}
+            </div>
             {photoVerificationStatus === "FLAGGED" ? (
               <p className="text-xs text-red-300">
                 Exterior photo may not match property address. Please verify.
@@ -1390,6 +1427,11 @@ export function SellerListingWizard({
         )}
 
         {err ? <p className="mt-4 text-sm text-red-400">{err}</p> : null}
+        {legalRiskAlert ? (
+          <p className="mt-4 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
+            {legalRiskAlert}
+          </p>
+        ) : null}
 
         <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-white/10 pt-6">
           {step > 1 ? (

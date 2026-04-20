@@ -30,6 +30,10 @@ export function SyriaPreviewPanel(props: Props) {
 
   const m = preview.metrics;
   const obs = preview.observation;
+  const syPolicy = preview.syriaPolicyPreview;
+  const sySignals = preview.syriaSignals ?? [];
+  const syOpps = preview.syriaOpportunities ?? [];
+  const syExplain = [...(preview.syriaSignalExplainability ?? [])];
 
   return (
     <section className="rounded-2xl border border-amber-500/25 bg-[#0a0a0a] p-6">
@@ -68,13 +72,53 @@ export function SyriaPreviewPanel(props: Props) {
       </div>
 
       {syPolicy ? (
-        <div className="mt-6 rounded-xl border border-amber-500/15 bg-zinc-950/50 px-4 py-3">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Syria policy (signals)</p>
+        <div
+          className={`mt-6 rounded-xl px-4 py-3 ${
+            syPolicy.decision === "blocked_for_region"
+              ? "border border-rose-500/40 bg-rose-950/30"
+              : "border border-amber-500/15 bg-zinc-950/50"
+          }`}
+        >
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Syria policy</p>
           <p className="mt-1 text-sm text-amber-100/90">
             <span className="font-mono text-xs text-amber-300/90">{syPolicy.decision}</span>
             <span className="mx-2 text-zinc-600">·</span>
             <span className="text-zinc-400">{syPolicy.rationale}</span>
           </p>
+        </div>
+      ) : null}
+
+      {preview.syriaApprovalBoundary ? (
+        <div className="mt-4 rounded-xl border border-rose-500/20 bg-rose-950/20 px-4 py-3">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Approval & execution boundary</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <span
+              className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase ${
+                preview.syriaApprovalBoundary.requiresHumanApprovalHint
+                  ? "border-amber-500/50 bg-amber-500/10 text-amber-100"
+                  : "border-zinc-600 text-zinc-400"
+              }`}
+            >
+              human review {preview.syriaApprovalBoundary.requiresHumanApprovalHint ? "suggested" : "optional"}
+            </span>
+            <span className="rounded-full border border-zinc-600 px-2 py-0.5 text-[10px] font-semibold uppercase text-zinc-400">
+              live exec blocked
+            </span>
+          </div>
+          <ul className="mt-2 list-inside list-disc text-xs text-zinc-500">
+            {preview.syriaApprovalBoundary.reasons.map((r) => (
+              <li key={r} className="font-mono">
+                {r}
+              </li>
+            ))}
+          </ul>
+          {preview.syriaApprovalBoundary.notes.length > 0 ? (
+            <ul className="mt-2 list-inside list-disc text-xs text-zinc-400">
+              {[...preview.syriaApprovalBoundary.notes].map((n) => (
+                <li key={n}>{n}</li>
+              ))}
+            </ul>
+          ) : null}
         </div>
       ) : null}
 

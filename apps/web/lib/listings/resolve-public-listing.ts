@@ -19,6 +19,7 @@ export type ResolvedPublicListing =
             verificationStatus: string;
           }>;
         };
+        externalListings: Array<{ id: string; status: string }>;
       };
     }
   | {
@@ -61,6 +62,12 @@ const fsboPublicInclude = {
         orderBy: { updatedAt: "desc" as const },
       },
     },
+  },
+  /** CENTRIS syndication badge — only when connector marked SYNCED (never inferred from scraping). */
+  externalListings: {
+    where: { platform: "CENTRIS", status: "SYNCED" },
+    select: { id: true, status: true },
+    take: 1,
   },
 } as const;
 

@@ -7,6 +7,7 @@ import { prisma } from "@/lib/db";
 import {
   expireStaleBnhubPendingBookings,
   findOverlappingActiveBnhubBooking,
+  findOverlappingExternalIcsBlock,
 } from "@/lib/bookings/checkAvailability";
 import { utcDayStart } from "@/lib/bnhub/availability-day-helpers";
 
@@ -119,6 +120,12 @@ export async function precheckBnhubBookingAvailability(
     if (blockedSlot) {
       return { available: false, reason: "calendar" };
     }
+
+    const icsBlock = await findOverlappingExternalIcsBlock(tx, listingId, checkIn, checkOut);
+    if (icsBlock) {
+      return { available: false, reason: "calendar" };
+    }
+
     return { available: true };
   });
 }

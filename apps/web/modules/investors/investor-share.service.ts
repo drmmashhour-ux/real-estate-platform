@@ -1,6 +1,11 @@
 /**
  * In-memory share links — process lifetime; rotate/revoke for operational control.
  * Public loads use filtered snapshots only (never raw admin payloads).
+ *
+ * Contract (do not regress):
+ * - Read-only public surface; no actions, no admin APIs, no raw internal dashboard JSON.
+ * - Tokens: cryptographically random; revoked/expired/unknown → same generic failure (no enumeration).
+ * - `buildInvestorSharedDashboard` always runs `filterInvestorDashboardForShare` — never return unfiltered internal payloads.
  */
 
 import { randomBytes, randomUUID } from "crypto";

@@ -24,6 +24,7 @@ import {
   growthGovernanceFeedbackFlags,
   growthOperatingReviewFlags,
   autonomousGrowthFlags,
+  growthIntelligenceFlags,
   engineFlags,
   brokerClosingFlags,
   globalFusionFlags,
@@ -58,6 +59,7 @@ import { GrowthAdsStrategyPlaybook } from "@/components/growth/GrowthAdsStrategy
 import { GrowthBookingAccelerationSection } from "@/components/growth/GrowthBookingAccelerationSection";
 import { GrowthConversionOptimizationSection } from "@/components/growth/GrowthConversionOptimizationSection";
 import { HubJourneyBanner } from "@/components/journey/HubJourneyBanner";
+import { ExplainabilityGrowthSection } from "@/components/autonomy/admin/ExplainabilityGrowthSection";
 import { GrowthMachineDashboard } from "@/components/growth/GrowthMachineDashboard";
 import { GrowthRetargetingEngineSection } from "@/components/growth/GrowthRetargetingEngineSection";
 import { MarketplaceIntelligenceSection } from "@/components/growth/MarketplaceIntelligenceSection";
@@ -137,6 +139,10 @@ export default async function GrowthMachineHubPage({
         </p>
       </div>
       {isAdmin ? <HubJourneyBanner hub="admin" locale={locale} country={country} userId={userId} /> : null}
+      {isAdmin && engineFlags.autonomyExplainabilityV1 ? <ExplainabilityGrowthSection enabled /> : null}
+      {isAdmin && growthIntelligenceFlags.growthIntelligenceV1 ? (
+        <GrowthIntelligencePhase6Section locale={locale} country={country} />
+      ) : null}
       <GrowthAdsStrategyPlaybook />
       {autonomousGrowthFlags.autonomousGrowthSystemV1 ? (
         <AutonomousGrowthSystemSection isAdmin={!!isAdmin} />
@@ -202,6 +208,11 @@ export default async function GrowthMachineHubPage({
         growthSimulation={{
           enabled: growthSimulationFlags.growthSimulationV1,
           panel: growthSimulationFlags.growthSimulationPanelV1,
+        }}
+        growthActionSimulation={{
+          enabled: engineFlags.actionSimulationV1,
+          panel: engineFlags.actionSimulationPanelV1,
+          comparison: engineFlags.actionSimulationComparisonV1,
         }}
         growthMissionControl={{
           enabled: growthMissionControlFlags.growthMissionControlV1,
@@ -349,6 +360,13 @@ export default async function GrowthMachineHubPage({
         timingOptimizerV1={engineFlags.timingOptimizerV1}
         brokerLockinV1={engineFlags.brokerLockinV1}
         growthPolicyV1={engineFlags.growthPolicyV1}
+        growthPolicyActionsV1={engineFlags.growthPolicyActionsV1}
+        growthPolicyActionsPanelV1={engineFlags.growthPolicyActionsPanelV1}
+        growthPolicyHistoryV1={engineFlags.growthPolicyHistoryV1}
+        growthPolicyHistoryPanelV1={engineFlags.growthPolicyHistoryPanelV1}
+        growthPolicyReviewV1={engineFlags.growthPolicyReviewV1}
+        growthPolicyTrendsV1={engineFlags.growthPolicyTrendsV1}
+        growthPolicyTrendsPanelV1={engineFlags.growthPolicyTrendsPanelV1}
         growthScaleV1={engineFlags.growthScaleV1}
         growth100kV1={engineFlags.growth100kV1}
         growth1mV1={engineFlags.growth1mV1}

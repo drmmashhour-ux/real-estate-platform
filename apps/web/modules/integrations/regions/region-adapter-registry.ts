@@ -1,15 +1,33 @@
 /**
- * Registered regional read adapters — extend with new regions without coupling app code.
+ * Registered regional adapters — deterministic; extend by updating ADAPTER_BY_CODE only.
  */
-import { syriaRegionAdapter } from "./syria/syria-region-adapter.service";
+import type { PlatformRegionCode } from "@lecipm/platform-core";
+import { webRegionAdapter } from "./web-region-adapter.service";
+import { syriaPlatformRegionAdapter } from "./syria-region-adapter.service";
 
 export const REGION_SY = "sy" as const;
+export const REGION_CA_QC = "ca_qc" as const;
 
-export type RegisteredRegionCode = typeof REGION_SY | (string & {});
+export type RegisteredRegionCode = PlatformRegionCode | (string & {});
 
-export type RegionBundle = {
+export type RegionAdapterBundle = {
   regionCode: RegisteredRegionCode;
-  adapter: typeof syriaRegionAdapter | null;
+  adapter:
+    | typeof webRegionAdapter
+    | typeof syriaPlatformRegionAdapter
+    | null;
+};
+
+function normCode(regionCode: string): string {
+  const raw = typeof regionCode === "string" ? regionCode.trim().toLowerCase() : "";
+  if (raw === "syria") return REGION_SY;
+  if (raw === "qc" || raw === "quebec") return REGION_CA_QC;
+  return raw;
+}
+
+const ADAPTER_BY_CODE: Record<string, RegionAdapterBundle["adapter"]> = {
+  [REGION_CA_QC]: webRegionAdapter,
+  [REGION_SY]: syriaPlatformRegionAdapter,
 };
 
 function compareRegionCodes(a: string, b: string): number {
@@ -18,16 +36,28 @@ function compareRegionCodes(a: string, b: string): number {
 
 /** Deterministic ordering for UI / APIs. */
 export function listRegisteredRegionCodes(): RegisteredRegionCode[] {
-  return [REGION_SY].sort(compareRegionCodes);
+  return Object.keys(ADAPTER_BY_CODE).sort(compareRegionCodes) as RegisteredRegionCode[];
 }
 
-/** Safe lookup — unsupported codes return null (callers degrade gracefully). */
-export function getRegionBundle(regionCode: string): RegionBundle | null {
-  const raw = typeof regionCode === "string" ? regionCode.trim().toLowerCase() : "";
-  const code = raw === "syria" ? REGION_SY : raw;
+export function listAvailableRegionAdapters(): RegionAdapterBundle[] {
+  return listRegisteredRegionCodes().map((code) => ({
+    regionCode: code,
+    adapter: ADAPTER_BY_CODE[normCode(code)] ?? null,
+  }));
+}
+
+/**
+ * Primary lookup — returns adapter + code (safe null when unknown).
+ */
+export function getRegionAdapter(regionCode: string): RegionAdapterBundle | null {
+  const code = normCode(regionCode);
   if (!code) return null;
-  if (code === REGION_SY) {
-    return { regionCode: REGION_SY, adapter: syriaRegionAdapter };
-  }
-  return null;
+  const adapter = ADAPTER_BY_CODE[code] ?? null;
+  if (!adapter) return null;
+  return { regionCode: code as RegisteredRegionCode, adapter };
+}
+
+/** @deprecated Use `getRegionAdapter` — kept for existing API routes. */
+export function getRegionBundle(regionCode: string): RegionAdapterBundle | null {
+  return getRegionAdapter(regionCode);
 }

@@ -38,7 +38,9 @@ export type ActionType =
   | "SEND_LEAD_FOLLOWUP"
   | "CREATE_TASK"
   | "FLAG_REVIEW"
-  | "REQUEST_HUMAN_APPROVAL";
+  | "REQUEST_HUMAN_APPROVAL"
+  /** Deterministic Legal Hub compliance check — evaluate-only; never auto-executed by autonomy executors. */
+  | "LEGAL_COMPLIANCE_GATE";
 
 /** @deprecated use TargetType — kept for grep compatibility */
 export type DomainTargetType = TargetType;
@@ -245,6 +247,12 @@ export type ExecutionResult = {
   message?: string;
   metadata: Record<string, unknown>;
   errorCode?: string;
+  /** Preview envelope — nothing executed when present (usually empty). */
+  executedActions?: string[];
+  /** Preview envelope — mirrors proposed action ids skipped in preview mode. */
+  skippedActions?: string[];
+  /** Stable reasons such as `"preview mode"`. */
+  reasons?: string[];
 };
 
 export type OutcomeSnapshot = {

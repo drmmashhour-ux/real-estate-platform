@@ -8,10 +8,16 @@ import { getHostReputationForHost } from "@/lib/ai/reputation/reputation-engine"
 import { updateHostPerformance } from "@/src/modules/reviews/aggregationService";
 import { AIAssistantPanel } from "@/components/ai/AIAssistantPanel";
 import type { CalendarBookingRow } from "@/components/calendar/BookingCalendar";
+import { TrustGrowthPrompt } from "@/components/growth/TrustGrowthPrompt";
 
 export const dynamic = "force-dynamic";
 
-export default async function DashboardHostPage() {
+export default async function DashboardHostPage({
+  params,
+}: {
+  params: Promise<{ locale: string; country: string }>;
+}) {
+  const { locale, country } = await params;
   const userId = await getGuestId();
   if (!userId) redirect("/auth/login?next=/dashboard/host");
 
@@ -86,6 +92,9 @@ export default async function DashboardHostPage() {
           context={{ listingId: firstListingId, role: "HOST" }}
           agentKey="host_management"
         />
+      </div>
+      <div className="mx-auto mb-6 max-w-6xl px-4 sm:px-0">
+        <TrustGrowthPrompt variant="host" locale={locale} country={country} />
       </div>
       <HostDashboardHub
         bookings={rows}

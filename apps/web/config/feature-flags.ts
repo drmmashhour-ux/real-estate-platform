@@ -181,10 +181,37 @@ export const engineFlags = {
   scaleSystemV1: envTrue("FEATURE_SCALE_SYSTEM_V1"),
   /** Autonomous marketplace V1 — draft decisions + log-only approval (no spend/pricing writes). */
   autonomousMarketplaceV1: envTrue("FEATURE_AUTONOMOUS_MARKETPLACE_V1"),
+  /**
+   * Listing preview uses full detector registry + full policy evaluate — still no execution (`DRY_RUN` only).
+   * @see autonomousMarketplaceEngine.previewForListing
+   */
+  autonomyPreviewRealV1: envTrue("FEATURE_AUTONOMY_PREVIEW_REAL_V1"),
+  /** Phase 6.5 — deterministic preview reasoning graph (signals → opportunities → policy → actions). Read-only. */
+  autonomyExplainabilityV1: envTrue("FEATURE_AUTONOMY_EXPLAINABILITY_V1"),
+  /**
+   * Real read-only preview pipeline (metric signals → opportunities → policy → actions) — still DRY_RUN only.
+   * @see buildPreviewSignalsForListing, AutonomousMarketplaceEngine.previewForWebFsboListing
+   */
+  autonomyRealPreviewV1: envTrue("FEATURE_AUTONOMY_REAL_PREVIEW_V1"),
+  /**
+   * Deterministic preview explainability graph (summary, findings, recommendations) — no LLM.
+   * @see buildPreviewExplanation
+   */
+  autonomyPreviewExplainabilityV1: envTrue("FEATURE_AUTONOMY_PREVIEW_EXPLAINABILITY_V1"),
+  /** Include policy rule codes and debug refs on reasoning nodes — admin-oriented. */
+  autonomyExplainabilityDebugV1: envTrue("FEATURE_AUTONOMY_EXPLAINABILITY_DEBUG_V1"),
   /** Gate + audit path for autonomous actions (policy + governance + compliance; default off). */
   controlledExecutionV1: envTrue("FEATURE_CONTROLLED_EXECUTION_V1"),
   /** Admin approval queue for gated actions (pairs with controlled execution). */
   autonomyApprovalsV1: envTrue("FEATURE_AUTONOMY_APPROVALS_V1"),
+  /** Region capability registry gates for controlled execution (`FEATURE_REGION_AWARE_AUTONOMY_V1` remains related). */
+  regionAwareExecutionV1: envTrue("FEATURE_REGION_AWARE_EXECUTION_V1"),
+  /** Syria listings: live controlled execution opt-in — preview stays available when false. */
+  syriaLiveExecutionV1: envTrue("FEATURE_SYRIA_LIVE_EXECUTION_V1"),
+  /** Post-exec rollback audit path for reversible internal actions (additive to hardening). */
+  autonomyRollbackV1: envTrue("FEATURE_AUTONOMY_ROLLBACK_V1"),
+  /** Verifies EXECUTED outcomes for internal-safe actions before optional rollback. */
+  autonomyExecutionVerifyV1: envTrue("FEATURE_AUTONOMY_EXECUTION_VERIFY_V1"),
   /** Unified marketplace intelligence dashboard API (read-only aggregates). */
   marketplaceDashboardV1: envTrue("FEATURE_MARKETPLACE_DASHBOARD_V1"),
   /** Syria region read adapter — `syria_*` tables via shared `DATABASE_URL` (read-only; no merged Prisma schema). */
@@ -193,10 +220,24 @@ export const engineFlags = {
   regionListingKeyV1: envTrue("FEATURE_REGION_LISTING_KEY_V1"),
   /** Syria listing preview via autonomous marketplace preview pipeline (DRY_RUN only). */
   syriaPreviewV1: envTrue("FEATURE_SYRIA_PREVIEW_V1"),
+  /** Shared `@lecipm/platform-core` region registry + resolution (deterministic). */
+  globalMultiRegionV1: envTrue("FEATURE_GLOBAL_MULTI_REGION_V1"),
+  /** Admin global marketplace dashboard API + investor comparison surfaces. */
+  globalDashboardV1: envTrue("FEATURE_GLOBAL_DASHBOARD_V1"),
+  /** Explicit regional adapter registry (`ca_qc`, `sy`) for intelligence aggregation. */
+  regionAdaptersV1: envTrue("FEATURE_REGION_ADAPTERS_V1"),
+  /** Gate autonomy / controlled execution by region capability + jurisdiction pack. */
+  regionAwareAutonomyV1: envTrue("FEATURE_REGION_AWARE_AUTONOMY_V1"),
+  /** Cross-region advisory domination summary (pairs with existing market domination intelligence). */
+  globalDominationV1: envTrue("FEATURE_GLOBAL_DOMINATION_V1"),
+  /** Phase 8 — legal risk + trust dampening/boost for marketplace ordering (deterministic). */
+  legalTrustRankingV1: envTrue("FEATURE_LEGAL_TRUST_RANKING_V1"),
   /** Post-exec verification + rollback hooks for reversible internal actions only. */
   autopilotHardeningV1: envTrue("FEATURE_AUTOPILOT_HARDENING_V1"),
   /** Advisory domination / ranking–pricing surface (deterministic explainers). */
   marketDominationV1: envTrue("FEATURE_MARKET_DOMINATION_V1"),
+  /** Single-pane unified listing intelligence read model + admin APIs (read-only aggregates). Default off. */
+  unifiedIntelligenceV1: envTrue("FEATURE_UNIFIED_INTELLIGENCE_V1"),
   /** Investor pitch V1 — static narrative slides (review before external use). */
   investorPitchV1: envTrue("FEATURE_INVESTOR_PITCH_V1"),
   /** Auto-generated investor dashboard API — CRM + growth signals only (`FEATURE_INVESTOR_DASHBOARD_V1`). */
@@ -239,6 +280,20 @@ export const engineFlags = {
   brokerLockinV1: envTrue("FEATURE_BROKER_LOCKIN_V1"),
   /** Growth Policy Enforcement Layer V1 — advisory evaluation (`GET /api/growth/policy`); does not block execution. */
   growthPolicyV1: envTrue("FEATURE_GROWTH_POLICY_V1"),
+  /** Map policy findings to safe navigation + resolution copy (read-only; no auto-exec). */
+  growthPolicyActionsV1: envTrue("FEATURE_GROWTH_POLICY_ACTIONS_V1"),
+  /** Growth policy panel: top action + open/review affordances. */
+  growthPolicyActionsPanelV1: envTrue("FEATURE_GROWTH_POLICY_ACTIONS_PANEL_V1"),
+  /** Policy evaluation fingerprint history + hints (additive JSON store; default off). */
+  growthPolicyHistoryV1: envTrue("FEATURE_GROWTH_POLICY_HISTORY_V1"),
+  /** Dashboard panel for recurring findings + history table (default off). */
+  growthPolicyHistoryPanelV1: envTrue("FEATURE_GROWTH_POLICY_HISTORY_PANEL_V1"),
+  /** POST review records + review form UI (default off). */
+  growthPolicyReviewV1: envTrue("FEATURE_GROWTH_POLICY_REVIEW_V1"),
+  /** Policy safety trend rollups from daily snapshots (read-only; default off). */
+  growthPolicyTrendsV1: envTrue("FEATURE_GROWTH_POLICY_TRENDS_V1"),
+  /** Growth machine panel for policy trend summary (default off). */
+  growthPolicyTrendsPanelV1: envTrue("FEATURE_GROWTH_POLICY_TRENDS_PANEL_V1"),
   /** $10K/month scale layer — forecast, pricing advisory, UTM ROI, broker performance (`/api/growth/scale`) + autopilot hints. */
   growthScaleV1: envTrue("FEATURE_GROWTH_SCALE_V1"),
   /** $100K/month orchestration — command center v7, marketplace/pricing/lifecycle fusion, top-3 autopilot hints. */
@@ -257,10 +312,24 @@ export const engineFlags = {
   hubJourneyV1: envTrue("FEATURE_HUB_JOURNEY_V1"),
   /** Hub copilot — 1–3 explainable suggestions from journey + signals (no auto-send / no auto-exec; default off). */
   hubCopilotV1: envTrue("FEATURE_HUB_COPILOT_V1"),
+  /** Journey outcome analytics (banner/copilot/blocker beacons — server logs only; default off). */
+  hubJourneyAnalyticsV1: envTrue("FEATURE_HUB_JOURNEY_ANALYTICS_V1"),
+  /** Admin journey effectiveness dashboard + APIs (aggregated read-only). */
+  hubJourneyAnalyticsDashboardV1: envTrue("FEATURE_HUB_JOURNEY_ANALYTICS_DASHBOARD_V1"),
+  /** Journey→outcome attribution summaries (exploratory; default off). */
+  hubJourneyAttributionV1: envTrue("FEATURE_HUB_JOURNEY_ATTRIBUTION_V1"),
+  /** Copilot/step feedback capture (bounded signals only; default off). */
+  hubJourneyFeedbackV1: envTrue("FEATURE_HUB_JOURNEY_FEEDBACK_V1"),
   /** Unified adaptive growth suggestions API (read-only, approval-based; no auto-exec). */
   adaptiveIntelligenceV1: envTrue("FEATURE_ADAPTIVE_INTELLIGENCE_V1"),
   /** Growth Machine panel for adaptive intelligence (requires API flag). */
   adaptiveIntelligencePanelV1: envTrue("FEATURE_ADAPTIVE_INTELLIGENCE_PANEL_V1"),
+  /** Scenario-based action simulation API (read-only; no execution). */
+  actionSimulationV1: envTrue("FEATURE_ACTION_SIMULATION_V1"),
+  /** Growth Machine panel for action simulation + comparison UI. */
+  actionSimulationPanelV1: envTrue("FEATURE_ACTION_SIMULATION_PANEL_V1"),
+  /** Allow A/B comparison of two simulated actions in UI + API. */
+  actionSimulationComparisonV1: envTrue("FEATURE_ACTION_SIMULATION_COMPARISON_V1"),
 } as const;
 
 /** Alias grouping for CRO / retargeting durable learning (reads same env keys as engineFlags). */
@@ -673,6 +742,17 @@ export const growthFusionFlags = {
 } as const;
 
 export type GrowthFusionFlagKey = keyof typeof growthFusionFlags;
+
+/**
+ * Growth Intelligence Phase 6 — deterministic signals, draft briefs, prioritized opportunities (default off).
+ */
+export const growthIntelligenceFlags = {
+  growthIntelligenceV1: envTrue("FEATURE_GROWTH_INTELLIGENCE_V1"),
+  growthBriefsV1: envTrue("FEATURE_GROWTH_BRIEFS_V1"),
+  growthOpportunitiesV1: envTrue("FEATURE_GROWTH_OPPORTUNITIES_V1"),
+} as const;
+
+export type GrowthIntelligenceFlagKey = keyof typeof growthIntelligenceFlags;
 
 /**
  * Growth Governance V1 — advisory prioritization / freeze hints / escalation (default off).
@@ -1514,6 +1594,16 @@ export const FEATURE_AI_ASSIST_EXECUTION_V1 = engineFlags.aiAssistExecutionV1;
 export const FEATURE_BROKER_COMPETITION_V1 = engineFlags.brokerCompetitionV1;
 export const FEATURE_SCALE_SYSTEM_V1 = engineFlags.scaleSystemV1;
 export const FEATURE_AUTONOMOUS_MARKETPLACE_V1 = engineFlags.autonomousMarketplaceV1;
+/** @see engineFlags.autonomyPreviewRealV1 */
+export const FEATURE_AUTONOMY_PREVIEW_REAL_V1 = engineFlags.autonomyPreviewRealV1;
+/** @see engineFlags.autonomyExplainabilityV1 */
+export const FEATURE_AUTONOMY_EXPLAINABILITY_V1 = engineFlags.autonomyExplainabilityV1;
+/** @see engineFlags.autonomyExplainabilityDebugV1 */
+export const FEATURE_AUTONOMY_EXPLAINABILITY_DEBUG_V1 = engineFlags.autonomyExplainabilityDebugV1;
+/** @see engineFlags.autonomyRealPreviewV1 */
+export const FEATURE_AUTONOMY_REAL_PREVIEW_V1 = engineFlags.autonomyRealPreviewV1;
+/** @see engineFlags.autonomyPreviewExplainabilityV1 */
+export const FEATURE_AUTONOMY_PREVIEW_EXPLAINABILITY_V1 = engineFlags.autonomyPreviewExplainabilityV1;
 export const FEATURE_INVESTOR_PITCH_V1 = engineFlags.investorPitchV1;
 /** @see engineFlags.investorDashboardV1 */
 export const FEATURE_INVESTOR_DASHBOARD_V1 = engineFlags.investorDashboardV1;
@@ -1540,12 +1630,41 @@ export const FEATURE_CLOSING_PSYCHOLOGY_V1 = engineFlags.closingPsychologyV1;
 export const FEATURE_TIMING_OPTIMIZER_V1 = engineFlags.timingOptimizerV1;
 export const FEATURE_BROKER_LOCKIN_V1 = engineFlags.brokerLockinV1;
 export const FEATURE_GROWTH_POLICY_V1 = engineFlags.growthPolicyV1;
+/** @see engineFlags.growthPolicyActionsV1 */
+export const FEATURE_GROWTH_POLICY_ACTIONS_V1 = engineFlags.growthPolicyActionsV1;
+/** @see engineFlags.growthPolicyActionsPanelV1 */
+export const FEATURE_GROWTH_POLICY_ACTIONS_PANEL_V1 = engineFlags.growthPolicyActionsPanelV1;
+/** @see engineFlags.growthPolicyHistoryV1 */
+export const FEATURE_GROWTH_POLICY_HISTORY_V1 = engineFlags.growthPolicyHistoryV1;
+/** @see engineFlags.growthPolicyHistoryPanelV1 */
+export const FEATURE_GROWTH_POLICY_HISTORY_PANEL_V1 = engineFlags.growthPolicyHistoryPanelV1;
+/** @see engineFlags.growthPolicyReviewV1 */
+export const FEATURE_GROWTH_POLICY_REVIEW_V1 = engineFlags.growthPolicyReviewV1;
+/** @see engineFlags.growthPolicyTrendsV1 */
+export const FEATURE_GROWTH_POLICY_TRENDS_V1 = engineFlags.growthPolicyTrendsV1;
+/** @see engineFlags.growthPolicyTrendsPanelV1 */
+export const FEATURE_GROWTH_POLICY_TRENDS_PANEL_V1 = engineFlags.growthPolicyTrendsPanelV1;
 export const FEATURE_HUB_JOURNEY_V1 = engineFlags.hubJourneyV1;
 export const FEATURE_HUB_COPILOT_V1 = engineFlags.hubCopilotV1;
+/** @see engineFlags.hubJourneyAnalyticsV1 */
+export const FEATURE_HUB_JOURNEY_ANALYTICS_V1 = engineFlags.hubJourneyAnalyticsV1;
+/** @see engineFlags.hubJourneyAnalyticsDashboardV1 */
+export const FEATURE_HUB_JOURNEY_ANALYTICS_DASHBOARD_V1 = engineFlags.hubJourneyAnalyticsDashboardV1;
+/** @see engineFlags.hubJourneyAttributionV1 */
+export const FEATURE_HUB_JOURNEY_ATTRIBUTION_V1 = engineFlags.hubJourneyAttributionV1;
+/** @see engineFlags.hubJourneyFeedbackV1 */
+export const FEATURE_HUB_JOURNEY_FEEDBACK_V1 = engineFlags.hubJourneyFeedbackV1;
 /** @see engineFlags.adaptiveIntelligenceV1 */
 export const FEATURE_ADAPTIVE_INTELLIGENCE_V1 = engineFlags.adaptiveIntelligenceV1;
 /** @see engineFlags.adaptiveIntelligencePanelV1 */
 export const FEATURE_ADAPTIVE_INTELLIGENCE_PANEL_V1 = engineFlags.adaptiveIntelligencePanelV1;
+
+/** @see engineFlags.actionSimulationV1 */
+export const FEATURE_ACTION_SIMULATION_V1 = engineFlags.actionSimulationV1;
+/** @see engineFlags.actionSimulationPanelV1 */
+export const FEATURE_ACTION_SIMULATION_PANEL_V1 = engineFlags.actionSimulationPanelV1;
+/** @see engineFlags.actionSimulationComparisonV1 */
+export const FEATURE_ACTION_SIMULATION_COMPARISON_V1 = engineFlags.actionSimulationComparisonV1;
 
 /** @see engineFlags.syriaRegionAdapterV1 — Syria regional read path for global intelligence / dashboards. */
 export const FEATURE_SYRIA_REGION_ADAPTER_V1 = engineFlags.syriaRegionAdapterV1;
@@ -1553,6 +1672,8 @@ export const FEATURE_SYRIA_REGION_ADAPTER_V1 = engineFlags.syriaRegionAdapterV1;
 export const FEATURE_REGION_LISTING_KEY_V1 = engineFlags.regionListingKeyV1;
 /** @see engineFlags.syriaPreviewV1 — Syria listing preview pipeline (DRY_RUN only). */
 export const FEATURE_SYRIA_PREVIEW_V1 = engineFlags.syriaPreviewV1;
+/** @see engineFlags.legalTrustRankingV1 */
+export const FEATURE_LEGAL_TRUST_RANKING_V1 = engineFlags.legalTrustRankingV1;
 
 function envTrue(k: string): boolean {
   return process.env[k] === "true" || process.env[k] === "1";
@@ -1565,9 +1686,22 @@ export const legalIntelligenceFlags = {
   legalIntelligenceV1: envTrue("FEATURE_LEGAL_INTELLIGENCE_V1"),
   legalReviewPriorityV1: envTrue("FEATURE_LEGAL_REVIEW_PRIORITY_V1"),
   legalAnomalyDetectionV1: envTrue("FEATURE_LEGAL_ANOMALY_DETECTION_V1"),
+  /** Normalized legal risk/verification indicators for admin (no accusatory fraud claims). */
+  legalFraudEngineV1: envTrue("FEATURE_LEGAL_FRAUD_ENGINE_V1"),
 } as const;
 
 export type LegalIntelligenceFlagKey = keyof typeof legalIntelligenceFlags;
+
+/** Admin operational panels (audit timeline, scoped review) — default off. */
+export const adminOpsFlags = {
+  adminAuditPanelV1: envTrue("FEATURE_ADMIN_AUDIT_PANEL_V1"),
+} as const;
+
+/** @see adminOpsFlags.adminAuditPanelV1 */
+export const FEATURE_ADMIN_AUDIT_PANEL_V1 = adminOpsFlags.adminAuditPanelV1;
+
+/** @see legalIntelligenceFlags.legalFraudEngineV1 */
+export const FEATURE_LEGAL_FRAUD_ENGINE_V1 = legalIntelligenceFlags.legalFraudEngineV1;
 
 /**
  * Revenue Enforcement V1 — log + soft guard wrappers (default off). Does not change Stripe webhooks.
@@ -1933,6 +2067,16 @@ export const brokerOpsFlags = {
 
 export type BrokerOpsFlagKey = keyof typeof brokerOpsFlags;
 
+/** Broker AI helpers — deterministic workflow support only (no legal conclusions). Default off. */
+export const brokerAiFlags = {
+  brokerAiCertificateOfLocationV1: envTrue("FEATURE_BROKER_AI_CERTIFICATE_OF_LOCATION_V1"),
+  brokerAiCertificateBlockerV1: envTrue("FEATURE_BROKER_AI_CERTIFICATE_BLOCKER_V1"),
+  /** Structured parsing + timeline/consistency signals + workflow hooks (deterministic). */
+  brokerAiCertificateOfLocationV2: envTrue("FEATURE_BROKER_AI_CERTIFICATE_OF_LOCATION_V2"),
+} as const;
+
+export type BrokerAiFlagKey = keyof typeof brokerAiFlags;
+
 /**
  * Brokerage owner / executive — company metrics, owner dashboard, strategy board, forecasting (default off).
  */
@@ -2125,6 +2269,91 @@ export const dealAutopilotFlags = {
 } as const;
 
 export type DealAutopilotFlagKey = keyof typeof dealAutopilotFlags;
+
+/**
+ * Legal Hub v1 — compliance workflow / document status (read-only; not legal advice). Default off.
+ */
+export const legalHubFlags = {
+  legalHubV1: envTrue("FEATURE_LEGAL_HUB_V1"),
+  legalHubDocumentsV1: envTrue("FEATURE_LEGAL_HUB_DOCUMENTS_V1"),
+  legalHubRisksV1: envTrue("FEATURE_LEGAL_HUB_RISKS_V1"),
+  legalHubAdminReviewV1: envTrue("FEATURE_LEGAL_HUB_ADMIN_REVIEW_V1"),
+  /** Phase 2 — user uploads & submission lifecycle (server-validated; not legal advice). */
+  legalUploadV1: envTrue("FEATURE_LEGAL_UPLOAD_V1"),
+  legalReviewV1: envTrue("FEATURE_LEGAL_REVIEW_V1"),
+  legalWorkflowSubmissionV1: envTrue("FEATURE_LEGAL_WORKFLOW_SUBMISSION_V1"),
+  /** Phase 3 — deterministic legal gates on high-risk product actions (soft/hard; never auto-approve). */
+  legalEnforcementV1: envTrue("FEATURE_LEGAL_ENFORCEMENT_V1"),
+  /** Phase 3 — readiness score card (derived from checklist + risks; not legal advice). */
+  legalReadinessV1: envTrue("FEATURE_LEGAL_READINESS_V1"),
+  /** Imported legal records — deterministic parse/validation stored on `LegalRecord`. */
+  legalRecordImportV1: envTrue("FEATURE_LEGAL_RECORD_IMPORT_V1"),
+  /** Rule outcomes bundled with validation (explainable impacts). */
+  legalRuleEngineV1: envTrue("FEATURE_LEGAL_RULE_ENGINE_V1"),
+  /** Record-derived intelligence signals / preview bridges (deterministic — not ML). */
+  legalAiLogicV1: envTrue("FEATURE_LEGAL_AI_LOGIC_V1"),
+} as const;
+
+export type LegalHubFlagKey = keyof typeof legalHubFlags;
+
+/** Env-backed mirrors for ops docs (`FEATURE_LEGAL_HUB_*`) — same values as `legalHubFlags`. */
+export const FEATURE_LEGAL_HUB_V1 = legalHubFlags.legalHubV1;
+export const FEATURE_LEGAL_HUB_DOCUMENTS_V1 = legalHubFlags.legalHubDocumentsV1;
+export const FEATURE_LEGAL_HUB_RISKS_V1 = legalHubFlags.legalHubRisksV1;
+export const FEATURE_LEGAL_HUB_ADMIN_REVIEW_V1 = legalHubFlags.legalHubAdminReviewV1;
+export const FEATURE_LEGAL_UPLOAD_V1 = legalHubFlags.legalUploadV1;
+export const FEATURE_LEGAL_REVIEW_V1 = legalHubFlags.legalReviewV1;
+export const FEATURE_LEGAL_WORKFLOW_SUBMISSION_V1 = legalHubFlags.legalWorkflowSubmissionV1;
+export const FEATURE_LEGAL_ENFORCEMENT_V1 = legalHubFlags.legalEnforcementV1;
+export const FEATURE_LEGAL_READINESS_V1 = legalHubFlags.legalReadinessV1;
+export const FEATURE_LEGAL_RECORD_IMPORT_V1 = legalHubFlags.legalRecordImportV1;
+export const FEATURE_LEGAL_RULE_ENGINE_V1 = legalHubFlags.legalRuleEngineV1;
+export const FEATURE_LEGAL_AI_LOGIC_V1 = legalHubFlags.legalAiLogicV1;
+
+/** Québec checklist + deterministic publish gate (feature-flagged). */
+export const complianceFlags = {
+  /** Deterministic Québec compliance checklist evaluation on listings/workflows. */
+  quebecComplianceV1: envTrue("FEATURE_QUEBEC_COMPLIANCE_V1"),
+  /** Hard block FSBO publish when checklist fails (with explainable payload). */
+  complianceAutoBlockV1: envTrue("FEATURE_COMPLIANCE_AUTO_BLOCK_V1"),
+  /** Phase 8 — extended checklist definitions + readiness scoring package. */
+  quebecListingComplianceV1: envTrue("FEATURE_QUEBEC_LISTING_COMPLIANCE_V1"),
+  /** Phase 8 — property legal risk index for publish + ranking signals. */
+  propertyLegalRiskScoreV1: envTrue("FEATURE_PROPERTY_LEGAL_RISK_SCORE_V1"),
+  /** Phase 8 — unified prepublish gate (pairs with legacy auto-block when enabled). */
+  listingPrepublishAutoBlockV1: envTrue("FEATURE_LISTING_PREPUBLISH_AUTO_BLOCK_V1"),
+} as const;
+
+export type ComplianceFlagKey = keyof typeof complianceFlags;
+
+export const FEATURE_QUEBEC_COMPLIANCE_V1 = complianceFlags.quebecComplianceV1;
+export const FEATURE_COMPLIANCE_AUTO_BLOCK_V1 = complianceFlags.complianceAutoBlockV1;
+export const FEATURE_QUEBEC_LISTING_COMPLIANCE_V1 = complianceFlags.quebecListingComplianceV1;
+export const FEATURE_PROPERTY_LEGAL_RISK_SCORE_V1 = complianceFlags.propertyLegalRiskScoreV1;
+export const FEATURE_LISTING_PREPUBLISH_AUTO_BLOCK_V1 = complianceFlags.listingPrepublishAutoBlockV1;
+
+/** Phase 4.5 — append-only compliance event timeline (Legal Hub + marketplace governance facts). Default off. */
+export const eventTimelineFlags = {
+  eventTimelineV1: envTrue("FEATURE_EVENT_TIMELINE_V1"),
+} as const;
+
+export type EventTimelineFlagKey = keyof typeof eventTimelineFlags;
+
+/** Env mirror for ops docs */
+export const FEATURE_EVENT_TIMELINE_V1 = eventTimelineFlags.eventTimelineV1;
+
+/** Phase 5 — deterministic trust scoring, ranking weight, badges (product signals only). */
+export const trustFlags = {
+  trustScoringV1: envTrue("FEATURE_TRUST_SCORING_V1"),
+  trustRankingV1: envTrue("FEATURE_TRUST_RANKING_V1"),
+  trustBadgesV1: envTrue("FEATURE_TRUST_BADGES_V1"),
+} as const;
+
+export type TrustFlagKey = keyof typeof trustFlags;
+
+export const FEATURE_TRUST_SCORING_V1 = trustFlags.trustScoringV1;
+export const FEATURE_TRUST_RANKING_V1 = trustFlags.trustRankingV1;
+export const FEATURE_TRUST_BADGES_V1 = trustFlags.trustBadgesV1;
 
 /** Soft-launch toggles (default: locales on; risky automation off unless env enables). */
 export const launchFlags = {

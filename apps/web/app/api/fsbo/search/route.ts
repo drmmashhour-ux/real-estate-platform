@@ -2,7 +2,13 @@ import type { Prisma } from "@prisma/client";
 import { NextRequest } from "next/server";
 import { fsboCityWhereFromParam } from "@/lib/geo/city-search";
 import { prisma } from "@/lib/db";
+import { engineFlags } from "@/config/feature-flags";
 import { applyListingRankingBoostIfEnabled } from "@/lib/trustgraph/application/integrations/listingRankingIntegration";
+import type { TrustScore } from "@/modules/trust/trust.types";
+import {
+  applyLegalTrustRanking,
+  computeLegalTrustRankingImpact,
+} from "@/modules/trust-ranking/legal-trust-ranking.service";
 
 export const dynamic = "force-dynamic";
 
@@ -91,7 +97,43 @@ export async function GET(request: NextRequest) {
       }),
     ]);
 
-    const { rows: boosted, publicAugmentations } = await applyListingRankingBoostIfEnabled(rowsRaw);
+    let { rows: boosted, publicAugmentations } = await applyListingRankingBoostIfEnabled(rowsRaw);
+
+    if (engineFlags.legalTrustRankingV1 === true && boosted.length > 1) {
+      try {
+        const indexed = boosted.map((row, orderIdx) => {
+          const baseScore = 500 - orderIdx;
+          const readiness = typeof row.trustScore === "number" ? Math.min(100, row.trustScore + 12) : 72;
+          const legalRisk = typeof row.riskScore === "number" ? row.riskScore : 38;
+          const trustStub: TrustScore = {
+            score: typeof row.trustScore === "number" ? row.trustScore : 58,
+            level: "medium",
+            confidence: "low",
+            factors: [],
+          };
+          const impact = computeLegalTrustRankingImpact({
+            listingId: row.id,
+            trustScore: trustStub,
+            publishSummary: {
+              listingId: row.id,
+              readinessScore: readiness,
+              legalRiskScore: legalRisk,
+              blockingIssues: [],
+              warnings: [],
+              requiredChecklistPassed: true,
+            },
+            prepublishBlocked: false,
+            isPublishedVisible: true,
+          });
+          const ranked = applyLegalTrustRanking(baseScore, impact);
+          return { row, sortKey: ranked.finalScore };
+        });
+        indexed.sort((a, b) => b.sortKey - a.sortKey);
+        boosted = indexed.map((x) => x.row);
+      } catch {
+        /* keep boost order */
+      }
+    }
 
     const data = boosted.map((row) => {
       const aug = publicAugmentations?.get(row.id);

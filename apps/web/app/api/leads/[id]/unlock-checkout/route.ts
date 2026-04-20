@@ -4,6 +4,7 @@ import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
 import { logError } from "@/lib/logger";
 import { initiateLeadUnlockCheckout } from "@/modules/leads/lead-monetization.service";
 import { assignLeadFromCrmLeadId } from "@/modules/brokers/broker-leads.service";
+import { maybeBlockRequestWithLegalGate } from "@/modules/legal/legal-api-gate";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +32,13 @@ export async function POST(
   }
 
   try {
+    const legalGate = await maybeBlockRequestWithLegalGate({
+      action: "unlock_contact",
+      userId,
+      actorType: "broker",
+    });
+    if (legalGate) return legalGate;
+
     void assignLeadFromCrmLeadId(leadId).catch(() => {});
     const result = await initiateLeadUnlockCheckout({ userId, leadId, recordMonetizationAttempt: false });
     if (!result.ok) {

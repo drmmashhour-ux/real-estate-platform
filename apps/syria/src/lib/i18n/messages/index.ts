@@ -1,2 +1,5 @@
-export { default as ar } from "./ar";
-export { default as en } from "./en";
+import ar from "./ar";
+import en from "./en";
+
+export { ar, en };
+export type SyriaMessageTree = typeof ar;

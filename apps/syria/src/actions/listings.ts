@@ -11,6 +11,22 @@ import { revalidateSyriaPaths } from "@/lib/revalidate-locale";
 import { trackSyriaGrowthEvent } from "@/lib/growth-events";
 import { validateListingGovernorateCityArea } from "@/lib/syria-location-catalog";
 import { assertDarlinkRuntimeEnv } from "@/lib/guard";
+import { findSyriaCityByStored } from "@/data/syriaLocations";
+
+function districtEnFromStored(cityCanonicalEn: string, areaStored: string | null | undefined): string | null {
+  try {
+    const a = typeof areaStored === "string" ? areaStored.trim() : "";
+    if (!a) return null;
+    const hit = findSyriaCityByStored(cityCanonicalEn);
+    if (!hit) return null;
+    for (const ar of hit.city.areas) {
+      if (ar.name_ar === a) return ar.name_en;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
 
 function parseImages(raw: string): string[] {
   return raw
@@ -80,6 +96,11 @@ export async function createPropertyListing(formData: FormData): Promise<void> {
   const governorateEn = locationOk.governorateEn;
   const placeName = locationOk.placeName;
 
+  const cityHit = findSyriaCityByStored(city);
+  const cityAr = cityHit?.city.name_ar ?? null;
+  const cityEnStored = city;
+  const districtEnStored = districtEnFromStored(city, area);
+
   if (!["SALE", "RENT", "BNHUB"].includes(type)) {
     return;
   }
@@ -106,7 +127,11 @@ export async function createPropertyListing(formData: FormData): Promise<void> {
       descriptionEn,
       governorate: governorateEn,
       city,
+      cityAr,
+      cityEn: cityEnStored,
       area,
+      districtAr: area,
+      districtEn: districtEnStored,
       placeName,
       addressText,
       latitude: coordsOk ? latitude : null,

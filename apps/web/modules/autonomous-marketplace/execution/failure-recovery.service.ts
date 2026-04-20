@@ -7,10 +7,14 @@ export type FailureClassification =
   | "unknown";
 
 export function classifyExecutionFailure(execution: ExecutionResult): FailureClassification {
-  if (execution.status === "FAILED") return "executor_failed";
-  if (execution.status === "DRY_RUN") return "transient_simulation";
-  if (execution.status === "BLOCKED") return "policy_expected_block";
-  return "unknown";
+  try {
+    if (execution.status === "FAILED") return "executor_failed";
+    if (execution.status === "DRY_RUN") return "transient_simulation";
+    if (execution.status === "BLOCKED") return "policy_expected_block";
+    return "unknown";
+  } catch {
+    return "unknown";
+  }
 }
 
 export type RecoveryRecommendation =
@@ -19,10 +23,14 @@ export type RecoveryRecommendation =
   | "no_action";
 
 export function recommendRecoveryPath(execution: ExecutionResult): RecoveryRecommendation {
-  const c = classifyExecutionFailure(execution);
-  if (c === "executor_failed") return "manual_followup";
-  if (c === "transient_simulation") return "retry_dry_run";
-  return "no_action";
+  try {
+    const c = classifyExecutionFailure(execution);
+    if (c === "executor_failed") return "manual_followup";
+    if (c === "transient_simulation") return "retry_dry_run";
+    return "no_action";
+  } catch {
+    return "manual_followup";
+  }
 }
 
 export function markActionForRetry(_actionId: string): { marked: boolean } {

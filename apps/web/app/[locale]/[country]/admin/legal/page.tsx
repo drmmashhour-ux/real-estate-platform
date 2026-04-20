@@ -12,10 +12,16 @@ import {
   allRequiredCorporateDocsSigned,
   buildCorporateComplianceRows,
 } from "@/lib/legal-management/compliance";
-import { legalIntelligenceFlags } from "@/config/feature-flags";
+import { adminOpsFlags, engineFlags, legalHubFlags, legalIntelligenceFlags } from "@/config/feature-flags";
 import { LegalIntelligenceAdminSection } from "@/components/legal/admin/LegalIntelligenceAdminSection";
+import { LegalRecordsAdminSection } from "@/components/legal/admin/LegalRecordsAdminSection";
+import { LegalReviewQueue } from "@/components/legal/admin/LegalReviewQueue";
 import { AdminLegalClient } from "./AdminLegalClient";
 import { LecipmLegalDashboard } from "./LecipmLegalDashboard";
+import { AdminLegalComplianceOps } from "@/components/legal/AdminLegalComplianceOps";
+import { ListingPreviewPanel } from "@/components/autonomy/admin/ListingPreviewPanel";
+import { LegalFraudEnginePanel } from "@/components/legal/admin/LegalFraudEnginePanel";
+import { AuditPanel } from "@/components/audit/admin/AuditPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -104,6 +110,55 @@ export default async function AdminLegalPage() {
           complianceRows={complianceRows}
           allSigned={allSigned}
         />
+
+        <AdminLegalComplianceOps />
+
+        {legalHubFlags.legalHubV1 && legalHubFlags.legalReviewV1 ? (
+          <section className="rounded-xl border border-slate-800/80 bg-slate-950/30 p-4">
+            <h2 className="text-sm font-semibold text-slate-200">Legal Hub — submission review (Phase 2)</h2>
+            <p className="mt-1 text-xs text-slate-500">
+              Broker/admin queue for uploaded documents and workflow bundles. Platform workflow checks only — not legal
+              advice.
+            </p>
+            <div className="mt-4">
+              <LegalReviewQueue />
+            </div>
+          </section>
+        ) : null}
+
+        {engineFlags.autonomyRealPreviewV1 || engineFlags.autonomousMarketplaceV1 ? (
+          <section className="rounded-xl border border-zinc-800 bg-[#111]/80 p-4">
+            <ListingPreviewPanel />
+          </section>
+        ) : null}
+
+        {legalIntelligenceFlags.legalFraudEngineV1 ? (
+          <section className="rounded-xl border border-zinc-800 bg-[#111]/80 p-4">
+            <LegalFraudEnginePanel />
+          </section>
+        ) : null}
+
+        {adminOpsFlags.adminAuditPanelV1 ? (
+          <section className="rounded-xl border border-zinc-800 bg-[#111]/80 p-4">
+            <h2 className="mb-3 text-sm font-semibold text-zinc-200">Operational audit trail</h2>
+            <p className="mb-4 text-xs text-zinc-500">
+              Scoped listing timeline + legal snapshot — metadata only (no raw document payloads).
+            </p>
+            <AuditPanel scopeType="listing" />
+          </section>
+        ) : null}
+
+        {legalHubFlags.legalHubAdminReviewV1 && legalHubFlags.legalRecordImportV1 ? (
+          <section className="rounded-xl border border-slate-800/80 bg-slate-950/30 p-4">
+            <h2 className="text-sm font-semibold text-slate-200">Imported legal records</h2>
+            <p className="mt-1 text-xs text-slate-500">
+              Structured validation and rule outcomes only — documents are referenced by opaque file identifiers.
+            </p>
+            <div className="mt-4">
+              <LegalRecordsAdminSection />
+            </div>
+          </section>
+        ) : null}
 
         {legalIntelligenceFlags.legalIntelligenceV1 || legalIntelligenceFlags.legalReviewPriorityV1 ? (
           <section className="rounded-xl border border-slate-800/80 bg-slate-950/30 p-4">

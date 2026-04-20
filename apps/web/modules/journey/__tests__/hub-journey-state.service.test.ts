@@ -10,6 +10,7 @@ describe("buildHubJourneyPlan", () => {
     expect(plan.steps.length).toBeGreaterThan(0);
     expect(["in_progress", "blocked"]).toContain(plan.steps[0].status);
     expect(plan.progressPercent).toBe(0);
+    expect(plan.confidence).toBeDefined();
   });
 
   it("marks buyer progress when shortlist exists", () => {

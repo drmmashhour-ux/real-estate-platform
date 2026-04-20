@@ -81,6 +81,29 @@ enum SyriaAutonomyRecommendationStatus {
   ACKNOWLEDGED
 }
 
+enum SyriaMarketplaceApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUPERSEDED
+}
+
+enum SyriaMarketplaceAutonomyRunStatus {
+  RUNNING
+  COMPLETED
+  FAILED
+  BLOCKED
+}
+
+enum SyriaMarketplaceActionOutcome {
+  BLOCKED
+  DRY_RUN
+  EXECUTED
+  FAILED
+  ROLLED_BACK
+  SKIPPED_APPROVAL_PENDING
+}
+
 model SyriaAppUser {
   id        String        @id @default(cuid())
   email     String        @unique
@@ -130,8 +153,17 @@ model SyriaProperty {
   type             SyriaPropertyType
   /// Canonical governorate `name_en` from `syriaLocations` (search + display).
   governorate      String?             @map("governorate")
+  /// Legacy search key: English city name from catalog (kept for filters and URL).
   city             String
+  /// Bilingual display: Arabic city label (optional; backfilled from catalog in new listings).
+  cityAr           String?             @map("city_ar")
+  /// Bilingual display: English city label (optional; often matches `city`).
+  cityEn           String?             @map("city_en")
+  /// Legacy: area / district (often Arabic from catalog or custom text).
   area             String?             @map("area")
+  /// Bilingual district (optional; may mirror `area` for AR).
+  districtAr       String?             @map("district_ar") @db.Text
+  districtEn       String?             @map("district_en") @db.Text
   /// Google place name or user text when a place was used to set the pin (optional).
   placeName        String?             @map("place_name")
   addressText      String?             @map("address_text") @db.Text
@@ -286,6 +318,90 @@ model SyriaGrowthEvent {
   @@index([eventType, createdAt])
   @@index([utmCampaign])
   @@map("syria_growth_events")
+}
+
+/// Runs of the deterministic marketplace autonomy pipeline (Syria-local only).
+model SyriaMarketplaceAutonomyRun {
+  id                   String                             @id @default(cuid())
+  startedAt            DateTime                           @default(now()) @map("started_at")
+  finishedAt           DateTime?                          @map("finished_at")
+  dryRun               Boolean                            @default(true) @map("dry_run")
+  autonomyModeLabel    String                             @map("autonomy_mode_label")
+  governanceModeLabel  String                             @map("governance_mode_label")
+  entityScope          String                             @map("entity_scope")
+  entityId             String?                            @map("entity_id")
+  status               SyriaMarketplaceAutonomyRunStatus  @default(RUNNING)
+  signalsCount         Int                                @default(0) @map("signals_count")
+  opportunitiesCount   Int                                @default(0) @map("opportunities_count")
+  proposalsCount       Int                                @default(0) @map("proposals_count")
+  executedCount        Int                                @default(0) @map("executed_count")
+  blockedCount         Int                                @default(0) @map("blocked_count")
+  summaryJson          Json?                              @map("summary_json")
+  errorNotes           String?                            @db.Text @map("error_notes")
+
+  @@index([startedAt])
+  @@map("syria_marketplace_autonomy_runs")
+}
+
+model SyriaMarketplaceAutonomyApproval {
+  id                String                         @id @default(cuid())
+  proposalKey       String                         @unique @map("proposal_key")
+  actionType        String                         @map("action_type")
+  targetEntityType  String                         @map("target_entity_type")
+  targetEntityId    String?                        @map("target_entity_id")
+  payloadJson       Json                           @default("{}") @map("payload_json")
+  policySnapshot    Json?                          @map("policy_snapshot")
+  status            SyriaMarketplaceApprovalStatus @default(PENDING)
+  requestedByUserId String?                        @map("requested_by_user_id")
+  decidedByUserId   String?                        @map("decided_by_user_id")
+  decidedAt         DateTime?                      @map("decided_at")
+  notes             String?                        @db.Text
+  createdAt         DateTime                       @default(now()) @map("created_at")
+  updatedAt         DateTime                       @updatedAt @map("updated_at")
+
+  @@index([status, createdAt])
+  @@map("syria_marketplace_autonomy_approvals")
+}
+
+model SyriaMarketplaceAutonomyAuditLog {
+  id          String   @id @default(cuid())
+  runId       String?  @map("run_id")
+  eventType   String   @map("event_type")
+  payloadJson Json     @default("{}") @map("payload_json")
+  actorUserId String?  @map("actor_user_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([runId])
+  @@index([eventType, createdAt])
+  @@map("syria_marketplace_autonomy_audit_logs")
+}
+
+model SyriaMarketplaceAutonomyActionRecord {
+  id             String                       @id @default(cuid())
+  runId          String?                      @map("run_id")
+  approvalId     String?                      @map("approval_id")
+  actionType     String                       @map("action_type")
+  targetEntityId String?                      @map("target_entity_id")
+  dryRun         Boolean                      @default(true) @map("dry_run")
+  outcome        SyriaMarketplaceActionOutcome @default(DRY_RUN)
+  detailJson     Json?                        @map("detail_json")
+  rollbackOfId   String?                      @map("rollback_of_id")
+  createdAt      DateTime                     @default(now()) @map("created_at")
+
+  @@index([runId])
+  @@index([approvalId])
+  @@map("syria_marketplace_autonomy_action_records")
+}
+
+model SyriaMarketplaceOutcomeFeedbackRollup {
+  id          String   @id @default(cuid())
+  periodStart DateTime @map("period_start")
+  periodEnd   DateTime @map("period_end")
+  rollupJson  Json     @default("{}") @map("rollup_json")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([periodEnd])
+  @@map("syria_marketplace_outcome_feedback_rollups")
 }
 
 /// Safe autonomy — recommendations only; no auto messaging / pricing / payout.

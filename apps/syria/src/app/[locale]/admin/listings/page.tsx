@@ -7,6 +7,7 @@ import {
   verifyListingPayment,
   setPropertyFraudFlag,
 } from "@/actions/admin";
+import { getDarlinkAutonomyFlags } from "@/lib/platform-flags";
 import { money } from "@/lib/format";
 
 export default async function AdminListingsPage() {
@@ -21,12 +22,25 @@ export default async function AdminListingsPage() {
     take: 80,
   });
 
+  const autonomyQuickLink = getDarlinkAutonomyFlags().AUTONOMY_ENABLED ?
+    <div className="rounded-2xl border border-indigo-100 bg-indigo-50/60 p-4 text-sm text-indigo-950">
+      <Link href="/admin/autonomy" className="font-semibold underline underline-offset-2 hover:text-indigo-900">
+        Marketplace autonomy dashboard
+      </Link>
+      <p className="mt-2 text-xs text-indigo-900/80">
+        Signals, opportunities, approvals, and dry-run controls live on the autonomy admin page.
+      </p>
+    </div>
+  : null;
+
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-lg font-semibold text-stone-900">{t("listingsTitle")}</h2>
         <p className="text-sm text-stone-600">{t("listingsIntro")}</p>
       </div>
+
+      {autonomyQuickLink}
       <div className="space-y-6">
         {properties.map((p) => (
           <article key={p.id} className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
