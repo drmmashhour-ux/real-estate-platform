@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
-import { money } from "@/lib/format";
+import { formatSyriaCurrency } from "@/lib/format";
 import { backfillLocalizedPropertyShape } from "@/lib/property-legacy-compat";
 import {
   getLocalizedPropertyCity,
@@ -65,7 +65,6 @@ export function ListingCard({
   const cityDisplay = getLocalizedPropertyCity(resolved, locale);
   const districtLine = getLocalizedPropertyDistrict(resolved, locale);
   const areaLine = districtLine ?? (listing.area?.trim() ? listing.area : null);
-  const numberLoc = locale.startsWith("ar") ? "ar-SY" : "en-US";
   const img = firstImage(listing.images);
   const guests = listing.guestsMax ?? null;
   const previewTags = amenityPreview(listing.amenities, 3);
@@ -128,7 +127,7 @@ export function ListingCard({
         </div>
         <div className="mt-3">
           <p className="text-base font-bold tabular-nums text-[color:var(--darlink-text)]">
-            {money(listing.price, listing.currency, numberLoc)}
+            {formatSyriaCurrency(listing.price, listing.currency, locale)}
           </p>
           {isBnhub ? (
             <p className="mt-0.5 text-[11px] font-medium uppercase tracking-wide text-[color:var(--darlink-text-muted)]">{t("cardPerNight")}</p>

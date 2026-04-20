@@ -1,5 +1,7 @@
 export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
+    const { assertCoreLaunchEnvOrThrow } = await import("@/lib/env/core-launch-instrumentation");
+    assertCoreLaunchEnvOrThrow();
     const { assertLecipmRuntimeEnv } = await import("./lib/assertContext");
     assertLecipmRuntimeEnv();
     await import("./sentry.server.config");

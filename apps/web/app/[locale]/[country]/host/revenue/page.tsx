@@ -38,7 +38,7 @@ export default async function HostBnhubRevenueDashboardPage() {
     getDailyRevenueTrend(hostId, 30),
     getPricingImpactSummary(hostId),
     detectRevenueAnomalies(hostId),
-    generateHostRevenueNarrative(hostId),
+    generateHostRevenueNarrative(hostId, { persist: false }),
   ]);
 
   const summary = settled[0].status === "fulfilled" ? settled[0].value : null;

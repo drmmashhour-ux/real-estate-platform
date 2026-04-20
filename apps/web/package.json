@@ -26,6 +26,7 @@
     "ci:all": "npx tsx scripts/ci-runner.ts",
     "prepush:check": "npx tsx scripts/prepush-check.ts",
     "predeploy:check": "npx tsx scripts/predeploy-check.ts",
+    "prelaunch-check": "npx tsx scripts/prelaunch-check.ts",
     "postdeploy:test": "npx tsx scripts/postdeploy-test.ts",
     "launch:e2e:stripe-booking": "npx tsx scripts/e2e-stripe-booking-test.ts",
     "launch:full-validation": "npx tsx scripts/full-validation.ts",

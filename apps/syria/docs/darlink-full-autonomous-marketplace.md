@@ -73,3 +73,35 @@ Apply with `pnpm prisma:migrate` or `pnpm prisma:push` in `apps/syria` after upd
 - Wire approval → re-run orchestrator with `approvalOverrides` for explicit proposal ids.
 - Richer entity targeting for payout/booking proposals (per-id opportunities).
 - Metrics export for audit dashboards and SLO alerts.
+
+---
+
+## Final validation checklist (safety-bounded OS)
+
+| Requirement | Status |
+|-------------|--------|
+| Execution stays in `apps/syria` + Syria Prisma (`syria_*`) | Yes — orchestrator and handlers use `@/lib/db` only |
+| No `apps/web` write path into Syria | Yes — no imports from web app |
+| Preview/dry-run default safe | Yes — `dryRun` defaults true on API; gate blocks live without flags |
+| Deterministic detectors & policy | Yes — threshold-based only |
+| No black-box ML / LLM decisions in autonomy core | Yes |
+| Approvals + audit tables | Yes — `SyriaMarketplaceAutonomyApproval`, `SyriaMarketplaceAutonomyAuditLog` |
+| Auto-execute off by default | Yes — `DARLINK_AUTONOMY_AUTO_EXECUTE_ENABLED` defaults false |
+| Feedback / optimization recommendation-only | Yes — `buildAutonomyAdjustmentRecommendations`, `buildMarketplaceOptimizationSummary` |
+
+## Deliverables map (parts 1–10)
+
+| Part | Primary locations |
+|------|-------------------|
+| Types | `darlink-marketplace-autonomy.types.ts` |
+| Snapshot | `darlink-marketplace-snapshot.service.ts` |
+| Detectors | `modules/autonomy/detectors/*`, `detector-registry.ts` |
+| Signals / opportunities | `darlink-signal-builder.service.ts`, `darlink-opportunity-builder.service.ts` |
+| Policy / governance / gate | `darlink-autonomy-policy.service.ts`, `darlink-autonomy-governance.service.ts`, `darlink-safe-execution-gate.service.ts` |
+| Proposals / approvals / handlers / orchestrator | `darlink-action-proposal.service.ts`, `darlink-approval.service.ts`, `darlink-action-handlers.service.ts`, `darlink-execution-orchestrator.service.ts` |
+| Verification / rollback / recovery | `darlink-verification.service.ts`, `darlink-rollback.service.ts`, `darlink-failure-recovery.service.ts` |
+| Feedback / adjustments / optimization | `darlink-outcome-feedback.service.ts`, `darlink-adjustment-recommendation.service.ts`, `darlink-optimization-summary.service.ts` |
+| Bridges | `integrations/darlink-growth-bridge.service.ts`, `integrations/darlink-ranking-bridge.service.ts` |
+| Dashboard + admin | `darlink-autonomy-dashboard.service.ts`, `app/api/admin/autonomy/*/route.ts`, `components/admin/DarlinkAutonomy*.tsx`, `app/[locale]/admin/autonomy/page.tsx` |
+| Persistence | `darlink-autonomy-persistence.service.ts` + Prisma models in `prisma/schema.prisma` |
+| Flags | `lib/platform-flags.ts`, `.env.example` |

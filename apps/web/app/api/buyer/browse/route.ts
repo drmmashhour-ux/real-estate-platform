@@ -267,7 +267,7 @@ async function runBrowse(
   const fsboAnd = buildFsboWhere(f, propertyFilters);
   const poolTake = hasPF ? POOL_WITH_LIFESTYLE : POOL;
 
-  const crmAnd: Prisma.ListingWhereInput[] = [];
+  const crmAnd: Prisma.ListingWhereInput[] = [{ crmMarketplaceLive: true }];
   const crmMin =
     f.type === "luxury_properties" || (f.type === "rent" && f.rentListingCategory === "luxury_properties")
       ? Math.max(f.priceMin, 1_000_000)
@@ -575,7 +575,7 @@ async function runBrowseCountOnly(f: GlobalSearchFiltersExtended, propertyFilter
   }
   const hasPF = hasActivePropertyBrowseFilters(propertyFilters);
   const fsboAnd = buildFsboWhere(f, propertyFilters);
-  const crmAnd: Prisma.ListingWhereInput[] = [];
+  const crmAnd: Prisma.ListingWhereInput[] = [{ crmMarketplaceLive: true }];
   const crmMinCo =
     f.type === "luxury_properties" || (f.type === "rent" && f.rentListingCategory === "luxury_properties")
       ? Math.max(f.priceMin, 1_000_000)

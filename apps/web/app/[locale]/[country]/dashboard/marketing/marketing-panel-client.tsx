@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { useParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import {
   generateMarketingCopy,
@@ -20,6 +22,11 @@ import {
 } from "@/modules/marketing/export-share";
 
 export function MarketingPanelClient() {
+  const routeParams = useParams();
+  const locale = typeof routeParams?.locale === "string" ? routeParams.locale : "en";
+  const country = typeof routeParams?.country === "string" ? routeParams.country : "ca";
+  const seoHref = `/${locale}/${country}/dashboard/marketing/seo`;
+
   const [target, setTarget] = useState<MarketingTarget>("host");
   const [city, setCity] = useState("Montréal");
   const [tone, setTone] = useState<MarketingGeneratorInput["tone"]>("luxury");
@@ -85,6 +92,12 @@ export function MarketingPanelClient() {
 
   return (
     <div className="space-y-6">
+      <div className="rounded-xl border border-sky-900/60 bg-sky-950/30 px-4 py-3 text-sm text-sky-100">
+        <span className="font-medium">SEO queue</span> — keywords, landing ideas, metadata previews, briefs:{" "}
+        <Link href={seoHref} className="text-sky-300 underline-offset-4 hover:text-white hover:underline">
+          Open SEO Engine
+        </Link>
+      </div>
       <div className="grid gap-4 rounded-2xl border border-zinc-800 bg-zinc-950/80 p-6 sm:grid-cols-2">
         <label className="text-sm text-zinc-400">
           Target

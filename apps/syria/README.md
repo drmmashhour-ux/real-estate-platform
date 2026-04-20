@@ -24,6 +24,7 @@ Consumer marketplace for Syria under the **Darlink / دارلينك** product id
 - **Locale toggle:** `LocaleToggle` switches locale while staying on the current path (next-intl router).
 - **Server helpers:** `src/lib/i18n/helpers.ts` (`getLocalizedValue`, `normalizeSyriaLocale`), `locale-resolver.ts` supports `?lang=` / `?locale=` query (used by server utilities; primary UX is path prefix).
 - **Types:** `SyriaLocale`, `LocalizedText`, `SYRIA_I18N_CONFIG` in `src/lib/i18n/types.ts` / `config.ts`.
+- **Listing copy validation:** `src/lib/listing-bilingual-validation.ts` (`validateBilingualListingCopy`) enforces non-empty Arabic title/description for the sell flow; English remains optional.
 
 ## Bilingual property fields (Prisma)
 

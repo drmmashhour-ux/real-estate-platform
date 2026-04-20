@@ -5,9 +5,8 @@ import { selectContextualActions } from "@/modules/autonomy/contextual/contextua
 import type { RankedContextualAction } from "@/modules/autonomy/contextual/contextual-selector.service";
 
 /**
- * Rules-only candidate actions from signals (no ML). Domain execution may still be gated by policy/mode.
- * Confidence is adjusted by learned rule weights; a deterministic **Contextual Bandit** ranks candidates using
- * feature buckets + stored contextual stats (policy engine remains the final authority).
+ * Rules-only candidates → deterministic **contextual linear score** (bucket features + stored bucket rewards +
+ * exploration bonus per stat). Policy engine remains the execution gate — this layer only ranks.
  */
 export async function generateAutonomyActions(
   config: AutonomyConfig,

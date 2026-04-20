@@ -10,7 +10,7 @@ export type BnhubPricingSuggestionRow = {
   basePrice: number;
   demandScore: number;
   reason: string;
-  status: "pending" | "approved";
+  status: string;
 };
 
 const HORIZON_DAYS = 30;
@@ -52,9 +52,14 @@ function deriveInitialSuggestionStatus(
   return "pending";
 }
 
+/**
+ * After suggestions are written, optionally auto-apply **one** row per run (first night in horizon)
+ * when `deriveInitialSuggestionStatus` marked it `approved` — only for AUTO_APPROVE_SAFE / FULL_AUTOPILOT.
+ * Actual dollars move only inside `applyPricingSuggestion` (audit log + OFF/safe checks).
+ */
 function shouldAttemptCronAutoApply(pricingMode: string, indexInHorizon: number): boolean {
   if (pricingMode === "OFF" || pricingMode === "MANUAL") return false;
-  /** Single published nightly rate: auto-apply at most once per run (tonight / first row). */
+  /** Single published nightly rate: auto-apply at most once per run (first slice / “tonight”). */
   return indexInHorizon === 0;
 }
 

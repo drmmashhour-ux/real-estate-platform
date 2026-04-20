@@ -11,6 +11,7 @@ import { MESSAGES } from "@/lib/i18n/messages";
 import { getResolvedMarket } from "@/lib/markets";
 import { describeStripeSecretKeyError } from "@/lib/stripe/stripeEnvGate";
 import { supabaseConfigStatus } from "@/lib/supabase/health";
+import { logApi } from "@/lib/server/launch-logger";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -39,6 +40,7 @@ export async function GET() {
     );
     return NextResponse.json(
       {
+        success: false,
         ok: false,
         ready: false,
         status: "error",
@@ -104,6 +106,7 @@ async function getReadyHandler() {
     );
     return NextResponse.json(
       {
+        success: false,
         ok: false,
         ready: false,
         status: "error",
@@ -145,6 +148,7 @@ async function getReadyHandler() {
     );
     return NextResponse.json(
       {
+        success: false,
         ok: false,
         ready: false,
         status: "error",
@@ -176,6 +180,7 @@ async function getReadyHandler() {
     const ok = true;
     const stripeOk = !describeStripeSecretKeyError();
     return NextResponse.json({
+      success: true,
       ok,
       ready: ok,
       status: "ok",
@@ -204,6 +209,7 @@ async function getReadyHandler() {
     console.error("[api/ready] non-DB readiness error:", e);
     return NextResponse.json(
       {
+        success: false,
         ok: false,
         ready: false,
         status: "error",

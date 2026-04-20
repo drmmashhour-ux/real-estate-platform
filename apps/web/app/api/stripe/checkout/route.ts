@@ -51,6 +51,7 @@ import { getRequestCountrySlug } from "@/lib/region/request-country";
 import { computeBookingPricing } from "@/lib/bnhub/booking-pricing";
 import { bookingMoneyBreakdownFromPricingBreakdown } from "@/lib/bookings/money";
 import { persistMoneyEvent } from "@/lib/payments/money-events";
+import { assertNoRawCardDataInBody } from "@/lib/api/request-safety";
 
 export const dynamic = "force-dynamic";
 
@@ -174,7 +175,7 @@ export async function POST(request: NextRequest) {
       });
       return Response.json({ error: guestResult.error }, { status: guestResult.status });
     }
-    return Response.json({ url: guestResult.url, sessionId: guestResult.sessionId });
+    return Response.json({ success: true, url: guestResult.url, sessionId: guestResult.sessionId });
   }
 
   const userId = await resolveCheckoutUserId(request);
@@ -243,7 +244,7 @@ export async function POST(request: NextRequest) {
       bookingId: null,
       listingId: null,
     });
-    return Response.json({ url: result.url, sessionId: result.sessionId });
+    return Response.json({ success: true, url: result.url, sessionId: result.sessionId });
   }
 
   const amountCents = typeof body.amountCents === "number" ? body.amountCents : Number(body.amountCents);
@@ -676,5 +677,5 @@ export async function POST(request: NextRequest) {
     }
   );
 
-  return Response.json({ url: result.url, sessionId: result.sessionId });
+  return Response.json({ success: true, url: result.url, sessionId: result.sessionId });
 }

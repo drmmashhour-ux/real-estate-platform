@@ -1,5 +1,18 @@
 /**
  * Syria preview policy — deterministic rules from observation facts + synthetic signals (read-only).
+ *
+ * Canonical matrix (first matching rule wins; see implementation for ordering + edge cases):
+ *
+ * | Signal | Result |
+ * | --- | --- |
+ * | `fraudFlag = true` (fact) | `requires_local_approval` |
+ * | listing pending review (`syriaListingStatus` / `pending_review` variants) | `requires_local_approval` |
+ * | payout inconsistency (`payout_anomaly`) | `caution_preview` **or** `requires_local_approval` if severity threshold met |
+ * | weak bookings / inactive listing signals | `caution_preview` |
+ * | unsupported feature / adapter disabled (`unsupportedRegionFeature`, `adapterDisabled`) | `blocked_for_region` |
+ * | otherwise | `allow_preview` |
+ *
+ * Also evaluated: any **critical** severity synthetic signal → `requires_local_approval`; first **warning** after above → `caution_preview`.
  */
 import type { ObservationSnapshot } from "@/modules/autonomous-marketplace/types/domain.types";
 import type { SyriaPreviewPolicyResult } from "./syria-policy.types";
@@ -38,7 +51,7 @@ function extractFacts(observation: ObservationSnapshot | null | undefined): Reco
 }
 
 /**
- * Ordered rules (see product matrix): blocked → fraud / pending review → payout tier → weak/inactive → residual warnings → allow.
+ * Ordered rules — matches docs matrix: unsupported/adapter → fraud → pending review → critical signals → payout tier → weak/inactive → residual warnings → allow.
  * Never throws.
  */
 export function evaluateSyriaPreviewPolicyFromSignals(

@@ -15,7 +15,7 @@ A **controlled execution** layer that runs **after** preview/explainability and 
 5. **Apply** — `applyControlledAction` → `dispatchExecution` only when the gate allows and the action type is in the safe list.
 6. **Optional verify + rollback audit** — `FEATURE_AUTONOMY_EXECUTION_VERIFY_V1` / `FEATURE_AUTONOMY_ROLLBACK_V1` (and legacy `FEATURE_AUTOPILOT_HARDENING_V1`) for reversible internal paths.
 
-Orchestration entrypoint: `runControlledExecutionStep` in `controlled-execution-orchestrator.service.ts`. The live engine (`runForListing`, etc.) invokes it; **`previewForListing` never calls the orchestrator**.
+Orchestration entrypoints: `runControlledExecution` (spec name) and `runControlledExecutionStep` in `controlled-execution-orchestrator.service.ts`; batch wrapper: `runControlledExecutionBatch`. The live engine (`runForListing`, etc.) invokes the step when `FEATURE_CONTROLLED_EXECUTION_V1` is on; **`previewForListing` never calls the orchestrator** (preview builds `executionResult: DRY_RUN` only).
 
 ## What V1 can execute
 

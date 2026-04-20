@@ -36,6 +36,7 @@ export function BnhubInvestorReportDownloadButton() {
       type="button"
       onClick={() => void download()}
       disabled={busy}
+      title="Board-ready PDF — Generated from BNHub analytics (Python ReportLab); same KPIs as this dashboard."
       className="rounded-lg border border-zinc-700 bg-black px-4 py-2 text-sm font-medium text-white transition hover:border-zinc-500 disabled:opacity-50"
       style={{ borderColor: busy ? undefined : GOLD }}
     >

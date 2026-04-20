@@ -12,6 +12,7 @@ import { trackSyriaGrowthEvent } from "@/lib/growth-events";
 import { validateListingGovernorateCityArea } from "@/lib/syria-location-catalog";
 import { assertDarlinkRuntimeEnv } from "@/lib/guard";
 import { findSyriaCityByStored } from "@/data/syriaLocations";
+import { validateBilingualListingCopy } from "@/lib/listing-bilingual-validation";
 
 function districtEnFromStored(cityCanonicalEn: string, areaStored: string | null | undefined): string | null {
   try {
@@ -82,7 +83,13 @@ export async function createPropertyListing(formData: FormData): Promise<void> {
     ? (rawMethod as SyriaPaymentMethod)
     : "MANUAL_TRANSFER";
 
-  if (!titleAr || !descriptionAr || !cityRaw || !governorate || !price) {
+  const bilingualOk = validateBilingualListingCopy({
+    titleAr,
+    descriptionAr,
+    titleEn,
+    descriptionEn,
+  });
+  if (!bilingualOk.ok || !cityRaw || !governorate || !price) {
     return;
   }
 

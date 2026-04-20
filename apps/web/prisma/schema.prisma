@@ -4289,6 +4289,11 @@ model ShortTermListing {
   legalRentRightAttestedAt           DateTime?                         @map("legal_rent_right_attested_at")
   /// Version of attestation copy the host agreed to; bump to require re-attestation.
   legalRentRightAttestationVersion   String?                           @map("legal_rent_right_attestation_version")
+  /// Optional allocator inputs — recommendations only until execution layer exists.
+  improvementBudgetNeed              Float?                            @map("improvement_budget_need")
+  marketingBudgetNeed                Float?                            @map("marketing_budget_need")
+  operationalRiskScore               Float?                            @map("operational_risk_score")
+  manualCapitalLock                  Boolean                           @default(false) @map("manual_capital_lock")
   createdAt                          DateTime                          @default(now()) @map("created_at")
   updatedAt                          DateTime                          @updatedAt @map("updated_at")
   ownerId                            String                            @map("host_id")
@@ -6424,6 +6429,154 @@ model UpliftLearningLog {
 
   @@index([scopeType, scopeId, createdAt])
   @@map("uplift_learning_logs")
+}
+
+/// BNHub autonomy holdout / RCT-style measurement (distinct from global `experiments` A/B traffic).
+/// Deterministic assignment; policy engine remains authoritative — holdout only skips autonomous execution.
+model AutonomyExperiment {
+  id           String    @id @default(cuid())
+  name         String
+  scopeType    String    @map("scope_type") @db.VarChar(24)
+  scopeId      String    @map("scope_id")
+  domain       String    @db.VarChar(32)
+  signalKey    String    @map("signal_key") @db.VarChar(48)
+  actionType   String    @map("action_type") @db.VarChar(48)
+  /// draft | running | paused | completed
+  status       String    @db.VarChar(24)
+  /// Fraction [0,1] assigned to treatment (keep low in production; default 15%).
+  trafficSplit Float     @default(0.15) @map("traffic_split")
+  startDate    DateTime  @map("start_date")
+  endDate      DateTime? @map("end_date")
+
+  assignments AutonomyExperimentAssignment[]
+  outcomes      AutonomyExperimentOutcome[]
+  results       AutonomyExperimentResult[]
+
+  @@index([scopeType, scopeId, status])
+  @@index([scopeType, scopeId, domain, signalKey, actionType, status])
+  @@map("autonomy_experiments")
+}
+
+model AutonomyExperimentAssignment {
+  id           String @id @default(cuid())
+  experimentId String @map("experiment_id")
+  entityId     String @map("entity_id")
+  /// control | treatment
+  group        String @db.VarChar(16)
+  assignedAt   DateTime @default(now()) @map("assigned_at")
+
+  experiment AutonomyExperiment @relation(fields: [experimentId], references: [id], onDelete: Cascade)
+
+  @@unique([experimentId, entityId])
+  @@index([experimentId])
+  @@map("autonomy_experiment_assignments")
+}
+
+model AutonomyExperimentOutcome {
+  id           String @id @default(cuid())
+  experimentId String @map("experiment_id")
+  entityId     String @map("entity_id")
+  group        String @db.VarChar(16)
+
+  revenue      Float
+  occupancy    Float
+  bookings     Int
+  adr          Float
+  revpar       Float
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  experiment AutonomyExperiment @relation(fields: [experimentId], references: [id], onDelete: Cascade)
+
+  @@index([experimentId, createdAt])
+  @@map("autonomy_experiment_outcomes")
+}
+
+model AutonomyExperimentResult {
+  id               String @id @default(cuid())
+  experimentId     String @map("experiment_id")
+
+  treatmentRevenue Float  @map("treatment_revenue")
+  controlRevenue   Float  @map("control_revenue")
+  upliftRevenue    Float  @map("uplift_revenue")
+
+  treatmentBookings Float @map("treatment_bookings")
+  controlBookings   Float @map("control_bookings")
+  upliftBookings    Float @map("uplift_bookings")
+
+  confidenceScore Float @map("confidence_score")
+  sampleSize      Int   @map("sample_size")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  experiment AutonomyExperiment @relation(fields: [experimentId], references: [id], onDelete: Cascade)
+
+  @@index([experimentId, createdAt])
+  @@map("autonomy_experiment_results")
+}
+
+/// Deterministic BNHub portfolio capital allocation **recommendations** (approval before any spend execution).
+model CapitalAllocationPlan {
+  id                String @id @default(cuid())
+  scopeType         String @map("scope_type") @db.VarChar(24)
+  scopeId           String @map("scope_id")
+  totalBudget       Float  @map("total_budget")
+  allocatableBudget Float  @map("allocatable_budget")
+  reserveBudget     Float  @default(0) @map("reserve_budget")
+  /// draft | approved | applied | archived
+  status            String @default("draft") @db.VarChar(24)
+  periodLabel       String? @map("period_label") @db.VarChar(32)
+  notes             String? @db.Text
+
+  items CapitalAllocationItem[]
+  logs  CapitalAllocationLog[] @relation("CapitalAllocationPlanLogs")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([scopeType, scopeId, createdAt])
+  @@map("capital_allocation_plans")
+}
+
+model CapitalAllocationItem {
+  id                  String @id @default(cuid())
+  planId              String @map("plan_id")
+  listingId           String @map("listing_id")
+  /// growth | pricing | operations | optimize | hold | reduce
+  allocationType      String @map("allocation_type") @db.VarChar(24)
+  allocatedAmount     Float  @map("allocated_amount")
+  recommendedAmount   Float  @map("recommended_amount")
+  priorityScore       Float  @map("priority_score")
+  expectedImpactScore Float  @map("expected_impact_score")
+  confidenceScore     Float  @map("confidence_score")
+  rationaleJson       Json?  @map("rationale_json")
+  metricsJson         Json?  @map("metrics_json")
+  /// recommended | approved | rejected | applied
+  status              String @default("recommended") @db.VarChar(24)
+
+  plan CapitalAllocationPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([planId, listingId])
+  @@map("capital_allocation_items")
+}
+
+model CapitalAllocationLog {
+  id        String  @id @default(cuid())
+  planId    String? @map("plan_id")
+  listingId String? @map("listing_id")
+  eventType String  @map("event_type") @db.VarChar(32)
+  message   String? @db.Text
+  meta      Json?
+
+  plan CapitalAllocationPlan? @relation("CapitalAllocationPlanLogs", fields: [planId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([planId, createdAt])
+  @@map("capital_allocation_logs")
 }
 
 model AutonomyRuleWeight {
@@ -17184,6 +17337,38 @@ enum LeadContactOrigin {
   BUYER
 }
 
+/// CRM listing asset classification (LECIPM broker listings).
+enum LecipmListingAssetType {
+  HOUSE
+  CONDO
+  MULTI_UNIT
+  TOWNHOUSE
+  LAND
+  OTHER
+}
+
+enum ComplianceChecklistItemStatus {
+  PENDING
+  COMPLETED
+}
+
+/// Québec Regulation 2025 — divided co-ownership compliance checklist rows (broker CRM `Listing`).
+model ChecklistItem {
+  id        String                         @id @default(cuid())
+  listingId String                         @map("listing_id")
+  listing   Listing                        @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  key       String
+  label     String
+  status    ComplianceChecklistItemStatus @default(PENDING)
+  required  Boolean                        @default(true)
+  createdAt DateTime                       @default(now()) @map("created_at")
+  updatedAt DateTime                       @updatedAt @map("updated_at")
+
+  @@unique([listingId, key], map: "uq_checklist_item_listing_key")
+  @@index([listingId], map: "idx_checklist_item_listing_id")
+  @@map("listing_coownership_checklist_items")
+}
+
 model Listing {
   id                         String                      @id @default(cuid())
   /**
@@ -17202,8 +17387,18 @@ model Listing {
   tenant                     Tenant?                     @relation(fields: [tenantId], references: [id], onDelete: SetNull)
   commissionCategory         ListingCommissionCategory   @default(SALE) @map("commission_category")
   commissionRate             Float?                      @map("commission_rate")
+  /// Residential / condo classification for CRM workflows (Reg. 2025 co-ownership compliance).
+  listingType                LecipmListingAssetType      @default(HOUSE) @map("listing_type")
+  /// Explicit divided co-ownership flag (may be true for non-CONDO edge cases).
+  isCoOwnership              Boolean                     @default(false) @map("is_co_ownership")
+  /**
+   * When true, CRM listing appears on public marketplace/buyer browse.
+   * New listings default to draft (false) until explicitly published via broker endpoint.
+   */
+  crmMarketplaceLive        Boolean                     @default(true) @map("crm_marketplace_live")
   createdAt                  DateTime                    @default(now())
   updatedAt                  DateTime                    @updatedAt
+  checklistItems             ChecklistItem[]
   brokerAccesses             BrokerListingAccess[]
   lecipmVisitRequests        LecipmVisitRequest[]
   lecipmVisits               LecipmVisit[]

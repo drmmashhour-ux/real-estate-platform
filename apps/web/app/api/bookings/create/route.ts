@@ -3,6 +3,7 @@ import { ListingStatus } from "@prisma/client";
 import { createBooking } from "@/lib/bnhub/booking";
 import {
   logBnhubBookingCreate,
+  normalizeBnhubBookingDatesToYmd,
   precheckBnhubBookingAvailability,
   validateBnhubBookingDateStrings,
   validateBnhubListingStructureForBooking,
@@ -14,6 +15,7 @@ import { GuestIdentityRequiredError } from "@/lib/bnhub/guest-identity-gate";
 import { computeBookingPricing } from "@/lib/bnhub/booking-pricing";
 import { maybeBlockRequestWithLegalGate } from "@/modules/legal/legal-api-gate";
 import { syncAvailability } from "@/modules/channel-manager/channel-sync.service";
+import { jsonErr, jsonOk } from "@/lib/api/standard-json";
 
 export const dynamic = "force-dynamic";
 
@@ -44,17 +46,21 @@ export async function POST(request: NextRequest) {
     const checkOut = typeof body.checkOut === "string" ? body.checkOut.trim() : "";
     if (!listingId || !checkIn || !checkOut) {
       logBnhubBookingCreate({ phase: "reject", reason: "missing_fields", listingId: listingId || null });
-      return Response.json({ error: "listingId, checkIn, and checkOut are required." }, { status: 400 });
+      return jsonErr("listingId, checkIn, and checkOut are required.", 400, "MISSING_FIELDS");
     }
 
     const dateVal = validateBnhubBookingDateStrings(checkIn, checkOut);
     if (!dateVal.ok) {
       logBnhubBookingCreate({ phase: "reject", reason: "date_validation", detail: dateVal.error, listingId });
-      return Response.json({ error: dateVal.error }, { status: 400 });
+      return jsonErr(dateVal.error, 400, "INVALID_DATES");
     }
 
-    const checkInD = new Date(checkIn);
-    const checkOutD = new Date(checkOut);
+    const ymd = normalizeBnhubBookingDatesToYmd(checkIn, checkOut);
+    const checkInNorm = ymd?.checkInYmd ?? checkIn;
+    const checkOutNorm = ymd?.checkOutYmd ?? checkOut;
+
+    const checkInD = new Date(checkInNorm);
+    const checkOutD = new Date(checkOutNorm);
 
     const listing = await prisma.shortTermListing.findUnique({
       where: { id: listingId },
@@ -72,7 +78,7 @@ export async function POST(request: NextRequest) {
     });
     if (!listing) {
       logBnhubBookingCreate({ phase: "reject", reason: "listing_not_found", listingId });
-      return Response.json({ error: "Listing not found." }, { status: 404 });
+      return jsonErr("Listing not found.", 404, "NOT_FOUND");
     }
 
     if (listing.listingStatus === ListingStatus.PUBLISHED) {
@@ -85,7 +91,12 @@ export async function POST(request: NextRequest) {
           errors: struct.errors,
         });
         return Response.json(
-          { error: struct.errors[0] ?? "Listing does not meet booking requirements.", errors: struct.errors },
+          {
+            success: false,
+            error: struct.errors[0] ?? "Listing does not meet booking requirements.",
+            code: "LISTING_STRUCTURE",
+            errors: struct.errors,
+          },
           { status: 400 },
         );
       }
@@ -108,7 +119,11 @@ export async function POST(request: NextRequest) {
         checkOut,
       });
       return Response.json(
-        { error: "Selected dates are no longer available.", code: availability.reason },
+        {
+          success: false,
+          error: "Selected dates are no longer available.",
+          code: availability.reason ?? "DATES_UNAVAILABLE",
+        },
         { status: 409 },
       );
     }
@@ -177,7 +192,7 @@ export async function POST(request: NextRequest) {
       select: { amountCents: true },
     });
 
-    return Response.json({
+    return jsonOk({
       id: booking.id,
       summary: {
         status: booking.status,
@@ -191,22 +206,22 @@ export async function POST(request: NextRequest) {
     });
   } catch (e) {
     if (e instanceof GuestIdentityRequiredError) {
-      return Response.json({ error: e.message, code: e.code }, { status: 403 });
+      return jsonErr(e.message, 403, e.code);
     }
     const msg = e instanceof Error ? e.message : "Booking could not be created.";
     if (
       msg.includes("Selected dates are no longer available") ||
       msg.includes("Listing not available for selected dates")
     ) {
-      return Response.json({ error: "Selected dates are no longer available." }, { status: 409 });
+      return jsonErr("Selected dates are no longer available.", 409, "DATES_UNAVAILABLE");
     }
     if (msg.includes("at most") && msg.includes("guests")) {
-      return Response.json({ error: msg }, { status: 400 });
+      return jsonErr(msg, 400, "GUEST_COUNT");
     }
     if (msg.includes("not available for booking") || msg.includes("PUBLISHED")) {
-      return Response.json({ error: msg }, { status: 403 });
+      return jsonErr(msg, 403, "LISTING_UNAVAILABLE");
     }
     logApiRouteError("POST /api/bookings/create", e);
-    return Response.json({ error: "Booking could not be created. Try again or contact support." }, { status: 500 });
+    return jsonErr("Booking could not be created. Try again or contact support.", 500, "INTERNAL");
   }
 }

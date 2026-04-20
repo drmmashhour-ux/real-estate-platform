@@ -101,6 +101,8 @@ export type SyriaPolicySummarySlice = {
     | "caution_preview"
     | "allow_preview";
   liveExecutionBlocked: true;
+  /** True when aggregate posture is not plain allow — aligns with approval-boundary human hint (SQL proxies). */
+  requiresHumanReviewLikely: boolean;
   notes: readonly string[];
 };
 

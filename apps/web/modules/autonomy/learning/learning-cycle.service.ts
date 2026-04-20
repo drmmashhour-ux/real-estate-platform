@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
-import { evaluateActionOutcome } from "./outcome-evaluator.service";
+import { runCausalEvaluationPipeline } from "@/modules/autonomy/counterfactual/causal-evaluation.service";
+import { applyOutcomeLearningRewards, evaluateActionOutcome } from "./outcome-evaluator.service";
 
 const configWindowCache = new Map<string, number>();
 
@@ -76,6 +77,16 @@ export async function runLearningCycle() {
 
     try {
       const result = await evaluateActionOutcome(action.id);
+
+      if ("success" in result && result.success) {
+        try {
+          await runCausalEvaluationPipeline(action.id);
+        } catch {
+          /** Counterfactual estimate is optional for learning — fall back to raw rewardScore in applyOutcomeLearningRewards. */
+        }
+        await applyOutcomeLearningRewards(action.id);
+      }
+
       results.push({ actionId: action.id, success: true, result });
     } catch (error) {
       results.push({

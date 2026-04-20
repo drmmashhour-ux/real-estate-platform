@@ -17,7 +17,8 @@ export async function loadReportData(scopeType: string, scopeId: string) {
   return { summary, narrative };
 }
 
-function resolveBnhubScopeToHostUserId(scopeType: string, scopeId: string): string {
+/** Map investor `InvestorAccess` scope to BNHub host user id (single-host portfolio = same id for now). */
+export function resolveBnhubScopeToHostUserId(scopeType: string, scopeId: string): string {
   if (!scopeId?.trim()) throw new Error("Invalid scope");
 
   switch (scopeType) {

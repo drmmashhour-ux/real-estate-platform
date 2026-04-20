@@ -8,6 +8,9 @@ export type AccessibleListingRow = {
   price: number;
   tenantId: string | null;
   createdAt: Date;
+  listingType: LecipmListingAssetType;
+  isCoOwnership: boolean;
+  crmMarketplaceLive: boolean;
 };
 
 /**
@@ -63,6 +66,9 @@ export async function getAccessibleListingsForUser(userId: string, isAdmin: bool
       price: true,
       tenantId: true,
       createdAt: true,
+      listingType: true,
+      isCoOwnership: true,
+      crmMarketplaceLive: true,
     },
   });
 }

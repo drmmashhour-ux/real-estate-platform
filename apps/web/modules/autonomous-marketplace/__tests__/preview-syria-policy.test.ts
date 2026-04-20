@@ -60,6 +60,11 @@ describe("preview Syria policy + boundary", () => {
     expect(out.syriaPolicyPreview?.decision).toBeDefined();
     expect(out.syriaApprovalBoundary?.liveExecutionBlocked).toBe(true);
     expect(out.syriaApprovalBoundary?.reasons.length).toBeGreaterThan(0);
+    expect(out.syriaStructuredExplainability?.structuredLines.length).toBeGreaterThan(0);
+    expect(out.syriaStructuredExplainability?.bullets.length).toBeGreaterThan(0);
+    expect(out.unifiedGovernance?.disposition).toBeDefined();
+    expect(out.combinedRisk?.level).toBeDefined();
+    expect(out.fraudRisk?.level).toBeDefined();
   });
 
   it("boundary is consistent with policy helper", () => {

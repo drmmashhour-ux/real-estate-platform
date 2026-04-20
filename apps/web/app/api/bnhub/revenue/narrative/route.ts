@@ -6,16 +6,18 @@ export const dynamic = "force-dynamic";
 
 /**
  * GET — rules-based (deterministic) host revenue narrative; requires signed-in host.
- * Each call rebuilds the narrative and appends a `BnhubDashboardNarrativeSnapshot` row.
+ * Append `?persist=0` to rebuild without writing `BnhubDashboardNarrativeSnapshot`.
  */
-export async function GET() {
+export async function GET(req: Request) {
   const userId = await getGuestId();
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const persist = new URL(req.url).searchParams.get("persist") !== "0";
+
   try {
-    const narrative = await generateHostRevenueNarrative(userId);
+    const narrative = await generateHostRevenueNarrative(userId, { persist });
     return NextResponse.json({
       success: true,
       narrative,

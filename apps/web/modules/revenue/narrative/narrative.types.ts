@@ -1,3 +1,7 @@
+/**
+ * Shapes for the rules-based (non-LLM) revenue narrative. Persisted as JSON on
+ * `BnhubDashboardNarrativeSnapshot` (factsJson, risksJson, opportunitiesJson).
+ */
 export type NarrativeFact = {
   label: string;
   value: string;

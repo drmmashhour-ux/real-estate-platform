@@ -1,73 +1,47 @@
-# Syria region preview and stable listing identity
+# Syria region preview & listing identity (apps/web)
 
-## Why stable region listing keys exist
+Read-only intelligence for **Darlink / `syria_*`** data surfaced in LECIPM admin and global dashboards. No writes to Syria from `apps/web`; execution remains blocked unless explicitly feature-flagged elsewhere.
 
-LECIPM serves multiple regional data stores under one `apps/web` deployment. Listing IDs can collide across namespaces (for example the same opaque id string in web CRM `Listing` and Syria `syria_*` properties). A **bare `listingId` string is therefore ambiguous** unless paired with an explicit **source** or a **stable region listing key**.
+**Governance modeling, trust copy & dashboard semantics:** [syria-governance-trust-and-dashboard.md](./syria-governance-trust-and-dashboard.md).
 
-Region listing keys remove ambiguity for admin intelligence, preview pipelines, and dashboards without merging Prisma schemas or writing cross-region data.
+## Preview pipeline (`autonomous-marketplace.engine`)
 
-## Wire format
+For `previewForListing({ listingId, source: "syria", regionCode })`, `previewForSyriaListing`:
 
-Canonical string (deterministic):
+1. Loads observation via `buildSyriaListingObservationSnapshot`.
+2. Builds **Syria signals** (`buildSyriaSignals`) and **policy** (`evaluateSyriaPreviewPolicyFromSignals`).
+3. Builds **approval boundary** (`evaluateSyriaApprovalBoundary`) — always `liveExecutionBlocked: true` in default web posture.
+4. Emits **preview notes** (`buildSyriaPreviewNoteLines`), **governance explainability** lines, **structured explainability** (`buildSyriaPreviewStructuredExplainability`: policy tags, boundary, signal severities, **identity scope** lines).
+5. Merges bullets into top-level **`explainability.notes`** and optional **`previewExplanation`** (when explainability flags are on).
+6. Returns **`executionResult.status: DRY_RUN`** only — never the controlled execution orchestrator.
 
-```text
-{regionCode}:{source}:{listingId}
-```
+**Policy & boundary details** (signal → decision matrix, approval boundary): [syria-policy-and-approval-boundary.md](./syria-policy-and-approval-boundary.md).
 
-Examples:
+## Listing identity (stable keys)
 
-- `ca_qc:web:clxxxxxxxx` — main web CRM listing (Québec routing tag).
-- `sy:syria:clxxxxxxxx` — Syria regional marketplace row (`syria_*` tables).
+When `FEATURE_REGION_LISTING_KEY_V1` is on, responses include **`regionListingRef`** (e.g. `sy:syria:<listingId>` / display id). Structured explainability adds `syria_explainability_identity_scope` tags so operators can correlate preview rows with unified intelligence without exposing raw DB payloads.
 
-Rules:
+## Admin API: `GET /api/admin/autonomy/preview`
 
-- `source` is one of `web`, `syria`, `external`.
-- `listingId` must not contain `:` (CUIDs satisfy this).
+With `source=syria` (or `regionListingKey` resolving to Syria), JSON includes **`syriaPreviewEnrichment`**:
 
-Parsing never throws; invalid strings yield a null key and a machine-readable fallback note.
+| Field | Purpose |
+|-------|---------|
+| `policy` | `syriaPolicyPreview` |
+| `approvalBoundary` | `syriaApprovalBoundary` |
+| `syriaPolicyDecision` | Envelope + review type |
+| `syriaPreviewNotes` / `syriaGovernanceExplainability` | Operator lines |
+| `syriaStructuredExplainability` | Full structured lines + bullets |
+| `structuredLinesSample` / `bulletsSample` | Trimmed copies for dashboards |
+| `explainabilityNotesSample` | First notes from merged explainability |
 
-## Syria preview (read-only)
+## Dashboard slices
 
-When `FEATURE_SYRIA_PREVIEW_V1` and `FEATURE_SYRIA_REGION_ADAPTER_V1` are enabled, the autonomous marketplace **preview** path can load Syria rows through `syria-preview-adapter.service.ts`:
+- **`syriaPolicySummary`** (`buildSyriaPolicySummarySlice`): aggregate SQL proxies → `worstCasePolicy`, **`requiresHumanReviewLikely`**, `liveExecutionBlocked: true`, notes.
+- **`syriaGovernanceSlice`**: counts for governance visibility (not workflow execution).
 
-- Builds an `ObservationSnapshot` with target type `syria_listing`.
-- Runs the preview detector registry (FSBO-oriented detectors typically yield **no opportunities** for non-FSBO targets — this is expected; availability notes explain the gap).
-- Evaluates listing preview policy in **DRY_RUN** only.
-- Surfaces **capability notes** from `syria-region-capabilities.service.ts`.
+**Source of truth for per-listing posture** remains the preview engine + policy service, not dashboard aggregates alone.
 
-**No execution:** Syria does not use controlled execution, governance execution, or Québec compliance engines in this phase. Metadata includes `execution_unavailable_for_syria_region`.
+## UI
 
-## Region capability notes
-
-`syria-region-capabilities.service.ts` exposes deterministic booleans:
-
-- Preview: supported (read-only).
-- Autonomy / controlled execution / Québec compliance: **off** for Syria from web.
-- Trust overlay: **limited summary** only (aggregate fraud / booking markers — never raw consumer-facing fraud labels outside approved surfaces).
-
-These notes are merged into unified intelligence (Syria branch) and dashboard summaries where relevant.
-
-## Future path: Syria-side autonomy
-
-Future phases may introduce a Syria-local execution boundary (policies, approvals, and eventual Syria-owned writers) **without** merging schemas into web Prisma. Until then, `apps/web` remains read-only against Syria tables and preview remains **DRY_RUN** only.
-
-## Preview detectors and signals
-
-Listing-level Syria signals, opportunities, and signal-driven policy hints are documented in [`syria-region-detectors.md`](./syria-region-detectors.md).
-
-## Preview policy & approval boundary (listing-level)
-
-Each Syria listing preview computes:
-
-1. **`syriaPolicyPreview`** — signal-severity policy (`evaluateSyriaPreviewPolicyFromSignals`), types in `syria-policy.types.ts`.
-2. **`syriaApprovalBoundary`** — execution / human-review posture (`evaluateSyriaApprovalBoundary`), types in `syria-approval-boundary.types.ts`. Live autonomous execution remains blocked for Syria in default web posture.
-
-Structured explainability lines are produced by `syria-preview-explainability.service.ts` (tags in `syria-preview-explainability-rules.ts`) and merged into preview `explainability.notes` and, when enabled, the preview explanation graph.
-
-Admin API `GET /api/admin/autonomy/preview` adds **`syriaPreviewEnrichment`** when `source=syria`, carrying policy, boundary, and explainability pointers without duplicating the full `preview` object.
-
-See also [`syria-policy-and-approval-boundary.md`](./syria-policy-and-approval-boundary.md).
-
-## Dashboard policy summary (aggregate)
-
-The marketplace dashboard exposes **`syriaPolicySummary`** — a deterministic **worst-case** label inferred from Syria aggregate KPIs (not per-listing preview). Use listing preview for authoritative per-id policy.
+**`SyriaPreviewPanel`** (admin intelligence): shows policy decision, approval boundary (codes + human-readable gloss via `syriaApprovalReasonDisplay`), governance explainability, structured explainability tags, signals, opportunities, and merged explainability summary.

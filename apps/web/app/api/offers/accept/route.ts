@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
+import { ERR_COOWNERSHIP_ACCEPT_OFFER } from "@/services/compliance/coownershipCompliance.service";
 import { acceptOffer } from "@/lib/transactions/offers";
 import { verifyTransactionParties } from "@/lib/transactions/verification";
 import { prisma } from "@/lib/db";
@@ -73,9 +74,10 @@ export async function POST(request: NextRequest) {
     });
   } catch (e) {
     console.error(e);
-    return Response.json(
-      { error: e instanceof Error ? e.message : "Accept offer failed" },
-      { status: 500 }
-    );
+    const msg = e instanceof Error ? e.message : "Accept offer failed";
+    if (msg === ERR_COOWNERSHIP_ACCEPT_OFFER) {
+      return Response.json({ error: msg }, { status: 403 });
+    }
+    return Response.json({ error: msg }, { status: 500 });
   }
 }

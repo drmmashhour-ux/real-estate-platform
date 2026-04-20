@@ -43,6 +43,7 @@ describe("global-dashboard Syria augmentation", () => {
     expect(aug.regionComparison.some((r) => r.regionCode === "web_crm")).toBe(true);
     expect(aug.syriaPolicySummary?.worstCasePolicy).toBe("requires_local_approval");
     expect(aug.syriaPolicySummary?.liveExecutionBlocked).toBe(true);
+    expect(aug.syriaPolicySummary?.requiresHumanReviewLikely).toBe(true);
     expect(aug.syriaGovernanceSlice?.requiresApprovalCount).toBe(1);
     expect(aug.syriaGovernanceSlice?.fraudFlaggedCount).toBe(0);
     expect(aug.syriaGovernanceSlice?.blockedForRegionCount).toBe(3);

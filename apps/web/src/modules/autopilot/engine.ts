@@ -5,10 +5,15 @@
 import {
   runLecipmCoreAutopilotEvent,
   runFsboListingAutopilotSampleScan,
+  runCrmListingCoownershipComplianceScan,
 } from "./autopilot.service";
 import type { LecipmCoreAutopilotEventPayload } from "./types";
 
-export { runLecipmCoreAutopilotEvent, runFsboListingAutopilotSampleScan };
+export {
+  runLecipmCoreAutopilotEvent,
+  runFsboListingAutopilotSampleScan,
+  runCrmListingCoownershipComplianceScan,
+};
 
 /** Alias for event-bus style callers. */
 export function dispatchLecipmCoreAutopilotEvent(payload: LecipmCoreAutopilotEventPayload) {

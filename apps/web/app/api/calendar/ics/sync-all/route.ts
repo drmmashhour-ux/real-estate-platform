@@ -11,12 +11,7 @@ function authorizeCron(req: NextRequest): boolean {
   return !!(secret && token === secret);
 }
 
-/** GET — refresh all enabled ICS imports (cron). Authorization: Bearer $CRON_SECRET */
-export async function GET(request: NextRequest) {
-  if (!authorizeCron(request)) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
+async function runAllEnabledImports(): Promise<Response> {
   const imports = await prisma.listingIcsImport.findMany({
     where: { isEnabled: true },
   });
@@ -48,4 +43,19 @@ export async function GET(request: NextRequest) {
   }
 
   return Response.json({ success: true, results });
+}
+
+/** GET / POST — refresh all enabled ICS imports (cron). Authorization: Bearer $CRON_SECRET */
+export async function GET(request: NextRequest) {
+  if (!authorizeCron(request)) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  return runAllEnabledImports();
+}
+
+export async function POST(request: NextRequest) {
+  if (!authorizeCron(request)) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  return runAllEnabledImports();
 }

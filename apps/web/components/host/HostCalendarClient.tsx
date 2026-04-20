@@ -115,6 +115,7 @@ export function HostCalendarClient({
         editable: true,
         extendedProps: {
           eventType: "booking",
+          type: "booking",
           listingId: b.listingId,
         },
       };
@@ -139,6 +140,7 @@ export function HostCalendarClient({
         display: "background",
         extendedProps: {
           eventType: fromSlot ? "blocked_slot" : "external_ics",
+          type: fromSlot ? "blocked_slot" : "external",
           listingId: s.listingId,
           sourceName: s.icsSourceName ?? null,
         },
@@ -244,26 +246,39 @@ export function HostCalendarClient({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap gap-6 rounded-xl border border-zinc-800 bg-zinc-950/60 px-4 py-3 text-sm text-zinc-200">
-        <div className="flex items-center gap-2">
-          <span className="h-3 w-3 rounded-sm" style={{ backgroundColor: GOLD }} />
-          <span>BNHub booking</span>
+      <div className="space-y-3 rounded-xl border border-zinc-800 bg-zinc-950/60 px-4 py-3 text-sm text-zinc-200">
+        <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">Sources</p>
+        <div className="flex flex-wrap gap-4">
+          <div className="flex items-center gap-2">
+            <span className="h-3 w-3 rounded-sm" style={{ backgroundColor: GOLD }} />
+            <span>BNHub booking</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="h-3 w-3 rounded-sm bg-gray-500" />
+            <span>External block (ICS / other)</span>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="h-3 w-3 rounded-sm bg-[#FF5A5F]" />
-          <span>External ICS · Airbnb-style</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="h-3 w-3 rounded-sm bg-[#003580]" />
-          <span>External ICS · Booking-style</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="h-3 w-3 rounded-sm bg-zinc-600" />
-          <span>Manual / slot block</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="h-3 w-3 rounded-sm bg-purple-500" />
-          <span>Channel manager feed</span>
+        <div className="flex flex-wrap gap-6 border-t border-zinc-800 pt-3">
+          <div className="flex items-center gap-2">
+            <span className="h-3 w-3 rounded-sm bg-[#FF5A5F]" />
+            <span>Airbnb-style ICS</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="h-3 w-3 rounded-sm bg-[#003580]" />
+            <span>Booking.com-style ICS</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="h-3 w-3 rounded-sm bg-[#7c3aed]" />
+            <span>Vrbo-style ICS</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="h-3 w-3 rounded-sm bg-zinc-600" />
+            <span>Manual / slot block</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="h-3 w-3 rounded-sm bg-purple-500" />
+            <span>Channel manager feed</span>
+          </div>
         </div>
       </div>
 

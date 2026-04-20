@@ -9,8 +9,7 @@
     "NPM_CONFIG_PRODUCTION": "false",
     "HUSKY": "0",
     "NEXT_TELEMETRY_DISABLED": "1",
-    "NODE_OPTIONS": "--max-old-space-size=8192",
-    "VERCEL_DEBUG": "1"
+    "NODE_OPTIONS": "--max-old-space-size=8192"
   },
   "crons": [
     {
@@ -24,6 +23,10 @@
     {
       "path": "/api/cron/investor-metrics-daily",
       "schedule": "15 5 * * *"
+    },
+    {
+      "path": "/api/cron/bnhub-investor-report-archive",
+      "schedule": "30 6 * * *"
     },
     {
       "path": "/api/cron/growth-seo-daily",
@@ -40,6 +43,14 @@
     {
       "path": "/api/pricing/generate",
       "schedule": "35 6 * * *"
+    },
+    {
+      "path": "/api/cron/autonomy-run-due",
+      "schedule": "30 */4 * * *"
+    },
+    {
+      "path": "/api/cron/autonomy-learning-run",
+      "schedule": "15 9 * * *"
     }
   ]
 }

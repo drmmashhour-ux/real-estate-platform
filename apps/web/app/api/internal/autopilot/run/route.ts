@@ -7,6 +7,7 @@ import {
 import {
   runLecipmCoreAutopilotEvent,
   runFsboListingAutopilotSampleScan,
+  runCrmListingCoownershipComplianceScan,
 } from "@/src/modules/autopilot/autopilot.service";
 import type { LecipmCoreAutopilotEventPayload } from "@/src/modules/autopilot/types";
 
@@ -14,7 +15,7 @@ export const dynamic = "force-dynamic";
 
 /**
  * POST /api/internal/autopilot/run — core autopilot (Bearer CRON_SECRET).
- * Body: { scan?: "fsbo_sample", limit?: number } | LecipmCoreAutopilotEventPayload
+ * Body: { scan?: "fsbo_sample" | "crm_coownership_sample", limit?: number } | LecipmCoreAutopilotEventPayload
  */
 export async function POST(request: NextRequest) {
   if (!process.env.CRON_SECRET?.trim()) return cronNotConfigured();
@@ -25,6 +26,12 @@ export async function POST(request: NextRequest) {
   if (body.scan === "fsbo_sample") {
     const limit = typeof body.limit === "number" ? body.limit : 40;
     const r = await runFsboListingAutopilotSampleScan(Math.min(200, limit));
+    return Response.json({ ok: true, ...r });
+  }
+
+  if (body.scan === "crm_coownership_sample") {
+    const limit = typeof body.limit === "number" ? body.limit : 40;
+    const r = await runCrmListingCoownershipComplianceScan(Math.min(200, limit));
     return Response.json({ ok: true, ...r });
   }
 

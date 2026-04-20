@@ -1,43 +1,46 @@
+import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
 import { requireRole } from "@/lib/auth/require-role";
-import { runAutonomyCycle } from "@/modules/autonomy/autonomy-orchestrator.service";
+import { runAutonomyDueBatch } from "@/modules/autonomy/autonomy-orchestrator.service";
 
 export const dynamic = "force-dynamic";
 
-/**
- * Batch runner for scheduled checks. Authenticate with `x-autonomy-cron-secret` matching `AUTONOMY_CRON_SECRET`,
- * or platform **admin** session.
- */
-export async function POST(req: Request) {
+async function authorize(req: Request): Promise<{ ok: true } | { ok: false; response: NextResponse }> {
   const secretHeader = req.headers.get("x-autonomy-cron-secret")?.trim();
+  const auth = req.headers.get("authorization") ?? "";
+  const bearer = auth.startsWith("Bearer ") ? auth.slice(7).trim() : "";
   const expected = process.env.AUTONOMY_CRON_SECRET?.trim();
-  const secretOk = Boolean(expected && secretHeader === expected);
-
-  if (!secretOk) {
-    const auth = await requireRole("admin");
-    if (!auth.ok) return auth.response;
+  if (expected && (secretHeader === expected || bearer === expected)) {
+    return { ok: true };
   }
 
-  const configs = await prisma.autonomyConfig.findMany({
-    where: { isEnabled: true },
-    take: 50,
-  });
+  const admin = await requireRole("admin");
+  if (!admin.ok) return { ok: false, response: admin.response };
+  return { ok: true };
+}
 
-  const results: unknown[] = [];
+/**
+ * POST/GET — batch autonomy cycles for every enabled config.
+ * Authenticate with `x-autonomy-cron-secret` or `Authorization: Bearer $AUTONOMY_CRON_SECRET`, or admin session.
+ * Prefer `/api/cron/autonomy-run-due` + `CRON_SECRET` for Vercel Cron (same pattern as other platform crons).
+ */
+async function handle(req: Request) {
+  const gate = await authorize(req);
+  if (!gate.ok) return gate.response;
 
-  for (const c of configs) {
-    try {
-      const r = await runAutonomyCycle(c.scopeType, c.scopeId);
-      results.push({ scopeType: c.scopeType, scopeId: c.scopeId, actions: r });
-    } catch (e) {
-      results.push({
-        scopeType: c.scopeType,
-        scopeId: c.scopeId,
-        error: e instanceof Error ? e.message : String(e),
-      });
-    }
+  try {
+    const out = await runAutonomyDueBatch({ take: 50 });
+    return NextResponse.json({ success: true, processed: out.processed, results: out.results });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Autonomy batch failed";
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
+}
 
-  return NextResponse.json({ success: true, processed: configs.length, results });
+export async function POST(req: NextRequest) {
+  return handle(req);
+}
+
+export async function GET(req: NextRequest) {
+  return handle(req);
 }

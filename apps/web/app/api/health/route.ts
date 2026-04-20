@@ -39,6 +39,7 @@ export async function GET(req: NextRequest) {
 
   if (!deep) {
     return NextResponse.json({
+      success: true,
       status: "ok",
       db: "not_checked",
       database: "not_checked",
@@ -69,6 +70,7 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json(
     {
+      success: status === "ok",
       status,
       db: dbLabel,
       database: dbLabel,

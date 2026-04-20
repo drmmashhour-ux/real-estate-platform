@@ -4,6 +4,15 @@ function resolveNumberLocale(locale?: string): string {
 }
 
 /** `numberingLocale`: BCP 47 tag for digits/grouping (e.g. `ar-SY`, `en-US`). */
+/** Locale-aware money string for UI (SYP + grouped amount). */
+export function formatSyriaCurrency(
+  amount: string | number | { toString(): string },
+  currency = "SYP",
+  localeHint?: string,
+): string {
+  return money(amount, currency, resolveNumberLocale(localeHint));
+}
+
 export function money(
   amount: string | number | { toString(): string },
   currency = "SYP",

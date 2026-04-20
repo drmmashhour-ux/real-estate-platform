@@ -1,6 +1,7 @@
 /**
- * Generates a BNHub investor/board PDF via **Python ReportLab** (`scripts/generate_report.py`).
- * Requires `python3` and `pip install -r apps/web/scripts/requirements-reportlab.txt` on the host.
+ * BNHub investor/board PDF via **Python ReportLab** (`apps/web/scripts/generate_report.py`).
+ * Not an npm package — install with: `pip install -r apps/web/scripts/requirements-reportlab.txt`
+ * and ensure `python3` is on `PATH` (local dev, long-running Node host, or a worker with Python).
  */
 
 import { execFileSync } from "child_process";

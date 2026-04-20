@@ -112,13 +112,13 @@ export async function resolvePublicListing(idOrCode: string): Promise<ResolvedPu
     return { kind: "fsbo", row: fsbo };
   }
 
-  let crm = await prisma.listing.findUnique({
-    where: { id: raw },
+  let crm = await prisma.listing.findFirst({
+    where: { id: raw, crmMarketplaceLive: true },
     include: crmPublicInclude,
   });
   if (!crm && publicCode) {
     crm = await prisma.listing.findFirst({
-      where: { listingCode: { equals: publicCode, mode: "insensitive" } },
+      where: { listingCode: { equals: publicCode, mode: "insensitive" }, crmMarketplaceLive: true },
       include: crmPublicInclude,
     });
   }

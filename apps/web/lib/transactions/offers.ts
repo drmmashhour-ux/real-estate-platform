@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { assertCoownershipEnforcementAllows } from "@/services/compliance/coownershipCompliance.service";
 import { recordTransactionEvent } from "./events";
 import type { OfferStatus, TransactionStatus } from "./constants";
 
@@ -112,6 +113,11 @@ export async function acceptOffer(input: AcceptOfferInput): Promise<{ transactio
     if (counter) finalPrice = counter.counterPrice;
   } else {
     if (!isSeller && offer.transaction.brokerId !== input.acceptedById) throw new Error("Only seller or broker can accept the initial offer");
+  }
+
+  const crmListingId = offer.transaction.listingId;
+  if (crmListingId) {
+    await assertCoownershipEnforcementAllows(crmListingId, "accept_offer");
   }
 
   await prisma.propertyOffer.update({

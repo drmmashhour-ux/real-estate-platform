@@ -60,6 +60,18 @@ export default async function AdminAutonomyPage({
             Contextual Bandit →
           </Link>
           <Link
+            href={`/${locale}/${country}/dashboard/admin/autonomy/counterfactual`}
+            className="text-sm font-medium text-premium-gold hover:underline"
+          >
+            Counterfactual uplift →
+          </Link>
+          <Link
+            href={`/${locale}/${country}/dashboard/admin/autonomy/experiments`}
+            className="text-sm font-medium text-premium-gold hover:underline"
+          >
+            Holdout experiments →
+          </Link>
+          <Link
             href={`/${locale}/${country}/dashboard/admin/autonomy/learning`}
             className="text-sm font-medium text-premium-gold hover:underline"
           >
@@ -112,7 +124,16 @@ export default async function AdminAutonomyPage({
                 <div className="mt-1 font-mono text-xs text-zinc-500">
                   {a.scopeType} / {a.scopeId}
                 </div>
+                {a.confidence != null ? (
+                  <div className="mt-1 text-xs text-zinc-500">Ranking / confidence: {Number(a.confidence).toFixed(4)}</div>
+                ) : null}
                 {a.reason ? <div className="mt-2 text-[#B3B3B3]">{a.reason}</div> : null}
+                <details className="mt-2 text-xs text-zinc-600">
+                  <summary className="cursor-pointer text-zinc-500 hover:text-zinc-400">Payload (audit)</summary>
+                  <pre className="mt-2 max-h-40 overflow-auto rounded bg-black/60 p-2 font-mono text-[11px] text-zinc-400">
+                    {JSON.stringify(a.payloadJson, null, 2)}
+                  </pre>
+                </details>
                 <div className="mt-1 text-xs text-zinc-600">
                   {a.createdAt.toISOString()}
                   {a.executedAt ? ` · executed ${a.executedAt.toISOString()}` : ""}

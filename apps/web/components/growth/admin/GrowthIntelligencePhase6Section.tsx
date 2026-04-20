@@ -90,7 +90,7 @@ export async function GrowthIntelligencePhase6Section(props: { locale: string; c
           <p className="mt-2 text-[11px] leading-relaxed">
             {data.timelineSignals.length === 0
               ? "No discrete timeline-derived signals — enable event timeline + ensure EventRecord ingestion."
-              : `${data.timelineSignals.length} condensed rows available in API payload (`timelineSignals`).`}
+              : `${data.timelineSignals.length} condensed rows available in API payload (timelineSignals field).`}
           </p>
         </div>
       </div>

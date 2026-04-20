@@ -1,24 +1,23 @@
 # Syria preview policy & approval boundary
 
-This complements [`syria-region-preview-and-identity.md`](./syria-region-preview-and-identity.md).
+This complements [`syria-region-preview-and-identity.md`](./syria-region-preview-and-identity.md) and [`syria-governance-trust-and-dashboard.md`](./syria-governance-trust-and-dashboard.md).
 
 ## Policy (`syria-policy.service`)
 
-`evaluateSyriaPreviewPolicyFromSignals(signals, observation?)` applies **facts first** (on `observation.facts`), then **synthetic signals** (from `buildSyriaSignals`), in a fixed order:
+Canonical **signal → decision** summary:
 
-| Input | Decision |
-|--------|----------|
-| `fraudFlag = true` (fact) | `requires_local_approval` |
-| `syriaListingStatus` ∈ {`PENDING_REVIEW`, `pending_review`, …} (fact) | `requires_local_approval` |
-| `adapterDisabled` or `unsupportedRegionFeature` (fact) | `blocked_for_region` |
-| Any **critical** signal (e.g. fraud pattern) | `requires_local_approval` |
-| `payout_anomaly` with **severe** backlog (`payoutPending` high vs `payoutPaid`) | `requires_local_approval` |
-| `payout_anomaly` otherwise | `caution_preview` |
-| `low_booking_activity` or `inactive_listing` (any severity) | `caution_preview` |
-| Any other **warning**-severity signal | `caution_preview` |
+| Signal | Result |
+| --- | --- |
+| `fraudFlag = true` | `requires_local_approval` |
+| Listing status pending review (`syriaListingStatus` facts: `PENDING_REVIEW`, `pending_review`, …) | `requires_local_approval` |
+| Payout inconsistency (`payout_anomaly`) | **`caution_preview`** or **`requires_local_approval`** (severe backlog vs mild — see thresholds in code) |
+| Weak bookings / inactive listing (`low_booking_activity`, `inactive_listing`) | `caution_preview` |
+| Unsupported feature / adapter off (`unsupportedRegionFeature`, `adapterDisabled`) | `blocked_for_region` |
 | Otherwise | `allow_preview` |
 
-Severe payout uses a fixed minimum pending count and compares pending to paid (see `PAYOUT_REQUIRES_APPROVAL_PENDING_MIN` in `syria-policy.service.ts`).
+**Implementation order** (first match wins): blocked region → fraud → pending review → **any critical-severity synthetic signal** → payout anomaly → weak/inactive → **first remaining warning-severity signal** → allow.
+
+Severe payout uses `PAYOUT_REQUIRES_APPROVAL_PENDING_MIN` and compares `payoutPending` vs `payoutPaid` in `syria-policy.service.ts`.
 
 Types live in `syria-policy.types.ts`. Output is advisory — **no FSBO / Québec rule engine**.
 
@@ -27,7 +26,7 @@ Types live in `syria-policy.types.ts`. Output is advisory — **no FSBO / Québe
 `evaluateSyriaApprovalBoundary` layers **platform posture** on top of policy:
 
 - **`liveExecutionBlocked`**: always `true` for Syria listings in default `apps/web` posture (read-only adapter; opt-in flags control any future live internal actions).
-- **`requiresHumanApprovalHint`**: `true` when policy is `requires_local_approval` or `caution_preview`.
+- **`requiresHumanApprovalHint`**: `true` when policy is `blocked_for_region`, `requires_local_approval`, or `caution_preview`; `false` only for `allow_preview`.
 
 ## Explainability (`syria-preview-explainability.service`)
 
@@ -39,7 +38,7 @@ Deterministic structured lines + bullets merge into:
 
 ## Dashboard slice (`syriaPolicySummary`)
 
-`buildSyriaPolicySummarySlice` in `global-dashboard.service` derives a **worst-case policy label** from aggregate SQL counts (fraud-flagged → critical proxy; pending review → caution proxy). This is **not** a substitute for per-listing `evaluateSyriaPreviewPolicyFromSignals`.
+`buildSyriaPolicySummarySlice` in `global-dashboard.service` derives a **worst-case policy label** from aggregate SQL counts (fraud-flagged → `requires_local_approval` proxy; pending review → same). It also sets **`requiresHumanReviewLikely`** when `worstCasePolicy !== "allow_preview"`. This is **not** a substitute for per-listing `evaluateSyriaPreviewPolicyFromSignals`.
 
 ## Governance review lane (`syriaGovernanceSlice`)
 

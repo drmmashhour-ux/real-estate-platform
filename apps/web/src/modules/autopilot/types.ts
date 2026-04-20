@@ -1,7 +1,16 @@
+/** Domains persisted on `LecipmCoreAutopilotAction.domain` (varchar). */
+export type AutopilotDomain =
+  | "listing"
+  | "growth"
+  | "trust"
+  | "revenue"
+  | "COOWNERSHIP_COMPLIANCE";
+
 /** Initial event set for Core Autopilot v1 — extend with typed payloads per event. */
 export type LecipmCoreAutopilotEventType =
   | "listing_created"
   | "listing_updated"
+  | "scheduled_scan"
   | "listing_published"
   | "listing_low_conversion_detected"
   | "listing_low_quality_detected"

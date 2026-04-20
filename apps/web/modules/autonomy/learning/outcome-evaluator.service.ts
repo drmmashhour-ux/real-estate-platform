@@ -63,21 +63,6 @@ export async function evaluateActionOutcome(actionId: string) {
 
   const scored = evaluateOutcome(action.domain, action.actionType, baseline, observed);
 
-  await prisma.autonomyLearningLog.create({
-    data: {
-      scopeType: action.scopeType,
-      scopeId: action.scopeId,
-      actionId: action.id,
-      eventType: "reward_scored",
-      message: "Deterministic reward computed from observed BNHub metrics vs stored baseline.",
-      meta: {
-        rewardScore: scored.rewardScore,
-        outcomeLabel: scored.outcomeLabel,
-        deltas: scored.deltas,
-      },
-    },
-  });
-
   const outcome = await prisma.autonomyOutcome.create({
     data: {
       actionId: action.id,
@@ -114,13 +99,59 @@ export async function evaluateActionOutcome(actionId: string) {
       scopeId: action.scopeId,
       actionId: action.id,
       eventType: "outcome_recorded",
-      message: "Autonomy outcome recorded.",
+      message:
+        "Outcome-based adjustment: deterministic reward scored from observed BNHub KPIs vs baselineMetricsJson at action time (not causal). Rule/context learning runs after optional counterfactual uplift estimate.",
       meta: {
         rewardScore: scored.rewardScore,
         outcomeLabel: scored.outcomeLabel,
+        deltas: scored.deltas,
       },
     },
   });
+
+  return {
+    success: true as const,
+    outcome,
+  };
+}
+
+/**
+ * Applies rule weights + contextual bucket stats using uplift-adjusted reward when present (after causal pipeline),
+ * otherwise raw outcome rewardScore. Idempotent via `outcome_learning_applied` log.
+ */
+export async function applyOutcomeLearningRewards(actionId: string) {
+  const action = await prisma.autonomyAction.findUnique({
+    where: { id: actionId },
+  });
+
+  const outcome = await prisma.autonomyOutcome.findUnique({
+    where: { actionId },
+  });
+
+  if (!action || !outcome || !action.learningEligible) {
+    return {
+      skipped: true as const,
+      reason: !action ? "Action not found" : !outcome ? "Outcome not found" : "Not learning eligible",
+    };
+  }
+
+  const applied = await prisma.autonomyLearningLog.findFirst({
+    where: { actionId, eventType: "outcome_learning_applied" },
+  });
+
+  if (applied) {
+    return { skipped: true as const, reason: "Learning already applied for this outcome" };
+  }
+
+  const learningReward =
+    typeof outcome.upliftAdjustedReward === "number" && !Number.isNaN(outcome.upliftAdjustedReward)
+      ? outcome.upliftAdjustedReward
+      : Number(outcome.rewardScore ?? 0);
+
+  const rewardSource =
+    typeof outcome.upliftAdjustedReward === "number" && !Number.isNaN(outcome.upliftAdjustedReward)
+      ? ("uplift_adjusted" as const)
+      : ("raw_reward" as const);
 
   if (action.signalKey) {
     const ruleWeight = await getOrCreateRuleWeight({
@@ -131,7 +162,7 @@ export async function evaluateActionOutcome(actionId: string) {
       actionType: action.actionType,
     });
 
-    const weightResult = await updateRuleWeight(ruleWeight.id, Number(scored.rewardScore || 0));
+    const weightResult = await updateRuleWeight(ruleWeight.id, learningReward);
 
     if (weightResult.applied) {
       await prisma.autonomyLearningLog.create({
@@ -141,9 +172,13 @@ export async function evaluateActionOutcome(actionId: string) {
           actionId: action.id,
           ruleWeightId: weightResult.row.id,
           eventType: "weight_updated",
-          message: "Rule preference weight updated from observed outcome (bounded; safety limits unchanged).",
+          message:
+            "Rule preference weight updated from learning reward (prefers uplift-adjusted estimate when available; bounded; not proven causality).",
           meta: {
-            rewardScore: scored.rewardScore,
+            learningReward,
+            rewardSource,
+            rawRewardScore: outcome.rewardScore,
+            upliftAdjustedReward: outcome.upliftAdjustedReward,
             newWeight: weightResult.row.weight,
             successCount: weightResult.row.successCount,
             failureCount: weightResult.row.failureCount,
@@ -166,7 +201,7 @@ export async function evaluateActionOutcome(actionId: string) {
       signalKey: action.signalKey,
       actionType: action.actionType,
       contextFeatures,
-      rewardScore: Number(scored.rewardScore ?? 0),
+      rewardScore: learningReward,
     });
 
     await prisma.autonomyLearningLog.create({
@@ -179,15 +214,33 @@ export async function evaluateActionOutcome(actionId: string) {
         meta: {
           actionType: action.actionType,
           signalKey: action.signalKey,
-          rewardScore: scored.rewardScore,
+          learningReward,
+          rewardSource,
+          rawRewardScore: outcome.rewardScore,
+          upliftAdjustedReward: outcome.upliftAdjustedReward,
           contextFeatures,
         },
       },
     });
   }
 
+  await prisma.autonomyLearningLog.create({
+    data: {
+      scopeType: action.scopeType,
+      scopeId: action.scopeId,
+      actionId: action.id,
+      eventType: "outcome_learning_applied",
+      message: "Outcome learning applied (rule + contextual stats when applicable).",
+      meta: {
+        learningReward,
+        rewardSource,
+      },
+    },
+  });
+
   return {
     success: true as const,
-    outcome,
+    learningReward,
+    rewardSource,
   };
 }

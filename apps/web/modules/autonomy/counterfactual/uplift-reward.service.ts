@@ -14,6 +14,14 @@ export async function applyUpliftAdjustedReward(actionId: string) {
     throw new Error("Outcome or counterfactual evaluation missing");
   }
 
+  if (
+    outcome.counterfactualEvalId != null &&
+    typeof outcome.upliftAdjustedReward === "number" &&
+    !Number.isNaN(outcome.upliftAdjustedReward)
+  ) {
+    return outcome;
+  }
+
   const rawReward = Number(outcome.rewardScore || 0);
   const upliftScore = Number(cf.upliftScore || 0);
   const confidence = Number(cf.confidenceScore || 0.4);

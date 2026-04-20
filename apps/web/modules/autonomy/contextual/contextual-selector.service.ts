@@ -6,8 +6,12 @@ import { extractContextFeatures } from "./context-feature-extractor.service";
 import type { ContextFeatures } from "./context.types";
 
 export type RankedContextualAction = AutonomyActionCandidate & {
+  ruleWeightId: string;
+  /** Bucket-level contextual component (weighted avgReward + exploration bonus per feature). */
   contextualScore: number;
+  /** Final deterministic rank: confidence·0.35 + learned weight·0.25 + contextualScore·0.4. */
   selectionScore: number;
+  /** Feature buckets used for scoring and persisted on `AutonomyAction.contextFeaturesJson`. */
   contextFeatures: ContextFeatures;
 };
 

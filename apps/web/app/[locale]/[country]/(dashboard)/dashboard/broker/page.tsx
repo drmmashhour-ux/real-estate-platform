@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { getGuestId, getUserRole, isHubAdminRole } from "@/lib/auth/session";
+import { getListingIdsForBroker } from "@/lib/broker/collaboration";
+import { isComplianceComplete } from "@/services/compliance/coownershipCompliance.service";
 
 import { prisma } from "@/lib/db";
 import { hubNavigation } from "@/lib/hub/navigation";
@@ -50,6 +52,7 @@ import { CollaborationStrip } from "@/components/collaboration/CollaborationStri
 import { ImmoDealRoomEntry } from "@/components/immo-deal-room/ImmoDealRoomEntry";
 import { BrokerServiceProfilePanel } from "@/components/broker/BrokerServiceProfilePanel";
 import { BrokerLegalComplianceStrip } from "@/components/broker/BrokerLegalComplianceStrip";
+import { CoOwnershipBrokerCondoPanel } from "@/components/compliance/CoOwnershipBrokerCondoPanel";
 
 function fmtCommissionCents(cents: number | null | undefined): string {
   if (cents == null || cents <= 0) return "—";
@@ -153,6 +156,25 @@ export default async function BrokerHubPage({
     };
   }
 
+  let coownershipIncompleteCount = 0;
+  if (userId && dbUser?.role === "BROKER") {
+    const ids = await getListingIdsForBroker(userId);
+    if (ids.length > 0) {
+      const coRows = await prisma.listing.findMany({
+        where: {
+          id: { in: ids },
+          OR: [{ listingType: "CONDO" }, { isCoOwnership: true }],
+        },
+        select: { id: true },
+      });
+      for (const r of coRows) {
+        if (!(await isComplianceComplete(r.id))) {
+          coownershipIncompleteCount++;
+        }
+      }
+    }
+  }
+
   const sampleLead = await prisma.lead.findFirst({ orderBy: { createdAt: "desc" } });
   const brokerDecision = await safeEvaluateDecision({
     hub: "broker",
@@ -191,6 +213,18 @@ export default async function BrokerHubPage({
     >
       <div className="space-y-8">
         <HubJourneyBanner hub="broker" locale={locale} country={country} userId={userId} />
+        {coownershipIncompleteCount > 0 ? (
+          <div
+            className="rounded-xl border border-amber-500/40 bg-amber-950/35 px-4 py-3 text-sm text-amber-100"
+            role="status"
+          >
+            ⚠️ You have {coownershipIncompleteCount} listing{coownershipIncompleteCount === 1 ? "" : "s"} with
+            incomplete co-ownership compliance.{" "}
+            <Link href={`/${locale}/${country}/dashboard/listings`} className="font-medium underline underline-offset-2">
+              Review listings
+            </Link>
+          </div>
+        ) : null}
         {userId ? <BrokerLegalComplianceStrip locale={locale} country={country} /> : null}
         {legalHubFlags.legalHubV1 ? (
           <LegalHubEntryCard href={`/${locale}/${country}/legal`} locale={locale} country={country} />
@@ -250,6 +284,8 @@ export default async function BrokerHubPage({
         dbUser?.role === "BROKER" ? (
           <BrokerIncentivesPanel accent={theme.accent} />
         ) : null}
+        {userId && dbUser?.role === "BROKER" ? <CoOwnershipBrokerCondoPanel className="mt-6" /> : null}
+
         <section className="grid gap-4 lg:grid-cols-2">
           <RecommendationBanner
             recommendation={conversionCopy.analysis.recommendationHigh}

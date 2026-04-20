@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import type { EventClickArg, EventDropArg } from "@fullcalendar/core";
-import "@fullcalendar/core/index.css";
-import "@fullcalendar/daygrid/index.css";
+
+/** FullCalendar v6 injects its own CSS at runtime — do not import removed `index.css` paths (breaks package exports). */
 
 export type BnCalendarEventInput = {
   id: string;
@@ -65,15 +65,20 @@ export default function BnCalendar({
   skipDateOverlapCheck?: boolean;
 }) {
   const calRef = useRef<FullCalendar>(null);
-  const [initialView, setInitialView] = useState<"dayGridMonth" | "dayGridWeek">("dayGridMonth");
+  const [initialView, setInitialView] = useState<"dayGridMonth" | "dayGridWeek" | null>(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const w = typeof window !== "undefined" ? window.innerWidth : 1024;
     setInitialView(w < 768 ? "dayGridWeek" : "dayGridMonth");
   }, []);
 
+  if (!initialView) {
+    return <div className="min-h-[22rem] w-full rounded-xl bg-zinc-950/40" aria-busy />;
+  }
+
   return (
     <FullCalendar
+      key={initialView}
       ref={calRef}
       plugins={[dayGridPlugin, interactionPlugin]}
       initialView={initialView}

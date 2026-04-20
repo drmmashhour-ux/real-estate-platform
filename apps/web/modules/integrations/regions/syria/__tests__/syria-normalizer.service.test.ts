@@ -48,6 +48,42 @@ describe("syria-normalizer.service", () => {
     expect(out?.payoutStateHint).toBe("mixed");
   });
 
+  it("normalizeSyriaListing carries bilingual fields and localization notes", () => {
+    const row: SyriaListingReadRow = {
+      id: "p1",
+      title: "عربي",
+      description: "وصف عربي",
+      titleAr: "عربي",
+      titleEn: "English title",
+      descriptionAr: "وصف عربي",
+      descriptionEn: null,
+      price: 100,
+      currency: "SYP",
+      type: "RENT",
+      city: "Damascus",
+      cityAr: "دمشق",
+      cityEn: "Damascus",
+      districtAr: "المزة",
+      districtEn: "Mazzeh",
+      ownerId: "u1",
+      status: "PUBLISHED",
+      fraudFlag: false,
+      isFeatured: true,
+      featuredUntil: null,
+      createdAt: new Date("2026-01-01T00:00:00.000Z"),
+      updatedAt: new Date("2026-01-02T00:00:00.000Z"),
+      bookingCount: 0,
+    };
+    const out = normalizeSyriaListing(row);
+    expect(out?.titleAr).toBe("عربي");
+    expect(out?.titleEn).toBe("English title");
+    expect(out?.descriptionEn).toBeNull();
+    expect(out?.cityAr).toBe("دمشق");
+    expect(out?.districtEn).toBe("Mazzeh");
+    expect(out?.localizationNotes).toContain("en_description_absent");
+    expect(out?.localizationNotes).toContain("en_title_present");
+  });
+
   it("normalizeSyriaRegionSummary clamps negatives", () => {
     const out = normalizeSyriaRegionSummary({
       totalListings: -1,

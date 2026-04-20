@@ -7,6 +7,7 @@ import { buildAutonomySignals } from "@/modules/autonomy/signal-aggregator.servi
 import { captureBaselineMetrics } from "@/modules/autonomy/learning/baseline-capture.service";
 import { incrementSelection } from "@/modules/autonomy/bandit/bandit-update.service";
 import { buildContextualPolicyNote } from "@/modules/autonomy/contextual/contextual-policy-notes";
+import { gateAutonomyExperimentExecution } from "@/modules/autonomy/experiment/experiment-gate.service";
 
 /**
  * Single autonomy pass: signals → deterministic candidates → contextual ranking → policy → execution (mode-gated) → persisted rows.
@@ -48,9 +49,9 @@ export async function runAutonomyCycle(scopeType: string, scopeId: string) {
         scopeId,
         eventType: "contextual_selection",
         message:
-          "Contextual Bandit — feature-aware deterministic ranking (policy engine still validates each action).",
+          "Contextual Bandit — deterministic feature buckets + observed bucket rewards + exploration bonus (not unrestricted ML). Policy validates each action before execution.",
         meta: {
-          algorithm: "contextual_linear_score",
+          algorithm: "deterministic_contextual_linear",
           selected: decisions.map((d) => ({
             domain: d.domain,
             signalKey: d.signalKey,
@@ -82,16 +83,44 @@ export async function runAutonomyCycle(scopeType: string, scopeId: string) {
     let reason = policy.reason ?? d.reason;
     let executedAt: Date | null = null;
 
-    if (policy.allowed && d.ruleWeightId) {
-      await incrementSelection(d.ruleWeightId);
-    }
-
     if (policy.allowed) {
-      const exec = await executeAutonomyAction(config, d, scopeType, scopeId);
-      status = exec.status;
-      executedAt = exec.executedAt ?? null;
-      if (exec.detail) {
-        reason = exec.detail;
+      const expGate = await gateAutonomyExperimentExecution({
+        scopeType,
+        scopeId,
+        domain: d.domain,
+        signalKey: d.signalKey,
+        actionType: d.actionType,
+      });
+
+      if (!expGate.execute) {
+        status = "skipped";
+        reason = expGate.reason;
+        await prisma.autonomyEventLog.create({
+          data: {
+            scopeType,
+            scopeId,
+            eventType: "experiment_holdout",
+            message: expGate.reason,
+            meta: {
+              experimentId: expGate.experimentId,
+              entityId: expGate.entityId,
+              domain: d.domain,
+              signalKey: d.signalKey,
+              actionType: d.actionType,
+            },
+          },
+        });
+      } else {
+        if (d.ruleWeightId) {
+          await incrementSelection(d.ruleWeightId);
+        }
+
+        const exec = await executeAutonomyAction(config, d, scopeType, scopeId);
+        status = exec.status;
+        executedAt = exec.executedAt ?? null;
+        if (exec.detail) {
+          reason = exec.detail;
+        }
       }
     }
 
@@ -132,4 +161,33 @@ export async function runAutonomyCycle(scopeType: string, scopeId: string) {
   });
 
   return results;
+}
+
+/** Batch runner: all enabled `AutonomyConfig` rows (caps concurrency server-side via `take`). */
+export async function runAutonomyDueBatch(opts?: { take?: number }) {
+  const take = opts?.take ?? 50;
+  const configs = await prisma.autonomyConfig.findMany({
+    where: { isEnabled: true },
+    take,
+  });
+
+  const results: Array<
+    | { scopeType: string; scopeId: string; actions: Awaited<ReturnType<typeof runAutonomyCycle>> }
+    | { scopeType: string; scopeId: string; error: string }
+  > = [];
+
+  for (const c of configs) {
+    try {
+      const actions = await runAutonomyCycle(c.scopeType, c.scopeId);
+      results.push({ scopeType: c.scopeType, scopeId: c.scopeId, actions });
+    } catch (e) {
+      results.push({
+        scopeType: c.scopeType,
+        scopeId: c.scopeId,
+        error: e instanceof Error ? e.message : String(e),
+      });
+    }
+  }
+
+  return { processed: configs.length, results };
 }

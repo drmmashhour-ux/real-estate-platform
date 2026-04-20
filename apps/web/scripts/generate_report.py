@@ -63,9 +63,16 @@ def main() -> None:
     muted = ParagraphStyle(name="Muted", parent=styles["Normal"], fontSize=8, textColor=colors.grey)
 
     elements.append(Paragraph("BNHub Board / Investor Report", title_style))
+    elements.append(Paragraph(esc(meta.get("reportLabel") or subtitle), muted))
     elements.append(Paragraph(esc(subtitle), styles["Normal"]))
     if generated_at:
         elements.append(Paragraph(f"Generated (UTC): {esc(generated_at)}", muted))
+    warns = meta.get("exportWarnings")
+    if isinstance(warns, list) and warns:
+        elements.append(Spacer(1, 6))
+        elements.append(Paragraph("<b>Export notes</b>", styles["Normal"]))
+        for w in warns[:8]:
+            elements.append(Paragraph(f"• {esc(str(w))}", muted))
     elements.append(Spacer(1, 14))
 
     # KPI

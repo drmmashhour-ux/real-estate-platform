@@ -7,7 +7,7 @@ import { buildEntityTimeline } from "@/modules/events/event-timeline.service";
 import type { EventRecord } from "@/modules/events/event.types";
 import { summarizeLegalIntelligence } from "@/modules/legal/legal-intelligence.service";
 import type { LegalIntelligenceSummary } from "@/modules/legal/legal-intelligence.types";
-import { engineFlags } from "@/config/feature-flags";
+import { brokerAiFlags, engineFlags } from "@/config/feature-flags";
 
 export type AuditTimelineRow = {
   id: string;
@@ -101,7 +101,42 @@ export async function buildListingAuditPanel(listingId: string): Promise<AuditPa
       }
     }
 
+    let certificateOfLocationAudit: AuditPanelPayload["certificateOfLocationAudit"] = null;
+    if (brokerAiFlags.brokerAiCertificateOfLocationV1) {
+      try {
+        const { buildCertificateOfLocationContextFromDb } = await import(
+          "@/modules/broker-ai/certificate-of-location/certificate-of-location-context.service"
+        );
+        const { evaluateCertificateOfLocation } = await import(
+          "@/modules/broker-ai/certificate-of-location/certificate-of-location-evaluator.service"
+        );
+        const ctx = await buildCertificateOfLocationContextFromDb({ listingId });
+        const s = evaluateCertificateOfLocation(ctx);
+        certificateOfLocationAudit = {
+          status: s.status,
+          readinessLevel: s.readinessLevel,
+          riskLevel: s.riskLevel,
+          blockingIssueCount: s.blockingIssues.length,
+          blockingIssuesPreview: s.blockingIssues.slice(0, 6),
+          warningsPreview: s.warnings.slice(0, 6),
+          availabilityNotes: s.availabilityNotes.slice(0, 6),
+        };
+      } catch {
+        notes.push("certificate_of_location_audit_unavailable");
+      }
+    }
+
     const reasonTrail = sortTrail([
+      ...(certificateOfLocationAudit ?
+        [
+          {
+            source: "certificate_of_location" as const,
+            label: "Certificate of location readiness (platform helper)",
+            detail: `status=${certificateOfLocationAudit.status}; readiness=${certificateOfLocationAudit.readinessLevel}; risk=${certificateOfLocationAudit.riskLevel}; blocking=${certificateOfLocationAudit.blockingIssueCount}`,
+            sortKey: `0-${generatedAt}-cert`,
+          },
+        ]
+      : []),
       ...(legalSummary ?
         [
           {
@@ -140,6 +175,7 @@ export async function buildListingAuditPanel(listingId: string): Promise<AuditPa
       riskAnomalySummary,
       reasonTrail,
       previewReasoningSummary,
+      certificateOfLocationAudit,
       notes,
     };
   } catch {
@@ -153,6 +189,7 @@ export async function buildListingAuditPanel(listingId: string): Promise<AuditPa
       riskAnomalySummary: "Unavailable",
       reasonTrail: [],
       previewReasoningSummary: null,
+      certificateOfLocationAudit: null,
       notes: [...notes, "audit_panel_failure"],
     };
   }

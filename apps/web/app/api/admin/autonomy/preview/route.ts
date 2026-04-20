@@ -137,7 +137,16 @@ export async function GET(req: NextRequest) {
           syriaPolicyDecision: preview.syriaPolicyDecision ?? null,
           syriaPreviewNotes: preview.syriaPreviewNotes ?? null,
           syriaGovernanceExplainability: preview.syriaGovernanceExplainability ?? null,
+          syriaStructuredExplainability: preview.syriaStructuredExplainability ?? null,
           explainabilityNotesSample: [...(preview.explainability?.notes ?? [])].slice(0, 24),
+          structuredLinesSample:
+            preview.syriaStructuredExplainability ?
+              [...preview.syriaStructuredExplainability.structuredLines].slice(0, 24)
+            : [],
+          bulletsSample:
+            preview.syriaStructuredExplainability ?
+              [...preview.syriaStructuredExplainability.bullets].slice(0, 16)
+            : [],
           flags: {
             executionUnavailableForSyria: preview.executionUnavailableForSyria === true,
             hasPreviewExplanation: Boolean(preview.previewExplanation),

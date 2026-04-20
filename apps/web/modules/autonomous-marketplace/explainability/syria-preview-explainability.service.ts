@@ -5,6 +5,9 @@ import type { SyriaApprovalBoundaryResult } from "@/modules/integrations/regions
 import type { SyriaPreviewPolicyResult } from "@/modules/integrations/regions/syria/syria-policy.types";
 import {
   SYRIA_PREVIEW_EXPLAINABILITY_TAGS,
+  buildSyriaIdentityScopeLines,
+  explainSyriaApprovalBoundaryUserSafe,
+  explainSyriaPolicyDecisionUserSafe,
   syriaPolicyDecisionToSummaryTag,
 } from "./syria-preview-explainability-rules";
 
@@ -19,11 +22,14 @@ export function buildSyriaPreviewStructuredExplainability(params: {
   policy: SyriaPreviewPolicyResult;
   boundary: SyriaApprovalBoundaryResult;
   signalCounts?: { critical: number; warning: number; info: number };
+  /** When set, adds identity-scope tags for stable listing keys (truncated in tag). */
+  regionListingRefDisplayId?: string | null;
 }): SyriaPreviewStructuredExplainability {
   const structuredLines: string[] = [
     `${SYRIA_PREVIEW_EXPLAINABILITY_TAGS.policyGate}:${syriaPolicyDecisionToSummaryTag(params.policy.decision)}`,
     `${SYRIA_PREVIEW_EXPLAINABILITY_TAGS.approvalBoundary}:requires_human_hint=${params.boundary.requiresHumanApprovalHint};live_blocked=${params.boundary.liveExecutionBlocked}`,
     `${SYRIA_PREVIEW_EXPLAINABILITY_TAGS.liveExecutionPosture}:true`,
+    ...buildSyriaIdentityScopeLines(params.regionListingRefDisplayId),
   ];
 
   if (params.signalCounts) {

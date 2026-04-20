@@ -9,7 +9,14 @@ import { proposeTrustFraudAutopilotActions } from "@/src/modules/trust/trust-aut
 import { actionRequiresApproval } from "@/src/modules/autopilot/policies/approval.policy";
 import { canAutoExecuteInMode } from "@/src/modules/autopilot/policies/execution.policy";
 import { evaluateFsboListingRules } from "@/src/modules/autopilot/rules/listing.rules";
+import { runCoownershipCompliancePipeline } from "@/src/modules/autopilot/coownership-compliance.pipeline";
 import type { LecipmCoreAutopilotEventPayload } from "@/src/modules/autopilot/types";
+
+const CRM_COOWNERSHIP_EVENTS = new Set([
+  "listing_created",
+  "listing_updated",
+  "scheduled_scan",
+]);
 
 async function upsertGrowthCandidate(params: {
   type: string;
@@ -289,6 +296,33 @@ export async function runFsboListingAutopilotSampleScan(limit = 40): Promise<{ p
       targetType: "fsbo_listing",
       targetId: r.id,
       metadata: { batch: "sample_scan" },
+    });
+    processed++;
+  }
+  return { processed };
+}
+
+/**
+ * Cron helper: re-check co-ownership compliance for CRM listings (CONDO / co-ownership flag).
+ */
+export async function runCrmListingCoownershipComplianceScan(limit = 40): Promise<{ processed: number }> {
+  const mode = getLecipmCoreAutopilotMode();
+  if (mode === "OFF" || !engineFlags.listingAutopilotV1) return { processed: 0 };
+
+  const rows = await prisma.listing.findMany({
+    where: { OR: [{ listingType: "CONDO" }, { isCoOwnership: true }] },
+    orderBy: { updatedAt: "asc" },
+    take: Math.min(200, limit),
+    select: { id: true },
+  });
+
+  let processed = 0;
+  for (const r of rows) {
+    await runLecipmCoreAutopilotEvent({
+      eventType: "scheduled_scan",
+      targetType: "listing",
+      targetId: r.id,
+      metadata: { batch: "crm_coownership_scan" },
     });
     processed++;
   }

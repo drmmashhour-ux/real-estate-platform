@@ -194,9 +194,6 @@ export function GrowthPolicyEnforcementPanel() {
 
   const partial = snapshot.inputCompleteness === "partial" || snapshot.missingDataWarnings.length > 0;
   const notes = buildGrowthPolicyEnforcementNotes(snapshot).slice(0, 5);
-  const showDebugPanel =
-    typeof window !== "undefined" &&
-    shouldShowGrowthPolicyEnforcementDebugUi(new URLSearchParams(window.location.search).get(GROWTH_POLICY_DEBUG_QUERY));
 
   return (
     <section

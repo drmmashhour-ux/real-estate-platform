@@ -59,6 +59,14 @@ export default async function AdminIntelligencePage({
             <Link href="/admin/unified-intelligence" className="text-emerald-400 hover:underline">
               unified listing read model
             </Link>
+            ·{" "}
+            <Link href="/admin/autonomy" className="text-amber-400/90 hover:underline">
+              controlled execution
+            </Link>
+            ·{" "}
+            <Link href="/api/admin/dashboard-intelligence" className="text-slate-400 hover:text-slate-200">
+              marketplace dashboard API
+            </Link>
             ).
           </p>
         </div>

@@ -85,7 +85,15 @@ export default async function AdminOperationsPage({
             Read-only KPIs, funnel health, pending work, and usage for the last period. Admin access only.
           </p>
         </div>
-        <AdminRangeFilter current={sp.range === "7d" ? "7d" : "30d"} />
+        <div className="flex flex-col items-end gap-2">
+          <AdminRangeFilter current={sp.range === "7d" ? "7d" : "30d"} />
+          <Link
+            href={`/${locale}/${country}/dashboard/admin/automation`}
+            className="text-sm font-medium text-premium-gold hover:underline"
+          >
+            Automation &amp; AI assist center →
+          </Link>
+        </div>
       </div>
 
       <DecisionCard

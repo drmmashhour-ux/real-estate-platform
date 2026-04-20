@@ -83,6 +83,7 @@ import { recordRevenueEventLedger } from "@/modules/revenue/revenue-event.servic
 import { recordAnalyticsFunnelEvent } from "@/lib/funnel/analytics-events";
 import { trackFunnelEvent } from "@/lib/funnel/tracker";
 import { securityLog } from "@/lib/security/security-logger";
+import { logStripeTagged } from "@/lib/server/launch-logger";
 import { auditStripePaymentEventIfApplicable } from "@/modules/stripe/validation.service";
 import { onLeadUnlockPaymentRecorded } from "@/modules/leads/lead-monetization-monitoring.service";
 
@@ -221,8 +222,8 @@ export async function POST(req: NextRequest) {
   try {
     const gate = await gateStripeWebhookProcessing(event);
     if (gate === "skip_duplicate") {
-      logInfo("[webhook] duplicate processed event skipped (idempotent)", { id: event.id });
-      return Response.json({ received: true, duplicate: true });
+      logStripeTagged.info("[api/stripe/webhook] duplicate skipped (idempotent)", { id: event.id });
+      return Response.json({ success: true, received: true, duplicate: true });
     }
   } catch (e) {
     logError("bnhub webhook idempotency gate failed", e);
@@ -591,7 +592,8 @@ export async function POST(req: NextRequest) {
   }
 
   if (event.type !== "checkout.session.completed" && event.type !== "checkout.session.async_payment_succeeded") {
-    return Response.json({ received: true });
+    logStripeTagged.info("[api/stripe/webhook] event processed", { type: event.type, id: event.id, branch: "noop" });
+    return Response.json({ success: true, received: true });
   }
 
   const session = event.data.object as Stripe.Checkout.Session;

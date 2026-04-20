@@ -7,6 +7,10 @@ const GOLD = "var(--color-premium-gold)";
 const links = [
   { href: "/investor/dashboard", label: "Dashboard" },
   { href: "/investor/bnhub-reports", label: "BNHub reports" },
+  { href: "/investor/recommendations", label: "BNHub signals" },
+  { href: "/investor/recommendations/summary", label: "Signals summary" },
+  { href: "/investor/revenue", label: "BNHub revenue" },
+  { href: "/investor/acquisition", label: "Acquisition model" },
   { href: "/investor/finance", label: "Financial model" },
   { href: "/investor/qa", label: "Investor Q&A" },
   { href: "/investor/analytics", label: "Analytics" },

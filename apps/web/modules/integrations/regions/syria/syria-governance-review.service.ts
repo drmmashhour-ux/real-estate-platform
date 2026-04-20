@@ -28,13 +28,16 @@ export type ResolveSyriaGovernanceReviewTypeParams = {
 };
 
 /**
- * Condition → reviewType (product mapping):
- * - fraudFlag → risk_review
- * - payout issues → risk_review
- * - pending listing → admin_review
- * - otherwise → standard
+ * Condition → reviewType (product mapping; **modeled only** — no workflows executed):
  *
- * Precedence: fraud → pending admin queue → payout → standard.
+ * | Condition | reviewType |
+ * | --- | --- |
+ * | fraudFlag | risk_review |
+ * | payout issues (`payout_anomaly` signal) | risk_review |
+ * | pending listing (`syriaListingStatus` pending review) | admin_review |
+ * | normal case | standard |
+ *
+ * Precedence (first match): **fraud** → **pending listing** → **payout** → **standard**.
  */
 export function resolveSyriaGovernanceReviewType(params: ResolveSyriaGovernanceReviewTypeParams): SyriaGovernanceReviewType {
   try {

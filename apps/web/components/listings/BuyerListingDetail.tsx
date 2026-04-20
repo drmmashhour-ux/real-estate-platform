@@ -2339,7 +2339,7 @@ export function BuyerListingDetail({
                 }}
               >
                 Get matched
-              </button>
+              </Link>
             </div>
           ) : (
             <button

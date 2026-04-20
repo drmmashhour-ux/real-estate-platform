@@ -372,6 +372,8 @@ async function seedListingsAndCrm(tenantId: string, brokerA: string, brokerB: st
         price: L.price,
         tenantId,
         ownerId: L.brokerId,
+        listingType: "HOUSE",
+        crmMarketplaceLive: true,
       },
     });
     await prisma.brokerListingAccess.create({

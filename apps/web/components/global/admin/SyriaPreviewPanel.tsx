@@ -1,5 +1,6 @@
 import type { ListingPreviewResponse } from "@/modules/autonomous-marketplace/types/listing-preview.types";
 import type { SyriaOpportunity, SyriaSignal } from "@/modules/integrations/regions/syria/syria-signal.types";
+import { syriaApprovalReasonDisplay } from "@/modules/autonomous-marketplace/explainability/syria-preview-explainability-rules";
 
 type Props = {
   listingId: string;
@@ -119,6 +120,30 @@ export function SyriaPreviewPanel(props: Props) {
               ))}
             </ul>
           ) : null}
+        </div>
+      ) : null}
+
+      {preview.syriaGovernanceExplainability && preview.syriaGovernanceExplainability.length > 0 ? (
+        <div className="mt-6 rounded-xl border border-amber-500/15 bg-zinc-950/50 px-4 py-3">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Governance explainability</p>
+          <ul className="mt-2 list-inside list-disc text-xs text-zinc-400">
+            {[...preview.syriaGovernanceExplainability].map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {preview.syriaStructuredExplainability ? (
+        <div className="mt-6 rounded-xl border border-white/10 bg-zinc-950/40 px-4 py-3">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Structured explainability</p>
+          <ul className="mt-2 space-y-1 font-mono text-[10px] leading-relaxed text-emerald-200/90">
+            {[...preview.syriaStructuredExplainability.structuredLines].slice(0, 16).map((line) => (
+              <li key={line} className="break-all">
+                {line}
+              </li>
+            ))}
+          </ul>
         </div>
       ) : null}
 

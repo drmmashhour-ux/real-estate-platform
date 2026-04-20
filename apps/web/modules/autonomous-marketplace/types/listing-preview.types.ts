@@ -16,6 +16,7 @@ import type { SyriaApprovalBoundaryResult } from "@/modules/integrations/regions
 import type { SyriaPreviewPolicyDecisionEnvelope } from "@/modules/integrations/regions/syria/syria-governance-review.types";
 import type { ListingExplanation } from "../explainability/explainability.types";
 import type { ListingPreviewExplanation } from "../explainability/preview-explainability.types";
+import type { SyriaPreviewStructuredExplainability } from "../explainability/syria-preview-explainability.service";
 import type { ListingPreviewResponseFlags } from "./preview-response.types";
 import type { ListingQuebecCompliancePreview } from "@/modules/legal/compliance/quebec-compliance.types";
 import type {
@@ -23,6 +24,7 @@ import type {
   PropertyPublishComplianceSummary,
 } from "@/modules/legal/scoring/property-legal-risk.types";
 import type { LegalTrustRankingImpact } from "@/modules/trust-ranking/legal-trust-ranking.types";
+import type { UnifiedGovernanceResult } from "../governance/unified-governance.types";
 
 /** One proposed action with its policy outcome (evaluate-only). */
 export type ListingPreviewActionEvaluation = {
@@ -96,6 +98,8 @@ export type ListingPreviewResponse = {
   };
   /** Read-only / execution boundary for Syria (no live automation in default web posture). */
   syriaApprovalBoundary?: SyriaApprovalBoundaryResult;
+  /** Deterministic structured tags + bullets (policy + boundary + identity scope). */
+  syriaStructuredExplainability?: SyriaPreviewStructuredExplainability;
   /** Phase 6.5 deterministic reasoning graph — preview/dry-run only (`FEATURE_AUTONOMY_EXPLAINABILITY_V1`). */
   explanation?: ListingExplanation | null;
   /** Deterministic preview graph + findings (`FEATURE_AUTONOMY_PREVIEW_EXPLAINABILITY_V1` + real preview pipeline). */
@@ -110,4 +114,8 @@ export type ListingPreviewResponse = {
   propertyPublishCompliance?: PropertyPublishComplianceSummary | null;
   propertyLegalRisk?: PropertyLegalRiskScore | null;
   legalTrustRanking?: LegalTrustRankingImpact | null;
+  /** Unified governance v1 — additive; Syria preview populates when adapter enabled. */
+  unifiedGovernance?: UnifiedGovernanceResult;
+  combinedRisk?: UnifiedGovernanceResult["combinedRisk"];
+  fraudRisk?: UnifiedGovernanceResult["fraudRisk"];
 };

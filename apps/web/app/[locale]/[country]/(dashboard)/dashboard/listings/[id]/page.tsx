@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState, useEffect } from "react";
+import { CoOwnershipChecklist } from "@/components/compliance/CoOwnershipChecklist";
 import { AiChatPanel } from "@/components/ai/AiChatPanel";
 import { BuyerPropertyAiDock } from "@/components/ai/BuyerPropertyAiDock";
 import { OpenContextConversationButton } from "@/components/messaging/OpenContextConversationButton";
@@ -329,6 +330,10 @@ export default function ListingDashboardPage() {
       <Link href="/dashboard/listings" style={{ color: GOLD, marginBottom: 20, display: "inline-block" }}>
         ← Back to listings
       </Link>
+
+      <div className="mb-8 max-w-3xl rounded-xl border border-white/10 bg-white p-4 text-slate-900 shadow-lg dark:bg-slate-100">
+        <CoOwnershipChecklist listingId={id} />
+      </div>
 
       {/* Hero */}
       <div style={cardStyle}>

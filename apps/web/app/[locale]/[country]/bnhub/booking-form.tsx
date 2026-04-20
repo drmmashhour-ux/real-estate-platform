@@ -457,6 +457,8 @@ export function BookingForm({
         }),
       });
       const data = (await res.json()) as {
+        success?: boolean;
+        data?: { id?: string; summary?: { status?: string; totalCents?: number | null } };
         id?: string;
         error?: string;
         summary?: { status?: string; totalCents?: number | null };
@@ -469,7 +471,7 @@ export function BookingForm({
         );
         return;
       }
-      const bookingId = data.id;
+      const bookingId = data.data?.id ?? data.id;
       if (!bookingId) {
         setError("Something went wrong — please try again.");
         return;
@@ -482,7 +484,8 @@ export function BookingForm({
       });
       trackBookingStarted(listingId);
 
-      if (data.summary?.status === "PENDING" && stripeConfigured && hostPayoutReady) {
+      const summary = data.data?.summary ?? data.summary;
+      if (summary?.status === "PENDING" && stripeConfigured && hostPayoutReady) {
         const ck = await fetch("/api/stripe/checkout", {
           method: "POST",
           headers: { "Content-Type": "application/json" },

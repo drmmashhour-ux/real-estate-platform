@@ -43,6 +43,13 @@ export function evaluateOutcome(
     rewardScore += revparDelta * 0.2;
   }
 
+  if (actionDomain === "portfolio") {
+    rewardScore += revenueDelta * 0.3;
+    rewardScore += occupancyDelta * 0.25;
+    rewardScore += bookingDelta * 0.25;
+    rewardScore += revparDelta * 0.2;
+  }
+
   rewardScore = round4(clamp(rewardScore, -1, 1));
 
   let outcomeLabel: "positive" | "neutral" | "negative" = "neutral";

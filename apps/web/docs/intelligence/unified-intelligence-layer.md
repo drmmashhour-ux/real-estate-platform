@@ -1,35 +1,29 @@
-# Unified intelligence layer (read model)
+# Unified intelligence layer (single source of truth)
 
-## Purpose
+One read model for admin and investor surfaces: canonical autonomy runs first, then event timeline, then legal/trust/growth services, with explicit source status when data is missing.
 
-The unified intelligence layer presents a **single admin-oriented read model** for a listing: observation, trust, growth, execution, governance, and source-freshness — without duplicating CRM vs regional rows as separate “truths”.
+## Types
 
-## What it does
+- **`UnifiedListingIntelligence`** — CRM/Syria listing-level signals (price, bookings, payouts, region keys).
+- **`UnifiedListingReadModel`** — serialized facets (`observation`, `preview`, `compliance`, `legalRisk`, `trust`, `ranking`, `growth`, `governance`, `execution`, `auditSummary`) for the single-pane admin panel.
+- **`UnifiedIntelligenceSummary`** — platform-wide freshness and recent IDs.
 
-- **Prefers canonical data** from `AutonomousMarketplaceRun` / action rows when `FEATURE_AUTONOMOUS_MARKETPLACE_V1` is on.
-- Merges **regional listing intelligence** (e.g. web CRM + optional Syria adapter) from `getUnifiedListingIntelligence`.
-- Optionally attaches **event timeline counts** when `FEATURE_EVENT_TIMELINE_V1` is on (`buildEntityTimeline`).
-- Exposes **JSON APIs**: `GET /api/admin/unified-intelligence/listing`, `GET /api/admin/unified-intelligence/summary`, gated by `FEATURE_UNIFIED_INTELLIGENCE_V1`.
+## Services
 
-## What it cannot do
+- **`unified-intelligence.service.ts`** — `getUnifiedListingIntelligence`, `buildUnifiedListingReadModel`, `buildUnifiedIntelligenceSummary`, `buildUnifiedEntityIntelligence`
+- **`unified-intelligence.repository.ts`** — `getCanonicalRunsForListingTarget`, `listUnifiedRecentListingIds`, `getUnifiedListingReadModel` pattern (canonical `autonomousMarketplaceRun` preferred)
 
-- No writes, no outbound automation, **no preview-path execution**.
-- No LLM inference or black-box scoring; facets are deterministic service outputs or advisory hints.
-- Does not bypass compliance or governance — it **reflects** stored dispositions only.
+## APIs
 
-## Source-of-truth strategy
+- **`GET /api/admin/unified-intelligence/listing?listingId=…`**
+- **`GET /api/admin/unified-intelligence/summary`**
 
-1. Canonical autonomy tables (runs + actions) when available.
-2. Append-only **event timeline** counts (availability only).
-3. CRM / regional adapters for listing observation.
-4. Explicit `availabilityNotes` when data is partial or ambiguous (e.g. plain id collision across regions).
+Both require admin; responses avoid raw document payloads.
+
+## Feature flag
+
+- `FEATURE_UNIFIED_INTELLIGENCE_V1`
 
 ## Legacy fallback
 
-Legacy or secondary tables are not merged blindly: missing canonical runs yields `canonicalRuns: missing | partial` with explanatory notes rather than synthesized scores.
-
-## Related docs
-
-- `apps/web/docs/autonomous-marketplace/controlled-execution-engine.md`
-- `apps/web/docs/dashboard/marketplace-intelligence-dashboard.md`
-- `apps/web/docs/market-domination/market-domination-layer.md`
+When canonical tables are empty, facets may be partial — `UnifiedIntelligenceSourceStatus` records `missing` / `partial` with notes; never invent conflicting duplicates.

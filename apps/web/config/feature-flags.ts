@@ -2322,6 +2322,11 @@ export const complianceFlags = {
   propertyLegalRiskScoreV1: envTrue("FEATURE_PROPERTY_LEGAL_RISK_SCORE_V1"),
   /** Phase 8 — unified prepublish gate (pairs with legacy auto-block when enabled). */
   listingPrepublishAutoBlockV1: envTrue("FEATURE_LISTING_PREPUBLISH_AUTO_BLOCK_V1"),
+  /**
+   * Québec Reg. 2025 — hard block CRM listing publish / offer acceptance when
+   * `coownership_certificate` checklist item is not completed (CONDOS / explicit co-ownership).
+   */
+  coownershipEnforcement: envTrue("FEATURE_COOWNERSHIP_ENFORCEMENT"),
 } as const;
 
 export type ComplianceFlagKey = keyof typeof complianceFlags;
@@ -2331,6 +2336,7 @@ export const FEATURE_COMPLIANCE_AUTO_BLOCK_V1 = complianceFlags.complianceAutoBl
 export const FEATURE_QUEBEC_LISTING_COMPLIANCE_V1 = complianceFlags.quebecListingComplianceV1;
 export const FEATURE_PROPERTY_LEGAL_RISK_SCORE_V1 = complianceFlags.propertyLegalRiskScoreV1;
 export const FEATURE_LISTING_PREPUBLISH_AUTO_BLOCK_V1 = complianceFlags.listingPrepublishAutoBlockV1;
+export const FEATURE_COOWNERSHIP_ENFORCEMENT = complianceFlags.coownershipEnforcement;
 
 /** Phase 4.5 — append-only compliance event timeline (Legal Hub + marketplace governance facts). Default off. */
 export const eventTimelineFlags = {

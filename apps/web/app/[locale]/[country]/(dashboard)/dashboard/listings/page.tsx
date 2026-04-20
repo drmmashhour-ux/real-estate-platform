@@ -1,12 +1,19 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
+import { CoOwnershipRowBadge } from "@/components/compliance/CoOwnershipRowBadge";
 import { getAccessibleListingsForUser } from "@/lib/listings/get-accessible-listings-for-user";
 
 export const dynamic = "force-dynamic";
 
 /** Dashboard listings: broker CRM `Listing` rows (tenant + access), not BNHUB short-term inventory. */
-export default async function DashboardListingsPage() {
+export default async function DashboardListingsPage({
+  params,
+}: {
+  params: Promise<{ locale: string; country: string }>;
+}) {
+  const { locale, country } = await params;
+  const dashPrefix = `/${locale}/${country}`;
   const { userId } = await requireAuthenticatedUser();
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -80,16 +87,33 @@ export default async function DashboardListingsPage() {
               ))
             : listings.map((listing) => (
                 <li key={listing.id}>
-                  <Link
-                    href={`/dashboard/listings/${listing.id}`}
-                    className="block rounded-xl border border-slate-200 bg-white p-4 transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-slate-700 dark:hover:bg-slate-900/80"
-                  >
-                    <span className="font-medium">{listing.title}</span>
-                    <span className="ml-2 font-mono text-xs text-slate-500 dark:text-slate-400">{listing.listingCode}</span>
-                    <span className="mt-1 block text-slate-600 dark:text-slate-300">
-                      ${listing.price.toLocaleString()} CAD
-                    </span>
-                  </Link>
+                  <div className="rounded-xl border border-slate-200 bg-white p-4 transition hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-slate-700">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <Link
+                        href={`${dashPrefix}/dashboard/listings/${listing.id}`}
+                        className="block flex-1 hover:bg-slate-50 dark:hover:bg-slate-900/80"
+                      >
+                        <span className="font-medium">{listing.title}</span>
+                        <span className="ml-2 font-mono text-xs text-slate-500 dark:text-slate-400">{listing.listingCode}</span>
+                        <span className="mt-1 block text-slate-600 dark:text-slate-300">
+                          ${listing.price.toLocaleString()} CAD
+                        </span>
+                      </Link>
+                      <div className="flex shrink-0 flex-wrap items-center gap-2">
+                        <CoOwnershipRowBadge
+                          listingId={listing.id}
+                          listingType={listing.listingType}
+                          isCoOwnership={listing.isCoOwnership}
+                        />
+                        <Link
+                          href={`${dashPrefix}/dashboard/listings/${listing.id}/edit`}
+                          className="rounded-lg border border-slate-300 px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
+                        >
+                          Edit & compliance
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
                 </li>
               ))}
         </ul>

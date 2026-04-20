@@ -13,6 +13,7 @@ export default async function LecipmEnginesAdminPage() {
   const [
     rankingRows,
     pendingAutopilot,
+    coownershipAutopilotRows,
     growthCandidates,
     seoCandidates,
     weakListings,
@@ -65,6 +66,7 @@ export default async function LecipmEnginesAdminPage() {
             <ul className="mt-2 space-y-1 text-sm text-slate-300">
               <li>Persisted ranking rows: {rankingRows}</li>
               <li>Pending autopilot actions: {pendingAutopilot}</li>
+              <li>Co-ownership compliance (Québec) actions: {coownershipAutopilotRows}</li>
               <li>Growth opportunity candidates: {growthCandidates}</li>
               <li>SEO page opportunities: {seoCandidates}</li>
               <li>FSBO weak/empty media (heuristic): {weakListings}</li>
@@ -92,7 +94,9 @@ export default async function LecipmEnginesAdminPage() {
           <p>
             Cron hooks (Bearer <code className="text-slate-400">CRON_SECRET</code>):{" "}
             <code className="text-slate-400">POST /api/internal/ranking/recalculate</code>,{" "}
-            <code className="text-slate-400">POST /api/internal/autopilot/run</code>,{" "}
+            <code className="text-slate-400">POST /api/internal/autopilot/run</code> (body{" "}
+            <code className="text-slate-400">{`{"scan":"crm_coownership_sample"}`}</code> for Québec co-ownership CRM
+            scan),{" "}
             <code className="text-slate-400">POST /api/internal/growth/scan</code>.
           </p>
           <p className="mt-2">

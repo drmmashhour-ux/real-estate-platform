@@ -35,6 +35,16 @@ describe("resolveSyriaGovernanceReviewType", () => {
     ).toBe("risk_review");
   });
 
+  it("prefers pending listing over payout anomaly", () => {
+    expect(
+      resolveSyriaGovernanceReviewType({
+        policy: policy(),
+        facts: { syriaListingStatus: "PENDING_REVIEW" },
+        signals: [{ type: "payout_anomaly", severity: "warning", message: "", contributingMetrics: {} }],
+      }),
+    ).toBe("admin_review");
+  });
+
   it("defaults to standard", () => {
     expect(resolveSyriaGovernanceReviewType({ policy: policy(), facts: {} })).toBe("standard");
   });

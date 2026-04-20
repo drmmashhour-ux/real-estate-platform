@@ -11,6 +11,7 @@ export default async function DashboardMarketingPage({
 }) {
   const { locale, country } = await params;
   const studioHref = `/${locale}/${country}/dashboard/marketing-studio`;
+  const seoHref = `/${locale}/${country}/dashboard/marketing/seo`;
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-6 text-white">
@@ -21,14 +22,22 @@ export default async function DashboardMarketingPage({
             Generate ad copy and export — LECIPM Growth + Ads System. Copy is deterministic (no fake “AI” claims).
           </p>
         </div>
-        {engineFlags.marketingStudioV1 ? (
+        <div className="flex flex-wrap gap-2">
           <Link
-            href={studioHref}
-            className="shrink-0 rounded-lg border border-emerald-600/50 bg-emerald-950/40 px-3 py-2 text-sm text-emerald-300 hover:border-emerald-500 hover:bg-emerald-950/60"
+            href={seoHref}
+            className="shrink-0 rounded-lg border border-sky-600/50 bg-sky-950/40 px-3 py-2 text-sm text-sky-200 hover:border-sky-500 hover:bg-sky-950/60"
           >
-            Marketing Studio (visual editor) →
+            SEO Engine →
           </Link>
-        ) : null}
+          {engineFlags.marketingStudioV1 ? (
+            <Link
+              href={studioHref}
+              className="shrink-0 rounded-lg border border-emerald-600/50 bg-emerald-950/40 px-3 py-2 text-sm text-emerald-300 hover:border-emerald-500 hover:bg-emerald-950/60"
+            >
+              Marketing Studio (visual editor) →
+            </Link>
+          ) : null}
+        </div>
       </div>
       <MarketingPanelClient />
     </div>

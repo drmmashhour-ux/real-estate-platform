@@ -22,6 +22,20 @@ export type ShortTermListingBookingValidationShape = {
   listingPhotos?: { id: string }[];
 };
 
+/** Normalize parsed dates to UTC `YYYY-MM-DD` for deterministic calendar alignment. */
+export function normalizeBnhubBookingDatesToYmd(checkIn: string, checkOut: string): {
+  checkInYmd: string;
+  checkOutYmd: string;
+} | null {
+  const cIn = new Date(checkIn);
+  const cOut = new Date(checkOut);
+  if (Number.isNaN(cIn.getTime()) || Number.isNaN(cOut.getTime())) return null;
+  return {
+    checkInYmd: cIn.toISOString().slice(0, 10),
+    checkOutYmd: cOut.toISOString().slice(0, 10),
+  };
+}
+
 /** Checkout-exclusive stay: occupied nights are [checkIn, checkOut) in UTC day alignment with availability slots. */
 export function validateBnhubBookingDateStrings(checkIn: string, checkOut: string): { ok: true } | { ok: false; error: string } {
   const checkInD = new Date(checkIn);

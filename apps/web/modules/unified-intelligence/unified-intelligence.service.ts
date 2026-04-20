@@ -384,6 +384,14 @@ export function parseOptionalListingSource(raw: string | null): UnifiedListingSo
   return undefined;
 }
 
+/** Spec-style alias for `getUnifiedListingIntelligence` — single listing id first. */
+export async function buildUnifiedListingIntelligence(
+  listingId: string,
+  opts?: Omit<GetUnifiedListingIntelligenceParams, "listingId">,
+): Promise<UnifiedListingIntelligence> {
+  return getUnifiedListingIntelligence({ listingId, ...opts });
+}
+
 /**
  * Canonical unified listing read model — merges CRM/regional signals, autonomy runs, and (when enabled) event timeline counts.
  * Read-only; never triggers execution or preview writes.

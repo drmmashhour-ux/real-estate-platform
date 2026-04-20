@@ -41,5 +41,9 @@ export function buildSyriaGovernanceExplainabilityLines(params: {
     lines.push("Pending listing status maps to admin_review governance lane (modeled only; no execution).");
   }
 
+  if (params.reviewType === "standard" && params.policyDecision === "allow_preview") {
+    lines.push("Governance lane: standard — normal informational preview; no automation from apps/web.");
+  }
+
   return lines;
 }

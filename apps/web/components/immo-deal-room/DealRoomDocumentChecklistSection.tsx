@@ -366,7 +366,7 @@ export function DealRoomDocumentChecklistSection({
                     type="button"
                     disabled={busy || !(attachDraft[req.id]?.url ?? "").trim()}
                     className="rounded bg-slate-700 px-2 py-1 text-[11px] text-white hover:bg-slate-600 disabled:opacity-50"
-                    onClick={() =>
+                    onClick={() => {
                       void run(() =>
                         fetch(
                           `/api/immo-deal-room/rooms/${encodeURIComponent(roomId)}/document-requirements/${encodeURIComponent(req.id)}/attach`,
@@ -379,17 +379,18 @@ export function DealRoomDocumentChecklistSection({
                               kind: "external_link",
                               url: attachDraft[req.id]?.url?.trim(),
                             }),
-                          })
+                          }
                         )
                       ).then((ok) => {
-                        if (ok)
+                        if (ok) {
                           setAttachDraft((d) => {
                             const next = { ...d };
                             delete next[req.id];
                             return next;
                           });
-                      })
-                    }
+                        }
+                      });
+                    }}
                   >
                     Attach link
                   </button>

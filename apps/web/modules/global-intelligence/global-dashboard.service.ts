@@ -57,13 +57,18 @@ function buildSyriaPolicySummarySlice(summary: SyriaRegionSummary): SyriaPolicyS
   if (summary.fraudFlaggedListings > 0) worstCasePolicy = "requires_local_approval";
   else if (summary.pendingReviewListings > 0) worstCasePolicy = "requires_local_approval";
 
+  const requiresHumanReviewLikely = worstCasePolicy !== "allow_preview";
+
   return {
     worstCasePolicy,
     liveExecutionBlocked: true,
+    requiresHumanReviewLikely,
     notes: [
       "dashboard_syria_policy_summary_uses_aggregate_sql_proxies",
       `fraud_flagged_listings=${summary.fraudFlaggedListings}`,
       `pending_review_listings=${summary.pendingReviewListings}`,
+      requiresHumanReviewLikely ? "requires_human_review_likely_true" : "requires_human_review_likely_false",
+      "approval_boundary_dashboard_proxy:live_execution_blocked_always_true_for_sy_web",
     ],
   };
 }

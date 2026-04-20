@@ -6,6 +6,7 @@ import { recordAutonomousMarketplaceGovernanceTimeline } from "@/modules/events/
 import { autonomyConfig } from "../config/autonomy.config";
 import { defaultDetectorRegistry } from "../detectors/detector-registry";
 import { resolveGovernance } from "../governance/governance-resolver";
+import { evaluateUnifiedGovernance } from "../governance/unified-governance.service";
 import { autonomyLog } from "../internal/autonomy-log";
 import { evaluateActionPolicy } from "../policy/policy-engine";
 import { persistAutonomousRun } from "../persistence/autonomy-repository";
@@ -56,7 +57,7 @@ import { buildPolicyContext } from "./policy-context-builder";
 import { findRecentRunByIdempotencyKey } from "./idempotency.service";
 import { dispatchExecution } from "./action-dispatch";
 import { DEFAULT_PLATFORM_REGION_CODE } from "@lecipm/platform-core";
-import { runControlledExecutionStep } from "./controlled-execution-orchestrator.service";
+import { runControlledExecution } from "./controlled-execution-orchestrator.service";
 import {
   buildListingExplanation,
   buildUserSafeListingReasoning,
@@ -612,6 +613,45 @@ export class AutonomousMarketplaceEngine {
       CRITICAL: syriaSignals.filter((s) => s.severity === "critical").length,
     };
 
+    const regionListingRef =
+      engineFlags.regionListingKeyV1 && listingId
+        ? buildRegionListingRef(
+            buildRegionListingKey({
+              regionCode: SYRIA_REGION_CODE,
+              source: "syria",
+              listingId,
+            }),
+          )
+        : null;
+
+    const unifiedSignals = syriaSignals.map((s) => ({
+      type: s.type,
+      severity: s.severity as "info" | "warning" | "critical",
+      metadata: {
+        message: s.message,
+        ...(s.contributingMetrics as Record<string, unknown>),
+      },
+    }));
+
+    const unifiedGovernance = await evaluateUnifiedGovernance({
+      mode: "preview",
+      regionCode: SYRIA_REGION_CODE,
+      listingId,
+      listingDisplayId: regionListingRef?.displayId ?? undefined,
+      listingStatus:
+        typeof factRecord.syriaListingStatus === "string"
+          ? factRecord.syriaListingStatus
+          : typeof observation.facts?.syriaListingStatus === "string"
+            ? String(observation.facts.syriaListingStatus)
+            : undefined,
+      fraudFlag: factRecord.fraudFlag === true,
+      signals: unifiedSignals,
+      featureFlags: {
+        syriaAdapterDisabled: engineFlags.syriaRegionAdapterV1 !== true,
+      },
+      metadata: { listingSource: "syria", preview: true },
+    });
+
     const syriaStructuredExplain = buildSyriaPreviewStructuredExplainability({
       policy: syriaPolicyPreview,
       boundary: syriaApprovalBoundary,
@@ -620,6 +660,7 @@ export class AutonomousMarketplaceEngine {
         warning: riskBuckets.HIGH,
         info: riskBuckets.LOW,
       },
+      regionListingRefDisplayId: regionListingRef?.displayId ?? null,
     });
 
     const hasPayoutSignal = syriaSignals.some((s) => s.type === "payout_anomaly");
@@ -631,17 +672,6 @@ export class AutonomousMarketplaceEngine {
       hasPayoutSignal,
     });
     const syriaPreviewNotes = [...previewNotes] as readonly string[];
-
-    const regionListingRef =
-      engineFlags.regionListingKeyV1 && listingId
-        ? buildRegionListingRef(
-            buildRegionListingKey({
-              regionCode: SYRIA_REGION_CODE,
-              source: "syria",
-              listingId,
-            }),
-          )
-        : null;
 
     const explainability = {
       summary: `${syriaPolicyPreview.rationale} Syria region preview (read-only). FSBO detectors stay separate; Syria opportunities reflect Syria signals only. Execution is unavailable for this region in this phase.`,
@@ -724,6 +754,10 @@ export class AutonomousMarketplaceEngine {
       syriaSignalExplainability,
       syriaPolicyPreview,
       syriaApprovalBoundary,
+      syriaStructuredExplainability: syriaStructuredExplain,
+      unifiedGovernance,
+      combinedRisk: unifiedGovernance.combinedRisk,
+      fraudRisk: unifiedGovernance.fraudRisk,
     };
   }
 
@@ -923,16 +957,16 @@ export class AutonomousMarketplaceEngine {
         let execution: ExecutionResult;
 
         if (engineFlags.controlledExecutionV1) {
-          const step = await runControlledExecutionStep(
-            {
+          const step = await runControlledExecution({
+            ctx: {
               runId,
               dryRun,
               createdByUserId: opts.createdByUserId ?? null,
               regionCode,
               listingSource,
             },
-            { proposed, policy, governance },
-          );
+            input: { proposed, policy, governance },
+          });
           execution = step.execution;
 
           if (!step.gate.allowed && governance.disposition !== "DRY_RUN") {

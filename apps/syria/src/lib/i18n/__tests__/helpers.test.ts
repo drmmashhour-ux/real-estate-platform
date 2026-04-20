@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { normalizeLocale, localeDirection, fallbackLocaleChain, getLocalizedValue } from "../helpers";
+import {
+  normalizeLocale,
+  localeDirection,
+  fallbackLocaleChain,
+  getLocalizedValue,
+  resolveSyriaLocale,
+  isRtlLocale,
+  getLocaleDirection,
+} from "../helpers";
 
 describe("i18n helpers", () => {
   it("normalizes unknown locale to Arabic", () => {
@@ -10,6 +18,18 @@ describe("i18n helpers", () => {
   it("preserves ar and en", () => {
     expect(normalizeLocale("ar")).toBe("ar");
     expect(normalizeLocale("en")).toBe("en");
+  });
+
+  it("resolveSyriaLocale matches normalizeLocale", () => {
+    expect(resolveSyriaLocale("EN")).toBe("en");
+    expect(resolveSyriaLocale("ar-SY")).toBe("ar");
+  });
+
+  it("isRtlLocale and getLocaleDirection", () => {
+    expect(isRtlLocale("ar")).toBe(true);
+    expect(isRtlLocale("en")).toBe(false);
+    expect(getLocaleDirection("ar")).toBe("rtl");
+    expect(getLocaleDirection("en")).toBe("ltr");
   });
 
   it("maps direction", () => {
