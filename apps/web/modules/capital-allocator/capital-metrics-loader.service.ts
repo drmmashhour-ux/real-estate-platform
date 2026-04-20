@@ -6,6 +6,7 @@ import type { ListingAllocationMetrics } from "./capital-allocator.types";
 
 /**
  * Loads BNHub listing KPIs from **real** booking-derived metrics + internal recommendation/outcome rows.
+ * Uses `ShortTermListing` (BNHub) + `getListingRevenueMetrics` — not the SaaS `RevenueSnapshot` table.
  * Does not fabricate market comparables or external benchmarks.
  */
 export async function loadAllocationMetricsForPortfolio(scopeId: string): Promise<ListingAllocationMetrics[]> {
@@ -97,4 +98,19 @@ export async function loadAllocationMetricsForPortfolio(scopeId: string): Promis
   }
 
   return rows;
+}
+
+/**
+ * v1: `portfolio` and `investor` both resolve listings where `ShortTermListing.ownerId === scopeId` (BNHub host user).
+ * LP-only or cross-user investor portfolios need an explicit listing crosswalk later — never invent metrics.
+ */
+export async function loadAllocationMetricsForScope(
+  scopeType: string,
+  scopeId: string,
+): Promise<ListingAllocationMetrics[]> {
+  const t = scopeType.toLowerCase();
+  if (t === "portfolio" || t === "investor") {
+    return loadAllocationMetricsForPortfolio(scopeId);
+  }
+  throw new Error(`Unsupported capital allocator scopeType: ${scopeType}`);
 }

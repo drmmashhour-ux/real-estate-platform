@@ -1,5 +1,5 @@
 import type { ComplianceStatusPayload } from "@/services/compliance/coownershipCompliance.service";
-import { getComplianceStatus } from "@/services/compliance/coownershipCompliance.service";
+import { getMergedComplianceStatus } from "@/services/compliance/coownershipCompliance.service";
 
 type Entry = { expires: number; value: ComplianceStatusPayload };
 
@@ -11,7 +11,7 @@ export async function getCachedComplianceStatus(listingId: string): Promise<Comp
   const hit = store.get(listingId);
   if (hit && hit.expires > now) return hit.value;
 
-  const value = await getComplianceStatus(listingId);
+  const value = await getMergedComplianceStatus(listingId);
   store.set(listingId, { expires: now + TTL_MS, value });
   return value;
 }

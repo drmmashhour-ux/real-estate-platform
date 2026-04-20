@@ -1,5 +1,36 @@
 import { prisma } from "@/lib/db";
 
+export async function rejectCapitalAllocationItem(itemId: string) {
+  const item = await prisma.capitalAllocationItem.findUnique({
+    where: { id: itemId },
+    select: { id: true, planId: true, listingId: true },
+  });
+  if (!item) throw new Error("Allocation item not found");
+
+  await prisma.capitalAllocationItem.update({
+    where: { id: itemId },
+    data: {
+      status: "rejected",
+      allocatedAmount: 0,
+    },
+  });
+
+  await prisma.capitalAllocationLog.create({
+    data: {
+      planId: item.planId,
+      listingId: item.listingId,
+      eventType: "rejected",
+      message: "Line rejected from capital plan (no spend on this listing in this plan).",
+      meta: { itemId },
+    },
+  });
+
+  return prisma.capitalAllocationPlan.findUnique({
+    where: { id: item.planId },
+    include: { items: true },
+  });
+}
+
 export async function approveCapitalPlan(planId: string) {
   const plan = await prisma.capitalAllocationPlan.update({
     where: { id: planId },

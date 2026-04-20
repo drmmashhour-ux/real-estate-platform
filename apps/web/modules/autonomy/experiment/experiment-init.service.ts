@@ -25,7 +25,7 @@ export async function initializeExperiment(experimentId: string) {
   let created = 0;
 
   for (const entityId of entities) {
-    const group = assignToGroup(entityId, exp.trafficSplit);
+    const group = assignToGroup(entityId, exp.trafficSplit, exp.id);
 
     await prisma.autonomyExperimentAssignment.upsert({
       where: {

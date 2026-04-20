@@ -15,7 +15,11 @@ export function allocateBudgetAcrossCandidates(params: {
   const reserveBudget = round2(params.totalBudget * reservePct);
   const allocatableBudget = round2(params.totalBudget - reserveBudget);
 
-  const eligible = params.candidates.filter((c) => c.allocationType !== "reduce").filter((c) => c.recommendedAmount > 0);
+  const eligible = params.candidates
+    .filter((c) => !c.metrics.manualCapitalLock)
+    .filter((c) => c.allocationType !== "reduce")
+    .filter((c) => c.allocationType !== "pause")
+    .filter((c) => c.recommendedAmount > 0);
 
   const weighted: Weighted[] = eligible.map((candidate) => {
     const compositeWeight =
@@ -51,7 +55,16 @@ export function allocateBudgetAcrossCandidates(params: {
       recommendedAmount: round2(c.recommendedAmount),
     }));
 
-  const finalItems = [...scaled, ...reduced].sort((a, b) => {
+  const inPool = new Set([...scaled, ...reduced].map((i) => i.listingId));
+  const auditOnly: AllocationPlanLine[] = params.candidates
+    .filter((c) => !inPool.has(c.listingId))
+    .map((c) => ({
+      ...c,
+      recommendedAmount: round2(c.recommendedAmount),
+      allocatedAmount: 0,
+    }));
+
+  const finalItems = [...scaled, ...reduced, ...auditOnly].sort((a, b) => {
     if (b.priorityScore !== a.priorityScore) return b.priorityScore - a.priorityScore;
     return b.expectedImpactScore - a.expectedImpactScore;
   });

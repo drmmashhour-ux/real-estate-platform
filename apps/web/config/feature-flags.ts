@@ -1749,6 +1749,30 @@ export const growthV3Flags = {
   autonomySystemV1: envTrue("FEATURE_AUTONOMY_SYSTEM_V1"),
 } as const;
 
+/**
+ * Governed autonomy OS layer — outcome-based engine, dynamic pricing (with FEATURE_DYNAMIC_PRICING_V1), portfolio allocator, dashboard (default off).
+ */
+export const autonomyOsLayerFlags = {
+  autonomyCoreV1: envTrue("FEATURE_AUTONOMY_CORE_V1"),
+  learningLoopV1: envTrue("FEATURE_LEARNING_LOOP_V1"),
+  autonomyActionsV1: envTrue("FEATURE_AUTONOMY_ACTIONS_V1"),
+  portfolioAllocatorV1: envTrue("FEATURE_PORTFOLIO_ALLOCATOR_V1"),
+  autonomyDashboardV1: envTrue("FEATURE_AUTONOMY_DASHBOARD_V1"),
+} as const;
+
+export type AutonomyOsLayerFlagKey = keyof typeof autonomyOsLayerFlags;
+
+/** @see autonomyOsLayerFlags.autonomyCoreV1 */
+export const FEATURE_AUTONOMY_CORE_V1 = autonomyOsLayerFlags.autonomyCoreV1;
+/** @see autonomyOsLayerFlags.learningLoopV1 */
+export const FEATURE_LEARNING_LOOP_V1 = autonomyOsLayerFlags.learningLoopV1;
+/** @see autonomyOsLayerFlags.autonomyActionsV1 */
+export const FEATURE_AUTONOMY_ACTIONS_V1 = autonomyOsLayerFlags.autonomyActionsV1;
+/** @see autonomyOsLayerFlags.portfolioAllocatorV1 */
+export const FEATURE_PORTFOLIO_ALLOCATOR_V1 = autonomyOsLayerFlags.portfolioAllocatorV1;
+/** @see autonomyOsLayerFlags.autonomyDashboardV1 */
+export const FEATURE_AUTONOMY_DASHBOARD_V1 = autonomyOsLayerFlags.autonomyDashboardV1;
+
 export type GrowthV3FlagKey = keyof typeof growthV3Flags;
 
 /**
@@ -2327,6 +2351,16 @@ export const complianceFlags = {
    * `coownership_certificate` checklist item is not completed (CONDOS / explicit co-ownership).
    */
   coownershipEnforcement: envTrue("FEATURE_COOWNERSHIP_ENFORCEMENT"),
+  /**
+   * Divided co-ownership — additionally require mandatory insurance gate rows (syndicate building,
+   * syndicate liability, co-owner liability tier) before publish / offer acceptance + autopilot block when enabled.
+   */
+  coownershipInsuranceEnforcement: envTrue("FEATURE_COOWNERSHIP_INSURANCE_ENFORCEMENT"),
+  /**
+   * Unified merged checklist — hard block publish / readiness when CRITICAL merged items (certificate +
+   * syndicate insurance verification) are missing (see CRITICAL_COMPLIANCE_BLOCK_KEYS).
+   */
+  coownershipComplianceEnforcement: envTrue("FEATURE_COOWNERSHIP_COMPLIANCE_ENFORCEMENT"),
 } as const;
 
 export type ComplianceFlagKey = keyof typeof complianceFlags;
@@ -2337,6 +2371,8 @@ export const FEATURE_QUEBEC_LISTING_COMPLIANCE_V1 = complianceFlags.quebecListin
 export const FEATURE_PROPERTY_LEGAL_RISK_SCORE_V1 = complianceFlags.propertyLegalRiskScoreV1;
 export const FEATURE_LISTING_PREPUBLISH_AUTO_BLOCK_V1 = complianceFlags.listingPrepublishAutoBlockV1;
 export const FEATURE_COOWNERSHIP_ENFORCEMENT = complianceFlags.coownershipEnforcement;
+export const FEATURE_COOWNERSHIP_INSURANCE_ENFORCEMENT = complianceFlags.coownershipInsuranceEnforcement;
+export const FEATURE_COOWNERSHIP_COMPLIANCE_ENFORCEMENT = complianceFlags.coownershipComplianceEnforcement;
 
 /** Phase 4.5 — append-only compliance event timeline (Legal Hub + marketplace governance facts). Default off. */
 export const eventTimelineFlags = {

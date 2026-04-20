@@ -7,6 +7,8 @@ import {
 import {
   executeCoownershipComplianceDecision,
   getCertificateCompleteForListing,
+  getCriticalComplianceCompleteForListing,
+  getInsuranceGateCompleteForListing,
   loadListingForCoownershipPipeline,
 } from "@/src/modules/autopilot/executor/coownership-compliance.executor";
 import { recordCoownershipCheckTriggered } from "@/src/modules/autopilot/monitoring/coownership-autopilot-monitoring.service";
@@ -43,12 +45,18 @@ export async function runCoownershipCompliancePipeline(input: {
 
   recordCoownershipCheckTriggered(listingId);
 
-  const certificateComplete = await getCertificateCompleteForListing(listingId);
+  const [certificateComplete, insuranceGateComplete, criticalComplianceComplete] = await Promise.all([
+    getCertificateCompleteForListing(listingId),
+    getInsuranceGateCompleteForListing(listingId),
+    getCriticalComplianceCompleteForListing(listingId),
+  ]);
 
   const decision = evaluateCoownershipComplianceRule({
     listing: { listingType: listing.listingType, isCoOwnership: listing.isCoOwnership },
     mode,
     certificateComplete,
+    insuranceGateComplete,
+    criticalComplianceComplete,
   });
 
   if (!decision) {

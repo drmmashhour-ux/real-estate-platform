@@ -1,12 +1,15 @@
 import { NextResponse } from "next/server";
+import type { ComplianceChecklistItemStatus } from "@prisma/client";
 import { getGuestId } from "@/lib/auth/session";
 import { canAccessCrmListingCompliance } from "@/lib/compliance/crm-listing-access";
-import { setChecklistItemCompleted } from "@/services/compliance/coownershipCompliance.service";
+import { setChecklistItemStatus } from "@/services/compliance/coownershipCompliance.service";
 
 export const dynamic = "force-dynamic";
 
-/** POST /api/compliance/:listingId/check/:key — mark checklist row completed */
-export async function POST(_req: Request, ctx: { params: Promise<{ listingId: string; key: string }> }) {
+const STATUSES = new Set<ComplianceChecklistItemStatus>(["PENDING", "COMPLETED", "NOT_APPLICABLE"]);
+
+/** POST /api/compliance/:listingId/check/:key — update checklist row status */
+export async function POST(req: Request, ctx: { params: Promise<{ listingId: string; key: string }> }) {
   const userId = await getGuestId();
   if (!userId) return NextResponse.json({ error: "Sign in required" }, { status: 401 });
 
@@ -14,8 +17,20 @@ export async function POST(_req: Request, ctx: { params: Promise<{ listingId: st
   const ok = await canAccessCrmListingCompliance(userId, listingId);
   if (!ok) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
+  let body: { status?: ComplianceChecklistItemStatus } = {};
   try {
-    const item = await setChecklistItemCompleted(listingId, decodeURIComponent(key));
+    body = (await req.json()) as { status?: ComplianceChecklistItemStatus };
+  } catch {
+    body = {};
+  }
+
+  const status: ComplianceChecklistItemStatus = body.status ?? "COMPLETED";
+  if (!STATUSES.has(status)) {
+    return NextResponse.json({ error: "status must be PENDING, COMPLETED, or NOT_APPLICABLE" }, { status: 400 });
+  }
+
+  try {
+    const item = await setChecklistItemStatus(listingId, decodeURIComponent(key), status, userId);
     return NextResponse.json({ item });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Failed";

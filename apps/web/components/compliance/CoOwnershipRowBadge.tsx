@@ -28,10 +28,14 @@ export function CoOwnershipRowBadge({ listingId, listingType, isCoOwnership, siz
     (async () => {
       try {
         const res = await fetch(`/api/compliance/${encodeURIComponent(listingId)}`, { credentials: "same-origin" });
-        const j = (await res.json().catch(() => ({}))) as { applies?: boolean; complete?: boolean };
+        const j = (await res.json().catch(() => ({}))) as {
+          applies?: boolean;
+          complete?: boolean;
+          complianceReady?: boolean;
+        };
         if (cancelled) return;
         setApplies(!!j.applies);
-        setComplete(!!j.complete);
+        setComplete(!!(j.complianceReady ?? j.complete));
       } catch {
         if (cancelled) return;
         setApplies(show);

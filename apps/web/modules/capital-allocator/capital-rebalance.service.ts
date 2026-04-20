@@ -13,7 +13,10 @@ export async function rebalanceCapitalPlan(planId: string, additionalBudget: num
   if (!plan) throw new Error("Plan not found");
   if (additionalBudget <= 0) throw new Error("additionalBudget must be positive");
 
-  const eligible = plan.items.filter((item) => item.status !== "rejected");
+  /** Do not flow incremental budget to constrained sell/exit arms or already-rejected lines. */
+  const eligible = plan.items.filter(
+    (item) => item.status !== "rejected" && item.allocationType !== "reduce",
+  );
   const totalPriority = eligible.reduce((sum, item) => sum + Number(item.priorityScore || 0), 0);
 
   for (const item of eligible) {

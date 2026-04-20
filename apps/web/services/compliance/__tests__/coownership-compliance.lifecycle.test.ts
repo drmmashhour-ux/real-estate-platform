@@ -1,8 +1,11 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
+import { MERGED_COOWNERSHIP_CHECKLIST } from "../coownership-merged-definitions";
+
 const prismaMock = {
   listing: {
     findUnique: vi.fn(),
+    update: vi.fn(),
   },
   checklistItem: {
     count: vi.fn(),
@@ -10,6 +13,9 @@ const prismaMock = {
     findMany: vi.fn(),
     findUnique: vi.fn(),
     update: vi.fn(),
+  },
+  listingComplianceSnapshot: {
+    upsert: vi.fn(),
   },
 };
 
@@ -20,27 +26,40 @@ vi.mock("@/lib/db", () => ({
 describe("co-ownership publish gate", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    prismaMock.listing.update.mockResolvedValue({});
+    prismaMock.listingComplianceSnapshot.upsert.mockResolvedValue({});
   });
 
   it("throws ERR_COOWNERSHIP_PUBLISH when condo checklist incomplete and enforcement on", async () => {
     vi.resetModules();
     vi.doMock("@/config/feature-flags", () => ({
-      complianceFlags: { coownershipEnforcement: true },
+      complianceFlags: {
+        coownershipEnforcement: true,
+        coownershipInsuranceEnforcement: false,
+        coownershipComplianceEnforcement: false,
+      },
     }));
 
-    const condoRow = { id: true, listingType: "CONDO", isCoOwnership: false };
+    const condoRow = { listingType: "CONDO", isCoOwnership: false };
     prismaMock.listing.findUnique.mockResolvedValue(condoRow);
 
-    prismaMock.checklistItem.count.mockResolvedValueOnce(0).mockResolvedValueOnce(5);
-    prismaMock.checklistItem.createMany.mockResolvedValue({ count: 5 });
+    const pending = MERGED_COOWNERSHIP_CHECKLIST.map((def, i) => ({
+      id: `id-${i}`,
+      key: def.key,
+      label: def.label,
+      description: def.description ?? null,
+      category: def.category,
+      priority: def.priority,
+      status: "PENDING" as const,
+      required: def.required,
+      source: def.source ?? null,
+    }));
 
-    const pending = [
-      { id: "1", key: "coownership_certificate", label: "a", status: "PENDING", required: true },
-      { id: "2", key: "certificate_reviewed", label: "b", status: "PENDING", required: true },
-      { id: "3", key: "maintenance_log", label: "c", status: "PENDING", required: true },
-      { id: "4", key: "contingency_fund", label: "d", status: "PENDING", required: true },
-      { id: "5", key: "seller_informed", label: "e", status: "PENDING", required: true },
-    ];
+    prismaMock.checklistItem.count
+      .mockResolvedValueOnce(0)
+      .mockResolvedValueOnce(MERGED_COOWNERSHIP_CHECKLIST.length);
+    prismaMock.checklistItem.createMany.mockResolvedValue({ count: MERGED_COOWNERSHIP_CHECKLIST.length });
+
     prismaMock.checklistItem.findMany.mockResolvedValue(pending);
 
     const { assertCoownershipPublishAllowed, ERR_COOWNERSHIP_PUBLISH } = await import(

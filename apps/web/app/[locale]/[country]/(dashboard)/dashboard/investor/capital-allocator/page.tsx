@@ -32,7 +32,7 @@ export default async function CapitalAllocatorPage({
     take: 20,
   });
 
-  const latest = await getLatestCapitalPlanSummary("portfolio", userId);
+  const latest = await getLatestCapitalPlanSummary(userId);
 
   return (
     <div className="space-y-8">
@@ -41,10 +41,13 @@ export default async function CapitalAllocatorPage({
           <p className="text-[10px] font-bold uppercase tracking-[0.25em]" style={{ color: GOLD }}>
             BNHub · portfolio capital
           </p>
-          <h1 className="mt-2 text-3xl font-bold text-white">Portfolio capital allocator</h1>
+          <h1 className="mt-2 text-3xl font-bold text-white">
+            Deterministic AI capital allocator · portfolio budget recommendations
+          </h1>
           <p className="mt-2 max-w-3xl text-sm text-[#B3B3B3]">
-            Deterministic budget recommendations from BNHub KPIs and internal signals — not guaranteed returns. Plans are
-            recommendation-first; approval/spend workflows stay separate.
+            Internal operating metrics, uplift signals, and portfolio rules only — auditable scoring and proportional
+            constraints. Does not infer external market facts or guaranteed returns; subject to investor/manager approval before
+            any discretionary spend.
           </p>
         </div>
         <Link
@@ -60,6 +63,20 @@ export default async function CapitalAllocatorPage({
         <span className="font-mono">scopeType: &quot;portfolio&quot;</span>, your user id as <span className="font-mono">scopeId</span>,
         and <span className="font-mono">totalBudget</span>.
       </p>
+
+      {latest && Object.keys(latest.byType).length > 0 ? (
+        <section className="rounded-2xl border border-white/10 bg-black/35 p-5">
+          <h2 className="text-sm font-semibold text-white">Allocation by bucket (latest plan)</h2>
+          <div className="mt-4 flex flex-wrap gap-3">
+            {Object.entries(latest.byType).map(([type, amt]) => (
+              <div key={type} className="rounded-xl border border-white/10 bg-black/40 px-4 py-2">
+                <div className="text-[10px] uppercase tracking-wide text-[#737373]">{type}</div>
+                <div className="font-mono text-lg text-white">{currency(amt)}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       {latest ? (
         <section className="grid grid-cols-1 gap-4 md:grid-cols-4">

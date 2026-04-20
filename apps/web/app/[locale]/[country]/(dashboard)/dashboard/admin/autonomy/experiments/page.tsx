@@ -58,14 +58,15 @@ export default async function AutonomyExperimentsPage({
       <section className="rounded-2xl border border-white/10 bg-black/35 p-5">
         <h2 className="text-sm font-semibold text-white">Experiments</h2>
         <p className="mt-1 text-xs text-[#737373]">
-          POST init · run · status (manual stop: paused) · GET results — secret or admin; see .env.example
-          AUTONOMY_EXPERIMENT_SECRET.
+          POST <code className="text-zinc-400">/api/autonomy/experiment</code> (draft) · POST init · run · status (pause) · GET
+          results — admin or <code className="text-zinc-400">x-autonomy-experiment-secret</code> (see .env.example).
         </p>
         <div className="mt-4 space-y-6">
           {experiments.length === 0 ? (
             <p className="text-sm text-[#737373]">
-              No rows — create via Prisma or admin tooling (`autonomy_experiments`), set status to <code className="text-zinc-400">running</code>,
-              trafficSplit 0.1–0.2, then call init.
+              No rows — POST <code className="text-zinc-400">/api/autonomy/experiment</code> (draft), set{" "}
+              <code className="text-zinc-400">trafficSplit</code> to 0.1–0.2, POST init, then POST status{" "}
+              <code className="text-zinc-400">running</code>.
             </p>
           ) : (
             experiments.map((exp) => {

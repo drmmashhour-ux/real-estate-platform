@@ -120,6 +120,23 @@ export function buildAllocationCandidate(metrics: ListingAllocationMetrics): All
     }
   }
 
+  /** Weak operating + uplift signals: recommend pausing new discretionary capital (no execution here). */
+  if (
+    allocationType !== "reduce" &&
+    allocationType !== "growth" &&
+    allocationType !== "operations" &&
+    allocationType !== "optimize" &&
+    metrics.occupancyRate < 0.38 &&
+    (metrics.upliftScore ?? 0) < -0.06 &&
+    rec !== "buy"
+  ) {
+    allocationType = "pause";
+    recommendedAmount = 0;
+    rationale.push(
+      "Low occupancy and weak uplift-adjusted autonomy outcome — pause new discretionary capital pending review (recommendation only).",
+    );
+  }
+
   if (allocationType === "reduce") {
     recommendedAmount = 0;
   }

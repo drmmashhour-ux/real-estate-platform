@@ -3,7 +3,7 @@
  * Recommendation-first; execution/spend happens only via explicit approval workflows (future).
  */
 
-import { loadAllocationMetricsForPortfolio } from "./capital-metrics-loader.service";
+import { loadAllocationMetricsForScope } from "./capital-metrics-loader.service";
 import { buildAllocationCandidate } from "./capital-priority-score.service";
 import { allocateBudgetAcrossCandidates } from "./capital-budget-engine.service";
 
@@ -13,8 +13,7 @@ export async function generateCapitalAllocationPlan(params: {
   totalBudget: number;
   reservePct?: number;
 }) {
-  void params.scopeType;
-  const metrics = await loadAllocationMetricsForPortfolio(params.scopeId);
+  const metrics = await loadAllocationMetricsForScope(params.scopeType, params.scopeId);
   const candidates = metrics.map(buildAllocationCandidate);
 
   return allocateBudgetAcrossCandidates({

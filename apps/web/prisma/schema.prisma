@@ -355,6 +355,7 @@ model User {
   identityVerifications                IdentityVerification[]
   bnhubTrustSimpleDisputesReported     BnhubTrustSimpleDispute[]             @relation("BnhubTrustSimpleDisputeReporter")
   brokerVerifications                  BrokerVerification[]
+  coownershipChecklistCompletions    ChecklistItem[]                       @relation("ChecklistItemCompletedBy")
   brokerServiceProfile                 BrokerServiceProfile?
   brokerActivityScores                 BrokerActivityScore[]
   transactionsAsBuyer                  RealEstateTransaction[]               @relation("TransactionBuyer")
@@ -6542,7 +6543,7 @@ model CapitalAllocationItem {
   id                  String @id @default(cuid())
   planId              String @map("plan_id")
   listingId           String @map("listing_id")
-  /// growth | pricing | operations | optimize | hold | reduce
+  /// growth | pricing | operations | optimize | hold | reduce | pause
   allocationType      String @map("allocation_type") @db.VarChar(24)
   allocatedAmount     Float  @map("allocated_amount")
   recommendedAmount   Float  @map("recommended_amount")
@@ -17350,23 +17351,60 @@ enum LecipmListingAssetType {
 enum ComplianceChecklistItemStatus {
   PENDING
   COMPLETED
+  NOT_APPLICABLE
+}
+
+enum ChecklistItemCategory {
+  COOWNERSHIP
+  INSURANCE
+}
+
+enum ChecklistPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
 }
 
 /// Québec Regulation 2025 — divided co-ownership compliance checklist rows (broker CRM `Listing`).
 model ChecklistItem {
-  id        String                         @id @default(cuid())
-  listingId String                         @map("listing_id")
-  listing   Listing                        @relation(fields: [listingId], references: [id], onDelete: Cascade)
-  key       String
-  label     String
-  status    ComplianceChecklistItemStatus @default(PENDING)
-  required  Boolean                        @default(true)
-  createdAt DateTime                       @default(now()) @map("created_at")
-  updatedAt DateTime                       @updatedAt @map("updated_at")
+  id          String                         @id @default(cuid())
+  listingId   String                         @map("listing_id")
+  listing     Listing                        @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  category    ChecklistItemCategory          @default(COOWNERSHIP)
+  key         String
+  label       String
+  description String?
+  status      ComplianceChecklistItemStatus @default(PENDING)
+  required    Boolean                        @default(true)
+  priority    ChecklistPriority              @default(MEDIUM)
+  source      String?                        @db.VarChar(48)
+  completedAt DateTime?                      @map("completed_at")
+  completedByUserId String?                  @map("completed_by_user_id")
+  completedBy User?                         @relation("ChecklistItemCompletedBy", fields: [completedByUserId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@unique([listingId, key], map: "uq_checklist_item_listing_key")
   @@index([listingId], map: "idx_checklist_item_listing_id")
   @@map("listing_coownership_checklist_items")
+}
+
+/// Cached merged compliance snapshot for audit / dashboards (optional).
+model ListingComplianceSnapshot {
+  id                   String   @id @default(cuid())
+  listingId            String   @unique @map("listing_id")
+  listing              Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  compliancePercent    Float?   @map("compliance_percent")
+  insurancePercent     Float?   @map("insurance_percent")
+  overallPercent       Float?   @map("overall_percent")
+  blockingIssuesJson   Json?    @map("blocking_issues_json")
+  recommendationText   String?  @map("recommendation_text") @db.Text
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  @@map("listing_compliance_snapshots")
 }
 
 model Listing {
@@ -17391,6 +17429,10 @@ model Listing {
   listingType                LecipmListingAssetType      @default(HOUSE) @map("listing_type")
   /// Explicit divided co-ownership flag (may be true for non-CONDO edge cases).
   isCoOwnership              Boolean                     @default(false) @map("is_co_ownership")
+  /// Cached 0–100 merged co-ownership (non-insurance) checklist score — recomputed by compliance service.
+  complianceScore            Int?                        @map("coownership_compliance_score_cache")
+  /// Cached 0–100 insurance subsection score — recomputed by compliance service.
+  insuranceScore             Int?                        @map("coownership_insurance_score_cache")
   /**
    * When true, CRM listing appears on public marketplace/buyer browse.
    * New listings default to draft (false) until explicitly published via broker endpoint.
@@ -17399,6 +17441,7 @@ model Listing {
   createdAt                  DateTime                    @default(now())
   updatedAt                  DateTime                    @updatedAt
   checklistItems             ChecklistItem[]
+  complianceSnapshot         ListingComplianceSnapshot?
   brokerAccesses             BrokerListingAccess[]
   lecipmVisitRequests        LecipmVisitRequest[]
   lecipmVisits               LecipmVisit[]
@@ -27484,4 +27527,107 @@ model CommissionLegalEvent {
   @@index([reasonKey])
   @@index([createdAt])
   @@map("commission_legal_events")
+}
+
+/// Autonomy OS layer — proposed/executed actions (auditable; separate from `ManagerAiActionLog` host logs).
+model ManagerAiAutonomyAction {
+  id                 String    @id @default(cuid())
+  domain             String
+  type               String
+  title              String
+  description        String    @db.Text
+  mode               String
+  status             String
+  payloadJson        Json      @map("payload_json")
+  expectedImpact     Json?     @map("expected_impact")
+  policyResultsJson  Json      @map("policy_results_json")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  approvedAt         DateTime? @map("approved_at")
+  executedAt         DateTime? @map("executed_at")
+  rolledBackAt       DateTime? @map("rolled_back_at")
+
+  @@index([domain, createdAt])
+  @@map("manager_ai_autonomy_actions")
+}
+
+/// Outcome events for the outcome-based self-improving engine (not `ManagerAiOutcomeEval` A/B evals).
+model ManagerAiAutonomyOutcome {
+  id         String   @id @default(cuid())
+  actionId   String   @map("action_id")
+  entityId   String   @map("entity_id")
+  entityType String   @map("entity_type")
+  domain     String
+  metric     String
+  beforeValue Float?  @map("before_value")
+  afterValue  Float?  @map("after_value")
+  delta      Float?
+  label      String
+  notes      String?  @db.Text
+  observedAt DateTime @default(now()) @map("observed_at")
+
+  @@index([actionId])
+  @@index([entityType, entityId])
+  @@map("manager_ai_autonomy_outcomes")
+}
+
+model ManagerAiAutonomyPolicyEvent {
+  id          String   @id @default(cuid())
+  ruleId      String   @map("rule_id")
+  domain      String
+  severity    String
+  allowed     Boolean
+  reason      String   @db.Text
+  contextJson Json?    @map("context_json")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([domain, createdAt])
+  @@map("manager_ai_autonomy_policy_events")
+}
+
+model ManagerAiAutonomyLearningSnapshot {
+  id                    String   @id @default(cuid())
+  modelVersion          String   @map("model_version")
+  totalActions          Int      @map("total_actions")
+  positiveOutcomes      Int      @map("positive_outcomes")
+  negativeOutcomes      Int      @map("negative_outcomes")
+  successRate           Float    @map("success_rate")
+  averageRevenueDelta   Float    @map("average_revenue_delta")
+  averageOccupancyDelta Float    @map("average_occupancy_delta")
+  averageRiskReduction  Float    @map("average_risk_reduction")
+  updatedAt             DateTime @map("updated_at")
+  createdAt             DateTime @default(now()) @map("created_at")
+
+  @@index([updatedAt])
+  @@map("manager_ai_autonomy_learning_snapshots")
+}
+
+model ManagerAiAutonomyPricingDecision {
+  id                 String   @id @default(cuid())
+  listingId          String   @map("listing_id")
+  suggestedPrice     Float    @map("suggested_price")
+  confidence         Float
+  deltaFromBase      Float    @map("delta_from_base")
+  factorsJson        Json     @map("factors_json")
+  policyResultsJson  Json     @map("policy_results_json")
+  shouldAutoApply    Boolean  @default(false) @map("should_auto_apply")
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  @@index([listingId, createdAt])
+  @@map("manager_ai_autonomy_pricing_decisions")
+}
+
+/// Singleton-style governance row (optional snapshot; in-process state also used in `autonomy-governance.service`).
+model ManagerAiAutonomyGovernanceState {
+  id                    String   @id @default("singleton")
+  mode                  String
+  paused                Boolean  @default(false)
+  activeDomainsJson     Json     @map("active_domains_json")
+  pendingApprovals      Int      @default(0) @map("pending_approvals")
+  executedToday         Int      @default(0) @map("executed_today")
+  rolledBackToday       Int      @default(0) @map("rolled_back_today")
+  criticalPolicyEvents  Int      @default(0) @map("critical_policy_events")
+  recommendedPause      Boolean  @default(false) @map("recommended_pause")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  @@map("manager_ai_autonomy_governance_state")
 }

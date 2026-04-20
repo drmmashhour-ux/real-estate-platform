@@ -1,3 +1,14 @@
+/**
+ * BNHub AI Capital Allocator — deterministic portfolio budget **recommendations** only.
+ *
+ * Pipeline (auditable layers):
+ * 1. **inputs** — `ListingAllocationMetrics` from BNHub listings + internal rows (revenue metrics, recommendations, autonomy).
+ * 2. **scoring** — `buildAllocationCandidate` → priority / impact / confidence / suggested ceiling (`recommendedAmount`).
+ * 3. **constraints** — reserve %, manual capital lock, sell/reduce arms, proportional cap vs `recommendedAmount`.
+ * 4. **allocation result** — `AllocationPlanResult` with per-line `allocatedAmount`.
+ * 5. **rationale** — string[] per line; persisted as `rationaleJson` / `metricsJson` on items.
+ */
+
 export type ListingAllocationMetrics = {
   listingId: string;
   listingTitle: string;
@@ -21,7 +32,7 @@ export type ListingAllocationMetrics = {
 export type AllocationCandidate = {
   listingId: string;
   listingTitle: string;
-  allocationType: "growth" | "pricing" | "operations" | "optimize" | "hold" | "reduce";
+  allocationType: "growth" | "pricing" | "operations" | "optimize" | "hold" | "reduce" | "pause";
   priorityScore: number;
   expectedImpactScore: number;
   confidenceScore: number;

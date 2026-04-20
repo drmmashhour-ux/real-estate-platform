@@ -1,9 +1,9 @@
 import { prisma } from "@/lib/db";
 
-export async function getLatestCapitalPlanSummary(scopeType: string, scopeId: string) {
+/** Latest plan for this owner; `portfolio` and `investor` both use the same BNHub listings, so we key on `scopeId` only. */
+export async function getLatestCapitalPlanSummary(scopeId: string) {
   const plan = await prisma.capitalAllocationPlan.findFirst({
     where: {
-      scopeType,
       scopeId,
     },
     include: { items: true },

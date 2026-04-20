@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import {
-  getComplianceStatus,
+  getMergedComplianceStatus,
+  getCriticalComplianceComplete,
   ensureCoOwnershipChecklist,
 } from "@/services/compliance/coownershipCompliance.service";
 import { createNotification } from "@/modules/notifications/services/create-notification";
@@ -113,6 +114,15 @@ export async function loadListingForCoownershipPipeline(listingId: string) {
 }
 
 export async function getCertificateCompleteForListing(listingId: string): Promise<boolean> {
-  const s = await getComplianceStatus(listingId);
+  const s = await getMergedComplianceStatus(listingId);
   return s.certificateComplete;
+}
+
+export async function getInsuranceGateCompleteForListing(listingId: string): Promise<boolean> {
+  const s = await getMergedComplianceStatus(listingId);
+  return s.insuranceGateComplete;
+}
+
+export async function getCriticalComplianceCompleteForListing(listingId: string): Promise<boolean> {
+  return getCriticalComplianceComplete(listingId);
 }
