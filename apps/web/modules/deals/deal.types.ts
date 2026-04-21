@@ -1,26 +1,45 @@
-import type { DealExecutionType, DealPartyRole } from "@prisma/client";
+/** Pipeline lifecycle — deterministic workflow labels */
+export type PipelineStage =
+  | "SOURCED"
+  | "SCREENING"
+  | "PRELIMINARY_REVIEW"
+  | "IC_PREP"
+  | "IC_REVIEW"
+  | "CONDITIONAL_APPROVAL"
+  | "APPROVED"
+  | "EXECUTION"
+  | "CLOSED"
+  | "DECLINED"
+  | "ON_HOLD";
 
-export type { DealExecutionType, DealPartyRole };
+export type DealLifecycleStatus = "ACTIVE" | "ON_HOLD" | "APPROVED" | "DECLINED" | "CLOSED";
 
-/** Broker-assistance only — not a determination of which mandatory OACIQ form applies. */
-export type DealWorkflowHint = {
-  packageKey: string;
-  confidence: number;
-  reasons: string[];
-  disclaimer: string;
-};
+export type CommitteeRecommendation = "PROCEED" | "PROCEED_WITH_CONDITIONS" | "HOLD" | "DECLINE";
 
-export type DealChecklistItem = {
-  id: string;
-  label: string;
-  done: boolean;
-  required: boolean;
-};
+export type DecisionStatus = "PENDING" | "PROCEED" | "PROCEED_WITH_CONDITIONS" | "HOLD" | "DECLINE";
 
-export type DealTimelineEntry = {
-  id: string;
-  at: string;
-  kind: "milestone" | "document" | "audit" | "suggestion";
-  title: string;
-  detail?: string;
-};
+export type ConditionCategory = "ESG" | "LEGAL" | "FINANCIAL" | "DOCUMENTATION" | "TECHNICAL" | "COMMITTEE";
+
+export type ConditionStatus = "OPEN" | "IN_PROGRESS" | "SATISFIED" | "WAIVED" | "FAILED";
+
+export type DiligenceCategory = "ESG" | "LEGAL" | "FINANCIAL" | "TECHNICAL" | "MARKET" | "OPERATIONS";
+
+export type DiligenceStatus = "OPEN" | "IN_PROGRESS" | "COMPLETED" | "BLOCKED" | "CANCELLED";
+
+export type FollowUpType =
+  | "APPROVAL_NEXT_STEP"
+  | "CONDITION_CHECK"
+  | "DOCUMENT_REQUEST"
+  | "INVESTOR_UPDATE"
+  | "EXECUTION_TASK";
+
+export type AuditEventType =
+  | "CREATED"
+  | "STAGE_CHANGED"
+  | "SUBMITTED_TO_COMMITTEE"
+  | "DECISION_RECORDED"
+  | "CONDITION_ADDED"
+  | "CONDITION_STATUS_CHANGED"
+  | "TASK_COMPLETED"
+  | "FOLLOWUP_CREATED"
+  | "ARTIFACTS_REFRESHED";

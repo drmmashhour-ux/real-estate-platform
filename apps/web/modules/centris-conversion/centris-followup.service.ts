@@ -15,6 +15,19 @@ export async function sendCentrisAnalysisFollowUpEmail(params: {
     const origin = getPublicAppUrl();
     const signupUrl = `${origin}/auth/signup?returnUrl=${encodeURIComponent("/dashboard/buyer")}`;
 
+    const peerLinks = enrich.similarListingIds
+      .slice(0, 5)
+      .map((lid) => {
+        const url = `${origin}/listings/${lid}`;
+        return `<li><a href="${escapeHtml(url)}">${escapeHtml(url)}</a></li>`;
+      })
+      .join("");
+
+    const peersBlock =
+      peerLinks.length > 0
+        ? `<p><strong>Similar listings to explore</strong> (examples only):</p><ul>${peerLinks}</ul>`
+        : "";
+
     const html = `<!DOCTYPE html><html><body style="font-family:system-ui,sans-serif;line-height:1.5;color:#111">
 <p>Thanks for your interest${params.listingTitle ? ` in <strong>${escapeHtml(params.listingTitle)}</strong>` : ""}.</p>
 <p><strong>Here is your initial property analysis snapshot</strong> (advisory only, not an appraisal):</p>
@@ -22,6 +35,7 @@ export async function sendCentrisAnalysisFollowUpEmail(params: {
 <li>${escapeHtml(enrich.priceAnalysis)}</li>
 <li>Deal signal: ${escapeHtml(enrich.dealRating)}</li>
 </ul>
+${peersBlock}
 <p><a href="${escapeHtml(origin)}">Open your LECIPM workspace</a> — create an account to unlock saved searches, visits, and documents.</p>
 <p><a href="${escapeHtml(signupUrl)}">Create your LECIPM account</a></p>
 <p style="font-size:12px;color:#555">Sent because you opted in to analysis updates from Centris-attributed traffic.</p>

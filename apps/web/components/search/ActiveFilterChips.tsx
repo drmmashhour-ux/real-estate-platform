@@ -70,6 +70,13 @@ function summarize(f: GlobalSearchFiltersExtended): { key: string; label: string
   if (f.bathrooms != null && f.bathrooms >= 0) {
     out.push({ key: "bath", label: `${f.bathrooms}+ ba`, clear: { bathrooms: null } });
   }
+  if (f.greenVerifiedOnly) {
+    out.push({
+      key: "green",
+      label: "Green verified properties",
+      clear: { greenVerifiedOnly: false, page: 1 },
+    });
+  }
   if ((f.propertyTypes?.length ?? 0) > 0) {
     out.push({
       key: "propertyTypes",

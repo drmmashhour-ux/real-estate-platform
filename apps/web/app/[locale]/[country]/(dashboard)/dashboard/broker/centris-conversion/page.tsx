@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { BrokerCentrisManualLeadForm } from "@/components/centris/BrokerCentrisManualLeadForm";
+
 type Payload = {
   days: number;
   since: string;
@@ -86,6 +88,10 @@ export default function CentrisConversionPage() {
           ) : null}
         </div>
       )}
+
+      <div className="mt-10 max-w-2xl">
+        <BrokerCentrisManualLeadForm />
+      </div>
     </div>
   );
 }

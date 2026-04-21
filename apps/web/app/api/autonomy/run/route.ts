@@ -1,49 +1,58 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { PlatformRole } from "@prisma/client";
 import { getGuestId } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
-import { runAutonomyCycle } from "@/modules/autonomy/autonomy-orchestrator.service";
-import { canInvokeAutonomyCycle } from "@/modules/autonomy/autonomy-access.service";
+import { runAutonomousOperations } from "@/modules/autonomy/autonomy.engine";
 
 export const dynamic = "force-dynamic";
 
-export async function POST(req: Request) {
-  let body: { scopeType?: string; scopeId?: string };
+async function canUse(userId: string): Promise<boolean> {
+  const u = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { role: true },
+  });
+  return u?.role === PlatformRole.ADMIN || u?.role === PlatformRole.BROKER;
+}
+
+/** POST — run autonomy pipeline (candidates → route → execute safe internals). */
+export async function POST(req: NextRequest) {
   try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
-  }
+    const userId = await getGuestId();
+    if (!userId) return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
+    const allowed = await canUse(userId);
+    if (!allowed) return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
 
-  const scopeType = typeof body.scopeType === "string" ? body.scopeType.trim() : "";
-  const scopeId = typeof body.scopeId === "string" ? body.scopeId.trim() : "";
+    const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
+    const dryRun = Boolean(body.dryRun);
+    const brokerId = typeof body.brokerId === "string" ? body.brokerId : userId;
 
-  if (!scopeType || !scopeId || !["portfolio", "listing"].includes(scopeType)) {
-    return NextResponse.json(
-      { error: "scopeType must be portfolio | listing and scopeId is required" },
-      { status: 400 }
-    );
-  }
+    const summary = await runAutonomousOperations({
+      brokerId,
+      dryRun,
+      portfolioHints: Array.isArray(body.portfolioHints) ? (body.portfolioHints as Record<string, unknown>[]) : [],
+      crmInsights: Array.isArray(body.crmInsights) ? (body.crmInsights as Record<string, unknown>[]) : [],
+      orchestrationHints: Array.isArray(body.orchestrationHints)
+        ? (body.orchestrationHints as Record<string, unknown>[])
+        : [],
+      listingIntelligence: Array.isArray(body.listingIntelligence)
+        ? (body.listingIntelligence as Record<string, unknown>[])
+        : [],
+      negotiationHints: Array.isArray(body.negotiationHints)
+        ? (body.negotiationHints as Record<string, unknown>[])
+        : [],
+      playbookOutputs: Array.isArray(body.playbookOutputs) ? (body.playbookOutputs as Record<string, unknown>[]) : [],
+      sourceAgent: typeof body.sourceAgent === "string" ? body.sourceAgent : undefined,
+      sourceStrategyKey: typeof body.sourceStrategyKey === "string" ? body.sourceStrategyKey : undefined,
+      sourceAssignmentId: typeof body.sourceAssignmentId === "string" ? body.sourceAssignmentId : undefined,
+      sourceOrchestrationRunId:
+        typeof body.sourceOrchestrationRunId === "string" ? body.sourceOrchestrationRunId : undefined,
+    });
 
-  const userId = await getGuestId();
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const ok = await canInvokeAutonomyCycle(userId, scopeType, scopeId);
-  if (!ok) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  try {
-    const result = await runAutonomyCycle(scopeType, scopeId);
-    return NextResponse.json({ success: true, result });
+    return NextResponse.json({ ok: true, summary });
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "Autonomy cycle failed";
-    return NextResponse.json({ error: msg }, { status: 500 });
+    return NextResponse.json(
+      { ok: false, error: e instanceof Error ? e.message : "run_failed" },
+      { status: 200 }
+    );
   }
 }

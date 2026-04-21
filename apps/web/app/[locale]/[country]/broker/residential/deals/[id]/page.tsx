@@ -5,6 +5,7 @@ import { brokerResidentialFlags } from "@/config/feature-flags";
 import { getGuestId } from "@/lib/auth/session";
 import { requireBrokerDealAccess } from "@/lib/broker/residential-access";
 import { prisma } from "@/lib/db";
+import { DealIntelligencePanel } from "@/components/deals/DealIntelligencePanel";
 import { BrokerDealDraftingWorkspace } from "@/components/broker-residential/deals/BrokerDealDraftingWorkspace";
 import { ResidentialDealWorkspaceClient } from "@/components/broker-residential/deals/ResidentialDealWorkspaceClient";
 import { OaciqEngineDealPanel } from "@/components/broker-residential/deals/OaciqEngineDealPanel";
@@ -77,6 +78,8 @@ export default async function BrokerResidentialDealDetailPage({
           Status: {deal.status} · {(deal.priceCents / 100).toLocaleString("en-CA", { style: "currency", currency: "CAD" })}
         </p>
       </div>
+
+      <DealIntelligencePanel dealId={id} />
 
       <BrokerDealDraftingWorkspace
         dealId={id}

@@ -8,6 +8,7 @@ import {
   ensureCoOwnershipChecklist,
   logComplianceEvent,
 } from "@/services/compliance/coownershipCompliance.service";
+import { ensureEsgProfileForListing } from "@/modules/esg/esg.service";
 
 export const dynamic = "force-dynamic";
 
@@ -37,6 +38,8 @@ export async function POST(_req: Request, ctx: { params: Promise<{ id: string }>
     }
 
     logComplianceEvent("listing_published", { listingId: id });
+
+    void ensureEsgProfileForListing(id).catch(() => null);
 
     return NextResponse.json({ ok: true, crmMarketplaceLive: true });
   } catch (e) {

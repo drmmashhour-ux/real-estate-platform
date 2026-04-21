@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import type { PlatformRole } from "@prisma/client";
 import { LecipmBrokerListingInbox } from "@/components/messaging/LecipmBrokerListingInbox";
 import { MessagesPageClient } from "@/components/messaging/MessagesPageClient";
 
@@ -8,9 +9,11 @@ type Tab = "listings" | "crm";
 
 export function BrokerMessagesTabs({
   viewerId,
+  viewerRole,
   initialLecipmThreadId,
 }: {
   viewerId: string;
+  viewerRole?: PlatformRole;
   /** Deep link from in-app notification (`?lecipmThread=`). */
   initialLecipmThreadId?: string;
 }) {
@@ -41,7 +44,7 @@ export function BrokerMessagesTabs({
       {tab === "listings" ? (
         <LecipmBrokerListingInbox initialThreadId={initialLecipmThreadId} />
       ) : (
-        <MessagesPageClient viewerId={viewerId} />
+        <MessagesPageClient viewerId={viewerId} viewerRole={viewerRole} />
       )}
     </div>
   );

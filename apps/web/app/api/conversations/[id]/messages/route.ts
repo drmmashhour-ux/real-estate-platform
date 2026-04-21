@@ -61,6 +61,7 @@ export async function GET(request: NextRequest, context: Params) {
       id: m.id,
       body: m.body,
       messageType: m.messageType,
+      metadata: m.metadata ?? null,
       createdAt: m.createdAt.toISOString(),
       editedAt: m.editedAt?.toISOString() ?? null,
       senderId: m.senderId,

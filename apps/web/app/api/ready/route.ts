@@ -11,7 +11,6 @@ import { MESSAGES } from "@/lib/i18n/messages";
 import { getResolvedMarket } from "@/lib/markets";
 import { describeStripeSecretKeyError } from "@/lib/stripe/stripeEnvGate";
 import { supabaseConfigStatus } from "@/lib/supabase/health";
-import { logApi } from "@/lib/server/launch-logger";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -177,34 +176,44 @@ async function getReadyHandler() {
       Object.keys(MESSAGES.fr).length > 0 &&
       Object.keys(MESSAGES.ar).length > 0;
     const market = await getResolvedMarket();
-    const ok = true;
-    const stripeOk = !describeStripeSecretKeyError();
-    return NextResponse.json({
-      success: true,
-      ok,
-      ready: ok,
-      status: "ok",
-      db: "ok",
-      stripe: stripeOk ? "ready" : "invalid",
-      supabase: supabaseConfigStatus(),
-      dbTargetHost,
-      dbHostKind: hostKind,
-      databaseUrlLooksLikeTemplate,
-      rawDbUrlExists,
-      dbUrlPreview,
-      projectId,
-      projectName,
-      vercelEnv,
-      hasOpenAI,
-      env: envName,
-      nodeEnv: envName,
-      publicEnv: getPublicEnv(),
-      checks: {
-        i18nBundles,
-        marketCode: market.code,
+    const stripeErr = describeStripeSecretKeyError();
+    const stripeReady = !stripeErr;
+    const strictStripe =
+      (process.env.VERCEL === "1" || process.env.NODE_ENV === "production") &&
+      process.env.READY_IGNORE_STRIPE !== "1";
+    const coreReady = i18nBundles;
+    const ready = coreReady && (stripeReady || !strictStripe);
+    return NextResponse.json(
+      {
+        success: ready,
+        ok: ready,
+        ready,
+        status: ready ? "ok" : "degraded",
+        db: "ok",
+        stripe: stripeReady ? "ready" : stripeErr ? "invalid" : "not_configured",
+        stripeHint: stripeErr,
+        supabase: supabaseConfigStatus(),
+        dbTargetHost,
+        dbHostKind: hostKind,
+        databaseUrlLooksLikeTemplate,
+        rawDbUrlExists,
+        dbUrlPreview,
+        projectId,
+        projectName,
+        vercelEnv,
+        hasOpenAI,
+        env: envName,
+        nodeEnv: envName,
+        publicEnv: getPublicEnv(),
+        checks: {
+          i18nBundles,
+          marketCode: market.code,
+          stripeRequired: strictStripe,
+        },
+        time,
       },
-      time,
-    });
+      { status: ready ? 200 : 503 }
+    );
   } catch (e) {
     console.error("[api/ready] non-DB readiness error:", e);
     return NextResponse.json(

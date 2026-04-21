@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { AiSuggestReplyBar } from "@/components/messaging/AiSuggestReplyBar";
 
 type ThreadRow = {
   id: string;
@@ -139,6 +140,14 @@ export function LecipmBrokerListingInbox({ initialThreadId }: { initialThreadId?
   useEffect(() => {
     if (selectedId) void loadThread(selectedId);
   }, [selectedId, loadThread]);
+
+  useEffect(() => {
+    const t = window.setInterval(() => {
+      void loadList();
+      if (selectedId) void loadThread(selectedId);
+    }, 12_000);
+    return () => window.clearInterval(t);
+  }, [loadList, loadThread, selectedId]);
 
   async function sendReply() {
     if (!selectedId || !reply.trim()) return;
@@ -327,31 +336,41 @@ export function LecipmBrokerListingInbox({ initialThreadId }: { initialThreadId?
               })}
             </div>
 
-            <div className="sticky bottom-0 border-t border-white/10 bg-slate-950/95 px-4 py-3 backdrop-blur pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-              {error ? <p className="mb-2 text-xs text-red-400">{error}</p> : null}
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-                <textarea
-                  className="min-h-[88px] flex-1 rounded-xl border border-white/15 bg-black/40 px-3 py-2 text-sm text-white placeholder:text-slate-600"
-                  placeholder="Write a reply…"
-                  value={reply}
-                  onChange={(e) => setReply(e.target.value)}
+            <div className="sticky bottom-0 border-t border-white/10 bg-slate-950/95 backdrop-blur">
+              {selectedId ? (
+                <AiSuggestReplyBar
+                  listingThreadId={selectedId}
+                  onApply={(text) =>
+                    setReply((prev) => (prev.trim() ? `${prev.trim()}\n\n${text}` : text))
+                  }
                 />
-                <div className="flex shrink-0 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => void closeThread()}
-                    className="rounded-xl border border-white/20 px-4 py-2 text-sm text-slate-200 hover:bg-white/5"
-                  >
-                    Close thread
-                  </button>
-                  <button
-                    type="button"
-                    disabled={sending || !reply.trim()}
-                    onClick={() => void sendReply()}
-                    className="rounded-xl bg-premium-gold px-4 py-2 text-sm font-semibold text-black disabled:opacity-50"
-                  >
-                    {sending ? "Sending…" : "Send message"}
-                  </button>
+              ) : null}
+              <div className="px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+                {error ? <p className="mb-2 text-xs text-red-400">{error}</p> : null}
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+                  <textarea
+                    className="min-h-[88px] flex-1 rounded-xl border border-white/15 bg-black/40 px-3 py-2 text-sm text-white placeholder:text-slate-600"
+                    placeholder="Write a reply…"
+                    value={reply}
+                    onChange={(e) => setReply(e.target.value)}
+                  />
+                  <div className="flex shrink-0 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => void closeThread()}
+                      className="rounded-xl border border-white/20 px-4 py-2 text-sm text-slate-200 hover:bg-white/5"
+                    >
+                      Close thread
+                    </button>
+                    <button
+                      type="button"
+                      disabled={sending || !reply.trim()}
+                      onClick={() => void sendReply()}
+                      className="rounded-xl bg-premium-gold px-4 py-2 text-sm font-semibold text-black disabled:opacity-50"
+                    >
+                      {sending ? "Sending…" : "Send message"}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

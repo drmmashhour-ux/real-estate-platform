@@ -72,6 +72,8 @@ export type GlobalSearchFiltersExtended = GlobalSearchFilters & {
   west?: number | null;
   /** Results layout when map is enabled: list | split | map */
   mapLayout?: "list" | "split" | "map";
+  /** FSBO Buyer Hub — AI/document-backed green listings only */
+  greenVerifiedOnly?: boolean;
 };
 
 export const DEFAULT_GLOBAL_FILTERS: GlobalSearchFiltersExtended = {
@@ -465,6 +467,7 @@ export function countActiveGlobalFilters(f: GlobalSearchFiltersExtended, mode: S
     if (f.yearBuiltMax != null && f.yearBuiltMax > 1700) n++;
     n += f.features.length;
     if (hasValidMapBounds(f)) n++;
+    if (f.greenVerifiedOnly) n++;
     return n;
   }
 

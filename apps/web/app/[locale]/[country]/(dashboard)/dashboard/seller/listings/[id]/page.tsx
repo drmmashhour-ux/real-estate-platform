@@ -50,6 +50,10 @@ import { ListingTransactionFlag } from "@/components/listings/ListingTransaction
 import { PrintPageButton } from "@/components/ui/PrintPageButton";
 import { suggestHostPrice } from "@/lib/listings/listing-demand-engine";
 import { refreshFsboListingAnalytics } from "@/lib/listings/listing-analytics-service";
+import { ListingEsgPitchPanel } from "@/components/green/ListingEsgPitchPanel";
+import { PlatformRole } from "@prisma/client";
+import { loadFsboListingScore } from "@/modules/listing-ranking/fsbo-score-loader";
+import { ListingLecipmScorePanel } from "@/components/dashboard/lecipm/ListingLecipmScorePanel";
 
 export const dynamic = "force-dynamic";
 
@@ -60,7 +64,11 @@ function parseAiReview(raw: unknown): SellerDeclarationAiReview | null {
   return raw as SellerDeclarationAiReview;
 }
 
-export default async function SellerHubListingDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function SellerHubListingDetailPage({
+  params,
+}: {
+  params: Promise<{ locale: string; country: string; id: string }>;
+}) {
   const userId = await getGuestId();
   if (!userId) redirect("/auth/login");
 
@@ -71,6 +79,11 @@ export default async function SellerHubListingDetailPage({ params }: { params: P
     include: { verification: true },
   });
   if (!listing) notFound();
+
+  const owner = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { name: true, role: true },
+  });
 
   const ux = fsboListingLifecycleUx(listing.status, listing.moderationStatus, listing.verification);
   const canEditDocs = listing.status !== "SOLD" && listing.status !== "PENDING_VERIFICATION";
@@ -204,6 +217,12 @@ export default async function SellerHubListingDetailPage({ params }: { params: P
                 <ListingImprovementBanner improvementPct={improvementPct} />
               </div>
             </div>
+
+            {lecipmListingScorePack ? (
+              <ListingLecipmScorePanel {...lecipmListingScorePack.result} />
+            ) : null}
+
+            <ListingEsgPitchPanel listingPayload={esgPitchPayload} brokerPremium={brokerPremium} />
 
             <div className="rounded-2xl border border-white/10 bg-[#121212] p-5">
               <h2 className="text-sm font-semibold text-white">Buyer demand signal</h2>

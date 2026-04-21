@@ -5,6 +5,7 @@ import { DashboardGuideBanner } from "@/components/dashboard/DashboardGuideBanne
 import { PlatformLegalGate } from "@/components/legal/PlatformLegalGate";
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
 import { getPlatformLegalGateStatus } from "@/lib/legal/platform-legal-status";
+import { BrokerAssistantFloating } from "@/components/assistant/BrokerAssistantFloating";
 import { OnboardingGate } from "@/src/modules/onboarding/OnboardingGate";
 
 export const dynamic = "force-dynamic";
@@ -23,6 +24,7 @@ export default async function DashboardSectionLayout({ children }: { children: R
 
   return (
     <OnboardingGate userId={id}>
+      {showGuide ? <BrokerAssistantFloating /> : null}
       {showGuide ? <DashboardGuideBanner /> : null}
       <AccountLegalStrip userId={id} />
       <PlatformLegalGate

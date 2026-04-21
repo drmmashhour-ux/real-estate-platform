@@ -9,6 +9,7 @@ import {
   ensureCoOwnershipChecklist,
 } from "@/services/compliance/coownershipCompliance.service";
 import { dispatchLecipmCoreAutopilotEvent } from "@/src/modules/autopilot/engine";
+import { ensureEsgProfileForListing } from "@/modules/esg/esg.service";
 
 export const dynamic = "force-dynamic";
 
@@ -107,6 +108,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
         targetId: id,
         metadata: { source: "broker_listings_patch" },
       }).catch(() => null);
+      void ensureEsgProfileForListing(id).catch(() => null);
     }
 
     return NextResponse.json(listing);

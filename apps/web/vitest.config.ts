@@ -9,6 +9,7 @@ export default defineConfig({
       "lib/**/*.test.ts",
       "app/api/**/*.test.ts",
       "modules/**/*.test.ts",
+      "modules/**/*.spec.ts",
       "src/modules/**/*.test.ts",
       "components/**/*.test.ts",
       "components/**/*.test.tsx",

@@ -73,6 +73,9 @@ export const hubNavigation: Record<string, NavItem[]> = {
   ],
   broker: [
     { label: "Dashboard", href: "/dashboard/broker" },
+    { label: "Deal pipeline", href: "/dashboard/broker/deal-lifecycle" },
+    { label: "ESG dashboard", href: "/dashboard/esg" },
+    { label: "Autonomy ops", href: "/dashboard/autonomy" },
     { label: "Listing inbox", href: "/dashboard/messages" },
     { label: "Inquiry CRM (AI)", href: "/dashboard/crm" },
     { label: "CRM Autopilot", href: "/dashboard/crm/autopilot" },

@@ -1,11 +1,9 @@
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getGuestId } from "@/lib/auth/session";
-import { BrokerVerificationBadge } from "@/components/brokers/BrokerVerificationBadge";
 import { MarketplaceOnboardingLayout } from "@/components/marketplace/MarketplaceOnboardingLayout";
-import { MarketplaceOnboardingForm } from "@/components/marketplace/MarketplaceOnboardingForm";
+import { BrokerLecipmOnboardingWizard } from "@/components/broker-onboarding/BrokerLecipmOnboardingWizard";
 import { dashboardPathForPersona } from "@/lib/marketplace/persona";
-import { isTrustGraphBrokerBadgeEnabled } from "@/lib/trustgraph/config";
 
 export const dynamic = "force-dynamic";
 
@@ -13,32 +11,26 @@ export default async function OnboardingBrokerPage() {
   const userId = await getGuestId();
   if (!userId) redirect("/auth/login?next=/onboarding/broker");
 
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { marketplacePersona: true, role: true, name: true, phone: true },
+  const completed = await prisma.launchEvent.findFirst({
+    where: { userId, event: "broker_lecipm_onboarding_completed" },
+    select: { id: true },
   });
-  const showBrokerBadge = isTrustGraphBrokerBadgeEnabled();
-  if (user?.marketplacePersona === "BROKER") {
+  if (completed) {
     redirect(dashboardPathForPersona("BROKER"));
   }
 
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { email: true, name: true, phone: true },
+  });
+  if (!user?.email) redirect("/auth/login?next=/onboarding/broker");
+
   return (
     <MarketplaceOnboardingLayout
-      title="Real estate broker onboarding"
-      description="We will save your marketplace profile. Full licensing verification and CRM access still follow your existing broker workflow and role checks."
+      title="Broker onboarding"
+      description="Seven steps to activate LECIPM — account, profile, coverage, listings, AI listing, dashboard intro, and your first action. Skip any step or exit anytime."
     >
-      {showBrokerBadge ? (
-        <div className="mt-6">
-          <BrokerVerificationBadge />
-        </div>
-      ) : null}
-      {user?.role !== "BROKER" && user?.role !== "ADMIN" ? (
-        <p className="mt-6 rounded-xl border border-amber-500/30 bg-amber-950/30 p-4 text-sm text-amber-100">
-          Your account is not a certified broker yet. Complete broker application from the main dashboard if you
-          represent an agency, or continue to save this preference for future upgrades.
-        </p>
-      ) : null}
-      <MarketplaceOnboardingForm persona="BROKER" redirectPath="/dashboard/broker" />
+      <BrokerLecipmOnboardingWizard initialName={user.name} initialEmail={user.email} initialPhone={user.phone} />
     </MarketplaceOnboardingLayout>
   );
 }

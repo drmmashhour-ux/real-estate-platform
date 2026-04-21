@@ -2,8 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import type { PlatformRole } from "@prisma/client";
 import { ConversationList } from "@/components/messaging/ConversationList";
 import { ConversationThread, type ThreadDetail, type ThreadMessage } from "@/components/messaging/ConversationThread";
+import { AiSuggestReplyBar } from "@/components/messaging/AiSuggestReplyBar";
+import { ConversationInsightsPanel } from "@/components/messaging/ConversationInsightsPanel";
+import { AutopilotChatBar } from "@/components/messaging/AutopilotChatBar";
 import type { InboxConversationRow } from "@/modules/messaging/services/get-user-conversations";
 import { ContentLicenseModal } from "@/components/legal/ContentLicenseModal";
 import { CONTENT_LICENSE_ERROR, ContentLicenseRequiredError } from "@/lib/legal/content-license-client";
@@ -11,9 +15,12 @@ import { CONTENT_LICENSE_VERSION } from "@/modules/legal/content-license";
 
 type Props = {
   viewerId: string;
+  viewerRole?: PlatformRole;
 };
 
-export function MessagesPageClient({ viewerId }: Props) {
+const POLL_MS = 12_000;
+
+export function MessagesPageClient({ viewerId, viewerRole }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialId = searchParams.get("conversationId");
@@ -27,6 +34,13 @@ export function MessagesPageClient({ viewerId }: Props) {
   const [licenseOpen, setLicenseOpen] = useState(false);
   const [licenseVersion, setLicenseVersion] = useState<string>(CONTENT_LICENSE_VERSION);
   const pendingSendRef = useRef<string | null>(null);
+  const [composerAppendDraft, setComposerAppendDraft] = useState<{ nonce: number; text: string } | null>(null);
+  const showAiSuggestions = viewerRole === "BROKER" || viewerRole === "ADMIN";
+  const showBrokerInsights = showAiSuggestions;
+  const phase2CallUrl =
+    typeof process !== "undefined"
+      ? process.env.NEXT_PUBLIC_MESSAGES_CALL_BRIDGE_URL?.trim() || null
+      : null;
 
   const loadList = useCallback(async () => {
     const res = await fetch("/api/conversations", { credentials: "same-origin" });
@@ -87,6 +101,14 @@ export function MessagesPageClient({ viewerId }: Props) {
     }
   }, [selectedId, loadThread, router]);
 
+  useEffect(() => {
+    const t = window.setInterval(() => {
+      void loadList();
+      if (selectedId) void loadThread(selectedId);
+    }, POLL_MS);
+    return () => window.clearInterval(t);
+  }, [loadList, loadThread, selectedId]);
+
   const canSend = !!detail?.participants.some((p) => p.userId === viewerId);
 
   const sendMessageBody = useCallback(
@@ -117,8 +139,38 @@ export function MessagesPageClient({ viewerId }: Props) {
     [selectedId, loadThread]
   );
 
+  const sendVoiceBody = useCallback(
+    async (blob: Blob, durationSec: number, mimeType: string) => {
+      if (!selectedId) return;
+      const fd = new FormData();
+      fd.append("audio", blob, "voice-message.webm");
+      fd.append("durationSec", String(durationSec));
+      fd.append("mimeType", mimeType);
+      const res = await fetch(`/api/conversations/${encodeURIComponent(selectedId)}/voice`, {
+        method: "POST",
+        credentials: "same-origin",
+        body: fd,
+      });
+      const j = (await res.json()) as {
+        error?: string;
+        requiredVersion?: string;
+        message?: string;
+      };
+      if (!res.ok) {
+        if (j.error === CONTENT_LICENSE_ERROR && j.requiredVersion) {
+          setLicenseVersion(j.requiredVersion);
+          setLicenseOpen(true);
+          throw new ContentLicenseRequiredError();
+        }
+        throw new Error(j.message ?? j.error ?? "Voice upload failed");
+      }
+      await loadThread(selectedId);
+    },
+    [selectedId, loadThread]
+  );
+
   return (
-    <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-6xl flex-col md:flex-row">
+    <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-7xl flex-col xl:flex-row">
       <aside className="w-full shrink-0 md:w-[340px]">
         {loadingList ? (
           <p className="p-4 text-sm text-slate-500">Loading inbox…</p>
@@ -139,17 +191,32 @@ export function MessagesPageClient({ viewerId }: Props) {
             detail={detail}
             messages={messages}
             canSend={canSend}
+            composerAppendDraft={composerAppendDraft}
+            composerExtras={
+              <>
+                {showAiSuggestions ? (
+                  <AutopilotChatBar
+                    conversationId={selectedId}
+                    enabled={showAiSuggestions}
+                    onInsertDraft={(text) =>
+                      setComposerAppendDraft({ nonce: Date.now(), text })
+                    }
+                  />
+                ) : null}
+                {showAiSuggestions && selectedId && canSend ? (
+                  <AiSuggestReplyBar
+                    conversationId={selectedId}
+                    onApply={(text) =>
+                      setComposerAppendDraft({ nonce: Date.now(), text })
+                    }
+                  />
+                ) : null}
+              </>
+            }
+            phase2CallUrl={phase2CallUrl}
+            onSendVoice={canSend ? sendVoiceBody : undefined}
             onSend={async (body) => {
-              if (!selectedId) return;
-              const res = await fetch(`/api/conversations/${encodeURIComponent(selectedId)}/messages`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                credentials: "same-origin",
-                body: JSON.stringify({ body }),
-              });
-              const j = (await res.json()) as { error?: string };
-              if (!res.ok) throw new Error(j.error ?? "Send failed");
-              await loadThread(selectedId);
+              await sendMessageBody(body);
             }}
             onMarkRead={async () => {
               if (!selectedId) return;
@@ -162,6 +229,8 @@ export function MessagesPageClient({ viewerId }: Props) {
           />
         )}
       </section>
+
+      <ConversationInsightsPanel conversationId={selectedId} enabled={showBrokerInsights} />
 
       <ContentLicenseModal
         open={licenseOpen}

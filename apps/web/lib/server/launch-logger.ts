@@ -4,7 +4,14 @@
 
 import { redactForLog } from "@/lib/security/redact";
 
-type Tag = "[api]" | "[stripe]" | "[booking]" | "[autopilot]" | "[compliance]";
+type Tag =
+  | "[api]"
+  | "[stripe]"
+  | "[booking]"
+  | "[autopilot]"
+  | "[compliance]"
+  | "[deal]"
+  | "[lead]";
 
 function emit(tag: Tag, level: "info" | "warn" | "error", msg: string, payload?: Record<string, unknown>): void {
   const line = `${tag} ${msg}`;
@@ -46,4 +53,16 @@ export const logComplianceTagged = {
   info: (msg: string, payload?: Record<string, unknown>) => emit("[compliance]", "info", msg, payload),
   warn: (msg: string, payload?: Record<string, unknown>) => emit("[compliance]", "warn", msg, payload),
   error: (msg: string, payload?: Record<string, unknown>) => emit("[compliance]", "error", msg, payload),
+};
+
+export const logDealTagged = {
+  info: (msg: string, payload?: Record<string, unknown>) => emit("[deal]", "info", msg, payload),
+  warn: (msg: string, payload?: Record<string, unknown>) => emit("[deal]", "warn", msg, payload),
+  error: (msg: string, payload?: Record<string, unknown>) => emit("[deal]", "error", msg, payload),
+};
+
+export const logLeadTagged = {
+  info: (msg: string, payload?: Record<string, unknown>) => emit("[lead]", "info", msg, payload),
+  warn: (msg: string, payload?: Record<string, unknown>) => emit("[lead]", "warn", msg, payload),
+  error: (msg: string, payload?: Record<string, unknown>) => emit("[lead]", "error", msg, payload),
 };

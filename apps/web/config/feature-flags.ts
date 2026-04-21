@@ -1680,6 +1680,45 @@ function envTrue(k: string): boolean {
 }
 
 /**
+ * LECIPM phased rollout — enable each layer independently in production (default off).
+ * Strict build order: phase N+1 assumes phase N is validated in development; runtime flags stay separate.
+ * @see docs/LECIPM-ROLLOUT.md
+ */
+export const lecipmRolloutFlags = {
+  /** Phase 1 — ESG intelligence + acquisition screening foundation */
+  esgV1: envTrue("FEATURE_ESG_V1"),
+  /** Phase 2 — investor memo + IC pack outputs */
+  investorV1: envTrue("FEATURE_INVESTOR_V1"),
+  /** Phase 3 — deal pipeline + committee workflow */
+  dealsV1: envTrue("FEATURE_DEALS_V1"),
+  /** Phase 4 — capital stack + lender workflow */
+  capitalV1: envTrue("FEATURE_CAPITAL_V1"),
+  /** Phase 5 — closing room + asset onboarding */
+  closingV1: envTrue("FEATURE_CLOSING_V1"),
+  /** Phase 6 — portfolio intelligence */
+  portfolioV1: envTrue("FEATURE_PORTFOLIO_V1"),
+  /** Phase 7 — multi-agent executive command center */
+  executiveV1: envTrue("FEATURE_EXECUTIVE_V1"),
+} as const;
+
+export type LecipmRolloutFlagKey = keyof typeof lecipmRolloutFlags;
+
+/** @see lecipmRolloutFlags.esgV1 */
+export const FEATURE_ESG_V1 = lecipmRolloutFlags.esgV1;
+/** @see lecipmRolloutFlags.investorV1 */
+export const FEATURE_INVESTOR_V1 = lecipmRolloutFlags.investorV1;
+/** @see lecipmRolloutFlags.dealsV1 */
+export const FEATURE_DEALS_V1 = lecipmRolloutFlags.dealsV1;
+/** @see lecipmRolloutFlags.capitalV1 */
+export const FEATURE_CAPITAL_V1 = lecipmRolloutFlags.capitalV1;
+/** @see lecipmRolloutFlags.closingV1 */
+export const FEATURE_CLOSING_V1 = lecipmRolloutFlags.closingV1;
+/** @see lecipmRolloutFlags.portfolioV1 */
+export const FEATURE_PORTFOLIO_V1 = lecipmRolloutFlags.portfolioV1;
+/** @see lecipmRolloutFlags.executiveV1 */
+export const FEATURE_EXECUTIVE_V1 = lecipmRolloutFlags.executiveV1;
+
+/**
  * Legal Hub — deterministic intelligence, review priority, anomaly surfacing (default off).
  */
 export const legalIntelligenceFlags = {
@@ -2002,7 +2041,7 @@ export type LaunchSystemV1FlagKey = keyof typeof launchSystemV1Flags;
  * High-conversion marketing landing — full page composition, pricing strip, ROI CTAs (default off).
  * Set `NEXT_PUBLIC_FEATURE_LANDING_V1` alongside to hide global header/footer on home for standalone shell.
  */
-/** High-conversion homepage — `app/page.tsx` + `/[locale]/[country]/page.tsx` use `LecipmMarketingLandingV1` when `landingV1`. */
+/** High-conversion homepage — `app/(marketing)/page.tsx` + `/[locale]/[country]/page.tsx` use `LecipmLeadCaptureLanding` when `landingV1`. */
 export const marketingLandingFlags = {
   /** Alias: `landing_v1` — full marketing shell (Navbar → Footer). Env: `FEATURE_LANDING_V1` */
   landingV1: envTrue("FEATURE_LANDING_V1"),

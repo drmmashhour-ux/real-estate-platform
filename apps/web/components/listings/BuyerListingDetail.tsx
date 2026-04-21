@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Bath,
@@ -181,6 +182,8 @@ export function BuyerListingDetail({
   shareUrl,
   shareSummary,
   collaboration = undefined,
+  lecipmRankingBadges = null,
+  esgBadge = null,
 }: {
   listing: BuyerListingPayload;
   /** Qualified traffic hint: use `?dist=centris` on listing URLs from authorized Centris landing flows. */
@@ -201,6 +204,8 @@ export function BuyerListingDetail({
     enabled: boolean;
     viewerId: string | null;
   } | null;
+  /** CRM listing ESG grade badge (server-rendered when composite score meets threshold). */
+  esgBadge?: ReactNode | null;
 }) {
   const conversionEngineFlags = useConversionEngineFlags();
   const { showToast } = useToast();
@@ -972,6 +977,8 @@ export function BuyerListingDetail({
                   </span>
                 ) : null}
               </div>
+              {esgBadge ? <div className="mt-3 flex flex-wrap gap-2">{esgBadge}</div> : null}
+              {lecipmRankingBadges}
               <p className="mt-2 max-w-2xl text-xs font-normal leading-snug text-white/45">Explore with confidence</p>
               {listing.transactionFlag ? (
                 <div className="mt-4">

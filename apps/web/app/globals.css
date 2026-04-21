@@ -156,6 +156,10 @@ html {
   --spacing-ds-5: 32px;
   --spacing-ds-6: 48px;
   --spacing-ds-7: 64px;
+
+  /** Short aliases (tailwind.config theme.extend parity) — `bg-gold`, `text-gold-soft`, … */
+  --color-gold: #d4af37;
+  --color-gold-soft: #c9a646;
 }
 
 @keyframes ds-fade-in {

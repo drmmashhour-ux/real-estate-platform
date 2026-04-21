@@ -54,6 +54,12 @@ export default async function AdminAutonomyPage({
         </div>
         <div className="flex flex-wrap gap-4">
           <Link
+            href="/dashboard/admin/autonomy"
+            className="text-sm font-medium text-premium-gold hover:underline"
+          >
+            Autonomy OS control center →
+          </Link>
+          <Link
             href={`/${locale}/${country}/dashboard/admin/autonomy/contextual`}
             className="text-sm font-medium text-premium-gold hover:underline"
           >

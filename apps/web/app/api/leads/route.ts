@@ -70,6 +70,8 @@ import { buildLeadQualitySummary } from "@/modules/leads/lead-quality.service";
 import { dynamicPricingFlags, leadQualityFlags } from "@/config/feature-flags";
 import { computeLeadDemandLevel } from "@/modules/leads/lead-demand.service";
 import { computeBrokerInterestLevel, computeDynamicLeadPrice } from "@/modules/leads/dynamic-pricing.service";
+import { metricsLog } from "@/lib/metrics-log";
+import { logLeadTagged } from "@/lib/server/launch-logger";
 
 export const dynamic = "force-dynamic";
 
@@ -469,7 +471,10 @@ export async function GET(req: Request) {
     }));
     const merged = [...fromDb, ...mem].sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
     return NextResponse.json(merged);
-  } catch {
+  } catch (e) {
+    logLeadTagged.error("GET /api/leads failed", {
+      message: e instanceof Error ? e.message : String(e),
+    });
     return NextResponse.json({ error: "Failed to load leads" }, { status: 500 });
   }
 }
@@ -490,10 +495,14 @@ export async function POST(req: Request) {
     if (!emailOk) {
       return NextResponse.json({ error: "Valid email required" }, { status: 400 });
     }
+    const phoneRaw = (body as Record<string, unknown>).phone;
+    const phone =
+      typeof phoneRaw === "string" ? phoneRaw.replace(/\s+/g, " ").trim().slice(0, 32) : "";
     const sessionUserId = await getGuestId();
     await persistLaunchEvent("CONTACT_BROKER", {
       email,
       source: "launch_capture",
+      ...(phone ? { phone } : {}),
       ...(sessionUserId ? { userId: sessionUserId } : {}),
     });
     await prisma.waitlistUser
@@ -589,6 +598,8 @@ export async function POST(req: Request) {
           aiTier: tierLabel,
         },
       });
+
+      metricsLog.funnel("lead_created", { leadSource, variant: "project_form" });
 
       void trackEvent(
         "inquiry_sent",
@@ -746,6 +757,12 @@ export async function POST(req: Request) {
         campaign: traffic.campaign,
         medium: traffic.medium,
       },
+    });
+
+    metricsLog.funnel("lead_created", {
+      leadSource,
+      variant: "listing_contact",
+      trafficSource: traffic.source,
     });
 
     void trackEvent(
@@ -1324,7 +1341,9 @@ export async function PATCH(req: Request) {
 
     return NextResponse.json({ success: true });
   } catch (e) {
-    console.error(e);
+    logLeadTagged.error("PATCH /api/leads failed", {
+      message: e instanceof Error ? e.message : String(e),
+    });
     return NextResponse.json({ error: "Failed to update lead" }, { status: 500 });
   }
 }

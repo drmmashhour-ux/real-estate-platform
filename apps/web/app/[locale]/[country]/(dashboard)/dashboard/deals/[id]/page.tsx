@@ -2,6 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getGuestId } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
+import { InvestmentPipelineDealDetailView } from "@/components/deals/InvestmentPipelineDealDetailView";
+import { getPipelineDealDetail } from "@/modules/deals/deal-pipeline.service";
+import { userCanViewPipelineDeal } from "@/modules/deals/deal-access";
 import { isStripeConfigured } from "@/lib/stripe";
 import { DealDetailClient } from "./deal-detail-client";
 import { DealLegalTimelineClient } from "./deal-legal-timeline-client";
@@ -25,11 +28,21 @@ const STATUS_LABELS: Record<string, string> = {
 export default async function DealDetailPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ locale: string; country: string; id: string }>;
 }) {
   const userId = await getGuestId();
   if (!userId) notFound();
-  const { id } = await params;
+  const { locale, country, id } = await params;
+  const localePrefix = `/${locale}/${country}`;
+
+  const pipelineRow = await prisma.investmentPipelineDeal.findUnique({
+    where: { id },
+    select: { id: true },
+  });
+  if (pipelineRow && (await userCanViewPipelineDeal(userId, id))) {
+    const pd = await getPipelineDealDetail(id);
+    if (pd) return <InvestmentPipelineDealDetailView localePrefix={localePrefix} deal={pd} />;
+  }
 
   const deal = await prisma.deal.findFirst({
     where: {
@@ -62,18 +75,18 @@ export default async function DealDetailPage({
   return (
     <main className="min-h-screen bg-slate-950 text-slate-50">
       <div className="mx-auto max-w-4xl px-4 py-8">
-        <Link href="/dashboard/deals" className="text-sm text-amber-400 hover:text-amber-300">
-          ← Deals
+        <Link href={`${localePrefix}/dashboard/deals`} className="text-sm text-amber-400 hover:text-amber-300">
+          ← Closing / pipeline hub
         </Link>
         <p className="mt-3 flex flex-wrap gap-4">
           <Link
-            href={`/dashboard/deals/${id}/coordination`}
+            href={`${localePrefix}/dashboard/deals/${id}/coordination`}
             className="text-sm font-medium text-emerald-400 hover:text-emerald-300"
           >
             Coordination hub →
           </Link>
           <Link
-            href={`/dashboard/deals/${id}/execution`}
+            href={`${localePrefix}/dashboard/deals/${id}/execution`}
             className="text-sm font-medium text-amber-400 hover:text-amber-300"
           >
             Execution &amp; document copilot →

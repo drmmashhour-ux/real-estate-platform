@@ -53,10 +53,23 @@ export default async function DashboardListingsPage({
             Storage
           </Link>
         </nav>
-        <h1 className="mt-6 text-2xl font-semibold tracking-tight">Listings</h1>
-        <p className="mt-1 text-slate-600 dark:text-slate-400">
-          CRM property listings for your workspace (codes, price, deal room). For vacation-rental BNHUB inventory, use the host dashboard.
-        </p>
+        <div className="mt-6 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">Listings</h1>
+            <p className="mt-1 text-slate-600 dark:text-slate-400">
+              CRM property listings for your workspace (codes, price, deal room). For vacation-rental BNHUB inventory,
+              use the host dashboard.
+            </p>
+          </div>
+          {(user?.role === "BROKER" || user?.role === "ADMIN") && (
+            <Link
+              href={`/${locale}/${country}/dashboard/listings/assistant`}
+              className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+            >
+              ✨ AI Listing Assistant
+            </Link>
+          )}
+        </div>
 
         {showFallback ? (
           <div className="mt-6 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-900 dark:text-amber-100">

@@ -3,6 +3,7 @@ import type {
   ComplianceChecklistItemStatus,
   LecipmListingAssetType,
 } from "@prisma/client";
+import type { RetrofitUpstreamFingerprint } from "@/modules/esg/esg-retrofit-upstream-refresh";
 import { complianceFlags } from "@/config/feature-flags";
 import { bumpMergedComplianceMetric } from "@/lib/compliance/coownership-compliance-metrics";
 import { prisma } from "@/lib/db";
@@ -384,6 +385,14 @@ export async function recomputeComplianceSnapshot(listingId: string): Promise<vo
   const status = await getMergedComplianceStatus(listingId);
   if (!status.applies) return;
 
+  let fpBefore: RetrofitUpstreamFingerprint | null = null;
+  try {
+    const mod = await import("@/modules/esg/esg-retrofit-upstream-refresh");
+    fpBefore = await mod.captureRetrofitUpstreamFingerprint(listingId);
+  } catch {
+    /* optional module load */
+  }
+
   await prisma.listing.update({
     where: { id: listingId },
     data: {
@@ -410,6 +419,13 @@ export async function recomputeComplianceSnapshot(listingId: string): Promise<vo
       recommendationText: status.recommendation ?? null,
     },
   });
+
+  try {
+    const mod = await import("@/modules/esg/esg-retrofit-upstream-refresh");
+    mod.scheduleDebouncedRetrofitUpstreamRefresh(listingId, "acquisition", fpBefore);
+  } catch {
+    /* optional */
+  }
 
   log("compliance_snapshot_recomputed", {
     listingId,

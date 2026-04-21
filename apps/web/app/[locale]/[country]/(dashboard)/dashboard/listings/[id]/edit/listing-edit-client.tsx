@@ -23,9 +23,10 @@ type Props = {
   };
   listingsIndexHref: string;
   detailHref: string;
+  assistantHref: string;
 };
 
-export function ListingEditClient({ listing, listingsIndexHref, detailHref }: Props) {
+export function ListingEditClient({ listing, listingsIndexHref, detailHref, assistantHref }: Props) {
   const router = useRouter();
   const [title, setTitle] = useState(listing.title);
   const [price, setPrice] = useState(String(listing.price));
@@ -124,6 +125,12 @@ export function ListingEditClient({ listing, listingsIndexHref, detailHref }: Pr
             )}
           </div>
         </div>
+        <Link
+          href={assistantHref}
+          className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500/90 to-amber-600/90 px-4 py-2.5 text-sm font-bold text-black shadow-sm hover:brightness-110"
+        >
+          ✨ Generate with AI
+        </Link>
       </header>
 
       <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">

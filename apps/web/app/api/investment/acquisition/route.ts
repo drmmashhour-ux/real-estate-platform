@@ -4,6 +4,7 @@ import { getGuestId } from "@/lib/auth/session";
 import { runAcquisitionAnalysis } from "@/modules/investment/acquisition.service";
 import { prisma } from "@/lib/db";
 import type { UnderwritingInput } from "@/modules/investment/underwriting.types";
+import { isLecipmPhaseEnabled, lecipmRolloutDisabledMeta, logRolloutGate } from "@/lib/lecipm/rollout";
 
 export const dynamic = "force-dynamic";
 
@@ -65,6 +66,16 @@ export async function POST(req: Request) {
   if (!sessionUserId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  if (!isLecipmPhaseEnabled(1)) {
+    logRolloutGate(1, "/api/investment/acquisition POST");
+    return NextResponse.json({
+      success: false,
+      rollout: lecipmRolloutDisabledMeta(1),
+      analysis: null,
+    });
+  }
+
   const user = await prisma.user.findUnique({ where: { id: sessionUserId }, select: { id: true } });
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

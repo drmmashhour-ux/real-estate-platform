@@ -22,6 +22,10 @@ import { recordBrokerConversionAttempt } from "@/modules/brokers/broker-monitori
 import type { LeadPricingInput, LeadPricingResult } from "@/modules/revenue/lead-pricing.service";
 import type { LeadMonetizationState, LeadUnlockResult } from "./lead-monetization.types";
 import { recordLeadUnlockAttempt as recordMonetizationUnlockAttempt } from "./lead-monetization-monitoring.service";
+import {
+  applyFirstLeadPricing,
+  isFirstLeadPurchaseEligible,
+} from "@/modules/brokers/broker-conversion.service";
 
 export function isLeadMonetizationV1Enabled(): boolean {
   return leadMonetizationFlags.leadMonetizationV1;
@@ -294,7 +298,8 @@ export async function initiateLeadUnlockCheckout(args: {
       metadata: {
         source: "lead_unlock",
         stage: "checkout_session_created",
-        amountCents: priced.leadPriceCents,
+        amountCents: finalCents,
+        firstLeadOffer: applied.firstLeadOfferApplied,
       },
     });
 
@@ -302,7 +307,7 @@ export async function initiateLeadUnlockCheckout(args: {
       ok: true,
       url: session.url,
       sessionId: session.sessionId,
-      amountCents: priced.leadPriceCents,
+      amountCents: finalCents,
       pricing: priced,
     };
   } catch {

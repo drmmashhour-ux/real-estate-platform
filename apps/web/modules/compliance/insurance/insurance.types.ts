@@ -38,3 +38,14 @@ export type ComplianceScoreResponse = {
   openRisks: number;
   lastEventAt: string | null;
 };
+
+/**
+ * Logical “compliance event” row — persisted as Prisma `BrokerComplianceEvent`
+ * (`broker_compliance_events`).
+ */
+export type ComplianceEventRecord = {
+  brokerId: string;
+  type: ComplianceEventType;
+  message: string;
+  severity: RiskSeverity;
+};

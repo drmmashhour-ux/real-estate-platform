@@ -48,6 +48,9 @@ import {
 import { buildPropertyConversionSurface } from "@/modules/conversion/property-conversion-surface";
 import { prisma } from "@/lib/db";
 import { isBrokerInsuranceActive } from "@/modules/compliance/insurance/insurance.service";
+import { loadFsboListingScore } from "@/modules/listing-ranking/fsbo-score-loader";
+import { ListingRankingBadges } from "@/components/listings/ListingRankingBadges";
+import { getPublicEsgBadge, touchEsgOnListingView } from "@/modules/esg/esg.service";
 
 export const dynamic = "force-dynamic";
 
@@ -357,6 +360,8 @@ export default async function PublicListingRoute({ params, searchParams }: Props
       isPrivilegedUser: listingRolloutPrivileged,
     });
     const collaborationFsbo = await collaborationForListingViewer(guestFsbo);
+    const lecipmRank =
+      (await loadFsboListingScore(row.id).catch(() => null))?.result ?? null;
     return (
       <>
         <JsonLdScript data={productLd} />
@@ -380,6 +385,11 @@ export default async function PublicListingRoute({ params, searchParams }: Props
             enabled: collaborationFsbo.enabled,
             viewerId: collaborationFsbo.viewerId,
           }}
+          lecipmRankingBadges={
+            lecipmRank && lecipmRank.badges.length > 0 ? (
+              <ListingRankingBadges badges={lecipmRank.badges} />
+            ) : null
+          }
         />
         <DeferredListingInsuranceLeadSection listingId={fsboPayloadFinal.id} />
         <section className="border-t border-slate-800 bg-slate-950 px-4 py-10 text-slate-300">
@@ -468,6 +478,10 @@ export default async function PublicListingRoute({ params, searchParams }: Props
   await incrementCrmListingView(payload.id);
   const demandUiCrm = await buildCrmPublicDemandUi(payload.id, { priceCents: payload.priceCents });
   const transactionFlagCrm = await getListingTransactionFlag(payload.id, null);
+  const insuredBrokerCrm =
+    payload.ownerId && payload.listingOwnerType === "BROKER"
+      ? await isBrokerInsuranceActive(payload.ownerId)
+      : false;
   const conversionSurfaceCrm = buildPropertyConversionSurface({
     priceCents: payload.priceCents,
     city: payload.city,
@@ -481,12 +495,20 @@ export default async function PublicListingRoute({ params, searchParams }: Props
 
   const collaborationCrm = await collaborationForListingViewer(guestCrm);
 
+  void touchEsgOnListingView(payload.id).catch(() => null);
+  const esgBadgeData = await getPublicEsgBadge(payload.id);
+
   return (
     <>
       <JsonLdScript data={productLd} />
       <JsonLdScript data={crumbLd} />
       <BuyerListingDetail
-        listing={{ ...crmPayload, listingKind: "crm", transactionFlag: transactionFlagCrm }}
+        listing={{
+          ...crmPayload,
+          listingKind: "crm",
+          transactionFlag: transactionFlagCrm,
+          insuredBroker: insuredBrokerCrm,
+        }}
         inquiryDistributionChannel={inquiryDistributionChannel}
         demandUi={demandUiCrm}
         conversionSurface={conversionSurfaceCrm}
@@ -503,6 +525,13 @@ export default async function PublicListingRoute({ params, searchParams }: Props
           enabled: collaborationCrm.enabled,
           viewerId: collaborationCrm.viewerId,
         }}
+        esgBadge={
+          esgBadgeData ? (
+            <span className="inline-flex items-center rounded-full border border-emerald-500/30 bg-emerald-950/45 px-3 py-1 text-xs font-semibold text-emerald-100">
+              {esgBadgeData.label}
+            </span>
+          ) : null
+        }
       />
       <DeferredListingInsuranceLeadSection listingId={payload.id} />
       <section className="border-t border-slate-800 bg-slate-950 px-4 py-10 text-slate-300">

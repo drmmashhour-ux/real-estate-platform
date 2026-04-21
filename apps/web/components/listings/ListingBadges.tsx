@@ -1,5 +1,7 @@
 "use client";
 
+import { LECIPM_GREEN_VERIFIED_TOOLTIP } from "@/modules/green-ai/green-certification";
+
 /**
  * Trust-safe, data-backed badges for listing cards. Never shows fraud suspicion — only verified inputs from the server.
  */
@@ -10,8 +12,12 @@ export type ListingBadgesProps = {
   priceDropped?: boolean;
   featuredActive?: boolean;
   newListing?: boolean;
+  /** LECIPM AI Green — server decides eligibility */
+  greenVerified?: boolean;
   className?: string;
 };
+
+type BadgeItem = { key: string; label: string; className: string; title?: string };
 
 export function ListingBadges({
   verified,
@@ -19,21 +25,33 @@ export function ListingBadges({
   priceDropped,
   featuredActive,
   newListing,
+  greenVerified,
   className = "",
 }: ListingBadgesProps) {
-  const items: { key: string; label: string; className: string }[] = [];
+  const items: BadgeItem[] = [];
   if (verified) items.push({ key: "v", label: "Verified", className: "bg-emerald-500/15 text-emerald-200 ring-1 ring-emerald-500/30" });
   if (greatDeal) items.push({ key: "d", label: "Great deal", className: "bg-amber-500/15 text-amber-100 ring-1 ring-amber-500/25" });
   if (priceDropped) items.push({ key: "p", label: "Price dropped", className: "bg-sky-500/15 text-sky-100 ring-1 ring-sky-500/25" });
   if (featuredActive) items.push({ key: "f", label: "Featured", className: "bg-yellow-500/15 text-yellow-100 ring-1 ring-yellow-500/30" });
   if (newListing) items.push({ key: "n", label: "New", className: "bg-slate-500/20 text-slate-100 ring-1 ring-white/10" });
+  if (greenVerified)
+    items.push({
+      key: "g",
+      label: "🌱 LECIPM Green Verified",
+      className: "bg-emerald-600/25 text-emerald-50 ring-1 ring-emerald-400/35",
+      title: LECIPM_GREEN_VERIFIED_TOOLTIP,
+    });
 
   if (items.length === 0) return null;
 
   return (
     <div className={`flex flex-wrap gap-1.5 ${className}`}>
       {items.map((b) => (
-        <span key={b.key} className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${b.className}`}>
+        <span
+          key={b.key}
+          title={b.title}
+          className={`inline-flex max-w-[min(100%,14rem)] cursor-help items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${b.className}`}
+        >
           {b.label}
         </span>
       ))}

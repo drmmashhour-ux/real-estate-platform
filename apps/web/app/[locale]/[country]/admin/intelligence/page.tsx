@@ -64,6 +64,10 @@ export default async function AdminIntelligencePage({
               controlled execution
             </Link>
             ·{" "}
+            <Link href="/dashboard/autonomy" className="text-amber-300/90 hover:underline">
+              autonomy operations dashboard
+            </Link>
+            ·{" "}
             <Link href="/api/admin/dashboard-intelligence" className="text-slate-400 hover:text-slate-200">
               marketplace dashboard API
             </Link>

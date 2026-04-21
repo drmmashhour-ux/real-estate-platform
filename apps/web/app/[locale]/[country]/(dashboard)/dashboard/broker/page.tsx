@@ -53,6 +53,7 @@ import { ImmoDealRoomEntry } from "@/components/immo-deal-room/ImmoDealRoomEntry
 import { BrokerServiceProfilePanel } from "@/components/broker/BrokerServiceProfilePanel";
 import { BrokerLegalComplianceStrip } from "@/components/broker/BrokerLegalComplianceStrip";
 import { CoOwnershipBrokerCondoPanel } from "@/components/compliance/CoOwnershipBrokerCondoPanel";
+import { BrokerGreenIntelligenceSection } from "@/components/broker/BrokerGreenIntelligenceSection";
 
 function fmtCommissionCents(cents: number | null | undefined): string {
   if (cents == null || cents <= 0) return "—";
@@ -213,6 +214,23 @@ export default async function BrokerHubPage({
     >
       <div className="space-y-8">
         <HubJourneyBanner hub="broker" locale={locale} country={country} userId={userId} />
+        {userId && (dbUser?.role === "BROKER" || dbUser?.role === "ADMIN") ? (
+          <>
+            <BrokerGreenIntelligenceSection locale={locale} country={country} userId={userId} />
+            <div className="rounded-xl border border-emerald-500/35 bg-emerald-950/40 px-4 py-4 text-sm text-emerald-100">
+              <p className="font-semibold text-white">AI Listing Assistant</p>
+              <p className="mt-1 text-emerald-100/90">
+                You save time, reduce risk, and increase closing probability using AI — validate every output before publish.
+              </p>
+              <Link
+                href={`/${locale}/${country}/dashboard/listings/assistant`}
+                className="mt-3 inline-flex font-medium text-emerald-300 underline-offset-4 hover:underline"
+              >
+                Open Listing Assistant →
+              </Link>
+            </div>
+          </>
+        ) : null}
         {coownershipIncompleteCount > 0 ? (
           <div
             className="rounded-xl border border-amber-500/40 bg-amber-950/35 px-4 py-3 text-sm text-amber-100"

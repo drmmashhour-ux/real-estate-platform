@@ -1,7 +1,14 @@
 "use client";
 
+import type { LecipmBrokerCrmLeadStatus } from "@prisma/client";
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  BROKER_CRM_KANBAN_COLUMNS,
+  brokerCrmStatusToKanbanColumn,
+  KANBAN_COLUMN_LABEL,
+  type BrokerCrmKanbanColumn,
+} from "@/modules/crm/crm.types";
 
 type AutopilotBar = {
   suggestedActions: number;
@@ -44,6 +51,9 @@ function badgePriority(label: string) {
 
 function badgeStatus(status: string) {
   if (status === "new") return "bg-sky-500/20 text-sky-100";
+  if (status === "contacted") return "bg-violet-500/15 text-violet-100";
+  if (status === "qualified") return "bg-emerald-500/20 text-emerald-100";
+  if (status === "visit_scheduled" || status === "negotiating") return "bg-amber-500/20 text-amber-100";
   if (status === "closed" || status === "lost") return "bg-slate-600/40 text-slate-200";
   return "bg-emerald-500/15 text-emerald-100";
 }
@@ -56,6 +66,15 @@ export function BrokerCrmHomeClient() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [autopilotBar, setAutopilotBar] = useState<AutopilotBar | null>(null);
+  const [convSummary, setConvSummary] = useState<{
+    topOpportunities: LeadRow[];
+    dealsAtRiskCount: number;
+    highPotentialOpenCount: number;
+    firstLeadEligible: boolean;
+    unlockCount: number;
+    coachTips: string[];
+  } | null>(null);
+  const homeViewTracked = useRef(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -78,6 +97,41 @@ export function BrokerCrmHomeClient() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch("/api/broker/conversion/summary", { credentials: "same-origin" });
+        const j = (await res.json()) as Record<string, unknown>;
+        if (!res.ok || cancelled) return;
+        setConvSummary({
+          topOpportunities: Array.isArray(j.topOpportunities) ? (j.topOpportunities as LeadRow[]) : [],
+          dealsAtRiskCount: Number(j.dealsAtRiskCount ?? 0),
+          highPotentialOpenCount: Number(j.highPotentialOpenCount ?? 0),
+          firstLeadEligible: Boolean(j.firstLeadEligible),
+          unlockCount: Number(j.unlockCount ?? 0),
+          coachTips: Array.isArray(j.coachTips) ? (j.coachTips as string[]) : [],
+        });
+      } catch {
+        if (!cancelled) setConvSummary(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (homeViewTracked.current) return;
+    homeViewTracked.current = true;
+    void fetch("/api/broker/conversion/track", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ eventType: "broker_conversion_crm_view" }),
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -106,8 +160,75 @@ export function BrokerCrmHomeClient() {
     lost: leads.filter((l) => l.status === "lost"),
   };
 
+  const nextBest = useMemo(() => {
+    if (!leads.length) return "Review your pipeline and pick one follow-up for today.";
+    const hot = leads.find((l) => l.priorityLabel === "high" && !["closed", "lost"].includes(l.status));
+    if (hot) return `Next: follow up with ${hot.displayName} (high priority).`;
+    const due = leads.find(
+      (l) => l.nextFollowUpAt && new Date(l.nextFollowUpAt) < new Date() && !["closed", "lost"].includes(l.status)
+    );
+    if (due) return `This deal needs follow-up: ${due.displayName}.`;
+    return `Work the newest lead: ${leads[0]!.displayName}.`;
+  }, [leads]);
+
   return (
     <div className="space-y-6">
+      {convSummary ? (
+        <div className="space-y-4">
+          {convSummary.firstLeadEligible ? (
+            <div className="rounded-xl border border-premium-gold/30 bg-gradient-to-r from-amber-950/40 to-black/50 px-4 py-4">
+              <p className="text-sm font-semibold text-white">Try your first lead — see how it works</p>
+              <p className="mt-1 text-sm text-slate-300">
+                Here are your top opportunities right now. Value is visible before you pay — unlock is optional.
+              </p>
+            </div>
+          ) : null}
+          {convSummary.unlockCount >= 1 && convSummary.highPotentialOpenCount >= 2 ? (
+            <div className="rounded-lg border border-slate-600/50 bg-white/5 px-4 py-3 text-sm text-slate-200">
+              You have {convSummary.highPotentialOpenCount} more high-potential leads in your queue — pick the next
+              best when you are ready.
+            </div>
+          ) : null}
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="rounded-xl border border-white/10 bg-black/30 p-4">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">Top actions today</h3>
+              <ul className="mt-2 space-y-2 text-sm text-slate-200">
+                {convSummary.topOpportunities.length === 0 ? (
+                  <li className="text-slate-500">No leads yet — inquiries will appear here.</li>
+                ) : (
+                  convSummary.topOpportunities.map((row) => (
+                    <li key={row.id}>
+                      <Link href={`/dashboard/crm/${row.id}`} className="text-premium-gold hover:underline">
+                        {row.displayName}
+                      </Link>
+                      <span className="text-xs text-slate-500">
+                        {" "}
+                        · {row.priorityLabel} ({row.priorityScore})
+                      </span>
+                    </li>
+                  ))
+                )}
+              </ul>
+            </div>
+            <div className="rounded-xl border border-rose-500/20 bg-rose-950/15 p-4">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-rose-200/90">Deals at risk</h3>
+              <p className="mt-2 text-2xl font-semibold text-white">{convSummary.dealsAtRiskCount}</p>
+              <p className="mt-1 text-xs text-slate-400">Follow-ups overdue (excluding closed/lost).</p>
+            </div>
+            <div className="rounded-xl border border-emerald-500/20 bg-emerald-950/15 p-4">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-emerald-200/90">Next best action</h3>
+              <p className="mt-2 text-sm text-slate-100">{nextBest}</p>
+            </div>
+          </div>
+          {convSummary.coachTips.length ? (
+            <ul className="list-disc space-y-1 pl-5 text-xs text-slate-400">
+              {convSummary.coachTips.map((t) => (
+                <li key={t}>{t}</li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
+      ) : null}
       {autopilotBar ? (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-500/20 bg-amber-950/20 px-4 py-3">
           <div className="flex flex-wrap gap-4 text-sm text-slate-200">
@@ -239,24 +360,24 @@ export function BrokerCrmHomeClient() {
       ) : null}
 
       {!loading && view === "pipeline" ? (
-        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-          {[
-            { key: "new", title: "New" },
-            { key: "active", title: "In progress" },
-            { key: "won", title: "Closed" },
-            { key: "lost", title: "Lost" },
-          ].map((col) => (
-            <div key={col.key} className="rounded-xl border border-white/10 bg-black/25 p-3">
-              <p className="text-xs font-semibold uppercase text-slate-500">{col.title}</p>
+        <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-2 lg:mx-0 lg:grid lg:grid-cols-5 lg:overflow-visible lg:px-0">
+          {BROKER_CRM_KANBAN_COLUMNS.map((colKey) => (
+            <div
+              key={colKey}
+              className="min-w-[220px] shrink-0 rounded-xl border border-white/10 bg-black/25 p-3 lg:min-w-0"
+            >
+              <p className="text-xs font-semibold uppercase text-slate-500">{KANBAN_COLUMN_LABEL[colKey]}</p>
               <ul className="mt-2 space-y-2">
-                {pipelineGroups[col.key as keyof typeof pipelineGroups]?.map((l) => (
+                {pipelineGroups[colKey].map((l) => (
                   <li key={l.id}>
                     <Link
                       href={`/dashboard/crm/${l.id}`}
                       className="block rounded-lg border border-white/10 bg-black/40 px-2 py-2 text-sm text-white hover:border-premium-gold/40"
                     >
                       <span className="line-clamp-2">{l.displayName}</span>
-                      <span className="mt-1 block text-[10px] text-slate-500">{l.listing?.title ?? "No listing"}</span>
+                      <span className="mt-0.5 block text-[10px] text-slate-500">
+                        {l.listing?.title ?? "No listing"} · {l.status}
+                      </span>
                     </Link>
                   </li>
                 ))}

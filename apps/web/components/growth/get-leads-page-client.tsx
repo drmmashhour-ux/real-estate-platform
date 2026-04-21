@@ -32,6 +32,7 @@ import { BrokerLeadTrustStrip } from "@/components/legal/BrokerLeadTrustStrip";
 import type { ConversionExperienceTier } from "@/modules/conversion/conversion-rollout-helpers";
 import { resolveGetLeadsIvSummaryLayer } from "@/modules/conversion/get-leads-conversion-summary";
 import { ConversionMonitoringLivePanel } from "@/components/conversion/ConversionMonitoringLivePanel";
+import { ListingAssistantMarketingStrip } from "@/components/marketing/ListingAssistantMarketingStrip";
 
 type Status = "idle" | "submitting" | "analyzing" | "success" | "error";
 
@@ -363,6 +364,8 @@ export function GetLeadsPageClient({
           </ul>
         ) : null}
       </section>
+
+      <ListingAssistantMarketingStrip />
 
       {/* Short value strip */}
       {!conversionUpgradeV1 ? (

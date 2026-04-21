@@ -16,6 +16,7 @@ import { assertBrokerCanParticipateInDeals } from "@/lib/compliance/professional
 import { notifyAdminsImmoPossibleBypass } from "@/lib/immo/notify-admin-immo-bypass";
 import { logImmoContactEvent } from "@/lib/immo/immo-contact-log";
 import type { PlatformRole } from "@prisma/client";
+import { logDealTagged } from "@/lib/server/launch-logger";
 
 export const dynamic = "force-dynamic";
 
@@ -39,7 +40,7 @@ function rejectClientPartyIds(body: Record<string, unknown>): Response | null {
   );
 }
 
-export async function GET(request: NextRequest) {
+async function listDeals(request: NextRequest) {
   const userId = await getGuestId();
   if (!userId) return Response.json({ error: "Sign in required" }, { status: 401 });
 
@@ -59,7 +60,18 @@ export async function GET(request: NextRequest) {
   return Response.json({ deals });
 }
 
-export async function POST(request: NextRequest) {
+export async function GET(request: NextRequest) {
+  try {
+    return await listDeals(request);
+  } catch (e) {
+    logDealTagged.error("GET /api/deals failed", {
+      message: e instanceof Error ? e.message : String(e),
+    });
+    return Response.json({ error: "Failed to list deals" }, { status: 500 });
+  }
+}
+
+async function createDeal(request: NextRequest) {
   const userId = await getGuestId();
   if (!userId) return Response.json({ error: "Sign in required" }, { status: 401 });
 
@@ -323,4 +335,15 @@ export async function POST(request: NextRequest) {
   }
 
   return Response.json(deal);
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    return await createDeal(request);
+  } catch (e) {
+    logDealTagged.error("POST /api/deals failed", {
+      message: e instanceof Error ? e.message : String(e),
+    });
+    return Response.json({ error: "Failed to create deal" }, { status: 500 });
+  }
 }

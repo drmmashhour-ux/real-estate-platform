@@ -51,6 +51,12 @@ const BUY_DEFS: QuickChipDef[] = [
     patch: { type: "commercial", propertyType: "COMMERCIAL", propertyTypes: [], sort: "recommended" },
     clearPatch: BUY_CLEAR,
   },
+  {
+    id: "green_verified",
+    label: "Green verified",
+    patch: { type: "buy", greenVerifiedOnly: true, propertyTypes: [], propertyType: "", sort: "recommended", page: 1 },
+    clearPatch: { ...BUY_CLEAR, greenVerifiedOnly: false },
+  },
 ];
 
 const SHORT_DEFS: QuickChipDef[] = [
@@ -80,6 +86,7 @@ export function QuickFilterChips({ tone = "gold" }: { tone?: "gold" | "slate" | 
   if (defs.length === 0) return null;
 
   const isActive = (def: QuickChipDef) => {
+    if (def.id === "green_verified") return Boolean(draft.greenVerifiedOnly);
     const p = def.patch;
     if (def.clearPatch != null) {
       if (p.type === "new_listing") return draft.type === "new_listing";

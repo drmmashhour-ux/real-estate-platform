@@ -35,6 +35,7 @@ export default async function ListingEditPage({
   const prefix = `/${locale}/${country}`;
   const listingsIndexHref = `${prefix}/dashboard/listings`;
   const detailHref = `${prefix}/dashboard/listings/${encodeURIComponent(id)}`;
+  const assistantHref = `${prefix}/dashboard/listings/assistant?listingId=${encodeURIComponent(id)}`;
 
   return (
     <main className="min-h-screen bg-slate-50 dark:bg-slate-950">
@@ -42,6 +43,7 @@ export default async function ListingEditPage({
         listing={listing}
         listingsIndexHref={listingsIndexHref}
         detailHref={detailHref}
+        assistantHref={assistantHref}
       />
     </main>
   );

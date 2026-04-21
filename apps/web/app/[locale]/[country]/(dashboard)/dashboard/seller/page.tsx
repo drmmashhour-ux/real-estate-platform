@@ -11,6 +11,8 @@ import { SellerDashboardTrustOverview } from "@/components/seller/SellerDashboar
 import { HubJourneyBanner } from "@/components/journey/HubJourneyBanner";
 import { legalHubFlags } from "@/config/feature-flags";
 import { LegalHubEntryCard } from "@/components/legal/LegalHubEntryCard";
+import { GreenUpgradeJourneySection } from "@/components/seller/GreenUpgradeJourney";
+import { isSubsidyPipelineStage } from "@/modules/green-ai/pipeline/upgrade-flow";
 
 export const dynamic = "force-dynamic";
 
@@ -161,6 +163,14 @@ export default async function SellerHubDashboardPage({
     <main className="dashboard-shell">
       <div className="mx-auto max-w-6xl space-y-10">
         <HubJourneyBanner hub="seller" locale={locale} country={country} userId={userId} />
+        <GreenUpgradeJourneySection
+          locale={locale}
+          country={country}
+          listingId={primaryListing?.id ?? null}
+          listingTitle={primaryListing?.title ?? null}
+          stage={greenStage}
+          estimatedGrantCad={greenProject?.estimatedGrant ?? null}
+        />
         {legalHubFlags.legalHubV1 ? (
           <LegalHubEntryCard href={`/${locale}/${country}/legal`} locale={locale} country={country} />
         ) : null}

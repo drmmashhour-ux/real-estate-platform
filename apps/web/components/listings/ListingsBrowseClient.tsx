@@ -61,6 +61,9 @@ type Row = {
   verifiedListing?: boolean;
   /** FSBO featured window — when active, may show “Top listing” micro-badge */
   featuredUntil?: string | null;
+  greenVerifiedListing?: boolean;
+  lecipmGreenVerificationLevel?: string | null;
+  lecipmGreenConfidence?: number | null;
 };
 
 function isFeaturedListingActive(featuredUntil: string | null | undefined): boolean {
@@ -364,6 +367,7 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
                   <ListingBadges
                     verified={Boolean(row.verifiedListing)}
                     featuredActive={isFeaturedListingActive(row.featuredUntil)}
+                    greenVerified={Boolean(row.greenVerifiedListing)}
                     className="drop-shadow-[0_1px_8px_rgba(0,0,0,0.65)]"
                   />
                 </div>
@@ -383,6 +387,12 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
                   {row.bathrooms != null ? ` · ${row.bathrooms} ba` : ""}
                   {row.propertyType ? ` · ${row.propertyType.replace(/_/g, " ")}` : ""}
                 </p>
+                {row.kind === "fsbo" && (row.lecipmGreenVerificationLevel != null || row.lecipmGreenConfidence != null) ? (
+                  <p className="mt-1 text-[10px] leading-snug text-slate-500">
+                    AI green: {row.lecipmGreenVerificationLevel?.replace(/_/g, " ") ?? "—"}
+                    {row.lecipmGreenConfidence != null ? ` · ${row.lecipmGreenConfidence}% confidence` : ""}
+                  </p>
+                ) : null}
                 {row.kind === "fsbo" && (row.noiseLevel || row.familyFriendly || row.petsAllowed) ? (
                   <div className="mt-2 flex flex-wrap gap-1">
                     {row.noiseLevel ? (

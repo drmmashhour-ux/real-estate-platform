@@ -23,6 +23,10 @@ import { isAiRankingEngineEnabled } from "@/src/modules/ranking/rankingEnv";
 import { scoreRealEstateListingsForBrowse } from "@/src/modules/ranking/rankingService";
 import { scoreRealEstateListingsForBrowseV2 } from "@/src/modules/ranking/v2/browse-scores";
 import { resolvedBrowseCoverAndImages } from "@/lib/listings/browse-listing-images";
+import { applyGreenPriorityBoost } from "@/modules/green/green.priority-ranking";
+import { parseGreenProgramTier } from "@/modules/green/green.types";
+import { evaluateGreenVerifiedPresentation } from "@/modules/green-ai/green-certification";
+import type { GreenAiPerformanceLabel, GreenVerificationLevel } from "@/modules/green-ai/green.types";
 
 export const dynamic = "force-dynamic";
 
@@ -61,7 +65,44 @@ type UnifiedRow = {
   /** FSBO listing owner — used for deterministic trust augmentation when flags are on */
   ownerId?: string;
   trustBadges?: TrustBadge[];
+  /** LECIPM AI Green Score — not an official eco-label */
+  lecipmGreenInternalScore?: number | null;
+  lecipmGreenCertifiedAt?: string | null;
+  lecipmGreenProgramTier?: string;
+  lecipmGreenAiLabel?: string | null;
+  lecipmGreenVerificationLevel?: string | null;
+  lecipmGreenConfidence?: number | null;
+  /** Show 🌱 LECIPM Green Verified badge on card */
+  greenVerifiedListing?: boolean;
 };
+
+type FsboBrowseGreenFields = {
+  id: string;
+  ownerId: string;
+  lecipmGreenInternalScore: number | null;
+  lecipmGreenCertifiedAt: Date | null;
+  lecipmGreenProgramTier: string;
+  lecipmGreenAiLabel: string | null;
+  lecipmGreenVerificationLevel: string | null;
+  lecipmGreenConfidence: number | null;
+};
+
+function applyGreenBrowseBoost(merged: UnifiedRow[], fsboSources: FsboBrowseGreenFields[]) {
+  const map = new Map(fsboSources.map((r) => [r.id, r]));
+  for (const row of merged) {
+    if (row.kind !== "fsbo") continue;
+    const src = map.get(row.id);
+    if (!src) continue;
+    row.sortAt = applyGreenPriorityBoost({
+      sortAt: row.sortAt,
+      internalScore: src.lecipmGreenInternalScore,
+      certifiedAt: src.lecipmGreenCertifiedAt,
+      tier: parseGreenProgramTier(src.lecipmGreenProgramTier),
+      aiLabel: src.lecipmGreenAiLabel,
+      verificationLevel: src.lecipmGreenVerificationLevel,
+    });
+  }
+}
 
 function applyTrustRankingSortMultiplier(rows: UnifiedRow[], aug: TrustBrowseAugmentation | null) {
   if (!trustFlags.trustRankingV1 || !aug) return;
@@ -214,6 +255,16 @@ function buildFsboWhere(
     fsboAnd.push({ updatedAt: { gte: since } });
   }
 
+  if (f.greenVerifiedOnly) {
+    fsboAnd.push({
+      OR: [
+        { lecipmGreenCertifiedAt: { not: null } },
+        { lecipmGreenVerificationLevel: { in: ["DOCUMENT_SUPPORTED", "PROFESSIONAL_VERIFIED"] } },
+        { lecipmGreenAiLabel: "GREEN" },
+      ],
+    });
+  }
+
   return fsboAnd;
 }
 
@@ -321,6 +372,13 @@ async function runBrowse(
         status: true,
         listingOwnerType: true,
         rankingTotalScoreCache: true,
+        ownerId: true,
+        lecipmGreenInternalScore: true,
+        lecipmGreenCertifiedAt: true,
+        lecipmGreenProgramTier: true,
+        lecipmGreenAiLabel: true,
+        lecipmGreenVerificationLevel: true,
+        lecipmGreenConfidence: true,
         owner: {
           select: {
             brokerVerifications: {
@@ -362,8 +420,16 @@ async function runBrowse(
       images: Array.isArray(r.images) ? r.images : [],
     });
     const brokerV = r.owner.brokerVerifications[0];
-    const     verifiedListing =
+    const verifiedListing =
       r.listingOwnerType === "BROKER" && brokerV?.verificationStatus === "VERIFIED";
+    const tier = parseGreenProgramTier(r.lecipmGreenProgramTier ?? "none");
+    const pres = evaluateGreenVerifiedPresentation({
+      score: r.lecipmGreenInternalScore,
+      label: (r.lecipmGreenAiLabel as GreenAiPerformanceLabel) ?? null,
+      verificationLevel: (r.lecipmGreenVerificationLevel as GreenVerificationLevel) ?? null,
+      confidence: r.lecipmGreenConfidence,
+      programTier: tier,
+    });
     return {
     kind: "fsbo" as const,
     id: r.id,
@@ -387,6 +453,13 @@ async function runBrowse(
     petsAllowed: r.petsAllowed,
     transactionFlag: transactionFlags.get(r.id) ?? null,
     verifiedListing,
+    lecipmGreenInternalScore: r.lecipmGreenInternalScore ?? null,
+    lecipmGreenCertifiedAt: r.lecipmGreenCertifiedAt?.toISOString() ?? null,
+    lecipmGreenProgramTier: r.lecipmGreenProgramTier ?? "none",
+    lecipmGreenAiLabel: r.lecipmGreenAiLabel ?? null,
+    lecipmGreenVerificationLevel: r.lecipmGreenVerificationLevel ?? null,
+    lecipmGreenConfidence: r.lecipmGreenConfidence ?? null,
+    greenVerifiedListing: pres.showBadge,
   };
   });
 
@@ -457,6 +530,7 @@ async function runBrowse(
         row.sortAt = Math.round((cached > 0 ? cached : 35) * 1_000_000);
       }
     }
+    applyGreenBrowseBoost(merged, fsboFiltered);
     applyTrustRankingSortMultiplier(merged, trustAug);
     merged.sort((a, b) => b.sortAt - a.sortAt);
   } else if (sortMode === "recommended" || sortMode === "aiScore") {
@@ -505,9 +579,11 @@ async function runBrowse(
         );
       }
     }
+    applyGreenBrowseBoost(merged, fsboFiltered);
     applyTrustRankingSortMultiplier(merged, trustAug);
     merged.sort((a, b) => b.sortAt - a.sortAt);
   } else {
+    applyGreenBrowseBoost(merged, fsboFiltered);
     applyTrustRankingSortMultiplier(merged, trustAug);
     merged.sort((a, b) => b.sortAt - a.sortAt);
   }

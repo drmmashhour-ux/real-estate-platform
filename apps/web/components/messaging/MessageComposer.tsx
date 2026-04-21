@@ -1,18 +1,34 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ContentLicenseRequiredError } from "@/lib/legal/content-license-client";
+
+import { VoiceRecorderControls } from "@/components/messaging/VoiceRecorderControls";
 
 type Props = {
   disabled?: boolean;
   disabledReason?: string;
   onSend: (body: string) => Promise<void>;
+  /** Append AI suggestion or template text when `nonce` changes (does not send). */
+  appendDraft?: { nonce: number; text: string } | null;
+  onSendVoice?: (blob: Blob, durationSec: number, mimeType: string) => Promise<void>;
 };
 
-export function MessageComposer({ disabled, disabledReason, onSend }: Props) {
+export function MessageComposer({ disabled, disabledReason, onSend, appendDraft, onSendVoice }: Props) {
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!appendDraft?.text.trim()) return;
+    const next = appendDraft.text.trim();
+    setText((prev) => {
+      const base = prev.trim();
+      return base ? `${base}\n\n${next}` : next;
+    });
+    // Intentionally keyed by nonce only — parent bumps nonce when applying a new AI draft.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appendDraft?.nonce]);
 
   async function submit() {
     const t = text.trim();
@@ -56,6 +72,9 @@ export function MessageComposer({ disabled, disabledReason, onSend }: Props) {
           {sending ? "Sending…" : "Send"}
         </button>
       </div>
+      {onSendVoice ? (
+        <VoiceRecorderControls disabled={disabled || sending} onSendVoice={onSendVoice} />
+      ) : null}
     </div>
   );
 }

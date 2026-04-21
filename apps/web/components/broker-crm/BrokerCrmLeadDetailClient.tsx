@@ -3,6 +3,10 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+function formatCad(cents: number) {
+  return new Intl.NumberFormat("en-CA", { style: "currency", currency: "CAD" }).format(cents / 100);
+}
+
 const AUTOPILOT_REPLY_PREFILL = "lecipm_autopilot_reply_prefill";
 
 type AutopilotSnapshot = {
@@ -78,6 +82,29 @@ export function BrokerCrmLeadDetailClient({ leadId }: { leadId: string }) {
   const [autopilotNext, setAutopilotNext] = useState<{ nextBestAction: string; reason: string } | null>(null);
   const pendingAutopilotActionId = useRef<string | null>(null);
   const prefillApplied = useRef(false);
+  const conversionTracked = useRef(false);
+  const [conversionOffer, setConversionOffer] = useState<
+    | {
+        ok: true;
+        unlocked: boolean;
+        listPriceCents: number;
+        offerPriceCents: number;
+        firstLeadEligible: boolean;
+        firstLeadOfferApplied: boolean;
+        quality: {
+          qualityScore: number;
+          qualityLabel: string;
+          reasonLine: string;
+          exclusiveAssignment: boolean;
+        };
+        copy: { tryLine: string; coach: string };
+      }
+    | { ok: false; message?: string }
+    | null
+  >(null);
+  const [unlockBusy, setUnlockBusy] = useState(false);
+  const [postPurchaseHint, setPostPurchaseHint] = useState(false);
+  const [progressNote, setProgressNote] = useState<string | null>(null);
   const [visitRows, setVisitRows] = useState<{
     requests: Array<{
       id: string;
@@ -128,6 +155,70 @@ export function BrokerCrmLeadDetailClient({ leadId }: { leadId: string }) {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch(`/api/broker-crm/leads/${encodeURIComponent(leadId)}/conversion`, {
+          credentials: "same-origin",
+        });
+        const j = (await res.json()) as Record<string, unknown>;
+        if (cancelled) return;
+        if (j.ok === true) {
+          setConversionOffer({
+            ok: true,
+            unlocked: Boolean(j.unlocked),
+            listPriceCents: Number(j.listPriceCents),
+            offerPriceCents: Number(j.offerPriceCents),
+            firstLeadEligible: Boolean(j.firstLeadEligible),
+            firstLeadOfferApplied: Boolean(j.firstLeadOfferApplied),
+            quality: j.quality as {
+              qualityScore: number;
+              qualityLabel: string;
+              reasonLine: string;
+              exclusiveAssignment: boolean;
+            },
+            copy: j.copy as { tryLine: string; coach: string },
+          });
+        } else {
+          setConversionOffer({
+            ok: false,
+            message: typeof j.message === "string" ? j.message : undefined,
+          });
+        }
+      } catch {
+        if (!cancelled) setConversionOffer(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [leadId]);
+
+  useEffect(() => {
+    if (conversionTracked.current || typeof window === "undefined") return;
+    conversionTracked.current = true;
+    void fetch("/api/broker/conversion/track", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ eventType: "broker_conversion_detail_open", crmLeadId: leadId }),
+    }).catch(() => {});
+  }, [leadId]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const q = new URLSearchParams(window.location.search);
+    if (q.get("leadUnlock") === "success") {
+      setPostPurchaseHint(true);
+      q.delete("leadUnlock");
+      q.delete("marketplaceLeadId");
+      const next =
+        window.location.pathname + (q.toString() ? `?${q.toString()}` : "") + window.location.hash;
+      window.history.replaceState({}, "", next);
+    }
+  }, [leadId]);
 
   useEffect(() => {
     void (async () => {
@@ -202,6 +293,18 @@ export function BrokerCrmLeadDetailClient({ leadId }: { leadId: string }) {
               try {
                 await post("/status", { status: e.target.value });
                 await load();
+                if (e.target.value === "contacted") {
+                  setProgressNote("You're making progress on this deal.");
+                  void fetch("/api/broker/conversion/track", {
+                    method: "POST",
+                    credentials: "same-origin",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      eventType: "broker_conversion_crm_view",
+                      crmLeadId: leadId,
+                    }),
+                  }).catch(() => {});
+                }
               } catch (err) {
                 setError(err instanceof Error ? err.message : "Failed");
               } finally {
@@ -217,6 +320,117 @@ export function BrokerCrmLeadDetailClient({ leadId }: { leadId: string }) {
           </select>
         </div>
       </div>
+
+      {progressNote ? (
+        <div className="rounded-lg border border-emerald-500/25 bg-emerald-950/25 px-4 py-3 text-sm text-emerald-100">
+          {progressNote}
+          <button
+            type="button"
+            className="ml-3 text-xs text-emerald-300 underline"
+            onClick={() => setProgressNote(null)}
+          >
+            Dismiss
+          </button>
+        </div>
+      ) : null}
+
+      {postPurchaseHint ? (
+        <div className="rounded-xl border border-premium-gold/35 bg-premium-gold/10 px-4 py-4">
+          <p className="text-sm font-semibold text-white">Contact this lead now</p>
+          <p className="mt-1 text-sm text-emerald-200/90">You’re ahead of most brokers on this deal when you follow up today.</p>
+          <p className="mt-1 text-sm text-slate-200">
+            Next: send a short introduction referencing the listing and offer two time options.
+          </p>
+          {latestInsight?.suggestedReply ? (
+            <div className="mt-3 rounded-lg border border-white/10 bg-black/40 p-3">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">Suggested message</p>
+              <p className="mt-2 whitespace-pre-wrap text-sm text-slate-100">{latestInsight.suggestedReply}</p>
+            </div>
+          ) : null}
+          <button
+            type="button"
+            className="mt-3 text-xs text-premium-gold hover:underline"
+            onClick={() => setPostPurchaseHint(false)}
+          >
+            Dismiss
+          </button>
+        </div>
+      ) : null}
+
+      {conversionOffer?.ok === true && conversionOffer.unlocked ? (
+        <p className="text-xs text-emerald-400/90">Full contact access is unlocked for this inquiry.</p>
+      ) : null}
+
+      {conversionOffer?.ok === true && !conversionOffer.unlocked ? (
+        <section className="rounded-xl border border-premium-gold/25 bg-[#151515] p-5">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-wide text-premium-gold">Try this lead</p>
+              <p className="text-sm text-slate-100">{conversionOffer.copy.tryLine}</p>
+              <p className="text-xs text-slate-500">{conversionOffer.copy.coach}</p>
+              <div className="flex flex-wrap gap-2 pt-1 text-[11px] text-slate-400">
+                <span className="rounded-full bg-white/10 px-2 py-0.5">
+                  Quality {conversionOffer.quality.qualityLabel} ({conversionOffer.quality.qualityScore})
+                </span>
+                {conversionOffer.quality.exclusiveAssignment ? (
+                  <span className="rounded-full bg-violet-500/20 px-2 py-0.5 text-violet-100">
+                    Routed to you
+                  </span>
+                ) : null}
+              </div>
+              <p className="text-sm text-slate-300">{conversionOffer.quality.reasonLine}</p>
+            </div>
+            <div className="text-right">
+              {conversionOffer.firstLeadOfferApplied ? (
+                <p className="text-xs text-slate-500 line-through">
+                  {formatCad(conversionOffer.listPriceCents)}
+                </p>
+              ) : null}
+              <p className="text-lg font-semibold text-white">{formatCad(conversionOffer.offerPriceCents)}</p>
+              {conversionOffer.firstLeadEligible ? (
+                <p className="text-[11px] text-emerald-300/90">First-lead introductory rate</p>
+              ) : null}
+              <button
+                type="button"
+                disabled={unlockBusy}
+                onClick={async () => {
+                  setUnlockBusy(true);
+                  try {
+                    void fetch("/api/broker/conversion/track", {
+                      method: "POST",
+                      credentials: "same-origin",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        eventType: "broker_conversion_unlock_click",
+                        crmLeadId: leadId,
+                      }),
+                    }).catch(() => {});
+                    const res = await fetch(`/api/broker-crm/leads/${encodeURIComponent(leadId)}/unlock-checkout`, {
+                      method: "POST",
+                      credentials: "same-origin",
+                    });
+                    const j = (await res.json()) as { url?: string; error?: string; softBlock?: boolean; message?: string };
+                    if (!res.ok) throw new Error(j.message ?? j.error ?? "Checkout failed");
+                    if (j.softBlock) throw new Error(j.message ?? "Unlock not available");
+                    if (j.url) window.location.href = j.url;
+                  } catch (err) {
+                    setError(err instanceof Error ? err.message : "Checkout failed");
+                  } finally {
+                    setUnlockBusy(false);
+                  }
+                }}
+                className="mt-3 w-full min-w-[160px] rounded-lg bg-premium-gold px-4 py-2.5 text-sm font-semibold text-black hover:opacity-95 disabled:opacity-40 sm:w-auto"
+              >
+                {unlockBusy ? "Starting checkout…" : `Unlock lead (${formatCad(conversionOffer.offerPriceCents)})`}
+              </button>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      {conversionOffer?.ok === false && conversionOffer.message ? (
+        <p className="text-xs text-slate-500">{conversionOffer.message}</p>
+      ) : null}
 
       {lead.listing ? (
         <section className="rounded-xl border border-white/10 bg-black/30 p-4">

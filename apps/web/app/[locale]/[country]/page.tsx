@@ -13,7 +13,7 @@ import { getExperimentBrowserSessionId } from "@/lib/experiments/browser-session
 import { EXPERIMENT_SURFACES } from "@/lib/experiments/constants";
 import { resolveExperimentSurface } from "@/lib/experiments/get-variant-config";
 import { marketingLandingFlags } from "@/config/feature-flags";
-import { LecipmMarketingLandingV1 } from "@/components/marketing/LecipmMarketingLandingV1";
+import { LecipmLeadCaptureLanding } from "@/components/marketing/LecipmLeadCaptureLanding";
 
 /** Public home — soft-launch landing: single search + trust. */
 export async function generateMetadata({
@@ -37,7 +37,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const { locale, country } = await params;
 
   if (marketingLandingFlags.landingV1) {
-    return <LecipmMarketingLandingV1 />;
+    return <LecipmLeadCaptureLanding locale={locale} country={country} />;
   }
 
   const sessionId = await getExperimentBrowserSessionId();

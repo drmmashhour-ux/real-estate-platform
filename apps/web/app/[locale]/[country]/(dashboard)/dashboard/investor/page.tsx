@@ -18,6 +18,10 @@ import { NextActionPanel } from "@/components/conversion/NextActionPanel";
 import { InlineUpgradeBanner } from "@/components/conversion/InlineUpgradeBanner";
 import { HubJourneyBanner } from "@/components/journey/HubJourneyBanner";
 import { InvestorComplianceSnapshot } from "@/components/investor/InvestorComplianceSnapshot";
+import { InvestorPortfolioEsgPanel } from "@/components/investor/InvestorPortfolioEsgPanel";
+import { runPortfolioEsgAnalysis } from "@/modules/investor-esg/portfolio-esg.engine";
+import { deriveIllustrativeEsgScore } from "@/modules/investor-esg/portfolio-scoring";
+import type { PortfolioPropertyInput } from "@/modules/investor-esg/portfolio.types";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +34,7 @@ export default async function InvestorDashboardPage({
   const userId = await getGuestId();
   if (!userId) redirect("/auth/login?returnUrl=/dashboard/investor");
 
-  const [scenarios, comparison, dbUser] = await Promise.all([
+  const [scenarios, comparison, dbUser, scenarioForEsg] = await Promise.all([
     prisma.portfolioScenario.findMany({
       where: { userId },
       orderBy: { updatedAt: "desc" },
@@ -48,7 +52,36 @@ export default async function InvestorDashboardPage({
     }),
     prisma.propertyComparison.findUnique({ where: { userId } }),
     prisma.user.findUnique({ where: { id: userId }, select: { role: true } }),
+    prisma.portfolioScenario.findFirst({
+      where: { userId },
+      orderBy: { updatedAt: "desc" },
+      select: {
+        title: true,
+        items: {
+          take: 48,
+          select: {
+            id: true,
+            listingId: true,
+            purchasePriceCents: true,
+            city: true,
+            riskLevel: true,
+            fitScore: true,
+          },
+        },
+      },
+    }),
   ]);
+
+  const portfolioEsgInputs: PortfolioPropertyInput[] =
+    scenarioForEsg?.items.map((it) => ({
+      id: it.id,
+      label: it.city?.trim() || `Listing ${it.listingId.slice(0, 8)}…`,
+      propertyValue: Math.max(0, it.purchasePriceCents / 100),
+      esgScore: deriveIllustrativeEsgScore({ riskLevel: it.riskLevel, fitScore: it.fitScore }),
+    })) ?? [];
+
+  const portfolioEsg =
+    portfolioEsgInputs.length > 0 ? runPortfolioEsgAnalysis(portfolioEsgInputs) : null;
 
   const investorDecision = await safeEvaluateDecision({
     hub: "investor",
@@ -105,6 +138,14 @@ export default async function InvestorDashboardPage({
           actionHref="/invest/portfolio"
           actionLabel="Open portfolio planner"
         />
+
+        {portfolioEsg ? (
+          <InvestorPortfolioEsgPanel
+            result={portfolioEsg}
+            scenarioTitle={scenarioForEsg?.title ?? null}
+            sourceNote="Per-asset ESG scores are illustrative when true green audits are unavailable — derived from scenario risk/fit signals for portfolio weighting."
+          />
+        ) : null}
         <section className="grid gap-4 lg:grid-cols-2">
           <TrustDealSummaryCard
             trustScore={null}
