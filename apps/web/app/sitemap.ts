@@ -11,6 +11,7 @@ import { buildFsboPublicVisibilityWhere } from "@/lib/fsbo/listing-expiry";
 import { getSiteBaseUrl } from "@/modules/seo/lib/siteBaseUrl";
 import { buildBnhubStaySeoSlug, buildFsboPublicListingPath } from "@/lib/seo/public-urls";
 import { routing } from "@/i18n/routing";
+import { GROWTH_SEO_SLUGS } from "@/modules/growth/seo/seo-page.service";
 
 export const revalidate = 3600;
 
@@ -57,6 +58,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/marketplace",
     "/tools/roi-calculator",
     "/tools/deal-analyzer",
+    "/senior-living",
   ];
 
   const entries: MetadataRoute.Sitemap = [];
@@ -67,6 +69,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         lastModified: now,
         changeFrequency: "weekly",
         priority: path === "/" ? 1 : 0.8,
+      });
+    }
+  });
+
+  forEachRoutedLocaleCountry((loc, country) => {
+    for (const slug of GROWTH_SEO_SLUGS) {
+      entries.push({
+        url: `${base}${withLocaleCountryPrefix(`/growth-seo/${slug}`, loc, country)}`,
+        lastModified: now,
+        changeFrequency: "weekly",
+        priority: 0.72,
       });
     }
   });

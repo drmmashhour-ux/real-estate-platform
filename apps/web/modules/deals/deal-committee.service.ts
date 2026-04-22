@@ -1,215 +1,226 @@
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { logInfo } from "@/lib/logger";
-import type { CommitteeRecommendation, PipelineStage } from "@/modules/deals/deal.types";
-import { buildStructuredDecisionRecord, type CommitteeDecisionPayload } from "@/modules/deals/deal-decision-log.service";
-import { createCondition } from "@/modules/deals/deal-conditions.service";
-import { createFollowUpsForDecision } from "@/modules/deals/deal-followup.service";
-import { assertStageTransitionAllowed, logStageCheck } from "@/modules/deals/deal-stage-engine";
-import { buildGateContext, countCriticalOpenConditions } from "@/modules/deals/deal-workflow-orchestrator";
-import { userCanRecordCommitteeDecision } from "@/modules/deals/deal-access";
-import { applyPipelineStage } from "@/modules/deals/deal-pipeline.service";
+import { appendDealAuditEvent } from "./deal-audit.service";
+import { applyStageAfterCommitteeDecision } from "./deal-stage.service";
 
-const TAG = "[deal-committee]";
+const TAG = "[deal.committee]";
 
-export async function submitToCommittee(dealId: string, actorUserId: string): Promise<{ submissionId: string }> {
-  const deal = await prisma.investmentPipelineDeal.findUnique({
-    where: { id: dealId },
-    select: {
-      listingId: true,
-      latestMemoId: true,
-      latestIcPackId: true,
-      pipelineStage: true,
-    },
-  });
+export async function submitToCommittee(dealId: string, summary: string, submittedByUserId: string | null) {
+  const deal = await prisma.lecipmPipelineDeal.findUnique({ where: { id: dealId } });
   if (!deal) throw new Error("Deal not found");
+  if (deal.pipelineStage === "DECLINED") throw new Error("Deal is declined");
 
-  if (!deal.latestMemoId || !deal.latestIcPackId) {
-    throw new Error("Committee submission requires investor memo and IC pack on file.");
-  }
-
-  const memo = await prisma.investorMemo.findUnique({
-    where: { id: deal.latestMemoId },
-    select: { listingId: true },
-  });
-  const ic = await prisma.investorIcPack.findUnique({
-    where: { id: deal.latestIcPackId },
-    select: { listingId: true },
-  });
-  if (deal.listingId && (memo?.listingId !== deal.listingId || ic?.listingId !== deal.listingId)) {
-    throw new Error("Latest memo / IC pack must match the deal listing.");
-  }
-
-  const submission = await prisma.investmentPipelineCommitteeSubmission.create({
-    data: {
+  await prisma.$transaction(async (tx) => {
+    await tx.lecipmPipelineDealCommitteeSubmission.create({
+      data: {
+        dealId,
+        submittedByUserId: submittedByUserId ?? undefined,
+        summary: summary.slice(0, 8000),
+        status: "SUBMITTED",
+      },
+    });
+    await applyStageAfterCommitteeDecision(
+      tx,
       dealId,
-      submittedByUserId: actorUserId,
-      memoId: deal.latestMemoId,
-      icPackId: deal.latestIcPackId,
-      submissionStatus: "SUBMITTED",
-    },
-    select: { id: true },
-  });
-
-  await prisma.investmentPipelineDecisionAudit.create({
-    data: {
+      deal.pipelineStage,
+      "COMMITTEE_REVIEW",
+      submittedByUserId,
+      "Submitted to committee"
+    );
+    await appendDealAuditEvent(tx, {
       dealId,
-      actorUserId,
       eventType: "SUBMITTED_TO_COMMITTEE",
-      note: "Submission created",
-      metadataJson: { submissionId: submission.id },
-    },
+      actorUserId: submittedByUserId,
+      summary: summary.slice(0, 500),
+    });
   });
 
-  const gate = { ...(await buildGateContext(dealId)), hasCommitteeSubmission: true, hasActiveSubmission: true };
-
-  const wantsPrep =
-    deal.pipelineStage === "SOURCED" ||
-    deal.pipelineStage === "SCREENING" ||
-    deal.pipelineStage === "PRELIMINARY_REVIEW";
-
-  const nextStage: PipelineStage = wantsPrep ? "IC_PREP" : "IC_REVIEW";
-  const check = assertStageTransitionAllowed(deal.pipelineStage as PipelineStage, nextStage, gate);
-  logStageCheck(dealId, deal.pipelineStage as PipelineStage, nextStage, check);
-  if (!check.ok) throw new Error(check.reason ?? "Stage blocked");
-
-  await prisma.investmentPipelineDeal.update({
-    where: { id: dealId },
-    data: { pipelineStage: nextStage, updatedAt: new Date() },
-  });
-
-  await prisma.investmentPipelineDealStageHistory.create({
-    data: {
-      dealId,
-      fromStage: deal.pipelineStage,
-      toStage: nextStage,
-      changedByUserId: actorUserId,
-      reason: "Submitted to committee",
-    },
-  });
-
-  logInfo(`${TAG} submit`, { dealId, submissionId: submission.id });
-  return { submissionId: submission.id };
+  logInfo(TAG, { dealId, action: "submit" });
+  return getCommitteeSubmission(dealId);
 }
 
-export async function recordCommitteeDecision(options: {
+export async function getCommitteeSubmission(dealId: string) {
+  return prisma.lecipmPipelineDealCommitteeSubmission.findFirst({
+    where: { dealId },
+    orderBy: { submittedAt: "desc" },
+    include: { decisions: { orderBy: { createdAt: "desc" }, take: 3 } },
+  });
+}
+
+export async function recordCommitteeDecision(input: {
   dealId: string;
   submissionId?: string | null;
-  actorUserId: string;
-  payload: CommitteeDecisionPayload;
-}): Promise<void> {
-  if (!(await userCanRecordCommitteeDecision(options.actorUserId))) throw new Error("Forbidden");
+  decidedByUserId: string | null;
+  recommendation: string;
+  rationale: string;
+  confidenceLevel?: string | null;
+}) {
+  const rec = input.recommendation.toUpperCase();
+  if (rec === "DECLINE" && !input.rationale.trim()) throw new Error("Decline requires rationale");
 
-  const deal = await prisma.investmentPipelineDeal.findUnique({
-    where: { id: options.dealId },
-    select: { pipelineStage: true, listingId: true },
-  });
+  const deal = await prisma.lecipmPipelineDeal.findUnique({ where: { id: input.dealId } });
   if (!deal) throw new Error("Deal not found");
 
-  const rationale = options.payload.rationale.trim();
-  if (!rationale) throw new Error("Decision requires rationale.");
+  await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    const decision = await tx.lecipmPipelineDealCommitteeDecision.create({
+      data: {
+        dealId: input.dealId,
+        submissionId: input.submissionId ?? undefined,
+        decidedByUserId: input.decidedByUserId ?? undefined,
+        recommendation: rec.slice(0, 40),
+        rationale: input.rationale.slice(0, 8000),
+        confidenceLevel: input.confidenceLevel?.slice(0, 16) ?? undefined,
+      },
+    });
 
-  const recommendation = options.payload.recommendation as CommitteeRecommendation;
-
-  const decisionJson = buildStructuredDecisionRecord(options.payload);
-
-  await prisma.investmentPipelineCommitteeDecision.create({
-    data: {
-      dealId: options.dealId,
-      submissionId: options.submissionId ?? null,
-      decidedByUserId: options.actorUserId,
-      recommendation,
-      rationale,
-      confidenceLevel: options.payload.confidenceLevel ?? null,
-      decisionJson,
-    },
-  });
-
-  await prisma.investmentPipelineCommitteeSubmission.updateMany({
-    where: { dealId: options.dealId, submissionStatus: { in: ["SUBMITTED", "REVIEWING"] } },
-    data: { submissionStatus: "DECIDED" },
-  });
-
-  await prisma.investmentPipelineDeal.update({
-    where: { id: options.dealId },
-    data: {
-      decisionStatus:
-        recommendation === "DECLINE" ? "DECLINE"
-        : recommendation === "HOLD" ? "HOLD"
-        : recommendation === "PROCEED_WITH_CONDITIONS" ? "PROCEED_WITH_CONDITIONS"
-        : recommendation === "PROCEED" ? "PROCEED"
-        : "PENDING",
-      headlineRecommendation: recommendation,
-      confidenceLevel: options.payload.confidenceLevel ?? null,
-      updatedAt: new Date(),
-    },
-  });
-
-  await prisma.investmentPipelineDecisionAudit.create({
-    data: {
-      dealId: options.dealId,
-      actorUserId: options.actorUserId,
-      eventType: "DECISION_RECORDED",
-      note: rationale.slice(0, 1500),
-      metadataJson: { recommendation },
-    },
-  });
-
-  const hints =
-    options.payload.requiredConditions ??
-    ((decisionJson as { requiredConditionsHints?: string[] }).requiredConditionsHints ?? []);
-
-  if (recommendation === "PROCEED_WITH_CONDITIONS") {
-    const titles = hints.length > 0 ? hints : ["Resolve committee conditions from diligence plan"];
-    for (const title of titles.slice(0, 15)) {
-      await createCondition({
-        dealId: options.dealId,
-        title: typeof title === "string" ? title.slice(0, 512) : String(title),
-        category: "COMMITTEE",
-        priority: "HIGH",
+    if (input.submissionId) {
+      await tx.lecipmPipelineDealCommitteeSubmission.updateMany({
+        where: { id: input.submissionId, dealId: input.dealId },
+        data: { status: "DECIDED", decidedAt: new Date() },
       });
     }
-    await applyPipelineStage({
-      dealId: options.dealId,
-      toStage: "CONDITIONAL_APPROVAL",
-      actorUserId: options.actorUserId,
-      reason: `Committee: ${recommendation}`,
-    });
-  } else if (recommendation === "HOLD") {
-    await applyPipelineStage({
-      dealId: options.dealId,
-      toStage: "ON_HOLD",
-      actorUserId: options.actorUserId,
-      reason: "Committee hold",
-    });
-  } else if (recommendation === "DECLINE") {
-    await applyPipelineStage({
-      dealId: options.dealId,
-      toStage: "DECLINED",
-      actorUserId: options.actorUserId,
-      reason: rationale.slice(0, 500),
-    });
-  } else if (recommendation === "PROCEED") {
-    const critical = await countCriticalOpenConditions(options.dealId);
-    const target: PipelineStage = critical > 0 ? "CONDITIONAL_APPROVAL" : "APPROVED";
-    const gate = await buildGateContext(options.dealId);
-    const check = assertStageTransitionAllowed(deal.pipelineStage as PipelineStage, target, gate);
-    logStageCheck(options.dealId, deal.pipelineStage as PipelineStage, target, check);
-    if (!check.ok) {
-      throw new Error(check.reason ?? "Stage transition not allowed for PROCEED decision.");
-    }
-    await applyPipelineStage({
-      dealId: options.dealId,
-      toStage: target,
-      actorUserId: options.actorUserId,
-      reason: `Committee proceed → ${target}`,
-    });
-  }
 
-  await createFollowUpsForDecision({
-    dealId: options.dealId,
-    recommendation,
-    actorUserId: options.actorUserId,
+    let decisionStatus = deal.decisionStatus;
+    let nextStage = deal.pipelineStage;
+
+    if (rec === "DECLINE") {
+      decisionStatus = "DECLINE";
+      nextStage = "DECLINED";
+    } else if (rec === "HOLD") {
+      decisionStatus = "HOLD";
+      nextStage = "ON_HOLD";
+    } else if (rec === "PROCEED_WITH_CONDITIONS") {
+      decisionStatus = "PROCEED_WITH_CONDITIONS";
+      nextStage = "CONDITIONAL_APPROVAL";
+    } else if (rec === "PROCEED") {
+      await syncConditionsFromTransactionContextWithTx(tx, input.dealId, input.decidedByUserId);
+      const criticalOpen = await tx.lecipmPipelineDealCondition.count({
+        where: { dealId: input.dealId, priority: "CRITICAL", status: "OPEN" },
+      });
+      if (criticalOpen > 0) {
+        decisionStatus = "PROCEED_WITH_CONDITIONS";
+        nextStage = "CONDITIONAL_APPROVAL";
+      } else {
+        decisionStatus = "PROCEED";
+        nextStage = "EXECUTION";
+      }
+    }
+
+    await tx.lecipmPipelineDeal.update({
+      where: { id: input.dealId },
+      data: { decisionStatus, pipelineStage: nextStage },
+    });
+
+    await tx.lecipmPipelineDealStageHistory.create({
+      data: {
+        dealId: input.dealId,
+        fromStage: deal.pipelineStage,
+        toStage: nextStage,
+        changedByUserId: input.decidedByUserId ?? undefined,
+        reason: input.rationale.slice(0, 2000),
+      },
+    });
+
+    await appendDealAuditEvent(tx, {
+      dealId: input.dealId,
+      eventType: "COMMITTEE_DECISION_RECORDED",
+      actorUserId: input.decidedByUserId,
+      summary: `${rec}: ${input.rationale.slice(0, 200)}`,
+      metadataJson: { decisionId: decision.id, recommendation: rec },
+    });
+
+    if (rec === "PROCEED_WITH_CONDITIONS" || nextStage === "CONDITIONAL_APPROVAL") {
+      await autoGenerateConditionsForDecisionTx(tx, input.dealId, input.decidedByUserId);
+    }
   });
 
-  logInfo(`${TAG} decision`, { dealId: options.dealId, recommendation });
+  logInfo(TAG, { dealId: input.dealId, recommendation: rec });
+  return prisma.lecipmPipelineDeal.findUnique({ where: { id: input.dealId } });
+}
+
+async function syncConditionsFromTransactionContextWithTx(
+  tx: Prisma.TransactionClient,
+  dealId: string,
+  actorUserId: string | null
+) {
+  const deal = await tx.lecipmPipelineDeal.findUnique({ where: { id: dealId } });
+  if (!deal?.transactionId) return;
+
+  const { evaluateCompliance } = await import("@/modules/transactions/transaction-compliance.service");
+  const evaln = await evaluateCompliance(deal.transactionId, { skipNotarySent: true });
+  for (const msg of evaln.blockingIssues.slice(0, 12)) {
+    const title = msg.slice(0, 500);
+    const dup = await tx.lecipmPipelineDealCondition.findFirst({ where: { dealId, title } });
+    if (dup) continue;
+    await tx.lecipmPipelineDealCondition.create({
+      data: {
+        dealId,
+        title,
+        description: "Derived from transaction compliance evaluation",
+        category: "COMPLIANCE",
+        priority: "CRITICAL",
+        status: "OPEN",
+      },
+    });
+    await appendDealAuditEvent(tx, {
+      dealId,
+      eventType: "CONDITION_CREATED",
+      actorUserId,
+      summary: `Condition: ${title}`,
+      metadataJson: { source: "transaction_compliance" },
+    });
+  }
+}
+
+async function autoGenerateConditionsForDecisionTx(
+  tx: Prisma.TransactionClient,
+  dealId: string,
+  actorUserId: string | null
+) {
+  const templates = [
+    { title: "Execute signed purchase agreement", category: "DOCUMENT", priority: "CRITICAL" },
+    { title: "Final financing approval on file", category: "FINANCIAL", priority: "CRITICAL" },
+    { title: "Resolve compliance blockers on transaction file", category: "COMPLIANCE", priority: "CRITICAL" },
+    { title: "Notary package ready / sent", category: "NOTARY", priority: "HIGH" },
+  ];
+
+  for (const t of templates) {
+    await tx.lecipmPipelineDealCondition.create({
+      data: {
+        dealId,
+        title: t.title,
+        category: t.category,
+        priority: t.priority,
+        status: "OPEN",
+      },
+    });
+    await appendDealAuditEvent(tx, {
+      dealId,
+      eventType: "CONDITION_CREATED",
+      actorUserId,
+      summary: `Condition: ${t.title}`,
+      metadataJson: { template: true },
+    });
+  }
+}
+
+export async function withdrawSubmission(submissionId: string, actorUserId: string | null) {
+  const sub = await prisma.lecipmPipelineDealCommitteeSubmission.findUnique({ where: { id: submissionId } });
+  if (!sub) throw new Error("Submission not found");
+
+  await prisma.lecipmPipelineDealCommitteeSubmission.update({
+    where: { id: submissionId },
+    data: { status: "WITHDRAWN" },
+  });
+
+  await appendDealAuditEvent(prisma, {
+    dealId: sub.dealId,
+    eventType: "SUBMITTED_TO_COMMITTEE",
+    actorUserId,
+    summary: `Committee submission ${submissionId} withdrawn`,
+    metadataJson: { submissionId, withdrawn: true },
+  });
+
+  return sub;
 }

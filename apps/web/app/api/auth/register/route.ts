@@ -37,6 +37,8 @@ import { buildSignupAttributionPayload } from "@/lib/attribution/signup-attribut
 import { recordTrafficEventServer } from "@/lib/traffic/record-server-event";
 import { GrowthEventName } from "@/modules/growth/event-types";
 import { recordGrowthEvent } from "@/modules/growth/tracking.service";
+import { recordUserSignupConsents } from "@/lib/auth/user-consent";
+import { logApi } from "@/lib/server/launch-logger";
 
 const VERIFY_TTL_MS = 48 * 60 * 60 * 1000;
 
@@ -355,6 +357,9 @@ export async function POST(request: NextRequest) {
     return res;
   } catch (e) {
     console.error(e);
+    logApi.error("POST /api/auth/register failed", {
+      message: e instanceof Error ? e.message : String(e),
+    });
     return NextResponse.json({ error: "Registration failed" }, { status: 500 });
   }
 }

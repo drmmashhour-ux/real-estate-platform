@@ -51,6 +51,22 @@
     {
       "path": "/api/cron/autonomy-learning-run",
       "schedule": "15 9 * * *"
+    },
+    {
+      "path": "/api/learning/update",
+      "schedule": "25 7 * * *"
+    },
+    {
+      "path": "/api/cron/autonomy-engine",
+      "schedule": "20 8 * * *"
+    },
+    {
+      "path": "/api/cron/ceo-ai-daily",
+      "schedule": "35 8 * * *"
+    },
+    {
+      "path": "/api/cron/ceo-ai-weekly",
+      "schedule": "45 9 * * 1"
     }
   ]
 }

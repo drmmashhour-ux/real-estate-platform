@@ -39,7 +39,7 @@ Repository: `apps/web/modules/autonomy/api/autonomy-os-persist.service.ts`
 cd apps/web && pnpm exec prisma validate --schema=./prisma/schema.prisma
 pnpm exec prisma generate --schema=./prisma/schema.prisma
 pnpm exec prisma migrate deploy   # when applying DB
-pnpm exec vitest run modules/autonomy/testing/autonomy-final.test.ts
+pnpm exec vitest run modules/autonomy/testing/autonomy.spec.ts
 pnpm exec tsc --noEmit -p tsconfig.json   # repo gate
 ```
 

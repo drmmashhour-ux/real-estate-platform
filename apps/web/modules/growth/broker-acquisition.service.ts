@@ -1,59 +1,112 @@
-import type { BrokerScript } from "./broker-acquisition.types";
+import type { PlatformRole } from "@prisma/client";
+import { prisma } from "@/lib/db";
+import { logInfo } from "@/lib/logger";
+import { engineFlags } from "@/config/feature-flags";
 
-const CITY_PLACEHOLDER = "[CITY]";
+const TAG = "[growth.brokerAcquisition]";
+
+function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+
+/** Comma-separated emails that may use LECIPM SD tools when early access is on (e.g. founders). */
+function earlyAccessAllowlist(): Set<string> {
+  const raw = process.env.LECIPM_EARLY_BROKER_EMAIL_ALLOWLIST ?? "";
+  const set = new Set<string>();
+  for (const p of raw.split(",")) {
+    const e = normalizeEmail(p);
+    if (e) set.add(e);
+  }
+  return set;
+}
 
 /**
- * Draft outreach scripts for human copy/paste only. No automated sending.
+ * When `FEATURE_EARLY_BROKER_V1` is enabled, only allowlisted emails or accepted invites may use broker SD flows.
  */
-export function getBrokerAcquisitionScripts(): BrokerScript[] {
-  const dmBody = `Hey — quick question. Are you currently open to receiving qualified buyer leads in ${CITY_PLACEHOLDER}?
+export async function assertEarlyBrokerAccess(userId: string, actorRole: PlatformRole): Promise<void> {
+  if (!engineFlags.earlyBrokerV1) return;
+  if (actorRole === "ADMIN") return;
 
-I'm working on a platform that connects serious buyers with agents. Some brokers are already closing deals from it.
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { email: true, role: true },
+  });
+  if (!user?.email) throw new Error("Early access: user email required.");
+  const email = normalizeEmail(user.email);
 
-No upfront cost — you only pay per opportunity.
+  if (earlyAccessAllowlist().has(email)) return;
 
-Would you be open to testing a few leads?`;
-
-  const followUp = `Just wanted to follow up — we're sending out a few high-intent leads this week. Let me know if you want me to reserve some for you.`;
-
-  const callBody = `Hi, I'll be quick — I'm working with a platform that sends qualified buyer leads directly to brokers in ${CITY_PLACEHOLDER}.
-
-We're currently onboarding a few agents and some are already closing deals.
-
-There's no upfront cost — you only pay per opportunity.
-
-Would you be open to trying a few leads this week?`;
-
-  return [
-    {
-      id: "instagram-dm",
-      channel: "instagram",
-      title: "Instagram / LinkedIn DM",
-      message: dmBody,
+  const accepted = await prisma.lecipmBrokerInvite.findFirst({
+    where: {
+      email,
+      status: "ACCEPTED",
+      acceptedByUserId: userId,
     },
-    {
-      id: "linkedin-dm",
-      channel: "linkedin",
-      title: "Instagram / LinkedIn DM",
-      message: dmBody,
+    select: { id: true },
+  });
+  if (accepted) return;
+
+  throw new Error(
+    "LECIPM early access: your brokerage account must be invited (Québec broker program). Contact support or use your invite link."
+  );
+}
+
+export async function sendInvite(args: { email: string; invitedByUserId?: string | null }) {
+  const email = normalizeEmail(args.email);
+  if (!email.includes("@")) throw new Error("Invalid email");
+
+  const existing = await prisma.lecipmBrokerInvite.findFirst({
+    where: { email, status: "PENDING" },
+  });
+  if (existing) {
+    logInfo(TAG, { action: "sendInvite.duplicate", email });
+    return { invite: existing, token: existing.inviteToken, alreadyPending: true as const };
+  }
+
+  const invite = await prisma.lecipmBrokerInvite.create({
+    data: {
+      email,
+      invitedByUserId: args.invitedByUserId ?? null,
+      status: "PENDING",
     },
-    {
-      id: "facebook-dm",
-      channel: "facebook",
-      title: "Instagram / LinkedIn DM",
-      message: dmBody,
+  });
+
+  logInfo(TAG, { action: "sendInvite.created", inviteId: invite.id, email });
+  return { invite, token: invite.inviteToken, alreadyPending: false as const };
+}
+
+export async function acceptInvite(args: { token: string; userId: string }) {
+  const token = args.token.trim();
+  const invite = await prisma.lecipmBrokerInvite.findUnique({
+    where: { inviteToken: token },
+  });
+  if (!invite) throw new Error("Invalid or expired invite token.");
+
+  const user = await prisma.user.findUnique({
+    where: { id: args.userId },
+    select: { email: true },
+  });
+  if (!user?.email) throw new Error("User email required to accept invite.");
+  if (normalizeEmail(user.email) !== normalizeEmail(invite.email)) {
+    throw new Error("This invite was sent to a different email address.");
+  }
+
+  if (invite.status === "ACCEPTED" && invite.acceptedByUserId === args.userId) {
+    return invite;
+  }
+  if (invite.status === "ACCEPTED") {
+    throw new Error("Invite already used.");
+  }
+
+  const updated = await prisma.lecipmBrokerInvite.update({
+    where: { id: invite.id },
+    data: {
+      status: "ACCEPTED",
+      acceptedByUserId: args.userId,
+      acceptedAt: new Date(),
     },
-    {
-      id: "dm-follow-up",
-      channel: "instagram",
-      title: "Follow-up (DM)",
-      message: followUp,
-    },
-    {
-      id: "direct-call",
-      channel: "direct_call",
-      title: "Call script",
-      message: callBody,
-    },
-  ];
+  });
+
+  logInfo(TAG, { action: "acceptInvite", inviteId: invite.id, userId: args.userId });
+  return updated;
 }

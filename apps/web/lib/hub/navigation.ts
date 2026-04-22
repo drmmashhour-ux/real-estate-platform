@@ -104,6 +104,7 @@ export const hubNavigation: Record<string, NavItem[]> = {
     { label: "Lifecycle CRM", href: "/dashboard/broker/lifecycle" },
     { label: "Market AI", href: "/dashboard/broker/market-insights" },
     { label: "Deals", href: "/dashboard/deals" },
+    { label: "Transaction files", href: "/dashboard/transactions" },
     { label: "Commissions", href: "/dashboard/broker/commissions" },
     { label: "Tax (GST/QST)", href: "/dashboard/broker/tax-information" },
     { label: "Leads", href: "/dashboard/leads" },

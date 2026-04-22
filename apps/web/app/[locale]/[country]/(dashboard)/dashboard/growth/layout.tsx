@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { engineFlags } from "@/config/feature-flags";
+import { listSeoLandingSlugs } from "@/modules/growth/seo/seo-page.service";
 
 export default async function GrowthMachineLayout({
   children,
@@ -15,8 +16,13 @@ export default async function GrowthMachineLayout({
     return <div className="p-6 text-white">{children}</div>;
   }
 
+  const demoSeoSlug = listSeoLandingSlugs()[0];
   const nav = [
     { href: base, label: "Overview" },
+    {
+      href: `/${locale}/${country}/growth-seo/${demoSeoSlug}`,
+      label: "SEO landings",
+    },
     { href: `${base}/campaigns`, label: "Campaigns" },
     { href: `${base}/leads`, label: "Leads" },
     { href: `${base}/listings`, label: "Listings" },

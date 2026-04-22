@@ -1,70 +1,92 @@
-import { NextRequest } from "next/server";
-import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { NextRequest, NextResponse } from "next/server";
+import { logError } from "@/lib/logger";
+import { requireBrokerOrAdminTransactionSession } from "@/lib/transactions/require-sd-transaction-session";
+import { createTransaction, listTransactions } from "@/modules/transactions/transaction.service";
+import { toTransactionWire } from "@/modules/transactions/transaction.types";
 
-/**
- * GET /api/transactions
- * Query: role=buyer|seller|broker (default: all for current user)
- * Returns transactions where the user is buyer, seller, or broker.
- */
-export async function GET(request: NextRequest) {
+export const dynamic = "force-dynamic";
+
+export async function POST(req: NextRequest) {
+  const auth = await requireBrokerOrAdminTransactionSession();
+  if (!auth.ok) return auth.response;
+
+  let body: Record<string, unknown>;
   try {
-    const userId = await getGuestId();
-    if (!userId) {
-      return Response.json({ error: "Sign in required" }, { status: 401 });
-    }
+    body = (await req.json()) as Record<string, unknown>;
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
 
-    const { searchParams } = new URL(request.url);
-    const role = searchParams.get("role");
-    const limit = Math.min(Number(searchParams.get("limit")) || 50, 100);
+  const transactionType = typeof body.transactionType === "string" ? body.transactionType.trim() : "";
+  if (!transactionType) {
+    return NextResponse.json({ error: "transactionType required" }, { status: 400 });
+  }
 
-    const where =
-      role === "buyer"
-        ? { buyerId: userId }
-        : role === "seller"
-          ? { sellerId: userId }
-          : role === "broker"
-            ? { brokerId: userId }
-            : {
-                OR: [
-                  { buyerId: userId },
-                  { sellerId: userId },
-                  { brokerId: userId },
-                ],
-              };
+  const title = typeof body.title === "string" ? body.title : null;
+  const listingId = typeof body.listingId === "string" ? body.listingId : null;
+  const propertyId = typeof body.propertyId === "string" ? body.propertyId : null;
+  const brokerIdBody = typeof body.brokerId === "string" ? body.brokerId.trim() : "";
 
-    const transactions = await prisma.realEstateTransaction.findMany({
-      where,
-      include: {
-        propertyIdentity: { select: { id: true, propertyUid: true, officialAddress: true, municipality: true, province: true } },
-        buyer: { select: { id: true, name: true, email: true } },
-        seller: { select: { id: true, name: true, email: true } },
-        broker: { select: { id: true, name: true, email: true } },
+  const brokerId =
+    auth.role === "ADMIN" && brokerIdBody ?
+      brokerIdBody
+    : auth.userId;
+
+  try {
+    const row = await createTransaction(
+      {
+        brokerId,
+        transactionType,
+        title,
+        listingId,
+        propertyId,
       },
-      orderBy: { updatedAt: "desc" },
-      take: limit,
+      auth.role
+    );
+
+    return NextResponse.json({
+      transactionNumber: row.transactionNumber,
+      transaction: toTransactionWire(row),
+    });
+  } catch (e) {
+    logError("[transaction.api.create]", { error: e });
+    const msg = e instanceof Error ? e.message : "Failed";
+    const status =
+      msg.includes("Forbidden") ? 403
+      : msg.includes("not accessible") || msg.includes("not found") ? 403
+      : 400;
+    return NextResponse.json({ error: msg }, { status });
+  }
+}
+
+export async function GET(req: NextRequest) {
+  const auth = await requireBrokerOrAdminTransactionSession();
+  if (!auth.ok) return auth.response;
+
+  const url = req.nextUrl;
+  const status = url.searchParams.get("status");
+  const brokerFilterId =
+    auth.role === "ADMIN" ?
+      url.searchParams.get("brokerId") ?? url.searchParams.get("broker") ?? undefined
+    : undefined;
+
+  try {
+    const rows = await listTransactions({
+      brokerId: auth.userId,
+      role: auth.role,
+      status: status ?? undefined,
+      brokerFilterId: brokerFilterId ?? undefined,
     });
 
-    return Response.json({
-      transactions: transactions.map((t) => ({
-        id: t.id,
-        property_identity: t.propertyIdentity,
-        listing_id: t.listingId,
-        buyer: t.buyer,
-        seller: t.seller,
-        broker: t.broker,
-        offer_price: t.offerPrice,
-        status: t.status,
-        frozen_by_admin: t.frozenByAdmin,
-        created_at: t.createdAt,
-        updated_at: t.updatedAt,
+    return NextResponse.json({
+      transactions: rows.map((t) => ({
+        ...toTransactionWire(t),
+        listingTitle: t.listing?.title ?? null,
+        listingCode: t.listing?.listingCode ?? null,
       })),
     });
   } catch (e) {
-    console.error(e);
-    return Response.json(
-      { error: e instanceof Error ? e.message : "Failed to list transactions" },
-      { status: 500 }
-    );
+    logError("[transaction.api.list]", { error: e });
+    return NextResponse.json({ error: "Failed to list transactions" }, { status: 500 });
   }
 }

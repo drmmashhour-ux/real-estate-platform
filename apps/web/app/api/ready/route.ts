@@ -43,6 +43,9 @@ export async function GET() {
         ok: false,
         ready: false,
         status: "error",
+        db: "error",
+        stripe: "error",
+        api: "error",
         error: "readiness_unhandled",
         time: new Date().toISOString(),
         publicEnv: getPublicEnv(),
@@ -88,12 +91,10 @@ async function getReadyHandler() {
     });
   }
 
-  let dbStatus: "ok" | "failed" = "ok";
   let prisma: Awaited<typeof import("@/lib/db")>["prisma"];
   try {
     ({ prisma } = await import("@/lib/db"));
   } catch (e) {
-    dbStatus = "failed";
     console.error(
       JSON.stringify({
         event: "api_ready_prisma_module_failure",
@@ -109,7 +110,9 @@ async function getReadyHandler() {
         ok: false,
         ready: false,
         status: "error",
-        db: dbStatus,
+        db: "error",
+        stripe: "not_configured",
+        api: "ok",
         dbTargetHost,
         dbHostKind: hostKind,
         databaseUrlLooksLikeTemplate,
@@ -132,7 +135,6 @@ async function getReadyHandler() {
   try {
     await withDbRetry(() => prisma.$queryRaw`SELECT 1`, { maxAttempts: 3, baseDelayMs: 200 });
   } catch (e) {
-    dbStatus = "failed";
     const c = classifyDbError(e);
     console.error(
       JSON.stringify({
@@ -151,7 +153,9 @@ async function getReadyHandler() {
         ok: false,
         ready: false,
         status: "error",
-        db: dbStatus,
+        db: "error",
+        stripe: "not_configured",
+        api: "ok",
         dbTargetHost,
         dbHostKind: hostKind,
         databaseUrlLooksLikeTemplate,
@@ -183,6 +187,7 @@ async function getReadyHandler() {
       process.env.READY_IGNORE_STRIPE !== "1";
     const coreReady = i18nBundles;
     const ready = coreReady && (stripeReady || !strictStripe);
+    const stripeLaunch = stripeReady ? "ok" : stripeErr ? "error" : "not_configured";
     return NextResponse.json(
       {
         success: ready,
@@ -190,7 +195,8 @@ async function getReadyHandler() {
         ready,
         status: ready ? "ok" : "degraded",
         db: "ok",
-        stripe: stripeReady ? "ready" : stripeErr ? "invalid" : "not_configured",
+        stripe: stripeLaunch,
+        api: "ok",
         stripeHint: stripeErr,
         supabase: supabaseConfigStatus(),
         dbTargetHost,
@@ -223,6 +229,8 @@ async function getReadyHandler() {
         ready: false,
         status: "error",
         db: "ok",
+        stripe: "error",
+        api: "ok",
         dbTargetHost,
         dbHostKind: hostKind,
         databaseUrlLooksLikeTemplate,

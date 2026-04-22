@@ -81,3 +81,24 @@ export const PRIVACY_DEFAULT_HTML = `
 <h2>9. Contact</h2>
 <p>Privacy inquiries: <a href="mailto:info@lecipm.com">info@lecipm.com</a></p>
 `;
+
+/** General disclaimer — intermediary role, no professional advice, Law 25 summary pointer. */
+export const DISCLAIMER_DEFAULT_HTML = `
+<h2>1. Platform role</h2>
+<p><strong>LECIPM</strong> is a <strong>technology intermediary</strong>. Unless a separate written agreement expressly states otherwise, we do not act as your real estate broker, mortgage broker, lawyer, accountant, or financial advisor. Licensed professionals using the platform remain responsible for their own regulatory obligations (including OACIQ and AMF rules where applicable).</p>
+
+<h2>2. No professional advice</h2>
+<p>Content, tools, calculators, AI-generated text, and marketplace listings are <strong>informational only</strong>. They are not legal, tax, investment, or lending advice. You should verify facts independently and retain qualified professionals before committing to a transaction.</p>
+
+<h2>3. Limitation of liability</h2>
+<p>To the fullest extent permitted by applicable law in Québec and Canada, LECIPM and Mashhour Investments disclaim liability for indirect or consequential losses, errors or omissions in user-generated content, third-party services (including payment processors), and outcomes of transactions between users. Non-waivable consumer rights remain unaffected.</p>
+
+<h2>4. Payments</h2>
+<p>Fees and charges are as shown at checkout or in your hub agreement. Payments are processed by approved processors (e.g. <strong>Stripe</strong>); we do not collect or store full card numbers on our application servers.</p>
+
+<h2>5. Québec — Law 25 (personal information)</h2>
+<p>We collect and use personal information as described in our <a href="/legal/privacy">Privacy Policy</a>, including measures appropriate to the sensitivity of the information. You may contact us to exercise access, correction, or other rights where applicable.</p>
+
+<h2>6. Contact</h2>
+<p><a href="mailto:info@lecipm.com">info@lecipm.com</a></p>
+`;

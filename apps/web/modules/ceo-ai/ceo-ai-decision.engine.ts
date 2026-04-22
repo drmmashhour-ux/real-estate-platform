@@ -1,0 +1,130 @@
+import { getOrCreateCeoPolicy, requiresApprovalForProposal } from "@/modules/ceo-ai/ceo-ai-policy";
+import { proposeGrowthDecisions } from "@/modules/ceo-ai/ceo-ai-growth.service";
+import { proposePricingDecisions } from "@/modules/ceo-ai/ceo-ai-pricing.service";
+import { proposeOutreachDecisions } from "@/modules/ceo-ai/ceo-ai-outreach.service";
+import { proposeRetentionDecisions } from "@/modules/ceo-ai/ceo-ai-retention.service";
+import type {
+  CeoDecisionProposal,
+  CeoMarketSignals,
+  GenerateCeoDecisionsResult,
+  ProblemOpportunityItem,
+} from "@/modules/ceo-ai/ceo-ai.types";
+
+function dedupeKey(p: CeoDecisionProposal): string {
+  return `${p.domain}:${p.title}`;
+}
+
+function pickProblems(signals: CeoMarketSignals): ProblemOpportunityItem[] {
+  const items: ProblemOpportunityItem[] = [];
+
+  if (signals.seniorConversionRate30d < 0.055) {
+    items.push({
+      title: "Trailing conversion below target",
+      detail: `Senior lead→close rate ${(signals.seniorConversionRate30d * 100).toFixed(1)}% (30d).`,
+      severityOrLift: 0.78,
+    });
+  }
+  if (signals.demandIndex < 0.4 && signals.leadsLast30d > 12) {
+    items.push({
+      title: "Soft demand index with inventory risk",
+      detail: `DemandIdx ${signals.demandIndex.toFixed(2)} with ${signals.leadsLast30d} inbound leads.`,
+      severityOrLift: 0.64,
+    });
+  }
+  if (signals.churnInactiveBrokersApprox > 15) {
+    items.push({
+      title: "Broker inactive pool expanding",
+      detail: `~${signals.churnInactiveBrokersApprox} inactive broker accounts flagged.`,
+      severityOrLift: 0.7,
+    });
+  }
+  return items.sort((a, b) => b.severityOrLift - a.severityOrLift).slice(0, 5);
+}
+
+function pickOpportunities(signals: CeoMarketSignals): ProblemOpportunityItem[] {
+  const items: ProblemOpportunityItem[] = [];
+
+  if (signals.demandIndex > 0.58 && signals.seniorConversionRate30d > 0.075) {
+    items.push({
+      title: "High-demand + healthy conversion window",
+      detail: "Elasticity likely supports pricing/GTM experiments with controlled risk.",
+      severityOrLift: 0.72,
+    });
+  }
+  if (signals.leadsLast30d > signals.leadsPrev30d * 1.12) {
+    items.push({
+      title: "Inbound acceleration vs prior 30d",
+      detail: `Leads ${signals.leadsLast30d} vs ${signals.leadsPrev30d} prior.`,
+      severityOrLift: 0.65,
+    });
+  }
+  if (signals.seoPagesIndexedApprox > 100 && signals.emailEngagementScore != null && signals.emailEngagementScore > 0.35) {
+    items.push({
+      title: "SEO + email flywheel engagement",
+      detail: "Strong surface area to cross-sell operator programs and family content.",
+      severityOrLift: 0.58,
+    });
+  }
+  return items.sort((a, b) => b.severityOrLift - a.severityOrLift).slice(0, 5);
+}
+
+function operationsCampaignProposal(signals: CeoMarketSignals): CeoDecisionProposal | null {
+  if (signals.leadsLast30d < 8) return null;
+
+  return {
+    domain: "OPERATIONS",
+    title: "Cross-channel referral burst (concept)",
+    summary:
+      "Coordinate lightweight referral incentives with partner clinics + geo-targeted landing refresh.",
+    rationale:
+      "Balances acquisition cost vs retention pressure when pipeline velocity is acceptable but needs diversification.",
+    confidence: 0.56,
+    impactEstimate: 0.045,
+    requiresApproval: true,
+    payload: {
+      kind: "campaign_recommend",
+      channel: "partner_clinic_geo",
+      headline: "Families researching care nearby",
+      bullets: ["Partner tear-off PDF", "Geo SMS retarget", "Broker co-host webinar"],
+    },
+  };
+}
+
+/**
+ * Detect strongest constraints, propose highest-impact bounded actions, dedupe, cap length.
+ */
+export async function generateCeoDecisions(
+  signals: CeoMarketSignals,
+  options?: { maxDecisions?: number }
+): Promise<GenerateCeoDecisionsResult> {
+  const policy = await getOrCreateCeoPolicy();
+  const max = Math.min(options?.maxDecisions ?? policy.maxDailyChanges, 25);
+
+  const combined: CeoDecisionProposal[] = [
+    ...proposeGrowthDecisions(signals),
+    ...(await proposePricingDecisions(signals)),
+    ...(await proposeOutreachDecisions(signals)),
+    ...proposeRetentionDecisions(signals),
+  ];
+
+  const ops = operationsCampaignProposal(signals);
+  if (ops) combined.push(ops);
+
+  const seen = new Set<string>();
+  const normalized: CeoDecisionProposal[] = [];
+  for (const p of combined) {
+    const ra = requiresApprovalForProposal(p.domain, p.payload, policy);
+    const adjusted: CeoDecisionProposal = { ...p, requiresApproval: ra };
+    const k = dedupeKey(adjusted);
+    if (seen.has(k)) continue;
+    seen.add(k);
+    normalized.push(adjusted);
+    if (normalized.length >= max) break;
+  }
+
+  return {
+    topProblems: pickProblems(signals),
+    topOpportunities: pickOpportunities(signals),
+    proposedDecisions: normalized,
+  };
+}

@@ -64,6 +64,7 @@
     "validate:flows": "pnpm --filter @lecipm/web run validate:flows",
     "validate-core-flows": "pnpm validate:flows",
     "validate:five-hub-transactions": "pnpm --filter @lecipm/web run validate:five-hub-transactions",
+    "e2e-simulation": "pnpm exec tsx scripts/e2e-simulation.ts",
     "db:migrate:deploy": "pnpm --filter @lecipm/web exec prisma migrate deploy",
     "validate:staging-stack": "pnpm validate:flows && pnpm --filter @lecipm/web run validate:executive-control && pnpm --filter @lecipm/web run validate:ranking-system && pnpm --filter @lecipm/web run validate:fraud",
     "inspect:executive-daily": "pnpm --filter @lecipm/web run inspect:executive-daily",

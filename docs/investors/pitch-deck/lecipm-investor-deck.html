@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LECIPM — Investor Deck</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #000000;
+      --gold: #d4af37;
+      --text: #ffffff;
+      --muted: #b3b3b3;
+      --card: #111111;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    html,
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Open Sans", system-ui, sans-serif;
+      font-size: clamp(15px, 1.65vw, 22px);
+      line-height: 1.45;
+    }
+    .deck {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .slide {
+      min-height: 100vh;
+      padding: clamp(2rem, 5vw, 4rem);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      page-break-after: always;
+      break-after: page;
+      border-bottom: 1px solid #222;
+    }
+    .slide:last-child {
+      border-bottom: none;
+    }
+    .label {
+      font-family: Montserrat, sans-serif;
+      font-weight: 600;
+      font-size: 0.65rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 0.75rem;
+    }
+    h1,
+    h2 {
+      font-family: Montserrat, sans-serif;
+      font-weight: 700;
+      margin: 0 0 1rem;
+      font-size: clamp(1.75rem, 4vw, 2.75rem);
+      line-height: 1.15;
+    }
+    .subtitle {
+      color: var(--muted);
+      font-size: clamp(1rem, 2.2vw, 1.35rem);
+      max-width: 36ch;
+      margin-top: 0.5rem;
+    }
+    .rule {
+      width: min(180px, 40%);
+      height: 3px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+      margin: 1.25rem auto 0;
+      border-radius: 2px;
+    }
+    .center {
+      text-align: center;
+      align-items: center;
+    }
+    .center .subtitle {
+      margin-left: auto;
+      margin-right: auto;
+    }
+    ul.points {
+      list-style: none;
+      padding: 0;
+      margin: 1.25rem 0 0;
+      max-width: 42rem;
+    }
+    ul.points li {
+      display: flex;
+      gap: 0.85rem;
+      align-items: flex-start;
+      margin-bottom: 0.85rem;
+      color: var(--text);
+    }
+    ul.points li::before {
+      content: "";
+      flex-shrink: 0;
+      width: 10px;
+      height: 10px;
+      margin-top: 0.45em;
+      border: 2px solid var(--gold);
+      border-radius: 50%;
+      box-shadow: 0 0 12px rgba(212, 175, 55, 0.35);
+    }
+    .muted {
+      color: var(--muted);
+      font-size: 0.85em;
+      margin-top: 1rem;
+      max-width: 40rem;
+    }
+    .diagram {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: stretch;
+      margin-top: 1.5rem;
+      justify-content: flex-start;
+    }
+    .node {
+      flex: 1 1 140px;
+      min-width: 120px;
+      background: var(--card);
+      border: 1px solid rgba(212, 175, 55, 0.45);
+      border-radius: 12px;
+      padding: 0.75rem 1rem;
+      font-size: 0.85em;
+      text-align: center;
+      font-family: Montserrat, sans-serif;
+      font-weight: 600;
+    }
+    .arrow {
+      align-self: center;
+      color: var(--gold);
+      font-size: 1.25rem;
+      opacity: 0.85;
+    }
+    .flow {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.35rem 0.5rem;
+      margin-top: 1.5rem;
+      font-family: Montserrat, sans-serif;
+      font-weight: 600;
+      font-size: clamp(0.8rem, 1.8vw, 1rem);
+    }
+    .flow span.pill {
+      background: var(--card);
+      border: 1px solid var(--gold);
+      padding: 0.5rem 0.85rem;
+      border-radius: 999px;
+    }
+    .flow span.sep {
+      color: var(--gold);
+      opacity: 0.9;
+    }
+    .kpi-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2rem;
+      margin-top: 1.5rem;
+    }
+    .kpi {
+      flex: 1 1 160px;
+    }
+    .kpi .num {
+      font-family: Montserrat, sans-serif;
+      font-weight: 700;
+      font-size: clamp(2.5rem, 8vw, 4rem);
+      color: var(--gold);
+      line-height: 1;
+    }
+    .kpi .cap {
+      color: var(--muted);
+      font-size: 0.85rem;
+      margin-top: 0.35rem;
+    }
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      align-items: start;
+    }
+    @media (max-width: 720px) {
+      .two-col {
+        grid-template-columns: 1fr;
+      }
+      .arrow {
+        display: none;
+      }
+      .diagram .arrow {
+        display: none;
+      }
+    }
+    @media print {
+      .slide {
+        min-height: auto;
+        padding: 1.5cm;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="deck">
+    <!-- 1 Title -->
+    <section class="slide center">
+      <p class="label">Confidential</p>
+      <h1>LECIPM</h1>
+      <p class="subtitle">AI-Powered Real Estate Operating System</p>
+      <div class="rule"></div>
+      <p class="muted" style="margin-top: 1.5rem">From listings to intelligent transactions</p>
+    </section>
+
+    <!-- 2 Problem -->
+    <section class="slide">
+      <p class="label">Problem</p>
+      <h2>The stack stopped at listings</h2>
+      <ul class="points">
+        <li>Passive directories → brokers lose leads after the click</li>
+        <li>No unified intelligence across CRM, deals, and marketplace</li>
+        <li>Deal success depends on individual habit — not system leverage</li>
+        <li>Regulators expect auditability — spreadsheets don’t scale</li>
+      </ul>
+    </section>
+
+    <!-- 3 Market gap -->
+    <section class="slide">
+      <p class="label">Market gap</p>
+      <h2>Distribution ≠ execution</h2>
+      <ul class="points">
+        <li>Syndication (e.g. Centris) delivers reach</li>
+        <li>Legacy CRM stores data — limited optimization</li>
+        <li>Missing layer: intelligence, conversion discipline, workflow depth</li>
+      </ul>
+    </section>
+
+    <!-- 4 Solution -->
+    <section class="slide">
+      <p class="label">Solution</p>
+      <h2>One operating layer</h2>
+      <ul class="points">
+        <li>Captures &amp; attributes leads end-to-end</li>
+        <li>Analyzes deals — scores, risk, next steps (assistive)</li>
+        <li>Guides brokers — AI suggests; humans choose outreach</li>
+        <li>Learns from outcomes — better defaults over time</li>
+      </ul>
+    </section>
+
+    <!-- 5 Product diagram -->
+    <section class="slide">
+      <p class="label">Product</p>
+      <h2>System overview</h2>
+      <div class="diagram">
+        <div class="node">Lead funnel</div>
+        <span class="arrow">→</span>
+        <div class="node">Deal intelligence</div>
+        <span class="arrow">→</span>
+        <div class="node">Broker assistant</div>
+        <span class="arrow">→</span>
+        <div class="node">Compliance</div>
+        <span class="arrow">→</span>
+        <div class="node">Learning &amp; marketplace</div>
+      </div>
+      <p class="muted">Assistive AI · OACIQ / Law 25–aligned surfaces · Humans accountable</p>
+    </section>
+
+    <!-- 6 How it works -->
+    <section class="slide">
+      <p class="label">How it works</p>
+      <h2>From syndication to closed deal</h2>
+      <div class="flow">
+        <span class="pill">Centris</span>
+        <span class="sep">→</span>
+        <span class="pill">LECIPM</span>
+        <span class="sep">→</span>
+        <span class="pill">AI</span>
+        <span class="sep">→</span>
+        <span class="pill">Broker</span>
+        <span class="sep">→</span>
+        <span class="pill">Closed deal</span>
+      </div>
+      <p class="muted">LECIPM complements syndication · Partner data only as permitted by contract</p>
+    </section>
+
+    <!-- 7 Differentiation -->
+    <section class="slide">
+      <p class="label">Differentiation</p>
+      <h2>Not search alone · not CRM alone</h2>
+      <ul class="points">
+        <li>Operating system for real estate workflows</li>
+        <li>Learning + marketplace signals embedded</li>
+        <li>Compliance-aware by design (Québec)</li>
+      </ul>
+    </section>
+
+    <!-- 8 Business model -->
+    <section class="slide">
+      <p class="label">Business model</p>
+      <h2>Revenue architecture</h2>
+      <ul class="points">
+        <li>Broker subscriptions</li>
+        <li>Premium AI &amp; exports</li>
+        <li>Investor / analytics surfaces</li>
+        <li>Transaction-aligned fees (where permitted)</li>
+      </ul>
+    </section>
+
+    <!-- 9 Traction -->
+    <section class="slide">
+      <p class="label">Traction</p>
+      <h2>Proof points</h2>
+      <div class="kpi-row">
+        <div class="kpi">
+          <div class="num">[#]</div>
+          <div class="cap">Leads captured</div>
+        </div>
+        <div class="kpi">
+          <div class="num">[#]</div>
+          <div class="cap">Brokers</div>
+        </div>
+        <div class="kpi">
+          <div class="num">[#]</div>
+          <div class="cap">Deals tracked</div>
+        </div>
+      </div>
+      <p class="muted">Replace [#] with audited figures before external distribution.</p>
+    </section>
+
+    <!-- 10 Moat -->
+    <section class="slide">
+      <p class="label">Moat</p>
+      <h2>Why this compounds</h2>
+      <ul class="points">
+        <li>Integrated graph — leads ↔ deals ↔ listings ↔ events</li>
+        <li>Self-improving signals — bounded, review-friendly</li>
+        <li>Workflow depth — daily broker use</li>
+        <li>Trust — compliance &amp; insurance alignment</li>
+      </ul>
+    </section>
+
+    <!-- 11 Vision -->
+    <section class="slide">
+      <p class="label">Vision</p>
+      <h2>Intelligence layer for transactions</h2>
+      <ul class="points">
+        <li>Depth in priority markets first</li>
+        <li>Assistive AI scales; licensees decide</li>
+        <li>Expand where product + regulation align</li>
+      </ul>
+    </section>
+
+    <!-- 12 Ask -->
+    <section class="slide">
+      <p class="label">Ask</p>
+      <h2>The round</h2>
+      <ul class="points">
+        <li>Raising: $[___] · [stage]</li>
+        <li>Use of funds: Product · GTM · Hiring</li>
+        <li>Milestones: [insert measurable targets]</li>
+      </ul>
+      <p class="muted" style="margin-top: 2rem">Building the default OS for transaction intelligence in real estate.</p>
+    </section>
+  </div>
+</body>
+</html>

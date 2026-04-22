@@ -1,0 +1,79 @@
+{
+  "$schema": "https://design-tokens.github.io/community-group/format/schemas/design-tokens.schema.json",
+  "color": {
+    "background": {
+      "black": { "$type": "color", "$value": "#000000", "$description": "App & pitch background" }
+    },
+    "brand": {
+      "gold-primary": { "$type": "color", "$value": "#D4AF37" },
+      "gold-secondary": { "$type": "color", "$value": "#C9A646" }
+    },
+    "text": {
+      "primary": { "$type": "color", "$value": "#FFFFFF" },
+      "muted": { "$type": "color", "$value": "#BFBFBF" }
+    },
+    "surface": {
+      "card": { "$type": "color", "$value": "#111111" },
+      "elevated": { "$type": "color", "$value": "#1A1A1A" }
+    },
+    "border": {
+      "default": { "$type": "color", "$value": "#2A2A2A" }
+    }
+  },
+  "dimension": {
+    "space": {
+      "8": { "$type": "dimension", "$value": "8px" },
+      "16": { "$type": "dimension", "$value": "16px" },
+      "24": { "$type": "dimension", "$value": "24px" },
+      "32": { "$type": "dimension", "$value": "32px" },
+      "40": { "$type": "dimension", "$value": "40px" },
+      "64": { "$type": "dimension", "$value": "64px" }
+    },
+    "layout": {
+      "sidebar-width": { "$type": "dimension", "$value": "240px" },
+      "content-padding": { "$type": "dimension", "$value": "80px" },
+      "topbar-height": { "$type": "dimension", "$value": "56px" },
+      "grid-gutter": { "$type": "dimension", "$value": "24px" }
+    }
+  },
+  "font": {
+    "family": {
+      "heading": { "$type": "fontFamily", "$value": "Montserrat" },
+      "body": { "$type": "fontFamily", "$value": "Open Sans" }
+    },
+    "size": {
+      "h1": { "$type": "dimension", "$value": "64px" },
+      "h2": { "$type": "dimension", "$value": "40px" },
+      "h3": { "$type": "dimension", "$value": "28px" },
+      "body": { "$type": "dimension", "$value": "20px" },
+      "caption": { "$type": "dimension", "$value": "16px" }
+    },
+    "weight": {
+      "bold": { "$type": "fontWeight", "$value": "700" },
+      "semibold": { "$type": "fontWeight", "$value": "600" },
+      "regular": { "$type": "fontWeight", "$value": "400" }
+    }
+  },
+  "shadow": {
+    "card": {
+      "$type": "shadow",
+      "$value": {
+        "color": "rgba(0,0,0,0.45)",
+        "offsetX": "0px",
+        "offsetY": "10px",
+        "blur": "40px",
+        "spread": "0px"
+      }
+    },
+    "glow-gold": {
+      "$type": "shadow",
+      "$value": {
+        "color": "rgba(212,175,55,0.12)",
+        "offsetX": "0px",
+        "offsetY": "0px",
+        "blur": "40px",
+        "spread": "0px"
+      }
+    }
+  }
+}

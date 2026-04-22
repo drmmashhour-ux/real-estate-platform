@@ -102,8 +102,15 @@ export const engineFlags = {
   growthRevenuePanelV1: envTrue("FEATURE_GROWTH_REVENUE_PANEL_V1"),
   /** $1K/month growth plan — daily tasks + target progress (`/api/growth/1k-plan`). */
   growth1kPlanV1: envTrue("FEATURE_GROWTH_1K_PLAN_V1"),
+  /**
+   * Scale engine v1 — SEO landings, capture leads, nurture, social queue, `/dashboard/growth` metrics.
+   * Default off; admin can still read `GET /api/admin/growth-scale-dashboard` when growth machine is on.
+   */
+  growthScaleEngineV1: envTrue("FEATURE_GROWTH_SCALE_ENGINE_V1"),
   /** Broker acquisition summary on Growth Machine (`/api/growth/broker-acquisition` + admin CRM link). */
   brokerAcquisitionV1: envTrue("FEATURE_BROKER_ACQUISITION_V1"),
+  /** First 100 brokers — invite-only full SD access (transactions, docs, signatures). Default off. */
+  earlyBrokerV1: envTrue("FEATURE_EARLY_BROKER_V1"),
   /** Draft-only ads copy + targeting for human export (no Meta/Google API). */
   adsEngineV1: envTrue("FEATURE_ADS_ENGINE_V1"),
   /** CRM lead → deal funnel summary + follow-up action hints (read-only / advisory). */

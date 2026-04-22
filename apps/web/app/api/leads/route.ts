@@ -600,6 +600,12 @@ export async function POST(req: Request) {
       });
 
       metricsLog.funnel("lead_created", { leadSource, variant: "project_form" });
+      logLeadTagged.info("lead created", {
+        leadId: dbLead.id,
+        leadSource,
+        variant: "project_form",
+        listingId: dbLead.listingId ?? null,
+      });
 
       void trackEvent(
         "inquiry_sent",
@@ -763,6 +769,12 @@ export async function POST(req: Request) {
       leadSource,
       variant: "listing_contact",
       trafficSource: traffic.source,
+    });
+    logLeadTagged.info("lead created", {
+      leadId: dbLead.id,
+      leadSource,
+      variant: "listing_contact",
+      listingId: dbLead.listingId ?? null,
     });
 
     void trackEvent(

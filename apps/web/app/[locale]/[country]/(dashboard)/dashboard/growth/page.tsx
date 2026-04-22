@@ -68,6 +68,8 @@ import { LeadPricingModePerformancePanel } from "@/components/growth/LeadPricing
 import { SwarmSystemSection } from "@/components/growth/SwarmSystemSection";
 import { PlatformCoreSectionWithBrainV8Overlay } from "@/components/growth/PlatformCoreSectionWithBrainV8Overlay";
 import { AutonomousGrowthSystemSection } from "@/components/growth/AutonomousGrowthSystemSection";
+import { GrowthIntelligencePhase6Section } from "@/components/growth/admin/GrowthIntelligencePhase6Section";
+import { GrowthScaleMetricsSection } from "@/components/growth/GrowthScaleMetricsSection";
 
 export const dynamic = "force-dynamic";
 
@@ -138,6 +140,7 @@ export default async function GrowthMachineHubPage({
           outreach stays review-only until you approve it in CRM or Marketing Studio.
         </p>
       </div>
+      {isAdmin ? <GrowthScaleMetricsSection /> : null}
       {isAdmin ? <HubJourneyBanner hub="admin" locale={locale} country={country} userId={userId} /> : null}
       {isAdmin && engineFlags.autonomyExplainabilityV1 ? <ExplainabilityGrowthSection enabled /> : null}
       {isAdmin && growthIntelligenceFlags.growthIntelligenceV1 ? (

@@ -1,77 +1,64 @@
 import { prisma } from "@/lib/db";
-import { logInfo } from "@/lib/logger";
-import { appendClosingAudit } from "@/modules/closing/closing-audit";
-import { syncDealClosingReadiness } from "@/modules/closing/closing-orchestrator";
+import { appendDealAuditEvent } from "@/modules/deals/deal-audit.service";
+import { logClosingTimeline } from "./closing-timeline.service";
 
-const TAG = "[closing-checklist]";
-
-const DEFAULT_ITEMS: Array<{
-  title: string;
-  category: string;
-  priority: string | null;
-}> = [
-  { title: "Legal review — purchase & ancillary agreements", category: "LEGAL", priority: "CRITICAL" },
-  { title: "Capital / lender funds ready & undertakings acknowledged", category: "CAPITAL", priority: "CRITICAL" },
-  { title: "Documentation package indexed (closing room)", category: "DOCUMENTATION", priority: "HIGH" },
-  { title: "ESG / regulatory disclosures (where applicable)", category: "ESG", priority: "OPTIONAL" },
-  { title: "Final broker / execution approval", category: "FINAL_APPROVAL", priority: "CRITICAL" },
-  { title: "Possession / keys / meter transfers scheduled", category: "EXECUTION", priority: "HIGH" },
+const DEFAULT_ITEMS: Array<{ label: string; isCritical: boolean }> = [
+  { label: "All documents signed (transaction file)", isCritical: true },
+  { label: "Financing conditions satisfied", isCritical: true },
+  { label: "Notary package ready", isCritical: true },
+  { label: "Identity verification complete", isCritical: true },
+  { label: "Funds confirmed", isCritical: true },
+  { label: "Final documents uploaded", isCritical: true },
 ];
 
-export async function seedDefaultClosingChecklist(dealId: string): Promise<number> {
-  const existing = await prisma.dealClosingChecklist.count({ where: { dealId } });
-  if (existing > 0) return 0;
-
-  await prisma.$transaction(async (tx) => {
-    for (const row of DEFAULT_ITEMS) {
-      await tx.dealClosingChecklist.create({
-        data: {
-          dealId,
-          title: row.title,
-          category: row.category,
-          priority: row.priority,
-          status: "OPEN",
-        },
-      });
-    }
-  });
-
-  logInfo(`${TAG}`, { dealId, seeded: DEFAULT_ITEMS.length });
-  return DEFAULT_ITEMS.length;
+export async function createDefaultChecklistItems(closingId: string, transactionId: string | null) {
+  for (const item of DEFAULT_ITEMS) {
+    await prisma.lecipmPipelineDealClosingChecklistItem.create({
+      data: {
+        closingId,
+        label: item.label,
+        status: "PENDING",
+        isCritical: item.isCritical,
+      },
+    });
+  }
+  await logClosingTimeline(transactionId, "CLOSING_CHECKLIST_CREATED", "Default closing checklist initialized");
 }
 
-export async function updateChecklistItemStatus(options: {
-  dealId: string;
-  itemId: string;
-  actorUserId: string;
-  status: string;
-  notes?: string | null;
-  ownerUserId?: string | null;
-}): Promise<void> {
-  const row = await prisma.dealClosingChecklist.findFirst({
-    where: { id: options.itemId, dealId: options.dealId },
-    select: { id: true, status: true },
+export async function listChecklistItems(closingId: string) {
+  return prisma.lecipmPipelineDealClosingChecklistItem.findMany({
+    where: { closingId },
+    orderBy: { label: "asc" },
   });
-  if (!row) throw new Error("Checklist item not found");
+}
 
-  await prisma.dealClosingChecklist.update({
-    where: { id: row.id },
-    data: {
-      status: options.status,
-      notes: options.notes ?? undefined,
-      ownerUserId: options.ownerUserId ?? undefined,
-      updatedAt: new Date(),
-    },
+export async function updateChecklistItemStatus(
+  itemId: string,
+  status: string,
+  dealId: string,
+  actorUserId: string | null,
+  transactionId: string | null
+) {
+  const item = await prisma.lecipmPipelineDealClosingChecklistItem.findUnique({
+    where: { id: itemId },
+    include: { closing: true },
   });
+  if (!item || item.closing.dealId !== dealId) throw new Error("Checklist item not found");
 
-  await appendClosingAudit({
-    dealId: options.dealId,
-    actorUserId: options.actorUserId,
-    eventType: "CHECKLIST_UPDATED",
-    note: `${row.status} → ${options.status}`,
-    metadataJson: { itemId: options.itemId },
+  const st = status.slice(0, 16).toUpperCase();
+  const row = await prisma.lecipmPipelineDealClosingChecklistItem.update({
+    where: { id: itemId },
+    data: { status: st },
   });
 
-  await syncDealClosingReadiness(options.dealId);
-  logInfo(`${TAG}`, { dealId: options.dealId, itemId: options.itemId });
+  await appendDealAuditEvent(prisma, {
+    dealId,
+    eventType: "CLOSING_CHECKLIST_UPDATED",
+    actorUserId,
+    summary: `Checklist "${item.label}" → ${st}`,
+    metadataJson: { itemId },
+  });
+  await logClosingTimeline(transactionId, "CLOSING_CHECKLIST_UPDATED", `${item.label}: ${st}`);
+
+  return row;
 }

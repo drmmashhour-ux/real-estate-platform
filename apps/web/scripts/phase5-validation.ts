@@ -1,49 +1,118 @@
 /**
- * Phase 5 — Closing room + onboarding (anonymous smoke).
- * Run: pnpm exec tsx scripts/phase5-validation.ts
+ * Phase 5 — Capital stack, lender workflow, offers, financing conditions, closing readiness.
+ * Run from apps/web: pnpm exec tsx scripts/phase5-validation.ts
  */
-import {
-  assertServerReady,
-  fetchJson,
-  getValidationBase,
-  printPhaseHeader,
-  summarize,
-} from "./lecipm-phase-validation-shared";
+import { config } from "dotenv";
+import { resolve } from "node:path";
+import { prisma } from "@/lib/db";
+import { createCapitalStack } from "@/modules/capital/capital-stack.service";
+import { evaluateClosingReadiness } from "@/modules/capital/closing-readiness.service";
+import { updateFinancingConditionStatus } from "@/modules/capital/financing-conditions.service";
+import { addLender, markPackageSent } from "@/modules/capital/lender.service";
+import { addOffer, compareOffers, selectOffer } from "@/modules/capital/lender-offer.service";
+import { createStandaloneDeal } from "@/modules/deals/deal.service";
+
+config({ path: resolve(process.cwd(), ".env") });
+config({ path: resolve(process.cwd(), ".env.local"), override: true });
 
 async function main(): Promise<void> {
-  printPhaseHeader(5, "Closing room + asset onboarding");
-  const base = getValidationBase();
+  console.log("\n========== Phase 5 capital pipeline validation ==========\n");
   let failed = 0;
 
-  const run = async (name: string, fn: () => Promise<{ ok: boolean; detail?: string }>) => {
-    try {
-      const r = await fn();
-      if (r.ok) console.log(`PASS ${name}${r.detail ? ` — ${r.detail}` : ""}`);
-      else {
-        failed++;
-        console.log(`FAIL ${name}${r.detail ? ` — ${r.detail}` : ""}`);
-      }
-    } catch (e) {
+  const broker = await prisma.user.findFirst({ where: { role: "BROKER" }, select: { id: true } });
+  if (!broker) {
+    console.log("SKIP — no BROKER in DB");
+    process.exit(0);
+  }
+
+  try {
+    const deal = await createStandaloneDeal({
+      brokerId: broker.id,
+      title: "Phase 5 validation deal",
+      dealType: "ACQUISITION",
+      actorUserId: broker.id,
+    });
+
+    await createCapitalStack(
+      deal.id,
+      {
+        totalPurchasePrice: 850_000,
+        equityAmount: 170_000,
+        debtAmount: 680_000,
+      },
+      broker.id
+    );
+
+    const l1 = await addLender(deal.id, { lenderName: "Bank A" }, broker.id);
+    const l2 = await addLender(deal.id, { lenderName: "Bank B" }, broker.id);
+
+    await markPackageSent(l1.id, broker.id);
+    await markPackageSent(l2.id, broker.id);
+
+    await addOffer(deal.id, l1.id, { offeredAmount: 680_000, interestRate: 5.2, termYears: 25 }, broker.id);
+    await addOffer(deal.id, l2.id, { offeredAmount: 675_000, interestRate: 5.0, termYears: 25 }, broker.id);
+
+    await compareOffers(deal.id, broker.id);
+
+    const offers = await prisma.lecipmPipelineDealLenderOffer.findMany({
+      where: { dealId: deal.id },
+      orderBy: { interestRate: "asc" },
+    });
+    const pick = offers[0];
+    if (!pick) {
+      console.log("FAIL no offers");
       failed++;
-      console.log(`FAIL ${name} — ${e instanceof Error ? e.message : String(e)}`);
+    } else {
+      await selectOffer(pick.id, broker.id);
     }
-  };
 
-  await run("Server /api/ready", async () => ({
-    ok: await assertServerReady(base),
-    detail: base,
-  }));
+    const fConds = await prisma.lecipmPipelineDealFinancingCondition.findMany({
+      where: { dealId: deal.id },
+    });
+    if (fConds.length === 0) {
+      console.log("FAIL financing conditions not generated");
+      failed++;
+    } else {
+      console.log(`PASS financing conditions (${fConds.length})`);
+    }
 
-  await run("GET /api/closing/pipeline/summary (→ 401 anonymous)", async () => {
-    const { res } = await fetchJson(`${base}/api/closing/pipeline/summary`);
-    return { ok: res.status === 401, detail: `status ${res.status}` };
-  });
+    for (const c of fConds) {
+      await updateFinancingConditionStatus(c.id, {
+        status: "SATISFIED",
+        actorUserId: broker.id,
+        actorRole: "BROKER",
+      });
+    }
 
-  summarize(failed, 5);
-  process.exit(failed === 0 ? 0 : 1);
+    const ev = await evaluateClosingReadiness(deal.id, broker.id);
+    if (ev.readinessStatus !== "READY" && ev.readinessStatus !== "CONDITIONAL") {
+      console.log(`FAIL readiness ${ev.readinessStatus}`);
+      failed++;
+    } else {
+      console.log(`PASS closing readiness: ${ev.readinessStatus}`);
+    }
+
+    const stage = await prisma.lecipmPipelineDeal.findUnique({
+      where: { id: deal.id },
+      select: { pipelineStage: true },
+    });
+    if (stage?.pipelineStage !== "EXECUTION") {
+      console.log(`FAIL expected EXECUTION got ${stage?.pipelineStage}`);
+      failed++;
+    } else {
+      console.log("PASS deal stage EXECUTION");
+    }
+
+    console.log("\n----------");
+    if (failed === 0) console.log("PASS — Phase 5 validation\n");
+    else console.log(`FAIL — ${failed} check(s)\n`);
+
+    process.exit(failed === 0 ? 0 : 1);
+  } catch (e) {
+    console.error(e);
+    console.log("\nFAIL — exception\n");
+    process.exit(1);
+  }
 }
 
-main().catch((e) => {
-  console.error(e);
-  process.exit(1);
-});
+main();

@@ -28,7 +28,7 @@ export default async function OnboardingBrokerPage() {
   return (
     <MarketplaceOnboardingLayout
       title="Broker onboarding"
-      description="Seven steps to activate LECIPM — account, profile, coverage, listings, AI listing, dashboard intro, and your first action. Skip any step or exit anytime."
+      description="Launch path: profile setup → optional licence verification → first transaction (LEC-SD file) → guided tutorial. Québec-first rollout (OACIQ): finish onboarding to activate reporting and SD workspace."
     >
       <BrokerLecipmOnboardingWizard initialName={user.name} initialEmail={user.email} initialPhone={user.phone} />
     </MarketplaceOnboardingLayout>

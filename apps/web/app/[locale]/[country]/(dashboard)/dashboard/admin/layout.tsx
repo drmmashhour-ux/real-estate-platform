@@ -51,6 +51,9 @@ export default async function DashboardAdminLaunchLayout({ children }: { childre
               >
                 First 10 clients
               </Link>
+              <Link href="/dashboard/operators/waitlist" className="text-[#B3B3B3] hover:text-white hover:underline">
+                Operator waitlist
+              </Link>
               <Link href="/admin" className="text-xs text-[#737373] hover:text-[#B3B3B3]">
                 ← Main admin
               </Link>

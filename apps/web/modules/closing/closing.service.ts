@@ -1,69 +1,212 @@
 import { prisma } from "@/lib/db";
-import { transitionPipelineState } from "@/modules/execution/execution.service";
-import type { ExecutionGuardContext } from "@/modules/execution/execution-guard.service";
-import { assertClosingPreconditions } from "@/modules/execution/execution-guard.service";
-import { normalizeState } from "@/modules/execution/execution-state-machine";
-import { getClosingReadiness } from "./closing-readiness.service";
-import { logClosingAnalytics } from "@/modules/analytics/signature-closing-analytics.service";
+import { logInfo } from "@/lib/logger";
+import { appendDealAuditEvent } from "@/modules/deals/deal-audit.service";
+import { logTimelineEvent } from "@/modules/transactions/transaction-timeline.service";
+import { createAssetFromDeal } from "./asset-onboarding.service";
+import { createTransactionArchive } from "./archive.service";
+import { createDefaultChecklistItems } from "./closing-checklist.service";
+import { evaluateClosing } from "./closing-validation.service";
+import { logClosingTimeline } from "./closing-timeline.service";
 
-export async function confirmDealClosing(input: {
-  dealId: string;
-  actorUserId: string;
-  ctx: ExecutionGuardContext;
-}): Promise<{ ok: true } | { ok: false; message: string }> {
-  const deal = await prisma.deal.findUnique({
-    where: { id: input.dealId },
-    select: { lecipmExecutionPipelineState: true },
+const TAG = "[closing.room]";
+
+export async function getClosingByDealId(dealId: string) {
+  return prisma.lecipmPipelineDealClosing.findUnique({
+    where: { dealId },
+    include: {
+      checklistItems: { orderBy: { label: "asc" } },
+      closingDocuments: { orderBy: { createdAt: "asc" } },
+    },
   });
-  if (!deal) return { ok: false, message: "Deal not found" };
+}
 
-  const state = normalizeState(deal.lecipmExecutionPipelineState);
-  if (state !== "closing_ready") {
-    return { ok: false, message: "Pipeline must be closing_ready before confirming closing." };
+export async function initializeClosing(dealId: string, actorUserId: string | null) {
+  const deal = await prisma.lecipmPipelineDeal.findUnique({ where: { id: dealId } });
+  if (!deal) throw new Error("Deal not found");
+
+  if (deal.pipelineStage !== "EXECUTION" && deal.pipelineStage !== "APPROVED") {
+    throw new Error("Deal must be APPROVED or EXECUTION to initialize closing");
+  }
+  if (!deal.transactionId) throw new Error("Deal must have a linked SD transaction");
+
+  const dup = await prisma.lecipmPipelineDealClosing.findUnique({ where: { dealId } });
+  if (dup) throw new Error("Closing room already initialized");
+
+  const notary = await prisma.lecipmSdNotaryPackage.findUnique({
+    where: { transactionId: deal.transactionId },
+  });
+
+  const closing = await prisma.lecipmPipelineDealClosing.create({
+    data: {
+      dealId,
+      transactionId: deal.transactionId,
+      closingStatus: "PREPARING",
+      notaryName: notary?.notaryName ?? undefined,
+      notaryEmail: notary?.notaryEmail ?? undefined,
+    },
+  });
+
+  await createDefaultChecklistItems(closing.id, deal.transactionId);
+
+  await appendDealAuditEvent(prisma, {
+    dealId,
+    eventType: "CLOSING_INITIALIZED",
+    actorUserId,
+    summary: "Closing room initialized",
+    metadataJson: { closingId: closing.id },
+  });
+  await logClosingTimeline(deal.transactionId, "CLOSING_INITIALIZED", `Deal ${deal.dealNumber}`);
+
+  logInfo(TAG, { dealId, closingId: closing.id });
+  return getClosingByDealId(dealId);
+}
+
+export async function assignNotary(dealId: string, name: string, email: string | null, actorUserId: string | null) {
+  const closing = await prisma.lecipmPipelineDealClosing.findUnique({ where: { dealId } });
+  if (!closing?.transactionId) throw new Error("Closing not found or no transaction");
+
+  await prisma.lecipmPipelineDealClosing.update({
+    where: { dealId },
+    data: {
+      notaryName: name.slice(0, 256),
+      notaryEmail: email?.slice(0, 320) ?? undefined,
+    },
+  });
+
+  await prisma.lecipmSdNotaryPackage.upsert({
+    where: { transactionId: closing.transactionId },
+    create: {
+      transactionId: closing.transactionId,
+      notaryName: name.slice(0, 256),
+      notaryEmail: email?.slice(0, 320) ?? undefined,
+    },
+    update: {
+      notaryName: name.slice(0, 256),
+      notaryEmail: email?.slice(0, 320) ?? undefined,
+    },
+  });
+
+  await appendDealAuditEvent(prisma, {
+    dealId,
+    eventType: "NOTARY_ASSIGNED",
+    actorUserId,
+    summary: `Notary: ${name}`,
+  });
+  await logClosingTimeline(closing.transactionId, "NOTARY_ASSIGNED", name);
+
+  return getClosingByDealId(dealId);
+}
+
+export async function prepareFinalDocumentSet(dealId: string, actorUserId: string | null) {
+  const closing = await prisma.lecipmPipelineDealClosing.findUnique({
+    where: { dealId },
+    include: { closingDocuments: true },
+  });
+  if (!closing) throw new Error("Closing not found");
+
+  for (const d of closing.closingDocuments) {
+    if (d.status === "PENDING") {
+      await prisma.lecipmPipelineDealClosingDocument.update({
+        where: { id: d.id },
+        data: { status: "READY" },
+      });
+    }
   }
 
-  const readiness = await getClosingReadiness(input.dealId);
-  if (!readiness.ready) {
-    return { ok: false, message: "Closing readiness checks failed — see missingItems on closing-status." };
+  await appendDealAuditEvent(prisma, {
+    dealId,
+    eventType: "NOTARY_PACKAGE_READY",
+    actorUserId,
+    summary: "Closing documents marked READY",
+  });
+  await logClosingTimeline(closing.transactionId, "NOTARY_PACKAGE_READY", "Final document set prepared");
+
+  return getClosingByDealId(dealId);
+}
+
+/** Marks closing READY and logs package sent (simulated). */
+export async function simulateSendToNotary(dealId: string, actorUserId: string | null) {
+  const closing = await prisma.lecipmPipelineDealClosing.findUnique({ where: { dealId } });
+  if (!closing) throw new Error("Closing not found");
+
+  await prisma.lecipmPipelineDealClosing.update({
+    where: { dealId },
+    data: { closingStatus: "READY" },
+  });
+
+  await appendDealAuditEvent(prisma, {
+    dealId,
+    eventType: "NOTARY_PACKAGE_SENT_SIMULATED",
+    actorUserId,
+    summary: "Simulated send to notary",
+  });
+  await logClosingTimeline(closing.transactionId, "NOTARY_PACKAGE_READY", "Package ready for notary execution");
+
+  return getClosingByDealId(dealId);
+}
+
+export async function markSigningStarted(dealId: string, actorUserId: string | null) {
+  const closing = await prisma.lecipmPipelineDealClosing.findUnique({ where: { dealId } });
+  if (!closing) throw new Error("Closing not found");
+
+  await prisma.lecipmPipelineDealClosing.update({
+    where: { dealId },
+    data: { closingStatus: "SIGNING" },
+  });
+
+  await appendDealAuditEvent(prisma, {
+    dealId,
+    eventType: "NOTARY_SIGNING_STARTED",
+    actorUserId,
+    summary: "Signing session started",
+  });
+  await logClosingTimeline(closing.transactionId, "NOTARY_SIGNING_STARTED", "Notary signing");
+
+  return getClosingByDealId(dealId);
+}
+
+export async function completeClosing(dealId: string, actorUserId: string | null) {
+  const validation = await evaluateClosing(dealId);
+  if (validation.status !== "READY") {
+    throw new Error(validation.issues.join("; ") || "Closing validation failed");
   }
-  const sig = await prisma.signatureSession.findFirst({
-    where: { dealId: input.dealId },
-    orderBy: { createdAt: "desc" },
-    include: { participants: true },
-  });
-  const signatureComplete = Boolean(
-    sig &&
-      sig.status === "completed" &&
-      sig.participants.length > 0 &&
-      sig.participants.every((p) => p.status === "signed"),
-  );
 
-  const open = await prisma.dealClosingCondition.count({
-    where: { dealId: input.dealId, status: { not: "fulfilled" } },
-  });
+  const deal = await prisma.lecipmPipelineDeal.findUnique({ where: { id: dealId } });
+  if (!deal?.transactionId) throw new Error("Missing transaction on deal");
 
-  const pre = assertClosingPreconditions({
-    state,
-    allConditionsFulfilled: open === 0,
-    signatureComplete,
-  });
-  if (!pre.ok) return pre;
+  const closing = await prisma.lecipmPipelineDealClosing.findUnique({ where: { dealId } });
+  if (!closing) throw new Error("Closing not initialized");
 
-  const t = await transitionPipelineState({
-    dealId: input.dealId,
-    to: "closed",
-    actorUserId: input.actorUserId,
-    reason: "closing_confirmed",
-    guard: input.ctx,
-  });
-  if (!t.ok) return t;
+  const now = new Date();
 
-  await prisma.dealNotaryCoordination.updateMany({
-    where: { dealId: input.dealId },
-    data: { notaryInviteStatus: "completed", packageStatus: "completed" },
+  await prisma.lecipmPipelineDealClosing.update({
+    where: { dealId },
+    data: {
+      closingStatus: "COMPLETED",
+      closingDate: now,
+    },
   });
 
-  await logClosingAnalytics({ dealId: input.dealId, eventKey: "deal_closed", payload: { at: new Date().toISOString() } });
+  await appendDealAuditEvent(prisma, {
+    dealId,
+    eventType: "TRANSACTION_CLOSED",
+    actorUserId,
+    summary: `Transaction closed ${deal.transactionNumber ?? deal.transactionId}`,
+    metadataJson: { transactionId: deal.transactionId },
+  });
 
-  return { ok: true };
+  await logTimelineEvent(prisma, deal.transactionId, "TRANSACTION_CLOSED", `Deal ${deal.dealNumber} closed`);
+
+  await appendDealAuditEvent(prisma, {
+    dealId,
+    eventType: "DEAL_CLOSED",
+    actorUserId,
+    summary: "Pipeline deal closed",
+  });
+
+  await createAssetFromDeal(dealId, actorUserId);
+  await createTransactionArchive(deal.transactionId, dealId, actorUserId);
+
+  logInfo(TAG, { dealId, closed: true });
+  return getClosingByDealId(dealId);
 }

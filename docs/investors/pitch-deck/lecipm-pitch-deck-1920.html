@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=1920" />
+  <title>LECIPM — Investor Pitch (1920×1080)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #000000;
+      --gold: #d4af37;
+      --gold2: #c9a646;
+      --text: #ffffff;
+      --subtext: #bfbfbf;
+      --margin: 80px;
+      --section: 40px;
+      --w: 1920px;
+      --h: 1080px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      background: #0a0a0a;
+      color: var(--text);
+    }
+
+    .deck {
+      width: var(--w);
+      margin: 0 auto;
+    }
+
+    /* --- Slide shell: exact canvas --- */
+    .slide {
+      width: var(--w);
+      height: var(--h);
+      padding: var(--margin);
+      position: relative;
+      overflow: hidden;
+      background-color: var(--bg);
+      background-image:
+        radial-gradient(ellipse 900px 600px at 100% 0%, rgba(212, 175, 55, 0.07) 0%, transparent 55%);
+      page-break-after: always;
+      break-after: page;
+      border-bottom: 1px solid #1a1a1a;
+    }
+
+    .slide:last-child {
+      border-bottom: none;
+    }
+
+    .title-font {
+      font-family: Montserrat, system-ui, sans-serif;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.35;
+    }
+
+    .subtitle-font {
+      font-family: Montserrat, system-ui, sans-serif;
+      font-weight: 600;
+      color: var(--subtext);
+      line-height: 1.4;
+    }
+
+    .body-font {
+      font-family: "Open Sans", system-ui, sans-serif;
+      font-weight: 400;
+      font-size: 22px;
+      line-height: 1.45;
+      color: var(--text);
+    }
+
+    .accent {
+      color: var(--gold);
+      font-weight: 600;
+    }
+
+    /* Slide 1 */
+    .s1 {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .s1 h1 {
+      margin: 0;
+      font-family: Montserrat, sans-serif;
+      font-weight: 700;
+      font-size: 60px;
+      letter-spacing: -0.02em;
+    }
+
+    .s1 .sub {
+      margin-top: var(--section);
+      font-family: Montserrat, sans-serif;
+      font-weight: 600;
+      font-size: 28px;
+      color: var(--subtext);
+      max-width: 28ch;
+    }
+
+    .s1 .rule {
+      margin-top: var(--section);
+      width: 200px;
+      height: 2px;
+      background: var(--gold);
+      opacity: 0.95;
+    }
+
+    .s1 .tag {
+      margin-top: calc(var(--section) * 1.25);
+      font-family: "Open Sans", sans-serif;
+      font-size: 20px;
+      color: var(--subtext);
+    }
+
+    /* Slide 2 — two columns */
+    .row2 {
+      display: flex;
+      gap: 60px;
+      height: calc(100% - 0px);
+      align-items: stretch;
+    }
+
+    .col-main {
+      flex: 1;
+      max-width: 980px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .col-icons {
+      flex: 0 0 520px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: var(--section);
+    }
+
+    .slide-label {
+      font-family: Montserrat, sans-serif;
+      font-weight: 600;
+      font-size: 14px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--gold2);
+      margin-bottom: 24px;
+    }
+
+    h2.slide-title {
+      margin: 0 0 var(--section);
+      font-family: Montserrat, sans-serif;
+      font-weight: 700;
+      font-size: 52px;
+      line-height: 1.15;
+      text-align: left;
+    }
+
+    ul.clean {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      max-width: 44ch;
+    }
+
+    ul.clean li {
+      position: relative;
+      padding-left: 0;
+      margin-bottom: 22px;
+      font-family: "Open Sans", sans-serif;
+      font-size: 22px;
+      line-height: 1.45;
+      color: var(--text);
+    }
+
+    .icon-cell {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      width: 100%;
+    }
+
+    .icon-cell svg {
+      flex-shrink: 0;
+    }
+
+    .icon-cap {
+      font-family: "Open Sans", sans-serif;
+      font-size: 18px;
+      color: var(--subtext);
+      text-align: center;
+      max-width: 140px;
+      line-height: 1.35;
+    }
+
+    /* Slide 3 — 3 columns */
+    .cols3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: var(--section);
+      margin-top: calc(var(--section) * 1.5);
+      align-items: stretch;
+    }
+
+    .col-box {
+      border: 1px solid rgba(212, 175, 55, 0.35);
+      border-radius: 4px;
+      padding: 36px 28px;
+      min-height: 280px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      background: rgba(17, 17, 17, 0.6);
+    }
+
+    .col-box.highlight {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 1px rgba(212, 175, 55, 0.25), inset 0 0 40px rgba(212, 175, 55, 0.06);
+    }
+
+    .col-box h3 {
+      margin: 0 0 20px;
+      font-family: Montserrat, sans-serif;
+      font-weight: 700;
+      font-size: 28px;
+      color: var(--text);
+    }
+
+    .col-box.highlight h3 {
+      color: var(--gold);
+    }
+
+    .col-box p {
+      margin: 0;
+      font-family: "Open Sans", sans-serif;
+      font-size: 20px;
+      line-height: 1.45;
+      color: var(--subtext);
+    }
+
+    /* Slide 4 — bullets + gold icons */
+    ul.icon-bullets {
+      list-style: none;
+      padding: 0;
+      margin: var(--section) 0 0;
+    }
+
+    ul.icon-bullets li {
+      display: flex;
+      align-items: flex-start;
+      gap: 18px;
+      margin-bottom: 26px;
+      font-family: "Open Sans", sans-serif;
+      font-size: 22px;
+      line-height: 1.45;
+    }
+
+    .gold-dot {
+      flex-shrink: 0;
+      width: 12px;
+      height: 12px;
+      margin-top: 9px;
+      border: 2px solid var(--gold);
+      border-radius: 50%;
+      box-shadow: 0 0 14px rgba(212, 175, 55, 0.35);
+    }
+
+    /* Slide 5 & 6 — flows */
+    .flow-wrap {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding-top: 20px;
+    }
+
+    .flow-row {
+      display: flex;
+      flex-wrap: nowrap;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    .node {
+      font-family: Montserrat, sans-serif;
+      font-weight: 600;
+      font-size: 22px;
+      padding: 18px 26px;
+      border: 1px solid var(--gold);
+      border-radius: 6px;
+      background: rgba(26, 26, 26, 0.95);
+      color: var(--text);
+      white-space: nowrap;
+    }
+
+    .arrow {
+      font-family: Montserrat, sans-serif;
+      font-weight: 600;
+      font-size: 26px;
+      color: var(--gold2);
+      opacity: 0.95;
+      padding: 0 4px;
+    }
+
+    /* Slide 7 split */
+    .split7 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--section);
+      margin-top: calc(var(--section) * 1.25);
+      flex: 1;
+      align-items: stretch;
+      min-height: 520px;
+    }
+
+    .panel {
+      padding: 40px;
+      border-radius: 6px;
+      border: 1px solid rgba(191, 191, 191, 0.2);
+      background: rgba(12, 12, 12, 0.9);
+    }
+
+    .panel.gold-panel {
+      border: 2px solid var(--gold);
+      background: linear-gradient(145deg, rgba(212, 175, 55, 0.08) 0%, rgba(0, 0, 0, 0.6) 100%);
+      box-shadow: inset 0 1px 0 rgba(212, 175, 55, 0.15);
+    }
+
+    .panel h3 {
+      margin: 0 0 28px;
+      font-family: Montserrat, sans-serif;
+      font-weight: 700;
+      font-size: 26px;
+      color: var(--subtext);
+    }
+
+    .panel.gold-panel h3 {
+      color: var(--gold);
+    }
+
+    .panel ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .panel li {
+      font-family: "Open Sans", sans-serif;
+      font-size: 21px;
+      line-height: 1.45;
+      margin-bottom: 18px;
+      color: var(--subtext);
+      padding-left: 20px;
+      position: relative;
+    }
+
+    .panel li::before {
+      content: "—";
+      position: absolute;
+      left: 0;
+      color: rgba(191, 191, 191, 0.5);
+    }
+
+    .panel.gold-panel li {
+      color: var(--text);
+    }
+
+    .panel.gold-panel li::before {
+      color: var(--gold);
+      content: "✓";
+      font-size: 14px;
+      top: 3px;
+    }
+
+    /* Slide 8 grid */
+    .grid4 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      gap: var(--section);
+      margin-top: calc(var(--section) * 1.5);
+      flex: 1;
+      min-height: 480px;
+    }
+
+    .card {
+      border: 1px solid rgba(212, 175, 55, 0.45);
+      border-radius: 8px;
+      padding: 36px 32px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      background: rgba(17, 17, 17, 0.85);
+    }
+
+    .card h4 {
+      margin: 0 0 12px;
+      font-family: Montserrat, sans-serif;
+      font-weight: 700;
+      font-size: 26px;
+      color: var(--gold);
+    }
+
+    .card p {
+      margin: 0;
+      font-family: "Open Sans", sans-serif;
+      font-size: 20px;
+      color: var(--subtext);
+      line-height: 1.45;
+    }
+
+    /* Slide 9 KPI */
+    .kpi-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: var(--section);
+      margin-top: calc(var(--section) * 2);
+      padding: 0 40px;
+      flex: 1;
+    }
+
+    .kpi {
+      text-align: left;
+      flex: 1;
+    }
+
+    .kpi .num {
+      font-family: Montserrat, sans-serif;
+      font-weight: 700;
+      font-size: 60px;
+      line-height: 1;
+      color: var(--gold);
+      letter-spacing: -0.03em;
+    }
+
+    .kpi .lbl {
+      margin-top: 16px;
+      font-family: "Open Sans", sans-serif;
+      font-size: 22px;
+      color: var(--subtext);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-weight: 600;
+    }
+
+    /* Slide 10 moat — underline items */
+    ul.moats {
+      list-style: none;
+      padding: 0;
+      margin: var(--section) 0 0;
+      max-width: 900px;
+    }
+
+    ul.moats li {
+      font-family: "Open Sans", sans-serif;
+      font-size: 22px;
+      line-height: 1.45;
+      margin-bottom: 28px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid rgba(212, 175, 55, 0.45);
+      color: var(--text);
+    }
+
+    ul.moats li strong {
+      font-family: Montserrat, sans-serif;
+      font-weight: 700;
+      color: var(--gold);
+      margin-right: 10px;
+    }
+
+    /* Slide 11 vision */
+    .vision-stack {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: calc(var(--section) * 2.25);
+      max-width: 920px;
+    }
+
+    .vision-stack p {
+      margin: 0;
+      font-family: Montserrat, sans-serif;
+      font-weight: 600;
+      font-size: 32px;
+      line-height: 1.4;
+      color: var(--text);
+    }
+
+    /* Slide 12 ask */
+    .ask12 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      margin-top: calc(var(--section) * 1.5);
+      flex: 1;
+      align-items: center;
+    }
+
+    .ask-left .big {
+      font-family: Montserrat, sans-serif;
+      font-weight: 700;
+      font-size: 52px;
+      color: var(--gold);
+      margin-bottom: 20px;
+    }
+
+    .ask-left .meta {
+      font-family: "Open Sans", sans-serif;
+      font-size: 22px;
+      color: var(--subtext);
+      line-height: 1.6;
+    }
+
+    .pie-wrap {
+      display: flex;
+      gap: 48px;
+      align-items: center;
+      justify-content: flex-start;
+    }
+
+    .pie {
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      background: conic-gradient(
+        var(--gold) 0deg 162deg,
+        var(--gold2) 162deg 270deg,
+        rgba(212, 175, 55, 0.35) 270deg 324deg,
+        rgba(191, 191, 191, 0.35) 324deg 360deg
+      );
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .pie::after {
+      content: "";
+      position: absolute;
+      inset: 52px;
+      border-radius: 50%;
+      background: var(--bg);
+    }
+
+    .legend {
+      flex: 1;
+    }
+
+    .legend-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+      font-family: "Open Sans", sans-serif;
+      font-size: 20px;
+      color: var(--text);
+    }
+
+    .swatch {
+      width: 14px;
+      height: 14px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+    @media print {
+      body {
+        background: #000;
+      }
+
+      .slide {
+        border: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="deck">
+    <!-- 1 TITLE -->
+    <section class="slide s1">
+      <h1>LECIPM</h1>
+      <p class="sub">AI-Powered Real Estate Operating System</p>
+      <div class="rule" aria-hidden="true"></div>
+      <p class="tag">Confidential · Investor presentation</p>
+    </section>
+
+    <!-- 2 PROBLEM -->
+    <section class="slide" style="display: flex; flex-direction: column;">
+      <div class="slide-label">Problem</div>
+      <div class="row2" style="flex: 1;">
+        <div class="col-main">
+          <h2 class="slide-title">The stack stopped at <span class="accent">listings</span></h2>
+          <ul class="clean">
+            <li><span class="accent">Broken system:</span> passive directories don’t execute deals.</li>
+            <li><span class="accent">Lost leads:</span> attribution drops after the first click.</li>
+            <li><span class="accent">Inefficiency:</span> brokers rely on habit, not leverage.</li>
+            <li>No unified intelligence across CRM, deals, and marketplace.</li>
+            <li>Regulators expect auditability — spreadsheets don’t scale.</li>
+          </ul>
+        </div>
+        <div class="col-icons">
+          <div class="icon-cell">
+            <svg width="88" height="88" viewBox="0 0 88 88" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <circle cx="28" cy="44" r="14" stroke="#D4AF37" stroke-width="2.5"/>
+              <circle cx="60" cy="44" r="14" stroke="#D4AF37" stroke-width="2.5"/>
+              <path d="M42 44 L46 44" stroke="#D4AF37" stroke-width="2.5" stroke-dasharray="4 4"/>
+            </svg>
+            <span class="icon-cap">Broken system</span>
+          </div>
+          <div class="icon-cell">
+            <svg width="88" height="88" viewBox="0 0 88 88" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M44 16 L60 40 H52 L56 72 H32 L36 40 H28 L44 16Z" stroke="#D4AF37" stroke-width="2.5" fill="none"/>
+              <circle cx="50" cy="54" r="6" stroke="#D4AF37" stroke-width="2"/>
+              <path d="M54 58 L62 68" stroke="#D4AF37" stroke-width="2"/>
+            </svg>
+            <span class="icon-cap">Lost leads</span>
+          </div>
+          <div class="icon-cell">
+            <svg width="88" height="88" viewBox="0 0 88 88" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <circle cx="44" cy="44" r="26" stroke="#D4AF37" stroke-width="2.5"/>
+              <path d="M44 30 V44 L56 52" stroke="#D4AF37" stroke-width="2.5" stroke-linecap="round"/>
+            </svg>
+            <span class="icon-cap">Inefficiency</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3 MARKET GAP -->
+    <section class="slide" style="display: flex; flex-direction: column;">
+      <div class="slide-label">Market gap</div>
+      <h2 class="slide-title">Distribution <span class="accent">≠</span> execution</h2>
+      <div class="cols3">
+        <div class="col-box">
+          <h3>Centris</h3>
+          <p>Reach and syndication. Listings surface; execution still happens elsewhere.</p>
+        </div>
+        <div class="col-box">
+          <h3>CRM</h3>
+          <p>Storage and tasks. Limited intelligence and weak cross-deal leverage.</p>
+        </div>
+        <div class="col-box highlight">
+          <h3>Missing</h3>
+          <p><span class="accent">Intelligence layer</span> — conversion discipline, workflow depth, and outcome learning in one OS.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4 SOLUTION -->
+    <section class="slide" style="display: flex; flex-direction: column;">
+      <div class="slide-label">Solution</div>
+      <h2 class="slide-title">One operating layer for <span class="accent">transactions</span></h2>
+      <ul class="icon-bullets">
+        <li><span class="gold-dot" aria-hidden="true"></span><span>Captures &amp; attributes leads <span class="accent">end-to-end</span>.</span></li>
+        <li><span class="gold-dot" aria-hidden="true"></span><span>Analyzes deals — scores, risk, next steps (<span class="accent">assistive AI</span>).</span></li>
+        <li><span class="gold-dot" aria-hidden="true"></span><span>Guides brokers — suggestions, not autonomous outreach.</span></li>
+        <li><span class="gold-dot" aria-hidden="true"></span><span>Learns from outcomes — <span class="accent">tighter defaults</span> over time.</span></li>
+      </ul>
+    </section>
+
+    <!-- 5 PRODUCT -->
+    <section class="slide" style="display: flex; flex-direction: column;">
+      <div class="slide-label">Product</div>
+      <h2 class="slide-title">Overview</h2>
+      <div class="flow-wrap">
+        <div class="flow-row">
+          <span class="node">Lead</span>
+          <span class="arrow">→</span>
+          <span class="node">Deal</span>
+          <span class="arrow">→</span>
+          <span class="node">AI</span>
+          <span class="arrow">→</span>
+          <span class="node">Broker</span>
+          <span class="arrow">→</span>
+          <span class="node">Close</span>
+        </div>
+        <p class="body-font" style="margin-top: 48px; color: var(--subtext); text-align: center; max-width: 52ch;">
+          Modular core: funnel → intelligence → assistant → compliance signals → learning &amp; marketplace feedback.
+        </p>
+      </div>
+    </section>
+
+    <!-- 6 HOW IT WORKS -->
+    <section class="slide" style="display: flex; flex-direction: column;">
+      <div class="slide-label">How it works</div>
+      <h2 class="slide-title">From syndication to <span class="accent">closed deal</span></h2>
+      <div class="flow-wrap">
+        <div class="flow-row" style="flex-wrap: wrap;">
+          <span class="node">Centris</span>
+          <span class="arrow">→</span>
+          <span class="node">LECIPM</span>
+          <span class="arrow">→</span>
+          <span class="node">AI Engine</span>
+          <span class="arrow">→</span>
+          <span class="node">Broker</span>
+          <span class="arrow">→</span>
+          <span class="node">Closed Deal</span>
+        </div>
+        <p class="body-font" style="margin-top: 48px; color: var(--subtext); text-align: center;">
+          Partner data only as permitted by contract · Humans remain accountable.
+        </p>
+      </div>
+    </section>
+
+    <!-- 7 DIFFERENTIATION -->
+    <section class="slide" style="display: flex; flex-direction: column;">
+      <div class="slide-label">Differentiation</div>
+      <h2 class="slide-title">Platforms vs. <span class="accent">operating system</span></h2>
+      <div class="split7">
+        <div class="panel">
+          <h3>Traditional platforms</h3>
+          <ul>
+            <li>Listings-first or CRM-only depth</li>
+            <li>Weak cross-object intelligence</li>
+            <li>Limited outcome learning</li>
+            <li>Generic workflows</li>
+          </ul>
+        </div>
+        <div class="panel gold-panel">
+          <h3>LECIPM advantages</h3>
+          <ul>
+            <li>Transaction OS — leads through close</li>
+            <li>Embedded learning + marketplace signals</li>
+            <li>Québec-aligned compliance posture</li>
+            <li>Daily broker workflow integration</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8 BUSINESS MODEL -->
+    <section class="slide" style="display: flex; flex-direction: column;">
+      <div class="slide-label">Business model</div>
+      <h2 class="slide-title">Revenue architecture</h2>
+      <div class="grid4">
+        <div class="card">
+          <h4>Subscription</h4>
+          <p>Broker seats and workspace access.</p>
+        </div>
+        <div class="card">
+          <h4>AI tools</h4>
+          <p>Premium exports, scoring, and assistant depth.</p>
+        </div>
+        <div class="card">
+          <h4>Analytics</h4>
+          <p>Investor &amp; portfolio surfaces (non-advisory framing).</p>
+        </div>
+        <div class="card">
+          <h4>Transaction fees</h4>
+          <p>Aligned to closed flow where permitted.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 9 TRACTION -->
+    <section class="slide" style="display: flex; flex-direction: column;">
+      <div class="slide-label">Traction</div>
+      <h2 class="slide-title">Proof points</h2>
+      <div class="kpi-row">
+        <div class="kpi">
+          <div class="num">[#]</div>
+          <div class="lbl">Leads</div>
+        </div>
+        <div class="kpi">
+          <div class="num">[#]</div>
+          <div class="lbl">Brokers</div>
+        </div>
+        <div class="kpi">
+          <div class="num">[#]</div>
+          <div class="lbl">Deals</div>
+        </div>
+      </div>
+      <p class="body-font" style="margin-top: auto; color: var(--subtext); font-size: 18px;">Replace [#] with live metrics before distribution.</p>
+    </section>
+
+    <!-- 10 MOAT -->
+    <section class="slide" style="display: flex; flex-direction: column;">
+      <div class="slide-label">Moat</div>
+      <h2 class="slide-title">Why this <span class="accent">compounds</span></h2>
+      <ul class="moats">
+        <li><strong>Data</strong> Integrated graph — leads ↔ deals ↔ listings ↔ events.</li>
+        <li><strong>AI</strong> Self-improving signals with human-in-the-loop controls.</li>
+        <li><strong>Compliance</strong> Built for auditability and Québec expectations.</li>
+        <li><strong>Workflow</strong> Deep daily integration — not a bolt-on widget.</li>
+      </ul>
+    </section>
+
+    <!-- 11 VISION -->
+    <section class="slide" style="display: flex; flex-direction: column;">
+      <div class="slide-label">Vision</div>
+      <div class="vision-stack">
+        <p>Depth in priority markets first — prove the OS where it matters.</p>
+        <p>Assistive AI scales; <span class="accent">licensees</span> retain decision rights.</p>
+        <p>Expand modules where product and regulation align.</p>
+      </div>
+    </section>
+
+    <!-- 12 ASK -->
+    <section class="slide" style="display: flex; flex-direction: column;">
+      <div class="slide-label">Ask</div>
+      <h2 class="slide-title">The round</h2>
+      <div class="ask12">
+        <div class="ask-left">
+          <div class="big">$ [___]</div>
+          <p class="meta"><strong style="color: var(--text);">Stage:</strong> [Seed / Series A]<br />
+            Use of funds tied to product velocity, broker GTM, and key hires.</p>
+        </div>
+        <div class="pie-wrap">
+          <div class="pie" role="img" aria-label="Allocation: Product 45%, GTM 30%, Team 15%, Buffer 10%"></div>
+          <div class="legend">
+            <div class="legend-row"><span class="swatch" style="background: var(--gold);"></span> Product · 45%</div>
+            <div class="legend-row"><span class="swatch" style="background: var(--gold2);"></span> GTM · 30%</div>
+            <div class="legend-row"><span class="swatch" style="background: rgba(212,175,55,0.45);"></span> Team · 15%</div>
+            <div class="legend-row"><span class="swatch" style="background: rgba(191,191,191,0.45);"></span> Buffer · 10%</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

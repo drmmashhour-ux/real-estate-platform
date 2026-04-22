@@ -1,167 +1,123 @@
 import { prisma } from "@/lib/db";
 import { logInfo } from "@/lib/logger";
-import { appendClosingAudit } from "@/modules/closing/closing-audit";
-import { syncDealClosingReadiness } from "@/modules/closing/closing-orchestrator";
+import { appendDealAuditEvent } from "@/modules/deals/deal-audit.service";
+import type { ClosingDocType } from "./closing.types";
+import { logClosingTimeline } from "./closing-timeline.service";
 
-const TAG = "[closing-document]";
+const TAG = "[closing.document]";
+const FINAL_STATUSES = new Set(["FINAL", "SIGNED"]);
 
-const DEFAULT_DOCS: Array<{ title: string; category: string; required: boolean }> = [
-  { title: "Purchase agreement (final executed)", category: "LEGAL", required: true },
-  { title: "Financing agreements", category: "FINANCING", required: true },
-  { title: "Lender closing instructions / undertakings", category: "FINANCING", required: true },
-  { title: "Insurance certificate(s) — effective at closing", category: "INSURANCE", required: true },
-  { title: "Title / deed evidence (or notarial act reference)", category: "TITLE", required: true },
-  { title: "Corporate authority & resolutions (if applicable)", category: "CORPORATE", required: true },
-  { title: "ESG / disclosure pack (where material)", category: "ESG", required: false },
-  { title: "Closing statement / adjustments", category: "LEGAL", required: true },
-];
-
-export async function seedDefaultClosingDocuments(dealId: string): Promise<number> {
-  const existing = await prisma.dealClosingDocument.count({ where: { dealId } });
-  if (existing > 0) return 0;
-
-  await prisma.$transaction(async (tx) => {
-    for (const d of DEFAULT_DOCS) {
-      await tx.dealClosingDocument.create({
-        data: {
-          dealId,
-          title: d.title,
-          category: d.category,
-          required: d.required,
-          status: "MISSING",
-        },
-      });
-    }
-  });
-
-  logInfo(`${TAG}`, { dealId, seeded: DEFAULT_DOCS.length });
-  return DEFAULT_DOCS.length;
+function mapSdDocumentTypeToClosing(dt: string): ClosingDocType | "OTHER" {
+  const u = dt.toUpperCase();
+  if (u.includes("DEED")) return "FINAL_DEED";
+  if (u.includes("MORTGAGE")) return "MORTGAGE";
+  if (u.includes("DISCLOSURE")) return "DISCLOSURE";
+  if (u.includes("TRANSFER")) return "TRANSFER";
+  return "OTHER";
 }
 
-export async function registerClosingDocumentUpload(options: {
-  dealId: string;
-  actorUserId: string;
-  title?: string;
-  category?: string;
-  fileUrl: string;
-  documentId?: string;
-  required?: boolean;
-}): Promise<{ id: string }> {
-  if (!options.fileUrl.trim()) throw new Error("fileUrl required");
+/** Import signed/final SD documents into the closing room file. */
+export async function importFinalDocs(closingId: string, dealId: string, transactionId: string, actorUserId: string | null) {
+  const docs = await prisma.lecipmSdDocument.findMany({
+    where: {
+      transactionId,
+      status: { in: [...FINAL_STATUSES] },
+    },
+  });
 
-  if (options.documentId) {
-    const exists = await prisma.dealClosingDocument.findFirst({
-      where: { id: options.documentId, dealId: options.dealId },
-      select: { id: true },
-    });
-    if (!exists) throw new Error("Document not found for this deal.");
-
-    const updated = await prisma.dealClosingDocument.update({
-      where: { id: exists.id },
+  const created: string[] = [];
+  for (const d of docs) {
+    const ct = mapSdDocumentTypeToClosing(d.documentType);
+    const row = await prisma.lecipmPipelineDealClosingDocument.create({
       data: {
-        fileUrl: options.fileUrl,
-        status: "UPLOADED",
-        updatedAt: new Date(),
+        closingId,
+        transactionDocumentId: d.id,
+        title: d.title,
+        docType: ct === "OTHER" ? "OTHER" : ct,
+        status: "READY",
+        fileUrl: d.fileUrl ?? undefined,
       },
-      select: { id: true },
     });
-
-    await appendClosingAudit({
-      dealId: options.dealId,
-      actorUserId: options.actorUserId,
-      eventType: "DOCUMENT_UPLOADED",
-      note: updated.id,
-      metadataJson: { documentId: updated.id },
-    });
-    await syncDealClosingReadiness(options.dealId);
-
-    logInfo(`${TAG}`, { dealId: options.dealId, documentId: updated.id });
-    return updated;
+    created.push(row.id);
   }
 
-  const row = await prisma.dealClosingDocument.create({
+  await appendDealAuditEvent(prisma, {
+    dealId,
+    eventType: "CLOSING_DOCS_IMPORTED",
+    actorUserId,
+    summary: `Imported ${created.length} signed/final documents`,
+    metadataJson: { ids: created },
+  });
+  await logClosingTimeline(transactionId, "CLOSING_DOCS_IMPORTED", `${created.length} documents linked`);
+  logInfo(TAG, { closingId, imported: created.length });
+  return created;
+}
+
+export async function uploadClosingDocument(input: {
+  closingId: string;
+  dealId: string;
+  transactionId: string | null;
+  title: string;
+  docType: ClosingDocType | string;
+  fileUrl: string | null;
+  actorUserId: string | null;
+}) {
+  const row = await prisma.lecipmPipelineDealClosingDocument.create({
     data: {
-      dealId: options.dealId,
-      title: options.title ?? "Uploaded document",
-      category: options.category ?? "OTHER",
-      fileUrl: options.fileUrl,
-      status: "UPLOADED",
-      required: options.required ?? false,
+      closingId: input.closingId,
+      title: input.title.slice(0, 512),
+      docType: input.docType.slice(0, 32),
+      status: "PENDING",
+      fileUrl: input.fileUrl?.slice(0, 8000) ?? undefined,
     },
-    select: { id: true },
   });
 
-  await appendClosingAudit({
-    dealId: options.dealId,
-    actorUserId: options.actorUserId,
-    eventType: "DOCUMENT_UPLOADED",
-    note: row.id,
-    metadataJson: {},
+  await appendDealAuditEvent(prisma, {
+    dealId: input.dealId,
+    eventType: "CLOSING_DOCUMENT_UPLOADED",
+    actorUserId: input.actorUserId,
+    summary: `Uploaded closing doc: ${row.title}`,
+    metadataJson: { documentId: row.id },
   });
-  await syncDealClosingReadiness(options.dealId);
-
+  await logClosingTimeline(input.transactionId, "CLOSING_DOCUMENT_UPLOADED", row.title);
+  logInfo(TAG, { id: row.id });
   return row;
 }
 
-export async function verifyClosingDocument(options: {
-  dealId: string;
-  documentId: string;
-  actorUserId: string;
-}): Promise<void> {
-  const doc = await prisma.dealClosingDocument.findFirst({
-    where: { id: options.documentId, dealId: options.dealId },
-    select: { id: true },
+export async function verifyDocument(documentId: string, dealId: string, transactionId: string | null, actorUserId: string | null) {
+  const doc = await prisma.lecipmPipelineDealClosingDocument.findUnique({
+    where: { id: documentId },
+    include: { closing: true, transactionDocument: true },
   });
-  if (!doc) throw new Error("Document not found for this deal.");
+  if (!doc || doc.closing.dealId !== dealId) throw new Error("Document not found");
 
-  await prisma.dealClosingDocument.update({
-    where: { id: doc.id },
-    data: {
-      status: "VERIFIED",
-      verifiedByUserId: options.actorUserId,
-      updatedAt: new Date(),
-    },
+  if (doc.transactionDocumentId) {
+    const sd = doc.transactionDocument;
+    if (sd && !FINAL_STATUSES.has(sd.status)) {
+      throw new Error("Transaction document must be FINAL or SIGNED before verify");
+    }
+  }
+
+  const row = await prisma.lecipmPipelineDealClosingDocument.update({
+    where: { id: documentId },
+    data: { status: "VERIFIED" },
   });
 
-  await appendClosingAudit({
-    dealId: options.dealId,
-    actorUserId: options.actorUserId,
+  await appendDealAuditEvent(prisma, {
+    dealId,
     eventType: "DOCUMENT_VERIFIED",
-    note: options.documentId,
-    metadataJson: {},
+    actorUserId,
+    summary: `Verified: ${row.title}`,
+    metadataJson: { documentId },
   });
-  await syncDealClosingReadiness(options.dealId);
-  logInfo(`${TAG}`, { dealId: options.dealId, documentId: options.documentId, verified: true });
+  await logClosingTimeline(transactionId, "DOCUMENT_VERIFIED", row.title);
+  logInfo(TAG, { documentId, verified: true });
+  return row;
 }
 
-export async function rejectClosingDocument(options: {
-  dealId: string;
-  documentId: string;
-  actorUserId: string;
-  notes?: string | null;
-}): Promise<void> {
-  const doc = await prisma.dealClosingDocument.findFirst({
-    where: { id: options.documentId, dealId: options.dealId },
-    select: { id: true },
+export async function listClosingDocuments(closingId: string) {
+  return prisma.lecipmPipelineDealClosingDocument.findMany({
+    where: { closingId },
+    orderBy: { createdAt: "asc" },
   });
-  if (!doc) throw new Error("Document not found for this deal.");
-
-  await prisma.dealClosingDocument.update({
-    where: { id: doc.id },
-    data: {
-      status: "REJECTED",
-      notes: options.notes ?? null,
-      updatedAt: new Date(),
-    },
-  });
-
-  await appendClosingAudit({
-    dealId: options.dealId,
-    actorUserId: options.actorUserId,
-    eventType: "DOCUMENT_REJECTED",
-    note: options.documentId,
-    metadataJson: { notes: options.notes ?? null },
-  });
-  await syncDealClosingReadiness(options.dealId);
-  logInfo(`${TAG}`, { dealId: options.dealId, documentId: options.documentId, rejected: true });
 }

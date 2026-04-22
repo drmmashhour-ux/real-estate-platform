@@ -27,13 +27,30 @@ const forceNoStoreDocumentCache = [
 const nextConfig: NextConfig = {
   /** Next.js 16 defaults to Turbopack; `next-pwa` injects webpack config — empty Turbopack block opts in explicitly. */
   turbopack: {},
-  transpilePackages: ["@lecipm/ui", "@lecipm/api-client", "@lecipm/platform-core"],
+  transpilePackages: [
+    "@lecipm/ui",
+    "@lecipm/api-client",
+    "@lecipm/platform-core",
+    "mapbox-gl",
+    "react-map-gl",
+    "@vis.gl/react-mapbox",
+  ],
   reactStrictMode: true,
   images: {
     remotePatterns: [{ protocol: "https", hostname: "images.unsplash.com", pathname: "/**" }],
   },
   /** PDF rendering uses Node-only deps; keep them external for App Router API routes. */
   serverExternalPackages: ["@react-pdf/renderer", "nspell"],
+  /** Short SEO landing URLs → default locale/country growth-seo pages (indexable). */
+  async rewrites() {
+    const L = "/en/ca";
+    return [
+      { source: "/broker-software-quebec", destination: `${L}/growth-seo/broker-software-quebec` },
+      { source: "/real-estate-crm-ai", destination: `${L}/growth-seo/real-estate-crm-ai` },
+      { source: "/tenant-screening-canada", destination: `${L}/growth-seo/tenant-screening-canada` },
+      { source: "/esg-real-estate-platform", destination: `${L}/growth-seo/esg-real-estate-platform` },
+    ];
+  },
   /** Legacy admin URLs from docs / bookmarks → real App Router pages. */
   async redirects() {
     const L = "/en/ca";

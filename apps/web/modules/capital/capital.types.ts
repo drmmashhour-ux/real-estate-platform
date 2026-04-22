@@ -1,81 +1,33 @@
-export const LENDER_PACKAGE_VERSION = "v1.0.0";
+/** Lender pipeline statuses (ordered). */
+export const LENDER_STATUSES = [
+  "TARGET",
+  "CONTACTED",
+  "PACKAGE_SENT",
+  "OFFER_RECEIVED",
+  "SELECTED",
+  "REJECTED",
+] as const;
 
-export type CapitalStrategyType = "CONSERVATIVE" | "BALANCED" | "AGGRESSIVE";
+export type LenderStatus = (typeof LENDER_STATUSES)[number];
 
-export type StackEngineResult = {
-  totalCapitalRequired: number | null;
-  seniorDebtTarget: number | null;
-  mezzanineTarget: number | null;
-  preferredEquityTarget: number | null;
-  commonEquityTarget: number | null;
-  rationale: string[];
-  warnings: string[];
-  dataGaps: string[];
+export const OFFER_STATUSES = ["RECEIVED", "NEGOTIATING", "ACCEPTED", "REJECTED"] as const;
+export type OfferStatus = (typeof OFFER_STATUSES)[number];
+
+export type ClosingReadinessLabel = "READY" | "CONDITIONAL" | "BLOCKED";
+
+export type ClosingBlocker = {
+  code: string;
+  message: string;
+  severity: "CRITICAL" | "WARNING";
 };
 
-export type LenderPackagePayload = {
-  schemaVersion: typeof LENDER_PACKAGE_VERSION;
-  generatedAt: string;
-  cover: {
-    dealTitle: string;
-    date: string;
-    requestedFinancingType: string;
-    targetCapitalStackSummary: string;
-  };
-  executiveSummary: {
-    shortNarrative: string;
-    recommendation: string;
-    confidenceLevel: string;
-  };
-  assetOverview: Record<string, unknown>;
-  financingRequest: {
-    capitalRequired: number | null;
-    targetStructure: string;
-    purposeOfFunds: string;
-    requestedTermsNotes: string;
-  };
-  investmentCase: {
-    strengths: string[];
-    mitigants: string[];
-    strategicPositioning: string[];
-  };
-  esgSection: {
-    score: string;
-    confidence: string;
-    evidenceStrength: string;
-    retrofitPlan: string;
-    financingRelevance: string;
-  };
-  diligenceStatus: {
-    completedItems: string[];
-    openItems: string[];
-    criticalConditions: string[];
-  };
-  appendices: {
-    memoReference: string | null;
-    icPackReference: string | null;
-    evidenceSummary: string;
-    versions: string[];
-  };
-  disclaimers: {
-    verifiedVsEstimated: string;
-    lenderSafe: string;
-  };
-};
-
-export type OfferComparisonResult = {
-  offers: Array<{ id: string; label: string; scoreHint: number }>;
-  ranking: string[];
-  strongestOfferId: string | null;
-  lowestConstraintOfferId: string | null;
-  mostFlexibleOfferId: string | null;
-  highestExecutionRiskOfferId: string | null;
-  explanation: string[];
-};
-
-export type ClosingReadinessResult = {
-  readinessStatus: "NOT_READY" | "PARTIALLY_READY" | "READY";
-  blockers: string[];
-  completedItems: string[];
-  nextCriticalSteps: string[];
+export type OfferComparisonRow = {
+  offerId: string;
+  lenderId: string;
+  lenderName: string;
+  offeredAmount: number;
+  interestRate: number;
+  termYears: number | null;
+  amortizationYears: number | null;
+  score: number;
 };

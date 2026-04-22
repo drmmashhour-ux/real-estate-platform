@@ -1,118 +1,124 @@
 import { prisma } from "@/lib/db";
 import { logInfo } from "@/lib/logger";
-import type { ClosingReadinessResult } from "@/modules/capital/capital.types";
+import { evaluateCompliance } from "@/modules/transactions/transaction-compliance.service";
+import { appendDealAuditEvent } from "@/modules/deals/deal-audit.service";
+import type { ClosingBlocker, ClosingReadinessLabel } from "./capital.types";
+import { logDealCapitalTimeline } from "./capital-timeline.service";
 
-const TAG = "[closing-readiness]";
+const TAG = "[capital.closing-readiness]";
 
-function criticalOpenFinancingConditions(
-  rows: Array<{ priority: string | null; status: string; title: string }>
-): string[] {
-  return rows
-    .filter((r) => r.priority === "CRITICAL" && !["SATISFIED", "WAIVED"].includes(r.status))
-    .map((r) => `[financing condition] ${r.title}`);
-}
+export async function evaluateClosingReadiness(dealId: string, actorUserId: string | null) {
+  const deal = await prisma.lecipmPipelineDeal.findUnique({
+    where: { id: dealId },
+    select: { id: true, transactionId: true },
+  });
+  if (!deal) throw new Error("Deal not found");
 
-function criticalOpenClosingItems(
-  rows: Array<{ priority: string | null; status: string; title: string }>
-): string[] {
-  return rows
-    .filter((r) => r.priority === "CRITICAL" && !["COMPLETE"].includes(r.status))
-    .map((r) => `[closing checklist] ${r.title}`);
-}
+  const blockers: ClosingBlocker[] = [];
+  const warnings: string[] = [];
 
-/**
- * Computes financing closing readiness — does not mutate deal stage or transactional closing.
- */
-export async function computeClosingReadiness(pipelineDealId: string): Promise<ClosingReadinessResult> {
-  const deal = await prisma.investmentPipelineDeal.findUnique({
-    where: { id: pipelineDealId },
-    select: {
-      pipelineStage: true,
-      committeeDecisions: {
-        orderBy: { createdAt: "desc" },
-        take: 1,
-        select: { recommendation: true },
-      },
+  const pipeCriticalOpen = await prisma.lecipmPipelineDealCondition.count({
+    where: {
+      dealId,
+      priority: "CRITICAL",
+      status: { in: ["OPEN", "IN_PROGRESS", "FAILED"] },
+    },
+  });
+  if (pipeCriticalOpen > 0) {
+    blockers.push({
+      code: "PIPELINE_CONDITION_CRITICAL",
+      severity: "CRITICAL",
+      message: `${pipeCriticalOpen} critical pipeline condition(s) not cleared`,
+    });
+  }
+
+  const financingCriticalOpen = await prisma.lecipmPipelineDealFinancingCondition.count({
+    where: {
+      dealId,
+      isCritical: true,
+      status: { notIn: ["SATISFIED", "WAIVED"] },
+    },
+  });
+  if (financingCriticalOpen > 0) {
+    blockers.push({
+      code: "FINANCING_CONDITION_CRITICAL",
+      severity: "CRITICAL",
+      message: `${financingCriticalOpen} critical financing condition(s) open`,
+    });
+  }
+
+  if (deal.transactionId) {
+    const ev = await evaluateCompliance(deal.transactionId);
+    for (const m of ev.blockingIssues) {
+      blockers.push({ code: "TRANSACTION_COMPLIANCE", severity: "CRITICAL", message: m });
+    }
+    for (const w of ev.warnings) warnings.push(w);
+  }
+
+  const pipeNonCriticalOpen = await prisma.lecipmPipelineDealCondition.count({
+    where: {
+      dealId,
+      priority: { not: "CRITICAL" },
+      status: { in: ["OPEN", "IN_PROGRESS"] },
     },
   });
 
-  const financingConditions = await prisma.investmentPipelineFinancingCondition.findMany({
-    where: { pipelineDealId },
-    select: { title: true, priority: true, status: true },
+  const financingNonCriticalOpen = await prisma.lecipmPipelineDealFinancingCondition.count({
+    where: {
+      dealId,
+      isCritical: false,
+      status: { notIn: ["SATISFIED", "WAIVED", "FAILED"] },
+    },
   });
 
-  const checklist = await prisma.investmentPipelineClosingChecklistItem.findMany({
-    where: { pipelineDealId },
-    select: { title: true, priority: true, status: true },
-  });
-
-  const offers = await prisma.investmentPipelineFinancingOffer.findMany({
-    where: { pipelineDealId },
-    select: { id: true, status: true },
-  });
-
-  const selectedOffer = offers.find((o) => o.status === "SELECTED");
-
-  const blockers: string[] = [];
-  const completedItems: string[] = [];
-  const nextCriticalSteps: string[] = [];
-
-  const latestRec = deal?.committeeDecisions[0]?.recommendation ?? null;
-  const committeePositive =
-    latestRec === "PROCEED" ||
-    latestRec === "PROCEED_WITH_CONDITIONS";
-  const stageEligible = ["APPROVED", "CONDITIONAL_APPROVAL", "EXECUTION"].includes(
-    deal?.pipelineStage ?? ""
-  );
-
-  if (!(committeePositive || stageEligible)) {
-    blockers.push("Committee approval / eligible execution stage not evidenced for financing close.");
-    nextCriticalSteps.push("Confirm IC / committee recommendation or advance pipeline stage.");
+  let readinessStatus: ClosingReadinessLabel = "BLOCKED";
+  if (blockers.length > 0) {
+    readinessStatus = "BLOCKED";
+  } else if (warnings.length > 0 || pipeNonCriticalOpen > 0 || financingNonCriticalOpen > 0) {
+    readinessStatus = "CONDITIONAL";
   } else {
-    completedItems.push("Decision pathway reviewed for financing readiness.");
-  }
-
-  if (!selectedOffer) {
-    blockers.push("No financing offer marked SELECTED.");
-    nextCriticalSteps.push("Select an indicative or formal financing offer once received.");
-  } else {
-    completedItems.push(`Selected offer recorded (${selectedOffer.id}).`);
-  }
-
-  const fcBlockers = criticalOpenFinancingConditions(financingConditions);
-  blockers.push(...fcBlockers);
-  if (fcBlockers.length > 0) {
-    nextCriticalSteps.push("Clear or waive—where permitted—critical financing conditions.");
-  }
-
-  const clBlockers = criticalOpenClosingItems(checklist);
-  blockers.push(...clBlockers);
-
-  const openHigh = financingConditions.filter(
-    (c) => c.priority === "HIGH" && !["SATISFIED", "WAIVED"].includes(c.status)
-  );
-  if (openHigh.length > 0) {
-    nextCriticalSteps.push(`${openHigh.length} high-priority financing condition(s) remain open.`);
-  }
-
-  const satisfied = financingConditions.filter((c) => c.status === "SATISFIED").length;
-  if (satisfied > 0) completedItems.push(`${satisfied} financing condition(s) satisfied.`);
-
-  let readinessStatus: ClosingReadinessResult["readinessStatus"];
-  if (blockers.length === 0) {
     readinessStatus = "READY";
-  } else if (completedItems.length > 0 || selectedOffer || openHigh.length > 0) {
-    readinessStatus = "PARTIALLY_READY";
-  } else {
-    readinessStatus = "NOT_READY";
   }
 
-  logInfo(`${TAG}`, { pipelineDealId, readinessStatus, blockers: blockers.length });
+  const prev = await prisma.lecipmPipelineDealClosingReadiness.findUnique({ where: { dealId } });
 
-  return {
-    readinessStatus,
-    blockers,
-    completedItems,
-    nextCriticalSteps,
-  };
+  const row = await prisma.lecipmPipelineDealClosingReadiness.upsert({
+    where: { dealId },
+    create: {
+      dealId,
+      readinessStatus,
+      blockingItemsJson: [...blockers, ...warnings.map((w) => ({ code: "WARNING", severity: "WARNING" as const, message: w }))],
+      lastEvaluatedAt: new Date(),
+    },
+    update: {
+      readinessStatus,
+      blockingItemsJson: [...blockers, ...warnings.map((w) => ({ code: "WARNING", severity: "WARNING" as const, message: w }))],
+      lastEvaluatedAt: new Date(),
+    },
+  });
+
+  await appendDealAuditEvent(prisma, {
+    dealId,
+    eventType: "CLOSING_READINESS_EVALUATED",
+    actorUserId,
+    summary: `Closing readiness: ${readinessStatus}`,
+    metadataJson: { blockerCount: blockers.length },
+  });
+
+  if (readinessStatus === "READY" && prev?.readinessStatus !== "READY") {
+    await logDealCapitalTimeline(dealId, "CLOSING_READY", "Pre-notary closing readiness satisfied");
+    await appendDealAuditEvent(prisma, {
+      dealId,
+      eventType: "CLOSING_READY",
+      actorUserId,
+      summary: "Closing readiness READY (pre-notary)",
+    });
+  }
+
+  logInfo(TAG, { dealId, readinessStatus });
+  return { row, blockers, warnings, readinessStatus };
+}
+
+export async function getStoredClosingReadiness(dealId: string) {
+  return prisma.lecipmPipelineDealClosingReadiness.findUnique({ where: { dealId } });
 }

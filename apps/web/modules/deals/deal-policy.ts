@@ -1,21 +1,27 @@
-import type { PipelineStage } from "@/modules/deals/deal.types";
+import type { PlatformRole } from "@prisma/client";
+import type { LecipmPipelineDeal } from "@prisma/client";
 
-/** Ordered progression hint — not all transitions are linear */
-export const PIPELINE_STAGES: PipelineStage[] = [
-  "SOURCED",
-  "SCREENING",
-  "PRELIMINARY_REVIEW",
-  "IC_PREP",
-  "IC_REVIEW",
-  "CONDITIONAL_APPROVAL",
-  "APPROVED",
-  "EXECUTION",
-  "CLOSED",
-];
+export function canAccessPipelineDeal(
+  role: PlatformRole,
+  userId: string,
+  deal: Pick<LecipmPipelineDeal, "brokerId" | "ownerUserId" | "sponsorUserId">
+): boolean {
+  if (role === "ADMIN") return true;
+  if (deal.brokerId === userId) return true;
+  if (deal.ownerUserId === userId) return true;
+  if (deal.sponsorUserId === userId) return true;
+  return false;
+}
 
-export const TERMINAL_STAGES: PipelineStage[] = ["CLOSED", "DECLINED"];
+export function canSubmitToCommittee(role: PlatformRole): boolean {
+  return role === "BROKER" || role === "ADMIN";
+}
 
-/** Committee member proxy: ADMIN + BROKER (extend via env for dedicated committee users). */
-export function committeeActorRoles(): Set<string> {
-  return new Set(["ADMIN", "BROKER"]);
+/** Committee decision + waive critical conditions. */
+export function canRecordCommitteeDecision(role: PlatformRole): boolean {
+  return role === "ADMIN" || role === "INVESTOR";
+}
+
+export function canWaiveCriticalCondition(role: PlatformRole): boolean {
+  return role === "ADMIN";
 }

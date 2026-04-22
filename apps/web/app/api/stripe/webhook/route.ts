@@ -83,7 +83,7 @@ import { recordRevenueEventLedger } from "@/modules/revenue/revenue-event.servic
 import { recordAnalyticsFunnelEvent } from "@/lib/funnel/analytics-events";
 import { trackFunnelEvent } from "@/lib/funnel/tracker";
 import { securityLog } from "@/lib/security/security-logger";
-import { logStripeTagged } from "@/lib/server/launch-logger";
+import { logPaymentTagged, logStripeTagged } from "@/lib/server/launch-logger";
 import { auditStripePaymentEventIfApplicable } from "@/modules/stripe/validation.service";
 import { onLeadUnlockPaymentRecorded } from "@/modules/leads/lead-monetization-monitoring.service";
 
@@ -597,6 +597,14 @@ export async function POST(req: NextRequest) {
   }
 
   const session = event.data.object as Stripe.Checkout.Session;
+  logPaymentTagged.info("checkout.session fulfillment path", {
+    eventType: event.type,
+    sessionId: session.id,
+    paymentStatus: session.payment_status,
+    amountTotal: session.amount_total ?? 0,
+    paymentType: session.metadata?.paymentType ?? null,
+    stripeEventId: event.id,
+  });
   logInfo(
     `[STRIPE] webhook_received: type=${event.type} sessionId=${session.id} paymentStatus=${session.payment_status} amountTotal=${session.amount_total ?? 0} paymentType=${session.metadata?.paymentType ?? "n/a"} stripeEventId=${event.id}`
   );

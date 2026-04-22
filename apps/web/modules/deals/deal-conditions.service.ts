@@ -1,127 +1,171 @@
 import { prisma } from "@/lib/db";
 import { logInfo } from "@/lib/logger";
-import { loadInvestorListingContext } from "@/modules/investor/investor-context.loader";
-import type { ConditionCategory, ConditionStatus } from "@/modules/deals/deal.types";
+import { evaluateCompliance } from "@/modules/transactions/transaction-compliance.service";
+import { appendDealAuditEvent } from "./deal-audit.service";
 
-const TAG = "[deal-condition]";
+const TAG = "[deal.conditions]";
 
-export async function createCondition(options: {
-  dealId: string;
-  title: string;
-  description?: string | null;
-  category: ConditionCategory;
-  priority?: string | null;
-  ownerUserId?: string | null;
-  dueDate?: Date | null;
-}): Promise<{ id: string }> {
-  const row = await prisma.investmentPipelineCondition.create({
+export async function listConditions(dealId: string) {
+  return prisma.lecipmPipelineDealCondition.findMany({
+    where: { dealId },
+    orderBy: [{ priority: "asc" }, { createdAt: "asc" }],
+  });
+}
+
+export async function getBlockingConditions(dealId: string) {
+  return prisma.lecipmPipelineDealCondition.findMany({
+    where: { dealId, status: { in: ["OPEN", "IN_PROGRESS", "FAILED"] } },
+  });
+}
+
+export async function createCondition(
+  dealId: string,
+  data: {
+    title: string;
+    description?: string | null;
+    category: string;
+    priority: string;
+    ownerUserId?: string | null;
+    dueDate?: Date | null;
+  },
+  actorUserId: string | null
+) {
+  const row = await prisma.lecipmPipelineDealCondition.create({
     data: {
-      dealId: options.dealId,
-      title: options.title.slice(0, 512),
-      description: options.description ?? null,
-      category: options.category,
-      priority: options.priority ?? "MEDIUM",
+      dealId,
+      title: data.title.slice(0, 512),
+      description: data.description?.slice(0, 8000) ?? undefined,
+      category: data.category.slice(0, 24),
+      priority: data.priority.slice(0, 16),
       status: "OPEN",
-      ownerUserId: options.ownerUserId ?? null,
-      dueDate: options.dueDate ?? null,
-    },
-    select: { id: true },
-  });
-
-  await prisma.investmentPipelineDecisionAudit.create({
-    data: {
-      dealId: options.dealId,
-      eventType: "CONDITION_ADDED",
-      note: options.title.slice(0, 2000),
-      metadataJson: { conditionId: row.id, category: options.category },
+      ownerUserId: data.ownerUserId ?? undefined,
+      dueDate: data.dueDate ?? undefined,
     },
   });
-
-  logInfo(`${TAG} created`, { dealId: options.dealId, conditionId: row.id });
+  await appendDealAuditEvent(prisma, {
+    dealId,
+    eventType: "CONDITION_CREATED",
+    actorUserId: actorUserId,
+    summary: `Condition: ${row.title}`,
+    metadataJson: { conditionId: row.id },
+  });
+  logInfo(TAG, { action: "create", id: row.id });
   return row;
 }
 
-export async function seedConditionsFromListing(dealId: string, listingId: string): Promise<number> {
-  const ctx = await loadInvestorListingContext(listingId);
-  if (!ctx) return 0;
-  let n = 0;
-  const due = new Date();
-  due.setDate(due.getDate() + 30);
+export async function updateConditionStatus(
+  conditionId: string,
+  status: string,
+  input: { note?: string | null; actorUserId: string | null; allowWaive?: boolean }
+) {
+  const cond = await prisma.lecipmPipelineDealCondition.findUnique({ where: { id: conditionId } });
+  if (!cond) throw new Error("Condition not found");
 
-  for (const a of ctx.esgActionsOpen.filter((x) => x.priority === "CRITICAL")) {
-    await createCondition({
-      dealId,
-      title: `ESG action: ${a.title}`,
-      description: `Source: Action Center (${a.reasonCode}).`,
-      category: "ESG",
-      priority: "CRITICAL",
-      dueDate: due,
-    });
-    n += 1;
-    if (n >= 8) break;
+  if (status === "WAIVED" && !input.note?.trim()) {
+    throw new Error("Waiver requires a note");
+  }
+  if (status === "WAIVED" && cond.priority === "CRITICAL" && !input.allowWaive) {
+    throw new Error("Critical condition waiver requires admin authorization");
   }
 
-  if ((ctx.esgProfile?.dataCoveragePercent ?? 100) < 50) {
-    await createCondition({
-      dealId,
-      title: "Provide verified utility / disclosure evidence",
-      description: "Data coverage below internal threshold — estimated fields must not be treated as verified.",
-      category: "DOCUMENTATION",
-      priority: "HIGH",
-      dueDate: due,
-    });
-    n += 1;
-  }
+  const notes =
+    input.note ?
+      cond.notes ?
+        `${cond.notes}\n${input.note}`
+      : input.note
+    : undefined;
 
-  return n;
-}
+  const satisfiedAt =
+    status === "SATISFIED" || status === "WAIVED" ? new Date()
+    : status === "OPEN" || status === "IN_PROGRESS" || status === "FAILED" ? null
+    : undefined;
 
-export async function setConditionStatus(options: {
-  dealId: string;
-  conditionId: string;
-  status: ConditionStatus;
-  actorUserId: string;
-  waiverNote?: string | null;
-}): Promise<void> {
-  const row = await prisma.investmentPipelineCondition.findFirst({
-    where: { id: options.conditionId, dealId: options.dealId },
-  });
-  if (!row) throw new Error("Condition not found");
-
-  if (row.priority === "CRITICAL" && options.status === "WAIVED") {
-    if (!options.waiverNote?.trim()) throw new Error("Critical condition waiver requires a note.");
-  }
-
-  const data: Parameters<typeof prisma.investmentPipelineCondition.update>[0]["data"] = {
-    status: options.status,
-    updatedAt: new Date(),
-  };
-
-  if (options.status === "SATISFIED") {
-    data.satisfiedAt = new Date();
-  }
-  if (options.status === "WAIVED") {
-    data.waiverNote = options.waiverNote ?? null;
-    data.waivedByUserId = options.actorUserId;
-  }
-
-  await prisma.investmentPipelineCondition.update({
-    where: { id: options.conditionId },
-    data,
-  });
-
-  await prisma.investmentPipelineDecisionAudit.create({
+  const row = await prisma.lecipmPipelineDealCondition.update({
+    where: { id: conditionId },
     data: {
-      dealId: options.dealId,
-      actorUserId: options.actorUserId,
-      eventType: "CONDITION_STATUS_CHANGED",
-      note: `Condition ${options.conditionId} → ${options.status}`,
-      metadataJson: { waiverNote: options.waiverNote ?? null },
+      status: status.slice(0, 16),
+      ...(notes !== undefined ? { notes } : {}),
+      ...(satisfiedAt !== undefined ? { satisfiedAt } : {}),
     },
   });
 
-  logInfo(`${TAG} status`, { dealId: options.dealId, conditionId: options.conditionId, status: options.status });
+  await appendDealAuditEvent(prisma, {
+    dealId: cond.dealId,
+    eventType: "CONDITION_STATUS_UPDATED",
+    actorUserId: input.actorUserId,
+    summary: `Condition ${row.title} → ${status}`,
+    metadataJson: { conditionId, status, note: input.note ?? null },
+  });
+  logInfo(TAG, { conditionId, status });
+  return row;
+}
 
-  const { reconcileAfterArtifactsUpdate } = await import("@/modules/deals/deal-workflow-orchestrator");
-  await reconcileAfterArtifactsUpdate(options.dealId, options.actorUserId);
+/** Creates template + transaction-derived conditions after committee decision. */
+export async function autoGenerateConditionsForDecision(
+  dealId: string,
+  recommendation: string,
+  actorUserId: string | null
+) {
+  const deal = await prisma.lecipmPipelineDeal.findUnique({ where: { id: dealId } });
+  if (!deal) throw new Error("Deal not found");
+
+  const templates: { title: string; category: string; priority: string }[] = [];
+
+  if (recommendation === "PROCEED_WITH_CONDITIONS") {
+    templates.push(
+      {
+        title: "Execute signed purchase agreement",
+        category: "DOCUMENT",
+        priority: "CRITICAL",
+      },
+      {
+        title: "Final financing approval on file",
+        category: "FINANCIAL",
+        priority: "CRITICAL",
+      },
+      {
+        title: "Resolve compliance blockers on transaction file",
+        category: "COMPLIANCE",
+        priority: "CRITICAL",
+      },
+      {
+        title: "Notary package ready / sent",
+        category: "NOTARY",
+        priority: "HIGH",
+      }
+    );
+  }
+
+  if (recommendation === "PROCEED") {
+    templates.push({
+      title: "Confirm no material outstanding regulatory items",
+      category: "COMPLIANCE",
+      priority: "MEDIUM",
+    });
+  }
+
+  for (const t of templates) {
+    await createCondition(dealId, t, actorUserId);
+  }
+
+  await syncConditionsFromTransactionContext(dealId, actorUserId);
+}
+
+export async function syncConditionsFromTransactionContext(dealId: string, actorUserId: string | null) {
+  const deal = await prisma.lecipmPipelineDeal.findUnique({ where: { id: dealId } });
+  if (!deal?.transactionId) return;
+
+  const evaln = await evaluateCompliance(deal.transactionId, { skipNotarySent: true });
+  for (const msg of evaln.blockingIssues.slice(0, 12)) {
+    await createCondition(
+      dealId,
+      {
+        title,
+        category: "COMPLIANCE",
+        priority: "CRITICAL",
+        description: "Derived from live transaction compliance evaluation",
+      },
+      actorUserId
+    );
+  }
 }

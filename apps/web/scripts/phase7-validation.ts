@@ -1,67 +1,95 @@
 /**
- * Phase 7 — Multi-agent executive layer (anonymous smoke).
- * Run: pnpm exec tsx scripts/phase7-validation.ts
+ * Phase 7 — Portfolio OS (broker portfolios, performance, health, AI proposals, allocation).
+ * Run from apps/web: pnpm exec tsx scripts/phase7-validation.ts
  */
+import { config } from "dotenv";
+import { resolve } from "node:path";
+import { prisma } from "@/lib/db";
+import { computeAndStoreHealthScore } from "@/modules/portfolio/asset-health.service";
+import { recordPerformance } from "@/modules/portfolio/asset-performance.service";
+import { generateAllocation } from "@/modules/portfolio/capital-allocation.service";
+import { generateProposedDecisions } from "@/modules/portfolio/ai-asset-manager.service";
 import {
-  assertServerReady,
-  fetchJson,
-  getValidationBase,
-  printPhaseHeader,
-  summarize,
-} from "./lecipm-phase-validation-shared";
+  addAssetToPortfolio,
+  createPortfolio,
+} from "@/modules/portfolio/portfolio.service";
+import { createStandaloneDeal } from "@/modules/deals/deal.service";
+
+config({ path: resolve(process.cwd(), ".env") });
+config({ path: resolve(process.cwd(), ".env.local"), override: true });
 
 async function main(): Promise<void> {
-  printPhaseHeader(7, "Multi-agent executive command center");
-  const base = getValidationBase();
+  console.log("\n========== Phase 7 portfolio OS validation ==========\n");
   let failed = 0;
 
-  const run = async (name: string, fn: () => Promise<{ ok: boolean; detail?: string }>) => {
-    try {
-      const r = await fn();
-      if (r.ok) console.log(`PASS ${name}${r.detail ? ` — ${r.detail}` : ""}`);
-      else {
-        failed++;
-        console.log(`FAIL ${name}${r.detail ? ` — ${r.detail}` : ""}`);
-      }
-    } catch (e) {
+  const broker = await prisma.user.findFirst({ where: { role: "BROKER" }, select: { id: true } });
+  if (!broker) {
+    console.log("SKIP — no BROKER in DB");
+    process.exit(0);
+  }
+
+  try {
+    const deal = await createStandaloneDeal({
+      brokerId: broker.id,
+      title: "Phase 7 asset seed",
+      dealType: "ACQUISITION",
+      actorUserId: broker.id,
+    });
+
+    const asset = await prisma.lecipmPortfolioAsset.create({
+      data: {
+        dealId: deal.id,
+        assetName: "Validation asset",
+        acquisitionPrice: 400_000,
+        acquisitionDate: new Date(),
+        status: "ACTIVE",
+      },
+    });
+
+    const portfolio = await createPortfolio(broker.id, { name: "Phase 7 validation portfolio" });
+
+    await addAssetToPortfolio(portfolio.id, asset.id, 1, broker.id, "BROKER");
+
+    await recordPerformance(
+      asset.id,
+      {
+        revenue: 48_000,
+        expenses: 17_000,
+        occupancyRate: 94,
+        period: "MONTHLY",
+      },
+      portfolio.id,
+      broker.id
+    );
+
+    await computeAndStoreHealthScore(asset.id, portfolio.id, broker.id);
+
+    const decisions = await generateProposedDecisions(portfolio.id, broker.id);
+    if (decisions.length === 0) {
+      console.log("FAIL no AI decisions generated");
       failed++;
-      console.log(`FAIL ${name} — ${e instanceof Error ? e.message : String(e)}`);
+    } else {
+      console.log(`PASS AI decisions (${decisions.length})`);
     }
-  };
 
-  await run("Server /api/ready", async () => ({
-    ok: await assertServerReady(base),
-    detail: base,
-  }));
+    const alloc = await generateAllocation(portfolio.id, 500_000, broker.id);
+    if (!alloc.proposal?.id) {
+      console.log("FAIL allocation proposal");
+      failed++;
+    } else {
+      console.log("PASS capital allocation proposal");
+    }
 
-  await run("POST /api/agents/execute (invalid JSON — anonymous → 401 auth before parse)", async () => {
-    const res = await fetch(`${base}/api/agents/execute`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: "{",
-    });
-    return { ok: res.status === 401, detail: `status ${res.status}` };
-  });
+    console.log("\n----------");
+    if (failed === 0) console.log("PASS — Phase 7 validation\n");
+    else console.log(`FAIL — ${failed} check(s)\n`);
 
-  await run("POST /api/agents/execute (missing fields → 401)", async () => {
-    const { res } = await fetchJson(`${base}/api/agents/execute`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ entityType: "PORTFOLIO", entityId: "x", triggerType: "MANUAL_EXECUTE" }),
-    });
-    return { ok: res.status === 401 || res.status === 403, detail: `status ${res.status}` };
-  });
-
-  await run("GET /api/agents/briefing (→ 401 anonymous)", async () => {
-    const { res } = await fetchJson(`${base}/api/agents/briefing`);
-    return { ok: res.status === 401 || res.status === 403, detail: `status ${res.status}` };
-  });
-
-  summarize(failed, 7);
-  process.exit(failed === 0 ? 0 : 1);
+    process.exit(failed === 0 ? 0 : 1);
+  } catch (e) {
+    console.error(e);
+    console.log("\nFAIL — exception\n");
+    process.exit(1);
+  }
 }
 
-main().catch((e) => {
-  console.error(e);
-  process.exit(1);
-});
+main();

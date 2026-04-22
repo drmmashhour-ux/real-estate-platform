@@ -6,6 +6,7 @@ import { AutonomyQueueTable } from "@/components/autonomy/AutonomyQueueTable";
 import { AutonomyPolicyCard } from "@/components/autonomy/AutonomyPolicyCard";
 import { AutonomyActionDetail } from "@/components/autonomy/AutonomyActionDetail";
 import { ApprovalActionsPanel } from "@/components/autonomy/ApprovalActionsPanel";
+import { LecipmAutonomyPanel } from "@/components/autonomy/LecipmAutonomyPanel";
 
 type QueueItem = {
   id: string;
@@ -163,6 +164,8 @@ export function AutonomyDashboard({ isAdmin }: { isAdmin: boolean }) {
       </div>
       {runLog ? <p className="text-xs text-slate-400">Last dry-run: {runLog}</p> : null}
       {err ? <p className="text-xs text-rose-400">{err}</p> : null}
+
+      <LecipmAutonomyPanel />
 
       <AutonomySummaryCards
         queued={counts.queued}

@@ -115,6 +115,7 @@ function isPublicPathForStaging(pathname: string): boolean {
   if (p.startsWith("/images/") || p.startsWith("/brand/") || p.startsWith("/branding/")) return true;
   if (/\.(ico|png|svg|jpg|jpeg|gif|webp|json|txt|xml|webmanifest)$/i.test(pathname)) return true;
   if (p === "/api/health" || p === "/api/ready") return true;
+  if (p === "/api/operators/waitlist") return true;
   if (isPublicBrowseSurface(pathname)) return true;
   return false;
 }
