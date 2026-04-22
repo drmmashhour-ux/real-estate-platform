@@ -2,6 +2,11 @@
  * POST /api/stripe/checkout – Create Stripe Checkout session.
  * Body: successUrl, cancelUrl, amountCents, currency?, paymentType, listingId?, projectId?, bookingId?, dealId?, brokerId?, description?
  * Returns: { url } or { error }. Only the Stripe webhook confirms paid/booking state — not success_url.
+ *
+ * LECIPM recurring SKUs (Stripe subscription mode): set Product/Price metadata so webhooks sync correctly:
+ * - `lecipmHubKind`: `investor` | `residence_soins` | `family_premium` | `workspace` (default workspace SaaS)
+ * - `paymentType`: e.g. `lecipm_workspace_subscription`, broker broker subscription uses `brokerLecipmSubscription` handlers
+ * One-time: leads, FSBO, featured listing — use existing `paymentType` values matching `PlatformPayment.paymentType`.
  */
 
 import { NextRequest } from "next/server";

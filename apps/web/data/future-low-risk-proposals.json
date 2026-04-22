@@ -1,8 +1,8 @@
 {
   "version": 1,
   "proposals": {
-    "flrp_eafa1260-aa3a-458d-93d7-9700f8ae7b2e": {
-      "id": "flrp_eafa1260-aa3a-458d-93d7-9700f8ae7b2e",
+    "flrp_7fa184ee-933e-4d63-9091-ddc6b524d551": {
+      "id": "flrp_7fa184ee-933e-4d63-9091-ddc6b524d551",
       "title": "R",
       "proposedActionType": "underRev",
       "category": "reminders",
@@ -32,10 +32,10 @@
         "clearAuditabilityExists": true
       },
       "currentStatus": "accepted_to_registry",
-      "createdAt": "2026-04-19T22:04:17.011Z",
-      "updatedAt": "2026-04-19T22:04:17.011Z",
-      "notes": "2026-04-19T22:04:17.011Z: Accepted to future-review registry only — not enabled."
+      "createdAt": "2026-04-22T05:02:11.785Z",
+      "updatedAt": "2026-04-22T05:02:11.785Z",
+      "notes": "2026-04-22T05:02:11.785Z: Accepted to future-review registry only — not enabled."
     }
   },
-  "updatedAt": "2026-04-19T22:04:17.011Z"
+  "updatedAt": "2026-04-22T05:02:11.785Z"
 }

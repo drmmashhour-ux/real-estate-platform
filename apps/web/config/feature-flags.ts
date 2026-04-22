@@ -2048,7 +2048,7 @@ export type LaunchSystemV1FlagKey = keyof typeof launchSystemV1Flags;
  * High-conversion marketing landing — full page composition, pricing strip, ROI CTAs (default off).
  * Set `NEXT_PUBLIC_FEATURE_LANDING_V1` alongside to hide global header/footer on home for standalone shell.
  */
-/** High-conversion homepage — `app/(marketing)/page.tsx` + `/[locale]/[country]/page.tsx` use `LecipmLeadCaptureLanding` when `landingV1`. */
+/** Legacy marketing toggles (`LecipmMarketingLandingV1`, pricing strip, ROI CTAs). Homepage is `LecipmLuxuryHomepage` (`app/page.tsx`, `/[locale]/[country]/page.tsx`). */
 export const marketingLandingFlags = {
   /** Alias: `landing_v1` — full marketing shell (Navbar → Footer). Env: `FEATURE_LANDING_V1` */
   landingV1: envTrue("FEATURE_LANDING_V1"),

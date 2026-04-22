@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { headers } from "next/headers";
-import { notFound, permanentRedirect } from "next/navigation";
+import { notFound, permanentRedirect, redirect } from "next/navigation";
 import { isFsboPubliclyVisible } from "@/lib/fsbo/constants";
 import { JsonLdScript } from "@/components/seo/JsonLdScript";
 import { BuyerListingDetail } from "@/components/listings/BuyerListingDetail";
 import { buildPageMetadata } from "@/lib/seo/page-metadata";
+import { seoConfig } from "@/lib/seo/config";
 import { publicListingPathLookupKeys } from "@/lib/seo/public-urls";
 import { mapCrmListingToBuyerPayload, resolvePublicListing } from "@/lib/listings/resolve-public-listing";
 import {
@@ -40,6 +41,7 @@ import { logInfo } from "@/lib/logger";
 import { redactBuyerListingContactPayload } from "@/lib/leads/redact-public-contact";
 import { recordAnalyticsFunnelEvent } from "@/lib/funnel/analytics-events";
 import { funnelVariantForListing } from "@/lib/funnel/listing-ab";
+import { getLuxuryShowcaseProperty } from "@/components/listings/luxury-showcase-data";
 import {
   buildCrmPublicDemandUi,
   buildFsboPublicDemandUi,
@@ -83,6 +85,18 @@ async function resolveListingFromParam(param: string) {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id: param, locale, country } = await params;
+  const showcase = getLuxuryShowcaseProperty(param);
+  if (showcase) {
+    return buildPageMetadata({
+      title: `${showcase.title} | ${seoConfig.siteName}`,
+      description: showcase.description.slice(0, 155),
+      path: `/listings/showcase/${param}`,
+      locale,
+      country,
+      ogImage: OG_DEFAULT_LISTINGS,
+      ogImageAlt: showcase.title,
+    });
+  }
   const resolved = await resolveListingFromParam(param);
   if (!resolved) {
     return { title: "Listing" };
@@ -157,6 +171,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function PublicListingRoute({ params, searchParams }: Props) {
   const { id: param, locale, country } = await params;
+  if (getLuxuryShowcaseProperty(param)) {
+    redirect(`/${locale}/${country}/listings/showcase/${param}`);
+  }
   const sp = await searchParams;
   const cookieStore = await cookies();
   const fromParams = resolveCentrisFromSearchParams(sp);

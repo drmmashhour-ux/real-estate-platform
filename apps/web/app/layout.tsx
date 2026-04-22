@@ -12,6 +12,8 @@ import {
   PLATFORM_NAME,
 } from "@/lib/brand/platform";
 import { OG_DEFAULT_PLATFORM } from "@/lib/seo/og-defaults";
+import TenantThemeProvider from "@/components/tenant/TenantThemeProvider";
+import { getTenantContextOptional } from "@/lib/tenant/context";
 import { getSiteBaseUrl } from "@/modules/seo/lib/siteBaseUrl";
 
 const inter = Inter({
@@ -92,6 +94,7 @@ export const viewport: Viewport = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const tenantForBrand = await getTenantContextOptional();
   const activeLocale = await getLocale();
   const localeEntry =
     UI_LOCALE_ENTRIES.find((l) => l.code === activeLocale) ?? UI_LOCALE_ENTRIES[0];
@@ -109,7 +112,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       >
         <SkipLinks />
         <ConversionFlagsPanel />
-        {children}
+        <TenantThemeProvider brand={tenantForBrand?.brand}>
+          {children}
+        </TenantThemeProvider>
       </body>
     </html>
   );

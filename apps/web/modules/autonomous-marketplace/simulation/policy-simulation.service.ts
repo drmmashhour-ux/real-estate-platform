@@ -15,6 +15,9 @@ import type {
   PolicySimulationResult,
 } from "./policy-simulation.types";
 
+/** Re-export score-threshold engine for callers that import from the sandbox module. */
+export { runPolicySimulation } from "./policy-simulation.engine";
+
 const ADVERSE_TRUTH_TYPES = new Set([
   "chargeback",
   "fraud_confirmed",

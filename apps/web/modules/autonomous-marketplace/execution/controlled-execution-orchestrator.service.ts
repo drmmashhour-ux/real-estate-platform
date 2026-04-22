@@ -25,19 +25,30 @@ import {
 } from "../governance/unified-governance.service";
 import { mergeGovernanceWithUnified } from "../governance/unified-governance-merge.service";
 import type { UnifiedGovernanceResult } from "../governance/unified-governance.types";
+import { evaluateLegalRisk, type LegalRiskResult } from "../legal/legal-risk.service";
+import { recordControlledExecutionFeedbackAsync } from "../feedback/governance-feedback-recording.service";
 
-function governanceSnapshots(unified: UnifiedGovernanceResult): Record<string, unknown> {
+function governanceSnapshots(
+  unified: UnifiedGovernanceResult | null,
+  legalRiskRun: LegalRiskResult,
+): Record<string, unknown> {
   try {
     const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
-    return {
-      unifiedGovernanceJson: clone(unified),
-      combinedRiskJson: clone(unified.combinedRisk),
-      fraudRiskJson: clone(unified.fraudRisk),
-      legalRiskJson: clone(unified.legalRisk),
-      traceJson: clone(unified.trace),
+    const base: Record<string, unknown> = {
+      legalRiskJson: clone(legalRiskRun),
     };
+    if (unified) {
+      Object.assign(base, {
+        unifiedGovernanceJson: clone(unified),
+        combinedRiskJson: clone(unified.combinedRisk),
+        fraudRiskJson: clone(unified.fraudRisk),
+        traceJson: clone(unified.trace),
+      });
+    }
+    return base;
   } catch {
     return {
+      legalRiskJson: legalRiskRun,
       unifiedGovernanceSnapshotFailed: true,
     };
   }
@@ -46,15 +57,36 @@ function governanceSnapshots(unified: UnifiedGovernanceResult): Record<string, u
 function attachUnifiedMetadata(
   execution: ExecutionResult,
   unified: UnifiedGovernanceResult | null,
+  legalRiskRun: LegalRiskResult,
 ): ExecutionResult {
-  if (!unified) return execution;
   return {
     ...execution,
     metadata: {
       ...execution.metadata,
-      ...governanceSnapshots(unified),
+      ...governanceSnapshots(unified, legalRiskRun),
     },
   };
+}
+
+function collectLegalRiskSignals(
+  ctx: ControlledExecutionOrchestratorContext,
+  proposed: ProposedAction,
+): string[] {
+  const out = new Set<string>(ctx.signals ?? []);
+  const meta =
+    proposed.metadata && typeof proposed.metadata === "object"
+      ? (proposed.metadata as Record<string, unknown>)
+      : {};
+  if (meta.fraudFlag === true) out.add("fraud_flag");
+  if (meta.payoutAnomaly === true) out.add("payout_anomaly");
+  if (meta.lowBookingActivity === true) out.add("low_booking_activity");
+  const extra = meta.legalRiskSignals;
+  if (Array.isArray(extra)) {
+    for (const x of extra) {
+      if (typeof x === "string") out.add(x);
+    }
+  }
+  return [...out];
 }
 
 export type ControlledExecutionOrchestratorContext = {
@@ -65,6 +97,8 @@ export type ControlledExecutionOrchestratorContext = {
   regionCode: string;
   /** Syria / external source hints for capability resolution. */
   listingSource?: string;
+  /** Deterministic legal-risk signal codes (merged with metadata-derived signals). */
+  signals?: string[];
 };
 
 export type OrchestratedControlledActionInput = {
@@ -230,6 +264,7 @@ export async function runControlledExecutionStep(
           },
         },
         unifiedGovernance,
+        legalRiskRun,
       );
     } else {
       execution = await dispatchExecution(proposed, { dryRun: true, allowExecute: false });
@@ -242,12 +277,14 @@ export async function runControlledExecutionStep(
           },
         },
         unifiedGovernance,
+        legalRiskRun,
       );
     }
   } else if (gate.requiresApproval && !engineFlags.autonomyApprovalsV1) {
     execution = attachUnifiedMetadata(
       await dispatchExecution(proposed, { dryRun: true, allowExecute: false }),
       unifiedGovernance,
+      legalRiskRun,
     );
   } else if (gate.allowed) {
     const app = await applyControlledAction({ proposed, gate });
@@ -261,6 +298,7 @@ export async function runControlledExecutionStep(
           metadata: {},
         } satisfies ExecutionResult),
       unifiedGovernance,
+      legalRiskRun,
     );
 
     const verifyEnabled =
@@ -268,7 +306,28 @@ export async function runControlledExecutionStep(
       engineFlags.controlledExecutionV1 === true;
 
     if (verifyEnabled && app.executionResult && app.executionResult.status === "EXECUTED") {
-      const v = verifyActionOutcome({ proposed, execution: app.executionResult });
+      const v = verifyActionOutcome({
+        proposed,
+        execution: app.executionResult,
+        executionContext:
+          unifiedGovernance != null
+            ? {
+                actionType: proposed.type,
+                regionCode: ctx.regionCode,
+                governance: {
+                  disposition: unifiedGovernance.disposition,
+                  blocked: unifiedGovernance.blocked,
+                  requiresHumanApproval: unifiedGovernance.requiresHumanApproval,
+                  allowExecution: unifiedGovernance.allowExecution,
+                  policyDecision: unifiedGovernance.policyDecision,
+                  legalRisk: unifiedGovernance.legalRisk,
+                  fraudRisk: unifiedGovernance.fraudRisk,
+                  combinedRisk: unifiedGovernance.combinedRisk,
+                  trace: unifiedGovernance.trace,
+                },
+              }
+            : undefined,
+      });
       const rollbackEnabled =
         engineFlags.autonomyRollbackV1 === true || engineFlags.autopilotHardeningV1 === true;
 
@@ -285,6 +344,7 @@ export async function runControlledExecutionStep(
     execution = attachUnifiedMetadata(
       await dispatchExecution(proposed, { dryRun: true, allowExecute: false }),
       unifiedGovernance,
+      legalRiskRun,
     );
   }
 
@@ -293,6 +353,15 @@ export async function runControlledExecutionStep(
     actionId: proposed.id,
     executionStatus: execution.status,
     actorUserId: ctx.createdByUserId ?? null,
+  });
+
+  void recordControlledExecutionFeedbackAsync({
+    ctx: { runId: ctx.runId, regionCode: ctx.regionCode, createdByUserId: ctx.createdByUserId },
+    proposed,
+    unified: unifiedGovernance,
+    mergedGovernance,
+    gate,
+    execution,
   });
 
   return { execution, gate, decision };

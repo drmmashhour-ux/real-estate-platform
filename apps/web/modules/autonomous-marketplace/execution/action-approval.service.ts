@@ -1,5 +1,9 @@
 import { prisma } from "@/lib/db";
 import { engineFlags } from "@/config/feature-flags";
+import { classifyGovernanceOutcome } from "../feedback/governance-feedback-classifier.service";
+import { buildGovernanceTrainingRow } from "../feedback/governance-training-data.service";
+import { persistGovernanceFeedbackRecord } from "../feedback/governance-feedback.repository";
+import type { GovernancePredictionSnapshot } from "../feedback/governance-feedback.types";
 import type { GovernanceResolution, PolicyDecision } from "../types/domain.types";
 import type { ProposedAction } from "../types/domain.types";
 import { recordExecutionApproval } from "./execution-audit.service";
@@ -54,6 +58,89 @@ export type ResolveApprovalParams = {
   actorUserId: string;
 };
 
+type ApprovalRowSnapshot = {
+  runId: string | null;
+  proposedActionId: string;
+  proposedActionJson: unknown;
+  policySnapshotJson: unknown;
+  governanceDisposition: string;
+  governanceReason: string | null;
+  requestedByUserId: string | null;
+};
+
+function buildGovernancePredictionFromApprovalRow(row: ApprovalRowSnapshot): GovernancePredictionSnapshot {
+  const disp = String(row.governanceDisposition ?? "UNKNOWN");
+  const blocked =
+    disp === "REJECTED" ||
+    disp === "BLOCKED_FOR_REGION" ||
+    disp.includes("BLOCK");
+  let policyDecision: string | undefined;
+  if (row.policySnapshotJson && typeof row.policySnapshotJson === "object") {
+    const pd = (row.policySnapshotJson as { disposition?: string }).disposition;
+    if (typeof pd === "string") policyDecision = pd;
+  }
+
+  return {
+    governanceDisposition: disp,
+    blocked,
+    requiresHumanApproval: true,
+    allowExecution: disp === "AUTO_EXECUTE" && !blocked,
+    policyDecision,
+    legalRiskScore: 0,
+    legalRiskLevel: "LOW",
+    fraudRiskScore: 0,
+    fraudRiskLevel: "LOW",
+    combinedRiskScore: 0,
+    combinedRiskLevel: "LOW",
+    revenueImpactEstimate: 0,
+    trace: [],
+  };
+}
+
+function enqueueApprovalGovernanceFeedback(row: ApprovalRowSnapshot, approved: boolean): void {
+  void (async () => {
+    try {
+      const now = new Date().toISOString();
+      const prediction = buildGovernancePredictionFromApprovalRow(row);
+      const proposed = row.proposedActionJson as ProposedAction | undefined;
+      const meta =
+        proposed?.metadata && typeof proposed.metadata === "object"
+          ? (proposed.metadata as Record<string, unknown>)
+          : {};
+      const truthEvents = [
+        {
+          type: approved ? ("manual_approval_granted" as const) : ("manual_approval_rejected" as const),
+          occurredAt: now,
+        },
+      ];
+      const input = {
+        runId: row.runId ?? undefined,
+        actionType: proposed?.type,
+        entityType: proposed?.target?.type,
+        entityId: proposed?.target?.id ?? undefined,
+        regionCode:
+          typeof meta.platformRegionCode === "string"
+            ? meta.platformRegionCode
+            : typeof meta.regionCode === "string"
+              ? meta.regionCode
+              : undefined,
+        userId: row.requestedByUserId ?? undefined,
+        prediction,
+        truthEvents,
+      };
+      const feedback = classifyGovernanceOutcome(input);
+      const trainingRow = buildGovernanceTrainingRow({ input, result: feedback });
+      await persistGovernanceFeedbackRecord({
+        input,
+        result: feedback,
+        trainingRow: trainingRow as unknown as Record<string, unknown>,
+      });
+    } catch (e) {
+      console.warn("[governance:feedback:approval]", e);
+    }
+  })();
+}
+
 export async function approvePendingAction(params: ResolveApprovalParams): Promise<{ ok: boolean; status?: string }> {
   try {
     const row = await prisma.autonomyPendingActionApproval.findUnique({ where: { id: params.approvalId } });
@@ -86,7 +173,19 @@ export async function rejectPendingAction(params: ResolveApprovalParams & { reas
   status?: string;
 }> {
   try {
-    const row = await prisma.autonomyPendingActionApproval.findUnique({ where: { id: params.approvalId } });
+    const row = await prisma.autonomyPendingActionApproval.findUnique({
+      where: { id: params.approvalId },
+      select: {
+        status: true,
+        runId: true,
+        proposedActionId: true,
+        proposedActionJson: true,
+        policySnapshotJson: true,
+        governanceDisposition: true,
+        governanceReason: true,
+        requestedByUserId: true,
+      },
+    });
     if (!row) return { ok: false };
     if (row.status !== "pending") return { ok: true, status: row.status };
 
@@ -106,6 +205,7 @@ export async function rejectPendingAction(params: ResolveApprovalParams & { reas
       resolution: "rejected",
       actorUserId: params.actorUserId,
     });
+    enqueueApprovalGovernanceFeedback(row, false);
     return { ok: true, status: "rejected" };
   } catch {
     return { ok: false };

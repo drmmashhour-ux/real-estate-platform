@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "../design-system/design-system.css";
 
 /* Mobile shell — prevent horizontal scroll; scale with rem/% */
 html {
@@ -903,11 +904,16 @@ body {
   font-size: var(--font-size-body);
   line-height: 1.58;
   color: #ffffff;
-  background-color: #0b0b0b;
+  background-color: #000000;
   min-height: 100vh;
   max-width: 100%;
   overflow-x: hidden;
   text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: rgb(212 175 55 / 0.35);
+  color: #fff;
 }
 
 /* Display titles — serif (Cormorant Garamond via layout) */

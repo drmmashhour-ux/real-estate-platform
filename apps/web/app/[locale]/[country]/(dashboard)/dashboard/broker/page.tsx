@@ -54,6 +54,7 @@ import { BrokerServiceProfilePanel } from "@/components/broker/BrokerServiceProf
 import { BrokerLegalComplianceStrip } from "@/components/broker/BrokerLegalComplianceStrip";
 import { CoOwnershipBrokerCondoPanel } from "@/components/compliance/CoOwnershipBrokerCondoPanel";
 import { BrokerGreenIntelligenceSection } from "@/components/broker/BrokerGreenIntelligenceSection";
+import { BrokerHubMonetizationBanner } from "@/components/broker/BrokerHubMonetizationBanner";
 
 function fmtCommissionCents(cents: number | null | undefined): string {
   if (cents == null || cents <= 0) return "—";
@@ -213,6 +214,7 @@ export default async function BrokerHubPage({
       showWorkspaceBadge
     >
       <div className="space-y-8">
+        <BrokerHubMonetizationBanner locale={locale} country={country} />
         <HubJourneyBanner hub="broker" locale={locale} country={country} userId={userId} />
         {userId && (dbUser?.role === "BROKER" || dbUser?.role === "ADMIN") ? (
           <>

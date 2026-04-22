@@ -42,8 +42,13 @@ import {
 import { resolveInternalLeadPricingDisplay } from "@/modules/leads/lead-pricing-display.service";
 import { getActiveLeadPricingOverride } from "@/modules/leads/lead-pricing-override.service";
 import { getLeadPricingResultsForAdmin } from "@/modules/leads/lead-pricing-results.service";
+import { assertBrokerLeadPaidAccess } from "@/modules/monetization/broker-lead-access.service";
 
 export const dynamic = "force-dynamic";
+
+function enforceBrokerLeadPaywall(): boolean {
+  return process.env.LECIPM_ENFORCE_BROKER_LEAD_PAYWALL?.trim() === "true";
+}
 
 /** GET: single lead (broker/admin) with CRM notes. */
 export async function GET(
@@ -103,6 +108,43 @@ export async function GET(
 
     if (!canBrokerOrAdminAccessLead(viewer.role, viewerId, lead)) {
       return Response.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const isAssignedBroker =
+      viewer.role === "BROKER" && lead.introducedByBrokerId === viewerId;
+    let brokerAssignedLeadPreview = false;
+    let brokerLeadPurchase: {
+      billingStatus: string | null;
+      priceCad: number | null;
+      brokerLeadId: string | null;
+    } | null = null;
+
+    if (isAssignedBroker) {
+      const blRow = await prisma.brokerLead.findFirst({
+        where: { leadId: id, brokerId: viewerId },
+        select: { id: true, billingStatus: true, price: true },
+      });
+      brokerLeadPurchase = blRow
+        ? {
+            billingStatus: blRow.billingStatus,
+            priceCad: blRow.price,
+            brokerLeadId: blRow.id,
+          }
+        : null;
+
+      const billing = await assertBrokerLeadPaidAccess(prisma, viewerId, id);
+      if (!billing.ok && enforceBrokerLeadPaywall()) {
+        return Response.json(
+          {
+            error: "Payment required for this assigned lead",
+            code: "BROKER_LEAD_UNPAID",
+            reason: billing.reason,
+            brokerLeadPurchase,
+          },
+          { status: 402 },
+        );
+      }
+      brokerAssignedLeadPreview = !billing.ok && !enforceBrokerLeadPaywall();
     }
 
     trackRevenueEvent({
@@ -294,11 +336,14 @@ export async function GET(
 
     const monetizationV1 = isLeadMonetizationV1Enabled();
     const locked = !lead.contactUnlockedAt;
-    const displayName = monetizationV1 && locked ? maskLeadDisplayName(lead.name) : lead.name;
-    const displayMessage = monetizationV1 && locked ? redactLeadMessagePreview(lead.message) : lead.message;
+    const previewContact = brokerAssignedLeadPreview || (monetizationV1 && locked);
+    const displayName = previewContact ? maskLeadDisplayName(lead.name) : lead.name;
+    const displayMessage = previewContact ? redactLeadMessagePreview(lead.message) : lead.message;
 
     const response = {
       ...lead,
+      followUps: brokerAssignedLeadPreview ? [] : lead.followUps,
+      crmInteractions: brokerAssignedLeadPreview ? [] : lead.crmInteractions,
       name: displayName,
       message: displayMessage,
       contactOriginLabel:
@@ -309,11 +354,17 @@ export async function GET(
             : lead.contactOrigin === LeadContactOrigin.DIRECT
               ? "Direct"
               : null,
-      email: lead.contactUnlockedAt ? lead.email : "[Locked]",
-      phone: lead.contactUnlockedAt ? lead.phone : "[Locked]",
-      isLocked: !lead.contactUnlockedAt,
+      email: previewContact ? "[Locked]" : lead.email ?? null,
+      phone: previewContact ? "[Locked]" : lead.phone ?? null,
+      isLocked: previewContact || !lead.contactUnlockedAt,
       leadMonetizationV1: monetizationV1,
-      accessLevel: locked ? "preview" : "full",
+      accessLevel: brokerAssignedLeadPreview
+        ? "broker_assigned_preview"
+        : locked
+          ? "preview"
+          : "full",
+      brokerAssignedLeadPreview,
+      brokerLeadPurchase,
       intentLabel: inferLeadIntentLabel(lead),
       status: lead.pipelineStatus || lead.status,
       automation: {

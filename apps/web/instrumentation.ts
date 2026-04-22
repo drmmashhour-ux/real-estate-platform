@@ -13,6 +13,7 @@ export async function register() {
     logStripeIntegrationEnvWarnings();
     const { assertStrictServerEnvIfProduction } = await import("@/lib/env.server");
     assertStrictServerEnvIfProduction();
+    await import("@/modules/notifications/bnhub-admin-notify-bridge");
   } else if (process.env.NEXT_RUNTIME === "edge") {
     await import("./sentry.edge.config");
   }

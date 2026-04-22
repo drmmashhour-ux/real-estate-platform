@@ -21,6 +21,8 @@ import { AdminDailyAiReportCard } from "@/components/ai/AdminDailyAiReportCard";
 import { BrandGuidelineStrip } from "@/components/brand/BrandGuidelineStrip";
 import { AISummaryWidget } from "@/components/ai/AISummaryWidget";
 import { HubJourneyBanner } from "@/components/journey/HubJourneyBanner";
+import { AdminMonetizationOverview } from "@/components/admin/AdminMonetizationOverview";
+import { getLecipmMonetizationSummary } from "@/modules/revenue/lecipm-monetization-summary.service";
 
 export default async function AdminHubDashboardPage({
   params,
@@ -40,7 +42,7 @@ export default async function AdminHubDashboardPage({
   }
 
   const aiSummary = getAdminAiSummary();
-  const [overview, platformStats, contentPacks, smartDashboard] = await Promise.all([
+  const [overview, platformStats, contentPacks, smartDashboard, monetizationSummary] = await Promise.all([
     getAdminOverviewStats(),
     getPlatformStats(30),
     prisma.formSubmission.findMany({
@@ -54,6 +56,7 @@ export default async function AdminHubDashboardPage({
       take: 250,
     }),
     getSmartDashboardData(),
+    getLecipmMonetizationSummary(30).catch(() => null),
   ]);
   const now = new Date();
   const reminderQueue = contentPacks
@@ -126,6 +129,7 @@ export default async function AdminHubDashboardPage({
             <SmartAdminDashboard data={smartDashboard} />
           </section>
         )}
+        <AdminMonetizationOverview summary={monetizationSummary} />
         {overview && (
           <>
             <section className="flex flex-wrap gap-3">

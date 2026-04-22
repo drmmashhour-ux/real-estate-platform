@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { BnhubLuxuryStaysMarketing } from "@/components/bnhub/BnhubLuxuryStaysMarketing";
 import { FeaturedListings } from "@/components/bnhub/FeaturedListings";
 import { SponsoredListings } from "@/components/bnhub/SponsoredListings";
 import { BnhubPersonalizedForYou } from "@/components/bnhub/BnhubPersonalizedForYou";
@@ -29,10 +30,20 @@ export async function generateMetadata({
 
 export default async function BNHubStaysPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string; country: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { locale, country } = await params;
+  const sp = await searchParams;
+  const viewRaw = sp.view;
+  const view = typeof viewRaw === "string" ? viewRaw : Array.isArray(viewRaw) ? viewRaw[0] : undefined;
+
+  if (view === "luxury") {
+    return <BnhubLuxuryStaysMarketing locale={locale} country={country} />;
+  }
+
   const guestId = await getGuestId();
   const basePath = `/${locale}/${country}`;
   return (

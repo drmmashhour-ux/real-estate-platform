@@ -385,6 +385,13 @@ model User {
   seniorAiProfiles                     SeniorAiProfile[]                        @relation("SeniorAiProfileUser")
   matchingEvents                       MatchingEvent[]
   seniorLivingGtmExecutionEvents       SeniorLivingGtmExecutionEvent[]       @relation("SeniorLivingGtmExecution")
+  /// Soins Hub — residence operator (optional).
+  careResidencesOperated               CareResidence[]                       @relation("CareResidenceOperator")
+  /// Soins Hub — at most one active resident profile per account.
+  careResidentProfile                  ResidentProfile?                      @relation("ResidentProfileUser")
+  careFamilyAccessGranted              FamilyAccess[]                        @relation("CareFamilyMember")
+  careChatMessagesSent                 CareChatMessage[]                     @relation("CareChatSender")
+  formSignatures                       FormSignature[]                       @relation("FormSignatureSigner")
   /// AMF-aligned capital raises — sponsor / issuer.
   amfCapitalDealsSponsored              AmfCapitalDeal[]                      @relation("AmfCapitalDealSponsor")
   /// Linked accredited investor profile (optional).
@@ -594,6 +601,12 @@ model User {
   hostGrowthOutreachLogsAuthored       HostGrowthOutreachLog[]               @relation("HostGrowthOutreachAuthor")
   clientAcquisitionDailyProgress       ClientAcquisitionDailyProgress[]
   earlyUserTrackingLinked              EarlyUserTracking[]                   @relation("EarlyUserTrackingLinkedUser")
+  lecipmAcquisitionContactsAssigned    LecipmAcquisitionContact[]            @relation("LecipmAcquisitionAssignee")
+  lecipmAcquisitionContactsLinked     LecipmAcquisitionContact[]            @relation("LecipmAcquisitionLinkedUser")
+  lecipmAcquisitionInvitesSent         LecipmAcquisitionInvite[]             @relation("LecipmAcquisitionInviteInviter")
+  lecipmAcquisitionInvitesRedeemed   LecipmAcquisitionInvite[]             @relation("LecipmAcquisitionInviteInvitee")
+  lecipmAcquisitionOnboarding          LecipmAcquisitionOnboardingSnapshot?
+  salesScriptCallsPerformed          SalesScriptCallLog[]                  @relation("SalesScriptCallsByPerformer")
   crmConversations                     CrmConversation[]
   propertyComparisons                  PropertyComparison[]
   investorProfiles                     InvestorProfile[]
@@ -22985,6 +22998,7 @@ model NotificationEvent {
 
 enum TenantStatus {
   ACTIVE
+  TRIAL
   SUSPENDED
   ARCHIVED
 }
@@ -23048,12 +23062,21 @@ model Tenant {
   name        String
   slug        String       @unique
   status      TenantStatus @default(ACTIVE)
+  /// solo_broker | agency | enterprise (white-label package)
+  tenantType  String?      @map("tenant_type")
+  primaryDomain String?    @unique @map("primary_domain")
+  subdomain     String?    @unique @map("subdomain")
+  defaultLocale   String?  @default("en") @map("default_locale")
+  defaultCurrency String?  @default("CAD") @map("default_currency")
+  defaultTimeZone String?  @default("America/Toronto") @map("default_time_zone")
   ownerUserId String?      @map("owner_user_id")
   owner       User?        @relation("OwnedTenants", fields: [ownerUserId], references: [id], onDelete: SetNull)
   settings    Json?
   createdAt   DateTime     @default(now()) @map("created_at")
   updatedAt   DateTime     @updatedAt @map("updated_at")
 
+  brand          TenantBrand?
+  featureFlags   TenantFeatureFlag[]
   memberships           TenantMembership[]
   listings              Listing[]
   brokerClients         BrokerClient[]
@@ -23082,9 +23105,49 @@ model Tenant {
   advisoryAccesses      AdvisoryAccess[]
   buyerListingViews     BuyerListingView[]
   fsboListings          FsboListing[]
+  bnhubBookings                Booking[]              @relation("BnhubBookingWorkspaceTenant")
+  workspaceWatchlistItems      WatchlistItem[]        @relation("WatchlistItemWorkspaceTenant")
+  workspaceAlertCandidates     AlertCandidate[]       @relation("AlertCandidateWorkspaceTenant")
 
   @@index([ownerUserId])
   @@map("tenants")
+}
+
+/// White-label branding for broker/agency tenants (portal + dashboard CSS variables).
+model TenantBrand {
+  id             String   @id @default(cuid())
+  tenantId       String   @unique @map("tenant_id")
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  displayName    String   @map("display_name")
+  logoUrl        String?  @map("logo_url")
+  faviconUrl     String?  @map("favicon_url")
+  primaryColor   String?  @default("#D4AF37") @map("primary_color")
+  secondaryColor String?  @default("#000000") @map("secondary_color")
+  accentColor    String?  @default("#ffffff") @map("accent_color")
+  heroTitle      String?  @map("hero_title") @db.Text
+  heroSubtitle   String?  @map("hero_subtitle") @db.Text
+  customCss      String?  @map("custom_css") @db.Text
+  customSettings Json?    @map("custom_settings")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@map("tenant_brands")
+}
+
+/// Per-tenant feature toggles (packages / upsells).
+model TenantFeatureFlag {
+  id         String   @id @default(cuid())
+  tenantId   String   @map("tenant_id")
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  featureKey String   @map("feature_key")
+  enabled    Boolean  @default(false)
+  config     Json?
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@unique([tenantId, featureKey])
+  @@index([tenantId])
+  @@map("tenant_feature_flags")
 }
 
 model TenantMembership {
@@ -24405,6 +24468,8 @@ model AlertCandidate {
   type         String               @map("type") @db.VarChar(64)
   userId       String               @map("user_id")
   user         User                 @relation("UserAlertCandidates", fields: [userId], references: [id], onDelete: Cascade)
+  tenantId     String?              @map("tenant_id") @db.VarChar(36)
+  tenant       Tenant?              @relation("AlertCandidateWorkspaceTenant", fields: [tenantId], references: [id], onDelete: SetNull)
   listingId    String?              @map("listing_id") @db.VarChar(40)
   payload      Json                 @default("{}") @db.JsonB
   status       AlertCandidateStatus @default(candidate)
@@ -24416,6 +24481,7 @@ model AlertCandidate {
   @@unique([dedupeKey])
   @@index([userId, status])
   @@index([listingId])
+  @@index([tenantId])
   @@map("alert_candidates")
 }
 
@@ -30562,6 +30628,240 @@ model LecipmGrowthSocialQueue {
   @@map("lecipm_growth_social_queue")
 }
 
+// ---------------------------------------------------------------------------
+// LECIPM Autonomous Growth Engine — bounded autonomy, audit logs, learning
+// ---------------------------------------------------------------------------
+
+model LecipmGrowthEngineActionLog {
+  id             String    @id @default(cuid())
+  runBatchId     String    @map("run_batch_id") @db.VarChar(40)
+  signalCode     String    @map("signal_code") @db.VarChar(48)
+  actionCode     String    @map("action_code") @db.VarChar(48)
+  entityKind     String    @map("entity_kind") @db.VarChar(24)
+  entityId       String?   @map("entity_id") @db.VarChar(36)
+  autonomyMode   String    @map("autonomy_mode") @db.VarChar(32)
+  riskTier       String    @map("risk_tier") @db.VarChar(24)
+  status         String    @db.VarChar(24)
+  explanation    String    @db.Text
+  contextJson    Json      @default("{}") @db.JsonB
+  resultJson     Json?     @db.JsonB
+  reversibleJson Json?     @map("reversible_json") @db.JsonB
+  approvalId     String?   @map("approval_id") @db.VarChar(36)
+  ownerUserId    String?   @map("owner_user_id") @db.VarChar(36)
+  createdAt      DateTime  @default(now()) @map("created_at")
+  revertedAt     DateTime? @map("reverted_at")
+
+  outcome LecipmGrowthEngineOutcome?
+
+  @@index([runBatchId])
+  @@index([entityKind, entityId])
+  @@index([createdAt(sort: Desc)])
+  @@index([signalCode])
+  @@map("lecipm_growth_engine_action_logs")
+}
+
+model LecipmGrowthEngineOutcome {
+  id           String                   @id @default(cuid())
+  actionLogId  String                   @unique @map("action_log_id")
+  actionLog    LecipmGrowthEngineActionLog @relation(fields: [actionLogId], references: [id], onDelete: Cascade)
+  signalCode   String                   @map("signal_code") @db.VarChar(48)
+  actionCode   String                   @map("action_code") @db.VarChar(48)
+  metricBefore Json                     @map("metric_before") @db.JsonB
+  metricAfter  Json?                    @map("metric_after") @db.JsonB
+  deltaJson    Json?                    @map("delta_json") @db.JsonB
+  measuredAt   DateTime?                @map("measured_at")
+  createdAt    DateTime                 @default(now()) @map("created_at")
+
+  @@index([signalCode, actionCode])
+  @@map("lecipm_growth_engine_outcomes")
+}
+
+model LecipmGrowthEngineLearningStat {
+  id               String   @id @default(cuid())
+  signalCode       String   @map("signal_code") @db.VarChar(48)
+  actionCode       String   @map("action_code") @db.VarChar(48)
+  attempts         Int      @default(0)
+  positiveOutcomes Int      @default(0) @map("positive_outcomes")
+  rollingScore     Float    @default(0) @map("rolling_score")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@unique([signalCode, actionCode])
+  @@map("lecipm_growth_engine_learning_stats")
+}
+
+// ---------------------------------------------------------------------------
+// LECIPM Marketing Hub — generated posts, scheduling, distribution, metrics
+// ---------------------------------------------------------------------------
+
+model LecipmMarketingHubPost {
+  id                   String    @id @default(cuid())
+  contentType          String    @map("content_type") @db.VarChar(40)
+  sourceKind           String    @map("source_kind") @db.VarChar(24)
+  sourceId             String?   @map("source_id") @db.VarChar(36)
+  title                String    @db.VarChar(512)
+  caption              String    @db.Text
+  hashtagsJson         Json      @default("[]") @map("hashtags_json")
+  mediaRefsJson        Json      @default("[]") @map("media_refs_json")
+  suggestedPlatform    String    @map("suggested_platform") @db.VarChar(24)
+  targetPlatform       String?   @map("target_platform") @db.VarChar(24)
+  status               String    @default("draft") @db.VarChar(24)
+  scheduledAt          DateTime? @map("scheduled_at")
+  publishedAt          DateTime? @map("published_at")
+  manualExport         Boolean   @default(false) @map("manual_export")
+  distributionProvider String?   @map("distribution_provider") @db.VarChar(32)
+  externalRef          String?   @map("external_ref") @db.VarChar(160)
+  performanceJson      Json?     @map("performance_json") @db.JsonB
+  growthSignalRef      String?   @map("growth_signal_ref") @db.VarChar(160)
+  captionEdited        String?   @map("caption_edited") @db.Text
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+  videoProjects        LecipmVideoEngineProject[]
+
+  @@index([status, scheduledAt])
+  @@index([sourceKind, sourceId])
+  @@index([createdAt(sort: Desc)])
+  @@map("lecipm_marketing_hub_posts")
+}
+
+// ---------------------------------------------------------------------------
+// LECIPM Video Content Engine — manifests, review workflow, marketing bridge
+// ---------------------------------------------------------------------------
+
+model LecipmVideoEngineProject {
+  id                   String                 @id @default(cuid())
+  templateKey          String                 @map("template_key") @db.VarChar(48)
+  sourceKind           String                 @map("source_kind") @db.VarChar(24)
+  sourceId             String?                @map("source_id") @db.VarChar(36)
+  status               String                 @default("draft") @db.VarChar(24)
+  durationTargetSec    Int                    @map("duration_target_sec")
+  aspectRatio          String                 @map("aspect_ratio") @db.VarChar(12)
+  targetPlatform       String                 @map("target_platform") @db.VarChar(24)
+  title                String                 @db.VarChar(512)
+  hookText             String                 @map("hook_text") @db.Text
+  cta                  String                 @db.Text
+  scriptJson           Json                   @map("script_json") @db.JsonB
+  renderManifestJson   Json                   @map("render_manifest_json") @db.JsonB
+  mediaPackageJson     Json?                  @map("media_package_json") @db.JsonB
+  performanceJson      Json?                  @map("performance_json") @db.JsonB
+  marketingHubPostId   String?                @map("marketing_hub_post_id") @db.VarChar(36)
+  marketingHubPost     LecipmMarketingHubPost? @relation(fields: [marketingHubPostId], references: [id], onDelete: SetNull)
+  rejectionReason      String?                @map("rejection_reason") @db.Text
+  scheduledAt          DateTime?              @map("scheduled_at")
+  publishedAt          DateTime?              @map("published_at")
+  createdAt            DateTime               @default(now()) @map("created_at")
+  updatedAt            DateTime               @updatedAt @map("updated_at")
+
+  @@index([status, createdAt])
+  @@index([templateKey])
+  @@index([marketingHubPostId])
+  @@map("lecipm_video_engine_projects")
+}
+
+// ---------------------------------------------------------------------------
+// First 100 Users — controlled internal acquisition CRM (brokers, hosts, residences, users)
+// ---------------------------------------------------------------------------
+
+model LecipmAcquisitionContact {
+  id                   String                   @id @default(cuid())
+  type                 String                   @db.VarChar(24)
+  name                 String                   @db.VarChar(512)
+  email                String?                  @db.VarChar(320)
+  phone                String?                  @db.VarChar(48)
+  source               String                   @default("manual") @db.VarChar(24)
+  /// Part 1 CRM status: CONTACTED | INTERESTED | ONBOARDED | LOST
+  relationshipStatus   String                   @default("CONTACTED") @map("relationship_status") @db.VarChar(24)
+  /// Part 2 pipeline / kanban: NEW | CONTACTED | FOLLOW_UP | DEMO_SCHEDULED | CONVERTED | LOST
+  pipelineStage        String                   @default("NEW") @map("pipeline_stage") @db.VarChar(32)
+  notesJson            Json                     @default("[]") @map("notes_json")
+  assignedAdminId      String?                  @map("assigned_admin_id") @db.VarChar(36)
+  assignedAdmin        User?                    @relation("LecipmAcquisitionAssignee", fields: [assignedAdminId], references: [id], onDelete: SetNull)
+  linkedUserId         String?                  @map("linked_user_id") @db.VarChar(36)
+  linkedUser           User?                    @relation("LecipmAcquisitionLinkedUser", fields: [linkedUserId], references: [id], onDelete: SetNull)
+  leadsGenerated       Int                      @default(0) @map("leads_generated")
+  revenueCents         Int                      @default(0) @map("revenue_cents")
+  firstContactedAt     DateTime?                @map("first_contacted_at")
+  convertedAt          DateTime?                @map("converted_at")
+  /// Milliseconds from createdAt to onboarded milestone (when known).
+  timeToOnboardMs      Int?                     @map("time_to_onboard_ms")
+  invites              LecipmAcquisitionInvite[]
+  salesScriptCallLogs  SalesScriptCallLog[]
+  createdAt            DateTime                 @default(now()) @map("created_at")
+  updatedAt            DateTime                 @updatedAt @map("updated_at")
+
+  @@index([type, pipelineStage])
+  @@index([assignedAdminId])
+  @@index([pipelineStage])
+  @@index([relationshipStatus])
+  @@index([createdAt(sort: Desc)])
+  @@map("lecipm_acquisition_contacts")
+}
+
+/// Sales script engine — outcome tracking for acquisition calls (brokers / investors).
+model SalesScriptCallLog {
+  id                      String                   @id @default(cuid())
+  contactId               String?                  @map("contact_id") @db.VarChar(36)
+  contact                 LecipmAcquisitionContact?  @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  audience                String                   @db.VarChar(16)
+  scriptCategory          String                   @map("script_category") @db.VarChar(48)
+  variantKey              String                   @default("default") @map("variant_key") @db.VarChar(48)
+  outcome                 String                   @db.VarChar(24)
+  objectionsEncountered   Json?                    @map("objections_encountered")
+  notes                   String?                  @db.Text
+  performedByUserId       String?                  @map("performed_by_user_id") @db.VarChar(36)
+  performedBy             User?                    @relation("SalesScriptCallsByPerformer", fields: [performedByUserId], references: [id], onDelete: SetNull)
+  createdAt               DateTime                 @default(now()) @map("created_at")
+
+  @@index([contactId])
+  @@index([scriptCategory, outcome])
+  @@index([audience])
+  @@index([createdAt(sort: Desc)])
+  @@map("sales_script_call_logs")
+}
+
+model LecipmAcquisitionInvite {
+  id            String                  @id @default(cuid())
+  code          String                  @unique @db.VarChar(32)
+  token         String                  @unique @db.VarChar(80)
+  contactId     String?                 @map("contact_id") @db.VarChar(36)
+  contact       LecipmAcquisitionContact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  inviterUserId String?                 @map("inviter_user_id") @db.VarChar(36)
+  inviter       User?                   @relation("LecipmAcquisitionInviteInviter", fields: [inviterUserId], references: [id], onDelete: SetNull)
+  inviteeEmail  String?                 @map("invitee_email") @db.VarChar(320)
+  inviteeUserId String?                 @map("invitee_user_id") @db.VarChar(36)
+  invitee       User?                   @relation("LecipmAcquisitionInviteInvitee", fields: [inviteeUserId], references: [id], onDelete: SetNull)
+  redeemedAt    DateTime?               @map("redeemed_at")
+  createdAt     DateTime                @default(now()) @map("created_at")
+
+  @@index([contactId])
+  @@index([inviterUserId])
+  @@index([code])
+  @@map("lecipm_acquisition_invites")
+}
+
+model LecipmAcquisitionOnboardingSnapshot {
+  userId                   String    @id @map("user_id") @db.VarChar(36)
+  user                     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountCreatedAt         DateTime? @map("account_created_at")
+  firstListingAt           DateTime? @map("first_listing_at")
+  firstBookingOrLeadAt     DateTime? @map("first_booking_or_lead_at")
+  subscriptionActivatedAt  DateTime? @map("subscription_activated_at")
+  completionPercentCached  Int?      @map("completion_percent_cached")
+  updatedAt                DateTime  @updatedAt @map("updated_at")
+
+  @@map("lecipm_acquisition_onboarding_snapshots")
+}
+
+model LecipmAcquisitionAdminNotification {
+  id          String    @id @default(cuid())
+  kind        String    @db.VarChar(48)
+  payloadJson Json      @map("payload_json") @db.JsonB
+  readAt      DateTime? @map("read_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@index([readAt, createdAt(sort: Desc)])
+  @@map("lecipm_acquisition_admin_notifications")
+}
+
 /// Senior Living Hub — residences, units, operator leads, family match profiles (Canada).
 model SeniorResidence {
   id                  String                 @id @default(cuid())
@@ -31164,6 +31464,54 @@ model AutonomousActionLog {
   @@map("senior_autonomous_action_logs")
 }
 
+/// Geographic expansion playbook — readiness, metrics, cloned config snapshots.
+model SeniorCity {
+  id                       String    @id @default(cuid())
+  name                     String    @db.VarChar(160)
+  country                  String    @db.VarChar(80)
+  status                   String    @default("LOCKED") @db.VarChar(24)
+
+  operatorCount            Int       @default(0) @map("operator_count")
+  leadCount                Int       @default(0) @map("lead_count")
+  conversionRate           Float?    @map("conversion_rate")
+
+  demandScore              Float?    @map("demand_score")
+  supplyScore              Float?    @map("supply_score")
+  readinessScore           Float?    @map("readiness_score")
+  leadGrowthRate           Float?    @map("lead_growth_rate")
+
+  /// Snapshot of matching + lead scoring weights copied from winning city at activation.
+  expansionWeightsJson     Json?     @map("expansion_weights_json") @db.JsonB
+  expansionClonedFromCity  String?   @map("expansion_cloned_from_city") @db.VarChar(160)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  expansionTasks SeniorExpansionTask[]
+
+  @@unique([name, country])
+  @@index([country, status])
+  @@index([readinessScore(sort: Desc)])
+  @@map("senior_cities")
+}
+
+model SeniorExpansionTask {
+  id        String     @id @default(cuid())
+  cityId    String     @map("city_id") @db.VarChar(36)
+  city      SeniorCity @relation(fields: [cityId], references: [id], onDelete: Cascade)
+
+  taskType  String     @map("task_type") @db.VarChar(48)
+  status    String     @default("PENDING") @db.VarChar(24)
+  metadataJson Json?   @map("metadata_json") @db.JsonB
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([cityId, status])
+  @@index([taskType, status])
+  @@map("senior_expansion_tasks")
+}
+
 model LecipmPortfolioAssetPerformance {
   id             String             @id @default(cuid())
   assetId        String             @map("asset_id") @db.VarChar(36)
@@ -31430,4 +31778,242 @@ model AmfDistributionRecord {
   @@index([capitalDealId, recordedAt])
   @@index([investorId])
   @@map("amf_distribution_records")
+}
+
+// ---------------------------------------------------------------------------
+// Soins Hub (Senior Care) — operational residences, residents, family, alerts
+// ---------------------------------------------------------------------------
+
+enum CareResidenceType {
+  INDEPENDENT
+  ASSISTED
+  MEDICAL
+}
+
+enum CareServiceKind {
+  MEDICAL
+  DAILY_LIVING
+  SAFETY
+}
+
+enum CareFoodPlanTier {
+  NONE
+  ONE_MEAL
+  FULL
+}
+
+enum CareLevel {
+  INDEPENDENT
+  ASSISTED
+  MEMORY_CARE
+  SKILLED
+}
+
+enum CareHubEventKind {
+  ALERT
+  HEALTH
+  MOVEMENT
+  EMERGENCY
+}
+
+enum CareHubEventSeverity {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+/// Senior care residence listing (Soins Hub).
+model CareResidence {
+  id          String            @id @default(cuid())
+  title       String            @db.VarChar(512)
+  description String?           @db.Text
+  city        String            @db.VarChar(160)
+  address     String            @db.VarChar(512)
+  type        CareResidenceType
+  basePrice   Float             @map("base_price")
+  operatorId  String?           @map("operator_id") @db.VarChar(36)
+  operator    User?             @relation("CareResidenceOperator", fields: [operatorId], references: [id], onDelete: SetNull)
+
+  units       CareUnit[]
+  services    CareService[]
+  foodPlans   FoodPlan[]
+  residents   ResidentProfile[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([city])
+  @@index([operatorId])
+  @@map("care_residences")
+}
+
+model CareUnit {
+  id          String        @id @default(cuid())
+  residenceId String        @map("residence_id") @db.VarChar(36)
+  residence   CareResidence @relation(fields: [residenceId], references: [id], onDelete: Cascade)
+  title       String        @db.VarChar(256)
+  price       Float
+  availability Boolean      @default(true)
+  roomType    String        @map("room_type") @db.VarChar(64)
+
+  @@index([residenceId])
+  @@map("care_units")
+}
+
+model CareService {
+  id            String          @id @default(cuid())
+  residenceId   String          @map("residence_id") @db.VarChar(36)
+  residence     CareResidence   @relation(fields: [residenceId], references: [id], onDelete: Cascade)
+  name          String          @db.VarChar(256)
+  type          CareServiceKind
+  price         Float
+  requiredLevel CareLevel       @map("required_level")
+
+  @@index([residenceId])
+  @@map("care_services")
+}
+
+model FoodPlan {
+  id           String           @id @default(cuid())
+  residenceId  String           @map("residence_id") @db.VarChar(36)
+  residence    CareResidence    @relation(fields: [residenceId], references: [id], onDelete: Cascade)
+  name         CareFoodPlanTier
+  mealsPerDay  Int              @default(0) @map("meals_per_day")
+  price        Float
+
+  residentProfiles ResidentProfile[]
+
+  @@unique([residenceId, name])
+  @@map("care_food_plans")
+}
+
+model ResidentProfile {
+  id               String        @id @default(cuid())
+  userId           String        @unique @map("user_id") @db.VarChar(36)
+  user             User          @relation("ResidentProfileUser", fields: [userId], references: [id], onDelete: Cascade)
+  residenceId      String        @map("residence_id") @db.VarChar(36)
+  residence        CareResidence @relation(fields: [residenceId], references: [id], onDelete: Cascade)
+  careLevel        CareLevel     @map("care_level")
+  foodPlanId       String?       @map("food_plan_id") @db.VarChar(36)
+  foodPlan         FoodPlan?     @relation(fields: [foodPlanId], references: [id], onDelete: SetNull)
+  healthNotes      String?       @map("health_notes") @db.Text
+  emergencyContact String?       @map("emergency_contact") @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  familyAccess  FamilyAccess[]
+  careEvents    CareEvent[]
+  cameraStreams CameraStream[]
+  chatMessages  CareChatMessage[]
+
+  @@index([residenceId])
+  @@map("care_resident_profiles")
+}
+
+model FamilyAccess {
+  id               String          @id @default(cuid())
+  residentId       String          @map("resident_id") @db.VarChar(36)
+  resident         ResidentProfile @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  familyUserId     String          @map("family_user_id") @db.VarChar(36)
+  familyUser       User            @relation("CareFamilyMember", fields: [familyUserId], references: [id], onDelete: Cascade)
+  canViewCamera    Boolean         @default(false) @map("can_view_camera")
+  canChat          Boolean         @default(true) @map("can_chat")
+  canReceiveAlerts Boolean         @default(true) @map("can_receive_alerts")
+
+  @@unique([residentId, familyUserId])
+  @@index([familyUserId])
+  @@map("care_family_access")
+}
+
+model CareEvent {
+  id         String               @id @default(cuid())
+  residentId String               @map("resident_id") @db.VarChar(36)
+  resident   ResidentProfile      @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  type       CareHubEventKind
+  message    String               @db.Text
+  severity   CareHubEventSeverity
+  createdAt  DateTime             @default(now()) @map("created_at")
+
+  @@index([residentId, createdAt(sort: Desc)])
+  @@map("care_events")
+}
+
+model CameraStream {
+  id         String          @id @default(cuid())
+  residentId String          @map("resident_id") @db.VarChar(36)
+  resident   ResidentProfile @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  streamUrl  String          @map("stream_url") @db.VarChar(2048)
+  isActive   Boolean         @default(true) @map("is_active")
+
+  @@index([residentId])
+  @@map("care_camera_streams")
+}
+
+/// Mapped to DB as `care_chat_messages` — “ChatMessage” concept in product docs.
+model CareChatMessage {
+  id         String          @id @default(cuid())
+  residentId String          @map("resident_id") @db.VarChar(36)
+  resident   ResidentProfile @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  senderId   String          @map("sender_id") @db.VarChar(36)
+  sender     User            @relation("CareChatSender", fields: [senderId], references: [id], onDelete: Cascade)
+  message    String          @db.Text
+  createdAt  DateTime        @default(now()) @map("created_at")
+
+  @@index([residentId, createdAt(sort: Desc)])
+  @@index([senderId])
+  @@map("care_chat_messages")
+}
+
+/// Structured e-sign audit row — traceable identity, time, location (internal compliance).
+model FormSignature {
+  id              String   @id @default(cuid())
+  entityType      String   @map("entity_type") @db.VarChar(64)
+  entityId        String   @map("entity_id") @db.VarChar(64)
+  signerId        String   @map("signer_id") @db.VarChar(36)
+  signer          User     @relation("FormSignatureSigner", fields: [signerId], references: [id], onDelete: Cascade)
+  signerType      String   @map("signer_type") @db.VarChar(24)
+  signedAt        DateTime @map("signed_at")
+  signedDate      String   @map("signed_date") @db.VarChar(16)
+  signedTime      String   @map("signed_time") @db.VarChar(16)
+  signedCity      String?  @map("signed_city") @db.VarChar(160)
+  signatureMethod String   @map("signature_method") @db.VarChar(24)
+  /** Integrity proof for captured signature payload / method binding */
+  signatureHash   String   @map("signature_hash") @db.VarChar(128)
+  /** SHA-256 of canonical document content at signing time */
+  documentHash    String?  @map("document_hash") @db.VarChar(128)
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@index([entityType, entityId])
+  @@index([signerId])
+  @@index([signedAt])
+  @@map("form_signatures")
+}
+
+/// DS (seller declaration) transaction linkage — traceability; distinct from `SellerDeclarationRecord` listing forms.
+model SellerDeclaration {
+  id              String   @id @default(cuid())
+  listingId       String?  @map("listing_id") @db.VarChar(64)
+  contractId      String?  @map("contract_id") @db.VarChar(64)
+  referenceNumber String?  @unique @map("reference_number") @db.VarChar(48)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@index([listingId])
+  @@index([contractId])
+  @@map("compliance_seller_declarations")
+}
+
+/// Chunked knowledge for source-grounded drafting (OACIQ forms, uploaded references).
+model VectorDocument {
+  id        String   @id @default(cuid())
+  sourceKey String   @map("source_key") @db.VarChar(512)
+  title     String?  @db.VarChar(512)
+  content   String   @db.Text
+  /// Same dimension as `embedText` / deterministic embedding (JSON number array).
+  embedding Json     @map("embedding")
+  metadata  Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([sourceKey])
+  @@map("vector_documents")
 }

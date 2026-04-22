@@ -5,7 +5,8 @@ export type SeniorCommandLogChannel =
   | "[senior-command]"
   | "[senior-alert]"
   | "[senior-override]"
-  | "[senior-optimization]";
+  | "[senior-optimization]"
+  | "[senior-expansion]";
 
 export function logSeniorCommand(
   channel: SeniorCommandLogChannel,

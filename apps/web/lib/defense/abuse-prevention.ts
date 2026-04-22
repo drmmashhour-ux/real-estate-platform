@@ -28,6 +28,20 @@ export async function recordAbuseSignal(params: {
       createdBy: params.createdBy,
     },
   });
+  if (params.severity?.toUpperCase() === "HIGH") {
+    void import("@/modules/notifications/notification-router.service").then(({ dispatchBusinessEventToChannels }) =>
+      dispatchBusinessEventToChannels({
+        type: "RISK_ALERT",
+        code: params.signalType,
+        detail:
+          params.entityType && params.entityId
+            ? `${params.entityType}:${params.entityId}`
+            : params.userId
+              ? `user:${params.userId}`
+              : undefined,
+      }).catch(() => {}),
+    );
+  }
   if (params.userId) {
     await upsertOffenderProfile(params.userId, { addStrike: params.severity !== "LOW" });
   }

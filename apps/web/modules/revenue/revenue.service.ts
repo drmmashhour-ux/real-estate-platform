@@ -57,3 +57,5 @@ export async function getRevenueSummary(range: RevenueSummaryRange): Promise<Get
 
   return { totalAmount, eventCount, byType };
 }
+
+export { aggregateLecipmMonetizationMetrics } from "./revenue-aggregation.service";

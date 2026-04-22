@@ -79,6 +79,20 @@ function planCodeFromSubscription(sub: Stripe.Subscription): string {
   return "pro";
 }
 
+/** Persist Stripe metadata facets for monetization dashboards / paywall hub routing. */
+function stripeSubscriptionMetadataMirror(sub: Stripe.Subscription): Record<string, unknown> {
+  const m = sub.metadata ?? {};
+  return {
+    source: "stripe_webhook",
+    stripeStatus: sub.status,
+    lecipmHubKind: typeof m.lecipmHubKind === "string" ? m.lecipmHubKind : undefined,
+    paymentType: typeof m.paymentType === "string" ? m.paymentType : undefined,
+    lecipmWorkspace: typeof m.lecipmWorkspace === "string" ? m.lecipmWorkspace : undefined,
+    planCode: typeof m.planCode === "string" ? m.planCode : undefined,
+    userId: typeof m.userId === "string" ? m.userId : undefined,
+  };
+}
+
 /**
  * Upsert local mirror row from Stripe Subscription (webhook source of truth).
  */
@@ -112,7 +126,7 @@ export async function syncWorkspaceSubscriptionFromStripeSubscription(
       currentPeriodStart: periodStart,
       currentPeriodEnd: periodEnd,
       cancelAtPeriodEnd,
-      metadata: { source: "stripe_webhook", stripeStatus: sub.status } as object,
+      metadata: stripeSubscriptionMetadataMirror(sub) as object,
     },
     update: {
       userId: userId ?? undefined,
@@ -125,7 +139,7 @@ export async function syncWorkspaceSubscriptionFromStripeSubscription(
       currentPeriodStart: periodStart,
       currentPeriodEnd: periodEnd,
       cancelAtPeriodEnd,
-      metadata: { source: "stripe_webhook", stripeStatus: sub.status } as object,
+      metadata: stripeSubscriptionMetadataMirror(sub) as object,
     },
   });
 

@@ -29,7 +29,9 @@ export type ControlledExecutionReason =
   | "region_capability_block"
   | "region_recommend_only"
   /** @deprecated prefer region_capability_block — retained for serialized audit compatibility */
-  | "region_execution_blocked";
+  | "region_execution_blocked"
+  | "legal_risk_critical"
+  | "legal_risk_require_approval";
 
 export type ComplianceGateSnapshot = {
   blocked: boolean;

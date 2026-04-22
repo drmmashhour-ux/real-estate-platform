@@ -86,6 +86,13 @@ import { securityLog } from "@/lib/security/security-logger";
 import { logPaymentTagged, logStripeTagged } from "@/lib/server/launch-logger";
 import { auditStripePaymentEventIfApplicable } from "@/modules/stripe/validation.service";
 import { onLeadUnlockPaymentRecorded } from "@/modules/leads/lead-monetization-monitoring.service";
+import { classifyGovernanceOutcome } from "@/modules/autonomous-marketplace/feedback/governance-feedback-classifier.service";
+import { buildGovernanceTrainingRow } from "@/modules/autonomous-marketplace/feedback/governance-training-data.service";
+import { persistGovernanceFeedbackRecord } from "@/modules/autonomous-marketplace/feedback/governance-feedback.repository";
+import type {
+  GovernanceGroundTruthEvent,
+  GovernancePredictionSnapshot,
+} from "@/modules/autonomous-marketplace/feedback/governance-feedback.types";
 
 export const dynamic = "force-dynamic";
 
@@ -116,6 +123,150 @@ function getStripe(): Stripe | null {
   const key = process.env.STRIPE_SECRET_KEY;
   if (!key) return null;
   return new Stripe(key);
+}
+
+function governanceRiskLevel(
+  v: unknown,
+): GovernancePredictionSnapshot["legalRiskLevel"] {
+  if (v === "LOW" || v === "MEDIUM" || v === "HIGH" || v === "CRITICAL") return v;
+  return "LOW";
+}
+
+function extractGovernancePredictionFromJson(blob: unknown): GovernancePredictionSnapshot | null {
+  if (!blob || typeof blob !== "object") return null;
+  const o = blob as Record<string, unknown>;
+  const lr = o.legalRisk && typeof o.legalRisk === "object" ? (o.legalRisk as Record<string, unknown>) : null;
+  const fr = o.fraudRisk && typeof o.fraudRisk === "object" ? (o.fraudRisk as Record<string, unknown>) : null;
+  const cr = o.combinedRisk && typeof o.combinedRisk === "object" ? (o.combinedRisk as Record<string, unknown>) : null;
+  if (!lr || !fr || !cr || typeof o.disposition !== "string") return null;
+
+  const traceRaw = o.trace;
+  const trace =
+    Array.isArray(traceRaw) &&
+    traceRaw.every(
+      (row) =>
+        row &&
+        typeof row === "object" &&
+        typeof (row as { step?: unknown }).step === "number" &&
+        typeof (row as { ruleId?: unknown }).ruleId === "string",
+    )
+      ? (traceRaw as GovernancePredictionSnapshot["trace"])
+      : [];
+
+  const revEst = typeof fr.revenueImpactEstimate === "number" ? fr.revenueImpactEstimate : 0;
+
+  return {
+    governanceDisposition: String(o.disposition),
+    blocked: o.blocked === true,
+    requiresHumanApproval: o.requiresHumanApproval === true,
+    allowExecution: o.allowExecution === true,
+    policyDecision: typeof o.policyDecision === "string" ? o.policyDecision : undefined,
+    legalRiskScore: typeof lr.score === "number" ? lr.score : 0,
+    legalRiskLevel: governanceRiskLevel(lr.level),
+    fraudRiskScore: typeof fr.score === "number" ? fr.score : 0,
+    fraudRiskLevel: governanceRiskLevel(fr.level),
+    combinedRiskScore: typeof cr.score === "number" ? cr.score : 0,
+    combinedRiskLevel: governanceRiskLevel(cr.level),
+    revenueImpactEstimate: revEst,
+    trace,
+  };
+}
+
+function neutralGovernancePrediction(): GovernancePredictionSnapshot {
+  return {
+    governanceDisposition: "UNKNOWN",
+    blocked: false,
+    requiresHumanApproval: false,
+    allowExecution: true,
+    legalRiskScore: 0,
+    legalRiskLevel: "LOW",
+    fraudRiskScore: 0,
+    fraudRiskLevel: "LOW",
+    combinedRiskScore: 0,
+    combinedRiskLevel: "LOW",
+    revenueImpactEstimate: 0,
+    trace: [],
+  };
+}
+
+function parseGovernanceBlob(raw: unknown): GovernancePredictionSnapshot | null {
+  if (raw == null) return null;
+  if (typeof raw === "string") {
+    try {
+      return extractGovernancePredictionFromJson(JSON.parse(raw));
+    } catch {
+      return null;
+    }
+  }
+  return extractGovernancePredictionFromJson(raw);
+}
+
+async function resolveGovernancePredictionForStripePayment(params: {
+  paymentIntentId?: string | null;
+  sessionMetadata?: Stripe.Metadata | Record<string, string | undefined> | null;
+}): Promise<GovernancePredictionSnapshot> {
+  const md = params.sessionMetadata ?? {};
+  for (const key of ["unifiedGovernanceJson", "governanceSnapshot", "governance_json"]) {
+    const v = md[key];
+    if (typeof v === "string") {
+      const pred = parseGovernanceBlob(v);
+      if (pred) return pred;
+    }
+  }
+
+  const pi = typeof params.paymentIntentId === "string" ? params.paymentIntentId.trim() : "";
+  if (!pi) return neutralGovernancePrediction();
+
+  const pp = await prisma.platformPayment
+    .findFirst({
+      where: { stripePaymentIntentId: pi },
+      select: { metadata: true },
+    })
+    .catch(() => null);
+
+  if (pp?.metadata && typeof pp.metadata === "object") {
+    const m = pp.metadata as Record<string, unknown>;
+    for (const key of ["unifiedGovernanceJson", "governanceSnapshot", "governance_json", "unifiedGovernance"]) {
+      const raw = m[key];
+      const pred = parseGovernanceBlob(raw);
+      if (pred) return pred;
+    }
+  }
+
+  return neutralGovernancePrediction();
+}
+
+function enqueueStripeGovernanceFeedback(params: {
+  prediction: GovernancePredictionSnapshot;
+  truthEvents: GovernanceGroundTruthEvent[];
+  actionType?: string;
+  regionCode?: string;
+  bookingId?: string;
+  listingId?: string;
+  userId?: string;
+}): void {
+  void (async () => {
+    try {
+      const input = {
+        actionType: params.actionType,
+        regionCode: params.regionCode,
+        listingId: params.listingId,
+        bookingId: params.bookingId,
+        userId: params.userId,
+        prediction: params.prediction,
+        truthEvents: params.truthEvents,
+      };
+      const feedback = classifyGovernanceOutcome(input);
+      const trainingRow = buildGovernanceTrainingRow({ input, result: feedback });
+      await persistGovernanceFeedbackRecord({
+        input,
+        result: feedback,
+        trainingRow: trainingRow as unknown as Record<string, unknown>,
+      });
+    } catch (e) {
+      console.warn("[governance:feedback:stripe]", e);
+    }
+  })();
 }
 
 async function syncConnectedAccountStatusFromEvent(stripe: Stripe, accountId: string) {
@@ -341,7 +492,79 @@ export async function POST(req: NextRequest) {
           });
         }
       }
+
+      void (async () => {
+        try {
+          const prediction = await resolveGovernancePredictionForStripePayment({
+            paymentIntentId,
+            sessionMetadata:
+              piMeta && typeof piMeta === "object" && Object.keys(piMeta).length > 0
+                ? (piMeta as Stripe.Metadata)
+                : null,
+          });
+          const ppFull = await prisma.platformPayment
+            .findFirst({
+              where: { stripePaymentIntentId: paymentIntentId },
+              select: { bookingId: true, listingId: true, userId: true, paymentType: true },
+            })
+            .catch(() => null);
+          enqueueStripeGovernanceFeedback({
+            prediction,
+            truthEvents: [
+              {
+                type: "refund",
+                occurredAt: new Date().toISOString(),
+                ...(refundCents > 0 ? { amount: refundCents } : {}),
+              },
+            ],
+            actionType: ppFull?.paymentType ?? piMeta.paymentType ?? undefined,
+            bookingId:
+              ppFull?.bookingId ??
+              (typeof piMeta.bookingId === "string" ? piMeta.bookingId : undefined),
+            listingId:
+              ppFull?.listingId ??
+              (typeof piMeta.listingId === "string" ? piMeta.listingId : undefined),
+            userId:
+              ppFull?.userId ??
+              (typeof piMeta.userId === "string" ? piMeta.userId : undefined),
+          });
+        } catch (e) {
+          console.warn("[governance:feedback:stripe]", e);
+        }
+      })();
     }
+    return Response.json({ received: true });
+  }
+
+  if (event.type === "charge.dispute.created") {
+    const dispute = event.data.object as Stripe.Dispute;
+    const disputePi =
+      typeof dispute.payment_intent === "string"
+        ? dispute.payment_intent
+        : dispute.payment_intent && typeof dispute.payment_intent === "object"
+          ? (dispute.payment_intent as Stripe.PaymentIntent).id
+          : null;
+    void (async () => {
+      try {
+        const prediction = await resolveGovernancePredictionForStripePayment({
+          paymentIntentId: disputePi,
+          sessionMetadata: null,
+        });
+        const amt = typeof dispute.amount === "number" ? dispute.amount : undefined;
+        enqueueStripeGovernanceFeedback({
+          prediction,
+          truthEvents: [
+            {
+              type: "chargeback",
+              occurredAt: new Date().toISOString(),
+              ...(typeof amt === "number" ? { amount: amt } : {}),
+            },
+          ],
+        });
+      } catch (e) {
+        console.warn("[governance:feedback:stripe]", e);
+      }
+    })();
     return Response.json({ received: true });
   }
 
@@ -407,6 +630,30 @@ export async function POST(req: NextRequest) {
     void import("@/lib/fraud/compute-payment-risk")
       .then((m) => m.evaluatePaymentFraudFromStripePaymentIntent(pi))
       .catch(() => {});
+    void (async () => {
+      try {
+        const prediction = await resolveGovernancePredictionForStripePayment({
+          paymentIntentId: pi.id,
+          sessionMetadata: md as Stripe.Metadata,
+        });
+        enqueueStripeGovernanceFeedback({
+          prediction,
+          truthEvents: [
+            {
+              type: "execution_failed",
+              occurredAt: new Date().toISOString(),
+              metadata: { stripeEvent: "payment_intent.payment_failed" },
+            },
+          ],
+          actionType: typeof md.paymentType === "string" ? md.paymentType : undefined,
+          bookingId: typeof md.bookingId === "string" ? md.bookingId : undefined,
+          listingId: typeof md.listingId === "string" ? md.listingId : undefined,
+          userId: typeof md.userId === "string" ? md.userId : undefined,
+        });
+      } catch (e) {
+        console.warn("[governance:feedback:stripe]", e);
+      }
+    })();
     return Response.json({ received: true });
   }
 
@@ -573,6 +820,17 @@ export async function POST(req: NextRequest) {
         failureMessage: payout.failure_message ?? null,
       },
     }).catch(() => {});
+    if (event.type === "payout.paid") {
+      const amt = typeof payout.amount === "number" ? payout.amount : 0;
+      void import("@/modules/notifications/notification-router.service").then(({ dispatchBusinessEventToChannels }) =>
+        dispatchBusinessEventToChannels({
+          type: "PAYOUT_COMPLETED",
+          amountCents: amt,
+          reference: payout.id,
+          ...(bookingId ? { beneficiary: bookingId } : {}),
+        }).catch(() => {}),
+      );
+    }
     return Response.json({ received: true, payoutEvent: event.type });
   }
 
@@ -588,6 +846,25 @@ export async function POST(req: NextRequest) {
       amountReceived: pi.amount_received ?? pi.amount,
       currency: pi.currency,
     });
+    void (async () => {
+      try {
+        const pim = (pi.metadata ?? {}) as Stripe.Metadata;
+        const prediction = await resolveGovernancePredictionForStripePayment({
+          paymentIntentId: pi.id,
+          sessionMetadata: pim,
+        });
+        enqueueStripeGovernanceFeedback({
+          prediction,
+          truthEvents: [{ type: "execution_succeeded", occurredAt: new Date().toISOString() }],
+          actionType: typeof pim.paymentType === "string" ? pim.paymentType : undefined,
+          bookingId: typeof pim.bookingId === "string" ? pim.bookingId : undefined,
+          listingId: typeof pim.listingId === "string" ? pim.listingId : undefined,
+          userId: typeof pim.userId === "string" ? pim.userId : undefined,
+        });
+      } catch (e) {
+        console.warn("[governance:feedback:stripe]", e);
+      }
+    })();
     return Response.json({ received: true });
   }
 
@@ -1465,6 +1742,13 @@ export async function POST(req: NextRequest) {
           amountCents,
         }).catch(() => {});
       }
+      void import("@/modules/notifications/notification-router.service").then(({ dispatchBusinessEventToChannels }) =>
+        dispatchBusinessEventToChannels({
+          type: "LEAD_PURCHASED",
+          amountCents,
+          reference: leadId,
+        }).catch(() => {}),
+      );
     }
 
     if (paymentType === "lead_marketplace") {
@@ -1990,6 +2274,31 @@ export async function POST(req: NextRequest) {
       entityId: platformPayment.id,
       payload: { paymentType, amountCents, bookingId, dealId },
     });
+    void (async () => {
+      try {
+        const sm = session.metadata ?? {};
+        const prediction = await resolveGovernancePredictionForStripePayment({
+          paymentIntentId: piId,
+          sessionMetadata: sm as Stripe.Metadata,
+        });
+        enqueueStripeGovernanceFeedback({
+          prediction,
+          truthEvents: [{ type: "execution_succeeded", occurredAt: new Date().toISOString() }],
+          actionType: paymentType,
+          regionCode:
+            typeof sm.platformRegionCode === "string"
+              ? sm.platformRegionCode
+              : typeof sm.regionCode === "string"
+                ? sm.regionCode
+                : undefined,
+          bookingId: typeof bookingId === "string" ? bookingId : undefined,
+          listingId: typeof listingId === "string" ? listingId : undefined,
+          userId: typeof userId === "string" ? userId : undefined,
+        });
+      } catch (e) {
+        console.warn("[governance:feedback:stripe]", e);
+      }
+    })();
     return Response.json({ received: true, platformPaymentId: platformPayment.id });
   }
 

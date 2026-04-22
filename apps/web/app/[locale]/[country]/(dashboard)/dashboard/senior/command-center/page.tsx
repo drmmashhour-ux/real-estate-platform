@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { PlatformRole } from "@prisma/client";
 import { SeniorCommandCenterClient } from "@/components/senior-living/SeniorCommandCenterClient";
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
 import {
@@ -25,6 +26,11 @@ export default async function SeniorLivingCommandCenterPage({
 
   if (!user || !canAccessSeniorCommandCenter(user.role)) {
     redirect(`${dashBase}/senior`);
+  }
+
+  /** Product-ops dashboard replaces the dense trading-style command center for admins. */
+  if (user.role === PlatformRole.ADMIN) {
+    redirect(`${dashBase}/admin`);
   }
 
   const tier = seniorCommandAccessTier(user.role);

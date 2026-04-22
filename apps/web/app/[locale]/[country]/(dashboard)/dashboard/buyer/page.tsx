@@ -2,6 +2,7 @@ import Link from "next/link";
 import { AppointmentStatus, ImmoContactEventType } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
+import { getBuyerLuxuryDashboardData } from "@/modules/dashboard/services/buyer-dashboard.service";
 import { DashboardBnhubRecommendations } from "@/components/recommendations/DashboardBnhubRecommendations";
 import { BuyerHubAiSection } from "@/components/ai/BuyerHubAiSection";
 import { DecisionCard } from "@/components/ai/DecisionCard";
@@ -9,6 +10,7 @@ import { safeEvaluateDecision } from "@/modules/ai/decision-engine";
 import { HubJourneyBanner } from "@/components/journey/HubJourneyBanner";
 import { legalHubFlags } from "@/config/feature-flags";
 import { LegalHubEntryCard } from "@/components/legal/LegalHubEntryCard";
+import { BuyerHubLuxuryShell } from "@/components/dashboard/BuyerHubLuxuryShell";
 
 export const dynamic = "force-dynamic";
 
@@ -19,11 +21,24 @@ function moneyCents(cents: number | null) {
 
 export default async function BuyerDashboardPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string; country: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { locale, country } = await params;
+  const sp = (await searchParams) ?? {};
+  const classicRaw = sp.classic;
+  const classic =
+    typeof classicRaw === "string" ? classicRaw : Array.isArray(classicRaw) ? classicRaw[0] : undefined;
+
   const { userId } = await requireAuthenticatedUser();
+  const hubBase = `/${locale}/${country}`;
+
+  if (classic !== "1") {
+    const luxuryData = await getBuyerLuxuryDashboardData(userId, hubBase);
+    return <BuyerHubLuxuryShell locale={locale} country={country} data={luxuryData} />;
+  }
 
   const [
     user,

@@ -1,0 +1,9 @@
+/* Soins Hub — optional large-text mode via data attribute */
+[data-soins-large-text="true"] {
+  font-size: 118%;
+}
+
+[data-soins-large-text="true"] button,
+[data-soins-large-text="true"] [role="button"] {
+  min-height: 56px;
+}

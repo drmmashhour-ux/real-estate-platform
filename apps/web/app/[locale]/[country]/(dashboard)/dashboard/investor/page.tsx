@@ -4,6 +4,8 @@ import { prisma } from "@/lib/db";
 import { getGuestId } from "@/lib/auth/session";
 import { hubNavigation } from "@/lib/hub/navigation";
 import { HubLayout } from "@/components/hub/HubLayout";
+import { InvestorCompanyDashboardClient } from "@/components/investor/InvestorCompanyDashboardClient";
+import { canViewCompanyInvestorDashboard } from "@/lib/investor-company/access";
 import { InvestorDashboardClient } from "./InvestorDashboardClient";
 import { DecisionCard } from "@/components/ai/DecisionCard";
 import { safeEvaluateDecision } from "@/modules/ai/decision-engine";
@@ -19,6 +21,9 @@ import { InlineUpgradeBanner } from "@/components/conversion/InlineUpgradeBanner
 import { HubJourneyBanner } from "@/components/journey/HubJourneyBanner";
 import { InvestorComplianceSnapshot } from "@/components/investor/InvestorComplianceSnapshot";
 import { InvestorPortfolioEsgPanel } from "@/components/investor/InvestorPortfolioEsgPanel";
+import { InvestorHubGoldDashboard } from "@/components/investor/InvestorHubGoldDashboard";
+import { InvestorHubLuxuryShell } from "@/components/dashboard/InvestorHubLuxuryShell";
+import { getInvestorDashboardData } from "@/modules/dashboard/services/investor-dashboard.service";
 import { runPortfolioEsgAnalysis } from "@/modules/investor-esg/portfolio-esg.engine";
 import { deriveIllustrativeEsgScore } from "@/modules/investor-esg/portfolio-scoring";
 import type { PortfolioPropertyInput } from "@/modules/investor-esg/portfolio.types";
@@ -27,12 +32,24 @@ export const dynamic = "force-dynamic";
 
 export default async function InvestorDashboardPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string; country: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { locale, country } = await params;
+  const sp = (await searchParams) ?? {};
+  const classicRaw = sp.classic;
+  const classic =
+    typeof classicRaw === "string" ? classicRaw : Array.isArray(classicRaw) ? classicRaw[0] : undefined;
+
   const userId = await getGuestId();
   if (!userId) redirect("/auth/login?returnUrl=/dashboard/investor");
+
+  if (classic !== "1") {
+    const investorLuxury = await getInvestorDashboardData(userId);
+    return <InvestorHubLuxuryShell locale={locale} country={country} model={investorLuxury} />;
+  }
 
   const [scenarios, comparison, dbUser, scenarioForEsg] = await Promise.all([
     prisma.portfolioScenario.findMany({
@@ -106,9 +123,15 @@ export default async function InvestorDashboardPage({
   const portfolioDealSignal =
     scenarios.length > 0 ? Math.max(0, Math.min(100, Math.round(Number(scenarios[0]!.projectedAverageRoiPercent) * 10))) : null;
 
+  const showCompanyInvestor =
+    dbUser?.role != null && canViewCompanyInvestorDashboard(dbUser.role);
+
   return (
     <HubLayout title="Investor" hubKey="investments" navigation={hubNavigation.investments} showAdminInSwitcher={false}>
       <div className="space-y-8">
+        {showCompanyInvestor ?
+          <InvestorCompanyDashboardClient locale={locale} country={country} />
+        : null}
         <HubJourneyBanner hub="investor" locale={locale} country={country} userId={userId} />
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
@@ -131,6 +154,8 @@ export default async function InvestorDashboardPage({
             </Link>
           </div>
         </div>
+
+        <InvestorHubGoldDashboard />
 
         <DecisionCard
           title="AI Market Insight"

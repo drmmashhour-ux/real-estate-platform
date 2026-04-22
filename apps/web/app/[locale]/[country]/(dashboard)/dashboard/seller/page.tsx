@@ -13,6 +13,8 @@ import { legalHubFlags } from "@/config/feature-flags";
 import { LegalHubEntryCard } from "@/components/legal/LegalHubEntryCard";
 import { GreenUpgradeJourneySection } from "@/components/seller/GreenUpgradeJourney";
 import { isSubsidyPipelineStage } from "@/modules/green-ai/pipeline/upgrade-flow";
+import { getSellerLuxuryDashboardData } from "@/modules/dashboard/services/seller-dashboard.service";
+import { SellerHubLuxuryShell } from "@/components/dashboard/SellerHubLuxuryShell";
 
 export const dynamic = "force-dynamic";
 
@@ -32,12 +34,24 @@ function badgeLabel(ux: ReturnType<typeof fsboListingLifecycleUx>) {
 
 export default async function SellerHubDashboardPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string; country: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { locale, country } = await params;
+  const sp = (await searchParams) ?? {};
+  const classicRaw = sp.classic;
+  const classic =
+    typeof classicRaw === "string" ? classicRaw : Array.isArray(classicRaw) ? classicRaw[0] : undefined;
+
   const userId = await getGuestId();
   if (!userId) redirect("/auth/login?next=/dashboard/seller");
+
+  if (classic !== "1") {
+    const luxuryData = await getSellerLuxuryDashboardData(userId);
+    return <SellerHubLuxuryShell locale={locale} country={country} data={luxuryData} />;
+  }
 
   const user = await prisma.user.findUnique({
     where: { id: userId },

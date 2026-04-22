@@ -8,6 +8,7 @@ import { getDailyDealFeed } from "@/src/modules/daily-deal-feed/application/getD
 import { getWatchlistSummary } from "@/src/modules/watchlist-alerts/infrastructure/watchlistSummaryService";
 import { listWatchlistAlerts } from "@/src/modules/watchlist-alerts/infrastructure/watchlistAlertRepository";
 import { WatchlistAlertsPreview } from "@/src/modules/watchlist-alerts/ui/WatchlistAlertsPreview";
+import { InvestorSubscriptionStrip } from "@/components/investor/InvestorSubscriptionStrip";
 
 const GOLD = "var(--color-premium-gold)";
 
@@ -23,6 +24,7 @@ export default async function InvestorDashboardPage() {
 
   return (
     <div>
+      <InvestorSubscriptionStrip />
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold">Dashboard</h1>

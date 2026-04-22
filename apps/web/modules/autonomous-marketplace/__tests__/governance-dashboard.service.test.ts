@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildGovernanceAdminDashboardView,
   buildGovernanceAdminSummarySlice,
+  buildGovernanceInvestorDashboardView,
   buildGovernanceInvestorSummarySlice,
+  GOVERNANCE_INVESTOR_NARRATIVE_CARDS,
+  LECIPM_GOVERNANCE_PITCH,
 } from "../dashboard/governance-dashboard.service";
 import type { UnifiedGovernanceResult } from "../governance/unified-governance.types";
 
@@ -53,5 +57,59 @@ describe("governance-dashboard.service", () => {
     expect(inv.anomalyLevel).toBe("LOW");
     expect(inv.humanOversightStatus.length).toBeGreaterThan(0);
     expect(inv.narrativeSummary.length).toBeGreaterThan(10);
+  });
+
+  it("admin dashboard view maps KPIs, risk cards, governance, revenue, explainability, action", () => {
+    const view = buildGovernanceAdminDashboardView(
+      baseResult({
+        disposition: "REQUIRE_APPROVAL",
+        requiresHumanApproval: true,
+        explainability: {
+          summary: "Composite posture elevated",
+          lines: [{ code: "x", label: "L", detail: "D", severity: "warning" }],
+          bullets: ["b1"],
+        },
+      }),
+      {
+        input: {
+          revenueFacts: {
+            grossBookingValue30d: 100_000,
+            refunds30d: 1000,
+            chargebacks30d: 200,
+            payoutVolume30d: 40_000,
+          },
+          signals: [{ type: "payout_anomaly", severity: "critical" }],
+        },
+      },
+    );
+    expect(view.kpis.humanApprovalRequired).toBe(true);
+    expect(view.kpis.executionReadiness).toBe("approval_required");
+    expect(view.riskCards.legal.score).toBe(10);
+    expect(view.riskCards.fraud.anomalySources.length).toBeGreaterThan(0);
+    expect(view.governance.previewPosture).toBe("review");
+    expect(view.revenue.grossBookingValue30d).toBe(100_000);
+    expect(view.explainability.bullets).toContain("b1");
+    expect(view.action.requestApproval).toBe(true);
+  });
+
+  it("investor dashboard view exposes metrics, narrative cards, chart placeholders", () => {
+    const view = buildGovernanceInvestorDashboardView(
+      baseResult({ fraudRisk: { ...baseResult().fraudRisk, revenueImpactEstimate: 500 } }),
+      {
+        input: {
+          revenueFacts: { grossBookingValue30d: 10_000 },
+        },
+      },
+    );
+    expect(view.topMetrics.protectedRevenueEstimate).toBe(9500);
+    expect(view.topMetrics.revenueAtRisk).toBe(500);
+    expect(view.narrativeCards.length).toBe(GOVERNANCE_INVESTOR_NARRATIVE_CARDS.length);
+    expect(view.charts.revenueAtRiskTrend).toBeNull();
+  });
+
+  it("pitch snippets are non-empty strings", () => {
+    expect(LECIPM_GOVERNANCE_PITCH.short.length).toBeGreaterThan(80);
+    expect(LECIPM_GOVERNANCE_PITCH.investor.length).toBeGreaterThan(80);
+    expect(LECIPM_GOVERNANCE_PITCH.closing.length).toBeGreaterThan(40);
   });
 });

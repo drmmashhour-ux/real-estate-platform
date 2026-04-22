@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { MarketingHubClient } from "@/components/marketing/MarketingHubClient";
+import { getMarketingHubDashboardPayload } from "@/modules/marketing/marketing-dashboard.service";
 import { MarketingPanelClient } from "./marketing-panel-client";
 import { engineFlags } from "@/config/feature-flags";
 
@@ -12,17 +14,26 @@ export default async function DashboardMarketingPage({
   const { locale, country } = await params;
   const studioHref = `/${locale}/${country}/dashboard/marketing-studio`;
   const seoHref = `/${locale}/${country}/dashboard/marketing/seo`;
+  const videosHref = `/${locale}/${country}/dashboard/marketing/videos`;
+
+  const hub = await getMarketingHubDashboardPayload();
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 p-6 text-white">
+    <div className="mx-auto max-w-5xl space-y-10 p-6 text-white">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Marketing</h1>
+          <h1 className="text-2xl font-bold">Marketing Hub</h1>
           <p className="mt-1 text-sm text-zinc-500">
-            Generate ad copy and export — LECIPM Growth + Ads System. Copy is deterministic (no fake “AI” claims).
+            Scheduled distribution, performance, and growth-linked drafts. Legacy copy generator below.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Link
+            href={videosHref}
+            className="shrink-0 rounded-lg border border-amber-600/50 bg-amber-950/40 px-3 py-2 text-sm text-amber-100 hover:border-amber-400 hover:bg-amber-950/60"
+          >
+            Video Engine →
+          </Link>
           <Link
             href={seoHref}
             className="shrink-0 rounded-lg border border-sky-600/50 bg-sky-950/40 px-3 py-2 text-sm text-sky-200 hover:border-sky-500 hover:bg-sky-950/60"
@@ -39,7 +50,14 @@ export default async function DashboardMarketingPage({
           ) : null}
         </div>
       </div>
-      <MarketingPanelClient />
+
+      <MarketingHubClient initial={hub} videosHref={videosHref} />
+
+      <div className="border-t border-white/10 pt-8">
+        <h2 className="text-lg font-semibold text-zinc-300">Legacy copy pack</h2>
+        <p className="mb-4 text-sm text-zinc-500">Deterministic headlines for ads — unchanged from previous Marketing page.</p>
+        <MarketingPanelClient />
+      </div>
     </div>
   );
 }

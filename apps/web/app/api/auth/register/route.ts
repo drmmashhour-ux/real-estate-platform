@@ -39,6 +39,7 @@ import { GrowthEventName } from "@/modules/growth/event-types";
 import { recordGrowthEvent } from "@/modules/growth/tracking.service";
 import { recordUserSignupConsents } from "@/lib/auth/user-consent";
 import { logApi } from "@/lib/server/launch-logger";
+import { redeemAcquisitionInvite } from "@/modules/acquisition/invite.service";
 
 const VERIFY_TTL_MS = 48 * 60 * 60 * 1000;
 
@@ -300,6 +301,10 @@ export async function POST(request: NextRequest) {
       await runFollowUpAutomation(prisma, { userId: user.id, triggers: tracked.triggers }).catch(() => {});
     }
     const attribution = refCodeRaw ? await resolveReferralAttribution(refCodeRaw).catch(() => null) : null;
+    if (refCodeRaw?.startsWith("LEC")) {
+      void redeemAcquisitionInvite(refCodeRaw, user.id).catch(() => {});
+    }
+
     if (attribution) {
       await createReferralIfNeeded(attribution.publicCode, user.id, { inviteKind: refKind }).catch(() => {});
       await prisma.referralEvent

@@ -11,6 +11,7 @@ import {
 } from "@/modules/senior-living/lead-scoring.service";
 import { getLeadPricingQuote } from "@/modules/monetization/dynamic-market-pricing.service";
 import { canAccessSeniorCommandCenter } from "@/lib/senior-command/access";
+import { resolveSeniorHubAccess } from "@/lib/senior-dashboard/role";
 
 export const dynamic = "force-dynamic";
 
@@ -98,6 +99,36 @@ export default async function SeniorOperatorDashboardPage({
 
   return (
     <div className="space-y-8 p-4 text-sm text-slate-100">
+      <section className="rounded-xl border border-zinc-600/50 bg-zinc-900/60 p-4">
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-200/90">Role workspaces</p>
+        <div className="mt-3 flex flex-wrap gap-3 text-sm">
+          {hubAccess.kind === "residence_operator" || hubAccess.kind === "platform_admin" ?
+            <Link
+              className="rounded-lg bg-zinc-100 px-4 py-2 font-semibold text-zinc-900 hover:bg-white"
+              href={`/${locale}/${country}/dashboard/residence`}
+            >
+              Residence dashboard
+            </Link>
+          : null}
+          {hubAccess.kind === "residence_manager" || hubAccess.kind === "platform_admin" ?
+            <Link
+              className="rounded-lg border border-amber-400/40 px-4 py-2 font-semibold text-amber-100 hover:bg-amber-500/10"
+              href={`/${locale}/${country}/dashboard/management`}
+            >
+              Management dashboard
+            </Link>
+          : null}
+          {hubAccess.kind === "platform_admin" ?
+            <Link
+              className="rounded-lg border border-teal-400/40 px-4 py-2 font-semibold text-teal-200 hover:bg-teal-500/10"
+              href={`/${locale}/${country}/dashboard/admin`}
+            >
+              Platform operations
+            </Link>
+          : null}
+        </div>
+      </section>
+
       <div>
         <p className="text-xs font-semibold uppercase tracking-wide text-teal-400">Operator</p>
         <h1 className="mt-1 text-2xl font-bold">Senior Living</h1>
@@ -107,12 +138,29 @@ export default async function SeniorOperatorDashboardPage({
         </p>
         <div className="mt-3 flex flex-wrap gap-4">
           {showCommandCenter ?
-            <Link
-              className="inline-block text-sm font-semibold text-teal-300 underline"
-              href={`/${locale}/${country}/dashboard/senior/command-center`}
-            >
-              Command Center
-            </Link>
+            <>
+              {isAdmin ?
+                <Link
+                  className="inline-block text-sm font-semibold text-teal-300 underline"
+                  href={`/${locale}/${country}/dashboard/admin`}
+                >
+                  Platform operations
+                </Link>
+              : (
+                <Link
+                  className="inline-block text-sm font-semibold text-teal-300 underline"
+                  href={`/${locale}/${country}/dashboard/senior/command-center`}
+                >
+                  Ops tools (legacy)
+                </Link>
+              )}
+              <Link
+                className="inline-block text-sm font-semibold text-teal-300 underline"
+                href={`/${locale}/${country}/dashboard/senior/expansion`}
+              >
+                City expansion
+              </Link>
+            </>
           : null}
           {isAdmin ?
             <Link

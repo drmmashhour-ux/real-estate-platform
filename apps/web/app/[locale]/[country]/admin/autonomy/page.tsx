@@ -6,6 +6,11 @@ import { RegionExecutionCapabilityNote } from "@/components/autonomy/admin/Regio
 import { getRegionExecutionAvailabilityNote } from "@/modules/autonomous-marketplace/execution/region-safe-execution.service";
 import { getManagerAiPlatformSettings } from "@/lib/manager-ai/platform-settings";
 import { AutonomyControlsClient } from "./autonomy-controls-client";
+import { GovernanceFeedbackPanel } from "@/modules/autonomous-marketplace/components/autonomy/admin/GovernanceFeedbackPanel";
+import { GovernanceIntelligencePanel } from "@/modules/autonomous-marketplace/components/autonomy/admin/GovernanceIntelligencePanel";
+import { PolicySimulationPanel } from "@/modules/autonomous-marketplace/components/autonomy/admin/PolicySimulationPanel";
+import { PolicyProposalPanel } from "@/modules/autonomous-marketplace/components/autonomy/admin/PolicyProposalPanel";
+import { autonomyConfig } from "@/modules/autonomous-marketplace/config/autonomy.config";
 
 export const dynamic = "force-dynamic";
 
@@ -85,6 +90,57 @@ export default async function AdminAutonomyPage() {
         </section>
 
         <ControlledExecutionPanel />
+
+        {engineFlags.autonomousMarketplaceV1 && autonomyConfig.enabled ? (
+          <section className="mt-8 rounded-xl border border-slate-800 bg-slate-900/60 p-6">
+            <h2 className="text-lg font-semibold text-slate-200">Governance outcome feedback</h2>
+            <p className="mt-2 max-w-3xl text-sm text-slate-400">
+              Advisory KPIs from classified outcomes — same payload as GET{" "}
+              <code className="rounded bg-slate-950/80 px-1 py-0.5 text-xs text-slate-300">
+                /api/admin/autonomy/governance-feedback
+              </code>
+              .
+            </p>
+            <div className="mt-4">
+              <GovernanceFeedbackPanel />
+            </div>
+            <h3 className="mt-8 text-base font-semibold text-slate-200">Intelligence signals</h3>
+            <p className="mt-2 max-w-3xl text-sm text-slate-400">
+              Hotspots (clustered outcomes with leakage) and drift (recent vs baseline harmful rate). Uses live feedback when
+              present; otherwise optional demo rows via <code className="text-slate-300">?demo=1</code> on GET{" "}
+              <code className="rounded bg-slate-950/80 px-1 py-0.5 text-xs text-slate-300">
+                /api/admin/autonomy/governance-intelligence
+              </code>
+              .
+            </p>
+            <div className="mt-4">
+              <GovernanceIntelligencePanel />
+            </div>
+            <h3 className="mt-8 text-base font-semibold text-slate-200">Policy simulation (what-if)</h3>
+            <p className="mt-2 max-w-3xl text-sm text-slate-400">
+              Multi-scenario score-threshold comparison with live delta vs baseline. Data:{" "}
+              <code className="rounded bg-slate-950/80 px-1 py-0.5 text-xs text-slate-300">
+                GET /api/admin/autonomy/policy-simulation
+              </code>
+              .
+            </p>
+            <div className="mt-4">
+              <PolicySimulationPanel />
+            </div>
+            <h3 className="mt-8 text-base font-semibold text-slate-200">Auto policy proposals</h3>
+            <p className="mt-2 max-w-3xl text-sm text-slate-400">
+              Deterministic advisory proposals from feedback, intelligence, drift, and sandbox simulation. Never activates
+              automatically —{" "}
+              <code className="rounded bg-slate-950/80 px-1 py-0.5 text-xs text-slate-300">
+                GET /api/admin/autonomy/policy-proposals
+              </code>
+              .
+            </p>
+            <div className="mt-4">
+              <PolicyProposalPanel />
+            </div>
+          </section>
+        ) : null}
 
         {engineFlags.controlledExecutionV1 ? (
           <section className="mt-8">
