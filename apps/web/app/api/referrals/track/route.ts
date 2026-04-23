@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getGuestId } from "@/lib/auth/session";
 
 const VALID_EVENTS = ["click", "invite_sent", "signup", "referral_signup", "activated", "paid"] as const;

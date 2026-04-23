@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { recordContentMetrics } from "@/lib/content-machine/pipeline";
 
 export const dynamic = "force-dynamic";

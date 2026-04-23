@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { Prisma } from "@prisma/client";
 import { exchangeBufferAuthorizationCode } from "@/lib/integrations/scheduler/connect";
 import { encryptTokens } from "@/lib/content-automation/social-accounts";

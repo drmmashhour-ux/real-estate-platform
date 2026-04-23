@@ -26,6 +26,7 @@ import {
   jsonResponseRawCardBlocked,
 } from "@/lib/security/blockRawCardData";
 import { runApiSecurityLayer } from "@/modules/security/security-middleware";
+import { runComplianceSecurityLayer } from "@/lib/server/compliance-middleware";
 import { isSecureCookieContext } from "@/lib/runtime-env";
 import { isPublicBrowseSurface } from "@/lib/routing/public-browse-paths";
 import { HUB_USER_ROLE_COOKIE } from "@/lib/staging-middleware-config";
@@ -184,6 +185,11 @@ export async function middleware(request: NextRequest) {
       const blocked = runApiSecurityLayer(request);
       if (blocked) {
         return blocked;
+      }
+      
+      const complianceBlocked = runComplianceSecurityLayer(request);
+      if (complianceBlocked) {
+        return complianceBlocked;
       }
     }
 

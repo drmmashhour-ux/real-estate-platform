@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { MarketingSystemEventCategory } from "@prisma/client";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { engineFlags } from "@/config/feature-flags";
 import { requireUser } from "@/modules/security/access-guard.service";
 import { aggregatePerformanceForUser } from "@/modules/marketing-performance";

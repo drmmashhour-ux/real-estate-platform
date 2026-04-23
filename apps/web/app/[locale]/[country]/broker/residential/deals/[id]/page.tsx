@@ -4,7 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { brokerResidentialFlags } from "@/config/feature-flags";
 import { getGuestId } from "@/lib/auth/session";
 import { requireBrokerDealAccess } from "@/lib/broker/residential-access";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { DealIntelligencePanel } from "@/components/deals/DealIntelligencePanel";
 import { BrokerDealDraftingWorkspace } from "@/components/broker-residential/deals/BrokerDealDraftingWorkspace";
 import { ResidentialDealWorkspaceClient } from "@/components/broker-residential/deals/ResidentialDealWorkspaceClient";

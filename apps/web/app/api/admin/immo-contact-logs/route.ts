@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getGuestId } from "@/lib/auth/session";
 import { immoEventSlug } from "@/lib/timeline/immo-event-labels";
 import { getImmoResolutionFromMetadata } from "@/lib/immo/immo-contact-resolution-metadata";

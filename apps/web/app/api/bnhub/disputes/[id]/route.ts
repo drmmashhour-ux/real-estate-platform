@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { updateDisputeStatus } from "@/lib/bnhub/disputes";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 /** GET /api/bnhub/disputes/:id — Get one dispute with booking, listing, messages, evidence. */
 export async function GET(

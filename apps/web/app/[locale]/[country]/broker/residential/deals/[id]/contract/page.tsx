@@ -4,7 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { brokerResidentialFlags, aiContractEngineFlags, oaciqMapperFlags } from "@/config/feature-flags";
 import { getGuestId } from "@/lib/auth/session";
 import { requireBrokerDealAccess } from "@/lib/broker/residential-access";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { ContractWorkspace } from "@/components/contract-engine/ContractWorkspace";
 import { ExactMapperWorkspace } from "@/components/oaciq-workspace/ExactMapperWorkspace";
 

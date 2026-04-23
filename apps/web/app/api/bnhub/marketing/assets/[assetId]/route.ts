@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
 import { assertCampaignAccess, MarketingAuthError } from "@/src/modules/bnhub-marketing/services/marketingAccess";
 import { saveEditedAsset } from "@/src/modules/bnhub-marketing/services/marketingAssetService";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 export const dynamic = "force-dynamic";
 

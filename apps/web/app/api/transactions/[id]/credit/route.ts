@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { logError } from "@/lib/logger";
 import { requireBrokerOrAdminTransactionSession } from "@/lib/transactions/require-sd-transaction-session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getTransactionById } from "@/modules/transactions/transaction.service";
 import { canAccessTransaction } from "@/modules/transactions/transaction-policy";
 import {

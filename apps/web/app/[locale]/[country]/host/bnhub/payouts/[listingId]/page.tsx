@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 export default async function HostPayoutsByListingPage({ params }: { params: Promise<{ listingId: string }> }) {
   const { listingId } = await params;

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { compareValidationRuns } from "@/modules/model-validation/application/compareValidationRuns";
 import { findComparisonsInvolvingRun } from "@/modules/model-validation/infrastructure/validationRepository";
 import { requirePlatformAdmin } from "../../../_auth";

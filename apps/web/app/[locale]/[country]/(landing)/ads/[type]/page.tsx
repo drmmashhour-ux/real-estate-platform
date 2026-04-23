@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ListingStatus } from "@prisma/client";
 import { landingConversionFlags } from "@/config/feature-flags";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { buildPageMetadata } from "@/lib/seo/page-metadata";
 import { generateLandingCopy } from "@/modules/ads";
 import { AdsLandingPageClient, type AdsLandingPreviewItem } from "@/components/ads/AdsLandingPageClient";

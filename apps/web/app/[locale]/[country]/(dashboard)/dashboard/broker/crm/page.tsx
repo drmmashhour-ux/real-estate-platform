@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { HubLayout } from "@/components/hub/HubLayout";
 import { getHubTheme } from "@/lib/hub/themes";
 import { hubNavigation } from "@/lib/hub/navigation";

@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getGuestId } from "@/lib/auth/session";
 import { FSBO_DOC_MAX_BYTES, uploadFsboListingDoc } from "@/lib/fsbo/upload-fsbo-listing-doc";
 

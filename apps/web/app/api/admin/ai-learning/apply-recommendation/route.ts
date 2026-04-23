@@ -1,5 +1,5 @@
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { normDim } from "@/src/modules/messaging/learning/contextKey";
 import { NextRequest } from "next/server";
 

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getGuestId } from "@/lib/auth/session";
 import { HostBookingsManagerClient } from "@/components/host/HostBookingsManagerClient";
 import { getHostBookings } from "@/lib/host/bookings-data";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 export const dynamic = "force-dynamic";
 

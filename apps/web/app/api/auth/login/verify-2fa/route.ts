@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
 import { applyLoginSessionCookies } from "@/lib/auth/apply-login-session";
 import { isMortgageExpertRole } from "@/lib/marketplace/mortgage-role";

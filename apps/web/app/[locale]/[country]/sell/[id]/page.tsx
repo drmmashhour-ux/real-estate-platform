@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getGuestId } from "@/lib/auth/session";
 import { isFsboPubliclyVisible } from "@/lib/fsbo/constants";
 import { FsboContactOwnerForm } from "@/components/fsbo/FsboContactOwnerForm";

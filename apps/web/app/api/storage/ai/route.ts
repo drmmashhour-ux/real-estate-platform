@@ -1,5 +1,5 @@
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getUsage } from "@/lib/storage-quota";
 import { getStorageAnalytics } from "@/lib/storage/analytics";
 import { getOptimizationRecommendations } from "@/lib/storage/ai-optimizer";

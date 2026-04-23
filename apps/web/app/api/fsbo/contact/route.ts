@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getGuestId } from "@/lib/auth/session";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
 import { parseFsboContactBody } from "@/lib/fsbo/validation";

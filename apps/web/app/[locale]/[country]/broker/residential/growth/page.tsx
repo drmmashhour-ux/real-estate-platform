@@ -2,7 +2,7 @@ import { PlatformRole } from "@prisma/client";
 import { redirect } from "next/navigation";
 import { brokerOpsFlags } from "@/config/feature-flags";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { BrokerGrowthDashboard } from "@/components/broker-growth/BrokerGrowthDashboard";
 import { buildBrokerGrowthDashboardSnapshot } from "@/modules/broker-growth/broker-growth-aggregation.service";
 import { brokerGrowthDisclaimer } from "@/modules/broker-growth/broker-growth-explainer";

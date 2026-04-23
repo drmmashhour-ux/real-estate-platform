@@ -4,7 +4,7 @@ import { recordPerformance } from "@/modules/portfolio/asset-performance.service
 import { computeAndStoreHealthScore } from "@/modules/portfolio/asset-health.service";
 import { findPrimaryPortfolioForAsset } from "@/modules/portfolio/portfolio.service";
 import { requireAuthUser } from "@/lib/deals/guard-pipeline-deal";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 export const dynamic = "force-dynamic";
 

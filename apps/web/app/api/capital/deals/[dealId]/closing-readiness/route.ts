@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
 import { logInfo } from "@/lib/logger";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { userCanAccessCapitalModule } from "@/modules/capital/capital-access";
 import { computeClosingReadiness } from "@/modules/capital/closing-readiness.service";
 

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { requireAdminSession } from "@/lib/admin/require-admin";
 import { aiAutopilotV1Flags } from "@/config/feature-flags";
 import { getLastGuardrailSessionStats } from "@/modules/ai-autopilot/core/action-guardrail.service";

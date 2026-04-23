@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { InvestorFinancialsClient } from "@/components/investor-hub/InvestorFinancialsClient";
 import { getGuestId } from "@/lib/auth/session";
 import { isPlatformAdmin } from "@/lib/auth/is-platform-admin";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { BookingStatus, PaymentStatus } from "@prisma/client";
 import { loadAdminInvestorHubData } from "@/lib/investor/load-admin-investor-hub";
 

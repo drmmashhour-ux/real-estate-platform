@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { requireAdminSession } from "@/lib/admin/require-admin";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 export const dynamic = "force-dynamic";
 

@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 /** POST /api/admin/developer/applications/:id/approve – Approve developer application. Sets user.role = DEVELOPER, accountStatus = ACTIVE. */
 export async function POST(

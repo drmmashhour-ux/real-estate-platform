@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { ingestLeadFromConnector } from "@/src/modules/bnhub-growth-engine/services/leadEngineService";
 import { leadResponseJob } from "@/src/modules/bnhub-growth-engine/automations/autopilotEngine";
 

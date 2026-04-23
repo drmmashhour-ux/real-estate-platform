@@ -1,6 +1,6 @@
 import { BrokerComplianceDashboard } from "@/components/compliance/BrokerComplianceDashboard";
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { evaluateBrokerInsuranceRisk } from "@/modules/compliance/insurance/insurance-risk.engine";
 import {
   getBrokerInsuranceStatus,

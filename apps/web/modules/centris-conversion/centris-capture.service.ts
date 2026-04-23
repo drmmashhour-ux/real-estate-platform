@@ -3,8 +3,11 @@ import { LeadContactOrigin } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { isFsboPubliclyVisible } from "@/lib/fsbo/constants";
 
+import { resolveBrokerForCentrisListing } from "./centris-broker-routing.service";
+import type { CentrisBehaviorHints } from "./centris-lead-score.service";
+import { persistCentrisLeadScore } from "./centris-lead-score.service";
 import { enrichCentrisLeadSnapshot } from "./centris-enrich.service";
-import { sendCentrisAnalysisFollowUpEmail } from "./centris-followup.service";
+import { scheduleCentrisLeadDominationSequence, sendCentrisAnalysisFollowUpEmail } from "./centris-followup.service";
 import { logConversion, logFunnel, logLead } from "./centris-funnel.log";
 import { recordLeadFunnelEvent } from "./lead-timeline.service";
 
@@ -19,6 +22,8 @@ export async function captureCentrisLead(params: {
   consentPrivacy: boolean;
   intent: CentrisCaptureIntent;
   userId: string | null;
+  /** Optional session hints for automatic Centris lead scoring (no extra CRM rows). */
+  behaviorHints?: CentrisBehaviorHints | null;
 }): Promise<{ ok: true; leadId: string } | { ok: false; error: string }> {
   const email = params.email?.trim() ?? "";
   const phone = params.phone?.trim() ?? "";
@@ -95,6 +100,16 @@ export async function captureCentrisLead(params: {
         logConversion("enrich_attached", { leadId: lead.id, peers: snap.similarListingIds.length });
       });
 
+      if (engineFlags.aiSalesAgentV1) {
+        void triggerAiSalesAgent({
+          leadId: lead.id,
+          trigger: "centris_capture",
+          consentMarketing: params.consentMarketing,
+          consentPrivacy: params.consentPrivacy,
+          listingTitle: fsbo.title,
+        });
+      }
+
       return { ok: true, leadId: lead.id };
     }
 
@@ -105,6 +120,7 @@ export async function captureCentrisLead(params: {
 
     if (crm && crm.crmMarketplaceLive) {
       const priceInt = Number.isFinite(crm.price) ? Math.round(crm.price) : null;
+      const routing = await resolveBrokerForCentrisListing(crm.id);
       const lead = await prisma.lead.create({
         data: {
           name,
@@ -121,6 +137,7 @@ export async function captureCentrisLead(params: {
           listingId: crm.id,
           listingCode: crm.listingCode,
           userId: params.userId ?? undefined,
+          introducedByBrokerId: routing.bestBrokerId ?? undefined,
           contactOrigin: LeadContactOrigin.DIRECT,
           commissionSource: LeadContactOrigin.DIRECT,
           firstPlatformContactAt: new Date(),
@@ -133,7 +150,10 @@ export async function captureCentrisLead(params: {
       await recordLeadFunnelEvent(lead.id, "CONTACT", {
         intent: params.intent,
         channel: "CENTRIS",
+        ...(params.behaviorHints ? { behaviorHints: params.behaviorHints } : {}),
       });
+
+      await persistCentrisLeadScore(lead.id, params.behaviorHints);
 
       logFunnel("centris_capture_crm", { leadId: lead.id, listingId: crm.id });
 
@@ -143,6 +163,25 @@ export async function captureCentrisLead(params: {
           leadId: lead.id,
           listingTitle: crm.title,
         });
+      }
+
+      const aiCfg = await getAiSalesAgentConfig();
+      if (engineFlags.aiSalesAgentV1) {
+        void triggerAiSalesAgent({
+          leadId: lead.id,
+          trigger: "centris_capture",
+          consentMarketing: params.consentMarketing,
+          consentPrivacy: params.consentPrivacy,
+          listingTitle: crm.title,
+        });
+      }
+      if (!engineFlags.aiSalesAgentV1 || !aiCfg.ownSequence) {
+        if (params.consentMarketing) {
+          void scheduleCentrisLeadDominationSequence({
+            leadId: lead.id,
+            consentMarketing: params.consentMarketing,
+          });
+        }
       }
 
       void enrichCentrisLeadSnapshot(lead.id).then((snap) => {

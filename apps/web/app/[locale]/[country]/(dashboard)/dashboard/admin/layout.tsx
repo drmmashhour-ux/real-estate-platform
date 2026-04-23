@@ -4,7 +4,7 @@ import { PlatformRole } from "@prisma/client";
 
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
 import { ensureDynamicAuthRequest } from "@/lib/auth/ensure-dynamic-request";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;

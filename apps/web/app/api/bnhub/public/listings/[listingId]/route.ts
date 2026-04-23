@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getPublicBnhubListingDetail } from "@/lib/bnhub/public-supabase-listings-read";
 import { getListingTrustSnapshot } from "@/lib/bnhub/two-sided-trust-sync";
 

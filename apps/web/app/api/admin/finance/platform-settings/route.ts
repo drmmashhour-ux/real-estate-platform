@@ -3,7 +3,7 @@ import { Prisma } from "@prisma/client";
 import { getFinanceActor } from "@/lib/admin/finance-request";
 import { isAdminOnly } from "@/lib/admin/finance-access";
 import { getPlatformFinancialSettings } from "@/lib/finance/platform-financial-settings";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { logFinancialAction } from "@/lib/admin/financial-audit";
 
 export const dynamic = "force-dynamic";

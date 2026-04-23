@@ -4,7 +4,7 @@ import { getGuestId, getUserRole, isHubAdminRole } from "@/lib/auth/session";
 import { redirect } from "next/navigation";
 import { HubLayout } from "@/components/hub/HubLayout";
 
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { hubNavigation } from "@/lib/hub/navigation";
 
 const LINKS = [

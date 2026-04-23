@@ -1,5 +1,5 @@
 import * as React from "react";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { AccountLegalStrip } from "@/components/dashboard/AccountLegalStrip";
 import { DashboardGuideBanner } from "@/components/dashboard/DashboardGuideBanner";
 import { PlatformLegalGate } from "@/components/legal/PlatformLegalGate";

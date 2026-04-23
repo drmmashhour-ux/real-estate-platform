@@ -1,6 +1,6 @@
 import { getExternalMortgageReadiness } from "@/lib/trustgraph/application/getExternalMortgageReadiness";
 import { trackExternalApiUsage } from "@/lib/trustgraph/application/integrations/billingIntegration";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { trustgraphJsonError, trustgraphJsonOk } from "@/lib/trustgraph/infrastructure/auth/http";
 import { requirePartnerApiKey } from "@/lib/trustgraph/infrastructure/auth/requireApiKey";
 import { z } from "zod";

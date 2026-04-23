@@ -3,7 +3,7 @@
  */
 
 import { NextRequest } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getGuestId } from "@/lib/auth/session";
 import { sendTransactionalEmail } from "@/lib/email/provider";
 import { logFinancialAction } from "@/lib/admin/financial-audit";

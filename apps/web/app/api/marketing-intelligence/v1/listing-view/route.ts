@@ -4,7 +4,7 @@ import { engineFlags } from "@/config/feature-flags";
 import { getGuestId } from "@/lib/auth/session";
 import { MarketingSystemEventCategory } from "@prisma/client";
 import { recordFunnelStep } from "@/modules/funnel/funnel.service";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 export const dynamic = "force-dynamic";
 

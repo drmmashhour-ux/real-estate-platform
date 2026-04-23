@@ -13,7 +13,7 @@ vi.mock("@/lib/auth/session", () => ({
   getGuestId: vi.fn(async () => "user-1"),
 }));
 
-vi.mock("@/lib/db", () => ({
+vi.mock("@repo/db", () => ({
   prisma: {
     user: {
       findUnique: vi.fn(async () => ({ role: "ADMIN" })),

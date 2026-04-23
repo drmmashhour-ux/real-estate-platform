@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdminSession } from "@/lib/admin/require-admin";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { mergeAiFollowUpIntoExplanation, parseAiFollowUpFromExplanation } from "@/modules/growth/ai-autopilot-followup-persist";
 import type { AiFollowUpState } from "@/modules/growth/ai-autopilot-followup.types";
 import { recordMarkedDone, recordSnoozed } from "@/modules/growth/ai-autopilot-followup-monitoring.service";

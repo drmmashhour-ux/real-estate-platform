@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { computeListingInvestmentRecommendation } from "@/lib/fsbo/listing-investment-recommendation";
 import { isFsboPubliclyVisible } from "@/lib/fsbo/constants";
 

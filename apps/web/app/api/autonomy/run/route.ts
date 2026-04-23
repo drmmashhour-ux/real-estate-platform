@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PlatformRole } from "@prisma/client";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { runAutonomousOperations } from "@/modules/autonomy/autonomy.engine";
 
 export const dynamic = "force-dynamic";

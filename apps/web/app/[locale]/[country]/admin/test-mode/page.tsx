@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { isTestMode } from "@/lib/config/app-mode";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;

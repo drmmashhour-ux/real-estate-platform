@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { runHostAutopilotTrigger } from "@/lib/ai/autopilot/host-autopilot-engine";
 import { isHostAutopilotRunApiEnabled } from "@/lib/ai/rollout-guards";
 import { getManagerAiPlatformSettings } from "@/lib/manager-ai/platform-settings";

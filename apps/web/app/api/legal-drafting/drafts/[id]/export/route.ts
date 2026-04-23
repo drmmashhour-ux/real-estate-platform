@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { appendLegalFormAudit } from "@/lib/forms/audit";
 import { assertDraftAccess } from "@/lib/forms/guards";
 import { countBlockingAlerts } from "@/lib/forms/guards";

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { IDENTITY_LEADS_REQUIRED_WARNING } from "@/modules/mortgage/services/broker-verification";
 import { requireBrokerPendingPage } from "@/modules/mortgage/services/require-broker-onboarding";
 

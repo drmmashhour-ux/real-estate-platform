@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { executiveDashboardFlags } from "@/config/feature-flags";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { OwnerDashboard } from "@/components/owner-dashboard/OwnerDashboard";
 import { getExecutiveSession } from "@/modules/owner-access/executive-visibility.service";
 import { buildOwnerDashboardPayload } from "@/modules/owner-dashboard/owner-dashboard.service";

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { requireBrokerOrAdminApi } from "@/modules/crm/services/require-broker-api";
 
 export const dynamic = "force-dynamic";

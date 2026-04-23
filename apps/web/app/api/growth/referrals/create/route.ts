@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { generateReferralCodeCandidate } from "@/modules/referrals";
 import { requireGrowthMachineActor } from "@/modules/growth-machine/growth-api-context";
 

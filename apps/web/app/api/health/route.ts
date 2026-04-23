@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { describeStripeSecretKeyError } from "@/lib/stripe/stripeEnvGate";
 import { getPublicEnv } from "@/lib/runtime-env";
-import { withDbRetry } from "@/lib/db/with-db-retry";
+import { withDbRetry } from "@repo/db/with-db-retry";
 import { getSupabaseHealth, supabaseConfigStatus } from "@/lib/supabase/health";
 
 export const dynamic = "force-dynamic";
@@ -56,7 +56,7 @@ export async function GET(req: NextRequest) {
 
   let db: "connected" | "failed" = "connected";
   try {
-    const { prisma } = await import("@/lib/db");
+    const { prisma } = await import("@repo/db");
     await withDbRetry(() => prisma.$queryRaw`SELECT 1`, { maxAttempts: 2, baseDelayMs: 150 });
   } catch {
     db = "failed";

@@ -3,7 +3,7 @@ import { subDays } from "date-fns";
 import { LecipmControlShell } from "@/components/admin/LecipmControlShell";
 import { getAdminRiskAlerts } from "@/lib/admin/control-center";
 import { requireAdminControlUserId } from "@/lib/admin/guard";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { REVENUE_PLATFORM_SCOPE_ID } from "@/lib/revenue-autopilot/constants";
 import { computeRevenueHealth } from "@/lib/revenue-autopilot/compute-revenue-health";
 import { getTopEarners } from "@/lib/revenue-autopilot/get-top-earners";

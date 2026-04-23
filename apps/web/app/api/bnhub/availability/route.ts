@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { getAvailability, setAvailability } from "@/lib/bnhub/listings";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 export async function GET(request: NextRequest) {
   try {

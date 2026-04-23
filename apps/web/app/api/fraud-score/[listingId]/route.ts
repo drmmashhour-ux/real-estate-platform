@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { assertListingOwnerOrAdmin } from "@/lib/decision-engine/assertListingOwnerOrAdmin";
 import { calculateFraudScore } from "@/modules/fraud-risk/application/calculateFraudScore";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 export const dynamic = "force-dynamic";
 

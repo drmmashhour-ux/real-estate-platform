@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { Prisma, type BnhubListingServicePricingType } from "@prisma/client";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getGuestId } from "@/lib/auth/session";
 import { assertListingOwner } from "@/lib/bnhub/hospitality-addons";
 

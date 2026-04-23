@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { AppointmentStatus, ImmoContactEventType } from "@prisma/client";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
 import { getBuyerLuxuryDashboardData } from "@/modules/dashboard/services/buyer-dashboard.service";
 import { DashboardBnhubRecommendations } from "@/components/recommendations/DashboardBnhubRecommendations";

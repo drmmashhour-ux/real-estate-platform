@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { BLOG_POSTS, getBlogPost, type BlogPost } from "@/lib/content/blog-posts";
 import { cityToSlug } from "@/lib/market/slug";
 import { getSiteBaseUrl } from "@/modules/seo/lib/siteBaseUrl";

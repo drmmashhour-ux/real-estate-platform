@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 /**
  * Admin entry for broker-style lead list (`/dashboard/leads`).

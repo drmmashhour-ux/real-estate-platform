@@ -117,6 +117,8 @@ export const engineFlags = {
   adsEngineV1: envTrue("FEATURE_ADS_ENGINE_V1"),
   /** CRM lead → deal funnel summary + follow-up action hints (read-only / advisory). */
   funnelSystemV1: envTrue("FEATURE_FUNNEL_SYSTEM_V1"),
+  /** Centris / broker-intake AI sales assistant — LECIPM-identified messages, broker escalations, logged timeline. */
+  aiSalesAgentV1: envTrue("FEATURE_AI_SALES_AGENT_V1"),
   /** 7-day operator deal sprint — day-by-day checklist (local progress; no auto-send). */
   dealExecutionPlanV1: envTrue("FEATURE_DEAL_EXECUTION_PLAN_V1"),
   /** $50 Facebook starter ads plan — copy + budget breakdown for human setup in Ads Manager (no Meta API). */
@@ -2437,6 +2439,18 @@ export type EventTimelineFlagKey = keyof typeof eventTimelineFlags;
 
 /** Env mirror for ops docs */
 export const FEATURE_EVENT_TIMELINE_V1 = eventTimelineFlags.eventTimelineV1;
+
+/**
+ * Insurance trust intelligence — batch trust multipliers in residential browse, stricter validation in code paths.
+ * Default off: opt in with FEATURE_INSURANCE_TRUST_INTELLIGENCE_V1=true
+ */
+export const complianceInsuranceFlags = {
+  trustIntelligenceV1: envTrue("FEATURE_INSURANCE_TRUST_INTELLIGENCE_V1"),
+} as const;
+
+export type ComplianceInsuranceFlagKey = keyof typeof complianceInsuranceFlags;
+
+export const FEATURE_INSURANCE_TRUST_INTELLIGENCE_V1 = complianceInsuranceFlags.trustIntelligenceV1;
 
 /** Phase 5 — deterministic trust scoring, ranking weight, badges (product signals only). */
 export const trustFlags = {

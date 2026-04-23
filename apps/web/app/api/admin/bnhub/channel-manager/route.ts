@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import type { BnhubChannelConnectionStatus } from "@prisma/client";
 import { getGuestId } from "@/lib/auth/session";
 import { isPlatformAdmin } from "@/lib/auth/is-platform-admin";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 export const dynamic = "force-dynamic";
 

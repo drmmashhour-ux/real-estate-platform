@@ -1,7 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { NextRequest } from "next/server";
 import { fsboCityWhereFromParam } from "@/lib/geo/city-search";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { engineFlags } from "@/config/feature-flags";
 import { applyListingRankingBoostIfEnabled } from "@/lib/trustgraph/application/integrations/listingRankingIntegration";
 import type { TrustScore } from "@/modules/trust/trust.types";

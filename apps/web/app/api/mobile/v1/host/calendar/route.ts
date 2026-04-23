@@ -1,5 +1,5 @@
 import { BookingStatus } from "@prisma/client";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { requireMobileUser, resolveMobileAppRoleFromRequest } from "@/lib/mobile/mobileAuth";
 
 const EXCLUDED_CAL_STATUSES: BookingStatus[] = [

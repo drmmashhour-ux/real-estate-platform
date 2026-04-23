@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
 import { buildMonetizationSnapshot } from "@/lib/investment/monetization";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { MvpNav } from "@/components/investment/MvpNav";
 import { DealCompareClient, type SerializableDeal } from "./deal-compare-client";
 import type { RentalType } from "@/lib/investment/rental-model";

@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { HubLayout } from "@/components/hub/HubLayout";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { isFinancialStaff } from "@/lib/admin/finance-access";
 import { hubNavigation } from "@/lib/hub/navigation";
 import { getHubTheme } from "@/lib/hub/themes";

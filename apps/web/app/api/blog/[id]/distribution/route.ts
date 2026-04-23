@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { engineFlags } from "@/config/feature-flags";
 import { requireUser } from "@/modules/security/access-guard.service";
 import { publishBlogDistribution } from "@/modules/distribution";

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { captureServerEvent } from "@/lib/analytics/posthog-server";
 
 const ALLOWED = new Set(["viewed", "saved", "ignored", "analyzed", "contacted", "clicked", "dismissed"]);

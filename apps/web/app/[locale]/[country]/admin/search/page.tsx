@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { LecipmControlShell } from "@/components/admin/LecipmControlShell";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { requireAdminControlUserId } from "@/lib/admin/guard";
 
 export const dynamic = "force-dynamic";

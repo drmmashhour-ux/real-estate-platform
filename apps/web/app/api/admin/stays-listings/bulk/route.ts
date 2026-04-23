@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getGuestId } from "@/lib/auth/session";
 import { isPlatformAdminSurface } from "@/lib/auth/is-platform-admin";
 import { approveListing, rejectListing } from "@/lib/bnhub/verification";

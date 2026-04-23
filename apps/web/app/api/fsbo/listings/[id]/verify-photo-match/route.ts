@@ -1,5 +1,5 @@
 import sharp from "sharp";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getGuestId } from "@/lib/auth/session";
 import { geocodeAddressLine } from "@/lib/geo/geocode-nominatim";
 

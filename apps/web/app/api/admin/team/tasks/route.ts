@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { TeamTaskPriority, TeamTaskStatus } from "@prisma/client";
 import { z } from "zod";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { requireAdminOnlySession, requireStaffPortalSession } from "@/lib/admin/staff-portal-auth";
 
 export const dynamic = "force-dynamic";

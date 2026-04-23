@@ -426,6 +426,7 @@ export function AdvancedSearchClient() {
       featFurnished,
       featNewConstruction,
       featPool,
+      insuredOnly,
       sort,
     ]
   );

@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { requireApiSession } from "@/lib/auth/require-api-session";
 import { upsertFamilyAccess } from "@/modules/soins/soins-family.service";
 import type { MobileAuthUser } from "@/lib/mobile/mobileAuth";

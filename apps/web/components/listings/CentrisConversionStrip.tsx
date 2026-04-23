@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Sparkles } from "lucide-react";
 
 type CentrisCaptureIntent = "unlock_analysis" | "book_visit" | "download_report";
@@ -18,6 +18,26 @@ export function CentrisConversionStrip({ listingId }: Props) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<string | null>(null);
+  const [urgencyLines, setUrgencyLines] = useState<string[] | null>(null);
+  const mountAt = useRef<number>(Date.now());
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const r = await fetch(`/api/centris/urgency?listingId=${encodeURIComponent(listingId)}`, {
+          credentials: "same-origin",
+        });
+        const j = (await r.json().catch(() => ({}))) as { urgency?: { stripLines?: string[] } };
+        if (!cancelled && j.urgency?.stripLines?.length) setUrgencyLines(j.urgency.stripLines.slice(0, 3));
+      } catch {
+        /* optional strip */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [listingId]);
 
   async function submit(intent: CentrisCaptureIntent) {
     setError(null);
@@ -44,6 +64,9 @@ export function CentrisConversionStrip({ listingId }: Props) {
           phone: phone.trim() || undefined,
           consentPrivacy,
           consentMarketing,
+          behaviorHints: {
+            dwellSeconds: Math.floor((Date.now() - mountAt.current) / 1000),
+          },
         }),
       });
       const j = (await r.json().catch(() => ({}))) as { error?: string };
@@ -77,6 +100,18 @@ export function CentrisConversionStrip({ listingId }: Props) {
             AI-style valuation context, investment signals, and documents stay on-platform. Leave your contact to
             unlock the full analysis and optional alerts.
           </p>
+          {urgencyLines && urgencyLines.length > 0 ? (
+            <ul className="mt-3 space-y-1 text-xs text-amber-200/90">
+              {urgencyLines.map((line, i) => (
+                <li key={i} className="flex gap-2">
+                  <span className="text-amber-400" aria-hidden>
+                    ·
+                  </span>
+                  <span>{line}</span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
         </div>
       </div>
 

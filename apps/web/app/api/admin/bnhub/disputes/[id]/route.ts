@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { getUserRole, isHubAdminRole } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { analyzeDisputeForAssistant } from "@/lib/bnhub/dispute-ai-assistant";
 
 type Params = { params: Promise<{ id: string }> };

@@ -9,7 +9,7 @@ vi.mock("@/lib/codes/generate-code", () => ({
   generateDealCode: vi.fn().mockResolvedValue("DEL-000001"),
 }));
 
-vi.mock("@/lib/db", () => ({
+vi.mock("@repo/db", () => ({
   prisma: {
     $transaction: vi.fn(),
     deal: { findMany: vi.fn(), create: vi.fn(), update: vi.fn() },
@@ -23,7 +23,7 @@ vi.mock("@/lib/db", () => ({
 }));
 
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 describe("GET /api/deals", () => {
   beforeEach(() => {

@@ -4,7 +4,7 @@ import {
   ListingAcquisitionPermissionStatus,
   ListingAcquisitionIntakeStatus,
 } from "@prisma/client";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { requireAdminSession } from "@/lib/admin/require-admin";
 import { normalizeListingDescription } from "@/lib/listings/normalize-listing-description";
 

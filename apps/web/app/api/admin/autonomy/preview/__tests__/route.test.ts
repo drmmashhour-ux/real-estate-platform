@@ -20,7 +20,7 @@ vi.mock("@/lib/auth/session", () => ({
   getGuestId: vi.fn(),
 }));
 
-vi.mock("@/lib/db", () => ({
+vi.mock("@repo/db", () => ({
   prisma: {
     user: { findUnique: vi.fn() },
   },
@@ -45,7 +45,7 @@ vi.mock("@/modules/autonomous-marketplace/execution/autonomous-marketplace.engin
 
 import { GET } from "../route";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 describe("GET /api/admin/autonomy/preview", () => {
   beforeEach(() => {

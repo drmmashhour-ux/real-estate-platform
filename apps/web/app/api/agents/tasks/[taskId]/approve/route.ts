@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { approveExecutiveTask } from "@/modules/agents/executive-approval.service";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { requireAgentsSession } from "../../../_auth";
 
 export const dynamic = "force-dynamic";

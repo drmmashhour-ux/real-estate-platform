@@ -5,7 +5,7 @@ import { CertificateOfLocationHelperPanel } from "@/components/broker-ai/Certifi
 import { getCertificateOfLocationBlockerImpact } from "@/modules/broker-ai/certificate-of-location/certificate-of-location-blocker.service";
 import { loadCertificateOfLocationPresentation } from "@/modules/broker-ai/certificate-of-location/certificate-of-location-view-model.service";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { ListingGrowthWorkspace } from "@/components/listing-growth/ListingGrowthWorkspace";
 
 export const dynamic = "force-dynamic";

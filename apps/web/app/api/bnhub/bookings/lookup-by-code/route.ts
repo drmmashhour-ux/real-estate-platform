@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { normalizeBnhubConfirmationCode } from "@/lib/bnhub/normalize-confirmation-code";
 import { logInfo } from "@/lib/logger";
 

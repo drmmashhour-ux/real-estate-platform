@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ContentAutomationAssetType } from "@prisma/client";
 import { verifyContentAutomationWebhook } from "@/lib/content-automation/webhook-verify";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 export const dynamic = "force-dynamic";
 

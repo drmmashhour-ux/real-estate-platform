@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getGuestId, setUserRoleCookie } from "@/lib/auth/session";
 import { isOnboardingMarketplacePersona } from "@/lib/marketplace/persona";
 import { isSellerPlanId } from "@/lib/marketplace/seller-plan";

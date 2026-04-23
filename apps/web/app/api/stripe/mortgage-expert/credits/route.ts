@@ -2,7 +2,7 @@
  * POST /api/stripe/mortgage-expert/credits — one-time Checkout for pay-per-lead credits.
  */
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { requireMortgageExpertWithTerms } from "@/modules/mortgage/services/expert-guard";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
 import { getStripe, isStripeConfigured } from "@/lib/stripe";

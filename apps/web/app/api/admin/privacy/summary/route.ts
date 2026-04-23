@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 export async function GET() {
   try {
@@ -21,7 +21,7 @@ export async function GET() {
     });
 
     // 4. Get audit logs
-    const auditLogs = await prisma.privacyAuditLog.findMany({
+    const auditLogs = await prisma.auditLog.findMany({
       orderBy: { createdAt: "desc" },
       take: 10,
     });

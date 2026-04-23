@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
 import { logDealExecutionEvent } from "@/lib/deals/execution-events";
 import { canMutateExecution, loadDealWithActor } from "@/lib/deals/execution-access";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { runContractIntelligence } from "@/modules/contract-intelligence/contract-intelligence.engine";
 
 export const dynamic = "force-dynamic";

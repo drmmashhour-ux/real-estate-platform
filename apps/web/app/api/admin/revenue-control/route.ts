@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import type { Prisma } from "@prisma/client";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { requireAdminControlUserId } from "@/lib/admin/guard";
 
 export const dynamic = "force-dynamic";

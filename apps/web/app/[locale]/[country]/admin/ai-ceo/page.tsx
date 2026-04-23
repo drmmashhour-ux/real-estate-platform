@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { HubLayout } from "@/components/hub/HubLayout";
 import { getGuestId, getUserRole, isHubAdminRole } from "@/lib/auth/session";
 import { hubNavigation } from "@/lib/hub/navigation";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getCeoDashboardPayload } from "@/src/modules/ai/ceoDashboardPayload";
 
 export const dynamic = "force-dynamic";

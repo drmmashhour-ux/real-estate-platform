@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { requireSessionUser } from "@/modules/tenancy/services/tenant-api-helpers";
 import { assertTenantAccess } from "@/modules/tenancy/services/tenant-context-service";
 import { canManageTenant, type TenantSubject } from "@/modules/tenancy/services/tenant-permissions";

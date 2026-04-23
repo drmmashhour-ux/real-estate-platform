@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { MvpNav } from "@/components/investment/MvpNav";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { RentDecisionAiCard } from "@/components/rental/RentDecisionAiCard";
 import { LeaseSignClient } from "./lease-sign-client";
 

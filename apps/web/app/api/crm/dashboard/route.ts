@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getCrmEliteDashboard } from "@/modules/crm/application/getCrmEliteDashboard";
 import { requireBrokerOrAdminApi } from "@/modules/crm/services/require-broker-api";
 

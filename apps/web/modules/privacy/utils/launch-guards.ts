@@ -34,11 +34,11 @@ export class PrivacyLaunchGuard {
    * Enforces the mandatory pre-transaction signature gate.
    */
   static async assertTransactionGate(userId: string, transactionId?: string) {
-    const hasConsent = await prisma.privacyConsentRecord.findFirst({
+    const hasConsent = await prisma.consent.findFirst({
       where: {
         userId,
         transactionId: transactionId ?? null,
-        purpose: PrivacyPurpose.TRANSACTION_EXECUTION,
+        purpose: "TRANSACTION_EXECUTION",
         granted: true,
         revokedAt: null,
       },

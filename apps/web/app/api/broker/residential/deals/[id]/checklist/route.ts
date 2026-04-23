@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { requireBrokerDealAccess, requireBrokerResidentialSession } from "@/lib/broker/residential-access";
 import { buildChecklistForPackage } from "@/modules/deals/deal-checklist.service";
 

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { logManagerAction } from "@/lib/ai/logger";
 import { applyHostAutopilotApproval } from "@/lib/ai/autopilot/apply-approval";
 import { notifyHostAutopilot } from "@/lib/ai/autopilot/notify-host";

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
+import { AiCloserLivePanel } from "@/components/closing/AiCloserLivePanel";
 import { CloserModePanel } from "@/components/closing/CloserModePanel";
 import { PsychologyCoachPanel } from "@/components/sales-psychology/PsychologyCoachPanel";
 import { analyzePostCallPsychology } from "@/modules/sales-psychology/psychology-suggestion.service";
@@ -218,6 +219,10 @@ export function CallCenterAdminClient({
                 />
               </div>
             ) : null}
+
+            <div className="mt-6">
+              <AiCloserLivePanel transcript={transcript} lastLine={lastLine} route="call_center" />
+            </div>
 
             <div className="mt-6">
               <PsychologyCoachPanel clientText={lastLine} compact transcript={transcript.slice(-1200)} />

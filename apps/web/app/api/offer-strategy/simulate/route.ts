@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
 import { captureServerEvent } from "@/lib/analytics/posthog-server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { assertFsboListingAccessibleForPhase3 } from "@/lib/deal-analyzer/phase3ListingAccess";
 import { checkGrowthPaywall } from "@/src/modules/growth-funnel/application/checkGrowthPaywall";
 import { recordSuccessfulSimulatorRun } from "@/src/modules/growth-funnel/application/recordSuccessfulSimulatorRun";

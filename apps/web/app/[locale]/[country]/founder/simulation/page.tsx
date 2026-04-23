@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { founderSimulationFlags, lecipmLaunchInvestorFlags, launchSystemV1Flags } from "@/config/feature-flags";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getExecutiveSession } from "@/modules/owner-access/executive-visibility.service";
 import { SimulationDashboard } from "@/components/founder-simulation/SimulationDashboard";
 

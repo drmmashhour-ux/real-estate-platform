@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { applyGuarantee, getGuaranteesForBooking } from "@/lib/bnhub/bnhub-guarantee";
 
 /** GET /api/bnhub/bookings/:id/guarantee — Guest or host views guarantee rows. */

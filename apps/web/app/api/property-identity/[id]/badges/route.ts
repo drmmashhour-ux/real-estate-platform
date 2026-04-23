@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
 import { getPropertyBadges } from "@/lib/property-identity/badges";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 /**
  * GET /api/property-identity/:id/badges

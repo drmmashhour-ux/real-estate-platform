@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { EsgRetrofitListingClient } from "@/components/esg/EsgRetrofitListingClient";
 
 export const metadata = {

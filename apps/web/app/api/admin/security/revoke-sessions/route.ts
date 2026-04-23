@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { requireAdminSession } from "@/lib/admin/require-admin";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { securityLog } from "@/lib/security/security-logger";
 
 export const dynamic = "force-dynamic";

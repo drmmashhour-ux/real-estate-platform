@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { Prisma } from "@prisma/client";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getDefaultPayloadForFormType } from "@/lib/forms/registry";
 import { sendFormSubmissionNotificationToAdmin } from "@/lib/email/notifications";
 import { formatFormActivityNote } from "@/lib/forms/form-activity";

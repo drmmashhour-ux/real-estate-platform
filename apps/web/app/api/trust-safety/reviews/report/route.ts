@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
 import { createIncident } from "@/lib/trust-safety/incident-service";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 /**
  * POST /api/trust-safety/reviews/report

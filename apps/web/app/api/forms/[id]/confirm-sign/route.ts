@@ -1,6 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { sendFormSignatureConfirmedToAdmin } from "@/lib/email/notifications";
 import { formatFormActivityNote } from "@/lib/forms/form-activity";
 

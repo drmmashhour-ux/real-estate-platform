@@ -1,6 +1,6 @@
 import { requireMobileBrokerUser } from "@/lib/mobile/require-mobile-broker";
 import { requireBrokerDealAccess } from "@/lib/broker/residential-access";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 export const dynamic = "force-dynamic";
 

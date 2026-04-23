@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { logError } from "@/lib/logger";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { canManageCapital } from "@/modules/capital/capital-policy";
 import { generateLenderPackage } from "@/modules/capital/lender-package.service";
 import { markPackageSent } from "@/modules/capital/lender.service";

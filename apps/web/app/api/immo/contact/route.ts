@@ -6,7 +6,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { LeadContactOrigin } from "@prisma/client";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getGuestId } from "@/lib/auth/session";
 import { findRecentListingLeadDuplicate } from "@/lib/crm/lead-dedupe";
 import { resolveImmoListing, resolveImmoIntroducedBrokerId } from "@/lib/immo/resolve-listing";

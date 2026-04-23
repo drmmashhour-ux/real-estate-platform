@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { addDays } from "date-fns";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { generateAvailableSlots } from "@/modules/scheduling/services/generate-available-slots";
 
 export const dynamic = "force-dynamic";

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { updateListing } from "@/lib/bnhub/listings";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 export const dynamic = "force-dynamic";
 

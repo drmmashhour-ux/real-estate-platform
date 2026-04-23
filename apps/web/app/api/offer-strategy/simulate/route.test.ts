@@ -10,7 +10,7 @@ vi.mock("@/lib/deal-analyzer/phase3ListingAccess", () => ({
 vi.mock("@/src/modules/offer-strategy-simulator/application/simulateOfferStrategy", () => ({
   simulateOfferStrategy: vi.fn(),
 }));
-vi.mock("@/lib/db", () => ({
+vi.mock("@repo/db", () => ({
   prisma: {
     user: {
       findUnique: vi.fn().mockResolvedValue({ plan: "free", role: "USER" }),

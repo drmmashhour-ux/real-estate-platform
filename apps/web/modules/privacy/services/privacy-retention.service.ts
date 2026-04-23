@@ -65,7 +65,7 @@ export class PrivacyRetentionService {
     });
 
     // 4. Audit log
-    await prisma.privacyAuditLog.create({
+    await prisma.auditLog.create({
       data: {
         userId: args.destroyedBy,
         action: "DATA_DESTROYED",

@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getAutoCloseSettings, readAutoCloseEnv, setAutoClosePaused } from "@/src/modules/autoclose/autoCloseEngine";
 
 export const dynamic = "force-dynamic";

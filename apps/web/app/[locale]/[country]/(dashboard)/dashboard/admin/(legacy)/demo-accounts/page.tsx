@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { DEMO_ACCOUNT_EMAILS } from "@/lib/demo/demo-account-constants";
 import { isDemoQuickLoginAllowed } from "@/lib/demo/is-demo-quick-login-allowed";
 import { DemoAccountLoginButton } from "./DemoAccountLoginButton";

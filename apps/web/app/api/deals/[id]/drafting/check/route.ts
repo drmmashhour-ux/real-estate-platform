@@ -1,7 +1,7 @@
 import { dealExecutionFlags } from "@/config/feature-flags";
 import { authenticateBrokerDealRoute } from "@/lib/deals/broker-draft-auth";
 import { logDraftingAudit } from "@/lib/deals/drafting-audit";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { runComplianceForDealDrafting } from "@/modules/drafting-ai/compliance-checker";
 
 export const dynamic = "force-dynamic";

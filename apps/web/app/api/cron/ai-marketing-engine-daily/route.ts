@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { GROWTH_CITY_SLUGS, type GrowthCitySlug } from "@/lib/growth/geo-slugs";
 import { runMarketingEngineDaily } from "@/modules/marketing-engine/pipeline";
 

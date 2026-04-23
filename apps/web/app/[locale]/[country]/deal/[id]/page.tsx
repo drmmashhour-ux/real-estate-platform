@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { PLATFORM_NAME } from "@/lib/brand/platform";
 import { notFound } from "next/navigation";
 import { z } from "zod";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { buildSharedDealPayload } from "@/lib/investment/shared-deal-public";
 import { SHARE_DEAL_LINE } from "@/lib/investment/share-deal-copy";
 import { MvpNav } from "@/components/investment/MvpNav";

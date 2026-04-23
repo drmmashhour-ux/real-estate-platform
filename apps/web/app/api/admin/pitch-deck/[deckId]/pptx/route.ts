@@ -1,6 +1,6 @@
 import { getGuestId } from "@/lib/auth/session";
 import { isPlatformAdmin } from "@/lib/auth/is-platform-admin";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { buildPitchDeckPptxBuffer, DEFAULT_PPTX_FILENAME } from "@/src/modules/pitchDeck/export";
 
 export const dynamic = "force-dynamic";

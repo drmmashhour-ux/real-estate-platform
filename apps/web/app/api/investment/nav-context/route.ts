@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getSessionUserIdFromRequest } from "@/lib/auth/api-session";
 
 /** Client hint for investment bottom nav: demo links when not a real account session. */

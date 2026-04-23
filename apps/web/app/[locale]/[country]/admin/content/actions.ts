@@ -1,6 +1,6 @@
 "use server";
 
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getGuestId } from "@/lib/auth/session";
 import { transitionContentStatus } from "@/lib/content/review";
 import { publishApprovedContent, rollbackLastPublish } from "@/lib/content/publish";

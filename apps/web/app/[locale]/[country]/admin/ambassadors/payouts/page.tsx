@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 export default async function AdminAmbassadorPayoutsPage() {
   const payouts = await prisma.ambassadorPayout.findMany({ orderBy: { createdAt: "desc" }, take: 50 }).catch(() => []);

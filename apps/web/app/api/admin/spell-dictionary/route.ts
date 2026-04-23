@@ -1,7 +1,7 @@
 import { revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 import { assertAdminResponse } from "@/lib/admin/assert-admin";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { SPELL_DICTIONARY_CACHE_TAG } from "@/lib/spell/allow-words";
 
 type LocaleCell = "en" | "fr" | "both";

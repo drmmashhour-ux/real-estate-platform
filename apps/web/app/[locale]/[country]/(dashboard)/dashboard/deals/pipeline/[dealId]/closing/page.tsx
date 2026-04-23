@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { evaluateClosing } from "@/modules/closing/closing-validation.service";
 import { getClosingByDealId } from "@/modules/closing/closing.service";
 import { canAccessPipelineDeal, canRecordCommitteeDecision } from "@/modules/deals/deal-policy";

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getGuestId } from "@/lib/auth/session";
 import { triggerNewMessage } from "@/lib/bnhub/notifications";
 import { appendBnhubInquiryMessage, getOrCreateBnhubInquiryThread } from "@/lib/bnhub/inquiry-messaging";

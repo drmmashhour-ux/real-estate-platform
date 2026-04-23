@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import type { RequiredDocumentCategory, RequiredDocumentStatus } from "@prisma/client";
 import { DemoEvents } from "@/lib/demo-event-types";
 import { trackDemoEvent } from "@/lib/demo-analytics";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getBrokerClientForIntake, requireIntakeUser } from "@/modules/intake/services/api-helpers";
 import {
   canManageRequiredDocuments,

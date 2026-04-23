@@ -1,6 +1,6 @@
 import { requireMobileBrokerUser } from "@/lib/mobile/require-mobile-broker";
 import { brokerMobileFlags } from "@/config/feature-flags";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { logGrowthEngineAudit } from "@/modules/growth-engine-audit/growth-engine-audit.service";
 
 export const dynamic = "force-dynamic";

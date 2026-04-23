@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
 import { logInfo } from "@/lib/logger";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { userCanAccessCapitalModule, userCanMutateCapitalData, userCanSelectOfferAndFinalize } from "@/modules/capital/capital-access";
 import { createFinancingOffer, selectFinancingOffer } from "@/modules/capital/financing-offers.service";
 import { compareFinancingOffers } from "@/modules/capital/lender-comparison.engine";

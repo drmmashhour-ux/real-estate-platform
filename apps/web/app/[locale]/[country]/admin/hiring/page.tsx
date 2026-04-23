@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { getGuestId } from "@/lib/auth/session";
 import { isPlatformAdmin } from "@/lib/auth/is-platform-admin";
 import { HiringAdminClient } from "@/components/admin/HiringAdminClient";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { HIRING_STAGES } from "@/src/modules/hiring/constants";
 
 export const dynamic = "force-dynamic";

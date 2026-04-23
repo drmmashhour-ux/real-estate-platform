@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { appendLeadTimelineEvent } from "@/lib/leads/timeline-helpers";
 import { refreshEvaluationLeadCrmScore } from "@/lib/leads/refresh-evaluation-score";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";

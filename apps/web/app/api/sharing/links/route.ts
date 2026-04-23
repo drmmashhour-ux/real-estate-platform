@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getGuestId } from "@/lib/auth/session";
 import { getSiteBaseUrl } from "@/modules/seo/lib/siteBaseUrl";
 import { createOrUpdateShareLink } from "@/modules/sharing/application/createShareLink";

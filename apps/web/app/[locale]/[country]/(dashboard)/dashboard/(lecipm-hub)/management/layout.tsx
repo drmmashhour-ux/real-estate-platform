@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 
 import { LecipmDashboardShell } from "@/components/layouts/dashboard-shell";
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { buildLecipmShellPayload, shellUserDisplayName } from "@/lib/navigation/lecipm-shell-server";
 import {
   canAccessManagementDashboard,

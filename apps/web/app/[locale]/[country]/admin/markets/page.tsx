@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getActiveMarkets } from "@/lib/market-config";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 export const dynamic = "force-dynamic";
 

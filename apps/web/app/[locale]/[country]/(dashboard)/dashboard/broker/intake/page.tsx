@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { HubLayout } from "@/components/hub/HubLayout";
 import { hubNavigation } from "@/lib/hub/navigation";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { requireBrokerOrAdminPage } from "@/modules/crm/services/require-broker-page";
 import { calculateChecklistProgress } from "@/modules/intake/services/calculate-checklist-progress";
 

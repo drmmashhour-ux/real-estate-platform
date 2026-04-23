@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { DemoWalkthroughPanel } from "@/components/demo/DemoWalkthroughPanel";
 import { loadDemoWalkthroughData } from "@/lib/demo/demo-walkthrough-data";
 

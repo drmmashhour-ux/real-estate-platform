@@ -1,5 +1,5 @@
 import { ImageResponse } from "next/og";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 export const runtime = "nodejs";
 

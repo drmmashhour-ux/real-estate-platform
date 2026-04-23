@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { requireWorkspacePermission } from "@/modules/enterprise/infrastructure/requireWorkspacePermission";
 import { generateDealInsights } from "@/modules/lecipm-monopoly/application/generateDealInsights";
 import { buildWorkspaceAggregatedStats } from "@/modules/lecipm-monopoly/infrastructure/buildWorkspaceAggregatedStats";

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { PaymentStatus } from "@prisma/client";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import {
   getOrchestratedPaymentDelegate,
   getOrchestratedPayoutDelegate,

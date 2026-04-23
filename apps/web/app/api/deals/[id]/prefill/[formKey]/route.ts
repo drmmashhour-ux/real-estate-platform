@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { authenticateBrokerDealRoute } from "@/lib/deals/broker-draft-auth";
 import { logContractEngineEvent } from "@/lib/contract-engine/events";
 import { requireAiContractEngine } from "@/lib/contract-engine/guard";

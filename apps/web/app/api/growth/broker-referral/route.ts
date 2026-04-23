@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { logError } from "@/lib/logger";
 import { requireBrokerOrAdminTransactionSession } from "@/lib/transactions/require-sd-transaction-session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 export const dynamic = "force-dynamic";
 

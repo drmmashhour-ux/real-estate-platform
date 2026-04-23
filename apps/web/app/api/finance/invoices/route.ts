@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { TenantInvoiceType } from "@prisma/client";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { requireTenantContext } from "@/modules/tenancy/services/tenant-context-service";
 import { createInvoice, type LineItem } from "@/modules/finance/services/invoice-service";
 import { canIssueInvoice, canViewFinance } from "@/modules/finance/services/finance-permissions";

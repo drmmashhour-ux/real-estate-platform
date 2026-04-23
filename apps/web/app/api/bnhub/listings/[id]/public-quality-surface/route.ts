@@ -1,5 +1,5 @@
 import { BnhubLuxuryEligibilityStatus, BnhubLuxuryTierCode, BnhubTrustProfileStatus, ListingStatus } from "@prisma/client";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 /**
  * Guest-safe fields only — no fraud evidence, no internal admin notes.

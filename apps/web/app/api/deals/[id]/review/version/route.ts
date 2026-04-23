@@ -3,7 +3,7 @@ import { DealDocumentVersionSource } from "@prisma/client";
 import { getGuestId } from "@/lib/auth/session";
 import { canMutateExecution, loadDealWithActor } from "@/lib/deals/execution-access";
 import { dealExecutionFlags } from "@/config/feature-flags";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { logApprovalAction } from "@/modules/review/approval-log.service";
 import { recordDocumentVersion } from "@/modules/review/versioning.service";
 

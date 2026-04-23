@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { isMortgageExpertRole } from "@/lib/marketplace/mortgage-role";
 import { appendExpertChatMessage } from "@/lib/immo/process-crm-chat";
 

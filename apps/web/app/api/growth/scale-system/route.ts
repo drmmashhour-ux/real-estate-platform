@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { PlatformRole } from "@prisma/client";
 import { engineFlags } from "@/config/feature-flags";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { buildScalePlan } from "@/modules/growth/scale-system.service";
 import { requireGrowthMachineActor } from "@/modules/growth-machine/growth-api-context";
 

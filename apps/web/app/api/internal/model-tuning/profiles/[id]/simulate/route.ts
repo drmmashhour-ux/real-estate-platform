@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { recordComparison } from "@/modules/model-tuning/infrastructure/tuningRepository";
 import { simulateTuningOnValidationRun } from "@/modules/model-tuning/infrastructure/thresholdSimulationService";
 import type { TuningProfileConfig } from "@/modules/scoring/tuningProfile";

@@ -32,8 +32,8 @@ export async function triggerInsuranceAlerts(brokerId: string, trigger: "EXPIRY"
         priority = "URGENT";
         break;
       case "CLAIM":
-        title = "New Insurance Claim Filed";
-        message = `A new insurance claim has been submitted for broker ${broker.name}. Review required in compliance hub.`;
+        title = "Insurance claim received";
+        message = `We recorded your professional liability claim${metadata?.claimId ? ` (${metadata.claimId})` : ""}. Compliance may follow up — keep documents on file.`;
         priority = "HIGH";
         break;
       case "RISK":
@@ -43,31 +43,31 @@ export async function triggerInsuranceAlerts(brokerId: string, trigger: "EXPIRY"
         break;
     }
 
-    // Notify Broker
-    if (trigger !== "CLAIM" && trigger !== "RISK") {
-      await createNotification({
-        userId: brokerId,
-        type: "SYSTEM",
-        title,
-        message,
-        priority: priority as any,
-        metadata: { trigger, ...metadata },
-      });
-    }
+    await createNotification({
+      userId: brokerId,
+      type: "SYSTEM",
+      title,
+      message,
+      priority: priority as any,
+      metadata: { trigger, ...metadata },
+    });
 
     // Notify Admins
     for (const admin of admins) {
       await createNotification({
         userId: admin.id,
         type: "SYSTEM",
-        title: `[ADMIN] ${title}`,
-        message: `${message} (Broker: ${broker.name})`,
+        title: `[ADMIN] ${trigger === "CLAIM" ? "New Insurance Claim Filed" : title}`,
+        message:
+          trigger === "CLAIM"
+            ? `Claim intake for broker ${broker.name}${metadata?.claimId ? ` — id ${metadata.claimId}` : ""}. Review compliance hub.`
+            : `${message} (Broker: ${broker.name})`,
         priority: priority as any,
         metadata: { trigger, brokerId, ...metadata },
       });
     }
 
-    logInsurance("alert_triggered", { brokerId, trigger, priority });
+    logInsurance("audit_alert_triggered", { brokerId, trigger, priority, metadataKeys: metadata ? Object.keys(metadata) : [] });
   } catch (e) {
     logInsurance("alert_trigger_error", { brokerId, trigger, err: e instanceof Error ? e.message : "unknown" });
   }

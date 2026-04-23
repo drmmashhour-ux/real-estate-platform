@@ -1,7 +1,7 @@
 import { getGuestId } from "@/lib/auth/session";
 import { assertGrowthAdmin, GrowthAuthError } from "@/src/modules/bnhub-growth-engine/services/growthAccess";
 import { growthGlobalOverview } from "@/src/modules/bnhub-growth-engine/services/growthAnalyticsService";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 export const dynamic = "force-dynamic";
 

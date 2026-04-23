@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { parseEarlyBookingPayload } from "@/lib/bnhub/early-booking-discount";
 import { generateSmartPrice } from "@/lib/bnhub/smart-pricing";
 import { getPricingRulesForListing } from "@/lib/bnhub/pricing";

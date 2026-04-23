@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getGuestId } from "@/lib/auth/session";
 import { isPlatformAdmin } from "@/lib/auth/is-platform-admin";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { hostEconomicsFlags } from "@/config/feature-flags";
 import { getPricingPlans } from "@/modules/business";
 import { MONTREAL_PRESETS, buildMontrealLaunchScenario } from "@/modules/simulations";

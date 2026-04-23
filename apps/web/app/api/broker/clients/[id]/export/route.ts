@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getBrokerClientDetailForPage } from "@/modules/crm/services/get-client-detail";
 import { buildBrandedDocumentHtml, asDate, asText, renderBulletList, renderKeyValueRows } from "@/lib/export/branded-document-html";
 

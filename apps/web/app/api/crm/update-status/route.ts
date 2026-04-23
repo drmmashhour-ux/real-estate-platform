@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { CRM_ELITE_STAGES, isCrmEliteStage } from "@/modules/crm/domain/eliteLead";
 import { requireBrokerOrAdminApi } from "@/modules/crm/services/require-broker-api";
 

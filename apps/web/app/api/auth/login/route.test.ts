@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { POST } from "./route";
 
-vi.mock("@/lib/db", () => ({
+vi.mock("@repo/db", () => ({
   prisma: {
     user: { findUnique: vi.fn() },
     mortgageExpert: { findUnique: vi.fn() },
@@ -24,7 +24,7 @@ vi.mock("@/lib/observability", () => ({
   recordPlatformEvent: vi.fn().mockResolvedValue(undefined),
 }));
 
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { verifyPassword } from "@/lib/auth/password";
 
 describe("POST /api/auth/login", () => {

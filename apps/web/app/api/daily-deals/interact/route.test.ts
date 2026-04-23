@@ -3,14 +3,14 @@ import { POST } from "./route";
 
 vi.mock("@/lib/auth/session", () => ({ getGuestId: vi.fn() }));
 vi.mock("@/lib/analytics/posthog-server", () => ({ captureServerEvent: vi.fn() }));
-vi.mock("@/lib/db", () => ({
+vi.mock("@repo/db", () => ({
   prisma: {
     feedInteraction: { create: vi.fn() },
   },
 }));
 
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 describe("POST /api/daily-deals/interact", () => {
   it("requires sign in", async () => {

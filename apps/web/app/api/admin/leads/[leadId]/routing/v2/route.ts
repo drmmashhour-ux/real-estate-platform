@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { brokerRoutingFlags, smartRoutingV2Flags } from "@/config/feature-flags";
 import { buildRoutingDecision } from "@/modules/broker/routing/broker-routing-decision.service";
 import { ROUTING_V2_AUTO_ASSIGN_MIN_CONFIDENCE } from "@/modules/broker/routing/broker-routing-policy";

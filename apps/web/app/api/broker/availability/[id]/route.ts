@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { requireBrokerOrAdminApi } from "@/modules/crm/services/require-broker-api";
 import { normalizeDayOfWeek, normalizeMinuteRange } from "@/modules/scheduling/services/validate-availability";
 

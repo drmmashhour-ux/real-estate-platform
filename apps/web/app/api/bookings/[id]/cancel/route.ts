@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { cancelBooking } from "@/lib/bnhub/booking";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { isPlatformAdmin } from "@/lib/auth/is-platform-admin";
 import { logInfo } from "@/lib/logger";
 import { logApiRouteError } from "@/lib/api/dev-log";

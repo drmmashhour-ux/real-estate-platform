@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getSubscriptionPlans } from "@/lib/subscription-billing";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 export const dynamic = "force-dynamic";
 

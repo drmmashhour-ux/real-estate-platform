@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { hostEconomicsFlags } from "@/config/feature-flags";
 import { buildRoiComparison, type RoiCalculatorInput } from "@/modules/roi";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";

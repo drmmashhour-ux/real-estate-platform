@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getGuestId } from "@/lib/auth/session";
 import { redirect } from "next/navigation";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { IdVerificationForm } from "./id-verification-form";
 
 export default async function VerifyIdPage() {

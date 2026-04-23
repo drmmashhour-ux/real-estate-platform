@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { LecipmControlShell } from "@/components/admin/LecipmControlShell";
 import { getAllDisputes } from "@/lib/bnhub/disputes";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { requireAdminControlUserId } from "@/lib/admin/guard";
 import { DisputesListClient } from "./disputes-list-client";
 import { PlatformLegalDisputesClient, type PlatformLegalDisputeRow } from "./PlatformLegalDisputesClient";

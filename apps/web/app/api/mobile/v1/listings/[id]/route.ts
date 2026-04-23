@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { fetchListingCardWithQuality, fetchPublicListingCardsByIds, toPublicListingCard } from "@/lib/mobile/listingMobileDto";
 
 export const dynamic = "force-dynamic";

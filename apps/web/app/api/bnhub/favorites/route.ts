@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { SearchEventType } from "@prisma/client";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { trackSearchEvent } from "@/lib/ai/search/trackSearchEvent";
 
 export const dynamic = "force-dynamic";

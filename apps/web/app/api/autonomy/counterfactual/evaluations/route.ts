@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { requireRole } from "@/lib/auth/require-role";
 
 export const dynamic = "force-dynamic";

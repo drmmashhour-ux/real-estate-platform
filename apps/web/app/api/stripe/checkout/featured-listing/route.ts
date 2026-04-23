@@ -4,7 +4,7 @@ import { getGuestId } from "@/lib/auth/session";
 import { getStripe, isStripeConfigured } from "@/lib/stripe";
 import { getPublicAppUrl } from "@/lib/config/public-app-url";
 import { createCheckoutSession } from "@/lib/stripe/checkout";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { trackFunnelEvent } from "@/lib/funnel/tracker";
 import {
   durationDaysForFsboFeaturedPlan,

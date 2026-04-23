@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { ImmoDealRoomDetailClient } from "@/components/immo-deal-room/ImmoDealRoomDetailClient";
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
 import { getImmoDealRoomAbilities } from "@/lib/immo-deal-room/room-abilities";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { roleCanUseImmoDealRooms } from "@/modules/deal-room/deal-room-access";
 import { assertCanViewRoom, getDealRoom, getDealRoomBundle } from "@/modules/deal-room/deal-room.service";
 

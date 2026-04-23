@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
 import { getAccessibleListingsForUser } from "@/lib/listings/get-accessible-listings-for-user";
 import { BrokerContentStudioClient } from "./content-studio-client";

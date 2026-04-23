@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
 import { getUserSafetyProfile, computeHostRiskLevel } from "@/lib/trust-safety/safety-profile-service";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 /**
  * GET /api/admin/trust-safety/users/:id (id = userId)

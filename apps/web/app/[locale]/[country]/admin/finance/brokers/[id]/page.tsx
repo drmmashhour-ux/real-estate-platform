@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { isFinancialStaff } from "@/lib/admin/finance-access";
 import { HubLayout } from "@/components/hub/HubLayout";
 import { hubNavigation } from "@/lib/hub/navigation";

@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { LISTING_TYPES, LINK_STATUSES } from "@/lib/property-identity/constants";
 import { checkDuplicateOutcome } from "@/lib/property-identity/duplicate-rules";
 import { recordEvent } from "@/lib/property-identity/events";

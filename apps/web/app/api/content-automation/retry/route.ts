@@ -3,7 +3,7 @@ import { ContentAutomationJobStatus } from "@prisma/client";
 import { getGuestId } from "@/lib/auth/session";
 import { isPlatformAdmin } from "@/lib/auth/is-platform-admin";
 import { retryContentJob } from "@/lib/content-automation/retry-job";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 export const dynamic = "force-dynamic";
 

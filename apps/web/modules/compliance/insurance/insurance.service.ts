@@ -4,7 +4,9 @@ import type {
   ComplianceScoreResponse,
   InsuranceStatusResponse,
   BrokerInsuranceCard,
+  PublicBrokerCoverageResponse,
 } from "./insurance.types";
+import { INSURANCE_RISK_ALERT_THRESHOLD, MIN_PROFESSIONAL_LIABILITY_COVERAGE_CAD } from "./insurance.types";
 import { logInsurance } from "./insurance-log";
 import { evaluateBrokerInsuranceRisk } from "./insurance-risk.engine";
 import { triggerInsuranceAlerts } from "./insurance-alert.service";
@@ -33,27 +35,53 @@ function mapCard(row: {
   };
 }
 
-/** True when broker has an in-force FARCIQ policy row marked ACTIVE and meets coverage requirements. */
+/** Prisma fragment — user has at least one in-term ACTIVE policy meeting minimum liability (SUSPENDED excluded via status). */
+export function prismaUserHasValidBrokerInsurance(now: Date = new Date()) {
+  return {
+    brokerInsurances: {
+      some: {
+        status: "ACTIVE",
+        startDate: { lte: now },
+        endDate: { gte: now },
+        coveragePerLoss: { gte: MIN_PROFESSIONAL_LIABILITY_COVERAGE_CAD },
+      },
+    },
+  };
+}
+
+function policyMeetsValidityGate(policy: {
+  status: string;
+  startDate: Date;
+  endDate: Date;
+  coveragePerLoss: number;
+}, now: Date): boolean {
+  if (policy.status === "SUSPENDED") return false;
+  return (
+    policy.status === "ACTIVE" &&
+    policy.startDate <= now &&
+    policy.endDate >= now &&
+    policy.coveragePerLoss >= MIN_PROFESSIONAL_LIABILITY_COVERAGE_CAD
+  );
+}
+
+/** True when broker has in-force FARCIQ coverage: ACTIVE, in date range, not suspended, meets minimum liability. */
 export async function isBrokerInsuranceValid(brokerId: string): Promise<boolean> {
   try {
     const now = new Date();
-    // Minimum coverage threshold (e.g., $1,000,000)
-    const MIN_COVERAGE_THRESHOLD = 1000000;
-
     const row = await prisma.brokerInsurance.findFirst({
       where: {
         brokerId,
         status: "ACTIVE",
         startDate: { lte: now },
         endDate: { gte: now },
-        coveragePerLoss: { gte: MIN_COVERAGE_THRESHOLD },
+        coveragePerLoss: { gte: MIN_PROFESSIONAL_LIABILITY_COVERAGE_CAD },
       },
       orderBy: { endDate: "desc" },
       select: { id: true, status: true, startDate: true, endDate: true, coveragePerLoss: true },
     });
 
-    const ok = Boolean(row);
-    logInsurance("validity_check", { brokerId, ok, coverage: row?.coveragePerLoss });
+    const ok = Boolean(row) && (row ? policyMeetsValidityGate(row, now) : false);
+    logInsurance("audit_validity_check", { brokerId, ok, coverage: row?.coveragePerLoss, status: row?.status });
     return ok;
   } catch (e) {
     logInsurance("validity_check_error", { brokerId, err: e instanceof Error ? e.message : "unknown" });
@@ -61,7 +89,7 @@ export async function isBrokerInsuranceValid(brokerId: string): Promise<boolean>
   }
 }
 
-/** @deprecated Use isBrokerInsuranceValid */
+/** @deprecated Use isBrokerInsuranceValid — thin alias for backward compatibility. */
 export async function isBrokerInsuranceActive(brokerId: string): Promise<boolean> {
   return isBrokerInsuranceValid(brokerId);
 }
@@ -83,12 +111,7 @@ export async function getBrokerInsuranceStatus(brokerId: string): Promise<Insura
       };
     }
 
-    const MIN_COVERAGE_THRESHOLD = 1000000;
-    const effectiveActive =
-      policy.status === "ACTIVE" &&
-      policy.startDate <= now &&
-      policy.endDate >= now &&
-      policy.coveragePerLoss >= MIN_COVERAGE_THRESHOLD;
+    const effectiveActive = policyMeetsValidityGate(policy, now);
 
     return {
       hasPolicy: true,
@@ -96,11 +119,13 @@ export async function getBrokerInsuranceStatus(brokerId: string): Promise<Insura
       policy: mapCard(policy),
       message: effectiveActive
         ? "Policy active for the current term."
-        : policy.coveragePerLoss < MIN_COVERAGE_THRESHOLD
-          ? `Policy active but coverage ($${policy.coveragePerLoss}) is below required minimum.`
-          : policy.endDate < now
-            ? "Policy term ended — renew to restore insured status."
-            : `Status: ${policy.status}`,
+        : policy.status === "SUSPENDED"
+          ? "Policy suspended — contact compliance."
+          : policy.coveragePerLoss < MIN_PROFESSIONAL_LIABILITY_COVERAGE_CAD
+            ? `Policy active but coverage ($${policy.coveragePerLoss}) is below required minimum.`
+            : policy.endDate < now
+              ? "Policy term ended — renew to restore insured status."
+              : `Status: ${policy.status}`,
     };
   } catch (e) {
     logInsurance("status_error", { brokerId, err: e instanceof Error ? e.message : "unknown" });
@@ -126,6 +151,23 @@ export async function getBrokerCoverageDetail(brokerId: string): Promise<BrokerI
   }
 }
 
+/** Safe payload for GET /api/insurance/coverage — omits policy number and provider details. */
+export async function getPublicBrokerCoverageSummary(brokerId: string): Promise<PublicBrokerCoverageResponse | null> {
+  const card = await getBrokerCoverageDetail(brokerId);
+  if (!card) return null;
+  const now = new Date();
+  const expiry = new Date(card.endDate);
+  const msToExpiry = expiry.getTime() - now.getTime();
+  const thirtyDays = 30 * 86400000;
+  return {
+    liabilityAmount: card.coveragePerLoss,
+    coverageType: "PROFESSIONAL_LIABILITY",
+    expiryDate: card.endDate,
+    status: card.status,
+    nearExpiry: msToExpiry > 0 && msToExpiry <= thirtyDays,
+  };
+}
+
 export async function getComplianceScoreForBroker(brokerId: string): Promise<ComplianceScoreResponse> {
   try {
     const risk = await evaluateBrokerInsuranceRisk({ brokerId });
@@ -147,7 +189,7 @@ export async function getComplianceScoreForBroker(brokerId: string): Promise<Com
     const penalty = Math.min(40, risk.riskScore * 0.35 + highEvents * 5);
     const score = Math.max(0, Math.round(100 - penalty));
 
-    if (risk.riskScore >= 70) {
+    if (risk.riskScore >= INSURANCE_RISK_ALERT_THRESHOLD) {
       await triggerInsuranceAlerts(brokerId, "RISK", { score: risk.riskScore, severity: risk.severity });
     }
 

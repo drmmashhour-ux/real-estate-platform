@@ -2,7 +2,7 @@
  * GET /api/stripe/connect/status — Sync onboarding from Stripe + persist requirements snapshot for host dashboard.
  */
 
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getGuestId } from "@/lib/auth/session";
 import { getStripe, isStripeConfigured } from "@/lib/stripe";
 import { syncHostOnboardingCompleteFromStripe } from "@/lib/stripe/hostConnectExpress";

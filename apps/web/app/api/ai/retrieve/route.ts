@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getGuestId } from "@/lib/auth/session";
 import { buildKnowledgeIndex } from "@/modules/ai-training/application/buildKnowledgeIndex";
 import { retrieveKnowledge } from "@/modules/ai-training/application/retrieveKnowledge";

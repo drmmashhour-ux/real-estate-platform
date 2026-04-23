@@ -15,7 +15,7 @@ export class PrivacyDisclosureService {
     data: any;
   }) {
     // 1. Verify consent exists for this disclosure purpose
-    const hasConsent = await prisma.privacyConsentRecord.findFirst({
+    const hasConsent = await prisma.consent.findFirst({
       where: {
         userId: args.userId,
         purpose: args.purpose,
@@ -45,8 +45,8 @@ export class PrivacyDisclosureService {
         redactedData = PrivacyRedactionService.redactForUnrepresentedBuyer(args.data);
     }
 
-    // 3. Log the disclosure in PrivacyAuditLog
-    await prisma.privacyAuditLog.create({
+    // 3. Log the disclosure in AuditLog
+    await prisma.auditLog.create({
       data: {
         userId: args.userId,
         action: "EXTERNAL_DISCLOSURE",

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getGuestId } from "@/lib/auth/session";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
 import { isOpenAiConfigured } from "@/lib/ai/openai";

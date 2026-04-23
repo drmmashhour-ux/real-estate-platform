@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { requireMortgageExpertWithTerms } from "@/modules/mortgage/services/expert-guard";
 
 export const dynamic = "force-dynamic";

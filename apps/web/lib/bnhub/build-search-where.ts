@@ -1,4 +1,5 @@
 import type { Prisma } from "@prisma/client";
+import { prismaUserHasValidBrokerInsurance } from "@/modules/compliance/insurance/insurance.service";
 import { getShortTermCityOrFromParam } from "@/lib/geo/city-search";
 import {
   normalizeAnyPublicListingCode,
@@ -76,18 +77,7 @@ export function buildPublishedListingSearchWhere(params: BuildSearchWhereInput):
   if (params.verifiedOnly) where.verificationStatus = "VERIFIED";
 
   if (params.insuredOnly) {
-    const now = new Date();
-    const MIN_COVERAGE_THRESHOLD = 1000000;
-    where.owner = {
-      brokerInsurance: {
-        some: {
-          status: "ACTIVE",
-          startDate: { lte: now },
-          endDate: { gte: now },
-          coveragePerLoss: { gte: MIN_COVERAGE_THRESHOLD },
-        },
-      },
-    };
+    where.owner = prismaUserHasValidBrokerInsurance(new Date());
   }
   if (params.propertyType?.trim()) {
     where.propertyType = { equals: params.propertyType.trim(), mode: "insensitive" };

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { AdminValuationClient } from "./admin-valuation-client";
 
 export const dynamic = "force-dynamic";

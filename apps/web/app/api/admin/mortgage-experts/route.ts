@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
 import type { Prisma } from "@prisma/client";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getMortgagePlanDefaults } from "@/modules/mortgage/services/subscription-plans";
 
 export const dynamic = "force-dynamic";

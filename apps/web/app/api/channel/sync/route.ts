@@ -3,7 +3,7 @@ import {
   BnhubChannelConnectionStatus,
   BnhubChannelConnectionType,
 } from "@prisma/client";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { syncAvailability } from "@/modules/channel-manager/channel-sync.service";
 import { syncAllConnections, syncConnection } from "@/src/modules/bnhub-channel-manager";
 

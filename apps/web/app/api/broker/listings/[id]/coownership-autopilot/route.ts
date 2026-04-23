@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
 import { canAccessCrmListingCompliance } from "@/lib/compliance/crm-listing-access";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getComplianceStatus } from "@/services/compliance/coownershipCompliance.service";
 
 export const dynamic = "force-dynamic";

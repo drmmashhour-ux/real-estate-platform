@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { PlatformRole } from "@prisma/client";
 import { logError } from "@/lib/logger";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import {
   GTM_EVENT_TYPES,
   getGtmExecutionSummary,

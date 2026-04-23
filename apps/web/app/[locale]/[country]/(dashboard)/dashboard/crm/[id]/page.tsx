@@ -5,7 +5,7 @@ import { hubNavigation } from "@/lib/hub/navigation";
 import { getHubTheme } from "@/lib/hub/themes";
 import { findLeadForBrokerScope } from "@/lib/broker-crm/access";
 import { requireBrokerOrAdminPage } from "@/modules/crm/services/require-broker-page";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 export const dynamic = "force-dynamic";
 

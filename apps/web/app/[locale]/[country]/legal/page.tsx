@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { PLATFORM_CARREFOUR_NAME, PLATFORM_OPERATOR } from "@/lib/brand/platform";
 import { brokerAiFlags, legalHubFlags } from "@/config/feature-flags";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { LEGAL_PATHS, LEGAL_DOCUMENT_TYPES } from "@/lib/legal/constants";
 import { getGuestId } from "@/lib/auth/session";
 import { buildLegalHubContextFromDb } from "@/modules/legal/legal-context.service";

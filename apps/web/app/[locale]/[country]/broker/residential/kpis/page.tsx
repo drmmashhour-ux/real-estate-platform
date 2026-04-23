@@ -2,7 +2,7 @@ import { PlatformRole } from "@prisma/client";
 import { redirect } from "next/navigation";
 import { brokerOpsFlags } from "@/config/feature-flags";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getBrokerKpiBoardSnapshot } from "@/modules/broker-kpis/broker-kpi.service";
 import { BrokerKPIBoard } from "@/components/broker-kpis/BrokerKPIBoard";
 

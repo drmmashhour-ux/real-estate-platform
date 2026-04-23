@@ -3,7 +3,7 @@
  */
 
 import { NextRequest } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { evaluatePayoutEligibility, releasePayout } from "@/modules/bnhub-payments/services/payoutControlService";
 import { BnhubMpPayoutStatus } from "@prisma/client";
 

@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { requireBrokerDealAccess, requireBrokerResidentialSession } from "@/lib/broker/residential-access";
 
 export const dynamic = "force-dynamic";

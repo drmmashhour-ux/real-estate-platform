@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireDocumentAccess } from "@/app/api/legal-workflow/_auth";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { logError } from "@/lib/logger";
 import { getCaseLegalSummary } from "@/src/modules/case-command-center/application/getCaseLegalSummary";
 import { LECIPM_WORKFLOW_EVALUATE_FALLBACK } from "@/src/modules/case-command-center/application/lecipmTrustCopy";

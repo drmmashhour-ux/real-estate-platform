@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { requireSellerOrAdminForListing } from "@/app/api/seller-declaration-ai/_auth";
 import { saveDeclarationDraft } from "@/src/modules/seller-declaration-ai/application/saveDeclarationDraft";
 

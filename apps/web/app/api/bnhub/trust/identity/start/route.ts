@@ -3,7 +3,7 @@
  */
 
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { startIdentityVerification } from "@/modules/bnhub-trust/services/identityVerificationService";
 import { BnhubTrustIdentityUserRole } from "@prisma/client";
 

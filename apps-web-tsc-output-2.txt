@@ -1,0 +1,269 @@
+.                                        |  WARN  Unsupported engine: wanted: {"node":"20.x"} (current: {"node":"v25.8.1","pnpm":"9.15.4"})
+apps/web                                 |  WARN  Unsupported engine: wanted: {"node":"20.x"} (current: {"node":"v25.8.1","pnpm":"9.15.4"})
+
+<--- Last few GCs --->
+
+[56061:0xb3c80c000]   238291 ms: Scavenge (during sweeping) 8175.5 (8198.8) -> 8174.4 (8199.3) MB, pooled: 0.0 MB, 13.42 / 0.00 ms (average mu = 0.270, current mu = 0.222) allocation failure; 
+[56061:0xb3c80c000]   243543 ms: Mark-Compact 8178.3 (8201.5) -> 8171.7 (8201.5) MB, pooled: 0.0 MB, 5241.05 / 0.00 ms (average mu = 0.162, current mu = 0.017) allocation failure; scavenge might not succeed
+
+FATAL ERROR: Ineffective mark-compacts near heap limit Allocation failed - JavaScript heap out of memory
+----- Native stack trace -----
+
+ 1: 0x1072b67ec node::OOMErrorHandler(char const*, v8::OOMDetails const&) [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]
+ 2: 0x1075ceb4c v8::Utils::ReportOOMFailure(v8::internal::Isolate*, char const*, v8::OOMDetails const&) [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]
+ 3: 0x1075ceb04 v8::internal::V8::FatalProcessOutOfMemory(v8::internal::Isolate*, char const*, v8::OOMDetails const&) [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]
+ 4: 0x10777ad90 v8::internal::Heap::ShouldOptimizeForLoadTime() const [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]
+ 5: 0x10777d31c v8::internal::Heap::OldGenerationConsumedBytes() const [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]
+ 6: 0x10777d1c4 v8::internal::Heap::RecomputeLimits(v8::internal::GarbageCollector, v8::base::TimeTicks) [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]
+ 7: 0x10778ac64 v8::internal::Heap::CollectGarbage(v8::internal::AllocationSpace, v8::internal::GarbageCollectionReason, v8::GCCallbackFlags, v8::internal::PerformHeapLimitCheck)::$_1::operator()() const [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]
+ 8: 0x10778a908 void heap::base::Stack::SetMarkerAndCallbackImpl<v8::internal::Heap::CollectGarbage(v8::internal::AllocationSpace, v8::internal::GarbageCollectionReason, v8::GCCallbackFlags, v8::internal::PerformHeapLimitCheck)::$_1>(heap::base::Stack*, void*, void const*) [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]
+ 9: 0x107da0070 PushAllRegistersAndIterateStack [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]
+10: 0x107779510 v8::internal::Heap::CollectGarbage(v8::internal::AllocationSpace, v8::internal::GarbageCollectionReason, v8::GCCallbackFlags, v8::internal::PerformHeapLimitCheck) [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]
+11: 0x107771b20 std::__1::invoke_result<v8::internal::HeapAllocator::AllocateRawWithRetryOrFailSlowPath(int, v8::internal::AllocationType, v8::internal::AllocationOrigin, v8::internal::AllocationAlignment, v8::internal::AllocationHint)::$_0&>::type v8::internal::HeapAllocator::CollectGarbageAndRetryAllocation<v8::internal::HeapAllocator::AllocateRawWithRetryOrFailSlowPath(int, v8::internal::AllocationType, v8::internal::AllocationOrigin, v8::internal::AllocationAlignment, v8::internal::AllocationHint)::$_0&>(v8::internal::HeapAllocator::AllocateRawWithRetryOrFailSlowPath(int, v8::internal::AllocationType, v8::internal::AllocationOrigin, v8::internal::AllocationAlignment, v8::internal::AllocationHint)::$_0&, v8::internal::AllocationType) [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]
+12: 0x10777098c v8::internal::HeapAllocator::AllocateRawWithRetryOrFailSlowPath(int, v8::internal::AllocationType, v8::internal::AllocationOrigin, v8::internal::AllocationAlignment, v8::internal::AllocationHint) [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]
+13: 0x107758dd8 v8::internal::Factory::NewFillerObject(int, v8::internal::AllocationAlignment, v8::internal::AllocationType, v8::internal::AllocationOrigin) [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]
+14: 0x107a643f4 v8::internal::Runtime_AllocateInYoungGeneration(int, unsigned long*, v8::internal::Isolate*) [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]
+15: 0x1070d1474 Builtins_CEntry_Return1_ArgvOnStack_NoBuiltinExit [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]
+16: 0x12d5b7724 
+17: 0x12d5bbe5c 
+18: 0x12d727650 
+19: 0x12cfc1828 
+20: 0x12d858494 
+21: 0x12cfc20a8 
+22: 0x12d858494 
+23: 0x12d8a1f30 
+24: 0x12d58e160 
+25: 0x12d7ec458 
+26: 0x12d30f8d4 
+27: 0x12d5bdf94 
+28: 0x12d849b24 
+29: 0x12d7ba3e4 
+30: 0x12d73a784 
+31: 0x12d797374 
+32: 0x12d7b1420 
+33: 0x12d739a14 
+34: 0x12d797374 
+35: 0x12d73cad4 
+36: 0x12d6a86c8 
+37: 0x12d851f44 
+38: 0x12d629120 
+39: 0x12d48bb98 
+40: 0x12d88f0d0 
+41: 0x12d58c474 
+42: 0x12d2cc170 
+43: 0x12d853ad0 
+44: 0x12d48c5c4 
+45: 0x12d88f0d0 
+46: 0x12d58c474 
+47: 0x12d2cc170 
+48: 0x12d853ad0 
+49: 0x12d7aa508 
+50: 0x12d894d78 
+51: 0x12d58c474 
+52: 0x12d2cc170 
+53: 0x12d853ad0 
+54: 0x12d4e88a8 
+55: 0x12d871180 
+56: 0x12d8a4398 
+57: 0x12d89504c 
+58: 0x12d58c474 
+59: 0x12d2cc170 
+60: 0x12d853ad0 
+61: 0x12cee1ba8 
+62: 0x12d54a4d8 
+63: 0x12d894f30 
+64: 0x12d58c474 
+65: 0x12d2cc170 
+66: 0x12d853ad0 
+67: 0x12d4e88a8 
+68: 0x12d871180 
+69: 0x12d8a4398 
+70: 0x12d89504c 
+71: 0x12d58c474 
+72: 0x12d2cc170 
+73: 0x12d853ad0 
+74: 0x12cee1ba8 
+75: 0x12d54a4d8 
+76: 0x12d894f30 
+77: 0x12d58c474 
+78: 0x12d2cc170 
+79: 0x12d853ad0 
+80: 0x12d4e88a8 
+81: 0x12d871180 
+82: 0x12d8a4398 
+83: 0x12d89504c 
+84: 0x12d58c474 
+85: 0x12d2cc170 
+86: 0x12d853ad0 
+87: 0x12cee1ba8 
+88: 0x12d54a4d8 
+89: 0x12d894f30 
+90: 0x12d58c474 
+91: 0x12d2cc170 
+92: 0x12d853ad0 
+93: 0x12d5b7288 
+94: 0x12d5bbeb8 
+95: 0x12d614bdc 
+96: 0x12d05b3e0 
+97: 0x12d894c54 
+98: 0x12d58c474 
+99: 0x12d2cc170 
+100: 0x12d853ad0 
+101: 0x12d4e88a8 
+102: 0x12d871180 
+103: 0x12d8a4398 
+104: 0x12d89504c 
+105: 0x12d58c474 
+106: 0x12d2cc170 
+107: 0x12d853ad0 
+108: 0x12cee1ba8 
+109: 0x12d54a4d8 
+110: 0x12d894f30 
+111: 0x12d58c474 
+112: 0x12d2cc170 
+113: 0x12d853ad0 
+114: 0x12d5b7288 
+115: 0x12d5bbeb8 
+116: 0x12d614b10 
+117: 0x12d05b3e0 
+118: 0x12d894c54 
+119: 0x12d58c474 
+120: 0x12d2cc170 
+121: 0x12d853ad0 
+122: 0x12cee1ba8 
+123: 0x12d7d8414 
+124: 0x12cef0d94 
+125: 0x12d6d60f0 
+126: 0x12d6211c4 
+127: 0x12cf28c54 
+128: 0x12d5b7288 
+129: 0x12d2b742c 
+130: 0x12d6f4904 
+131: 0x12cf21bcc 
+132: 0x12d6aca4c 
+133: 0x1070315ec Builtins_InterpreterEntryTrampoline [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]
+134: 0x1070315ec Builtins_InterpreterEntryTrampoline [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]
+135: 0x12d3b7afc 
+136: 0x12d3b4b64 
+137: 0x1070315ec Builtins_InterpreterEntryTrampoline [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]
+138: 0x12d56def8 
+139: 0x12d2930c4 
+140: 0x12d57083c 
+141: 0x12d248608 
+142: 0x12d5cffc4 
+143: 0x12d254e40 
+144: 0x12d1ceec0 
+145: 0x12d3ff5b8 
+146: 0x12cecd640 
+147: 0x12d3ff5c0 
+148: 0x12cefadac 
+149: 0x12d3f17bc 
+150: 0x12d56debc 
+151: 0x12d2930c4 
+152: 0x12d15c6f8 
+153: 0x12d1cd480 
+154: 0x12d56dee0 
+155: 0x12d2930c4 
+156: 0x12d15c6f8 
+157: 0x12d1cd480 
+158: 0x12d56dee0 
+159: 0x12d2930c4 
+160: 0x12d15c6f8 
+161: 0x12d44b60c 
+162: 0x12d44b390 
+163: 0x12d2484fc 
+164: 0x12d5cffc4 
+165: 0x12d254e40 
+166: 0x12d1ceec0 
+167: 0x12d3ff5b8 
+168: 0x12cefadac 
+169: 0x12d3f17bc 
+170: 0x12d56debc 
+171: 0x12d2930c4 
+172: 0x12d15c6f8 
+173: 0x12d1cd480 
+174: 0x12d56dee0 
+175: 0x12d2930c4 
+176: 0x12d3d4ce0 
+177: 0x12d2d7f2c 
+178: 0x12d3d5ae0 
+179: 0x12d3d5f74 
+180: 0x12d56dee8 
+181: 0x12d2930c4 
+182: 0x12d15c6f8 
+183: 0x12d1cd480 
+184: 0x12d56dee0 
+185: 0x12d2930c4 
+186: 0x12d15c6f8 
+187: 0x12d44b60c 
+188: 0x12d2484fc 
+189: 0x12d5cffc4 
+190: 0x12d254e40 
+191: 0x12d1ceec0 
+192: 0x12d3ff5b8 
+193: 0x12cefadac 
+194: 0x12d3f17bc 
+195: 0x12d56debc 
+196: 0x12d2930c4 
+197: 0x1070315ec Builtins_InterpreterEntryTrampoline [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]
+198: 0x12d56ded8 
+199: 0x12d560110 
+200: 0x12d57083c 
+201: 0x12d3cab60 
+202: 0x12d1ee54c 
+203: 0x12d461780 
+204: 0x12cf671ec 
+205: 0x12d1e59cc 
+206: 0x12d1ee5ec 
+207: 0x12d0c4b9c 
+208: 0x12d1fcf2c 
+209: 0x12d1e59cc 
+210: 0x12d1ee5ec 
+211: 0x12d461780 
+212: 0x12cf671ec 
+213: 0x12d1e59cc 
+214: 0x12d1ee5ec 
+215: 0x12d5719fc 
+216: 0x12cf43f38 
+217: 0x12d5cc238 
+218: 0x12d54e9bc 
+219: 0x12d4df33c 
+220: 0x12d0fab50 
+221: 0x12d5775b8 
+222: 0x12d51afa8 
+223: 0x12d242b18 
+224: 0x12d5635b4 
+225: 0x12d2534b0 
+226: 0x12d302b34 
+227: 0x12d3e4bb0 
+228: 0x12d5775b4 
+229: 0x12d51afa8 
+230: 0x12d242b18 
+231: 0x12d5635b4 
+232: 0x12d52de18 
+233: 0x12d52cee4 
+234: 0x12cedd4dc 
+235: 0x12d1c0db8 
+236: 0x12d36021c 
+237: 0x12d3c3d70 
+238: 0x12d0e6f94 
+239: 0x12d263454 
+240: 0x12d1d9044 
+241: 0x12d263df4 
+242: 0x12d5c7bb0 
+243: 0x12d263b3c 
+244: 0x12d36041c 
+245: 0x12d410494 
+246: 0x1070315ec Builtins_InterpreterEntryTrampoline [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]
+247: 0x1070315ec Builtins_InterpreterEntryTrampoline [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]
+248: 0x1070315ec Builtins_InterpreterEntryTrampoline [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]
+249: 0x1070315ec Builtins_InterpreterEntryTrampoline [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]
+250: 0x1070315ec Builtins_InterpreterEntryTrampoline [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]
+251: 0x1070315ec Builtins_InterpreterEntryTrampoline [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]
+252: 0x1070315ec Builtins_InterpreterEntryTrampoline [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]
+253: 0x1070315ec Builtins_InterpreterEntryTrampoline [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]
+254: 0x1070315ec Builtins_InterpreterEntryTrampoline [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]
+255: 0x1070315ec Builtins_InterpreterEntryTrampoline [/opt/homebrew/Cellar/node/25.8.1_1/lib/libnode.141.dylib]
+undefined
+/Users/mohamedalmashhour/real-estate-platform/apps/web:
+ ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL  Command was killed with SIGABRT (Aborted): tsc --noEmit

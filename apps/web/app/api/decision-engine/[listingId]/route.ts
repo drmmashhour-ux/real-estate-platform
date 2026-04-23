@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { assertListingOwnerOrAdmin } from "@/lib/decision-engine/assertListingOwnerOrAdmin";
 import { runDecisionEngine } from "@/modules/decision-engine/application/runDecisionEngine";
 import { isDealAnalyzerEnabled } from "@/modules/deal-analyzer/config";

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { Prisma } from "@prisma/client";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { DemoEvents } from "@/lib/demo-event-types";
 import { trackDemoEvent } from "@/lib/demo-analytics";
 import { canDeleteBrokerClient, canViewBrokerClient } from "@/modules/crm/services/broker-crm-permissions";

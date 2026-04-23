@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GET as bnhubDashboardGet } from "../../dashboard/route";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { bnhubV2Flags } from "@/config/feature-flags";
 
 export const dynamic = "force-dynamic";

@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { getGuestId } from "@/lib/auth/session";
 import { canAccessCrmListingCompliance } from "@/lib/compliance/crm-listing-access";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { ListingEditClient } from "./listing-edit-client";
 
 export const dynamic = "force-dynamic";

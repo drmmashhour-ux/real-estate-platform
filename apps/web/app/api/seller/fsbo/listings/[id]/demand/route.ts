@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { suggestHostPrice } from "@/lib/listings/listing-demand-engine";
 import { refreshFsboListingAnalytics } from "@/lib/listings/listing-analytics-service";
 

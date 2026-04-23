@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { isAiOperatorEnabled, callAiOperator } from "@/lib/ai-operator-client";
 
 export const dynamic = "force-dynamic";

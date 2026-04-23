@@ -1,7 +1,7 @@
 import type { ComplianceEscalationTargetRole, ComplianceEscalationType } from "@prisma/client";
 import { complianceAdminFlags } from "@/config/feature-flags";
 import { requireAdminSession } from "@/lib/admin/require-admin";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { createEscalation, resolveEscalation } from "@/modules/compliance-ops/escalation-engine.service";
 
 export const dynamic = "force-dynamic";

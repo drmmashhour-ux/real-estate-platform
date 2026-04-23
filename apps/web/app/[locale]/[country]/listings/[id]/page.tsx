@@ -48,7 +48,7 @@ import {
   incrementCrmListingView,
 } from "@/lib/listings/listing-analytics-service";
 import { buildPropertyConversionSurface } from "@/modules/conversion/property-conversion-surface";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { isBrokerInsuranceValid, getBrokerInsuranceStatus } from "@/modules/compliance/insurance/insurance.service";
 import { loadFsboListingScore } from "@/modules/listing-ranking/fsbo-score-loader";
 import { ListingRankingBadges } from "@/components/listings/ListingRankingBadges";

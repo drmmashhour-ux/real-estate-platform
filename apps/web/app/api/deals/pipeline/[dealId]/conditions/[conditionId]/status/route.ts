@@ -4,7 +4,7 @@ import { logInfo } from "@/lib/logger";
 import { setConditionStatus } from "@/modules/deals/deal-conditions.service";
 import { userCanMutatePipelineDeal, userCanWaiveCriticalCondition } from "@/modules/deals/deal-access";
 import type { ConditionStatus } from "@/modules/deals/deal.types";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 export const dynamic = "force-dynamic";
 

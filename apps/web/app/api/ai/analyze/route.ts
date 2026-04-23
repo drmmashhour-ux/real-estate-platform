@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { analyzeListingWithAiCore } from "@/modules/ai-core/application/listingAnalysisAI";
 
 export const dynamic = "force-dynamic";

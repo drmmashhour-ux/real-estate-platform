@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { VERIFICATION_TYPES, VERIFICATION_STATUSES } from "@/lib/property-identity/constants";
 import { updatePropertyIdentityVerificationScore } from "@/lib/property-identity/verification-score";
 import { recordEvent } from "@/lib/property-identity/events";

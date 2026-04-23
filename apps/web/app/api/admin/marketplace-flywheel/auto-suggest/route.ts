@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { marketplaceFlywheelFlags } from "@/config/feature-flags";
 import { analyzeMarketplaceGrowth, prioritizeFlywheelInsights } from "@/modules/marketplace/flywheel.service";
 import { summarizeFlywheelLearning } from "@/modules/growth/flywheel-learning.service";

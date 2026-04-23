@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdminSession } from "@/lib/admin/require-admin";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { buildFirst100UsersPlan, generateDailyLaunchActions } from "@/modules/launch";
 import { getRetargetingSnapshot } from "@/modules/experiments/retargeting-audience.service";
 import { startOfUtcDay } from "@/modules/analytics/services/get-platform-stats";

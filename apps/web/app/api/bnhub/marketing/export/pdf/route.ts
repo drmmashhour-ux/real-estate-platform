@@ -2,7 +2,7 @@ import * as React from "react";
 import { NextRequest } from "next/server";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import {
   assertListingMarketingAccess,
   MarketingAuthError,

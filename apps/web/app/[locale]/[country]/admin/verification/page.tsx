@@ -3,7 +3,7 @@ import { LecipmControlShell } from "@/components/admin/LecipmControlShell";
 import { VerificationRequestActions } from "@/components/admin/VerificationRequestActions";
 import { getAdminRiskAlerts } from "@/lib/admin/control-center";
 import { requireAdminControlUserId } from "@/lib/admin/guard";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;

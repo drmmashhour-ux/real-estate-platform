@@ -3,7 +3,7 @@ import { getGuestId } from "@/lib/auth/session";
 import { isDealAnalyzerEnabled, isDealAnalyzerRepricingTriggersEnabled } from "@/modules/deal-analyzer/config";
 import { assertFsboListingAccessibleForPhase3 } from "@/lib/deal-analyzer/phase3ListingAccess";
 import { runSellerRepricingReview } from "@/modules/deal-analyzer/application/runSellerRepricingReview";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { mapRepricingReviewRow } from "@/modules/deal-analyzer/infrastructure/mappers/phase4DtoMappers";
 
 export const dynamic = "force-dynamic";

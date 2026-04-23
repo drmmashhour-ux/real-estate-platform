@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { effectiveListingSafety } from "@/lib/mobile/safetyPublic";
 
 export const dynamic = "force-dynamic";

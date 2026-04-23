@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { createBrokerManualCentrisLead } from "@/modules/centris-conversion/centris-broker-intake.service";
 import { PlatformRole } from "@prisma/client";
 

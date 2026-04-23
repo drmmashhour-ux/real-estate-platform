@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { DEAL_LEGAL_ACTIONS, recordDealLegalAction, getDealLegalTimeline, type DealLegalAction } from "@/lib/deals/legal-timeline";
 
 export const dynamic = "force-dynamic";

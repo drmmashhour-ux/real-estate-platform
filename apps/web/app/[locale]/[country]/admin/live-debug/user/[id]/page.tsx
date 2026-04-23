@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { isLiveDebugDashboardEnabled } from "@/src/modules/analytics/liveDebugGate";
 
 export const dynamic = "force-dynamic";

@@ -1,6 +1,8 @@
 import { LeadContactOrigin } from "@prisma/client";
 
+import { engineFlags } from "@/config/feature-flags";
 import { prisma } from "@/lib/db";
+import { triggerAiSalesAgent } from "@/modules/ai-sales-agent/ai-sales-orchestrator.service";
 import { isFsboPubliclyVisible } from "@/lib/fsbo/constants";
 
 import { logFunnel, logLead } from "./centris-funnel.log";
@@ -82,6 +84,17 @@ export async function createBrokerManualCentrisLead(params: {
 
       logFunnel("centris_broker_manual_fsbo", { leadId: lead.id, listingId: fsbo.id });
       logLead("broker_manual_created", { leadId: lead.id });
+
+      if (engineFlags.aiSalesAgentV1) {
+        void triggerAiSalesAgent({
+          leadId: lead.id,
+          trigger: "broker_manual_centris",
+          consentMarketing: false,
+          consentPrivacy: params.brokerAttestsConsent,
+          listingTitle: fsbo.title,
+        });
+      }
+
       return { ok: true, leadId: lead.id };
     }
 
@@ -130,6 +143,17 @@ export async function createBrokerManualCentrisLead(params: {
 
       logFunnel("centris_broker_manual_crm", { leadId: lead.id, listingId: crm.id });
       logLead("broker_manual_created", { leadId: lead.id });
+
+      if (engineFlags.aiSalesAgentV1) {
+        void triggerAiSalesAgent({
+          leadId: lead.id,
+          trigger: "broker_manual_centris",
+          consentMarketing: false,
+          consentPrivacy: params.brokerAttestsConsent,
+          listingTitle: crm.title,
+        });
+      }
+
       return { ok: true, leadId: lead.id };
     }
 

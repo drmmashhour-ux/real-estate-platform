@@ -4,7 +4,7 @@ import {
   getOwnerVerificationStatus,
   getPropertyVerificationStatus,
 } from "@/lib/bnhub/mandatory-verification";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 /**
  * GET /api/bnhub/verification/status?userId=... | ?listingId=...

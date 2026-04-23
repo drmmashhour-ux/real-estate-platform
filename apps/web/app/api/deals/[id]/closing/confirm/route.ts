@@ -1,6 +1,6 @@
 import { authenticateBrokerDealRoute } from "@/lib/deals/broker-draft-auth";
 import { requireClosingPipelineV1 } from "@/lib/deals/pipeline-feature-guard";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { canMutateExecution } from "@/lib/deals/execution-access";
 import { confirmDealClosing } from "@/modules/closing/closing.service";
 

@@ -2,7 +2,7 @@ import React from "react";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { PlatformInvoiceStatus } from "@prisma/client";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { PlatformInvoicePdfDocument } from "@/lib/pdf/platform-invoice-pdf";
 
 export const dynamic = "force-dynamic";

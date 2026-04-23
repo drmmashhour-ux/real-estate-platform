@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { BROKER_PROSPECT_STATUSES } from "@/modules/growth/broker-prospect.service";
 import { requireGrowthMachineActor } from "@/modules/growth-machine/growth-api-context";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 export const dynamic = "force-dynamic";
 

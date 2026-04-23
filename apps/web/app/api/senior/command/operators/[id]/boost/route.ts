@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { logSeniorCommand } from "@/lib/senior-command/log";
 import { canOps, seniorCommandAuth } from "@/lib/senior-command/api-auth";
 

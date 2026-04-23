@@ -2,7 +2,7 @@ import Link from "next/link";
 import { subDays } from "date-fns";
 import { getListingsByOwner } from "@/lib/bnhub/listings";
 import { getBookingsForHost } from "@/lib/bnhub/booking";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getGuestId } from "@/lib/auth/session";
 import { updateHostPerformance } from "@/src/modules/reviews/aggregationService";
 import { HostDashboardClient } from "./host-dashboard-client";

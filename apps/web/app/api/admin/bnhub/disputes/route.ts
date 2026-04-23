@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { getUserRole, isHubAdminRole } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 /**
  * GET /api/admin/bnhub/disputes — marketplace disputes (guest/host complaints).

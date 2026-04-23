@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { aiAutopilotMessagingAssistFlags, brokerAiAssistFlags, brokerClosingFlags } from "@/config/feature-flags";
 import { canBrokerOrAdminAccessLead } from "@/lib/leads/can-access-lead";
 import { buildLeadClosingStateFromLeadRecord } from "@/modules/broker/closing/broker-closing-state.service";

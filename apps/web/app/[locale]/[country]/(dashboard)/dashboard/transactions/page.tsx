@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { listTransactions } from "@/modules/transactions/transaction.service";
 import { toTransactionWire } from "@/modules/transactions/transaction.types";
 

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { sendFormSignatureRequestToClient } from "@/lib/email/notifications";
 import { formatFormActivityNote } from "@/lib/forms/form-activity";
 

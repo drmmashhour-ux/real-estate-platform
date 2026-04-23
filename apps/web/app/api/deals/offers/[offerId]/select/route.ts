@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { logError } from "@/lib/logger";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { canManageCapital } from "@/modules/capital/capital-policy";
 import { selectOffer } from "@/modules/capital/lender-offer.service";
 import { canAccessPipelineDeal, requireAuthUser } from "@/lib/deals/guard-pipeline-deal";

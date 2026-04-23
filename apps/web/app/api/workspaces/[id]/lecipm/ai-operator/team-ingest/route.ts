@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { LecipmWorkspaceRole } from "@prisma/client";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { requireWorkspacePermission } from "@/modules/enterprise/infrastructure/requireWorkspacePermission";
 import { workspaceDealWhere } from "@/modules/enterprise/domain/workspaceDataScope";
 import { generateActions } from "@/src/modules/ai-operator/application/generateActions";

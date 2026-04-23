@@ -1,7 +1,7 @@
 import type { GrowthOpsManualAdSpend } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminSession } from "@/lib/admin/require-admin";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { listGrowthOpsManualSpendRows } from "@/modules/ads/growth-ops-manual-spend.service";
 
 export const dynamic = "force-dynamic";

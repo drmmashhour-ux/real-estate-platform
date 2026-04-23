@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 /** POST /api/admin/host/applications/:id/approve – Approve host application. Sets user.role = HOST, accountStatus = ACTIVE. */
 export async function POST(

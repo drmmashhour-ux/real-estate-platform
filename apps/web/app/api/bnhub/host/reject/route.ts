@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { getUserRole, isHubAdminRole } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 export async function POST(request: NextRequest) {
   const role = await getUserRole();

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { updateLeadOutreachStage } from "@/src/modules/daily-execution/application/dailyMetricsService";
 import { isOutreachCoachingStage, type OutreachCoachingStage } from "@/src/modules/daily-execution/domain/outreachStages";
 

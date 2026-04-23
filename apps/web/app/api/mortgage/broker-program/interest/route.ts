@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
 import { brokerPlatformPlanBySlug, type BrokerPlatformPlanSlug } from "@/modules/mortgage/services/broker-platform-plans";
 

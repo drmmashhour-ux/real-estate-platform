@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { listPortfoliosForOwner } from "@/modules/portfolio/portfolio.service";
 import { PortfolioDashboardClient } from "@/components/portfolio/portfolio-dashboard-client";
 import { PortfolioOsCreateForm } from "./portfolio-os-client";

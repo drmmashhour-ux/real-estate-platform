@@ -19,7 +19,7 @@ import {
 import { getCityInsights, getWhyInvestContent } from "@/lib/city-insights";
 import { searchListingsPaginated } from "@/lib/bnhub/listings";
 import { getStaysRecommendedInCity } from "@/lib/recommendations";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { buildFsboPublicVisibilityWhere } from "@/lib/fsbo/listing-expiry";
 import { isCitySearchPageEnabled } from "@/modules/multi-city/cityRolloutGate";
 import { FsboCompareButton } from "@/components/compare/FsboCompareButton";

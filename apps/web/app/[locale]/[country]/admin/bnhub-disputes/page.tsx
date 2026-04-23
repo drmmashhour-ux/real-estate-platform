@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { HubLayout } from "@/components/hub/HubLayout";
 import { getGuestId, getUserRole, isHubAdminRole } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { hubNavigation } from "@/lib/hub/navigation";
 
 export const dynamic = "force-dynamic";

@@ -7,7 +7,7 @@ import { AdminFormRefillBar } from "./AdminFormRefillBar";
 import { AdminFormSubmissionView } from "../AdminFormSubmissionView";
 import { getAllFeatureFlags, getActiveControls, getControlAuditLog } from "@/lib/operational-controls";
 import { ensureDefaultPolicies, getAllPolicyRules, getPolicyDecisionLog } from "@/lib/policy-engine";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 export const dynamic = "force-dynamic";
 

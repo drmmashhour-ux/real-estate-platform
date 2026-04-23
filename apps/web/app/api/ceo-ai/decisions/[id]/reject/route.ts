@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { PlatformRole } from "@prisma/client";
 import { rejectCeoDecision } from "@/modules/ceo-ai/ceo-ai.service";
 

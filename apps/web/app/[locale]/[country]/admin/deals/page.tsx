@@ -2,7 +2,7 @@ import Link from "next/link";
 import { AdminDealsKanban, DealInsightsStrip, type KanbanDeal } from "@/components/admin/AdminDealsKanban";
 import { LecipmControlShell } from "@/components/admin/LecipmControlShell";
 import { getAdminRiskAlerts } from "@/lib/admin/control-center";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getDealLegalTimeline } from "@/lib/deals/legal-timeline";
 import { requireAdminControlUserId } from "@/lib/admin/guard";
 

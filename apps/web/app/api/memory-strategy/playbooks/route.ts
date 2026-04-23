@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { MemoryDomain } from "@prisma/client";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { authorizePlaybookMemoryApi } from "@/modules/playbook-memory/api/playbook-memory-authorize";
 
 export const dynamic = "force-dynamic";

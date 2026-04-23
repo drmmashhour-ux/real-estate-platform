@@ -32,7 +32,7 @@ export class ConfidentialityIncidentService {
     });
 
     // Audit log
-    await prisma.privacyAuditLog.create({
+    await prisma.auditLog.create({
       data: {
         userId: args.reportedBy,
         action: "INCIDENT_REGISTERED",

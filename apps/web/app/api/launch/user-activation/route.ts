@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { lecipmLaunchInvestorFlags } from "@/config/feature-flags";
 import { requirePlatformLaunchInvestor } from "@/lib/launch-investor-api-auth";
 import { logGrowthEngineAudit } from "@/modules/growth-engine-audit/growth-engine-audit.service";

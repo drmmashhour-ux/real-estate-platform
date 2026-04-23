@@ -3,7 +3,7 @@ import Link from "next/link";
 import { getGuestId, getUserRole, isHubAdminRole } from "@/lib/auth/session";
 import { HubLayout } from "@/components/hub/HubLayout";
 import { ListingStatus } from "@prisma/client";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { hubNavigation } from "@/lib/hub/navigation";
 import { ContentTrafficFlywheelStrip } from "@/components/admin/ContentTrafficFlywheelStrip";
 import { ListingTrafficFunnelStrip } from "@/components/admin/ListingTrafficFunnelStrip";

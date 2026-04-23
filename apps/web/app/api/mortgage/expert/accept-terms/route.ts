@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { recordPlatformEvent } from "@/lib/observability";
 import { requireMortgageExpertSession } from "@/modules/mortgage/services/expert-guard";
 

@@ -7,7 +7,7 @@ import {
   verifyDocument,
 } from "@/modules/closing/closing-document.service";
 import { canManageClosing } from "@/modules/closing/closing-policy";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { canAccessPipelineDeal, requireAuthUser } from "@/lib/deals/guard-pipeline-deal";
 import { getDealById } from "@/modules/deals/deal.service";
 

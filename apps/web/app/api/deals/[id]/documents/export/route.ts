@@ -3,7 +3,7 @@ import { getGuestId } from "@/lib/auth/session";
 import { logDealExecutionEvent } from "@/lib/deals/execution-events";
 import { canMutateExecution, loadDealWithActor } from "@/lib/deals/execution-access";
 import { dealExecutionFlags } from "@/config/feature-flags";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { exportFilename, serializeDraftBundleJson } from "@/modules/form-rendering/export.service";
 import { renderDealDraftBundle } from "@/modules/form-rendering/render.service";
 import { loadDocumentsForBundle } from "@/modules/form-rendering/document-bundle.service";

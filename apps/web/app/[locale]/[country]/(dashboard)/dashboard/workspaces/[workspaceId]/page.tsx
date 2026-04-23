@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
 import { requireWorkspacePermission } from "@/modules/enterprise/infrastructure/requireWorkspacePermission";
 import { roleHasPermission } from "@/modules/enterprise/domain/workspacePermissions";

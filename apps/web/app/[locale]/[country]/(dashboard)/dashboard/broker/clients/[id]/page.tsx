@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { HubLayout } from "@/components/hub/HubLayout";
 import { hubNavigation } from "@/lib/hub/navigation";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getBrokerClientDetailForPage } from "@/modules/crm/services/get-client-detail";
 import { requireBrokerOrAdminPage } from "@/modules/crm/services/require-broker-page";
 import { BrokerCrmStagingBadge } from "@/components/crm/broker-crm/BrokerCrmStagingBadge";

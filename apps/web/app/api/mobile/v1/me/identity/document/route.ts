@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { saveVerificationImage } from "@/lib/verification/document-storage";
 import { requireMobileUser } from "@/lib/mobile/mobileAuth";
 import { resolvePrismaIdentitySubjectUserId } from "@/lib/mobile/resolvePrismaIdentitySubjectUserId";

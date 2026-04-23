@@ -2,7 +2,7 @@ import { TenantMembershipStatus, TenantRole } from "@prisma/client";
 
 import TenantBrandSettingsClient from "@/components/tenant/TenantBrandSettingsClient";
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 export const dynamic = "force-dynamic";
 

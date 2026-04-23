@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { requireBrokerDealAccess, requireBrokerResidentialSession } from "@/lib/broker/residential-access";
 import { logDealExecutionEvent } from "@/lib/deals/execution-events";
 import { buildPackagePrefill } from "@/modules/form-mapping/package-prefill.service";

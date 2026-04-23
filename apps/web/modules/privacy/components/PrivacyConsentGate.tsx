@@ -1,14 +1,12 @@
 "use client";
 
 import React, { useState } from "react";
-import { PrivacyPurpose } from "@prisma/client";
-
 interface PrivacyConsentGateProps {
   userId: string;
   transactionId?: string;
   onSuccess: () => void;
   title?: string;
-  purpose?: PrivacyPurpose;
+  purpose?: string;
 }
 
 export const PrivacyConsentGate: React.FC<PrivacyConsentGateProps> = ({

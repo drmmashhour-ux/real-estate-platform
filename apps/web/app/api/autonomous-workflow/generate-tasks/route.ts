@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { captureServerEvent } from "@/lib/analytics/posthog-server";
 import { requireDocumentAccess } from "@/app/api/legal-workflow/_auth";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { generateAutonomousTasks } from "@/src/modules/autonomous-workflow-assistant/application/generateAutonomousTasks";
 import { getLegalGraphSummary } from "@/src/modules/legal-intelligence-graph/application/getLegalGraphSummary";
 

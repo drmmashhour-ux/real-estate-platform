@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PlatformRole } from "@prisma/client";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { createPolicyVersion, listActivePolicies } from "@/modules/autonomy/policy-store.service";
 import type { AutonomyMode, AutonomyRiskLevel, PolicyScopeType } from "@/modules/autonomy/autonomy.types";
 

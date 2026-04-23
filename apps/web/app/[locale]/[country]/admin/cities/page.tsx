@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { requireAdminUser } from "@/modules/analytics/services/require-admin";
 import { getCitySupplyDemandSnapshot } from "@/modules/multi-city/cityMetrics";
 import { rankCitiesByOpportunity, suggestNextExpansionSlug } from "@/modules/multi-city/expansionEngine";

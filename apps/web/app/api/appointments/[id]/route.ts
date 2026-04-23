@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { canViewAppointment } from "@/modules/scheduling/services/appointment-permissions";
 import type { AppointmentViewer } from "@/modules/scheduling/services/appointment-permissions";
 

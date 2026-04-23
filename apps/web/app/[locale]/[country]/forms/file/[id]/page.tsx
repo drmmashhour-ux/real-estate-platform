@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { PrintPageButton } from "@/components/ui/PrintPageButton";
 import { ClientSignatureActions } from "./client-signature-actions";
 

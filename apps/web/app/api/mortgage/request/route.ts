@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getGuestId } from "@/lib/auth/session";
 import { notifyPrimaryBrokerNewMortgageLead } from "@/modules/mortgage/services/notify-primary-broker-lead";
 import { assignMortgageBrokerForLead } from "@/modules/mortgage/services/lead-distribution";

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { LecipmBrandLockup } from "@/components/brand/LecipmBrandLockup";
 import { redirect } from "next/navigation";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { isMortgageExpertRole } from "@/lib/marketplace/mortgage-role";
 import { mortgagePlanTierRank } from "@/modules/mortgage/services/subscription-plans";
 import { ExpertAlertBanner } from "./expert-alert-banner";

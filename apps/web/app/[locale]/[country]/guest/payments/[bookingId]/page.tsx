@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Lock } from "lucide-react";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getGuestPaymentSummary } from "@/modules/bnhub-payments/services/paymentService";
 import { getRefundSummary } from "@/modules/bnhub-payments/services/refundService";
 

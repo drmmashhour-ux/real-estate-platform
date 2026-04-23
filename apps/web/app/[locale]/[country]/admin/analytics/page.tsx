@@ -7,7 +7,7 @@ import { LecipmControlShell } from "@/components/admin/LecipmControlShell";
 import { getAdminRiskAlerts } from "@/lib/admin/control-center";
 import { requireAdminControlUserId } from "@/lib/admin/guard";
 import { getPlatformStats } from "@/modules/analytics/services/get-platform-stats";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 export const dynamic = "force-dynamic";
 

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getGuestId } from "@/lib/auth/session";
 import { aiAutopilotV1Flags } from "@/config/feature-flags";
 import { rejectAction } from "@/modules/ai-autopilot";

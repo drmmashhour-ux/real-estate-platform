@@ -1,5 +1,5 @@
 import { InsuranceLeadStatus } from "@prisma/client";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { insuranceHubScopedWhere, requireInsuranceHubAccess } from "@/lib/insurance/require-insurance-hub";
 import { transitionInsuranceLeadStatus } from "@/lib/insurance/transition-insurance-lead-status";
 

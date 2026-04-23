@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { HubLayout } from "@/components/hub/HubLayout";
 import { ManagementHubMoneyPanel } from "@/components/admin/ManagementHubMoneyPanel";
 import { getGuestId, getUserRole, isHubAdminRole } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { hubNavigation } from "@/lib/hub/navigation";
 import { getManagementHubMoneySnapshot } from "@/lib/admin/management-hub-money";
 import type { ManagementHubMoneySnapshot } from "@/lib/admin/management-hub-money";

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { Prisma } from "@prisma/client";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getGuestId } from "@/lib/auth/session";
 import type { InvestorProfileInput } from "@/lib/invest/portfolio-types";
 import { trackDemoEvent } from "@/lib/demo-analytics";

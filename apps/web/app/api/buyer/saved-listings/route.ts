@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { persistLaunchEvent } from "@/src/modules/launch/persistLaunchEvent";
 import { getGuestId } from "@/lib/auth/session";
 import { isFsboPubliclyVisible } from "@/lib/fsbo/constants";

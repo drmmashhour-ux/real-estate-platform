@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { markTuningProfileApplied } from "@/modules/model-tuning/application/applyTuningProfile";
 import { requirePlatformAdmin } from "../../../_auth";
 

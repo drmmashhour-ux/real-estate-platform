@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { createBooking } from "@/lib/bnhub/booking";
 import { isListingAvailable } from "@/lib/bnhub/listings";
 import { requireMobileUser } from "@/lib/mobile/mobileAuth";

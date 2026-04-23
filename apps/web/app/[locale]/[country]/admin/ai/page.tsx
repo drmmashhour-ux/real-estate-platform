@@ -2,7 +2,7 @@ import Link from "next/link";
 import { LecipmControlShell } from "@/components/admin/LecipmControlShell";
 import { getAdminAIStatus } from "@/lib/admin/control-center";
 import { getAdminAiOverview } from "@/lib/admin/getAdminAiOverview";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { requireAdminControlUserId } from "@/lib/admin/guard";
 
 export const dynamic = "force-dynamic";

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getAutonomyModeRecommendation } from "@/modules/autonomy/services/autonomy-mode-recommendation.service";
 
 export async function GET() {

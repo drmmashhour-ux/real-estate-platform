@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { requireMobileUser } from "@/lib/mobile/mobileAuth";
 import { fetchPublicListingCardsByIds } from "@/lib/mobile/listingMobileDto";
 

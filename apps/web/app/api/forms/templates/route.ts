@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { lecipmOaciqFlags } from "@/config/feature-flags";
 import { listFormDefinitions } from "@/modules/oaciq-mapper/form-definition.registry";
 

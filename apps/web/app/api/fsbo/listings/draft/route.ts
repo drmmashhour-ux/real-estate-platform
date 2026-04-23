@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import type { FsboListingOwnerType } from "@prisma/client";
 import { getGuestId } from "@/lib/auth/session";
 import { parseSessionUserId, TENANT_CONTEXT_COOKIE_NAME } from "@/lib/auth/session-cookie";

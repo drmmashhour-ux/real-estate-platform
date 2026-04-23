@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { verifyListingAnalysisShareToken } from "@/lib/share/listing-analysis-share";
 import { ShareAnalysisPublicCard } from "@/components/share/ShareAnalysisPublicCard";
 import { ShareAnalysisViewTracker } from "@/components/share/ShareAnalysisViewTracker";

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getDemoProjectById } from "@/lib/data/demo-projects";
 import { analyzeProject } from "@/lib/ai/projects-analysis";
 import { analyzeProjectInvestment } from "@/lib/ai/openai-investment";

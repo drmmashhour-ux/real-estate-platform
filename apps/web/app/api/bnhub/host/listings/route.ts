@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
 import { getApprovedHost, hasAcceptedHostAgreement } from "@/lib/bnhub/host";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { legalRiskAlertMessage } from "@/modules/legal/engine/legal-engine.service";
 import { buildLegalRiskInputFromBnhubCreate } from "@/modules/legal/engine/legal-risk-input";
 import {

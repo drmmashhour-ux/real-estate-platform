@@ -1,5 +1,5 @@
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { createRiskFlag } from "@/modules/bnhub-trust/services/riskFlagService";
 import { BnhubFraudSeverity, BnhubTrustRiskFlagTypeV2 } from "@prisma/client";
 

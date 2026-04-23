@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { runBnhubDisputePreventionScan } from "@/lib/ai/disputes/run-bnhub-dispute-prevention";
 
 export const dynamic = "force-dynamic";

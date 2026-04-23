@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getSessionUserIdFromRequest } from "@/lib/auth/api-session";
 import { isPlatformAdminSurface } from "@/lib/auth/is-platform-admin";
 

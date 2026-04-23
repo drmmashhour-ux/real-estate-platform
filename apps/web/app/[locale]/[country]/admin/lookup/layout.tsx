@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { ensureDynamicAuthRequest } from "@/lib/auth/ensure-dynamic-request";
 
 export const dynamic = "force-dynamic";

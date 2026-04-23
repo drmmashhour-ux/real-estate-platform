@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { mkdir, writeFile } from "fs/promises";
 import path from "path";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getMortgageBrokerOwnerSession } from "@/modules/mortgage/services/mortgage-broker-owner-session";
 import { scanBufferBeforeStorage } from "@/lib/security/malware-scan";
 

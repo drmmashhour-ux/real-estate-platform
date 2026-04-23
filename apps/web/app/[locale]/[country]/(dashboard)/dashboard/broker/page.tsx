@@ -3,7 +3,7 @@ import { getGuestId, getUserRole, isHubAdminRole } from "@/lib/auth/session";
 import { getListingIdsForBroker } from "@/lib/broker/collaboration";
 import { isComplianceComplete } from "@/services/compliance/coownershipCompliance.service";
 
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { hubNavigation } from "@/lib/hub/navigation";
 import { getHubTheme } from "@/lib/hub/themes";
 import { getAiFallbacksForHub } from "@/lib/ai/brain";

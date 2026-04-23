@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { incrementDailyProgress } from "@/lib/client-acquisition/daily-progress";
 import { requireAcquisitionAdmin } from "@/lib/client-acquisition/auth";
 

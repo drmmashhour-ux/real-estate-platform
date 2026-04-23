@@ -8,7 +8,7 @@ import {
   validateBnhubBookingDateStrings,
   validateBnhubListingStructureForBooking,
 } from "@/lib/bnhub/booking-create-validation";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { requireUser } from "@/modules/security/access-guard.service";
 import { logApiRouteError } from "@/lib/api/dev-log";
 import { GuestIdentityRequiredError } from "@/lib/bnhub/guest-identity-gate";

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { redirect } from "next/navigation";
 import { resolveSeniorHubAccess, canAccessResidenceDashboard } from "@/lib/senior-dashboard/role";
 

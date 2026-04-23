@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { requireWorkspacePermission } from "@/modules/enterprise/infrastructure/requireWorkspacePermission";
 import { AI_OPERATOR_CONTEXTS } from "@/src/modules/ai-operator/domain/operator.enums";
 import type { AiOperatorContext } from "@/src/modules/ai-operator/domain/operator.enums";

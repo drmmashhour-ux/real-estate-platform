@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { ListingStatus } from "@prisma/client";
 import { PromoLeadForm } from "@/src/modules/bnhub-growth-engine/components/PromoLeadForm";
 

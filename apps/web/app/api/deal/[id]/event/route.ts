@@ -3,7 +3,7 @@ import { PlatformRole } from "@prisma/client";
 
 import { getGuestId } from "@/lib/auth/session";
 import { findDealForUser } from "@/lib/deals/deal-party-access";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import type { DealIntelligenceEventType } from "@/modules/deal/deal.types";
 import { recordDealIntelligenceEvent } from "@/modules/deal/deal.service";
 

@@ -3,7 +3,7 @@ import { getCookieValueFromHeader } from "@/lib/auth/session-cookie";
 import { EXPERIMENT_SESSION_COOKIE_NAME, EXPERIMENT_SESSION_HEADER } from "@/lib/experiments/constants";
 import { trackBodySchema } from "@/lib/experiments/validators";
 import { trackExperimentEvent } from "@/lib/experiments/track-event";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { resolveSessionTokenToUserId } from "@/lib/auth/db-session";
 import { AUTH_SESSION_COOKIE_NAME } from "@/lib/auth/session-cookie";
 import { checkRateLimitDistributed, getRateLimitHeadersFromResult } from "@/lib/rate-limit-distributed";

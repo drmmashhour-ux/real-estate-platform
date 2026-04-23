@@ -1,5 +1,5 @@
 import { BookingStatus, PaymentStatus } from "@prisma/client";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { completeBooking } from "@/lib/bnhub/booking";
 import { maybeBlockRequestWithLegalGate } from "@/modules/legal/legal-api-gate";
 import { requireMobileUser } from "@/lib/mobile/mobileAuth";

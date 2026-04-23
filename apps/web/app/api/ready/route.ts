@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { classifyDbError } from "@/lib/db/db-error-classification";
+import { classifyDbError } from "@repo/db/db-error-classification";
 import {
   databaseUrlHasLiteralHostPlaceholder,
   getDatabaseHostHint,
   getDbHostKind,
-} from "@/lib/db/database-host-hint";
-import { withDbRetry } from "@/lib/db/with-db-retry";
+} from "@repo/db/database-host-hint";
+import { withDbRetry } from "@repo/db/with-db-retry";
 import { getPublicEnv } from "@/lib/runtime-env";
 import { MESSAGES } from "@/lib/i18n/messages";
 import { getResolvedMarket } from "@/lib/markets";
@@ -84,9 +84,9 @@ async function getReadyHandler() {
     });
   }
 
-  let prisma: Awaited<typeof import("@/lib/db")>["prisma"];
+  let prisma: Awaited<typeof import("@repo/db")>["prisma"];
   try {
-    ({ prisma } = await import("@/lib/db"));
+    ({ prisma } = await import("@repo/db"));
   } catch (e) {
     console.error(
       JSON.stringify({

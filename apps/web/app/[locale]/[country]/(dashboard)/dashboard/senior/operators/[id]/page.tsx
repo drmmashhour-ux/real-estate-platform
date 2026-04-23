@@ -2,7 +2,7 @@ import Link from "next/link";
 import { PlatformRole } from "@prisma/client";
 import { notFound, redirect } from "next/navigation";
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 export const dynamic = "force-dynamic";
 

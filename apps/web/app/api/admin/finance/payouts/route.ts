@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import type { BrokerPayoutStatus } from "@prisma/client";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getFinanceActor } from "@/lib/admin/finance-request";
 import { logFinancialAction } from "@/lib/admin/financial-audit";
 import { randomUUID } from "crypto";

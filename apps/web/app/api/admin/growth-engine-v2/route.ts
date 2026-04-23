@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { PlatformRole } from "@prisma/client";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { growthEngineV2Flags } from "@/config/feature-flags";
 import { buildGrowthEngineV2Summary } from "@/modules/growth/v2/growth-engine-v2.service";
 

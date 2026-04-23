@@ -14,6 +14,7 @@ export const CONTROL_TOWER_NAV_GROUPS: ControlTowerNavGroup[] = [
       { label: "Analytics", href: "/admin/analytics" },
       { label: "Alerts", href: "/admin/alerts" },
       { label: "Assistant", href: "/admin/assistant" },
+      { label: "AI Sales Agent", href: "/admin/ai-sales-agent" },
     ],
   },
   {

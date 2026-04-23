@@ -1,5 +1,7 @@
 import { complianceAuditKeys, logComplianceAudit } from "@/lib/admin/compliance-audit";
 import { prisma } from "@/lib/db";
+import { evaluateBrokerInsuranceRiskBatch } from "@/modules/compliance/insurance/insurance-risk.engine";
+import { MIN_PROFESSIONAL_LIABILITY_COVERAGE_CAD } from "@/modules/compliance/insurance/insurance.types";
 import { getComplianceAnalytics } from "@/modules/compliance-analytics/compliance-analytics.service";
 import type { ComplianceAnalyticsWindow } from "@/modules/compliance-analytics/compliance-analytics.types";
 import { getCaseSeverityTrends } from "@/modules/compliance-analytics/risk-trends.service";
@@ -27,36 +29,60 @@ async function getInsuranceMonitoring() {
   const now = new Date();
   const thirtyDaysFromNow = new Date(now.getTime() + 30 * 86400000);
 
-  const [expiringSoon, highRiskEvents, recentClaims] = await Promise.all([
+  const [expiringSoon, recentClaims] = await Promise.all([
     prisma.brokerInsurance.findMany({
       where: {
         status: "ACTIVE",
         endDate: { gt: now, lte: thirtyDaysFromNow },
+        coveragePerLoss: { gte: MIN_PROFESSIONAL_LIABILITY_COVERAGE_CAD },
       },
       include: { broker: { select: { id: true, name: true } } },
-      take: 10,
+      take: 12,
       orderBy: { endDate: "asc" },
-    }),
-    prisma.brokerComplianceEvent.findMany({
-      where: {
-        severity: "HIGH",
-        createdAt: { gte: new Date(now.getTime() - 30 * 86400000) },
-      },
-      include: { broker: { select: { id: true, name: true } } },
-      take: 10,
-      orderBy: { createdAt: "desc" },
     }),
     prisma.insuranceClaim.findMany({
       where: {
         createdAt: { gte: new Date(now.getTime() - 90 * 86400000) },
       },
       include: { broker: { select: { id: true, name: true } } },
-      take: 10,
+      take: 12,
       orderBy: { createdAt: "desc" },
     }),
   ]);
 
-  return { expiringSoon, highRiskBrokers: highRiskEvents, recentClaims };
+  const candidateBrokerIds = [
+    ...new Set([...expiringSoon.map((p) => p.brokerId), ...recentClaims.map((c) => c.brokerId)]),
+  ];
+
+  const riskMap =
+    candidateBrokerIds.length > 0
+      ? await evaluateBrokerInsuranceRiskBatch(candidateBrokerIds.slice(0, 48))
+      : new Map();
+
+  const highRiskIds = candidateBrokerIds
+    .filter((id) => (riskMap.get(id)?.riskScore ?? 0) >= 55)
+    .sort((a, b) => (riskMap.get(b)?.riskScore ?? 0) - (riskMap.get(a)?.riskScore ?? 0))
+    .slice(0, 10);
+
+  const users =
+    highRiskIds.length > 0
+      ? await prisma.user.findMany({
+          where: { id: { in: highRiskIds } },
+          select: { id: true, name: true },
+        })
+      : [];
+  const userMap = new Map(users.map((u) => [u.id, u.name]));
+
+  const highRiskBrokers = highRiskIds.map((id) => {
+    const r = riskMap.get(id);
+    return {
+      id,
+      broker: { id, name: userMap.get(id) ?? "Broker" },
+      message: `${r?.riskScore ?? "—"} · ${(r?.flags[0] ?? "Insurance risk review").slice(0, 120)}`,
+    };
+  });
+
+  return { expiringSoon, highRiskBrokers, recentClaims };
 }
 
 async function listRecentEscalations() {

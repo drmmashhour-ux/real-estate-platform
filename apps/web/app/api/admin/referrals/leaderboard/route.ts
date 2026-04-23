@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { assertAdminResponse } from "@/lib/admin/assert-admin";
 
 export const dynamic = "force-dynamic";

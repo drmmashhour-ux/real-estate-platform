@@ -1,5 +1,5 @@
 import { requireDailyActionCenterEnabled, requireMobileBrokerUser } from "@/lib/mobile/require-mobile-broker";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { brokerMobileFlags } from "@/config/feature-flags";
 import { logGrowthEngineAudit } from "@/modules/growth-engine-audit/growth-engine-audit.service";
 

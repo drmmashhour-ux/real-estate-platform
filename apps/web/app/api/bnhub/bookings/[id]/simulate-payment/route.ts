@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { confirmBooking } from "@/lib/bnhub/booking";
 import { isStripeConfigured } from "@/lib/stripe";
 

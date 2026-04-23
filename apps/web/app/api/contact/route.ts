@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { scoreLead } from "@/lib/ai/lead-scoring";
 import { logAiEvent } from "@/lib/ai/log";
 import {

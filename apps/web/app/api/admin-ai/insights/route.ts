@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { getUserRole, isHubAdminRole } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { AdminAiInsightType } from "@prisma/client";
 
 export const dynamic = "force-dynamic";

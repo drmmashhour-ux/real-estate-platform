@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { AcquisitionBoardClient } from "./acquisition-board-client";
 
 export const dynamic = "force-dynamic";

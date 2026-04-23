@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { ListingStatus, type Prisma } from "@prisma/client";
 import { getGuestId } from "@/lib/auth/session";
 import { isPlatformAdmin } from "@/lib/auth/is-platform-admin";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { createListing } from "@/lib/bnhub/listings";
 
 export const dynamic = "force-dynamic";

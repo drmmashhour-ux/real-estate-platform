@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { PlatformRole } from "@prisma/client";
 import { logError } from "@/lib/logger";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { createResidence, listResidences } from "@/modules/senior-living/residence.service";
 import { syncResidenceServices } from "@/modules/senior-living/service.service";
 import { upsertUnits } from "@/modules/senior-living/unit.service";

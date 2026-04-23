@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getGuestId } from "@/lib/auth/session";
 import { runFollowUpAutomation } from "@/modules/conversion-engine/application/followUpAutomationService";
 import type { ConversionTrigger } from "@/modules/conversion-engine/domain/types";

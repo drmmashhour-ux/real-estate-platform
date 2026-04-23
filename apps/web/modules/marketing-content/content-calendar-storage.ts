@@ -17,9 +17,18 @@ export function loadMarketingContentStore(): MarketingContentStore {
   if (typeof localStorage !== "undefined") {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) memoryStore = { ...empty(), ...JSON.parse(raw) } as MarketingContentStore;
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === "object") {
+          // Sync memoryStore with localStorage if localStorage has data
+          memoryStore = {
+            items: parsed.items && typeof parsed.items === "object" ? parsed.items : {},
+            notifications: Array.isArray(parsed.notifications) ? parsed.notifications : [],
+          };
+        }
+      }
     } catch {
-      /* ignore */
+      // If localStorage is broken, we just rely on memoryStore
     }
   }
   return memoryStore;

@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { launchSystemV1Flags, lecipmLaunchInvestorFlags } from "@/config/feature-flags";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getExecutiveSession } from "@/modules/owner-access/executive-visibility.service";
 import { buildFullInvestorPitchPackage } from "@/modules/investor-pitch/pitch.service";
 import { PitchPreview } from "@/components/launch-system/PitchPreview";

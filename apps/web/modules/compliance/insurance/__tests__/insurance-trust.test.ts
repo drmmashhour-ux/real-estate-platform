@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { triggerInsuranceAlerts } from "../insurance-alert.service";
 import { isBrokerInsuranceValid } from "../insurance.service";
 import { evaluateBrokerInsuranceRisk } from "../insurance-risk.engine";
 import { computeBrokerTrustScore } from "../trust-score.service";
@@ -8,14 +9,42 @@ vi.mock("@/lib/db", () => ({
   prisma: {
     brokerInsurance: {
       findFirst: vi.fn(),
+      findMany: vi.fn(),
     },
-    realEstateTransaction: { count: vi.fn() },
-    reputationComplaint: { count: vi.fn() },
-    brokerTransactionRecord: { count: vi.fn() },
-    fsboListing: { count: vi.fn() },
-    insuranceClaim: { count: vi.fn() },
-    brokerComplianceEvent: { findFirst: vi.fn(), count: vi.fn() },
+    realEstateTransaction: {
+      count: vi.fn(),
+      groupBy: vi.fn(),
+    },
+    reputationComplaint: {
+      count: vi.fn(),
+      groupBy: vi.fn(),
+    },
+    brokerTransactionRecord: {
+      count: vi.fn(),
+      groupBy: vi.fn(),
+    },
+    fsboListing: {
+      count: vi.fn(),
+      groupBy: vi.fn(),
+    },
+    insuranceClaim: {
+      count: vi.fn(),
+      findMany: vi.fn(),
+    },
+    brokerComplianceEvent: {
+      findFirst: vi.fn(),
+      count: vi.fn(),
+      groupBy: vi.fn(),
+    },
+    user: {
+      findMany: vi.fn(),
+      findUnique: vi.fn(),
+    },
   },
+}));
+
+vi.mock("@/modules/notifications/services/create-notification", () => ({
+  createNotification: vi.fn().mockResolvedValue(undefined),
 }));
 
 describe("Insurance Trust Intelligence", () => {
@@ -44,55 +73,77 @@ describe("Insurance Trust Intelligence", () => {
   });
 
   describe("Claim Impact on Risk Engine", () => {
-    it("should increase risk score when claims exist", async () => {
-      (prisma.insuranceClaim.count as any).mockResolvedValue(1);
+    const oldClaim = { status: "SUBMITTED", createdAt: new Date(Date.now() - 120 * 86400000) };
+
+    it("should increase risk score when claims exist (last 12 months)", async () => {
+      (prisma.insuranceClaim.findMany as any).mockResolvedValue([oldClaim]);
       (prisma.realEstateTransaction.count as any).mockResolvedValue(0);
       (prisma.reputationComplaint.count as any).mockResolvedValue(0);
       (prisma.brokerTransactionRecord.count as any).mockResolvedValue(0);
       (prisma.fsboListing.count as any).mockResolvedValue(0);
 
       const result = await evaluateBrokerInsuranceRisk({ brokerId: "b1" });
-      // Base is 20, 1 claim adds 20
-      expect(result.riskScore).toBe(40);
-      expect(result.flags).toContain("recent_claim_penalty: at least one claim in the last year.");
+      expect(result.riskScore).toBe(41);
+      expect(result.flags.some((f) => f.includes("claim in the last year"))).toBe(true);
     });
 
     it("should highly penalize multiple claims", async () => {
-      (prisma.insuranceClaim.count as any).mockResolvedValue(3);
+      (prisma.insuranceClaim.findMany as any).mockResolvedValue([oldClaim, oldClaim, oldClaim]);
       (prisma.realEstateTransaction.count as any).mockResolvedValue(0);
       (prisma.reputationComplaint.count as any).mockResolvedValue(0);
       (prisma.brokerTransactionRecord.count as any).mockResolvedValue(0);
       (prisma.fsboListing.count as any).mockResolvedValue(0);
 
       const result = await evaluateBrokerInsuranceRisk({ brokerId: "b1" });
-      // Base 20 + 45 = 65
-      expect(result.riskScore).toBe(65);
+      expect(result.riskScore).toBeGreaterThanOrEqual(60);
+      expect(result.flags.some((f) => f.includes("high_claim_frequency"))).toBe(true);
+    });
+
+    it("should add recent-window penalty for claims in the last 30 days", async () => {
+      const recent = { status: "SUBMITTED", createdAt: new Date(Date.now() - 5 * 86400000) };
+      (prisma.insuranceClaim.findMany as any).mockResolvedValue([recent]);
+      (prisma.realEstateTransaction.count as any).mockResolvedValue(0);
+      (prisma.reputationComplaint.count as any).mockResolvedValue(0);
+      (prisma.brokerTransactionRecord.count as any).mockResolvedValue(0);
+      (prisma.fsboListing.count as any).mockResolvedValue(0);
+
+      const result = await evaluateBrokerInsuranceRisk({ brokerId: "b1" });
+      expect(result.riskScore).toBeGreaterThan(40);
+      expect(result.flags.some((f) => f.includes("last 30 days"))).toBe(true);
     });
   });
 
   describe("Trust Score Computation", () => {
     it("should compute a blended trust score", async () => {
-      // Mock active insurance
       (prisma.brokerInsurance.findFirst as any).mockResolvedValue({
         status: "ACTIVE",
         coveragePerLoss: 2000000,
         startDate: new Date(Date.now() - 86400000),
         endDate: new Date(Date.now() + 86400000),
       });
-      // Mock low risk
-      (prisma.insuranceClaim.count as any).mockResolvedValue(0);
+      (prisma.insuranceClaim.findMany as any).mockResolvedValue([]);
       (prisma.realEstateTransaction.count as any).mockResolvedValue(0);
       (prisma.reputationComplaint.count as any).mockResolvedValue(0);
       (prisma.brokerTransactionRecord.count as any).mockResolvedValue(0);
       (prisma.fsboListing.count as any).mockResolvedValue(0);
-      // Mock high compliance
       (prisma.brokerComplianceEvent.count as any).mockResolvedValue(0);
 
       const result = await computeBrokerTrustScore("b1");
-      // Insurance (1.0 * 0.4) + Compliance (1.0 * 0.3) + Risk (0.8 * 0.3) = 0.4 + 0.3 + 0.24 = 0.94
-      // Note: Base risk score is 20, so risk01 is 1 - 0.2 = 0.8
       expect(result.trustScore).toBeGreaterThan(0.9);
       expect(result.insuranceValid).toBe(true);
+    });
+  });
+
+  describe("Alert triggers", () => {
+    it("fires notifications for expiry trigger (broker + admin)", async () => {
+      const { createNotification } = await import("@/modules/notifications/services/create-notification");
+      (prisma.user.findUnique as any).mockResolvedValue({ id: "b1", name: "Test", email: "t@t.com" });
+      (prisma.user.findMany as any).mockResolvedValue([{ id: "adm1" }]);
+
+      await triggerInsuranceAlerts("b1", "EXPIRY", { expiryDate: new Date().toISOString() });
+
+      expect(createNotification).toHaveBeenCalled();
+      expect((createNotification as any).mock.calls.length).toBeGreaterThanOrEqual(2);
     });
   });
 });

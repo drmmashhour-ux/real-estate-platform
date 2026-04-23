@@ -1,5 +1,5 @@
 import { ListingStatus, Prisma } from "@prisma/client";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { requireMobileUser, resolveMobileAppRoleFromRequest } from "@/lib/mobile/mobileAuth";
 import { enqueueHostAutopilot } from "@/lib/ai/autopilot/triggers";
 

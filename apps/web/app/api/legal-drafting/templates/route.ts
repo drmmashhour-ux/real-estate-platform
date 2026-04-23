@@ -1,6 +1,6 @@
 import { requireBrokerLikeApi } from "@/lib/forms/require-broker";
 import { ensureDefaultLegalFormTemplates } from "@/lib/forms/ensure-default-templates";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 export const dynamic = "force-dynamic";
 

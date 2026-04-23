@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { mkdir, writeFile } from "fs/promises";
 import path from "path";
 import { randomUUID } from "crypto";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { assessIdentityUploadAssist } from "@/lib/broker/identity-upload-assist";
 import { computeBrokerIsVerified } from "@/modules/mortgage/services/broker-verification";
 import { getMortgageBrokerOwnerSession } from "@/modules/mortgage/services/mortgage-broker-owner-session";

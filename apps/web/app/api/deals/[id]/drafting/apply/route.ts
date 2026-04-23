@@ -3,7 +3,7 @@ import { dealExecutionFlags } from "@/config/feature-flags";
 import { authenticateBrokerDealRoute } from "@/lib/deals/broker-draft-auth";
 import { logDraftingAudit } from "@/lib/deals/drafting-audit";
 import { canMutateExecution } from "@/lib/deals/execution-access";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { resolveCopilotSuggestion } from "@/modules/review/broker-review.service";
 
 export const dynamic = "force-dynamic";

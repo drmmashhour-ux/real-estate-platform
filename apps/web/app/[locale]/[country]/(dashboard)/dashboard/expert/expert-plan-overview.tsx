@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { isMortgageExpertRole } from "@/lib/marketplace/mortgage-role";
 import { mortgageExpertPlanDisplayName } from "@/modules/mortgage/services/broker-platform-plans";
 import {

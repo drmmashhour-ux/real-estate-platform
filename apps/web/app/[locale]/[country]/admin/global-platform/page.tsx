@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { HubLayout } from "@/components/hub/HubLayout";
 import { getGuestId, getUserRole, isHubAdminRole } from "@/lib/auth/session";
 import { hubNavigation } from "@/lib/hub/navigation";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { listActiveCountries } from "@/src/modules/global/countries";
 import { leadDemandByCountry } from "@/src/modules/data/demandAnalytics";
 import { leadVolumeTrend, expansionCityTrend } from "@/src/modules/data/trends";

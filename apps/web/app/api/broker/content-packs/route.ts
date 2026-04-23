@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { Prisma } from "@prisma/client";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
 import { formatFormActivityNote } from "@/lib/forms/form-activity";
 

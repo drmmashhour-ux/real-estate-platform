@@ -2,7 +2,7 @@ import { brokerOpsFlags } from "@/config/feature-flags";
 import { requireBrokerResidentialSession } from "@/lib/broker/residential-access";
 import { brokerWorkspaceAuditKeys, logBrokerWorkspaceEvent } from "@/lib/broker/broker-workspace-audit";
 import { assertBrokerResidentialFsboListing } from "@/lib/broker/residential-fsbo-scope";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { computeListingMarketingIntelligence } from "@/modules/listing-marketing-intelligence/listing-marketing-intelligence.service";
 import { persistSuggestions } from "@/modules/marketing-drafts/marketing-draft.service";
 import { runResidentialMarketingStrategies } from "@/modules/marketing-autopilot/strategies/run-all-strategies";

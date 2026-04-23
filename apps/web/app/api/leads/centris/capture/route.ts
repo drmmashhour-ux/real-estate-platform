@@ -32,6 +32,19 @@ export async function POST(req: NextRequest) {
   const consentPrivacy = o.consentPrivacy === true;
   const consentMarketing = o.consentMarketing === true;
 
+  const bh = o.behaviorHints && typeof o.behaviorHints === "object" ? (o.behaviorHints as Record<string, unknown>) : null;
+  const behaviorHints =
+    bh &&
+    (typeof bh.dwellSeconds === "number" ||
+      typeof bh.priorSessionViews === "number" ||
+      bh.returningVisitor === true)
+      ? {
+          ...(typeof bh.dwellSeconds === "number" ? { dwellSeconds: bh.dwellSeconds } : {}),
+          ...(typeof bh.priorSessionViews === "number" ? { priorSessionViews: bh.priorSessionViews } : {}),
+          ...(bh.returningVisitor === true ? { returningVisitor: true as const } : {}),
+        }
+      : undefined;
+
   if (!listingId || !intent) {
     return NextResponse.json({ error: "listingId and valid intent are required." }, { status: 400 });
   }
@@ -46,6 +59,7 @@ export async function POST(req: NextRequest) {
     consentPrivacy,
     intent,
     userId,
+    behaviorHints,
   });
 
   if (!result.ok) {

@@ -16,7 +16,7 @@ const TYPES = ["VIDEO", "POSTER", "TEXT"] as const;
 const PLATFORMS = ["TIKTOK", "INSTAGRAM", "YOUTUBE", "LINKEDIN"] as const;
 const AUDIENCES = ["BROKER", "INVESTOR", "BUYER", "GENERAL"] as const;
 const GOALS = ["LEADS", "AWARENESS", "CONVERSION"] as const;
-const STATUSES = ["IDEA", "DRAFT", "APPROVED", "SCHEDULED", "POSTED"] as const;
+const STATUSES = ["IDEA", "SCRIPT", "READY", "SCHEDULED", "POSTED"] as const;
 
 type Props = {
   item: ContentItem | null;

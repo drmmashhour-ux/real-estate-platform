@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getBrokerApiSession } from "@/modules/mortgage/services/broker-dashboard-api";
 
 export const dynamic = "force-dynamic";

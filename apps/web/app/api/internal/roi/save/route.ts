@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdminSession } from "@/lib/admin/require-admin";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { asInputJsonValue } from "@/lib/prisma/as-input-json";
 import { hostEconomicsFlags } from "@/config/feature-flags";
 

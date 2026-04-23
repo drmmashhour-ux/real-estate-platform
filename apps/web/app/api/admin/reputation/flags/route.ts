@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdminSession } from "@/lib/admin/require-admin";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { BnhubFraudFlagStatus } from "@prisma/client";
 import { reputationEngineFlags } from "@/config/feature-flags";
 

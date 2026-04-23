@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { recomputeListingTrust } from "@/modules/bnhub-trust/services/listingRiskService";
 import { ListingStatus } from "@prisma/client";
 

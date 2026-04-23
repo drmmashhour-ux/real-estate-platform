@@ -1,0 +1,10 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "paths": {
+      "@repo/ai/*": ["../../packages/ai/src/*"],
+      "@repo/market/*": ["../../packages/market/src/*"]
+    }
+  }
+}

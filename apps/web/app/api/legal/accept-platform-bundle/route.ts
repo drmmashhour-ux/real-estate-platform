@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PlatformRole } from "@prisma/client";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getGuestId } from "@/lib/auth/session";
 import { recordAcceptance } from "@/lib/legal/acceptance";
 import { LEGAL_DOCUMENT_TYPES } from "@/lib/legal/constants";

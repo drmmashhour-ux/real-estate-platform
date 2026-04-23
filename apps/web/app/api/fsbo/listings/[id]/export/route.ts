@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getSellHubLegalChecklist } from "@/lib/fsbo/sell-hub-legal-checklist";
 import { getListingTransactionFlag } from "@/lib/fsbo/listing-transaction-flag";
 import { buildBrandedDocumentHtml, asDate, asText, renderBulletList, renderKeyValueRows } from "@/lib/export/branded-document-html";

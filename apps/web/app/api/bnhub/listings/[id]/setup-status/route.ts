@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
 import { getListingById } from "@/lib/bnhub/listings";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getSellerDisclosure } from "@/lib/bnhub/seller-disclosure";
 import { ensureHostListingContract } from "@/lib/contracts/bnhub-host-contracts";
 import { ensureSellerListingAgreementForBnhub } from "@/lib/contracts/bnhub-seller-listing-contracts";

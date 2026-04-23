@@ -3,7 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { brokerOpsFlags } from "@/config/feature-flags";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getBrokerWorkloadSummary } from "@/modules/broker-workload/workload.service";
 import { suggestRebalance } from "@/modules/broker-workload/workload-balancer.service";
 import { WorkloadBoard } from "@/components/broker-team/WorkloadBoard";

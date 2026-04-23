@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { logInfo } from "@/lib/logger";
 import { getPipelineSummaryForViewer } from "@/modules/deals/deal-monitoring.service";
 import { isLecipmPhaseEnabled, logRolloutGate, pipelineSummaryWhenRolloutDisabled } from "@/lib/lecipm/rollout";

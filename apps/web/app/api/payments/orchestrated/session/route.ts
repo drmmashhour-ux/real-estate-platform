@@ -6,7 +6,7 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { createPaymentSession } from "@/lib/payments/orchestrator";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
 import { logError } from "@/lib/logger";

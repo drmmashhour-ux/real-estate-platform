@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { exportBNHubCalendar } from "@/src/modules/bnhub-channel-manager";
 
 export const dynamic = "force-dynamic";

@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 /**
  * POST /api/hotels/[id]/rooms — Create a room for a hotel.

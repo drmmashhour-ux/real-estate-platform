@@ -6,7 +6,7 @@ import {
   expireStaleBnhubPendingBookings,
   findOverlappingActiveBnhubBooking,
 } from "@/lib/bookings/checkAvailability";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 export const dynamic = "force-dynamic";
 

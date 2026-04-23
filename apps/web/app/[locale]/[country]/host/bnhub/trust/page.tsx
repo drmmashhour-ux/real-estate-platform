@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getUserVerificationStatus } from "@/modules/bnhub-trust/services/identityVerificationService";
 import { listSafeFlagsForHost } from "@/modules/bnhub-trust/services/riskFlagService";
 import { BNHUB_TRUST_SAFE_COPY } from "@/modules/bnhub-trust/lib/safeCopy";

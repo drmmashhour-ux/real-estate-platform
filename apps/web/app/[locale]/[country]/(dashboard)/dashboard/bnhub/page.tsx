@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getGuestId, getUserRole, isHubAdminRole } from "@/lib/auth/session";
 
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { createListing } from "@/lib/bnhub/listings";
 import { hubNavigation } from "@/lib/hub/navigation";
 import { getHubTheme } from "@/lib/hub/themes";

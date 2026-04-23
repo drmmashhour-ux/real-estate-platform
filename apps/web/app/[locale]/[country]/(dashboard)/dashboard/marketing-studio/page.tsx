@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
 import { engineFlags, softLaunchFlags } from "@/config/feature-flags";
 import {

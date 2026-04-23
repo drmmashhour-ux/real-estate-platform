@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { createTunedFreshSetValidationRun } from "@/modules/model-validation/application/createTunedValidationRun";
 import { requirePlatformAdmin } from "../../_auth";
 

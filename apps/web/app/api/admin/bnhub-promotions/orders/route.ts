@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
 import { isPlatformAdmin } from "@/lib/auth/is-platform-admin";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { computePromotionWindowEnd } from "@/lib/bnhub/promotion-orders";
 
 export const dynamic = "force-dynamic";

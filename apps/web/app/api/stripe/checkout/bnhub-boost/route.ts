@@ -5,7 +5,7 @@ import { getStripe, isStripeConfigured } from "@/lib/stripe";
 import { getPublicAppUrl } from "@/lib/config/public-app-url";
 import { createCheckoutSession } from "@/lib/stripe/checkout";
 import { ListingStatus } from "@prisma/client";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
 import { logError } from "@/lib/logger";
 import { getRevenueControlSettings } from "@/modules/revenue/revenue-control-settings";

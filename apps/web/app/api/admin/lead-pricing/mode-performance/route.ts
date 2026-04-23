@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { leadPricingResultsFlags } from "@/config/feature-flags";
 import { buildLeadPricingModePerformance } from "@/modules/leads/lead-pricing-results.service";
 

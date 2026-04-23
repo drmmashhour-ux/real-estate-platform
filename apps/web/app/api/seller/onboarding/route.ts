@@ -1,6 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getGuestId } from "@/lib/auth/session";
 import { isBrokerVerified } from "@/lib/verification/broker";
 import { evaluateLegalRisk, legalRiskAlertMessage } from "@/modules/legal/engine/legal-engine.service";

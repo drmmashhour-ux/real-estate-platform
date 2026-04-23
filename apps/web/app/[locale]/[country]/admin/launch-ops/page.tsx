@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getResolvedMarket } from "@/lib/markets";
 import { resolveLaunchFlags } from "@/lib/launch/resolve-launch-flags";
 

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { engineFlags } from "@/config/feature-flags";
 import { recordFastDealOutcome, recordFastDealSourceEvent } from "@/modules/growth/fast-deal-results.service";
 import type { FastDealSourceType } from "@/modules/growth/fast-deal-results.types";

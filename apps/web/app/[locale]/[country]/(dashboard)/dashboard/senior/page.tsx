@@ -2,7 +2,7 @@ import Link from "next/link";
 import { PlatformRole } from "@prisma/client";
 import { redirect } from "next/navigation";
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { listLeadsForAdmin, listLeadsForOperator } from "@/modules/senior-living/lead.service";
 import {
   compareLeadsByPriority,

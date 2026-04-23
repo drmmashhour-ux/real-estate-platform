@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { logError } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";

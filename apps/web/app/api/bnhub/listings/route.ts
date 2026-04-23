@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { searchListings, createListing } from "@/lib/bnhub/listings";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getGuestId } from "@/lib/auth/session";
 import { requireContentLicenseAccepted } from "@/lib/legal/content-license-enforcement";
 import { bnhubV2Flags } from "@/config/feature-flags";

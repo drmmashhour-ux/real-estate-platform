@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
 import { canAccessCrmListingCompliance } from "@/lib/compliance/crm-listing-access";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import {
   ERR_COOWNERSHIP_PUBLISH,
   assertCoownershipPublishAllowed,

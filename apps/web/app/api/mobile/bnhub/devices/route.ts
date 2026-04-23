@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { requireMobileGuestUser } from "@/lib/bnhub/mobile-api";
 import { upsertPushDeviceForUser } from "@/lib/mobile/upsert-push-device";
 

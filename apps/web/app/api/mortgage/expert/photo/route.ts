@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { mkdir, writeFile } from "fs/promises";
 import path from "path";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { requireMortgageExpertWithTerms } from "@/modules/mortgage/services/expert-guard";
 import { scanBufferBeforeStorage } from "@/lib/security/malware-scan";
 

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { PlatformRole } from "@prisma/client";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { appendLeadTimelineEvent } from "@/lib/leads/timeline-helpers";
 import { assertBrokerCanReceiveNewLead } from "@/modules/billing/brokerLeadBilling";
 import { brokerLeadDistributionFlags, brokerRoutingFlags } from "@/config/feature-flags";

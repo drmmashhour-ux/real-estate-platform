@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import type { DealDocumentVersionSource } from "@prisma/client";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { authenticateBrokerDealRoute } from "@/lib/deals/broker-draft-auth";
 import { canMutateExecution } from "@/lib/deals/execution-access";
 import { logContractEngineEvent } from "@/lib/contract-engine/events";

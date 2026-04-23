@@ -3,7 +3,7 @@ import { getGuestId } from "@/lib/auth/session";
 import { submitComplaint } from "@/lib/trust-safety/dispute-service";
 import { DISPUTE_COMPLAINT_CATEGORIES } from "@/lib/trust-safety/constants";
 import type { ComplaintCategory } from "@/lib/trust-safety/constants";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 /**
  * GET /api/bnhub/bookings/:id — booking detail for guest or host (no card data).

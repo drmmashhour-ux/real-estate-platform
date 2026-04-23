@@ -1,5 +1,5 @@
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { readAutoCloseEnv, runAutoCloseHourlyPass } from "@/src/modules/autoclose/autoCloseEngine";
 
 export const dynamic = "force-dynamic";

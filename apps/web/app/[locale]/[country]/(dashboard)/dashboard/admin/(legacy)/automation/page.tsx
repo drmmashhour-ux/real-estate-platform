@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getGuestId } from "@/lib/auth/session";
 import { buildAdminDailyAiSummary } from "@/modules/ai-assist/admin-daily-summary.service";
 import { describeDefaultModes } from "@/modules/autopilot/autopilot-mode.service";

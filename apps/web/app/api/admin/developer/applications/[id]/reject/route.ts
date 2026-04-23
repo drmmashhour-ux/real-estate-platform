@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 /** POST /api/admin/developer/applications/:id/reject – Reject developer application. Sets accountStatus = RESTRICTED. */
 export async function POST(

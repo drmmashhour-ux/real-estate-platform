@@ -1,7 +1,7 @@
 import { suggestClausesForDraft } from "@/lib/forms/ai/suggest-clauses";
 import { assertDraftAccess } from "@/lib/forms/guards";
 import { requireBrokerLikeApi } from "@/lib/forms/require-broker";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 export const dynamic = "force-dynamic";
 

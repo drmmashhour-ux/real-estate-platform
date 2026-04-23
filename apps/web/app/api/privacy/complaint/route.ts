@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 export async function POST(req: Request) {
   try {
@@ -22,8 +22,8 @@ export async function POST(req: Request) {
       },
     });
 
-    // Log the event in PrivacyAuditLog
-    await prisma.privacyAuditLog.create({
+    // Log the event in AuditLog
+    await prisma.auditLog.create({
       data: {
         action: "COMPLAINT_SUBMITTED",
         entityType: "PrivacyComplaint",

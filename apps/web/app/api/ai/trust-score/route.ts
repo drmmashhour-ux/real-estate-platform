@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { getTrustScore, getTrustScoreForUser, getTrustScoreForListing } from "@/lib/ai";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { AnalyticsEvents } from "@/lib/analytics/events";
 import { captureServerEvent } from "@/lib/analytics/posthog-server";
 

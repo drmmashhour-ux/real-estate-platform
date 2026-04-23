@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
 import { loadDealWithActor } from "@/lib/deals/execution-access";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { listDocumentVersions } from "@/modules/review/versioning.service";
 
 export const dynamic = "force-dynamic";

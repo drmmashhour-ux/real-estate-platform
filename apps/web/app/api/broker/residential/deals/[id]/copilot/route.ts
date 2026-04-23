@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { requireBrokerDealAccess, requireBrokerResidentialSession } from "@/lib/broker/residential-access";
 import { loadCopilotSuggestions } from "@/modules/deal-copilot/deal-copilot.service";
 import { suggestWorkflowPackage } from "@/modules/form-packages/workflow-matcher.service";

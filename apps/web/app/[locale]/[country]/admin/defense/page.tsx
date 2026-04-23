@@ -4,7 +4,7 @@ import { getPendingApprovals } from "@/lib/defense/internal-access";
 import { getPendingAppeals } from "@/lib/defense/enforcement";
 import { getFinancialRiskFlags } from "@/lib/defense/financial-defense";
 import { buildDefenseMetricsSnapshot } from "@/lib/defense/defense-analytics";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 export const dynamic = "force-dynamic";
 

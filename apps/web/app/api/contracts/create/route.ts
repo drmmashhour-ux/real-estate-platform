@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
 import { createLeaseContract } from "@/modules/contracts/services/lease-service";
 import { hasActiveEnforceableContract } from "@/lib/legal/enforceable-contract";

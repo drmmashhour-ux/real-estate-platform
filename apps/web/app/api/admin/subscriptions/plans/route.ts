@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { getSubscriptionPlans } from "@/lib/subscription-billing";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import type { SubscriptionPlanModule, BillingCycle } from "@prisma/client";
 
 export const dynamic = "force-dynamic";

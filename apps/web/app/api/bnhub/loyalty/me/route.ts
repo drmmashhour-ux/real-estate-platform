@@ -1,5 +1,5 @@
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { loyaltyTierFromCompletedBookings } from "@/lib/loyalty/loyalty-engine";
 import { getOrCreateUserLoyaltyProfile } from "@/lib/loyalty/loyalty-service";
 

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getStripe, isStripeConfigured } from "@/lib/stripe";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { createBrokerInvoiceBatchCheckout } from "@/modules/billing/brokerLeadBilling";
 import { requireBrokerOrAdminApi } from "@/modules/crm/services/require-broker-api";
 

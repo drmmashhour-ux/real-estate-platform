@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { hasActiveEnforceableContract } from "@/lib/legal/enforceable-contract";
 import { ENFORCEABLE_CONTRACT_TYPES } from "@/lib/legal/enforceable-contract-types";
 import { enforceableContractsRequired } from "@/lib/legal/enforceable-contracts-enforcement";

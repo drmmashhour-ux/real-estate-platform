@@ -6,7 +6,7 @@ import {
   addDesign,
   DEFAULT_STORAGE_LIMIT_BYTES,
 } from "@/lib/designs-store";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getUsage } from "@/lib/storage-quota";
 
 export const dynamic = "force-dynamic";

@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { HubLayout } from "@/components/hub/HubLayout";
 
 import { hubNavigation } from "@/lib/hub/navigation";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 export const dynamic = "force-dynamic";
 

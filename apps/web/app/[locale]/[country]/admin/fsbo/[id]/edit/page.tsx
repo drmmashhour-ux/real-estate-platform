@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getGuestId } from "@/lib/auth/session";
 import { SellerListingWizard } from "@/components/seller/SellerListingWizard";
 import { getTrustGraphFeatureFlags } from "@/lib/trustgraph/feature-flags";

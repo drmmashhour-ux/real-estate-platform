@@ -3,7 +3,7 @@ import Link from "next/link";
 import { getGuestId } from "@/lib/auth/session";
 import { getBookingsForGuest } from "@/lib/bnhub/booking";
 import { loyaltyTierFromCompletedBookings } from "@/lib/loyalty/loyalty-engine";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { BnhubGuestAppInstallCard } from "@/components/bnhub/BnhubGuestAppInstallCard";
 import { BnhubMobileTabBar } from "@/components/bnhub/BnhubMobileTabBar";
 import { GuestReservationCenter } from "@/components/bnhub/GuestReservationCenter";

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cookies } from "next/headers";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
 import { TENANT_CONTEXT_COOKIE_NAME } from "@/lib/auth/session-cookie";
 import { DealFinancialCard } from "@/components/finance/DealFinancialCard";

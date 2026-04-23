@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { revenueV4Flags } from "@/config/feature-flags";
 import { recommendPriceV2 } from "@/src/modules/pricing/pricing-v2.engine";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";

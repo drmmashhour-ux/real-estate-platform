@@ -2,7 +2,7 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { executiveDashboardFlags, founderWorkspaceFlags } from "@/config/feature-flags";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getExecutiveSession } from "@/modules/owner-access/executive-visibility.service";
 import { getBriefingByIdForScope } from "@/modules/executive-briefing/briefing-history.service";
 import { ExecutiveBriefingViewer } from "@/components/executive-briefing/ExecutiveBriefingViewer";

@@ -1,5 +1,5 @@
 import { authenticateBrokerDealRoute } from "@/lib/deals/broker-draft-auth";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { lecipmOaciqFlags } from "@/config/feature-flags";
 import { generateStructuredContractFieldsForForm } from "@/modules/ai-contract/ai-contract-generator";
 

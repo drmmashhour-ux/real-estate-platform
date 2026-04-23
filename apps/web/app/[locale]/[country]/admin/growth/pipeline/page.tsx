@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { listGrowthLeads } from "@/lib/growth/lead-service";
 import { getGrowthEngineDashboardMetrics } from "@/lib/growth/metrics";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import {
   GrowthPipelineClient,
   type SerializedGrowthLead,

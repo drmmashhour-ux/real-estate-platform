@@ -6,7 +6,7 @@ import {
   canAccessSeniorCommandCenter,
   seniorCommandAccessTier,
 } from "@/lib/senior-command/access";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 export const dynamic = "force-dynamic";
 

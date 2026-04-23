@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { requireResidenceDashboardApi } from "@/lib/senior-dashboard/api-auth";
 import { getResidenceDashboardPayload } from "@/modules/senior-living/dashboard/residence-dashboard.service";
 

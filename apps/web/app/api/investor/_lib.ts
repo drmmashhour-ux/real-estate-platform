@@ -1,5 +1,5 @@
 import { PlatformRole } from "@prisma/client";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getGuestId } from "@/lib/auth/session";
 
 export async function requireInvestorApiSession(): Promise<

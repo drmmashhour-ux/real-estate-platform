@@ -3,7 +3,7 @@ import { DisputeStatus } from "@prisma/client";
 import { LecipmControlShell } from "@/components/admin/LecipmControlShell";
 import { getAdminRiskAlerts } from "@/lib/admin/control-center";
 import { requireAdminControlUserId } from "@/lib/admin/guard";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 const CLOSED_DISPUTE_STATUSES: DisputeStatus[] = [
   DisputeStatus.RESOLVED,

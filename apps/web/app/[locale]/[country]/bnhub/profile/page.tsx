@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { BnhubMobileTabBar } from "@/components/bnhub/BnhubMobileTabBar";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getGuestId } from "@/lib/auth/session";
 import { buildPageMetadata } from "@/lib/seo/page-metadata";
 import { seoConfig } from "@/lib/seo/config";

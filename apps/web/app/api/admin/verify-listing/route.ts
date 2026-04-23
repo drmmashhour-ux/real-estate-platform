@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { setVerificationDecision } from "@/lib/verification/ownership";
 import { logVerificationAction } from "@/lib/verification/audit";
 import { AnalyticsEvents } from "@/lib/analytics/events";

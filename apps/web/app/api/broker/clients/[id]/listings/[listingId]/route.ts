@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { canManageBrokerClient } from "@/modules/crm/services/broker-crm-permissions";
 import { requireBrokerOrAdminApi } from "@/modules/crm/services/require-broker-api";
 

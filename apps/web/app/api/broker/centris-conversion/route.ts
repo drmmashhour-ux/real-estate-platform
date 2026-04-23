@@ -1,7 +1,8 @@
 import type { Prisma } from "@prisma/client";
 
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getGuestId } from "@/lib/auth/session";
+import { getCentrisBrokerDominationSnapshot } from "@/modules/centris-conversion/centris-funnel-analytics.service";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +24,7 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const days = Math.min(90, Math.max(1, parseInt(searchParams.get("days") ?? "30", 10) || 30));
   const since = new Date(Date.now() - days * 86400000);
+  const extended = searchParams.get("extended") === "1";
 
   const ownedCrmIds = await prisma.listing.findMany({
     where: { ownerId: userId },
@@ -53,13 +55,24 @@ export async function GET(request: Request) {
     }),
   ]);
 
-  return Response.json({
+  const conversionRate =
+    centrisLeads > 0 ? Math.round((convertedToPlatformUsers / centrisLeads) * 1000) / 10 : 0;
+
+  const payload: Record<string, unknown> = {
     days,
     since: since.toISOString(),
     centrisLeads,
     convertedToPlatformUsers,
+    conversionRate,
     /** Stored as dollars CAD in `finalCommission` when deals close — sum for scoped leads. */
     revenueCad: revenueAgg._sum.finalCommission ?? 0,
     note: "Counts include leads with distribution CENTRIS on your FSBO listings or CRM listings. Revenue sums recorded final commission on closed deals.",
-  });
+  };
+
+  if (extended) {
+    const domination = await getCentrisBrokerDominationSnapshot(userId, days);
+    payload.domination = domination;
+  }
+
+  return Response.json(payload);
 }

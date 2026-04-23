@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { logSeniorCommand } from "@/lib/senior-command/log";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { canPricing, seniorCommandAuth } from "@/lib/senior-command/api-auth";
 import {
   getPricingRules,

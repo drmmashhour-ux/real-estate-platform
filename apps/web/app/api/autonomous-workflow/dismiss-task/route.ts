@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
 import { isPlatformAdmin } from "@/lib/auth/is-platform-admin";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { requireDocumentAccess } from "@/app/api/legal-workflow/_auth";
 import { updateTaskStatus, recordWorkflowAutomationEvent } from "@/src/modules/autonomous-workflow-assistant/infrastructure/workflowAutomationRepository";
 import { captureServerEvent } from "@/lib/analytics/posthog-server";

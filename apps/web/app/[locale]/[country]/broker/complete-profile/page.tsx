@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { requireBrokerProfilePage } from "@/modules/mortgage/services/require-broker-onboarding";
 import { CompleteProfileClient } from "./complete-profile-client";
 

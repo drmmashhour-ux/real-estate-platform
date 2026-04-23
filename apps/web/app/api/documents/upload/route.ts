@@ -1,6 +1,6 @@
 import { DocumentEventType, type DocumentCategory, type DocumentVisibility } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { DemoEvents } from "@/lib/demo-event-types";
 import { trackDemoEvent } from "@/lib/demo-analytics";
 import { requireDocumentUser } from "@/modules/documents/services/api-helpers";

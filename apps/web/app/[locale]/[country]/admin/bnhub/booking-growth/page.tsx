@@ -3,7 +3,7 @@ import { ListingStatus } from "@prisma/client";
 import { LecipmControlShell } from "@/components/admin/LecipmControlShell";
 import { getAdminRiskAlerts } from "@/lib/admin/control-center";
 import { requireAdminControlUserId } from "@/lib/admin/guard";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { countBnhubViewedNotBookedPairs } from "@/lib/bnhub/bnhub-retargeting-queries";
 import { bnhubConversionLayerFlags } from "@/config/feature-flags";
 import { BNHubConversionOverviewPanel } from "@/components/admin/bnhub/BNHubConversionOverviewPanel";

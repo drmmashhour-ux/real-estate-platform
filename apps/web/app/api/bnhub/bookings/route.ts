@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { createBooking } from "@/lib/bnhub/booking";
 import { isListingAvailable } from "@/lib/bnhub/listings";
 import { requireUser } from "@/modules/security/access-guard.service";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { isBookingRestrictedFor } from "@/lib/operational-controls";
 import { canConfirmBooking } from "@/lib/policy-engine";
 import { recordPlatformEvent } from "@/lib/observability";

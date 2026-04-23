@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { ListingStatus } from "@prisma/client";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { updateListing, type UpdateListingData } from "@/lib/bnhub/listings";
 import { getGuestId } from "@/lib/auth/session";
 

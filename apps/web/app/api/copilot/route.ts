@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { AnalyticsEvents } from "@/lib/analytics/events";
 import { captureServerEvent } from "@/lib/analytics/posthog-server";
 import { FeatureNotAvailableError, requireFeature } from "@/lib/featureGate";

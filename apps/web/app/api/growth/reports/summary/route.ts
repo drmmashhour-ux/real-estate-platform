@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { PlatformRole } from "@prisma/client";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { buildGrowthDashboardPayload } from "@/modules/growth-reporting";
 import { summarizeGrowthBlockers } from "@/modules/growth-reporting/growth-summary.service";
 import { findStaleLeadsForBroker } from "@/modules/lead-nurture/reengagement.service";

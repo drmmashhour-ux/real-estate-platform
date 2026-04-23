@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { getBookingById } from "@/lib/bnhub/booking";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { CONTRACT_TYPES } from "@/lib/hubs/contract-types";
 import { GenerateLeaseButton } from "@/components/contracts/GenerateLeaseButton";
 import { isStripeConfigured } from "@/lib/stripe";

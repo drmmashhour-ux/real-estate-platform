@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getGuestId } from "@/lib/auth/session";
 import { scoreLead } from "@/lib/ai/lead-scoring";
 import { mergeFormAndBehaviorScore } from "@/lib/ai/behavior-scoring";

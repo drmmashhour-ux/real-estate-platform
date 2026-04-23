@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
   const listingId = sp.get("listingId")?.trim();
 
   if (listingId) {
-    const { prisma } = await import("@/lib/db");
+    const { prisma } = await import("@repo/db");
     const row = await prisma.listingRankingScore.findUnique({
       where: { listingType_listingId: { listingType, listingId } },
     });

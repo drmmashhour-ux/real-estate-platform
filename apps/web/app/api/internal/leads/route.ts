@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdminSession } from "@/lib/admin/require-admin";
 import { isLeadScoringEnabled } from "@/lib/feature-flags/revenue-growth";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { listTopLeads } from "@/modules/lead-scoring/infrastructure/leadScoringService";
 
 export const dynamic = "force-dynamic";

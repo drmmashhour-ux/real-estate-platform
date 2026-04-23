@@ -1,6 +1,6 @@
 import { ListingAnalyticsKind, ListingStatus } from "@prisma/client";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { calculateDemandScore } from "@/lib/ai/pricing/calculateDemandScore";
 import { suggestNightlyPrice } from "@/lib/ai/pricing/suggestNightlyPrice";
 import { getOrCreateHostAutopilotSettings } from "@/lib/host/autopilot-settings";

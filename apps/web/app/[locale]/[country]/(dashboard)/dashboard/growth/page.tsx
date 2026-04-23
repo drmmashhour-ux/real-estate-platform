@@ -41,7 +41,7 @@ import { parseGrowthAutonomyAutoLowRiskRolloutFromEnv } from "@/modules/growth/g
 import { parseGrowthAutonomyRolloutFromEnv } from "@/modules/growth/growth-autonomy-config";
 import { computeGrowthAutonomyViewerPilotAccess } from "@/modules/growth/growth-autonomy-internal-access";
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { buildAssistantRecommendationFeed } from "@/modules/operator/assistant-aggregator.service";
 import { isExternallySyncableBudgetAction } from "@/modules/operator/operator-execution.types";
 import { getLatestSyncLogsForRecommendations } from "@/modules/operator/operator-external-sync.repository";

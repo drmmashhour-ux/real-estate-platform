@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
 import { createOrLink } from "@/lib/property-identity/create-or-link";
 import { LISTING_TYPES } from "@/lib/property-identity/constants";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 /**
  * POST /api/property-identity/create-or-link

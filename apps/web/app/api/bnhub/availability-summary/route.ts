@@ -2,7 +2,7 @@ import { BnhubDayAvailabilityStatus } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { getAvailability } from "@/src/modules/bnhub/application/bookingService";
 import { utcDayStart } from "@/lib/bnhub/availability-day-helpers";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { detectConflicts } from "@/src/modules/bnhub-channel-manager";
 
 export async function GET(req: Request) {

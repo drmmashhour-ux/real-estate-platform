@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getGuestId } from "@/lib/auth/session";
 import { sendTransactionalEmail } from "@/lib/email/provider";
 import { getLegalEmailFooter } from "@/lib/email/notifications";

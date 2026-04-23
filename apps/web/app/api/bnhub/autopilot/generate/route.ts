@@ -1,5 +1,5 @@
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { buildBNHubAutopilotActions } from "@/modules/bnhub/autopilot/bnhub-autopilot-actions.builder";
 import { bnhubAutopilotExecutionFlags } from "@/config/feature-flags";
 

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { revenueV4Flags, hostEconomicsFlags } from "@/config/feature-flags";
 import { buildPlatformPricingSnapshot } from "@/modules/pricing-model/pricing-engine.service";
 import { FeeBreakdown } from "@/components/pricing/FeeBreakdown";

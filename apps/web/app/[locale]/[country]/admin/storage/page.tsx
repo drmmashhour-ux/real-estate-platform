@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getStorageAnalytics } from "@/lib/storage/analytics";
 import { getOptimizationRecommendations } from "@/lib/storage/ai-optimizer";
 

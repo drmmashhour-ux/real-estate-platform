@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomBytes } from "crypto";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { requireAdminSession } from "@/lib/admin/require-admin";
 import { hashPassword } from "@/lib/auth/password";
 import type { PlatformRole } from "@prisma/client";

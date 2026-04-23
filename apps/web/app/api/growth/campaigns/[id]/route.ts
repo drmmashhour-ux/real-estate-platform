@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { PlatformRole } from "@prisma/client";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { requireGrowthMachineActor } from "@/modules/growth-machine/growth-api-context";
 
 export const dynamic = "force-dynamic";

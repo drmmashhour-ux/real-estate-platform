@@ -1,7 +1,7 @@
 import { getGuestId } from "@/lib/auth/session";
 import { assertMarketingAdmin, MarketingAuthError } from "@/src/modules/bnhub-marketing/services/marketingAccess";
 import { getCampaignOverviewStats } from "@/src/modules/bnhub-marketing/services/marketingAnalyticsService";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 export const dynamic = "force-dynamic";
 

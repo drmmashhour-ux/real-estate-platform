@@ -3,7 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { brokerOpsFlags } from "@/config/feature-flags";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { residentialBrokerFsboWhere } from "@/lib/broker/residential-fsbo-scope";
 
 export const dynamic = "force-dynamic";

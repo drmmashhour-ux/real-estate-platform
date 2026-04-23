@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { ListingAnalyticsKind } from "@prisma/client";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
 import { isFsboPubliclyVisible } from "@/lib/fsbo/constants";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import {
   incrementFsboContactClick,
   incrementListingShareCount,

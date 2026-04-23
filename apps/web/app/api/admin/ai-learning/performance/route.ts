@@ -1,5 +1,5 @@
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { derivedRates, weightedScore } from "@/src/modules/messaging/learning/templatePerformance";
 
 export const dynamic = "force-dynamic";

@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { uploadStayListingImagePublicUrl } from "@/lib/bnhub/upload-listing-media-public";
 import { setListingPhotos } from "@/lib/bnhub/listings";
 

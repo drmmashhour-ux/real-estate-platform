@@ -1,5 +1,5 @@
 import { authenticateBrokerDealRoute } from "@/lib/deals/broker-draft-auth";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { lecipmOaciqFlags } from "@/config/feature-flags";
 import { nextStep } from "@/modules/deal-execution/step-engine.service";
 import type { ExecutionStepKey } from "@/modules/deal-execution/execution-orchestrator";

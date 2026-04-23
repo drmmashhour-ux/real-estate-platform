@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getBookingsForHost } from "@/lib/bnhub/booking";
 import { HostDashboardHub } from "@/components/host/HostDashboardHub";
 import { getHostConversionInsights } from "@/lib/ai/conversion/conversion-engine";

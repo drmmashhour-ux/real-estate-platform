@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { PlatformRole } from "@prisma/client";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { canonicalStageFromLead, type LifecycleStage } from "@/modules/deal-lifecycle/lifecycle.stages";
 import {
   aggregatePipelineMetrics,

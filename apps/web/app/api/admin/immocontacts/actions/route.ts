@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getGuestId } from "@/lib/auth/session";
 import { IMMO_ADMIN_ACTIONS, recordImmoAdminAction, type ImmoAdminActionType } from "@/lib/immo/immo-contact-enforcement";
 

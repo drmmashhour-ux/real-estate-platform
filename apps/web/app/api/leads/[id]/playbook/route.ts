@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getPlaybookSnapshotForLead } from "@/src/modules/playbooks/playbookEngine";
 import { canBrokerOrAdminAccessLead } from "@/lib/leads/can-access-lead";
 

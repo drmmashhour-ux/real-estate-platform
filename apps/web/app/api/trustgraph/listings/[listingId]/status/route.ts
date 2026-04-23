@@ -1,6 +1,6 @@
 import { getGuestId } from "@/lib/auth/session";
 import { isPlatformAdmin } from "@/lib/auth/is-platform-admin";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { isTrustGraphEnabled } from "@/lib/trustgraph/config";
 import { toListingTrustSnapshotDto } from "@/lib/trustgraph/application/dto/listingTrustSnapshotDto";
 import { trustgraphJsonError, trustgraphJsonOk } from "@/lib/trustgraph/infrastructure/auth/http";

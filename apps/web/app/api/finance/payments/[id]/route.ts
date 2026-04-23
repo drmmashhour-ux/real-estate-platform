@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { requireTenantContext } from "@/modules/tenancy/services/tenant-context-service";
 import { updatePaymentRecord } from "@/modules/finance/services/payment-record-service";
 import { canRecordPayment, canViewFinance } from "@/modules/finance/services/finance-permissions";

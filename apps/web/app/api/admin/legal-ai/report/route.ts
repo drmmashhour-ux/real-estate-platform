@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
 import { isPlatformAdmin } from "@/lib/auth/is-platform-admin";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { aiLegalRiskReportForAdmin } from "@/lib/legal/ai-legal-service";
 import { demoLegalRiskReport } from "@/lib/legal/demo-legal-ai";
 import { isDemoMode } from "@/lib/demo-mode";

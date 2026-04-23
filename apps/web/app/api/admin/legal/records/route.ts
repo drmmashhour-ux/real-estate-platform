@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
 import { requireAdminUser } from "@/modules/analytics/services/require-admin";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { legalHubFlags } from "@/config/feature-flags";
 import { mapPrismaLegalRecord } from "@/modules/legal/records/legal-record-import.service";
 import type { LegalRecordValidationBundleV1, LegalRuleResult } from "@/modules/legal/records/legal-record.types";

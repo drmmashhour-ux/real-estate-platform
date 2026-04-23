@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { ListingStatus } from "@prisma/client";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getBnhubMarketInsightForPublishedListing } from "@/lib/bnhub/market-price-insight";
 
 /**

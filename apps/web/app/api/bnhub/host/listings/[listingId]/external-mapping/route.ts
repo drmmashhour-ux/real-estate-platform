@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { BnhubChannelPlatform, BnhubChannelSyncStatus } from "@prisma/client";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { assertListingOwner } from "@/lib/bnhub/hospitality-addons";
 import { logChannelSync } from "@/lib/bnhub/channel-integration";
 

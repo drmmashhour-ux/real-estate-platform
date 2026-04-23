@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { resolveShortTermListingRef, normalizeAnyPublicListingCode } from "@/lib/listing-code";
 import { getCachedBnhubListingById } from "@/lib/bnhub/cached-listing";
 import { buildBnhubStaySeoSlug } from "@/lib/seo/public-urls";

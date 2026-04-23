@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { appendLegalFormAudit } from "@/lib/forms/audit";
 import { assertDraftAccess, countBlockingAlerts } from "@/lib/forms/guards";
 import { requireBrokerLikeApi } from "@/lib/forms/require-broker";

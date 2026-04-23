@@ -1,5 +1,5 @@
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { rollbackBNHubAction } from "@/modules/bnhub/autopilot/bnhub-autopilot-rollback.service";
 import { getBnhubAutopilotAction } from "@/modules/bnhub/autopilot/bnhub-autopilot-store.service";
 import { bnhubAutopilotExecutionFlags } from "@/config/feature-flags";

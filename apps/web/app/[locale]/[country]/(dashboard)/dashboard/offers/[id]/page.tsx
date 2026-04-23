@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
 import { getListingById } from "@/lib/bnhub/listings";
 import { canViewOffer, resolveOfferActorRole } from "@/modules/offers/services/offer-access";

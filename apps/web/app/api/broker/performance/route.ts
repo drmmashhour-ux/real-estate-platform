@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { brokerPerformanceFlags } from "@/config/feature-flags";
 import { buildBrokerPerformanceEngineSnapshot } from "@/modules/broker/performance/broker-performance-engine.service";
 import { buildBrokerPerformanceSummary } from "@/modules/broker/performance/broker-performance.service";

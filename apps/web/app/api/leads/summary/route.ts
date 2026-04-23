@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { Prisma } from "@prisma/client";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getGuestId } from "@/lib/auth/session";
 import { PLATFORM_BNHUB_HOST_FEE_RATE } from "@/lib/leads/commission";
 import { normalizePipelineStage } from "@/lib/leads/pipeline-stage";

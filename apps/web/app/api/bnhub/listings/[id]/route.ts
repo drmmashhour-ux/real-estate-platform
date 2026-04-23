@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getListingById, updateListing } from "@/lib/bnhub/listings";
 import { canPublishListingMandatory } from "@/lib/bnhub/mandatory-verification";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { hasActiveEnforceableContract } from "@/lib/legal/enforceable-contract";
 import { ENFORCEABLE_CONTRACT_TYPES } from "@/lib/legal/enforceable-contract-types";
 import { enforceableContractsRequired } from "@/lib/legal/enforceable-contracts-enforcement";

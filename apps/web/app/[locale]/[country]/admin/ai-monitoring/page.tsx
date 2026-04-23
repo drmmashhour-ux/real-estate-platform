@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getActiveAiAlerts } from "@/lib/ai-marketplace-health";
 import { getAiDecisionLogs } from "@/lib/ai-decision-log";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 export const dynamic = "force-dynamic";
 

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { DEMO_PROJECTS } from "@/lib/data/demo-projects";
 import { getTrialEndDate } from "@/lib/projects-pricing";
 import { isFeaturedEffective, sortProjectsByFeaturedAndPremium } from "@/lib/projects-featured";

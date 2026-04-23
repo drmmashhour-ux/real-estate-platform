@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { checkGrowthPaywall } from "@/src/modules/growth-funnel/application/checkGrowthPaywall";
 import { maxFreeAiDrafts, maxFreeSimulatorRuns } from "@/src/modules/growth-funnel/domain/usageLimits";
 import { getOrCreateUsageCounter } from "@/src/modules/growth-funnel/infrastructure/growthFunnelRepository";

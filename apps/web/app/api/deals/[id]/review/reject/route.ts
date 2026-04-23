@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { authenticateBrokerDealRoute } from "@/lib/deals/broker-draft-auth";
 import { canMutateExecution } from "@/lib/deals/execution-access";
 import { requireAiContractEngine } from "@/lib/contract-engine/guard";

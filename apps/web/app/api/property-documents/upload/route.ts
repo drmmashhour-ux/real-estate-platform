@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { checkQuotaBeforeUpload, addUsage } from "@/lib/storage-quota";
 import { createStorageFileRecord } from "@/lib/storage/record";
 import { savePropertyDocument } from "@/lib/verification/document-storage";

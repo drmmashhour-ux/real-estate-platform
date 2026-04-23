@@ -5,7 +5,7 @@
  */
 
 import { NextRequest } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getGuestId } from "@/lib/auth/session";
 import { getStripe, isStripeConfigured } from "@/lib/stripe";
 import { stripeAppBaseUrl } from "@/lib/stripe/app-base-url";

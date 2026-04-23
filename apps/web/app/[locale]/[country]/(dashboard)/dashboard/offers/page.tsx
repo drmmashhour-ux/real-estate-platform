@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
 import { resolveListingTitle } from "@/modules/offers/services/resolve-listing-title";
 import { MyOffersActions } from "@/components/offers/MyOffersActions";

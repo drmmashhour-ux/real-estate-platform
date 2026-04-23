@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { syncIcsImport } from "@/modules/calendar/ics/ics-sync.service";
 
 export const dynamic = "force-dynamic";

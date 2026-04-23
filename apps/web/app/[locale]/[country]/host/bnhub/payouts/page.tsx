@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getGuestId } from "@/lib/auth/session";
 import { getHostPayoutSummary } from "@/modules/bnhub-payments/services/payoutControlService";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { syncHostAccountFromUserStripe } from "@/modules/bnhub-payments/services/connectedAccountService";
 
 export default async function HostBnhubPayoutsPage() {

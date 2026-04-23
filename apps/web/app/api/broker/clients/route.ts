@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { BrokerClientStatus, Prisma } from "@prisma/client";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { DemoEvents } from "@/lib/demo-event-types";
 import { trackDemoEvent } from "@/lib/demo-analytics";
 import { requireBrokerOrAdminApi } from "@/modules/crm/services/require-broker-api";

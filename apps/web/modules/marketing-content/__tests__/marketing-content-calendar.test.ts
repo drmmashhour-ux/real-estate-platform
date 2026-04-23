@@ -34,8 +34,8 @@ describe("marketing-content calendar", () => {
   });
 
   it("enforces adjacent status transitions", () => {
-    expect(canTransition("IDEA", "DRAFT")).toBe(true);
-    expect(canTransition("IDEA", "APPROVED")).toBe(false);
+    expect(canTransition("IDEA", "SCRIPT")).toBe(true);
+    expect(canTransition("IDEA", "READY")).toBe(false);
     expect(canTransition("POSTED", "POSTED")).toBe(true);
   });
 
@@ -51,7 +51,7 @@ describe("marketing-content calendar", () => {
   });
 
   it("scheduling via rescheduleContent moves pre-approved rows to SCHEDULED", () => {
-    let itm = seedItem({ status: "DRAFT" });
+    let itm = seedItem({ status: "SCRIPT" });
     const updated = rescheduleContent(itm.id, "2026-06-01");
     expect(updated?.scheduledDate).toBe("2026-06-01");
     expect(updated?.status).toBe("SCHEDULED");

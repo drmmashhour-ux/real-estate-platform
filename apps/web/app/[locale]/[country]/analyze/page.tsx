@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { PLATFORM_DEFAULT_DESCRIPTION } from "@/lib/brand/platform";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getGuestId } from "@/lib/auth/session";
 import { buildMonetizationSnapshot } from "@/lib/investment/monetization";
 import { GeneratedByLecipm } from "@/components/brand/GeneratedByLecipm";

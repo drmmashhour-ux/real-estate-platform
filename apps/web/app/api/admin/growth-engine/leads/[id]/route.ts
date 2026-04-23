@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { GrowthEngineLeadStage } from "@prisma/client";
 import { z } from "zod";
 import { requireAdminSession } from "@/lib/admin/require-admin";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { updateLeadStage } from "@/lib/growth/lead-service";
 
 export const dynamic = "force-dynamic";

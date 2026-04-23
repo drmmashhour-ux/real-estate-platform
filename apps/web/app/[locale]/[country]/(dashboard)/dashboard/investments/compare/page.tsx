@@ -4,7 +4,7 @@ import { getUserRole, isHubAdminRole } from "@/lib/auth/session";
 import { hubNavigation } from "@/lib/hub/navigation";
 import { getHubTheme } from "@/lib/hub/themes";
 import { HubLayout } from "@/components/hub/HubLayout";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { DEMO_PROJECTS } from "@/lib/data/demo-projects";
 import { predictUnitPrice } from "@/lib/ai/unit-pricing";
 

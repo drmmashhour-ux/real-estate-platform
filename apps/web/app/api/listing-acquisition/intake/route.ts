@@ -5,7 +5,7 @@ import {
   ListingAcquisitionPermissionStatus,
   type FsboListingOwnerType,
 } from "@prisma/client";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
 import { normalizeListingDescription } from "@/lib/listings/normalize-listing-description";
 import { createGrowthLeadFromListingAcquisition } from "@/lib/growth/lead-service";

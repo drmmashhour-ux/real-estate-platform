@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { requireBrokerOrAdminApi } from "@/modules/crm/services/require-broker-api";
 import { recalculateLeadLecipmScores } from "@/modules/crm/application/recalculateLeadLecipmScores";
 import { suggestAutoActions } from "@/modules/crm/application/suggestAutoActions";

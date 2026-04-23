@@ -3,7 +3,7 @@ import { getGuestId } from "@/lib/auth/session";
 import { assertGrowthAdmin, GrowthAuthError } from "@/src/modules/bnhub-growth-engine/services/growthAccess";
 import { getGrowthCampaignById } from "@/src/modules/bnhub-growth-engine/services/growthCampaignService";
 import type { BnhubGrowthCampaignStatus } from "@prisma/client";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 export const dynamic = "force-dynamic";
 

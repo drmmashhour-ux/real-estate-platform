@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { ACQUISITION_DAILY_TARGETS } from "@/lib/client-acquisition/constants";
 import { FIRST_TEN_DM_SCRIPTS, FIRST_TEN_CALL_FLOW, FIRST_TEN_FOLLOW_UP_SEQUENCE, FIRST_TEN_MOTIVATION } from "@/lib/client-acquisition/scripts";
 import { getOrCreateTodayProgress } from "@/lib/client-acquisition/daily-progress";

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
 import { isPlatformAdmin } from "@/lib/auth/is-platform-admin";
 import { ensureDefaultPromotionPlans } from "@/lib/bnhub/promotion-plans";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 export const dynamic = "force-dynamic";
 

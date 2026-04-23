@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
 import { getRecentlyViewedBnhubListings } from "@/lib/bnhub/recently-viewed";
 import { getUnifiedRecommendations } from "@/lib/ai/recommendations/getUnifiedRecommendations";

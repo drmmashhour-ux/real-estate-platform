@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { bnhubV2Flags, revenueV4Flags } from "@/config/feature-flags";
 import { buildBnhubPricingSuggestion } from "@/modules/bnhub-pricing/pricing-engine.service";
 import { computeBnhubAdvisoryPricing } from "@/modules/bnhub/pricing/bnhub-dynamic-pricing.service";

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
 import { canAccessAdminDashboard, resolveSeniorHubAccess } from "@/lib/senior-dashboard/role";
 import { redirect } from "next/navigation";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { MarketingContentStudioClient } from "@/components/marketing-studio/MarketingContentStudioClient";
 
 export const dynamic = "force-dynamic";

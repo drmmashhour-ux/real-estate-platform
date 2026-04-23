@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { getGuestId } from "@/lib/auth/session";
 import { isPlatformAdmin } from "@/lib/auth/is-platform-admin";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { isTrustGraphEnabled } from "@/lib/trustgraph/config";
 import { isTrustGraphBnhubRiskEnabled } from "@/lib/trustgraph/feature-flags";
 import { toBnhubBookingRiskDtos } from "@/lib/trustgraph/application/dto/bnhubBookingRiskDto";

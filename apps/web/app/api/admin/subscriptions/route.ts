@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { createSubscription } from "@/lib/subscription-billing";
 import type { PlanSubscriptionStatus } from "@prisma/client";
 

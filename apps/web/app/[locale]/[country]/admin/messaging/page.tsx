@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { MessagingAdminClient } from "./MessagingAdminClient";
 
 export const dynamic = "force-dynamic";

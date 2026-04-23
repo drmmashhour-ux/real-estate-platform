@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { PlatformRole } from "@prisma/client";
 import { listBadges } from "@/modules/gamification/broker-badges.service";
 

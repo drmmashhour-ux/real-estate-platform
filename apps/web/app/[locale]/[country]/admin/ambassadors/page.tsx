@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import Link from "next/link";
 import { LegalPacketLink } from "@/components/admin/LegalPacketLink";
 import { PremiumCard } from "@/components/ui/PremiumCard";

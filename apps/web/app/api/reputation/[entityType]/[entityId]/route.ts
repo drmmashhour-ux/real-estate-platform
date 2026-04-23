@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { ReputationEntityType } from "@prisma/client";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getReputationBadges } from "@/lib/reputation/get-public-badges";
 
 export const dynamic = "force-dynamic";

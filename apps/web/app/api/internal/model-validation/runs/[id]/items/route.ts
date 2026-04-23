@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { addValidationItem } from "@/modules/model-validation/application/addValidationItem";
 import type { AddValidationItemInput } from "@/modules/model-validation/domain/validation.types";
 import { requirePlatformAdmin } from "../../../_auth";

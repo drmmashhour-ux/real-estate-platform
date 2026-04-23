@@ -4,7 +4,7 @@
 
 import { getSupabaseAuthIdFromRequest } from "@/lib/bnhub/getSupabaseAuthIdFromRequest";
 import { getBnhubHostListingCountForUser } from "@/lib/bnhub/supabaseHostListings";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getStripe, isStripeConfigured } from "@/lib/stripe";
 import { syncHostOnboardingCompleteFromStripe } from "@/lib/stripe/hostConnectExpress";
 import { getMobileAuthUser } from "@/lib/mobile/mobileAuth";

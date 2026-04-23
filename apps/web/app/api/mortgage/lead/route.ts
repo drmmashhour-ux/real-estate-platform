@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { scoreLead } from "@/lib/ai/lead-scoring";
 import { tierFromScore } from "@/lib/ai/lead-tier";
 import {

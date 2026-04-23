@@ -6,7 +6,7 @@ import { AreaOverview } from "@/modules/seo-city/components/AreaOverview";
 import { SeoCityTracker } from "@/modules/seo-city/components/SeoCityTracker";
 import { generateSeoCityModel, metadataForSeoModel } from "@/modules/seo-city/seo-city-generator.service";
 import { isCitySearchPageEnabled } from "@/modules/multi-city/cityRolloutGate";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 export const revalidate = 300;
 

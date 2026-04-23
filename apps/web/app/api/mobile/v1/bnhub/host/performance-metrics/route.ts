@@ -2,7 +2,7 @@ import { BnhubBookingFunnelStage } from "@prisma/client";
 import { getSupabaseAuthIdFromRequest } from "@/lib/bnhub/getSupabaseAuthIdFromRequest";
 import { listBnhubListingIdsForHost } from "@/lib/bookings/host-supabase-bookings";
 import { getMobileAuthUser, resolveMobileAppRoleFromRequest } from "@/lib/mobile/mobileAuth";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 export const dynamic = "force-dynamic";
 

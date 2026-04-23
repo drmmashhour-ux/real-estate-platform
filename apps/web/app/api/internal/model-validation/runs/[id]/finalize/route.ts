@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { finalizeValidationRun } from "@/modules/model-validation/application/finalizeValidationRun";
 import { requirePlatformAdmin } from "../../../_auth";
 

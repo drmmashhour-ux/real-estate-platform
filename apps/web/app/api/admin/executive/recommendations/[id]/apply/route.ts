@@ -1,5 +1,5 @@
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { executeSafeExecutiveAction } from "@/src/modules/executive/autoActionEngine";
 
 export const dynamic = "force-dynamic";

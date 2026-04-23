@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdminSession } from "@/lib/admin/require-admin";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { recordOutcome } from "@/lib/growth-brain/learning";
 import { GrowthBrainApprovalStatus } from "@prisma/client";
 

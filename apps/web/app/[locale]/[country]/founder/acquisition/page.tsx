@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { launchSystemV1Flags } from "@/config/feature-flags";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getExecutiveSession } from "@/modules/owner-access/executive-visibility.service";
 import { buildMontrealHostAcquisitionSnapshot } from "@/modules/host-acquisition/host-acquisition.service";
 import { listOutreachLeads } from "@/modules/outreach-crm/crm.service";

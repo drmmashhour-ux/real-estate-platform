@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getGuestId } from "@/lib/auth/session";
 import { isPlatformAdmin } from "@/lib/auth/is-platform-admin";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { refreshLeadSignalsFromTelemetry } from "@/lib/crm/internal-crm-telemetry";
 import { recalculateLeadLecipmScores } from "@/modules/crm/application/recalculateLeadLecipmScores";
 export async function adminRefreshLeadCrmSignals(leadId: string): Promise<{ ok: boolean; error?: string }> {

@@ -6,7 +6,7 @@ import { executeAutonomousDecision } from "@/modules/autonomous/autonomous-execu
 import { buildGrowthPolicyEnforcementSnapshot } from "@/modules/growth/growth-policy-enforcement.service";
 import { getEnforcementForTarget } from "@/modules/growth/growth-policy-enforcement-query.service";
 import { requireGrowthMachineActor } from "@/modules/growth-machine/growth-api-context";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import type { AutonomousDecisionContext } from "@/modules/autonomous/autonomous-marketplace.types";
 
 export const dynamic = "force-dynamic";

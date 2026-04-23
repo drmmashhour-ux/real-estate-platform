@@ -1,5 +1,5 @@
 import { Prisma } from "@prisma/client";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { createDealRoom } from "@/lib/deals/create-deal-room";
 import { createDealRoomFromLead } from "@/lib/deals/create-from-lead";
 import { createDealRoomFromThread } from "@/lib/deals/create-from-thread";

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { GrowthCampaignStatus } from "@prisma/client";
 import { setGrowthCampaignStatus } from "@/lib/growth-acquisition";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getGuestId } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";

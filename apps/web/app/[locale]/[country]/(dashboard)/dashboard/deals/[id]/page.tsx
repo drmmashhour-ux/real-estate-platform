@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { InvestmentPipelineDealDetailView } from "@/components/deals/InvestmentPipelineDealDetailView";
 import { getPipelineDealDetail } from "@/modules/deals/deal-pipeline.service";
 import { userCanViewPipelineDeal } from "@/modules/deals/deal-access";

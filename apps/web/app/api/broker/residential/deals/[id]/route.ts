@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import type { DealExecutionType } from "@prisma/client";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { requireBrokerDealAccess, requireBrokerResidentialSession } from "@/lib/broker/residential-access";
 import { canMutateExecution } from "@/lib/deals/execution-access";
 import { logDealExecutionEvent } from "@/lib/deals/execution-events";

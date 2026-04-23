@@ -6,7 +6,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { isStripeConfigured } from "@/lib/stripe";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
 import { engineFlags, lecipmMonetizationSystemV1 } from "@/config/feature-flags";

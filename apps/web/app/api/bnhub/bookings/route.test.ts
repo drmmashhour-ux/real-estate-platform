@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { POST } from "./route";
 
 vi.mock("@/lib/auth/session", () => ({ getGuestId: vi.fn() }));
-vi.mock("@/lib/db", () => ({
+vi.mock("@repo/db", () => ({
   prisma: {
     shortTermListing: { findUnique: vi.fn() },
     booking: { create: vi.fn() },
@@ -20,7 +20,7 @@ vi.mock("@/lib/legal/content-license-enforcement", () => ({
 }));
 
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { createBooking } from "@/lib/bnhub/booking";
 
 describe("POST /api/bnhub/bookings", () => {

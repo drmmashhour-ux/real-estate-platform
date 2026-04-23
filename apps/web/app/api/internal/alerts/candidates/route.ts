@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { requireCronSecretOrAdmin } from "@/lib/server/verify-cron-or-admin";
 import { z } from "zod";
 

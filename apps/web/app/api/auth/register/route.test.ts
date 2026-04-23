@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { NextRequest } from "next/server";
 import { POST } from "./route";
 
-vi.mock("@/lib/db", () => ({
+vi.mock("@repo/db", () => ({
   prisma: {
     user: {
       findUnique: vi.fn(),
@@ -55,7 +55,7 @@ vi.mock("@/lib/bnhub/revenue-automation", () => ({
   runBnhubPostSignupAutomation: vi.fn().mockResolvedValue(undefined),
 }));
 
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 function nextRequest(url: string, body: Record<string, unknown>) {
   const req = new Request(url, {

@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
 import { addDisputeEvidence } from "@/lib/bnhub/disputes";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 /**
  * POST /api/bnhub/disputes/:id/evidence

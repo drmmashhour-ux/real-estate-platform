@@ -1,6 +1,6 @@
 import { DocumentEventType, type DocumentAccessLevel } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { requireDocumentUser } from "@/modules/documents/services/api-helpers";
 import {
   canManageDocument,

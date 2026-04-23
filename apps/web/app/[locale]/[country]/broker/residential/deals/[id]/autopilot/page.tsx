@@ -4,7 +4,7 @@ import { PlatformRole } from "@prisma/client";
 import { dealAutopilotFlags } from "@/config/feature-flags";
 import { getGuestId } from "@/lib/auth/session";
 import { requireBrokerDealAccess } from "@/lib/broker/residential-access";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { loadDealForAutopilot } from "@/modules/deal-autopilot/deal-autopilot.service";
 import { runDealAutopilotEngine } from "@/modules/deal-autopilot/deal-autopilot.engine";
 import { DealAutopilotPanel } from "@/components/deal-autopilot/DealAutopilotPanel";

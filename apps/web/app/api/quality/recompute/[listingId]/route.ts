@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { requireAdminSession } from "@/lib/admin/require-admin";
 import { updateListingQuality } from "@/lib/quality/update-listing-quality";
 

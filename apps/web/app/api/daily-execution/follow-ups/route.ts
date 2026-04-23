@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { generateFollowUpMessage } from "@/src/modules/daily-execution/domain/outreachCopy";
 import { listFollowUpQueue } from "@/src/modules/daily-execution/application/dailyMetricsService";
 

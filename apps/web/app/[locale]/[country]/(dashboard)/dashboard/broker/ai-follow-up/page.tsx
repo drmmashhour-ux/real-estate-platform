@@ -2,7 +2,7 @@ import Link from "next/link";
 import { HubLayout } from "@/components/hub/HubLayout";
 import { hubNavigation } from "@/lib/hub/navigation";
 import { getGuestId, getUserRole } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { redirect } from "next/navigation";
 
 export default async function BrokerAiFollowUpPage() {

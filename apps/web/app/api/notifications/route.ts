@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { NotificationStatus, NotificationType, Prisma } from "@prisma/client";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { DemoEvents } from "@/lib/demo-event-types";
 import { trackDemoEvent } from "@/lib/demo-analytics";
 import { requireNotificationUser } from "@/modules/notifications/services/api-helpers";

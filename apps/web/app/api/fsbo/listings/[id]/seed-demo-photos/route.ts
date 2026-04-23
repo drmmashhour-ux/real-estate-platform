@@ -1,7 +1,7 @@
 import { existsSync } from "fs";
 import { readFile } from "fs/promises";
 import path from "path";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getGuestId } from "@/lib/auth/session";
 import { assessListingPhotoForPropertyUse } from "@/lib/fsbo/assess-listing-photo-relevance";
 import {

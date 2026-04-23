@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { PrivacySensitivityLevel, PlatformRole } from "@prisma/client";
+import { canAccess } from "@/lib/server/access-control";
 
 export const PrivacyRole = PlatformRole;
 
@@ -9,55 +10,27 @@ export class PrivacyAccessService {
    */
   static async canAccessDocument(args: {
     userId: string;
-    userRole: string; // User.role or PrivacyRole
+    userRole: string;
     documentId: string;
   }): Promise<boolean> {
     const doc = await prisma.transactionDocument.findUnique({
       where: { id: args.documentId },
-      include: { transaction: { select: { brokerId: true } } },
+      include: { transaction: { select: { brokerId: true, buyerId: true, sellerId: true } } },
     });
 
     if (!doc) return false;
 
-    // 1. Super admin / Privacy Officer bypass
-    if (args.userRole === "ADMIN" || args.userRole === PrivacyRole.SUPER_ADMIN || args.userRole === PrivacyRole.PRIVACY_OFFICER) {
-      return true;
-    }
-
-    // 2. Check sensitivity
-    if (doc.sensitivityLevel === PrivacySensitivityLevel.PUBLIC) {
-      return true;
-    }
-
-    // 3. Broker on the transaction
-    if (doc.transaction.brokerId === args.userId) {
-      return true;
-    }
-
-    // 4. Allowed roles check
-    if (doc.allowedRoles) {
-      const allowed = doc.allowedRoles as string[];
-      if (allowed.includes(args.userRole)) {
-        return true;
+    // Use centralized access control logic
+    return canAccess(
+      { id: args.userId, role: args.userRole },
+      { 
+        type: "DOCUMENT", 
+        ownerId: doc.transaction.buyerId, // Simplified for now
+        brokerId: doc.transaction.brokerId || undefined,
+        allowedRoles: doc.allowedRoles as string[] || [],
+        sensitivityLevel: doc.sensitivityLevel
       }
-    }
-
-    // 5. Allowed departments check (assuming user.department exists or is passed in)
-    // For now, we'll assume departments are not yet fully implemented in the User model,
-    // but the logic is ready.
-    if (doc.allowedDepartments) {
-      const allowedDepts = doc.allowedDepartments as string[];
-      // if (args.userDepartment && allowedDepts.includes(args.userDepartment)) return true;
-    }
-
-    // 6. Need to know override
-    if (doc.needToKnow === false) {
-      // If not strictly need-to-know, allow wider internal access if not confidential
-      if (doc.sensitivityLevel === PrivacySensitivityLevel.INTERNAL) return true;
-    }
-
-    // 7. Default deny
-    return false;
+    );
   }
 
   /**
@@ -72,10 +45,9 @@ export class PrivacyAccessService {
     data: any;
     redact?: boolean;
   }) {
-    // 1. Verify purpose exists
     if (!args.purpose) throw new Error("Transfer purpose required");
 
-    // 2. Log transfer
+    // Log transfer in compliance register
     await prisma.privacyTransferLog.create({
       data: {
         transactionId: args.transactionId,
@@ -88,8 +60,8 @@ export class PrivacyAccessService {
       },
     });
 
-    // 3. Audit log
-    await prisma.privacyAuditLog.create({
+    // Audit log
+    await prisma.auditLog.create({
       data: {
         userId: args.initiatedBy,
         action: "INTERNAL_TRANSFER",

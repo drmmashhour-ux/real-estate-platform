@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
 import { createReview } from "@/lib/bnhub/reviews";
 import { canLeaveReview } from "@/lib/policy-engine";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 /** @deprecated Prefer POST /api/reviews (session-based). Body guestId ignored when signed in. */
 export async function POST(request: NextRequest) {

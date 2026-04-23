@@ -3,7 +3,7 @@
  */
 
 import { resolveCheckoutUserId } from "@/lib/auth/resolve-checkout-user";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getHostPayoutSummary } from "@/modules/bnhub-payments/services/payoutControlService";
 import { syncHostAccountFromUserStripe } from "@/modules/bnhub-payments/services/connectedAccountService";
 

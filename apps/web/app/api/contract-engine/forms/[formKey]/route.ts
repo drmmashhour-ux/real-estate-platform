@@ -1,5 +1,5 @@
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { aiContractEngineFlags } from "@/config/feature-flags";
 import { getFormByKey } from "@/modules/form-engine/form-registry.service";
 

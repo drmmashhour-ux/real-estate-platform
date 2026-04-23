@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { appendLegalFormAudit } from "@/lib/forms/audit";
 import { ensureDefaultLegalFormTemplates } from "@/lib/forms/ensure-default-templates";
 import { requireBrokerLikeApi } from "@/lib/forms/require-broker";

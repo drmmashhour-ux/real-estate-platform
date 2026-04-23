@@ -18,7 +18,7 @@ import {
 } from "@/lib/config/contact";
 import { getPublicContactMailto } from "@/lib/marketing-contact";
 import { PLATFORM_CARREFOUR_NAME } from "@/lib/brand/platform";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { fsboCityWhereFromParam } from "@/lib/geo/city-search";
 import { getFsboPremiumPublishPriceCents, getFsboPublishPriceCents } from "@/lib/fsbo/constants";
 import { computeListingInvestmentRecommendation } from "@/lib/fsbo/listing-investment-recommendation";

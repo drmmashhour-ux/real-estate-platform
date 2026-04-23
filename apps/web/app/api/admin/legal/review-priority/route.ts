@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { legalIntelligenceFlags } from "@/config/feature-flags";
 import { getGuestId } from "@/lib/auth/session";
 import { recommendLegalEscalation } from "@/modules/legal/legal-escalation.service";

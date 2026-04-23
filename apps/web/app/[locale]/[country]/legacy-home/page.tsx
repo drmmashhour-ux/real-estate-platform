@@ -15,7 +15,7 @@ import { getPhoneNumber, getPhoneTelLink } from "@/lib/phone";
 import { VerifiedBrokerBadge } from "@/components/ui/VerifiedBrokerBadge";
 import { getGuestId } from "@/lib/auth/session";
 import { getFeedbackRatingSummary } from "@/lib/feedback/rating-summary";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getPublicAppUrl } from "@/lib/config/public-app-url";
 import { getStaysRecommendedForYou, type SimilarListingCard } from "@/lib/recommendations";
 import { getFeaturedTestimonialsForHome } from "@/lib/marketing/trust-content";

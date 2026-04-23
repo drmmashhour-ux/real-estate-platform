@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
 import { formatAssistantChecklistMessage } from "@/lib/bnhub/host-verification-assistant";
 import { getRequirementsForListingId } from "@/lib/bnhub/verification";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 /**
  * GET — Host preview of the same verification checklist admins see (plus assistant copy).

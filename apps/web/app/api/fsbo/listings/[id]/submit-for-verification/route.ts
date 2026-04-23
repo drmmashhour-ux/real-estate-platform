@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getGuestId } from "@/lib/auth/session";
 import { FSBO_STATUS } from "@/lib/fsbo/constants";
 import { assertSellerHubSubmitReady } from "@/lib/fsbo/seller-hub-validation";

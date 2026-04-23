@@ -3,7 +3,7 @@ import { getGuestId } from "@/lib/auth/session";
 import { logDealExecutionEvent } from "@/lib/deals/execution-events";
 import { canMutateExecution, loadDealWithActor } from "@/lib/deals/execution-access";
 import { dealExecutionFlags } from "@/config/feature-flags";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { renderDealDraftBundle } from "@/modules/form-rendering/render.service";
 
 export const dynamic = "force-dynamic";

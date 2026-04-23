@@ -2,7 +2,17 @@ import { prisma } from "@/lib/db";
 
 import { logLead } from "./centris-funnel.log";
 
-export type LeadFunnelEventType = "VIEW" | "CONTACT" | "SAVE" | "BOOKING";
+export type LeadFunnelEventType =
+  | "VIEW"
+  | "CONTACT"
+  | "SAVE"
+  | "BOOKING"
+  /** Pricing widget / valuation interaction */
+  | "PRICE"
+  /** Deep listing engagement (gallery, docs, scroll milestone) — payload-driven */
+  | "ENGAGEMENT"
+  /** Explicit analysis unlock request or analysis view */
+  | "ANALYSIS";
 
 /** Maps to `LeadTimelineEvent.eventType` — CRM timeline + Centris funnel analytics. */
 export async function recordLeadFunnelEvent(

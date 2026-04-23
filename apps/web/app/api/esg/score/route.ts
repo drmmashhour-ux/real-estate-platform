@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { computeEsgScore } from "@/modules/esg/esg-score.engine";
 import type { EsgProfilePayload } from "@/modules/esg/esg.types";
 import { syncEsgScoreForListing } from "@/modules/esg/esg.service";

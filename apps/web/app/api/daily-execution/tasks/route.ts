@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getTodayTasks, buildCoachingReminders } from "@/src/modules/daily-execution/application/dailyTaskService";
 
 export const dynamic = "force-dynamic";

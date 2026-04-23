@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { requireListingOwnerOrAdmin } from "@/lib/autopilot/listing-guard";
 
 export const dynamic = "force-dynamic";

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { seedContractDraftTemplatesIfEmpty } from "@/lib/contracts/seed-contract-draft-templates";
 
 export const dynamic = "force-dynamic";

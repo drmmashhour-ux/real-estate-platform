@@ -1,5 +1,5 @@
 import { PlatformRole } from "@prisma/client";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { assertBnhubHostOrAdmin } from "@/lib/mobile/mobileAuth";
 
 export const dynamic = "force-dynamic";

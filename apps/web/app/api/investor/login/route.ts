@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PlatformRole } from "@prisma/client";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { verifyPassword } from "@/lib/auth/password";
 import { createDbSession } from "@/lib/auth/db-session";
 import { setGuestIdCookie, setUserRoleCookie } from "@/lib/auth/session";

@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getSessionUserIdFromRequest } from "@/lib/auth/api-session";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
 

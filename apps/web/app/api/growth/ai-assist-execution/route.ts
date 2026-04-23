@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { engineFlags, growthPolicyEnforcementFlags } from "@/config/feature-flags";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { buildAiExecutionSuggestions } from "@/modules/growth/ai-assisted-execution.service";
 import { buildGrowthPolicyEnforcementSnapshot } from "@/modules/growth/growth-policy-enforcement.service";
 import { getEnforcementForTarget } from "@/modules/growth/growth-policy-enforcement-query.service";

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getNetworkEffectMetrics, describeNetworkLoop, NETWORK_EFFECT_LOOP_MERMAID } from "@/src/modules/network-effects";
 import { getMonetizationRollup } from "@/src/modules/monetization";
 import { listLatestCompetitorSnapshots } from "@/src/modules/competitor-tracking";

@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { requireBrokerDealAccess, requireBrokerResidentialSession } from "@/lib/broker/residential-access";
 import { canMutateExecution } from "@/lib/deals/execution-access";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { resolveCopilotSuggestion } from "@/modules/review/broker-review.service";
 
 export const dynamic = "force-dynamic";

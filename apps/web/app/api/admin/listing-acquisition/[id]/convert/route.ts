@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { Prisma } from "@prisma/client";
 import { ListingAcquisitionSourceType } from "@prisma/client";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { requireAdminSession } from "@/lib/admin/require-admin";
 import { allocateUniqueLSTListingCode } from "@/lib/listing-code";
 import { normalizeListingDescription } from "@/lib/listings/normalize-listing-description";

@@ -3,7 +3,7 @@ import { SecurityFailureBarChart } from "@/components/admin/SecurityFailureBarCh
 import { LecipmControlShell } from "@/components/admin/LecipmControlShell";
 import { getAdminRiskAlerts } from "@/lib/admin/control-center";
 import { requireAdminControlUserId } from "@/lib/admin/guard";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getActiveAlerts, getPlatformHealthSnapshot } from "@/lib/observability";
 import { listSecurityIpBlocks } from "@/lib/security/ip-block";
 import { getLoginFailureHourlySeries, getTopFailedLoginFingerprints } from "@/lib/security/security-analytics";

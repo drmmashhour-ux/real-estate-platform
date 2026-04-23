@@ -1496,17 +1496,17 @@ export function BuyerListingDetail({
                           className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/35 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-100"
                           title="Broker maintains active professional liability coverage on file"
                         >
-                          <span aria-hidden>🛡️</span> Insured Broker
+                          <span aria-hidden>🛡️</span> Insured <span className="text-emerald-200/90">✓</span>
                         </p>
                         {listing.insuranceDetail && (
                           <div className="flex flex-col gap-1 pl-1">
                             <p className="text-[10px] text-white/50 font-medium">
-                              ${(listing.insuranceDetail.liabilityAmount / 1000000).toFixed(0)}M liability coverage
+                              ${(listing.insuranceDetail.liabilityAmount / 1_000_000).toFixed(0)}M professional liability
                             </p>
                             {new Date(listing.insuranceDetail.expiryDate).getTime() - Date.now() < 30 * 86400000 && (
                               <p className="text-[10px] text-orange-400 font-bold flex items-center gap-1">
                                 <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
-                                Coverage renewal pending
+                                Expires soon — confirm renewal
                               </p>
                             )}
                           </div>

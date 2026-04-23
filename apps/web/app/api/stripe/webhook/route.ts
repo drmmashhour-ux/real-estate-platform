@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { headers } from "next/headers";
 import Stripe from "stripe";
 import { PaymentStatus, PlatformInvoiceStatus, type Prisma } from "@prisma/client";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { generateInvoiceNumber } from "@/lib/codes/generate-code";
 import { PAID_STORAGE_PLAN_KEYS, plans, type PlanKey } from "@/lib/billing/plans";
 import { getResend, isResendConfigured, getFromEmail } from "@/lib/email/resend";

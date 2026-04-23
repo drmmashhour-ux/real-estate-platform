@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { PlatformRole } from "@prisma/client";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { recordEvolutionOutcome } from "@/modules/evolution/outcome-tracker.service";
 import type { EvolutionDomain, EvolutionMetricType } from "@/modules/evolution/evolution.types";
 

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { validateLicenseFormat } from "@/lib/broker/licenseValidation";
 import { computeBrokerIsVerified, brokerHasLeadAccess } from "@/modules/mortgage/services/broker-verification";
 import { getMortgageBrokerOwnerSession } from "@/modules/mortgage/services/mortgage-broker-owner-session";

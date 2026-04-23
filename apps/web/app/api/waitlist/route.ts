@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { gateDistributedRateLimit } from "@/lib/rate-limit-enforcement";
 import { persistLaunchEvent } from "@/src/modules/launch/persistLaunchEvent";
 

@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { brokerageOfficeFlags } from "@/config/feature-flags";
 import { roleCanViewOfficeFinance } from "@/lib/brokerage/office-access";
 import { resolveBrokerOfficeRequest } from "@/lib/brokerage/resolve-office-api";

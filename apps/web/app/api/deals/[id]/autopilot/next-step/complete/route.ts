@@ -1,6 +1,6 @@
 import { authenticateBrokerDealRoute } from "@/lib/deals/broker-draft-auth";
 import { dealAutopilotFlags } from "@/config/feature-flags";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { logBrokerWorkspaceEvent, brokerWorkspaceAuditKeys } from "@/lib/broker/broker-workspace-audit";
 
 export const dynamic = "force-dynamic";

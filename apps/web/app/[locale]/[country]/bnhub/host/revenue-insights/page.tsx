@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { computeBnhubListingRevMetrics } from "@/src/modules/pricing/bnhub-metrics.service";
 import { revenueV4Flags } from "@/config/feature-flags";
 

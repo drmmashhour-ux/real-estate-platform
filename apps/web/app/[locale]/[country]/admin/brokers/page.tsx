@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { LecipmControlShell } from "@/components/admin/LecipmControlShell";
 import { getGuestId } from "@/lib/auth/session";
 import { getAdminRiskAlerts } from "@/lib/admin/control-center";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { IDENTITY_MANUAL_REVIEW_DISCLAIMER } from "@/modules/mortgage/services/broker-verification";
 import { AdminBrokersClient } from "./AdminBrokersClient";
 import { AdminMortgageBrokersClient } from "./AdminMortgageBrokersClient";

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { runCalibrationBatch } from "@/modules/continuous-calibration/application/runCalibrationBatch";
 import { requirePlatformAdmin } from "../../../../model-validation/_auth";
 

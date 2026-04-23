@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { buildMarketAnalysis } from "@/lib/market/analysis-service";
 import { cityToSlug } from "@/lib/market/slug";
 

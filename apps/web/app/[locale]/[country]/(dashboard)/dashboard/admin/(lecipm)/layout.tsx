@@ -5,7 +5,7 @@ import { LecipmDashboardShell } from "@/components/layouts/dashboard-shell";
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
 import { buildLecipmShellPayload, shellUserDisplayName } from "@/lib/navigation/lecipm-shell-server";
 import { canAccessAdminDashboard, resolveSeniorHubAccess } from "@/lib/senior-dashboard/role";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 export const dynamic = "force-dynamic";
 

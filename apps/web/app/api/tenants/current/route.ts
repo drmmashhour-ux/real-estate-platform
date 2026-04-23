@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { safeApiError } from "@/lib/api/safe-error-response";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { createApiTimer } from "@/lib/middleware/request-logger";
 import { requireSessionUser } from "@/modules/tenancy/services/tenant-api-helpers";
 import { getRequestedTenantIdFromRequest } from "@/modules/tenancy/services/tenant-context-service";

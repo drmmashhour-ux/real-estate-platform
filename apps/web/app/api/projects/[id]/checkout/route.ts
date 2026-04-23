@@ -1,6 +1,6 @@
 import Stripe from "stripe";
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getStripe, isStripeConfigured } from "@/lib/stripe";
 import {
   getSubscriptionPriceCentsAsync,

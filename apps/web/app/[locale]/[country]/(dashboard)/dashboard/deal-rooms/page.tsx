@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { DealRoomsListClient } from "@/components/deal-rooms/DealRoomsListClient";
 import { NewDealRoomForm } from "@/components/deal-rooms/NewDealRoomForm";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { listDealRooms } from "@/lib/deals/list-deal-rooms";
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
 

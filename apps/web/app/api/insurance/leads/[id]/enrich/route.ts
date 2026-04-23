@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
 import { getClientIpFromRequest } from "@/lib/insurance/client-ip";
 import { scoreInsuranceLead } from "@/lib/insurance/score-lead";

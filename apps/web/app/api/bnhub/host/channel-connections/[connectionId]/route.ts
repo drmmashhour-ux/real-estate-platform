@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { BnhubChannelConnectionStatus } from "@prisma/client";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { syncConnection } from "@/src/modules/bnhub-channel-manager";
 
 export const dynamic = "force-dynamic";

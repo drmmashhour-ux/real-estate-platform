@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { PLATFORM_DEFAULT_DESCRIPTION } from "@/lib/brand/platform";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
 import { buildMonetizationSnapshot } from "@/lib/investment/monetization";
 import { MvpNav } from "@/components/investment/MvpNav";

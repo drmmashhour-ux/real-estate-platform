@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { getGuestId, getUserRole, isHubAdminRole } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 /**
  * POST /api/bnhub/issues/[id]/resolve — Admin: approve refund or reject claim.

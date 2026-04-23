@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { BnhubDayAvailabilityStatus } from "@prisma/client";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { loadStayListingForEditor } from "@/lib/admin/stay-listing-edit";
 import { getAvailability } from "@/lib/bnhub/listings";
 

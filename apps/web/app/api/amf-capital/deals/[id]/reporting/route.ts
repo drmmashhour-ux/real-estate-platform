@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { canManageCapitalDeal, canViewCapitalDeal } from "@/modules/amf-capital/amf-access.service";
 import { getDealReportingSnapshot, recordDistribution } from "@/modules/amf-capital/amf-reporting.service";
 

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { E_SIGN_CONTRACT_TYPES } from "@/lib/hubs/contract-types";
 import { isInvestmentFeaturesEnabled } from "@/lib/compliance/investment-features";
 import { ContractsStatusTabs } from "./contracts-status-tabs";

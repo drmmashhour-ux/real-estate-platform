@@ -1,6 +1,6 @@
 import { launchSystemV1Flags } from "@/config/feature-flags";
 import { requireLaunchSystemPlatform } from "@/lib/launch-system-api-auth";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { listOutreachLeads } from "@/modules/outreach-crm/crm.service";
 import { buildMontrealHostAcquisitionSnapshot } from "@/modules/host-acquisition/host-acquisition.service";
 

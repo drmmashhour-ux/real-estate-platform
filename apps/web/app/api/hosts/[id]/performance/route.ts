@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { updateHostPerformance } from "@/src/modules/reviews/aggregationService";
 import { getHostBadges } from "@/src/modules/reviews/badgeService";
 

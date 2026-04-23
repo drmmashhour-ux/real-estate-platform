@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getGuestId } from "@/lib/auth/session";
 import { pipelineLog } from "@/modules/green-ai/pipeline/pipeline-logger";
 import { isSubsidyPipelineStage } from "@/modules/green-ai/pipeline/upgrade-flow";

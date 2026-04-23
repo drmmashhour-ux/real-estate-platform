@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import type { ShortTermListing } from "@prisma/client";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import {
   listGuestVisibleListingServices,
   suggestAddonServiceCodes,

@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { requireAdminSurfaceApi } from "@/app/api/ai/admin-guard";
 import { marketingJsonError, marketingJsonOk } from "@/lib/marketing/http-response";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 export const dynamic = "force-dynamic";
 

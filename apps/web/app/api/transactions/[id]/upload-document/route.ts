@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
 import { uploadTransactionDocument } from "@/lib/transactions/documents";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { DOCUMENT_TYPES } from "@/lib/transactions/constants";
 
 /**

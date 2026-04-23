@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getGuestId } from "@/lib/auth/session";
 import { requireAdminUser } from "@/modules/analytics/services/require-admin";
 import { getGrowthTrackingDashboard } from "@/modules/analytics/services/growth-tracking-dashboard";

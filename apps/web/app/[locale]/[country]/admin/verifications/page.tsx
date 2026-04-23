@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { VerificationsDashboardClient } from "./verifications-dashboard-client";
 import { ProfessionalVerificationsClient } from "./professional-verifications-client";
 

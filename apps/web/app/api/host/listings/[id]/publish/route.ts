@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { updateListing } from "@/lib/bnhub/listings";
 import { getGuestId } from "@/lib/auth/session";
 import { postCreateShortTermListingFlow } from "@/lib/bnhub/post-create-short-term-listing";

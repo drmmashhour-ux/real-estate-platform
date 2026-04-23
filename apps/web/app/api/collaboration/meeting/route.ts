@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { PlatformRole } from "@prisma/client";
 
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { createTeamsMeeting, createZoomMeeting } from "@/modules/collaboration/collaboration-meeting.service";
 import type { CollaborationEntityType } from "@/modules/collaboration/collaboration.types";
 

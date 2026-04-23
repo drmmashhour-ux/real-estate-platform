@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { isFsboPubliclyVisible } from "@/lib/fsbo/constants";
 import { cityToSlug } from "@/lib/market/slug";
 import { isDealAnalyzerEnabled } from "@/modules/deal-analyzer/config";

@@ -1,8 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { PrivacyPurpose } from "@prisma/client";
-
 interface ConsentManagerProps {
   userId: string;
 }
@@ -16,7 +14,7 @@ export function ConsentManager({ userId }: ConsentManagerProps) {
       try {
         const res = await fetch(`/api/privacy/consents?userId=${userId}`);
         const data = await res.json();
-        setConsents(data.consents);
+        setConsents(data.consents || []);
       } catch (err) {
         console.error("Failed to fetch consents", err);
       } finally {
@@ -26,7 +24,7 @@ export function ConsentManager({ userId }: ConsentManagerProps) {
     fetchConsents();
   }, [userId]);
 
-  const handleToggle = async (purpose: PrivacyPurpose, currentlyGranted: boolean) => {
+  const handleToggle = async (purpose: string, currentlyGranted: boolean) => {
     try {
       const res = await fetch("/api/privacy/consent/toggle", {
         method: "POST",
@@ -70,7 +68,7 @@ export function ConsentManager({ userId }: ConsentManagerProps) {
                 <p className="text-xs text-gray-500 max-w-md">{p.description}</p>
               </div>
               <button
-                onClick={() => handleToggle(p.key as PrivacyPurpose, isGranted)}
+                onClick={() => handleToggle(p.key, isGranted)}
                 className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${isGranted ? 'bg-blue-600' : 'bg-gray-200'}`}
               >
                 <span

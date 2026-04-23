@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { getGuestId, getUserRole, isHubAdminRole } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import type { Prisma } from "@prisma/client";
 
 const ALLOWED_STATUSES = ["reviewing", "approved", "rejected", "resolved"] as const;

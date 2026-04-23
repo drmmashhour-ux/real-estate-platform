@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { AiCloserTrainingCritique } from "@/components/closing/AiCloserTrainingCritique";
+
 import type { SimulationPersonaId, TrainingLevel } from "@/modules/call-center/call-center.types";
 import { buildGamificationVm, levelFromAverageScore } from "@/modules/call-center/call-performance.service";
 import { scoreTrainingReply } from "@/modules/call-center/training-feedback.service";
@@ -127,6 +129,7 @@ export function TrainingLabClient({
   }, [allowedPersonas, personaId]);
 
   const clientLines = simState?.clientMessages ?? [];
+  const lastClientLine = clientLines[clientLines.length - 1] ?? "";
 
   return (
     <div className="mx-auto flex max-w-[1400px] flex-col gap-6 p-6 text-white">

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { buildHostEarningsSnapshot } from "@/lib/host-earnings/dashboard";
 import { getResolvedMarket } from "@/lib/markets";
 import { resolveActivePaymentModeFromMarket } from "@/lib/payments/resolve-payment-mode";

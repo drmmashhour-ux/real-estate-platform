@@ -2,7 +2,7 @@ import { PlatformRole } from "@prisma/client";
 import { brokerOpsFlags } from "@/config/feature-flags";
 import { requireBrokerResidentialSession } from "@/lib/broker/residential-access";
 import { createInternalNote } from "@/modules/broker-collaboration/internal-note.service";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 export const dynamic = "force-dynamic";
 

@@ -5,7 +5,7 @@
 
 import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { recordDealCrmStageChange } from "@/lib/ai/automation-triggers";
 import { hintCrmStageFromDealStatus } from "@/lib/ai/lifecycle/deal-actions";
 import { notifyDealClosedCelebrationIfNeeded } from "@/lib/listing-lifecycle/notify-deal-closed-celebration";

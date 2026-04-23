@@ -43,7 +43,7 @@ export async function POST(
       );
     }
 
-    const { prisma } = await import("@/lib/db");
+    const { prisma } = await import("@repo/db");
     let invId = investigationId;
     if (!invId) {
       const open = await prisma.listingInvestigation.findFirst({

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getPublicBadgesForListing } from "@/lib/trust/get-public-badges";
 
 export const dynamic = "force-dynamic";

@@ -1,6 +1,6 @@
 import { NotificationPriority, NotificationType } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { requireMobileGuestUser } from "@/lib/bnhub/mobile-api";
 import { createBnhubMobileNotification } from "@/lib/bnhub/mobile-push";
 import { triggerNewMessage } from "@/lib/bnhub/notifications";

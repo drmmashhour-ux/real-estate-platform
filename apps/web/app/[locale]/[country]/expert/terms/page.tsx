@@ -2,7 +2,7 @@ import Link from "next/link";
 import { PLATFORM_CARREFOUR_NAME } from "@/lib/brand/platform";
 import { redirect } from "next/navigation";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { isMortgageExpertRole } from "@/lib/marketplace/mortgage-role";
 import { ExpertTermsClient } from "./expert-terms-client";
 

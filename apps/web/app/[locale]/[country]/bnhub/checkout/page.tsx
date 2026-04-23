@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { getListingById } from "@/lib/bnhub/listings";
 import { getGuestId } from "@/lib/auth/session";
 import { BNHubCheckoutClient } from "./checkout-client";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getExperimentBrowserSessionId } from "@/lib/experiments/browser-session";
 import { EXPERIMENT_SURFACES } from "@/lib/experiments/constants";
 import { resolveExperimentSurface } from "@/lib/experiments/get-variant-config";

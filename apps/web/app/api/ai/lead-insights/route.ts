@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getLeadIntelligence } from "@/modules/ai-core/application/leadIntelligenceService";
 import { storeFeedbackSignal } from "@/modules/ai-training/application/storeFeedbackSignal";
 

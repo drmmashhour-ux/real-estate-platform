@@ -3,7 +3,7 @@ import { getGuestId } from "@/lib/auth/session";
 import { ERR_COOWNERSHIP_ACCEPT_OFFER } from "@/services/compliance/coownershipCompliance.service";
 import { acceptOffer } from "@/lib/transactions/offers";
 import { verifyTransactionParties } from "@/lib/transactions/verification";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { autoRecordDealLegalActionFromOffer } from "@/lib/deals/legal-timeline-bridge";
 import { maybeBlockRequestWithLegalGate } from "@/modules/legal/legal-api-gate";
 

@@ -22,7 +22,7 @@ import {
 } from "@/lib/stripe/bnhub-connect";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
 import { recordPlatformEvent } from "@/lib/observability";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { AnalyticsEvents } from "@/lib/analytics/events";
 import { captureServerEvent } from "@/lib/analytics/posthog-server";
 import { getFsboPlanPublishPriceCents, parseFsboPublishPlan } from "@/lib/fsbo/constants";

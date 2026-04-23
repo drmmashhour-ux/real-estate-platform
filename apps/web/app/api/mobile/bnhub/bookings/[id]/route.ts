@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getBookingById } from "@/lib/bnhub/booking";
 import { requireMobileGuestUser } from "@/lib/bnhub/mobile-api";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 export const dynamic = "force-dynamic";
 

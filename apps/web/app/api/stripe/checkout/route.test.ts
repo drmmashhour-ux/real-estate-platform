@@ -39,7 +39,7 @@ vi.mock("@/lib/bnhub/booking-pricing", () => ({
   computeBookingPricing: vi.fn().mockResolvedValue(null),
 }));
 
-vi.mock("@/lib/db", () => ({
+vi.mock("@repo/db", () => ({
   prisma: {
     booking: {
       findUnique: vi.fn(),
@@ -70,7 +70,7 @@ import { createCheckoutSession } from "@/lib/stripe/checkout";
 import { isStripeConfigured } from "@/lib/stripe";
 import { createGuestSupabaseBookingCheckoutSession } from "@/lib/stripe/guestSupabaseBooking";
 import { validateHostStripePayoutReadiness } from "@/lib/stripe/hostPayoutReadiness";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import {
   prepareReservationPaymentForCheckout,
   attachCheckoutSessionToReservationPayment,

@@ -5,7 +5,7 @@ import { getGuestId } from "@/lib/auth/session";
 import { isPlatformAdmin } from "@/lib/auth/is-platform-admin";
 import { hubNavigation } from "@/lib/hub/navigation";
 import { BnhubFraudFlagStatus } from "@prisma/client";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { FraudRiskBadge } from "@/components/bnhub/quality/BnhubQualityKit";
 import { ResolveFlagForm } from "./ResolveFlagForm";
 

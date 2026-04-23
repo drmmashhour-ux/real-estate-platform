@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { reputationEngineFlags } from "@/config/feature-flags";
 import { computeListingQualityBundle } from "@/modules/reputation/listing-quality.service";
 import { computeReputationRankingForListing } from "@/modules/ranking/ranking-engine.service";

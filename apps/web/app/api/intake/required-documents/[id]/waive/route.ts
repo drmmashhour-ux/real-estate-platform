@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getBrokerClientForIntake, requireIntakeUser } from "@/modules/intake/services/api-helpers";
 import { canReviewRequiredDocument, canViewIntakeProfile } from "@/modules/intake/services/intake-permissions";
 import {

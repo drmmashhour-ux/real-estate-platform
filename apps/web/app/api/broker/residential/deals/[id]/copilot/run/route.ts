@@ -1,6 +1,6 @@
 import { requireBrokerDealAccess, requireBrokerResidentialSession } from "@/lib/broker/residential-access";
 import { canMutateExecution } from "@/lib/deals/execution-access";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { runCopilotForDealId } from "@/modules/deal-copilot/deal-copilot.service";
 
 export const dynamic = "force-dynamic";

@@ -40,7 +40,7 @@ import { getListingPromotion } from "@/lib/promotions";
 import { getPhoneNumber, getPhoneTelLink } from "@/lib/phone";
 import { ListingUserProvidedDisclaimer } from "@/components/legal/ListingUserProvidedDisclaimer";
 import { GenerateOfferButton } from "@/components/offers/GenerateOfferButton";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { trackSearchEvent } from "@/lib/ai/search/trackSearchEvent";
 import { trackJourneyEvent } from "@/lib/journey/track-journey-event";
 import { getBnhubWhyThisPropertyBullets } from "@/lib/ai/search/bnhubWhyThisProperty";

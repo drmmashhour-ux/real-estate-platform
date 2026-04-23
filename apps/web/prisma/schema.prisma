@@ -323,7 +323,7 @@ model User {
   bnhubGuestRatingAverage              Float?                                @map("bnhub_guest_rating_average")
   createdAt                            DateTime                              @default(now())
   updatedAt                            DateTime                              @updatedAt
-  privacyConsentRecords                PrivacyConsentRecord[]
+  privacyConsentRecords                Consent[]
   launchEvents                         LaunchEvent[]                         @relation("LaunchEvents")
   properties                           Property[]
   shortTermListings                    ShortTermListing[]
@@ -32161,20 +32161,20 @@ enum ConfidentialityIncidentRiskLevel {
   CRITICAL
 }
 
-model PrivacyConsentRecord {
+model Consent {
   id             String         @id @default(cuid())
   userId         String         @map("user_id")
   user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactionId  String?        @map("transaction_id")
-  purpose        PrivacyPurpose
-  scopeText      String         @map("scope_text") @db.Text
+  purpose        String // "MARKETING", "SHARE_WITH_BROKERS", etc.
+  scopeText      String?        @map("scope_text") @db.Text
   granted        Boolean        @default(false)
   explicit       Boolean        @default(false)
   written        Boolean        @default(false)
   grantedAt      DateTime       @default(now()) @map("granted_at")
   expiresAt      DateTime?      @map("expires_at")
   revokedAt      DateTime?      @map("revoked_at")
-  legalBasisText String         @map("legal_basis_text") @db.Text
+  legalBasisText String?        @map("legal_basis_text") @db.Text
   evidenceRef    String?        @map("evidence_ref")
   createdBy      String?        @map("created_by")
   createdAt      DateTime       @default(now()) @map("created_at")
@@ -32288,12 +32288,13 @@ model PrivacyComplaint {
   @@map("privacy_complaints")
 }
 
-model PrivacyAuditLog {
+model AuditLog {
   id             String   @id @default(cuid())
   userId         String?  @map("user_id")
   action         String
   entityType     String?  @map("entity_type")
   entityId       String?  @map("entity_id")
+  resource       String?  @map("resource") // Added for user query consistency
   purpose        String?  @db.Text
   metadata       Json?
   ipAddress      String?  @map("ip_address")
@@ -32303,4 +32304,80 @@ model PrivacyAuditLog {
   @@index([userId])
   @@index([entityType, entityId])
   @@map("privacy_audit_logs")
+}
+
+model PortfolioAutopilotReview {
+  id                    String   @id @default(cuid())
+
+  portfolioId           String
+
+  status                String   // "generated" | "reviewed" | "archived"
+  reviewType            String   // "scheduled" | "manual" | "triggered"
+
+  overallHealthScore    Float?
+  concentrationRisk     Float?
+  cashflowStrength      Float?
+  growthStrength        Float?
+  riskScore             Float?
+
+  summary               String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model PortfolioAutopilotRecommendation {
+  id                    String   @id @default(cuid())
+
+  portfolioAutopilotReviewId String
+
+  recommendationType    String   // "hold" | "improve" | "rebalance" | "sell_review" | "buy_more" | "refinance_review"
+  priority              String   // "low" | "medium" | "high"
+
+  title                 String
+  description           String?
+
+  propertyId            String?
+  neighborhoodKey       String?
+
+  rationale             Json?
+  aiSummary             String?
+
+  requiresApproval      Boolean  @default(true)
+  accepted              Boolean  @default(false)
+  dismissed             Boolean  @default(false)
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model PortfolioPerformanceSnapshot {
+  id                    String   @id @default(cuid())
+
+  portfolioId           String
+  date                  DateTime
+
+  totalValueCents       Int?
+  totalCashflowCents    Int?
+  avgCapRate            Float?
+  avgROI                Float?
+  avgDSCR               Float?
+
+  metadata              Json?
+  createdAt             DateTime @default(now())
+}
+
+model AIWorkflow {
+  id               String   @id @default(cuid())
+  ownerType        String
+  ownerId          String
+  type             String
+  status           String
+  title            String
+  description      String?
+  requiresApproval Boolean  @default(true)
+  steps            Json
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@map("ai_workflows")
 }

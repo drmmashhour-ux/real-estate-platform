@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { PlatformRole } from "@prisma/client";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { topOpportunityListings } from "@/modules/listing-growth";
 import { requireGrowthMachineActor } from "@/modules/growth-machine/growth-api-context";
 

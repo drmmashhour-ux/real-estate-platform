@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { LeadContactOrigin, NotificationType } from "@prisma/client";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { gateDistributedRateLimit } from "@/lib/rate-limit-enforcement";
 import { parseFsboContactBody } from "@/lib/fsbo/validation";
 import { isFsboPubliclyVisible } from "@/lib/fsbo/constants";

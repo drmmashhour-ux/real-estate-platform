@@ -5,7 +5,7 @@ import { headers } from "next/headers";
 import type { PlatformRole } from "@prisma/client";
 import { getGuestId } from "@/lib/auth/session";
 import { LECIPM_PATH_HEADER } from "@/lib/auth/session-cookie";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 
 const ADMIN_SURFACE_ROLES = new Set<PlatformRole>(["ADMIN", "ACCOUNTANT"]);
 

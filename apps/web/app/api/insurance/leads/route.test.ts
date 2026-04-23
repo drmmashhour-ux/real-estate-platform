@@ -28,7 +28,7 @@ vi.mock("@/lib/insurance/assign-partner", () => ({
   assignInsurancePartner: vi.fn().mockResolvedValue(null),
 }));
 
-vi.mock("@/lib/db", () => ({
+vi.mock("@repo/db", () => ({
   prisma: {
     insuranceLead: { create: vi.fn(), findMany: vi.fn(), update: vi.fn(), findFirst: vi.fn() },
     insurancePartner: { findFirst: vi.fn(), findUnique: vi.fn(), findMany: vi.fn() },
@@ -52,7 +52,7 @@ vi.mock("@/lib/logger", () => ({
   logWarn: vi.fn(),
 }));
 
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getGuestId } from "@/lib/auth/session";
 import { sendInsuranceLeadToPartner } from "@/lib/email/send-insurance-lead";
 

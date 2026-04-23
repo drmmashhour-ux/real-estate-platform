@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { LeadMarketplaceStatus } from "@prisma/client";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getStripe, isStripeConfigured } from "@/lib/stripe";
 import { getSiteBaseUrl } from "@/modules/seo/lib/siteBaseUrl";
 import { requireBrokerOrAdminApi } from "@/modules/crm/services/require-broker-api";

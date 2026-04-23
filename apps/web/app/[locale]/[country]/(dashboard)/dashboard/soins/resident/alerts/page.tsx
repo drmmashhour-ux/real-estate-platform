@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
 import { SoinsAlertsListClient } from "@/components/soins/SoinsAlertsListClient";
 import { SoinsFamilySubHeader } from "@/components/soins/SoinsFamilySubHeader";

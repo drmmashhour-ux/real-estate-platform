@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { completeActionQueueItem } from "@/modules/notifications/services/action-queue";
 import { canViewActionQueueItem } from "@/modules/notifications/services/notification-permissions";
 import { requireNotificationUser } from "@/modules/notifications/services/api-helpers";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { AnalyticsEvents } from "@/lib/analytics/events";
 import { captureServerEvent } from "@/lib/analytics/posthog-server";
 

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { brokerMarketplaceRankingFlags } from "@/config/feature-flags";
 import { buildBrokerMarketplaceRankings } from "@/modules/broker/performance/broker-marketplace-ranking.service";
 import { summarizeRoutingReadinessFromRankings } from "@/modules/broker/performance/broker-routing-readiness.service";

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getBrokerApiSession } from "@/modules/mortgage/services/broker-dashboard-api";
 import { FREE_BROKER_VISIBLE_LEADS } from "@/modules/mortgage/services/broker-lead-limits";
 import { mapBrokerLeadRows } from "@/modules/mortgage/services/map-broker-lead";

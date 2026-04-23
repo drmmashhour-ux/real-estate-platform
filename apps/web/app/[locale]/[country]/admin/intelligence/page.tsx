@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { HubLayout } from "@/components/hub/HubLayout";
 import { getGuestId, getUserRole, isHubAdminRole } from "@/lib/auth/session";
 import { hubNavigation } from "@/lib/hub/navigation";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { SyriaRegionPanel } from "@/components/global/admin/SyriaRegionPanel";
 import { SyriaPreviewPanel } from "@/components/global/admin/SyriaPreviewPanel";
 import { engineFlags } from "@/config/feature-flags";

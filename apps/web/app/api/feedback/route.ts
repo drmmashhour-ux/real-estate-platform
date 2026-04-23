@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getGuestId } from "@/lib/auth/session";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
 import { getFeedbackRatingSummary } from "@/lib/feedback/rating-summary";

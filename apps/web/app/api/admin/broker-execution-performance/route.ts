@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { PlatformRole } from "@prisma/client";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { brokerPerformanceFlags } from "@/config/feature-flags";
 import { buildInternalBrokerLeaderboard } from "@/modules/broker/performance/broker-leaderboard.service";
 

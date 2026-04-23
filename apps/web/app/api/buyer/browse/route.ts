@@ -8,7 +8,7 @@ import {
   parsePropertyBrowseFiltersFromBody,
   type PropertyBrowseFilters,
 } from "@/lib/buy/property-browse-filters";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { buildFsboPublicVisibilityWhere } from "@/lib/fsbo/listing-expiry";
 import { getListingTransactionFlagsForListings } from "@/lib/fsbo/listing-transaction-flag";
 import type { GlobalSearchFiltersExtended } from "@/components/search/FilterState";
@@ -17,6 +17,8 @@ import { ListingAnalyticsKind } from "@prisma/client";
 import { buildFsboRecommendedBrowseSortUnit } from "@/lib/listings/marketplace-browse-sort";
 import { engineFlags, trustFlags } from "@/config/feature-flags";
 import { batchTrustBrowseAugmentation } from "@/modules/trust/trust-browse";
+import { batchInsuranceTrustSortMultipliers } from "@/modules/compliance/insurance/insurance-trust-ranking";
+import { prismaUserHasValidBrokerInsurance } from "@/modules/compliance/insurance/insurance.service";
 import type { TrustBrowseAugmentation } from "@/modules/trust/trust-browse";
 import type { TrustBadge } from "@/modules/trust/trust.types";
 import { isAiRankingEngineEnabled } from "@/src/modules/ranking/rankingEnv";
@@ -265,6 +267,10 @@ function buildFsboWhere(
     });
   }
 
+  if (f.insuredOnly === true) {
+    fsboAnd.push({ listingOwnerType: "BROKER" }, { owner: prismaUserHasValidBrokerInsurance(new Date()) });
+  }
+
   return fsboAnd;
 }
 
@@ -333,6 +339,9 @@ async function runBrowse(
     const sinceCrm = new Date();
     sinceCrm.setDate(sinceCrm.getDate() - 14);
     crmAnd.push({ createdAt: { gte: sinceCrm } });
+  }
+  if (f.insuredOnly === true) {
+    crmAnd.push({ owner: prismaUserHasValidBrokerInsurance(new Date()) });
   }
 
   const [fsboTotal, crmTotal, fsboRows, crmRows] = await Promise.all([
@@ -487,6 +496,21 @@ async function runBrowse(
 
   const sortMode = f.sort ?? "recommended";
   const merged = [...fsboMapped, ...crmMapped];
+
+  const trustOwnerIds = merged
+    .filter((m): m is (typeof merged)[number] & { ownerId: string } => m.kind === "fsbo" && Boolean(m.ownerId))
+    .map((m) => m.ownerId);
+  const trustAug = await batchTrustBrowseAugmentation(trustOwnerIds);
+  const insuranceTrustMult = await batchInsuranceTrustSortMultipliers(trustOwnerIds);
+
+  function applyInsuranceTrustIntelligenceMultiplier(rows: typeof merged) {
+    for (const row of rows) {
+      if (row.kind !== "fsbo" || !row.ownerId) continue;
+      const mult = insuranceTrustMult.get(row.ownerId);
+      if (mult != null && mult > 0) row.sortAt = Math.round(row.sortAt * mult);
+    }
+  }
+
   if (sortMode === "priceAsc") {
     merged.sort((a, b) => a.priceCents - b.priceCents);
   } else if (sortMode === "priceDesc") {
@@ -666,6 +690,9 @@ async function runBrowseCountOnly(f: GlobalSearchFiltersExtended, propertyFilter
     const sinceCrm = new Date();
     sinceCrm.setDate(sinceCrm.getDate() - 14);
     crmAnd.push({ createdAt: { gte: sinceCrm } });
+  }
+  if (f.insuredOnly === true) {
+    crmAnd.push({ owner: prismaUserHasValidBrokerInsurance(new Date()) });
   }
   const [fsboTotal, crmTotal] = await Promise.all([
     prisma.fsboListing.count({ where: { AND: fsboAnd } }),

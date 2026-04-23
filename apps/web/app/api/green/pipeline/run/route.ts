@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { GreenEngineInput } from "@/modules/green/green.types";
 import { parseGreenProgramTier } from "@/modules/green/green.types";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getGuestId } from "@/lib/auth/session";
 import type { DocumentRefInput } from "@/modules/green-ai/green-verification.service";
 import { pipelineLog } from "@/modules/green-ai/pipeline/pipeline-logger";

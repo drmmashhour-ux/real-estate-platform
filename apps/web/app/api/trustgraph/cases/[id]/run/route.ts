@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { isTrustGraphEnabled } from "@/lib/trustgraph/config";
 import { runVerificationPipelineForCase } from "@/lib/trustgraph/application/runVerificationPipeline";
 import { toVerificationCaseDetailDto } from "@/lib/trustgraph/application/dto/verificationCaseDto";

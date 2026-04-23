@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { isFsboPubliclyVisible } from "@/lib/fsbo/constants";
 import { buildFsboPublicListingPath } from "@/lib/seo/public-urls";
 import { buildPageMetadata } from "@/lib/seo/page-metadata";

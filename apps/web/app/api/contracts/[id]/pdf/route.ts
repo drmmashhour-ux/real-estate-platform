@@ -1,5 +1,5 @@
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { buildContractPdfBufferForUser } from "@/lib/pdf/contract-pdf-response";
 
 export const dynamic = "force-dynamic";

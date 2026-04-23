@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { isTrustGraphEnabled } from "@/lib/trustgraph/config";
 import { toTrustProfileDto } from "@/lib/trustgraph/application/dto/trustProfileDto";
 import { trustgraphJsonError, trustgraphJsonOk } from "@/lib/trustgraph/infrastructure/auth/http";

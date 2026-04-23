@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { logError } from "@/lib/logger";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import {
   canAccessPipelineDeal,
   requireAuthUser,

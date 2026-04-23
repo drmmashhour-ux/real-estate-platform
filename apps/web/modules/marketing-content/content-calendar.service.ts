@@ -26,9 +26,8 @@ import {
 
 const STATUS_ORDER: ContentStatus[] = [
   "IDEA",
-  "DRAFT",
-  "READY_FOR_APPROVAL",
-  "APPROVED",
+  "SCRIPT",
+  "READY",
   "SCHEDULED",
   "POSTED",
 ];
@@ -176,7 +175,7 @@ export function rescheduleContent(id: string, scheduledDateIsoDay: string): Cont
     return updateContentItem(id, { scheduledDate: scheduledDateIsoDay });
   }
   let status = cur.status;
-  if (status === "IDEA" || status === "DRAFT" || status === "APPROVED") {
+  if (status === "IDEA" || status === "SCRIPT" || status === "READY") {
     status = "SCHEDULED";
   }
   return updateContentItem(id, { scheduledDate: scheduledDateIsoDay, status });

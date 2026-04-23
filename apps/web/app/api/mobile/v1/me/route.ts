@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { getSupabaseAuthIdFromRequest } from "@/lib/bnhub/getSupabaseAuthIdFromRequest";
 import { getBnhubHostListingCountForUser } from "@/lib/bnhub/supabaseHostListings";
 import { getMobileAuthUser, resolveMobileAppRole } from "@/lib/mobile/mobileAuth";

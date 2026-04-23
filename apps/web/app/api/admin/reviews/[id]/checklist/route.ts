@@ -2,7 +2,7 @@ import type { QaChecklistItemStatus } from "@prisma/client";
 import { complianceAdminFlags } from "@/config/feature-flags";
 import { requireAdminSession } from "@/lib/admin/require-admin";
 import { complianceAuditKeys, logComplianceAudit } from "@/lib/admin/compliance-audit";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { updateChecklistItem } from "@/modules/qa-review/review-checklist.service";
 
 export const dynamic = "force-dynamic";

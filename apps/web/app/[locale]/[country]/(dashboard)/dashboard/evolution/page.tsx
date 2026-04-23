@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { PlatformRole } from "@prisma/client";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { EvolutionDashboardClient } from "@/components/evolution/EvolutionDashboardClient";
 
 export const metadata = {

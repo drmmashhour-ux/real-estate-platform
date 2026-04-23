@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { loadDealWithActor } from "@/lib/deals/execution-access";
 import { createExecutionDocument } from "@/modules/doc-intelligence/doc.service";
 

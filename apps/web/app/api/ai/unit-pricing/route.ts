@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import { predictUnitPrice } from "@/lib/ai/unit-pricing";
 import { predictUnitValueAI } from "@/lib/ai/openai-investment";
 import { logError } from "@/lib/logger";

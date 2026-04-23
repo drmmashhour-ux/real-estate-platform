@@ -81,6 +81,18 @@ export function ContentCalendarClient({ marketingHubHref }: Props) {
   const anchorDayIso = format(anchor, "yyyy-MM-dd");
   const weekDays = weekDaysContaining(anchor);
 
+  const monthGrid = useMemo(() => {
+    const start = startOfMonth(anchor);
+    const end = endOfMonth(anchor);
+    const days = eachDayOfInterval({ start, end });
+    const firstDay = getISODay(start); // 1 (Mon) to 7 (Sun)
+    const pads = firstDay - 1;
+    const grid: ({ kind: "pad" } | { kind: "day"; iso: string })[] = [];
+    for (let i = 0; i < pads; i++) grid.push({ kind: "pad" });
+    for (const d of days) grid.push({ kind: "day", iso: format(d, "yyyy-MM-dd") });
+    return grid;
+  }, [anchor]);
+
   function navigate(dir: -1 | 1) {
     if (view === "daily") setAnchor((d) => (dir < 0 ? subDays(d, 1) : addDays(d, 1)));
     else if (view === "weekly") setAnchor((d) => (dir < 0 ? subWeeks(d, 1) : addWeeks(d, 1)));
@@ -97,6 +109,24 @@ export function ContentCalendarClient({ marketingHubHref }: Props) {
 
   const dayItems = itemsForDay(anchorDayIso, filtered);
   const revenueDisplay = (summary.revenueFromContentCents / 100).toFixed(0);
+
+  if (!items.length && !creating) {
+    return (
+      <div className="flex min-h-[400px] flex-col items-center justify-center rounded-2xl border border-dashed border-white/10 bg-white/5 p-12 text-center">
+        <h2 className="text-xl font-semibold text-white">No content scheduled</h2>
+        <p className="mt-2 text-zinc-500">
+          Start by creating your first content idea or planning a post.
+        </p>
+        <button
+          type="button"
+          onClick={() => setCreating(true)}
+          className="mt-6 rounded-xl bg-amber-600 px-6 py-2.5 font-medium text-black hover:bg-amber-500"
+        >
+          Create first post
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">

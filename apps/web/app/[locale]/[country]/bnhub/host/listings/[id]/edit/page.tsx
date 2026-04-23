@@ -4,7 +4,7 @@ import { getListingById } from "@/lib/bnhub/listings";
 import { EditListingForm } from "./edit-listing-form";
 import { VerificationChecklist } from "@/components/bnhub/VerificationChecklist";
 import { HostBnhubRatingPanel } from "@/components/bnhub/HostBnhubRatingPanel";
-import { prisma } from "@/lib/db";
+import { prisma } from "@repo/db";
 import type { ClassificationBreakdown } from "@/src/modules/bnhub-growth-engine/services/propertyClassificationService";
 import { AIAssistantPanel } from "@/components/ai/AIAssistantPanel";
 import { ContentAutomationHostPanel } from "@/components/bnhub/ContentAutomationHostPanel";
