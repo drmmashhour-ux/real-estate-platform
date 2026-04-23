@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { AutonomousSuggestionsPanel } from "@/components/copilot/AutonomousSuggestionsPanel";
 
 import type { InvestorLuxuryDashboardModel } from "@/modules/dashboard/view-models";
 
@@ -314,6 +315,8 @@ export function InvestorHubLuxuryShell({ locale, country, model }: Props) {
                 Review full insight
               </Link>
             </div>
+
+            <AutonomousSuggestionsPanel ownerType="investor" autoGenerate={false} />
           </aside>
         </section>
 

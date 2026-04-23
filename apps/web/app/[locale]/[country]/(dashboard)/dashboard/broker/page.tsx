@@ -55,6 +55,7 @@ import { BrokerLegalComplianceStrip } from "@/components/broker/BrokerLegalCompl
 import { CoOwnershipBrokerCondoPanel } from "@/components/compliance/CoOwnershipBrokerCondoPanel";
 import { BrokerGreenIntelligenceSection } from "@/components/broker/BrokerGreenIntelligenceSection";
 import { BrokerHubMonetizationBanner } from "@/components/broker/BrokerHubMonetizationBanner";
+import { AutonomousSuggestionsPanel } from "@/components/copilot/AutonomousSuggestionsPanel";
 
 function fmtCommissionCents(cents: number | null | undefined): string {
   if (cents == null || cents <= 0) return "—";
@@ -271,6 +272,9 @@ export default async function BrokerHubPage({
               <InboxSummaryCards userId={userId} />
             </div>
           </section>
+        ) : null}
+        {userId && dbUser?.role === "BROKER" ? (
+          <AutonomousSuggestionsPanel ownerType="solo_broker" autoGenerate={false} className="max-w-4xl" />
         ) : null}
         {userId && dbUser?.role === "BROKER" ? (
           <BrokerExecutiveSnapshot

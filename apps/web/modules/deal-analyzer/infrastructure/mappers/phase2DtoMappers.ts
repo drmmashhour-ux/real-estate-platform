@@ -6,6 +6,7 @@ import type {
 
 export function mapComparableRow(r: DealAnalysisComparable): ComparableSummaryDto {
   return {
+    comparableRowId: r.id,
     comparablePropertyId: r.comparablePropertyId,
     distanceKm: r.distanceKm,
     similarityScore: r.similarityScore,

@@ -2603,6 +2603,8 @@ model DealAnalysis {
   refreshJobs              DealAnalysisRefreshJob[]
   refreshEvents            DealAnalysisRefreshEvent[]
   negotiationPlaybooks     DealNegotiationPlaybook[]
+  appraisalAdjustmentProposals AppraisalAdjustmentProposal[]
+  appraisalAdjustments         AppraisalAdjustment[]
 
   @@index([propertyId], map: "idx_deal_analyses_property_id")
   @@index([canonicalPropertyId], map: "idx_deal_analyses_canonical_property_id")
@@ -2667,9 +2669,68 @@ model DealAnalysisComparable {
   listingStatus        String?      @map("listing_status")
   details              Json?        @db.JsonB
   createdAt            DateTime     @default(now()) @map("created_at")
+  appraisalAdjustmentProposals AppraisalAdjustmentProposal[]
+  appraisalAdjustments         AppraisalAdjustment[]
 
   @@index([analysisId], map: "idx_deal_analysis_comparables_analysis_id")
   @@map("deal_analysis_comparables")
+}
+
+/// Broker-reviewable adjustment proposals for valuation support (`appraisalCaseId` = `DealAnalysis.id`).
+model AppraisalAdjustmentProposal {
+  id                   String   @id @default(cuid())
+  appraisalCaseId      String   @map("appraisal_case_id")
+  appraisalCase        DealAnalysis @relation(fields: [appraisalCaseId], references: [id], onDelete: Cascade)
+  comparableId         String?  @map("comparable_id")
+  comparable           DealAnalysisComparable? @relation(fields: [comparableId], references: [id], onDelete: SetNull)
+
+  adjustmentType       String   @map("adjustment_type")
+  label                String
+  suggestedAmountCents Int      @map("suggested_amount_cents")
+  direction            String
+
+  rationale            String?  @db.Text
+  confidence           Float?
+
+  sourceType           String?  @map("source_type")
+  sourceSummary        Json?    @map("source_summary") @db.JsonB
+
+  reviewed             Boolean  @default(false)
+  approved             Boolean  @default(false)
+  reviewedById         String?  @map("reviewed_by_id")
+
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  appliedAdjustment    AppraisalAdjustment?
+
+  @@index([appraisalCaseId], map: "idx_appraisal_adj_props_case")
+  @@index([comparableId], map: "idx_appraisal_adj_props_comp")
+  @@map("appraisal_adjustment_proposals")
+}
+
+/// Applied adjustments after broker approval (audit / reporting).
+model AppraisalAdjustment {
+  id              String   @id @default(cuid())
+  proposalId      String?  @unique @map("proposal_id")
+  proposal        AppraisalAdjustmentProposal? @relation(fields: [proposalId], references: [id], onDelete: SetNull)
+
+  appraisalCaseId String   @map("appraisal_case_id")
+  appraisalCase   DealAnalysis @relation(fields: [appraisalCaseId], references: [id], onDelete: Cascade)
+
+  comparableId    String?  @map("comparable_id")
+  comparable      DealAnalysisComparable? @relation(fields: [comparableId], references: [id], onDelete: SetNull)
+
+  adjustmentType  String   @map("adjustment_type")
+  label           String
+  amountCents     Int      @map("amount_cents")
+  direction       String
+  rationale       String?  @db.Text
+
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@index([appraisalCaseId], map: "idx_appraisal_adj_applied_case")
+  @@map("appraisal_adjustments")
 }
 
 /// Phase 3 — offer strategy guidance (not legal advice; rules-based).
@@ -12065,6 +12126,127 @@ model ComplianceAuditLog {
   @@map("compliance_audit_logs")
 }
 
+// —— LECIPM regulator export, trust ledger / reconciliation, AI autopilot proposals (human-in-the-loop) ——
+
+/// Manifest-first regulator / inspection export runs (PDF assembly is a separate step).
+model RegulatorExportRun {
+  id              String    @id @default(cuid())
+  exportNumber    String    @unique @map("export_number")
+  ownerType       String    @map("owner_type")
+  ownerId         String    @map("owner_id")
+  exportType      String    @map("export_type")
+  scopeType       String    @map("scope_type")
+  scopeId         String?   @map("scope_id")
+  status          String
+  format          String
+  requestedById   String?   @map("requested_by_id")
+  generatedAt     DateTime? @map("generated_at")
+  sealedAt        DateTime? @map("sealed_at")
+  manifest        Json?     @db.JsonB
+  fileUrl         String?   @map("file_url") @db.Text
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  @@index([ownerType, ownerId], map: "idx_regulator_export_owner")
+  @@map("regulator_export_runs")
+}
+
+/// Broker / agency trust deposit envelope (ledger is source of movement truth).
+model TrustDeposit {
+  id              String   @id @default(cuid())
+  agencyId        String?  @map("agency_id")
+  brokerId        String?  @map("broker_id")
+  listingId       String?  @map("listing_id")
+  dealId          String?  @map("deal_id")
+  amountCents     Int      @map("amount_cents")
+  /// received | held_in_trust | release_requested | released | refunded | adjusted
+  status          String   @default("received")
+  receiptNumber   String?  @map("receipt_number")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  ledgerEntries   TrustLedgerEntry[]
+
+  @@index([brokerId], map: "idx_trust_deposits_broker")
+  @@index([agencyId], map: "idx_trust_deposits_agency")
+  @@index([listingId], map: "idx_trust_deposits_listing")
+  @@index([dealId], map: "idx_trust_deposits_deal")
+  @@map("trust_deposits")
+}
+
+model TrustLedgerEntry {
+  id               String        @id @default(cuid())
+  ownerType        String        @map("owner_type")
+  ownerId          String        @map("owner_id")
+  trustDepositId   String?       @map("trust_deposit_id")
+  trustDeposit     TrustDeposit? @relation(fields: [trustDepositId], references: [id], onDelete: SetNull)
+  listingId        String?       @map("listing_id")
+  dealId           String?       @map("deal_id")
+  entryType        String        @map("entry_type")
+  direction        String
+  amountCents      Int           @map("amount_cents")
+  currency         String        @default("CAD")
+  referenceNumber  String?       @map("reference_number")
+  notes            String?       @db.Text
+  createdById      String?       @map("created_by_id")
+  createdAt        DateTime      @default(now()) @map("created_at")
+
+  @@index([ownerType, ownerId], map: "idx_trust_ledger_owner")
+  @@index([trustDepositId], map: "idx_trust_ledger_deposit")
+  @@map("trust_ledger_entries")
+}
+
+model TrustReconciliationRun {
+  id                  String   @id @default(cuid())
+  runNumber           String   @unique @map("run_number")
+  ownerType           String   @map("owner_type")
+  ownerId             String   @map("owner_id")
+  status              String
+  totalDepositsCents  Int      @map("total_deposits_cents")
+  totalLedgerCents    Int      @map("total_ledger_cents")
+  differenceCents     Int      @map("difference_cents")
+  details             Json?    @db.JsonB
+  createdAt           DateTime @default(now()) @map("created_at")
+
+  @@index([ownerType, ownerId], map: "idx_trust_recon_owner")
+  @@map("trust_reconciliation_runs")
+}
+
+/// AI-suggested drafts / next steps — never auto-executed; requires human review.
+model AiAutopilotProposal {
+  id             String   @id @default(cuid())
+  ownerType      String   @map("owner_type")
+  ownerId        String   @map("owner_id")
+  moduleKey      String   @map("module_key")
+  proposalType   String   @map("proposal_type")
+  entityType     String?  @map("entity_type")
+  entityId       String?  @map("entity_id")
+  content        Json     @db.JsonB
+  rationale      String?  @db.Text
+  sourceSummary  Json?    @map("source_summary") @db.JsonB
+  requiresReview Boolean  @default(true) @map("requires_review")
+  reviewed       Boolean  @default(false)
+  approved       Boolean  @default(false)
+  reviewedById   String?  @map("reviewed_by_id")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@index([ownerType, ownerId], map: "idx_ai_autopilot_owner")
+  @@map("ai_autopilot_proposals")
+}
+
+/// Cash receipt / intake forms (regulator packet payloads).
+model CashReceiptForm {
+  id          String   @id @default(cuid())
+  ownerType   String   @map("owner_type")
+  ownerId     String   @map("owner_id")
+  listingId   String?  @map("listing_id")
+  amountCents Int?     @map("amount_cents")
+  payload     Json?    @db.JsonB
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([ownerType, ownerId], map: "idx_cash_receipt_owner")
+  @@map("cash_receipt_forms")
+}
+
 /// Broker-controlled execution / closing pipeline (platform coordination — not OACIQ replacement).
 enum LecipmExecutionPipelineState {
   draft
@@ -14630,6 +14812,8 @@ model CopilotConversation {
   user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   workspaceId String?        @map("workspace_id") @db.Uuid
   title       String?
+  /// global | listing | deal | appraisal | alerts | compliance — command bar / contextual copilot.
+  contextType String?        @map("context_type") @db.VarChar(32)
   lastIntent  CopilotIntent? @map("last_intent")
   metadata    Json?          @db.JsonB
 
@@ -26872,6 +27056,26 @@ enum LecipmVisitStatus {
   no_show
 }
 
+/// LECIPM no-show pipeline state (advisory; does not replace `LecipmVisitStatus` outcome).
+enum LecipmVisitWorkflowState {
+  BOOKED
+  CONFIRMED
+  REMINDER_SENT
+  RESCHEDULE_REQUESTED
+  RESCHEDULED
+  NO_SHOW_RISK_HIGH
+  MISSED
+  COMPLETED
+  CANCELED
+}
+
+/// Probabilistic no-show risk tier (0–100 score maps to these bands).
+enum LecipmNoShowRiskBand {
+  LOW
+  MEDIUM
+  HIGH
+}
+
 model LecipmBrokerAvailability {
   id           String   @id @default(cuid())
   brokerUserId String   @map("broker_user_id")
@@ -26899,6 +27103,19 @@ model LecipmBrokerTimeOff {
 
   @@index([brokerUserId])
   @@map("lecipm_broker_time_off")
+}
+
+/// Per-broker caps for visit scheduling (LECIPM listing visits, not BNHub stays).
+model LecipmBrokerBookingSettings {
+  id              String   @id @default(cuid())
+  brokerUserId    String   @unique @map("broker_user_id")
+  broker          User     @relation(fields: [brokerUserId], references: [id], onDelete: Cascade)
+  maxVisitsPerDay Int      @default(4) @map("max_visits_per_day")
+  timeZone        String   @default("America/Toronto") @map("time_zone")
+  performanceScore Float?  @default(0.7) @map("performance_score")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("lecipm_broker_booking_settings")
 }
 
 model LecipmVisitRequest {
@@ -26948,15 +27165,28 @@ model LecipmVisit {
   broker         User               @relation("VisitBroker", fields: [brokerUserId], references: [id], onDelete: Cascade)
   customerUserId String?            @map("customer_user_id")
   customer       User?              @relation("VisitCustomer", fields: [customerUserId], references: [id], onDelete: SetNull)
-  startDateTime  DateTime           @map("start_date_time")
-  endDateTime    DateTime           @map("end_date_time")
-  status         LecipmVisitStatus  @default(scheduled)
-  createdAt      DateTime           @default(now()) @map("created_at")
-  updatedAt      DateTime           @updatedAt @map("updated_at")
+  startDateTime  DateTime                @map("start_date_time")
+  endDateTime    DateTime                @map("end_date_time")
+  status         LecipmVisitStatus       @default(scheduled)
+  workflowState  LecipmVisitWorkflowState @default(BOOKED) @map("workflow_state")
+  reconfirmedAt  DateTime?               @map("reconfirmed_at")
+  reconfirmMethod String?                @map("reconfirm_method") @db.VarChar(32)
+  noShowRiskScore Int                    @default(0) @map("no_show_risk_score")
+  noShowRiskBand  LecipmNoShowRiskBand?  @map("no_show_risk_band")
+  lastReminderAt  DateTime?              @map("last_reminder_at")
+  lastReminderKind String?               @map("last_reminder_kind") @db.VarChar(16)
+  reminderCount   Int                    @default(0) @map("reminder_count")
+  engagementHints Json?                 @map("engagement_hints")
+  rescheduleCount Int                  @default(0) @map("reschedule_count")
+  leadDeclineReason String?            @map("lead_decline_reason") @db.Text
+  createdAt      DateTime                @default(now()) @map("created_at")
+  updatedAt      DateTime                @updatedAt @map("updated_at")
 
   @@index([brokerUserId])
   @@index([startDateTime])
   @@index([leadId])
+  @@index([workflowState])
+  @@index([noShowRiskBand])
   @@map("lecipm_visits")
 }
 
@@ -32332,6 +32562,8 @@ model PortfolioAutopilotReview {
   summary               String?
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
+
+  @@index([portfolioId])
 }
 
 model PortfolioAutopilotRecommendation {
@@ -32357,6 +32589,8 @@ model PortfolioAutopilotRecommendation {
 
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
+
+  @@index([portfolioAutopilotReviewId])
 }
 
 model PortfolioPerformanceSnapshot {
@@ -32373,6 +32607,8 @@ model PortfolioPerformanceSnapshot {
 
   metadata              Json?
   createdAt             DateTime @default(now())
+
+  @@index([portfolioId, date])
 }
 
 model AIWorkflow {
@@ -32385,10 +32621,55 @@ model AIWorkflow {
   description      String?
   requiresApproval Boolean  @default(true)
   steps            Json
+  /// Aggregated execution outputs / summary (non-destructive metadata).
+  result           Json?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
+  executionLogs AIWorkflowExecutionLog[]
+
+  @@index([ownerType, ownerId, status])
   @@map("ai_workflows")
+}
+
+model AIWorkflowExecutionLog {
+  id         String   @id @default(cuid())
+  workflowId String
+  workflow   AIWorkflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  stepIndex  Int
+  stepType   String
+  status     String // pending | success | failed
+  input      Json?
+  output     Json?
+  createdAt  DateTime @default(now())
+
+  @@index([workflowId, stepIndex])
+  @@map("ai_workflow_execution_logs")
+}
+
+/// City-level activity buckets for heatmaps (platform-sourced counts; not a full-market census).
+model CityActivityZone {
+  id                String   @id @default(cuid())
+  city              String
+  province          String   @default("QC")
+  zoneKey           String   @map("zone_key")
+  centerLat         Float    @map("center_lat")
+  centerLng         Float    @map("center_lng")
+  listingsCount     Int      @default(0) @map("listings_count")
+  soldCount         Int      @default(0) @map("sold_count")
+  reservationsCount Int      @default(0) @map("reservations_count")
+  dealCount         Int      @default(0) @map("deal_count")
+  visitorsCount     Int      @default(0) @map("visitors_count")
+  activityScore     Float?   @map("activity_score")
+  activityLabel     String?  @map("activity_label")
+  /// Shown in UI: platform vs imported scope; estimated scoring disclaimer.
+  dataScopeNote     String?  @map("data_scope_note")
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([city, zoneKey], map: "city_activity_zones_city_zone_key")
+  @@index([city, province], map: "city_activity_zones_city_province_idx")
+  @@map("city_activity_zones")
 }
 
 /// Persisted daily executive briefing (platform + market signals) per owner.
@@ -32407,4 +32688,68 @@ model DailyDigest {
 
   @@index([ownerType, ownerId, date])
   @@map("daily_digests")
+}
+
+/// Point-in-time rollup for Admin / Executive Command Center (strategic cockpit).
+model ExecutiveSnapshot {
+  id                 String   @id @default(cuid())
+  ownerType          String // "admin" | "agency" | "platform"
+  ownerId            String
+  snapshotDate       DateTime
+  platformMetrics    Json?
+  complianceMetrics  Json?
+  financialMetrics   Json?
+  investorMetrics    Json?
+  marketMetrics      Json?
+  aiMetrics          Json?
+  overallHealthScore Float?
+  riskLevel          String? // "low" | "medium" | "high" | "critical"
+  summary            String?  @db.Text
+  /// Coverage flags, data-scope labels, thin-data markers (non-PII).
+  metadata           Json?
+  createdAt          DateTime @default(now())
+
+  @@index([ownerType, ownerId, snapshotDate])
+  @@map("executive_snapshots")
+}
+
+/// Proactive LECIPM suggestions (workflows / analysis) — separate from BNHub `AiSuggestion` (stays).
+model LecipmProactiveSuggestion {
+  id                String   @id @default(cuid())
+  ownerType         String
+  ownerId           String
+  suggestionType    String // workflow | analysis | watchlist | buy_box | appraisal | portfolio
+  priority          String // low | medium | high
+  title             String
+  message           String   @db.Text
+  rationale         Json?
+  relatedEntityType String?
+  relatedEntityId   String?
+  workflowType      String?
+  workflowPayload   Json?
+  shown             Boolean  @default(false)
+  dismissed         Boolean  @default(false)
+  accepted          Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([ownerType, ownerId, dismissed, accepted])
+  @@index([ownerId, createdAt])
+  @@map("lecipm_proactive_suggestions")
+}
+
+/// Lightweight behavior signals for autonomous suggestion pattern detection.
+model LecipmUserBehaviorSignal {
+  id            String   @id @default(cuid())
+  ownerType     String
+  ownerId       String
+  signalType    String // listing_view | deal_view | repeat_search | watchlist_add | appraisal_open | portfolio_view | neighborhood_focus
+  referenceType String?
+  referenceId   String?
+  metadata      Json?
+  createdAt     DateTime @default(now())
+
+  @@index([ownerType, ownerId, createdAt])
+  @@index([signalType, createdAt])
+  @@map("lecipm_user_behavior_signals")
 }

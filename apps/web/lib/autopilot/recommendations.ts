@@ -1,5 +1,17 @@
+import type { AutopilotPropertyInput } from "@/lib/autopilot/portfolio-data";
+
+export type RuleRecommendation = {
+  recommendationType: string;
+  priority: string;
+  title: string;
+  description: string;
+  propertyId?: string;
+  neighborhoodKey?: string;
+  rationale?: Record<string, unknown>;
+};
+
 export function generatePortfolioRecommendations(input: {
-  properties: any[];
+  properties: AutopilotPropertyInput[];
   health: {
     overallHealthScore: number;
     concentrationRisk: number;
@@ -7,8 +19,8 @@ export function generatePortfolioRecommendations(input: {
     growthStrength: number;
     riskScore: number;
   };
-}) {
-  const recommendations: any[] = [];
+}): RuleRecommendation[] {
+  const recommendations: RuleRecommendation[] = [];
   const properties = input.properties ?? [];
 
   for (const p of properties) {
@@ -88,6 +100,29 @@ export function generatePortfolioRecommendations(input: {
       description: "Consider prioritizing cashflow-positive assets or reducing weaker holdings.",
       rationale: {
         cashflowStrength: input.health.cashflowStrength,
+      },
+    });
+  }
+
+  if (input.health.riskScore >= 60) {
+    recommendations.push({
+      recommendationType: "rebalance",
+      priority: "high",
+      title: "Portfolio risk score is elevated",
+      description: "Several holdings may carry elevated risk. Review leverage, tenant quality, and geographic exposure.",
+      rationale: { riskScore: input.health.riskScore },
+    });
+  }
+
+  if (input.health.growthStrength >= 70 && input.health.concentrationRisk < 45) {
+    recommendations.push({
+      recommendationType: "hold",
+      priority: "low",
+      title: "Core portfolio momentum looks healthy",
+      description: "Growth and diversification metrics are reasonable; continue monitoring alerts and quarterly reviews.",
+      rationale: {
+        growthStrength: input.health.growthStrength,
+        concentrationRisk: input.health.concentrationRisk,
       },
     });
   }

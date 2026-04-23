@@ -17,6 +17,7 @@ export async function POST(req: NextRequest) {
   const messages = Array.isArray(body.messages) ? body.messages.filter((x: unknown) => typeof x === "string") : undefined;
   const listingHint = typeof body.listingHint === "string" ? body.listingHint : undefined;
   const leadId = typeof body.leadId === "string" ? body.leadId : undefined;
+  const listingId = typeof body.listingId === "string" ? body.listingId : undefined;
   const persistStage = body.persistStage === false ? false : true;
 
   const out = await getCloserAssist({
@@ -25,6 +26,7 @@ export async function POST(req: NextRequest) {
     route,
     listingHint,
     leadId,
+    listingId,
     persistStage,
     visitIntent: Boolean(body.visitIntent),
     hotLead: Boolean(body.hotLead),

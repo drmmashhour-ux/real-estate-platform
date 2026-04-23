@@ -96,7 +96,7 @@ async function runDigestModel(prompt: string): Promise<DailyDigestAiShape> {
       {
         role: "system",
         content:
-          "You output only valid JSON matching the user's schema. Never promise guaranteed investment outcomes.",
+          "You output only valid JSON matching the user's schema. Advisory briefing only: never promise guaranteed investment outcomes; never instruct autonomous trades, listings, or financing execution.",
       },
       { role: "user", content: prompt },
     ],
@@ -106,7 +106,11 @@ async function runDigestModel(prompt: string): Promise<DailyDigestAiShape> {
   if (!raw) {
     throw new Error("EMPTY_AI_DIGEST");
   }
-  return parseDigestJson(raw);
+  try {
+    return parseDigestJson(raw);
+  } catch {
+    throw new Error("INVALID_AI_DIGEST_JSON");
+  }
 }
 
 function digestDateUtc(d: Date): Date {

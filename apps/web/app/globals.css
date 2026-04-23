@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "mapbox-gl/dist/mapbox-gl.css";
 @import "../design-system/design-system.css";
 
 /* Mobile shell — prevent horizontal scroll; scale with rem/% */

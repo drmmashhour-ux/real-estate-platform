@@ -1,3 +1,7 @@
+import { getBestAvailableBroker } from "../centris-conversion/centris-broker-routing.service";
+import { getAvailableSlots, defaultSearchRange } from "../booking-system/broker-availability.service";
+import { groupSlotsForUi, formatSlotListForMessage } from "../booking-system/booking-calendar.service";
+
 import type { AiCloserRouteContext, AiCloserStage } from "./ai-closer.types";
 
 export function generateBookingPrompt(input: {
@@ -34,6 +38,41 @@ export function evaluateVisitIntent(stage: AiCloserStage, lastMessage: string): 
   return { ready: false, notes: "Keep discovery / objection handling first." };
 }
 
+/**
+ * Loads real open visit slots for the listing broker (CRM listing required).
+ * User-facing copy must identify automation as the LECIPM assistant.
+ */
+export async function fetchAvailableSlotsForLead(input: { leadId: string; listingId: string }): Promise<{
+  brokerId: string | null;
+  lines: string[];
+  message: string;
+  availabilityNote: string;
+} | null> {
+  const best = await getBestAvailableBroker({ leadId: input.leadId, listingId: input.listingId });
+  if (!best.bestBrokerId) {
+    return {
+      brokerId: null,
+      lines: [],
+      message: "A broker will propose times manually — no open automated slots in the next two weeks.",
+      availabilityNote: best.routingReason,
+    };
+  }
+  const { from, to } = defaultSearchRange();
+  const raw = await getAvailableSlots(best.bestBrokerId, { from, to });
+  const ui = groupSlotsForUi(raw);
+  const block = formatSlotListForMessage(ui);
+  return {
+    brokerId: best.bestBrokerId,
+    lines: ui.map((s) => `${s.relativeLabel} ${s.timeLabel}`),
+    message: `I can help you schedule a visit. Here are a few available times (LECIPM assistant — not the broker):
+
+${block}
+
+Reply with the option that works best, or say “other times”.`,
+    availabilityNote: best.routingReason,
+  };
+}
+
 export function prepareBrokerHandoffSummary(input: {
   leadName?: string;
   listingTitle?: string;
@@ -49,4 +88,40 @@ export function prepareBrokerHandoffSummary(input: {
     "Broker to confirm showing and compliance.",
   ].filter(Boolean);
   return lines.join("\n");
+}
+
+/**
+ * Upcoming LECIPM visit no-show *support* context (not a medical/legal prediction).
+ */
+export async function fetchNoShowContextForLead(leadId: string): Promise<{
+  hasHighRisk: boolean;
+  nudge: string;
+  visitId: string | null;
+  riskBand: "LOW" | "MEDIUM" | "HIGH" | "UNSET";
+} | null> {
+  const { prisma } = await import("@/lib/db");
+  const v = await prisma.lecipmVisit.findFirst({
+    where: { leadId, status: "scheduled", startDateTime: { gte: new Date() } },
+    orderBy: { startDateTime: "asc" },
+  });
+  if (!v) return null;
+  const band = (v.noShowRiskBand ?? "UNSET") as "LOW" | "MEDIUM" | "HIGH" | "UNSET";
+  if (v.noShowRiskBand === "HIGH" && !v.reconfirmedAt) {
+    return {
+      hasHighRisk: true,
+      visitId: v.id,
+      riskBand: band,
+      nudge:
+        "This visit has a higher *likelihood* of being missed (operational score only—never guaranteed). Suggest a quick reconfirm and a gentle reschedule offer.",
+    };
+  }
+  if (v.noShowRiskBand === "MEDIUM" && !v.reconfirmedAt) {
+    return {
+      hasHighRisk: false,
+      visitId: v.id,
+      riskBand: band,
+      nudge: "A short, friendly one-line confirmation is enough before the visit.",
+    };
+  }
+  return { hasHighRisk: false, visitId: v.id, riskBand: band, nudge: "" };
 }

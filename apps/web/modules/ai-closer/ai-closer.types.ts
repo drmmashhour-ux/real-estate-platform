@@ -70,6 +70,13 @@ export type AiCloserExplanation = {
   complianceNote: string;
 };
 
+export type AiCloserBookingSlotSuggestion = {
+  message: string;
+  lines: string[];
+  brokerId: string | null;
+  availabilityNote: string;
+};
+
 export type AiCloserAssistOutput = {
   assistantDisclosure: string;
   detectedStage: AiCloserStage;
@@ -86,5 +93,11 @@ export type AiCloserAssistOutput = {
     urgency: "low" | "medium" | "high";
   };
   bookingPrompt?: string;
+  /**
+   * Real availability from broker calendar + LECIPM booking engine (when `leadId` + `listingId` are provided).
+   */
+  bookingSlotSuggestion?: AiCloserBookingSlotSuggestion;
+  /** LECIPM no-show engine — soft reconfirm nudge when a scheduled visit is high-risk. */
+  noShowAssist?: { visitId: string | null; nudge: string; riskBand: "LOW" | "MEDIUM" | "HIGH" | "UNSET" };
   explanation: AiCloserExplanation;
 };

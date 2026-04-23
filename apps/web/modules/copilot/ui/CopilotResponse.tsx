@@ -1,15 +1,19 @@
 "use client";
 
+import WorkflowCard from "@/components/copilot/WorkflowCard";
+import type { WorkflowClientDto } from "@/lib/workflows/dto";
 import type { CopilotResponse as CopilotResponseType } from "@/modules/copilot/domain/copilotTypes";
 
 type Props = {
   response: CopilotResponseType | null;
   error: string | null;
   loading: boolean;
+  workflow?: WorkflowClientDto | null;
+  workflowError?: string | null;
 };
 
 /** Renders a structured Copilot API response (deterministic content only). */
-export function CopilotResponseView({ response, error, loading }: Props) {
+export function CopilotResponseView({ response, error, loading, workflow, workflowError }: Props) {
   if (loading) {
     return <p className="text-sm text-ds-text-secondary">Thinking…</p>;
   }
@@ -68,6 +72,10 @@ export function CopilotResponseView({ response, error, loading }: Props) {
           )}
         </div>
       ) : null}
+      {workflowError ? (
+        <p className="text-xs text-amber-200/90">Workflow planner blocked: {workflowError}</p>
+      ) : null}
+      {workflow ? <WorkflowCard initial={workflow} /> : null}
     </div>
   );
 }

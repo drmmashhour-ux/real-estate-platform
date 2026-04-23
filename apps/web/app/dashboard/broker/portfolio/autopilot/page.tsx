@@ -2,9 +2,31 @@
 
 import { useState } from "react";
 
+type PortfolioReviewRow = {
+  id: string;
+  portfolioId: string;
+  status: string;
+  reviewType: string;
+  overallHealthScore: number | null;
+  concentrationRisk: number | null;
+  cashflowStrength: number | null;
+  growthStrength: number | null;
+  riskScore: number | null;
+  summary: string | null;
+};
+
+type RecommendationRow = {
+  id: string;
+  title: string;
+  description: string | null;
+  priority: string;
+  aiSummary: string | null;
+  accepted?: boolean;
+};
+
 export default function PortfolioAutopilotPage() {
-  const [review, setReview] = useState<any>(null);
-  const [recommendations, setRecommendations] = useState<any[]>([]);
+  const [review, setReview] = useState<PortfolioReviewRow | null>(null);
+  const [recommendations, setRecommendations] = useState<RecommendationRow[]>([]);
   const [loading, setLoading] = useState(false);
 
   async function runReview() {
@@ -13,14 +35,13 @@ export default function PortfolioAutopilotPage() {
       const generated = await fetch("/api/autopilot/portfolio/generate", {
         method: "POST",
         body: JSON.stringify({
-          portfolioId: "demo",
           reviewType: "manual",
         }),
         headers: { "Content-Type": "application/json" },
       }).then((r) => r.json());
 
       if (generated.success) {
-        setReview(generated.item);
+        setReview(generated.item as PortfolioReviewRow);
 
         const listed = await fetch("/api/autopilot/portfolio/recommendations", {
           method: "POST",
@@ -30,34 +51,45 @@ export default function PortfolioAutopilotPage() {
           headers: { "Content-Type": "application/json" },
         }).then((r) => r.json());
 
-        setRecommendations(listed.items ?? []);
+        setRecommendations((listed.items ?? []) as RecommendationRow[]);
       } else {
         alert("Failed to run review: " + generated.error);
       }
-    } catch (err: any) {
-      alert("Error: " + err.message);
+    } catch (err: unknown) {
+      alert("Error: " + (err instanceof Error ? err.message : String(err)));
     } finally {
       setLoading(false);
     }
   }
 
-  async function accept(id: string) {
-    await fetch("/api/autopilot/portfolio/recommendations/accept", {
+  async function accept(id: string, launchWorkflow = false) {
+    const res = await fetch("/api/autopilot/portfolio/recommendations/accept", {
       method: "POST",
-      body: JSON.stringify({ recommendationId: id }),
+      body: JSON.stringify({ recommendationId: id, launchWorkflow }),
       headers: { "Content-Type": "application/json" },
-    });
+    }).then((r) => r.json());
+    if (!res.success) {
+      alert(res.error ?? "Accept failed");
+      return;
+    }
     setRecommendations((prev) =>
       prev.map((r) => (r.id === id ? { ...r, accepted: true } : r))
     );
+    if (launchWorkflow && res.workflow?.id) {
+      alert(`Workflow proposed (id: ${res.workflow.id}). Complete approval in workflows when available.`);
+    }
   }
 
   async function dismiss(id: string) {
-    await fetch("/api/autopilot/portfolio/recommendations/dismiss", {
+    const res = await fetch("/api/autopilot/portfolio/recommendations/dismiss", {
       method: "POST",
       body: JSON.stringify({ recommendationId: id }),
       headers: { "Content-Type": "application/json" },
-    });
+    }).then((r) => r.json());
+    if (!res.success) {
+      alert(res.error ?? "Dismiss failed");
+      return;
+    }
     setRecommendations((prev) => prev.filter((r) => r.id !== id));
   }
 
@@ -66,11 +98,14 @@ export default function PortfolioAutopilotPage() {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-[#D4AF37]">Portfolio Autopilot Advisor</h1>
-          <p className="text-white/60 mt-1">
-            AI-assisted portfolio rebalancing, weak asset detection, and strategic recommendations.
+          <p className="text-white/60 mt-1 max-w-3xl">
+            Advisory-only: scores holdings using your investor portfolio and saved deal analyses, suggests next steps,
+            and never executes trades or financing. Sign in required. Optional workflow proposals after you accept a
+            recommendation.
           </p>
         </div>
         <button
+          type="button"
           onClick={runReview}
           disabled={loading}
           className="rounded-xl bg-[#D4AF37] px-6 py-3 font-semibold text-black hover:bg-[#B8860B] transition-colors disabled:opacity-50"
@@ -101,17 +136,21 @@ export default function PortfolioAutopilotPage() {
           <div key={r.id} className="rounded-2xl border border-white/10 bg-zinc-900/50 p-6 space-y-4 flex flex-col">
             <div className="flex items-center justify-between gap-3">
               <div className="text-xl font-semibold text-[#D4AF37]">{r.title}</div>
-              <div className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${
-                r.priority === 'high' ? 'bg-red-500/20 text-red-400' : 
-                r.priority === 'medium' ? 'bg-amber-500/20 text-amber-400' : 
-                'bg-zinc-500/20 text-zinc-400'
-              }`}>
+              <div
+                className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${
+                  r.priority === "high"
+                    ? "bg-red-500/20 text-red-400"
+                    : r.priority === "medium"
+                      ? "bg-amber-500/20 text-amber-400"
+                      : "bg-zinc-500/20 text-zinc-400"
+                }`}
+              >
                 {r.priority} Priority
               </div>
             </div>
 
             <div className="text-zinc-400 text-sm">{r.description}</div>
-            
+
             {r.aiSummary && (
               <div className="bg-black/30 rounded-xl p-4 text-sm text-zinc-300 border border-white/5">
                 <span className="text-[#D4AF37] font-medium block mb-1">AI Rationale:</span>
@@ -119,20 +158,30 @@ export default function PortfolioAutopilotPage() {
               </div>
             )}
 
-            <div className="flex gap-3 mt-auto pt-4">
+            <div className="flex flex-col sm:flex-row gap-3 mt-auto pt-4">
               <button
-                onClick={() => accept(r.id)}
+                type="button"
+                onClick={() => accept(r.id, false)}
                 disabled={r.accepted}
                 className={`flex-1 rounded-lg px-4 py-2.5 font-semibold transition-all ${
-                  r.accepted 
-                  ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 cursor-default' 
-                  : 'bg-[#D4AF37] text-black hover:bg-[#B8860B]'
+                  r.accepted
+                    ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 cursor-default"
+                    : "bg-[#D4AF37] text-black hover:bg-[#B8860B]"
                 }`}
               >
-                {r.accepted ? 'Accepted' : 'Accept Recommendation'}
+                {r.accepted ? "Accepted" : "Accept (advisory)"}
+              </button>
+              <button
+                type="button"
+                onClick={() => accept(r.id, true)}
+                disabled={r.accepted}
+                className="flex-1 rounded-lg border border-[#D4AF37]/50 px-4 py-2.5 font-semibold text-[#D4AF37] hover:bg-[#D4AF37]/10 transition-all disabled:opacity-40"
+              >
+                Accept + propose workflow
               </button>
 
               <button
+                type="button"
                 onClick={() => dismiss(r.id)}
                 className="rounded-lg border border-white/10 px-4 py-2.5 text-zinc-400 hover:bg-white/5 transition-all"
               >
@@ -142,7 +191,7 @@ export default function PortfolioAutopilotPage() {
           </div>
         ))}
       </div>
-      
+
       {!loading && review && recommendations.length === 0 && (
         <div className="text-center py-12 bg-zinc-900/30 rounded-2xl border border-dashed border-white/10">
           <p className="text-zinc-500">No active recommendations. Your portfolio looks well-balanced!</p>
@@ -152,13 +201,14 @@ export default function PortfolioAutopilotPage() {
   );
 }
 
-function Metric({ title, value }: { title: string; value: any }) {
+function Metric({ title, value }: { title: string; value: number | null | undefined }) {
+  const n = typeof value === "number" && Number.isFinite(value) ? value : 0;
   return (
     <div className="rounded-2xl border border-white/10 bg-zinc-900/50 p-5 flex flex-col items-center text-center">
       <div className="text-xs uppercase tracking-widest text-zinc-500 mb-1">{title}</div>
       <div className="text-3xl font-bold text-[#D4AF37]">{value ?? "-"}</div>
       <div className="w-12 h-1 bg-[#D4AF37]/20 rounded-full mt-3 overflow-hidden">
-        <div className="h-full bg-[#D4AF37]" style={{ width: `${value}%` }} />
+        <div className="h-full bg-[#D4AF37]" style={{ width: `${Math.min(100, Math.max(0, n))}%` }} />
       </div>
     </div>
   );

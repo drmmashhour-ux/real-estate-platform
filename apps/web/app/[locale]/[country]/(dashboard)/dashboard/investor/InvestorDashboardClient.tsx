@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { HubAiDock } from "@/components/ai/HubAiDock";
+import { AutonomousSuggestionsPanel } from "@/components/copilot/AutonomousSuggestionsPanel";
 
 type ScenarioRow = {
   id: string;
@@ -76,6 +77,8 @@ export function InvestorDashboardClient({
   return (
     <div className="space-y-8">
       <HubAiDock hub="investor" context={{ scenarioCount: scenarios.length }} />
+
+      <AutonomousSuggestionsPanel ownerType="investor" autoGenerate={false} />
 
       {scenarios.length > 0 ? <InvestorScenarioRead scenarios={scenarios} /> : null}
 

@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { getNoShowLearningSnapshot } from "@/modules/no-show-prevention/no-show-learning.service";
 
 export type AiCloserLearningSnapshot = {
   recommendationsLogged30d: number;
@@ -6,6 +7,9 @@ export type AiCloserLearningSnapshot = {
   objectionsCounts: Record<string, number>;
   escalationRateApprox: number | null;
   bookingSignals30d: number;
+  /** LECIPM scheduled visits in last 30d (from `LecipmVisit`). */
+  lecipmVisitsBooked30d: number;
+  noShowPrevention30d: Awaited<ReturnType<typeof getNoShowLearningSnapshot>>;
 };
 
 /** Aggregates timeline rows — effectiveness weights can be layered later without schema migration. */
@@ -35,12 +39,19 @@ export async function getAiCloserLearningSnapshot(): Promise<AiCloserLearningSna
 
   const recs = recent.length;
 
+  const lecipmVisitsBooked30d = await prisma.lecipmVisit.count({
+    where: { createdAt: { gte: since }, status: { in: ["scheduled", "completed"] } },
+  });
+  const noShowPrevention30d = await getNoShowLearningSnapshot();
+
   return {
     recommendationsLogged30d: recs,
     stagesCounts,
     objectionsCounts,
     escalationRateApprox: recs > 0 ? Math.round((esc / recs) * 1000) / 1000 : null,
     bookingSignals30d: bookings,
+    lecipmVisitsBooked30d,
+    noShowPrevention30d,
   };
 }
 

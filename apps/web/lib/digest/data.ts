@@ -81,6 +81,10 @@ export async function buildDigestData(ownerType: string, ownerId: string) {
     rawSnapshots,
     workspaceZones,
     workflows,
+    brokerListingsNew,
+    investmentOpportunities,
+    investmentRecommendationsPulse,
+    marketHeatScores,
   ] = await Promise.all([
     prisma.watchlistAlert.findMany({
       where: { userId, createdAt: { gte: since } },
@@ -229,7 +233,86 @@ export async function buildDigestData(ownerType: string, ownerId: string) {
         updatedAt: true,
       },
     }),
+    prisma.listing.findMany({
+      where: { ownerId: userId, createdAt: { gte: since } },
+      orderBy: { createdAt: "desc" },
+      take: 20,
+      select: {
+        id: true,
+        listingCode: true,
+        title: true,
+        price: true,
+        createdAt: true,
+      },
+    }),
+    prisma.investmentOpportunity.findMany({
+      where: { createdAt: { gte: since } },
+      orderBy: { createdAt: "desc" },
+      take: 15,
+      select: {
+        id: true,
+        listingId: true,
+        score: true,
+        expectedROI: true,
+        riskLevel: true,
+        createdAt: true,
+      },
+    }),
+    prisma.investmentRecommendation.findMany({
+      where: {
+        OR: [{ updatedAt: { gte: since } }, { createdAt: { gte: since } }],
+      },
+      orderBy: { updatedAt: "desc" },
+      take: 20,
+      select: {
+        id: true,
+        scopeType: true,
+        scopeId: true,
+        recommendation: true,
+        score: true,
+        status: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    }),
+    prisma.marketInvestmentScore.findMany({
+      orderBy: [{ investmentScore: "desc" }, { createdAt: "desc" }],
+      take: 12,
+      select: {
+        id: true,
+        marketRegionId: true,
+        investmentScore: true,
+        riskLevel: true,
+        summary: true,
+        createdAt: true,
+      },
+    }),
   ]);
+
+  const autopilotReviewIds = await prisma.portfolioAutopilotReview.findMany({
+    where: { portfolioId: userId },
+    select: { id: true },
+    take: 80,
+  });
+  const autopilotReviewIdList = autopilotReviewIds.map((r) => r.id);
+  const portfolioAutopilotOpen =
+    autopilotReviewIdList.length === 0
+      ? []
+      : await prisma.portfolioAutopilotRecommendation.findMany({
+          where: {
+            dismissed: false,
+            accepted: false,
+            portfolioAutopilotReviewId: { in: autopilotReviewIdList },
+          },
+          orderBy: { createdAt: "desc" },
+          take: 15,
+          select: {
+            title: true,
+            priority: true,
+            recommendationType: true,
+            createdAt: true,
+          },
+        });
 
   const seenZone = new Set<string>();
   const marketZones: MarketZoneRow[] = [];
@@ -252,8 +335,7 @@ export async function buildDigestData(ownerType: string, ownerId: string) {
     if (marketZones.length >= 10) break;
   }
 
-  const incompleteMarket =
-    rawSnapshots.length === 0 || marketZones.length < 3;
+  const incompleteMarket = rawSnapshots.length === 0 || marketZones.length < 3;
 
   if (incompleteMarket) {
     window.label = "Platform + partial market data";
@@ -290,7 +372,39 @@ export async function buildDigestData(ownerType: string, ownerId: string) {
         marketZones: marketZones.length,
         workspaceZones: workspaceZones.length,
         workflows: workflows.length,
+        brokerListingsNew: brokerListingsNew.length,
+        dealFinderSignals: investmentOpportunities.length,
+        buyBoxStancesUpdated: investmentRecommendationsPulse.length,
+        marketHeatRows: marketHeatScores.length,
+        portfolioAutopilotOpen: portfolioAutopilotOpen.length,
       },
+    },
+    platformActivity: {
+      newBrokerListings: brokerListingsNew.map((l) => ({
+        ...l,
+        createdAt: l.createdAt.toISOString(),
+      })),
+    },
+    dealFinder: {
+      newSignals: investmentOpportunities.map((o) => ({
+        ...o,
+        createdAt: o.createdAt.toISOString(),
+      })),
+    },
+    buyBoxStances: investmentRecommendationsPulse.map((r) => ({
+      ...r,
+      createdAt: r.createdAt.toISOString(),
+      updatedAt: r.updatedAt.toISOString(),
+    })),
+    marketHeat: marketHeatScores.map((m) => ({
+      ...m,
+      createdAt: m.createdAt.toISOString(),
+    })),
+    portfolioAutopilot: {
+      openRecommendations: portfolioAutopilotOpen.map((r) => ({
+        ...r,
+        createdAt: r.createdAt.toISOString(),
+      })),
     },
     alerts: {
       watchlist: watchlistAlerts.map((a) => ({

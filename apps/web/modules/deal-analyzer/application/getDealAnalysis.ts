@@ -132,6 +132,7 @@ export async function getDealAnalysisPublicDto(listingId: string): Promise<DealA
   const mergedWarnings = [...warnings, ...refined.extraWarnings];
 
   return {
+    analysisId: row.id,
     investmentScore: row.investmentScore,
     riskScore: row.riskScore,
     opportunityType: row.opportunityType,

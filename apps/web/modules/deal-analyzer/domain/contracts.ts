@@ -1,4 +1,6 @@
 export type ComparableSummaryDto = {
+  /** `deal_analysis_comparables.id` — for adjustment / appraisal tooling. */
+  comparableRowId: string;
   comparablePropertyId: string;
   distanceKm: number | null;
   similarityScore: number;
@@ -74,6 +76,8 @@ export type DealDecisionDto = {
 
 /** Safe JSON shape for API clients (no internal DB-only fields). */
 export type DealAnalysisPublicDto = {
+  /** Latest persisted deal analysis row id (used as appraisal case id for adjustments). */
+  analysisId: string;
   investmentScore: number;
   riskScore: number;
   opportunityType: string;

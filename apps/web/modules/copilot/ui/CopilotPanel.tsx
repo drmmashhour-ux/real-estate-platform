@@ -1,7 +1,9 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import type { WorkflowClientDto } from "@/lib/workflows/dto";
 import type { CopilotResponse as CopilotResponseType } from "@/modules/copilot/domain/copilotTypes";
+import { AutonomousSuggestionsPanel } from "@/components/copilot/AutonomousSuggestionsPanel";
 import { CopilotInput } from "@/modules/copilot/ui/CopilotInput";
 import { CopilotResponseView } from "@/modules/copilot/ui/CopilotResponse";
 
@@ -22,6 +24,8 @@ export function CopilotPanel({ listingId, watchlistId }: Props) {
   const [response, setResponse] = useState<CopilotResponseType | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [workflow, setWorkflow] = useState<WorkflowClientDto | null>(null);
+  const [workflowError, setWorkflowError] = useState<string | null>(null);
 
   const sendWith = useCallback(
     async (raw: string) => {
@@ -84,7 +88,16 @@ export function CopilotPanel({ listingId, watchlistId }: Props) {
       </div>
       <CopilotInput value={query} onChange={setQuery} onSubmit={() => void send()} disabled={loading} />
       <div className="mt-4">
-        <CopilotResponseView response={response} error={error} loading={loading} />
+        <CopilotResponseView
+        response={response}
+        error={error}
+        loading={loading}
+        workflow={workflow}
+        workflowError={workflowError}
+      />
+      </div>
+      <div className="mt-6">
+        <AutonomousSuggestionsPanel ownerType="solo_broker" autoGenerate={false} />
       </div>
     </section>
   );

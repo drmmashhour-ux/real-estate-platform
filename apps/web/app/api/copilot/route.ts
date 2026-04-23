@@ -9,6 +9,11 @@ import { copilotPostBodySchema } from "@/modules/copilot/api/copilotSchemas";
 import { maybeEnrichResponseWithSummary } from "@/modules/copilot/infrastructure/responseBuilder";
 import { buildRetrievalAugmentedResponse } from "@/modules/copilot/infrastructure/retrievalAugmentedResponseBuilder";
 import { storeFeedbackSignal } from "@/modules/ai-training/application/storeFeedbackSignal";
+import { generateWorkflowPlanFromMessage } from "@/lib/workflows/plan-from-ai";
+import { createWorkflowFromPlan, enrichPlanWithRequestContext } from "@/lib/workflows/service";
+import { workflowToClientDto, type WorkflowClientDto } from "@/lib/workflows/dto";
+import { WorkflowSafetyError } from "@/lib/workflows/safety";
+import { recordAuditEvent } from "@/modules/analytics/audit-log.service";
 
 export const dynamic = "force-dynamic";
 
@@ -113,9 +118,40 @@ export async function POST(req: NextRequest) {
       metadata: { intent: response.intent, grounded: true },
     }).catch(() => {});
 
+    let workflow: WorkflowClientDto | undefined;
+    let workflowError: string | undefined;
+
+    if (parsed.data.withWorkflowPlan) {
+      try {
+        const plan = await generateWorkflowPlanFromMessage(parsed.data.query, {
+          listingId: parsed.data.listingId ?? null,
+          watchlistId: parsed.data.watchlistId ?? null,
+          workspaceId: parsed.data.workspaceId ?? null,
+        });
+        const enriched = enrichPlanWithRequestContext(plan, {
+          listingId: parsed.data.listingId ?? null,
+        });
+        const wfRow = await createWorkflowFromPlan(enriched, "user", user.id);
+        await recordAuditEvent({
+          actorUserId: user.id,
+          action: "AI_WORKFLOW_CREATED",
+          payload: { workflowId: wfRow.id, source: "copilot" },
+        }).catch(() => {});
+        workflow = workflowToClientDto(wfRow);
+      } catch (e) {
+        if (e instanceof WorkflowSafetyError) {
+          workflowError = e.code;
+        } else {
+          console.error("Copilot workflow plan error:", e);
+        }
+      }
+    }
+
     return NextResponse.json({
       response,
       ...(result.conversationId !== undefined && { conversationId: result.conversationId }),
+      ...(workflow !== undefined && { workflow }),
+      ...(workflowError !== undefined && { workflowError }),
     });
   } catch (error) {
     console.error("Copilot route error:", error);

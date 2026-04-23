@@ -66,10 +66,12 @@ export async function getAvailableVisitSlots(opts: {
     select: { startDateTime: true, endDateTime: true },
   });
 
+  const now = new Date();
   const pending = await prisma.lecipmVisitRequest.findMany({
     where: {
       brokerUserId: opts.brokerUserId,
       status: "pending",
+      OR: [{ holdExpiresAt: null }, { holdExpiresAt: { gte: now } }],
       AND: [{ requestedEnd: { gte: rangeFrom } }, { requestedStart: { lte: rangeTo } }],
     },
     select: { requestedStart: true, requestedEnd: true },
@@ -121,5 +123,21 @@ export async function getAvailableVisitSlots(opts: {
     dayCursor = addDays(dayCursor, 1);
   }
 
-  return slots;
+  const settings = await prisma.lecipmBrokerBookingSettings.findUnique({
+    where: { brokerUserId: opts.brokerUserId },
+  });
+  const maxPerDay = settings?.maxVisitsPerDay ?? 6;
+  const usedByDay: Record<string, number> = {};
+  for (const v of visits) {
+    const k = formatInTimeZone(v.startDateTime, brokerTz, "yyyy-MM-dd");
+    usedByDay[k] = (usedByDay[k] ?? 0) + 1;
+  }
+  for (const p of pending) {
+    const k = formatInTimeZone(p.requestedStart, brokerTz, "yyyy-MM-dd");
+    usedByDay[k] = (usedByDay[k] ?? 0) + 1;
+  }
+  return slots.filter((s) => {
+    const k = formatInTimeZone(new Date(s.start), brokerTz, "yyyy-MM-dd");
+    return (usedByDay[k] ?? 0) < maxPerDay;
+  });
 }

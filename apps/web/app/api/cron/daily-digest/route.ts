@@ -6,6 +6,7 @@ export const dynamic = "force-dynamic";
 
 /**
  * POST /api/cron/daily-digest — optional scheduled generation for one user.
+ * Example schedule: `0 7 * * *` (07:00) with Bearer CRON_SECRET.
  * Authorization: Bearer CRON_SECRET
  * Body: { userId: string, ownerType?: string, sendEmail?: boolean }
  */
@@ -36,7 +37,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, digest });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Digest failed";
-    const status = msg === "GUARANTEED_OUTCOME_FORBIDDEN" ? 422 : 500;
+    const status =
+      msg === "GUARANTEED_OUTCOME_FORBIDDEN" || msg === "AUTONOMOUS_DIGEST_EXECUTION_FORBIDDEN" ? 422 : 500;
     return NextResponse.json({ success: false, error: msg }, { status });
   }
 }

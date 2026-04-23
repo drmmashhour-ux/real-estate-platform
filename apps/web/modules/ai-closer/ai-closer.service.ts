@@ -1,5 +1,10 @@
 import { buildCloserExplanation } from "./ai-closer-explainability.service";
-import { evaluateVisitIntent, generateBookingPrompt } from "./ai-closer-booking.service";
+import {
+  evaluateVisitIntent,
+  fetchAvailableSlotsForLead,
+  fetchNoShowContextForLead,
+  generateBookingPrompt,
+} from "./ai-closer-booking.service";
 import { evaluateCloserEscalation } from "./ai-closer-escalation.service";
 import { recordAiCloserEvent } from "./ai-closer-log.service";
 import { detectObjection, getObjectionPlaybook } from "./ai-closer-objection.service";
@@ -144,6 +149,41 @@ export async function getCloserAssist(input: GetCloserAssistInput): Promise<AiCl
     bookingPrompt,
     explanation,
   };
+
+  const shouldLoadRealSlots =
+    input.leadId &&
+    input.listingId &&
+    out.shouldAttemptBooking &&
+    !esc.shouldEscalate &&
+    !input.optedOut;
+  if (input.leadId) {
+    const ns = await fetchNoShowContextForLead(input.leadId);
+    if (ns && (ns.nudge || ns.hasHighRisk)) {
+      out.noShowAssist = {
+        visitId: ns.visitId,
+        nudge: ns.nudge,
+        riskBand: ns.riskBand,
+      };
+    }
+  }
+
+  if (shouldLoadRealSlots) {
+    const slotPack = await fetchAvailableSlotsForLead({ leadId: input.leadId, listingId: input.listingId });
+    if (slotPack) {
+      out.bookingSlotSuggestion = {
+        message: slotPack.message,
+        lines: slotPack.lines,
+        brokerId: slotPack.brokerId,
+        availabilityNote: slotPack.availabilityNote,
+      };
+      if (slotPack.message && (stage === "READY_TO_BOOK" || visitEval.ready)) {
+        out.response = {
+          ...out.response,
+          main: slotPack.message,
+        };
+      }
+    }
+  }
 
   if (input.leadId) {
     await recordAiCloserEvent(input.leadId, "AI_CLOSER_RECOMMENDATION", {

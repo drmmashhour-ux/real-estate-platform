@@ -25,7 +25,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, digest });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Digest failed";
-    const status = msg === "GUARANTEED_OUTCOME_FORBIDDEN" ? 422 : 500;
+    const status =
+      msg === "GUARANTEED_OUTCOME_FORBIDDEN" || msg === "AUTONOMOUS_DIGEST_EXECUTION_FORBIDDEN" ? 422 : 500;
     return NextResponse.json({ success: false, error: msg }, { status });
   }
 }
