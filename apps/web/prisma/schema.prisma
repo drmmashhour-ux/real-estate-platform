@@ -7543,8 +7543,12 @@ model TransactionDocument {
   signedByBuyer    Boolean                 @default(false) @map("signed_by_buyer")
   signedBySeller   Boolean                 @default(false) @map("signed_by_seller")
   signedByBroker   Boolean                 @default(false) @map("signed_by_broker")
-  signedAt         DateTime?               @map("signed_at")
-  createdAt        DateTime                @default(now()) @map("created_at")
+  signedAt           DateTime?               @map("signed_at")
+  allowedRoles       Json?                   @map("allowed_roles") // string[]
+  allowedDepartments Json?                   @map("allowed_departments") // string[]
+  needToKnow         Boolean                 @default(true) @map("need_to_know")
+  dataCategory       PrivacyDataCategory?    @map("data_category")
+  createdAt          DateTime                @default(now()) @map("created_at")
 
   @@index([transactionId])
   @@index([documentType])

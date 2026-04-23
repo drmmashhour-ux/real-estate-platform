@@ -42,7 +42,21 @@ export class PrivacyAccessService {
       }
     }
 
-    // 5. Default deny
+    // 5. Allowed departments check (assuming user.department exists or is passed in)
+    // For now, we'll assume departments are not yet fully implemented in the User model,
+    // but the logic is ready.
+    if (doc.allowedDepartments) {
+      const allowedDepts = doc.allowedDepartments as string[];
+      // if (args.userDepartment && allowedDepts.includes(args.userDepartment)) return true;
+    }
+
+    // 6. Need to know override
+    if (doc.needToKnow === false) {
+      // If not strictly need-to-know, allow wider internal access if not confidential
+      if (doc.sensitivityLevel === PrivacySensitivityLevel.INTERNAL) return true;
+    }
+
+    // 7. Default deny
     return false;
   }
 

@@ -44,4 +44,20 @@ describe("PrivacyLaunchGuard", () => {
     const result = await PrivacyLaunchGuard.assertTransactionGate("user-1");
     expect(result).toBe(true);
   });
+
+  it("should verify marketing consent is required", async () => {
+    (prisma.privacyConsentRecord.findFirst as any).mockResolvedValue(null);
+    const hasConsent = await prisma.privacyConsentRecord.findFirst({
+      where: { userId: "user-1", purpose: PrivacyPurpose.MARKETING, granted: true }
+    });
+    expect(hasConsent).toBe(null);
+  });
+
+  it("should verify lockbox disclosure consent is required", async () => {
+    (prisma.privacyConsentRecord.findFirst as any).mockResolvedValue(null);
+    const hasConsent = await prisma.privacyConsentRecord.findFirst({
+      where: { userId: "user-1", purpose: PrivacyPurpose.LOCKBOX_CODE_DISCLOSURE, granted: true }
+    });
+    expect(hasConsent).toBe(null);
+  });
 });

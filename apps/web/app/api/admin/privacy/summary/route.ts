@@ -20,10 +20,21 @@ export async function GET() {
       take: 10,
     });
 
+    // 4. Get audit logs
+    const auditLogs = await prisma.privacyAuditLog.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 10,
+    });
+
+    // 5. Get retention policies
+    const policies = await prisma.privacyRetentionPolicy.findMany();
+
     return NextResponse.json({
       officer,
       incidents,
       complaints,
+      auditLogs,
+      policies,
     });
   } catch (error: any) {
     console.error("Admin privacy summary error:", error);

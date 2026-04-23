@@ -5,6 +5,8 @@ import React, { useState, useEffect } from "react";
 export function PrivacyDashboard() {
   const [incidents, setIncidents] = useState<any[]>([]);
   const [complaints, setComplaints] = useState<any[]>([]);
+  const [auditLogs, setAuditLogs] = useState<any[]>([]);
+  const [policies, setPolicies] = useState<any[]>([]);
   const [officer, setOfficer] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -13,8 +15,10 @@ export function PrivacyDashboard() {
       try {
         const res = await fetch("/api/admin/privacy/summary");
         const data = await res.json();
-        setIncidents(data.incidents);
-        setComplaints(data.complaints);
+        setIncidents(data.incidents || []);
+        setComplaints(data.complaints || []);
+        setAuditLogs(data.auditLogs || []);
+        setPolicies(data.policies || []);
         setOfficer(data.officer);
       } catch (err) {
         console.error("Failed to fetch privacy summary", err);
@@ -164,19 +168,16 @@ export function PrivacyDashboard() {
             </div>
             <div className="p-4 overflow-y-auto max-h-[300px]">
               <ul className="space-y-3">
-                {/* Audit log entries would go here */}
-                <li className="text-xs flex justify-between border-b border-gray-50 pb-2">
-                  <span className="text-gray-700 font-medium">EXTERNAL_DISCLOSURE</span>
-                  <span className="text-gray-400 italic">2 mins ago</span>
-                </li>
-                <li className="text-xs flex justify-between border-b border-gray-50 pb-2">
-                  <span className="text-gray-700 font-medium">CONSENT_GRANTED</span>
-                  <span className="text-gray-400 italic">1 hour ago</span>
-                </li>
-                <li className="text-xs flex justify-between border-b border-gray-50 pb-2">
-                  <span className="text-gray-700 font-medium">INTERNAL_TRANSFER</span>
-                  <span className="text-gray-400 italic">3 hours ago</span>
-                </li>
+                {auditLogs.length > 0 ? auditLogs.map((log) => (
+                  <li key={log.id} className="text-xs flex justify-between border-b border-gray-50 pb-2">
+                    <span className="text-gray-700 font-medium">{log.action}</span>
+                    <span className="text-gray-400 italic">
+                      {new Date(log.createdAt).toLocaleTimeString()}
+                    </span>
+                  </li>
+                )) : (
+                  <p className="text-center text-xs text-gray-400 italic py-4">No audit logs available.</p>
+                )}
               </ul>
             </div>
           </section>
@@ -187,18 +188,18 @@ export function PrivacyDashboard() {
             </div>
             <div className="p-4">
               <div className="space-y-4 text-sm">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Identity Information</span>
-                  <span className="font-bold text-gray-900">7 Years</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Financial Information</span>
-                  <span className="font-bold text-gray-900">7 Years</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Contact Information</span>
-                  <span className="font-bold text-gray-900">3 Years</span>
-                </div>
+                {policies.length > 0 ? policies.map((policy) => (
+                  <div key={policy.id} className="flex justify-between items-center">
+                    <span className="text-gray-600">
+                      {policy.dataCategory.replace(/_/g, " ")}
+                    </span>
+                    <span className="font-bold text-gray-900">
+                      {Math.round(policy.retentionPeriod / 365)} Years
+                    </span>
+                  </div>
+                )) : (
+                  <p className="text-center text-xs text-gray-400 italic py-4">No policies defined.</p>
+                )}
               </div>
               <button className="w-full mt-6 py-2 border border-gray-200 rounded text-xs font-bold text-gray-500 hover:bg-gray-50">
                 EDIT RETENTION SCHEDULE
