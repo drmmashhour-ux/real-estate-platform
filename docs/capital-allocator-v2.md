@@ -20,6 +20,7 @@ Allows investors to project the impact of capital shifts before committing.
 Tracks the delta between projected and real performance after an allocation is applied. 
 - Logs results to `CapitalAllocationLog`.
 - Adjusts scoring weights (via `capital-allocation-weights.service.ts`) when performance exceeds or lags thresholds (e.g., increasing `upliftWeight` on success).
+- Persists user-specific or global weights to the `AutonomyRuleWeight` table under the `CAPITAL_ALLOCATOR` domain.
 - Provides success rate analysis for strategies.
 
 ### 4. Recommendation Engine (`capital-recommendation.service.ts`)

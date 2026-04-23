@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { trackAllocationPerformance } from "../capital-learning.service";
 import { getAllocationWeights } from "../capital-allocation-weights.service";
 import { prisma } from "@/lib/db";
@@ -8,27 +8,51 @@ vi.mock("@/lib/db", () => ({
     capitalAllocationLog: {
       create: vi.fn(),
     },
-    platformConfig: {
-      findUnique: vi.fn(),
+    autonomyRuleWeight: {
       upsert: vi.fn(),
+      findMany: vi.fn().mockResolvedValue([]),
     },
   },
 }));
 
-describe("Capital Learning Loop", () => {
-  it("should log performance and update weights on success", async () => {
-    const listingId = "l1";
-    const planId = "p1";
-    const performanceDelta = 0.15; // Success
+describe("Capital Allocator Learning Loop", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
-    await trackAllocationPerformance(listingId, planId, performanceDelta);
+  it("should log performance and update weights on success", async () => {
+    await trackAllocationPerformance({
+      listingId: "l1",
+      planId: "p1",
+      performanceDelta: 0.15,
+      metricType: "revenue",
+    });
 
     expect(prisma.capitalAllocationLog.create).toHaveBeenCalled();
-    // Weights are logged to info in V2 mock but we can check if it completed
+    expect(prisma.autonomyRuleWeight.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({ signalKey: "upliftWeight", weight: 14 }),
+      })
+    );
+  });
+
+  it("should increase risk penalty on poor performance", async () => {
+    await trackAllocationPerformance({
+      listingId: "l2",
+      planId: "p2",
+      performanceDelta: -0.1,
+      metricType: "occupancy",
+    });
+
+    expect(prisma.autonomyRuleWeight.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({ signalKey: "riskPenalty", weight: 30 }),
+      })
+    );
   });
 
   it("should fetch default weights if none in DB", async () => {
-    (prisma.platformConfig.findUnique as any).mockResolvedValue(null);
+    (prisma.autonomyRuleWeight.findMany as any).mockResolvedValue([]);
     const weights = await getAllocationWeights();
     expect(weights.upliftWeight).toBe(12);
   });

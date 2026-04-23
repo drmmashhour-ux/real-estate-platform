@@ -16,7 +16,7 @@ export async function generateCapitalAllocationPlan(params: {
 }) {
   const [metrics, weights] = await Promise.all([
     loadAllocationMetricsForScope(params.scopeType, params.scopeId),
-    getAllocationWeights(),
+    getAllocationWeights(params.scopeId),
   ]);
 
   const candidates = metrics.map((m) => buildAllocationCandidate(m, weights));
