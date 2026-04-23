@@ -819,6 +819,7 @@ model User {
   loyaltyRewardEvents                  LoyaltyRewardEvent[]
   lecipmBrokerAvailabilities           LecipmBrokerAvailability[]
   lecipmBrokerTimeOffBlocks            LecipmBrokerTimeOff[]
+  lecipmBrokerBookingSettings          LecipmBrokerBookingSettings?
   lecipmVisitRequestsAsBroker          LecipmVisitRequest[]                  @relation("VisitRequestBroker")
   lecipmVisitRequestsAsCustomer        LecipmVisitRequest[]                  @relation("VisitRequestCustomer")
   lecipmVisitsAsBroker                 LecipmVisit[]                         @relation("VisitBroker")
@@ -19496,6 +19497,7 @@ model Lead {
   brokerBillingLead          BrokerLead?
   salesAssignment            SalesAssignment?
   lecipmCrmPipelineLeads     LecipmCrmPipelineLead[]     @relation("LecipmCrmPipelinePlatformLead")
+  lecipmVisitRequests        LecipmVisitRequest[]         @relation("LeadLecipmVisitRequests")
   /// Optional 1:1 link to broker inquiry CRM row (same listing / visitor).
   lecipmInquiryCrmLeads      LecipmBrokerCrmLead[]      @relation("CrmInquiryToMarketplaceLead")
 
@@ -26902,6 +26904,7 @@ model LecipmBrokerTimeOff {
 model LecipmVisitRequest {
   id              String                   @id @default(cuid())
   leadId          String                   @map("lead_id")
+  lead            Lead                     @relation("LeadLecipmVisitRequests", fields: [leadId], references: [id], onDelete: Cascade)
   threadId        String?                  @map("thread_id")
   listingId       String                   @map("listing_id")
   listing         Listing                  @relation(fields: [listingId], references: [id], onDelete: Cascade)
@@ -26916,6 +26919,11 @@ model LecipmVisitRequest {
   durationMinutes Int                      @default(45) @map("duration_minutes")
   status          LecipmVisitRequestStatus @default(pending)
   brokerNote      String?                  @map("broker_note")
+  /// CENTRIS | DIRECT | AI_CLOSER | MOBILE — audit for booking source.
+  visitSource     String?                  @map("visit_source") @db.VarChar(32)
+  /// Soft lock while buyer confirms (no double-book); expired rows ignored for overlap.
+  holdExpiresAt   DateTime?                @map("hold_expires_at")
+  metadata        Json?
   createdAt       DateTime                 @default(now()) @map("created_at")
   updatedAt       DateTime                 @updatedAt @map("updated_at")
   visit           LecipmVisit?
@@ -26925,6 +26933,7 @@ model LecipmVisitRequest {
   @@index([leadId])
   @@index([threadId])
   @@index([status])
+  @@index([holdExpiresAt])
   @@map("lecipm_visit_requests")
 }
 
@@ -32380,4 +32389,22 @@ model AIWorkflow {
   updatedAt        DateTime @updatedAt
 
   @@map("ai_workflows")
+}
+
+/// Persisted daily executive briefing (platform + market signals) per owner.
+model DailyDigest {
+  id               String   @id @default(cuid())
+  ownerType        String
+  ownerId          String
+  date             DateTime
+  summary          String?
+  keyHighlights    Json?
+  risks            Json?
+  opportunities    Json?
+  suggestedActions Json?
+  metrics          Json?
+  generatedAt      DateTime @default(now())
+
+  @@index([ownerType, ownerId, date])
+  @@map("daily_digests")
 }

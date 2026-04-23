@@ -7,7 +7,13 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./client": "./src/client.ts"
+    "./client": "./src/client.ts",
+    "./database-host-hint": "./src/database-host-hint.ts",
+    "./resolve-database-url": "./src/resolve-database-url.ts",
+    "./normalize-database-url": "./src/normalize-database-url.ts",
+    "./database-url-ssl": "./src/database-url-ssl.ts",
+    "./with-db-retry": "./src/with-db-retry.ts",
+    "./db-error-classification": "./src/db-error-classification.ts"
   },
   "dependencies": {
     "@prisma/client": "^6"
