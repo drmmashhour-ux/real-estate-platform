@@ -3,6 +3,7 @@ import { getActiveDocument } from "@/lib/legal/documents";
 import { LEGAL_DOCUMENT_TYPES } from "@/lib/legal/constants";
 import { LegalPageLayout } from "@/components/legal/LegalPageLayout";
 import { PRIVACY_DEFAULT_HTML } from "@/lib/legal/default-legal-en";
+import { PrivacyOfficerInfo } from "@/modules/privacy/components/PrivacyOfficerInfo";
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
@@ -17,7 +18,22 @@ export default async function LegalPrivacyPage() {
 
   return (
     <LegalPageLayout title="Privacy Policy" version={version} updatedAt={updatedAt} backHref="/">
-      <div dangerouslySetInnerHTML={{ __html: content }} />
+      <div className="space-y-8">
+        <section>
+          <PrivacyOfficerInfo />
+        </section>
+
+        <section dangerouslySetInnerHTML={{ __html: content }} />
+
+        <section className="p-6 bg-blue-50 border border-blue-100 rounded-lg">
+          <h3 className="text-lg font-bold mb-2 text-blue-900">Retention and Destruction</h3>
+          <p className="text-sm text-blue-800">
+            We retain your personal information only for as long as necessary to fulfill the purposes for which it was collected, 
+            including for the purposes of satisfying any legal, accounting, or reporting requirements. 
+            Once the retention period has expired, your information is securely destroyed or anonymized.
+          </p>
+        </section>
+      </div>
     </LegalPageLayout>
   );
 }
