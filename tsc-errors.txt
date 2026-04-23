@@ -1,0 +1,2 @@
+.                                        |  WARN  Unsupported engine: wanted: {"node":"20.x"} (current: {"node":"v25.8.1","pnpm":"9.15.4"})
+apps/web                                 |  WARN  Unsupported engine: wanted: {"node":"20.x"} (current: {"node":"v25.8.1","pnpm":"9.15.4"})

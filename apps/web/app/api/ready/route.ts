@@ -183,26 +183,6 @@ async function getReadyHandler() {
         status: "error",
         db: true,
         api: false,
-        verbose: {
-          success: false,
-          ready: false,
-          db: "ok",
-          stripe: "error",
-          api: "error",
-          dbTargetHost,
-          dbHostKind: hostKind,
-          databaseUrlLooksLikeTemplate,
-          rawDbUrlExists,
-          dbUrlPreview,
-          projectId,
-          projectName,
-          vercelEnv,
-          hasOpenAI,
-          env: envName,
-          nodeEnv: envName,
-          publicEnv: getPublicEnv(),
-          time,
-        }
       },
       { status: 503 }
     );
