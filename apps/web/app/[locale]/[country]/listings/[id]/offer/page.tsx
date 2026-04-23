@@ -2,6 +2,9 @@ import { requireAuthenticatedUser } from "@/lib/auth/require-session";
 import { deriveIllustrativeListPriceUsd } from "@/modules/ai-deal-analyzer/services/map-listing-to-input";
 import { getListingById } from "@/lib/bnhub/listings";
 import { OfferForm } from "@/components/offers/OfferForm";
+import { PrivacyConsentService } from "@/modules/privacy/services/privacy-consent.service";
+import { PrivacyPurpose } from "@prisma/client";
+import { OfferFormWrapper } from "@/components/offers/OfferFormWrapper";
 
 const DEMO_NIGHT_CENTS: Record<string, number> = {
   "1": 20000,
@@ -12,8 +15,14 @@ const DEMO_NIGHT_CENTS: Record<string, number> = {
 export const dynamic = "force-dynamic";
 
 export default async function ListingOfferPage({ params }: { params: Promise<{ id: string }> }) {
-  await requireAuthenticatedUser();
+  const { userId } = await requireAuthenticatedUser();
   const { id } = await params;
+
+  // Check for existing consent
+  const hasConsent = await PrivacyConsentService.hasActiveConsent({
+    userId,
+    purpose: PrivacyPurpose.TRANSACTION_EXECUTION,
+  });
 
   let defaultOfferPriceUsd: number | null = null;
   const demoCents = DEMO_NIGHT_CENTS[id];
@@ -28,7 +37,12 @@ export default async function ListingOfferPage({ params }: { params: Promise<{ i
 
   return (
     <main className="min-h-screen bg-[#0f0f0f] px-4 py-10 text-white">
-      <OfferForm listingId={id} defaultOfferPriceUsd={defaultOfferPriceUsd} />
+      <OfferFormWrapper 
+        userId={userId} 
+        listingId={id} 
+        defaultOfferPriceUsd={defaultOfferPriceUsd} 
+        initialHasConsent={hasConsent} 
+      />
     </main>
   );
 }

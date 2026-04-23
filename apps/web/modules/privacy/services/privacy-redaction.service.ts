@@ -59,4 +59,17 @@ export class PrivacyRedactionService {
     }
     return redacted;
   }
+
+  /**
+   * Redacts identifying details for comparables given to clients.
+   */
+  static redactForComparables(data: any): any {
+    const redacted = { ...data };
+    // Redact specific address and photos until lawful use is appropriate
+    delete redacted.addressLine1;
+    delete redacted.unitNumber;
+    delete redacted.ownerName;
+    // Keep general area, beds/baths, and sold price (if allowed)
+    return redacted;
+  }
 }

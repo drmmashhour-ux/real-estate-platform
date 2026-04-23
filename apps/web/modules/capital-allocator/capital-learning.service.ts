@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { logComplianceEvent } from "@/services/compliance/coownershipCompliance.service";
+import { updateAllocationWeights } from "./capital-allocation-weights.service";
 
 export async function trackAllocationPerformance(listingId: string, planId: string, performanceDelta: number) {
   // Log the performance delta for future learning
@@ -15,8 +15,11 @@ export async function trackAllocationPerformance(listingId: string, planId: stri
 
   // Learning logic: If performance was good, increase scoring weights for this listing/strategy
   if (performanceDelta > 0.1) {
-    // Increment success in autonomy weights or similar storage
-    // For V2, we'll just log it. Actual weight adjustment would happen in capital-priority-score.service
+    // Increment uplift weight as it seems to be a good predictor
+    await updateAllocationWeights({ upliftWeight: 14 }); // Simple heuristic for V2
+  } else if (performanceDelta < -0.05) {
+    // Increase risk penalty if underperforming
+    await updateAllocationWeights({ riskPenalty: 30 });
   }
 }
 

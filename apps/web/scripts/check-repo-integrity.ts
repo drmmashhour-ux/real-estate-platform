@@ -23,12 +23,12 @@ type Report = {
 };
 
 const CRITICAL_FILES = [
-  "app/bnhub/[id]/page.tsx",
-  "app/bnhub/bnhub-listing-view.tsx",
-  "app/stays/[slug]/page.tsx",
-  "app/bnhub/booking-form.tsx",
-  "app/bnhub/listing-image-gallery.tsx",
-  "app/bnhub/availability-calendar.tsx",
+  "app/[locale]/[country]/bnhub/[id]/page.tsx",
+  "app/[locale]/[country]/bnhub/bnhub-listing-view.tsx",
+  "app/[locale]/[country]/bnhub/stays/[id]/page.tsx",
+  "app/[locale]/[country]/bnhub/booking-form.tsx",
+  "app/[locale]/[country]/bnhub/listing-image-gallery.tsx",
+  "app/[locale]/[country]/bnhub/availability-calendar.tsx",
   "prisma/schema.prisma",
   "lib/auth/protected-route-segment.ts",
 ] as const;
@@ -51,7 +51,7 @@ function readUtf8(relative: string): string {
 
 function contentChecks(): CheckResult[] {
   const out: CheckResult[] = [];
-  const bnhubPage = "app/bnhub/[id]/page.tsx";
+  const bnhubPage = "app/[locale]/[country]/bnhub/[id]/page.tsx";
   try {
     const src = readUtf8(bnhubPage);
     if (!src.includes("bnhub-listing-view") && !src.includes("BnhubListingView")) {
@@ -67,7 +67,7 @@ function contentChecks(): CheckResult[] {
     out.push({ path: bnhubPage, ok: false, reason: String(e) });
   }
 
-  const view = "app/bnhub/bnhub-listing-view.tsx";
+  const view = "app/[locale]/[country]/bnhub/bnhub-listing-view.tsx";
   try {
     const src = readUtf8(view);
     const need = ["ListingImageGallery", "BookingForm", "AvailabilityCalendar"];
@@ -85,7 +85,7 @@ function contentChecks(): CheckResult[] {
     out.push({ path: view, ok: false, reason: String(e) });
   }
 
-  const stays = "app/stays/[slug]/page.tsx";
+  const stays = "app/[locale]/[country]/bnhub/stays/[id]/page.tsx";
   try {
     const src = readUtf8(stays);
     if (!src.includes("BnhubListingView") && !src.includes("bnhub-listing-view")) {

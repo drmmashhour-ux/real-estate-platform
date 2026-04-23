@@ -42,16 +42,6 @@ export async function GET() {
         status: "error",
         db: false,
         api: false,
-        error: "readiness_unhandled",
-        verbose: {
-          success: false,
-          ready: false,
-          db: "error",
-          stripe: "error",
-          api: "error",
-          time: new Date().toISOString(),
-          publicEnv: getPublicEnv(),
-        }
       },
       { status: 503 }
     );
@@ -112,27 +102,6 @@ async function getReadyHandler() {
         status: "error",
         db: false,
         api: true,
-        error: "prisma_module_unavailable",
-        verbose: {
-          success: false,
-          ready: false,
-          db: "error",
-          stripe: "not_configured",
-          api: "ok",
-          dbTargetHost,
-          dbHostKind: hostKind,
-          databaseUrlLooksLikeTemplate,
-          rawDbUrlExists,
-          dbUrlPreview,
-          projectId,
-          projectName,
-          vercelEnv,
-          hasOpenAI,
-          env: envName,
-          nodeEnv: envName,
-          publicEnv: getPublicEnv(),
-          time,
-        },
       },
       { status: 503 }
     );
@@ -158,26 +127,6 @@ async function getReadyHandler() {
         status: "error",
         db: false,
         api: true,
-        verbose: {
-          success: false,
-          ready: false,
-          db: "error",
-          stripe: "not_configured",
-          api: "ok",
-          dbTargetHost,
-          dbHostKind: hostKind,
-          databaseUrlLooksLikeTemplate,
-          rawDbUrlExists,
-          dbUrlPreview,
-          projectId,
-          projectName,
-          vercelEnv,
-          hasOpenAI,
-          env: envName,
-          nodeEnv: envName,
-          publicEnv: getPublicEnv(),
-          time,
-        }
       },
       { status: 503 }
     );
@@ -206,48 +155,26 @@ async function getReadyHandler() {
     
     const coreReady = i18nBundles && privacyOk;
     const ready = coreReady && (stripeReady || !strictStripe);
-    const stripeLaunch = stripeReady ? "ok" : stripeErr ? "error" : "not_configured";
 
     // Phase 8: Standardized JSON format
-    const status = ready ? "ok" : "failing";
-    const dbStatus = true; // DB query succeeded if we reached here
-    const apiStatus = true;
+    if (!ready) {
+      return NextResponse.json(
+        {
+          status: "failing",
+          db: true,
+          api: true,
+          error: "core_services_not_ready"
+        },
+        { status: 503 }
+      );
+    }
 
     return NextResponse.json(
       {
-        status,
-        db: dbStatus,
-        api: apiStatus,
-        // Keep existing verbose metadata for debugging
-        verbose: {
-          success: ready,
-          ready,
-          db: "ok",
-          stripe: stripeLaunch,
-          api: "ok",
-          stripeHint: stripeErr,
-          supabase: supabaseConfigStatus(),
-          dbTargetHost,
-          dbHostKind: hostKind,
-          databaseUrlLooksLikeTemplate,
-          rawDbUrlExists,
-          dbUrlPreview,
-          projectId,
-          projectName,
-          vercelEnv,
-          hasOpenAI,
-          env: envName,
-          nodeEnv: envName,
-          publicEnv: getPublicEnv(),
-          checks: {
-            i18nBundles,
-            marketCode: market.code,
-            stripeRequired: strictStripe,
-          },
-          time,
-        }
-      },
-      { status: ready ? 200 : 503 }
+        status: "ok",
+        db: true,
+        api: true
+      }
     );
   } catch (e) {
     console.error("[api/ready] non-DB readiness error:", e);

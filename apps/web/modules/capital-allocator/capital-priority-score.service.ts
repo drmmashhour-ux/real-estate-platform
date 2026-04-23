@@ -1,4 +1,5 @@
 import type { ListingAllocationMetrics, AllocationCandidate } from "./capital-allocator.types";
+import type { AllocationWeights } from "./capital-allocation-weights.service";
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
@@ -11,7 +12,16 @@ function round2(value: number) {
 /**
  * Deterministic priority + **suggested** dollar need (ceiling) per listing. Not a return guarantee.
  */
-export function buildAllocationCandidate(metrics: ListingAllocationMetrics): AllocationCandidate {
+export function buildAllocationCandidate(
+  metrics: ListingAllocationMetrics,
+  weights: AllocationWeights = {
+    buySignalWeight: 20,
+    occupancyWeight: 10,
+    revparWeight: 8,
+    upliftWeight: 12,
+    riskPenalty: 25,
+  }
+): AllocationCandidate {
   if (metrics.manualCapitalLock) {
     return {
       listingId: metrics.listingId,
@@ -39,7 +49,7 @@ export function buildAllocationCandidate(metrics: ListingAllocationMetrics): All
   const rec = (metrics.recommendation ?? "").toLowerCase().trim();
 
   if (rec === "buy" || rec === "accumulate" || rec === "add") {
-    priorityScore += 20;
+    priorityScore += weights.buySignalWeight;
     expectedImpactScore += 15;
     rationale.push("Active investment stance suggests capital can support growth (from platform recommendation row).");
   }
@@ -51,14 +61,14 @@ export function buildAllocationCandidate(metrics: ListingAllocationMetrics): All
   }
 
   if (rec === "sell" || rec === "reduce" || rec === "exit") {
-    priorityScore -= 25;
+    priorityScore -= weights.riskPenalty;
     expectedImpactScore -= 20;
     allocationType = "reduce";
     rationale.push("Investment stance suggests constraining new discretionary spend on this listing.");
   }
 
   if (metrics.occupancyRate >= 0.72) {
-    priorityScore += 10;
+    priorityScore += weights.occupancyWeight;
     expectedImpactScore += 8;
     rationale.push("Occupancy from counted stays in the KPI window is strong.");
   } else if (metrics.occupancyRate < 0.45) {
@@ -68,7 +78,7 @@ export function buildAllocationCandidate(metrics: ListingAllocationMetrics): All
   }
 
   if (metrics.revpar > 0 && metrics.adr > 0 && metrics.revpar >= metrics.adr * 0.65) {
-    priorityScore += 8;
+    priorityScore += weights.revparWeight;
     rationale.push("RevPAR is healthy relative to ADR in-window (internal BNHub definitions).");
   } else if (metrics.adr > 0 && metrics.revpar < metrics.adr * 0.4) {
     expectedImpactScore += 8;
@@ -76,7 +86,7 @@ export function buildAllocationCandidate(metrics: ListingAllocationMetrics): All
   }
 
   if ((metrics.upliftScore ?? 0) > 0.08) {
-    priorityScore += 12;
+    priorityScore += weights.upliftWeight;
     expectedImpactScore += 10;
     rationale.push("Recent autonomy outcome uplift signal is positive (internal estimate, not causal proof).");
   } else if ((metrics.upliftScore ?? 0) < -0.05) {

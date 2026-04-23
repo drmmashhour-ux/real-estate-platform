@@ -71,3 +71,27 @@ export async function detachDocumentFromChecklistItem(
 
   return updated;
 }
+
+/**
+ * Specialized helpers for common co-ownership document types.
+ * Links them to their respective checklist items by key.
+ */
+export async function uploadInsuranceCertificate(listingId: string, documentId: string, actorUserId: string) {
+  return attachDocumentByItemKey(listingId, "syndicate_property_insurance_verified", documentId, actorUserId);
+}
+
+export async function uploadSyndicatePolicy(listingId: string, documentId: string, actorUserId: string) {
+  return attachDocumentByItemKey(listingId, "syndicate_third_party_liability_verified", documentId, actorUserId);
+}
+
+export async function uploadValuationReport(listingId: string, documentId: string, actorUserId: string) {
+  return attachDocumentByItemKey(listingId, "syndicate_valuation_within_5_years_verified", documentId, actorUserId);
+}
+
+async function attachDocumentByItemKey(listingId: string, key: string, documentId: string, actorUserId: string) {
+  const item = await prisma.checklistItem.findUnique({
+    where: { listingId_key: { listingId, key } },
+  });
+  if (!item) throw new Error(`Checklist item with key ${key} not found for listing ${listingId}`);
+  return attachDocumentToChecklistItem(item.id, documentId, actorUserId);
+}

@@ -4,6 +4,8 @@ import { LEGAL_DOCUMENT_TYPES } from "@/lib/legal/constants";
 import { LegalPageLayout } from "@/components/legal/LegalPageLayout";
 import { PRIVACY_DEFAULT_HTML } from "@/lib/legal/default-legal-en";
 import { PrivacyOfficerInfo } from "@/modules/privacy/components/PrivacyOfficerInfo";
+import { PrivacyComplaintForm } from "@/modules/privacy/components/PrivacyComplaintForm";
+import { MandatoryPrivacyWarnings } from "@/modules/privacy/components/MandatoryPrivacyWarnings";
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
@@ -18,25 +20,35 @@ export default async function LegalPrivacyPage() {
 
   return (
     <LegalPageLayout title="Privacy Policy" version={version} updatedAt={updatedAt} backHref="/">
-      <div className="space-y-8">
+      <div className="space-y-12">
         <section>
           <PrivacyOfficerInfo />
         </section>
 
-        <section dangerouslySetInnerHTML={{ __html: content }} />
+        <section>
+          <h2 className="text-2xl font-bold mb-6">Our Commitment to Privacy</h2>
+          <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: content }} />
+        </section>
 
-        <section className="p-6 bg-blue-50 border border-blue-100 rounded-lg">
-          <h3 className="text-lg font-bold mb-2 text-blue-900">Retention and Destruction</h3>
-          <p className="text-sm text-blue-800 mb-4">
-            We retain your personal information only for as long as necessary to fulfill the purposes for which it was collected, 
-            including for the purposes of satisfying any legal, accounting, or reporting requirements. 
-            Once the retention period has expired, your information is securely destroyed or anonymized.
-          </p>
-          <div className="pt-4 border-t border-blue-200">
-            <h4 className="font-bold text-sm text-blue-900 mb-2">Have a concern?</h4>
-            <a href="/legal/privacy/complaint" className="inline-block px-4 py-2 bg-blue-600 text-white text-sm font-bold rounded hover:bg-blue-700">
-              Submit a Privacy Complaint
-            </a>
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-8 border-t border-gray-100">
+          <div>
+            <h3 className="text-xl font-bold mb-4">Retention and Destruction</h3>
+            <div className="p-6 bg-blue-50 border border-blue-100 rounded-lg">
+              <p className="text-sm text-blue-800">
+                We retain your personal information only for as long as necessary to fulfill the purposes for which it was collected, 
+                including for the purposes of satisfying any legal, accounting, or reporting requirements. 
+                Once the retention period has expired, your information is securely destroyed or anonymized.
+              </p>
+            </div>
+            
+            <div className="mt-8">
+              <h3 className="text-xl font-bold mb-4">Regulatory Compliance</h3>
+              <MandatoryPrivacyWarnings />
+            </div>
+          </div>
+
+          <div>
+            <PrivacyComplaintForm />
           </div>
         </section>
       </div>

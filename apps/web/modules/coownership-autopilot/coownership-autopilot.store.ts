@@ -6,6 +6,7 @@ import type { CoownershipChecklistItem } from "./coownership-autopilot.types";
 
 export interface CoownershipAutopilotStore {
   listChecklistKeys(listingId: string): Promise<string[]>;
+  getChecklistItems(listingId: string): Promise<CoownershipChecklistItem[]>;
   upsertChecklistItem(listingId: string, item: CoownershipChecklistItem): Promise<void>;
   deleteChecklistItemsForListing(listingId: string): Promise<void>;
   getComplianceApplicable(listingId: string): Promise<boolean | undefined>;
@@ -33,6 +34,10 @@ export function createMemoryCoownershipStore(): CoownershipAutopilotStore {
   return {
     async listChecklistKeys(listingId: string): Promise<string[]> {
       return [...ck(listingId).keys()];
+    },
+
+    async getChecklistItems(listingId: string): Promise<CoownershipChecklistItem[]> {
+      return [...ck(listingId).values()];
     },
 
     async upsertChecklistItem(listingId: string, item: CoownershipChecklistItem): Promise<void> {

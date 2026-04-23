@@ -5,7 +5,7 @@ import { PrivacySensitivityLevel } from "@prisma/client";
 
 vi.mock("@/lib/db", () => ({
   prisma: {
-    lecipmSdDocument: {
+    transactionDocument: {
       findUnique: vi.fn(),
     },
     privacyTransferLog: {
@@ -23,7 +23,7 @@ describe("PrivacyAccessService", () => {
   });
 
   it("should allow ADMIN to access any document", async () => {
-    (prisma.lecipmSdDocument.findUnique as any).mockResolvedValue({
+    (prisma.transactionDocument.findUnique as any).mockResolvedValue({
       id: "doc-1",
       sensitivityLevel: PrivacySensitivityLevel.HIGHLY_SENSITIVE,
       transaction: { brokerId: "other-broker" },
@@ -39,7 +39,7 @@ describe("PrivacyAccessService", () => {
   });
 
   it("should deny access to unrelated broker for sensitive document", async () => {
-    (prisma.lecipmSdDocument.findUnique as any).mockResolvedValue({
+    (prisma.transactionDocument.findUnique as any).mockResolvedValue({
       id: "doc-1",
       sensitivityLevel: PrivacySensitivityLevel.CONFIDENTIAL,
       transaction: { brokerId: "owner-broker" },
@@ -48,7 +48,7 @@ describe("PrivacyAccessService", () => {
 
     const result = await PrivacyAccessService.canAccessDocument({
       userId: "other-broker",
-      userRole: PrivacyRole.BROKER,
+      userRole: "BROKER",
       documentId: "doc-1",
     });
 
@@ -56,7 +56,7 @@ describe("PrivacyAccessService", () => {
   });
 
   it("should allow access to the broker on the transaction", async () => {
-    (prisma.lecipmSdDocument.findUnique as any).mockResolvedValue({
+    (prisma.transactionDocument.findUnique as any).mockResolvedValue({
       id: "doc-1",
       sensitivityLevel: PrivacySensitivityLevel.CONFIDENTIAL,
       transaction: { brokerId: "owner-broker" },
@@ -64,7 +64,7 @@ describe("PrivacyAccessService", () => {
 
     const result = await PrivacyAccessService.canAccessDocument({
       userId: "owner-broker",
-      userRole: PrivacyRole.BROKER,
+      userRole: "BROKER",
       documentId: "doc-1",
     });
 

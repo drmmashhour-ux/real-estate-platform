@@ -31,10 +31,18 @@ export type CoownershipListingInput = {
   sellerDeclarationJson?: SellerDeclarationCoownershipSlice | null;
 };
 
+export type VerificationLevel = "DECLARED" | "DOCUMENTED" | "VERIFIED";
+
 export type CoownershipChecklistItem = {
   key: string;
   label: string;
   done: boolean;
+  verificationLevel: VerificationLevel;
+  verifiedBy: string | null;
+  verifiedAtIso: string | null;
+  supportingDocumentIds: string[];
+  validUntilIso: string | null;
+  isExpired: boolean;
 };
 
 export type CoownershipAutopilotResult = {

@@ -19,23 +19,27 @@ Allows investors to project the impact of capital shifts before committing.
 ### 3. Learning Loop (`capital-learning.service.ts`)
 Tracks the delta between projected and real performance after an allocation is applied. 
 - Logs results to `CapitalAllocationLog`.
-- Informs future scoring weights (V2.1 implementation).
+- Adjusts scoring weights (via `capital-allocation-weights.service.ts`) when performance exceeds or lags thresholds (e.g., increasing `upliftWeight` on success).
+- Provides success rate analysis for strategies.
 
 ### 4. Recommendation Engine (`capital-recommendation.service.ts`)
 Generates human-readable, actionable advice:
 - "Increase investment in X" (based on priority and capacity).
 - "Reduce spend on Y" (due to high risk).
 - "Pause Z" (due to severe occupancy issues).
+- Includes reason and confidence score for each recommendation.
 
 ## API Endpoints
 
-- `GET /api/capital-allocator/insights`: Returns structured portfolio insights.
-- `GET /api/capital-allocator/recommendations`: Returns actionable investment advice.
-- `POST /api/capital-allocator/simulate`: Projects impact of budget/strategy changes.
+- `GET /api/capital-allocator/insights`: Returns top contributors, underperformers, high-growth opportunities, and risk alerts.
+- `GET /api/capital-allocator/recommendations`: Returns actionable investment advice with confidence scores.
+- `POST /api/capital-allocator/simulate`: Projects impact of budget/strategy changes on revenue and risk.
 - `GET /api/mobile/investor/capital-allocator/summary`: Lightweight summary for mobile alerts.
 
 ## UI Integration
 The investor dashboard now includes:
-- **Portfolio Overview**: Visual summary of performers and risks.
+- **Portfolio Overview**: Visual summary of top contributors.
+- **Top Opportunities**: Listings with high growth potential based on uplift.
+- **Risk Alerts**: Immediate flags for critical operational or occupancy issues.
 - **Actionable Recommendations**: High-confidence AI cards.
 - **Interactive Simulator**: Real-time projection tool for budget planning.

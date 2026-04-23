@@ -30,6 +30,12 @@ enum PlatformRole {
   DEVELOPER // Projects: manage projects (must verify + accept developer terms)
   ACCOUNTANT // Financial dashboard, reports, tax docs — no system config / user deletion
   ADMIN // Full control
+  /// Privacy & Compliance Roles (Law 25)
+  PRIVACY_OFFICER
+  LEGAL_ADMIN
+  COMPLIANCE_STAFF
+  AGENCY_EXECUTIVE
+  UNREPRESENTED_BUYER
   /// Internal ops — team workspace (`/admin/team`): tasks, daily reports, scoped metrics (not full platform admin)
   CONTENT_OPERATOR
   LISTING_OPERATOR

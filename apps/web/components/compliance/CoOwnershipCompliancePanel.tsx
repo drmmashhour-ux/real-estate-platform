@@ -194,6 +194,43 @@ export function CoOwnershipCompliancePanel({
     }
   };
 
+  const onAttach = async (key: string) => {
+    // In a real app, this would trigger a file upload modal.
+    // For this hardened demo, we'll simulate picking a docId.
+    const docId = prompt("Enter Document ID to attach (simulated upload):");
+    if (!docId) return;
+
+    setUpdating(key);
+    try {
+      const res = await fetch(`/api/compliance/${encodeURIComponent(listingId)}/attach/${encodeURIComponent(key)}`, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ documentId: docId }),
+      });
+      if (res.ok) await load();
+      else alert("Failed to attach document");
+    } finally {
+      setUpdating(null);
+    }
+  };
+
+  const onVerify = async (key: string, level: ComplianceVerificationLevel) => {
+    setUpdating(key);
+    try {
+      const res = await fetch(`/api/compliance/${encodeURIComponent(listingId)}/verify/${encodeURIComponent(key)}`, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ level }),
+      });
+      if (res.ok) await load();
+      else alert("Failed to update verification");
+    } finally {
+      setUpdating(null);
+    }
+  };
+
   if (loading && !data) {
     return (
       <div
@@ -360,12 +397,23 @@ export function CoOwnershipCompliancePanel({
               </div>
               <div className="flex shrink-0 flex-wrap items-center gap-2">
                 <button
-                  onClick={() => alert("Upload logic placeholder")}
+                  onClick={() => onAttach(item.key)}
                   className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800"
+                  disabled={updating === item.key}
                   title="Upload supporting document"
                 >
                   <Upload className="h-4 w-4" />
                 </button>
+                <select
+                  className="rounded-md border border-slate-300 bg-white px-2 py-1 text-[10px] font-bold dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+                  disabled={updating === item.key}
+                  value={item.verificationLevel}
+                  onChange={(e) => onVerify(item.key, e.target.value as ComplianceVerificationLevel)}
+                >
+                  <option value="DECLARED">Declared</option>
+                  <option value="DOCUMENTED">Documented</option>
+                  <option value="VERIFIED">Verified</option>
+                </select>
                 <select
                   className="rounded-md border border-slate-300 bg-white px-2 py-1 text-xs dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
                   disabled={updating === item.key}
@@ -431,11 +479,30 @@ export function CoOwnershipCompliancePanel({
               </div>
               <div className="flex shrink-0 flex-wrap items-center gap-2">
                 <button
-                  onClick={() => alert("Upload logic placeholder")}
+                  onClick={() => onAttach(item.key)}
                   className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800"
+                  disabled={updating === item.key}
                   title="Upload supporting document"
                 >
                   <Upload className="h-4 w-4" />
+                </button>
+                <select
+                  className="rounded-md border border-slate-300 bg-white px-2 py-1 text-[10px] font-bold dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+                  disabled={updating === item.key}
+                  value={item.verificationLevel}
+                  onChange={(e) => onVerify(item.key, e.target.value as ComplianceVerificationLevel)}
+                >
+                  <option value="DECLARED">Declared</option>
+                  <option value="DOCUMENTED">Documented</option>
+                  <option value="VERIFIED">Verified</option>
+                </select>
+                <button
+                  onClick={() => onOverride(item.key, item.isOverridden)}
+                  className={`rounded p-1 ${item.isOverridden ? "text-amber-600 bg-amber-50" : "text-slate-400"} hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800`}
+                  disabled={updating === item.key}
+                  title={item.isOverridden ? "Remove override" : "Admin override"}
+                >
+                  <ShieldAlert className="h-4 w-4" />
                 </button>
                 <select
                   className="shrink-0 rounded-md border border-slate-300 bg-white px-2 py-1 text-xs dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"

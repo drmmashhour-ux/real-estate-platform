@@ -93,6 +93,8 @@ export const engineFlags = {
   /** Optional outbound API connectors — default off; COPY/SHARE_LINKS do not need this. */
   distributionApiV1: envTrue("FEATURE_DISTRIBUTION_API_V1"),
   marketingIntelligenceV1: envTrue("FEATURE_MARKETING_INTELLIGENCE_V1"),
+  coownershipVerificationEnforcement: envTrue("FEATURE_COOWNERSHIP_VERIFICATION_ENFORCEMENT"),
+  coownershipExpiryEnforcement: envTrue("FEATURE_COOWNERSHIP_EXPIRY_ENFORCEMENT"),
   /**
    * LECIPM Growth Machine v1 — unified dashboard, lead capture API, reporting (default off).
    * Does not auto-send outreach; suggestions are review-only unless existing pipelines send.

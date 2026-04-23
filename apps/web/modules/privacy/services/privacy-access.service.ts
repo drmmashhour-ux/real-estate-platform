@@ -1,21 +1,7 @@
 import { prisma } from "@/lib/db";
-import { PrivacySensitivityLevel, PrivacyRole as PrismaPrivacyRole } from "@prisma/client";
+import { PrivacySensitivityLevel, PlatformRole } from "@prisma/client";
 
-export enum PrivacyRole {
-  SUPER_ADMIN = "SUPER_ADMIN",
-  LEGAL_ADMIN = "LEGAL_ADMIN",
-  PRIVACY_OFFICER = "PRIVACY_OFFICER",
-  AGENCY_EXECUTIVE = "AGENCY_EXECUTIVE",
-  BROKER = "BROKER",
-  SUPPORT_STAFF = "SUPPORT_STAFF",
-  COMPLIANCE_STAFF = "COMPLIANCE_STAFF",
-  MORTGAGE_STAFF = "MORTGAGE_STAFF",
-  INVESTOR_STAFF = "INVESTOR_STAFF",
-  HOST_STAFF = "HOST_STAFF",
-  CLIENT = "CLIENT",
-  UNREPRESENTED_BUYER = "UNREPRESENTED_BUYER",
-  VISITOR = "VISITOR",
-}
+export const PrivacyRole = PlatformRole;
 
 export class PrivacyAccessService {
   /**
@@ -26,7 +12,7 @@ export class PrivacyAccessService {
     userRole: string; // User.role or PrivacyRole
     documentId: string;
   }): Promise<boolean> {
-    const doc = await prisma.lecipmSdDocument.findUnique({
+    const doc = await prisma.transactionDocument.findUnique({
       where: { id: args.documentId },
       include: { transaction: { select: { brokerId: true } } },
     });

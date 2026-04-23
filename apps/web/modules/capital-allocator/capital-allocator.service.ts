@@ -6,6 +6,7 @@
 import { loadAllocationMetricsForScope } from "./capital-metrics-loader.service";
 import { buildAllocationCandidate } from "./capital-priority-score.service";
 import { allocateBudgetAcrossCandidates } from "./capital-budget-engine.service";
+import { getAllocationWeights } from "./capital-allocation-weights.service";
 
 export async function generateCapitalAllocationPlan(params: {
   scopeType: string;
@@ -13,8 +14,12 @@ export async function generateCapitalAllocationPlan(params: {
   totalBudget: number;
   reservePct?: number;
 }) {
-  const metrics = await loadAllocationMetricsForScope(params.scopeType, params.scopeId);
-  const candidates = metrics.map(buildAllocationCandidate);
+  const [metrics, weights] = await Promise.all([
+    loadAllocationMetricsForScope(params.scopeType, params.scopeId),
+    getAllocationWeights(),
+  ]);
+
+  const candidates = metrics.map((m) => buildAllocationCandidate(m, weights));
 
   return allocateBudgetAcrossCandidates({
     totalBudget: params.totalBudget,

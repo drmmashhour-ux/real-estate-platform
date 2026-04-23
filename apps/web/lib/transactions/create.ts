@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { recordTransactionEvent } from "./events";
 import type { TransactionStatus } from "./constants";
+import { PrivacyLaunchGuard } from "@/modules/privacy/utils/launch-guards";
 
 export interface CreateTransactionInput {
   propertyIdentityId: string;
@@ -11,6 +12,9 @@ export interface CreateTransactionInput {
 }
 
 export async function createTransaction(input: CreateTransactionInput): Promise<{ id: string; status: TransactionStatus }> {
+  // Enforce Privacy Gate for Buyer
+  await PrivacyLaunchGuard.assertTransactionGate(input.buyerId);
+
   const tx = await prisma.realEstateTransaction.create({
     data: {
       propertyIdentityId: input.propertyIdentityId,

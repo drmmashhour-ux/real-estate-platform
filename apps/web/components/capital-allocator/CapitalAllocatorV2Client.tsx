@@ -76,7 +76,7 @@ export function CapitalAllocatorV2Client({ locale, country }: Props) {
     <div className="space-y-8">
       {/* Portfolio Insights */}
       {insights && (
-        <section className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <section className="grid grid-cols-1 gap-6 md:grid-cols-3">
           <div className="rounded-2xl border border-white/10 bg-black/35 p-5">
             <h2 className="flex items-center gap-2 text-sm font-semibold text-white">
               <TrendingUp className="h-4 w-4 text-emerald-500" />
@@ -89,6 +89,25 @@ export function CapitalAllocatorV2Client({ locale, country }: Props) {
                   <span className="font-mono text-white">${p.metrics.grossRevenue.toLocaleString()}</span>
                 </div>
               ))}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-white/10 bg-black/35 p-5">
+            <h2 className="flex items-center gap-2 text-sm font-semibold text-white">
+              <TrendingUp className="h-4 w-4 text-premium-gold" />
+              Top Opportunities
+            </h2>
+            <div className="mt-4 space-y-3">
+              {insights.highGrowthPotential.length === 0 ? (
+                <p className="text-xs text-[#737373]">No high growth opportunities found.</p>
+              ) : (
+                insights.highGrowthPotential.map((p) => (
+                  <div key={p.listingId} className="flex justify-between text-sm text-[#B3B3B3]">
+                    <span>{p.listingTitle}</span>
+                    <span className="font-mono text-premium-gold">+{Math.round((p.metrics.upliftScore || 0) * 100)}% uplift</span>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 
