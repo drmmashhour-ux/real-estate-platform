@@ -39,6 +39,34 @@ const pillarLinks = [
   },
 ] as const;
 
+const brokerValuationEngines = [
+  {
+    href: "/dashboard/broker/appraisal",
+    title: "Appraisal Hub",
+    desc: "Broker workspace for valuation support, pricing analysis, and appraisal report drafts — with review gates.",
+  },
+  {
+    href: "/dashboard/broker/appraisal/comparative",
+    title: "Comparative sales",
+    desc: "Sales comparison path and map-linked comparables (sign in as broker).",
+  },
+  {
+    href: "/dashboard/broker/appraisal/income",
+    title: "Income approach",
+    desc: "Income-based pricing analysis worksheets (broker dashboard).",
+  },
+  {
+    href: "/dashboard/broker/appraisal/cost",
+    title: "Cost approach",
+    desc: "Replacement / cost context for the appraisal report draft (broker dashboard).",
+  },
+  {
+    href: "/dashboard/broker/appraisal/land",
+    title: "Land / lot",
+    desc: "Unimproved land and lot logic for market estimates (broker dashboard).",
+  },
+] as const;
+
 const customerTools = [
   {
     href: "/appraisal-calculator",
@@ -109,6 +137,28 @@ export default function FinancialHubPage() {
           {pillarLinks.map((p) => (
             <Link
               key={p.id}
+              href={p.href}
+              className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 transition hover:border-premium-gold/40 hover:bg-white/[0.05]"
+            >
+              <h3 className="text-xl font-semibold text-premium-gold">{p.title}</h3>
+              <p className="mt-3 text-sm leading-relaxed text-slate-400">{p.desc}</p>
+              <p className="mt-5 text-sm font-medium text-white">Open →</p>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section id="broker-valuation" className="mt-8 scroll-mt-24">
+        <h2 className="text-lg font-semibold text-white">Broker valuation support</h2>
+        <p className="mt-2 max-w-3xl text-sm text-slate-400">
+          LECIPM brokers: open the appraisal engine for pricing analysis and appraisal report drafts. This is valuation
+          support — not an automatic certified appraisal unless separately reviewed and signed under the proper professional
+          process.
+        </p>
+        <div className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {brokerValuationEngines.map((p) => (
+            <Link
+              key={p.href}
               href={p.href}
               className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 transition hover:border-premium-gold/40 hover:bg-white/[0.05]"
             >

@@ -17,11 +17,11 @@ export async function GET(request: Request) {
   const dealId = url.searchParams.get("dealId")?.trim() || undefined;
   const leadId = url.searchParams.get("leadId")?.trim() || undefined;
 
-  const { suggestions, disclaimer } = await getBrokerAssistantSuggestions({
+  const { suggestions, disclaimer, assistantMode } = await getBrokerAssistantSuggestions({
     brokerUserId: gate.session.id,
     dealId,
     leadId,
   });
 
-  return NextResponse.json({ suggestions, disclaimer });
+  return NextResponse.json({ suggestions, disclaimer, assistantMode });
 }

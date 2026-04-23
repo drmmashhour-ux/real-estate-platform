@@ -1,5 +1,8 @@
 import type { ReactNode } from "react";
+import { PlatformRole } from "@prisma/client";
 import { BrokerResidentialShell } from "@/components/broker-residential/BrokerResidentialShell";
+import { getSession } from "@/lib/auth/get-session";
+import { getBrokerLicenceDisplay } from "@/lib/compliance/oaciq/broker-licence-service";
 
 export default async function BrokerResidentialLayout({
   children,
@@ -10,5 +13,13 @@ export default async function BrokerResidentialLayout({
 }) {
   const { locale, country } = await params;
   const basePath = `/${locale}/${country}/broker/residential`;
-  return <BrokerResidentialShell basePath={basePath}>{children}</BrokerResidentialShell>;
+  const { user } = await getSession();
+  const licence =
+    user?.role === PlatformRole.BROKER ? await getBrokerLicenceDisplay(user.id) : null;
+
+  return (
+    <BrokerResidentialShell basePath={basePath} licence={licence}>
+      {children}
+    </BrokerResidentialShell>
+  );
 }

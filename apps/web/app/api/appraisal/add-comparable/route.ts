@@ -10,6 +10,8 @@ import {
   scoreComparableSimilarity,
 } from "@/modules/deal-analyzer/infrastructure/services/comparableScoringService";
 import type { ComparableCandidate } from "@/modules/deal-analyzer/domain/comparables";
+import { logAppraisalAudit } from "@/lib/appraisal/appraisal-audit";
+import { getBrokerAppraisalCaseForUser } from "@/lib/appraisal/broker-appraisal-case.service";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +20,8 @@ const bodySchema = z.object({
   subjectListingId: z.string().min(1),
   /** Selected comparable FSBO listing id. */
   comparablePropertyId: z.string().min(1),
+  /** Optional LECIPM broker appraisal case — logs comparable_added when set and valid. */
+  lecipmBrokerAppraisalCaseId: z.string().optional(),
 });
 
 function toCandidate(row: {
@@ -157,6 +161,29 @@ export async function POST(req: Request) {
       details: { source: "map_manual" },
     },
   });
+
+  if (body.lecipmBrokerAppraisalCaseId?.trim()) {
+    const apCase = await getBrokerAppraisalCaseForUser(body.lecipmBrokerAppraisalCaseId.trim(), auth.user.id);
+    if (
+      apCase &&
+      apCase.subjectListingId === body.subjectListingId &&
+      (apCase.dealAnalysisId === analysis.id || !apCase.dealAnalysisId)
+    ) {
+      if (!apCase.dealAnalysisId) {
+        await prisma.lecipmBrokerAppraisalCase.update({
+          where: { id: apCase.id },
+          data: { dealAnalysisId: analysis.id },
+        });
+      }
+      await logAppraisalAudit({
+        actorUserId: auth.user.id,
+        action: "comparable_added",
+        entityId: apCase.id,
+        summary: `Comparable linked to pricing analysis (${comp.id})`,
+        payload: { comparableRowId: created.id, comparableListingId: comp.id },
+      });
+    }
+  }
 
   return NextResponse.json({ success: true, id: created.id });
 }

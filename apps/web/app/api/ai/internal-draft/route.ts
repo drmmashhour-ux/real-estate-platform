@@ -10,6 +10,8 @@ type Body = {
   formType?: string;
   facts?: Record<string, unknown>;
   listing?: { address?: string | null };
+  mode?: "full" | "clause";
+  clauseType?: string;
 };
 
 /**
@@ -31,17 +33,37 @@ export async function POST(req: NextRequest) {
 
   const formType = typeof body.formType === "string" ? body.formType.trim() : "";
   const facts = body.facts && typeof body.facts === "object" ? body.facts : {};
+  const mode = body.mode === "clause" ? "clause" : "full";
+  const clauseType = typeof body.clauseType === "string" ? body.clauseType.trim() : "";
   if (!formType) {
     return Response.json({ error: "formType required" }, { status: 400 });
   }
+  if (mode === "clause" && !clauseType) {
+    return Response.json({ error: "clauseType required for clause mode" }, { status: 400 });
+  }
 
   try {
-    const query = `${formType} ${JSON.stringify(facts)}`;
+    const query =
+      mode === "clause" ? `${formType} ${clauseType}` : `${formType} ${JSON.stringify(facts)}`;
     const sources = await retrieveDraftingContext(query);
-    const draft = runInternalDraftGeneration({ formType, facts, sources });
+    const draft = runInternalDraftGeneration({
+      formType,
+      facts,
+      sources,
+      mode,
+      clauseType: mode === "clause" ? clauseType : undefined,
+    });
 
     if (!draft.sourceUsed?.length) {
       return Response.json({ error: "NO_SOURCE_CONTEXT" }, { status: 422 });
+    }
+
+    if (mode === "clause") {
+      return Response.json({
+        fields: draft.fields,
+        sourceUsed: draft.sourceUsed,
+        formType: draft.formType,
+      });
     }
 
     const validation = validateDraft(draft.fields);
