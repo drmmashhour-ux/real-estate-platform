@@ -56,6 +56,7 @@ export type ListingSearchParams = {
   maxPrice?: number;
   guests?: number;
   verifiedOnly?: boolean;
+  insuredOnly?: boolean;
   propertyType?: string;
   roomType?: string;
   instantBook?: boolean;

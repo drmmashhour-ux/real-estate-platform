@@ -22,6 +22,7 @@ export default async function DashboardMarketingPage({
   const calendarHref = `/${locale}/${country}/dashboard/marketing/calendar`;
   const autonomousMarketingHref = `/${locale}/${country}/dashboard/admin/marketing/ai`;
   const aiContentHref = `/${locale}/${country}/dashboard/marketing/ai-content`;
+  const weekPlanHref = `/${locale}/${country}/dashboard/admin/marketing/week-plan`;
 
   const { userId } = await requireAuthenticatedUser();
   const u = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
@@ -83,6 +84,7 @@ export default async function DashboardMarketingPage({
         calendarHref={calendarHref}
         autonomousMarketingHref={autonomousMarketingHref}
         aiContentHref={aiContentHref}
+        weekPlanHref={canAdmin ? weekPlanHref : undefined}
       />
 
       <div className="border-t border-white/10 pt-8">

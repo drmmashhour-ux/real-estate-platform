@@ -27,6 +27,7 @@ import {
 const STATUS_ORDER: ContentStatus[] = [
   "IDEA",
   "DRAFT",
+  "READY_FOR_APPROVAL",
   "APPROVED",
   "SCHEDULED",
   "POSTED",

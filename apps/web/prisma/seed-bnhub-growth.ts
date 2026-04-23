@@ -25,6 +25,19 @@ export async function seedBnhubGrowthDemo(hostUserId: string): Promise<void> {
     return;
   }
 
+  // Ensure host has sufficient autonomy level for seed campaigns
+  await prisma.bnhubHostGrowthPrefs.upsert({
+    where: { userId: hostUserId },
+    create: {
+      userId: hostUserId,
+      maxAutonomyLevel: "SUPERVISED_AUTOPILOT",
+      dailySpendCapCents: 50000,
+    },
+    update: {
+      maxAutonomyLevel: "SUPERVISED_AUTOPILOT",
+    },
+  });
+
   for (const listingId of DEMO_LISTINGS) {
     const listing = await prisma.shortTermListing.findUnique({ where: { id: listingId } });
     if (!listing) continue;

@@ -49,7 +49,7 @@ import {
 } from "@/lib/listings/listing-analytics-service";
 import { buildPropertyConversionSurface } from "@/modules/conversion/property-conversion-surface";
 import { prisma } from "@/lib/db";
-import { isBrokerInsuranceActive } from "@/modules/compliance/insurance/insurance.service";
+import { isBrokerInsuranceValid, getBrokerInsuranceStatus } from "@/modules/compliance/insurance/insurance.service";
 import { loadFsboListingScore } from "@/modules/listing-ranking/fsbo-score-loader";
 import { ListingRankingBadges } from "@/components/listings/ListingRankingBadges";
 import { getPublicEsgBadge, touchEsgOnListingView } from "@/modules/esg/esg.service";
@@ -324,12 +324,20 @@ export default async function PublicListingRoute({ params, searchParams }: Props
     }
     const ownerBrokerVerification = row.owner.brokerVerifications[0] ?? null;
     const insuredBroker =
-      row.listingOwnerType === "BROKER" ? await isBrokerInsuranceActive(row.ownerId) : false;
+      row.listingOwnerType === "BROKER" ? await isBrokerInsuranceValid(row.ownerId) : false;
+    const insuranceStatus = 
+      row.listingOwnerType === "BROKER" ? await getBrokerInsuranceStatus(row.ownerId) : null;
     const transactionFlag = await getListingTransactionFlag(row.id, row.status);
     const fsboPayload = {
       ...row,
       listingKind: "fsbo" as const,
       transactionFlag,
+      insuredBroker,
+      insuranceDetail: insuranceStatus?.policy ? {
+        liabilityAmount: insuranceStatus.policy.coveragePerLoss,
+        expiryDate: insuranceStatus.policy.endDate,
+        status: insuranceStatus.status,
+      } : null,
       representative: {
         name: row.owner.name ?? (row.listingOwnerType === "BROKER" ? "Listing broker" : "Property owner"),
         roleLabel: row.listingOwnerType === "BROKER" ? "Listing broker" : "Property owner",
@@ -497,8 +505,12 @@ export default async function PublicListingRoute({ params, searchParams }: Props
   const transactionFlagCrm = await getListingTransactionFlag(payload.id, null);
   const insuredBrokerCrm =
     payload.ownerId && payload.listingOwnerType === "BROKER"
-      ? await isBrokerInsuranceActive(payload.ownerId)
+      ? await isBrokerInsuranceValid(payload.ownerId)
       : false;
+  const insuranceStatusCrm =
+    payload.ownerId && payload.listingOwnerType === "BROKER"
+      ? await getBrokerInsuranceStatus(payload.ownerId)
+      : null;
   const conversionSurfaceCrm = buildPropertyConversionSurface({
     priceCents: payload.priceCents,
     city: payload.city,
@@ -525,6 +537,11 @@ export default async function PublicListingRoute({ params, searchParams }: Props
           listingKind: "crm",
           transactionFlag: transactionFlagCrm,
           insuredBroker: insuredBrokerCrm,
+          insuranceDetail: insuranceStatusCrm?.policy ? {
+            liabilityAmount: insuranceStatusCrm.policy.coveragePerLoss,
+            expiryDate: insuranceStatusCrm.policy.endDate,
+            status: insuranceStatusCrm.status,
+          } : null,
         }}
         inquiryDistributionChannel={inquiryDistributionChannel}
         demandUi={demandUiCrm}

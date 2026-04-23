@@ -395,3 +395,9 @@ export function recordCountryLaunch(countryCode: string, steps: string[]): void 
   };
   save(s);
 }
+
+export async function launchCountry(countryCode: string, actorUserId: string | null) {
+  recordCountryLaunch(countryCode, ["INITIAL_SCOPING", "LEGAL_REVIEW_STARTED"]);
+  setCountryExpansionStatus(countryCode, "active");
+  return { success: true, countryCode };
+}

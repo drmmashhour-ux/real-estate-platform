@@ -39,16 +39,19 @@ export async function GET() {
     );
     return NextResponse.json(
       {
-        success: false,
-        ok: false,
-        ready: false,
         status: "error",
-        db: "error",
-        stripe: "error",
-        api: "error",
+        db: false,
+        api: false,
         error: "readiness_unhandled",
-        time: new Date().toISOString(),
-        publicEnv: getPublicEnv(),
+        verbose: {
+          success: false,
+          ready: false,
+          db: "error",
+          stripe: "error",
+          api: "error",
+          time: new Date().toISOString(),
+          publicEnv: getPublicEnv(),
+        }
       },
       { status: 503 }
     );
@@ -106,27 +109,30 @@ async function getReadyHandler() {
     );
     return NextResponse.json(
       {
-        success: false,
-        ok: false,
-        ready: false,
         status: "error",
-        db: "error",
-        stripe: "not_configured",
-        api: "ok",
-        dbTargetHost,
-        dbHostKind: hostKind,
-        databaseUrlLooksLikeTemplate,
-        rawDbUrlExists,
-        dbUrlPreview,
-        projectId,
-        projectName,
-        vercelEnv,
-        hasOpenAI,
-        env: envName,
-        nodeEnv: envName,
-        publicEnv: getPublicEnv(),
-        time,
+        db: false,
+        api: true,
         error: "prisma_module_unavailable",
+        verbose: {
+          success: false,
+          ready: false,
+          db: "error",
+          stripe: "not_configured",
+          api: "ok",
+          dbTargetHost,
+          dbHostKind: hostKind,
+          databaseUrlLooksLikeTemplate,
+          rawDbUrlExists,
+          dbUrlPreview,
+          projectId,
+          projectName,
+          vercelEnv,
+          hasOpenAI,
+          env: envName,
+          nodeEnv: envName,
+          publicEnv: getPublicEnv(),
+          time,
+        },
       },
       { status: 503 }
     );
@@ -149,26 +155,29 @@ async function getReadyHandler() {
     );
     return NextResponse.json(
       {
-        success: false,
-        ok: false,
-        ready: false,
         status: "error",
-        db: "error",
-        stripe: "not_configured",
-        api: "ok",
-        dbTargetHost,
-        dbHostKind: hostKind,
-        databaseUrlLooksLikeTemplate,
-        rawDbUrlExists,
-        dbUrlPreview,
-        projectId,
-        projectName,
-        vercelEnv,
-        hasOpenAI,
-        env: envName,
-        nodeEnv: envName,
-        publicEnv: getPublicEnv(),
-        time,
+        db: false,
+        api: true,
+        verbose: {
+          success: false,
+          ready: false,
+          db: "error",
+          stripe: "not_configured",
+          api: "ok",
+          dbTargetHost,
+          dbHostKind: hostKind,
+          databaseUrlLooksLikeTemplate,
+          rawDbUrlExists,
+          dbUrlPreview,
+          projectId,
+          projectName,
+          vercelEnv,
+          hasOpenAI,
+          env: envName,
+          nodeEnv: envName,
+          publicEnv: getPublicEnv(),
+          time,
+        }
       },
       { status: 503 }
     );
@@ -182,41 +191,61 @@ async function getReadyHandler() {
     const market = await getResolvedMarket();
     const stripeErr = describeStripeSecretKeyError();
     const stripeReady = !stripeErr;
+    
+    // Privacy check
+    const officer = await prisma.privacyOfficer.findFirst({ where: { published: true } });
+    const privacyReady = !!officer;
+
+    // Enforce Privacy Officer for Production Launch
+    const isStrictPrivacy = (process.env.VERCEL === "1" || process.env.NODE_ENV === "production");
+    const privacyOk = privacyReady || !isStrictPrivacy;
+
     const strictStripe =
       (process.env.VERCEL === "1" || process.env.NODE_ENV === "production") &&
       process.env.READY_IGNORE_STRIPE !== "1";
-    const coreReady = i18nBundles;
+    
+    const coreReady = i18nBundles && privacyOk;
     const ready = coreReady && (stripeReady || !strictStripe);
     const stripeLaunch = stripeReady ? "ok" : stripeErr ? "error" : "not_configured";
+
+    // Phase 8: Standardized JSON format
+    const status = ready ? "ok" : "failing";
+    const dbStatus = true; // DB query succeeded if we reached here
+    const apiStatus = true;
+
     return NextResponse.json(
       {
-        success: ready,
-        ok: ready,
-        ready,
-        status: ready ? "ok" : "degraded",
-        db: "ok",
-        stripe: stripeLaunch,
-        api: "ok",
-        stripeHint: stripeErr,
-        supabase: supabaseConfigStatus(),
-        dbTargetHost,
-        dbHostKind: hostKind,
-        databaseUrlLooksLikeTemplate,
-        rawDbUrlExists,
-        dbUrlPreview,
-        projectId,
-        projectName,
-        vercelEnv,
-        hasOpenAI,
-        env: envName,
-        nodeEnv: envName,
-        publicEnv: getPublicEnv(),
-        checks: {
-          i18nBundles,
-          marketCode: market.code,
-          stripeRequired: strictStripe,
-        },
-        time,
+        status,
+        db: dbStatus,
+        api: apiStatus,
+        // Keep existing verbose metadata for debugging
+        verbose: {
+          success: ready,
+          ready,
+          db: "ok",
+          stripe: stripeLaunch,
+          api: "ok",
+          stripeHint: stripeErr,
+          supabase: supabaseConfigStatus(),
+          dbTargetHost,
+          dbHostKind: hostKind,
+          databaseUrlLooksLikeTemplate,
+          rawDbUrlExists,
+          dbUrlPreview,
+          projectId,
+          projectName,
+          vercelEnv,
+          hasOpenAI,
+          env: envName,
+          nodeEnv: envName,
+          publicEnv: getPublicEnv(),
+          checks: {
+            i18nBundles,
+            marketCode: market.code,
+            stripeRequired: strictStripe,
+          },
+          time,
+        }
       },
       { status: ready ? 200 : 503 }
     );
@@ -224,26 +253,29 @@ async function getReadyHandler() {
     console.error("[api/ready] non-DB readiness error:", e);
     return NextResponse.json(
       {
-        success: false,
-        ok: false,
-        ready: false,
         status: "error",
-        db: "ok",
-        stripe: "error",
-        api: "ok",
-        dbTargetHost,
-        dbHostKind: hostKind,
-        databaseUrlLooksLikeTemplate,
-        rawDbUrlExists,
-        dbUrlPreview,
-        projectId,
-        projectName,
-        vercelEnv,
-        hasOpenAI,
-        env: envName,
-        nodeEnv: envName,
-        publicEnv: getPublicEnv(),
-        time,
+        db: true,
+        api: false,
+        verbose: {
+          success: false,
+          ready: false,
+          db: "ok",
+          stripe: "error",
+          api: "error",
+          dbTargetHost,
+          dbHostKind: hostKind,
+          databaseUrlLooksLikeTemplate,
+          rawDbUrlExists,
+          dbUrlPreview,
+          projectId,
+          projectName,
+          vercelEnv,
+          hasOpenAI,
+          env: envName,
+          nodeEnv: envName,
+          publicEnv: getPublicEnv(),
+          time,
+        }
       },
       { status: 503 }
     );

@@ -2,8 +2,19 @@
 
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import type { ComplianceChecklistItemStatus } from "@prisma/client";
+import type { ComplianceChecklistItemStatus, ComplianceVerificationLevel } from "@prisma/client";
 import type { ChecklistItem } from "@prisma/client";
+import { 
+  FileText, 
+  ShieldCheck, 
+  AlertTriangle, 
+  Clock, 
+  CheckCircle2, 
+  History,
+  ShieldAlert,
+  Upload,
+  UserCheck
+} from "lucide-react";
 
 export type CoOwnershipCompliancePayload = {
   applies: boolean;
@@ -20,6 +31,14 @@ export type CoOwnershipCompliancePayload = {
     | "priority"
     | "description"
     | "source"
+    | "verificationLevel"
+    | "verifiedAt"
+    | "verifiedByUserId"
+    | "supportingDocumentIds"
+    | "validUntil"
+    | "isExpired"
+    | "isOverridden"
+    | "overrideReason"
   >[];
   complete: boolean;
   certificateComplete: boolean;
@@ -63,6 +82,21 @@ function priorityBadge(priority: string) {
   return map[priority] ?? map.LOW;
 }
 
+function verificationBadge(level: ComplianceVerificationLevel) {
+  const map: Record<ComplianceVerificationLevel, string> = {
+    DECLARED: "bg-slate-500/10 text-slate-500 border-slate-500/20",
+    DOCUMENTED: "bg-indigo-500/10 text-indigo-600 border-indigo-500/20",
+    VERIFIED: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
+  };
+  return (
+    <span className={`flex items-center gap-1 rounded border px-1.5 py-0.5 text-[10px] font-bold uppercase ${map[level]}`}>
+      {level === "VERIFIED" && <ShieldCheck className="h-2.5 w-2.5" />}
+      {level === "DOCUMENTED" && <FileText className="h-2.5 w-2.5" />}
+      {level}
+    </span>
+  );
+}
+
 export function CoOwnershipCompliancePanel({
   listingId,
   className = "",
@@ -74,6 +108,8 @@ export function CoOwnershipCompliancePanel({
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
+  const [showAudit, setShowAudit] = useState(false);
+  const [auditLogs, setAuditLogs] = useState<any[]>([]);
 
   const load = useCallback(async () => {
     if (!listingId) return;
@@ -113,9 +149,26 @@ export function CoOwnershipCompliancePanel({
     }
   }, [listingId, onComplianceLoaded]);
 
+  const loadAudit = useCallback(async () => {
+    if (!listingId) return;
+    try {
+      const res = await fetch(`/api/compliance/${encodeURIComponent(listingId)}/audit`);
+      if (res.ok) {
+        const j = await res.json();
+        setAuditLogs(j.logs ?? []);
+      }
+    } catch {
+      /* silent */
+    }
+  }, [listingId]);
+
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    if (showAudit) void loadAudit();
+  }, [showAudit, loadAudit]);
 
   const setStatus = async (key: string, status: ComplianceChecklistItemStatus) => {
     setUpdating(key);
@@ -277,16 +330,42 @@ export function CoOwnershipCompliancePanel({
                       Conditional
                     </span>
                   )}
+                  {verificationBadge(item.verificationLevel as any)}
+                  {item.isExpired && (
+                    <span className="flex items-center gap-1 rounded border border-rose-500/20 bg-rose-500/10 px-1.5 py-0.5 text-[10px] font-bold uppercase text-rose-600">
+                      <AlertTriangle className="h-2.5 w-2.5" /> Expired
+                    </span>
+                  )}
+                  {item.isOverridden && (
+                    <span className="flex items-center gap-1 rounded border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-bold uppercase text-amber-600">
+                      <ShieldAlert className="h-2.5 w-2.5" /> Overridden
+                    </span>
+                  )}
                 </div>
                 <div className="font-medium text-slate-900 dark:text-slate-100">{item.label}</div>
                 {item.description ? (
                   <div className="text-xs text-slate-600 dark:text-slate-400">{item.description}</div>
                 ) : null}
-                {item.source ? (
-                  <div className="text-[10px] text-slate-500 dark:text-slate-500">Source: {item.source}</div>
-                ) : null}
+                <div className="flex flex-wrap items-center gap-3 pt-1">
+                  {item.source ? (
+                    <div className="text-[10px] text-slate-500 dark:text-slate-500">Source: {item.source}</div>
+                  ) : null}
+                  {item.validUntil && (
+                    <div className="flex items-center gap-1 text-[10px] text-slate-500">
+                      <Clock className="h-2.5 w-2.5" />
+                      Valid until: {new Date(item.validUntil).toLocaleDateString()}
+                    </div>
+                  )}
+                </div>
               </div>
               <div className="flex shrink-0 flex-wrap items-center gap-2">
+                <button
+                  onClick={() => alert("Upload logic placeholder")}
+                  className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800"
+                  title="Upload supporting document"
+                >
+                  <Upload className="h-4 w-4" />
+                </button>
                 <select
                   className="rounded-md border border-slate-300 bg-white px-2 py-1 text-xs dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
                   disabled={updating === item.key}
@@ -327,26 +406,97 @@ export function CoOwnershipCompliancePanel({
                       Conditional
                     </span>
                   )}
+                  {verificationBadge(item.verificationLevel as any)}
+                  {item.isExpired && (
+                    <span className="flex items-center gap-1 rounded border border-rose-500/20 bg-rose-500/10 px-1.5 py-0.5 text-[10px] font-bold uppercase text-rose-600">
+                      <AlertTriangle className="h-2.5 w-2.5" /> Expired
+                    </span>
+                  )}
+                  {item.isOverridden && (
+                    <span className="flex items-center gap-1 rounded border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-bold uppercase text-amber-600">
+                      <ShieldAlert className="h-2.5 w-2.5" /> Overridden
+                    </span>
+                  )}
                 </div>
                 <div className="font-medium text-slate-900 dark:text-slate-100">{item.label}</div>
                 {item.description ? (
                   <div className="text-xs text-slate-600 dark:text-slate-400">{item.description}</div>
                 ) : null}
+                {item.validUntil && (
+                  <div className="flex items-center gap-1 pt-1 text-[10px] text-slate-500">
+                    <Clock className="h-2.5 w-2.5" />
+                    Valid until: {new Date(item.validUntil).toLocaleDateString()}
+                  </div>
+                )}
               </div>
-              <select
-                className="shrink-0 rounded-md border border-slate-300 bg-white px-2 py-1 text-xs dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
-                disabled={updating === item.key}
-                value={item.status}
-                onChange={(e) => void setStatus(item.key, e.target.value as ComplianceChecklistItemStatus)}
-              >
-                <option value="PENDING">Pending</option>
-                <option value="COMPLETED">Completed</option>
-                <option value="NOT_APPLICABLE">Not applicable</option>
-              </select>
+              <div className="flex shrink-0 flex-wrap items-center gap-2">
+                <button
+                  onClick={() => alert("Upload logic placeholder")}
+                  className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800"
+                  title="Upload supporting document"
+                >
+                  <Upload className="h-4 w-4" />
+                </button>
+                <select
+                  className="shrink-0 rounded-md border border-slate-300 bg-white px-2 py-1 text-xs dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+                  disabled={updating === item.key}
+                  value={item.status}
+                  onChange={(e) => void setStatus(item.key, e.target.value as ComplianceChecklistItemStatus)}
+                >
+                  <option value="PENDING">Pending</option>
+                  <option value="COMPLETED">Completed</option>
+                  <option value="NOT_APPLICABLE">Not applicable</option>
+                </select>
+              </div>
             </li>
           ))}
         </ul>
       </section>
+
+      <div className="border-t border-slate-200 pt-4 dark:border-slate-800">
+        <button
+          onClick={() => setShowAudit(!showAudit)}
+          className="flex items-center gap-2 text-xs font-medium text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
+        >
+          <History className="h-3.5 w-3.5" />
+          {showAudit ? "Hide Audit Trail" : "View Compliance Audit Trail"}
+        </button>
+
+        {showAudit && (
+          <div className="mt-4 overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-50 text-slate-500 dark:bg-slate-900/50">
+                <tr>
+                  <th className="px-3 py-2 font-semibold">Event</th>
+                  <th className="px-3 py-2 font-semibold">Actor</th>
+                  <th className="px-3 py-2 font-semibold">Reason</th>
+                  <th className="px-3 py-2 font-semibold">Time</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                {auditLogs.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="px-3 py-4 text-center text-slate-400 italic">
+                      No audit logs found for this listing.
+                    </td>
+                  </tr>
+                ) : (
+                  auditLogs.map((log) => (
+                    <tr key={log.id}>
+                      <td className="px-3 py-2 font-medium text-slate-900 dark:text-slate-100">{log.event}</td>
+                      <td className="px-3 py-2 text-slate-600 dark:text-slate-400">{log.actor?.name ?? "System"}</td>
+                      <td className="px-3 py-2 text-slate-600 dark:text-slate-400">{log.reason ?? "—"}</td>
+                      <td className="px-3 py-2 text-slate-500">
+                        {new Date(log.timestamp).toLocaleString()}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

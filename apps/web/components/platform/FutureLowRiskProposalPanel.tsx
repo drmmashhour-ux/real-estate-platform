@@ -7,7 +7,7 @@ import {
   CHECKLIST_KEYS,
   CHECKLIST_LABELS,
   type ChecklistKey,
-} from "@/modules/platform/ops-assistant/future-low-risk-proposal.service";
+} from "@/modules/platform/ops-assistant/future-low-risk-proposal-shared";
 import type { FutureLowRiskActionProposal } from "@/modules/platform/ops-assistant/future-low-risk-proposal.types";
 import {
   PROPOSAL_ACCEPTANCE_NOT_ENABLED_MESSAGE,

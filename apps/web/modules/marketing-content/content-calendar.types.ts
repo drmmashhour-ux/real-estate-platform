@@ -6,7 +6,7 @@ export type ContentAudience = "BROKER" | "INVESTOR" | "BUYER" | "GENERAL";
 
 export type ContentGoal = "LEADS" | "AWARENESS" | "CONVERSION";
 
-export type ContentStatus = "IDEA" | "DRAFT" | "APPROVED" | "SCHEDULED" | "POSTED";
+export type ContentStatus = "IDEA" | "DRAFT" | "READY_FOR_APPROVAL" | "APPROVED" | "SCHEDULED" | "POSTED";
 
 export type ContentPerformance = {
   views: number;

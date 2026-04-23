@@ -13,6 +13,7 @@ import {
   getAggregatedSourceWeightForListing,
   getAggregatedTrustScoreForListing,
 } from "@/modules/platform-core/one-brain.listing-trust";
+import { computeBrokerTrustScore } from "@/modules/compliance/insurance/trust-score.service";
 import {
   applyAdaptiveSourceRankingMultiplier,
   applyCrossDomainRankingAdjustment,
@@ -65,12 +66,19 @@ export async function searchListingsWithOptionalReputationRank(
       let rankingScore = bundle?.rankingScore ?? null;
 
       if (platformCoreFlags.platformCoreV1 && bundle) {
-        const oneBrainTrust = await getAggregatedTrustScoreForListing(l.id);
+        const [oneBrainTrust, brokerTrust] = await Promise.all([
+          getAggregatedTrustScoreForListing(l.id),
+          computeBrokerTrustScore(l.ownerId),
+        ]);
+        
+        // Combine platform trust with broker insurance trust
+        const combinedTrust = (oneBrainTrust * 0.6) + (brokerTrust.trustScore * 0.4);
+        
         const base01 = Math.min(1, Math.max(0, (bundle.rankingScore ?? 0) / 100));
         const perf01 = Math.min(1, Math.max(0, (bundle.conversionScore ?? 0) / 100));
         let blended = computeListingRank({
           baseScore: base01,
-          trustScore: oneBrainTrust,
+          trustScore: combinedTrust,
           performanceScore: perf01,
         });
         if (oneBrainV2Flags.oneBrainV2RankingWeightingV1) {

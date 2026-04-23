@@ -30,6 +30,14 @@ export type CoownershipRuleListingInput = {
   isCoOwnership: boolean;
 };
 
+export type CoownershipComplianceHardeningInput = {
+  certificateComplete: boolean;
+  insuranceGateComplete: boolean;
+  criticalComplianceComplete: boolean;
+  /** Part 1 & 3: Reasons for block from compliance service */
+  blockingIssues: string[];
+};
+
 export function listingMatchesCoownershipRule(input: CoownershipRuleListingInput): boolean {
   return input.listingType === "CONDO" || input.isCoOwnership === true;
 }
@@ -40,19 +48,16 @@ export function listingMatchesCoownershipRule(input: CoownershipRuleListingInput
 export function evaluateCoownershipComplianceRule(input: {
   listing: CoownershipRuleListingInput;
   mode: LecipmCoreAutopilotExecutionMode;
-  /** Certificate received row (`coownership_certificate_received`) */
-  certificateComplete: boolean;
-  insuranceGateComplete: boolean;
-  /** CRITICAL merged compliance block keys */
-  criticalComplianceComplete: boolean;
-}): CoownershipComplianceAutopilotDecision | null {
-  const { listing, mode, certificateComplete, insuranceGateComplete, criticalComplianceComplete } = input;
+} & CoownershipComplianceHardeningInput): CoownershipComplianceAutopilotDecision | null {
+  const { listing, mode, certificateComplete, insuranceGateComplete, criticalComplianceComplete, blockingIssues } = input;
 
   if (mode === "OFF") return null;
   if (!listingMatchesCoownershipRule(listing)) return null;
 
   const insuranceGateEnforced = complianceFlags.coownershipInsuranceEnforcement === true;
   const complianceCriticalEnforced = complianceFlags.coownershipComplianceEnforcement === true;
+  const verificationEnforcement = complianceFlags.coownershipVerificationEnforcement === true;
+  const expiryEnforcement = complianceFlags.coownershipExpiryEnforcement === true;
 
   const baseChecklist: CoownershipComplianceAutopilotDecision = {
     domain: "COOWNERSHIP_COMPLIANCE",
@@ -100,6 +105,24 @@ export function evaluateCoownershipComplianceRule(input: {
         ],
       };
     }
+
+    // Part 1 & 3: Harden Autopilot with specific reasons if enabled
+    if ((verificationEnforcement || expiryEnforcement) && blockingIssues.length > 0) {
+      return {
+        domain: "COOWNERSHIP_COMPLIANCE",
+        severity: "critical",
+        actions: [
+          ...baseChecklist.actions,
+          {
+            type: "BLOCK_ACTION",
+            payload: {
+              reason: `Co-ownership compliance blocked: ${blockingIssues.join(", ")}.`,
+            },
+          },
+        ],
+      };
+    }
+
     if (!certificateComplete) {
       return {
         domain: "COOWNERSHIP_COMPLIANCE",

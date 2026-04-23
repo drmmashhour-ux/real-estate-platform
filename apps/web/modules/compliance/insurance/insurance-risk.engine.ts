@@ -18,7 +18,7 @@ export async function evaluateBrokerInsuranceRisk(input: EngineInput): Promise<I
   try {
     const now = new Date();
 
-    const [dualSideDeals, complaintsLast90, transactions90d, disclosures] = await Promise.all([
+    const [dualSideDeals, complaintsLast90, transactions90d, disclosures, recentClaims] = await Promise.all([
       prisma.realEstateTransaction.count({
         where: {
           brokerId: input.brokerId,
@@ -46,7 +46,22 @@ export async function evaluateBrokerInsuranceRisk(input: EngineInput): Promise<I
           status: "ACTIVE",
         },
       }).catch(() => 0),
+      prisma.insuranceClaim.count({
+        where: {
+          brokerId: input.brokerId,
+          createdAt: { gte: new Date(now.getTime() - 365 * 86400000) },
+        },
+      }).catch(() => 0),
     ]);
+
+    /** Claim Impact Heuristic: recent claims indicate elevated liability risk. */
+    if (recentClaims >= 3) {
+      score += 45;
+      flags.push("high_claim_frequency: multiple claims in 12 months — critical risk profile.");
+    } else if (recentClaims >= 1) {
+      score += 20;
+      flags.push("recent_claim_penalty: at least one claim in the last year.");
+    }
 
     /** Conflict-of-interest heuristic: elevated deal volume on both sides without independent review flag in DB — proxy via activity density. */
     if (dualSideDeals >= 8) {

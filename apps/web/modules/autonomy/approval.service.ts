@@ -25,6 +25,14 @@ export async function approveAutonomousAction(
       where: { id: actionQueueId },
       data: { status: "APPROVED", approvedAt: new Date() },
     });
+    await prisma.autonomyExecutionAuditLog.create({
+      data: {
+        eventKind: "ACTION_APPROVED",
+        actorUserId: userId,
+        actionId: actionQueueId,
+        payloadJson: { reason, timestamp: new Date().toISOString() },
+      },
+    });
     autonomyLog.approvalRecorded({ actionQueueId, decision: "APPROVED", userId });
     return { ok: true };
   } catch {
@@ -53,6 +61,14 @@ export async function rejectAutonomousAction(
     await prisma.autonomousActionQueue.update({
       where: { id: actionQueueId },
       data: { status: "REJECTED", rejectedAt: new Date() },
+    });
+    await prisma.autonomyExecutionAuditLog.create({
+      data: {
+        eventKind: "ACTION_REJECTED",
+        actorUserId: userId,
+        actionId: actionQueueId,
+        payloadJson: { reason, timestamp: new Date().toISOString() },
+      },
     });
     autonomyLog.approvalRecorded({ actionQueueId, decision: "REJECTED", userId });
     return { ok: true };

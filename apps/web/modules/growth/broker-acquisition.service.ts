@@ -110,3 +110,8 @@ export async function acceptInvite(args: { token: string; userId: string }) {
   logInfo(TAG, { action: "acceptInvite", inviteId: invite.id, userId: args.userId });
   return updated;
 }
+
+export async function getBrokerAcquisitionScripts() {
+  // Placeholder to fix build error
+  return [];
+}

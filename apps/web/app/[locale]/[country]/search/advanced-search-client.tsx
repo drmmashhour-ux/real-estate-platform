@@ -56,6 +56,7 @@ export function AdvancedSearchClient() {
   const [featFurnished, setFeatFurnished] = useState(false);
   const [featNewConstruction, setFeatNewConstruction] = useState(false);
   const [featPool, setFeatPool] = useState(false);
+  const [insuredOnly, setInsuredOnly] = useState(false);
   const [sort, setSort] = useState<"relevance" | "newest" | "priceLow" | "priceHigh">("relevance");
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -85,6 +86,7 @@ export function AdvancedSearchClient() {
     setFeatFurnished(f.furnished === "yes");
     setFeatNewConstruction(feats.has("new construction") || f.type === "new_construction");
     setFeatPool(feats.has("pool"));
+    setInsuredOnly(f.insuredOnly === true);
 
     const s = f.sort ?? "recommended";
     if (s === "newest") setSort("newest");
@@ -146,6 +148,7 @@ export function AdvancedSearchClient() {
       west: null,
       mapLayout: "split" as const,
       roomType: "",
+      insuredOnly,
     };
 
     if (listingMode === "stays") {
@@ -230,6 +233,7 @@ export function AdvancedSearchClient() {
     featFurnished,
     featNewConstruction,
     featPool,
+    insuredOnly,
     sort,
   ]);
 
@@ -376,6 +380,11 @@ export function AdvancedSearchClient() {
               <label className="flex cursor-pointer items-center gap-2 text-sm text-white/80">
                 <input type="checkbox" checked={featPool} onChange={(e) => setFeatPool(e.target.checked)} />
                 Pool
+              </label>
+              <div className="my-2 h-px bg-white/5" />
+              <label className="flex cursor-pointer items-center gap-2 text-sm font-bold text-[#D4AF37]">
+                <input type="checkbox" checked={insuredOnly} onChange={(e) => setInsuredOnly(e.target.checked)} />
+                Insured brokers only 🛡️
               </label>
             </div>
           </div>

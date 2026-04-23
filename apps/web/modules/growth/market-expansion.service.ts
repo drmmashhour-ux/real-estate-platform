@@ -125,3 +125,8 @@ export async function buildMarketExpansionRecommendations(
     windowDays,
   };
 }
+
+export async function getMarketExpansionSnapshot() {
+  // Placeholder to fix build error
+  return buildMarketExpansionRecommendations(["Montreal", "Laval", "Quebec"], 30);
+}

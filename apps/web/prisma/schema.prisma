@@ -357,6 +357,10 @@ model User {
   bnhubTrustSimpleDisputesReported     BnhubTrustSimpleDispute[]             @relation("BnhubTrustSimpleDisputeReporter")
   brokerVerifications                  BrokerVerification[]
   coownershipChecklistCompletions    ChecklistItem[]                       @relation("ChecklistItemCompletedBy")
+  checklistItemVerifiedBy            ChecklistItem[]                       @relation("ChecklistItemVerifiedBy")
+  checklistItemOverriddenBy          ChecklistItem[]                       @relation("ChecklistItemOverriddenBy")
+  coownershipAdvisories              CoOwnershipAdvisoryLog[]              @relation("CoOwnershipAdvisoryBroker")
+  coownershipAuditActions            CoOwnershipAuditLog[]                 @relation("CoOwnershipAuditActor")
   brokerServiceProfile                 BrokerServiceProfile?
   brokerActivityScores                 BrokerActivityScore[]
   brokerPointsLedger                   BrokerPointsLedger[]
@@ -18091,11 +18095,48 @@ enum ChecklistItemCategory {
   INSURANCE
 }
 
+enum ComplianceVerificationLevel {
+  DECLARED
+  DOCUMENTED
+  VERIFIED
+}
+
 enum ChecklistPriority {
   LOW
   MEDIUM
   HIGH
   CRITICAL
+}
+
+model CoOwnershipAdvisoryLog {
+  id                String   @id @default(cuid())
+  listingId         String   @map("listing_id")
+  listing           Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  brokerId          String   @map("broker_id")
+  broker            User     @relation("CoOwnershipAdvisoryBroker", fields: [brokerId], references: [id], onDelete: Cascade)
+  advisoryType      String   @map("advisory_type") // e.g. "INSURANCE_GAP", "CERTIFICATE_MISSING"
+  advisoryDelivered Boolean  @default(true) @map("advisory_delivered")
+  timestamp         DateTime @default(now())
+
+  @@index([listingId])
+  @@index([brokerId])
+  @@map("listing_coownership_advisory_logs")
+}
+
+model CoOwnershipAuditLog {
+  id          String   @id @default(cuid())
+  listingId   String   @map("listing_id")
+  listing     Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  actorId     String?  @map("actor_id")
+  actor       User?    @relation("CoOwnershipAuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+  event       String   // e.g. "CHECKLIST_UPDATE", "ENFORCEMENT_BLOCK", "OVERRIDE"
+  reason      String?  @db.Text
+  beforeValue Json?    @map("before_value")
+  afterValue  Json?    @map("after_value")
+  timestamp   DateTime @default(now())
+
+  @@index([listingId])
+  @@map("listing_coownership_audit_logs")
 }
 
 /// Québec Regulation 2025 — divided co-ownership compliance checklist rows (broker CRM `Listing`).
@@ -18113,7 +18154,21 @@ model ChecklistItem {
   source      String?                        @db.VarChar(48)
   completedAt DateTime?                      @map("completed_at")
   completedByUserId String?                  @map("completed_by_user_id")
-  completedBy User?                         @relation("ChecklistItemCompletedBy", fields: [completedByUserId], references: [id], onDelete: SetNull)
+  completedBy       User?                    @relation("ChecklistItemCompletedBy", fields: [completedByUserId], references: [id], onDelete: SetNull)
+
+  // Hardening extensions (Part 1, 3, 10)
+  verificationLevel ComplianceVerificationLevel @default(DECLARED) @map("verification_level")
+  verifiedAt        DateTime?                   @map("verified_at")
+  verifiedByUserId  String?                     @map("verified_by_user_id")
+  verifiedBy        User?                       @relation("ChecklistItemVerifiedBy", fields: [verifiedByUserId], references: [id], onDelete: SetNull)
+  supportingDocumentIds Json?                   @map("supporting_document_ids")
+  validUntil        DateTime?                   @map("valid_until")
+  isExpired         Boolean                     @default(false) @map("is_expired")
+  
+  isOverridden      Boolean                     @default(false) @map("is_overridden")
+  overrideReason    String?                     @map("override_reason") @db.Text
+  overriddenByUserId String?                    @map("overridden_by_user_id")
+  overriddenBy      User?                       @relation("ChecklistItemOverriddenBy", fields: [overriddenByUserId], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -18174,6 +18229,8 @@ model Listing {
   updatedAt                  DateTime                    @updatedAt
   checklistItems             ChecklistItem[]
   complianceSnapshot         ListingComplianceSnapshot?
+  advisoryLogs               CoOwnershipAdvisoryLog[]
+  auditLogs                  CoOwnershipAuditLog[]
   brokerAccesses             BrokerListingAccess[]
   lecipmVisitRequests        LecipmVisitRequest[]
   lecipmVisits               LecipmVisit[]
@@ -29940,6 +29997,13 @@ model LecipmSdDocument {
 
   replacesDocumentId  String?             @map("replaces_document_id") @db.VarChar(36)
   requiredForClosing  Boolean             @default(false) @map("required_for_closing")
+
+  /// Privacy Compliance (Law 25)
+  sensitivityLevel    PrivacySensitivityLevel @default(INTERNAL) @map("sensitivity_level")
+  allowedRoles        Json?               @map("allowed_roles")
+  allowedDepartments  Json?               @map("allowed_departments")
+  needToKnow          Boolean             @default(true) @map("need_to_know")
+  organizationId      String?             @map("organization_id")
 
   /// Phase 3 — immutable after fully signed packet completes.
   lockedAt            DateTime?           @map("locked_at")

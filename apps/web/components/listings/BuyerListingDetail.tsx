@@ -1491,12 +1491,27 @@ export function BuyerListingDetail({
                     <p className="mt-4 text-lg font-semibold text-white">{representative.name}</p>
                     <p className="mt-1 text-sm text-white/70">{representative.roleLabel}</p>
                     {listing.insuredBroker ? (
-                      <p
-                        className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-emerald-500/35 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-100"
-                        title="Broker maintains active professional liability coverage on file"
-                      >
-                        <span aria-hidden>🛡️</span> Insured Broker
-                      </p>
+                      <div className="mt-2 space-y-1">
+                        <p
+                          className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/35 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-100"
+                          title="Broker maintains active professional liability coverage on file"
+                        >
+                          <span aria-hidden>🛡️</span> Insured Broker
+                        </p>
+                        {listing.insuranceDetail && (
+                          <div className="flex flex-col gap-1 pl-1">
+                            <p className="text-[10px] text-white/50 font-medium">
+                              ${(listing.insuranceDetail.liabilityAmount / 1000000).toFixed(0)}M liability coverage
+                            </p>
+                            {new Date(listing.insuranceDetail.expiryDate).getTime() - Date.now() < 30 * 86400000 && (
+                              <p className="text-[10px] text-orange-400 font-bold flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
+                                Coverage renewal pending
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     ) : null}
                     {representative.company ? (
                       <p className="mt-1 text-sm text-white/50">{representative.company}</p>

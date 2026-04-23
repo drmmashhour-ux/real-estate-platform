@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getGuestId } from "@/lib/auth/session";
 import { getLatestCapitalPlanSummary } from "@/modules/capital-allocator/capital-plan-summary.service";
+import { CapitalAllocatorV2Client } from "@/components/capital-allocator/CapitalAllocatorV2Client";
 
 export const dynamic = "force-dynamic";
 
@@ -98,6 +99,8 @@ export default async function CapitalAllocatorPage({
           </div>
         </section>
       ) : null}
+
+      <CapitalAllocatorV2Client locale={locale} country={country} />
 
       <section className="rounded-2xl border border-white/10 bg-black/35 p-5">
         <h2 className="text-sm font-semibold text-white">Recent capital plans</h2>

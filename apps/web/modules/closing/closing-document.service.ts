@@ -84,6 +84,8 @@ export async function uploadClosingDocument(input: {
   return row;
 }
 
+export const registerClosingDocumentUpload = uploadClosingDocument;
+
 export async function verifyDocument(documentId: string, dealId: string, transactionId: string | null, actorUserId: string | null) {
   const doc = await prisma.lecipmPipelineDealClosingDocument.findUnique({
     where: { id: documentId },
@@ -115,9 +117,63 @@ export async function verifyDocument(documentId: string, dealId: string, transac
   return row;
 }
 
+export async function verifyClosingDocument(input: { documentId: string; dealId: string; actorUserId: string | null; transactionId?: string | null }) {
+  return verifyDocument(input.documentId, input.dealId, input.transactionId ?? null, input.actorUserId);
+}
+
+export async function rejectClosingDocument(input: {
+  documentId: string;
+  dealId: string;
+  actorUserId: string | null;
+  transactionId?: string | null;
+  notes: string | null;
+}) {
+  const doc = await prisma.lecipmPipelineDealClosingDocument.findUnique({
+    where: { id: input.documentId },
+    include: { closing: true },
+  });
+  if (!doc || doc.closing.dealId !== input.dealId) throw new Error("Document not found");
+
+  const row = await prisma.lecipmPipelineDealClosingDocument.update({
+    where: { id: input.documentId },
+    data: { status: "REJECTED" },
+  });
+
+  await appendDealAuditEvent(prisma, {
+    dealId: input.dealId,
+    eventType: "DOCUMENT_REJECTED",
+    actorUserId: input.actorUserId,
+    summary: `Rejected: ${row.title}${input.notes ? ` — ${input.notes}` : ""}`,
+    metadataJson: { documentId: input.documentId, notes: input.notes },
+  });
+  if (input.transactionId) {
+    await logClosingTimeline(input.transactionId, "DOCUMENT_REJECTED", row.title);
+  }
+  logInfo(TAG, { documentId: input.documentId, rejected: true });
+  return row;
+}
+
 export async function listClosingDocuments(closingId: string) {
   return prisma.lecipmPipelineDealClosingDocument.findMany({
     where: { closingId },
     orderBy: { createdAt: "asc" },
   });
+}
+
+export async function seedDefaultClosingDocuments(closingId: string, dealId: string, transactionId: string | null, actorUserId: string | null) {
+  const templates = [
+    { title: "Final Deed of Sale", docType: "FINAL_DEED" },
+    { title: "Mortgage / Hypothec Discharge", docType: "MORTGAGE" },
+    { title: "Proof of Transfer Tax Payment", docType: "TRANSFER" },
+  ];
+  for (const t of templates) {
+    await prisma.lecipmPipelineDealClosingDocument.create({
+      data: {
+        closingId,
+        title: t.title,
+        docType: t.docType,
+        status: "PENDING",
+      },
+    });
+  }
 }

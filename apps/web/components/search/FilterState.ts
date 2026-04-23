@@ -74,6 +74,8 @@ export type GlobalSearchFiltersExtended = GlobalSearchFilters & {
   mapLayout?: "list" | "split" | "map";
   /** FSBO Buyer Hub — AI/document-backed green listings only */
   greenVerifiedOnly?: boolean;
+  /** Trust Intelligence — show only listings from insured brokers */
+  insuredOnly?: boolean;
 };
 
 export const DEFAULT_GLOBAL_FILTERS: GlobalSearchFiltersExtended = {
@@ -105,6 +107,7 @@ export const DEFAULT_GLOBAL_FILTERS: GlobalSearchFiltersExtended = {
   west: null,
   /** Default split view so map acts as a search tool (viewport → URL bbox) on browse surfaces. */
   mapLayout: "split",
+  insuredOnly: false,
 };
 
 export const DEFAULT_STAYS_FILTERS: GlobalSearchFiltersExtended = {
@@ -267,6 +270,7 @@ export function parseGlobalSearchBody(raw: unknown): GlobalSearchFiltersExtended
     west: floatOrNull(o.west),
     mapLayout: parseMapLayout(o.mapLayout),
     rentListingCategory: rentListingCategoryFromUnknown(o.rentListingCategory),
+    insuredOnly: o.insuredOnly === true || o.insuredOnly === "true",
   };
 }
 
@@ -312,6 +316,7 @@ export function globalFiltersToUrlParams(f: GlobalSearchFiltersExtended): URLSea
   }
   if (f.mapLayout && f.mapLayout !== "split") p.set("mapLayout", f.mapLayout);
   if (f.sort && f.sort !== "recommended") p.set("sort", f.sort);
+  if (f.insuredOnly) p.set("insuredOnly", "true");
   return p;
 }
 
@@ -423,6 +428,7 @@ export function urlParamsToGlobalFilters(sp: URLSearchParams): GlobalSearchFilte
     east: floatOrNull(sp.get("east")),
     west: floatOrNull(sp.get("west")),
     mapLayout: parseMapLayout(sp.get("mapLayout")),
+    insuredOnly: sp.get("insuredOnly") === "true",
     sort: (() => {
       const s = sp.get("sort");
       if (
@@ -468,6 +474,7 @@ export function countActiveGlobalFilters(f: GlobalSearchFiltersExtended, mode: S
     n += f.features.length;
     if (hasValidMapBounds(f)) n++;
     if (f.greenVerifiedOnly) n++;
+    if (f.insuredOnly) n++;
     return n;
   }
 
@@ -512,6 +519,7 @@ export function globalFiltersToBnhubParams(f: GlobalSearchFiltersExtended): URLS
   if (f.roomType?.trim()) p.set("roomType", f.roomType.trim());
   if (f.features.includes("verified")) p.set("verifiedOnly", "true");
   if (f.features.includes("instant_book")) p.set("instantBook", "true");
+  if (f.insuredOnly) p.set("insuredOnly", "true");
   const sort = f.sort ?? "recommended";
   if (
     sort === "newest" ||

@@ -210,3 +210,5 @@ export async function completeClosing(dealId: string, actorUserId: string | null
   logInfo(TAG, { dealId, closed: true });
   return getClosingByDealId(dealId);
 }
+
+export const confirmDealClosing = completeClosing;

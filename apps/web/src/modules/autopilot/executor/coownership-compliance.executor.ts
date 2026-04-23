@@ -126,3 +126,8 @@ export async function getInsuranceGateCompleteForListing(listingId: string): Pro
 export async function getCriticalComplianceCompleteForListing(listingId: string): Promise<boolean> {
   return getCriticalComplianceComplete(listingId);
 }
+
+export async function getComplianceBlockingIssuesForListing(listingId: string): Promise<string[]> {
+  const s = await getMergedComplianceStatus(listingId);
+  return s.blockingIssues ?? [];
+}

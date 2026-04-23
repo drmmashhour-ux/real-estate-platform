@@ -96,6 +96,24 @@ export async function updateCapitalStack(
   return row;
 }
 
+export async function upsertCapitalStack(
+  dealId: string,
+  data: {
+    totalPurchasePrice: number;
+    equityAmount?: number | null;
+    debtAmount?: number | null;
+    noiAnnual?: number | null;
+    annualDebtService?: number | null;
+  },
+  actorUserId: string | null
+) {
+  const existing = await prisma.lecipmPipelineDealCapitalStack.findUnique({ where: { dealId } });
+  if (existing) {
+    return updateCapitalStack(dealId, data, actorUserId);
+  }
+  return createCapitalStack(dealId, data, actorUserId);
+}
+
 function calculateDscrRaw(noi: number | null, annualDebtService: number | null): number | null {
   if (noi == null || annualDebtService == null || annualDebtService <= 0) return null;
   return noi / annualDebtService;

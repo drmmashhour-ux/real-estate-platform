@@ -17,6 +17,7 @@ export async function GET(request: NextRequest) {
     const minPrice = searchParams.get("minPrice");
     const maxPrice = searchParams.get("maxPrice");
     const guests = searchParams.get("guests");
+    const insuredOnly = searchParams.get("insuredOnly") === "true";
     const sort = searchParams.get("sort") ?? "recommended";
     const limit = searchParams.get("limit") ? Number(searchParams.get("limit")) : 40;
 
@@ -27,6 +28,7 @@ export async function GET(request: NextRequest) {
       minPrice: minPrice ? Number(minPrice) : undefined,
       maxPrice: maxPrice ? Number(maxPrice) : undefined,
       guests: guests ? Number(guests) : undefined,
+      insuredOnly,
       sort: sort === "priceAsc" || sort === "priceDesc" || sort === "recommended" || sort === "newest" ? sort : "recommended",
       limit: Number.isFinite(limit) ? limit : 40,
     });

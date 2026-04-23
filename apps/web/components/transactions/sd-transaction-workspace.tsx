@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { DisclosureConfirmationModal } from "@/modules/privacy/components/DisclosureConfirmationModal";
 
 type DocRow = {
   id: string;
@@ -81,8 +82,47 @@ export function SdTransactionWorkspace({
   const packets = useMemo(() => initialPackets, [initialPackets]);
   const compliance = useMemo(() => initialCompliance, [initialCompliance]);
 
+  const [isDisclosureModalOpen, setIsDisclosureModalOpen] = useState(false);
+  const [selectedDoc, setSelectedDoc] = useState<DocRow | null>(null);
+
+  const handleDisclose = (doc: DocRow) => {
+    setSelectedDoc(doc);
+    setIsDisclosureModalOpen(true);
+  };
+
+  const onConfirmDisclosure = async (purpose: string, redact: boolean) => {
+    if (!selectedDoc) return;
+    try {
+      const res = await fetch(`/api/privacy/disclosure`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          documentId: selectedDoc.id,
+          recipient: "External Party (Manual)",
+          purpose,
+          redact,
+        }),
+      });
+      if (res.ok) {
+        alert("Document disclosed successfully and logged for audit.");
+        setIsDisclosureModalOpen(false);
+      } else {
+        throw new Error("Disclosure failed");
+      }
+    } catch (err) {
+      alert("Failed to disclose document. Check audit logs.");
+    }
+  };
+
   return (
     <div className="space-y-4">
+      <DisclosureConfirmationModal
+        isOpen={isDisclosureModalOpen}
+        onClose={() => setIsDisclosureModalOpen(false)}
+        onConfirm={onConfirmDisclosure}
+        fileName={selectedDoc?.title ?? "Document"}
+        recipient="External Recipient"
+      />
       <div className="flex flex-wrap gap-2 border-b pb-2">
         {(
           ["documents", "financial", "notary", "signatures", "compliance"] as const
@@ -113,9 +153,17 @@ export function SdTransactionWorkspace({
                 </div>
                 <div className="font-mono text-xs">{d.transactionNumber}</div>
                 {d.fileUrl ?
-                  <a className="text-primary underline" href={d.fileUrl} target="_blank" rel="noreferrer">
-                    Open file
-                  </a>
+                  <div className="mt-2 flex gap-2">
+                    <a className="text-primary underline" href={d.fileUrl} target="_blank" rel="noreferrer">
+                      Open file
+                    </a>
+                    <button 
+                      onClick={() => handleDisclose(d)}
+                      className="text-xs font-bold text-gray-500 hover:text-blue-600 underline"
+                    >
+                      Share Externally
+                    </button>
+                  </div>
                 : null}
               </li>
             ))}

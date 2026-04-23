@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
+import { Shield } from "lucide-react";
 import type { ComplianceCommandCenterPayload } from "@/modules/compliance-admin/compliance-command-center.service";
 import type { ComplianceAnalyticsWindow } from "@/modules/compliance-analytics/compliance-analytics.types";
 import { complianceAdminFlags } from "@/config/feature-flags";
@@ -14,6 +15,7 @@ import { ComplianceTrendCard } from "./ComplianceTrendCard";
 import { BlockedClosingsPanel } from "./BlockedClosingsPanel";
 import { ReviewerWorkloadPanel } from "./ReviewerWorkloadPanel";
 import { ReviewChecklistPanel } from "./ReviewChecklistPanel";
+import { InsuranceTrustMonitoring } from "./InsuranceTrustMonitoring";
 
 export function ComplianceCommandCenterView(props: {
   data: ComplianceCommandCenterPayload;
@@ -128,6 +130,14 @@ export function ComplianceCommandCenterView(props: {
             <ReviewerWorkloadPanel reviews={data.reviews} />
             <ReviewChecklistPanel {...checklistAgg} />
           </div>
+
+          <section className="space-y-4">
+            <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+              <Shield className="h-5 w-5 text-indigo-400" />
+              Insurance & Trust Intelligence
+            </h2>
+            <InsuranceTrustMonitoring monitoring={data.insuranceMonitoring} />
+          </section>
 
           {complianceAdminFlags.complianceRuleEngineV1 && <RunRuleEngineHint />}
         </>

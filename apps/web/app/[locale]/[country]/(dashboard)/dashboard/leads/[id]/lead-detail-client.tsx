@@ -23,7 +23,7 @@ import { DynamicPricingPanel } from "@/components/leads/DynamicPricingPanel";
 import { LeadMonetizationControlPanel } from "@/components/leads/LeadMonetizationControlPanel";
 import { LeadPricingExperimentsPanel } from "@/components/leads/LeadPricingExperimentsPanel";
 import { LeadPricingOverridePanel } from "@/components/leads/LeadPricingOverridePanel";
-import { inferLeadIntentLabel } from "@/modules/leads/lead-monetization.service";
+import { inferLeadIntentLabel } from "@/modules/leads/lead-monetization-shared";
 import type { LeadQualitySummary } from "@/modules/leads/lead-quality.types";
 import type { DynamicPricingSuggestion } from "@/modules/leads/dynamic-pricing.types";
 import type { LeadMonetizationControlSummary } from "@/modules/leads/lead-monetization-control.types";

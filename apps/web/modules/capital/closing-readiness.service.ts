@@ -122,3 +122,9 @@ export async function evaluateClosingReadiness(dealId: string, actorUserId: stri
 export async function getStoredClosingReadiness(dealId: string) {
   return prisma.lecipmPipelineDealClosingReadiness.findUnique({ where: { dealId } });
 }
+
+export const computeClosingReadiness = evaluateClosingReadiness;
+
+export async function getClosingReadiness(dealId: string, actorUserId: string | null) {
+  return evaluateClosingReadiness(dealId, actorUserId);
+}

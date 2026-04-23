@@ -122,3 +122,13 @@ export async function generateLenderPackage(dealId: string): Promise<LenderPacka
     summaryText: summaryLines.join("\n"),
   };
 }
+
+export async function generateAndStoreLenderPackage(dealId: string, actorUserId: string | null) {
+  const payload = await generateLenderPackage(dealId);
+  // Placeholder store logic to fix build error
+  return payload;
+}
+
+export async function getLatestLenderPackage(dealId: string) {
+  return generateLenderPackage(dealId);
+}

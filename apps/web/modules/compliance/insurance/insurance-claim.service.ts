@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { prisma } from "@/lib/db";
 
 import { logClaim, logCompliance } from "./insurance-log";
+import { triggerInsuranceAlerts } from "./insurance-alert.service";
 
 const MAX_SUMMARY = 2000;
 
@@ -55,6 +56,8 @@ export async function createInsuranceClaim(input: CreateClaimInput) {
       .catch(() => undefined);
 
     logCompliance("claim_event_logged", { brokerId: input.brokerId });
+
+    await triggerInsuranceAlerts(input.brokerId, "CLAIM", { claimId: row.id });
 
     return { ok: true as const, claimId: row.id, fingerprint };
   } catch (e) {

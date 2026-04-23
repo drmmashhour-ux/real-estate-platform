@@ -25,6 +25,10 @@ export async function createDefaultChecklistItems(closingId: string, transaction
   await logClosingTimeline(transactionId, "CLOSING_CHECKLIST_CREATED", "Default closing checklist initialized");
 }
 
+export async function seedDefaultClosingChecklist(closingId: string, transactionId: string | null) {
+  return createDefaultChecklistItems(closingId, transactionId);
+}
+
 export async function listChecklistItems(closingId: string) {
   return prisma.lecipmPipelineDealClosingChecklistItem.findMany({
     where: { closingId },

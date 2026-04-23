@@ -12,6 +12,7 @@ export type BuildSearchWhereInput = {
   maxPrice?: number;
   guests?: number;
   verifiedOnly?: boolean;
+  insuredOnly?: boolean;
   propertyType?: string;
   roomType?: string;
   instantBook?: boolean;
@@ -73,6 +74,21 @@ export function buildPublishedListingSearchWhere(params: BuildSearchWhereInput):
   const guests = params.guests ?? 0;
   if (guests > 0) where.maxGuests = { gte: guests };
   if (params.verifiedOnly) where.verificationStatus = "VERIFIED";
+
+  if (params.insuredOnly) {
+    const now = new Date();
+    const MIN_COVERAGE_THRESHOLD = 1000000;
+    where.owner = {
+      brokerInsurance: {
+        some: {
+          status: "ACTIVE",
+          startDate: { lte: now },
+          endDate: { gte: now },
+          coveragePerLoss: { gte: MIN_COVERAGE_THRESHOLD },
+        },
+      },
+    };
+  }
   if (params.propertyType?.trim()) {
     where.propertyType = { equals: params.propertyType.trim(), mode: "insensitive" };
   }

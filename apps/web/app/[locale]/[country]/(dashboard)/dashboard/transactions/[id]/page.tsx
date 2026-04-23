@@ -13,6 +13,8 @@ import { getNotaryPackage } from "@/modules/transactions/transaction-notary.serv
 import { listSignaturePackets } from "@/modules/transactions/transaction-signature.service";
 import { listParties } from "@/modules/transactions/transaction-party.service";
 import { listTimeline } from "@/modules/transactions/transaction-timeline.service";
+import { TransactionPrivacyPanel } from "@/modules/privacy/components/TransactionPrivacyPanel";
+import { MandatoryPrivacyWarnings } from "@/modules/privacy/components/MandatoryPrivacyWarnings";
 
 export const dynamic = "force-dynamic";
 
@@ -78,7 +80,9 @@ export default async function SdTransactionDetailPage({
         </p>
       </div>
 
-      <SdTransactionWorkspace
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <SdTransactionWorkspace
         transactionId={id}
         transactionNumber={w.transactionNumber}
         initialDocs={sdDocs.map((d) => ({
@@ -140,6 +144,13 @@ export default async function SdTransactionDetailPage({
           warnings: compliance.warnings,
         }}
       />
+        </div>
+
+        <div className="space-y-6">
+          <TransactionPrivacyPanel transactionId={id} />
+          <MandatoryPrivacyWarnings />
+        </div>
+      </div>
 
       <section>
         <h2 className="font-medium">Parties</h2>

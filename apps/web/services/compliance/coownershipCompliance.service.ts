@@ -1,8 +1,11 @@
 import type {
   ChecklistItem,
   ComplianceChecklistItemStatus,
+  ComplianceVerificationLevel,
   LecipmListingAssetType,
 } from "@prisma/client";
+import { logCoOwnershipAudit } from "./coownershipAudit.service";
+import { isCriticalRowExpired } from "./coownershipValidity.service";
 import type { RetrofitUpstreamFingerprint } from "@/modules/esg/esg-retrofit-upstream-refresh";
 import { complianceFlags } from "@/config/feature-flags";
 import { bumpMergedComplianceMetric } from "@/lib/compliance/coownership-compliance-metrics";
@@ -77,6 +80,14 @@ export type ComplianceStatusPayload = {
     | "priority"
     | "description"
     | "source"
+    | "verificationLevel"
+    | "verifiedAt"
+    | "verifiedByUserId"
+    | "supportingDocumentIds"
+    | "validUntil"
+    | "isExpired"
+    | "isOverridden"
+    | "overrideReason"
   >[];
   complete: boolean;
   certificateComplete: boolean;
@@ -287,6 +298,10 @@ export async function getMergedComplianceStatus(listingId: string): Promise<Comp
 
   await ensureMergedCoOwnershipChecklist(listingId);
 
+  // Part 3: Refresh expiry status before computing status
+  const { refreshListingComplianceExpiry } = await import("./coownershipValidity.service");
+  await refreshListingComplianceExpiry(listingId).catch(() => null);
+
   const items = await prisma.checklistItem.findMany({
     where: { listingId, key: { in: [...MERGED_KEYS] } },
     orderBy: [{ category: "asc" }, { key: "asc" }],
@@ -300,23 +315,62 @@ export async function getMergedComplianceStatus(listingId: string): Promise<Comp
       priority: true,
       description: true,
       source: true,
+      verificationLevel: true,
+      verifiedAt: true,
+      verifiedByUserId: true,
+      supportingDocumentIds: true,
+      validUntil: true,
+      isExpired: true,
+      isOverridden: true,
+      overrideReason: true,
     },
   });
 
-  const itemPick = items.map((i) => ({ key: i.key, status: i.status }));
+  const itemPick = items.map((i) => ({ 
+    key: i.key, 
+    status: i.status, 
+    verificationLevel: i.verificationLevel, 
+    isExpired: i.isExpired,
+    isOverridden: i.isOverridden,
+  }));
   const { gap } = getConditionalInsuranceRequirements(listingId, itemPick);
 
   const requiredRows = MERGED_COOWNERSHIP_CHECKLIST.filter((def) => effectiveRequired(def, itemPick));
+
+  const verificationEnforcement = complianceFlags.coownershipVerificationEnforcement === true;
+  const expiryEnforcement = complianceFlags.coownershipExpiryEnforcement === true;
+
+  const isRowReady = (row: typeof items[0]) => {
+    if (row.isOverridden) return true;
+    if (!itemSatisfied(row.status)) return false;
+    
+    // Part 1: Insurance gate keys require at least DOCUMENTED if enforcement is on
+    if (verificationEnforcement && INSURANCE_GATE_KEYS.includes(row.key as any)) {
+      if (row.verificationLevel === "DECLARED") return false;
+    }
+
+    // Part 3: Block if expired critical rows
+    if (expiryEnforcement && isCriticalRowExpired(row)) {
+      return false;
+    }
+
+    return true;
+  };
+
   const complete =
     requiredRows.length > 0 &&
-    requiredRows.every((def) => itemSatisfied(items.find((i) => i.key === def.key)?.status));
+    requiredRows.every((def) => {
+      const row = items.find((i) => i.key === def.key);
+      return row && isRowReady(row);
+    });
 
   const certRow = items.find((i) => i.key === COOWNERSHIP_CRITICAL_KEY);
-  const certificateComplete = itemSatisfied(certRow?.status);
+  const certificateComplete = certRow ? isRowReady(certRow) : false;
 
-  const insuranceGateComplete = INSURANCE_GATE_KEYS.every((k) =>
-    itemSatisfied(items.find((i) => i.key === k)?.status),
-  );
+  const insuranceGateComplete = INSURANCE_GATE_KEYS.every((k) => {
+    const row = items.find((i) => i.key === k);
+    return row && isRowReady(row);
+  });
 
   const coPct = scoreCategory(MERGED_COOWNERSHIP_CHECKLIST, itemPick, "COOWNERSHIP");
   const insPct = scoreCategory(MERGED_COOWNERSHIP_CHECKLIST, itemPick, "INSURANCE");
@@ -454,6 +508,10 @@ export async function setChecklistItemStatus(
 
   await ensureMergedCoOwnershipChecklist(listingId);
 
+  const currentItem = await prisma.checklistItem.findUnique({
+    where: { listingId_key: { listingId, key } },
+  });
+
   const now = new Date();
   const completed =
     status === "COMPLETED"
@@ -467,6 +525,15 @@ export async function setChecklistItemStatus(
       ...completed,
     },
   });
+
+  await logCoOwnershipAudit({
+    listingId,
+    actorId: completedByUserId ?? undefined,
+    event: "CHECKLIST_UPDATE",
+    beforeValue: { status: currentItem?.status },
+    afterValue: { status },
+    reason: `Status updated to ${status}`,
+  }).catch(() => null);
 
   log("checklist_item_completed", { listingId, key, status });
   bumpMergedComplianceMetric("checklistItemUpdates");
@@ -496,6 +563,10 @@ export const ERR_COOWNERSHIP_INSURANCE_GATE =
   "Complete mandatory insurance verification (co-owner liability tier, syndicate building insurance, syndicate liability) before proceeding — platform checklist only.";
 export const ERR_CRITICAL_COOWNERSHIP_COMPLIANCE =
   "Critical co-ownership compliance items are missing. Complete certificate and insurance verification before proceeding.";
+export const ERR_COOWNERSHIP_VERIFICATION_REQUIRED =
+  "Insurance and critical checklist items require 'DOCUMENTED' or 'VERIFIED' status with supporting evidence.";
+export const ERR_COOWNERSHIP_EXPIRY_BLOCKED =
+  "One or more critical co-ownership compliance documents have expired. Please update with current documentation.";
 
 function legacyFullEnforcement(): boolean {
   return complianceFlags.coownershipEnforcement === true;
@@ -509,11 +580,26 @@ function insuranceEnforcementEnabled(): boolean {
   return complianceFlags.coownershipInsuranceEnforcement === true;
 }
 
+function verificationEnforcementEnabled(): boolean {
+  return complianceFlags.coownershipVerificationEnforcement === true;
+}
+
+function expiryEnforcementEnabled(): boolean {
+  return complianceFlags.coownershipExpiryEnforcement === true;
+}
+
 export async function assertCoownershipEnforcementAllows(
   listingId: string,
   action: CoownershipEnforcementAction,
 ): Promise<void> {
-  if (!complianceCriticalEnforcement() && !legacyFullEnforcement() && !insuranceEnforcementEnabled()) return;
+  if (
+    !complianceCriticalEnforcement() &&
+    !legacyFullEnforcement() &&
+    !insuranceEnforcementEnabled() &&
+    !verificationEnforcementEnabled() &&
+    !expiryEnforcementEnabled()
+  )
+    return;
 
   const listing = await prisma.listing.findUnique({
     where: { id: listingId },
@@ -525,9 +611,10 @@ export async function assertCoownershipEnforcementAllows(
 
   await ensureMergedCoOwnershipChecklist(listingId);
 
+  const status = await getMergedComplianceStatus(listingId);
+
   if (complianceCriticalEnforcement()) {
-    const ok = await getCriticalComplianceComplete(listingId);
-    if (!ok) {
+    if (!status.certificateComplete || !status.insuranceGateComplete) {
       log("critical_block_triggered", { listingId, action });
       bumpMergedComplianceMetric("criticalBlocks");
       throw new Error(ERR_CRITICAL_COOWNERSHIP_COMPLIANCE);
@@ -535,22 +622,110 @@ export async function assertCoownershipEnforcementAllows(
   }
 
   if (legacyFullEnforcement()) {
-    const complete = await isMergedComplianceComplete(listingId);
-    if (!complete) {
+    if (!status.complete) {
       log("compliance_blocked_action", { listingId, action, reason: "checklist_incomplete" });
       throw new Error(action === "publish" ? ERR_COOWNERSHIP_PUBLISH : ERR_COOWNERSHIP_ACCEPT_OFFER);
     }
   }
 
   if (insuranceEnforcementEnabled()) {
-    const status = await getMergedComplianceStatus(listingId);
     if (!status.insuranceGateComplete) {
       log("compliance_blocked_action", { listingId, action, reason: "insurance_gate_incomplete" });
       throw new Error(ERR_COOWNERSHIP_INSURANCE_GATE);
+    }
+  }
+
+  // Part 1: Verification level check
+  if (verificationEnforcementEnabled()) {
+    const unverifiedCritical = status.items.filter(
+      (i) =>
+        (CRITICAL_COMPLIANCE_BLOCK_KEYS.includes(i.key as any) ||
+          INSURANCE_GATE_KEYS.includes(i.key as any)) &&
+        !i.isOverridden &&
+        itemSatisfied(i.status) &&
+        i.verificationLevel === "DECLARED"
+    );
+    if (unverifiedCritical.length > 0) {
+      log("compliance_blocked_action", { listingId, action, reason: "verification_required" });
+      throw new Error(ERR_COOWNERSHIP_VERIFICATION_REQUIRED);
+    }
+  }
+
+  // Part 3: Expiry check
+  if (expiryEnforcementEnabled()) {
+    const expiredCritical = status.items.filter((i) => !i.isOverridden && isCriticalRowExpired(i));
+    if (expiredCritical.length > 0) {
+      log("compliance_blocked_action", { listingId, action, reason: "expiry_blocked" });
+      throw new Error(ERR_COOWNERSHIP_EXPIRY_BLOCKED);
     }
   }
 }
 
 export async function assertCoownershipPublishAllowed(listingId: string): Promise<void> {
   await assertCoownershipEnforcementAllows(listingId, "publish");
+}
+
+export async function setChecklistItemVerification(
+  listingId: string,
+  key: string,
+  verificationLevel: ComplianceVerificationLevel,
+  verifiedByUserId?: string | null
+): Promise<ChecklistItem> {
+  const currentItem = await prisma.checklistItem.findUnique({
+    where: { listingId_key: { listingId, key } },
+  });
+
+  const updated = await prisma.checklistItem.update({
+    where: { listingId_key: { listingId, key } },
+    data: {
+      verificationLevel,
+      verifiedAt: verificationLevel !== "DECLARED" ? new Date() : null,
+      verifiedByUserId: verificationLevel !== "DECLARED" ? verifiedByUserId : null,
+    },
+  });
+
+  await logCoOwnershipAudit({
+    listingId,
+    actorId: verifiedByUserId ?? undefined,
+    event: "VERIFICATION_UPGRADE",
+    beforeValue: { level: currentItem?.verificationLevel },
+    afterValue: { level: verificationLevel },
+    reason: `Verification level set to ${verificationLevel}`,
+  }).catch(() => null);
+
+  await recomputeComplianceSnapshot(listingId).catch(() => null);
+  return updated;
+}
+
+export async function overrideChecklistItemCompliance(
+  listingId: string,
+  key: string,
+  override: boolean,
+  reason: string,
+  overriddenByUserId: string
+): Promise<ChecklistItem> {
+  const currentItem = await prisma.checklistItem.findUnique({
+    where: { listingId_key: { listingId, key } },
+  });
+
+  const updated = await prisma.checklistItem.update({
+    where: { listingId_key: { listingId, key } },
+    data: {
+      isOverridden: override,
+      overrideReason: override ? reason : null,
+      overriddenByUserId: override ? overriddenByUserId : null,
+    },
+  });
+
+  await logCoOwnershipAudit({
+    listingId,
+    actorId: overriddenByUserId,
+    event: "OVERRIDE",
+    beforeValue: { overridden: currentItem?.isOverridden },
+    afterValue: { overridden: override },
+    reason: override ? `Admin override: ${reason}` : "Override removed",
+  }).catch(() => null);
+
+  await recomputeComplianceSnapshot(listingId).catch(() => null);
+  return updated;
 }

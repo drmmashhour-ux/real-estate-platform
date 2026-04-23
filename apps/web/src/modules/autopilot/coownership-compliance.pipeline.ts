@@ -45,10 +45,11 @@ export async function runCoownershipCompliancePipeline(input: {
 
   recordCoownershipCheckTriggered(listingId);
 
-  const [certificateComplete, insuranceGateComplete, criticalComplianceComplete] = await Promise.all([
+  const [certificateComplete, insuranceGateComplete, criticalComplianceComplete, blockingIssues] = await Promise.all([
     getCertificateCompleteForListing(listingId),
     getInsuranceGateCompleteForListing(listingId),
     getCriticalComplianceCompleteForListing(listingId),
+    getComplianceBlockingIssuesForListing(listingId),
   ]);
 
   const decision = evaluateCoownershipComplianceRule({
@@ -57,6 +58,7 @@ export async function runCoownershipCompliancePipeline(input: {
     certificateComplete,
     insuranceGateComplete,
     criticalComplianceComplete,
+    blockingIssues,
   });
 
   if (!decision) {

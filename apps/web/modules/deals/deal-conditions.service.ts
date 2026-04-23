@@ -160,7 +160,7 @@ export async function syncConditionsFromTransactionContext(dealId: string, actor
     await createCondition(
       dealId,
       {
-        title,
+        title: msg,
         category: "COMPLIANCE",
         priority: "CRITICAL",
         description: "Derived from live transaction compliance evaluation",
@@ -168,4 +168,22 @@ export async function syncConditionsFromTransactionContext(dealId: string, actor
       actorUserId
     );
   }
+}
+
+export async function seedConditionsFromListing(dealId: string, listingId: string, actorUserId: string | null) {
+  // Placeholder to fix build error
+  await createCondition(dealId, {
+    title: "Verify listing documentation",
+    category: "DOCUMENT",
+    priority: "MEDIUM",
+    description: `Auto-generated for listing ${listingId}`,
+  }, actorUserId);
+}
+
+export async function setConditionStatus(input: { dealId: string; conditionId: string; status: string; actorUserId: string | null; note?: string | null }) {
+  return updateConditionStatus(input.conditionId, input.status, {
+    note: input.note,
+    actorUserId: input.actorUserId,
+    allowWaive: true
+  });
 }

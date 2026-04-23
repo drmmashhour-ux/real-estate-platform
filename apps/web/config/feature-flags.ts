@@ -2407,6 +2407,10 @@ export const complianceFlags = {
    * syndicate insurance verification) are missing (see CRITICAL_COMPLIANCE_BLOCK_KEYS).
    */
   coownershipComplianceEnforcement: envTrue("FEATURE_COOWNERSHIP_COMPLIANCE_ENFORCEMENT"),
+  /** Harden Co-Ownership — require DOCUMENTED+ level for critical/insurance rows. */
+  coownershipVerificationEnforcement: envTrue("FEATURE_COOWNERSHIP_VERIFICATION_ENFORCEMENT"),
+  /** Harden Co-Ownership — block readiness/autopilot when critical rows are expired. */
+  coownershipExpiryEnforcement: envTrue("FEATURE_COOWNERSHIP_EXPIRY_ENFORCEMENT"),
 } as const;
 
 export type ComplianceFlagKey = keyof typeof complianceFlags;
@@ -2419,6 +2423,8 @@ export const FEATURE_LISTING_PREPUBLISH_AUTO_BLOCK_V1 = complianceFlags.listingP
 export const FEATURE_COOWNERSHIP_ENFORCEMENT = complianceFlags.coownershipEnforcement;
 export const FEATURE_COOWNERSHIP_INSURANCE_ENFORCEMENT = complianceFlags.coownershipInsuranceEnforcement;
 export const FEATURE_COOWNERSHIP_COMPLIANCE_ENFORCEMENT = complianceFlags.coownershipComplianceEnforcement;
+export const FEATURE_COOWNERSHIP_VERIFICATION_ENFORCEMENT = complianceFlags.coownershipVerificationEnforcement;
+export const FEATURE_COOWNERSHIP_EXPIRY_ENFORCEMENT = complianceFlags.coownershipExpiryEnforcement;
 
 /** Phase 4.5 — append-only compliance event timeline (Legal Hub + marketplace governance facts). Default off. */
 export const eventTimelineFlags = {

@@ -20,6 +20,8 @@ export async function generateConditionsFromOffer(offerId: string, actorUserId: 
   });
 }
 
+export const seedStandardConditionsForOffer = generateConditionsFromOffer;
+
 export async function generateConditionsFromOfferTx(
   tx: Prisma.TransactionClient,
   offerId: string,
@@ -114,6 +116,30 @@ export async function updateFinancingConditionStatus(conditionId: string, input:
   await maybeEmitFinancingApproved(cond.dealId);
 
   logInfo(TAG, { conditionId, status: st });
+  return row;
+}
+
+export async function updateFinancingCondition(input: { dealId: string; conditionId: string } & UpdateFinancingStatusInput) {
+  return updateFinancingConditionStatus(input.conditionId, input);
+}
+
+export async function createFinancingCondition(dealId: string, data: { title: string; description?: string; isCritical: boolean }, actorUserId: string | null) {
+  const row = await prisma.lecipmPipelineDealFinancingCondition.create({
+    data: {
+      dealId,
+      title: data.title,
+      description: data.description?.slice(0, 8000),
+      status: "OPEN",
+      isCritical: data.isCritical,
+    },
+  });
+  await appendDealAuditEvent(prisma, {
+    dealId,
+    eventType: "FINANCING_CONDITION_CREATED",
+    actorUserId,
+    summary: `Financing condition: ${row.title}`,
+    metadataJson: { conditionId: row.id },
+  });
   return row;
 }
 

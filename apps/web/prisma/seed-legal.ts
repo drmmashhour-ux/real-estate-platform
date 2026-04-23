@@ -230,5 +230,50 @@ export async function runSeedLegal(): Promise<void> {
 
   await seedQcBrokerDutyCorpusFromFile();
 
-  console.log("Legal Hub seed: LegalCase + LegalRule library rows ensured.");
+  // Privacy Officer seed
+  await prisma.privacyOfficer.upsert({
+    where: { id: "seed-privacy-officer-001" },
+    create: {
+      id: "seed-privacy-officer-001",
+      name: "Mohamed Almashhour",
+      title: "Chief Privacy Officer",
+      email: "privacy@lecipm.com",
+      published: true,
+      publishedAt: new Date(),
+    },
+    update: {
+      name: "Mohamed Almashhour",
+      title: "Chief Privacy Officer",
+      email: "privacy@lecipm.com",
+      published: true,
+    },
+  });
+
+  // Retention Policies seed
+  const retentionPolicies = [
+    { category: "CONTACT_INFORMATION", period: 365 * 3, basis: "PIPEDA / Law 25 — General contact retention." },
+    { category: "IDENTITY_INFORMATION", period: 365 * 7, basis: "OACIQ / Real Estate Brokerage Act — Mandatory brokerage record retention." },
+    { category: "FINANCIAL_INFORMATION", period: 365 * 7, basis: "Income Tax Act / AML regulations." },
+    { category: "LEGAL_AUTHORITY_INFORMATION", period: 365 * 10, basis: "Extended liability and mandate verification." },
+    { category: "PROPERTY_LINKED_SENSITIVE_INFORMATION", period: 365 * 7, basis: "OACIQ record keeping requirements." },
+    { category: "COMMUNICATION_MEDIA", period: 365 * 2, basis: "General business records." },
+  ];
+
+  for (const p of retentionPolicies) {
+    await prisma.privacyRetentionPolicy.upsert({
+      where: { id: `seed-policy-${p.category.toLowerCase()}` },
+      create: {
+        id: `seed-policy-${p.category.toLowerCase()}`,
+        dataCategory: p.category as any,
+        retentionPeriod: p.period,
+        retentionBasis: p.basis,
+      },
+      update: {
+        retentionPeriod: p.period,
+        retentionBasis: p.basis,
+      },
+    });
+  }
+
+  console.log("Legal Hub seed: LegalCase + LegalRule library rows ensured. Privacy compliance rows Ensured.");
 }

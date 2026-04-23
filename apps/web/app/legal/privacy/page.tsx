@@ -27,11 +27,17 @@ export default async function LegalPrivacyPage() {
 
         <section className="p-6 bg-blue-50 border border-blue-100 rounded-lg">
           <h3 className="text-lg font-bold mb-2 text-blue-900">Retention and Destruction</h3>
-          <p className="text-sm text-blue-800">
+          <p className="text-sm text-blue-800 mb-4">
             We retain your personal information only for as long as necessary to fulfill the purposes for which it was collected, 
             including for the purposes of satisfying any legal, accounting, or reporting requirements. 
             Once the retention period has expired, your information is securely destroyed or anonymized.
           </p>
+          <div className="pt-4 border-t border-blue-200">
+            <h4 className="font-bold text-sm text-blue-900 mb-2">Have a concern?</h4>
+            <a href="/legal/privacy/complaint" className="inline-block px-4 py-2 bg-blue-600 text-white text-sm font-bold rounded hover:bg-blue-700">
+              Submit a Privacy Complaint
+            </a>
+          </div>
         </section>
       </div>
     </LegalPageLayout>

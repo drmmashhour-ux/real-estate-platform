@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { PrivacySensitivityLevel } from "@prisma/client";
+import { PrivacySensitivityLevel, PrivacyRole as PrismaPrivacyRole } from "@prisma/client";
 
 export enum PrivacyRole {
   SUPER_ADMIN = "SUPER_ADMIN",
@@ -19,41 +19,44 @@ export enum PrivacyRole {
 
 export class PrivacyAccessService {
   /**
-   * Enforces "need to know" access control.
+   * Enforces "need to know" access control for documents.
    */
-  static async canAccess(args: {
+  static async canAccessDocument(args: {
     userId: string;
-    role: PrivacyRole;
-    entityType: string;
-    entityId: string;
-    transactionId?: string;
-    sensitivity: PrivacySensitivityLevel;
+    userRole: string; // User.role or PrivacyRole
+    documentId: string;
   }): Promise<boolean> {
-    // 1. Super admin always has access
-    if (args.role === PrivacyRole.SUPER_ADMIN || args.role === PrivacyRole.PRIVACY_OFFICER) {
+    const doc = await prisma.lecipmSdDocument.findUnique({
+      where: { id: args.documentId },
+      include: { transaction: { select: { brokerId: true } } },
+    });
+
+    if (!doc) return false;
+
+    // 1. Super admin / Privacy Officer bypass
+    if (args.userRole === "ADMIN" || args.userRole === PrivacyRole.SUPER_ADMIN || args.userRole === PrivacyRole.PRIVACY_OFFICER) {
       return true;
     }
 
-    // 2. Default deny for public if sensitive
-    if (args.sensitivity !== PrivacySensitivityLevel.PUBLIC && args.role === PrivacyRole.VISITOR) {
-      return false;
+    // 2. Check sensitivity
+    if (doc.sensitivityLevel === PrivacySensitivityLevel.PUBLIC) {
+      return true;
     }
 
-    // 3. Broker on the file
-    if (args.role === PrivacyRole.BROKER && args.transactionId) {
-      const isOnFile = await prisma.brokerageOfficeAuditLog.findFirst({
-        where: {
-          // Placeholder for actual file linkage check
-          // e.g. transaction has broker assigned
-          id: "some-linkage",
-        },
-      });
-      // For now, let's assume we have a better way to check "involved in file"
-      // return !!isOnFile;
-      return true; // Simplified for MVP
+    // 3. Broker on the transaction
+    if (doc.transaction.brokerId === args.userId) {
+      return true;
     }
 
-    // 4. Default deny for unrelated roles
+    // 4. Allowed roles check
+    if (doc.allowedRoles) {
+      const allowed = doc.allowedRoles as string[];
+      if (allowed.includes(args.userRole)) {
+        return true;
+      }
+    }
+
+    // 5. Default deny
     return false;
   }
 
@@ -100,6 +103,6 @@ export class PrivacyAccessService {
       },
     });
 
-    return args.data; // In a real system, this would return the filtered data
+    return args.data;
   }
 }

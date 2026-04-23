@@ -7,3 +7,7 @@ export function canManageCapital(role: PlatformRole): boolean {
 export function canWaiveCriticalFinancingCondition(role: PlatformRole): boolean {
   return role === "ADMIN";
 }
+
+export function userCanElevatedCapitalOps(role: PlatformRole): boolean {
+  return role === "ADMIN";
+}

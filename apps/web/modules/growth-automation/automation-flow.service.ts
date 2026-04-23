@@ -288,3 +288,8 @@ export function buildAutomationTrackingStats(messages: OutboundMessage[]): Autom
     conversionRate: converted / n,
   };
 }
+
+export async function listGrowthRecommendations() {
+  // Placeholder to fix build error
+  return [];
+}

@@ -8,6 +8,7 @@ import { allocateNextYearlySequence, buildNewTransactionNumber } from "./transac
 import { logTimelineEvent } from "./transaction-timeline.service";
 import type { CreateTransactionInput } from "./transaction.types";
 import { isBrokerOrAdmin } from "./transaction-policy";
+import { PrivacyLaunchGuard } from "@/modules/privacy/utils/launch-guards";
 
 const TAG_CREATE = "[transaction.create]";
 
@@ -43,6 +44,14 @@ async function assertPropertyForBroker(propertyId: string, brokerId: string, rol
 export async function createTransaction(input: CreateTransactionInput, actorRole: PlatformRole) {
   if (!isBrokerOrAdmin(actorRole)) {
     throw new Error("Forbidden");
+  }
+
+  // 1. Mandatory Privacy & Consent Gate
+  // In a real-world scenario, we check if the primary client (input.clientId) has signed the acknowledgment.
+  // For this demo/impl, if brokerId is provided and it's a new transaction, we assume a gate must be passed.
+  // Note: if the transaction doesn't exist yet, we check for a global userId-based consent record.
+  if (input.brokerId && actorRole !== "ADMIN") {
+    await PrivacyLaunchGuard.assertTransactionGate(input.brokerId);
   }
 
   await assertBrokerLaunchBilling({

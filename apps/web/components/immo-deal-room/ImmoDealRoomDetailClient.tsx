@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 
-import { contextLinkForRoom } from "@/lib/immo-deal-room/room-abilities";
+import { contextLinkForRoom } from "@/lib/immo-deal-room/room-abilities-shared";
 import { DealRoomDocumentChecklistSection } from "@/components/immo-deal-room/DealRoomDocumentChecklistSection";
 import type {
   DealRoom,

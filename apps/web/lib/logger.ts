@@ -10,6 +10,8 @@ export function logWarn(message: string, meta?: unknown) {
   console.warn(`[WARN] ${redactSensitiveText(message)}`, safeMeta);
 }
 
+export const logWarning = logWarn;
+
 export function logError(message: string, error?: unknown) {
   const safeErr = error !== undefined ? redactForLog(error) : "";
   console.error(`[ERROR] ${redactSensitiveText(message)}`, safeErr);

@@ -53,15 +53,14 @@ function walkDir(dir: string, out: string[]): void {
 function resolveRepoRoot(): string {
   let dir = process.cwd();
   for (let i = 0; i < 12; i++) {
-    const syria = path.join(dir, "apps", "syria", "src");
     const webApp = path.join(dir, "apps", "web", "app");
     const pkg = path.join(dir, "package.json");
-    if (fs.existsSync(syria) && fs.existsSync(webApp) && fs.existsSync(pkg)) return dir;
+    if (fs.existsSync(webApp) && fs.existsSync(pkg)) return dir;
     const parent = path.dirname(dir);
     if (parent === dir) break;
     dir = parent;
   }
-  throw new Error("Could not locate monorepo root (expected apps/syria/src and apps/web/app).");
+  throw new Error("Could not locate monorepo root (expected apps/web/app).");
 }
 
 /** Syria: guard definitions / tests may mention forbidden tokens intentionally. */

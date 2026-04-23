@@ -54,6 +54,8 @@ export async function createTask(
   return row;
 }
 
+export const createDiligenceTask = createTask;
+
 export async function updateTaskStatus(
   taskId: string,
   status: string,
@@ -79,6 +81,10 @@ export async function updateTaskStatus(
   });
   logInfo(TAG, { taskId, status });
   return row;
+}
+
+export async function setDiligenceTaskStatus(input: { dealId: string; taskId: string; status: string; actorUserId: string | null }) {
+  return updateTaskStatus(input.taskId, input.status, input.actorUserId);
 }
 
 export async function createTasksFromCondition(conditionId: string, actorUserId: string | null) {

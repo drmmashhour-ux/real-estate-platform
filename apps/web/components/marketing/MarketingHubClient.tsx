@@ -12,6 +12,7 @@ export function MarketingHubClient({
   calendarHref,
   autonomousMarketingHref,
   aiContentHref,
+  weekPlanHref,
 }: {
   initial: MarketingHubDashboardVm;
   videosHref?: string;
@@ -19,6 +20,7 @@ export function MarketingHubClient({
   autonomousMarketingHref?: string;
   /** AI ideas / scripts / daily plan (structured generator) */
   aiContentHref?: string;
+  weekPlanHref?: string;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
@@ -39,6 +41,25 @@ export function MarketingHubClient({
 
   return (
     <div className="space-y-10">
+      {weekPlanHref ? (
+        <section className="rounded-2xl border border-amber-500/35 bg-amber-950/10 p-5">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold text-amber-100">Week 1 Autopilot (Montreal)</h2>
+              <p className="mt-1 max-w-xl text-xs text-zinc-500">
+                Full 7-day content plan with video storyboards, posters, and automated validation. Everything requires manual approval before calendar deployment.
+              </p>
+            </div>
+            <Link
+              href={weekPlanHref}
+              className="rounded-lg border border-amber-500/50 bg-amber-950/35 px-4 py-2 text-sm font-medium text-amber-100 hover:border-amber-400 hover:bg-amber-950/55"
+            >
+              Open week plan →
+            </Link>
+          </div>
+        </section>
+      ) : null}
+
       {aiContentHref ? (
         <section className="rounded-2xl border border-amber-700/35 bg-amber-950/15 p-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
