@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { loadDisputeObservabilityMetrics } from "@/modules/disputes/dispute.service";
 import { buildSelfExpansionDashboardHints } from "@/modules/self-expansion/self-expansion-integration.service";
 import { buildFullAutopilotControlCenterPayload } from "@/modules/autopilot-governance/full-autopilot-control-center.service";
 import {
@@ -427,6 +428,8 @@ export async function buildAutonomyCommandCenterPayload() {
 
   const selfExpansionHints = await buildSelfExpansionDashboardHints();
 
+  const disputeObservability = await loadDisputeObservabilityMetrics().catch(() => null);
+
   return {
     generatedAt: new Date().toISOString(),
     advisory: core.advisory,
@@ -468,6 +471,7 @@ export async function buildAutonomyCommandCenterPayload() {
       recompute: "POST /api/autonomy-command-center/recompute",
       learningReset: "POST /api/autonomy-command-center/learning-reset (audit only)",
     },
+    disputeObservability,
   };
 }
 

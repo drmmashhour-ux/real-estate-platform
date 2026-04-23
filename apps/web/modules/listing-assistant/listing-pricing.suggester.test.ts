@@ -45,5 +45,7 @@ describe("suggestPricingRange", () => {
     const p = await suggestPricingRange({ listingType: "CONDO", currentPriceMajor: 300_000 });
     expect(p.thinDataWarning).toBe(true);
     expect(p.confidenceLevel).toBe("LOW");
+    expect(p.pricingAdviceBlocked).toBe(true);
+    expect(p.pricingAdviceBlockedMessageEn).toContain("comparables");
   });
 });

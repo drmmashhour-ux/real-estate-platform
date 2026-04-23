@@ -10,6 +10,8 @@ import {
 } from "@/services/compliance/coownershipCompliance.service";
 import { dispatchLecipmCoreAutopilotEvent } from "@/src/modules/autopilot/engine";
 import { ensureEsgProfileForListing } from "@/modules/esg/esg.service";
+import { complianceFlags } from "@/config/feature-flags";
+import { validateQuebecLanguageForListingPublish } from "@/lib/compliance/quebec/listing-quebec-compliance-publish.service";
 
 export const dynamic = "force-dynamic";
 
@@ -66,6 +68,15 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
     if (data.crmMarketplaceLive === true) {
       await ensureCoOwnershipChecklist(id);
       await assertCoownershipPublishAllowed(id);
+      if (complianceFlags.quebecLanguageComplianceV1) {
+        const quebecLanguage = await validateQuebecLanguageForListingPublish(id, userId);
+        if (quebecLanguage.blockPublish) {
+          return NextResponse.json(
+            { error: "QUEBEC_LANGUAGE_COMPLIANCE_BLOCK", quebecLanguage },
+            { status: 422 },
+          );
+        }
+      }
     }
 
     const hasFieldUpdates = Object.keys(data).length > 0;

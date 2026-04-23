@@ -12,10 +12,25 @@ export type DraftingFormType =
   | "disclosure"
   | "other";
 
-/** Semantic score boost by `sourceKey` — aligned with `DRAFTING_SOURCE_REGISTRY` priorities. */
-export const SOURCE_PRIORITY: Record<string, number> = Object.fromEntries(
-  DRAFTING_SOURCE_REGISTRY.map((s) => [s.key, s.priority]),
-);
+/**
+ * LECIPM ordering: official OACIQ forms outrank brokerage books in `rankSearchHits`.
+ * Overrides registry defaults where the product standard differs.
+ */
+const LECIPM_SOURCE_PRIORITY: Record<string, number> = {
+  oaciq_pp_residential: 100,
+  oaciq_counter_proposal: 100,
+  oaciq_annex_r: 95,
+  oaciq_notice_conditions: 95,
+  oaciq_other_forms: 92,
+  drafting_book: 80,
+  real_estate_intro_book: 70,
+};
+
+/** Semantic score boost by `sourceKey` (merged: registry + LECIPM overrides). */
+export const SOURCE_PRIORITY: Record<string, number> = {
+  ...Object.fromEntries(DRAFTING_SOURCE_REGISTRY.map((s) => [s.key, s.priority])),
+  ...LECIPM_SOURCE_PRIORITY,
+};
 
 export function getAllowedSourcesForFormType(formType: DraftingFormType): string[] {
   return getAllowedSourcesForFormTypeImpl(formType);

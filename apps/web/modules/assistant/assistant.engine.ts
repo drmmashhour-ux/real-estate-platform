@@ -56,6 +56,17 @@ export function buildAssistantSuggestions(input: AssistantEngineInput, maxItems 
   const lid = input.contextLeadId ?? undefined;
   const did = input.contextDealId ?? undefined;
 
+  if (did) {
+    push(
+      out,
+      "REMINDER",
+      "OACIQ — buyers should be advised to obtain a professional inspection (still advisable if a pre-sale inspection exists). Document your VERIFY → INFORM → ADVISE trail.",
+      "HIGH",
+      maxItems,
+      `${ck}:inspection`,
+    );
+  }
+
   const hours = input.hoursSinceLastBrokerAction;
 
   if (hours != null && hours >= 72) {

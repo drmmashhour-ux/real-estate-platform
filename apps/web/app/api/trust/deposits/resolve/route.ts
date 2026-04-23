@@ -179,8 +179,8 @@ export async function POST(req: Request) {
       ownerId: scope.ownerId,
       alertType: "trust",
       severity: "critical",
-      title: "Trust deposit issue",
-      description: "Deposit dispute or anomaly detected",
+      title: "Critical risk detected",
+      description: `Trust deposit ${action} on ${updated.id}. Immediate action required.`,
       entityType: "trust_deposit",
       entityId: updated.id,
     });

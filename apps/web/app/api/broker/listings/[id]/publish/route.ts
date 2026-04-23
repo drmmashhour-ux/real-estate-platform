@@ -18,6 +18,8 @@ import {
 import { rejectIfInspectionReadOnlyMutation } from "@/lib/compliance/inspection-session-guard";
 import { enforceAction } from "@/lib/compliance/enforce-action";
 import { createAccountabilityRecord } from "@/lib/compliance/create-accountability-record";
+import { validateListingAdvertisingForPublish } from "@/lib/compliance/oaciq/representation-advertising/listing-advertising-publish.service";
+import { validateQuebecLanguageForListingPublish } from "@/lib/compliance/quebec/listing-quebec-compliance-publish.service";
 
 export const dynamic = "force-dynamic";
 
@@ -113,6 +115,32 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   try {
     await ensureCoOwnershipChecklist(id);
     await assertCoownershipPublishAllowed(id);
+
+    if (complianceFlags.oaciqRepresentationAdvertisingEngineV1) {
+      const oaciqAdvertising = await validateListingAdvertisingForPublish(id, userId);
+      if (oaciqAdvertising.blockPublish) {
+        return NextResponse.json(
+          {
+            error: "OACIQ_ADVERTISING_COMPLIANCE_BLOCK",
+            oaciqAdvertising,
+          },
+          { status: 422 },
+        );
+      }
+    }
+
+    if (complianceFlags.quebecLanguageComplianceV1) {
+      const quebecLanguage = await validateQuebecLanguageForListingPublish(id, userId);
+      if (quebecLanguage.blockPublish) {
+        return NextResponse.json(
+          {
+            error: "QUEBEC_LANGUAGE_COMPLIANCE_BLOCK",
+            quebecLanguage,
+          },
+          { status: 422 },
+        );
+      }
+    }
 
     if (complianceFlags.sellerDeclarationComplianceGateV1) {
       const dec = await loadListingDeclarationComplianceInput(id);

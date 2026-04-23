@@ -44,15 +44,32 @@ export function MockBadge({
   tone = "gold",
 }: {
   children: ReactNode;
-  tone?: "gold" | "muted";
+  tone?:
+    | "gold"
+    | "muted"
+    | "dispute-open"
+    | "dispute-review"
+    | "dispute-escalated"
+    | "dispute-resolved"
+    | "dispute-rejected";
 }) {
+  const cls =
+    tone === "gold"
+      ? "border-ds-gold/40 bg-ds-gold/10 text-ds-gold"
+      : tone === "muted"
+        ? "border-ds-border bg-ds-surface text-ds-text-secondary"
+        : tone === "dispute-open"
+          ? "border-ds-gold/55 bg-transparent text-ds-gold shadow-[inset_0_0_0_1px_rgba(212,175,55,0.45)]"
+          : tone === "dispute-review"
+            ? "border-ds-gold/30 bg-ds-gold/20 text-ds-gold"
+            : tone === "dispute-escalated"
+              ? "border-red-500/45 bg-red-950/40 text-red-100"
+              : tone === "dispute-resolved"
+                ? "border-emerald-500/40 bg-emerald-950/35 text-emerald-100"
+                : "border-zinc-600 bg-zinc-900/60 text-zinc-300";
   return (
     <span
-      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${
-        tone === "gold"
-          ? "border-ds-gold/40 bg-ds-gold/10 text-ds-gold"
-          : "border-ds-border bg-ds-surface text-ds-text-secondary"
-      }`}
+      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${cls}`}
     >
       {children}
     </span>

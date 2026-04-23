@@ -1,5 +1,7 @@
 /** AI Listing Assistant — assistive only; never auto-publishes or submits to Centris. */
 
+import type { ListingAssistantViaAttachment } from "@/lib/compliance/oaciq/verify-inform-advise/bundles";
+
 export type ListingLanguage = "en" | "fr" | "ar";
 
 export type ListingPropertyPartial = {
@@ -57,6 +59,10 @@ export type PricingSuggestionResult = {
   thinDataWarning: boolean;
   competitivenessScore: number;
   rationale: string;
+  /** OACIQ: no price “advice” without sufficient comparables / context */
+  pricingAdviceBlocked?: boolean;
+  pricingAdviceBlockedMessageEn?: string;
+  pricingAdviceBlockedMessageFr?: string;
 };
 
 export type ListingReadinessStatus = "READY" | "NEEDS_EDITS" | "HIGH_RISK";
@@ -114,4 +120,6 @@ export type FullListingAssistantBundle = {
   readiness?: ListingReadinessResult;
   /** Operational nudges (assistive-only — broker still validates). */
   alerts?: ListingAssistantUiAlert[];
+  /** OACIQ VERIFY → INFORM → ADVISE duty chain for this bundle. */
+  oaciqVerifyInformAdvise?: ListingAssistantViaAttachment;
 };

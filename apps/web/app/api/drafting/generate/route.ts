@@ -8,6 +8,7 @@ import { canReleaseDraftedTransaction } from "@/lib/compliance/draft-release";
 import { getRequiredNextStep } from "@/lib/compliance/form-order";
 import { requireUser } from "@/lib/auth/require-user";
 import { recordAuditEvent } from "@/modules/analytics/audit-log.service";
+import { evaluateOaciqVia } from "@/lib/compliance/oaciq/verify-inform-advise/evaluate";
 
 export const dynamic = "force-dynamic";
 
@@ -92,7 +93,8 @@ export async function POST(req: Request) {
     formType: body.formType,
     knownFacts: body.knownFacts ?? {},
     userQuery,
-    transactionType: body.transactionType,
+    transactionType: body.transactionType ?? "sale",
+    userId: auth.user.id, // Phase 3: Pass userId for broker identity injection
   });
 
   const validation = validateDraftWithFormType({ formType: body.formType, fields: draft.fields });
@@ -145,6 +147,16 @@ export async function POST(req: Request) {
   if (!brokerSigned) blockingCodes.push("BROKER_SIGNATURE_REQUIRED");
   if (!complianceGuardrailsPassed) blockingCodes.push("COMPLIANCE_GUARDRAILS_NOT_PASSED");
 
+  const oaciqVia = evaluateOaciqVia({
+    verificationSourcesCount: draft.passages?.length ?? 0,
+    sourceCoverageSufficient: sourceCoverage.sufficient,
+    requiredReviewOpen: (draft.requiredReviewFields?.length ?? 0) > 0,
+    workflowComplete: stepOrderValid,
+  });
+  if (!oaciqVia.advicePermitted) {
+    blockingCodes.push("OACIQ_VIA_ADVICE_NOT_PERMITTED");
+  }
+
   await recordAuditEvent({
     actorUserId: auth.user.id,
     action: "ai_draft_generated",
@@ -169,6 +181,11 @@ export async function POST(req: Request) {
         releaseGateErrors: releaseGate.errors,
         blockingCodes,
         nextWorkflowStep: nextStep,
+        oaciqVia: {
+          riskLevel: oaciqVia.riskLevel,
+          advicePermitted: oaciqVia.advicePermitted,
+          verifyPhaseComplete: oaciqVia.verifyPhaseComplete,
+        },
       },
     },
   });
@@ -184,6 +201,7 @@ export async function POST(req: Request) {
       releaseGate,
       nextWorkflowStep: nextStep,
       blockingCodes,
+      oaciqVia,
       gates: {
         brokerReviewCompleted,
         brokerSigned,

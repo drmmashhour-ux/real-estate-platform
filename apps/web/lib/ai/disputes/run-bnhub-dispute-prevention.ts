@@ -4,6 +4,7 @@ import { detectRisksForBooking } from "./risk-detection";
 import { shouldSuppressRiskLog } from "./cooldown";
 import type { BookingRiskContext } from "./types";
 import { createNotification } from "@/modules/notifications/services/create-notification";
+import { persistUnifiedBookingRiskAssessment } from "@/modules/risk-engine/risk-prevention.service";
 
 function listingHasPhotosJson(photos: unknown): boolean {
   if (photos == null) return false;
@@ -26,7 +27,8 @@ function adequateCheckinDetails(c: BnhubCheckinDetails | null | undefined): bool
   return ins.length > 0 || key.length > 0;
 }
 
-function buildContext(input: {
+/** Exported for `@/modules/risk-engine` unified scoring. */
+export function buildBnhubBookingRiskContext(input: {
   booking: Booking & {
     listing: {
       id: string;
@@ -86,7 +88,8 @@ function buildContext(input: {
   };
 }
 
-async function listingOpenIssueCount90d(
+/** Exported for unified pre-dispute risk engine (signals only — no legal findings). */
+export async function listingOpenIssueCount90d(
   prisma: PrismaClient,
   listingId: string,
   now: Date
@@ -270,7 +273,7 @@ export async function runBnhubDisputePreventionScan(
       listingCache.set(booking.listingId, li);
     }
 
-    const ctx = buildContext({
+    const ctx = buildBnhubBookingRiskContext({
       booking,
       listingOpenIssueCount90d: li,
       now,
@@ -341,6 +344,12 @@ export async function runBnhubDisputePreventionScan(
           },
         });
       }
+    }
+
+    try {
+      await persistUnifiedBookingRiskAssessment(booking.id);
+    } catch (e) {
+      console.warn("[risk] unified booking assessment failed", e);
     }
   }
 

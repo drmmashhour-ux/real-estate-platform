@@ -2416,6 +2416,24 @@ export const complianceFlags = {
    * allow explicit refusal with buyer warning only (OACIQ-style liability posture). FSBO publish still uses Seller Hub checks.
    */
   sellerDeclarationComplianceGateV1: envTrue("FEATURE_SELLER_DECLARATION_COMPLIANCE_GATE_V1"),
+  /**
+   * OACIQ — Representation, Solicitation, Promotion & Advertising rule engine on CRM listing publish
+   * (licence, identity, mandate contract, sold/price, coming soon, guarantees, etc.).
+   */
+  oaciqRepresentationAdvertisingEngineV1: envTrue("FEATURE_OACIQ_REPRESENTATION_ADVERTISING_ENGINE_V1"),
+  /**
+   * OACIQ / FINTRAC-style AML rule engine — deal dry-run API + scoring (KYC, trust, fraud indicators).
+   * Default off; wire to deal milestones when ready.
+   */
+  oaciqAmlEngineV1: envTrue("FEATURE_OACIQ_AML_ENGINE_V1"),
+  /**
+   * Québec — French public copy + residential scope gates on CRM listing publish; broker chat FR companion metadata.
+   */
+  quebecLanguageComplianceV1: envTrue("FEATURE_QUEBEC_LANGUAGE_COMPLIANCE_V1"),
+  /**
+   * OACIQ clause library + structural validation (actor, deadline, consequence, ambiguity) for contract workflows.
+   */
+  oaciqClauseComplianceEngineV1: envTrue("FEATURE_OACIQ_CLAUSE_COMPLIANCE_ENGINE_V1"),
   /** Harden Co-Ownership — require DOCUMENTED+ level for critical/insurance rows. */
   coownershipVerificationEnforcement: envTrue("FEATURE_COOWNERSHIP_VERIFICATION_ENFORCEMENT"),
   /** Harden Co-Ownership — block readiness/autopilot when critical rows are expired. */
@@ -2435,6 +2453,11 @@ export const FEATURE_COOWNERSHIP_COMPLIANCE_ENFORCEMENT = complianceFlags.coowne
 export const FEATURE_COOWNERSHIP_VERIFICATION_ENFORCEMENT = complianceFlags.coownershipVerificationEnforcement;
 export const FEATURE_COOWNERSHIP_EXPIRY_ENFORCEMENT = complianceFlags.coownershipExpiryEnforcement;
 export const FEATURE_SELLER_DECLARATION_COMPLIANCE_GATE_V1 = complianceFlags.sellerDeclarationComplianceGateV1;
+export const FEATURE_OACIQ_REPRESENTATION_ADVERTISING_ENGINE_V1 =
+  complianceFlags.oaciqRepresentationAdvertisingEngineV1;
+export const FEATURE_OACIQ_AML_ENGINE_V1 = complianceFlags.oaciqAmlEngineV1;
+export const FEATURE_QUEBEC_LANGUAGE_COMPLIANCE_V1 = complianceFlags.quebecLanguageComplianceV1;
+export const FEATURE_OACIQ_CLAUSE_COMPLIANCE_ENGINE_V1 = complianceFlags.oaciqClauseComplianceEngineV1;
 
 /** Phase 4.5 — append-only compliance event timeline (Legal Hub + marketplace governance facts). Default off. */
 export const eventTimelineFlags = {

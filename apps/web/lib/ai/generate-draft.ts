@@ -5,6 +5,7 @@
 import { retrieveDraftingContext } from "./retrieve";
 import { runInternalDraftGeneration, type InternalDraftResult } from "./internal-draft-runner";
 import { validateDraft, checkConsistency } from "@/lib/compliance/draft-validation";
+import { assertDraftSourceContext } from "@/lib/compliance/source-grounded";
 
 export type GenerateDraftInput = {
   formType: string;
@@ -19,9 +20,7 @@ export type GenerateDraftOutput = InternalDraftResult & {
 };
 
 function assertHardRules(draft: InternalDraftResult, validation: ReturnType<typeof validateDraft>): void {
-  if (!draft.sourceUsed || draft.sourceUsed.length === 0) {
-    throw new Error("NO_SOURCE_CONTEXT");
-  }
+  assertDraftSourceContext(draft);
   if (!validation.valid) {
     throw new Error("DRAFT_INVALID");
   }
@@ -50,7 +49,7 @@ export async function generateDraft(input: GenerateDraftInput): Promise<Generate
     sources,
   });
 
-  const validation = validateDraft(draft.fields);
+  const validation = validateDraft({ formType: input.formType, fields: draft.fields });
   assertHardRules(draft, validation);
 
   const consistency = checkConsistency({

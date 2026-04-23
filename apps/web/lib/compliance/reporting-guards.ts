@@ -19,6 +19,6 @@ export function assertLegalHoldRecordsNotOmitted(omitLegalHoldRecords?: boolean)
 
 export function assertReportRunMutable(run: Pick<ComplianceReportRun, "status">) {
   if (run.status === "sealed") {
-    throw new Error("SEALED_REPORT_IMMUTABLE");
+    throw new Error("IMMUTABLE_REPORT");
   }
 }

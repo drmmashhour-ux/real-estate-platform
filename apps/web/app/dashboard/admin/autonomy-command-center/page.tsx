@@ -14,7 +14,9 @@ import { LiveAutonomyFeed } from "@/components/autonomy/LiveAutonomyFeed";
 import { MarketingExpansionPanel } from "@/components/autonomy/MarketingExpansionPanel";
 import { RevenueGrowthPanel } from "@/components/autonomy/RevenueGrowthPanel";
 import { RiskCompliancePanel } from "@/components/autonomy/RiskCompliancePanel";
+import { DisputeObservabilityPanel } from "@/components/autonomy/DisputeObservabilityPanel";
 import { SystemOverviewStrip } from "@/components/autonomy/SystemOverviewStrip";
+import type { DisputeObservabilityMetrics } from "@/modules/disputes/dispute.types";
 import { useRouter } from "next/navigation";
 
 type SummaryPayload = {
@@ -91,6 +93,7 @@ type SummaryPayload = {
   };
   approvalQueue: ApprovalQueueRow[];
   alertsAndAnomalies: Array<{ kind: string; severity: string; title: string; detail: string }>;
+  disputeObservability?: DisputeObservabilityMetrics | null;
   performanceByDomain: Array<{
     uiDomainId: string;
     title: string;
@@ -239,6 +242,8 @@ export default function AutonomyCommandCenterPage() {
             riskDistribution={data.dealIntelligence.riskDistribution}
           />
         : null}
+
+        <DisputeObservabilityPanel metrics={data?.disputeObservability} />
 
         <div className="grid gap-8 xl:grid-cols-2">
           {data ?

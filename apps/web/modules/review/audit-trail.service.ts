@@ -1,5 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { scheduleDealRiskEvaluation } from "@/modules/risk-engine/risk-prevention.service";
 
 export async function logSuggestionDecision(input: {
   dealId: string;
@@ -11,7 +12,7 @@ export async function logSuggestionDecision(input: {
   sourceReferences?: unknown;
   validationSnapshot?: unknown;
 }) {
-  return prisma.suggestionDecisionLog.create({
+  const row = await prisma.suggestionDecisionLog.create({
     data: {
       dealId: input.dealId,
       actorId: input.actorId,
@@ -23,6 +24,8 @@ export async function logSuggestionDecision(input: {
       validationSnapshot: input.validationSnapshot === undefined ? undefined : (input.validationSnapshot as Prisma.InputJsonValue),
     },
   });
+  scheduleDealRiskEvaluation(input.dealId);
+  return row;
 }
 
 export async function listSuggestionDecisions(dealId: string, take = 50) {

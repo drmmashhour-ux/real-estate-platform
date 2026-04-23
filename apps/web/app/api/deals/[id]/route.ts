@@ -9,6 +9,7 @@ import { prisma } from "@repo/db";
 import { recordDealCrmStageChange } from "@/lib/ai/automation-triggers";
 import { hintCrmStageFromDealStatus } from "@/lib/ai/lifecycle/deal-actions";
 import { notifyDealClosedCelebrationIfNeeded } from "@/lib/listing-lifecycle/notify-deal-closed-celebration";
+import { evaluateDealRisk } from "@/modules/risk-engine/risk-prevention.service";
 
 export const dynamic = "force-dynamic";
 
@@ -136,6 +137,8 @@ export async function PATCH(
       toStage: newCrm ?? updated.status,
     }).catch(() => {});
   }
+
+  void evaluateDealRisk(id, { triggerPrevention: true }).catch(() => {});
 
   return Response.json(updated);
 }

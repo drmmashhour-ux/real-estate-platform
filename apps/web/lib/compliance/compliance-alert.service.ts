@@ -1,5 +1,9 @@
 import { prisma } from "@/lib/db";
 
+/**
+ * Persists a `ComplianceRiskEvent` (review-queue / risk register).
+ * For acknowledgeable cockpit rows (`ComplianceAlert`), use `@/lib/compliance/alerts`.
+ */
 export type CreateComplianceAlertInput = {
   ownerType: string;
   ownerId: string;

@@ -13,15 +13,31 @@ export function getAllowedSourcesForFormType(formType: string): string[] {
         "real_estate_intro_book",
       ];
     case "counter_proposal":
-      return ["oaciq_counter_proposal", "oaciq_pp_residential", "drafting_book"];
+      return [
+        "oaciq_counter_proposal",
+        "oaciq_pp_residential",
+        "oaciq_annex_r",
+        "drafting_book",
+      ];
     case "annex_r":
-      return ["oaciq_annex_r", "oaciq_pp_residential", "drafting_book"];
+      return [
+        "oaciq_annex_r",
+        "oaciq_pp_residential",
+        "oaciq_notice_conditions",
+        "drafting_book",
+      ];
     case "notice_fulfilment_conditions":
-      return ["oaciq_notice_conditions", "oaciq_pp_residential", "drafting_book"];
-    case "brokerage_contract":
+      return [
+        "oaciq_notice_conditions",
+        "oaciq_pp_residential",
+        "oaciq_annex_r",
+        "oaciq_counter_proposal",
+        "drafting_book",
+      ];
     case "seller_declaration":
-    case "disclosure":
+    case "brokerage_contract":
     case "identity_verification":
+    case "disclosure":
       return ["oaciq_other_forms", "drafting_book", "real_estate_intro_book"];
     default:
       return ["drafting_book", "real_estate_intro_book", "oaciq_other_forms"];

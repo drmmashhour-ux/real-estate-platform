@@ -9,6 +9,7 @@ const NAV: { href: string; label: string; embellish?: string }[] = [
   { href: "/design/lecipm-dashboard/listings", label: "Listings" },
   { href: "/design/lecipm-dashboard/listing-assistant", label: "Listing Assistant", embellish: "✨" },
   { href: "/design/lecipm-dashboard/deals", label: "Deals" },
+  { href: "/design/lecipm-dashboard/disputes", label: "Disputes", embellish: "⚖️" },
   { href: "/design/lecipm-dashboard/leads", label: "Leads" },
   { href: "/design/lecipm-dashboard/compliance", label: "Compliance", embellish: "🛡️" },
   { href: "/design/lecipm-dashboard/investment", label: "Investment" },
@@ -61,7 +62,7 @@ export function LecipmDashboardMockLayout({ children }: { children: ReactNode })
           })}
         </nav>
         <div className="border-t border-ds-border px-5 py-4 text-[10px] leading-relaxed text-ds-text-secondary">
-          UI mock · presentation layer · no live data
+          Design system · Disputes room uses live API when signed in
         </div>
       </aside>
 

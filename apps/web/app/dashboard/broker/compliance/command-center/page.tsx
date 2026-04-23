@@ -35,8 +35,10 @@ type ReviewQueueRow = {
 type DashboardPayload = {
   success?: boolean;
   metrics: DashboardMetrics;
-  alerts: ComplianceAlertRow[];
+  /** Open manual-review rows (same name as metric count in `cockpitSummary.reviewQueue`). */
   reviewQueue: ReviewQueueRow[];
+  cockpitSummary?: DashboardMetrics;
+  alerts: ComplianceAlertRow[];
   executiveStatus: "NORMAL" | "ELEVATED" | "CRITICAL";
   executiveView?: {
     systemHealth: string;
@@ -271,7 +273,12 @@ export default function ComplianceCommandCenterPage() {
                       method: "POST",
                       credentials: "same-origin",
                       headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ ownerType: "solo_broker" }),
+                      body: JSON.stringify({
+                        ownerType: "solo_broker",
+                        reportKey: "oaciq_inspection",
+                        reportType: "regulator_pack",
+                        scopeType: "broker_scope",
+                      }),
                     });
                     const json = await res.json().catch(() => ({}));
                     if (!res.ok) {
@@ -279,7 +286,12 @@ export default function ComplianceCommandCenterPage() {
                       return;
                     }
                     setError(null);
-                    alert(`Report bundle ${json.report?.bundleNumber ?? ""} generated. Seal when final.`);
+                    const run = json.run as { runNumber?: string } | undefined;
+                    alert(
+                      run?.runNumber
+                        ? `Report ${run.runNumber} generated. Seal when final.`
+                        : "Report generated. Seal when final.",
+                    );
                   } finally {
                     setBusy(false);
                   }

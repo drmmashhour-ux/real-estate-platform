@@ -74,6 +74,7 @@ import { BnhubStayScrollDepthBeacon } from "@/components/analytics/BnhubStayFunn
 import { FunnelCtaAnchor } from "@/components/analytics/FunnelCtaAnchor";
 import { ShareListingActions } from "@/components/sharing/ShareListingActions";
 import { VerifiedListingBadge } from "@/components/listings/VerifiedListingBadge";
+import { BrokerDisclosureBadge } from "@/components/listings/BrokerDisclosureBadge";
 import { CroListingConversionTrustBlock } from "@/components/bnhub/CroListingConversionTrustBlock";
 import {
   abTestingFlags,
@@ -325,6 +326,14 @@ export async function BnhubListingView(opts: {
 
   const isBrokerListing = listing.listingAuthorityType === "BROKER";
   const contactLabel = isBrokerListing ? "Contact broker" : "Contact host";
+
+  // Phase 4: Fetch broker profile for disclosure
+  const brokerProfile = isBrokerListing
+    ? await prisma.lecipmBrokerLicenceProfile.findUnique({
+        where: { userId: listing.ownerId },
+      })
+    : null;
+
   const supportTel = getPhoneTelLink();
   const supportDisplay = getPhoneNumber();
 
@@ -535,6 +544,12 @@ export async function BnhubListingView(opts: {
               <h1 className="text-balance text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl xl:text-4xl">
                 {displayTitle}
               </h1>
+              {brokerProfile?.licenceNumber && (
+                <BrokerDisclosureBadge 
+                  brokerName={brokerProfile.fullName || listing.owner.name || ""} 
+                  licenseNumber={brokerProfile.licenceNumber} 
+                />
+              )}
               <p className="mt-1.5 text-base font-medium text-slate-700">{locationLine}</p>
               {hostDisplayRating != null && hostDisplayRating > 0 ? (
                 <p className="mt-2 text-sm font-semibold text-slate-800">

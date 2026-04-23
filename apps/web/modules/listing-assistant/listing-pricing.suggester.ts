@@ -5,6 +5,7 @@ import type {
   PricingConfidenceLevel,
   PricingSuggestionResult,
 } from "@/modules/listing-assistant/listing-assistant.types";
+import { evaluatePricingAdviceGate } from "@/lib/compliance/oaciq/verify-inform-advise/evaluate";
 
 /**
  * Peer-based price band vs CRM listings of same asset type — heuristic only.
@@ -41,7 +42,7 @@ export async function suggestPricingRange(params: {
     : count >= 6 ? "MEDIUM"
     : "LOW";
 
-  const base = (rationale: string): PricingSuggestionResult => ({
+  const base = (rationale: string, extra?: Partial<PricingSuggestionResult>): PricingSuggestionResult => ({
     suggestedMinMajor,
     suggestedMaxMajor,
     priceBandLow: suggestedMinMajor,
@@ -51,15 +52,28 @@ export async function suggestPricingRange(params: {
     thinDataWarning: thinBand,
     competitivenessScore: 50,
     rationale,
+    ...extra,
   });
 
   if (thinBand) {
     suggestedMinMajor = params.currentPriceMajor ? round2(params.currentPriceMajor * 0.94) : 100_000;
     suggestedMaxMajor = params.currentPriceMajor ? round2(params.currentPriceMajor * 1.06) : 900_000;
+    const thinPricingGate = evaluatePricingAdviceGate({
+      comparableCount: count,
+      marketContextPresent: true,
+      propertyCharacteristicsPresent: true,
+    });
     return base(
       count < 3 ?
         "Insufficient peer CRM listings for this type — market-wide heuristic band only; use comps manually."
-      : "Limited pricing history — verify with MLS-style comps."
+      : "Limited pricing history — verify with MLS-style comps.",
+      thinPricingGate.pricingAdviceBlocked
+        ? {
+            pricingAdviceBlocked: true,
+            pricingAdviceBlockedMessageEn: thinPricingGate.messageEn,
+            pricingAdviceBlockedMessageFr: thinPricingGate.messageFr,
+          }
+        : undefined,
     );
   }
 
@@ -69,6 +83,12 @@ export async function suggestPricingRange(params: {
 
   suggestedMinMajor = round2(avg * 0.92);
   suggestedMaxMajor = round2(avg * 1.08);
+
+  const outGate = evaluatePricingAdviceGate({
+    comparableCount: count,
+    marketContextPresent: true,
+    propertyCharacteristicsPresent: true,
+  });
 
   return {
     suggestedMinMajor,
@@ -80,5 +100,12 @@ export async function suggestPricingRange(params: {
     thinDataWarning: false,
     competitivenessScore,
     rationale: `Compared to ${count} CRM listings of type ${params.listingType}; peer avg ~$${round2(avg).toLocaleString()} — illustrative only.`,
+    ...(outGate.pricingAdviceBlocked
+      ? {
+          pricingAdviceBlocked: true,
+          pricingAdviceBlockedMessageEn: outGate.messageEn,
+          pricingAdviceBlockedMessageFr: outGate.messageFr,
+        }
+      : {}),
   };
 }

@@ -131,10 +131,17 @@ export async function POST(req: Request) {
       critical: executiveStatus === "CRITICAL",
     },
     guardrailEscalations30d,
-    /** @deprecated Prefer `metrics.complaints` — kept for older clients */
-    complaints: { total: complaints },
-    /** @deprecated Prefer `metrics.highRiskCases` */
-    highRiskCases: metrics.highRiskCases,
+    /**
+     * Metric counts matching command-center contract (`complaints`, `highRiskCases`, …).
+     * Open manual-review rows remain in `reviewQueue` (array).
+     */
+    cockpitSummary: {
+      complaints: metrics.complaints,
+      highRiskCases: metrics.highRiskCases,
+      trustIssues: metrics.trustIssues,
+      reviewQueue: metrics.reviewQueue,
+      legalHolds: metrics.legalHolds,
+    },
     systemStatus: executiveStatus,
   });
 }

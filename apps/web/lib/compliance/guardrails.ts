@@ -225,6 +225,30 @@ export function evaluateGuardrails(input: {
         message: "AI-assisted release blocked until broker review is recorded.",
       };
     }
+    /** Full LECIPM release gate (drafting execute). Legacy `release_transaction` does not set this. */
+    if (facts.fullReleaseGate === true) {
+      const need: Array<[keyof GuardrailFacts, string, string]> = [
+        ["formOrderValid", "FORM_ORDER_INVALID", "Release blocked: mandatory form sequence incomplete."],
+        ["draftValid", "DRAFT_INVALID", "Release blocked: draft validation failed."],
+        ["noContradictions", "CONTRADICTION_DETECTED", "Release blocked: listing / draft contradiction."],
+        ["sourceCoverageValid", "NO_SOURCE_CONTEXT", "Release blocked: draft is not source-grounded."],
+        ["brokerReviewDone", "BROKER_REVIEW_REQUIRED", "Release blocked: broker review not recorded."],
+        ["brokerSigned", "SIGNATURE_REQUIRED", "Release blocked: broker signature / completion missing."],
+        ["documentHashPresent", "DOCUMENT_HASH_REQUIRED", "Release blocked: document hash missing."],
+        ["dsLinked", "DS_LINK_REQUIRED", "Release blocked: seller declaration not linked."],
+      ];
+      for (const [key, reasonCode, message] of need) {
+        if (facts[key] !== true) {
+          return {
+            allowed: false,
+            outcome: "hard_blocked",
+            severity: "critical",
+            reasonCode,
+            message,
+          };
+        }
+      }
+    }
     return { allowed: true, outcome: "allowed", severity: "info" };
   }
 

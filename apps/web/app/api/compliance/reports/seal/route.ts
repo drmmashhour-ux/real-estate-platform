@@ -39,7 +39,7 @@ export async function POST(req: Request) {
   try {
     assertReportRunMutable(existing);
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "SEALED_REPORT_IMMUTABLE";
+    const msg = e instanceof Error ? e.message : "IMMUTABLE_REPORT";
     return NextResponse.json({ success: false, error: msg }, { status: 400 });
   }
 

@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 import { logAuditEvent } from "@/lib/compliance/log-audit-event";
-import { createComplianceAlert } from "@/lib/compliance/compliance-alert.service";
+import { createComplianceAlert } from "@/lib/compliance/alerts";
 
 function buildDecisionNumber() {
   const now = new Date();
@@ -72,17 +72,52 @@ export async function createGuardrailDecision(input: CreateGuardrailDecisionInpu
     (input.outcome === "hard_blocked" || input.outcome === "manual_review_required") &&
     (input.severity === "critical" || input.severity === "high")
   ) {
+    const isCritical = input.severity === "critical";
     await createComplianceAlert({
       ownerType: input.ownerType,
       ownerId: input.ownerId,
-      alertType: "violation",
+      alertType: "guardrail_block",
       severity: input.severity,
-      title: "Guardrail triggered",
-      description: input.message,
-      relatedEntityType: input.entityType,
-      relatedEntityId: input.entityId ?? null,
-      detectedBy: "guardrail_engine",
+      title: isCritical ? "Critical risk detected" : "High-risk guardrail block",
+      description: isCritical ? `${input.message}\n\nImmediate action required.` : input.message,
+      entityType: input.entityType,
+      entityId: input.entityId ?? undefined,
     }).catch(() => undefined);
+
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const reasonKey = (input.reasonCode ?? input.triggeredRuleKey ?? "unknown").trim() || "unknown";
+    const repeatCount = await prisma.complianceGuardrailDecision.count({
+      where: {
+        ownerType: input.ownerType,
+        ownerId: input.ownerId,
+        outcome: { in: ["hard_blocked", "manual_review_required"] },
+        OR: [{ reasonCode: reasonKey }, { triggeredRuleKey: reasonKey }],
+        createdAt: { gte: since },
+      },
+    });
+    if (reasonKey !== "unknown" && repeatCount >= 3) {
+      const dup = await prisma.complianceAlert.findFirst({
+        where: {
+          ownerType: input.ownerType,
+          ownerId: input.ownerId,
+          alertType: "repeated_violations",
+          acknowledged: false,
+          createdAt: { gte: since },
+        },
+      });
+      if (!dup) {
+        await createComplianceAlert({
+          ownerType: input.ownerType,
+          ownerId: input.ownerId,
+          alertType: "repeated_violations",
+          severity: "critical",
+          title: "Critical risk detected",
+          description: `Repeated guardrail blocks (${repeatCount} in 24h) for rule ${reasonKey}. Immediate action required.`,
+          entityType: input.entityType,
+          entityId: input.entityId ?? undefined,
+        }).catch(() => undefined);
+      }
+    }
   }
 
   return decision;

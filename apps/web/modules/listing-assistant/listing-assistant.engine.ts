@@ -8,6 +8,8 @@ import {
   deriveBuyerTargeting,
 } from "@/modules/listing-assistant/listing-score.engine";
 import { buildCentrisStructuredExport } from "@/modules/listing-assistant/listing-export.service";
+import { evaluateOaciqVia } from "@/lib/compliance/oaciq/verify-inform-advise/evaluate";
+import { buildListingAssistantViaAttachment } from "@/lib/compliance/oaciq/verify-inform-advise/bundles";
 import type {
   ComplianceCheckResult,
   FullListingAssistantBundle,
@@ -41,6 +43,15 @@ export function generateListingAssistantDraft(
     warningCount: compliance.warnings.length,
   });
 
+  const hasCoreFacts = Boolean(property.city && property.listingType);
+  const viaEval = evaluateOaciqVia({
+    verificationSourcesCount: hasCoreFacts ? 1 : 0,
+    sourceCoverageSufficient: hasCoreFacts && compliance.riskLevel !== "HIGH",
+    requiredReviewOpen: compliance.riskLevel === "HIGH",
+    propertyCharacteristicsPresent: hasCoreFacts,
+  });
+  const oaciqVerifyInformAdvise = buildListingAssistantViaAttachment(viaEval);
+
   const seo = buildSeoPack({
     title: content.title,
     description: content.description,
@@ -61,6 +72,7 @@ export function generateListingAssistantDraft(
     listingPerformance,
     centrisStructured,
     language: lang,
+    oaciqVerifyInformAdvise,
   };
 }
 

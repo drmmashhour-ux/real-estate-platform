@@ -123,6 +123,25 @@ export async function POST(req: Request) {
         severity: spike.severity,
       },
     });
+    const spikeDup = await prisma.complianceAlert.findFirst({
+      where: {
+        ownerType,
+        ownerId,
+        alertType: "complaint_spike",
+        acknowledged: false,
+        createdAt: { gte: new Date(now.getTime() - DEDUPE_MS) },
+      },
+    });
+    if (!spikeDup) {
+      await createComplianceAlert({
+        ownerType,
+        ownerId,
+        alertType: "complaint_spike",
+        severity: spike.severity === "critical" ? "critical" : "high",
+        title: "Critical risk detected",
+        description: `${spike.description}\n\nImmediate action required.`,
+      });
+    }
   }
 
   if (flags.triggerAuditFlag) {
@@ -226,8 +245,8 @@ export async function POST(req: Request) {
         ownerId,
         alertType: "risk",
         severity: "critical",
-        title: "Critical compliance risk detected",
-        description: "Immediate review required",
+        title: "Critical risk detected",
+        description: "Immediate action required.",
         entityType: "compliance_score",
         entityId: scoreRow.id,
       });

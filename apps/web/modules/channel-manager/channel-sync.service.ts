@@ -184,5 +184,8 @@ export async function importExternalChannelBooking(input: {
 
   void syncAvailability(input.listingId).catch(() => {});
 
+  const { scheduleBookingRiskEvaluation } = await import("@/modules/risk-engine/risk-prevention.service");
+  scheduleBookingRiskEvaluation(bookingId);
+
   return { bookingId };
 }

@@ -13,6 +13,7 @@ import { sendContractCompletedEmail } from "@/lib/email/contract-emails";
 import { completeOpenActionQueueBySource } from "@/modules/notifications/services/action-queue";
 import { onContractSigned } from "@/modules/notifications/services/workflow-notification-triggers";
 import { assertTrustDepositAllowsContractCompletion } from "@/lib/compliance/trust-contract-gate";
+import { complianceFlags } from "@/config/feature-flags";
 
 export type SignContractInput = {
   contractId: string;
@@ -64,6 +65,18 @@ export async function signContractUniversal(
   let newStatus = fresh.status;
 
   if (allSigned) {
+    if (complianceFlags.oaciqClauseComplianceEngineV1) {
+      const attached = await prisma.contractClause.count({ where: { contractId: input.contractId } });
+      if (attached > 0) {
+        const pending = await prisma.contractClause.count({
+          where: { contractId: input.contractId, validated: false },
+        });
+        if (pending > 0) {
+          return { ok: false, error: "CLAUSE_COMPLIANCE_INCOMPLETE" };
+        }
+      }
+    }
+
     const trustGate = await assertTrustDepositAllowsContractCompletion(input.contractId);
     if (!trustGate.ok) {
       return { ok: false, error: trustGate.error };

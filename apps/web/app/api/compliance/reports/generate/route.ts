@@ -24,11 +24,18 @@ export async function POST(req: Request) {
   }
 
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
-  const ownerType = typeof body.ownerType === "string" ? body.ownerType.trim() : "";
-  const ownerId = typeof body.ownerId === "string" ? body.ownerId.trim() : "";
-  const reportKey = typeof body.reportKey === "string" ? body.reportKey.trim() : "";
-  const reportType = typeof body.reportType === "string" ? body.reportType.trim() : "";
-  const scopeType = typeof body.scopeType === "string" ? body.scopeType.trim() : "";
+  let ownerType = typeof body.ownerType === "string" ? body.ownerType.trim() : "";
+  let ownerId = typeof body.ownerId === "string" ? body.ownerId.trim() : "";
+  if (user.role === PlatformRole.BROKER) {
+    if (!ownerType) ownerType = "solo_broker";
+    if (!ownerId && ownerType === "solo_broker") ownerId = user.id;
+  }
+  let reportKey = typeof body.reportKey === "string" ? body.reportKey.trim() : "";
+  let reportType = typeof body.reportType === "string" ? body.reportType.trim() : "";
+  let scopeType = typeof body.scopeType === "string" ? body.scopeType.trim() : "";
+  if (!reportKey) reportKey = "oaciq_inspection";
+  if (!reportType) reportType = "regulator_pack";
+  if (!scopeType) scopeType = "broker_scope";
   const scopeId = typeof body.scopeId === "string" ? body.scopeId.trim() : "";
   const dateFromRaw = typeof body.dateFrom === "string" ? body.dateFrom : null;
   const dateToRaw = typeof body.dateTo === "string" ? body.dateTo : null;
@@ -68,6 +75,27 @@ export async function POST(req: Request) {
   const access = await assertComplianceOwnerAccess(user, ownerType, ownerId);
   if (!access.ok) {
     return NextResponse.json({ success: false, error: access.message }, { status: 403 });
+  }
+
+  let declarationListingIds: string[] = [];
+  if (!(scopeType === "listing" && scopeId)) {
+    if (ownerType === "solo_broker") {
+      declarationListingIds = (
+        await prisma.listing.findMany({
+          where: { ownerId },
+          select: { id: true },
+          take: 5000,
+        })
+      ).map((l) => l.id);
+    } else if (ownerType === "agency") {
+      declarationListingIds = (
+        await prisma.listing.findMany({
+          where: { tenantId: ownerId },
+          select: { id: true },
+          take: 5000,
+        })
+      ).map((l) => l.id);
+    }
   }
 
   const auditWhere: Prisma.ComplianceAuditRecordWhereInput = {
@@ -113,7 +141,11 @@ export async function POST(req: Request) {
   };
 
   const declarationWhere: Prisma.SellerDeclarationWhereInput =
-    scopeType === "listing" && scopeId ? { listingId: scopeId } : { id: "__no_declaration_scope__" };
+    scopeType === "listing" && scopeId
+      ? { listingId: scopeId }
+      : declarationListingIds.length > 0
+        ? { listingId: { in: declarationListingIds } }
+        : { id: "__no_declaration_scope__" };
 
   const contractWhere: Prisma.ContractWhereInput = {};
   if (scopeType === "listing" && scopeId) {

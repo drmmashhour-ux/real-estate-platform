@@ -23,6 +23,7 @@ const COPY: Record<
     disclaim2: string;
     disclaim3: string;
     disclaim4: string;
+    disclaim5: string;
     ksp1: (city: string) => string;
     ksp2: string;
     ksp3: string;
@@ -46,7 +47,7 @@ const COPY: Record<
       `Presenting ${seed} — an opportunity for buyers seeking a ${typeLower} lifestyle in ${city}.`,
     highlights: "Highlights:",
     nextSteps:
-      "Suggested next steps for buyers: schedule a verified visit, review declarations and certificates, and confirm financing with a licensed professional.",
+      "Suggested next steps for buyers: schedule a verified visit, review declarations and certificates, confirm financing with a licensed professional, and obtain a professional inspection (recommended even if a pre-sale inspection exists).",
     amenity1: "Confirm inclusions/exclusions with seller declaration",
     amenity2: "Parking / storage — verify condominium documents if applicable",
     amenity3: "Heating, windows, roof age — diligence items for visits",
@@ -58,6 +59,8 @@ const COPY: Record<
       "Syndication (incl. Centris) requires broker confirmation and compliant data entry — never auto-submit from LECIPM.",
     disclaim4:
       "Co-ownership listings require mandatory declarations and insurer-aligned wording — verify locally.",
+    disclaim5:
+      "OACIQ duty — verify information before any recommendation; statutory legal warranty and inspection diligence apply (broker validates all copy).",
     ksp1: (city) => `Strong ${city} positioning — tailor to your comps`,
     ksp2: "Highlight transportation, schools, or amenities only when verified",
     ksp3: "Use measured photo order and disclosures per brokerage policy",
@@ -80,7 +83,7 @@ const COPY: Record<
       `Présentation : ${seed} — une opportunité pour les acheteurs recherchant un style de vie de type ${typeLower} à ${city}.`,
     highlights: "Points saillants :",
     nextSteps:
-      "Prochaines étapes suggérées : visite vérifiée, examen des déclarations et certificats, confirmation du financement avec un professionnel autorisé.",
+      "Prochaines étapes suggérées : visite vérifiée, examen des déclarations et certificats, confirmation du financement avec un professionnel autorisé, et inspection professionnelle (recommandée même en présence d’une inspection préalable).",
     amenity1: "Confirmer inclusions/exclusions avec la déclaration du vendeur",
     amenity2: "Stationnement / rangement — vérifier les documents de copropriété le cas échéant",
     amenity3: "Chauffage, fenêtres, toiture — sujets de diligence pour les visites",
@@ -92,6 +95,8 @@ const COPY: Record<
       "La syndication (incl. Centris) exige validation du courtier et saisie conforme — jamais de publication automatique depuis LECIPM.",
     disclaim4:
       "Copropriété : déclarations obligatoires et formulations alignées assureurs — valider localement.",
+    disclaim5:
+      "Devoir OACIQ — vérifier l’information avant toute recommandation; garantie légale de qualité et diligence d’inspection (le courtier valide tout le texte).",
     ksp1: (city) => `Positionnement ${city} — ajuster selon comparables`,
     ksp2: "Mettre en avant transport, écoles ou services seulement si vérifiés",
     ksp3: "Ordre des photos et divulgations selon les politiques du courtage",
@@ -114,7 +119,7 @@ const COPY: Record<
       `نقدّم ${seed} — فرصة للمشترين الباحثين عن نمط حياة ${typeLower} في ${city}.`,
     highlights: "أبرز النقاط:",
     nextSteps:
-      "خطوات مقترحة للمشترين: جدولة زيارة موثّقة، مراجعة الإقرارات والشهادات، والتحقق من التمويل مع مختص مرخّص.",
+      "خطوات مقترحة للمشترين: جدولة زيارة موثّقة، مراجعة الإقرارات والشهادات، والتحقق من التمويل مع مختص مرخّص، وطلب فحص مهني للعقار (يُنصح به حتى مع وجود فحص مسبق للبيع).",
     amenity1: "تأكيد شامل/غير شامل مع إقرار البائع",
     amenity2: "موقف / تخزين — التحقق من وثائق الشقق المشتركة عند الحاجة",
     amenity3: "تدفئة، نوافذ، عمر السقف — نقاط للعناية أثناء الزيارات",
@@ -126,6 +131,8 @@ const COPY: Record<
       "النشر الخارجي (بما فيه Centris) يتطلب تأكيد الوسيط وإدخالاً متوافقاً — لا نشر تلقائي من LECIPM.",
     disclaim4:
       "الملكية المشتركة تتطلب إقرارات إلزامية وصياغة متوافقة مع التأمين — راجع محلياً.",
+    disclaim5:
+      "التزام OACIQ — التحقق من المعلومات قبل أي توصية؛ الضمان القانوني وإجراءات الفحص (يتحقق الوسيط من كل النص).",
     ksp1: (city) => `موقع قوي في ${city} — ضبط حسب المقارنات`,
     ksp2: "اذكر النقل والمدارس عند التحقق فقط",
     ksp3: "ترتيب الصور والإفصاح حسب سياسة الوساطة",
@@ -181,7 +188,7 @@ export function generateListingContent(
 
   const zoningNotes = nz(property.zoningNotes, c.zonaDefault);
 
-  const disclaimers = [c.disclaim1, c.disclaim2, c.disclaim3, c.disclaim4];
+  const disclaimers = [c.disclaim1, c.disclaim2, c.disclaim3, c.disclaim4, c.disclaim5];
 
   const description = [
     c.presenting(titleSeed, typeLower, city),

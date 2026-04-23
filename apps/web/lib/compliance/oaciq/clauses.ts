@@ -1,6 +1,8 @@
 /**
  * Generic platform-assistance clauses — apply until section-specific counsel-reviewed text is inserted in DB.
  * Does not replace OACIQ instruments or professional duties.
+ *
+ * Structured clause library + validation: `lib/compliance/oaciq/clause-compliance/` (feature `FEATURE_OACIQ_CLAUSE_COMPLIANCE_ENGINE_V1`).
  */
 
 export const PLATFORM_ASSISTANCE_CLAUSE_FR =

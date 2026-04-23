@@ -2,7 +2,8 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 import { getDisputeActor } from "@/modules/dispute-room/dispute-api-auth";
-import { DISPUTE_COMPLIANCE_FOOTER, getDisputeDetailForUser } from "@/modules/dispute-room/dispute-case.service";
+import { DISPUTE_COMPLIANCE_FOOTER } from "@/modules/dispute-room/dispute-case.service";
+import { getDisputeWorkspaceDetail } from "@/modules/disputes/dispute.service";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +12,7 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ id: str
   if (actor instanceof NextResponse) return actor;
 
   const { id } = await ctx.params;
-  const detail = await getDisputeDetailForUser({
+  const detail = await getDisputeWorkspaceDetail({
     disputeId: id,
     userId: actor.userId,
     role: actor.role,
@@ -24,6 +25,7 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ id: str
   return NextResponse.json({
     dispute: detail.dispute,
     timeline: detail.timeline,
+    relatedLabel: detail.relatedLabel,
     compliance: { footer: DISPUTE_COMPLIANCE_FOOTER },
   });
 }

@@ -15,6 +15,8 @@ import { notifyNewMessage } from "@/modules/messaging/services/messaging-notific
 import { publishConversationUpdate } from "@/modules/messaging/services/realtime-adapter";
 import { onNewMessage } from "@/modules/notifications/services/workflow-notification-triggers";
 import { requireContentLicenseAccepted } from "@/lib/legal/content-license-enforcement";
+import { buildBrokerMessageQuebecMetadata } from "@/lib/compliance/quebec/chat-bilingual-metadata";
+import type { Prisma } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 
@@ -111,6 +113,8 @@ export async function POST(request: NextRequest, context: Params) {
     if (licenseBlock) return licenseBlock;
   }
 
+  const quebecMeta = await buildBrokerMessageQuebecMetadata({ role: user.role, body: parsed.body });
+
   const msg = await prisma.$transaction(async (tx) => {
     const m = await tx.message.create({
       data: {
@@ -118,6 +122,7 @@ export async function POST(request: NextRequest, context: Params) {
         senderId: userId,
         body: parsed.body,
         messageType: MessageType.TEXT,
+        ...(quebecMeta ? { metadata: quebecMeta as Prisma.InputJsonValue } : {}),
       },
     });
     const now = new Date();
@@ -157,6 +162,7 @@ export async function POST(request: NextRequest, context: Params) {
       id: msg.id,
       body: msg.body,
       messageType: msg.messageType,
+      metadata: msg.metadata ?? null,
       createdAt: msg.createdAt.toISOString(),
     },
     demoDisclaimer: isPublicDemoMode()

@@ -1,9 +1,11 @@
 import { buildDraftingPrompt } from "@/lib/ai/build-drafting-prompt";
 import { openai, isOpenAiConfigured } from "@/lib/ai/openai";
 import { runInternalDraftGeneration } from "@/lib/ai/internal-draft-runner";
-import { retrieveDraftingContext } from "@/lib/ai/drafting-retrieval";
+import { retrieveDraftingContextForForm } from "@/lib/ai/retrieve-drafting-context";
 import type { RetrievedPassage } from "@/lib/ai/retrieve-drafting-context";
 import type { DraftingContextChunk } from "@/lib/ai/retrieve";
+import { OACIQ_VIA_MESSAGES } from "@/lib/compliance/oaciq/verify-inform-advise/messages";
+import { buildBrokerDocumentContext, formatBrokerSignatureBlock } from "@/lib/investor/deal-loop/broker-context";
 
 export type FieldSourceAttribution = { field: string; sourceKey: string; reason: string };
 
@@ -62,8 +64,8 @@ async function completeJsonDraft(prompt: string): Promise<unknown | null> {
     messages: [
       {
         role: "system",
-        content:
-          "You are a drafting engine. Output only valid JSON matching the user schema. Never add markdown fences.",
+        content: `You are a drafting engine. Output only valid JSON matching the user schema. Never add markdown fences.
+OACIQ duty — VERIFY → INFORM → ADVISE: do not invent facts; do not give broker-style advice when verification is incomplete; use REQUIRED_REVIEW instead. ${OACIQ_VIA_MESSAGES.verifyBeforeAdviceEn}`,
       },
       { role: "user", content: prompt },
     ],
@@ -84,7 +86,24 @@ export async function generateSourceGroundedDraft(input: {
   formType: string;
   knownFacts: Record<string, unknown>;
   userQuery: string;
+  transactionType?: string;
+  userId?: string; // Phase 3: Add userId for broker identity injection
 }): Promise<SourceGroundedDraftResult> {
+  // Phase 3: Broker Identity Injection
+  const enrichedFacts = { ...input.knownFacts };
+  if (input.userId) {
+    try {
+      const brokerCtx = await buildBrokerDocumentContext(input.userId);
+      enrichedFacts.brokerName = brokerCtx.brokerName;
+      enrichedFacts.brokerLicenseNumber = brokerCtx.licenseNumber;
+      enrichedFacts.brokerAddress = brokerCtx.fullAddress;
+      enrichedFacts.brokerSignatureBlock = formatBrokerSignatureBlock(brokerCtx);
+      enrichedFacts.brokerDisclosure = `Real estate broker: ${brokerCtx.brokerName}, OACIQ licence ${brokerCtx.licenseNumber}, ${brokerCtx.fullAddress}`;
+    } catch (e) {
+      console.warn("[generateSourceGroundedDraft] Broker identity injection failed:", e);
+    }
+  }
+
   const passages = await retrieveDraftingContextForForm({
     formType: input.formType,
     query: input.userQuery,
@@ -110,15 +129,23 @@ export async function generateSourceGroundedDraft(input: {
 
   const deterministic = runInternalDraftGeneration({
     formType: input.formType,
-    facts: input.knownFacts,
+    facts: enrichedFacts, // Use enriched facts
     sources: chunks,
   });
+
+  const transactionType = input.transactionType ?? "sale";
+  const retrievedPassages = passages.map((p) => ({
+    sourceKey: p.sourceKey,
+    sourceLabel: String(p.title ?? p.sourceKey),
+    excerpt: p.content,
+    confidence: p.weightedScore,
+  }));
 
   const prompt = buildDraftingPrompt({
     formType: input.formType,
     transactionType,
-    knownFacts: input.knownFacts,
-    retrievedPassages: rows,
+    knownFacts: enrichedFacts, // Use enriched facts
+    retrievedPassages,
   });
 
   const llmRaw = await completeJsonDraft(prompt);

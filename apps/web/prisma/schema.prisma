@@ -504,6 +504,7 @@ model User {
   developerApplications                DeveloperApplication[]
   contracts                            Contract[]
   contractsCreated                     Contract[]                            @relation("ContractCreatedBy")
+  clauseComplianceValidations          ClauseValidation[]                    @relation("ClauseValidationValidator")
   contractSignatures                   ContractSignature[]
   complianceReviewsReviewed            ListingComplianceReview[]             @relation("ComplianceReviewer")
   brokerTransactionRecords             BrokerTransactionRecord[]
@@ -885,6 +886,9 @@ model User {
   evolutionPolicyAdjustmentsReviewed  EvolutionPolicyAdjustment[]         @relation("EvolutionAdjustmentReviewer")
   /** Signup / policy acceptance audit (QUÉBEC Law 25–aligned records). */
   userConsents                        UserConsent[]
+  lecipmRegulatoryConsents           LecipmRegulatoryConsent[]           @relation("LecipmRegulatoryConsentUser")
+  lecipmRegulatoryAuditLogs          LecipmRegulatoryAuditLog[]          @relation("LecipmRegulatoryAuditActor")
+  lecipmRiskDisclosureAcceptances    LecipmUserRiskDisclosureAcceptance[] @relation("LecipmRiskDisclosureAcceptanceUser")
 
   @@index([lecipmCityId])
 }
@@ -900,6 +904,84 @@ model UserConsent {
 
   @@index([userId])
   @@index([userId, type])
+}
+
+// --- Regulatory traceability (Québec / Canada — additive; distinct from signup `UserConsent`). ---
+
+enum LecipmRegulatoryConsentType {
+  DATA_USAGE
+  AI_DECISIONING
+  MARKETING
+  FINANCIAL_SIMULATION
+}
+
+enum LecipmRegulatoryAuditEntityType {
+  DEAL
+  FUND
+  LISTING
+  AI_DECISION
+}
+
+enum LecipmRiskDisclosureContext {
+  DEAL
+  FUND
+  ESG
+  AI_RECOMMENDATION
+}
+
+model LecipmRegulatoryConsent {
+  id          String                      @id @default(cuid())
+  userId      String                      @map("user_id")
+  user        User                        @relation("LecipmRegulatoryConsentUser", fields: [userId], references: [id], onDelete: Cascade)
+  consentType LecipmRegulatoryConsentType @map("consent_type")
+  granted     Boolean
+  grantedAt   DateTime                    @default(now()) @map("granted_at")
+  revokedAt   DateTime?                   @map("revoked_at")
+
+  @@unique([userId, consentType])
+  @@index([userId])
+  @@map("lecipm_regulatory_consents")
+}
+
+model LecipmRegulatoryAuditLog {
+  id           String                         @id @default(cuid())
+  userId       String?                        @map("user_id")
+  user         User?                          @relation("LecipmRegulatoryAuditActor", fields: [userId], references: [id], onDelete: SetNull)
+  entityType   LecipmRegulatoryAuditEntityType @map("entity_type")
+  entityId     String                         @map("entity_id") @db.VarChar(96)
+  action       String                         @db.VarChar(160)
+  metadataJson Json                           @default("{}") @map("metadata_json")
+  createdAt    DateTime                       @default(now()) @map("created_at")
+
+  @@index([entityType, entityId])
+  @@index([userId, createdAt])
+  @@map("lecipm_regulatory_audit_logs")
+}
+
+model LecipmRiskDisclosure {
+  id          String                     @id @default(cuid())
+  context     LecipmRiskDisclosureContext
+  message     String                     @db.Text
+  version     String                     @db.VarChar(32)
+  createdAt   DateTime                   @default(now()) @map("created_at")
+  acceptances LecipmUserRiskDisclosureAcceptance[]
+
+  @@unique([context, version])
+  @@index([context])
+  @@map("lecipm_risk_disclosures")
+}
+
+model LecipmUserRiskDisclosureAcceptance {
+  id           String               @id @default(cuid())
+  userId       String               @map("user_id")
+  user         User                 @relation("LecipmRiskDisclosureAcceptanceUser", fields: [userId], references: [id], onDelete: Cascade)
+  disclosureId String               @map("disclosure_id")
+  disclosure   LecipmRiskDisclosure @relation(fields: [disclosureId], references: [id], onDelete: Cascade)
+  acceptedAt   DateTime             @default(now()) @map("accepted_at")
+
+  @@unique([userId, disclosureId])
+  @@index([userId])
+  @@map("lecipm_user_risk_disclosure_acceptances")
 }
 
 /// Admin team — delegated work tracking (LECIPM / BNHUB operations).
@@ -8482,6 +8564,11 @@ model LecipmBrokerLicenceProfile {
   gst             String?  @db.VarChar(32)
   qst             String?  @db.VarChar(32)
   address         String?  @db.Text
+  addressLine     String?  @map("address_line") @db.VarChar(256)
+  city            String?  @db.VarChar(128)
+  province        String?  @default("QC") @db.VarChar(32)
+  postalCode      String?  @map("postal_code") @db.VarChar(16)
+  practiceMode    String?  @default("INDEPENDENT") @map("practice_mode") @db.VarChar(32)
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
   licenceChecks   LecipmLicenceCheck[]
@@ -18349,6 +18436,7 @@ model Contract {
   platformPaymentLegalLinks PlatformPayment[]          @relation("PlatformPaymentLegalLink")
   bnhubInvoiceLegalLinks    BnhubBookingInvoice[]      @relation("BnhubInvoiceLegalLink")
   platformCommissionRecords PlatformCommissionRecord[]
+  contractClauses           ContractClause[]
 
   @@index([userId])
   @@index([tenantId])
@@ -18362,6 +18450,84 @@ model Contract {
   @@index([createdById])
   @@index([signed])
   @@map("contracts")
+}
+
+/// OACIQ clause intelligence — standardized library rows (admin-seeded).
+enum OaciqClauseLibraryCategory {
+  brokerage_contract
+  amendment
+  promise_to_purchase
+  other
+  enterprise_sale
+}
+
+enum OaciqClauseFormVersion {
+  forms_2022_mandatory @map("2022_mandatory")
+}
+
+model ClausesLibrary {
+  id                  String                   @id @default(cuid())
+  category            OaciqClauseLibraryCategory
+  code                String                   @unique @db.VarChar(64)
+  title               String                   @db.VarChar(512)
+  description         String?                  @db.Text
+  templateText        String                   @map("template_text") @db.Text
+  requiresDeadline    Boolean                  @default(true) @map("requires_deadline")
+  requiresNotice      Boolean                  @default(true) @map("requires_notice")
+  requiresConsequence Boolean                  @default(true) @map("requires_consequence")
+  requiresActor       Boolean                  @default(true) @map("requires_actor")
+  formVersion         OaciqClauseFormVersion   @default(forms_2022_mandatory) @map("form_version")
+  active              Boolean                  @default(true)
+  /// Optional workflow key: off_market | security_deposit_trust | dual_representation | enterprise_sale
+  enforcementKey      String?                  @map("enforcement_key") @db.VarChar(64)
+  createdAt           DateTime                 @default(now()) @map("created_at")
+  updatedAt           DateTime                 @updatedAt @map("updated_at")
+
+  contractClauses ContractClause[]
+
+  @@index([category, active])
+  @@map("clauses_library")
+}
+
+model ContractClause {
+  id                 String         @id @default(cuid())
+  contractId         String         @map("contract_id")
+  contract           Contract       @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  libraryClauseId    String         @map("clause_id")
+  libraryClause      ClausesLibrary @relation(fields: [libraryClauseId], references: [id], onDelete: Restrict)
+  customText         String?        @map("custom_text") @db.Text
+  actorDefined       Boolean        @default(false) @map("actor_defined")
+  deadlineDefined    Boolean        @default(false) @map("deadline_defined")
+  noticeDefined      Boolean        @default(false) @map("notice_defined")
+  consequenceDefined Boolean        @default(false) @map("consequence_defined")
+  validated          Boolean        @default(false)
+  validationErrors   Json?          @map("validation_errors")
+  createdAt          DateTime       @default(now()) @map("created_at")
+
+  validations ClauseValidation[]
+
+  @@index([contractId])
+  @@index([libraryClauseId])
+  @@map("contract_clauses")
+}
+
+model ClauseValidation {
+  id                 String         @id @default(cuid())
+  contractClauseId   String         @map("contract_clause_id")
+  contractClause     ContractClause @relation(fields: [contractClauseId], references: [id], onDelete: Cascade)
+  missingActor       Boolean        @default(false) @map("missing_actor")
+  missingDeadline    Boolean        @default(false) @map("missing_deadline")
+  missingConsequence Boolean        @default(false) @map("missing_consequence")
+  missingNotice      Boolean        @default(false) @map("missing_notice")
+  ambiguousLanguage  Boolean        @default(false) @map("ambiguous_language")
+  aiFlag             Boolean        @default(false) @map("ai_flag")
+  errorCodes         Json?          @map("error_codes")
+  validatedByUserId  String?        @map("validated_by_user_id")
+  validatedBy        User?          @relation("ClauseValidationValidator", fields: [validatedByUserId], references: [id], onDelete: SetNull)
+  createdAt          DateTime       @default(now()) @map("created_at")
+
+  @@index([contractClauseId, createdAt(sort: Desc)])
+  @@map("clause_validations")
 }
 
 /// Issued contract / instrument numbers for traceability (promise, DS, brokerage, offer, etc.).
@@ -31835,6 +32001,7 @@ model LecipmSdTransaction {
   title               String?                 @db.VarChar(512)
 
   openedAt            DateTime                @default(now()) @map("opened_at")
+  brokerSnapshot      Json?                   @map("broker_snapshot")
   createdAt           DateTime                @default(now()) @map("created_at")
   updatedAt           DateTime                @updatedAt @map("updated_at")
 
@@ -31905,6 +32072,7 @@ model LecipmSdDocument {
   status              String              @default("DRAFT") @db.VarChar(24)
 
   transactionNumber   String              @map("transaction_number") @db.VarChar(48)
+  brokerSnapshot      Json?               @map("broker_snapshot")
   bodyHtml            String?             @map("body_html") @db.Text
   metadataJson        Json?               @map("metadata_json")
 
@@ -33160,6 +33328,71 @@ model CeoPolicy {
   @@map("ceo_policies")
 }
 
+model CeoDecisionMemory {
+  id                 String   @id @default(cuid())
+  decisionType       String   @db.VarChar(24) // INVEST | REDUCE | EXPERIMENT | SHIFT_FOCUS | HOLD
+  domain             String   @db.VarChar(24) // PRICING | MARKETING | DEALS | ESG | PRODUCT
+  contextFingerprint String   @db.VarChar(128)
+  payloadJson        Json?    @map("payload_json")
+  reasoning          String?  @db.Text
+  confidence         Float?
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  outcomes CeoDecisionOutcome[]
+
+  @@index([domain, contextFingerprint])
+  @@index([createdAt(sort: Desc)])
+  @@map("ceo_decision_memories")
+}
+
+model CeoDecisionOutcome {
+  id                String            @id @default(cuid())
+  memoryId          String            @map("memory_id")
+  memory            CeoDecisionMemory @relation(fields: [memoryId], references: [id], onDelete: Cascade)
+  outcomeWindowDays Int               @map("outcome_window_days")
+  metricsBeforeJson Json              @map("metrics_before_json")
+  metricsAfterJson  Json              @map("metrics_after_json")
+  impactScore       Float             @map("impact_score")
+  resultLabel       String            @db.VarChar(16) // POSITIVE | NEUTRAL | NEGATIVE
+  createdAt         DateTime          @default(now()) @map("created_at")
+
+  @@index([memoryId])
+  @@map("ceo_decision_outcomes")
+}
+
+model CeoStrategyPattern {
+  id                 String   @id @default(cuid())
+  patternKey         String   @unique @map("pattern_key") @db.VarChar(128)
+  domain             String   @db.VarChar(24)
+  contextFingerprint String   @map("context_fingerprint") @db.VarChar(128)
+  timesUsed          Int      @default(0) @map("times_used")
+  positiveCount      Int      @default(0) @map("positive_count")
+  neutralCount       Int      @default(0) @map("neutral_count")
+  negativeCount      Int      @default(0) @map("negative_count")
+  score              Float    @default(0)
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  @@index([domain, score(sort: Desc)])
+  @@map("ceo_strategy_patterns")
+}
+
+model CeoLongTermGoal {
+  id           String   @id @default(cuid())
+  name         String   @db.VarChar(256)
+  domain       String   @db.VarChar(24)
+  description  String?  @db.Text
+  priority     Int      @default(0)
+  active       Boolean  @default(true)
+  targetMetric String   @map("target_metric") @db.VarChar(64)
+  targetValue  Float    @map("target_value")
+  currentValue Float    @default(0) @map("current_value")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([active, priority(sort: Desc)])
+  @@map("ceo_long_term_goals")
+}
+
 /// Broker gamification — append-only points (quality-guarded via policy + dedupe keys in code).
 model BrokerPointsLedger {
   id        String   @id @default(cuid())
@@ -33633,6 +33866,7 @@ model AmfCapitalDeal {
 
   title                 String   @db.VarChar(512)
   status                String   @default("DRAFT") @db.VarChar(24)
+  brokerSnapshot        Json?    @map("broker_snapshot")
   /// PRIVATE_PLACEMENT | PROSPECTUS_EXEMPT — drives solicitation rules in services.
   solicitationMode      String   @default("PRIVATE_PLACEMENT") @map("solicitation_mode") @db.VarChar(40)
   /// When false, subscription endpoints reject broad marketing flows (policy hook).
@@ -34526,6 +34760,33 @@ model LecipmUserBehaviorSignal {
   @@index([ownerType, ownerId, createdAt])
   @@index([signalType, createdAt])
   @@map("lecipm_user_behavior_signals")
+}
+
+// -----------------------------------------------------------------------------
+// Pre-dispute risk engine — aggregated signals & prevention audit (no legal findings).
+// -----------------------------------------------------------------------------
+
+enum LecipmPreDisputeRiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+model LecipmPreDisputeRiskAssessment {
+  id            String                     @id @default(cuid())
+  subjectType   LecipmDisputeCaseEntityType @map("subject_type")
+  subjectId     String                     @map("subject_id") @db.VarChar(64)
+  riskScore     Int                        @map("risk_score")
+  riskLevel     LecipmPreDisputeRiskLevel  @map("risk_level")
+  signalsJson   Json                       @map("signals_json")
+  explainJson   Json                       @map("explain_json")
+  actionsJson   Json?                      @map("actions_json")
+  engineVersion String                     @default("v1") @map("engine_version") @db.VarChar(16)
+  createdAt     DateTime                   @default(now()) @map("created_at")
+
+  @@index([subjectType, subjectId, createdAt(sort: Desc)])
+  @@map("lecipm_pre_dispute_risk_assessments")
 }
 
 // -----------------------------------------------------------------------------
