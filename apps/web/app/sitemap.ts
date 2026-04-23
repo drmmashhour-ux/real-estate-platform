@@ -2,7 +2,8 @@ import type { MetadataRoute } from "next";
 import { ListingStatus } from "@prisma/client";
 import { getCountryBySlug, isLocaleAllowedForCountry, ROUTED_COUNTRY_SLUGS } from "@/config/countries";
 import { BLOG_POSTS } from "@/lib/content/blog-posts";
-import { CITY_SLUGS } from "@/lib/geo/city-search";
+import { CITY_SLUGS, type CitySlug } from "@/lib/geo/city-search";
+import { listNeighborhoodSlugs } from "@/src/modules/demand-engine/neighborhoodRegistry";
 import { GROWTH_CITY_SLUGS } from "@/lib/growth/geo-slugs";
 import { listDistinctCitiesWithData } from "@/lib/market/data";
 import { cityToSlug } from "@/lib/market/slug";
@@ -168,6 +169,28 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         changeFrequency: "weekly",
         priority: 0.72,
       });
+      entries.push(
+        {
+          url: `${base}${withLocaleCountryPrefix(`/city/${slug}/brokers`, loc, country)}`,
+          lastModified: now,
+          changeFrequency: "weekly",
+          priority: 0.71,
+        },
+        {
+          url: `${base}${withLocaleCountryPrefix(`/city/${slug}/rentals`, loc, country)}`,
+          lastModified: now,
+          changeFrequency: "weekly",
+          priority: 0.71,
+        }
+      );
+      for (const area of listNeighborhoodSlugs(slug as CitySlug)) {
+        entries.push({
+          url: `${base}${withLocaleCountryPrefix(`/city/${slug}/n/${area}`, loc, country)}`,
+          lastModified: now,
+          changeFrequency: "weekly",
+          priority: 0.7,
+        });
+      }
     }
   });
 

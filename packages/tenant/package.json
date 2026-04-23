@@ -1,0 +1,23 @@
+{
+  "name": "@repo/tenant",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Tenant resolution, scoping helpers, and permissions (LECIPM multi-tenant foundation).",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^6",
+    "@repo/db": "workspace:*"
+  },
+  "peerDependencies": {
+    "next": ">=14",
+    "typescript": ">=5"
+  },
+  "devDependencies": {
+    "next": "16.1.6",
+    "typescript": "^5.9.3"
+  }
+}

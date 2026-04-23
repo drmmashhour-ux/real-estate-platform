@@ -22,6 +22,7 @@ function timelineWeeksFromReadiness(band: string): number {
       return 8;
     default:
       return 14;
+  }
 }
 
 function priorityHubsFromIntegration(integration: LaunchIntegrationSnapshot): HubType[] {

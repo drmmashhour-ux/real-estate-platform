@@ -11,11 +11,14 @@ export function MarketingHubClient({
   videosHref,
   calendarHref,
   autonomousMarketingHref,
+  aiContentHref,
 }: {
   initial: MarketingHubDashboardVm;
   videosHref?: string;
   calendarHref?: string;
   autonomousMarketingHref?: string;
+  /** AI ideas / scripts / daily plan (structured generator) */
+  aiContentHref?: string;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
@@ -36,6 +39,26 @@ export function MarketingHubClient({
 
   return (
     <div className="space-y-10">
+      {aiContentHref ? (
+        <section className="rounded-2xl border border-amber-700/35 bg-amber-950/15 p-5">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold text-amber-100">AI Content Generator</h2>
+              <p className="mt-1 max-w-xl text-xs text-zinc-500">
+                Video ideas, short-form scripts, captions, and a 1–3 post daily plan — export-ready copy that plugs into
+                the calendar and autonomous engine.
+              </p>
+            </div>
+            <Link
+              href={aiContentHref}
+              className="rounded-lg border border-amber-500/50 bg-amber-950/35 px-4 py-2 text-sm font-medium text-amber-100 hover:border-amber-400 hover:bg-amber-950/55"
+            >
+              Open generator →
+            </Link>
+          </div>
+        </section>
+      ) : null}
+
       {autonomousMarketingHref ? (
         <section className="rounded-2xl border border-fuchsia-700/35 bg-fuchsia-950/20 p-5">
           <div className="flex flex-wrap items-start justify-between gap-3">

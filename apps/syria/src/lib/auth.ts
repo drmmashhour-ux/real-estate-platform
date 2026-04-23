@@ -14,13 +14,19 @@ export async function getSessionUser() {
 
 export async function requireSessionUser(): Promise<SyriaAppUser> {
   const u = await getSessionUser();
-  if (!u) redirect("/login");
+  if (!u) {
+    redirect({ href: "/login", locale: "ar" });
+    throw new Error("unauthorized");
+  }
   return u;
 }
 
 export async function requireAdmin() {
   const u = await requireSessionUser();
-  if (u.role !== "ADMIN") redirect("/");
+  if (u.role !== "ADMIN") {
+    redirect({ href: "/", locale: "ar" });
+    throw new Error("forbidden");
+  }
   return u;
 }
 

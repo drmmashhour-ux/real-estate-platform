@@ -104,7 +104,7 @@ export async function persistAutonomyPreview(propertyId: string, ownerUserId: st
         actionType: p.actionType,
         autonomyMode: mode as SyriaAutonomyMode,
         explanation: p.explanation,
-        payload: p.payload,
+        payload: p.payload as any,
       })),
     });
   });

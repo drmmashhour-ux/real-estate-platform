@@ -27,6 +27,9 @@ import { PLATFORM_CARREFOUR_NAME, platformCarrefourGoldGradientClass } from "@/l
 import { buildCityInternalLinks } from "@/src/modules/demand-engine/internalLinking";
 import { getListingTransactionFlagsForListings } from "@/lib/fsbo/listing-transaction-flag";
 import { ListingTransactionFlag } from "@/components/listings/ListingTransactionFlag";
+import { SeoCityContentSections } from "@/modules/seo-city/components/SeoCityContentSections";
+import { SeoCityTracker } from "@/modules/seo-city/components/SeoCityTracker";
+import { generateSeoCityModel, metadataForSeoModel } from "@/modules/seo-city/seo-city-generator.service";
 
 export const revalidate = 120;
 
@@ -34,17 +37,20 @@ export function generateStaticParams() {
   return CITY_SLUGS.map((city) => ({ city }));
 }
 
-type PageProps = { params: Promise<{ city: string }> };
+type PageProps = { params: Promise<{ city: string; locale: string; country: string }> };
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { city: raw } = await params;
+  const { city: raw, locale, country } = await params;
   const slug = parseCitySlugParam(raw);
   if (!slug) return { title: "City" };
-  const c = getCityPageConfig(slug);
+  const model = await generateSeoCityModel("CITY", slug);
+  const meta = metadataForSeoModel(model, `/${locale}/${country}/city/${slug}`);
   return {
-    title: c.metaTitle,
-    description: c.metaDescription,
-    openGraph: { title: c.metaTitle, description: c.metaDescription },
+    title: meta.title,
+    description: meta.description,
+    keywords: meta.keywords,
+    openGraph: meta.openGraph,
+    alternates: meta.alternates,
   };
 }
 
@@ -79,7 +85,7 @@ function ListingCardImage({
 }
 
 export default async function CityPage({ params }: PageProps) {
-  const { city: raw } = await params;
+  const { city: raw, locale, country } = await params;
   const slug = parseCitySlugParam(raw);
   if (!slug) notFound();
 
@@ -89,7 +95,8 @@ export default async function CityPage({ params }: PageProps) {
   const config = getCityPageConfig(slug);
   const q = config.searchQuery;
 
-  const [bnhubResult, fsboRows, insights, recommendedInCity, whyInvest] = await Promise.all([
+  const [seoModel, bnhubResult, fsboRows, insights, recommendedInCity, whyInvest] = await Promise.all([
+    generateSeoCityModel("CITY", slug),
     searchListingsPaginated({ city: q, page: 1, limit: 12, sort: "newest" }),
     prisma.fsboListing.findMany({
       where: {
@@ -111,7 +118,7 @@ export default async function CityPage({ params }: PageProps) {
     getCityInsights(slug),
     getStaysRecommendedInCity(slug, 6),
     Promise.resolve(getWhyInvestContent(slug)),
-  ]);
+  ] as const);
 
   const mapListings: MapListing[] = bnhubResult.listings
     .filter((l) => hasValidCoordinates(l))
@@ -136,6 +143,7 @@ export default async function CityPage({ params }: PageProps) {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
+      <SeoCityTracker path={`/${locale}/${country}/city/${slug}`} />
       <section className="relative flex min-h-[420px] items-end sm:min-h-[480px]">
         <Image
           src={config.heroImage}
@@ -329,6 +337,13 @@ export default async function CityPage({ params }: PageProps) {
             </span>
           ))}
         </nav>
+
+        <SeoCityContentSections
+          model={seoModel}
+          browseFsboHref={fsboBrowse}
+          bnHubHref={bnhubBrowse}
+          cityLabel={labelForSlug(slug)}
+        />
       </div>
     </div>
   );

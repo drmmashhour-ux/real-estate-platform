@@ -17,6 +17,17 @@ This folder contains **investor-grade** materials for **LECIPM Manager**, positi
 | [go-to-market-summary.md](./go-to-market-summary.md) | One-page GTM |
 | [brand-guidance.md](./brand-guidance.md) | Visual standards for slides and PDFs |
 
+### v2 — full platform (multi-hub OS)
+
+| File | Description |
+|------|-------------|
+| [pitch-deck-v2.md](./pitch-deck-v2.md) | 12-slide **LECIPM** operating-system narrative (luxury, web + mobile, governance, revenue) |
+| [founder-script-v2.md](./founder-script-v2.md) | 30s / 90s / 3m script + **five closing lines** |
+| [investor-one-pager-v2.md](./investor-one-pager-v2.md) | One-pager aligned to v2 positioning |
+| [investor-faq-v2.md](./investor-faq-v2.md) | FAQ for **operating system** and multi-hub story |
+
+*Use **v2** for “**LECIPM** as luxury real estate **OS**.” Use the **Manager**-labelled v1 files for **stays-first** or historical leaves.*
+
 ## Consistency rules
 
 1. **Naming:** Use **LECIPM Manager** everywhere in this package (not mixed with other product names unless explicitly cross-referencing the broader platform).

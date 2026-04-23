@@ -3,6 +3,9 @@ import { MarketingHubClient } from "@/components/marketing/MarketingHubClient";
 import { getMarketingHubDashboardPayload } from "@/modules/marketing/marketing-dashboard.service";
 import { MarketingPanelClient } from "./marketing-panel-client";
 import { engineFlags } from "@/config/feature-flags";
+import { requireAuthenticatedUser } from "@/lib/auth/require-session";
+import { prisma } from "@/lib/db";
+import { canAccessAdminDashboard, resolveSeniorHubAccess } from "@/lib/senior-dashboard/role";
 
 export const dynamic = "force-dynamic";
 
@@ -13,10 +16,17 @@ export default async function DashboardMarketingPage({
 }) {
   const { locale, country } = await params;
   const studioHref = `/${locale}/${country}/dashboard/marketing-studio`;
+  const contentStudioHref = `/${locale}/${country}/dashboard/admin/marketing/studio`;
   const seoHref = `/${locale}/${country}/dashboard/marketing/seo`;
   const videosHref = `/${locale}/${country}/dashboard/marketing/videos`;
   const calendarHref = `/${locale}/${country}/dashboard/marketing/calendar`;
   const autonomousMarketingHref = `/${locale}/${country}/dashboard/admin/marketing/ai`;
+  const aiContentHref = `/${locale}/${country}/dashboard/marketing/ai-content`;
+
+  const { userId } = await requireAuthenticatedUser();
+  const u = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
+  const access = u ? await resolveSeniorHubAccess(userId, u.role) : null;
+  const canAdmin = access != null && canAccessAdminDashboard(access);
 
   const hub = await getMarketingHubDashboardPayload();
 
@@ -56,6 +66,14 @@ export default async function DashboardMarketingPage({
               Marketing Studio (visual editor) →
             </Link>
           ) : null}
+          {engineFlags.marketingStudioV1 && canAdmin ? (
+            <Link
+              href={contentStudioHref}
+              className="shrink-0 rounded-lg border border-amber-600/50 bg-amber-950/40 px-3 py-2 text-sm text-amber-200 hover:border-amber-500 hover:bg-amber-950/60"
+            >
+              Content + video studio (admin) →
+            </Link>
+          ) : null}
         </div>
       </div>
 
@@ -64,6 +82,7 @@ export default async function DashboardMarketingPage({
         videosHref={videosHref}
         calendarHref={calendarHref}
         autonomousMarketingHref={autonomousMarketingHref}
+        aiContentHref={aiContentHref}
       />
 
       <div className="border-t border-white/10 pt-8">

@@ -6,11 +6,10 @@
     "schema": "apps/web/prisma/schema.prisma"
   },
   "packageManager": "pnpm@9.15.4",
-  "workspaces": [
+    "workspaces": [
     "apps/*",
     "packages/*",
-    "services/*",
-    "modules/*"
+    "services/*"
   ],
   "scripts": {
     "preinstall": "node -e \"console.log('Using pnpm version:', process.env.npm_config_user_agent)\"",
@@ -27,7 +26,7 @@
     "dev:ai-manager": "pnpm --filter @lecipm/ai-manager dev",
     "dev:ai-operator": "pnpm --filter @lecipm/ai-operator dev",
     "build": "pnpm -r --if-present run build",
-    "build:ci": "pnpm build:web && pnpm --filter @lecipm/admin run build && pnpm -r --filter './modules/*' --if-present run build && pnpm -r --filter './packages/*' --if-present run build",
+    "build:ci": "pnpm build:web && pnpm --filter @lecipm/admin run build && pnpm -r --filter './packages/*' --if-present run build",
     "build:web": "pnpm --filter @lecipm/web build",
     "start": "pnpm --filter @lecipm/web start",
     "lint": "eslint .",

@@ -4,16 +4,25 @@ export type UtmTriplet = {
   utmSource: string | null;
   utmMedium: string | null;
   utmCampaign: string | null;
+  source?: string | null;
+  medium?: string | null;
+  campaign?: string | null;
 };
 
 export function parseUtmFromFormData(formData: FormData): UtmTriplet {
   const s = String(formData.get("utm_source") ?? "").trim();
   const m = String(formData.get("utm_medium") ?? "").trim();
   const c = String(formData.get("utm_campaign") ?? "").trim();
+  const source = s || null;
+  const medium = m || null;
+  const campaign = c || null;
   return {
-    utmSource: s || null,
-    utmMedium: m || null,
-    utmCampaign: c || null,
+    utmSource: source,
+    utmMedium: medium,
+    utmCampaign: campaign,
+    source,
+    medium,
+    campaign,
   };
 }
 
@@ -24,9 +33,15 @@ export function parseUtmFromSearchParams(searchParams: Record<string, string | s
     const s = typeof raw === "string" ? raw.trim() : "";
     return s || null;
   };
+  const source = g("utm_source");
+  const medium = g("utm_medium");
+  const campaign = g("utm_campaign");
   return {
-    utmSource: g("utm_source"),
-    utmMedium: g("utm_medium"),
-    utmCampaign: g("utm_campaign"),
+    utmSource: source,
+    utmMedium: medium,
+    utmCampaign: campaign,
+    source,
+    medium,
+    campaign,
   };
 }

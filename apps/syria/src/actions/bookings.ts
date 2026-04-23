@@ -126,7 +126,7 @@ export async function createBnhubBooking(formData: FormData): Promise<void> {
     "/bnhub/stays",
     "/admin/bookings",
   );
-  redirect("/dashboard/bookings");
+  redirect({ href: "/dashboard/bookings", locale: "ar" });
 }
 
 export async function markBookingCheckedIn(formData: FormData): Promise<void> {

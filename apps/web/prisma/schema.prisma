@@ -317,6 +317,7 @@ model User {
   bnhubGuestRatingAverage              Float?                                @map("bnhub_guest_rating_average")
   createdAt                            DateTime                              @default(now())
   updatedAt                            DateTime                              @updatedAt
+  privacyConsentRecords                PrivacyConsentRecord[]
   launchEvents                         LaunchEvent[]                         @relation("LaunchEvents")
   properties                           Property[]
   shortTermListings                    ShortTermListing[]
@@ -32023,4 +32024,203 @@ model VectorDocument {
 
   @@index([sourceKey])
   @@map("vector_documents")
+}
+
+/**
+ * LECIPM Privacy + Consent + Compliance System
+ * Aligned with Québec (Law 25) and OACIQ standards.
+ */
+
+enum PrivacyPurpose {
+  TRANSACTION_EXECUTION
+  IDENTITY_VERIFICATION
+  DISCLOSURE_TO_BROKERS
+  DISCLOSURE_TO_INFORMATION_DISSEMINATION_SERVICE
+  DISCLOSURE_TO_BUYER_BROKER
+  DISCLOSURE_TO_UNREPRESENTED_BUYER
+  MARKETING
+  COMMERCIAL_PROSPECTING
+  SECONDARY_USE
+  LOCKBOX_CODE_DISCLOSURE
+  ALARM_CODE_DISCLOSURE
+  PHONE_DISCLOSURE_FOR_VISIT
+  SOLD_PRICE_DISCLOSURE_TO_LICENSE_HOLDERS
+}
+
+enum PrivacySensitivityLevel {
+  PUBLIC
+  INTERNAL
+  CONFIDENTIAL
+  RESTRICTED
+  HIGHLY_SENSITIVE
+}
+
+enum PrivacyDataCategory {
+  CONTACT_INFORMATION
+  IDENTITY_INFORMATION
+  FINANCIAL_INFORMATION
+  LEGAL_AUTHORITY_INFORMATION
+  PROPERTY_LINKED_SENSITIVE_INFORMATION
+  COMMUNICATION_MEDIA
+}
+
+enum ConfidentialityIncidentCategory {
+  UNAUTHORIZED_ACCESS
+  UNAUTHORIZED_DISCLOSURE
+  LOSS_OF_DATA
+  THEFT_OF_DATA
+  SECURITY_BREACH
+  HUMAN_ERROR
+  MALICIOUS_ACT
+}
+
+enum ConfidentialityIncidentRiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+model PrivacyConsentRecord {
+  id             String         @id @default(cuid())
+  userId         String         @map("user_id")
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactionId  String?        @map("transaction_id")
+  purpose        PrivacyPurpose
+  scopeText      String         @map("scope_text") @db.Text
+  granted        Boolean        @default(false)
+  explicit       Boolean        @default(false)
+  written        Boolean        @default(false)
+  grantedAt      DateTime       @default(now()) @map("granted_at")
+  expiresAt      DateTime?      @map("expires_at")
+  revokedAt      DateTime?      @map("revoked_at")
+  legalBasisText String         @map("legal_basis_text") @db.Text
+  evidenceRef    String?        @map("evidence_ref")
+  createdBy      String?        @map("created_by")
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([transactionId])
+  @@map("privacy_consent_records")
+}
+
+model PrivacyOfficer {
+  id                  String   @id @default(cuid())
+  organizationId      String?  @map("organization_id")
+  name                String
+  title               String
+  email               String
+  phone               String?
+  published           Boolean  @default(false)
+  publishedAt         DateTime? @map("published_at")
+  delegatedFromUserId String?  @map("delegated_from_user_id")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  @@map("privacy_officers")
+}
+
+model PrivacyTransferLog {
+  id             String   @id @default(cuid())
+  transactionId  String?  @map("transaction_id")
+  fromDepartment String   @map("from_department")
+  toDepartment   String   @map("to_department")
+  initiatedBy    String   @map("initiated_by")
+  approvedBy     String?  @map("approved_by")
+  purpose        String   @db.Text
+  fieldsTransferred Json  @map("fields_transferred")
+  redacted       Boolean  @default(true)
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@index([transactionId])
+  @@map("privacy_transfer_logs")
+}
+
+model PrivacyRetentionPolicy {
+  id              String              @id @default(cuid())
+  dataCategory    PrivacyDataCategory @map("data_category")
+  retentionBasis  String              @map("retention_basis") @db.Text
+  retentionPeriod Int                 @map("retention_period") // in days
+  createdAt       DateTime            @default(now()) @map("created_at")
+  updatedAt       DateTime            @updatedAt @map("updated_at")
+
+  @@map("privacy_retention_policies")
+}
+
+model PrivacyDestructionJob {
+  id              String           @id @default(cuid())
+  scheduledFor    DateTime         @map("scheduled_for")
+  status          String           @default("PENDING") // PENDING, RUNNING, COMPLETED, FAILED
+  dataCategory    PrivacyDataCategory? @map("data_category")
+  legalHold       Boolean          @default(false) @map("legal_hold")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+
+  @@map("privacy_destruction_jobs")
+}
+
+model PrivacyDestructionLog {
+  id             String   @id @default(cuid())
+  jobId          String?  @map("job_id")
+  entityType     String   @map("entity_type")
+  entityId       String   @map("entity_id")
+  destroyedBy    String   @map("destroyed_by")
+  destructionMethod String @map("destruction_method")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@map("privacy_destruction_logs")
+}
+
+model ConfidentialityIncident {
+  id                    String                          @id @default(cuid())
+  organizationId        String?                         @map("organization_id")
+  transactionId         String?                         @map("transaction_id")
+  category              ConfidentialityIncidentCategory
+  description           String                          @db.Text
+  personalInfoTypes     Json                            @map("personal_info_types")
+  discoveredAt          DateTime                        @map("discovered_at")
+  riskLevel             ConfidentialityIncidentRiskLevel @map("risk_level")
+  riskOfSeriousInjury   Boolean                         @default(false) @map("risk_of_serious_injury")
+  notifiedCAIAt         DateTime?                       @map("notified_cai_at")
+  notifiedIndividualsAt DateTime?                       @map("notified_individuals_at")
+  containedAt           DateTime?                       @map("contained_at")
+  closedAt              DateTime?                       @map("closed_at")
+  actionsTaken          Json                            @map("actions_taken")
+  createdAt             DateTime                        @default(now()) @map("created_at")
+  updatedAt             DateTime                        @updatedAt @map("updated_at")
+
+  @@map("confidentiality_incidents")
+}
+
+model PrivacyComplaint {
+  id            String   @id @default(cuid())
+  submittedBy   String   @map("submitted_by")
+  transactionId String?  @map("transaction_id")
+  category      String
+  description   String   @db.Text
+  status        String   @default("PENDING") // PENDING, INVESTIGATING, RESOLVED
+  assignedTo    String?  @map("assigned_to")
+  responseDueAt DateTime @map("response_due_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+  resolvedAt    DateTime? @map("resolved_at")
+
+  @@map("privacy_complaints")
+}
+
+model PrivacyAuditLog {
+  id             String   @id @default(cuid())
+  userId         String?  @map("user_id")
+  action         String
+  entityType     String?  @map("entity_type")
+  entityId       String?  @map("entity_id")
+  purpose        String?  @db.Text
+  metadata       Json?
+  ipAddress      String?  @map("ip_address")
+  userAgent      String?  @map("user_agent")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@map("privacy_audit_logs")
 }
