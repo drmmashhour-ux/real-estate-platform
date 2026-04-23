@@ -1,5 +1,7 @@
 import { getRevenueDashboardData } from "@/modules/dashboard/services/revenue-dashboard.service";
 
+import { getRevenuePredictorAdminSummary } from "@/modules/revenue-predictor/revenue-predictor.service";
+
 import type { AdminSuperDashboardPayload } from "./admin-intelligence.types";
 import { buildAdminAiInsights } from "./admin-ai-insights.service";
 import { detectAdminAnomaliesFromRefs } from "./admin-anomaly.service";
@@ -48,5 +50,6 @@ export async function getAdminSuperDashboardPayload(): Promise<AdminSuperDashboa
     insights,
     anomalies,
     recentActivity: activity,
+    revenuePredictor: getRevenuePredictorAdminSummary(),
   };
 }

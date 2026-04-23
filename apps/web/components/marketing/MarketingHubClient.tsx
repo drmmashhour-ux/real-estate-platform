@@ -9,9 +9,13 @@ import type { MarketingHubDashboardVm } from "@/modules/marketing/marketing.type
 export function MarketingHubClient({
   initial,
   videosHref,
+  calendarHref,
+  autonomousMarketingHref,
 }: {
   initial: MarketingHubDashboardVm;
   videosHref?: string;
+  calendarHref?: string;
+  autonomousMarketingHref?: string;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
@@ -32,6 +36,46 @@ export function MarketingHubClient({
 
   return (
     <div className="space-y-10">
+      {autonomousMarketingHref ? (
+        <section className="rounded-2xl border border-fuchsia-700/35 bg-fuchsia-950/20 p-5">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold text-white">Autonomous Marketing Engine</h2>
+              <p className="mt-1 max-w-xl text-xs text-zinc-500">
+                Weekly AI plan, hook/script/caption packs, SAFE autopilot queue with approval — ties
+                calendar performance into the next plan.
+              </p>
+            </div>
+            <Link
+              href={autonomousMarketingHref}
+              className="rounded-lg border border-fuchsia-500/50 bg-fuchsia-950/35 px-4 py-2 text-sm font-medium text-fuchsia-100 hover:border-fuchsia-400 hover:bg-fuchsia-950/55"
+            >
+              Open engine →
+            </Link>
+          </div>
+        </section>
+      ) : null}
+
+      {calendarHref ? (
+        <section className="rounded-2xl border border-violet-600/35 bg-violet-950/25 p-5">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold text-white">Content calendar</h2>
+              <p className="mt-1 max-w-xl text-xs text-zinc-500">
+                Cross-platform posts (TikTok, IG, YouTube, LinkedIn), statuses, hooks, and performance —
+                drag items between days and sync to mobile admin after you publish from the browser.
+              </p>
+            </div>
+            <Link
+              href={calendarHref}
+              className="rounded-lg border border-violet-500/50 bg-violet-950/35 px-4 py-2 text-sm font-medium text-violet-100 hover:border-violet-400 hover:bg-violet-950/55"
+            >
+              Open calendar →
+            </Link>
+          </div>
+        </section>
+      ) : null}
+
       {videosHref ? (
         <section className="rounded-2xl border border-amber-900/40 bg-gradient-to-br from-black via-zinc-950 to-black p-5">
           <div className="flex flex-wrap items-start justify-between gap-3">

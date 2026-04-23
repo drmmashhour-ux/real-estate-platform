@@ -24,7 +24,9 @@
       "@ui/*": ["../../packages/ui/src/*"],
       "@utils/*": ["../../packages/utils/src/*"],
       "@shared-types/*": ["../../packages/types/src/*"],
-      "@api/*": ["../../packages/api-client/src/*"]
+      "@api/*": ["../../packages/api-client/src/*"],
+      "@repo/db": ["../../packages/db/src/index.ts"],
+      "@repo/tenant": ["../../packages/tenant/src/index.ts"]
     }
   },
   "include": [

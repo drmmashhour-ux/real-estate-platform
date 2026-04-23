@@ -15,6 +15,8 @@ export default async function DashboardMarketingPage({
   const studioHref = `/${locale}/${country}/dashboard/marketing-studio`;
   const seoHref = `/${locale}/${country}/dashboard/marketing/seo`;
   const videosHref = `/${locale}/${country}/dashboard/marketing/videos`;
+  const calendarHref = `/${locale}/${country}/dashboard/marketing/calendar`;
+  const autonomousMarketingHref = `/${locale}/${country}/dashboard/admin/marketing/ai`;
 
   const hub = await getMarketingHubDashboardPayload();
 
@@ -28,6 +30,12 @@ export default async function DashboardMarketingPage({
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Link
+            href={calendarHref}
+            className="shrink-0 rounded-lg border border-violet-600/50 bg-violet-950/40 px-3 py-2 text-sm text-violet-100 hover:border-violet-400 hover:bg-violet-950/60"
+          >
+            Content Calendar →
+          </Link>
           <Link
             href={videosHref}
             className="shrink-0 rounded-lg border border-amber-600/50 bg-amber-950/40 px-3 py-2 text-sm text-amber-100 hover:border-amber-400 hover:bg-amber-950/60"
@@ -51,7 +59,12 @@ export default async function DashboardMarketingPage({
         </div>
       </div>
 
-      <MarketingHubClient initial={hub} videosHref={videosHref} />
+      <MarketingHubClient
+        initial={hub}
+        videosHref={videosHref}
+        calendarHref={calendarHref}
+        autonomousMarketingHref={autonomousMarketingHref}
+      />
 
       <div className="border-t border-white/10 pt-8">
         <h2 className="text-lg font-semibold text-zinc-300">Legacy copy pack</h2>

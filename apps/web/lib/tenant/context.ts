@@ -1,19 +1,9 @@
-import { headers } from "next/headers";
+export { getTenantContext, getTenantContextOptional } from "@repo/tenant";
 
-import { resolveTenantFromHost } from "@/lib/tenant/resolve";
-
-/**
- * Optional tenant context — use for root layout / marketing so the main domain never throws.
- */
-export async function getTenantContextOptional() {
-  const h = await headers();
-  const host = h.get("host") ?? "";
-  if (!host) return null;
-  return resolveTenantFromHost(host);
-}
+import { getTenantContextOptional } from "@repo/tenant";
 
 /**
- * Throws when no tenant resolved — use only on routes that must run under a white-label host.
+ * Throws when no tenant resolved — legacy error token for existing call sites.
  */
 export async function requireTenantContext() {
   const tenant = await getTenantContextOptional();

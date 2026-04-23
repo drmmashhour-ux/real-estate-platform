@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
 
 import type { AcquisitionContactVm } from "@/modules/acquisition/acquisition.types";
@@ -150,6 +151,11 @@ export function AcquisitionCallAssistClient({
           <h1 className="mt-2 text-2xl font-semibold text-white">Script assist</h1>
           <p className="mt-2 max-w-xl text-sm text-zinc-500">
             Premium, short lines — stay factual; show the product you can demonstrate today.
+          </p>
+          <p className="mt-3 text-xs text-emerald-400/90">
+            <Link href="../call-assistant" className="underline hover:text-emerald-300">
+              AI call assistant (live suggestions & objections)
+            </Link>
           </p>
           <p className="mt-3 text-xs text-amber-200/80">{script.rep_reminder}</p>
           <p className="mt-2 font-mono text-[11px] text-zinc-500">

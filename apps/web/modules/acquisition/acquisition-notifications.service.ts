@@ -6,7 +6,8 @@ export type AcquisitionNotificationKind =
   | "acquisition_onboarding_complete"
   | "sales_script_conversion"
   | "investor_interest_call"
-  | "broker_demo_booked_call";
+  | "broker_demo_booked_call"
+  | "call_assistant_followup_scheduled";
 
 export async function notifyAcquisitionAdmins(
   kind: AcquisitionNotificationKind,

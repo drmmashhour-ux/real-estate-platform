@@ -1,0 +1,1 @@
+See repository root [`docs/marketing/autonomous-engine.md`](../../../../docs/marketing/autonomous-engine.md) for the full Autonomous Marketing Engine documentation (autonomy modes, planner, optimizer, approvals, APIs).

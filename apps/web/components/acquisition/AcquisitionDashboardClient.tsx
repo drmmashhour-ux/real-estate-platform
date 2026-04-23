@@ -102,6 +102,18 @@ export function AcquisitionDashboardClient({
         >
           Call script assist
         </a>
+        <a
+          href={`${localeCountryPrefix}/dashboard/acquisition/call-assistant`}
+          className="text-sm text-emerald-200/90 underline-offset-4 hover:underline"
+        >
+          AI call assistant
+        </a>
+        <a
+          href={`${localeCountryPrefix}/dashboard/call-live`}
+          className="text-sm text-sky-200/90 underline-offset-4 hover:underline"
+        >
+          Call live (desk)
+        </a>
       </div>
       <section className="rounded-2xl border border-emerald-900/40 bg-zinc-950/60 p-6">
         <h2 className="text-lg font-semibold text-white">Early traction metrics</h2>

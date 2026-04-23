@@ -145,6 +145,8 @@
     "@lecipm/api-client": "workspace:*",
     "@lecipm/platform-core": "workspace:*",
     "@lecipm/ui": "workspace:*",
+    "@repo/db": "workspace:*",
+    "@repo/tenant": "workspace:*",
     "@prisma/client": "^6",
     "@react-google-maps/api": "^2.20.8",
     "@react-pdf/renderer": "^4.3.2",

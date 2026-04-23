@@ -1,171 +1,240 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import type { GrowthBrainRecommendation, GrowthBrainApproval, GrowthBrainOutcomeEvent } from "@prisma/client";
+import Link from "next/link";
+import { useCallback, useMemo, useState } from "react";
+
+import { GrowthAllocationCard } from "@/modules/growth-brain/components/GrowthAllocationCard";
+import { GrowthAlertList } from "@/modules/growth-brain/components/GrowthAlertList";
+import { GrowthApprovalQueue } from "@/modules/growth-brain/components/GrowthApprovalQueue";
+import { GrowthBrainSummaryBar } from "@/modules/growth-brain/components/GrowthBrainSummaryBar";
+import { GrowthOpportunityCard } from "@/modules/growth-brain/components/GrowthOpportunityCard";
+import { GrowthPatternCard } from "@/modules/growth-brain/components/GrowthPatternCard";
+import { GrowthRecommendationCard } from "@/modules/growth-brain/components/GrowthRecommendationCard";
+import type { GrowthAutonomyLevel } from "@/modules/growth-brain/growth-brain.types";
+import {
+  explainTopOpportunity,
+  runGrowthBrainSnapshot,
+  setGrowthAutonomy,
+  updateApprovalItem,
+} from "@/modules/growth-brain/growth-brain.service";
 
 type Props = {
-  initialMode: string;
+  adminBase: string;
+  marketingHubHref: string;
 };
 
-export function GrowthBrainDashboardClient({ initialMode }: Props) {
-  const [loading, setLoading] = useState(true);
-  const [runLoading, setRunLoading] = useState(false);
-  const [recs, setRecs] = useState<GrowthBrainRecommendation[]>([]);
-  const [pending, setPending] = useState<(GrowthBrainApproval & { recommendation: GrowthBrainRecommendation })[]>([]);
-  const [outcomes, setOutcomes] = useState<
-    (GrowthBrainOutcomeEvent & { recommendation: { title: string; domain: string; priority: string } })[]
-  >([]);
-  const [msg, setMsg] = useState<string | null>(null);
+export function GrowthBrainDashboardClient({ adminBase, marketingHubHref }: Props) {
+  const [tick, setTick] = useState(0);
+  const refresh = useCallback(() => setTick((x) => x + 1), []);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/admin/growth-brain/recommendations", { cache: "no-store" });
-      const data = (await res.json()) as {
-        recommendations?: GrowthBrainRecommendation[];
-        pendingApprovals?: (GrowthBrainApproval & { recommendation: GrowthBrainRecommendation })[];
-        recentOutcomes?: (GrowthBrainOutcomeEvent & {
-          recommendation: { title: string; domain: string; priority: string };
-        })[];
-      };
-      setRecs(data.recommendations ?? []);
-      setPending(data.pendingApprovals ?? []);
-      setOutcomes(data.recentOutcomes ?? []);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const snapshot = useMemo(() => runGrowthBrainSnapshot(), [tick]);
+  const explain = useMemo(() => explainTopOpportunity(snapshot), [snapshot]);
 
-  useEffect(() => {
-    void load();
-  }, [load]);
-
-  async function runBrain() {
-    setRunLoading(true);
-    setMsg(null);
-    try {
-      const res = await fetch("/api/admin/growth-brain/run", { method: "POST" });
-      const j = (await res.json()) as { ok?: boolean; error?: string; created?: number };
-      if (!res.ok) setMsg(j.error ?? "Run failed");
-      else setMsg(`Run complete — ${j.created ?? 0} recommendations upserted.`);
-      await load();
-    } finally {
-      setRunLoading(false);
-    }
-  }
-
-  async function patchRec(id: string, action: "view" | "dismiss" | "approve_queue" | "reject") {
-    await fetch(`/api/admin/growth-brain/recommendations/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action }),
-    });
-    await load();
-  }
-
-  const top = recs.slice(0, 24);
+  const safeActions = snapshot.actions.filter((a) => a.autoExecutable && !a.approvalRequired);
+  const approvalActions = snapshot.actions.filter((a) => a.approvalRequired);
 
   return (
-    <div className="space-y-10">
-      <section className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-800 bg-slate-900/50 p-4">
+    <div className="space-y-10 text-white">
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-xs text-slate-500">Automation mode (env)</p>
-          <p className="font-mono text-sm text-amber-200">{initialMode}</p>
-          <p className="mt-2 max-w-xl text-xs text-slate-500">
-            Side-effecting actions stay approval-first. Kill switch: <code className="text-slate-400">GROWTH_AUTONOMY_KILL_SWITCH=1</code>{" "}
-            or autonomy mode OFF.
+          <p className="text-sm text-zinc-500">
+            <Link href={`${adminBase}`} className="hover:text-zinc-300">
+              ← Admin
+            </Link>
+          </p>
+          <h1 className="mt-2 text-2xl font-bold tracking-tight">Growth AI Brain</h1>
+          <p className="mt-1 max-w-2xl text-sm text-zinc-500">
+            Decision-support layer: aggregates signals, ranks opportunities, proposes bounded actions,
+            and explains every recommendation. No autonomous spend or mass messaging — impactful moves
+            stay approval-gated and logged.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => void runBrain()}
-          disabled={runLoading}
-          className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500 disabled:opacity-50"
-        >
-          {runLoading ? "Running…" : "Run growth brain now"}
-        </button>
-      </section>
-      {msg ? <p className="text-sm text-emerald-400">{msg}</p> : null}
+        <div className="flex flex-wrap gap-2 text-sm">
+          <Link
+            href={marketingHubHref}
+            className="rounded-lg border border-fuchsia-500/40 px-3 py-2 text-fuchsia-100 hover:bg-fuchsia-950/40"
+          >
+            Marketing Hub
+          </Link>
+          <Link
+            href={`${marketingHubHref}/calendar`}
+            className="rounded-lg border border-violet-500/40 px-3 py-2 text-violet-100 hover:bg-violet-950/40"
+          >
+            Content Calendar
+          </Link>
+          <Link
+            href={`${adminBase}/marketing/ai`}
+            className="rounded-lg border border-amber-500/40 px-3 py-2 text-amber-100 hover:bg-amber-950/40"
+          >
+            Autonomous Marketing
+          </Link>
+          <Link
+            href={`${adminBase}/revenue-predictor`}
+            className="rounded-lg border border-emerald-500/40 px-3 py-2 text-emerald-100 hover:bg-emerald-950/40"
+          >
+            Revenue Predictor
+          </Link>
+          <Link
+            href={`${adminBase}/market-domination`}
+            className="rounded-lg border border-orange-500/40 px-3 py-2 text-orange-100 hover:bg-orange-950/40"
+          >
+            Market domination
+          </Link>
+          <Link
+            href={`${adminBase}/global`}
+            className="rounded-lg border border-cyan-500/40 px-3 py-2 text-cyan-100 hover:bg-cyan-950/40"
+          >
+            Global expansion
+          </Link>
+          <Link
+            href={`${adminBase}/ai-sales-manager`}
+            className="rounded-lg border border-sky-500/40 px-3 py-2 text-sky-100 hover:bg-sky-950/40"
+          >
+            AI Sales Manager
+          </Link>
+          <Link
+            href={`${adminBase}/growth-leads`}
+            className="rounded-lg border border-teal-500/40 px-3 py-2 text-teal-100 hover:bg-teal-950/40"
+          >
+            Lead routing
+          </Link>
+        </div>
+      </div>
 
-      {loading ? <p className="text-slate-500">Loading…</p> : null}
-
-      <section>
-        <h2 className="text-lg font-semibold text-slate-100">Top opportunities & actions</h2>
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
-          {top.map((r) => (
-            <article
-              key={r.id}
-              className="rounded-xl border border-slate-800 bg-slate-950/60 p-4 text-sm text-slate-300"
+      <section className="rounded-2xl border border-white/10 bg-zinc-950/40 p-5">
+        <h2 className="text-sm font-semibold text-zinc-300">Autonomy mode</h2>
+        <p className="mt-1 text-xs text-zinc-600">
+          ASSIST = suggestions only · SAFE_AUTOPILOT = low-risk automation · APPROVAL_REQUIRED = queue
+          gates · OFF = read-only mirror
+        </p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {(
+            [
+              "OFF",
+              "ASSIST",
+              "SAFE_AUTOPILOT",
+              "APPROVAL_REQUIRED",
+            ] as GrowthAutonomyLevel[]
+          ).map((level) => (
+            <button
+              key={level}
+              type="button"
+              onClick={() => {
+                setGrowthAutonomy(level);
+                refresh();
+              }}
+              className={`rounded-xl border px-4 py-2 text-sm font-medium ${
+                snapshot.autonomy === level
+                  ? "border-amber-400 bg-amber-500/20 text-amber-50"
+                  : "border-white/15 text-zinc-300 hover:bg-white/10"
+              }`}
             >
-              <div className="flex flex-wrap items-start justify-between gap-2">
-                <p className="font-medium text-slate-100">{r.title}</p>
-                <span
-                  className="rounded bg-slate-800 px-2 py-0.5 text-xs text-slate-400"
-                  title="domain · priority · model confidence"
-                >
-                  {r.domain} · {r.priority} · {(r.confidence * 100).toFixed(0)}% conf
-                </span>
-              </div>
-              <p className="mt-2 text-xs leading-relaxed text-slate-500">{r.reasoning}</p>
-              <p className="mt-2 text-slate-400">{r.suggestedAction}</p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  className="rounded border border-slate-700 px-2 py-1 text-xs text-slate-300"
-                  onClick={() => void patchRec(r.id, "view")}
-                >
-                  Mark viewed
-                </button>
-                <button
-                  type="button"
-                  className="rounded border border-amber-800/60 px-2 py-1 text-xs text-amber-200"
-                  onClick={() => void patchRec(r.id, "approve_queue")}
-                >
-                  Queue approval
-                </button>
-                <button
-                  type="button"
-                  className="rounded border border-slate-700 px-2 py-1 text-xs text-slate-400"
-                  onClick={() => void patchRec(r.id, "dismiss")}
-                >
-                  Dismiss
-                </button>
-              </div>
-            </article>
+              {level.replace(/_/g, " ")}
+            </button>
           ))}
         </div>
-        {top.length === 0 && !loading ? (
-          <p className="mt-4 text-sm text-slate-500">No active recommendations — run the brain or check migrations.</p>
-        ) : null}
+      </section>
+
+      <GrowthBrainSummaryBar snapshot={snapshot} />
+
+      {explain ? (
+        <section className="rounded-2xl border border-sky-500/25 bg-sky-950/15 p-5 text-sm">
+          <h2 className="text-sm font-semibold text-sky-100">Explainability — top opportunity</h2>
+          <p className="mt-2 font-medium text-white">{explain.headline}</p>
+          <p className="mt-2 text-zinc-400">{explain.prioritizationReason}</p>
+          <p className="mt-2 text-xs text-zinc-500">
+            Signals: {explain.signalsReferenced.join(", ")}
+          </p>
+          <p className="mt-2 text-xs text-zinc-500">{explain.confidenceExplanation}</p>
+          <p className="mt-2 text-xs text-amber-200/90">{explain.approvalExplanation}</p>
+        </section>
+      ) : null}
+
+      <section>
+        <h2 className="text-lg font-semibold">Opportunity board</h2>
+        <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {snapshot.opportunities.slice(0, 9).map((op, i) => (
+            <GrowthOpportunityCard key={op.id} op={op} rank={i + 1} />
+          ))}
+        </div>
+      </section>
+
+      {snapshot.allocation ? <GrowthAllocationCard allocation={snapshot.allocation} /> : null}
+
+      <section>
+        <h2 className="text-lg font-semibold">Recommended actions</h2>
+        <div className="mt-4 grid gap-4 lg:grid-cols-2">
+          <div>
+            <h3 className="text-xs uppercase tracking-wide text-emerald-500">Lower risk / safe lane</h3>
+            <div className="mt-2 space-y-2">
+              {safeActions.length === 0 ? (
+                <p className="text-sm text-zinc-600">None in current snapshot.</p>
+              ) : (
+                safeActions.map((a) => <GrowthRecommendationCard key={a.id} action={a} />)
+              )}
+            </div>
+          </div>
+          <div>
+            <h3 className="text-xs uppercase tracking-wide text-amber-500">Approval required</h3>
+            <div className="mt-2 space-y-2">
+              {approvalActions.length === 0 ? (
+                <p className="text-sm text-zinc-600">None flagged.</p>
+              ) : (
+                approvalActions.map((a) => <GrowthRecommendationCard key={a.id} action={a} />)
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="grid gap-8 lg:grid-cols-2">
+        <div>
+          <h2 className="text-lg font-semibold">Learned patterns</h2>
+          <p className="text-xs text-zinc-500">From logged outcomes — heuristic, reversible.</p>
+          <div className="mt-3 space-y-2">
+            <p className="text-xs uppercase text-emerald-600">Working</p>
+            {snapshot.learnedPatterns.length === 0 ? (
+              <p className="text-sm text-zinc-600">No strong patterns yet — log outcomes after actions.</p>
+            ) : (
+              snapshot.learnedPatterns.map((p) => (
+                <GrowthPatternCard key={p.id} pattern={p} tone="strong" />
+              ))
+            )}
+            <p className="mt-4 text-xs uppercase text-rose-600">Weak / stop repeating</p>
+            {snapshot.weakPatterns.length === 0 ? (
+              <p className="text-sm text-zinc-600">—</p>
+            ) : (
+              snapshot.weakPatterns.map((p) => (
+                <GrowthPatternCard key={p.id} pattern={p} tone="weak" />
+              ))
+            )}
+          </div>
+        </div>
+        <div>
+          <h2 className="text-lg font-semibold">Growth alerts</h2>
+          <div className="mt-3">
+            <GrowthAlertList alerts={snapshot.alerts} />
+          </div>
+        </div>
       </section>
 
       <section>
-        <h2 className="text-lg font-semibold text-slate-100">Pending approvals</h2>
-        <ul className="mt-3 space-y-3 text-sm text-slate-400">
-          {pending.map((p) => (
-            <li key={p.id} className="rounded-lg border border-slate-800/80 bg-slate-950/40 px-3 py-2">
-              <p className="font-medium text-slate-200">{p.recommendation.title}</p>
-              <p className="mt-1 text-xs text-slate-500">
-                {p.recommendation.domain} · {p.recommendation.priority} · {(p.recommendation.confidence * 100).toFixed(0)}% ·{" "}
-                <span className="text-amber-200/90">{p.status}</span>
-              </p>
-            </li>
-          ))}
-          {pending.length === 0 ? <li className="text-slate-600">None.</li> : null}
-        </ul>
+        <h2 className="text-lg font-semibold">Approval queue</h2>
+        <div className="mt-4">
+          <GrowthApprovalQueue
+            items={snapshot.approvalQueue}
+            onDecide={(id, status) => {
+              updateApprovalItem(id, status);
+              refresh();
+            }}
+          />
+        </div>
       </section>
 
-      <section>
-        <h2 className="text-lg font-semibold text-slate-100">Recent outcomes</h2>
-        <ul className="mt-3 max-h-56 overflow-y-auto space-y-1.5 text-xs text-slate-500">
-          {outcomes.map((o) => (
-            <li key={o.id} className="border-b border-slate-800/60 pb-1.5 font-mono last:border-0">
-              <span className="text-slate-400">{o.eventType}</span> · {o.recommendation.title.slice(0, 72)}
-              {o.recommendation.title.length > 72 ? "…" : ""}
-            </li>
-          ))}
-        </ul>
-      </section>
+      <p className="text-[11px] text-zinc-600">
+        Generated {new Date(snapshot.generatedAtIso).toLocaleString()} · All outputs are explainable;
+        financial or broadcast actions require explicit approval in this model.
+      </p>
     </div>
   );
 }

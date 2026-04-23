@@ -9077,9 +9077,13 @@ model Booking {
   hostLastReadBookingMessagesAt  DateTime?                     @map("host_last_read_booking_messages_at")
   bnhubHostAvgBookingResponseMs  Int?                          @map("bnhub_host_avg_booking_response_ms")
   bnhubHostBookingResponseSamples Int                          @default(0) @map("bnhub_host_booking_response_samples")
+  /// Optional LECIPM workspace tenant (multi-tenant / white-label).
+  tenantId                     String?                         @map("tenant_id") @db.VarChar(36)
+  tenant                       Tenant?                         @relation("BnhubBookingWorkspaceTenant", fields: [tenantId], references: [id], onDelete: SetNull)
 
   @@index([guestId])
   @@index([listingId])
+  @@index([tenantId])
   @@index([status])
   @@index([checkIn])
   @@index([bookingSource])
@@ -24361,10 +24365,13 @@ model WatchlistItem {
   watchlist   Watchlist   @relation(fields: [watchlistId], references: [id], onDelete: Cascade)
   listingId   String      @map("listing_id")
   listing     FsboListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  tenantId    String?     @map("tenant_id") @db.VarChar(36)
+  tenant      Tenant?     @relation("WatchlistItemWorkspaceTenant", fields: [tenantId], references: [id], onDelete: SetNull)
   createdAt   DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
 
   @@unique([watchlistId, listingId])
   @@index([listingId])
+  @@index([tenantId])
   @@map("watchlist_items")
 }
 

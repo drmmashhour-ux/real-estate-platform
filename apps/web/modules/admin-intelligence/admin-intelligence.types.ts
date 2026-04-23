@@ -48,6 +48,18 @@ export type AdminAnomalyVm = {
   recommendedAction: string;
 };
 
+export type RevenuePredictorSummaryVm = {
+  generatedAtIso: string;
+  totalForecastBaseCents: number;
+  conservativeCents: number;
+  baseCents: number;
+  upsideCents: number;
+  repCount: number;
+  biggestLeakCents: number;
+  biggestUpsideCents: number;
+  alertsPreview: { kind: string; title: string; severity: string }[];
+};
+
 export type AdminSuperDashboardPayload = {
   generatedAt: string;
   global: AdminGlobalStatsVm;
@@ -59,4 +71,6 @@ export type AdminSuperDashboardPayload = {
   insights: AiInsightVm[];
   anomalies: AdminAnomalyVm[];
   recentActivity: AdminRecentActivityItem[];
+  /** Operational revenue ranges from predictor — not audited GAAP forecasts. */
+  revenuePredictor?: RevenuePredictorSummaryVm;
 };
