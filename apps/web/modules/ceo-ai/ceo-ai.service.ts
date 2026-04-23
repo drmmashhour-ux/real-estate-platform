@@ -13,6 +13,10 @@ import { CEO_PRICING_APPROVAL_THRESHOLD, getOrCreateCeoPolicy } from "@/modules/
 import { generateCeoDecisions } from "@/modules/ceo-ai/ceo-ai-decision.engine";
 import type { CeoDecisionPayload } from "@/modules/ceo-ai/ceo-ai.types";
 import { snapshotBaselineMetrics } from "@/modules/autonomy/autonomy-decision.service";
+import { recordCeoDecisionMemory } from "@/modules/ceo-ai/ceo-memory.service";
+import { shouldRouteCeoDecision } from "@/modules/ceo-ai/ceo-routing.service";
+import { buildCeoContextFingerprint } from "@/modules/ceo-ai/ceo-memory-context.service";
+import { buildCeoStrategySnapshot } from "@/modules/ceo-ai/ceo-strategy-snapshot.service";
 
 export async function gatherMarketSignals() {
   const d30 = new Date();
@@ -124,6 +128,7 @@ export async function getExecutiveSummary() {
   const signals = await gatherMarketSignals();
   const policy = await getOrCreateCeoPolicy();
   const preview = await generateCeoDecisions(signals, { maxDecisions: policy.maxDailyChanges });
+  const snapshot = await buildCeoStrategySnapshot();
 
   const pending = await prisma.ceoDecision.count({
     where: { status: "PROPOSED", createdAt: { gte: new Date(Date.now() - 86400000) } },
@@ -133,6 +138,7 @@ export async function getExecutiveSummary() {
     signals,
     policy,
     preview,
+    snapshot,
     pendingDecisionsToday: pending,
     generatedAt: new Date().toISOString(),
   };
@@ -171,9 +177,17 @@ export async function runCeo(mode: "daily" | "weekly" | "manual") {
   const signals = await gatherMarketSignals();
   const budget = Math.max(0, policy.maxDailyChanges - (await decisionsCreatedToday()));
   const generated = await generateCeoDecisions(signals, { maxDecisions: Math.min(budget, policy.maxDailyChanges) });
+  const fingerprint = buildCeoContextFingerprint(signals);
 
   const createdIds: string[] = [];
   for (const p of generated.proposedDecisions) {
+    // Phase 9: Routing Guard
+    const guard = await shouldRouteCeoDecision(p, fingerprint);
+    if (!guard.shouldRoute) {
+      console.log(`[ceo-ai] skipping decision routing: ${p.title} (${guard.reason})`);
+      continue;
+    }
+
     const row = await prisma.ceoDecision.create({
       data: {
         domain: p.domain,
@@ -182,12 +196,19 @@ export async function runCeo(mode: "daily" | "weekly" | "manual") {
         rationale: p.rationale,
         confidence: p.confidence,
         impactEstimate: p.impactEstimate,
-        requiresApproval: p.requiresApproval,
+        requiresApproval: guard.forceApproval || p.requiresApproval,
         status: "PROPOSED",
         payloadJson: p.payload as unknown as Prisma.InputJsonValue,
       },
     });
     createdIds.push(row.id);
+
+    // Phase 3: Record in memory for evolving CEO
+    try {
+      await recordCeoDecisionMemory(p, signals);
+    } catch (e) {
+      console.error("[ceo-ai] failed to record memory", e);
+    }
   }
 
   const run = await prisma.ceoRun.create({

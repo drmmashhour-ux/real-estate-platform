@@ -1988,6 +1988,8 @@ export const intelligenceFlags = {
   autopilotV2: envTrue("FEATURE_AUTOPILOT_V2"),
   liquidityEngineV1: envTrue("FEATURE_LIQUIDITY_ENGINE_V1"),
   analyticsDashboardV1: envTrue("FEATURE_ANALYTICS_DASHBOARD_V1"),
+  /** Persistent marketplace memory (preferences, intent) — capture, aggregation, insights (default off). */
+  marketplaceMemoryEngineV1: envTrue("FEATURE_MARKETPLACE_MEMORY_ENGINE_V1"),
 } as const;
 
 /**
@@ -2002,6 +2004,8 @@ export const commandCenterFlags = {
 } as const;
 
 export type IntelligenceFlagKey = keyof typeof intelligenceFlags;
+
+export const FEATURE_MARKETPLACE_MEMORY_ENGINE_V1 = intelligenceFlags.marketplaceMemoryEngineV1;
 
 /**
  * Host economics — ROI calculator, pricing copy, Montreal simulations (default off).

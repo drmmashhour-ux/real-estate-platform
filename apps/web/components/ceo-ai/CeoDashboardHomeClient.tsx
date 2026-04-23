@@ -1,6 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { CeoLongTermGoalsPanel } from "./CeoLongTermGoalsPanel";
+import { CeoStrategyMemoryPanel } from "./CeoStrategyMemoryPanel";
+import { CeoDecisionOutcomeTable } from "./CeoDecisionOutcomeTable";
 
 type Summary = {
   signals: Record<string, number | null>;
@@ -9,6 +12,12 @@ type Summary = {
     topProblems: { title: string; detail: string; severityOrLift: number }[];
     topOpportunities: { title: string; detail: string; severityOrLift: number }[];
     proposedDecisions: { domain: string; title: string; confidence: number | null; requiresApproval: boolean }[];
+  };
+  snapshot?: {
+    longTermGoals: any[];
+    topStrategyPatterns: any[];
+    riskyStrategyPatterns: any[];
+    recentStrategicMemory: any[];
   };
   pendingDecisionsToday: number;
   generatedAt: string;
@@ -33,6 +42,7 @@ export function CeoDashboardHomeClient() {
         signals: j.signals!,
         policy: j.policy!,
         preview: j.preview!,
+        snapshot: j.snapshot,
         pendingDecisionsToday: j.pendingDecisionsToday!,
         generatedAt: j.generatedAt!,
       });
@@ -84,6 +94,10 @@ export function CeoDashboardHomeClient() {
         </button>
       </div>
       {runLog ? <p className="text-xs text-cyan-200/90">{runLog}</p> : null}
+
+      {data.snapshot?.longTermGoals && (
+        <CeoLongTermGoalsPanel goals={data.snapshot.longTermGoals} />
+      )}
 
       <section className="grid gap-4 md:grid-cols-2">
         <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
@@ -166,6 +180,17 @@ export function CeoDashboardHomeClient() {
           Use <strong className="text-slate-400">Run CEO cycle</strong> to persist proposals into the decisions queue.
         </p>
       </section>
+
+      {data.snapshot && (
+        <>
+          <h2 className="text-lg font-bold text-white pt-4">Strategic Learning & Memory</h2>
+          <CeoStrategyMemoryPanel 
+            topPatterns={data.snapshot.topStrategyPatterns} 
+            riskyPatterns={data.snapshot.riskyStrategyPatterns} 
+          />
+          <CeoDecisionOutcomeTable memories={data.snapshot.recentStrategicMemory} />
+        </>
+      )}
     </div>
   );
 }

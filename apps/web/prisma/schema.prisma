@@ -432,6 +432,10 @@ model User {
   bnhubGuestTrustProfile               BnhubGuestProfile?
   bnhubGuestFavorites                  BnhubGuestFavorite[]
   userSearchProfile                    UserSearchProfile?
+  userMemoryProfile                  UserMemoryProfile?
+  marketplaceMemoryEvents          UserMemoryEvent[]
+  marketplaceMemoryInsights        UserMemoryInsight[]
+  marketplaceMemorySessions        UserMemorySession[]
   userIntelligenceProfile              UserIntelligenceProfile?
   searchEvents                         SearchEvent[]
   userBehaviorEvents                   UserBehaviorEvent[]
@@ -5199,6 +5203,102 @@ model UserSearchProfile {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_search_profiles")
+}
+
+/// LECIPM / BNHub — persistent marketplace memory (preferences, intent, behavior) with user control.
+enum MarketplaceMemoryRole {
+  BUYER
+  RENTER
+  BROKER
+  INVESTOR
+}
+
+enum MarketplaceMemoryEventType {
+  VIEW
+  SEARCH
+  SAVE
+  MESSAGE
+  OFFER
+  BOOK
+  INVEST
+  SIGN
+}
+
+enum MarketplaceMemoryEntityType {
+  LISTING
+  DEAL
+  PACKET
+}
+
+enum MarketplaceMemoryInsightType {
+  PREFERENCE
+  INTENT
+  RISK
+  TIMING
+  LOCATION_AFFINITY
+}
+
+model UserMemoryProfile {
+  id                    String               @id @default(cuid())
+  userId                String               @unique @map("user_id")
+  user                  User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role                  MarketplaceMemoryRole @default(BUYER)
+  intentSummaryJson     Json                 @default("{}") @map("intent_summary_json")
+  preferenceSummaryJson Json                 @default("{}") @map("preference_summary_json")
+  behaviorSummaryJson   Json                 @default("{}") @map("behavior_summary_json")
+  financialProfileJson  Json?                @map("financial_profile_json")
+  esgProfileJson        Json?                @map("esg_profile_json")
+  riskProfileJson       Json?                @map("risk_profile_json")
+  /// Law 25–style — when false, capture and engine reads return neutral / empty.
+  personalizationEnabled Boolean             @default(true) @map("personalization_enabled")
+  lastUpdatedAt         DateTime             @default(now()) @map("last_updated_at")
+  createdAt             DateTime             @default(now()) @map("created_at")
+
+  @@map("user_memory_profiles")
+}
+
+model UserMemoryEvent {
+  id           String                     @id @default(cuid())
+  userId       String                     @map("user_id")
+  user         User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  eventType    MarketplaceMemoryEventType @map("event_type")
+  entityType   MarketplaceMemoryEntityType @map("entity_type")
+  entityId     String                     @map("entity_id") @db.VarChar(64)
+  metadataJson Json?                      @map("metadata_json")
+  createdAt    DateTime                   @default(now()) @map("created_at")
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([userId, eventType, createdAt(sort: Desc)])
+  @@map("user_memory_events")
+}
+
+model UserMemoryInsight {
+  id               String                      @id @default(cuid())
+  userId           String                      @map("user_id")
+  user             User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  insightType      MarketplaceMemoryInsightType @map("insight_type")
+  key              String                      @db.VarChar(128)
+  value            String                      @db.Text
+  confidenceScore  Float                       @map("confidence_score")
+  sourceEventsJson Json                        @map("source_events_json")
+  createdAt        DateTime                    @default(now()) @map("created_at")
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([userId, insightType])
+  @@map("user_memory_insights")
+}
+
+model UserMemorySession {
+  id              String   @id @default(cuid())
+  userId          String   @map("user_id")
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessionId       String   @map("session_id") @db.VarChar(128)
+  activeIntentJson Json    @default("{}") @map("active_intent_json")
+  lastActivityAt  DateTime @default(now()) @map("last_activity_at")
+
+  @@unique([userId, sessionId])
+  @@index([userId, lastActivityAt(sort: Desc)])
+  @@map("user_memory_sessions")
 }
 
 model SearchEvent {

@@ -3,6 +3,9 @@ import { proposeGrowthDecisions } from "@/modules/ceo-ai/ceo-ai-growth.service";
 import { proposePricingDecisions } from "@/modules/ceo-ai/ceo-ai-pricing.service";
 import { proposeOutreachDecisions } from "@/modules/ceo-ai/ceo-ai-outreach.service";
 import { proposeRetentionDecisions } from "@/modules/ceo-ai/ceo-ai-retention.service";
+import { buildCeoContextFingerprint } from "./ceo-memory-context.service";
+import { mapPayloadKindToDecisionType } from "./ceo-memory.service";
+import { prisma } from "@/lib/db";
 import type {
   CeoDecisionProposal,
   CeoMarketSignals,
@@ -110,11 +113,43 @@ export async function generateCeoDecisions(
   const ops = operationsCampaignProposal(signals);
   if (ops) combined.push(ops);
 
+  // Phase 6: Strategy Memory Awareness
+  const fingerprint = buildCeoContextFingerprint(signals);
+  const patterns = await prisma.ceoStrategyPattern.findMany({
+    where: { contextFingerprint: fingerprint }
+  });
+  
+  const patternScores = new Map(patterns.map(p => [p.patternKey, p.score]));
+
   const seen = new Set<string>();
   const normalized: CeoDecisionProposal[] = [];
   for (const p of combined) {
     const ra = requiresApprovalForProposal(p.domain, p.payload, policy);
-    const adjusted: CeoDecisionProposal = { ...p, requiresApproval: ra };
+    
+    // Memory-based confidence adjustment
+    const decisionType = mapPayloadKindToDecisionType(p.payload.kind);
+    const patternKey = `${p.domain}:${fingerprint}:${decisionType}`;
+    const historicalScore = patternScores.get(patternKey) || 0;
+    
+    let confidence = p.confidence || 0.5;
+    let memorySignal = "neutral";
+    
+    if (historicalScore > 5) {
+      confidence = Math.min(1, confidence + 0.1);
+      memorySignal = "positive history boost";
+    } else if (historicalScore < -5) {
+      confidence = Math.max(0.1, confidence - 0.15);
+      memorySignal = "negative history penalty";
+    }
+
+    const adjusted: CeoDecisionProposal = { 
+      ...p, 
+      requiresApproval: ra,
+      confidence,
+      // Add memory details to rationale
+      rationale: `${p.rationale} (Memory: ${memorySignal}, score: ${historicalScore.toFixed(1)})`
+    };
+
     const k = dedupeKey(adjusted);
     if (seen.has(k)) continue;
     seen.add(k);

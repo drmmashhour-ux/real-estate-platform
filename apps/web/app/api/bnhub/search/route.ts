@@ -2,10 +2,13 @@ import { NextRequest } from "next/server";
 import { SearchService } from "@/lib/bnhub/services";
 import { rankListings } from "@/lib/ai/bnhub-search";
 import { cacheGet, cacheSet, isRedisConfigured } from "@/lib/cache/redis";
+import { intelligenceFlags } from "@/config/feature-flags";
 import { getActivePromotedListingIds } from "@/lib/promotions";
 import { getGuestId } from "@/lib/auth/session";
 import { trackDemoEvent } from "@/lib/demo-analytics";
 import { DemoEvents } from "@/lib/demo-event-types";
+import { getMemorySignalsForEngine } from "@/lib/marketplace-memory/memory-query.service";
+import { buildMemoryRankHintFromSignals } from "@/lib/marketplace-memory/memory-ranking-hint";
 
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 100;
@@ -71,9 +74,19 @@ export async function GET(request: NextRequest) {
       process.env.BNHUB_SEARCH_RANKING_DEBUG === "true" &&
       searchParams.get("ranking_debug") === "1";
 
+    const sessionHeader = request.headers.get("x-session-id")?.trim().slice(0, 128) ?? null;
+    const userIdForPersonalizedCache =
+      sort === "recommended" && intelligenceFlags.marketplaceMemoryEngineV1
+        ? await getGuestId().catch(() => null)
+        : null;
+    const personalizedCacheSeg =
+      userIdForPersonalizedCache != null ? `:mem:${userIdForPersonalizedCache}` : ":mem:anon";
+
     const cacheKey =
       isRedisConfigured() && !rankingDebug
-        ? `bnhub:search:${[city, listingCode, checkIn, checkOut, guests, minPrice, maxPrice, propertyType, roomType, centerLat, centerLng, radiusKm, minBaths, instantBook, verifiedOnly, sort, page, limit].join(":")}`
+        ? `bnhub:search:${[city, listingCode, checkIn, checkOut, guests, minPrice, maxPrice, propertyType, roomType, centerLat, centerLng, radiusKm, minBaths, instantBook, verifiedOnly, sort, page, limit].join(":")}${
+            sort === "recommended" && intelligenceFlags.marketplaceMemoryEngineV1 ? personalizedCacheSeg : ""
+          }`
         : null;
     if (cacheKey) {
       const cached = await cacheGet(cacheKey);
@@ -126,7 +139,14 @@ export async function GET(request: NextRequest) {
       propertyType,
     };
 
-    const ranked = rankListings(listings, filters, undefined, { rankingDebug });
+    let userContext: { memoryRankHint: ReturnType<typeof buildMemoryRankHintFromSignals> } | undefined;
+    if (sort === "recommended" && intelligenceFlags.marketplaceMemoryEngineV1 && userIdForPersonalizedCache) {
+      const signals = await getMemorySignalsForEngine(userIdForPersonalizedCache, sessionHeader);
+      const memoryRankHint = buildMemoryRankHintFromSignals(signals);
+      if (memoryRankHint) userContext = { memoryRankHint };
+    }
+
+    const ranked = rankListings(listings, filters, userContext, { rankingDebug });
 
     const featuredIds = new Set(await getActivePromotedListingIds({ placement: "FEATURED", limit: 40 }));
     const NEW_DAYS = 14;

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { engineFlags } from "@/config/feature-flags";
+import { engineFlags, intelligenceFlags } from "@/config/feature-flags";
 import { getGuestId } from "@/lib/auth/session";
+import { getMemorySignalsForEngine } from "@/lib/marketplace-memory/memory-query.service";
+import { preferredCityFromMemorySignals } from "@/lib/marketplace-memory/memory-ranking-hint";
 import { getRecommendationsForBrowse } from "@/src/modules/recommendations/recommendation.service";
 import { trendingStrategy } from "@/src/modules/recommendations/strategies/trending.strategy";
 
@@ -20,13 +22,25 @@ export async function GET(req: NextRequest) {
   const sessionId = req.headers.get("x-session-id")?.trim().slice(0, 128) ?? null;
   const userId = await getGuestId().catch(() => null);
 
+  let effectiveCity: string | null | undefined = city ?? null;
+  if (!effectiveCity && userId && intelligenceFlags.marketplaceMemoryEngineV1) {
+    const signals = await getMemorySignalsForEngine(userId, sessionId);
+    effectiveCity = preferredCityFromMemorySignals(signals);
+  }
+
   if (mode === "trending") {
-    const block = await trendingStrategy({ city: city ?? null, excludeIds: [], limit: 12, sessionId, userId });
+    const block = await trendingStrategy({
+      city: effectiveCity ?? null,
+      excludeIds: [],
+      limit: 12,
+      sessionId,
+      userId,
+    });
     return NextResponse.json({ ok: true, blocks: block ? [block] : [] });
   }
 
   const blocks = await getRecommendationsForBrowse({
-    city: city ?? null,
+    city: effectiveCity ?? null,
     sessionId,
     userId,
     excludeIds: [],

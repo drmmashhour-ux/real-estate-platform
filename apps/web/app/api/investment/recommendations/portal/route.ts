@@ -12,7 +12,7 @@ export async function GET() {
   const gate = await requireBnhubInvestorPortalAccessApi();
   if (!gate.ok) return gate.response;
 
-  const data = await loadBnhubInvestorRecommendationsView(gate.email);
+  const data = await loadBnhubInvestorRecommendationsView(gate.email, { userId: gate.userId });
   if (!data.ok) {
     return NextResponse.json({ success: false, error: "Unable to load investor recommendations." }, { status: 403 });
   }

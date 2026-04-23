@@ -15,8 +15,8 @@ function labelStyle(type: string) {
 }
 
 export default async function InvestorBnhubRecommendationsPage() {
-  const { email } = await requireInvestorUser();
-  const data = await loadBnhubInvestorRecommendationsView(email);
+  const { email, userId } = await requireInvestorUser();
+  const data = await loadBnhubInvestorRecommendationsView(email, { userId });
 
   if (!data.ok) {
     return (

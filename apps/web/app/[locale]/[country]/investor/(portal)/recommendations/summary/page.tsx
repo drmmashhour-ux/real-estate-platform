@@ -7,8 +7,8 @@ export const dynamic = "force-dynamic";
 const GOLD = "var(--color-premium-gold)";
 
 export default async function InvestorRecommendationSummaryPage() {
-  const { email } = await requireInvestorUser();
-  const data = await loadBnhubInvestorRecommendationsView(email);
+  const { email, userId } = await requireInvestorUser();
+  const data = await loadBnhubInvestorRecommendationsView(email, { userId });
 
   if (!data.ok) {
     return (

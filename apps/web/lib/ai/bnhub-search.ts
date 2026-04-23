@@ -9,6 +9,7 @@ import {
   type ListingForMarketplaceRank,
   type ListingSearchScoreResult,
 } from "@/lib/bnhub/ranking/listing-ranking";
+import { memoryListingAffinity01, type MemoryRankHint } from "@/lib/marketplace-memory/memory-ranking-hint";
 
 export type BnhubSearchFilters = {
   location?: string;
@@ -23,6 +24,8 @@ export type BnhubSearchFilters = {
 export type BnhubSearchUserContext = {
   /** Optional: preferred price range for personalization */
   preferredMaxPrice?: number;
+  /** Bounded memory hint from marketplace memory (session + long-term summaries). */
+  memoryRankHint?: MemoryRankHint | null;
 };
 
 /** Listing shape expected by rankListings (matches search API response). */
@@ -158,7 +161,7 @@ export type RankListingsOptions = {
 export function rankListings<T extends BnhubListingForRanking>(
   listings: T[],
   filters: BnhubSearchFilters,
-  _userContext?: BnhubSearchUserContext,
+  userContext?: BnhubSearchUserContext,
   options?: RankListingsOptions
 ): RankedBnhubListing<T>[] {
   if (listings.length === 0) return [];
@@ -171,6 +174,8 @@ export function rankListings<T extends BnhubListingForRanking>(
     checkOut: filters.checkOut,
   };
 
+  const memoryHint = userContext?.memoryRankHint ?? null;
+
   const scored: RankedBnhubListing<T>[] = listings.map((listing) => {
     const ctxListing = listing as ListingForMarketplaceRank;
     const result = scoreListingForSearch(ctxListing, rankCtx);
@@ -178,7 +183,10 @@ export function rankListings<T extends BnhubListingForRanking>(
     const labels = deriveLabels(listing, filters, score01, marketAvgCents);
     const tieGuest = guestMatch(listing.maxGuests, filters.guests) * 0.02;
     const tiePrice = 1 - Math.min(1, priceVsMarketRatio(listing.nightPriceCents ?? 0, marketAvgCents)) * 0.01;
-    const displayScore = Math.round((score01 * 100 + tieGuest + tiePrice) * 100) / 100;
+    /** Max +3 points on the 0–100 display scale — assistive only. */
+    const memNudge =
+      memoryHint != null ? Math.min(3, memoryListingAffinity01(listing, memoryHint) * 3) : 0;
+    const displayScore = Math.round((score01 * 100 + tieGuest + tiePrice + memNudge) * 100) / 100;
 
     const row: RankedBnhubListing<T> = {
       ...listing,

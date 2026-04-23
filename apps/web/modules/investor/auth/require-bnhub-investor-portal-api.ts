@@ -9,6 +9,7 @@ export type BnhubInvestorPortalApiOk = {
   ok: true;
   investor: InvestorAccess;
   email: string;
+  userId: string;
 };
 
 export type BnhubInvestorPortalApiFail = {
@@ -28,7 +29,7 @@ export async function requireBnhubInvestorPortalAccessApi(): Promise<BnhubInvest
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { email: true, role: true },
+    select: { id: true, email: true, role: true },
   });
 
   if (!user?.email || user.role !== PlatformRole.INVESTOR) {
@@ -40,5 +41,5 @@ export async function requireBnhubInvestorPortalAccessApi(): Promise<BnhubInvest
     return { ok: false, response: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
   }
 
-  return { ok: true, investor, email: user.email };
+  return { ok: true, investor, email: user.email, userId: user.id };
 }
