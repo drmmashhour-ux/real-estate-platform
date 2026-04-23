@@ -10,6 +10,7 @@ import { canViewOffer } from "@/modules/offers/services/offer-access";
 import { notifyOfferEvent } from "@/modules/offers/services/offer-notifications";
 import { sendSystemMessage } from "@/modules/messaging/services/send-system-message";
 import { onOfferAccepted, onOfferRejected } from "@/modules/notifications/services/workflow-notification-triggers";
+import { assertTrustDepositAllowsOfferAcceptance } from "@/lib/compliance/trust-offer-gate";
 
 export const dynamic = "force-dynamic";
 
@@ -65,6 +66,13 @@ export async function POST(request: NextRequest, context: Params) {
 
   if (!canTransitionOfferStatus(offer.status, next, actor)) {
     return NextResponse.json({ error: "Invalid status transition" }, { status: 400 });
+  }
+
+  if (next === "ACCEPTED") {
+    const trustGate = await assertTrustDepositAllowsOfferAcceptance(id);
+    if (!trustGate.ok) {
+      return NextResponse.json({ error: trustGate.error }, { status: 400 });
+    }
   }
 
   const msg =

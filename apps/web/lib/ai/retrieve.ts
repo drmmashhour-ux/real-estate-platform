@@ -1,4 +1,5 @@
-import { searchVectors } from "./vector-search";
+import type { DraftingFormType } from "@/lib/ai/drafting-policy";
+import { retrieveDraftingContextForForm } from "@/lib/ai/retrieve-drafting-context";
 
 export type DraftingContextChunk = {
   sourceKey: string;
@@ -6,16 +7,28 @@ export type DraftingContextChunk = {
   confidence: number;
 };
 
-export async function retrieveDraftingContext(query: string): Promise<DraftingContextChunk[]> {
-  const results = await searchVectors(query);
+export type RetrieveDraftingContextOptions = {
+  /** When omitted, `"other"` allow-list applies (books + generic OACIQ bucket). */
+  formType?: DraftingFormType | string;
+};
 
-  if (!results.length) {
-    throw new Error("NO_SOURCE_CONTEXT");
+/**
+ * Policy-aware retrieval: approved OACIQ + book `sourceKey` rows only (see `drafting-policy.ts`).
+ */
+export async function retrieveDraftingContext(
+  query: string,
+  opts?: RetrieveDraftingContextOptions,
+): Promise<DraftingContextChunk[]> {
+  const formType = opts?.formType ?? "other";
+  const passages = await retrieveDraftingContextForForm({ formType: String(formType), query });
+
+  if (!passages.length) {
+    throw new Error("NO_SOURCE_CONTEXT_AVAILABLE");
   }
 
-  return results.map((r) => ({
-    sourceKey: r.sourceKey,
-    content: r.content,
-    confidence: r.score,
+  return passages.map((p) => ({
+    sourceKey: p.sourceKey,
+    content: p.content,
+    confidence: p.weightedScore,
   }));
 }

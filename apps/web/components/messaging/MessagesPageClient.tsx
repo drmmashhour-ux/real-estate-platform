@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { PlatformRole } from "@prisma/client";
@@ -13,17 +14,34 @@ import { ContentLicenseModal } from "@/components/legal/ContentLicenseModal";
 import { CONTENT_LICENSE_ERROR, ContentLicenseRequiredError } from "@/lib/legal/content-license-client";
 import { CONTENT_LICENSE_VERSION } from "@/modules/legal/content-license";
 
+type UrlSyncMode = "dashboard-query" | "locale-messages-path" | "none";
+
 type Props = {
   viewerId: string;
   viewerRole?: PlatformRole;
+  /** Server-provided thread id (e.g. `/[locale]/[country]/messages/[id]`). */
+  pinnedConversationId?: string | null;
+  urlSync?: UrlSyncMode;
+  /** No trailing slash, e.g. `/en/sy/messages` */
+  localeMessagesBasePath?: string;
+  compactInbox?: boolean;
+  fullInboxHref?: string;
 };
 
 const POLL_MS = 12_000;
 
-export function MessagesPageClient({ viewerId, viewerRole }: Props) {
+export function MessagesPageClient({
+  viewerId,
+  viewerRole,
+  pinnedConversationId = null,
+  urlSync = "dashboard-query",
+  localeMessagesBasePath = "",
+  compactInbox = false,
+  fullInboxHref = "",
+}: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const initialId = searchParams.get("conversationId");
+  const initialId = pinnedConversationId ?? searchParams.get("conversationId");
 
   const [rows, setRows] = useState<InboxConversationRow[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(initialId);
@@ -93,13 +111,17 @@ export function MessagesPageClient({ viewerId, viewerRole }: Props) {
   }, [loadList]);
 
   useEffect(() => {
-    if (selectedId) {
-      void loadThread(selectedId);
+    if (!selectedId) return;
+    void loadThread(selectedId);
+    if (urlSync === "dashboard-query") {
       router.replace(`/dashboard/messages?conversationId=${encodeURIComponent(selectedId)}`, {
         scroll: false,
       });
+    } else if (urlSync === "locale-messages-path" && localeMessagesBasePath) {
+      const base = localeMessagesBasePath.replace(/\/$/, "");
+      router.replace(`${base}/${encodeURIComponent(selectedId)}`, { scroll: false });
     }
-  }, [selectedId, loadThread, router]);
+  }, [selectedId, loadThread, router, urlSync, localeMessagesBasePath]);
 
   useEffect(() => {
     const t = window.setInterval(() => {
@@ -172,7 +194,19 @@ export function MessagesPageClient({ viewerId, viewerRole }: Props) {
   return (
     <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-7xl flex-col xl:flex-row">
       <aside className="w-full shrink-0 md:w-[340px]">
-        {loadingList ? (
+        {compactInbox ? (
+          <div className="space-y-3 p-4">
+            {fullInboxHref ? (
+              <Link
+                href={fullInboxHref}
+                className="inline-flex text-sm font-medium text-emerald-400 hover:text-emerald-300"
+              >
+                ← All messages
+              </Link>
+            ) : null}
+            <p className="text-xs text-slate-500">You can return to your full inbox anytime.</p>
+          </div>
+        ) : loadingList ? (
           <p className="p-4 text-sm text-slate-500">Loading inbox…</p>
         ) : (
           <ConversationList
@@ -194,7 +228,7 @@ export function MessagesPageClient({ viewerId, viewerRole }: Props) {
             composerAppendDraft={composerAppendDraft}
             composerExtras={
               <>
-                {showAiSuggestions ? (
+                {showAiSuggestions && selectedId ? (
                   <AutopilotChatBar
                     conversationId={selectedId}
                     enabled={showAiSuggestions}

@@ -13,6 +13,8 @@ export const AUTONOMY_DECISION_STATUSES = [
   "APPLIED",
   "ROLLED_BACK",
   "INVALID",
+  /** Operator-marked stale proposal (no longer actionable). */
+  "EXPIRED",
 ] as const;
 export type AutonomyDecisionStatus = (typeof AUTONOMY_DECISION_STATUSES)[number];
 

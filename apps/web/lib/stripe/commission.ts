@@ -3,6 +3,7 @@
  */
 
 import { prisma } from "@/lib/db";
+import { assertTrustFundsCannotBeRevenue } from "@/lib/financial/financial-guards";
 
 const DEFAULTS: Record<string, { brokerPercent: number; platformPercent: number }> = {
   /** Align with BNHUB Stripe Connect `application_fee_amount` (`bnhub-connect` rate). */
@@ -47,8 +48,11 @@ export async function createCommissionsForPayment(params: {
   paymentType: string;
   amountCents: number;
   brokerId?: string | null;
+  /** When `"trust"`, commission/revenue attribution is blocked (OACIQ-style segregation). */
+  fundsSource?: string | null;
 }): Promise<{ id: string; brokerAmountCents: number; platformAmountCents: number } | null> {
-  const { paymentId, paymentType, amountCents, brokerId } = params;
+  const { paymentId, paymentType, amountCents, brokerId, fundsSource } = params;
+  assertTrustFundsCannotBeRevenue(fundsSource, "revenue");
   const rule = getRuleForPaymentType(paymentType);
   const brokerAmountCents = Math.round((amountCents * rule.brokerPercent) / 100);
   const platformAmountCents = Math.round((amountCents * rule.platformPercent) / 100);

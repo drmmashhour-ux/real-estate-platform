@@ -25,6 +25,7 @@ export type ThreadDetail = {
   participants: { userId: string; name: string | null; email: string }[];
   context: {
     listing: { id: string; title: string } | null;
+    fsboListing: { id: string; title: string; listingCode: string | null } | null;
     offer: { id: string } | null;
     contract: { id: string; title: string } | null;
     appointment: { id: string; title: string } | null;
@@ -59,6 +60,7 @@ const TYPE_LABEL: Record<ConversationType, string> = {
 
 function contextBlurb(d: ThreadDetail): string | null {
   if (d.context.listing) return `Listing · ${d.context.listing.title}`;
+  if (d.context.fsboListing) return `FSBO · ${d.context.fsboListing.title}`;
   if (d.context.offer) return `Offer · ${d.context.offer.id.slice(0, 8)}…`;
   if (d.context.contract) return `Contract · ${d.context.contract.title || d.context.contract.id.slice(0, 8)}`;
   if (d.context.appointment) return `Appointment · ${d.context.appointment.title}`;

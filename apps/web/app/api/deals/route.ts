@@ -1,11 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { logError } from "@/lib/logger";
 import { prisma } from "@repo/db";
-import {
-  canAccessPipelineDeal,
-  requireAuthUser,
-  requireBrokerOrAdmin,
-} from "@/lib/deals/guard-pipeline-deal";
+import { requireAuthUser, requireBrokerOrAdmin } from "@/lib/deals/guard-pipeline-deal";
+import { requireActiveResidentialBrokerLicence } from "@/lib/compliance/oaciq/broker-licence-guard";
 import { createDealFromTransaction, createStandaloneDeal, listPipelineDeals } from "@/modules/deals/deal.service";
 
 export const dynamic = "force-dynamic";
@@ -58,12 +55,18 @@ export async function POST(req: NextRequest) {
       if (!transactionId) return NextResponse.json({ error: "transactionId required" }, { status: 400 });
       const tx = await prisma.lecipmSdTransaction.findUnique({
         where: { id: transactionId },
-        select: { brokerId: true },
+        select: { brokerId: true, transactionType: true },
       });
       if (!tx) return NextResponse.json({ error: "Transaction not found" }, { status: 404 });
       if (auth.role !== "ADMIN" && tx.brokerId !== auth.userId) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
+      const licenceBlock = await requireActiveResidentialBrokerLicence(tx.brokerId, {
+        transactionType: tx.transactionType,
+        actorBrokerId: auth.userId,
+        assignedBrokerId: tx.brokerId,
+      });
+      if (licenceBlock) return licenceBlock;
       const deal = await createDealFromTransaction({
         transactionId,
         brokerId: tx.brokerId,
@@ -80,6 +83,13 @@ export async function POST(req: NextRequest) {
     const title = typeof body.title === "string" ? body.title : "";
     const dealType = typeof body.dealType === "string" ? body.dealType : "OTHER";
     if (!title.trim()) return NextResponse.json({ error: "title required" }, { status: 400 });
+
+    const licenceBlock = await requireActiveResidentialBrokerLicence(brokerId, {
+      dealType,
+      actorBrokerId: auth.userId,
+      assignedBrokerId: brokerId,
+    });
+    if (licenceBlock) return licenceBlock;
 
     const deal = await createStandaloneDeal({
       brokerId,

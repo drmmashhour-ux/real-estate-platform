@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
   try {
     const query =
       mode === "clause" ? `${formType} ${clauseType}` : `${formType} ${JSON.stringify(facts)}`;
-    const sources = await retrieveDraftingContext(query);
+    const sources = await retrieveDraftingContext(query, { formType });
     const draft = runInternalDraftGeneration({
       formType,
       facts,
@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "DRAFT_FAILED";
-    if (msg === "NO_SOURCE_CONTEXT") {
+    if (msg === "NO_SOURCE_CONTEXT" || msg === "NO_SOURCE_CONTEXT_AVAILABLE") {
       return Response.json({ error: msg }, { status: 422 });
     }
     throw e;

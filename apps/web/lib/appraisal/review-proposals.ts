@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { logAppraisalAdjustmentAudit } from "@/lib/appraisal/adjustment-audit";
+import { logAppraisalAudit } from "@/lib/appraisal/appraisal-audit";
 
 function requireReviewerId(id: string): void {
   if (!id?.trim()) {
@@ -58,6 +59,20 @@ export async function approveAdjustmentProposal(input: {
     entityId: proposal.id,
     payload: { appraisalCaseId: proposal.appraisalCaseId, comparableId: proposal.comparableId },
   });
+
+  const lecipmCase = await prisma.lecipmBrokerAppraisalCase.findFirst({
+    where: { dealAnalysisId: proposal.appraisalCaseId },
+    select: { id: true },
+  });
+  if (lecipmCase) {
+    await logAppraisalAudit({
+      actorUserId: input.reviewedById,
+      action: "adjustment_added",
+      entityId: lecipmCase.id,
+      summary: "Adjustment recorded on appraisal report draft workflow",
+      payload: { dealAnalysisId: proposal.appraisalCaseId, proposalId: proposal.id },
+    });
+  }
 
   return proposal;
 }

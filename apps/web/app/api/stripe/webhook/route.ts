@@ -2000,11 +2000,23 @@ export async function POST(req: NextRequest) {
     }
 
     await getOrCreateCommissionRules().catch(() => {});
+    const checkoutMeta =
+      session.metadata && typeof session.metadata === "object"
+        ? (session.metadata as Record<string, unknown>)
+        : {};
+    const fundsSourceFromCheckout =
+      typeof checkoutMeta.fundsSource === "string"
+        ? checkoutMeta.fundsSource
+        : typeof checkoutMeta.funds_source === "string"
+          ? checkoutMeta.funds_source
+          : null;
+
     const commissionResult = await createCommissionsForPayment({
       paymentId: platformPayment.id,
       paymentType,
       amountCents,
       brokerId: brokerId ?? null,
+      fundsSource: fundsSourceFromCheckout,
     }).catch((e) => {
       logError("Webhook: commission creation failed", e);
       return null;

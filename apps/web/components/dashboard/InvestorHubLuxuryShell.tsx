@@ -235,6 +235,23 @@ export function InvestorHubLuxuryShell({ locale, country, model }: Props) {
               Opportunities
             </Link>
           </div>
+          <p className="mt-3 text-xs text-white/45">
+            Live monitoring (broker workspace):{" "}
+            <Link href="/dashboard/broker/watchlist" className="text-[#D4AF37]/90 underline-offset-4 hover:underline">
+              Watchlist
+            </Link>
+            {" · "}
+            <Link
+              href="/dashboard/broker/saved-searches"
+              className="text-[#D4AF37]/90 underline-offset-4 hover:underline"
+            >
+              Saved searches
+            </Link>
+            {" · "}
+            <Link href="/dashboard/broker/alerts" className="text-[#D4AF37]/90 underline-offset-4 hover:underline">
+              Alert Center
+            </Link>
+          </p>
         </div>
 
         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-5">

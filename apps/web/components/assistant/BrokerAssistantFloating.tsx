@@ -3,7 +3,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 
-import type { AssistantPriority, AssistantSuggestion, AssistantSuggestionType } from "@/modules/assistant/assistant.types";
+import { AssistantActionConfirmModal } from "@/components/assistant/AssistantActionConfirmModal";
+import type {
+  AssistantPriority,
+  AssistantSuggestion,
+  AssistantSuggestionType,
+} from "@/modules/assistant/assistant.types";
+import type { BrokerAssistantSafetyMode } from "@/modules/assistant/assistant-safety";
 
 function extractDashboardContext(pathname: string): { dealId?: string; leadId?: string } {
   const dealMatch = pathname.match(/\/dashboard\/deals\/([^/]+)/);
@@ -46,7 +52,13 @@ export function BrokerAssistantFloating() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [disclaimer, setDisclaimer] = useState<string | null>(null);
+  const [assistantMode, setAssistantMode] = useState<BrokerAssistantSafetyMode | null>(null);
   const [suggestions, setSuggestions] = useState<AssistantSuggestion[]>([]);
+  const [doneIds, setDoneIds] = useState<Set<string>>(() => new Set());
+  const [failedIds, setFailedIds] = useState<Set<string>>(() => new Set());
+  const [confirmSuggestion, setConfirmSuggestion] = useState<AssistantSuggestion | null>(null);
+  const [execLoading, setExecLoading] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -66,9 +78,14 @@ export function BrokerAssistantFloating() {
         setSuggestions([]);
         return;
       }
-      const data = await res.json() as { suggestions?: AssistantSuggestion[]; disclaimer?: string };
+      const data = await res.json() as {
+        suggestions?: AssistantSuggestion[];
+        disclaimer?: string;
+        assistantMode?: BrokerAssistantSafetyMode;
+      };
       setSuggestions(Array.isArray(data.suggestions) ? data.suggestions : []);
       setDisclaimer(typeof data.disclaimer === "string" ? data.disclaimer : null);
+      setAssistantMode(typeof data.assistantMode === "string" ? data.assistantMode : null);
     } catch {
       setError("Network error");
       setSuggestions([]);
@@ -98,8 +115,64 @@ export function BrokerAssistantFloating() {
 
   const typesOrder: AssistantSuggestionType[] = ["ACTION", "ALERT", "REMINDER"];
 
+  const showExecute = assistantMode === "SAFE_AUTOPILOT" || assistantMode === "FULL_AUTOPILOT";
+
+  async function runExecute(s: AssistantSuggestion, confirmed: boolean) {
+    if (!s.actionType || !s.actionPayload) return;
+    setExecLoading(true);
+    setToast(null);
+    try {
+      const res = await fetch("/api/assistant/execute", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          actionType: s.actionType,
+          actionPayload: s.actionPayload,
+          confirmed,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.success) {
+        setFailedIds((prev) => new Set(prev).add(s.id));
+        setToast(typeof data.message === "string" ? data.message : "Action failed");
+        return;
+      }
+      setDoneIds((prev) => new Set(prev).add(s.id));
+      setToast(typeof data.message === "string" ? data.message : "Done");
+      if (data.result?.deepLink && typeof data.result.deepLink === "string") {
+        window.open(data.result.deepLink, "_blank", "noopener,noreferrer");
+      }
+    } catch {
+      setFailedIds((prev) => new Set(prev).add(s.id));
+      setToast("Network error");
+    } finally {
+      setExecLoading(false);
+      setConfirmSuggestion(null);
+    }
+  }
+
+  function onExecuteClick(s: AssistantSuggestion) {
+    if (!s.actionType) return;
+    if (s.requiresConfirmation === false) {
+      void runExecute(s, true);
+      return;
+    }
+    setConfirmSuggestion(s);
+  }
+
   return (
     <div className="pointer-events-auto fixed bottom-6 start-6 z-[45] flex max-w-[min(100vw-3rem,22rem)] flex-col gap-2 sm:bottom-8 sm:start-8">
+      <AssistantActionConfirmModal
+        open={Boolean(confirmSuggestion)}
+        suggestion={confirmSuggestion}
+        loading={execLoading}
+        onCancel={() => setConfirmSuggestion(null)}
+        onConfirm={() => {
+          if (confirmSuggestion) void runExecute(confirmSuggestion, true);
+        }}
+      />
+
       <button
         type="button"
         onClick={() => {
@@ -130,8 +203,18 @@ export function BrokerAssistantFloating() {
           className="max-h-[min(70vh,28rem)] overflow-y-auto rounded-2xl border border-[color-mix(in_oklab,var(--foreground)_15%,transparent)] bg-[color-mix(in_oklab,var(--card)_95%,transparent)] p-4 text-sm shadow-xl backdrop-blur-md"
         >
           <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Suggestions only — no auto-send
+            {assistantMode === "ASSIST"
+              ? "Assist mode — suggestions only"
+              : assistantMode === "OFF"
+                ? "Assistant off"
+                : "Confirm before any outbound action"}
           </p>
+
+          {toast ? (
+            <p className="mb-2 rounded-md bg-muted/50 px-2 py-1 text-xs text-foreground" role="status">
+              {toast}
+            </p>
+          ) : null}
 
           {loading && suggestions.length === 0 ? (
             <p className="text-muted-foreground">Loading…</p>
@@ -156,9 +239,9 @@ export function BrokerAssistantFloating() {
                     {typeLabel(type)}
                   </h3>
                   <ul className="space-y-2">
-                    {sorted.map((s, idx) => (
+                    {sorted.map((s) => (
                       <li
-                        key={`${type}-${idx}-${s.message.slice(0, 24)}`}
+                        key={s.id}
                         className="rounded-lg border border-[color-mix(in_oklab,var(--foreground)_10%,transparent)] bg-background/40 p-3"
                       >
                         <div className="mb-1 flex items-center gap-2">
@@ -178,8 +261,23 @@ export function BrokerAssistantFloating() {
                           <span className="text-[10px] font-medium uppercase text-muted-foreground">
                             {s.priority}
                           </span>
+                          {doneIds.has(s.id) ? (
+                            <span className="text-[10px] font-medium text-emerald-600">Done</span>
+                          ) : null}
+                          {failedIds.has(s.id) ? (
+                            <span className="text-[10px] font-medium text-destructive">Failed</span>
+                          ) : null}
                         </div>
                         <p className="leading-snug text-foreground">{s.message}</p>
+                        {showExecute && s.actionType && s.actionPayload && !doneIds.has(s.id) ? (
+                          <button
+                            type="button"
+                            className="mt-2 rounded-md border border-premium-gold/40 bg-premium-gold/10 px-2 py-1 text-xs font-medium text-premium-gold hover:bg-premium-gold/20"
+                            onClick={() => onExecuteClick(s)}
+                          >
+                            Execute…
+                          </button>
+                        ) : null}
                       </li>
                     ))}
                   </ul>

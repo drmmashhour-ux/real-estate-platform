@@ -117,7 +117,11 @@ export async function persistProposals(
   return { createdIds };
 }
 
-export async function approveDecision(decisionId: string, userId: string): Promise<void> {
+export async function approveDecision(
+  decisionId: string,
+  userId: string,
+  note?: string | null
+): Promise<void> {
   const d = await prisma.autonomyDecision.findUnique({ where: { id: decisionId } });
   if (!d || d.status !== "PROPOSED") throw new Error("invalid_state");
 
@@ -129,10 +133,14 @@ export async function approveDecision(decisionId: string, userId: string): Promi
       approvedByUserId: userId,
     },
   });
-  await appendLog(decisionId, "APPROVED", { userId });
+  await appendLog(decisionId, "APPROVED", { userId, note: note?.trim() || undefined });
 }
 
-export async function rejectDecision(decisionId: string, userId?: string | null): Promise<void> {
+export async function rejectDecision(
+  decisionId: string,
+  userId?: string | null,
+  note?: string | null
+): Promise<void> {
   const d = await prisma.autonomyDecision.findUnique({ where: { id: decisionId } });
   if (!d || d.status !== "PROPOSED") throw new Error("invalid_state");
 
@@ -140,7 +148,26 @@ export async function rejectDecision(decisionId: string, userId?: string | null)
     where: { id: decisionId },
     data: { status: "REJECTED" },
   });
-  await appendLog(decisionId, "REJECTED", { userId: userId ?? null });
+  await appendLog(decisionId, "REJECTED", {
+    userId: userId ?? null,
+    note: note?.trim() || undefined,
+  });
+}
+
+/** Marks a still-pending proposal as expired (operator workflow; not auto-applied). */
+export async function markDecisionExpired(
+  decisionId: string,
+  userId: string,
+  note?: string | null
+): Promise<void> {
+  const d = await prisma.autonomyDecision.findUnique({ where: { id: decisionId } });
+  if (!d || d.status !== "PROPOSED") throw new Error("invalid_state");
+
+  await prisma.autonomyDecision.update({
+    where: { id: decisionId },
+    data: { status: "EXPIRED" },
+  });
+  await appendLog(decisionId, "EXPIRED", { userId, note: note?.trim() || undefined });
 }
 
 function parsePayload(raw: unknown): DecisionPayload | null {

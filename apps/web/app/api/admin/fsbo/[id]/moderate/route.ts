@@ -5,6 +5,9 @@ import { syncFsboListingExpiryState } from "@/lib/fsbo/listing-expiry";
 import { persistSellerDeclarationAiReview } from "@/lib/fsbo/seller-declaration-ai-review";
 import { notifyFsboListingActivatedIfNeeded } from "@/lib/listing-lifecycle/notify-fsbo-listing-activated";
 import { maybeBlockRequestWithLegalGate } from "@/modules/legal/legal-api-gate";
+import { COMPLAINT_PLATFORM_OWNER_ID } from "@/lib/compliance/complaint-case-number";
+import { logAuditEvent } from "@/lib/compliance/log-audit-event";
+import { rejectIfInspectionReadOnlyMutation } from "@/lib/compliance/inspection-session-guard";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +26,14 @@ export async function POST(
   if (admin?.role !== "ADMIN") {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
+
+  const blocked = await rejectIfInspectionReadOnlyMutation(request, {
+    ownerType: "platform",
+    ownerId: COMPLAINT_PLATFORM_OWNER_ID,
+    actorId: userId,
+    actorType: "admin",
+  });
+  if (blocked) return blocked;
 
   const { id } = await context.params;
   let body: { action?: string; reason?: string };
@@ -92,6 +103,42 @@ export async function POST(
   if (action === "approve") {
     void notifyFsboListingActivatedIfNeeded(id).catch(() => null);
   }
+
+  const auditAction =
+    action === "reject"
+      ? row.status === FSBO_STATUS.PENDING_VERIFICATION
+        ? "listing_publication_blocked"
+        : "refused"
+      : row.status === FSBO_STATUS.PENDING_VERIFICATION
+        ? "validated"
+        : "admin_approved";
+
+  await logAuditEvent({
+    ownerType: "platform",
+    ownerId: COMPLAINT_PLATFORM_OWNER_ID,
+    entityType: "seller_declaration",
+    entityId: id,
+    actionType: auditAction,
+    moduleKey: "declarations",
+    actorType: "admin",
+    actorId: userId,
+    linkedListingId: id,
+    severity: action === "reject" ? "high" : "info",
+    summary:
+      action === "reject"
+        ? "Listing publication blocked or declaration refused by moderator"
+        : "Listing / declaration validated or approved by moderator",
+    details: {
+      action,
+      priorStatus: row.status,
+      rejectReason:
+        action === "reject"
+          ? typeof body.reason === "string" && body.reason.trim()
+            ? body.reason.trim().slice(0, 2000)
+            : null
+          : null,
+    },
+  });
 
   return Response.json({ ok: true });
 }

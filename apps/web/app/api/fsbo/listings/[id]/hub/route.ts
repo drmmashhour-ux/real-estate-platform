@@ -15,8 +15,18 @@ import { getDeclarationListingConsistencyWarnings } from "@/lib/fsbo/listing-pro
 import { setCentrisDistributionIntent } from "@/modules/distribution/distribution.service";
 import { CENTRIS_PLATFORM } from "@/modules/distribution/centris.service";
 import { safeRunFsboListingLegalCompliance } from "@/modules/legal/legal-compliance-runner";
+import { logComplianceEvent } from "@/services/compliance/coownershipCompliance.service";
+import {
+  normalizeFsboDeclarationComplianceInput,
+  sellerRefusedDeclarationFromCompliance,
+  validateListingCompliance,
+} from "@/modules/legal/compliance/listing-declaration-compliance.service";
 
 export const dynamic = "force-dynamic";
+
+function declarationRefusedState(input: ReturnType<typeof normalizeFsboDeclarationComplianceInput>): boolean {
+  return sellerRefusedDeclarationFromCompliance(validateListingCompliance(input));
+}
 
 function num(v: unknown): number | undefined {
   if (typeof v === "number" && Number.isFinite(v)) return v;
@@ -44,7 +54,14 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
   const isAdmin = await isPlatformAdmin(userId);
   const existing = await prisma.fsboListing.findUnique({
     where: { id },
-    select: { ownerId: true, status: true, propertyType: true, images: true },
+    select: {
+      ownerId: true,
+      status: true,
+      propertyType: true,
+      images: true,
+      sellerDeclarationJson: true,
+      sellerDeclarationCompletedAt: true,
+    },
   });
   if (!existing) {
     return Response.json({ error: "Not found" }, { status: 404 });
@@ -168,7 +185,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       .filter((t): t is string => typeof t === "string")
       .map((t) => t.trim())
       .filter(Boolean);
-    data.photoTagsJson = tags.slice(0, maxPhotos) as any;
+    data.photoTagsJson = tags.slice(0, maxPhotos) as Prisma.InputJsonValue;
 
     // Tags changed => reset match decision & confirmation.
     data.photoVerificationStatus = "PENDING";
@@ -232,10 +249,31 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
   }
 
   if (Object.keys(data).length > 0) {
+    const beforeRefused =
+      body.sellerDeclarationJson !== undefined ? declarationRefusedState(normalizeFsboDeclarationComplianceInput(existing)) : false;
     await prisma.fsboListing.update({
       where: { id },
       data,
     });
+    if (body.sellerDeclarationJson !== undefined) {
+      if (body.sellerDeclarationJson === null) {
+        logComplianceEvent("DECLARATION_UPDATED", { listingId: id, actorUserId: userId, cleared: true });
+      } else if (existing.sellerDeclarationJson == null) {
+        logComplianceEvent("DECLARATION_CREATED", { listingId: id, actorUserId: userId });
+      } else {
+        logComplianceEvent("DECLARATION_UPDATED", { listingId: id, actorUserId: userId });
+      }
+      const afterRow = await prisma.fsboListing.findUnique({
+        where: { id },
+        select: { sellerDeclarationJson: true, sellerDeclarationCompletedAt: true, propertyType: true },
+      });
+      if (afterRow) {
+        const afterRefused = declarationRefusedState(normalizeFsboDeclarationComplianceInput(afterRow));
+        if (afterRefused && !beforeRefused) {
+          logComplianceEvent("DECLARATION_REFUSED", { listingId: id, actorUserId: userId });
+        }
+      }
+    }
   }
 
   if (publishOnCentris !== undefined) {

@@ -16,6 +16,18 @@ export default function BrokerBuyBoxPage() {
           views, portfolio revisits).
         </p>
         <div className="mt-4 flex flex-wrap gap-3 text-sm">
+          <Link href="/dashboard/broker/buybox" className="text-[#D4AF37] underline-offset-4 hover:underline">
+            AI Buy Box Engine →
+          </Link>
+          <Link href="/dashboard/broker/saved-searches" className="text-[#D4AF37] underline-offset-4 hover:underline">
+            Saved searches →
+          </Link>
+          <Link href="/dashboard/broker/watchlist" className="text-[#D4AF37] underline-offset-4 hover:underline">
+            Watchlist →
+          </Link>
+          <Link href="/dashboard/broker/alerts" className="text-[#D4AF37] underline-offset-4 hover:underline">
+            Alert Center →
+          </Link>
           <Link href="/dashboard/broker/digest" className="text-[#D4AF37] underline-offset-4 hover:underline">
             Morning briefing →
           </Link>

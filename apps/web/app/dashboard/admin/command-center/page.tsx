@@ -86,7 +86,8 @@ const QUICK_ACTIONS: { href: string; label: string }[] = [
   { href: "/dashboard/admin/financial/transactions", label: "Financial / transactions" },
   { href: "/dashboard/broker/investor", label: "Investor portfolio" },
   { href: "/dashboard/broker/appraisal", label: "Appraisal & analysis" },
-  { href: "/dashboard/broker/market-watch/zones", label: "Market watch & zones" },
+  { href: "/dashboard/broker/market-watch", label: "Real Estate Watch (pulse)" },
+  { href: "/dashboard/broker/market-watch/zones", label: "Live activity zones" },
   { href: "/dashboard/broker/alerts", label: "Alerts & digest" },
   { href: "/dashboard/broker/portfolio/autopilot", label: "Portfolio autopilot" },
 ];

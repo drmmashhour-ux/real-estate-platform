@@ -1,5 +1,6 @@
 import type { Conversation, ConversationType, Prisma } from "@prisma/client";
 import { MessageEventType } from "@prisma/client";
+import { isFsboPubliclyVisible } from "@/lib/fsbo/constants";
 import { prisma } from "@/lib/db";
 import { getContractForAccess } from "@/modules/contracts/services/access";
 import type { ContextKind } from "@/modules/messaging/services/messaging-permissions";
@@ -33,6 +34,7 @@ async function findExistingPairConversation(
   filter: {
     type: ConversationType;
     listingId?: string | null;
+    fsboListingId?: string | null;
     offerId?: string | null;
     contractId?: string | null;
     appointmentId?: string | null;
@@ -43,6 +45,7 @@ async function findExistingPairConversation(
 ): Promise<Conversation | null> {
   const where: Prisma.ConversationWhereInput = { type: filter.type };
   if (filter.listingId !== undefined) where.listingId = filter.listingId;
+  if (filter.fsboListingId !== undefined) where.fsboListingId = filter.fsboListingId;
   if (filter.offerId !== undefined) where.offerId = filter.offerId;
   if (filter.contractId !== undefined) where.contractId = filter.contractId;
   if (filter.appointmentId !== undefined) where.appointmentId = filter.appointmentId;
@@ -83,6 +86,7 @@ async function createConversationWithParticipants(params: {
   createdById: string | null;
   subject: string | null;
   listingId?: string | null;
+  fsboListingId?: string | null;
   offerId?: string | null;
   contractId?: string | null;
   appointmentId?: string | null;
@@ -99,6 +103,7 @@ async function createConversationWithParticipants(params: {
       createdById: params.createdById,
       subject: params.subject,
       listingId: params.listingId ?? null,
+      fsboListingId: params.fsboListingId ?? null,
       offerId: params.offerId ?? null,
       contractId: params.contractId ?? null,
       appointmentId: params.appointmentId ?? null,
@@ -129,6 +134,7 @@ export async function createDirectConversation(params: {
       {
         type: "DIRECT",
         listingId: null,
+        fsboListingId: null,
         offerId: null,
         contractId: null,
         appointmentId: null,
@@ -145,6 +151,7 @@ export async function createDirectConversation(params: {
       createdById,
       subject: null,
       listingId: null,
+      fsboListingId: null,
       offerId: null,
       contractId: null,
       appointmentId: null,
@@ -188,6 +195,7 @@ export async function createListingConversation(params: {
       {
         type: "LISTING",
         listingId,
+        fsboListingId: null,
         offerId: null,
         contractId: null,
         appointmentId: null,
@@ -204,7 +212,65 @@ export async function createListingConversation(params: {
       createdById,
       subject,
       listingId,
+      fsboListingId: null,
       participantUserIds: [createdById, otherId],
+    });
+    return { conversation: conv, created: true };
+  });
+}
+
+/** Buyer/signed-in user ↔ FSBO owner (or broker-as-owner) — scoped by `fsboListingId` on the row. */
+export async function createFsboMarketplaceConversation(params: {
+  fsboListingId: string;
+  createdById: string;
+}): Promise<{ conversation: Conversation; created: boolean }> {
+  const fsbo = await prisma.fsboListing.findUnique({
+    where: { id: params.fsboListingId },
+    select: {
+      id: true,
+      title: true,
+      ownerId: true,
+      status: true,
+      moderationStatus: true,
+      archivedAt: true,
+      expiresAt: true,
+    },
+  });
+  if (!fsbo) throw new Error("Listing not found");
+  if (!isFsboPubliclyVisible(fsbo)) throw new Error("Listing not available");
+  if (fsbo.ownerId === params.createdById) throw new Error("Cannot message your own listing");
+
+  const subject = fsbo.title ? `Property: ${fsbo.title.slice(0, 120)}` : `Listing ${fsbo.id.slice(0, 8)}`;
+
+  return prisma.$transaction(async (tx) => {
+    const existing = await findExistingPairConversation(
+      tx,
+      {
+        type: "DIRECT",
+        listingId: null,
+        fsboListingId: fsbo.id,
+        offerId: null,
+        contractId: null,
+        appointmentId: null,
+        brokerClientId: null,
+      },
+      params.createdById,
+      fsbo.ownerId
+    );
+    if (existing) return { conversation: existing, created: false };
+
+    const conv = await createConversationWithParticipants({
+      tx,
+      type: "DIRECT",
+      createdById: params.createdById,
+      subject,
+      listingId: null,
+      fsboListingId: fsbo.id,
+      offerId: null,
+      contractId: null,
+      appointmentId: null,
+      brokerClientId: null,
+      participantUserIds: [params.createdById, fsbo.ownerId],
     });
     return { conversation: conv, created: true };
   });
@@ -240,6 +306,7 @@ export async function createOfferConversation(params: {
         type: "OFFER",
         offerId: offer.id,
         listingId: null,
+        fsboListingId: null,
         contractId: null,
         appointmentId: null,
         brokerClientId: null,
@@ -255,6 +322,7 @@ export async function createOfferConversation(params: {
       createdById: params.createdById,
       subject,
       offerId: offer.id,
+      fsboListingId: null,
       participantUserIds: [buyerId, brokerId],
     });
     return { conversation: conv, created: true };
@@ -293,6 +361,7 @@ export async function createContractConversation(params: {
       createdById: params.createdById,
       subject,
       contractId: c.id,
+      fsboListingId: null,
       participantUserIds: participants,
     });
     return { conversation: conv, created: true };
@@ -336,6 +405,7 @@ export async function createAppointmentConversation(params: {
         type: "APPOINTMENT",
         appointmentId: appt.id,
         listingId: null,
+        fsboListingId: null,
         offerId: null,
         contractId: null,
         brokerClientId: null,
@@ -351,6 +421,7 @@ export async function createAppointmentConversation(params: {
       createdById: params.createdById,
       subject,
       appointmentId: appt.id,
+      fsboListingId: null,
       participantUserIds: [appt.brokerId, clientId],
     });
     return { conversation: conv, created: true };
@@ -377,6 +448,7 @@ export async function createBrokerClientConversation(params: {
         type: "CLIENT_THREAD",
         brokerClientId: bc.id,
         listingId: null,
+        fsboListingId: null,
         offerId: null,
         contractId: null,
         appointmentId: null,
@@ -392,6 +464,7 @@ export async function createBrokerClientConversation(params: {
       createdById: params.createdById,
       subject,
       brokerClientId: bc.id,
+      fsboListingId: null,
       participantUserIds: [bc.brokerId, bc.userId!],
     });
     return { conversation: conv, created: true };
@@ -423,6 +496,8 @@ export async function getOrCreateConversationForContext(
       return createAppointmentConversation({ appointmentId: contextId, createdById: userId });
     case "client":
       return createBrokerClientConversation({ brokerClientId: contextId, createdById: userId });
+    case "fsbo_listing":
+      return createFsboMarketplaceConversation({ fsboListingId: contextId, createdById: userId });
     default:
       throw new Error("Unsupported context");
   }

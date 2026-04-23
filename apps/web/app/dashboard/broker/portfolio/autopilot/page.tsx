@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 
 type PortfolioReviewRow = {
@@ -28,6 +29,20 @@ export default function PortfolioAutopilotPage() {
   const [review, setReview] = useState<PortfolioReviewRow | null>(null);
   const [recommendations, setRecommendations] = useState<RecommendationRow[]>([]);
   const [loading, setLoading] = useState(false);
+
+  const monitoringLinks = (
+    <div className="mb-6 flex flex-wrap gap-3 text-sm">
+      <Link href="/dashboard/broker/watchlist" className="text-[#D4AF37] underline-offset-4 hover:underline">
+        Watchlist
+      </Link>
+      <Link href="/dashboard/broker/saved-searches" className="text-[#D4AF37] underline-offset-4 hover:underline">
+        Saved searches
+      </Link>
+      <Link href="/dashboard/broker/alerts" className="text-[#D4AF37] underline-offset-4 hover:underline">
+        Alert Center
+      </Link>
+    </div>
+  );
 
   async function runReview() {
     setLoading(true);
@@ -113,6 +128,8 @@ export default function PortfolioAutopilotPage() {
           {loading ? "Analyzing..." : "Run Portfolio Review"}
         </button>
       </div>
+
+      {monitoringLinks}
 
       {review && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">

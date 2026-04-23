@@ -75,6 +75,8 @@
     "demo:full": "npx tsx scripts/generate-full-demo-data.ts",
     "backup:db": "npx tsx scripts/backup-db.ts",
     "export:audit-log": "npx tsx scripts/export-audit-log.ts",
+    "export:investor-deck": "node docs/investors/pitch-deck/export-deck-to-pdf.mjs",
+    "export:investor-deck:strict": "node docs/investors/pitch-deck/export-deck-to-pdf.mjs --strict",
     "pitch:premium": "python3 scripts/build_bnhub_premium_pitch_deck.py",
     "docker:build": "docker compose -f infrastructure/docker/docker-compose.yml build",
     "docker:up": "docker compose -f infrastructure/docker/docker-compose.yml up -d",
@@ -94,6 +96,7 @@
     "codemod:imports": "jscodeshift -t scripts/codemods/replace-imports.js apps/web --extensions=ts,tsx --parser=tsx --ignore-pattern=**/node_modules/**"
   },
   "devDependencies": {
+    "puppeteer": "^24.2.0",
     "@repo/db": "workspace:*",
     "jscodeshift": "^17.1.2",
     "@eslint/js": "^9.15.0",

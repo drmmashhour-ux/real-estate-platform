@@ -1,12 +1,17 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type {
   ComplianceCheckResult,
   FullListingAssistantBundle,
   ListingLanguage,
   PricingSuggestionResult,
 } from "@/modules/listing-assistant/listing-assistant.types";
+import { computeListingReadiness } from "@/modules/listing-assistant/listing-readiness.service";
+import type { ListingVersionCompareResult } from "@/modules/listing-assistant/listing-version.types";
+import { snapshotFromGeneratedContent } from "@/modules/listing-assistant/listing-version.types";
 import {
   formatCentrisExportJson,
   formatCopyReadyCentrisText,
@@ -36,6 +41,14 @@ export function ListingAssistantDashboardClient({ initialListingId }: Props) {
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<TabId>("content");
+
+  const [editTitle, setEditTitle] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editHighlights, setEditHighlights] = useState("");
+  const [versions, setVersions] = useState<Array<{ id: string; phase: string; createdAt: string }>>([]);
+  const [compareFrom, setCompareFrom] = useState("");
+  const [compareTo, setCompareTo] = useState("");
+  const [compareResult, setCompareResult] = useState<ListingVersionCompareResult | null>(null);
 
   const partialPayload = useCallback(() => {
     const bd = bedrooms.trim() ? Number(bedrooms) : undefined;
@@ -152,6 +165,75 @@ export function ListingAssistantDashboardClient({ initialListingId }: Props) {
     void navigator.clipboard.writeText(text);
   }
 
+  function buildSnapshotForSave() {
+    if (!bundle) return null;
+    const highlights =
+      editHighlights.trim() ?
+        editHighlights.split("\n").map((l) => l.trim()).filter(Boolean)
+      : bundle.content.propertyHighlights;
+    return snapshotFromGeneratedContent({
+      ...bundle.content,
+      title: editTitle.trim() || bundle.content.title,
+      description: editDescription.trim() || bundle.content.description,
+      propertyHighlights: highlights,
+    });
+  }
+
+  function isBrokerEdited(): boolean {
+    if (!bundle) return false;
+    const snap = buildSnapshotForSave();
+    if (!snap) return false;
+    const gen = snapshotFromGeneratedContent(bundle.content);
+    return (
+      snap.title !== gen.title ||
+      snap.description !== gen.description ||
+      JSON.stringify(snap.propertyHighlights) !== JSON.stringify(gen.propertyHighlights)
+    );
+  }
+
+  async function runSaveDraft() {
+    const id = listingId.trim();
+    if (!id || !bundle) {
+      setError("Listing ID and generated content required to save draft.");
+      return;
+    }
+    const content = buildSnapshotForSave();
+    if (!content) return;
+    setLoading("save");
+    setError(null);
+    try {
+      const res = await fetch("/api/listing/assistant/save-draft", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          listingId: id,
+          content,
+          brokerEdited: isBrokerEdited(),
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(typeof data.error === "string" ? data.error : "Save failed");
+        return;
+      }
+    } catch {
+      setError("Network error");
+    } finally {
+      setLoading(null);
+    }
+  }
+
+  async function runCompareVersions() {
+    const id = listingId.trim();
+    if (!id || !compareFrom || !compareTo) return;
+    const res = await fetch(
+      `/api/listing/assistant/versions?listingId=${encodeURIComponent(id)}&fromId=${encodeURIComponent(compareFrom)}&toId=${encodeURIComponent(compareTo)}`
+    );
+    const data = await res.json().catch(() => ({}));
+    setCompareResult((data.compare as ListingVersionCompareResult | null) ?? null);
+  }
+
   function downloadJson() {
     if (!bundle) return;
     const json = formatCentrisExportJson(bundle.centrisStructured);
@@ -178,6 +260,17 @@ export function ListingAssistantDashboardClient({ initialListingId }: Props) {
         The smartest way to create real estate listings —{" "}
         <strong className="text-white">broker validation required</strong>. No auto-posting to Centris or external MLS.
       </p>
+
+      {localePrefix ?
+        <div className="flex flex-wrap gap-3 text-sm">
+          <Link
+            href={`${localePrefix}/dashboard/listings/assistant/operations`}
+            className="font-semibold text-emerald-700 underline dark:text-emerald-400"
+          >
+            Open operations dashboard →
+          </Link>
+        </div>
+      : null}
 
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
         <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Property input</h2>
@@ -292,8 +385,145 @@ export function ListingAssistantDashboardClient({ initialListingId }: Props) {
           >
             {loading === "pricing" ? "…" : "Suggest price band"}
           </button>
+          <button
+            type="button"
+            disabled={loading !== null || !bundle || !listingId.trim()}
+            onClick={() => void runSaveDraft()}
+            className="rounded-xl border border-emerald-600 px-5 py-2.5 text-sm font-semibold text-emerald-800 hover:bg-emerald-50 disabled:opacity-50 dark:border-emerald-500 dark:text-emerald-200 dark:hover:bg-emerald-950/40"
+          >
+            {loading === "save" ? "Saving…" : "Save to CRM draft"}
+          </button>
         </div>
       </section>
+
+      {bundle?.alerts && bundle.alerts.length > 0 ?
+        <aside className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900/70">
+          <p className="text-xs font-semibold uppercase text-slate-500">Assistant alerts</p>
+          <ul className="mt-2 space-y-2 text-sm">
+            {bundle.alerts.map((a) => (
+              <li
+                key={a.id}
+                className={
+                  a.severity === "critical" ? "text-red-700 dark:text-red-400"
+                  : a.severity === "warning" ? "text-amber-800 dark:text-amber-300"
+                  : "text-slate-700 dark:text-slate-300"
+                }
+              >
+                <strong>{a.title}:</strong> {a.detail}
+              </li>
+            ))}
+          </ul>
+        </aside>
+      : null}
+
+      {readinessMerged ?
+        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm dark:border-slate-800 dark:bg-slate-900/70">
+          <span className="font-semibold text-slate-700 dark:text-slate-200">Publish readiness</span>
+          <span
+            className={
+              readinessMerged.readinessStatus === "HIGH_RISK" ? "rounded-full bg-red-100 px-3 py-1 text-red-900 dark:bg-red-950/60 dark:text-red-200"
+              : readinessMerged.readinessStatus === "NEEDS_EDITS" ? "rounded-full bg-amber-100 px-3 py-1 text-amber-950 dark:bg-amber-950/40 dark:text-amber-100"
+              : "rounded-full bg-emerald-100 px-3 py-1 text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-100"
+            }
+          >
+            {readinessMerged.readinessStatus} · {readinessMerged.readinessScore}/100
+          </span>
+          <span className="text-slate-600 dark:text-slate-400">
+            {readinessMerged.topBlockers[0] ?? "No blockers flagged."}
+          </span>
+        </div>
+      : null}
+
+      {bundle && listingId.trim() ?
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Version comparison</h2>
+          <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+            Compare recorded snapshots (original baseline → AI iterations → broker saves).
+          </p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <select
+              value={compareFrom}
+              onChange={(e) => setCompareFrom(e.target.value)}
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-950"
+            >
+              <option value="">From…</option>
+              {versions.map((v) => (
+                <option key={v.id} value={v.id}>
+                  {v.phase} · {new Date(v.createdAt).toLocaleString()}
+                </option>
+              ))}
+            </select>
+            <select
+              value={compareTo}
+              onChange={(e) => setCompareTo(e.target.value)}
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-950"
+            >
+              <option value="">To…</option>
+              {versions.map((v) => (
+                <option key={`${v.id}-to`} value={v.id}>
+                  {v.phase} · {new Date(v.createdAt).toLocaleString()}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={() => void runCompareVersions()}
+              className="rounded-lg bg-slate-900 px-4 py-2 text-sm text-white dark:bg-slate-100 dark:text-slate-900"
+            >
+              Compare
+            </button>
+          </div>
+          {compareResult ?
+            <ul className="mt-4 list-inside list-disc text-sm text-slate-700 dark:text-slate-300">
+              {compareResult.segments.map((s) => (
+                <li key={s.field + s.summary}>
+                  <strong>{s.field}:</strong> {s.summary}
+                </li>
+              ))}
+            </ul>
+          : null}
+        </section>
+      : null}
+
+      {bundle ?
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Broker refinements (optional)</h2>
+          <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+            Edit before saving to CRM draft. Leave blank to use the generated text.
+          </p>
+          <div className="mt-4 grid gap-4">
+            <label className="text-sm">
+              Title
+              <input
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                placeholder={bundle.content.title}
+                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 dark:border-slate-600 dark:bg-slate-950"
+              />
+            </label>
+            <label className="text-sm">
+              Description
+              <textarea
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+                placeholder={bundle.content.description.slice(0, 120) + "…"}
+                rows={5}
+                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 dark:border-slate-600 dark:bg-slate-950"
+              />
+            </label>
+            <label className="text-sm">
+              Highlights (one per line)
+              <textarea
+                value={editHighlights}
+                onChange={(e) => setEditHighlights(e.target.value)}
+                placeholder={bundle.content.propertyHighlights.join("\n")}
+                rows={4}
+                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 dark:border-slate-600 dark:bg-slate-950"
+              />
+            </label>
+          </div>
+        </section>
+      : null}
 
       {bundle ? (
         <>
@@ -399,16 +629,35 @@ export function ListingAssistantDashboardClient({ initialListingId }: Props) {
                 </p>
               ) : (
                 <>
-                  <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">{pricing.rationale}</p>
-                  <p className="mt-3 text-sm">
-                    Range:{" "}
-                    <strong className="text-slate-900 dark:text-white">
-                      ${pricing.suggestedMinMajor.toLocaleString()} – ${pricing.suggestedMaxMajor.toLocaleString()}
-                    </strong>
-                  </p>
-                  <p className="mt-2 text-sm">
-                    Competitiveness index: <strong>{Math.round(pricing.competitivenessScore)}</strong>/100
-                  </p>
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-950/80">
+                    <p className="text-xs font-semibold uppercase text-slate-500">Pricing transparency</p>
+                    <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">{pricing.rationale}</p>
+                    <dl className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
+                      <div>
+                        <dt className="text-xs uppercase text-slate-500">CRM peers matched</dt>
+                        <dd className="font-semibold">{pricing.comparableCount}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs uppercase text-slate-500">Confidence</dt>
+                        <dd className="font-semibold">{pricing.confidenceLevel}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs uppercase text-slate-500">Band</dt>
+                        <dd>
+                          ${pricing.priceBandLow.toLocaleString()} – ${pricing.priceBandHigh.toLocaleString()}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs uppercase text-slate-500">Competitiveness</dt>
+                        <dd>{Math.round(pricing.competitivenessScore)}/100</dd>
+                      </div>
+                    </dl>
+                    {pricing.thinDataWarning ?
+                      <p className="mt-3 text-sm font-medium text-amber-700 dark:text-amber-400">
+                        Caution: thin peer sample — widen comps manually before relying on this band.
+                      </p>
+                    : null}
+                  </div>
                 </>
               )}
             </section>

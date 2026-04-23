@@ -118,6 +118,30 @@ export default function DigestPage() {
           >
             Portfolio autopilot →
           </Link>
+          <Link
+            href="/dashboard/broker/saved-searches"
+            className="text-center text-sm text-[#D4AF37]/90 underline-offset-2 hover:underline"
+          >
+            Saved searches →
+          </Link>
+          <Link
+            href="/dashboard/broker/watchlist"
+            className="text-center text-sm text-[#D4AF37]/90 underline-offset-2 hover:underline"
+          >
+            Watchlist →
+          </Link>
+          <Link
+            href="/dashboard/broker/alerts"
+            className="text-center text-sm text-[#D4AF37]/90 underline-offset-2 hover:underline"
+          >
+            Alert Center →
+          </Link>
+          <Link
+            href="/dashboard/broker/market-watch"
+            className="text-center text-sm text-[#D4AF37]/90 underline-offset-2 hover:underline"
+          >
+            Real Estate Watch →
+          </Link>
         </div>
       </div>
 

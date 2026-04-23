@@ -362,6 +362,8 @@ model User {
   identityVerifications                IdentityVerification[]
   bnhubTrustSimpleDisputesReported     BnhubTrustSimpleDispute[]             @relation("BnhubTrustSimpleDisputeReporter")
   brokerVerifications                  BrokerVerification[]
+  lecipmBrokerLicenceProfile         LecipmBrokerLicenceProfile?
+  lecipmLicenceChecks                LecipmLicenceCheck[]
   coownershipChecklistCompletions    ChecklistItem[]                       @relation("ChecklistItemCompletedBy")
   checklistItemVerifiedBy            ChecklistItem[]                       @relation("ChecklistItemVerifiedBy")
   checklistItemOverriddenBy          ChecklistItem[]                       @relation("ChecklistItemOverriddenBy")
@@ -622,6 +624,7 @@ model User {
   propertyComparisons                  PropertyComparison[]
   investorProfiles                     InvestorProfile[]
   portfolioScenarios                   PortfolioScenario[]
+  portfolioBooks                       PortfolioBook[]
   investorPortfolioAlerts              InvestorPortfolioAlert[]
   investmentDeals                      InvestmentDeal[]
   dealWatchlists                       DealWatchlist[]
@@ -731,6 +734,12 @@ model User {
   legalContractAuditLogs               LegalContractAuditLog[]
   platformLegalDisputesOpened          PlatformLegalDispute[]                @relation("PlatformLegalDisputeOpenedBy")
   platformLegalDisputesTargeted        PlatformLegalDispute[]                @relation("PlatformLegalDisputeTarget")
+  /// Platform Dispute Room (neutral resolution workflow — distinct from BNHub `Dispute`).
+  lecipmDisputeCasesOpened            LecipmDisputeCase[]                   @relation("LecipmDisputeCaseOpenedBy")
+  lecipmDisputeCasesAgainst           LecipmDisputeCase[]                   @relation("LecipmDisputeCaseAgainst")
+  lecipmDisputeCasesResolved          LecipmDisputeCase[]                   @relation("LecipmDisputeCaseResolvedBy")
+  lecipmDisputeCaseMessagesSent       LecipmDisputeCaseMessage[]            @relation("LecipmDisputeCaseMessageSender")
+  lecipmDisputeCaseEventsAsActor      LecipmDisputeCaseEvent[]              @relation("LecipmDisputeCaseEventActor")
   /// Latest acceptance of the platform Content & Usage License (version checked against `ContentLicensePolicy`).
   contentLicenseAcceptance             ContentLicenseAcceptance?
   contentLicensePolicyUpdates          ContentLicensePolicy[]                @relation("ContentLicensePolicyUpdatedBy")
@@ -2269,6 +2278,8 @@ model FsboListing {
   /// Optional syndication rows (e.g. Centris) — authorized connector only; never scraped.
   externalListings               ExternalListing[]
   greenProject                   GreenProject?
+  /// Marketplace DM threads opened from FSBO detail (`Conversation.fsboListingId`).
+  marketplaceConversations       Conversation[]               @relation("ConversationFsboListing")
 
   @@index([ownerId])
   @@index([tenantId])
@@ -2605,6 +2616,7 @@ model DealAnalysis {
   negotiationPlaybooks     DealNegotiationPlaybook[]
   appraisalAdjustmentProposals AppraisalAdjustmentProposal[]
   appraisalAdjustments         AppraisalAdjustment[]
+  lecipmBrokerAppraisalCase  LecipmBrokerAppraisalCase?
 
   @@index([propertyId], map: "idx_deal_analyses_property_id")
   @@index([canonicalPropertyId], map: "idx_deal_analyses_canonical_property_id")
@@ -7153,6 +7165,116 @@ model ListingComplianceReview {
   @@map("listing_compliance_reviews")
 }
 
+/// OACIQ guideline section — versioned rule bundle + bilingual clauses (platform assistance; broker remains liable).
+model OaciqComplianceSection {
+  id               String   @id @default(cuid())
+  sectionKey       String   @unique @map("section_key") @db.VarChar(128)
+  sectionTitleFr   String   @map("section_title_fr") @db.VarChar(500)
+  sectionTitleEn   String?  @map("section_title_en") @db.VarChar(500)
+  /// Official excerpt or controlled summary (for traceability — not legal advice).
+  sourceExcerpt    String?  @map("source_excerpt") @db.Text
+  /// rule_engine.{sectionKey}: requiredActions, forbiddenActions, conditionalChecks
+  ruleEngineJson   Json     @map("rule_engine_json")
+  /// AI_CHECKLIST / AI_WARNINGS / AI_BLOCKS + metadata
+  aiBehaviorJson   Json     @map("ai_behavior_json")
+  clauseFr         String   @map("clause_fr") @db.Text
+  clauseEn         String?  @map("clause_en") @db.Text
+  defaultRiskLevel String   @default("MEDIUM") @map("default_risk_level") @db.VarChar(16)
+  active           Boolean  @default(true)
+  effectiveFrom    DateTime? @map("effective_from") @db.Timestamptz(6)
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  evaluations OaciqComplianceEvaluationLog[]
+
+  @@index([active, sectionKey], map: "idx_oaciq_compliance_sections_active_key")
+  @@map("oaciq_compliance_sections")
+}
+
+/// Inspection-grade trace of rule evaluation (OACIQ diligence trail).
+model OaciqComplianceEvaluationLog {
+  id                  String               @id @default(cuid())
+  sectionId           String               @map("section_id")
+  section             OaciqComplianceSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  brokerUserId        String               @map("broker_user_id")
+  dealId              String?              @map("deal_id") @db.VarChar(128)
+  listingId           String?              @map("listing_id") @db.VarChar(128)
+  /// pass | warn | block
+  outcome             String               @map("outcome") @db.VarChar(16)
+  complianceRiskScore String               @map("compliance_risk_score") @db.VarChar(16)
+  contextJson         Json?                @map("context_json")
+  triggeredRulesJson  Json?                @map("triggered_rules_json")
+  blockedActionsJson  Json?                @map("blocked_actions_json")
+  createdAt           DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([brokerUserId, createdAt(sort: Desc)], map: "idx_oaciq_eval_logs_broker_created")
+  @@index([sectionId, createdAt(sort: Desc)], map: "idx_oaciq_eval_logs_section_created")
+  @@map("oaciq_compliance_evaluation_logs")
+}
+
+/// OACIQ Guideline — Conflicts of Interest (Ref 208901): prevention, disclosure trace, enforcement flags.
+/// Platform assists; broker attestation and professional judgment are mandatory. AI does not decide.
+model OaciqConflictCheck {
+  id     String @id @default(cuid())
+  /// Acting residential broker (solo book).
+  brokerId String @map("broker_id") @db.VarChar(36)
+  /// CRM / capital pipeline deal (cuid).
+  pipelineDealId String? @map("pipeline_deal_id") @db.VarChar(36)
+  /// Execution `Deal` (uuid) — closing room / signatures.
+  executionDealId String? @map("execution_deal_id") @db.VarChar(36)
+  listingId       String? @map("listing_id") @db.VarChar(36)
+
+  hasConflict       Boolean @map("has_conflict")
+  conflictType      String  @map("conflict_type") @db.VarChar(64)
+  disclosureStatus  String  @map("disclosure_status") @db.VarChar(24)
+  riskLevel         String  @map("risk_level") @db.VarChar(16)
+
+  clientRepresentationContractSigned Boolean @default(false) @map("client_representation_contract_signed")
+  brokerPersonalInvolvement            Boolean @default(false) @map("broker_personal_involvement")
+  brokerFinancialInterest                Boolean @default(false) @map("broker_financial_interest")
+  relatedPartyInvolvement              Boolean @default(false) @map("related_party_involvement")
+  benefitOutsideCommission               Boolean @default(false) @map("benefit_outside_commission")
+  dualRoleWithoutFramework               Boolean @default(false) @map("dual_role_without_framework")
+
+  brokerConfirmedDeclaration Boolean   @default(false) @map("broker_confirmed_declaration")
+  brokerConfirmedAt          DateTime? @map("broker_confirmed_at")
+  /// High-risk: disclosure does not erase conflict — broker must acknowledge persisting duty / documentation.
+  highRiskAcknowledgedPersistingConflict Boolean   @default(false) @map("high_risk_ack_persisting")
+  highRiskReleasedAt                     DateTime? @map("high_risk_released_at")
+
+  checklistJson Json? @map("checklist_json") @db.JsonB
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  disclosures OaciqConflictDisclosureLog[]
+
+  @@index([brokerId, pipelineDealId], map: "idx_oaciq_conflict_broker_pipeline")
+  @@index([brokerId, executionDealId], map: "idx_oaciq_conflict_broker_execution")
+  @@index([brokerId, listingId], map: "idx_oaciq_conflict_broker_listing")
+  @@map("oaciq_conflict_checks")
+}
+
+/// Immutable-lean disclosure record (text + client sign-off flag); append-only in application code.
+model OaciqConflictDisclosureLog {
+  id              String @id @default(cuid())
+  conflictCheckId String @map("conflict_check_id") @db.VarChar(36)
+  conflictCheck   OaciqConflictCheck @relation(fields: [conflictCheckId], references: [id], onDelete: Cascade)
+
+  pipelineDealId  String? @map("pipeline_deal_id") @db.VarChar(36)
+  executionDealId String? @map("execution_deal_id") @db.VarChar(36)
+  disclosureText  String  @map("disclosure_text") @db.Text
+  signedByClient  Boolean @default(false) @map("signed_by_client")
+  locale          String? @db.VarChar(8)
+  includesStandardClause Boolean @default(false) @map("includes_standard_clause")
+
+  createdByBrokerId String   @map("created_by_broker_id") @db.VarChar(36)
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@index([conflictCheckId, createdAt(sort: Desc)], map: "idx_oaciq_disclosure_check_created")
+  @@map("oaciq_conflict_disclosure_logs")
+}
+
 // Professional applications – unified verification (admin approve/reject)
 
 model BrokerApplication {
@@ -8343,6 +8465,45 @@ model BrokerServiceProfile {
 
   @@index([brokerId])
   @@map("broker_service_profiles")
+}
+
+/// OACIQ-facing residential licence capsule (platform record; regulator-verified status remains the broker’s duty).
+model LecipmBrokerLicenceProfile {
+  id              String   @id @default(cuid())
+  userId          String   @unique @map("user_id")
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fullName        String?  @map("full_name") @db.VarChar(256)
+  licenceNumber   String?  @map("licence_number") @db.VarChar(64)
+  /// Platform product enforces residential brokerage paths only.
+  licenceType     String   @default("residential") @map("licence_type") @db.VarChar(32)
+  /// active | inactive | pending
+  licenceStatus   String   @default("pending") @map("licence_status") @db.VarChar(24)
+  neq             String?  @db.VarChar(32)
+  gst             String?  @db.VarChar(32)
+  qst             String?  @db.VarChar(32)
+  address         String?  @db.Text
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  licenceChecks   LecipmLicenceCheck[]
+
+  @@map("lecipm_broker_licence_profiles")
+}
+
+/// Append-only licence / scope evaluation for audits (login, deal create, drafting).
+model LecipmLicenceCheck {
+  id          String                    @id @default(cuid())
+  brokerId    String                    @map("broker_id")
+  broker      User                      @relation(fields: [brokerId], references: [id], onDelete: Cascade)
+  profileId   String?                   @map("profile_id")
+  profile     LecipmBrokerLicenceProfile? @relation(fields: [profileId], references: [id], onDelete: SetNull)
+  isValid     Boolean                   @map("is_valid")
+  scopeValid  Boolean                   @map("scope_valid")
+  riskLevel   String?                   @map("risk_level") @db.VarChar(16)
+  contextJson Json?                     @map("context_json")
+  checkedAt   DateTime                  @default(now()) @map("checked_at")
+
+  @@index([brokerId, checkedAt(sort: Desc)])
+  @@map("lecipm_licence_checks")
 }
 
 // Quebec / Canada broker tax registration (BN, GST, QST) — provided by broker; format-checked only.
@@ -12126,6 +12287,690 @@ model ComplianceAuditLog {
   @@map("compliance_audit_logs")
 }
 
+// —— LECIPM complaints, public protection & syndic-oriented routing (audit + human accountability) ——
+
+/// Consumer / broker complaint & public assistance case file (distinct from `ComplianceCase` deal QA).
+model ComplaintCase {
+  id                 String    @id @default(cuid())
+  caseNumber         String    @unique @map("case_number")
+
+  ownerType          String    @map("owner_type") // agency | solo_broker | platform
+  ownerId            String    @map("owner_id")
+
+  complainantUserId  String?   @map("complainant_user_id")
+  complainantName    String?   @map("complainant_name")
+  complainantEmail   String?   @map("complainant_email")
+  complainantPhone   String?   @map("complainant_phone")
+
+  targetType         String?   @map("target_type")
+  targetId           String?   @map("target_id")
+
+  linkedBrokerId     String?   @map("linked_broker_id")
+  linkedAgencyId     String?   @map("linked_agency_id")
+  linkedListingId    String?   @map("linked_listing_id")
+  linkedDealId       String?   @map("linked_deal_id")
+  linkedOfferId      String?   @map("linked_offer_id")
+  linkedContractId   String?   @map("linked_contract_id")
+
+  complaintChannel   String    @map("complaint_channel")
+  complaintType      String    @map("complaint_type")
+  severity           String
+
+  summary            String    @db.Text
+  description        String    @db.Text
+  intakeLanguage     String?   @map("intake_language")
+
+  status             String
+  routingDecision    String?   @map("routing_decision")
+
+  aiSummary          String?   @map("ai_summary") @db.Text
+  aiFlags            Json?     @map("ai_flags") @db.JsonB
+
+  firstReceivedAt    DateTime  @default(now()) @map("first_received_at")
+  acknowledgedAt     DateTime? @map("acknowledged_at")
+  closedAt           DateTime? @map("closed_at")
+
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+
+  events               ComplaintEvent[]
+  attachments          ComplaintAttachment[]
+  publicProtectionReferral PublicProtectionReferral?
+
+  @@index([ownerType, ownerId], map: "idx_complaint_case_owner")
+  @@index([status], map: "idx_complaint_case_status")
+  @@index([complaintType], map: "idx_complaint_case_type")
+  @@index([linkedBrokerId], map: "idx_complaint_case_linked_broker")
+  @@map("complaint_cases")
+}
+
+model ComplaintEvent {
+  id                   String   @id @default(cuid())
+  complaintCaseId      String   @map("complaint_case_id")
+  eventType            String   @map("event_type")
+  performedById        String?  @map("performed_by_id")
+  aiAssisted           Boolean  @default(false) @map("ai_assisted")
+  visibleToComplainant Boolean  @default(false) @map("visible_to_complainant")
+  details              Json?    @db.JsonB
+  createdAt            DateTime @default(now()) @map("created_at")
+
+  complaintCase ComplaintCase @relation(fields: [complaintCaseId], references: [id], onDelete: Cascade)
+
+  @@index([complaintCaseId], map: "idx_complaint_events_case")
+  @@index([eventType], map: "idx_complaint_events_type")
+  @@map("complaint_events")
+}
+
+model ComplaintAttachment {
+  id              String   @id @default(cuid())
+  complaintCaseId String   @map("complaint_case_id")
+  fileName        String   @map("file_name")
+  fileUrl         String   @map("file_url") @db.Text
+  fileType        String?  @map("file_type")
+  uploadedById    String?  @map("uploaded_by_id")
+  confidential    Boolean  @default(true)
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  complaintCase ComplaintCase @relation(fields: [complaintCaseId], references: [id], onDelete: Cascade)
+
+  @@index([complaintCaseId], map: "idx_complaint_attachments_case")
+  @@map("complaint_attachments")
+}
+
+model PublicProtectionReferral {
+  id              String   @id @default(cuid())
+  complaintCaseId String   @unique @map("complaint_case_id")
+  referralType    String   @map("referral_type")
+  referralStatus  String   @map("referral_status")
+  referralReason  String   @map("referral_reason") @db.Text
+  referredById    String?  @map("referred_by_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  complaintCase ComplaintCase @relation(fields: [complaintCaseId], references: [id], onDelete: Cascade)
+
+  @@index([referralType], map: "idx_public_protection_referral_type")
+  @@map("public_protection_referrals")
+}
+
+model ComplaintPolicyRule {
+  id                String   @id @default(cuid())
+  ownerType         String   @map("owner_type")
+  ownerId           String   @map("owner_id")
+  complaintType     String   @map("complaint_type")
+  defaultSeverity   String   @map("default_severity")
+  suggestedRouting  String   @map("suggested_routing")
+  autoFlagSyndic    Boolean  @default(false) @map("auto_flag_syndic")
+  active            Boolean  @default(true)
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@index([ownerType, ownerId], map: "idx_complaint_policy_owner")
+  @@map("complaint_policy_rules")
+}
+
+/// Public assistance / consumer guidance intake (pre-complaint; converts to `ComplaintCase` when escalated).
+model AssistanceRequest {
+  id                    String   @id @default(cuid())
+  requestNumber         String   @unique @map("request_number")
+
+  userId                String?  @map("user_id")
+  name                  String?
+  email                 String?
+  phone                 String?
+
+  requestType           String   @map("request_type") // info | guidance | issue | pre-complaint
+  topic                 String // listing | offer | deposit | contract | commission | general
+
+  relatedListingId      String?  @map("related_listing_id")
+  relatedDealId         String?  @map("related_deal_id")
+  relatedBrokerId       String?  @map("related_broker_id")
+
+  message               String   @db.Text
+  language              String // en | fr | ar
+
+  aiSuggestedPath       String?  @map("ai_suggested_path") // self_resolve | contact_broker | file_complaint
+  status                String // new | responded | converted_to_complaint | closed
+
+  threadLocked          Boolean  @default(false) @map("thread_locked")
+  linkedComplaintCaseId String?  @map("linked_complaint_case_id")
+
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  messages AssistanceMessage[]
+
+  @@index([userId], map: "idx_assistance_request_user")
+  @@index([status], map: "idx_assistance_request_status")
+  @@index([email], map: "idx_assistance_request_email")
+  @@map("assistance_requests")
+}
+
+model AssistanceMessage {
+  id                  String   @id @default(cuid())
+  assistanceRequestId String   @map("assistance_request_id")
+  senderType          String   @map("sender_type") // user | broker | admin | ai
+  senderId            String?  @map("sender_id")
+
+  message             String   @db.Text
+  isOfficial          Boolean  @default(false) @map("is_official")
+
+  createdAt           DateTime @default(now()) @map("created_at")
+
+  assistanceRequest AssistanceRequest @relation(fields: [assistanceRequestId], references: [id], onDelete: Cascade)
+
+  @@index([assistanceRequestId], map: "idx_assistance_messages_request")
+  @@map("assistance_messages")
+}
+
+model AcknowledgmentTemplate {
+  id          String   @id @default(cuid())
+  templateKey String   @map("template_key")
+  language    String
+  subject     String
+  body        String   @db.Text
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@unique([templateKey, language], map: "uq_ack_template_key_lang")
+  @@index([templateKey], map: "idx_ack_template_key")
+  @@map("acknowledgment_templates")
+}
+
+/// Unified LECIPM compliance audit chronology (immutable hash per event; no row deletions in product code).
+model ComplianceAuditRecord {
+  id                    String   @id @default(cuid())
+  auditNumber           String   @unique @map("audit_number")
+  ownerType             String   @map("owner_type")
+  ownerId               String   @map("owner_id")
+  entityType            String   @map("entity_type")
+  entityId              String   @map("entity_id")
+  actionType            String   @map("action_type")
+  moduleKey             String   @map("module_key")
+  actorType             String?  @map("actor_type")
+  actorId               String?  @map("actor_id")
+  linkedListingId       String?  @map("linked_listing_id")
+  linkedDealId          String?  @map("linked_deal_id")
+  linkedOfferId         String?  @map("linked_offer_id")
+  linkedContractId      String?  @map("linked_contract_id")
+  linkedComplaintCaseId String?  @map("linked_complaint_case_id")
+  linkedTrustDepositId  String?  @map("linked_trust_deposit_id")
+  aiAssisted            Boolean  @default(false) @map("ai_assisted")
+  humanReviewRequired   Boolean  @default(false) @map("human_review_required")
+  humanReviewCompleted  Boolean  @default(false) @map("human_review_completed")
+  severity              String   @default("info")
+  summary               String   @db.Text
+  details               Json?    @db.JsonB
+  immutableHash         String   @map("immutable_hash")
+  eventTimestamp        DateTime @default(now()) @map("event_timestamp")
+
+  @@index([ownerType, ownerId], map: "idx_compliance_audit_owner")
+  @@index([eventTimestamp], map: "idx_compliance_audit_event_ts")
+  @@index([moduleKey], map: "idx_compliance_audit_module")
+  @@map("compliance_audit_records")
+}
+
+/// Structured export bundle for inspections, complaint dossiers, trust/financial reviews (sealed = immutable).
+model ComplianceExportBundle {
+  id               String    @id @default(cuid())
+  bundleNumber     String    @unique @map("bundle_number")
+  ownerType        String    @map("owner_type")
+  ownerId          String    @map("owner_id")
+  bundleType       String    @map("bundle_type")
+  status           String
+  targetEntityType String?   @map("target_entity_type")
+  targetEntityId   String?   @map("target_entity_id")
+  dateFrom         DateTime? @map("date_from")
+  dateTo           DateTime? @map("date_to")
+  generatedById    String?   @map("generated_by_id")
+  generatedAt      DateTime? @map("generated_at")
+  sealedAt         DateTime? @map("sealed_at")
+  manifest         Json?     @db.JsonB
+  fileUrl          String?   @map("file_url") @db.Text
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  items ComplianceExportItem[]
+
+  @@index([ownerType, ownerId], map: "idx_compliance_export_owner")
+  @@map("compliance_export_bundles")
+}
+
+model ComplianceExportItem {
+  id                       String @id @default(cuid())
+  complianceExportBundleId String @map("compliance_export_bundle_id")
+  sourceType               String @map("source_type")
+  sourceId                 String @map("source_id")
+  label                    String @db.Text
+  sortOrder                Int    @default(0) @map("sort_order")
+  metadata                 Json?  @db.JsonB
+
+  complianceExportBundle ComplianceExportBundle @relation(fields: [complianceExportBundleId], references: [id], onDelete: Cascade)
+
+  @@index([complianceExportBundleId], map: "idx_compliance_export_item_bundle")
+  @@map("compliance_export_items")
+}
+
+/// Read-only inspection / oversight viewer session (token-based; do not use for mutating APIs when readOnly).
+model InspectionAccessSession {
+  id            String    @id @default(cuid())
+  sessionToken  String    @unique @map("session_token")
+  ownerType     String    @map("owner_type")
+  ownerId       String    @map("owner_id")
+  requestedById String?   @map("requested_by_id")
+  reviewerType  String    @map("reviewer_type")
+  scopeType     String    @map("scope_type")
+  scopeId       String?   @map("scope_id")
+  readOnly      Boolean   @default(true) @map("read_only")
+  startedAt     DateTime  @default(now()) @map("started_at")
+  expiresAt     DateTime? @map("expires_at")
+  revokedAt     DateTime? @map("revoked_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  @@index([ownerType, ownerId], map: "idx_inspection_session_owner")
+  @@map("inspection_access_sessions")
+}
+
+/// Platform / agency / broker-scoped guardrail rule definitions (seeded defaults + future local overrides).
+model ComplianceGuardrailRule {
+  id              String   @id @default(cuid())
+  ruleKey         String   @unique @map("rule_key")
+  ownerType       String   @map("owner_type")
+  ownerId         String   @map("owner_id")
+  moduleKey       String   @map("module_key")
+  actionKey       String   @map("action_key")
+  severity        String
+  enforcementMode String   @map("enforcement_mode")
+  conditionType   String   @map("condition_type")
+  conditionConfig Json?    @map("condition_config") @db.JsonB
+  message         String   @db.Text
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@index([ownerType, ownerId], map: "idx_guardrail_rule_owner")
+  @@index([moduleKey, actionKey], map: "idx_guardrail_rule_module_action")
+  @@map("compliance_guardrail_rules")
+}
+
+/// Immutable-style log of each guardrail evaluation (ties to audit trail via `logAuditEvent`).
+model ComplianceGuardrailDecision {
+  id               String   @id @default(cuid())
+  decisionNumber   String   @unique @map("decision_number")
+  ownerType        String   @map("owner_type")
+  ownerId          String   @map("owner_id")
+  moduleKey        String   @map("module_key")
+  actionKey        String   @map("action_key")
+  entityType       String   @map("entity_type")
+  entityId         String?  @map("entity_id")
+  actorType        String?  @map("actor_type")
+  actorId          String?  @map("actor_id")
+  outcome          String // allowed | warned | soft_blocked | hard_blocked | manual_review_required
+  severity         String
+  triggeredRuleKey String?  @map("triggered_rule_key")
+  reasonCode       String?  @map("reason_code")
+  message          String   @db.Text
+  aiAssisted       Boolean  @default(false) @map("ai_assisted")
+  overrideAllowed  Boolean  @default(false) @map("override_allowed")
+  details          Json?    @db.JsonB
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  @@index([ownerType, ownerId], map: "idx_guardrail_decision_owner")
+  @@index([moduleKey, actionKey], map: "idx_guardrail_decision_module")
+  @@map("compliance_guardrail_decisions")
+}
+
+/// Human escalation queue for manual_review_required outcomes (agency vs solo scoped by owner keys).
+model ComplianceManualReviewQueue {
+  id           String   @id @default(cuid())
+  ownerType    String   @map("owner_type")
+  ownerId      String   @map("owner_id")
+  moduleKey    String   @map("module_key")
+  actionKey    String   @map("action_key")
+  entityType   String   @map("entity_type")
+  entityId     String?  @map("entity_id")
+  decisionId   String?  @map("decision_id")
+  priority     String   @default("high")
+  reason       String   @db.Text
+  assignedToId String?  @map("assigned_to_id")
+  status       String   @default("open")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([ownerType, ownerId, status], map: "idx_manual_review_owner_status")
+  @@map("compliance_manual_review_queue")
+}
+
+/// Point-in-time compliance health score (broker/agency; optional listing/deal scope). Explainable factors in `factors` JSON.
+model ComplianceScore {
+  id             String   @id @default(cuid())
+  ownerType      String   @map("owner_type")
+  ownerId        String   @map("owner_id")
+  scopeType      String   @default("global") @map("scope_type")
+  scopeId        String?  @map("scope_id")
+  score          Float
+  grade          String
+  riskLevel      String   @map("risk_level")
+  lastComputedAt DateTime @default(now()) @map("last_computed_at")
+  factors        Json     @db.JsonB
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@index([ownerType, ownerId, scopeType, scopeId], map: "idx_compliance_score_owner_scope")
+  @@index([lastComputedAt], map: "idx_compliance_score_computed")
+  @@map("compliance_scores")
+}
+
+/// Command-center alert (acknowledgeable; separate from `ComplianceRiskEvent` rule-engine rows).
+model ComplianceAlert {
+  id               String    @id @default(cuid())
+  ownerType        String    @map("owner_type")
+  ownerId          String    @map("owner_id")
+  alertType        String    @map("alert_type")
+  severity         String
+  title            String
+  description      String    @db.Text
+  entityType       String?   @map("entity_type")
+  entityId         String?   @map("entity_id")
+  acknowledged     Boolean   @default(false)
+  acknowledgedById String?   @map("acknowledged_by_id")
+  acknowledgedAt   DateTime? @map("acknowledged_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+
+  @@index([ownerType, ownerId, acknowledged], map: "idx_compliance_alert_owner_ack")
+  @@map("compliance_alerts")
+}
+
+/// Flag-only risk signal (human review; no automatic enforcement).
+model ComplianceRiskEvent {
+  id                String   @id @default(cuid())
+  ownerType         String   @map("owner_type")
+  ownerId           String   @map("owner_id")
+  relatedEntityType String   @map("related_entity_type")
+  relatedEntityId   String?  @map("related_entity_id")
+  riskType          String   @map("risk_type")
+  severity          String
+  description       String   @db.Text
+  detectedBy        String   @map("detected_by")
+  aiConfidence      Float?   @map("ai_confidence")
+  requiresReview    Boolean  @default(true) @map("requires_review")
+  reviewed          Boolean  @default(false)
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@index([ownerType, ownerId], map: "idx_compliance_risk_owner")
+  @@index([riskType, createdAt], map: "idx_compliance_risk_type_created")
+  @@map("compliance_risk_events")
+}
+
+/// Deterministic anomaly record (traceable deviation from baseline).
+model ComplianceAnomaly {
+  id             String   @id @default(cuid())
+  entityType     String   @map("entity_type")
+  entityId       String   @map("entity_id")
+  anomalyType    String   @map("anomaly_type")
+  description    String   @db.Text
+  baselineValue  Float?   @map("baseline_value")
+  detectedValue  Float?   @map("detected_value")
+  severity       String
+  detectedAt     DateTime @default(now()) @map("detected_at")
+
+  @@index([entityType, entityId], map: "idx_compliance_anomaly_entity")
+  @@index([detectedAt], map: "idx_compliance_anomaly_detected")
+  @@map("compliance_anomalies")
+}
+
+/// Regulated actor profile (license-aware roles, supervision link, capability flags).
+model ComplianceActorProfile {
+  id                    String   @id @default(cuid())
+  userId                String   @unique @map("user_id")
+  actorType             String   @map("actor_type")
+  displayRole           String?  @map("display_role")
+  licenseStatus         String?  @map("license_status")
+  licenseNumber         String?  @map("license_number")
+  licenseCategory       String?  @map("license_category")
+  agencyId              String?  @map("agency_id")
+  supervisingActorId    String?  @map("supervising_actor_id")
+  canHoldTrustAuthority Boolean  @default(false) @map("can_hold_trust_authority")
+  canApproveContracts   Boolean  @default(false) @map("can_approve_contracts")
+  canCloseComplaints    Boolean  @default(false) @map("can_close_complaints")
+  canPublishListings    Boolean  @default(false) @map("can_publish_listings")
+  active                Boolean  @default(true)
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  @@index([actorType], map: "idx_compliance_actor_type")
+  @@index([agencyId], map: "idx_compliance_actor_agency")
+  @@map("compliance_actor_profiles")
+}
+
+/// Scoped, revocable delegation (explicit approver, auditable).
+model DelegatedAuthority {
+  id               String    @id @default(cuid())
+  ownerType        String    @map("owner_type")
+  ownerId          String    @map("owner_id")
+  delegatorActorId String    @map("delegator_actor_id")
+  delegateActorId  String    @map("delegate_actor_id")
+  authorityKey     String    @map("authority_key")
+  scopeType        String    @map("scope_type")
+  scopeId          String?   @map("scope_id")
+  canExecute       Boolean   @default(false) @map("can_execute")
+  requiresApproval Boolean   @default(true) @map("requires_approval")
+  approvalActorId  String?   @map("approval_actor_id")
+  startsAt         DateTime? @map("starts_at")
+  endsAt           DateTime? @map("ends_at")
+  revokedAt        DateTime? @map("revoked_at")
+  notes            String?   @db.Text
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  @@index([ownerType, ownerId, delegateActorId], map: "idx_delegation_owner_delegate")
+  @@index([authorityKey], map: "idx_delegation_authority")
+  @@map("delegated_authorities")
+}
+
+model SupervisionAssignment {
+  id                  String    @id @default(cuid())
+  ownerType           String    @map("owner_type")
+  ownerId             String    @map("owner_id")
+  supervisorActorId   String    @map("supervisor_actor_id")
+  supervisedActorId   String    @map("supervised_actor_id")
+  supervisionType     String    @map("supervision_type")
+  active              Boolean   @default(true)
+  startsAt            DateTime? @map("starts_at")
+  endsAt              DateTime? @map("ends_at")
+  revokedAt           DateTime? @map("revoked_at")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  @@index([ownerType, ownerId, supervisedActorId], map: "idx_supervision_owner_supervised")
+  @@map("supervision_assignments")
+}
+
+model AccountabilityRecord {
+  id                  String   @id @default(cuid())
+  ownerType           String   @map("owner_type")
+  ownerId             String   @map("owner_id")
+  entityType          String   @map("entity_type")
+  entityId            String   @map("entity_id")
+  actionKey           String   @map("action_key")
+  performedByActorId  String   @map("performed_by_actor_id")
+  accountableActorId  String   @map("accountable_actor_id")
+  supervisorActorId   String?  @map("supervisor_actor_id")
+  delegated           Boolean  @default(false)
+  delegationId        String?  @map("delegation_id")
+  supervisionId       String?  @map("supervision_id")
+  approvalRequired    Boolean  @default(false) @map("approval_required")
+  approvalCompleted   Boolean  @default(false) @map("approval_completed")
+  approvedByActorId   String?  @map("approved_by_actor_id")
+  createdAt           DateTime @default(now()) @map("created_at")
+
+  @@index([ownerType, ownerId], map: "idx_accountability_owner")
+  @@index([accountableActorId], map: "idx_accountability_accountable")
+  @@index([entityType, entityId], map: "idx_accountability_entity")
+  @@map("accountability_records")
+}
+
+/// Human approval gate for delegated preparatory work (not auto-enforced).
+model DelegatedApprovalTask {
+  id                 String   @id @default(cuid())
+  ownerType          String   @map("owner_type")
+  ownerId            String   @map("owner_id")
+  delegationId       String?  @map("delegation_id")
+  entityType         String   @map("entity_type")
+  entityId           String   @map("entity_id")
+  actionKey          String   @map("action_key")
+  requestedByActorId String   @map("requested_by_actor_id")
+  approverActorId    String   @map("approver_actor_id")
+  status             String   @default("pending")
+  note               String?  @db.Text
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  @@index([ownerType, ownerId, status], map: "idx_delegated_approval_owner_status")
+  @@map("delegated_approval_tasks")
+}
+
+/// Litigation / investigation hold on records (scoped or book-wide). Does not auto-delete data.
+model LegalHold {
+  id                 String    @id @default(cuid())
+  ownerType          String    @map("owner_type")
+  ownerId            String    @map("owner_id")
+  holdType           String    @map("hold_type")
+  entityType         String?   @map("entity_type")
+  entityId           String?   @map("entity_id")
+  appliesGlobally    Boolean   @default(false) @map("applies_globally")
+  reason             String    @db.Text
+  imposedByActorId   String    @map("imposed_by_actor_id")
+  active             Boolean   @default(true)
+  releasedAt         DateTime? @map("released_at")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+
+  @@index([ownerType, ownerId, active], map: "idx_legal_hold_owner_active")
+  @@index([entityType, entityId, active], map: "idx_legal_hold_entity_active")
+  @@map("compliance_legal_holds")
+}
+
+/// Per-entity retention schedule, immutability, and legal-hold mirror flags for enforcement layers.
+model RecordRetention {
+  id                String    @id @default(cuid())
+  ownerType         String    @map("owner_type")
+  ownerId           String    @map("owner_id")
+  entityType        String    @map("entity_type")
+  entityId          String    @map("entity_id")
+  retentionUntil    DateTime? @map("retention_until")
+  immutable         Boolean   @default(false)
+  legalHoldActive   Boolean   @default(false) @map("legal_hold_active")
+  legalHoldReason   String?   @map("legal_hold_reason") @db.Text
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  @@unique([entityType, entityId], map: "uniq_record_retention_entity")
+  @@index([ownerType, ownerId], map: "idx_record_retention_owner")
+  @@map("compliance_record_retention")
+}
+
+/// Catalog of regulator / internal compliance report templates.
+model ComplianceReportDefinition {
+  id              String   @id @default(cuid())
+  reportKey       String   @unique @map("report_key")
+  ownerType       String   @map("owner_type")
+  ownerId         String   @map("owner_id")
+  title           String
+  description     String?  @db.Text
+  reportType      String   @map("report_type")
+  allowedScopes   Json     @map("allowed_scopes") @db.JsonB
+  defaultFormat   String   @default("json") @map("default_format")
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  runs ComplianceReportRun[]
+
+  @@index([ownerType, ownerId], map: "idx_report_def_owner")
+  @@map("compliance_report_definitions")
+}
+
+/// One generated compliance report run (manifest + items; sealable).
+model ComplianceReportRun {
+  id                   String    @id @default(cuid())
+  runNumber            String    @unique @map("run_number")
+  ownerType            String    @map("owner_type")
+  ownerId              String    @map("owner_id")
+  reportDefinitionId   String?   @map("report_definition_id")
+  reportDefinition     ComplianceReportDefinition? @relation(fields: [reportDefinitionId], references: [id], onDelete: SetNull)
+  reportKey            String    @map("report_key")
+  reportType           String    @map("report_type")
+  scopeType            String    @map("scope_type")
+  scopeId              String?   @map("scope_id")
+  dateFrom             DateTime? @map("date_from")
+  dateTo               DateTime? @map("date_to")
+  requestedByActorId   String?   @map("requested_by_actor_id")
+  generatedBySystem    Boolean   @default(false) @map("generated_by_system")
+  format               String    @default("json")
+  status               String    @default("draft")
+  manifest             Json?     @db.JsonB
+  summary              Json?     @db.JsonB
+  fileUrl              String?   @map("file_url") @db.Text
+  generatedAt          DateTime? @map("generated_at")
+  sealedAt             DateTime? @map("sealed_at")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  items                ComplianceReportItem[]
+
+  @@index([ownerType, ownerId], map: "idx_report_run_owner")
+  @@index([status], map: "idx_report_run_status")
+  @@map("compliance_report_runs")
+}
+
+model ComplianceReportItem {
+  id                    String   @id @default(cuid())
+  complianceReportRunId String   @map("compliance_report_run_id")
+  complianceReportRun   ComplianceReportRun @relation(fields: [complianceReportRunId], references: [id], onDelete: Cascade)
+  sourceType            String   @map("source_type")
+  sourceId              String   @map("source_id")
+  label                 String   @db.Text
+  category              String?  @db.VarChar(128)
+  sortOrder             Int      @default(0) @map("sort_order")
+  metadata              Json?    @db.JsonB
+  createdAt             DateTime @default(now()) @map("created_at")
+
+  @@index([complianceReportRunId], map: "idx_report_item_run")
+  @@map("compliance_report_items")
+}
+
+model RegulatorExportProfile {
+  id                String   @id @default(cuid())
+  ownerType         String   @map("owner_type")
+  ownerId           String   @map("owner_id")
+  regulatorKey      String   @map("regulator_key")
+  title             String
+  includedModules   Json     @map("included_modules") @db.JsonB
+  defaultReportKeys Json     @map("default_report_keys") @db.JsonB
+  active            Boolean  @default(true)
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@unique([ownerType, ownerId, regulatorKey], map: "uniq_regulator_profile")
+  @@map("regulator_export_profiles")
+}
+
+/// Hook for future cron — definitions only in this phase.
+model ComplianceScheduledReport {
+  id               String    @id @default(cuid())
+  ownerType        String    @map("owner_type")
+  ownerId          String    @map("owner_id")
+  reportKey        String    @map("report_key")
+  reportType       String    @map("report_type")
+  scopeType        String    @map("scope_type")
+  scopeId          String?   @map("scope_id")
+  frequency        String
+  active           Boolean   @default(true)
+  lastRunAt        DateTime? @map("last_run_at")
+  nextRunAt        DateTime? @map("next_run_at")
+  createdByActorId String?   @map("created_by_actor_id")
+  createdAt        DateTime  @default(now()) @map("created_at")
+
+  @@index([ownerType, ownerId, active], map: "idx_scheduled_report_owner")
+  @@map("compliance_scheduled_reports")
+}
+
 // —— LECIPM regulator export, trust ledger / reconciliation, AI autopilot proposals (human-in-the-loop) ——
 
 /// Manifest-first regulator / inspection export runs (PDF assembly is a separate step).
@@ -12150,26 +12995,94 @@ model RegulatorExportRun {
   @@map("regulator_export_runs")
 }
 
-/// Broker / agency trust deposit envelope (ledger is source of movement truth).
+/// Brokerage / solo broker trust account registration (OACIQ separation of trust vs operating funds).
+model TrustAccountProfile {
+  id                  String   @id @default(cuid())
+  ownerType           String   @map("owner_type") // agency | solo_broker
+  ownerId             String   @map("owner_id")
+  trustAccountEnabled Boolean  @default(false) @map("trust_account_enabled")
+  institutionName     String?  @map("institution_name")
+  maskedAccountRef    String?  @map("masked_account_ref")
+  accountStatus       String   @default("pending") @map("account_status") // pending | active | suspended
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  deposits TrustDeposit[]
+
+  @@unique([ownerType, ownerId], map: "uq_trust_account_profile_owner")
+  @@index([ownerId], map: "idx_trust_account_profile_owner_id")
+  @@map("trust_account_profiles")
+}
+
+/// Broker / agency trust deposit envelope — lifecycle + audit events (ledger remains movement truth).
 model TrustDeposit {
-  id              String   @id @default(cuid())
-  agencyId        String?  @map("agency_id")
-  brokerId        String?  @map("broker_id")
-  listingId       String?  @map("listing_id")
-  dealId          String?  @map("deal_id")
-  amountCents     Int      @map("amount_cents")
-  /// received | held_in_trust | release_requested | released | refunded | adjusted
-  status          String   @default("received")
-  receiptNumber   String?  @map("receipt_number")
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
-  ledgerEntries   TrustLedgerEntry[]
+  id                    String   @id @default(cuid())
+  listingId             String?  @map("listing_id")
+  offerId               String?  @map("offer_id")
+  contractId            String?  @map("contract_id")
+  payerUserId           String?  @map("payer_user_id")
+  brokerId              String?  @map("broker_id")
+  agencyId              String?  @map("agency_id")
+  trustAccountProfileId String?  @map("trust_account_profile_id")
+  dealId                String?  @map("deal_id")
+
+  depositType     String @map("deposit_type") // earnest_money | security_deposit_vacation_resort | other_trust_funds
+  contextType     String @map("context_type") // sale | purchase | lease_vacation_resort | other
+  amountCents     Int    @map("amount_cents")
+  currency        String @default("CAD")
+
+  paymentMethod     String? @map("payment_method")
+  externalReference String? @map("external_reference")
+  receiptNumber     String? @map("receipt_number")
+
+  /// pending_receipt | received | held_in_trust | release_requested | released | refunded | disputed | frozen | cancelled
+  status          String  @default("pending_receipt")
+  releaseRuleType String? @map("release_rule_type")
+  releaseRuleText String? @map("release_rule_text") @db.Text
+
+  receivedAt  DateTime? @map("received_at")
+  heldAt      DateTime? @map("held_at")
+  releasedAt  DateTime? @map("released_at")
+  refundedAt  DateTime? @map("refunded_at")
+
+  requiresManualReview Boolean @default(true) @map("requires_manual_review")
+  complianceFlags      Json?   @map("compliance_flags")
+  notes                String? @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  trustAccountProfile TrustAccountProfile? @relation(fields: [trustAccountProfileId], references: [id], onDelete: SetNull)
+  ledgerEntries       TrustLedgerEntry[]
+  events              TrustDepositEvent[]
+  financialLedgerEntries FinancialLedgerEntry[]
+  financialRegisterLinks FinancialRegisterLink[]
 
   @@index([brokerId], map: "idx_trust_deposits_broker")
   @@index([agencyId], map: "idx_trust_deposits_agency")
   @@index([listingId], map: "idx_trust_deposits_listing")
   @@index([dealId], map: "idx_trust_deposits_deal")
+  @@index([offerId], map: "idx_trust_deposits_offer")
+  @@index([contractId], map: "idx_trust_deposits_contract")
+  @@index([trustAccountProfileId], map: "idx_trust_deposits_profile")
+  @@index([status], map: "idx_trust_deposits_status")
   @@map("trust_deposits")
+}
+
+model TrustDepositEvent {
+  id             String   @id @default(cuid())
+  trustDepositId String   @map("trust_deposit_id")
+  eventType      String   @map("event_type")
+  performedById  String?  @map("performed_by_id")
+  aiAssisted     Boolean  @default(false) @map("ai_assisted")
+  details        Json?    @db.JsonB
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  trustDeposit TrustDeposit @relation(fields: [trustDepositId], references: [id], onDelete: Cascade)
+
+  @@index([trustDepositId], map: "idx_trust_deposit_events_deposit")
+  @@index([eventType], map: "idx_trust_deposit_events_type")
+  @@map("trust_deposit_events")
 }
 
 model TrustLedgerEntry {
@@ -12233,18 +13146,185 @@ model AiAutopilotProposal {
   @@map("ai_autopilot_proposals")
 }
 
-/// Cash receipt / intake forms (regulator packet payloads).
+/// Receipt-of-cash / funds — traceable intake linked to ledger + registers (regulator-ready).
 model CashReceiptForm {
-  id          String   @id @default(cuid())
-  ownerType   String   @map("owner_type")
-  ownerId     String   @map("owner_id")
-  listingId   String?  @map("listing_id")
-  amountCents Int?     @map("amount_cents")
-  payload     Json?    @db.JsonB
-  createdAt   DateTime @default(now()) @map("created_at")
+  id                   String    @id @default(cuid())
+  receiptNumber        String    @unique @map("receipt_number")
+
+  ownerType            String    @map("owner_type") // agency | solo_broker | platform
+  ownerId              String    @map("owner_id")
+
+  payerUserId          String?   @map("payer_user_id")
+  payerName            String?   @map("payer_name")
+  payerContact         String?   @map("payer_contact")
+
+  listingId            String?   @map("listing_id")
+  offerId              String?   @map("offer_id")
+  contractId           String?   @map("contract_id")
+  dealId               String?   @map("deal_id")
+  bookingId            String?   @map("booking_id")
+
+  brokerId             String?   @map("broker_id")
+  agencyId             String?   @map("agency_id")
+
+  amountCents          Int       @map("amount_cents")
+  currency             String    @default("CAD")
+  paymentMethod        String    @map("payment_method") // cash | cheque | bank_transfer | card | other
+  receivedForType      String    @map("received_for_type") // trust_deposit | brokerage_fee | platform_fee | rent | other
+  receivedForLabel     String?   @map("received_for_label")
+
+  fundsDestinationType String    @map("funds_destination_type") // trust | operating | platform_revenue | pending_review
+  externalReference    String?   @map("external_reference")
+  notes                String?   @db.Text
+
+  receivedAt           DateTime  @map("received_at")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+
+  /// Legacy regulator payload (prefer structured columns).
+  payload              Json?     @db.JsonB
+
+  ledgerEntries        FinancialLedgerEntry[]
+  registerLinks        FinancialRegisterLink[]
 
   @@index([ownerType, ownerId], map: "idx_cash_receipt_owner")
+  @@index([listingId], map: "idx_cash_receipt_listing")
+  @@index([brokerId], map: "idx_cash_receipt_broker")
+  @@index([receivedAt], map: "idx_cash_receipt_received_at")
   @@map("cash_receipt_forms")
+}
+
+/// Immutable-style general ledger lines for brokerage books (corrections via reversal / adjustment only).
+model FinancialLedgerEntry {
+  id                String   @id @default(cuid())
+  ownerType         String   @map("owner_type")
+  ownerId           String   @map("owner_id")
+
+  entryNumber       String   @unique @map("entry_number")
+  entryType         String   @map("entry_type") // receipt | deposit_to_trust | deposit_to_operating | release | refund | fee | reversal | adjustment
+  accountBucket     String   @map("account_bucket")
+  direction         String // debit | credit | memo
+
+  amountCents       Int      @map("amount_cents")
+  currency          String   @default("CAD")
+
+  cashReceiptFormId String?  @map("cash_receipt_form_id")
+  trustDepositId    String?  @map("trust_deposit_id")
+  relatedEntryId    String?  @map("related_entry_id")
+
+  listingId         String?  @map("listing_id")
+  offerId           String?  @map("offer_id")
+  contractId        String?  @map("contract_id")
+  dealId            String?  @map("deal_id")
+
+  effectiveDate     DateTime @map("effective_date")
+  description       String   @db.Text
+  createdById       String?  @map("created_by_id")
+  approvedById      String?  @map("approved_by_id")
+  locked            Boolean  @default(false)
+
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  cashReceiptForm   CashReceiptForm?       @relation(fields: [cashReceiptFormId], references: [id], onDelete: SetNull)
+  trustDeposit      TrustDeposit?          @relation(fields: [trustDepositId], references: [id], onDelete: SetNull)
+  relatedEntry      FinancialLedgerEntry?  @relation("FinancialLedgerReversal", fields: [relatedEntryId], references: [id], onDelete: SetNull)
+  reversalOf        FinancialLedgerEntry[] @relation("FinancialLedgerReversal")
+  registerLinks     FinancialRegisterLink[]
+
+  @@index([ownerType, ownerId], map: "idx_fin_ledger_owner")
+  @@index([cashReceiptFormId], map: "idx_fin_ledger_cash_receipt")
+  @@index([trustDepositId], map: "idx_fin_ledger_trust_deposit")
+  @@index([effectiveDate], map: "idx_fin_ledger_effective_date")
+  @@map("financial_ledger_entries")
+}
+
+model FinancialRegister {
+  id           String   @id @default(cuid())
+  ownerType    String   @map("owner_type")
+  ownerId      String   @map("owner_id")
+
+  registerType String   @map("register_type")
+  registerDate DateTime @map("register_date")
+  periodKey    String   @map("period_key")
+
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  links FinancialRegisterLink[]
+
+  @@unique([ownerType, ownerId, registerType, periodKey], map: "uq_financial_register_period")
+  @@index([ownerType, ownerId], map: "idx_financial_register_owner")
+  @@map("financial_registers")
+}
+
+model FinancialRegisterLink {
+  id                  String   @id @default(cuid())
+  financialRegisterId String   @map("financial_register_id")
+  cashReceiptFormId   String?  @map("cash_receipt_form_id")
+  ledgerEntryId       String?  @map("ledger_entry_id")
+  trustDepositId      String?  @map("trust_deposit_id")
+
+  createdAt           DateTime @default(now()) @map("created_at")
+
+  financialRegister FinancialRegister    @relation(fields: [financialRegisterId], references: [id], onDelete: Cascade)
+  cashReceiptForm   CashReceiptForm?     @relation(fields: [cashReceiptFormId], references: [id], onDelete: SetNull)
+  ledgerEntry       FinancialLedgerEntry? @relation(fields: [ledgerEntryId], references: [id], onDelete: SetNull)
+  trustDeposit      TrustDeposit?         @relation(fields: [trustDepositId], references: [id], onDelete: SetNull)
+
+  @@index([financialRegisterId], map: "idx_fin_reg_link_register")
+  @@index([cashReceiptFormId], map: "idx_fin_reg_link_receipt")
+  @@index([ledgerEntryId], map: "idx_fin_reg_link_ledger")
+  @@map("financial_register_links")
+}
+
+model FinancialComplianceEvent {
+  id            String   @id @default(cuid())
+  ownerType     String   @map("owner_type")
+  ownerId       String   @map("owner_id")
+
+  eventType     String   @map("event_type")
+  entityType    String   @map("entity_type")
+  entityId      String   @map("entity_id")
+
+  performedById String?  @map("performed_by_id")
+  aiAssisted    Boolean  @default(false) @map("ai_assisted")
+  details       Json?    @db.JsonB
+
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([ownerType, ownerId], map: "idx_fin_compliance_owner")
+  @@index([entityType, entityId], map: "idx_fin_compliance_entity")
+  @@index([eventType], map: "idx_fin_compliance_event_type")
+  @@map("financial_compliance_events")
+}
+
+/// Broker workspace: valuation support / appraisal report draft (not an automatic certified appraisal).
+model LecipmBrokerAppraisalCase {
+  id                   String        @id @default(cuid())
+  brokerUserId         String        @map("broker_user_id")
+  subjectListingId     String        @map("subject_listing_id")
+  dealAnalysisId       String?       @unique @map("deal_analysis_id")
+  dealAnalysis         DealAnalysis? @relation(fields: [dealAnalysisId], references: [id], onDelete: SetNull)
+  title                String?
+  reportNumber         String?       @unique @map("report_number")
+
+  comparablesReviewed  Boolean       @default(false) @map("comparables_reviewed")
+  adjustmentsReviewed  Boolean       @default(false) @map("adjustments_reviewed")
+  assumptionsReviewed  Boolean       @default(false) @map("assumptions_reviewed")
+  conclusionReviewed   Boolean       @default(false) @map("conclusion_reviewed")
+  brokerApproved       Boolean       @default(false) @map("broker_approved")
+
+  reportDraftJson      Json?         @map("report_draft_json") @db.JsonB
+  reportReviewedAt     DateTime?     @map("report_reviewed_at")
+  valueIndicationCents Int?          @map("value_indication_cents")
+  finalizedAt          DateTime?     @map("finalized_at")
+
+  createdAt            DateTime      @default(now()) @map("created_at")
+  updatedAt            DateTime      @updatedAt @map("updated_at")
+
+  @@index([brokerUserId], map: "idx_lecipm_broker_appraisal_broker")
+  @@index([subjectListingId], map: "idx_lecipm_broker_appraisal_listing")
+  @@map("lecipm_broker_appraisal_cases")
 }
 
 /// Broker-controlled execution / closing pipeline (platform coordination — not OACIQ replacement).
@@ -17231,6 +18311,8 @@ model Contract {
    */
   dealId                    String?                    @map("deal_id")
   deal                      Deal?                      @relation(fields: [dealId], references: [id], onDelete: SetNull)
+  /// Platform-issued registry number (see `ContractRegistry`).
+  contractNumber            String?                    @unique @map("contract_number") @db.VarChar(80)
   title                     String                     @default("")
   contentHtml               String?                    @map("content_html") @db.Text
   /// Plain-text snapshot (PDF / search); immutable after sign.
@@ -17280,6 +18362,36 @@ model Contract {
   @@index([createdById])
   @@index([signed])
   @@map("contracts")
+}
+
+/// Issued contract / instrument numbers for traceability (promise, DS, brokerage, offer, etc.).
+model ContractRegistry {
+  id             String   @id @default(cuid())
+  contractNumber String   @unique @map("contract_number") @db.VarChar(80)
+  contractType   String   @map("contract_type") @db.VarChar(64)
+  listingId      String?  @map("listing_id")
+  dealId         String?  @map("deal_id")
+  contractId     String?  @map("contract_id")
+  createdBy      String   @map("created_by")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([contractType], map: "idx_contract_registry_type")
+  @@index([listingId], map: "idx_contract_registry_listing")
+  @@index([dealId], map: "idx_contract_registry_deal")
+  @@map("contract_registry")
+}
+
+/// Regulator-style compliance inspection snapshot (advisory gate before release).
+model ComplianceInspection {
+  id        String   @id @default(cuid())
+  ownerId   String   @map("owner_id")
+  result    String   @db.VarChar(16)
+  issues    Json
+  context   Json?
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([ownerId, createdAt(sort: Desc)], map: "idx_compliance_inspections_owner_created")
+  @@map("compliance_inspections")
 }
 
 /// Immutable audit trail for enforceable contracts (append-only in application code).
@@ -17660,6 +18772,188 @@ model PortfolioScenarioItem {
   @@index([scenarioId])
   @@index([listingId])
   @@map("portfolio_scenario_items")
+}
+
+/// Aggregate portfolio (ranked properties — planning / tracking; not a performance guarantee).
+model PortfolioBook {
+  id          String              @id @default(cuid())
+  ownerUserId String              @map("owner_user_id")
+  owner       User                @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+  title       String              @default("Portfolio") @db.VarChar(240)
+  notes       String?             @db.Text
+  createdAt   DateTime            @default(now()) @map("created_at")
+  updatedAt   DateTime            @updatedAt @map("updated_at")
+  properties  PortfolioProperty[]
+
+  @@index([ownerUserId], map: "idx_portfolio_books_owner")
+  @@map("portfolio_books")
+}
+
+model PortfolioProperty {
+  id                   String        @id @default(cuid())
+  portfolioId          String        @map("portfolio_id")
+  portfolio            PortfolioBook @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+  address              String        @db.VarChar(500)
+  city                 String?       @db.VarChar(160)
+  capRate              Float?        @map("cap_rate")
+  roiPercent           Float?        @map("roi_percent")
+  monthlyCashflowCents Int?          @map("monthly_cashflow_cents")
+  dscr                 Float?
+  neighborhoodScore    Float?        @map("neighborhood_score")
+  /// high | medium | low
+  riskLevel            String?       @map("risk_level") @db.VarChar(16)
+  currentValueCents    Int?          @map("current_value_cents")
+  rankingScore         Float?        @map("ranking_score")
+  rankingLabel         String?       @map("ranking_label") @db.VarChar(64)
+  createdAt            DateTime      @default(now()) @map("created_at")
+  updatedAt            DateTime      @updatedAt @map("updated_at")
+
+  @@index([portfolioId], map: "idx_portfolio_properties_book")
+  @@map("portfolio_properties")
+}
+
+/// Underwriting-style investor analysis case (broker/investor inputs → metrics; not a performance guarantee).
+model InvestorAnalysisCase {
+  id                       String             @id @default(cuid())
+  ownerType                String             @map("owner_type")
+  ownerId                  String             @map("owner_id")
+  title                    String
+  city                     String?
+  propertyType             String?            @map("property_type")
+  purchasePriceCents       Int?               @map("purchase_price_cents")
+  downPaymentCents         Int?               @map("down_payment_cents")
+  loanAmountCents          Int?               @map("loan_amount_cents")
+  annualInterestRate       Float?             @map("annual_interest_rate")
+  amortizationYears        Int?               @map("amortization_years")
+  monthlyMortgageCents     Int?               @map("monthly_mortgage_cents")
+  monthlyRentCents         Int?               @map("monthly_rent_cents")
+  otherMonthlyIncomeCents  Int?               @map("other_monthly_income_cents")
+  monthlyTaxesCents        Int?               @map("monthly_taxes_cents")
+  monthlyInsuranceCents    Int?               @map("monthly_insurance_cents")
+  monthlyUtilitiesCents    Int?               @map("monthly_utilities_cents")
+  monthlyMaintenanceCents  Int?               @map("monthly_maintenance_cents")
+  monthlyManagementCents    Int?               @map("monthly_management_cents")
+  monthlyVacancyCents      Int?               @map("monthly_vacancy_cents")
+  monthlyOtherExpensesCents Int?              @map("monthly_other_expenses_cents")
+  annualCashflowCents      Int?               @map("annual_cashflow_cents")
+  monthlyCashflowCents     Int?               @map("monthly_cashflow_cents")
+  capRate                  Float?             @map("cap_rate")
+  grossRentMultiplier      Float?             @map("gross_rent_multiplier")
+  cashOnCashReturn         Float?             @map("cash_on_cash_return")
+  roiPercent               Float?             @map("roi_percent")
+  dscr                     Float?
+  breakEvenOccupancy       Float?             @map("break_even_occupancy")
+  assumptions              Json?
+  aiSummary                String?            @map("ai_summary") @db.Text
+  status                   String             @default("draft") @db.VarChar(24)
+  createdById              String?            @map("created_by_id")
+  createdAt                DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
+  scenarios                InvestorScenario[]
+
+  @@index([ownerType, ownerId], map: "idx_investor_analysis_cases_owner")
+  @@map("investor_analysis_cases")
+}
+
+model InvestorScenario {
+  id                     String               @id @default(cuid())
+  investorAnalysisCaseId String               @map("investor_analysis_case_id")
+  investorAnalysisCase   InvestorAnalysisCase @relation(fields: [investorAnalysisCaseId], references: [id], onDelete: Cascade)
+  scenarioName           String               @map("scenario_name")
+  monthlyRentCents       Int?                 @map("monthly_rent_cents")
+  annualAppreciationRate Float?               @map("annual_appreciation_rate")
+  exitYear               Int?                 @map("exit_year")
+  saleCostRate           Float?               @map("sale_cost_rate")
+  projectedValueCents    Int?                 @map("projected_value_cents")
+  projectedProfitCents   Int?                 @map("projected_profit_cents")
+  projectedROI           Float?               @map("projected_roi")
+  createdAt              DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([investorAnalysisCaseId], map: "idx_investor_scenarios_case")
+  @@map("investor_scenarios")
+}
+
+/// Normalized comparable row for neighborhood aggregation (import / sync — not an appraisal record).
+model ComparableProperty {
+  id                 String   @id @default(cuid())
+  city               String
+  province           String   @default("QC") @map("province")
+  neighborhoodName   String   @map("neighborhood_name")
+  salePriceCents     Int?     @map("sale_price_cents")
+  buildingAreaSqft   Int?     @map("building_area_sqft")
+  listingStatus      String?  @map("listing_status")
+  metadata           Json?
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([city, neighborhoodName], map: "idx_comparable_properties_city_hood")
+  @@map("comparable_properties")
+}
+
+/// Cached neighborhood intelligence (model-driven; thin data → low confidence).
+model NeighborhoodProfile {
+  id                   String   @id @default(cuid())
+  city                 String
+  province             String   @default("QC") @map("province")
+  neighborhoodKey      String   @unique @map("neighborhood_key")
+  neighborhoodName     String   @map("neighborhood_name")
+  latitude             Float?
+  longitude            Float?
+  avgSalePriceCents    Int?     @map("avg_sale_price_cents")
+  avgPricePerSqftCents Int?     @map("avg_price_per_sqft_cents")
+  avgRentCents         Int?     @map("avg_rent_cents")
+  inventoryCount       Int?     @default(0) @map("inventory_count")
+  comparableCount      Int?     @default(0) @map("comparable_count")
+  scoreOverall         Float?   @map("score_overall")
+  scoreDemand          Float?   @map("score_demand")
+  scoreValue           Float?   @map("score_value")
+  scoreYield           Float?   @map("score_yield")
+  scoreRisk            Float?   @map("score_risk")
+  trendDirection       String?  @map("trend_direction") @db.VarChar(16)
+  investmentZone       String?  @map("investment_zone") @db.VarChar(24)
+  aiSummary            String?  @map("ai_summary") @db.Text
+  metrics              Json?
+  createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  scoreRuns            NeighborhoodScoreRun[]
+
+  @@index([city, province], map: "idx_neighborhood_profiles_city_prov")
+  @@map("neighborhood_profiles")
+}
+
+model NeighborhoodScoreRun {
+  id                    String              @id @default(cuid())
+  neighborhoodProfileId String              @map("neighborhood_profile_id")
+  neighborhoodProfile   NeighborhoodProfile @relation(fields: [neighborhoodProfileId], references: [id], onDelete: Cascade)
+  runType               String              @map("run_type") @db.VarChar(24)
+  scoreOverall          Float               @map("score_overall")
+  scoreDemand           Float               @map("score_demand")
+  scoreValue            Float               @map("score_value")
+  scoreYield            Float               @map("score_yield")
+  scoreRisk             Float               @map("score_risk")
+  trendDirection        String              @map("trend_direction") @db.VarChar(16)
+  investmentZone        String              @map("investment_zone") @db.VarChar(24)
+  rationale             Json?
+  aiSummary             String?             @map("ai_summary") @db.Text
+  createdAt             DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([neighborhoodProfileId, createdAt(sort: Desc)], map: "idx_neighborhood_score_runs_profile_created")
+  @@map("neighborhood_score_runs")
+}
+
+model InvestmentZoneSnapshot {
+  id                String   @id @default(cuid())
+  city              String
+  province          String   @default("QC") @map("province")
+  zoneType          String   @map("zone_type") @db.VarChar(24)
+  neighborhoodKey   String   @map("neighborhood_key")
+  neighborhoodName  String @map("neighborhood_name")
+  scoreOverall      Float?   @map("score_overall")
+  scoreYield        Float?   @map("score_yield")
+  scoreRisk         Float?   @map("score_risk")
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([city, province], map: "idx_investment_zone_snapshots_city")
+  @@map("investment_zone_snapshots")
 }
 
 /// Future: ROI / trend / cash-flow alerts for investor portfolio planner.
@@ -18426,6 +19720,10 @@ model Listing {
    * New listings default to draft (false) until explicitly published via broker endpoint.
    */
   crmMarketplaceLive        Boolean                     @default(true) @map("crm_marketplace_live")
+  /// AI Listing Assistant — broker working copy (JSON). Does not publish or syndicate.
+  assistantDraftContent     Json?                       @map("assistant_draft_content")
+  assistantDraftSource      String?                     @map("assistant_draft_source") @db.VarChar(32)
+  assistantDraftUpdatedAt   DateTime?                   @map("assistant_draft_updated_at")
   createdAt                  DateTime                    @default(now())
   updatedAt                  DateTime                    @updatedAt
   checklistItems             ChecklistItem[]
@@ -18473,9 +19771,27 @@ model Listing {
   lecipmPipelineDeals           LecipmPipelineDeal[]
   /// One SPV / offering per listing (optional).
   amfCapitalDeals               AmfCapitalDeal[]
+  listingAssistantContentVersions ListingAssistantContentVersion[]
 
   @@index([ownerId])
   @@index([tenantId])
+}
+
+/// Version history for AI Listing Assistant workflows (additive audit trail).
+model ListingAssistantContentVersion {
+  id          String   @id @default(cuid())
+  listingId   String   @map("listing_id")
+  listing     Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  /// ORIGINAL | AI_GENERATED | BROKER_EDITED | SAVED_DRAFT
+  phase       String   @db.VarChar(32)
+  content     Json
+  /// AI_ASSISTANT | BROKER_MANUAL | SYSTEM
+  source      String   @default("AI_ASSISTANT") @db.VarChar(32)
+  actorUserId String?  @map("actor_user_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([listingId, createdAt(sort: Desc)])
+  @@map("listing_assistant_content_versions")
 }
 
 /// CRM listing ESG profile — scoring inputs + cached composite (LECIPM internal).
@@ -22554,6 +23870,8 @@ model Conversation {
   tenantId       String?          @map("tenant_id")
   tenant         Tenant?          @relation(fields: [tenantId], references: [id], onDelete: SetNull)
   listingId      String?          @map("listing_id")
+  /// FSBO listing context for buyer ↔ owner threads (CRM `listingId` stays null).
+  fsboListingId  String?          @map("fsbo_listing_id") @db.VarChar(64)
   offerId        String?          @map("offer_id")
   contractId     String?          @map("contract_id")
   appointmentId  String?          @map("appointment_id")
@@ -22566,6 +23884,7 @@ model Conversation {
 
   createdBy              User?                     @relation("ConversationCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
   listing                Listing?                  @relation(fields: [listingId], references: [id], onDelete: SetNull)
+  fsboListing            FsboListing?              @relation("ConversationFsboListing", fields: [fsboListingId], references: [id], onDelete: SetNull)
   offer                  Offer?                    @relation(fields: [offerId], references: [id], onDelete: SetNull)
   contract               Contract?                 @relation(fields: [contractId], references: [id], onDelete: SetNull)
   appointment            Appointment?              @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
@@ -22579,6 +23898,7 @@ model Conversation {
   leadForPlatformContact Lead?                     @relation("LeadPlatformConversation")
 
   @@index([listingId])
+  @@index([fsboListingId])
   @@index([tenantId])
   @@index([offerId])
   @@index([contractId])
@@ -23003,6 +24323,7 @@ enum NotificationType {
   TASK
   REMINDER
   FINANCE
+  DISPUTE_CASE
 }
 
 enum NotificationStatus {
@@ -24652,12 +25973,278 @@ model WatchlistAlert {
   createdAt   DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt   DateTime               @updatedAt @map("updated_at") @db.Timestamptz(6)
 
+  aiAnalysis AlertAIAnalysis?
+
   @@index([userId], map: "idx_watchlist_alerts_user_id")
   @@index([listingId], map: "idx_watchlist_alerts_listing_id")
   @@index([status], map: "idx_watchlist_alerts_status")
   @@index([createdAt(sort: Desc)], map: "idx_watchlist_alerts_created_at_desc")
   @@index([alertType], map: "idx_watchlist_alerts_alert_type")
   @@map("watchlist_alerts")
+}
+
+/// LLM-generated explanation and suggested actions for a watchlist / investor alert (human review only).
+model AlertAIAnalysis {
+  id               String         @id @default(cuid())
+  alertId          String         @unique @map("alert_id")
+  alert            WatchlistAlert @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  summary          String?        @db.Text
+  whyItMatters     String?        @map("why_it_matters") @db.Text
+  suggestedActions Json?          @map("suggested_actions")
+  confidence       Float?
+  riskFlags        Json?          @map("risk_flags")
+  assumptions      Json?          @db.JsonB
+  generatedAt      DateTime       @default(now()) @map("generated_at") @db.Timestamptz(6)
+  updatedAt        DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("alert_ai_analyses")
+}
+
+/// Per-owner channel preferences, alert categories, quiet hours, and explicit consent flags for compliant delivery.
+model NotificationPreference {
+  id               String   @id @default(cuid())
+  ownerType        String   @map("owner_type")
+  ownerId          String   @map("owner_id")
+
+  emailEnabled     Boolean  @default(true) @map("email_enabled")
+  smsEnabled       Boolean  @default(false) @map("sms_enabled")
+  pushEnabled      Boolean  @default(true) @map("push_enabled")
+
+  emailAddress     String?  @map("email_address")
+  phoneNumber      String?  @map("phone_number")
+
+  alertNewDeals    Boolean  @default(true) @map("alert_new_deals")
+  alertPriceDrop   Boolean  @default(true) @map("alert_price_drop")
+  alertScoreChange Boolean  @default(true) @map("alert_score_change")
+  alertBuyBox      Boolean  @default(true) @map("alert_buy_box")
+
+  quietHoursStart  Int?     @map("quiet_hours_start")
+  quietHoursEnd    Int?     @map("quiet_hours_end")
+
+  /// User acknowledged alert notifications (required before any channel sends).
+  consentGranted   Boolean  @default(false) @map("consent_granted")
+  /// Email channel: explicit opt-in for property/investor alerts.
+  emailOptIn       Boolean  @default(false) @map("email_opt_in")
+  /// SMS channel: explicit opt-in (phone must also be verified on `User`).
+  smsOptIn         Boolean  @default(false) @map("sms_opt_in")
+
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([ownerType, ownerId], map: "notification_preferences_owner_key")
+  @@index([ownerId], map: "idx_notification_preferences_owner_id")
+  @@map("notification_preferences")
+}
+
+/// Audit trail row per delivery attempt (email, SMS, or push).
+model NotificationLog {
+  id               String   @id @default(cuid())
+  ownerType        String   @map("owner_type")
+  ownerId          String   @map("owner_id")
+
+  channel          String
+  status           String
+
+  alertId          String?  @map("alert_id")
+
+  title            String
+  message          String   @db.Text
+
+  providerResponse Json?    @map("provider_response")
+
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  @@index([ownerId], map: "idx_notification_logs_owner_id")
+  @@index([alertId], map: "idx_notification_logs_alert_id")
+  @@index([createdAt(sort: Desc)], map: "idx_notification_logs_created_at_desc")
+  @@map("notification_logs")
+}
+
+/// Web Push subscriptions (VAPID) per owner.
+model PushSubscription {
+  id        String   @id @default(cuid())
+  ownerType String   @map("owner_type")
+  ownerId   String   @map("owner_id")
+
+  endpoint  String
+  keys      Json
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@unique([ownerType, ownerId, endpoint], map: "push_subscriptions_owner_endpoint_key")
+  @@index([ownerId], map: "idx_push_subscriptions_owner_id")
+  @@map("push_subscriptions")
+}
+
+/// Investor / broker monitoring saved search (distinct from marketplace `SavedSearch` on `User`).
+model MonitoringSavedSearch {
+  id               String                   @id @default(cuid())
+  ownerType        String                   @map("owner_type")
+  ownerId          String                   @map("owner_id")
+  title            String
+  searchType       String                   @map("search_type")
+  city             String?
+  province         String?                  @default("QC")
+  propertyType     String?                  @map("property_type")
+  minPriceCents    Int?                     @map("min_price_cents")
+  maxPriceCents    Int?                     @map("max_price_cents")
+  minCapRate       Float?                   @map("min_cap_rate")
+  minROI           Float?                   @map("min_roi")
+  minCashflowCents Int?                     @map("min_cashflow_cents")
+  minDSCR          Float?                   @map("min_dscr")
+  requiredZone     String?                  @map("required_zone")
+  bedrooms         Int?
+  bathrooms        Float?
+  minAreaSqft      Float?                   @map("min_area_sqft")
+  maxAreaSqft      Float?                   @map("max_area_sqft")
+  filters          Json?
+  active           Boolean                  @default(true)
+  createdAt        DateTime                 @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime                 @updatedAt @map("updated_at") @db.Timestamptz(6)
+  runs             MonitoringSavedSearchRun[]
+
+  @@index([ownerType, ownerId, active], map: "idx_monitoring_saved_searches_owner_active")
+  @@map("monitoring_saved_searches")
+}
+
+model MonitoringSavedSearchRun {
+  id             String                @id @default(cuid())
+  savedSearchId  String                @map("saved_search_id")
+  savedSearch    MonitoringSavedSearch @relation(fields: [savedSearchId], references: [id], onDelete: Cascade)
+  resultCount    Int                   @map("result_count")
+  newResultCount Int                   @default(0) @map("new_result_count")
+  metadata       Json?
+  createdAt      DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([savedSearchId, createdAt(sort: Desc)], map: "idx_monitoring_saved_search_runs_search_created")
+  @@map("monitoring_saved_search_runs")
+}
+
+/// Polymorphic bookmarks for listings, deal signals, buy-box rows, neighborhoods (distinct from `WatchlistItem` → FSBO listing).
+model MonitoringWatchlistItem {
+  id             String   @id @default(cuid())
+  ownerType      String   @map("owner_type")
+  ownerId        String   @map("owner_id")
+  watchType      String   @map("watch_type")
+  referenceId    String   @map("reference_id")
+  title          String?
+  city           String?
+  currentScore   Float?   @map("current_score")
+  lastPriceCents Int?     @map("last_price_cents")
+  notes          String?  @db.Text
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([ownerType, ownerId], map: "idx_monitoring_watchlist_items_owner")
+  @@index([referenceId], map: "idx_monitoring_watchlist_items_reference")
+  @@map("monitoring_watchlist_items")
+}
+
+/// Unified alert inbox for saved-search matches, watchlist signals, buy-box hooks (inform-only; no auto-execution).
+model AlertCenterItem {
+  id            String   @id @default(cuid())
+  ownerType     String   @map("owner_type")
+  ownerId       String   @map("owner_id")
+  alertType     String   @map("alert_type")
+  severity      String
+  title         String
+  message       String   @db.Text
+  referenceType String?  @map("reference_type")
+  referenceId   String?  @map("reference_id")
+  read          Boolean  @default(false)
+  archived      Boolean  @default(false)
+  metadata      Json?
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([ownerType, ownerId, archived], map: "idx_alert_center_items_owner_archived")
+  @@map("alert_center_items")
+}
+
+/// Investor-defined buy box (strategy filters). Matches are computed against platform inventory (e.g. FSBO), not autonomous execution.
+model InvestorBuyBox {
+  id                     String   @id @default(cuid())
+  ownerType              String   @map("owner_type")
+  ownerId                String   @map("owner_id")
+  title                  String
+  city                   String?
+  province               String   @default("QC") @map("province")
+  propertyType           String?  @map("property_type")
+  minPriceCents          Int?     @map("min_price_cents")
+  maxPriceCents          Int?     @map("max_price_cents")
+  minCapRate             Float?   @map("min_cap_rate")
+  minROI                 Float?   @map("min_roi")
+  minCashflowCents       Int?     @map("min_cashflow_cents")
+  minDSCR                Float?   @map("min_dscr")
+  maxRiskScore           Float?   @map("max_risk_score")
+  requiredZone           String?  @map("required_zone")
+  preferredNeighborhoods Json?   @map("preferred_neighborhoods")
+  minBedrooms            Int?     @map("min_bedrooms")
+  minBathrooms           Float?   @map("min_bathrooms")
+  minAreaSqft            Float?   @map("min_area_sqft")
+  maxAreaSqft            Float?   @map("max_area_sqft")
+  strategyType           String?  @map("strategy_type")
+  notes                  String?  @db.Text
+  active                 Boolean  @default(true)
+  createdAt              DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt              DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  matches                BuyBoxMatch[]
+
+  @@index([ownerType, ownerId, active], map: "idx_investor_buy_boxes_owner_active")
+  @@map("investor_buy_boxes")
+}
+
+model BuyBoxMatch {
+  id               String         @id @default(cuid())
+  investorBuyBoxId String         @map("investor_buy_box_id")
+  investorBuyBox   InvestorBuyBox @relation(fields: [investorBuyBoxId], references: [id], onDelete: Cascade)
+  /// Reserved for future CRM / deal-candidate rows; matching today uses `listingId` (FSBO).
+  dealCandidateId  String?        @map("deal_candidate_id")
+  /// FSBO / marketplace listing id when the match is inventory-backed.
+  listingId        String?        @map("listing_id")
+  matchScore       Float          @map("match_score")
+  matchLabel       String?        @map("match_label")
+  aiSummary        String?        @map("ai_summary") @db.Text
+  rationale        Json?
+  seen             Boolean        @default(false)
+  bookmarked       Boolean        @default(false)
+  alerted          Boolean        @default(false)
+  createdAt        DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([investorBuyBoxId, listingId], map: "buy_box_matches_box_listing_key")
+  @@index([investorBuyBoxId, matchScore(sort: Desc)], map: "idx_buy_box_matches_box_score")
+  @@map("buy_box_matches")
+}
+
+/// Scored investment opportunity row (deal discovery — not trade execution). Built from governed inventory (e.g. FSBO + metrics).
+model DealCandidate {
+  id                     String   @id @default(cuid())
+  source                 String   @map("source")
+  listingId              String?  @map("listing_id")
+  address                String   @map("address")
+  city                   String   @map("city")
+  askingPriceCents       Int?     @map("asking_price_cents")
+  estimatedValueCents    Int?     @map("estimated_value_cents")
+  monthlyRentCents       Int?     @map("monthly_rent_cents")
+  capRate                Float?   @map("cap_rate")
+  roiPercent             Float?   @map("roi_percent")
+  cashflowCents          Int?     @map("cashflow_cents")
+  neighborhoodScore      Float?   @map("neighborhood_score")
+  investmentZone         String?  @map("investment_zone")
+  dealScore              Float?   @map("deal_score")
+  dealLabel              String?  @map("deal_label")
+  dealType               String?  @map("deal_type")
+  aiSummary              String?  @map("ai_summary") @db.Text
+  /// True when key inputs are missing or heuristic (appraisal / rent not verified).
+  lowConfidence          Boolean  @default(false) @map("low_confidence")
+  /// Dedupes Alert Center items when the same listing is rescored above threshold.
+  highOpportunityAlerted Boolean  @default(false) @map("high_opportunity_alerted")
+  createdAt              DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt              DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([source, listingId], map: "deal_candidates_source_listing_key")
+  @@index([dealScore(sort: Desc)], map: "idx_deal_candidates_score_desc")
+  @@map("deal_candidates")
 }
 
 model WatchlistSnapshot {
@@ -28468,6 +30055,77 @@ model PlatformAutopilotDecision {
 
   @@index([actionId], map: "idx_platform_autopilot_decision_action")
   @@map("platform_autopilot_decisions")
+}
+
+/// Per-domain autopilot posture for LECIPM Full Autopilot Layer (additive).
+model LecipmFullAutopilotDomainConfig {
+  domainId   String @id @map("domain_id") @db.VarChar(64)
+  /// OFF | ASSIST | SAFE_AUTOPILOT | FULL_AUTOPILOT_APPROVAL | FULL_AUTOPILOT_BOUNDED
+  mode       String @default("ASSIST") @db.VarChar(40)
+  /// ON | OFF | LIMITED — when OFF, no future executes; LIMITED = whitelist-only in policy engine
+  killSwitch String @default("ON") @map("kill_switch") @db.VarChar(16)
+
+  lastChangedById String? @map("last_changed_by_id")
+  lastReason      String? @map("last_reason") @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("lecipm_full_autopilot_domain_configs")
+}
+
+/// Singleton — global pause for all LECIPM full-autopilot executions (additive).
+model LecipmFullAutopilotGlobalState {
+  id         String   @id @default("singleton")
+  pausedAll  Boolean  @default(false) @map("paused_all")
+  pausedById String?  @map("paused_by_id")
+  pausedReason String? @map("paused_reason") @db.Text
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@map("lecipm_full_autopilot_global_state")
+}
+
+/// Auditable execution / evaluation trail; may link to `PlatformAutopilotAction`.
+model LecipmFullAutopilotExecution {
+  id                String @id @default(cuid())
+  platformActionId  String? @unique @map("platform_action_id")
+
+  domain            String @db.VarChar(64)
+  actionType        String @map("action_type") @db.VarChar(160)
+  sourceSystem      String @map("source_system") @db.VarChar(80)
+
+  policyRuleId      String @map("policy_rule_id") @db.VarChar(96)
+  decisionOutcome   String @map("decision_outcome") @db.VarChar(32)
+  riskLevel         String @map("risk_level") @db.VarChar(16)
+  confidence        Float  @default(0)
+
+  explanation       String @db.Text
+  explanationDetail Json?  @map("explanation_detail")
+
+  candidatePayload Json? @map("candidate_payload")
+  executedPayload  Json? @map("executed_payload")
+
+  outcomeWindow       String?   @map("outcome_window") @db.VarChar(32)
+  baselineBeforeJson  Json?     @map("baseline_before_json")
+  resultAfterJson     Json?     @map("result_after_json")
+  outcomeDeltaJson    Json?     @map("outcome_delta_json")
+  outcomeConfidence   Float?    @map("outcome_confidence")
+
+  rollbackEligible Boolean   @default(false) @map("rollback_eligible")
+  rolledBackAt     DateTime? @map("rolled_back_at")
+  rollbackReason   String?   @map("rollback_reason") @db.Text
+  rollbackActorId  String?   @map("rollback_actor_id")
+
+  actorUserId String? @map("actor_user_id")
+  actorType   String  @default("system") @map("actor_type") @db.VarChar(24)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([domain, createdAt(sort: Desc)])
+  @@index([decisionOutcome, createdAt(sort: Desc)])
+  @@index([sourceSystem, createdAt(sort: Desc)])
+  @@map("lecipm_full_autopilot_executions")
 }
 
 // ---------------------------------------------------------------------------
@@ -32321,7 +33979,8 @@ model SellerDeclaration {
   id              String   @id @default(cuid())
   listingId       String?  @map("listing_id") @db.VarChar(64)
   contractId      String?  @map("contract_id") @db.VarChar(64)
-  referenceNumber String?  @unique @map("reference_number") @db.VarChar(48)
+  referenceNumber String   @unique @map("reference_number") @db.VarChar(48)
+  status          String   @default("recorded") @map("status") @db.VarChar(32)
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
 
@@ -32331,12 +33990,13 @@ model SellerDeclaration {
 }
 
 /// Chunked knowledge for source-grounded drafting (OACIQ forms, uploaded references).
+/// Embeddings are a JSON number array (same semantics as `Float[]`; stored as Json for Prisma portability).
 model VectorDocument {
   id        String   @id @default(cuid())
   sourceKey String   @map("source_key") @db.VarChar(512)
   title     String?  @db.VarChar(512)
   content   String   @db.Text
-  /// Same dimension as `embedText` / deterministic embedding (JSON number array).
+  /// Float vector as JSON array. Dimension matches ingest/query mode: OpenAI `text-embedding-3-small` when `OPENAI_API_KEY` is set, else deterministic stub in `lib/ai/vector-store.ts` (re-ingest after switching modes).
   embedding Json     @map("embedding")
   metadata  Json?
   createdAt DateTime @default(now()) @map("created_at")
@@ -32672,6 +34332,27 @@ model CityActivityZone {
   @@map("city_activity_zones")
 }
 
+/// Live platform pulse for Real Estate Watch (distinct from regional `MarketSnapshot` trend rows).
+model PlatformMarketPulse {
+  id                String   @id @default(cuid())
+  /// UTC midnight for the calendar day this pulse belongs to.
+  date              DateTime @map("snapshot_date") @db.Timestamptz(6)
+  visitorsCount     Int?     @map("visitors_count")
+  reservationsCount Int?     @map("reservations_count")
+  listingsCount     Int?     @map("listings_count")
+  soldCount         Int?     @map("sold_count")
+  dealsDetected     Int?     @map("deals_detected")
+  buyBoxMatches     Int?     @map("buy_box_matches")
+  /// platform | imported | estimated
+  source            String   @db.VarChar(24)
+  metadata          Json?    @db.JsonB
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([date, source], map: "platform_market_pulses_date_source_idx")
+  @@index([createdAt(sort: Desc)], map: "platform_market_pulses_created_at_desc_idx")
+  @@map("platform_market_pulses")
+}
+
 /// Persisted daily executive briefing (platform + market signals) per owner.
 model DailyDigest {
   id               String   @id @default(cuid())
@@ -32713,6 +34394,99 @@ model ExecutiveSnapshot {
   @@map("executive_snapshots")
 }
 
+/// AI CEO Mode — strategic recommendations (advisory layer; **never** auto-executes sensitive actions).
+model LecipmAiCeoRecommendation {
+  id                   String    @id @default(cuid())
+  fingerprint          String    @unique @db.VarChar(160)
+  title                String    @db.VarChar(280)
+  category             String    @db.VarChar(24)
+  summary              String    @db.Text
+  expectedImpactBand   String    @map("expected_impact_band") @db.VarChar(48)
+  confidenceScore      Float     @map("confidence_score")
+  urgency              String    @db.VarChar(24)
+  requiredEffort       String    @map("required_effort") @db.VarChar(24)
+  affectedDomains      Json      @map("affected_domains")
+  explanationJson      Json      @map("explanation_json")
+  signalsSnapshotJson  Json      @map("signals_snapshot_json")
+  inputSnapshotJson    Json      @map("input_snapshot_json")
+  /** NEVER_AUTO blocks machine execution for pricing/investment/legal-class recs */
+  executionSafety      String    @default("APPROVAL_REQUIRED") @map("execution_safety") @db.VarChar(32)
+  prioritizationBucket String?   @map("prioritization_bucket") @db.VarChar(48)
+  decisionStatus       String    @default("pending") @map("decision_status") @db.VarChar(24)
+  decidedAt            DateTime? @map("decided_at")
+  decidedByUserId      String?   @map("decided_by_user_id")
+  outcomeImpactBand    String?   @map("outcome_impact_band") @db.VarChar(48)
+  outcomeNotesJson     Json?     @map("outcome_notes_json")
+  lastRefreshedAt      DateTime  @default(now()) @map("last_refreshed_at")
+
+  @@index([decisionStatus])
+  @@index([prioritizationBucket])
+  @@map("lecipm_ai_ceo_recommendations")
+}
+
+/// Self-Expansion Engine — territory expansion recommendations (advisory; no auto-launch in v1).
+model LecipmSelfExpansionRecommendation {
+  id                     String    @id @default(cuid())
+  fingerprint            String    @unique @db.VarChar(160)
+  territoryId            String    @map("territory_id") @db.VarChar(64)
+  title                  String    @db.VarChar(280)
+  category               String    @db.VarChar(32)
+  summary                String    @db.Text
+  expansionScore         Float     @map("expansion_score")
+  confidenceScore        Float     @map("confidence_score")
+  urgency                String    @db.VarChar(24)
+  expectedImpactBand     String    @map("expected_impact_band") @db.VarChar(48)
+  requiredEffort         String    @map("required_effort") @db.VarChar(24)
+  entryHub               String    @map("entry_hub") @db.VarChar(32)
+  targetSegment          String?   @map("target_segment") @db.VarChar(64)
+  phaseSuggested         String    @map("phase_suggested") @db.VarChar(24)
+  recommendationActionBand String  @map("recommendation_action_band") @db.VarChar(24)
+  executionSafety        String    @default("APPROVAL_REQUIRED") @map("execution_safety") @db.VarChar(32)
+  phasedPlanSummary      String?   @map("phased_plan_summary") @db.Text
+  explanationJson        Json      @map("explanation_json")
+  signalsSnapshotJson    Json      @map("signals_snapshot_json")
+  inputSnapshotJson      Json      @map("input_snapshot_json")
+  firstActionsJson       Json?     @map("first_actions_json")
+  expectedRisksJson      Json?     @map("expected_risks_json")
+  decisionStatus         String    @default("PROPOSED") @map("decision_status") @db.VarChar(24)
+  decidedAt              DateTime? @map("decided_at")
+  decidedByUserId        String?   @map("decided_by_user_id")
+  decisionReason         String?   @map("decision_reason") @db.Text
+  outcomeNotesJson       Json?     @map("outcome_notes_json")
+  outcomeImpactBand      String?   @map("outcome_impact_band") @db.VarChar(48)
+  outcomeMetricsJson     Json?     @map("outcome_metrics_json")
+  lastRefreshedAt        DateTime  @default(now()) @map("last_refreshed_at")
+
+  @@index([territoryId])
+  @@index([decisionStatus])
+  @@index([recommendationActionBand])
+  @@map("lecipm_self_expansion_recommendations")
+}
+
+/// Tunable learning weights for self-expansion scoring (singleton row).
+model LecipmSelfExpansionLearningState {
+  key           String   @id @default("global") @db.VarChar(32)
+  hubLiftJson   Json     @map("hub_lift_json")
+  blockerLiftJson Json   @map("blocker_lift_json")
+  archetypeLiftJson Json @map("archetype_lift_json")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("lecipm_self_expansion_learning_state")
+}
+
+/// Territory War Room — operator overrides (phase, pause, scaling) per domination territory id.
+model LecipmTerritoryWarRoomState {
+  territoryId       String   @id @map("territory_id") @db.VarChar(64)
+  phaseOverride     String?  @map("phase_override") @db.VarChar(24)
+  paused            Boolean  @default(false)
+  scaling           Boolean  @default(false)
+  expansionPlanNote String?  @map("expansion_plan_note") @db.Text
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  updatedByUserId   String?  @map("updated_by_user_id")
+
+  @@map("lecipm_territory_war_room_state")
+}
+
 /// Proactive LECIPM suggestions (workflows / analysis) — separate from BNHub `AiSuggestion` (stays).
 model LecipmProactiveSuggestion {
   id                String   @id @default(cuid())
@@ -32752,4 +34526,118 @@ model LecipmUserBehaviorSignal {
   @@index([ownerType, ownerId, createdAt])
   @@index([signalType, createdAt])
   @@map("lecipm_user_behavior_signals")
+}
+
+// -----------------------------------------------------------------------------
+// Platform Dispute Room — structured cases (additive; BNHub stays use `Dispute`).
+// -----------------------------------------------------------------------------
+
+enum LecipmDisputeCaseEntityType {
+  BOOKING
+  DEAL
+  LISTING
+  PAYMENT
+}
+
+enum LecipmDisputeCaseStatus {
+  OPEN
+  IN_REVIEW
+  RESOLVED
+  REJECTED
+  ESCALATED
+}
+
+enum LecipmDisputeCasePriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum LecipmDisputeCaseCategory {
+  NO_SHOW
+  PAYMENT
+  MISLEADING_LISTING
+  OTHER
+}
+
+enum LecipmDisputeCaseEventType {
+  CREATED
+  STATUS_CHANGE
+  MESSAGE_ADDED
+  EVIDENCE_ADDED
+  ESCALATED
+  ADMIN_NOTE
+  RESOLUTION_PROPOSED
+}
+
+model LecipmDisputeCase {
+  id                 String                     @id @default(cuid())
+  relatedEntityType  LecipmDisputeCaseEntityType @map("related_entity_type")
+  relatedEntityId    String                     @map("related_entity_id") @db.VarChar(64)
+  openedByUserId     String                     @map("opened_by_user_id")
+  againstUserId      String?                    @map("against_user_id")
+  status             LecipmDisputeCaseStatus    @default(OPEN)
+  priority           LecipmDisputeCasePriority  @default(MEDIUM)
+  category           LecipmDisputeCaseCategory
+  title              String                     @db.VarChar(280)
+  description        String                     @db.Text
+  resolutionNotes    String?                    @map("resolution_notes") @db.Text
+  resolvedAt         DateTime?                  @map("resolved_at")
+  resolvedByUserId   String?                    @map("resolved_by_user_id")
+  escalatedAt        DateTime?                  @map("escalated_at")
+  /// Neutral operator notes — not legal findings.
+  internalAdminNotes String?                  @map("internal_admin_notes") @db.Text
+  aiAssistSummary    String?                   @map("ai_assist_summary") @db.Text
+  aiAssistHintsJson  Json?                     @map("ai_assist_hints_json")
+  aiAssistGeneratedAt DateTime?                @map("ai_assist_generated_at")
+  createdAt          DateTime                   @default(now()) @map("created_at")
+  updatedAt          DateTime                   @updatedAt @map("updated_at")
+
+  openedBy          User                         @relation("LecipmDisputeCaseOpenedBy", fields: [openedByUserId], references: [id], onDelete: Restrict)
+  againstUser       User?                        @relation("LecipmDisputeCaseAgainst", fields: [againstUserId], references: [id], onDelete: SetNull)
+  resolvedBy        User?                        @relation("LecipmDisputeCaseResolvedBy", fields: [resolvedByUserId], references: [id], onDelete: SetNull)
+  messages          LecipmDisputeCaseMessage[]
+  events            LecipmDisputeCaseEvent[]
+
+  @@index([openedByUserId])
+  @@index([againstUserId])
+  @@index([status])
+  @@index([priority])
+  @@index([category])
+  @@index([relatedEntityType, relatedEntityId])
+  @@index([createdAt])
+  @@map("lecipm_dispute_cases")
+}
+
+model LecipmDisputeCaseMessage {
+  id           String          @id @default(cuid())
+  disputeId    String          @map("dispute_id")
+  senderId     String          @map("sender_id")
+  message      String          @db.Text
+  /// References only: `[{ documentFileId?, url?, fileName, mimeType }]`
+  attachments  Json?
+  createdAt    DateTime        @default(now()) @map("created_at")
+
+  dispute LecipmDisputeCase @relation(fields: [disputeId], references: [id], onDelete: Cascade)
+  sender  User              @relation("LecipmDisputeCaseMessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([disputeId])
+  @@index([createdAt])
+  @@map("lecipm_dispute_case_messages")
+}
+
+model LecipmDisputeCaseEvent {
+  id          String                     @id @default(cuid())
+  disputeId   String                     @map("dispute_id")
+  eventType   LecipmDisputeCaseEventType @map("event_type")
+  payload     Json
+  actorUserId String?                    @map("actor_user_id")
+  createdAt   DateTime                   @default(now()) @map("created_at")
+
+  dispute LecipmDisputeCase @relation(fields: [disputeId], references: [id], onDelete: Cascade)
+  actor   User?             @relation("LecipmDisputeCaseEventActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([disputeId])
+  @@index([createdAt])
+  @@map("lecipm_dispute_case_events")
 }

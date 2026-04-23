@@ -14,7 +14,7 @@ export type CompletionGuardInput = {
 };
 
 export function assertComplianceCompletionOrder(flags: CompletionGuardInput): void {
-  if (!flags.identityVerified) throw new Error("IDENTITY_REQUIRED");
+  if (!flags.identityVerified) throw new Error("IDENTITY_VERIFICATION_REQUIRED");
   if (!flags.brokerageContractSigned) throw new Error("BROKERAGE_CONTRACT_REQUIRED");
   if (flags.mode === "sale" && !flags.sellerDeclarationCompleted) {
     throw new Error("SELLER_DECLARATION_REQUIRED");

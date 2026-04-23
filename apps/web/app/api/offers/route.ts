@@ -21,6 +21,32 @@ import { hasActiveEnforceableContract } from "@/lib/legal/enforceable-contract";
 import { ENFORCEABLE_CONTRACT_TYPES } from "@/lib/legal/enforceable-contract-types";
 import { enforceableContractsRequired } from "@/lib/legal/enforceable-contracts-enforcement";
 import { maybeBlockRequestWithLegalGate } from "@/modules/legal/legal-api-gate";
+import { maybeBlockOfferForDeclaration } from "@/modules/offers/services/offer-declaration-gate";
+import { assertComplianceReviewApprovedIfRequired } from "@/lib/contracts/compliance-review-service";
+import { enforceComplianceAction } from "@/lib/compliance/enforce-compliance-action";
+
+const DEMO_OFFER_LISTING_IDS = new Set(["1", "test-listing-1", "demo-listing-montreal"]);
+
+async function resolveOfferComplianceOwner(listingId: string): Promise<{ ownerType: string; ownerId: string }> {
+  const crm = await prisma.listing.findUnique({
+    where: { id: listingId },
+    select: { tenantId: true, ownerId: true },
+  });
+  if (crm) {
+    if (crm.tenantId) return { ownerType: "agency", ownerId: crm.tenantId };
+    if (crm.ownerId) return { ownerType: "solo_broker", ownerId: crm.ownerId };
+    return { ownerType: "platform", ownerId: "platform" };
+  }
+  const fsbo = await prisma.fsboListing.findUnique({
+    where: { id: listingId },
+    select: { tenantId: true, ownerId: true },
+  });
+  if (fsbo) {
+    if (fsbo.tenantId) return { ownerType: "agency", ownerId: fsbo.tenantId };
+    return { ownerType: "solo_broker", ownerId: fsbo.ownerId };
+  }
+  return { ownerType: "platform", ownerId: "platform" };
+}
 
 export const dynamic = "force-dynamic";
 
@@ -40,6 +66,9 @@ export async function POST(request: NextRequest) {
   if (!listingCheck.ok) {
     return NextResponse.json({ error: listingCheck.error }, { status: listingCheck.status });
   }
+
+  const declBlock = await maybeBlockOfferForDeclaration(listingId);
+  if (declBlock) return declBlock;
 
   const phase3Gate = await maybeBlockRequestWithLegalGate({
     action: "submit_offer",
@@ -72,6 +101,37 @@ export async function POST(request: NextRequest) {
           code: "ENFORCEABLE_CONTRACT_REQUIRED",
         },
         { status: 403 }
+      );
+    }
+  }
+
+  if (!DEMO_OFFER_LISTING_IDS.has(listingId)) {
+    const adminReview = await assertComplianceReviewApprovedIfRequired(listingId);
+    const listingCompliant = adminReview.ok;
+    const scope = await resolveOfferComplianceOwner(listingId);
+    const guard = await enforceComplianceAction({
+      ownerType: scope.ownerType,
+      ownerId: scope.ownerId,
+      moduleKey: "offers",
+      actionKey: "submit_offer",
+      entityType: "listing",
+      entityId: listingId,
+      actorType: "buyer",
+      actorId: userId,
+      facts: {
+        listingCompliant,
+        depositRequired: false,
+        trustDepositReady: true,
+      },
+    });
+    if (!guard.allowed) {
+      return NextResponse.json(
+        {
+          error: guard.reasonCode ?? "OFFER_SUBMISSION_BLOCKED",
+          message: guard.message,
+          decisionId: guard.decisionId,
+        },
+        { status: 403 },
       );
     }
   }

@@ -225,12 +225,20 @@ export default async function BrokerHubPage({
               <p className="mt-1 text-emerald-100/90">
                 You save time, reduce risk, and increase closing probability using AI — validate every output before publish.
               </p>
-              <Link
-                href={`/${locale}/${country}/dashboard/listings/assistant`}
-                className="mt-3 inline-flex font-medium text-emerald-300 underline-offset-4 hover:underline"
-              >
-                Open Listing Assistant →
-              </Link>
+              <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2">
+                <Link
+                  href={`/${locale}/${country}/dashboard/listings/assistant`}
+                  className="inline-flex font-medium text-emerald-300 underline-offset-4 hover:underline"
+                >
+                  Open Listing Assistant →
+                </Link>
+                <Link
+                  href="/dashboard/broker/contracts/create"
+                  className="inline-flex font-medium text-[#E8D589] underline-offset-4 hover:underline"
+                >
+                  Create Contract
+                </Link>
+              </div>
             </div>
           </>
         ) : null}

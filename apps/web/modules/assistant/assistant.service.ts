@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 
 import { buildAssistantSuggestions, daysBetween, hoursBetween } from "./assistant.engine";
+import { assistantSuggestionsEnabled, getBrokerAssistantSafetyMode } from "./assistant-safety";
 import type {
   AssistantDealContext,
   AssistantEngineInput,
@@ -24,8 +25,19 @@ export async function getBrokerAssistantSuggestions(params: {
   dealId?: string | null;
   leadId?: string | null;
 }): Promise<{ suggestions: AssistantSuggestion[]; disclaimer: string }> {
+  const mode = getBrokerAssistantSafetyMode();
+  if (!assistantSuggestionsEnabled(mode)) {
+    return {
+      suggestions: [],
+      disclaimer: "Broker assistant is off for this environment.",
+      assistantMode: mode,
+    };
+  }
+
   const disclaimer =
-    "Suggestions only — you choose when to act. LECIPM does not auto-send messages to clients.";
+    mode === "ASSIST"
+      ? "Assist mode — suggestions only; use CRM tools manually. Execution from the assistant panel is disabled."
+      : "Actionable when you confirm — nothing sends without your explicit confirmation. All runs are logged.";
 
   try {
     const now = new Date();
@@ -133,9 +145,14 @@ export async function getBrokerAssistantSuggestions(params: {
       lead: leadCtx,
       hoursSinceLastBrokerAction,
       staleLeadCount,
+      contextLeadId: params.leadId ?? null,
+      contextDealId: params.dealId ?? null,
     };
 
-    const suggestions = buildAssistantSuggestions(engineInput);
+    let suggestions = buildAssistantSuggestions(engineInput);
+    if (mode === "ASSIST") {
+      suggestions = stripExecutableActions(suggestions);
+    }
     logAssistant("suggestions_built", {
       brokerId: params.brokerUserId,
       count: suggestions.length,
@@ -143,7 +160,7 @@ export async function getBrokerAssistantSuggestions(params: {
       hasLead: Boolean(leadCtx),
     });
 
-    return { suggestions, disclaimer };
+    return { suggestions, disclaimer, assistantMode: mode };
   } catch (e) {
     logAssistant("suggestions_error", { err: e instanceof Error ? e.message : "unknown" });
     return {
@@ -152,8 +169,11 @@ export async function getBrokerAssistantSuggestions(params: {
         lead: null,
         hoursSinceLastBrokerAction: null,
         staleLeadCount: 0,
+        contextLeadId: params.leadId ?? null,
+        contextDealId: params.dealId ?? null,
       }),
       disclaimer,
+      assistantMode: getBrokerAssistantSafetyMode(),
     };
   }
 }

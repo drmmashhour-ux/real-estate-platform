@@ -328,15 +328,26 @@ export async function assertSellerHubSubmitReady(
     errors.push("Confirm uploaded photos represent the actual property before submitting.");
   }
 
-  if (!isSellerDeclarationComplete(listing)) {
-    const parsed = parseSellerDeclarationJson(listing.sellerDeclarationJson, { propertyType: listing.propertyType });
-    if (!parsed.ok) {
-      errors.push(parsed.error);
-    }
-    const partial = migrateLegacySellerDeclaration(listing.sellerDeclarationJson);
-    const missing = missingDeclarationSections(partial, listing.propertyType);
-    if (missing.length > 0) {
-      errors.push(`Incomplete declaration sections: ${missing.join(", ")}.`);
+  const { validateListingCompliance, normalizeFsboDeclarationComplianceInput } = await import(
+    "@/modules/legal/compliance/listing-declaration-compliance.service"
+  );
+  const declNorm = normalizeFsboDeclarationComplianceInput(listing);
+  const declCompliance = validateListingCompliance(declNorm);
+  if (!declCompliance.allowed) {
+    if (declCompliance.reason === "DECLARATION_MISSING") {
+      errors.push("Seller declaration is required before publishing this listing.");
+    } else {
+      if (!isSellerDeclarationComplete(listing)) {
+        const parsed = parseSellerDeclarationJson(listing.sellerDeclarationJson, { propertyType: listing.propertyType });
+        if (!parsed.ok) {
+          errors.push(parsed.error);
+        }
+        const partial = migrateLegacySellerDeclaration(listing.sellerDeclarationJson);
+        const missing = missingDeclarationSections(partial, listing.propertyType);
+        if (missing.length > 0) {
+          errors.push(`Incomplete declaration sections: ${missing.join(", ")}.`);
+        }
+      }
     }
   }
 

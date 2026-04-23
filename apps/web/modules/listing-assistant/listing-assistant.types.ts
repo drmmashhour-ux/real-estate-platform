@@ -44,11 +44,28 @@ export type ComplianceCheckResult = {
   riskLevel: "LOW" | "MEDIUM" | "HIGH";
 };
 
+export type PricingConfidenceLevel = "LOW" | "MEDIUM" | "HIGH";
+
 export type PricingSuggestionResult = {
   suggestedMinMajor: number;
   suggestedMaxMajor: number;
+  /** Transparency aliases — identical to band endpoints for UI clarity */
+  priceBandLow: number;
+  priceBandHigh: number;
+  comparableCount: number;
+  confidenceLevel: PricingConfidenceLevel;
+  thinDataWarning: boolean;
   competitivenessScore: number;
   rationale: string;
+};
+
+export type ListingReadinessStatus = "READY" | "NEEDS_EDITS" | "HIGH_RISK";
+
+export type ListingReadinessResult = {
+  readinessStatus: ListingReadinessStatus;
+  readinessScore: number;
+  topBlockers: string[];
+  recommendedFixes: string[];
 };
 
 /** SEO pack — deterministic hints; brokers validate. */
@@ -78,6 +95,13 @@ export type ListingPerformanceScore = {
   improvementSuggestions: string[];
 };
 
+export type ListingAssistantUiAlert = {
+  id: string;
+  severity: "info" | "warning" | "critical";
+  title: string;
+  detail: string;
+};
+
 export type FullListingAssistantBundle = {
   content: GeneratedListingContent;
   compliance: ComplianceCheckResult;
@@ -86,4 +110,8 @@ export type FullListingAssistantBundle = {
   listingPerformance: ListingPerformanceScore;
   centrisStructured: CentrisStructuredExport;
   language: ListingLanguage;
+  /** Populated when `/api/listing/assistant/generate` attaches readiness heuristics. */
+  readiness?: ListingReadinessResult;
+  /** Operational nudges (assistive-only — broker still validates). */
+  alerts?: ListingAssistantUiAlert[];
 };

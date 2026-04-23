@@ -3,7 +3,14 @@ import { NextResponse } from "next/server";
 import { canAccessCrmListingCompliance } from "@/lib/compliance/crm-listing-access";
 import { listingAssistantGenerateService } from "@/modules/listing-assistant/listing-assistant.service";
 import type { ListingPropertyPartial } from "@/modules/listing-assistant/listing-assistant.types";
+import { evaluateListingAssistantAlerts } from "@/modules/listing-assistant/listing-assistant-alerts.service";
+import { computeListingReadiness } from "@/modules/listing-assistant/listing-readiness.service";
 import { recordListingAssistantGeneration } from "@/modules/listing-assistant/listing-assistant.analytics";
+import { snapshotFromGeneratedContent } from "@/modules/listing-assistant/listing-version.types";
+import {
+  ensureOriginalVersionRecord,
+  recordListingAssistantVersion,
+} from "@/modules/listing-assistant/listing-version.service";
 import { logListingAssistant } from "@/modules/listing-assistant/listing-assistant.log";
 import { requireBrokerOrAdminApi } from "@/modules/crm/services/require-broker-api";
 
@@ -37,6 +44,35 @@ export async function POST(request: Request) {
       partial,
       language,
     });
+
+    bundle.readiness = computeListingReadiness({
+      content: bundle.content,
+      compliance: bundle.compliance,
+      partial,
+      pricing: null,
+    });
+    bundle.alerts = evaluateListingAssistantAlerts({
+      listingId,
+      snapshot: snapshotFromGeneratedContent(bundle.content),
+      pricing: null,
+    }).map((a) => ({
+      id: a.id,
+      severity: a.severity,
+      title: a.title,
+      detail: a.detail,
+    }));
+
+    if (listingId) {
+      await ensureOriginalVersionRecord({ listingId, actorUserId: gate.session.id });
+      await recordListingAssistantVersion({
+        listingId,
+        phase: "AI_GENERATED",
+        content: snapshotFromGeneratedContent(bundle.content),
+        source: "AI_ASSISTANT",
+        actorUserId: gate.session.id,
+      });
+    }
+
     logListingAssistant("generate_ok", {
       listingId: listingId ?? null,
       riskLevel: bundle.compliance.riskLevel,

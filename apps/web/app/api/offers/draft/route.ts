@@ -11,6 +11,7 @@ import {
   parseOfferedPrice,
   parseScenario,
 } from "@/modules/offers/services/offer-validation";
+import { maybeBlockOfferForDeclaration } from "@/modules/offers/services/offer-declaration-gate";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +28,9 @@ export async function POST(request: NextRequest) {
   if (!listingCheck.ok) {
     return NextResponse.json({ error: listingCheck.error }, { status: listingCheck.status });
   }
+
+  const declBlock = await maybeBlockOfferForDeclaration(listingId);
+  if (declBlock) return declBlock;
 
   const price = parseOfferedPrice(body.offeredPrice);
   if (!price.ok) return NextResponse.json({ error: price.error }, { status: 400 });

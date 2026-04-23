@@ -1,4 +1,5 @@
 import { getListingById } from "@/lib/bnhub/listings";
+import { prisma } from "@repo/db";
 
 const DEMO_LISTING_IDS = new Set(["1", "test-listing-1", "demo-listing-montreal"]);
 
@@ -10,6 +11,19 @@ export async function assertListingExists(listingId: string): Promise<
   }
   if (DEMO_LISTING_IDS.has(listingId)) return { ok: true };
   const row = await getListingById(listingId);
-  if (!row) return { ok: false, status: 404, error: "Listing not found" };
-  return { ok: true };
+  if (row) return { ok: true };
+
+  const crm = await prisma.listing.findFirst({
+    where: { id: listingId, crmMarketplaceLive: true },
+    select: { id: true },
+  });
+  if (crm) return { ok: true };
+
+  const fsbo = await prisma.fsboListing.findFirst({
+    where: { id: listingId, status: "ACTIVE", moderationStatus: "APPROVED", archivedAt: null },
+    select: { id: true },
+  });
+  if (fsbo) return { ok: true };
+
+  return { ok: false, status: 404, error: "Listing not found" };
 }

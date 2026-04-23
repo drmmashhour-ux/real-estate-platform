@@ -2411,6 +2411,11 @@ export const complianceFlags = {
    * syndicate insurance verification) are missing (see CRITICAL_COMPLIANCE_BLOCK_KEYS).
    */
   coownershipComplianceEnforcement: envTrue("FEATURE_COOWNERSHIP_COMPLIANCE_ENFORCEMENT"),
+  /**
+   * Seller declaration gate — block CRM publish and marketplace offers when declaration is missing or incomplete;
+   * allow explicit refusal with buyer warning only (OACIQ-style liability posture). FSBO publish still uses Seller Hub checks.
+   */
+  sellerDeclarationComplianceGateV1: envTrue("FEATURE_SELLER_DECLARATION_COMPLIANCE_GATE_V1"),
   /** Harden Co-Ownership — require DOCUMENTED+ level for critical/insurance rows. */
   coownershipVerificationEnforcement: envTrue("FEATURE_COOWNERSHIP_VERIFICATION_ENFORCEMENT"),
   /** Harden Co-Ownership — block readiness/autopilot when critical rows are expired. */
@@ -2429,6 +2434,7 @@ export const FEATURE_COOWNERSHIP_INSURANCE_ENFORCEMENT = complianceFlags.coowner
 export const FEATURE_COOWNERSHIP_COMPLIANCE_ENFORCEMENT = complianceFlags.coownershipComplianceEnforcement;
 export const FEATURE_COOWNERSHIP_VERIFICATION_ENFORCEMENT = complianceFlags.coownershipVerificationEnforcement;
 export const FEATURE_COOWNERSHIP_EXPIRY_ENFORCEMENT = complianceFlags.coownershipExpiryEnforcement;
+export const FEATURE_SELLER_DECLARATION_COMPLIANCE_GATE_V1 = complianceFlags.sellerDeclarationComplianceGateV1;
 
 /** Phase 4.5 — append-only compliance event timeline (Legal Hub + marketplace governance facts). Default off. */
 export const eventTimelineFlags = {

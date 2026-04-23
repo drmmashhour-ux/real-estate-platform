@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { PlatformRole } from "@prisma/client";
 import { getGuestId } from "@/lib/auth/session";
 import { prisma } from "@repo/db";
+import { requireActiveResidentialBrokerLicence } from "@/lib/compliance/oaciq/broker-licence-guard";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
 import { createOfferDocument, type OfferTypeKey } from "@/modules/offers/services/offer-service";
 import { hasActiveEnforceableContract } from "@/lib/legal/enforceable-contract";
@@ -27,6 +29,15 @@ export async function POST(req: NextRequest) {
   const type = body?.type as string;
   if (type !== "purchase_offer" && type !== "rental_offer") {
     return NextResponse.json({ error: "type must be purchase_offer or rental_offer" }, { status: 400 });
+  }
+
+  if (user.role === PlatformRole.BROKER) {
+    const licenceBlock = await requireActiveResidentialBrokerLicence(userId, {
+      dealType: type === "purchase_offer" ? "residential_purchase_offer" : "residential_lease_offer",
+      actorBrokerId: userId,
+      assignedBrokerId: userId,
+    });
+    if (licenceBlock) return licenceBlock;
   }
 
   const listingId = typeof body.listingId === "string" ? body.listingId.trim() : "";

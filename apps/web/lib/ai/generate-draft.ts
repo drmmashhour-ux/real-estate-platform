@@ -1,3 +1,7 @@
+/**
+ * Broker-execute path: policy-scoped retrieval + deterministic assembly (`internal-draft-runner`).
+ * For JSON/LLM drafting + coverage gates, use `generateSourceGroundedDraft` and `POST /api/drafting/generate`.
+ */
 import { retrieveDraftingContext } from "./retrieve";
 import { runInternalDraftGeneration, type InternalDraftResult } from "./internal-draft-runner";
 import { validateDraft, checkConsistency } from "@/lib/compliance/draft-validation";
@@ -31,10 +35,14 @@ function assertConsistency(consistency: ReturnType<typeof checkConsistency>): vo
 
 /**
  * Source-grounded draft: retrieval → assembly → validation → hard rules.
+ *
+ * - Retrieval: policy-scoped `vector_documents` only (`drafting-policy` allow-list + source priority).
+ * - Assembly: in-process `runInternalDraftGeneration` (same behavior as `POST /api/ai/internal-draft` for HTTP clients).
+ * - Hard rules: `NO_SOURCE_CONTEXT`, `DRAFT_INVALID`, `CONTRADICTION_DETECTED` — AI output is not trusted until these pass.
  */
 export async function generateDraft(input: GenerateDraftInput): Promise<GenerateDraftOutput> {
   const query = `${input.formType} ${JSON.stringify(input.facts ?? {})}`;
-  const sources = await retrieveDraftingContext(query);
+  const sources = await retrieveDraftingContext(query, { formType: input.formType });
 
   const draft = runInternalDraftGeneration({
     formType: input.formType,

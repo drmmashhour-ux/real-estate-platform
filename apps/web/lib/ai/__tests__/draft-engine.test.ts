@@ -40,4 +40,17 @@ describe("runInternalDraftGeneration", () => {
     expect(r.sourceUsed).toContain("oaciq/form-x");
     expect(r.fields.propertyAddress).toBe("10 Rue");
   });
+
+  it("clause mode emits clauseBody without requiring full-form fields", () => {
+    const r = runInternalDraftGeneration({
+      formType: "promise_to_purchase",
+      facts: { inspectionDays: 14 },
+      mode: "clause",
+      clauseType: "inspection",
+      sources: [{ sourceKey: "oaciq/clause-a", content: "Inspection clause …", confidence: 0.88 }],
+    });
+    expect(r.fields.clauseType).toBe("inspection");
+    expect(String(r.fields.clauseBody)).toContain("oaciq/clause-a");
+    expect(r.sourceUsed).toContain("oaciq/clause-a");
+  });
 });

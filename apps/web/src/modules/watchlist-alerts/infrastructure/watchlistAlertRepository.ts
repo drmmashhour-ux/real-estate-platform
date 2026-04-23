@@ -1,9 +1,10 @@
 import { prisma } from "@/lib/db";
-import type { Prisma } from "@prisma/client";
+import { isNotificationDeliveryV1Enabled } from "@/lib/notifications/flags";
+import type { Prisma, WatchlistAlertType } from "@prisma/client";
 import type { WatchlistAlertInput } from "@/src/modules/watchlist-alerts/domain/watchlistAlert.types";
 
 export async function createWatchlistAlert(input: WatchlistAlertInput) {
-  return prisma.watchlistAlert.create({
+  const created = await prisma.watchlistAlert.create({
     data: {
       userId: input.userId,
       watchlistId: input.watchlistId,
@@ -16,6 +17,13 @@ export async function createWatchlistAlert(input: WatchlistAlertInput) {
       status: "unread",
     },
   });
+  const { scheduleAlertAnalysis } = await import("@/lib/alerts/analyze");
+  scheduleAlertAnalysis(created.id, input.userId);
+  if (isNotificationDeliveryV1Enabled()) {
+    const { dispatchWatchlistAlert } = await import("@/lib/notifications/dispatcher");
+    void dispatchWatchlistAlert(created.id);
+  }
+  return created;
 }
 
 export async function listWatchlistAlerts(args: { userId: string; limit?: number }) {
@@ -46,7 +54,7 @@ export async function findRecentSimilarAlert(args: {
     where: {
       userId: args.userId,
       listingId: args.listingId,
-      alertType: args.alertType as any,
+      alertType: args.alertType as WatchlistAlertType,
       createdAt: { gte: args.since },
       metadata: { path: ["signature"], equals: args.signature },
     },

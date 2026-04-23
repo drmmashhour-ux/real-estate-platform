@@ -1,4 +1,6 @@
-import type { Conversation, ConversationParticipant, PlatformRole } from "@prisma/client";
+import type { Conversation, ConversationParticipant } from "@prisma/client";
+import { PlatformRole } from "@prisma/client";
+import { isFsboPubliclyVisible } from "@/lib/fsbo/constants";
 import { prisma } from "@/lib/db";
 import { getContractForAccess, resolveListingOwnerId, canAccessContract } from "@/modules/contracts/services/access";
 import { canViewOffer, isBrokerLikeRole } from "@/modules/offers/services/offer-access";
@@ -40,7 +42,16 @@ export function canArchiveConversation(
   return isParticipant(user.id, participants);
 }
 
-export type ContextKind = "listing" | "offer" | "contract" | "appointment" | "client";
+export type ContextKind = "listing" | "offer" | "contract" | "appointment" | "client" | "fsbo_listing";
+
+const MARKETPLACE_LISTING_INQUIRER_ROLES = new Set<PlatformRole>([
+  PlatformRole.USER,
+  PlatformRole.CLIENT,
+  PlatformRole.BUYER,
+  PlatformRole.UNREPRESENTED_BUYER,
+  PlatformRole.INVESTOR,
+  PlatformRole.TESTER,
+]);
 
 export async function canCreateContextConversation(
   user: UserForMessaging,
@@ -122,11 +133,12 @@ export async function canAccessConversationContext(
   user: UserForMessaging,
   conversation: Pick<
     Conversation,
-    "type" | "listingId" | "offerId" | "contractId" | "appointmentId" | "brokerClientId"
+    "type" | "listingId" | "fsboListingId" | "offerId" | "contractId" | "appointmentId" | "brokerClientId"
   >
 ): Promise<boolean> {
   if (
     !conversation.listingId &&
+    !conversation.fsboListingId &&
     !conversation.offerId &&
     !conversation.contractId &&
     !conversation.appointmentId &&
@@ -136,6 +148,9 @@ export async function canAccessConversationContext(
   }
   if (conversation.listingId) {
     return canCreateContextConversation(user, "listing", conversation.listingId);
+  }
+  if (conversation.fsboListingId) {
+    return canCreateContextConversation(user, "fsbo_listing", conversation.fsboListingId);
   }
   if (conversation.offerId) {
     return canCreateContextConversation(user, "offer", conversation.offerId);

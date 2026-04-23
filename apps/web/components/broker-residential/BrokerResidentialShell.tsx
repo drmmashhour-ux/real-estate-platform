@@ -1,5 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import type { BrokerLicenceEvaluation } from "@/lib/compliance/oaciq/broker-licence-service";
+import { BrokerLicenceStatusStrip } from "@/components/broker-residential/BrokerLicenceStatusStrip";
 
 const NAV: { href: string; label: string }[] = [
   { href: "", label: "Overview" },
@@ -16,9 +18,11 @@ const NAV: { href: string; label: string }[] = [
 
 export function BrokerResidentialShell({
   basePath,
+  licence,
   children,
 }: {
   basePath: string;
+  licence?: BrokerLicenceEvaluation | null;
   children: ReactNode;
 }) {
   const officePath = basePath.replace(/\/broker\/residential$/, "/broker/office");
@@ -34,12 +38,15 @@ export function BrokerResidentialShell({
               Quebec residential workflow — drafting assistance is reviewable; official OACIQ forms are not replaced here.
             </p>
           </div>
-          <Link
-            href={basePath.replace(/\/broker\/residential$/, "/dashboard/broker")}
-            className="text-sm text-ds-gold hover:text-amber-200"
-          >
-            Classic broker dashboard →
-          </Link>
+          <div className="flex max-w-md flex-col items-end gap-3">
+            <BrokerLicenceStatusStrip licence={licence ?? null} />
+            <Link
+              href={basePath.replace(/\/broker\/residential$/, "/dashboard/broker")}
+              className="text-sm text-ds-gold hover:text-amber-200"
+            >
+              Classic broker dashboard →
+            </Link>
+          </div>
         </div>
       </div>
 

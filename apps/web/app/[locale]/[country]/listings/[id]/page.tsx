@@ -53,6 +53,12 @@ import { isBrokerInsuranceValid, getBrokerInsuranceStatus } from "@/modules/comp
 import { loadFsboListingScore } from "@/modules/listing-ranking/fsbo-score-loader";
 import { ListingRankingBadges } from "@/components/listings/ListingRankingBadges";
 import { getPublicEsgBadge, touchEsgOnListingView } from "@/modules/esg/esg.service";
+import {
+  loadListingDeclarationComplianceInput,
+  normalizeFsboDeclarationComplianceInput,
+  sellerRefusedDeclarationFromCompliance,
+  validateListingCompliance,
+} from "@/modules/legal/compliance/listing-declaration-compliance.service";
 
 export const dynamic = "force-dynamic";
 
@@ -328,9 +334,12 @@ export default async function PublicListingRoute({ params, searchParams }: Props
     const insuranceStatus = 
       row.listingOwnerType === "BROKER" ? await getBrokerInsuranceStatus(row.ownerId) : null;
     const transactionFlag = await getListingTransactionFlag(row.id, row.status);
+    const declFsboResult = validateListingCompliance(normalizeFsboDeclarationComplianceInput(row));
+    const sellerDeclarationRefusedFsbo = sellerRefusedDeclarationFromCompliance(declFsboResult);
     const fsboPayload = {
       ...row,
       listingKind: "fsbo" as const,
+      sellerDeclarationRefused: sellerDeclarationRefusedFsbo,
       transactionFlag,
       insuredBroker,
       insuranceDetail: insuranceStatus?.policy ? {
@@ -524,6 +533,9 @@ export default async function PublicListingRoute({ params, searchParams }: Props
 
   const collaborationCrm = await collaborationForListingViewer(guestCrm);
 
+  const declCrmResult = validateListingCompliance(await loadListingDeclarationComplianceInput(payload.id));
+  const sellerDeclarationRefusedCrm = sellerRefusedDeclarationFromCompliance(declCrmResult);
+
   void touchEsgOnListingView(payload.id).catch(() => null);
   const esgBadgeData = await getPublicEsgBadge(payload.id);
 
@@ -535,6 +547,7 @@ export default async function PublicListingRoute({ params, searchParams }: Props
         listing={{
           ...crmPayload,
           listingKind: "crm",
+          sellerDeclarationRefused: sellerDeclarationRefusedCrm,
           transactionFlag: transactionFlagCrm,
           insuredBroker: insuredBrokerCrm,
           insuranceDetail: insuranceStatusCrm?.policy ? {

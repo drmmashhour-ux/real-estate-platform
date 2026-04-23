@@ -30,6 +30,7 @@ export async function GET(_request: Request, context: Params) {
     include: {
       participants: { include: { user: { select: { id: true, name: true, email: true } } } },
       listing: { select: { id: true, title: true, listingCode: true } },
+      fsboListing: { select: { id: true, title: true, listingCode: true } },
       offer: { select: { id: true, status: true, listingId: true } },
       contract: { select: { id: true, title: true, status: true } },
       appointment: { select: { id: true, title: true, startsAt: true, status: true } },
@@ -66,6 +67,7 @@ export async function GET(_request: Request, context: Params) {
       })),
       context: {
         listing: conv.listing,
+        fsboListing: conv.fsboListing,
         offer: conv.offer ? { id: conv.offer.id } : null,
         contract: conv.contract,
         appointment: conv.appointment

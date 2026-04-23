@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { GrowthEmailQueueStatus, GrowthEmailQueueType } from "@prisma/client";
 import { sendEmail, getNotificationEmail } from "@/lib/email/resend";
 import { logError } from "@/lib/logger";
+import { isNotificationDeliveryV1Enabled } from "@/lib/notifications/flags";
 
 /**
  * Price drop on FSBO listing — in-app + optional email (uses watchlist-style row when watchlist exists).
@@ -31,7 +32,7 @@ export async function triggerPriceDropAlert(input: {
     select: { id: true },
   });
   if (wl) {
-    await prisma.watchlistAlert.create({
+    const created = await prisma.watchlistAlert.create({
       data: {
         userId: input.userId,
         watchlistId: wl.id,
@@ -44,10 +45,17 @@ export async function triggerPriceDropAlert(input: {
         metadata: { oldPriceCents: input.oldPriceCents, newPriceCents: input.newPriceCents } as object,
       },
     });
+    const { scheduleAlertAnalysis } = await import("@/lib/alerts/analyze");
+    scheduleAlertAnalysis(created.id, input.userId);
+    if (isNotificationDeliveryV1Enabled()) {
+      const { dispatchWatchlistAlert } = await import("@/lib/notifications/dispatcher");
+      void dispatchWatchlistAlert(created.id);
+    }
   }
 
+  const skipLegacyEmail = isNotificationDeliveryV1Enabled() && Boolean(wl);
   const user = await prisma.user.findUnique({ where: { id: input.userId }, select: { email: true } });
-  if (user?.email) {
+  if (!skipLegacyEmail && user?.email) {
     void sendEmail({
       to: user.email,
       subject: title,

@@ -12,6 +12,7 @@ import {
 import { sendContractCompletedEmail } from "@/lib/email/contract-emails";
 import { completeOpenActionQueueBySource } from "@/modules/notifications/services/action-queue";
 import { onContractSigned } from "@/modules/notifications/services/workflow-notification-triggers";
+import { assertTrustDepositAllowsContractCompletion } from "@/lib/compliance/trust-contract-gate";
 
 export type SignContractInput = {
   contractId: string;
@@ -63,6 +64,11 @@ export async function signContractUniversal(
   let newStatus = fresh.status;
 
   if (allSigned) {
+    const trustGate = await assertTrustDepositAllowsContractCompletion(input.contractId);
+    if (!trustGate.ok) {
+      return { ok: false, error: trustGate.error };
+    }
+
     newStatus = c.type === CONTRACT_TYPES.LEASE ? LEASE_CONTRACT_STATUS.COMPLETED : "completed";
     await prisma.contract.update({
       where: { id: input.contractId },

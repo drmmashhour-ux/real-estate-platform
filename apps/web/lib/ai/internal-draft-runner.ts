@@ -9,6 +9,9 @@ export type InternalDraftInput = {
   formType: string;
   facts: Record<string, unknown>;
   sources: DraftingContextChunk[];
+  /** When set, output is clause-shaped (no full-form buyer/address requirements). */
+  mode?: "full" | "clause";
+  clauseType?: string;
 };
 
 export type InternalDraftResult = {
@@ -31,6 +34,23 @@ export function runInternalDraftGeneration(input: InternalDraftInput): InternalD
     .slice(0, 5)
     .map((s) => `[${s.sourceKey}] ${s.content.slice(0, 2000)}`)
     .join("\n\n");
+
+  if (input.mode === "clause") {
+    const clauseType = input.clauseType?.trim() || "general";
+    const fields: Record<string, unknown> = {
+      formType: input.formType,
+      clauseType,
+      clauseBody: topSnippets,
+      sourceExcerpts: topSnippets,
+      retrievedAt: new Date().toISOString(),
+      ...input.facts,
+    };
+    return {
+      fields,
+      sourceUsed,
+      formType: input.formType,
+    };
+  }
 
   const propertyAddress =
     (pickFact<string>(input.facts, "propertyAddress") ??

@@ -1,6 +1,7 @@
 import type { LecipmExecutionPipelineState } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { asInputJsonValue } from "@/lib/prisma/as-input-json";
+import { assertTrustAndExportGatesForDeal } from "@/lib/compliance/transaction-release-guards";
 import { assertHasBrokerApproval, assertTransitionAllowed, type ExecutionGuardContext } from "./execution-guard.service";
 import { normalizeState } from "./execution-state-machine";
 import type { ExecutionPipelineState, ExecutionTransitionReason } from "./execution.types";
@@ -116,6 +117,21 @@ export async function startExecution(input: {
 }): Promise<{ ok: true } | { ok: false; message: string }> {
   const appr = await assertHasBrokerApproval(input.dealId);
   if (!appr.ok) return appr;
+
+  if (process.env.LECIPM_REQUIRE_TRUST_RECONCILIATION_FOR_EXECUTION === "1") {
+    const gate = await assertTrustAndExportGatesForDeal({
+      dealId: input.dealId,
+      requiresTrustReconciliation: true,
+    });
+    if (!gate.ok) return gate;
+  }
+  if (process.env.LECIPM_REQUIRE_REGULATOR_EXPORT_FOR_EXECUTION === "1") {
+    const gate = await assertTrustAndExportGatesForDeal({
+      dealId: input.dealId,
+      requiresInspectionPacket: true,
+    });
+    if (!gate.ok) return gate;
+  }
 
   const deal = await prisma.deal.findUnique({
     where: { id: input.dealId },

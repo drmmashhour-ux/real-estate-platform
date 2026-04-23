@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -104,6 +105,8 @@ export type BuyerListingPayload = {
   longitude?: number | null;
   /** Centris syndication badge — only when connector marked SYNCED. */
   listedOnCentris?: boolean;
+  /** Seller explicitly refused / did not complete declaration — buyers must be informed (OACIQ posture). */
+  sellerDeclarationRefused?: boolean;
 };
 
 export type ListingContactGateProps = {
@@ -209,9 +212,14 @@ export function BuyerListingDetail({
 }) {
   const conversionEngineFlags = useConversionEngineFlags();
   const { showToast } = useToast();
+  const router = useRouter();
+  const routeParams = useParams<{ locale?: string; country?: string }>();
+  const localeSeg = typeof routeParams?.locale === "string" ? routeParams.locale : "en";
+  const countrySeg = typeof routeParams?.country === "string" ? routeParams.country : "ca";
   const [modal, setModal] = useState<Modal>(null);
   const [submitting, setSubmitting] = useState(false);
   const [leadCheckoutBusy, setLeadCheckoutBusy] = useState(false);
+  const [messageBrokerBusy, setMessageBrokerBusy] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   /** Set when CRM contact also opens a LECIPM messaging thread — link to `/account/messages`. */
   const [contactInboxThreadId, setContactInboxThreadId] = useState<string | null>(null);
@@ -776,6 +784,61 @@ export function BuyerListingDetail({
     setFormError(null);
   }
 
+  async function goToMarketplaceChat() {
+    if (isSold || !isBrokerListing) return;
+    setMessageBrokerBusy(true);
+    setFormError(null);
+    try {
+      void fetch("/api/listings/analytics/event", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          kind: listing.listingKind === "crm" ? "CRM" : "FSBO",
+          listingId: listing.id,
+          event: "marketplace_message_click",
+        }),
+      }).catch(() => {});
+      trackImmoContactClient({
+        listingId: listing.id,
+        listingKind: listing.listingKind === "crm" ? "crm" : "fsbo",
+        contactType: ImmoContactEventType.CONTACT_CLICK,
+        metadata: { surface: "marketplace_message_broker" },
+      });
+      const res = await fetch("/api/messages/start-from-listing", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          listingId: listing.id,
+          listingKind: listing.listingKind === "fsbo" ? "fsbo" : "crm",
+          listingUrl: typeof window !== "undefined" ? window.location.href : "",
+        }),
+      });
+      const j = (await res.json().catch(() => ({}))) as {
+        conversationId?: string;
+        error?: string;
+        code?: string;
+      };
+      if (res.status === 401) {
+        const next = `/${localeSeg}/${countrySeg}/listings/${encodeURIComponent(listing.id)}`;
+        router.push(`/auth/login?next=${encodeURIComponent(next)}`);
+        return;
+      }
+      if (res.status === 402 && j.code === "LEAD_PAYMENT_REQUIRED") {
+        showToast(j.error ?? "Unlock listing contact before messaging the broker.", "warning");
+        openPrimaryContact();
+        return;
+      }
+      if (!res.ok || !j.conversationId) {
+        showToast(j.error ?? "Could not open chat.", "error");
+        return;
+      }
+      router.push(`/${localeSeg}/${countrySeg}/messages/${j.conversationId}`);
+    } finally {
+      setMessageBrokerBusy(false);
+    }
+  }
+
   const featureRows = propertyDetails.map((item) => {
     const l = item.label.toLowerCase();
     let Icon = CheckCircle2;
@@ -819,6 +882,13 @@ export function BuyerListingDetail({
 
         <div className="mt-4 lg:grid lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-4">
           <div className="min-w-0">
+            {listing.sellerDeclarationRefused ? (
+              <div className="mb-4 rounded-xl border border-amber-500/40 bg-yellow-950/80 p-3 text-sm text-amber-50">
+                Seller refused to complete the seller declaration for this property, or declined to provide one. You must
+                be informed before proceeding — verify material facts with the listing representative and conduct your
+                own due diligence.
+              </div>
+            ) : null}
             <FsboListingGallery
               images={listing.images}
               coverImage={listing.coverImage}
@@ -1069,7 +1139,7 @@ export function BuyerListingDetail({
                         </p>
                       </div>
                     </div>
-                    <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
+                    <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
                       {listing.listingKind === "crm" && contactLeadId ? (
                         <button
                           type="button"
@@ -1079,6 +1149,14 @@ export function BuyerListingDetail({
                           Request a visit
                         </button>
                       ) : null}
+                      <button
+                        type="button"
+                        onClick={() => void goToMarketplaceChat()}
+                        disabled={messageBrokerBusy || leadCheckoutBusy}
+                        className={`${secondaryActionBtnClass} border-emerald-500/40 px-6 py-2.5 text-sm whitespace-nowrap text-emerald-100 hover:border-emerald-400/55 hover:text-white`}
+                      >
+                        {messageBrokerBusy ? "Opening…" : "Message broker"}
+                      </button>
                       <button
                         type="button"
                         onClick={openPrimaryContact}
@@ -1832,6 +1910,16 @@ export function BuyerListingDetail({
                   className={`${primaryCtaButtonClass} mt-2 flex w-full items-center justify-center px-6`}
                 >
                   Request a visit
+                </button>
+              ) : null}
+              {isBrokerListing ? (
+                <button
+                  type="button"
+                  onClick={() => void goToMarketplaceChat()}
+                  disabled={messageBrokerBusy || leadCheckoutBusy}
+                  className={`${secondaryActionBtnClass} mt-2 flex w-full items-center justify-center border-emerald-500/35 px-6 text-emerald-100`}
+                >
+                  {messageBrokerBusy ? "Opening…" : "Message broker"}
                 </button>
               ) : null}
               <button

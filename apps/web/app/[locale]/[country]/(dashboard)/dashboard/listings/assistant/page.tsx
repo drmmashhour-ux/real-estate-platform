@@ -44,12 +44,20 @@ export default async function ListingAssistantPage({
               Assistive only; no auto-submit to external boards.
             </p>
           </div>
-          <Link
-            href={`${prefix}/dashboard/listings`}
-            className="text-sm font-medium text-emerald-700 hover:underline dark:text-emerald-400"
-          >
-            ← Back to listings
-          </Link>
+          <div className="flex flex-wrap gap-4 text-sm">
+            <Link
+              href={`${prefix}/dashboard/listings/assistant/operations`}
+              className="font-medium text-amber-800 hover:underline dark:text-amber-200"
+            >
+              Operations →
+            </Link>
+            <Link
+              href={`${prefix}/dashboard/listings`}
+              className="font-medium text-emerald-700 hover:underline dark:text-emerald-400"
+            >
+              ← Back to listings
+            </Link>
+          </div>
         </div>
       </div>
       <ListingAssistantDashboardClient initialListingId={initialListingId} />

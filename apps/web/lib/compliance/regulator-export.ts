@@ -63,6 +63,22 @@ export async function buildRegulatorExport(input: {
     take: 3000,
   });
 
+  const transactions = await prisma.transactionRecord.findMany({
+    where: {
+      ownerType: input.ownerType,
+      ownerId: input.ownerId,
+    },
+    take: 3000,
+  });
+
+  const taxes = await prisma.taxRecord.findMany({
+    where: {
+      ownerType: input.ownerType,
+      ownerId: input.ownerId,
+    },
+    take: 3000,
+  });
+
   const report = {
     exportType: input.exportType,
     scopeType: input.scopeType,
@@ -73,17 +89,23 @@ export async function buildRegulatorExport(input: {
       complaintsSource: "compliance_cases",
       trustSource: "trust_deposits",
       receiptsSource: "cash_receipt_forms",
+      transactionsSource: "lecipm_financial_transaction_records",
+      taxesSource: "lecipm_tax_records",
     },
     counts: {
       audit: audit.length,
       complaints: complianceCases.length,
       trustDeposits: trustDeposits.length,
       receipts: receipts.length,
+      transactions: transactions.length,
+      taxes: taxes.length,
     },
     audit,
     complaints: complianceCases,
     trustDeposits,
     receipts,
+    transactions,
+    taxes,
   };
 
   const run = await prisma.regulatorExportRun.create({
