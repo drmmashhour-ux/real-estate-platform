@@ -12,7 +12,7 @@ import {
   View,
 } from "react-native";
 import { Calendar } from "react-native-calendars";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { API_BASE_URL } from "../../config";
 import { AUTH_DISABLED } from "../../config/dev";
 import { ListingGallery } from "../../components/ListingGallery";
@@ -83,6 +83,7 @@ export default function PropertyScreen() {
     return r.split("|").map((s) => s.trim()).filter(Boolean).slice(0, 4);
   }, [rankTagsParam]);
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { session, me } = useAppAuth();
   const [detail, setDetail] = useState<DetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -303,6 +304,8 @@ export default function PropertyScreen() {
   const entryInfo = trustDefaults.entry;
   const houseRulesBlock = property.house_rules?.trim() || trustDefaults.rules;
 
+  const stickyBottomPad = Math.max(insets.bottom, 12);
+
   return (
     <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
       <Modal visible={dateModal != null} transparent animationType="fade" onRequestClose={() => setDateModal(null)}>
@@ -333,7 +336,12 @@ export default function PropertyScreen() {
         </Pressable>
       </Modal>
 
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+      <View style={styles.shell}>
+      <ScrollView
+        style={styles.scrollFlex}
+        contentContainerStyle={[styles.scroll, { paddingBottom: stickyBottomPad + 96 }]}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={styles.topBar}>
           <Pressable onPress={() => router.back()} hitSlop={12}>
             <Text style={styles.back}>‹ Back</Text>
@@ -460,13 +468,13 @@ export default function PropertyScreen() {
                   : "Pick check-in and check-out to calculate."}
               </Text>
             </View>
+          </View>
 
-            <Pressable
-              onPress={goBook}
-              style={({ pressed }) => [styles.bookNow, pressed && { opacity: 0.92 }]}
-            >
-              <Text style={styles.bookNowLabel}>Book now</Text>
-            </Pressable>
+          <View style={styles.aiInsight}>
+            <Text style={styles.aiInsightLabel}>AI insight</Text>
+            <Text style={styles.aiInsightBody}>
+              Demand signals for stays near {property.city ?? "this market"} are elevated versus your typical 30-day rolling average — lock dates early if you like this home.
+            </Text>
           </View>
 
           <View style={styles.block}>
@@ -526,16 +534,33 @@ export default function PropertyScreen() {
           />
         </View>
       </ScrollView>
+
+      <View style={[styles.stickyBar, { paddingBottom: stickyBottomPad }]}>
+        <View style={styles.stickyLeft}>
+          <Text style={styles.stickyEyebrow}>Total</Text>
+          <Text style={styles.stickyAmount}>
+            {nights > 0
+              ? `$${Number.isInteger(totalStay) ? totalStay.toFixed(0) : totalStay.toFixed(2)}`
+              : "—"}
+          </Text>
+        </View>
+        <Pressable onPress={goBook} style={({ pressed }) => [styles.stickyBook, pressed && { opacity: 0.92 }]}>
+          <Text style={styles.stickyBookLabel}>Book now</Text>
+        </Pressable>
+      </View>
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  shell: { flex: 1 },
+  scrollFlex: { flex: 1 },
   safe: { flex: 1, backgroundColor: colors.background },
   center: { flex: 1, backgroundColor: colors.background, justifyContent: "center", alignItems: "center" },
   loadingHint: { color: colors.muted, marginTop: 12, fontSize: 14 },
   padded: { flex: 1, padding: 24 },
-  scroll: { paddingBottom: 48 },
+  scroll: { paddingBottom: 24 },
   topBar: { paddingHorizontal: 20, paddingBottom: 8 },
   back: { color: colors.gold, fontSize: 16, fontWeight: "600" },
   section: { paddingHorizontal: 20, paddingTop: 4 },
@@ -626,13 +651,45 @@ const styles = StyleSheet.create({
   totalLabel: { color: colors.muted, fontSize: 12, fontWeight: "700", marginBottom: 4 },
   totalValue: { color: colors.gold, fontSize: 26, fontWeight: "800" },
   totalMeta: { color: colors.muted, fontSize: 13, marginTop: 6, lineHeight: 18 },
-  bookNow: {
+  aiInsight: {
+    marginTop: 20,
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(212,175,55,0.35)",
+    backgroundColor: "rgba(212,175,55,0.06)",
+  },
+  aiInsightLabel: {
+    color: colors.gold,
+    fontSize: 11,
+    fontWeight: "900",
+    letterSpacing: 1,
+    marginBottom: 8,
+    textTransform: "uppercase",
+  },
+  aiInsightBody: { color: colors.text, fontSize: 14, lineHeight: 21 },
+  stickyBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 16,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+    backgroundColor: colors.background,
+  },
+  stickyLeft: { flexShrink: 1 },
+  stickyEyebrow: { color: colors.muted, fontSize: 11, fontWeight: "700", marginBottom: 4 },
+  stickyAmount: { color: colors.gold, fontSize: 22, fontWeight: "900" },
+  stickyBook: {
     backgroundColor: colors.gold,
-    paddingVertical: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 22,
     borderRadius: 14,
     alignItems: "center",
   },
-  bookNowLabel: { color: "#0a0a0a", fontWeight: "900", fontSize: 17 },
+  stickyBookLabel: { color: "#0a0a0a", fontWeight: "900", fontSize: 16 },
   block: { marginTop: 28 },
   blockTitle: { color: colors.text, fontSize: 17, fontWeight: "800", marginBottom: 10 },
   desc: { color: colors.text, lineHeight: 24, fontSize: 15 },

@@ -66,6 +66,7 @@
     "validate:five-hub-transactions": "pnpm --filter @lecipm/web run validate:five-hub-transactions",
     "e2e-simulation": "pnpm exec tsx scripts/e2e-simulation.ts",
     "db:migrate:deploy": "pnpm --filter @lecipm/web exec prisma migrate deploy",
+    "tenant:backfill": "pnpm exec tsx scripts/backfill-tenant.ts",
     "validate:staging-stack": "pnpm validate:flows && pnpm --filter @lecipm/web run validate:executive-control && pnpm --filter @lecipm/web run validate:ranking-system && pnpm --filter @lecipm/web run validate:fraud",
     "inspect:executive-daily": "pnpm --filter @lecipm/web run inspect:executive-daily",
     "test:e2e": "pnpm --filter @lecipm/web run test:e2e",
@@ -93,6 +94,7 @@
     "git:clean": "git rm -r --cached . && git add ."
   },
   "devDependencies": {
+    "@repo/db": "workspace:*",
     "@eslint/js": "^9.15.0",
     "eslint": "^9.15.0",
     "husky": "^9.1.7",

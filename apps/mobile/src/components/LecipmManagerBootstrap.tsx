@@ -5,7 +5,7 @@ import {
   addNotificationReceivedListener,
   addNotificationResponseListener,
   registerForPushNotificationsAsync,
-} from "../services/notifications";
+} from "@/lib/notifications";
 
 /**
  * Push registration + in-app notification listeners for LECIPM Manager (root layout).

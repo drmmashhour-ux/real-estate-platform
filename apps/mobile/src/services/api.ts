@@ -52,6 +52,47 @@ function createApiClient(): AxiosInstance {
 export const lecipmApi = createApiClient();
 const client = lecipmApi;
 
+/**
+ * Lightweight `fetch` wrapper aligned with Bearer auth used by `/api/mobile/**`.
+ * @param token Pass a string to force that JWT; `undefined` resolves stored session / Supabase; `null` sends no Authorization header (public endpoints).
+ */
+export async function apiFetch<T>(
+  path: string,
+  token?: string | null,
+  init?: RequestInit,
+): Promise<T> {
+  let bearer: string | null = null;
+  if (token === undefined) bearer = await resolveBearer();
+  else if (typeof token === "string" && token.length > 0) bearer = token;
+
+  const headers: Record<string, string> = {
+    Accept: "application/json",
+    ...(init?.headers as Record<string, string>),
+  };
+  if (bearer) headers.Authorization = `Bearer ${bearer}`;
+
+  const url = `${baseURL}${path.startsWith("/") ? path : `/${path}`}`;
+  const res = await fetch(url, { ...init, headers });
+  if (!res.ok) {
+    const text = await res.text();
+    let msg = text || res.statusText;
+    try {
+      const j = JSON.parse(text) as Record<string, unknown>;
+      const e =
+        typeof j.error === "string"
+          ? j.error
+          : typeof j.message === "string"
+            ? j.message
+            : null;
+      if (e) msg = e;
+    } catch {
+      /* keep raw */
+    }
+    throw new Error(`API ${res.status}: ${msg}`);
+  }
+  return res.json() as Promise<T>;
+}
+
 export type PublicListingCard = {
   id: string;
   title: string;

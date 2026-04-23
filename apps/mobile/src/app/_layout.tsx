@@ -10,13 +10,13 @@ import { useCallback, useEffect, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
+import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { BrandedSplashTransition } from "../components/BrandedSplashTransition";
 import { LecipmManagerBootstrap } from "../components/LecipmManagerBootstrap";
 import { MobileI18nProvider } from "../i18n/I18nProvider";
 import { AuthProvider } from "../hooks/useAuth";
 import { trackBnhubEvent } from "../lib/bnhubTrack";
-import { colors } from "../theme/colors";
 
 void SplashScreen.preventAutoHideAsync();
 
@@ -39,13 +39,15 @@ export default function RootLayout() {
       <QueryClientProvider client={queryClient}>
         <MobileI18nProvider>
           <AuthProvider>
+            <StatusBar style="light" />
             <LecipmManagerBootstrap />
             <BnhubSoftLaunchTracking />
             {!splashDone ? <BrandedSplashTransition onComplete={onSplashComplete} /> : null}
             <Stack
               screenOptions={{
                 headerShown: false,
-                contentStyle: { backgroundColor: colors.background },
+                animation: "fade",
+                contentStyle: { backgroundColor: "#000000" },
               }}
             />
           </AuthProvider>
