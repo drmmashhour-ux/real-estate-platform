@@ -7429,6 +7429,7 @@ model PropertyIdentity {
 // ---------------------------------------------------------------------------
 model RealEstateTransaction {
   id                 String                @id @default(uuid())
+  organizationId     String?               @map("organization_id")
   propertyIdentityId String                @map("property_identity_id")
   propertyIdentity   PropertyIdentity      @relation(fields: [propertyIdentityId], references: [id], onDelete: Restrict)
   listingId          String?               @map("listing_id") // Optional: ShortTermListing.id or future sale listing
@@ -7523,16 +7524,21 @@ model TransactionDeposit {
 }
 
 model TransactionDocument {
-  id             String                @id @default(uuid())
-  transactionId  String                @map("transaction_id")
-  transaction    RealEstateTransaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
-  documentType   String                @map("document_type") // purchase_agreement | broker_agreement | inspection_conditions | etc.
-  fileUrl        String                @map("file_url")
-  signedByBuyer  Boolean               @default(false) @map("signed_by_buyer")
-  signedBySeller Boolean               @default(false) @map("signed_by_seller")
-  signedByBroker Boolean               @default(false) @map("signed_by_broker")
-  signedAt       DateTime?             @map("signed_at")
-  createdAt      DateTime              @default(now()) @map("created_at")
+  id               String                  @id @default(uuid())
+  transactionId    String                  @map("transaction_id")
+  transaction      RealEstateTransaction   @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  documentType     String                  @map("document_type") // purchase_agreement | broker_agreement | inspection_conditions | etc.
+  fileUrl          String                  @map("file_url")
+  originalFileUrl  String?                 @map("original_file_url")
+  redactedFileUrl  String?                 @map("redacted_file_url")
+  sensitivityLevel PrivacySensitivityLevel @default(CONFIDENTIAL) @map("sensitivity_level")
+  version          String                  @default("1.0")
+  isImmutable      Boolean                 @default(false) @map("is_immutable")
+  signedByBuyer    Boolean                 @default(false) @map("signed_by_buyer")
+  signedBySeller   Boolean                 @default(false) @map("signed_by_seller")
+  signedByBroker   Boolean                 @default(false) @map("signed_by_broker")
+  signedAt         DateTime?               @map("signed_at")
+  createdAt        DateTime                @default(now()) @map("created_at")
 
   @@index([transactionId])
   @@index([documentType])

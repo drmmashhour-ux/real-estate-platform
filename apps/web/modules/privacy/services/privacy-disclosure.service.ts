@@ -1,49 +1,86 @@
 import { prisma } from "@/lib/db";
 import { PrivacyRedactionService } from "./privacy-redaction.service";
-import { PrivacyAuditLog } from "@prisma/client";
+import { PrivacyPurpose } from "@prisma/client";
 
 export class PrivacyDisclosureService {
   /**
-   * Discloses a document to an external recipient with optional redaction.
+   * Logs and handles external disclosure of information.
    */
-  static async discloseDocument(args: {
-    documentId: string;
-    recipient: string;
-    purpose: string;
-    actorUserId: string;
-    redact: boolean;
+  static async discloseData(args: {
+    userId: string;
+    transactionId: string;
+    purpose: PrivacyPurpose;
+    recipientType: 'CENTRIS' | 'BUYER_BROKER' | 'UNREPRESENTED_BUYER' | 'OTHER';
+    recipientName: string;
+    data: any;
   }) {
-    const doc = await prisma.lecipmSdDocument.findUnique({
-      where: { id: args.documentId },
+    // 1. Verify consent exists for this disclosure purpose
+    const hasConsent = await prisma.privacyConsentRecord.findFirst({
+      where: {
+        userId: args.userId,
+        purpose: args.purpose,
+        granted: true,
+        revokedAt: null,
+      },
     });
 
-    if (!doc) throw new Error("Document not found");
-
-    let finalContent = doc.bodyHtml || "";
-    if (args.redact) {
-      finalContent = PrivacyRedactionService.redactInspectionReport(finalContent);
-      // In a real system, we'd generate a new PDF or file with redactions applied.
+    if (!hasConsent) {
+      throw new Error(`DISCLOSURE_BLOCKED: Explicit consent missing for ${args.purpose}`);
     }
 
-    // Log the disclosure
+    // 2. Redact data based on recipient
+    let redactedData = { ...args.data };
+    switch (args.recipientType) {
+      case 'CENTRIS':
+        redactedData = PrivacyRedactionService.redactForInformationDisseminationService(args.data);
+        break;
+      case 'BUYER_BROKER':
+        redactedData = PrivacyRedactionService.redactForBuyerBroker(args.data);
+        break;
+      case 'UNREPRESENTED_BUYER':
+        redactedData = PrivacyRedactionService.redactForUnrepresentedBuyer(args.data);
+        break;
+      default:
+        // Default to maximum redaction if unknown recipient
+        redactedData = PrivacyRedactionService.redactForUnrepresentedBuyer(args.data);
+    }
+
+    // 3. Log the disclosure in PrivacyAuditLog
     await prisma.privacyAuditLog.create({
       data: {
-        userId: args.actorUserId,
+        userId: args.userId,
         action: "EXTERNAL_DISCLOSURE",
-        entityType: "LecipmSdDocument",
-        entityId: args.documentId,
-        purpose: args.purpose,
+        entityType: "Transaction",
+        entityId: args.transactionId,
+        purpose: args.purpose.toString(),
         metadata: {
-          recipient: args.recipient,
-          redacted: args.redact,
+          recipientType: args.recipientType,
+          recipientName: args.recipientName,
+          fieldsDisclosed: Object.keys(redactedData),
         },
       },
     });
 
-    return {
-      success: true,
-      content: finalContent,
-      message: `Document disclosed to ${args.recipient} for ${args.purpose}.`,
-    };
+    return redactedData;
+  }
+
+  /**
+   * Specifically handles listing dissemination (Centris/etc).
+   */
+  static async discloseListingToService(listingId: string, sellerUserId: string) {
+    const listing = await prisma.shortTermListing.findUnique({
+      where: { id: listingId },
+    });
+
+    if (!listing) throw new Error("Listing not found");
+
+    return this.discloseData({
+      userId: sellerUserId,
+      transactionId: listing.id, // Using listingId as transaction context
+      purpose: PrivacyPurpose.DISCLOSURE_TO_INFORMATION_DISSEMINATION_SERVICE,
+      recipientType: 'CENTRIS',
+      recipientName: 'Centris / MLS',
+      data: listing,
+    });
   }
 }

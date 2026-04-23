@@ -14,11 +14,11 @@ export function TransactionPrivacyPanel({ transactionId }: TransactionPrivacyPan
   useEffect(() => {
     async function fetchPrivacyData() {
       try {
-        const res = await fetch(`/api/privacy/transaction/${transactionId}/summary`);
-        const json = await res.json();
-        setData(json);
+        const res = await fetch(`/api/privacy/transaction-status?transactionId=${transactionId}`);
+        const result = await res.json();
+        setData(result);
       } catch (err) {
-        console.error("Failed to fetch transaction privacy data", err);
+        console.error("Failed to fetch transaction privacy status", err);
       } finally {
         setLoading(false);
       }
@@ -26,66 +26,64 @@ export function TransactionPrivacyPanel({ transactionId }: TransactionPrivacyPan
     fetchPrivacyData();
   }, [transactionId]);
 
-  if (loading) return <div className="p-4 text-center text-sm text-gray-500">Loading privacy info...</div>;
+  if (loading) return <div className="p-4 text-center text-gray-500 text-sm">Loading privacy status...</div>;
   if (!data) return null;
 
-  const { consents, accessLogs, transferLogs } = data;
-
   return (
-    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
-      <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
-        <h3 className="text-sm font-bold text-gray-900">Privacy & Compliance Panel</h3>
-        <span className="text-[10px] font-bold px-2 py-0.5 bg-green-100 text-green-800 rounded-full uppercase tracking-tighter">
-          Law 25 Compliant
-        </span>
+    <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+      <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
+        <h3 className="text-sm font-bold text-gray-900">Privacy & Access Status</h3>
       </div>
       
-      <div className="p-4 space-y-6">
-        <section>
-          <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Consents & Gates</h4>
-          <div className="space-y-2">
-            {consents.length > 0 ? consents.map((c: any) => (
-              <div key={c.id} className="flex justify-between items-center text-xs p-2 bg-blue-50 border border-blue-100 rounded">
-                <div>
-                  <p className="font-bold text-blue-900">{c.purpose.replace(/_/g, ' ')}</p>
-                  <p className="text-blue-700 text-[10px]">{new Date(c.grantedAt).toLocaleString()}</p>
-                </div>
-                <span className="text-blue-600 font-bold">GRANTED</span>
-              </div>
-            )) : (
-              <p className="text-xs text-red-500 italic font-medium p-2 bg-red-50 border border-red-100 rounded">
-                No active consents found for this transaction.
-              </p>
-            )}
-          </div>
-        </section>
-
-        <section>
-          <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Access & Transfers</h4>
-          <div className="space-y-1">
-            <div className="flex justify-between text-[11px] py-1">
-              <span className="text-gray-500">Internal Transfers:</span>
-              <span className="font-medium text-gray-900">{transferLogs.length} logged</span>
+      <div className="p-4 space-y-4">
+        <div>
+          <h4 className="text-xs font-bold text-gray-500 uppercase mb-2">Acknowledgement</h4>
+          {data.acknowledgement ? (
+            <div className="flex items-center gap-2 text-sm text-green-700">
+              <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              <span>Signed by {data.acknowledgement.metadata?.role} on {new Date(data.acknowledgement.signedAt).toLocaleDateString()}</span>
             </div>
-            <div className="flex justify-between text-[11px] py-1">
-              <span className="text-gray-500">External Disclosures:</span>
-              <span className="font-medium text-gray-900">
-                {accessLogs.filter((l: any) => l.action === 'EXTERNAL_DISCLOSURE').length} logged
-              </span>
+          ) : (
+            <div className="flex items-center gap-2 text-sm text-red-600">
+              <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+              <span>Acknowledgement Required</span>
             </div>
-          </div>
-        </section>
+          )}
+        </div>
 
-        <section className="pt-4 border-t border-gray-100">
-          <div className="flex gap-2">
-            <button className="flex-1 px-3 py-1.5 border border-gray-300 rounded text-[10px] font-bold hover:bg-gray-50">
-              Audit Logs
-            </button>
-            <button className="flex-1 px-3 py-1.5 border border-gray-300 rounded text-[10px] font-bold hover:bg-gray-50">
-              Revoke Consents
-            </button>
-          </div>
-        </section>
+        <div>
+          <h4 className="text-xs font-bold text-gray-500 uppercase mb-2">Active Disclosures</h4>
+          <ul className="space-y-2">
+            {data.disclosures.map((d: any, idx: number) => (
+              <li key={idx} className="text-xs flex justify-between items-center bg-gray-50 p-2 rounded">
+                <span className="font-medium text-gray-700">{d.recipientName}</span>
+                <span className="text-gray-400">{new Date(d.createdAt).toLocaleDateString()}</span>
+              </li>
+            ))}
+            {data.disclosures.length === 0 && <li className="text-xs text-gray-400 italic">No external disclosures recorded</li>}
+          </ul>
+        </div>
+
+        <div>
+          <h4 className="text-xs font-bold text-gray-500 uppercase mb-2">Access Log (Recent)</h4>
+          <ul className="space-y-1">
+            {data.accessLogs.map((log: any, idx: number) => (
+              <li key={idx} className="text-[10px] text-gray-500 flex justify-between border-b border-gray-100 pb-1">
+                <span>{log.action}</span>
+                <span>{new Date(log.createdAt).toLocaleTimeString()}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+      
+      <div className="px-4 py-2 bg-gray-50 border-t border-gray-200 text-[10px] text-gray-400 flex justify-between">
+        <span>File ID: {transactionId.slice(0, 8)}...</span>
+        <span>Law 25 Compliant</span>
       </div>
     </div>
   );
