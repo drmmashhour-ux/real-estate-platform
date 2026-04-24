@@ -1,5 +1,6 @@
 import { AccountStatus } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { readExemptionPreferenceFromSuitability } from "@/modules/deal-investor-match/investor-suitability-profile";
 
 export type EligibilityResult =
   | { ok: true }
@@ -84,6 +85,10 @@ export async function assertPrivateInvestorPacketEligibility(input: {
       })
     : null;
   if (capitalDeal && amf) {
+    const exPref = readExemptionPreferenceFromSuitability(amf.suitabilityIntakeJson);
+    if (!exPref) {
+      blockers.push("Exemption path not selected — complete investor eligibility preferences.");
+    }
     const disclosureCount = await prisma.amfDealDisclosure.count({
       where: { capitalDealId: capitalDeal.id },
     });

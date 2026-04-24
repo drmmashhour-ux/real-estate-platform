@@ -1,6 +1,10 @@
-import { redirect } from "next/navigation";
+import { ComplianceDashboardClient } from "./ComplianceDashboardClient";
 
-/** Quick-link target from Executive Command Center → canonical compliance hub. */
-export default function AdminComplianceRedirectPage() {
-  redirect("/dashboard/compliance");
+export const metadata = {
+  title: "Regulatory Compliance | Admin",
+  description: "Transparency, data sovereignty, and regulatory alignment.",
+};
+
+export default function ComplianceDashboardPage() {
+  return <ComplianceDashboardClient />;
 }

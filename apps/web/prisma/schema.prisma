@@ -578,6 +578,9 @@ model User {
   privateInvestorPacketsReleased           PrivateInvestorPacket[]                  @relation("PrivateInvestorPacketReleasedBy")
   privateInvestorPacketEngagements         PrivateInvestorPacketEngagement[]
   privateInvestorPacketAuditLogs           PrivateInvestorPacketAuditLog[]          @relation("PrivateInvestorPacketAuditActor")
+  dealInvestorMatchAuditLogsAsInvestor     DealInvestorMatchAuditLog[]              @relation("DealInvestorMatchAuditInvestor")
+  dealInvestorMatchAuditLogsAsActor        DealInvestorMatchAuditLog[]              @relation("DealInvestorMatchAuditActor")
+  dealInvestorMatchLearningEvents          DealInvestorMatchLearningEvent[]
   lecipmProductionGuardNoticeAcks          LecipmProductionGuardNoticeAck[]
   lecipmProductionGuardAuditEvents         LecipmProductionGuardAuditEvent[]        @relation("LecipmProductionGuardAuditActor")
   lecipmProductionGuardArtifactsCreated    LecipmProductionGuardArtifact[]          @relation("LecipmProductionGuardArtifactCreator")
@@ -11234,6 +11237,8 @@ model Deal {
   crmDealInvestorCommitments       CrmDealInvestorCommitment[]
   privateInvestorPackets           PrivateInvestorPacket[]
   privateInvestorPacketAuditLogs   PrivateInvestorPacketAuditLog[]
+  dealInvestorMatchAuditLogs       DealInvestorMatchAuditLog[]
+  dealInvestorMatchLearningEvents  DealInvestorMatchLearningEvent[]
   complianceCases                  ComplianceCase[]
   qaReviews                        QaReview[]
   brokerageOfficeId                String?                           @map("brokerage_office_id")
@@ -11510,6 +11515,40 @@ model PrivateInvestorPacketEngagement {
   @@index([packetId, eventType])
   @@index([investorId, createdAt])
   @@map("private_investor_packet_engagements")
+}
+
+/// [investor-match-ai] append-only audit (match_generated, investor_blocked_compliance, packet_prepared, investor_selected_by_broker).
+model DealInvestorMatchAuditLog {
+  id          String   @id @default(cuid())
+  dealId      String   @map("deal_id")
+  deal        Deal     @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  investorId  String?  @map("investor_id")
+  investor    User?    @relation("DealInvestorMatchAuditInvestor", fields: [investorId], references: [id], onDelete: SetNull)
+  actorUserId String?  @map("actor_user_id")
+  actor       User?    @relation("DealInvestorMatchAuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  action      String   @db.VarChar(48)
+  metadata    Json     @default("{}") @db.JsonB
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([dealId, createdAt])
+  @@index([action])
+  @@map("deal_investor_match_audit_logs")
+}
+
+/// Outcome signals for matching evolution (no bulk marketing; broker-in-the-loop).
+model DealInvestorMatchLearningEvent {
+  id         String   @id @default(cuid())
+  dealId     String   @map("deal_id")
+  deal       Deal     @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  investorId String   @map("investor_id")
+  investor   User     @relation(fields: [investorId], references: [id], onDelete: Cascade)
+  eventType  String   @map("event_type") @db.VarChar(32)
+  metadata   Json     @default("{}") @db.JsonB
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([dealId, eventType])
+  @@index([investorId, createdAt])
+  @@map("deal_investor_match_learning_events")
 }
 
 /// Critical disclosure / risk notice — explicit checkbox acknowledgment (timestamp + user + notice id).

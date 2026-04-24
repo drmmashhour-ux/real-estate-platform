@@ -14,12 +14,13 @@ type Props = {
 export function DreamHomeResults({ result, basePath, onRefine }: Props) {
   const { profile, listings, tradeoffs, source, warnings } = result;
   const mergedTradeoffs = [...(profile.tradeoffs ?? []), ...tradeoffs];
+  const sourceLabel = source === "ai" ? "Enriched" : "Deterministic";
 
   return (
     <div className="mt-10 space-y-8">
       <div className="flex flex-wrap items-center gap-2 text-xs text-slate-400">
         <span className="rounded-full border border-white/10 px-2 py-0.5">
-          Dream Home v1 — rule-based profile &amp; match (no LLM)
+          Dream Home v1 — {sourceLabel} ({source === "ai" ? "assisted" : "rules only"}, no required LLM)
         </span>
         {(warnings ?? []).map((w) => (
           <span key={w} className="text-amber-200/80">
