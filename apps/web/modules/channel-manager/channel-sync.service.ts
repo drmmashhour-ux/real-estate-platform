@@ -136,6 +136,8 @@ export async function importExternalChannelBooking(input: {
 
     const bookingCode = await generateBookingCode(tx);
 
+    const priceSnapshotSubtotalCents =
+      b.lodgingSubtotalAfterDiscountCents + b.cleaningFeeCents + b.addonsSubtotalCents;
     const created = await tx.booking.create({
       data: {
         listingId: input.listingId,
@@ -147,6 +149,10 @@ export async function importExternalChannelBooking(input: {
         totalCents: b.subtotalCents,
         guestFeeCents: b.serviceFeeCents,
         hostFeeCents: b.hostFeeCents,
+        priceSnapshotSubtotalCents,
+        priceSnapshotFeesCents: b.serviceFeeCents,
+        priceSnapshotTaxesCents: b.taxCents,
+        priceSnapshotTotalCents: b.totalCents,
         status: BookingStatus.CONFIRMED,
         guestNotes: null,
         specialRequest: `Channel import (${input.externalSource ?? "external"}). Collected off-platform.`,

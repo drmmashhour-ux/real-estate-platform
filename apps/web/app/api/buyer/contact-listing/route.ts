@@ -240,6 +240,11 @@ async function handleFsboContact(opts: {
       leadSource: "BUYER",
     });
   });
+  if (userId) {
+    void import("@/modules/user-intelligence/integrations/crm-user-intelligence").then((m) => {
+      m.recordListingInquiryTouch(userId, { listingId, flow: "fsbo" });
+    });
+  }
 
   void recordBuyerGrowthEvent("CONTACT_LISTING_BROKER", listingId, {
     leadId: crmLead.id,
@@ -421,6 +426,11 @@ async function handleCrmContact(opts: {
       leadSource: "BUYER",
     });
   });
+  if (userId) {
+    void import("@/modules/user-intelligence/integrations/crm-user-intelligence").then((m) => {
+      m.recordListingInquiryTouch(userId, { listingId: listing.id, flow: "crm" });
+    });
+  }
 
   void recordBuyerGrowthEvent("CONTACT_LISTING_BROKER", listing.id, {
     leadId: crmLead.id,

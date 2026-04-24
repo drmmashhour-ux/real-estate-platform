@@ -246,6 +246,8 @@ export async function createBooking(data: {
       }
 
       const bookingCode = await generateBookingCode(tx);
+      const priceSnapshotSubtotalCents =
+        b.lodgingSubtotalAfterDiscountCents + b.cleaningFeeCents + b.addonsSubtotalCents;
       const created = await tx.booking.create({
         data: {
           listingId: data.listingId,
@@ -257,6 +259,10 @@ export async function createBooking(data: {
           totalCents: b.subtotalCents,
           guestFeeCents: b.serviceFeeCents,
           hostFeeCents: b.hostFeeCents,
+          priceSnapshotSubtotalCents,
+          priceSnapshotFeesCents: b.serviceFeeCents,
+          priceSnapshotTaxesCents: b.taxCents,
+          priceSnapshotTotalCents: b.totalCents,
           status: initialStatus,
           guestNotes: data.guestNotes,
           specialRequest: data.specialRequest ?? data.guestNotes,
@@ -268,6 +274,19 @@ export async function createBooking(data: {
           guestContactName: data.guestContactName?.trim() || null,
           guestContactPhone: data.guestContactPhone?.trim() || null,
           pendingCheckoutExpiresAt: pendingExpiresAt,
+        },
+      });
+
+      await tx.bnhubBookingEvent.create({
+        data: {
+          bookingId: created.id,
+          eventType: "availability_checked",
+          actorId: data.guestId,
+          payload: {
+            listingId: data.listingId,
+            checkIn: checkIn.toISOString(),
+            checkOut: checkOut.toISOString(),
+          } as Prisma.InputJsonValue,
         },
       });
 

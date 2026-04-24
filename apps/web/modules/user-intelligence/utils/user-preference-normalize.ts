@@ -25,8 +25,8 @@ export function normalizePreferenceRecord(input: unknown): Record<string, unknow
     if (BLOCK.has(k.toLowerCase()) || k.toLowerCase().includes("nationalit")) {
       continue;
     }
-    if (typeof v === "string" && v.length > 8_000) {
-      out[k] = v.slice(0, 8_000);
+    if (typeof v === "string") {
+      out[k] = v.length > 8_000 ? v.slice(0, 8_000) : v;
     } else if (typeof v === "number" && Number.isFinite(v)) {
       out[k] = v;
     } else if (typeof v === "boolean") {
@@ -49,8 +49,8 @@ export function safeSignalValue(value: unknown): unknown {
     if (value == null) {
       return null;
     }
-    if (typeof value === "string" && value.length > 4_000) {
-      return value.slice(0, 4_000);
+    if (typeof value === "string") {
+      return value.length > 4_000 ? value.slice(0, 4_000) : value;
     }
     if (typeof value === "number" && Number.isFinite(value)) {
       return value;

@@ -38239,3 +38239,60 @@ model AiAgentStrategy {
   @@index([strategyKey])
   @@map("ai_agent_strategies")
 }
+
+enum InvestorStage {
+  NEW
+  CONTACTED
+  INTERESTED
+  NEGOTIATING
+  CLOSED
+}
+
+enum InvestorInteractionType {
+  EMAIL
+  CALL
+  MEETING
+  OTHER
+}
+
+model Investor {
+  id            String              @id @default(cuid())
+  name          String
+  email         String              @unique
+  stage         InvestorStage       @default(NEW)
+  notes         String?             @db.Text
+  targetAmount  Int?                @map("target_amount") // Cents
+  actualAmount  Int?                @map("actual_amount") // Cents
+  interactions  InvestorInteraction[]
+  documents     InvestorDocument[]
+  createdAt     DateTime            @default(now()) @map("created_at")
+  updatedAt     DateTime            @updatedAt @map("updated_at")
+
+  @@map("investors")
+}
+
+model InvestorInteraction {
+  id            String                  @id @default(cuid())
+  investorId    String                  @map("investor_id")
+  investor      Investor                @relation(fields: [investorId], references: [id], onDelete: Cascade)
+  type          InvestorInteractionType @default(EMAIL)
+  notes         String?                 @db.Text
+  date          DateTime                @default(now())
+  createdAt     DateTime                @default(now()) @map("created_at")
+
+  @@index([investorId])
+  @@map("investor_interactions")
+}
+
+model InvestorDocument {
+  id            String    @id @default(cuid())
+  investorId    String    @map("investor_id")
+  investor      Investor  @relation(fields: [investorId], references: [id], onDelete: Cascade)
+  name          String
+  url           String
+  type          String?   // pitch_deck, financials, legal, other
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  @@index([investorId])
+  @@map("investor_documents")
+}

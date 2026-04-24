@@ -40,6 +40,13 @@ export async function transitionPipelineStage(input: {
     });
   });
 
+  const actor = input.actorUserId;
+  if (actor) {
+    void import("@/modules/user-intelligence/integrations/crm-user-intelligence").then((m) => {
+      m.recordPipelineDealProgression(actor, { dealId: input.dealId, fromStage: from, toStage: to });
+    });
+  }
+
   return prisma.lecipmPipelineDeal.findUnique({ where: { id: input.dealId } });
 }
 

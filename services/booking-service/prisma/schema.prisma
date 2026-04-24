@@ -95,6 +95,11 @@ model Booking {
   totalCents      Int
   guestFeeCents   Int           @default(0)
   hostFeeCents    Int           @default(0)
+  /// Cents — aligned with web `Booking` when sharing DB (optional / backfilled).
+  priceSnapshotSubtotalCents Int? @map("price_snapshot_subtotal_cents")
+  priceSnapshotFeesCents     Int? @map("price_snapshot_fees_cents")
+  priceSnapshotTaxesCents    Int? @map("price_snapshot_taxes_cents")
+  priceSnapshotTotalCents    Int? @map("price_snapshot_total_cents")
   status          BookingStatus @default(PENDING)
   guestNotes      String?
   checkedInAt     DateTime?     // actual check-in time
@@ -109,6 +114,7 @@ model Booking {
 
   @@index([guestId])
   @@index([listingId])
+  @@index([listingId, checkIn, checkOut])
   @@index([status])
   @@index([checkIn])
 }

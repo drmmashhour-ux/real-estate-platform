@@ -1,7 +1,9 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
-const findUnique = vi.fn();
-const upsert = vi.fn();
+const { findUnique, upsert } = vi.hoisted(() => ({
+  findUnique: vi.fn(),
+  upsert: vi.fn(),
+}));
 
 vi.mock("@/lib/db", () => ({
   prisma: { userJourneyState: { findUnique, upsert } },

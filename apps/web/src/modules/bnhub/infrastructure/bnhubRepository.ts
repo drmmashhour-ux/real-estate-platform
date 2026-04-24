@@ -54,6 +54,10 @@ export async function createBookingRow(args: {
         checkOut: args.checkOut,
         nights: args.nights,
         totalCents: args.totalCents,
+        priceSnapshotSubtotalCents: args.totalCents,
+        priceSnapshotFeesCents: 0,
+        priceSnapshotTaxesCents: 0,
+        priceSnapshotTotalCents: args.totalCents,
         status: BookingStatus.PENDING,
       },
     });

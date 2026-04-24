@@ -52,12 +52,23 @@ export async function upsertBookedNightsForBooking(
       },
     });
   }
+  if (nights.length > 0) {
+    await tx.bookingNight.createMany({
+      data: nights.map((stayDate) => ({
+        listingId: params.listingId,
+        stayDate,
+        bookingId: params.bookingId,
+      })),
+      skipDuplicates: true,
+    });
+  }
 }
 
 export async function releaseBookedSlotsForBooking(
   tx: Prisma.TransactionClient,
   bookingId: string
 ): Promise<void> {
+  await tx.bookingNight.deleteMany({ where: { bookingId } });
   await tx.availabilitySlot.updateMany({
     where: { bookedByBookingId: bookingId },
     data: {
