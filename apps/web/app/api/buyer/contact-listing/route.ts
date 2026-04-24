@@ -232,6 +232,15 @@ async function handleFsboContact(opts: {
     },
   });
 
+  void import("@/modules/playbook-memory/services/playbook-learning-bridge.service").then((m) => {
+    m.playbookLearningBridge.afterCrmInquiryLead({
+      leadId: crmLead.id,
+      city: listing.city,
+      listingId,
+      leadSource: "BUYER",
+    });
+  });
+
   void recordBuyerGrowthEvent("CONTACT_LISTING_BROKER", listingId, {
     leadId: crmLead.id,
     fsboLeadId: fsboLead.id,
@@ -402,6 +411,15 @@ async function handleCrmContact(opts: {
       distributionChannel: distributionChannelResolved,
       ...(priceInt != null ? { dealValue: priceInt, estimatedValue: priceInt } : {}),
     },
+  });
+
+  void import("@/modules/playbook-memory/services/playbook-learning-bridge.service").then((m) => {
+    m.playbookLearningBridge.afterCrmInquiryLead({
+      leadId: crmLead.id,
+      city: null,
+      listingId: listing.id,
+      leadSource: "BUYER",
+    });
   });
 
   void recordBuyerGrowthEvent("CONTACT_LISTING_BROKER", listing.id, {

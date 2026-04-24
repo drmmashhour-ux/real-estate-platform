@@ -27,7 +27,7 @@ export async function assertPrivateInvestorPacketEligibility(input: {
     blockers.push("Investor account is not ACTIVE.");
   }
 
-  const amf = await prisma.amfInvestor.findFirst({
+  const amf = await prisma.amfInvestor.findUnique({
     where: { userId: input.investorUserId },
     select: {
       id: true,

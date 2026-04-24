@@ -20,6 +20,10 @@ export async function applyPolicyWithRollout(policyAdjustmentId: string) {
   if (!policy) throw new Error("Policy adjustment not found");
   if (policy.status !== "APPROVED") throw new Error("Policy must be approved before rollout");
 
+  const { isSystemReadyForEvolution } = await import("@/modules/acceptance/checklist.engine");
+  const ready = await isSystemReadyForEvolution();
+  if (!ready) throw new Error("Rollout blocked: System failed final acceptance checklist");
+
   // @ts-ignore
   if (policy.rollout) {
     return policy.rollout;
@@ -49,9 +53,16 @@ export async function advanceRollout(rolloutId: string) {
     where: { id: rolloutId },
   });
 
-  if (!rollout || rollout.status !== "ACTIVE") return null;
+    if (!rollout || rollout.status !== "ACTIVE") return null;
 
-  const currentIndex = ROLLOUT_STEPS.indexOf(rollout.rolloutPercent);
+    const { isSystemReadyForEvolution } = await import("@/modules/acceptance/checklist.engine");
+    const ready = await isSystemReadyForEvolution();
+    if (!ready) {
+      logEvolution("rollout", { event: "advance_blocked", rolloutId, reason: "Acceptance checklist failed" });
+      return rollout;
+    }
+
+    const currentIndex = ROLLOUT_STEPS.indexOf(rollout.rolloutPercent);
   if (currentIndex === -1 || currentIndex === ROLLOUT_STEPS.length - 1) {
     if (rollout.rolloutPercent === 100) {
       // @ts-ignore

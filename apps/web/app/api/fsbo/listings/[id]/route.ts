@@ -191,6 +191,15 @@ export async function PATCH(
     data,
   });
 
+  void import("@/modules/playbook-memory/services/playbook-learning-bridge.service").then((m) => {
+    m.playbookLearningBridge.afterListingSave({
+      listingId: id,
+      rawBody: body,
+      previousStatus: existing.status,
+      data,
+    });
+  });
+
   if (typeof (data as { priceCents?: number }).priceCents === "number" && nextPrice !== prevPrice) {
     const { recordFsboListingPriceChange } = await import("@/lib/listings/fsbo-price-change");
     await recordFsboListingPriceChange({

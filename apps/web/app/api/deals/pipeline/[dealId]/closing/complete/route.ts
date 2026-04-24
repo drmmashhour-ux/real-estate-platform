@@ -27,6 +27,10 @@ export async function POST(req: Request, context: { params: Promise<{ dealId: st
         : null;
 
     const closing = await completeClosing(dealId, auth.userId, actionPipelineId);
+    const playAssign = typeof body.playbookAssignmentId === "string" ? body.playbookAssignmentId.trim() : null;
+    void import("@/modules/playbook-memory/services/playbook-learning-bridge.service").then((m) => {
+      m.playbookLearningBridge.afterDealClosingComplete({ dealId, playbookAssignmentId: playAssign });
+    });
     return NextResponse.json({ closing });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Failed";

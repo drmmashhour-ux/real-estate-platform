@@ -112,7 +112,8 @@ export async function POST(req: NextRequest) {
             throw e;
           }
 
-          const deal = await createDealFromTransaction({
+          const playAssign = typeof body.playbookAssignmentId === "string" ? body.playbookAssignmentId.trim() : null;
+        const deal = await createDealFromTransaction({
             transactionId,
             brokerId: tx.brokerId,
             actorUserId: auth.userId,
@@ -120,6 +121,9 @@ export async function POST(req: NextRequest) {
             dealType: typeof body.dealType === "string" ? body.dealType : undefined,
             brokerDecisionAttested,
             brokerDecisionConfirmedByUserId: auth.userId,
+          });
+          void import("@/modules/playbook-memory/services/playbook-learning-bridge.service").then((m) => {
+            m.playbookLearningBridge.afterDealCreated({ dealId: deal.id, playbookAssignmentId: playAssign });
           });
           return NextResponse.json({ deal });
         }
@@ -154,6 +158,7 @@ export async function POST(req: NextRequest) {
           throw e;
         }
 
+        const playAssign = typeof body.playbookAssignmentId === "string" ? body.playbookAssignmentId.trim() : null;
         const deal = await createStandaloneDeal({
           brokerId,
           title,
@@ -166,6 +171,9 @@ export async function POST(req: NextRequest) {
           brokerDecisionConfirmedByUserId: auth.userId,
         });
 
+        void import("@/modules/playbook-memory/services/playbook-learning-bridge.service").then((m) => {
+          m.playbookLearningBridge.afterDealCreated({ dealId: deal.id, playbookAssignmentId: playAssign });
+        });
         return NextResponse.json({ deal });
       } catch (e) {
         logError("[api.deals.post]", { error: e });

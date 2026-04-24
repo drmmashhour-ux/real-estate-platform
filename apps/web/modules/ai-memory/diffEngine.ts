@@ -13,10 +13,25 @@ function normalize(s: string): string {
   return s.replace(/\s+/g, " ").trim();
 }
 
+function similarEnough(a: string, b: string): boolean {
+  if (a.length < 12 || b.length < 12) return false;
+  const wa = new Set(a.toLowerCase().split(/\s+/).filter(Boolean));
+  const wb = new Set(b.toLowerCase().split(/\s+/).filter(Boolean));
+  let inter = 0;
+  for (const w of wa) {
+    if (wb.has(w)) inter++;
+  }
+  const union = new Set([...wa, ...wb]).size;
+  return union > 0 && inter / union >= 0.35;
+}
+
 function splitClauses(text: string): string[] {
   const t = normalize(text.replace(/<[^>]+>/g, " "));
   if (!t) return [];
-  const byNumber = t.split(/\s(?=\d+[\.)]\s)/g).map(normalize).filter(Boolean);
+  const byNumber = t
+    .split(/(?=\b\d+[\.)]\s+)/g)
+    .map(normalize)
+    .filter(Boolean);
   if (byNumber.length > 1) return byNumber;
   return t.split(/\n\n+/g).map(normalize).filter(Boolean);
 }
@@ -41,14 +56,7 @@ export function computeDiff(original: string, final: string): ClauseDiffResult {
     }
     const similar = b.findIndex((x, i) => {
       if (usedB.has(i)) return false;
-      if (x.length < 12 || clause.length < 12) return false;
-      const shorter = Math.min(x.length, clause.length);
-      const longer = Math.max(x.length, clause.length);
-      let same = 0;
-      for (let k = 0; k < Math.min(x.length, clause.length); k++) {
-        if (x[k] === clause[k]) same++;
-      }
-      return same / longer > 0.55;
+      return similarEnough(clause, x);
     });
     if (similar >= 0) {
       usedB.add(similar);

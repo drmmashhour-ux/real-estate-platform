@@ -27,6 +27,8 @@ export { playbookMemoryRecommendationService, buildExecutionPlanFromRecommendati
 export { playbookMemoryExecutionService } from "./services/playbook-memory-execution.service";
 export { playbookMemoryBanditService } from "./services/playbook-memory-bandit.service";
 export { playbookMemoryAssignmentService } from "./services/playbook-memory-assignment.service";
+export { playbookLearningBridge } from "./services/playbook-learning-bridge.service";
+export { assignmentLog, banditLog } from "./playbook-learning-logger";
 export { runPlaybookBanditRollup } from "./jobs/playbook-bandit-rollup.job";
 export { buildExecutionPlan } from "./utils/playbook-memory-execution";
 export {

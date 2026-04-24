@@ -33,6 +33,13 @@ export async function createGrowthExperiment(args: CreateExperimentArgs) {
 }
 
 export async function startExperiment(experimentId: string) {
+  const { isSystemReadyForEvolution } = await import("@/modules/acceptance/checklist.engine");
+  const ready = await isSystemReadyForEvolution();
+  if (!ready) {
+    logInfo(`${TAG} experiment_start_blocked`, { experimentId, reason: "Acceptance checklist failed" });
+    return { error: "System not ready for autonomous experimentation" };
+  }
+
   // @ts-ignore
   const exp = await prisma.growthExperiment.findUnique({ where: { id: experimentId } });
   if (!exp) throw new Error("Experiment not found");

@@ -7,10 +7,10 @@ describe("playbookDomainRegistry", () => {
     expect(getDomainModule("GROWTH")?.domain).toBe("GROWTH");
     expect(getDomainModule("listings")?.domain).toBe("LISTINGS");
     expect(getDomainModule("DREAM_HOME")?.domain).toBe("DREAM_HOME");
+    expect(getDomainModule("LEADS")?.domain).toBe("LEADS");
   });
 
   it("returns null for unknown domains (generic engine path)", () => {
-    expect(getDomainModule("LEADS")).toBeNull();
     expect(getDomainModule("")).toBeNull();
   });
 });

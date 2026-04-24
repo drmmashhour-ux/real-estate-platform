@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { DreamHomeProfile } from "@/modules/dream-home/types/dream-home.types";
 import { buildDreamHomeProfile } from "@/modules/dream-home/services/dream-home-profile.service";
 import { matchDreamHomeListings } from "@/modules/dream-home/services/dream-home-match.service";
+import { suggestDreamHomePlaybookAssignment } from "@/modules/dream-home/services/dream-home-playbook.service";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -48,7 +49,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: "profile_required" }, { status: 400 });
     }
     const result = await matchDreamHomeListings(profile, source);
-    return NextResponse.json({ ok: true, ...result });
+    const playSegment: Record<string, unknown> = {
+      ...((profile.searchFilters as Record<string, unknown> | undefined) ?? {}),
+      source: "dream_home_match",
+    };
+    const sessionEntity =
+      typeof b.dreamSessionEntityId === "string" && b.dreamSessionEntityId.trim()
+        ? b.dreamSessionEntityId.trim()
+        : undefined;
+    const playback = await suggestDreamHomePlaybookAssignment({ entityId: sessionEntity, segment: playSegment });
+    return NextResponse.json({ ok: true, ...result, playbookAssignment: playback });
   } catch {
     return NextResponse.json({ ok: false, error: "match_unavailable" });
   }

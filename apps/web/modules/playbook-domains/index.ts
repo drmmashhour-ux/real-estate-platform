@@ -5,3 +5,4 @@ export { growthPlaybookSeeds } from "./growth/growth-playbooks.seed";
 export { listingsPlaybookSeeds } from "./listings/listings-playbooks.seed";
 export { dreamHomePlaybookSeeds } from "./dream-home/dream-home-playbooks.seed";
 export { dreamHomeDomainModule } from "./dream-home";
+export { leadsDomainModule } from "./leads";

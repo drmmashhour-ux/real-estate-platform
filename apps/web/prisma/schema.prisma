@@ -566,18 +566,18 @@ model User {
   dealsAsBroker                            Deal[]                                   @relation("DealBroker")
   dealCapitalAllocationsProposed           DealCapitalAllocation[]                  @relation("DealCapitalAllocationProposedBy")
   dealCapitalAllocationsApproved           DealCapitalAllocation[]                  @relation("DealCapitalAllocationApprovedBy")
-  crmDealInvestorCommitments             CrmDealInvestorCommitment[]              @relation("CrmDealInvestorCommitmentInvestor")
-  crmDealInvestorCommitmentsApproved     CrmDealInvestorCommitment[]              @relation("CrmDealInvestorCommitmentApprovedBy")
-  crmDealInvestorCommitmentsRejected     CrmDealInvestorCommitment[]              @relation("CrmDealInvestorCommitmentRejectedBy")
-  crmDealInvestorSubscriptions           CrmDealInvestorSubscription[]            @relation("CrmDealInvestorSubscriptionInvestor")
-  crmDealInvestorPaymentsRecorded        CrmDealInvestorPayment[]                 @relation("CrmDealInvestorPaymentRecordedBy")
-  crmDealCapTableEntries                 CrmDealCapTableEntry[]                   @relation("CrmDealCapTableInvestor")
-  lecipmInvestmentFlowAuditLogs          LecipmInvestmentFlowAuditLog[]           @relation("LecipmInvestmentFlowAuditActor")
-  privateInvestorPacketsAsInvestor       PrivateInvestorPacket[]                  @relation("PrivateInvestorPacketInvestor")
-  privateInvestorPacketsApproved         PrivateInvestorPacket[]                  @relation("PrivateInvestorPacketApprovedBy")
-  privateInvestorPacketsReleased         PrivateInvestorPacket[]                  @relation("PrivateInvestorPacketReleasedBy")
-  privateInvestorPacketEngagements       PrivateInvestorPacketEngagement[]
-  privateInvestorPacketAuditLogs         PrivateInvestorPacketAuditLog[]          @relation("PrivateInvestorPacketAuditActor")
+  crmDealInvestorCommitments               CrmDealInvestorCommitment[]              @relation("CrmDealInvestorCommitmentInvestor")
+  crmDealInvestorCommitmentsApproved       CrmDealInvestorCommitment[]              @relation("CrmDealInvestorCommitmentApprovedBy")
+  crmDealInvestorCommitmentsRejected       CrmDealInvestorCommitment[]              @relation("CrmDealInvestorCommitmentRejectedBy")
+  crmDealInvestorSubscriptions             CrmDealInvestorSubscription[]            @relation("CrmDealInvestorSubscriptionInvestor")
+  crmDealInvestorPaymentsRecorded          CrmDealInvestorPayment[]                 @relation("CrmDealInvestorPaymentRecordedBy")
+  crmDealCapTableEntries                   CrmDealCapTableEntry[]                   @relation("CrmDealCapTableInvestor")
+  lecipmInvestmentFlowAuditLogs            LecipmInvestmentFlowAuditLog[]           @relation("LecipmInvestmentFlowAuditActor")
+  privateInvestorPacketsAsInvestor         PrivateInvestorPacket[]                  @relation("PrivateInvestorPacketInvestor")
+  privateInvestorPacketsApproved           PrivateInvestorPacket[]                  @relation("PrivateInvestorPacketApprovedBy")
+  privateInvestorPacketsReleased           PrivateInvestorPacket[]                  @relation("PrivateInvestorPacketReleasedBy")
+  privateInvestorPacketEngagements         PrivateInvestorPacketEngagement[]
+  privateInvestorPacketAuditLogs           PrivateInvestorPacketAuditLog[]          @relation("PrivateInvestorPacketAuditActor")
   lecipmProductionGuardNoticeAcks          LecipmProductionGuardNoticeAck[]
   lecipmProductionGuardAuditEvents         LecipmProductionGuardAuditEvent[]        @relation("LecipmProductionGuardAuditActor")
   lecipmProductionGuardArtifactsCreated    LecipmProductionGuardArtifact[]          @relation("LecipmProductionGuardArtifactCreator")
@@ -11295,18 +11295,18 @@ model CrmDealInvestorSubscription {
 }
 
 model CrmDealInvestorPayment {
-  id               String                    @id @default(cuid())
-  subscriptionId String                    @map("subscription_id")
+  id               String                      @id @default(cuid())
+  subscriptionId   String                      @map("subscription_id")
   subscription     CrmDealInvestorSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
-  amountCents      Int                       @map("amount_cents")
+  amountCents      Int                         @map("amount_cents")
   /// WIRE | CHEQUE
-  method           String                    @db.VarChar(16)
-  received         Boolean                   @default(false)
-  receivedAt       DateTime?                 @map("received_at")
-  referenceNumber  String?                   @map("reference_number") @db.VarChar(128)
-  recordedByUserId String?                   @map("recorded_by_user_id")
-  recordedBy       User?                     @relation("CrmDealInvestorPaymentRecordedBy", fields: [recordedByUserId], references: [id], onDelete: SetNull)
-  createdAt        DateTime                  @default(now()) @map("created_at")
+  method           String                      @db.VarChar(16)
+  received         Boolean                     @default(false)
+  receivedAt       DateTime?                   @map("received_at")
+  referenceNumber  String?                     @map("reference_number") @db.VarChar(128)
+  recordedByUserId String?                     @map("recorded_by_user_id")
+  recordedBy       User?                       @relation("CrmDealInvestorPaymentRecordedBy", fields: [recordedByUserId], references: [id], onDelete: SetNull)
+  createdAt        DateTime                    @default(now()) @map("created_at")
 
   @@index([subscriptionId])
   @@map("crm_deal_investor_payments")
@@ -11349,30 +11349,30 @@ model LecipmInvestmentFlowAuditLog {
 
 /// Per-investor private placement packet (broker-reviewed; not a public offering document).
 model PrivateInvestorPacket {
-  id                   String    @id @default(cuid())
-  dealId               String    @map("deal_id")
-  deal                 Deal      @relation(fields: [dealId], references: [id], onDelete: Cascade)
-  investorId           String    @map("investor_id")
-  investor             User      @relation("PrivateInvestorPacketInvestor", fields: [investorId], references: [id], onDelete: Restrict)
-  spvId                String?   @map("spv_id")
-  spv                  AmfSpv?   @relation(fields: [spvId], references: [id], onDelete: SetNull)
+  id                    String    @id @default(cuid())
+  dealId                String    @map("deal_id")
+  deal                  Deal      @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  investorId            String    @map("investor_id")
+  investor              User      @relation("PrivateInvestorPacketInvestor", fields: [investorId], references: [id], onDelete: Restrict)
+  spvId                 String?   @map("spv_id")
+  spv                   AmfSpv?   @relation(fields: [spvId], references: [id], onDelete: SetNull)
   /// DRAFT | READY_FOR_REVIEW | APPROVED | RELEASED
-  status               String    @default("DRAFT") @map("status") @db.VarChar(24)
-  version              Int       @default(1)
-  packetSummaryJson    Json      @map("packet_summary_json")
+  status                String    @default("DRAFT") @map("status") @db.VarChar(24)
+  version               Int       @default(1)
+  packetSummaryJson     Json      @map("packet_summary_json")
   /// Compiled HTML for controlled export (PDF pipeline can consume).
-  htmlBundle           String?   @map("html_bundle") @db.Text
-  generatedAt          DateTime  @default(now()) @map("generated_at")
-  approvedAt           DateTime? @map("approved_at")
-  approvedByBrokerId   String?   @map("approved_by_broker_id")
-  approvedByBroker     User?     @relation("PrivateInvestorPacketApprovedBy", fields: [approvedByBrokerId], references: [id], onDelete: SetNull)
-  approvalSnapshotJson Json?     @map("approval_snapshot_json") @db.JsonB
-  releasedAt           DateTime? @map("released_at")
-  releasedByBrokerId   String?   @map("released_by_broker_id")
-  releasedByBroker     User?     @relation("PrivateInvestorPacketReleasedBy", fields: [releasedByBrokerId], references: [id], onDelete: SetNull)
-  brokerAttestationText String?  @map("broker_attestation_text") @db.Text
-  createdAt            DateTime  @default(now()) @map("created_at")
-  updatedAt            DateTime  @updatedAt @map("updated_at")
+  htmlBundle            String?   @map("html_bundle") @db.Text
+  generatedAt           DateTime  @default(now()) @map("generated_at")
+  approvedAt            DateTime? @map("approved_at")
+  approvedByBrokerId    String?   @map("approved_by_broker_id")
+  approvedByBroker      User?     @relation("PrivateInvestorPacketApprovedBy", fields: [approvedByBrokerId], references: [id], onDelete: SetNull)
+  approvalSnapshotJson  Json?     @map("approval_snapshot_json") @db.JsonB
+  releasedAt            DateTime? @map("released_at")
+  releasedByBrokerId    String?   @map("released_by_broker_id")
+  releasedByBroker      User?     @relation("PrivateInvestorPacketReleasedBy", fields: [releasedByBrokerId], references: [id], onDelete: SetNull)
+  brokerAttestationText String?   @map("broker_attestation_text") @db.Text
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
 
   documents   PrivateInvestorPacketDocument[]
   engagements PrivateInvestorPacketEngagement[]
@@ -11402,17 +11402,17 @@ model PrivateInvestorPacketDocument {
 
 /// [private-packet] append-only audit.
 model PrivateInvestorPacketAuditLog {
-  id          String   @id @default(cuid())
-  dealId      String   @map("deal_id")
-  deal        Deal     @relation(fields: [dealId], references: [id], onDelete: Cascade)
-  packetId    String?  @map("packet_id")
+  id          String                 @id @default(cuid())
+  dealId      String                 @map("deal_id")
+  deal        Deal                   @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  packetId    String?                @map("packet_id")
   packet      PrivateInvestorPacket? @relation(fields: [packetId], references: [id], onDelete: SetNull)
-  investorId  String?  @map("investor_id")
-  actorUserId String?  @map("actor_user_id")
-  actor       User?    @relation("PrivateInvestorPacketAuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
-  action      String   @db.VarChar(64)
-  metadata    Json     @default("{}") @db.JsonB
-  createdAt   DateTime @default(now()) @map("created_at")
+  investorId  String?                @map("investor_id")
+  actorUserId String?                @map("actor_user_id")
+  actor       User?                  @relation("PrivateInvestorPacketAuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  action      String                 @db.VarChar(64)
+  metadata    Json                   @default("{}") @db.JsonB
+  createdAt   DateTime               @default(now()) @map("created_at")
 
   @@index([dealId, createdAt])
   @@index([packetId])
@@ -14519,7 +14519,7 @@ model DealDocument {
   qaReviews                      QaReview[]
   lecipmProductionGuardArtifacts LecipmProductionGuardArtifact[]
   crmDealInvestorSubscriptions   CrmDealInvestorSubscription[]
-  privateInvestorPacketDocuments   PrivateInvestorPacketDocument[]
+  privateInvestorPacketDocuments PrivateInvestorPacketDocument[]
 
   @@index([dealId])
   @@index([workflowStatus])
@@ -16198,7 +16198,7 @@ model EvolutionPolicyAdjustment {
   reviewedAt       DateTime? @map("reviewed_at")
   createdAt        DateTime  @default(now()) @map("created_at")
 
-  rollout          PolicyRollout?
+  rollout PolicyRollout?
 
   @@index([status, createdAt(sort: Desc)])
   @@map("evolution_policy_adjustments")
@@ -16213,13 +16213,13 @@ enum PolicyRolloutStatus {
 }
 
 model PolicyRollout {
-  id                 String              @id @default(cuid())
-  policyAdjustmentId String              @unique @map("policy_adjustment_id")
+  id                 String                    @id @default(cuid())
+  policyAdjustmentId String                    @unique @map("policy_adjustment_id")
   policyAdjustment   EvolutionPolicyAdjustment @relation(fields: [policyAdjustmentId], references: [id], onDelete: Cascade)
-  status             PolicyRolloutStatus @default(PENDING)
-  rolloutPercent     Int                 @default(0) @map("rollout_percent") // 0-100
-  createdAt          DateTime            @default(now()) @map("created_at")
-  updatedAt          DateTime            @updatedAt @map("updated_at")
+  status             PolicyRolloutStatus       @default(PENDING)
+  rolloutPercent     Int                       @default(0) @map("rollout_percent") // 0-100
+  createdAt          DateTime                  @default(now()) @map("created_at")
+  updatedAt          DateTime                  @updatedAt @map("updated_at")
 
   @@index([status])
   @@map("evolution_policy_rollouts")
