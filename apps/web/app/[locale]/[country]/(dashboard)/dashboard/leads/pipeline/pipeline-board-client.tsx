@@ -48,7 +48,7 @@ export function SalesPipelineBoardClient() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/leads", { credentials: "same-origin" });
+      const res = await fetch("/api/lecipm/leads", { credentials: "same-origin" });
       if (res.status === 401) {
         setAuthError(true);
         setLeads([]);
@@ -79,7 +79,7 @@ export function SalesPipelineBoardClient() {
   }, [leads]);
 
   const moveLead = async (leadId: string, toStage: string) => {
-    const res = await fetch("/api/leads", {
+    const res = await fetch("/api/lecipm/leads", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       credentials: "same-origin",

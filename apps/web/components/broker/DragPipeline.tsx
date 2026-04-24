@@ -153,7 +153,7 @@ export function DragPipeline() {
 
   const fetchLeads = useCallback(() => {
     setLoading(true);
-    fetch("/api/leads", { credentials: "same-origin" })
+    fetch("/api/lecipm/leads", { credentials: "same-origin" })
       .then((res) => res.json())
       .then((data: PipelineLead[]) => {
         const list = Array.isArray(data) ? data : [];
@@ -181,7 +181,7 @@ export function DragPipeline() {
   const moveLead = useCallback(
     (leadId: string, newStatus: string) => {
       const status = normalizeStatus(newStatus);
-      fetch("/api/leads", {
+      fetch("/api/lecipm/leads", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: leadId, status }),
@@ -200,7 +200,7 @@ export function DragPipeline() {
   );
 
   const recordFollowUp = useCallback((leadId: string, note: string) => {
-    return fetch("/api/leads", {
+    return fetch("/api/lecipm/leads", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id: leadId, recordFollowUp: true, note }),

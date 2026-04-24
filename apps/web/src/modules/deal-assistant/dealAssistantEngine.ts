@@ -27,6 +27,12 @@ export type DealAssistantAnalysis = {
   confidence: number;
 };
 
+/** Optional marketplace memory hints — assistive only; never overrides explicit user messages. */
+export type DealAssistantMemoryHints = {
+  urgencyScore?: number;
+  activeVsPassive?: string;
+};
+
 const norm = (s: string) => s.trim().toLowerCase();
 
 function userTexts(messages: ConversationMessageInput[]): string[] {
@@ -140,14 +146,31 @@ function pickAction(
   return "send_message";
 }
 
+function bumpUrgencyWithMemory(
+  urgency: DealAssistantUrgency,
+  hints?: DealAssistantMemoryHints | null,
+): DealAssistantUrgency {
+  if (!hints) return urgency;
+  const score = hints.urgencyScore ?? 0;
+  const active = hints.activeVsPassive === "active";
+  if (!active && score < 40) return urgency;
+  if (urgency === "low" && (active || score >= 40)) return "medium";
+  if (urgency === "medium" && score >= 65) return "high";
+  return urgency;
+}
+
 /**
  * Analyze a thread for operator assistance. Uses keyword/heuristic signals only (no external LLM).
  */
-export function analyzeConversation(messages: ConversationMessageInput[]): DealAssistantAnalysis {
+export function analyzeConversation(
+  messages: ConversationMessageInput[],
+  opts?: { marketplaceMemoryHints?: DealAssistantMemoryHints | null },
+): DealAssistantAnalysis {
   const texts = userTexts(messages);
   const { intent, weight: iw } = scoreIntent(texts);
   const { objection, weight: ow } = scoreObjection(texts);
-  const urgency = scoreUrgency(messages, intent);
+  let urgency = scoreUrgency(messages, intent);
+  urgency = bumpUrgencyWithMemory(urgency, opts?.marketplaceMemoryHints ?? null);
   const messageSuggestion = buildMessageSuggestion(intent, objection, urgency);
   const recommendedAction = pickAction(intent, objection, urgency);
   const confidence = Math.min(0.95, Math.max(0.35, (iw + ow) / 2));

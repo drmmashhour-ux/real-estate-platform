@@ -11,7 +11,7 @@
 
 ## Lead fields (sales tracking)
 
-Stored on `Lead`: `launchSalesContacted` (= **contacted**), `launchLastContactDate` (= **lastContactDate**), `launchNotes` (= **notes**). Patched via `PATCH /api/leads`.
+Stored on `Lead`: `launchSalesContacted` (= **contacted**), `launchLastContactDate` (= **lastContactDate**), `launchNotes` (= **notes**). Patched via `PATCH /api/lecipm/leads`.
 
 ## Homepage
 

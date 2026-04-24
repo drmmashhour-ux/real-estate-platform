@@ -14,8 +14,8 @@
 
 ## CRM UI
 
-- **Lead detail:** Automation card — recommended action, DM suggestions, open tasks (complete via `completeAutomationTaskId` on `PATCH /api/leads`).
-- **Leads list:** “Urgent leads”, daily pulse, broker notifications, insights (from `GET /api/leads/summary` → `automation`).
+- **Lead detail:** Automation card — recommended action, DM suggestions, open tasks (complete via `completeAutomationTaskId` on `PATCH /api/lecipm/leads`).
+- **Leads list:** “Urgent leads”, daily pulse, broker notifications, insights (from `GET /api/lecipm/leads/summary` → `automation`).
 
 ## Database
 

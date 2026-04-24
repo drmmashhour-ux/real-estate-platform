@@ -9,6 +9,13 @@ import {
   type ListingForMarketplaceRank,
   type ListingSearchScoreResult,
 } from "@/lib/bnhub/ranking/listing-ranking";
+import { engineFlags } from "@/config/feature-flags";
+import {
+  buildRankingContextPayload,
+  rankListingsAlgorithm,
+  type RankableListingInput,
+} from "@/lib/marketplace-ranking/ranking-algorithm.engine";
+import type { ListingRankingBreakdown, RankingSortIntent } from "@/lib/marketplace-ranking/ranking.types";
 import { memoryListingAffinity01, type MemoryRankHint } from "@/lib/marketplace-memory/memory-ranking-hint";
 
 export type BnhubSearchFilters = {
@@ -26,6 +33,13 @@ export type BnhubSearchUserContext = {
   preferredMaxPrice?: number;
   /** Bounded memory hint from marketplace memory (session + long-term summaries). */
   memoryRankHint?: MemoryRankHint | null;
+  /** Weighted marketplace rank algorithm v1 — promoted placements are explicit in breakdown. */
+  rankingAlgo?: {
+    userId?: string | null;
+    cohort?: string | null;
+    promotedIds?: Set<string> | null;
+    searchQuery?: string | null;
+  };
 };
 
 /** Listing shape expected by rankListings (matches search API response). */
@@ -61,6 +75,8 @@ export type BnhubListingForRanking = {
   cachedListingQuality01?: number | null;
   /** Optional pill for search UI when quality thresholds are met. */
   qualityBadgeLabel?: string | null;
+  /** When date search is used — false means conflict (ranking may penalize). */
+  availableForRequestedDates?: boolean;
 };
 
 export type BnhubListingLabel = "Best Match" | "Great Price" | "High Demand";
@@ -151,6 +167,9 @@ function deriveLabels(
 export type RankListingsOptions = {
   /** When true, attaches `_marketplaceRankDebug` (internal — enable via env + query on API). */
   rankingDebug?: boolean;
+  /** Keep DB result order (price / newest / popular) while still computing scores. */
+  preserveInputOrder?: boolean;
+  sortIntent?: RankingSortIntent;
 };
 
 /**
@@ -175,6 +194,53 @@ export function rankListings<T extends BnhubListingForRanking>(
   };
 
   const memoryHint = userContext?.memoryRankHint ?? null;
+  const sortIntent: RankingSortIntent = options?.sortIntent ?? "RELEVANCE";
+  const preserveInputOrder = options?.preserveInputOrder === true;
+
+  if (engineFlags.listingMarketplaceRankAlgorithmV1) {
+    const ctx = buildRankingContextPayload(filters, {
+      userId: userContext?.rankingAlgo?.userId ?? null,
+      searchQuery: userContext?.rankingAlgo?.searchQuery ?? null,
+      sortIntent,
+      marketSegment: "SHORT_TERM",
+    });
+    const { ranked: algoRanked } = rankListingsAlgorithm(ctx, listings as RankableListingInput[], {
+      memoryHint: memoryHint ?? null,
+      promotedIds: userContext?.rankingAlgo?.promotedIds ?? null,
+      cohort: userContext?.rankingAlgo?.cohort ?? null,
+    });
+
+    const byId = new Map(algoRanked.map((r) => [r.listing.id, r]));
+    const sequence = preserveInputOrder
+      ? listings.map((l) => byId.get(l.id)).filter((x): x is (typeof algoRanked)[number] => Boolean(x))
+      : algoRanked;
+
+    const scoredAlgo: RankedBnhubListing<T>[] = sequence.map((item) => {
+      const listing = item.listing as T;
+      const br = item.breakdown;
+      const score01 = Math.min(1, Math.max(0, br.totalScore / 100));
+      const labels = deriveLabels(listing, filters, score01, marketAvgCents);
+      const row: RankedBnhubListing<T> = {
+        ...listing,
+        _aiScore: br.totalScore,
+        _aiLabels: labels,
+      };
+      if (options?.rankingDebug) {
+        row._listingRankBreakdown = br;
+      }
+      return row;
+    });
+
+    if (!preserveInputOrder) {
+      scoredAlgo.sort((a, b) => {
+        const d = b._aiScore - a._aiScore;
+        if (Math.abs(d) > 1e-6) return d;
+        return String(a.id).localeCompare(String(b.id));
+      });
+    }
+
+    return scoredAlgo;
+  }
 
   const scored: RankedBnhubListing<T>[] = listings.map((listing) => {
     const ctxListing = listing as ListingForMarketplaceRank;
@@ -206,10 +272,12 @@ export function rankListings<T extends BnhubListingForRanking>(
     return row;
   });
 
-  scored.sort((a, b) => {
-    const d = b._aiScore - a._aiScore;
-    if (Math.abs(d) > 1e-6) return d;
-    return String(a.id).localeCompare(String(b.id));
-  });
+  if (!preserveInputOrder) {
+    scored.sort((a, b) => {
+      const d = b._aiScore - a._aiScore;
+      if (Math.abs(d) > 1e-6) return d;
+      return String(a.id).localeCompare(String(b.id));
+    });
+  }
   return scored;
 }

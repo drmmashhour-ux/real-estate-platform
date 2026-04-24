@@ -12,7 +12,7 @@ export function Card({ className = "", children, ...rest }: CardProps) {
     <div
       className={[
         "rounded-xl border border-[#222222] bg-[#111111] p-6 shadow-lg shadow-black/50",
-        "transition-all duration-200 hover:border-gold/25 hover:shadow-[0_0_36px_rgb(212_175_55_/_0.10)]",
+        "transition-all duration-200 hover:border-[#D4AF37]/25 hover:shadow-[0_0_36px_rgb(212_175_55_/_0.10)]",
         className,
       ].join(" ")}
       {...rest}

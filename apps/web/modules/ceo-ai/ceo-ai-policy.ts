@@ -47,6 +47,7 @@ export function requiresApprovalForProposal(
   if (payload.kind.startsWith("outreach_")) return true;
   if (payload.kind === "retention_credit_offer") return true;
   if (domain === "OPERATIONS") return true;
+  if (domain === "DEALS") return true; // PHASE 5: Disable automated allocation
 
   if (payload.kind === "growth_family_content") return false;
   if (payload.kind === "retention_broker_email" || payload.kind === "retention_operator_profile") return false;

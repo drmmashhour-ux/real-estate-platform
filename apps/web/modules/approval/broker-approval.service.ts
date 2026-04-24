@@ -2,7 +2,7 @@ import { prisma } from "@/lib/db";
 import { validateExactAllForms } from "@/modules/oaciq-mapper/validation/exact-validation.service";
 import { buildCanonicalDealShape } from "@/modules/oaciq-mapper/source-paths/canonical-deal-shape";
 import { loadDealForMapper } from "@/lib/oaciq/load-deal-for-mapper";
-import type { LecipmExecutionPipelineState } from "@prisma/client";
+import { finalizeBrokerApprovalWithSignature } from "./broker-approval-workflow.service";
 
 export type ApprovalReadiness = {
   canApprove: boolean;
@@ -43,26 +43,16 @@ export async function recordBrokerApproval(input: {
   approvedById: string;
   notes?: string | null;
   snapshot?: Record<string, unknown>;
+  /** Required — broker must confirm OACIQ responsibility text in UI before calling. */
+  oaciqBrokerAcknowledged: boolean;
 }): Promise<{ id: string; approvedAt: Date }> {
-  const row = await prisma.dealExecutionApproval.create({
-    data: {
-      dealId: input.dealId,
-      approvedById: input.approvedById,
-      notes: input.notes ?? null,
-      snapshot: (input.snapshot ?? {}) as object,
-    },
+  const out = await finalizeBrokerApprovalWithSignature({
+    dealId: input.dealId,
+    approvedById: input.approvedById,
+    notes: input.notes,
+    snapshot: input.snapshot,
+    oaciqBrokerAcknowledged: input.oaciqBrokerAcknowledged,
+    channel: "execute_approve_route",
   });
-  await prisma.deal.update({
-    where: { id: input.dealId },
-    data: { lecipmExecutionPipelineState: "broker_approved" satisfies LecipmExecutionPipelineState },
-  });
-  await prisma.dealExecutionAuditLog.create({
-    data: {
-      dealId: input.dealId,
-      actorUserId: input.approvedById,
-      actionKey: "broker_execution_approval",
-      payload: { approvalId: row.id },
-    },
-  });
-  return { id: row.id, approvedAt: row.approvedAt };
+  return { id: out.legacyApprovalId, approvedAt: out.approvedAt };
 }

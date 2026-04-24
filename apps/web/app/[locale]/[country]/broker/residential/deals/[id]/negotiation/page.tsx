@@ -9,6 +9,7 @@ import { runNegotiationAutopilotAssist } from "@/modules/negotiation-autopilot/n
 import { generateCpDeltaHints } from "@/modules/negotiation-autopilot/cp-delta-generator.service";
 import { NegotiationAutopilotPanel } from "@/components/negotiation-autopilot/NegotiationAutopilotPanel";
 import { PPtoCPDiffCard } from "@/components/negotiation-autopilot/PPtoCPDiffCard";
+import { NegotiationStrategyAiPanel } from "@/components/negotiation-ai/NegotiationStrategyAiPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -65,6 +66,7 @@ export default async function NegotiationAutopilotPage({
         </Link>
       </div>
       <h1 className="font-serif text-2xl text-ds-text">Negotiation Autopilot Assist</h1>
+      <NegotiationStrategyAiPanel dealId={id} />
       <PPtoCPDiffCard changedKeys={delta.changedKeys} notes={delta.notes} />
       <NegotiationAutopilotPanel result={result} />
     </div>

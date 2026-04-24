@@ -343,6 +343,8 @@ model User {
   bnhubHostReviewsOfGuestsWritten      BnhubHostReviewOfGuest[]              @relation("BnhubHostReviewAuthor")
   bnhubHostReviewsOfGuestsAboutMe      BnhubHostReviewOfGuest[]              @relation("BnhubHostReviewSubjectGuest")
   bnhubMonthlyReputationSnapshots      BnhubMonthlyReputationSnapshot[]
+  lecipmRegulatoryState                LecipmRegulatoryState?
+  lecipmEntityRoles                    LecipmUserEntityRole[]
   /// Append-only audit — optional; not read at runtime (see `snapshot-writer.service.ts`).
   hostTrustScoreSnapshots              HostTrustScoreSnapshot[]              @relation("HostTrustScoreSnapshots")
   guestTrustScoreSnapshots             GuestTrustScoreSnapshot[]             @relation("GuestTrustScoreSnapshots")
@@ -468,6 +470,12 @@ model User {
   lastFollowUpLeads                    Lead[]                                @relation("LastFollowUpBy")
   leadFollowUpsSent                    LeadFollowUp[]
   ownedCrmListings                     Listing[]
+  lecipmBrokerageContractsAsBroker     LecipmBrokerageContract[]           @relation("LecipmBrokerageContractBroker")
+  lecipmCrmOaciqSellerDeclarationsAsSeller LecipmCrmOaciqSellerDeclaration[] @relation("LecipmCrmOaciqSellerDeclarationSeller")
+  lecipmDeclarationDisclosuresAsBuyer  LecipmDeclarationDisclosure[]       @relation("LecipmDisclosureBuyer")
+  lecipmBrokerageIdentityProofsAsSeller LecipmBrokerageIdentityProof[]     @relation("LecipmBrokerageIdentityProofSeller")
+  lecipmBrokerageIdentityProofsVerified LecipmBrokerageIdentityProof[]     @relation("LecipmBrokerageIdentityProofVerifier")
+  complianceFormLogsPerformed          ComplianceFormLog[]                 @relation("ComplianceFormLogActor")
   brokerListingAccesses                BrokerListingAccess[]
   investorMemosGenerated               InvestorMemo[]                        @relation("InvestorMemoGeneratedFor")
   investorIcPacksGenerated             InvestorIcPack[]                      @relation("InvestorIcPackGeneratedFor")
@@ -532,6 +540,7 @@ model User {
   dealsAsBuyer                         Deal[]                                @relation("DealBuyer")
   dealsAsSeller                        Deal[]                                @relation("DealSeller")
   dealsAsBroker                        Deal[]                                @relation("DealBroker")
+  brokerActionPipelineSignatures       BrokerSignature[]                     @relation("BrokerActionPipelineSigner")
   dealExecutionApprovalsGranted        DealExecutionApproval[]               @relation("DealExecutionApprovalApprover")
   lecipmPaymentConfirmationsRecorded   LecipmPaymentConfirmation[]           @relation("LecipmPaymentConfirmationActor")
   dealStateTransitionsCreated          DealStateTransition[]                 @relation("DealStateTransitionCreatedBy")
@@ -745,6 +754,8 @@ model User {
   lecipmDisputeCasesResolved          LecipmDisputeCase[]                   @relation("LecipmDisputeCaseResolvedBy")
   lecipmDisputeCaseMessagesSent       LecipmDisputeCaseMessage[]            @relation("LecipmDisputeCaseMessageSender")
   lecipmDisputeCaseEventsAsActor      LecipmDisputeCaseEvent[]              @relation("LecipmDisputeCaseEventActor")
+  lecipmSystemAdjustmentsProposed     LecipmSystemBehaviorAdjustment[]      @relation("LecipmSystemAdjustmentProposedBy")
+  lecipmSystemAdjustmentsApproved     LecipmSystemBehaviorAdjustment[]      @relation("LecipmSystemAdjustmentApprovedBy")
   /// Latest acceptance of the platform Content & Usage License (version checked against `ContentLicensePolicy`).
   contentLicenseAcceptance             ContentLicenseAcceptance?
   contentLicensePolicyUpdates          ContentLicensePolicy[]                @relation("ContentLicensePolicyUpdatedBy")
@@ -8669,6 +8680,8 @@ model LecipmBrokerLicenceProfile {
   province        String?  @default("QC") @db.VarChar(32)
   postalCode      String?  @map("postal_code") @db.VarChar(16)
   practiceMode    String?  @default("INDEPENDENT") @map("practice_mode") @db.VarChar(32)
+  regulator       String?  @default("OACIQ") @db.VarChar(32) // NEW
+  verifiedAt      DateTime? @map("verified_at") // NEW
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
   licenceChecks   LecipmLicenceCheck[]
@@ -10633,6 +10646,22 @@ enum DealExecutionType {
   counter_proposal
 }
 
+/// AI autopilot prep lanes — execution blocked until broker signs (see `BrokerSignature`).
+enum ActionPipelineType {
+  DEAL
+  DOCUMENT
+  INVESTMENT
+  CLOSING
+  FINANCE
+}
+
+enum ActionPipelineStatus {
+  DRAFT
+  READY_FOR_SIGNATURE
+  SIGNED
+  EXECUTED
+}
+
 enum DealPartyRole {
   buyer
   seller
@@ -10743,6 +10772,7 @@ model Deal {
   lecipmPaymentLedgerEntries     LecipmPaymentLedgerEntry[]
   negotiationThreads             NegotiationThread[]
   negotiationSuggestions         NegotiationSuggestion[]
+  negotiationStrategies          NegotiationStrategy[]
   lecipmCommunicationDrafts      LecipmCommunicationDraft[]
   lecipmCommunicationLogs        LecipmCommunicationLog[]
   lecipmBrokerTasks              LecipmBrokerTask[]
@@ -10769,6 +10799,10 @@ model Deal {
   intelligenceStage          String?  @map("intelligence_stage") @db.VarChar(24)
   lastIntelligenceComputedAt DateTime? @map("last_intelligence_computed_at")
   dealIntelligenceEvents     DealIntelligenceEvent[]
+  /// Versioned close-probability AI snapshots (0–100, factors, drivers/risks).
+  closeProbabilities         CloseProbability[]
+  /// Broker decision-support deal scores (accept / review / reject guidance).
+  dealScores                 DealScore[]
   /// Autonomous learning layer — outcome rows for closed/failed deals (analytics only).
   dealOutcomes               DealOutcome[]
   /// Secure closing room + post-close asset onboarding (LECIPM execution bridge).
@@ -10778,6 +10812,10 @@ model Deal {
   lecipmClosingSignatures        DealClosingSignature[]
   postCloseAsset                 PostCloseAsset?
   lecipmDealClosingAudits        DealClosingAudit[]
+  /// OACIQ-attested broker approvals with signature linkage (v2 execution gate).
+  brokerApprovals                BrokerApproval[]
+  /// AI autopilot action queue — broker signature required before EXECUTED.
+  actionPipelines                ActionPipeline[]
 
   @@index([buyerId])
   @@index([sellerId])
@@ -10791,6 +10829,41 @@ model Deal {
   @@index([lecipmExecutionPipelineState])
   @@index([brokerageOfficeId])
   @@map("deals")
+}
+
+/// Assistive close-likelihood estimate before broker approval / signing (rule blend + pipeline signals).
+model CloseProbability {
+  id          String   @id @default(cuid())
+  dealId      String   @map("deal_id")
+  deal        Deal     @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  /// 0–100
+  probability Float
+  /// VERY_HIGH | HIGH | MEDIUM | LOW
+  category    String   @db.VarChar(16)
+  /// Factor scores, weights, notes, plus embedded drivers/risks for audit.
+  factorsJson Json     @map("factors_json")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([dealId, createdAt(sort: Desc)])
+  @@map("deal_close_probabilities")
+}
+
+/// Assistive deal scoring for brokers — not a credit/investment recommendation; does not replace diligence.
+model DealScore {
+  id            String   @id @default(cuid())
+  dealId        String   @map("deal_id")
+  deal          Deal     @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  /// 0–100
+  score         Float
+  /// EXCELLENT | GOOD | RISKY | REJECT
+  category      String   @db.VarChar(16)
+  /// LOW | MEDIUM | HIGH
+  riskLevel     String   @map("risk_level") @db.VarChar(8)
+  reasoningJson Json     @map("reasoning_json")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([dealId, createdAt(sort: Desc)])
+  @@map("deal_scores")
 }
 
 /// Final execution closing session (secure room, docs, checklist, signatures).
@@ -11541,6 +11614,31 @@ model NegotiationSuggestion {
   @@index([dealId])
   @@index([status])
   @@map("negotiation_suggestions")
+}
+
+/// AI-assisted counter-offer packages — broker must approve before any outbound counter; never auto-sent.
+model NegotiationStrategy {
+  id                   String   @id @default(cuid())
+  dealId               String   @map("deal_id")
+  deal                 Deal     @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  /// Groups the three profiles (AGGRESSIVE / BALANCED / SAFE) from one run.
+  strategyRunId        String   @map("strategy_run_id") @db.VarChar(40)
+  /// AGGRESSIVE | BALANCED | SAFE
+  strategyType         String   @map("strategy_type") @db.VarChar(16)
+  /// Suggested counter price (CAD, major units) — illustrative until broker edits and approves.
+  suggestedPrice       Float    @map("suggested_price")
+  conditionChangesJson Json     @map("condition_changes_json")
+  timelineSuggestion   String   @map("timeline_suggestion") @db.Text
+  reasoningJson        Json     @map("reasoning_json")
+  confidenceScore      Float    @map("confidence_score")
+  /// AI_PROPOSED | BROKER_SELECTED | BROKER_APPROVED_TO_SEND | DISMISSED
+  workflowStatus       String   @default("AI_PROPOSED") @map("workflow_status") @db.VarChar(32)
+  brokerNotes          String?  @map("broker_notes") @db.Text
+  createdAt            DateTime @default(now()) @map("created_at")
+
+  @@index([dealId, strategyRunId])
+  @@index([dealId, createdAt(sort: Desc)])
+  @@map("negotiation_strategies")
 }
 
 // —— Broker CRM v1 + communication copilot (distinct from legacy `BrokerClient` / billing `BrokerLead`) ——
@@ -13738,6 +13836,82 @@ model DealExecutionApproval {
   @@map("deal_execution_approvals")
 }
 
+/// Broker-driven approval workflow: pending → approved (OACIQ ack + signature) | rejected. Platform assist only.
+model BrokerApproval {
+  id                    String            @id @default(cuid())
+  dealId                String            @map("deal_id")
+  deal                  Deal              @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  status                String            @default("PENDING") @db.VarChar(16)
+  actionKey             String            @default("execution_prep") @map("action_key") @db.VarChar(96)
+  actionPayload         Json              @default("{}") @map("action_payload")
+  beforeSnapshot        Json              @default("{}") @map("before_snapshot")
+  afterSnapshot         Json?             @map("after_snapshot")
+  requestedByUserId     String?           @map("requested_by_user_id") @db.VarChar(36)
+  decidedByUserId       String?           @map("decided_by_user_id") @db.VarChar(36)
+  decidedAt             DateTime?         @map("decided_at")
+  oaciqAcknowledgedAt   DateTime?         @map("oaciq_acknowledged_at")
+  oaciqAckTextVersion   String            @default("v1_oaciq_broker_2026") @map("oaciq_ack_text_version") @db.VarChar(48)
+  rejectionReason       String?           @map("rejection_reason") @db.Text
+  signatureSessionId    String?           @unique @map("signature_session_id")
+  signatureSession      SignatureSession? @relation(fields: [signatureSessionId], references: [id], onDelete: SetNull)
+  createdAt             DateTime          @default(now()) @map("created_at")
+  updatedAt             DateTime          @updatedAt @map("updated_at")
+
+  @@index([dealId, status])
+  @@index([dealId, createdAt(sort: Desc)])
+  @@map("broker_approvals")
+}
+
+/// AI-generated operational action — stays in prep until broker signs; only then may execution hooks run.
+model ActionPipeline {
+  id          String               @id @default(cuid())
+  type        ActionPipelineType
+  dataJson    Json                 @map("data_json")
+  aiGenerated Boolean              @default(true) @map("ai_generated")
+  status      ActionPipelineStatus
+  dealId      String?              @map("deal_id")
+  deal        Deal?                @relation(fields: [dealId], references: [id], onDelete: SetNull)
+  brokerSignature BrokerSignature?
+  signatureControlAuditLogs SignatureControlAuditLog[]
+  createdAt   DateTime             @default(now()) @map("created_at")
+  updatedAt   DateTime             @updatedAt @map("updated_at")
+
+  @@index([status, createdAt])
+  @@index([dealId])
+  @@map("action_pipelines")
+}
+
+/// Immutable broker attestation for a single action pipeline row (licensed broker only).
+model BrokerSignature {
+  id           String         @id @default(cuid())
+  brokerId     String         @map("broker_id")
+  broker       User           @relation("BrokerActionPipelineSigner", fields: [brokerId], references: [id], onDelete: Restrict)
+  actionId     String         @unique @map("action_id")
+  action       ActionPipeline @relation(fields: [actionId], references: [id], onDelete: Cascade)
+  ipAddress    String?        @map("ip_address") @db.VarChar(64)
+  userAgent    String?        @map("user_agent") @db.VarChar(512)
+  signedAt     DateTime       @default(now()) @map("signed_at")
+  documentHash String         @map("document_hash") @db.VarChar(128)
+
+  @@index([brokerId])
+  @@map("broker_signatures")
+}
+
+/// Audit trail for autopilot signature gate ([signature-control] events).
+model SignatureControlAuditLog {
+  id               String         @id @default(cuid())
+  actionPipelineId String         @map("action_pipeline_id")
+  actionPipeline   ActionPipeline @relation(fields: [actionPipelineId], references: [id], onDelete: Cascade)
+  dealId           String?        @map("deal_id")
+  eventKey         String         @map("event_key") @db.VarChar(64)
+  payload          Json           @default("{}")
+  actorUserId      String?        @map("actor_user_id")
+  createdAt        DateTime       @default(now()) @map("created_at")
+
+  @@index([actionPipelineId, createdAt])
+  @@map("signature_control_audit_logs")
+}
+
 model SignatureSession {
   id                String                 @id @default(uuid())
   dealId            String                 @map("deal_id")
@@ -13751,6 +13925,7 @@ model SignatureSession {
   createdAt         DateTime               @default(now()) @map("created_at")
   updatedAt         DateTime               @updatedAt @map("updated_at")
   participants      SignatureParticipant[]
+  brokerApproval      BrokerApproval?
 
   @@index([dealId])
   @@index([provider, status])
@@ -14445,6 +14620,21 @@ model RankingClickLog {
   @@index([listingType, listingId])
   @@index([pageType, createdAt])
   @@map("ranking_click_logs")
+}
+
+/// Append-only marketplace ranking computation rows (explainable breakdown + context hash for replay).
+model ListingRankScore {
+  id                 String   @id @default(cuid())
+  listingId          String   @map("listing_id") @db.VarChar(64)
+  listingType        String   @default("bnhub") @map("listing_type") @db.VarChar(16)
+  totalScore         Float    @map("total_score")
+  breakdownJson      Json     @map("breakdown_json")
+  rankingContextHash String   @map("ranking_context_hash") @db.VarChar(64)
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  @@index([listingId, createdAt(sort: Desc)])
+  @@index([rankingContextHash, createdAt(sort: Desc)])
+  @@map("listing_rank_scores")
 }
 
 // ---------------------------------------------------------------------------
@@ -19990,6 +20180,9 @@ model Listing {
   assistantDraftContent     Json?                       @map("assistant_draft_content")
   assistantDraftSource      String?                     @map("assistant_draft_source") @db.VarChar(32)
   assistantDraftUpdatedAt   DateTime?                   @map("assistant_draft_updated_at")
+  /// OACIQ brokerage forms engine — hard hold (e.g. seller declaration refusal).
+  lecipmOaciqComplianceHoldAt     DateTime? @map("lecipm_oaciq_compliance_hold_at")
+  lecipmOaciqComplianceHoldReason String?   @map("lecipm_oaciq_compliance_hold_reason") @db.VarChar(64)
   createdAt                  DateTime                    @default(now())
   updatedAt                  DateTime                    @updatedAt
   checklistItems             ChecklistItem[]
@@ -20038,6 +20231,10 @@ model Listing {
   /// One SPV / offering per listing (optional).
   amfCapitalDeals               AmfCapitalDeal[]
   listingAssistantContentVersions ListingAssistantContentVersion[]
+  lecipmBrokerageContracts          LecipmBrokerageContract[]
+  lecipmCrmOaciqSellerDeclarations  LecipmCrmOaciqSellerDeclaration[]
+  lecipmDeclarationDisclosures      LecipmDeclarationDisclosure[]
+  lecipmBrokerageIdentityProofs     LecipmBrokerageIdentityProof[]
 
   @@index([ownerId])
   @@index([tenantId])
@@ -20058,6 +20255,179 @@ model ListingAssistantContentVersion {
 
   @@index([listingId, createdAt(sort: Desc)])
   @@map("listing_assistant_content_versions")
+}
+
+// —— LECIPM OACIQ brokerage contracts + CRM seller declarations (2022 mandatory forms) ——
+// Note: FSBO `seller_declarations` + platform `identity_verifications` are separate legacy tables.
+
+enum OaciqMandatoryFormVersion {
+  REFORM_2022_MANDATORY @map("2022_mandatory")
+}
+
+enum BrokerageContractType {
+  exclusive      @map("exclusive")
+  non_exclusive  @map("non_exclusive")
+}
+
+enum BrokerageContractStatus {
+  draft       @map("draft")
+  active      @map("active")
+  expired     @map("expired")
+  terminated  @map("terminated")
+}
+
+enum DeclarationDisclosureMethod {
+  auto           @map("auto")
+  broker_manual  @map("broker_manual")
+}
+
+enum ComplianceFormEntityType {
+  contract    @map("contract")
+  declaration @map("declaration")
+  identity    @map("identity")
+}
+
+enum ComplianceFormAction {
+  created         @map("created")
+  updated         @map("updated")
+  signed          @map("signed")
+  refused         @map("refused")
+  validated       @map("validated")
+  expired         @map("expired")
+  version_checked @map("version_checked")
+}
+
+enum LecipmIdentityProofMethod {
+  in_person @map("in_person")
+  remote    @map("remote")
+}
+
+enum LecipmIdentityProofVisibility {
+  broker_only     @map("broker_only")
+  compliance_only @map("compliance_only")
+}
+
+/// One current brokerage mandate row per CRM listing (`@@unique(listing_id)`).
+model LecipmBrokerageContract {
+  id        String   @id @default(cuid())
+  listingId String   @unique @map("listing_id")
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  brokerId  String   @map("broker_id")
+  broker    User     @relation("LecipmBrokerageContractBroker", fields: [brokerId], references: [id], onDelete: Cascade)
+  agencyId  String?  @map("agency_id")
+  agency    Tenant?  @relation(fields: [agencyId], references: [id], onDelete: SetNull)
+
+  contractType BrokerageContractType   @map("contract_type")
+  status       BrokerageContractStatus @default(draft)
+  startDate    DateTime?               @map("start_date") @db.Date
+  endDate      DateTime?               @map("end_date") @db.Date
+
+  includesDistributionAuthorization Boolean @default(false) @map("includes_distribution_authorization")
+  distributionScope                 Json?   @map("distribution_scope")
+
+  formVersion OaciqMandatoryFormVersion @map("form_version")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([brokerId])
+  @@index([agencyId])
+  @@map("brokerage_contracts")
+}
+
+/// CRM listing seller declaration (distinct from FSBO `seller_declarations` on `ListingProperty`).
+model LecipmCrmOaciqSellerDeclaration {
+  id        String  @id @default(cuid())
+  listingId String  @map("listing_id")
+  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  sellerId  String  @map("seller_id")
+  seller    User    @relation("LecipmCrmOaciqSellerDeclarationSeller", fields: [sellerId], references: [id], onDelete: Cascade)
+
+  formVersion OaciqMandatoryFormVersion @map("form_version")
+
+  completed Boolean @default(false)
+  signed    Boolean @default(false)
+  refused   Boolean @default(false)
+
+  refusalReason String? @map("refusal_reason") @db.Text
+
+  submittedAt DateTime? @map("submitted_at")
+  signedAt    DateTime? @map("signed_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  disclosure LecipmDeclarationDisclosure?
+
+  @@unique([listingId, sellerId])
+  @@index([listingId])
+  @@map("lecipm_crm_oaciq_seller_declarations")
+}
+
+model LecipmDeclarationDisclosure {
+  id            String                        @id @default(cuid())
+  listingId     String                        @map("listing_id")
+  listing       Listing                       @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  declarationId String                        @unique @map("declaration_id")
+  declaration   LecipmCrmOaciqSellerDeclaration @relation(fields: [declarationId], references: [id], onDelete: Cascade)
+
+  disclosedToBuyer    Boolean                   @default(false) @map("disclosed_to_buyer")
+  disclosureTimestamp DateTime?                 @map("disclosure_timestamp")
+  disclosureMethod    DeclarationDisclosureMethod? @map("disclosure_method")
+
+  buyerAcknowledgedAt DateTime? @map("buyer_acknowledged_at")
+  buyerUserId         String?   @map("buyer_user_id")
+  buyer               User?     @relation("LecipmDisclosureBuyer", fields: [buyerUserId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([listingId])
+  @@map("declaration_disclosures")
+}
+
+/// Confidential identity proof for brokerage compliance — never attachable to promise to purchase (enforced in app).
+model LecipmBrokerageIdentityProof {
+  id           String   @id @default(cuid())
+  listingId    String   @map("listing_id")
+  listing      Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  sellerUserId String   @map("seller_user_id")
+  seller       User     @relation("LecipmBrokerageIdentityProofSeller", fields: [sellerUserId], references: [id], onDelete: Cascade)
+
+  verifiedByBrokerId String @map("verified_by_broker_id")
+  verifiedByBroker   User   @relation("LecipmBrokerageIdentityProofVerifier", fields: [verifiedByBrokerId], references: [id], onDelete: Cascade)
+
+  verificationMethod    LecipmIdentityProofMethod @map("verification_method")
+  documentType          String                    @map("document_type") @db.VarChar(64)
+  documentReferenceHash String                    @map("document_reference_hash") @db.VarChar(128)
+
+  verifiedAt DateTime @map("verified_at")
+
+  confidential Boolean                   @default(true)
+  visibleTo    LecipmIdentityProofVisibility @default(broker_only) @map("visible_to")
+
+  attachableToTransactionDocuments Boolean @default(false) @map("attachable_to_transaction_documents")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([listingId, sellerUserId])
+  @@index([verifiedByBrokerId])
+  @@map("lecipm_brokerage_identity_proofs")
+}
+
+model ComplianceFormLog {
+  id                String                   @id @default(cuid())
+  entityType        ComplianceFormEntityType @map("entity_type")
+  entityId          String                   @map("entity_id")
+  action            ComplianceFormAction     @map("action")
+  performedByUserId String?                  @map("performed_by_user_id")
+  performedBy       User?                    @relation("ComplianceFormLogActor", fields: [performedByUserId], references: [id], onDelete: SetNull)
+  aiAssisted        Boolean                  @default(false) @map("ai_assisted")
+  notes             String?                  @db.Text
+  createdAt         DateTime                 @default(now()) @map("created_at")
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("compliance_form_logs")
 }
 
 /// CRM listing ESG profile — scoring inputs + cached composite (LECIPM internal).
@@ -24930,6 +25300,7 @@ model Tenant {
   featureFlags   TenantFeatureFlag[]
   memberships           TenantMembership[]
   listings              Listing[]
+  lecipmBrokerageContracts LecipmBrokerageContract[]
   brokerClients         BrokerClient[]
   offers                Offer[]
   offerEvents           OfferEvent[]
@@ -33974,11 +34345,13 @@ model AmfCapitalDeal {
   /// Issuer-recorded exemption narrative (non-legal placeholder for compliance workflow).
   exemptionNarrative    String?  @map("exemption_narrative") @db.Text
 
-  spv                   AmfSpvCompany?
+  corporateEntity       LecipmLegalEntity?
   investments           AmfInvestment[]
   disclosures           AmfDealDisclosure[]
   disclosureAcks        AmfDisclosureAcknowledgment[]
   distributions         AmfDistributionRecord[]
+  investmentPacket      DealInvestmentPacket?
+  spvRecord             AmfSpv? // NEW: AMF-aligned SPV record
 
   createdAt             DateTime @default(now()) @map("created_at")
   updatedAt             DateTime @updatedAt @map("updated_at")
@@ -33988,20 +34361,39 @@ model AmfCapitalDeal {
   @@map("amf_capital_deals")
 }
 
-/// One legal entity per capital deal (SPV).
-model AmfSpvCompany {
-  id                String         @id @default(cuid())
-  capitalDealId     String         @unique @map("capital_deal_id") @db.VarChar(36)
-  capitalDeal       AmfCapitalDeal @relation(fields: [capitalDealId], references: [id], onDelete: Cascade)
+model LecipmLegalEntity {
+  id                 String               @id @default(cuid())
+  name               String               @map("name") @db.VarChar(512)
+  type               String               @map("type") @db.VarChar(32) // BROKERAGE | TECH | FUND | HOLDING
+  jurisdiction       String               @default("QC") @db.VarChar(8)
+  registrationNumber String?              @map("registration_number") @db.VarChar(64)
+  regulator          String?              @db.VarChar(16) // OACIQ | AMF | null
+  createdAt          DateTime             @default(now()) @map("created_at")
+  updatedAt          DateTime             @updatedAt @map("updated_at")
 
-  legalName         String         @map("legal_name") @db.VarChar(512)
-  registrationNumber String?       @map("registration_number") @db.VarChar(64)
-  jurisdiction      String         @default("QC") @db.VarChar(8)
+  userRoles          LecipmUserEntityRole[]
+  capitalDeal        AmfCapitalDeal?      @relation(fields: [capitalDealId], references: [id], onDelete: SetNull)
+  capitalDealId      String?              @unique @map("capital_deal_id")
 
-  createdAt         DateTime       @default(now()) @map("created_at")
-  updatedAt         DateTime       @updatedAt @map("updated_at")
+  /// For bridge logic: packets originated by this brokerage entity
+  originatedPackets  DealInvestmentPacket[] @relation("BrokerageOriginatedPackets")
+  /// For bridge logic: SPVs managed by this fund entity
+  managedSpvs        AmfSpv[]               @relation("FundManagedSpvs")
 
-  @@map("amf_spv_companies")
+  @@map("lecipm_legal_entities")
+}
+
+model LecipmUserEntityRole {
+  id        String            @id @default(cuid())
+  userId    String            @map("user_id") @db.VarChar(36)
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entityId  String            @map("entity_id") @db.VarChar(36)
+  entity    LecipmLegalEntity @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  role      String            @db.VarChar(32) // BROKER | DIRECTOR | SHAREHOLDER | ADMIN
+  createdAt DateTime          @default(now()) @map("created_at")
+
+  @@unique([userId, entityId, role])
+  @@map("lecipm_user_entity_roles")
 }
 
 model AmfInvestor {
@@ -34075,6 +34467,11 @@ model AmfDisclosureAcknowledgment {
   disclosure     AmfDealDisclosure @relation(fields: [disclosureId], references: [id], onDelete: Cascade)
 
   acknowledgedAt DateTime         @default(now()) @map("acknowledged_at")
+  
+  /// PHASE 4: DISCLOSURE SYSTEM
+  riskAccepted        Boolean @default(false) @map("risk_accepted")
+  notFinancialAdvice  Boolean @default(false) @map("not_financial_advice")
+  independentDecision Boolean @default(false) @map("independent_decision")
 
   @@unique([investorId, disclosureId])
   @@index([capitalDealId, investorId])
@@ -34088,7 +34485,7 @@ model AmfDistributionRecord {
   investorId     String?        @map("investor_id") @db.VarChar(36)
   investor       AmfInvestor?   @relation(fields: [investorId], references: [id], onDelete: SetNull)
 
-  /// DISTRIBUTION | RETURN_OF_CAPITAL | INCOME_ALLOCATION
+  /// DISTRIBUTION | RETURN_OF_CAPITAL | INCOME_ALLOCATION | BROKER_COMMISSION | PLATFORM_FEE
   kind           String         @db.VarChar(40)
   amount         Float
   recordedAt     DateTime       @default(now()) @map("recorded_at")
@@ -34097,6 +34494,76 @@ model AmfDistributionRecord {
   @@index([capitalDealId, recordedAt])
   @@index([investorId])
   @@map("amf_distribution_records")
+}
+
+model DealInvestmentPacket {
+  id               String         @id @default(cuid())
+  capitalDealId    String         @unique @map("capital_deal_id") @db.VarChar(36)
+  capitalDeal      AmfCapitalDeal @relation(fields: [capitalDealId], references: [id], onDelete: Cascade)
+  
+  /// The BROKERAGE entity that originated the deal
+  entityId         String?        @map("entity_id") @db.VarChar(36)
+  entity           LecipmLegalEntity? @relation("BrokerageOriginatedPackets", fields: [entityId], references: [id], onDelete: SetNull)
+
+  summary          String         @db.Text
+  risks            String         @db.Text
+  financialProjection String?      @map("financial_projection") @db.Text
+  esgScore         Float?         @map("esg_score")
+  
+  createdByBrokerId String        @map("created_by_broker_id") @db.VarChar(36)
+  
+  createdAt        DateTime       @default(now()) @map("created_at")
+  updatedAt        DateTime       @updatedAt @map("updated_at")
+
+  @@map("deal_investment_packets")
+}
+
+/// AMF-ready SPV structure isolating capital from brokerage
+model AmfSpv {
+  id                String         @id @default(cuid())
+  capitalDealId     String         @unique @map("capital_deal_id") @db.VarChar(36)
+  capitalDeal       AmfCapitalDeal @relation(fields: [capitalDealId], references: [id], onDelete: Cascade)
+
+  /// The FUND entity that manages this SPV
+  entityId          String         @map("entity_id") @db.VarChar(36)
+  entity            LecipmLegalEntity @relation("FundManagedSpvs", fields: [entityId], references: [id], onDelete: Cascade)
+
+  ownershipStructureJson Json?      @map("ownership_structure_json")
+  
+  createdAt         DateTime       @default(now()) @map("created_at")
+  updatedAt         DateTime       @updatedAt @map("updated_at")
+
+  @@map("amf_spvs")
+}
+
+model LecipmRegulatoryState {
+  id                  String   @id @default(cuid())
+  userId              String   @unique @map("user_id") @db.VarChar(36)
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  isLicensedBroker    Boolean  @default(false) @map("is_licensed_broker")
+  brokerMode          String   @default("INDEPENDENT") @map("broker_mode") @db.VarChar(24) // INDEPENDENT | AGENCY
+  canOperateBrokerage Boolean  @default(false) @map("can_operate_brokerage")
+  canOperateFund      Boolean  @default(false) @map("can_operate_fund")
+  fundMode            String   @default("SIMULATION") @map("fund_mode") @db.VarChar(24) // SIMULATION | PRIVATE | REGISTERED
+  
+  updatedAt           DateTime @updatedAt @map("updated_at")
+  createdAt           DateTime @default(now()) @map("created_at")
+
+  @@map("lecipm_regulatory_states")
+}
+
+model AmfPolicy {
+  id                    String   @id @default("amf_policy_global")
+  fundMode              String   @default("SIMULATION") @map("fund_mode") @db.VarChar(24) // SIMULATION | PRIVATE | REGISTERED
+  maxInvestorsPerDeal   Int      @default(50) @map("max_investors_per_deal")
+  requireIndependentSpv Boolean  @default(true) @map("require_independent_spv")
+  blockPublicMarketing  Boolean  @default(true) @map("block_public_marketing")
+  disableAutoAllocation Boolean  @default(true) @map("disable_auto_allocation")
+  
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  @@map("amf_policies")
 }
 
 // ---------------------------------------------------------------------------
@@ -34887,6 +35354,147 @@ model LecipmPreDisputeRiskAssessment {
 
   @@index([subjectType, subjectId, createdAt(sort: Desc)])
   @@map("lecipm_pre_dispute_risk_assessments")
+}
+
+// --- Dispute prediction + AI CEO system adjustments (advisory / operational — not legal fault). ---
+
+enum LecipmDisputePredictedCategory {
+  NO_SHOW_CONFLICT
+  PAYMENT_FRICTION
+  MISLEADING_EXPECTATION
+  RESPONSE_DELAY_CONFLICT
+  DOCUMENTATION_GAP
+  NEGOTIATION_BREAKDOWN
+  OTHER
+}
+
+enum LecipmSystemAdjustmentStatus {
+  PROPOSED
+  APPROVED
+  REJECTED
+  IMPLEMENTED
+  REVERSED
+}
+
+model LecipmDisputePredictionPattern {
+  id                       String                   @id @default(cuid())
+  patternKey               String                   @unique @map("pattern_key") @db.VarChar(196)
+  confidence               Float
+  impactScore              Float                    @map("impact_score")
+  sampleSize               Int                      @map("sample_size")
+  signalsFingerprintJson   Json                     @map("signals_fingerprint_json")
+  recommendedPreventionJson Json                    @map("recommended_prevention_json")
+  topOutcomeCategory       LecipmDisputeCaseCategory? @map("top_outcome_category")
+  lastTrainedAt            DateTime                 @default(now()) @map("last_trained_at")
+  createdAt                DateTime                 @default(now()) @map("created_at")
+  updatedAt                DateTime                 @updatedAt @map("updated_at")
+
+  @@index([lastTrainedAt])
+  @@map("lecipm_dispute_prediction_patterns")
+}
+
+model LecipmDisputePredictionSnapshot {
+  id                     String                         @id @default(cuid())
+  entityType             LecipmDisputeCaseEntityType    @map("entity_type")
+  entityId               String                         @map("entity_id") @db.VarChar(64)
+  disputeRiskScore       Int                            @map("dispute_risk_score")
+  riskBand               LecipmPreDisputeRiskLevel      @map("risk_band")
+  predictedCategory      LecipmDisputePredictedCategory @map("predicted_category")
+  topSignalsJson         Json                           @map("top_signals_json")
+  explainJson            Json                           @map("explain_json")
+  preventionActionsJson  Json?                          @map("prevention_actions_json")
+  matchedPatternKeysJson Json?                          @map("matched_pattern_keys_json")
+  sourceMix              String                         @default("rules_plus_patterns") @map("source_mix") @db.VarChar(48)
+  engineVersion          String                         @default("v1") @map("engine_version") @db.VarChar(16)
+  createdAt              DateTime                       @default(now()) @map("created_at")
+
+  @@index([entityType, entityId, createdAt(sort: Desc)])
+  @@index([riskBand, createdAt])
+  @@map("lecipm_dispute_prediction_snapshots")
+}
+
+model LecipmSystemBehaviorAdjustment {
+  id                      String                       @id @default(cuid())
+  title                   String                       @db.VarChar(280)
+  affectedDomain          String                       @map("affected_domain") @db.VarChar(64)
+  territory               String?                      @db.VarChar(120)
+  segment                 String?                      @db.VarChar(120)
+  hub                     String?                      @db.VarChar(120)
+  impactBand              String                       @map("impact_band") @db.VarChar(32)
+  confidence              Float
+  urgency                 String                       @db.VarChar(24)
+  recommendedAdjustment   String                       @map("recommended_adjustment") @db.Text
+  explanation             String                       @db.Text
+  status                  LecipmSystemAdjustmentStatus @default(PROPOSED)
+  proposedByUserId      String?                        @map("proposed_by_user_id")
+  approvedByUserId      String?                        @map("approved_by_user_id")
+  approvalReason          String?                      @map("approval_reason") @db.Text
+  expectedEffect          String?                      @map("expected_effect") @db.Text
+  measuredOutcomeJson     Json?                        @map("measured_outcome_json")
+  createdAt               DateTime                     @default(now()) @map("created_at")
+  updatedAt               DateTime                     @updatedAt @map("updated_at")
+  implementedAt           DateTime?                    @map("implemented_at")
+  reversedAt              DateTime?                    @map("reversed_at")
+
+  proposedBy User? @relation("LecipmSystemAdjustmentProposedBy", fields: [proposedByUserId], references: [id], onDelete: SetNull)
+  approvedBy User? @relation("LecipmSystemAdjustmentApprovedBy", fields: [approvedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([affectedDomain, createdAt])
+  @@map("lecipm_system_behavior_adjustments")
+}
+
+// --- LECIPM Operational Trust Score Engine (explainable prioritization signal — not moral/legal judgment). ---
+
+enum LecipmTrustEngineTargetType {
+  BROKER
+  LISTING
+  DEAL
+  BOOKING
+  TERRITORY
+}
+
+enum LecipmTrustOperationalBand {
+  HIGH_TRUST
+  GOOD
+  WATCH
+  ELEVATED_RISK
+  CRITICAL_REVIEW
+}
+
+model LecipmOperationalTrustSnapshot {
+  id                      String                      @id @default(cuid())
+  targetType              LecipmTrustEngineTargetType @map("target_type")
+  targetId                String                      @map("target_id") @db.VarChar(96)
+  trustScore              Int                         @map("trust_score")
+  trustBand               LecipmTrustOperationalBand  @map("trust_band")
+  contributingFactorsJson Json                        @map("contributing_factors_json")
+  warningsJson            Json                        @default("[]") @map("warnings_json")
+  explainJson             Json                        @map("explain_json")
+  deltaFromPrior          Int?                        @map("delta_from_prior")
+  weightProfileVersion    String                      @default("v1") @map("weight_profile_version") @db.VarChar(24)
+  inputsSummaryJson       Json                        @default("{}") @map("inputs_summary_json")
+  createdAt               DateTime                    @default(now()) @map("created_at")
+
+  @@index([targetType, targetId, createdAt(sort: Desc)])
+  @@index([trustBand, createdAt])
+  @@map("lecipm_operational_trust_snapshots")
+}
+
+model LecipmOperationalTrustAlert {
+  id             String                      @id @default(cuid())
+  targetType     LecipmTrustEngineTargetType @map("target_type")
+  targetId       String                      @map("target_id") @db.VarChar(96)
+  alertKind      String                      @map("alert_kind") @db.VarChar(48)
+  message        String                      @db.Text
+  severity       String                      @db.VarChar(24)
+  metadataJson   Json                        @default("{}") @map("metadata_json")
+  acknowledgedAt DateTime?                   @map("acknowledged_at")
+  createdAt      DateTime                    @default(now()) @map("created_at")
+
+  @@index([targetType, targetId])
+  @@index([createdAt])
+  @@map("lecipm_operational_trust_alerts")
 }
 
 // -----------------------------------------------------------------------------

@@ -1,12 +1,15 @@
 import { authenticateBrokerDealRoute } from "@/lib/deals/broker-draft-auth";
 import { requireClosingPipelineV1 } from "@/lib/deals/pipeline-feature-guard";
-import { prisma } from "@repo/db";
 import { canMutateExecution } from "@/lib/deals/execution-access";
-import { confirmDealClosing } from "@/modules/closing/closing.service";
+import { confirmClosingExecution } from "@/modules/closing/closing-room.service";
 
 export const dynamic = "force-dynamic";
 
-export async function POST(_request: Request, context: { params: Promise<{ id: string }> }) {
+/**
+ * Broker-path closing confirm — aligns with `POST /api/closing/deals/[dealId]/confirm`.
+ * Body: { closingDate?: ISO date string, notes?: string, action_pipeline_id?: string }
+ */
+export async function POST(request: Request, context: { params: Promise<{ id: string }> }) {
   const gated = requireClosingPipelineV1();
   if (gated) return gated;
   const { id: dealId } = await context.params;
@@ -17,22 +20,35 @@ export async function POST(_request: Request, context: { params: Promise<{ id: s
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const deal = await prisma.deal.findUnique({
-    where: { id: dealId },
-    select: { lecipmExecutionPipelineState: true, brokerId: true },
-  });
-  if (!deal) return Response.json({ error: "Not found" }, { status: 404 });
+  let body: Record<string, unknown> = {};
+  try {
+    body = (await request.json()) as Record<string, unknown>;
+  } catch {
+    body = {};
+  }
 
-  const r = await confirmDealClosing({
-    dealId,
-    actorUserId: auth.userId,
-    ctx: {
-      deal: { id: dealId, brokerId: deal.brokerId, lecipmExecutionPipelineState: deal.lecipmExecutionPipelineState },
-      userId: auth.userId,
-      role: auth.role,
-    },
-  });
+  const closingDateRaw =
+    typeof body.closingDate === "string" ? body.closingDate : new Date().toISOString().slice(0, 10);
+  const closingDate = new Date(closingDateRaw);
+  if (Number.isNaN(closingDate.getTime())) {
+    return Response.json({ error: "Invalid closingDate" }, { status: 400 });
+  }
 
-  if (!r.ok) return Response.json({ error: r.message }, { status: 400 });
-  return Response.json({ ok: true });
+  const actionPipelineId =
+    typeof body.action_pipeline_id === "string" && body.action_pipeline_id.trim()
+      ? body.action_pipeline_id.trim()
+      : null;
+
+  try {
+    const r = await confirmClosingExecution({
+      dealId,
+      actorUserId: auth.userId,
+      closingDate,
+      notes: typeof body.notes === "string" ? body.notes : null,
+      actionPipelineId,
+    });
+    return Response.json({ ok: true, assetId: r.assetId });
+  } catch (e) {
+    return Response.json({ error: e instanceof Error ? e.message : "Failed" }, { status: 400 });
+  }
 }

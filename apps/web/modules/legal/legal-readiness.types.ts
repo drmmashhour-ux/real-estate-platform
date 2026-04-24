@@ -30,6 +30,7 @@ export type LegalGateAction =
   | "accept_offer"
   | "activate_host_listing"
   | "unlock_contact"
+  | "negotiate_offer"
   | "become_broker";
 
 /** Inputs to {@link evaluateLegalGate} — must be constructible without DB inside the gate engine. */

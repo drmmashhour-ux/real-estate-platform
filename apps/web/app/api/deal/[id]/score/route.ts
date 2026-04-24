@@ -5,6 +5,7 @@ import { getGuestId } from "@/lib/auth/session";
 import { findDealForUser } from "@/lib/deals/deal-party-access";
 import { prisma } from "@repo/db";
 import { computeDealIntelligenceSnapshot } from "@/modules/deal/deal.service";
+import { getLatestCloseProbability } from "@/modules/deal/close-probability.service";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +32,10 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ id
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const snapshot = await computeDealIntelligenceSnapshot(id);
+  const [snapshot, closeProbabilityAi] = await Promise.all([
+    computeDealIntelligenceSnapshot(id),
+    getLatestCloseProbability(id),
+  ]);
   if (!snapshot) {
     return NextResponse.json({ error: "Unable to compute" }, { status: 500 });
   }
@@ -40,5 +44,15 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ id
     ok: true,
     advisory: ADVISORY,
     snapshot,
+    closeProbabilityAi: closeProbabilityAi
+      ? {
+          id: closeProbabilityAi.id,
+          probability: closeProbabilityAi.probability,
+          category: closeProbabilityAi.category,
+          drivers: closeProbabilityAi.drivers,
+          risks: closeProbabilityAi.risks,
+          createdAt: closeProbabilityAi.createdAt.toISOString(),
+        }
+      : null,
   });
 }

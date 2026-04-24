@@ -93,7 +93,7 @@ export default async function BrokerAiFollowUpPage() {
               Leads
             </Link>{" "}
             and call{" "}
-            <code className="rounded bg-slate-800 px-1 text-xs">GET /api/leads/[id]/timeline</code> for events +
+            <code className="rounded bg-slate-800 px-1 text-xs">GET /api/lecipm/leads/[id]/timeline</code> for events +
             messages.
           </p>
           <p className="mt-2">

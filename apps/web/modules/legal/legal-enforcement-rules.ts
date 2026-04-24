@@ -51,7 +51,13 @@ export const LEGAL_ENFORCEMENT_RULES: Record<LegalGateAction, LegalGateRequireme
       workflowType: "privacy_consent",
       requirementId: "privacy_policy",
       mode: "soft",
-      actors: ["host", "seller"],
+      actors: ["host", "seller", "broker"],
+    },
+    {
+      workflowType: "broker_mandate",
+      requirementId: "license_verification",
+      mode: "hard",
+      actors: ["broker"],
     },
   ],
 
@@ -164,6 +170,27 @@ export const LEGAL_ENFORCEMENT_RULES: Record<LegalGateAction, LegalGateRequireme
       mode: "soft",
       actors: ["broker"],
     },
+    {
+      workflowType: "broker_mandate",
+      requirementId: "license_verification",
+      mode: "hard",
+      actors: ["broker"],
+    },
+  ],
+
+  negotiate_offer: [
+    {
+      workflowType: "broker_mandate",
+      requirementId: "license_verification",
+      mode: "hard",
+      actors: ["broker"],
+    },
+    {
+      workflowType: "privacy_consent",
+      requirementId: "privacy_policy",
+      mode: "soft",
+      actors: ["broker"],
+    },
   ],
 
   unlock_contact: [
@@ -218,5 +245,6 @@ export const ALL_LEGAL_GATE_ACTIONS: readonly LegalGateAction[] = [
   "accept_offer",
   "activate_host_listing",
   "unlock_contact",
+  "negotiate_offer",
   "become_broker",
 ];

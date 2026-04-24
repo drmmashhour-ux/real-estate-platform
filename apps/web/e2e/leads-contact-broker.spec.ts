@@ -6,11 +6,11 @@ import { prisma } from "../lib/db";
 
 const SEED_PROJECT_ID = "seed-project-001";
 
-test("POST /api/leads (project) creates lead and CONTACT_BROKER launch event", async ({ request }) => {
+test("POST /api/lecipm/leads (project) creates lead and CONTACT_BROKER launch event", async ({ request }) => {
   const base = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3001";
   const leadEmail = `e2e-contact-${Date.now()}@example.com`;
 
-  const res = await request.post(`${base}/api/leads`, {
+  const res = await request.post(`${base}/api/lecipm/leads`, {
     data: {
       projectId: SEED_PROJECT_ID,
       name: "Contact E2E",

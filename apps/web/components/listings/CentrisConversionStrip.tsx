@@ -52,7 +52,7 @@ export function CentrisConversionStrip({ listingId }: Props) {
     }
     setBusy(true);
     try {
-      const r = await fetch("/api/leads/centris/capture", {
+      const r = await fetch("/api/lecipm/leads/centris/capture", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "same-origin",

@@ -6,7 +6,7 @@ type Props = {
   leadId: string;
   className?: string;
   label?: string;
-  /** When set, POST /api/leads/unlock (requires FEATURE_LEAD_MONETIZATION_V1). Otherwise legacy unlock-checkout. */
+  /** When set, POST /api/lecipm/leads/unlock (requires FEATURE_LEAD_MONETIZATION_V1). Otherwise legacy unlock-checkout. */
   useMonetizationUnlockApi?: boolean;
 };
 
@@ -25,7 +25,7 @@ export function LeadUnlockButton({
     setErr(null);
     setLoading(true);
     try {
-      const url = useMonetizationUnlockApi ? "/api/leads/unlock" : `/api/leads/${encodeURIComponent(leadId)}/unlock-checkout`;
+      const url = useMonetizationUnlockApi ? "/api/lecipm/leads/unlock" : `/api/lecipm/leads/${encodeURIComponent(leadId)}/unlock-checkout`;
       const init: RequestInit =
         useMonetizationUnlockApi ?
           {

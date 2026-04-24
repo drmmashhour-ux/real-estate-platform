@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { loadDisputePredictionObservabilityForCommandCenter } from "@/modules/dispute-prediction/dispute-prediction-dashboard.service";
 import { loadDisputeObservabilityMetrics } from "@/modules/disputes/dispute.service";
 import { buildSelfExpansionDashboardHints } from "@/modules/self-expansion/self-expansion-integration.service";
 import { buildFullAutopilotControlCenterPayload } from "@/modules/autopilot-governance/full-autopilot-control-center.service";
@@ -472,6 +473,7 @@ export async function buildAutonomyCommandCenterPayload() {
       learningReset: "POST /api/autonomy-command-center/learning-reset (audit only)",
     },
     disputeObservability,
+    disputePredictionObservability,
   };
 }
 

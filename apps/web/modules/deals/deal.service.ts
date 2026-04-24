@@ -3,6 +3,7 @@ import { logInfo } from "@/lib/logger";
 import { getTransactionById } from "@/modules/transactions/transaction.service";
 import { appendDealAuditEvent } from "./deal-audit.service";
 import { allocateNextDealSequence, formatDealNumber } from "./deal-number.service";
+import { BrokerActionGuard } from "@/lib/compliance/broker-action-guard";
 
 const TAG = "[deal.service]";
 
@@ -16,6 +17,15 @@ export async function createStandaloneDeal(input: {
   priority?: string | null;
   actorUserId: string | null;
 }) {
+  // PHASE 2 & 4: BROKERAGE ACTION GUARD
+  const guard = await BrokerActionGuard.validateBrokerageAction({
+    userId: input.brokerId,
+    action: "CREATE_LISTING", // Mapped to creation intent
+  });
+  if (!guard.allowed) {
+    throw new Error(guard.reason || "Unauthorized brokerage action.");
+  }
+
   const year = new Date().getFullYear();
 
   const deal = await prisma.$transaction(async (tx) => {
@@ -69,6 +79,17 @@ export async function createDealFromTransaction(input: {
   title?: string;
   dealType?: string;
 }) {
+  // PHASE 2 & 4: BROKERAGE ACTION GUARD
+  const guard = await BrokerActionGuard.validateBrokerageAction({
+    userId: input.brokerId,
+    action: "CREATE_LISTING",
+    entityId: input.transactionId,
+    entityType: "Deal" as any, // Pipeline deals are linked to transactions
+  });
+  if (!guard.allowed) {
+    throw new Error(guard.reason || "Unauthorized brokerage action.");
+  }
+
   const tx = await getTransactionById(input.transactionId);
   if (!tx) throw new Error("Transaction not found");
   if (tx.brokerId !== input.brokerId) throw new Error("Broker mismatch");

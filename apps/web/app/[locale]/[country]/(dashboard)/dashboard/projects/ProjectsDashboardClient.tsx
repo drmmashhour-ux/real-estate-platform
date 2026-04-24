@@ -44,7 +44,7 @@ export function ProjectsDashboardClient({ theme, isAdmin }: Props) {
     setLoading(true);
     Promise.all([
       fetch("/api/projects", { credentials: "same-origin" }).then((r) => r.json()),
-      fetch("/api/leads", { credentials: "same-origin" }).then((r) => r.json()),
+      fetch("/api/lecipm/leads", { credentials: "same-origin" }).then((r) => r.json()),
       fetch("/api/projects/favorites", { credentials: "same-origin" }).then((r) => r.json()),
       fetch("/api/projects/alerts", { credentials: "same-origin" }).then((r) => r.json()),
       fetch("/api/projects/reservations", { credentials: "same-origin" }).then((r) => r.json()),

@@ -53,4 +53,22 @@ describe("dealAssistantEngine", () => {
     expect(r.confidence).toBeGreaterThanOrEqual(0.35);
     expect(r.confidence).toBeLessThanOrEqual(0.95);
   });
+
+  it("applies bounded marketplace memory hints without replacing message signals", () => {
+    const base = analyzeConversation([
+      { senderType: "user", messageText: "Just browsing for now", createdAt: new Date(Date.now() - 86400000 * 3) },
+    ]);
+    expect(base.urgencyLevel).toBe("low");
+    const bumped = analyzeConversation(
+      [
+        {
+          senderType: "user",
+          messageText: "Just browsing for now",
+          createdAt: new Date(Date.now() - 86400000 * 3),
+        },
+      ],
+      { marketplaceMemoryHints: { urgencyScore: 70, activeVsPassive: "active" } },
+    );
+    expect(bumped.urgencyLevel).toBe("medium");
+  });
 });

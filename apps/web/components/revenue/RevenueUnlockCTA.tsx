@@ -16,7 +16,7 @@ type Props = {
 };
 
 /**
- * Reuses existing Stripe flows: lead unlock → POST `/api/leads/[id]/unlock-checkout`;
+ * Reuses existing Stripe flows: lead unlock → POST `/api/lecipm/leads/[id]/unlock-checkout`;
  * premium insight → workspace subscription checkout when configured.
  */
 export function RevenueUnlockCTA({
@@ -52,7 +52,7 @@ export function RevenueUnlockCTA({
       await logCtaIntent();
       if (featureType === "lead_unlock" || featureType === "contact_reveal") {
         if (!leadId?.trim()) return;
-        const res = await fetch(`/api/leads/${encodeURIComponent(leadId)}/unlock-checkout`, {
+        const res = await fetch(`/api/lecipm/leads/${encodeURIComponent(leadId)}/unlock-checkout`, {
           method: "POST",
           credentials: "same-origin",
         });

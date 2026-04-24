@@ -24,7 +24,7 @@
 ## APIs
 
 - `GET /api/broker/crm/lifecycle` — hot leads + actions, active deals + actions, retention queue, aggregates
-- `PATCH /api/leads` — authz fix; CRM note; **closed** → retention schedule
+- `PATCH /api/lecipm/leads` — authz fix; CRM note; **closed** → retention schedule
 - `PATCH /api/deals/[id]` — `crmStage` + auto-hint from `status` + `CrmInteraction`
 
 ## Compliance

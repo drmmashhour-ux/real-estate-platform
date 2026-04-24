@@ -15,6 +15,7 @@ import { MarketingExpansionPanel } from "@/components/autonomy/MarketingExpansio
 import { RevenueGrowthPanel } from "@/components/autonomy/RevenueGrowthPanel";
 import { RiskCompliancePanel } from "@/components/autonomy/RiskCompliancePanel";
 import { DisputeObservabilityPanel } from "@/components/autonomy/DisputeObservabilityPanel";
+import { DisputePredictionObservabilityPanel } from "@/components/autonomy/DisputePredictionObservabilityPanel";
 import { SystemOverviewStrip } from "@/components/autonomy/SystemOverviewStrip";
 import type { DisputeObservabilityMetrics } from "@/modules/disputes/dispute.types";
 import { useRouter } from "next/navigation";
@@ -94,6 +95,18 @@ type SummaryPayload = {
   approvalQueue: ApprovalQueueRow[];
   alertsAndAnomalies: Array<{ kind: string; severity: string; title: string; detail: string }>;
   disputeObservability?: DisputeObservabilityMetrics | null;
+  disputePredictionObservability?: {
+    riskBandTrend30d: Array<{ band: string; count: number }>;
+    highRiskZones: Array<{
+      entityType: string;
+      entityId: string;
+      disputeRiskScore: number;
+      predictedCategory: string;
+      createdAt: string;
+    }>;
+    ceoRiskAdjustmentsPending: Array<{ id: string; title: string; affectedDomain: string; urgency: string }>;
+    note: string;
+  } | null;
   performanceByDomain: Array<{
     uiDomainId: string;
     title: string;
@@ -244,6 +257,8 @@ export default function AutonomyCommandCenterPage() {
         : null}
 
         <DisputeObservabilityPanel metrics={data?.disputeObservability} />
+
+        <DisputePredictionObservabilityPanel data={data?.disputePredictionObservability ?? null} />
 
         <div className="grid gap-8 xl:grid-cols-2">
           {data ?

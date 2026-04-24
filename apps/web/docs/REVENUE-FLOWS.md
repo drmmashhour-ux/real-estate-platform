@@ -10,7 +10,7 @@ Client redirect to `success_url` is **not** proof of payment.
 | `POST /api/stripe/checkout` | Create Checkout Session (`paymentType`, amounts server-side for BNHub bookings). |
 | `POST /api/stripe/webhook` | Fulfillment: `checkout.session.completed`, subscriptions, Connect, refunds, etc. |
 | `POST /api/fsbo/checkout` | FSBO publish fee — wraps FSBO rules then Stripe. |
-| `POST /api/leads/checkout` | Lead unlock / lead billing (see body + `lib`). |
+| `POST /api/lecipm/leads/checkout` | Lead unlock / lead billing (see body + `lib`). |
 | `POST /api/lead-marketplace/checkout` | Lead marketplace purchase. |
 | `POST /api/billing/checkout` | Workspace / billing product checkout. |
 | `POST /api/billing/webhook` | Billing-specific webhook (if deployed separately from main Stripe webhook). |

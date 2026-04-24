@@ -259,7 +259,7 @@ export default function ProjectDetailPage() {
   const submitLead = async () => {
     setSubmitting(true);
     try {
-      const res = await fetch("/api/leads", {
+      const res = await fetch("/api/lecipm/leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...form, projectId: id }),

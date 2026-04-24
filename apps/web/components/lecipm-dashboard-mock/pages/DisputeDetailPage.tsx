@@ -6,6 +6,8 @@ import { Link } from "@/i18n/navigation";
 
 import { MockBadge, MockButton, MockCard } from "@/components/lecipm-dashboard-mock/mock-ui";
 
+import { OperationalTrustEntityPanel } from "@/components/trust-score/OperationalTrustEntityPanel";
+
 import type { UnifiedTimelineRow } from "@/modules/disputes/dispute.types";
 
 type DetailPayload = {
@@ -50,6 +52,13 @@ function lifecycleIndex(s: string): number {
   if (s === "REJECTED") return 3;
   const i = LIFECYCLE.indexOf(s as (typeof LIFECYCLE)[number]);
   return i >= 0 ? i : 0;
+}
+
+function trustTargetForDisputeEntity(relatedEntityType: string): "LISTING" | "BOOKING" | "DEAL" | null {
+  if (relatedEntityType === "LISTING" || relatedEntityType === "BOOKING" || relatedEntityType === "DEAL") {
+    return relatedEntityType;
+  }
+  return null;
 }
 
 export function DisputeDetailPage(props: { disputeId: string }) {
@@ -151,6 +160,23 @@ export function DisputeDetailPage(props: { disputeId: string }) {
           <MockBadge tone="muted">{d.category}</MockBadge>
         </div>
       </div>
+
+      {(() => {
+        const trustT = trustTargetForDisputeEntity(d.relatedEntityType);
+        return trustT ?
+            <MockCard>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-brand-soft-gold">
+                Operational trust (related entity)
+              </p>
+              <p className="mt-2 text-xs text-ds-text-secondary">
+                Advisory composite — pairs with dispute prediction and prevention logs; not a fault finding.
+              </p>
+              <div className="mt-4">
+                <OperationalTrustEntityPanel targetType={trustT} targetId={d.relatedEntityId} />
+              </div>
+            </MockCard>
+          : null;
+      })()}
 
       <div className="grid gap-4 md:grid-cols-2">
         <MockCard>

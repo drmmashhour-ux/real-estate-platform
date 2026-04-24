@@ -12,7 +12,7 @@ type Params = { params: Promise<{ id: string }> };
 
 /**
  * POST — start Stripe checkout to unlock platform contact for the inquiry linked to this CRM lead.
- * Reuses `lead_unlock` (same as `/api/leads/[marketplaceLeadId]/unlock-checkout`).
+ * Reuses `lead_unlock` (same as `/api/lecipm/leads/[marketplaceLeadId]/unlock-checkout`).
  */
 export async function POST(_request: Request, context: Params) {
   const auth = await requireBrokerCrmApiUser();

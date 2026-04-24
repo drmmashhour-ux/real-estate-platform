@@ -13,6 +13,8 @@ const bodySchema = z.object({
     "execute_deal",
     "distribute_profits",
     "audit_trail",
+    "verify_compliance",
+    "record_view",
     "run_full_loop_mock",
   ]),
   params: z.any(),
@@ -62,6 +64,18 @@ export async function POST(req: Request) {
         break;
       case "audit_trail":
         result = await DealInvestorLoopService.getAuditTrail(params.dealId);
+        break;
+      case "verify_compliance":
+        result = await DealInvestorLoopService.verifyCompliance(params.dealId);
+        break;
+      case "record_view":
+        result = await logActivity({
+          userId: params.userId,
+          action: "investor_viewed",
+          entityType: "DealInvestmentPacket",
+          entityId: params.packetId,
+          metadata: { dealId: params.dealId },
+        });
         break;
       case "run_full_loop_mock":
         result = await DealInvestorLoopService.runFullLoopMock(params);

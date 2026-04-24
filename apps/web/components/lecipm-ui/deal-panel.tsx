@@ -19,7 +19,7 @@ export function DealPanel({
     <Card>
       <div className="mb-2 text-xl font-semibold text-white">{title}</div>
       <div className="text-neutral-400">
-        Score: <span className="font-semibold text-gold">{score}</span>
+        Score: <span className="font-semibold text-[#D4AF37]">{score}</span>
       </div>
       <div className="mt-1 text-neutral-400">
         Close probability:{" "}

@@ -7,7 +7,7 @@ import { engineFlags } from "@/config/feature-flags";
 export const dynamic = "force-dynamic";
 
 /**
- * GET /api/growth/host-acquisition/leads — pipeline list (admin). CRM `Lead` remains under GET /api/leads.
+ * GET /api/growth/host-acquisition/leads — pipeline list (admin). CRM `Lead` remains under GET /api/lecipm/leads.
  */
 export async function GET() {
   if (!engineFlags.hostAcquisitionV1) {

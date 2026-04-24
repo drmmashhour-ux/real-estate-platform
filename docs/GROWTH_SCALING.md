@@ -46,7 +46,7 @@ Main content gets `pb-28` in root layout to clear the sticky bar.
 
 `sendGrowthLeadFollowUpEmail` runs after lead creation on:
 
-- `POST /api/leads` (DB paths)
+- `POST /api/lecipm/leads` (DB paths)
 - `POST /api/mortgage/lead`
 - `POST /api/contact`
 

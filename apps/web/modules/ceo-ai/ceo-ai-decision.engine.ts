@@ -5,7 +5,9 @@ import { proposeOutreachDecisions } from "@/modules/ceo-ai/ceo-ai-outreach.servi
 import { proposeRetentionDecisions } from "@/modules/ceo-ai/ceo-ai-retention.service";
 import { buildCeoContextFingerprint } from "./ceo-memory-context.service";
 import { mapPayloadKindToDecisionType } from "./ceo-memory.service";
+import { evaluateGoalAlignment } from "./ceo-long-term-goals.service";
 import { prisma } from "@/lib/db";
+import { aiCeoLog } from "../ai-ceo/ai-ceo-log";
 import type {
   CeoDecisionProposal,
   CeoMarketSignals,
@@ -119,7 +121,9 @@ export async function generateCeoDecisions(
     where: { contextFingerprint: fingerprint }
   });
   
-  const patternScores = new Map(patterns.map(p => [p.patternKey, p.score]));
+  const patternData = new Map(patterns.map(p => [p.patternKey, { score: p.score, timesUsed: p.timesUsed }]));
+  const alignments = await evaluateGoalAlignment(combined);
+  const alignmentMap = new Map(alignments.map(a => [a.title, a]));
 
   const seen = new Set<string>();
   const normalized: CeoDecisionProposal[] = [];
@@ -129,17 +133,39 @@ export async function generateCeoDecisions(
     // Memory-based confidence adjustment
     const decisionType = mapPayloadKindToDecisionType(p.payload.kind);
     const patternKey = `${p.domain}:${fingerprint}:${decisionType}`;
-    const historicalScore = patternScores.get(patternKey) || 0;
+    const historical = patternData.get(patternKey);
+    const historicalScore = historical?.score || 0;
+    const timesUsed = historical?.timesUsed || 0;
     
     let confidence = p.confidence || 0.5;
     let memorySignal = "neutral";
     
-    if (historicalScore > 5) {
-      confidence = Math.min(1, confidence + 0.1);
-      memorySignal = "positive history boost";
-    } else if (historicalScore < -5) {
-      confidence = Math.max(0.1, confidence - 0.15);
-      memorySignal = "negative history penalty";
+    // Safety Bound: Only apply memory signals if we have a significant sample
+    if (timesUsed >= 2) {
+      if (historicalScore > 5) {
+        confidence = Math.min(1, confidence + 0.1);
+        memorySignal = "positive history boost";
+      } else if (historicalScore < -5) {
+        confidence = Math.max(0.1, confidence - 0.15);
+        memorySignal = "negative history penalty";
+      }
+    } else if (timesUsed > 0) {
+      memorySignal = "low sample - skipping adjustment";
+    }
+
+    // Goal alignment boost
+    const align = alignmentMap.get(p.title);
+    if (align && align.alignmentScore > 0) {
+      confidence = Math.min(1, confidence + align.alignmentScore);
+    }
+
+    if (memorySignal !== "neutral") {
+      aiCeoLog("info", "memory_signal_applied", { 
+        title: p.title, 
+        patternKey, 
+        score: historicalScore,
+        signal: memorySignal 
+      });
     }
 
     const adjusted: CeoDecisionProposal = { 
@@ -147,7 +173,7 @@ export async function generateCeoDecisions(
       requiresApproval: ra,
       confidence,
       // Add memory details to rationale
-      rationale: `${p.rationale} (Memory: ${memorySignal}, score: ${historicalScore.toFixed(1)})`
+      rationale: `${p.rationale} (Memory: ${memorySignal}, score: ${historicalScore.toFixed(1)}${align?.goalNames.length ? `, Goals: ${align.goalNames.join(', ')}` : ''})`
     };
 
     const k = dedupeKey(adjusted);

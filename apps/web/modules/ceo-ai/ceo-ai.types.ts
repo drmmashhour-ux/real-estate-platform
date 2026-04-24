@@ -1,6 +1,6 @@
 /** Supervised AI CEO layer — shared types */
 
-export const CEO_DOMAINS = ["GROWTH", "PRICING", "OUTREACH", "RETENTION", "OPERATIONS"] as const;
+export const CEO_DOMAINS = ["GROWTH", "PRICING", "OUTREACH", "RETENTION", "OPERATIONS", "DEALS"] as const;
 export type CeoDomain = (typeof CEO_DOMAINS)[number];
 
 export const CEO_DECISION_STATUSES = [

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { CloseProbabilityGauge } from "@/components/deals/CloseProbabilityGauge";
 
 type Snapshot = {
   dealScore: number;
@@ -18,10 +19,21 @@ type Snapshot = {
   };
 };
 
+type CloseProbabilityAi = {
+  id: string;
+  probability: number;
+  category: string;
+  drivers: string[];
+  risks: string[];
+  createdAt: string;
+};
+
 export function DealIntelligencePanel({ dealId }: { dealId: string }) {
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
+  const [closeAi, setCloseAi] = useState<CloseProbabilityAi | null>(null);
   const [advisory, setAdvisory] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [aiBusy, setAiBusy] = useState(false);
   const viewLogged = useRef(false);
 
   useEffect(() => {
@@ -46,16 +58,48 @@ export function DealIntelligencePanel({ dealId }: { dealId: string }) {
       .then(async (r) => {
         const data = await r.json();
         if (!r.ok) throw new Error(data?.error ?? "Unable to load");
-        return data as { snapshot: Snapshot; advisory?: string };
+        return data as { snapshot: Snapshot; advisory?: string; closeProbabilityAi?: CloseProbabilityAi | null };
       })
       .then((data) => {
         setSnapshot(data.snapshot);
+        setCloseAi(data.closeProbabilityAi ?? null);
         setAdvisory(data.advisory ?? null);
       })
       .catch(() => {
         setError("Could not load deal intelligence.");
       });
   }, [dealId]);
+
+  async function runCloseProbabilityAi() {
+    setAiBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/deals/${dealId}/close-probability`, {
+        method: "POST",
+        credentials: "same-origin",
+      });
+      const data = (await res.json()) as {
+        ok?: boolean;
+        prediction?: CloseProbabilityAi;
+        error?: string;
+      };
+      if (!res.ok || !data.ok || !data.prediction) {
+        throw new Error(data.error ?? "Close probability run failed");
+      }
+      setCloseAi({
+        id: data.prediction.id,
+        probability: data.prediction.probability,
+        category: data.prediction.category,
+        drivers: data.prediction.drivers ?? [],
+        risks: data.prediction.risks ?? [],
+        createdAt: data.prediction.createdAt,
+      });
+    } catch {
+      setError("Could not refresh close probability AI.");
+    } finally {
+      setAiBusy(false);
+    }
+  }
 
   if (error) {
     return (
@@ -86,6 +130,35 @@ export function DealIntelligencePanel({ dealId }: { dealId: string }) {
         Deal intelligence
       </h3>
       {advisory ? <p className="mt-2 text-[11px] leading-relaxed text-ds-text-secondary">{advisory}</p> : null}
+
+      <div className="mt-5 space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-ds-text-secondary">
+            Close probability AI
+          </p>
+          <button
+            type="button"
+            disabled={aiBusy}
+            onClick={() => void runCloseProbabilityAi()}
+            className="rounded-lg border border-ds-border bg-white/5 px-3 py-1.5 text-[11px] font-medium text-ds-text hover:bg-white/10 disabled:opacity-50"
+          >
+            {aiBusy ? "Computing…" : closeAi ? "Refresh estimate" : "Run estimate"}
+          </button>
+        </div>
+        {closeAi ? (
+          <CloseProbabilityGauge
+            probability={closeAi.probability}
+            category={closeAi.category}
+            drivers={closeAi.drivers}
+            risks={closeAi.risks}
+          />
+        ) : (
+          <p className="text-xs text-ds-text-secondary">
+            No AI snapshot yet — run an estimate to blend financing, inspection, pricing, negotiation, seller signals,
+            documents, and timeline.
+          </p>
+        )}
+      </div>
 
       <div className="mt-4 grid gap-4 sm:grid-cols-3">
         <div>

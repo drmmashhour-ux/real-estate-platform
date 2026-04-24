@@ -51,7 +51,7 @@ Scripts live in `apps/web/modules/brokers/broker-outreach.service.ts` (`getBroke
 
 - **Manual:** PATCH `mark_purchase` via API or **Mark purchase** in UI.
 - **Helpers:** `markBrokerConverted`, `tryMarkProspectConvertedByBrokerEmail` in `broker-conversion.service.ts` (additive; call from future hooks — **does not** change Stripe webhooks in V1).
-- **Existing:** Broker **unlock checkout** still records `recordBrokerConversionAttempt` when flag is on (`/api/leads/[id]/unlock-checkout`) — unchanged payment behavior.
+- **Existing:** Broker **unlock checkout** still records `recordBrokerConversionAttempt` when flag is on (`/api/lecipm/leads/[id]/unlock-checkout`) — unchanged payment behavior.
 
 ## Monitoring
 

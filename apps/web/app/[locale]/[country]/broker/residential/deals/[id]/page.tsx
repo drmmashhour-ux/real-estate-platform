@@ -5,6 +5,7 @@ import { brokerResidentialFlags } from "@/config/feature-flags";
 import { getGuestId } from "@/lib/auth/session";
 import { requireBrokerDealAccess } from "@/lib/broker/residential-access";
 import { prisma } from "@repo/db";
+import { DealOperationalTrustPanel } from "@/components/trust-score/DealOperationalTrustPanel";
 import { DealIntelligencePanel } from "@/components/deals/DealIntelligencePanel";
 import { BrokerDealDraftingWorkspace } from "@/components/broker-residential/deals/BrokerDealDraftingWorkspace";
 import { ResidentialDealWorkspaceClient } from "@/components/broker-residential/deals/ResidentialDealWorkspaceClient";
@@ -80,6 +81,8 @@ export default async function BrokerResidentialDealDetailPage({
       </div>
 
       <DealIntelligencePanel dealId={id} />
+
+      <DealOperationalTrustPanel dealId={id} />
 
       <BrokerDealDraftingWorkspace
         dealId={id}

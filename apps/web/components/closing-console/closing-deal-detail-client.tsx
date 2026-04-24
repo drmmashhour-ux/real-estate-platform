@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { CloseProbabilityGauge } from "@/components/deals/CloseProbabilityGauge";
 
 type ClosingDetail = {
   deal: {
@@ -48,6 +49,14 @@ type ClosingDetail = {
     blockers: string[];
     nextSteps: string[];
   };
+  latestCloseProbability: {
+    id: string;
+    probability: number;
+    category: string;
+    drivers: string[];
+    risks: string[];
+    createdAt: string;
+  } | null;
 };
 
 export function ClosingDealDetailClient({ dealId }: { dealId: string }) {
@@ -171,6 +180,24 @@ export function ClosingDealDetailClient({ dealId }: { dealId: string }) {
       await load();
     } catch (e) {
       setMsg(e instanceof Error ? e.message : "Update failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function refreshCloseProbability() {
+    setBusy(true);
+    setMsg(null);
+    try {
+      const res = await fetch(`/api/deals/${dealId}/close-probability`, {
+        method: "POST",
+        credentials: "include",
+      });
+      const j = (await res.json()) as { ok?: boolean; error?: string };
+      if (!res.ok || !j.ok) throw new Error(j.error ?? "Close probability failed");
+      await load();
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : "Close probability failed");
     } finally {
       setBusy(false);
     }
@@ -353,7 +380,41 @@ export function ClosingDealDetailClient({ dealId }: { dealId: string }) {
         </section>
       : null}
 
-      {/* D) Signatures */}
+      {/* D) Close probability — before signatures */}
+      {detail ?
+        <section className="rounded-lg border border-border p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-lg font-semibold">Close probability (AI)</h2>
+            <button
+              type="button"
+              disabled={busy}
+              className="rounded-md border border-border px-3 py-1.5 text-xs disabled:opacity-50"
+              onClick={() => void refreshCloseProbability()}
+            >
+              Refresh estimate
+            </button>
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Shown before signatures by design — assistive only; not a regulatory or legal prediction.
+          </p>
+          {detail.latestCloseProbability ?
+            <div className="mt-4">
+              <CloseProbabilityGauge
+                probability={detail.latestCloseProbability.probability}
+                category={detail.latestCloseProbability.category}
+                drivers={detail.latestCloseProbability.drivers}
+                risks={detail.latestCloseProbability.risks}
+                emphasizeLow={detail.latestCloseProbability.category === "LOW"}
+              />
+              <p className="mt-3 text-center text-sm font-medium text-foreground">
+                Estimated close probability: {Math.round(detail.latestCloseProbability.probability)}%
+              </p>
+            </div>
+          : <p className="mt-3 text-sm text-muted-foreground">No estimate yet — use Refresh to compute from current deal signals.</p>}
+        </section>
+      : null}
+
+      {/* E) Signatures */}
       {detail ?
         <section className="rounded-lg border border-border p-4">
           <h2 className="text-lg font-semibold">Signatures</h2>
@@ -389,7 +450,7 @@ export function ClosingDealDetailClient({ dealId }: { dealId: string }) {
         </section>
       : null}
 
-      {/* E) Readiness */}
+      {/* F) Readiness */}
       {detail ?
         <section className="rounded-lg border border-border p-4">
           <h2 className="text-lg font-semibold">Readiness</h2>
@@ -419,7 +480,7 @@ export function ClosingDealDetailClient({ dealId }: { dealId: string }) {
         </section>
       : null}
 
-      {/* F) Confirm repeated for visibility */}
+      {/* G) Confirm repeated for visibility */}
       {detail?.readiness ?
         <section className="rounded-lg border border-dashed border-border p-4">
           <h2 className="text-lg font-semibold">Finalize</h2>

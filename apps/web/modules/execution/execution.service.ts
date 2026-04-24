@@ -2,7 +2,9 @@ import type { LecipmExecutionPipelineState } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { asInputJsonValue } from "@/lib/prisma/as-input-json";
 import { assertTrustAndExportGatesForDeal } from "@/lib/compliance/transaction-release-guards";
+import { assertAutopilotOutboundAllowed } from "@/lib/signature-control/autopilot-guard";
 import { assertHasBrokerApproval, assertTransitionAllowed, type ExecutionGuardContext } from "./execution-guard.service";
+import { resolveBrokerApprovalUiState } from "@/modules/approval/broker-approval-workflow.service";
 import { normalizeState } from "./execution-state-machine";
 import type { ExecutionPipelineState, ExecutionTransitionReason } from "./execution.types";
 
@@ -42,6 +44,7 @@ export async function getExecutionStatus(dealId: string) {
     orderBy: { createdAt: "desc" },
     select: { id: true, status: true, provider: true },
   });
+  const brokerUi = await resolveBrokerApprovalUiState(dealId);
   return {
     pipelineState: normalizeState(deal.lecipmExecutionPipelineState),
     dealStatus: deal.status,
@@ -49,6 +52,9 @@ export async function getExecutionStatus(dealId: string) {
     latestApprovalAt: latestApproval?.approvedAt ?? null,
     openConditionsCount: openConditions,
     latestSignatureSession: sig,
+    brokerApprovalUiState: brokerUi.uiState,
+    brokerApprovalLabel: brokerUi.label,
+    brokerApprovalId: brokerUi.brokerApprovalId,
     disclaimer:
       "LECIPM pipeline coordinates tasks — it does not replace OACIQ official publisher systems or broker-mandated execution.",
   };
@@ -60,12 +66,26 @@ export async function transitionPipelineState(input: {
   actorUserId: string | null;
   reason: ExecutionTransitionReason;
   guard?: ExecutionGuardContext;
+  /** When `LECIPM_AUTOPILOT_SIGNATURE_GATE` is on, closing the pipeline requires an EXECUTED action record. */
+  actionPipelineId?: string | null;
 }): Promise<{ ok: true; state: LecipmExecutionPipelineState } | { ok: false; message: string }> {
   const deal = await prisma.deal.findUnique({
     where: { id: input.dealId },
     select: { lecipmExecutionPipelineState: true },
   });
   if (!deal) return { ok: false, message: "Deal not found" };
+
+  if (input.to === "closed") {
+    try {
+      await assertAutopilotOutboundAllowed({
+        operation: "execution_pipeline:close",
+        actionPipelineId: input.actionPipelineId,
+      });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Signature gate blocked pipeline close.";
+      return { ok: false, message: msg };
+    }
+  }
 
   const check = assertTransitionAllowed(deal.lecipmExecutionPipelineState, input.to);
   if (!check.ok) return check;

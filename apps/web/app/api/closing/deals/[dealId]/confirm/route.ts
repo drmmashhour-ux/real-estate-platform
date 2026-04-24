@@ -34,12 +34,18 @@ export async function POST(request: NextRequest, context: { params: Promise<{ de
     return NextResponse.json({ error: "Invalid closingDate" }, { status: 400 });
   }
 
+  const actionPipelineId =
+    typeof body.action_pipeline_id === "string" && body.action_pipeline_id.trim()
+      ? body.action_pipeline_id.trim()
+      : null;
+
   try {
     const r = await confirmClosingExecution({
       dealId,
       actorUserId: userId,
       closingDate,
       notes: typeof body.notes === "string" ? body.notes : null,
+      actionPipelineId,
     });
     return NextResponse.json({ ok: true, assetId: r.assetId });
   } catch (e) {

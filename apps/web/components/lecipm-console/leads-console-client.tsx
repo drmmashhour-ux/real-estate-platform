@@ -22,7 +22,7 @@ export function LeadsConsoleClient() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/leads", { credentials: "same-origin" });
+      const res = await fetch("/api/lecipm/leads", { credentials: "same-origin" });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error(typeof body?.error === "string" ? body.error : `HTTP ${res.status}`);

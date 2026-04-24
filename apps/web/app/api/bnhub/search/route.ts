@@ -1,8 +1,8 @@
 import { NextRequest } from "next/server";
 import { SearchService } from "@/lib/bnhub/services";
-import { rankListings } from "@/lib/ai/bnhub-search";
+import { rankListings, type BnhubSearchUserContext } from "@/lib/ai/bnhub-search";
 import { cacheGet, cacheSet, isRedisConfigured } from "@/lib/cache/redis";
-import { intelligenceFlags } from "@/config/feature-flags";
+import { engineFlags, intelligenceFlags } from "@/config/feature-flags";
 import { getActivePromotedListingIds } from "@/lib/promotions";
 import { getGuestId } from "@/lib/auth/session";
 import { trackDemoEvent } from "@/lib/demo-analytics";
@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
     const cacheKey =
       isRedisConfigured() && !rankingDebug
         ? `bnhub:search:${[city, listingCode, checkIn, checkOut, guests, minPrice, maxPrice, propertyType, roomType, centerLat, centerLng, radiusKm, minBaths, instantBook, verifiedOnly, sort, page, limit].join(":")}${
-            sort === "recommended" && intelligenceFlags.marketplaceMemoryEngineV1 ? personalizedCacheSeg : ""
+            personalizedRanking ? personalizedCacheSeg : ""
           }`
         : null;
     if (cacheKey) {
@@ -139,16 +139,39 @@ export async function GET(request: NextRequest) {
       propertyType,
     };
 
-    let userContext: { memoryRankHint: ReturnType<typeof buildMemoryRankHintFromSignals> } | undefined;
-    if (sort === "recommended" && intelligenceFlags.marketplaceMemoryEngineV1 && userIdForPersonalizedCache) {
-      const signals = await getMemorySignalsForEngine(userIdForPersonalizedCache, sessionHeader);
-      const memoryRankHint = buildMemoryRankHintFromSignals(signals);
-      if (memoryRankHint) userContext = { memoryRankHint };
+    const featuredIds = new Set(await getActivePromotedListingIds({ placement: "FEATURED", limit: 40 }));
+
+    let userContext: BnhubSearchUserContext | undefined;
+    if (
+      engineFlags.listingMarketplaceRankAlgorithmV1 ||
+      (intelligenceFlags.marketplaceMemoryEngineV1 && userIdForPersonalizedCache)
+    ) {
+      userContext = {};
+      if (engineFlags.listingMarketplaceRankAlgorithmV1) {
+        const uid = userIdForPersonalizedCache ?? (await getGuestId().catch(() => null));
+        userContext.rankingAlgo = {
+          userId: uid,
+          promotedIds: featuredIds,
+          cohort: process.env.RANKING_ALGO_COHORT ?? null,
+          searchQuery: city ?? listingCode ?? undefined,
+        };
+      }
+      if (intelligenceFlags.marketplaceMemoryEngineV1 && userIdForPersonalizedCache) {
+        const signals = await getMemorySignalsForEngine(userIdForPersonalizedCache, sessionHeader);
+        const memoryRankHint = buildMemoryRankHintFromSignals(signals);
+        if (memoryRankHint) userContext.memoryRankHint = memoryRankHint;
+      }
     }
 
-    const ranked = rankListings(listings, filters, userContext, { rankingDebug });
+    const preserveInputOrder = sort === "priceAsc" || sort === "priceDesc" || sort === "newest";
+    const sortIntent =
+      sort === "newest" ? "NEWEST" : sort === "priceAsc" || sort === "priceDesc" ? "PRICE" : "RELEVANCE";
 
-    const featuredIds = new Set(await getActivePromotedListingIds({ placement: "FEATURED", limit: 40 }));
+    const ranked = rankListings(listings, filters, userContext, {
+      rankingDebug,
+      preserveInputOrder,
+      sortIntent,
+    });
     const NEW_DAYS = 14;
     const now = Date.now();
     const enriched = ranked.map((row) => {

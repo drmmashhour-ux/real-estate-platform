@@ -97,7 +97,10 @@ export async function buildScoreContext(dealId: string): Promise<BuildScoreConte
   const milestoneCompleted = deal.milestones.filter((m) => m.status === "completed").length;
   const milestoneTotal = deal.milestones.length;
 
-  const negotiationRoundMax = threadRoundMax._max.currentRound ?? 0;
+  const negotiationRoundMax =
+    deal.negotiationThreads.length > 0
+      ? Math.max(0, ...deal.negotiationThreads.map((t) => t.currentRound ?? 0))
+      : 0;
   const rejectedProposals = deal.negotiationSuggestions.length;
 
   const lastEventTime =

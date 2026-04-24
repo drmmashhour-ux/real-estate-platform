@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { PlatformRole } from "@prisma/client";
 import {
   dealExecutionFlags,
   dealTransactionFlags,
@@ -24,7 +25,7 @@ export default async function DealExecutionPage({ params }: { params: Promise<{ 
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, role: true },
+    select: { id: true, role: true, name: true, email: true, twoFactorEmailEnabled: true },
   });
   if (!user) notFound();
 
@@ -53,6 +54,21 @@ export default async function DealExecutionPage({ params }: { params: Promise<{ 
           showPaymentsHub={lecipmPaymentsNegotiationFlags.trustWorkflowV1}
           showNegotiationHub={lecipmPaymentsNegotiationFlags.negotiationCopilotV1}
           includeDealLedger={lecipmPaymentsNegotiationFlags.dealLedgerV1}
+          showDealScoring={dealTransactionFlags.dealExecutionV1}
+          showBrokerApprovalStatus={dealTransactionFlags.dealExecutionV1}
+          dealScoringRefresh={
+            canMutate && dealTransactionFlags.dealExecutionV1 && (user.role === PlatformRole.BROKER || user.role === PlatformRole.ADMIN)
+          }
+          quickSign={
+            canMutate &&
+            dealTransactionFlags.dealExecutionV1 &&
+            (user.role === PlatformRole.BROKER || user.role === PlatformRole.ADMIN) ?
+              {
+                displayName: user.name?.trim() || user.email,
+                email: user.email,
+              }
+            : null
+          }
         />
 
         {dealTransactionFlags.dealExecutionV1 ? (

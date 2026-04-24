@@ -67,7 +67,7 @@ Dashboard **`/dashboard/broker/centris-conversion`** loads **`GET /api/broker/ce
 
 | Method | Path | Purpose |
 |--------|------|---------|
-| POST | `/api/leads/centris/capture` | Capture + **`behaviorHints`** optional JSON |
+| POST | `/api/lecipm/leads/centris/capture` | Capture + **`behaviorHints`** optional JSON |
 | GET | `/api/centris/urgency` | Listing urgency signals (public, rate limited) |
 | GET | `/api/centris/lead-score` | Broker — score snapshot for **`leadId`** |
 | GET | `/api/centris/analytics` | Broker — funnel analytics + top listings |

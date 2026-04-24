@@ -39,7 +39,7 @@ function LeadsHubCaptureForm({ propertySegment }: { propertySegment: PropertySeg
     setStatus("idle");
     setMsg("");
     try {
-      const res = await fetch("/api/leads/hub-capture", {
+      const res = await fetch("/api/lecipm/leads/hub-capture", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

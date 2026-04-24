@@ -15,6 +15,11 @@ import {
   sellerRefusedDeclarationFromCompliance,
   validateListingCompliance,
 } from "@/modules/legal/compliance/listing-declaration-compliance.service";
+import {
+  buildOaciqBrokerageCheckPayload,
+  loadOaciqBrokerageComplianceSlice,
+  oaciqBrokerageFormsAllowListingPublish,
+} from "@/modules/legal/compliance/lecipm-oaciq-brokerage-forms.service";
 import { rejectIfInspectionReadOnlyMutation } from "@/lib/compliance/inspection-session-guard";
 import { enforceAction } from "@/lib/compliance/enforce-action";
 import { createAccountabilityRecord } from "@/lib/compliance/create-accountability-record";
@@ -148,8 +153,25 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
       if (!compliance.allowed) {
         throw new Error(compliance.reason);
       }
+      if (
+        complianceFlags.lecipmOaciqBrokerageFormsEngineV1 &&
+        dec?.status === "refused"
+      ) {
+        throw new Error("DECLARATION_REFUSED_BLOCK");
+      }
       if (sellerRefusedDeclarationFromCompliance(compliance)) {
         logComplianceEvent("DECLARATION_PUBLISH_WITH_REFUSAL_WARNING", { listingId: id });
+      }
+    }
+
+    if (complianceFlags.lecipmOaciqBrokerageFormsEngineV1) {
+      const slice = await loadOaciqBrokerageComplianceSlice(id);
+      if (!oaciqBrokerageFormsAllowListingPublish(slice)) {
+        const oaciqBrokerageForms = buildOaciqBrokerageCheckPayload(slice);
+        return NextResponse.json(
+          { error: "OACIQ_BROKERAGE_FORMS_BLOCK", oaciqBrokerageForms },
+          { status: 403 },
+        );
       }
     }
 
@@ -191,7 +213,11 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     return NextResponse.json({ ok: true, crmMarketplaceLive: true });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Failed";
-    if (msg === "DECLARATION_MISSING" || msg === "DECLARATION_INCOMPLETE") {
+    if (
+      msg === "DECLARATION_MISSING" ||
+      msg === "DECLARATION_INCOMPLETE" ||
+      msg === "DECLARATION_REFUSED_BLOCK"
+    ) {
       return NextResponse.json({ error: msg }, { status: 403 });
     }
     if (msg === ERR_COOWNERSHIP_PUBLISH) {

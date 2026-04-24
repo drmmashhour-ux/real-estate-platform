@@ -1,26 +1,28 @@
 import type { Metadata } from "next";
 
-import { AiSuggestion, DealPanel, KpiCard } from "@/components";
+import { CommandCenterView } from "@/components/command-center/CommandCenterView";
+import { requireAuthenticatedUser } from "@/lib/auth/require-session";
+import { loadCommandCenterPagePayload } from "@/modules/command-center/command-center-page.service";
+import { prisma } from "@repo/db";
 
 export const metadata: Metadata = {
-  title: "LECIPM Console",
-  description: "Broker operations overview — KPIs, deal intelligence, AI suggestions.",
+  title: "LECIPM Command Center",
+  description: "Executive operations overview — revenue, pipeline, trust, growth, and approvals in one surface.",
 };
 
-export default function LecipmConsoleHomePage() {
-  return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiCard title="Leads" value="24" />
-        <KpiCard title="Deals" value="8" />
-        <KpiCard title="Conversion" value="32%" />
-        <KpiCard title="Revenue" value="$4,200" />
-      </div>
+export const dynamic = "force-dynamic";
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <DealPanel score={82} probability={74} riskLevel="Low" />
-        <AiSuggestion message="Follow up within 24h" />
-      </div>
-    </div>
-  );
+export default async function LecipmCommandCenterPage() {
+  const { userId } = await requireAuthenticatedUser();
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { role: true },
+  });
+  if (!user) {
+    return null;
+  }
+
+  const initial = await loadCommandCenterPagePayload(userId, user.role);
+
+  return <CommandCenterView initial={initial} />;
 }

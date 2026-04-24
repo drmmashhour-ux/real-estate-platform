@@ -41,7 +41,7 @@ export function BrokerPipelineBoard() {
   const [leads, setLeads] = useState<BrokerLead[]>([]);
 
   useEffect(() => {
-    fetch("/api/leads", { credentials: "same-origin" })
+    fetch("/api/lecipm/leads", { credentials: "same-origin" })
       .then((res) => res.json())
       .then((data: BrokerLead[]) => {
         const list = Array.isArray(data) ? data : [];
@@ -52,7 +52,7 @@ export function BrokerPipelineBoard() {
   }, []);
 
   const updateStatus = async (leadId: string, status: string) => {
-    const res = await fetch("/api/leads", {
+    const res = await fetch("/api/lecipm/leads", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id: leadId, status }),

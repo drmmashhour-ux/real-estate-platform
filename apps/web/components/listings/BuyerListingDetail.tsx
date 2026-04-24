@@ -308,7 +308,7 @@ export function BuyerListingDetail({
     setLeadCheckoutBusy(true);
     setFormError(null);
     try {
-      const r = await fetch("/api/leads/checkout", {
+      const r = await fetch("/api/lecipm/leads/checkout", {
         method: "POST",
         credentials: "same-origin",
         headers: { "Content-Type": "application/json" },

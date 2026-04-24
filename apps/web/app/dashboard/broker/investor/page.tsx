@@ -130,6 +130,9 @@ export default function InvestorCalculatorPage() {
           Cashflow, ROI, cap rate, DSCR, break-even occupancy, and AI investment interpretation. Advisory only — not investment
           advice.
         </p>
+        <div className="mt-2 inline-block rounded-full bg-amber-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-amber-500 border border-amber-500/20">
+          Private investment opportunity (not a regulated fund)
+        </div>
       </div>
 
       <button

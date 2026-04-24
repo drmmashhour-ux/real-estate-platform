@@ -548,7 +548,13 @@ export async function BnhubListingView(opts: {
                 <BrokerDisclosureBadge 
                   brokerName={brokerProfile.fullName || listing.owner.name || ""} 
                   licenseNumber={brokerProfile.licenceNumber} 
+                  practiceMode={brokerProfile.practiceMode || "INDEPENDENT"}
                 />
+              )}
+              {isBrokerListing && (
+                <div className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-700 ring-1 ring-inset ring-amber-500/20">
+                  Private investment opportunity
+                </div>
               )}
               <p className="mt-1.5 text-base font-medium text-slate-700">{locationLine}</p>
               {hostDisplayRating != null && hostDisplayRating > 0 ? (

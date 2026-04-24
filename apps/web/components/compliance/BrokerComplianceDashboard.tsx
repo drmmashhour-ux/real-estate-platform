@@ -227,6 +227,12 @@ export function BrokerComplianceDashboard({
         </p>
         <div className="mt-4 flex flex-wrap gap-3">
           <Link
+            href="/dashboard/broker/compliance"
+            className="inline-flex rounded-lg border-2 border-[#D4AF37] bg-[#D4AF37]/10 px-4 py-2 text-sm font-semibold text-[#D4AF37] hover:bg-[#D4AF37]/20"
+          >
+            Compliance Center
+          </Link>
+          <Link
             href="/dashboard/broker/compliance/audit"
             className="inline-flex rounded-lg bg-[#D4AF37] px-4 py-2 text-sm font-semibold text-black hover:opacity-95"
           >

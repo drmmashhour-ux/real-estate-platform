@@ -21,7 +21,7 @@ export function PlaybookConversionStrip({ leadId }: { leadId: string }) {
 
   const load = useCallback(async () => {
     setReady(false);
-    const res = await fetch(`/api/leads/${leadId}/playbook?compose=1`, { credentials: "same-origin" });
+    const res = await fetch(`/api/lecipm/leads/${leadId}/playbook?compose=1`, { credentials: "same-origin" });
     if (res.ok) {
       setData(await res.json());
     } else {

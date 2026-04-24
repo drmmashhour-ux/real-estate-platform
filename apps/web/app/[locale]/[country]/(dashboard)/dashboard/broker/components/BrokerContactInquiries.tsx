@@ -35,7 +35,7 @@ export function BrokerContactInquiries({ accent = "#10b981" }: { accent?: string
 
   const fetchData = useCallback(() => {
     setLoading(true);
-    fetch("/api/leads", { credentials: "same-origin" })
+    fetch("/api/lecipm/leads", { credentials: "same-origin" })
       .then((r) => r.json())
       .then((data) => {
         const list = Array.isArray(data) ? data : [];

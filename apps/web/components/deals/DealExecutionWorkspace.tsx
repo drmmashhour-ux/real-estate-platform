@@ -6,6 +6,9 @@ import { DocumentList } from "@/components/documents/DocumentList";
 import { SignatureNotaryClosingPanels } from "@/components/deals/SignatureNotaryClosingPanels";
 import { DealPaymentsHub } from "@/components/payments-ops/DealPaymentsHub";
 import { NegotiationWorkspace } from "@/components/negotiation/NegotiationWorkspace";
+import { BrokerQuickSignPanel } from "@/components/broker/BrokerQuickSignPanel";
+import { BrokerApprovalStatusChip } from "@/components/deals/BrokerApprovalStatusChip";
+import { DealScoringInsightPanel } from "@/components/deals/DealScoringInsightPanel";
 
 type Props = {
   dealId: string;
@@ -18,6 +21,10 @@ type Props = {
   showPaymentsHub: boolean;
   showNegotiationHub: boolean;
   includeDealLedger: boolean;
+  quickSign?: { displayName: string; email: string } | null;
+  dealScoringRefresh?: boolean;
+  showDealScoring?: boolean;
+  showBrokerApprovalStatus?: boolean;
 };
 
 export function DealExecutionWorkspace({
@@ -31,11 +38,28 @@ export function DealExecutionWorkspace({
   showPaymentsHub,
   showNegotiationHub,
   includeDealLedger,
+  quickSign,
+  dealScoringRefresh = false,
+  showDealScoring = true,
+  showBrokerApprovalStatus = true,
 }: Props) {
   const [error, setError] = useState<string | null>(null);
 
   return (
     <div className="space-y-8">
+      {showBrokerApprovalStatus ?
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="text-xs font-medium uppercase tracking-wide text-zinc-500">Broker approval</span>
+          <BrokerApprovalStatusChip dealId={dealId} />
+        </div>
+      : null}
+
+      {showDealScoring ? <DealScoringInsightPanel dealId={dealId} allowRefresh={dealScoringRefresh} /> : null}
+
+      {quickSign ?
+        <BrokerQuickSignPanel dealId={dealId} brokerDisplayName={quickSign.displayName} brokerEmail={quickSign.email} />
+      : null}
+
       <section className="rounded-2xl border border-amber-500/20 bg-black/60 p-6 shadow-xl shadow-black/40">
         <h2 className="font-serif text-xl tracking-tight text-amber-100">Broker obligations</h2>
         <ul className="mt-3 list-inside list-disc space-y-1 text-sm leading-relaxed text-amber-100/75">

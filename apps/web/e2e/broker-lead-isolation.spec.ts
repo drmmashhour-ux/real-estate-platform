@@ -35,15 +35,15 @@ test("brokers cannot read each other's leads (GET + playbook)", async ({ browser
 
   await loginAsBroker(pageA, alphaEmail, pw);
 
-  const ownA = await pageA.request.get(`/api/leads/${leadAlphaId}`);
+  const ownA = await pageA.request.get(`/api/lecipm/leads/${leadAlphaId}`);
   expect(ownA.status(), "Alpha should read own lead").toBe(200);
   const ownJson = (await ownA.json().catch(() => ({}))) as { id?: string };
   expect(ownJson.id).toBe(leadAlphaId);
 
-  const crossA = await pageA.request.get(`/api/leads/${leadBetaId}`);
+  const crossA = await pageA.request.get(`/api/lecipm/leads/${leadBetaId}`);
   expect(crossA.status(), "Alpha must not read Beta's lead").toBe(403);
 
-  const playbookCrossA = await pageA.request.get(`/api/leads/${leadBetaId}/playbook`);
+  const playbookCrossA = await pageA.request.get(`/api/lecipm/leads/${leadBetaId}/playbook`);
   expect(playbookCrossA.status(), "Alpha must not load Beta's playbook").toBe(403);
 
   await ctxA.close();
@@ -54,13 +54,13 @@ test("brokers cannot read each other's leads (GET + playbook)", async ({ browser
 
   await loginAsBroker(pageB, betaEmail, pw);
 
-  const ownB = await pageB.request.get(`/api/leads/${leadBetaId}`);
+  const ownB = await pageB.request.get(`/api/lecipm/leads/${leadBetaId}`);
   expect(ownB.status(), "Beta should read own lead").toBe(200);
 
-  const crossB = await pageB.request.get(`/api/leads/${leadAlphaId}`);
+  const crossB = await pageB.request.get(`/api/lecipm/leads/${leadAlphaId}`);
   expect(crossB.status(), "Beta must not read Alpha's lead").toBe(403);
 
-  const playbookCrossB = await pageB.request.get(`/api/leads/${leadAlphaId}/playbook`);
+  const playbookCrossB = await pageB.request.get(`/api/lecipm/leads/${leadAlphaId}/playbook`);
   expect(playbookCrossB.status(), "Beta must not load Alpha's playbook").toBe(403);
 
   await ctxB.close();

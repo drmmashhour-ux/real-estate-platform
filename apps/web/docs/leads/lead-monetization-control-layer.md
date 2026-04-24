@@ -30,7 +30,7 @@ Unlock and monetization copy must not read as a firm quote or guaranteed ROI. Th
 
 ## Feature flag
 
-`FEATURE_LEAD_MONETIZATION_CONTROL_V1` — when on, **admins** receive `leadMonetizationControlV1` on `GET /api/leads/[id]` and see **Lead monetization control** on the lead detail page.
+`FEATURE_LEAD_MONETIZATION_CONTROL_V1` — when on, **admins** receive `leadMonetizationControlV1` on `GET /api/lecipm/leads/[id]` and see **Lead monetization control** on the lead detail page.
 
 ## Pricing mode precedence (exact)
 

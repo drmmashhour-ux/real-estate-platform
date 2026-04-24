@@ -2,6 +2,7 @@ import { GrowthEmailQueueStatus, GrowthEmailQueueType } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { sendEmail, getFromEmail } from "@/lib/email/resend";
 import { logError, logInfo } from "@/lib/logger";
+import { assertAutopilotOutboundAllowed } from "@/lib/signature-control/autopilot-guard";
 
 const DEFAULT_BATCH = 30;
 const MAX_ATTEMPTS = 5;
@@ -63,6 +64,24 @@ export async function runGrowthEmailWorkerOnce(
       });
       failed++;
       continue;
+    }
+
+    if (payload.signatureGateOutbound === true) {
+      try {
+        await assertAutopilotOutboundAllowed({
+          operation: "growth_email_queue:brokerage_outbound",
+          actionPipelineId: typeof payload.actionPipelineId === "string" ? payload.actionPipelineId : null,
+        });
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "Signature gate blocked email send.";
+        await prisma.growthEmailQueue.update({
+          where: { id: row.id },
+          data: { status: GrowthEmailQueueStatus.FAILED, lastError: msg.slice(0, 512) },
+        });
+        failed++;
+        logError("[growth-email-worker] signature gate blocked", { id: row.id, msg });
+        continue;
+      }
     }
 
     const { subject, html } = templateForType(row.type, payload);

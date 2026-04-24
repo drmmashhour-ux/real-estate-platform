@@ -1,8 +1,17 @@
 import type { ReactNode } from "react";
 
-import DashboardLayout from "@/components/lecipm-ui/dashboard-layout";
+import { prisma } from "@repo/db";
 
-/** LECIPM broker console — premium shell under `/dashboard/lecipm`. */
-export default function LecipmConsoleLayout({ children }: { children: ReactNode }) {
-  return <DashboardLayout>{children}</DashboardLayout>;
+import { LecipmConsoleShell } from "@/components/dashboard/LecipmConsoleShell";
+import { requireAuthenticatedUser } from "@/lib/auth/require-session";
+
+/** LECIPM Command Center shell under `/dashboard/lecipm` — role-aware navigation + Classic escape. */
+export default async function LecipmConsoleLayout({ children }: { children: ReactNode }) {
+  const { userId } = await requireAuthenticatedUser();
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { role: true },
+  });
+
+  return <LecipmConsoleShell userRole={user?.role ?? "USER"}>{children}</LecipmConsoleShell>;
 }

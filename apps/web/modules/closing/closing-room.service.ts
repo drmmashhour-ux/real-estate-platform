@@ -8,6 +8,8 @@ import { seedDefaultSignatures } from "@/modules/closing/closing-signature.servi
 import { syncDealClosingReadiness, evaluateFinalClosingReadiness } from "@/modules/closing/closing-orchestrator";
 import { runPostCloseOnboarding } from "@/modules/closing/postclose-onboarding.service";
 import { transitionPipelineState } from "@/modules/execution/execution.service";
+import { getLatestCloseProbability } from "@/modules/deal/close-probability.service";
+import { recordCloseProbabilityOutcome } from "@/modules/deal/close-probability-learning.service";
 
 const TAG = "[closing-room]";
 
@@ -75,7 +77,7 @@ export async function startClosingRoom(options: {
 }
 
 export async function getClosingRoomDetail(dealId: string) {
-  const [deal, closing, docs, checklist, signatures, readiness] = await Promise.all([
+  const [deal, closing, docs, checklist, signatures, readiness, latestCloseProbability] = await Promise.all([
     prisma.deal.findUnique({
       where: { id: dealId },
       select: {
@@ -95,6 +97,7 @@ export async function getClosingRoomDetail(dealId: string) {
     prisma.dealClosingChecklist.findMany({ where: { dealId }, orderBy: { createdAt: "asc" } }),
     prisma.dealClosingSignature.findMany({ where: { dealId }, orderBy: { createdAt: "asc" } }),
     evaluateFinalClosingReadiness(dealId),
+    getLatestCloseProbability(dealId),
   ]);
 
   return {
@@ -104,6 +107,16 @@ export async function getClosingRoomDetail(dealId: string) {
     checklist,
     signatures,
     readiness,
+    latestCloseProbability: latestCloseProbability
+      ? {
+          id: latestCloseProbability.id,
+          probability: latestCloseProbability.probability,
+          category: latestCloseProbability.category,
+          drivers: latestCloseProbability.drivers,
+          risks: latestCloseProbability.risks,
+          createdAt: latestCloseProbability.createdAt.toISOString(),
+        }
+      : null,
   };
 }
 
@@ -112,6 +125,7 @@ export async function confirmClosingExecution(options: {
   actorUserId: string;
   closingDate: Date;
   notes?: string | null;
+  actionPipelineId?: string | null;
 }): Promise<{ assetId: string | null }> {
   const dealCheck = await prisma.deal.findUnique({
     where: { id: options.dealId },
@@ -154,6 +168,9 @@ export async function confirmClosingExecution(options: {
     data: { status: "closed", updatedAt: new Date() },
   });
 
+  void recordCloseProbabilityOutcome(options.dealId, true).catch(() => {});
+  void recordNegotiationStrategyOutcome(options.dealId, true).catch(() => {});
+
   await appendClosingAudit({
     dealId: options.dealId,
     actorUserId: options.actorUserId,
@@ -167,6 +184,7 @@ export async function confirmClosingExecution(options: {
     to: "closed",
     actorUserId: options.actorUserId,
     reason: "closing_confirmed" as const,
+    actionPipelineId: options.actionPipelineId,
   });
   if (!tr.ok) {
     logInfo(`${TAG}`, { dealId: options.dealId, pipelineWarn: tr.message });

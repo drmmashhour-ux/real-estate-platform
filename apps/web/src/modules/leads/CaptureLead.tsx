@@ -28,7 +28,7 @@ export function CaptureLead({
     }
     setStatus("loading");
     try {
-      const r = await fetch("/api/leads", {
+      const r = await fetch("/api/lecipm/leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ source: "launch_lead_capture", email: trimmed }),

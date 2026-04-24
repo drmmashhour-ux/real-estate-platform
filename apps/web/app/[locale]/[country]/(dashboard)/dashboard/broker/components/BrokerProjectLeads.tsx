@@ -25,7 +25,7 @@ export function BrokerProjectLeads({ accent = "#10b981" }: { accent?: string }) 
   const fetchData = useCallback(() => {
     setLoading(true);
     Promise.all([
-      fetch("/api/leads", { credentials: "same-origin" }).then((r) => r.json()),
+      fetch("/api/lecipm/leads", { credentials: "same-origin" }).then((r) => r.json()),
       fetch("/api/projects", { credentials: "same-origin" }).then((r) => r.json()),
     ])
       .then(([leadsData, projectsData]) => {

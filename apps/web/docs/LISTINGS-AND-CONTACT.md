@@ -29,7 +29,7 @@ Contact between **clients and brokers** (and guests and hosts) works as follows:
 | Flow | Where | How |
 |------|--------|-----|
 | **Contact page → broker** | `/contact` | User submits the form → **POST /api/contact** creates a **Lead** with `status: "contact_inquiry"` and no project/listing. Brokers see these under **Broker** dashboard → **Contact page inquiries**. Optional email to `BROKER_EMAIL` when Resend is configured. |
-| **Project/listing lead → broker** | Project or listing page | User submits a lead form with `projectId` or `listingId` → **POST /api/leads** creates a **Lead**. Brokers see these in **Broker** dashboard → **Project Leads** and in **Leads** dashboard. |
+| **Project/listing lead → broker** | Project or listing page | User submits a lead form with `projectId` or `listingId` → **POST /api/lecipm/leads** creates a **Lead**. Brokers see these in **Broker** dashboard → **Project Leads** and in **Leads** dashboard. |
 | **BNHub guest ↔ host** | Booking detail / messages | After a booking exists, guest and host chat via **POST /api/bnhub/messages** (booking-scoped). UI: **Messages** and booking thread. |
 | **Transaction buyer/seller/broker** | Transaction detail | Buyer, seller, and broker exchange messages via **TransactionMessage** and **POST /api/transactions/[id]/messages**. |
 
@@ -48,7 +48,7 @@ So:
 The platform instead provides:
 
 - **Contact page** → saved as **Lead** (contact inquiries) and visible in the **Broker** dashboard.
-- **Leads API** (`/api/leads`) for project/listing leads and contact inquiries, with optional email to broker.
+- **Leads API** (`/api/lecipm/leads`) for project/listing leads and contact inquiries, with optional email to broker.
 - **BNHub** and **transaction** messaging as above.
 
 If you need ImmoContact (or a similar CRM), it would require either:

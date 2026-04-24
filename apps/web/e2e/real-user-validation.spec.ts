@@ -169,7 +169,7 @@ test.describe("Real user validation harness", () => {
     // --- lead (CONTACT_BROKER) ---
     try {
       const leadEmail = `e2e-lead-${Date.now()}@example.com`;
-      const lr = await postJson(request, "/api/leads", {
+      const lr = await postJson(request, "/api/lecipm/leads", {
         projectId: SEED_PROJECT_ID,
         name: "Harness Lead",
         email: leadEmail,

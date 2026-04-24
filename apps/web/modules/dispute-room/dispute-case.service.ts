@@ -10,6 +10,7 @@ import {
 
 import { recordAuditEvent } from "@/modules/analytics/audit-log.service";
 import { prisma } from "@/lib/db";
+import { loadPriorDisputePredictionAttachment } from "@/modules/dispute-prediction/dispute-prediction.engine";
 import { loadPreDisputeRiskAttachmentForEntity } from "@/modules/risk-engine/risk-prevention.service";
 
 import { notifyDisputeEvent } from "./dispute-case-notify";
@@ -105,6 +106,12 @@ export async function createDisputeCase(input: {
     row.relatedEntityId
   );
 
+  const priorDisputePrediction = await loadPriorDisputePredictionAttachment(
+    row.relatedEntityType,
+    row.relatedEntityId,
+    row.category
+  );
+
   await prisma.lecipmDisputeCaseEvent.create({
     data: {
       disputeId: row.id,
@@ -113,6 +120,7 @@ export async function createDisputeCase(input: {
         relatedEntityType: row.relatedEntityType,
         relatedEntityId: row.relatedEntityId,
         preDisputeRisk,
+        priorDisputePrediction,
       },
       actorUserId: input.openedByUserId,
     },

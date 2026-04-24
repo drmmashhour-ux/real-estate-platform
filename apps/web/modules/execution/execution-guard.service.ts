@@ -1,6 +1,6 @@
 import type { Deal } from "@prisma/client";
-import { prisma } from "@/lib/db";
 import { canMutateExecution } from "@/lib/deals/execution-access";
+import { assertBrokerApprovalExecutionGate } from "@/modules/approval/broker-approval-workflow.service";
 import { canTransition, normalizeState } from "./execution-state-machine";
 import type { ExecutionPipelineState } from "./execution.types";
 
@@ -23,14 +23,7 @@ export function assertBrokerForExecution(ctx: ExecutionGuardContext): { ok: true
 }
 
 export async function assertHasBrokerApproval(dealId: string): Promise<{ ok: true } | { ok: false; message: string }> {
-  const row = await prisma.dealExecutionApproval.findFirst({
-    where: { dealId },
-    orderBy: { approvedAt: "desc" },
-  });
-  if (!row) {
-    return { ok: false, message: "Broker approval is required before execution steps." };
-  }
-  return { ok: true };
+  return assertBrokerApprovalExecutionGate(dealId);
 }
 
 export function assertTransitionAllowed(

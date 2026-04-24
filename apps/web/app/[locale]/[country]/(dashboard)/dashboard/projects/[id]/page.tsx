@@ -59,7 +59,7 @@ export default function ProjectDetailDashboardPage() {
     Promise.all([
       fetch(`/api/projects/${id}/subscription`, { credentials: "same-origin" }).then((r) => r.json()),
       fetch(`/api/projects/${id}/stats`, { credentials: "same-origin" }).then((r) => r.json()),
-      fetch("/api/leads", { credentials: "same-origin" }).then((r) => r.json()),
+      fetch("/api/lecipm/leads", { credentials: "same-origin" }).then((r) => r.json()),
     ])
       .then(([sub, st, leadsData]) => {
         setSubscription(sub?.error ? null : sub);

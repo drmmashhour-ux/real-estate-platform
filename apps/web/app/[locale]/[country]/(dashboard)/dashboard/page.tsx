@@ -1,7 +1,15 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { PLATFORM_DEFAULT_DESCRIPTION } from "@/lib/brand/platform";
 import { prisma } from "@repo/db";
+import { engineFlags } from "@/config/feature-flags";
+import { ClassicDashboardBanner } from "@/components/dashboard/ClassicDashboardBanner";
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
+import {
+  LECIPM_DASHBOARD_CONSOLE_COOKIE,
+  shouldRedirectRootDashboardToLecipm,
+} from "@/lib/dashboard/lecipm-console-preference";
 import { buildMonetizationSnapshot } from "@/lib/investment/monetization";
 import { MvpNav } from "@/components/investment/MvpNav";
 import { PortfolioDashboardClient } from "@/components/investment/PortfolioDashboardClient";
@@ -26,8 +34,19 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-export default async function InvestmentPortfolioDashboardPage() {
+export default async function InvestmentPortfolioDashboardPage({
+  params,
+}: {
+  params: Promise<{ locale: string; country: string }>;
+}) {
+  const { locale, country } = await params;
   const { userId } = await requireAuthenticatedUser();
+
+  const jar = await cookies();
+  const pref = jar.get(LECIPM_DASHBOARD_CONSOLE_COOKIE)?.value;
+  if (shouldRedirectRootDashboardToLecipm(engineFlags.lecipmConsoleDefault, pref)) {
+    redirect(`/${locale}/${country}/dashboard/lecipm`);
+  }
 
   const deals = await prisma.investmentDeal.findMany({
     where: { userId },
@@ -45,6 +64,9 @@ export default async function InvestmentPortfolioDashboardPage() {
   return (
     <div className="min-h-screen bg-brand-background text-white">
       <MvpNav variant="live" />
+      <div className="mx-auto w-full max-w-6xl px-4 pt-6">
+        <ClassicDashboardBanner />
+      </div>
       <PortfolioDashboardClient
         deals={deals}
         variant="live"

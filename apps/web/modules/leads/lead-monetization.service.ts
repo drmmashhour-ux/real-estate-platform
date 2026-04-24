@@ -170,7 +170,7 @@ export type InitiateLeadUnlockResult =
   | { ok: false; status: number; error: string; softBlock?: boolean; message?: string; reason?: string };
 
 /**
- * Shared Stripe Checkout creation for CRM lead unlock — used by `/api/leads/[id]/unlock-checkout` and `/api/leads/unlock`.
+ * Shared Stripe Checkout creation for CRM lead unlock — used by `/api/lecipm/leads/[id]/unlock-checkout` and `/api/lecipm/leads/unlock`.
  */
 export async function initiateLeadUnlockCheckout(args: {
   userId: string;

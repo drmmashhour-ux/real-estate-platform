@@ -26,7 +26,7 @@ export function BrokerImmoLeadsPanel({ accent = "#10b981" }: { accent?: string }
   const load = useCallback(() => {
     setLoading(true);
     setErr(null);
-    fetch("/api/leads?leadType=immo_contact", { credentials: "same-origin" })
+    fetch("/api/lecipm/leads?leadType=immo_contact", { credentials: "same-origin" })
       .then((r) => {
         if (!r.ok) throw new Error("Could not load leads");
         return r.json();

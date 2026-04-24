@@ -7,7 +7,7 @@ import { getDealById } from "@/modules/deals/deal.service";
 
 export const dynamic = "force-dynamic";
 
-export async function POST(_req: Request, context: { params: Promise<{ dealId: string }> }) {
+export async function POST(req: Request, context: { params: Promise<{ dealId: string }> }) {
   const auth = await requireAuthUser();
   if (!auth.ok) return auth.response;
 
@@ -20,7 +20,13 @@ export async function POST(_req: Request, context: { params: Promise<{ dealId: s
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const closing = await completeClosing(dealId, auth.userId);
+    const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
+    const actionPipelineId =
+      typeof body.action_pipeline_id === "string" && body.action_pipeline_id.trim()
+        ? body.action_pipeline_id.trim()
+        : null;
+
+    const closing = await completeClosing(dealId, auth.userId, actionPipelineId);
     return NextResponse.json({ closing });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Failed";

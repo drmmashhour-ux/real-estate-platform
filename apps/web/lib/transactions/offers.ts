@@ -1,7 +1,9 @@
 import { prisma } from "@/lib/db";
 import { assertCoownershipEnforcementAllows } from "@/services/compliance/coownershipCompliance.service";
+import { assertAutopilotOutboundAllowed } from "@/lib/signature-control/autopilot-guard";
 import { recordTransactionEvent } from "./events";
 import type { OfferStatus, TransactionStatus } from "./constants";
+import { BrokerActionGuard } from "@/lib/compliance/broker-action-guard";
 
 export interface SubmitOfferInput {
   transactionId: string;
@@ -9,9 +11,16 @@ export interface SubmitOfferInput {
   offerPrice: number; // cents
   conditions?: unknown;
   expirationDate?: Date | null;
+  /** Required when `LECIPM_AUTOPILOT_SIGNATURE_GATE` is enabled — broker-signed action pipeline. */
+  actionPipelineId?: string | null;
 }
 
 export async function submitOffer(input: SubmitOfferInput): Promise<{ offerId: string; status: OfferStatus }> {
+  await assertAutopilotOutboundAllowed({
+    operation: "submit_offer",
+    actionPipelineId: input.actionPipelineId,
+  });
+
   const tx = await prisma.realEstateTransaction.findUnique({
     where: { id: input.transactionId },
     select: { id: true, buyerId: true, status: true },
@@ -57,6 +66,18 @@ export async function counterOffer(input: CounterOfferInput): Promise<{ counterO
   const isSellerOrBroker =
     offer.transaction.sellerId === input.createdById || offer.transaction.brokerId === input.createdById;
   if (!isSellerOrBroker) throw new Error("Only seller or broker can counter");
+
+  // PHASE 2 & 4: BROKERAGE ACTION GUARD
+  if (offer.transaction.brokerId === input.createdById) {
+    const guard = await BrokerActionGuard.validateBrokerageAction({
+      userId: input.createdById,
+      action: "NEGOTIATE",
+      entityId: offer.transactionId,
+      entityType: "Deal" as any,
+    });
+    if (!guard.allowed) throw new Error(guard.reason || "Unauthorized brokerage action.");
+  }
+
   if (["completed", "cancelled"].includes(offer.transaction.status)) throw new Error("Transaction is no longer active");
 
   const counter = await prisma.propertyCounterOffer.create({
@@ -82,6 +103,17 @@ export async function counterOffer(input: CounterOfferInput): Promise<{ counterO
     counterPrice: input.counterPrice,
   }, input.createdById);
 
+  // PHASE 6: AUDIT LOG (If counter by broker)
+  if (offer.transaction.brokerId === input.createdById) {
+    const { BrokerageAuditService } = await import("@/lib/compliance/brokerage-audit.service");
+    void BrokerageAuditService.logAction({
+      brokerId: input.createdById,
+      action: "counter_offer",
+      dealId: offer.transactionId,
+      metadata: { offerId: input.offerId, counterPrice: input.counterPrice },
+    });
+  }
+
   return { counterOfferId: counter.id };
 }
 
@@ -104,6 +136,18 @@ export async function acceptOffer(input: AcceptOfferInput): Promise<{ transactio
 
   const isBuyer = offer.transaction.buyerId === input.acceptedById;
   const isSeller = offer.transaction.sellerId === input.acceptedById;
+
+  // PHASE 2 & 4: BROKERAGE ACTION GUARD
+  if (offer.transaction.brokerId === input.acceptedById && !isBuyer && !isSeller) {
+    const guard = await BrokerActionGuard.validateBrokerageAction({
+      userId: input.acceptedById,
+      action: "ACCEPT_OFFER",
+      entityId: offer.transactionId,
+      entityType: "Deal" as any,
+    });
+    if (!guard.allowed) throw new Error(guard.reason || "Unauthorized brokerage action.");
+  }
+
   let finalPrice = offer.offerPrice;
   if (offer.status === "countered") {
     if (!isBuyer) throw new Error("Only buyer can accept a counter offer");
@@ -134,6 +178,17 @@ export async function acceptOffer(input: AcceptOfferInput): Promise<{ transactio
     acceptedBy: input.acceptedById,
     finalPrice,
   }, input.acceptedById);
+
+  // PHASE 6: AUDIT LOG (If accepted by broker)
+  if (offer.transaction.brokerId === input.acceptedById) {
+    const { BrokerageAuditService } = await import("@/lib/compliance/brokerage-audit.service");
+    void BrokerageAuditService.logAction({
+      brokerId: input.acceptedById,
+      action: "accept_offer",
+      dealId: offer.transactionId,
+      metadata: { offerId: input.offerId, finalPrice },
+    });
+  }
 
   return { transactionId: offer.transactionId, status: "deposit_required" };
 }

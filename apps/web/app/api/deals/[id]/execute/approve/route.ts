@@ -11,7 +11,16 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
   const auth = await authenticateBrokerDealRoute(dealId);
   if (!auth.ok) return auth.response;
 
-  const body = (await request.json()) as { activeFormKeys?: string[]; notes?: string };
+  const body = (await request.json()) as { activeFormKeys?: string[]; notes?: string; oaciqBrokerAcknowledged?: boolean };
+  if (body.oaciqBrokerAcknowledged !== true) {
+    return Response.json(
+      {
+        error: "OACIQ broker acknowledgment is required before approval.",
+        disclaimer: "Confirm the licensed broker responsibility statement in your client before submitting.",
+      },
+      { status: 400 },
+    );
+  }
   const activeFormKeys = (body.activeFormKeys ?? ["PP", "DS"]).map((k) => k.toUpperCase());
 
   const readiness = await assessApprovalReadiness(dealId, activeFormKeys);
@@ -31,6 +40,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     approvedById: auth.userId,
     notes: body.notes,
     snapshot: { readiness, activeFormKeys },
+    oaciqBrokerAcknowledged: true,
   });
 
   return Response.json({

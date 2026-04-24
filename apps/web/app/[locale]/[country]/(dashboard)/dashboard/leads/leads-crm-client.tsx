@@ -175,8 +175,8 @@ export function LeadsCrmClient({ isAdmin }: { isAdmin: boolean }) {
     setLoading(true);
     try {
       const [res, sumRes] = await Promise.all([
-        fetch(`/api/leads${queryString ? `?${queryString}` : ""}`, { credentials: "same-origin" }),
-        fetch("/api/leads/summary", { credentials: "same-origin" }),
+        fetch(`/api/lecipm/leads${queryString ? `?${queryString}` : ""}`, { credentials: "same-origin" }),
+        fetch("/api/lecipm/leads/summary", { credentials: "same-origin" }),
       ]);
       if (res.status === 401) {
         setAuthError(true);
@@ -203,7 +203,7 @@ export function LeadsCrmClient({ isAdmin }: { isAdmin: boolean }) {
   const startLeadUnlockCheckout = useCallback(async (leadId: string) => {
     setUnlockingId(leadId);
     try {
-      const res = await fetch(`/api/leads/${encodeURIComponent(leadId)}/unlock-checkout`, {
+      const res = await fetch(`/api/lecipm/leads/${encodeURIComponent(leadId)}/unlock-checkout`, {
         method: "POST",
         credentials: "same-origin",
       });
@@ -244,7 +244,7 @@ export function LeadsCrmClient({ isAdmin }: { isAdmin: boolean }) {
   }, [leads]);
 
   const patchLead = async (id: string, pipelineStatus: string) => {
-    const res = await fetch("/api/leads", {
+    const res = await fetch("/api/lecipm/leads", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id, pipelineStatus }),
@@ -259,7 +259,7 @@ export function LeadsCrmClient({ isAdmin }: { isAdmin: boolean }) {
   };
 
   const patchLaunchFields = async (id: string, data: Record<string, unknown>) => {
-    const res = await fetch("/api/leads", {
+    const res = await fetch("/api/lecipm/leads", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id, ...data }),

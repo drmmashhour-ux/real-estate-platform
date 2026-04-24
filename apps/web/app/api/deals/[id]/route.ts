@@ -10,6 +10,7 @@ import { recordDealCrmStageChange } from "@/lib/ai/automation-triggers";
 import { hintCrmStageFromDealStatus } from "@/lib/ai/lifecycle/deal-actions";
 import { notifyDealClosedCelebrationIfNeeded } from "@/lib/listing-lifecycle/notify-deal-closed-celebration";
 import { evaluateDealRisk } from "@/modules/risk-engine/risk-prevention.service";
+import { recordCloseProbabilityOutcome } from "@/modules/deal/close-probability-learning.service";
 
 export const dynamic = "force-dynamic";
 
@@ -115,6 +116,11 @@ export async function PATCH(
 
   if (updated.status === "closed" && prevStatus !== "closed") {
     void notifyDealClosedCelebrationIfNeeded(id).catch(() => {});
+    void recordCloseProbabilityOutcome(id, true).catch(() => {});
+    void recordNegotiationStrategyOutcome(id, true).catch(() => {});
+  }
+  if (updated.status === "cancelled" && prevStatus !== "cancelled") {
+    void recordCloseProbabilityOutcome(id, false).catch(() => {});
   }
 
   const newCrm = updated.crmStage ?? null;

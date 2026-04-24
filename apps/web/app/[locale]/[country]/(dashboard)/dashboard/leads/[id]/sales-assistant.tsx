@@ -39,7 +39,7 @@ const CLOSING_LINE =
   "Based on your needs, the best next step is to move forward now so we can secure the best opportunity and avoid delays.";
 
 async function logAssistantEvent(leadId: string, type: string, payload?: Record<string, unknown>) {
-  await fetch(`/api/leads/${leadId}/assistant-event`, {
+  await fetch(`/api/lecipm/leads/${leadId}/assistant-event`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "same-origin",
@@ -124,7 +124,7 @@ export function SalesAssistantPanel({
       : getContactMailtoHref();
 
   useEffect(() => {
-    void fetch("/api/leads/assistant-stats", { credentials: "same-origin" })
+    void fetch("/api/lecipm/leads/assistant-stats", { credentials: "same-origin" })
       .then((r) => (r.ok ? r.json() : null))
       .then((j) => {
         if (j && typeof j.callsMade === "number") setStats(j);

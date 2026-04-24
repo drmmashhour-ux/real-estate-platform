@@ -191,7 +191,7 @@
 
 ## 9. Broker CRM
 
-**Examples:** `/api/leads/*`, broker clients, visits, ` /api/broker/*`, hub capture, mortgage expert routes.
+**Examples:** `/api/lecipm/leads/*`, broker clients, visits, ` /api/broker/*`, hub capture, mortgage expert routes.
 
 | Route / family | Auth | Authz | Ownership | Validation | RL | Risks |
 |----------------|------|-------|------------|------------|-----|-------|
@@ -200,7 +200,7 @@
 
 **Verify**
 
-- [ ] Broker A cannot `GET/PATCH /api/leads/[id]` for Broker B’s lead.
+- [ ] Broker A cannot `GET/PATCH /api/lecipm/leads/[id]` for Broker B’s lead.
 
 **Tests:** T2, T3 on lead id; T5 on public capture.
 

@@ -62,6 +62,11 @@ export const engineFlags = {
   experimentRankingVariantsV1:
     process.env.FEATURE_EXPERIMENT_RANKING_VARIANTS_V1 === "true" ||
     process.env.FEATURE_EXPERIMENT_RANKING_VARIANTS_V1 === "1",
+  /**
+   * Explainable weighted marketplace ranking for listing search (relevance, price fit, quality, trust, …).
+   * Env: `FEATURE_LISTING_MARKETPLACE_RANK_ALGO_V1`. Optional cohort: `RANKING_ALGO_COHORT`.
+   */
+  listingMarketplaceRankAlgorithmV1: envTrue("FEATURE_LISTING_MARKETPLACE_RANK_ALGO_V1"),
   experimentCampaignCopyV1:
     process.env.FEATURE_EXPERIMENT_CAMPAIGN_COPY_V1 === "true" ||
     process.env.FEATURE_EXPERIMENT_CAMPAIGN_COPY_V1 === "1",
@@ -341,7 +346,19 @@ export const engineFlags = {
   actionSimulationPanelV1: envTrue("FEATURE_ACTION_SIMULATION_PANEL_V1"),
   /** Allow A/B comparison of two simulated actions in UI + API. */
   actionSimulationComparisonV1: envTrue("FEATURE_ACTION_SIMULATION_COMPARISON_V1"),
+  /**
+   * When true, `/[locale]/[country]/dashboard` redirects to `/dashboard/lecipm` unless the user chose Classic (cookie).
+   * Env: `FEATURE_LECIPM_CONSOLE_DEFAULT`
+   */
+  lecipmConsoleDefault: envTrue("FEATURE_LECIPM_CONSOLE_DEFAULT"),
 } as const;
+
+/** @see engineFlags.lecipmConsoleDefault */
+export const FEATURE_LECIPM_CONSOLE_DEFAULT = engineFlags.lecipmConsoleDefault;
+
+/** @see engineFlags.listingMarketplaceRankAlgorithmV1 */
+export const FEATURE_LISTING_MARKETPLACE_RANK_ALGO_V1 =
+  engineFlags.listingMarketplaceRankAlgorithmV1;
 
 /** Alias grouping for CRO / retargeting durable learning (reads same env keys as engineFlags). */
 export const croRetargetingLearningFlags = {
@@ -2438,6 +2455,11 @@ export const complianceFlags = {
    * OACIQ clause library + structural validation (actor, deadline, consequence, ambiguity) for contract workflows.
    */
   oaciqClauseComplianceEngineV1: envTrue("FEATURE_OACIQ_CLAUSE_COMPLIANCE_ENGINE_V1"),
+  /**
+   * LECIPM — OACIQ brokerage mandate + CRM seller declaration + identity proof + disclosure traceability.
+   * Gates CRM publish when mandatory rows are incomplete; refusal hard-stops listing.
+   */
+  lecipmOaciqBrokerageFormsEngineV1: envTrue("FEATURE_LECIPM_OACIQ_BROKERAGE_FORMS_V1"),
   /** Harden Co-Ownership — require DOCUMENTED+ level for critical/insurance rows. */
   coownershipVerificationEnforcement: envTrue("FEATURE_COOWNERSHIP_VERIFICATION_ENFORCEMENT"),
   /** Harden Co-Ownership — block readiness/autopilot when critical rows are expired. */
@@ -2462,6 +2484,7 @@ export const FEATURE_OACIQ_REPRESENTATION_ADVERTISING_ENGINE_V1 =
 export const FEATURE_OACIQ_AML_ENGINE_V1 = complianceFlags.oaciqAmlEngineV1;
 export const FEATURE_QUEBEC_LANGUAGE_COMPLIANCE_V1 = complianceFlags.quebecLanguageComplianceV1;
 export const FEATURE_OACIQ_CLAUSE_COMPLIANCE_ENGINE_V1 = complianceFlags.oaciqClauseComplianceEngineV1;
+export const FEATURE_LECIPM_OACIQ_BROKERAGE_FORMS_V1 = complianceFlags.lecipmOaciqBrokerageFormsEngineV1;
 
 /** Phase 4.5 — append-only compliance event timeline (Legal Hub + marketplace governance facts). Default off. */
 export const eventTimelineFlags = {

@@ -13,9 +13,9 @@ Additive instrumentation and optional soft gating around high-value actions. **D
 
 ## What is tracked (log + optional counters)
 
-- `lead_viewed` — broker/admin `GET /api/leads/[id]`
+- `lead_viewed` — broker/admin `GET /api/lecipm/leads/[id]`
 - `contact_revealed` — same route when `contactUnlockedAt` is set
-- `lead_unlocked` — lead unlock Stripe **checkout session created** (`/api/leads/[id]/unlock-checkout`)
+- `lead_unlocked` — lead unlock Stripe **checkout session created** (`/api/lecipm/leads/[id]/unlock-checkout`)
 - `booking_started` — BNHub booking checkout session path in `POST /api/stripe/checkout` (alongside existing analytics)
 - `premium_insight_viewed` — `isLecipmAiInsightsPremiumUser()` when enforcement or dashboard flag is on (monetization enabled)
 - Client `POST /api/revenue/events` — authenticated fan-in (e.g. CTA intents)

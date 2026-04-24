@@ -22,7 +22,7 @@ Set in `apps/web/.env` / deployment. Documented in `apps/web/.env.example`.
 ## Unlock flow
 
 1. Broker opens dashboard or lead list; locked leads show `LeadPreviewCard` + price from `leadPricing.leadPrice` (deterministic pricing via `computeLeadValueAndPrice` + revenue bounds).
-2. **Unlock lead** → `POST /api/leads/unlock` with `{ "leadId": "..." }` (or legacy `POST /api/leads/[id]/unlock-checkout`).
+2. **Unlock lead** → `POST /api/lecipm/leads/unlock` with `{ "leadId": "..." }` (or legacy `POST /api/lecipm/leads/[id]/unlock-checkout`).
 3. Server reuses `createCheckoutSession` with `paymentType: "lead_unlock"` and metadata including `leadId`, `monetizationType: "lead_unlock"`.
 4. Stripe Checkout completes → existing webhook branch sets `contactUnlockedAt` and ledger/revenue events; `onLeadUnlockPaymentRecorded` increments monetization monitoring (additive).
 

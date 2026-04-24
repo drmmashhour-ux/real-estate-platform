@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { BrokerOperationalTrustPanel } from "@/components/trust-score/BrokerOperationalTrustPanel";
+
 type DepositRow = {
   id: string;
   depositType: string;
@@ -74,6 +76,16 @@ export default function BrokerTrustPage() {
         </p>
         {loadError ? <p className="mt-2 text-sm text-amber-400">{loadError}</p> : null}
       </div>
+
+      <section className="rounded-xl border border-[#D4AF37]/25 bg-black/60 p-5">
+        <h2 className="text-lg font-semibold text-[#D4AF37]">Operational trust snapshot</h2>
+        <p className="mt-1 text-sm text-gray-400">
+          Separate from escrow balances — this summarizes marketplace reliability signals for coaching and queues.
+        </p>
+        <div className="mt-4">
+          <BrokerOperationalTrustPanel />
+        </div>
+      </section>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="rounded-xl border border-[#D4AF37]/30 bg-black p-4 text-white">

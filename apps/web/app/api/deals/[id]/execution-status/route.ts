@@ -1,4 +1,4 @@
-import { authenticateBrokerDealRoute } from "@/lib/deals/broker-draft-auth";
+import { authenticateDealParticipantRoute } from "@/lib/deals/execution-access";
 import { requireDealExecutionV1 } from "@/lib/deals/pipeline-feature-guard";
 import { getExecutionStatus } from "@/modules/execution/execution.service";
 
@@ -8,7 +8,7 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
   const gated = requireDealExecutionV1();
   if (gated) return gated;
   const { id: dealId } = await context.params;
-  const auth = await authenticateBrokerDealRoute(dealId);
+  const auth = await authenticateDealParticipantRoute(dealId);
   if (!auth.ok) return auth.response;
 
   const status = await getExecutionStatus(dealId);

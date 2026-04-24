@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { logInfo } from "@/lib/logger";
+import { assertAutopilotOutboundAllowed } from "@/lib/signature-control/autopilot-guard";
 import { appendDealAuditEvent } from "@/modules/deals/deal-audit.service";
 import { logTimelineEvent } from "@/modules/transactions/transaction-timeline.service";
 import { createAssetFromDeal } from "./asset-onboarding.service";
@@ -125,7 +126,16 @@ export async function prepareFinalDocumentSet(dealId: string, actorUserId: strin
 }
 
 /** Marks closing READY and logs package sent (simulated). */
-export async function simulateSendToNotary(dealId: string, actorUserId: string | null) {
+export async function simulateSendToNotary(
+  dealId: string,
+  actorUserId: string | null,
+  actionPipelineId?: string | null,
+) {
+  await assertAutopilotOutboundAllowed({
+    operation: "sd_closing:simulate_send_notary",
+    actionPipelineId,
+  });
+
   const closing = await prisma.lecipmPipelineDealClosing.findUnique({ where: { dealId } });
   if (!closing) throw new Error("Closing not found");
 
@@ -165,7 +175,16 @@ export async function markSigningStarted(dealId: string, actorUserId: string | n
   return getClosingByDealId(dealId);
 }
 
-export async function completeClosing(dealId: string, actorUserId: string | null) {
+export async function completeClosing(
+  dealId: string,
+  actorUserId: string | null,
+  actionPipelineId?: string | null,
+) {
+  await assertAutopilotOutboundAllowed({
+    operation: "sd_closing:complete",
+    actionPipelineId,
+  });
+
   const validation = await evaluateClosing(dealId);
   if (validation.status !== "READY") {
     throw new Error(validation.issues.join("; ") || "Closing validation failed");
@@ -211,4 +230,5 @@ export async function completeClosing(dealId: string, actorUserId: string | null
   return getClosingByDealId(dealId);
 }
 
+/** @deprecated Use `confirmClosingExecution` from `closing-room.service` for LECIPm `Deal` closing. */
 export const confirmDealClosing = completeClosing;

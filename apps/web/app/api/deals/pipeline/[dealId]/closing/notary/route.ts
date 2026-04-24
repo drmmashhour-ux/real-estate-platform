@@ -42,7 +42,11 @@ export async function POST(req: Request, context: { params: Promise<{ dealId: st
     }
 
     if (action === "send") {
-      const closing = await simulateSendToNotary(dealId, auth.userId);
+      const actionPipelineId =
+        typeof body.action_pipeline_id === "string" && body.action_pipeline_id.trim()
+          ? body.action_pipeline_id.trim()
+          : null;
+      const closing = await simulateSendToNotary(dealId, auth.userId, actionPipelineId);
       return NextResponse.json({ closing });
     }
 

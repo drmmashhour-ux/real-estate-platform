@@ -52,7 +52,7 @@ export type LeadPricingModePerformance = {
   confidenceLevel: "low" | "medium" | "high";
 };
 
-/** Admin GET /api/leads/[id] when lead pricing results flag is on — types only for client surfaces. */
+/** Admin GET /api/lecipm/leads/[id] when lead pricing results flag is on — types only for client surfaces. */
 export type LeadPricingResultsAdminPayload = {
   latestObservationId: string | null;
   outcomeSummary: LeadPricingOutcomeSummary | null;

@@ -30,6 +30,8 @@ async function main() {
       postalCode: 'H7V 0B1',
       practiceMode: 'INDEPENDENT',
       licenceStatus: 'active',
+      regulator: 'OACIQ',
+      verifiedAt: new Date(),
     },
     create: {
       userId: user.id,
@@ -41,6 +43,8 @@ async function main() {
       postalCode: 'H7V 0B1',
       practiceMode: 'INDEPENDENT',
       licenceStatus: 'active',
+      regulator: 'OACIQ',
+      verifiedAt: new Date(),
     },
   });
 

@@ -15,7 +15,7 @@
 ## Automation flows
 
 1. **Triggers** (orchestrator `triggerAiFollowUpForLead`):
-   - Project lead form: `POST /api/leads` (after create).
+   - Project lead form: `POST /api/lecipm/leads` (after create).
    - Contact page: `POST /api/contact`.
    - AI client chat: after persisted lead from chat (`leadSource: ai_chat`).
 
@@ -34,7 +34,7 @@
 ## Lead pipeline (`Lead.pipelineStatus`)
 
 Default **`new`**. Values: `new` | `contacted` | `awaiting_reply` | `qualified` | `broker_assigned` | `closed` | `lost`.  
-`PATCH /api/leads` with `status: closed` / `lost` syncs pipeline to `closed` / `lost`.
+`PATCH /api/lecipm/leads` with `status: closed` / `lost` syncs pipeline to `closed` / `lost`.
 
 Legacy `Lead.status` (e.g. `contact_inquiry`) unchanged for compatibility.
 
@@ -55,7 +55,7 @@ Legacy `Lead.status` (e.g. `contact_inquiry`) unchanged for compatibility.
 
 - `LeadTimelineEvent` — capture, consent, sends, skips, opt-out, voice queued, escalations.
 - `LeadCommMessage` — inbound/outbound audit.
-- `GET /api/leads/[id]/timeline` — broker/admin.
+- `GET /api/lecipm/leads/[id]/timeline` — broker/admin.
 
 ## Admin settings
 

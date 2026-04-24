@@ -188,8 +188,8 @@ export function LeadDetailClient({
 
   const load = useCallback(async () => {
     const [lr, tr] = await Promise.all([
-      fetch(`/api/leads/${leadId}`, { credentials: "same-origin" }),
-      fetch(`/api/leads/${leadId}/timeline`, { credentials: "same-origin" }),
+      fetch(`/api/lecipm/leads/${leadId}`, { credentials: "same-origin" }),
+      fetch(`/api/lecipm/leads/${leadId}/timeline`, { credentials: "same-origin" }),
     ]);
     if (!lr.ok) {
       setError("Could not load lead.");
@@ -226,7 +226,7 @@ export function LeadDetailClient({
   }, [leadId]);
 
   const patch = async (body: Record<string, unknown>) => {
-    const res = await fetch("/api/leads", {
+    const res = await fetch("/api/lecipm/leads", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       credentials: "same-origin",
@@ -262,7 +262,7 @@ export function LeadDetailClient({
     const text = getDmTemplateForLead(key, { name: lead.name, city: cityLocal });
     try {
       await navigator.clipboard.writeText(text);
-      const res = await fetch("/api/leads", {
+      const res = await fetch("/api/lecipm/leads", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "same-origin",
@@ -287,7 +287,7 @@ export function LeadDetailClient({
   const sendFollowUpEmail = async (templateId: "evaluation_followup_2" | "evaluation_followup_3") => {
     setSending(templateId);
     try {
-      const res = await fetch(`/api/leads/${leadId}/follow-up-email`, {
+      const res = await fetch(`/api/lecipm/leads/${leadId}/follow-up-email`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "same-origin",
@@ -297,7 +297,7 @@ export function LeadDetailClient({
       if (!res.ok) alert(j.error ?? "Send failed");
       else {
         if (j.sent) {
-          await fetch(`/api/leads/${leadId}/assistant-event`, {
+          await fetch(`/api/lecipm/leads/${leadId}/assistant-event`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             credentials: "same-origin",
@@ -895,7 +895,7 @@ export function LeadDetailClient({
                     alert("Enter a valid final price.");
                     return;
                   }
-                  await fetch(`/api/leads/${leadId}/assistant-event`, {
+                  await fetch(`/api/lecipm/leads/${leadId}/assistant-event`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     credentials: "same-origin",

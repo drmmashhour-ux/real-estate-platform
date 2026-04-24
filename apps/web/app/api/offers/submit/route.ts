@@ -28,12 +28,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const actionPipelineId =
+      typeof body.action_pipeline_id === "string" && body.action_pipeline_id.trim()
+        ? body.action_pipeline_id.trim()
+        : null;
+
     const result = await submitOffer({
       transactionId,
       buyerId: userId,
       offerPrice,
       conditions: body.conditions ?? undefined,
       expirationDate,
+      actionPipelineId,
     });
 
     if (process.env.NEXT_PUBLIC_ENV === "staging") {
