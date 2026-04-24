@@ -20,7 +20,10 @@ type Tag =
   | "[tax]"
   | "[playbook]"
   | "[finance-admin]"
-  | "[investment-compliance]";
+  | "[investment-compliance]"
+  | "[insurance]"
+  | "[listing]"
+  | "[ceo-memory]";
 
 function emit(tag: Tag, level: "info" | "warn" | "error", msg: string, payload?: Record<string, unknown>): void {
   const line = `${tag} ${msg}`;
@@ -125,4 +128,32 @@ export const logInvestmentComplianceTagged = {
   info: (msg: string, payload?: Record<string, unknown>) => emit("[investment-compliance]", "info", msg, payload),
   warn: (msg: string, payload?: Record<string, unknown>) => emit("[investment-compliance]", "warn", msg, payload),
   error: (msg: string, payload?: Record<string, unknown>) => emit("[investment-compliance]", "error", msg, payload),
+};
+
+/** Broker professional liability (FARCIQ) — `validated` | `expired` | `uploaded` | `blocked`. */
+export const logInsuranceTagged = {
+  info: (msg: string, payload?: Record<string, unknown>) => emit("[insurance]", "info", msg, payload),
+  warn: (msg: string, payload?: Record<string, unknown>) => emit("[insurance]", "warn", msg, payload),
+  error: (msg: string, payload?: Record<string, unknown>) => emit("[insurance]", "error", msg, payload),
+};
+
+/** CRM listing lifecycle — `created` | `prepared_for_centris` | `published` (Centris prep uses manual export only unless authorized). */
+export const logListingTagged = {
+  info: (msg: string, payload?: Record<string, unknown>) => emit("[listing]", "info", msg, payload),
+  warn: (msg: string, payload?: Record<string, unknown>) => emit("[listing]", "warn", msg, payload),
+  error: (msg: string, payload?: Record<string, unknown>) => emit("[listing]", "error", msg, payload),
+};
+
+/** CEO decision memory + outcomes — `decision_recorded` | `outcome_recorded`. */
+export const logCeoMemoryTagged = {
+  info: (msg: string, payload?: Record<string, unknown>) => emit("[ceo-memory]", "info", msg, payload),
+  warn: (msg: string, payload?: Record<string, unknown>) => emit("[ceo-memory]", "warn", msg, payload),
+  error: (msg: string, payload?: Record<string, unknown>) => emit("[ceo-memory]", "error", msg, payload),
+};
+
+/** Autonomous rollout — policy, execution, cohort, rollback observability. */
+export const logRolloutTagged = {
+  info: (msg: string, payload?: Record<string, unknown>) => emit("[rollout]", "info", msg, payload),
+  warn: (msg: string, payload?: Record<string, unknown>) => emit("[rollout]", "warn", msg, payload),
+  error: (msg: string, payload?: Record<string, unknown>) => emit("[rollout]", "error", msg, payload),
 };

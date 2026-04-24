@@ -21,6 +21,9 @@ import { logError } from "@/lib/logger";
 import { recordAuditEvent } from "@/modules/analytics/audit-log.service";
 import { logAuditEvent } from "@/lib/compliance/log-audit-event";
 import { rejectIfInspectionReadOnlyMutation } from "@/lib/compliance/inspection-session-guard";
+import { assertBrokeredTransaction } from "@/modules/legal-boundary/compliance-action-guard";
+import { writeSignatureBoundaryAudit } from "@/modules/legal-boundary/legal-boundary-audit.service";
+import { getOrSyncTransactionContext } from "@/modules/legal-boundary/transaction-context.service";
 
 export const dynamic = "force-dynamic";
 
@@ -243,6 +246,20 @@ export async function POST(req: Request) {
   const dealId = factString(facts, "dealId");
   const contractId = dsNormalized.contractId?.trim() || factString(facts, "contractId");
 
+  if (listingId) {
+    const txCtx = await getOrSyncTransactionContext({ entityType: "LISTING", entityId: listingId });
+    const boundaryBlock = await assertBrokeredTransaction(txCtx, "binding_contract_execution", auth.user.id, {
+      auditAllowSuccess: true,
+    });
+    if (boundaryBlock) return boundaryBlock;
+  } else if (dealId) {
+    const txCtx = await getOrSyncTransactionContext({ entityType: "DEAL", entityId: dealId });
+    const boundaryBlock = await assertBrokeredTransaction(txCtx, "binding_contract_execution", auth.user.id, {
+      auditAllowSuccess: true,
+    });
+    if (boundaryBlock) return boundaryBlock;
+  }
+
   let contractNumber: string;
   try {
     contractNumber = await ensureContractRegistryNumber({
@@ -452,6 +469,26 @@ export async function POST(req: Request) {
       persistedAuditTrail: body.persistAuditTrail,
     },
   });
+
+  if (listingId) {
+    const txCtx = await getOrSyncTransactionContext({ entityType: "LISTING", entityId: listingId });
+    await writeSignatureBoundaryAudit({
+      entityId: listingId,
+      entityType: "LISTING",
+      mode: txCtx.mode,
+      detail: `broker_signature_recorded formType=${body.formType} contractNumber=${contractNumber ?? ""}`,
+      actorUserId: auth.user.id,
+    });
+  } else if (dealId) {
+    const txCtx = await getOrSyncTransactionContext({ entityType: "DEAL", entityId: dealId });
+    await writeSignatureBoundaryAudit({
+      entityId: dealId,
+      entityType: "DEAL",
+      mode: txCtx.mode,
+      detail: `broker_signature_recorded formType=${body.formType} contractNumber=${contractNumber ?? ""}`,
+      actorUserId: auth.user.id,
+    });
+  }
 
   return NextResponse.json({
     success: true,

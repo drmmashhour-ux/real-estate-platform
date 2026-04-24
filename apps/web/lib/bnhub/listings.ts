@@ -87,6 +87,12 @@ export type ListingSearchParams = {
   userId?: string | null;
   /** Cookie `lecipm_behavior_sid` — optional behavior-learning personalization. */
   sessionId?: string | null;
+  /** `ExpansionCountry.id` */
+  marketCountryId?: string;
+  /** `lecipm_cities.id` */
+  marketCityId?: string;
+  /** Country code: matches `ExpansionCountry.code` or legacy listing `country` when FK unset. */
+  countryCode?: string;
 };
 
 /** Maps filter keys to substrings matched against `ShortTermListing.amenities` JSON strings. */
@@ -241,6 +247,9 @@ export async function searchListings(params: ListingSearchParams) {
     geocodeMissingCoordinates = true,
     userId,
     sessionId,
+    marketCountryId,
+    marketCityId,
+    countryCode,
   } = params;
 
   const where = buildPublishedListingSearchWhere({
@@ -262,6 +271,9 @@ export async function searchListings(params: ListingSearchParams) {
     south,
     east,
     west,
+    marketCountryId,
+    marketCityId,
+    countryCode,
   });
 
   const orderBy = searchOrderBy(sort, {});
@@ -480,7 +492,15 @@ const LISTING_SEARCH_BASE_INCLUDE = {
       id: true,
       name: true,
       hostQuality: true,
-      hostPerformanceMetrics: { select: { score: true } },
+      hostPerformanceMetrics: {
+        select: {
+          score: true,
+          avgResponseTime: true,
+          cancellationRate: true,
+          responseRate: true,
+          completionRate: true,
+        },
+      },
     },
   },
   _count: { select: { reviews: true, bookings: true } },
@@ -515,6 +535,13 @@ export async function searchListingsPaginated(
     limit = 20,
     amenitySlugs,
     userId,
+    marketCountryId,
+    marketCityId,
+    countryCode,
+    north,
+    south,
+    east,
+    west,
   } = params;
 
   const where = buildPublishedListingSearchWhere({
@@ -532,6 +559,13 @@ export async function searchListingsPaginated(
     centerLat,
     centerLng,
     radiusKm,
+    north,
+    south,
+    east,
+    west,
+    marketCountryId,
+    marketCityId,
+    countryCode,
   });
 
   const orderBy = searchOrderBy(sort, { paginated: true });

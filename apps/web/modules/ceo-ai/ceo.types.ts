@@ -1,61 +1,69 @@
 export type CeoInsightType = "GROWTH" | "REVENUE" | "RISK" | "OPPORTUNITY" | "EFFICIENCY";
-export type CeoInsightSeverity = "low" | "medium" | "high";
+export type CeoSeverity = "low" | "medium" | "high";
 
 export interface CeoInsight {
   id: string;
   type: CeoInsightType;
   title: string;
   description: string;
-  severity: CeoInsightSeverity;
+  severity: CeoSeverity;
   detectedAt: Date;
+  metadata?: Record<string, any>;
 }
 
 export type CeoDecisionType = "INVEST" | "REDUCE" | "EXPERIMENT" | "SHIFT_FOCUS" | "HOLD";
-export type CeoDecisionDomain = "PRICING" | "MARKETING" | "DEALS" | "ESG" | "PRODUCT" | "GROWTH" | "OUTREACH" | "RETENTION" | "OPERATIONS" | "FUND" | "CAPITAL";
+export type CeoDomain = "PRICING" | "MARKETING" | "DEALS" | "ESG" | "PRODUCT";
 
 export interface CeoDecision {
   id: string;
   decisionType: CeoDecisionType;
-  domain: CeoDecisionDomain;
-  payloadJson: any;
+  domain: CeoDomain;
+  payloadJson: Record<string, any>;
   reasoning: string;
-  confidence: number;
+  confidence: number; // 0-1
   createdAt: Date;
+  insightIds: string[]; // Linked insights
 }
 
 export interface CeoStrategySnapshot {
   id: string;
-  summaryJson: any;
-  keyMetricsJson: any;
+  summaryJson: Record<string, any>;
+  keyMetricsJson: Record<string, any>;
   createdAt: Date;
 }
 
 export interface CeoContext {
   growth: {
-    leads: number;
-    leadsPrev: number;
+    leadsCount: number;
     conversionRate: number;
-    traffic: number;
+    trafficVolume: number;
+    trend: number; // Percentage change
   };
   deals: {
     volume: number;
     closeRate: number;
     stageDistribution: Record<string, number>;
+    avgRejectionRate: number;
   };
   esg: {
     avgScore: number;
     upgradeActivity: number;
+    adoptionRate: number;
   };
   rollout: {
-    activeRollouts: number;
+    activeCount: number;
     successRate: number;
+    failureSignals: string[];
   };
   agents: {
     decisionsCount: number;
-    successSignals: number;
+    successSignals: number; // 0-1
+    activeAgents: number;
   };
-  revenue?: {
-    mrr: number;
-    growth: number;
+  revenue: {
+    total?: number;
+    mrr?: number;
+    trend?: number;
   };
+  timestamp: Date;
 }

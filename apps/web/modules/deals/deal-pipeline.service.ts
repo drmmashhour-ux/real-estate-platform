@@ -4,6 +4,8 @@ import type { PipelineStage } from "@/modules/deals/deal.types";
 import { assertStageTransitionAllowed, logStageCheck } from "@/modules/deals/deal-stage-engine";
 import { buildGateContext } from "@/modules/deals/deal-workflow-orchestrator";
 import { seedConditionsFromListing } from "@/modules/deals/deal-conditions.service";
+import { recordEvolutionOutcome } from "@/modules/evolution/outcome-tracker.service";
+import { runAndAttachUnderwritingToDeal } from "@/modules/investment-ai/deal-underwriting.integration.service";
 
 const TAG = "[deal-pipeline]";
 
@@ -87,6 +89,8 @@ export async function createPipelineDeal(options: {
     await seedConditionsFromListing(row.id, options.listingId).catch(() => 0);
   }
 
+  void runAndAttachUnderwritingToDeal(row.id, { source: "INITIAL" }).catch(() => {});
+
   logInfo(`${TAG} created`, { dealId: row.id, listingId: options.listingId });
   return row;
 }
@@ -150,6 +154,23 @@ export async function applyPipelineStage(options: {
     /* capital module optional at build boundary */
   }
 
+  if (options.toStage === "CLOSED" || options.toStage === "DECLINED") {
+    void recordEvolutionOutcome({
+      domain: "DEAL",
+      metricType: "CONVERSION",
+      strategyKey: "deal_execution",
+      entityId: options.dealId,
+      entityType: "InvestmentPipelineDeal",
+      actualJson: {
+        result: options.toStage === "CLOSED" ? "CLOSED" : "LOST",
+        stage: options.toStage,
+        reason: options.reason,
+      },
+      reinforceStrategy: true,
+      idempotent: true,
+    }).catch(() => {});
+  }
+
   logInfo(`${TAG} stage`, { dealId: options.dealId, to: options.toStage });
 }
 
@@ -169,6 +190,7 @@ export async function getPipelineDealDetail(dealId: string) {
       diligenceTasks: { orderBy: { updatedAt: "desc" } },
       followUps: { orderBy: { updatedAt: "desc" } },
       audits: { orderBy: { createdAt: "desc" }, take: 80 },
+      underwritingSnapshots: { orderBy: { createdAt: "desc" }, take: 5 },
     },
   });
 }

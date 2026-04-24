@@ -18,8 +18,8 @@ export type PolicyGateInput = {
   autonomyHint?: PlaybookExecutionMode;
 };
 
-/** Optional autonomy hint for execution (OFF = no automation). */
-export type AutonomyModeHint = PlaybookExecutionMode | "OFF" | "RECOMMEND_ONLY" | "NONE";
+/** Optional autonomy hint for execution (OFF = no automation; ASSIST = human-in-the-loop). */
+export type AutonomyModeHint = PlaybookExecutionMode | "OFF" | "RECOMMEND_ONLY" | "NONE" | "ASSIST";
 
 export type PlaybookGovernanceInput = {
   status: PlaybookStatus;

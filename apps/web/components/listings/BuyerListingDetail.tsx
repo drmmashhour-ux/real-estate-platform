@@ -187,6 +187,7 @@ export function BuyerListingDetail({
   collaboration = undefined,
   lecipmRankingBadges = null,
   esgBadge = null,
+  legalBoundaryBanner = null,
 }: {
   listing: BuyerListingPayload;
   /** Qualified traffic hint: use `?dist=centris` on listing URLs from authorized Centris landing flows. */
@@ -209,6 +210,8 @@ export function BuyerListingDetail({
   } | null;
   /** CRM listing ESG grade badge (server-rendered when composite score meets threshold). */
   esgBadge?: ReactNode | null;
+  /** OACIQ legal boundary — broker assisted vs independent (FSBO) disclosure. */
+  legalBoundaryBanner?: ReactNode | null;
 }) {
   const conversionEngineFlags = useConversionEngineFlags();
   const { showToast } = useToast();
@@ -889,6 +892,7 @@ export function BuyerListingDetail({
                 own due diligence.
               </div>
             ) : null}
+            {legalBoundaryBanner}
             <FsboListingGallery
               images={listing.images}
               coverImage={listing.coverImage}
@@ -1572,9 +1576,10 @@ export function BuyerListingDetail({
                       <div className="mt-2 space-y-1">
                         <p
                           className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/35 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-100"
-                          title="Broker maintains active professional liability coverage on file"
+                          title="Broker maintains active professional liability coverage on file (FARCIQ)"
                         >
-                          <span aria-hidden>🛡️</span> Insured <span className="text-emerald-200/90">✓</span>
+                          <span aria-hidden>🛡️</span> Insured real estate broker (FARCIQ)
+                          <span className="text-emerald-200/90">✓</span>
                         </p>
                         {listing.insuranceDetail && (
                           <div className="flex flex-col gap-1 pl-1">

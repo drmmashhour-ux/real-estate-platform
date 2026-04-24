@@ -2,6 +2,7 @@ import { logInfo } from "@/lib/logger";
 import { prisma } from "@/lib/db";
 import { refreshGrowthAiConversationStage } from "@/src/modules/messaging/growthAiStage";
 import { applyLearningOutcomeFeedback } from "@/src/modules/messaging/learning/templatePerformance";
+import { recordEvolutionOutcome } from "@/modules/evolution/outcome-tracker.service";
 
 export type GrowthOutcome =
   | "new"
@@ -127,6 +128,18 @@ export async function updateGrowthAiOutcome(
   });
   logInfo(`Outcome updated: ${next}`, { conversationId, eventType });
   await refreshGrowthAiConversationStage(conversationId, `outcome:${eventType}`);
+
+  void recordEvolutionOutcome({
+    domain: "MESSAGING",
+    metricType: "CONVERSION",
+    strategyKey: "lead_conversion",
+    entityId: conversationId,
+    entityType: "GrowthAiConversation",
+    actualJson: { eventType, outcome: next },
+    reinforceStrategy: true,
+    idempotent: false, // Funnel progression can have multiple events
+  }).catch(() => {});
+
   await applyLearningOutcomeFeedback(conversationId, next, eventType).catch(() => {
     /* learning tables may be missing before migration */
   });

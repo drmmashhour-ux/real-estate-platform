@@ -311,6 +311,19 @@ export async function generateRetrofitPlansForListing(
   }
 
   logInfo(`${TAG} generate-done`, { listingId, generated, skippedEmpty });
+
+  // Trigger underwriting refresh for all linked deals (non-blocking)
+  prisma.investmentPipelineDeal.findMany({
+    where: { listingId },
+    select: { id: true }
+  }).then(deals => {
+    for (const d of deals) {
+      import("@/modules/investment-ai/deal-underwriting.integration.service")
+        .then(m => m.runAndAttachUnderwritingToDeal(d.id, { source: "ARTIFACTS_REFRESH" }))
+        .catch(() => {});
+    }
+  }).catch(() => {});
+
   return { generated, skippedEmpty };
 }
 

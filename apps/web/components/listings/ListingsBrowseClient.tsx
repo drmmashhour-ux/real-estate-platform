@@ -138,6 +138,7 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [smartCompareIds, setSmartCompareIds] = useState<string[]>([]);
   const [mapFeedRows, setMapFeedRows] = useState<Row[]>([]);
+  const [personalizedTopIds, setPersonalizedTopIds] = useState<Set<string>>(() => new Set());
   const listRef = useRef<HTMLDivElement>(null);
   const mapDeepLinkScrollKey = useRef<string | null>(null);
 
@@ -181,7 +182,28 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
         return;
       }
       const j = await r.json();
-      setData(Array.isArray(j.data) ? j.data : []);
+      let rows: Row[] = Array.isArray(j.data) ? j.data : [];
+      if (f.sort === "personalized" && rows.length > 0) {
+        try {
+          const ids = rows.map((row) => row.id).join(",");
+          const rec = await fetch(`/api/recommendations/listings?ids=${encodeURIComponent(ids)}&personalization=1`, {
+            cache: "no-store",
+          });
+          const recJson = (await rec.json()) as { items?: { entityId: string; score: number }[] };
+          if (rec.ok && Array.isArray(recJson.items)) {
+            const scoreMap = new Map(recJson.items.map((it) => [it.entityId, it.score] as const));
+            rows = [...rows].sort((a, b) => (scoreMap.get(b.id) ?? 0) - (scoreMap.get(a.id) ?? 0));
+            setPersonalizedTopIds(new Set(recJson.items.slice(0, 3).map((it) => it.entityId)));
+          } else {
+            setPersonalizedTopIds(new Set());
+          }
+        } catch {
+          setPersonalizedTopIds(new Set());
+        }
+      } else {
+        setPersonalizedTopIds(new Set());
+      }
+      setData(rows);
       setTotal(typeof j.total === "number" ? j.total : 0);
     } catch {
       setFetchError("Something went wrong — please try again.");
@@ -364,6 +386,11 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
                   />
                 ) : null}
                 <div className="pointer-events-none absolute bottom-3 left-3 z-[2] max-w-[calc(100%-1.5rem)]">
+                  {listSort === "personalized" && personalizedTopIds.has(row.id) ?
+                    <span className="mb-1 inline-block rounded-full bg-premium-gold px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-black">
+                      Best match
+                    </span>
+                  : null}
                   <ListingBadges
                     verified={Boolean(row.verifiedListing)}
                     featuredActive={isFeaturedListingActive(row.featuredUntil)}
@@ -432,7 +459,7 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
         })}
       </div>
     ),
-    [data, selectedId, smartCompareIds]
+    [data, selectedId, smartCompareIds, listSort, personalizedTopIds]
   );
 
   const mapSearchEl = (
@@ -669,6 +696,7 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
           className="rounded-xl border border-white/15 bg-[#141414] px-3 py-2 text-sm text-white/85 focus:border-premium-gold/45 focus:outline-none focus:ring-1 focus:ring-premium-gold/30"
         >
           <option value="recommended">Recommended</option>
+          <option value="personalized">For you (personalized)</option>
           <option value="newest">Newest</option>
           <option value="priceAsc">Price · Low to high</option>
           <option value="priceDesc">Price · High to low</option>

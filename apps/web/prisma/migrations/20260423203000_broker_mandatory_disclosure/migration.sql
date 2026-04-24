@@ -25,5 +25,5 @@ CREATE INDEX "broker_disclosures_broker_id_disclosed_at_idx" ON "broker_disclosu
 
 ALTER TABLE "broker_disclosures" ADD CONSTRAINT "broker_disclosures_broker_id_fkey" FOREIGN KEY ("broker_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE "broker_disclosures" ADD CONSTRAINT "broker_disclosures_deal_id_fkey" FOREIGN KEY ("deal_id") REFERENCES "deals"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "broker_disclosures" ADD CONSTRAINT "broker_disclosures_listing_id_fkey" FOREIGN KEY ("listing_id") REFERENCES "listings"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "broker_disclosures" ADD CONSTRAINT "broker_disclosures_listing_id_fkey" FOREIGN KEY ("listing_id") REFERENCES "Listing"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE "broker_disclosures" ADD CONSTRAINT "broker_disclosures_fsbo_listing_id_fkey" FOREIGN KEY ("fsbo_listing_id") REFERENCES "fsbo_listings"("id") ON DELETE CASCADE ON UPDATE CASCADE;

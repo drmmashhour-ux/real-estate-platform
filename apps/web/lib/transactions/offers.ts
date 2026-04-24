@@ -11,6 +11,11 @@ import {
 import { recordTransactionEvent } from "./events";
 import type { OfferStatus, TransactionStatus } from "./constants";
 import { BrokerActionGuard } from "@/lib/compliance/broker-action-guard";
+import {
+  assertMandatoryBrokerDisclosureForOfferPath,
+  MandatoryBrokerDisclosureError,
+} from "@/lib/compliance/oaciq/broker-mandatory-disclosure.service";
+import { assertBrokerProfessionalInsuranceActiveOrThrow } from "@/lib/compliance/oaciq/broker-professional-insurance.service";
 
 export interface SubmitOfferInput {
   transactionId: string;
@@ -42,6 +47,22 @@ export async function submitOffer(input: SubmitOfferInput): Promise<{ offerId: s
       realEstateTransactionId: input.transactionId,
       listingId: tx.listingId ?? null,
     });
+  }
+
+  if (tx.listingId) {
+    try {
+      await assertMandatoryBrokerDisclosureForOfferPath({
+        brokerId: tx.brokerId,
+        listingId: tx.listingId,
+      });
+    } catch (e) {
+      if (e instanceof MandatoryBrokerDisclosureError) throw e;
+      throw e;
+    }
+  }
+
+  if (tx.brokerId) {
+    await assertBrokerProfessionalInsuranceActiveOrThrow(tx.brokerId, "transaction_offer_submit");
   }
 
   if (oaciqClientDisclosureEnforcementEnabled()) {
@@ -102,6 +123,7 @@ export async function counterOffer(input: CounterOfferInput): Promise<{ counterO
       entityType: "Deal" as any,
     });
     if (!guard.allowed) throw new Error(guard.reason || "Unauthorized brokerage action.");
+    await assertBrokerProfessionalInsuranceActiveOrThrow(input.createdById, "transaction_offer_counter");
   }
 
   if (["completed", "cancelled"].includes(offer.transaction.status)) throw new Error("Transaction is no longer active");
@@ -159,6 +181,10 @@ export async function acceptOffer(input: AcceptOfferInput): Promise<{ transactio
   });
   if (!offer) throw new Error("Offer not found");
   if (!["pending", "countered"].includes(offer.status)) throw new Error("Offer cannot be accepted");
+
+  if (offer.transaction.brokerId === input.acceptedById) {
+    await assertBrokerProfessionalInsuranceActiveOrThrow(input.acceptedById, "transaction_offer_accept");
+  }
 
   const isBuyer = offer.transaction.buyerId === input.acceptedById;
   const isSeller = offer.transaction.sellerId === input.acceptedById;

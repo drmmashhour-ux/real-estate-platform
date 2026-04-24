@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { LecipmBrandLockup } from "@/components/brand/LecipmBrandLockup";
 import { LecipmHomeSearchPanel } from "@/components/marketing/LecipmHomeSearchPanel";
+import { RecommendedForYouHomeSection } from "@/components/recommendations/RecommendedForYouHomeSection";
 import { DEFAULT_COUNTRY_SLUG } from "@/config/countries";
 import { routing } from "@/i18n/routing";
 
@@ -342,6 +344,10 @@ export function LecipmLuxuryHomepage({ locale = routing.defaultLocale, country =
           </div>
         </div>
       </section>
+
+      <Suspense fallback={null}>
+        <RecommendedForYouHomeSection base={base} locale={locale} country={country} />
+      </Suspense>
 
       <section className="relative px-6 py-24 lg:px-10">
         <div className="mx-auto max-w-7xl">

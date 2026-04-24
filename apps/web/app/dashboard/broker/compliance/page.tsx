@@ -37,6 +37,11 @@ export default function BrokerCompliancePage() {
           description="Trust, AML, records, tax rule packs"
           href="/dashboard/broker/compliance/unified"
         />
+        <HubCard
+          title="AI Broker Assistant"
+          description="Rédaction FR, conformité résidentielle, révision obligatoire"
+          href="/dashboard/broker-assistant"
+        />
       </div>
 
       <div className="mt-8 border-t border-white/10 pt-6">

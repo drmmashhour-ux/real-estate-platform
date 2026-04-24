@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { recordEvolutionOutcome } from "@/modules/evolution/outcome-tracker.service";
 
 export type PricingApplyActor = "cron_auto" | "host_ui";
 
@@ -142,6 +143,22 @@ export async function applyPricingSuggestion(
         appliedAt: new Date(),
       },
     });
+
+    void recordEvolutionOutcome({
+      domain: "BNHUB",
+      metricType: "PRICING",
+      strategyKey: "dynamic_pricing",
+      entityId: listing.id,
+      entityType: "ShortTermListing",
+      expectedJson: { targetPrice: newDollars },
+      actualJson: {
+        oldPrice: oldDollars,
+        newPrice: newDollars,
+        actor: ctx.actor,
+      },
+      reinforceStrategy: true,
+      idempotent: false, // Allow multiple price changes for same listing
+    }).catch(() => {});
   });
 
   return { ok: true };

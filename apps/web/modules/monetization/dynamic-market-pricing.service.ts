@@ -5,6 +5,11 @@
  */
 import { prisma } from "@/lib/db";
 import { getLatestLeadScore, type LeadBand } from "@/modules/senior-living/lead-scoring.service";
+import {
+  getLeadPricingRolloutRelativeDelta,
+  getPricingRolloutRelativeDelta,
+} from "@/modules/rollout/rollout-runtime.service";
+import { ROLLOUT_STRATEGY } from "@/modules/rollout/rollout.constants";
 
 export const MARKET_PRICING_TYPES = {
   LEAD: "LEAD",
@@ -224,6 +229,8 @@ export async function getLeadPricingQuote(input?: {
   recordEvent?: boolean;
   /** Force recomputing smoothed factors (admin / cron). */
   refreshFactors?: boolean;
+  /** Stable id for rollout cohort (defaults to leadId). */
+  cohortEntityId?: string | null;
 }): Promise<LeadPricingQuote> {
   const sig = await computeDemandQualitySignals({ city: input?.city });
   const { demandFactor, qualityFactor } = await smoothAndPersistFactors(
@@ -234,6 +241,13 @@ export async function getLeadPricingQuote(input?: {
   );
 
   const rule = await getOrCreateMarketRule(MARKET_PRICING_TYPES.LEAD);
+
+  const cohortId = input?.cohortEntityId ?? input?.leadId ?? null;
+  const rolloutRel = await getLeadPricingRolloutRelativeDelta(cohortId);
+  const effectiveBase =
+    rolloutRel != null ?
+      Math.min(rule.maxPrice, Math.max(rule.minPrice, rule.basePrice * (1 + rolloutRel)))
+    : rule.basePrice;
 
   let leadBand: LeadBand | null = null;
   let mult = 1;
@@ -246,7 +260,7 @@ export async function getLeadPricingQuote(input?: {
   }
 
   const finalPrice = computeFinalPrice({
-    basePrice: rule.basePrice,
+    basePrice: effectiveBase,
     minPrice: rule.minPrice,
     maxPrice: rule.maxPrice,
     demandFactor,
@@ -292,7 +306,7 @@ export async function getLeadPricingQuote(input?: {
   return {
     type: "LEAD",
     currency: "CAD",
-    basePrice: rule.basePrice,
+    basePrice: effectiveBase,
     minPrice: rule.minPrice,
     maxPrice: rule.maxPrice,
     demandFactor,
@@ -384,6 +398,7 @@ export async function getFeaturedPlacementQuote(input?: {
   city?: string | null;
   recordEvent?: boolean;
   refreshFactors?: boolean;
+  cohortEntityId?: string | null;
 }): Promise<FeaturedPricingQuote> {
   const sig = await computeDemandQualitySignals({ city: input?.city });
   const { demandFactor, qualityFactor } = await smoothAndPersistFactors(
@@ -393,8 +408,17 @@ export async function getFeaturedPlacementQuote(input?: {
     input?.refreshFactors === true
   );
   const rule = await getOrCreateMarketRule(MARKET_PRICING_TYPES.FEATURED);
+  const rolloutRel = await getPricingRolloutRelativeDelta(
+    input?.cohortEntityId ?? null,
+    ROLLOUT_STRATEGY.FEATURED_BASE_PRICE_RELATIVE,
+  );
+  const effectiveBase =
+    rolloutRel != null ?
+      Math.min(rule.maxPrice, Math.max(rule.minPrice, rule.basePrice * (1 + rolloutRel)))
+    : rule.basePrice;
+
   const finalPrice = computeFinalPrice({
-    basePrice: rule.basePrice,
+    basePrice: effectiveBase,
     minPrice: rule.minPrice,
     maxPrice: rule.maxPrice,
     demandFactor,
@@ -402,7 +426,7 @@ export async function getFeaturedPlacementQuote(input?: {
   });
 
   const explanation = [
-    `Featured placement reference $${rule.basePrice.toFixed(0)} CAD.`,
+    `Featured placement reference $${effectiveBase.toFixed(0)} CAD.`,
     input?.city ?
       `Higher demand in ${input.city} increases placement cost within the published min/max.`
     : "City-specific demand can change this quote — pass ?city= when requesting.",
@@ -423,7 +447,7 @@ export async function getFeaturedPlacementQuote(input?: {
   return {
     type: "FEATURED",
     currency: "CAD",
-    basePrice: rule.basePrice,
+    basePrice: effectiveBase,
     minPrice: rule.minPrice,
     maxPrice: rule.maxPrice,
     demandFactor,

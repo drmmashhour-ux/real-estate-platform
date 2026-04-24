@@ -2358,6 +2358,8 @@ export const lecipmOaciqFlags = {
   brokerConflictDisclosureV1: envTrue("FEATURE_BROKER_CONFLICT_DISCLOSURE_V1"),
   /** Broker-filed mandatory disclosure (OACIQ) before offers, publish, and deal creation. */
   mandatoryBrokerDisclosureV1: envTrue("FEATURE_MANDATORY_BROKER_DISCLOSURE_V1"),
+  /** FARCIQ-style professional liability insurance gates for broker listing / offer / contract actions. */
+  brokerProfessionalInsuranceV1: envTrue("FEATURE_BROKER_PROFESSIONAL_INSURANCE_V1"),
 } as const;
 
 export type LecipmOaciqFlagKey = keyof typeof lecipmOaciqFlags;
@@ -2473,6 +2475,11 @@ export const complianceFlags = {
   coownershipVerificationEnforcement: envTrue("FEATURE_COOWNERSHIP_VERIFICATION_ENFORCEMENT"),
   /** Harden Co-Ownership — block readiness/autopilot when critical rows are expired. */
   coownershipExpiryEnforcement: envTrue("FEATURE_COOWNERSHIP_EXPIRY_ENFORCEMENT"),
+  /**
+   * Independent broker — CRM listing publish requires OACIQ licence + `hasCentrisAccess` on licence profile.
+   * Centris export remains manual; LECIPM never auto-posts to Centris without a separate authorized integration.
+   */
+  centrisListingEligibilityV1: envTrue("FEATURE_CENTRIS_LISTING_ELIGIBILITY_V1"),
 } as const;
 
 export type ComplianceFlagKey = keyof typeof complianceFlags;
@@ -2487,6 +2494,7 @@ export const FEATURE_COOWNERSHIP_INSURANCE_ENFORCEMENT = complianceFlags.coowner
 export const FEATURE_COOWNERSHIP_COMPLIANCE_ENFORCEMENT = complianceFlags.coownershipComplianceEnforcement;
 export const FEATURE_COOWNERSHIP_VERIFICATION_ENFORCEMENT = complianceFlags.coownershipVerificationEnforcement;
 export const FEATURE_COOWNERSHIP_EXPIRY_ENFORCEMENT = complianceFlags.coownershipExpiryEnforcement;
+export const FEATURE_CENTRIS_LISTING_ELIGIBILITY_V1 = complianceFlags.centrisListingEligibilityV1;
 export const FEATURE_SELLER_DECLARATION_COMPLIANCE_GATE_V1 = complianceFlags.sellerDeclarationComplianceGateV1;
 export const FEATURE_OACIQ_REPRESENTATION_ADVERTISING_ENGINE_V1 =
   complianceFlags.oaciqRepresentationAdvertisingEngineV1;

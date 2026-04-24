@@ -100,4 +100,10 @@ export type AiCloserAssistOutput = {
   /** LECIPM no-show engine — soft reconfirm nudge when a scheduled visit is high-risk. */
   noShowAssist?: { visitId: string | null; nudge: string; riskBand: "LOW" | "MEDIUM" | "HIGH" | "UNSET" };
   explanation: AiCloserExplanation;
+  /** OACIQ legal boundary — negotiation AI disabled for FSBO / unbrokered files when listing context is present. */
+  legalBoundary?: {
+    mode: "BROKERED" | "FSBO";
+    blockedCapability: string;
+    brokerConversionPrompt: boolean;
+  };
 };

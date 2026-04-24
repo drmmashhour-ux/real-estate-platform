@@ -16,6 +16,10 @@ import type {
   AiCloserRouteContext,
   AiCloserStageContext,
 } from "./ai-closer.types";
+import { BROKER_CONVERSION_PROMPT_EN } from "@/modules/legal-boundary/broker-conversion.service";
+import { getAllowedCapabilities } from "@/modules/legal-boundary/compliance-capability-guard";
+import { writeLegalBoundaryAudit } from "@/modules/legal-boundary/legal-boundary-audit.service";
+import { getOrSyncTransactionContext } from "@/modules/legal-boundary/transaction-context.service";
 
 const DISCLOSURE =
   "LECIPM assistant — automation to help reps close ethically; not a licensed broker; no outbound robocalls.";
@@ -50,9 +54,75 @@ export type GetCloserAssistInput = {
   hotLead?: boolean;
   optedOut?: boolean;
   persistStage?: boolean;
+  listingId?: string;
 };
 
+function buildFsboLegalBoundaryCloserOutput(): AiCloserAssistOutput {
+  const explanation = buildCloserExplanation({
+    stage: "ESCALATE_TO_BROKER",
+    stageReasons: ["legal_boundary_fsbo"],
+    objection: "human_requested",
+    objectionSignals: ["licensing_boundary"],
+    mainLineRationale:
+      "Negotiation coaching is disabled for independent (non-broker) transactions under LECIPM OACIQ safeguards.",
+    shouldBook: false,
+    softBook: false,
+    shouldEscalate: true,
+    escalateWhy: "Licensed brokerage activity requires an OACIQ broker of record on the file.",
+    confidenceSignals: ["legal_boundary"],
+  });
+
+  return {
+    assistantDisclosure: DISCLOSURE,
+    detectedStage: "ESCALATE_TO_BROKER",
+    objection: "human_requested",
+    response: {
+      main:
+        "For negotiation strategy, offers, and contract steps in Québec, this file must be handled under a licensed real estate broker (OACIQ). You can still use listing display, neutral messaging, and basic calculators.",
+      alternatives: [
+        "Ask a neutral factual question about the property or logistics.",
+        BROKER_CONVERSION_PROMPT_EN,
+      ],
+      bestCta: "Request broker assistance",
+      confidence: 0.95,
+    },
+    nextBestQuestion: BROKER_CONVERSION_PROMPT_EN,
+    confidence: 0.95,
+    shouldEscalate: true,
+    shouldAttemptBooking: false,
+    escalation: {
+      target: "broker",
+      reason: "LECIPM_LEGAL_BOUNDARY_FSBO",
+      urgency: "medium",
+    },
+    explanation,
+    legalBoundary: {
+      mode: "FSBO",
+      blockedCapability: "negotiation_ai",
+      brokerConversionPrompt: true,
+    },
+  };
+}
+
 export async function getCloserAssist(input: GetCloserAssistInput): Promise<AiCloserAssistOutput> {
+  const listingIdRaw = input.listingId?.trim();
+  if (listingIdRaw) {
+    const txCtx = await getOrSyncTransactionContext({ entityType: "LISTING", entityId: listingIdRaw });
+    const caps = getAllowedCapabilities(txCtx);
+    if (!caps.negotiationAi) {
+      await writeLegalBoundaryAudit({
+        actionType: "negotiation_ai",
+        entityId: listingIdRaw,
+        entityType: "LISTING",
+        mode: txCtx.mode,
+        allowed: false,
+        reason: "fsbo_neutral_tooling_only",
+        actorUserId: null,
+      });
+      return buildFsboLegalBoundaryCloserOutput();
+    }
+  }
+
   const last = lastSegment(input);
   const objection = detectObjection(last);
   const personality = input.personalityHint ?? inferPersonality(last);

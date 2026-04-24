@@ -8,6 +8,8 @@ import { isReasonableListingId } from "@/lib/api/safe-params";
 import { logInfo, logWarn } from "@/lib/logger";
 import { syncFsboListingMetrics } from "@/src/modules/listings/syncFsboListingMetrics";
 import { trackFunnelEvent } from "@/lib/funnel/tracker";
+import { assertBrokeredTransaction } from "@/modules/legal-boundary/compliance-action-guard";
+import { getOrSyncTransactionContext } from "@/modules/legal-boundary/transaction-context.service";
 
 export const dynamic = "force-dynamic";
 
@@ -39,6 +41,12 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
     if (!revenueV4Flags.pricingEngineV1) {
       return Response.json({ ok: false, error: "Feature disabled" }, { status: 403 });
     }
+
+    const txCtx = await getOrSyncTransactionContext({ entityType: "LISTING", entityId: id });
+    const boundary = await assertBrokeredTransaction(txCtx, "advanced_pricing_recommendation", userId, {
+      auditAllowSuccess: true,
+    });
+    if (boundary) return boundary;
 
     const rec = await recommendFsboListingPrice(id);
     if (!rec) {

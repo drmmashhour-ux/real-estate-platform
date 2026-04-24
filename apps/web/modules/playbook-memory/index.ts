@@ -23,10 +23,28 @@ export {
   playbookMemoryWriteService,
 } from "./services/playbook-memory-write.service";
 export { playbookMemoryOutcomeService } from "./services/playbook-memory-outcome.service";
+export { playbookMemoryRecommendationService, buildExecutionPlanFromRecommendation, getEligibleRecommendationCandidates } from "./services/playbook-memory-recommendation.service";
+export { playbookMemoryExecutionService } from "./services/playbook-memory-execution.service";
+export { playbookMemoryBanditService } from "./services/playbook-memory-bandit.service";
+export { playbookMemoryAssignmentService } from "./services/playbook-memory-assignment.service";
+export { runPlaybookBanditRollup } from "./jobs/playbook-bandit-rollup.job";
+export { buildExecutionPlan } from "./utils/playbook-memory-execution";
+export {
+  DEFAULT_EXPLORATION_RATE,
+  computeExplorationDecision,
+  computeSelectionScore,
+  computeUncertaintyBonus,
+  computeReward,
+  resolveRewardForDomain,
+} from "./utils/playbook-memory-bandit";
 export {
   getRecommendations,
+  getRecommendationsWithSource,
   findSimilarMemories,
   rankPlaybooks,
   playbookMemoryRetrievalService,
 } from "./services/playbook-memory-retrieval.service";
 export { authorizePlaybookMemoryApi } from "./api/playbook-memory-authorize";
+export { playbookMemoryDashboardService } from "./services/playbook-memory-dashboard.service";
+export type { ExperimentHealth, PlaybookMemoryOverview } from "./services/playbook-memory-dashboard.service";
+export { playbookMemoryControlService } from "./services/playbook-memory-control.service";

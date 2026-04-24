@@ -3,6 +3,7 @@ import type { EvolutionDomain } from "./evolution.types";
 import { computeNextReinforcementScore, bucketOutcome } from "./reinforcement.engine";
 import type { FeedbackAssessment } from "./evolution.types";
 import { logEvolution } from "./evolution-logger";
+import { proposePolicyAdjustment } from "./policy-adjustment";
 
 /** Persist bounded reinforcement score + counts for a strategy key. */
 export async function applyReinforcementToMemory(args: {
@@ -53,6 +54,21 @@ export async function applyReinforcementToMemory(args: {
     strategyKey: args.strategyKey,
     reinforcementScore: row.reinforcementScore,
   });
+
+  // Phase 8: Optional Policy Proposals for repeated negative outcomes
+  if (args.assessment === "WORSE_THAN_EXPECTED" && row.failureCount > 3 && row.reinforcementScore < 0.3) {
+    try {
+      await proposePolicyAdjustment({
+        domain: args.domain,
+        kind: "RANKING_WEIGHT",
+        payloadJson: { strategyKey: args.strategyKey, currentScore: row.reinforcementScore },
+        rationale: `Automatic negative outcome threshold reached for ${args.strategyKey} (${row.failureCount} failures). Proposing review.`,
+      });
+      logEvolution("adjustment", { phase: "proposal_triggered", strategyKey: args.strategyKey });
+    } catch (e) {
+      // Don't block core reinforcement
+    }
+  }
 
   return {
     reinforcementScore: row.reinforcementScore,

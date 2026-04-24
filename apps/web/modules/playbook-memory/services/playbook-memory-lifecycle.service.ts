@@ -1,4 +1,5 @@
 import type { MemoryOutcomeStatus, MemoryPlaybook } from "@prisma/client";
+import { playbookSharedContextService } from "@/modules/playbook-intelligence/services/playbook-shared-context.service";
 import { prisma } from "@/lib/db";
 import {
   PLAYBOOK_DEMOTION_MAX_FAILURE_RATE,
@@ -296,6 +297,7 @@ export async function resumePlaybook(p: { playbookId: string; reason?: string })
     ]);
     // eslint-disable-next-line no-console
     console.log(PB, "resumed", { playbookId: p.playbookId });
+    void playbookSharedContextService.tryIndexFromPlaybookId(p.playbookId);
     return { ok: true, data: { status: "ACTIVE" } };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "resume_failed" };

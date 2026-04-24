@@ -18,6 +18,10 @@ import {
   formatOaciqDisclosureHtmlAppendix,
   getOaciqDisclosureBundleForTransaction,
 } from "@/lib/compliance/oaciq/client-disclosure";
+import {
+  formatBrokerDisclosureDeclarationHtml,
+  getBrokerDisclosureDeclarationForDeal,
+} from "@/lib/compliance/oaciq/broker-mandatory-disclosure.service";
 
 function assertEngineOn() {
   if (!legalDocumentsEngineEnabled()) {
@@ -55,6 +59,10 @@ export async function generateLegalDocumentArtifact(input: {
     if (txId) {
       const bundle = await getOaciqDisclosureBundleForTransaction(txId);
       renderedHtml += formatOaciqDisclosureHtmlAppendix(bundle);
+    }
+    const brokerLine = await getBrokerDisclosureDeclarationForDeal(input.dealId);
+    if (brokerLine) {
+      renderedHtml += formatBrokerDisclosureDeclarationHtml(brokerLine);
     }
   }
 

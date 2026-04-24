@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     route,
     listingHint,
     leadId,
-    listingId,
+    listingId: listingId?.trim() || undefined,
     persistStage,
     visitIntent: Boolean(body.visitIntent),
     hotLead: Boolean(body.hotLead),

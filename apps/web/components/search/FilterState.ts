@@ -440,7 +440,8 @@ export function urlParamsToGlobalFilters(sp: URLSearchParams): GlobalSearchFilte
         s === "ai" ||
         s === "aiScore" ||
         s === "best_value" ||
-        s === "top_conversion"
+        s === "top_conversion" ||
+        s === "personalized"
       )
         return s;
       if (type === "new_listing") return "newest";
@@ -530,7 +531,8 @@ export function globalFiltersToBnhubParams(f: GlobalSearchFiltersExtended): URLS
     sort === "ai" ||
     sort === "aiScore" ||
     sort === "best_value" ||
-    sort === "top_conversion"
+    sort === "top_conversion" ||
+    sort === "personalized"
   ) {
     p.set("sort", sort);
   }

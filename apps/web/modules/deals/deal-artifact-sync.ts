@@ -38,6 +38,10 @@ export async function syncArtifactsForListing(
     import("@/modules/deals/deal-workflow-orchestrator")
       .then((m) => m.reconcileAfterArtifactsUpdate(d.id, null))
       .catch(() => {});
+
+    import("@/modules/investment-ai/deal-underwriting.integration.service")
+      .then((m) => m.runAndAttachUnderwritingToDeal(d.id, { source: "ARTIFACTS_REFRESH" }))
+      .catch(() => {});
   }
 
   logInfo(`${TAG}`, { listingId, dealCount: deals.length, ...opts });

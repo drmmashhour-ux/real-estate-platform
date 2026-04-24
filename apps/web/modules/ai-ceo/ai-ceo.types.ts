@@ -120,3 +120,82 @@ export type AiCeoMeasurementSummary = {
   falsePositiveReports: number;
   ignoredStalePending: number;
 };
+
+/** Internal-metrics-only operational alerts (no external feeds). */
+export type AiCeoStrategicAlertType =
+  | "REVENUE_DROP"
+  | "CONVERSION_WEAK"
+  | "CHURN_SIGNAL"
+  | "EXECUTIVE_RISK"
+  | "DATA_STALE";
+
+export type AiCeoStrategicAlert = {
+  type: AiCeoStrategicAlertType;
+  severity: "low" | "medium" | "high" | "critical";
+  title: string;
+  message: string;
+  reasoning: string;
+  signals: AiCeoSignalRef[];
+};
+
+export type AiCeoStrategicInsightBlock = {
+  title: string;
+  summary: string;
+  reasoning: string;
+  signals: AiCeoSignalRef[];
+};
+
+export type AiCeoStrategicInsights = {
+  keyInsights: string[];
+  risks: AiCeoStrategicInsightBlock[];
+  opportunities: AiCeoStrategicInsightBlock[];
+  recommendedActions: AiCeoStrategicInsightBlock[];
+};
+
+/** API + dashboard payload — advisory only; never auto-executes. */
+export type AiCeoInsightsPackage = {
+  summary: string;
+  topPriorities: AiCeoRecommendationDraft[];
+  alerts: AiCeoStrategicAlert[];
+  strategicInsights: AiCeoStrategicInsights;
+  prioritized: AiCeoPrioritizedSet;
+  contextMeta: {
+    generatedAt: string;
+    thinDataWarnings: string[];
+    lecipm: Record<string, unknown>;
+    bnhub: Record<string, unknown>;
+    revenueInternal: Record<string, unknown>;
+  };
+};
+
+/** Extended platform context: core AI CEO snapshot + LECIPM/BNHub internal series. */
+export type AiCeoStrategicContext = AiCeoPlatformContext & {
+  lecipm: {
+    seniorLeads30d: number | null;
+    seniorClosed30d: number | null;
+    brokerAccountsApprox: number | null;
+    operatorOnboardedLast90d: number | null;
+    demandIndex: number | null;
+    churnInactiveBrokersApprox: number | null;
+    inactiveOperatorsApprox: number | null;
+    gtmEvents30d: number | null;
+    note: string;
+  };
+  bnhub: {
+    registeredHosts: number | null;
+    bookingsCreated30d: number | null;
+    listingViews30d: number | null;
+    note: string;
+  };
+  revenueInternal: {
+    mrrLatest: number | null;
+    mrrPrevious: number | null;
+    monthOverMonth: number | null;
+    snapshotDates: string[];
+    note: string;
+  };
+  marketplace?: {
+    note?: string | null;
+    seniorResidencesApprox?: number | null;
+  };
+};

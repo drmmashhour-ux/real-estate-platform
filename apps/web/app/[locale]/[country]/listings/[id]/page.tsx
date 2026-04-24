@@ -59,6 +59,9 @@ import {
   sellerRefusedDeclarationFromCompliance,
   validateListingCompliance,
 } from "@/modules/legal/compliance/listing-declaration-compliance.service";
+import { TransactionModeBanner } from "@/components/legal-boundary/TransactionModeBanner";
+import { getOrSyncTransactionContext } from "@/modules/legal-boundary/transaction-context.service";
+import { SimilarListingsYouMayLike } from "@/components/recommendations/SimilarListingsYouMayLike";
 
 export const dynamic = "force-dynamic";
 
@@ -396,6 +399,10 @@ export default async function PublicListingRoute({ params, searchParams }: Props
     const collaborationFsbo = await collaborationForListingViewer(guestFsbo);
     const lecipmRank =
       (await loadFsboListingScore(row.id).catch(() => null))?.result ?? null;
+    const txLegalFsbo = await getOrSyncTransactionContext({ entityType: "LISTING", entityId: row.id });
+    const legalBannerFsbo = (
+      <TransactionModeBanner mode={txLegalFsbo.mode} complianceState={txLegalFsbo.complianceState} />
+    );
     return (
       <>
         <JsonLdScript data={productLd} />
@@ -424,8 +431,10 @@ export default async function PublicListingRoute({ params, searchParams }: Props
               <ListingRankingBadges badges={lecipmRank.badges} />
             ) : null
           }
+          legalBoundaryBanner={legalBannerFsbo}
         />
         <DeferredListingInsuranceLeadSection listingId={fsboPayloadFinal.id} />
+        <SimilarListingsYouMayLike seedFsboListingId={row.id} locale={locale} country={country} />
         <section className="border-t border-slate-800 bg-slate-950 px-4 py-10 text-slate-300">
           <div className="mx-auto flex max-w-4xl flex-col gap-4 sm:flex-row sm:flex-wrap sm:justify-center">
             <Link href="/listings" className="text-sm font-medium text-emerald-400 hover:text-emerald-300">
@@ -538,6 +547,10 @@ export default async function PublicListingRoute({ params, searchParams }: Props
 
   void touchEsgOnListingView(payload.id).catch(() => null);
   const esgBadgeData = await getPublicEsgBadge(payload.id);
+  const txLegalCrm = await getOrSyncTransactionContext({ entityType: "LISTING", entityId: payload.id });
+  const legalBannerCrm = (
+    <TransactionModeBanner mode={txLegalCrm.mode} complianceState={txLegalCrm.complianceState} />
+  );
 
   return (
     <>
@@ -579,6 +592,7 @@ export default async function PublicListingRoute({ params, searchParams }: Props
             </span>
           ) : null
         }
+        legalBoundaryBanner={legalBannerCrm}
       />
       <DeferredListingInsuranceLeadSection listingId={payload.id} />
       <section className="border-t border-slate-800 bg-slate-950 px-4 py-10 text-slate-300">

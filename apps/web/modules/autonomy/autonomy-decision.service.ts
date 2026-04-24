@@ -15,6 +15,10 @@ import {
   type DecisionPayload,
   type GeneratedDecisionDraft,
 } from "@/modules/autonomy/autonomy-types";
+import {
+  createRolloutDraftFromAutonomy,
+  rollbackRolloutByPolicyId,
+} from "@/modules/rollout/rollout-policy.service";
 
 export function computeRequiresApproval(domain: AutonomyDomain, magnitude: number): boolean {
   if (domain === "GROWTH") return true;
@@ -367,6 +371,28 @@ export async function applyDecision(decisionId: string): Promise<void> {
   if (needsApproval && !isApproved) throw new Error("approval_required");
   if (!needsApproval && !canAuto && !isApproved) throw new Error("invalid_state");
 
+  if (payload.kind === "adjust_lead_base_price" || payload.kind === "boost_residence_rank") {
+    const policy = await createRolloutDraftFromAutonomy({
+      autonomyDecisionId: decisionId,
+      payload,
+      createdByUserId: d.approvedByUserId ?? null,
+    });
+    const outcome = await snapshotBaselineMetrics();
+    await prisma.autonomyDecision.update({
+      where: { id: decisionId },
+      data: {
+        status: canAuto ? "AUTO_APPLIED" : "APPLIED",
+        appliedAt: new Date(),
+        outcomeMetricsJson: {
+          ...(outcome as Record<string, unknown>),
+          rolloutPolicyId: policy.id,
+        } as unknown as Prisma.InputJsonValue,
+      },
+    });
+    await appendLog(decisionId, "ROLLOUT_DRAFT_CREATED", { rolloutPolicyId: policy.id });
+    return;
+  }
+
   const previous = await capturePreviousState(payload);
 
   await applyPayload(payload);
@@ -393,13 +419,28 @@ export async function applyDecision(decisionId: string): Promise<void> {
 
 export async function rollbackDecision(decisionId: string): Promise<void> {
   const d = await prisma.autonomyDecision.findUnique({ where: { id: decisionId } });
-  const prevRaw = d?.previousStateJson;
+  if (!d) throw new Error("cannot_rollback");
+
+  const outcomeRaw = d.outcomeMetricsJson as Record<string, unknown> | null | undefined;
+  const rolloutPolicyId =
+    outcomeRaw && typeof outcomeRaw.rolloutPolicyId === "string" ? outcomeRaw.rolloutPolicyId : null;
+  if (rolloutPolicyId) {
+    await rollbackRolloutByPolicyId(rolloutPolicyId, `autonomy_rollback:${decisionId}`);
+    await prisma.autonomyDecision.update({
+      where: { id: decisionId },
+      data: { status: "ROLLED_BACK", rolledBackAt: new Date() },
+    });
+    await appendLog(decisionId, "ROLLBACK", { rolloutPolicyId });
+    return;
+  }
+
+  const prevRaw = d.previousStateJson;
   const noSnapshot =
     prevRaw == null ||
     (typeof prevRaw === "object" &&
       prevRaw !== null &&
       Object.keys(prevRaw as Record<string, unknown>).length === 0);
-  if (!d || noSnapshot) throw new Error("cannot_rollback");
+  if (noSnapshot) throw new Error("cannot_rollback");
 
   const prev = prevRaw as Record<string, unknown>;
 

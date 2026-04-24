@@ -28,6 +28,14 @@ export type BuildSearchWhereInput = {
   south?: number;
   east?: number;
   west?: number;
+  /** `ExpansionCountry.id` — exact FK match on listing. */
+  marketCountryId?: string;
+  /** `lecipm_cities.id` — exact FK match on listing. */
+  marketCityId?: string;
+  /**
+   * ISO-style country code matching `ExpansionCountry.code` or legacy `ShortTermListing.country` when FK unset.
+   */
+  countryCode?: string;
 };
 
 /** Canadian postal code loose match on listing address / city. */
@@ -129,6 +137,29 @@ export function buildPublishedListingSearchWhere(params: BuildSearchWhereInput):
   }
 
   where.listingStatus = "PUBLISHED";
+
+  const extraAnd: Prisma.ShortTermListingWhereInput[] = [];
+  if (params.marketCountryId?.trim()) {
+    extraAnd.push({ marketCountryId: params.marketCountryId.trim() });
+  }
+  if (params.marketCityId?.trim()) {
+    extraAnd.push({ marketCityId: params.marketCityId.trim() });
+  }
+  if (params.countryCode?.trim()) {
+    const code = params.countryCode.trim();
+    extraAnd.push({
+      OR: [
+        { marketCountry: { is: { code: { equals: code, mode: "insensitive" } } } },
+        { AND: [{ marketCountryId: null }, { country: { equals: code, mode: "insensitive" } }] },
+      ],
+    });
+  }
+  if (extraAnd.length) {
+    const existing = where.AND;
+    const base = Array.isArray(existing) ? existing : existing != null ? [existing] : [];
+    where.AND = [...base, ...extraAnd];
+  }
+
   return where;
 }
 

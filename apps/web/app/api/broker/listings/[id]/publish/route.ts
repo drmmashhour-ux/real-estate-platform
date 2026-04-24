@@ -36,6 +36,13 @@ import {
   enforceOaciqAlignmentOrThrow,
 } from "@/lib/compliance/oaciq/oaciq-alignment-layer.service";
 import { requireActiveResidentialBrokerLicence } from "@/lib/compliance/oaciq/broker-licence-guard";
+import {
+  assertMandatoryBrokerDisclosurePresent,
+  MandatoryBrokerDisclosureError,
+} from "@/lib/compliance/oaciq/broker-mandatory-disclosure.service";
+import { requireActiveBrokerProfessionalInsurance } from "@/lib/compliance/oaciq/broker-insurance-guard";
+import { requireCentrisListingPublishEligibility } from "@/lib/centris/centris-listing-eligibility.service";
+import { logListingTagged } from "@/lib/server/launch-logger";
 
 export const dynamic = "force-dynamic";
 
@@ -57,7 +64,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
 
   const listing = await prisma.listing.findUnique({
     where: { id },
-    select: { tenantId: true, ownerId: true, listingType: true },
+    select: { tenantId: true, ownerId: true, listingType: true, centrisPublicationState: true },
   });
   if (!listing) return NextResponse.json({ error: "Listing not found" }, { status: 404 });
 
@@ -70,6 +77,9 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     actorBrokerId: userId,
   });
   if (licenceBlock) return licenceBlock;
+
+  const insBlock = await requireActiveBrokerProfessionalInsurance(alignmentBrokerId, "crm_listing_publish");
+  if (insBlock) return insBlock;
 
   try {
     await enforceOaciqAlignmentOrThrow({
@@ -219,6 +229,22 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
       }
     }
 
+    try {
+      await assertMandatoryBrokerDisclosurePresent({
+        brokerId: alignmentBrokerId,
+        listingId: id,
+        blockContext: "crm_listing_publish",
+      });
+    } catch (e) {
+      if (e instanceof MandatoryBrokerDisclosureError) {
+        return NextResponse.json(
+          { error: e.message, code: "BROKER_MANDATORY_DISCLOSURE_REQUIRED" },
+          { status: 403 },
+        );
+      }
+      throw e;
+    }
+
     if (brokerDecisionAuthorityEnforced()) {
       try {
         assertLegallyBindingCallerNotAutomated(publishBody);
@@ -239,9 +265,12 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
       });
     }
 
+    const nextCentrisState =
+      listing.centrisPublicationState === "PUBLISHED_CENTRIS" ? "PUBLISHED_CENTRIS" : "PUBLISHED_INTERNAL";
+
     await prisma.listing.update({
       where: { id },
-      data: { crmMarketplaceLive: true },
+      data: { crmMarketplaceLive: true, centrisPublicationState: nextCentrisState },
     });
 
     if (authSnapshot) {
@@ -271,10 +300,11 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     }
 
     logComplianceEvent("listing_published", { listingId: id });
+    logListingTagged.info("published", { listingId: id, brokerId: alignmentBrokerId, centrisPublicationState: nextCentrisState });
 
     void ensureEsgProfileForListing(id).catch(() => null);
 
-    return NextResponse.json({ ok: true, crmMarketplaceLive: true });
+    return NextResponse.json({ ok: true, crmMarketplaceLive: true, centrisPublicationState: nextCentrisState });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Failed";
     if (

@@ -557,7 +557,7 @@ async function runBrowse(
     applyGreenBrowseBoost(merged, fsboFiltered);
     applyTrustRankingSortMultiplier(merged, trustAug);
     merged.sort((a, b) => b.sortAt - a.sortAt);
-  } else if (sortMode === "recommended" || sortMode === "aiScore") {
+  } else if (sortMode === "recommended" || sortMode === "aiScore" || sortMode === "personalized") {
     const fsboIds = merged.filter((m) => m.kind === "fsbo").map((m) => m.id);
     const effMinCad =
       f.type === "luxury_properties" || (f.type === "rent" && f.rentListingCategory === "luxury_properties")

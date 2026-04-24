@@ -9,6 +9,7 @@ import {
   oaciqClientDisclosureEnforcementEnabled,
 } from "@/lib/compliance/oaciq/client-disclosure";
 import { assertBrokerApprovedContractSign } from "@/lib/compliance/oaciq/broker-decision-authority";
+import { assertBrokerProfessionalInsuranceActiveOrThrow } from "@/lib/compliance/oaciq/broker-professional-insurance.service";
 
 function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -59,6 +60,10 @@ export async function createSignedEnforceableContract(params: {
   ipAddress: string | null;
   signatureData?: string | null;
 }): Promise<{ id: string }> {
+  if (params.contractType === ENFORCEABLE_CONTRACT_TYPES.BROKER) {
+    await assertBrokerProfessionalInsuranceActiveOrThrow(params.userId, "enforceable_contract_sign_broker");
+  }
+
   let contentText = params.contentText;
   if (params.realEstateTransactionId) {
     const rtx = await prisma.realEstateTransaction.findUnique({

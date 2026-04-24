@@ -15,8 +15,10 @@
 
 import { prisma } from "@/lib/db";
 import { logInfo } from "@/lib/logger";
+import { acquireRefreshLock, releaseRefreshLock } from "./esg-retrofit-refresh-lock";
 
 const TAG = "[retrofit]";
+const TAG_METRICS = "[retrofit-metrics]";
 
 /** Per-listing debounce timer handles (avoid refresh storms). */
 const debounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
@@ -171,6 +173,7 @@ export function scheduleDebouncedRetrofitUpstreamRefresh(
   source: UpstreamRefreshSource,
   fingerprintBefore: RetrofitUpstreamFingerprint | null,
 ): void {
+  const scheduleStartTime = Date.now();
   if (!pendingBefore.has(listingId)) pendingBefore.set(listingId, fingerprintBefore);
 
   const prev = debounceTimers.get(listingId);
@@ -182,26 +185,63 @@ export function scheduleDebouncedRetrofitUpstreamRefresh(
       debounceTimers.delete(listingId);
       const fpBeforeWindow = pendingBefore.get(listingId) ?? null;
       pendingBefore.delete(listingId);
+
       void (async () => {
-        const fpAfter = await captureRetrofitUpstreamFingerprint(listingId);
-        if (!fpAfter) {
-          logInfo(`${TAG} upstream_refresh_skipped_no_material_change`, { listingId, source, reason: "no_fingerprint" });
+        const upstreamProcessingTime = Date.now() - scheduleStartTime;
+
+        // Step 1: Check Lock
+        const lockAcquired = acquireRefreshLock(listingId);
+        if (!lockAcquired) {
+          logInfo(`${TAG_METRICS} refresh_skipped_lock`, { listingId, source });
           return;
         }
-        if (!materialRetrofitUpstreamChange(fpBeforeWindow, fpAfter)) {
-          logInfo(`${TAG} upstream_refresh_skipped_no_material_change`, { listingId, source });
-          return;
-        }
-        if (source === "evidence") {
-          logInfo(`${TAG} upstream_refresh_source_evidence`, { listingId });
-        } else {
-          logInfo(`${TAG} upstream_refresh_source_acquisition`, { listingId });
-        }
-        logInfo(`${TAG} upstream_refresh_triggered`, { listingId, source });
+
         try {
+          const fpAfter = await captureRetrofitUpstreamFingerprint(listingId);
+          if (!fpAfter) {
+            logInfo(`${TAG_METRICS} refresh_skipped_no_change`, {
+              listingId,
+              source,
+              reason: "no_fingerprint",
+              upstreamProcessingTimeMs: upstreamProcessingTime,
+            });
+            return;
+          }
+
+          if (!materialRetrofitUpstreamChange(fpBeforeWindow, fpAfter)) {
+            logInfo(`${TAG_METRICS} refresh_skipped_no_change`, {
+              listingId,
+              source,
+              upstreamProcessingTimeMs: upstreamProcessingTime,
+            });
+            return;
+          }
+
+          logInfo(`${TAG_METRICS} refresh_started`, {
+            listingId,
+            source,
+            upstreamProcessingTimeMs: upstreamProcessingTime,
+          });
+
+          const plannerStartTime = Date.now();
           await runRetrofitRefresh(listingId);
-        } catch {
-          /* logged inside planner */
+          const plannerDuration = Date.now() - plannerStartTime;
+
+          logInfo(`${TAG_METRICS} refresh_completed`, {
+            listingId,
+            source,
+            plannerDurationMs: plannerDuration,
+            totalDurationMs: upstreamProcessingTime + plannerDuration,
+          });
+        } catch (error) {
+          logInfo(`${TAG_METRICS} refresh_failed`, {
+            listingId,
+            source,
+            error: error instanceof Error ? error.message : String(error),
+          });
+        } finally {
+          // Step 6: Release lock even on failure
+          releaseRefreshLock(listingId);
         }
       })();
     }, DEBOUNCE_MS),

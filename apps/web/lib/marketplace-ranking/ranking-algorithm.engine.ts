@@ -25,6 +25,8 @@ import type {
 
 export type RankableListingInput = BnhubListingForRanking & {
   hostAvgResponseHours?: number | null;
+  /** 0–1 from `HostPerformance.cancellationRate` when joined. */
+  hostCancellationRate?: number | null;
   esgSignal01?: number | null;
   duplicateSuspected?: boolean;
   complianceBlocked?: boolean;
@@ -35,6 +37,8 @@ export type RankListingsAlgorithmOptions = {
   promotedIds?: Set<string> | null;
   cohort?: string | null;
   listingType?: string;
+  /** Bounded 0–1 guest-AI affinity per listing id — applied as small transparent personalization slice. */
+  guestAiListingAffinity?: Map<string, number> | null;
 };
 
 export type RankedListingResult<T> = {
@@ -193,6 +197,12 @@ function collectPenalties(listing: RankableListingInput, ctx: ListingSearchRankC
   if (listing.availableForRequestedDates === false && ctx.checkIn && ctx.checkOut) {
     m *= 0.35;
     reasons.push("unavailable_for_dates");
+  }
+
+  const cxl = listing.hostCancellationRate;
+  if (cxl != null && Number.isFinite(cxl) && cxl > 0.12) {
+    m *= Math.max(0.72, 1 - Math.min(0.25, (cxl - 0.12) * 1.2));
+    reasons.push("elevated_host_cancellation");
   }
 
   return { multiplier: m, reasons };
@@ -379,6 +389,10 @@ export function rankListingsAlgorithm<T extends RankableListingInput>(
     let personalizationBoost = 0;
     if (memoryHint) {
       personalizationBoost = clamp01(memoryListingAffinity01(listing, memoryHint) * 0.08);
+    }
+    const guestAi = options?.guestAiListingAffinity?.get(listing.id);
+    if (guestAi != null && Number.isFinite(guestAi)) {
+      personalizationBoost = clamp01(personalizationBoost + clamp01(guestAi) * 0.06);
     }
 
     const esgSlice = 0.03;

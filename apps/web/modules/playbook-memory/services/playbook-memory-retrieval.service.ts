@@ -1,10 +1,15 @@
-import type { MemoryPlaybook, PlaybookExecutionMode, MemoryDomain } from "@prisma/client";
+import type { MemoryPlaybook, MemoryDomain, PlaybookExecutionMode } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import { evaluateRecommendationPolicy } from "./playbook-memory-policy-gate.service";
+import { playbookMemoryRecommendationService } from "./playbook-memory-recommendation.service";
 import { playbookLog } from "../playbook-memory.logger";
 import { playbookTelemetry } from "../playbook-memory.telemetry";
 import * as repo from "../repository/playbook-memory.repository";
-import type { PlaybookComparableContext, PlaybookRecommendation, RetrievalContextInput } from "../types/playbook-memory.types";
+import type {
+  PlaybookComparableContext,
+  PlaybookOrMemoryRecommendation,
+  RecommendationRequestContext,
+  RetrievalContextInput,
+} from "../types/playbook-memory.types";
 import {
   buildMarketKey,
   buildSegmentKey,
@@ -17,7 +22,35 @@ import {
   confidenceFromExecutionStats,
   hybridCandidateScore,
 } from "../utils/playbook-memory-score";
-import { buildRationale, buildRationaleLines } from "../utils/playbook-memory-rationale";
+import { buildRationale } from "../utils/playbook-memory-rationale";
+
+const PB = "[playbook]";
+
+function mapHintToRequestAutonomy(
+  autonomyMode: RecommendationRequestContext["autonomyMode"] | undefined,
+  hint: PlaybookExecutionMode | undefined,
+): RecommendationRequestContext["autonomyMode"] | undefined {
+  if (autonomyMode != null) return autonomyMode;
+  if (hint == null) return undefined;
+  if (hint === "HUMAN_APPROVAL") return "ASSIST";
+  if (hint === "RECOMMEND_ONLY") return "OFF";
+  if (hint === "SAFE_AUTOPILOT" || hint === "FULL_AUTOPILOT") return hint;
+  return undefined;
+}
+
+function toRecommendationRequestContext(input: RetrievalContextInput): RecommendationRequestContext {
+  const c = input.context;
+  return {
+    domain: c.domain as RecommendationRequestContext["domain"],
+    entityType: c.entityType,
+    market: c.market as unknown as Record<string, string | number | boolean | null> | undefined,
+    segment: c.segment as unknown as Record<string, string | number | boolean | null> | undefined,
+    signals: c.signals,
+    policyFlags: input.policyFlags,
+    autonomyMode: mapHintToRequestAutonomy(input.autonomyMode, input.autonomyModeHint),
+    candidatePlaybookIds: input.candidatePlaybookIds,
+  };
+}
 
 function recencyScoreFromDate(d: Date | null | undefined): number {
   if (!d) return 0.2;
@@ -94,76 +127,75 @@ export function rankPlaybooks(
   return scored;
 }
 
-export async function getRecommendations(input: RetrievalContextInput): Promise<PlaybookRecommendation[]> {
+export type RecommendationsWithSource = {
+  recommendations: PlaybookOrMemoryRecommendation[];
+  source: "playbook_first" | "memory_fallback" | "none";
+};
+
+export async function getRecommendationsWithSource(input: RetrievalContextInput): Promise<RecommendationsWithSource> {
   playbookTelemetry.evaluationsCount += 1;
-  const candidates = await findCandidatePlaybooks(input.context, input.candidatePlaybookIds);
-  const ranked = rankPlaybooks(input.context, candidates);
-  const out: PlaybookRecommendation[] = [];
-
-  for (const { playbook: p, score } of ranked.slice(0, 12)) {
-    if (p.status === "PAUSED" || p.status === "ARCHIVED" || p.status === "DRAFT") {
-      continue;
-    }
-    const versionId = p.currentVersionId;
-    if (!versionId) {
-      out.push({
-        playbookId: p.id,
-        playbookVersionId: "none",
-        name: p.name,
-        score,
-        confidence: confidenceFromExecutionStats(p.totalExecutions),
-        rationale: ["No active version linked — recommendation blocked."],
-        executionMode: p.executionMode as PlaybookExecutionMode,
-        allowed: false,
-        blockedReasons: ["missing_current_version"],
+  try {
+    const req = toRecommendationRequestContext(input);
+    const playbookRecs = await playbookMemoryRecommendationService.getPlaybookRecommendations(req);
+    if (playbookRecs.length > 0) {
+      for (const r of playbookRecs) {
+        if (!r.allowed) {
+          playbookTelemetry.blockedCount += 1;
+        }
+      }
+      playbookTelemetry.recommendationsCount += playbookRecs.length;
+      playbookLog.info("getRecommendationsWithSource", {
+        source: "playbook_first",
+        count: playbookRecs.length,
+        domain: input.context.domain,
       });
-      continue;
+      // eslint-disable-next-line no-console -- [playbook] source annotation
+      console.log(PB, "recommendation_source", { source: "playbook_first", domain: input.context.domain, count: playbookRecs.length });
+      return { recommendations: playbookRecs, source: "playbook_first" };
     }
-
-    const gate = evaluateRecommendationPolicy({
-      playbook: p,
-      context: input.context,
-      policySnapshot: undefined,
-      riskSnapshot: undefined,
-      autonomyHint: input.autonomyModeHint,
+  } catch (e) {
+    playbookLog.error("getRecommendationsWithSource playbook path failed", {
+      message: e instanceof Error ? e.message : String(e),
     });
-
-    const rationale = buildRationaleLines({
-      rankScore: score,
-      domain: p.domain,
-      totalExecutions: p.totalExecutions,
-      scoreBand: p.scoreBand,
-      executionMode: p.executionMode,
-    });
-
-    const rec: PlaybookRecommendation = {
-      playbookId: p.id,
-      playbookVersionId: versionId,
-      name: p.name,
-      score,
-      confidence: confidenceFromExecutionStats(p.totalExecutions),
-      rationale,
-      executionMode: p.executionMode as PlaybookExecutionMode,
-      allowed: gate.allowed && p.status === "ACTIVE",
-      blockedReasons: [...gate.blockedReasons],
-    };
-
-    if (!rec.allowed) {
-      playbookTelemetry.blockedCount += 1;
-    }
-
-    out.push(rec);
-    playbookTelemetry.recommendationsCount += 1;
   }
 
-  playbookLog.info("getRecommendations", {
-    count: out.length,
+  const memRaw = await playbookMemoryRetrievalService.getRecommendations(input.context);
+  if (memRaw.length === 0) {
+    playbookLog.info("getRecommendationsWithSource", {
+      source: "none",
+      domain: input.context.domain,
+    });
+    // eslint-disable-next-line no-console
+    console.log(PB, "recommendation_source", { source: "none", domain: input.context.domain, count: 0 });
+    return { recommendations: [], source: "none" };
+  }
+
+  const withType = memRaw.map<PlaybookOrMemoryRecommendation>((m) => ({
+    itemType: "memory" as const,
+    memoryId: m.memoryId,
+    actionType: m.actionType,
+    score: m.score,
+    confidence: m.confidence,
+    rationale: m.rationale,
+    allowed: m.allowed,
+    blockedReasons: m.blockedReasons,
+  }));
+  playbookTelemetry.recommendationsCount += withType.length;
+  playbookLog.info("getRecommendationsWithSource", {
+    source: "memory_fallback",
+    count: withType.length,
     domain: input.context.domain,
   });
-  return out;
+  // eslint-disable-next-line no-console
+  console.log(PB, "recommendation_source", { source: "memory_fallback", domain: input.context.domain, count: withType.length });
+  return { recommendations: withType, source: "memory_fallback" };
 }
 
-const PB = "[playbook]";
+/** Wave 7: playbook-first, then `PlaybookMemoryRecord` history. */
+export async function getRecommendations(input: RetrievalContextInput): Promise<PlaybookOrMemoryRecommendation[]> {
+  const { recommendations } = await getRecommendationsWithSource(input);
+  return recommendations;
+}
 
 export type MemoryRecordRecommendation = {
   memoryId: string;

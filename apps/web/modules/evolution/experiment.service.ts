@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import type { EvolutionDomain } from "./evolution.types";
 import { logEvolution } from "./evolution-logger";
+import { createRolloutDraftFromEvolutionExperiment } from "@/modules/rollout/rollout-policy.service";
 
 export async function createDraftExperiment(args: {
   experimentKey: string;
@@ -44,6 +45,7 @@ export async function approveExperiment(experimentId: string, approverUserId: st
     experimentKey: row.experimentKey,
     approverUserId,
   });
+  void createRolloutDraftFromEvolutionExperiment(row, approverUserId).catch(() => {});
   return row;
 }
 

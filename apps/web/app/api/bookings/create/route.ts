@@ -16,6 +16,7 @@ import { computeBookingPricing } from "@/lib/bnhub/booking-pricing";
 import { maybeBlockRequestWithLegalGate } from "@/modules/legal/legal-api-gate";
 import { syncAvailability } from "@/modules/channel-manager/channel-sync.service";
 import { jsonErr, jsonOk } from "@/lib/api/standard-json";
+import { recordEvolutionOutcome } from "@/modules/evolution/outcome-tracker.service";
 
 export const dynamic = "force-dynamic";
 
@@ -186,6 +187,21 @@ export async function POST(request: NextRequest) {
     void syncAvailability(listingId).catch((err) =>
       logApiRouteError("syncAvailability after POST /api/bookings/create", err)
     );
+
+    void recordEvolutionOutcome({
+      domain: "BOOKING",
+      metricType: "BOOKING",
+      strategyKey: "conversion",
+      entityId: booking.id,
+      entityType: "Booking",
+      actualJson: {
+        listingId,
+        nights: booking.nights,
+        status: booking.status,
+      },
+      reinforceStrategy: true,
+      idempotent: true,
+    }).catch(() => {});
 
     const pay = await prisma.payment.findUnique({
       where: { bookingId: booking.id },

@@ -81,6 +81,8 @@ export type BrokerAssistantNextStep = {
 export type BrokerAssistantOutput = {
   status: BrokerAssistantOutputStatus;
   complianceLevel: BrokerAssistantComplianceLevel;
+  /** French-first executive summary (same as summaryFr; spec alias). */
+  summary: string;
   summaryFr: string;
   summaryEn?: string;
   missingInformation: MissingInformationItem[];

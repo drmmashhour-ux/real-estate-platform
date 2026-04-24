@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { PipelineDealDetail } from "@/modules/deals/deal-pipeline.service";
+import { UnderwritingPanel } from "./UnderwritingPanel";
 
 export function InvestmentPipelineDealDetailView({
   localePrefix,
@@ -50,6 +51,20 @@ export function InvestmentPipelineDealDetailView({
           </div>
         </div>
       </div>
+
+      <UnderwritingPanel 
+        dealId={deal.id} 
+        initialUnderwriting={{
+          underwritingScore: deal.underwritingScore,
+          underwritingLabel: deal.underwritingLabel,
+          underwritingRecommendation: deal.underwritingRecommendation,
+          underwritingConfidence: deal.underwritingConfidence,
+          underwritingSummaryJson: deal.underwritingSummaryJson,
+          underwritingRisksJson: deal.underwritingRisksJson,
+          underwritingUpsideJson: deal.underwritingUpsideJson,
+          underwritingUpdatedAt: deal.underwritingUpdatedAt,
+        }} 
+      />
 
       <section className="rounded-xl border border-zinc-800 bg-zinc-950/50 p-5">
         <h2 className="text-sm font-semibold text-zinc-200">Linked asset</h2>

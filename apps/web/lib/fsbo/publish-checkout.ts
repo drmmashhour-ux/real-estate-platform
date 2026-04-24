@@ -19,6 +19,14 @@ import { complianceFlags } from "@/config/feature-flags";
 import { evaluateListingPublishComplianceDecision } from "@/modules/legal/compliance/listing-publish-compliance.service";
 import { recordEventSafe } from "@/modules/events/event-helpers";
 import { recordEvent } from "@/modules/events/event.service";
+import {
+  assertMandatoryBrokerDisclosurePresent,
+  MandatoryBrokerDisclosureError,
+} from "@/lib/compliance/oaciq/broker-mandatory-disclosure.service";
+import {
+  assertBrokerProfessionalInsuranceActiveOrThrow,
+  BrokerProfessionalInsuranceError,
+} from "@/lib/compliance/oaciq/broker-professional-insurance.service";
 
 export type FsboPublishCheckoutTrustGraphError = {
   blocking: Array<{ ruleCode: string; message: string }>;
@@ -292,6 +300,29 @@ export async function startFsboListingPublishCheckout(
           "Sign the seller listing agreement before publishing. Use the legal contract step on your listing (or /api/legal/enforceable-contract/sign with kind=seller).",
         status: 403,
       };
+    }
+  }
+
+  if (listing.listingOwnerType === "BROKER") {
+    try {
+      await assertMandatoryBrokerDisclosurePresent({
+        brokerId: listing.ownerId,
+        fsboListingId: listingId,
+        blockContext: "fsbo_broker_publish",
+      });
+    } catch (e) {
+      if (e instanceof MandatoryBrokerDisclosureError) {
+        return { ok: false, error: e.message, status: 403 };
+      }
+      throw e;
+    }
+    try {
+      await assertBrokerProfessionalInsuranceActiveOrThrow(listing.ownerId, "fsbo_broker_publish");
+    } catch (e) {
+      if (e instanceof BrokerProfessionalInsuranceError) {
+        return { ok: false, error: e.message, status: 403 };
+      }
+      throw e;
     }
   }
 

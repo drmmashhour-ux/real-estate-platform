@@ -3,6 +3,10 @@ import { prisma } from "@/lib/db";
 import { resolveShortTermListingRef } from "@/lib/listing-code";
 import { generateDealCode } from "@/lib/codes/generate-code";
 import { conversionLog } from "./crm-pipeline-logger";
+import {
+  assertMandatoryBrokerDisclosurePresent,
+  classifyListingRef,
+} from "@/lib/compliance/oaciq/broker-mandatory-disclosure.service";
 
 export type ConverterResult =
   | { ok: true; deal: Deal }
@@ -62,6 +66,21 @@ export async function convertBrokerCrmLeadToDeal(params: {
   const priceCents = Math.round(Math.max(0, params.priceDollars) * 100);
 
   try {
+    const ref = await classifyListingRef(listingRow.id);
+    if (ref?.kind === "crm") {
+      await assertMandatoryBrokerDisclosurePresent({
+        brokerId: params.brokerUserId,
+        listingId: ref.id,
+        blockContext: "residential_deal_create_bnhub_lead",
+      });
+    } else if (ref?.kind === "fsbo") {
+      await assertMandatoryBrokerDisclosurePresent({
+        brokerId: params.brokerUserId,
+        fsboListingId: ref.id,
+        blockContext: "residential_deal_create_bnhub_lead_fsbo",
+      });
+    }
+
     const deal = await prisma.$transaction(async (tx) => {
       const dealCode = await generateDealCode(tx);
       return tx.deal.create({

@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
+import type { MemoryOutcomeStatus } from "@prisma/client";
 import { authorizePlaybookMemoryApi } from "@/modules/playbook-memory/api/playbook-memory-authorize";
 import {
   appendOutcomeMetric,
   playbookMemoryWriteService,
 } from "@/modules/playbook-memory/services/playbook-memory-write.service";
+import { playbookMemoryOutcomeService } from "@/modules/playbook-memory/services/playbook-memory-outcome.service";
 import type { MemoryOutcomeStatusLiteral, RecordOutcomeUpdateInput } from "@/modules/playbook-memory/types/playbook-memory.types";
 
 export const dynamic = "force-dynamic";
@@ -86,6 +88,21 @@ export async function POST(req: Request) {
       // eslint-disable-next-line no-console
       console.error(PB, "outcome_update_failed", { memoryRecordId });
       return NextResponse.json({ ok: false, error: "outcome_update_failed" as const });
+    }
+
+    const assignmentId = typeof o.assignmentId === "string" && o.assignmentId.trim() ? o.assignmentId.trim() : undefined;
+    if (assignmentId) {
+      await playbookMemoryOutcomeService
+        .syncAssignmentAfterOutcome({
+          assignmentId,
+          memoryRecordId,
+          outcomeStatus: rawStatus as MemoryOutcomeStatus,
+          realizedValue: payload.realizedValue,
+          realizedRevenue: payload.realizedRevenue,
+          realizedConversion: payload.realizedConversion,
+          realizedRiskScore: payload.realizedRiskScore,
+        })
+        .catch(() => undefined);
     }
 
     // `record` kept for legacy clients; `updated` matches Wave 4 spec.

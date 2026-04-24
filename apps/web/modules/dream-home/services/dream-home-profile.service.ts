@@ -1,8 +1,148 @@
 import { isOpenAiConfigured, openai } from "@/lib/ai/openai";
-import type { DreamHomeIntake, DreamHomeProfile } from "../types/dream-home.types";
-import { normalizeIntake } from "../utils/dream-home-normalize";
+import { logDreamHomeProfileGenerated } from "./dream-home-playbook-memory.service";
+import type { DreamHomeIntake, DreamHomeProfile, DreamHomeQuestionnaireInput } from "../types/dream-home.types";
+import {
+  buildDefaultRankingPreferences,
+  suggestBedroomBathMinimums,
+} from "../utils/dream-home-scoring";
+import { buildDreamHomeTradeoffs } from "../utils/dream-home-tradeoffs";
+import { buildDreamHomeUserPrompt, buildDreamHomeProfileSystemPrompt, validateDreamHomeProfileShape } from "../utils/dream-home-prompts";
+import {
+  legacyIntakeToQuestionnaire,
+  normalizeIntake,
+  normalizeQuestionnaire,
+} from "../utils/dream-home-normalize";
 
 const MODEL = process.env.DREAM_HOME_AI_MODEL?.trim() || "gpt-4o-mini";
+
+function hasQuestionnaireKeys(raw: unknown): boolean {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    return false;
+  }
+  const o = raw as Record<string, unknown>;
+  return (
+    o.familySize != null ||
+    o.adultsCount != null ||
+    o.guestsFrequency != null ||
+    o.transactionType != null ||
+    o.budgetMin != null ||
+    o.budgetMax != null ||
+    o.privacyPreference === "low" ||
+    o.privacyPreference === "medium" ||
+    o.privacyPreference === "high"
+  );
+}
+
+function mergeQuestionnaire(legacy: DreamHomeQuestionnaireInput, q: DreamHomeQuestionnaireInput): DreamHomeQuestionnaireInput {
+  return { ...legacy, ...q };
+}
+
+function buildDeterministicProfile(q: DreamHomeQuestionnaireInput, intakeFallback?: DreamHomeIntake): DreamHomeProfile {
+  const family = q.familySize ?? intakeFallback?.householdSize ?? 2;
+  const { minBedrooms, minBathrooms } = suggestBedroomBathMinimums({
+    familySize: family,
+    childrenCount: q.childrenCount,
+    eldersInHome: q.eldersInHome,
+    guestsFrequency: q.guestsFrequency,
+  });
+  const maxBudget = q.budgetMax ?? (intakeFallback?.maxBudget != null ? intakeFallback.maxBudget : undefined);
+  const minBudget = q.budgetMin;
+  const city = q.city ?? intakeFallback?.city;
+  const ranking = buildDefaultRankingPreferences({
+    ...q,
+    familySize: family,
+  });
+  const tradeoffs = buildDreamHomeTradeoffs(q);
+  const wfh = q.workFromHome ?? (intakeFallback?.workFromHome ? "sometimes" : "none");
+  const special = (q.specialSpaces ?? []).length
+    ? `User-listed space interests: ${(q.specialSpaces ?? []).join(", ")}.`
+    : null;
+  const must = (q.mustHaves ?? []).length ? `Stated must-haves: ${(q.mustHaves ?? []).join("; ")}.` : null;
+  const warn: string[] = [];
+  if (maxBudget == null || maxBudget <= 0) {
+    warn.push("Add a clear budget (min/max) in your currency to tighten matches.");
+  }
+  if (!city?.trim()) {
+    warn.push("City or area not set — location-based matching stays broad.");
+  }
+  if ((q.dealBreakers?.length ?? 0) > 0) {
+    warn.push("Review listings against your stated deal-breakers manually; automated checks are limited to text and filters.");
+  }
+  const householdProfile = `Household: ${family} people (declared)${q.childrenCount != null ? `, ${q.childrenCount} children noted` : ""}. Work from home: ${wfh}. Hosting frequency: ${q.guestsFrequency ?? "not specified"}. ${special ?? ""} ${must ?? ""}`.trim();
+  const propertyTraits: string[] = [];
+  if (wfh === "full_time" || wfh === "sometimes") {
+    propertyTraits.push("Space for a dedicated or quiet workspace (from your WFH answer)");
+  }
+  if (q.hostingPreference === "high" || q.guestsFrequency === "high") {
+    propertyTraits.push("Layout suited to guests: generous kitchen/gathering flow (from your hosting settings)");
+  }
+  if (q.privacyPreference === "high") {
+    propertyTraits.push("Separation of spaces / quieter zones (from your privacy setting)");
+  }
+  if (q.pets) {
+    propertyTraits.push("Pet-friendly practical features (from your pet answer)");
+  }
+  if (q.outdoorPriority === "high") {
+    propertyTraits.push("Outdoor or yard/terrace priority (from your outdoor priority)");
+  }
+  if (q.kitchenPriority === "high") {
+    propertyTraits.push("Kitchen-forward layout (from your kitchen priority)");
+  }
+  if (Array.isArray(q.accessibilityNeeds) && q.accessibilityNeeds.length) {
+    propertyTraits.push("Accessibility and mobility considerations (from your list)");
+  }
+  if (q.stylePreferences?.length) {
+    propertyTraits.push(`Style cues you provided: ${q.stylePreferences.slice(0, 6).join(", ")}`);
+  }
+  if (propertyTraits.length === 0) {
+    propertyTraits.push("Adaptable layout — refine the wizard to add more must-haves.");
+  }
+  const neighborhoodTraits: string[] = [];
+  if (city?.trim()) {
+    neighborhoodTraits.push(`Search centered on ${String(city).trim()}`);
+  } else {
+    neighborhoodTraits.push("Set a city to sharpen neighborhood and commute fit.");
+  }
+  if (q.commutePriority === "high") {
+    neighborhoodTraits.push("Commute is a high priority — verify travel times to your destinations.");
+  }
+  if (q.noiseTolerance === "high") {
+    neighborhoodTraits.push("Favoring quieter context where possible (per your noise preference).");
+  }
+  const searchFilters: DreamHomeProfile["searchFilters"] = {
+    minBedrooms: minBedrooms,
+    minBathrooms: minBathrooms,
+    bedroomsMin: minBedrooms,
+    bathroomsMin: minBathrooms,
+    budgetMin: minBudget,
+    budgetMax: maxBudget,
+    maxBudget: maxBudget,
+    city: city?.trim() || undefined,
+    neighborhoods: q.neighborhoods,
+    maxCommuteMinutes: q.commutePriority === "high" ? 35 : q.commutePriority === "medium" ? 50 : undefined,
+    keywords: [
+      ...(q.stylePreferences ?? []),
+      ...(q.lifestyleTags ?? []),
+      ...(q.specialSpaces ?? []),
+    ],
+    amenities: (q.pets ? ["pet-friendly"] : []) as string[],
+  };
+  const summary = `Dream profile: ${family} people · ${q.transactionType ?? "buy/rent (set transaction type)"}${city ? ` · ${String(city)}` : ""}`.trim();
+  return {
+    summary,
+    householdProfile,
+    propertyTraits: propertyTraits.slice(0, 24),
+    neighborhoodTraits: neighborhoodTraits.slice(0, 12),
+    searchFilters,
+    rankingPreferences: ranking,
+    rationale: [
+      "Generated deterministically from your form answers (no background inference).",
+      isOpenAiConfigured() ? "Enable richer narrative with your existing AI configuration — deterministic path used if the model is unavailable or returns invalid JSON." : "Set OPENAI_API_KEY for an optional AI-written narrative; filters stay rule-based either way.",
+    ],
+    tradeoffs: tradeoffs.length ? tradeoffs : ["Weigh budget vs space vs commute as you review listings."],
+    warnings: warn,
+  };
+}
 
 function stripJsonFences(text: string): string {
   return text
@@ -12,149 +152,98 @@ function stripJsonFences(text: string): string {
     .trim();
 }
 
-function asStringArray(v: unknown): string[] {
-  if (!Array.isArray(v)) return [];
-  return v.filter((x): x is string => typeof x === "string" && x.trim().length > 0);
-}
-
-function clampSearchFilters(raw: unknown): DreamHomeProfile["searchFilters"] {
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
-    return {};
-  }
-  const o = raw as Record<string, unknown>;
-  const bed = o.bedroomsMin;
-  const bath = o.bathroomsMin;
-  const maxB = o.maxBudget;
-  const city = o.city;
-  return {
-    propertyType: asStringArray(o.propertyType),
-    bedroomsMin: typeof bed === "number" && Number.isFinite(bed) ? Math.max(0, Math.floor(bed)) : undefined,
-    bathroomsMin: typeof bath === "number" && Number.isFinite(bath) ? Math.max(0, bath) : undefined,
-    maxBudget: typeof maxB === "number" && Number.isFinite(maxB) && maxB > 0 ? maxB : undefined,
-    amenities: asStringArray(o.amenities),
-    keywords: asStringArray(o.keywords),
-    city: typeof city === "string" && city.trim() ? city.trim() : undefined,
-  };
-}
-
-function parseProfileJson(text: string): DreamHomeProfile | null {
+function tryParseProfile(text: string): DreamHomeProfile | null {
   try {
     const cleaned = stripJsonFences(text);
     const parsed = JSON.parse(cleaned) as Record<string, unknown>;
-    const householdProfile = typeof parsed.householdProfile === "string" ? parsed.householdProfile.trim() : "";
-    if (!householdProfile) return null;
-    return {
-      householdProfile,
-      propertyTraits: asStringArray(parsed.propertyTraits).slice(0, 24),
-      neighborhoodTraits:
-        asStringArray(parsed.neighborhoodTraits).length > 0
-          ? asStringArray(parsed.neighborhoodTraits).slice(0, 16)
-          : ["Neighborhood fit based on your city and lifestyle notes"],
-      searchFilters: clampSearchFilters(parsed.searchFilters),
-      rationale: asStringArray(parsed.rationale).slice(0, 16),
-    };
+    return validateDreamHomeProfileShape(parsed);
   } catch {
     return null;
   }
 }
 
-function deterministicProfile(intake: DreamHomeIntake): DreamHomeProfile {
-  const beds = Math.min(8, Math.max(1, Math.ceil((intake.householdSize ?? 2) * 0.45) + (intake.guestFrequency && intake.guestFrequency > 0.4 ? 1 : 0)));
-  const baths = Math.min(6, Math.max(1, Math.floor(beds / 2) + 1));
-  const traits: string[] = [];
-  if (intake.workFromHome) traits.push("Dedicated or separable workspace");
-  if (intake.entertainingStyle === "social" || intake.entertainingStyle === "moderate") {
-    traits.push("Strong kitchen and open gathering space");
+function coalesceQuestionnaire(intakeRaw: unknown): { q: DreamHomeQuestionnaireInput; legacy?: DreamHomeIntake } {
+  try {
+    const hasQ = hasQuestionnaireKeys(intakeRaw);
+    const hasLegacy = Boolean(
+      intakeRaw &&
+        typeof intakeRaw === "object" &&
+        !Array.isArray(intakeRaw) &&
+        (intakeRaw as Record<string, unknown>).householdSize != null,
+    );
+    if (hasQ) {
+      const nq = normalizeQuestionnaire(intakeRaw);
+      if (hasLegacy) {
+        return { q: mergeQuestionnaire(legacyIntakeToQuestionnaire(normalizeIntake(intakeRaw)), nq) };
+      }
+      return { q: nq };
+    }
+    if (hasLegacy) {
+      const li = normalizeIntake(intakeRaw);
+      return { q: legacyIntakeToQuestionnaire(li), legacy: li };
+    }
+    const empty = normalizeQuestionnaire(intakeRaw);
+    if (Object.keys(empty).length) {
+      return { q: empty };
+    }
+    return { q: {} };
+  } catch {
+    return { q: {} };
   }
-  if (intake.privacyPreference === "high") traits.push("Layout with separated quiet zones");
-  if (intake.hasPets) traits.push("Pet-friendly features or yard access");
-  if (intake.accessibilityNeeds) traits.push("Accessibility-friendly layout (per your notes)");
-  if (intake.culturalLifestyleTags?.length) {
-    traits.push(`Accommodations aligned to your selected preferences: ${intake.culturalLifestyleTags.slice(0, 4).join(", ")}`);
-  }
-  if (traits.length === 0) traits.push("Flexible layout that can adapt as your needs evolve");
-
-  return {
-    householdProfile: `A ${intake.householdSize ?? "small"}-person household seeking comfort, ${intake.noiseTolerance ?? "balanced"} surroundings, and ${intake.privacyPreference ?? "balanced"} privacy.`,
-    propertyTraits: traits,
-    neighborhoodTraits: [
-      intake.city ? `Preference around ${intake.city}` : "Neighborhood fit based on your commute and lifestyle notes",
-      intake.noiseTolerance === "quiet" ? "Quieter residential feel" : "Balanced urban or suburban amenities",
-    ],
-    searchFilters: {
-      bedroomsMin: beds,
-      bathroomsMin: baths,
-      maxBudget: intake.maxBudget,
-      city: intake.city,
-      keywords: [intake.designTaste, intake.lifestyleNote].filter(Boolean) as string[],
-    },
-    rationale: [
-      "Generated without OpenAI — set OPENAI_API_KEY for richer narratives.",
-      "Based only on fields you provided in the form (no nationality or origin inference).",
-    ],
-  };
 }
-
-const SYSTEM = `You are "AI Dream Home Match" for a Canadian real-estate platform.
-You receive JSON describing USER-DECLARED housing preferences only.
-
-HARD RULES:
-- Never infer preferences from nationality, ethnicity, religion, or place of origin.
-- Never mention or guess the user's nationality or background.
-- Never claim you know "traditional" norms for any group — only reflect what the user explicitly wrote or selected.
-- If cultural or multigenerational needs appear, they MUST come from user fields like culturalLifestyleTags or freeform text.
-- Output valid JSON only, with this exact structure:
-{
-  "householdProfile": string,
-  "propertyTraits": string[],
-  "neighborhoodTraits": string[],
-  "searchFilters": {
-    "propertyType": string[] (optional),
-    "bedroomsMin": number (optional),
-    "bathroomsMin": number (optional),
-    "maxBudget": number (optional, same currency as listing price),
-    "amenities": string[] (optional),
-    "keywords": string[] (optional),
-    "city": string (optional)
-  },
-  "rationale": string[] (short bullet reasons tied to user inputs)
-}
-Use Canadian real-estate vocabulary where relevant. Be practical and non-stereotyping.`;
 
 /**
- * Builds a structured dream-home profile from normalized intake (OpenAI when configured, else deterministic).
+ * Structured dream-home profile. Never throws: falls back to deterministic on any error.
  */
 export async function buildDreamHomeProfile(
   intakeRaw: unknown,
 ): Promise<{ profile: DreamHomeProfile; source: "ai" | "deterministic" }> {
-  const intake = normalizeIntake(intakeRaw);
+  let co: ReturnType<typeof coalesceQuestionnaire> = { q: {} };
+  try {
+    co = coalesceQuestionnaire(intakeRaw);
+  } catch {
+    co = { q: {} };
+  }
+  const { q, legacy } = co;
+  const det = buildDeterministicProfile(q, legacy);
 
   const client = openai;
   if (isOpenAiConfigured() && client) {
     try {
-      const userPayload = JSON.stringify(intake);
+      const payload = JSON.stringify({ ...q, legacy: legacy ?? null });
+      const system = buildDreamHomeProfileSystemPrompt();
+      const user = buildDreamHomeUserPrompt(payload);
       const completion = await client.chat.completions.create({
         model: MODEL,
         temperature: 0.35,
         max_tokens: 1200,
         response_format: { type: "json_object" },
         messages: [
-          { role: "system", content: SYSTEM },
-          {
-            role: "user",
-            content: `User-declared intake (JSON). Interpret into the required output shape.\n${userPayload}`,
-          },
+          { role: "system", content: system },
+          { role: "user", content: user },
         ],
       });
       const raw = completion.choices[0]?.message?.content?.trim() ?? "";
-      const parsed = raw ? parseProfileJson(raw) : null;
+      const parsed = raw ? tryParseProfile(raw) : null;
       if (parsed) {
-        return { profile: parsed, source: "ai" };
+        const merged: DreamHomeProfile = {
+          ...det,
+          ...parsed,
+          propertyTraits: parsed.propertyTraits.length ? parsed.propertyTraits : det.propertyTraits,
+          neighborhoodTraits: parsed.neighborhoodTraits.length ? parsed.neighborhoodTraits : det.neighborhoodTraits,
+          searchFilters: { ...det.searchFilters, ...parsed.searchFilters },
+          rankingPreferences: det.rankingPreferences,
+          tradeoffs: parsed.tradeoffs?.length ? parsed.tradeoffs : det.tradeoffs,
+          warnings: [...(det.warnings ?? []), ...(parsed.warnings ?? [])].filter(Boolean).slice(0, 8),
+        };
+        void logDreamHomeProfileGenerated({ questionnaire: { ...q }, source: "ai" }).catch(() => {});
+        return { profile: merged, source: "ai" };
       }
     } catch {
-      // fall through to deterministic
+      /* fall back */
     }
   }
 
-  return { profile: deterministicProfile(intake), source: "deterministic" };
+  void logDreamHomeProfileGenerated({ questionnaire: { ...q }, source: "deterministic" }).catch(() => {});
+  return { profile: det, source: "deterministic" };
 }

@@ -57,7 +57,7 @@ export function AdvancedSearchClient() {
   const [featNewConstruction, setFeatNewConstruction] = useState(false);
   const [featPool, setFeatPool] = useState(false);
   const [insuredOnly, setInsuredOnly] = useState(false);
-  const [sort, setSort] = useState<"relevance" | "newest" | "priceLow" | "priceHigh">("relevance");
+  const [sort, setSort] = useState<"relevance" | "newest" | "priceLow" | "priceHigh" | "personalized">("relevance");
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
@@ -92,6 +92,7 @@ export function AdvancedSearchClient() {
     if (s === "newest") setSort("newest");
     else if (s === "priceAsc") setSort("priceLow");
     else if (s === "priceDesc") setSort("priceHigh");
+    else if (s === "personalized") setSort("personalized");
     else setSort("relevance");
   }, [spKey]);
 
@@ -399,6 +400,7 @@ export function AdvancedSearchClient() {
             disabled={listingMode === "stays"}
           >
             <option value="relevance">Relevance</option>
+            <option value="personalized">For you (personalized)</option>
             <option value="newest">Newest</option>
             <option value="priceLow">Price · Low to high</option>
             <option value="priceHigh">Price · High to low</option>

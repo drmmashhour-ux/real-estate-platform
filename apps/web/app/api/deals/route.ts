@@ -14,6 +14,7 @@ import {
   OaciqAlignmentError,
   enforceOaciqAlignmentOrThrow,
 } from "@/lib/compliance/oaciq/oaciq-alignment-layer.service";
+import { MandatoryBrokerDisclosureError } from "@/lib/compliance/oaciq/broker-mandatory-disclosure.service";
 
 export const dynamic = "force-dynamic";
 
@@ -168,6 +169,12 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ deal });
       } catch (e) {
         logError("[api.deals.post]", { error: e });
+        if (e instanceof MandatoryBrokerDisclosureError) {
+          return NextResponse.json(
+            { error: e.message, code: "BROKER_MANDATORY_DISCLOSURE_REQUIRED" },
+            { status: 403 },
+          );
+        }
         const msg = e instanceof Error ? e.message : "Failed";
         return NextResponse.json({ error: msg }, { status: 400 });
       }

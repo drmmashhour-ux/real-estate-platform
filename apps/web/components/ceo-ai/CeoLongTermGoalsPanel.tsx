@@ -1,48 +1,66 @@
+"use client";
 import React from "react";
+import { Target, Flag, AlertCircle } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
 
-type Goal = {
-  id: string;
-  name: string;
-  domain: string;
-  targetMetric: string;
-  targetValue: number;
-  currentValue: number;
-  priority: number;
-};
+interface CeoLongTermGoalsPanelProps {
+  goals: any[];
+}
 
-export function CeoLongTermGoalsPanel({ goals }: { goals: Goal[] }) {
+export function CeoLongTermGoalsPanel({ goals }: CeoLongTermGoalsPanelProps) {
   return (
-    <section className="rounded-xl border border-white/10 bg-white/[0.03] p-5">
-      <h3 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
-        <span className="h-2 w-2 rounded-full bg-cyan-400"></span>
-        Long-Term Strategic Goals
-      </h3>
-      <div className="mt-4 space-y-4">
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold flex items-center gap-2">
+          <Target className="h-5 w-5 text-blue-600" />
+          Long-Term Strategic Goals
+        </h3>
+        <Badge variant="outline">{goals.length} Active Goals</Badge>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {goals.map((goal) => {
-          const progress = Math.min(100, (goal.currentValue / goal.targetValue) * 100);
+          const progress = Math.min(100, Math.max(0, (goal.currentValue / goal.targetValue) * 100));
           return (
-            <div key={goal.id} className="space-y-1.5">
-              <div className="flex justify-between text-xs">
-                <span className="font-medium text-slate-300">{goal.name}</span>
-                <span className="text-slate-500">{progress.toFixed(1)}%</span>
-              </div>
-              <div className="h-1.5 w-full rounded-full bg-slate-800">
-                <div 
-                  className="h-full rounded-full bg-cyan-500/80" 
-                  style={{ width: `${progress}%` }}
-                ></div>
-              </div>
-              <div className="flex justify-between text-[10px] text-slate-500 uppercase tracking-tight">
-                <span>{goal.domain}</span>
-                <span>Target: {goal.targetValue} {goal.targetMetric}</span>
-              </div>
-            </div>
+            <Card key={goal.id} className="overflow-hidden">
+              <CardHeader className="pb-2 space-y-0">
+                <div className="flex justify-between items-start">
+                  <Badge className={goal.priority > 2 ? "bg-amber-500" : "bg-slate-400"}>
+                    P{goal.priority}
+                  </Badge>
+                  <span className="text-[10px] uppercase font-bold text-slate-400">{goal.domain}</span>
+                </div>
+                <CardTitle className="text-base pt-2">{goal.name}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-slate-500">Progress</span>
+                    <span className="font-bold">{progress.toFixed(1)}%</span>
+                  </div>
+                  <Progress value={progress} className="h-2" />
+                  <div className="flex justify-between items-end pt-1">
+                    <div className="text-[10px] text-slate-400">
+                      Target: {goal.targetValue} {goal.targetMetric}
+                    </div>
+                    <div className="text-xs font-medium">
+                      Current: {goal.currentValue}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           );
         })}
         {goals.length === 0 && (
-          <p className="text-xs text-slate-500 italic">No active long-term goals.</p>
+          <div className="col-span-full py-8 text-center bg-slate-50 rounded-lg border border-dashed border-slate-200">
+            <AlertCircle className="h-8 w-8 text-slate-300 mx-auto mb-2" />
+            <p className="text-sm text-slate-500">No active long-term goals defined.</p>
+          </div>
         )}
       </div>
-    </section>
+    </div>
   );
 }

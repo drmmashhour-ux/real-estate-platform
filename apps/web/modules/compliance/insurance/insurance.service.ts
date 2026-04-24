@@ -10,6 +10,7 @@ import { INSURANCE_RISK_ALERT_THRESHOLD, MIN_PROFESSIONAL_LIABILITY_COVERAGE_CAD
 import { logInsurance } from "./insurance-log";
 import { evaluateBrokerInsuranceRisk } from "./insurance-risk.engine";
 import { triggerInsuranceAlerts } from "./insurance-alert.service";
+import { validateBrokerInsurance } from "@/lib/compliance/oaciq/broker-professional-insurance.service";
 
 function mapCard(row: {
   id: string;
@@ -67,22 +68,9 @@ function policyMeetsValidityGate(policy: {
 /** True when broker has in-force FARCIQ coverage: ACTIVE, in date range, not suspended, meets minimum liability. */
 export async function isBrokerInsuranceValid(brokerId: string): Promise<boolean> {
   try {
-    const now = new Date();
-    const row = await prisma.brokerInsurance.findFirst({
-      where: {
-        brokerId,
-        status: "ACTIVE",
-        startDate: { lte: now },
-        endDate: { gte: now },
-        coveragePerLoss: { gte: MIN_PROFESSIONAL_LIABILITY_COVERAGE_CAD },
-      },
-      orderBy: { endDate: "desc" },
-      select: { id: true, status: true, startDate: true, endDate: true, coveragePerLoss: true },
-    });
-
-    const ok = Boolean(row) && (row ? policyMeetsValidityGate(row, now) : false);
-    logInsurance("audit_validity_check", { brokerId, ok, coverage: row?.coveragePerLoss, status: row?.status });
-    return ok;
+    const v = await validateBrokerInsurance(brokerId);
+    logInsurance("audit_validity_check", { brokerId, ok: v.isValid, daysRemaining: v.daysRemaining });
+    return v.isValid;
   } catch (e) {
     logInsurance("validity_check_error", { brokerId, err: e instanceof Error ? e.message : "unknown" });
     return false;

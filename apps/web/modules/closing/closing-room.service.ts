@@ -15,6 +15,8 @@ import {
   assertDealConflictConsentAllowsProgress,
 } from "@/lib/compliance/conflict-deal-compliance.service";
 
+import { recordEvolutionOutcome } from "@/modules/evolution/outcome-tracker.service";
+
 const TAG = "[closing-room]";
 
 export async function startClosingRoom(options: {
@@ -178,6 +180,17 @@ export async function confirmClosingExecution(options: {
     where: { id: options.dealId },
     data: { status: "closed", updatedAt: new Date() },
   });
+
+  void recordEvolutionOutcome({
+    domain: "DEAL",
+    metricType: "CONVERSION",
+    strategyKey: "deal_execution",
+    entityId: options.dealId,
+    entityType: "Deal",
+    actualJson: { result: "CLOSED", closingConfirmed: true },
+    reinforceStrategy: true,
+    idempotent: true,
+  }).catch(() => {});
 
   void recordCloseProbabilityOutcome(options.dealId, true).catch(() => {});
   void recordNegotiationStrategyOutcome(options.dealId, true).catch(() => {});

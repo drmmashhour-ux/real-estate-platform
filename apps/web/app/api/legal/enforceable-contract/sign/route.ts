@@ -6,6 +6,7 @@ import { createSignedEnforceableContract } from "@/lib/legal/enforceable-contrac
 import type { EnforceableContractType } from "@/lib/legal/enforceable-contract-types";
 import { getEnforceableTemplate, type EnforceableTemplateKind } from "@/lib/legal/enforceable-contract-templates";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
+import { BrokerProfessionalInsuranceError } from "@/lib/compliance/oaciq/broker-professional-insurance.service";
 
 export const dynamic = "force-dynamic";
 
@@ -102,6 +103,9 @@ export async function POST(request: NextRequest) {
     }
     if (msg.includes("broker must confirm") || msg.includes("BrokerDecisionAuthority")) {
       return NextResponse.json({ error: msg, code: "BROKER_DECISION_AUTHORITY_REQUIRED" }, { status: 403 });
+    }
+    if (e instanceof BrokerProfessionalInsuranceError) {
+      return NextResponse.json({ error: e.message, code: "BROKER_PROFESSIONAL_INSURANCE_REQUIRED" }, { status: 403 });
     }
     return NextResponse.json({ error: "Could not save contract" }, { status: 500 });
   }

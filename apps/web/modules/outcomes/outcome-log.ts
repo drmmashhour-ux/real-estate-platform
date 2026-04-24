@@ -18,11 +18,17 @@ type Tag =
   | "[tax]"
   | "[playbook]"
   | "[finance-admin]"
-  | "[investment-compliance]";
+  | "[investment-compliance]"
+  | "[insurance]"
+  | "[listing]"
+  | "[ceo-memory]";
 
 function tagToSource(tag: Tag): OutcomeSource {
   if (tag === "[stripe]" || tag === "[payment]") return "log_hook";
   if (tag === "[compliance]" || tag === "[compliance:oaciq]" || tag === "[compliance:conflict]") return "log_hook";
+  if (tag === "[insurance]") return "log_hook";
+  if (tag === "[listing]") return "log_hook";
+  if (tag === "[ceo-memory]") return "log_hook";
   if (tag === "[booking]") return "log_hook";
   if (tag === "[deal]") return "deal_intelligence";
   if (tag === "[lead]") return "log_hook";
@@ -42,8 +48,17 @@ function inferFromMessage(
     return { entityType: "lead", entityId: leadId, action: "lead_created" };
   }
   if (tag === "[compliance:oaciq]" && msg.includes("disclosure")) {
-    const sid = typeof payload.sessionId === "string" ? payload.sessionId : "unknown";
-    return { entityType: "compliance", entityId: sid, action: msg.replace(/\s+/g, "_").toLowerCase().slice(0, 80) };
+    const entityId =
+      typeof payload.brokerDisclosureId === "string"
+        ? payload.brokerDisclosureId
+        : typeof payload.dealId === "string"
+          ? payload.dealId
+          : typeof payload.listingId === "string"
+            ? payload.listingId
+            : typeof payload.sessionId === "string"
+              ? payload.sessionId
+              : "unknown";
+    return { entityType: "compliance", entityId, action: msg.replace(/\s+/g, "_").toLowerCase().slice(0, 80) };
   }
   if (tag === "[compliance:conflict]" && (msg.includes("conflict") || msg.includes("consent"))) {
     const dealId = typeof payload.dealId === "string" ? payload.dealId : "unknown";
@@ -55,6 +70,27 @@ function inferFromMessage(
   }
   if (tag === "[booking]" && visitId) {
     return { entityType: "booking", entityId: visitId, action: msg.toLowerCase().replace(/\s+/g, "_").slice(0, 80) };
+  }
+  if (tag === "[insurance]" && typeof payload.brokerId === "string") {
+    return {
+      entityType: "compliance",
+      entityId: payload.brokerId,
+      action: msg.replace(/\s+/g, "_").toLowerCase().slice(0, 80),
+    };
+  }
+  if (tag === "[listing]" && typeof payload.listingId === "string") {
+    return {
+      entityType: "compliance",
+      entityId: payload.listingId,
+      action: msg.replace(/\s+/g, "_").toLowerCase().slice(0, 80),
+    };
+  }
+  if (tag === "[ceo-memory]" && typeof payload.memoryId === "string") {
+    return {
+      entityType: "system",
+      entityId: payload.memoryId,
+      action: msg.replace(/\s+/g, "_").toLowerCase().slice(0, 80),
+    };
   }
   return null;
 }

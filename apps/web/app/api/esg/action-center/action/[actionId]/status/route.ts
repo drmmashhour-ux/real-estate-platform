@@ -35,6 +35,8 @@ export async function POST(req: NextRequest, context: { params: Promise<{ action
   const access = await userCanAccessEsgActionCenter(userId, row.listingId);
   if (!access) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
+  const fpBefore = await captureRetrofitUpstreamFingerprint(row.listingId);
+
   const result = await updateEsgActionStatus({
     actionId,
     actorUserId: userId,

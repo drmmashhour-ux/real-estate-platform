@@ -1,5 +1,6 @@
 import type { RecordOutcomeUpdateInput } from "../types/playbook-memory.types";
 import { playbookMemoryWriteService } from "./playbook-memory-write.service";
+import { playbookMemoryAssignmentService } from "./playbook-memory-assignment.service";
 
 export const playbookMemoryOutcomeService = {
   async markSucceeded(input: Omit<RecordOutcomeUpdateInput, "outcomeStatus">) {
@@ -28,5 +29,12 @@ export const playbookMemoryOutcomeService = {
       ...input,
       outcomeStatus: "NEUTRAL",
     });
+  },
+
+  /** Bandit: update assignment + stat row when a memory record outcome is recorded (idempotent, never throws from attach). */
+  async syncAssignmentAfterOutcome(
+    p: Parameters<typeof playbookMemoryAssignmentService.attachAssignmentOutcome>[0],
+  ) {
+    return playbookMemoryAssignmentService.attachAssignmentOutcome(p);
   },
 };

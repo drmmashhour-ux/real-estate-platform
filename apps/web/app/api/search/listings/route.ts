@@ -13,6 +13,9 @@ export async function POST(request: NextRequest) {
   try {
     const body = (await request.json().catch(() => ({}))) as {
       city?: string;
+      countryCode?: string;
+      marketCountryId?: string;
+      marketCityId?: string;
       checkIn?: string;
       checkOut?: string;
       guests?: number;
@@ -37,6 +40,9 @@ export async function POST(request: NextRequest) {
 
     const listings = await searchListings({
       city: typeof body.city === "string" ? body.city.trim() || undefined : undefined,
+      countryCode: typeof body.countryCode === "string" ? body.countryCode.trim() || undefined : undefined,
+      marketCountryId: typeof body.marketCountryId === "string" ? body.marketCountryId.trim() || undefined : undefined,
+      marketCityId: typeof body.marketCityId === "string" ? body.marketCityId.trim() || undefined : undefined,
       checkIn: typeof body.checkIn === "string" ? body.checkIn.trim() || undefined : undefined,
       checkOut: typeof body.checkOut === "string" ? body.checkOut.trim() || undefined : undefined,
       guests: typeof body.guests === "number" && body.guests > 0 ? body.guests : undefined,

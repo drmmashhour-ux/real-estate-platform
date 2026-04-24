@@ -25,3 +25,19 @@ export function canRecordCommitteeDecision(role: PlatformRole): boolean {
 export function canWaiveCriticalCondition(role: PlatformRole): boolean {
   return role === "ADMIN";
 }
+
+export const PIPELINE_STAGES = [
+  "SOURCED",
+  "SCREENING",
+  "PRELIMINARY_REVIEW",
+  "IC_PREP",
+  "IC_REVIEW",
+  "CONDITIONAL_APPROVAL",
+  "APPROVED",
+  "EXECUTION",
+  "CLOSED",
+  "DECLINED",
+  "ON_HOLD",
+] as const;
+
+export const TERMINAL_STAGES: string[] = ["CLOSED", "DECLINED"];

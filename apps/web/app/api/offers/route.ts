@@ -37,6 +37,12 @@ import {
   brokerDecisionAuthorityEnforced,
   resolveResponsibleBrokerIdForCrmListing,
 } from "@/lib/compliance/oaciq/broker-decision-authority";
+import {
+  assertMandatoryBrokerDisclosureForOfferPath,
+  MandatoryBrokerDisclosureError,
+  resolveResponsibleBrokerForMarketplaceListing,
+} from "@/lib/compliance/oaciq/broker-mandatory-disclosure.service";
+import { requireActiveBrokerProfessionalInsurance } from "@/lib/compliance/oaciq/broker-insurance-guard";
 
 const DEMO_OFFER_LISTING_IDS = new Set(["1", "test-listing-1", "demo-listing-montreal"]);
 
@@ -211,6 +217,31 @@ export async function POST(request: NextRequest) {
       );
     }
   }
+
+  let offerBrokerId: string | null = null;
+  try {
+    const txBroker = linkedTxId
+      ? (
+          await prisma.realEstateTransaction.findUnique({
+            where: { id: linkedTxId },
+            select: { brokerId: true },
+          })
+        )?.brokerId
+      : null;
+    offerBrokerId = txBroker ?? (await resolveResponsibleBrokerForMarketplaceListing(listingId));
+    await assertMandatoryBrokerDisclosureForOfferPath({ brokerId: offerBrokerId, listingId });
+  } catch (e) {
+    if (e instanceof MandatoryBrokerDisclosureError) {
+      return NextResponse.json(
+        { error: e.message, code: "BROKER_MANDATORY_DISCLOSURE_REQUIRED" },
+        { status: 403 },
+      );
+    }
+    throw e;
+  }
+
+  const insOffer = await requireActiveBrokerProfessionalInsurance(offerBrokerId, "marketplace_offer_submit");
+  if (insOffer) return insOffer;
 
   if (linkedTxId && oaciqClientDisclosureEnforcementEnabled()) {
     try {

@@ -38,7 +38,8 @@ export type ListingRankingPenaltyReason =
   | "verification_rejected"
   | "duplicate_suspected"
   | "compliance_flag"
-  | "unavailable_for_dates";
+  | "unavailable_for_dates"
+  | "elevated_host_cancellation";
 
 export type ListingRankingBreakdown = {
   weightsVersion: string;

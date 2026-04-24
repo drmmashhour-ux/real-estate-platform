@@ -10,6 +10,8 @@ import { ensureCoOwnershipChecklist } from "@/services/compliance/coownershipCom
 import { dispatchLecipmCoreAutopilotEvent } from "@/src/modules/autopilot/engine";
 import type { LecipmListingAssetType } from "@prisma/client";
 import { safeParseBrokerCrmListingBody } from "@/lib/validation/broker-crm-listing-create";
+import { requireActiveBrokerProfessionalInsurance } from "@/lib/compliance/oaciq/broker-insurance-guard";
+import { logListingTagged } from "@/lib/server/launch-logger";
 
 export const dynamic = "force-dynamic";
 
@@ -42,6 +44,8 @@ export async function POST(req: NextRequest) {
   if (!brokerId) {
     return Response.json({ success: false, error: "Sign in required" }, { status: 401 });
   }
+  const insBlock = await requireActiveBrokerProfessionalInsurance(brokerId, "crm_listing_create");
+  if (insBlock) return insBlock;
   try {
     const rawBody = await req.json().catch(() => ({}));
     const validated = safeParseBrokerCrmListingBody(rawBody);
@@ -98,6 +102,7 @@ export async function POST(req: NextRequest) {
       targetId: listing.id,
       metadata: { source: "broker_listings_post" },
     }).catch(() => null);
+    logListingTagged.info("created", { listingId: listing.id, brokerId: brokerId });
     return Response.json({ ...listing, success: true, data: listing });
   } catch (e) {
     logApi.error("POST /api/broker/listings failed", { message: e instanceof Error ? e.message : String(e) });

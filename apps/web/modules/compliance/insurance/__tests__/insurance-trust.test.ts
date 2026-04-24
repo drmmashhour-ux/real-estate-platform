@@ -10,6 +10,7 @@ vi.mock("@/lib/db", () => ({
     brokerInsurance: {
       findFirst: vi.fn(),
       findMany: vi.fn(),
+      updateMany: vi.fn().mockResolvedValue({ count: 0 }),
     },
     realEstateTransaction: {
       count: vi.fn(),

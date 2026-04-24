@@ -18,12 +18,28 @@ export type RecordOutcomeArgs = {
   actual?: number | null;
   /** When true, update reinforcement memory for strategyKey (if provided). */
   reinforceStrategy?: boolean;
+  /** When true, skip if an outcome for same entityId + metricType + domain already exists. */
+  idempotent?: boolean;
 };
 
 /**
  * Phase 1 — append-only outcome tracking + optional reinforcement (bounded).
  */
 export async function recordEvolutionOutcome(args: RecordOutcomeArgs) {
+  if (args.idempotent && args.entityId) {
+    const existing = await prisma.evolutionOutcomeEvent.findFirst({
+      where: {
+        entityId: args.entityId,
+        metricType: args.metricType,
+        domain: args.domain,
+      },
+      select: { id: true },
+    });
+    if (existing) {
+      return { id: existing.id, skipped: true };
+    }
+  }
+
   const fb = compareExpectedVsActual({
     expected: args.expected ?? undefined,
     actual: args.actual ?? undefined,

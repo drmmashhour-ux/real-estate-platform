@@ -1,10 +1,8 @@
 import { NextResponse } from "next/server";
-import { buildBrokerAssistantContext } from "@/modules/broker-assistant/broker-assistant-context.service";
+import { resolveBrokerAssistantContextFromRequestBody } from "@/modules/broker-assistant/broker-assistant-context.service";
 import { suggestClauseCategoriesForContext } from "@/modules/broker-assistant/broker-assistant-clauses.service";
 import { requireBrokerAssistantActor } from "@/modules/broker-assistant/broker-assistant-route-guard";
 import { recordBrokerAssistantAudit } from "@/modules/broker-assistant/broker-assistant-audit.service";
-import type { BrokerAssistantContext } from "@/modules/broker-assistant/broker-assistant.types";
-
 export const dynamic = "force-dynamic";
 
 /** POST — suggestions de catégories de clauses (non finalisées). */
@@ -19,7 +17,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const ctx = buildBrokerAssistantContext(body as Partial<BrokerAssistantContext>);
+  const ctx = await resolveBrokerAssistantContextFromRequestBody(body, auth.userId);
   const suggestedClauses = await suggestClauseCategoriesForContext(ctx);
 
   await recordBrokerAssistantAudit({

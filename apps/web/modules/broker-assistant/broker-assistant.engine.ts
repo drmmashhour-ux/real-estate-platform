@@ -93,6 +93,7 @@ export async function runBrokerAssistant(
   return {
     status: "READY_FOR_REVIEW",
     complianceLevel,
+    summary: summaryFr,
     summaryFr,
     summaryEn,
     missingInformation,

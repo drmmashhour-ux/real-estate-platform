@@ -21,7 +21,12 @@ function buildGroups(role: PlatformRole): NavGroup[] {
     {
       id: "command",
       label: "Command",
-      items: [{ label: "Command Center", href: `${LECIPM_CONSOLE_BASE}` }],
+      items: [
+        { label: "Command Center", href: `${LECIPM_CONSOLE_BASE}` },
+        { label: "AI Command Cockpit", href: "/dashboard/command-center" },
+        { label: "Execution desk", href: "/dashboard/execution" },
+        { label: "Opportunities", href: "/dashboard/opportunities" },
+      ],
     },
     {
       id: "operations",
@@ -48,6 +53,7 @@ function buildGroups(role: PlatformRole): NavGroup[] {
       label: "Executive intel",
       items: [
         { label: "Executive overview", href: "/dashboard/executive", executiveOnly: true },
+        { label: "Company AI", href: "/dashboard/company-ai", executiveOnly: true },
         { label: "Trust score", href: "/dashboard/admin/trust-score", executiveOnly: true },
         { label: "Dispute prediction", href: "/dashboard/admin/dispute-prediction", executiveOnly: true },
         { label: "Autonomy center", href: "/dashboard/admin/autonomy-command-center", executiveOnly: true },

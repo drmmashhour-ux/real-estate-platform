@@ -8,6 +8,7 @@ import {
   brokerDecisionAuthorityEnforced,
   recordOaciqBrokerDecision,
 } from "@/lib/compliance/oaciq/broker-decision-authority";
+import { assertMandatoryBrokerDisclosurePresent } from "@/lib/compliance/oaciq/broker-mandatory-disclosure.service";
 
 const TAG = "[deal.service]";
 
@@ -31,6 +32,14 @@ export async function createStandaloneDeal(input: {
   });
   if (!guard.allowed) {
     throw new Error(guard.reason || "Unauthorized brokerage action.");
+  }
+
+  if (input.listingId) {
+    await assertMandatoryBrokerDisclosurePresent({
+      brokerId: input.brokerId,
+      listingId: input.listingId,
+      blockContext: "pipeline_deal_create_standalone",
+    });
   }
 
   const year = new Date().getFullYear();
@@ -107,6 +116,14 @@ export async function createDealFromTransaction(input: {
     where: { transactionId: input.transactionId },
   });
   if (existing) throw new Error("Pipeline deal already linked to this transaction");
+
+  if (tx.listingId) {
+    await assertMandatoryBrokerDisclosurePresent({
+      brokerId: input.brokerId,
+      listingId: tx.listingId,
+      blockContext: "pipeline_deal_create_from_transaction",
+    });
+  }
 
   const year = new Date().getFullYear();
 

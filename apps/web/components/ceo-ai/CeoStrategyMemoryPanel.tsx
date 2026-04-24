@@ -1,55 +1,70 @@
+"use client";
 import React from "react";
+import { Brain, TrendingUp, TrendingDown, History } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
-type Pattern = {
-  id: string;
-  patternKey: string;
-  domain: string;
-  timesUsed: number;
-  score: number;
-  positiveCount: number;
-  negativeCount: number;
-};
+interface CeoStrategyMemoryPanelProps {
+  topPatterns: any[];
+  avoidPatterns: any[];
+}
 
-export function CeoStrategyMemoryPanel({ 
-  topPatterns, 
-  riskyPatterns 
-}: { 
-  topPatterns: Pattern[], 
-  riskyPatterns: Pattern[] 
-}) {
+export function CeoStrategyMemoryPanel({ topPatterns, avoidPatterns }: CeoStrategyMemoryPanelProps) {
   return (
     <div className="grid gap-4 md:grid-cols-2">
-      <section className="rounded-xl border border-emerald-500/20 bg-emerald-950/10 p-5">
-        <h3 className="text-sm font-semibold text-emerald-100">Successful Strategies</h3>
-        <div className="mt-3 space-y-3">
-          {topPatterns.map(p => (
-            <div key={p.id} className="text-xs border-b border-white/5 pb-2 last:border-0">
-              <div className="flex justify-between items-center">
-                <span className="font-medium text-slate-200">{p.domain} Strategy</span>
-                <span className="text-emerald-400 font-mono">+{p.score.toFixed(1)}</span>
+      <Card className="border-emerald-500/20 bg-emerald-500/5">
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-emerald-700">
+            <TrendingUp className="h-5 w-5" />
+            Winning Strategies
+          </CardTitle>
+          <CardDescription>Proven patterns with high success scores</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {topPatterns.length === 0 && <p className="text-sm text-slate-500">No high-performing patterns yet.</p>}
+            {topPatterns.map((p) => (
+              <div key={p.id} className="flex items-center justify-between rounded-lg bg-white/50 p-2 shadow-sm">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{p.domain}</p>
+                  <p className="text-sm font-medium">{p.patternKey.split('_')[0]} Strategy</p>
+                </div>
+                <div className="text-right">
+                  <Badge className="bg-emerald-500">Score: {p.score.toFixed(1)}</Badge>
+                  <p className="mt-1 text-[10px] text-slate-400">Used {p.timesUsed}x</p>
+                </div>
               </div>
-              <p className="text-slate-500 mt-0.5">Used {p.timesUsed}x · {p.positiveCount} successes</p>
-            </div>
-          ))}
-          {topPatterns.length === 0 && <p className="text-xs text-slate-500 italic">No patterns learned yet.</p>}
-        </div>
-      </section>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
-      <section className="rounded-xl border border-rose-500/20 bg-rose-950/10 p-5">
-        <h3 className="text-sm font-semibold text-rose-100">Underperforming Strategies</h3>
-        <div className="mt-3 space-y-3">
-          {riskyPatterns.map(p => (
-            <div key={p.id} className="text-xs border-b border-white/5 pb-2 last:border-0">
-              <div className="flex justify-between items-center">
-                <span className="font-medium text-slate-200">{p.domain} Strategy</span>
-                <span className="text-rose-400 font-mono">{p.score.toFixed(1)}</span>
+      <Card className="border-rose-500/20 bg-rose-500/5">
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-rose-700">
+            <TrendingDown className="h-5 w-5" />
+            Risk Patterns
+          </CardTitle>
+          <CardDescription>Strategies that failed to deliver impact</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {avoidPatterns.length === 0 && <p className="text-sm text-slate-500">No high-risk patterns detected.</p>}
+            {avoidPatterns.map((p) => (
+              <div key={p.id} className="flex items-center justify-between rounded-lg bg-white/50 p-2 shadow-sm">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{p.domain}</p>
+                  <p className="text-sm font-medium">{p.patternKey.split('_')[0]} Strategy</p>
+                </div>
+                <div className="text-right">
+                  <Badge variant="destructive">Score: {p.score.toFixed(1)}</Badge>
+                  <p className="mt-1 text-[10px] text-slate-400">Used {p.timesUsed}x</p>
+                </div>
               </div>
-              <p className="text-slate-500 mt-0.5">Used {p.timesUsed}x · {p.negativeCount} failures</p>
-            </div>
-          ))}
-          {riskyPatterns.length === 0 && <p className="text-xs text-slate-500 italic">No negative patterns identified.</p>}
-        </div>
-      </section>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

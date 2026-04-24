@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
-import type { LecipmListingAssetType } from "@prisma/client";
+import type { LecipmListingAssetType, LecipmListingCentrisPublicationState } from "@prisma/client";
 import type { CoOwnershipCompliancePayload } from "@/components/compliance/CoOwnershipChecklist";
 import { CoOwnershipChecklist } from "@/components/compliance/CoOwnershipChecklist";
 import { ComplianceStatusBadge } from "@/components/compliance/ComplianceStatusBadge";
@@ -20,13 +20,28 @@ type Props = {
     listingType: LecipmListingAssetType;
     isCoOwnership: boolean;
     crmMarketplaceLive: boolean;
+    centrisPublicationState: LecipmListingCentrisPublicationState;
+  };
+  centris: {
+    publicationState: LecipmListingCentrisPublicationState;
+    enforcementEnabled: boolean;
+    eligible: boolean;
+    headline: string;
+    detail: string;
   };
   listingsIndexHref: string;
   detailHref: string;
   assistantHref: string;
 };
 
-export function ListingEditClient({ listing, listingsIndexHref, detailHref, assistantHref }: Props) {
+const CENTRIS_STATE_LABEL: Record<LecipmListingCentrisPublicationState, string> = {
+  DRAFT: "Draft (Centris)",
+  READY_FOR_CENTRIS: "Ready for Centris export",
+  PUBLISHED_INTERNAL: "Published on LECIPM marketplace",
+  PUBLISHED_CENTRIS: "Marked published to Centris (manual)",
+};
+
+export function ListingEditClient({ listing, centris, listingsIndexHref, detailHref, assistantHref }: Props) {
   const router = useRouter();
   const [title, setTitle] = useState(listing.title);
   const [price, setPrice] = useState(String(listing.price));
@@ -35,6 +50,7 @@ export function ListingEditClient({ listing, listingsIndexHref, detailHref, assi
   const [marketplaceLive, setMarketplaceLive] = useState(listing.crmMarketplaceLive);
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [badgeState, setBadgeState] = useState<{ applies: boolean; complete: boolean } | null>(null);
 
@@ -68,6 +84,35 @@ export function ListingEditClient({ listing, listingsIndexHref, detailHref, assi
       setFeedback("Network error");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function downloadCentrisExport() {
+    setExporting(true);
+    setFeedback(null);
+    try {
+      const res = await fetch(`/api/broker/listings/${encodeURIComponent(listing.id)}/centris-export`, {
+        method: "GET",
+        credentials: "same-origin",
+      });
+      if (!res.ok) {
+        const j = (await res.json().catch(() => ({}))) as { error?: string };
+        setFeedback(typeof j.error === "string" ? j.error : "Centris export failed");
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `lecipm-centris-export-${listing.listingCode}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setFeedback("Centris export downloaded — upload manually to your Centris workflow.");
+      router.refresh();
+    } catch {
+      setFeedback("Network error");
+    } finally {
+      setExporting(false);
     }
   }
 
@@ -185,6 +230,35 @@ export function ListingEditClient({ listing, listingsIndexHref, detailHref, assi
       <CoOwnershipChecklist listingId={listing.id} refreshRouter onComplianceLoaded={onComplianceLoaded} />
 
       <CoownershipComplianceAutopilotCard listingId={listing.id} />
+
+      <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Centris (manual export)</h2>
+        <p className="mt-1 text-xs font-medium text-slate-500 dark:text-slate-400">
+          Status: {CENTRIS_STATE_LABEL[centris.publicationState]}
+          {centris.enforcementEnabled ? " · eligibility enforcement on" : ""}
+        </p>
+        <div
+          className={`mt-3 rounded-lg border px-3 py-2 text-sm ${
+            centris.eligible
+              ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-900 dark:text-emerald-100"
+              : "border-amber-500/40 bg-amber-500/10 text-amber-950 dark:text-amber-100"
+          }`}
+        >
+          <p className="font-semibold">{centris.headline}</p>
+          <p className="mt-1 text-xs opacity-90">{centris.detail}</p>
+        </div>
+        <button
+          type="button"
+          disabled={exporting || !centris.eligible}
+          onClick={() => void downloadCentrisExport()}
+          className="mt-4 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
+        >
+          {exporting ? "Preparing…" : "Download Centris JSON (manual upload)"}
+        </button>
+        <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+          LECIPM never impersonates Centris. Use your board-authorized Centris portal to complete publication.
+        </p>
+      </section>
 
       <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Marketplace</h2>

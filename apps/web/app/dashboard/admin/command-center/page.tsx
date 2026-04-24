@@ -82,6 +82,8 @@ type AiMetrics = {
 const PIE_COLORS = ["#D4AF37", "#4a4a4a"];
 
 const QUICK_ACTIONS: { href: string; label: string }[] = [
+  { href: "/dashboard/ai-ceo", label: "AI CEO insights" },
+  { href: "/dashboard/rollout", label: "Rollout (policies)" },
   { href: "/dashboard/admin/compliance", label: "Compliance" },
   { href: "/dashboard/admin/financial/transactions", label: "Financial / transactions" },
   { href: "/dashboard/broker/investor", label: "Investor portfolio" },

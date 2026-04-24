@@ -5,6 +5,8 @@ import { isLecipmPhaseEnabled, logRolloutGate, withRolloutDisabledBody } from "@
 import { getLatestInvestorIcPack } from "@/modules/investor/investor-ic-pack.service";
 import { userCanAccessInvestorDocuments } from "@/modules/investor/investor-permissions";
 import type { InvestorIcPackPayload } from "@/modules/investor/investor.types";
+import { assertBrokeredTransaction } from "@/modules/legal-boundary/compliance-action-guard";
+import { getOrSyncTransactionContext } from "@/modules/legal-boundary/transaction-context.service";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +29,10 @@ export async function GET(_req: Request, context: { params: Promise<{ listingId:
     logRolloutGate(2, "/api/investor/ic-pack GET");
     return NextResponse.json(withRolloutDisabledBody(2, { icPack: null }));
   }
+
+  const txCtx = await getOrSyncTransactionContext({ entityType: "LISTING", entityId: listingId });
+  const boundaryBlock = await assertBrokeredTransaction(txCtx, "investor_packet", userId);
+  if (boundaryBlock) return boundaryBlock;
 
   const pack = await getLatestInvestorIcPack(listingId);
   if (!pack) return NextResponse.json({ icPack: null });

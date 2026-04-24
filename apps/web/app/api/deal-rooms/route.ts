@@ -10,6 +10,7 @@ import {
   parsePriority,
   parseStage,
 } from "@/lib/deals/validators";
+import { MandatoryBrokerDisclosureError } from "@/lib/compliance/oaciq/broker-mandatory-disclosure.service";
 
 export const dynamic = "force-dynamic";
 
@@ -151,6 +152,12 @@ export async function POST(req: Request) {
     });
     return Response.json({ dealRoom: room });
   } catch (e) {
+    if (e instanceof MandatoryBrokerDisclosureError) {
+      return Response.json(
+        { error: e.message, code: "BROKER_MANDATORY_DISCLOSURE_REQUIRED" },
+        { status: 403 },
+      );
+    }
     const msg = e instanceof Error ? e.message : "Failed";
     return Response.json({ error: msg }, { status: 400 });
   }

@@ -3,6 +3,7 @@
  * Formula: score = round(baseScore * 0.7 + performanceScore * 0.3).
  */
 import { prisma } from "@/lib/db";
+import { getActiveRankingRolloutTreatments } from "@/modules/rollout/rollout-runtime.service";
 import { getPerformanceScoresForResidences, MIN_VIEWS_FOR_PERF } from "./matching-events.service";
 import { getOrCreateMatchingWeights } from "./learning.service";
 import type { AiInsightRow, MatchResultRow } from "./senior.types";
@@ -150,6 +151,7 @@ export async function matchResidences(profileId: string): Promise<{
   const weights = await getOrCreateMatchingWeights();
   const ids = residences.map((x) => x.id);
   const perfMap = await getPerformanceScoresForResidences(ids);
+  const rankRollout = profile.userId ? await getActiveRankingRolloutTreatments(profile.userId) : null;
 
   const viewRows =
     ids.length === 0 ?
@@ -174,7 +176,11 @@ export async function matchResidences(profileId: string): Promise<{
       partials.service * weights.serviceWeight;
 
     const performanceScore = perfMap.get(r.id) ?? 50;
-    const bias = typeof r.rankBoostPoints === "number" ? Math.max(-5, Math.min(5, r.rankBoostPoints)) : 0;
+    const storedBias =
+      typeof r.rankBoostPoints === "number" ? Math.max(-5, Math.min(5, r.rankBoostPoints)) : 0;
+    const rolloutBias =
+      rankRollout?.residenceIdSet.has(r.id) ? rankRollout.deltaPoints : 0;
+    const bias = Math.max(-5, Math.min(5, storedBias + rolloutBias));
     const score = Math.round(
       Math.max(0, Math.min(100, baseScore * BLEND_RULE + performanceScore * BLEND_PERF + bias))
     );

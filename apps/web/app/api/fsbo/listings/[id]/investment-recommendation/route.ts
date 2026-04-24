@@ -1,6 +1,8 @@
 import { prisma } from "@repo/db";
 import { computeListingInvestmentRecommendation } from "@/lib/fsbo/listing-investment-recommendation";
 import { isFsboPubliclyVisible } from "@/lib/fsbo/constants";
+import { assertBrokeredTransaction } from "@/modules/legal-boundary/compliance-action-guard";
+import { getOrSyncTransactionContext } from "@/modules/legal-boundary/transaction-context.service";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +27,10 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
   if (!isFsboPubliclyVisible(row)) {
     return Response.json({ error: "Not found" }, { status: 404 });
   }
+
+  const txCtx = await getOrSyncTransactionContext({ entityType: "LISTING", entityId: id });
+  const boundary = await assertBrokeredTransaction(txCtx, "deal_scoring_advice", null);
+  if (boundary) return boundary;
 
   const recommendation = computeListingInvestmentRecommendation({
     riskScore: row.riskScore,

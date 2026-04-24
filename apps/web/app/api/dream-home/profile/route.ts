@@ -11,11 +11,6 @@ export async function POST(req: Request) {
   } catch {
     return NextResponse.json({ ok: false, error: "invalid_json" }, { status: 400 });
   }
-  try {
-    const { profile, source } = await buildDreamHomeProfile(body);
-    return NextResponse.json({ ok: true, profile, source });
-  } catch (e) {
-    console.error("[dream-home] profile failed", e);
-    return NextResponse.json({ ok: false, error: "profile_failed" }, { status: 500 });
-  }
+  const { profile, source } = await buildDreamHomeProfile(body);
+  return NextResponse.json({ ok: true, profile, source });
 }

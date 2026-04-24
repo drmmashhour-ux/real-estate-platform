@@ -1,0 +1,36 @@
+import type { LegalTemplateDefinition } from "./types";
+
+export const cancellationPolicyTemplate: LegalTemplateDefinition = {
+  id: "cancellation_policy",
+  title: "Cancellation policy (draft)",
+  suggestedKeys: [
+    "LISTING_OR_PROPERTY_LABEL",
+    "HOST_LEGAL_NAME",
+    "POLICY_EFFECTIVE_DATE",
+    "REFUND_RULES_SUMMARY",
+    "FORCE_MAJEURE_NOTE",
+    "GOVERNING_LAW_NOTE",
+  ],
+  body: [
+    "## Cancellation policy",
+    "",
+    "- **Listing / property:** {{LISTING_OR_PROPERTY_LABEL}}",
+    "- **Host:** {{HOST_LEGAL_NAME}}",
+    "- **Effective:** {{POLICY_EFFECTIVE_DATE}}",
+    "",
+    "## Refund and timeline (complete before publishing)",
+    "",
+    "{{REFUND_RULES_SUMMARY}}",
+    "",
+    "## Events outside host or guest control",
+    "",
+    "{{FORCE_MAJEURE_NOTE}}",
+    "",
+    "## Governing law (parties to complete)",
+    "",
+    "{{GOVERNING_LAW_NOTE}}",
+    "",
+    "Guests should also review the booking contract and any platform-level cancellation rules that apply to the transaction.",
+    "",
+  ].join("\n"),
+};

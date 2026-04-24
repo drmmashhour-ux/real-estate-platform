@@ -14,6 +14,8 @@ import {
   refreshDealConflictComplianceState,
 } from "@/lib/compliance/conflict-deal-compliance.service";
 
+import { recordEvolutionOutcome } from "@/modules/evolution/outcome-tracker.service";
+
 export const dynamic = "force-dynamic";
 
 export async function GET(
@@ -160,9 +162,31 @@ export async function PATCH(
         void notifyDealClosedCelebrationIfNeeded(id).catch(() => {});
         void recordCloseProbabilityOutcome(id, true).catch(() => {});
         // void recordNegotiationStrategyOutcome(id, true).catch(() => {});
+        
+        void recordEvolutionOutcome({
+          domain: "DEAL",
+          metricType: "CONVERSION",
+          strategyKey: "deal_execution",
+          entityId: id,
+          entityType: "Deal",
+          actualJson: { result: "CLOSED", status: updated.status, crmStage: updated.crmStage },
+          reinforceStrategy: true,
+          idempotent: true,
+        }).catch(() => {});
       }
       if (updated.status === "cancelled" && prevStatus !== "cancelled") {
         void recordCloseProbabilityOutcome(id, false).catch(() => {});
+
+        void recordEvolutionOutcome({
+          domain: "DEAL",
+          metricType: "CONVERSION",
+          strategyKey: "deal_execution",
+          entityId: id,
+          entityType: "Deal",
+          actualJson: { result: "LOST", status: updated.status, crmStage: updated.crmStage },
+          reinforceStrategy: true,
+          idempotent: true,
+        }).catch(() => {});
       }
 
       const newCrm = updated.crmStage ?? null;

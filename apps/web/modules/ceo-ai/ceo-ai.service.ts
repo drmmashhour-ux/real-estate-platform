@@ -3,147 +3,22 @@
  */
 import { prisma } from "@/lib/db";
 import type { Prisma } from "@prisma/client";
-import { PlatformRole } from "@prisma/client";
-import {
-  MARKET_PRICING_TYPES,
-  computeDemandQualitySignals,
-  normalizeDemandIndexMetrics,
-} from "@/modules/monetization/dynamic-market-pricing.service";
 import { CEO_PRICING_APPROVAL_THRESHOLD, getOrCreateCeoPolicy } from "@/modules/ceo-ai/ceo-ai-policy";
 import { generateCeoDecisions } from "@/modules/ceo-ai/ceo-ai-decision.engine";
 import type { CeoDecisionPayload } from "@/modules/ceo-ai/ceo-ai.types";
 import { snapshotBaselineMetrics } from "@/modules/autonomy/autonomy-decision.service";
-import { recordCeoDecisionMemory } from "@/modules/ceo-ai/ceo-memory.service";
+import {
+  extractFlatMetricsFromSignals,
+  recordAiCeoProposalAsMemory,
+} from "@/modules/ceo-ai/ceo-memory.service";
 import { shouldRouteCeoDecision } from "@/modules/ceo-ai/ceo-routing.service";
 import { buildCeoContextFingerprint } from "@/modules/ceo-ai/ceo-memory-context.service";
 import { buildCeoStrategySnapshot } from "@/modules/ceo-ai/ceo-strategy-snapshot.service";
 import { seedInitialGoals } from "@/modules/ceo-ai/ceo-long-term-goals.service";
+import { gatherMarketSignals } from "@/modules/ceo-ai/ceo-market-signals.service";
+import { createRolloutDraftForCeoPricing, rollbackRolloutByPolicyId } from "@/modules/rollout/rollout-policy.service";
 
-export async function gatherMarketSignals() {
-  const d30 = new Date();
-  d30.setDate(d30.getDate() - 30);
-  const d60 = new Date();
-  d60.setDate(d60.getDate() - 60);
-  const d90 = new Date();
-  d90.setDate(d90.getDate() - 90);
-  const inactiveCutoff = new Date();
-  inactiveCutoff.setDate(inactiveCutoff.getDate() - 90);
-
-  const [
-    leadsLast30d,
-    leadsPrev30d,
-    closed30,
-    operatorsWithResidences,
-    brokerAccountsApprox,
-    operatorUsersRecent,
-    brokersJoinedLast90d,
-    inactiveBrokers,
-    residencesWithoutRecentLead,
-    sig,
-    seoBlogCount,
-    avgLeadScore,
-    revenueRows,
-    gtmRecent,
-    dealsActive,
-    esgRecent,
-  ] = await Promise.all([
-    prisma.seniorLead.count({ where: { createdAt: { gte: d30 } } }),
-    prisma.seniorLead.count({ where: { createdAt: { gte: d60, lt: d30 } } }),
-    prisma.seniorLead.count({ where: { createdAt: { gte: d30 }, status: "CLOSED" } }),
-    prisma.seniorResidence.groupBy({
-      by: ["operatorId"],
-      where: { operatorId: { not: null } },
-    }).then((r) => r.length),
-    prisma.user.count({ where: { role: PlatformRole.BROKER } }),
-    prisma.user.count({
-      where: {
-        seniorLivingResidencesOperated: { some: {} },
-        createdAt: { gte: d90 },
-      },
-    }),
-    prisma.user.count({
-      where: { role: PlatformRole.BROKER, createdAt: { gte: d90 } },
-    }),
-    prisma.user.count({
-      where: {
-        role: PlatformRole.BROKER,
-        updatedAt: { lt: inactiveCutoff },
-      },
-    }),
-    prisma.seniorResidence.count({
-      where: {
-        leads: { none: { createdAt: { gte: d30 } } },
-        operatorId: { not: null },
-      },
-    }),
-    computeDemandQualitySignals(),
-    prisma.seoBlogPost.count().catch(() => 0),
-    prisma.leadScore.aggregate({ _avg: { score: true } }),
-    prisma.revenueSnapshot.findMany({
-      orderBy: { snapshotDate: "desc" },
-      take: 2,
-      select: { mrr: true, snapshotDate: true },
-    }),
-    prisma.seniorLivingGtmExecutionEvent.count({
-      where: { occurredAt: { gte: d30 } },
-    }),
-    prisma.amfCapitalDeal.count({
-      where: { status: { notIn: ["CLOSED", "PAUSED", "AVOID"] } },
-    }),
-    prisma.esgEvent.count({
-      where: { createdAt: { gte: d30 } },
-    }),
-  ]);
-
-  const activeDealsCount = dealsActive;
-  // Deal pipeline health: ratio of advanced status vs total active
-  const advancedDeals = await prisma.amfCapitalDeal.count({
-    where: { status: { in: ["DILIGENCE", "COMMITMENT"] } },
-  });
-  const dealPipelineHealth = activeDealsCount > 0 ? advancedDeals / activeDealsCount : 0.5;
-
-  const esgActivityLevel = Math.min(1.0, esgRecent / 20); // Normalized to 20 events per month
-
-  const seniorConversionRate30d = leadsLast30d === 0 ? 0 : closed30 / leadsLast30d;
-
-  const demandIndex = normalizeDemandIndexMetrics({
-    leadsLast30d: sig.leadsLast30d,
-    operatorCount: sig.operatorCount,
-    residencesInMarket: sig.residencesInMarket,
-    activeUsersProxy: sig.activeUsersProxy,
-  });
-
-  let revenueTrend30dProxy = 0;
-  if (revenueRows.length >= 2 && revenueRows[0]?.mrr != null && revenueRows[1]?.mrr != null) {
-    const a = Number(revenueRows[0].mrr);
-    const b = Number(revenueRows[1].mrr);
-    if (b > 1e-9) revenueTrend30dProxy = (a - b) / b;
-  }
-
-  const outreachReplyRateProxy =
-    gtmRecent > 0 ? Math.min(0.35, 0.12 + Math.min(0.2, gtmRecent / 400)) : null;
-
-  return {
-    leadsLast30d,
-    leadsPrev30d,
-    seniorConversionRate30d,
-    operatorsWithResidences,
-    brokerAccountsApprox,
-    operatorOnboardedLast90d: operatorUsersRecent,
-    brokersJoinedLast90d,
-    churnInactiveBrokersApprox: inactiveBrokers,
-    inactiveOperatorsApprox: Math.min(residencesWithoutRecentLead, 500),
-    demandIndex,
-    outreachReplyRateProxy,
-    seoPagesIndexedApprox: seoBlogCount,
-    emailEngagementScore: null,
-    avgLeadQualityScore: avgLeadScore._avg.score ?? null,
-    revenueTrend30dProxy,
-    activeDealsCount,
-    dealPipelineHealth,
-    esgActivityLevel,
-  };
-}
+export { gatherMarketSignals };
 
 export async function getExecutiveSummary() {
   const signals = await gatherMarketSignals();
@@ -236,9 +111,8 @@ export async function runCeo(mode: "daily" | "weekly" | "manual") {
     });
     createdIds.push(row.id);
 
-    // Phase 3: Record in memory for evolving CEO
     try {
-      await recordCeoDecisionMemory(p, signals);
+      await recordAiCeoProposalAsMemory(p, row.id, fingerprint, extractFlatMetricsFromSignals(signals));
     } catch (e) {
       console.error("[ceo-ai] failed to record memory", e);
     }
@@ -327,17 +201,13 @@ export async function executeCeoDecision(id: string): Promise<void> {
   switch (payload.kind) {
     case "pricing_lead_adjust":
     case "pricing_featured_adjust": {
-      const type = payload.kind === "pricing_lead_adjust" ? "LEAD" : MARKET_PRICING_TYPES.FEATURED;
-      const rule = await prisma.lecipmMarketPricingRule.findUnique({ where: { type } });
-      if (!rule) throw new Error("rule_missing");
-      previous = { type, basePrice: rule.basePrice };
-      const next = rule.basePrice * (1 + payload.relativeDelta);
-      const clamped = Math.min(rule.maxPrice, Math.max(rule.minPrice, next));
-      await prisma.lecipmMarketPricingRule.update({
-        where: { type },
-        data: { basePrice: clamped },
+      const policy = await createRolloutDraftForCeoPricing({
+        ceoDecisionId: d.id,
+        payload,
+        createdByUserId: d.approvedByUserId ?? "system",
       });
-      result.newBasePrice = clamped;
+      result.rolloutPolicyId = policy.id;
+      result.note = "pricing_queued_gradual_rollout_no_direct_rule_mutation";
       break;
     }
     case "growth_seo_city_pages":
@@ -443,8 +313,13 @@ export async function rollbackCeoDecision(id: string): Promise<void> {
   const d = await prisma.ceoDecision.findUnique({ where: { id } });
   if (!d || d.status !== "EXECUTED" || !d.resultJson) throw new Error("cannot_rollback");
 
-  const res = d.resultJson as { previousState?: { type?: string; basePrice?: number } };
-  if (res.previousState?.type && res.previousState.basePrice != null) {
+  const res = d.resultJson as {
+    previousState?: { type?: string; basePrice?: number };
+    rolloutPolicyId?: string;
+  };
+  if (typeof res.rolloutPolicyId === "string") {
+    await rollbackRolloutByPolicyId(res.rolloutPolicyId, `ceo_rollback:${id}`);
+  } else if (res.previousState?.type && res.previousState.basePrice != null) {
     await prisma.lecipmMarketPricingRule.update({
       where: { type: res.previousState.type },
       data: { basePrice: res.previousState.basePrice },

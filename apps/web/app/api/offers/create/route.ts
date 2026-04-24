@@ -8,6 +8,8 @@ import { createOfferDocument, type OfferTypeKey } from "@/modules/offers/service
 import { hasActiveEnforceableContract } from "@/lib/legal/enforceable-contract";
 import { ENFORCEABLE_CONTRACT_TYPES } from "@/lib/legal/enforceable-contract-types";
 import { enforceableContractsRequired } from "@/lib/legal/enforceable-contracts-enforcement";
+import { assertBrokeredTransaction } from "@/modules/legal-boundary/compliance-action-guard";
+import { getOrSyncTransactionContext } from "@/modules/legal-boundary/transaction-context.service";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +43,13 @@ export async function POST(req: NextRequest) {
   }
 
   const listingId = typeof body.listingId === "string" ? body.listingId.trim() : "";
+  if (listingId) {
+    const txCtx = await getOrSyncTransactionContext({ entityType: "LISTING", entityId: listingId });
+    const boundaryBlock = await assertBrokeredTransaction(txCtx, "create_offer", userId, {
+      auditAllowSuccess: true,
+    });
+    if (boundaryBlock) return boundaryBlock;
+  }
   if (enforceableContractsRequired() && listingId) {
     const contractType =
       type === "rental_offer" ? ENFORCEABLE_CONTRACT_TYPES.RENTAL : ENFORCEABLE_CONTRACT_TYPES.BUYER;

@@ -1,85 +1,86 @@
+"use client";
 import React from "react";
+import { CheckCircle2, XCircle, MinusCircle, ExternalLink } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 
-type Outcome = {
-  id: string;
-  resultLabel: string;
-  impactScore: number;
-  outcomeWindowDays: number;
-  createdAt: string;
-};
+interface CeoDecisionOutcomeTableProps {
+  decisions: any[];
+}
 
-type Memory = {
-  id: string;
-  decisionType: string;
-  domain: string;
-  reasoning: string | null;
-  outcomes: Outcome[];
-  createdAt: string;
-};
-
-export function CeoDecisionOutcomeTable({ memories }: { memories: Memory[] }) {
+export function CeoDecisionOutcomeTable({ decisions }: CeoDecisionOutcomeTableProps) {
   return (
-    <section className="rounded-xl border border-white/10 bg-white/[0.02] overflow-hidden">
-      <div className="bg-white/5 px-5 py-3">
-        <h3 className="text-sm font-semibold text-slate-200">Strategic Performance Audit</h3>
-      </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-xs text-slate-400">
-          <thead className="bg-white/[0.02] text-slate-500 uppercase tracking-tighter">
-            <tr>
-              <th className="px-5 py-3 font-medium">Decision</th>
-              <th className="px-5 py-3 font-medium">Domain</th>
-              <th className="px-5 py-3 font-medium">Result</th>
-              <th className="px-5 py-3 font-medium">Impact</th>
-              <th className="px-5 py-3 font-medium">Age</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-white/5">
-            {memories.map((m) => {
-              const outcome = m.outcomes[0];
-              return (
-                <tr key={m.id} className="hover:bg-white/[0.02] transition-colors">
-                  <td className="px-5 py-3">
-                    <div className="font-medium text-slate-200">{m.decisionType}</div>
-                    <div className="truncate max-w-[200px] text-slate-500">{m.reasoning || 'No rationale stored'}</div>
-                  </td>
-                  <td className="px-5 py-3">{m.domain}</td>
-                  <td className="px-5 py-3">
-                    {outcome ? (
-                      <span className={`px-2 py-0.5 rounded-full ${
-                        outcome.resultLabel === 'POSITIVE' ? 'bg-emerald-500/10 text-emerald-400' :
-                        outcome.resultLabel === 'NEGATIVE' ? 'bg-rose-500/10 text-rose-400' :
-                        'bg-slate-500/10 text-slate-400'
-                      }`}>
-                        {outcome.resultLabel}
-                      </span>
-                    ) : (
-                      <span className="text-slate-600 italic">PENDING</span>
-                    )}
-                  </td>
-                  <td className="px-5 py-3 font-mono">
-                    {outcome ? (
-                      <span className={outcome.impactScore > 0 ? 'text-emerald-500' : 'text-rose-500'}>
-                        {outcome.impactScore > 0 ? '+' : ''}{outcome.impactScore.toFixed(1)}
-                      </span>
-                    ) : '—'}
-                  </td>
-                  <td className="px-5 py-3 text-slate-500">
-                    {Math.floor((Date.now() - new Date(m.createdAt).getTime()) / (1000 * 60 * 60 * 24))}d
-                  </td>
-                </tr>
-              );
-            })}
-            {memories.length === 0 && (
-              <tr>
-                <td colSpan={5} className="px-5 py-8 text-center text-slate-500 italic">
-                  No strategic decisions in memory.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-    </section>
+    <div className="rounded-md border bg-white">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Decision</TableHead>
+            <TableHead>Domain</TableHead>
+            <TableHead>Confidence</TableHead>
+            <TableHead>Outcome</TableHead>
+            <TableHead className="text-right">Score</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {decisions.map((d) => {
+            const outcome = d.outcomes?.[0];
+            return (
+              <TableRow key={d.id}>
+                <TableCell className="font-medium">
+                  <div className="flex flex-col">
+                    <span>{d.decisionType}</span>
+                    <span className="text-[10px] text-slate-400 font-normal">{new Date(d.createdAt).toLocaleDateString()}</span>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <Badge variant="outline" className="text-[10px]">{d.domain}</Badge>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <div className="h-1.5 w-12 rounded-full bg-slate-100 overflow-hidden">
+                      <div 
+                        className="h-full bg-blue-500" 
+                        style={{ width: `${d.confidence * 100}%` }} 
+                      />
+                    </div>
+                    <span className="text-xs">{(d.confidence * 100).toFixed(0)}%</span>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  {!outcome ? (
+                    <Badge variant="secondary" className="bg-slate-100 text-slate-500 gap-1">
+                      <MinusCircle className="h-3 w-3" />
+                      Pending
+                    </Badge>
+                  ) : outcome.resultLabel === "POSITIVE" ? (
+                    <Badge className="bg-emerald-500 gap-1">
+                      <CheckCircle2 className="h-3 w-3" />
+                      Positive
+                    </Badge>
+                  ) : outcome.resultLabel === "NEGATIVE" ? (
+                    <Badge variant="destructive" className="gap-1">
+                      <XCircle className="h-3 w-3" />
+                      Negative
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-slate-500 gap-1">
+                      <MinusCircle className="h-3 w-3" />
+                      Neutral
+                    </Badge>
+                  )}
+                </TableCell>
+                <TableCell className="text-right">
+                  {outcome ? (
+                    <span className={outcome.impactScore > 0 ? "text-emerald-600 font-bold" : outcome.impactScore < 0 ? "text-rose-600 font-bold" : "text-slate-400"}>
+                      {outcome.impactScore > 0 ? "+" : ""}{outcome.impactScore.toFixed(2)}
+                    </span>
+                  ) : "-"}
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+    </div>
   );
 }

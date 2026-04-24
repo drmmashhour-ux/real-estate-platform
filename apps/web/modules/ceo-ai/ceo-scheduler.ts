@@ -1,60 +1,65 @@
-import { buildCeoContext } from "./ceo-data-aggregator.service";
-import { generateCeoInsights } from "./ceo-insight.engine";
-import { generateCeoDecisions } from "./ceo-decision.engine";
-import { routeCeoDecisions } from "./ceo-routing.service";
+import { CeoDataAggregatorService } from "./ceo-data-aggregator.service";
+import { CeoInsightEngine } from "./ceo-insight.engine";
+import { CeoDecisionEngine } from "./ceo-decision.engine";
+import { CeoRoutingService } from "./ceo-routing.service";
 import { prisma } from "@/lib/db";
+import { logActivity } from "@/lib/audit/activity-log";
+import { CeoMemoryContextService } from "./ceo-memory-context.service";
 
-/**
- * PHASE 6: SCHEDULER
- * Orchestrates the full CEO cycle: context -> insights -> decisions -> route.
- */
-export async function runCeoCycle() {
-  console.log("[ceo] Starting strategic cycle...");
+export class CeoScheduler {
+  private static COOLDOWN_MINUTES = 60; // 1 hour cooldown between strategic cycles
 
-  // 1. Build context
-  const context = await buildCeoContext();
-  console.log("[ceo] context_built");
+  static async runCycle() {
+    console.log("[ceo] Starting strategic intelligence cycle...");
 
-  // 2. Generate insights
-  const insights = generateCeoInsights(context);
-  console.log(`[ceo] insights_generated: ${insights.length}`);
-  
-  // Persist insights for dashboard
-  for (const insight of insights) {
-    await prisma.ceoInsight.create({
-      data: {
-        type: insight.type,
-        title: insight.title,
-        description: insight.description,
-        severity: insight.severity,
+    try {
+      // 1. Cooldown — last successful context build (memory is only written after a successful route).
+      const lastRun = await prisma.activityLog.findFirst({
+        where: { action: "ceo_context_built" },
+        orderBy: { createdAt: "desc" },
+      });
+
+      if (lastRun) {
+        const diff = (new Date().getTime() - lastRun.createdAt.getTime()) / (1000 * 60);
+        if (diff < this.COOLDOWN_MINUTES) {
+          console.log(`[ceo] Cycle skipped. Cooldown active (${Math.round(this.COOLDOWN_MINUTES - diff)}m remaining).`);
+          return;
+        }
       }
-    });
-  }
 
-  // 3. Generate decisions
-  const decisions = generateCeoDecisions(insights, context);
-  console.log(`[ceo] decisions_generated: ${decisions.length}`);
+      // 2. Build Context
+      const context = await CeoDataAggregatorService.buildCeoContext();
+      const fingerprint = CeoMemoryContextService.buildCeoContextFingerprint(context);
+      await logActivity({ action: "ceo_context_built", metadata: { timestamp: context.timestamp, fingerprint } });
+      console.log("[ceo] Context built successfully.");
 
-  // 4. Route decisions
-  const routedIds = await routeCeoDecisions(decisions);
-  console.log(`[ceo] decisions_routed: ${routedIds.length}`);
+      // 3. Generate Insights
+      const insights = CeoInsightEngine.generateCeoInsights(context);
+      await logActivity({ action: "ceo_insights_generated", metadata: { count: insights.length } });
+      console.log(`[ceo] Generated ${insights.length} insights.`);
 
-  // 5. Create strategy snapshot
-  await prisma.ceoStrategySnapshot.create({
-    data: {
-      summaryJson: {
-        insightsCount: insights.length,
-        decisionsCount: decisions.length,
-        routedCount: routedIds.length,
-      } as any,
-      keyMetricsJson: context as any,
+      if (insights.length === 0) {
+        console.log("[ceo] No significant insights detected. Cycle complete.");
+        return;
+      }
+
+      // 4. Generate Decisions
+      const decisions = await CeoDecisionEngine.generateCeoDecisions(insights, context);
+      await logActivity({ action: "ceo_decisions_generated", metadata: { count: decisions.length } });
+      console.log(`[ceo] Generated ${decisions.length} strategic decisions.`);
+
+      if (decisions.length === 0) {
+        console.log("[ceo] No high-confidence decisions generated. Cycle complete.");
+        return;
+      }
+
+      // 5–6. Route to systems; memory is recorded only after a successful route.
+      await CeoRoutingService.routeCeoDecisions(decisions, context, fingerprint);
+      await logActivity({ action: "ceo_decisions_routed", metadata: { count: decisions.length } });
+
+      console.log("[ceo] Strategic intelligence cycle completed successfully.");
+    } catch (error) {
+      console.error("[ceo] Cycle failed:", error);
     }
-  });
-
-  console.log("[ceo] Strategic cycle complete.");
-  return {
-    insights: insights.length,
-    decisions: decisions.length,
-    routed: routedIds.length,
-  };
+  }
 }

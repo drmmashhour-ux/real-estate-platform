@@ -17,6 +17,9 @@ import {
   refreshDealConflictComplianceState,
 } from "@/lib/compliance/conflict-deal-compliance.service";
 import { DealConflictDisclosureClient } from "@/components/deals/DealConflictDisclosureClient";
+import { BrokerAssistantQuickLinks } from "@/components/broker-assistant/BrokerAssistantQuickLinks";
+import { BrokerMandatoryDisclosureStatus } from "@/components/compliance/BrokerMandatoryDisclosureStatus";
+import { getBrokerDisclosureStatusForDeal, mandatoryBrokerDisclosureEnforced } from "@/lib/compliance/oaciq/broker-mandatory-disclosure.service";
 
 export const dynamic = "force-dynamic";
 
@@ -105,6 +108,8 @@ export default async function DealDetailPage({
       ? await getDealConflictDisclosureSurface(id, userId)
       : null;
 
+  const mandatoryDisclosure = await getBrokerDisclosureStatusForDeal(id);
+
   return (
     <main className="min-h-screen bg-slate-950 text-slate-50">
       <div className="mx-auto max-w-4xl px-4 py-8">
@@ -130,6 +135,12 @@ export default async function DealDetailPage({
           Status: {STATUS_LABELS[deal.status] ?? deal.status} · ${(deal.priceCents / 100).toLocaleString()}
         </p>
 
+        {(viewer?.role === "ADMIN" || (viewer?.role === "BROKER" && deal.brokerId === userId)) && (
+          <div className="mt-4">
+            <BrokerAssistantQuickLinks crmDealId={id} />
+          </div>
+        )}
+
         <DealReviewSurfaceSection surface={reviewSurface} />
 
         {conflictSurface ? (
@@ -142,6 +153,13 @@ export default async function DealDetailPage({
             viewerHasAcknowledged={conflictSurface.viewerHasAcknowledged}
           />
         ) : null}
+
+        <div className="mt-4">
+          <BrokerMandatoryDisclosureStatus
+            provided={mandatoryDisclosure.provided}
+            enforcementEnabled={mandatoryBrokerDisclosureEnforced()}
+          />
+        </div>
 
         {(deal.leadContactOrigin === "IMMO_CONTACT" || deal.commissionSource === "IMMO_CONTACT") && (
           <div className="mt-4 rounded-xl border border-amber-500/35 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">

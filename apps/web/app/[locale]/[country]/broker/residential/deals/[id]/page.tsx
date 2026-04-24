@@ -17,6 +17,9 @@ import {
   getDealConflictDisclosureSurface,
   refreshDealConflictComplianceState,
 } from "@/lib/compliance/conflict-deal-compliance.service";
+import { BrokerAssistantQuickLinks } from "@/components/broker-assistant/BrokerAssistantQuickLinks";
+import { BrokerMandatoryDisclosureStatus } from "@/components/compliance/BrokerMandatoryDisclosureStatus";
+import { getBrokerDisclosureStatusForDeal, mandatoryBrokerDisclosureEnforced } from "@/lib/compliance/oaciq/broker-mandatory-disclosure.service";
 
 export const dynamic = "force-dynamic";
 
@@ -71,6 +74,7 @@ export default async function BrokerResidentialDealDetailPage({
   const conflictSurface = lecipmOaciqFlags.brokerConflictDisclosureV1
     ? await getDealConflictDisclosureSurface(id, userId)
     : null;
+  const mandatoryDisclosure = await getBrokerDisclosureStatusForDeal(id);
   const pkg = deal.assignedFormPackageKey ? getFormPackageByKey(deal.assignedFormPackageKey) : null;
   const executionHref = `/${locale}/${country}/dashboard/deals/${id}/execution`;
 
@@ -120,9 +124,17 @@ export default async function BrokerResidentialDealDetailPage({
             </p>
           </div>
         ) : null}
+        <div className="mt-3">
+          <BrokerMandatoryDisclosureStatus
+            provided={mandatoryDisclosure.provided}
+            enforcementEnabled={mandatoryBrokerDisclosureEnforced()}
+          />
+        </div>
       </div>
 
       <DealIntelligencePanel dealId={id} />
+
+      <BrokerAssistantQuickLinks crmDealId={id} />
 
       <DealOperationalTrustPanel dealId={id} />
 

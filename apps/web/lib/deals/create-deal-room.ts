@@ -3,6 +3,10 @@ import { prisma } from "@/lib/db";
 import { DEAL_ROOM_EVENT } from "./constants";
 import { addDealRoomEvent } from "./add-event";
 import { BrokerActionGuard } from "@/lib/compliance/broker-action-guard";
+import {
+  assertMandatoryBrokerDisclosurePresent,
+  classifyListingRef,
+} from "@/lib/compliance/oaciq/broker-mandatory-disclosure.service";
 
 export type CreateDealRoomParticipantInput = {
   userId?: string | null;
@@ -35,6 +39,23 @@ export async function createDealRoom(input: {
   });
   if (!guard.allowed) {
     throw new Error(guard.reason || "Broker license validation failed for deal creation.");
+  }
+
+  if (input.listingId) {
+    const ref = await classifyListingRef(input.listingId);
+    if (ref?.kind === "crm") {
+      await assertMandatoryBrokerDisclosurePresent({
+        brokerId: input.brokerUserId,
+        listingId: ref.id,
+        blockContext: "deal_room_create",
+      });
+    } else if (ref?.kind === "fsbo") {
+      await assertMandatoryBrokerDisclosurePresent({
+        brokerId: input.brokerUserId,
+        fsboListingId: ref.id,
+        blockContext: "deal_room_create_fsbo",
+      });
+    }
   }
 
   const room = await prisma.dealRoom.create({

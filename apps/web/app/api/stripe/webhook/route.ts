@@ -7,6 +7,7 @@ import { generateInvoiceNumber } from "@/lib/codes/generate-code";
 import { PAID_STORAGE_PLAN_KEYS, plans, type PlanKey } from "@/lib/billing/plans";
 import { getResend, isResendConfigured, getFromEmail } from "@/lib/email/resend";
 import { logError, logInfo, logWarn } from "@/lib/logger";
+import { recordEvolutionOutcome } from "@/modules/evolution/outcome-tracker.service";
 import { addCommissionForReferral, rewardReferralActivation } from "@/lib/referrals";
 import {
   grantReferrerVisibilityBoostOnGuestBookingComplete,
@@ -962,6 +963,21 @@ export async function POST(req: NextRequest) {
           userId: userIdMeta || undefined,
         },
       });
+
+      void recordEvolutionOutcome({
+        domain: "BOOKING",
+        metricType: "BOOKING",
+        strategyKey: "payment_success",
+        entityId: md.bookingId,
+        entityType: "Booking",
+        actualJson: {
+          paymentSuccess: true,
+          amountTotal: session.amount_total,
+          currency: session.currency,
+        },
+        reinforceStrategy: true,
+        idempotent: true,
+      }).catch(() => {});
     }
   }
 

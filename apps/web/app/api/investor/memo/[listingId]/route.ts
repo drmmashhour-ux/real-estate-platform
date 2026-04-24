@@ -5,6 +5,8 @@ import { isLecipmPhaseEnabled, logRolloutGate, withRolloutDisabledBody } from "@
 import { getLatestInvestorMemo } from "@/modules/investor/investor-memo.service";
 import { userCanAccessInvestorDocuments } from "@/modules/investor/investor-permissions";
 import type { InvestorMemoPayload } from "@/modules/investor/investor.types";
+import { assertBrokeredTransaction } from "@/modules/legal-boundary/compliance-action-guard";
+import { getOrSyncTransactionContext } from "@/modules/legal-boundary/transaction-context.service";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +29,10 @@ export async function GET(_req: Request, context: { params: Promise<{ listingId:
     logRolloutGate(2, "/api/investor/memo GET");
     return NextResponse.json(withRolloutDisabledBody(2, { memo: null }));
   }
+
+  const txCtx = await getOrSyncTransactionContext({ entityType: "LISTING", entityId: listingId });
+  const boundaryBlock = await assertBrokeredTransaction(txCtx, "investor_memo", userId);
+  if (boundaryBlock) return boundaryBlock;
 
   const memo = await getLatestInvestorMemo(listingId);
   if (!memo) return NextResponse.json({ memo: null });

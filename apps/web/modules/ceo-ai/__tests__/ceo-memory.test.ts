@@ -23,6 +23,9 @@ describe("CEO Context Fingerprinting", () => {
     outreachReplyRateProxy: 0.1,
     emailEngagementScore: 0.4,
     avgLeadQualityScore: 0.7,
+    activeDealsCount: 3,
+    dealPipelineHealth: 0.5,
+    esgActivityLevel: 0.5,
   };
 
   it("generates stable fingerprints for similar contexts (bucket stability)", () => {
@@ -30,7 +33,7 @@ describe("CEO Context Fingerprinting", () => {
       ...baseSignals,
       leadsLast30d: 105, // Still "UP" vs 80
       demandIndex: 0.55, // Still "STABLE"
-      revenueTrend30dProxy: 0.03, // Still "POS"
+      revenueTrend30dProxy: 0.015, // Still "FLAT" (same bucket as 0.02)
     };
 
     const f1 = buildCeoContextFingerprint(baseSignals);
@@ -55,7 +58,3 @@ describe("CEO Context Fingerprinting", () => {
   });
 });
 
-describe("Strategic Alignment Heuristics", () => {
-  // We can add more tests for alignment, pattern scoring, etc.
-  // These would typically require a mock Prisma client.
-});
