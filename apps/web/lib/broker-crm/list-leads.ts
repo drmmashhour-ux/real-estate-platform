@@ -51,27 +51,43 @@ export async function listBrokerCrmLeads(opts: {
       listing: { select: { id: true, title: true, listingCode: true } },
       thread: { select: { id: true, lastMessageAt: true } },
       customer: { select: { name: true, email: true } },
+      brokerAutopilotActions: {
+        where: { status: { in: ["suggested", "queued"] } },
+        orderBy: { createdAt: "desc" },
+        take: 1,
+        select: { title: true, reason: true, reasonBucket: true },
+      },
     },
   });
 
-  return rows.map((r) => ({
-    id: r.id,
-    status: r.status,
-    source: r.source,
-    priorityLabel: r.priorityLabel,
-    priorityScore: r.priorityScore,
-    nextFollowUpAt: r.nextFollowUpAt?.toISOString() ?? null,
-    lastContactAt: r.lastContactAt?.toISOString() ?? null,
-    updatedAt: r.updatedAt.toISOString(),
-    guestName: r.guestName,
-    guestEmail: r.guestEmail,
-    listing: r.listing
-      ? { id: r.listing.id, title: r.listing.title, listingCode: r.listing.listingCode }
-      : null,
-    threadId: r.threadId,
-    lastActivityAt: r.thread?.lastMessageAt?.toISOString() ?? r.updatedAt.toISOString(),
-    displayName: r.customer?.name?.trim() || r.guestName || r.customer?.email || "Lead",
-  }));
+  return rows.map((r) => {
+    const autopilot = r.brokerAutopilotActions[0];
+    const suggestedNext =
+      autopilot?.title && autopilot?.reason
+        ? `${autopilot.title}: ${autopilot.reason.slice(0, 120)}${autopilot.reason.length > 120 ? "…" : ""}`
+        : autopilot?.title ?? null;
+    return {
+      id: r.id,
+      status: r.status,
+      source: r.source,
+      priorityLabel: r.priorityLabel,
+      priorityScore: r.priorityScore,
+      nextFollowUpAt: r.nextFollowUpAt?.toISOString() ?? null,
+      lastContactAt: r.lastContactAt?.toISOString() ?? null,
+      updatedAt: r.updatedAt.toISOString(),
+      guestName: r.guestName,
+      guestEmail: r.guestEmail,
+      listing: r.listing
+        ? { id: r.listing.id, title: r.listing.title, listingCode: r.listing.listingCode }
+        : null,
+      threadId: r.threadId,
+      lastActivityAt: r.thread?.lastMessageAt?.toISOString() ?? r.updatedAt.toISOString(),
+      displayName: r.customer?.name?.trim() || r.guestName || r.customer?.email || "Lead",
+      /** Rule-based + surfaced suggestions (no auto-send). */
+      aiScoreLabel: `${r.priorityLabel} · ${r.priorityScore}`,
+      suggestedNext,
+    };
+  });
 }
 
 export async function brokerCrmKpis(brokerUserId: string, isAdmin: boolean) {

@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { brokerCrmKpis, listBrokerCrmLeads } from "@/lib/broker-crm/list-leads";
+import { brokerCrmKpis } from "@/lib/broker-crm/list-leads";
 import { playbookLog } from "@/modules/playbook-memory/playbook-memory.logger";
 
 export type BrokerCrmInsights = {

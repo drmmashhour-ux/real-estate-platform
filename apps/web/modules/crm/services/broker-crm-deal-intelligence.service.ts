@@ -80,7 +80,7 @@ export async function evaluateDealProgress(dealId: string): Promise<DealProgress
         brokerId: deal.brokerId ?? undefined,
         context: ctx,
         actionPayload: { progressScore, bottlenecks, suggestedActions: suggestedActions.slice(0, 6) },
-        idempotencyKey: `crm_deal_progress:${dealId}:${deal.updatedAt.getTime()}`,
+        idempotencyKey: `crm_deal_progress_insight:${dealId}`,
       })
       .catch((e) => {
         playbookLog.warn("deal progress memory skipped", {

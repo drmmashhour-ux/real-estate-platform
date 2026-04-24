@@ -25,6 +25,9 @@ type LeadRow = {
   listing: { id: string; title: string; listingCode: string } | null;
   lastActivityAt: string;
   nextFollowUpAt: string | null;
+  /** Rule-based label (internal scoring; no auto-messaging). */
+  aiScoreLabel?: string;
+  suggestedNext?: string | null;
 };
 
 type Kpis = {
@@ -331,6 +334,17 @@ export function BrokerCrmHomeClient() {
                     </td>
                     <td className="px-3 py-2">
                       <span className={`rounded-full px-2 py-0.5 text-[11px] ${badgeStatus(row.status)}`}>{row.status}</span>
+                    </td>
+                    <td className="px-3 py-2">
+                      <span
+                        className="rounded-full border border-violet-500/30 bg-violet-950/30 px-2 py-0.5 text-[11px] text-violet-100"
+                        title="Rule-based score from message signals. Not legal or financial advice."
+                      >
+                        {row.aiScoreLabel ?? `${row.priorityLabel} · ${row.priorityScore}`}
+                      </span>
+                    </td>
+                    <td className="max-w-[220px] px-3 py-2 text-xs text-slate-400" title="Suggestions only; nothing is auto-sent.">
+                      {row.suggestedNext ? row.suggestedNext : "—"}
                     </td>
                     <td className="px-3 py-2">
                       <span className={`rounded-full px-2 py-0.5 text-[11px] ${badgePriority(row.priorityLabel)}`}>

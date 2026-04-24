@@ -195,6 +195,10 @@ export async function confirmClosingExecution(options: {
   void recordCloseProbabilityOutcome(options.dealId, true).catch(() => {});
   void recordNegotiationStrategyOutcome(options.dealId, true).catch(() => {});
 
+  void import("@/modules/crm/services/broker-crm-outcome.service").then((m) => {
+    m.onDealClosedForPlaybookMemory(options.dealId).catch(() => {});
+  });
+
   await appendClosingAudit({
     dealId: options.dealId,
     actorUserId: options.actorUserId,

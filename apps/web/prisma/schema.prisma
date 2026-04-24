@@ -582,10 +582,10 @@ model User {
   dealInvestorMatchAuditLogsAsInvestor     DealInvestorMatchAuditLog[]              @relation("DealInvestorMatchAuditInvestor")
   dealInvestorMatchAuditLogsAsActor        DealInvestorMatchAuditLog[]              @relation("DealInvestorMatchAuditActor")
   dealInvestorMatchLearningEvents          DealInvestorMatchLearningEvent[]
-  offerDraftsAsBuyer                     OfferDraft[]                             @relation("OfferDraftBuyer")
-  offerDraftsApproved                    OfferDraft[]                             @relation("OfferDraftApprovedBy")
-  offerDraftsSent                        OfferDraft[]                             @relation("OfferDraftSentBy")
-  offerDraftAuditLogs                    OfferDraftAuditLog[]                     @relation("OfferDraftAuditActor")
+  offerDraftsAsBuyer                       OfferDraft[]                             @relation("OfferDraftBuyer")
+  offerDraftsApproved                      OfferDraft[]                             @relation("OfferDraftApprovedBy")
+  offerDraftsSent                          OfferDraft[]                             @relation("OfferDraftSentBy")
+  offerDraftAuditLogs                      OfferDraftAuditLog[]                     @relation("OfferDraftAuditActor")
   lecipmProductionGuardNoticeAcks          LecipmProductionGuardNoticeAck[]
   lecipmProductionGuardAuditEvents         LecipmProductionGuardAuditEvent[]        @relation("LecipmProductionGuardAuditActor")
   lecipmProductionGuardArtifactsCreated    LecipmProductionGuardArtifact[]          @relation("LecipmProductionGuardArtifactCreator")
@@ -647,7 +647,7 @@ model User {
   /// LECIPM transactional AI Autopilot Layer (drafts/deals) — distinct from BNHub `HostAutopilotSettings`.
   aiAutopilotLayerConfig                   AiAutopilotLayerConfig?
   aiAutopilotLayerActions                  AiAutopilotLayerAction[]                 @relation("AiAutopilotLayerActionUser")
-  aiAutopilotLayerEvents                   AiAutopilotLayerEvent[]                 @relation("AiAutopilotLayerEventUser")
+  aiAutopilotLayerEvents                   AiAutopilotLayerEvent[]                  @relation("AiAutopilotLayerEventUser")
   listingAutopilotOptimizationSetting      ListingAutopilotSetting?                 @relation("ListingAutopilotOptimizationSetting")
   portfolioAutopilotSetting                PortfolioAutopilotSetting?               @relation("PortfolioAutopilotSettingOwner")
   portfolioHealthScore                     PortfolioHealthScore?                    @relation("PortfolioHealthScoreOwner")
@@ -11295,6 +11295,7 @@ model Deal {
   conflictClientConsents           DealConflictClientConsent[]
   /// OACIQ mandatory broker disclosure records filed for this deal (when applicable).
   brokerDisclosures                BrokerDisclosure[]
+  aiAutopilotLayerActions          AiAutopilotLayerAction[]
 
   @@index([buyerId])
   @@index([sellerId])
@@ -14910,6 +14911,7 @@ model LecipmLegalDocumentArtifact {
   /// Deterministic locked PDF bytes after broker sign (tamper-evident bundle); regenerate if document changes.
   lockedPdfBytes                   Bytes?                             @map("locked_pdf_bytes")
   lockedPdfGeneratedAt             DateTime?                          @map("locked_pdf_generated_at")
+  offerDraftFromPromise            OfferDraft?                        @relation("OfferDraftPromiseArtifact")
 
   @@index([dealId])
   @@index([capitalDealId])
@@ -21488,43 +21490,43 @@ model Listing {
 
 /// AI-assisted promise-to-purchase draft — broker must review, approve, and sign before any outbound send.
 model OfferDraft {
-  id                     String    @id @default(cuid())
-  dealId                 String    @map("deal_id")
-  deal                   Deal      @relation(fields: [dealId], references: [id], onDelete: Cascade)
-  listingId              String?   @map("listing_id")
-  listing                Listing?  @relation(fields: [listingId], references: [id], onDelete: SetNull)
-  buyerId                String    @map("buyer_id")
-  buyer                  User      @relation("OfferDraftBuyer", fields: [buyerId], references: [id], onDelete: Restrict)
-  generatedBy            String    @default("AI") @map("generated_by") @db.VarChar(16)
+  id                    String                       @id @default(cuid())
+  dealId                String                       @map("deal_id")
+  deal                  Deal                         @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  listingId             String?                      @map("listing_id")
+  listing               Listing?                     @relation(fields: [listingId], references: [id], onDelete: SetNull)
+  buyerId               String                       @map("buyer_id")
+  buyer                 User                         @relation("OfferDraftBuyer", fields: [buyerId], references: [id], onDelete: Restrict)
+  generatedBy           String                       @default("AI") @map("generated_by") @db.VarChar(16)
   /// DRAFT | READY_FOR_REVIEW | APPROVED | SENT
-  status                 String    @default("DRAFT") @map("status") @db.VarChar(24)
-  purchasePrice          Float     @map("purchase_price")
-  depositAmount          Float?    @map("deposit_amount")
-  financingDeadline      DateTime? @map("financing_deadline")
-  inspectionDeadline     DateTime? @map("inspection_deadline")
-  occupancyDate          DateTime? @map("occupancy_date")
-  includedItemsJson      Json      @default("[]") @map("included_items_json")
-  excludedItemsJson      Json      @default("[]") @map("excluded_items_json")
-  specialConditionsJson  Json      @default("[]") @map("special_conditions_json")
+  status                String                       @default("DRAFT") @map("status") @db.VarChar(24)
+  purchasePrice         Float                        @map("purchase_price")
+  depositAmount         Float?                       @map("deposit_amount")
+  financingDeadline     DateTime?                    @map("financing_deadline")
+  inspectionDeadline    DateTime?                    @map("inspection_deadline")
+  occupancyDate         DateTime?                    @map("occupancy_date")
+  includedItemsJson     Json                         @default("[]") @map("included_items_json")
+  excludedItemsJson     Json                         @default("[]") @map("excluded_items_json")
+  specialConditionsJson Json                         @default("[]") @map("special_conditions_json")
   /// Price ladder + selected band + per-field traceability (sources: listing, negotiation_ai, clause_library, broker_default).
-  rationaleJson          Json      @map("rationale_json")
-  priceBandsJson         Json?     @map("price_bands_json")
-  clauseWarningsJson     Json      @default("[]") @map("clause_warnings_json")
-  financingClauseText    String?   @map("financing_clause_text") @db.Text
-  inspectionClauseText   String?   @map("inspection_clause_text") @db.Text
-  occupancyClauseText    String?   @map("occupancy_clause_text") @db.Text
-  promiseArtifactId      String?   @unique @map("promise_artifact_id")
-  promiseArtifact        LecipmLegalDocumentArtifact? @relation(fields: [promiseArtifactId], references: [id], onDelete: SetNull)
-  approvedAt             DateTime? @map("approved_at")
-  approvedByBrokerId     String?   @map("approved_by_broker_id")
-  approvedByBroker       User?     @relation("OfferDraftApprovedBy", fields: [approvedByBrokerId], references: [id], onDelete: SetNull)
-  sentAt                 DateTime? @map("sent_at")
-  sentByBrokerId         String?   @map("sent_by_broker_id")
-  sentByBroker           User?     @relation("OfferDraftSentBy", fields: [sentByBrokerId], references: [id], onDelete: SetNull)
-  offerSnapshotJson      Json?     @map("offer_snapshot_json")
-  createdAt              DateTime  @default(now()) @map("created_at")
-  updatedAt              DateTime  @updatedAt @map("updated_at")
-  auditLogs              OfferDraftAuditLog[]
+  rationaleJson         Json                         @map("rationale_json")
+  priceBandsJson        Json?                        @map("price_bands_json")
+  clauseWarningsJson    Json                         @default("[]") @map("clause_warnings_json")
+  financingClauseText   String?                      @map("financing_clause_text") @db.Text
+  inspectionClauseText  String?                      @map("inspection_clause_text") @db.Text
+  occupancyClauseText   String?                      @map("occupancy_clause_text") @db.Text
+  promiseArtifactId     String?                      @unique @map("promise_artifact_id")
+  promiseArtifact       LecipmLegalDocumentArtifact? @relation("OfferDraftPromiseArtifact", fields: [promiseArtifactId], references: [id], onDelete: SetNull)
+  approvedAt            DateTime?                    @map("approved_at")
+  approvedByBrokerId    String?                      @map("approved_by_broker_id")
+  approvedByBroker      User?                        @relation("OfferDraftApprovedBy", fields: [approvedByBrokerId], references: [id], onDelete: SetNull)
+  sentAt                DateTime?                    @map("sent_at")
+  sentByBrokerId        String?                      @map("sent_by_broker_id")
+  sentByBroker          User?                        @relation("OfferDraftSentBy", fields: [sentByBrokerId], references: [id], onDelete: SetNull)
+  offerSnapshotJson     Json?                        @map("offer_snapshot_json")
+  createdAt             DateTime                     @default(now()) @map("created_at")
+  updatedAt             DateTime                     @updatedAt @map("updated_at")
+  auditLogs             OfferDraftAuditLog[]
 
   @@index([dealId, createdAt(sort: Desc)])
   @@index([dealId, status])
@@ -31069,9 +31071,9 @@ model LegalFormDraft {
   createdAt       DateTime          @default(now()) @map("created_at")
   updatedAt       DateTime          @updatedAt @map("updated_at")
 
-  suggestions LegalFormSuggestion[]
-  alerts      LegalFormAlert[]
-  auditEvents LegalFormAuditEvent[]
+  suggestions             LegalFormSuggestion[]
+  alerts                  LegalFormAlert[]
+  auditEvents             LegalFormAuditEvent[]
   aiAutopilotLayerActions AiAutopilotLayerAction[]
 
   @@index([templateId])
@@ -31155,28 +31157,28 @@ model AiAutopilotLayerConfig {
 }
 
 model AiAutopilotLayerAction {
-  id               String    @id @default(cuid())
-  userId           String?   @map("user_id")
-  user             User?     @relation("AiAutopilotLayerActionUser", fields: [userId], references: [id], onDelete: SetNull)
-  draftId          String?   @map("draft_id") @db.Uuid
-  draft            LegalFormDraft? @relation(fields: [draftId], references: [id], onDelete: SetNull)
-  dealId           String?   @map("deal_id")
-  deal             Deal?     @relation(fields: [dealId], references: [id], onDelete: SetNull)
-  actionKey        String    @map("action_key") @db.VarChar(128)
-  actionType       String    @map("action_type") @db.VarChar(64)
-  mode             String    @db.VarChar(32)
+  id               String                  @id @default(cuid())
+  userId           String?                 @map("user_id")
+  user             User?                   @relation("AiAutopilotLayerActionUser", fields: [userId], references: [id], onDelete: SetNull)
+  draftId          String?                 @map("draft_id") @db.Uuid
+  draft            LegalFormDraft?         @relation(fields: [draftId], references: [id], onDelete: SetNull)
+  dealId           String?                 @map("deal_id")
+  deal             Deal?                   @relation(fields: [dealId], references: [id], onDelete: SetNull)
+  actionKey        String                  @map("action_key") @db.VarChar(128)
+  actionType       String                  @map("action_type") @db.VarChar(64)
+  mode             String                  @db.VarChar(32)
   /// PROPOSED | APPROVED | EXECUTED | REJECTED | BLOCKED
-  status           String    @default("PROPOSED") @db.VarChar(24)
+  status           String                  @default("PROPOSED") @db.VarChar(24)
   /// LOW | MEDIUM | HIGH | CRITICAL
-  riskLevel        String    @default("LOW") @map("risk_level") @db.VarChar(16)
-  payloadJson      Json?     @map("payload_json")
-  reasonFr         String?   @map("reason_fr") @db.Text
-  requiresApproval Boolean   @default(true) @map("requires_approval")
-  blockReason      String?   @map("block_reason") @db.Text
-  approvedAt       DateTime? @map("approved_at")
-  rejectedAt       DateTime? @map("rejected_at")
-  executedAt       DateTime? @map("executed_at")
-  createdAt        DateTime  @default(now()) @map("created_at")
+  riskLevel        String                  @default("LOW") @map("risk_level") @db.VarChar(16)
+  payloadJson      Json?                   @map("payload_json")
+  reasonFr         String?                 @map("reason_fr") @db.Text
+  requiresApproval Boolean                 @default(true) @map("requires_approval")
+  blockReason      String?                 @map("block_reason") @db.Text
+  approvedAt       DateTime?               @map("approved_at")
+  rejectedAt       DateTime?               @map("rejected_at")
+  executedAt       DateTime?               @map("executed_at")
+  createdAt        DateTime                @default(now()) @map("created_at")
   events           AiAutopilotLayerEvent[]
 
   @@index([userId])
@@ -31187,14 +31189,14 @@ model AiAutopilotLayerAction {
 }
 
 model AiAutopilotLayerEvent {
-  id          String   @id @default(cuid())
-  userId      String?  @map("user_id")
-  user        User?    @relation("AiAutopilotLayerEventUser", fields: [userId], references: [id], onDelete: SetNull)
-  actionId    String?  @map("action_id")
+  id          String                  @id @default(cuid())
+  userId      String?                 @map("user_id")
+  user        User?                   @relation("AiAutopilotLayerEventUser", fields: [userId], references: [id], onDelete: SetNull)
+  actionId    String?                 @map("action_id")
   action      AiAutopilotLayerAction? @relation(fields: [actionId], references: [id], onDelete: SetNull)
-  eventKey    String   @map("event_key") @db.VarChar(64)
-  payloadJson Json?    @map("payload_json")
-  createdAt   DateTime @default(now()) @map("created_at")
+  eventKey    String                  @map("event_key") @db.VarChar(64)
+  payloadJson Json?                   @map("payload_json")
+  createdAt   DateTime                @default(now()) @map("created_at")
 
   @@index([userId])
   @@index([actionId])
@@ -38443,42 +38445,42 @@ enum InvestorInteractionType {
 }
 
 model Investor {
-  id            String              @id @default(cuid())
-  name          String
-  email         String              @unique
-  stage         InvestorStage       @default(NEW)
-  notes         String?             @db.Text
-  targetAmount  Int?                @map("target_amount") // Cents
-  actualAmount  Int?                @map("actual_amount") // Cents
-  interactions  InvestorInteraction[]
-  documents     InvestorDocument[]
-  createdAt     DateTime            @default(now()) @map("created_at")
-  updatedAt     DateTime            @updatedAt @map("updated_at")
+  id           String                @id @default(cuid())
+  name         String
+  email        String                @unique
+  stage        InvestorStage         @default(NEW)
+  notes        String?               @db.Text
+  targetAmount Int?                  @map("target_amount") // Cents
+  actualAmount Int?                  @map("actual_amount") // Cents
+  interactions InvestorInteraction[]
+  documents    InvestorDocument[]
+  createdAt    DateTime              @default(now()) @map("created_at")
+  updatedAt    DateTime              @updatedAt @map("updated_at")
 
   @@map("investors")
 }
 
 model InvestorInteraction {
-  id            String                  @id @default(cuid())
-  investorId    String                  @map("investor_id")
-  investor      Investor                @relation(fields: [investorId], references: [id], onDelete: Cascade)
-  type          InvestorInteractionType @default(EMAIL)
-  notes         String?                 @db.Text
-  date          DateTime                @default(now())
-  createdAt     DateTime                @default(now()) @map("created_at")
+  id         String                  @id @default(cuid())
+  investorId String                  @map("investor_id")
+  investor   Investor                @relation(fields: [investorId], references: [id], onDelete: Cascade)
+  type       InvestorInteractionType @default(EMAIL)
+  notes      String?                 @db.Text
+  date       DateTime                @default(now())
+  createdAt  DateTime                @default(now()) @map("created_at")
 
   @@index([investorId])
   @@map("investor_interactions")
 }
 
 model InvestorDocument {
-  id            String    @id @default(cuid())
-  investorId    String    @map("investor_id")
-  investor      Investor  @relation(fields: [investorId], references: [id], onDelete: Cascade)
-  name          String
-  url           String
-  type          String?   // pitch_deck, financials, legal, other
-  createdAt     DateTime  @default(now()) @map("created_at")
+  id         String   @id @default(cuid())
+  investorId String   @map("investor_id")
+  investor   Investor @relation(fields: [investorId], references: [id], onDelete: Cascade)
+  name       String
+  url        String
+  type       String? // pitch_deck, financials, legal, other
+  createdAt  DateTime @default(now()) @map("created_at")
 
   @@index([investorId])
   @@map("investor_documents")
@@ -38504,7 +38506,7 @@ model LedgerEntry {
   booking   Booking?          @relation(fields: [bookingId], references: [id], onDelete: SetNull)
   userId    String?           @map("user_id")
   user      User?             @relation("UserLedgerEntries", fields: [userId], references: [id], onDelete: SetNull)
-  amount    Int               // Cents
+  amount    Int // Cents
   currency  String            @default("USD")
   status    LedgerEntryStatus @default(PENDING)
   stripeId  String?           @map("stripe_id")

@@ -46,6 +46,7 @@ export async function evaluateLead(leadId: string): Promise<EvaluateLeadResult |
 
     let assignment: Awaited<ReturnType<typeof playbookMemoryAssignmentService.assignBestPlaybook>> | null = null;
     try {
+      const allowedIds = recommendations.filter((r) => r.allowed).map((r) => r.playbookId);
       const bandit: PlaybookBanditContext = {
         domain: "LEADS",
         entityType: "lecipm_broker_crm_lead",
@@ -60,11 +61,9 @@ export async function evaluateLead(leadId: string): Promise<EvaluateLeadResult |
           status: lead.status,
           priorityLabel: lead.priorityLabel,
         },
-        candidatePlaybookIds: recommendations.filter((r) => r.allowed).map((r) => r.playbookId),
+        candidatePlaybookIds: allowedIds.length ? allowedIds : undefined,
       };
-      if (bandit.candidatePlaybookIds?.length) {
-        assignment = await playbookMemoryAssignmentService.assignBestPlaybook(bandit);
-      }
+      assignment = await playbookMemoryAssignmentService.assignBestPlaybook(bandit);
     } catch (e) {
       playbookLog.warn("evaluateLead assignment", { message: e instanceof Error ? e.message : String(e) });
     }

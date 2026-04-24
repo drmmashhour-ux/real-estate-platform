@@ -62,7 +62,6 @@ export async function scoreLead(leadId: string): Promise<LeadScoreResult | LeadS
           leadId,
           context: ctx,
           actionPayload: { priorityScore, priorityLabel },
-          idempotencyKey: `broker_crm_scored:${leadId}:${Math.floor(Date.now() / 86_400_000)}`,
         })
         .catch((e) => {
           playbookLog.warn("broker_crm_lead_scored memory skipped", {

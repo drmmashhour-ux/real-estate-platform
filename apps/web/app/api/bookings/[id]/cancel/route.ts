@@ -46,6 +46,22 @@ export async function POST(request: NextRequest, ctx: Ctx) {
 
     const updated = await cancelBooking(bookingId.trim(), userId, by, { reason });
     logInfo("[booking/cancel]", { bookingId: updated.id, by, userId });
+
+    // Financial Wiring: Record Refund if payment was already made
+    if (updated.status === "CANCELLED") {
+      const { processRefund } = await import("@/modules/payouts/payout.service");
+      const bookingWithPayment = await prisma.booking.findUnique({
+        where: { id: updated.id },
+        include: { payment: true }
+      });
+      
+      if (bookingWithPayment?.payment?.amountCents) {
+        void processRefund(updated.id, bookingWithPayment.payment.amountCents).catch((err) => 
+          console.error("[finance] failed to record refund on cancel", err)
+        );
+      }
+    }
+
     return Response.json({
       id: updated.id,
       status: updated.status,
