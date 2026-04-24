@@ -11,12 +11,15 @@ import {
 } from "@/lib/ai/learning/host-autopilot-flow-hooks";
 import { translateServer } from "@/lib/i18n/server-translate";
 import { getUserUiLocaleCode } from "@/lib/i18n/user-ui-locale";
+import { logAutopilotTagged } from "@/lib/server/launch-logger";
 
 export const dynamic = "force-dynamic";
 
 const BodyZ = z.object({
-  decision: z.enum(["approve", "reject"]),
+  decision: z.enum(["approve", "reject", "modify"]),
   note: z.string().max(2000).optional(),
+  /** Shallow-merge into stored approval payload (host-adjusted proposal). */
+  modifiedPayloadJson: z.string().max(8000).optional(),
 });
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -39,6 +42,48 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   }
   if (row.status !== "pending") {
     return NextResponse.json({ error: "not_pending" }, { status: 400 });
+  }
+
+  if (parsed.data.decision === "modify") {
+    let extra: Record<string, unknown> | undefined;
+    const rawJson = parsed.data.modifiedPayloadJson?.trim();
+    const note = parsed.data.note?.trim();
+    if (rawJson) {
+      try {
+        const parsedJson = JSON.parse(rawJson) as unknown;
+        if (parsedJson && typeof parsedJson === "object" && !Array.isArray(parsedJson)) {
+          extra = parsedJson as Record<string, unknown>;
+        } else {
+          return NextResponse.json({ error: "modified_payload_must_be_object" }, { status: 400 });
+        }
+      } catch {
+        return NextResponse.json({ error: "invalid_modified_json" }, { status: 400 });
+      }
+    }
+    if (!extra && !note) {
+      return NextResponse.json({ error: "provide_json_or_note" }, { status: 400 });
+    }
+    const base =
+      row.payload && typeof row.payload === "object" && !Array.isArray(row.payload)
+        ? { ...(row.payload as object) }
+        : {};
+    const merged = extra
+      ? { ...base, ...extra, hostModifiedAt: new Date().toISOString() }
+      : base;
+    await prisma.managerAiApprovalRequest.update({
+      where: { id: row.id },
+      data: {
+        payload: merged as object,
+        reviewNote: note ?? row.reviewNote,
+      },
+    });
+    logAutopilotTagged.info("action_suggested", {
+      event: "approval_payload_amended",
+      approvalId: row.id,
+      hostId: userId,
+      actionKey: row.actionKey,
+    });
+    return NextResponse.json({ ok: true, status: "modified" });
   }
 
   if (parsed.data.decision === "reject") {
@@ -69,7 +114,18 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     } catch {
       /* learning must not affect approval flow */
     }
+    logAutopilotTagged.info("action_rejected", {
+      approvalId: row.id,
+      hostId: userId,
+      actionKey: row.actionKey,
+      targetEntityType: row.targetEntityType,
+      targetEntityId: row.targetEntityId,
+    });
     return NextResponse.json({ ok: true, status: "rejected" });
+  }
+
+  if (parsed.data.decision !== "approve") {
+    return NextResponse.json({ error: "invalid_decision" }, { status: 400 });
   }
 
   const applied =
@@ -112,6 +168,15 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   } catch {
     /* learning must not affect approval flow */
   }
+
+  logAutopilotTagged.info("action_applied", {
+    approvalId: row.id,
+    hostId: userId,
+    actionKey: row.actionKey,
+    targetEntityType: row.targetEntityType,
+    targetEntityId: row.targetEntityId,
+    applied: applied.ok,
+  });
 
   const loc = await getUserUiLocaleCode(userId);
   await notifyHostAutopilot({

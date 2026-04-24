@@ -108,7 +108,7 @@ export async function updateGrowthAiOutcome(
 
   const conv = await prisma.growthAiConversation.findUnique({
     where: { id: conversationId },
-    select: { outcome: true },
+    select: { outcome: true, recommendedTemplateKey: true, learningFlag: true },
   });
   const current = conv?.outcome;
 
@@ -132,12 +132,17 @@ export async function updateGrowthAiOutcome(
   void recordEvolutionOutcome({
     domain: "MESSAGING",
     metricType: "CONVERSION",
-    strategyKey: "lead_conversion",
+    strategyKey: conv?.learningFlag || conv?.recommendedTemplateKey || "lead_conversion",
     entityId: conversationId,
     entityType: "GrowthAiConversation",
-    actualJson: { eventType, outcome: next },
+    actualJson: {
+      eventType,
+      outcome: next,
+      templateKey: conv?.recommendedTemplateKey,
+    },
     reinforceStrategy: true,
     idempotent: false, // Funnel progression can have multiple events
+    duplicateKey: `msg_outcome:${conversationId}:${eventType}`,
   }).catch(() => {});
 
   await applyLearningOutcomeFeedback(conversationId, next, eventType).catch(() => {

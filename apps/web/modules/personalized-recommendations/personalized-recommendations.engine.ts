@@ -83,6 +83,20 @@ export function scoreFsboBuyerSync(args: {
   } else if (ctx.homeCity && listing.city.toLowerCase() === ctx.homeCity.toLowerCase()) {
     factors.cityAffinity = 0.55;
     score += 12;
+  } else {
+    const w13 = ctx.memory.preferenceSummary;
+    const wh = w13["wave13Housing"];
+    if (wh && typeof wh === "object" && !Array.isArray(wh)) {
+      for (const [k, v] of Object.entries(wh as Record<string, unknown>)) {
+        if (k.toLowerCase().includes("location_city") && typeof v === "string" && v) {
+          if (listing.city.toLowerCase() === v.toLowerCase()) {
+            factors.wave13City = 0.45;
+            score += 4;
+            break;
+          }
+        }
+      }
+    }
   }
 
   const pt = listing.propertyType ?? "";
@@ -294,7 +308,7 @@ async function recommendBroker(
   if (ctx.role !== PlatformRole.BROKER && ctx.role !== PlatformRole.ADMIN) return [];
 
   const leads = await prisma.lead.findMany({
-    where: { introducedByBrokerId: userId, NOT: { pipelineStatus: { in: ["won", "lost"] } } },
+    where: { introducedByBrokerId: userId },
     take: 20,
     orderBy: { score: "desc" },
     select: { id: true, name: true, score: true, conversionProbability: true, aiTier: true, purchaseRegion: true },

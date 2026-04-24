@@ -1,12 +1,15 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import {
   PLATFORM_LIABILITY_DISCLAIMER_AUTOMATION,
   renderHostLifecycleTemplate,
 } from "@/lib/ai/messaging/templates";
 import { GUEST_MESSAGE_TRIGGER_KEYS } from "@/lib/ai/messaging/trigger-config";
+import { HostAutopilotCoreSettings } from "@/components/host/HostAutopilotCoreSettings";
+import { HostAutopilotEvaluatePanel } from "@/components/host/HostAutopilotEvaluatePanel";
 
 type Settings = {
   autopilotEnabled: boolean;
@@ -62,13 +65,6 @@ type ApprovalRow = {
   payload: unknown;
 };
 
-const MODES = [
-  { id: "OFF", label: "Off", hint: "No autopilot runs." },
-  { id: "ASSIST", label: "Assist", hint: "Suggestions & notifications only." },
-  { id: "SAFE_AUTOPILOT", label: "Safe autopilot", hint: "May auto-apply listing copy when enabled below — never payouts/refunds." },
-  { id: "FULL_AUTOPILOT_APPROVAL", label: "Full (approvals)", hint: "Side effects require your approval first." },
-] as const;
-
 export function HostAutopilotClient({
   initialSettings,
   initialActions,
@@ -84,6 +80,13 @@ export function HostAutopilotClient({
   const [pending, startTransition] = useTransition();
   const [settings, setSettings] = useState(initialSettings);
   const [error, setError] = useState<string | null>(null);
+  const [modifyingId, setModifyingId] = useState<string | null>(null);
+  const [modJson, setModJson] = useState("");
+  const [modNote, setModNote] = useState("");
+
+  useEffect(() => {
+    setSettings(initialSettings);
+  }, [initialSettings]);
 
   const previewSample = useMemo(
     () => ({
@@ -127,99 +130,56 @@ export function HostAutopilotClient({
     });
   };
 
-  const reviewApproval = (id: string, decision: "approve" | "reject") => {
+  const reviewApproval = (
+    id: string,
+    decision: "approve" | "reject" | "modify",
+    opts?: { modifiedPayloadJson?: string; note?: string }
+  ) => {
     setError(null);
     startTransition(async () => {
+      const body: Record<string, unknown> = { decision };
+      if (opts?.note != null && opts.note !== "") body.note = opts.note;
+      if (opts?.modifiedPayloadJson != null && opts.modifiedPayloadJson !== "") {
+        body.modifiedPayloadJson = opts.modifiedPayloadJson;
+      }
       const res = await fetch(`/api/ai/host-autopilot/approvals/${encodeURIComponent(id)}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ decision }),
+        body: JSON.stringify(body),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.error ?? "Review failed");
+        setError((data as { error?: string }).error ?? "Review failed");
         return;
       }
+      setModifyingId(null);
+      setModJson("");
+      setModNote("");
       router.refresh();
     });
   };
 
   return (
     <div className="space-y-10 text-slate-200">
+      <p className="text-sm text-slate-500">
+        <Link href="/dashboard/host/settings/autopilot" className="text-amber-400 hover:text-amber-300">
+          Autopilot settings (compact)
+        </Link>{" "}
+        · same mode and capability toggles without the full console.
+      </p>
       {error ? (
         <div className="rounded-xl border border-red-500/40 bg-red-950/30 px-4 py-3 text-sm text-red-200">{error}</div>
       ) : null}
 
-      <section className="rounded-2xl border border-slate-800 bg-slate-950/60 p-6">
-        <h2 className="text-lg font-semibold text-white">Master switch</h2>
-        <p className="mt-1 text-sm text-slate-500">
-          Manual override: turn everything off instantly. Financial actions (refunds, payouts, legal) never auto-run from
-          Autopilot.
-        </p>
-        <label className="mt-4 flex cursor-pointer items-center gap-3">
-          <input
-            type="checkbox"
-            className="h-5 w-5 rounded border-slate-600 bg-slate-900"
-            checked={settings.autopilotEnabled}
-            disabled={pending}
-            onChange={(e) => patch({ autopilotEnabled: e.target.checked })}
-          />
-          <span>Enable host AI Autopilot</span>
-        </label>
-      </section>
+      <HostAutopilotEvaluatePanel />
 
-      <section className="rounded-2xl border border-slate-800 bg-slate-950/60 p-6">
-        <h2 className="text-lg font-semibold text-white">Mode</h2>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          {MODES.map((m) => (
-            <label
-              key={m.id}
-              className={`flex cursor-pointer flex-col rounded-xl border p-4 ${
-                settings.autopilotMode === m.id ? "border-amber-500/60 bg-amber-950/20" : "border-slate-800 hover:border-slate-600"
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="autopilotMode"
-                  value={m.id}
-                  checked={settings.autopilotMode === m.id}
-                  disabled={pending || !settings.autopilotEnabled}
-                  onChange={() => patch({ autopilotMode: m.id })}
-                />
-                <span className="font-medium text-white">{m.label}</span>
-              </div>
-              <p className="mt-2 text-xs text-slate-500">{m.hint}</p>
-            </label>
-          ))}
-        </div>
-      </section>
-
-      <section className="rounded-2xl border border-slate-800 bg-slate-950/60 p-6">
-        <h2 className="text-lg font-semibold text-white">Capabilities</h2>
-        <p className="mt-1 text-sm text-slate-500">Toggle what the engine may work on. Pricing is suggest-only or approval — never silent price changes.</p>
-        <ul className="mt-4 space-y-3">
-          {(
-            [
-              ["autoListingOptimization", "Listing optimization (title & description)"],
-              ["autoPricing", "Pricing insights"],
-              ["autoMessaging", "Guest message drafts"],
-              ["autoPromotions", "Promotion ideas"],
-            ] as const
-          ).map(([key, label]) => (
-            <li key={key} className="flex items-center justify-between gap-4 rounded-lg border border-slate-800/80 px-3 py-2">
-              <span className="text-sm">{label}</span>
-              <input
-                type="checkbox"
-                className="h-5 w-5 rounded border-slate-600 bg-slate-900"
-                checked={settings.preferences[key]}
-                disabled={pending || !settings.autopilotEnabled}
-                onChange={(e) => patch({ [key]: e.target.checked })}
-              />
-            </li>
-          ))}
-        </ul>
-      </section>
+      <HostAutopilotCoreSettings
+        initialSettings={{
+          autopilotEnabled: settings.autopilotEnabled,
+          autopilotMode: settings.autopilotMode,
+          preferences: settings.preferences,
+        }}
+      />
 
       <section className="rounded-2xl border border-amber-500/25 bg-amber-950/10 p-6">
         <h2 className="text-lg font-semibold text-white">Guest messaging automation</h2>
@@ -350,6 +310,56 @@ export function HostAutopilotClient({
                 <p className="text-xs text-slate-500">
                   {a.targetEntityType} · {a.targetEntityId.slice(0, 12)}…
                 </p>
+                <p className="mt-2 text-xs text-slate-600">
+                  You can amend the proposed payload (JSON merge) before approving — autopilot never overrides without your
+                  confirmation.
+                </p>
+                {modifyingId === a.id ? (
+                  <div className="mt-3 space-y-2">
+                    <label className="block text-xs text-slate-500">
+                      Host note (optional)
+                      <input
+                        value={modNote}
+                        onChange={(e) => setModNote(e.target.value)}
+                        className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-200"
+                        placeholder="Context for your future self"
+                      />
+                    </label>
+                    <textarea
+                      value={modJson}
+                      onChange={(e) => setModJson(e.target.value)}
+                      placeholder='JSON object shallow-merged into the proposal, e.g. {"patch":{"title":"..."}} — or leave blank and save a note only'
+                      className="min-h-[100px] w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 font-mono text-xs text-slate-200"
+                    />
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        disabled={pending}
+                        onClick={() =>
+                          reviewApproval(a.id, "modify", {
+                            modifiedPayloadJson: modJson.trim() || undefined,
+                            note: modNote.trim() || undefined,
+                          })
+                        }
+                        className="rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-semibold text-black hover:bg-amber-500"
+                      >
+                        Save changes
+                      </button>
+                      <button
+                        type="button"
+                        disabled={pending}
+                        onClick={() => {
+                          setModifyingId(null);
+                          setModJson("");
+                          setModNote("");
+                        }}
+                        className="rounded-lg border border-slate-600 px-3 py-1.5 text-xs text-slate-300"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
                 <div className="mt-3 flex flex-wrap gap-2">
                   <button
                     type="button"
@@ -358,6 +368,22 @@ export function HostAutopilotClient({
                     className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-500"
                   >
                     Approve
+                  </button>
+                  <button
+                    type="button"
+                    disabled={pending}
+                    onClick={() => {
+                      setModifyingId(a.id);
+                      setModNote("");
+                      setModJson(
+                        a.payload && typeof a.payload === "object"
+                          ? JSON.stringify(a.payload, null, 2).slice(0, 6000)
+                          : "{}"
+                      );
+                    }}
+                    className="rounded-lg border border-amber-500/50 px-3 py-1.5 text-xs font-medium text-amber-200 hover:bg-amber-950/30"
+                  >
+                    Modify
                   </button>
                   <button
                     type="button"

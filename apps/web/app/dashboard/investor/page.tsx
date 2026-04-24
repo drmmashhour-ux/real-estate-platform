@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import { RecommendationsInvestorStrip } from "@/components/recommendations/RecommendationsInvestorStrip";
 import type { InvestorDashboardPayload } from "@/modules/investor/investor-dashboard-performance.service";
 
 function cad(n: number) {
@@ -82,6 +83,8 @@ export default function InvestorDashboardPage() {
           {message}
         </div>
       ) : null}
+
+      <RecommendationsInvestorStrip />
 
       {loading ? (
         <p className="text-slate-500">Loading…</p>

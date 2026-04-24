@@ -129,6 +129,11 @@ function parseSearchParams(sp: URLSearchParams) {
   const limitRaw = sp.get("limit");
   const priceMinRaw = sp.get("priceMin");
   const priceMaxRaw = sp.get("priceMax");
+  const guestsN = guestsRaw != null && guestsRaw !== "" ? Number(guestsRaw) : NaN;
+  const pageN = pageRaw != null && pageRaw !== "" ? Number(pageRaw) : NaN;
+  const limitN = limitRaw != null && limitRaw !== "" ? Number(limitRaw) : NaN;
+  const priceMinN = priceMinRaw != null && priceMinRaw !== "" ? Number(priceMinRaw) : NaN;
+  const priceMaxN = priceMaxRaw != null && priceMaxRaw !== "" ? Number(priceMaxRaw) : NaN;
   return {
     city: sp.get("city") ?? undefined,
     countryCode: sp.get("countryCode") ?? sp.get("country") ?? undefined,
@@ -239,6 +244,7 @@ export async function GET(request: NextRequest) {
       sort: q.sort,
       page: Number.isFinite(q.page) ? q.page : undefined,
       limit: Number.isFinite(q.limit) ? q.limit : undefined,
+      rankingDebug: q.rankingDebug,
     });
   } catch (e) {
     console.error("[listings/search GET]", e);

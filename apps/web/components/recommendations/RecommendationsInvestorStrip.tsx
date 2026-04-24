@@ -35,7 +35,7 @@ export function RecommendationsInvestorStrip() {
     void load();
   }, [load]);
 
-  if (msg || items.length === 0) return null;
+  if (items.length === 0) return null;
 
   return (
     <div className="mb-8 rounded-2xl border border-slate-200 bg-slate-50 p-5">

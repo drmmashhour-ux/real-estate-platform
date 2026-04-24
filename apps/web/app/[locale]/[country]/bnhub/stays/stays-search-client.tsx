@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo, useId } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { ChevronDown, MapPin, SlidersHorizontal } from "lucide-react";
+import { ChevronDown, Heart, MapPin, SlidersHorizontal, Sparkles } from "lucide-react";
 import { SearchEngineBar, SearchFiltersProvider, useSearchEngineContext } from "@/components/search/SearchEngine";
 import { hasValidMapBounds, type GlobalSearchFiltersExtended } from "@/components/search/FilterState";
 import { StaysSearchResultsSkeleton } from "@/components/bnhub/StaysSearchResultsSkeleton";
@@ -61,6 +61,9 @@ type Listing = {
   learningExplanationDetail?: string;
   /** From cached listing quality — short pill when thresholds are met. */
   qualityBadgeLabel?: string | null;
+  guestMatchPercent?: number;
+  guestMatchReasons?: string[];
+  guestTrustLabels?: { key: string; label: string; evidence: string }[];
 };
 
 const DEFAULT_STAY_FILTERS: StaysSearchFilters = {
@@ -119,20 +122,6 @@ function toMapListing(l: Listing): MapListing | null {
     guestScoreOutOf10: hasPublishedAvg ? null : pseudo,
     guestScoreLabel: hasPublishedAvg ? null : reviewLabel(pseudo),
   };
-}
-
-/** Discovery badges from AI score + light demand signal — max 2 to avoid clutter */
-function discoveryBadges(listing: Listing, medianNightCents: number): string[] {
-  const s = listing.aiScore ?? 0;
-  const out: string[] = [];
-  if (s >= 85) out.push("🔥 Hot");
-  else if (s >= 70) out.push("⭐ Great value");
-  const bookings = listing._count.bookings ?? 0;
-  const greatPrice =
-    medianNightCents > 0 && listing.nightPriceCents > 0 && listing.nightPriceCents <= medianNightCents * 0.95;
-  if (greatPrice && !out.includes("⭐ Great value") && s >= 60) out.push("⭐ Great value");
-  if (bookings >= 2 || listing._count.reviews >= 3) out.push("⚡ High demand");
-  return [...new Set(out)].slice(0, 2);
 }
 
 function formatCurrency(cents: number) {
@@ -313,7 +302,7 @@ export function StaysSearchResults() {
     fetch("/api/bnhub/stays/search", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+      body: JSON.stringify({ ...body, includeGuestMatch: true }),
     })
       .then((res) => res.json())
       .then((data) => {
@@ -350,13 +339,6 @@ export function StaysSearchResults() {
   );
   const hasActiveFilters = activeFilterCount > 0 || hasActiveStaysFilters(staysFilters);
 
-  const medianNightCents = useMemo(() => {
-    if (listings.length === 0) return 0;
-    const sorted = [...listings].map((l) => l.nightPriceCents).sort((a, b) => a - b);
-    const mid = Math.floor(sorted.length / 2);
-    return sorted.length % 2 ? sorted[mid]! : Math.round((sorted[mid - 1]! + sorted[mid]!) / 2);
-  }, [listings]);
-
   const recommendedTop = useMemo(() => {
     return [...listings]
       .filter((l) => typeof l.aiScore === "number" || typeof l.learningRankScore === "number")
@@ -367,6 +349,36 @@ export function StaysSearchResults() {
       })
       .slice(0, 5);
   }, [listings]);
+
+  const runPerfectStayAssistant = useCallback(async () => {
+    setAssistantLoading(true);
+    try {
+      const p = new URLSearchParams();
+      const loc = applied.location?.trim();
+      if (loc) p.set("city", loc);
+      if (applied.checkIn?.trim()) p.set("checkIn", applied.checkIn.trim());
+      if (applied.checkOut?.trim()) p.set("checkOut", applied.checkOut.trim());
+      if (applied.guests != null && applied.guests > 0) p.set("guests", String(applied.guests));
+      if (applied.priceMin > 0) p.set("priceMin", String(Math.round(applied.priceMin)));
+      if (applied.priceMax > 0) p.set("priceMax", String(Math.round(applied.priceMax)));
+      p.set("sort", applied.sort === "priceAsc" || applied.sort === "priceDesc" ? applied.sort : "recommended");
+      p.set("limit", "36");
+      if (assistantPrefs.length) p.set("preferences", assistantPrefs.join(","));
+      const r = await fetch(`/api/guest/recommendations?${p.toString()}`, { cache: "no-store" });
+      const j = (await r.json()) as { listings?: Listing[] };
+      if (r.ok && Array.isArray(j.listings)) {
+        setListings(j.listings);
+        setAssistantBanner(
+          "Showing curated results ranked by transparent match scores (price, location, reviews, amenities, and your activity). Availability still depends on dates."
+        );
+        setAssistantOpen(false);
+      }
+    } catch {
+      /* ignore */
+    } finally {
+      setAssistantLoading(false);
+    }
+  }, [applied, assistantPrefs]);
 
   const onBoundsChange = useCallback(
     (b: MapBoundsWgs84) => {
@@ -443,9 +455,7 @@ export function StaysSearchResults() {
       <div className="space-y-4">
         {listings.map((listing) => {
           const reviewScore = pseudoReview(listing);
-          const badges = discoveryBadges(listing, medianNightCents);
-          const labelPills =
-            badges.length > 0 ? badges : (listing.aiLabels ?? []).slice(0, 3);
+          const labelPills = (listing.guestTrustLabels?.length ? listing.guestTrustLabels : []).slice(0, 2);
           return (
             <Link
               key={listing.id}
@@ -735,7 +745,8 @@ export function StaysSearchResults() {
               <option value="newest">Newest</option>
             </select>
             <p className="mt-2 text-xs text-neutral-400">
-              AI ranking blends relevance, demand, value, and your preferences when signed in.
+              Recommended / AI sorts blend marketplace quality with a transparent guest match (price, location,
+              reviews, amenities, your recent clicks and saves).
             </p>
           </div>
 

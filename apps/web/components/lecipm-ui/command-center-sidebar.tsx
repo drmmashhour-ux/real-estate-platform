@@ -61,6 +61,7 @@ function buildGroups(role: PlatformRole): NavGroup[] {
         { label: "Self-expansion", href: "/dashboard/admin/self-expansion", executiveOnly: true },
         { label: "What-if simulation", href: `${LECIPM_CONSOLE_BASE}/simulation`, executiveOnly: true },
         { label: "Scenario autopilot", href: "/dashboard/admin/scenario-autopilot", executiveOnly: true },
+        { label: "Recommendations debug", href: "/dashboard/recommendations", executiveOnly: true },
       ],
     },
     {

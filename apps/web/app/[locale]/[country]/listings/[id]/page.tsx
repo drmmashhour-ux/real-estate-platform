@@ -24,6 +24,7 @@ import {
 } from "@/modules/centris-conversion/centris-attribution";
 import { trackEvent } from "@/src/services/analytics";
 import { persistLaunchEvent } from "@/src/modules/launch/persistLaunchEvent";
+import { recordEvolutionOutcome } from "@/modules/evolution/outcome-tracker.service";
 import { mergeTrafficAttributionIntoMetadata } from "@/lib/attribution/social-traffic";
 import { fireViewListingGrowth } from "@/lib/growth/events";
 import { PlatformRole } from "@prisma/client";
@@ -228,6 +229,20 @@ export default async function PublicListingRoute({ params, searchParams }: Props
       listingKind: "bnhub",
       ...(guestIdBnhub ? { userId: guestIdBnhub } : {}),
     });
+
+    void recordEvolutionOutcome({
+      domain: "BNHUB",
+      metricType: "CONVERSION",
+      strategyKey: "listing_view",
+      entityId: resolved.id,
+      entityType: "Listing",
+      actualJson: {
+        kind: "bnhub",
+        viewerId: guestIdBnhub,
+      },
+      reinforceStrategy: true,
+      idempotent: false,
+    }).catch(() => {});
     fireViewListingGrowth({
       userId: guestIdBnhub,
       listingId: resolved.id,
@@ -498,6 +513,20 @@ export default async function PublicListingRoute({ params, searchParams }: Props
     listingKind: "crm",
     ...(guestCrm ? { userId: guestCrm } : {}),
   });
+
+  void recordEvolutionOutcome({
+    domain: "BNHUB",
+    metricType: "CONVERSION",
+    strategyKey: "listing_view",
+    entityId: payload.id,
+    entityType: "Listing",
+    actualJson: {
+      kind: "crm",
+      viewerId: guestCrm,
+    },
+    reinforceStrategy: true,
+    idempotent: false,
+  }).catch(() => {});
   fireViewListingGrowth({
     userId: guestCrm,
     listingId: payload.id,

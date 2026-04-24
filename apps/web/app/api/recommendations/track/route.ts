@@ -4,6 +4,7 @@ import { getGuestId } from "@/lib/auth/session";
 import { MarketplaceMemoryRole } from "@prisma/client";
 import { prisma } from "@repo/db";
 import { recordRecommendationEngagement } from "@/modules/personalized-recommendations";
+import type { RecommendationTrackEvent } from "@/modules/personalized-recommendations/recommendation.types";
 import { recordRecommendationAudit } from "@/modules/personalized-recommendations/recommendation-audit.service";
 import { RECOMMENDATION_TRACK_EVENTS } from "@/modules/personalized-recommendations/recommendation.types";
 
@@ -68,7 +69,7 @@ export async function POST(req: NextRequest) {
   const r = await recordRecommendationEngagement({
     userId,
     mode: b.mode ?? "BUYER",
-    eventKind: b.eventKind,
+    eventKind: b.eventKind as RecommendationTrackEvent,
     entityType: b.entityType,
     entityId: b.entityId,
     recommendationScore: b.recommendationScore,

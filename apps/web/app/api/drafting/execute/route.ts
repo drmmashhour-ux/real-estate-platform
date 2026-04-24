@@ -24,6 +24,13 @@ import { rejectIfInspectionReadOnlyMutation } from "@/lib/compliance/inspection-
 import { assertBrokeredTransaction } from "@/modules/legal-boundary/compliance-action-guard";
 import { writeSignatureBoundaryAudit } from "@/modules/legal-boundary/legal-boundary-audit.service";
 import { getOrSyncTransactionContext } from "@/modules/legal-boundary/transaction-context.service";
+import {
+  getAiFallbackFacts,
+  mapDraftFormTypeToProductionGuardKey,
+  recordAiFallbackUsed,
+  shouldUseAiFallback,
+  validateAIOutput,
+} from "@/lib/production-guard";
 
 export const dynamic = "force-dynamic";
 
@@ -68,6 +75,8 @@ const bodySchema = z.object({
   persistAuditTrail: z.boolean().optional().default(true),
   /** Re-use a number already issued in `contract_registry` for this deal/session. */
   contractNumber: z.string().min(1).optional(),
+  /** ProductionGuard locked schema version (see `lib/production-guard/form-schema.ts`). */
+  productionGuardFormVersion: z.string().min(1).optional(),
 });
 
 function factString(facts: Record<string, unknown>, key: string): string | undefined {
@@ -134,6 +143,28 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "BROKER_REVIEW_REQUIRED" }, { status: 403 });
   }
 
+  let factsForDraft: Record<string, unknown> = { ...(body.facts ?? {}) };
+  const productionGuardKey = mapDraftFormTypeToProductionGuardKey(body.formType);
+  if (body.aiGenerated && productionGuardKey) {
+    const version = body.productionGuardFormVersion?.trim() || "2026-04-01";
+    const baseFacts = getAiFallbackFacts(productionGuardKey, {});
+    const aiGate = validateAIOutput({
+      formKey: productionGuardKey,
+      version,
+      baseFacts,
+      aiPatch: factsForDraft,
+      actorUserId: auth.user.id,
+      dealId: factString(factsForDraft, "dealId") ?? null,
+    });
+    if (!aiGate.ok) {
+      return NextResponse.json(
+        { error: "AI_OUTPUT_REJECTED", errors: aiGate.errors, productionGuard: true },
+        { status: 400 },
+      );
+    }
+    factsForDraft = aiGate.merged;
+  }
+
   const formOrderInput = toFormOrderInput(body);
 
   try {
@@ -181,17 +212,42 @@ export async function POST(req: Request) {
   try {
     draft = await generateDraft({
       formType: body.formType,
-      facts: body.facts ?? {},
+      facts: factsForDraft,
       listing: body.listing,
     });
   } catch (e) {
-    const raw = e instanceof Error ? e.message : "DRAFT_FAILED";
-    const code = mapDraftError(raw);
-    const status =
-      code === "NO_SOURCE_CONTEXT" ? 422
-      : code === "CONFLICT_DETECTED" ? 409
-      : 400;
-    return NextResponse.json({ error: code, detail: raw }, { status });
+    if (shouldUseAiFallback() && body.aiGenerated && productionGuardKey) {
+      await recordAiFallbackUsed({
+        formKey: productionGuardKey,
+        actorUserId: auth.user.id,
+        dealId: factString(factsForDraft, "dealId") ?? null,
+      });
+      const fb = getAiFallbackFacts(productionGuardKey, factsForDraft);
+      try {
+        draft = await generateDraft({
+          formType: body.formType,
+          facts: fb,
+          listing: body.listing,
+        });
+        factsForDraft = fb;
+      } catch (e2) {
+        const raw = e2 instanceof Error ? e2.message : "DRAFT_FAILED";
+        const code = mapDraftError(raw);
+        const status =
+          code === "NO_SOURCE_CONTEXT" ? 422
+          : code === "CONFLICT_DETECTED" ? 409
+          : 400;
+        return NextResponse.json({ error: code, detail: raw, productionGuard: true }, { status });
+      }
+    } else {
+      const raw = e instanceof Error ? e.message : "DRAFT_FAILED";
+      const code = mapDraftError(raw);
+      const status =
+        code === "NO_SOURCE_CONTEXT" ? 422
+        : code === "CONFLICT_DETECTED" ? 409
+        : 400;
+      return NextResponse.json({ error: code, detail: raw }, { status });
+    }
   }
 
   const validation = validateDraft(draft.fields);
@@ -241,7 +297,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "CONFLICT_DETECTED", errors: consistency.errors }, { status: 409 });
   }
 
-  const facts = body.facts ?? {};
+  const facts = factsForDraft;
   const listingId = dsNormalized.listingId?.trim() || factString(facts, "listingId");
   const dealId = factString(facts, "dealId");
   const contractId = dsNormalized.contractId?.trim() || factString(facts, "contractId");

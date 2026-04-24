@@ -1,3 +1,4 @@
+import { mergePlaybookContextWithUserIntelligence } from "@/modules/user-intelligence/services/user-personalization.service";
 import { playbookLog } from "@/modules/playbook-memory/playbook-memory.logger";
 import type { RecommendationRequestContext } from "@/modules/playbook-memory/types/playbook-memory.types";
 import { getDomainModule } from "./shared/domain-registry";
@@ -29,19 +30,20 @@ export async function augmentRecommendationContext(
   context: RecommendationRequestContext,
 ): Promise<RecommendationRequestContext> {
   try {
-    const mod = getDomainModule(String(context.domain));
+    const withUser = await mergePlaybookContextWithUserIntelligence(context);
+    const mod = getDomainModule(String(withUser.domain));
     if (!mod) {
-      return context;
+      return withUser;
     }
-    const extra = await mod.buildContext(context);
+    const extra = await mod.buildContext(withUser);
     if (extra == null) {
-      return context;
+      return withUser;
     }
-    const nextSignals = mergeSignals(context.signals, extra);
+    const nextSignals = mergeSignals(withUser.signals, extra);
     if (Object.keys(nextSignals).length === 0) {
-      return context;
+      return withUser;
     }
-    return { ...context, signals: nextSignals as RecommendationRequestContext["signals"] };
+    return { ...withUser, signals: nextSignals as RecommendationRequestContext["signals"] };
   } catch (e) {
     playbookLog.warn("augmentRecommendationContext", {
       domain: context.domain,

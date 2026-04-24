@@ -8,6 +8,8 @@ import { buildReferralAgreementHtml } from "@/modules/contracts/services/templat
 import { getPublicAppUrl } from "@/lib/config/public-app-url";
 import { sendContractSignRequestEmail } from "@/lib/email/contract-emails";
 import { onContractReadyForSignature } from "@/modules/notifications/services/workflow-notification-triggers";
+import type { ContractBrainContext } from "@/lib/legal/contract-brain-types";
+import { injectNoticesIntoDraft } from "@/lib/legal/contract-brain-engine";
 
 export type BrokerContractTypeKey =
   | "broker_agreement_seller"
@@ -143,6 +145,17 @@ export async function createBrokerContract(input: CreateBrokerContractInput): Pr
       throw new Error("Unsupported contract type");
   }
 
+  const brainCtx: ContractBrainContext | undefined =
+    typeof b.lecipmContractBrainContext === "object" && b.lecipmContractBrainContext !== null
+      ? (b.lecipmContractBrainContext as ContractBrainContext)
+      : undefined;
+  let contentPayload: Prisma.InputJsonValue = { ...content, snapshot: b } as unknown as Prisma.InputJsonValue;
+  if (brainCtx) {
+    const injected = injectNoticesIntoDraft({ html, contentJson: contentPayload, context: brainCtx });
+    html = injected.html;
+    contentPayload = injected.content;
+  }
+
   const typeStr = TYPE_MAP[input.contractType];
   const contract = await prisma.$transaction(async (tx) => {
     const c = await tx.contract.create({
@@ -154,7 +167,7 @@ export async function createBrokerContract(input: CreateBrokerContractInput): Pr
         fsboListingId: typeof b.fsboListingId === "string" ? b.fsboListingId : null,
         title,
         contentHtml: html,
-        content: { ...content, snapshot: b } as unknown as Prisma.InputJsonValue,
+        content: contentPayload,
         status: LEASE_CONTRACT_STATUS.SENT,
         hub: "broker",
       },

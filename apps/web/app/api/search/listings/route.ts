@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { searchListings } from "@/lib/bnhub/listings";
 import { getGuestId } from "@/lib/auth/session";
+import { recordEvolutionOutcome } from "@/modules/evolution/outcome-tracker.service";
 
 export const dynamic = "force-dynamic";
 
@@ -53,6 +54,20 @@ export async function POST(request: NextRequest) {
       sort,
       userId,
     });
+
+    void recordEvolutionOutcome({
+      domain: "BNHUB",
+      metricType: "CONVERSION",
+      strategyKey: "search_click",
+      entityType: "Search",
+      actualJson: {
+        city: body.city,
+        resultsCount: listings.length,
+        sort,
+      },
+      reinforceStrategy: true,
+      idempotent: false,
+    }).catch(() => {});
 
     return Response.json({ listings });
   } catch (e) {

@@ -1,6 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
 import { POST } from "./route";
 
+vi.mock("@/lib/auth/api-session", () => ({
+  getSessionUserIdFromRequest: vi.fn().mockResolvedValue(null),
+}));
+vi.mock("@/modules/user-intelligence/integrations/dream-home-user-intelligence", () => ({
+  mergeStoredPreferencesIntoIntake: vi.fn(async (_u, b) => b),
+  recordDreamHomeQuestionnaire: vi.fn().mockResolvedValue(undefined),
+}));
 vi.mock("@/modules/dream-home/services/dream-home-profile.service", () => ({
   buildDreamHomeProfile: vi.fn().mockResolvedValue({
     profile: {

@@ -10,6 +10,9 @@ import {
 } from "@/lib/compliance/oaciq/client-disclosure";
 import { assertBrokerApprovedContractSign } from "@/lib/compliance/oaciq/broker-decision-authority";
 import { assertBrokerProfessionalInsuranceActiveOrThrow } from "@/lib/compliance/oaciq/broker-professional-insurance.service";
+import type { ContractBrainContext } from "@/lib/legal/contract-brain-types";
+import { computeRequiredNoticeKeysFromContext } from "@/lib/legal/contract-brain-engine";
+import { CONTRACT_BRAIN_NOTICE_DEFINITIONS, LIMITED_ROLE_NOTICE_KEY } from "@/lib/legal/contract-brain-notices";
 
 function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -57,6 +60,11 @@ export async function createSignedEnforceableContract(params: {
   listingId?: string | null;
   /** When set, OACIQ client disclosure is enforced (if enabled) and appended to the stored agreement. */
   realEstateTransactionId?: string | null;
+  /**
+   * When the counterparty is an unrepresented buyer/tenant in an OACIQ-relevant interaction,
+   * injects the limited-role notice into the archived agreement text (no separate e-sign gate on this one-shot flow).
+   */
+  lecipmContractBrainContext?: ContractBrainContext | null;
   ipAddress: string | null;
   signatureData?: string | null;
 }): Promise<{ id: string }> {
@@ -65,6 +73,13 @@ export async function createSignedEnforceableContract(params: {
   }
 
   let contentText = params.contentText;
+  if (params.lecipmContractBrainContext) {
+    const brainKeys = computeRequiredNoticeKeysFromContext(params.lecipmContractBrainContext);
+    if (brainKeys.includes(LIMITED_ROLE_NOTICE_KEY)) {
+      const def = CONTRACT_BRAIN_NOTICE_DEFINITIONS.LIMITED_ROLE_NOTICE;
+      contentText = `${def.title}\n\n${def.bodyFr}\n\n---\n${contentText}`;
+    }
+  }
   if (params.realEstateTransactionId) {
     const rtx = await prisma.realEstateTransaction.findUnique({
       where: { id: params.realEstateTransactionId },

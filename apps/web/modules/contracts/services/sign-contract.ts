@@ -14,6 +14,7 @@ import { completeOpenActionQueueBySource } from "@/modules/notifications/service
 import { onContractSigned } from "@/modules/notifications/services/workflow-notification-triggers";
 import { assertTrustDepositAllowsContractCompletion } from "@/lib/compliance/trust-contract-gate";
 import { complianceFlags } from "@/config/feature-flags";
+import { assertContractBrainAllowsSigning } from "@/lib/legal/contract-brain-engine";
 
 export type SignContractInput = {
   contractId: string;
@@ -30,7 +31,7 @@ function isCancelled(status: string): boolean {
 
 export async function signContractUniversal(
   input: SignContractInput
-): Promise<{ ok: true; status: string } | { ok: false; error: string }> {
+): Promise<{ ok: true; status: string } | { ok: false; error: string; missingNotices?: string[] }> {
   const c = await getContractForAccess(input.contractId);
   if (!c) return { ok: false, error: "Contract not found" };
   if (!E_SIGN_CONTRACT_TYPES.has(c.type)) {
@@ -49,6 +50,15 @@ export async function signContractUniversal(
 
   const name = input.typedName.trim();
   if (name.length < 2) return { ok: false, error: "Please type your full legal name" };
+
+  const brain = await assertContractBrainAllowsSigning({
+    contractId: input.contractId,
+    userId: input.userId,
+    contractContent: c.content,
+  });
+  if (!brain.ok) {
+    return { ok: false, error: brain.error, missingNotices: brain.missingNotices };
+  }
 
   await prisma.contractSignature.update({
     where: { id: sig.id },

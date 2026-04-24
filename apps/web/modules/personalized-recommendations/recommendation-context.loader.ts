@@ -83,9 +83,23 @@ export async function loadRecommendationContext(userId: string | null): Promise<
 
   const personalizationEnabled = profile?.personalizationEnabled ?? true;
 
+  const w13 = await prisma.userPreferenceProfile
+    .findUnique({
+      where: { userId },
+      select: { housingPreferences: true, budgetPreferences: true, confidenceScore: true },
+    })
+    .catch(() => null);
   const memory = {
     intentSummary: asRecord(profile?.intentSummaryJson),
-    preferenceSummary: asRecord(profile?.preferenceSummaryJson),
+    preferenceSummary: {
+      ...asRecord(profile?.preferenceSummaryJson),
+      ...(w13?.housingPreferences
+        ? { wave13Housing: w13.housingPreferences, wave13Confidence: w13.confidenceScore }
+        : {}),
+      ...(w13?.budgetPreferences
+        ? { wave13Budget: w13.budgetPreferences }
+        : {}),
+    },
     behaviorSummary: asRecord(profile?.behaviorSummaryJson),
     financialProfile: asRecord(profile?.financialProfileJson),
     esgProfile: asRecord(profile?.esgProfileJson),

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@repo/db";
 import { persistLaunchEvent } from "@/src/modules/launch/persistLaunchEvent";
+import { recordEvolutionOutcome } from "@/modules/evolution/outcome-tracker.service";
 import { getGuestId } from "@/lib/auth/session";
 import { isFsboPubliclyVisible } from "@/lib/fsbo/constants";
 import { trackEvent } from "@/src/modules/analytics/eventTracker";
@@ -76,5 +77,20 @@ export async function POST(req: Request) {
     { userId }
   ).catch(() => {});
   void persistLaunchEvent("SAVE_PROPERTY", { userId, fsboListingId });
+
+  void recordEvolutionOutcome({
+    domain: "BNHUB",
+    metricType: "CONVERSION",
+    strategyKey: "listing_save",
+    entityId: fsboListingId,
+    entityType: "Listing",
+    actualJson: {
+      userId,
+      listingId: fsboListingId,
+    },
+    reinforceStrategy: true,
+    idempotent: false,
+  }).catch(() => {});
+
   return NextResponse.json({ saved: true });
 }

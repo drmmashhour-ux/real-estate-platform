@@ -58,6 +58,15 @@ export async function POST(request: NextRequest) {
 
     if (!result.ok) {
       const st = result.error === "Forbidden" ? 403 : result.error.includes("not found") ? 404 : 400;
+      if (result.error === "CONTRACT_BRAIN_NOTICE_REQUIRED") {
+        return NextResponse.json(
+          {
+            error: result.error,
+            missingNotices: result.missingNotices ?? [],
+          },
+          { status: 400 }
+        );
+      }
       return NextResponse.json({ error: result.error }, { status: st });
     }
 

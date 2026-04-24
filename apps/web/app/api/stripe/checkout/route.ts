@@ -32,6 +32,7 @@ import {
 } from "@/modules/bnhub-payments/services/paymentService";
 import { trackEvent } from "@/src/services/analytics";
 import { persistLaunchEvent } from "@/src/modules/launch/persistLaunchEvent";
+import { recordEvolutionOutcome } from "@/modules/evolution/outcome-tracker.service";
 import { logInfo, logWarn } from "@/lib/logger";
 import { stripeSecretBlockedInTestMode } from "@/lib/stripe/test-mode-stripe-guard";
 import {
@@ -249,6 +250,20 @@ export async function POST(request: NextRequest) {
       bookingId: null,
       listingId: null,
     });
+
+    void recordEvolutionOutcome({
+      domain: "LECIPM",
+      metricType: "CONVERSION",
+      strategyKey: "checkout_start",
+      entityId: result.sessionId,
+      entityType: "CheckoutSession",
+      actualJson: {
+        userId,
+        paymentType: "lecipm_workspace_subscription",
+      },
+      reinforceStrategy: true,
+      idempotent: false,
+    }).catch(() => {});
     return Response.json({ success: true, url: result.url, sessionId: result.sessionId });
   }
 
@@ -636,6 +651,22 @@ export async function POST(request: NextRequest) {
           ? body.listingId
           : null,
   });
+
+  void recordEvolutionOutcome({
+    domain: "BNHUB",
+    metricType: "CONVERSION",
+    strategyKey: "checkout_start",
+    entityId: result.sessionId,
+    entityType: "CheckoutSession",
+    actualJson: {
+      userId,
+      paymentType,
+      amountCents: chargeAmountCents,
+      bookingId: typeof body.bookingId === "string" ? body.bookingId.trim() : null,
+    },
+    reinforceStrategy: true,
+    idempotent: false,
+  }).catch(() => {});
 
   void prisma.user
     .findUnique({ where: { id: userId }, select: { createdAt: true } })

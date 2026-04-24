@@ -163,6 +163,11 @@ export type RecommendationRequestContext = {
   autonomyMode?: "OFF" | "ASSIST" | "SAFE_AUTOPILOT" | "FULL_AUTOPILOT";
   /** When set, only consider these playbook ids (must match the domain). */
   candidatePlaybookIds?: string[];
+  /**
+   * Wave 13: optional user id to merge auditable, product-only preference `signals` (non-destructive, additive)
+   * before domain-specific context augmentation. Never for protected-trait inference.
+   */
+  userId?: string;
 };
 
 export type RetrievalContextInput = {

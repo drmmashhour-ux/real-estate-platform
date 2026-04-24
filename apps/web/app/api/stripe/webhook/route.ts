@@ -967,13 +967,14 @@ export async function POST(req: NextRequest) {
       void recordEvolutionOutcome({
         domain: "BOOKING",
         metricType: "BOOKING",
-        strategyKey: "payment_success",
+        strategyKey: "booking_conversion",
         entityId: md.bookingId,
         entityType: "Booking",
         actualJson: {
           paymentSuccess: true,
           amountTotal: session.amount_total,
           currency: session.currency,
+          strategyKey: "payment_success",
         },
         reinforceStrategy: true,
         idempotent: true,

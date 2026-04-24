@@ -168,6 +168,7 @@ export async function applyPipelineStage(options: {
       },
       reinforceStrategy: true,
       idempotent: true,
+      duplicateKey: `deal_outcome:${options.dealId}:${options.toStage}`,
     }).catch(() => {});
   }
 

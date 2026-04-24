@@ -7,6 +7,13 @@ import { parseStaysFiltersFromBody } from "@/lib/bnhub/parse-stays-search-body";
 import { hasActiveStaysFilters } from "@/lib/bnhub/stays-filters";
 import { getGuestId } from "@/lib/auth/session";
 import { trackSearchEvent } from "@/lib/ai/search/trackSearchEvent";
+import {
+  buildGuestContextForStaysSearch,
+  getRecommendedListings,
+  loadGuestBehaviorSignals,
+  mergeGuestScoresIntoListings,
+  parseGuestPreferenceTags,
+} from "@/modules/guest-ai";
 
 export const dynamic = "force-dynamic";
 
@@ -40,6 +47,17 @@ export async function POST(request: NextRequest) {
     const userId = await getGuestId();
     const cookieStore = await cookies();
     const sessionId = cookieStore.get("lecipm_behavior_sid")?.value ?? null;
+
+    const rawObj = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
+    const includeGuestMatch = rawObj.includeGuestMatch === true;
+    const guestPreferenceTags = parseGuestPreferenceTags(
+      typeof rawObj.guestPreferences === "string"
+        ? rawObj.guestPreferences
+        : Array.isArray(rawObj.guestPreferences)
+          ? (rawObj.guestPreferences as unknown[]).filter((x): x is string => typeof x === "string")
+          : undefined
+    );
+
     const listings = await searchListings({
       city: f.location.trim() || undefined,
       checkIn: f.checkIn?.trim() || undefined,
@@ -72,6 +90,31 @@ export async function POST(request: NextRequest) {
       sessionId,
     });
 
+    let data = listings;
+    if (includeGuestMatch) {
+      const behaviorSignals = await loadGuestBehaviorSignals({ userId, sessionId });
+      const guestContext = buildGuestContextForStaysSearch({
+        filters: f,
+        behaviorSignals,
+        preferenceTags: guestPreferenceTags.length ? guestPreferenceTags : undefined,
+      });
+      const rec = getRecommendedListings(guestContext, listings);
+      const relevanceSort =
+        f.sort === "recommended" || f.sort === "ai" || f.sort === "aiScore" || f.sort === "ranking";
+      data = mergeGuestScoresIntoListings(listings, rec, { reorder: relevanceSort });
+      if (relevanceSort) {
+        const blended = (row: (typeof listings)[number]) => {
+          const g = (row as { guestMatchPercent?: number }).guestMatchPercent ?? 50;
+          const ai =
+            typeof (row as { aiScore?: number }).aiScore === "number"
+              ? (row as { aiScore: number }).aiScore
+              : 52;
+          return g * 0.42 + ai * 0.58;
+        };
+        data = [...data].sort((a, b) => blended(b) - blended(a));
+      }
+    }
+
     void trackSearchEvent({
       eventType: SearchEventType.SEARCH,
       userId,
@@ -83,7 +126,11 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    return Response.json({ data: listings, filters: f });
+    return Response.json({
+      data,
+      filters: f,
+      guestMatch: includeGuestMatch,
+    });
   } catch (e) {
     console.error(e);
     return Response.json({ error: "Stays search failed" }, { status: 500 });

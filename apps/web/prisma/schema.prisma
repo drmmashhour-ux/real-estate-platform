@@ -457,6 +457,10 @@ model User {
   marketplaceMemoryInsights                UserMemoryInsight[]
   marketplaceMemorySessions                UserMemorySession[]
   userIntelligenceProfile                  UserIntelligenceProfile?
+  /// Wave 13 — LECIPM auditable user preference memory (playbook + Dream Home; no protected-trait storage).
+  userPreferenceProfileW13                 UserPreferenceProfile?                   @relation("UserPreferenceProfileW13")
+  userJourneyStateW13                      UserJourneyState?                        @relation("UserJourneyStateW13")
+  userPreferenceSignalsW13                 UserPreferenceSignal[]                   @relation("UserPreferenceSignalOwner")
   searchEvents                             SearchEvent[]
   userBehaviorEvents                       UserBehaviorEvent[]
   behaviorPreferenceProfile                BehaviorPreferenceProfile?
@@ -534,6 +538,8 @@ model User {
   developerApplications                    DeveloperApplication[]
   contracts                                Contract[]
   contractsCreated                         Contract[]                               @relation("ContractCreatedBy")
+  contractLegalNoticesAcked                ContractLegalNotice[]
+  contractSignatureGates                   ContractSignatureGate[]
   clauseComplianceValidations              ClauseValidation[]                       @relation("ClauseValidationValidator")
   contractSignatures                       ContractSignature[]
   complianceReviewsReviewed                ListingComplianceReview[]                @relation("ComplianceReviewer")
@@ -558,6 +564,11 @@ model User {
   dealsAsBuyer                             Deal[]                                   @relation("DealBuyer")
   dealsAsSeller                            Deal[]                                   @relation("DealSeller")
   dealsAsBroker                            Deal[]                                   @relation("DealBroker")
+  dealCapitalAllocationsProposed           DealCapitalAllocation[]                  @relation("DealCapitalAllocationProposedBy")
+  dealCapitalAllocationsApproved           DealCapitalAllocation[]                  @relation("DealCapitalAllocationApprovedBy")
+  lecipmProductionGuardNoticeAcks          LecipmProductionGuardNoticeAck[]
+  lecipmProductionGuardAuditEvents         LecipmProductionGuardAuditEvent[]        @relation("LecipmProductionGuardAuditActor")
+  lecipmProductionGuardArtifactsCreated    LecipmProductionGuardArtifact[]          @relation("LecipmProductionGuardArtifactCreator")
   dealConflictClientConsents               DealConflictClientConsent[]
   brokerMandatoryDisclosures               BrokerDisclosure[]
   brokerActionPipelineSignatures           BrokerSignature[]                        @relation("BrokerActionPipelineSigner")
@@ -5777,6 +5788,99 @@ model UserIntelligenceProfile {
   @@map("user_intelligence_profiles")
 }
 
+/// Wave 13 — Durable, explainable housing + lifestyle preferences (user-provided and product interaction signals only).
+model UserPreferenceProfile {
+  id                       String                   @id @default(cuid())
+  createdAt                DateTime                 @default(now()) @map("created_at")
+  updatedAt                DateTime                 @updatedAt @map("updated_at")
+  userId                   String                   @unique @map("user_id")
+  user                     User                     @relation("UserPreferenceProfileW13", fields: [userId], references: [id], onDelete: Cascade)
+  activeSnapshotId         String?                  @unique @map("active_snapshot_id")
+  activeSnapshot           UserPreferenceSnapshot?  @relation("UserPreferenceActiveSnapshot", fields: [activeSnapshotId], references: [id], onDelete: SetNull)
+  householdProfile         Json?                    @map("household_profile")
+  housingPreferences       Json?                    @map("housing_preferences")
+  lifestylePreferences     Json?                    @map("lifestyle_preferences")
+  neighborhoodPreferences  Json?                    @map("neighborhood_preferences")
+  budgetPreferences        Json?                    @map("budget_preferences")
+  accessibilityPreferences Json?                    @map("accessibility_preferences")
+  designPreferences        Json?                    @map("design_preferences")
+  confidenceScore          Float?                   @map("confidence_score")
+  lastInferredAt           DateTime?                @map("last_inferred_at")
+  lastInteractionAt        DateTime?                @map("last_interaction_at")
+  isActive                 Boolean                  @default(true) @map("is_active")
+  signals                  UserPreferenceSignal[]
+  snapshots                UserPreferenceSnapshot[] @relation("UserPreferenceProfileSnapshots")
+
+  @@index([userId, isActive])
+  @@map("user_preference_profiles_w13")
+}
+
+/// Wave 13 — Individual preference or behavior signals; explicit flags separate from product-only derivations.
+model UserPreferenceSignal {
+  id                   String                 @id @default(cuid())
+  createdAt            DateTime               @default(now()) @map("created_at")
+  updatedAt            DateTime               @updatedAt @map("updated_at")
+  userId               String                 @map("user_id")
+  user                 User                   @relation("UserPreferenceSignalOwner", fields: [userId], references: [id], onDelete: Cascade)
+  profileId            String?                @map("profile_id")
+  profile              UserPreferenceProfile? @relation(fields: [profileId], references: [id], onDelete: SetNull)
+  sourceDomain         String                 @map("source_domain")
+  sourceType           String                 @map("source_type")
+  sourceId             String?                @map("source_id")
+  signalKey            String                 @map("signal_key")
+  signalValueJson      Json                   @map("signal_value_json")
+  signalWeight         Float?                 @map("signal_weight")
+  confidence           Float?                 @map("confidence")
+  explicitUserProvided Boolean                @default(false) @map("explicit_user_provided")
+  derivedFromBehavior  Boolean                @default(false) @map("derived_from_behavior")
+  expiresAt            DateTime?              @map("expires_at")
+  lastObservedAt       DateTime?              @map("last_observed_at")
+
+  @@index([userId, signalKey, createdAt])
+  @@index([sourceDomain, sourceType, createdAt])
+  @@map("user_preference_signals_w13")
+}
+
+/// Wave 13 — Session-level journey hints (not identity).
+model UserJourneyState {
+  id                   String    @id @default(cuid())
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+  userId               String    @unique @map("user_id")
+  user                 User      @relation("UserJourneyStateW13", fields: [userId], references: [id], onDelete: Cascade)
+  currentIntent        String?   @map("current_intent")
+  currentDomain        String?   @map("current_domain")
+  currentStage         String?   @map("current_stage")
+  currentSearchMode    String?   @map("current_search_mode")
+  latestCity           String?   @map("latest_city")
+  latestBudgetBand     String?   @map("latest_budget_band")
+  latestPropertyIntent String?   @map("latest_property_intent")
+  latestHouseholdBand  String?   @map("latest_household_band")
+  summaryJson          Json?     @map("summary_json")
+  lastActivityAt       DateTime? @map("last_activity_at")
+
+  @@index([currentDomain, currentStage])
+  @@map("user_journey_states_w13")
+}
+
+/// Wave 13 — Point-in-time profile snapshots (audit / rollback).
+model UserPreferenceSnapshot {
+  id           String                 @id @default(cuid())
+  createdAt    DateTime               @default(now()) @map("created_at")
+  userId       String                 @map("user_id")
+  profileId    String                 @map("profile_id")
+  profile      UserPreferenceProfile  @relation("UserPreferenceProfileSnapshots", fields: [profileId], references: [id], onDelete: Cascade)
+  activeFor    UserPreferenceProfile? @relation("UserPreferenceActiveSnapshot")
+  snapshotType String                 @map("snapshot_type")
+  profileJson  Json                   @map("profile_json")
+  summary      String?                @map("summary") @db.Text
+  source       String?                @map("source")
+
+  @@index([userId, createdAt])
+  @@index([profileId, createdAt])
+  @@map("user_preference_snapshots_w13")
+}
+
 /// Unified intelligence audit (distinct from legacy `AiDecisionLog` / model-registry logs).
 model IntelligenceDecisionLog {
   id              String           @id @default(cuid())
@@ -7955,18 +8059,18 @@ enum OaciqComplianceAlignmentAction {
 }
 
 model OaciqComplianceRule {
-  id                       String                     @id @default(cuid())
-  ruleKey                  String                     @unique @map("rule_key") @db.VarChar(80)
-  title                    String                     @db.VarChar(256)
-  description              String                     @db.Text
-  category                 OaciqComplianceRuleCategory
-  enforcedBySystem         Boolean                    @default(true) @map("enforced_by_system")
-  appliesDealCreate        Boolean                    @default(true) @map("applies_deal_create")
-  appliesListingPublish    Boolean                    @default(true) @map("applies_listing_publish")
-  appliesContractGenerate  Boolean                    @default(true) @map("applies_contract_generate")
-  active                   Boolean                    @default(true)
-  createdAt                DateTime                   @default(now()) @map("created_at")
-  updatedAt                DateTime                   @updatedAt @map("updated_at")
+  id                      String                      @id @default(cuid())
+  ruleKey                 String                      @unique @map("rule_key") @db.VarChar(80)
+  title                   String                      @db.VarChar(256)
+  description             String                      @db.Text
+  category                OaciqComplianceRuleCategory
+  enforcedBySystem        Boolean                     @default(true) @map("enforced_by_system")
+  appliesDealCreate       Boolean                     @default(true) @map("applies_deal_create")
+  appliesListingPublish   Boolean                     @default(true) @map("applies_listing_publish")
+  appliesContractGenerate Boolean                     @default(true) @map("applies_contract_generate")
+  active                  Boolean                     @default(true)
+  createdAt               DateTime                    @default(now()) @map("created_at")
+  updatedAt               DateTime                    @updatedAt @map("updated_at")
 
   @@index([active, category])
   @@map("oaciq_compliance_rules")
@@ -7974,21 +8078,21 @@ model OaciqComplianceRule {
 
 /// Evaluation record for OACIQ-aligned gates (pass/block + optional resolution).
 model OaciqComplianceAlignmentEvent {
-  id              String                       @id @default(cuid())
-  brokerId        String                       @map("broker_id")
+  id              String                         @id @default(cuid())
+  brokerId        String                         @map("broker_id")
   action          OaciqComplianceAlignmentAction @map("action")
   /// PASS | BLOCK
-  outcome         String                       @map("outcome") @db.VarChar(16)
-  failedRuleKeys  Json?                        @map("failed_rule_keys")
-  listingId       String?                      @map("listing_id") @db.VarChar(36)
-  pipelineDealId  String?                      @map("pipeline_deal_id") @db.VarChar(36)
-  crmDealId       String?                      @map("crm_deal_id") @db.VarChar(36)
-  sdTransactionId String?                      @map("sd_transaction_id") @db.VarChar(36)
-  legalArtifactId String?                      @map("legal_artifact_id") @db.VarChar(36)
-  detailsJson     Json?                        @map("details_json")
-  resolvedAt      DateTime?                    @map("resolved_at")
-  resolutionNote  String?                      @map("resolution_note") @db.Text
-  createdAt       DateTime                     @default(now()) @map("created_at")
+  outcome         String                         @map("outcome") @db.VarChar(16)
+  failedRuleKeys  Json?                          @map("failed_rule_keys")
+  listingId       String?                        @map("listing_id") @db.VarChar(36)
+  pipelineDealId  String?                        @map("pipeline_deal_id") @db.VarChar(36)
+  crmDealId       String?                        @map("crm_deal_id") @db.VarChar(36)
+  sdTransactionId String?                        @map("sd_transaction_id") @db.VarChar(36)
+  legalArtifactId String?                        @map("legal_artifact_id") @db.VarChar(36)
+  detailsJson     Json?                          @map("details_json")
+  resolvedAt      DateTime?                      @map("resolved_at")
+  resolutionNote  String?                        @map("resolution_note") @db.Text
+  createdAt       DateTime                       @default(now()) @map("created_at")
 
   @@index([brokerId, createdAt(sort: Desc)])
   @@index([outcome, resolvedAt])
@@ -10940,144 +11044,149 @@ enum DealDocumentVersionSource {
 
 // Deal closing workflow (listing sale: buyer, seller, broker, milestones, documents)
 model Deal {
-  id                             String                          @id @default(uuid())
+  id                               String                            @id @default(uuid())
   /**
    * Immutable deal reference for support / contracts (e.g. DEL-000001).
    */
-  dealCode                       String?                         @unique @map("deal_code")
-  listingId                      String?                         @map("listing_id") // ShortTermListing or sale listing
+  dealCode                         String?                           @unique @map("deal_code")
+  listingId                        String?                           @map("listing_id") // ShortTermListing or sale listing
   /**
    * Denormalized LEC code when deal references a ShortTermListing.
    */
-  listingCode                    String?                         @map("listing_code")
-  buyerId                        String                          @map("buyer_id")
-  buyer                          User                            @relation("DealBuyer", fields: [buyerId], references: [id], onDelete: Restrict)
-  sellerId                       String                          @map("seller_id")
-  seller                         User                            @relation("DealSeller", fields: [sellerId], references: [id], onDelete: Restrict)
-  brokerId                       String?                         @map("broker_id")
-  broker                         User?                           @relation("DealBroker", fields: [brokerId], references: [id], onDelete: SetNull)
-  priceCents                     Int                             @map("price_cents")
-  status                         String                          @default("initiated") // initiated | offer_submitted | accepted | inspection | financing | closing_scheduled | closed | cancelled | CONFLICT_REQUIRES_DISCLOSURE
+  listingCode                      String?                           @map("listing_code")
+  buyerId                          String                            @map("buyer_id")
+  buyer                            User                              @relation("DealBuyer", fields: [buyerId], references: [id], onDelete: Restrict)
+  sellerId                         String                            @map("seller_id")
+  seller                           User                              @relation("DealSeller", fields: [sellerId], references: [id], onDelete: Restrict)
+  brokerId                         String?                           @map("broker_id")
+  broker                           User?                             @relation("DealBroker", fields: [brokerId], references: [id], onDelete: SetNull)
+  priceCents                       Int                               @map("price_cents")
+  status                           String                            @default("initiated") // initiated | offer_submitted | accepted | inspection | financing | closing_scheduled | closed | cancelled | CONFLICT_REQUIRES_DISCLOSURE
   /**
    * Broker CRM pipeline stage (UI / reminders); separate from legal deal status.
    */
-  crmStage                       String?                         @map("crm_stage")
-  createdAt                      DateTime                        @default(now()) @map("created_at")
-  updatedAt                      DateTime                        @updatedAt @map("updated_at")
+  crmStage                         String?                           @map("crm_stage")
+  createdAt                        DateTime                          @default(now()) @map("created_at")
+  updatedAt                        DateTime                          @updatedAt @map("updated_at")
   /// Broker execution profile — assists official workflows; does not replace mandatory OACIQ forms.
-  dealExecutionType              DealExecutionType?              @map("deal_execution_type")
-  jurisdiction                   String?                         @default("QC") @db.VarChar(16)
-  assignedFormPackageKey         String?                         @map("assigned_form_package_key") @db.VarChar(160)
-  propertyReferenceId            String?                         @map("property_reference_id") @db.VarChar(160)
-  executionMetadata              Json                            @default("{}") @map("execution_metadata")
-  milestones                     DealMilestone[]
-  documents                      DealDocument[]
-  payments                       PlatformPayment[]
-  crmInteractions                CrmInteraction[]
-  contracts                      Contract[]
+  dealExecutionType                DealExecutionType?                @map("deal_execution_type")
+  jurisdiction                     String?                           @default("QC") @db.VarChar(16)
+  assignedFormPackageKey           String?                           @map("assigned_form_package_key") @db.VarChar(160)
+  propertyReferenceId              String?                           @map("property_reference_id") @db.VarChar(160)
+  executionMetadata                Json                              @default("{}") @map("execution_metadata")
+  milestones                       DealMilestone[]
+  documents                        DealDocument[]
+  payments                         PlatformPayment[]
+  crmInteractions                  CrmInteraction[]
+  contracts                        Contract[]
   /**
    * Optional link to originating CRM lead (e.g. ImmoContact).
    */
-  leadId                         String?                         @unique @map("lead_id")
-  lead                           Lead?                           @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  leadId                           String?                           @unique @map("lead_id")
+  lead                             Lead?                             @relation(fields: [leadId], references: [id], onDelete: SetNull)
   /**
    * LECIPM enterprise workspace (organization) — optional; null = legacy unscoped rows.
    */
-  workspaceId                    String?                         @map("workspace_id") @db.Uuid
-  workspace                      EnterpriseWorkspace?            @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+  workspaceId                      String?                           @map("workspace_id") @db.Uuid
+  workspace                        EnterpriseWorkspace?              @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
   /**
    * Snapshot of lead origin at deal creation (reporting / disputes).
    */
-  leadContactOrigin              LeadContactOrigin?              @map("lead_contact_origin")
+  leadContactOrigin                LeadContactOrigin?                @map("lead_contact_origin")
   /**
    * Commission attribution (e.g. IMMO_CONTACT).
    */
-  commissionSource               LeadContactOrigin?              @map("commission_source")
-  commissionEligible             Boolean                         @default(false) @map("commission_eligible")
+  commissionSource                 LeadContactOrigin?                @map("commission_source")
+  commissionEligible               Boolean                           @default(false) @map("commission_eligible")
   /**
    * Heuristic: deal created without auto-linked Immo lead while one existed (compliance review).
    */
-  possibleBypassFlag             Boolean                         @default(false) @map("possible_bypass_flag")
-  platformCommissionRecords      PlatformCommissionRecord[]
-  platformLegalDisputes          PlatformLegalDispute[]
-  lecipmDealHistories            LecipmDealHistory[]
-  workspaceDealShares            WorkspaceDealShare[]
-  workspaceCollaborationMessages WorkspaceCollaborationMessage[]
+  possibleBypassFlag               Boolean                           @default(false) @map("possible_bypass_flag")
+  platformCommissionRecords        PlatformCommissionRecord[]
+  platformLegalDisputes            PlatformLegalDispute[]
+  lecipmDealHistories              LecipmDealHistory[]
+  workspaceDealShares              WorkspaceDealShare[]
+  workspaceCollaborationMessages   WorkspaceCollaborationMessage[]
   /// Set when sale celebration emails + notifications were sent (idempotency).
-  saleCelebrationNotifiedAt      DateTime?                       @map("sale_celebration_notified_at")
-  dealRequests                   DealRequest[]
-  coordinationContacts           CoordinationContact[]
-  bankCoordination               DealBankCoordination?
-  notaryCoordination             DealNotaryCoordination?
-  coordinationAuditLogs          DealCoordinationAuditLog[]
-  dealParties                    DealParty[]
-  copilotSuggestions             DealCopilotSuggestion[]
-  executionAuditLogs             DealExecutionAuditLog[]
+  saleCelebrationNotifiedAt        DateTime?                         @map("sale_celebration_notified_at")
+  dealRequests                     DealRequest[]
+  coordinationContacts             CoordinationContact[]
+  bankCoordination                 DealBankCoordination?
+  notaryCoordination               DealNotaryCoordination?
+  coordinationAuditLogs            DealCoordinationAuditLog[]
+  dealParties                      DealParty[]
+  copilotSuggestions               DealCopilotSuggestion[]
+  executionAuditLogs               DealExecutionAuditLog[]
   /// AI Contract Engine workflow state (intake | drafting | broker_review | …) — assistive, not legal status.
-  contractWorkflowState          String?                         @map("contract_workflow_state") @db.VarChar(32)
-  dealAssets                     DealAsset[]
-  dealStateTransitions           DealStateTransition[]
-  suggestionDecisionLogs         SuggestionDecisionLog[]
+  contractWorkflowState            String?                           @map("contract_workflow_state") @db.VarChar(32)
+  dealAssets                       DealAsset[]
+  dealStateTransitions             DealStateTransition[]
+  suggestionDecisionLogs           SuggestionDecisionLog[]
   /// LECIPM transaction pipeline — does not replace OACIQ official publisher systems.
-  lecipmExecutionPipelineState   LecipmExecutionPipelineState?   @map("lecipm_execution_pipeline_state")
-  dealExecutionApprovals         DealExecutionApproval[]
-  signatureSessions              SignatureSession[]
-  dealClosingConditions          DealClosingCondition[]
+  lecipmExecutionPipelineState     LecipmExecutionPipelineState?     @map("lecipm_execution_pipeline_state")
+  dealExecutionApprovals           DealExecutionApproval[]
+  signatureSessions                SignatureSession[]
+  dealClosingConditions            DealClosingCondition[]
   /// Escrow / trust-account coordination (v1) — not a regulated trust by default; see `LecipmTrustWorkflow.mode`.
-  lecipmDealPayments             LecipmDealPayment[]
-  lecipmTrustWorkflow            LecipmTrustWorkflow?
-  lecipmPaymentLedgerEntries     LecipmPaymentLedgerEntry[]
-  negotiationThreads             NegotiationThread[]
-  negotiationSuggestions         NegotiationSuggestion[]
-  negotiationStrategies          NegotiationStrategy[]
-  lecipmCommunicationDrafts      LecipmCommunicationDraft[]
-  lecipmCommunicationLogs        LecipmCommunicationLog[]
-  lecipmBrokerTasks              LecipmBrokerTask[]
-  lecipmCrmPipelineLeads         LecipmCrmPipelineLead[]         @relation("LecipmCrmPipelineDeal")
-  lecipmBrokerCrmAuditLogs       LecipmBrokerCrmAuditLog[]
-  brokerCollaborationThreads     BrokerCollaborationThread[]
-  brokerDealAssignments          BrokerDealAssignment[]
-  brokerInternalNotes            BrokerInternalNote[]
-  brokerWorkspaceAuditEvents     BrokerWorkspaceAuditEvent[]
-  complianceCases                ComplianceCase[]
-  qaReviews                      QaReview[]
-  brokerageOfficeId              String?                         @map("brokerage_office_id")
-  brokerageOffice                BrokerageOffice?                @relation(fields: [brokerageOfficeId], references: [id], onDelete: SetNull)
-  brokerageCommissionCases       BrokerageCommissionCase[]
-  officeInvoices                 OfficeInvoice[]
-  lecipmFormInstances            LecipmFormInstance[]
+  lecipmDealPayments               LecipmDealPayment[]
+  lecipmTrustWorkflow              LecipmTrustWorkflow?
+  lecipmPaymentLedgerEntries       LecipmPaymentLedgerEntry[]
+  negotiationThreads               NegotiationThread[]
+  negotiationSuggestions           NegotiationSuggestion[]
+  negotiationStrategies            NegotiationStrategy[]
+  lecipmCommunicationDrafts        LecipmCommunicationDraft[]
+  lecipmCommunicationLogs          LecipmCommunicationLog[]
+  lecipmBrokerTasks                LecipmBrokerTask[]
+  lecipmCrmPipelineLeads           LecipmCrmPipelineLead[]           @relation("LecipmCrmPipelineDeal")
+  lecipmBrokerCrmAuditLogs         LecipmBrokerCrmAuditLog[]
+  brokerCollaborationThreads       BrokerCollaborationThread[]
+  brokerDealAssignments            BrokerDealAssignment[]
+  brokerInternalNotes              BrokerInternalNote[]
+  brokerWorkspaceAuditEvents       BrokerWorkspaceAuditEvent[]
+  complianceCases                  ComplianceCase[]
+  qaReviews                        QaReview[]
+  brokerageOfficeId                String?                           @map("brokerage_office_id")
+  brokerageOffice                  BrokerageOffice?                  @relation(fields: [brokerageOfficeId], references: [id], onDelete: SetNull)
+  brokerageCommissionCases         BrokerageCommissionCase[]
+  officeInvoices                   OfficeInvoice[]
+  lecipmFormInstances              LecipmFormInstance[]
   /**
    * Deal Intelligence engine — advisory scores; refreshed on interactions and cron.
    */
-  dealScore                      Float?                          @map("deal_score")
-  closeProbability               Float?                          @map("close_probability")
-  riskLevel                      String?                         @map("risk_level") @db.VarChar(16)
+  dealScore                        Float?                            @map("deal_score")
+  closeProbability                 Float?                            @map("close_probability")
+  riskLevel                        String?                           @map("risk_level") @db.VarChar(16)
   /// Pipeline lens: VIEWING | OFFER | NEGOTIATION | CLOSED (distinct from legal `status`).
-  intelligenceStage              String?                         @map("intelligence_stage") @db.VarChar(24)
-  lastIntelligenceComputedAt     DateTime?                       @map("last_intelligence_computed_at")
-  dealIntelligenceEvents         DealIntelligenceEvent[]
+  intelligenceStage                String?                           @map("intelligence_stage") @db.VarChar(24)
+  lastIntelligenceComputedAt       DateTime?                         @map("last_intelligence_computed_at")
+  dealIntelligenceEvents           DealIntelligenceEvent[]
   /// Versioned close-probability AI snapshots (0–100, factors, drivers/risks).
-  closeProbabilities             CloseProbability[]
+  closeProbabilities               CloseProbability[]
   /// Broker decision-support deal scores (accept / review / reject guidance).
-  dealScores                     DealScore[]
+  dealScores                       DealScore[]
   /// Autonomous learning layer — outcome rows for closed/failed deals (analytics only).
-  dealOutcomes                   DealOutcome[]
+  dealOutcomes                     DealOutcome[]
   /// Secure closing room + post-close asset onboarding (LECIPM execution bridge).
-  lecipmDealClosing              DealClosing?
-  lecipmClosingRoomDocuments     DealClosingDocument[]
-  lecipmClosingChecklistItems    DealClosingChecklist[]
-  lecipmClosingSignatures        DealClosingSignature[]
-  postCloseAsset                 PostCloseAsset?
-  lecipmDealClosingAudits        DealClosingAudit[]
+  lecipmDealClosing                DealClosing?
+  lecipmClosingRoomDocuments       DealClosingDocument[]
+  lecipmClosingChecklistItems      DealClosingChecklist[]
+  lecipmClosingSignatures          DealClosingSignature[]
+  postCloseAsset                   PostCloseAsset?
+  lecipmDealClosingAudits          DealClosingAudit[]
   /// OACIQ-attested broker approvals with signature linkage (v2 execution gate).
-  brokerApprovals                BrokerApproval[]
+  brokerApprovals                  BrokerApproval[]
+  /// Advisory capital allocation proposals — broker approval required before any use.
+  dealCapitalAllocations           DealCapitalAllocation[]
+  lecipmProductionGuardNoticeAcks  LecipmProductionGuardNoticeAck[]
+  lecipmProductionGuardAuditEvents LecipmProductionGuardAuditEvent[]
+  lecipmProductionGuardArtifacts   LecipmProductionGuardArtifact[]
   /// AI autopilot action queue — broker signature required before EXECUTED.
-  actionPipelines                ActionPipeline[]
-  legalDocumentArtifacts         LecipmLegalDocumentArtifact[]
+  actionPipelines                  ActionPipeline[]
+  legalDocumentArtifacts           LecipmLegalDocumentArtifact[]
   /// OACIQ-style conflict / self-dealing — client acknowledgments (exact text + timestamp; optional IP/UA).
-  conflictClientConsents         DealConflictClientConsent[]
+  conflictClientConsents           DealConflictClientConsent[]
   /// OACIQ mandatory broker disclosure records filed for this deal (when applicable).
-  brokerDisclosures              BrokerDisclosure[]
+  brokerDisclosures                BrokerDisclosure[]
 
   @@index([buyerId])
   @@index([sellerId])
@@ -11091,6 +11200,85 @@ model Deal {
   @@index([lecipmExecutionPipelineState])
   @@index([brokerageOfficeId])
   @@map("deals")
+}
+
+/// AI capital allocator — recommends deployable capital slice for a CRM deal (advisory only; broker approves).
+model DealCapitalAllocation {
+  id                     String    @id @default(cuid())
+  dealId                 String    @map("deal_id")
+  deal                   Deal      @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  /// Recommended equity / deployable capital in minor units (CAD cents).
+  recommendedAmountCents Int       @map("recommended_amount_cents")
+  /// Share of declared deployable pool (0–1), e.g. 0.15 = 15%.
+  allocationPercent      Float     @map("allocation_percent")
+  reasoningJson          Json      @map("reasoning_json")
+  /// 0–100 model confidence (data sufficiency), not outcome certainty.
+  confidenceScore        Int       @map("confidence_score")
+  /// PROPOSED | APPROVED | REJECTED | SUPERSEDED
+  brokerApprovalStatus   String    @default("PROPOSED") @map("broker_approval_status") @db.VarChar(16)
+  proposedByUserId       String?   @map("proposed_by_user_id")
+  proposedBy             User?     @relation("DealCapitalAllocationProposedBy", fields: [proposedByUserId], references: [id], onDelete: SetNull)
+  approvedByUserId       String?   @map("approved_by_user_id")
+  approvedBy             User?     @relation("DealCapitalAllocationApprovedBy", fields: [approvedByUserId], references: [id], onDelete: SetNull)
+  approvedAt             DateTime? @map("approved_at")
+  createdAt              DateTime  @default(now()) @map("created_at")
+
+  @@index([dealId, createdAt(sort: Desc)])
+  @@index([dealId, brokerApprovalStatus])
+  @@map("deal_capital_allocations")
+}
+
+/// Critical disclosure / risk notice — explicit checkbox acknowledgment (timestamp + user + notice id).
+model LecipmProductionGuardNoticeAck {
+  id             String   @id @default(cuid())
+  dealId         String   @map("deal_id")
+  deal           Deal     @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  userId         String   @map("user_id")
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  noticeId       String   @map("notice_id") @db.VarChar(96)
+  acknowledgedAt DateTime @default(now()) @map("acknowledged_at")
+
+  @@unique([dealId, userId, noticeId])
+  @@index([dealId, userId])
+  @@map("lecipm_production_guard_notice_acks")
+}
+
+/// Append-only production hardening audit (field changes, notices, AI, signatures, PDF hashes).
+model LecipmProductionGuardAuditEvent {
+  id          String   @id @default(cuid())
+  dealId      String?  @map("deal_id")
+  deal        Deal?    @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  actorUserId String?  @map("actor_user_id")
+  actor       User?    @relation("LecipmProductionGuardAuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  action      String   @db.VarChar(96)
+  entityType  String?  @map("entity_type") @db.VarChar(64)
+  entityId    String?  @map("entity_id") @db.VarChar(64)
+  diff        Json?    @db.JsonB
+  metadata    Json     @default("{}") @db.JsonB
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([dealId, createdAt])
+  @@index([action, createdAt])
+  @@map("lecipm_production_guard_audit_events")
+}
+
+/// Final draft fingerprint: canonical content SHA-256 + optional PDF bytes hash.
+model LecipmProductionGuardArtifact {
+  id             String        @id @default(cuid())
+  dealId         String        @map("deal_id")
+  deal           Deal          @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  dealDocumentId String?       @map("deal_document_id")
+  dealDocument   DealDocument? @relation(fields: [dealDocumentId], references: [id], onDelete: SetNull)
+  kind           String        @db.VarChar(32)
+  contentSha256  String        @map("content_sha256") @db.VarChar(64)
+  pdfSha256      String?       @map("pdf_sha256") @db.VarChar(64)
+  createdById    String?       @map("created_by_id")
+  createdBy      User?         @relation("LecipmProductionGuardArtifactCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt      DateTime      @default(now()) @map("created_at")
+
+  @@index([dealId, createdAt])
+  @@index([contentSha256])
+  @@map("lecipm_production_guard_artifacts")
 }
 
 /// Broker conflict-of-interest / self-dealing — recorded client acknowledgment (OACIQ-oriented operational record).
@@ -11121,24 +11309,24 @@ enum BrokerDisclosureRole {
 }
 
 model BrokerDisclosure {
-  id                  String              @id @default(cuid())
-  brokerId            String              @map("broker_id")
-  broker              User                @relation(fields: [brokerId], references: [id], onDelete: Cascade)
+  id                  String               @id @default(cuid())
+  brokerId            String               @map("broker_id")
+  broker              User                 @relation(fields: [brokerId], references: [id], onDelete: Cascade)
   /// Residential `Deal` when disclosure is filed in deal context.
-  dealId              String?             @map("deal_id")
-  deal                Deal?               @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  dealId              String?              @map("deal_id")
+  deal                Deal?                @relation(fields: [dealId], references: [id], onDelete: Cascade)
   /// CRM `Listing` for publish / pipeline / offer gates on broker inventory.
-  listingId           String?             @map("listing_id")
-  listing             Listing?            @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  listingId           String?              @map("listing_id")
+  listing             Listing?             @relation(fields: [listingId], references: [id], onDelete: Cascade)
   /// FSBO row for broker-managed inventory publish.
-  fsboListingId       String?             @map("fsbo_listing_id")
-  fsboListing         FsboListing?        @relation(fields: [fsboListingId], references: [id], onDelete: Cascade)
+  fsboListingId       String?              @map("fsbo_listing_id")
+  fsboListing         FsboListing?         @relation(fields: [fsboListingId], references: [id], onDelete: Cascade)
   role                BrokerDisclosureRole
-  hasConflict         Boolean             @map("has_conflict")
-  conflictDescription String?             @map("conflict_description") @db.Text
-  disclosedAt         DateTime            @default(now()) @map("disclosed_at")
+  hasConflict         Boolean              @map("has_conflict")
+  conflictDescription String?              @map("conflict_description") @db.Text
+  disclosedAt         DateTime             @default(now()) @map("disclosed_at")
   /// Snapshot line appended to generated legal documents (OACIQ declaration).
-  declarationLine     String              @map("declaration_line") @db.Text
+  declarationLine     String               @map("declaration_line") @db.Text
 
   @@index([brokerId])
   @@index([dealId])
@@ -11147,7 +11335,6 @@ model BrokerDisclosure {
   @@index([brokerId, disclosedAt(sort: Desc)])
   @@map("broker_disclosures")
 }
-
 
 /// Assistive close-likelihood estimate before broker approval / signing (rule blend + pipeline signals).
 model CloseProbability {
@@ -14102,25 +14289,26 @@ model DealMilestone {
 }
 
 model DealDocument {
-  id                     String                @id @default(uuid())
-  dealId                 String                @map("deal_id")
-  deal                   Deal                  @relation(fields: [dealId], references: [id], onDelete: Cascade)
-  type                   String // contract | amendment | inspection_report | etc.
+  id                             String                          @id @default(uuid())
+  dealId                         String                          @map("deal_id")
+  deal                           Deal                            @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  type                           String // contract | amendment | inspection_report | etc.
   /// Nullable when row is structured-draft-only until broker uploads official PDF.
-  fileUrl                String?               @map("file_url")
-  status                 String                @default("uploaded") // uploaded | signed (legacy); see workflowStatus for execution pipeline
-  createdAt              DateTime              @default(now()) @map("created_at")
-  templateKey            String?               @map("template_key") @db.VarChar(160)
-  versionLabel           String?               @map("version_label") @db.VarChar(64)
-  sourceType             String?               @map("source_type") @db.VarChar(32)
-  structuredData         Json?                 @map("structured_data")
-  renderedOutput         Json?                 @map("rendered_output")
+  fileUrl                        String?                         @map("file_url")
+  status                         String                          @default("uploaded") // uploaded | signed (legacy); see workflowStatus for execution pipeline
+  createdAt                      DateTime                        @default(now()) @map("created_at")
+  templateKey                    String?                         @map("template_key") @db.VarChar(160)
+  versionLabel                   String?                         @map("version_label") @db.VarChar(64)
+  sourceType                     String?                         @map("source_type") @db.VarChar(32)
+  structuredData                 Json?                           @map("structured_data")
+  renderedOutput                 Json?                           @map("rendered_output")
   /// draft | broker_review | approved | exported | signed | archived — assists broker review gates
-  workflowStatus         String?               @map("workflow_status") @db.VarChar(24)
-  fulfillingRequestItems DealRequestItem[]
-  documentVersions       DealDocumentVersion[]
-  complianceCases        ComplianceCase[]
-  qaReviews              QaReview[]
+  workflowStatus                 String?                         @map("workflow_status") @db.VarChar(24)
+  fulfillingRequestItems         DealRequestItem[]
+  documentVersions               DealDocumentVersion[]
+  complianceCases                ComplianceCase[]
+  qaReviews                      QaReview[]
+  lecipmProductionGuardArtifacts LecipmProductionGuardArtifact[]
 
   @@index([dealId])
   @@index([workflowStatus])
@@ -19242,6 +19430,8 @@ model Contract {
   bnhubInvoiceLegalLinks    BnhubBookingInvoice[]      @relation("BnhubInvoiceLegalLink")
   platformCommissionRecords PlatformCommissionRecord[]
   contractClauses           ContractClause[]
+  contractLegalNotices      ContractLegalNotice[]
+  contractSignatureGates    ContractSignatureGate[]
 
   @@index([userId])
   @@index([tenantId])
@@ -19255,6 +19445,49 @@ model Contract {
   @@index([createdById])
   @@index([signed])
   @@map("contracts")
+}
+
+/// LECIPM Contract Brain — immutable snapshots of regulated notices acknowledged before signature.
+model ContractLegalNotice {
+  id              String    @id @default(cuid())
+  contractId      String    @map("contract_id")
+  contract        Contract  @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  userId          String?   @map("user_id")
+  user            User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  noticeKey       String    @map("notice_key")
+  version         String
+  title           String
+  contentSnapshot String    @map("content_snapshot") @db.Text
+  acceptedAt      DateTime? @map("accepted_at")
+  ipAddress       String?   @map("ip_address") @db.VarChar(128)
+  userAgent       String?   @map("user_agent") @db.Text
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@unique([contractId, userId, noticeKey, version])
+  @@index([contractId])
+  @@index([userId])
+  @@index([noticeKey])
+  @@map("contract_legal_notices")
+}
+
+/// Last evaluated Contract Brain signature gate per contract + gate key (audit / UX).
+model ContractSignatureGate {
+  id         String    @id @default(cuid())
+  contractId String    @map("contract_id")
+  contract   Contract  @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  userId     String?   @map("user_id")
+  user       User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  gateKey    String    @map("gate_key")
+  passed     Boolean   @default(false)
+  passedAt   DateTime? @map("passed_at")
+  reason     String?   @db.Text
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+
+  @@unique([contractId, gateKey])
+  @@index([userId])
+  @@map("contract_signature_gates")
 }
 
 /// OACIQ clause intelligence — standardized library rows (admin-seeded).
@@ -20686,47 +20919,47 @@ enum LecipmListingCentrisPublicationState {
 }
 
 model Listing {
-  id                               String                            @id @default(cuid())
+  id                               String                               @id @default(cuid())
   /**
    * Broker CRM listing public code (LST-XXXXXX or legacy LEC-#####).
    */
-  listingCode                      String                            @unique @map("listing_code")
+  listingCode                      String                               @unique @map("listing_code")
   title                            String
   /// Optional French title for CRM surfaces; falls back to `title`.
-  titleFr                          String?                           @map("title_fr")
+  titleFr                          String?                              @map("title_fr")
   /// Optional Arabic title; falls back to `title`.
-  titleAr                          String?                           @map("title_ar")
+  titleAr                          String?                              @map("title_ar")
   price                            Float
-  ownerId                          String?                           @map("owner_id")
-  owner                            User?                             @relation(fields: [ownerId], references: [id], onDelete: SetNull)
-  tenantId                         String?                           @map("tenant_id")
-  tenant                           Tenant?                           @relation(fields: [tenantId], references: [id], onDelete: SetNull)
-  commissionCategory               ListingCommissionCategory         @default(SALE) @map("commission_category")
-  commissionRate                   Float?                            @map("commission_rate")
+  ownerId                          String?                              @map("owner_id")
+  owner                            User?                                @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  tenantId                         String?                              @map("tenant_id")
+  tenant                           Tenant?                              @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  commissionCategory               ListingCommissionCategory            @default(SALE) @map("commission_category")
+  commissionRate                   Float?                               @map("commission_rate")
   /// Residential / condo classification for CRM workflows (Reg. 2025 co-ownership compliance).
-  listingType                      LecipmListingAssetType            @default(HOUSE) @map("listing_type")
+  listingType                      LecipmListingAssetType               @default(HOUSE) @map("listing_type")
   /// Explicit divided co-ownership flag (may be true for non-CONDO edge cases).
-  isCoOwnership                    Boolean                           @default(false) @map("is_co_ownership")
+  isCoOwnership                    Boolean                              @default(false) @map("is_co_ownership")
   /// Cached 0–100 merged co-ownership (non-insurance) checklist score — recomputed by compliance service.
-  complianceScore                  Int?                              @map("coownership_compliance_score_cache")
+  complianceScore                  Int?                                 @map("coownership_compliance_score_cache")
   /// Cached 0–100 insurance subsection score — recomputed by compliance service.
-  insuranceScore                   Int?                              @map("coownership_insurance_score_cache")
+  insuranceScore                   Int?                                 @map("coownership_insurance_score_cache")
   /**
    * When true, CRM listing appears on public marketplace/buyer browse.
    * New listings default to draft (false) until explicitly published via broker endpoint.
    */
-  crmMarketplaceLive               Boolean                           @default(true) @map("crm_marketplace_live")
+  crmMarketplaceLive               Boolean                              @default(true) @map("crm_marketplace_live")
   /// Independent-broker Centris readiness (manual export); not a syndication status from Centris.
   centrisPublicationState          LecipmListingCentrisPublicationState @default(DRAFT) @map("centris_publication_state")
   /// AI Listing Assistant — broker working copy (JSON). Does not publish or syndicate.
-  assistantDraftContent            Json?                             @map("assistant_draft_content")
-  assistantDraftSource             String?                           @map("assistant_draft_source") @db.VarChar(32)
-  assistantDraftUpdatedAt          DateTime?                         @map("assistant_draft_updated_at")
+  assistantDraftContent            Json?                                @map("assistant_draft_content")
+  assistantDraftSource             String?                              @map("assistant_draft_source") @db.VarChar(32)
+  assistantDraftUpdatedAt          DateTime?                            @map("assistant_draft_updated_at")
   /// OACIQ brokerage forms engine — hard hold (e.g. seller declaration refusal).
-  lecipmOaciqComplianceHoldAt      DateTime?                         @map("lecipm_oaciq_compliance_hold_at")
-  lecipmOaciqComplianceHoldReason  String?                           @map("lecipm_oaciq_compliance_hold_reason") @db.VarChar(64)
-  createdAt                        DateTime                          @default(now())
-  updatedAt                        DateTime                          @updatedAt
+  lecipmOaciqComplianceHoldAt      DateTime?                            @map("lecipm_oaciq_compliance_hold_at")
+  lecipmOaciqComplianceHoldReason  String?                              @map("lecipm_oaciq_compliance_hold_reason") @db.VarChar(64)
+  createdAt                        DateTime                             @default(now())
+  updatedAt                        DateTime                             @updatedAt
   checklistItems                   ChecklistItem[]
   complianceSnapshot               ListingComplianceSnapshot?
   advisoryLogs                     CoOwnershipAdvisoryLog[]
@@ -20742,7 +20975,7 @@ model Listing {
   dealFinancials                   DealFinancial[]
   tenantInvoices                   TenantInvoice[]
   /// Optional 1:1 — CRM listing created from safe intake (`ListingAcquisitionLead`).
-  sourcedFromAcquisitionLead       ListingAcquisitionLead?           @relation("CrmListingFromAcquisition")
+  sourcedFromAcquisitionLead       ListingAcquisitionLead?              @relation("CrmListingFromAcquisition")
   brokerCollaborationThreads       BrokerCollaborationThread[]
   brokerInternalNotes              BrokerInternalNote[]
   complianceCases                  ComplianceCase[]
@@ -21535,16 +21768,16 @@ model InvestmentPipelineDeal {
   createdAt              DateTime        @default(now())
   updatedAt              DateTime        @updatedAt
   closedAt               DateTime?       @map("closed_at")
-  
+
   // Underwriting & Investment Intelligence
-  underwritingScore          Float?          @map("underwriting_score")
-  underwritingLabel          String?         @map("underwriting_label") @db.VarChar(24) // WEAK, MODERATE, STRONG
-  underwritingRecommendation String?         @map("underwriting_recommendation") @db.VarChar(32) // BUY, BUY_WITH_RETROFIT_PLAN, HOLD, AVOID
-  underwritingConfidence     String?         @map("underwriting_confidence") @db.VarChar(16) // low, medium, high
-  underwritingSummaryJson    Json?           @map("underwriting_summary_json")
-  underwritingRisksJson      Json?           @map("underwriting_risks_json")
-  underwritingUpsideJson     Json?           @map("underwriting_upside_json")
-  underwritingUpdatedAt      DateTime?       @map("underwriting_updated_at")
+  underwritingScore          Float?    @map("underwriting_score")
+  underwritingLabel          String?   @map("underwriting_label") @db.VarChar(24) // WEAK, MODERATE, STRONG
+  underwritingRecommendation String?   @map("underwriting_recommendation") @db.VarChar(32) // BUY, BUY_WITH_RETROFIT_PLAN, HOLD, AVOID
+  underwritingConfidence     String?   @map("underwriting_confidence") @db.VarChar(16) // low, medium, high
+  underwritingSummaryJson    Json?     @map("underwriting_summary_json")
+  underwritingRisksJson      Json?     @map("underwriting_risks_json")
+  underwritingUpsideJson     Json?     @map("underwriting_upside_json")
+  underwritingUpdatedAt      DateTime? @map("underwriting_updated_at")
 
   stageHistories        InvestmentPipelineDealStageHistory[]
   committeeSubmissions  InvestmentPipelineCommitteeSubmission[]
@@ -21707,12 +21940,12 @@ model InvestmentPipelineDecisionAudit {
 }
 
 model DealUnderwritingSnapshot {
-  id        String                 @id @default(cuid())
-  dealId    String                 @map("deal_id")
-  deal      InvestmentPipelineDeal @relation(fields: [dealId], references: [id], onDelete: Cascade)
-  source    String                 @db.VarChar(32) // INITIAL, ARTIFACTS_REFRESH, MANUAL_REFRESH
-  payloadJson Json                 @map("payload_json")
-  createdAt DateTime               @default(now()) @map("created_at")
+  id          String                 @id @default(cuid())
+  dealId      String                 @map("deal_id")
+  deal        InvestmentPipelineDeal @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  source      String                 @db.VarChar(32) // INITIAL, ARTIFACTS_REFRESH, MANUAL_REFRESH
+  payloadJson Json                   @map("payload_json")
+  createdAt   DateTime               @default(now()) @map("created_at")
 
   @@index([dealId, createdAt(sort: Desc)])
   @@map("deal_underwriting_snapshots")
@@ -26920,14 +27153,14 @@ model SeoBlogPost {
 
 /// Configurable country row for multi-market expansion (tax/fee/locale config lives in `regionalConfigJson`).
 model ExpansionCountry {
-  id                 String   @id @default(cuid())
-  code               String   @unique @db.VarChar(8)
+  id                 String             @id @default(cuid())
+  code               String             @unique @db.VarChar(8)
   name               String
-  defaultLocale      String   @default("en") @map("default_locale") @db.VarChar(16)
-  supportedLocales   String[] @default(["en", "fr"]) @map("supported_locales")
-  currency           String   @db.VarChar(8)
-  isActive           Boolean  @default(true) @map("is_active")
-  regionalConfigJson Json?    @map("regional_config_json")
+  defaultLocale      String             @default("en") @map("default_locale") @db.VarChar(16)
+  supportedLocales   String[]           @default(["en", "fr"]) @map("supported_locales")
+  currency           String             @db.VarChar(8)
+  isActive           Boolean            @default(true) @map("is_active")
+  regionalConfigJson Json?              @map("regional_config_json")
   cities             City[]
   shortTermListings  ShortTermListing[]
   fsboListings       FsboListing[]
@@ -26938,30 +27171,30 @@ model ExpansionCountry {
 
 /// LECIPM market city — rollout, playbooks, and admin dashboards (multi-city expansion).
 model City {
-  id                  String    @id @default(cuid())
-  slug                String    @unique
+  id                  String             @id @default(cuid())
+  slug                String             @unique
   name                String
-  country             String    @default("CA")
-  expansionCountryId  String?   @map("expansion_country_id")
-  expansionCountry    ExpansionCountry? @relation(fields: [expansionCountryId], references: [id], onDelete: SetNull)
+  country             String             @default("CA")
+  expansionCountryId  String?            @map("expansion_country_id")
+  expansionCountry    ExpansionCountry?  @relation(fields: [expansionCountryId], references: [id], onDelete: SetNull)
   /// Operational flag for go-to-market (complements `status`).
-  isActive            Boolean   @default(true) @map("market_is_active")
+  isActive            Boolean            @default(true) @map("market_is_active")
   region              String?
   /// testing | active
-  status              String    @default("testing")
-  launchDate          DateTime? @map("launch_date") @db.Timestamptz(6)
-  listingsEnabled     Boolean   @default(false) @map("listings_enabled")
-  searchPagesEnabled  Boolean   @default(false) @map("search_pages_enabled")
-  growthEngineEnabled Boolean   @default(false) @map("growth_engine_enabled")
-  playbookMessaging   String?   @map("playbook_messaging") @db.Text
-  playbookPricing     String?   @map("playbook_pricing") @db.Text
-  playbookStrategy    String?   @map("playbook_strategy") @db.Text
+  status              String             @default("testing")
+  launchDate          DateTime?          @map("launch_date") @db.Timestamptz(6)
+  listingsEnabled     Boolean            @default(false) @map("listings_enabled")
+  searchPagesEnabled  Boolean            @default(false) @map("search_pages_enabled")
+  growthEngineEnabled Boolean            @default(false) @map("growth_engine_enabled")
+  playbookMessaging   String?            @map("playbook_messaging") @db.Text
+  playbookPricing     String?            @map("playbook_pricing") @db.Text
+  playbookStrategy    String?            @map("playbook_strategy") @db.Text
   /// Cached 0–100 opportunity score (expansion engine).
-  expansionScore      Int?      @map("expansion_score")
+  expansionScore      Int?               @map("expansion_score")
   /// Match `FsboListing.city` / `ShortTermListing.city` (case-insensitive contains).
-  cityMatchTerms      String[]  @default([]) @map("city_match_terms")
-  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt           DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  cityMatchTerms      String[]           @default([]) @map("city_match_terms")
+  createdAt           DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
   users               User[]
   shortTermListings   ShortTermListing[]
   fsboListings        FsboListing[]
@@ -29386,20 +29619,20 @@ model InsuranceRevenueLog {
 
 /// Broker professional liability (FARCIQ policy parameters — illustrative limits; bind coverage with your carrier).
 model BrokerInsurance {
-  id              String   @id @default(cuid())
-  brokerId        String   @map("broker_id")
-  broker          User     @relation("BrokerFARCIQInsurance", fields: [brokerId], references: [id], onDelete: Cascade)
-  policyNumber    String?  @map("policy_number")
-  provider        String   @default("FARCIQ")
-  coveragePerLoss Int      @default(2000000) @map("coverage_per_loss")
-  coveragePerYear Int      @default(2000000) @map("coverage_per_year")
-  startDate       DateTime @map("start_date")
-  endDate         DateTime @map("end_date")
-  status          String   @db.VarChar(24)
-  deductibleLevel Int      @map("deductible_level")
+  id                 String   @id @default(cuid())
+  brokerId           String   @map("broker_id")
+  broker             User     @relation("BrokerFARCIQInsurance", fields: [brokerId], references: [id], onDelete: Cascade)
+  policyNumber       String?  @map("policy_number")
+  provider           String   @default("FARCIQ")
+  coveragePerLoss    Int      @default(2000000) @map("coverage_per_loss")
+  coveragePerYear    Int      @default(2000000) @map("coverage_per_year")
+  startDate          DateTime @map("start_date")
+  endDate            DateTime @map("end_date")
+  status             String   @db.VarChar(24)
+  deductibleLevel    Int      @map("deductible_level")
   /// Private PDF (`documents` bucket path `broker-insurance/...` or `local:...` under `private/uploads`).
-  documentStorageKey String? @map("document_storage_key") @db.VarChar(512)
-  createdAt       DateTime @default(now()) @map("created_at")
+  documentStorageKey String?  @map("document_storage_key") @db.VarChar(512)
+  createdAt          DateTime @default(now()) @map("created_at")
 
   @@index([brokerId, status])
   @@index([brokerId, endDate])
@@ -30060,15 +30293,15 @@ enum LecipmLegalBoundaryModeSource {
 }
 
 model LecipmTransactionContext {
-  id              String                           @id @default(cuid())
-  entityType      LecipmLegalBoundaryEntityType    @map("entity_type")
-  entityId        String                           @map("entity_id") @db.VarChar(64)
+  id              String                             @id @default(cuid())
+  entityType      LecipmLegalBoundaryEntityType      @map("entity_type")
+  entityId        String                             @map("entity_id") @db.VarChar(64)
   mode            LecipmLegalBoundaryTransactionMode
-  brokerId        String?                          @map("broker_id") @db.VarChar(36)
+  brokerId        String?                            @map("broker_id") @db.VarChar(36)
   complianceState LecipmLegalBoundaryComplianceState @default(SAFE) @map("compliance_state")
-  modeSource      LecipmLegalBoundaryModeSource    @default(AUTO) @map("mode_source")
-  createdAt       DateTime                         @default(now()) @map("created_at")
-  updatedAt       DateTime                         @updatedAt @map("updated_at")
+  modeSource      LecipmLegalBoundaryModeSource      @default(AUTO) @map("mode_source")
+  createdAt       DateTime                           @default(now()) @map("created_at")
+  updatedAt       DateTime                           @updatedAt @map("updated_at")
 
   @@unique([entityType, entityId])
   @@index([entityId])
@@ -32814,9 +33047,9 @@ model PlaybookMemoryRecord {
   memoryPlaybook        MemoryPlaybook?        @relation(fields: [memoryPlaybookId], references: [id], onDelete: SetNull)
   memoryPlaybookVersion MemoryPlaybookVersion? @relation(fields: [memoryPlaybookVersionId], references: [id], onDelete: SetNull)
 
-  outcomeMetrics   MemoryPlaybookOutcomeMetric[]
-  retrievalIndexes MemoryPlaybookRetrievalIndex[]
-  playbookAssignments PlaybookAssignment[] @relation("PlaybookMemoryRecordAssignments")
+  outcomeMetrics      MemoryPlaybookOutcomeMetric[]
+  retrievalIndexes    MemoryPlaybookRetrievalIndex[]
+  playbookAssignments PlaybookAssignment[]           @relation("PlaybookMemoryRecordAssignments")
 
   @@index([domain, createdAt])
   @@index([actionType, createdAt])
@@ -32994,21 +33227,21 @@ model PlaybookBanditStat {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  domain   MemoryDomain
-  segmentKey String  @default("") @map("segment_key")
-  marketKey  String  @default("") @map("market_key")
-  playbookId         String  @map("playbook_id")
-  playbookVersionId  String  @default("") @map("playbook_version_id")
+  domain            MemoryDomain
+  segmentKey        String       @default("") @map("segment_key")
+  marketKey         String       @default("") @map("market_key")
+  playbookId        String       @map("playbook_id")
+  playbookVersionId String       @default("") @map("playbook_version_id")
 
-  impressions  Int  @default(0)
-  executions  Int  @default(0)
-  successes  Int  @default(0)
-  failures  Int  @default(0)
+  impressions Int @default(0)
+  executions  Int @default(0)
+  successes   Int @default(0)
+  failures    Int @default(0)
 
-  avgReward    Float?  @map("avg_reward")
-  avgRevenue   Float?  @map("avg_revenue")
+  avgReward     Float? @map("avg_reward")
+  avgRevenue    Float? @map("avg_revenue")
   avgConversion Float? @map("avg_conversion")
-  avgRiskScore  Float?  @map("avg_risk_score")
+  avgRiskScore  Float? @map("avg_risk_score")
 
   lastSelectedAt DateTime? @map("last_selected_at")
   lastOutcomeAt  DateTime? @map("last_outcome_at")
@@ -33027,13 +33260,13 @@ model PlaybookAssignment {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   domain     MemoryDomain
-  entityType String  @map("entity_type")
-  entityId   String? @map("entity_id")
+  entityType String       @map("entity_type")
+  entityId   String?      @map("entity_id")
 
-  playbookId   String  @map("playbook_id")
-  playbookVersionId   String? @map("playbook_version_id")
+  playbookId         String  @map("playbook_id")
+  playbookVersionId  String? @map("playbook_version_id")
   /// Normalized for lookups (empty = no version).
-  playbookVersionKey  String  @default("") @map("playbook_version_key")
+  playbookVersionKey String  @default("") @map("playbook_version_key")
 
   recommendationScore Float? @map("recommendation_score")
   selectionScore      Float? @map("selection_score")
@@ -33041,20 +33274,20 @@ model PlaybookAssignment {
 
   selectionMode PlaybookAssignmentSelectionMode @map("selection_mode")
 
-  contextSnapshot Json   @map("context_snapshot")
-  segmentKey  String? @map("segment_key")
-  marketKey   String? @map("market_key")
-  fingerprint String? @map("fingerprint")
+  contextSnapshot Json    @map("context_snapshot")
+  segmentKey      String? @map("segment_key")
+  marketKey       String? @map("market_key")
+  fingerprint     String? @map("fingerprint")
 
   executionMode PlaybookExecutionMode @map("execution_mode")
 
-  executed         Boolean  @default(false) @map("executed")
-  memoryRecordId   String?  @map("memory_record_id")
+  executed       Boolean @default(false) @map("executed")
+  memoryRecordId String? @map("memory_record_id")
 
   outcomeStatus      MemoryOutcomeStatus? @map("outcome_status")
-  realizedValue      Float?  @map("realized_value")
-  realizedRevenue     Float?  @map("realized_revenue")
-  realizedConversion  Float?  @map("realized_conversion")
+  realizedValue      Float?               @map("realized_value")
+  realizedRevenue    Float?               @map("realized_revenue")
+  realizedConversion Float?               @map("realized_conversion")
 
   memoryRecord PlaybookMemoryRecord? @relation("PlaybookMemoryRecordAssignments", fields: [memoryRecordId], references: [id], onDelete: SetNull)
 
@@ -33071,15 +33304,15 @@ model PlaybookControlSetting {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  scopeType String   @map("scope_type")
-  scopeKey  String   @map("scope_key")
+  scopeType String @map("scope_type")
+  scopeKey  String @map("scope_key")
 
   explorationCap  Float?  @map("exploration_cap")
-  forceMode      String?  @map("force_mode")
+  forceMode       String? @map("force_mode")
   emergencyFreeze Boolean @default(false) @map("emergency_freeze")
 
   updatedByUserId String? @map("updated_by_user_id")
-  reason          String?  @map("reason")
+  reason          String? @map("reason")
 
   @@unique([scopeType, scopeKey], map: "playbook_control_settings_scope")
   @@index([scopeType, updatedAt])
@@ -33088,26 +33321,26 @@ model PlaybookControlSetting {
 
 /// Cross-domain, deterministic shared feature index (no vector store).
 model PlaybookSharedContextIndex {
-  id                String  @id @default(cuid())
-  createdAt         DateTime @default(now()) @map("created_at")
-  updatedAt         DateTime @updatedAt @map("updated_at")
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  domain            MemoryDomain
-  sourceType        String   @map("source_type")
-  sourceId          String   @map("source_id")
+  domain     MemoryDomain
+  sourceType String       @map("source_type")
+  sourceId   String       @map("source_id")
 
-  playbookId        String?  @map("playbook_id")
-  playbookVersionId String?  @map("playbook_version_id")
+  playbookId        String? @map("playbook_id")
+  playbookVersionId String? @map("playbook_version_id")
 
-  sharedSignature  String  @map("shared_signature")
-  sharedFeatures   Json   @map("shared_features")
+  sharedSignature String @map("shared_signature")
+  sharedFeatures  Json   @map("shared_features")
 
-  segmentKey  String? @map("segment_key")
-  marketKey   String? @map("market_key")
+  segmentKey String?            @map("segment_key")
+  marketKey  String?            @map("market_key")
   scoreBand  PlaybookScoreBand? @map("score_band")
 
-  lastUsedAt  DateTime? @map("last_used_at")
-  isActive   Boolean  @default(true) @map("is_active")
+  lastUsedAt DateTime? @map("last_used_at")
+  isActive   Boolean   @default(true) @map("is_active")
 
   @@unique([sourceType, sourceId], map: "psci_source_type_id")
   @@index([domain, sourceType, createdAt], map: "psci_domain_source_created")
@@ -34820,18 +35053,18 @@ model CommandCenterSnapshot {
 }
 
 model CommandCenterAlert {
-  id          String                   @id @default(cuid())
-  snapshotId  String?                  @map("snapshot_id") @db.VarChar(36)
+  id          String                     @id @default(cuid())
+  snapshotId  String?                    @map("snapshot_id") @db.VarChar(36)
   type        CommandCenterAlertType
   severity    CommandCenterAlertSeverity
-  entityType  String                   @map("entity_type") @db.VarChar(64)
-  entityId    String                   @map("entity_id") @db.VarChar(64)
-  title       String                   @db.VarChar(512)
-  description String                   @db.Text
-  actionLabel String?                  @map("action_label") @db.VarChar(160)
-  actionUrl   String?                  @map("action_url") @db.Text
-  createdAt   DateTime                 @default(now()) @map("created_at")
-  resolvedAt  DateTime?                @map("resolved_at")
+  entityType  String                     @map("entity_type") @db.VarChar(64)
+  entityId    String                     @map("entity_id") @db.VarChar(64)
+  title       String                     @db.VarChar(512)
+  description String                     @db.Text
+  actionLabel String?                    @map("action_label") @db.VarChar(160)
+  actionUrl   String?                    @map("action_url") @db.Text
+  createdAt   DateTime                   @default(now()) @map("created_at")
+  resolvedAt  DateTime?                  @map("resolved_at")
 
   @@index([type, severity, createdAt(sort: Desc)])
   @@index([entityType, entityId])
@@ -34840,16 +35073,16 @@ model CommandCenterAlert {
 }
 
 model CommandCenterRecommendation {
-  id             String                           @id @default(cuid())
-  snapshotId     String?                          @map("snapshot_id") @db.VarChar(36)
+  id             String                              @id @default(cuid())
+  snapshotId     String?                             @map("snapshot_id") @db.VarChar(36)
   category       CommandCenterRecommendationCategory
-  entityType     String                           @map("entity_type") @db.VarChar(64)
-  entityId       String                           @map("entity_id") @db.VarChar(64)
+  entityType     String                              @map("entity_type") @db.VarChar(64)
+  entityId       String                              @map("entity_id") @db.VarChar(64)
   score          Float
-  reasoningJson  Json                             @map("reasoning_json")
-  createdAt      DateTime                         @default(now()) @map("created_at")
-  actedAt        DateTime?                        @map("acted_at")
-  quickActionKey String?                          @map("quick_action_key") @db.VarChar(64)
+  reasoningJson  Json                                @map("reasoning_json")
+  createdAt      DateTime                            @default(now()) @map("created_at")
+  actedAt        DateTime?                           @map("acted_at")
+  quickActionKey String?                             @map("quick_action_key") @db.VarChar(64)
 
   @@index([snapshotId, score(sort: Desc)])
   @@index([entityType, entityId])
@@ -34915,26 +35148,26 @@ model BrokerLecipmExecutionSettings {
 }
 
 model LecipmExecutionTask {
-  id                     String                   @id @default(cuid())
-  brokerUserId           String                   @map("broker_user_id")
-  broker                 User                     @relation("LecipmExecutionTaskBroker", fields: [brokerUserId], references: [id], onDelete: Cascade)
-  taskType               LecipmExecutionTaskType  @map("task_type")
+  id                     String                    @id @default(cuid())
+  brokerUserId           String                    @map("broker_user_id")
+  broker                 User                      @relation("LecipmExecutionTaskBroker", fields: [brokerUserId], references: [id], onDelete: Cascade)
+  taskType               LecipmExecutionTaskType   @map("task_type")
   entityType             LecipmExecutionEntityType @map("entity_type")
-  entityId               String                   @map("entity_id") @db.VarChar(64)
+  entityId               String                    @map("entity_id") @db.VarChar(64)
   status                 LecipmExecutionTaskStatus @map("status")
-  riskLevel              LecipmExecutionRiskLevel @map("risk_level")
-  priorityScore          Float                    @default(0) @map("priority_score")
-  payloadJson            Json                     @map("payload_json")
-  aiReasoningJson        Json                     @map("ai_reasoning_json")
-  idempotencyKey         String?                  @unique @map("idempotency_key") @db.VarChar(192)
-  linkedBrokerApprovalId String?                  @map("linked_broker_approval_id") @db.VarChar(36)
-  linkedActionPipelineId String?                  @map("linked_action_pipeline_id") @db.VarChar(36)
-  failureCount           Int                      @default(0) @map("failure_count")
-  lastError              String?                  @map("last_error") @db.Text
-  safetyPausedAt         DateTime?                @map("safety_paused_at")
-  outcomeLabel           String?                  @map("outcome_label") @db.VarChar(32)
-  createdAt              DateTime                 @default(now()) @map("created_at")
-  updatedAt              DateTime                 @updatedAt @map("updated_at")
+  riskLevel              LecipmExecutionRiskLevel  @map("risk_level")
+  priorityScore          Float                     @default(0) @map("priority_score")
+  payloadJson            Json                      @map("payload_json")
+  aiReasoningJson        Json                      @map("ai_reasoning_json")
+  idempotencyKey         String?                   @unique @map("idempotency_key") @db.VarChar(192)
+  linkedBrokerApprovalId String?                   @map("linked_broker_approval_id") @db.VarChar(36)
+  linkedActionPipelineId String?                   @map("linked_action_pipeline_id") @db.VarChar(36)
+  failureCount           Int                       @default(0) @map("failure_count")
+  lastError              String?                   @map("last_error") @db.Text
+  safetyPausedAt         DateTime?                 @map("safety_paused_at")
+  outcomeLabel           String?                   @map("outcome_label") @db.VarChar(32)
+  createdAt              DateTime                  @default(now()) @map("created_at")
+  updatedAt              DateTime                  @updatedAt @map("updated_at")
 
   actionLogs LecipmExecutionActionLog[]
 
@@ -34997,26 +35230,26 @@ enum LecipmOpportunityOutcomeKind {
 }
 
 model LecipmOpportunityCandidate {
-  id               String                         @id @default(cuid())
-  brokerUserId     String                         @map("broker_user_id")
-  broker           User                           @relation("LecipmOpportunityBroker", fields: [brokerUserId], references: [id], onDelete: Cascade)
-  entityType       LecipmDiscoveryEntityType      @map("entity_type")
-  entityId         String                         @map("entity_id") @db.VarChar(64)
-  opportunityType  LecipmOpportunityKind          @map("opportunity_type")
-  score            Int
-  confidenceScore  Int                            @map("confidence_score")
-  riskLevel        LecipmOpportunityRiskTier      @map("risk_level")
-  rationaleJson    Json                           @map("rationale_json")
-  discoveredAt     DateTime                       @default(now()) @map("discovered_at")
-  status           LecipmOpportunityCandidateStatus @default(NEW) @map("status")
-  idempotencyKey   String?                        @unique @map("idempotency_key") @db.VarChar(192)
-  city             String?                        @db.VarChar(128)
-  propertyType     String?                        @map("property_type") @db.VarChar(64)
-  marketSegment    String?                        @map("market_segment") @db.VarChar(64)
-  investorReady    Boolean                        @default(false) @map("investor_ready")
-  esgRelevant      Boolean                        @default(false) @map("esg_relevant")
-  createdAt        DateTime                       @default(now()) @map("created_at")
-  updatedAt        DateTime                       @updatedAt @map("updated_at")
+  id              String                           @id @default(cuid())
+  brokerUserId    String                           @map("broker_user_id")
+  broker          User                             @relation("LecipmOpportunityBroker", fields: [brokerUserId], references: [id], onDelete: Cascade)
+  entityType      LecipmDiscoveryEntityType        @map("entity_type")
+  entityId        String                           @map("entity_id") @db.VarChar(64)
+  opportunityType LecipmOpportunityKind            @map("opportunity_type")
+  score           Int
+  confidenceScore Int                              @map("confidence_score")
+  riskLevel       LecipmOpportunityRiskTier        @map("risk_level")
+  rationaleJson   Json                             @map("rationale_json")
+  discoveredAt    DateTime                         @default(now()) @map("discovered_at")
+  status          LecipmOpportunityCandidateStatus @default(NEW) @map("status")
+  idempotencyKey  String?                          @unique @map("idempotency_key") @db.VarChar(192)
+  city            String?                          @db.VarChar(128)
+  propertyType    String?                          @map("property_type") @db.VarChar(64)
+  marketSegment   String?                          @map("market_segment") @db.VarChar(64)
+  investorReady   Boolean                          @default(false) @map("investor_ready")
+  esgRelevant     Boolean                          @default(false) @map("esg_relevant")
+  createdAt       DateTime                         @default(now()) @map("created_at")
+  updatedAt       DateTime                         @updatedAt @map("updated_at")
 
   outcomes LecipmOpportunityOutcome[]
 
@@ -35028,12 +35261,12 @@ model LecipmOpportunityCandidate {
 }
 
 model LecipmOpportunityOutcome {
-  id              String                   @id @default(cuid())
-  opportunityId   String                   @map("opportunity_id")
-  opportunity     LecipmOpportunityCandidate @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
-  outcomeType     LecipmOpportunityOutcomeKind @map("outcome_type")
-  outcomeValueJson Json                    @map("outcome_value_json")
-  createdAt       DateTime                 @default(now()) @map("created_at")
+  id               String                       @id @default(cuid())
+  opportunityId    String                       @map("opportunity_id")
+  opportunity      LecipmOpportunityCandidate   @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  outcomeType      LecipmOpportunityOutcomeKind @map("outcome_type")
+  outcomeValueJson Json                         @map("outcome_value_json")
+  createdAt        DateTime                     @default(now()) @map("created_at")
 
   @@index([opportunityId, createdAt])
   @@map("lecipm_opportunity_outcomes")
@@ -35041,21 +35274,21 @@ model LecipmOpportunityOutcome {
 
 /// Marketplace personalization — engagement + audit telemetry (Law 25–aware; no sensitive claims in user-facing copy).
 model LecipmPersonalizedRecommendationEvent {
-  id                    String   @id @default(cuid())
-  userId                String   @map("user_id")
-  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                  String   @id @default(cuid())
+  userId              String   @map("user_id")
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   /// BUYER | RENTER | BROKER | INVESTOR | SYSTEM
-  mode                  String   @db.VarChar(24)
+  mode                String   @db.VarChar(24)
   /// shown | clicked | saved | messaged | booked | offered | packet_opened | invested | audit:profile_built | audit:generated | audit:converted | audit:opt_out
-  eventKind             String   @map("event_kind") @db.VarChar(48)
-  entityType            String?  @map("entity_type") @db.VarChar(32)
-  entityId              String?  @map("entity_id") @db.VarChar(64)
-  recommendationScore   Float?   @map("recommendation_score")
-  explanationUserSafe   String?  @map("explanation_user_safe") @db.Text
-  factorsJson           Json?    @map("factors_json")
-  sessionId             String?  @map("session_id") @db.VarChar(96)
-  metadata              Json?
-  createdAt             DateTime @default(now()) @map("created_at")
+  eventKind           String   @map("event_kind") @db.VarChar(48)
+  entityType          String?  @map("entity_type") @db.VarChar(32)
+  entityId            String?  @map("entity_id") @db.VarChar(64)
+  recommendationScore Float?   @map("recommendation_score")
+  explanationUserSafe String?  @map("explanation_user_safe") @db.Text
+  factorsJson         Json?    @map("factors_json")
+  sessionId           String?  @map("session_id") @db.VarChar(96)
+  metadata            Json?
+  createdAt           DateTime @default(now()) @map("created_at")
 
   @@index([userId, createdAt(sort: Desc)])
   @@index([userId, eventKind])
@@ -35821,10 +36054,10 @@ model AmfSpv {
   ownershipStructureJson Json? @map("ownership_structure_json")
 
   /// Default private exempt deal mode — no public offering workflow.
-  privateExemptDealMode Boolean @default(true) @map("private_exempt_deal_mode")
-  exemptionPath         AmfExemptionCategory? @map("exemption_path")
+  privateExemptDealMode         Boolean               @default(true) @map("private_exempt_deal_mode")
+  exemptionPath                 AmfExemptionCategory? @map("exemption_path")
   /// Counsel-approved additional exemption keys (manual enablement only).
-  counselApprovedExemptionsJson Json? @map("counsel_approved_exemptions_json")
+  counselApprovedExemptionsJson Json?                 @map("counsel_approved_exemptions_json")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -35921,22 +36154,22 @@ model ComplianceFinanceAccount {
 }
 
 model ComplianceFinanceLedgerEntry {
-  id                   String             @id @default(cuid())
-  accountId            String             @map("account_id")
-  account              ComplianceFinanceAccount @relation(fields: [accountId], references: [id], onDelete: Restrict)
-  domain               FinAdminDomain     @map("domain")
-  entryType            FinLedgerEntryType @map("entry_type")
-  referenceType        String             @map("reference_type") @db.VarChar(64)
-  referenceId          String?            @map("reference_id") @db.VarChar(64)
-  amount               Decimal            @map("amount") @db.Decimal(18, 2)
-  taxExclusiveAmount   Decimal?           @map("tax_exclusive_amount") @db.Decimal(18, 2)
-  gstAmount            Decimal?           @map("gst_amount") @db.Decimal(18, 2)
-  qstAmount            Decimal?           @map("qst_amount") @db.Decimal(18, 2)
-  effectiveDate        DateTime           @map("effective_date")
-  counterpartyId       String?            @map("counterparty_id")
-  counterparty         ComplianceFinanceCounterparty? @relation(fields: [counterpartyId], references: [id], onDelete: SetNull)
-  notesJson            Json?              @map("notes_json")
-  createdAt            DateTime           @default(now()) @map("created_at")
+  id                 String                         @id @default(cuid())
+  accountId          String                         @map("account_id")
+  account            ComplianceFinanceAccount       @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  domain             FinAdminDomain                 @map("domain")
+  entryType          FinLedgerEntryType             @map("entry_type")
+  referenceType      String                         @map("reference_type") @db.VarChar(64)
+  referenceId        String?                        @map("reference_id") @db.VarChar(64)
+  amount             Decimal                        @map("amount") @db.Decimal(18, 2)
+  taxExclusiveAmount Decimal?                       @map("tax_exclusive_amount") @db.Decimal(18, 2)
+  gstAmount          Decimal?                       @map("gst_amount") @db.Decimal(18, 2)
+  qstAmount          Decimal?                       @map("qst_amount") @db.Decimal(18, 2)
+  effectiveDate      DateTime                       @map("effective_date")
+  counterpartyId     String?                        @map("counterparty_id")
+  counterparty       ComplianceFinanceCounterparty? @relation(fields: [counterpartyId], references: [id], onDelete: SetNull)
+  notesJson          Json?                          @map("notes_json")
+  createdAt          DateTime                       @default(now()) @map("created_at")
 
   @@index([domain, effectiveDate])
   @@index([entryType, effectiveDate])
@@ -35945,11 +36178,11 @@ model ComplianceFinanceLedgerEntry {
 }
 
 model ComplianceFinanceCounterparty {
-  id           String             @id @default(cuid())
-  name         String             @db.VarChar(512)
-  type         FinCounterpartyKind @map("type")
-  taxNumberJson Json?             @map("tax_number_json")
-  createdAt    DateTime           @default(now()) @map("created_at")
+  id            String              @id @default(cuid())
+  name          String              @db.VarChar(512)
+  type          FinCounterpartyKind @map("type")
+  taxNumberJson Json?               @map("tax_number_json")
+  createdAt     DateTime            @default(now()) @map("created_at")
 
   ledgerEntries ComplianceFinanceLedgerEntry[]
 
@@ -35957,29 +36190,29 @@ model ComplianceFinanceCounterparty {
 }
 
 model TaxRegistrationProfile {
-  id               String             @id @default(cuid())
-  registrantName   String             @map("registrant_name") @db.VarChar(512)
-  gstNumber        String?            @map("gst_number") @db.VarChar(64)
-  qstNumber        String?            @map("qst_number") @db.VarChar(64)
-  filingFrequency  TaxFilingFrequency @map("filing_frequency")
-  isRegistered     Boolean            @default(true) @map("is_registered")
-  effectiveDate    DateTime           @map("effective_date")
-  createdAt        DateTime           @default(now()) @map("created_at")
-  updatedAt        DateTime           @updatedAt @map("updated_at")
+  id              String             @id @default(cuid())
+  registrantName  String             @map("registrant_name") @db.VarChar(512)
+  gstNumber       String?            @map("gst_number") @db.VarChar(64)
+  qstNumber       String?            @map("qst_number") @db.VarChar(64)
+  filingFrequency TaxFilingFrequency @map("filing_frequency")
+  isRegistered    Boolean            @default(true) @map("is_registered")
+  effectiveDate   DateTime           @map("effective_date")
+  createdAt       DateTime           @default(now()) @map("created_at")
+  updatedAt       DateTime           @updatedAt @map("updated_at")
 
   @@map("tax_registration_profiles")
 }
 
 model RegulatoryObligation {
-  id              String                   @id @default(cuid())
-  authority       RegulatoryAuthority      @map("authority")
-  obligationType  RegulatoryObligationType @map("obligation_type")
-  dueDate         DateTime                 @map("due_date")
-  amountEstimate  Decimal?                 @map("amount_estimate") @db.Decimal(18, 2)
-  status          RegulatoryObligationStatus @default(OPEN) @map("status")
-  referenceJson   Json?                    @map("reference_json")
-  createdAt       DateTime                 @default(now()) @map("created_at")
-  updatedAt       DateTime                 @updatedAt @map("updated_at")
+  id             String                     @id @default(cuid())
+  authority      RegulatoryAuthority        @map("authority")
+  obligationType RegulatoryObligationType   @map("obligation_type")
+  dueDate        DateTime                   @map("due_date")
+  amountEstimate Decimal?                   @map("amount_estimate") @db.Decimal(18, 2)
+  status         RegulatoryObligationStatus @default(OPEN) @map("status")
+  referenceJson  Json?                      @map("reference_json")
+  createdAt      DateTime                   @default(now()) @map("created_at")
+  updatedAt      DateTime                   @updatedAt @map("updated_at")
 
   @@index([authority, dueDate])
   @@index([status, dueDate])
@@ -35987,33 +36220,33 @@ model RegulatoryObligation {
 }
 
 model ExemptDistributionFile {
-  id                String                @id @default(cuid())
-  spvId             String                @map("spv_id")
-  spv               AmfSpv                @relation(fields: [spvId], references: [id], onDelete: Cascade)
-  exemptionType     AmfExemptionCategory  @map("exemption_type")
-  distributionDate  DateTime              @map("distribution_date")
-  filingDeadline    DateTime              @map("filing_deadline")
+  id                String                 @id @default(cuid())
+  spvId             String                 @map("spv_id")
+  spv               AmfSpv                 @relation(fields: [spvId], references: [id], onDelete: Cascade)
+  exemptionType     AmfExemptionCategory   @map("exemption_type")
+  distributionDate  DateTime               @map("distribution_date")
+  filingDeadline    DateTime               @map("filing_deadline")
   form45106F1Status ExemptFilingFormStatus @default(DRAFT) @map("form_45_106f1_status")
-  amfFeeAmount      Decimal?              @map("amf_fee_amount") @db.Decimal(18, 2)
-  notesJson         Json?                 @map("notes_json")
-  createdAt         DateTime              @default(now()) @map("created_at")
+  amfFeeAmount      Decimal?               @map("amf_fee_amount") @db.Decimal(18, 2)
+  notesJson         Json?                  @map("notes_json")
+  createdAt         DateTime               @default(now()) @map("created_at")
 
   @@index([spvId, distributionDate])
   @@map("exempt_distribution_files")
 }
 
 model InvestorCapitalCommitment {
-  id              String                         @id @default(cuid())
-  spvId           String                         @map("spv_id")
-  spv             AmfSpv                         @relation(fields: [spvId], references: [id], onDelete: Cascade)
-  investorId      String                         @map("investor_id")
-  investor        User                           @relation("InvestorCapitalCommitmentInvestor", fields: [investorId], references: [id], onDelete: Cascade)
-  committedAmount Decimal                        @map("committed_amount") @db.Decimal(18, 2)
-  receivedAmount  Decimal                        @default(0) @map("received_amount") @db.Decimal(18, 2)
-  status          InvestorCapitalCommitmentStatus @default(PENDING) @map("status")
-  exemptionType   AmfExemptionCategory           @map("exemption_type")
-  eligibilityRecordedAt DateTime?                @map("eligibility_recorded_at")
-  createdAt       DateTime                       @default(now()) @map("created_at")
+  id                    String                          @id @default(cuid())
+  spvId                 String                          @map("spv_id")
+  spv                   AmfSpv                          @relation(fields: [spvId], references: [id], onDelete: Cascade)
+  investorId            String                          @map("investor_id")
+  investor              User                            @relation("InvestorCapitalCommitmentInvestor", fields: [investorId], references: [id], onDelete: Cascade)
+  committedAmount       Decimal                         @map("committed_amount") @db.Decimal(18, 2)
+  receivedAmount        Decimal                         @default(0) @map("received_amount") @db.Decimal(18, 2)
+  status                InvestorCapitalCommitmentStatus @default(PENDING) @map("status")
+  exemptionType         AmfExemptionCategory            @map("exemption_type")
+  eligibilityRecordedAt DateTime?                       @map("eligibility_recorded_at")
+  createdAt             DateTime                        @default(now()) @map("created_at")
 
   @@unique([spvId, investorId])
   @@index([spvId, status])
@@ -37369,15 +37602,15 @@ model RolloutPolicy {
 }
 
 model RolloutExecution {
-  id               String                  @id @default(cuid())
-  policyId         String                  @map("policy_id")
-  policy           RolloutPolicy           @relation(fields: [policyId], references: [id], onDelete: Cascade)
-  rolloutPercent   Int                     @map("rollout_percent")
-  cohortKey        String                  @map("cohort_key") @db.VarChar(128)
-  startedAt        DateTime                @default(now()) @map("started_at")
-  lastEvaluatedAt  DateTime?               @map("last_evaluated_at")
-  status           RolloutExecutionStatus  @default(RUNNING)
-  createdAt        DateTime                @default(now()) @map("created_at")
+  id              String                 @id @default(cuid())
+  policyId        String                 @map("policy_id")
+  policy          RolloutPolicy          @relation(fields: [policyId], references: [id], onDelete: Cascade)
+  rolloutPercent  Int                    @map("rollout_percent")
+  cohortKey       String                 @map("cohort_key") @db.VarChar(128)
+  startedAt       DateTime               @default(now()) @map("started_at")
+  lastEvaluatedAt DateTime?              @map("last_evaluated_at")
+  status          RolloutExecutionStatus @default(RUNNING)
+  createdAt       DateTime               @default(now()) @map("created_at")
 
   metricSnapshots RolloutMetricSnapshot[]
   decisionLogs    RolloutDecisionLog[]
@@ -37388,11 +37621,11 @@ model RolloutExecution {
 }
 
 model RolloutMetricSnapshot {
-  id           String           @id @default(cuid())
-  executionId  String           @map("execution_id")
-  execution    RolloutExecution @relation(fields: [executionId], references: [id], onDelete: Cascade)
-  timestamp    DateTime         @default(now())
-  metricsJson  Json             @map("metrics_json")
+  id          String           @id @default(cuid())
+  executionId String           @map("execution_id")
+  execution   RolloutExecution @relation(fields: [executionId], references: [id], onDelete: Cascade)
+  timestamp   DateTime         @default(now())
+  metricsJson Json             @map("metrics_json")
 
   @@index([executionId, timestamp(sort: Desc)])
   @@map("rollout_metric_snapshots")
@@ -37408,4 +37641,138 @@ model RolloutDecisionLog {
 
   @@index([executionId, createdAt(sort: Desc)])
   @@map("rollout_decision_logs")
+}
+
+// ---------------------------------------------------------------------------
+// Empire Control System — multi-company orchestration & strategic oversight.
+// ---------------------------------------------------------------------------
+
+enum EmpireEntityType {
+  HOLDING
+  OPERATING
+  INVESTMENT
+  SERVICE
+}
+
+model EmpireEntity {
+  id             String           @id @default(cuid())
+  name           String           @db.VarChar(256)
+  entityType     EmpireEntityType @map("entity_type")
+  jurisdiction   String?          @db.VarChar(128)
+  parentEntityId String?          @map("parent_entity_id")
+  isActive       Boolean          @default(true) @map("is_active")
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+
+  // Relations
+  ownershipsAsParent EmpireOwnership[] @relation("OwnershipParent")
+  ownershipsAsChild  EmpireOwnership[] @relation("OwnershipChild")
+  roles              EmpireRole[]
+
+  @@map("empire_entities")
+}
+
+model EmpireOwnership {
+  id               String       @id @default(cuid())
+  parentEntityId   String       @map("parent_entity_id")
+  parentEntity     EmpireEntity @relation("OwnershipParent", fields: [parentEntityId], references: [id], onDelete: Cascade)
+  childEntityId    String       @map("child_entity_id")
+  childEntity      EmpireEntity @relation("OwnershipChild", fields: [childEntityId], references: [id], onDelete: Cascade)
+  ownershipPercent Float        @map("ownership_percent")
+  controlNotes     String?      @map("control_notes") @db.Text
+  createdAt        DateTime     @default(now()) @map("created_at")
+
+  @@index([parentEntityId])
+  @@index([childEntityId])
+  @@map("empire_ownerships")
+}
+
+enum EmpireRoleType {
+  FOUNDER
+  MANAGER
+  BOARD
+  OPERATOR
+  ADVISOR
+}
+
+model EmpireRole {
+  id         String         @id @default(cuid())
+  entityId   String         @map("entity_id")
+  entity     EmpireEntity   @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  roleType   EmpireRoleType @map("role_type")
+  personName String         @map("person_name") @db.VarChar(256)
+  notes      String?        @db.Text
+  createdAt  DateTime       @default(now()) @map("created_at")
+
+  @@index([entityId])
+  @@map("empire_roles")
+}
+
+// ---------------------------------------------------------------------------
+// Growth Engine — autonomous hypothesis testing & funnel optimization.
+// ---------------------------------------------------------------------------
+
+enum GrowthChannel {
+  CONTENT
+  SEO
+  REFERRAL
+  EMAIL
+  LANDING
+  PRICING
+  ONBOARDING
+  PAID
+}
+
+enum GrowthExperimentStatus {
+  DRAFT
+  RUNNING
+  PAUSED
+  COMPLETED
+}
+
+model GrowthExperiment {
+  id                String                 @id @default(cuid())
+  channel           GrowthChannel
+  hypothesis        String                 @db.Text
+  targetMetric      String                 @map("target_metric") @db.VarChar(64)
+  status            GrowthExperimentStatus @default(DRAFT)
+  trafficCapPercent Int?                   @map("traffic_cap_percent")
+  requiresApproval  Boolean                @default(true) @map("requires_approval")
+  createdAt         DateTime               @default(now()) @map("created_at")
+  updatedAt         DateTime               @updatedAt @map("updated_at")
+
+  outcomes GrowthOutcome[]
+
+  @@index([channel, status])
+  @@map("growth_experiments")
+}
+
+model GrowthOutcome {
+  id             String           @id @default(cuid())
+  experimentId   String           @map("experiment_id")
+  experiment     GrowthExperiment @relation(fields: [experimentId], references: [id], onDelete: Cascade)
+  impressions    Int?             @default(0)
+  clicks         Int?             @default(0)
+  signups        Int?             @default(0)
+  activations    Int?             @default(0)
+  purchases      Int?             @default(0)
+  retentionDelta Float?           @map("retention_delta")
+  notesJson      Json?            @map("notes_json")
+  createdAt      DateTime         @default(now()) @map("created_at")
+
+  @@index([experimentId])
+  @@map("growth_outcomes")
+}
+
+model GrowthPlaybookMemory {
+  id          String        @id @default(cuid())
+  strategyKey String        @unique @map("strategy_key") @db.VarChar(128)
+  channel     GrowthChannel
+  score       Float         @default(0.5)
+  wins        Int           @default(0)
+  losses      Int           @default(0)
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  @@index([channel, score])
+  @@map("growth_playbook_memory")
 }

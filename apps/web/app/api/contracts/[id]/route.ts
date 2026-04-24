@@ -3,6 +3,7 @@ import { getGuestId } from "@/lib/auth/session";
 import { prisma } from "@repo/db";
 import { canAccessContract, getContractForAccess, resolveListingOwnerId } from "@/modules/contracts/services/access";
 import { E_SIGN_CONTRACT_TYPES } from "@/lib/hubs/contract-types";
+import { evaluateContractBrainSignatureGate } from "@/lib/legal/contract-brain-engine";
 
 export const dynamic = "force-dynamic";
 
@@ -49,6 +50,16 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
   const marketplaceSimpleSign =
     marketplaceSimpleTypes.has(c.type) && c.status === "pending" && c.userId === userId;
 
+  let baseCanSign = Boolean(pendingSig) || marketplaceSimpleSign;
+  if (baseCanSign) {
+    const brain = await evaluateContractBrainSignatureGate({
+      contractId: c.id,
+      userId,
+      contractContent: c.content,
+    });
+    baseCanSign = brain.canSign;
+  }
+
   return NextResponse.json({
     id: c.id,
     title: c.title,
@@ -69,7 +80,7 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
       isViewer: s.userId === userId || s.email.toLowerCase() === user.email.toLowerCase(),
     })),
     marketplaceSimpleSign,
-    canSign: Boolean(pendingSig) || marketplaceSimpleSign,
+    canSign: baseCanSign,
     pendingRole: pendingSig?.role ?? null,
   });
 }

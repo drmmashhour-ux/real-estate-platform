@@ -8,6 +8,7 @@ import { HostConversionInsights } from "@/components/host/HostConversionInsights
 import { HostReputationScore } from "@/components/host/HostReputationScore";
 import type { ListingConversionInsight } from "@/lib/ai/conversion/conversion-types";
 import type { HostReputationResult } from "@/lib/ai/reputation/reputation-types";
+import { HostAutopilotEvaluatePanel } from "@/components/host/HostAutopilotEvaluatePanel";
 
 export function HostDashboardHub({
   bookings,
@@ -59,10 +60,18 @@ export function HostDashboardHub({
           >
             AI Autopilot
           </Link>
+          <Link
+            href="/dashboard/host/settings/autopilot"
+            className="rounded-xl border border-slate-600 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800"
+          >
+            Autopilot settings
+          </Link>
         </div>
       </div>
 
       {conversionInsights.length > 0 ? <HostConversionInsights insights={conversionInsights} /> : null}
+
+      <HostAutopilotEvaluatePanel />
 
       {hostReputation ? <HostReputationScore data={hostReputation} /> : null}
 

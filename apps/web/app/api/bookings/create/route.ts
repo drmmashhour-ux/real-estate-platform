@@ -191,7 +191,7 @@ export async function POST(request: NextRequest) {
     void recordEvolutionOutcome({
       domain: "BOOKING",
       metricType: "BOOKING",
-      strategyKey: "conversion",
+      strategyKey: "booking_conversion",
       entityId: booking.id,
       entityType: "Booking",
       actualJson: {
@@ -202,6 +202,62 @@ export async function POST(request: NextRequest) {
       reinforceStrategy: true,
       idempotent: true,
     }).catch(() => {});
+
+    // Step 2: Pricing outcome wiring — check if dynamic pricing was used recently for this listing
+    void (async () => {
+      try {
+        const lastPricing = await prisma.bnhubPricingExecutionLog.findFirst({
+          where: { listingId, status: "success" },
+          orderBy: { createdAt: "desc" },
+          take: 1,
+        });
+
+        if (lastPricing) {
+          await recordEvolutionOutcome({
+            domain: "BNHUB",
+            metricType: "PRICING",
+            strategyKey: "dynamic_pricing",
+            entityId: booking.id, // Tie it to the booking as the outcome
+            entityType: "Booking",
+            actualJson: {
+              listingId,
+              bookingId: booking.id,
+              suggestedPrice: lastPricing.newPrice,
+              actualPrice: lastPricing.newPrice, // Booking used the applied price
+              bookingResult: "SUCCESS",
+            },
+            reinforceStrategy: true,
+            idempotent: true,
+          });
+        }
+
+        // Step 3: Conversion funnel wiring — check if user had saved this listing
+        if (guestId) {
+          const saved = await prisma.buyerSavedListing.findUnique({
+            where: { userId_fsboListingId: { userId: guestId, fsboListingId: listingId } },
+          });
+          if (saved) {
+            await recordEvolutionOutcome({
+              domain: "BNHUB",
+              metricType: "CONVERSION",
+              strategyKey: "save_to_booking",
+              entityId: booking.id,
+              entityType: "Booking",
+              actualJson: {
+                listingId,
+                userId: guestId,
+                savedAt: saved.createdAt,
+              },
+              reinforceStrategy: true,
+              idempotent: true,
+            });
+          }
+        }
+      } catch (err) {
+        // Log failures only, never block
+        console.error("[evolution:pricing] failed to record booking outcome for pricing", err);
+      }
+    })();
 
     const pay = await prisma.payment.findUnique({
       where: { bookingId: booking.id },
