@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authorizePlaybookMemoryApi } from "@/modules/playbook-memory/api/playbook-memory-authorize";
-import { recalculatePlaybookStats } from "@/modules/playbook-memory/services/playbook-memory-learning.service";
-import { runPlaybookLearningRollup } from "@/modules/playbook-memory/jobs/playbook-learning-rollup.job";
+import { recalculateAllPlaybookStats, recalculatePlaybookStats } from "@/modules/playbook-memory/services/playbook-memory-learning.service";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -24,17 +23,28 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
     if (body && typeof body === "object" && "playbookId" in body) {
-      playbookId = String((body as Record<string, unknown>).playbookId ?? "");
+      const v = (body as Record<string, unknown>).playbookId;
+      const s = typeof v === "string" ? v.trim() : v != null ? String(v) : "";
+      playbookId = s || undefined;
     }
   } catch {
-    /* empty body */
+    /* empty */
   }
 
   if (playbookId) {
-    await recalculatePlaybookStats(playbookId);
-    return NextResponse.json({ ok: true, mode: "single", playbookId });
+    const result = await recalculatePlaybookStats(playbookId);
+    if (!result.ok) {
+      return NextResponse.json({ ok: false, error: result.error, mode: "single" });
+    }
+    return NextResponse.json({ ok: true, mode: "single" as const, playbookId, result });
   }
 
-  const rollup = await runPlaybookLearningRollup();
-  return NextResponse.json({ ok: true, mode: "rollup", ...rollup });
+  const all = await recalculateAllPlaybookStats();
+  const updated = all.processed - all.failed;
+  return NextResponse.json({
+    ok: true,
+    mode: "rollup" as const,
+    updated,
+    ...all,
+  });
 }

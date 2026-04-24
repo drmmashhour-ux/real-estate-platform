@@ -42,21 +42,27 @@ If the migration history has shadow DB issues locally, align baseline per your t
 |--------|------|-------------|
 | `POST` | `/api/playbook-memory/record` | Create `PlaybookMemoryRecord` (idempotency via `idempotencyKey`). |
 | `POST` | `/api/playbook-memory/outcome` | Update outcome (`kind: "update"`) or append metric (`kind: "metric"`). |
-| `GET` | `/api/playbook-memory/recommendations?context=<JSON>` | Ranked recommendations (paused/archived never `allowed: true`). |
+| `GET` | `/api/playbook-memory/recommendations?context=<JSON>` | Ranked recommendations (query-string `context` JSON). |
+| `POST` | `/api/playbook-memory/recommendations` | Same as GET with `{ "context", "candidatePlaybookIds"?, "autonomyModeHint"? }` in body (large / structured contexts). |
 
-**Strategy playbooks** (named **`memory-strategy`** to avoid clashing with CRM `/conversion_playbooks`)
+**Strategy playbooks (MemoryPlaybook)** — two URL prefixes, same handlers and auth:
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `GET` | `/api/memory-strategy/playbooks` | List `MemoryPlaybook` rows. |
-| `POST` | `/api/memory-strategy/playbooks` | Create playbook (`key`, `name`, `domain`). |
-| `GET` | `/api/memory-strategy/playbooks/[id]` | Detail + versions. |
-| `POST` | `/api/memory-strategy/playbooks/[id]/versions` | New version (`strategyDefinition` JSON). |
-| `POST` | `/api/memory-strategy/playbooks/[id]/promote` | Body `{ "versionId" }` — activate version + set `currentVersionId`. |
-| `POST` | `/api/memory-strategy/playbooks/[id]/pause` | Set status `PAUSED`. |
-| `POST` | `/api/memory-strategy/recalculate` | Body `{ "playbookId" }` optional — single rollup, or full rollup when omitted. Accepts `CRON_SECRET` or playbook API secret / admin. |
+| `GET` / `POST` | `/api/playbooks` | List / create `MemoryPlaybook` (same as `/api/memory-strategy/playbooks`). |
+| `GET` | `/api/playbooks/[id]` | Detail + versions. |
+| `POST` | `/api/playbooks/[id]/versions` | New version. |
+| `POST` | `/api/playbooks/[id]/promote` | Body `{ "versionId" }`. |
+| `POST` | `/api/playbooks/[id]/pause` | Pause. |
+| `POST` | `/api/playbooks/recalculate` | Recalculate / rollup. |
 
-> Spec paths like `GET /api/playbooks` map to **`/api/memory-strategy/playbooks`** here.
+| Method | Path (alias) | Description |
+|--------|-------------|-------------|
+| `GET` / `POST` | `/api/memory-strategy/playbooks` | **Alias** of `/api/playbooks`. |
+| … | `/api/memory-strategy/playbooks/[id]`, `…/versions`, `…/promote`, `…/pause` | **Alias** paths. |
+| `POST` | `/api/memory-strategy/recalculate` | **Alias** of `/api/playbooks/recalculate`. |
+
+Migration folder: `prisma/migrations/20260424120000_add_playbook_memory_engine/` (baseline; resolve if your DB was created with `db push` — see `migration.sql` comment).
 
 ### Example: record decision
 
@@ -109,7 +115,7 @@ Wire to `CRON_SECRET` routes the same way as other workers under `app/api/cron/*
 
 ## Telemetry
 
-In-process counters in `playbook-memory.telemetry.ts`; structured logs use prefix **`[playbook]`** via `playbook-memory.logger.ts`.
+In-process counters in `playbook-memory.telemetry.ts` and `playbook-memory-monitoring.service.ts` (`getMonitoringSnapshot`); module logs use **`[playbook]`** via `playbook-memory.logger.ts`. The shared app logger also exposes **`logPlaybookTagged`** in `apps/web/lib/server/launch-logger.ts` for cross-cutting lines with the same tag.
 
 ## Tests
 

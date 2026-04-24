@@ -25,6 +25,12 @@ export function buildCeoContextFingerprint(context: CeoMarketSignals): string {
   // Market balance: operators vs brokers
   const marketBalance = context.operatorOnboardedLast90d > context.brokersJoinedLast90d ? "OP_HEAVY" : "BROKER_HEAVY";
 
+  // NEW: Deal pipeline health
+  const dealHealth = context.dealPipelineHealth > 0.7 ? "DEAL_HOT" : context.dealPipelineHealth > 0.3 ? "DEAL_STABLE" : "DEAL_COLD";
+
+  // NEW: ESG Activity
+  const esgActivity = context.esgActivityLevel > 0.6 ? "ESG_ACTIVE" : context.esgActivityLevel > 0.2 ? "ESG_STARTING" : "ESG_IDLE";
+
   const components = [
     funnelState,
     revenueTrend,
@@ -32,6 +38,8 @@ export function buildCeoContextFingerprint(context: CeoMarketSignals): string {
     rolloutHealth,
     demandBucket,
     marketBalance,
+    dealHealth,
+    esgActivity,
   ];
 
   // If we had ESG or Deal specific metrics in CeoMarketSignals, we would add them here.

@@ -17,7 +17,7 @@ async function main() {
     update: {},
     create: {
       id: 'lecipm_brokerage',
-      name: '9375-7649 Québec Inc.',
+      name: 'LECIPM Brokerage Inc.',
       type: 'BROKERAGE',
       jurisdiction: 'QC',
       registrationNumber: '1175764917', // Example NEQ

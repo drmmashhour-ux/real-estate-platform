@@ -1,7 +1,60 @@
 import { prisma } from "@/lib/db";
-import { CeoDecisionProposal } from "./ceo-ai.types";
+import { CeoDecision, CeoDecisionProposal } from "./ceo-ai.types";
 import { buildCeoContextFingerprint } from "./ceo-memory-context.service";
 import { mapPayloadKindToDecisionType } from "./ceo-memory.service";
+import { CeoDecision as DomainCeoDecision } from "./ceo.types";
+
+/**
+ * PHASE 5: ROUTING TO SYSTEM
+ * Routes high-level CEO decisions into specific execution systems (rollouts, agents, evolution).
+ */
+export async function routeCeoDecisions(decisions: DomainCeoDecision[]) {
+  const routedIds: string[] = [];
+
+  for (const d of decisions) {
+    // Persist the decision as a proposal
+    const row = await prisma.ceoDecision.create({
+      data: {
+        decisionType: d.decisionType,
+        domain: d.domain,
+        title: `Strategic ${d.decisionType} in ${d.domain}`,
+        summary: d.reasoning,
+        rationale: d.reasoning,
+        confidence: d.confidence,
+        status: "PROPOSED",
+        payloadJson: d.payloadJson,
+      }
+    });
+
+    // Semantic routing logic
+    if (d.domain === "MARKETING" && d.decisionType === "INVEST") {
+      // Logic to create a rollout policy for ads/campaigns
+      await prisma.seniorLivingGtmExecutionEvent.create({
+        data: {
+          eventType: "CEO_ROUTED_MARKETING_INVEST",
+          quantity: 1,
+          notes: `CEO routing: ${d.reasoning}`,
+          metadata: { decisionId: row.id, payload: d.payloadJson } as any,
+        }
+      });
+    } else if (d.domain === "DEALS" && d.decisionType === "SHIFT_FOCUS") {
+      // Logic to trigger agent task or priority shift
+      await prisma.evolutionOutcomeEvent.create({
+        data: {
+          domain: "DEALS",
+          actionKey: "CEO_PRIORITY_SHIFT",
+          success: true, // Marker for routing success
+          metadata: { decisionId: row.id, focus: d.payloadJson.focus } as any,
+        }
+      });
+    }
+
+    routedIds.push(row.id);
+    console.log(`[ceo] decision_routed: ${row.id} (${d.domain})`);
+  }
+
+  return routedIds;
+}
 
 /**
  * PHASE 9: ROUTING GUARDS

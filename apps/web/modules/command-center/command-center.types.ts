@@ -115,6 +115,26 @@ export type CommandCenterSummaryPayload = {
   generatedAt: string;
 };
 
+export type SystemPerformanceRow = {
+  label: string;
+  value: string;
+  hint?: string;
+  lane: CommandCenterStatusLane;
+};
+
+export type SystemPerformancePanelView = {
+  title: string;
+  headline: string;
+  rows: SystemPerformanceRow[];
+  wins: Array<{ id: string; title: string; detail: string; at: string }>;
+  misses: Array<{ id: string; title: string; detail: string; at: string }>;
+  seriesHint: string;
+  /** Last 7 points of daily accuracy in-window (oldest first). */
+  series: Array<{ day: string; accuracy: number | null; count: number }>;
+  learningQueue: number;
+  generatedAt: string;
+} | null;
+
 export type CommandCenterPagePayload = {
   summary: CommandCenterSummaryPayload;
   /** Raw chronological feed (auditable); prefer `intelligenceFeed` in UI. */
@@ -126,6 +146,7 @@ export type CommandCenterPagePayload = {
   signalsByZone: SignalsByZone;
   marketplaceHealth: MarketplaceHealthPayload;
   strategicRecommendations: StrategicRecommendation[];
+  systemPerformance: SystemPerformancePanelView;
   role: PlatformRole;
   viewMode: "executive" | "broker";
   generatedAt: string;

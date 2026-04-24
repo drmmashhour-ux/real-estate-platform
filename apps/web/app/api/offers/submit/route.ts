@@ -60,9 +60,19 @@ export async function POST(request: NextRequest) {
     });
   } catch (e) {
     console.error(e);
-    return Response.json(
-      { error: e instanceof Error ? e.message : "Submit offer failed" },
-      { status: 500 }
-    );
+    const msg = e instanceof Error ? e.message : "Submit offer failed";
+    if (msg.includes("OACIQ client disclosure")) {
+      return Response.json(
+        { error: msg, code: "OACIQ_CLIENT_DISCLOSURE_REQUIRED" },
+        { status: 403 }
+      );
+    }
+    if (msg.includes("responsible broker") || msg.includes("BrokerDecisionAuthority")) {
+      return Response.json(
+        { error: msg, code: "BROKER_DECISION_AUTHORITY_REQUIRED" },
+        { status: 403 }
+      );
+    }
+    return Response.json({ error: msg }, { status: 500 });
   }
 }

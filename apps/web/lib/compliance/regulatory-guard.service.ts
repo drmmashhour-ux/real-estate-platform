@@ -10,7 +10,9 @@ export type RegulatoryAction =
   | "INVEST_PRIVATE"
   | "INVEST_SIMULATION"
   | "MANAGE_PORTFOLIO"
-  | "GUARANTEE_RETURNS";
+  | "GUARANTEE_RETURNS"
+  | "MORTGAGE_BROKERAGE_EXECUTE"
+  | "MORTGAGE_LENDER_REFERRAL";
 
 /**
  * PHASE 5: ACTION VALIDATOR
@@ -27,6 +29,20 @@ export class RegulatoryGuardService {
     warning?: string;
   }> {
     const state = await this.getOrCreateRegulatoryState(userId);
+
+    // Part of Phase 2 Integration: Force state sync with User license field
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { isOaciqLicensed: true, licenseVerifiedAt: true }
+    });
+    if (user?.isOaciqLicensed && !state.isLicensedBroker) {
+      await prisma.lecipmRegulatoryState.update({
+        where: { userId },
+        data: { isLicensedBroker: true, canOperateBrokerage: true }
+      });
+      state.isLicensedBroker = true;
+      state.canOperateBrokerage = true;
+    }
 
     let allowed = false;
     let reason = "Unknown action";
@@ -79,6 +95,26 @@ export class RegulatoryGuardService {
 
       case "INVEST_SIMULATION":
         allowed = true; // Always allowed
+        break;
+
+      case "MORTGAGE_BROKERAGE_EXECUTE":
+        // Part E.3: require proper AMF-side mortgage certification path
+        const brokerProfile = await prisma.lecipmBrokerLicenceProfile.findUnique({
+          where: { userId },
+        });
+        if (brokerProfile?.mortgageLicenceCertified) {
+          allowed = true;
+        } else {
+          allowed = false;
+          reason = "Mortgage brokerage requires specific AMF certification path.";
+          warning = "AMF mortgage certification required";
+        }
+        break;
+
+      case "MORTGAGE_LENDER_REFERRAL":
+        // simple lender referrals allowed where compensation is not contingent on loan closing
+        allowed = true;
+        warning = "Compensation must not be contingent on loan closing for non-certified referrals.";
         break;
 
       default:

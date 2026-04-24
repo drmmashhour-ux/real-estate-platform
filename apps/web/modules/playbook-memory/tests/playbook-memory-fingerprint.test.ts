@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildFingerprint,
+  buildLeadsEntryMarketKey,
+  buildLeadsEntrySegmentKey,
   buildSegmentKey,
   buildSimilarityFingerprint,
   stableStringify,
@@ -41,5 +44,13 @@ describe("playbook-memory-fingerprint", () => {
     };
     expect(buildSegmentKey(c)).toContain("buyer");
     expect(buildSegmentKey(c)).toContain("500k-700k");
+  });
+
+  it("buildFingerprint is stable and entry keys match k:v|… form", () => {
+    const ctx1 = { domain: "LEADS", market: { city: "mtl", country: "ca" } };
+    const ctx2 = { market: { country: "ca", city: "mtl" }, domain: "LEADS" };
+    expect(buildFingerprint(ctx1)).toBe(buildFingerprint(ctx2));
+    expect(buildLeadsEntryMarketKey(ctx1)).toBe("city:mtl|country:ca");
+    expect(buildLeadsEntrySegmentKey({ segment: { a: 1, z: 2 } })).toBe("a:1|z:2");
   });
 });

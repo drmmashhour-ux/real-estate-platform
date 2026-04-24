@@ -1,6 +1,13 @@
 import { prisma } from "@/lib/db";
 import { assertCoownershipEnforcementAllows } from "@/services/compliance/coownershipCompliance.service";
 import { assertAutopilotOutboundAllowed } from "@/lib/signature-control/autopilot-guard";
+import { assertBrokerApprovedOfferSubmission } from "@/lib/compliance/oaciq/broker-decision-authority";
+import {
+  assertOaciqClientDisclosureAck,
+  getOaciqDisclosureBundleForTransaction,
+  mergePropertyOfferConditionsWithOaciq,
+  oaciqClientDisclosureEnforcementEnabled,
+} from "@/lib/compliance/oaciq/client-disclosure";
 import { recordTransactionEvent } from "./events";
 import type { OfferStatus, TransactionStatus } from "./constants";
 import { BrokerActionGuard } from "@/lib/compliance/broker-action-guard";
@@ -23,18 +30,37 @@ export async function submitOffer(input: SubmitOfferInput): Promise<{ offerId: s
 
   const tx = await prisma.realEstateTransaction.findUnique({
     where: { id: input.transactionId },
-    select: { id: true, buyerId: true, status: true },
+    select: { id: true, buyerId: true, brokerId: true, listingId: true, status: true },
   });
   if (!tx) throw new Error("Transaction not found");
   if (tx.buyerId !== input.buyerId) throw new Error("Only the buyer can submit offers");
   if (["completed", "cancelled"].includes(tx.status)) throw new Error("Transaction is no longer active");
+
+  if (tx.brokerId) {
+    await assertBrokerApprovedOfferSubmission({
+      responsibleBrokerId: tx.brokerId,
+      realEstateTransactionId: input.transactionId,
+      listingId: tx.listingId ?? null,
+    });
+  }
+
+  if (oaciqClientDisclosureEnforcementEnabled()) {
+    await assertOaciqClientDisclosureAck({
+      transactionId: input.transactionId,
+      userId: input.buyerId,
+      flow: "OFFER_SUBMIT",
+    });
+  }
+
+  const oaciqBundle = await getOaciqDisclosureBundleForTransaction(input.transactionId);
+  const conditionsPayload = mergePropertyOfferConditionsWithOaciq(input.conditions ?? null, oaciqBundle);
 
   const offer = await prisma.propertyOffer.create({
     data: {
       transactionId: input.transactionId,
       buyerId: input.buyerId,
       offerPrice: input.offerPrice,
-      conditions: input.conditions ? (input.conditions as object) : undefined,
+      conditions: conditionsPayload as object,
       expirationDate: input.expirationDate ?? undefined,
       status: "pending",
     },

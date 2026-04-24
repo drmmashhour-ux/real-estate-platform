@@ -1,6 +1,12 @@
 import { authenticateBrokerDealRoute } from "@/lib/deals/broker-draft-auth";
 import { requireNegotiationCopilotV1 } from "@/lib/deals/payments-negotiation-feature-guard";
 import { updateNegotiationStrategyBroker } from "@/modules/deal/negotiation-strategy.service";
+import {
+  assertBrokerDecisionConfirmation,
+  assertLegallyBindingCallerNotAutomated,
+  brokerDecisionAuthorityEnforced,
+  recordOaciqBrokerDecision,
+} from "@/lib/compliance/oaciq/broker-decision-authority";
 
 export const dynamic = "force-dynamic";
 
@@ -36,6 +42,14 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
   }
 
   try {
+    if (
+      brokerDecisionAuthorityEnforced() &&
+      (workflowStatus === "BROKER_SELECTED" || workflowStatus === "BROKER_APPROVED_TO_SEND")
+    ) {
+      assertLegallyBindingCallerNotAutomated(body);
+      assertBrokerDecisionConfirmation(body);
+    }
+
     const row = await updateNegotiationStrategyBroker({
       dealId,
       strategyId,
@@ -44,6 +58,24 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       suggestedPrice: typeof body.suggestedPrice === "number" ? body.suggestedPrice : undefined,
       conditionChangesJson: body.conditionChangesJson,
     });
+
+    if (
+      brokerDecisionAuthorityEnforced() &&
+      (workflowStatus === "BROKER_SELECTED" || workflowStatus === "BROKER_APPROVED_TO_SEND")
+    ) {
+      const responsibleBrokerId = auth.deal.brokerId ?? auth.userId;
+      await recordOaciqBrokerDecision({
+        responsibleBrokerId,
+        decisionType: "NEGOTIATION_STEP",
+        confirmedByUserId: auth.userId,
+        scope: {
+          crmDealId: dealId,
+          negotiationStrategyId: strategyId,
+          metadata: { workflowStatus },
+        },
+      });
+    }
+
     return Response.json({ ok: true, disclaimer: NEGOTIATION_AI_DISCLAIMER, strategy: row });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Update failed";

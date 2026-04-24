@@ -1,0 +1,32 @@
+import { NextResponse } from "next/server";
+
+import { requireMobileAdmin } from "@/modules/auth/mobile-auth";
+import { prisma } from "@repo/db";
+
+export const dynamic = "force-dynamic";
+
+export async function GET(request: Request) {
+  try {
+    const u = await requireMobileAdmin(request);
+    const rows = await prisma.lecipmScenarioAutopilotRun.findMany({
+      where: {
+        userId: u.id,
+        status: { in: ["READY_FOR_REVIEW", "GENERATED", "APPROVED"] },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 20,
+    });
+    return NextResponse.json({
+      pending: rows.map((r) => ({
+        id: r.id,
+        status: r.status,
+        bestCandidateId: r.bestCandidateId,
+        createdAt: r.createdAt.toISOString(),
+        rankingRationale: r.rankingRationale,
+      })),
+    });
+  } catch (e) {
+    const status = (e as Error & { status?: number })?.status ?? 500;
+    return NextResponse.json({ error: (e as Error).message }, { status });
+  }
+}

@@ -24,6 +24,19 @@ import { maybeBlockRequestWithLegalGate } from "@/modules/legal/legal-api-gate";
 import { maybeBlockOfferForDeclaration } from "@/modules/offers/services/offer-declaration-gate";
 import { assertComplianceReviewApprovedIfRequired } from "@/lib/contracts/compliance-review-service";
 import { enforceComplianceAction } from "@/lib/compliance/enforce-compliance-action";
+import {
+  assertOaciqClientDisclosureAck,
+  findRealEstateTransactionIdForListingOffer,
+  formatOaciqDisclosurePlainText,
+  getOaciqDisclosureBundleForTransaction,
+  oaciqClientDisclosureEnforcementEnabled,
+} from "@/lib/compliance/oaciq/client-disclosure";
+import {
+  assertBrokerApprovedOfferSubmission,
+  assertLegallyBindingCallerNotAutomated,
+  brokerDecisionAuthorityEnforced,
+  resolveResponsibleBrokerIdForCrmListing,
+} from "@/lib/compliance/oaciq/broker-decision-authority";
 
 const DEMO_OFFER_LISTING_IDS = new Set(["1", "test-listing-1", "demo-listing-montreal"]);
 
@@ -161,6 +174,68 @@ export async function POST(request: NextRequest) {
 
   const scenario = parseScenario(body.scenario);
 
+  const linkedTxId = await findRealEstateTransactionIdForListingOffer({
+    listingId,
+    buyerId: userId,
+  });
+
+  if (brokerDecisionAuthorityEnforced()) {
+    try {
+      assertLegallyBindingCallerNotAutomated(body);
+      if (linkedTxId) {
+        const txRow = await prisma.realEstateTransaction.findUnique({
+          where: { id: linkedTxId },
+          select: { brokerId: true },
+        });
+        if (txRow?.brokerId) {
+          await assertBrokerApprovedOfferSubmission({
+            responsibleBrokerId: txRow.brokerId,
+            realEstateTransactionId: linkedTxId,
+            listingId,
+          });
+        }
+      } else {
+        const brokerId = await resolveResponsibleBrokerIdForCrmListing(listingId);
+        if (brokerId) {
+          await assertBrokerApprovedOfferSubmission({
+            responsibleBrokerId: brokerId,
+            listingId,
+          });
+        }
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Broker approval required";
+      return NextResponse.json(
+        { error: msg, code: "BROKER_DECISION_AUTHORITY_REQUIRED" },
+        { status: 403 }
+      );
+    }
+  }
+
+  if (linkedTxId && oaciqClientDisclosureEnforcementEnabled()) {
+    try {
+      await assertOaciqClientDisclosureAck({
+        transactionId: linkedTxId,
+        userId,
+        flow: "OFFER_SUBMIT",
+      });
+    } catch (e) {
+      return NextResponse.json(
+        {
+          error: e instanceof Error ? e.message : "OACIQ disclosure required",
+          code: "OACIQ_CLIENT_DISCLOSURE_REQUIRED",
+        },
+        { status: 403 }
+      );
+    }
+  }
+  let conditionsOut = cond.value;
+  if (linkedTxId) {
+    const bundle = await getOaciqDisclosureBundleForTransaction(linkedTxId);
+    const appendix = formatOaciqDisclosurePlainText(bundle);
+    conditionsOut = conditionsOut ? `${conditionsOut}\n\n${appendix}` : appendix;
+  }
+
   const data: Prisma.OfferCreateInput = {
     listingId,
     buyer: { connect: { id: userId } },
@@ -169,7 +244,7 @@ export async function POST(request: NextRequest) {
     downPaymentAmount: down ?? null,
     financingNeeded: financing ?? null,
     closingDate: closing.value,
-    conditions: cond.value,
+    conditions: conditionsOut,
     message: msg.value,
     ...(scenario !== undefined ? { scenario } : {}),
   };

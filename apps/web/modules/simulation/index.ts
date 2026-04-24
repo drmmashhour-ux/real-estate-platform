@@ -1,10 +1,6 @@
-export {
-  simulateFirstTenUsers,
-  type UserSimulation,
-  type SimulationStep,
-  type UserPersonaId,
-  type FirstUsersSimulationAggregate,
-  type FunnelEvent,
-} from "./first-users";
-export { buildLaunchOptimizationRecommendations, type OptimizationRecommendation } from "./launch-optimization";
-export { runFirstLaunchSimulationReport, type FirstLaunchSimulationReport } from "./first-launch-report";
+export * from "./simulation.types";
+export { parseScenarioInput } from "./simulation-input";
+export { runWhatIfSimulation } from "./simulation.engine";
+export { loadSimulationBaseline } from "./simulation-baseline.service";
+export { listScenarios, createScenario, updateScenario, deleteScenario } from "./simulation-scenarios.service";
+export { simulationLog } from "./simulation-log";

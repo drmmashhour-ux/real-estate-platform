@@ -133,6 +133,41 @@ export default async function InvestorDashboardPage({
           <InvestorCompanyDashboardClient locale={locale} country={country} />
         : null}
         <HubJourneyBanner hub="investor" locale={locale} country={country} userId={userId} />
+
+        {/* PART 11: GLOBAL REGULATORY DISCLOSURE */}
+        <div className="rounded-xl border border-blue-500/30 bg-blue-500/10 p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white shadow-lg">AMF</span>
+              <div>
+                <p className="text-sm font-bold text-white">Québec Regulatory Alignment: Simulation Mode Active</p>
+                <p className="text-xs text-blue-200/80 mt-0.5">
+                  This platform is operated in <strong>Simulation Mode</strong>. All financial projections, ROI estimates, and capital allocations are for educational purposes only.
+                </p>
+              </div>
+            </div>
+            <div className="hidden sm:block">
+              <span className="rounded-full bg-blue-600/20 px-2.5 py-1 text-[10px] font-bold text-blue-400 uppercase tracking-widest border border-blue-400/30">
+                Not Financial Advice
+              </span>
+            </div>
+          </div>
+          <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3 border-t border-blue-500/20 pt-3">
+            <div className="flex items-start gap-2">
+              <span className="text-blue-400 text-xs">⚖️</span>
+              <p className="text-[10px] text-blue-300/70 italic">Separation: Brokerage (OACIQ) vs. Investment (AMF) strictly enforced by domain.</p>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-blue-400 text-xs">🛡️</span>
+              <p className="text-[10px] text-blue-300/70 italic">Investor Protection: Risk disclosures and suitability checks required for all simulated actions.</p>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-blue-400 text-xs">📋</span>
+              <p className="text-[10px] text-blue-300/70 italic">Audit: Every AI-driven reasoning step is logged for regulatory end-to-end traceability.</p>
+            </div>
+          </div>
+        </div>
+
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="text-xs uppercase tracking-wider text-premium-gold">Portfolio workspace</p>

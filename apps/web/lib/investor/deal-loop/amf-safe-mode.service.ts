@@ -40,11 +40,19 @@ export class AmfSafeModeService {
     const policy = await this.getPolicy();
     const deal = await prisma.amfCapitalDeal.findUnique({
       where: { id: dealId },
+      include: { corporateEntity: true }
     });
 
     if (!deal) throw new Error("Deal not found.");
 
+    // Part C.2: Until AMF-side registration/exemption structure is complete, keep in SIMULATION mode
+    const isRegistered = deal.corporateEntity?.regulator === "AMF" && deal.corporateEntity?.registrationNumber;
+
     const triggers: string[] = [];
+
+    if (!isRegistered) {
+      triggers.push("legal entity not AMF-registered");
+    }
 
     if (deal.investorCount >= policy.maxInvestorsPerDeal) {
       triggers.push("investor count limit reached");
@@ -62,11 +70,12 @@ export class AmfSafeModeService {
     if (triggers.length > 0) {
       return {
         compliant: false,
-        warning: "AMF registration required",
+        warning: "AMF registration required. Enforcing SIMULATION mode.",
         reasons: triggers,
+        simulationForced: true,
       };
     }
 
-    return { compliant: true };
+    return { compliant: true, simulationForced: false };
   }
 }

@@ -6,6 +6,7 @@ import { PlatformLegalGate } from "@/components/legal/PlatformLegalGate";
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
 import { getPlatformLegalGateStatus } from "@/lib/legal/platform-legal-status";
 import { BrokerAssistantFloating } from "@/components/assistant/BrokerAssistantFloating";
+import { BrokerageOaciqDisclaimer } from "@/components/compliance/BrokerageOaciqDisclaimer";
 import { OnboardingGate } from "@/src/modules/onboarding/OnboardingGate";
 
 export const dynamic = "force-dynamic";
@@ -31,6 +32,11 @@ export default async function DashboardSectionLayout({ children }: { children: R
         needsPlatformIntermediary={legal.needsPlatformIntermediary}
         needsBrokerCollaboration={legal.needsBrokerCollaboration}
       >
+        {showGuide ? (
+          <div className="mx-auto w-full max-w-6xl px-4 pt-4">
+            <BrokerageOaciqDisclaimer />
+          </div>
+        ) : null}
         {children}
       </PlatformLegalGate>
     </OnboardingGate>

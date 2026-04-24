@@ -9,6 +9,8 @@ type Props = {
   fsboListingId?: string;
   /** Generic listing id (buyer offer, short-term stay). */
   listingId?: string;
+  /** When set, mandatory OACIQ client disclosures apply before sign (if `LECIPM_OACIQ_CLIENT_DISCLOSURE_ENFORCEMENT=1`). */
+  transactionId?: string;
   onSuccess?: (contractId: string) => void;
   className?: string;
 };
@@ -16,7 +18,17 @@ type Props = {
 /**
  * E-sign style capture: show text, require checkbox + typed legal name; optional drawn signature (data URL).
  */
-export function ContractSign({ kind, fsboListingId, listingId, onSuccess, className = "" }: Props) {
+const OACIQ_ACK =
+  "I acknowledge the broker's role and disclosures";
+
+export function ContractSign({
+  kind,
+  fsboListingId,
+  listingId,
+  transactionId,
+  onSuccess,
+  className = "",
+}: Props) {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [version, setVersion] = useState("");
@@ -26,6 +38,16 @@ export function ContractSign({ kind, fsboListingId, listingId, onSuccess, classN
   const [signatureData, setSignatureData] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [oaciqLoading, setOaciqLoading] = useState(false);
+  const [oaciqEnforcement, setOaciqEnforcement] = useState(false);
+  const [oaciqBundle, setOaciqBundle] = useState<{
+    brokerStatus: { title: string; body: string };
+    conflict: { title: string; body: string };
+    financialInterest: { title: string; body: string };
+    conflictAlertText: string | null;
+  } | null>(null);
+  const [oaciqAck, setOaciqAck] = useState(false);
+  const [oaciqAckFreshFromServer, setOaciqAckFreshFromServer] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawing = useRef(false);
 
@@ -114,10 +136,66 @@ export function ContractSign({ kind, fsboListingId, listingId, onSuccess, classN
     };
   }, [kind]);
 
+  useEffect(() => {
+    if (!transactionId) {
+      setOaciqBundle(null);
+      setOaciqEnforcement(false);
+      return;
+    }
+    let cancelled = false;
+    setOaciqLoading(true);
+    const q = new URLSearchParams({ transactionId, flow: "CONTRACT_SIGN" });
+    void fetch(`/api/compliance/oaciq/client-disclosure?${q.toString()}`, { credentials: "same-origin" })
+      .then((r) => r.json())
+      .then((j) => {
+        if (cancelled) return;
+        if (j.bundle && typeof j.bundle === "object") {
+          setOaciqBundle(j.bundle);
+          setOaciqEnforcement(j.enforcementEnabled === true);
+          if (j.ackValid === true) setOaciqAck(true);
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setOaciqLoading(false);
+      });
+
+    void fetch("/api/compliance/oaciq/client-disclosure/shown", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ transactionId, flow: "CONTRACT_SIGN" }),
+    }).catch(() => undefined);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [transactionId]);
+
   async function submit() {
     setBusy(true);
     setErr(null);
     try {
+      if (transactionId && oaciqEnforcement && !oaciqAck) {
+        throw new Error("Confirm OACIQ disclosures before signing.");
+      }
+      if (transactionId && oaciqEnforcement && oaciqAck && !oaciqAckFreshFromServer) {
+        const ar = await fetch("/api/compliance/oaciq/client-disclosure/accept", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            transactionId,
+            flow: "CONTRACT_SIGN",
+            acknowledgeBrokerDisclosures: true,
+          }),
+        });
+        const aj = await ar.json().catch(() => ({}));
+        if (!ar.ok) {
+          throw new Error(typeof aj.error === "string" ? aj.error : "Disclosure acknowledgment failed");
+        }
+      }
+
       const r = await fetch("/api/legal/enforceable-contract/sign", {
         method: "POST",
         credentials: "same-origin",
@@ -128,6 +206,7 @@ export function ContractSign({ kind, fsboListingId, listingId, onSuccess, classN
           signerName,
           fsboListingId: fsboListingId ?? undefined,
           listingId: listingId ?? undefined,
+          transactionId: transactionId ?? undefined,
           signatureData: signatureData ?? undefined,
         }),
       });
@@ -235,7 +314,12 @@ export function ContractSign({ kind, fsboListingId, listingId, onSuccess, classN
 
           <button
             type="button"
-            disabled={busy || !agree || signerName.trim().length < 2}
+            disabled={
+              busy ||
+              !agree ||
+              signerName.trim().length < 2 ||
+              (Boolean(transactionId) && oaciqEnforcement && !oaciqAck)
+            }
             onClick={() => void submit()}
             className="mt-4 w-full rounded-xl bg-premium-gold py-3 text-sm font-bold text-black disabled:opacity-40"
           >

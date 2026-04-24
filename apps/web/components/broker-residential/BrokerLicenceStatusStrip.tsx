@@ -1,4 +1,5 @@
 import type { BrokerLicenceEvaluation } from "@/lib/compliance/oaciq/broker-licence-service";
+import { OACIQ_LICENCE_BROKER_DECLARATION, OACIQ_LICENCE_PLATFORM_PRINCIPLES } from "@/modules/compliance/oaciq/licence-declarations";
 
 export function BrokerLicenceStatusStrip({ licence }: { licence: BrokerLicenceEvaluation | null }) {
   if (!licence) return null;
@@ -18,6 +19,8 @@ export function BrokerLicenceStatusStrip({ licence }: { licence: BrokerLicenceEv
         {icon} OACIQ licence (residential){" "}
         <span className="text-xs font-normal opacity-90">— {licence.label}</span>
       </p>
+      <p className="mt-2 text-[11px] leading-relaxed opacity-90">{OACIQ_LICENCE_BROKER_DECLARATION.en}</p>
+      <p className="mt-1 text-[10px] leading-relaxed opacity-75">{OACIQ_LICENCE_PLATFORM_PRINCIPLES.en}</p>
       {licence.warnings.length > 0 ? (
         <ul className="mt-2 list-inside list-disc text-xs opacity-95">
           {licence.warnings.map((w) => (

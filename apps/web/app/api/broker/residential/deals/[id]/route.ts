@@ -5,6 +5,7 @@ import { requireBrokerDealAccess, requireBrokerResidentialSession } from "@/lib/
 import { canMutateExecution } from "@/lib/deals/execution-access";
 import { logDealExecutionEvent } from "@/lib/deals/execution-events";
 import { runResidentialDealWorkspaceEngine } from "@/modules/broker-residential-copilot/broker-residential-copilot.engine";
+import { conflictDisclosureEnforced, refreshDealConflictComplianceState } from "@/lib/compliance/conflict-deal-compliance.service";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +17,7 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
   const deal = await requireBrokerDealAccess(session.userId, id, session.role === "ADMIN");
   if (!deal) return Response.json({ error: "Not found" }, { status: 404 });
 
-  const full = await prisma.deal.findUnique({
+  let full = await prisma.deal.findUnique({
     where: { id: deal.id },
     include: {
       buyer: { select: { id: true, name: true, email: true } },
@@ -27,6 +28,21 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
     },
   });
   if (!full) return Response.json({ error: "Not found" }, { status: 404 });
+
+  if (conflictDisclosureEnforced()) {
+    await refreshDealConflictComplianceState(full.id);
+    const again = await prisma.deal.findUnique({
+      where: { id: deal.id },
+      include: {
+        buyer: { select: { id: true, name: true, email: true } },
+        seller: { select: { id: true, name: true, email: true } },
+        documents: { orderBy: { createdAt: "desc" }, take: 40 },
+        dealParties: true,
+        milestones: true,
+      },
+    });
+    if (again) full = again;
+  }
 
   const workspace = await runResidentialDealWorkspaceEngine(full);
 
@@ -78,7 +94,7 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
     return Response.json({ error: "No updatable fields" }, { status: 400 });
   }
 
-  const updated = await prisma.deal.update({
+  let updated = await prisma.deal.update({
     where: { id: deal.id },
     data,
     include: {
@@ -89,6 +105,21 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
       milestones: true,
     },
   });
+
+  if (conflictDisclosureEnforced()) {
+    await refreshDealConflictComplianceState(updated.id);
+    const again = await prisma.deal.findUnique({
+      where: { id: deal.id },
+      include: {
+        buyer: { select: { id: true, name: true, email: true } },
+        seller: { select: { id: true, name: true, email: true } },
+        documents: { orderBy: { createdAt: "desc" }, take: 20 },
+        dealParties: true,
+        milestones: true,
+      },
+    });
+    if (again) updated = again;
+  }
 
   void logDealExecutionEvent({
     eventType: "form_package_selected",

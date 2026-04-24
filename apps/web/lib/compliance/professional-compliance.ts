@@ -6,13 +6,14 @@
 import { prisma } from "@/lib/db";
 import type { ListingAuthorityType } from "@prisma/client";
 import { getOwnerVerificationStatus } from "@/lib/bnhub/mandatory-verification";
+import { ComplianceLicenseService } from "./compliance-license.service";
 
 export type ComplianceResult = { ok: boolean; reasons: string[] };
 
 /** Platform broker license + admin verification (BrokerVerification record). */
 export async function getBrokerProfessionalCompliance(userId: string): Promise<ComplianceResult> {
   const reasons: string[] = [];
-  const [user, bv] = await Promise.all([
+  const [user, bv, license] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
       select: { brokerStatus: true, accountStatus: true },
@@ -21,6 +22,7 @@ export async function getBrokerProfessionalCompliance(userId: string): Promise<C
       where: { userId },
       select: { verificationStatus: true },
     }),
+    ComplianceLicenseService.validateBrokerLicense(userId),
   ]);
 
   if (user?.accountStatus !== "ACTIVE") {
@@ -31,6 +33,9 @@ export async function getBrokerProfessionalCompliance(userId: string): Promise<C
   }
   if (bv?.verificationStatus !== "VERIFIED") {
     reasons.push("Broker verification (license review) must be approved");
+  }
+  if (!license.valid) {
+    reasons.push(license.reason || "Valid OACIQ license required for brokerage actions.");
   }
 
   return { ok: reasons.length === 0, reasons };

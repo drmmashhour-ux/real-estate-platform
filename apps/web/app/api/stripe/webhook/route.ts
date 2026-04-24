@@ -881,6 +881,16 @@ export async function POST(req: NextRequest) {
     amountTotal: session.amount_total ?? 0,
     paymentType: session.metadata?.paymentType ?? null,
     stripeEventId: event.id,
+    outcomeHint: {
+      capture: true,
+      entityType: "payment" as const,
+      entityId: session.id,
+      actionTaken: "checkout_fulfillment",
+      predictedOutcome: { expectedPaymentStatus: "paid" },
+      actualOutcome: { paymentStatus: session.payment_status },
+      source: "log_hook" as const,
+      contextUserId: typeof session.metadata?.userId === "string" ? session.metadata.userId : undefined,
+    },
   });
   logInfo(
     `[STRIPE] webhook_received: type=${event.type} sessionId=${session.id} paymentStatus=${session.payment_status} amountTotal=${session.amount_total ?? 0} paymentType=${session.metadata?.paymentType ?? "n/a"} stripeEventId=${event.id}`

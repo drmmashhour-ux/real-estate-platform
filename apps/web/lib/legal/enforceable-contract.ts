@@ -2,6 +2,13 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import type { EnforceableContractType } from "@/lib/legal/enforceable-contract-types";
 import { ENFORCEABLE_CONTRACT_TYPES } from "@/lib/legal/enforceable-contract-types";
+import {
+  assertOaciqClientDisclosureAck,
+  formatOaciqDisclosurePlainText,
+  getOaciqDisclosureBundleForTransaction,
+  oaciqClientDisclosureEnforcementEnabled,
+} from "@/lib/compliance/oaciq/client-disclosure";
+import { assertBrokerApprovedContractSign } from "@/lib/compliance/oaciq/broker-decision-authority";
 
 function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -47,14 +54,47 @@ export async function createSignedEnforceableContract(params: {
   title: string;
   fsboListingId?: string | null;
   listingId?: string | null;
+  /** When set, OACIQ client disclosure is enforced (if enabled) and appended to the stored agreement. */
+  realEstateTransactionId?: string | null;
   ipAddress: string | null;
   signatureData?: string | null;
 }): Promise<{ id: string }> {
-  const html = `<pre style="white-space:pre-wrap;font-family:system-ui,sans-serif">${escapeHtml(params.contentText)}</pre>`;
+  let contentText = params.contentText;
+  if (params.realEstateTransactionId) {
+    const rtx = await prisma.realEstateTransaction.findUnique({
+      where: { id: params.realEstateTransactionId },
+      select: { buyerId: true, sellerId: true, brokerId: true },
+    });
+    if (rtx?.brokerId) {
+      const party = rtx.buyerId === params.userId || rtx.sellerId === params.userId;
+      const isBrokerSigner = rtx.brokerId === params.userId;
+      if (party && !isBrokerSigner) {
+        await assertBrokerApprovedContractSign({
+          responsibleBrokerId: rtx.brokerId,
+          realEstateTransactionId: params.realEstateTransactionId,
+        });
+      }
+    }
+
+    if (oaciqClientDisclosureEnforcementEnabled()) {
+      await assertOaciqClientDisclosureAck({
+        transactionId: params.realEstateTransactionId,
+        userId: params.userId,
+        flow: "CONTRACT_SIGN",
+      });
+    }
+    const bundle = await getOaciqDisclosureBundleForTransaction(params.realEstateTransactionId);
+    contentText = `${contentText}\n\n---\n${formatOaciqDisclosurePlainText(bundle)}`;
+  }
+
+  const html = `<pre style="white-space:pre-wrap;font-family:system-ui,sans-serif">${escapeHtml(contentText)}</pre>`;
   const meta: Prisma.InputJsonValue = {
     enforceable: true,
     version: params.version,
     signedName: params.name,
+    ...(params.realEstateTransactionId
+      ? { oaciqRealEstateTransactionId: params.realEstateTransactionId }
+      : {}),
   };
 
   const contract = await prisma.$transaction(async (tx) => {
@@ -63,7 +103,7 @@ export async function createSignedEnforceableContract(params: {
         type: params.contractType,
         userId: params.userId,
         title: params.title,
-        contentText: params.contentText,
+        contentText,
         contentHtml: html,
         version: params.version,
         fsboListingId: params.fsboListingId ?? undefined,

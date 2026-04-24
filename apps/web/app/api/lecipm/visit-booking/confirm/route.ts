@@ -3,6 +3,7 @@ import { assertVisitBookingAccess } from "@/lib/lecipm/visit-booking-access";
 import { confirmVisitBooking } from "@/modules/booking-system/booking-engine.service";
 import { prisma } from "@/lib/db";
 import { sendAdminHighValueAlert } from "@/modules/booking-system/booking-notification.service";
+import { recordOutcome } from "@/modules/outcomes/outcome.service";
 import type { LecipmVisitSourceTag } from "@/modules/booking-system/booking.types";
 
 export const dynamic = "force-dynamic";
@@ -52,6 +53,20 @@ export async function POST(request: Request) {
     where: { id: req.leadId },
     select: { estimatedValue: true, name: true },
   });
+
+  if (out.visitId) {
+    void recordOutcome({
+      entityType: "booking",
+      entityId: out.visitId,
+      actionTaken: "booking_confirmed",
+      predictedOutcome: { pAttend: 0.86 },
+      actualOutcome: { confirmed: true, source },
+      source: "system",
+      contextUserId: userId,
+    }).then((r) => {
+      if (!r.ok) console.error("[lecipm][outcome] booking confirm record failed", r);
+    });
+  }
   const highValue = (lead?.estimatedValue ?? 0) >= 1_000_000;
   const adminEmail = process.env.LECIPM_PLATFORM_ALERTS_EMAIL;
   if (highValue && adminEmail) {

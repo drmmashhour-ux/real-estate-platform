@@ -16,8 +16,22 @@ export const LECIPM_LICENCE_RULE_ENGINE: OaciqRuleEngineBundle = {
     "allow_ai_to_execute_legal_actions",
     "allow_out_of_scope_transaction",
   ],
-  /** Required + forbidden flags cover licence, scope, and broker assignment; avoids dead `manual_review` gates. */
-  conditionalChecks: [],
+  /**
+   * Mirrors playbook conditional gates — context keys come from `buildOaciqLicenceContext`.
+   * When licence compound flag is false, require explicit supervisory acknowledgement (broker UI).
+   */
+  conditionalChecks: [
+    {
+      id: "licence_not_compound_active",
+      when: { field: "is_licence_active", equals: false },
+      thenRequire: ["manual_regulator_review_completed"],
+    },
+    {
+      id: "scope_not_residential",
+      when: { field: "is_residential_scope_valid", equals: false },
+      thenRequire: ["manual_regulator_review_completed"],
+    },
+  ],
 };
 
 /** AI-facing copy — assistant only; broker remains liable. */

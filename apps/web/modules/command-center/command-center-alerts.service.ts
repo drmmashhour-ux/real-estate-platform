@@ -5,6 +5,8 @@ import { isExecutiveCommandCenter } from "./command-center.types";
 
 import { prisma } from "@repo/db";
 
+import { getLecipmOutcomesSummary } from "@/modules/outcomes/outcome.service";
+
 export async function loadCommandCenterAlerts(userId: string, role: PlatformRole): Promise<AlertApprovalRow[]> {
   const [trustHigh, ceo, disputesUrgent] = await Promise.all([
     prisma.lecipmOperationalTrustAlert.findMany({
@@ -70,6 +72,24 @@ export async function loadCommandCenterAlerts(userId: string, role: PlatformRole
       href: `/dashboard/disputes/${d.id}`,
       createdAt: d.createdAt.toISOString(),
     });
+  }
+
+  if (isExecutiveCommandCenter(role)) {
+    try {
+      const o = await getLecipmOutcomesSummary(30, { includeLearning: false, comparePriorWindow: true });
+      for (const a of o.alerts) {
+        rows.push({
+          id: `outcome:${a.id}`,
+          kind: "System performance",
+          title: a.title,
+          severity: a.severity,
+          href: "/dashboard/lecipm",
+          createdAt: new Date().toISOString(),
+        });
+      }
+    } catch (e) {
+      console.error("[lecipm][outcome] alert merge failed", e instanceof Error ? e.message : e);
+    }
   }
 
   rows.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());

@@ -36,6 +36,9 @@ export function runUnderwriting(input: UnderwritingInput): UnderwritingResult {
     roi: finite(roi),
     capRate: finite(capRate),
     breakEvenOccupancy: Math.min(1, Math.max(0, finite(breakEvenOccupancy))),
+    reasoning: `Deterministic model-based projection. ROI is ${roi.toFixed(2)}% based on annual revenue of $${annualRevenue.toLocaleString()} and costs of $${annualCost.toLocaleString()}.`,
+    confidence: 0.85, // High confidence for deterministic models
+    disclaimer: "AI-PROJECTION-DISCLAIMER: Projections are for informational purposes only and do not constitute financial advice.",
     methodologyNote:
       "Revenue uses your ADR × occupancy × 30 (nights) as a static monthly proxy. Excludes taxes, platform fees, seasonality, and debt service unless you extend the model.",
   };

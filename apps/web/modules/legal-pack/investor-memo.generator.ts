@@ -1,0 +1,35 @@
+import { LEGAL_PACK_DISCLAIMERS, LEGAL_PACK_VERSION, type InvestorMemoFields } from "./legal-pack.templates";
+
+export function generateInvestorMemoMarkdown(fields: InvestorMemoFields): string {
+  return [
+    `# Investor memo / offering summary (template v${LEGAL_PACK_VERSION})`,
+    "",
+    LEGAL_PACK_DISCLAIMERS.notAdvice,
+    "",
+    LEGAL_PACK_DISCLAIMERS.noGuarantee,
+    "",
+    LEGAL_PACK_DISCLAIMERS.privatePlacement,
+    "",
+    "## Deal summary",
+    fields.dealSummary,
+    "",
+    "## Acquisition thesis",
+    fields.acquisitionThesis,
+    "",
+    "## Key risks",
+    fields.risks,
+    "",
+    "## Use of proceeds",
+    fields.useOfProceeds,
+    "",
+    "## Capital stack (illustrative)",
+    fields.capitalStack,
+    "",
+    "## ESG / retrofit",
+    fields.esgRetrofitSummary,
+    "",
+    "## Conflicts",
+    fields.conflictsDisclosure,
+    "",
+  ].join("\n");
+}

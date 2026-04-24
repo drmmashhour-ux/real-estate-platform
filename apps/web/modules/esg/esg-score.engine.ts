@@ -54,7 +54,15 @@ export function computeEsgScore(input: EsgProfilePayload): EsgScoreEngineResult 
   const grade = gradeFromScore(score);
 
   logInfo(`${TAG} computed`, { score, grade, flagCount: flags.length });
-  return { score, grade, flags };
+  
+  return { 
+    score, 
+    grade, 
+    flags,
+    reasoning: `Composite ESG score based on energy, carbon, and sustainability factors. Flags: ${flags.join(", ") || "none"}.`,
+    confidence: e != null && c != null && s != null ? 0.9 : 0.65,
+    disclaimer: "ESG-SCORE-DISCLAIMER: This score is an AI-generated estimate and not a formal environmental certification.",
+  };
 }
 
 /** AI-style recommendations — advisory copy only */

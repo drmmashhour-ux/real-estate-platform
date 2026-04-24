@@ -4,6 +4,10 @@ import { getTransactionById } from "@/modules/transactions/transaction.service";
 import { appendDealAuditEvent } from "./deal-audit.service";
 import { allocateNextDealSequence, formatDealNumber } from "./deal-number.service";
 import { BrokerActionGuard } from "@/lib/compliance/broker-action-guard";
+import {
+  brokerDecisionAuthorityEnforced,
+  recordOaciqBrokerDecision,
+} from "@/lib/compliance/oaciq/broker-decision-authority";
 
 const TAG = "[deal.service]";
 
@@ -16,6 +20,9 @@ export async function createStandaloneDeal(input: {
   sponsorUserId?: string | null;
   priority?: string | null;
   actorUserId: string | null;
+  /** When broker decision authority enforcement is on, caller records attestation after create. */
+  brokerDecisionAttested?: boolean;
+  brokerDecisionConfirmedByUserId?: string | null;
 }) {
   // PHASE 2 & 4: BROKERAGE ACTION GUARD
   const guard = await BrokerActionGuard.validateBrokerageAction({
@@ -78,6 +85,8 @@ export async function createDealFromTransaction(input: {
   actorUserId: string | null;
   title?: string;
   dealType?: string;
+  brokerDecisionAttested?: boolean;
+  brokerDecisionConfirmedByUserId?: string | null;
 }) {
   // PHASE 2 & 4: BROKERAGE ACTION GUARD
   const guard = await BrokerActionGuard.validateBrokerageAction({
@@ -140,6 +149,23 @@ export async function createDealFromTransaction(input: {
 
     return row;
   });
+
+  if (
+    input.brokerDecisionAttested &&
+    brokerDecisionAuthorityEnforced() &&
+    input.brokerDecisionConfirmedByUserId
+  ) {
+    await recordOaciqBrokerDecision({
+      responsibleBrokerId: input.brokerId,
+      decisionType: "PIPELINE_DEAL_CREATE",
+      confirmedByUserId: input.brokerDecisionConfirmedByUserId,
+      scope: {
+        pipelineDealId: deal.id,
+        listingId: deal.listingId ?? null,
+        metadata: { lecipmSdTransactionId: input.transactionId },
+      },
+    });
+  }
 
   logInfo(TAG, { action: "createFromTx", id: deal.id });
   return deal;

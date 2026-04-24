@@ -1,6 +1,7 @@
 import { getGuestId } from "@/lib/auth/session";
 import { assertNoShowVisitAccess } from "@/lib/lecipm/noshow-access";
 import { markCannotAttend } from "@/modules/no-show-prevention/no-show-confirmation.service";
+import { recordOutcome } from "@/modules/outcomes/outcome.service";
 
 export const dynamic = "force-dynamic";
 
@@ -22,5 +23,16 @@ export async function POST(request: Request) {
   if (!r.ok) {
     return Response.json({ error: r.error }, { status: 400 });
   }
+  void recordOutcome({
+    entityType: "booking",
+    entityId: visitId,
+    actionTaken: "visit_noshow",
+    predictedOutcome: { pAttend: 0.86 },
+    actualOutcome: { noshow: true, reason: typeof body.reason === "string" ? body.reason : undefined },
+    source: "system",
+    contextUserId: userId,
+  }).then((res) => {
+    if (!res.ok) console.error("[lecipm][outcome] noshow record failed", res);
+  });
   return Response.json({ ok: true, kind: "lecipm_noshow_cannot_attend_v1" });
 }

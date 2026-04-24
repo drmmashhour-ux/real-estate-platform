@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { normalizeContext } from "./playbook-memory-normalize";
 import type { PlaybookComparableContext } from "../types/playbook-memory.types";
 
 /** Deterministic stable JSON string (sorted keys recursively). */
@@ -76,4 +77,45 @@ function sortSignals(
 export function buildSimilarityFingerprint(context: PlaybookComparableContext): string {
   const normalized = extractComparableFeatures(context);
   return sha256Hex(stableStringify(normalized));
+}
+
+/** SHA-256 of `JSON.stringify(normalizeContext(context))` — Wave 2 minimal write path. */
+export function buildFingerprint(context: unknown): string {
+  const normalized = normalizeContext(context);
+  return sha256Hex(JSON.stringify(normalized));
+}
+
+/**
+ * Join `segment` entries as `k:v` pairs sorted lexicographically, or `null` if empty.
+ * Used for Wave 2 lead capture and other entry-style keys (retrieval may still use `buildSegmentKey` above).
+ */
+export function buildLeadsEntrySegmentKey(context: unknown): string | null {
+  if (context === null || typeof context !== "object" || Array.isArray(context)) {
+    return null;
+  }
+  const seg = (context as { segment?: Record<string, unknown> }).segment;
+  if (!seg || typeof seg !== "object" || Array.isArray(seg)) {
+    return null;
+  }
+  return Object.entries(seg)
+    .map(([k, v]) => `${k}:${String(v)}`)
+    .sort()
+    .join("|");
+}
+
+/**
+ * Join `market` entries as `k:v` pairs sorted lexicographically, or `null` if empty.
+ */
+export function buildLeadsEntryMarketKey(context: unknown): string | null {
+  if (context === null || typeof context !== "object" || Array.isArray(context)) {
+    return null;
+  }
+  const m = (context as { market?: Record<string, unknown> }).market;
+  if (!m || typeof m !== "object" || Array.isArray(m)) {
+    return null;
+  }
+  return Object.entries(m)
+    .map(([k, v]) => `${k}:${String(v)}`)
+    .sort()
+    .join("|");
 }

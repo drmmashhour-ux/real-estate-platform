@@ -11,6 +11,12 @@ import { DealLegalTimelineClient } from "./deal-legal-timeline-client";
 import { getDealLegalTimeline } from "@/lib/deals/legal-timeline";
 import { DealReviewSurfaceSection } from "@/components/review-integration/DealReviewSurfaceSection";
 import { getDealReviewSurfaceForViewer } from "@/modules/qa-review/review-surface.service";
+import { lecipmOaciqFlags } from "@/config/feature-flags";
+import {
+  getDealConflictDisclosureSurface,
+  refreshDealConflictComplianceState,
+} from "@/lib/compliance/conflict-deal-compliance.service";
+import { DealConflictDisclosureClient } from "@/components/deals/DealConflictDisclosureClient";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +29,7 @@ const STATUS_LABELS: Record<string, string> = {
   closing_scheduled: "Closing scheduled",
   closed: "Closed",
   cancelled: "Cancelled",
+  CONFLICT_REQUIRES_DISCLOSURE: "Disclosure required (broker conflict)",
 };
 
 export default async function DealDetailPage({
@@ -44,7 +51,7 @@ export default async function DealDetailPage({
     if (pd) return <InvestmentPipelineDealDetailView localePrefix={localePrefix} deal={pd} />;
   }
 
-  const deal = await prisma.deal.findFirst({
+  let deal = await prisma.deal.findFirst({
     where: {
       id,
       OR: [{ buyerId: userId }, { sellerId: userId }, { brokerId: userId }],
@@ -60,6 +67,27 @@ export default async function DealDetailPage({
     },
   });
   if (!deal) notFound();
+
+  if (lecipmOaciqFlags.brokerConflictDisclosureV1) {
+    await refreshDealConflictComplianceState(deal.id);
+    const refreshed = await prisma.deal.findFirst({
+      where: {
+        id,
+        OR: [{ buyerId: userId }, { sellerId: userId }, { brokerId: userId }],
+      },
+      include: {
+        buyer: { select: { id: true, name: true, email: true } },
+        seller: { select: { id: true, name: true, email: true } },
+        broker: { select: { id: true, name: true, email: true } },
+        lead: { select: { id: true, contactOrigin: true, commissionSource: true, firstPlatformContactAt: true } },
+        milestones: true,
+        documents: true,
+        payments: true,
+      },
+    });
+    if (refreshed) deal = refreshed;
+  }
+
   const viewer = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
   const legalTimeline = await getDealLegalTimeline(deal.id);
   const canEditLegalTimeline = viewer?.role === "ADMIN" || viewer?.role === "BROKER" || deal.brokerId === userId;
@@ -71,6 +99,11 @@ export default async function DealDetailPage({
           viewerRole: viewer.role,
         })
       : { enabled: false as const };
+
+  const conflictSurface =
+    lecipmOaciqFlags.brokerConflictDisclosureV1
+      ? await getDealConflictDisclosureSurface(id, userId)
+      : null;
 
   return (
     <main className="min-h-screen bg-slate-950 text-slate-50">
@@ -98,6 +131,17 @@ export default async function DealDetailPage({
         </p>
 
         <DealReviewSurfaceSection surface={reviewSurface} />
+
+        {conflictSurface ? (
+          <DealConflictDisclosureClient
+            dealId={id}
+            warningMessage={conflictSurface.warningMessage}
+            acknowledgmentText={conflictSurface.acknowledgmentText}
+            reasons={conflictSurface.reasons}
+            viewerMustAcknowledge={conflictSurface.viewerMustAcknowledge}
+            viewerHasAcknowledged={conflictSurface.viewerHasAcknowledged}
+          />
+        ) : null}
 
         {(deal.leadContactOrigin === "IMMO_CONTACT" || deal.commissionSource === "IMMO_CONTACT") && (
           <div className="mt-4 rounded-xl border border-amber-500/35 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">

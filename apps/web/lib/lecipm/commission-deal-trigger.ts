@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { runCommissionForDeal } from "@/modules/commission-engine/commission-calculation.service";
 import { getDefaultOfficeIdForUser } from "@/lib/brokerage/office-access";
+import { BrokerActionGuard } from "@/lib/compliance/broker-action-guard";
 
 /**
  * Idempotent hook: when a deal is accepted/closed, optionally materialize a commission case (broker office context required).
@@ -14,6 +15,15 @@ export async function maybeTriggerCommissionCaseForDeal(input: {
   /** Only run when deal status matches. */
   dealStatus: string;
 }) {
+  // Phase 5 & 3: Commission flow protection
+  const guard = await BrokerActionGuard.validateBrokerageAction({
+    userId: input.actorUserId,
+    action: "EXECUTE_DEAL", // Commissions are part of deal execution
+  });
+  if (!guard.allowed) {
+    return { ok: false as const, error: guard.reason || "Unauthorized commission flow access." };
+  }
+
   const s = input.dealStatus.toLowerCase();
   if (!["accepted", "closed", "closing_scheduled"].includes(s)) {
     return { ok: false as const, skipped: true as const, reason: "status_not_commission_trigger" };

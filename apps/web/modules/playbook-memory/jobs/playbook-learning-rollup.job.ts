@@ -1,30 +1,12 @@
-import { prisma } from "@/lib/db";
-import * as repo from "../repository/playbook-memory.repository";
-import { recalculatePlaybookStats } from "../services/playbook-memory-learning.service";
 import { playbookLog } from "../playbook-memory.logger";
+import { recalculateAllPlaybookStats } from "../services/playbook-memory-learning.service";
 
-/** Recompute aggregates for every memory playbook (bounded batch). */
+/** @deprecated use `recalculateAllPlaybookStats` from learning service; kept for import compatibility. */
 export async function runPlaybookLearningRollup(params?: { maxPlaybooks?: number }) {
-  const max = params?.maxPlaybooks ?? 200;
-  const ids = await prisma.memoryPlaybook.findMany({
-    select: { id: true },
-    take: max,
-    orderBy: { updatedAt: "desc" },
-  });
-
-  let updated = 0;
-  for (const row of ids) {
-    try {
-      await recalculatePlaybookStats(row.id);
-      updated += 1;
-    } catch (e) {
-      playbookLog.error("rollup failed", {
-        playbookId: row.id,
-        message: e instanceof Error ? e.message : String(e),
-      });
-    }
+  const result = await recalculateAllPlaybookStats();
+  if (params?.maxPlaybooks != null && result.processed > (params.maxPlaybooks ?? 200)) {
+    playbookLog.info("runPlaybookLearningRollup: maxPlaybooks cap ignored; full list processed", { max: params.maxPlaybooks });
   }
-
-  playbookLog.info("runPlaybookLearningRollup", { updated });
-  return { updated };
+  playbookLog.info("runPlaybookLearningRollup", { processed: result.processed, failed: result.failed });
+  return { updated: result.processed - result.failed, processed: result.processed, failed: result.failed };
 }

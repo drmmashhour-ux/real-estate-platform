@@ -3,6 +3,8 @@ import { proposeGrowthDecisions } from "@/modules/ceo-ai/ceo-ai-growth.service";
 import { proposePricingDecisions } from "@/modules/ceo-ai/ceo-ai-pricing.service";
 import { proposeOutreachDecisions } from "@/modules/ceo-ai/ceo-ai-outreach.service";
 import { proposeRetentionDecisions } from "@/modules/ceo-ai/ceo-ai-retention.service";
+import { proposeFundDecisions } from "@/modules/ceo-ai/ceo-ai-fund.service";
+import { proposeCapitalDecisions } from "@/modules/ceo-ai/ceo-ai-capital.service";
 import { buildCeoContextFingerprint } from "./ceo-memory-context.service";
 import { mapPayloadKindToDecisionType } from "./ceo-memory.service";
 import { evaluateGoalAlignment } from "./ceo-long-term-goals.service";
@@ -110,6 +112,8 @@ export async function generateCeoDecisions(
     ...(await proposePricingDecisions(signals)),
     ...(await proposeOutreachDecisions(signals)),
     ...proposeRetentionDecisions(signals),
+    ...(await proposeFundDecisions(signals)),
+    ...(await proposeCapitalDecisions(signals)),
   ];
 
   const ops = operationsCampaignProposal(signals);

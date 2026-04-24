@@ -32,6 +32,11 @@ export default function BrokerCompliancePage() {
           description="Check listing compliance"
           href="/dashboard/broker/compliance/status"
         />
+        <HubCard
+          title="Unified OACIQ engine"
+          description="Trust, AML, records, tax rule packs"
+          href="/dashboard/broker/compliance/unified"
+        />
       </div>
 
       <div className="mt-8 border-t border-white/10 pt-6">

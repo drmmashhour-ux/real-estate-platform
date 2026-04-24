@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import { CeoLongTermGoalsPanel } from "./CeoLongTermGoalsPanel";
 import { CeoStrategyMemoryPanel } from "./CeoStrategyMemoryPanel";
 import { CeoDecisionOutcomeTable } from "./CeoDecisionOutcomeTable";
+import { CeoPatternInsightsCard } from "./CeoPatternInsightsCard";
+import { CeoInsightsPanel } from "./CeoInsightsPanel";
 
 type Summary = {
   signals: Record<string, number | null>;
@@ -19,6 +21,7 @@ type Summary = {
     riskyStrategyPatterns: any[];
     recentStrategicMemory: any[];
   };
+  latestInsights?: any[];
   pendingDecisionsToday: number;
   generatedAt: string;
 };
@@ -43,6 +46,7 @@ export function CeoDashboardHomeClient() {
         policy: j.policy!,
         preview: j.preview!,
         snapshot: j.snapshot,
+        latestInsights: j.latestInsights,
         pendingDecisionsToday: j.pendingDecisionsToday!,
         generatedAt: j.generatedAt!,
       });
@@ -95,29 +99,37 @@ export function CeoDashboardHomeClient() {
       </div>
       {runLog ? <p className="text-xs text-cyan-200/90">{runLog}</p> : null}
 
-      {data.snapshot?.longTermGoals && (
-        <CeoLongTermGoalsPanel goals={data.snapshot.longTermGoals} />
-      )}
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2 space-y-6">
+          {data.snapshot?.longTermGoals && (
+            <CeoLongTermGoalsPanel goals={data.snapshot.longTermGoals} />
+          )}
 
-      <section className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
-          <h3 className="text-sm font-semibold text-slate-200">Revenue & demand</h3>
-          <ul className="mt-2 space-y-1 text-xs text-slate-400">
-            <li>Revenue trend (30d proxy): {((s.revenueTrend30dProxy as number) * 100).toFixed(1)}%</li>
-            <li>Demand index: {s.demandIndex != null ? (s.demandIndex as number).toFixed(2) : "—"}</li>
-            <li>Leads 30d: {s.leadsLast30d as number}</li>
-          </ul>
+          <section className="grid gap-4 md:grid-cols-2">
+            <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+              <h3 className="text-sm font-semibold text-slate-200">Revenue & demand</h3>
+              <ul className="mt-2 space-y-1 text-xs text-slate-400">
+                <li>Revenue trend (30d proxy): {((s.revenueTrend30dProxy as number) * 100).toFixed(1)}%</li>
+                <li>Demand index: {s.demandIndex != null ? (s.demandIndex as number).toFixed(2) : "—"}</li>
+                <li>Leads 30d: {s.leadsLast30d as number}</li>
+              </ul>
+            </div>
+            <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+              <h3 className="text-sm font-semibold text-slate-200">Risks & flow</h3>
+              <ul className="mt-2 space-y-1 text-xs text-slate-400">
+                <li>Conversion 30d: {((s.seniorConversionRate30d as number) * 100).toFixed(1)}%</li>
+                <li>Inactive brokers (approx): {s.churnInactiveBrokersApprox as number}</li>
+                <li>Operators stale leads (approx): {s.inactiveOperatorsApprox as number}</li>
+                <li>Pending decisions today: {data.pendingDecisionsToday}</li>
+              </ul>
+            </div>
+          </section>
         </div>
-        <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
-          <h3 className="text-sm font-semibold text-slate-200">Risks & flow</h3>
-          <ul className="mt-2 space-y-1 text-xs text-slate-400">
-            <li>Conversion 30d: {((s.seniorConversionRate30d as number) * 100).toFixed(1)}%</li>
-            <li>Inactive brokers (approx): {s.churnInactiveBrokersApprox as number}</li>
-            <li>Operators stale leads (approx): {s.inactiveOperatorsApprox as number}</li>
-            <li>Pending decisions today: {data.pendingDecisionsToday}</li>
-          </ul>
+
+        <div>
+          <CeoInsightsPanel insights={data.latestInsights || []} />
         </div>
-      </section>
+      </div>
 
       <section className="rounded-xl border border-amber-500/20 bg-amber-950/10 p-4">
         <h3 className="text-sm font-semibold text-amber-100">Policy</h3>
@@ -184,10 +196,30 @@ export function CeoDashboardHomeClient() {
       {data.snapshot && (
         <>
           <h2 className="text-lg font-bold text-white pt-4">Strategic Learning & Memory</h2>
-          <CeoStrategyMemoryPanel 
-            topPatterns={data.snapshot.topStrategyPatterns} 
-            riskyPatterns={data.snapshot.riskyStrategyPatterns} 
-          />
+          
+          <div className="grid gap-4 lg:grid-cols-3">
+            <div className="lg:col-span-2">
+              <CeoStrategyMemoryPanel 
+                topPatterns={data.snapshot.topStrategyPatterns} 
+                riskyPatterns={data.snapshot.riskyStrategyPatterns} 
+              />
+            </div>
+            <div className="space-y-4">
+              <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest px-1">Top Insights</h3>
+              {data.snapshot.topStrategyPatterns.slice(0, 1).map(p => (
+                <CeoPatternInsightsCard key={p.id} pattern={p} variant="success" />
+              ))}
+              {data.snapshot.riskyStrategyPatterns.slice(0, 1).map(p => (
+                <CeoPatternInsightsCard key={p.id} pattern={p} variant="risky" />
+              ))}
+              {data.snapshot.topStrategyPatterns.length === 0 && data.snapshot.riskyStrategyPatterns.length === 0 && (
+                <div className="rounded-xl border border-dashed border-white/10 p-8 text-center">
+                  <p className="text-xs text-slate-500">Awaiting more decision outcomes to generate insights.</p>
+                </div>
+              )}
+            </div>
+          </div>
+
           <CeoDecisionOutcomeTable memories={data.snapshot.recentStrategicMemory} />
         </>
       )}

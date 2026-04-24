@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { PlatformRole } from "@prisma/client";
 import { notFound, redirect } from "next/navigation";
-import { brokerResidentialFlags } from "@/config/feature-flags";
+import { brokerResidentialFlags, lecipmOaciqFlags } from "@/config/feature-flags";
 import { getGuestId } from "@/lib/auth/session";
 import { requireBrokerDealAccess } from "@/lib/broker/residential-access";
 import { prisma } from "@repo/db";
@@ -10,8 +10,13 @@ import { DealIntelligencePanel } from "@/components/deals/DealIntelligencePanel"
 import { BrokerDealDraftingWorkspace } from "@/components/broker-residential/deals/BrokerDealDraftingWorkspace";
 import { ResidentialDealWorkspaceClient } from "@/components/broker-residential/deals/ResidentialDealWorkspaceClient";
 import { OaciqEngineDealPanel } from "@/components/broker-residential/deals/OaciqEngineDealPanel";
+import { BrokerDisclosureBadge } from "@/components/listings/BrokerDisclosureBadge";
 import { getFormPackageByKey } from "@/modules/form-packages/form-package.service";
 import { runResidentialDealWorkspaceEngine } from "@/modules/broker-residential-copilot/broker-residential-copilot.engine";
+import {
+  getDealConflictDisclosureSurface,
+  refreshDealConflictComplianceState,
+} from "@/lib/compliance/conflict-deal-compliance.service";
 
 export const dynamic = "force-dynamic";
 
@@ -41,11 +46,20 @@ export default async function BrokerResidentialDealDetailPage({
   const dealAccess = await requireBrokerDealAccess(userId, id, user.role === PlatformRole.ADMIN);
   if (!dealAccess) notFound();
 
+  if (lecipmOaciqFlags.brokerConflictDisclosureV1) {
+    await refreshDealConflictComplianceState(id);
+  }
+
   const deal = await prisma.deal.findUnique({
     where: { id },
     include: {
       buyer: { select: { name: true, email: true } },
       seller: { select: { name: true, email: true } },
+      broker: {
+        include: {
+          lecipmBrokerLicenceProfile: true,
+        },
+      },
       documents: { orderBy: { createdAt: "desc" }, take: 30 },
       dealParties: true,
       milestones: true,
@@ -54,6 +68,9 @@ export default async function BrokerResidentialDealDetailPage({
   if (!deal) notFound();
 
   const workspace = await runResidentialDealWorkspaceEngine(deal);
+  const conflictSurface = lecipmOaciqFlags.brokerConflictDisclosureV1
+    ? await getDealConflictDisclosureSurface(id, userId)
+    : null;
   const pkg = deal.assignedFormPackageKey ? getFormPackageByKey(deal.assignedFormPackageKey) : null;
   const executionHref = `/${locale}/${country}/dashboard/deals/${id}/execution`;
 
@@ -75,9 +92,34 @@ export default async function BrokerResidentialDealDetailPage({
           </Link>
         </div>
         <h2 className="mt-4 font-serif text-2xl text-ds-text">Residential deal file</h2>
-        <p className="mt-1 text-sm text-ds-text-secondary">
+        <div className="mt-2 flex flex-wrap items-center gap-3">
+          <div className="inline-block rounded bg-blue-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-blue-500 ring-1 ring-blue-500/20">
+            Brokerage activity (OACIQ)
+          </div>
+          {deal.broker?.lecipmBrokerLicenceProfile && (
+            <BrokerDisclosureBadge 
+              brokerName={deal.broker.name || "Licensed Broker"} 
+              licenceNumber={deal.broker.lecipmBrokerLicenceProfile.licenceNumber}
+              practiceMode={deal.broker.lecipmBrokerLicenceProfile.practiceMode as any}
+            />
+          )}
+        </div>
+        <p className="mt-2 text-sm text-ds-text-secondary">
           Status: {deal.status} · {(deal.priceCents / 100).toLocaleString("en-CA", { style: "currency", currency: "CAD" })}
         </p>
+        {conflictSurface ? (
+          <div className="mt-4 rounded-xl border border-amber-500/35 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+            <p className="font-semibold uppercase tracking-wide text-amber-400">Conflict disclosure (OACIQ)</p>
+            <p className="mt-1">{conflictSurface.warningMessage}</p>
+            <p className="mt-2 text-xs text-amber-200/85">
+              Signals: {conflictSurface.reasons.join(", ")} · Party acknowledgments recorded:{" "}
+              {conflictSurface.consentedUserIds.length}/{conflictSurface.requiredUserIds.length}
+            </p>
+            <p className="mt-2 text-xs text-amber-200/70">
+              Clients must submit the exact checkbox wording on their deal dashboard before the file can progress.
+            </p>
+          </div>
+        ) : null}
       </div>
 
       <DealIntelligencePanel dealId={id} />

@@ -4,6 +4,9 @@ export type EsgScoreEngineResult = {
   score: number;
   grade: EsgGrade;
   flags: string[];
+  reasoning?: string;
+  confidence?: number;
+  disclaimer?: string;
 };
 
 export type EsgProfilePayload = {

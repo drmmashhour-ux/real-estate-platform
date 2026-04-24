@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { Card } from "@/components/lecipm-ui/card";
+import { LECIPM_LEADS_API } from "@/lib/lecipm/console-api-routes";
 
 type LeadRow = {
   id: string;
@@ -22,7 +23,7 @@ export function LeadsConsoleClient() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/lecipm/leads", { credentials: "same-origin" });
+      const res = await fetch(LECIPM_LEADS_API, { credentials: "same-origin" });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error(typeof body?.error === "string" ? body.error : `HTTP ${res.status}`);

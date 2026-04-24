@@ -1,7 +1,7 @@
 /** Self-evolving loop version — bump when interpretation of stored rows changes. */
 export const EVOLUTION_ENGINE_VERSION = "v1.0.0";
 
-export type EvolutionDomain = "BNHUB" | "LECIPM" | "SHARED";
+export type EvolutionDomain = "BNHUB" | "LECIPM" | "SHARED" | "FUND" | "CAPITAL";
 
 export type EvolutionMetricType =
   | "BOOKING"

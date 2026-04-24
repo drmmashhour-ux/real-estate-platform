@@ -30,6 +30,8 @@ export type PlaybookComparableContext = {
     demandBand?: string;
   };
   segment?: {
+    /** e.g. landing, campaign id */
+    source?: string;
     propertyType?: string;
     bedrooms?: number;
     budgetBand?: string;
@@ -49,6 +51,10 @@ export type RecordDecisionInput = {
   actorUserId?: string;
   actorSystem?: string;
   actorRole?: string;
+  /** Maps to `memoryPlaybookId` in the database. */
+  playbookId?: string;
+  /** Maps to `memoryPlaybookVersionId` in the database. */
+  playbookVersionId?: string;
   memoryPlaybookId?: string;
   memoryPlaybookVersionId?: string;
   listingId?: string;
@@ -68,15 +74,24 @@ export type RecordDecisionInput = {
   idempotencyKey?: string;
 };
 
+/** Outcome status literals (match `MemoryOutcomeStatus` in Prisma). */
+export type MemoryOutcomeStatusLiteral =
+  | "PENDING"
+  | "PARTIAL"
+  | "SUCCEEDED"
+  | "FAILED"
+  | "NEUTRAL"
+  | "CANCELLED";
+
 export type RecordOutcomeUpdateInput = {
   memoryRecordId: string;
-  outcomeStatus?: MemoryOutcomeStatus;
+  outcomeStatus: MemoryOutcomeStatusLiteral;
   outcomeSummary?: Record<string, unknown>;
-  realizedValue?: number;
-  realizedRevenue?: number;
-  realizedConversion?: number;
-  realizedLatencyMs?: number;
-  realizedRiskScore?: number;
+  realizedValue?: number | null;
+  realizedRevenue?: number | null;
+  realizedConversion?: number | null;
+  realizedLatencyMs?: number | null;
+  realizedRiskScore?: number | null;
 };
 
 export type AppendOutcomeMetricInput = {
@@ -107,3 +122,34 @@ export type RetrievalContextInput = {
   /** Optional playbook ids to bias ranking. */
   candidatePlaybookIds?: string[];
 };
+
+export type PolicyGateResult = {
+  allowed: boolean;
+  blockedReasons: string[];
+};
+
+export type FingerprintResult = {
+  segmentKey: string;
+  marketKey: string;
+  fingerprint: string;
+  features: Record<string, unknown>;
+};
+
+export type RankedPlaybookCandidate = {
+  playbookId: string;
+  score: number;
+  rank: number;
+};
+
+export type AggregatePlaybookStats = {
+  totalMemories: number;
+  successes: number;
+  failures: number;
+  avgRealizedValue: number | null;
+  avgRealizedRevenue: number | null;
+  avgConversionLift: number | null;
+  avgRiskScore: number | null;
+  numericScore: number;
+  scoreBand: PlaybookScoreBand;
+};
+

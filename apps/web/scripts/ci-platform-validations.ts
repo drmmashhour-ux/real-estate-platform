@@ -49,6 +49,10 @@ async function main(): Promise<void> {
     }
   }
 
+  if (!run("pnpm", ["exec", "tsx", "scripts/check-regulator-marketing-claims.ts"], "check-regulator-marketing-claims")) {
+    process.exit(1);
+  }
+
   if (typeof process.env.GITHUB_STEP_SUMMARY === "string" && process.env.GITHUB_STEP_SUMMARY) {
     const { appendFileSync } = await import("node:fs");
     const lines = [

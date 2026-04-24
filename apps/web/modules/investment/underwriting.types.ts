@@ -17,6 +17,9 @@ export type UnderwritingResult = {
   roi: number;
   capRate: number;
   breakEvenOccupancy: number;
+  reasoning?: string;
+  confidence?: number;
+  disclaimer?: string;
   methodologyNote: string;
 };
 

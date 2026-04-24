@@ -1,5 +1,6 @@
-import type { MemoryPlaybook, PlaybookExecutionMode } from "@prisma/client";
-import { evaluatePlaybookEligibility } from "./playbook-memory-policy-gate.service";
+import type { MemoryPlaybook, PlaybookExecutionMode, MemoryDomain } from "@prisma/client";
+import { prisma } from "@/lib/db";
+import { evaluateRecommendationPolicy } from "./playbook-memory-policy-gate.service";
 import { playbookLog } from "../playbook-memory.logger";
 import { playbookTelemetry } from "../playbook-memory.telemetry";
 import * as repo from "../repository/playbook-memory.repository";
@@ -9,7 +10,14 @@ import {
   buildSegmentKey,
   buildSimilarityFingerprint,
 } from "../utils/playbook-memory-fingerprint";
-import { confidenceFromExecutionStats, hybridCandidateScore } from "../utils/playbook-memory-score";
+import {
+  computeFinalScore,
+  computeRecencyScore,
+  computeSimilarityScore,
+  confidenceFromExecutionStats,
+  hybridCandidateScore,
+} from "../utils/playbook-memory-score";
+import { buildRationale, buildRationaleLines } from "../utils/playbook-memory-rationale";
 
 function recencyScoreFromDate(d: Date | null | undefined): number {
   if (!d) return 0.2;
@@ -112,7 +120,7 @@ export async function getRecommendations(input: RetrievalContextInput): Promise<
       continue;
     }
 
-    const gate = evaluatePlaybookEligibility({
+    const gate = evaluateRecommendationPolicy({
       playbook: p,
       context: input.context,
       policySnapshot: undefined,
@@ -120,12 +128,13 @@ export async function getRecommendations(input: RetrievalContextInput): Promise<
       autonomyHint: input.autonomyModeHint,
     });
 
-    const rationale = [
-      `rank_score=${score.toFixed(4)}`,
-      `domain=${p.domain}`,
-      `executions=${p.totalExecutions}`,
-      `score_band=${p.scoreBand}`,
-    ];
+    const rationale = buildRationaleLines({
+      rankScore: score,
+      domain: p.domain,
+      totalExecutions: p.totalExecutions,
+      scoreBand: p.scoreBand,
+      executionMode: p.executionMode,
+    });
 
     const rec: PlaybookRecommendation = {
       playbookId: p.id,
@@ -153,3 +162,82 @@ export async function getRecommendations(input: RetrievalContextInput): Promise<
   });
   return out;
 }
+
+const PB = "[playbook]";
+
+export type MemoryRecordRecommendation = {
+  memoryId: string;
+  actionType: string;
+  score: number;
+  confidence: number;
+  rationale: string[];
+  allowed: boolean;
+  blockedReasons: string[];
+};
+
+/**
+ * Wave 3: ranked hints from `PlaybookMemoryRecord` only (SUCCEEDED outcomes), no `MemoryPlaybook` reads.
+ * Read path; never throws — returns `[]` on any failure.
+ */
+export const playbookMemoryRetrievalService = {
+  async getRecommendations(context: unknown): Promise<MemoryRecordRecommendation[]> {
+    try {
+      if (context === null || typeof context !== "object") {
+        return [];
+      }
+      const c = context as { domain?: MemoryDomain; segment?: Record<string, unknown> | null };
+      if (c.domain === undefined || c.domain === null) {
+        return [];
+      }
+
+      const records = await prisma.playbookMemoryRecord.findMany({
+        where: {
+          domain: c.domain,
+          outcomeStatus: "SUCCEEDED",
+        },
+        orderBy: { createdAt: "desc" },
+        take: 50,
+      });
+
+      const segA = c.segment ?? {};
+      const results = records.map((r) => {
+        const snap = r.contextSnapshot as { segment?: Record<string, unknown> } | null;
+        const segB = snap?.segment ?? {};
+        const similarity = computeSimilarityScore(segA, segB);
+        const recency = computeRecencyScore(r.createdAt);
+        const score = computeFinalScore({ similarity, recency });
+        return {
+          id: r.id,
+          actionType: r.actionType,
+          score,
+          similarity,
+          recency,
+          rationale: buildRationale({ similarity, recency }),
+        };
+      });
+
+      const sorted = results.sort((a, b) => {
+        if (b.score !== a.score) {
+          return b.score - a.score;
+        }
+        return a.id.localeCompare(b.id);
+      });
+
+      // eslint-disable-next-line no-console -- Wave 3 ops visibility
+      console.log(PB, "memory_recommendations_retrieved", { count: sorted.length, domain: c.domain });
+      return sorted.slice(0, 5).map((r) => ({
+        memoryId: r.id,
+        actionType: r.actionType,
+        score: r.score,
+        confidence: r.score,
+        rationale: r.rationale,
+        allowed: true,
+        blockedReasons: [] as string[],
+      }));
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error(PB, "retrieval_failed", error);
+      return [];
+    }
+  },
+};

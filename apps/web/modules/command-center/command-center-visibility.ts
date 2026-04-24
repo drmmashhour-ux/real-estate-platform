@@ -7,12 +7,13 @@ export type CommandCenterSectionKey =
   | "dealsPipeline"
   | "leadsConversion"
   | "trustRisk"
+  | "systemPerformance"
   | "marketingExpansion"
   | "approvalsAlerts"
   | "quickActions"
   | "liveFeed";
 
-const BROKER_HIDDEN: CommandCenterSectionKey[] = ["marketingExpansion"];
+const BROKER_HIDDEN: CommandCenterSectionKey[] = ["marketingExpansion", "systemPerformance"];
 
 /** Pure visibility rules — unit-tested. */
 export function visibleSectionsForRole(role: PlatformRole): Record<CommandCenterSectionKey, boolean> {
@@ -23,6 +24,7 @@ export function visibleSectionsForRole(role: PlatformRole): Record<CommandCenter
     dealsPipeline: true,
     leadsConversion: true,
     trustRisk: true,
+    systemPerformance: exec,
     marketingExpansion: exec,
     approvalsAlerts: true,
     quickActions: true,

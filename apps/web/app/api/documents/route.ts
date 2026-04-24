@@ -1,48 +1,41 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireDocumentUser } from "@/modules/documents/services/api-helpers";
-import { getDocumentCenterPayload } from "@/modules/documents/services/get-document-center";
-import {
-  queryDocumentsForUser,
-  type DocumentSearchFilters,
-} from "@/modules/documents/services/query-documents";
-import type { DocumentCategory, DocumentVisibility } from "@prisma/client";
+import { requireAuthUser, requireBrokerOrAdmin } from "@/lib/deals/guard-pipeline-deal";
+import { legalDocumentsEngineEnabled, listLegalDocumentArtifacts } from "@/modules/legal-documents";
 
 export const dynamic = "force-dynamic";
 
-/**
- * GET /api/documents — document center payload + optional search filters.
- */
-export async function GET(request: NextRequest) {
-  const user = await requireDocumentUser(request);
-  if (user instanceof NextResponse) return user;
-
-  const { searchParams } = new URL(request.url);
-  const q = searchParams.get("q") ?? undefined;
-  const hasSearch =
-    q ||
-    searchParams.get("category") ||
-    searchParams.get("visibility") ||
-    searchParams.get("contextType") ||
-    searchParams.get("from") ||
-    searchParams.get("to") ||
-    searchParams.get("uploaderName");
-
-  const center = await getDocumentCenterPayload(user.userId, user.role);
-
-  let searchResults: Awaited<ReturnType<typeof queryDocumentsForUser>> | undefined;
-  if (hasSearch) {
-    const filters: DocumentSearchFilters = {
-      q,
-      category: (searchParams.get("category") as DocumentCategory | null) ?? undefined,
-      visibility: (searchParams.get("visibility") as DocumentVisibility | null) ?? undefined,
-      contextType:
-        (searchParams.get("contextType") as DocumentSearchFilters["contextType"]) ?? undefined,
-      from: searchParams.get("from") ?? undefined,
-      to: searchParams.get("to") ?? undefined,
-      uploaderName: searchParams.get("uploaderName") ?? undefined,
-    };
-    searchResults = await queryDocumentsForUser(user.userId, user.role, filters);
+export async function GET(req: NextRequest) {
+  if (!legalDocumentsEngineEnabled()) {
+    return NextResponse.json({ error: "Legal documents engine disabled" }, { status: 503 });
+  }
+  const auth = await requireAuthUser();
+  if (!auth.ok) return auth.response;
+  if (!requireBrokerOrAdmin(auth.role)) {
+    return NextResponse.json({ error: "Broker or administrator access required" }, { status: 403 });
   }
 
-  return NextResponse.json({ ...center, searchResults });
+  const { searchParams } = new URL(req.url);
+  const domain = searchParams.get("domain") as "BROKERAGE" | "INVESTMENT" | "INTERNAL_HANDOFF" | null;
+  const group = searchParams.get("group") as "awaiting" | "signed_archived" | "all" | null;
+
+  const rows = await listLegalDocumentArtifacts({
+    userId: auth.userId,
+    role: auth.role,
+    domain: domain ?? undefined,
+    statusGroup: group === "awaiting" || group === "signed_archived" ? group : group === "all" ? "all" : undefined,
+  });
+
+  return NextResponse.json({
+    items: rows.map((a) => ({
+      id: a.id,
+      kind: a.kind,
+      domain: a.domain,
+      status: a.status,
+      dealId: a.dealId,
+      capitalDealId: a.capitalDealId,
+      templateKind: a.templateVersion.template.kind,
+      approvedAt: a.approvedAt?.toISOString() ?? null,
+      createdAt: a.createdAt.toISOString(),
+    })),
+  });
 }

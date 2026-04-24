@@ -1,6 +1,6 @@
 /** Supervised AI CEO layer — shared types */
 
-export const CEO_DOMAINS = ["GROWTH", "PRICING", "OUTREACH", "RETENTION", "OPERATIONS", "DEALS"] as const;
+export const CEO_DOMAINS = ["GROWTH", "PRICING", "OUTREACH", "RETENTION", "OPERATIONS", "DEALS", "FUND", "CAPITAL"] as const;
 export type CeoDomain = (typeof CEO_DOMAINS)[number];
 
 export const CEO_DECISION_STATUSES = [
@@ -34,6 +34,10 @@ export type CeoMarketSignals = {
   emailEngagementScore: number | null;
   avgLeadQualityScore: number | null;
   revenueTrend30dProxy: number;
+  // NEW: Advanced signals for memory
+  activeDealsCount: number;
+  dealPipelineHealth: number; // 0-1
+  esgActivityLevel: number; // 0-1
 };
 
 export type ProblemOpportunityItem = {
@@ -75,7 +79,11 @@ export type CeoDecisionPayload =
   | { kind: "retention_operator_profile"; promptCopy: string }
   | { kind: "retention_credit_offer"; audience: string; pctCredit: number }
   | { kind: "campaign_recommend"; channel: string; headline: string; bullets: string[] }
-  | { kind: "operations_note"; note: string };
+  | { kind: "operations_note"; note: string }
+  | { kind: "fund_strategy_change"; fundId: string; targetStrategy: string }
+  | { kind: "fund_reallocation_trigger"; fundId: string; timing: string }
+  | { kind: "fund_rebalance"; fundId: string }
+  | { kind: "capital_strategy_shift"; targetMode: string; rationale: string };
 
 export type GenerateCeoDecisionsResult = {
   topProblems: ProblemOpportunityItem[];

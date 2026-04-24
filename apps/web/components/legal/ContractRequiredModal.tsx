@@ -10,6 +10,8 @@ type Props = {
   kind: EnforceableTemplateKind;
   fsboListingId?: string;
   listingId?: string;
+  /** SD / transaction engine id — enables OACIQ disclosure panel before sign when enforcement is on. */
+  transactionId?: string;
   onClose: () => void;
   onComplete?: (contractId: string) => void;
 };
@@ -23,6 +25,7 @@ export function ContractRequiredModal({
   kind,
   fsboListingId,
   listingId,
+  transactionId,
   onClose,
   onComplete,
 }: Props) {
@@ -60,6 +63,7 @@ export function ContractRequiredModal({
             kind={kind}
             fsboListingId={fsboListingId}
             listingId={listingId}
+            transactionId={transactionId}
             onSuccess={handleSuccess}
           />
         )}

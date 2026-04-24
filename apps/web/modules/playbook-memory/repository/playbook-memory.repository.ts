@@ -1,5 +1,6 @@
 import type {
   MemoryDomain,
+  MemoryOutcomeStatus,
   MemoryPlaybook,
   MemoryPlaybookVersion,
   PlaybookMemoryRecord,
@@ -107,6 +108,60 @@ export async function memoriesForPlaybookAggregate(playbookId: string): Promise<
     where: { memoryPlaybookId: playbookId },
     orderBy: { createdAt: "desc" },
     take: 5000,
+  });
+}
+
+export async function memoriesForVersionAggregate(playbookVersionId: string): Promise<PlaybookMemoryRecord[]> {
+  return prisma.playbookMemoryRecord.findMany({
+    where: { memoryPlaybookVersionId: playbookVersionId },
+    orderBy: { createdAt: "desc" },
+    take: 5000,
+  });
+}
+
+export async function listAllMemoryPlaybookIds(): Promise<string[]> {
+  const rows = await prisma.memoryPlaybook.findMany({ select: { id: true } });
+  return rows.map((r) => r.id);
+}
+
+export async function recentOutcomeStatusesForPlaybook(
+  playbookId: string,
+  take: number,
+): Promise<MemoryOutcomeStatus[]> {
+  const rows = await prisma.playbookMemoryRecord.findMany({
+    where: { memoryPlaybookId: playbookId },
+    orderBy: { createdAt: "desc" },
+    take,
+    select: { outcomeStatus: true },
+  });
+  return rows.map((r) => r.outcomeStatus);
+}
+
+export async function recentOutcomeStatusesForVersion(
+  versionId: string,
+  take: number,
+): Promise<MemoryOutcomeStatus[]> {
+  const rows = await prisma.playbookMemoryRecord.findMany({
+    where: { memoryPlaybookVersionId: versionId },
+    orderBy: { createdAt: "desc" },
+    take,
+    select: { outcomeStatus: true },
+  });
+  return rows.map((r) => r.outcomeStatus);
+}
+
+export async function listRecentLifecycleEvents(playbookId: string, take: number) {
+  return prisma.memoryPlaybookLifecycleEvent.findMany({
+    where: { playbookId },
+    orderBy: { createdAt: "desc" },
+    take,
+    select: {
+      id: true,
+      eventType: true,
+      reason: true,
+      playbookVersionId: true,
+      createdAt: true,
+    },
   });
 }
 

@@ -3,6 +3,7 @@
  */
 
 import { redactForLog } from "@/lib/security/redact";
+import { tryCaptureFromTaggedLog } from "@/modules/outcomes/outcome-log";
 
 type Tag =
   | "[api]"
@@ -11,9 +12,15 @@ type Tag =
   | "[booking]"
   | "[autopilot]"
   | "[compliance]"
+  | "[compliance:oaciq]"
+  | "[compliance:conflict]"
   | "[deal]"
   | "[lead]"
-  | "[transaction]";
+  | "[transaction]"
+  | "[tax]"
+  | "[playbook]"
+  | "[finance-admin]"
+  | "[investment-compliance]";
 
 function emit(tag: Tag, level: "info" | "warn" | "error", msg: string, payload?: Record<string, unknown>): void {
   const line = `${tag} ${msg}`;
@@ -24,6 +31,13 @@ function emit(tag: Tag, level: "info" | "warn" | "error", msg: string, payload?:
     else console.error(line, safePayload ?? "");
   } catch {
     /* never throw from logging */
+  }
+  try {
+    if (payload && (level === "info" || level === "warn")) {
+      tryCaptureFromTaggedLog(tag, level, msg, payload);
+    }
+  } catch (e) {
+    console.error("[lecipm][outcome] tryCaptureFromTaggedLog failed", e instanceof Error ? e.message : e);
   }
 }
 
@@ -63,6 +77,20 @@ export const logComplianceTagged = {
   error: (msg: string, payload?: Record<string, unknown>) => emit("[compliance]", "error", msg, payload),
 };
 
+/** OACIQ client disclosure audit line — use messages `disclosure_shown` | `disclosure_accepted`. */
+export const logOaciqComplianceTagged = {
+  info: (msg: string, payload?: Record<string, unknown>) => emit("[compliance:oaciq]", "info", msg, payload),
+  warn: (msg: string, payload?: Record<string, unknown>) => emit("[compliance:oaciq]", "warn", msg, payload),
+  error: (msg: string, payload?: Record<string, unknown>) => emit("[compliance:oaciq]", "error", msg, payload),
+};
+
+/** OACIQ-oriented broker conflict / self-dealing — `conflict detected` | `consent accepted`. */
+export const logConflictComplianceTagged = {
+  info: (msg: string, payload?: Record<string, unknown>) => emit("[compliance:conflict]", "info", msg, payload),
+  warn: (msg: string, payload?: Record<string, unknown>) => emit("[compliance:conflict]", "warn", msg, payload),
+  error: (msg: string, payload?: Record<string, unknown>) => emit("[compliance:conflict]", "error", msg, payload),
+};
+
 export const logDealTagged = {
   info: (msg: string, payload?: Record<string, unknown>) => emit("[deal]", "info", msg, payload),
   warn: (msg: string, payload?: Record<string, unknown>) => emit("[deal]", "warn", msg, payload),
@@ -79,4 +107,22 @@ export const logTransactionTagged = {
   info: (msg: string, payload?: Record<string, unknown>) => emit("[transaction]", "info", msg, payload),
   warn: (msg: string, payload?: Record<string, unknown>) => emit("[transaction]", "warn", msg, payload),
   error: (msg: string, payload?: Record<string, unknown>) => emit("[transaction]", "error", msg, payload),
+};
+
+export const logTaxTagged = {
+  info: (msg: string, payload?: Record<string, unknown>) => emit("[tax]", "info", msg, payload),
+  warn: (msg: string, payload?: Record<string, unknown>) => emit("[tax]", "warn", msg, payload),
+  error: (msg: string, payload?: Record<string, unknown>) => emit("[tax]", "error", msg, payload),
+};
+
+export const logFinanceAdminTagged = {
+  info: (msg: string, payload?: Record<string, unknown>) => emit("[finance-admin]", "info", msg, payload),
+  warn: (msg: string, payload?: Record<string, unknown>) => emit("[finance-admin]", "warn", msg, payload),
+  error: (msg: string, payload?: Record<string, unknown>) => emit("[finance-admin]", "error", msg, payload),
+};
+
+export const logInvestmentComplianceTagged = {
+  info: (msg: string, payload?: Record<string, unknown>) => emit("[investment-compliance]", "info", msg, payload),
+  warn: (msg: string, payload?: Record<string, unknown>) => emit("[investment-compliance]", "warn", msg, payload),
+  error: (msg: string, payload?: Record<string, unknown>) => emit("[investment-compliance]", "error", msg, payload),
 };

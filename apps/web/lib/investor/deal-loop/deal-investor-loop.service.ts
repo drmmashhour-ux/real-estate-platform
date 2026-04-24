@@ -109,7 +109,7 @@ export class DealInvestorLoopService {
 
   /**
    * PHASE 3: SPV CREATION
-   * Auto-creates a legal entity (CorporateEntity) for the deal.
+   * Auto-creates an AMF-ready SPV structure isolating capital from brokerage.
    */
   static async createSpv(dealId: string, legalName: string) {
     const deal = await prisma.amfCapitalDeal.findUnique({
@@ -118,21 +118,27 @@ export class DealInvestorLoopService {
 
     if (!deal) throw new Error("Deal not found.");
 
-    const spv = await prisma.lecipmCorporateEntity.create({
+    // 1. Ensure a FUND entity exists to manage this SPV (Part A.1)
+    const fundEntity = await prisma.lecipmLegalEntity.findFirst({
+      where: { type: "FUND" },
+    });
+    if (!fundEntity) throw new Error("No FUND entity found in registry.");
+
+    // 2. Create the SPV record (Part C)
+    const spv = await prisma.amfSpv.create({
       data: {
         capitalDealId: dealId,
-        legalName: legalName,
-        entityType: "SPV",
-        jurisdiction: "QC", // Defaulting to Quebec for this platform
+        entityId: fundEntity.id,
+        ownershipStructureJson: { name: legalName, jurisdiction: "QC" },
       },
     });
 
     await logActivity({
       userId: deal.sponsorUserId,
       action: "amf_spv_created",
-      entityType: "LecipmCorporateEntity",
+      entityType: "AmfSpv",
       entityId: spv.id,
-      metadata: { capitalDealId: dealId, legalName },
+      metadata: { capitalDealId: dealId, legalName, fundEntityId: fundEntity.id },
     });
 
     // Update deal status to active for capital raise
@@ -202,7 +208,7 @@ export class DealInvestorLoopService {
     // Here we check if the platform/fund entity allows this action.
     const entityCheck = await EntityComplianceGuard.validateDomainAction({
       userId: investor.userId!,
-      domain: "FUND",
+      domain: "FINANCIAL",
       action: "INVEST_PRIVATE",
     });
     if (!entityCheck.allowed) {
@@ -358,7 +364,11 @@ export class DealInvestorLoopService {
     totalProfit: number;
     brokerCommission?: number;
     platformFee?: number;
+    referralFee?: number;
+    fundManagementFee?: number;
   }) {
+    const { CompensationSafetyService } = await import("@/lib/compliance/compensation-safety.service");
+
     const investments = await prisma.amfInvestment.findMany({
       where: { capitalDealId: params.dealId, status: "COMMITTED" },
     });
@@ -371,42 +381,51 @@ export class DealInvestorLoopService {
       const share = inv.amount / totalCommitted;
       const amount = share * params.totalProfit;
 
-      const record = await prisma.amfDistributionRecord.create({
-        data: {
-          capitalDealId: params.dealId,
-          investorId: inv.investorId,
-          kind: "DISTRIBUTION",
-          amount: amount,
-          notes: `Profit distribution for ${inv.amount} committed.`,
-        },
+      const record = await CompensationSafetyService.recordDistribution({
+        capitalDealId: params.dealId,
+        investorId: inv.investorId,
+        kind: "DISTRIBUTION" as any,
+        amount: amount,
+        notes: `Profit distribution for ${inv.amount} committed.`,
+        domain: "FINANCIAL",
       });
       distributions.push(record);
     }
 
     // 2. Record Brokerage Commission (Phase 6)
     if (params.brokerCommission) {
-      const brokerRecord = await prisma.amfDistributionRecord.create({
-        data: {
-          capitalDealId: params.dealId,
-          kind: "BROKER_COMMISSION",
-          amount: params.brokerCommission,
-          notes: "Brokerage commission for deal execution.",
-        },
+      const brokerRecord = await CompensationSafetyService.recordDistribution({
+        capitalDealId: params.dealId,
+        kind: "BROKER_COMMISSION",
+        amount: params.brokerCommission,
+        notes: "Brokerage commission for deal execution.",
+        domain: "BROKERAGE",
       });
       distributions.push(brokerRecord);
     }
 
     // 3. Record Platform Fee (Phase 6)
     if (params.platformFee) {
-      const platformRecord = await prisma.amfDistributionRecord.create({
-        data: {
-          capitalDealId: params.dealId,
-          kind: "PLATFORM_FEE",
-          amount: params.platformFee,
-          notes: "Platform technology fee.",
-        },
+      const platformRecord = await CompensationSafetyService.recordDistribution({
+        capitalDealId: params.dealId,
+        kind: "PLATFORM_FEE",
+        amount: params.platformFee,
+        notes: "Platform technology fee.",
+        domain: "FINANCIAL", // Processed as part of capital management
       });
       distributions.push(platformRecord);
+    }
+
+    // 4. Record Fund Management Fee (Part E)
+    if (params.fundManagementFee) {
+      const fundRecord = await CompensationSafetyService.recordDistribution({
+        capitalDealId: params.dealId,
+        kind: "FUND_MANAGEMENT_FEE",
+        amount: params.fundManagementFee,
+        notes: "Fund management fee.",
+        domain: "FINANCIAL",
+      });
+      distributions.push(fundRecord);
     }
 
     return distributions;

@@ -10,6 +10,10 @@ import { runPostCloseOnboarding } from "@/modules/closing/postclose-onboarding.s
 import { transitionPipelineState } from "@/modules/execution/execution.service";
 import { getLatestCloseProbability } from "@/modules/deal/close-probability.service";
 import { recordCloseProbabilityOutcome } from "@/modules/deal/close-probability-learning.service";
+import {
+  DealConflictConsentBlockedError,
+  assertDealConflictConsentAllowsProgress,
+} from "@/lib/compliance/conflict-deal-compliance.service";
 
 const TAG = "[closing-room]";
 
@@ -137,6 +141,13 @@ export async function confirmClosingExecution(options: {
       select: { id: true },
     });
     return { assetId: a?.id ?? null };
+  }
+
+  try {
+    await assertDealConflictConsentAllowsProgress(options.dealId);
+  } catch (e) {
+    if (e instanceof DealConflictConsentBlockedError) throw new Error(e.message);
+    throw e;
   }
 
   const readiness = await evaluateFinalClosingReadiness(options.dealId);

@@ -15,6 +15,7 @@
     "build": "NODE_OPTIONS=--max-old-space-size=16384 next build --webpack",
     "ci:integrity": "npx tsx scripts/check-repo-integrity.ts",
     "integrity:check": "npx tsx scripts/check-repo-integrity.ts",
+    "validate:regulator-claims": "npx tsx scripts/check-regulator-marketing-claims.ts",
     "validate:v8-safe": "npx tsx scripts/validate-v8-nondestructive.ts",
     "validate:v8-safe:last-commit": "npx tsx scripts/validate-v8-nondestructive.ts --last-commit",
     "typecheck": "NODE_OPTIONS=--max-old-space-size=8192 pnpm exec tsc --noEmit -p tsconfig.json",

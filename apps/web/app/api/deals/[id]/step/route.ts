@@ -4,6 +4,10 @@ import { lecipmOaciqFlags } from "@/config/feature-flags";
 import { nextStep } from "@/modules/deal-execution/step-engine.service";
 import type { ExecutionStepKey } from "@/modules/deal-execution/execution-orchestrator";
 import { resolveCurrentStepFromDealStatus } from "@/modules/deal-execution/execution-orchestrator";
+import {
+  DealConflictConsentBlockedError,
+  assertDealConflictConsentAllowsProgress,
+} from "@/lib/compliance/conflict-deal-compliance.service";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +32,17 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
 
   const deal = await prisma.deal.findUnique({ where: { id: dealId } });
   if (!deal) return Response.json({ error: "Not found" }, { status: 404 });
+
+  if (lecipmOaciqFlags.brokerConflictDisclosureV1) {
+    try {
+      await assertDealConflictConsentAllowsProgress(dealId);
+    } catch (e) {
+      if (e instanceof DealConflictConsentBlockedError) {
+        return Response.json({ error: e.message, code: "CONFLICT_DISCLOSURE_REQUIRED" }, { status: 409 });
+      }
+      throw e;
+    }
+  }
 
   const meta =
     deal.executionMetadata && typeof deal.executionMetadata === "object"

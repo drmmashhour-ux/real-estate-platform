@@ -130,6 +130,10 @@ export async function POST(req: Request) {
   const performedById = sessionUserId ?? null;
   const aiFlags = mergeAiFlags(applied.intakeFlags, body.aiFlags);
 
+  const evidenceDocumentIds = Array.isArray(body.evidenceDocumentIds)
+    ? (body.evidenceDocumentIds as unknown[]).filter((x): x is string => typeof x === "string")
+    : [];
+
   const complaint = await prisma.complaintCase.create({
     data: {
       caseNumber: buildComplaintCaseNumber(),
@@ -139,9 +143,14 @@ export async function POST(req: Request) {
       complainantName: typeof body.complainantName === "string" ? body.complainantName : null,
       complainantEmail: complainantEmail || null,
       complainantPhone: typeof body.complainantPhone === "string" ? body.complainantPhone : null,
+      complainantRelation: typeof body.complainantRelation === "string" ? body.complainantRelation : null,
+      consentToBeContacted: body.consentToBeContacted === true,
+      preferredResolution: typeof body.preferredResolution === "string" ? body.preferredResolution : null,
+      evidenceDocumentIds: evidenceDocumentIds.length ? evidenceDocumentIds : undefined,
       targetType: typeof body.targetType === "string" ? body.targetType : "unknown",
       targetId: typeof body.targetId === "string" ? body.targetId : null,
       linkedBrokerId: typeof body.linkedBrokerId === "string" ? body.linkedBrokerId : null,
+      linkedEmployeeUserId: typeof body.linkedEmployeeUserId === "string" ? body.linkedEmployeeUserId : null,
       linkedAgencyId: typeof body.linkedAgencyId === "string" ? body.linkedAgencyId : agencyId,
       linkedListingId: typeof body.linkedListingId === "string" ? body.linkedListingId : null,
       linkedDealId: typeof body.linkedDealId === "string" ? body.linkedDealId : null,

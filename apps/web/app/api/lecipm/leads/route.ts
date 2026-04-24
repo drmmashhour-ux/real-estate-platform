@@ -47,6 +47,7 @@ import {
 import { tierEmoji, recommendedActionsForLead } from "@/lib/ai/lead-tier";
 import { getLeadAttributionFromRequest } from "@/lib/attribution/lead-attribution";
 import { persistLaunchEvent } from "@/src/modules/launch/persistLaunchEvent";
+import { playbookMemoryWriteService } from "@/modules/playbook-memory/services/playbook-memory-write.service";
 import { assertImmoContactLegalForSession } from "@/lib/immo/immo-contact-legal-gate";
 import {
   brokerDemoLeadStage,
@@ -72,6 +73,7 @@ import { computeLeadDemandLevel } from "@/modules/leads/lead-demand.service";
 import { computeBrokerInterestLevel, computeDynamicLeadPrice } from "@/modules/leads/dynamic-pricing.service";
 import { metricsLog } from "@/lib/metrics-log";
 import { logLeadTagged } from "@/lib/server/launch-logger";
+import { recordOutcome, predictedTierFromLeadScore } from "@/modules/outcomes/outcome.service";
 
 export const dynamic = "force-dynamic";
 
@@ -505,6 +507,42 @@ export async function POST(req: Request) {
       ...(phone ? { phone } : {}),
       ...(sessionUserId ? { userId: sessionUserId } : {}),
     });
+    try {
+      const b = body as Record<string, unknown>;
+      // TODO: Downstream steps may pass `memoryRecordId` in internal request metadata to tie outcomes
+      // (e.g. POST /api/playbook-memory/outcome) without exposing it on the public response body.
+      const _launchPlaybookMemoryRecord = await playbookMemoryWriteService.recordDecision({
+        source: "HUMAN",
+        triggerEvent: "launch_lead_capture",
+        actionType: "lead_capture_form_submit",
+        context: {
+          domain: "LEADS",
+          entityType: "lead",
+          market: {
+            country: typeof b.country === "string" ? b.country : "ca",
+          },
+          segment: {
+            source: "landing",
+            leadType: "unknown",
+          },
+          signals: {
+            hasPhone: Boolean(phone),
+            locale: typeof b.locale === "string" ? b.locale : "en",
+          },
+        },
+        actionPayload: {
+          email,
+          hasPhone: Boolean(phone),
+        },
+        objectiveSnapshot: {
+          goal: "lead_conversion",
+        },
+        initialConfidence: 0.5,
+      });
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error("[playbook]", "leads_integration_failed", e);
+    }
     await prisma.waitlistUser
       .upsert({
         where: { email },
@@ -605,6 +643,17 @@ export async function POST(req: Request) {
         leadSource,
         variant: "project_form",
         listingId: dbLead.listingId ?? null,
+        outcomeHint: (() => {
+          const p = predictedTierFromLeadScore(finalScore);
+          return {
+            capture: true,
+            entityType: "lead" as const,
+            entityId: dbLead.id,
+            actionTaken: "lead_created",
+            predictedOutcome: { tier: p.label, pConvert: p.pConvert },
+            source: "log_hook" as const,
+          };
+        })(),
       });
 
       void trackEvent(
@@ -1239,6 +1288,25 @@ export async function PATCH(req: Request) {
       await prisma.lead.update({
         where: { id },
         data: updateData,
+      });
+    }
+
+    if (pipelineChangedTo === "won" || pipelineChangedTo === "lost") {
+      const pred = predictedTierFromLeadScore(lead.score);
+      const conv = pipelineChangedTo === "won";
+      const gap = Math.abs((conv ? 1 : 0) - pred.pConvert);
+      const comparisonLabel = gap < 0.2 ? "match" : gap < 0.45 ? "partial" : "miss";
+      void recordOutcome({
+        entityType: "lead",
+        entityId: id,
+        actionTaken: pipelineChangedTo === "won" ? "pipeline_won" : "pipeline_lost",
+        predictedOutcome: { tier: pred.label, pConvert: pred.pConvert },
+        actualOutcome: { converted: conv, pipeline: pipelineChangedTo },
+        source: "deal_intelligence",
+        contextUserId: brokerId,
+        comparisonLabel: comparisonLabel as "match" | "partial" | "miss",
+      }).then((r) => {
+        if (!r.ok) console.error("[lecipm][outcome] pipeline record failed", r);
       });
     }
 

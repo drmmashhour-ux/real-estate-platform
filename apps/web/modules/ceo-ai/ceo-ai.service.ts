@@ -17,6 +17,7 @@ import { recordCeoDecisionMemory } from "@/modules/ceo-ai/ceo-memory.service";
 import { shouldRouteCeoDecision } from "@/modules/ceo-ai/ceo-routing.service";
 import { buildCeoContextFingerprint } from "@/modules/ceo-ai/ceo-memory-context.service";
 import { buildCeoStrategySnapshot } from "@/modules/ceo-ai/ceo-strategy-snapshot.service";
+import { seedInitialGoals } from "@/modules/ceo-ai/ceo-long-term-goals.service";
 
 export async function gatherMarketSignals() {
   const d30 = new Date();
@@ -43,6 +44,8 @@ export async function gatherMarketSignals() {
     avgLeadScore,
     revenueRows,
     gtmRecent,
+    dealsActive,
+    esgRecent,
   ] = await Promise.all([
     prisma.seniorLead.count({ where: { createdAt: { gte: d30 } } }),
     prisma.seniorLead.count({ where: { createdAt: { gte: d60, lt: d30 } } }),
@@ -84,7 +87,22 @@ export async function gatherMarketSignals() {
     prisma.seniorLivingGtmExecutionEvent.count({
       where: { occurredAt: { gte: d30 } },
     }),
+    prisma.amfCapitalDeal.count({
+      where: { status: { notIn: ["CLOSED", "PAUSED", "AVOID"] } },
+    }),
+    prisma.esgEvent.count({
+      where: { createdAt: { gte: d30 } },
+    }),
   ]);
+
+  const activeDealsCount = dealsActive;
+  // Deal pipeline health: ratio of advanced status vs total active
+  const advancedDeals = await prisma.amfCapitalDeal.count({
+    where: { status: { in: ["DILIGENCE", "COMMITMENT"] } },
+  });
+  const dealPipelineHealth = activeDealsCount > 0 ? advancedDeals / activeDealsCount : 0.5;
+
+  const esgActivityLevel = Math.min(1.0, esgRecent / 20); // Normalized to 20 events per month
 
   const seniorConversionRate30d = leadsLast30d === 0 ? 0 : closed30 / leadsLast30d;
 
@@ -121,6 +139,9 @@ export async function gatherMarketSignals() {
     emailEngagementScore: null,
     avgLeadQualityScore: avgLeadScore._avg.score ?? null,
     revenueTrend30dProxy,
+    activeDealsCount,
+    dealPipelineHealth,
+    esgActivityLevel,
   };
 }
 
@@ -130,9 +151,18 @@ export async function getExecutiveSummary() {
   const preview = await generateCeoDecisions(signals, { maxDecisions: policy.maxDailyChanges });
   const snapshot = await buildCeoStrategySnapshot();
 
-  const pending = await prisma.ceoDecision.count({
-    where: { status: "PROPOSED", createdAt: { gte: new Date(Date.now() - 86400000) } },
-  });
+  const [pending, latestInsights, latestSnapshot] = await Promise.all([
+    prisma.ceoDecision.count({
+      where: { status: "PROPOSED", createdAt: { gte: new Date(Date.now() - 86400000) } },
+    }),
+    prisma.ceoInsight.findMany({
+      orderBy: { detectedAt: "desc" },
+      take: 10
+    }),
+    prisma.ceoStrategySnapshot.findFirst({
+      orderBy: { createdAt: "desc" }
+    })
+  ]);
 
   return {
     signals,
@@ -140,6 +170,8 @@ export async function getExecutiveSummary() {
     preview,
     snapshot,
     pendingDecisionsToday: pending,
+    latestInsights,
+    latestSnapshot,
     generatedAt: new Date().toISOString(),
   };
 }
@@ -173,6 +205,7 @@ async function recentMajorPricingMove(): Promise<boolean> {
 }
 
 export async function runCeo(mode: "daily" | "weekly" | "manual") {
+  await seedInitialGoals();
   const policy = await getOrCreateCeoPolicy();
   const signals = await gatherMarketSignals();
   const budget = Math.max(0, policy.maxDailyChanges - (await decisionsCreatedToday()));
@@ -354,6 +387,36 @@ export async function executeCeoDecision(id: string): Promise<void> {
         },
       });
       result.logged = "gtm_material_queue";
+      break;
+    }
+    case "fund_strategy_change": {
+      const p = payload as { fundId: string; targetStrategy: any };
+      await prisma.investmentFund.update({
+        where: { id: p.fundId },
+        data: { strategyMode: p.targetStrategy },
+      });
+      result.executed = "fund_strategy_updated";
+      break;
+    }
+    case "fund_reallocation_trigger":
+    case "fund_rebalance": {
+      const p = payload as { fundId: string };
+      const { FundAllocationService } = await import("../fund/fund-allocation.service");
+      await FundAllocationService.runFundAllocation(p.fundId, d.approvedByUserId || "system");
+      result.executed = "fund_allocation_triggered";
+      break;
+    }
+    case "capital_strategy_shift": {
+      const p = payload as { targetMode: string; rationale: string };
+      await prisma.seniorLivingGtmExecutionEvent.create({
+        data: {
+          eventType: "CEO_CAPITAL_STRATEGY_SHIFT",
+          quantity: 1,
+          notes: `${d.title}: Shifting to ${p.targetMode}. ${p.rationale}`,
+          metadata: { payload } as Prisma.InputJsonValue,
+        },
+      });
+      result.executed = "capital_strategy_shifted_logged";
       break;
     }
     default:

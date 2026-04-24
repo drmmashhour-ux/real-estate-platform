@@ -7,6 +7,10 @@ import { assertHasBrokerApproval, assertTransitionAllowed, type ExecutionGuardCo
 import { resolveBrokerApprovalUiState } from "@/modules/approval/broker-approval-workflow.service";
 import { normalizeState } from "./execution-state-machine";
 import type { ExecutionPipelineState, ExecutionTransitionReason } from "./execution.types";
+import {
+  DealConflictConsentBlockedError,
+  assertDealConflictConsentAllowsProgress,
+} from "@/lib/compliance/conflict-deal-compliance.service";
 
 async function audit(
   dealId: string,
@@ -74,6 +78,15 @@ export async function transitionPipelineState(input: {
     select: { lecipmExecutionPipelineState: true },
   });
   if (!deal) return { ok: false, message: "Deal not found" };
+
+  try {
+    await assertDealConflictConsentAllowsProgress(input.dealId);
+  } catch (e) {
+    if (e instanceof DealConflictConsentBlockedError) {
+      return { ok: false, message: e.message };
+    }
+    throw e;
+  }
 
   if (input.to === "closed") {
     try {

@@ -1,0 +1,35 @@
+import { LEGAL_PACK_DISCLAIMERS, LEGAL_PACK_VERSION, type SubscriptionAgreementFields } from "./legal-pack.templates";
+
+export function generateSubscriptionAgreementMarkdown(fields: SubscriptionAgreementFields): string {
+  return [
+    `# Subscription Agreement (template v${LEGAL_PACK_VERSION})`,
+    "",
+    LEGAL_PACK_DISCLAIMERS.notAdvice,
+    "",
+    LEGAL_PACK_DISCLAIMERS.noGuarantee,
+    "",
+    `**Issuer:** ${fields.spvIssuerLegalName}`,
+    `**Investor:** ${fields.investorIdentity}`,
+    `**Subscription amount:** ${fields.subscribedAmount} (currency as agreed)`,
+    `**Security type:** ${fields.securityType}`,
+    "",
+    "## Closing conditions",
+    fields.closingConditions,
+    "",
+    "## Investor representations",
+    fields.investorRepresentations,
+    "",
+    "## Broker / intermediary conflicts",
+    fields.brokerConflictNote,
+    "",
+    "## Governing law",
+    fields.governingLaw,
+    "",
+    "## Signatures",
+    "",
+    "_________________________  Date: __________  Investor",
+    "",
+    "_________________________  Date: __________  Authorized signatory for issuer",
+    "",
+  ].join("\n");
+}

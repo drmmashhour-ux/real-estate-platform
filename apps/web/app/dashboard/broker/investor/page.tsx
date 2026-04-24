@@ -130,8 +130,13 @@ export default function InvestorCalculatorPage() {
           Cashflow, ROI, cap rate, DSCR, break-even occupancy, and AI investment interpretation. Advisory only — not investment
           advice.
         </p>
-        <div className="mt-2 inline-block rounded-full bg-amber-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-amber-500 border border-amber-500/20">
-          Private investment opportunity (not a regulated fund)
+        <div className="mt-2 flex gap-2">
+          <div className="inline-block rounded-full bg-amber-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-amber-500 border border-amber-500/20">
+            Investment activity (AMF)
+          </div>
+          <div className="inline-block rounded-full bg-slate-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-slate-400 border border-slate-500/20">
+            Simulation mode
+          </div>
         </div>
       </div>
 

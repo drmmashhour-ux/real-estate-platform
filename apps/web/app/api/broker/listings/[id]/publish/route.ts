@@ -25,6 +25,17 @@ import { enforceAction } from "@/lib/compliance/enforce-action";
 import { createAccountabilityRecord } from "@/lib/compliance/create-accountability-record";
 import { validateListingAdvertisingForPublish } from "@/lib/compliance/oaciq/representation-advertising/listing-advertising-publish.service";
 import { validateQuebecLanguageForListingPublish } from "@/lib/compliance/quebec/listing-quebec-compliance-publish.service";
+import {
+  assertBrokerDecisionConfirmation,
+  assertLegallyBindingCallerNotAutomated,
+  brokerDecisionAuthorityEnforced,
+  recordOaciqBrokerDecision,
+} from "@/lib/compliance/oaciq/broker-decision-authority";
+import {
+  OaciqAlignmentError,
+  enforceOaciqAlignmentOrThrow,
+} from "@/lib/compliance/oaciq/oaciq-alignment-layer.service";
+import { requireActiveResidentialBrokerLicence } from "@/lib/compliance/oaciq/broker-licence-guard";
 
 export const dynamic = "force-dynamic";
 
@@ -33,15 +44,48 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   const userId = await getGuestId();
   if (!userId) return NextResponse.json({ error: "Sign in required" }, { status: 401 });
 
+  let publishBody: Record<string, unknown> = {};
+  try {
+    publishBody = (await req.json()) as Record<string, unknown>;
+  } catch {
+    publishBody = {};
+  }
+
   const { id } = await ctx.params;
   const ok = await canAccessCrmListingCompliance(userId, id);
   if (!ok) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const listing = await prisma.listing.findUnique({
     where: { id },
-    select: { tenantId: true, ownerId: true },
+    select: { tenantId: true, ownerId: true, listingType: true },
   });
   if (!listing) return NextResponse.json({ error: "Listing not found" }, { status: 404 });
+
+  const alignmentBrokerId = listing.ownerId ?? userId;
+
+  const licenceBlock = await requireActiveResidentialBrokerLicence(alignmentBrokerId, {
+    transactionType: "listing",
+    dealType: listing.listingType,
+    assignedBrokerId: alignmentBrokerId,
+    actorBrokerId: userId,
+  });
+  if (licenceBlock) return licenceBlock;
+
+  try {
+    await enforceOaciqAlignmentOrThrow({
+      brokerId: alignmentBrokerId,
+      action: "LISTING_PUBLISH",
+      listingId: id,
+    });
+  } catch (e) {
+    if (e instanceof OaciqAlignmentError) {
+      return NextResponse.json(
+        { error: e.message, code: "OACIQ_ALIGNMENT_BLOCK", rules: e.failedSummaries },
+        { status: 403 },
+      );
+    }
+    throw e;
+  }
 
   const ownerType = listing.tenantId ? "agency" : listing.ownerId ? "solo_broker" : "platform";
   const ownerId = listing.tenantId ?? listing.ownerId ?? "platform";
@@ -173,6 +217,26 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
           { status: 403 },
         );
       }
+    }
+
+    if (brokerDecisionAuthorityEnforced()) {
+      try {
+        assertLegallyBindingCallerNotAutomated(publishBody);
+        assertBrokerDecisionConfirmation(publishBody);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "Broker decision required";
+        return NextResponse.json(
+          { error: msg, code: "BROKER_DECISION_AUTHORITY_REQUIRED" },
+          { status: 403 }
+        );
+      }
+      const responsibleBrokerId = listing.ownerId ?? userId;
+      await recordOaciqBrokerDecision({
+        responsibleBrokerId,
+        decisionType: "LISTING_PUBLISH",
+        confirmedByUserId: userId,
+        scope: { listingId: id },
+      });
     }
 
     await prisma.listing.update({

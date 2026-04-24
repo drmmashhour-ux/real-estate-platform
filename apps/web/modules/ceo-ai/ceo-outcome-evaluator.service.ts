@@ -122,6 +122,33 @@ function computeOutcome(
       break;
     }
 
+    case "DEALS": {
+      const pipelineDelta = after.dealPipelineHealth - before.dealPipelineHealth;
+      impactScore = pipelineDelta * 100;
+      if (pipelineDelta > 0.05) resultLabel = "POSITIVE";
+      else if (pipelineDelta < -0.05) resultLabel = "NEGATIVE";
+      reasoning = `Deal pipeline health shifted by ${(pipelineDelta * 100).toFixed(1)}%`;
+      break;
+    }
+
+    case "ESG": {
+      const esgDelta = after.esgActivityLevel - before.esgActivityLevel;
+      impactScore = esgDelta * 100;
+      if (esgDelta > 0.1) resultLabel = "POSITIVE";
+      else if (esgDelta < -0.1) resultLabel = "NEGATIVE";
+      reasoning = `ESG activity level shifted by ${(esgDelta * 100).toFixed(1)}%`;
+      break;
+    }
+
+    case "CAPITAL": {
+      const dealCountDelta = after.activeDealsCount - before.activeDealsCount;
+      impactScore = dealCountDelta * 5;
+      if (dealCountDelta > 0) resultLabel = "POSITIVE";
+      else if (dealCountDelta < 0) resultLabel = "NEGATIVE";
+      reasoning = `Active deals count changed by ${dealCountDelta}`;
+      break;
+    }
+
     default:
       // Fallback to leads
       impactScore = (after.leadsLast30d - before.leadsLast30d) > 0 ? 10 : -10;

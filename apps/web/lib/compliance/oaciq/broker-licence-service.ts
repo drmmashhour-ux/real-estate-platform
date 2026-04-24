@@ -14,6 +14,8 @@ export type BrokerageScopeInput = {
   dwellingUnitCount?: number | null;
   assignedBrokerId?: string | null;
   actorBrokerId?: string | null;
+  /** Broker / compliance officer attestation after manual review (never set by AI). */
+  manualComplianceAcknowledged?: boolean;
 };
 
 export type BrokerLicenceEvaluation = {
@@ -37,7 +39,14 @@ function isDwellingCountInScope(count: number | null | undefined): boolean {
 }
 
 export function buildOaciqLicenceContext(input: {
-  user: { id: string; role: PlatformRole; brokerStatus: BrokerStatus; emailVerifiedAt: Date | null };
+  user: {
+    id: string;
+    role: PlatformRole;
+    brokerStatus: BrokerStatus;
+    emailVerifiedAt: Date | null;
+    isOaciqLicensed?: boolean;
+    oaciqLicenseNumber?: string | null;
+  };
   brokerVerification: { verificationStatus: VerificationStatus; licenseNumber: string } | null;
   profile: { licenceType: string; licenceStatus: string } | null;
   scope: BrokerageScopeInput;
@@ -48,7 +57,10 @@ export function buildOaciqLicenceContext(input: {
   const identityOk = Boolean(input.user.emailVerifiedAt) && verificationOk;
 
   const profile = input.profile;
-  const profileActive = !profile || profile.licenceStatus !== "inactive";
+  /** Capsule active, or legacy User OACIQ flags when no capsule row exists yet. */
+  const profileActive = profile
+    ? profile.licenceStatus === "active"
+    : Boolean(input.user.isOaciqLicensed && input.user.oaciqLicenseNumber?.trim());
   const categoryOk = !profile || profile.licenceType === "residential";
 
   const scopeOk =
@@ -75,7 +87,7 @@ export function buildOaciqLicenceContext(input: {
     is_licence_active,
     is_residential_scope_valid,
     is_transaction_type_allowed,
-    manual_regulator_review_completed: false,
+    manual_regulator_review_completed: input.scope.manualComplianceAcknowledged === true,
   };
 }
 
@@ -95,6 +107,8 @@ export async function evaluateBrokerLicenceForBrokerage(input: {
       role: true,
       brokerStatus: true,
       emailVerifiedAt: true,
+      isOaciqLicensed: true,
+      oaciqLicenseNumber: true,
       brokerVerifications: {
         take: 1,
         select: { verificationStatus: true, licenseNumber: true },

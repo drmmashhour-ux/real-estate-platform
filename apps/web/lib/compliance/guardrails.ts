@@ -1,3 +1,8 @@
+import {
+  evaluateComplaintGovernanceRules,
+  type ComplaintGovernanceFacts,
+} from "@/lib/compliance/complaints/complaint-compliance-engine";
+
 export type GuardrailFacts = Record<string, unknown>;
 
 export type GuardrailEvaluation =
@@ -11,6 +16,52 @@ export type GuardrailEvaluation =
       manualReviewRequired?: boolean;
       overrideAllowed?: boolean;
     };
+
+function mapComplaintGovernanceFacts(facts: GuardrailFacts): ComplaintGovernanceFacts {
+  return {
+    hasWrittenComplaintPolicy: facts.hasWrittenComplaintPolicy === true,
+    complaintStatus: typeof facts.complaintStatus === "string" ? facts.complaintStatus : "new",
+    hasClassificationReview: facts.hasClassificationReview === true,
+    assignedOwnerUserId:
+      typeof facts.assignedOwnerUserId === "string" && facts.assignedOwnerUserId.trim()
+        ? facts.assignedOwnerUserId.trim()
+        : null,
+    daysOpen: typeof facts.complaintDaysOpen === "number" ? facts.complaintDaysOpen : 0,
+    acknowledgeSlaDays: typeof facts.complaintAcknowledgeSlaDays === "number" ? facts.complaintAcknowledgeSlaDays : 5,
+    complaintType: typeof facts.complaintType === "string" ? facts.complaintType : "other",
+    routingDecision: typeof facts.routingDecision === "string" ? facts.routingDecision : null,
+    resolutionNote: typeof facts.resolutionNote === "string" ? facts.resolutionNote : null,
+    falseAdvertisingViolationLinked: facts.falseAdvertisingViolationLinked === true,
+    repeatedComplaintPattern: facts.repeatedComplaintPattern === true,
+    consumerProtectionExplained: facts.consumerProtectionExplained === true,
+  };
+}
+
+function evaluateComplaintGovernanceGuardrail(facts: GuardrailFacts): GuardrailEvaluation {
+  const outcomes = evaluateComplaintGovernanceRules(mapComplaintGovernanceFacts(facts));
+  const fails = outcomes.filter((o) => o.level === "fail");
+  const warns = outcomes.filter((o) => o.level === "warn");
+  if (fails.length) {
+    const f0 = fails[0];
+    return {
+      allowed: false,
+      outcome: "hard_blocked",
+      severity: "high",
+      reasonCode: f0.code,
+      message: f0.message,
+    };
+  }
+  if (warns.length) {
+    const w0 = warns[0];
+    return {
+      allowed: true,
+      outcome: "allowed",
+      severity: "medium",
+      message: `${w0.code}: ${w0.message}`,
+    };
+  }
+  return { allowed: true, outcome: "allowed", severity: "info" };
+}
 
 /**
  * Deterministic compliance guardrail evaluation (no AI). All regulated flows should run through
@@ -203,6 +254,18 @@ export function evaluateGuardrails(input: {
 
   if (moduleKey === "complaints" && actionKey === "refer_complaint") {
     return { allowed: true, outcome: "allowed", severity: "info" };
+  }
+
+  if (moduleKey === "complaints" && actionKey === "governance_eval") {
+    return evaluateComplaintGovernanceGuardrail(facts);
+  }
+
+  if (moduleKey === "consumer_protection" && actionKey === "governance_eval") {
+    return evaluateComplaintGovernanceGuardrail(facts);
+  }
+
+  if (moduleKey === "oaciq_collaboration" && actionKey === "governance_eval") {
+    return evaluateComplaintGovernanceGuardrail(facts);
   }
 
   // CONTRACT / TRANSACTION RELEASE (broker execution path)

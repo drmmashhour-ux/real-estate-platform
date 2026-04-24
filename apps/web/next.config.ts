@@ -46,6 +46,9 @@ const nextConfig: NextConfig = {
   async rewrites() {
     const L = "/en/ca";
     return [
+      /** LECIPM console lead APIs — legacy `/api/leads` → canonical `/api/lecipm/leads` (POST body preserved). */
+      { source: "/api/leads", destination: "/api/lecipm/leads" },
+      { source: "/api/leads/:path*", destination: "/api/lecipm/leads/:path*" },
       { source: "/broker-software-quebec", destination: `${L}/growth-seo/broker-software-quebec` },
       { source: "/real-estate-crm-ai", destination: `${L}/growth-seo/real-estate-crm-ai` },
       { source: "/tenant-screening-canada", destination: `${L}/growth-seo/tenant-screening-canada` },

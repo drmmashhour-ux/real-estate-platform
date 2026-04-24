@@ -31,11 +31,14 @@ export function BrokerDisclosureBadge({
           </svg>
         </span>
         <div className="flex flex-col">
-          <span className="text-[10px] uppercase tracking-wider text-emerald-700 font-bold">
-            Listed by licensed broker
-          </span>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] uppercase tracking-wider text-emerald-700 font-bold">
+              Licensed Broker Verified
+            </span>
+            <span className="inline-block px-1 rounded-sm bg-emerald-600 text-[8px] text-white font-bold uppercase tracking-tighter">OACIQ</span>
+          </div>
           <span>
-            <span className="font-bold">{brokerName}</span> · OACIQ #{licenseNumber} · {practiceMode === "INDEPENDENT" ? "Independent" : "Agency"}
+            <span className="font-bold">{brokerName}</span> · #{licenseNumber} · {practiceMode === "INDEPENDENT" ? "Independent" : "Agency"}
           </span>
         </div>
       </div>

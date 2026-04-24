@@ -2018,6 +2018,11 @@ export const commandCenterFlags = {
   executiveDashboardV1: envTrue("FEATURE_EXECUTIVE_DASHBOARD_V1"),
   /** Strategic MI insights feed (dashboards); distinct env from agent `FEATURE_MARKET_INTELLIGENCE_V1` if needed. */
   marketIntelligenceDashboardV1: envTrue("FEATURE_MI_COMMAND_CENTER_V1"),
+  /**
+   * LECIPM production feedback loop — `launch-logger` hooks write append-only `LecipmOutcomeEvent` rows (opt-in for noisy tags).
+   * Default off: enable with `FEATURE_LECIPM_OUTCOME_LOOP_V1=1` when the migration is applied.
+   */
+  outcomeFeedbackLoopV1: envTrue("FEATURE_LECIPM_OUTCOME_LOOP_V1"),
 } as const;
 
 export type IntelligenceFlagKey = keyof typeof intelligenceFlags;
@@ -2349,6 +2354,8 @@ export const lecipmOaciqFlags = {
   oaciqFormsEngineV1: envTrue("FEATURE_OACIQ_FORMS_ENGINE_V1"),
   aiContractMapperV1: envTrue("FEATURE_AI_CONTRACT_MAPPER_V1"),
   residentialExecutionPipelineV1: envTrue("FEATURE_RESIDENTIAL_EXECUTION_PIPELINE_V1"),
+  /** Broker conflict-of-interest / self-dealing: disclosure status, client consent, progression gates. */
+  brokerConflictDisclosureV1: envTrue("FEATURE_BROKER_CONFLICT_DISCLOSURE_V1"),
 } as const;
 
 export type LecipmOaciqFlagKey = keyof typeof lecipmOaciqFlags;

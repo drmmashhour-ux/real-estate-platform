@@ -63,6 +63,44 @@ export async function recordCeoDecisionMemory(
 }
 
 /**
+ * Records the real-world outcome of a strategic decision.
+ */
+export async function recordCeoDecisionOutcome(params: {
+  memoryId: string;
+  outcomeWindowDays: number;
+  metricsBefore: CeoMarketSignals;
+  metricsAfter: CeoMarketSignals;
+  impactScore: number;
+  resultLabel: "POSITIVE" | "NEUTRAL" | "NEGATIVE";
+}) {
+  const outcome = await prisma.ceoDecisionOutcome.create({
+    data: {
+      memoryId: params.memoryId,
+      outcomeWindowDays: params.outcomeWindowDays,
+      metricsBeforeJson: params.metricsBefore as any,
+      metricsAfterJson: params.metricsAfter as any,
+      impactScore: params.impactScore,
+      resultLabel: params.resultLabel,
+    },
+  });
+
+  aiCeoLog("info", "decision_outcome_recorded", { 
+    outcomeId: outcome.id, 
+    memoryId: params.memoryId, 
+    label: params.resultLabel 
+  });
+  
+  void logActivity({
+    action: "decision_outcome_recorded",
+    entityType: "CeoDecisionOutcome",
+    entityId: outcome.id,
+    metadata: { memoryId: params.memoryId, resultLabel: params.resultLabel }
+  });
+
+  return outcome;
+}
+
+/**
  * Retrieves past decisions made in similar contexts.
  */
 export async function getRelevantPastDecisions(contextFingerprint: string, domain?: string) {
@@ -105,7 +143,13 @@ export function mapPayloadKindToDecisionType(kind: string): string {
       return "INVEST";
     
     case "campaign_recommend":
+    case "capital_strategy_shift":
+    case "fund_strategy_change":
       return "SHIFT_FOCUS";
+    
+    case "fund_reallocation_trigger":
+    case "fund_rebalance":
+      return "EXPERIMENT";
     
     case "operations_note":
       return "HOLD";

@@ -13,6 +13,8 @@ import type { IntelligenceFeedItem } from "@/modules/command-center/signal.types
 import { cc } from "@/components/command-center/cc-tokens";
 import { CcStatusBadge } from "@/components/command-center/CcStatusBadge";
 import { SignalCard } from "@/components/command-center/SignalCard";
+import { ScenarioAutopilotStrip } from "@/components/command-center/ScenarioAutopilotStrip";
+import { SystemPerformancePanel } from "@/components/command-center/SystemPerformancePanel";
 
 const MarketingExpansionPanel = dynamic(
   () => import("@/components/command-center/MarketingExpansionPanel").then((m) => m.MarketingExpansionPanel),
@@ -119,7 +121,20 @@ export function CommandCenterView(props: { initial: CommandCenterPagePayload }) 
           <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-[#D4AF37]/85">
             {initial.viewMode === "executive" ? "Executive command" : "Broker command"}
           </p>
-          <h1 className="mt-2 font-serif text-3xl text-[#f4efe4]">Operations overview</h1>
+          <div className="mt-1 flex items-center gap-3">
+            <h1 className="mt-2 font-serif text-3xl text-[#f4efe4]">Operations overview</h1>
+            <div className="mt-2 flex gap-2">
+              <span className="rounded bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-500 ring-1 ring-emerald-500/20">
+                Brokerage activity (OACIQ)
+              </span>
+              <span className="rounded bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-500 ring-1 ring-amber-500/20">
+                Investment activity (AMF)
+              </span>
+              <span className="rounded bg-slate-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 ring-1 ring-slate-500/20">
+                Simulation mode
+              </span>
+            </div>
+          </div>
           <p className="mt-2 max-w-2xl text-sm text-neutral-500">
             Intelligence-first command center — every signal includes provenance, explanation, and governed actions.
           </p>
@@ -129,6 +144,12 @@ export function CommandCenterView(props: { initial: CommandCenterPagePayload }) 
           <time dateTime={initial.generatedAt}>{new Date(initial.generatedAt).toLocaleString()}</time>
         </p>
       </header>
+
+      {initial.viewMode === "executive" ? <ScenarioAutopilotStrip /> : null}
+
+      {sections.systemPerformance && initial.systemPerformance ?
+        <SystemPerformancePanel data={initial.systemPerformance} />
+      : null}
 
       {sections.executiveSummary ?
         <section className="mb-10 space-y-4" aria-labelledby="exec-summary">
@@ -367,9 +388,9 @@ function PriorityZoneColumn(props: {
 
 function StrategicRecommendationsSection(props: {
   rows: CommandCenterPagePayload["strategicRecommendations"];
-  show: boolean;
+  show?: boolean;
 }) {
-  if (!props.show || props.rows.length === 0) return null;
+  if (props.show === false || props.rows.length === 0) return null;
   return (
     <section aria-labelledby="strategic">
       <h2 id="strategic" className={`${cc.sectionTitle} mb-4`}>
@@ -653,6 +674,8 @@ function QuickActionsBar(props: { viewMode: CommandCenterPagePayload["viewMode"]
   const actions = [
     { label: "Listing assistant", href: "/dashboard/lecipm/listings/assistant" },
     { label: "Hot leads", href: "/dashboard/lecipm/leads" },
+    { label: "Deal Handoff (OACIQ)", href: "/dashboard/broker/handoff" },
+    { label: "Fund Deal Flow (AMF)", href: "/dashboard/investor/packets" },
     { label: "Disputes room", href: exec ? "/dashboard/admin/disputes" : "/dashboard/disputes" },
     { label: "Portfolio (classic)", href: "/dashboard/portfolio" },
     ...(exec ?

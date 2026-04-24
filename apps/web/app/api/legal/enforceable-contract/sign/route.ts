@@ -41,6 +41,7 @@ export async function POST(request: NextRequest) {
     signatureData?: unknown;
     fsboListingId?: unknown;
     listingId?: unknown;
+    transactionId?: unknown;
   };
   try {
     body = (await request.json()) as typeof body;
@@ -88,12 +89,20 @@ export async function POST(request: NextRequest) {
       title: tpl.title,
       fsboListingId: fsboListingId || null,
       listingId: listingId || null,
+      realEstateTransactionId: transactionId || null,
       ipAddress: ipAddr,
       signatureData,
     });
     return NextResponse.json({ ok: true, contractId: id }, { headers: getRateLimitHeaders(rl) });
   } catch (e) {
     console.error("[enforceable-contract/sign]", e);
+    const msg = e instanceof Error ? e.message : "Could not save contract";
+    if (msg.includes("OACIQ client disclosure")) {
+      return NextResponse.json({ error: msg, code: "OACIQ_CLIENT_DISCLOSURE_REQUIRED" }, { status: 403 });
+    }
+    if (msg.includes("broker must confirm") || msg.includes("BrokerDecisionAuthority")) {
+      return NextResponse.json({ error: msg, code: "BROKER_DECISION_AUTHORITY_REQUIRED" }, { status: 403 });
+    }
     return NextResponse.json({ error: "Could not save contract" }, { status: 500 });
   }
 }

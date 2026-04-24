@@ -2,6 +2,7 @@ import type { DealPriorityLabel, DealRoomStage, DealParticipantRole } from "@pri
 import { prisma } from "@/lib/db";
 import { DEAL_ROOM_EVENT } from "./constants";
 import { addDealRoomEvent } from "./add-event";
+import { BrokerActionGuard } from "@/lib/compliance/broker-action-guard";
 
 export type CreateDealRoomParticipantInput = {
   userId?: string | null;
@@ -27,6 +28,15 @@ export async function createDealRoom(input: {
   extraParticipants?: CreateDealRoomParticipantInput[];
   actorUserId?: string | null;
 }) {
+  // Phase 4: Deal Ownership Enforcement & Phase 3: Action Guard
+  const guard = await BrokerActionGuard.validateBrokerageAction({
+    userId: input.brokerUserId,
+    action: "EXECUTE_DEAL",
+  });
+  if (!guard.allowed) {
+    throw new Error(guard.reason || "Broker license validation failed for deal creation.");
+  }
+
   const room = await prisma.dealRoom.create({
     data: {
       brokerUserId: input.brokerUserId,

@@ -61,3 +61,49 @@ export function confidenceFromExecutionStats(executions: number, recentDaysHint 
   const recency = Math.min(1, 14 / Math.max(1, recentDaysHint));
   return clamp01(sample * recency);
 }
+
+// --- Wave 3: `PlaybookMemoryRecord` segment similarity + recency (deterministic, no playbooks) ---
+
+export function computeSimilarityScore(a: any, b: any): number {
+  if (!a || !b) {
+    return 0;
+  }
+
+  let score = 0;
+  let total = 0;
+
+  for (const key of Object.keys(a)) {
+    total++;
+    if (a[key] === b[key]) {
+      score += 1;
+    }
+  }
+
+  return total === 0 ? 0 : score / total;
+}
+
+export function computeRecencyScore(date: Date): number {
+  const now = Date.now();
+  const diff = now - new Date(date).getTime();
+
+  const days = diff / (1000 * 60 * 60 * 24);
+
+  if (days < 1) {
+    return 1;
+  }
+  if (days < 7) {
+    return 0.8;
+  }
+  if (days < 30) {
+    return 0.6;
+  }
+  if (days < 90) {
+    return 0.4;
+  }
+
+  return 0.2;
+}
+
+export function computeFinalScore(params: { similarity: number; recency: number }): number {
+  return params.similarity * 0.7 + params.recency * 0.3;
+}
