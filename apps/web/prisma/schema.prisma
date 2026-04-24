@@ -2361,6 +2361,7 @@ model FsboListing {
   dailyDealFeedItems             DailyDealFeedItem[]
   feedInteractions               FeedInteraction[]
   watchlistItems                 WatchlistItem[]
+  brokerDisclosures              BrokerDisclosure[]
   watchlistAlerts                WatchlistAlert[]
   watchlistSnapshots             WatchlistSnapshot[]
   sellerDeclarationDrafts        SellerDeclarationDraft[]
@@ -11084,6 +11085,42 @@ model DealConflictClientConsent {
   @@index([dealId])
   @@index([userId])
   @@map("deal_conflict_client_consents")
+}
+
+/// OACIQ — broker attestation of role / interest (mandatory disclosure gate when enforcement flag is on).
+enum BrokerDisclosureRole {
+  BROKER
+  BUYER
+  SELLER
+  INVESTOR
+}
+
+model BrokerDisclosure {
+  id                  String              @id @default(cuid())
+  brokerId            String              @map("broker_id")
+  broker              User                @relation(fields: [brokerId], references: [id], onDelete: Cascade)
+  /// Residential `Deal` when disclosure is filed in deal context.
+  dealId              String?             @map("deal_id")
+  deal                Deal?               @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  /// CRM `Listing` for publish / pipeline / offer gates on broker inventory.
+  listingId           String?             @map("listing_id")
+  listing             Listing?            @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  /// FSBO row for broker-managed inventory publish.
+  fsboListingId       String?             @map("fsbo_listing_id")
+  fsboListing         FsboListing?        @relation(fields: [fsboListingId], references: [id], onDelete: Cascade)
+  role                BrokerDisclosureRole
+  hasConflict         Boolean             @map("has_conflict")
+  conflictDescription String?             @map("conflict_description") @db.Text
+  disclosedAt         DateTime            @default(now()) @map("disclosed_at")
+  /// Snapshot line appended to generated legal documents (OACIQ declaration).
+  declarationLine     String              @map("declaration_line") @db.Text
+
+  @@index([brokerId])
+  @@index([dealId])
+  @@index([listingId])
+  @@index([fsboListingId])
+  @@index([brokerId, disclosedAt(sort: Desc)])
+  @@map("broker_disclosures")
 }
 
 /// Assistive close-likelihood estimate before broker approval / signing (rule blend + pipeline signals).
@@ -20704,6 +20741,7 @@ model Listing {
   lecipmCrmOaciqSellerDeclarations LecipmCrmOaciqSellerDeclaration[]
   lecipmDeclarationDisclosures     LecipmDeclarationDisclosure[]
   lecipmBrokerageIdentityProofs    LecipmBrokerageIdentityProof[]
+  brokerDisclosures                BrokerDisclosure[]
 
   @@index([ownerId])
   @@index([tenantId])

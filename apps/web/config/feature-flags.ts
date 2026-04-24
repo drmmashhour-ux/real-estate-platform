@@ -2356,6 +2356,8 @@ export const lecipmOaciqFlags = {
   residentialExecutionPipelineV1: envTrue("FEATURE_RESIDENTIAL_EXECUTION_PIPELINE_V1"),
   /** Broker conflict-of-interest / self-dealing: disclosure status, client consent, progression gates. */
   brokerConflictDisclosureV1: envTrue("FEATURE_BROKER_CONFLICT_DISCLOSURE_V1"),
+  /** Broker-filed mandatory disclosure (OACIQ) before offers, publish, and deal creation. */
+  mandatoryBrokerDisclosureV1: envTrue("FEATURE_MANDATORY_BROKER_DISCLOSURE_V1"),
 } as const;
 
 export type LecipmOaciqFlagKey = keyof typeof lecipmOaciqFlags;
