@@ -70,9 +70,14 @@ export async function runBrokerAssistant(
     "L’assistant ne remplace pas le jugement du courtier ni l’avis juridique.",
     "Les brouillons sont fournis à des fins de révision uniquement.",
   ];
+  const disclaimersEn: string[] = [
+    "The assistant does not replace broker judgment or legal advice.",
+    "Drafts are for review only.",
+  ];
 
   if (confidenceScore < CONFIDENCE_FLOOR) {
     disclaimersFr.push(LOW_CONFIDENCE_NOTE_FR);
+    disclaimersEn.push(LOW_CONFIDENCE_NOTE_EN);
   }
 
   const summaryFr =
@@ -96,9 +101,7 @@ export async function runBrokerAssistant(
     suggestedNextSteps: nextStepsFrom(ctx, missingInformation),
     draftingSuggestions,
     confidenceScore,
-    disclaimersFr: [
-      ...disclaimersFr,
-      ...(confidenceScore < CONFIDENCE_FLOOR ? [LOW_CONFIDENCE_NOTE_EN] : []),
-    ],
+    disclaimersFr,
+    disclaimersEn,
   };
 }

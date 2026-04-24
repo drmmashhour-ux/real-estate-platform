@@ -91,6 +91,7 @@ export type BrokerAssistantOutput = {
   /** 0–1; low values force human review per safety rules */
   confidenceScore: number;
   disclaimersFr: string[];
+  disclaimersEn?: string[];
 };
 
 export type BrokerAssistantParty = {
