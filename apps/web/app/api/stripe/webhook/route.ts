@@ -964,6 +964,15 @@ export async function POST(req: NextRequest) {
         },
       });
 
+      // Finance Wiring: Create Ledger Entry
+      const { recordCharge } = await import("@/modules/payouts/payout.service");
+      void recordCharge({
+        bookingId: md.bookingId,
+        userId: userIdMeta,
+        amount: session.amount_total || 0,
+        stripeId: session.id,
+      }).catch((err) => console.error("[finance] failed to record charge", err));
+
       void recordEvolutionOutcome({
         domain: "BOOKING",
         metricType: "BOOKING",

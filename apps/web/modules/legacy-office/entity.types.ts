@@ -33,6 +33,7 @@ export type FamilyOfficeEntity = LegacyEntityBase & { entityType: "FAMILY_OFFICE
 export type HoldingEntity = LegacyEntityBase & { entityType: "HOLDING" };
 export type OperatingEntity = LegacyEntityBase & { entityType: "OPERATING" };
 export type InvestmentVehicle = LegacyEntityBase & { entityType: "INVESTMENT_VEHICLE" };
+export type TrustLikeEntity = LegacyEntityBase & { entityType: "TRUST_LIKE_INFO" };
 
 /**
  * Informational profile for trust-like or fiduciary arrangements — not a trust instrument.
@@ -48,7 +49,12 @@ export type TrustLikeControlProfile = {
   amendmentOrTerminationNotes?: string | null;
 };
 
-export type LegacyOfficeEntity = FamilyOfficeEntity | HoldingEntity | OperatingEntity | InvestmentVehicle;
+export type LegacyOfficeEntity =
+  | FamilyOfficeEntity
+  | HoldingEntity
+  | OperatingEntity
+  | InvestmentVehicle
+  | TrustLikeEntity;
 
 /** Full office state for graph + dashboard (all editable by the user in UI). */
 export type LegacyOfficeState = {

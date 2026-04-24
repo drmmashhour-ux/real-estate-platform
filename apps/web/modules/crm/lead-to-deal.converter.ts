@@ -66,6 +66,25 @@ export async function convertBrokerCrmLeadToDeal(params: {
   const priceCents = Math.round(Math.max(0, params.priceDollars) * 100);
 
   try {
+    const existingForLead = await prisma.deal.findFirst({
+      where: {
+        brokerId: params.brokerUserId,
+        executionMetadata: { path: ["brokerCrmLeadId"], equals: params.brokerCrmLeadId },
+      },
+    });
+    if (existingForLead) {
+      if (lead.status !== "negotiating") {
+        await prisma.lecipmBrokerCrmLead.update({
+          where: { id: params.brokerCrmLeadId },
+          data: { status: "negotiating" },
+        });
+      }
+      conversionLog.info("convertBrokerCrmLeadToDeal_idempotent", {
+        dealId: existingForLead.id,
+        leadId: params.brokerCrmLeadId,
+      });
+      return { ok: true, deal: existingForLead };
+    }
     const ref = await classifyListingRef(listingRow.id);
     if (ref?.kind === "crm") {
       await assertMandatoryBrokerDisclosurePresent({
@@ -95,6 +114,10 @@ export async function convertBrokerCrmLeadToDeal(params: {
           status: "initiated",
           crmStage: "negotiation",
           intelligenceStage: "NEGOTIATION",
+          executionMetadata: {
+            brokerCrmLeadId: params.brokerCrmLeadId,
+            source: "broker_crm_convert",
+          },
         },
       });
     });
