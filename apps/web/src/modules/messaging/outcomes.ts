@@ -129,6 +129,12 @@ export async function updateGrowthAiOutcome(
   logInfo(`Outcome updated: ${next}`, { conversationId, eventType });
   await refreshGrowthAiConversationStage(conversationId, `outcome:${eventType}`);
 
+  // Step 4: Broker Flow Wiring — conversation leads to booked/deal
+  if (next === "booked" || next === "lost") {
+    const { wireMessageToDeal } = await import("@/modules/evolution/funnel-wiring.service");
+    void wireMessageToDeal(conversationId, null, next === "booked" ? "DEAL_CREATED" : "LOST").catch(() => {});
+  }
+
   void recordEvolutionOutcome({
     domain: "MESSAGING",
     metricType: "CONVERSION",

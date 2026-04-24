@@ -37,7 +37,7 @@ export async function recordSignal(
     if (v == null) {
       return { ok: false, error: "empty_value" };
     }
-    const row = await prisma.userPreferenceSignalW13.create({
+    const row = await prisma.userPreferenceSignal.create({
       data: {
         userId: input.userId,
         profileId: input.profileId,

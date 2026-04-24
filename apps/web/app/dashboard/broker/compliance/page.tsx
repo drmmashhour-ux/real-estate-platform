@@ -38,6 +38,11 @@ export default function BrokerCompliancePage() {
           href="/dashboard/broker/compliance/unified"
         />
         <HubCard
+          title="Private investor packets"
+          description="From a CRM deal: /dashboard/deals/[id]/investors → Private packet. Broker approve & single-investor release."
+          href="/dashboard/command-center"
+        />
+        <HubCard
           title="AI Broker Assistant"
           description="Rédaction FR, conformité résidentielle, révision obligatoire"
           href="/dashboard/broker-assistant"

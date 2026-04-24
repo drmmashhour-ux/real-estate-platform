@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { authenticateBrokerDealRoute } from "@/lib/deals/broker-draft-auth";
-import { prisma } from "@/lib/db";
 import { generatePrivateInvestorPacketRecord } from "@/modules/private-investor-packet/private-investor-packet.service";
 
 export const dynamic = "force-dynamic";
@@ -13,11 +12,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
   const auth = await authenticateBrokerDealRoute(dealId);
   if (!auth.ok) return auth.response;
 
-  const user = await prisma.user.findUnique({
-    where: { id: auth.userId },
-    select: { role: true },
-  });
-  if (auth.deal.brokerId !== auth.userId && user?.role !== "ADMIN") {
+  if (auth.deal.brokerId !== auth.userId && auth.role !== "ADMIN") {
     return NextResponse.json({ error: "Assignee broker only" }, { status: 403 });
   }
 

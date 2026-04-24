@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 
 type Row = {
   commitmentId: string;
@@ -85,6 +86,14 @@ export function DealInvestorsDashboardClient({ dealId }: { dealId: string }) {
                       .map((p) => `${money(p.amountCents)} ${p.received ? "✓" : "—"}`)
                       .join(", ")
                   : "—"}
+                </td>
+                <td className="p-2">
+                  <Link
+                    href={`/dashboard/deals/${dealId}/investor-packet/${r.investorId}`}
+                    className="text-blue-600 underline"
+                  >
+                    Open
+                  </Link>
                 </td>
               </tr>
             ))}

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { authenticateBrokerDealRoute } from "@/lib/deals/broker-draft-auth";
-import { authenticateDealParticipantRoute } from "@/lib/deals/execution-access";
+import { getGuestId } from "@/lib/auth/session";
+import { requireBrokerDealAccess } from "@/lib/broker/residential-access";
 import { prisma } from "@/lib/db";
 import {
   assertPrivateInvestorPacketEligibility,
@@ -10,40 +10,54 @@ import {
 export const dynamic = "force-dynamic";
 
 /**
- * GET — latest packet + eligibility preview (broker sees all; investor sees only if released and self).
+ * GET — latest packet + eligibility preview.
+ * Brokers (assignee or admin): full payload. Released recipient (logged-in user === investorId): summary + HTML only for their packet.
  */
 export async function GET(_request: Request, context: { params: Promise<{ id: string; investorId: string }> }) {
   const { id: dealId, investorId } = await context.params;
 
-  const brokerAuth = await authenticateBrokerDealRoute(dealId);
-  const participant = await authenticateDealParticipantRoute(dealId);
-
-  if (!brokerAuth.ok && !participant.ok) {
-    return participant.ok === false ? participant.response : brokerAuth.response;
+  const userId = await getGuestId();
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const isBroker = brokerAuth.ok && (brokerAuth.deal.brokerId === brokerAuth.userId || brokerAuth.role === "ADMIN");
-  const isSelfInvestor =
-    participant.ok && participant.userId === investorId && participant.deal.buyerId === investorId;
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { role: true },
+  });
+  if (!user) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
 
-  if (!isBroker && !isSelfInvestor) {
+  let isBrokerViewer = false;
+  if (user.role === "BROKER" || user.role === "ADMIN") {
+    const deal = await requireBrokerDealAccess(userId, dealId, user.role === "ADMIN");
+    if (deal && (deal.brokerId === userId || user.role === "ADMIN")) {
+      isBrokerViewer = true;
+    }
+  }
+
+  const packet = await getLatestPrivateInvestorPacket(dealId, investorId);
+  const isReleasedRecipient = userId === investorId && packet?.status === "RELEASED";
+
+  if (!isBrokerViewer && !isReleasedRecipient) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const eligibility = await assertPrivateInvestorPacketEligibility({
     dealId,
     investorUserId: investorId,
-    spvId: null,
+    spvId: packet?.spvId ?? null,
   });
 
-  const packet = await getLatestPrivateInvestorPacket(dealId, investorId);
-
-  if (!isBroker && packet && packet.status !== "RELEASED") {
+  if (!isBrokerViewer && packet && packet.status !== "RELEASED") {
     return NextResponse.json(
       { error: "Packet not released to investor", privatePacket: true },
       { status: 403 },
     );
   }
+
+  const showContent = isBrokerViewer || packet?.status === "RELEASED";
 
   return NextResponse.json({
     ok: true,
@@ -63,8 +77,8 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
           version: d.version,
           dealDocumentType: d.document.type,
         })),
-        summary: isBroker || packet.status === "RELEASED" ? packet.packetSummaryJson : null,
-        htmlBundle: isBroker || packet.status === "RELEASED" ? packet.htmlBundle : null,
+        summary: showContent ? packet.packetSummaryJson : null,
+        htmlBundle: showContent ? packet.htmlBundle : null,
       }
     : null,
   });

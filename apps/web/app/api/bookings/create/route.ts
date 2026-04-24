@@ -188,6 +188,9 @@ export async function POST(request: NextRequest) {
       logApiRouteError("syncAvailability after POST /api/bookings/create", err)
     );
 
+    // Evolution Wiring
+    const { wireBookingToFunnel, recordPricingOutcome: recordFunnelPricing } = await import("@/modules/evolution/funnel-wiring.service");
+    
     void recordEvolutionOutcome({
       domain: "BOOKING",
       metricType: "BOOKING",
@@ -203,36 +206,15 @@ export async function POST(request: NextRequest) {
       idempotent: true,
     }).catch(() => {});
 
-    // Step 2: Pricing outcome wiring — check if dynamic pricing was used recently for this listing
-    void (async () => {
-      try {
-        const lastPricing = await prisma.bnhubPricingExecutionLog.findFirst({
-          where: { listingId, status: "success" },
-          orderBy: { createdAt: "desc" },
-          take: 1,
-        });
+    // Step 2: Funnel wiring — click -> booking
+    void wireBookingToFunnel(guestId, listingId, booking.id).catch(() => {});
 
-        if (lastPricing) {
-          await recordEvolutionOutcome({
-            domain: "BNHUB",
-            metricType: "PRICING",
-            strategyKey: "dynamic_pricing",
-            entityId: booking.id, // Tie it to the booking as the outcome
-            entityType: "Booking",
-            actualJson: {
-              listingId,
-              bookingId: booking.id,
-              suggestedPrice: lastPricing.newPrice,
-              actualPrice: lastPricing.newPrice, // Booking used the applied price
-              bookingResult: "SUCCESS",
-            },
-            reinforceStrategy: true,
-            idempotent: true,
-          });
-        }
+    // Step 3: Pricing outcome wiring — detailed comparison
+    const pricingBreakdown = pricingCheck.breakdown;
+    void recordFunnelPricing(listingId, booking.id, pricingBreakdown.totalCents).catch(() => {});
 
-        // Step 3: Conversion funnel wiring — check if user had saved this listing
-        if (guestId) {
+    // Step 4: Conversion funnel wiring — check if user had saved this listing
+    if (guestId) {
           const saved = await prisma.buyerSavedListing.findUnique({
             where: { userId_fsboListingId: { userId: guestId, fsboListingId: listingId } },
           });

@@ -243,6 +243,12 @@ export default async function PublicListingRoute({ params, searchParams }: Props
       reinforceStrategy: true,
       idempotent: false,
     }).catch(() => {});
+
+    // Step 2: Funnel Wiring — Search -> Click
+    if (guestIdBnhub) {
+      const { recordSearchToClick } = await import("@/modules/evolution/funnel-wiring.service");
+      void recordSearchToClick(guestIdBnhub, resolved.id, { source: "search_results" }).catch(() => {});
+    }
     fireViewListingGrowth({
       userId: guestIdBnhub,
       listingId: resolved.id,
