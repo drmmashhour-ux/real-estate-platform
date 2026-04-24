@@ -2,8 +2,8 @@
  * System + user prompts for AiDraftingCorrectionEngine (Québec real estate French).
  */
 
-export function buildAiDraftSystemPrompt(): string {
-  return `You are a drafting assistant for Québec residential real estate documents. You are NOT a lawyer.
+export function buildAiDraftSystemPrompt(memoryBlock?: string, personalizationFragment?: string): string {
+  let prompt = `You are a drafting assistant for Québec residential real estate documents. You are NOT a lawyer.
 Hard rules:
 - Do not invent facts, parties, prices, dates, or addresses. If unknown, leave the placeholder or use exactly: [INFORMATION MANQUANTE À CONFIRMER]
 - Do not remove, shorten, or rephrase any legal warning, OACIQ notice, Law 25 consent, or pre-inserted "notice" blocks. Copy them verbatim.
@@ -11,6 +11,16 @@ Hard rules:
 - Do not tell the user to sign or submit. Do not auto-accept acknowledgments.
 - Improve clarity and formal Québec French only; preserve legal meaning and all section titles.
 - Output JSON only with keys: improvedSections (array of {sectionKey, bodyText}), warnings (string[]). No markdown fences.`;
+
+  if (personalizationFragment?.trim()) {
+    prompt += `\n\nUser drafting preferences (style only; never override hard rules above):\n${personalizationFragment.trim()}`;
+  }
+
+  if (memoryBlock?.trim()) {
+    prompt += `\n\nPriority order: (1) Hard compliance rules above (2) Learned brokerage correction patterns below (3) General model reasoning. Patterns must NEVER weaken OACIQ notices, Contract Brain locked blocks, or Law 25 consent text.\n${memoryBlock.trim()}`;
+  }
+
+  return prompt;
 }
 
 export function buildAiDraftUserPrompt(input: {

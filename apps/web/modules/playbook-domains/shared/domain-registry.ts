@@ -1,6 +1,7 @@
 import type { PlaybookDomainModule } from "./domain.types";
 import { dreamHomeDomainModule } from "../dream-home/dream-home.module";
 import { growthDomainModule } from "../growth/growth.module";
+import { leadsDomainModule } from "../leads/leads.module";
 import { listingsDomainModule } from "../listings/listings.module";
 
 /**
@@ -8,6 +9,7 @@ import { listingsDomainModule } from "../listings/listings.module";
  */
 export const playbookDomainRegistry = {
   GROWTH: growthDomainModule,
+  LEADS: leadsDomainModule,
   LISTINGS: listingsDomainModule,
   DREAM_HOME: dreamHomeDomainModule,
 } as const;

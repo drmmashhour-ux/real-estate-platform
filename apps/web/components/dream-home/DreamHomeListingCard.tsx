@@ -30,6 +30,12 @@ export function DreamHomeListingCard({ listing: L, basePath, rank }: Props) {
         <p className="mt-1 text-sm text-premium-gold">
           {priceFmt(L.priceCents)} · {L.bedrooms ?? "—"} bd · {L.bathrooms ?? "—"} ba
         </p>
+        {L.scoreBreakdown ? (
+          <p className="mt-1 text-xs text-slate-500">
+            Score blend: filter fit {L.scoreBreakdown.filterFit.toFixed(2)} · lifestyle fit{" "}
+            {L.scoreBreakdown.lifestyleFit.toFixed(2)} (rule-based, from your answers + listing text)
+          </p>
+        ) : null}
         <ul className="mt-2 list-inside list-disc text-sm text-slate-400">
           {L.whyThisFits.map((w) => (
             <li key={w}>{w}</li>

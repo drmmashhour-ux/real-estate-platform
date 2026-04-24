@@ -573,6 +573,11 @@ model User {
   crmDealInvestorPaymentsRecorded        CrmDealInvestorPayment[]                 @relation("CrmDealInvestorPaymentRecordedBy")
   crmDealCapTableEntries                 CrmDealCapTableEntry[]                   @relation("CrmDealCapTableInvestor")
   lecipmInvestmentFlowAuditLogs          LecipmInvestmentFlowAuditLog[]           @relation("LecipmInvestmentFlowAuditActor")
+  privateInvestorPacketsAsInvestor       PrivateInvestorPacket[]                  @relation("PrivateInvestorPacketInvestor")
+  privateInvestorPacketsApproved         PrivateInvestorPacket[]                  @relation("PrivateInvestorPacketApprovedBy")
+  privateInvestorPacketsReleased         PrivateInvestorPacket[]                  @relation("PrivateInvestorPacketReleasedBy")
+  privateInvestorPacketEngagements       PrivateInvestorPacketEngagement[]
+  privateInvestorPacketAuditLogs         PrivateInvestorPacketAuditLog[]          @relation("PrivateInvestorPacketAuditActor")
   lecipmProductionGuardNoticeAcks          LecipmProductionGuardNoticeAck[]
   lecipmProductionGuardAuditEvents         LecipmProductionGuardAuditEvent[]        @relation("LecipmProductionGuardAuditActor")
   lecipmProductionGuardArtifactsCreated    LecipmProductionGuardArtifact[]          @relation("LecipmProductionGuardArtifactCreator")
@@ -11150,6 +11155,10 @@ model Deal {
   brokerDealAssignments            BrokerDealAssignment[]
   brokerInternalNotes              BrokerInternalNote[]
   brokerWorkspaceAuditEvents       BrokerWorkspaceAuditEvent[]
+  lecipmInvestmentFlowAuditLogs    LecipmInvestmentFlowAuditLog[]
+  crmDealInvestorCommitments       CrmDealInvestorCommitment[]
+  privateInvestorPackets           PrivateInvestorPacket[]
+  privateInvestorPacketAuditLogs   PrivateInvestorPacketAuditLog[]
   complianceCases                  ComplianceCase[]
   qaReviews                        QaReview[]
   brokerageOfficeId                String?                           @map("brokerage_office_id")
@@ -11336,6 +11345,96 @@ model LecipmInvestmentFlowAuditLog {
   @@index([dealId, createdAt])
   @@index([action])
   @@map("lecipm_investment_flow_audit_logs")
+}
+
+/// Per-investor private placement packet (broker-reviewed; not a public offering document).
+model PrivateInvestorPacket {
+  id                   String    @id @default(cuid())
+  dealId               String    @map("deal_id")
+  deal                 Deal      @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  investorId           String    @map("investor_id")
+  investor             User      @relation("PrivateInvestorPacketInvestor", fields: [investorId], references: [id], onDelete: Restrict)
+  spvId                String?   @map("spv_id")
+  spv                  AmfSpv?   @relation(fields: [spvId], references: [id], onDelete: SetNull)
+  /// DRAFT | READY_FOR_REVIEW | APPROVED | RELEASED
+  status               String    @default("DRAFT") @map("status") @db.VarChar(24)
+  version              Int       @default(1)
+  packetSummaryJson    Json      @map("packet_summary_json")
+  /// Compiled HTML for controlled export (PDF pipeline can consume).
+  htmlBundle           String?   @map("html_bundle") @db.Text
+  generatedAt          DateTime  @default(now()) @map("generated_at")
+  approvedAt           DateTime? @map("approved_at")
+  approvedByBrokerId   String?   @map("approved_by_broker_id")
+  approvedByBroker     User?     @relation("PrivateInvestorPacketApprovedBy", fields: [approvedByBrokerId], references: [id], onDelete: SetNull)
+  approvalSnapshotJson Json?     @map("approval_snapshot_json") @db.JsonB
+  releasedAt           DateTime? @map("released_at")
+  releasedByBrokerId   String?   @map("released_by_broker_id")
+  releasedByBroker     User?     @relation("PrivateInvestorPacketReleasedBy", fields: [releasedByBrokerId], references: [id], onDelete: SetNull)
+  brokerAttestationText String?  @map("broker_attestation_text") @db.Text
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+
+  documents   PrivateInvestorPacketDocument[]
+  engagements PrivateInvestorPacketEngagement[]
+  auditLogs   PrivateInvestorPacketAuditLog[]
+
+  @@index([dealId, investorId])
+  @@index([dealId, status])
+  @@map("private_investor_packets")
+}
+
+/// Linked `DealDocument` rows versioned inside a private packet bundle.
+model PrivateInvestorPacketDocument {
+  id           String                @id @default(cuid())
+  packetId     String                @map("packet_id")
+  packet       PrivateInvestorPacket @relation(fields: [packetId], references: [id], onDelete: Cascade)
+  /// DEAL_SUMMARY | INVESTOR_MEMO | RISK_DISCLOSURE | EXEMPTION_REPRESENTATION | QUESTIONNAIRE | SUBSCRIPTION_AGREEMENT | ESG_SUMMARY | UNDERWRITING_SUMMARY
+  documentType String                @map("document_type") @db.VarChar(48)
+  documentId   String                @map("document_id")
+  document     DealDocument          @relation(fields: [documentId], references: [id], onDelete: Restrict)
+  version      Int                   @default(1)
+  createdAt    DateTime              @default(now()) @map("created_at")
+
+  @@index([packetId])
+  @@index([documentId])
+  @@map("private_investor_packet_documents")
+}
+
+/// [private-packet] append-only audit.
+model PrivateInvestorPacketAuditLog {
+  id          String   @id @default(cuid())
+  dealId      String   @map("deal_id")
+  deal        Deal     @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  packetId    String?  @map("packet_id")
+  packet      PrivateInvestorPacket? @relation(fields: [packetId], references: [id], onDelete: SetNull)
+  investorId  String?  @map("investor_id")
+  actorUserId String?  @map("actor_user_id")
+  actor       User?    @relation("PrivateInvestorPacketAuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  action      String   @db.VarChar(64)
+  metadata    Json     @default("{}") @db.JsonB
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([dealId, createdAt])
+  @@index([packetId])
+  @@index([action])
+  @@map("private_investor_packet_audit_logs")
+}
+
+/// Learning / outcome hooks for matching + evolution (no PII beyond user ids).
+model PrivateInvestorPacketEngagement {
+  id         String                @id @default(cuid())
+  packetId   String                @map("packet_id")
+  packet     PrivateInvestorPacket @relation(fields: [packetId], references: [id], onDelete: Cascade)
+  investorId String                @map("investor_id")
+  investor   User                  @relation(fields: [investorId], references: [id], onDelete: Cascade)
+  /// VIEWED | INTERESTED | COMMITTED | FUNDED | NO_ACTION | PACKET_GENERATED | PACKET_RELEASED
+  eventType  String                @map("event_type") @db.VarChar(32)
+  metadata   Json                  @default("{}") @db.JsonB
+  createdAt  DateTime              @default(now()) @map("created_at")
+
+  @@index([packetId, eventType])
+  @@index([investorId, createdAt])
+  @@map("private_investor_packet_engagements")
 }
 
 /// Critical disclosure / risk notice — explicit checkbox acknowledgment (timestamp + user + notice id).
@@ -14420,6 +14519,7 @@ model DealDocument {
   qaReviews                      QaReview[]
   lecipmProductionGuardArtifacts LecipmProductionGuardArtifact[]
   crmDealInvestorSubscriptions   CrmDealInvestorSubscription[]
+  privateInvestorPacketDocuments   PrivateInvestorPacketDocument[]
 
   @@index([dealId])
   @@index([workflowStatus])
@@ -16098,8 +16198,31 @@ model EvolutionPolicyAdjustment {
   reviewedAt       DateTime? @map("reviewed_at")
   createdAt        DateTime  @default(now()) @map("created_at")
 
+  rollout          PolicyRollout?
+
   @@index([status, createdAt(sort: Desc)])
   @@map("evolution_policy_adjustments")
+}
+
+enum PolicyRolloutStatus {
+  PENDING
+  ACTIVE
+  PAUSED
+  COMPLETED
+  ROLLED_BACK
+}
+
+model PolicyRollout {
+  id                 String              @id @default(cuid())
+  policyAdjustmentId String              @unique @map("policy_adjustment_id")
+  policyAdjustment   EvolutionPolicyAdjustment @relation(fields: [policyAdjustmentId], references: [id], onDelete: Cascade)
+  status             PolicyRolloutStatus @default(PENDING)
+  rolloutPercent     Int                 @default(0) @map("rollout_percent") // 0-100
+  createdAt          DateTime            @default(now()) @map("created_at")
+  updatedAt          DateTime            @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@map("evolution_policy_rollouts")
 }
 
 // ---------------------------------------------------------------------------
@@ -19214,6 +19337,58 @@ model AiDraftSuggestion {
   @@index([draftId])
   @@index([fieldKey])
   @@map("ai_draft_suggestions")
+}
+
+// ---------------------------------------------------------------------------
+// LECIPM AI Memory — self-improving draft intelligence (broker-safe, anonymized)
+// ---------------------------------------------------------------------------
+model AiMemoryExample {
+  id              String   @id @default(cuid())
+  draftId         String   @map("draft_id")
+  formKey         String   @map("form_key")
+  userId          String?  @map("user_id")
+  inputJson       Json     @map("input_json")
+  aiOutputJson    Json     @map("ai_output_json")
+  finalOutputJson Json     @map("final_output_json")
+  diffJson        Json?    @map("diff_json")
+  /// ACCEPTED | MODIFIED | REJECTED | SUCCESSFUL_DRAFT | FAILED_DRAFT | PENDING
+  outcome         String
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@index([draftId])
+  @@index([formKey])
+  @@index([outcome])
+  @@map("ai_memory_examples")
+}
+
+model AiCorrectionPattern {
+  id            String   @id @default(cuid())
+  formKey       String?  @map("form_key")
+  findingKey    String   @map("finding_key")
+  /// Stable hash of findingKey + normalized original + corrected for deduplication
+  patternKey    String   @unique @map("pattern_key")
+  originalText  String   @map("original_text") @db.Text
+  correctedText String   @map("corrected_text") @db.Text
+  frequency     Int      @default(1)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@index([formKey])
+  @@index([findingKey])
+  @@map("ai_correction_patterns")
+}
+
+model AiUserPreference {
+  id            String   @id @default(cuid())
+  userId        String   @map("user_id")
+  preferenceKey String   @map("preference_key")
+  value         String   @db.Text
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@unique([userId, preferenceKey])
+  @@index([userId])
+  @@map("ai_user_preferences")
 }
 
 enum AdminReportPeriodType {
@@ -36234,6 +36409,7 @@ model AmfSpv {
   investorCapitalCommitments InvestorCapitalCommitment[]
   crmDealInvestorCommitments CrmDealInvestorCommitment[]
   crmDealCapTableEntries     CrmDealCapTableEntry[]
+  privateInvestorPackets     PrivateInvestorPacket[]
 
   @@map("amf_spvs")
 }

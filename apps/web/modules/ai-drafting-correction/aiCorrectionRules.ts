@@ -158,7 +158,10 @@ export function runDeterministicCorrectionRules(input: AiDraftInput): AiRiskFind
     });
   }
 
-  if (!hasRe(lower, /(\d[\d\s,]*\s*\$|\$\s*\d|prix.*\d)/) && hasRe(lower, /promesse|achat|vente/)) {
+  if (
+    !hasRe(lower, /(\d[\d\s,]*\s*\$|\$\s*\d|prix.*\d)/) &&
+    hasRe(lower, /promesse|promise to purchase|achat|offre d'achat/)
+  ) {
     push({
       findingKey: "MISSING_PRICE",
       severity: "CRITICAL",
@@ -171,7 +174,11 @@ export function runDeterministicCorrectionRules(input: AiDraftInput): AiRiskFind
     });
   }
 
-  if (!hasRe(lower, /vendeur|acheteur|seller|buyer/) || !hasRe(lower, /adresse.*(rue|road|st\b)|\d{3,5}\s+[a-zàâäéèêëïîôùûüç]/i)) {
+  if (
+    hasRe(lower, /promesse|promise to purchase|achat/) &&
+    (!hasRe(lower, /vendeur|acheteur|seller|buyer/) ||
+      !hasRe(lower, /adresse|rue|street|road|st\b|\d{3,5}/i))
+  ) {
     push({
       findingKey: "MISSING_PARTIES_OR_ADDRESS",
       severity: "CRITICAL",

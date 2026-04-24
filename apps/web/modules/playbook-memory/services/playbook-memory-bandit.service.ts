@@ -1,5 +1,6 @@
 import type { MemoryDomain, MemoryOutcomeStatus, PlaybookAssignmentSelectionMode, PlaybookBanditStat } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { banditLog } from "../playbook-learning-logger";
 import { playbookLog } from "../playbook-memory.logger";
 import { resolveRewardForDomain } from "../utils/playbook-memory-bandit";
 import { stableStringify, sha256Hex } from "../utils/playbook-memory-fingerprint";
@@ -238,13 +239,15 @@ export const playbookMemoryBanditService = {
         },
       });
 
-      playbookLog.info("bandit_outcome", {
+      const payload = {
         domain: params.domain,
         playbookId: params.playbookId,
         mode: params.selectionMode,
         outcome: params.outcomeStatus,
         reward,
-      });
+      };
+      playbookLog.info("bandit_outcome", payload);
+      banditLog.info("outcome", payload);
     } catch (e) {
       playbookLog.error("updateBanditOutcome", { message: e instanceof Error ? e.message : String(e) });
     }

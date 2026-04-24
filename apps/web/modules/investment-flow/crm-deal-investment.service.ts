@@ -292,6 +292,7 @@ export async function getCapitalSummaryForDeal(dealId: string) {
   let receivedCents = 0;
 
   for (const c of commitments) {
+    if (c.status === "REJECTED" || c.status === "WITHDRAWN") continue;
     if (c.status === "SOFT_COMMIT") softCommitCents += c.committedAmountCents;
     if (c.status === "CONFIRMED") confirmedCommitCents += c.committedAmountCents;
     for (const p of c.subscription?.payments ?? []) {

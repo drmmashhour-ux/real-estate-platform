@@ -1,5 +1,6 @@
 import type { MemoryDomain, PlaybookAssignmentSelectionMode, PlaybookExecutionMode } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { assignmentLog } from "../playbook-learning-logger";
 import { playbookLog } from "../playbook-memory.logger";
 import type {
   PlaybookAssignmentResult,
@@ -160,7 +161,9 @@ export const playbookMemoryAssignmentService = {
 
       await playbookMemoryBanditService.upsertSelectionImpression({ ...pick.key, alsoExecute: false });
 
-      playbookLog.info("assignBestPlaybook", { assignmentId: row.id, mode, playbookId: chosen.playbookId });
+      const assignPayload = { assignmentId: row.id, mode, playbookId: chosen.playbookId };
+      playbookLog.info("assignBestPlaybook", assignPayload);
+      assignmentLog.info("select", assignPayload);
 
       return {
         assignmentId: row.id,

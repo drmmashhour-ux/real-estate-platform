@@ -23,6 +23,8 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
       formKey?: string;
       formVersion?: string;
       formPayload?: unknown;
+      /** When set, `validateBeforeSignature` requires open AI draft findings cleared (see AiDraftingCorrectionEngine). */
+      aiDraftId?: string;
     };
   };
   const provider = body.provider as SignatureProviderId;
@@ -41,6 +43,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     formKey: body.productionGuard?.formKey,
     formVersion: body.productionGuard?.formVersion,
     formPayload: body.productionGuard?.formPayload,
+    aiDraftIdOverride: body.productionGuard?.aiDraftId ?? null,
   });
   if (!gate.ok) {
     return Response.json(

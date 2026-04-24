@@ -13,6 +13,8 @@ export type SignatureGateInput = {
   formKey?: string;
   formVersion?: string;
   formPayload?: unknown;
+  /** Optional: same as `deal.executionMetadata.productionGuard.aiDraftId` when not yet persisted. */
+  aiDraftIdOverride?: string | null;
 };
 
 async function resolveComplianceScore(deal: SignatureGateInput["deal"]): Promise<number | null> {
@@ -113,7 +115,8 @@ export async function validateBeforeSignature(
     }
   }
 
-  const aiDraftId = parseAiDraftId(input.deal.executionMetadata);
+  const aiDraftId =
+    (input.aiDraftIdOverride?.trim() || null) ?? parseAiDraftId(input.deal.executionMetadata);
   if (aiDraftId) {
     const aiGate = await assertAiDraftClearForSignature(aiDraftId, input.userId);
     if (!aiGate.ok) {

@@ -1,4 +1,9 @@
 import { isOpenAiConfigured, openai } from "@/lib/ai/openai";
+import {
+  buildMemoryPromptBlockForFormKey,
+  getDraftPersonalizationForUser,
+  personalizationToPromptFragment,
+} from "@/modules/ai-memory";
 import { buildAiDraftSystemPrompt, buildAiDraftUserPrompt } from "@/modules/ai-drafting-correction/aiDraftPrompt";
 import { AI_MISSING_FACT_MARKER } from "@/modules/ai-drafting-correction/aiSuggestionEngine";
 import { reviewDraftForRisks } from "@/modules/ai-drafting-correction/aiRiskReviewer";
@@ -43,6 +48,9 @@ async function openAiPolish(input: AiDraftInput, base: TurboDraftSection[]): Pro
     return null;
   }
   try {
+    const memoryBlock = await buildMemoryPromptBlockForFormKey(input.formKey);
+    const personalization = await getDraftPersonalizationForUser(input.userId);
+    const personalizationFragment = personalizationToPromptFragment(personalization);
     const user = buildAiDraftUserPrompt({
       formKey: input.formKey,
       locale: input.locale,
@@ -54,7 +62,10 @@ async function openAiPolish(input: AiDraftInput, base: TurboDraftSection[]): Pro
       model: process.env.AI_DRAFTING_MODEL?.trim() || "gpt-4o-mini",
       temperature: 0.15,
       messages: [
-        { role: "system", content: buildAiDraftSystemPrompt() },
+        {
+          role: "system",
+          content: buildAiDraftSystemPrompt(memoryBlock || undefined, personalizationFragment || undefined),
+        },
         { role: "user", content: user.slice(0, 14000) },
       ],
       response_format: { type: "json_object" },
