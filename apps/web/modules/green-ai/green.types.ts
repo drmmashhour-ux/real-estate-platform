@@ -3,6 +3,9 @@
  */
 
 import type { QuebecEsgBreakdown, QuebecEsgLabel } from "./quebec-esg.engine";
+import type { QuebecEsgRecommendation } from "./quebec-esg-recommendation.service";
+import type { UpgradeSimulationResult } from "./quebec-esg-simulator.service";
+import type { BrokerGreenCallouts } from "./quebec-esg-callouts.service";
 
 export type GreenAiPerformanceLabel = "GREEN" | "IMPROVABLE" | "LOW";
 
@@ -33,6 +36,9 @@ export type GreenAiEngineOutput = {
   recommendations: string[];
   /** Weighted Québec-inspired factor model (primary score driver) */
   quebecEsg: QuebecEsgBundle;
+  quebecEsgRecommendations?: QuebecEsgRecommendation[];
+  quebecEsgSimulation?: UpgradeSimulationResult;
+  quebecEsgCallouts?: BrokerGreenCallouts;
 };
 
 export type GrantHintRow = {

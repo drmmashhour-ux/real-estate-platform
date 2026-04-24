@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { findLeadForBrokerScope } from "@/lib/broker-crm/access";
 import { requireBrokerCrmApiUser } from "@/lib/broker-crm/api-auth";
+import { crmLog } from "@/modules/crm/crm-pipeline-logger";
 import { convertBrokerCrmLeadToDeal } from "@/modules/crm/lead-to-deal.converter";
 import { logLeadToDealConversion } from "@/modules/crm/services/broker-crm-outcome.service";
 
@@ -8,7 +9,9 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 /**
- * Suggestion-side conversion path: create Deal from eligible broker CRM lead, update lead stage. No auto-messaging. Never throws.
+ * Suggestion-side conversion path: create Deal from eligible broker CRM lead, update lead stage.
+ * Body: `{ leadId: string, priceDollars?: number, idempotencyKey?: string }` — `leadId` required.
+ * Idempotent when a deal already exists for this lead. No auto-messaging. Never throws from handler.
  */
 export async function POST(req: NextRequest) {
   let body: { leadId?: string; priceDollars?: number; idempotencyKey?: string };
@@ -37,6 +40,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: "not_found" }, { status: 404 });
     }
 
+    crmLog.info("convert_to_deal_attempt", { leadId, brokerUserId: auth.user.id });
     const result = await convertBrokerCrmLeadToDeal({
       brokerCrmLeadId: leadId,
       brokerUserId: auth.user.id,
@@ -44,6 +48,7 @@ export async function POST(req: NextRequest) {
     });
 
     if (result.ok) {
+      crmLog.info("convert_to_deal_success", { leadId, dealId: result.deal.id });
       void logLeadToDealConversion({
         leadId,
         dealId: result.deal.id,
@@ -57,8 +62,10 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    crmLog.warn("convert_to_deal_blocked", { leadId, reason: result.reason });
     return NextResponse.json({ ok: false, reason: result.reason }, { status: 200 });
   } catch {
+    crmLog.warn("convert_to_deal_error", { leadId });
     return NextResponse.json({ ok: false, error: "convert_unavailable" }, { status: 200 });
   }
 }

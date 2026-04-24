@@ -2,7 +2,7 @@ import { prisma } from "@/lib/db";
 import { getRecommendations } from "@/modules/playbook-memory/services/playbook-memory-retrieval.service";
 import { playbookLog } from "@/modules/playbook-memory/playbook-memory.logger";
 import type { PlaybookComparableContext } from "@/modules/playbook-memory/types/playbook-memory.types";
-import type { PlaybookOrMemoryRecommendation } from "@/modules/playbook-memory/types/playbook-memory.types";
+import type { PlaybookOrMemoryRecommendation, PlaybookRecommendation } from "@/modules/playbook-memory/types/playbook-memory.types";
 
 export type LeadPlaybookRec = {
   playbookId: string;
@@ -10,34 +10,45 @@ export type LeadPlaybookRec = {
   score: number;
   reason: string;
   allowed: boolean;
+  /** Model / policy confidence for this row (0–1). */
+  confidence: number;
+  /** Full rationale lines from playbook-memory. */
+  rationale: string[];
+  /** Suggested action labels (non-executable hints). */
+  actions: string[];
+  /** When `allowed` is false, policy block reasons. */
+  blockedReasons: string[];
 };
 
-function mapRec(r: PlaybookOrMemoryRecommendation): LeadPlaybookRec {
-  if (r.itemType === "playbook") {
-    return {
-      playbookId: r.playbookId,
-      name: r.name,
-      score: r.score,
-      reason: (r.rationale[0] ?? r.key) || "playbook",
-      allowed: r.allowed,
-    };
-  }
+function mapRec(r: PlaybookRecommendation): LeadPlaybookRec {
+  const rationale = r.rationale?.length ? [...r.rationale] : [r.key || "playbook"];
+  const actions: string[] = [];
+  if (r.actionType) actions.push(String(r.actionType));
+  if (r.name) actions.push(r.name);
   return {
-    playbookId: r.memoryId,
-    name: "memory",
+    playbookId: r.playbookId,
+    name: r.name,
     score: r.score,
-    reason: (r.rationale[0] ?? r.actionType) || "memory",
+    reason: (rationale[0] ?? r.key) || "playbook",
     allowed: r.allowed,
+    confidence: Number.isFinite(r.confidence) ? Math.min(1, Math.max(0, r.confidence)) : r.score,
+    rationale,
+    actions: [...new Set(actions)].slice(0, 6),
+    blockedReasons: r.blockedReasons?.length ? [...r.blockedReasons] : [],
   };
 }
 
 /**
- * Playbook recommendations for a broker CRM lead. Suggest-only, no automation. Never throws.
+ * Playbook recommendations for a broker CRM lead (`leadId`). Suggest-only, no automation.
+ * Domain: LEADS · entityType: `broker_lead` for playbook-memory fingerprinting. Never throws.
  */
-export async function getLeadRecommendations(leadId: string): Promise<LeadPlaybookRec[]> {
+export async function getLeadRecommendationsWithPlaybooks(leadId: string): Promise<{
+  items: LeadPlaybookRec[];
+  playbooks: PlaybookRecommendation[];
+}> {
   try {
     if (!leadId?.trim()) {
-      return [];
+      return { items: [], playbooks: [] };
     }
     const lead = await prisma.lecipmBrokerCrmLead.findUnique({
       where: { id: leadId },
@@ -52,12 +63,12 @@ export async function getLeadRecommendations(leadId: string): Promise<LeadPlaybo
       },
     });
     if (!lead) {
-      return [];
+      return { items: [], playbooks: [] };
     }
 
     const ctx: PlaybookComparableContext = {
       domain: "LEADS",
-      entityType: "lecipm_broker_crm_lead",
+      entityType: "broker_lead",
       entityId: leadId,
       market: undefined,
       segment: {
@@ -75,10 +86,17 @@ export async function getLeadRecommendations(leadId: string): Promise<LeadPlaybo
       },
     };
 
-    const recs = await getRecommendations({ context: ctx, autonomyMode: "ASSIST" });
-    return recs.slice(0, 8).map(mapRec);
+    const recs = (await getRecommendations({ context: ctx, autonomyMode: "ASSIST" })) as PlaybookOrMemoryRecommendation[];
+    const playbooks = recs.filter((x): x is PlaybookRecommendation => x.itemType === "playbook").slice(0, 8);
+    return { items: playbooks.map(mapRec), playbooks };
   } catch (e) {
-    playbookLog.warn("getLeadRecommendations", { message: e instanceof Error ? e.message : String(e) });
-    return [];
+    playbookLog.warn("getLeadRecommendationsWithPlaybooks", { message: e instanceof Error ? e.message : String(e) });
+    return { items: [], playbooks: [] };
   }
+}
+
+export async function getLeadRecommendations(leadOrId: string | { id: string }): Promise<LeadPlaybookRec[]> {
+  const leadId = typeof leadOrId === "string" ? leadOrId : String(leadOrId?.id ?? "");
+  const { items } = await getLeadRecommendationsWithPlaybooks(leadId);
+  return items;
 }

@@ -17,32 +17,41 @@ export async function upsertCondition(input: {
   notes?: string | null;
 }) {
   if (input.id) {
+    const status = input.status ?? "pending";
+    const now = new Date();
     return prisma.dealClosingCondition.update({
       where: { id: input.id },
       data: {
         conditionType: input.conditionType,
         deadline: input.deadline,
-        status: input.status,
+        status,
         relatedForm: input.relatedForm,
         notes: input.notes,
-        fulfilledAt: input.status === "fulfilled" ? new Date() : null,
+        fulfilledAt: status === "fulfilled" ? now : null,
+        waivedAt: status === "waived" ? now : null,
+        failedAt: status === "failed" ? now : null,
       },
     });
   }
+  const status = input.status ?? "pending";
+  const now = new Date();
   return prisma.dealClosingCondition.create({
     data: {
       dealId: input.dealId,
       conditionType: input.conditionType,
       deadline: input.deadline,
-      status: input.status ?? "pending",
+      status,
       relatedForm: input.relatedForm,
       notes: input.notes,
+      fulfilledAt: status === "fulfilled" ? now : null,
+      waivedAt: status === "waived" ? now : null,
+      failedAt: status === "failed" ? now : null,
     },
   });
 }
 
 export async function countOpenConditions(dealId: string): Promise<number> {
   return prisma.dealClosingCondition.count({
-    where: { dealId, status: { not: "fulfilled" } },
+    where: { dealId, status: { notIn: ["fulfilled", "waived"] } },
   });
 }

@@ -66,12 +66,16 @@ export async function listBrokerCrmLeads(opts: {
       autopilot?.title && autopilot?.reason
         ? `${autopilot.title}: ${autopilot.reason.slice(0, 120)}${autopilot.reason.length > 120 ? "…" : ""}`
         : autopilot?.title ?? null;
+    const aiThermal = r.priorityLabel === "high" ? "hot" : r.priorityLabel === "medium" ? "warm" : "cold";
+    const aiScore01 = Math.min(1, Math.max(0, r.priorityScore / 100));
     return {
       id: r.id,
       status: r.status,
       source: r.source,
       priorityLabel: r.priorityLabel,
       priorityScore: r.priorityScore,
+      aiScore01,
+      aiThermal,
       nextFollowUpAt: r.nextFollowUpAt?.toISOString() ?? null,
       lastContactAt: r.lastContactAt?.toISOString() ?? null,
       updatedAt: r.updatedAt.toISOString(),

@@ -29,6 +29,15 @@ import { applyGreenPriorityBoost } from "@/modules/green/green.priority-ranking"
 import { parseGreenProgramTier } from "@/modules/green/green.types";
 import { evaluateGreenVerifiedPresentation } from "@/modules/green-ai/green-certification";
 import type { GreenAiPerformanceLabel, GreenVerificationLevel } from "@/modules/green-ai/green.types";
+import { decorateListingWithGreenSignals, toPublicListingGreenPayload } from "@/modules/green-ai/green-search-decoration.service";
+import { applyGreenSearchFilters, isGreenFiltersActive } from "@/modules/green-ai/green-search-filter.service";
+import { rankListingsWithGreenSignals } from "@/modules/green-ai/green-ranking.service";
+import type {
+  PublicListingGreenPayload,
+  GreenSearchFilters,
+  GreenRankingSortMode,
+  GreenRankingSignal,
+} from "@/modules/green-ai/green-search.types";
 
 export const dynamic = "force-dynamic";
 
@@ -76,6 +85,16 @@ type UnifiedRow = {
   lecipmGreenConfidence?: number | null;
   /** Show 🌱 LECIPM Green Verified badge on card */
   greenVerifiedListing?: boolean;
+  /** Public Québec-inspired green block — not an official rating. */
+  green?: PublicListingGreenPayload;
+  /** Broker/admin only — not for consumer marketing. */
+  greenIntelligence?: {
+    brokerCallouts: string[];
+    rankingBoostSuggestion: number | null;
+    rationale: string[];
+    /** Populated when a green `sortMode` was applied (assistive rank rationale). */
+    rankingSignal?: GreenRankingSignal;
+  };
 };
 
 type FsboBrowseGreenFields = {
@@ -294,11 +313,18 @@ function fireAndForgetGeocodeFsbo(
   })();
 }
 
+type GreenBrowseOpts = {
+  audience?: "public" | "internal";
+  filters?: GreenSearchFilters;
+  sortMode?: GreenRankingSortMode;
+};
+
 async function runBrowse(
   f: GlobalSearchFiltersExtended,
   page: number,
   limit: number,
-  propertyFilters: PropertyBrowseFilters | null
+  propertyFilters: PropertyBrowseFilters | null,
+  greenOpts: GreenBrowseOpts = {}
 ) {
   if (f.type === "short") {
     return Response.json(
@@ -388,6 +414,8 @@ async function runBrowse(
         lecipmGreenAiLabel: true,
         lecipmGreenVerificationLevel: true,
         lecipmGreenConfidence: true,
+        lecipmGreenMetadataJson: true,
+        yearBuilt: true,
         owner: {
           select: {
             brokerVerifications: {
@@ -611,11 +639,60 @@ async function runBrowse(
     applyTrustRankingSortMultiplier(merged, trustAug);
     merged.sort((a, b) => b.sortAt - a.sortAt);
   }
-  const total = hasPF ? fsboFiltered.length : fsboTotal + crmTotal;
+
+  const audience = greenOpts.audience === "internal" ? "internal" : "public";
+  const decById = new Map(
+    fsboFiltered.map((r) => {
+      return [r.id, decorateListingWithGreenSignals(r)] as const;
+    })
+  );
+
+  let working = merged;
+  const gActive = isGreenFiltersActive(greenOpts.filters);
+  if (gActive) {
+    working = applyGreenSearchFilters(working, greenOpts.filters, decById);
+  }
+  let greenRankSignals: Map<string, GreenRankingSignal> | null = null;
+  if (greenOpts.sortMode) {
+    const { ranked, signals } = rankListingsWithGreenSignals({
+      items: working,
+      decorationById: decById,
+      getId: (x) => x.id,
+      getBaseScore: (x) => (x.sortAt ?? 0) / 1e18,
+      sortMode: greenOpts.sortMode,
+      audience,
+    });
+    working = ranked;
+    greenRankSignals = signals;
+  }
+
+  const baseTotal = hasPF ? fsboFiltered.length : fsboTotal + crmTotal;
+  const total = gActive || greenOpts.sortMode ? working.length : baseTotal;
   const skip = (page - 1) * limit;
-  const sliced = merged.slice(skip, skip + limit).map((row) => {
+  const sliced = working.slice(skip, skip + limit).map((row) => {
     const { sortAt: _sortAt, ...rest } = row;
     void _sortAt;
+    if (row.kind === "fsbo" && decById.has(row.id)) {
+      const d = decById.get(row.id);
+      if (d) {
+        return {
+          ...rest,
+          green: toPublicListingGreenPayload(d),
+          ...(audience === "internal"
+            ? {
+                greenIntelligence: {
+                  brokerCallouts: d.brokerCallouts,
+                  rankingBoostSuggestion: d.rankingBoostSuggestion,
+                  rationale: d.rationale,
+                  ...(greenOpts.sortMode && greenRankSignals
+                    ? { rankingSignal: greenRankSignals.get(row.id) }
+                    : {}),
+                },
+              }
+            : {}),
+        };
+      }
+    }
     return rest;
   });
 
@@ -659,7 +736,7 @@ async function runBrowse(
     total,
     page,
     limit,
-    hasMore: skip + pageRows.length < merged.length,
+    hasMore: skip + pageRows.length < working.length,
     filters: f,
     propertyFiltersActive: hasPF,
   });
@@ -714,7 +791,7 @@ export async function GET(request: NextRequest) {
       MAX_LIMIT,
       Math.max(1, parseInt(searchParams.get("limit") ?? String(DEFAULT_LIMIT), 10) || DEFAULT_LIMIT)
     );
-    return runBrowse({ ...f, page }, page, limit, null);
+    return runBrowse({ ...f, page }, page, limit, null, {});
   } catch (e) {
     console.error(e);
     return Response.json({ error: "Browse failed" }, { status: 500 });
@@ -737,7 +814,24 @@ export async function POST(request: NextRequest) {
       Math.max(1, parseInt(String((raw as Record<string, unknown>).limit ?? DEFAULT_LIMIT), 10) || DEFAULT_LIMIT)
     );
     const propertyFilters = parsePropertyBrowseFiltersFromBody(raw);
-    return runBrowse({ ...f, page }, page, limit, propertyFilters);
+    const o = raw as Record<string, unknown>;
+    const gRaw = o.greenFilters;
+    const greenFilters =
+      gRaw != null && typeof gRaw === "object" && !Array.isArray(gRaw) ? (gRaw as GreenSearchFilters) : undefined;
+    const sm = o.greenSortMode;
+    const greenSortMode: GreenRankingSortMode | undefined =
+      sm === "green_best_now" ||
+      sm === "green_upgrade_potential" ||
+      sm === "green_incentive_opportunity" ||
+      sm === "standard_with_green_boost"
+        ? sm
+        : undefined;
+    const greenOpts: GreenBrowseOpts = {
+      audience: o.greenAudience === "internal" ? "internal" : "public",
+      filters: greenFilters,
+      sortMode: greenSortMode,
+    };
+    return runBrowse({ ...f, page }, page, limit, propertyFilters, greenOpts);
   } catch (e) {
     console.error(e);
     return Response.json({ error: "Browse failed" }, { status: 500 });

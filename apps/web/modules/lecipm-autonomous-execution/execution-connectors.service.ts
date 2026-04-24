@@ -1,6 +1,7 @@
 import type { LecipmExecutionTask } from "@prisma/client";
-import { ActionPipelineStatus, ActionPipelineType } from "@prisma/client";
+import { ActionPipelineType } from "@prisma/client";
 import { prisma } from "@repo/db";
+import { createActionPipelineRecord } from "@/modules/action-pipeline/action-pipeline.service";
 
 /**
  * Side-effect handlers — drafts and internal prep only. No contract dispatch, no payments, no investor solicitation sends.
@@ -44,24 +45,23 @@ export async function runExecutionConnector(task: LecipmExecutionTask): Promise<
     case "OFFER_PREP": {
       const dealId = task.entityType === "DEAL" ? task.entityId : String(payload.dealId ?? "");
       if (!dealId) return { skipped: true, reason: "missing_deal_id" };
-      const pipeline = await prisma.actionPipeline.create({
-        data: {
-          type: ActionPipelineType.DEAL,
-          status: ActionPipelineStatus.DRAFT,
-          aiGenerated: true,
-          dealId,
-          dataJson: {
-            source: "lecipm_execution_task",
-            taskId: task.id,
-            note: "Offer draft prep — requires broker approval / signature before any dispatch.",
-          },
+      const pipeline = await createActionPipelineRecord({
+        type: ActionPipelineType.DEAL,
+        dealId,
+        aiGenerated: true,
+        initialStatus: "READY_FOR_SIGNATURE",
+        actorUserId: null,
+        dataJson: {
+          source: "lecipm_execution_task",
+          taskId: task.id,
+          note: "AI prepared offer-related deal action — broker must review, sign, then execution hooks may run.",
         },
       });
       await prisma.lecipmExecutionTask.update({
         where: { id: task.id },
         data: { linkedActionPipelineId: pipeline.id },
       });
-      return { actionPipelineId: pipeline.id, draftOnly: true };
+      return { actionPipelineId: pipeline.id, draftOnly: true, status: "READY_FOR_SIGNATURE" };
     }
     case "INVESTOR_PACKET_PREP": {
       const dealId = task.entityType === "DEAL" ? task.entityId : String(payload.dealId ?? "");
@@ -87,24 +87,23 @@ export async function runExecutionConnector(task: LecipmExecutionTask): Promise<
     case "DISCLOSURE_PREP":
     case "DOCUMENT_PREP": {
       const dealId = task.entityType === "DEAL" ? task.entityId : String(payload.dealId ?? "");
-      const pipeline = await prisma.actionPipeline.create({
-        data: {
-          type: ActionPipelineType.DOCUMENT,
-          status: ActionPipelineStatus.DRAFT,
-          aiGenerated: true,
-          dealId: dealId || null,
-          dataJson: {
-            source: "lecipm_execution_task",
-            taskId: task.id,
-            taskType: task.taskType,
-          },
+      const pipeline = await createActionPipelineRecord({
+        type: ActionPipelineType.DOCUMENT,
+        dealId: dealId || null,
+        aiGenerated: true,
+        initialStatus: "READY_FOR_SIGNATURE",
+        actorUserId: null,
+        dataJson: {
+          source: "lecipm_execution_task",
+          taskId: task.id,
+          taskType: task.taskType,
         },
       });
       await prisma.lecipmExecutionTask.update({
         where: { id: task.id },
         data: { linkedActionPipelineId: pipeline.id },
       });
-      return { actionPipelineId: pipeline.id, draftOnly: true };
+      return { actionPipelineId: pipeline.id, draftOnly: true, status: "READY_FOR_SIGNATURE" };
     }
     case "NOTARY_REMINDER": {
       const dealId = task.entityId;
@@ -113,31 +112,50 @@ export async function runExecutionConnector(task: LecipmExecutionTask): Promise<
         select: { id: true, dealCode: true },
       });
       if (!deal) return { skipped: true, reason: "deal_not_found" };
-      const pipeline = await prisma.actionPipeline.create({
-        data: {
-          type: ActionPipelineType.CLOSING,
-          status: ActionPipelineStatus.DRAFT,
-          aiGenerated: true,
-          dealId,
-          dataJson: {
-            source: "lecipm_execution_task",
-            taskId: task.id,
-            kind: "NOTARY_REMINDER_PREP",
-            dealCode: deal.dealCode,
-          },
+      const pipeline = await createActionPipelineRecord({
+        type: ActionPipelineType.CLOSING,
+        dealId,
+        aiGenerated: true,
+        initialStatus: "READY_FOR_SIGNATURE",
+        actorUserId: null,
+        dataJson: {
+          source: "lecipm_execution_task",
+          taskId: task.id,
+          kind: "NOTARY_REMINDER_PREP",
+          dealCode: deal.dealCode,
         },
       });
       await prisma.lecipmExecutionTask.update({
         where: { id: task.id },
         data: { linkedActionPipelineId: pipeline.id },
       });
-      return { actionPipelineId: pipeline.id, draftOnly: true };
+      return { actionPipelineId: pipeline.id, draftOnly: true, status: "READY_FOR_SIGNATURE" };
     }
     case "INVOICE_PREP": {
+      const dealId =
+        task.entityType === "DEAL" ? task.entityId : typeof payload.dealId === "string" ? payload.dealId : "";
+      const pipeline = await createActionPipelineRecord({
+        type: ActionPipelineType.FINANCE,
+        dealId: dealId || null,
+        aiGenerated: true,
+        initialStatus: "READY_FOR_SIGNATURE",
+        actorUserId: null,
+        dataJson: {
+          source: "lecipm_execution_task",
+          taskId: task.id,
+          lineItemsSuggestion: payload.lineItems ?? [{ description: "Services", quantity: 1, unitAmount: 0 }],
+          note: "AI-prepared invoice structure — broker signature required before finance execution hooks.",
+        },
+      });
+      await prisma.lecipmExecutionTask.update({
+        where: { id: task.id },
+        data: { linkedActionPipelineId: pipeline.id },
+      });
       return {
+        actionPipelineId: pipeline.id,
         draftOnly: true,
+        status: "READY_FOR_SIGNATURE",
         lineItemsSuggestion: payload.lineItems ?? [{ description: "Services", quantity: 1, unitAmount: 0 }],
-        note: "Invoice remains DRAFT — no issuance or payment execution from this engine.",
       };
     }
     case "PRICE_UPDATE_PREP": {

@@ -243,7 +243,7 @@ export async function FeaturedListings({ variant = "dark" }: { variant?: Feature
             <Link
               key={l.id}
               href={href}
-              className="group overflow-hidden rounded-[12px] border border-bnhub-border bg-bnhub-card shadow-[0_12px_40px_-12px_rgba(0,0,0,0.85)] transition hover:border-bnhub-gold/40 hover:shadow-[0_16px_48px_-12px_rgba(212,175,55,0.1)]"
+              className="group overflow-hidden rounded-[12px] border border-bnhub-border bg-bnhub-card shadow-[0_12px_40px_-12px_rgba(0,0,0,0.85)] transition-all duration-300 ease-out hover:-translate-y-1 hover:border-bnhub-gold/40 hover:shadow-[0_16px_48px_-12px_rgba(212,175,55,0.1)] active:scale-[0.98]"
             >
               <div className="relative aspect-[4/3] bg-neutral-900">
                 {l.verificationStatus === VerificationStatus.VERIFIED ? (

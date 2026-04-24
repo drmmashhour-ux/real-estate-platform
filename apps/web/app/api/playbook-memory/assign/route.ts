@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { augmentRecommendationContext } from "@/modules/playbook-domains/augment-recommendation-context";
 import { authorizePlaybookMemoryApi } from "@/modules/playbook-memory/api/playbook-memory-authorize";
 import { playbookMemoryAssignmentService } from "@/modules/playbook-memory/services/playbook-memory-assignment.service";
-import type { PlaybookBanditContext } from "@/modules/playbook-memory/types/playbook-memory.types";
+import type { PlaybookBanditContext, RecommendationRequestContext } from "@/modules/playbook-memory/types/playbook-memory.types";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -12,6 +13,7 @@ const DOMAINS = new Set<PlaybookBanditContext["domain"]>([
   "LEADS",
   "DEALS",
   "LISTINGS",
+  "DREAM_HOME",
   "MESSAGING",
   "PROMOTIONS",
   "BOOKINGS",
@@ -50,8 +52,10 @@ export async function POST(req: NextRequest) {
   if (!isContext(raw)) {
     return NextResponse.json({ ok: true, assignment: null as null });
   }
+  const userId = typeof b.userId === "string" && b.userId.trim() ? b.userId.trim() : undefined;
   const ctx: PlaybookBanditContext = {
     ...raw,
+    ...(userId ? { userId } : {}),
     ...(typeof b.explorationRate === "number" && Number.isFinite(b.explorationRate)
       ? { explorationRate: b.explorationRate }
       : {}),
@@ -61,7 +65,25 @@ export async function POST(req: NextRequest) {
   };
 
   try {
-    const a = await playbookMemoryAssignmentService.assignBestPlaybook(ctx);
+    const baseRec: RecommendationRequestContext = {
+      domain: ctx.domain,
+      entityType: ctx.entityType,
+      market: ctx.market,
+      segment: ctx.segment,
+      signals: ctx.signals,
+      policyFlags: ctx.policyFlags,
+      autonomyMode: ctx.autonomyMode,
+      candidatePlaybookIds: ctx.candidatePlaybookIds,
+      userId: ctx.userId,
+    };
+    const aug = await augmentRecommendationContext(baseRec);
+    const enriched: PlaybookBanditContext = {
+      ...ctx,
+      signals: aug.signals as PlaybookBanditContext["signals"],
+      market: aug.market ?? ctx.market,
+      segment: aug.segment ?? ctx.segment,
+    };
+    const a = await playbookMemoryAssignmentService.assignBestPlaybook(enriched);
     if (a == null) {
       return NextResponse.json({ ok: true, assignment: null as null });
     }

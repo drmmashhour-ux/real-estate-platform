@@ -181,6 +181,17 @@ export async function middleware(request: NextRequest) {
   try {
     const pathname = request.nextUrl.pathname;
 
+    // STEP 14 — ADD REDIRECTS
+    if (pathname.startsWith("/bnhub")) {
+      return NextResponse.redirect(new URL("http://localhost:3003" + pathname + request.nextUrl.search, request.url));
+    }
+    if (pathname.startsWith("/dashboard/broker")) {
+      return NextResponse.redirect(new URL("http://localhost:3004" + pathname + request.nextUrl.search, request.url));
+    }
+    if (pathname.startsWith("/dashboard/admin")) {
+      return NextResponse.redirect(new URL("http://localhost:3002" + pathname + request.nextUrl.search, request.url));
+    }
+
     if (pathname.startsWith("/api/")) {
       const blocked = runApiSecurityLayer(request);
       if (blocked) {

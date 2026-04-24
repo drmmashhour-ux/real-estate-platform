@@ -12,7 +12,7 @@ export default async function LegalFormDraftPage({ params }: { params: Promise<{
   const { userId } = await requireAuthenticatedUser();
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { role: true },
+    select: { role: true, id: true },
   });
   if (!user || !BROKER_LIKE.has(user.role)) {
     redirect("/dashboard");
@@ -26,7 +26,12 @@ export default async function LegalFormDraftPage({ params }: { params: Promise<{
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
-      <LegalFormWorkspaceClient draftId={draftId} initialDraft={draft} />
+      <LegalFormWorkspaceClient
+        draftId={draftId}
+        initialDraft={draft}
+        userId={user.id}
+        userRole={user.role}
+      />
     </div>
   );
 }

@@ -63,7 +63,10 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     const msg = e instanceof Error ? e.message : "FAILED";
     const status =
       msg === "SUBSCRIPTION_NOT_FOUND" ? 404
-      : msg === "SUBSCRIPTION_NOT_SIGNED" || msg === "SPV_REQUIRED_FOR_FUNDING" ? 403
+      : msg === "SUBSCRIPTION_NOT_SIGNED" ||
+          msg === "SPV_REQUIRED_FOR_FUNDING" ||
+          msg === "EXEMPTION_CLASSIFICATION_REQUIRED" ?
+        403
       : 400;
     return NextResponse.json({ error: msg }, { status });
   }

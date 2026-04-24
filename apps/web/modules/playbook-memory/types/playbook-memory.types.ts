@@ -264,5 +264,10 @@ export type PlaybookBanditContext = {
   /** When set, overrides default 0.15. Clamped 0.05..0.35. */
   explorationRate?: number;
   candidatePlaybookIds?: string[];
+  /**
+   * Wave 13: merges product-only preference signals into scoring context (non-destructive).
+   * Never used for protected-trait inference.
+   */
+  userId?: string;
 };
 

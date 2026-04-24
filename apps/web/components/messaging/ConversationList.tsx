@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { MessageCircle } from "lucide-react";
 import { useMemo, useState } from "react";
+import { EmptyState } from "@/components/ui/EmptyState";
 import type { ConversationType } from "@prisma/client";
 import type { InboxConversationRow } from "@/modules/messaging/services/get-user-conversations";
 
@@ -81,21 +82,15 @@ export function ConversationList({ rows, selectedId, onSelect }: Props) {
       </div>
       <ul className="min-h-0 flex-1 overflow-y-auto">
         {filtered.length === 0 ? (
-          <li className="flex flex-col items-center gap-3 px-4 py-10 text-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-slate-400">
-              <MessageCircle className="h-6 w-6" strokeWidth={1.5} aria-hidden />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-slate-300">No conversations match</p>
-              <p className="mt-1 text-xs text-slate-500">Try clearing search or filters — or start from a listing.</p>
-            </div>
-            <Link
-              href="/explore"
-              className="inline-flex min-h-[40px] items-center justify-center rounded-lg border border-emerald-500/35 bg-emerald-950/20 px-4 py-2 text-xs font-semibold text-emerald-300 transition hover:border-emerald-400/50 hover:bg-emerald-950/40"
-            >
-              Browse listings
-            </Link>
-          </li>
+          <div className="p-4">
+            <EmptyState
+              icon={MessageCircle}
+              title="No messages"
+              description="Your inbox is clear. Start a conversation from any listing to get started."
+              ctaText="Explore Stays"
+              ctaHref="/bnhub/stays"
+            />
+          </div>
         ) : (
           filtered.map((r) => (
             <li key={r.id}>

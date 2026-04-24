@@ -88,4 +88,11 @@ export function scheduleScoreNewLead(leadId: string, brokerUserId: string): void
       leadId,
     });
   });
+  void import("@/modules/playbook-domains/leads/crm-leads-playbook.service").then((m) => {
+    try {
+      m.scheduleBrokerLeadPlaybookAssignment(leadId);
+    } catch {
+      /* */
+    }
+  });
 }

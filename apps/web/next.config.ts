@@ -30,7 +30,9 @@ const nextConfig: NextConfig = {
   transpilePackages: [
     "@repo/tenant",
     "@lecipm/ui",
+    "@lecipm/api",
     "@lecipm/api-client",
+    "@lecipm/core",
     "@lecipm/platform-core",
     "mapbox-gl",
     "react-map-gl",

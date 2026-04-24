@@ -842,6 +842,31 @@ html {
     border-color: rgb(var(--premium-gold-channels) / 0.45);
     box-shadow: 0 0 0 2px rgb(var(--premium-gold-channels) / 0.12);
   }
+
+  /**
+   * BNHub Polish — advanced UX (hover lift, gold glow, priority markers).
+   */
+  .bnhub-card-polish {
+    @apply transition-all duration-300 ease-out;
+  }
+  .bnhub-card-polish:hover {
+    @apply -translate-y-1 border-premium-gold/40;
+    box-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.5), 0 0 20px -2px rgba(212, 175, 55, 0.15);
+  }
+
+  .bnhub-glow-gold {
+    box-shadow: 0 0 25px -5px rgba(212, 175, 55, 0.25);
+  }
+
+  .bnhub-priority-border {
+    border: 2px solid var(--premium-gold);
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.2);
+  }
+
+  .bnhub-touch-feedback:active {
+    transform: scale(0.98);
+    opacity: 0.9;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

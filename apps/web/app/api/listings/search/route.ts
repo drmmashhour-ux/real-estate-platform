@@ -11,8 +11,26 @@ import {
   mapListingRowToRankable,
   rankListings,
 } from "@/modules/search/ranking.engine";
+import { greenAiLog } from "@/modules/green-ai/green-ai-logger";
 
 export const dynamic = "force-dynamic";
+
+const greenFilterSchema = z
+  .object({
+    minimumGreenLabel: z.enum(["GREEN", "IMPROVABLE", "LOW"]).optional(),
+    minimumQuebecScore: z.number().optional(),
+    hasUpgradePotential: z.boolean().optional(),
+    minimumProjectedScore: z.number().optional(),
+    minimumScoreDelta: z.number().optional(),
+    hasPotentialIncentives: z.boolean().optional(),
+    minimumEstimatedIncentives: z.number().optional(),
+    showOnlyEfficientHeating: z.boolean().optional(),
+    showOnlyHighInsulation: z.boolean().optional(),
+    showOnlyHighWindowPerformance: z.boolean().optional(),
+    showSolarOnly: z.boolean().optional(),
+    showGreenRoofOnly: z.boolean().optional(),
+  })
+  .optional();
 
 const bodySchema = z.object({
   city: z.string().optional(),
@@ -32,6 +50,16 @@ const bodySchema = z.object({
   rankingDebug: z.boolean().optional(),
   /** Optional 0–1 affinity per listing id — bounded in engine; for signed-in experiments only. */
   guestAiAffinity: z.record(z.string(), z.number()).optional(),
+  /** Stays (BNHub) search — green is informational; FSBO LECIPM data is not attached to these rows. */
+  greenFilters: greenFilterSchema,
+  sortMode: z
+    .enum([
+      "green_best_now",
+      "green_upgrade_potential",
+      "green_incentive_opportunity",
+      "standard_with_green_boost",
+    ])
+    .optional(),
 });
 
 function sortKeyFromClient(raw: string | undefined): string {
@@ -192,6 +220,12 @@ async function handleSearch(request: NextRequest, body?: z.infer<typeof bodySche
     rankingDebug,
     guestAiAffinity: b.guestAiAffinity,
   });
+
+  if (b.greenFilters != null || b.sortMode) {
+    greenAiLog.info("stays_listing_search_green_ignored", {
+      note: "BNHub stays rows do not carry LECIPM FSBO green snapshots; green filter/sort no-op.",
+    });
+  }
 
   return NextResponse.json({
     listings,

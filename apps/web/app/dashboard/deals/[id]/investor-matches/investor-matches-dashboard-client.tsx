@@ -89,6 +89,9 @@ export function InvestorMatchesDashboardClient({ dealId }: { dealId: string }) {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Link href={`/dashboard/deals/${dealId}/playbook`} className="rounded-md border px-3 py-1.5 text-xs">
+            Playbook
+          </Link>
           <Link href={`/dashboard/deals/${dealId}/investors`} className="rounded-md border px-3 py-1.5 text-xs">
             Investors
           </Link>

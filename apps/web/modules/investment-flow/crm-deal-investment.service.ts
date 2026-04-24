@@ -1,5 +1,6 @@
 import type { Deal, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { assertCommitmentExemptionRecordedForSpv } from "@/modules/amf-private-placement/amf-private-placement.guards";
 import { recordInvestmentFlowAudit } from "./investment-flow-audit.service";
 
 const COMMIT_STATUSES = new Set(["SOFT_COMMIT", "CONFIRMED", "REJECTED", "WITHDRAWN"]);
@@ -238,6 +239,7 @@ export async function brokerRecordPaymentReceived(input: {
   if (!sub) throw new Error("SUBSCRIPTION_NOT_FOUND");
   if (!sub.signed) throw new Error("SUBSCRIPTION_NOT_SIGNED");
   if (!sub.commitment.spvId) throw new Error("SPV_REQUIRED_FOR_FUNDING");
+  assertCommitmentExemptionRecordedForSpv(sub.commitment);
 
   const payment = await prisma.$transaction(async (tx) => {
     const p = await tx.crmDealInvestorPayment.create({

@@ -5,6 +5,7 @@ import { LecipmHomeSearchPanel } from "@/components/marketing/LecipmHomeSearchPa
 import { RecommendedForYouHomeSection } from "@/components/recommendations/RecommendedForYouHomeSection";
 import { DEFAULT_COUNTRY_SLUG } from "@/config/countries";
 import { routing } from "@/i18n/routing";
+import { ShieldCheck } from "lucide-react";
 
 const hubs = [
   {
@@ -397,6 +398,44 @@ export function LecipmLuxuryHomepage({ locale = routing.defaultLocale, country =
               >
                 Explore Broker Hub
               </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="relative px-6 py-24 lg:px-10">
+        <div className="mx-auto max-w-7xl">
+          <div className="rounded-[38px] border border-premium-gold/20 bg-gradient-to-br from-zinc-950 to-black p-10 md:p-16 overflow-hidden relative">
+            <div className="absolute right-0 top-0 h-96 w-96 translate-x-1/3 -translate-y-1/3 bg-premium-gold/5 blur-[120px]" />
+            
+            <div className="max-w-3xl relative z-10">
+              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-premium-gold/30 bg-premium-gold/10 px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-premium-gold">
+                <ShieldCheck className="h-3 w-3" />
+                Québec Trust Hub
+              </div>
+              
+              <h2 className="text-4xl font-semibold tracking-tight text-white md:text-5xl leading-tight">
+                Un parcours de rédaction <span className="text-premium-gold">plus clair</span>, plus transparent et mieux encadré.
+              </h2>
+              
+              <p className="mt-8 text-lg leading-8 text-neutral-400">
+                LECIPM aide les utilisateurs à comprendre les clauses, vérifier les risques, suivre les avis importants et préparer des documents plus clairs avant signature.
+              </p>
+
+              <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div className="space-y-2">
+                  <h4 className="text-xs font-black uppercase tracking-widest text-white">Score de Conformité</h4>
+                  <p className="text-sm text-neutral-500 italic">Évaluation dynamique de la complétude et des risques de vos brouillons.</p>
+                </div>
+                <div className="space-y-2">
+                  <h4 className="text-xs font-black uppercase tracking-widest text-white">Avis OACIQ-Ready</h4>
+                  <p className="text-sm text-neutral-500 italic">Divulgations obligatoires et avis de protection intégrés nativement.</p>
+                </div>
+                <div className="space-y-2">
+                  <h4 className="text-xs font-black uppercase tracking-widest text-white">Broker Assist</h4>
+                  <p className="text-sm text-neutral-500 italic">Accès direct à une révision professionnelle pour vos transactions complexes.</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>

@@ -1,0 +1,11 @@
+{
+  "name": "@lecipm/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "LECIPM platform module registry and shared core config",
+  "exports": {
+    ".": "./index.ts",
+    "./modules.config": "./modules.config.ts"
+  }
+}

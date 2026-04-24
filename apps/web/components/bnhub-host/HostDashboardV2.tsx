@@ -5,6 +5,7 @@ import { RevenueCard } from "./RevenueCard";
 import { OccupancyChart } from "./OccupancyChart";
 import { AutopilotPanel } from "./AutopilotPanel";
 import { ListingHealthCard } from "./ListingHealthCard";
+import { DashboardStatSkeleton, Skeleton } from "@/components/ui/SkeletonLoader";
 
 type DashPayload = {
   revenueMTD?: number;
@@ -44,7 +45,21 @@ export function HostDashboardV2({ ownerId }: { ownerId: string }) {
     return <p className="text-sm text-red-300">BNHub v2 dashboard: {err}</p>;
   }
   if (!data) {
-    return <p className="text-sm text-neutral-500">Loading host insights…</p>;
+    return (
+      <div className="space-y-4 rounded-2xl border border-premium-gold/25 bg-black/40 p-4">
+        <div className="space-y-2">
+          <Skeleton className="h-6 w-40" />
+          <Skeleton className="h-4 w-64" />
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <DashboardStatSkeleton />
+          <DashboardStatSkeleton />
+          <DashboardStatSkeleton />
+        </div>
+        <Skeleton className="h-48 w-full" />
+        <Skeleton className="h-32 w-full" />
+      </div>
+    );
   }
 
   const mtdCents = typeof data.revenueMTD === "number" ? data.revenueMTD : 0;

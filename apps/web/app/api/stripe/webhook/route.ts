@@ -1725,6 +1725,9 @@ export async function POST(req: NextRequest) {
           })
           .catch((e) => logError("Webhook: deal close failed", e));
         if (prevDeal && prevDeal.status !== "closed") {
+          void import("@/modules/crm/services/broker-crm-outcome.service").then((m) =>
+            m.syncBrokerCrmDealTerminalPlaybookMemory(dealId).catch(() => {}),
+          );
           const { notifyDealClosedCelebrationIfNeeded } = await import("@/lib/listing-lifecycle/notify-deal-closed-celebration");
           void notifyDealClosedCelebrationIfNeeded(dealId).catch(() => null);
         }

@@ -5,4 +5,12 @@ export { getJourneyState, updateJourneyState } from "./services/user-journey.ser
 export type { UserJourneyView } from "./services/user-journey.service";
 export { buildPersonalizationContext, mergePlaybookContextWithUserIntelligence, personalisationListingNudge } from "./services/user-personalization.service";
 export { mergeStoredPreferencesIntoIntake, recordDreamHomeQuestionnaire } from "./integrations/dream-home-user-intelligence";
-export { recordListingInquiryTouch, recordPipelineDealProgression } from "./integrations/crm-user-intelligence";
+export {
+  recordListingInquiryTouch,
+  recordListingSaveEngagement,
+  recordPipelineDealProgression,
+  recordBrokerCrmLeadStatusSignal,
+  recordMarketplaceDealCrmStageSignal,
+  recordMarketplaceLeadPipelineSignal,
+  recordMarketplaceLeadNoteSignal,
+} from "./integrations/crm-user-intelligence";

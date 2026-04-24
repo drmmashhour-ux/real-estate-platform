@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 
 type InsightBlock = {
   title: string;
@@ -95,9 +97,17 @@ export function AiCeoInsightsDashboardClient() {
         </Card>
       )}
 
+      <div className="flex items-center justify-between mb-2">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500 italic">Executive summary</h2>
+        <Link 
+          href="/dashboard/defensibility" 
+          className="text-[10px] font-black uppercase tracking-widest text-premium-gold hover:text-amber-200 transition-colors flex items-center gap-2"
+        >
+          View Defensibility Moat <ArrowRight className="h-3 w-3" />
+        </Link>
+      </div>
       <Card className="border border-zinc-800 bg-zinc-900/40 p-5">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">Executive summary</h2>
-        <p className="mt-3 text-sm leading-relaxed text-zinc-200">{data.summary}</p>
+        <p className="text-sm leading-relaxed text-zinc-200">{data.summary}</p>
       </Card>
 
       <div className="grid gap-6 md:grid-cols-2">

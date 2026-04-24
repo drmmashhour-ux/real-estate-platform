@@ -28,6 +28,10 @@ import { useGeocodedMapFocus } from "@/hooks/useGeocodedMapFocus";
 import { computeMapSearchStats } from "@/lib/search/map-search-analytics";
 import { BROWSE_EMPTY_LISTINGS } from "@/lib/listings/browse-empty-copy";
 import { ListingBadges } from "@/components/listings/ListingBadges";
+import { GreenFilterSection } from "@/components/listings/GreenFilterSection";
+import { GreenListingBadge } from "@/components/listings/GreenListingBadge";
+import { isGreenFiltersActive } from "@/modules/green-ai/green-search-filter.service";
+import type { GreenRankingSortMode, GreenSearchFilters } from "@/modules/green-ai/green-search.types";
 
 /** Luxury residential hero — Unsplash (modern home, dusk). */
 const LISTINGS_HERO_BG =
@@ -64,6 +68,22 @@ type Row = {
   greenVerifiedListing?: boolean;
   lecipmGreenVerificationLevel?: string | null;
   lecipmGreenConfidence?: number | null;
+  green?: {
+    currentScore: number | null;
+    projectedScore: number | null;
+    scoreDelta: number | null;
+    label: "GREEN" | "IMPROVABLE" | "LOW" | null;
+    quebecLabel: string | null;
+    improvementPotential: "high" | "medium" | "low" | null;
+    estimatedIncentives: number | null;
+    rationale: string[];
+    disclaimer: string;
+  };
+  greenIntelligence?: {
+    brokerCallouts: string[];
+    rankingBoostSuggestion: number | null;
+    rationale: string[];
+  };
 };
 
 function isFeaturedListingActive(featuredUntil: string | null | undefined): boolean {
@@ -135,6 +155,8 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [propertyFilters, setPropertyFilters] = useState<PropertyBrowseFilters>(EMPTY_PF);
+  const [greenFilters, setGreenFilters] = useState<GreenSearchFilters>({});
+  const [greenSortMode, setGreenSortMode] = useState<GreenRankingSortMode | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [smartCompareIds, setSmartCompareIds] = useState<string[]>([]);
   const [mapFeedRows, setMapFeedRows] = useState<Row[]>([]);
@@ -165,10 +187,19 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
     try {
       const base = urlParamsToGlobalFilters(new URLSearchParams(searchParams.toString()));
       const f = hubMode === "rent" ? { ...base, type: "rent" as const } : base;
+      const gPayload = isGreenFiltersActive(greenFilters) ? greenFilters : undefined;
       const r = await fetch("/api/buyer/browse", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...f, page, limit: 24, propertyFilters }),
+        body: JSON.stringify({
+          ...f,
+          page,
+          limit: 24,
+          propertyFilters,
+          greenFilters: gPayload,
+          greenSortMode: greenSortMode ?? undefined,
+          greenAudience: "public",
+        }),
         cache: "no-store",
       });
       if (!r.ok) {
@@ -212,17 +243,26 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
     } finally {
       setLoading(false);
     }
-  }, [searchParams, page, propertyFilters, hubMode]);
+  }, [searchParams, page, propertyFilters, greenFilters, greenSortMode, hubMode]);
 
   const fetchMapFeed = useCallback(async () => {
     try {
       const params = new URLSearchParams(queryString);
       const base = urlParamsToGlobalFilters(params);
       const f = hubMode === "rent" ? { ...base, type: "rent" as const } : base;
+      const gPayload = isGreenFiltersActive(greenFilters) ? greenFilters : undefined;
       const r = await fetch("/api/buyer/browse", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...f, page: 1, limit: MAP_BROWSE_LIMIT, propertyFilters }),
+        body: JSON.stringify({
+          ...f,
+          page: 1,
+          limit: MAP_BROWSE_LIMIT,
+          propertyFilters,
+          greenFilters: gPayload,
+          greenSortMode: greenSortMode ?? undefined,
+          greenAudience: "public",
+        }),
         cache: "no-store",
       });
       if (!r.ok) return;
@@ -231,7 +271,7 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
     } catch {
       setMapFeedRows([]);
     }
-  }, [queryString, hubMode, propertyFilters]);
+  }, [queryString, hubMode, propertyFilters, greenFilters, greenSortMode]);
 
   useEffect(() => {
     void fetchList();
@@ -391,12 +431,15 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
                       Best match
                     </span>
                   : null}
-                  <ListingBadges
-                    verified={Boolean(row.verifiedListing)}
-                    featuredActive={isFeaturedListingActive(row.featuredUntil)}
-                    greenVerified={Boolean(row.greenVerifiedListing)}
-                    className="drop-shadow-[0_1px_8px_rgba(0,0,0,0.65)]"
-                  />
+                  <div className="flex flex-wrap items-center gap-1">
+                    <ListingBadges
+                      verified={Boolean(row.verifiedListing)}
+                      featuredActive={isFeaturedListingActive(row.featuredUntil)}
+                      greenVerified={Boolean(row.greenVerifiedListing)}
+                      className="drop-shadow-[0_1px_8px_rgba(0,0,0,0.65)]"
+                    />
+                    {row.green ? <GreenListingBadge green={row.green} /> : null}
+                  </div>
                 </div>
               </div>
               <div className="p-5 sm:p-6">
@@ -751,6 +794,26 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
       </div>
     ) : null;
 
+  const greenSection = (
+    <details className="mt-6 rounded-2xl border border-emerald-500/20 bg-white/[0.02] open:bg-white/[0.03]">
+      <summary className="cursor-pointer list-none px-4 py-3 text-sm font-semibold text-emerald-200/95 [&::-webkit-details-marker]:hidden">
+        <span className="inline-flex items-center gap-2">
+          Green search (Québec-inspired)
+          <span className="text-xs font-normal text-slate-500">(optional — modeled signals only)</span>
+        </span>
+      </summary>
+      <div className="border-t border-white/10 px-4 pb-4 pt-3">
+        <GreenFilterSection
+          greenFilters={greenFilters}
+          onChange={setGreenFilters}
+          sortMode={greenSortMode}
+          onSortMode={setGreenSortMode}
+          brokerView={false}
+        />
+      </div>
+    </details>
+  );
+
   const lifestyleSection = (
     <details className="mt-6 rounded-2xl border border-white/10 bg-white/[0.02] open:bg-white/[0.03]">
       <summary className="cursor-pointer list-none px-4 py-3 text-sm font-semibold text-premium-gold [&::-webkit-details-marker]:hidden">
@@ -788,6 +851,8 @@ function ListingsBrowseContent({ embedded, hubMode = "buy" }: BrowseProps) {
             />
           </div>
         ) : null}
+
+        {greenSection}
 
         {lifestyleSection}
 

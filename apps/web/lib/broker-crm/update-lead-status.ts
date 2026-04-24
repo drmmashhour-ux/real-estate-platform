@@ -44,5 +44,14 @@ export async function updateBrokerCrmLeadStatus(leadId: string, status: LecipmBr
   if (status === "closed" || status === "lost") {
     trackBrokerCrm("broker_crm_lead_closed", { leadId, status }, { userId: brokerUserId });
   }
+  void import("@/modules/user-intelligence/integrations/crm-user-intelligence").then((m) =>
+    m
+      .recordBrokerCrmLeadStatusSignal(brokerUserId, {
+        leadId,
+        fromStatus: prev?.status != null ? String(prev.status) : null,
+        toStatus: String(status),
+      })
+      .catch(() => {}),
+  );
   return lead;
 }

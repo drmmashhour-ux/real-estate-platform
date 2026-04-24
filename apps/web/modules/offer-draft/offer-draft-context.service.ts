@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { getBrokerDisclosureDeclarationForDeal } from "@/lib/compliance/oaciq/broker-mandatory-disclosure.service";
+import type { NegotiationAiContext } from "@/modules/deal/negotiation-ai.engine";
 import { buildNegotiationAiContext, listLatestNegotiationStrategyRun } from "@/modules/deal/negotiation-strategy.service";
 import { getLatestBrokerDealScore } from "@/modules/deal/deal-scoring.service";
 
@@ -29,7 +30,7 @@ export type OfferDraftContext = {
     email: string;
     homeCity: string | null;
   } | null;
-  negotiationAi: Awaited<ReturnType<typeof buildNegotiationAiContext>>;
+  negotiationAi: NegotiationAiContext;
   negotiationStrategies: Awaited<ReturnType<typeof listLatestNegotiationStrategyRun>>["strategies"];
   dealScoreSnapshot: Awaited<ReturnType<typeof getLatestBrokerDealScore>>;
   brokerDisclosureLine: string | null;
@@ -58,7 +59,7 @@ export async function buildOfferDraftContext(dealId: string): Promise<OfferDraft
   });
   if (!deal) return null;
 
-  const [listing, buyer, negotiationAi, strategyRun, dealScoreSnapshot, brokerDecl] = await Promise.all([
+  const [listing, buyer, negotiationAiRaw, strategyRun, dealScoreSnapshot, brokerDecl] = await Promise.all([
     deal.listingId ?
       prisma.listing.findUnique({
         where: { id: deal.listingId },
@@ -77,6 +78,21 @@ export async function buildOfferDraftContext(dealId: string): Promise<OfferDraft
 
   const requiresConflictClause =
     deal.status === "CONFLICT_REQUIRES_DISCLOSURE" || /conflict/i.test(deal.crmStage ?? "");
+
+  const negotiationAi =
+    negotiationAiRaw ??
+    ({
+      dealPriceCad: deal.priceCents / 100,
+      listPriceCad: null,
+      comparableMedianCad: null,
+      comparableSampleSize: 0,
+      buyerSellerMotivationNote: "Negotiation context could not be loaded — verify all fields manually.",
+      urgencyDaysSinceActivity: 0,
+      priorOfferCount: 0,
+      inspectionStress: "medium",
+      financingStrength: "moderate",
+      dealStatus: deal.status,
+    } satisfies NegotiationAiContext);
 
   return {
     deal: {

@@ -89,12 +89,74 @@ export type GreenListingMetadata = {
     improvementAreas: string[];
     disclaimer: string;
     updatedAtIso?: string;
+    recommendations?: any[];
+    simulation?: any;
+    callouts?: any;
   };
   /** Illustrative grants matched to engine recommendations — verify with official programs */
   grantsSnapshot?: {
     eligibleGrants: Array<{ id: string; name: string; amount: string; reason: string; howToApply: string }>;
     disclaimer: string;
     byRecommendation: Array<{ action: string; grants: Array<{ id: string; name: string; amount: string; reason: string; howToApply: string }> }>;
+    updatedAtIso?: string;
+  };
+  /** Precomputed search/ranking fields — non-destructive merge; filled by green sync / jobs. */
+  greenSearchSnapshot?: {
+    currentScore?: number;
+    projectedScore?: number;
+    scoreDelta?: number;
+    quebecLabel?: string;
+    label?: "GREEN" | "IMPROVABLE" | "LOW";
+    improvementPotential?: "high" | "medium" | "low";
+    /** Illustrative $ sum from grant hints. */
+    estimatedIncentivesTotal?: number;
+    rankingBoostSuggestion?: number;
+    /** Optional — persisted when known from last evaluation */
+    hasSolarIndicated?: boolean;
+    hasGreenRoofIndicated?: boolean;
+    updatedAtIso?: string;
+  };
+  /**
+   * Optional user-provided or imported intake (additive) — not required for read paths.
+   */
+  greenIntake?: GreenEngineInput;
+  /** Shorthand recommendations (optional cache). */
+  recommendationsSnapshot?: string[];
+  /**
+   * Aggregated incentive hint total (illustrative) — may mirror grants or a broker-computed sum.
+   * Does not replace `grantsSnapshot` detail.
+   */
+  incentivesSnapshot?: {
+    totalIllustrativeCad?: number;
+    note?: string;
+    updatedAtIso?: string;
+  };
+  /** Non-guarantee ROI / value narrative for discovery (internal or owner-facing tools). */
+  roiSnapshot?: {
+    bandLabel?: string;
+    note?: string;
+    updatedAtIso?: string;
+  };
+  /** Browse-ranking assist from premium / program (1.x scale). */
+  pricingBoostSnapshot?: {
+    boostFactor?: number;
+    note?: string;
+    updatedAtIso?: string;
+  };
+  /**
+   * Wave: Québec ESG economics (costs, incentives, ROI, internal pricing signal) — additive merge in PATCH.
+   * Serialized JSON only; verify all figures with official programs and contractors.
+   */
+  quebecEsgEconomicsSnapshot?: {
+    recommendationKeys?: string[];
+    projectedQuebecScore?: number;
+    currentQuebecScore?: number;
+    costEstimates?: Record<string, unknown>;
+    incentives?: Record<string, unknown>;
+    roi?: Record<string, unknown>;
+    pricingBoost?: Record<string, unknown>;
+    disclaimers?: string[];
+    catalogVersion?: string;
     updatedAtIso?: string;
   };
 };

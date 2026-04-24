@@ -99,6 +99,7 @@ const PAYMENT_TYPES: PaymentType[] = [
   "closing_fee",
   "featured_listing",
   "fsbo_publish",
+  "contract_generation",
 ];
 
 export async function POST(request: NextRequest) {

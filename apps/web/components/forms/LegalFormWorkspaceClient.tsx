@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
 
 import type { LegalDraftWorkspacePayload } from "@/lib/forms/load-draft-workspace";
+import { buildLayerContextFromLegalDraft } from "@/modules/ai-autopilot-layer/buildContextFromLegalDraft";
+import { AutopilotActionPanel } from "@/components/ai-autopilot/AutopilotActionPanel";
 
 type DraftPayload = LegalDraftWorkspacePayload;
 
@@ -25,9 +27,13 @@ function fieldValuesToEditMap(fv: Record<string, unknown>): Record<string, strin
 export function LegalFormWorkspaceClient({
   draftId,
   initialDraft,
+  userId,
+  userRole,
 }: {
   draftId: string;
   initialDraft: DraftPayload;
+  userId: string;
+  userRole: string;
 }) {
   const [draft, setDraft] = useState<DraftPayload>(initialDraft);
   const [refreshing, setRefreshing] = useState(false);
@@ -55,6 +61,24 @@ export function LegalFormWorkspaceClient({
     const schema = draft?.template.schemaJson as { sections?: { id: string; title: string; fields: { id: string; label: string; type: string }[] }[] };
     return schema?.sections ?? [];
   }, [draft]);
+
+  const autopilotContext = useMemo(
+    () =>
+      buildLayerContextFromLegalDraft(
+        {
+          status: draft.status,
+          alerts: draft.alerts.map((a) => ({
+            severity: a.severity,
+            title: a.title,
+            alertType: a.alertType,
+          })),
+        },
+        userId,
+        userRole,
+        draftId
+      ),
+    [draft.alerts, draft.status, draftId, userId, userRole]
+  );
 
   const runAction = async (path: string, body?: object) => {
     setError(null);
@@ -243,6 +267,9 @@ export function LegalFormWorkspaceClient({
             <p className="mt-2 whitespace-pre-wrap text-xs text-slate-300">{draft.aiSummary}</p>
           </div>
         )}
+        <div className="lg:col-span-1">
+          <AutopilotActionPanel draftId={draftId} planContext={autopilotContext} title="AI Autopilot — brouillon" />
+        </div>
         <Link href="/dashboard/forms" className="inline-block text-xs text-amber-400 hover:text-amber-300">
           ← Back to forms
         </Link>

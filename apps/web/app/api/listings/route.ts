@@ -59,7 +59,11 @@ export async function GET(request: NextRequest) {
       logSearchRelevanceDebug(ordered, { city, country, minPrice, maxPrice });
     }
 
-    return Response.json(ordered);
+    const res = Response.json(ordered);
+    if (searchParams.get("green") === "1" || searchParams.get("green") === "true") {
+      res.headers.set("X-Lecipm-Green-Layer", "stays;-fsbo-listings:/api/buyer/browse;fsbo:/api/fsbo/search");
+    }
+    return res;
   } catch (e) {
     console.error(e);
     return Response.json({ error: "Failed to fetch listings" }, { status: 500 });

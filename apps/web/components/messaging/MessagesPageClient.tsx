@@ -7,6 +7,7 @@ import type { PlatformRole } from "@prisma/client";
 import { ConversationList } from "@/components/messaging/ConversationList";
 import { ConversationThread, type ThreadDetail, type ThreadMessage } from "@/components/messaging/ConversationThread";
 import { AiSuggestReplyBar } from "@/components/messaging/AiSuggestReplyBar";
+import { ConversationAssistantPanel } from "@/components/messaging/ConversationAssistantPanel";
 import { ConversationInsightsPanel } from "@/components/messaging/ConversationInsightsPanel";
 import { AutopilotChatBar } from "@/components/messaging/AutopilotChatBar";
 import type { InboxConversationRow } from "@/modules/messaging/services/get-user-conversations";
@@ -53,6 +54,7 @@ export function MessagesPageClient({
   const [licenseVersion, setLicenseVersion] = useState<string>(CONTENT_LICENSE_VERSION);
   const pendingSendRef = useRef<string | null>(null);
   const [composerAppendDraft, setComposerAppendDraft] = useState<{ nonce: number; text: string } | null>(null);
+  const [assistantSuggestion, setAssistantSuggestion] = useState<string | null>(null);
   const showAiSuggestions = viewerRole === "BROKER" || viewerRole === "ADMIN";
   const showBrokerInsights = showAiSuggestions;
   const phase2CallUrl =
@@ -132,6 +134,22 @@ export function MessagesPageClient({
   }, [loadList, loadThread, selectedId]);
 
   const canSend = !!detail?.participants.some((p) => p.userId === viewerId);
+
+  const onUseAssistantDraft = useCallback(() => {
+    if (!selectedId) return;
+    if (!assistantSuggestion?.trim()) return;
+    setComposerAppendDraft({ nonce: Date.now(), text: assistantSuggestion });
+    void fetch(`/api/conversations/${encodeURIComponent(selectedId)}/assistant`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
+      body: JSON.stringify({
+        event: "suggestion_used",
+        messagePreview: assistantSuggestion,
+        actionLabel: "suggested_draft",
+      }),
+    }).catch(() => {});
+  }, [selectedId, assistantSuggestion]);
 
   const sendMessageBody = useCallback(
     async (body: string) => {
@@ -226,6 +244,8 @@ export function MessagesPageClient({
             messages={messages}
             canSend={canSend}
             composerAppendDraft={composerAppendDraft}
+            assistantSuggestionText={showBrokerInsights && assistantSuggestion ? assistantSuggestion : null}
+            onUseAssistantSuggestion={showBrokerInsights ? onUseAssistantDraft : undefined}
             composerExtras={
               <>
                 {showAiSuggestions && selectedId ? (
@@ -264,7 +284,17 @@ export function MessagesPageClient({
         )}
       </section>
 
-      <ConversationInsightsPanel conversationId={selectedId} enabled={showBrokerInsights} />
+      {showBrokerInsights ? (
+        <div className="hidden w-[min(100%,400px)] shrink-0 flex-col border-l border-white/10 bg-black/25 xl:flex max-h-screen">
+          <ConversationAssistantPanel
+            conversationId={selectedId}
+            enabled
+            onSuggestionText={(t) => setAssistantSuggestion(t?.trim() ? t : null)}
+            onUseSuggestionInComposer={onUseAssistantDraft}
+          />
+          <ConversationInsightsPanel conversationId={selectedId} enabled asNestedSection />
+        </div>
+      ) : null}
 
       <ContentLicenseModal
         open={licenseOpen}

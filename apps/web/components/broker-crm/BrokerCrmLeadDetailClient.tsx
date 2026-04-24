@@ -23,6 +23,25 @@ type AutopilotSnapshot = {
   }>;
 };
 
+type PlaybookRecRow = {
+  playbookId: string;
+  name: string;
+  score: number;
+  reason: string;
+  allowed: boolean;
+};
+
+const DEAL_CONVERT_HELP: Record<string, string> = {
+  lead_not_found: "Lead not found or you don’t have access.",
+  listing_required_for_bnhub_deal: "Link a listing to this lead before converting.",
+  registered_buyer_required: "The inquiry needs a registered buyer (customer with email) on file.",
+  short_term_listing_only_in_v1: "This automated path is limited to BNHub short-term listings today.",
+  listing_resolve_failed: "We couldn’t resolve the listing record for deal creation.",
+  buyer_and_seller_same_party: "Buyer and seller can’t be the same party.",
+  deal_create_failed: "Deal creation failed — check broker disclosure / logs.",
+  convert_unavailable: "Conversion service unavailable.",
+};
+
 type LeadPayload = {
   lead: {
     id: string;
@@ -121,6 +140,11 @@ export function BrokerCrmLeadDetailClient({ leadId }: { leadId: string }) {
       listing: { title: string } | null;
     }>;
   } | null>(null);
+  const [playbookRecs, setPlaybookRecs] = useState<PlaybookRecRow[] | null>(null);
+  const [convertPrice, setConvertPrice] = useState("");
+  const [convertBusy, setConvertBusy] = useState(false);
+  const [convertNote, setConvertNote] = useState<string | null>(null);
+  const [createdDealId, setCreatedDealId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -233,6 +257,33 @@ export function BrokerCrmLeadDetailClient({ leadId }: { leadId: string }) {
       }
     })();
   }, [leadId]);
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        const res = await fetch(
+          `/api/broker-crm/leads/${encodeURIComponent(leadId)}/playbook-suggestions`,
+          { credentials: "same-origin" }
+        );
+        const j = (await res.json()) as { recommendations?: PlaybookRecRow[] };
+        if (res.ok && Array.isArray(j.recommendations)) setPlaybookRecs(j.recommendations);
+        else setPlaybookRecs([]);
+      } catch {
+        setPlaybookRecs([]);
+      }
+    })();
+  }, [leadId]);
+
+  useEffect(() => {
+    if (!data?.lead?.listing?.price) {
+      setConvertPrice("");
+      return;
+    }
+    const dollars = Math.max(1, Math.round(data.lead.listing.price / 100));
+    setConvertPrice(String(dollars));
+    setConvertNote(null);
+    setCreatedDealId(null);
+  }, [data?.lead?.listing?.id, data?.lead?.listing?.price]);
 
   useEffect(() => {
     if (loading || prefillApplied.current) return;
@@ -439,6 +490,115 @@ export function BrokerCrmLeadDetailClient({ leadId }: { leadId: string }) {
             {lead.listing.title}
           </Link>
           <p className="text-xs text-slate-500">{lead.listing.listingCode}</p>
+        </section>
+      ) : null}
+
+      {playbookRecs && playbookRecs.length > 0 ? (
+        <section className="rounded-xl border border-violet-500/25 bg-violet-950/20 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h3 className="text-sm font-semibold text-violet-100">Playbook suggestions</h3>
+            <p className="text-[10px] text-slate-500">
+              From playbook-memory retrieval ·{" "}
+              <Link href="/dashboard/crm/autopilot" className="text-violet-300 hover:underline">
+                review queue
+              </Link>
+            </p>
+          </div>
+          <ul className="mt-3 space-y-2 text-sm text-slate-200">
+            {playbookRecs.map((r) => (
+              <li
+                key={r.playbookId}
+                className="rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-xs sm:text-sm"
+              >
+                <span className="font-medium text-white">{r.name}</span>{" "}
+                <span className="text-slate-500">(score {Number(r.score).toFixed(2)})</span>{" "}
+                <span
+                  className={`ml-2 rounded-full px-2 py-0.5 text-[10px] ${
+                    r.allowed ? "bg-emerald-500/20 text-emerald-100" : "bg-slate-600/40 text-slate-300"
+                  }`}
+                >
+                  {r.allowed ? "Allowed" : "Blocked by policy"}
+                </span>
+                <p className="mt-1 text-slate-400">{r.reason}</p>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-2 text-[11px] text-slate-500">
+            Assignments that update the bandit run only from explicit autopilot evaluate — nothing here auto-executes.
+          </p>
+        </section>
+      ) : playbookRecs && playbookRecs.length === 0 ? (
+        <section className="rounded-xl border border-white/10 bg-black/20 p-4 text-sm text-slate-500">
+          No playbook recommendations for this lead yet (memory loop returned empty).
+        </section>
+      ) : null}
+
+      {lead.listing ? (
+        <section className="rounded-xl border border-emerald-500/25 bg-emerald-950/15 p-4">
+          <h3 className="text-sm font-semibold text-emerald-100">Create deal from lead</h3>
+          <p className="mt-1 text-xs text-slate-400">
+            Uses <code className="text-slate-500">POST /api/crm/convert-to-deal</code> — BNHub short-term listing + registered
+            buyer required. Broker disclosure checks apply. No auto-messages.
+          </p>
+          <div className="mt-3 flex flex-wrap items-end gap-3">
+            <label className="text-xs text-slate-500">
+              Offer price (CAD, dollars)
+              <input
+                type="number"
+                min={1}
+                className="mt-1 block w-40 rounded-lg border border-white/15 bg-black/50 px-3 py-2 text-sm text-white"
+                value={convertPrice}
+                onChange={(e) => setConvertPrice(e.target.value)}
+              />
+            </label>
+            <button
+              type="button"
+              disabled={convertBusy || !convertPrice}
+              onClick={async () => {
+                setConvertBusy(true);
+                setConvertNote(null);
+                setCreatedDealId(null);
+                try {
+                  const priceDollars = Math.max(1, Number(convertPrice) || 0);
+                  const res = await fetch("/api/crm/convert-to-deal", {
+                    method: "POST",
+                    credentials: "same-origin",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ leadId, priceDollars }),
+                  });
+                  const j = (await res.json()) as {
+                    ok?: boolean;
+                    dealId?: string;
+                    reason?: string;
+                    error?: string;
+                  };
+                  if (j.ok && j.dealId) {
+                    setCreatedDealId(j.dealId);
+                    setConvertNote("Deal created or linked. Lead stage updated to negotiating when applicable.");
+                    await load();
+                  } else {
+                    const reason = j.reason ?? j.error ?? "unknown";
+                    setConvertNote(DEAL_CONVERT_HELP[reason] ?? reason);
+                  }
+                } catch {
+                  setConvertNote("Request failed.");
+                } finally {
+                  setConvertBusy(false);
+                }
+              }}
+              className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-40"
+            >
+              {convertBusy ? "Working…" : "Convert to deal"}
+            </button>
+          </div>
+          {convertNote ? <p className="mt-2 text-xs text-slate-300">{convertNote}</p> : null}
+          {createdDealId ? (
+            <p className="mt-2 text-sm">
+              <Link href={`/dashboard/deals/${createdDealId}/playbook`} className="text-premium-gold hover:underline">
+                Open deal playbook →
+              </Link>
+            </p>
+          ) : null}
         </section>
       ) : null}
 

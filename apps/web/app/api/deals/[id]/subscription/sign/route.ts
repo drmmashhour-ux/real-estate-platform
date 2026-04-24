@@ -51,7 +51,9 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
   } catch (e) {
     const msg = e instanceof Error ? e.message : "FAILED";
     const status =
-      msg === "SUBSCRIPTION_NOT_READY" || msg === "DOCUMENT_NOT_FOUND" ? 404 : 400;
+      msg === "SUBSCRIPTION_NOT_READY" || msg === "DOCUMENT_NOT_FOUND" ? 404
+      : msg === "EXEMPTION_CLASSIFICATION_REQUIRED" ? 403
+      : 400;
     return NextResponse.json({ error: msg }, { status });
   }
 }

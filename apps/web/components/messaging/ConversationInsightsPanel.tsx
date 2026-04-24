@@ -18,9 +18,12 @@ type Profile = {
 export function ConversationInsightsPanel({
   conversationId,
   enabled,
+  /** When true, render as a flex child (parent must provide the `xl:` column shell and borders). */
+  asNestedSection = false,
 }: {
   conversationId: string | null;
   enabled: boolean;
+  asNestedSection?: boolean;
 }) {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -101,8 +104,12 @@ export function ConversationInsightsPanel({
 
   if (!enabled) return null;
 
+  const shell = asNestedSection
+    ? "flex min-h-0 min-w-0 flex-1 flex-col border-t border-white/5 bg-black/20"
+    : "hidden w-[min(100%,320px)] shrink-0 border-l border-white/10 bg-black/25 xl:flex xl:flex-col xl:overflow-y-auto";
+
   return (
-    <aside className="hidden w-[min(100%,320px)] shrink-0 border-l border-white/10 bg-black/25 xl:flex xl:flex-col xl:overflow-y-auto">
+    <aside className={shell}>
       <div className="sticky top-0 z-10 border-b border-white/10 bg-slate-950/95 px-3 py-3 backdrop-blur">
         <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Client intelligence</p>
         <p className="mt-1 text-xs text-slate-400">

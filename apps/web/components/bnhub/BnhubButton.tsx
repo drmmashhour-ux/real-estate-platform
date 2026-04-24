@@ -16,7 +16,7 @@ export function BnhubButton({
   type = "button",
   ...rest
 }: BnhubButtonProps) {
-  const base = variant === "primary" ? "bnhub-btn bnhub-btn--primary" : "bnhub-btn bnhub-btn--secondary";
+  const base = variant === "primary" ? "bnhub-btn bnhub-btn--primary transition-all duration-200 active:scale-95 active:opacity-90" : "bnhub-btn bnhub-btn--secondary transition-all duration-200 active:scale-95 active:opacity-90";
   return (
     <button type={type} className={`${base} ${className}`.trim()} disabled={disabled || loading} {...rest}>
       {loading ? <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden /> : null}

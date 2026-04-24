@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import { LaunchSequencerSummaryStrip } from "@/components/launch-sequencer/LaunchSequencerSummaryStrip";
 import { RecommendationsInvestorStrip } from "@/components/recommendations/RecommendationsInvestorStrip";
 import type { InvestorDashboardPayload } from "@/modules/investor/investor-dashboard-performance.service";
 
@@ -83,6 +84,10 @@ export default function InvestorDashboardPage() {
           {message}
         </div>
       ) : null}
+
+      <div className="mb-6">
+        <LaunchSequencerSummaryStrip />
+      </div>
 
       <RecommendationsInvestorStrip />
 

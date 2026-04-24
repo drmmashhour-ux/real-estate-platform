@@ -1,8 +1,12 @@
 import type { DreamHomeQuestionnaireInput, DreamHomeProfile } from "@/modules/dream-home/types/dream-home.types";
 import { toBudgetBand, toFamilySizeBand } from "@/modules/dream-home/utils/dream-home-normalize";
-import { getProfile } from "../services/user-preference-profile.service";
+import {
+  createSnapshot,
+  ensureUserPreferenceProfile,
+  getProfile,
+  rebuildProfile,
+} from "../services/user-preference-profile.service";
 import { recordSignal } from "../services/user-preference-signal.service";
-import { createSnapshot, ensureUserPreferenceProfile, rebuildProfile } from "../services/user-preference-profile.service";
 import { updateJourneyState } from "../services/user-journey.service";
 import { playbookLog } from "@/modules/playbook-memory/playbook-memory.logger";
 

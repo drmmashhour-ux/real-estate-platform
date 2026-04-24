@@ -10,6 +10,7 @@ import { getDailyDealFeed } from "@/src/modules/daily-deal-feed/application/getD
 import { getWatchlistSummary } from "@/src/modules/watchlist-alerts/infrastructure/watchlistSummaryService";
 import { listWatchlistAlerts } from "@/src/modules/watchlist-alerts/infrastructure/watchlistAlertRepository";
 import { WatchlistAlertsPreview } from "@/src/modules/watchlist-alerts/ui/WatchlistAlertsPreview";
+import { AutopilotActionPanel } from "@/components/ai-autopilot/AutopilotActionPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -58,6 +59,9 @@ export default async function BrokerDashboardPage() {
               "Use score-driven follow-up to increase conversion.",
             ]}
           />
+          <div className="max-w-xl">
+            <AutopilotActionPanel showModeSelector title="AI Autopilot — tableau de bord" />
+          </div>
         </div>
         <p className="mt-10 border-t border-white/10 pt-6 text-center text-sm text-slate-500">
           <Link href="/dashboard" className="text-premium-gold hover:underline">

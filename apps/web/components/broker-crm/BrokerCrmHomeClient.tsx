@@ -1,6 +1,5 @@
 "use client";
 
-import type { LecipmBrokerCrmLeadStatus } from "@prisma/client";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -27,6 +26,10 @@ type LeadRow = {
   nextFollowUpAt: string | null;
   /** Rule-based label (internal scoring; no auto-messaging). */
   aiScoreLabel?: string;
+  /** 0–1 normalized priority score. */
+  aiScore01?: number;
+  /** hot / warm / cold from priority bands. */
+  aiThermal?: "hot" | "warm" | "cold";
   suggestedNext?: string | null;
 };
 
@@ -35,6 +38,25 @@ type Kpis = {
   highPriority: number;
   followUpsDueToday: number;
   closedThisWeek: number;
+};
+
+type CrmInsightsPayload = {
+  pipeline: {
+    openLeads: number;
+    stuckFollowUps: number;
+    newLeads: number;
+    highPriority: number;
+  };
+  operational?: {
+    stalledLeads: number;
+    overdueFollowUps?: number;
+    uncontactedLeads: number;
+    highScoreIgnoredLeads: number;
+    dealBottlenecks: number;
+  };
+  suggestedBacklog: number;
+  notes: string[];
+  generatedAt: string;
 };
 
 const FILTERS = [
@@ -50,6 +72,20 @@ function badgePriority(label: string) {
   if (label === "high") return "bg-rose-500/20 text-rose-100";
   if (label === "medium") return "bg-amber-500/20 text-amber-100";
   return "bg-slate-500/20 text-slate-200";
+}
+
+function badgeThermal(t: string | undefined) {
+  if (t === "hot") return "bg-rose-600/30 text-rose-50";
+  if (t === "warm") return "bg-amber-500/25 text-amber-50";
+  return "bg-slate-600/35 text-slate-200";
+}
+
+function leadEligibleForConvert(l: LeadRow): boolean {
+  if (["closed", "lost"].includes(l.status)) return false;
+  if (!l.listing?.id) return false;
+  if (["qualified", "visit_scheduled", "negotiating"].includes(l.status)) return true;
+  if (l.priorityLabel === "high") return true;
+  return l.status === "contacted" && (l.priorityLabel === "medium" || l.priorityLabel === "high");
 }
 
 function badgeStatus(status: string) {
@@ -69,6 +105,9 @@ export function BrokerCrmHomeClient() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [autopilotBar, setAutopilotBar] = useState<AutopilotBar | null>(null);
+  const [crmInsights, setCrmInsights] = useState<CrmInsightsPayload | null>(null);
+  const [convertingLeadId, setConvertingLeadId] = useState<string | null>(null);
+  const [convertHintByLead, setConvertHintByLead] = useState<Record<string, string>>({});
   const [convSummary, setConvSummary] = useState<{
     topOpportunities: LeadRow[];
     dealsAtRiskCount: number;
@@ -100,6 +139,23 @@ export function BrokerCrmHomeClient() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch("/api/crm/insights", { credentials: "same-origin" });
+        const j = (await res.json()) as { ok?: boolean; insights?: CrmInsightsPayload };
+        if (!res.ok || cancelled || !j.insights) return;
+        setCrmInsights(j.insights);
+      } catch {
+        if (!cancelled) setCrmInsights(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -174,6 +230,44 @@ export function BrokerCrmHomeClient() {
     return `Work the newest lead: ${leads[0]!.displayName}.`;
   }, [leads]);
 
+  const convertLeadToDeal = useCallback(async (leadId: string) => {
+    setConvertingLeadId(leadId);
+    setConvertHintByLead((prev) => {
+      const next = { ...prev };
+      delete next[leadId];
+      return next;
+    });
+    try {
+      const res = await fetch("/api/crm/convert-to-deal", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ leadId }),
+      });
+      const j = (await res.json()) as { ok?: boolean; dealId?: string; reason?: string; error?: string };
+      if (j.ok && j.dealId) {
+        setConvertHintByLead((prev) => ({ ...prev, [leadId]: `Deal created — open in Deals (${j.dealId.slice(0, 8)}…).` }));
+        await load();
+      } else {
+        setConvertHintByLead((prev) => ({
+          ...prev,
+          [leadId]: j.reason ?? j.error ?? "Conversion not available for this lead (see requirements).",
+        }));
+      }
+    } catch {
+      setConvertHintByLead((prev) => ({ ...prev, [leadId]: "Network error — try again." }));
+    } finally {
+      setConvertingLeadId(null);
+    }
+  }, [load]);
+
+  const autopilotSuggestedLead = useMemo(() => {
+    const withHint = leads.find((l) => l.suggestedNext && !["closed", "lost"].includes(l.status));
+    if (withHint) return withHint;
+    const hot = leads.find((l) => (l.aiThermal === "hot" || l.priorityLabel === "high") && !["closed", "lost"].includes(l.status));
+    return hot ?? null;
+  }, [leads]);
+
   return (
     <div className="space-y-6">
       {convSummary ? (
@@ -200,13 +294,17 @@ export function BrokerCrmHomeClient() {
                   <li className="text-slate-500">No leads yet — inquiries will appear here.</li>
                 ) : (
                   convSummary.topOpportunities.map((row) => (
-                    <li key={row.id}>
+                    <li key={row.id} className="flex flex-wrap items-center gap-1">
                       <Link href={`/dashboard/crm/${row.id}`} className="text-premium-gold hover:underline">
                         {row.displayName}
                       </Link>
+                      {row.aiThermal ? (
+                        <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-medium uppercase ${badgeThermal(row.aiThermal)}`}>
+                          {row.aiThermal}
+                        </span>
+                      ) : null}
                       <span className="text-xs text-slate-500">
-                        {" "}
-                        · {row.priorityLabel} ({row.priorityScore})
+                        · {row.aiScore01 != null ? `${(row.aiScore01 * 100).toFixed(0)}%` : `${row.priorityLabel} (${row.priorityScore})`}
                       </span>
                     </li>
                   ))
@@ -252,6 +350,32 @@ export function BrokerCrmHomeClient() {
           </Link>
         </div>
       ) : null}
+
+      {autopilotSuggestedLead ? (
+        <div className="rounded-xl border border-violet-500/30 bg-violet-950/20 px-4 py-4">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-violet-200">AI Broker Autopilot — suggested focus</h3>
+          <p className="mt-2 text-sm text-slate-200">
+            <Link href={`/dashboard/crm/${autopilotSuggestedLead.id}`} className="font-medium text-premium-gold hover:underline">
+              {autopilotSuggestedLead.displayName}
+            </Link>
+            <span className={`ml-2 inline-block rounded-full px-2 py-0.5 text-[10px] font-medium uppercase ${badgeThermal(autopilotSuggestedLead.aiThermal)}`}>
+              {autopilotSuggestedLead.aiThermal ?? autopilotSuggestedLead.priorityLabel} ·{" "}
+              {autopilotSuggestedLead.aiScore01 != null
+                ? `${(autopilotSuggestedLead.aiScore01 * 100).toFixed(0)}%`
+                : autopilotSuggestedLead.priorityScore}
+            </span>
+          </p>
+          {autopilotSuggestedLead.suggestedNext ? (
+            <p className="mt-2 text-sm text-slate-300">{autopilotSuggestedLead.suggestedNext}</p>
+          ) : (
+            <p className="mt-2 text-sm text-slate-400">Open the lead to run full evaluation (score + playbook-memory). Nothing is auto-sent.</p>
+          )}
+          <p className="mt-2 text-[10px] text-slate-500">
+            Safe mode: prioritization &amp; tagging only — use{" "}
+            <code className="text-slate-400">POST /api/broker-crm/leads/[id]/evaluate</code> from the lead workspace when needed.
+          </p>
+        </div>
+      ) : null}
       {kpis ? (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {[
@@ -266,6 +390,68 @@ export function BrokerCrmHomeClient() {
             </div>
           ))}
         </div>
+      ) : null}
+
+      {crmInsights ? (
+        <section className="rounded-xl border border-sky-500/25 bg-sky-950/20 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h3 className="text-sm font-semibold text-sky-100">CRM insights</h3>
+            <p className="text-[10px] text-slate-500">
+              <code className="text-slate-400">GET /api/crm/insights</code> · assistive only
+            </p>
+          </div>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4 text-sm">
+            <div>
+              <p className="text-xs text-slate-500">Open leads</p>
+              <p className="text-lg font-semibold text-white">{crmInsights.pipeline.openLeads}</p>
+            </div>
+            <div>
+              <p className="text-xs text-slate-500">Stuck follow-ups (2d+)</p>
+              <p className="text-lg font-semibold text-amber-100">{crmInsights.pipeline.stuckFollowUps}</p>
+            </div>
+            <div>
+              <p className="text-xs text-slate-500">Playbook suggestions backlog</p>
+              <p className="text-lg font-semibold text-violet-100">{crmInsights.suggestedBacklog}</p>
+            </div>
+            <div>
+              <p className="text-xs text-slate-500">Generated</p>
+              <p className="text-xs text-slate-400">{new Date(crmInsights.generatedAt).toLocaleString()}</p>
+            </div>
+          </div>
+          {crmInsights.operational ? (
+            <div className="mt-4 grid gap-3 border-t border-white/10 pt-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 text-sm">
+              <div>
+                <p className="text-xs text-slate-500">Stalled leads</p>
+                <p className="text-lg font-semibold text-amber-100">{crmInsights.operational.stalledLeads}</p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-500">Overdue follow-ups</p>
+                <p className="text-lg font-semibold text-red-200/90">
+                  {crmInsights.operational.overdueFollowUps ?? "—"}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-500">Uncontacted / new</p>
+                <p className="text-lg font-semibold text-sky-100">{crmInsights.operational.uncontactedLeads}</p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-500">Warm/hot ignored</p>
+                <p className="text-lg font-semibold text-rose-100">{crmInsights.operational.highScoreIgnoredLeads}</p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-500">Deal bottlenecks</p>
+                <p className="text-lg font-semibold text-orange-100">{crmInsights.operational.dealBottlenecks}</p>
+              </div>
+            </div>
+          ) : null}
+          {crmInsights.notes.length ? (
+            <ul className="mt-3 list-disc space-y-1 pl-5 text-xs text-slate-400">
+              {crmInsights.notes.map((n) => (
+                <li key={n}>{n}</li>
+              ))}
+            </ul>
+          ) : null}
+        </section>
       ) : null}
 
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -312,10 +498,13 @@ export function BrokerCrmHomeClient() {
                 <th className="px-3 py-2">Lead</th>
                 <th className="px-3 py-2">Listing</th>
                 <th className="px-3 py-2">Status</th>
+                <th className="px-3 py-2">AI / score</th>
+                <th className="px-3 py-2">Suggestion</th>
                 <th className="px-3 py-2">Priority</th>
                 <th className="px-3 py-2">Last activity</th>
                 <th className="px-3 py-2">Next follow-up</th>
                 <th className="px-3 py-2">Source</th>
+                <th className="px-3 py-2">Deal</th>
               </tr>
             </thead>
             <tbody>
@@ -336,12 +525,20 @@ export function BrokerCrmHomeClient() {
                       <span className={`rounded-full px-2 py-0.5 text-[11px] ${badgeStatus(row.status)}`}>{row.status}</span>
                     </td>
                     <td className="px-3 py-2">
-                      <span
-                        className="rounded-full border border-violet-500/30 bg-violet-950/30 px-2 py-0.5 text-[11px] text-violet-100"
-                        title="Rule-based score from message signals. Not legal or financial advice."
-                      >
-                        {row.aiScoreLabel ?? `${row.priorityLabel} · ${row.priorityScore}`}
-                      </span>
+                      <div className="flex flex-wrap items-center gap-1">
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-[10px] font-medium uppercase ${badgeThermal(row.aiThermal)}`}
+                          title="Thermal band from rule-based score (not legal advice)."
+                        >
+                          {row.aiThermal ?? "—"}
+                        </span>
+                        <span
+                          className="rounded-full border border-violet-500/30 bg-violet-950/30 px-2 py-0.5 text-[11px] text-violet-100"
+                          title="Rule-based score from message signals. Not legal or financial advice."
+                        >
+                          {row.aiScore01 != null ? `${(row.aiScore01 * 100).toFixed(0)}%` : row.aiScoreLabel ?? `${row.priorityScore}`}
+                        </span>
+                      </div>
                     </td>
                     <td className="max-w-[220px] px-3 py-2 text-xs text-slate-400" title="Suggestions only; nothing is auto-sent.">
                       {row.suggestedNext ? row.suggestedNext : "—"}
@@ -365,6 +562,25 @@ export function BrokerCrmHomeClient() {
                       )}
                     </td>
                     <td className="px-3 py-2 text-xs text-slate-500">{row.source}</td>
+                    <td className="px-3 py-2 text-xs">
+                      {leadEligibleForConvert(row) ? (
+                        <div className="space-y-1">
+                          <button
+                            type="button"
+                            disabled={convertingLeadId === row.id}
+                            onClick={() => void convertLeadToDeal(row.id)}
+                            className="rounded-md border border-premium-gold/40 bg-premium-gold/10 px-2 py-1 text-[10px] font-semibold text-premium-gold hover:bg-premium-gold/20 disabled:opacity-50"
+                          >
+                            {convertingLeadId === row.id ? "…" : "Convert"}
+                          </button>
+                          {convertHintByLead[row.id] ? (
+                            <p className="max-w-[140px] text-[9px] text-slate-500">{convertHintByLead[row.id]}</p>
+                          ) : null}
+                        </div>
+                      ) : (
+                        <span className="text-slate-600">—</span>
+                      )}
+                    </td>
                   </tr>
                 );
               })}
@@ -384,15 +600,42 @@ export function BrokerCrmHomeClient() {
               <ul className="mt-2 space-y-2">
                 {pipelineGroups[colKey].map((l) => (
                   <li key={l.id}>
-                    <Link
-                      href={`/dashboard/crm/${l.id}`}
-                      className="block rounded-lg border border-white/10 bg-black/40 px-2 py-2 text-sm text-white hover:border-premium-gold/40"
-                    >
-                      <span className="line-clamp-2">{l.displayName}</span>
-                      <span className="mt-0.5 block text-[10px] text-slate-500">
-                        {l.listing?.title ?? "No listing"} · {l.status}
+                    <div className="rounded-lg border border-white/10 bg-black/40 px-2 py-2 text-sm text-white">
+                      <Link href={`/dashboard/crm/${l.id}`} className="block hover:text-premium-gold">
+                        <span className="line-clamp-2">{l.displayName}</span>
+                      </Link>
+                      <span className="mt-0.5 flex flex-wrap items-center gap-1 text-[10px] text-slate-500">
+                        <span>{l.listing?.title ?? "No listing"} · {l.status}</span>
+                        {l.aiThermal ? (
+                          <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-medium uppercase ${badgeThermal(l.aiThermal)}`}>
+                            {l.aiThermal}
+                          </span>
+                        ) : null}
+                        <span>
+                          {l.aiScore01 != null ? `${(l.aiScore01 * 100).toFixed(0)}%` : l.aiScoreLabel ?? `${l.priorityScore}`}
+                        </span>
                       </span>
-                    </Link>
+                      {l.suggestedNext ? (
+                        <p className="mt-1 line-clamp-2 text-[10px] text-violet-200/90" title="Suggestion only — nothing auto-sent.">
+                          {l.suggestedNext}
+                        </p>
+                      ) : null}
+                      {leadEligibleForConvert(l) ? (
+                        <div className="mt-2 space-y-1">
+                          <button
+                            type="button"
+                            disabled={convertingLeadId === l.id}
+                            onClick={() => void convertLeadToDeal(l.id)}
+                            className="w-full rounded-md border border-premium-gold/50 bg-premium-gold/15 py-1 text-[10px] font-semibold text-premium-gold hover:bg-premium-gold/25 disabled:opacity-50"
+                          >
+                            {convertingLeadId === l.id ? "Converting…" : "Convert to deal"}
+                          </button>
+                          {convertHintByLead[l.id] ? (
+                            <p className="text-[9px] text-slate-500">{convertHintByLead[l.id]}</p>
+                          ) : null}
+                        </div>
+                      ) : null}
+                    </div>
                   </li>
                 ))}
               </ul>

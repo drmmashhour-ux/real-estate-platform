@@ -930,6 +930,14 @@ export function BuyerListingDetail({
                   >
                     {primaryCtaLabel}
                   </button>
+                  {listing.listingKind !== "bnhub" && (
+                    <Link
+                      href={`/drafts/turbo?type=PROMISE_TO_PURCHASE&listingId=${listing.id}&kind=${listing.listingKind}`}
+                      className="inline-flex min-h-[52px] w-full items-center justify-center rounded-2xl border border-[#D4AF37]/30 bg-black/40 px-8 text-base font-bold text-[#D4AF37] shadow-lg transition hover:bg-[#D4AF37]/10 sm:w-auto sm:min-w-[220px]"
+                    >
+                      Faire une offre (Turbo)
+                    </Link>
+                  )}
                 </div>
                 {(du?.pricingInsight?.headline?.toLowerCase().includes("early") ||
                   du?.badge?.toLowerCase().includes("early")) && (

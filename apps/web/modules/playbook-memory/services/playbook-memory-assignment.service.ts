@@ -1,6 +1,6 @@
 import type { MemoryDomain, PlaybookAssignmentSelectionMode, PlaybookExecutionMode } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import { assignmentLog } from "../playbook-learning-logger";
+import { assignmentLog, banditLog } from "../playbook-learning-logger";
 import { playbookLog } from "../playbook-memory.logger";
 import type {
   PlaybookAssignmentResult,
@@ -35,6 +35,7 @@ function toRequestContext(c: PlaybookBanditContext): RecommendationRequestContex
     policyFlags: c.policyFlags,
     autonomyMode: c.autonomyMode,
     candidatePlaybookIds: c.candidatePlaybookIds,
+    userId: c.userId,
   };
 }
 
@@ -88,6 +89,7 @@ export const playbookMemoryAssignmentService = {
       const candidates = await getEligibleRecommendationCandidates(req, 32);
       if (candidates == null || candidates.length === 0) {
         playbookLog.info("assignBestPlaybook", { result: "empty", domain: context.domain });
+        banditLog.info("no_eligible_candidates", { domain: context.domain });
         return null;
       }
 
@@ -181,6 +183,32 @@ export const playbookMemoryAssignmentService = {
     }
   },
 
+  /**
+   * Bandit selection first; if null, first policy-safe eligible candidate as manual assignment.
+   * Keeps recommendation → assignment connected under sparse bandit stats. Never throws.
+   */
+  async assignBestOrManualFallback(context: PlaybookBanditContext): Promise<PlaybookAssignmentResult | null> {
+    try {
+      const primary = await playbookMemoryAssignmentService.assignBestPlaybook(context);
+      if (primary) {
+        return primary;
+      }
+      const req = toRequestContext(context);
+      const candidates = await getEligibleRecommendationCandidates(req, 32);
+      if (candidates == null || candidates.length === 0) {
+        return null;
+      }
+      const top = candidates.find((c) => c.allowed) ?? null;
+      if (top == null) {
+        return null;
+      }
+      return await playbookMemoryAssignmentService.createManualAssignment({ context, playbook: top });
+    } catch (e) {
+      playbookLog.warn("assignBestOrManualFallback", { message: e instanceof Error ? e.message : String(e) });
+      return null;
+    }
+  },
+
   async createManualAssignment(params: {
     context: PlaybookBanditContext;
     playbook: PlaybookRecommendation;
@@ -254,6 +282,17 @@ export const playbookMemoryAssignmentService = {
       const a = await prisma.playbookAssignment.findUnique({ where: { id: params.assignmentId } });
       if (!a) {
         playbookLog.warn("attachAssignmentOutcome", { message: "assignment_not_found", id: params.assignmentId });
+        return;
+      }
+      if (
+        a.outcomeStatus != null &&
+        a.outcomeStatus === params.outcomeStatus &&
+        (params.outcomeStatus === "SUCCEEDED" || params.outcomeStatus === "FAILED")
+      ) {
+        assignmentLog.info("outcome_idempotent_skip", {
+          assignmentId: params.assignmentId,
+          outcomeStatus: params.outcomeStatus,
+        });
         return;
       }
       await prisma.playbookAssignment

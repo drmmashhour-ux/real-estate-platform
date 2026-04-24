@@ -48,12 +48,17 @@ export function DealInvestorsDashboardClient({ dealId }: { dealId: string }) {
         <div>
           <h1 className="text-xl font-semibold">Investors</h1>
           <p className="text-muted-foreground font-mono text-xs">{dealId}</p>
-          <Link
-            href={`/dashboard/deals/${dealId}/investor-matches`}
-            className="mt-2 inline-block text-xs text-blue-600 underline"
-          >
-            Investor matches (AI ranking)
-          </Link>
+          <div className="mt-2 flex flex-wrap gap-3 text-xs">
+            <Link href={`/dashboard/deals/${dealId}/playbook`} className="text-blue-600 underline">
+              First deal playbook
+            </Link>
+            <Link href={`/dashboard/deals/${dealId}/investor-matches`} className="text-blue-600 underline">
+              Investor matches (AI ranking)
+            </Link>
+            <Link href={`/dashboard/deals/${dealId}/offer-draft`} className="text-blue-600 underline">
+              Auto offer draft
+            </Link>
+          </div>
         </div>
         <button
           type="button"

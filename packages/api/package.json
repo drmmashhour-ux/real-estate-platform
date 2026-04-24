@@ -2,5 +2,10 @@
   "name": "@lecipm/api",
   "version": "0.1.0",
   "private": true,
-  "description": "Shared API utilities and types"
+  "type": "module",
+  "description": "Internal platform services (leads, deals, messaging, analytics)",
+  "exports": {
+    ".": "./internal/index.ts",
+    "./internal": "./internal/index.ts"
+  }
 }

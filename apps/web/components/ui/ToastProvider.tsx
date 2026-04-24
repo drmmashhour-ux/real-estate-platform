@@ -54,18 +54,21 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         {toasts.map((t) => (
           <div
             key={t.id}
-            className={`pointer-events-auto rounded-xl border px-4 py-3 text-center text-sm font-medium shadow-lg ${
+            className={`pointer-events-auto rounded-xl border px-5 py-3.5 text-center text-xs font-black uppercase tracking-widest shadow-2xl transition-all duration-300 animate-slide-up ${
               t.variant === "success"
-                ? "border-emerald-500/40 bg-emerald-950/95 text-emerald-100"
+                ? "border-premium-gold/50 bg-black/90 text-premium-gold shadow-premium-gold/20"
                 : t.variant === "warning"
-                  ? "border-amber-500/50 bg-amber-950/95 text-amber-50"
+                  ? "border-amber-500/50 bg-black/90 text-amber-500 shadow-amber-500/10"
                   : t.variant === "error"
-                    ? "border-red-500/50 bg-red-600 text-white"
-                    : "border-white/15 bg-[#1a1a1a]/95 text-white"
+                    ? "border-red-500/50 bg-black/90 text-red-500 shadow-red-500/10"
+                    : "border-white/10 bg-black/90 text-white"
             }`}
             role="status"
           >
-            {t.message}
+            <div className="flex items-center justify-center gap-3">
+              {t.variant === "success" && <span className="h-1.5 w-1.5 rounded-full bg-premium-gold animate-pulse" />}
+              {t.message}
+            </div>
           </div>
         ))}
       </div>

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getSessionUserIdFromRequest } from "@/lib/auth/api-session";
 import type { DreamHomeMatchedListing, DreamHomeProfile } from "@/modules/dream-home/types/dream-home.types";
 import { buildDreamHomeProfile } from "@/modules/dream-home/services/dream-home-profile.service";
 import { rankDreamHomeListings } from "@/modules/dream-home/services/dream-home-ranking.service";
@@ -60,8 +61,16 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "profile_required" }, { status: 400 });
   }
 
+  const userId = await getSessionUserIdFromRequest(req as Request).catch(() => null);
+  const sessionPreferenceOverride =
+    profile.searchFilters && typeof profile.searchFilters === "object" && !Array.isArray(profile.searchFilters)
+      ? (profile.searchFilters as Record<string, unknown>)
+      : null;
+
   const { ranked, playbooksConsidered, warnings } = await rankDreamHomeListings(profile, listings as DreamHomeMatchedListing[], {
     playbookBoostPlaybookId: playbookBoostPlaybookId ?? undefined,
+    userId,
+    sessionPreferenceOverride,
   });
   return NextResponse.json({ ok: true, profile, ranked, playbooksConsidered, warnings });
 }

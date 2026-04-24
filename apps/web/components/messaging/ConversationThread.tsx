@@ -41,6 +41,9 @@ type Props = {
   onSend: (body: string) => Promise<void>;
   onMarkRead: () => Promise<void>;
   composerAppendDraft?: { nonce: number; text: string } | null;
+  /** AI assistant draft text — optional "Use suggestion" in composer (does not send) */
+  assistantSuggestionText?: string | null;
+  onUseAssistantSuggestion?: () => void;
   /** AI bar or consent — rendered above the composer */
   composerExtras?: ReactNode;
   onSendVoice?: (blob: Blob, durationSec: number, mimeType: string) => Promise<void>;
@@ -76,6 +79,8 @@ export function ConversationThread({
   onSend,
   onMarkRead,
   composerAppendDraft,
+  assistantSuggestionText,
+  onUseAssistantSuggestion,
   composerExtras,
   onSendVoice,
   phase2CallUrl,
@@ -193,6 +198,8 @@ export function ConversationThread({
         disabled={!canSend}
         disabledReason={!canSend ? "You can view this thread but not send messages." : undefined}
         appendDraft={composerAppendDraft ?? null}
+        assistantDraftHint={assistantSuggestionText ?? null}
+        onUseAssistantDraft={onUseAssistantSuggestion}
         onSendVoice={onSendVoice}
         onSend={async (body) => {
           await onSend(body);

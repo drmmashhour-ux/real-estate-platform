@@ -41,7 +41,7 @@ export async function getExecutionStatus(dealId: string) {
     select: { id: true, approvedAt: true, approvedById: true },
   });
   const openConditions = await prisma.dealClosingCondition.count({
-    where: { dealId, status: { not: "fulfilled" } },
+    where: { dealId, status: { notIn: ["fulfilled", "waived"] } },
   });
   const sig = await prisma.signatureSession.findFirst({
     where: { dealId },

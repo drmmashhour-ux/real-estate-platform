@@ -102,6 +102,9 @@ export async function PATCH(
 
       const status = typeof body.status === "string" ? body.status : undefined;
       const crmStageRaw = typeof body.crmStage === "string" ? body.crmStage : undefined;
+      const playbookAssignmentIdRaw =
+        typeof body.playbookAssignmentId === "string" ? body.playbookAssignmentId.trim() : "";
+      const playbookAssignmentId = playbookAssignmentIdRaw || null;
       const CRM_STAGES = new Set([
         "new",
         "contacted",
@@ -159,6 +162,9 @@ export async function PATCH(
       });
 
       if (updated.status === "closed" && prevStatus !== "closed") {
+        void import("@/modules/crm/services/broker-crm-outcome.service").then((m) =>
+          m.syncBrokerCrmDealTerminalPlaybookMemory(id).catch(() => {}),
+        );
         void notifyDealClosedCelebrationIfNeeded(id).catch(() => {});
         void recordCloseProbabilityOutcome(id, true).catch(() => {});
         // void recordNegotiationStrategyOutcome(id, true).catch(() => {});
@@ -173,8 +179,21 @@ export async function PATCH(
           reinforceStrategy: true,
           idempotent: true,
         }).catch(() => {});
+        void import("@/modules/playbook-memory/services/playbook-learning-bridge.service").then((m) => {
+          try {
+            m.playbookLearningBridge.afterDealClosingComplete({
+              dealId: id,
+              playbookAssignmentId,
+            });
+          } catch {
+            /* */
+          }
+        });
       }
       if (updated.status === "cancelled" && prevStatus !== "cancelled") {
+        void import("@/modules/crm/services/broker-crm-outcome.service").then((m) =>
+          m.syncBrokerCrmDealTerminalPlaybookMemory(id).catch(() => {}),
+        );
         void recordCloseProbabilityOutcome(id, false).catch(() => {});
 
         void recordEvolutionOutcome({
@@ -187,9 +206,34 @@ export async function PATCH(
           reinforceStrategy: true,
           idempotent: true,
         }).catch(() => {});
+        void import("@/modules/playbook-memory/services/playbook-learning-bridge.service").then((m) => {
+          try {
+            m.playbookLearningBridge.afterDealClosedLost({
+              dealId: id,
+              playbookAssignmentId,
+              reason: "cancelled",
+            });
+          } catch {
+            /* */
+          }
+        });
       }
 
       const newCrm = updated.crmStage ?? null;
+      if (newCrm === "lost" && prevCrm !== "lost" && updated.status !== "closed") {
+        void import("@/modules/playbook-memory/services/playbook-learning-bridge.service").then((m) => {
+          try {
+            m.playbookLearningBridge.afterDealClosedLost({
+              dealId: id,
+              playbookAssignmentId,
+              reason: "crm_lost",
+            });
+          } catch {
+            /* */
+          }
+        });
+      }
+
       if (newCrm !== prevCrm && userId) {
         await prisma.crmInteraction
           .create({
@@ -208,6 +252,18 @@ export async function PATCH(
           fromStage: prevCrm,
           toStage: newCrm ?? updated.status,
         }).catch(() => {});
+        const dealBrokerId = updated.brokerId;
+        if (dealBrokerId) {
+          void import("@/modules/user-intelligence/integrations/crm-user-intelligence").then((m) =>
+            m
+              .recordMarketplaceDealCrmStageSignal(dealBrokerId, {
+                dealId: id,
+                fromStage: prevCrm,
+                toStage: newCrm,
+              })
+              .catch(() => {}),
+          );
+        }
       }
 
       void evaluateDealRisk(id, { triggerPrevention: true }).catch(() => {});

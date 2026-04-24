@@ -65,6 +65,17 @@ export async function POST(req: Request) {
   await prisma.buyerSavedListing.create({
     data: { userId, fsboListingId },
   });
+  void import("@/modules/user-intelligence/integrations/crm-user-intelligence").then((m) => {
+    try {
+      void m.recordListingSaveEngagement(userId, {
+        listingId: fsboListingId,
+        city: listing.city,
+        propertyType: listing.propertyType,
+      });
+    } catch {
+      /* */
+    }
+  });
   void refreshFsboListingAnalytics(fsboListingId, listing.priceCents).catch(() => {});
   void trackEvent(
     "favorite",

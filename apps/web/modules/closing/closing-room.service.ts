@@ -16,6 +16,7 @@ import {
 } from "@/lib/compliance/conflict-deal-compliance.service";
 
 import { recordEvolutionOutcome } from "@/modules/evolution/outcome-tracker.service";
+import { deedAndRegistrationBlockers, deriveInitialQcStage } from "@/modules/quebec-closing/quebec-closing-gates";
 
 const TAG = "[closing-room]";
 
@@ -39,11 +40,21 @@ export async function startClosingRoom(options: {
 
   const existing = await prisma.dealClosing.findUnique({
     where: { dealId: options.dealId },
-    select: { id: true, status: true },
+    select: { id: true, status: true, qcClosingStage: true, qcWorkflowStartedAt: true },
   });
   if (existing && existing.status !== "NOT_STARTED" && existing.status !== "FAILED") {
     throw new Error("Closing session already active or completed.");
   }
+
+  const [conds, dealRow] = await Promise.all([
+    prisma.dealClosingCondition.findMany({ where: { dealId: options.dealId }, select: { status: true } }),
+    prisma.deal.findUnique({ where: { id: options.dealId }, select: { status: true } }),
+  ]);
+  const qcStage = deriveInitialQcStage(dealRow?.status ?? deal.status, conds);
+  const offerAcceptedAt =
+    ["accepted", "inspection", "financing", "closing_scheduled", "closed"].includes(dealRow?.status ?? deal.status) ?
+      new Date()
+    : null;
 
   const closing = await prisma.dealClosing.upsert({
     where: { dealId: options.dealId },
@@ -51,10 +62,15 @@ export async function startClosingRoom(options: {
       dealId: options.dealId,
       status: "IN_PROGRESS",
       readinessStatus: "NOT_READY",
+      qcWorkflowStartedAt: new Date(),
+      qcClosingStage: qcStage,
+      offerAcceptedAt,
     },
     update: {
       status: "IN_PROGRESS",
       readinessStatus: "NOT_READY",
+      qcWorkflowStartedAt: existing?.qcWorkflowStartedAt ?? new Date(),
+      qcClosingStage: existing?.qcClosingStage ?? qcStage,
       updatedAt: new Date(),
     },
     select: { id: true },
@@ -159,10 +175,24 @@ export async function confirmClosingExecution(options: {
 
   const closing = await prisma.dealClosing.findUnique({
     where: { dealId: options.dealId },
-    select: { id: true, status: true },
+    select: {
+      id: true,
+      status: true,
+      qcClosingStage: true,
+      qcWorkflowStartedAt: true,
+      deedSignedAt: true,
+      landRegisterStatus: true,
+      deedActNumber: true,
+      deedPublicationReference: true,
+    },
   });
   if (!closing || closing.status === "CLOSED") {
     throw new Error("Invalid closing session state.");
+  }
+  const notaryRow = await prisma.dealNotaryCoordination.findUnique({ where: { dealId: options.dealId } });
+  const deedBlockers = deedAndRegistrationBlockers({ closing, notary: notaryRow });
+  if (deedBlockers.length > 0) {
+    throw new Error(deedBlockers.join(" "));
   }
 
   await prisma.dealClosing.update({
@@ -196,7 +226,7 @@ export async function confirmClosingExecution(options: {
   void recordNegotiationStrategyOutcome(options.dealId, true).catch(() => {});
 
   void import("@/modules/crm/services/broker-crm-outcome.service").then((m) => {
-    m.onDealClosedForPlaybookMemory(options.dealId).catch(() => {});
+    m.syncBrokerCrmDealTerminalPlaybookMemory(options.dealId).catch(() => {});
   });
 
   await appendClosingAudit({

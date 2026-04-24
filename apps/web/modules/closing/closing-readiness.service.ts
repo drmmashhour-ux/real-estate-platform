@@ -42,7 +42,7 @@ export async function getClosingReadiness(dealId: string): Promise<ClosingReadin
     missing.push("All required e-signatures completed in the latest session");
   }
 
-  const openConditions = conditions.filter((c) => c.status !== "fulfilled");
+  const openConditions = conditions.filter((c) => c.status !== "fulfilled" && c.status !== "waived");
   for (const c of openConditions) {
     missing.push(`Condition open: ${c.conditionType}`);
   }

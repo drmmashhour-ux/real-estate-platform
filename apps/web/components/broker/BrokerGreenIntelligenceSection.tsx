@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { AvailableFinancialSupport } from "@/components/green/AvailableFinancialSupport";
 import { prisma } from "@/lib/db";
-import { POSITIONING_GREEN_EXECUTION } from "@/modules/contractors/contractor.model";
 import { QuebecEsgBreakdownPanel } from "@/components/green/QuebecEsgBreakdownPanel";
+import { QuebecEsgRecommendationsPanel } from "@/components/green/QuebecEsgRecommendationsPanel";
+import { QuebecEsgSimulator } from "@/components/green/QuebecEsgSimulator";
+import { GreenBrokerCallouts } from "@/components/green/GreenBrokerCallouts";
 import type { GreenListingMetadata } from "@/modules/green/green.types";
 import {
   GREEN_VERIFICATION_PRODUCT,
@@ -11,6 +13,9 @@ import {
 } from "@/modules/green-ai/green.types";
 import { QUEBEC_ESG_CRITERIA_DISCLAIMER } from "@/modules/green-ai/quebec-esg.engine";
 import { RenoclimatPotentialChecker } from "@/components/green/RenoclimatPotentialChecker";
+import { QuebecEsgIncentivesPanel } from "@/components/green/QuebecEsgIncentivesPanel";
+import { QuebecEsgRoiPanel } from "@/components/green/QuebecEsgRoiPanel";
+import { QuebecEsgPricingSignalPanel } from "@/components/green/QuebecEsgPricingSignalPanel";
 
 export async function BrokerGreenIntelligenceSection({
   locale,
@@ -21,6 +26,12 @@ export async function BrokerGreenIntelligenceSection({
   country: string;
   userId: string | null;
 }) {
+  const userRole =
+    userId != null
+      ? await prisma.user.findUnique({ where: { id: userId }, select: { role: true } })
+      : null;
+  const showInternalPricingSignal = userRole?.role === "BROKER" || userRole?.role === "ADMIN";
+
   const listings =
     userId != null
       ? await prisma.fsboListing.findMany({
@@ -103,6 +114,7 @@ export async function BrokerGreenIntelligenceSection({
                   : undefined;
               const qcSnap = meta?.quebecEsgSnapshot;
               const grantsSnap = meta?.grantsSnapshot;
+              const econSnap = meta?.quebecEsgEconomicsSnapshot;
 
               return (
                 <li
@@ -117,8 +129,30 @@ export async function BrokerGreenIntelligenceSection({
                       {l.lecipmGreenCertifiedAt ? " · LECIPM Green Verified" : ""}
                     </span>
                   </div>
-                  {qcSnap ? <QuebecEsgBreakdownPanel snapshot={qcSnap} /> : null}
+                  {qcSnap ? (
+                    <div className="mt-4 space-y-8">
+                      <QuebecEsgBreakdownPanel snapshot={qcSnap} />
+                      
+                      {qcSnap.recommendations && (
+                        <QuebecEsgRecommendationsPanel recommendations={qcSnap.recommendations} />
+                      )}
+                      
+                      {meta?.greenIntake && qcSnap.recommendations && (
+                        <QuebecEsgSimulator 
+                          baseInput={meta.greenIntake} 
+                          recommendations={qcSnap.recommendations} 
+                        />
+                      )}
+                      
+                      {qcSnap.callouts && (
+                        <GreenBrokerCallouts callouts={qcSnap.callouts} />
+                      )}
+                    </div>
+                  ) : null}
                   {grantsSnap ? <AvailableFinancialSupport snapshot={grantsSnap} /> : null}
+                  {econSnap ? <QuebecEsgIncentivesPanel snapshot={econSnap} /> : null}
+                  {econSnap ? <QuebecEsgRoiPanel snapshot={econSnap} /> : null}
+                  <QuebecEsgPricingSignalPanel snapshot={econSnap} visible={showInternalPricingSignal} />
                 </li>
               );
             })}

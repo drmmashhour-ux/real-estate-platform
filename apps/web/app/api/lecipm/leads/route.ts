@@ -1237,6 +1237,9 @@ export async function PATCH(req: Request) {
         },
       });
       await appendLeadTimelineEvent(id, "note_added", { preview: trimmed.slice(0, 120) });
+      void import("@/modules/user-intelligence/integrations/crm-user-intelligence").then((m) =>
+        m.recordMarketplaceLeadNoteSignal(brokerId, { leadId: id }).catch(() => {}),
+      );
     }
 
     if (meetingAt !== undefined) {
@@ -1333,6 +1336,17 @@ export async function PATCH(req: Request) {
 
     if (pipelineChangedTo != null && pipelineChangedTo !== prevPipeline) {
       void automationOnPipelineStageChange(id, pipelineChangedTo, prevPipeline).catch(() => {});
+      if (brokerId) {
+        void import("@/modules/user-intelligence/integrations/crm-user-intelligence").then((m) =>
+          m
+            .recordMarketplaceLeadPipelineSignal(brokerId, {
+              leadId: id,
+              fromStage: String(prevPipeline),
+              toStage: String(pipelineChangedTo),
+            })
+            .catch(() => {}),
+        );
+      }
     }
 
     if (markDmReplied === true || updateData.dmStatus === "replied") {

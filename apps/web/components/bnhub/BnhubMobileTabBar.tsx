@@ -38,7 +38,7 @@ export function BnhubMobileTabBar() {
             <li key={href} className="flex-1">
               <Link
                 href={href}
-                className={`flex min-h-[52px] flex-col items-center justify-center gap-1 px-1 py-1 text-[10px] font-semibold tracking-wide transition ${
+                className={`flex min-h-[52px] flex-col items-center justify-center gap-1 px-1 py-1 text-[10px] font-semibold tracking-wide transition-all duration-200 active:scale-90 active:opacity-70 ${
                   active ? "text-bnhub-gold" : "text-bnhub-text-muted hover:text-bnhub-text-secondary"
                 }`}
               >

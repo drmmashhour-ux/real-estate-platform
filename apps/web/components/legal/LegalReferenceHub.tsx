@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import type { LegalRiskEngineResult } from "@/modules/legal/engine/legal-engine.service";
 import { LegalCaseList } from "@/modules/legal/components/LegalCaseList";
 import { LegalRiskAnalyzer } from "@/modules/legal/components/LegalRiskAnalyzer";
+import { ShieldCheck, ArrowRight } from "lucide-react";
+import Link from "next/link";
 
 type LegalCaseRow = {
   id: string;
@@ -145,6 +147,36 @@ export function LegalReferenceHub() {
             </p>
           </div>
         ) : null}
+      </section>
+      <section className="mt-10 rounded-3xl border border-premium-gold/30 bg-gradient-to-br from-black to-premium-gold/5 p-10 overflow-hidden relative">
+        <div className="absolute right-0 top-0 h-64 w-64 translate-x-1/3 -translate-y-1/3 bg-premium-gold/5 blur-[80px]" />
+        
+        <div className="relative z-10 max-w-3xl">
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-premium-gold/30 bg-premium-gold/10 px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-premium-gold">
+            <ShieldCheck className="h-3 w-3" />
+            Nouveau : Québec Trust Hub
+          </div>
+          
+          <h2 className="text-3xl font-black uppercase italic tracking-tighter text-white leading-tight">
+            Une rédaction <span className="text-premium-gold">intelligente</span> et sécurisée.
+          </h2>
+          
+          <p className="mt-4 text-sm leading-relaxed text-neutral-400">
+            Intégré nativement à notre moteur Turbo Draft, le Trust Hub vous aide à naviguer les clauses complexes, 
+            identifier les risques de rédaction et obtenir une révision professionnelle en un clic.
+          </p>
+
+          <div className="mt-8 flex flex-wrap gap-4">
+            <Link href="/dashboard/broker/forms/turbo-draft" className="px-6 py-3 rounded-xl bg-premium-gold text-black text-xs font-black uppercase tracking-widest hover:scale-105 transition-all">
+              Essayer Turbo Draft →
+            </Link>
+            <div className="flex items-center gap-4 text-xs font-bold text-neutral-500 italic">
+              <span>• Score de Conformité</span>
+              <span>• Safer Choice Engine</span>
+              <span>• Broker Assist</span>
+            </div>
+          </div>
+        </div>
       </section>
     </div>
   );

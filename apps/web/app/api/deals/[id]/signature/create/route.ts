@@ -1,6 +1,7 @@
 import { authenticateBrokerDealRoute } from "@/lib/deals/broker-draft-auth";
 import { requireSignatureSystemV1 } from "@/lib/deals/pipeline-feature-guard";
 import { validateBeforeSignature } from "@/lib/production-guard/signature-gate";
+import { assessBrokerApprovalRisk } from "@/modules/broker-action-risk/risk.engine";
 import { createDealSignatureSession } from "@/modules/signature/signature.service";
 import type { SignatureProviderId } from "@/modules/signature/signature.types";
 
@@ -14,6 +15,21 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
   const { id: dealId } = await context.params;
   const auth = await authenticateBrokerDealRoute(dealId);
   if (!auth.ok) return auth.response;
+
+  const actionRisk = await assessBrokerApprovalRisk({ kind: "signature_session", dealId });
+  if (actionRisk.blockers.length > 0) {
+    return Response.json(
+      {
+        error: "ACTION_RISK_BLOCKED",
+        riskScore: actionRisk.riskScore,
+        riskLevel: actionRisk.riskLevel,
+        warnings: actionRisk.warnings,
+        blockers: actionRisk.blockers,
+        flags: actionRisk.flags,
+      },
+      { status: 403 },
+    );
+  }
 
   const body = (await request.json()) as {
     provider?: string;

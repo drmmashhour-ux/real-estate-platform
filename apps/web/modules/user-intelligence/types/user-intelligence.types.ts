@@ -90,3 +90,33 @@ export type UserPreferenceMergeResult = {
 };
 
 export type UserIntelligenceServiceResult<T> = { ok: true; data: T } | { ok: false; error: string };
+
+/** API/UI snapshot of journey row (no PII). Mirrors `UserJourneyView` from the journey service. */
+export type UserJourneyStateSnapshot = {
+  currentIntent: string | null;
+  currentDomain: string | null;
+  currentStage: string | null;
+  currentSearchMode: string | null;
+  latestCity: string | null;
+  latestBudgetBand: string | null;
+  latestPropertyIntent: string | null;
+  latestHouseholdBand: string | null;
+  lastActivityAt: string | null;
+  recency: number;
+  intentWeight: number;
+};
+
+/** Optional args when building personalization context (session wins over DB). */
+export type PersonalizationContextBuildOptions = {
+  sessionExplicitOverride?: Record<string, unknown> | null;
+};
+
+/** Allowed explicit signal keys for buyer-facing editors (subset; extend as needed). */
+export const EXPLICIT_PREFERENCE_SIGNAL_KEYS = [
+  "dream_home_location_city",
+  "dream_home_housing_intent",
+  "dream_home_budget_band",
+  "dream_home_style_preference",
+] as const;
+
+export type ExplicitPreferenceSignalKey = (typeof EXPLICIT_PREFERENCE_SIGNAL_KEYS)[number];

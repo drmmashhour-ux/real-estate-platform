@@ -27,3 +27,17 @@ export const banditLog = {
   warn: (msg: string, payload?: Record<string, unknown>) => emit("[bandit]", "warn", msg, payload),
   error: (msg: string, payload?: Record<string, unknown>) => emit("[bandit]", "error", msg, payload),
 };
+
+/** [dream-home] — wizard / match learning hooks (additive; never throw). */
+export const dreamHomeLearningLog = {
+  info: (msg: string, payload?: Record<string, unknown>) => emit("[dream-home]", "info", msg, payload),
+  warn: (msg: string, payload?: Record<string, unknown>) => emit("[dream-home]", "warn", msg, payload),
+  error: (msg: string, payload?: Record<string, unknown>) => emit("[dream-home]", "error", msg, payload),
+};
+
+/** [crm] — marketplace + broker CRM inquiry paths (additive; never throw). */
+export const crmLearningLog = {
+  info: (msg: string, payload?: Record<string, unknown>) => emit("[crm]", "info", msg, payload),
+  warn: (msg: string, payload?: Record<string, unknown>) => emit("[crm]", "warn", msg, payload),
+  error: (msg: string, payload?: Record<string, unknown>) => emit("[crm]", "error", msg, payload),
+};

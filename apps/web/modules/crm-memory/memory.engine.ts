@@ -84,3 +84,54 @@ export async function buildMemorySnapshot(params: {
   logInfo(`${TAG_INS} snapshot`, { hasRow: Boolean(row) });
   return { profile, notes: row?.notes ?? "" };
 }
+
+export type AssistantHeuristicSnapshotV1 = {
+  version: 1;
+  updatedAt: string;
+  source: "assistant_engine";
+  dominantObjection: string | null;
+  /** How firm the system thinks budget alignment is (heuristic; not a financial assessment). */
+  budgetConfidence: "low" | "medium" | "high" | null;
+  /** Conversation-flow hint only — not a credit decision. */
+  financingReadinessHint: "unknown" | "likely" | "uncertain" | null;
+  /** Relative follow-up energy implied by the thread, not a personal trait. */
+  urgencyLevel: "low" | "medium" | "high" | null;
+  propertyFitIssue: boolean;
+};
+
+/**
+ * Merges soft, broker-scoped heuristics from the messaging assistant into `ClientMemory.preferences.assistantHeuristics`.
+ * Strong, explicit user-extracted preferences in `mergeExtractedPreferences` / `extractPreferencesFromTexts` are not overwritten
+ * (we only set budgetConfidence; we do not change `budget` or `preferredArea` strings from here).
+ */
+export async function mergeAssistantHeuristicSnapshot(params: {
+  clientId: string;
+  brokerId: string;
+  snapshot: AssistantHeuristicSnapshotV1;
+}): Promise<void> {
+  try {
+    const existing = await loadClientMemoryRow(params.clientId, params.brokerId);
+    const prefs =
+      existing?.preferences && typeof existing.preferences === "object"
+        ? ({ ...((existing.preferences as Record<string, unknown>) ?? {}) } as Record<string, unknown>)
+        : {};
+    const cur = (prefs.assistantHeuristics as Record<string, unknown> | undefined) ?? {};
+    const nextSnap = { ...cur, ...params.snapshot };
+    prefs.assistantHeuristics = nextSnap;
+    await prisma.clientMemory.upsert({
+      where: { clientId_brokerId: { clientId: params.clientId, brokerId: params.brokerId } },
+      create: {
+        clientId: params.clientId,
+        brokerId: params.brokerId,
+        preferences: prefs as object,
+        notes: existing?.notes ?? "",
+      },
+      update: { preferences: prefs as object },
+    });
+    logInfo(`${TAG_MEM} assistant_heuristics_merged`, { clientId: params.clientId });
+  } catch (e) {
+    logInfo(`${TAG_MEM} assistant_heuristics_skipped`, {
+      err: e instanceof Error ? e.message : String(e),
+    });
+  }
+}

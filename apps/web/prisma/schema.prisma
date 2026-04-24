@@ -592,6 +592,8 @@ model User {
   dealConflictClientConsents               DealConflictClientConsent[]
   brokerMandatoryDisclosures               BrokerDisclosure[]
   brokerActionPipelineSignatures           BrokerSignature[]                        @relation("BrokerActionPipelineSigner")
+  investorEligibilityProfile               InvestorEligibilityProfile?
+  investorExemptionAttestations            InvestorExemptionRecord[]               @relation("InvestorExemptionAttestations")
   lecipmExecutionTasks                     LecipmExecutionTask[]                    @relation("LecipmExecutionTaskBroker")
   brokerLecipmExecutionSettings            BrokerLecipmExecutionSettings?
   lecipmOpportunityCandidates              LecipmOpportunityCandidate[]             @relation("LecipmOpportunityBroker")
@@ -11227,6 +11229,8 @@ model Deal {
   dealExecutionApprovals           DealExecutionApproval[]
   signatureSessions                SignatureSession[]
   dealClosingConditions            DealClosingCondition[]
+  dealClosingAdjustments           DealClosingAdjustment[]
+  dealQuebecNotaryChecklistItems   DealQuebecNotaryChecklistItem[]
   /// Escrow / trust-account coordination (v1) — not a regulated trust by default; see `LecipmTrustWorkflow.mode`.
   lecipmDealPayments               LecipmDealPayment[]
   lecipmTrustWorkflow              LecipmTrustWorkflow?
@@ -11251,6 +11255,7 @@ model Deal {
   dealInvestorMatchLearningEvents  DealInvestorMatchLearningEvent[]
   offerDrafts                      OfferDraft[]
   offerDraftAuditLogs              OfferDraftAuditLog[]
+  executionPlaybook                DealPlaybook?
   complianceCases                  ComplianceCase[]
   qaReviews                        QaReview[]
   brokerageOfficeId                String?                           @map("brokerage_office_id")
@@ -11296,6 +11301,8 @@ model Deal {
   /// OACIQ mandatory broker disclosure records filed for this deal (when applicable).
   brokerDisclosures                BrokerDisclosure[]
   aiAutopilotLayerActions          AiAutopilotLayerAction[]
+  /// One AMF private-placement issuer per CRM deal (securities workflow — isolated from brokerage execution).
+  amfPrivatePlacementSpv           AmfSpv?
 
   @@index([buyerId])
   @@index([sellerId])
@@ -11358,6 +11365,9 @@ model CrmDealInvestorCommitment {
   brokerRejectedById   String?   @map("broker_rejected_by_id")
   brokerRejectedBy     User?     @relation("CrmDealInvestorCommitmentRejectedBy", fields: [brokerRejectedById], references: [id], onDelete: SetNull)
   rejectionReason      String?   @map("rejection_reason") @db.Text
+  /// Recorded via investment-compliance classify flow — required before subscription signing / capital receipt when SPV-linked.
+  exemptionType        AmfExemptionCategory? @map("exemption_type")
+  exemptionRecordedAt  DateTime?               @map("exemption_recorded_at")
   createdAt            DateTime  @default(now()) @map("created_at")
   updatedAt            DateTime  @updatedAt @map("updated_at")
 
@@ -11718,6 +11728,20 @@ model DealClosing {
   confirmedBy       User?     @relation("DealClosingConfirmedBy", fields: [confirmedByUserId], references: [id], onDelete: SetNull)
   readinessStatus   String?   @map("readiness_status") @db.VarChar(24) // NOT_READY | PARTIALLY_READY | READY
   notes             String?   @db.Text
+  /// Québec notarial closing sequence (mandatory gate for LECIPM residential flow when set).
+  qcClosingStage             String?   @map("qc_closing_stage") @db.VarChar(40)
+  qcWorkflowStartedAt        DateTime? @map("qc_workflow_started_at")
+  offerAcceptedAt            DateTime? @map("offer_accepted_at")
+  signingScheduledAt         DateTime? @map("signing_scheduled_at")
+  deedSignedAt               DateTime? @map("deed_signed_at")
+  deedActNumber              String?   @map("deed_act_number") @db.VarChar(128)
+  deedPublicationReference   String?   @map("deed_publication_reference") @db.Text
+  /// PENDING | CONFIRMED | NOT_APPLICABLE
+  landRegisterStatus         String?   @map("land_register_status") @db.VarChar(24)
+  landRegisterConfirmedAt    DateTime? @map("land_register_confirmed_at")
+  keysReleasedAt             DateTime? @map("keys_released_at")
+  closingPacketMarkedCompleteAt  DateTime? @map("closing_packet_marked_complete_at")
+  closingPacketCompleteByUserId  String?   @map("closing_packet_complete_by_user_id")
   createdAt         DateTime  @default(now()) @map("created_at")
   updatedAt         DateTime  @updatedAt @map("updated_at")
 
@@ -14995,10 +15019,13 @@ model DealClosingCondition {
   deal          Deal      @relation(fields: [dealId], references: [id], onDelete: Cascade)
   conditionType String    @map("condition_type") @db.VarChar(64)
   deadline      DateTime? @map("deadline")
+  /// pending | fulfilled | waived | failed
   status        String    @default("pending") @db.VarChar(24)
   relatedForm   String?   @map("related_form") @db.VarChar(32)
   notes         String?   @db.Text
   fulfilledAt   DateTime? @map("fulfilled_at")
+  waivedAt      DateTime? @map("waived_at")
+  failedAt      DateTime? @map("failed_at")
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
 
@@ -15215,6 +15242,12 @@ model DealNotaryCoordination {
   deedReadinessNotes   String?   @map("deed_readiness_notes") @db.Text
   appointmentAt        DateTime? @map("appointment_at")
   notaryFirmName       String?   @map("notary_firm_name")
+  /// Free-form Québec notary assignment when `notaryId` is not linked to directory row.
+  notaryDisplayName    String?   @map("notary_display_name") @db.VarChar(256)
+  notaryOffice         String?   @map("notary_office") @db.VarChar(512)
+  notaryEmail          String?   @map("notary_email") @db.VarChar(320)
+  notaryPhone          String?   @map("notary_phone") @db.VarChar(64)
+  requestedDocumentsJson Json    @default("[]") @map("requested_documents_json")
   packageStatus        String    @default("not_started") @map("package_status")
   metadata             Json      @default("{}")
   createdAt            DateTime  @default(now()) @map("created_at")
@@ -15222,6 +15255,43 @@ model DealNotaryCoordination {
 
   @@index([notaryId])
   @@map("deal_notary_coordinations")
+}
+
+/// Line-level notarial checklist (certificate of location, taxes, title, adjustments, etc.).
+model DealQuebecNotaryChecklistItem {
+  id         String    @id @default(cuid())
+  dealId     String    @map("deal_id")
+  deal       Deal      @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  itemKey    String    @map("item_key") @db.VarChar(64)
+  /// PENDING | RECEIVED | WAIVED | NOT_APPLICABLE
+  status     String    @default("PENDING") @db.VarChar(24)
+  notes      String?   @db.Text
+  receivedAt DateTime? @map("received_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+
+  @@unique([dealId, itemKey])
+  @@index([dealId])
+  @@map("deal_quebec_notary_checklist_items")
+}
+
+/// Québec-style closing adjustments (taxes, condo, rent deposits, prepaid/occupancy).
+model DealClosingAdjustment {
+  id          String   @id @default(cuid())
+  dealId      String   @map("deal_id")
+  deal        Deal     @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  /// MUNICIPAL_TAX | SCHOOL_TAX | CONDO_COMMON | RENT_DEPOSIT | PREPAID | OCCUPANCY | OTHER
+  kind        String   @map("kind") @db.VarChar(32)
+  label       String   @db.VarChar(512)
+  /// Signed cents: positive = credit to buyer unless `buyerOwes` is true (convention in UI).
+  amountCents Int      @map("amount_cents")
+  buyerOwes   Boolean  @default(false) @map("buyer_owes")
+  notes       String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([dealId])
+  @@map("deal_closing_adjustments")
 }
 
 model DealCoordinationAuditLog {
@@ -21550,6 +21620,40 @@ model OfferDraftAuditLog {
   @@index([offerDraftId])
   @@index([action])
   @@map("offer_draft_audit_logs")
+}
+
+/// First-deals execution playbook — guided workflow (advisory; broker remains responsible for OACIQ compliance).
+model DealPlaybook {
+  id                 String   @id @default(cuid())
+  dealId             String   @unique @map("deal_id")
+  deal               Deal     @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  /// Current step key (e.g. offer_generation_ai).
+  currentStep        String   @map("current_step") @db.VarChar(48)
+  completedSteps     Json     @default("[]") @map("completed_steps")
+  nextAction         String   @map("next_action") @db.Text
+  progressPercent    Float    @default(0) @map("progress_percent")
+  trackingSnapshot   Json     @default("{}") @map("tracking_snapshot")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  @@index([dealId])
+  @@map("deal_playbooks")
+}
+
+/// Pre-approval / pre-signature risk assessment (audit trail; one row per assessment POST).
+model ActionRisk {
+  id        String   @id @default(cuid())
+  /// Logical action key, e.g. `offer_draft_approve:{dealId}:{draftId}` or `signature_session:{dealId}`.
+  actionId  String   @map("action_id") @db.VarChar(200)
+  riskScore Int      @map("risk_score")
+  /// LOW | MEDIUM | HIGH
+  riskLevel String   @map("risk_level") @db.VarChar(16)
+  /// Structured flags + embedded warnings/blockers snapshot for replay.
+  flagsJson Json     @default("{}") @map("flags_json")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([actionId, createdAt(sort: Desc)])
+  @@map("action_risks")
 }
 
 /// Version history for AI Listing Assistant workflows (additive audit trail).
@@ -36654,11 +36758,23 @@ model AmfSpv {
   capitalDealId String         @unique @map("capital_deal_id") @db.VarChar(36)
   capitalDeal   AmfCapitalDeal @relation(fields: [capitalDealId], references: [id], onDelete: Cascade)
 
+  /// Optional CRM deal anchor — private placement per property/deal raise (non-public fund workflow).
+  dealId String? @unique @map("deal_id")
+  deal   Deal?   @relation(fields: [dealId], references: [id], onDelete: SetNull)
+
   /// The FUND entity that manages this SPV
   entityId String            @map("entity_id") @db.VarChar(36)
   entity   LecipmLegalEntity @relation("FundManagedSpvs", fields: [entityId], references: [id], onDelete: Cascade)
 
   ownershipStructureJson Json? @map("ownership_structure_json")
+
+  /// Display / issuer name for filings and packets (counsel may map to registered legal entity separately).
+  issuerLegalName String? @map("issuer_legal_name") @db.VarChar(512)
+  issuerType      String  @default("SPV") @map("issuer_type") @db.VarChar(32)
+  active          Boolean @default(true)
+
+  /// When false: simulation / training rails; stricter investment guards apply when true (counsel-approved).
+  counselApprovedRealMode Boolean @default(false) @map("counsel_approved_real_mode")
 
   /// Default private exempt deal mode — no public offering workflow.
   privateExemptDealMode         Boolean               @default(true) @map("private_exempt_deal_mode")
@@ -36839,10 +36955,52 @@ model ExemptDistributionFile {
   form45106F1Status ExemptFilingFormStatus @default(DRAFT) @map("form_45_106f1_status")
   amfFeeAmount      Decimal?               @map("amf_fee_amount") @db.Decimal(18, 2)
   notesJson         Json?                  @map("notes_json")
+  /// Required-document checklist + completion flags (subscription, risk disclosure, questionnaire, etc.).
+  documentChecklistJson Json               @default("{}") @map("document_checklist_json")
   createdAt         DateTime               @default(now()) @map("created_at")
+
+  investorExemptionRecords InvestorExemptionRecord[]
 
   @@index([spvId, distributionDate])
   @@map("exempt_distribution_files")
+}
+
+/// KYC / exemption questionnaire and classification (investment domain — not brokerage).
+model InvestorEligibilityProfile {
+  id     String @id @default(cuid())
+  userId String @unique @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  jurisdiction        String                 @default("QC") @map("jurisdiction") @db.VarChar(16)
+  questionnaireJson   Json                   @default("{}") @map("questionnaire_json")
+  classifiedExemption AmfExemptionCategory?  @map("classified_exemption")
+  blockedReason       String?                @map("blocked_reason") @db.Text
+  classifiedAt        DateTime?              @map("classified_at")
+  classifiedByUserId  String?                @map("classified_by_user_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([classifiedExemption])
+  @@map("investor_eligibility_profiles")
+}
+
+/// Immutable audit: investor classification tied to a specific exempt distribution record.
+model InvestorExemptionRecord {
+  id                       String                 @id @default(cuid())
+  exemptDistributionFileId String               @map("exempt_distribution_file_id")
+  exemptDistributionFile   ExemptDistributionFile @relation(fields: [exemptDistributionFileId], references: [id], onDelete: Cascade)
+  investorUserId           String                 @map("investor_user_id")
+  investor                 User                   @relation("InvestorExemptionAttestations", fields: [investorUserId], references: [id], onDelete: Cascade)
+
+  exemptionType               AmfExemptionCategory @map("exemption_type")
+  classificationSnapshotJson Json                 @map("classification_snapshot_json")
+  recordedAt                  DateTime             @default(now()) @map("recorded_at")
+  recordedByUserId            String?              @map("recorded_by_user_id")
+
+  @@unique([exemptDistributionFileId, investorUserId])
+  @@index([investorUserId])
+  @@map("investor_exemption_records")
 }
 
 model InvestorCapitalCommitment {
@@ -38516,4 +38674,126 @@ model LedgerEntry {
   @@index([bookingId])
   @@index([userId])
   @@map("financial_ledger_v2")
+}
+
+model Notice {
+  id        String   @id @default(cuid())
+  type      String // REPRESENTATION, WARRANTY, TRANSPARENCY, PRIVACY, RISK
+  title     String
+  content   String   @db.Text
+  severity  String // INFO, WARNING, CRITICAL
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("compliance_notices")
+}
+
+model NoticeLog {
+  id        String   @id @default(cuid())
+  noticeId  String   @map("notice_id")
+  userId    String?  @map("user_id")
+  draftId   String?  @map("draft_id")
+  accepted  Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([noticeId])
+  @@index([userId])
+  @@index([draftId])
+  @@map("compliance_notice_logs")
+}
+
+model TurboDraft {
+  id            String   @id @default(cuid())
+  userId        String?  @map("user_id")
+  formKey       String   @map("form_key")
+  title         String
+  locale        String   @default("fr")
+  status        String   @default("DRAFT")
+  contextJson   Json     @map("context_json")
+  resultJson    Json?    @map("result_json")
+  canProceed    Boolean  @default(false) @map("can_proceed")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  integrityHash String?  @map("integrity_hash")
+  finalizedAt   DateTime? @map("finalized_at")
+
+  @@index([userId])
+  @@index([formKey])
+  @@index([status])
+  @@map("turbo_drafts")
+}
+
+model TurboDraftAcknowledgement {
+  id         String   @id @default(cuid())
+  draftId    String   @map("draft_id")
+  userId     String?  @map("user_id")
+  noticeKey  String   @map("notice_key")
+  version    String?
+  acceptedAt DateTime @default(now()) @map("accepted_at")
+  ipAddress  String?  @map("ip_address")
+  userAgent  String?  @map("user_agent")
+
+  @@unique([draftId, noticeKey, userId])
+  @@index([draftId])
+  @@index([userId])
+  @@map("turbo_draft_acknowledgements")
+}
+
+model TurboDraftAuditLog {
+  id          String   @id @default(cuid())
+  draftId     String?  @map("draft_id")
+  userId      String?  @map("user_id")
+  eventKey    String   @map("event_key")
+  severity    String
+  payloadJson Json?    @map("payload_json")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([draftId])
+  @@index([userId])
+  @@index([eventKey])
+  @@map("turbo_draft_audit_logs")
+}
+
+model TrustHubScore {
+  id          String   @id @default(cuid())
+  draftId     String   @map("draft_id")
+  userId      String?  @map("user_id")
+  score       Int
+  status      String
+  resultJson  Json     @map("result_json")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([draftId])
+  @@index([userId])
+  @@map("trust_hub_scores")
+}
+
+model TrustHubBadge {
+  id          String   @id @default(cuid())
+  draftId     String   @map("draft_id")
+  userId      String?  @map("user_id")
+  badgeKey    String   @map("badge_key")
+  labelFr     String   @map("label_fr")
+  proofJson   Json?    @map("proof_json")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@unique([draftId, badgeKey])
+  @@index([draftId])
+  @@map("trust_hub_badges")
+}
+
+model BrokerAssistRequest {
+  id          String   @id @default(cuid())
+  draftId     String   @map("draft_id")
+  userId      String?  @map("user_id")
+  dealId      String?  @map("deal_id")
+  status      String   @default("REQUESTED")
+  reasonFr    String?  @map("reason_fr")
+  riskJson    Json?    @map("risk_json")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([draftId])
+  @@index([userId])
+  @@index([status])
+  @@map("broker_assist_requests")
 }

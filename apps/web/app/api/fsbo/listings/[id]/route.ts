@@ -197,6 +197,7 @@ export async function PATCH(
       rawBody: body,
       previousStatus: existing.status,
       data,
+      city: existing.city,
     });
   });
 

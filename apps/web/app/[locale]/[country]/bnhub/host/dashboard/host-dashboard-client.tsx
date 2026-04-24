@@ -6,6 +6,11 @@ import { CopyListingCodeButton } from "@/components/bnhub/CopyListingCodeButton"
 import { HubAiDock } from "@/components/ai/HubAiDock";
 import { HostVenueModeBar } from "@/components/bnhub/HostVenueModeBar";
 import { HostDashboardV2 } from "@/components/bnhub-host/HostDashboardV2";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Building2, CalendarDays, MessageSquare } from "lucide-react";
+import { Skeleton } from "@/components/ui/SkeletonLoader";
+import { cn } from "@/lib/utils";
+import { useToast } from "@/components/ui/ToastProvider";
 
 type Listing = {
   id: string;
@@ -19,11 +24,11 @@ type Listing = {
 };
 
 function ExternalSyncPanel({ listings }: { listings: Listing[] }) {
+  const { showToast } = useToast();
   const [states, setStates] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(listings.map((l) => [l.id, Boolean(l.externalSyncEnabled)]))
   );
   const [saving, setSaving] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
     setStates(Object.fromEntries(listings.map((l) => [l.id, Boolean(l.externalSyncEnabled)])));
@@ -33,7 +38,6 @@ function ExternalSyncPanel({ listings }: { listings: Listing[] }) {
 
   async function toggle(listingId: string, value: boolean) {
     setSaving(listingId);
-    setMessage(null);
     try {
       const res = await fetch("/api/bnhub/host/external-sync", {
         method: "PATCH",
@@ -43,56 +47,64 @@ function ExternalSyncPanel({ listings }: { listings: Listing[] }) {
       });
       if (!res.ok) throw new Error("save_failed");
       setStates((s) => ({ ...s, [listingId]: value }));
-      setMessage("Saved.");
+      showToast("External sync updated", "success");
     } catch {
-      setMessage("Could not update. Sign in as the listing owner and try again.");
+      showToast("Could not update sync settings", "error");
     } finally {
       setSaving(null);
     }
   }
 
   return (
-    <section className="bnhub-panel p-5">
-      <h2 className="text-lg font-semibold tracking-tight text-white">External sync</h2>
-      <p className="mt-1 text-sm text-neutral-400">
-        Prepare for Booking.com, Airbnb, and Expedia via channel manager. When enabled, availability can be pushed and
-        updated from inbound webhooks at <code className="font-mono text-xs text-premium-gold/90">/api/integrations/webhook</code>.
-      </p>
-      {message && <p className="mt-2 text-sm text-neutral-400">{message}</p>}
-      <ul className="mt-4 divide-y divide-white/10">
+    <section className="bnhub-card-polish bnhub-panel-muted p-8 border-premium-gold/10">
+      <div className="flex flex-wrap items-center justify-between gap-6 border-b border-white/5 pb-6">
+        <div>
+          <h2 className="text-xl font-black tracking-tighter text-white uppercase italic">Distribution Control</h2>
+          <p className="mt-2 text-xs text-neutral-500 max-w-lg">
+            Multichannel inventory synchronization. Enable real-time availability updates for Airbnb, Booking.com, and VRBO via global iCal/Webhook bridge.
+          </p>
+        </div>
+      </div>
+      <ul className="mt-6 divide-y divide-white/5">
         {listings.map((l) => (
-          <li key={l.id} className="flex flex-wrap items-center justify-between gap-3 py-3 first:pt-0">
-            <div>
-              <p className="font-medium text-neutral-100">{l.title}</p>
-              <p className="text-xs text-neutral-500">{l.city}</p>
+          <li key={l.id} className="flex flex-wrap items-center justify-between gap-4 py-4 first:pt-0">
+            <div className="flex items-center gap-3">
+              <div className={cn(
+                "h-2 w-2 rounded-full",
+                states[l.id] ? "bg-premium-gold animate-pulse shadow-[0_0_8px_rgba(212,175,55,0.4)]" : "bg-neutral-800"
+              )} />
+              <div>
+                <p className="text-sm font-bold text-neutral-100">{l.title}</p>
+                <p className="text-[10px] uppercase tracking-widest text-neutral-500">{l.city}</p>
+              </div>
             </div>
-            <label className="flex cursor-pointer items-center gap-2">
-              <span className="text-sm text-neutral-400">Sync</span>
-              <input
-                type="checkbox"
-                className="h-4 w-4 rounded border-premium-gold/30 bg-black text-premium-gold focus:ring-premium-gold/40"
-                checked={states[l.id] ?? false}
-                disabled={saving === l.id}
-                onChange={(e) => void toggle(l.id, e.target.checked)}
-              />
-            </label>
+            <div className="flex items-center gap-4">
+              <span className="text-[10px] font-black uppercase tracking-widest text-neutral-600">Sync Status</span>
+              <label className="relative inline-flex cursor-pointer items-center">
+                <input
+                  type="checkbox"
+                  className="peer sr-only"
+                  checked={states[l.id] ?? false}
+                  disabled={saving === l.id}
+                  onChange={(e) => void toggle(l.id, e.target.checked)}
+                />
+                <div className="peer h-6 w-11 rounded-full bg-neutral-800 transition-all after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-premium-gold peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-premium-gold/20 disabled:opacity-50"></div>
+              </label>
+            </div>
           </li>
         ))}
       </ul>
-      <div className="mt-4 flex flex-wrap items-center gap-3">
+      <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-white/5 pt-6">
         <Link
           href="/bnhub/host/channel-manager"
-          className="lecipm-prestige-pill lecipm-neon-white-muted inline-flex px-4 py-2 text-sm"
+          className="bnhub-touch-feedback inline-flex items-center gap-2 rounded-xl border border-premium-gold/30 bg-premium-gold/5 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-premium-gold hover:bg-premium-gold/10"
         >
-          Channel manager and iCal
+          Configure Bridges
         </Link>
+        <p className="max-w-md text-[10px] leading-relaxed text-neutral-600 italic">
+          Availability pushed via <code className="text-neutral-500">/api/integrations/webhook</code>. Sync conflicts logged in the audit trail.
+        </p>
       </div>
-      <p className="mt-3 text-xs text-neutral-500">
-        Map OTA IDs with{" "}
-        <code className="text-premium-gold/80">POST /api/bnhub/host/ota-ai/parse</code> (AI + rules) then{" "}
-        <code className="text-premium-gold/80">…/external-mapping</code>. Legacy: <code className="text-premium-gold/80">external_mapping</code>. Sync
-        errors are logged in <code className="text-premium-gold/80">bnhub_channel_sync_logs</code>.
-      </p>
     </section>
   );
 }
@@ -147,59 +159,70 @@ function PricingWidget({ listings }: { listings: Listing[] }) {
   if (listings.length === 0) return null;
 
   return (
-    <div className="bnhub-panel-muted p-4">
-      <h3 className="text-base font-semibold tracking-tight text-white">AI insights</h3>
-      <p className="mt-1 text-xs text-neutral-500">Informational only — not financial advice</p>
-      <div className="mt-2">
-        <p className="text-xs font-medium text-neutral-400">Pricing suggestions</p>
+    <div className="bnhub-card-polish bnhub-panel-muted p-5">
+      <div className="flex items-center justify-between">
+        <h3 className="text-base font-bold tracking-tight text-white uppercase italic">Pricing Insight</h3>
+        <span className="rounded-full bg-premium-gold/10 px-2 py-0.5 text-[10px] font-bold text-premium-gold border border-premium-gold/20">AI</span>
       </div>
-      <div className="mt-3">
+      <div className="mt-4">
         <select
           value={listingId}
           onChange={(e) => setListingId(e.target.value)}
-          className="bnhub-input max-w-full"
+          className="bnhub-input w-full bg-black/40 text-sm font-medium"
         >
           {listings.map((l) => (
             <option key={l.id} value={l.id}>{l.title}</option>
           ))}
         </select>
       </div>
-      {loading && <p className="mt-2 text-sm text-neutral-500">Loading…</p>}
-      {rec && !loading && (
-        <div className="mt-3 space-y-1 text-sm">
-          <p className="text-neutral-200">
-            Recommended tonight:{" "}
-            <span className="font-semibold text-premium-gold">${(rec.recommendedPriceCents / 100).toFixed(0)}</span>
-          </p>
-          <p className="text-neutral-400">
-            Current: ${(rec.currentPriceCents / 100).toFixed(0)} · Market avg: ${(rec.marketAvgCents / 100).toFixed(0)}
-          </p>
-          <p className="text-neutral-400">
-            Demand: <span className="capitalize">{rec.demandLevel}</span>
-          </p>
-          <ul className="mt-2 list-inside list-disc text-xs text-neutral-500">
-            {rec.factors.slice(0, 4).map((f, i) => (
-              <li key={i}>{f}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-      {loadingInsight && <p className="mt-3 text-xs text-neutral-500">Loading market comparison…</p>}
-      {hostInsight && hostInsight.hostBullets.length > 0 && !loadingInsight && (
-        <div className="mt-4 border-t border-white/10 pt-3">
-          <p className="text-xs font-medium text-neutral-400">
-            vs BNHUB market {hostInsight.aiEnhanced ? "(AI-polished copy)" : ""}
-          </p>
-          <ul className="mt-2 list-inside list-disc text-xs text-neutral-300">
-            {hostInsight.hostBullets.map((b, i) => (
-              <li key={i}>{b}</li>
-            ))}
-          </ul>
-          {hostInsight.disclaimer ? (
-            <p className="mt-2 text-[10px] leading-snug text-neutral-600">{hostInsight.disclaimer}</p>
-          ) : null}
-        </div>
-      )}
+      
+      <div className="mt-5 space-y-4">
+        {loading ? (
+          <div className="space-y-2">
+            <Skeleton className="h-5 w-full" />
+            <Skeleton className="h-4 w-2/3" />
+            <Skeleton className="h-3 w-1/2" />
+          </div>
+        ) : rec ? (
+          <div className="space-y-2">
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl font-black text-white">${(rec.recommendedPriceCents / 100).toFixed(0)}</span>
+              <span className="text-xs font-bold uppercase tracking-widest text-premium-gold">Suggested</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-[10px] font-bold uppercase tracking-wider text-neutral-500">
+              <div>Current: <span className="text-neutral-300">${(rec.currentPriceCents / 100).toFixed(0)}</span></div>
+              <div>Market: <span className="text-neutral-300">${(rec.marketAvgCents / 100).toFixed(0)}</span></div>
+            </div>
+            <ul className="mt-3 space-y-1.5">
+              {rec.factors.slice(0, 3).map((f, i) => (
+                <li key={i} className="flex items-start gap-2 text-xs text-neutral-400">
+                  <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-premium-gold"></span>
+                  {f}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+
+        {loadingInsight ? (
+          <div className="border-t border-white/5 pt-4 space-y-2">
+            <Skeleton className="h-3 w-1/3" />
+            <Skeleton className="h-3 w-full" />
+            <Skeleton className="h-3 w-full" />
+          </div>
+        ) : hostInsight && hostInsight.hostBullets.length > 0 ? (
+          <div className="border-t border-white/5 pt-4">
+            <p className="text-[10px] font-black uppercase tracking-widest text-neutral-500 mb-2">Market Comparison</p>
+            <ul className="space-y-2">
+              {hostInsight.hostBullets.map((b, i) => (
+                <li key={i} className="text-xs leading-relaxed text-neutral-300 italic">
+                  "{b}"
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -239,41 +262,62 @@ function HostAiInsights({ listings }: { listings: Listing[] }) {
   if (listings.length === 0) return null;
 
   return (
-    <div className="bnhub-panel-muted p-4">
-      <h2 className="text-lg font-semibold tracking-tight text-white">AI insights</h2>
-      <p className="mt-1 text-xs text-neutral-500">Informational only</p>
-      <div className="mt-3">
+    <div className="bnhub-card-polish bnhub-panel-muted p-5">
+      <div className="flex items-center justify-between">
+        <h3 className="text-base font-bold tracking-tight text-white uppercase italic">Growth Strategy</h3>
+        <span className="rounded-full bg-premium-gold/10 px-2 py-0.5 text-[10px] font-bold text-premium-gold border border-premium-gold/20">AI</span>
+      </div>
+      <div className="mt-4">
         <select
           value={listingId}
           onChange={(e) => setListingId(e.target.value)}
-          className="bnhub-input max-w-full"
+          className="bnhub-input w-full bg-black/40 text-sm font-medium"
         >
           {listings.map((l) => (
             <option key={l.id} value={l.id}>{l.title}</option>
           ))}
         </select>
       </div>
-      {recs.length > 0 && !loadingRecs && (
-        <div className="mt-4 space-y-2">
-          <p className="text-xs font-medium text-neutral-400">Improvement tips</p>
-          <ul className="list-inside list-disc space-y-1 text-sm text-neutral-300">
-            {recs.slice(0, 5).map((r, i) => (
-              <li key={i}>{r.title}: {r.description}</li>
+
+      <div className="mt-5 space-y-4">
+        {loadingRecs ? (
+          <div className="space-y-3">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-full" />
+          </div>
+        ) : recs.length > 0 ? (
+          <div className="space-y-3">
+            {recs.slice(0, 3).map((r, i) => (
+              <div key={i} className="rounded-lg border border-white/5 bg-white/5 p-3">
+                <p className="text-xs font-bold text-neutral-200">{r.title}</p>
+                <p className="mt-1 text-[11px] leading-relaxed text-neutral-500">{r.description}</p>
+              </div>
             ))}
-          </ul>
-        </div>
-      )}
-      {loadingRecs && <p className="mt-2 text-sm text-neutral-500">Loading suggestions…</p>}
-      {demand && !loadingDemand && (
-        <div className="mt-3 text-sm text-neutral-400">
-          <span className="font-medium text-neutral-200">Demand in {city}:</span> {demand.demandLevel}
-          {demand.highDemandDates.length > 0 && (
-            <p className="mt-1 text-xs text-neutral-500">
-              High-demand dates: {demand.highDemandDates.slice(0, 3).join(", ")}…
-            </p>
-          )}
-        </div>
-      )}
+          </div>
+        ) : null}
+
+        {loadingDemand ? (
+          <div className="border-t border-white/5 pt-4 space-y-2">
+            <Skeleton className="h-3 w-1/4" />
+            <Skeleton className="h-4 w-1/2" />
+          </div>
+        ) : demand ? (
+          <div className="border-t border-white/5 pt-4">
+            <p className="text-[10px] font-black uppercase tracking-widest text-neutral-500 mb-1">Market Demand</p>
+            <div className="flex items-center gap-2">
+              <span className="text-lg font-bold text-white capitalize">{demand.demandLevel}</span>
+              <span className="h-2 w-2 rounded-full bg-premium-gold"></span>
+              <span className="text-xs text-neutral-400">{city}</span>
+            </div>
+            {demand.highDemandDates.length > 0 && (
+              <p className="mt-2 text-[10px] text-neutral-500 italic">
+                Surge expected: {demand.highDemandDates.slice(0, 2).join(", ")}
+              </p>
+            )}
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -298,21 +342,31 @@ function ReferralWidget({ ownerId }: { ownerId: string }) {
   }
 
   return (
-    <div className="bnhub-panel-muted p-4">
-      <h3 className="text-base font-semibold tracking-tight text-white">Invite hosts</h3>
-      <p className="mt-1 text-xs text-neutral-500">Share your referral code; you and the new host get booking credits.</p>
-      {code ? (
-        <p className="mt-2 font-mono text-sm text-premium-gold">{code}</p>
-      ) : (
-        <button
-          type="button"
-          onClick={generateCode}
-          disabled={loading}
-          className="lecipm-touch mt-2 rounded-lg border border-premium-gold/35 bg-premium-gold/10 px-3 py-1.5 text-sm font-medium text-premium-gold hover:bg-premium-gold/15 disabled:opacity-50"
-        >
-          {loading ? "Generating…" : "Get referral code"}
-        </button>
-      )}
+    <div className="bnhub-card-polish bnhub-panel-muted p-5 flex flex-col justify-between">
+      <div>
+        <h3 className="text-base font-bold tracking-tight text-white uppercase italic">Ambassador</h3>
+        <p className="mt-2 text-xs leading-relaxed text-neutral-500">
+          Grow the BNHub community. Invite fellow hosts and earn booking credits for every successful onboarding.
+        </p>
+      </div>
+
+      <div className="mt-6">
+        {code ? (
+          <div className="rounded-xl border border-premium-gold/30 bg-premium-gold/5 p-4 text-center">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-premium-gold/70 mb-1">Your Referral Code</p>
+            <p className="font-mono text-xl font-black tracking-tighter text-premium-gold">{code}</p>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={generateCode}
+            disabled={loading}
+            className="bnhub-touch-feedback flex w-full items-center justify-center rounded-xl bg-premium-gold px-4 py-3 text-sm font-black uppercase tracking-widest text-black disabled:opacity-50"
+          >
+            {loading ? "Generating..." : "Generate Invite Link"}
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -570,6 +624,7 @@ export function HostDashboardClient({
   hostStripe: { stripeAccountId: string | null; stripeOnboardingComplete: boolean };
   bnhubV2?: boolean;
 }) {
+  const { showToast } = useToast();
   const [showAddListing, setShowAddListing] = useState(false);
   const [addSuccess, setAddSuccess] = useState(false);
   const [descAiBusy, setDescAiBusy] = useState(false);
@@ -582,7 +637,7 @@ export function HostDashboardClient({
     const title = String(fd.get("title") ?? "").trim();
     const city = String(fd.get("city") ?? "").trim();
     if (!title || !city) {
-      window.alert("Add at least a title and city, then try AI draft again.");
+      showToast("Add at least a title and city", "warning");
       return;
     }
     const nightRaw = String(fd.get("nightPrice") ?? "");
@@ -607,12 +662,13 @@ export function HostDashboardClient({
       });
       const data = (await res.json()) as { description?: string; error?: string };
       if (!res.ok) {
-        window.alert(data.error ?? "Could not generate description.");
+        showToast(data.error ?? "AI draft failed", "error");
         return;
       }
       const ta = form.querySelector<HTMLTextAreaElement>('textarea[name="description"]');
       if (ta && data.description) {
         ta.value = data.description;
+        showToast("Description generated", "success");
       }
     } finally {
       setDescAiBusy(false);
@@ -623,28 +679,35 @@ export function HostDashboardClient({
     e.preventDefault();
     const form = e.currentTarget;
     const data = new FormData(form);
-    const res = await fetch("/api/bnhub/listings/create", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        ownerId,
-        title: data.get("title"),
-        description: data.get("description") || undefined,
-        address: data.get("address"),
-        city: data.get("city"),
-        country: data.get("country") || "US",
-        nightPriceCents: Math.round(Number(data.get("nightPrice")) * 100),
-        beds: Number(data.get("beds")),
-        baths: Number(data.get("baths")),
-        maxGuests: Number(data.get("maxGuests")) || 4,
-        photos: (data.get("photos") as string)?.split(",").filter(Boolean) || [],
-      }),
-    });
-    if (res.ok) {
-      setAddSuccess(true);
-      form.reset();
-      setShowAddListing(false);
-      window.location.reload();
+    try {
+      const res = await fetch("/api/bnhub/listings/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ownerId,
+          title: data.get("title"),
+          description: data.get("description") || undefined,
+          address: data.get("address"),
+          city: data.get("city"),
+          country: data.get("country") || "US",
+          nightPriceCents: Math.round(Number(data.get("nightPrice")) * 100),
+          beds: Number(data.get("beds")),
+          baths: Number(data.get("baths")),
+          maxGuests: Number(data.get("maxGuests")) || 4,
+          photos: (data.get("photos") as string)?.split(",").filter(Boolean) || [],
+        }),
+      });
+      if (res.ok) {
+        showToast("Listing created successfully", "success");
+        setAddSuccess(true);
+        form.reset();
+        setShowAddListing(false);
+        setTimeout(() => window.location.reload(), 1500);
+      } else {
+        showToast("Failed to create listing", "error");
+      }
+    } catch {
+      showToast("Error creating listing", "error");
     }
   }
 
@@ -673,121 +736,130 @@ export function HostDashboardClient({
       ) : null}
 
       {/* Your listings */}
-      <section>
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
-          <h2 className="text-lg font-semibold tracking-tight text-white">Your listings</h2>
-          <div className="flex items-center gap-2">
-            <Link
-              href="/host/listings/new"
-              className="lecipm-touch rounded-xl bg-premium-gold px-4 py-2.5 text-sm font-semibold text-black hover:brightness-95"
-            >
-              Start listing
-            </Link>
+      <section className="space-y-6">
+        <div className="flex flex-wrap items-end justify-between gap-6 border-b border-white/5 pb-4">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-premium-gold/80">Properties</p>
+            <h2 className="mt-1 text-2xl font-black tracking-tighter text-white italic">Portfolio Management</h2>
+          </div>
+          <div className="flex items-center gap-3">
             <Link
               href="/bnhub/host/listings/new"
-              className="lecipm-touch rounded-xl border border-premium-gold/35 px-3 py-2.5 text-xs font-medium text-neutral-200 hover:bg-premium-gold/10"
+              className="bnhub-touch-feedback rounded-xl border border-premium-gold/30 bg-premium-gold/5 px-5 py-2.5 text-xs font-black uppercase tracking-widest text-premium-gold hover:bg-premium-gold/10"
             >
-              Full editor
+              Advanced Editor
             </Link>
             <button
               type="button"
               onClick={() => setShowAddListing(!showAddListing)}
-              className="lecipm-touch rounded-xl border border-white/15 px-4 py-2.5 text-sm font-medium text-neutral-300 hover:border-premium-gold/25 hover:bg-black/40"
+              className="bnhub-touch-feedback rounded-xl bg-premium-gold px-6 py-2.5 text-xs font-black uppercase tracking-widest text-black shadow-lg shadow-premium-gold/20"
             >
-              {showAddListing ? "Cancel" : "+ Quick add"}
+              {showAddListing ? "Cancel" : "Quick Add"}
             </button>
           </div>
         </div>
 
         {showAddListing && (
-          <form ref={quickAddFormRef} onSubmit={handleAddListing} className="bnhub-panel mb-6 space-y-4 p-6">
-            <input name="title" required placeholder="Title" className="bnhub-input w-full" />
-            <div className="flex flex-wrap items-end gap-2">
-              <textarea name="description" placeholder="Description" rows={4} className="bnhub-input min-h-[100px] flex-1" />
-              <button
-                type="button"
-                onClick={() => void draftDescriptionWithGemini()}
-                disabled={descAiBusy}
-                className="lecipm-touch shrink-0 rounded-xl border border-premium-gold/40 bg-premium-gold/10 px-3 py-2 text-xs font-semibold text-premium-gold hover:bg-premium-gold/15 disabled:opacity-50"
-              >
-                {descAiBusy ? "Drafting…" : "AI draft (Gemini)"}
-              </button>
+          <form ref={quickAddFormRef} onSubmit={handleAddListing} className="bnhub-panel-muted mb-8 space-y-6 p-8 border-premium-gold/20 bg-black/60 backdrop-blur-xl">
+            <div className="space-y-1">
+              <label className="text-[10px] font-black uppercase tracking-widest text-neutral-500">Listing Identity</label>
+              <input name="title" required placeholder="Luxury Penthouse with Skyline View" className="bnhub-input w-full text-lg font-bold" />
             </div>
-            <p className="text-[10px] text-neutral-600">
-              Uses Google Gemini when <code className="text-neutral-500">GEMINI_API_KEY</code> is set server-side. You remain responsible for accuracy.
-            </p>
-            <input name="address" required placeholder="Address" className="bnhub-input w-full" />
-            <div className="grid grid-cols-2 gap-4">
-              <input name="city" required placeholder="City" className="bnhub-input" />
-              <input name="country" placeholder="Country" defaultValue="US" className="bnhub-input" />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="mb-1 block text-xs text-neutral-500">Night price ($)</label>
-                <input name="nightPrice" type="number" required min="1" step="0.01" placeholder="100" className="bnhub-input w-full" />
+            
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <label className="text-[10px] font-black uppercase tracking-widest text-neutral-500">Narrative</label>
+                <button
+                  type="button"
+                  onClick={() => void draftDescriptionWithGemini()}
+                  disabled={descAiBusy}
+                  className="bnhub-touch-feedback text-[10px] font-black uppercase tracking-widest text-premium-gold"
+                >
+                  {descAiBusy ? "Drafting..." : "Generate AI Description"}
+                </button>
               </div>
-              <div>
-                <label className="mb-1 block text-xs text-neutral-500">Max guests</label>
+              <textarea name="description" placeholder="Describe the unique value of this stay..." rows={4} className="bnhub-input min-h-[120px] w-full text-sm leading-relaxed" />
+            </div>
+
+            <div className="grid gap-6 sm:grid-cols-2">
+              <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase tracking-widest text-neutral-500">Location</label>
+                <input name="address" required placeholder="123 Prestige Ave" className="bnhub-input w-full" />
+              </div>
+              <div className="grid grid-cols-2 gap-4 pt-5">
+                <input name="city" required placeholder="City" className="bnhub-input" />
+                <input name="country" placeholder="Country" defaultValue="US" className="bnhub-input" />
+              </div>
+            </div>
+
+            <div className="grid gap-6 sm:grid-cols-3">
+              <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase tracking-widest text-neutral-500">Price per Night ($)</label>
+                <input name="nightPrice" type="number" required min="1" step="0.01" placeholder="450.00" className="bnhub-input w-full font-mono text-premium-gold" />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase tracking-widest text-neutral-500">Max Guests</label>
                 <input name="maxGuests" type="number" min="1" defaultValue="4" className="bnhub-input w-full" />
               </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="mb-1 block text-xs text-neutral-500">Beds</label>
-                <input name="beds" type="number" required min="0" className="bnhub-input w-full" />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-neutral-500">Beds</label>
+                  <input name="beds" type="number" required min="0" className="bnhub-input w-full" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-neutral-500">Baths</label>
+                  <input name="baths" type="number" required min="0" step="0.5" className="bnhub-input w-full" />
+                </div>
               </div>
-              <div>
-                <label className="mb-1 block text-xs text-neutral-500">Baths</label>
-                <input name="baths" type="number" required min="0" step="0.5" className="bnhub-input w-full" />
-              </div>
             </div>
-            <div>
-              <label className="mb-1 block text-xs text-neutral-500">Photo URLs (comma-separated)</label>
-              <input name="photos" placeholder="https://..." className="bnhub-input w-full" />
-            </div>
-            <button type="submit" className="lecipm-touch rounded-xl bg-premium-gold px-4 py-2 text-sm font-semibold text-black hover:brightness-95">
-              Create listing
+
+            <button type="submit" className="bnhub-touch-feedback w-full rounded-xl bg-premium-gold py-4 text-sm font-black uppercase tracking-[0.2em] text-black shadow-xl shadow-premium-gold/20">
+              Publish Listing
             </button>
           </form>
         )}
 
-        {addSuccess && <p className="mt-2 text-sm text-premium-gold">Listing added. Refreshing…</p>}
-
         <ul className="space-y-3">
           {listings.length === 0 && !showAddListing && (
-            <li className="bnhub-panel-muted p-6 text-center text-neutral-500">
-              <p>No listings yet.</p>
-              <Link
-                href="/host/listings/new"
-                className="mt-3 inline-block text-sm font-semibold text-premium-gold hover:underline"
-              >
-                Start your first listing →
-              </Link>
-            </li>
+            <EmptyState
+              icon={Building2}
+              title="No listings yet"
+              description="Start your first listing to begin hosting on BNHub."
+              ctaText="Start your first listing"
+              ctaHref="/host/listings/new"
+            />
           )}
           {listings.map((l) => (
             <li
               key={l.id}
-              className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-premium-gold/15 bg-black/35 p-4 transition hover:border-premium-gold/30"
+              className="bnhub-card-polish flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-premium-gold/15 bg-black/35 p-4"
             >
-              <div>
-                <Link href={`/bnhub/${l.id}`} className="font-medium text-neutral-100 hover:text-premium-gold">
-                  {l.title}
-                </Link>
-                <p className="text-sm text-neutral-500">
-                  {l.city} · ${(l.nightPriceCents / 100).toFixed(0)}/night
-                </p>
-                {l.listingCode ? (
-                  <div className="mt-1 flex flex-wrap items-center gap-2">
-                    <span className="font-mono text-xs text-neutral-500">Code {l.listingCode}</span>
-                    <CopyListingCodeButton listingCode={l.listingCode} variant="light" className="!py-1 !px-2" />
-                    <span className="text-[10px] text-neutral-600">Support and payout reference</span>
+              <div className="flex flex-1 items-start gap-4">
+                <div className="hidden h-16 w-16 overflow-hidden rounded-xl bg-neutral-900 sm:block">
+                  {/* Image placeholder if none exists, listing title initial as fallback */}
+                  <div className="flex h-full w-full items-center justify-center text-xl font-bold text-premium-gold/40">
+                    {l.title[0]}
                   </div>
-                ) : null}
-                <p className="mt-0.5 font-mono text-[10px] text-neutral-600">Internal id {l.id}</p>
-                <p className="text-xs text-neutral-600">
-                  {l._count.bookings} bookings · {l._count.reviews} reviews
-                </p>
+                </div>
+                <div>
+                  <Link href={`/bnhub/${l.id}`} className="text-lg font-semibold tracking-tight text-neutral-100 hover:text-premium-gold">
+                    {l.title}
+                  </Link>
+                  <p className="text-sm text-neutral-400">
+                    {l.city} · <span className="font-semibold text-premium-gold">${(l.nightPriceCents / 100).toFixed(0)}</span><span className="text-[10px] text-neutral-600">/night</span>
+                  </p>
+                  {l.listingCode ? (
+                    <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                      <span className="rounded bg-neutral-900 px-1.5 py-0.5 font-mono text-[10px] font-bold text-premium-gold/80">Code {l.listingCode}</span>
+                      <CopyListingCodeButton listingCode={l.listingCode} variant="light" className="!py-0.5 !px-1.5 !text-[10px]" />
+                    </div>
+                  ) : null}
+                  <div className="mt-2 flex items-center gap-3 text-[10px] font-medium uppercase tracking-wider text-neutral-500">
+                    <span>{l._count.bookings} bookings</span>
+                    <span className="h-1 w-1 rounded-full bg-neutral-700"></span>
+                    <span>{l._count.reviews} reviews</span>
+                  </div>
+                </div>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 {l.verificationStatus === "VERIFIED" && (
@@ -832,41 +904,67 @@ export function HostDashboardClient({
       </section>
 
       {/* Bookings */}
-      <section>
-        <h2 className="mb-4 text-lg font-semibold tracking-tight text-white">Bookings</h2>
+      <section className="space-y-6">
+        <div className="flex flex-wrap items-end justify-between gap-6 border-b border-white/5 pb-4">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-premium-gold/80">Reservations</p>
+            <h2 className="mt-1 text-2xl font-black tracking-tighter text-white italic">Booking Lifecycle</h2>
+          </div>
+        </div>
         <ul className="space-y-3">
           {bookings.length === 0 && (
-            <li className="bnhub-panel-muted p-6 text-center text-neutral-500">No bookings yet.</li>
+            <EmptyState
+              icon={CalendarDays}
+              title="No bookings yet"
+              description="Your future bookings will appear here once guests start reserving your stays."
+            />
           )}
           {bookings.map((b) => {
             const paymentSummary = getHostPaymentSummary(b);
+            const isUpcoming = new Date(b.checkIn).getTime() - Date.now() < 48 * 60 * 60 * 1000 && new Date(b.checkIn).getTime() > Date.now();
+            const isHighValue = (b.payment?.hostPayoutCents ?? 0) > 100000; // > $1000
+
             return (
             <li
               key={b.id}
-              className="bnhub-panel-muted p-4 transition hover:border-premium-gold/20"
+              className={cn(
+                "bnhub-card-polish p-4 rounded-2xl border",
+                isUpcoming || isHighValue ? "bnhub-priority-border" : "bnhub-panel-muted"
+              )}
             >
-              <div className="flex flex-wrap items-start justify-between gap-2">
-                <div>
-                  <p className="font-medium text-neutral-100">{b.listing.title}</p>
-                  <p className="text-sm text-neutral-400">
-                    {new Date(b.checkIn).toLocaleDateString()} – {new Date(b.checkOut).toLocaleDateString()} · {b.nights}{" "}
-                    nights
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="font-bold tracking-tight text-neutral-100">{b.listing.title}</p>
+                    {isUpcoming && (
+                      <span className="animate-pulse rounded-full bg-premium-gold/20 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-premium-gold">
+                        Upcoming
+                      </span>
+                    )}
+                    {isHighValue && (
+                      <span className="rounded-full bg-premium-gold px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-black">
+                        High Value
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-1 text-sm font-medium text-neutral-300">
+                    {new Date(b.checkIn).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – {new Date(b.checkOut).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} · <span className="text-premium-gold">{b.nights} nights</span>
                   </p>
-                  <p className="text-sm text-neutral-400">
-                    Guest: <span className="text-neutral-200">{b.guest.name ?? "—"}</span> · {b.guest.email}
+                  <p className="mt-1 text-sm text-neutral-500">
+                    Guest: <span className="font-semibold text-neutral-200">{b.guest.name ?? b.guest.email.split('@')[0]}</span>
                   </p>
                 </div>
-                <div className="text-right text-xs">
-                  <p className="text-neutral-500">
-                    Booking: <span className="capitalize text-neutral-200">{b.status.toLowerCase().replace(/_/g, " ")}</span>
-                  </p>
-                  <p className="mt-0.5 text-neutral-500">
-                    Payment: <span className={paymentSummary.tone}>{paymentSummary.label}</span>
-                    {b.payment?.status === "COMPLETED" && b.payment.hostPayoutCents != null ? (
-                      <span className="ml-1 text-premium-gold/90">
-                        · Est. payout ${((b.payment.hostPayoutCents ?? 0) / 100).toFixed(0)}
+                <div className="text-right">
+                  <div className="inline-block rounded-md bg-neutral-900/50 px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-neutral-500 border border-white/5">
+                    {b.status.replace(/_/g, " ")}
+                  </div>
+                  <p className="mt-2 text-xs font-medium">
+                    <span className={paymentSummary.tone}>{paymentSummary.label}</span>
+                    {b.payment?.hostPayoutCents != null && (
+                      <span className="ml-1.5 font-mono text-premium-gold">
+                        ${(b.payment.hostPayoutCents / 100).toFixed(0)}
                       </span>
-                    ) : null}
+                    )}
                   </p>
                 </div>
               </div>

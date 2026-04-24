@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getSessionUserIdFromRequest } from "@/lib/auth/api-session";
 import type { DreamHomeProfile } from "@/modules/dream-home/types/dream-home.types";
 import { buildDreamHomeProfile } from "@/modules/dream-home/services/dream-home-profile.service";
 import { matchDreamHomeListings } from "@/modules/dream-home/services/dream-home-match.service";
@@ -57,7 +58,15 @@ export async function POST(req: Request) {
       typeof b.dreamSessionEntityId === "string" && b.dreamSessionEntityId.trim()
         ? b.dreamSessionEntityId.trim()
         : undefined;
-    const playback = await suggestDreamHomePlaybookAssignment({ entityId: sessionEntity, segment: playSegment });
+    const userId = await getSessionUserIdFromRequest(req).catch(() => null);
+    const playback = await suggestDreamHomePlaybookAssignment({
+      entityId: sessionEntity,
+      segment: playSegment,
+      userId,
+    });
+    void import("@/modules/playbook-memory/services/playbook-learning-bridge.service").then((m) => {
+      m.playbookLearningBridge.afterDreamHomeMatch({ assignment: playback, segment: playSegment });
+    });
     return NextResponse.json({ ok: true, ...result, playbookAssignment: playback });
   } catch {
     return NextResponse.json({ ok: false, error: "match_unavailable" });

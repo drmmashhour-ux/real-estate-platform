@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { logInfo } from "@/lib/logger";
 import type { ClosingRoomReadiness } from "@/modules/closing/closing.types";
 import { checklistItemCountsForClosing } from "@/modules/closing/closing.types";
+import { qcExecutionBlockers } from "@/modules/quebec-closing/quebec-closing-gates";
 
 const TAG = "[closing-orchestrator]";
 
@@ -96,6 +97,20 @@ export async function evaluateFinalClosingReadiness(dealId: string): Promise<Clo
       blockers.push(`Signature pending: ${s.signerName} (${s.signerRole})`);
     }
   }
+
+  const [qcConditions, qcNotary, qcChecklist] = await Promise.all([
+    prisma.dealClosingCondition.findMany({ where: { dealId } }),
+    prisma.dealNotaryCoordination.findUnique({ where: { dealId } }),
+    prisma.dealQuebecNotaryChecklistItem.findMany({ where: { dealId } }),
+  ]);
+  blockers.push(
+    ...qcExecutionBlockers({
+      closing: session,
+      conditions: qcConditions,
+      notary: qcNotary,
+      notaryChecklist: qcChecklist,
+    }),
+  );
 
   if (docs.some((d) => d.required && d.status !== "VERIFIED")) {
     nextSteps.push("Verify all required documents.");

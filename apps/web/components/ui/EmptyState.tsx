@@ -1,103 +1,52 @@
-import type { ReactNode } from "react";
-import { Inbox } from "lucide-react";
-import { FiltersEmptyIcon } from "@/components/ui/empty-state-icons";
+import { LucideIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import Link from "next/link";
 
-type Variant = "boxed" | "centered";
-
-export type EmptyStateIcon = ReactNode | string;
-
-function IconDisc({
-  children,
-  variant,
-}: {
-  children: ReactNode;
-  variant: Variant;
-}) {
-  const ring =
-    variant === "centered"
-      ? "border-white/12 bg-white/[0.05] text-premium-gold"
-      : "border-white/10 bg-white/[0.06] text-premium-gold";
-  return (
-    <div
-      className={`mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border ${ring} [&_svg]:shrink-0`}
-      aria-hidden
-    >
-      {children}
-    </div>
-  );
+interface EmptyStateProps {
+  icon: LucideIcon;
+  title: string;
+  description: string;
+  ctaText?: string;
+  ctaHref?: string;
+  onCtaClick?: () => void;
 }
 
-function renderIcon(icon: EmptyStateIcon | undefined, variant: Variant, defaultVisual: "filters" | "generic") {
-  if (icon === undefined) {
-    return (
-      <IconDisc variant={variant}>
-        {defaultVisual === "filters" ? <FiltersEmptyIcon /> : <Inbox className="h-7 w-7 opacity-90" strokeWidth={1.5} />}
-      </IconDisc>
-    );
-  }
-  if (typeof icon === "string") {
-    return (
-      <IconDisc variant={variant}>
-        <span className="text-3xl leading-none">{icon}</span>
-      </IconDisc>
-    );
-  }
-  return <IconDisc variant={variant}>{icon}</IconDisc>;
-}
-
-/**
- * Shared empty state — icon, title, optional description, and action slot (buttons/links).
- * Pass `icon` as a Lucide node, emoji string, or omit for a sensible default (`filters` vs `generic`).
- */
 export function EmptyState({
+  icon: Icon,
   title,
   description,
-  action,
-  icon,
-  children,
-  variant = "boxed",
-  defaultIcon = "filters",
-}: {
-  title: string;
-  description?: string;
-  action?: ReactNode;
-  icon?: EmptyStateIcon;
-  children?: ReactNode;
-  variant?: Variant;
-  /** When `icon` is omitted: `filters` = search icon; `generic` = inbox. */
-  defaultIcon?: "filters" | "generic";
-}) {
-  const iconBlock = renderIcon(icon, variant, defaultIcon);
-
-  if (variant === "centered") {
-    return (
-      <div className="py-16 text-center text-white/55 md:py-20" role="status" aria-live="polite">
-        {iconBlock}
-        <div className="mt-5 text-lg font-semibold text-white">{title}</div>
-        {description ? <div className="lecipm-subtitle mx-auto mt-2 max-w-md">{description}</div> : null}
-        {children ?? action ? (
-          <div className="mt-6 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center">
-            {children ?? action}
-          </div>
-        ) : null}
-      </div>
-    );
-  }
-
+  ctaText,
+  ctaHref,
+  onCtaClick,
+}: EmptyStateProps) {
   return (
-    <div
-      className="rounded-2xl border border-dashed border-premium-gold/25 bg-premium-gold/[0.03] p-[var(--lecipm-card-padding)] py-10 text-center sm:py-12"
-      role="status"
-      aria-live="polite"
-    >
-      {iconBlock}
-      <p className="mt-5 text-base font-semibold text-white">{title}</p>
-      {description ? <p className="lecipm-subtitle mt-3">{description}</p> : null}
-      {children ?? action ? (
-        <div className="mt-6 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center">
-          {children ?? action}
-        </div>
-      ) : null}
-    </div>
+    <Card className="flex flex-col items-center justify-center p-12 text-center bg-zinc-950 border-zinc-800 border-dashed">
+      <div className="p-4 rounded-full bg-zinc-900 mb-6">
+        <Icon className="w-10 h-10 text-zinc-700" />
+      </div>
+      <h3 className="text-xl font-bold text-white uppercase tracking-tight mb-2 italic">
+        {title}
+      </h3>
+      <p className="text-zinc-500 text-sm max-w-xs mb-8 font-medium">
+        {description}
+      </p>
+      {ctaText && (
+        ctaHref ? (
+          <Link href={ctaHref}>
+            <Button className="bg-premium-gold hover:bg-premium-gold/90 text-black font-black uppercase text-xs tracking-widest px-8">
+              {ctaText}
+            </Button>
+          </Link>
+        ) : (
+          <Button 
+            onClick={onCtaClick}
+            className="bg-premium-gold hover:bg-premium-gold/90 text-black font-black uppercase text-xs tracking-widest px-8"
+          >
+            {ctaText}
+          </Button>
+        )
+      )}
+    </Card>
   );
 }

@@ -3,6 +3,10 @@ import type { GreenAiEngineOutput, GreenAiPerformanceLabel, GreenVerificationLev
 import { evaluateQuebecEsg, QUEBEC_ESG_CRITERIA_DISCLAIMER, type QuebecEsgLabel } from "./quebec-esg.engine";
 import { resolveVerificationLevel, type DocumentRefInput } from "./green-verification.service";
 import { greenAiLog } from "./green-ai-logger";
+import { generateQuebecEsgRecommendations } from "./quebec-esg-recommendation.service";
+import { simulateQuebecEsgUpgrade } from "./quebec-esg-simulator.service";
+import { generateBrokerGreenCallouts } from "./quebec-esg-callouts.service";
+import { runQuebecEsgEconomicsPipeline } from "./quebec-esg-economics.runner";
 
 function mapQuebecLabelToAi(label: QuebecEsgLabel): GreenAiPerformanceLabel {
   if (label === "STANDARD") return "IMPROVABLE";
@@ -77,6 +81,17 @@ export function runGreenAiAnalysis(args: RunGreenAiAnalysisArgs): GreenAiEngineO
     quebecDisclaimer: QUEBEC_ESG_CRITERIA_DISCLAIMER,
   };
 
+  const recs = generateQuebecEsgRecommendations(args.intake, qc);
+  const topRecKeys = recs.recommendations.slice(0, 3).map((r) => r.key);
+  const simulation = simulateQuebecEsgUpgrade(args.intake, topRecKeys);
+  const econ = runQuebecEsgEconomicsPipeline(args.intake);
+  const callouts = generateBrokerGreenCallouts(qc, recs.recommendations, {
+    incentiveRows: econ?.incentives.incentives,
+    costTotalLow: econ?.costEstimates.totalLowCost ?? null,
+    costTotalHigh: econ?.costEstimates.totalHighCost ?? null,
+    roi: econ?.roi ?? null,
+  });
+
   greenAiLog.info("green_ai_analysis_complete", {
     score,
     label,
@@ -93,5 +108,8 @@ export function runGreenAiAnalysis(args: RunGreenAiAnalysisArgs): GreenAiEngineO
     issues,
     recommendations,
     quebecEsg,
+    quebecEsgRecommendations: recs.recommendations,
+    quebecEsgSimulation: simulation,
+    quebecEsgCallouts: callouts,
   };
 }

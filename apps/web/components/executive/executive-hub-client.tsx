@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { LaunchSequencerSummaryStrip } from "@/components/launch-sequencer/LaunchSequencerSummaryStrip";
 import { Button } from "@/components/ui/button";
 
 type Briefing = {
@@ -96,6 +97,16 @@ export function ExecutiveHubClient({ basePath }: { basePath: string }) {
         {err && briefing ?
           <p className="mt-3 text-xs text-destructive">{err}</p>
         : null}
+      </section>
+
+      <section className="rounded-xl border bg-card p-4">
+        <h2 className="text-sm font-semibold">Expansion sequencing (advisory)</h2>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Scenario-based market ordering — not authorization to launch. Broker/admin only.
+        </p>
+        <div className="mt-3">
+          <LaunchSequencerSummaryStrip dashboardHref="/dashboard/launch-sequencer" />
+        </div>
       </section>
 
       <section className="grid gap-4 lg:grid-cols-2">

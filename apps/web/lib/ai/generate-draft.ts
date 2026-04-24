@@ -6,6 +6,7 @@ import { retrieveDraftingContext } from "./retrieve";
 import { runInternalDraftGeneration, type InternalDraftResult } from "./internal-draft-runner";
 import { validateDraft, checkConsistency } from "@/lib/compliance/draft-validation";
 import { assertDraftSourceContext } from "@/lib/compliance/source-grounded";
+import { detectNotices, type DetectedNotice } from "@/modules/notice-engine/noticeEngine";
 
 export type GenerateDraftInput = {
   formType: string;
@@ -17,6 +18,7 @@ export type GenerateDraftInput = {
 export type GenerateDraftOutput = InternalDraftResult & {
   validation: ReturnType<typeof validateDraft>;
   consistency: ReturnType<typeof checkConsistency>;
+  notices: DetectedNotice[];
 };
 
 function assertHardRules(draft: InternalDraftResult, validation: ReturnType<typeof validateDraft>): void {
@@ -58,9 +60,17 @@ export async function generateDraft(input: GenerateDraftInput): Promise<Generate
   });
   assertConsistency(consistency);
 
+  const notices = detectNotices({
+    hasWarrantyExclusion: Boolean(input.facts.withoutWarranty),
+    buyerRepresented: input.facts.buyerRepresented === false ? false : true,
+    inclusionsModified: Boolean(input.facts.inclusionsChanged),
+    containsPersonalData: true, // Safety-first default
+  });
+
   return {
     ...draft,
     validation,
     consistency,
+    notices,
   };
 }

@@ -21,6 +21,11 @@ const MarketingExpansionPanel = dynamic(
   { loading: () => <PanelSkeleton title="Marketing & expansion" /> },
 );
 
+const LaunchSequencerSummaryStrip = dynamic(
+  () => import("@/components/launch-sequencer/LaunchSequencerSummaryStrip").then((m) => m.LaunchSequencerSummaryStrip),
+  { loading: () => <PanelSkeleton title="Launch sequencer" /> },
+);
+
 function PanelSkeleton(props: { title: string }) {
   return (
     <div className={`${cc.cardMuted} animate-pulse`}>
@@ -293,6 +298,9 @@ export function CommandCenterView(props: { initial: CommandCenterPagePayload }) 
                 Marketing + expansion
               </h2>
               <MarketingExpansionPanel data={initial.summary.marketing} />
+              <div className="mt-4">
+                <LaunchSequencerSummaryStrip />
+              </div>
             </section>
           : null}
 

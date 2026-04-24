@@ -1,8 +1,11 @@
 import { prisma } from "@/lib/db";
+import { crmLog } from "@/modules/crm/crm-pipeline-logger";
+import { isAutopilotActionSafe } from "@/modules/crm/autopilot-safety";
 import { playbookLog } from "@/modules/playbook-memory/playbook-memory.logger";
+import { playbookLearningBridge } from "@/modules/playbook-memory/services/playbook-learning-bridge.service";
 import { playbookMemoryAssignmentService } from "@/modules/playbook-memory/services/playbook-memory-assignment.service";
 import type { PlaybookBanditContext } from "@/modules/playbook-memory/types/playbook-memory.types";
-import { getLeadRecommendations, type LeadPlaybookRec } from "./broker-crm-playbook.service";
+import { getLeadRecommendationsWithPlaybooks, type LeadPlaybookRec } from "./broker-crm-playbook.service";
 import { scoreLead, type LeadScoreError, type LeadScoreResult } from "./broker-crm-ai.service";
 
 export type EvaluateLeadResult = {
@@ -10,17 +13,30 @@ export type EvaluateLeadResult = {
   leadId: string;
   score: LeadScoreResult | LeadScoreError;
   recommendations: LeadPlaybookRec[];
-  /** Bandit assignment when a safe candidate exists. */
-  assignment: Awaited<ReturnType<typeof playbookMemoryAssignmentService.assignBestPlaybook>> | null;
-  /** One-line for CRM UI. */
+  /** Bandit or manual fallback assignment when a safe candidate exists (audit row; not executed). */
+  assignment: Awaited<ReturnType<typeof playbookMemoryAssignmentService.assignBestOrManualFallback>> | null;
+  /** @deprecated Use suggestedNextAction */
   suggestedNext: string | null;
+  suggestedNextAction: string | null;
+  recommendation: LeadPlaybookRec | null;
+  /** 0–1 confidence from normalized lead score when scoring succeeded; else low prior. */
+  confidence: number;
+  /** Aggregated playbook policy blocks (suggest-only; never executed). */
+  blockedReasons: string[];
 };
 
+function confidenceFromScore(score: LeadScoreResult | LeadScoreError): number {
+  if (!score.ok) return 0.35;
+  return Math.min(1, Math.max(0.15, score.score));
+}
+
 /**
- * Autopilot evaluation: score + recs + optional playbook assignment + internal suggested action row. Never throws.
+ * Autopilot evaluation: score + recs + playbook-memory assignment + internal suggested action row.
+ * No external messaging; no financial/legal automation. Never throws.
  */
-export async function evaluateLead(leadId: string): Promise<EvaluateLeadResult | { ok: false; error: string }> {
+export async function evaluateLead(leadOrId: string | { id: string }): Promise<EvaluateLeadResult | { ok: false; error: string }> {
   try {
+    const leadId = typeof leadOrId === "string" ? leadOrId : String(leadOrId?.id ?? "");
     if (!leadId?.trim()) {
       return { ok: false, error: "invalid_lead" };
     }
@@ -42,33 +58,39 @@ export async function evaluateLead(leadId: string): Promise<EvaluateLeadResult |
     }
 
     const score = await scoreLead(leadId);
-    const recommendations = await getLeadRecommendations(leadId);
+    const { items: recommendations, playbooks: playbookRecsRaw } = await getLeadRecommendationsWithPlaybooks(leadId);
+    const allowedPlaybookIds = recommendations.filter((r) => r.allowed).map((r) => r.playbookId);
 
-    let assignment: Awaited<ReturnType<typeof playbookMemoryAssignmentService.assignBestPlaybook>> | null = null;
+    let assignment: Awaited<ReturnType<typeof playbookMemoryAssignmentService.assignBestOrManualFallback>> | null = null;
+    const bandit: PlaybookBanditContext = {
+      domain: "LEADS",
+      entityType: "broker_lead",
+      entityId: leadId,
+      market: undefined,
+      segment: {
+        source: "broker_crm_autopilot",
+        hasListing: Boolean(lead.listingId),
+        wave: "evaluate_lead",
+      },
+      signals: {
+        hasListing: lead.listingId != null,
+        status: lead.status,
+        priorityLabel: lead.priorityLabel,
+      },
+      candidatePlaybookIds: allowedPlaybookIds.length ? allowedPlaybookIds : undefined,
+    };
     try {
-      const allowedIds = recommendations.filter((r) => r.allowed).map((r) => r.playbookId);
-      const bandit: PlaybookBanditContext = {
-        domain: "LEADS",
-        entityType: "lecipm_broker_crm_lead",
-        entityId: leadId,
-        market: undefined,
-        segment: {
-          source: "broker_crm_autopilot",
-          hasListing: Boolean(lead.listingId),
-        },
-        signals: {
-          hasListing: lead.listingId != null,
-          status: lead.status,
-          priorityLabel: lead.priorityLabel,
-        },
-        candidatePlaybookIds: allowedIds.length ? allowedIds : undefined,
-      };
-      assignment = await playbookMemoryAssignmentService.assignBestPlaybook(bandit);
+      assignment = await playbookMemoryAssignmentService.assignBestOrManualFallback(bandit);
     } catch (e) {
       playbookLog.warn("evaluateLead assignment", { message: e instanceof Error ? e.message : String(e) });
     }
 
     const top = recommendations.find((r) => r.allowed) ?? null;
+    try {
+      playbookLearningBridge.afterBrokerLeadAutopilotEvaluate({ leadId, assignment });
+    } catch (e) {
+      playbookLog.warn("evaluateLead learning bridge", { message: e instanceof Error ? e.message : String(e) });
+    }
     let suggestedNext: string | null = null;
     if (top) {
       suggestedNext = `Review playbook “${top.name}” — ${top.reason.slice(0, 160)}`;
@@ -88,13 +110,14 @@ export async function evaluateLead(leadId: string): Promise<EvaluateLeadResult |
             createdAt: { gte: new Date(Date.now() - 36 * 60 * 60 * 1000) },
           },
         });
-        if (!recent) {
+        const actionType = "mark_qualified";
+        if (!recent && isAutopilotActionSafe(actionType, "playbook_recommendation")) {
           await prisma.lecipmBrokerAutopilotAction.create({
             data: {
               brokerUserId: lead.brokerUserId,
               leadId,
               threadId: lead.threadId ?? undefined,
-              actionType: "mark_qualified",
+              actionType,
               status: "suggested",
               title: `Playbook: ${top.name}`.slice(0, 512),
               reason: top.reason,
@@ -107,6 +130,14 @@ export async function evaluateLead(leadId: string): Promise<EvaluateLeadResult |
       }
     }
 
+    const confidence = confidenceFromScore(score);
+    const blockedReasons = [
+      ...new Set(
+        playbookRecsRaw.flatMap((r) => (r.allowed ? [] : r.blockedReasons?.length ? r.blockedReasons : ["policy_blocked"])),
+      ),
+    ];
+    crmLog.info("autopilot_evaluate_lead", { leadId, confidence, hasAssignment: Boolean(assignment) });
+
     return {
       ok: true,
       leadId,
@@ -114,6 +145,10 @@ export async function evaluateLead(leadId: string): Promise<EvaluateLeadResult |
       recommendations,
       assignment,
       suggestedNext,
+      suggestedNextAction: suggestedNext,
+      recommendation: top,
+      confidence,
+      blockedReasons,
     };
   } catch (e) {
     playbookLog.warn("evaluateLead", { message: e instanceof Error ? e.message : String(e) });
