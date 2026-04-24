@@ -119,16 +119,18 @@ export function detectMissingInformation(ctx: BrokerAssistantContext): MissingIn
     }
   }
 
-  if (!ctx.broker?.brokerDisclosureRecorded && ctx.broker?.displayName) {
-    out.push(
-      mi(
-        "broker_disclosure",
-        "broker.disclosure",
-        "Vérifiez que la divulgation du courtier requise est consignée avant envoi au client.",
-        "Ensure required broker disclosure is recorded before sending to the client.",
-        "medium",
-      ),
-    );
+  if (!ctx.fsboContext && ctx.transactionMode !== "fsbo_neutral") {
+    if (!ctx.broker?.brokerDisclosureRecorded && ctx.broker?.displayName) {
+      out.push(
+        mi(
+          "broker_disclosure",
+          "broker.disclosure",
+          "Vérifiez que la divulgation du courtier requise est consignée avant envoi au client.",
+          "Ensure required broker disclosure is recorded before sending to the client.",
+          "medium",
+        ),
+      );
+    }
   }
 
   if (ctx.disclosures?.brokerHasInterest && !ctx.disclosures?.conflictOfInterestDeclared) {

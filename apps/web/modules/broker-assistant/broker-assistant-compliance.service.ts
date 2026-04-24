@@ -40,16 +40,18 @@ export function evaluateBrokerAssistantCompliance(
     );
   }
 
-  if (!ctx.broker?.brokerDisclosureRecorded) {
-    flags.push(
-      flag(
-        "broker_disclosure",
-        "BROKER_DISCLOSURE",
-        "Vérifiez la divulgation du courtier et les obligations d’information avant toute communication engageante.",
-        "Verify broker disclosure and information duties before any binding communication.",
-        "warning",
-      ),
-    );
+  if (!ctx.fsboContext && ctx.transactionMode !== "fsbo_neutral") {
+    if (!ctx.broker?.brokerDisclosureRecorded) {
+      flags.push(
+        flag(
+          "broker_disclosure",
+          "BROKER_DISCLOSURE",
+          "Vérifiez la divulgation du courtier et les obligations d’information avant toute communication engageante.",
+          "Verify broker disclosure and information duties before any binding communication.",
+          "warning",
+        ),
+      );
+    }
   }
 
   if (ctx.isPublicOrClientFacing && DEFAULT_QUEBEC_LANGUAGE_POLICY.requireFrenchForPublicContent) {
