@@ -12,13 +12,9 @@ const STEPS = ["Household", "Lifestyle", "Place & budget", "Preferences"];
 
 type Props = { basePath: string };
 
+/** Sparse defaults: partial / sparse answers still produce a valid profile. */
 const defaultQ: Partial<DreamHomeQuestionnaireInput> = {
-  familySize: 3,
   guestsFrequency: "medium",
-  workFromHome: "sometimes",
-  transactionType: "buy",
-  budgetMax: 750_000,
-  city: "montreal",
   privacyPreference: "medium",
   hostingPreference: "medium",
   kitchenPriority: "medium",
@@ -26,7 +22,7 @@ const defaultQ: Partial<DreamHomeQuestionnaireInput> = {
   commutePriority: "medium",
   noiseTolerance: "medium",
   specialSpaces: [],
-  stylePreferences: ["modern", "bright"],
+  stylePreferences: [],
   lifestyleTags: [],
   mustHaves: [],
   dealBreakers: [],

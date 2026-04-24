@@ -94,6 +94,8 @@ export type DreamHomeProfile = {
   /** One-line headline */
   summary?: string;
   householdProfile: string;
+  /** Tags from the questionnaire + explicit rules (e.g. hosting/guests), never inferred protected traits */
+  lifestyleTags?: string[];
   propertyTraits: string[];
   neighborhoodTraits: string[];
   searchFilters: DreamHomeSearchFilters;

@@ -4,6 +4,7 @@ import { validateFormSchema } from "./form-schema";
 import { listMissingCriticalNoticeAcks } from "./notice-ack.service";
 import { isProductionGuardRelaxed, productionGuardComplianceMinScore } from "./production-mode";
 import { recordProductionGuardAudit } from "./audit-service";
+import { assertAiDraftClearForSignature } from "@/modules/ai-drafting-correction/turbo-draft-gate";
 
 export type SignatureGateInput = {
   deal: Pick<Deal, "id" | "brokerId" | "listingId" | "executionMetadata">;
@@ -36,6 +37,14 @@ async function resolveComplianceScore(deal: SignatureGateInput["deal"]): Promise
     if (l?.complianceScore != null) return l.complianceScore;
   }
   return null;
+}
+
+function parseAiDraftId(metadata: unknown): string | null {
+  if (!metadata || typeof metadata !== "object") return null;
+  const pg = (metadata as Record<string, unknown>).productionGuard;
+  if (!pg || typeof pg !== "object") return null;
+  const id = (pg as Record<string, unknown>).aiDraftId;
+  return typeof id === "string" && id.trim() ? id.trim() : null;
 }
 
 function parsePaymentRequirement(metadata: unknown): string[] | null {
@@ -101,6 +110,15 @@ export async function validateBeforeSignature(
     if (!v.ok) {
       errors.push(...v.errors);
       blockingReasons.push("FORM_SCHEMA_INVALID");
+    }
+  }
+
+  const aiDraftId = parseAiDraftId(input.deal.executionMetadata);
+  if (aiDraftId) {
+    const aiGate = await assertAiDraftClearForSignature(aiDraftId, input.userId);
+    if (!aiGate.ok) {
+      errors.push(...aiGate.errors);
+      blockingReasons.push("AI_DRAFT_REVIEW_INCOMPLETE");
     }
   }
 

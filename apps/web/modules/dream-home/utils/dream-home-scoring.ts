@@ -24,7 +24,10 @@ export function suggestBedroomBathMinimums(p: {
   const ch = p.childrenCount != null && Number.isFinite(p.childrenCount) ? Math.max(0, p.childrenCount) : 0;
   const guestBoost = p.guestsFrequency === "high" ? 1 : p.guestsFrequency === "medium" ? 0.5 : 0;
   const elderBoost = p.eldersInHome ? 0.5 : 0;
-  const minBedrooms = Math.min(8, Math.max(1, Math.ceil(fs * 0.4 + ch * 0.35 + guestBoost + elderBoost * 0.2)));
+  let minBedrooms = Math.min(8, Math.max(1, Math.ceil(fs * 0.4 + ch * 0.35 + guestBoost + elderBoost * 0.2)));
+  if (fs >= 4) {
+    minBedrooms = Math.max(minBedrooms, 3);
+  }
   const minBathrooms = Math.min(6, Math.max(1, Math.floor(minBedrooms / 2) + (p.guestsFrequency === "high" ? 1 : 0)));
   return { minBedrooms, minBathrooms };
 }

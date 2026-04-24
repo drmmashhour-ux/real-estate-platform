@@ -566,6 +566,13 @@ model User {
   dealsAsBroker                            Deal[]                                   @relation("DealBroker")
   dealCapitalAllocationsProposed           DealCapitalAllocation[]                  @relation("DealCapitalAllocationProposedBy")
   dealCapitalAllocationsApproved           DealCapitalAllocation[]                  @relation("DealCapitalAllocationApprovedBy")
+  crmDealInvestorCommitments             CrmDealInvestorCommitment[]              @relation("CrmDealInvestorCommitmentInvestor")
+  crmDealInvestorCommitmentsApproved     CrmDealInvestorCommitment[]              @relation("CrmDealInvestorCommitmentApprovedBy")
+  crmDealInvestorCommitmentsRejected     CrmDealInvestorCommitment[]              @relation("CrmDealInvestorCommitmentRejectedBy")
+  crmDealInvestorSubscriptions           CrmDealInvestorSubscription[]            @relation("CrmDealInvestorSubscriptionInvestor")
+  crmDealInvestorPaymentsRecorded        CrmDealInvestorPayment[]                 @relation("CrmDealInvestorPaymentRecordedBy")
+  crmDealCapTableEntries                 CrmDealCapTableEntry[]                   @relation("CrmDealCapTableInvestor")
+  lecipmInvestmentFlowAuditLogs          LecipmInvestmentFlowAuditLog[]           @relation("LecipmInvestmentFlowAuditActor")
   lecipmProductionGuardNoticeAcks          LecipmProductionGuardNoticeAck[]
   lecipmProductionGuardAuditEvents         LecipmProductionGuardAuditEvent[]        @relation("LecipmProductionGuardAuditActor")
   lecipmProductionGuardArtifactsCreated    LecipmProductionGuardArtifact[]          @relation("LecipmProductionGuardArtifactCreator")
@@ -11228,6 +11235,109 @@ model DealCapitalAllocation {
   @@map("deal_capital_allocations")
 }
 
+/// CRM `Deal` investment commitment — soft interest → broker CONFIRMED → subscription → funded (AMF-style controls).
+/// Distinct from fundraising `InvestorCommitment` and AMF `InvestorCapitalCommitment`.
+model CrmDealInvestorCommitment {
+  id                   String    @id @default(cuid())
+  dealId               String    @map("deal_id")
+  deal                 Deal      @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  investorId           String    @map("investor_id")
+  investor             User      @relation("CrmDealInvestorCommitmentInvestor", fields: [investorId], references: [id], onDelete: Restrict)
+  spvId                String?   @map("spv_id")
+  spv                  AmfSpv?   @relation(fields: [spvId], references: [id], onDelete: SetNull)
+  committedAmountCents Int       @map("committed_amount_cents")
+  currency             String    @default("CAD") @db.VarChar(8)
+  /// SOFT_COMMIT | CONFIRMED | REJECTED | WITHDRAWN
+  status               String    @default("SOFT_COMMIT") @map("status") @db.VarChar(24)
+  brokerApprovedAt     DateTime? @map("broker_approved_at")
+  brokerApprovedById   String?   @map("broker_approved_by_id")
+  brokerApprovedBy     User?     @relation("CrmDealInvestorCommitmentApprovedBy", fields: [brokerApprovedById], references: [id], onDelete: SetNull)
+  brokerRejectedAt     DateTime? @map("broker_rejected_at")
+  brokerRejectedById   String?   @map("broker_rejected_by_id")
+  brokerRejectedBy     User?     @relation("CrmDealInvestorCommitmentRejectedBy", fields: [brokerRejectedById], references: [id], onDelete: SetNull)
+  rejectionReason      String?   @map("rejection_reason") @db.Text
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+
+  subscription CrmDealInvestorSubscription?
+
+  @@index([dealId, status])
+  @@index([investorId])
+  @@map("crm_deal_investor_commitments")
+}
+
+model CrmDealInvestorSubscription {
+  id                      String                    @id @default(cuid())
+  commitmentId            String                    @unique @map("commitment_id")
+  commitment              CrmDealInvestorCommitment @relation(fields: [commitmentId], references: [id], onDelete: Cascade)
+  investorId              String                    @map("investor_id")
+  investor                User                      @relation("CrmDealInvestorSubscriptionInvestor", fields: [investorId], references: [id], onDelete: Restrict)
+  subscriptionAmountCents Int                       @map("subscription_amount_cents")
+  signed                  Boolean                   @default(false)
+  signedAt                DateTime?                 @map("signed_at")
+  documentId              String?                   @map("document_id")
+  document                DealDocument?             @relation(fields: [documentId], references: [id], onDelete: SetNull)
+  createdAt               DateTime                  @default(now()) @map("created_at")
+
+  payments CrmDealInvestorPayment[]
+
+  @@index([investorId])
+  @@map("crm_deal_investor_subscriptions")
+}
+
+model CrmDealInvestorPayment {
+  id               String                    @id @default(cuid())
+  subscriptionId String                    @map("subscription_id")
+  subscription     CrmDealInvestorSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  amountCents      Int                       @map("amount_cents")
+  /// WIRE | CHEQUE
+  method           String                    @db.VarChar(16)
+  received         Boolean                   @default(false)
+  receivedAt       DateTime?                 @map("received_at")
+  referenceNumber  String?                   @map("reference_number") @db.VarChar(128)
+  recordedByUserId String?                   @map("recorded_by_user_id")
+  recordedBy       User?                     @relation("CrmDealInvestorPaymentRecordedBy", fields: [recordedByUserId], references: [id], onDelete: SetNull)
+  createdAt        DateTime                  @default(now()) @map("created_at")
+
+  @@index([subscriptionId])
+  @@map("crm_deal_investor_payments")
+}
+
+model CrmDealCapTableEntry {
+  id                  String   @id @default(cuid())
+  spvId               String   @map("spv_id")
+  spv                 AmfSpv   @relation(fields: [spvId], references: [id], onDelete: Cascade)
+  investorId          String   @map("investor_id")
+  investor            User     @relation("CrmDealCapTableInvestor", fields: [investorId], references: [id], onDelete: Cascade)
+  investedAmountCents Int      @map("invested_amount_cents")
+  ownershipPercent    Float    @map("ownership_percent")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  @@unique([spvId, investorId])
+  @@index([spvId])
+  @@map("crm_deal_cap_table_entries")
+}
+
+/// [investment-flow] audit — commitment, approval, subscription, payment, cap table (non-repudiation).
+model LecipmInvestmentFlowAuditLog {
+  id          String   @id @default(cuid())
+  dealId      String   @map("deal_id")
+  deal        Deal     @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  actorUserId String?  @map("actor_user_id")
+  actor       User?    @relation("LecipmInvestmentFlowAuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  action      String   @db.VarChar(64)
+  entityType  String?  @map("entity_type") @db.VarChar(64)
+  entityId    String?  @map("entity_id") @db.VarChar(64)
+  metadata    Json     @default("{}") @db.JsonB
+  diff        Json?    @db.JsonB
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([dealId, createdAt])
+  @@index([action])
+  @@map("lecipm_investment_flow_audit_logs")
+}
+
 /// Critical disclosure / risk notice — explicit checkbox acknowledgment (timestamp + user + notice id).
 model LecipmProductionGuardNoticeAck {
   id             String   @id @default(cuid())
@@ -14309,6 +14419,7 @@ model DealDocument {
   complianceCases                ComplianceCase[]
   qaReviews                      QaReview[]
   lecipmProductionGuardArtifacts LecipmProductionGuardArtifact[]
+  crmDealInvestorSubscriptions   CrmDealInvestorSubscription[]
 
   @@index([dealId])
   @@index([workflowStatus])
@@ -19046,6 +19157,63 @@ model AiInteractionLog {
   @@index([createdAt])
   @@index([legalContext, createdAt])
   @@map("ai_interaction_logs")
+}
+
+// ---------------------------------------------------------------------------
+// LECIPM AI drafting + correction (Turbo Form / ProductionGuard adjacent)
+// ---------------------------------------------------------------------------
+model AiDraftRun {
+  id         String   @id @default(cuid())
+  draftId    String   @map("draft_id")
+  userId     String?  @map("user_id")
+  runType    String   @map("run_type")
+  status     String   @default("COMPLETED")
+  inputJson  Json?    @map("input_json")
+  outputJson Json?    @map("output_json")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([draftId])
+  @@index([userId])
+  @@index([runType])
+  @@map("ai_draft_runs")
+}
+
+model AiDraftFinding {
+  id             String    @id @default(cuid())
+  draftId        String    @map("draft_id")
+  userId         String?   @map("user_id")
+  findingKey     String    @map("finding_key")
+  severity       String
+  sectionKey     String?   @map("section_key")
+  messageFr      String    @map("message_fr") @db.Text
+  messageEn      String?   @map("message_en") @db.Text
+  suggestedFixFr String?   @map("suggested_fix_fr") @db.Text
+  suggestedFixEn String?   @map("suggested_fix_en") @db.Text
+  blocking       Boolean   @default(false)
+  resolved       Boolean   @default(false)
+  createdAt      DateTime  @default(now()) @map("created_at")
+  resolvedAt     DateTime? @map("resolved_at")
+
+  @@index([draftId])
+  @@index([severity])
+  @@index([blocking])
+  @@map("ai_draft_findings")
+}
+
+model AiDraftSuggestion {
+  id           String   @id @default(cuid())
+  draftId      String   @map("draft_id")
+  userId       String?  @map("user_id")
+  fieldKey     String?  @map("field_key")
+  suggestionFr String   @map("suggestion_fr") @db.Text
+  suggestionEn String?  @map("suggestion_en") @db.Text
+  actionType   String   @map("action_type")
+  applied      Boolean  @default(false)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([draftId])
+  @@index([fieldKey])
+  @@map("ai_draft_suggestions")
 }
 
 enum AdminReportPeriodType {
@@ -36064,6 +36232,8 @@ model AmfSpv {
 
   exemptDistributionFiles    ExemptDistributionFile[]
   investorCapitalCommitments InvestorCapitalCommitment[]
+  crmDealInvestorCommitments CrmDealInvestorCommitment[]
+  crmDealCapTableEntries     CrmDealCapTableEntry[]
 
   @@map("amf_spvs")
 }
@@ -37775,4 +37945,46 @@ model GrowthPlaybookMemory {
 
   @@index([channel, score])
   @@map("growth_playbook_memory")
+}
+
+// ---------------------------------------------------------------------------
+// Multi-Agent Learning Coordination — independent agents competing safely.
+// ---------------------------------------------------------------------------
+
+enum AiAgentStatus {
+  ACTIVE
+  PAUSED
+}
+
+model AiAgent {
+  id               String        @id @default(cuid())
+  name             String        @db.VarChar(128)
+  domain           String        @db.VarChar(64) // pricing, ranking, messaging, etc.
+  status           AiAgentStatus @default(ACTIVE)
+  performanceScore Float         @default(0.5) @map("performance_score")
+  createdAt        DateTime      @default(now()) @map("created_at")
+  updatedAt        DateTime      @updatedAt @map("updated_at")
+
+  strategies AiAgentStrategy[]
+
+  @@index([domain, status])
+  @@map("ai_agents")
+}
+
+model AiAgentStrategy {
+  id           String   @id @default(cuid())
+  agentId      String   @map("agent_id")
+  agent        AiAgent  @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  strategyKey  String   @map("strategy_key") @db.VarChar(128)
+  description  String?  @db.Text
+  payloadJson  Json?    @map("payload_json")
+  successCount Int      @default(0) @map("success_count")
+  failureCount Int      @default(0) @map("failure_count")
+  winRate      Float    @default(0) @map("win_rate")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([agentId])
+  @@index([strategyKey])
+  @@map("ai_agent_strategies")
 }

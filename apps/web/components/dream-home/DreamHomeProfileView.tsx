@@ -20,6 +20,19 @@ export function DreamHomeProfileView({ profile }: Props) {
     <div className="mt-6 space-y-6">
       {profile.summary && <p className="text-sm text-slate-200">{profile.summary}</p>}
       <DreamHomeTraitCard label="Your home profile">{profile.householdProfile}</DreamHomeTraitCard>
+      {!!profile.lifestyleTags?.length && (
+        <div>
+          <h2 className="text-lg font-semibold text-white">Lifestyle tags (from your answers)</h2>
+          <p className="mt-1 text-xs text-slate-500">Explicit only — we don&apos;t infer background or protected categories.</p>
+          <ul className="mt-2 flex flex-wrap gap-2">
+            {profile.lifestyleTags!.map((t) => (
+              <li key={t} className="rounded-full border border-white/10 px-3 py-1 text-xs text-slate-200">
+                {t}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       <div>
         <h2 className="text-lg font-semibold text-white">Ideal property traits</h2>
         <ul className="mt-2 list-inside list-disc text-slate-300">

@@ -19,7 +19,7 @@ export function DreamHomeResults({ result, basePath, onRefine }: Props) {
     <div className="mt-10 space-y-8">
       <div className="flex flex-wrap items-center gap-2 text-xs text-slate-400">
         <span className="rounded-full border border-white/10 px-2 py-0.5">
-          {source === "ai" ? "Profile: AI narrative" : "Profile: deterministic (set OPENAI_API_KEY for AI)"}
+          Dream Home v1 — rule-based profile &amp; match (no LLM)
         </span>
         {(warnings ?? []).map((w) => (
           <span key={w} className="text-amber-200/80">

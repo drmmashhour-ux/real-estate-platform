@@ -77,3 +77,6 @@ export async function rankDreamHomeListings(
   void logDreamHomeRankListings({ listingIds: ranked.map((x) => x.id), topN: ranked.length }).catch(() => {});
   return { ranked, playbooksConsidered, warnings };
 }
+
+/** @alias rankDreamHomeListings */
+export const rankListings = rankDreamHomeListings;

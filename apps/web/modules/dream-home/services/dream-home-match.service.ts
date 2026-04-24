@@ -2,14 +2,25 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { fsboCityWhereFromParam } from "@/lib/geo/city-search";
 import type { DreamHomeProfile, DreamHomeMatchResult, DreamHomeMatchedListing } from "../types/dream-home.types";
-import { scoreListingMatch, buildDefaultRankingPreferences } from "../utils/dream-home-scoring";
+import { buildDefaultRankingPreferences } from "../utils/dream-home-scoring";
 import { logDreamHomeMemory } from "./dream-home-playbook-memory.service";
+import { rankDreamHomeListings } from "./dream-home-ranking.service";
 
 const TAKE = 36;
 const RETURN_TOP = 12;
 
 /**
- * Ranks public FSBO listings using profile filters + deterministic scoring (no LLM). Never throws.
+ * Fetches public FSBO listings, then `rankListings` scores and sorts (no LLM). Never throws.
+ */
+export async function matchListings(
+  profile: DreamHomeProfile,
+  source: DreamHomeMatchResult["source"] = "deterministic",
+): Promise<DreamHomeMatchResult> {
+  return matchDreamHomeListings(profile, source);
+}
+
+/**
+ * Fetches + ranks public FSBO listings (deterministic). Never throws.
  */
 export async function matchDreamHomeListings(
   profile: DreamHomeProfile,
@@ -77,17 +88,8 @@ export async function matchDreamHomeListings(
       },
     });
 
-    const scored: DreamHomeMatchedListing[] = rows.map((r) => {
+    const candidates: DreamHomeMatchedListing[] = rows.map((r) => {
       const desc = r.description ?? "";
-      const sm = scoreListingMatch(prof, {
-        title: r.title,
-        city: r.city,
-        priceCents: r.priceCents,
-        bedrooms: r.bedrooms,
-        bathrooms: r.bathrooms,
-        description: desc,
-      });
-      const baseWhy = sm.scoreBreakdown?.explanation?.slice(0, 2) ?? [];
       return {
         id: r.id,
         title: r.title,
@@ -98,20 +100,32 @@ export async function matchDreamHomeListings(
         coverImage: r.coverImage,
         propertyType: r.propertyType,
         description: desc,
-        matchScore: sm.matchScore,
-        whyThisFits: baseWhy.length
-          ? baseWhy
-          : [
-              minBeds != null && (r.bedrooms ?? 0) >= minBeds
-                ? "Bedroom count matches your minimum."
-                : "Meets the filters you set; review details in person or online.",
-            ],
-        scoreBreakdown: sm.scoreBreakdown,
+        matchScore: 0,
+        whyThisFits: [] as string[],
       };
     });
 
-    scored.sort((a, b) => b.matchScore - a.matchScore);
-    const listings = scored.slice(0, RETURN_TOP);
+    const { ranked, warnings: rankWarnings } = await rankDreamHomeListings(prof, candidates, {});
+    const listings: DreamHomeMatchedListing[] = ranked.slice(0, RETURN_TOP).map((L) => {
+      const explain = [
+        ...(L.scoreBreakdown?.explanation?.slice(0, 2) ?? []),
+        ...L.rankRationale.slice(0, 2),
+      ].filter((x) => Boolean(x && String(x).trim()));
+      const { rank: _r, rankRationale: _rr, ...row } = L;
+      return {
+        ...row,
+        whyThisFits: explain.length
+          ? explain.slice(0, 5)
+          : [
+              minBeds != null && (L.bedrooms ?? 0) >= (minBeds ?? 0)
+                ? "Bedroom count matches your minimum."
+                : "Meets the filters you set; review details in person or online.",
+            ],
+      };
+    });
+    for (const w of rankWarnings) {
+      warnings.push(w);
+    }
 
     const tradeoffs: string[] = [
       "Matching uses your explicit filters and listing text — not inferred background.",

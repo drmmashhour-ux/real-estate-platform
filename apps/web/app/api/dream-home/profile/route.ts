@@ -17,12 +17,27 @@ export async function POST(req: NextRequest) {
   } catch {
     return NextResponse.json({ ok: false, error: "invalid_json" }, { status: 400 });
   }
-  const userId = await getSessionUserIdFromRequest(req);
-  const merged = userId ? await mergeStoredPreferencesIntoIntake(userId, body) : body;
-  const { profile, source } = await buildDreamHomeProfile(merged);
-  if (userId) {
-    const q = normalizeQuestionnaire(merged);
-    void recordDreamHomeQuestionnaire(userId, q, profile);
+  try {
+    const userId = await getSessionUserIdFromRequest(req).catch(() => null);
+    let merged: unknown = body;
+    if (userId) {
+      try {
+        merged = await mergeStoredPreferencesIntoIntake(userId, body);
+      } catch {
+        merged = body;
+      }
+    }
+    const { profile, source } = await buildDreamHomeProfile(merged);
+    if (userId) {
+      try {
+        const q = normalizeQuestionnaire(merged);
+        void recordDreamHomeQuestionnaire(userId, q, profile);
+      } catch {
+        /* best-effort */
+      }
+    }
+    return NextResponse.json({ ok: true, profile, source, persisted: Boolean(userId) });
+  } catch {
+    return NextResponse.json({ ok: false, error: "profile_unavailable" });
   }
-  return NextResponse.json({ ok: true, profile, source, persisted: Boolean(userId) });
 }

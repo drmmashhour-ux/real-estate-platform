@@ -35,17 +35,21 @@ export async function POST(req: Request) {
   if (!body || typeof body !== "object") {
     return NextResponse.json({ ok: false, error: "invalid_body" }, { status: 400 });
   }
-  const b = body as Record<string, unknown>;
-  let profile: DreamHomeProfile | null = isProfile(b.profile) ? b.profile : null;
-  let source: "ai" | "deterministic" = b.source === "ai" || b.source === "deterministic" ? b.source : "deterministic";
-  if (!profile) {
-    const built = await buildDreamHomeProfile(body);
-    profile = built.profile;
-    source = built.source;
+  try {
+    const b = body as Record<string, unknown>;
+    let profile: DreamHomeProfile | null = isProfile(b.profile) ? b.profile : null;
+    let source: "ai" | "deterministic" = b.source === "ai" || b.source === "deterministic" ? b.source : "deterministic";
+    if (!profile) {
+      const built = await buildDreamHomeProfile(body);
+      profile = built.profile;
+      source = built.source;
+    }
+    if (!profile) {
+      return NextResponse.json({ ok: false, error: "profile_required" }, { status: 400 });
+    }
+    const result = await matchDreamHomeListings(profile, source);
+    return NextResponse.json({ ok: true, ...result });
+  } catch {
+    return NextResponse.json({ ok: false, error: "match_unavailable" });
   }
-  if (!profile) {
-    return NextResponse.json({ ok: false, error: "profile_required" }, { status: 400 });
-  }
-  const result = await matchDreamHomeListings(profile, source);
-  return NextResponse.json({ ok: true, ...result });
 }
