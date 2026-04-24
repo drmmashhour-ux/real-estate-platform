@@ -187,6 +187,9 @@ export function InvestorPacketDashboardClient({ dealId, investorId }: { dealId: 
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Link href={`/dashboard/deals/${dealId}/investor-matches`} className="rounded-md border px-3 py-1.5 text-xs">
+            Investor matches
+          </Link>
           <Link href={`/dashboard/deals/${dealId}/investors`} className="rounded-md border px-3 py-1.5 text-xs">
             ← Investors
           </Link>

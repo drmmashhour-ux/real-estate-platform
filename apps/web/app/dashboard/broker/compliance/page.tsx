@@ -39,7 +39,7 @@ export default function BrokerCompliancePage() {
         />
         <HubCard
           title="Private investor packets"
-          description="From a CRM deal: /dashboard/deals/[id]/investors → Private packet. Broker approve & single-investor release."
+          description="Deal → Investor matches → Prepare packet → Approve → Release. Paths: /dashboard/deals/[id]/investor-matches and …/investor-packet/[investorId]."
           href="/dashboard/command-center"
         />
         <HubCard

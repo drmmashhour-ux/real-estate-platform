@@ -48,6 +48,12 @@ export function DealInvestorsDashboardClient({ dealId }: { dealId: string }) {
         <div>
           <h1 className="text-xl font-semibold">Investors</h1>
           <p className="text-muted-foreground font-mono text-xs">{dealId}</p>
+          <Link
+            href={`/dashboard/deals/${dealId}/investor-matches`}
+            className="mt-2 inline-block text-xs text-blue-600 underline"
+          >
+            Investor matches (AI ranking)
+          </Link>
         </div>
         <button
           type="button"

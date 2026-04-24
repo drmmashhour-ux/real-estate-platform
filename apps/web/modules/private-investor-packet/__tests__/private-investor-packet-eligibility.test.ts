@@ -55,7 +55,7 @@ describe("assertPrivateInvestorPacketEligibility", () => {
     if (!r.ok) expect(r.blockers.some((b) => /ACTIVE/i.test(b))).toBe(true);
   });
 
-  it("passes when AMF profile, KYC, accreditation, suitability, and disclosures ok", async () => {
+  it("blocks when capital deal exists but exemption preference missing in suitability", async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue({
       id: "u1",
       accountStatus: AccountStatus.ACTIVE,
@@ -66,6 +66,30 @@ describe("assertPrivateInvestorPacketEligibility", () => {
       kycStatus: "VERIFIED",
       accreditationStatus: "ACCREDITED",
       suitabilityIntakeJson: { completed: true },
+    } as never);
+    vi.mocked(prisma.deal.findUnique).mockResolvedValue({ listingId: "lst1" } as never);
+    vi.mocked(prisma.amfCapitalDeal.findFirst).mockResolvedValue({ id: "cd1" } as never);
+    vi.mocked(prisma.amfDealDisclosure.count).mockResolvedValue(0);
+    const r = await assertPrivateInvestorPacketEligibility({
+      dealId: "deal-1",
+      investorUserId: "u1",
+      spvId: null,
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.blockers.some((b) => /Exemption path not selected/i.test(b))).toBe(true);
+  });
+
+  it("passes when AMF profile, KYC, accreditation, suitability, and disclosures ok", async () => {
+    vi.mocked(prisma.user.findUnique).mockResolvedValue({
+      id: "u1",
+      accountStatus: AccountStatus.ACTIVE,
+      email: "a@b.c",
+    } as never);
+    vi.mocked(prisma.amfInvestor.findUnique).mockResolvedValue({
+      id: "amf1",
+      kycStatus: "VERIFIED",
+      accreditationStatus: "ACCREDITED",
+      suitabilityIntakeJson: { completed: true, exemptionPath: "ACCREDITED_INVESTOR" },
     } as never);
     vi.mocked(prisma.deal.findUnique).mockResolvedValue({ listingId: "lst1" } as never);
     vi.mocked(prisma.amfCapitalDeal.findFirst).mockResolvedValue({ id: "cd1" } as never);

@@ -18,7 +18,7 @@ export type DealInvestorMatchRow = {
   complianceBlockers: string[];
 };
 
-type DealMatchContext = {
+export type DealMatchContext = {
   dealId: string;
   buyerId: string;
   sellerId: string;
