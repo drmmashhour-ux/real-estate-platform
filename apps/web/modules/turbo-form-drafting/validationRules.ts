@@ -136,5 +136,38 @@ export function runValidationRules(input: TurboDraftInput): TurboDraftRisk[] {
     });
   }
 
+  // 13. Equitable Treatment (for unrepresented buyers)
+  if (representedStatus === "NOT_REPRESENTED" && input.role === "BUYER" && !answers.equitableTreatmentAck) {
+    risks.push({
+      ruleKey: "MISSING_EQUITABLE_TREATMENT_ACK",
+      severity: "CRITICAL",
+      messageFr: "L'avis sur le traitement équitable doit être accepté par l'acheteur non représenté.",
+      messageEn: "The fair treatment notice must be accepted by the unrepresented buyer.",
+      blocking: true,
+    });
+  }
+
+  // 14. OACIQ Buyer/Seller Guide Ack
+  if (!answers.oaciqGuideAck) {
+    risks.push({
+      ruleKey: "MISSING_OACIQ_GUIDE_ACK",
+      severity: "WARNING",
+      messageFr: "Il est recommandé de prendre connaissance du guide de l'OACIQ.",
+      messageEn: "It is recommended to review the OACIQ guide.",
+      blocking: false,
+    });
+  }
+
+  // 15. Movable vs Immovable ambiguity (Fixtures, etc.)
+  if (answers.inclusions && (answers.inclusions.toLowerCase().includes("lustre") || answers.inclusions.toLowerCase().includes("rideau"))) {
+    risks.push({
+      ruleKey: "MOVABLE_AMBIGUITY",
+      severity: "WARNING",
+      messageFr: "Attention: Certains biens (lustres, rideaux) peuvent être considérés comme meubles ou immeubles. Veuillez préciser s'ils sont inclus.",
+      messageEn: "Warning: Some items (chandeliers, curtains) can be considered movable or immovable. Please specify if they are included.",
+      blocking: false,
+    });
+  }
+
   return risks;
 }
