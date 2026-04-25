@@ -64,6 +64,7 @@
     "validate-core-flows": "pnpm validate:flows",
     "validate:five-hub-transactions": "pnpm --filter @lecipm/web run validate:five-hub-transactions",
     "e2e-simulation": "pnpm exec tsx scripts/e2e-simulation.ts",
+    "e2e:test": "pnpm --filter @lecipm/web run e2e:test",
     "db:migrate:deploy": "pnpm --filter @lecipm/web exec prisma migrate deploy",
     "tenant:backfill": "pnpm exec tsx scripts/backfill-tenant.ts",
     "validate:staging-stack": "pnpm validate:flows && pnpm --filter @lecipm/web run validate:executive-control && pnpm --filter @lecipm/web run validate:ranking-system && pnpm --filter @lecipm/web run validate:fraud",

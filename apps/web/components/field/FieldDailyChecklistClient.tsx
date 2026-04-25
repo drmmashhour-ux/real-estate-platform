@@ -146,8 +146,9 @@ export function FieldDailyChecklistClient() {
 
       <div className="grid gap-6 lg:grid-cols-[1fr,280px]">
         <div>
-          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-zinc-500">Chronologie</h2>
-          <div className="relative pl-2">
+          <h2 className="mb-1 text-sm font-semibold uppercase tracking-wider text-zinc-500">Chronologie</h2>
+          <p className="mb-4 text-xs text-zinc-500">Progression globale : {Math.round(taskPercent * 100)}% des tâches</p>
+          <div className="pl-0">
             {workBlocks.map((b, i) => (
               <BlockRow
                 key={b.id}
@@ -263,15 +264,17 @@ function BlockRow({
   const doneCount = block.tasks.filter((t) => doneMap[t.id]).length;
   const pct = block.tasks.length > 0 ? (doneCount / block.tasks.length) * 100 : 0;
   return (
-    <div className="relative flex gap-3 pb-8">
-      {!isLast && <div className="absolute left-[15px] top-6 bottom-0 w-px bg-zinc-800" aria-hidden />}
-      <div
-        className={cn(
-          "relative z-0 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[9px] font-bold tabular-nums",
-          isBreak ? "bg-zinc-800 text-zinc-500" : "bg-amber-500/20 text-amber-300",
-        )}
-      >
-        {isBreak ? "⏸" : `${Math.round(pct)}%`}
+    <div className="flex gap-3 pb-6">
+      <div className="flex w-8 shrink-0 flex-col items-center self-stretch">
+        <div
+          className={cn(
+            "z-[1] flex h-8 w-8 items-center justify-center rounded-full text-[9px] font-bold tabular-nums",
+            isBreak ? "bg-zinc-800 text-zinc-500" : "bg-amber-500/20 text-amber-300",
+          )}
+        >
+          {isBreak ? "⏸" : `${Math.round(pct)}%`}
+        </div>
+        {!isLast && <div className="w-px flex-1 self-stretch bg-zinc-800" aria-hidden />}
       </div>
       <div
         className={cn(

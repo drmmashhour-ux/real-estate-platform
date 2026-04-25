@@ -126,9 +126,9 @@ export function GreenDecisionCard({
   const topRationale = rationale.filter((r) => r.trim().length > 0).slice(0, 3);
 
   const primaryBtnClass =
-    "w-full h-12 bg-[#22c55e] text-black font-black text-xs tracking-widest uppercase rounded-xl hover:scale-[1.02] transition-transform";
+    "w-full h-12 inline-flex items-center justify-center gap-2 bg-[#22c55e] text-black font-black text-xs tracking-widest uppercase rounded-xl hover:scale-[1.02] transition-transform";
   const secondaryBtnClass =
-    "w-full h-12 border-white/10 text-white font-black text-xs tracking-widest uppercase rounded-xl hover:bg-white/5";
+    "w-full h-12 inline-flex items-center justify-center gap-2 border border-white/10 text-white font-black text-xs tracking-widest uppercase rounded-xl hover:bg-white/5";
 
   return (
     <Card className={`bg-zinc-900/40 border-[#22c55e]/30 border-2 rounded-[3rem] overflow-hidden shadow-2xl relative ${className ?? ""}`}>
@@ -208,29 +208,25 @@ export function GreenDecisionCard({
         {/* Section 4 — Action */}
         <div className="pt-2 border-t border-white/5 flex flex-col gap-3">
           {improvementIdeasHref ? (
-            <Button asChild className={primaryBtnClass}>
-              <Link href={improvementIdeasHref}>
-                See improvement ideas
-                <Search className="w-4 h-4 ml-2" />
-              </Link>
-            </Button>
+            <Link href={improvementIdeasHref} className={primaryBtnClass}>
+              See improvement ideas
+              <Search className="w-4 h-4" aria-hidden />
+            </Link>
           ) : (
             <Button type="button" className={primaryBtnClass} onClick={onSeeImprovementIdeas}>
               See improvement ideas
-              <Search className="w-4 h-4 ml-2" />
+              <Search className="w-4 h-4" />
             </Button>
           )}
           {compareSimilarHref ? (
-            <Button asChild variant="outline" className={secondaryBtnClass}>
-              <Link href={compareSimilarHref}>
-                Compare with similar homes
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Link>
-            </Button>
+            <Link href={compareSimilarHref} className={secondaryBtnClass}>
+              Compare with similar homes
+              <ArrowRight className="w-4 h-4" aria-hidden />
+            </Link>
           ) : (
             <Button type="button" variant="outline" className={secondaryBtnClass} onClick={onCompareSimilar}>
               Compare with similar homes
-              <ArrowRight className="w-4 h-4 ml-2" />
+              <ArrowRight className="w-4 h-4" />
             </Button>
           )}
         </div>

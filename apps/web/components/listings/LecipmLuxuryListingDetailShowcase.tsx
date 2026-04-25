@@ -98,15 +98,20 @@ export function LecipmLuxuryListingDetailShowcase({ base, property }: Props) {
             </div>
           </div>
 
-          <GreenDecisionCard 
-            verdict="Good opportunity to improve efficiency"
-            impact="Medium"
-            rationales={[
-              "Windows and insulation could be optimized for 15% lower costs.",
-              "Heating system is efficient but could be paired with smart controls.",
-              "High solar potential for rooftop energy generation."
-            ]}
+          <GreenDecisionCard
             quebecLabel="IMPROVABLE"
+            rationale={[
+              "Windows and insulation could be updated for more comfort and lower bills.",
+              "Heating works well and could be paired with simple controls to trim waste.",
+              "The roof may be a good fit for sun power down the road.",
+            ]}
+            signals={{
+              label: "IMPROVABLE",
+              improvementPotential: "medium",
+              scoreDelta: 15,
+              hasPotentialIncentives: true,
+            }}
+            economics={{ annualSavingsMinCad: 900, annualSavingsMaxCad: 1600, savingsSummary: "Typical for similar homes after smart upgrades, not a quote." }}
           />
 
           <div className="rounded-[28px] border border-[#D4AF37]/14 bg-[linear-gradient(135deg,#0D0D0D,#090909)] p-7">
