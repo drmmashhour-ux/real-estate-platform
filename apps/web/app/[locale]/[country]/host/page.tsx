@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { HostAiCopilotSection } from "@/components/host/HostAiCopilotSection";
 import { HostAiSuggestionsSection } from "@/components/host/HostAiSuggestionsSection";
+import { HostHomeOverview } from "@/components/host/HostHomeOverview";
 import { PricingInsightCard } from "@/components/host/PricingInsightCard";
 import { getGuestId } from "@/lib/auth/session";
 import { revenueV4Flags } from "@/config/feature-flags";
@@ -41,6 +42,8 @@ export default async function HostDashboardPage() {
     style: "currency",
     currency: "CAD",
   });
+
+  const primaryListingId = performance[0]?.listingId ?? null;
 
   return (
     <div className="space-y-10">
@@ -84,34 +87,12 @@ export default async function HostDashboardPage() {
         </div>
       </div>
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-2xl border border-zinc-800 bg-[#111] p-5">
-          <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">Active listings</p>
-          <p className="mt-2 text-3xl font-bold text-white">{stats.publishedListings}</p>
-          <p className="mt-1 flex items-center gap-2 text-xs text-zinc-500">
-            of {stats.totalListings} total <Trend dir={stats.listingsTrend} />
-          </p>
-        </div>
-        <div className="rounded-2xl border border-zinc-800 bg-[#111] p-5">
-          <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">Upcoming bookings</p>
-          <p className="mt-2 text-3xl font-bold text-white">{stats.upcomingBookings}</p>
-          <p className="mt-1 text-xs text-zinc-500">{stats.confirmedBookings} confirmed lifetime</p>
-        </div>
-        <div className="rounded-2xl border border-zinc-800 bg-[#111] p-5">
-          <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">Monthly earnings</p>
-          <p className="mt-2 text-3xl font-bold" style={{ color: GOLD }}>
-            {earningsCad}
-          </p>
-          <p className="mt-1 flex items-center gap-2 text-xs text-zinc-500">
-            vs last month <Trend dir={stats.earningsTrend} />
-          </p>
-        </div>
-        <div className="rounded-2xl border border-zinc-800 bg-[#111] p-5">
-          <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">Occupancy (30d est.)</p>
-          <p className="mt-2 text-3xl font-bold text-white">{stats.occupancyRatePercent}%</p>
-          <p className="mt-1 text-xs text-zinc-500">Avg nightly ${(stats.averageNightlyRateCents / 100).toFixed(0)} CAD</p>
-        </div>
-      </section>
+      <HostHomeOverview stats={stats} primaryListingId={primaryListingId} earningsCad={earningsCad} />
+
+      <p className="text-xs text-zinc-600">
+        Trends: earnings <Trend dir={stats.earningsTrend} />, listings <Trend dir={stats.listingsTrend} />. Avg nightly
+        ${(stats.averageNightlyRateCents / 100).toFixed(0)} · {stats.confirmedBookings} confirmed stays lifetime
+      </p>
 
       {revenueV4Flags.pricingEngineV2 && performance[0] ? (
         <section className="space-y-3">

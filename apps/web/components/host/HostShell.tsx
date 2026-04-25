@@ -10,19 +10,28 @@ import { BNHUB_LOGO_SRC } from "@/lib/brand/bnhub-logo";
 const NAV = [
   { href: "/host", label: "Dashboard" },
   { href: "/host/bookings", label: "Bookings" },
+  { href: "/host/calendar", label: "Calendar" },
   { href: "/host/listings", label: "Listings" },
   { href: "/host/pricing", label: "Pricing" },
+  { href: "/host/earnings", label: "Earnings" },
+  { href: "/messages", label: "Messages" },
   { href: "/host/autopilot", label: "Autopilot" },
-  { href: "/host/calendar", label: "Calendar" },
   { href: "/host/payouts", label: "Payouts" },
   { href: "/host/bnhub/payments/onboarding", label: "Settings" },
 ] as const;
 
 const GOLD = "#D4AF37";
 
+function pathActive(pathname: string, href: string) {
+  if (href === "/host") {
+    return pathname === "/host" || pathname.endsWith("/host");
+  }
+  return pathname === href || pathname.endsWith(href) || pathname.includes(`${href}/`);
+}
+
 function NavLinkDesktop({ href, label }: { href: string; label: string }) {
   const pathname = usePathname();
-  const active = pathname === href || (href !== "/host" && pathname.startsWith(href + "/"));
+  const active = pathActive(pathname, href);
   return (
     <Link
       href={href}
@@ -47,7 +56,7 @@ function NavLinkMobile({
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
-  const active = pathname === href || (href !== "/host" && pathname.startsWith(href + "/"));
+  const active = pathActive(pathname, href);
   return (
     <Link
       href={href}

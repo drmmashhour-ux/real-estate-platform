@@ -111,6 +111,24 @@ export function HostListingsGridClient({
     }
   }
 
+  async function goLive(id: string) {
+    setBusy(true);
+    try {
+      const r = await fetch(`/api/host/listings/${id}/wizard`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ listingStatus: "PUBLISHED" }),
+      });
+      if (!r.ok) {
+        window.alert("Could not publish. Finish required fields or verification in the editor.");
+        return;
+      }
+      router.refresh();
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const addListingHref =
     newestListingId != null
       ? `/host/listings/new?from=${encodeURIComponent(newestListingId)}`
@@ -314,7 +332,17 @@ export function HostListingsGridClient({
                       onClick={() => void pauseListing(l.id)}
                       className="rounded-xl border border-zinc-600 px-3 py-2 text-xs text-zinc-300 hover:bg-zinc-900"
                     >
-                      Pause
+                      Pause (inactive)
+                    </button>
+                  ) : null}
+                  {l.listingStatus === ListingStatus.UNLISTED ? (
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => void goLive(l.id)}
+                      className="rounded-xl border border-emerald-700/50 px-3 py-2 text-xs text-emerald-300 hover:bg-emerald-950/30"
+                    >
+                      Go live (active)
                     </button>
                   ) : null}
                   <Link

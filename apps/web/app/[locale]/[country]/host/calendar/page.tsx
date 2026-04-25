@@ -1,6 +1,5 @@
-import Link from "next/link";
 import { getGuestId } from "@/lib/auth/session";
-import { HostCalendarClient } from "@/components/host/HostCalendarClient";
+import { HostCalendarPage } from "@/components/host/HostCalendarPage";
 import { getHostCalendarEvents } from "@/lib/host";
 import { prisma } from "@repo/db";
 
@@ -45,26 +44,12 @@ export default async function HostCalendarPage({
   }));
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">Calendar</h1>
-          <p className="mt-1 text-sm text-zinc-500">
-            Unified view: BNHub bookings, ICS imports, channel manager feeds, and manual blocks.
-          </p>
-        </div>
-        <Link href="/host/bookings" className="text-sm text-zinc-400 hover:text-zinc-200">
-          View all bookings →
-        </Link>
-      </div>
-
-      <HostCalendarClient
-        listings={listings}
-        bookings={bookingsSerialized}
-        blocked={blocked}
-        channelEvents={channelSerialized}
-        initialListingId={listingId}
-      />
-    </div>
+    <HostCalendarPage
+      listings={listings}
+      bookings={bookingsSerialized}
+      blocked={blocked}
+      channelEvents={channelSerialized}
+      initialListingId={listingId}
+    />
   );
 }
