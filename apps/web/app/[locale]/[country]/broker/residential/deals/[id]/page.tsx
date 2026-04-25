@@ -103,10 +103,12 @@ export default async function BrokerResidentialDealDetailPage({
             Brokerage activity (OACIQ)
           </div>
           {deal.broker?.lecipmBrokerLicenceProfile && (
-            <BrokerDisclosureBadge 
-              brokerName={deal.broker.name || "Licensed Broker"} 
-              licenceNumber={deal.broker.lecipmBrokerLicenceProfile.licenceNumber}
-              practiceMode={deal.broker.lecipmBrokerLicenceProfile.practiceMode as any}
+            <BrokerDisclosureBadge
+              brokerName={deal.broker.name || "Licensed Broker"}
+              licenseNumber={
+                deal.broker.lecipmBrokerLicenceProfile.licenceNumber?.trim() || "—"
+              }
+              practiceMode={deal.broker.lecipmBrokerLicenceProfile.practiceMode as string | undefined}
             />
           )}
         </div>

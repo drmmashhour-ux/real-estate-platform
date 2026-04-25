@@ -16,7 +16,11 @@ export function runNegotiationSimulator(
   const objectionForecast = forecastObjectionPath(context);
   negSimLog.objectionPath({ n: objectionForecast.likelyObjections.length, dealId: context.dealId });
   const scenarios = simulateAllApproaches(context);
-  const { safestApproach, highestUpsideApproach } = selectBestNegotiationApproaches(scenarios, momentumRisk);
+  const { safestApproach, highestUpsideApproach } = selectBestNegotiationApproaches(
+    scenarios,
+    momentumRisk,
+    context
+  );
   const coachNotes = buildCoachNotes(
     context,
     scenarios,
@@ -49,13 +53,13 @@ function buildCoachNotes(
   const offerD = scenarios.find((s) => s.approachKey === "offer_discussion_now");
 
   if (offerD?.expectedOutcome === "pushback_risk" && (objf || firm)) {
-    n.push("A direct offer *discussion* push in this read looks early for some clients; objection-first or a softer nudge can be a lower-friction first move — scenario only.");
+    n.push("A direct offer discussion push in this read looks early for some clients; objection-first may be a lower-friction first move — scenario only.");
   }
   if (momentum.level === "high" && scenarios.find((s) => s.approachKey === "timing_pause" && s.expectedOutcome === "stall_risk")) {
-    n.push("Delay can increase momentum loss in high-competition reads; a pause may still be valid for relationship reasons — weigh the tradeoff.");
+    n.push("Waiting may increase momentum loss when competition or comparison risk is in play; a pause can still be valid for relationship reasons — you weigh the tradeoff.");
   }
   if (upside && upside === "value_reinforcement") {
-    n.push("Value reinforcement followed by a light next-step ask can pair well with this read — suggestions only, not a guarantee of outcome.");
+    n.push("Value reinforcement followed by offer discussion appears strongest in some similar scenarios — you still lead; not a claim about this client.");
   }
   if (saferHint(safest) && !n.length) {
     n.push("Compare scenarios below; the labeled safest and highest-upside are heuristics, not assurances. Adapt to what you know about the client.");

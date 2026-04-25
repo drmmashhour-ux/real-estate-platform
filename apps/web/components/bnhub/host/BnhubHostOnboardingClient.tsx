@@ -20,6 +20,8 @@ export function BnhubHostOnboardingClient() {
   const [price, setPrice] = useState("119");
   const [amenities, setAmenities] = useState("Wi‑Fi, Kitchen, Workspace");
   const [description, setDescription] = useState("");
+  const [highlightNew, setHighlightNew] = useState(true);
+  const [highlightSpecial, setHighlightSpecial] = useState(false);
 
   function canAdvance(): boolean {
     if (step === 0) return title.trim().length > 2 && city.trim().length > 1;
@@ -52,8 +54,8 @@ export function BnhubHostOnboardingClient() {
           photos,
           amenities,
           publish: true,
-          flagNewListing: true,
-          flagSpecialOffer: false,
+          flagNewListing: highlightNew,
+          flagSpecialOffer: highlightSpecial,
         }),
       });
       const j = await r.json();
@@ -201,6 +203,33 @@ export function BnhubHostOnboardingClient() {
                   className="w-full rounded-xl border border-white/15 bg-black px-3 py-2 text-sm"
                 />
                 <p className="text-xs text-white/35">{description.trim().length} / {BNHUB_LAUNCH_MIN_DESCRIPTION}+</p>
+                <div className="rounded-xl border border-white/10 bg-black/40 p-4 space-y-3">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-white/45">First bookings</p>
+                  <label className="flex cursor-pointer items-start gap-3 text-sm">
+                    <input
+                      type="checkbox"
+                      className="mt-1 h-4 w-4 rounded border-white/25 accent-[#D4AF37]"
+                      checked={highlightNew}
+                      onChange={(e) => setHighlightNew(e.target.checked)}
+                    />
+                    <span>
+                      <span className="font-medium text-white">“New listing” badge</span>
+                      <span className="mt-0.5 block text-xs text-white/45">Recommended for launch discovery.</span>
+                    </span>
+                  </label>
+                  <label className="flex cursor-pointer items-start gap-3 text-sm">
+                    <input
+                      type="checkbox"
+                      className="mt-1 h-4 w-4 rounded border-white/25 accent-[#D4AF37]"
+                      checked={highlightSpecial}
+                      onChange={(e) => setHighlightSpecial(e.target.checked)}
+                    />
+                    <span>
+                      <span className="font-medium text-white">“Special offer” badge</span>
+                      <span className="mt-0.5 block text-xs text-white/45">Use when you are running an opening promo.</span>
+                    </span>
+                  </label>
+                </div>
               </div>
             ) : null}
 

@@ -20,6 +20,7 @@ export async function applyLoginSessionCookies(
   const cookie = setGuestIdCookie(token);
   res.cookies.set(cookie.name, cookie.value, {
     path: cookie.path,
+    domain: cookie.domain,
     maxAge: cookie.maxAge,
     httpOnly: cookie.httpOnly,
     secure: cookie.secure,
@@ -32,6 +33,7 @@ export async function applyLoginSessionCookies(
   const roleCk = setUserRoleCookie(user.role);
   res.cookies.set(roleCk.name, roleCk.value, {
     path: roleCk.path,
+    domain: roleCk.domain,
     maxAge: roleCk.maxAge,
     httpOnly: roleCk.httpOnly,
     secure: roleCk.secure,

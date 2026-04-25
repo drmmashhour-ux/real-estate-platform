@@ -9,6 +9,7 @@ import {
   recordNegotiationStrategyUsageEvent,
 } from "@/modules/negotiation-simulator/negotiation-strategy-assignment.service";
 import { applyNegotiationScenarioNudges } from "@/modules/strategy-benchmark/learning-nudges.service";
+import { maybeApplyReinforcementToNegotiation } from "@/modules/reinforcement/reinforcement-wiring.service";
 import { trackStrategyExecution } from "@/modules/strategy-benchmark/strategy-tracking.service";
 
 export const dynamic = "force-dynamic";
@@ -44,7 +45,10 @@ export async function GET(_req: NextRequest, context: Params) {
     if (!deal) return NextResponse.json({ ok: false, error: "Not found", simulator: emptySim }, { status: 404 });
     const brokerFor = deal.brokerId ?? userId;
     const nctx = await buildNegotiationSimulatorContext({ dealId, brokerId: brokerFor });
-    const simulator = runNegotiationSimulator(nctx);
+    const base = runNegotiationSimulator(nctx);
+    const nudged = await applyNegotiationScenarioNudges(base.scenarios, "NEGOTIATION");
+    const withSim = { ...base, scenarios: nudged };
+    const simulator = await maybeApplyReinforcementToNegotiation(nctx, withSim);
     void recordNegotiationStrategyAssignment({
       userId,
       dealId,

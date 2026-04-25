@@ -49,6 +49,12 @@ export function HostDashboardHub({
             BNHUB host dashboard
           </Link>
           <Link
+            href="/dashboard/host/analytics"
+            className="rounded-xl border border-sky-500/40 px-4 py-2 text-sm font-medium text-sky-200 hover:bg-sky-950/40"
+          >
+            Revenue analytics
+          </Link>
+          <Link
             href="/dashboard/host/payouts"
             className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
           >

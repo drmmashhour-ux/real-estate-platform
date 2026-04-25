@@ -1,6 +1,7 @@
 import { ListingStatus } from "@prisma/client";
 import { prisma } from "@repo/db";
 import { updateListing, type UpdateListingData } from "@/lib/bnhub/listings";
+import { logPricingAiApplied } from "@/modules/pricing-ai/pricing-ai.logger";
 
 export async function patchShortTermListingForHost(
   hostId: string,
@@ -29,6 +30,10 @@ export async function patchShortTermListingForHost(
     const n = Number(body.pricePerNight);
     if (Number.isFinite(n) && n >= 0) patch.nightPriceCents = Math.round(n * 100);
   }
+  if (body.nightPriceCents != null) {
+    const n = Number(body.nightPriceCents);
+    if (Number.isFinite(n) && n >= 50) patch.nightPriceCents = Math.round(n);
+  }
   if (typeof body.description === "string") patch.description = body.description;
   if (
     typeof body.listingStatus === "string" &&
@@ -37,6 +42,13 @@ export async function patchShortTermListingForHost(
     patch.listingStatus = body.listingStatus as ListingStatus;
   }
 
+  const pricingAiApplied = body.pricingAiApplied === true;
   const updated = await updateListing(listingId, patch);
+  if (pricingAiApplied && typeof patch.nightPriceCents === "number") {
+    logPricingAiApplied({
+      listingId: listingId.slice(0, 8),
+      nightPriceCents: patch.nightPriceCents,
+    });
+  }
   return { ok: true, listing: updated };
 }

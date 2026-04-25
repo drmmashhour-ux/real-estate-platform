@@ -92,12 +92,15 @@ export function hostGrowthLevelCopy(level: HostGrowthLevel): { label: string; be
     case "top_host":
       return {
         label: "Top host",
-        benefits: ["Eligible for visibility boosts in growth experiments", "Top host badge on qualifying listings"],
+        benefits: [
+          "Better visibility in growth experiments and discovery surfaces",
+          "Top host badge on qualifying listings",
+        ],
       };
     case "active_host":
       return {
         label: "Active host",
-        benefits: ["Standard discovery placement", "Active host badge when listings stay fresh"],
+        benefits: ["Solid discovery placement", "Active host badge when listings stay fresh"],
       };
     default:
       return {
@@ -207,6 +210,30 @@ export function buildGrowthInsightsForListing(
   }
 
   return insights.slice(0, 6);
+}
+
+/** Deep link from a growth insight to host listing editor (fragments are hints for future wizard anchors). */
+export function growthInsightActionHref(
+  listingId: string,
+  action: GrowthInsight["action"] | undefined,
+  pricingHref: string,
+): string | null {
+  if (!action) return null;
+  const edit = (hash: string) => `/bnhub/host/listings/${listingId}/edit#${hash}`;
+  switch (action) {
+    case "adjust_price":
+      return edit("pricing");
+    case "update_description":
+      return edit("description");
+    case "add_amenities":
+      return edit("amenities");
+    case "add_photos":
+      return edit("photos");
+    case "promotions":
+      return pricingHref;
+    default:
+      return `/bnhub/host/listings/${listingId}/edit`;
+  }
 }
 
 export function buildGrowthAlerts(input: {

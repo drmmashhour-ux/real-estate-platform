@@ -24,6 +24,8 @@ export type BnhubGuestListingAnnotations = {
   verified: boolean;
   displayRating: number | null;
   displayReviewCount: number;
+  /** Host-level pilot flag — boosts sort tie-breakers only; never fabricates reviews. */
+  foundingHost: boolean;
 };
 
 const MIN_DESCRIPTION_CHARS = 120;
@@ -115,6 +117,7 @@ export function annotateBnhubListingsForGuest<
       verified,
       displayRating: avgRating,
       displayReviewCount: reviewCount,
+      foundingHost: l.owner?.bnhubIsFoundingHost === true,
     };
   });
 }
@@ -125,6 +128,7 @@ export function sortBnhubListingsByGuestAppeal<T extends BnhubGuestListingAnnota
   return [...listings].sort((a, b) => {
     if (Math.abs(b.valueScore - a.valueScore) > 1e-6) return b.valueScore - a.valueScore;
     if (riskOrder[a.riskLevel] !== riskOrder[b.riskLevel]) return riskOrder[a.riskLevel] - riskOrder[b.riskLevel];
+    if (a.foundingHost !== b.foundingHost) return (b.foundingHost ? 1 : 0) - (a.foundingHost ? 1 : 0);
     return (b.verified ? 1 : 0) - (a.verified ? 1 : 0);
   });
 }

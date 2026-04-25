@@ -13,6 +13,8 @@ export type OfferStrategyContext = {
   /** From deal-closer or another readiness pass when available. */
   closingReadinessScore?: number | null;
   dealProbability?: number | null;
+  /** From deal-closer / call pipeline when available; opaque to offer engine. */
+  callAnalysis?: unknown;
   visitCompleted?: boolean;
   visitScheduled?: boolean;
   offerDiscussed?: boolean;
@@ -66,6 +68,15 @@ export type OfferActionRecommendation = {
   suggestedApproach?: string;
 };
 
+export type OfferStrategyReinforcementMeta = {
+  topKey: string;
+  selectionMode: "exploit" | "explore";
+  contextBucket: string;
+  adjustedRanking: { strategyKey: string; baseScore: number; adjustedScore: number }[];
+  rationale: string[];
+  decisionId: string | null;
+};
+
 export type OfferStrategyOutput = {
   readiness: OfferReadinessResult;
   posture: OfferPosture;
@@ -73,4 +84,6 @@ export type OfferStrategyOutput = {
   competitiveRisk: CompetitiveOfferRisk;
   recommendations: OfferActionRecommendation[];
   coachNotes: string[];
+  /** Optional contextual bandit layer — ranking only; no auto-exec. */
+  reinforcement?: OfferStrategyReinforcementMeta;
 };

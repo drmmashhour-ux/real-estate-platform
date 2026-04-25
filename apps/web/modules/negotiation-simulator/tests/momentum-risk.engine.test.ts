@@ -20,4 +20,12 @@ describe("computeMomentumRisk", () => {
     expect(m.level).toBe("low");
     expect(m.rationale[0] ?? "").toBeTruthy();
   });
+
+  it("flags many open objections in structured blob", () => {
+    const c: NegotiationSimulatorContext = {
+      objections: { objections: [{ t: 1 }, { t: 2 }, { t: 3 }], x: 1 } as unknown,
+    };
+    const m = computeMomentumRisk(c);
+    expect(m.rationale.join(" ")).toMatch(/objection|concern|forward/i);
+  });
 });

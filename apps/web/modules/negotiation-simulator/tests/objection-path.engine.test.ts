@@ -14,4 +14,11 @@ describe("forecastObjectionPath", () => {
     const f = forecastObjectionPath(c);
     expect(f.likelyObjections.length).toBeGreaterThan(0);
   });
+
+  it("heightens price / value when price sensitivity is high (scenario label)", () => {
+    const c: NegotiationSimulatorContext = { priceSensitivity: "high" };
+    const f = forecastObjectionPath(c);
+    const row = f.likelyObjections.find((o) => /price|value/i.test(o.type));
+    expect(row?.probabilityBand).toBe("high");
+  });
 });

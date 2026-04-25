@@ -26,7 +26,7 @@ export type NegotiationSimulatorContext = {
   offerReadinessScore?: number | null;
   /** Optional deal win probability 0–1 from CRM / heuristics; descriptive only, not a guarantee. */
   dealProbability?: number | null;
-  posture?: OfferPostureStyle | NegotiationPosture | null;
+  posture?: NegotiationPosture | null;
   blockers?: unknown;
   objections?: unknown;
   competitiveRisk?: "low" | "medium" | "high" | null;
@@ -75,6 +75,15 @@ export type ObjectionPathForecast = {
   }[];
 };
 
+export type NegotiationReinforcementMeta = {
+  topKey: string;
+  selectionMode: "exploit" | "explore";
+  contextBucket: string;
+  adjustedRanking: { strategyKey: string; baseScore: number; adjustedScore: number }[];
+  rationale: string[];
+  decisionId: string | null;
+};
+
 export type NegotiationSimulatorOutput = {
   scenarios: NegotiationScenario[];
   safestApproach: string | null;
@@ -82,4 +91,6 @@ export type NegotiationSimulatorOutput = {
   momentumRisk: MomentumRiskResult;
   objectionForecast: ObjectionPathForecast;
   coachNotes: string[];
+  /** Optional bandit re-rank; does not change scenario content, only optional ordered view in API. */
+  reinforcement?: NegotiationReinforcementMeta;
 };

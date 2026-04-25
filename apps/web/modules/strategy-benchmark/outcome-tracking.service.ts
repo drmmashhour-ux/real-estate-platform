@@ -3,6 +3,7 @@ import { prisma } from "@repo/db";
 import { strategyBenchmarkLog } from "./strategy-benchmark-logger";
 import { attributeOutcomeToStrategies } from "./strategy-attribution.engine";
 import { updateAggregatesForOutcome } from "./performance-aggregator.service";
+import { recordStrategyOutcomeFeedback } from "@/modules/reinforcement/feedback.service";
 
 export type DealLike = {
   id: string;
@@ -20,7 +21,8 @@ export function mapDealToStrategyOutcome(
 ): StrategyBucketOutcome | null {
   if (deal.status === "closed") return "WON";
   if (deal.status === "cancelled") return "LOST";
-  /* STALLED is reserved for explicit / future pipeline hooks; terminal outcomes avoid transition bugs. */
+  const s = (deal.crmStage ?? "").toLowerCase();
+  if (/\b(stalled|on-hold|on hold|dormant|stuck)\b/i.test(s)) return "STALLED";
   return null;
 }
 
@@ -46,6 +48,11 @@ export async function trackDealOutcome(deal: DealLike): Promise<void> {
     strategyBenchmarkLog.outcome({ dealId: deal.id, outcome, first: true });
     const { attributedStrategies } = await attributeOutcomeToStrategies(deal.id, outcome, closingTimeDays);
     await updateAggregatesForOutcome(attributedStrategies, outcome, closingTimeDays);
+    void recordStrategyOutcomeFeedback({
+      dealId: deal.id,
+      outcome,
+      closingTimeDays,
+    }).catch(() => undefined);
   } catch (e) {
     strategyBenchmarkLog.warn("trackDealOutcome", { err: e instanceof Error ? e.message : String(e) });
   }

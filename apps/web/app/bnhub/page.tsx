@@ -11,6 +11,9 @@ import { getGrowthFeaturedListingIds } from "@/src/modules/bnhub-growth-engine/s
 import { ListingStatus, VerificationStatus } from "@prisma/client";
 import { bnhubLaunchBadgesFromTags } from "@/lib/bnhub/bnhub-launch-quality";
 import { annotateBnhubListingsForGuest, sortBnhubListingsByGuestAppeal } from "@/modules/bnhub/recommendationEngine";
+import { EarlyAccessBanner } from "@/components/bnhub/EarlyAccessBanner";
+import { Testimonials } from "@/components/bnhub/Testimonials";
+import { deriveBnhubListingBadges } from "@/components/bnhub/ListingBadges";
 
 export const metadata: Metadata = {
   title: "BNHub — Find your perfect stay",
@@ -19,6 +22,32 @@ export const metadata: Metadata = {
 };
 
 const SEARCH_BASE = "/en/ca/search/bnhub";
+
+const homeListingSelect = {
+  id: true,
+  listingCode: true,
+  title: true,
+  city: true,
+  nightPriceCents: true,
+  beds: true,
+  maxGuests: true,
+  photos: true,
+  verificationStatus: true,
+  operationalRiskScore: true,
+  bnhubListingRatingAverage: true,
+  bnhubListingReviewCount: true,
+  experienceTags: true,
+  createdAt: true,
+  bnhubEarlyAccessPercentOff: true,
+  bnhubWishlistCount: true,
+  bnhubListingViewCount: true,
+  owner: { select: { bnhubIsFoundingHost: true } },
+} as const;
+
+function isEarlyAccessRegionCity(city: string): boolean {
+  const c = city.toLowerCase();
+  return c.includes("montréal") || c.includes("montreal") || c.includes("laval");
+}
 
 function photoFirst(photos: unknown): string | null {
   if (!Array.isArray(photos)) return null;
@@ -44,21 +73,7 @@ async function loadFeaturedForHome() {
   if (merged.length > 0) {
     const rows = await prisma.shortTermListing.findMany({
       where: { id: { in: merged.slice(0, 8) }, listingStatus: ListingStatus.PUBLISHED },
-      select: {
-        id: true,
-        listingCode: true,
-        title: true,
-        city: true,
-        nightPriceCents: true,
-        beds: true,
-        maxGuests: true,
-        photos: true,
-        verificationStatus: true,
-        operationalRiskScore: true,
-        bnhubListingRatingAverage: true,
-        bnhubListingReviewCount: true,
-        experienceTags: true,
-      },
+      select: { ...homeListingSelect },
     });
     const order = new Map(merged.map((id, i) => [id, i]));
     rows.sort((a, b) => (order.get(a.id) ?? 99) - (order.get(b.id) ?? 99));
@@ -69,27 +84,43 @@ async function loadFeaturedForHome() {
     where: { listingStatus: ListingStatus.PUBLISHED },
     orderBy: { updatedAt: "desc" },
     take: 6,
-    select: {
-      id: true,
-      listingCode: true,
-      title: true,
-      city: true,
-      nightPriceCents: true,
-      beds: true,
-      maxGuests: true,
-      photos: true,
-      verificationStatus: true,
-      operationalRiskScore: true,
-      bnhubListingRatingAverage: true,
-      bnhubListingReviewCount: true,
-      experienceTags: true,
-    },
+    select: { ...homeListingSelect },
+  });
+}
+
+async function loadBestValueForHome(excludeIds: Set<string>) {
+  const rows = await prisma.shortTermListing.findMany({
+    where: { listingStatus: ListingStatus.PUBLISHED, id: { notIn: [...excludeIds] } },
+    take: 24,
+    select: { ...homeListingSelect },
+  });
+  const sorted = sortBnhubListingsByGuestAppeal(annotateBnhubListingsForGuest(rows));
+  return sorted.slice(0, 6);
+}
+
+async function loadNewListingsForHome(excludeIds: Set<string>) {
+  return prisma.shortTermListing.findMany({
+    where: { listingStatus: ListingStatus.PUBLISHED, id: { notIn: [...excludeIds] } },
+    orderBy: { createdAt: "desc" },
+    take: 6,
+    select: { ...homeListingSelect },
   });
 }
 
 export default async function BnhubHomePage() {
   const featuredRaw = await loadFeaturedForHome();
   const featured = sortBnhubListingsByGuestAppeal(annotateBnhubListingsForGuest(featuredRaw));
+  const featuredIds = new Set(featured.map((l) => l.id));
+
+  let bestValue = await loadBestValueForHome(featuredIds);
+  if (bestValue.length === 0) bestValue = featured;
+
+  const bestIds = new Set(bestValue.map((l) => l.id));
+  let newRows = await loadNewListingsForHome(new Set([...featuredIds, ...bestIds]));
+  if (newRows.length === 0) newRows = featuredRaw;
+  const newListings = annotateBnhubListingsForGuest(newRows).sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
 
   return (
     <main className="scroll-smooth bg-[#000] text-white">
@@ -109,6 +140,12 @@ export default async function BnhubHomePage() {
               Browse
             </Link>
             <Link
+              href="/bnhub/concierge"
+              className="inline-flex min-h-[48px] items-center justify-center rounded-full px-4 text-sm font-medium text-white/80 transition hover:text-[#D4AF37]"
+            >
+              Concierge
+            </Link>
+            <Link
               href="/bnhub/become-host"
               className="inline-flex min-h-[48px] items-center justify-center rounded-full border border-[#D4AF37]/50 bg-[#D4AF37]/10 px-5 text-sm font-semibold text-[#D4AF37] transition hover:bg-[#D4AF37]/20"
             >
@@ -121,6 +158,10 @@ export default async function BnhubHomePage() {
       <BnhubHomeHero searchBasePath={SEARCH_BASE} />
 
       <TrustStrip />
+
+      <div className="mx-auto max-w-6xl px-4 pt-10 sm:pt-12">
+        <EarlyAccessBanner />
+      </div>
 
       <section className="bg-[#000] px-4 py-20 sm:py-24 md:py-28" id="featured">
         <div className="mx-auto max-w-6xl">
@@ -143,7 +184,7 @@ export default async function BnhubHomePage() {
               {featured.map((l) => (
                 <ListingCard
                   key={l.id}
-                  href={`/bnhub/${l.listingCode || l.id}`}
+                  href={`/en/ca/stays/${encodeURIComponent(l.listingCode || l.id)}`}
                   imageUrl={photoFirst(l.photos)}
                   title={l.title}
                   city={l.city}
@@ -151,10 +192,20 @@ export default async function BnhubHomePage() {
                   rating={l.displayRating ?? l.bnhubListingRatingAverage}
                   reviewCount={l.displayReviewCount}
                   verified={l.verificationStatus === VerificationStatus.VERIFIED}
+                  layout="full"
                   riskLevel={l.riskLevel}
                   valueLabel={l.valueLabel}
                   fraud={l.fraud}
                   launchBadges={bnhubLaunchBadgesFromTags(l.experienceTags)}
+                  ethicalBadges={deriveBnhubListingBadges({
+                    verified: l.verificationStatus === VerificationStatus.VERIFIED,
+                    createdAt: l.createdAt,
+                    earlyAccessPercentOff: l.bnhubEarlyAccessPercentOff,
+                    foundingHost: l.foundingHost,
+                    earlyAccessRegion: isEarlyAccessRegionCity(l.city),
+                  })}
+                  wishlistCount={l.bnhubWishlistCount}
+                  lifetimeViewCount={l.bnhubListingViewCount}
                 />
               ))}
             </div>
@@ -166,6 +217,96 @@ export default async function BnhubHomePage() {
             >
               See all stays
             </Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-t border-white/[0.06] bg-[#050505] px-4 py-20 sm:py-24 md:py-28" id="best-value">
+        <div className="mx-auto max-w-6xl">
+          <div className="mb-12 text-center sm:mb-16">
+            <h2 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl md:text-4xl">
+              Best value this week
+            </h2>
+            <p className="mx-auto mt-4 max-w-md text-sm text-white/50">
+              Ranked from real nightly rates and capacity — not paid placement.
+            </p>
+          </div>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {bestValue.map((l) => (
+              <ListingCard
+                key={l.id}
+                href={`/en/ca/stays/${encodeURIComponent(l.listingCode || l.id)}`}
+                imageUrl={photoFirst(l.photos)}
+                title={l.title}
+                city={l.city}
+                nightPriceCents={l.nightPriceCents}
+                rating={l.displayRating ?? l.bnhubListingRatingAverage}
+                reviewCount={l.displayReviewCount}
+                verified={l.verificationStatus === VerificationStatus.VERIFIED}
+                layout="full"
+                riskLevel={l.riskLevel}
+                valueLabel={l.valueLabel}
+                fraud={l.fraud}
+                ethicalBadges={deriveBnhubListingBadges({
+                  verified: l.verificationStatus === VerificationStatus.VERIFIED,
+                  createdAt: l.createdAt,
+                  earlyAccessPercentOff: l.bnhubEarlyAccessPercentOff,
+                  foundingHost: l.foundingHost,
+                  earlyAccessRegion: isEarlyAccessRegionCity(l.city),
+                })}
+                wishlistCount={l.bnhubWishlistCount}
+                lifetimeViewCount={l.bnhubListingViewCount}
+              />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-[#000] px-4 py-20 sm:py-24 md:py-28" id="new-listings">
+        <div className="mx-auto max-w-6xl">
+          <div className="mb-12 text-center sm:mb-16">
+            <h2 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl md:text-4xl">New listings</h2>
+            <p className="mx-auto mt-4 max-w-md text-sm text-white/50">Recently published stays on BNHub.</p>
+          </div>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {newListings.map((l) => (
+              <ListingCard
+                key={l.id}
+                href={`/en/ca/stays/${encodeURIComponent(l.listingCode || l.id)}`}
+                imageUrl={photoFirst(l.photos)}
+                title={l.title}
+                city={l.city}
+                nightPriceCents={l.nightPriceCents}
+                rating={l.displayRating ?? l.bnhubListingRatingAverage}
+                reviewCount={l.displayReviewCount}
+                verified={l.verificationStatus === VerificationStatus.VERIFIED}
+                layout="full"
+                riskLevel={l.riskLevel}
+                valueLabel={l.valueLabel}
+                fraud={l.fraud}
+                ethicalBadges={deriveBnhubListingBadges({
+                  verified: l.verificationStatus === VerificationStatus.VERIFIED,
+                  createdAt: l.createdAt,
+                  earlyAccessPercentOff: l.bnhubEarlyAccessPercentOff,
+                  foundingHost: l.foundingHost,
+                  earlyAccessRegion: isEarlyAccessRegionCity(l.city),
+                })}
+                wishlistCount={l.bnhubWishlistCount}
+                lifetimeViewCount={l.bnhubListingViewCount}
+              />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="border-t border-white/[0.06] bg-[#050505] px-4 py-16 sm:py-20" id="stories">
+        <div className="mx-auto max-w-6xl">
+          <h2 className="text-center text-2xl font-semibold tracking-tight text-white sm:text-3xl">Pilot stories</h2>
+          <p className="mx-auto mt-3 max-w-lg text-center text-sm text-white/50">
+            Only verified quotes you configure — never auto-generated reviews.
+          </p>
+          <div className="mt-10">
+            <Testimonials />
           </div>
         </div>
       </section>

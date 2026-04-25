@@ -27,7 +27,7 @@ export const metadata: Metadata = {
 export default async function BnhubHostGrowthPage() {
   const userId = await getGuestId();
   if (!userId) {
-    redirect("/auth/login?next=/bnhub/host/growth");
+    redirect("/en/ca/auth/login?next=/bnhub/host/growth");
   }
 
   const listings = await prisma.shortTermListing.findMany({

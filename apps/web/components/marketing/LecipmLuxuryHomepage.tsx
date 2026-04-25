@@ -5,7 +5,10 @@ import { LecipmHomeSearchPanel } from "@/components/marketing/LecipmHomeSearchPa
 import { RecommendedForYouHomeSection } from "@/components/recommendations/RecommendedForYouHomeSection";
 import { DEFAULT_COUNTRY_SLUG } from "@/config/countries";
 import { routing } from "@/i18n/routing";
-import { ShieldCheck } from "lucide-react";
+import { ShieldCheck, Leaf, Brain, Search as SearchIcon, TrendingUp, ChevronRight, ArrowRight } from "lucide-react";
+import { GreenValueStrip } from "@/components/green/GreenValueStrip";
+import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
 
 const hubs = [
   {
@@ -290,6 +293,24 @@ export function LecipmLuxuryHomepage({ locale = routing.defaultLocale, country =
               decision-making.
             </p>
 
+            {/* Green Hook */}
+            <div className="mt-12 p-8 bg-[#22c55e]/5 border border-[#22c55e]/20 rounded-[2.5rem] relative overflow-hidden group max-w-3xl">
+              <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:scale-110 transition-transform">
+                <Leaf className="w-16 h-16 text-[#22c55e]" />
+              </div>
+              <div className="relative z-10 space-y-2">
+                <h2 className="text-2xl font-black tracking-tight text-white">Find smarter homes with hidden value</h2>
+                <p className="text-gray-400 font-medium">
+                  See which properties are already efficient — and which ones you can improve.
+                </p>
+                <div className="pt-4 flex gap-4">
+                  <Link href={`${base}/listings?filter=green`} className="text-[10px] font-black uppercase tracking-widest text-[#22c55e] flex items-center gap-2 hover:translate-x-1 transition-transform">
+                    Explore smart homes <ChevronRight className="w-3 h-3" />
+                  </Link>
+                </div>
+              </div>
+            </div>
+
             <div className="mt-10">
               <LecipmHomeSearchPanel base={base} />
             </div>
@@ -304,6 +325,8 @@ export function LecipmLuxuryHomepage({ locale = routing.defaultLocale, country =
           </div>
         </div>
       </section>
+
+      <GreenValueStrip />
 
       <section className="relative px-6 py-24 lg:px-10">
         <div className="mx-auto max-w-7xl">
@@ -342,6 +365,52 @@ export function LecipmLuxuryHomepage({ locale = routing.defaultLocale, country =
             >
               View All Listings
             </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Smart Opportunities (Green Listings) */}
+      <section className="relative px-6 py-24 lg:px-10 bg-[#22c55e]/5">
+        <div className="mx-auto max-w-7xl">
+          <SectionHeading
+            eyebrow="Intelligence"
+            title="Smart Opportunities"
+            subtitle="Properties identified by Green AI with significant hidden value or exceptional efficiency."
+          />
+
+          <div className="grid gap-7 xl:grid-cols-3">
+             {[
+               { title: "Eco-Conscious Loft", label: "OPTIMIZED", color: "#22c55e", rationale: "Already highly efficient" },
+               { title: "Hidden Value Estate", label: "IMPROVABLE", color: "#D4AF37", rationale: "Good potential for improvement" },
+               { title: "Energy-Ready Condo", label: "READY", color: "#3b82f6", rationale: "Minor updates needed for peak efficiency" }
+             ].map((item, i) => (
+               <div key={i} className="group overflow-hidden rounded-[30px] border border-[#22c55e]/20 bg-black p-8 space-y-6 relative hover:border-[#22c55e]/40 transition-all shadow-xl">
+                  <div className="flex justify-between items-start">
+                     <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center border border-white/10 group-hover:scale-110 transition-transform">
+                        <Leaf className="w-6 h-6 text-[#22c55e]" />
+                     </div>
+                     <Badge className="font-black text-[10px]" style={{ backgroundColor: `${item.color}10`, color: item.color, borderColor: `${item.color}30` }}>
+                        {item.label}
+                     </Badge>
+                  </div>
+                  <div className="space-y-2">
+                     <h3 className="text-2xl font-black text-white">{item.title}</h3>
+                     <p className="text-sm text-gray-500 italic">"{item.rationale}"</p>
+                  </div>
+                  <div className="pt-6 border-t border-white/5 flex justify-between items-center">
+                     <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest">Green AI Verified</span>
+                     <Link href={`${base}/listings`} className="h-10 w-10 bg-white/5 rounded-full flex items-center justify-center group-hover:bg-[#22c55e] group-hover:text-black transition-all">
+                        <ArrowRight className="w-4 h-4" />
+                     </Link>
+                  </div>
+               </div>
+             ))}
+          </div>
+
+          <div className="mt-12 text-center">
+            <Button className="bg-[#22c55e] text-black h-14 px-10 rounded-full font-black text-xs tracking-widest uppercase hover:brightness-110">
+               Explore smart homes
+            </Button>
           </div>
         </div>
       </section>

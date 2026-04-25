@@ -66,6 +66,12 @@ export async function createQuickBnhubListingRecord(input: CreateQuickBnhubListi
   return listing;
 }
 
+function resolveLaunchTargetListings(): number {
+  const raw = Number(process.env.BNHUB_LAUNCH_TARGET_LISTINGS ?? "15");
+  if (!Number.isFinite(raw)) return 15;
+  return Math.min(20, Math.max(10, Math.round(raw)));
+}
+
 export async function loadBnhubLaunchDashboardRows() {
   const [publishedCount, draftCount, hostRows, bookingCount, listings] = await Promise.all([
     prisma.shortTermListing.count({ where: { listingStatus: ListingStatus.PUBLISHED } }),
@@ -97,7 +103,7 @@ export async function loadBnhubLaunchDashboardRows() {
   ]);
 
   const activeHosts = hostRows.length;
-  const targetListings = 20;
+  const targetListings = resolveLaunchTargetListings();
   const gap = Math.max(0, targetListings - publishedCount);
 
   const table = listings.map((l) => ({
@@ -135,12 +141,35 @@ export async function applyBnhubLaunchPromotionFlags(input: {
   visibilityBoost: boolean;
   /** When set, reduces current nightly price by this percent once (launch promo). */
   discountPercent?: number | null;
+  /**
+   * Only adjust rank boost and/or discount — do not rewrite launch tags.
+   * Use for “boost visibility” without touching New/Special badges.
+   */
+  visibilityOnly?: boolean;
 }) {
   const row = await prisma.shortTermListing.findUnique({
     where: { id: input.listingId },
-    select: { experienceTags: true },
+    select: { experienceTags: true, nightPriceCents: true, reputationRankBoost: true },
   });
   if (!row) throw new Error("Listing not found");
+
+  if (input.visibilityOnly) {
+    const update: Prisma.ShortTermListingUpdateInput = {};
+    if (input.visibilityBoost) {
+      update.reputationRankBoost = 0.08;
+    }
+    if (input.discountPercent != null && input.discountPercent > 0 && input.discountPercent < 75) {
+      const next = Math.round(row.nightPriceCents * (1 - input.discountPercent / 100));
+      update.nightPriceCents = Math.max(100, next);
+    }
+    if (Object.keys(update).length === 0) {
+      throw new Error("visibilityOnly requires visibilityBoost and/or discountPercent");
+    }
+    return prisma.shortTermListing.update({
+      where: { id: input.listingId },
+      data: update,
+    });
+  }
 
   const existing = Array.isArray(row.experienceTags)
     ? row.experienceTags.filter((x): x is string => typeof x === "string")
@@ -156,14 +185,8 @@ export async function applyBnhubLaunchPromotionFlags(input: {
   };
 
   if (input.discountPercent != null && input.discountPercent > 0 && input.discountPercent < 75) {
-    const cur = await prisma.shortTermListing.findUnique({
-      where: { id: input.listingId },
-      select: { nightPriceCents: true },
-    });
-    if (cur) {
-      const next = Math.round(cur.nightPriceCents * (1 - input.discountPercent / 100));
-      update.nightPriceCents = Math.max(100, next);
-    }
+    const next = Math.round(row.nightPriceCents * (1 - input.discountPercent / 100));
+    update.nightPriceCents = Math.max(100, next);
   }
 
   return prisma.shortTermListing.update({

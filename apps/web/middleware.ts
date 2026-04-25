@@ -186,14 +186,18 @@ export async function middleware(request: NextRequest) {
     const isBroker = pathname.includes("/dashboard/broker");
     const isAdmin = pathname.includes("/dashboard/admin");
 
+    const BNHUB_URL = process.env.NEXT_PUBLIC_BNHUB_URL || "https://bnhub.lecipm.com";
+    const BROKER_URL = process.env.NEXT_PUBLIC_BROKER_URL || "https://broker.lecipm.com";
+    const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL || "https://admin.lecipm.com";
+
     if (isBnhub) {
-      return NextResponse.redirect(new URL("http://localhost:3003" + pathname + request.nextUrl.search, request.url));
+      return NextResponse.redirect(new URL(BNHUB_URL + pathname + request.nextUrl.search, request.url));
     }
     if (isBroker) {
-      return NextResponse.redirect(new URL("http://localhost:3004" + pathname + request.nextUrl.search, request.url));
+      return NextResponse.redirect(new URL(BROKER_URL + pathname + request.nextUrl.search, request.url));
     }
     if (isAdmin) {
-      return NextResponse.redirect(new URL("http://localhost:3002" + pathname + request.nextUrl.search, request.url));
+      return NextResponse.redirect(new URL(ADMIN_URL + pathname + request.nextUrl.search, request.url));
     }
 
     if (pathname.startsWith("/api/")) {

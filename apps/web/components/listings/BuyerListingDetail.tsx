@@ -57,6 +57,9 @@ import { recordPropertyDetailViewOnce } from "@/modules/conversion/funnel-metric
 import type { PropertyConversionSurface } from "@/modules/conversion/property-conversion-surface";
 import { recordPropertyCtaClick } from "@/modules/conversion/conversion-monitoring.service";
 import { CentrisConversionStrip } from "@/components/listings/CentrisConversionStrip";
+import { BrokerTrustBadges } from "@/components/trust/BrokerTrustBadges";
+import { BrokerTrustVerifyLink } from "@/components/trust/BrokerTrustVerifyLink";
+import { isIndependentPractice, TRUST_COPY } from "@/lib/trust/broker-trust";
 
 export type BuyerListingPayload = {
   id: string;
@@ -91,9 +94,19 @@ export type BuyerListingPayload = {
     licenseNumber: string | null;
     licenseVerified: boolean;
     address: string | null;
+    brokerUserId?: string | null;
+    licenceStatus?: string | null;
+    practiceMode?: string | null;
+    /** Active OACIQ licence record on file (platform data). */
+    licensedActiveOaciq?: boolean;
   } | null;
   /** FARCIQ broker liability coverage active (broker-owned listings only). */
   insuredBroker?: boolean;
+  insuranceDetail?: {
+    liabilityAmount: number;
+    expiryDate: Date | string;
+    status: string;
+  } | null;
   propertyDetails?: Array<{ label: string; value: string | null }>;
   transactionFlag?: {
     key: "offer_received" | "offer_accepted" | "sold";
@@ -698,7 +711,23 @@ export function BuyerListingDetail({
     licenseNumber: null,
     licenseVerified: false,
     address: null,
+    brokerUserId: null,
+    licenceStatus: null,
+    practiceMode: null,
+    licensedActiveOaciq: false,
   };
+  const trustRepProfile = {
+    licenceNumber: representative.licenseNumber,
+    licenceStatus: representative.licenceStatus ?? "",
+    practiceMode: representative.practiceMode,
+    regulator: null as string | null,
+  };
+  const licensedOaciqOnListing = Boolean(representative.licensedActiveOaciq);
+  const insuredFarciaOnListing = Boolean(listing.insuredBroker);
+  const independentBrokerOnListing = isIndependentPractice(trustRepProfile);
+  const showLicensedInsuredListingLine =
+    isBrokerListing && licensedOaciqOnListing && insuredFarciaOnListing;
+  const brokerTrustUserId = representative.brokerUserId?.trim() || null;
   const propertyDetails = [
     { label: "Bedrooms", value: listing.bedrooms != null ? String(listing.bedrooms) : null },
     { label: "Bathrooms", value: listing.bathrooms != null ? String(listing.bathrooms) : null },
@@ -1027,6 +1056,11 @@ export function BuyerListingDetail({
                   Broker-assisted
                 </li>
               ) : null}
+              {showLicensedInsuredListingLine ? (
+                <li className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-100/95">
+                  Licensed · insured broker
+                </li>
+              ) : null}
               {listing.listedOnCentris ? (
                 <li className="rounded-full border border-sky-400/25 bg-sky-500/10 px-3 py-1.5 text-xs font-medium text-sky-100/95">
                   📡 Also listed on Centris
@@ -1061,6 +1095,35 @@ export function BuyerListingDetail({
               </div>
               {esgBadge ? <div className="mt-3 flex flex-wrap gap-2">{esgBadge}</div> : null}
               {lecipmRankingBadges}
+              {showLicensedInsuredListingLine ? (
+                <p className="mt-3 max-w-2xl text-sm font-medium leading-snug text-white/85">
+                  Listed by licensed and insured real estate broker
+                </p>
+              ) : null}
+              {isBrokerListing ? (
+                <div className="mt-3 max-w-2xl">
+                  <BrokerTrustBadges
+                    licensedOaciq={licensedOaciqOnListing}
+                    insuredFarcia={insuredFarciaOnListing}
+                    independentBroker={independentBrokerOnListing}
+                    locale={localeSeg}
+                    brokerUserId={brokerTrustUserId}
+                    listingId={listing.id}
+                    surface="listing"
+                    variant="listing"
+                  />
+                </div>
+              ) : null}
+              {isBrokerListing && brokerTrustUserId ? (
+                <p className="mt-2 text-xs text-white/45">
+                  <Link
+                    href={`/${localeSeg}/${countrySeg}/broker/${encodeURIComponent(brokerTrustUserId)}`}
+                    className="font-medium text-[#E8D589]/90 underline decoration-[#D4AF37]/35 underline-offset-2 hover:text-[#E8D589]"
+                  >
+                    Broker profile
+                  </Link>
+                </p>
+              ) : null}
               <p className="mt-2 max-w-2xl text-xs font-normal leading-snug text-white/45">Explore with confidence</p>
               {listing.transactionFlag ? (
                 <div className="mt-4">
@@ -1616,9 +1679,22 @@ export function BuyerListingDetail({
                     </p>
                     {representative.licenseNumber ? (
                       <p className="mt-2 text-xs text-white/45">
-                        License {representative.licenseNumber}
-                        {representative.licenseVerified ? " · verified" : ""}
+                        OACIQ licence no. on file: {representative.licenseNumber}
+                        {representative.licenceStatus ? ` · status on file: ${representative.licenceStatus}` : ""}
+                        {representative.licenseVerified ? " · internal verification record" : ""}
                       </p>
+                    ) : null}
+                    {isBrokerListing ? (
+                      <div className="mt-2 space-y-1">
+                        <BrokerTrustVerifyLink
+                          locale={localeSeg}
+                          brokerUserId={brokerTrustUserId}
+                          listingId={listing.id}
+                          surface="listing"
+                          className="text-[#E8D589]/90 decoration-[#D4AF37]/35"
+                        />
+                        <p className="text-[10px] leading-relaxed text-white/40">{TRUST_COPY.platformNotRegulator}</p>
+                      </div>
                     ) : null}
                   </div>
                   <div className="w-full shrink-0 sm:w-auto sm:min-w-[220px]" aria-label="Call to action">

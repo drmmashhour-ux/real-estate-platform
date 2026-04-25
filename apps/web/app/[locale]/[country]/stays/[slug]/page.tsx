@@ -15,6 +15,7 @@ import { growthCityDisplayName, growthCityRegion } from "@/lib/growth/geo-slugs"
 import { parseGrowthCitySlugParam } from "@/lib/growth/geo-slugs";
 import { mergeTrafficAttributionIntoMetadata } from "@/lib/attribution/social-traffic";
 import { hasAdUtmParams } from "@/lib/marketing/bnhub-ad-landing-url";
+import { recordBnhubStayPublicView } from "@/lib/bnhub/bnhub-ethical-seeding";
 
 export const dynamic = "force-dynamic";
 
@@ -110,6 +111,7 @@ export default async function StaySeoPage({
   }
 
   const guestId = await getGuestId().catch(() => null);
+  void recordBnhubStayPublicView(listing.id, guestId);
   const cookieHeader = (await headers()).get("cookie");
   void trackEvent(
     "listing_view",

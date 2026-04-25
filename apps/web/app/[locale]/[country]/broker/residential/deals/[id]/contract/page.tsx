@@ -6,6 +6,8 @@ import { getGuestId } from "@/lib/auth/session";
 import { requireBrokerDealAccess } from "@/lib/broker/residential-access";
 import { prisma } from "@repo/db";
 import { ContractWorkspace } from "@/components/contract-engine/ContractWorkspace";
+import { isActiveOaciqLicenceOnFile, isIndependentPractice, TRUST_COPY } from "@/lib/trust/broker-trust";
+import { isBrokerInsuranceValid } from "@/modules/compliance/insurance/insurance.service";
 import { ExactMapperWorkspace } from "@/components/oaciq-workspace/ExactMapperWorkspace";
 
 export const dynamic = "force-dynamic";
@@ -42,7 +44,7 @@ export default async function BrokerResidentialContractEnginePage({
           ← Deal file
         </Link>
         <h2 className="font-serif text-2xl text-ds-text">AI Contract Engine</h2>
-        <ContractWorkspace dealId={id} />
+        <ContractWorkspace dealId={id} complianceFooter={complianceFooter} />
       </div>
       {oaciqMapperFlags.oaciqExactMapperV1 && aiContractEngineFlags.aiContractEngineV1 ? (
         <div className="space-y-3">

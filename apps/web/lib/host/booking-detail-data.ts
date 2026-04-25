@@ -1,6 +1,29 @@
 import type { PaymentStatus, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import type { BookingMoneyBreakdown } from "@/lib/payments/bnhub-money-types";
+import type { BnhubGuestTrustPublicSnapshot } from "@/modules/trust/trust.types";
+
+function parseGuestTrustPayload(raw: unknown): BnhubGuestTrustPublicSnapshot | null {
+  if (raw == null || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const p = raw as Record<string, unknown>;
+  const score = typeof p.score === "number" ? p.score : null;
+  const riskLevel = typeof p.riskLevel === "string" ? p.riskLevel : null;
+  const uiLabel = typeof p.uiLabel === "string" ? p.uiLabel : null;
+  const fraudSignalCodes = Array.isArray(p.fraudSignalCodes)
+    ? p.fraudSignalCodes.filter((x): x is string => typeof x === "string")
+    : [];
+  const factorCount = typeof p.factorCount === "number" ? p.factorCount : 0;
+  if (score == null || riskLevel == null || uiLabel == null) return null;
+  if (!["LOW", "MEDIUM", "HIGH"].includes(riskLevel)) return null;
+  if (!["trusted_guest", "new_user", "potential_risk", "standard"].includes(uiLabel)) return null;
+  return {
+    score,
+    riskLevel: riskLevel as BnhubGuestTrustPublicSnapshot["riskLevel"],
+    uiLabel: uiLabel as BnhubGuestTrustPublicSnapshot["uiLabel"],
+    fraudSignalCodes,
+    factorCount,
+  };
+}
 
 function parseMoneyBreakdown(raw: Prisma.JsonValue | null | undefined): BookingMoneyBreakdown | null {
   if (raw == null || typeof raw !== "object" || Array.isArray(raw)) return null;
@@ -38,6 +61,7 @@ const NON_CANCELABLE = new Set([
 
 export type HostBookingDetail = {
   id: string;
+  guestId: string;
   confirmationCode: string | null;
   bookingCode: string | null;
   status: string;
@@ -50,6 +74,8 @@ export type HostBookingDetail = {
   guestContactName: string | null;
   guestContactEmail: string | null;
   guestContactPhone: string | null;
+  /** Snapshot at booking time from `guest_trust_evaluated` event (no PII). */
+  guestTrust: BnhubGuestTrustPublicSnapshot | null;
   guest: { name: string | null; email: string; phone: string | null } | null;
   listing: { id: string; title: string; city: string };
   payment: {
@@ -73,7 +99,23 @@ export async function getHostBookingDetail(
 ): Promise<HostBookingDetail | null> {
   const b = await prisma.booking.findFirst({
     where: { id: bookingId, listing: { ownerId: hostId } },
-    include: {
+    select: {
+      id: true,
+      guestId: true,
+      confirmationCode: true,
+      bookingCode: true,
+      status: true,
+      createdAt: true,
+      canceledAt: true,
+      checkIn: true,
+      checkOut: true,
+      nights: true,
+      guestsCount: true,
+      guestContactName: true,
+      guestContactEmail: true,
+      guestContactPhone: true,
+      guestConfirmationEmailSentAt: true,
+      cancellationReason: true,
       listing: { select: { id: true, title: true, city: true } },
       guest: { select: { name: true, email: true, phone: true } },
       payment: true,
@@ -81,6 +123,9 @@ export async function getHostBookingDetail(
     },
   });
   if (!b) return null;
+
+  const trustEv = b.bookingEvents.find((e) => e.eventType === "guest_trust_evaluated");
+  const guestTrust = parseGuestTrustPayload(trustEv?.payload ?? null);
 
   const pay = b.payment;
   const moneyBreakdown = pay ? parseMoneyBreakdown(pay.moneyBreakdownJson) : null;
@@ -118,6 +163,7 @@ export async function getHostBookingDetail(
 
   return {
     id: b.id,
+    guestId: b.guestId,
     confirmationCode: b.confirmationCode,
     bookingCode: b.bookingCode,
     status: b.status,
@@ -130,6 +176,7 @@ export async function getHostBookingDetail(
     guestContactName: b.guestContactName,
     guestContactEmail: b.guestContactEmail,
     guestContactPhone: b.guestContactPhone,
+    guestTrust,
     guest: b.guest,
     listing: b.listing,
     payment: pay

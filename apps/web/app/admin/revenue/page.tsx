@@ -64,6 +64,13 @@ export default async function AdminBnhubRevenuePage() {
             Totals from completed Stripe checkouts (<code className="text-zinc-300">Payment.status = COMPLETED</code>
             ). Platform earnings use Stripe application fees when present; otherwise guest service fees.
           </p>
+          <p className="max-w-2xl text-sm text-zinc-500">
+            Guest quotes use <code className="text-zinc-400">calculateBookingTotal</code> /{" "}
+            <code className="text-zinc-400">calculateBookingTotalCents</code> — platform fee band{" "}
+            <strong className="text-zinc-300">10–15%</strong> (<code className="text-zinc-400">BNHUB_PLATFORM_FEE_PERCENT</code>
+            ). Optional upsells: early check-in, late check-out, cleaning add-on (
+            <code className="text-zinc-400">lib/monetization/bnhub-checkout-pricing.ts</code>).
+          </p>
           <div className="flex flex-wrap gap-3 text-sm">
             <Link href="/admin/revenue-dashboard" className="text-amber-400 hover:text-amber-300">
               BNHub revenue dashboard →
@@ -83,9 +90,9 @@ export default async function AdminBnhubRevenuePage() {
 
         <section className="grid gap-4 lg:grid-cols-2">
           <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-zinc-500">Guest volume</h2>
-            <p className="mt-3 text-3xl font-semibold tabular-nums text-white">{cad(totalRevenueCents)}</p>
-            <p className="mt-1 text-sm text-zinc-400">Sum of payment amounts (what guests paid).</p>
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-zinc-500">Paid checkouts</h2>
+            <p className="mt-3 text-3xl font-semibold tabular-nums text-white">{paidCount}</p>
+            <p className="mt-1 text-sm text-zinc-400">Completed payments (same cohort as revenue and averages).</p>
           </div>
           <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6">
             <h2 className="text-sm font-semibold uppercase tracking-wider text-zinc-500">Platform earnings</h2>

@@ -4,9 +4,10 @@ import { GuestBookingFlowDemo } from "@/components/bnhub/demo/GuestBookingFlowDe
 export const metadata: Metadata = {
   title: "BNHub — Guest booking flow (demo)",
   description:
-    "Interactive simulation: search, results, listing detail, transparent pricing, and confirmation — designed for clarity and trust.",
+    "Interactive simulation: search → results → listing → booking → confirmation. Transparent pricing and trust-first UI.",
 };
 
+/** Real guest booking flow simulation (client-side state machine; no live API). */
 export default function BnhubGuestFlowDemoPage() {
   return <GuestBookingFlowDemo />;
 }

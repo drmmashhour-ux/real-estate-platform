@@ -1,9 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { ReinforcementInsightsPanel } from "@/components/reinforcement/ReinforcementInsightsPanel";
 import { TopStrategiesPanel } from "./TopStrategiesPanel";
 
-type Row = { strategyKey: string; domain: string; winRate: number | null; usageCount: number };
+type Row = { strategyKey: string; domain: string; winRate: number | null; usageCount: number; avgClosingTime?: number | null };
 
 type Insights = { topPerforming: Row[]; underperforming: Row[]; mostUsed: Row[] };
 
@@ -62,6 +63,9 @@ export function StrategyInsightsDashboard({ className, compact = false }: Props)
         <TopStrategiesPanel top={data.underperforming} title="Weaker historical lean (low data possible)" />
         <div className={compact ? "" : "sm:col-span-2"}>
           <TopStrategiesPanel top={data.mostUsed} title="Most often logged" />
+        </div>
+        <div className={compact ? "mt-6" : "sm:col-span-2 border-t border-slate-800 pt-6"}>
+          <ReinforcementInsightsPanel compact={compact} />
         </div>
       </div>
     </section>

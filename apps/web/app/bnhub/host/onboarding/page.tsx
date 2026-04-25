@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export default async function BnhubHostOnboardingPage() {
   const userId = await getGuestId();
   if (!userId) {
-    redirect("/auth/login?next=/bnhub/host/onboarding");
+    redirect("/en/ca/auth/login?next=/bnhub/host/onboarding");
   }
 
   return (

@@ -26,6 +26,7 @@ export async function PATCH(request: NextRequest, ctx: { params: Promise<{ id: s
   const newListing = body.newListing === true;
   const specialOffer = body.specialOffer === true;
   const visibilityBoost = body.visibilityBoost === true;
+  const visibilityOnly = body.visibilityOnly === true;
   const discountRaw = body.discountPercent;
   const discountPercent =
     discountRaw == null ? null : typeof discountRaw === "number" ? discountRaw : Number(discountRaw);
@@ -36,6 +37,7 @@ export async function PATCH(request: NextRequest, ctx: { params: Promise<{ id: s
       newListing,
       specialOffer,
       visibilityBoost,
+      visibilityOnly,
       discountPercent: Number.isFinite(discountPercent) ? discountPercent : null,
     });
     return Response.json({ ok: true });

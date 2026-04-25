@@ -8,6 +8,8 @@ import { getAdminRiskAlerts } from "@/lib/admin/control-center";
 import { requireAdminControlUserId } from "@/lib/admin/guard";
 import { getPlatformStats } from "@/modules/analytics/services/get-platform-stats";
 import { prisma } from "@repo/db";
+import { StrategyInsightsDashboard } from "@/components/strategy/StrategyInsightsDashboard";
+import { PortfolioDashboard } from "@/components/brokerage-intelligence/PortfolioDashboard";
 
 export const dynamic = "force-dynamic";
 
@@ -53,6 +55,20 @@ export default async function AdminAnalyticsHubPage() {
         </div>
 
         <GrowthRoiDashboard />
+
+        <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-4">
+          <h2 className="text-sm font-semibold text-zinc-200">Strategy outcome benchmarks (product)</h2>
+          <p className="mb-2 text-xs text-zinc-500">Aggregate, probabilistic — not personal profiles; use for product tuning only.</p>
+          <StrategyInsightsDashboard compact className="text-zinc-200" />
+        </div>
+
+        <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-4">
+          <h2 className="text-sm font-semibold text-zinc-200">Brokerage portfolio intelligence (advisory)</h2>
+          <p className="mb-2 text-xs text-zinc-500">
+            Load, segments, and routing tips — suggestions only; no auto-irreversible actions from this view.
+          </p>
+          <PortfolioDashboard compact className="text-zinc-200" />
+        </div>
 
         {rankingV8ShadowFlags.rankingV8GovernanceDashboardV1 ? (
           <RankingV8GovernanceBlock />

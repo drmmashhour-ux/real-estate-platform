@@ -354,6 +354,10 @@ export default async function PublicListingRoute({ params, searchParams }: Props
       logInfo("[listing_view]", { listingId: row.id, userId: guestFsbo ?? null, kind: "fsbo" });
     }
     const ownerBrokerVerification = row.owner.brokerVerifications[0] ?? null;
+    const ownerLicProfile = row.owner.lecipmBrokerLicenceProfile ?? null;
+    const fsboLicenseNumber =
+      ownerLicProfile?.licenceNumber?.trim() || ownerBrokerVerification?.licenseNumber || null;
+    const licensedActiveOaciqFsbo = isActiveOaciqLicenceOnFile(ownerLicProfile);
     const insuredBroker =
       row.listingOwnerType === "BROKER" ? await isBrokerInsuranceValid(row.ownerId) : false;
     const insuranceStatus = 
@@ -398,7 +402,6 @@ export default async function PublicListingRoute({ params, searchParams }: Props
         { label: "Country", value: row.country ?? null },
         { label: "Publishing path", value: row.listingOwnerType === "BROKER" ? "Sell Hub with broker" : "Sell Hub Free" },
       ],
-      insuredBroker,
     };
     const paywallFsbo = isListingContactPaywallEnabled();
     const viewerFsbo = guestFsbo;

@@ -138,8 +138,9 @@ export function BnhubLaunchDashboardClient({
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-400/90">BNHub launch</p>
         <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">First listings &amp; first bookings</h1>
         <p className="max-w-2xl text-sm text-zinc-400">
-          Seed 10–20 high-quality stays, promote discovery, and track booking traction. Quality bar: 3+ photos, 120+
-          character description, 3+ amenities.
+          Seed {data.targetListings} high-quality stays (configure with{" "}
+          <code className="text-zinc-300">BNHUB_LAUNCH_TARGET_LISTINGS</code>, 10–20), promote discovery, and track traction.
+          Quality bar: 3+ photos, 120+ character description, 3+ amenities.
         </p>
         <Link href="/admin/revenue" className="text-sm text-amber-400 hover:text-amber-300">
           Revenue dashboard →
@@ -150,11 +151,14 @@ export function BnhubLaunchDashboardClient({
         <p className="rounded-xl border border-zinc-700 bg-zinc-900/80 px-4 py-3 text-sm text-zinc-200">{msg}</p>
       ) : null}
 
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat icon={<Rocket className="h-5 w-5" />} label="Published listings" value={String(data.publishedCount)} />
-        <Stat icon={<Users className="h-5 w-5" />} label="Active hosts" value={String(data.activeHosts)} />
-        <Stat icon={<Target className="h-5 w-5" />} label="Total bookings" value={String(data.bookingCount)} />
-        <Stat icon={<ClipboardList className="h-5 w-5" />} label="Draft listings" value={String(data.draftCount)} />
+      <section className="space-y-3">
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-zinc-500">Overview</h2>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Stat icon={<Rocket className="h-5 w-5" />} label="Listings acquired" value={String(data.publishedCount)} />
+          <Stat icon={<Users className="h-5 w-5" />} label="Active hosts" value={String(data.activeHosts)} />
+          <Stat icon={<Target className="h-5 w-5" />} label="Bookings" value={String(data.bookingCount)} />
+          <Stat icon={<ClipboardList className="h-5 w-5" />} label="Draft listings" value={String(data.draftCount)} />
+        </div>
       </section>
 
       <section className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5 sm:p-6">
@@ -169,7 +173,7 @@ export function BnhubLaunchDashboardClient({
 
       <section className="grid gap-8 lg:grid-cols-2">
         <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-5 sm:p-6">
-          <h2 className="text-lg font-semibold text-white">Add listing (manual seed)</h2>
+          <h2 className="text-lg font-semibold text-white">First listings strategy — manual seed</h2>
           <p className="mt-1 text-sm text-zinc-500">Host must already exist — enter their account email.</p>
           <form onSubmit={submitCreate} className="mt-5 space-y-4">
             <Field label="Host email *">
@@ -284,7 +288,7 @@ export function BnhubLaunchDashboardClient({
         </div>
 
         <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-5 sm:p-6">
-          <h2 className="text-lg font-semibold text-white">Launch tasks</h2>
+          <h2 className="text-lg font-semibold text-white">Tasks</h2>
           <ul className="mt-4 space-y-3 text-sm text-zinc-300">
             <li className="flex gap-2">
               <span className="text-amber-400">□</span>
@@ -309,7 +313,10 @@ export function BnhubLaunchDashboardClient({
 
       <section className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5 sm:p-6">
         <h2 className="text-lg font-semibold text-white">Tracking</h2>
-        <p className="mt-1 text-sm text-zinc-500">Bookings per listing; conversion = first-booking signal (bookings &gt; 0).</p>
+        <p className="mt-1 text-sm text-zinc-500">
+          Bookings per listing. Launch conversion rate = share of listings that have secured at least one booking (proxy until
+          view-level funnel exists).
+        </p>
         <div className="mt-4 overflow-x-auto">
           <table className="w-full min-w-[720px] text-left text-sm">
             <thead className="border-b border-zinc-800 text-xs uppercase tracking-wide text-zinc-500">
@@ -319,7 +326,7 @@ export function BnhubLaunchDashboardClient({
                 <th className="py-2 pr-3">City</th>
                 <th className="py-2 pr-3">Price</th>
                 <th className="py-2 pr-3">Bookings</th>
-                <th className="py-2 pr-3">Conversion</th>
+                <th className="py-2 pr-3">Conv. rate</th>
                 <th className="py-2 pr-3">Promote</th>
               </tr>
             </thead>
@@ -341,7 +348,9 @@ export function BnhubLaunchDashboardClient({
                   <td className="py-3 pr-3">{row.city}</td>
                   <td className="py-3 pr-3 tabular-nums">{cad(row.nightPriceCents)}</td>
                   <td className="py-3 pr-3 tabular-nums">{row.bookings}</td>
-                  <td className="py-3 pr-3">{row.bookings > 0 ? "Active" : "Pre-revenue"}</td>
+                  <td className="py-3 pr-3 tabular-nums" title={row.bookings >= 1 ? "At least one booking" : "Awaiting first booking"}>
+                    {row.bookings >= 1 ? "100%" : "0%"}
+                  </td>
                   <td className="py-3 pr-3">
                     <div className="flex flex-col gap-1">
                       <button
@@ -354,9 +363,22 @@ export function BnhubLaunchDashboardClient({
                             visibilityBoost: true,
                           })
                         }
-                        className="rounded-lg border border-zinc-600 px-2 py-1 text-xs hover:bg-zinc-800 disabled:opacity-50"
+                        className="rounded-lg border border-zinc-600 px-2 py-1 text-left text-xs hover:bg-zinc-800 disabled:opacity-50"
                       >
-                        Feature + boost
+                        Feature listing
+                      </button>
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() =>
+                          patchListing(row.id, {
+                            visibilityOnly: true,
+                            visibilityBoost: true,
+                          })
+                        }
+                        className="rounded-lg border border-zinc-600 px-2 py-1 text-left text-xs hover:bg-zinc-800 disabled:opacity-50"
+                      >
+                        Boost visibility
                       </button>
                       <button
                         type="button"
@@ -369,9 +391,9 @@ export function BnhubLaunchDashboardClient({
                             discountPercent: 10,
                           })
                         }
-                        className="rounded-lg border border-zinc-600 px-2 py-1 text-xs hover:bg-zinc-800 disabled:opacity-50"
+                        className="rounded-lg border border-zinc-600 px-2 py-1 text-left text-xs hover:bg-zinc-800 disabled:opacity-50"
                       >
-                        Special + 10% off nightly
+                        Apply 10% discount
                       </button>
                     </div>
                   </td>

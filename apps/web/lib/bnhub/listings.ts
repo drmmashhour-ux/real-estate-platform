@@ -783,6 +783,7 @@ export async function getListingById(idOrPublicCode: string) {
             hostQuality: true,
             stripeAccountId: true,
             stripeOnboardingComplete: true,
+            bnhubIsFoundingHost: true,
           },
         },
         listingPhotos: { orderBy: [{ isCover: "desc" }, { sortOrder: "asc" }] },

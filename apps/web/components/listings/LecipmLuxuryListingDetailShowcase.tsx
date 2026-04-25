@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { LuxuryShowcaseProperty } from "@/components/listings/luxury-showcase-data";
+import { GreenDecisionCard } from "@/components/green/GreenDecisionCard";
 
 function DetailStat({ label, value }: { label: string; value: string | number }) {
   return (
@@ -96,6 +97,17 @@ export function LecipmLuxuryListingDetailShowcase({ base, property }: Props) {
               ))}
             </div>
           </div>
+
+          <GreenDecisionCard 
+            verdict="Good opportunity to improve efficiency"
+            impact="Medium"
+            rationales={[
+              "Windows and insulation could be optimized for 15% lower costs.",
+              "Heating system is efficient but could be paired with smart controls.",
+              "High solar potential for rooftop energy generation."
+            ]}
+            quebecLabel="IMPROVABLE"
+          />
 
           <div className="rounded-[28px] border border-[#D4AF37]/14 bg-[linear-gradient(135deg,#0D0D0D,#090909)] p-7">
             <div className="text-[11px] uppercase tracking-[0.3em] text-[#D4AF37]/78">AI insights</div>

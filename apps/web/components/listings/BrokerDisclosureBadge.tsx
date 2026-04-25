@@ -1,15 +1,14 @@
 import React from "react";
 
 /**
- * PHASE 3 & 5: BROKER VISIBILITY & LEGAL DISCLOSURE
- * Displays verified broker information and mandatory OACIQ regulatory disclosure.
+ * Broker visibility — reflects licence data on file; does not imply platform certification.
  */
-export function BrokerDisclosureBadge({ 
-  brokerName, 
+export function BrokerDisclosureBadge({
+  brokerName,
   licenseNumber,
-  practiceMode = "INDEPENDENT"
-}: { 
-  brokerName: string; 
+  practiceMode = "INDEPENDENT",
+}: {
+  brokerName: string;
   licenseNumber: string;
   practiceMode?: string;
 }) {
@@ -33,17 +32,21 @@ export function BrokerDisclosureBadge({
         <div className="flex flex-col">
           <div className="flex items-center gap-1.5">
             <span className="text-[10px] uppercase tracking-wider text-emerald-700 font-bold">
-              Licensed Broker Verified
+              OACIQ licence on file
             </span>
-            <span className="inline-block px-1 rounded-sm bg-emerald-600 text-[8px] text-white font-bold uppercase tracking-tighter">OACIQ</span>
+            <span className="inline-block rounded-sm bg-emerald-600 px-1 text-[8px] font-bold uppercase tracking-tighter text-white">
+              confirm on register
+            </span>
           </div>
           <span>
-            <span className="font-bold">{brokerName}</span> · #{licenseNumber} · {practiceMode === "INDEPENDENT" ? "Independent" : "Agency"}
+            <span className="font-bold">{brokerName}</span> · #{licenseNumber} ·{" "}
+            {practiceMode === "INDEPENDENT" ? "Independent" : "Agency"}
           </span>
         </div>
       </div>
       <p className="px-1 text-[10px] text-slate-500 italic">
-        Services provided by a licensed real estate broker regulated by OACIQ.
+        Brokerage services are regulated by OACIQ. This platform is not a regulator—verify current licence status on the
+        official OACIQ register.
       </p>
     </div>
   );

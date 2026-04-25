@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 
 export default async function AdminBnhubLaunchPage() {
   const guestId = await getGuestId();
-  if (!guestId) redirect("/auth/login?next=/admin/bnhub-launch");
+  if (!guestId) redirect("/en/ca/auth/login?next=/admin/bnhub-launch");
   if (!(await isPlatformAdmin(guestId))) redirect("/");
 
   const initial = await loadBnhubLaunchDashboardRows();

@@ -1,5 +1,5 @@
 import { prisma } from "@repo/db";
-import { attributeOutcomeToStrategies } from "./strategy-attribution.engine";
+import { attributeOutcomeToStrategies, type AttributedStrategy } from "./strategy-attribution.engine";
 import type { StrategyBucketOutcome } from "@prisma/client";
 
 /**
@@ -8,7 +8,7 @@ import type { StrategyBucketOutcome } from "@prisma/client";
 export async function getDealStrategyBenchmarkView(dealId: string): Promise<{
   executions: { id: string; strategyKey: string; domain: string; createdAt: string }[];
   outcome: { outcome: StrategyBucketOutcome; closingTimeDays: number | null } | null;
-  attributed: { strategyKey: string; contributionWeight: number }[];
+  attributed: { strategyKey: string; domain: string; contributionWeight: number }[];
   notes: string[];
 }> {
   try {
@@ -21,11 +21,12 @@ export async function getDealStrategyBenchmarkView(dealId: string): Promise<{
       }),
       prisma.strategyOutcomeEvent.findUnique({ where: { dealId } }),
     ]);
-    const attr = await attributeOutcomeToStrategies(
-      dealId,
-      outcome?.outcome ?? "WON",
-      outcome?.closingTimeDays ?? null
-    ).catch(() => ({ attributedStrategies: [] }));
+    const hasOutcome = Boolean(outcome);
+    const attr = hasOutcome
+      ? await attributeOutcomeToStrategies(dealId, outcome!.outcome, outcome?.closingTimeDays ?? null).catch(
+          (): { attributedStrategies: AttributedStrategy[] } => ({ attributedStrategies: [] })
+        )
+      : { attributedStrategies: [] as AttributedStrategy[] };
     const notes: string[] = [];
     if (outcome) {
       const denom = outcome.outcome === "WON" ? "positive terminal" : "non-won terminal";
@@ -34,6 +35,9 @@ export async function getDealStrategyBenchmarkView(dealId: string): Promise<{
       );
     } else {
       notes.push("No terminal outcome recorded for this deal in the strategy benchmark yet.");
+      if (events.length > 0) {
+        notes.push("Execution events are still logged; attribution weights are shown only after a terminal bucket exists.");
+      }
     }
     if (attr.attributedStrategies.length > 0) {
       notes.push("Attribution uses recency-weighted strategy events; weights are heuristic, not causal.");
@@ -50,6 +54,7 @@ export async function getDealStrategyBenchmarkView(dealId: string): Promise<{
         : null,
       attributed: attr.attributedStrategies.map((a) => ({
         strategyKey: a.strategyKey,
+        domain: a.domain,
         contributionWeight: Math.round(a.contributionWeight * 1000) / 1000,
       })),
       notes,

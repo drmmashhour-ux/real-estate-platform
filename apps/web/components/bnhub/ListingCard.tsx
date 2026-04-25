@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { Star } from "lucide-react";
 import { TrustBadge } from "@/components/bnhub/TrustBadge";
+import type { ListingBadgeKey } from "@/components/bnhub/ListingBadges";
+import { ListingBadges } from "@/components/bnhub/ListingBadges";
 import type { BnhubFraudHeuristic, BnhubListingRiskLevel } from "@/modules/bnhub/recommendationEngine";
 
 export type BnhubListingCardProps = {
@@ -19,6 +21,9 @@ export type BnhubListingCardProps = {
   valueLabel?: "Best value" | "Great price" | null;
   fraud?: BnhubFraudHeuristic;
   launchBadges?: { newListing?: boolean; specialOffer?: boolean };
+  ethicalBadges?: ListingBadgeKey[];
+  wishlistCount?: number;
+  lifetimeViewCount?: number;
 };
 
 export function ListingCard({
@@ -35,6 +40,9 @@ export function ListingCard({
   valueLabel,
   fraud,
   launchBadges,
+  ethicalBadges,
+  wishlistCount = 0,
+  lifetimeViewCount = 0,
 }: BnhubListingCardProps) {
   const price = (nightPriceCents / 100).toFixed(0);
   const full = layout === "full";
@@ -65,7 +73,11 @@ export function ListingCard({
             {valueLabel}
           </span>
         ) : null}
-        {full && (launchBadges?.newListing || launchBadges?.specialOffer) ? (
+        {full && ethicalBadges?.length ? (
+          <div className="absolute right-3 top-3 max-w-[72%]">
+            <ListingBadges badges={ethicalBadges} dense className="justify-end" />
+          </div>
+        ) : full && (launchBadges?.newListing || launchBadges?.specialOffer) ? (
           <div className="absolute right-3 top-3 flex max-w-[70%] flex-col items-end gap-1.5">
             {launchBadges?.newListing ? (
               <span className="rounded-full bg-sky-500/90 px-2.5 py-1 text-[11px] font-semibold text-black shadow-sm backdrop-blur-sm">
@@ -89,6 +101,13 @@ export function ListingCard({
           {title}
         </h3>
         {city ? <p className="text-sm text-white/50">{city}</p> : null}
+        {full && (wishlistCount > 0 || lifetimeViewCount > 0) ? (
+          <p className="text-[11px] text-white/40">
+            {lifetimeViewCount > 0 ? `${lifetimeViewCount.toLocaleString()} lifetime views` : null}
+            {lifetimeViewCount > 0 && wishlistCount > 0 ? " · " : null}
+            {wishlistCount > 0 ? `${wishlistCount} saves` : null}
+          </p>
+        ) : null}
         {full ? (
           <>
             <TrustBadge

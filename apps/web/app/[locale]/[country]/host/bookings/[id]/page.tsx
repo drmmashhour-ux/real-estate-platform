@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getGuestId } from "@/lib/auth/session";
 import { HostBookingDetailActions } from "@/components/host/HostBookingDetailActions";
+import { GuestTrustHostCallout } from "@/components/host/GuestTrustHostCallout";
 import { getHostBookingDetail } from "@/lib/host";
 
 export const dynamic = "force-dynamic";
@@ -93,6 +94,15 @@ export default async function HostBookingDetailPage({ params }: Props) {
                 <dd className="mt-0.5 text-zinc-200">{b.guestsCount ?? "—"}</dd>
               </div>
             </dl>
+            {b.guestTrust ? (
+              <div className="mt-4">
+                <GuestTrustHostCallout trust={b.guestTrust} />
+              </div>
+            ) : (
+              <p className="mt-4 text-xs text-zinc-500">
+                Trust snapshot unavailable for this booking (older reservations may predate automated guest trust).
+              </p>
+            )}
           </section>
 
           <section className="rounded-2xl border border-zinc-800 bg-[#111] p-5">

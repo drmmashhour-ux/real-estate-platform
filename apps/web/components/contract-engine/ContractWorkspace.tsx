@@ -1,10 +1,32 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { BrokerTrustBadges } from "@/components/trust/BrokerTrustBadges";
+import { TRUST_COPY } from "@/lib/trust/broker-trust";
 
 const NOTICE = "Draft assistance — broker review required.";
 
-export function ContractWorkspace({ dealId, defaultFormKey = "pp_mandatory_residential_immovable" }: { dealId: string; defaultFormKey?: string }) {
+export type ContractComplianceFooter = {
+  locale: string;
+  dealId: string;
+  brokerUserId: string | null;
+  licenceNumber: string | null;
+  licenceStatus: string | null;
+  licensedOaciq: boolean;
+  insuredFarcia: boolean;
+  independentBroker: boolean;
+  insuranceStatement: string;
+};
+
+export function ContractWorkspace({
+  dealId,
+  defaultFormKey = "pp_mandatory_residential_immovable",
+  complianceFooter = null,
+}: {
+  dealId: string;
+  defaultFormKey?: string;
+  complianceFooter?: ContractComplianceFooter | null;
+}) {
   const [formKey, setFormKey] = useState(defaultFormKey);
   const [prefill, setPrefill] = useState<unknown>(null);
   const [validation, setValidation] = useState<unknown>(null);
@@ -95,6 +117,48 @@ export function ContractWorkspace({ dealId, defaultFormKey = "pp_mandatory_resid
           <pre className="mt-2 max-h-64 overflow-auto text-[11px] text-ds-text-secondary">{suggestions ? JSON.stringify(suggestions, null, 2) : "—"}</pre>
         </div>
       </section>
+
+      {complianceFooter ? (
+        <section
+          className="rounded-xl border border-ds-border bg-ds-card/30 p-4"
+          aria-labelledby="contract-broker-compliance-heading"
+        >
+          <h4
+            id="contract-broker-compliance-heading"
+            className="text-xs font-semibold uppercase tracking-wide text-ds-gold/80"
+          >
+            Broker compliance (disclosure)
+          </h4>
+          <dl className="mt-3 space-y-3 text-xs text-ds-text-secondary">
+            <div>
+              <dt className="font-medium text-ds-text/80">OACIQ licence number on file</dt>
+              <dd className="mt-1 text-ds-text">{complianceFooter.licenceNumber?.trim() || "—"}</dd>
+              {complianceFooter.licenceStatus ? (
+                <dd className="mt-1 text-[11px] text-ds-text-secondary/90">
+                  Status on file: {complianceFooter.licenceStatus}
+                </dd>
+              ) : null}
+            </div>
+            <div>
+              <dt className="font-medium text-ds-text/80">Professional liability (FARCIQ)</dt>
+              <dd className="mt-1 text-ds-text/90">{complianceFooter.insuranceStatement}</dd>
+            </div>
+          </dl>
+          <div className="mt-4">
+            <BrokerTrustBadges
+              licensedOaciq={complianceFooter.licensedOaciq}
+              insuredFarcia={complianceFooter.insuredFarcia}
+              independentBroker={complianceFooter.independentBroker}
+              locale={complianceFooter.locale}
+              brokerUserId={complianceFooter.brokerUserId}
+              dealId={complianceFooter.dealId}
+              surface="contract"
+              variant="dashboard"
+            />
+          </div>
+          <p className="mt-3 text-[10px] leading-relaxed text-ds-text-secondary/90">{TRUST_COPY.platformNotRegulator}</p>
+        </section>
+      ) : null}
     </div>
   );
 }

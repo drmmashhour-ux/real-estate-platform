@@ -17,6 +17,15 @@ function blockerCount(b: unknown): number {
   return 0;
 }
 
+function objectionCount(obj: unknown): number {
+  if (Array.isArray(obj)) return obj.length;
+  if (obj && typeof obj === "object" && "objections" in obj) {
+    const a = (obj as { objections?: unknown }).objections;
+    if (Array.isArray(a)) return a.length;
+  }
+  return 0;
+}
+
 /**
  * Heuristic risk — not a prediction, suggestions only.
  */
@@ -52,6 +61,12 @@ export function computeMomentumRisk(context: NegotiationSimulatorContext): Momen
   if (bCount >= 3) {
     score += 1;
     rationale.push("Multiple unresolved blockers can slow progress until at least one is addressed.");
+  }
+
+  const oCount = objectionCount(context.objections);
+  if (oCount >= 3) {
+    score += 1;
+    rationale.push("Several open objections or concern themes in the data can make forward motion uneven until the client names priorities.");
   }
 
   if ((context.engagementScore ?? 0.5) < 0.4 && readiness >= 0.6) {

@@ -63,6 +63,7 @@ export type StrategyInsightRow = {
   winsCredited: number;
   lossesCredited: number;
   stallsCredited: number;
+  avgClosingTime: number | null;
 };
 
 /**
@@ -89,6 +90,7 @@ export async function getGlobalStrategyInsights(): Promise<{
           winsCredited: r.wins,
           lossesCredited: r.losses,
           stallsCredited: r.stalls,
+          avgClosingTime: r.avgClosingTime,
         };
       })
     );

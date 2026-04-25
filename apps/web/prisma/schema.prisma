@@ -40,6 +40,7 @@ enum PlatformRole {
   CONTENT_OPERATOR
   LISTING_OPERATOR
   OUTREACH_OPERATOR
+  OPERATOR
   SUPPORT_AGENT
   /// Marketplace — residential buyer hub (`/dashboard/buyer`)
   BUYER
@@ -321,6 +322,8 @@ model User {
   bnhubGuestTotalStays          Int                @default(0) @map("bnhub_guest_total_stays")
   /// Average of host post-stay ratings (1–5), when at least one exists.
   bnhubGuestRatingAverage       Float?             @map("bnhub_guest_rating_average")
+  /// BNHub pilot: founding hosts get badge + ranking tie-breaker (set by ops; never auto-faked).
+  bnhubIsFoundingHost           Boolean            @default(false) @map("bnhub_is_founding_host")
 
   /// OACIQ License Integration (Phase 1)
   isOaciqLicensed    Boolean   @default(false) @map("is_oaciq_licensed")
@@ -565,6 +568,10 @@ model User {
   dealsAsBuyer                             Deal[]                                   @relation("DealBuyer")
   dealsAsSeller                            Deal[]                                   @relation("DealSeller")
   dealsAsBroker                            Deal[]                                   @relation("DealBroker")
+  leadRoutingRecommendations               LeadRoutingDecision[]                    @relation("LeadRoutingRecommended")
+  /// Investor-intelligence / expansion scenarios authored by this user.
+  investorIntelligenceScenarios            ExpansionScenario[]                      @relation("InvestorIntelligenceScenarios")
+  brokerLoadMetric                         BrokerLoadMetric?
   dealCapitalAllocationsProposed           DealCapitalAllocation[]                  @relation("DealCapitalAllocationProposedBy")
   dealCapitalAllocationsApproved           DealCapitalAllocation[]                  @relation("DealCapitalAllocationApprovedBy")
   crmDealInvestorCommitments               CrmDealInvestorCommitment[]              @relation("CrmDealInvestorCommitmentInvestor")
@@ -4837,6 +4844,14 @@ model ShortTermListing {
   investmentOperatingCostMonthlyMajor Float?                            @map("investment_operating_cost_monthly_major")
   /// Include in bulk BNHub recommendation jobs (hosts can disable per listing).
   investmentAnalyticsActive           Boolean                           @default(true) @map("investment_analytics_active")
+  /// Public stay detail views — incremented server-side on each published listing page load (real traffic).
+  bnhubListingViewCount             Int                               @default(0) @map("bnhub_listing_view_count")
+  /// Count of rows in `bnhub_guest_favorites` for this listing (synced on save/unsave).
+  bnhubWishlistCount                Int                               @default(0) @map("bnhub_wishlist_count")
+  /// Last server-recorded public detail view.
+  bnhubLastViewedAt                 DateTime?                         @map("bnhub_last_viewed_at") @db.Timestamptz(6)
+  /// Optional early-access discount percent for UX copy; checkout may use `BnhubHostListingPromotion` instead.
+  bnhubEarlyAccessPercentOff        Int?                              @map("bnhub_early_access_percent_off")
 
   @@index([city, verificationStatus])
   @@index([city, listingStatus])
@@ -11314,6 +11329,10 @@ model Deal {
   strategyExecutionEvents        StrategyExecutionEvent[]
   /// Latest terminal or stalled strategy outcome (one row per deal).
   strategyOutcomeEvent           StrategyOutcomeEvent?
+  /// Contextual bandit decision audit rows (soft ranking only; no auto-exec).
+  reinforcementDecisions       ReinforcementDecision[]
+  /// Portfolio intelligence — soft priority scores (suggestions; broker confirms actions).
+  dealPriorityScores            DealPriorityScore[]
 
   @@index([buyerId])
   @@index([sellerId])
@@ -11392,6 +11411,273 @@ model StrategyPerformanceAggregate {
   @@unique([strategyKey, domain])
   @@index([domain, lastUpdatedAt])
   @@map("strategy_performance_aggregates")
+}
+
+/// Explainable bandit policy (ε-greedy or UCB-lite); exploration rate bounded in product code.
+model ReinforcementPolicy {
+  id              String                    @id @default(cuid())
+  domain          StrategyBenchmarkDomain
+  isActive        Boolean                   @default(true) @map("is_active")
+  policyType      ReinforcementPolicyType     @map("policy_type")
+  explorationRate Float                     @map("exploration_rate")
+  createdAt       DateTime                  @default(now()) @map("created_at")
+  updatedAt       DateTime                  @updatedAt @map("updated_at")
+
+  @@index([domain, isActive])
+  @@map("reinforcement_policies")
+}
+
+enum ReinforcementPolicyType {
+  EPSILON_GREEDY
+  UCB_LITE
+}
+
+/// Per (strategy, domain, context bucket) running stats — incremental only.
+model ReinforcementArmStat {
+  id            String                 @id @default(cuid())
+  strategyKey   String                 @map("strategy_key") @db.VarChar(128)
+  domain        StrategyBenchmarkDomain
+  contextBucket String               @map("context_bucket") @db.VarChar(256)
+  pulls         Int                    @default(0)
+  rewardsSum    Float                  @default(0) @map("rewards_sum")
+  avgReward     Float?                 @map("avg_reward")
+  wins          Float                  @default(0)
+  losses        Float                  @default(0)
+  stalls        Float                  @default(0)
+  updatedAt     DateTime               @updatedAt @map("updated_at")
+
+  @@unique([strategyKey, domain, contextBucket], map: "reinforcement_arm_stats_strategy_domain_bucket")
+  @@index([domain, contextBucket])
+  @@map("reinforcement_arm_stats")
+}
+
+/// One auditable row per bandit draw (suggestion order only; never executes client actions).
+model ReinforcementDecision {
+  id               String                 @id @default(cuid())
+  domain           StrategyBenchmarkDomain
+  strategyKey      String                 @map("strategy_key") @db.VarChar(128)
+  dealId           String?                @map("deal_id")
+  deal             Deal?                  @relation(fields: [dealId], references: [id], onDelete: SetNull)
+  conversationId   String?                @map("conversation_id")
+  brokerId         String?                @map("broker_id")
+  contextBucket    String                 @map("context_bucket") @db.VarChar(256)
+  selectionMode    ReinforcementBanditMode @map("selection_mode")
+  baseScore        Float                 @map("base_score")
+  adjustedScore   Float                 @map("adjusted_score")
+  rewardObserved   Float?                @map("reward_observed")
+  outcomeObserved  StrategyBucketOutcome? @map("outcome_observed")
+  createdAt        DateTime              @default(now()) @map("created_at")
+  updatedAt        DateTime              @updatedAt @map("updated_at")
+
+  @@index([dealId, createdAt])
+  @@index([domain, createdAt])
+  @@index([brokerId, createdAt])
+  @@map("reinforcement_decisions")
+}
+
+enum ReinforcementBanditMode {
+  exploit
+  explore
+}
+
+/// Point-in-time brokerage portfolio rollup (auditable; not real-time truth for all metrics).
+model PortfolioSnapshot {
+  id                          String   @id @default(cuid())
+  createdAt                   DateTime @default(now()) @map("created_at")
+  totalLeads                  Int      @map("total_leads")
+  totalActiveDeals            Int      @map("total_active_deals")
+  totalWonDeals               Int      @map("total_won_deals")
+  totalLostDeals              Int      @map("total_lost_deals")
+  avgDealCycleDays            Float?   @map("avg_deal_cycle_days")
+  brokerLoadDistributionJson  Json     @map("broker_load_distribution_json")
+  segmentPerformanceJson      Json     @map("segment_performance_json")
+
+  @@index([createdAt])
+  @@map("portfolio_snapshots")
+}
+
+/// Lead routing recommendation — suggestions only; broker/admin confirms assignment in product rules.
+model LeadRoutingDecision {
+  id                   String   @id @default(cuid())
+  leadId               String   @map("lead_id")
+  lead                 Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  recommendedBrokerId  String   @map("recommended_broker_id")
+  recommendedBroker    User     @relation("LeadRoutingRecommended", fields: [recommendedBrokerId], references: [id], onDelete: Cascade)
+  alternativeBrokerIds Json     @map("alternative_broker_ids")
+  rationaleJson        Json     @map("rationale_json")
+  contextBucket        String   @map("context_bucket") @db.VarChar(256)
+  createdAt            DateTime @default(now()) @map("created_at")
+
+  @@index([leadId, createdAt])
+  @@index([recommendedBrokerId, createdAt])
+  @@map("lead_routing_decisions")
+}
+
+/// Per-run deal priority score (0–100 scale in product code); advisory ordering.
+model DealPriorityScore {
+  id            String   @id @default(cuid())
+  dealId        String   @map("deal_id")
+  deal          Deal     @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  priorityScore Float    @map("priority_score")
+  riskLevel     String   @map("risk_level") @db.VarChar(32)
+  urgencyLevel  String  @map("urgency_level") @db.VarChar(32)
+  rationaleJson Json     @map("rationale_json")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([dealId, createdAt])
+  @@index([priorityScore])
+  @@map("deal_priority_scores")
+}
+
+/// Rolling load snapshot per broker (recomputed; not PII).
+model BrokerLoadMetric {
+  id              String   @id @default(cuid())
+  brokerId        String   @unique @map("broker_id")
+  broker          User     @relation(fields: [brokerId], references: [id], onDelete: Cascade)
+  activeDeals     Int      @default(0) @map("active_deals")
+  activeLeads     Int      @default(0) @map("active_leads")
+  avgResponseTime Float?   @map("avg_response_time")
+  workloadScore   Float    @default(0) @map("workload_score")
+  lastUpdatedAt   DateTime @updatedAt @map("last_updated_at")
+
+  @@index([workloadScore])
+  @@map("broker_load_metrics")
+}
+
+/// Heuristic segment aggregates (e.g. city|price|type); avoid inferring personal traits.
+model SegmentPerformanceAggregate {
+  id             String   @id @default(cuid())
+  segmentKey     String   @unique @map("segment_key") @db.VarChar(256)
+  totalDeals     Int      @default(0) @map("total_deals")
+  wins           Int      @default(0)
+  losses         Int      @default(0)
+  avgClosingTime Float?   @map("avg_closing_time")
+  winRate        Float?   @map("win_rate")
+  lastUpdatedAt  DateTime @updatedAt @map("last_updated_at")
+
+  @@index([winRate])
+  @@map("segment_performance_aggregates")
+}
+
+// --- Investor / board intelligence (operational signals, not audited financials) ---
+
+enum CapitalAllocationScopeType {
+  SEGMENT
+  CHANNEL
+  BROKER
+  MARKET
+  PRODUCT
+}
+
+enum CapitalRecommendationType {
+  INCREASE
+  MAINTAIN
+  REDUCE
+  EXPERIMENT
+}
+
+enum CapitalAllocationConfidence {
+  low
+  medium
+  high
+}
+
+enum CapitalAllocationStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+enum RoiScopeType {
+  SEGMENT
+  CHANNEL
+  BROKER
+  MARKET
+  PRODUCT
+  STRATEGY
+}
+
+enum ExpansionScenarioStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+/// Roll-up snapshot for investor/board review — all figures are heuristics, traceable in JSON fields to internal aggregates.
+model InvestorSnapshot {
+  id                     String   @id @default(cuid())
+  createdAt              DateTime @default(now()) @map("created_at")
+  periodKey              String   @map("period_key") @db.VarChar(32)
+  totalRevenue           Float    @map("total_revenue")
+  totalWonDeals          Int      @map("total_won_deals")
+  totalLeadSpend         Float?   @map("total_lead_spend")
+  estimatedPipelineValue Float?   @map("estimated_pipeline_value")
+  avgDealCycleDays       Float?   @map("avg_deal_cycle_days")
+  topSegmentJson         Json     @map("top_segment_json")
+  weakSegmentJson        Json     @map("weak_segment_json")
+  capitalAllocationJson  Json     @map("capital_allocation_json")
+  riskSummaryJson        Json     @map("risk_summary_json")
+
+  @@index([periodKey, createdAt])
+  @@map("investor_snapshots")
+}
+
+model CapitalAllocationRecommendation {
+  id                 String                    @id @default(cuid())
+  createdAt          DateTime                  @default(now()) @map("created_at")
+  updatedAt          DateTime                  @updatedAt @map("updated_at")
+  recommendationKey  String                 @map("recommendation_key") @db.VarChar(128)
+  scopeType          CapitalAllocationScopeType @map("scope_type")
+  scopeKey           String                    @map("scope_key") @db.VarChar(256)
+  recommendationType  CapitalRecommendationType @map("recommendation_type")
+  confidence         CapitalAllocationConfidence
+  rationaleJson      Json                      @map("rationale_json")
+  expectedImpactJson Json                      @map("expected_impact_json")
+  status             CapitalAllocationStatus   @default(ACTIVE) @map("status")
+
+  @@index([status, createdAt])
+  @@index([scopeType, scopeKey])
+  @@map("capital_allocation_recommendations")
+}
+
+/// Explainable ROI-style aggregates by coarse scope; spend may be null when not tracked.
+model RoiPerformanceAggregate {
+  id                 String   @id @default(cuid())
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+  scopeType          RoiScopeType @map("scope_type")
+  scopeKey           String   @map("scope_key") @db.VarChar(256)
+  revenue            Float    @default(0) @map("revenue")
+  wonDeals           Int      @default(0) @map("won_deals")
+  lostDeals          Int      @default(0) @map("lost_deals")
+  avgDealCycleDays   Float?   @map("avg_deal_cycle_days")
+  estimatedLeadSpend Float?   @map("estimated_lead_spend")
+  roiScore            Float?   @map("roi_score")
+  efficiencyScore     Float?  @map("efficiency_score")
+
+  @@unique([scopeType, scopeKey], map: "roi_performance_scope_key_unique")
+  @@index([scopeType, scopeKey])
+  @@index([roiScore])
+  @@map("roi_performance_aggregates")
+}
+
+/// What-if / expansion — assumptions must be stored explicitly; no guaranteed returns in product.
+model ExpansionScenario {
+  id                  String                @id @default(cuid())
+  createdAt           DateTime              @default(now()) @map("created_at")
+  updatedAt            DateTime              @updatedAt @map("updated_at")
+  scenarioKey         String                @map("scenario_key") @db.VarChar(128)
+  marketKey          String                 @map("market_key") @db.VarChar(256)
+  segmentKey         String?                 @map("segment_key") @db.VarChar(256)
+  assumptionsJson    Json                   @map("assumptions_json")
+  projectedImpactJson Json                 @map("projected_impact_json")
+  riskJson           Json                   @map("risk_json")
+  createdByUserId    String?                 @map("created_by_user_id")
+  createdBy          User?                    @relation("InvestorIntelligenceScenarios", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  status              ExpansionScenarioStatus  @default(DRAFT)
+
+  @@index([status, marketKey])
+  @@index([createdByUserId])
+  @@map("expansion_scenarios")
 }
 
 /// AI capital allocator — recommends deployable capital slice for a CRM deal (advisory only; broker approves).
@@ -23280,6 +23566,8 @@ model Lead {
   lecipmVisitRequests           LecipmVisitRequest[]           @relation("LeadLecipmVisitRequests")
   /// Optional 1:1 link to broker inquiry CRM row (same listing / visitor).
   lecipmInquiryCrmLeads         LecipmBrokerCrmLead[]          @relation("CrmInquiryToMarketplaceLead")
+  /// Auditable lead-routing recommendations (not auto-assignment to broker without product rules).
+  leadRoutingDecisions          LeadRoutingDecision[]
 
   @@index([listingId])
   @@index([fsboListingId])
@@ -29326,6 +29614,7 @@ model BnhubSafetyAuditLog {
   @@map("bnhub_safety_audit_logs")
 }
 
+/// Guest wishlist / “Save” for BNHub stays (`Wishlist` in product copy; stored here for real counts only).
 model BnhubGuestFavorite {
   id          String           @id @default(uuid()) @map("id")
   guestUserId String           @map("guest_user_id")
@@ -39027,12 +39316,16 @@ model BrokerOnboardingLead {
 
 model DemoView {
   id        String   @id @default(cuid())
-  refId     String?  @map("ref_id")
+  draftId   String?  @map("draft_id")
+  userId    String?  @map("user_id")
+  leadId    String?  @map("lead_id")
+  ref       String?
   userAgent String?  @map("user_agent")
   ip        String?
   createdAt DateTime @default(now()) @map("created_at")
 
-  @@index([refId])
+  @@index([userId])
+  @@index([leadId])
   @@map("demo_views")
 }
 
@@ -39135,3 +39428,45 @@ model OutreachDailyTask {
   @@index([date])
   @@map("outreach_daily_tasks")
 }
+
+// ---------------------------------------------------------------------------
+// Executive / board reporting (auditable JSON + narrative; no fabricated metrics)
+// ---------------------------------------------------------------------------
+
+enum ExecutiveReportStatus {
+  GENERATED
+  SENT
+  FAILED
+}
+
+enum ExecutiveReportScheduleFrequency {
+  WEEKLY
+  MONTHLY
+}
+
+model ExecutiveReport {
+  id           String                 @id @default(cuid())
+  createdAt    DateTime               @default(now()) @map("created_at")
+  periodKey    String                 @map("period_key") @db.VarChar(32)
+  generatedAt  DateTime               @default(now()) @map("generated_at")
+  reportJson   Json                   @map("report_json") @db.JsonB
+  summaryText  String                 @map("summary_text") @db.Text
+  status       ExecutiveReportStatus  @default(GENERATED)
+  errorMessage String?                @map("error_message") @db.Text
+
+  @@index([periodKey, generatedAt(sort: Desc)])
+  @@map("executive_reports")
+}
+
+model ExecutiveReportSchedule {
+  id             String                           @id @default(cuid())
+  createdAt      DateTime                         @default(now()) @map("created_at")
+  frequency      ExecutiveReportScheduleFrequency
+  recipientsJson Json                             @map("recipients_json") @db.JsonB
+  lastRunAt      DateTime?                        @map("last_run_at") @db.Timestamptz(6)
+  isActive       Boolean                          @default(true) @map("is_active")
+
+  @@index([isActive])
+  @@map("executive_report_schedules")
+}
+

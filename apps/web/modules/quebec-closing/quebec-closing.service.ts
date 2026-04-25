@@ -21,7 +21,7 @@ import {
   normalizeQcClosingStage,
   type DealClosingAdjustmentKind,
 } from "@/modules/quebec-closing/quebec-closing.types";
-import { summarizeClosingFundFlow } from "@/modules/quebec-closing/quebec-closing-fund-flow";
+import { ensureDefaultClosingFundMilestones, summarizeClosingFundFlow } from "@/modules/quebec-closing/quebec-closing-fund-flow";
 
 export async function ensureQuebecClosingSessionDefaults(dealId: string): Promise<void> {
   const [deal, closing, conds] = await Promise.all([
@@ -93,7 +93,12 @@ export async function getQuebecClosingBundle(dealId: string) {
   await ensureNotaryChecklistRows(dealId);
   await persistNormalizedQcStage(dealId);
 
-  const [closing, conditions, notary, checklist, adjustments, audits, closingAudits, readiness, packet, payments] =
+  const closingShell = await prisma.dealClosing.findUnique({ where: { dealId }, select: { id: true } });
+  if (closingShell) {
+    await ensureDefaultClosingFundMilestones(dealId);
+  }
+
+  const [closing, conditions, notary, checklist, adjustments, audits, closingAudits, readiness, packet, payments, fundMilestones] =
     await Promise.all([
       prisma.dealClosing.findUnique({ where: { dealId } }),
       prisma.dealClosingCondition.findMany({ where: { dealId }, orderBy: { deadline: "asc" } }),
@@ -113,6 +118,7 @@ export async function getQuebecClosingBundle(dealId: string) {
       evaluateFinalClosingReadiness(dealId),
       buildClosingPacketIndex(dealId),
       prisma.lecipmDealPayment.findMany({ where: { dealId }, orderBy: { createdAt: "asc" } }),
+      prisma.dealClosingFundMilestone.findMany({ where: { dealId }, orderBy: { kind: "asc" } }),
     ]);
 
   const qcBlockers =
@@ -153,7 +159,7 @@ export async function getQuebecClosingBundle(dealId: string) {
     coordinationAudits: audits,
     closingAudits: closingAudits,
     closingPacket: packet,
-    fundFlow: summarizeClosingFundFlow(payments),
+    fundFlow: summarizeClosingFundFlow({ payments, milestones: fundMilestones }),
     flags: {
       qcWorkflowActive: isQcWorkflowActive(closing),
       notaryOk: notaryAssignmentComplete(notary),
@@ -527,4 +533,90 @@ export async function upsertClosingAdjustment(options: {
 
   await appendCoordinationAudit(options.dealId, options.actorUserId, "QC_ADJUSTMENT_UPSERT", { adjustmentId: row.id });
   return row;
+}
+
+export async function upsertClosingFundMilestone(options: {
+  dealId: string;
+  actorUserId: string;
+  kind: string;
+  status: string;
+  amountCents?: number | null;
+  expectedAt?: string | null;
+  completedAt?: string | null;
+  notes?: string | null;
+}) {
+  await ensureQuebecClosingSessionDefaults(options.dealId);
+  await ensureDefaultClosingFundMilestones(options.dealId);
+
+  const expectedAt =
+    typeof options.expectedAt === "string" && options.expectedAt.trim() ?
+      new Date(options.expectedAt)
+    : null;
+  const completedAt =
+    typeof options.completedAt === "string" && options.completedAt.trim() ?
+      new Date(options.completedAt)
+    : null;
+
+  const row = await prisma.dealClosingFundMilestone.upsert({
+    where: { dealId_kind: { dealId: options.dealId, kind: options.kind } },
+    create: {
+      dealId: options.dealId,
+      kind: options.kind,
+      status: options.status,
+      amountCents: options.amountCents ?? null,
+      expectedAt,
+      completedAt,
+      notes: options.notes ?? null,
+    },
+    update: {
+      status: options.status,
+      amountCents: options.amountCents === undefined ? undefined : options.amountCents,
+      expectedAt: options.expectedAt === undefined ? undefined : expectedAt,
+      completedAt: options.completedAt === undefined ? undefined : completedAt,
+      notes: options.notes === undefined ? undefined : options.notes,
+      updatedAt: new Date(),
+    },
+  });
+
+  await appendCoordinationAudit(options.dealId, options.actorUserId, "QC_FUND_MILESTONE", {
+    kind: options.kind,
+    status: options.status,
+  });
+  return row;
+}
+
+export async function attestPreClosingIdentities(options: { dealId: string; actorUserId: string; role: string }) {
+  await ensureQuebecClosingSessionDefaults(options.dealId);
+  const closing = await prisma.dealClosing.findUnique({ where: { dealId: options.dealId } });
+  if (!closing) throw new Error("Closing session not found.");
+
+  const deal = await prisma.deal.findUnique({
+    where: { id: options.dealId },
+    select: { brokerId: true },
+  });
+  if (!deal) throw new Error("Deal not found");
+  if (options.role !== "ADMIN" && deal.brokerId !== options.actorUserId) {
+    throw new Error("Only the assigned broker may attest identity verification.");
+  }
+
+  const now = new Date();
+  await prisma.dealClosing.update({
+    where: { dealId: options.dealId },
+    data: {
+      preClosingIdentitiesVerifiedAt: now,
+      preClosingIdentitiesVerifiedById: options.actorUserId,
+      updatedAt: now,
+    },
+  });
+
+  await appendCoordinationAudit(options.dealId, options.actorUserId, "QC_PRECLOSE_IDENTITIES", {});
+  await appendClosingAudit({
+    dealId: options.dealId,
+    actorUserId: options.actorUserId,
+    eventType: "QC_PRECLOSE_IDENTITIES",
+    note: "Pre-closing: identities verified (broker attestation)",
+    metadataJson: {},
+  });
+
+  return getQuebecClosingBundle(options.dealId);
 }

@@ -30,6 +30,23 @@ export async function trackStrategyExecution(params: TrackStrategyExecutionParam
         contextSnapshot: (params.contextSnapshot ?? { source: "track" }) as object,
       },
     });
+    try {
+      await prisma.strategyPerformanceAggregate.upsert({
+        where: { strategyKey_domain: { strategyKey: key, domain: params.domain } },
+        create: {
+          strategyKey: key,
+          domain: params.domain,
+          totalUses: 1,
+          wins: 0,
+          losses: 0,
+          stalls: 0,
+          closingSamples: 0,
+        },
+        update: { totalUses: { increment: 1 } },
+      });
+    } catch {
+      /* non-fatal; events table remains source of truth for usage */
+    }
     strategyBenchmarkLog.execution({ strategyKey: key, domain: params.domain, dealId: params.dealId });
     return { ok: true, id: row.id };
   } catch (e) {

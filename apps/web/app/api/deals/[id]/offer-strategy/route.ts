@@ -6,6 +6,7 @@ import { runOfferStrategy } from "@/modules/offer-strategy/offer-strategy.engine
 import { buildOfferStrategyContext } from "@/modules/offer-strategy/offer-strategy-context.service";
 import { recordOfferStrategyAssignment } from "@/modules/offer-strategy/offer-strategy-assignment.service";
 import { applyOfferStrategyLearningNudge } from "@/modules/strategy-benchmark/learning-nudges.service";
+import { maybeApplyReinforcementToOffer } from "@/modules/reinforcement/reinforcement-wiring.service";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +32,8 @@ export async function GET(_req: NextRequest, context: Params) {
     if (!deal) return NextResponse.json({ ok: false, error: "Not found" }, { status: 404 });
     const brokerFor = deal.brokerId ?? userId;
     const ctx = await buildOfferStrategyContext({ dealId, brokerId: brokerFor });
-    const strategy = await applyOfferStrategyLearningNudge(runOfferStrategy(ctx));
+    const nudged = await applyOfferStrategyLearningNudge(runOfferStrategy(ctx));
+    const strategy = await maybeApplyReinforcementToOffer("OFFER", ctx, nudged);
     if (strategy.recommendations[0]) {
       void recordOfferStrategyAssignment({
         userId,

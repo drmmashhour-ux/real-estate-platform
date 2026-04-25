@@ -17,7 +17,9 @@ import {
   LogOut,
   ChevronRight,
   Share2,
-  Copy
+  Copy,
+  Zap,
+  FileText
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
@@ -170,6 +172,14 @@ export default function OutreachPage() {
   return (
     <div className="min-h-screen bg-[#050505] text-white p-6">
       <div className="max-w-7xl mx-auto space-y-8">
+        {/* Navigation */}
+        <div className="flex items-center gap-4 mb-4">
+          <Button variant="ghost" className="text-xs font-bold text-[#D4AF37] bg-[#D4AF37]/10" onClick={() => window.location.href = '/admin/outreach'}>CRM</Button>
+          <Button variant="ghost" className="text-xs font-bold text-gray-400" onClick={() => window.location.href = '/admin/execution'}>Execution</Button>
+          <Button variant="ghost" className="text-xs font-bold text-gray-400" onClick={() => window.location.href = '/admin/closing'}>Closing</Button>
+          <Button variant="ghost" className="text-xs font-bold text-gray-400" onClick={() => window.location.href = '/admin/bookings'}>Démos</Button>
+          <Button variant="ghost" className="text-xs font-bold text-purple-400" onClick={() => window.location.href = '/operator'}>Operator Hub</Button>
+        </div>
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
@@ -269,15 +279,6 @@ export default function OutreachPage() {
                 <h4 className="text-xl font-black">{activationKpis.paidUsers > 0 ? Math.round((activationKpis.paidUsers / stats.onboarded) * 100) : 0}%</h4>
               </div>
             </div>
-          </Card>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <Card className="p-8 bg-black/40 border-white/5 backdrop-blur-xl">
-            <LoomScript />
-          </Card>
-          <Card className="p-8 bg-black/40 border-white/5 backdrop-blur-xl">
-            <ClosingScript />
           </Card>
         </div>
 
@@ -431,6 +432,8 @@ export default function OutreachPage() {
 
             {/* Script Panel */}
             <CallScriptPanel />
+            <LoomScript />
+            <ClosingScript />
           </div>
         </div>
       </div>

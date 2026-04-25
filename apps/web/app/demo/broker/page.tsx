@@ -8,176 +8,159 @@ import {
   CheckCircle, 
   Calendar, 
   ArrowRight, 
-  Check, 
-  BarChart3,
-  Award,
-  Play
+  Check,
+  Video,
+  FileText,
+  Lock
 } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
-import { Badge } from '../../../components/ui/Badge';
 
 export default function BrokerDemoPage() {
   const searchParams = useSearchParams();
-  const refId = searchParams.get('ref');
-  const [hasTracked, setHasTracked] = useState(false);
+  const ref = searchParams.get('ref');
+  const [tracked, setTracked] = useState(false);
 
   useEffect(() => {
-    if (!hasTracked) {
+    if (ref && !tracked) {
       fetch('/api/demo/track', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refId }),
-      }).catch(console.error);
-      setHasTracked(true);
+        body: JSON.stringify({ ref }),
+      }).then(() => setTracked(true));
     }
-  }, [refId, hasTracked]);
+  }, [ref, tracked]);
 
   const benefits = [
     {
       title: "Réduction des erreurs",
-      desc: "Validation intelligente en temps réel sur tous les formulaires OACIQ.",
+      desc: "Validation intelligente des clauses et formulaires OACIQ.",
       icon: <Shield className="w-5 h-5 text-[#D4AF37]" />
     },
     {
-      title: "Gain de temps massif",
-      desc: "Pré-remplissage automatique des données de la fiche descriptive.",
-      icon: <Zap className="w-5 h-5 text-[#D4AF37]" />
+      title: "Rapidité d'exécution",
+      desc: "Générez des offres complexes en moins de 5 minutes.",
+      icon: <Zap className="w-5 h-5 text-blue-400" />
     },
     {
-      title: "Éducation client",
-      desc: "Explications claires des clauses pour sécuriser vos clients.",
-      icon: <CheckCircle className="w-5 h-5 text-[#D4AF37]" />
+      title: "Conformité Québec",
+      desc: "Système aligné sur les exigences de la Loi 25 et de l'OACIQ.",
+      icon: <Lock className="w-5 h-5 text-green-500" />
     }
   ];
 
   return (
     <div className="min-h-screen bg-[#050505] text-white">
-      {/* Navbar */}
+      {/* Navbar Minimaliste */}
       <nav className="border-b border-white/5 bg-black/50 backdrop-blur-xl sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+        <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-[#D4AF37] rounded-lg flex items-center justify-center font-black text-black">L</div>
-            <span className="font-black text-xl tracking-tighter">LECIPM <span className="text-[#D4AF37]">DEMO</span></span>
+            <div className="w-8 h-8 bg-[#D4AF37] rounded-lg flex items-center justify-center font-black text-black text-sm">L</div>
+            <span className="font-bold tracking-tight">LECIPM <span className="text-[#D4AF37]">DEMO</span></span>
           </div>
           <Button 
-            className="bg-[#D4AF37] hover:bg-[#B8962E] text-black font-bold rounded-full px-6 h-9 text-sm"
-            onClick={() => window.open('https://calendly.com/lecipm-demo', '_blank')}
+            className="bg-[#D4AF37] hover:bg-[#B8962E] text-black font-bold h-9 text-xs rounded-full px-4"
+            onClick={() => window.open('https://calendly.com/lecipm/demo', '_blank')}
           >
             Réserver ma démo
           </Button>
         </div>
       </nav>
 
-      <main className="max-w-5xl mx-auto px-6 py-16 md:py-24 space-y-20">
-        {/* Hero & Video */}
-        <div className="text-center space-y-8">
-          <div className="space-y-4">
-            <Badge variant="outline" className="border-[#D4AF37]/30 text-[#D4AF37] bg-[#D4AF37]/5 px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest">
-              Aperçu Exclusif Courtier
-            </Badge>
-            <h1 className="text-4xl md:text-6xl font-black tracking-tight leading-tight">
-              Gagnez 2h par offre avec la <br/>
-              <span className="text-[#D4AF37]">Rédaction Intelligente.</span>
-            </h1>
-            <p className="text-gray-400 text-lg md:text-xl max-w-2xl mx-auto">
-              Découvrez comment sécuriser vos transactions et automatiser votre conformité en moins de 2 minutes.
-            </p>
+      <main className="max-w-4xl mx-auto px-6 py-12 md:py-20 space-y-16">
+        {/* Hero Section */}
+        <div className="text-center space-y-6">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#D4AF37]/10 border border-[#D4AF37]/20 rounded-full text-[10px] font-bold text-[#D4AF37] uppercase tracking-widest">
+            Accès Courtier — Québec
           </div>
-
-          {/* Video Container (Loom Placeholder) */}
-          <div className="relative aspect-video w-full max-w-4xl mx-auto rounded-3xl overflow-hidden border border-white/10 shadow-2xl shadow-[#D4AF37]/10 group">
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent z-10" />
-            
-            {/* Replace this div with actual Loom embed in production */}
-            <div className="absolute inset-0 bg-[#111] flex items-center justify-center">
-              <div className="text-center space-y-4">
-                <div className="w-20 h-20 bg-[#D4AF37] rounded-full flex items-center justify-center mx-auto shadow-xl shadow-[#D4AF37]/20 group-hover:scale-110 transition cursor-pointer">
-                  <Play className="w-8 h-8 text-black fill-current ml-1" />
-                </div>
-                <p className="text-sm font-bold text-gray-400">Cliquez pour lancer la démo</p>
-              </div>
-            </div>
-            
-            {/* Loom iFrame would go here:
-            <iframe 
-              src="https://www.loom.com/embed/your-id-here" 
-              frameBorder="0" 
-              webkitallowfullscreen 
-              mozallowfullscreen 
-              allowFullScreen 
-              className="absolute inset-0 w-full h-full"
-            />
-            */}
-          </div>
+          <h1 className="text-4xl md:text-6xl font-black tracking-tight leading-tight">
+            Découvrez le futur de la <br />
+            <span className="text-[#D4AF37]">rédaction immobilière.</span>
+          </h1>
+          <p className="text-gray-400 text-lg md:text-xl max-w-2xl mx-auto">
+            Regardez comment LECIPM sécurise vos transactions et automatise votre conformité en moins de 2 minutes.
+          </p>
         </div>
 
-        {/* Benefits Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {benefits.map((benefit, idx) => (
-            <Card key={idx} className="p-8 bg-white/5 border-white/5 hover:border-[#D4AF37]/20 transition group">
-              <div className="w-12 h-12 bg-[#D4AF37]/10 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition">
-                {benefit.icon}
+        {/* Loom Video Embed Placeholder */}
+        <div className="relative aspect-video rounded-2xl md:rounded-[32px] overflow-hidden border border-white/10 bg-black/60 shadow-2xl shadow-[#D4AF37]/5 group">
+          <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-transparent transition-colors duration-500">
+             {/* Replace this with real Loom embed code */}
+             <div className="text-center space-y-4">
+               <div className="w-20 h-20 bg-[#D4AF37] rounded-full flex items-center justify-center mx-auto shadow-xl shadow-[#D4AF37]/20 group-hover:scale-110 transition-transform cursor-pointer">
+                 <PlayIcon className="w-8 h-8 text-black fill-current" />
+               </div>
+               <p className="text-sm font-bold text-gray-300">Vidéo Démo (1:55 min)</p>
+             </div>
+          </div>
+          {/* Real Loom Iframe example:
+          <iframe 
+            src="https://www.loom.com/embed/YOUR_VIDEO_ID" 
+            frameBorder="0" 
+            webkitallowfullscreen="true" 
+            mozallowfullscreen="true" 
+            allowFullScreen 
+            className="absolute inset-0 w-full h-full"
+          ></iframe>
+          */}
+        </div>
+
+        {/* Key Benefits */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {benefits.map((b, i) => (
+            <Card key={i} className="p-6 bg-black/40 border-white/5 backdrop-blur-xl hover:border-[#D4AF37]/30 transition group">
+              <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center mb-4 group-hover:bg-[#D4AF37]/10 transition">
+                {b.icon}
               </div>
-              <h3 className="text-xl font-bold mb-3">{benefit.title}</h3>
-              <p className="text-gray-400 text-sm leading-relaxed">{benefit.desc}</p>
+              <h3 className="font-bold text-lg mb-2">{b.title}</h3>
+              <p className="text-sm text-gray-400 leading-relaxed">{b.desc}</p>
             </Card>
           ))}
         </div>
 
-        {/* Final CTA Section */}
-        <Card className="p-12 md:p-16 bg-gradient-to-br from-[#D4AF37]/20 to-black border-[#D4AF37]/30 rounded-[3rem] text-center space-y-8 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-[#D4AF37]/10 blur-[100px] rounded-full" />
-          <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-500/10 blur-[100px] rounded-full" />
-          
-          <div className="relative z-10 space-y-4">
-            <h2 className="text-3xl md:text-4xl font-black">Prêt à voir le système en action ?</h2>
-            <p className="text-gray-300 max-w-xl mx-auto">
-              Réservez une démo de 10 minutes avec un expert pour voir comment LECIPM s'adapte à vos besoins spécifiques.
+        {/* CTA Section */}
+        <div className="bg-gradient-to-b from-[#D4AF37]/10 to-transparent border border-[#D4AF37]/20 rounded-[40px] p-8 md:p-12 text-center space-y-8">
+          <h2 className="text-3xl font-black">Prêt à transformer votre pratique ?</h2>
+          <p className="text-gray-300 max-w-xl mx-auto">
+            Rejoignez les courtiers qui utilisent déjà LECIPM pour gagner du temps et réduire leurs risques juridiques.
+          </p>
+          <div className="flex flex-col md:flex-row items-center justify-center gap-4">
+            <Button 
+              className="w-full md:w-auto bg-[#D4AF37] hover:bg-[#B8962E] text-black font-black h-14 px-10 rounded-2xl text-lg shadow-lg shadow-[#D4AF37]/20"
+              onClick={() => window.open('https://calendly.com/lecipm/demo', '_blank')}
+            >
+              Réserver ma démo de 10 min
+              <ArrowRight className="w-5 h-5 ml-2" />
+            </Button>
+            <p className="text-xs text-gray-500 italic">
+              Zéro engagement. 100% concret.
             </p>
           </div>
-
-          <div className="relative z-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button 
-              className="bg-[#D4AF37] hover:bg-[#B8962E] text-black font-black px-10 h-14 rounded-2xl text-lg w-full sm:w-auto shadow-xl shadow-[#D4AF37]/20"
-              onClick={() => window.open('https://calendly.com/lecipm-demo', '_blank')}
-            >
-              <Calendar className="w-5 h-5 mr-3" />
-              Book 10-min Demo
-            </Button>
-            <Button 
-              variant="outline"
-              className="border-white/20 bg-white/5 hover:bg-white/10 text-white font-bold px-10 h-14 rounded-2xl text-lg w-full sm:w-auto"
-              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            >
-              Revoir la démo
-              <ArrowRight className="w-5 h-5 ml-3" />
-            </Button>
-          </div>
-
-          <div className="relative z-10 pt-8 flex items-center justify-center gap-8 grayscale opacity-50">
-            <div className="flex items-center gap-2">
-              <Award className="w-5 h-5" />
-              <span className="text-xs font-bold uppercase tracking-widest">OACIQ Compliant</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <BarChart3 className="w-5 h-5" />
-              <span className="text-xs font-bold uppercase tracking-widest">Law 25 Protected</span>
-            </div>
-          </div>
-        </Card>
+        </div>
       </main>
 
-      {/* Simple Footer */}
-      <footer className="border-t border-white/5 py-12 px-6 text-center">
-        <p className="text-gray-500 text-xs tracking-widest uppercase">
-          © 2026 LECIPM QUÉBEC — TOUS DROITS RÉSERVÉS
-        </p>
+      {/* Footer Minimal */}
+      <footer className="border-t border-white/5 py-12 bg-black/80">
+        <div className="max-w-5xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-2 text-gray-500">
+            <Shield className="w-4 h-4" />
+            <span className="text-xs">Propulsé par le moteur de conformité LECIPM Québec</span>
+          </div>
+          <div className="flex items-center gap-6 text-xs text-gray-500">
+            <a href="/legal/terms" className="hover:text-white transition">Conditions</a>
+            <a href="/legal/privacy" className="hover:text-white transition">Confidentialité</a>
+            <span>© 2026 LECIPM Platform</span>
+          </div>
+        </div>
       </footer>
     </div>
   );
 }
 
-function cn(...classes: any[]) {
-  return classes.filter(Boolean).join(' ');
+function PlayIcon(props: any) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
+      <path d="M8 5V19L19 12L8 5Z" fill="currentColor" />
+    </svg>
+  );
 }

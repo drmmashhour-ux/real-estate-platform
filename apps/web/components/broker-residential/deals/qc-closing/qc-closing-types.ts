@@ -13,6 +13,8 @@ export type QcClosingApiBundle = {
     landRegisterConfirmedAt: string | null;
     keysReleasedAt: string | null;
     closingPacketMarkedCompleteAt: string | null;
+    preClosingIdentitiesVerifiedAt: string | null;
+    preClosingIdentitiesVerifiedById: string | null;
   } | null;
   conditions: Array<{
     id: string;
@@ -57,7 +59,18 @@ export type QcClosingApiBundle = {
   closingAudits: Array<{ id: string; eventType: string; createdAt: string; note: string | null }>;
   closingPacket: { sections: Array<{ key: string; label: string; status: string; detail?: string }>; generatedAt: string };
   fundFlow: {
-    rows: Array<{
+    milestones: Array<{
+      id: string;
+      kind: string;
+      label: string;
+      status: string;
+      amountCents: number | null;
+      currency: string;
+      expectedAt: string | null;
+      completedAt: string | null;
+      notes: string | null;
+    }>;
+    paymentRows: Array<{
       id: string;
       paymentKind: string;
       status: string;

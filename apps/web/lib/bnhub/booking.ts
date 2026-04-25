@@ -1,4 +1,5 @@
 import {
+  BookingStatus,
   BnhubBookingServiceLineStatus,
   BnhubBookingSource,
   BnhubServiceSelectedFrom,
@@ -8,6 +9,7 @@ import {
   Prisma,
 } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { logWarn } from "@/lib/logger";
 import { assertHostAgreementSignedForPublish } from "@/lib/contracts/bnhub-host-contracts";
 import { contractEnforcementDisabled } from "@/lib/contracts/enforcement-flags";
 import { allocateUniqueConfirmationCode } from "@/lib/bnhub/confirmation-code";
@@ -45,6 +47,7 @@ import {
 } from "@/lib/bookings/checkAvailability";
 import { logGuestExperienceOutcome } from "@/lib/bnhub/guest-experience/log-signal";
 import { resolveBnhubPlatformGuestFeePercent } from "@/lib/bnhub/booking-revenue-pricing";
+import { calculateTrustScore, flagBnhubUserTrustForReview } from "@/modules/trust/trust.engine";
 
 const HOST_FEE_PERCENT = 3;
 
@@ -196,14 +199,51 @@ export async function createBooking(data: {
     prismaGuestUserId: data.guestId,
   });
 
+  const guestTrust = await calculateTrustScore({
+    userId: data.guestId,
+    listingId: data.listingId,
+    pendingBookingTotalCents: b.totalCents,
+  });
+
+  await prisma.bnhubGuestProfile.upsert({
+    where: { userId: data.guestId },
+    create: { userId: data.guestId, trustScore: guestTrust.score },
+    update: { trustScore: guestTrust.score },
+  });
+
+  if (guestTrust.hostScore != null) {
+    await prisma.bnhubHostProfile.upsert({
+      where: { userId: data.guestId },
+      create: { userId: data.guestId, trustScore: guestTrust.hostScore },
+      update: { trustScore: guestTrust.hostScore },
+    });
+  }
+
+  try {
+    await flagBnhubUserTrustForReview({
+      userId: data.guestId,
+      listingId: data.listingId,
+      trust: guestTrust,
+    });
+  } catch (err) {
+    logWarn("[trust] bnhub_trust_review_flag_failed", { domain: "[trust]", err });
+  }
+
   const market = await getResolvedMarket();
   const requestOnly =
     !market.onlinePaymentsEnabled || market.bookingMode === "manual_first";
-  const initialStatus = requestOnly
-    ? "AWAITING_HOST_APPROVAL"
+  const trustForceHostApproval =
+    guestTrust.riskLevel === "HIGH" && process.env.BNHUB_TRUST_HIGH_RISK_FORCE_HOST_APPROVAL === "1";
+
+  let initialStatus: BookingStatus = requestOnly
+    ? BookingStatus.AWAITING_HOST_APPROVAL
     : listing.instantBookEnabled
-      ? "PENDING"
-      : "AWAITING_HOST_APPROVAL";
+      ? BookingStatus.PENDING
+      : BookingStatus.AWAITING_HOST_APPROVAL;
+
+  if (trustForceHostApproval) {
+    initialStatus = BookingStatus.AWAITING_HOST_APPROVAL;
+  }
   const confirmationCode = await allocateUniqueConfirmationCode();
 
   const escrowHours = getEscrowReleaseHoursAfterCheckin();
@@ -218,7 +258,7 @@ export async function createBooking(data: {
   }
 
   const pendingExpiresAt =
-    initialStatus === "PENDING" ? new Date(Date.now() + 60 * 60 * 1000) : null;
+    initialStatus === BookingStatus.PENDING ? new Date(Date.now() + 60 * 60 * 1000) : null;
 
   const booking = await prisma.$transaction(
     async (tx) => {
@@ -287,6 +327,22 @@ export async function createBooking(data: {
             listingId: data.listingId,
             checkIn: checkIn.toISOString(),
             checkOut: checkOut.toISOString(),
+          } as Prisma.InputJsonValue,
+        },
+      });
+
+      await tx.bnhubBookingEvent.create({
+        data: {
+          bookingId: created.id,
+          eventType: "guest_trust_evaluated",
+          actorId: data.guestId,
+          payload: {
+            score: guestTrust.score,
+            riskLevel: guestTrust.riskLevel,
+            uiLabel: guestTrust.uiLabel,
+            fraudSignalCodes: guestTrust.fraudSignalCodes,
+            factorCount: guestTrust.factors.length,
+            hostScore: guestTrust.hostScore,
           } as Prisma.InputJsonValue,
         },
       });
@@ -360,7 +416,7 @@ export async function createBooking(data: {
 
   await recordBookingEvent(
     booking.id,
-    initialStatus === "PENDING" ? "created" : "awaiting_host_approval",
+    initialStatus === BookingStatus.PENDING ? "created" : "awaiting_host_approval",
     data.guestId,
     {
       nights: b.nights,
@@ -392,13 +448,19 @@ export async function createBooking(data: {
     });
     const hostLocale = normalizeLocaleCode(hostLocaleRow?.preferredUiLocale);
     const title =
-      initialStatus === "PENDING"
+      initialStatus === BookingStatus.PENDING
         ? translateServer(hostLocale, "host.newBookingPaymentPending")
         : translateServer(hostLocale, "host.newBookingReceived");
-    const message = translateServer(hostLocale, "host.bookingMessage", {
+    let message = translateServer(hostLocale, "host.bookingMessage", {
       guestName,
       listingTitle: listing.title.slice(0, 80),
     });
+    if (guestTrust.riskLevel === "HIGH") {
+      message +=
+        " Trust notice: elevated automated risk signals on this guest account — review before accepting (no automatic block).";
+    } else if (guestTrust.riskLevel === "MEDIUM") {
+      message += " Trust notice: guest trust is mid-range; use normal diligence.";
+    }
     void createBnhubMobileNotification({
       userId: listing.ownerId,
       type: NotificationType.SYSTEM,
@@ -408,7 +470,13 @@ export async function createBooking(data: {
       actionLabel: translateServer(hostLocale, "host.viewReservation"),
       actorId: data.guestId,
       listingId: data.listingId,
-      metadata: { bookingId: booking.id, listingId: data.listingId } as Prisma.InputJsonValue,
+      metadata: {
+        bookingId: booking.id,
+        listingId: data.listingId,
+        guestTrustRisk: guestTrust.riskLevel,
+        guestTrustUiLabel: guestTrust.uiLabel,
+        guestTrustScore: guestTrust.score,
+      } as Prisma.InputJsonValue,
       pushData: {
         kind: "new_booking_host",
         bookingId: booking.id,

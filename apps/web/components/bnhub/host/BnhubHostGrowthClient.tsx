@@ -216,7 +216,12 @@ export function BnhubHostGrowthClient({
                       </ActionChip>
                     </div>
                   </div>
-                  <GrowthInsights insights={group.insights} className="mt-4" />
+                  <GrowthInsights
+                    insights={group.insights}
+                    listingId={group.listingId}
+                    pricingHref={pricingHref}
+                    className="mt-4"
+                  />
                 </div>
               ))
             )}
@@ -225,8 +230,10 @@ export function BnhubHostGrowthClient({
 
         <section className="grid gap-6 lg:grid-cols-2">
           <div className="rounded-2xl border border-white/10 bg-[#0A0A0A] p-5 sm:p-6">
-            <h2 className="text-lg font-semibold text-white">Similar listings</h2>
-            <p className="mt-1 text-sm text-white/50">Published stays in your area (snapshot — not real-time comps).</p>
+            <h2 className="text-lg font-semibold text-white">Competitor comparison</h2>
+            <p className="mt-1 text-sm text-white/50">
+              Similar published stays in your primary city — nightly rate and ratings for quick benchmarking.
+            </p>
             {competitors.length === 0 ? (
               <p className="mt-4 text-sm text-white/45">Add a city to your listing to see nearby benchmarks.</p>
             ) : (
@@ -244,7 +251,8 @@ export function BnhubHostGrowthClient({
             )}
             {yourNightCents != null && marketMedianNightCents != null ? (
               <p className="mt-4 rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm text-white/70">
-                Your nightly: <strong className="text-white">{formatCad(yourNightCents)}</strong> · Area median:{" "}
+                <span className="font-medium text-white/90">Price comparison:</span> your nightly{" "}
+                <strong className="text-white">{formatCad(yourNightCents)}</strong> · area median{" "}
                 <strong className="text-white">{formatCad(marketMedianNightCents)}</strong>
               </p>
             ) : null}
@@ -260,20 +268,20 @@ export function BnhubHostGrowthClient({
             </p>
             <div className="mt-4 space-y-3">
               <PromoRow
-                label="Limited-time discount"
-                hint="Good for filling gaps Tue–Thu."
+                label="Discounts"
+                hint="Limited-time rate cuts — strong for filling Tue–Thu gaps."
                 checked={promo.discount}
                 onChange={(v) => setPromo((p) => ({ ...p, discount: v }))}
               />
               <PromoRow
-                label="Seasonal offer"
-                hint="Holiday or event window — pair with refreshed photos."
+                label="Seasonal offers"
+                hint="Holiday or event windows — pair with refreshed photos."
                 checked={promo.seasonal}
                 onChange={(v) => setPromo((p) => ({ ...p, seasonal: v }))}
               />
               <PromoRow
-                label="Last-minute deal"
-                hint="48h window — protects occupancy without training guests to wait."
+                label="Last-minute deals"
+                hint="Short booking window — lifts occupancy without training guests to wait."
                 checked={promo.lastMinute}
                 onChange={(v) => setPromo((p) => ({ ...p, lastMinute: v }))}
               />

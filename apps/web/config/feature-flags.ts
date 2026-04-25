@@ -351,6 +351,21 @@ export const engineFlags = {
    * Env: `FEATURE_LECIPM_CONSOLE_DEFAULT`
    */
   lecipmConsoleDefault: envTrue("FEATURE_LECIPM_CONSOLE_DEFAULT"),
+  /**
+   * Contextual bandit (ε-greedy / UCB-lite) for strategy ordering only — never auto-executes messages or offers.
+   * Env: `FEATURE_REINFORCEMENT_LAYER_V1`
+   */
+  reinforcementLayerV1: envTrue("FEATURE_REINFORCEMENT_LAYER_V1"),
+  /**
+   * Brokerage portfolio intelligence: lead routing suggestions, deal prioritization, load, segments (advisory; no auto-irreversible actions).
+   * Env: `FEATURE_BROKERAGE_INTELLIGENCE_V1`
+   */
+  brokerageIntelligenceV1: envTrue("FEATURE_BROKERAGE_INTELLIGENCE_V1"),
+  /**
+   * Investor / board layer: ROI aggregates, capital allocation heuristics, expansion scenarios (assumption-based, not financial guarantees).
+   * Env: `FEATURE_INVESTOR_INTELLIGENCE_V1`
+   */
+  investorIntelligenceV1: envTrue("FEATURE_INVESTOR_INTELLIGENCE_V1"),
 } as const;
 
 /** @see engineFlags.lecipmConsoleDefault */

@@ -1,6 +1,14 @@
 "use client";
 
+/**
+ * BNHub guest flow simulation — flow logic:
+ * search → results (fake latency) → listing → booking (review) → confirmation.
+ * State: `step`, `city`, `checkIn`/`checkOut`, `selectedId`, `upsells`, `bookingRef`.
+ * `bestMatchId` = first verified listing preferring `bestValue`, else highest rating.
+ */
+
 import Image from "next/image";
+import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
 import { ArrowLeft, Calendar, Check, ChevronRight, MapPin, ShieldCheck, Sparkles, Star } from "lucide-react";
 import { BnhubButton } from "@/components/bnhub/BnhubButton";
@@ -174,7 +182,7 @@ export function GuestBookingFlowDemo() {
       setResultsLoading(false);
       setStep("results");
       setSelectedId(null);
-    }, 380);
+    }, 280);
   }, []);
 
   const openListing = (id: string) => {
@@ -228,48 +236,64 @@ export function GuestBookingFlowDemo() {
   return (
     <div className="min-h-screen bg-black text-white">
       <header className="sticky top-0 z-30 border-b border-white/10 bg-black/90 backdrop-blur-md">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
-          <div className="flex min-w-0 items-center gap-3">
-            {step !== "search" ? (
-              <button
-                type="button"
-                onClick={() => {
-                  if (step === "results") setStep("search");
-                  else if (step === "listing") setStep("results");
-                  else if (step === "booking") setStep("listing");
-                  else if (step === "confirmation") setStep("search");
-                }}
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/15 text-white/80 transition hover:border-[#D4AF37]/40 hover:text-[#D4AF37]"
-                aria-label="Go back"
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </button>
-            ) : null}
-            <div className="min-w-0">
-              <p className="truncate text-xs font-medium uppercase tracking-[0.2em] text-[#D4AF37]">Demo</p>
-              <h1 className="truncate text-base font-semibold sm:text-lg">Guest booking flow</h1>
-            </div>
-          </div>
-          <nav className="hidden items-center gap-1 sm:flex" aria-label="Progress">
-            {STEPS.map((s, i) => (
-              <div key={s.id} className="flex items-center">
-                <span
-                  className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${
-                    i <= stepIndex ? "bg-[#D4AF37]/15 text-[#D4AF37]" : "text-white/35"
-                  }`}
+        <div className="mx-auto max-w-5xl px-4 py-4 sm:px-6">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex min-w-0 items-center gap-3">
+              {step !== "search" ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (step === "results") setStep("search");
+                    else if (step === "listing") setStep("results");
+                    else if (step === "booking") setStep("listing");
+                    else if (step === "confirmation") setStep("search");
+                  }}
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/15 text-white/80 transition hover:border-[#D4AF37]/40 hover:text-[#D4AF37]"
+                  aria-label="Go back"
                 >
-                  {s.label}
-                </span>
-                {i < STEPS.length - 1 ? (
-                  <ChevronRight className="mx-0.5 h-3.5 w-3.5 text-white/25" aria-hidden />
-                ) : null}
+                  <ArrowLeft className="h-5 w-5" />
+                </button>
+              ) : null}
+              <div className="min-w-0">
+                <p className="truncate text-xs font-medium uppercase tracking-[0.2em] text-[#D4AF37]">Demo</p>
+                <h1 className="truncate text-base font-semibold sm:text-lg">Guest booking flow</h1>
               </div>
-            ))}
-          </nav>
+            </div>
+            <nav className="hidden items-center gap-1 sm:flex" aria-label="Progress">
+              {STEPS.map((s, i) => (
+                <div key={s.id} className="flex items-center">
+                  <span
+                    className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                      i <= stepIndex ? "bg-[#D4AF37]/15 text-[#D4AF37]" : "text-white/35"
+                    }`}
+                  >
+                    {s.label}
+                  </span>
+                  {i < STEPS.length - 1 ? (
+                    <ChevronRight className="mx-0.5 h-3.5 w-3.5 text-white/25" aria-hidden />
+                  ) : null}
+                </div>
+              ))}
+            </nav>
+          </div>
+          <p
+            className="mt-2 text-center text-[11px] font-medium text-white/45 sm:hidden"
+            aria-live="polite"
+          >
+            Step {Math.min(stepIndex + 1, STEPS.length)} of {STEPS.length}: {STEPS[stepIndex]?.label}
+          </p>
         </div>
       </header>
 
       <main className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-14">
+        <div className="mb-8">
+          <Link
+            href="/bnhub"
+            className="inline-flex min-h-[44px] items-center text-sm font-medium text-[#D4AF37] transition hover:text-[#e5c35c]"
+          >
+            ← BNHub home
+          </Link>
+        </div>
         {step === "search" ? (
           <section className="mx-auto max-w-lg space-y-10 text-center">
             <div className="space-y-3">
@@ -356,13 +380,14 @@ export function GuestBookingFlowDemo() {
                       isBest ? "border-[#D4AF37]/60 ring-2 ring-[#D4AF37]/25" : "border-white/10"
                     }`}
                   >
-                    <div className="relative aspect-[16/11]">
+                    <div className="relative aspect-[4/3] sm:aspect-[16/10]">
                       <Image
                         src={l.image}
                         alt=""
                         fill
                         className="object-cover transition duration-500 group-hover:scale-[1.03]"
                         sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                        priority={isBest}
                       />
                       {isBest ? (
                         <span className="absolute left-3 top-3 flex items-center gap-1.5 rounded-full border border-[#D4AF37]/60 bg-black/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-[#D4AF37] backdrop-blur-sm">
@@ -432,8 +457,10 @@ export function GuestBookingFlowDemo() {
               <p className="flex items-start gap-2 text-sm text-white/90 sm:text-base">
                 <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-[#D4AF37]" aria-hidden />
                 <span>
-                  <strong className="font-semibold text-[#D4AF37]">Good value for your dates.</strong>{" "}
-                  This listing is priced below similar verified stays for these nights.
+                  <strong className="font-semibold text-[#D4AF37]">Smart insight.</strong>{" "}
+                  {selected.bestValue
+                    ? "This listing is a good value for your dates."
+                    : "Compare the nightly rate with similar stays — this host has strong recent reviews for these dates."}
                 </span>
               </p>
             </div>
@@ -589,7 +616,9 @@ export function GuestBookingFlowDemo() {
                   >
                     Book
                   </BnhubButton>
-                  <p className="mt-3 text-center text-xs text-white/40">You won&apos;t be charged until the host accepts.</p>
+                  <p className="mt-3 text-center text-xs text-white/40">
+                    Total above includes all fees shown — no hidden charges. You won&apos;t be charged until the host accepts.
+                  </p>
                 </div>
               </aside>
             </div>

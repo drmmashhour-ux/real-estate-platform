@@ -2,6 +2,9 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { Leaf, Info } from "lucide-react";
+import { GreenFilterSection } from "@/components/green/GreenFilterSection";
+import { Badge } from "@/components/ui/Badge";
 
 export type LuxuryBrowseListing = {
   id: string;
@@ -163,8 +166,19 @@ function ListingCard({
   item: LuxuryBrowseListing;
   detailHref: string;
 }) {
+  const isGreen = parseInt(item.id) % 2 === 0; // Mock green logic
+  const greenLabel = isGreen ? "IMPROVABLE" : "OPTIMIZED";
+
   return (
-    <div className="group overflow-hidden rounded-2xl border border-[#222] bg-[#0B0B0B] transition hover:border-[#D4AF37]/40">
+    <div className="group overflow-hidden rounded-2xl border border-[#222] bg-[#0B0B0B] transition hover:border-[#D4AF37]/40 relative">
+      {/* Green Badge */}
+      <div className="absolute top-4 left-4 z-10">
+        <div className="bg-black/40 backdrop-blur-md rounded-full px-2 py-1 flex items-center gap-1 border border-[#22c55e]/30 shadow-lg">
+          <Leaf className="w-2.5 h-2.5 text-[#22c55e]" />
+          <span className="text-[8px] font-black text-[#22c55e] uppercase tracking-widest">{greenLabel}</span>
+        </div>
+      </div>
+
       <div
         className="h-60 bg-cover bg-center transition duration-500 group-hover:scale-105"
         style={{ backgroundImage: `url(${item.image})` }}
@@ -181,6 +195,16 @@ function ListingCard({
           <span className="text-xs text-gray-500">
             {item.beds} beds • {item.baths} baths
           </span>
+        </div>
+
+        {/* Quick Insight */}
+        <div className="pt-2">
+           <div className="bg-[#22c55e]/5 border border-[#22c55e]/10 p-2 rounded-lg flex items-center gap-2">
+              <Info className="w-3 h-3 text-[#22c55e] shrink-0" />
+              <p className="text-[10px] text-gray-400 font-medium italic">
+                 {isGreen ? "Potential improvement opportunity" : "Already efficient"}
+              </p>
+           </div>
         </div>
 
         <Link
@@ -256,7 +280,7 @@ export function LecipmLuxuryListingsBrowse({
       </p>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
-        <div className="md:col-span-1">
+        <div className="md:col-span-1 space-y-6">
           <FilterPanel
             maxPriceUsd={maxPriceUsd}
             onMaxPriceUsd={setMaxPriceUsd}
@@ -265,6 +289,7 @@ export function LecipmLuxuryListingsBrowse({
             propertyType={propertyType}
             onPropertyType={setPropertyType}
           />
+          <GreenFilterSection />
         </div>
 
         <div className="md:col-span-3">

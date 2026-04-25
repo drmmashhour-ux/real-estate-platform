@@ -3,13 +3,17 @@ import { prisma } from "../../../../lib/prisma";
 
 export async function POST(req: NextRequest) {
   try {
-    const { refId } = await req.json();
-    const userAgent = req.headers.get("user-agent");
-    const ip = req.headers.get("x-forwarded-for") || "unknown";
+    const body = await req.json();
+    const { ref, userId, leadId } = body;
+    
+    const userAgent = req.headers.get("user-agent") || undefined;
+    const ip = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || undefined;
 
     await prisma.demoView.create({
       data: {
-        refId,
+        ref,
+        userId,
+        leadId,
         userAgent,
         ip,
       },
@@ -18,6 +22,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error("[DEMO_TRACK]", error);
-    return NextResponse.json({ success: false }, { status: 500 });
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

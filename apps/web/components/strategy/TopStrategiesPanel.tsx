@@ -1,6 +1,6 @@
 "use client";
 
-type Row = { strategyKey: string; domain: string; winRate: number | null; usageCount: number };
+type Row = { strategyKey: string; domain: string; winRate: number | null; usageCount: number; avgClosingTime?: number | null };
 
 type Props = {
   top: Row[];
@@ -19,6 +19,7 @@ export function TopStrategiesPanel({ top, title }: Props) {
           <li key={`${r.domain}-${r.strategyKey}`}>
             <span className="text-amber-200/80">{r.strategyKey}</span> <span className="text-slate-600">({r.domain})</span> — win
             proxy {r.winRate != null ? (r.winRate * 100).toFixed(0) + "%" : "n/a"} — uses {r.usageCount}
+            {r.avgClosingTime != null && r.avgClosingTime > 0 ? ` — avg close ~${r.avgClosingTime.toFixed(0)}d (where credited)` : null}
           </li>
         ))}
       </ul>

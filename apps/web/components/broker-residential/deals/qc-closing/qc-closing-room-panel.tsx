@@ -5,6 +5,7 @@ import Link from "next/link";
 import { AdjustmentsPanel } from "./adjustments-panel";
 import { ClosingTimeline } from "./closing-timeline";
 import { ConditionDeadlinePanel } from "./condition-deadline-panel";
+import { FundFlowPanel } from "./fund-flow-panel";
 import { NotaryChecklistPanel } from "./notary-checklist-panel";
 import type { QcClosingApiBundle } from "./qc-closing-types";
 
@@ -36,6 +37,25 @@ export function QcClosingRoomPanel({
   useEffect(() => {
     void refresh();
   }, [refresh]);
+
+  async function attestIdentities() {
+    setActionErr(null);
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/deals/${dealId}/closing/pre-close`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ identitiesVerified: true }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Failed");
+      setBundle(data as QcClosingApiBundle);
+    } catch (e) {
+      setActionErr(e instanceof Error ? e.message : "Failed");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function postSigningReady() {
     setActionErr(null);
@@ -114,7 +134,7 @@ export function QcClosingRoomPanel({
         <div>
           <h3 className="font-medium text-ds-text">Québec closing room</h3>
           <p className="mt-1 text-xs text-ds-text-secondary">
-            Notarial sequence: offer → conditions → notary → signing → deed → land register → keys. CRM close requires deed data and register confirmation (or N/A).
+            Québec notarial closing: accepted offer → conditions → notary assignment → document prep → signing ready → signed at notary (in person or digital where permitted) → closed once the land register is confirmed. This workflow does not replace the notary for title transfer.
           </p>
         </div>
         <Link href={pipelineClosingHref} className="text-xs text-ds-gold hover:text-amber-200">
@@ -140,7 +160,11 @@ export function QcClosingRoomPanel({
           <div className="mt-4 space-y-1 text-[11px] text-ds-text-secondary">
             <p>
               Readiness: <span className="text-ds-text">{bundle.readiness.readinessStatus}</span> · Packet:{" "}
-              <span className="text-ds-text">{bundle.flags.packetMarkedComplete ? "marked complete" : "open"}</span>
+              <span className="text-ds-text">{bundle.flags.packetMarkedComplete ? "marked complete" : "open"}</span> ·
+              Identities:{" "}
+              <span className="text-ds-text">
+                {bundle.closing?.preClosingIdentitiesVerifiedAt ? "verified (broker)" : "pending attestation"}
+              </span>
             </p>
             {bundle.signingReadinessBlockers.length > 0 ? (
               <div>
@@ -193,26 +217,25 @@ export function QcClosingRoomPanel({
           <AdjustmentsPanel dealId={dealId} bundle={bundle} onUpdated={setBundle} />
         </div>
         <div>
-          <h4 className="text-xs font-semibold uppercase tracking-wide text-ds-gold/90">Fund flow (deposit & disbursement)</h4>
+          <h4 className="text-xs font-semibold uppercase tracking-wide text-ds-gold/90">Fund flow (deposit, mortgage, disbursement)</h4>
           <p className="mt-1 text-xs text-ds-text-secondary">
-            Tracks `LecipmDealPayment` rows on the deal (deposit, balance, trust release). Broker records funding milestones; notary coordinates final disbursement.
+            Milestones are broker-tracked checkpoints; payment rows reflect `LecipmDealPayment` when present. Final disbursement follows notary instructions.
           </p>
-          <ul className="mt-2 space-y-1 text-xs">
-            {bundle.fundFlow.rows.length === 0 ? (
-              <li className="text-ds-text-secondary">No payment rows yet.</li>
-            ) : (
-              bundle.fundFlow.rows.map((p) => (
-                <li key={p.id} className="flex flex-wrap justify-between gap-2 rounded border border-white/5 bg-black/20 px-2 py-1">
-                  <span>
-                    {p.paymentKind} · {p.status}
-                  </span>
-                  <span className="font-mono text-ds-text-secondary">
-                    {(p.amountCents / 100).toLocaleString("en-CA", { style: "currency", currency: "CAD" })}
-                  </span>
-                </li>
-              ))
-            )}
-          </ul>
+          <FundFlowPanel dealId={dealId} bundle={bundle} onUpdated={setBundle} />
+        </div>
+        <div>
+          <h4 className="text-xs font-semibold uppercase tracking-wide text-ds-gold/90">Pre-closing validation</h4>
+          <p className="mt-1 text-xs text-ds-text-secondary">
+            Before signing is scheduled, conditions must be met, closing-room signatures complete, and party identities verified per your brokerage file (OACIQ).
+          </p>
+          <button
+            type="button"
+            disabled={busy || !bundle.closing || Boolean(bundle.closing.preClosingIdentitiesVerifiedAt)}
+            className="mt-3 rounded-lg border border-emerald-500/40 px-3 py-1.5 text-xs font-semibold text-emerald-200 disabled:opacity-40"
+            onClick={() => void attestIdentities()}
+          >
+            {bundle.closing?.preClosingIdentitiesVerifiedAt ? "Identities attested" : "Attest identities verified"}
+          </button>
         </div>
       </div>
 

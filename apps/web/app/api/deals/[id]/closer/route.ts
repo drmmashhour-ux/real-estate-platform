@@ -6,6 +6,7 @@ import { runDealCloser } from "@/modules/deal-closer/deal-closer.engine";
 import { buildDealCloserContext } from "@/modules/deal-closer/deal-closer-context.service";
 import { recordCloseActionAssignment } from "@/modules/deal-closer/close-action-assignment.service";
 import { applyDealCloserLearningNudge } from "@/modules/strategy-benchmark/learning-nudges.service";
+import { maybeApplyReinforcementToCloser } from "@/modules/reinforcement/reinforcement-wiring.service";
 
 export const dynamic = "force-dynamic";
 
@@ -41,7 +42,8 @@ export async function GET(_req: NextRequest, context: Params) {
     const ctx = await buildDealCloserContext({ dealId, brokerId: brokerForContext });
     const raw = runDealCloser(ctx);
     const nextActions = await applyDealCloserLearningNudge(raw.nextActions);
-    const closer = { ...raw, nextActions };
+    const nudged = { ...raw, nextActions };
+    const closer = await maybeApplyReinforcementToCloser(ctx, nudged);
     const top = closer.nextActions[0];
     if (top) {
       void recordCloseActionAssignment({

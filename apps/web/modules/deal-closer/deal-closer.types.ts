@@ -54,6 +54,15 @@ export type NextCloseAction = {
   blockedIf?: string[];
 };
 
+export type DealCloserReinforcementMeta = {
+  topKey: string;
+  selectionMode: "exploit" | "explore";
+  contextBucket: string;
+  adjustedRanking: { strategyKey: string; baseScore: number; adjustedScore: number }[];
+  rationale: string[];
+  decisionId: string | null;
+};
+
 export type DealCloserOutput = {
   readiness: ClosingReadinessResult;
   blockers: CloseBlocker[];
@@ -61,4 +70,5 @@ export type DealCloserOutput = {
   prematurePushRisk: "low" | "medium" | "high";
   closeStrategy: string[];
   coachNotes: string[];
+  reinforcement?: DealCloserReinforcementMeta;
 };

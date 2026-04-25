@@ -5,7 +5,10 @@ import type { NegotiationSimulatorContext } from "./negotiation-simulator.types"
 type Params = { dealId: string; brokerId: string };
 
 /**
- * Merges offer strategy + deal-closer derived data (via offer context) into simulator input. Never throws.
+ * Merges signals from the same pipeline the offer copilot uses: deal closer + offer readiness, messaging/CRM
+ * heuristics from `buildOfferStrategyContext` (readiness, blockers, visit state, trust, price sensitivity, etc.),
+ * plus `dealProbability` and optional `callAnalysis` when the closer exposed them. Safe fallbacks when data is
+ * missing — this never throws. Outputs are inputs to deterministic scenario heuristics only, not price or legal advice.
  */
 export async function buildNegotiationSimulatorContext(params: Params): Promise<NegotiationSimulatorContext> {
   const base: NegotiationSimulatorContext = { dealId: params.dealId, brokerId: params.brokerId };
@@ -24,6 +27,7 @@ export async function buildNegotiationSimulatorContext(params: Params): Promise<
       clientId: osc.clientId ?? null,
       closingReadinessScore: typeof osc.closingReadinessScore === "number" ? osc.closingReadinessScore : null,
       offerReadinessScore: s.readiness.score,
+      dealProbability: typeof osc.dealProbability === "number" && Number.isFinite(osc.dealProbability) ? osc.dealProbability : null,
       posture: s.posture.style,
       blockers: s.blockers,
       objections: osc.objections,
@@ -36,6 +40,7 @@ export async function buildNegotiationSimulatorContext(params: Params): Promise<
       visitCompleted: osc.visitCompleted,
       offerDiscussed: osc.offerDiscussed,
       clientMemory: osc.clientMemory,
+      callAnalysis: osc.callAnalysis,
       priceSensitivity: osc.priceSensitivity,
       postponementHint: Boolean(osc.competitiveSignals?.delayedDecision) || Boolean(osc.hesitationOrComparisonHint),
     };

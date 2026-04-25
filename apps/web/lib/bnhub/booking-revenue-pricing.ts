@@ -1,10 +1,15 @@
 /**
  * BNHub booking revenue — guest-facing totals, platform fee, host payout.
  *
- * Production persistence uses `Booking` + `Payment` (cents): map
- * `baseAmount` → lodging subtotal (+ agreed extras), `serviceFee` → `guestFeeCents` /
- * quote fees, `total` → `priceSnapshotTotalCents` / `Payment.amountCents`.
- * Stripe Checkout already receives `bookingId` + `listingId` in session metadata (`lib/stripe/checkout.ts`).
+ * **Conceptual model → Prisma (single `Booking` table — do not duplicate):**
+ * - `totalPrice` (float) ≈ `priceSnapshotTotalCents / 100` or `Payment.amountCents / 100`
+ * - `serviceFee` ≈ `guestFeeCents / 100` (and/or Stripe `application_fee` on the Payment)
+ * - `userId` → `Booking.guestId`
+ * - `listingId` → `Booking.listingId`
+ * - `status` → `Booking.status` (`BookingStatus` enum)
+ *
+ * Stripe Checkout: `createCheckoutSession` includes `bookingId` + `listingId` in session metadata
+ * (`lib/stripe/checkout.ts`, validated in `checkoutMetadata.ts`).
  */
 
 import type { BnhubUpsellSelection } from "@/lib/monetization/bnhub-checkout-pricing";

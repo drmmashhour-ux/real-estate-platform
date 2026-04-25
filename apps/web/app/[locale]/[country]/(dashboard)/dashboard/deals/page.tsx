@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getGuestId } from "@/lib/auth/session";
 import { prisma } from "@repo/db";
 import { listPipelineDeals } from "@/modules/deals/deal.service";
+import { StrategyInsightsDashboard } from "@/components/strategy/StrategyInsightsDashboard";
 
 export const dynamic = "force-dynamic";
 
@@ -42,6 +43,9 @@ export default async function PipelineDealsListPage({
 
   return (
     <div className="space-y-4 p-4 text-sm">
+      <div className="rounded-lg border border-slate-800 bg-slate-900/50 p-4 text-slate-200">
+        <StrategyInsightsDashboard compact className="text-slate-200" />
+      </div>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-lg font-semibold">Deal pipeline</h1>
         <Link className="text-primary underline" href={`${base}/committee`}>

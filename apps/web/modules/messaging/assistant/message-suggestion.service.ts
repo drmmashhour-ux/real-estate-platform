@@ -160,6 +160,11 @@ export function generateMessageSuggestion(context: MessageSuggestionContext): Me
         goalType = "visit_scheduling";
         goal = "optional, concrete visit or on-site follow-up (only what you can confirm)";
         reason = "Negotiation sim suggested a visit path where fit is uncertain — you confirm availability, no access guarantees.";
+      } else if (k === "offer_discussion_now") {
+        goalType = "closing_nudge";
+        goal = "low-pressure framing for how an offer could be discussed next (no terms or price implied)";
+        reason =
+          "Simulation read leans toward an offer-discussion shape here — you supply all specifics; nothing is drafted or sent automatically, not a legal or market guarantee.";
       } else if (k === "timing_pause" && (nSafe === "timing_pause" || nMom === "high")) {
         goalType = "re_engagement";
         goal = nMom === "high" ? "ultra-light touch or a pause to avoid a rush read" : "nurture tone without a hard next-step ask";
@@ -175,6 +180,10 @@ export function generateMessageSuggestion(context: MessageSuggestionContext): Me
         goalType = "re_engagement";
         goal = "gentle check-in to protect momentum (no new promises)";
         reason = "Sim suggests soft follow-up in a read with some momentum concern — not a performance guarantee.";
+      } else if (k === "soft_follow_up") {
+        goalType = "re_engagement";
+        goal = "brief, low-pressure check-in (you can also choose not to message yet)";
+        reason = "Negotiation sim highlighted a soft follow-up; you set cadence and content — not a response forecast.";
       } else {
         reason =
           "Negotiation simulator produced approach hints you can line up with your read — " +

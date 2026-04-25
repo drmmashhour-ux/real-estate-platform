@@ -1,61 +1,78 @@
 import React from 'react';
-import { Card } from '../ui/Card';
-import { Target, MessageCircle, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
+import { Target, XCircle, CheckCircle, HelpCircle } from 'lucide-react';
 
 export const ClosingScript: React.FC = () => {
+  const scripts = [
+    {
+      id: 'CLOSE_TRIAL',
+      title: 'PROPOSER UN ESSAI (CAS RÉEL)',
+      content: (
+        <div className="space-y-3 text-sm">
+          <p className="font-semibold text-blue-400 italic">"Tu as vu comment ça fonctionne. Maintenant la vraie question: est-ce que ça peut t’aider à gagner du temps ou sécuriser tes dossiers ?"</p>
+          <p className="text-xs uppercase text-gray-500 font-bold">(ATTENDRE LA RÉPONSE)</p>
+          <div className="bg-white/5 p-3 rounded-lg border border-white/10">
+            <p className="font-bold text-[#D4AF37]">"Je te propose: on l’utilise ensemble sur un vrai dossier cette semaine."</p>
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: 'CLOSE_A',
+      title: 'DÉMO → ACTIVATION',
+      content: (
+        <div className="space-y-3 text-sm">
+          <p className="font-semibold text-blue-400 italic">"On prend seulement quelques courtiers en early access par secteur."</p>
+          <p>
+            "Je te propose d'activer ton accès aujourd'hui. Tu peux créer ton premier draft gratuitement pour voir comment le système réagit à ton dossier actuel."
+          </p>
+          <p className="font-bold text-[#D4AF37]">"Tu veux qu'on configure ton profil ensemble ?"</p>
+        </div>
+      ),
+    },
+    {
+      id: 'CLOSE_B',
+      title: 'GÉRER LE PRIX',
+      content: (
+        <div className="space-y-3 text-sm">
+          <p className="font-semibold text-blue-400 italic">"C'est un investissement dans ta tranquillité d'esprit."</p>
+          <p>
+            "Une seule erreur évitée ou un seul oubli sur une promesse d'achat et le système est rentabilisé pour l'année complète."
+          </p>
+        </div>
+      ),
+    },
+    {
+      id: 'CLOSE_C',
+      title: 'SÉCURITÉ LOI 25',
+      content: (
+        <div className="space-y-3 text-sm">
+          <p className="font-semibold text-blue-400 italic">"On s'occupe de la traçabilité pour toi."</p>
+          <p>
+            "Chaque clic, chaque consentement et chaque validation est archivé selon les standards du Québec. Tu n'as plus à te soucier de l'audit de tes données."
+          </p>
+        </div>
+      ),
+    }
+  ];
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-white flex items-center gap-2">
-          <Target className="w-5 h-5 text-[#D4AF37]" />
-          Script de Closing (Activation)
-        </h2>
-      </div>
-
-      <div className="space-y-4">
-        {/* Phase 1: The Question */}
-        <Card className="p-5 bg-white/5 border-white/10 hover:border-[#D4AF37]/30 transition">
-          <div className="flex gap-4">
-            <div className="w-8 h-8 rounded-full bg-[#D4AF37]/10 flex items-center justify-center flex-shrink-0">
-              <span className="text-xs font-black text-[#D4AF37]">01</span>
+      <h2 className="text-xl font-bold text-white flex items-center gap-2">
+        <Target className="w-5 h-5 text-[#D4AF37]" />
+        Techniques de Closing
+      </h2>
+      <div className="grid gap-4">
+        {scripts.map((script) => (
+          <div key={script.id} className="bg-black/40 border border-white/5 rounded-2xl overflow-hidden">
+            <div className="px-4 py-3 bg-white/5 border-b border-white/10">
+              <h3 className="text-xs font-bold text-[#D4AF37] uppercase tracking-widest">{script.title}</h3>
             </div>
-            <div className="space-y-3">
-              <p className="text-sm font-bold text-[#D4AF37] uppercase tracking-wider">La Question de Valeur</p>
-              <p className="text-gray-200 italic leading-relaxed">
-                "Tu as vu comment ça fonctionne. Maintenant la vraie question: est-ce que ça peut t’aider à gagner du temps ou sécuriser tes dossiers ?"
-              </p>
-              <p className="text-[10px] text-gray-500 font-bold uppercase">(ATTENDRE LA RÉPONSE)</p>
+            <div className="p-4 text-gray-300">
+              {script.content}
             </div>
           </div>
-        </Card>
-
-        {/* Phase 2: The Trial */}
-        <Card className="p-5 bg-white/5 border-white/10 hover:border-[#D4AF37]/30 transition">
-          <div className="flex gap-4">
-            <div className="w-8 h-8 rounded-full bg-[#D4AF37]/10 flex items-center justify-center flex-shrink-0">
-              <span className="text-xs font-black text-[#D4AF37]">02</span>
-            </div>
-            <div className="space-y-3">
-              <p className="text-sm font-bold text-[#D4AF37] uppercase tracking-wider">Le Dossier Réel</p>
-              <p className="text-gray-200 italic leading-relaxed">
-                "Si oui: Je te propose qu'on l’utilise ensemble sur un vrai dossier cette semaine. On passe en 'Mode Assisté' et je te guide pour ton premier draft."
-              </p>
-            </div>
-          </div>
-        </Card>
-
-        {/* Phase 3: Next Step */}
-        <Card className="p-5 bg-[#D4AF37]/5 border-[#D4AF37]/20">
-          <div className="flex items-start gap-4">
-            <CheckCircle2 className="w-5 h-5 text-[#D4AF37] mt-1" />
-            <div>
-              <p className="text-sm font-bold text-white">Objectif : Premier Succès</p>
-              <p className="text-xs text-gray-400 mt-1 leading-relaxed">
-                Le but n'est pas de vendre l'outil aujourd'hui, mais de lui faire finaliser son premier document. Le paiement à l'usage ($15/doc) s'active naturellement après le premier succès.
-              </p>
-            </div>
-          </div>
-        </Card>
+        ))}
       </div>
     </div>
   );
