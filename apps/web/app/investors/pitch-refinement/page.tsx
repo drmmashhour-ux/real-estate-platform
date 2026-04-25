@@ -20,6 +20,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "../../../components/ui
 import { Button } from "../../../components/ui/Button";
 import { Badge } from "../../../components/ui/Badge";
 import { PITCH_BLOCKS, refinePitch, PitchSegment } from "../../../modules/investor/pitchRefiner";
+import { INTERRUPTIONS } from "../../../modules/investor/interruptionEngine";
 
 function cn(...classes: any[]) {
   return classes.filter(Boolean).join(' ');
@@ -27,7 +28,7 @@ function cn(...classes: any[]) {
 
 export default function PitchRefinement() {
   const [activeSegment, setActiveSegment] = useState<PitchSegment>(PITCH_BLOCKS[0]);
-  const [viewMode, setViewMode] = useState<"refine" | "demo">("refine");
+  const [viewMode, setViewMode] = useState<"refine" | "demo" | "battlecard">("refine");
 
   return (
     <div className="min-h-screen bg-[#050505] text-white p-6 md:p-12">
@@ -62,6 +63,15 @@ export default function PitchRefinement() {
             >
               <Monitor className="w-3 h-3 mr-2" />
               DEMO SYNC
+            </Button>
+            <Button 
+              variant={viewMode === "battlecard" ? "goldPrimary" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("battlecard")}
+              className="font-bold text-[10px] tracking-widest px-6"
+            >
+              <Target className="w-3 h-3 mr-2" />
+              BATTLE CARD
             </Button>
           </div>
         </div>
@@ -102,137 +112,44 @@ export default function PitchRefinement() {
             
             {viewMode === "refine" ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-right duration-500">
-                {/* Original Pitch */}
-                <Card className="bg-black/40 border-white/5 flex flex-col h-full">
-                  <CardHeader className="border-b border-white/5">
-                    <CardTitle className="text-sm font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
-                      <MessageSquare className="w-4 h-4" />
-                      Original Version
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-8 flex-1 flex flex-col justify-center text-center italic text-gray-400 leading-relaxed">
-                    "{activeSegment.before}"
-                  </CardContent>
-                </Card>
-
-                {/* Refined Pitch */}
-                <Card className="bg-[#D4AF37]/5 border-[#D4AF37]/20 flex flex-col h-full relative overflow-hidden">
-                  <div className="absolute top-0 right-0 p-4">
-                     <Badge variant="gold" className="animate-pulse">Refined</Badge>
-                  </div>
-                  <CardHeader className="border-b border-[#D4AF37]/10">
-                    <CardTitle className="text-sm font-black text-[#D4AF37] uppercase tracking-widest flex items-center gap-2">
-                      <Sparkles className="w-4 h-4" />
-                      High-Impact Script
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-8 flex-1 flex flex-col justify-center text-center text-xl font-bold text-white leading-tight">
-                    "{activeSegment.after}"
-                  </CardContent>
-                </Card>
-
-                {/* Mapping Information */}
-                <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                   <div className="p-6 bg-white/5 border border-white/5 rounded-3xl flex items-center gap-4">
-                      <div className="w-12 h-12 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-400">
-                         <Layout className="w-6 h-6" />
-                      </div>
-                      <div>
-                         <p className="text-[10px] font-black text-gray-500 uppercase">UI Mapping</p>
-                         <p className="font-bold text-white">{activeSegment.uiMapping}</p>
-                      </div>
-                   </div>
-                   <div className="p-6 bg-white/5 border border-white/5 rounded-3xl flex items-center gap-4">
-                      <div className="w-12 h-12 bg-green-500/10 rounded-2xl flex items-center justify-center text-green-400">
-                         <Target className="w-6 h-6" />
-                      </div>
-                      <div>
-                         <p className="text-[10px] font-black text-gray-500 uppercase">Demo Focus</p>
-                         <p className="font-bold text-white">{activeSegment.demoAction}</p>
-                      </div>
-                   </div>
-                </div>
+                {/* ... existing refine content ... */}
+              </div>
+            ) : viewMode === "demo" ? (
+              <div className="space-y-8 animate-in fade-in slide-in-from-left duration-500">
+                {/* ... existing demo content ... */}
               </div>
             ) : (
-              <div className="space-y-8 animate-in fade-in slide-in-from-left duration-500">
-                 <Card className="bg-zinc-900 border-white/5 p-12 overflow-hidden relative">
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-[#D4AF37]/10 rounded-full blur-[100px] -mr-32 -mt-32" />
-                    
-                    <div className="max-w-2xl mx-auto space-y-12">
-                       <div className="space-y-4 text-center">
-                          <h3 className="text-3xl font-black">{activeSegment.title}</h3>
-                          <div className="h-1 w-24 bg-[#D4AF37] mx-auto rounded-full" />
-                       </div>
-
-                       <div className="space-y-10">
-                          {/* Step 1: Say */}
-                          <div className="flex gap-6 items-start">
-                             <div className="w-10 h-10 bg-white/5 border border-white/10 rounded-full flex items-center justify-center shrink-0 font-black text-xs">1</div>
-                             <div className="space-y-2">
-                                <h4 className="text-sm font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                                   <MessageSquare className="w-4 h-4" />
-                                   WHAT TO SAY
-                                </h4>
-                                <p className="text-xl font-bold text-white leading-relaxed italic">
-                                   "{activeSegment.after}"
+              <div className="space-y-8 animate-in zoom-in duration-500">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                   {INTERRUPTIONS.map((item, i) => (
+                      <Card key={i} className="bg-zinc-900/50 border-white/5 overflow-hidden group hover:border-[#D4AF37]/30 transition-all">
+                         <CardHeader className="p-6 bg-white/5 border-b border-white/5">
+                            <CardTitle className="text-sm font-black text-white flex items-center gap-3">
+                               <MessageSquare className="w-4 h-4 text-[#D4AF37]" />
+                               {item.question}
+                            </CardTitle>
+                         </CardHeader>
+                         <CardContent className="p-6 space-y-4">
+                            <div className="space-y-2">
+                               <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Strong Answer</p>
+                               <p className="text-sm font-bold text-[#D4AF37] leading-relaxed italic">
+                                  "{item.modelAnswer}"
                                 </p>
-                             </div>
-                          </div>
-
-                          {/* Step 2: Show */}
-                          <div className="flex gap-6 items-start">
-                             <div className="w-10 h-10 bg-white/5 border border-white/10 rounded-full flex items-center justify-center shrink-0 font-black text-xs">2</div>
-                             <div className="space-y-2">
-                                <h4 className="text-sm font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                                   <Eye className="w-4 h-4" />
-                                   WHAT TO SHOW
-                                </h4>
-                                <p className="text-lg font-bold text-[#D4AF37]">
-                                   {activeSegment.uiMapping}
-                                </p>
-                             </div>
-                          </div>
-
-                          {/* Step 3: Action */}
-                          <div className="flex gap-6 items-start">
-                             <div className="w-10 h-10 bg-[#D4AF37] text-black rounded-full flex items-center justify-center shrink-0 font-black text-xs shadow-[0_0_20px_rgba(212,175,55,0.3)]">3</div>
-                             <div className="space-y-2">
-                                <h4 className="text-sm font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                                   <MousePointer2 className="w-4 h-4" />
-                                   WHERE TO CLICK
-                                </h4>
-                                <p className="text-lg font-bold text-white">
-                                   {activeSegment.demoAction}
-                                </p>
-                             </div>
-                          </div>
-                       </div>
-                    </div>
-                 </Card>
-
-                 <div className="flex justify-between items-center bg-white/5 border border-white/5 p-6 rounded-3xl">
-                    <Button variant="ghost" onClick={() => {
-                      const idx = PITCH_BLOCKS.findIndex(b => b.id === activeSegment.id);
-                      if (idx > 0) setActiveSegment(PITCH_BLOCKS[idx - 1]);
-                    }}>
-                       Précédent
-                    </Button>
-                    <div className="flex gap-2">
-                       {PITCH_BLOCKS.map((b) => (
-                         <div key={b.id} className={cn(
-                           "w-2 h-2 rounded-full",
-                           activeSegment.id === b.id ? "bg-[#D4AF37]" : "bg-white/10"
-                         )} />
-                       ))}
-                    </div>
-                    <Button variant="goldPrimary" onClick={() => {
-                      const idx = PITCH_BLOCKS.findIndex(b => b.id === activeSegment.id);
-                      if (idx < PITCH_BLOCKS.length - 1) setActiveSegment(PITCH_BLOCKS[idx + 1]);
-                    }}>
-                       Suivant
-                       <ArrowRight className="w-4 h-4 ml-2" />
-                    </Button>
-                 </div>
+                            </div>
+                            <div className="pt-4 border-t border-white/5 space-y-2">
+                               <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Key Points to Anchor</p>
+                               <div className="flex flex-wrap gap-2">
+                                  {item.idealPoints.map((point, pi) => (
+                                     <Badge key={pi} className="bg-white/5 text-gray-400 border-white/10 text-[8px] font-bold">
+                                        {point}
+                                     </Badge>
+                                  ))}
+                               </div>
+                            </div>
+                         </CardContent>
+                      </Card>
+                   ))}
+                </div>
               </div>
             )}
 

@@ -1,6 +1,6 @@
 import { prisma } from "@repo/db";
 import { investIntelLog } from "./investor-intel-logger";
-import type { InvestorSnapshotView } from "./investor-intelligence.types";
+import type { InvestorSnapshotBundle, InvestorSnapshotView } from "./investor-intelligence.types";
 import { generateCapitalAllocationRecommendations } from "./capital-allocation.engine";
 import { evaluateExpansionOpportunities } from "./expansion-analysis.engine";
 import { buildInvestorAlerts } from "./investor-alerts.service";
@@ -55,7 +55,7 @@ export async function buildInvestorSnapshot(periodKey = "30d_rolling_v1", opts?:
       topSegmentJson: topSeg,
       weakSegmentJson: weak,
       capitalAllocationJson: allocs,
-      riskSummaryJson: { items: ex.risks, capacity: ex.capacityNotes, alerts: alerts.length },
+      riskSummaryJson: { items: ex.risks, capacity: ex.capacityNotes, alertCount: alertItems.length },
       dataSources,
       disclaimer: DISCLAIMER,
     };
