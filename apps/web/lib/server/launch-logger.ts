@@ -36,8 +36,11 @@ function emit(tag: Tag, level: "info" | "warn" | "error", msg: string, payload?:
     /* never throw from logging */
   }
   try {
-    if (payload && (level === "info" || level === "warn")) {
-      tryCaptureFromTaggedLog(tag, level, msg, payload);
+    if (payload && (level === "info" || level === "warn") && process.env.NEXT_RUNTIME !== "edge") {
+      // Lazy load to avoid Prisma initialization in instrumentation
+      import("@/modules/outcomes/outcome-log").then(m => {
+        m.tryCaptureFromTaggedLog(tag, level, msg, payload);
+      }).catch(() => {});
     }
   } catch (e) {
     console.error("[lecipm][outcome] tryCaptureFromTaggedLog failed", e instanceof Error ? e.message : e);

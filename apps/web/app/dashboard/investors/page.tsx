@@ -2,6 +2,7 @@ import React from "react";
 import { getInvestorMetrics, getInvestorSnapshot } from "@/modules/investor/metrics.service";
 import { generateInvestorNarrative } from "@/modules/investor/narrative.engine";
 import { PitchDeck } from "@/components/investor/PitchDeck";
+import { FundingStoryHighlights } from "@/components/investor/FundingStoryHighlights";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { ShieldCheck, AlertTriangle, Lightbulb, TrendingUp } from "lucide-react";
@@ -96,9 +97,13 @@ export default async function InvestorDashboardPage() {
             </div>
             <div className="pt-8 border-t border-white/5 space-y-4">
               <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Next Board Action</p>
-              <button className="w-full bg-[#D4AF37] text-black font-black text-[10px] tracking-widest py-4 rounded-2xl shadow-xl shadow-[#D4AF37]/10 hover:scale-105 transition-all uppercase">
-                Download Weekly PDF
-              </button>
+              <a 
+                href="/api/investor/report" 
+                target="_blank"
+                className="block w-full bg-[#D4AF37] text-black text-center font-black text-[10px] tracking-widest py-4 rounded-2xl shadow-xl shadow-[#D4AF37]/10 hover:scale-105 transition-all uppercase"
+              >
+                Download Weekly JSON Report
+              </a>
             </div>
           </section>
 
@@ -119,6 +124,9 @@ export default async function InvestorDashboardPage() {
           </Card>
         </div>
       </div>
+
+      {/* Phase 8: Funding Story Highlights */}
+      <FundingStoryHighlights />
     </main>
   );
 }

@@ -2,7 +2,7 @@
 generator client {
   provider   = "prisma-client-js"
   output     = "../generated/analytics"
-  engineType = "binary"
+  engineType = "library"
 }
 
 datasource db {

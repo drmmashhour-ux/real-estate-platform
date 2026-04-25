@@ -22,11 +22,16 @@ ${narrative.highlights.map(h => `- ${h}`).join('\n')}
 - MoM Growth: ${(metrics.revenueGrowthMonthOverMonth * 100).toFixed(1)}%
 - Conversion: ${(metrics.leadConversionRate * 100).toFixed(1)}%
 
-3. FOCUS FOR NEXT WEEK
+3. FUNDING STORY PILLARS
+- AI Differentiation: Custom OACIQ-trained decision layer (Green AI).
+- Scalability: Ready for Ontario (RECO) and BC expansion.
+- Revenue Model: $99-$225/lead + $79/mo SaaS + 15% Success Fee.
+
+4. FOCUS FOR NEXT WEEK
 - Mitigating: ${narrative.risks[0]}
 - Pursuing: ${narrative.opportunities[0]}
 
-4. TRACTION NARRATIVE
+5. TRACTION NARRATIVE
 "${narrative.traction}"
 
 --------------------------------------------------
