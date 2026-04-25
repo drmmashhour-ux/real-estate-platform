@@ -16,6 +16,7 @@ import { LeciShell } from "@/components/leci/LeciShell";
 import TenantThemeProvider from "@/components/tenant/TenantThemeProvider";
 import { getTenantContextOptional } from "@/lib/tenant/context";
 import { getSiteBaseUrl } from "@/modules/seo/lib/siteBaseUrl";
+import { VisitorGuideChat } from "@/components/ai/VisitorGuideChat";
 
 const inter = Inter({
   subsets: ["latin", "latin-ext"],
@@ -115,6 +116,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <ConversionFlagsPanel />
         <TenantThemeProvider brand={tenantForBrand?.brand}>
           <LeciShell>{children}</LeciShell>
+          <VisitorGuideChat />
         </TenantThemeProvider>
       </body>
     </html>

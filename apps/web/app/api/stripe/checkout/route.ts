@@ -102,6 +102,7 @@ const PAYMENT_TYPES: PaymentType[] = [
   "lead_purchase",
   "premium_subscription",
   "fsbo_listing",
+  "broker_export_credits",
 ];
 
 export async function POST(request: NextRequest) {
@@ -462,6 +463,13 @@ export async function POST(request: NextRequest) {
   const fsboPlanForSession =
     paymentType === "fsbo_publish" ? parseFsboPublishPlan(body.fsboPlan) : undefined;
 
+  const checkoutExtraMetadata = {
+    ...marketplaceCheckoutMetadata,
+    ...bnhubStripeMetadata,
+    ...(brokerExportCreditMetadata ?? {}),
+  };
+  const hasCheckoutExtra = Object.keys(checkoutExtraMetadata).length > 0;
+
   const result = await createCheckoutSession({
     successUrl,
     cancelUrl,
@@ -482,18 +490,17 @@ export async function POST(request: NextRequest) {
     fsboListingId,
     fsboPlan: fsboPlanForSession,
     description:
-      paymentType === "fsbo_publish"
-        ? fsboPlanForSession === "premium"
-          ? "FSBO — featured listing on LECIPM"
-          : "FSBO — standard listing on LECIPM"
-        : typeof body.description === "string"
-          ? body.description
-          : undefined,
+      paymentType === "broker_export_credits" && brokerExportCreditMetadata
+        ? `LECIPM — ${brokerExportCreditMetadata.quantity} crédit(s) export contrat`
+        : paymentType === "fsbo_publish"
+          ? fsboPlanForSession === "premium"
+            ? "FSBO — featured listing on LECIPM"
+            : "FSBO — standard listing on LECIPM"
+          : typeof body.description === "string"
+            ? body.description
+            : undefined,
     connect,
-    metadata:
-      Object.keys({ ...marketplaceCheckoutMetadata, ...bnhubStripeMetadata }).length > 0
-        ? { ...marketplaceCheckoutMetadata, ...bnhubStripeMetadata }
-        : undefined,
+    metadata: hasCheckoutExtra ? checkoutExtraMetadata : undefined,
   });
 
   if ("error" in result) {

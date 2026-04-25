@@ -36,6 +36,8 @@ export function revenueFlowTypeLabel(paymentType: PaymentType): string {
     case "subscription":
     case "premium_subscription":
       return "subscription";
+    case "broker_export_credits":
+      return "lecipm_broker_credits";
     default:
       return paymentType;
   }
@@ -52,7 +54,8 @@ export type PaymentType =
   | "fsbo_publish"
   | "lead_purchase"
   | "premium_subscription"
-  | "fsbo_listing";
+  | "fsbo_listing"
+  | "broker_export_credits";
 
 export type CreateCheckoutParams = {
   successUrl: string;

@@ -18,7 +18,7 @@ function mk(
   rest: Omit<StepDef, "slug" | "phaseId">
 ): LaunchStep {
   return {
-    id: sid(territoryId, slug),
+    id: stepId(territoryId, slug),
     phaseId,
     ...rest,
   };
@@ -147,7 +147,7 @@ export function buildLaunchStepsForPlaybook(
       priority: "P0",
       estimatedEffort: "S",
       expectedImpact: "HIGH",
-      dependencies: [sid(territoryId, "ops-routing")],
+      dependencies: [stepId(territoryId, "ops-routing")],
       successMetric: "Zero orphan leads in pilot cohort for 5 business days",
       linkedGrowthThemes: ["ROUTE_LEAD_PRIORITY"],
     }),
@@ -163,7 +163,7 @@ export function buildLaunchStepsForPlaybook(
       priority: "P0",
       estimatedEffort: "L",
       expectedImpact: "HIGH",
-      dependencies: [sid(territoryId, "lead-engine-live")],
+      dependencies: [stepId(territoryId, "lead-engine-live")],
       successMetric: "50 SQLs logged with source + next step",
     }),
     mk(territoryId, "EARLY_TRACTION", "deals-3", {
@@ -226,7 +226,7 @@ export function buildLaunchStepsForPlaybook(
       priority: "P0",
       estimatedEffort: "L",
       expectedImpact: "HIGH",
-      dependencies: [sid(territoryId, "bnhub-early")],
+      dependencies: [stepId(territoryId, "bnhub-early")],
       successMetric: "Inventory count + booking volume up vs prior 4 weeks",
     }),
     mk(territoryId, "SCALE", "investor-content", {

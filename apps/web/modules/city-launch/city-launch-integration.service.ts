@@ -3,6 +3,7 @@ import { prioritizeOpportunities } from "@/modules/growth-brain/growth-brain-pri
 import { aggregateGrowthSignals } from "@/modules/growth-brain/growth-brain-signals.service";
 import { recommendActionsFromOpportunities } from "@/modules/growth-brain/growth-brain-actions.service";
 import { getTerritoryDetail, loadTerritories } from "@/modules/market-domination/market-domination.service";
+import { explainTerritoryScore } from "@/modules/market-domination/market-domination-explainability.service";
 import { computeHubPenetration } from "@/modules/market-domination/market-penetration.service";
 import type { HubType } from "@/modules/market-domination/market-domination.types";
 

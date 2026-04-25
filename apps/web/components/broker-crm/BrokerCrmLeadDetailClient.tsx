@@ -141,6 +141,8 @@ export function BrokerCrmLeadDetailClient({ leadId }: { leadId: string }) {
     }>;
   } | null>(null);
   const [playbookRecs, setPlaybookRecs] = useState<PlaybookRecRow[] | null>(null);
+  const growthLeadViewSent = useRef(false);
+  const growthAiSent = useRef(false);
   const [convertPrice, setConvertPrice] = useState("");
   const [convertBusy, setConvertBusy] = useState(false);
   const [convertNote, setConvertNote] = useState<string | null>(null);
@@ -890,6 +892,12 @@ export function BrokerCrmLeadDetailClient({ leadId }: { leadId: string }) {
                   });
                   const j = (await res.json()) as { error?: string };
                   if (!res.ok) throw new Error(j.error ?? "Failed");
+                  void fetch("/api/broker-activity", {
+                    method: "POST",
+                    credentials: "same-origin",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ eventType: "contact_attempt", refId: leadId }),
+                  }).catch(() => {});
                   setReplyDraft("");
                   pendingAutopilotActionId.current = null;
                   await load();

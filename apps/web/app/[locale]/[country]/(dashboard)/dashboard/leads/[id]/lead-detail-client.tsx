@@ -34,6 +34,7 @@ import type {
 } from "@/modules/leads/lead-pricing-experiments.types";
 import type { LeadPricingResultsAdminPayload } from "@/modules/leads/lead-pricing-results.types";
 import { LeadPricingResultsPanel } from "@/components/leads/LeadPricingResultsPanel";
+import { RevenueLoopLeadStrip } from "@/components/monetization/RevenueLoopLeadStrip";
 
 type AutomationTaskRow = {
   id: string;
@@ -98,6 +99,7 @@ type LeadDetail = {
   nextFollowUpAt: string | null;
   reminderStatus: string | null;
   createdAt: string;
+  isLocked?: boolean;
   dmStatus?: string;
   lastDmAt?: string | null;
   highIntent?: boolean;
@@ -497,6 +499,7 @@ export function LeadDetailClient({
             Training
           </Link>
         </div>
+        <RevenueLoopLeadStrip leadId={leadId} show={!lead.isLocked} />
 
         <div className="mt-8 grid gap-4 sm:grid-cols-2">
           <div className="rounded-2xl border border-white/10 bg-[#121212] p-5">

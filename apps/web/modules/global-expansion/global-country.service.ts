@@ -4,7 +4,7 @@ import { buildMarketDominationSnapshot } from "@/modules/market-domination/marke
 import { getRevenuePredictorAdminSummary } from "@/modules/revenue-predictor/revenue-predictor.service";
 import { runGrowthBrainSnapshot } from "@/modules/growth-brain/growth-brain.service";
 
-import { getRegulationView } from "./global-regulation.service";
+import { getRegulationViewFromConfig } from "./global-regulation.service";
 import { explainCountryRollout } from "./global-explainability.service";
 
 import type {

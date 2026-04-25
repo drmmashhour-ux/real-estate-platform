@@ -5,6 +5,7 @@ import { requireUser } from "@/lib/auth/require-user";
 import { createDealFromTurboDraft } from "@/modules/turbo-form-drafting/deal-pipeline.service";
 import { validateBeforeSignature } from "@/modules/production-guard/validationEngine";
 import { logProductionAuditEvent } from "@/modules/production-guard/auditTrail";
+import { getExportCreditBalance } from "@/modules/revenue/usage-credit.service";
 
 export async function POST(req: Request) {
   const auth = await requireUser();
@@ -17,6 +18,8 @@ export async function POST(req: Request) {
     if (!draftId) {
       return NextResponse.json({ error: "Draft ID is required" }, { status: 400 });
     }
+
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
 
     // @ts-ignore
     const draft = await prisma.turboDraft.findUnique({
@@ -53,6 +56,7 @@ export async function POST(req: Request) {
 
     const isBroker = (draft.contextJson as any)?.role === "BROKER";
     const isPaid = draft.status === "PAID" || isBroker || draft.status === "DEAL_CREATED";
+    const exportCredits = await getExportCreditBalance(auth.user.id);
     
     let canSign = false;
     let errors: string[] = [];
@@ -86,12 +90,11 @@ export async function POST(req: Request) {
       await logProductionAuditEvent(draftId, auth.user.id, "PG_SIGNATURE_GATE_FAIL", { errors, ip }, ip, "WARNING");
     }
 
-    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-
     return NextResponse.json({
       status: draft.status,
       canSign,
       isPaid,
+      exportCredits,
       errors,
       score: latestScore?.score || 0,
       totalAcks: acks.length,

@@ -1,33 +1,42 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
-export async function GET() {
-  try {
-    // 1. Check DB Connection
-    await prisma.$queryRaw`SELECT 1`;
+export const dynamic = "force-dynamic";
 
-    return NextResponse.json({
-      status: "ready",
-      app: "web",
-      timestamp: new Date().toISOString(),
-      env: process.env.NEXT_PUBLIC_ENV || "development",
-      checks: {
-        database: "ok",
-        auth: "ok",
-        packages: {
-          ai: "ok",
-          market: "ok",
-          compliance: "ok",
-          finance: "ok"
-        }
-      }
-    });
+export async function GET() {
+  const readiness: Record<string, string> = {
+    status: "ok",
+    db: "pending",
+    stripe: "pending",
+    ai: "pending"
+  };
+
+  try {
+    // 1. DB
+    await prisma.$queryRaw`SELECT 1`;
+    readiness.db = "ok";
+
+    // 2. Stripe (Basic env check)
+    if (process.env.STRIPE_SECRET_KEY) {
+      readiness.stripe = "ok";
+    } else {
+      readiness.stripe = "missing_config";
+      readiness.status = "degraded";
+    }
+
+    // 3. AI (Basic env check)
+    if (process.env.OPENAI_API_KEY) {
+      readiness.ai = "ok";
+    } else {
+      readiness.ai = "missing_config";
+      readiness.status = "degraded";
+    }
+
+    return NextResponse.json(readiness);
   } catch (error) {
-    console.error("[web] Health check failed:", error);
-    return NextResponse.json({ 
-      status: "error", 
-      message: "App not ready",
-      error: error instanceof Error ? error.message : "Unknown error"
+    return NextResponse.json({
+      status: "not_ready",
+      error: error instanceof Error ? error.message : "System not ready"
     }, { status: 503 });
   }
 }

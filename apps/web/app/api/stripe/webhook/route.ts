@@ -1091,6 +1091,7 @@ export async function POST(req: NextRequest) {
     "broker_assigned_lead",
     "broker_lead_invoice",
     "listing_contact_lead",
+    "broker_export_credits",
   ];
   if (paymentType && PLATFORM_PAYMENT_TYPES.includes(paymentType) && userId) {
     const sessionId = session.id;
@@ -1245,6 +1246,16 @@ export async function POST(req: NextRequest) {
         },
       })
       .catch((e) => logError("Webhook: stripe ledger insert failed", e));
+
+    if (paymentType === "broker_export_credits" && typeof userId === "string" && userId) {
+      const { grantBrokerExportCreditsFromPayment } = await import("@/modules/revenue/usage-credit.service");
+      const creditGrant = parseInt(String(session.metadata?.creditGrant ?? "0"), 10);
+      await grantBrokerExportCreditsFromPayment({
+        userId,
+        creditGrant,
+        platformPaymentId: platformPayment.id,
+      }).catch((e) => logError("Webhook: broker export credits grant failed", e));
+    }
 
     if (paymentType === "booking" && bookingId) {
       const connectDestination =

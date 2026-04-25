@@ -35,7 +35,14 @@ export const FUNDRAISING_ROUND_STATUSES = ["open", "closed"] as const;
 
 export type FundraisingRoundStatus = (typeof FUNDRAISING_ROUND_STATUSES)[number];
 
-export const INVESTOR_COMMITMENT_STATUSES = ["interested", "committed", "transferred"] as const;
+/** `verbal` = non-binding interest; `partial` = amount scoped pending docs; hard raise uses committed/transferred. */
+export const INVESTOR_COMMITMENT_STATUSES = [
+  "verbal",
+  "interested",
+  "partial",
+  "committed",
+  "transferred",
+] as const;
 
 export type InvestorCommitmentStatus = (typeof INVESTOR_COMMITMENT_STATUSES)[number];
 

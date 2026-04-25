@@ -1,5 +1,9 @@
 /**
  * LECIPM ProductionGuard — runtime mode flags (server-only).
+ *
+ * **`PRODUCTION_MODE=true`**: form strict keys, minimum compliance for signature, verbose audit metadata when
+ * `PRODUCTION_GUARD_VERBOSE_LOG` is unset (verbose follows `isProductionGuardVerboseLogging`), AI fallback enforced
+ * (see `isAiFallbackEnforced`). Never set `PRODUCTION_GUARD_RELAXED` in real prod.
  */
 
 export function isProductionMode(): boolean {

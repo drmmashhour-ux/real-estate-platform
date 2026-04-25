@@ -1,6 +1,6 @@
-/** Amounts that count toward the round's raised total (not soft interest). */
+/** Amounts that count toward the round progress bar — excludes non-binding `verbal` / `interested` only. */
 export function commitmentStatusCountsTowardRaised(status: string): boolean {
-  return status === "committed" || status === "transferred";
+  return status === "partial" || status === "committed" || status === "transferred";
 }
 
 export function computeRaisedFromCommitments(rows: { amount: number; status: string }[]): number {

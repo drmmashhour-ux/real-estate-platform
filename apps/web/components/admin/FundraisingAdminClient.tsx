@@ -78,9 +78,10 @@ export function FundraisingAdminClient({
 
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="rounded-xl border border-violet-900/50 bg-violet-950/20 p-4 lg:col-span-2">
-          <h3 className="text-sm font-semibold text-white">$100K round — commitment</h3>
+          <h3 className="text-sm font-semibold text-white">Round — commitment</h3>
           <p className="mt-1 text-xs text-slate-500">
-            Creates a row tied to the open $100K round (round is created automatically if missing).
+            Ties to the open execution round (created automatically if missing). verbal/interested = soft; partial+ =
+            pipeline bar.
           </p>
           <form
             className="mt-3 flex flex-wrap items-end gap-2"

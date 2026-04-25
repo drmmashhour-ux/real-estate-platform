@@ -47,6 +47,7 @@
     "validate:crm-upgrade": "npx tsx scripts/validate-crm-upgrade.ts",
     "start": "next start",
     "lint": "eslint",
+    "e2e:test": "npx tsx scripts/e2e-flow.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:management-income": "vitest run lib/admin/management-hub-payment-streams.test.ts lib/datetime/utc-calendar-windows.test.ts",

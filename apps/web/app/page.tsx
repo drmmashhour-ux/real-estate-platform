@@ -7,11 +7,11 @@ import { OG_DEFAULT_PLATFORM } from "@/lib/seo/og-defaults";
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildPageMetadata({
-    title: `${PLATFORM_NAME} — Luxury real estate intelligence | ${seoConfig.siteName}`,
-    description: `${PLATFORM_NAME}: Where real estate meets intelligence — premium search, six hubs, AI-powered insights, and investor-grade controls.`,
+    title: `${PLATFORM_NAME} — Close the right deals, faster | Québec brokers`,
+    description: `Stop chasing every lead. LECIPM shows which deals matter and what to do next — built for brokers in Québec.`,
     path: "/",
     ogImage: OG_DEFAULT_PLATFORM,
-    ogImageAlt: `${PLATFORM_NAME} — luxury real estate marketplace`,
+    ogImageAlt: `${PLATFORM_NAME} — broker priorities and next steps`,
   });
 }
 

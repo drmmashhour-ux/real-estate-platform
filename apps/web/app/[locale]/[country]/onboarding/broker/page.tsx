@@ -3,11 +3,15 @@ import { prisma } from "@repo/db";
 import { getGuestId } from "@/lib/auth/session";
 import { MarketplaceOnboardingLayout } from "@/components/marketplace/MarketplaceOnboardingLayout";
 import { BrokerLecipmOnboardingWizard } from "@/components/broker-onboarding/BrokerLecipmOnboardingWizard";
+import { BrokerAcquisitionOnboarding } from "@/components/broker-onboarding/BrokerAcquisitionOnboarding";
 import { dashboardPathForPersona } from "@/lib/marketplace/persona";
 
 export const dynamic = "force-dynamic";
 
-export default async function OnboardingBrokerPage() {
+type Props = { params: Promise<{ locale: string; country: string }> };
+
+export default async function OnboardingBrokerPage(props: Props) {
+  const { locale, country } = await props.params;
   const userId = await getGuestId();
   if (!userId) redirect("/auth/login?next=/onboarding/broker");
 
@@ -24,6 +28,31 @@ export default async function OnboardingBrokerPage() {
     select: { email: true, name: true, phone: true },
   });
   if (!user?.email) redirect("/auth/login?next=/onboarding/broker");
+
+  const profile = await prisma.brokerProfile.findUnique({
+    where: { userId },
+    select: { onboardingCompletedAt: true, firstValueShownAt: true },
+  });
+
+  if (!profile?.onboardingCompletedAt) {
+    return (
+      <MarketplaceOnboardingLayout
+        title="Broker onboarding"
+        description="Four quick steps — then we show you example leads and insights so you see value immediately."
+      >
+        <BrokerAcquisitionOnboarding
+          locale={locale}
+          country={country}
+          initialName={user.name}
+          initialPhone={user.phone}
+        />
+      </MarketplaceOnboardingLayout>
+    );
+  }
+
+  if (!profile.firstValueShownAt) {
+    redirect(`/${locale}/${country}/onboarding/broker/first-value`);
+  }
 
   return (
     <MarketplaceOnboardingLayout

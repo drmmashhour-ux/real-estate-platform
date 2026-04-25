@@ -13,13 +13,14 @@ export function LecipmLandingLeadForm({ idPrefix = "lead" }: { idPrefix?: string
     setMessage(null);
     setStatus("loading");
     try {
-      const r = await fetch("/api/lecipm/leads", {
+      const r = await fetch("/api/growth/broker-capture", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          source: "launch_lead_capture",
           email: email.trim(),
-          ...(phone.trim() ? { phone: phone.trim() } : {}),
+          phone: phone.trim(),
+          source: "broker_signup",
+          tag: "broker_interest",
         }),
       });
       const data = (await r.json().catch(() => ({}))) as { error?: string };
@@ -62,9 +63,11 @@ export function LecipmLandingLeadForm({ idPrefix = "lead" }: { idPrefix?: string
         name="phone"
         type="tel"
         autoComplete="tel"
+        required
+        minLength={5}
         value={phone}
         onChange={(ev) => setPhone(ev.target.value)}
-        placeholder="Phone (optional)"
+        placeholder="Phone"
         className="rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-white placeholder:text-white/40 outline-none ring-brand-gold/0 transition focus:border-brand-gold/50 focus:ring-2 focus:ring-brand-gold/30"
       />
       <button

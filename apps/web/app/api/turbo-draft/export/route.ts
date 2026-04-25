@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
+import { PlatformRole } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth/require-user";
 import { logTurboDraftEvent } from "@/modules/turbo-form-drafting/auditLogger";
 import { generateDraftHash, storeDraftHash } from "@/modules/production-guard/hashSystem";
+import { getExportCreditBalance, tryConsumeOneExportCredit } from "@/modules/revenue/usage-credit.service";
+import { BROKER_CREDIT_OFFERS, BROKER_EXPORT_CREDIT_PAYMENT_TYPE } from "@/modules/revenue/broker-credits.config";
 
 export async function POST(req: Request) {
   const auth = await requireUser();
@@ -24,25 +27,50 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Draft not found" }, { status: 404 });
     }
 
-    // 1. Payment check (MOCK)
-    const context = draft.contextJson as any;
-    const isBroker = context.role === "BROKER" || context.role === "ADMIN";
-    
-    // Check for paid state in metadata (MOCK - would use real Stripe fulfillment)
-    const isPaid = draft.status === "PAID" || isBroker || draft.status === "DEAL_CREATED";
-
-    if (!isPaid) {
-      return NextResponse.json({ 
-        error: "PAYMENT_REQUIRED", 
-        message: "Payment of $15 is required to export this contract.",
-        checkoutUrl: "/api/stripe/checkout" 
-      }, { status: 402 });
+    if (draft.userId && draft.userId !== auth.user.id) {
+      return NextResponse.json({ error: "Not allowed" }, { status: 403 });
     }
 
-    // 2. Export logic (MOCK PDF generation)
+    const isAdminUser = auth.user.role === PlatformRole.ADMIN;
+    /** Single-checkout or pipeline states — no per-export credit. */
+    const legacyPaid = draft.status === "PAID" || draft.status === "DEAL_CREATED" || isAdminUser;
+
+    if (!legacyPaid) {
+      const balance = await getExportCreditBalance(auth.user.id);
+      if (balance < 1) {
+        return NextResponse.json(
+          {
+            error: "PAYMENT_REQUIRED",
+            message: "Crédit d’export requis (15 $ par utilisation ou pack 10).",
+            paymentType: BROKER_EXPORT_CREDIT_PAYMENT_TYPE,
+            userId: auth.user.id,
+            offerA: { amountCents: BROKER_CREDIT_OFFERS.A.priceCents, offerType: "A", quantity: 1 },
+            offerB: { amountCents: BROKER_CREDIT_OFFERS.B.priceCents, offerType: "B", quantity: 10 },
+            checkoutUrl: "/api/stripe/checkout",
+          },
+          { status: 402 }
+        );
+      }
+
+      const consumed = await tryConsumeOneExportCredit(auth.user.id);
+      if (!consumed) {
+        return NextResponse.json(
+          {
+            error: "PAYMENT_REQUIRED",
+            message: "Crédits insuffisants — achetez un crédit ou un pack.",
+            paymentType: BROKER_EXPORT_CREDIT_PAYMENT_TYPE,
+            userId: auth.user.id,
+            offerA: { amountCents: BROKER_CREDIT_OFFERS.A.priceCents, offerType: "A", quantity: 1 },
+            offerB: { amountCents: BROKER_CREDIT_OFFERS.B.priceCents, offerType: "B", quantity: 10 },
+            checkoutUrl: "/api/stripe/checkout",
+          },
+          { status: 402 }
+        );
+      }
+    }
+
     const pdfUrl = `https://storage.lecipm.com/drafts/${draftId}.pdf`;
-    
-    // 3. Final Integrity Hashing (ProductionGuard)
+
     const contentToHash = JSON.stringify(draft.resultJson);
     const hash = generateDraftHash(contentToHash);
     await storeDraftHash(draftId, hash, prisma);
@@ -52,7 +80,7 @@ export async function POST(req: Request) {
       userId: auth.user.id,
       eventKey: "turbo_draft_exported",
       severity: "INFO",
-      payload: { format: "PDF", hash },
+      payload: { format: "PDF", hash, usedCredit: !legacyPaid },
     });
 
     return NextResponse.json({ success: true, pdfUrl, hash });

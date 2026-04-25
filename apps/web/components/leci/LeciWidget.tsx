@@ -168,6 +168,14 @@ export function LeciWidget() {
   }, [open]);
 
   useEffect(() => {
+    function onVisitorGuideOpen() {
+      setOpen(true);
+    }
+    window.addEventListener("lecipm-visitor-guide-open", onVisitorGuideOpen);
+    return () => window.removeEventListener("lecipm-visitor-guide-open", onVisitorGuideOpen);
+  }, []);
+
+  useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, open]);
 

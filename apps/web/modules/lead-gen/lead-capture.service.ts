@@ -22,6 +22,8 @@ export type CaptureGrowthLeadInput = {
   shortTermListingId?: string | null;
   userId?: string | null;
   introducedByBrokerId?: string | null;
+  /** Acquisition tag, e.g. `broker_interest` (see `Lead.growthTag`). */
+  growthTag?: string | null;
 };
 
 export async function captureGrowthLead(input: CaptureGrowthLeadInput) {
@@ -64,6 +66,7 @@ export async function captureGrowthLead(input: CaptureGrowthLeadInput) {
       shortTermListingId: input.shortTermListingId ?? null,
       userId: input.userId ?? null,
       introducedByBrokerId: input.introducedByBrokerId ?? null,
+      growthTag: input.growthTag?.trim() ? input.growthTag.trim().slice(0, 64) : null,
       pipelineStatus: "new",
       pipelineStage: "new",
     },

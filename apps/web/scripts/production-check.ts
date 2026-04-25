@@ -2,7 +2,9 @@
  * LECIPM ProductionGuard — final system check (forms, AI validation, signature gate logic, env).
  *
  * Run from apps/web: `npx tsx scripts/production-check.ts`
- * Or from repo root: `npx tsx scripts/production-check.ts` (wrapper delegates here).
+ * Or from repo root: `npx tsx apps/web/scripts/production-check.ts`
+ *
+ * Flags: `--json` — print machine-readable results to stdout (last line: JSON summary).
  */
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
@@ -12,14 +14,17 @@ import { validateFormSchema } from "../lib/production-guard/formSchema";
 import { validateAIOutput } from "../lib/production-guard/ai-output";
 import { getAiFallbackFacts } from "../lib/production-guard/ai-fallback";
 import { validateBeforeSignature } from "../lib/production-guard/signature-gate";
-import { isProductionMode, isAiFallbackEnforced } from "../lib/production-guard/production-mode";
+import { isProductionMode, isAiFallbackEnforced, isProductionGuardVerboseLogging } from "../lib/production-guard/production-mode";
 import { LECIPM_CRITICAL_NOTICE_IDS } from "../lib/production-guard/critical-notices";
 import { sealFinalDraftPdf } from "../lib/production-guard/pdf-artifact.service";
+import { listMissingCriticalNoticeAcks, recordCriticalNoticeShown } from "../lib/production-guard/notice-ack.service";
 import { prisma } from "../lib/db";
 import { Prisma } from "@prisma/client";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const webRoot = path.resolve(__dirname, "..");
+
+const jsonMode = process.argv.includes("--json");
 
 type Check = { name: string; pass: boolean; detail?: string };
 
@@ -85,7 +90,10 @@ async function main() {
 
   add("env: PRODUCTION_MODE reads as boolean flag", typeof isProductionMode() === "boolean");
   add("env: AI fallback flag readable", typeof isAiFallbackEnforced() === "boolean");
+  add("env: verbose audit metadata flag readable", typeof isProductionGuardVerboseLogging() === "boolean");
   add("signature gate: validateBeforeSignature is defined", typeof validateBeforeSignature === "function");
+  add("notices: listMissingCriticalNoticeAcks is defined", typeof listMissingCriticalNoticeAcks === "function");
+  add("notices: recordCriticalNoticeShown is defined", typeof recordCriticalNoticeShown === "function");
 
   try {
     const schemaText = readFileSync(path.join(webRoot, "prisma", "schema.prisma"), "utf8");
@@ -170,15 +178,31 @@ async function main() {
   }
 
   const failed = checks.filter((c) => !c.pass);
-  console.log("\n=== LECIPM ProductionGuard — production-check ===\n");
-  for (const c of checks) {
-    console.log(`${c.pass ? "PASS" : "FAIL"} — ${c.name}${c.detail ? ` (${c.detail})` : ""}`);
+  if (!jsonMode) {
+    console.log("\n=== LECIPM ProductionGuard — production-check ===\n");
+    for (const c of checks) {
+      console.log(`${c.pass ? "PASS" : "FAIL"} — ${c.name}${c.detail ? ` (${c.detail})` : ""}`);
+    }
+    console.log(`\nSummary: ${checks.length - failed.length}/${checks.length} passed\n`);
   }
-  console.log(`\nSummary: ${checks.length - failed.length}/${checks.length} passed\n`);
 
-  if (failed.length) {
+  const summary = {
+    system: "ProductionGuard",
+    passed: failed.length === 0,
+    total: checks.length,
+    passCount: checks.length - failed.length,
+    failCount: failed.length,
+    checks: checks.map((c) => ({ name: c.name, pass: c.pass, detail: c.detail ?? null })),
+    failed: failed.map((c) => ({ name: c.name, detail: c.detail ?? null })),
+  };
+  if (jsonMode) {
+    console.log(JSON.stringify(summary, null, 2));
+  } else if (failed.length) {
     console.error("FAILED CHECKS:");
     for (const f of failed) console.error(` - ${f.name}${f.detail ? `: ${f.detail}` : ""}`);
+  }
+
+  if (failed.length) {
     process.exit(1);
   }
 }

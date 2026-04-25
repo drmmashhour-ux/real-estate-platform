@@ -31,14 +31,16 @@ import {
 } from "../round";
 
 describe("roundMetrics", () => {
-  it("computeRaisedFromCommitments sums committed and transferred only", () => {
+  it("computeRaisedFromCommitments sums partial, committed, transferred (excludes verbal/interested)", () => {
     expect(
       computeRaisedFromCommitments([
+        { amount: 8_000, status: "verbal" },
         { amount: 10_000, status: "interested" },
+        { amount: 7_000, status: "partial" },
         { amount: 25_000, status: "committed" },
         { amount: 15_000, status: "transferred" },
       ]),
-    ).toBe(40_000);
+    ).toBe(47_000);
   });
 
   it("roundProgressPercent caps at 100", () => {
@@ -52,7 +54,9 @@ describe("roundMetrics", () => {
   });
 
   it("commitmentStatusCountsTowardRaised", () => {
+    expect(commitmentStatusCountsTowardRaised("verbal")).toBe(false);
     expect(commitmentStatusCountsTowardRaised("interested")).toBe(false);
+    expect(commitmentStatusCountsTowardRaised("partial")).toBe(true);
     expect(commitmentStatusCountsTowardRaised("committed")).toBe(true);
     expect(commitmentStatusCountsTowardRaised("transferred")).toBe(true);
   });

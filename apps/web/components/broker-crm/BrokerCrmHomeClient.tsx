@@ -1,7 +1,35 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { 
+  Users, 
+  Target, 
+  TrendingUp, 
+  Clock, 
+  CheckCircle2, 
+  AlertCircle, 
+  ChevronRight, 
+  ArrowUpRight,
+  Info,
+  DollarSign,
+  Tag,
+  Zap,
+  Star,
+  RefreshCcw,
+  MapPin,
+  Sparkles
+} from "lucide-react";
+import { QUEBEC_PRICING, PricingDisplay } from "@/modules/monetization/quebec-pricing.config";
+
+type LeadMarketplaceRow = {
+  id: string;
+  name: string;
+  score: number;
+  conversionProbability: number;
+  estimatedValue: number;
+  createdAt: string;
+  purchaseRegion: string | null;
+};
 import {
   BROKER_CRM_KANBAN_COLUMNS,
   brokerCrmStatusToKanbanColumn,
@@ -107,6 +135,10 @@ export function BrokerCrmHomeClient() {
   const [autopilotBar, setAutopilotBar] = useState<AutopilotBar | null>(null);
   const [crmInsights, setCrmInsights] = useState<CrmInsightsPayload | null>(null);
   const [convertingLeadId, setConvertingLeadId] = useState<string | null>(null);
+  const [marketplaceLeads, setMarketplaceLeads] = useState<LeadMarketplaceRow[]>([]);
+  const [marketplacePricing, setMarketplacePricing] = useState<Record<string, PricingDisplay>>({});
+  const [marketplaceLoading, setMarketplaceLoading] = useState(false);
+  const [purchasingLeadId, setPurchasedLeadId] = useState<string | null>(null);
   const [convertHintByLead, setConvertHintByLead] = useState<Record<string, string>>({});
   const [convSummary, setConvSummary] = useState<{
     topOpportunities: LeadRow[];
@@ -138,7 +170,59 @@ export function BrokerCrmHomeClient() {
 
   useEffect(() => {
     void load();
+    void fetchMarketplaceLeads();
   }, [load]);
+
+  const fetchMarketplaceLeads = async () => {
+    setMarketplaceLoading(true);
+    try {
+      const res = await fetch("/api/leads");
+      const data = await res.json();
+      setMarketplaceLeads(data);
+      
+      // Batch fetch pricing for all marketplace leads
+      if (data.length > 0) {
+        const pricingMap: Record<string, PricingDisplay> = {};
+        await Promise.all(data.map(async (l: any) => {
+          try {
+            const pRes = await fetch(`/api/leads/pricing?leadId=${l.id}`);
+            const pData = await pRes.json();
+            pricingMap[l.id] = pData;
+          } catch (e) {
+            console.error("Failed to fetch pricing for", l.id);
+          }
+        }));
+        setMarketplacePricing(pricingMap);
+      }
+    } catch (e) {
+      console.error("Failed to fetch marketplace leads", e);
+    } finally {
+      setMarketplaceLoading(false);
+    }
+  };
+
+  const handlePurchaseLead = async (leadId: string) => {
+    setPurchasedLeadId(leadId);
+    try {
+      const res = await fetch("/api/leads/purchase", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          leadId,
+          successUrl: window.location.href + "?purchase=success",
+          cancelUrl: window.location.href + "?purchase=cancel"
+        })
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch (e) {
+      console.error("Purchase failed", e);
+    } finally {
+      setPurchasedLeadId(null);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -269,399 +353,308 @@ export function BrokerCrmHomeClient() {
   }, [leads]);
 
   return (
-    <div className="space-y-6">
-      {convSummary ? (
-        <div className="space-y-4">
-          {convSummary.firstLeadEligible ? (
-            <div className="rounded-xl border border-premium-gold/30 bg-gradient-to-r from-amber-950/40 to-black/50 px-4 py-4">
-              <p className="text-sm font-semibold text-white">Try your first lead — see how it works</p>
-              <p className="mt-1 text-sm text-slate-300">
-                Here are your top opportunities right now. Value is visible before you pay — unlock is optional.
-              </p>
-            </div>
-          ) : null}
-          {convSummary.unlockCount >= 1 && convSummary.highPotentialOpenCount >= 2 ? (
-            <div className="rounded-lg border border-slate-600/50 bg-white/5 px-4 py-3 text-sm text-slate-200">
-              You have {convSummary.highPotentialOpenCount} more high-potential leads in your queue — pick the next
-              best when you are ready.
-            </div>
-          ) : null}
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="rounded-xl border border-white/10 bg-black/30 p-4">
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">Top actions today</h3>
-              <ul className="mt-2 space-y-2 text-sm text-slate-200">
-                {convSummary.topOpportunities.length === 0 ? (
-                  <li className="text-slate-500">No leads yet — inquiries will appear here.</li>
-                ) : (
-                  convSummary.topOpportunities.map((row) => (
-                    <li key={row.id} className="flex flex-wrap items-center gap-1">
-                      <Link href={`/dashboard/crm/${row.id}`} className="text-premium-gold hover:underline">
-                        {row.displayName}
-                      </Link>
-                      {row.aiThermal ? (
-                        <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-medium uppercase ${badgeThermal(row.aiThermal)}`}>
-                          {row.aiThermal}
-                        </span>
-                      ) : null}
-                      <span className="text-xs text-slate-500">
-                        · {row.aiScore01 != null ? `${(row.aiScore01 * 100).toFixed(0)}%` : `${row.priorityLabel} (${row.priorityScore})`}
-                      </span>
-                    </li>
-                  ))
-                )}
-              </ul>
-            </div>
-            <div className="rounded-xl border border-rose-500/20 bg-rose-950/15 p-4">
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-rose-200/90">Deals at risk</h3>
-              <p className="mt-2 text-2xl font-semibold text-white">{convSummary.dealsAtRiskCount}</p>
-              <p className="mt-1 text-xs text-slate-400">Follow-ups overdue (excluding closed/lost).</p>
-            </div>
-            <div className="rounded-xl border border-emerald-500/20 bg-emerald-950/15 p-4">
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-emerald-200/90">Next best action</h3>
-              <p className="mt-2 text-sm text-slate-100">{nextBest}</p>
-            </div>
-          </div>
-          {convSummary.coachTips.length ? (
-            <ul className="list-disc space-y-1 pl-5 text-xs text-slate-400">
-              {convSummary.coachTips.map((t) => (
-                <li key={t}>{t}</li>
-              ))}
-            </ul>
-          ) : null}
-        </div>
-      ) : null}
-      {autopilotBar ? (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-500/20 bg-amber-950/20 px-4 py-3">
-          <div className="flex flex-wrap gap-4 text-sm text-slate-200">
-            <span>
-              <span className="text-slate-500">Suggested actions</span>{" "}
-              <span className="font-semibold text-amber-100">{autopilotBar.suggestedActions}</span>
-            </span>
-            <span>
-              <span className="text-slate-500">Follow-ups due today</span>{" "}
-              <span className="font-semibold text-amber-100">{autopilotBar.followUpsDueToday}</span>
-            </span>
-          </div>
-          <Link
-            href="/dashboard/crm/autopilot"
-            className="rounded-lg bg-premium-gold px-3 py-1.5 text-xs font-semibold text-black hover:opacity-90"
-          >
-            Open Autopilot
-          </Link>
-        </div>
-      ) : null}
-
-      {autopilotSuggestedLead ? (
-        <div className="rounded-xl border border-violet-500/30 bg-violet-950/20 px-4 py-4">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-violet-200">AI Broker Autopilot — suggested focus</h3>
-          <p className="mt-2 text-sm text-slate-200">
-            <Link href={`/dashboard/crm/${autopilotSuggestedLead.id}`} className="font-medium text-premium-gold hover:underline">
-              {autopilotSuggestedLead.displayName}
-            </Link>
-            <span className={`ml-2 inline-block rounded-full px-2 py-0.5 text-[10px] font-medium uppercase ${badgeThermal(autopilotSuggestedLead.aiThermal)}`}>
-              {autopilotSuggestedLead.aiThermal ?? autopilotSuggestedLead.priorityLabel} ·{" "}
-              {autopilotSuggestedLead.aiScore01 != null
-                ? `${(autopilotSuggestedLead.aiScore01 * 100).toFixed(0)}%`
-                : autopilotSuggestedLead.priorityScore}
-            </span>
-          </p>
-          {autopilotSuggestedLead.suggestedNext ? (
-            <p className="mt-2 text-sm text-slate-300">{autopilotSuggestedLead.suggestedNext}</p>
-          ) : (
-            <p className="mt-2 text-sm text-slate-400">Open the lead to run full evaluation (score + playbook-memory). Nothing is auto-sent.</p>
-          )}
-          <p className="mt-2 text-[10px] text-slate-500">
-            Safe mode: prioritization &amp; tagging only — use{" "}
-            <code className="text-slate-400">POST /api/broker-crm/leads/[id]/evaluate</code> from the lead workspace when needed.
-          </p>
-        </div>
-      ) : null}
-      {kpis ? (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {[
-            { label: "New leads", value: kpis.newLeads },
-            { label: "High-priority", value: kpis.highPriority },
-            { label: "Follow-ups due today", value: kpis.followUpsDueToday },
-            { label: "Closed this week", value: kpis.closedThisWeek },
-          ].map((c) => (
-            <div key={c.label} className="rounded-xl border border-white/10 bg-black/35 px-4 py-3">
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{c.label}</p>
-              <p className="mt-1 text-2xl font-semibold text-white">{c.value}</p>
-            </div>
-          ))}
-        </div>
-      ) : null}
-
-      {crmInsights ? (
-        <section className="rounded-xl border border-sky-500/25 bg-sky-950/20 p-4">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h3 className="text-sm font-semibold text-sky-100">CRM insights</h3>
-            <p className="text-[10px] text-slate-500">
-              <code className="text-slate-400">GET /api/crm/insights</code> · assistive only
+    <div className="p-4 lg:p-8 space-y-10 max-w-7xl mx-auto">
+      {/* PHASE 5: TOP SECTION — "Top actions today" */}
+      <section className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <h2 className="text-3xl lg:text-4xl font-black text-white tracking-tighter uppercase">
+              Top Actions <span className="text-[#D4AF37]">Today</span>
+            </h2>
+            <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-[0.2em]">
+              Focus your energy on these {convSummary?.topOpportunities.length || 0} priority moves.
             </p>
           </div>
-          <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4 text-sm">
-            <div>
-              <p className="text-xs text-slate-500">Open leads</p>
-              <p className="text-lg font-semibold text-white">{crmInsights.pipeline.openLeads}</p>
+          <div className="hidden md:flex items-center gap-4">
+            <div className="text-right">
+              <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Market Status</p>
+              <p className="text-xs font-bold text-green-500 uppercase">Active · High Demand</p>
             </div>
-            <div>
-              <p className="text-xs text-slate-500">Stuck follow-ups (2d+)</p>
-              <p className="text-lg font-semibold text-amber-100">{crmInsights.pipeline.stuckFollowUps}</p>
-            </div>
-            <div>
-              <p className="text-xs text-slate-500">Playbook suggestions backlog</p>
-              <p className="text-lg font-semibold text-violet-100">{crmInsights.suggestedBacklog}</p>
-            </div>
-            <div>
-              <p className="text-xs text-slate-500">Generated</p>
-              <p className="text-xs text-slate-400">{new Date(crmInsights.generatedAt).toLocaleString()}</p>
+            <div className="h-10 w-px bg-white/10" />
+            <div className="text-right">
+              <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Session</p>
+              <p className="text-xs font-bold text-white uppercase">{new Date().toLocaleDateString()}</p>
             </div>
           </div>
-          {crmInsights.operational ? (
-            <div className="mt-4 grid gap-3 border-t border-white/10 pt-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 text-sm">
-              <div>
-                <p className="text-xs text-slate-500">Stalled leads</p>
-                <p className="text-lg font-semibold text-amber-100">{crmInsights.operational.stalledLeads}</p>
+        </div>
+
+        {/* Lead Marketplace: Québec Optimized (Phase 3 & 4 Re-refined) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {marketplaceLeads.slice(0, 3).map((lead) => {
+            const pricing = marketplacePricing[lead.id];
+            if (!pricing) return null;
+
+            return (
+              <div 
+                key={lead.id} 
+                className={`group relative bg-zinc-900/40 border rounded-[2.5rem] p-8 transition-all duration-500 hover:scale-[1.02] ${
+                  lead.score >= 85 
+                    ? "border-[#D4AF37]/50 shadow-[0_20px_50px_rgba(212,175,55,0.15)] bg-zinc-900/60" 
+                    : "border-white/5 hover:border-[#D4AF37]/30"
+                }`}
+              >
+                {/* Background Decor */}
+                <div className={`absolute top-0 right-0 w-40 h-40 rounded-full -mr-20 -mt-20 blur-[80px] transition-colors duration-700 ${
+                  lead.score >= 85 ? "bg-[#D4AF37]/20" : "bg-[#D4AF37]/5 group-hover:bg-[#D4AF37]/15"
+                }`} />
+
+                <div className="relative space-y-6">
+                  <div className="flex justify-between items-start">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-lg font-black text-white truncate max-w-[180px]">
+                          {lead.name}
+                        </h3>
+                        {lead.score >= 85 && (
+                          <div className="flex items-center gap-1.5 text-[9px] font-black text-black uppercase bg-[#D4AF37] px-3 py-1 rounded-full shadow-lg shadow-[#D4AF37]/20 animate-pulse">
+                            <Star className="w-2.5 h-2.5 fill-current" />
+                            Focus Here
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 text-[10px] font-black text-zinc-500 uppercase tracking-widest">
+                        <MapPin className="w-3.5 h-3.5 text-[#D4AF37]" />
+                        {lead.purchaseRegion || "Greater Montréal"}
+                      </div>
+                    </div>
+                    {pricing.badge && (
+                      <Badge variant="gold" className="text-[9px] font-black tracking-widest py-1 px-3 shadow-lg shadow-[#D4AF37]/10">
+                        {pricing.badge}
+                      </Badge>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-6 py-4 border-y border-white/5">
+                    <div className="flex-1 space-y-2">
+                      <p className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">Match Strength</p>
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1 bg-white/5 h-1.5 rounded-full overflow-hidden">
+                          <div 
+                            className="bg-gradient-to-r from-[#D4AF37] to-white h-full transition-all duration-1000" 
+                            style={{ width: `${lead.score}%` }} 
+                          />
+                        </div>
+                        <span className="text-xs font-black text-white">{lead.score}%</span>
+                      </div>
+                    </div>
+                    <div className="text-right space-y-1">
+                      <p className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">Value</p>
+                      <p className="text-sm font-black text-white uppercase tracking-tighter">
+                        High Potential
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-3">
+                        {pricing.anchorPrice && (
+                          <span className="text-sm text-zinc-600 line-through font-black">
+                            ${pricing.anchorPrice}
+                          </span>
+                        )}
+                        <span className="text-2xl font-black text-white tracking-tighter">
+                          ${pricing.price}
+                        </span>
+                      </div>
+                      <button className="group/why flex items-center gap-2 text-[9px] font-black text-[#D4AF37] hover:text-white uppercase tracking-widest transition-colors">
+                        <Info className="w-3.5 h-3.5" />
+                        Why this price?
+                        <div className="absolute bottom-full left-0 mb-4 hidden group-hover/why:block bg-zinc-900 border border-[#D4AF37]/20 rounded-2xl p-4 shadow-[0_10px_40px_rgba(0,0,0,0.8)] z-50 min-w-[240px] normal-case text-xs text-zinc-300 font-medium">
+                          <div className="space-y-3">
+                            {pricing.reasoning.map((r, i) => (
+                              <div key={i} className="flex items-start gap-3">
+                                <div className="w-1.5 h-1.5 bg-[#D4AF37] rounded-full mt-1.5 shrink-0" />
+                                <span>{r}</span>
+                              </div>
+                            ))}
+                            <div className="pt-3 border-t border-white/5 text-[#D4AF37] font-black uppercase text-[10px] tracking-widest flex items-center gap-2">
+                              <TrendingUp className="w-3 h-3" />
+                              High region demand
+                            </div>
+                          </div>
+                        </div>
+                      </button>
+                    </div>
+
+                    <Button 
+                      variant="goldPrimary"
+                      disabled={purchasingLeadId === lead.id}
+                      onClick={() => handlePurchaseLead(lead.id)}
+                      className="font-black text-[10px] tracking-[0.2em] px-8 py-6 rounded-2xl shadow-xl shadow-[#D4AF37]/20 transition-all hover:scale-105"
+                    >
+                      {purchasingLeadId === lead.id ? "UNLOCKING..." : "UNLOCK LEAD"}
+                    </Button>
+                  </div>
+                </div>
               </div>
-              <div>
-                <p className="text-xs text-slate-500">Overdue follow-ups</p>
-                <p className="text-lg font-semibold text-red-200/90">
-                  {crmInsights.operational.overdueFollowUps ?? "—"}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-500">Uncontacted / new</p>
-                <p className="text-lg font-semibold text-sky-100">{crmInsights.operational.uncontactedLeads}</p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-500">Warm/hot ignored</p>
-                <p className="text-lg font-semibold text-rose-100">{crmInsights.operational.highScoreIgnoredLeads}</p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-500">Deal bottlenecks</p>
-                <p className="text-lg font-semibold text-orange-100">{crmInsights.operational.dealBottlenecks}</p>
-              </div>
-            </div>
-          ) : null}
-          {crmInsights.notes.length ? (
-            <ul className="mt-3 list-disc space-y-1 pl-5 text-xs text-slate-400">
-              {crmInsights.notes.map((n) => (
-                <li key={n}>{n}</li>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* PHASE 5: MIDDLE & RIGHT PANEL */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 pt-6">
+        {/* MIDDLE: Pipeline Management (Phase 5) */}
+        <div className="lg:col-span-8 space-y-8">
+          <div className="flex items-center justify-between border-b border-white/5 pb-6">
+            <h3 className="text-2xl font-black text-white uppercase tracking-tighter">
+              Active <span className="text-[#D4AF37]">Pipeline</span>
+            </h3>
+            <div className="hidden sm:flex gap-2">
+              {FILTERS.slice(0, 4).map((f) => (
+                <button
+                  key={f.id}
+                  onClick={() => setFilter(f.id)}
+                  className={`text-[9px] font-black uppercase tracking-widest px-5 py-2.5 rounded-full transition-all ${
+                    filter === f.id ? "bg-[#D4AF37] text-black" : "bg-zinc-900 text-zinc-500 hover:text-white border border-white/5"
+                  }`}
+                >
+                  {f.label}
+                </button>
               ))}
-            </ul>
-          ) : null}
-        </section>
-      ) : null}
+            </div>
+          </div>
 
-      <p className="text-[11px] text-slate-500">
-        <span className="font-medium text-slate-400">Scores &amp; suggestions</span> are assistive only (prioritization
-        + playbook hints). Use <strong className="text-slate-300">Convert</strong> for{" "}
-        <code className="text-slate-400">POST /api/crm/convert-to-deal</code> when eligible.
-      </p>
-
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap gap-2">
-          {FILTERS.map((f) => (
-            <button
-              key={f.id}
-              type="button"
-              onClick={() => setFilter(f.id)}
-              className={`rounded-full px-3 py-1.5 text-xs font-medium ${
-                filter === f.id ? "bg-premium-gold text-black" : "bg-white/5 text-slate-300 hover:bg-white/10"
-              }`}
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => setView("table")}
-            className={`rounded-lg px-3 py-1.5 text-xs ${view === "table" ? "bg-white/15 text-white" : "text-slate-400"}`}
-          >
-            Table
-          </button>
-          <button
-            type="button"
-            onClick={() => setView("pipeline")}
-            className={`rounded-lg px-3 py-1.5 text-xs ${view === "pipeline" ? "bg-white/15 text-white" : "text-slate-400"}`}
-          >
-            Pipeline
-          </button>
-        </div>
-      </div>
-
-      {error ? <p className="text-sm text-red-400">{error}</p> : null}
-      {loading ? <p className="text-sm text-slate-500">Loading…</p> : null}
-
-      {!loading && view === "table" ? (
-        <div className="overflow-x-auto rounded-xl border border-white/10">
-          <table className="min-w-full text-left text-sm text-slate-200">
-            <thead className="bg-white/5 text-xs uppercase text-slate-500">
-              <tr>
-                <th className="px-3 py-2">Lead</th>
-                <th className="px-3 py-2">Listing</th>
-                <th className="px-3 py-2">Status</th>
-                <th className="px-3 py-2" title="Rule-based priority; not legal or financial advice.">
-                  AI score
-                </th>
-                <th className="px-3 py-2" title="Playbook / autopilot hints only — nothing is auto-sent.">
-                  Suggested actions
-                </th>
-                <th className="px-3 py-2">Priority</th>
-                <th className="px-3 py-2">Last activity</th>
-                <th className="px-3 py-2">Next follow-up</th>
-                <th className="px-3 py-2">Source</th>
-                <th className="px-3 py-2">Deal</th>
-              </tr>
-            </thead>
-            <tbody>
-              {leads.map((row) => {
-                const overdue =
-                  row.nextFollowUpAt && new Date(row.nextFollowUpAt) < new Date() && !["closed", "lost"].includes(row.status);
-                return (
-                  <tr key={row.id} className="border-t border-white/5 hover:bg-white/[0.03]">
-                    <td className="px-3 py-2">
-                      <Link href={`/dashboard/crm/${row.id}`} className="font-medium text-premium-gold hover:underline">
+          <div className="space-y-4">
+            {loading ? (
+              <div className="p-20 text-center animate-pulse">
+                <p className="text-zinc-600 font-black uppercase tracking-[0.3em] text-xs">Syncing CRM...</p>
+              </div>
+            ) : leads.length === 0 ? (
+              <div className="p-20 text-center border border-dashed border-white/10 rounded-[2.5rem] bg-zinc-900/20">
+                <p className="text-zinc-600 text-sm font-black uppercase tracking-[0.2em]">Queue is empty.</p>
+              </div>
+            ) : (
+              leads.map((row) => (
+                <div 
+                  key={row.id}
+                  className="group bg-zinc-900/30 border border-white/5 rounded-[2.5rem] p-8 hover:border-[#D4AF37]/30 transition-all duration-300 flex flex-col md:flex-row md:items-center justify-between gap-8"
+                >
+                  <div className="flex items-center gap-6">
+                    <div className={`w-14 h-14 rounded-3xl flex items-center justify-center border transition-all duration-500 ${
+                      row.aiThermal === "hot" ? "bg-rose-500/10 border-rose-500/20 text-rose-500 shadow-lg shadow-rose-500/10" : "bg-white/5 border-white/10 text-zinc-500"
+                    }`}>
+                      {row.aiThermal === "hot" ? <Zap className="w-6 h-6 fill-current" /> : <Users className="w-6 h-6" />}
+                    </div>
+                    <div className="space-y-1">
+                      <Link href={`/dashboard/crm/${row.id}`} className="text-xl font-black text-white hover:text-[#D4AF37] transition-colors uppercase tracking-tight">
                         {row.displayName}
                       </Link>
-                    </td>
-                    <td className="max-w-[200px] truncate px-3 py-2 text-slate-400">
-                      {row.listing?.title ?? "—"}
-                    </td>
-                    <td className="px-3 py-2">
-                      <span className={`rounded-full px-2 py-0.5 text-[11px] ${badgeStatus(row.status)}`}>{row.status}</span>
-                    </td>
-                    <td className="px-3 py-2">
-                      <div className="flex flex-wrap items-center gap-1">
-                        <span
-                          className={`rounded-full px-2 py-0.5 text-[10px] font-medium uppercase ${badgeThermal(row.aiThermal)}`}
-                          title="Thermal band from rule-based score (not legal advice)."
-                        >
-                          {row.aiThermal ?? "—"}
+                      <div className="flex items-center gap-4">
+                        <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-md ${badgeStatus(row.status)}`}>
+                          {row.status}
                         </span>
-                        <span
-                          className="rounded-full border border-violet-500/30 bg-violet-950/30 px-2 py-0.5 text-[11px] text-violet-100"
-                          title="Rule-based score from message signals. Not legal or financial advice."
-                        >
-                          {row.aiScore01 != null ? `${(row.aiScore01 * 100).toFixed(0)}%` : row.aiScoreLabel ?? `${row.priorityScore}`}
+                        <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest truncate max-w-[200px]">
+                          {row.listing?.title || "Direct Lead"}
                         </span>
                       </div>
-                    </td>
-                    <td className="max-w-[220px] px-3 py-2 text-xs text-slate-400" title="Suggestions only; nothing is auto-sent.">
-                      {row.suggestedNext ? row.suggestedNext : "—"}
-                    </td>
-                    <td className="px-3 py-2">
-                      <span className={`rounded-full px-2 py-0.5 text-[11px] ${badgePriority(row.priorityLabel)}`}>
-                        {row.priorityLabel} ({row.priorityScore})
-                      </span>
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-2 text-xs text-slate-400">
-                      {new Date(row.lastActivityAt).toLocaleString()}
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-2 text-xs">
-                      {row.nextFollowUpAt ? (
-                        <span className={overdue ? "font-semibold text-amber-300" : "text-slate-400"}>
-                          {new Date(row.nextFollowUpAt).toLocaleString()}
-                          {overdue ? " · overdue" : ""}
-                        </span>
-                      ) : (
-                        "—"
-                      )}
-                    </td>
-                    <td className="px-3 py-2 text-xs text-slate-500">{row.source}</td>
-                    <td className="px-3 py-2 text-xs">
-                      {leadEligibleForConvert(row) ? (
-                        <div className="space-y-1">
-                          <button
-                            type="button"
-                            disabled={convertingLeadId === row.id}
-                            onClick={() => void convertLeadToDeal(row.id)}
-                            className="rounded-md border border-premium-gold/40 bg-premium-gold/10 px-2 py-1 text-[10px] font-semibold text-premium-gold hover:bg-premium-gold/20 disabled:opacity-50"
-                          >
-                            {convertingLeadId === row.id ? "…" : "Convert"}
-                          </button>
-                          {convertHintByLead[row.id] ? (
-                            <p className="max-w-[140px] text-[9px] text-slate-500">{convertHintByLead[row.id]}</p>
-                          ) : null}
-                        </div>
-                      ) : (
-                        <span className="text-slate-600">—</span>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      ) : null}
-
-      {!loading && view === "pipeline" ? (
-        <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-2 lg:mx-0 lg:grid lg:grid-cols-5 lg:overflow-visible lg:px-0">
-          {BROKER_CRM_KANBAN_COLUMNS.map((colKey) => (
-            <div
-              key={colKey}
-              className="min-w-[220px] shrink-0 rounded-xl border border-white/10 bg-black/25 p-3 lg:min-w-0"
-            >
-              <p className="text-xs font-semibold uppercase text-slate-500">{KANBAN_COLUMN_LABEL[colKey]}</p>
-              <ul className="mt-2 space-y-2">
-                {pipelineGroups[colKey].map((l) => (
-                  <li key={l.id}>
-                    <div className="rounded-lg border border-white/10 bg-black/40 px-2 py-2 text-sm text-white">
-                      <Link href={`/dashboard/crm/${l.id}`} className="block hover:text-premium-gold">
-                        <span className="line-clamp-2">{l.displayName}</span>
-                      </Link>
-                      <p className="mt-1 text-[9px] uppercase tracking-wide text-slate-500">Listing · stage</p>
-                      <p className="text-[10px] text-slate-400">
-                        {l.listing?.title ?? "No listing"} · {l.status}
-                      </p>
-                      <p className="mt-1.5 text-[9px] uppercase tracking-wide text-slate-500">AI score (assistive)</p>
-                      <div className="mt-0.5 flex flex-wrap items-center gap-1" aria-label="AI lead score">
-                        {l.aiThermal ? (
-                          <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-medium uppercase ${badgeThermal(l.aiThermal)}`}>
-                            {l.aiThermal}
-                          </span>
-                        ) : (
-                          <span className="rounded-full bg-slate-700/50 px-1.5 py-0.5 text-[9px] text-slate-400">—</span>
-                        )}
-                        <span className="rounded-full border border-violet-500/25 bg-violet-950/30 px-1.5 py-0.5 text-[10px] font-medium text-violet-100">
-                          {l.aiScore01 != null ? `${(l.aiScore01 * 100).toFixed(0)}%` : l.aiScoreLabel ?? `${l.priorityScore}`}
-                        </span>
-                      </div>
-                      <p className="mt-1.5 text-[9px] uppercase tracking-wide text-slate-500">Suggested next</p>
-                      {l.suggestedNext ? (
-                        <p className="line-clamp-3 text-[10px] text-violet-200/90" title="Suggestion only — nothing auto-sent.">
-                          {l.suggestedNext}
-                        </p>
-                      ) : (
-                        <p className="text-[10px] text-slate-600">—</p>
-                      )}
-                      {leadEligibleForConvert(l) ? (
-                        <div className="mt-2 space-y-1">
-                          <button
-                            type="button"
-                            disabled={convertingLeadId === l.id}
-                            onClick={() => void convertLeadToDeal(l.id)}
-                            className="w-full rounded-md border border-premium-gold/50 bg-premium-gold/15 py-1 text-[10px] font-semibold text-premium-gold hover:bg-premium-gold/25 disabled:opacity-50"
-                          >
-                            {convertingLeadId === l.id ? "Converting…" : "Convert to deal"}
-                          </button>
-                          {convertHintByLead[l.id] ? (
-                            <p className="text-[9px] text-slate-500">{convertHintByLead[l.id]}</p>
-                          ) : null}
-                        </div>
-                      ) : null}
                     </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+                  </div>
+
+                  <div className="flex items-center gap-10">
+                    <div className="hidden sm:block text-right">
+                      <p className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">Score</p>
+                      <p className={`text-lg font-black uppercase ${
+                        row.aiScore01 && row.aiScore01 >= 0.8 ? "text-[#D4AF37]" : "text-white"
+                      }`}>
+                        {row.aiScore01 != null ? `${(row.aiScore01 * 100).toFixed(0)}%` : "—"}
+                      </p>
+                    </div>
+                    <Link href={`/dashboard/crm/${row.id}`}>
+                      <Button variant="ghost" className="border border-white/10 hover:border-[#D4AF37]/50 hover:bg-[#D4AF37]/10 text-white font-black text-[11px] tracking-widest px-8 py-6 rounded-2xl transition-all">
+                        OPEN
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
-      ) : null}
+
+        {/* RIGHT PANEL: AI Insights & Upgrades (Phase 5 & 10) */}
+        <div className="lg:col-span-4 space-y-10">
+          <section className="bg-zinc-900 border border-[#D4AF37]/30 rounded-[3rem] p-10 space-y-8 relative overflow-hidden shadow-2xl shadow-[#D4AF37]/5">
+            <div className="absolute top-0 right-0 w-48 h-48 bg-[#D4AF37]/5 rounded-full -mr-24 -mt-24 blur-[80px]" />
+            
+            <div className="flex items-center gap-4 relative">
+              <div className="w-10 h-10 bg-[#D4AF37]/10 rounded-2xl flex items-center justify-center border border-[#D4AF37]/20">
+                <Sparkles className="w-5 h-5 text-[#D4AF37]" />
+              </div>
+              <h3 className="text-lg font-black text-white uppercase tracking-tighter">LECIPM Intelligence</h3>
+            </div>
+
+            {autopilotSuggestedLead ? (
+              <div className="space-y-8 relative">
+                <div className="space-y-4">
+                  <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Critical Recommendation</p>
+                  <div className="p-6 bg-white/5 border border-white/5 rounded-3xl space-y-4">
+                    <p className="text-sm font-bold text-white uppercase leading-tight">
+                      Close the gap with <span className="text-[#D4AF37]">{autopilotSuggestedLead.displayName}</span>
+                    </p>
+                    {autopilotSuggestedLead.suggestedNext && (
+                      <p className="text-xs text-zinc-500 font-bold uppercase tracking-widest leading-relaxed">
+                        "{autopilotSuggestedLead.suggestedNext}"
+                      </p>
+                    )}
+                    <Link href={`/dashboard/crm/${autopilotSuggestedLead.id}`} className="block">
+                      <Button variant="goldPrimary" className="w-full py-5 text-[10px] font-black tracking-widest">
+                        EXECUTE NOW
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-5 bg-black/40 rounded-[2rem] border border-white/5">
+                    <p className="text-[8px] font-black text-zinc-600 uppercase tracking-widest">Overdue</p>
+                    <p className="text-2xl font-black text-rose-500 mt-1">{convSummary?.dealsAtRiskCount || 0}</p>
+                  </div>
+                  <div className="p-5 bg-black/40 rounded-[2rem] border border-white/5">
+                    <p className="text-[8px] font-black text-zinc-600 uppercase tracking-widest">Active Ops</p>
+                    <p className="text-2xl font-black text-[#D4AF37] mt-1">{convSummary?.highPotentialOpenCount || 0}</p>
+                  </div>
+                </div>
+
+                {convSummary?.coachTips && convSummary.coachTips.length > 0 && (
+                  <div className="space-y-4 pt-2">
+                    <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Coach Notes</p>
+                    {convSummary.coachTips.slice(0, 2).map((tip, i) => (
+                      <div key={i} className="flex gap-4 text-[11px] text-zinc-400 font-bold uppercase tracking-tight">
+                        <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
+                        <span>{tip}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="py-20 text-center space-y-4 opacity-40">
+                <Clock className="w-12 h-12 text-zinc-700 mx-auto" />
+                <p className="text-[10px] font-black text-zinc-700 uppercase tracking-widest">Neural Syncing...</p>
+              </div>
+            )}
+          </section>
+
+          {/* Premium Conversion (Phase 6) */}
+          {convSummary && convSummary.unlockCount >= 1 && (
+            <div className="bg-gradient-to-br from-indigo-500/20 via-zinc-900 to-zinc-900 border border-indigo-500/30 rounded-[3rem] p-10 space-y-6 relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-40 h-40 bg-indigo-500/10 rounded-full -mr-20 -mt-20 blur-[80px] group-hover:bg-indigo-500/20 transition-all duration-700" />
+              <div className="flex items-center gap-3 relative">
+                <Star className="w-5 h-5 text-indigo-400" />
+                <h4 className="text-xs font-black text-white uppercase tracking-widest">Pro Expansion</h4>
+              </div>
+              <p className="text-sm font-black text-zinc-400 uppercase tracking-tighter leading-tight relative">
+                Unlock <span className="text-white">Full AI Insights</span> and elite lead marketplace.
+              </p>
+              <Button variant="ghost" className="w-full py-6 bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 font-black text-[10px] tracking-widest hover:bg-indigo-500/20 relative">
+                ACTIVATE PRO
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

@@ -324,6 +324,10 @@ model User {
   bnhubGuestRatingAverage       Float?             @map("bnhub_guest_rating_average")
   /// BNHub pilot: founding hosts get badge + ranking tie-breaker (set by ops; never auto-faked).
   bnhubIsFoundingHost           Boolean            @default(false) @map("bnhub_is_founding_host")
+  /// Set once when the broker’s first lead unlocks or first CRM outbound message is recorded — testimonial nudge.
+  brokerTestimonialPromptEligibleAt  DateTime?  @map("broker_testimonial_prompt_eligible_at")
+  /// User dismissed the testimonial prompt (optional; stops repeat nudges).
+  brokerTestimonialNudgeDismissedAt  DateTime?  @map("broker_testimonial_nudge_dismissed_at")
 
   /// OACIQ License Integration (Phase 1)
   isOaciqLicensed    Boolean   @default(false) @map("is_oaciq_licensed")
@@ -411,6 +415,7 @@ model User {
   lecipmBrokerLaunchSubscription           LecipmBrokerLaunchSubscription?
   lecipmBrokerUsageEvents                  LecipmBrokerUsageEvent[]
   lecipmBrokerLaunchReferralsGiven         LecipmBrokerLaunchReferral[]             @relation("LecipmBrokerLaunchReferrer")
+  brokerProfilesReferred                   BrokerProfile[]                          @relation("BrokerProfileReferredBy")
   fundInvestors                            FundInvestor[]
   investorCapitalCommitments               InvestorCapitalCommitment[]              @relation("InvestorCapitalCommitmentInvestor")
   seniorLivingResidencesOperated           SeniorResidence[]                        @relation("SeniorLivingOperator")
@@ -494,6 +499,9 @@ model User {
   introducedLeads                          Lead[]                                   @relation("IntroducedBy")
   leadsContactUnlocked                     Lead[]                                   @relation("LeadContactUnlockedBy")
   lastFollowUpLeads                        Lead[]                                   @relation("LastFollowUpBy")
+  purchasedLeads                           Lead[]                                   @relation("LeadPurchasedBy")
+  brokerProfile                            BrokerProfile?
+  brokerActivities                         BrokerActivity[]
   leadFollowUpsSent                        LeadFollowUp[]
   ownedCrmListings                         Listing[]
   lecipmBrokerageContractsAsBroker         LecipmBrokerageContract[]                @relation("LecipmBrokerageContractBroker")
@@ -554,6 +562,8 @@ model User {
   activityLogs                             ActivityLog[]
   legalAgreements                          LegalAgreement[]
   platformPayments                         PlatformPayment[]
+  /// LECIPM First Revenue — balance of paid contract (turbo) export credits.
+  usageCredit                              UsageCredit?
   listingContactLeadPurchases              ListingContactLeadPurchase[]
   /// Multi-provider orchestration ledger (Stripe primary, Clover secondary) — see `lib/payments`.
   orchestratedPayments                     OrchestratedPayment[]
@@ -701,6 +711,7 @@ model User {
   /// Listing supply pipeline rows assigned to this admin/operator.
   listingAcquisitionLeadsAssigned          ListingAcquisitionLead[]                 @relation("AcquisitionLeadAssignee")
   outreachLeadsCreated                     OutreachLead[]                           @relation("OutreachLeadCreator")
+  brokerTestimonials                        Testimonial[]
   founderLaunchSimulationState             FounderLaunchSimulationState?
   hostListingPerformanceSnapshots          HostListingPerformanceSnapshot[]         @relation("HostListingPerfSnapshots")
   hostGrowthOutreachLogsAuthored           HostGrowthOutreachLog[]                  @relation("HostGrowthOutreachAuthor")
@@ -2738,25 +2749,58 @@ model ListingAcquisitionLead {
   @@map("listing_acquisition_leads")
 }
 
+/// Broker marketing quotes — public only when `isApproved` (admin review).
+model Testimonial {
+  id         String   @id @default(cuid())
+  createdAt  DateTime @default(now()) @map("created_at")
+  brokerId   String   @map("broker_id")
+  broker     User     @relation(fields: [brokerId], references: [id], onDelete: Cascade)
+  name       String   @db.VarChar(200)
+  city       String   @db.VarChar(120)
+  quote      String   @db.Text
+  rating     Int
+  isApproved Boolean  @default(false) @map("is_approved")
+
+  @@index([brokerId])
+  @@index([isApproved, createdAt(sort: Desc)])
+  @@map("testimonials")
+}
+
 /// Founder / growth CRM — manual Montreal host outreach (Law 25: no auto-send; drafts reviewed in-app).
 model OutreachLead {
-  id              String   @id @default(cuid())
+  id              String    @id @default(cuid())
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
   name            String?
-  contact         String
-  type            String
-  source          String
-  status          String
-  notes           String?  @db.Text
-  /// e.g. plateau | downtown | laval — acquisition zoning
-  market          String?  @map("market")
-  createdByUserId String?  @map("created_by_user_id")
-  createdBy       User?    @relation("OutreachLeadCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
+  email           String?   @unique
+  phone           String?
+  source          String    // INSTAGRAM | LINKEDIN | REFERRAL | DIRECT
+  status          String    @default("NEW") // NEW | CONTACTED | RESPONDED | INTERESTED | ONBOARDED | LOST
+  notesJson       Json?     @map("notes_json")
+  lastContactedAt DateTime? @map("last_contacted_at")
+  referralSource  String?   @map("referral_source")
+  
+  // Québec/Canada broker sourcing fields
+  city            String?
+  agency          String?
+  instagramHandle String?   @map("instagram_handle")
+  linkedinUrl     String?   @map("linkedin_url")
+  specialization  String?
+  score           Int       @default(0)
+  
+  // Legacy fields for host outreach
+  contact         String?
+  type            String?
+  notes           String?   @db.Text
+  market          String?   @map("market")
+  createdByUserId String?   @map("created_by_user_id")
+  createdBy       User?     @relation("OutreachLeadCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
 
   @@index([status])
   @@index([source])
   @@index([createdAt])
+  @@index([city])
+  @@index([score])
   @@map("outreach_leads")
 }
 
@@ -7969,6 +8013,50 @@ model BrokerActivityScore {
   @@map("broker_activity_scores")
 }
 
+/// Broker acquisition / onboarding profile (distinct from `BrokerServiceProfile` routing JSON).
+model BrokerProfile {
+  id                    String    @id @default(cuid())
+  userId                String    @unique @map("user_id")
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Step 1 — display / team name for CRM.
+  displayName           String?   @map("display_name") @db.VarChar(256)
+  phone                 String?   @db.VarChar(40)
+  /// Step 2 — selected market keys or labels (JSON string array).
+  marketsJson           Json?     @map("markets_json")
+  /// Step 3 — e.g. condo, rental, luxury.
+  specializations       String[]  @default([])
+  /// Step 4 — goals: { "seekLeads": true, "seekDeals": true }
+  goalsJson             Json?     @map("goals_json")
+  onboardingCompletedAt DateTime? @map("onboarding_completed_at")
+  firstValueShownAt     DateTime? @map("first_value_shown_at")
+  /// Optional: referred by another broker at signup (referral program).
+  referredByBrokerId    String?   @map("referred_by_broker_id")
+  referredBy              User?   @relation("BrokerProfileReferredBy", fields: [referredByBrokerId], references: [id], onDelete: SetNull)
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  @@index([onboardingCompletedAt])
+  @@index([referredByBrokerId])
+  @@map("broker_profile")
+}
+
+/// Append-only growth activation events (distinct from fraud `BrokerActivityScore`).
+model BrokerActivity {
+  id        String   @id @default(cuid())
+  brokerId  String   @map("broker_id")
+  broker    User     @relation(fields: [brokerId], references: [id], onDelete: Cascade)
+  /// lead_viewed | ai_suggestion_used | contact_attempt
+  eventType String   @map("event_type") @db.VarChar(48)
+  /// Optional CRM lead id / context.
+  refId     String?  @map("ref_id") @db.VarChar(64)
+  metadata  Json?    @default("{}")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([brokerId, eventType, createdAt(sort: Desc)])
+  @@index([brokerId, refId])
+  @@map("broker_activity")
+}
+
 // ---------------------------------------------------------------------------
 // Property Digital Identity: one permanent identity per real property
 // ---------------------------------------------------------------------------
@@ -10976,6 +11064,18 @@ model PlatformPayment {
   @@index([stripeSessionId])
   @@index([linkedContractId])
   @@map("platform_payments")
+}
+
+/// Broker turbo-draft PDF export wallet — one row per user; decremented on each paid export.
+model UsageCredit {
+  id        String   @id @default(cuid())
+  userId    String   @unique @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  credits   Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("usage_credits")
 }
 
 /// Paywalled buyer access to FSBO / CRM listing representative contact (Stripe `listing_contact_lead`).
@@ -19371,7 +19471,7 @@ model FundraisingInvestor {
   name           String
   email          String
   firm           String    @default("")
-  /// contacted | interested | meeting | negotiating | closed
+  /// contacted | meeting | follow_up | interested | negotiating | closed
   stage          String    @default("contacted")
   notes          String?
   nextFollowUpAt DateTime? @map("next_follow_up_at")
@@ -19440,7 +19540,7 @@ model InvestorCommitment {
   roundId    String   @map("round_id")
   investorId String   @map("investor_id")
   amount     Float
-  /// interested | committed | transferred
+  /// verbal | interested | partial | committed | transferred
   status     String   @default("interested")
   createdAt  DateTime @default(now()) @map("created_at")
   updatedAt  DateTime @updatedAt @map("updated_at")
@@ -23497,6 +23597,10 @@ model Lead {
   medium                        String?
   utmTerm                       String?                        @map("utm_term") @db.VarChar(256)
   utmContent                    String?                        @map("utm_content") @db.VarChar(256)
+  /**
+   * Single acquisition tag (e.g. broker_interest) — distinct from marketing `source`.
+   */
+  growthTag                     String?                        @map("growth_tag") @db.VarChar(64)
   referrerUrl                   String?                        @map("referrer_url") @db.Text
   /**
    * Capture channel: listing, contact, ai_chat, form, ad, referral, other, mortgage_inquiry
@@ -23552,6 +23656,9 @@ model Lead {
   lastFollowUpAt                DateTime?                      @map("last_follow_up_at")
   createdAt                     DateTime                       @default(now())
   updatedAt                     DateTime                       @updatedAt @map("updated_at")
+  leadStatus                    String                         @default("NEW") @map("lead_status")
+  purchasedByBrokerId           String?                        @map("purchased_by_broker_id")
+  purchasedByBroker             User?                          @relation("LeadPurchasedBy", fields: [purchasedByBrokerId], references: [id], onDelete: SetNull)
   /**
    * Sales pipeline: new | contacted | qualified | meeting | negotiation | won | lost (legacy: follow_up)
    */
@@ -23814,6 +23921,7 @@ model Lead {
   @@index([executionStage])
   @@index([aiPriority])
   @@index([aiScore])
+  @@index([growthTag])
 }
 
 /**
@@ -39678,3 +39786,36 @@ model ExecutiveReportSchedule {
   @@map("executive_report_schedules")
 }
 
+
+// ---------------------------------------------------------------------------
+// Production Safety Layer: Audit & Immutability
+// ---------------------------------------------------------------------------
+
+model SystemAuditLog {
+  id          String   @id @default(cuid())
+  userId      String?  @map("user_id")
+  action      String   // DRAFT_CREATE | NOTICE_ACK | AI_CORRECT | AUTOPILOT_ACT | SIGN_ATTEMPT | SIGN_BLOCK
+  entityType  String   @map("entity_type") // DRAFT | DEAL | LEAD | NOTICE
+  entityId    String?  @map("entity_id")
+  payloadJson Json?    @map("payload_json") @db.JsonB
+  traceId     String?  @map("trace_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([action])
+  @@map("system_audit_logs")
+}
+
+model DocumentHash {
+  id          String   @id @default(cuid())
+  entityType  String   @map("entity_type") // DRAFT_PDF | DEAL_PDF
+  entityId    String   @map("entity_id")
+  hash        String   // SHA-256
+  version     Int      @default(1)
+  metadata    Json?    @db.JsonB
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@unique([entityType, entityId, version])
+  @@map("document_hashes")
+}

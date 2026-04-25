@@ -33,6 +33,13 @@ export function TurboDraftForm({ formKey, initialInput, listingId, listingKind }
   const [busy, setBusy] = useState(false);
   const [canSign, setCanSign] = useState(false);
   const [isPaid, setIsPaid] = useState(false);
+  const [exportCredits, setExportCredits] = useState<number | null>(null);
+  const [revenueHint, setRevenueHint] = useState<{
+    id: string;
+    title: string;
+    body: string;
+    variant: "info" | "promo";
+  } | null>(null);
   const [loading, setLoading] = useState(!!listingId);
   const [currentStepIdx, setCurrentStepIdx] = useState(0);
 
@@ -54,6 +61,17 @@ export function TurboDraftForm({ formKey, initialInput, listingId, listingKind }
       void refreshTrustHub(result.draftId);
     }
   }, [result?.draftId, answers]); // Refresh on answer changes
+
+  useEffect(() => {
+    if (!result?.draftId) return;
+    void fetch("/api/turbo-draft/revenue-hint")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d?.hint) setRevenueHint(d.hint);
+        else setRevenueHint(null);
+      })
+      .catch(() => setRevenueHint(null));
+  }, [result?.draftId]);
 
   async function refreshTrustHub(draftId: string) {
     try {
@@ -166,6 +184,7 @@ export function TurboDraftForm({ formKey, initialInput, listingId, listingKind }
       const data = await res.json();
       setCanSign(data.canSign);
       setIsPaid(data.isPaid);
+      if (typeof data.exportCredits === "number") setExportCredits(data.exportCredits);
     } catch {}
   }
 
@@ -179,28 +198,34 @@ export function TurboDraftForm({ formKey, initialInput, listingId, listingKind }
       });
       const data = await res.json();
       if (res.status === 402) {
-        // Payment required - start checkout
+        const offerA = (data as { offerA?: { amountCents: number; offerType: string } }).offerA;
+        const amountCents = offerA?.amountCents ?? 1500;
+        const offerType = offerA?.offerType ?? "A";
+        const returnUrl = new URL(window.location.href);
+        returnUrl.searchParams.set("paid", "1");
         const checkoutRes = await fetch("/api/stripe/checkout", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            paymentType: "contract_generation",
-            amountCents: 1500,
+            paymentType: "broker_export_credits",
+            amountCents,
+            offerType,
             currency: "cad",
-            description: `Génération de contrat: ${template.title}`,
-            successUrl: window.location.href + "&paid=true",
+            successUrl: returnUrl.toString(),
             cancelUrl: window.location.href,
-            draftId: result.draftId,
           }),
         });
         const checkoutData = await checkoutRes.json();
         if (checkoutData.url) {
           window.location.href = checkoutData.url;
+        } else {
+          showToast(checkoutData.error || "Paiement indisponible", "error");
         }
         return;
       }
       if (data.pdfUrl) {
         window.open(data.pdfUrl, "_blank");
+        if (result.draftId) void checkStatus(result.draftId);
       }
     } catch {
       showToast("Export failed", "error");
@@ -413,6 +438,29 @@ export function TurboDraftForm({ formKey, initialInput, listingId, listingKind }
               </div>
             </div>
 
+            {revenueHint && (
+              <div
+                className={cn(
+                  "mb-8 rounded-2xl border p-5",
+                  revenueHint.variant === "promo"
+                    ? "border-amber-500/30 bg-amber-500/5"
+                    : "border-sky-500/25 bg-sky-500/5"
+                )}
+              >
+                <p className="text-[10px] font-black uppercase tracking-widest text-neutral-500">{revenueHint.title}</p>
+                <p className="mt-2 text-sm text-neutral-300 leading-relaxed">{revenueHint.body}</p>
+              </div>
+            )}
+
+            <div className="mb-8 rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+              <p className="text-[10px] font-black uppercase tracking-widest text-premium-gold/80">Prix — ton mot</p>
+              <p className="mt-2 text-sm text-neutral-300 leading-relaxed">
+                Tu peux commencer sans engagement.{" "}
+                <span className="text-white">Tu paies seulement quand tu l’utilises.</span>{" "}
+                Si ça ne t’aide pas, tu arrêtes.
+              </p>
+            </div>
+
             <TurboDraftPreview 
               sections={result.sections} 
               styleValidation={(result as any).styleValidation}
@@ -479,7 +527,12 @@ export function TurboDraftForm({ formKey, initialInput, listingId, listingKind }
                     onClick={handleExport}
                     className="bnhub-touch-feedback rounded-2xl border border-white/20 bg-white/5 px-8 py-4 text-sm font-black uppercase tracking-widest text-white transition-all hover:bg-white/10"
                   >
-                    Export PDF {!isPaid && "(15$)"}
+                    Export PDF
+                    {exportCredits != null && exportCredits > 0
+                      ? ` (${exportCredits} cr.)`
+                      : !isPaid
+                        ? " (15$)"
+                        : ""}
                   </button>
 
                   <button

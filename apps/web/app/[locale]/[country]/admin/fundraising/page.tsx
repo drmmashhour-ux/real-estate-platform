@@ -1,21 +1,18 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { FundraisingExecutionPlaybook } from "@/components/admin/FundraisingExecutionPlaybook";
+import { FundraisingAdminClient } from "@/components/admin/FundraisingAdminClient";
 import { getGuestId } from "@/lib/auth/session";
 import { isPlatformAdmin } from "@/lib/auth/is-platform-admin";
-import { FundraisingAdminClient } from "@/components/admin/FundraisingAdminClient";
+import { getExecutionMomentum, listInvestorsDueForFollowUp } from "@/modules/investor/followup.service";
+import { FUNDRAISING_EXECUTION } from "@/modules/investor/fundraising-execution.config";
 import { getRecentMetricSnapshots } from "@/src/modules/investor-metrics/metricsSnapshot";
 import { utcDayStart } from "@/src/modules/investor-metrics/metricsEngine";
 import { getRevenueEngineDashboardStats } from "@/src/modules/revenue/revenueEngine";
 import { FUNDRAISING_STAGES } from "@/src/modules/fundraising/constants";
 import { getPipelineSummary, listFundraisingInvestors } from "@/src/modules/fundraising/pipeline";
-import {
-  getOrCreateOpen100kRound,
-  listCommitmentsForRound,
-} from "@/src/modules/fundraising/round";
-import {
-  roundProgressPercent,
-  roundRemaining,
-} from "@/src/modules/fundraising/roundMetrics";
+import { getOrCreateOpenExecutionRound, listCommitmentsForRound, resolveExecutionRoundTargetCad } from "@/src/modules/fundraising/round";
+import { roundProgressPercent, roundRemaining } from "@/src/modules/fundraising/roundMetrics";
 
 export const dynamic = "force-dynamic";
 
@@ -27,8 +24,10 @@ export default async function AdminFundraisingPage() {
   let summary: Awaited<ReturnType<typeof getPipelineSummary>> | null = null;
   let snap: Awaited<ReturnType<typeof getRecentMetricSnapshots>>[0] | null = null;
   let engine: Awaited<ReturnType<typeof getRevenueEngineDashboardStats>> | null = null;
-  let round100k: Awaited<ReturnType<typeof getOrCreateOpen100kRound>> | null = null;
+  let activeRound: Awaited<ReturnType<typeof getOrCreateOpenExecutionRound>> | null = null;
   let commitments: Awaited<ReturnType<typeof listCommitmentsForRound>> = [];
+  let followUpDue: Awaited<ReturnType<typeof listInvestorsDueForFollowUp>> = [];
+  let momentum: Awaited<ReturnType<typeof getExecutionMomentum>> | null = null;
 
   try {
     [investors, summary, snap, engine] = await Promise.all([
@@ -42,16 +41,23 @@ export default async function AdminFundraisingPage() {
   }
 
   try {
-    round100k = await getOrCreateOpen100kRound();
-    commitments = await listCommitmentsForRound(round100k.id);
+    activeRound = await getOrCreateOpenExecutionRound();
+    commitments = await listCommitmentsForRound(activeRound.id);
   } catch {
     /* fundraising_rounds / investor_commitments may not exist until migration */
-    round100k = null;
+    activeRound = null;
     commitments = [];
   }
 
-  const target = round100k?.targetAmount ?? 100_000;
-  const raised = round100k?.raisedAmount ?? 0;
+  try {
+    [followUpDue, momentum] = await Promise.all([listInvestorsDueForFollowUp(), getExecutionMomentum()]);
+  } catch {
+    followUpDue = [];
+    momentum = null;
+  }
+
+  const target = activeRound?.targetAmount ?? resolveExecutionRoundTargetCad();
+  const raised = activeRound?.raisedAmount ?? 0;
   const remaining = roundRemaining(target, raised);
   const progressPct = roundProgressPercent(target, raised);
 
@@ -79,8 +85,10 @@ export default async function AdminFundraisingPage() {
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-violet-400">Capital</p>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight">Fundraising</h1>
           <p className="mt-3 max-w-2xl text-sm text-slate-400">
-            Track investors, outreach, conversations, and pipeline value. Traction pulls from investor metrics
-            snapshots and the revenue engine.
+            Track investors, stages, and every logged interaction. Traction is internal only — label figures in
+            investor updates. Target window {FUNDRAISING_EXECUTION.targetAmountMinCad / 1_000}k–
+            {FUNDRAISING_EXECUTION.targetAmountMaxCad / 1_000}k ({FUNDRAISING_EXECUTION.defaultTargetCad / 1_000}k default,{" "}
+            <code className="text-slate-300">FUNDRAISING_TARGET_CAD</code> overrides).
           </p>
           <div className="mt-4 flex flex-wrap gap-3 text-sm">
             <Link href="/admin" className="text-emerald-400 hover:text-emerald-300">
@@ -108,17 +116,50 @@ export default async function AdminFundraisingPage() {
         </div>
       </section>
 
+      <section className="border-b border-slate-800">
+        <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+          <FundraisingExecutionPlaybook />
+        </div>
+      </section>
+
+      <section className="border-b border-slate-800">
+        <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+          <h2 className="text-lg font-semibold text-white">Follow-ups due</h2>
+          <p className="mt-1 text-sm text-slate-500">
+            Reminder date passed, or no touch in {FUNDRAISING_EXECUTION.followUp.daysAfterTouchMin}+ days (unless a
+            future reminder is set).
+          </p>
+          {followUpDue.length === 0 ? (
+            <p className="mt-4 text-sm text-slate-600">None due right now.</p>
+          ) : (
+            <ul className="mt-4 space-y-2">
+              {followUpDue.map((f) => (
+                <li
+                  key={f.id}
+                  className="rounded-xl border border-amber-500/25 bg-amber-950/20 px-4 py-3 text-sm text-slate-300"
+                >
+                  <span className="font-medium text-white">{f.name}</span>{" "}
+                  <span className="text-slate-500">· {f.reason}</span>
+                  <p className="mt-1 text-xs text-slate-500">
+                    Suggested: {f.suggestedNote} · Last touch: {f.lastInteractionAt?.slice(0, 10) ?? "—"}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </section>
+
       <section className="border-b border-slate-800 bg-violet-950/20">
         <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
           <div className="rounded-lg border border-violet-500/35 bg-violet-950/40 px-4 py-3 text-center text-sm font-semibold tracking-wide text-violet-200">
-            LECIPM 100K FUNDRAISING SYSTEM ACTIVE
+            Active round · resolveExecutionRoundTargetCad() = ${target.toLocaleString()}
           </div>
-          <h2 className="mt-8 text-lg font-semibold text-white">$100K round</h2>
+          <h2 className="mt-8 text-lg font-semibold text-white">Progress</h2>
           <p className="mt-1 text-sm text-slate-400">
-            Track who committed, how much, and progress toward the round target. Raised total includes
-            commitments marked committed or transferred.
+            Bar includes partial + committed + transferred (verbal / interested are excluded).
           </p>
-          {round100k ? (
+          {activeRound ? (
             <>
               <div className="mt-6 grid gap-4 sm:grid-cols-3">
                 <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
@@ -126,7 +167,7 @@ export default async function AdminFundraisingPage() {
                   <p className="mt-1 text-2xl font-semibold text-emerald-300">
                     ${raised.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                   </p>
-                  <p className="mt-1 text-[11px] text-slate-600">Round status: {round100k.status}</p>
+                  <p className="mt-1 text-[11px] text-slate-600">Round status: {activeRound.status}</p>
                 </div>
                 <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
                   <p className="text-xs uppercase text-slate-500">Remaining to target</p>
@@ -207,6 +248,11 @@ export default async function AdminFundraisingPage() {
       <section className="border-b border-slate-800">
         <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
           <h2 className="text-lg font-semibold text-white">Traction (metrics + revenue)</h2>
+          {momentum ? (
+            <p className="mt-1 text-xs text-slate-500">
+              Broker accounts (ACTIVE): {momentum.brokerAccounts}. {momentum.disclaimer}
+            </p>
+          ) : null}
           <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
               <p className="text-xs uppercase text-slate-500">Users (snapshot)</p>
@@ -325,11 +371,11 @@ export default async function AdminFundraisingPage() {
           <div className="mt-6">
             <FundraisingAdminClient
               investors={clientInvestors}
-              roundId={round100k?.id ?? null}
+              roundId={activeRound?.id ?? null}
             />
           </div>
           <p className="mt-12 text-center text-xs font-medium tracking-wide text-violet-400/90">
-            LECIPM 100K FUNDRAISING SYSTEM ACTIVE
+            Fundraising execution — all touches logged; no outbound pressure scripts.
           </p>
         </div>
       </section>

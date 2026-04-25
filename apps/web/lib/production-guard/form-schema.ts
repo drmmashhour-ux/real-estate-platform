@@ -1,8 +1,9 @@
 import { z } from "zod";
 
 /**
- * Strict, versioned field specs — no free-form AI structure.
- * Add new versions with additive fields only (V8-safe).
+ * ProductionGuard — locked form registry and `validateFormSchema()` (re-exported as `formSchema.ts`).
+ * No free-form or AI-invented field sets; in `PRODUCTION_MODE`, unknown keys are rejected.
+ * Add new form versions with explicit field arrays (V8-safe).
  */
 const formFieldSpecSchema = z.object({
   key: z.string().min(1),

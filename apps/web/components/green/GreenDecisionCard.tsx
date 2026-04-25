@@ -1,135 +1,244 @@
-import React, { useState } from 'react';
-import { Leaf, Info, TrendingUp, Search, ArrowRight, ShieldCheck, Lock, Zap } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
-import { Button } from '../ui/Button';
-import { Badge } from '../ui/Badge';
+import React from "react";
+import Link from "next/link";
+import { Leaf, Info, TrendingUp, Search, ArrowRight, DollarSign, Sparkles } from "lucide-react";
+import { Card, CardHeader, CardTitle, CardContent } from "../ui/Card";
+import { Button } from "../ui/Button";
+import { Badge } from "../ui/Badge";
+/**
+ * What we know about this listing — from search decoration, ranking, or your own API.
+ * All fields optional; the card fills in plain-language copy from whatever is present.
+ */
+export type GreenDecisionSignals = {
+  label?: "GREEN" | "IMPROVABLE" | "LOW" | null;
+  improvementPotential?: "high" | "medium" | "low" | null;
+  scoreDelta?: number | null;
+  /** Illustrative $ from matched help programs — not a guarantee. */
+  estimatedIncentives?: number | null;
+  hasPotentialIncentives?: boolean;
+  currentScore?: number | null;
+  projectedScore?: number | null;
+  incentiveStrength?: "high" | "medium" | "low" | null;
+};
 
-interface GreenDecisionCardProps {
-  verdict: string;
-  impact: "High" | "Medium" | "Low";
-  rationales: string[];
-  quebecLabel?: string;
-  isGreenPremium?: boolean;
+export type GreenDecisionEconomics = {
+  /** Illustrative annual savings after realistic upgrades, CAD */
+  annualSavingsMinCad?: number;
+  annualSavingsMaxCad?: number;
+  /** One-line context shown under savings (plain language) */
+  savingsSummary?: string;
+};
+
+export type GreenDecisionCardProps = {
+  quebecLabel: string;
+  rationale: string[];
+  signals: GreenDecisionSignals;
+  economics?: GreenDecisionEconomics;
+  /** Override auto verdict if you already computed copy elsewhere */
+  verdictOverride?: string;
+  improvementIdeasHref?: string;
+  compareSimilarHref?: string;
+  onSeeImprovementIdeas?: () => void;
+  onCompareSimilar?: () => void;
+  className?: string;
+};
+
+function formatCurrencyCad(n: number): string {
+  if (!Number.isFinite(n)) return "";
+  return new Intl.NumberFormat("en-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(n);
 }
 
-export function GreenDecisionCard({ verdict, impact, rationales, quebecLabel, isGreenPremium = false }: GreenDecisionCardProps) {
-  const [showUpgradeFlow, setShowUpgradeFlow] = useState(false);
+function improvementPotentialLabel(p: "high" | "medium" | "low" | null | undefined): string {
+  if (p === "high") return "high";
+  if (p === "medium") return "medium";
+  if (p === "low") return "low";
+  return "unclear for now";
+}
+
+/**
+ * Simple verdict lines — no jargon, buyer-first.
+ */
+function deriveVerdict(
+  signals: GreenDecisionSignals,
+  economics: GreenDecisionEconomics | undefined,
+): string {
+  if (signals.label === "GREEN" && (signals.improvementPotential === "low" || (signals.scoreDelta != null && signals.scoreDelta < 8))) {
+    return "Already optimized home";
+  }
+  const hasSavings =
+    (economics?.annualSavingsMinCad != null && economics?.annualSavingsMaxCad != null) ||
+    (signals.estimatedIncentives != null && signals.estimatedIncentives > 0) ||
+    signals.hasPotentialIncentives === true;
+
+  if (hasSavings && signals.improvementPotential !== "low") {
+    return "Potential for cost savings";
+  }
+  if (signals.improvementPotential === "high" || signals.improvementPotential === "medium" || signals.label === "IMPROVABLE") {
+    return "Good opportunity to improve efficiency";
+  }
+  if (signals.label === "GREEN") {
+    return "Already optimized home";
+  }
+  return "Good opportunity to improve efficiency";
+}
+
+/**
+ * Build an illustrative annual savings *range* for buyers, without technical terms.
+ */
+function deriveSavingsRangeText(
+  signals: GreenDecisionSignals,
+  economics: GreenDecisionEconomics | undefined,
+): string | null {
+  if (economics?.annualSavingsMinCad != null && economics?.annualSavingsMaxCad != null) {
+    const a = Math.min(economics.annualSavingsMinCad, economics.annualSavingsMaxCad);
+    const b = Math.max(economics.annualSavingsMinCad, economics.annualSavingsMaxCad);
+    if (a === b) {
+      return `You could see on the order of ${formatCurrencyCad(a)} a year in lower bills (estimate).`;
+    }
+    return `You could see on the order of ${formatCurrencyCad(a)} to ${formatCurrencyCad(b)} a year in lower bills (estimate).`;
+  }
+  if (typeof signals.estimatedIncentives === "number" && signals.estimatedIncentives > 0) {
+    const mid = signals.estimatedIncentives;
+    const low = Math.max(0, Math.round(mid * 0.75));
+    const high = Math.round(mid * 1.25);
+    return `Help and upgrades might add up to about ${formatCurrencyCad(low)} to ${formatCurrencyCad(high)} in support (illustrative).`;
+  }
+  if (signals.scoreDelta != null && signals.scoreDelta >= 10) {
+    return "No dollar range yet, but the gap between today and a smarter setup looks meaningful here.";
+  }
+  return null;
+}
+
+export function GreenDecisionCard({
+  quebecLabel,
+  rationale,
+  signals,
+  economics,
+  verdictOverride,
+  improvementIdeasHref,
+  compareSimilarHref,
+  onSeeImprovementIdeas,
+  onCompareSimilar,
+  className,
+}: GreenDecisionCardProps) {
+  const verdict = verdictOverride ?? deriveVerdict(signals, economics);
+  const savingsText = deriveSavingsRangeText(signals, economics);
+  const imp = improvementPotentialLabel(signals.improvementPotential);
+  const topRationale = rationale.filter((r) => r.trim().length > 0).slice(0, 3);
+
+  const primaryBtnClass =
+    "w-full h-12 bg-[#22c55e] text-black font-black text-xs tracking-widest uppercase rounded-xl hover:scale-[1.02] transition-transform";
+  const secondaryBtnClass =
+    "w-full h-12 border-white/10 text-white font-black text-xs tracking-widest uppercase rounded-xl hover:bg-white/5";
 
   return (
-    <Card className="bg-zinc-900/40 border-[#22c55e]/30 border-2 rounded-[3rem] overflow-hidden shadow-2xl relative">
-      {!isGreenPremium && (
-         <div className="absolute inset-x-0 bottom-0 top-[220px] bg-gradient-to-t from-black via-black/95 to-transparent z-20 flex flex-col items-center justify-end p-12 text-center space-y-6">
-            <div className="w-16 h-16 bg-[#22c55e]/10 rounded-full flex items-center justify-center border border-[#22c55e]/20 animate-bounce">
-               <Lock className="w-8 h-8 text-[#22c55e]" />
-            </div>
-            <div className="space-y-2">
-               <h3 className="text-2xl font-black text-white">Unlock Full Green Analysis</h3>
-               <p className="text-gray-400 text-sm max-w-xs mx-auto">
-                 "See which properties are smarter decisions before you buy."
-               </p>
-            </div>
-            <Button className="bg-[#22c55e] text-black font-black h-14 px-10 rounded-2xl shadow-lg hover:scale-105 transition-all uppercase tracking-widest text-xs">
-               Upgrade to Premium
-            </Button>
-            <p className="text-[10px] text-gray-600 font-bold uppercase">Only $9.99/mo for buyers</p>
-         </div>
-      )}
-
-      <CardHeader className="p-10 border-b border-white/5 bg-[#22c55e]/5 backdrop-blur-xl">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-[#22c55e]/10 rounded-2xl flex items-center justify-center border border-[#22c55e]/20">
-              <Leaf className="w-6 h-6 text-[#22c55e]" />
+    <Card className={`bg-zinc-900/40 border-[#22c55e]/30 border-2 rounded-[3rem] overflow-hidden shadow-2xl relative ${className ?? ""}`}>
+      <CardHeader className="p-10 border-b border-white/5 bg-gradient-to-r from-[#22c55e]/10 via-[#0d0d0d] to-transparent backdrop-blur-xl">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4 min-w-0">
+            <div className="w-14 h-14 shrink-0 bg-[#22c55e]/15 rounded-2xl flex items-center justify-center border border-[#22c55e]/30 shadow-[0_0_32px_rgba(34,197,94,0.18)]">
+              <Leaf className="w-7 h-7 text-[#22c55e]" />
             </div>
             <div>
-              <CardTitle className="text-xl font-black tracking-tight text-white">Green AI Verdict</CardTitle>
-              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Efficiency & Value Analysis</p>
+              <CardTitle className="text-xl font-black tracking-tight text-white">Your green snapshot</CardTitle>
+              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Plain-language read on this home</p>
             </div>
           </div>
-          {quebecLabel && (
-            <Badge variant="gold" className="bg-[#22c55e]/10 text-[#22c55e] border-[#22c55e]/20 font-black">
-              {quebecLabel}
-            </Badge>
-          )}
+          <Badge variant="gold" className="shrink-0 bg-[#22c55e]/15 text-[#4ade80] border-[#22c55e]/30 font-black text-[10px]">
+            {quebecLabel}
+          </Badge>
         </div>
       </CardHeader>
+
       <CardContent className="p-10 space-y-8">
-        {/* Section 1: Verdict */}
-        <div className="space-y-2">
-          <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Decision Verdict</h4>
-          <p className="text-2xl font-black text-white leading-tight">"{verdict}"</p>
+        {/* Section 1 — Simple verdict */}
+        <div className="rounded-3xl border border-white/8 bg-white/[0.03] p-6 space-y-2">
+          <h4 className="text-[10px] font-black text-[#4ade80] uppercase tracking-[0.2em]">What it means for you</h4>
+          <p className="text-2xl md:text-[1.65rem] font-black text-white leading-tight">&ldquo;{verdict}&rdquo;</p>
         </div>
 
-        {/* Section 2: Impact */}
-        <div className="grid grid-cols-2 gap-4">
-           <div className="flex items-center gap-4 p-4 bg-white/5 rounded-2xl border border-white/10">
-             <TrendingUp className="w-5 h-5 text-[#3b82f6]" />
-             <div>
-               <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Improvement Potential</p>
-               <p className="text-sm font-bold text-white">{impact} Impact</p>
-             </div>
-           </div>
-           {isGreenPremium && (
-             <div className="flex items-center gap-4 p-4 bg-[#22c55e]/5 rounded-2xl border border-[#22c55e]/20 animate-in zoom-in duration-500">
-               <Zap className="w-5 h-5 text-[#22c55e]" />
-               <div>
-                 <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Opportunity Score</p>
-                 <p className="text-sm font-bold text-[#22c55e]">HIGH (88/100)</p>
-               </div>
-             </div>
-           )}
-        </div>
-
-        {/* Section 3: Why */}
+        {/* Section 2 — Impact */}
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-             <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Why this matters</h4>
-             {!isGreenPremium && <Badge className="bg-white/5 text-gray-600 border-white/10 text-[8px]">PREVIEW ONLY</Badge>}
-          </div>
-          <div className="space-y-3">
-            {rationales.slice(0, isGreenPremium ? undefined : 1).map((rationale, i) => (
-              <div key={i} className="flex items-start gap-3 p-3 bg-white/5 rounded-xl border border-white/5 group hover:bg-white/10 transition-all">
-                <div className="w-1.5 h-1.5 rounded-full bg-[#22c55e] mt-1.5 shrink-0" />
-                <p className="text-xs text-gray-300 font-medium leading-relaxed italic">"{rationale}"</p>
+          <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Impact</h4>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div className="flex items-start gap-4 p-5 bg-gradient-to-br from-blue-500/10 to-transparent rounded-2xl border border-blue-500/20 min-h-[120px]">
+              <DollarSign className="w-5 h-5 text-sky-400 mt-0.5 shrink-0" />
+              <div>
+                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Possible savings (range)</p>
+                <p className="text-sm font-semibold text-white/95 leading-relaxed mt-1">
+                  {savingsText ?? "We need a bit more detail to show a dollar range — the direction still matters."}
+                </p>
+                {economics?.savingsSummary && <p className="text-xs text-white/60 mt-2 leading-relaxed">{economics.savingsSummary}</p>}
               </div>
-            ))}
-            {!isGreenPremium && (
-               <div className="p-3 bg-black/40 rounded-xl border border-dashed border-white/10 flex items-center justify-center">
-                  <span className="text-[10px] text-gray-700 font-bold uppercase tracking-widest">2 more insights locked</span>
-               </div>
+            </div>
+            <div className="flex items-start gap-4 p-5 bg-gradient-to-br from-[#22c55e]/10 to-transparent rounded-2xl border border-[#22c55e]/25 min-h-[120px]">
+              <TrendingUp className="w-5 h-5 text-[#4ade80] mt-0.5 shrink-0" />
+              <div>
+                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Improvement headroom</p>
+                <p className="text-base font-bold text-white mt-1">Potential improvement: {imp}</p>
+                {signals.scoreDelta != null && signals.scoreDelta >= 8 && (
+                  <p className="text-xs text-white/50 mt-2">There’s still a clear gap between where this home is today and where it could be with the right updates.</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Section 3 — Why */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-[#22c55e]" />
+            <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Why we say that</h4>
+          </div>
+          <ul className="space-y-3">
+            {topRationale.length === 0 && (
+              <li className="text-sm text-white/50 italic pl-1">We&apos;ll add plain reasons as soon as more details are in.</li>
             )}
-          </div>
+            {topRationale.map((line) => (
+              <li
+                key={line.slice(0, 64)}
+                className="flex items-start gap-3 p-4 bg-white/5 rounded-2xl border border-white/8 hover:border-[#22c55e]/20 transition-colors"
+              >
+                <span className="mt-1.5 h-2 w-2 rounded-full bg-[#22c55e] shadow-[0_0_8px_rgba(34,197,94,0.6)] shrink-0" />
+                <span className="text-sm text-white/90 font-medium leading-relaxed">{line}</span>
+              </li>
+            ))}
+          </ul>
         </div>
 
-        {isGreenPremium && (
-           <div className="p-6 bg-blue-500/5 border border-blue-500/20 rounded-3xl space-y-2 animate-in slide-in-from-bottom duration-700">
-              <div className="flex items-center gap-2 text-blue-400">
-                 <Sparkles className="w-4 h-4" />
-                 <h4 className="text-[10px] font-black uppercase tracking-widest">Future Value Indicator</h4>
-              </div>
-              <p className="text-xs text-gray-300 leading-relaxed font-medium">
-                 A green retrofit for this property is estimated to increase long-term market value by <span className="text-white font-black">9-12%</span> over standard properties in Westmount.
-              </p>
-           </div>
-        )}
-
-        {/* Section 4: Actions */}
-        <div className="pt-6 border-t border-white/5 flex flex-col gap-3">
-          <Button className="w-full h-12 bg-[#22c55e] text-black font-black text-xs tracking-widest uppercase rounded-xl hover:scale-105 transition-transform">
-            See improvement ideas
-            <Search className="w-4 h-4 ml-2" />
-          </Button>
-          <Button variant="outline" className="w-full h-12 border-white/10 text-white font-black text-xs tracking-widest uppercase rounded-xl hover:bg-white/5">
-            Compare similar homes
-            <ArrowRight className="w-4 h-4 ml-2" />
-          </Button>
+        {/* Section 4 — Action */}
+        <div className="pt-2 border-t border-white/5 flex flex-col gap-3">
+          {improvementIdeasHref ? (
+            <Button asChild className={primaryBtnClass}>
+              <Link href={improvementIdeasHref}>
+                See improvement ideas
+                <Search className="w-4 h-4 ml-2" />
+              </Link>
+            </Button>
+          ) : (
+            <Button type="button" className={primaryBtnClass} onClick={onSeeImprovementIdeas}>
+              See improvement ideas
+              <Search className="w-4 h-4 ml-2" />
+            </Button>
+          )}
+          {compareSimilarHref ? (
+            <Button asChild variant="outline" className={secondaryBtnClass}>
+              <Link href={compareSimilarHref}>
+                Compare with similar homes
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Link>
+            </Button>
+          ) : (
+            <Button type="button" variant="outline" className={secondaryBtnClass} onClick={onCompareSimilar}>
+              Compare with similar homes
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          )}
         </div>
 
-        {/* Disclaimer */}
-        <div className="flex items-center gap-2 pt-4 justify-center">
-          <Info className="w-3 h-3 text-gray-600" />
-          <p className="text-[9px] text-gray-600 font-bold uppercase tracking-widest italic text-center">
-            This is an estimate based on available data. Not an official certification.
+        <div className="flex items-center gap-2 pt-2 justify-center">
+          <Info className="w-3 h-3 text-gray-600 shrink-0" />
+          <p className="text-[9px] text-gray-600 font-bold uppercase tracking-widest text-center leading-relaxed">
+            Estimates for planning, not a promise. Not an official home rating.
           </p>
         </div>
       </CardContent>

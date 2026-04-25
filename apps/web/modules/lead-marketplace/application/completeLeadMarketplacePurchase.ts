@@ -1,6 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { LeadMarketplaceStatus } from "@prisma/client";
 import { upsertMarketplacePaidBrokerLead } from "@/modules/billing/brokerLeadBilling";
+import { noteRevenueLoopAfterPurchase } from "@/modules/monetization/revenue-loop.service";
 import { recordLeadPurchasedRevenue } from "@/src/modules/revenue/revenueEngine";
 
 export async function completeLeadMarketplacePurchase(
@@ -48,6 +49,8 @@ export async function completeLeadMarketplacePurchase(
     brokerId: args.buyerUserId,
     priceCents: row.priceCents,
   }).catch(() => {});
+
+  void noteRevenueLoopAfterPurchase(args.buyerUserId, row.leadId);
 
   return { ok: true };
 }

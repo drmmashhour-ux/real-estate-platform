@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getGuestId } from "@/lib/auth/session";
-import { getPricing } from "@/modules/monetization/pricing.config";
 import { createCheckoutSession } from "@/lib/stripe/checkout";
+import { getLeadPricingForBroker } from "@/modules/monetization/pricing-psychology.service";
 
 export const dynamic = "force-dynamic";
 
@@ -45,9 +45,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Lead already purchased or unavailable" }, { status: 400 });
     }
 
-    // 2. Create Stripe Checkout Session
-    const pricing = getPricing();
-    const amountCents = pricing.leadPrice * 100;
+    // 2. Get psychological pricing
+    const pricingDisplay = await getLeadPricingForBroker(userId, leadId);
+    const amountCents = pricingDisplay.price * 100;
 
     const session = await createCheckoutSession({
       userId,
@@ -61,6 +61,8 @@ export async function POST(request: NextRequest) {
       metadata: {
         leadId,
         brokerId: userId,
+        pricingType: pricingDisplay.type,
+        originalPrice: String(pricingDisplay.anchorPrice || pricingDisplay.price)
       }
     });
 
