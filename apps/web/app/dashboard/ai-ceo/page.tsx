@@ -36,6 +36,9 @@ export default async function AiCeoStrategicDashboardPage() {
           <Link href="/dashboard/ceo" className="text-zinc-400 hover:text-zinc-200 hover:underline">
             CEO hub
           </Link>
+          <Link href="/dashboard/corporate-strategy" className="text-amber-300/80 hover:underline">
+            Corporate strategy (advisory)
+          </Link>
           <Link href="/api/ai-ceo/insights" className="text-zinc-500 hover:text-zinc-300 hover:underline">
             Raw JSON API
           </Link>

@@ -7,6 +7,7 @@ import { InvestorAlertsFeed } from "./InvestorAlertsFeed";
 import { InvestorSummaryCards } from "./InvestorSummaryCards";
 import { RoiPerformanceTable } from "./RoiPerformanceTable";
 import { ScenarioSimulatorPanel } from "./ScenarioSimulatorPanel";
+import { InvestorCorporateStrategyBlurb } from "./InvestorCorporateStrategyBlurb";
 import type { CapitalAllocationView, InvestorSnapshotView, InvestorAlert, RoiInsight, InvestmentOpportunity, MarketExpansionCandidate, InvestmentRisk } from "@/modules/investor-intelligence/investor-intelligence.types";
 
 type Overview = {
@@ -88,6 +89,9 @@ export function InvestorDashboard({ className }: Props) {
       </div>
       <div className="mt-6">
         <ScenarioSimulatorPanel />
+      </div>
+      <div className="mt-6 border-t border-slate-200 pt-4">
+        <InvestorCorporateStrategyBlurb />
       </div>
     </div>
   );

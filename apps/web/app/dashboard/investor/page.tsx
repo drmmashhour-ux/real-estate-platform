@@ -62,7 +62,13 @@ export default function InvestorDashboardPage() {
             administrator provides audited statements.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/dashboard/investor-intelligence"
+            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
+          >
+            Capital &amp; allocation intelligence
+          </Link>
           <Link
             href="/dashboard/memory"
             className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"

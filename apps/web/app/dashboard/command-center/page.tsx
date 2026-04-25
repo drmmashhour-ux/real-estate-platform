@@ -3,6 +3,7 @@ import Link from "next/link";
 import { CommandCenterAiRefreshButton } from "@/components/command-center/CommandCenterAiRefreshButton";
 import { CommandCenterTrackedLink } from "@/components/command-center/CommandCenterTrackedLink";
 import { LaunchSequencerSummaryStrip } from "@/components/launch-sequencer/LaunchSequencerSummaryStrip";
+import { CorporateStrategyCommandStrip } from "@/components/corporate-strategy/CorporateStrategyCommandStrip";
 import { InvestorIntelligenceCommandStrip } from "@/components/investor/InvestorIntelligenceCommandStrip";
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
 import { buildCommandCenterAiPayload, getLatestCommandCenterSnapshotMeta } from "@/modules/command-center/command-center-ai.service";
@@ -74,8 +75,9 @@ export default async function CommandCenterAiPage() {
 
         <LaunchSequencerSummaryStrip dashboardHref="/dashboard/launch-sequencer" />
 
-        <div className="md:max-w-3xl">
+        <div className="md:max-w-3xl space-y-3">
           <InvestorIntelligenceCommandStrip />
+          <CorporateStrategyCommandStrip />
         </div>
 
         {/* 1 Executive overview */}

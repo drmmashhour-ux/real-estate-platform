@@ -1,6 +1,7 @@
 import { getGuestId } from "@/lib/auth/session";
 import { isReasonableListingId } from "@/lib/api/safe-params";
 import { assertHostOwnsListing, requireBnhubHostAccess } from "@/lib/host/require-bnhub-host-access";
+import { logHostAi } from "@/modules/host-ai/host-ai.logger";
 import { logPricingAiSuggestion } from "@/modules/pricing-ai/pricing-ai.logger";
 import { suggestDynamicPrice } from "@/modules/pricing-ai/pricing.engine";
 import { buildPricingAiSignalBundle } from "@/modules/pricing-ai/signals.loader";
@@ -85,6 +86,11 @@ export async function GET(req: Request) {
     pricingMode: suggestion.pricingMode,
     safetyClamped: suggestion.safetyClamped,
   });
+  logHostAi("pricing_suggestion", {
+    listingId: row.id.slice(0, 8),
+    suggestedCents: suggestion.suggestedPriceCents,
+    deltaPct: suggestion.priceDeltaPct,
+  });
 
   return Response.json({
     listingId: row.id,
@@ -92,6 +98,11 @@ export async function GET(req: Request) {
     currency: row.currency ?? "USD",
     currentPriceCents: row.nightPriceCents,
     ...suggestion,
+    suggestedPrice: {
+      amountCents: suggestion.suggestedPriceCents,
+      currency: row.currency ?? "USD",
+    },
+    reasoning: suggestion.reasoning,
     signals: {
       locationDemand01: signals.locationDemand01,
       seasonalityFactor: signals.seasonalityFactor,

@@ -366,6 +366,8 @@ export const engineFlags = {
    * Env: `FEATURE_INVESTOR_INTELLIGENCE_V1`
    */
   investorIntelligenceV1: envTrue("FEATURE_INVESTOR_INTELLIGENCE_V1"),
+  /** Board-level corporate strategy (hiring, budget, roadmap, bottlenecks) — advisor-only, no auto-execution. */
+  corporateStrategyV1: envTrue("FEATURE_CORPORATE_STRATEGY_V1"),
 } as const;
 
 /** @see engineFlags.lecipmConsoleDefault */

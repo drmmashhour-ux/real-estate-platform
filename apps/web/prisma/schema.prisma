@@ -11602,6 +11602,26 @@ enum ExpansionScenarioStatus {
   ARCHIVED
 }
 
+/// Corporate strategy intelligence — hiring/budget/roadmap views; advisory, not auto-execution.
+enum CorporateStrategyRecCategory {
+  HIRING
+  BUDGET
+  PRODUCT
+  OPERATIONS
+  EXPANSION
+}
+
+enum CorporateStrategyTriage {
+  low
+  medium
+  high
+}
+
+enum CorporateStrategyRecStatus {
+  ACTIVE
+  ARCHIVED
+}
+
 /// Roll-up snapshot for investor/board review — all figures are heuristics, traceable in JSON fields to internal aggregates.
 model InvestorSnapshot {
   id                     String   @id @default(cuid())
@@ -11678,6 +11698,40 @@ model ExpansionScenario {
   @@index([status, marketKey])
   @@index([createdByUserId])
   @@map("expansion_scenarios")
+}
+
+/// Aggregated strategy snapshot for quarterly review — JSON mirrors module outputs; all advisory.
+model CorporateStrategySnapshot {
+  id                   String   @id @default(cuid())
+  createdAt            DateTime @default(now()) @map("created_at")
+  periodKey            String   @map("period_key") @db.VarChar(64)
+  summaryJson          Json     @map("summary_json")
+  hiringStrategyJson   Json     @map("hiring_strategy_json")
+  budgetStrategyJson   Json     @map("budget_strategy_json")
+  roadmapStrategyJson  Json     @map("roadmap_strategy_json")
+  bottlenecksJson      Json     @map("bottlenecks_json")
+  risksJson            Json     @map("risks_json")
+
+  @@index([periodKey, createdAt])
+  @@map("corporate_strategy_snapshots")
+}
+
+/// Persisted cross-cutting recommendations (e.g. from plan generator); same semantics as in-memory recs in JSON snapshots.
+model StrategicRecommendation {
+  id                 String                    @id @default(cuid())
+  createdAt          DateTime                  @default(now()) @map("created_at")
+  updatedAt          DateTime                  @updatedAt @map("updated_at")
+  category           CorporateStrategyRecCategory
+  priority           CorporateStrategyTriage
+  recommendationKey  String                    @map("recommendation_key") @db.VarChar(128)
+  rationaleJson      Json                      @map("rationale_json")
+  expectedImpactJson Json                      @map("expected_impact_json")
+  confidence         CorporateStrategyTriage
+  status             CorporateStrategyRecStatus  @default(ACTIVE) @map("status")
+
+  @@index([status, category, createdAt])
+  @@index([recommendationKey])
+  @@map("strategic_recommendations")
 }
 
 /// AI capital allocator — recommends deployable capital slice for a CRM deal (advisory only; broker approves).

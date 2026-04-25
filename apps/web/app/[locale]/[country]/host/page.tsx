@@ -1,8 +1,10 @@
 import Link from "next/link";
+import { HostAiCopilotSection } from "@/components/host/HostAiCopilotSection";
 import { HostAiSuggestionsSection } from "@/components/host/HostAiSuggestionsSection";
 import { PricingInsightCard } from "@/components/host/PricingInsightCard";
 import { getGuestId } from "@/lib/auth/session";
 import { revenueV4Flags } from "@/config/feature-flags";
+import { loadHostAiPanel } from "@/modules/host-ai/panel.service";
 import {
   getHostAiSuggestions,
   getHostDashboardStats,
@@ -26,12 +28,13 @@ export default async function HostDashboardPage() {
   const hostId = await getGuestId();
   if (!hostId) return null;
 
-  const [stats, upcoming, activity, performance, suggestions] = await Promise.all([
+  const [stats, upcoming, activity, performance, suggestions, hostAiPanel] = await Promise.all([
     getHostDashboardStats(hostId),
     getHostUpcomingBookings(hostId, 5),
     getHostRecentActivity(hostId, 8),
     getHostListingPerformanceTop(hostId, 3),
     getHostAiSuggestions(hostId),
+    loadHostAiPanel(hostId),
   ]);
 
   const earningsCad = (stats.monthlyRevenueCents / 100).toLocaleString("en-CA", {
@@ -217,9 +220,11 @@ export default async function HostDashboardPage() {
         )}
       </section>
 
+      <HostAiCopilotSection panel={hostAiPanel} />
+
       <section className="space-y-4">
         <div className="flex flex-wrap items-end justify-between gap-2">
-          <h2 className="text-lg font-semibold text-white">AI suggestions</h2>
+          <h2 className="text-lg font-semibold text-white">More AI actions</h2>
           <Link href="/host/pricing" className="text-xs font-medium hover:underline" style={{ color: GOLD }}>
             Pricing overview →
           </Link>
