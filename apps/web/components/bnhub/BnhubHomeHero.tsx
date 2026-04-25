@@ -39,20 +39,22 @@ export function BnhubHomeHero({ searchBasePath }: Props) {
     router.push(qs ? `${searchBasePath}?${qs}` : searchBasePath);
   }, [checkIn, checkOut, guests, location, priceMax, priceMin, router, searchBasePath]);
 
-  const field =
-    "min-h-[52px] w-full rounded-2xl border border-white/12 bg-white/[0.06] px-4 text-base text-white placeholder:text-white/40 focus:border-[#D4AF37]/55 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/20";
+  const searchField =
+    "min-h-[56px] w-full rounded-2xl border border-white/12 bg-white/[0.06] px-5 text-lg text-white placeholder:text-white/40 focus:border-[#D4AF37]/55 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/20 sm:min-h-[60px]";
+  const filterField =
+    "min-h-[48px] w-full rounded-xl border border-white/10 bg-white/[0.05] px-3 text-base text-white placeholder:text-white/35 focus:border-[#D4AF37]/45 focus:outline-none focus:ring-1 focus:ring-[#D4AF37]/25";
 
   return (
-    <section className="bg-[#000] px-4 pb-16 pt-12 sm:pb-24 sm:pt-16 md:pt-20">
+    <section className="bg-[#000] px-4 pb-20 pt-14 sm:pb-28 sm:pt-20 md:pt-24">
       <div className="mx-auto max-w-3xl text-center">
-        <h1 className="text-balance text-3xl font-semibold tracking-tight text-white sm:text-4xl md:text-5xl lg:text-[3.25rem] lg:leading-tight">
+        <h1 className="text-balance text-3xl font-semibold tracking-tight text-white sm:text-4xl md:text-5xl lg:text-[3.25rem] lg:leading-[1.1]">
           Find your perfect stay
         </h1>
-        <p className="mx-auto mt-5 max-w-xl text-pretty text-base text-white/60 sm:text-lg">
+        <p className="mx-auto mt-6 max-w-xl text-pretty text-base leading-relaxed text-white/60 sm:text-lg">
           Verified listings. Smart recommendations. Safer bookings.
         </p>
 
-        <div className="mx-auto mt-10 max-w-2xl rounded-3xl border border-[#D4AF37]/20 bg-white/[0.04] p-4 shadow-[0_0_80px_rgba(212,175,55,0.12)] backdrop-blur-md sm:p-5">
+        <div className="mx-auto mt-12 max-w-2xl rounded-3xl border border-[#D4AF37]/22 bg-white/[0.035] p-5 shadow-[0_0_100px_rgba(212,175,55,0.1)] backdrop-blur-md sm:p-7">
           <label className="sr-only" htmlFor="bnhub-home-search">
             Search by city, address, or listing ID
           </label>
@@ -64,56 +66,70 @@ export function BnhubHomeHero({ searchBasePath }: Props) {
             onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), submit())}
             placeholder="Search by city, address, or listing ID"
             autoComplete="off"
-            className={`${field} text-center sm:text-left`}
+            className={`${searchField} text-center sm:text-left`}
           />
 
-          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <div className="sm:col-span-1">
-              <label className="mb-1.5 block text-left text-[11px] font-medium uppercase tracking-wider text-white/45">
-                Dates
-              </label>
-              <div className="grid grid-cols-2 gap-2">
-                <input type="date" value={checkIn} onChange={(e) => setCheckIn(e.target.value)} className={field} />
-                <input type="date" value={checkOut} onChange={(e) => setCheckOut(e.target.value)} className={field} />
+          <div className="mt-5 space-y-4 text-left">
+            <p className="text-center text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">Quick filters</p>
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div className="space-y-2">
+                <span className="block text-[11px] font-medium uppercase tracking-wider text-white/45">Price</span>
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="number"
+                    min={0}
+                    inputMode="numeric"
+                    placeholder="Min"
+                    value={priceMin}
+                    onChange={(e) => setPriceMin(e.target.value)}
+                    className={filterField}
+                    aria-label="Minimum price per night"
+                  />
+                  <input
+                    type="number"
+                    min={0}
+                    inputMode="numeric"
+                    placeholder="Max"
+                    value={priceMax}
+                    onChange={(e) => setPriceMax(e.target.value)}
+                    className={filterField}
+                    aria-label="Maximum price per night"
+                  />
+                </div>
               </div>
-            </div>
-            <div>
-              <label className="mb-1.5 block text-left text-[11px] font-medium uppercase tracking-wider text-white/45">
-                Guests
-              </label>
-              <input
-                type="number"
-                min={1}
-                inputMode="numeric"
-                placeholder="Any"
-                value={guests}
-                onChange={(e) => setGuests(e.target.value)}
-                className={field}
-              />
-            </div>
-            <div>
-              <label className="mb-1.5 block text-left text-[11px] font-medium uppercase tracking-wider text-white/45">
-                Price / night
-              </label>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-2">
+                <label htmlFor="bnhub-home-guests" className="block text-[11px] font-medium uppercase tracking-wider text-white/45">
+                  Guests
+                </label>
                 <input
+                  id="bnhub-home-guests"
                   type="number"
-                  min={0}
+                  min={1}
                   inputMode="numeric"
-                  placeholder="Min"
-                  value={priceMin}
-                  onChange={(e) => setPriceMin(e.target.value)}
-                  className={field}
+                  placeholder="Any"
+                  value={guests}
+                  onChange={(e) => setGuests(e.target.value)}
+                  className={filterField}
                 />
-                <input
-                  type="number"
-                  min={0}
-                  inputMode="numeric"
-                  placeholder="Max"
-                  value={priceMax}
-                  onChange={(e) => setPriceMax(e.target.value)}
-                  className={field}
-                />
+              </div>
+              <div className="space-y-2 sm:col-span-1">
+                <span className="block text-[11px] font-medium uppercase tracking-wider text-white/45">Dates</span>
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="date"
+                    value={checkIn}
+                    onChange={(e) => setCheckIn(e.target.value)}
+                    className={filterField}
+                    aria-label="Check-in date"
+                  />
+                  <input
+                    type="date"
+                    value={checkOut}
+                    onChange={(e) => setCheckOut(e.target.value)}
+                    className={filterField}
+                    aria-label="Check-out date"
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -121,7 +137,7 @@ export function BnhubHomeHero({ searchBasePath }: Props) {
           <button
             type="button"
             onClick={submit}
-            className="mt-5 min-h-[56px] w-full rounded-2xl bg-[#D4AF37] text-base font-semibold text-black transition hover:brightness-110 active:brightness-95"
+            className="mt-6 min-h-[56px] w-full rounded-2xl bg-[#D4AF37] text-base font-semibold text-black transition hover:brightness-110 active:brightness-95"
           >
             Search stays
           </button>

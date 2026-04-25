@@ -71,6 +71,9 @@ export function annotateBnhubListingsForGuest<
     reviews?: { propertyRating: number }[];
     _count?: { reviews?: number };
     operationalRiskScore?: number | null;
+    /** Denormalized card aggregates when `reviews` are not loaded (e.g. homepage). */
+    bnhubListingRatingAverage?: number | null;
+    bnhubListingReviewCount?: number;
   },
 >(listings: T[]): Array<T & BnhubGuestListingAnnotations> {
   const scores = listings.map((l) => computeBnhubValueScore(l));
@@ -78,11 +81,17 @@ export function annotateBnhubListingsForGuest<
 
   return listings.map((l, i) => {
     const reviewSamples = l.reviews ?? [];
-    const reviewCount = l._count?.reviews ?? reviewSamples.length;
+    const countFromRelation = l._count?.reviews ?? reviewSamples.length;
+    const reviewCount =
+      countFromRelation > 0
+        ? countFromRelation
+        : typeof l.bnhubListingReviewCount === "number"
+          ? l.bnhubListingReviewCount
+          : 0;
     const avgRating =
       reviewSamples.length > 0
         ? reviewSamples.reduce((s, r) => s + r.propertyRating, 0) / reviewSamples.length
-        : null;
+        : (l.bnhubListingRatingAverage ?? null);
     const verified = l.verificationStatus === "VERIFIED";
     const riskLevel = computeBnhubTrustRiskLevel({
       verificationStatus: l.verificationStatus,
@@ -108,6 +117,37 @@ export function annotateBnhubListingsForGuest<
       displayReviewCount: reviewCount,
     };
   });
+}
+
+/** Guest-first ordering: value, then lower trust risk, then verification. */
+export function sortBnhubListingsByGuestAppeal<T extends BnhubGuestListingAnnotations>(listings: T[]): T[] {
+  const riskOrder: Record<BnhubListingRiskLevel, number> = { low: 0, medium: 1, high: 2 };
+  return [...listings].sort((a, b) => {
+    if (Math.abs(b.valueScore - a.valueScore) > 1e-6) return b.valueScore - a.valueScore;
+    if (riskOrder[a.riskLevel] !== riskOrder[b.riskLevel]) return riskOrder[a.riskLevel] - riskOrder[b.riskLevel];
+    return (b.verified ? 1 : 0) - (a.verified ? 1 : 0);
+  });
+}
+
+/** Host dashboard tips — avoids duplicating listing-quality issues (shown separately). */
+export function bnhubHostGrowthTips(input: {
+  suggestedPriceDeltaPercent: number;
+  priceRationale: string;
+  occLow: number;
+  occHigh: number;
+  occNote: string;
+}): string[] {
+  const tips: string[] = [];
+  if (input.suggestedPriceDeltaPercent !== 0) {
+    tips.push(input.priceRationale);
+  }
+  tips.push(`Occupancy band (model): ${input.occLow}%–${input.occHigh}%. ${input.occNote}`);
+  const promo = bnhubAutopilotPromotionIdeas()[0];
+  if (promo) tips.push(promo);
+  if (tips.length === 1) {
+    tips.push("Aim for sub-hour replies on booking inquiries during peak windows.");
+  }
+  return tips;
 }
 
 /** Basic signals only — escalate via admin trust tools when `watch`. */

@@ -4,6 +4,9 @@
 
 import type { OfferPostureStyle } from "@/modules/offer-strategy/offer-strategy.types";
 
+/** Posture from offer-strategy; same as broker-facing offer discussion modes (suggestion-only). */
+export type NegotiationPosture = OfferPostureStyle;
+
 export type NegotiationApproachKey =
   | "soft_follow_up"
   | "firm_follow_up"
@@ -21,7 +24,9 @@ export type NegotiationSimulatorContext = {
   clientId?: string | null;
   closingReadinessScore?: number | null;
   offerReadinessScore?: number | null;
-  posture?: OfferPostureStyle | null;
+  /** Optional deal win probability 0–1 from CRM / heuristics; descriptive only, not a guarantee. */
+  dealProbability?: number | null;
+  posture?: OfferPostureStyle | NegotiationPosture | null;
   blockers?: unknown;
   objections?: unknown;
   competitiveRisk?: "low" | "medium" | "high" | null;
@@ -32,7 +37,10 @@ export type NegotiationSimulatorContext = {
   trustLevel?: "low" | "medium" | "high" | "unknown";
   visitCompleted?: boolean;
   offerDiscussed?: boolean;
+  /** Opaque: CRM / deal-closer / optional call pipeline blobs; simulation reads only high-level heuristics when structured. */
   clientMemory?: unknown;
+  /** Optional: last call analysis object when the deal thread has a linked call pipeline (suggestion context only). */
+  callAnalysis?: unknown;
   priceSensitivity?: "low" | "medium" | "high" | "unknown";
   /** Heuristic: postponed or later language. */
   postponementHint?: boolean;

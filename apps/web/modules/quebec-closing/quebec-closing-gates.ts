@@ -122,6 +122,16 @@ export function signingScheduledBlockers(input: {
     blockers.push("Québec workflow has not been initialized on this closing session.");
     return blockers;
   }
+  const requireIdentities = process.env.QC_REQUIRE_PRECLOSE_IDENTITIES !== "0";
+  if (
+    requireIdentities &&
+    isQcWorkflowActive(input.closing) &&
+    !input.closing?.preClosingIdentitiesVerifiedAt
+  ) {
+    blockers.push(
+      "Pre-closing validation: broker must attest that party identities are verified for the notarial file.",
+    );
+  }
   if (!input.baseReadinessReady) {
     blockers.push("Closing room readiness is not READY (documents, checklist, or signatures).");
   }

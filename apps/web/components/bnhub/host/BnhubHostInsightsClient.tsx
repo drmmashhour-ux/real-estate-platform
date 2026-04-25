@@ -5,6 +5,7 @@ import {
   analyzeBnhubListingContentQuality,
   bnhubAutopilotMessageSuggestions,
   bnhubAutopilotPromotionIdeas,
+  bnhubHostGrowthTips,
   predictBnhubOccupancyBand,
   suggestBnhubNightlyPriceDeltaPercent,
 } from "@/modules/bnhub/recommendationEngine";
@@ -91,6 +92,13 @@ export function BnhubHostInsightsClient({
               completedStaysLast90Days: Math.min(12, l.bnhubListingCompletedStays),
               reviewAverage: l.bnhubListingRatingAverage,
             });
+            const growthTips = bnhubHostGrowthTips({
+              suggestedPriceDeltaPercent: priceHint.suggestedDeltaPercent,
+              priceRationale: priceHint.rationale,
+              occLow: occ.lowPct,
+              occHigh: occ.highPct,
+              occNote: occ.note,
+            });
             return (
               <article key={l.id} className="rounded-2xl border border-white/10 bg-[#0C0C0C] p-5">
                 <div className="flex flex-wrap items-start justify-between gap-3">
@@ -136,6 +144,18 @@ export function BnhubHostInsightsClient({
                   ) : (
                     <p className="mt-2 text-sm text-white/65">Photos, description, and amenities look sufficient for discovery.</p>
                   )}
+                </div>
+
+                <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.04] p-4">
+                  <h3 className="text-sm font-semibold text-white">Growth &amp; improvement tips</h3>
+                  <p className="mt-1 text-xs text-white/45">
+                    Pricing, demand, and promotion ideas — suggestions only; your listing quality checklist is above.
+                  </p>
+                  <ul className="mt-3 list-disc space-y-1.5 pl-5 text-sm text-white/70">
+                    {growthTips.map((tip, idx) => (
+                      <li key={`${l.id}-growth-${idx}`}>{tip}</li>
+                    ))}
+                  </ul>
                 </div>
               </article>
             );

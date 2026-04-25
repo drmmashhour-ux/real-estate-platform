@@ -11235,6 +11235,7 @@ model Deal {
   /// LECIPM native e-signature envelopes (transaction documents; not notarial transfer).
   signatureEnvelopes               SignatureEnvelope[]
   dealClosingConditions            DealClosingCondition[]
+  dealClosingFundMilestones        DealClosingFundMilestone[]
   dealClosingAdjustments           DealClosingAdjustment[]
   dealQuebecNotaryChecklistItems   DealQuebecNotaryChecklistItem[]
   /// Escrow / trust-account coordination (v1) — not a regulated trust by default; see `LecipmTrustWorkflow.mode`.
@@ -11817,10 +11818,35 @@ model DealClosing {
   keysReleasedAt                DateTime? @map("keys_released_at")
   closingPacketMarkedCompleteAt DateTime? @map("closing_packet_marked_complete_at")
   closingPacketCompleteByUserId String?   @map("closing_packet_complete_by_user_id")
+  /// Broker attestation: buyer/seller identities verified for pre-closing (OACIQ / file requirements).
+  preClosingIdentitiesVerifiedAt   DateTime? @map("pre_closing_identities_verified_at")
+  preClosingIdentitiesVerifiedById String?   @map("pre_closing_identities_verified_by_id") @db.VarChar(36)
   createdAt                     DateTime  @default(now()) @map("created_at")
   updatedAt                     DateTime  @updatedAt @map("updated_at")
 
   @@map("lecipm_deal_closings")
+}
+
+/// Notary-closing fund-flow checkpoints (deposit, lender funds, disbursement) — advisory tracking.
+model DealClosingFundMilestone {
+  id          String    @id @default(cuid())
+  dealId      String    @map("deal_id")
+  deal        Deal      @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  /// DEPOSIT | MORTGAGE_FUNDS | FINAL_DISBURSEMENT
+  kind        String    @map("kind") @db.VarChar(32)
+  /// PENDING | IN_FLIGHT | COMPLETED | NOT_APPLICABLE
+  status      String    @default("PENDING") @map("status") @db.VarChar(24)
+  amountCents Int?      @map("amount_cents")
+  currency    String    @default("CAD") @map("currency") @db.VarChar(8)
+  expectedAt  DateTime? @map("expected_at")
+  completedAt DateTime? @map("completed_at")
+  notes       String?   @db.Text
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@unique([dealId, kind])
+  @@index([dealId])
+  @@map("deal_closing_fund_milestones")
 }
 
 model DealClosingDocument {

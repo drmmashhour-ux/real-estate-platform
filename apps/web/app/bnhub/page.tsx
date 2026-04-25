@@ -10,6 +10,7 @@ import { getMarketingFeaturedListingIds } from "@/src/modules/bnhub-marketing/se
 import { getGrowthFeaturedListingIds } from "@/src/modules/bnhub-growth-engine/services/growthFeaturedBridge";
 import { ListingStatus, VerificationStatus } from "@prisma/client";
 import { bnhubLaunchBadgesFromTags } from "@/lib/bnhub/bnhub-launch-quality";
+import { annotateBnhubListingsForGuest, sortBnhubListingsByGuestAppeal } from "@/modules/bnhub/recommendationEngine";
 
 export const metadata: Metadata = {
   title: "BNHub — Find your perfect stay",
@@ -49,8 +50,11 @@ async function loadFeaturedForHome() {
         title: true,
         city: true,
         nightPriceCents: true,
+        beds: true,
+        maxGuests: true,
         photos: true,
         verificationStatus: true,
+        operationalRiskScore: true,
         bnhubListingRatingAverage: true,
         bnhubListingReviewCount: true,
         experienceTags: true,
@@ -71,8 +75,11 @@ async function loadFeaturedForHome() {
       title: true,
       city: true,
       nightPriceCents: true,
+      beds: true,
+      maxGuests: true,
       photos: true,
       verificationStatus: true,
+      operationalRiskScore: true,
       bnhubListingRatingAverage: true,
       bnhubListingReviewCount: true,
       experienceTags: true,
@@ -81,28 +88,29 @@ async function loadFeaturedForHome() {
 }
 
 export default async function BnhubHomePage() {
-  const featured = await loadFeaturedForHome();
+  const featuredRaw = await loadFeaturedForHome();
+  const featured = sortBnhubListingsByGuestAppeal(annotateBnhubListingsForGuest(featuredRaw));
 
   return (
     <main className="scroll-smooth bg-[#000] text-white">
-      <header className="sticky top-0 z-50 border-b border-white/10 bg-[#000]/90 backdrop-blur-md">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4">
+      <header className="sticky top-0 z-50 border-b border-white/10 bg-[#000]/92 backdrop-blur-md">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-5">
           <Link
             href="/bnhub"
-            className="text-lg font-semibold tracking-tight text-[#D4AF37] transition hover:text-[#e5c35c]"
+            className="min-h-[44px] min-w-[44px] text-lg font-semibold tracking-tight text-[#D4AF37] transition hover:text-[#e5c35c]"
           >
             BNHub
           </Link>
           <nav className="flex items-center gap-2 sm:gap-3">
             <Link
               href={SEARCH_BASE}
-              className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full px-4 text-sm font-medium text-white/80 transition hover:text-[#D4AF37]"
+              className="inline-flex min-h-[48px] min-w-[48px] items-center justify-center rounded-full px-5 text-sm font-medium text-white/80 transition hover:text-[#D4AF37]"
             >
               Browse
             </Link>
             <Link
               href="/bnhub/become-host"
-              className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-[#D4AF37]/50 bg-[#D4AF37]/10 px-4 text-sm font-semibold text-[#D4AF37] transition hover:bg-[#D4AF37]/20"
+              className="inline-flex min-h-[48px] items-center justify-center rounded-full border border-[#D4AF37]/50 bg-[#D4AF37]/10 px-5 text-sm font-semibold text-[#D4AF37] transition hover:bg-[#D4AF37]/20"
             >
               Host
             </Link>
@@ -114,12 +122,12 @@ export default async function BnhubHomePage() {
 
       <TrustStrip />
 
-      <section className="bg-[#000] px-4 py-16 sm:py-20 md:py-24" id="featured">
+      <section className="bg-[#000] px-4 py-20 sm:py-24 md:py-28" id="featured">
         <div className="mx-auto max-w-6xl">
-          <div className="mb-10 text-center sm:mb-14">
-            <h2 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">Featured stays</h2>
-            <p className="mx-auto mt-3 max-w-md text-sm text-white/55 sm:text-base">
-              Hand-picked visibility for guests; premium presentation for hosts.
+          <div className="mb-12 text-center sm:mb-16">
+            <h2 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl md:text-4xl">Featured listings</h2>
+            <p className="mx-auto mt-4 max-w-sm text-sm text-white/50">
+              Hand-picked stays — clear nightly rates and verified hosts.
             </p>
           </div>
           {featured.length === 0 ? (
@@ -140,18 +148,21 @@ export default async function BnhubHomePage() {
                   title={l.title}
                   city={l.city}
                   nightPriceCents={l.nightPriceCents}
-                  rating={l.bnhubListingRatingAverage}
-                  reviewCount={l.bnhubListingReviewCount}
+                  rating={l.displayRating ?? l.bnhubListingRatingAverage}
+                  reviewCount={l.displayReviewCount}
                   verified={l.verificationStatus === VerificationStatus.VERIFIED}
+                  riskLevel={l.riskLevel}
+                  valueLabel={l.valueLabel}
+                  fraud={l.fraud}
                   launchBadges={bnhubLaunchBadgesFromTags(l.experienceTags)}
                 />
               ))}
             </div>
           )}
-          <div className="mt-10 flex justify-center">
+          <div className="mt-14 flex justify-center sm:mt-16">
             <Link
               href={SEARCH_BASE}
-              className="inline-flex min-h-[52px] items-center justify-center rounded-2xl border border-[#D4AF37]/45 px-8 text-sm font-semibold text-[#D4AF37] transition hover:bg-[#D4AF37]/10"
+              className="inline-flex min-h-[52px] items-center justify-center rounded-2xl border border-[#D4AF37]/45 px-10 text-sm font-semibold text-[#D4AF37] transition hover:bg-[#D4AF37]/10"
             >
               See all stays
             </Link>
@@ -159,54 +170,51 @@ export default async function BnhubHomePage() {
         </div>
       </section>
 
-      <section className="border-t border-white/[0.06] bg-[#050505] px-4 py-16 sm:py-20 md:py-24" id="why">
+      <section className="border-t border-white/[0.06] bg-[#050505] px-4 py-20 sm:py-24 md:py-28" id="why">
         <div className="mx-auto max-w-6xl">
           <h2 className="text-center text-2xl font-semibold tracking-tight text-white sm:text-3xl">Why BNHub</h2>
-          <p className="mx-auto mt-3 max-w-lg text-center text-sm text-white/55 sm:text-base">
-            Less noise. More confidence from search to checkout.
-          </p>
           <div className="mt-12 grid gap-6 md:grid-cols-3 md:gap-8">
             {[
               {
                 icon: Sparkles,
                 title: "Smart matching",
-                body: "Recommendations that balance price, quality, and fit — not endless scrolling.",
+                body: "Recommendations tuned to price, quality, and fit.",
               },
               {
                 icon: Shield,
                 title: "Safer stays",
-                body: "Verified listings and clear trust signals so you know what you are booking.",
+                body: "Verified listings and clear signals before you book.",
               },
               {
                 icon: Gem,
                 title: "Better value",
-                body: "Transparent nightly pricing with fewer surprises when you confirm your trip.",
+                body: "Transparent nightly pricing — fewer surprises at checkout.",
               },
             ].map(({ icon: Icon, title, body }) => (
               <div
                 key={title}
                 className="rounded-2xl border border-white/10 bg-[#0A0A0A] p-6 sm:min-h-[200px] sm:p-8"
               >
-                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl border border-[#D4AF37]/30 bg-[#D4AF37]/10 text-[#D4AF37]">
-                  <Icon className="h-6 w-6" strokeWidth={1.75} aria-hidden />
+                <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl border border-[#D4AF37]/30 bg-[#D4AF37]/10 text-[#D4AF37]">
+                  <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
                 </div>
                 <h3 className="text-lg font-semibold text-white">{title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-white/55">{body}</p>
+                <p className="mt-2 text-sm leading-relaxed text-white/50">{body}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="bg-[#000] px-4 py-16 sm:py-20 md:py-24">
-        <div className="mx-auto max-w-3xl rounded-3xl border border-[#D4AF37]/25 bg-gradient-to-b from-[#D4AF37]/10 to-transparent px-6 py-12 text-center sm:px-10 sm:py-16">
-          <h2 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">List your property</h2>
-          <p className="mx-auto mt-3 max-w-md text-sm text-white/60 sm:text-base">
-            Reach guests who value clarity, verification, and a premium booking experience.
+      <section className="bg-[#000] px-4 py-20 sm:py-24 md:py-28">
+        <div className="mx-auto max-w-3xl rounded-3xl border border-[#D4AF37]/25 bg-gradient-to-b from-[#D4AF37]/10 to-transparent px-6 py-14 text-center sm:px-12 sm:py-16 md:py-20">
+          <h2 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl md:text-4xl">List your property</h2>
+          <p className="mx-auto mt-4 max-w-md text-sm text-white/55 sm:text-base">
+            Join hosts who lead with clarity and trust.
           </p>
           <Link
             href="/bnhub/become-host"
-            className="mt-8 inline-flex min-h-[56px] min-w-[200px] items-center justify-center rounded-2xl bg-[#D4AF37] px-8 text-base font-semibold text-black transition hover:brightness-110"
+            className="mt-10 inline-flex min-h-[56px] min-w-[220px] items-center justify-center rounded-2xl bg-[#D4AF37] px-10 text-base font-semibold text-black transition hover:brightness-110"
           >
             Start hosting
           </Link>
