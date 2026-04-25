@@ -20,7 +20,7 @@ jobs:
         with:
           host: ${{ secrets.HETZNER_HOST }}
           username: ${{ secrets.HETZNER_USER }}
-          key: ${{ secrets.HETZNER_SSH_KEY }}
+          password: ${{ secrets.HETZNER_PASSWORD }}
           script: |
             # 1. Navigate to app directory (create if missing)
             mkdir -p /var/www/lecipm
