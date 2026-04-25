@@ -25,19 +25,20 @@ jobs:
           script: |
             set -e
             # 0. Ensure Swap (for builds on low-RAM servers)
+            echo "Checking swap status..."
             if ! free | grep -i swap | grep -qv "0"; then
-              echo "No swap detected. Preparing swap..."
-              if [ ! -f "/swapfile" ]; then
-                echo "Creating 8G swap file..."
-                fallocate -l 8G /swapfile || dd if=/dev/zero of=/swapfile bs=1M count=8192
-                chmod 600 /swapfile
-                mkswap /swapfile
-              fi
-              echo "Enabling swap..."
-              swapon /swapfile || true
+              echo "No swap detected. Creating 16G swap file..."
+              swapoff /swapfile || true
+              rm -f /swapfile
+              fallocate -l 16G /swapfile || dd if=/dev/zero of=/swapfile bs=1M count=16384
+              chmod 600 /swapfile
+              mkswap /swapfile
+              swapon /swapfile
               if ! grep -q "/swapfile" /etc/fstab; then
                 echo '/swapfile none swap sw 0 0' | tee -a /etc/fstab || true
               fi
+            else
+              echo "Swap already active."
             fi
 
             # 1. Navigate to app directory (create if missing)
