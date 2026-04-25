@@ -1,6 +1,8 @@
-import type { Booking, User } from "@prisma/client";
+import type { Booking } from "../../prisma/generated/analytics";
+import type { User } from "../../prisma/generated/core";
 
-/** LECIPM `Booking` row + guest `User` resolved in app code (no Prisma `include`). */
-export type BookingWithGuest = Booking & {
-  guest: User | null;
-};
+/** LECIPM `Booking` (analytics client) + core `User` joined in app code (replaces Prisma `include`). */
+export type BookingWithUser = Booking & { user: User | null };
+
+/** @deprecated Use `BookingWithUser` — `user` is the guest account. */
+export type BookingWithGuest = Booking & { guest: User | null };

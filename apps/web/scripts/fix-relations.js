@@ -1,7 +1,16 @@
 /**
- * Prisma split-schema: remove field lines that reference model types not defined
- * in the same file (cross-domain "dangling" relations). Scalars and enums are safe.
- * Same-file model relations and @relation are kept.
+ * CURSOR ORDER — auto-fix dangling relations in standalone domain trees.
+ *
+ * After `pnpm run prisma:extract`, each of prisma/core|marketplace|compliance|analytics
+ * is a *separate* Prisma project. Field types must refer only to models/enums *present
+ * in that same domain folder* (across all shard files). This script removes field lines
+ * that reference a model name not defined anywhere in the domain, or drops relation-only
+ * lines when the referenced type is missing (keeps existing userId / listingId scalars).
+ *
+ * It does **not** do the dangerous global replace `Field + Model` → `fieldId String`
+ * (that would corrupt enums like `role PlatformRole`).
+ *
+ * Prisma 7: validate with the folder: prisma validate --schema=./prisma/core
  *
  * Usage (from apps/web):
  *   node scripts/fix-relations.js
@@ -13,11 +22,11 @@ const path = require("node:path");
 const webRoot = path.join(__dirname, "..");
 const allFlag = process.argv.includes("--all");
 
-const schemas = [
-  path.join(webRoot, "prisma/core/schema.prisma"),
-  path.join(webRoot, "prisma/marketplace/schema.prisma"),
-  path.join(webRoot, "prisma/compliance/schema.prisma"),
-  ...(allFlag ? [path.join(webRoot, "prisma/analytics/schema.prisma")] : []),
+const DOMAIN_DIRS = [
+  path.join(webRoot, "prisma", "core"),
+  path.join(webRoot, "prisma", "marketplace"),
+  path.join(webRoot, "prisma", "compliance"),
+  ...(allFlag ? [path.join(webRoot, "prisma", "analytics")] : []),
 ];
 
 const SCALAR_TYPES = new Set([
@@ -45,12 +54,20 @@ function collectModelAndEnumNames(text) {
   return { models, enums };
 }
 
+function listPrismaFilesInDir(dir) {
+  if (!fs.existsSync(dir)) return [];
+  return fs
+    .readdirSync(dir)
+    .filter((f) => f.endsWith(".prisma"))
+    .map((f) => path.join(dir, f));
+}
+
 function fieldLineBaseType(line) {
   const s = line.trim();
   if (!s) {
     return null;
   }
-  if (s.startsWith("@@") || s.startsWith("///") || s.startsWith("//") || s.startsWith("#")) {
+  if (s.startsWith("@@") || s.startsWith("///") || s.startsWith("//") || s.startsWith("**")) {
     return null;
   }
   const m = s.match(
@@ -66,7 +83,7 @@ function fieldLineBaseType(line) {
   return base;
 }
 
-function shouldRemoveFieldLine(line, models, enums) {
+function shouldRemoveFieldLine(line, globalModels, globalEnums) {
   const base = fieldLineBaseType(line);
   if (base === null) {
     return false;
@@ -74,33 +91,34 @@ function shouldRemoveFieldLine(line, models, enums) {
   if (SCALAR_TYPES.has(base) || base === "Unsupported") {
     return false;
   }
-  if (enums.has(base)) {
+  if (globalEnums.has(base)) {
     return false;
   }
-  if (models.has(base)) {
+  if (globalModels.has(base)) {
     return false;
   }
   return true;
 }
 
-function processModelBlockContent(innerLines, models, enums) {
+function processModelBlockContent(innerLines, globalModels, globalEnums) {
   return innerLines.filter((ln) => {
     const t = ln.trim();
-    if (t.startsWith("@@") || t.startsWith("///") || t.startsWith("//")) {
+    if (t.startsWith("@@") || t.startsWith("///") || t.startsWith("//") || t.startsWith("**")) {
       return true;
     }
     if (!fieldLineBaseType(ln)) {
       return true;
     }
-    return !shouldRemoveFieldLine(ln, models, enums);
+    return !shouldRemoveFieldLine(ln, globalModels, globalEnums);
   });
 }
 
 /**
  * @param {string} content
+ * @param {Set<string>} globalModels
+ * @param {Set<string>} globalEnums
  */
-function fixFile(content) {
-  const { models, enums } = collectModelAndEnumNames(content);
+function fixFile(content, globalModels, globalEnums) {
   const lines = content.split("\n");
   const out = [];
   let i = 0;
@@ -130,29 +148,35 @@ function fixFile(content) {
     }
     const last = inner[inner.length - 1];
     const body = inner.slice(0, -1);
-    out.push(first, ...processModelBlockContent(body, models, enums), last);
+    out.push(first, ...processModelBlockContent(body, globalModels, globalEnums), last);
   }
   return out.join("\n");
 }
 
 function main() {
-  for (const file of schemas) {
-    if (!fs.existsSync(file)) {
-      process.stderr.write(`skip (missing): ${path.relative(webRoot, file)}\n`);
+  for (const domainDir of DOMAIN_DIRS) {
+    const files = listPrismaFilesInDir(domainDir);
+    if (files.length === 0) {
+      process.stderr.write(`skip (no .prisma): ${path.relative(webRoot, domainDir)}\n`);
       continue;
     }
-    const rel = path.relative(webRoot, file);
-    const before = fs.readFileSync(file, "utf-8");
-    const after = fixFile(before);
-    if (after === before) {
-      process.stdout.write(`· ${rel} (no changes)\n`);
-      continue;
+    const fullText = files.map((f) => fs.readFileSync(f, "utf-8")).join("\n\n");
+    const { models, enums } = collectModelAndEnumNames(fullText);
+    for (const file of files) {
+      const rel = path.relative(webRoot, file);
+      const before = fs.readFileSync(file, "utf-8");
+      const after = fixFile(before, models, enums);
+      if (after === before) {
+        process.stdout.write(`· ${rel} (no changes)\n`);
+        continue;
+      }
+      fs.writeFileSync(file, after, "utf-8");
+      process.stdout.write(`✔ ${rel}\n`);
     }
-    fs.writeFileSync(file, after, "utf-8");
-    process.stdout.write(`✔ ${rel}\n`);
   }
   process.stdout.write(
-    "\nNext: pnpm exec prisma validate --schema=./prisma/core/schema.prisma  (and marketplace, compliance…)\n",
+    "\nNext: pnpm exec prisma validate --schema=./prisma/core  (and marketplace, compliance…; use directory path for sharded schema)\n" +
+      "      pnpm run prisma:generate:domain-clients-three   # or prisma:generate:split for all four\n",
   );
 }
 
