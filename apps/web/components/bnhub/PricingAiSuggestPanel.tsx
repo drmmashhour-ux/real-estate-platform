@@ -110,7 +110,8 @@ export function PricingAiSuggestPanel(props: {
   }
 
   const currency = data?.currency ?? "USD";
-  const primaryReason = data?.reasoning?.filter(Boolean).slice(1, 4).join(" ") ?? "";
+  const primaryReason =
+    (data?.reasoning ?? []).find((line, i) => i > 0 && line && !line.startsWith("Current base nightly rate")) ?? "";
 
   return (
     <div className="space-y-4 rounded-xl border border-white/10 bg-black/5 p-4 dark:bg-white/5">
