@@ -144,13 +144,13 @@ function main(): void {
     console.log("\n[predeploy] SKIP TypeScript — LECIPM_SKIP_TYPECHECK=1");
   }
 
-  if (!run("prisma validate", "pnpm", ["exec", "prisma", "validate", "--schema=./prisma/schema.prisma"])) {
+  if (!run("prisma validate", "pnpm", ["exec", "prisma", "validate", "--schema=./prisma"])) {
     console.error("\n[predeploy] BLOCKED: Prisma schema invalid.");
     process.exit(1);
   }
 
   if (process.env.DATABASE_URL?.trim() && process.env.LECIPM_ENFORCE_DB_MIGRATIONS === "1") {
-    const st = spawnSync("pnpm", ["exec", "prisma", "migrate", "status", "--schema=./prisma/schema.prisma"], {
+    const st = spawnSync("pnpm", ["exec", "prisma", "migrate", "status", "--schema=./prisma"], {
       cwd: WEB_ROOT,
       stdio: "inherit",
       shell: process.platform === "win32",

@@ -10,6 +10,12 @@ Use this when deploying the Next.js app (`apps/web`) to Vercel with Supabase Pos
 - **Stripe**: Checkout + webhooks — subscription state is mirrored in `stripe_subscriptions` after verified webhooks.
 - **OpenAI**: Copilot and AI features — call only from server routes / server actions.
 
+## Split Prisma clients (`prisma/core`, `marketplace`, `compliance`, `analytics`)
+
+- **One** PostgreSQL database and **one** migration history: use `prisma migrate deploy` with the **merged** app schema (`--schema=./prisma` / `prisma.config.ts` from `apps/web`). Do **not** run `migrate deploy` separately for each split `schema.prisma` — you would get duplicate or conflicting history on the same DB.
+- `postinstall` / `prisma:generate:split` generate `@prisma/client` + `prisma/generated/*` for domain code; all clients point at the same `DATABASE_URL`.
+- A production env **template** (no secrets) lives at: `apps/web/config/env.production.sample`.
+
 ## Environment variables
 
 Set in the Vercel project (or team) settings. Values are encrypted at rest; **redeploy** after changes.

@@ -44,8 +44,8 @@ export function runBuildGate(opts: BuildGateOptions): { steps: BuildStepResult[]
 
   const pnpm = process.platform === "win32" ? "pnpm.cmd" : "pnpm";
 
-  steps.push(runStep("prisma_validate", pnpm, ["exec", "prisma", "validate", "--schema=./prisma/schema.prisma"], opts.cwd));
-  steps.push(runStep("prisma_generate", pnpm, ["exec", "prisma", "generate", "--schema=./prisma/schema.prisma"], opts.cwd));
+  steps.push(runStep("prisma_validate", pnpm, ["exec", "prisma", "validate", "--schema=./prisma"], opts.cwd));
+  steps.push(runStep("prisma_generate", pnpm, ["exec", "prisma", "generate", "--schema=./prisma"], opts.cwd));
 
   if (!opts.skipTsc) {
     steps.push(

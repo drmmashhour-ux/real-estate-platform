@@ -16,7 +16,7 @@
     "./db-error-classification": "./src/db-error-classification.ts"
   },
   "dependencies": {
-    "@prisma/client": "^6"
+    "@prisma/client": "^7.8.0"
   },
   "peerDependencies": {
     "typescript": ">=5"

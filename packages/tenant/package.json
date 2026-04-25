@@ -10,7 +10,7 @@
     "./*": "./src/*"
   },
   "dependencies": {
-    "@prisma/client": "^6",
+    "@prisma/client": "^7.8.0",
     "@repo/db": "workspace:*"
   },
   "peerDependencies": {

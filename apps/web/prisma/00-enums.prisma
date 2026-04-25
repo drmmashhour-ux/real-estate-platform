@@ -1,0 +1,5065 @@
+// @domain: enums (shared) — copy into per-domain schemas on extraction; Prisma will need duplicates across split clients.
+// Auto-split from models.prisma — domain buckets for LECIPM (see scripts/split-prisma-by-domain.mjs).
+// Merged with prisma/schema.prisma; relations preserved. Do not duplicate models across files.
+
+enum PlatformRole {
+  VISITOR // Browse only (not logged in)
+  USER // Signed-up user: booking, messaging
+  CLIENT // Legacy alias for USER (treat as USER in guards)
+  TESTER // Staging/UAT demo testers (same product access as USER; use on staging DB only)
+  HOST // BNHub: manage listings (must verify + accept hosting terms)
+  BROKER // Real estate: CRM + deals (must verify + accept broker terms)
+  MORTGAGE_EXPERT // Mortgage specialists: profile, assigned leads
+  DEVELOPER // Projects: manage projects (must verify + accept developer terms)
+  ACCOUNTANT // Financial dashboard, reports, tax docs — no system config / user deletion
+  ADMIN // Full control
+  /// Privacy & Compliance Roles (Law 25)
+  PRIVACY_OFFICER
+  LEGAL_ADMIN
+  COMPLIANCE_STAFF
+  AGENCY_EXECUTIVE
+  UNREPRESENTED_BUYER
+  /// Internal ops — team workspace (`/admin/team`): tasks, daily reports, scoped metrics (not full platform admin)
+  CONTENT_OPERATOR
+  LISTING_OPERATOR
+  OUTREACH_OPERATOR
+  OPERATOR
+  SUPPORT_AGENT
+  /// Marketplace — residential buyer hub (`/dashboard/buyer`)
+  BUYER
+  /// Marketplace — DIY / FSBO seller (`/dashboard/seller`)
+  SELLER_DIRECT
+  /// Marketplace — mortgage specialist (same product surface as MORTGAGE_EXPERT; prefer one per user long-term)
+  MORTGAGE_BROKER
+  /// Property & stay insurance partners (`/dashboard/insurance`)
+  INSURANCE_BROKER
+  /// Investor relations — pitch + private metrics (`/investor/*`)
+  INVESTOR
+}
+
+enum MarketplacePersona {
+  UNSET
+  BUYER
+  SELLER_DIRECT
+  BROKER
+  MORTGAGE_BROKER
+}
+
+enum BrokerStatus {
+  NONE
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum BrokerPayoutStatus {
+  PENDING
+  APPROVED
+  PAID
+  FAILED
+  CANCELLED
+}
+
+enum BrokerTaxRegistrationStatus {
+  SUBMITTED
+  FORMAT_VALID
+  PENDING_STAFF_REVIEW
+  MANUALLY_REVIEWED
+  APPROVED
+  REJECTED
+}
+
+enum RevenueParty {
+  PLATFORM
+  BROKER
+}
+
+enum InvoiceIssuer {
+  PLATFORM
+  BROKER
+}
+
+enum PlatformInvoiceStatus {
+  DRAFT
+  ISSUED
+  PAID
+  VOID
+  OVERDUE
+}
+
+enum AccountStatus {
+  ACTIVE // Approved; full access
+  PENDING_VERIFICATION // Applied; awaiting admin approval
+  RESTRICTED // Rejected or limited; cannot use professional features
+  SUSPENDED // Temporary suspension
+  BANNED // Permanent; cannot use platform
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum FsboPhotoVerificationStatus {
+  PENDING
+  VERIFIED
+  FLAGGED
+}
+
+enum ListingAuthorityType {
+  OWNER
+  BROKER
+}
+
+enum ListingVerificationStatus {
+  DRAFT // Not yet submitted for verification
+  PENDING_VERIFICATION // Documents submitted, awaiting admin review
+  PENDING_DOCUMENTS // Admin requested more documents; lister can resubmit
+  VERIFIED // Ownership/broker authorization confirmed (cadastre + identity + location)
+  REJECTED // Verification failed
+}
+
+enum PropertyDocumentType {
+  LAND_REGISTRY_EXTRACT
+  BROKER_AUTHORIZATION
+}
+
+enum ListingCommissionCategory {
+  SALE
+  RENT_LONG
+  RENT_SHORT
+}
+
+enum BookingStatus {
+  PENDING // Awaiting payment
+  AWAITING_HOST_APPROVAL // Request sent, host must approve or decline
+  CONFIRMED
+  DECLINED // Host declined
+  CANCELLED_BY_GUEST
+  CANCELLED_BY_HOST
+  CANCELLED // Legacy / admin cancellation
+  COMPLETED
+  DISPUTED
+  /// Unpaid checkout abandoned past `pendingCheckoutExpiresAt` (or legacy 1h rule) — ignored for overlap.
+  EXPIRED
+}
+
+enum ManualPaymentSettlement {
+  NOT_APPLICABLE
+  PENDING
+  RECEIVED
+  FAILED
+  WAIVED
+}
+
+enum ListingStatus {
+  DRAFT // Not visible in search
+  PENDING_REVIEW // Submitted; awaiting admin approval (Quebec/OACIQ-style)
+  APPROVED // Admin approved; can be published
+  PUBLISHED // Live and searchable
+  UNLISTED // Temporarily hidden
+  SUSPENDED // Admin action
+  UNDER_INVESTIGATION // Fraud suspected; removed from public; admin review
+  FROZEN // Explicit freeze (same visibility as under_investigation)
+  REJECTED_FOR_FRAUD // Fraud confirmed; listing rejected
+  PERMANENTLY_REMOVED // Permanently removed for fraud
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum ListingAcquisitionSourceType {
+  OWNER
+  BROKER
+  HOST
+  MANUAL
+
+  @@map("listing_acquisition_source_type")
+}
+
+enum ListingAcquisitionPermissionStatus {
+  UNKNOWN
+  REQUESTED
+  GRANTED
+  REJECTED
+
+  @@map("listing_acquisition_permission_status")
+}
+
+enum ListingAcquisitionIntakeStatus {
+  NEW
+  CONTACTED
+  INTERESTED
+  AWAITING_ASSETS
+  READY_FOR_REVIEW
+  PUBLISHED
+  ARCHIVED
+
+  @@map("listing_acquisition_intake_status")
+}
+
+enum LecipmRegulatoryConsentType {
+  DATA_USAGE
+  AI_DECISIONING
+  MARKETING
+  FINANCIAL_SIMULATION
+}
+
+enum LecipmRegulatoryAuditEntityType {
+  DEAL
+  FUND
+  LISTING
+  AI_DECISION
+}
+
+enum LecipmRiskDisclosureContext {
+  DEAL
+  FUND
+  ESG
+  AI_RECOMMENDATION
+}
+
+enum TeamTaskStatus {
+  PENDING
+  IN_PROGRESS
+  DONE
+  CANCELLED
+}
+
+enum TeamTaskPriority {
+  LOW
+  NORMAL
+  HIGH
+}
+
+enum PlatformAutonomyEventType {
+  LISTING_CREATED
+  LISTING_UPDATED
+  BOOKING_CREATED
+  BOOKING_ABANDONED
+  USER_ACTIVITY
+}
+
+enum LoyaltyTier {
+  NONE
+  BRONZE
+  SILVER
+  GOLD
+}
+
+enum LecipmAiOperatorActionStatus {
+  pending
+  suggested
+  approved
+  executed
+  failed
+  rejected
+}
+
+enum LecipmWorkspaceRole {
+  owner
+  admin
+  manager
+  broker
+  analyst
+  viewer
+  compliance_reviewer
+
+  @@map("lecipm_workspace_role")
+}
+
+enum LecipmWorkspaceInviteStatus {
+  pending
+  accepted
+  expired
+  revoked
+
+  @@map("lecipm_workspace_invite_status")
+}
+
+enum LecipmDealHistoryOutcome {
+  won
+  lost
+  canceled
+
+  @@map("lecipm_deal_history_outcome")
+}
+
+enum RentalListingStatus {
+  DRAFT
+  ACTIVE
+  RENTED
+}
+
+enum RentalApplicationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum RentalLeaseStatus {
+  PENDING_SIGNATURE
+  ACTIVE
+  TERMINATED
+}
+
+enum RentPaymentStatus {
+  PENDING
+  PAID
+  LATE
+}
+
+enum ImmoContactEventType {
+  /// listing_view
+  VIEW
+  /// contact_click
+  CONTACT_CLICK
+  /// conversation / thread message
+  MESSAGE
+  CALL
+  BOOKING_REQUEST
+  /// Deal / pipeline started (BNHub offer flow).
+  DEAL_STARTED
+  /// Structured contact form submit (buyer/broker forms).
+  CONTACT_FORM_SUBMITTED
+  /// Platform conversation thread opened (buyer ↔ seller/broker).
+  CONVERSATION_STARTED
+  /// Offer / negotiation started on a listing.
+  OFFER_STARTED
+  /// CRM lead linked to an active deal (compliance).
+  DEAL_LINKED
+}
+
+enum FsboListingOwnerType {
+  SELLER
+  BROKER
+}
+
+enum ListingMarketingContentStatus {
+  draft
+  ready_for_review
+  approved
+  rejected
+  scheduled
+  published
+  archived
+
+  @@map("listing_marketing_content_status")
+}
+
+enum ListingMarketingDraftChannel {
+  email
+  sms_short
+  social_post
+  listing_page
+  ad_copy
+  internal_brief
+
+  @@map("listing_marketing_draft_channel")
+}
+
+enum HostGrowthOutreachChannel {
+  email
+  sms
+  dm
+  other
+
+  @@map("host_growth_outreach_channel")
+}
+
+enum HostGrowthOutreachStatus {
+  sent
+  delivered
+  replied
+  failed
+
+  @@map("host_growth_outreach_status")
+}
+
+enum SellerSupportingDocumentCategory {
+  IDENTITY
+  INSPECTION_REPORT
+  RENOVATION_INVOICES
+  PERMITS_PLANS
+  CERTIFICATES_WARRANTIES
+  CONDO_DOCUMENTS
+  OTHER
+}
+
+enum SellerSupportingDocumentStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum RiskAlertSeverity {
+  HIGH
+  MEDIUM
+}
+
+enum VerificationEntityType {
+  LISTING
+  SELLER
+  BUYER
+  TENANT
+  GUEST
+  BROKER
+  BOOKING
+  OFFER
+  RENTAL_APPLICATION
+  MORTGAGE_FILE
+  SELLER_DECLARATION
+  /// BNHub host profile (`entity_id` = `BnhubHost.id`)
+  HOST
+  /// BNHub short-term listing (`entity_id` = `ShortTermListing.id`)
+  SHORT_TERM_LISTING
+}
+
+enum VerificationCaseStatus {
+  pending
+  in_review
+  approved
+  rejected
+  needs_info
+  escalated
+}
+
+enum TrustLevel {
+  low
+  medium
+  high
+  verified
+}
+
+enum ReadinessLevel {
+  not_ready
+  partial
+  ready
+  action_required
+}
+
+enum VerificationSignalCategory {
+  identity
+  address
+  media
+  legal
+  financial
+  behavior
+  fraud
+  compliance
+  quality
+}
+
+enum VerificationSeverity {
+  info
+  low
+  medium
+  high
+  critical
+}
+
+enum VerificationSignalStatus {
+  open
+  accepted
+  dismissed
+  resolved
+}
+
+enum TrustProfileSubjectType {
+  user
+  broker
+  listing
+  property_owner
+  host
+}
+
+enum HumanReviewActionType {
+  approve
+  reject
+  request_info
+  override_score
+  dismiss_signal
+  escalate
+  assign
+}
+
+enum NextBestActionPriority {
+  low
+  medium
+  high
+  urgent
+}
+
+enum NextBestActionActorType {
+  user
+  broker
+  admin
+  legal
+  system
+}
+
+enum NextBestActionStatus {
+  pending
+  completed
+  dismissed
+}
+
+enum MediaVerificationJobStatus {
+  queued
+  processing
+  completed
+  failed
+}
+
+enum MediaVerificationType {
+  exterior
+  interior
+  street
+  document
+  id
+  other
+}
+
+enum TrustgraphExtractionSourceKind {
+  seller_supporting_document
+  mortgage_request
+}
+
+enum TrustgraphExtractionJobStatus {
+  queued
+  running
+  completed
+  failed
+  needs_review
+}
+
+enum TrustgraphFraudGraphNodeKind {
+  user
+  listing
+  broker
+  upload
+  fingerprint
+  phone
+  email
+}
+
+enum TrustgraphComplianceOrgType {
+  brokerage
+  investor_firm
+  admin_internal
+  legal_team
+}
+
+enum TrustgraphWorkspaceMemberRole {
+  workspace_admin
+  workspace_manager
+  workspace_reviewer
+  workspace_legal_reviewer
+  workspace_viewer
+}
+
+enum TrustgraphWorkspaceMemberStatus {
+  active
+  suspended
+  invited
+}
+
+enum TrustgraphSubscriptionStatus {
+  active
+  trial
+  paused
+  canceled
+}
+
+enum ContentMachineStyle {
+  price_shock
+  lifestyle
+  comparison
+  question
+  hidden_gem
+}
+
+enum ContentMachinePieceStatus {
+  generated
+  video_created
+  scheduled
+  posted
+  failed
+}
+
+enum ContentMachineScheduleStatus {
+  pending
+  confirmed
+  posted
+  failed
+  cancelled
+}
+
+enum ContentAutomationJobStatus {
+  QUEUED
+  GENERATING_COPY
+  GENERATING_VIDEO
+  READY
+  SCHEDULED
+  PUBLISHED
+  FAILED
+}
+
+enum ContentAutomationPlatformTarget {
+  TIKTOK
+  INSTAGRAM
+  BOTH
+}
+
+enum ContentAutomationContentStyle {
+  PRICE_SHOCK
+  LIFESTYLE
+  COMPARISON
+  QUESTION
+  HIDDEN_GEM
+  /// Generate all five pack variants in one job
+  ALL_FIVE
+}
+
+enum ContentAutomationAssetType {
+  SCRIPT
+  CAPTION
+  HASHTAG_SET
+  OVERLAY_TEXT
+  CTA
+  VIDEO
+  THUMBNAIL
+  METADATA
+}
+
+enum ContentAutomationApprovalMode {
+  MANUAL
+  AUTO_SCHEDULE
+  AUTO_PUBLISH
+}
+
+enum ContentSocialPlatform {
+  TIKTOK
+  INSTAGRAM
+  FACEBOOK
+}
+
+enum ContentSocialPublishMode {
+  DRAFT
+  SCHEDULED
+  DIRECT
+}
+
+enum ContentSocialPostStatus {
+  DRAFT
+  SCHEDULED
+  PUBLISHED
+  FAILED
+}
+
+enum SearchEventType {
+  VIEW
+  CLICK
+  SAVE
+  BOOK
+  SEARCH
+}
+
+enum MarketplaceMemoryRole {
+  BUYER
+  RENTER
+  BROKER
+  INVESTOR
+}
+
+enum MarketplaceMemoryEventType {
+  VIEW
+  SEARCH
+  SAVE
+  MESSAGE
+  OFFER
+  BOOK
+  INVEST
+  SIGN
+}
+
+enum MarketplaceMemoryEntityType {
+  LISTING
+  DEAL
+  PACKET
+}
+
+enum MarketplaceMemoryInsightType {
+  PREFERENCE
+  INTENT
+  RISK
+  TIMING
+  LOCATION_AFFINITY
+}
+
+enum BehaviorEventType {
+  LISTING_IMPRESSION
+  LISTING_CLICK
+  LISTING_SAVE
+  LISTING_SHARE
+  LISTING_CONTACT_CLICK
+  LISTING_UNLOCK_START
+  LISTING_UNLOCK_SUCCESS
+  LISTING_BOOKING_ATTEMPT
+  LISTING_BOOKING_SUCCESS
+  SEARCH_FILTERS_APPLIED
+  MAP_PIN_CLICK
+  SIMILAR_LISTING_CLICK
+  SEARCH_RESULT_IMPRESSION
+  DWELL_POSITIVE
+  DWELL_NEGATIVE
+}
+
+enum ListingQualityLevel {
+  poor
+  needs_improvement
+  good
+  excellent
+}
+
+enum ListingHealthStatus {
+  needs_attention
+  improving
+  healthy
+  top_performer
+}
+
+enum ListingHealthActionPriority {
+  high
+  medium
+  low
+}
+
+enum AiDecisionDomain {
+  SEARCH
+  PRICING
+  AUTOPILOT
+  RECOMMENDATIONS
+  ADMIN_OPS
+}
+
+enum AiSuggestionType {
+  PRICE_INCREASE
+  PRICE_DECREASE
+  PROMOTION_SUGGESTION
+  DESCRIPTION_IMPROVEMENT
+  TITLE_IMPROVEMENT
+  AMENITIES_IMPROVEMENT
+  PHOTO_QUALITY_WARNING
+  DEMAND_ALERT
+}
+
+enum AiSuggestionStatus {
+  PENDING
+  APPLIED
+  DISMISSED
+  FAILED
+}
+
+enum AutopilotMode {
+  OFF
+  ASSIST
+  SAFE_AUTOPILOT
+  FULL_AUTOPILOT_APPROVAL
+}
+
+enum AiAutopilotActionType {
+  UPDATE_PRICE
+  CREATE_PROMOTION
+  OPTIMIZE_DESCRIPTION
+  OPTIMIZE_TITLE
+}
+
+enum AiAutopilotActionStatus {
+  PENDING
+  APPROVED
+  EXECUTED
+  REJECTED
+  FAILED
+}
+
+enum ListingOptimizationRunStatus {
+  queued
+  running
+  completed
+  failed
+}
+
+enum OptimizationRiskLevel {
+  low
+  medium
+  high
+}
+
+enum ListingOptimizationSuggestionStatus {
+  suggested
+  approved
+  rejected
+  applied
+}
+
+enum ListingAutopilotMode {
+  off
+  assist
+  safe_autopilot
+  approval_required
+}
+
+enum PortfolioAutopilotMode {
+  off
+  assist
+  safe_autopilot
+  approval_required
+}
+
+enum PortfolioAutopilotActionPriority {
+  high
+  medium
+  low
+}
+
+enum PortfolioAutopilotActionStatus {
+  suggested
+  approved
+  rejected
+  applied
+}
+
+enum RevenueAutopilotMode {
+  off
+  assist
+  safe_autopilot
+  approval_required
+}
+
+enum RevenueAutopilotScopeType {
+  platform
+  owner
+}
+
+enum RevenueAutopilotActionPriority {
+  high
+  medium
+  low
+}
+
+enum RevenueAutopilotActionStatus {
+  suggested
+  approved
+  rejected
+  applied
+}
+
+enum BnhubLuxuryTierCode {
+  NONE
+  VERIFIED
+  PREMIUM
+  ELITE
+}
+
+enum BnhubLuxuryEligibilityStatus {
+  ELIGIBLE
+  INELIGIBLE
+  REVIEW_REQUIRED
+  SUSPENDED
+}
+
+enum BnhubTrustRiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum BnhubTrustProfileStatus {
+  TRUSTED
+  REVIEW_REQUIRED
+  RESTRICTED
+  BLOCKED
+}
+
+enum BnhubFraudFlagType {
+  ADDRESS_MISMATCH
+  SUSPICIOUS_PRICE
+  DUPLICATE_LISTING
+  MISSING_EXTERIOR_PHOTO
+  SUSPICIOUS_IMAGES
+  REPEATED_CONTACT_PATTERN
+  UNVERIFIABLE_HOST
+  INCONSISTENT_METADATA
+  ABNORMAL_BEHAVIOR
+  MANUAL_REVIEW
+}
+
+enum BnhubFraudSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum BnhubFraudFlagStatus {
+  OPEN
+  UNDER_REVIEW
+  RESOLVED
+  DISMISSED
+  ESCALATED
+}
+
+enum BnhubTrustIdentityUserRole {
+  HOST
+  GUEST
+  ADMIN
+  SERVICE_PROVIDER
+}
+
+enum BnhubTrustIdentityProvider {
+  STRIPE_IDENTITY
+  MANUAL
+  OTHER
+}
+
+enum BnhubTrustIdentitySessionStatus {
+  NOT_STARTED
+  PENDING
+  REQUIRES_INPUT
+  VERIFIED
+  FAILED
+  RESTRICTED
+}
+
+enum BnhubTrustGeocodeProvider {
+  GOOGLE_GEOCODING
+  MANUAL
+  OTHER
+}
+
+enum BnhubTrustGeocodeStatus {
+  PENDING
+  SUCCESS
+  PARTIAL_MATCH
+  FAILED
+  NEEDS_REVIEW
+}
+
+enum BnhubTrustStreetviewCompareStatus {
+  NOT_RUN
+  PENDING
+  MATCHED
+  WEAK_MATCH
+  NO_REFERENCE
+  FAILED
+  REVIEW_REQUIRED
+}
+
+enum BnhubTrustPayoutGateStatus {
+  NONE
+  HOLD
+  RELEASE_BLOCKED
+}
+
+enum BnhubTrustPromotionGateStatus {
+  ELIGIBLE
+  REVIEW_REQUIRED
+  BLOCKED
+}
+
+enum BnhubTrustRiskFlagTypeV2 {
+  IDENTITY_INCOMPLETE
+  ADDRESS_MISMATCH
+  SUSPICIOUS_PRICE
+  DUPLICATE_LISTING
+  REPEATED_MEDIA
+  MISSING_EXTERIOR_PHOTO
+  UNVERIFIABLE_LOCATION
+  ABNORMAL_BEHAVIOR
+  MANUAL_REVIEW
+  RESTRICTED_ZONE
+  PAYMENT_RISK
+}
+
+enum BnhubTrustRiskFlagVisibility {
+  ADMIN_ONLY
+  SAFE_HOST_VISIBLE
+}
+
+enum BnhubTrustLocationPolicyStatus {
+  PENDING
+  APPROVED
+  MANUAL_REVIEW_REQUIRED
+  RESTRICTED
+  REJECTED
+}
+
+enum BnhubTrustZonePolicyResult {
+  CLEAR
+  REVIEW_REQUIRED
+  RESTRICTED_ZONE
+  UNKNOWN
+}
+
+enum BnhubTrustAccessSafetyResult {
+  CLEAR
+  REVIEW_REQUIRED
+  RESTRICTED
+}
+
+enum BnhubTrustRestrictedZoneAction {
+  REVIEW_REQUIRED
+  RESTRICTED
+  REJECTED
+}
+
+enum BnhubTrustIdentityAuditActor {
+  SYSTEM
+  AI
+  ADMIN
+  WEBHOOK
+  HOST
+}
+
+enum BnhubPricingScopeType {
+  GLOBAL
+  CITY
+  LISTING
+  HOST
+}
+
+enum BnhubPricingRuleType {
+  WEEKEND_MULTIPLIER
+  OCCUPANCY_DEMAND
+  MIN_GUARDRAIL
+  MAX_GUARDRAIL
+  PREMIUM_BONUS
+  EVENT_BONUS
+  SEASONAL_SHIFT
+  TRUST_PENALTY
+  FRAUD_LOCK
+}
+
+enum BnhubPricingHistorySource {
+  SYSTEM
+  AI
+  ADMIN
+  HOST
+}
+
+enum MatchStatus {
+  MATCH
+  PARTIAL_MATCH
+  MISMATCH
+}
+
+enum OaciqClientDisclosureFlow {
+  OFFER_SUBMIT
+  CONTRACT_SIGN
+  AGREEMENT
+}
+
+enum OaciqBrokerDecisionType {
+  PIPELINE_DEAL_CREATE
+  CRM_DEAL_CREATE
+  OFFER_SUBMIT
+  CONTRACT_GENERATE
+  LISTING_PUBLISH
+  NEGOTIATION_STEP
+  CONTRACT_SIGN
+}
+
+enum OaciqComplianceRuleCategory {
+  DISCLOSURE
+  CONFLICT
+  CLIENT_PROTECTION
+  DOCUMENTATION
+}
+
+enum OaciqComplianceAlignmentAction {
+  DEAL_CREATE
+  LISTING_PUBLISH
+  CONTRACT_GENERATE
+}
+
+enum BnhubChannelPlatform {
+  BOOKING_COM
+  AIRBNB
+  EXPEDIA
+  VRBO
+  /// Metasearch / Google Hotels — map when partner or feed supplies a stable property ref
+  TRIVAGO
+  HOTELS_COM
+  GOOGLE_HOTEL
+  DIRECT
+  OTHER
+}
+
+enum BnhubChannelConnectionType {
+  ICAL
+  API
+}
+
+enum BnhubChannelConnectionStatus {
+  ACTIVE
+  PAUSED
+  ERROR
+}
+
+enum BnhubChannelListingMapStatus {
+  LINKED
+  PENDING
+  ERROR
+}
+
+enum BnhubChannelEventSource {
+  BNHUB
+  EXTERNAL
+}
+
+enum BnhubChannelEventKind {
+  RESERVATION
+  BLOCK
+  AVAILABILITY_UPDATE
+}
+
+enum BnhubOtaSyncType {
+  IMPORT
+  EXPORT
+}
+
+enum BnhubOtaSyncResultStatus {
+  SUCCESS
+  FAILED
+}
+
+enum BnhubDayAvailabilityStatus {
+  AVAILABLE
+  BLOCKED
+  BOOKED
+}
+
+enum BnhubBookingSource {
+  LOCAL
+  AIRBNB
+  BOOKING_COM
+  EXPEDIA
+  OTHER
+}
+
+enum BnhubChannelSyncStatus {
+  IDLE
+  OK
+  ERROR
+  SYNCING
+}
+
+enum AvailabilityBlockType {
+  HOST_BLOCK
+  BOOKING_HOLD
+  MAINTENANCE
+}
+
+enum BnhubMpAccountRole {
+  HOST
+  PLATFORM
+}
+
+enum BnhubMpProcessor {
+  STRIPE
+}
+
+enum BnhubMpOnboardingStatus {
+  NOT_STARTED
+  PENDING
+  ACTIVE
+  RESTRICTED
+  REJECTED
+}
+
+enum BnhubMpVerificationState {
+  UNVERIFIED
+  PENDING
+  VERIFIED
+  RESTRICTED
+}
+
+enum BnhubMpReservationPaymentStatus {
+  DRAFT
+  REQUIRES_ACTION
+  PROCESSING
+  AUTHORIZED
+  PAID
+  PARTIALLY_REFUNDED
+  REFUNDED
+  FAILED
+  CANCELLED
+  DISPUTED
+}
+
+enum BnhubMpCaptureMode {
+  AUTOMATIC
+  MANUAL
+  PARTIAL_CAPTURE_READY
+}
+
+enum BnhubMpFundsFlow {
+  DESTINATION_CHARGE
+  SEPARATE_CHARGE_TRANSFER
+  MANUAL_RELEASE
+}
+
+enum BnhubMpRiskHold {
+  NONE
+  HELD
+  UNDER_REVIEW
+  RELEASE_BLOCKED
+}
+
+enum BnhubMpPayoutStatus {
+  PENDING
+  SCHEDULED
+  HELD
+  IN_TRANSIT
+  PAID
+  FAILED
+  REVERSED
+  CANCELLED
+}
+
+enum BnhubMpHoldType {
+  RISK_HOLD
+  DISPUTE_HOLD
+  PAYOUT_RESERVE
+  SECURITY_HOLD
+  COMPLIANCE_HOLD
+}
+
+enum BnhubMpHoldStatus {
+  ACTIVE
+  RELEASED
+  EXPIRED
+  CANCELLED
+}
+
+enum BnhubMpRefundType {
+  FULL
+  PARTIAL
+  CANCELLATION
+  GOODWILL
+  DISPUTE_RESOLUTION
+}
+
+enum BnhubMpRefundStatus {
+  DRAFT
+  PENDING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}
+
+enum BnhubMpDisputeStatus {
+  OPEN
+  WARNING_NEEDS_RESPONSE
+  UNDER_REVIEW
+  WON
+  LOST
+  CLOSED
+}
+
+enum BnhubMpPaymentEventActor {
+  SYSTEM
+  GUEST
+  HOST
+  ADMIN
+  WEBHOOK
+}
+
+enum BnhubMpLedgerEntity {
+  PAYMENT
+  PAYOUT
+  REFUND
+  FEE
+  RESERVE
+  ADJUSTMENT
+}
+
+enum BnhubMpLedgerDirection {
+  DEBIT
+  CREDIT
+}
+
+enum BnhubMpWebhookInboxStatus {
+  RECEIVED
+  PROCESSED
+  FAILED
+  IGNORED
+}
+
+enum ShareSessionStatus {
+  ACTIVE
+  PAUSED
+  STOPPED
+  EXPIRED
+}
+
+enum ShareSessionType {
+  LIVE_LOCATION
+  STAY_STATUS_ONLY
+}
+
+enum ShareRecipientType {
+  EMAIL
+  LINK_ONLY
+}
+
+enum ShareAuditActorType {
+  GUEST
+  SYSTEM
+  ADMIN
+  RECIPIENT
+}
+
+enum ShareAuditEventType {
+  CREATED
+  LINK_OPENED
+  LOCATION_UPDATED
+  PAUSED
+  RESUMED
+  STOPPED
+  EXPIRED
+  EXTENDED
+}
+
+enum AiDisputeRiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum AiDisputeRiskSignalType {
+  MISSING_CHECKIN_DETAILS
+  MISSING_CHECKIN_COMPLETION
+  GUEST_SLOW_RESPONSE
+  HOST_SLOW_RESPONSE
+  REPEATED_BOOKING_ISSUES
+  NEGATIVE_FEEDBACK_SIGNAL
+  INCOMPLETE_LISTING_SIGNAL
+  HOST_ROOM_READINESS_MISSING
+}
+
+enum AiDisputePreventionAction {
+  GENTLE_REMINDER
+  NOTIFY_BOTH_PARTIES
+  NOTIFY_ADMIN_ESCALATION
+}
+
+enum BnhubGuaranteeStatus {
+  ACTIVE
+  CLAIMED
+  RESOLVED
+}
+
+enum BnhubTrustSimpleDisputeStatus {
+  OPEN
+  RESOLVED
+}
+
+enum DisputeStatus {
+  OPEN // New, awaiting review (legacy)
+  SUBMITTED // Guest submitted complaint
+  UNDER_REVIEW // Platform reviewing evidence
+  WAITING_FOR_HOST_RESPONSE // Host must respond within time limit
+  EVIDENCE_REVIEW // Evidence under review
+  RESOLVED // Resolution applied (legacy)
+  RESOLVED_PARTIAL_REFUND
+  RESOLVED_FULL_REFUND
+  RESOLVED_RELOCATION
+  REJECTED // Complaint rejected
+  ESCALATED // Escalated to trust & safety
+  CLOSED // No further action
+}
+
+enum DisputeClaimant {
+  GUEST
+  HOST
+}
+
+enum FraudSignalType {
+  FAKE_LISTING
+  SUSPICIOUS_BOOKING
+  PAYMENT_FRAUD
+  ACCOUNT_TAKEOVER
+  REVIEW_MANIPULATION
+  REFUND_ABUSE
+  SUSPICIOUS_MESSAGING
+}
+
+enum FraudAlertStatus {
+  NEW
+  REVIEWING
+  RESOLVED
+  DISMISSED
+}
+
+enum InvestigationStatus {
+  OPEN
+  UNDER_REVIEW
+  CLOSED
+}
+
+enum ListingFraudEnforcementType {
+  REJECT_LISTING
+  PERMANENTLY_REMOVE_LISTING
+  SUSPEND_LISTING_ACCOUNT
+  BAN_USER_ACCOUNT
+  BLOCK_FUTURE_LISTING
+  FREEZE_PAYOUTS
+  FRAUD_MARKER_PROPERTY_IDENTITY
+  REQUIRE_STRONGER_VERIFICATION
+}
+
+enum PayoutHoldStatus {
+  PENDING // Hold requested
+  ON_HOLD // Payout held
+  RELEASABLE // Window passed, can release
+  RELEASED
+  REVERSED
+  REFUNDED
+}
+
+enum ListingContactTargetKind {
+  FSBO_LISTING
+  CRM_LISTING
+
+  @@map("listing_contact_target_kind")
+}
+
+enum DealExecutionType {
+  residential_sale
+  divided_coownership_sale
+  undivided_coownership_sale
+  residential_lease
+  commercial_lease
+  income_property
+  purchase_brokerage
+  sale_brokerage
+  amendment
+  counter_proposal
+}
+
+enum ActionPipelineType {
+  DEAL
+  DOCUMENT
+  INVESTMENT
+  CLOSING
+  FINANCE
+}
+
+enum ActionPipelineStatus {
+  DRAFT
+  READY_FOR_SIGNATURE
+  SIGNED
+  EXECUTED
+}
+
+enum LecipmLegalDocumentTemplateKind {
+  PROMISE_TO_PURCHASE
+  COUNTER_PROPOSAL
+  AMENDMENT
+  BROKER_DISCLOSURE
+  CONFLICT_DISCLOSURE
+  SUBSCRIPTION_AGREEMENT
+  INVESTOR_MEMO
+  RISK_DISCLOSURE
+  EXEMPTION_REPRESENTATION
+  INVESTOR_QUESTIONNAIRE
+  DEAL_INVESTOR_HANDOFF_PACKET
+}
+
+enum LecipmLegalDocumentDomain {
+  BROKERAGE
+  INVESTMENT
+  INTERNAL_HANDOFF
+}
+
+enum LecipmLegalDocumentArtifactStatus {
+  DRAFT
+  AWAITING_APPROVAL
+  APPROVED
+  DISPATCHED
+  ARCHIVED
+  REJECTED
+}
+
+enum LecipmLegalDocumentDispatchChannel {
+  EMAIL
+  ESIGN_ENVELOPE
+  SUPPORTING_INTERNAL
+}
+
+enum LecipmLegalDocumentDispatchStatus {
+  PENDING
+  SENT
+  FAILED
+  CANCELLED
+}
+
+enum DealPartyRole {
+  buyer
+  seller
+  broker
+  co_broker
+  lessor
+  lessee
+  mandatary
+  liquidator
+  corporation_representative
+}
+
+enum DealDocumentVersionSource {
+  manual
+  ai_prefill
+  ai_suggestion
+  broker_edit
+}
+
+enum StrategyBenchmarkDomain {
+  NEGOTIATION
+  CLOSING
+  OFFER
+}
+
+enum StrategyBucketOutcome {
+  WON
+  LOST
+  STALLED
+}
+
+enum ReinforcementPolicyType {
+  EPSILON_GREEDY
+  UCB_LITE
+}
+
+enum ReinforcementBanditMode {
+  exploit
+  explore
+}
+
+enum CapitalAllocationScopeType {
+  SEGMENT
+  CHANNEL
+  BROKER
+  MARKET
+  PRODUCT
+}
+
+enum CapitalRecommendationType {
+  INCREASE
+  MAINTAIN
+  REDUCE
+  EXPERIMENT
+}
+
+enum CapitalAllocationConfidence {
+  low
+  medium
+  high
+}
+
+enum CapitalAllocationStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+enum RoiScopeType {
+  SEGMENT
+  CHANNEL
+  BROKER
+  MARKET
+  PRODUCT
+  STRATEGY
+}
+
+enum ExpansionScenarioStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum CorporateStrategyRecCategory {
+  HIRING
+  BUDGET
+  PRODUCT
+  OPERATIONS
+  EXPANSION
+}
+
+enum CorporateStrategyTriage {
+  low
+  medium
+  high
+}
+
+enum CorporateStrategyRecStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+enum EvolutionProposalCategory {
+  PLAYBOOK
+  ROUTING_WEIGHT
+  RANKING_WEIGHT
+  HANDOFF_RULE
+  FOLLOWUP_TIMING
+  THRESHOLD
+  FEATURE_SUBSET
+  OTHER
+}
+
+enum EvolutionTargetScopeType {
+  GLOBAL
+  MARKET
+  DOMAIN
+  BROKERAGE
+  SEGMENT
+}
+
+enum EvolutionProposalStatus {
+  DRAFT
+  SANDBOXED
+  READY_FOR_REVIEW
+  APPROVED
+  REJECTED
+  PROMOTED
+  ROLLED_BACK
+}
+
+enum EvolutionAuthorKind {
+  SYSTEM
+  HUMAN
+}
+
+enum EvolutionRiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum EvolutionExperimentType {
+  SHADOW
+  SANDBOX
+  LIMITED_TRAFFIC
+}
+
+enum EvolutionExperimentStatus {
+  RUNNING
+  COMPLETED
+  FAILED
+  STOPPED
+}
+
+enum EvolutionEventDecision {
+  PROMOTED
+  REJECTED
+  ROLLED_BACK
+}
+
+enum EvolutionEventActor {
+  SYSTEM
+  HUMAN
+}
+
+enum EvolutionPolicyScopeType {
+  GLOBAL
+  DOMAIN
+}
+
+enum BrokerDisclosureRole {
+  BROKER
+  BUYER
+  SELLER
+  INVESTOR
+}
+
+enum LecipmPaymentKind {
+  deposit
+  additional_sum
+  balance_due
+  trust_release
+  refund
+  fee
+}
+
+enum LecipmPaymentRecordStatus {
+  draft
+  requested
+  awaiting_payment
+  awaiting_confirmation
+  confirmed
+  held
+  release_pending
+  released
+  refund_pending
+  refunded
+  failed
+  cancelled
+}
+
+enum LecipmTrustWorkflowMode {
+  tracking_only
+  manual_trust_workflow
+  provider_connected
+  notary_coordinated
+}
+
+enum LecipmTrustWorkflowStatus {
+  not_started
+  profiled
+  funds_expected
+  funds_held
+  release_scheduled
+  released
+  closed
+}
+
+enum LecipmLedgerEntryKind {
+  request_created
+  payment_received
+  payment_confirmed
+  held_in_trust
+  released_to_notary_or_closing
+  refunded
+  adjustment
+  failure
+}
+
+enum LecipmPaymentConfirmationKind {
+  manual_broker
+  provider_webhook
+  bank_reference_upload
+  notary_attestation
+  other
+}
+
+enum NegotiationThreadStatus {
+  active
+  paused
+  closed
+  archived
+}
+
+enum NegotiationRoundStatus {
+  draft
+  open
+  responded
+  closed
+}
+
+enum NegotiationProposalType {
+  initial_offer
+  counter_offer
+  occupancy_adjustment
+  deed_date_adjustment
+  deposit_adjustment
+  financing_adjustment
+  inspection_adjustment
+  concession_bundle
+  other
+}
+
+enum NegotiationProposalSource {
+  copilot
+  broker_manual
+  imported
+}
+
+enum NegotiationProposalRecordStatus {
+  draft
+  pending_review
+  approved
+  rejected
+  superseded
+}
+
+enum NegotiationSuggestionStatus {
+  draft
+  pending_review
+  approved
+  rejected
+  applied
+}
+
+enum LecipmCrmContactType {
+  lead
+  buyer
+  seller
+  lessor
+  lessee
+  investor
+  co_broker
+  unrepresented_party
+}
+
+enum LecipmCrmPipelineLeadStatus {
+  new
+  engaged
+  warm
+  hot
+  inactive
+  converted
+  lost
+}
+
+enum LecipmBrokerTaskStatus {
+  open
+  done
+  cancelled
+}
+
+enum LecipmBrokerTaskPriority {
+  low
+  medium
+  high
+  urgent
+}
+
+enum LecipmCommDraftStatus {
+  draft
+  pending_approval
+  approved
+  rejected
+  sent
+  superseded
+}
+
+enum LecipmCommChannel {
+  email
+  sms
+  in_app
+  call_prep
+}
+
+enum LecipmCommLogDirection {
+  outbound
+  inbound
+  internal_note
+}
+
+enum LecipmBrokerThreadStatus {
+  open
+  replied
+  closed
+}
+
+enum LecipmBrokerThreadSource {
+  listing_contact
+  broker_profile
+  general_inquiry
+}
+
+enum LecipmBrokerMessageSenderRole {
+  customer
+  broker
+  admin
+  guest
+}
+
+enum LecipmBrokerCrmLeadStatus {
+  new
+  contacted
+  qualified
+  visit_scheduled
+  negotiating
+  closed
+  lost
+}
+
+enum LecipmBrokerCrmPriorityLabel {
+  low
+  medium
+  high
+}
+
+enum LecipmBrokerCrmLeadSource {
+  listing_contact
+  broker_profile
+  general_inquiry
+  booking_inquiry
+  manual
+}
+
+enum LecipmBrokerAutopilotMode {
+  off
+  assist
+  safe_autopilot
+  approval_required
+}
+
+enum LecipmBrokerAutopilotActionType {
+  follow_up_due
+  reply_now
+  schedule_visit
+  mark_qualified
+  reengage_lead
+  close_lost
+}
+
+enum LecipmBrokerAutopilotActionStatus {
+  suggested
+  queued
+  approved
+  dismissed
+  executed
+}
+
+enum BrokerTeamMemberRole {
+  owner
+  admin
+  broker
+  assistant
+  coordinator
+  analyst
+  reviewer
+}
+
+enum BrokerTeamMemberStatus {
+  invited
+  active
+  suspended
+}
+
+enum BrokerCollaborationVisibilityScope {
+  private
+  assigned_team
+  brokerage_admin
+  deal_participants_internal
+}
+
+enum BrokerCollaborationMessageType {
+  text
+  mention
+  escalation
+  review_request
+  system
+}
+
+enum BrokerDealAssignmentRole {
+  lead_broker
+  support_broker
+  transaction_coordinator
+  reviewer
+  admin_observer
+}
+
+enum BrokerDealAssignmentStatus {
+  active
+  completed
+  cancelled
+}
+
+enum BrokerInternalNoteType {
+  general
+  review
+  escalation
+  coordination
+}
+
+enum ComplianceCaseType {
+  missing_disclosure
+  representation_risk
+  document_inconsistency
+  execution_readiness_risk
+  communication_compliance_risk
+  payment_workflow_risk
+  closing_readiness_risk
+  suspicious_activity_internal
+}
+
+enum ComplianceCaseSeverity {
+  low
+  medium
+  high
+  critical
+}
+
+enum ComplianceCaseStatus {
+  open
+  under_review
+  action_required
+  resolved
+  dismissed
+  escalated
+  archived
+}
+
+enum QaReviewType {
+  pre_execution_review
+  document_quality_review
+  communication_compliance_review
+  closing_readiness_review
+  spot_audit
+  supervisor_review
+}
+
+enum QaReviewStatus {
+  draft
+  pending
+  in_progress
+  completed
+  cancelled
+}
+
+enum QaReviewOutcome {
+  approved
+  approved_with_notes
+  changes_required
+  escalated
+  rejected
+}
+
+enum QaChecklistItemStatus {
+  pending
+  passed
+  failed
+  skipped
+}
+
+enum ComplianceEscalationType {
+  supervisory
+  legal
+  risk
+  operations
+}
+
+enum ComplianceEscalationTargetRole {
+  reviewer
+  supervisor
+  admin
+  compliance_officer
+}
+
+enum ComplianceEscalationStatus {
+  open
+  acknowledged
+  resolved
+  cancelled
+}
+
+enum LecipmExecutionPipelineState {
+  draft
+  broker_review_required
+  broker_approved
+  ready_for_execution
+  execution_in_progress
+  awaiting_signature
+  partially_signed
+  fully_signed
+  conditions_pending
+  closing_ready
+  closed
+  archived
+}
+
+enum DealRequestStatus {
+  DRAFT
+  READY
+  SENT
+  AWAITING_RESPONSE
+  PARTIALLY_FULFILLED
+  FULFILLED
+  OVERDUE
+  BLOCKED
+  CANCELLED
+}
+
+enum DealRequestCategory {
+  SELLER_DOCUMENTS
+  BUYER_DOCUMENTS
+  LENDER_DOCUMENTS
+  SYNDICATE_DOCUMENTS
+  INSPECTION_DOCUMENTS
+  IDENTITY_COMPLIANCE
+  NOTARY_PREPARATION
+  CLOSING_SUPPORT
+  OTHER
+}
+
+enum CoordinationTargetRole {
+  BUYER
+  SELLER
+  BROKER
+  LENDER
+  NOTARY
+  SYNDICATE
+  INSPECTOR
+  EXPERT
+  INSURER
+}
+
+enum DealRequestItemStatus {
+  PENDING
+  RECEIVED
+  VALIDATED
+  REJECTED
+  WAIVED
+}
+
+enum RequestCommunicationChannel {
+  IN_APP
+  EMAIL_DRAFT
+  MANUAL_EXPORT
+}
+
+enum RequestCommunicationDirection {
+  OUTBOUND
+  INBOUND
+  INTERNAL_NOTE
+}
+
+enum DealFinancingCoordinationStatus {
+  NOT_STARTED
+  APPLICATION_IN_PROGRESS
+  UNDERTAKING_PENDING
+  UNDERTAKING_RECEIVED
+  ADDITIONAL_INFO_NEEDED
+  REFUSED
+  CONDITION_FULFILLED
+  CONDITION_FAILED
+}
+
+enum CoordinationContactType {
+  LENDER
+  NOTARY
+  SYNDICATE
+  INSPECTOR
+  BUYER_AGENT
+  OTHER
+}
+
+enum LecipmCoreAutopilotMode {
+  OFF
+  ASSIST
+  SAFE_AUTOPILOT
+  FULL_AUTOPILOT_APPROVAL
+}
+
+enum LecipmCoreAutopilotActionStatus {
+  pending
+  approved
+  executed
+  skipped
+  dismissed
+}
+
+enum AutopilotV2SuggestionStatus {
+  pending
+  accepted
+  rejected
+  auto_applied
+
+  @@map("autopilot_v2_suggestion_status")
+}
+
+enum PolicyRolloutStatus {
+  PENDING
+  ACTIVE
+  PAUSED
+  COMPLETED
+  ROLLED_BACK
+}
+
+enum FraudEntityType {
+  user
+  listing
+  booking
+  payment
+  message
+}
+
+enum FraudRiskLevel {
+  low
+  medium
+  high
+  critical
+}
+
+enum FraudCaseStatus {
+  open
+  under_review
+  confirmed_fraud
+  false_positive
+  resolved
+}
+
+enum FraudActionType {
+  allow
+  monitor
+  review
+  challenge
+  block
+}
+
+enum VerificationLevel {
+  basic
+  enhanced
+  full
+}
+
+enum PlatformTrustEntityType {
+  user
+  host
+  broker
+  listing
+}
+
+enum PlatformTrustTier {
+  low
+  medium
+  high
+  trusted
+}
+
+enum VerificationRequestStatus {
+  pending
+  approved
+  rejected
+}
+
+enum ReputationEntityType {
+  host
+  broker
+  seller
+  listing
+  buyer
+}
+
+enum ReputationLevel {
+  poor
+  fair
+  good
+  excellent
+}
+
+enum ReviewStatus {
+  pending
+  published
+  hidden
+  flagged
+}
+
+enum ComplaintStatus {
+  open
+  under_review
+  confirmed
+  dismissed
+  resolved
+}
+
+enum OperationalControlType {
+  KILL_SWITCH // Disable a flow (e.g. instant_booking)
+  PAYOUT_HOLD // Hold payouts for target
+  LISTING_FREEZE // Freeze listing visibility or creation
+  BOOKING_RESTRICTION // Restrict new bookings
+  MODERATION_LEVEL // Stricter moderation
+  REGIONAL_LOCK // Region-specific lock
+}
+
+enum SystemAlertSeverity {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+enum PolicyRuleType {
+  ELIGIBILITY // Who can do what
+  VISIBILITY // Listing/search visibility
+  RELEASE_CONDITION // Payout/reward release
+  VERIFICATION // Verification requirements by risk
+  AUTO_BLOCK // Auto-block conditions
+  CANCELLATION // Cancellation policy
+  REVIEW_ELIGIBILITY
+  REFERRAL_REWARD
+}
+
+enum PolicyEffect {
+  ALLOW
+  DENY
+  HOLD
+  REQUIRE_ACTION
+}
+
+enum SubscriptionPlanModule {
+  BROKER_CRM
+  HOST_PRO
+  OWNER_ANALYTICS
+  INVESTOR_ANALYTICS
+  ENTERPRISE
+}
+
+enum BillingCycle {
+  MONTHLY
+  YEARLY
+}
+
+enum PlanSubscriptionStatus {
+  ACTIVE
+  TRIALING
+  PAST_DUE
+  CANCELED
+  EXPIRED
+
+  @@map("SubscriptionStatus")
+}
+
+enum InvoiceStatus {
+  DRAFT
+  OPEN
+  PAID
+  VOID
+  UNCOLLECTIBLE
+}
+
+enum SubscriptionStatus {
+  trialing
+  active
+  past_due
+  canceled
+  unpaid
+  incomplete
+  incomplete_expired
+  paused
+
+  @@map("subscription_status")
+}
+
+enum BillingEventType {
+  checkout_completed
+  subscription_created
+  subscription_updated
+  subscription_deleted
+  invoice_payment_failed
+  invoice_paid
+
+  @@map("billing_event_type")
+}
+
+enum CopilotMessageRole {
+  user
+  assistant
+  system
+  tool
+
+  @@map("copilot_message_role")
+}
+
+enum CopilotIntent {
+  find_deals
+  analyze_property
+  improve_listing
+  why_not_selling
+  portfolio_summary
+  pricing_help
+  risk_check
+  unknown
+
+  @@map("copilot_intent")
+}
+
+enum CopilotRunStatus {
+  queued
+  completed
+  failed
+
+  @@map("copilot_run_status")
+}
+
+enum PromotionPlacement {
+  FEATURED
+  SPONSORED
+  BOOST
+}
+
+enum PromotionCampaignStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  ENDED
+}
+
+enum BnhubMarketingCampaignObjective {
+  AWARENESS
+  TRAFFIC
+  LEAD_GENERATION
+  BOOKING_CONVERSION
+  BRAND_BUILDING
+}
+
+enum BnhubMarketingCampaignStatus {
+  DRAFT
+  READY
+  SCHEDULED
+  ACTIVE
+  PAUSED
+  COMPLETED
+  ARCHIVED
+  FAILED
+}
+
+enum BnhubMarketingBudgetMode {
+  NONE
+  INTERNAL_ONLY
+  ESTIMATED
+  PAID_EXTERNAL
+}
+
+enum BnhubMarketingAssetType {
+  HEADLINE
+  CAPTION
+  LONG_DESCRIPTION
+  SEO_TITLE
+  SEO_META
+  EMAIL_COPY
+  SOCIAL_POST
+  AD_COPY
+  BROCHURE_TEXT
+  BLOG_FEED_CARD
+}
+
+enum BnhubMarketingTone {
+  LUXURY
+  PROFESSIONAL
+  FRIENDLY
+  DIRECT
+  PREMIUM
+  INVESTOR
+}
+
+enum BnhubDistributionChannelType {
+  INTERNAL
+  EXTERNAL
+  EXPORT
+}
+
+enum BnhubCampaignDistributionStatus {
+  DRAFT
+  QUEUED
+  SCHEDULED
+  PUBLISHED
+  FAILED
+  CANCELLED
+}
+
+enum BnhubMarketingEventType {
+  GENERATED
+  EDITED
+  SCHEDULED
+  PUBLISHED
+  FAILED
+  CLICKED
+  LEAD
+  BOOKING
+  RECOMMENDATION_APPLIED
+}
+
+enum BnhubMarketingEventSource {
+  SYSTEM
+  AI
+  ADMIN
+  HOST
+}
+
+enum BnhubMarketingRecommendationType {
+  CHANNEL
+  TIMING
+  CREATIVE
+  PRICING
+  PHOTO_UPGRADE
+  DESCRIPTION_UPGRADE
+  HOMEPAGE_BOOST
+}
+
+enum BnhubMarketingRecommendationPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum BnhubMarketingRecommendationStatus {
+  OPEN
+  APPLIED
+  DISMISSED
+}
+
+enum BnhubEmailCampaignQueueStatus {
+  DRAFT
+  QUEUED
+  SENT
+  CANCELLED
+}
+
+enum BnhubGrowthAutonomyLevel {
+  OFF
+  ASSISTED
+  SUPERVISED_AUTOPILOT
+  FULL_AUTOPILOT
+}
+
+enum BnhubGrowthCampaignType {
+  LISTING_PROMO
+  DESTINATION_PROMO
+  SEASONAL
+  RETARGETING
+  LEAD_GEN
+  BOOKING_CONVERSION
+}
+
+enum BnhubGrowthCampaignObjective {
+  AWARENESS
+  TRAFFIC
+  LEADS
+  INQUIRIES
+  BOOKING_CONVERSION
+  HOST_ACQUISITION
+}
+
+enum BnhubGrowthCampaignStatus {
+  DRAFT
+  READY
+  AWAITING_APPROVAL
+  SCHEDULED
+  ACTIVE
+  PAUSED
+  COMPLETED
+  FAILED
+  ARCHIVED
+}
+
+enum BnhubGrowthBudgetMode {
+  MANUAL
+  AI_RECOMMENDED
+  CAPPED_AUTOPILOT
+}
+
+enum BnhubGrowthAssetFamily {
+  HEADLINE
+  CAPTION
+  SOCIAL_PRIMARY
+  SOCIAL_VARIANT
+  AD_PRIMARY
+  AD_VARIANT
+  LANDING_COPY
+  EMAIL_COPY
+  WHATSAPP_COPY
+  SEO_TITLE
+  SEO_META
+}
+
+enum BnhubGrowthAssetApprovalStatus {
+  DRAFT
+  APPROVED
+  REJECTED
+}
+
+enum BnhubGrowthConnectorType {
+  ADS
+  MESSAGING
+  INTERNAL
+  EXPORT
+}
+
+enum BnhubGrowthConnectorStatus {
+  INACTIVE
+  SETUP_REQUIRED
+  ACTIVE
+  ERROR
+  RESTRICTED
+}
+
+enum BnhubGrowthDistributionStatus {
+  DRAFT
+  QUEUED
+  AWAITING_APPROVAL
+  SCHEDULED
+  PUBLISHING
+  PUBLISHED
+  FAILED
+  CANCELLED
+}
+
+enum BnhubLeadSourceType {
+  INTERNAL_FORM
+  META_LEAD
+  GOOGLE_LEAD
+  TIKTOK_LEAD
+  WHATSAPP_MESSAGE
+  MANUAL
+  IMPORT
+}
+
+enum BnhubLeadType {
+  GUEST_BOOKING
+  SHORT_TERM_INQUIRY
+  HOST_SIGNUP
+  BROKER_LEAD
+  INVESTOR_LEAD
+}
+
+enum BnhubLeadTemperature {
+  COLD
+  WARM
+  HOT
+}
+
+enum BnhubLeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  CONVERTED
+  LOST
+  SPAM
+}
+
+enum BnhubLeadEventType {
+  CREATED
+  SYNCED
+  SCORED
+  ASSIGNED
+  CONTACTED
+  QUALIFIED
+  CONVERTED
+  CLOSED
+  SPAM_FLAGGED
+}
+
+enum BnhubLeadEventSource {
+  SYSTEM
+  AI
+  CONNECTOR
+  ADMIN
+  HOST
+}
+
+enum BnhubGrowthEngineRecommendationType {
+  LAUNCH
+  CHANNEL_SHIFT
+  BUDGET_SHIFT
+  COPY_REFRESH
+  CREATIVE_REFRESH
+  LANDING_FIX
+  PRICING_FIX
+  PAUSE_CAMPAIGN
+  BOOST_INTERNAL
+  WHATSAPP_FOLLOWUP
+}
+
+enum BnhubGrowthEngineRecommendationStatus {
+  OPEN
+  APPLIED
+  DISMISSED
+  EXPIRED
+}
+
+enum BnhubGrowthEngineRecommendationPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum BnhubGrowthRuleScopeType {
+  GLOBAL
+  HOST
+  LISTING
+  CAMPAIGN
+}
+
+enum BnhubGrowthRuleTriggerType {
+  LISTING_APPROVED
+  DAILY_SCAN
+  LEAD_DROP
+  LOW_CTR
+  HIGH_CPL
+  HIGH_CONVERSION
+  NO_EXTERIOR_PHOTO
+  NO_RESPONSE
+  ABANDONED_INQUIRY
+}
+
+enum BnhubConnectorTokenOwnerType {
+  SYSTEM
+  ADMIN
+  HOST
+}
+
+enum BnhubConnectorTokenStatus {
+  ACTIVE
+  REVOKED
+  EXPIRED
+  ROTATING
+}
+
+enum BnhubGrowthAuditActorType {
+  SYSTEM
+  AI
+  ADMIN
+  HOST
+  CONNECTOR_WEBHOOK
+}
+
+enum GrowthCampaignStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  ENDED
+}
+
+enum LifecycleStage {
+  ONBOARDING
+  ACTIVE
+  AT_RISK
+  CHURNED
+  REACTIVATED
+}
+
+enum RevenueLedgerType {
+  BOOKING_COMMISSION
+  REAL_ESTATE_COMMISSION
+  SUBSCRIPTION
+  PROMOTION
+  REFERRAL_COST
+  REFUND
+  CHARGEBACK
+  INCENTIVE
+  PAYOUT
+}
+
+enum AiAlertType {
+  FRAUD_SPIKE
+  DISPUTE_SPIKE
+  LISTING_QUALITY_DROP
+  CANCELLATION_ANOMALY
+  DEMAND_CHANGE
+  REGIONAL_RISK
+  MODEL_DRIFT
+}
+
+enum AdminReportPeriodType {
+  DAILY
+  WEEKLY
+  MONTHLY
+  YEARLY
+}
+
+enum OaciqClauseLibraryCategory {
+  brokerage_contract
+  amendment
+  promise_to_purchase
+  other
+  enterprise_sale
+}
+
+enum OaciqClauseFormVersion {
+  forms_2022_mandatory @map("2022_mandatory")
+}
+
+enum AbuseSignalType {
+  REPEAT_OFFENDER
+  LINKED_ACCOUNT
+  EVASION_AFTER_SUSPENSION
+  ABUSIVE_MESSAGING
+  ABUSIVE_BOOKING
+  REFUND_ABUSE
+  PROMOTION_ABUSE
+  REFERRAL_ABUSE
+  BAN_EVASION
+}
+
+enum ApprovalRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum CrisisSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum EnforcementActionType {
+  WARNING
+  TEMPORARY_RESTRICTION
+  LISTING_FREEZE
+  BOOKING_LIMITATION
+  PAYOUT_HOLD
+  ACCOUNT_SUSPENSION
+  PERMANENT_BAN
+  MARKET_SPECIFIC
+}
+
+enum AppealStatus {
+  PENDING
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  WITHDRAWN
+}
+
+enum TrustSafetyIncidentStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  WAITING_RESPONSE
+  ESCALATED
+  RESOLVED
+  CLOSED
+}
+
+enum TrustSafetySeverity {
+  LOW
+  MEDIUM
+  HIGH
+  EMERGENCY
+}
+
+enum TrustSafetyRiskLevel {
+  LOW_RISK
+  MEDIUM_RISK
+  HIGH_RISK
+  CRITICAL_RISK
+}
+
+enum TrustSafetyActionType {
+  WARNING
+  LISTING_WARNING
+  BOOKING_RESTRICTION
+  PAYOUT_HOLD
+  LISTING_FREEZE
+  ACCOUNT_SUSPENSION
+  PERMANENT_LISTING_REMOVAL
+  PERMANENT_ACCOUNT_BAN
+  REFUND
+  ADDITIONAL_VERIFICATION_REQUIRED
+  MANUAL_REVIEW_REQUIRED
+}
+
+enum TrustSafetyAppealStatus {
+  PENDING
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  WITHDRAWN
+}
+
+enum LeadContactOrigin {
+  IMMO_CONTACT
+  PLATFORM_BROKER
+  DIRECT
+  /// Buyer Hub / marketplace inquiry (sale listing contact)
+  BUYER
+}
+
+enum LecipmListingAssetType {
+  HOUSE
+  CONDO
+  MULTI_UNIT
+  TOWNHOUSE
+  LAND
+  OTHER
+}
+
+enum ComplianceChecklistItemStatus {
+  PENDING
+  COMPLETED
+  NOT_APPLICABLE
+}
+
+enum ChecklistItemCategory {
+  COOWNERSHIP
+  INSURANCE
+}
+
+enum ComplianceVerificationLevel {
+  DECLARED
+  DOCUMENTED
+  VERIFIED
+}
+
+enum ChecklistPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum LecipmListingCentrisPublicationState {
+  DRAFT
+  READY_FOR_CENTRIS
+  PUBLISHED_INTERNAL
+  PUBLISHED_CENTRIS
+}
+
+enum OaciqMandatoryFormVersion {
+  REFORM_2022_MANDATORY @map("2022_mandatory")
+}
+
+enum BrokerageContractType {
+  exclusive     @map("exclusive")
+  non_exclusive @map("non_exclusive")
+}
+
+enum BrokerageContractStatus {
+  draft      @map("draft")
+  active     @map("active")
+  expired    @map("expired")
+  terminated @map("terminated")
+}
+
+enum DeclarationDisclosureMethod {
+  auto          @map("auto")
+  broker_manual @map("broker_manual")
+}
+
+enum ComplianceFormEntityType {
+  contract    @map("contract")
+  declaration @map("declaration")
+  identity    @map("identity")
+}
+
+enum ComplianceFormAction {
+  created         @map("created")
+  updated         @map("updated")
+  signed          @map("signed")
+  refused         @map("refused")
+  validated       @map("validated")
+  expired         @map("expired")
+  version_checked @map("version_checked")
+}
+
+enum LecipmIdentityProofMethod {
+  in_person @map("in_person")
+  remote    @map("remote")
+}
+
+enum LecipmIdentityProofVisibility {
+  broker_only     @map("broker_only")
+  compliance_only @map("compliance_only")
+}
+
+enum EarlyUserTrackingType {
+  HOST
+  GUEST
+}
+
+enum EarlyUserTrackingStatus {
+  CONTACTED
+  REPLIED
+  SIGNED_UP
+  ONBOARDED
+}
+
+enum LeadPriorityTier {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum GrowthEngineLeadRole {
+  owner
+  broker
+  buyer
+  host
+}
+
+enum GrowthEngineLeadSource {
+  form
+  csv
+  manual
+  referral
+}
+
+enum GrowthEnginePermissionStatus {
+  unknown
+  requested
+  granted
+  rejected
+  granted_by_source
+}
+
+enum GrowthEngineLeadStage {
+  new
+  contacted
+  interested
+  awaiting_assets
+  converted
+  lost
+}
+
+enum GrowthEngineBrokerRoute {
+  unspecified
+  real_estate
+  mortgage
+  both
+}
+
+enum GrowthEngineLeadUrgency {
+  unspecified
+  hot
+  mid
+  long_term
+}
+
+enum GrowthBrainDomain {
+  supply
+  demand
+  seo
+  content
+  conversion
+  revenue
+  retention
+}
+
+enum GrowthBrainPriority {
+  low
+  medium
+  high
+}
+
+enum GrowthBrainApprovalStatus {
+  pending
+  approved
+  rejected
+  executed
+}
+
+enum EnterpriseLeadSegment {
+  PROPERTY_MANAGEMENT
+  REAL_ESTATE_AGENCY
+  MULTI_PROPERTY_HOST
+  STR_OPERATOR
+  TRAVEL_BUSINESS
+}
+
+enum EnterpriseLeadStage {
+  LEAD_IDENTIFIED
+  CONTACTED
+  INTERESTED
+  DEMO_SCHEDULED
+  NEGOTIATION
+  CLOSED_WON
+  CLOSED_LOST
+}
+
+enum UserEventType {
+  ANALYZE
+  SAVE_DEAL
+  COMPARE
+  VISIT_PAGE
+  WAITLIST_SIGNUP
+  RETURN_VISIT
+  /// LECIPM + BNHub product funnel (growth dashboard)
+  SIGNUP
+  LOGIN
+  LISTING_VIEW
+  FAVORITE
+  INQUIRY
+  BOOKING_START
+  CHECKOUT_START
+  PAYMENT_SUCCESS
+  PAYMENT_FAILED
+  STRIPE_WEBHOOK
+  /// Live funnel / monitoring (search, messaging, AI)
+  SEARCH_PERFORMED
+  MESSAGE_SENT
+  AI_REPLY_SENT
+}
+
+enum GrowthEmailQueueType {
+  WELCOME
+  REMINDER
+  FOLLOWUP
+}
+
+enum GrowthEmailQueueStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+enum OaciqFormFamily {
+  PPG
+  CP
+  DS
+  IV
+  ANNEX_G
+  ANNEX_R
+  ANNEX_RC
+  ANNEX_L
+  SYNDICATE_REQUEST
+  MORTGAGE_REQUEST
+  DISCLOSURE_NOTICE
+  LISTING_CONTRACT
+  BUYER_CONTRACT
+  LEASE_CONTRACT
+  OTHER
+}
+
+enum OaciqPdfFieldKind {
+  text
+  checkbox
+  date
+  signature
+  dropdown
+  radio
+  unknown
+}
+
+enum LecipmFormInstanceStatus {
+  draft
+  ai_generated
+  broker_review
+  client_review
+  signed
+  archived
+}
+
+enum OfferStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  COUNTERED
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
+  EXPIRED
+}
+
+enum OfferEventType {
+  CREATED
+  SUBMITTED
+  STATUS_CHANGED
+  COUNTERED
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
+  NOTE_ADDED
+}
+
+enum BrokerClientStatus {
+  LEAD
+  CONTACTED
+  QUALIFIED
+  VIEWING
+  NEGOTIATING
+  UNDER_CONTRACT
+  CLOSED
+  LOST
+}
+
+enum BrokerInteractionType {
+  NOTE
+  EMAIL
+  CALL
+  MEETING
+  TASK
+  FOLLOW_UP
+  STATUS_CHANGE
+}
+
+enum BrokerClientListingKind {
+  SAVED
+  SHARED
+  VIEWED
+  FAVORITE
+}
+
+enum AppointmentType {
+  PROPERTY_VISIT
+  CALL
+  MEETING
+  CONSULTATION
+  DOCUMENT_REVIEW
+  OFFER_DISCUSSION
+  CONTRACT_SIGNING
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  RESCHEDULE_REQUESTED
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+}
+
+enum MeetingMode {
+  IN_PERSON
+  PHONE
+  VIDEO
+}
+
+enum AppointmentEventType {
+  REQUESTED
+  CONFIRMED
+  RESCHEDULED
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+  NOTE_ADDED
+  STATUS_CHANGED
+}
+
+enum ConversationType {
+  DIRECT
+  LISTING
+  OFFER
+  CONTRACT
+  APPOINTMENT
+  CLIENT_THREAD
+  SUPPORT
+}
+
+enum MessageType {
+  TEXT
+  SYSTEM
+  NOTE
+  VOICE
+}
+
+enum MessageEventType {
+  CONVERSATION_CREATED
+  PARTICIPANT_ADDED
+  MESSAGE_SENT
+  MESSAGE_EDITED
+  MESSAGE_DELETED
+  CONVERSATION_ARCHIVED
+  READ
+}
+
+enum DocumentFolderType {
+  GENERAL
+  LISTING_ROOM
+  CLIENT_ROOM
+  OFFER_ROOM
+  CONTRACT_ROOM
+  APPOINTMENT_ROOM
+  CONVERSATION_ROOM
+}
+
+enum DocumentFileStatus {
+  UPLOADING
+  AVAILABLE
+  ARCHIVED
+  DELETED
+  FAILED
+}
+
+enum DocumentVisibility {
+  PRIVATE_INTERNAL
+  SHARED_PARTICIPANTS
+  BROKER_ONLY
+  CLIENT_VISIBLE
+  ADMIN_ONLY
+}
+
+enum DocumentCategory {
+  IDENTITY
+  FINANCIAL
+  CONTRACT
+  DISCLOSURE
+  PROPERTY
+  APPOINTMENT
+  MESSAGE_ATTACHMENT
+  OTHER
+}
+
+enum DocumentAccessLevel {
+  VIEW
+  COMMENT
+  EDIT
+  MANAGE
+}
+
+enum DocumentEventType {
+  FOLDER_CREATED
+  FILE_UPLOADED
+  FILE_RENAMED
+  FILE_MOVED
+  FILE_ARCHIVED
+  FILE_DELETED
+  FILE_SHARED
+  FILE_VIEWED
+  FILE_DOWNLOADED
+  ACCESS_CHANGED
+}
+
+enum ClientIntakeStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  UNDER_REVIEW
+  COMPLETE
+  ON_HOLD
+}
+
+enum RequiredDocumentCategory {
+  IDENTITY
+  INCOME
+  BANKING
+  TAX
+  RESIDENCY
+  CREDIT
+  EMPLOYMENT
+  CORPORATE
+  PROPERTY
+  OTHER
+}
+
+enum RequiredDocumentStatus {
+  REQUIRED
+  REQUESTED
+  UPLOADED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  WAIVED
+}
+
+enum ClientIntakeEventType {
+  INTAKE_CREATED
+  INTAKE_UPDATED
+  STATUS_CHANGED
+  DOCUMENT_REQUESTED
+  DOCUMENT_UPLOADED
+  DOCUMENT_LINKED
+  DOCUMENT_APPROVED
+  DOCUMENT_REJECTED
+  DOCUMENT_WAIVED
+  NOTE_ADDED
+}
+
+enum NotificationType {
+  MESSAGE
+  OFFER
+  CONTRACT
+  APPOINTMENT
+  DOCUMENT
+  INTAKE
+  CRM
+  SYSTEM
+  TASK
+  REMINDER
+  FINANCE
+  DISPUTE_CASE
+}
+
+enum NotificationStatus {
+  UNREAD
+  READ
+  ARCHIVED
+}
+
+enum NotificationPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum ActionQueueItemType {
+  REVIEW_DOCUMENT
+  REVIEW_OFFER
+  REVIEW_CONTRACT
+  RESPOND_MESSAGE
+  CONFIRM_APPOINTMENT
+  FOLLOW_UP_CLIENT
+  COMPLETE_INTAKE
+  SIGN_CONTRACT
+  UPLOAD_REQUIRED_DOCUMENT
+  REVIEW_COUNTER_OFFER
+  INTERNAL_TASK
+  SYSTEM_ACTION
+  REVIEW_COMMISSION
+  ISSUE_INVOICE
+  RECORD_PAYMENT
+  FOLLOW_UP_OVERDUE_INVOICE
+}
+
+enum ActionQueueItemStatus {
+  OPEN
+  IN_PROGRESS
+  DONE
+  DISMISSED
+  ARCHIVED
+}
+
+enum NotificationEventType {
+  CREATED
+  READ
+  ARCHIVED
+  ACTION_COMPLETED
+  ACTION_DISMISSED
+  STATUS_CHANGED
+}
+
+enum ClientFollowUpType {
+  NEW_MATCH
+  INACTIVITY_NUDGE
+  BIRTHDAY_GREETING
+  BROKER_REENGAGE
+}
+
+enum ClientFollowUpStatus {
+  PENDING
+  SENT
+  SKIPPED
+  FAILED
+}
+
+enum TenantStatus {
+  ACTIVE
+  TRIAL
+  SUSPENDED
+  ARCHIVED
+}
+
+enum TenantRole {
+  TENANT_OWNER
+  TENANT_ADMIN
+  BROKER
+  ASSISTANT
+  STAFF
+  VIEWER
+}
+
+enum TenantMembershipStatus {
+  ACTIVE
+  INVITED
+  SUSPENDED
+  REMOVED
+}
+
+enum CommissionStatus {
+  PENDING
+  APPROVED
+  PAID
+  CANCELLED
+}
+
+enum TenantInvoiceType {
+  COMMISSION
+  SERVICE_FEE
+  BROKER_FEE
+  PLATFORM_FEE
+  OTHER
+}
+
+enum TenantInvoiceStatus {
+  DRAFT
+  ISSUED
+  PARTIALLY_PAID
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+enum PaymentRecordType {
+  INCOMING
+  OUTGOING
+  ADJUSTMENT
+}
+
+enum PaymentRecordStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}
+
+enum SellerDeclarationDraftStatus {
+  draft
+  in_review
+  needs_changes
+  ready
+  finalized
+  approved
+  exported
+  signed
+}
+
+enum DocumentSignatureStatus {
+  pending
+  viewed
+  signed
+  declined
+}
+
+enum LegalGraphIssueStatus {
+  open
+  resolved
+  dismissed
+}
+
+enum LegalGraphIssueSeverity {
+  info
+  warning
+  critical
+}
+
+enum KnowledgeDocumentType {
+  law
+  drafting
+  internal
+}
+
+enum KnowledgeChunkSemanticType {
+  declaration
+  obligation
+  clause
+  process
+}
+
+enum KnowledgeChunkAudience {
+  seller
+  buyer
+  broker
+  transaction
+}
+
+enum KnowledgeChunkImportance {
+  mandatory
+  optional
+}
+
+enum AutoDraftingActionType {
+  generate
+  section
+  clause
+  rewrite_notes
+  follow_up
+  review_summary
+}
+
+enum AutonomousWorkflowTaskStatus {
+  pending
+  approved
+  dismissed
+  completed
+  blocked
+}
+
+enum WorkflowAutomationEventStatus {
+  success
+  skipped
+  blocked
+  failed
+  pending
+  completed
+  dismissed
+  approved
+}
+
+enum ModelValidationRunStatus {
+  draft
+  in_progress
+  completed
+  archived
+}
+
+enum ModelValidationRunKind {
+  baseline
+  tuned_same_set
+  tuned_fresh_set
+}
+
+enum CalibrationBatchStatus {
+  draft
+  running
+  completed
+  failed
+}
+
+enum CalibrationDriftSeverity {
+  info
+  warning
+  critical
+}
+
+enum CalibrationDriftAlertStatus {
+  open
+  acknowledged
+  dismissed
+}
+
+enum LeadMarketplaceStatus {
+  available
+  reserved
+  sold
+  withdrawn
+
+  @@map("lead_marketplace_status")
+}
+
+enum DailyDealFeedInteractionType {
+  viewed
+  saved
+  ignored
+  analyzed
+  contacted
+  clicked
+  dismissed
+
+  @@map("daily_deal_feed_interaction_type")
+}
+
+enum WatchlistAlertStatus {
+  unread
+  read
+  dismissed
+
+  @@map("watchlist_alert_status")
+}
+
+enum WatchlistAlertSeverity {
+  info
+  warning
+  critical
+
+  @@map("watchlist_alert_severity")
+}
+
+enum WatchlistAlertType {
+  price_changed
+  deal_score_up
+  deal_score_down
+  trust_score_changed
+  fraud_risk_up
+  confidence_up
+  confidence_down
+  listing_status_changed
+  strong_opportunity_detected
+  needs_review_detected
+
+  @@map("watchlist_alert_type")
+}
+
+enum FeaturedListingStatus {
+  pending_payment
+  scheduled
+  active
+  expired
+  cancelled
+  refunded
+
+  @@map("featured_listing_status")
+}
+
+enum AlertCandidateStatus {
+  candidate
+  blocked
+  approved
+  queued
+  sent
+  suppressed
+  failed
+
+  @@map("alert_candidate_status")
+}
+
+enum NegotiationChainStatus {
+  active
+  accepted
+  rejected
+
+  @@map("negotiation_chain_status")
+}
+
+enum NegotiationVersionRole {
+  buyer
+  seller
+  broker
+
+  @@map("negotiation_version_role")
+}
+
+enum NegotiationVersionStatus {
+  pending
+  accepted
+  rejected
+
+  @@map("negotiation_version_status")
+}
+
+enum GrowthMarketingPlatform {
+  INSTAGRAM
+  LINKEDIN
+  YOUTUBE
+  TIKTOK
+  BLOG
+  EMAIL
+}
+
+enum GrowthMarketingChannelStatus {
+  PENDING
+  CONNECTED
+  EXPIRED
+  REVOKED
+  ERROR
+}
+
+enum GrowthContentItemStatus {
+  DRAFT
+  PENDING_REVIEW
+  APPROVED
+  SCHEDULED
+  PUBLISHED
+  FAILED
+}
+
+enum LecipmConversionSubscriptionStatus {
+  trial
+  active
+  past_due
+  canceled
+  incomplete
+  expired
+
+  @@map("lecipm_conversion_subscription_status")
+}
+
+enum BnhubSafetyReviewStatus {
+  PENDING
+  APPROVED
+  RESTRICTED
+  REJECTED
+  MANUAL_REVIEW_REQUIRED
+}
+
+enum BnhubSafetyFlagStatus {
+  OPEN
+  UNDER_REVIEW
+  RESOLVED
+  DISMISSED
+}
+
+enum BnhubSafetyFlagSeverity {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum BnhubMobileNotificationChannel {
+  PUSH
+  IN_APP
+  EMAIL
+}
+
+enum BnhubMobileNotificationStatus {
+  PENDING
+  SENT
+  FAILED
+  CANCELLED
+}
+
+enum BnhubReviewModerationStatus {
+  VISIBLE
+  PENDING
+  HIDDEN
+}
+
+enum BnhubBookingFunnelStage {
+  STARTED
+  CHECKOUT
+  PAID
+  CANCELLED
+}
+
+enum BnhubDiscoveryAlertType {
+  PRICE_DROP
+  NEW_LISTING
+  PROMOTION
+}
+
+enum BnhubAddonServiceCategory {
+  TRANSPORT
+  FOOD
+  CLEANING
+  CONVENIENCE
+  EXPERIENCE
+  ACCESS
+  HOSPITALITY
+  CONCIERGE
+}
+
+enum BnhubServiceScope {
+  LISTING_HOSTED
+  PLATFORM_MANAGED
+  PARTNER_MANAGED
+  REQUEST_ONLY
+}
+
+enum BnhubCatalogPricingBehavior {
+  FREE
+  FIXED
+  PER_DAY
+  PER_GUEST
+  PER_BOOKING
+  QUOTE_REQUIRED
+}
+
+enum BnhubListingServicePricingType {
+  FREE
+  FIXED
+  PER_DAY
+  PER_GUEST
+  PER_BOOKING
+  QUOTE_REQUIRED
+}
+
+enum BnhubListingServiceModerationStatus {
+  APPROVED
+  PENDING_REVIEW
+  RESTRICTED
+  SUSPENDED
+}
+
+enum BnhubBookingServiceLineStatus {
+  REQUESTED
+  PENDING_APPROVAL
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  REJECTED
+}
+
+enum BnhubServiceSelectedFrom {
+  BOOKING_FLOW
+  POST_BOOKING
+  CONCIERGE
+  BUNDLE
+}
+
+enum BnhubServiceRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  COMPLETED
+  CANCELLED
+}
+
+enum BnhubServiceRequestType {
+  SERVICE_REQUEST
+  CONCIERGE_REQUEST
+  EARLY_CHECKIN
+  LATE_CHECKOUT
+  TRANSPORT_QUOTE
+  CUSTOM_REQUEST
+}
+
+enum BnhubBundleTargetSegment {
+  ROMANTIC
+  FAMILY
+  BUSINESS
+  LUXURY
+  LONG_STAY
+  ARRIVAL
+  WELLNESS
+  CUSTOM
+}
+
+enum BnhubBundlePricingType {
+  FIXED
+  DYNAMIC
+  MIXED
+}
+
+enum BnhubBundleVisibilityScope {
+  PUBLIC
+  MEMBERS_ONLY
+  HOST_SELECTED
+  ADMIN_SELECTED
+}
+
+enum BnhubBookingBundleStatus {
+  SELECTED
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+enum BnhubConciergeRoleContext {
+  GUEST
+  HOST
+  ADMIN
+}
+
+enum BnhubConciergeSessionStatus {
+  ACTIVE
+  CLOSED
+  ESCALATED
+}
+
+enum BnhubConciergeAiMode {
+  MOCK
+  FALLBACK
+  PROVIDER
+}
+
+enum BnhubConciergeSenderType {
+  USER
+  AI
+  ADMIN
+  HOST
+}
+
+enum BnhubConciergeMessageType {
+  TEXT
+  RECOMMENDATION
+  BUNDLE_OFFER
+  SERVICE_OFFER
+  ESCALATION_NOTE
+}
+
+enum BnhubMembershipAudienceType {
+  GUEST
+  HOST
+  UNIVERSAL
+}
+
+enum BnhubMembershipBillingCycle {
+  MONTHLY
+  YEARLY
+  ONE_TIME
+}
+
+enum BnhubUserMembershipStatus {
+  ACTIVE
+  TRIALING
+  PAUSED
+  EXPIRED
+  CANCELLED
+}
+
+enum BnhubMembershipRenewalMode {
+  AUTO
+  MANUAL
+}
+
+enum BnhubProviderType {
+  HOST
+  PARTNER
+  PLATFORM
+}
+
+enum BnhubProviderVerificationStatus {
+  UNVERIFIED
+  PENDING
+  VERIFIED
+  RESTRICTED
+}
+
+enum BnhubHospitalitySafetyScopeType {
+  GLOBAL
+  LISTING
+  HOST
+  REGION
+  SAFETY_STATUS
+}
+
+enum BnhubHospitalityAuditActorType {
+  SYSTEM
+  AI
+  GUEST
+  HOST
+  ADMIN
+}
+
+enum BnhubTravelProductType {
+  HOTEL
+  TRANSPORT
+  FLIGHT
+  ACTIVITY
+  PARTNER_SERVICE
+}
+
+enum BnhubTravelProductStatus {
+  DRAFT
+  ACTIVE
+  RESTRICTED
+  ARCHIVED
+}
+
+enum MarketingContentType {
+  SOCIAL_POST
+  CAPTION
+  EMAIL
+  GROWTH_IDEA
+}
+
+enum MarketingContentStatus {
+  DRAFT
+  APPROVED
+  SCHEDULED
+  PUBLISHED
+  /// Publish pipeline in progress (claimed by worker or admin publish)
+  PUBLISHING
+  /// Last publish attempt failed (see marketing_publish_jobs)
+  FAILED
+}
+
+enum MarketingPublishChannel {
+  EMAIL
+  X
+  LINKEDIN
+  INSTAGRAM
+  TIKTOK
+}
+
+enum MarketingPublishJobStatus {
+  SCHEDULED
+  RUNNING
+  SUCCESS
+  FAILED
+  DRY_RUN
+}
+
+enum MarketingBlogPostStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum MarketingSystemEventCategory {
+  FUNNEL
+  PERFORMANCE
+}
+
+enum InsuranceLeadType {
+  TRAVEL
+  PROPERTY
+  MORTGAGE
+}
+
+enum InsuranceLeadSource {
+  BNBHUB
+  LISTING
+  CHECKOUT
+  MANUAL
+}
+
+enum InsuranceLeadStatus {
+  NEW
+  /// Broker acknowledged outreach — does not imply a quote was issued.
+  CONTACTED
+  SENT
+  CONVERTED
+  REJECTED
+}
+
+enum InsuranceLeadFunnelEventType {
+  LEAD_FORM_VIEWED
+  LEAD_STARTED
+  LEAD_SUBMITTED
+  LEAD_FAILED
+}
+
+enum ListingAnalyticsKind {
+  FSBO
+  CRM
+  BNHUB
+}
+
+enum LecipmVisitRequestStatus {
+  pending
+  accepted
+  rejected
+  cancelled
+}
+
+enum LecipmVisitStatus {
+  scheduled
+  completed
+  cancelled
+  no_show
+}
+
+enum LecipmVisitWorkflowState {
+  BOOKED
+  CONFIRMED
+  REMINDER_SENT
+  RESCHEDULE_REQUESTED
+  RESCHEDULED
+  NO_SHOW_RISK_HIGH
+  MISSED
+  COMPLETED
+  CANCELED
+}
+
+enum LecipmNoShowRiskBand {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum LecipmLegalBoundaryEntityType {
+  LISTING
+  DEAL
+  BOOKING
+}
+
+enum LecipmLegalBoundaryTransactionMode {
+  BROKERED
+  FSBO
+}
+
+enum LecipmLegalBoundaryComplianceState {
+  SAFE
+  RESTRICTED
+  BLOCKED
+}
+
+enum LecipmLegalBoundaryModeSource {
+  AUTO
+  CONVERSION
+}
+
+enum InvestorQACategory {
+  product
+  growth
+  financials
+  competition
+  strategy
+}
+
+enum InvestorQADifficulty {
+  easy
+  medium
+  hard
+}
+
+enum AnalyticsFunnelEventName {
+  listing_view
+  contact_click
+  visit_request
+  visit_confirmed
+  deal_started
+  payment_completed
+  landing_visit
+  search_used
+  listing_click
+  booking_started
+}
+
+enum AdminAiInsightType {
+  daily_summary
+  alert
+  recommendation
+  listing_diagnosis
+  revenue_summary
+  user_intent_summary
+}
+
+enum AdminAiInsightPriority {
+  low
+  medium
+  high
+  critical
+}
+
+enum AdminAiEntityType {
+  listing
+  user
+  revenue
+  document_request
+  payment
+  support
+  funnel
+}
+
+enum AdminAiRunStatus {
+  queued
+  running
+  completed
+  failed
+}
+
+enum DealRoomStage {
+  new_interest
+  qualified
+  visit_scheduled
+  visit_completed
+  offer_preparing
+  offer_submitted
+  negotiating
+  accepted
+  documents_pending
+  payment_pending
+  closed
+  lost
+}
+
+enum DealPriorityLabel {
+  low
+  medium
+  high
+}
+
+enum DealTaskStatus {
+  todo
+  in_progress
+  done
+  blocked
+}
+
+enum DealDocumentRefType {
+  uploaded_file
+  legal_form_draft
+  external
+}
+
+enum DealDocumentStatus {
+  requested
+  in_progress
+  review_required
+  completed
+}
+
+enum DealPaymentType {
+  listing_fee
+  booking_payment
+  deposit
+  commission
+  lead_fee
+}
+
+enum DealPaymentStatus {
+  pending
+  paid
+  failed
+  waived
+}
+
+enum DealParticipantRole {
+  broker
+  buyer
+  seller
+  client
+  admin
+  guest
+}
+
+enum ExperimentStatus {
+  draft
+  running
+  paused
+  completed
+  archived
+}
+
+enum OfficeMembershipStatus {
+  invited
+  active
+  suspended
+  left
+}
+
+enum OfficeMembershipRole {
+  office_owner
+  office_admin
+  managing_broker
+  /// @deprecated use residential_broker — kept for backward compatibility
+  broker
+  residential_broker
+  broker_assistant
+  /// @deprecated use transaction_coordinator
+  coordinator
+  transaction_coordinator
+  finance_admin
+  reviewer
+}
+
+enum BrokerageOfficeType {
+  residential_only
+}
+
+enum OfficeTeamType {
+  residential_sales
+  buyer_rep
+  seller_rep
+  transaction_support
+}
+
+enum CommissionPlanScope {
+  residential_only
+}
+
+enum ResidentialTransactionType {
+  residential_sale
+  residential_purchase_representation
+  residential_listing_side
+  divided_coownership
+  undivided_coownership
+  residential_lease
+}
+
+enum BrokerageCommissionPlanStatus {
+  draft
+  active
+  archived
+}
+
+enum BrokerageCommissionCaseStatus {
+  draft
+  calculated
+  pending_review
+  approved
+  invoiced
+  payout_ready
+  paid
+  disputed
+  archived
+}
+
+enum BrokerageCommissionSplitCategory {
+  office_share
+  broker_share
+  team_share
+  referral_share
+  external_broker
+  deduction
+  fee
+}
+
+enum BrokerageSplitPayeeKind {
+  office
+  broker
+  team
+  external
+  platform
+}
+
+enum OfficeInvoiceStatus {
+  draft
+  issued
+  due
+  paid
+  overdue
+  cancelled
+  disputed
+}
+
+enum OfficeInvoiceType {
+  office_fee
+  transaction_admin
+  marketing
+  software_platform
+  compliance_review
+  referral
+  external_brokerage
+  commission_record
+  other
+}
+
+enum OfficeInvoiceLineType {
+  line_item
+  adjustment
+  tax
+}
+
+enum OfficePayoutStatus {
+  draft
+  ready
+  approved
+  sent
+  paid
+  failed
+  reversed
+}
+
+enum OfficePayoutLineSourceType {
+  commission_case
+  invoice_adjustment
+  manual
+}
+
+enum OfficeReconciliationRecordType {
+  commission
+  invoice
+  payout
+  deal
+}
+
+enum OfficeReconciliationStatus {
+  open
+  matched
+  discrepancy
+  resolved
+}
+
+enum ExecutiveBriefingStatus {
+  draft
+  generated
+  reviewed
+  delivered
+  archived
+}
+
+enum ExecutiveBriefingDeliveryChannel {
+  in_app
+  download
+  email_draft
+}
+
+enum ExecutiveBriefingDeliveryStatus {
+  pending
+  completed
+  failed
+  cancelled
+}
+
+enum FounderActionStatus {
+  open
+  accepted
+  rejected
+  delegated
+  completed
+  archived
+}
+
+enum PlatformAutopilotActionStatus {
+  detected
+  recommended
+  pending_approval
+  approved
+  executed
+  rejected
+  expired
+  failed
+  archived
+}
+
+enum PlatformAutopilotRiskClass {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum SecurityEventSeverity {
+  info
+  low
+  medium
+  high
+  critical
+}
+
+enum MemoryDomain {
+  GROWTH
+  PRICING
+  LEADS
+  DEALS
+  LISTINGS
+  MESSAGING
+  PROMOTIONS
+  BOOKINGS
+  BROKER_ROUTING
+  RISK
+  DREAM_HOME
+}
+
+enum MemorySource {
+  HUMAN
+  SYSTEM
+  AI_RECOMMENDATION
+  AI_AUTOMATION
+  IMPORTED
+}
+
+enum MemoryOutcomeStatus {
+  PENDING
+  PARTIAL
+  SUCCEEDED
+  FAILED
+  NEUTRAL
+  CANCELLED
+}
+
+enum PlaybookStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+enum PlaybookExecutionMode {
+  RECOMMEND_ONLY
+  HUMAN_APPROVAL
+  SAFE_AUTOPILOT
+  FULL_AUTOPILOT
+}
+
+enum PlaybookScoreBand {
+  LOW
+  MEDIUM
+  HIGH
+  ELITE
+}
+
+enum PlaybookAssignmentSelectionMode {
+  exploit
+  explore
+  manual
+}
+
+enum CompanyStrategyDomain {
+  GROWTH
+  DEALS
+  EXECUTION
+  INVESTMENT
+  ESG
+  FINANCE
+  MARKETPLACE
+}
+
+enum CompanyAdaptationSource {
+  CEO
+  EVOLUTION
+  PORTFOLIO
+  OPPORTUNITY
+  COMMAND_CENTER
+}
+
+enum CompanyAdaptationType {
+  WEIGHT_SHIFT
+  PRIORITY_SHIFT
+  SEGMENT_FOCUS_CHANGE
+  RISK_TIGHTENING
+  RESOURCE_REALLOCATION
+  EXPERIMENT_RECOMMENDATION
+}
+
+enum CompanyAdaptationStatus {
+  PROPOSED
+  APPROVED
+  REJECTED
+  ROLLED_OUT
+}
+
+enum CompanyOutcomePeriodType {
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+}
+
+enum CommandCenterAlertType {
+  RISK
+  OPPORTUNITY
+  APPROVAL
+  FINANCE
+  CLOSING
+  INVESTOR
+  COMPLIANCE
+}
+
+enum CommandCenterAlertSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum CommandCenterRecommendationCategory {
+  PRIORITIZE
+  APPROVE
+  FOLLOW_UP
+  REVIEW
+  ESCALATE
+  IGNORE
+}
+
+enum LecipmExecutionTaskType {
+  MESSAGE
+  FOLLOW_UP
+  DOCUMENT_PREP
+  OFFER_PREP
+  PRICE_UPDATE_PREP
+  INVESTOR_PACKET_PREP
+  NOTARY_REMINDER
+  INVOICE_PREP
+  DISCLOSURE_PREP
+  DEAL_STAGE_PREP
+}
+
+enum LecipmExecutionEntityType {
+  LISTING
+  DEAL
+  CONVERSATION
+  PACKET
+  INVOICE
+  CLOSING
+}
+
+enum LecipmExecutionTaskStatus {
+  DRAFT
+  QUEUED
+  READY_FOR_APPROVAL
+  APPROVED
+  EXECUTED
+  REJECTED
+  FAILED
+}
+
+enum LecipmExecutionRiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum LecipmAutonomousExecutionMode {
+  OFF
+  ASSIST
+  SAFE_AUTOMATION
+  APPROVAL_REQUIRED
+}
+
+enum LecipmDiscoveryEntityType {
+  LISTING
+  DEAL
+  SHORT_TERM_UNIT
+  INVESTMENT
+}
+
+enum LecipmOpportunityKind {
+  UNDERVALUED
+  VALUE_ADD
+  HIGH_DEMAND
+  ESG_UPSIDE
+  INVESTOR_FIT
+  ARBITRAGE
+}
+
+enum LecipmOpportunityCandidateStatus {
+  NEW
+  REVIEWED
+  DISMISSED
+  ACTIONED
+}
+
+enum LecipmOpportunityRiskTier {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum LecipmOpportunityOutcomeKind {
+  CONTACTED
+  OFFER_SENT
+  BOOKED
+  INVESTED
+  CLOSED
+  DISMISSED
+}
+
+enum SeniorAutonomyMode {
+  OFF
+  ASSIST
+  SAFE_AUTOPILOT
+  FULL_AUTOPILOT_APPROVAL
+}
+
+enum AmfExemptionCategory {
+  ACCREDITED_INVESTOR
+  FAMILY_FRIENDS_BUSINESS_ASSOCIATES
+}
+
+enum ExemptFilingFormStatus {
+  DRAFT
+  READY
+  FILED
+}
+
+enum InvestorCapitalCommitmentStatus {
+  PENDING
+  PARTIAL
+  FUNDED
+  CANCELLED
+}
+
+enum FinAdminDomain {
+  BROKERAGE
+  PLATFORM
+  INVESTMENT
+}
+
+enum FinAccountType {
+  BANK
+  RECEIVABLE
+  PAYABLE
+  TAX
+  ESCROW_SIMULATION
+}
+
+enum FinLedgerEntryType {
+  INVOICE
+  PAYMENT
+  COMMISSION
+  OACIQ_FEE
+  INSURANCE
+  GST
+  QST
+  AMF_FEE
+  LEGAL
+  DISTRIBUTION
+  REFUND
+}
+
+enum FinCounterpartyKind {
+  CLIENT
+  BROKER
+  INVESTOR
+  GOVERNMENT
+  VENDOR
+  LAWYER
+  NOTARY
+}
+
+enum TaxFilingFrequency {
+  MONTHLY
+  QUARTERLY
+  ANNUAL
+}
+
+enum RegulatoryAuthority {
+  OACIQ
+  REVENU_QUEBEC
+  CRA
+  FARCIQ
+  AMF
+}
+
+enum RegulatoryObligationType {
+  LICENCE_RENEWAL
+  INSURANCE_RENEWAL
+  GST_QST_RETURN
+  EXEMPT_DISTRIBUTION_REPORT
+  FEE_PAYMENT
+}
+
+enum RegulatoryObligationStatus {
+  OPEN
+  DRAFT
+  FILED
+  PAID
+}
+
+enum InvestmentFundStrategy {
+  CAPITAL_PRESERVATION
+  GROWTH
+  AGRESSIVE_GROWTH
+  INCOME
+}
+
+enum InvestmentFundStatus {
+  ACTIVE
+  PAUSED
+  CLOSED
+}
+
+enum InvestmentFundMode {
+  SIMULATION
+  LIVE
+}
+
+enum FundDistributionType {
+  PROFIT
+  RETURN_OF_CAPITAL
+}
+
+enum CareResidenceType {
+  INDEPENDENT
+  ASSISTED
+  MEDICAL
+}
+
+enum CareServiceKind {
+  MEDICAL
+  DAILY_LIVING
+  SAFETY
+}
+
+enum CareFoodPlanTier {
+  NONE
+  ONE_MEAL
+  FULL
+}
+
+enum CareLevel {
+  INDEPENDENT
+  ASSISTED
+  MEMORY_CARE
+  SKILLED
+}
+
+enum CareHubEventKind {
+  ALERT
+  HEALTH
+  MOVEMENT
+  EMERGENCY
+}
+
+enum CareHubEventSeverity {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum PrivacyPurpose {
+  TRANSACTION_EXECUTION
+  IDENTITY_VERIFICATION
+  DISCLOSURE_TO_BROKERS
+  DISCLOSURE_TO_INFORMATION_DISSEMINATION_SERVICE
+  DISCLOSURE_TO_BUYER_BROKER
+  DISCLOSURE_TO_UNREPRESENTED_BUYER
+  MARKETING
+  COMMERCIAL_PROSPECTING
+  SECONDARY_USE
+  LOCKBOX_CODE_DISCLOSURE
+  ALARM_CODE_DISCLOSURE
+  PHONE_DISCLOSURE_FOR_VISIT
+  SOLD_PRICE_DISCLOSURE_TO_LICENSE_HOLDERS
+}
+
+enum PrivacySensitivityLevel {
+  PUBLIC
+  INTERNAL
+  CONFIDENTIAL
+  RESTRICTED
+  HIGHLY_SENSITIVE
+}
+
+enum PrivacyDataCategory {
+  CONTACT_INFORMATION
+  IDENTITY_INFORMATION
+  FINANCIAL_INFORMATION
+  LEGAL_AUTHORITY_INFORMATION
+  PROPERTY_LINKED_SENSITIVE_INFORMATION
+  COMMUNICATION_MEDIA
+}
+
+enum ConfidentialityIncidentCategory {
+  UNAUTHORIZED_ACCESS
+  UNAUTHORIZED_DISCLOSURE
+  LOSS_OF_DATA
+  THEFT_OF_DATA
+  SECURITY_BREACH
+  HUMAN_ERROR
+  MALICIOUS_ACT
+}
+
+enum ConfidentialityIncidentRiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum LecipmPreDisputeRiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum LecipmDisputePredictedCategory {
+  NO_SHOW_CONFLICT
+  PAYMENT_FRICTION
+  MISLEADING_EXPECTATION
+  RESPONSE_DELAY_CONFLICT
+  DOCUMENTATION_GAP
+  NEGOTIATION_BREAKDOWN
+  OTHER
+}
+
+enum LecipmSystemAdjustmentStatus {
+  PROPOSED
+  APPROVED
+  REJECTED
+  IMPLEMENTED
+  REVERSED
+}
+
+enum LecipmTrustEngineTargetType {
+  BROKER
+  LISTING
+  DEAL
+  BOOKING
+  TERRITORY
+}
+
+enum LecipmTrustOperationalBand {
+  HIGH_TRUST
+  GOOD
+  WATCH
+  ELEVATED_RISK
+  CRITICAL_REVIEW
+}
+
+enum LecipmDisputeCaseEntityType {
+  BOOKING
+  DEAL
+  LISTING
+  PAYMENT
+}
+
+enum LecipmDisputeCaseStatus {
+  OPEN
+  IN_REVIEW
+  RESOLVED
+  REJECTED
+  ESCALATED
+}
+
+enum LecipmDisputeCasePriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum LecipmDisputeCaseCategory {
+  NO_SHOW
+  PAYMENT
+  MISLEADING_LISTING
+  OTHER
+}
+
+enum LecipmDisputeCaseEventType {
+  CREATED
+  STATUS_CHANGE
+  MESSAGE_ADDED
+  EVIDENCE_ADDED
+  ESCALATED
+  ADMIN_NOTE
+  RESOLUTION_PROPOSED
+}
+
+enum RolloutPolicyDomain {
+  PRICING
+  RANKING
+  MESSAGING
+  DEAL
+  ESG
+}
+
+enum RolloutPolicySource {
+  AGENT
+  EVOLUTION
+  MANUAL
+}
+
+enum RolloutPolicyStatus {
+  DRAFT
+  APPROVED
+  LIVE
+  PAUSED
+  ROLLED_BACK
+}
+
+enum RolloutExecutionStatus {
+  RUNNING
+  PAUSED
+  COMPLETED
+  ROLLED_BACK
+}
+
+enum RolloutDecisionAction {
+  INCREASE
+  PAUSE
+  ROLLBACK
+}
+
+enum EmpireEntityType {
+  HOLDING
+  OPERATING
+  INVESTMENT
+  SERVICE
+}
+
+enum EmpireRoleType {
+  FOUNDER
+  MANAGER
+  BOARD
+  OPERATOR
+  ADVISOR
+}
+
+enum GrowthChannel {
+  CONTENT
+  SEO
+  REFERRAL
+  EMAIL
+  LANDING
+  PRICING
+  ONBOARDING
+  PAID
+}
+
+enum GrowthExperimentStatus {
+  DRAFT
+  RUNNING
+  PAUSED
+  COMPLETED
+}
+
+enum AiAgentStatus {
+  ACTIVE
+  PAUSED
+}
+
+enum InvestorStage {
+  NEW
+  CONTACTED
+  INTERESTED
+  NEGOTIATING
+  CLOSED
+}
+
+enum InvestorInteractionType {
+  EMAIL
+  CALL
+  MEETING
+  OTHER
+}
+
+enum LedgerEntryType {
+  CHARGE
+  FEE
+  PAYOUT
+  REFUND
+}
+
+enum LedgerEntryStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+}
+
+enum ExecutiveReportStatus {
+  GENERATED
+  SENT
+  FAILED
+}
+
+enum ExecutiveReportScheduleFrequency {
+  WEEKLY
+  MONTHLY
+}

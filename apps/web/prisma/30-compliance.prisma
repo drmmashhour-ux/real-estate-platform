@@ -1,0 +1,2200 @@
+// Auto-split from models.prisma — domain buckets for LECIPM (see scripts/split-prisma-by-domain.mjs).
+// Merged with prisma/schema.prisma; relations preserved. Do not duplicate models across files.
+
+// @domain: compliance
+model LecipmRegulatoryConsent {
+  id          String                      @id @default(cuid())
+  userId      String                      @map("user_id")
+  user        User                        @relation("LecipmRegulatoryConsentUser", fields: [userId], references: [id], onDelete: Cascade)
+  consentType LecipmRegulatoryConsentType @map("consent_type")
+  granted     Boolean
+  grantedAt   DateTime                    @default(now()) @map("granted_at")
+  revokedAt   DateTime?                   @map("revoked_at")
+
+  @@unique([userId, consentType])
+  @@index([userId])
+  @@map("lecipm_regulatory_consents")
+}
+
+// @domain: compliance
+model LecipmRegulatoryAuditLog {
+  id           String                          @id @default(cuid())
+  userId       String?                         @map("user_id")
+  user         User?                           @relation("LecipmRegulatoryAuditActor", fields: [userId], references: [id], onDelete: SetNull)
+  entityType   LecipmRegulatoryAuditEntityType @map("entity_type")
+  entityId     String                          @map("entity_id") @db.VarChar(96)
+  action       String                          @db.VarChar(160)
+  metadataJson Json                            @default("{}") @map("metadata_json")
+  createdAt    DateTime                        @default(now()) @map("created_at")
+
+  @@index([entityType, entityId])
+  @@index([userId, createdAt])
+  @@map("lecipm_regulatory_audit_logs")
+}
+
+// @domain: compliance
+model LecipmRiskDisclosure {
+  id          String                               @id @default(cuid())
+  context     LecipmRiskDisclosureContext
+  message     String                               @db.Text
+  version     String                               @db.VarChar(32)
+  createdAt   DateTime                             @default(now()) @map("created_at")
+  acceptances LecipmUserRiskDisclosureAcceptance[]
+
+  @@unique([context, version])
+  @@index([context])
+  @@map("lecipm_risk_disclosures")
+}
+
+// @domain: compliance
+model SellerSupportingDocument {
+  id                    String                           @id @default(cuid())
+  userId                String                           @map("user_id")
+  user                  User                             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fsboListingId         String                           @map("fsbo_listing_id")
+  fsboListing           FsboListing                      @relation(fields: [fsboListingId], references: [id], onDelete: Cascade)
+  /// Object key within private bucket (e.g. `userId/listingId/uuid.pdf`) or `local:...` for dev disk fallback.
+  storagePath           String                           @map("storage_path")
+  originalFileName      String                           @map("original_file_name")
+  mimeType              String                           @map("mime_type")
+  category              SellerSupportingDocumentCategory
+  status                SellerSupportingDocumentStatus   @default(PENDING)
+  /// Optional link to seller declaration section (e.g. renovations, inspection).
+  declarationSectionKey String?                          @map("declaration_section_key")
+  createdAt             DateTime                         @default(now()) @map("created_at")
+  updatedAt             DateTime                         @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([fsboListingId])
+  @@index([status])
+  @@map("seller_documents")
+}
+
+// @domain: compliance
+model VerificationRuleResult {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  caseId      String   @map("case_id") @db.Uuid
+  ruleCode    String   @map("rule_code")
+  ruleVersion String   @default("1") @map("rule_version")
+  passed      Boolean  @default(false)
+  scoreDelta  Int      @default(0) @map("score_delta")
+  confidence  Decimal? @db.Decimal(5, 4)
+  details     Json?    @db.JsonB
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  case VerificationCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@index([caseId], map: "idx_verification_rule_results_case_id")
+  @@index([ruleCode], map: "idx_verification_rule_results_rule_code")
+  @@map("verification_rule_results")
+}
+
+// @domain: compliance
+model SellerDisclosure {
+  id               String           @id @default(cuid())
+  listingId        String           @unique @map("listing_id")
+  listing          ShortTermListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  structuralIssues String?          @map("structural_issues") @db.Text
+  waterDamage      String?          @map("water_damage") @db.Text
+  renovations      String?          @map("renovations") @db.Text
+  defects          String?          @map("defects") @db.Text
+  /**
+   * Structured Seller Declaration form (property) — see `SellerDeclarationFormData` in app code.
+   */
+  formData         Json?            @map("form_data")
+  completedAt      DateTime?        @map("completed_at") // Set when seller submits declaration
+  declinedAt       DateTime?        @map("declined_at") // Set when seller refuses; listing cannot publish
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+
+  @@map("seller_disclosures")
+}
+
+// @domain: compliance
+model OaciqComplianceSection {
+  id               String    @id @default(cuid())
+  sectionKey       String    @unique @map("section_key") @db.VarChar(128)
+  sectionTitleFr   String    @map("section_title_fr") @db.VarChar(500)
+  sectionTitleEn   String?   @map("section_title_en") @db.VarChar(500)
+  /// Official excerpt or controlled summary (for traceability — not legal advice).
+  sourceExcerpt    String?   @map("source_excerpt") @db.Text
+  /// rule_engine.{sectionKey}: requiredActions, forbiddenActions, conditionalChecks
+  ruleEngineJson   Json      @map("rule_engine_json")
+  /// AI_CHECKLIST / AI_WARNINGS / AI_BLOCKS + metadata
+  aiBehaviorJson   Json      @map("ai_behavior_json")
+  clauseFr         String    @map("clause_fr") @db.Text
+  clauseEn         String?   @map("clause_en") @db.Text
+  defaultRiskLevel String    @default("MEDIUM") @map("default_risk_level") @db.VarChar(16)
+  active           Boolean   @default(true)
+  effectiveFrom    DateTime? @map("effective_from") @db.Timestamptz(6)
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  evaluations OaciqComplianceEvaluationLog[]
+
+  @@index([active, sectionKey], map: "idx_oaciq_compliance_sections_active_key")
+  @@map("oaciq_compliance_sections")
+}
+
+// @domain: compliance
+model OaciqComplianceEvaluationLog {
+  id                  String                 @id @default(cuid())
+  sectionId           String                 @map("section_id")
+  section             OaciqComplianceSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  brokerUserId        String                 @map("broker_user_id")
+  dealId              String?                @map("deal_id") @db.VarChar(128)
+  listingId           String?                @map("listing_id") @db.VarChar(128)
+  /// pass | warn | block
+  outcome             String                 @map("outcome") @db.VarChar(16)
+  complianceRiskScore String                 @map("compliance_risk_score") @db.VarChar(16)
+  contextJson         Json?                  @map("context_json")
+  triggeredRulesJson  Json?                  @map("triggered_rules_json")
+  blockedActionsJson  Json?                  @map("blocked_actions_json")
+  createdAt           DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([brokerUserId, createdAt(sort: Desc)], map: "idx_oaciq_eval_logs_broker_created")
+  @@index([sectionId, createdAt(sort: Desc)], map: "idx_oaciq_eval_logs_section_created")
+  @@map("oaciq_compliance_evaluation_logs")
+}
+
+// @domain: compliance
+model OaciqConflictCheck {
+  id              String  @id @default(cuid())
+  /// Acting residential broker (solo book).
+  brokerId        String  @map("broker_id") @db.VarChar(36)
+  /// CRM / capital pipeline deal (cuid).
+  pipelineDealId  String? @map("pipeline_deal_id") @db.VarChar(36)
+  /// Execution `Deal` (uuid) — closing room / signatures.
+  executionDealId String? @map("execution_deal_id") @db.VarChar(36)
+  listingId       String? @map("listing_id") @db.VarChar(36)
+
+  hasConflict      Boolean @map("has_conflict")
+  conflictType     String  @map("conflict_type") @db.VarChar(64)
+  disclosureStatus String  @map("disclosure_status") @db.VarChar(24)
+  riskLevel        String  @map("risk_level") @db.VarChar(16)
+
+  clientRepresentationContractSigned Boolean @default(false) @map("client_representation_contract_signed")
+  brokerPersonalInvolvement          Boolean @default(false) @map("broker_personal_involvement")
+  brokerFinancialInterest            Boolean @default(false) @map("broker_financial_interest")
+  relatedPartyInvolvement            Boolean @default(false) @map("related_party_involvement")
+  benefitOutsideCommission           Boolean @default(false) @map("benefit_outside_commission")
+  dualRoleWithoutFramework           Boolean @default(false) @map("dual_role_without_framework")
+
+  brokerConfirmedDeclaration             Boolean   @default(false) @map("broker_confirmed_declaration")
+  brokerConfirmedAt                      DateTime? @map("broker_confirmed_at")
+  /// High-risk: disclosure does not erase conflict — broker must acknowledge persisting duty / documentation.
+  highRiskAcknowledgedPersistingConflict Boolean   @default(false) @map("high_risk_ack_persisting")
+  highRiskReleasedAt                     DateTime? @map("high_risk_released_at")
+
+  checklistJson Json? @map("checklist_json") @db.JsonB
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  disclosures OaciqConflictDisclosureLog[]
+
+  @@index([brokerId, pipelineDealId], map: "idx_oaciq_conflict_broker_pipeline")
+  @@index([brokerId, executionDealId], map: "idx_oaciq_conflict_broker_execution")
+  @@index([brokerId, listingId], map: "idx_oaciq_conflict_broker_listing")
+  @@map("oaciq_conflict_checks")
+}
+
+// @domain: compliance
+model OaciqConflictDisclosureLog {
+  id              String             @id @default(cuid())
+  conflictCheckId String             @map("conflict_check_id") @db.VarChar(36)
+  conflictCheck   OaciqConflictCheck @relation(fields: [conflictCheckId], references: [id], onDelete: Cascade)
+
+  pipelineDealId         String? @map("pipeline_deal_id") @db.VarChar(36)
+  executionDealId        String? @map("execution_deal_id") @db.VarChar(36)
+  disclosureText         String  @map("disclosure_text") @db.Text
+  signedByClient         Boolean @default(false) @map("signed_by_client")
+  locale                 String? @db.VarChar(8)
+  includesStandardClause Boolean @default(false) @map("includes_standard_clause")
+
+  createdByBrokerId String   @map("created_by_broker_id") @db.VarChar(36)
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@index([conflictCheckId, createdAt(sort: Desc)], map: "idx_oaciq_disclosure_check_created")
+  @@map("oaciq_conflict_disclosure_logs")
+}
+
+// @domain: compliance
+model DocumentExtraction {
+  id                String             @id @default(uuid())
+  documentId        String             @unique @map("document_id")
+  document          PropertyDocument   @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  cadastreNumber    String?            @map("cadastre_number")
+  ownerName         String?            @map("owner_name")
+  propertyAddress   String?            @map("property_address")
+  municipality      String?            @map("municipality")
+  lotNumber         String?            @map("lot_number")
+  confidenceScore   Float?             @map("confidence_score") // 0-1
+  extractedAt       DateTime           @default(now()) @map("extracted_at")
+  rawTextSnippet    String?            @map("raw_text_snippet")
+  verificationMatch VerificationMatch?
+
+  @@map("document_extractions")
+}
+
+// @domain: compliance
+model VerificationMatch {
+  id                   String             @id @default(uuid())
+  listingId            String             @unique @map("listing_id")
+  listing              ShortTermListing   @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  documentExtractionId String             @unique @map("document_extraction_id")
+  documentExtraction   DocumentExtraction @relation(fields: [documentExtractionId], references: [id], onDelete: Cascade)
+  cadastreMatch        MatchStatus        @map("cadastre_match")
+  addressMatch         MatchStatus        @map("address_match")
+  ownerMatch           MatchStatus        @map("owner_match")
+  overallStatus        MatchStatus        @map("overall_status")
+  verificationScore    Int                @map("verification_score") // 0-100
+  checkedAt            DateTime           @default(now()) @map("checked_at")
+
+  @@index([overallStatus])
+  @@map("verification_matches")
+}
+
+// @domain: compliance
+model PropertyIdentity {
+  id                         String                         @id @default(uuid())
+  propertyUid                String                         @unique @map("property_uid") // Deterministic from cadastre + normalized address + municipality + province
+  cadastreNumber             String?                        @map("cadastre_number")
+  officialAddress            String                         @map("official_address")
+  normalizedAddress          String                         @map("normalized_address")
+  municipality               String?
+  province                   String?
+  country                    String                         @default("US")
+  postalCode                 String?                        @map("postal_code")
+  latitude                   Float?
+  longitude                  Float?
+  propertyType               String?                        @map("property_type")
+  verificationScore          Int?                           @map("verification_score") // 0-100
+  createdAt                  DateTime                       @default(now()) @map("created_at")
+  updatedAt                  DateTime                       @updatedAt @map("updated_at")
+  links                      PropertyIdentityLink[]
+  verifications              PropertyIdentityVerification[]
+  owners                     PropertyIdentityOwner[]
+  riskRecords                PropertyIdentityRisk[]
+  events                     PropertyIdentityEvent[]
+  shortTermListings          ShortTermListing[]
+  realEstateTransactions     RealEstateTransaction[]
+  propertyValuations         PropertyValuation[]
+  listingAuthorities         ListingAuthority[]
+  ownershipHistory           OwnershipHistory[]
+  brokerAuthorizationHistory BrokerAuthorizationHistory[]
+  marketRegionId             String?                        @map("market_region_id")
+  marketRegion               MarketRegion?                  @relation(fields: [marketRegionId], references: [id], onDelete: SetNull)
+  marketInvestmentScores     MarketInvestmentScore[]
+
+  @@index([cadastreNumber])
+  @@index([normalizedAddress])
+  @@index([municipality, province])
+  @@index([marketRegionId])
+  @@map("property_identities")
+}
+
+// @domain: compliance
+model OaciqTransactionDisclosureProfile {
+  id                         String                @id @default(uuid())
+  transactionId              String                @unique @map("transaction_id")
+  transaction                RealEstateTransaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  brokerStatusBody           String                @map("broker_status_body") @db.Text
+  conflictBody               String                @map("conflict_body") @db.Text
+  financialInterestBody      String                @map("financial_interest_body") @db.Text
+  hasBrokerConflict          Boolean               @default(false) @map("has_broker_conflict")
+  hasBrokerFinancialInterest Boolean               @default(false) @map("has_broker_financial_interest")
+  bundleVersion              Int                   @default(1) @map("bundle_version")
+  createdAt                  DateTime              @default(now()) @map("created_at")
+  updatedAt                  DateTime              @updatedAt @map("updated_at")
+
+  @@map("oaciq_transaction_disclosure_profiles")
+}
+
+// @domain: compliance
+model OaciqClientDisclosureAck {
+  id                      String                    @id @default(uuid())
+  transactionId           String                    @map("transaction_id")
+  transaction             RealEstateTransaction     @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  userId                  String                    @map("user_id")
+  user                    User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  flow                    OaciqClientDisclosureFlow @map("flow")
+  ackTextExact            String                    @map("ack_text_exact") @db.VarChar(512)
+  disclosureBundleVersion Int                       @map("disclosure_bundle_version")
+  acknowledgedAt          DateTime                  @default(now()) @map("acknowledged_at")
+  clientIp                String?                   @map("client_ip") @db.VarChar(128)
+  userAgent               String?                   @map("user_agent") @db.VarChar(512)
+
+  @@index([transactionId, userId, flow])
+  @@index([acknowledgedAt])
+  @@map("oaciq_client_disclosure_acks")
+}
+
+// @domain: compliance
+model OaciqBrokerDecisionLog {
+  id                      String                  @id @default(uuid())
+  brokerId                String                  @map("broker_id")
+  broker                  User                    @relation(fields: [brokerId], references: [id], onDelete: Cascade)
+  decisionType            OaciqBrokerDecisionType @map("decision_type")
+  approvedAt              DateTime                @default(now()) @map("approved_at")
+  confirmationTextVersion String                  @default("v1_broker_decision_2026") @map("confirmation_text_version") @db.VarChar(64)
+  crmDealId               String?                 @map("crm_deal_id") @db.VarChar(36)
+  pipelineDealId          String?                 @map("pipeline_deal_id") @db.VarChar(36)
+  realEstateTransactionId String?                 @map("real_estate_transaction_id") @db.VarChar(36)
+  listingId               String?                 @map("listing_id") @db.VarChar(36)
+  listingOfferId          String?                 @map("listing_offer_id") @db.VarChar(36)
+  propertyOfferId         String?                 @map("property_offer_id") @db.VarChar(36)
+  legalDocumentArtifactId String?                 @map("legal_document_artifact_id") @db.VarChar(36)
+  negotiationStrategyId   String?                 @map("negotiation_strategy_id") @db.VarChar(36)
+  metadata                Json?
+
+  @@index([brokerId, decisionType, approvedAt(sort: Desc)])
+  @@index([realEstateTransactionId, decisionType, approvedAt(sort: Desc)])
+  @@index([listingId, decisionType, approvedAt(sort: Desc)])
+  @@index([pipelineDealId])
+  @@index([crmDealId])
+  @@map("oaciq_broker_decision_logs")
+}
+
+// @domain: compliance
+model OaciqComplianceRule {
+  id                      String                      @id @default(cuid())
+  ruleKey                 String                      @unique @map("rule_key") @db.VarChar(80)
+  title                   String                      @db.VarChar(256)
+  description             String                      @db.Text
+  category                OaciqComplianceRuleCategory
+  enforcedBySystem        Boolean                     @default(true) @map("enforced_by_system")
+  appliesDealCreate       Boolean                     @default(true) @map("applies_deal_create")
+  appliesListingPublish   Boolean                     @default(true) @map("applies_listing_publish")
+  appliesContractGenerate Boolean                     @default(true) @map("applies_contract_generate")
+  active                  Boolean                     @default(true)
+  createdAt               DateTime                    @default(now()) @map("created_at")
+  updatedAt               DateTime                    @updatedAt @map("updated_at")
+
+  @@index([active, category])
+  @@map("oaciq_compliance_rules")
+}
+
+// @domain: compliance
+model OaciqComplianceAlignmentEvent {
+  id              String                         @id @default(cuid())
+  brokerId        String                         @map("broker_id")
+  action          OaciqComplianceAlignmentAction @map("action")
+  /// PASS | BLOCK
+  outcome         String                         @map("outcome") @db.VarChar(16)
+  failedRuleKeys  Json?                          @map("failed_rule_keys")
+  listingId       String?                        @map("listing_id") @db.VarChar(36)
+  pipelineDealId  String?                        @map("pipeline_deal_id") @db.VarChar(36)
+  crmDealId       String?                        @map("crm_deal_id") @db.VarChar(36)
+  sdTransactionId String?                        @map("sd_transaction_id") @db.VarChar(36)
+  legalArtifactId String?                        @map("legal_artifact_id") @db.VarChar(36)
+  detailsJson     Json?                          @map("details_json")
+  resolvedAt      DateTime?                      @map("resolved_at")
+  resolutionNote  String?                        @map("resolution_note") @db.Text
+  createdAt       DateTime                       @default(now()) @map("created_at")
+
+  @@index([brokerId, createdAt(sort: Desc)])
+  @@index([outcome, resolvedAt])
+  @@map("oaciq_compliance_alignment_events")
+}
+
+// @domain: compliance
+model ComplianceRegulatorCorrespondence {
+  id              String    @id @default(cuid())
+  regulatorKey    String    @map("regulator_key") @db.VarChar(64)
+  channel         String    @db.VarChar(32)
+  status          String    @default("draft") @db.VarChar(32)
+  subject         String?   @db.VarChar(512)
+  outboundSummary String?   @map("outbound_summary") @db.Text
+  inboundSummary  String?   @map("inbound_summary") @db.Text
+  feedbackNotes   String?   @map("feedback_notes") @db.Text
+  recommendations String?   @db.Text
+  occurredAt      DateTime? @map("occurred_at")
+  createdByUserId String?   @map("created_by_user_id")
+  createdBy       User?     @relation("RegulatorCorrespondenceCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  metadata        Json?
+
+  @@index([regulatorKey, createdAt(sort: Desc)])
+  @@map("compliance_regulator_correspondence")
+}
+
+// @domain: compliance
+model TransactionMessage {
+  id            String                @id @default(uuid())
+  transactionId String                @map("transaction_id")
+  transaction   RealEstateTransaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  senderId      String                @map("sender_id")
+  sender        User                  @relation(fields: [senderId], references: [id], onDelete: Restrict)
+  message       String
+  createdAt     DateTime              @default(now()) @map("created_at")
+
+  @@index([transactionId])
+  @@index([senderId])
+  @@map("transaction_messages")
+}
+
+// @domain: compliance
+model TransactionDeposit {
+  id              String                @id @default(uuid())
+  transactionId   String                @map("transaction_id")
+  transaction     RealEstateTransaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  amount          Int                   @map("amount") // Cents
+  paymentProvider String                @map("payment_provider")
+  paymentStatus   String                @map("payment_status") // pending | paid | refunded
+  externalRef     String?               @map("external_ref")
+  createdAt       DateTime              @default(now()) @map("created_at")
+
+  @@index([transactionId])
+  @@index([paymentStatus])
+  @@map("transaction_deposits")
+}
+
+// @domain: compliance
+model TransactionDocument {
+  id                 String                  @id @default(uuid())
+  transactionId      String                  @map("transaction_id")
+  transaction        RealEstateTransaction   @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  documentType       String                  @map("document_type") // purchase_agreement | broker_agreement | inspection_conditions | etc.
+  fileUrl            String                  @map("file_url")
+  originalFileUrl    String?                 @map("original_file_url")
+  redactedFileUrl    String?                 @map("redacted_file_url")
+  sensitivityLevel   PrivacySensitivityLevel @default(CONFIDENTIAL) @map("sensitivity_level")
+  version            String                  @default("1.0")
+  isImmutable        Boolean                 @default(false) @map("is_immutable")
+  signedByBuyer      Boolean                 @default(false) @map("signed_by_buyer")
+  signedBySeller     Boolean                 @default(false) @map("signed_by_seller")
+  signedByBroker     Boolean                 @default(false) @map("signed_by_broker")
+  signedAt           DateTime?               @map("signed_at")
+  allowedRoles       Json?                   @map("allowed_roles") // string[]
+  allowedDepartments Json?                   @map("allowed_departments") // string[]
+  needToKnow         Boolean                 @default(true) @map("need_to_know")
+  dataCategory       PrivacyDataCategory?    @map("data_category")
+  createdAt          DateTime                @default(now()) @map("created_at")
+
+  @@index([transactionId])
+  @@index([documentType])
+  @@map("transaction_documents")
+}
+
+// @domain: compliance
+model TransactionStep {
+  id            String                @id @default(uuid())
+  transactionId String                @map("transaction_id")
+  transaction   RealEstateTransaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  stepName      String                @map("step_name") // inspection | financing_approval | legal_review | final_payment | ownership_transfer
+  status        String                @map("status") // pending | completed
+  completedById String?               @map("completed_by")
+  completedAt   DateTime?             @map("completed_at")
+  createdAt     DateTime              @default(now()) @map("created_at")
+
+  @@index([transactionId])
+  @@map("transaction_steps")
+}
+
+// @domain: compliance
+model TransactionEvent {
+  id            String                @id @default(uuid())
+  transactionId String                @map("transaction_id")
+  transaction   RealEstateTransaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  eventType     String                @map("event_type")
+  eventData     Json?                 @map("event_data")
+  createdById   String?               @map("created_by")
+  createdAt     DateTime              @default(now()) @map("created_at")
+
+  @@index([transactionId])
+  @@index([eventType])
+  @@map("transaction_events")
+}
+
+// @domain: compliance
+model TransactionTimeline {
+  id                 String                     @id @default(uuid())
+  transactionId      String                     @unique @map("transaction_id")
+  transaction        RealEstateTransaction      @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  propertyIdentityId String                     @map("property_identity_id")
+  listingId          String?                    @map("listing_id")
+  buyerId            String                     @map("buyer_id")
+  sellerId           String                     @map("seller_id")
+  brokerId           String?                    @map("broker_id")
+  currentStage       String                     @map("current_stage") // listing_live | offer_submitted | negotiation | offer_accepted | deposit_pending | deposit_received | inspection_* | financing_* | legal_documents_prepared | notary_review | closing_scheduled | closing_completed | cancelled
+  status             String                     @default("active") // active | blocked | completed | cancelled
+  nextRequiredAction String?                    @map("next_required_action")
+  cancelledReason    String?                    @map("cancelled_reason")
+  cancelledAt        DateTime?                  @map("cancelled_at")
+  createdAt          DateTime                   @default(now()) @map("created_at")
+  updatedAt          DateTime                   @updatedAt @map("updated_at")
+  steps              TransactionTimelineStep[]
+  events             TransactionTimelineEvent[]
+
+  @@index([currentStage])
+  @@index([status])
+  @@index([buyerId])
+  @@index([sellerId])
+  @@index([brokerId])
+  @@map("transaction_timelines")
+}
+
+// @domain: compliance
+model TransactionTimelineStep {
+  id                String              @id @default(uuid())
+  timelineId        String              @map("timeline_id")
+  timeline          TransactionTimeline @relation(fields: [timelineId], references: [id], onDelete: Cascade)
+  stepCode          String              @map("step_code") // e.g. offer_submit | deposit_pay | inspection_complete
+  stepName          String              @map("step_name")
+  stageName         String              @map("stage_name")
+  status            String              @default("pending") // pending | in_progress | completed | blocked | cancelled | overdue
+  assignedToRole    String?             @map("assigned_to_role") // buyer | seller | broker | admin | notary | compliance | system
+  assignedToUserId  String?             @map("assigned_to_user_id")
+  dueDate           DateTime?           @map("due_date")
+  completedAt       DateTime?           @map("completed_at")
+  completedByUserId String?             @map("completed_by_user_id")
+  notes             String?
+  metadata          Json? // inspection result, financing status, etc.
+  createdAt         DateTime            @default(now()) @map("created_at")
+  updatedAt         DateTime            @updatedAt @map("updated_at")
+
+  @@index([timelineId])
+  @@index([status])
+  @@index([dueDate])
+  @@index([assignedToRole])
+  @@map("transaction_timeline_steps")
+}
+
+// @domain: compliance
+model TransactionTimelineEvent {
+  id         String              @id @default(uuid())
+  timelineId String              @map("timeline_id")
+  timeline   TransactionTimeline @relation(fields: [timelineId], references: [id], onDelete: Cascade)
+  eventType  String              @map("event_type") // timeline_created | offer_submitted | counter_offer_sent | deposit_received | inspection_completed | financing_approved | documents_generated | notary_assigned | closing_completed | transaction_cancelled | stage_changed | step_completed | step_blocked
+  eventData  Json?               @map("event_data")
+  createdBy  String?             @map("created_by")
+  createdAt  DateTime            @default(now()) @map("created_at")
+
+  @@index([timelineId])
+  @@index([eventType])
+  @@index([createdAt])
+  @@map("transaction_timeline_events")
+}
+
+// @domain: compliance
+model OwnerIdentity {
+  id                 String                       @id @default(uuid())
+  legalName          String                       @map("legal_name")
+  normalizedName     String                       @map("normalized_name")
+  verificationStatus String                       @default("PENDING") @map("verification_status") // PENDING | VERIFIED | REJECTED
+  primarySource      String?                      @map("primary_source") // land_register_extract | manual_admin | broker_authorization | legal_document
+  status             String                       @default("ACTIVE") // ACTIVE | FROZEN | MERGED
+  createdAt          DateTime                     @default(now()) @map("created_at")
+  updatedAt          DateTime                     @updatedAt @map("updated_at")
+  ownershipHistory   OwnershipHistory[]
+  brokerAuthHistory  BrokerAuthorizationHistory[]
+  listingAuthorities ListingAuthority[]
+
+  @@index([normalizedName])
+  @@index([verificationStatus])
+  @@map("owner_identities")
+}
+
+// @domain: compliance
+model BrokerIdentity {
+  id                         String                       @id @default(uuid())
+  legalName                  String                       @map("legal_name")
+  normalizedName             String                       @map("normalized_name")
+  licenseNumber              String                       @map("license_number")
+  brokerageName              String                       @map("brokerage_name")
+  regulatorRef               String?                      @map("regulator_ref") // e.g. OACIQ number
+  verificationStatus         String                       @default("PENDING") @map("verification_status")
+  status                     String                       @default("ACTIVE")
+  createdAt                  DateTime                     @default(now()) @map("created_at")
+  updatedAt                  DateTime                     @updatedAt @map("updated_at")
+  brokerAuthorizationHistory BrokerAuthorizationHistory[]
+  listingAuthorities         ListingAuthority[]
+
+  @@index([licenseNumber])
+  @@index([normalizedName])
+  @@map("broker_identities")
+}
+
+// @domain: compliance
+model OrganizationIdentity {
+  id                 String             @id @default(uuid())
+  legalName          String             @map("legal_name")
+  normalizedName     String             @map("normalized_name")
+  organizationType   String             @map("organization_type") // brokerage | property_management | legal_entity
+  verificationStatus String             @default("PENDING") @map("verification_status")
+  status             String             @default("ACTIVE")
+  createdAt          DateTime           @default(now()) @map("created_at")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
+  listingAuthorities ListingAuthority[]
+
+  @@index([normalizedName])
+  @@map("organization_identities")
+}
+
+// @domain: compliance
+model IdentityLink {
+  id           String   @id @default(uuid())
+  identityType String   @map("identity_type") // OWNER | BROKER
+  identityId   String   @map("identity_id")
+  userId       String   @map("user_id")
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  linkStatus   String   @default("ACTIVE") @map("link_status") // ACTIVE | REVOKED
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@unique([identityType, identityId, userId])
+  @@index([userId])
+  @@index([identityType, identityId])
+  @@map("identity_links")
+}
+
+// @domain: compliance
+model IdentityRiskProfile {
+  id                  String   @id @default(uuid())
+  identityType        String   @map("identity_type") // OWNER | BROKER | ORGANIZATION
+  identityId          String   @map("identity_id")
+  riskScore           Int      @map("risk_score") // 0-100
+  riskLevel           String   @map("risk_level") // low | medium | high | critical
+  riskReasons         Json?    @map("risk_reasons")
+  investigationStatus String?  @map("investigation_status") // open | closed | pending_review
+  updatedAt           DateTime @updatedAt @map("updated_at")
+  createdAt           DateTime @default(now()) @map("created_at")
+
+  @@unique([identityType, identityId])
+  @@index([identityType])
+  @@index([riskLevel])
+  @@map("identity_risk_profiles")
+}
+
+// @domain: compliance
+model IdentityEvent {
+  id           String   @id @default(uuid())
+  identityType String   @map("identity_type")
+  identityId   String   @map("identity_id")
+  eventType    String   @map("event_type")
+  eventData    Json?    @map("event_data")
+  createdBy    String?  @map("created_by")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([identityType, identityId])
+  @@index([eventType])
+  @@map("identity_events")
+}
+
+// @domain: compliance
+model GeneratedDocument {
+  id                      String                   @id @default(uuid())
+  documentType            String                   @map("document_type") // offer | rental_agreement | broker_agreement | booking_confirmation | investment_report | verification_report | transaction_summary | dispute_report
+  relatedEntityType       String                   @map("related_entity_type") // transaction | property | listing | booking | dispute
+  relatedEntityId         String                   @map("related_entity_id")
+  generatedById           String                   @map("generated_by")
+  generatedBy             User                     @relation(fields: [generatedById], references: [id], onDelete: Restrict)
+  filePath                String?                  @map("file_path") // Storage path or URL
+  format                  String                   @default("html") // html | pdf | docx
+  status                  String                   @default("draft") // draft | final | signed
+  versionNumber           Int                      @default(1) @map("version_number")
+  changeSummary           String?                  @map("change_summary")
+  signatureFields         Json?                    @map("signature_fields") // [{ signerRole, signerName, signerEmail }]
+  contentHtml             String?                  @map("content_html") // Rendered HTML for preview/storage
+  createdAt               DateTime                 @default(now()) @map("created_at")
+  closingPackageDocuments ClosingPackageDocument[]
+
+  @@index([documentType])
+  @@index([relatedEntityType, relatedEntityId])
+  @@index([generatedById])
+  @@index([status])
+  @@map("generated_documents")
+}
+
+// @domain: compliance
+model Notary {
+  id               String                   @id @default(uuid())
+  notaryName       String                   @map("notary_name")
+  notaryEmail      String                   @map("notary_email")
+  notaryOffice     String?                  @map("notary_office")
+  jurisdiction     String? // e.g. Quebec, Ontario
+  /// Québec / regional routing for matching (e.g. montréal, laval, qc-wide).
+  region           String?                  @db.VarChar(64)
+  phone            String?                  @db.VarChar(32)
+  address          String?                  @db.Text
+  /// Chambre des notaires or other registry id — informational only.
+  licenseNumber    String?                  @map("license_number") @db.VarChar(64)
+  languagesJson    Json                     @default("[]") @map("languages_json")
+  availabilityJson Json                     @default("{}") @map("availability_json")
+  isActive         Boolean                  @default(true) @map("is_active")
+  createdAt        DateTime                 @default(now()) @map("created_at")
+  updatedAt        DateTime                 @updatedAt @map("updated_at")
+  closingPackages  ClosingPackage[]
+  dealAssignments  DealNotaryCoordination[]
+
+  @@index([jurisdiction])
+  @@index([region])
+  @@map("notaries")
+}
+
+// @domain: compliance
+model ClosingPackage {
+  id            String                   @id @default(uuid())
+  transactionId String                   @map("transaction_id")
+  transaction   RealEstateTransaction    @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  packageStatus String                   @map("package_status") // draft | ready | notary_review | closing_scheduled | completed
+  generatedById String                   @map("generated_by")
+  generatedBy   User                     @relation(fields: [generatedById], references: [id], onDelete: Restrict)
+  notaryId      String?                  @map("notary_id")
+  notary        Notary?                  @relation(fields: [notaryId], references: [id], onDelete: SetNull)
+  createdAt     DateTime                 @default(now()) @map("created_at")
+  updatedAt     DateTime                 @updatedAt @map("updated_at")
+  documents     ClosingPackageDocument[]
+
+  @@index([transactionId])
+  @@index([packageStatus])
+  @@index([notaryId])
+  @@map("closing_packages")
+}
+
+// @domain: compliance
+model ClosingPackageDocument {
+  id           String            @id @default(uuid())
+  packageId    String            @map("package_id")
+  package      ClosingPackage    @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  documentId   String            @map("document_id")
+  document     GeneratedDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  documentType String            @map("document_type") // offer | property_sheet | buyer_info | seller_info | broker_details | transaction_summary | payment_summary | ownership_verification | broker_authorization
+  createdAt    DateTime          @default(now()) @map("created_at")
+
+  @@unique([packageId, documentType])
+  @@index([packageId])
+  @@map("closing_package_documents")
+}
+
+// @domain: compliance
+model IdentityVerification {
+  id                  String             @id @default(uuid())
+  userId              String             @unique @map("user_id")
+  user                User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  governmentIdFileUrl String?            @map("government_id_file")
+  selfiePhotoUrl      String?            @map("selfie_photo")
+  verificationStatus  VerificationStatus @default(PENDING) @map("verification_status")
+  verifiedById        String?            @map("verified_by")
+  verifiedAt          DateTime?          @map("verified_at")
+  notes               String?
+  createdAt           DateTime           @default(now()) @map("created_at")
+  updatedAt           DateTime           @updatedAt @map("updated_at")
+
+  @@map("identity_verifications")
+}
+
+// @domain: compliance
+model BrokerVerification {
+  id                 String             @id @default(uuid())
+  userId             String             @unique @map("user_id")
+  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  licenseNumber      String             @map("license_number")
+  brokerageCompany   String             @map("brokerage_company")
+  verificationStatus VerificationStatus @default(PENDING) @map("verification_status")
+  verifiedById       String?            @map("verified_by")
+  verifiedAt         DateTime?          @map("verified_at")
+  notes              String?
+  createdAt          DateTime           @default(now()) @map("created_at")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
+
+  @@map("broker_verifications")
+}
+
+// @domain: compliance
+model LecipmBrokerLicenceProfile {
+  id                       String               @id @default(cuid())
+  userId                   String               @unique @map("user_id")
+  user                     User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fullName                 String?              @map("full_name") @db.VarChar(256)
+  licenceNumber            String?              @map("licence_number") @db.VarChar(64)
+  /// Platform product enforces residential brokerage paths only.
+  licenceType              String               @default("residential") @map("licence_type") @db.VarChar(32)
+  /// active | inactive | pending
+  licenceStatus            String               @default("pending") @map("licence_status") @db.VarChar(24)
+  neq                      String?              @db.VarChar(32)
+  gst                      String?              @db.VarChar(32)
+  qst                      String?              @db.VarChar(32)
+  address                  String?              @db.Text
+  addressLine              String?              @map("address_line") @db.VarChar(256)
+  city                     String?              @db.VarChar(128)
+  province                 String?              @default("QC") @db.VarChar(32)
+  postalCode               String?              @map("postal_code") @db.VarChar(16)
+  practiceMode             String?              @default("INDEPENDENT") @map("practice_mode") @db.VarChar(32)
+  regulator                String?              @default("OACIQ") @db.VarChar(32) // NEW
+  verifiedAt               DateTime?            @map("verified_at")
+  mortgageLicenceCertified Boolean              @default(false) @map("mortgage_licence_certified")
+  /// Broker attestation / subscription: eligible to prepare Centris-oriented listing flows (never auto-posted by LECIPM).
+  hasCentrisAccess         Boolean              @default(false) @map("has_centris_access")
+  /// Optional Centris member identifier — platform does not validate with Centris; broker supplies for export metadata.
+  centrisMemberId          String?              @map("centris_member_id") @db.VarChar(64)
+  createdAt                DateTime             @default(now()) @map("created_at")
+  updatedAt                DateTime             @updatedAt @map("updated_at")
+  licenceChecks            LecipmLicenceCheck[]
+
+  @@map("lecipm_broker_licence_profiles")
+}
+
+// @domain: compliance
+model BrokerTaxRegistration {
+  id                 String                      @id @default(uuid())
+  userId             String                      @unique @map("user_id")
+  user               User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  legalName          String                      @map("legal_name")
+  businessName       String?                     @map("business_name")
+  businessNumberNine String                      @map("business_number_nine") // 9 digits
+  gstNumber          String?                     @map("gst_number") // e.g. 123456789RT0001
+  qstNumber          String?                     @map("qst_number") // required when province is QC; format 1234567890TQ0001
+  businessAddress    String                      @map("business_address") @db.Text
+  province           String                      @default("QC") // default Quebec
+  status             BrokerTaxRegistrationStatus @default(PENDING_STAFF_REVIEW)
+  adminNotes         String?                     @map("admin_notes") @db.Text
+  reviewedAt         DateTime?                   @map("reviewed_at")
+  reviewedByUserId   String?                     @map("reviewed_by_user_id")
+  reviewedBy         User?                       @relation("BrokerTaxReviewedBy", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+  createdAt          DateTime                    @default(now()) @map("created_at")
+  updatedAt          DateTime                    @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@index([province])
+  @@map("broker_tax_registrations")
+}
+
+// @domain: compliance
+model BrokerDisclosure {
+  id                  String               @id @default(cuid())
+  brokerId            String               @map("broker_id")
+  broker              User                 @relation(fields: [brokerId], references: [id], onDelete: Cascade)
+  /// Residential `Deal` when disclosure is filed in deal context.
+  dealId              String?              @map("deal_id")
+  deal                Deal?                @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  /// CRM `Listing` for publish / pipeline / offer gates on broker inventory.
+  listingId           String?              @map("listing_id")
+  listing             Listing?             @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  /// FSBO row for broker-managed inventory publish.
+  fsboListingId       String?              @map("fsbo_listing_id")
+  fsboListing         FsboListing?         @relation(fields: [fsboListingId], references: [id], onDelete: Cascade)
+  role                BrokerDisclosureRole
+  hasConflict         Boolean              @map("has_conflict")
+  conflictDescription String?              @map("conflict_description") @db.Text
+  disclosedAt         DateTime             @default(now()) @map("disclosed_at")
+  /// Snapshot line appended to generated legal documents (OACIQ declaration).
+  declarationLine     String               @map("declaration_line") @db.Text
+
+  @@index([brokerId])
+  @@index([dealId])
+  @@index([listingId])
+  @@index([fsboListingId])
+  @@index([brokerId, disclosedAt(sort: Desc)])
+  @@map("broker_disclosures")
+}
+
+// @domain: compliance
+model LecipmTrustWorkflow {
+  id                    String                    @id @default(uuid())
+  dealId                String                    @unique @map("deal_id")
+  deal                  Deal                      @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  mode                  LecipmTrustWorkflowMode
+  status                LecipmTrustWorkflowStatus @default(not_started)
+  trusteeName           String?                   @map("trustee_name") @db.VarChar(160)
+  trusteeType           String?                   @map("trustee_type") @db.VarChar(64)
+  trustAccountReference String?                   @map("trust_account_reference") @db.VarChar(160)
+  notes                 Json                      @default("[]")
+  createdAt             DateTime                  @default(now()) @map("created_at")
+  updatedAt             DateTime                  @updatedAt @map("updated_at")
+
+  @@index([dealId])
+  @@map("lecipm_trust_workflows")
+}
+
+// @domain: compliance
+model ComplianceCase {
+  id                 String                 @id @default(uuid())
+  dealId             String?                @map("deal_id")
+  deal               Deal?                  @relation(fields: [dealId], references: [id], onDelete: SetNull)
+  documentId         String?                @map("document_id")
+  dealDocument       DealDocument?          @relation(fields: [documentId], references: [id], onDelete: SetNull)
+  listingId          String?                @map("listing_id")
+  listing            Listing?               @relation(fields: [listingId], references: [id], onDelete: SetNull)
+  lecipmContactId    String?                @map("lecipm_contact_id")
+  lecipmContact      LecipmCrmContact?      @relation(fields: [lecipmContactId], references: [id], onDelete: SetNull)
+  caseType           ComplianceCaseType     @map("case_type")
+  severity           ComplianceCaseSeverity
+  status             ComplianceCaseStatus   @default(open)
+  summary            String                 @db.Text
+  findings           Json                   @default("{}")
+  openedBySystem     Boolean                @default(true) @map("opened_by_system")
+  assignedReviewerId String?                @map("assigned_reviewer_id")
+  assignedReviewer   User?                  @relation("ComplianceCaseReviewer", fields: [assignedReviewerId], references: [id], onDelete: SetNull)
+  createdAt          DateTime               @default(now()) @map("created_at")
+  updatedAt          DateTime               @updatedAt @map("updated_at")
+  complianceFindings ComplianceFinding[]
+  escalations        ComplianceEscalation[]
+  auditLogs          ComplianceAuditLog[]
+
+  @@index([dealId])
+  @@index([status])
+  @@index([severity])
+  @@index([caseType])
+  @@index([assignedReviewerId])
+  @@map("compliance_cases")
+}
+
+// @domain: compliance
+model ComplianceFinding {
+  id                 String                 @id @default(uuid())
+  caseId             String                 @map("case_id")
+  complianceCase     ComplianceCase         @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  findingType        String                 @map("finding_type") @db.VarChar(64)
+  severity           ComplianceCaseSeverity
+  title              String                 @db.VarChar(200)
+  summary            String                 @db.Text
+  affectedEntityType String?                @map("affected_entity_type") @db.VarChar(32)
+  affectedEntityId   String?                @map("affected_entity_id")
+  sourceRefs         Json                   @default("[]") @map("source_refs")
+  metadata           Json                   @default("{}")
+  createdAt          DateTime               @default(now()) @map("created_at")
+
+  @@index([caseId])
+  @@map("compliance_findings")
+}
+
+// @domain: compliance
+model QaReview {
+  id                String                  @id @default(uuid())
+  dealId            String?                 @map("deal_id")
+  deal              Deal?                   @relation(fields: [dealId], references: [id], onDelete: SetNull)
+  documentId        String?                 @map("document_id")
+  dealDocument      DealDocument?           @relation(fields: [documentId], references: [id], onDelete: SetNull)
+  reviewType        QaReviewType            @map("review_type")
+  status            QaReviewStatus          @default(pending)
+  assignedToUserId  String?                 @map("assigned_to_user_id")
+  assignedTo        User?                   @relation("QaReviewAssignee", fields: [assignedToUserId], references: [id], onDelete: SetNull)
+  requestedByUserId String?                 @map("requested_by_user_id")
+  requestedBy       User?                   @relation("QaReviewRequester", fields: [requestedByUserId], references: [id], onDelete: SetNull)
+  outcome           QaReviewOutcome?
+  notes             Json                    @default("{}")
+  createdAt         DateTime                @default(now()) @map("created_at")
+  updatedAt         DateTime                @updatedAt @map("updated_at")
+  checklistItems    QaReviewChecklistItem[]
+  auditLogs         ComplianceAuditLog[]
+
+  @@index([dealId])
+  @@index([status])
+  @@index([reviewType])
+  @@map("qa_reviews")
+}
+
+// @domain: compliance
+model QaReviewChecklistItem {
+  id           String                @id @default(uuid())
+  reviewId     String                @map("review_id")
+  review       QaReview              @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  itemKey      String                @map("item_key") @db.VarChar(96)
+  itemLabel    String                @map("item_label") @db.VarChar(200)
+  status       QaChecklistItemStatus @default(pending)
+  reviewerNote String?               @map("reviewer_note") @db.Text
+  createdAt    DateTime              @default(now()) @map("created_at")
+  updatedAt    DateTime              @updatedAt @map("updated_at")
+
+  @@index([reviewId])
+  @@map("qa_review_checklist_items")
+}
+
+// @domain: compliance
+model ComplianceEscalation {
+  id             String                         @id @default(uuid())
+  caseId         String                         @map("case_id")
+  complianceCase ComplianceCase                 @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  escalationType ComplianceEscalationType       @map("escalation_type")
+  targetRole     ComplianceEscalationTargetRole @map("target_role")
+  status         ComplianceEscalationStatus     @default(open)
+  createdAt      DateTime                       @default(now()) @map("created_at")
+  updatedAt      DateTime                       @updatedAt @map("updated_at")
+
+  @@index([caseId])
+  @@index([status])
+  @@map("compliance_escalations")
+}
+
+// @domain: compliance
+model ComplianceAuditLog {
+  id             String          @id @default(uuid())
+  actorUserId    String          @map("actor_user_id")
+  actor          User            @relation("ComplianceAuditActor", fields: [actorUserId], references: [id], onDelete: Cascade)
+  actionKey      String          @map("action_key") @db.VarChar(96)
+  caseId         String?         @map("case_id")
+  complianceCase ComplianceCase? @relation(fields: [caseId], references: [id], onDelete: SetNull)
+  reviewId       String?         @map("review_id")
+  qaReview       QaReview?       @relation(fields: [reviewId], references: [id], onDelete: SetNull)
+  payload        Json            @default("{}")
+  createdAt      DateTime        @default(now()) @map("created_at")
+
+  @@index([actorUserId, createdAt])
+  @@index([actionKey])
+  @@map("compliance_audit_logs")
+}
+
+// @domain: compliance
+model ComplaintCase {
+  id         String @id @default(cuid())
+  caseNumber String @unique @map("case_number")
+
+  ownerType String @map("owner_type") // agency | solo_broker | platform
+  ownerId   String @map("owner_id")
+
+  complainantUserId             String?   @map("complainant_user_id")
+  complainantName               String?   @map("complainant_name")
+  complainantEmail              String?   @map("complainant_email")
+  complainantPhone              String?   @map("complainant_phone")
+  complainantRelation           String?   @map("complainant_relation")
+  consentToBeContacted          Boolean   @default(false) @map("consent_to_be_contacted")
+  preferredResolution           String?   @map("preferred_resolution") @db.Text
+  resolutionNote                String?   @map("resolution_note") @db.Text
+  consumerProtectionExplainedAt DateTime? @map("consumer_protection_explained_at")
+  evidenceDocumentIds           Json?     @map("evidence_document_ids") @db.JsonB
+
+  assignedOwnerUserId String? @map("assigned_owner_user_id")
+  assignedOwner       User?   @relation("ComplaintCaseAssignedOwner", fields: [assignedOwnerUserId], references: [id], onDelete: SetNull)
+
+  targetType String? @map("target_type")
+  targetId   String? @map("target_id")
+
+  linkedBrokerId         String? @map("linked_broker_id")
+  linkedEmployeeUserId   String? @map("linked_employee_user_id")
+  linkedAgencyId         String? @map("linked_agency_id")
+  linkedListingId        String? @map("linked_listing_id")
+  linkedDealId           String? @map("linked_deal_id")
+  linkedOfferId          String? @map("linked_offer_id")
+  linkedContractId       String? @map("linked_contract_id")
+  linkedComplianceCaseId String? @map("linked_compliance_case_id")
+
+  complaintChannel String @map("complaint_channel")
+  complaintType    String @map("complaint_type")
+  severity         String
+
+  summary        String  @db.Text
+  description    String  @db.Text
+  intakeLanguage String? @map("intake_language")
+
+  status          String
+  routingDecision String? @map("routing_decision")
+
+  aiSummary String? @map("ai_summary") @db.Text
+  aiFlags   Json?   @map("ai_flags") @db.JsonB
+
+  firstReceivedAt DateTime  @default(now()) @map("first_received_at")
+  acknowledgedAt  DateTime? @map("acknowledged_at")
+  closedAt        DateTime? @map("closed_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  events                   ComplaintEvent[]
+  attachments              ComplaintAttachment[]
+  publicProtectionReferral PublicProtectionReferral?
+  classificationReviews    ComplaintClassificationReview[]
+  correctiveActionPlans    ComplaintCorrectiveActionPlan[]
+  escalationSuggestions    ComplaintEscalationSuggestion[]
+
+  @@index([ownerType, ownerId], map: "idx_complaint_case_owner")
+  @@index([status], map: "idx_complaint_case_status")
+  @@index([complaintType], map: "idx_complaint_case_type")
+  @@index([linkedBrokerId], map: "idx_complaint_case_linked_broker")
+  @@index([assignedOwnerUserId], map: "idx_complaint_case_assigned_owner")
+  @@map("complaint_cases")
+}
+
+// @domain: compliance
+model ComplaintEvent {
+  id                   String   @id @default(cuid())
+  complaintCaseId      String   @map("complaint_case_id")
+  eventType            String   @map("event_type")
+  performedById        String?  @map("performed_by_id")
+  aiAssisted           Boolean  @default(false) @map("ai_assisted")
+  visibleToComplainant Boolean  @default(false) @map("visible_to_complainant")
+  details              Json?    @db.JsonB
+  createdAt            DateTime @default(now()) @map("created_at")
+
+  complaintCase ComplaintCase @relation(fields: [complaintCaseId], references: [id], onDelete: Cascade)
+
+  @@index([complaintCaseId], map: "idx_complaint_events_case")
+  @@index([eventType], map: "idx_complaint_events_type")
+  @@map("complaint_events")
+}
+
+// @domain: compliance
+model ComplaintAttachment {
+  id              String   @id @default(cuid())
+  complaintCaseId String   @map("complaint_case_id")
+  fileName        String   @map("file_name")
+  fileUrl         String   @map("file_url") @db.Text
+  fileType        String?  @map("file_type")
+  uploadedById    String?  @map("uploaded_by_id")
+  confidential    Boolean  @default(true)
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  complaintCase ComplaintCase @relation(fields: [complaintCaseId], references: [id], onDelete: Cascade)
+
+  @@index([complaintCaseId], map: "idx_complaint_attachments_case")
+  @@map("complaint_attachments")
+}
+
+// @domain: compliance
+model ComplaintPolicyRule {
+  id               String   @id @default(cuid())
+  ownerType        String   @map("owner_type")
+  ownerId          String   @map("owner_id")
+  complaintType    String   @map("complaint_type")
+  defaultSeverity  String   @map("default_severity")
+  suggestedRouting String   @map("suggested_routing")
+  autoFlagSyndic   Boolean  @default(false) @map("auto_flag_syndic")
+  active           Boolean  @default(true)
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  @@index([ownerType, ownerId], map: "idx_complaint_policy_owner")
+  @@map("complaint_policy_rules")
+}
+
+// @domain: compliance
+model ComplaintWrittenPolicyRecord {
+  id            String   @id @default(cuid())
+  ownerType     String   @map("owner_type")
+  ownerId       String   @map("owner_id")
+  documentUrl   String?  @map("document_url") @db.Text
+  policySummary String   @map("policy_summary") @db.Text
+  versionLabel  String?  @map("version_label") @db.VarChar(64)
+  effectiveAt   DateTime @map("effective_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@unique([ownerType, ownerId], map: "uq_complaint_written_policy_owner")
+  @@map("complaint_written_policy_records")
+}
+
+// @domain: compliance
+model ComplaintClassificationReview {
+  id                                    String        @id @default(cuid())
+  complaintCaseId                       String        @map("complaint_case_id")
+  complaintCase                         ComplaintCase @relation(fields: [complaintCaseId], references: [id], onDelete: Cascade)
+  initialClassification                 String        @map("initial_classification")
+  severity                              String
+  plausibleComplianceCategories         Json          @default("[]") @map("plausible_compliance_categories")
+  requiresManualReview                  Boolean       @default(false) @map("requires_manual_review")
+  requiresConsumerProtectionExplanation Boolean       @default(false) @map("requires_consumer_protection_explanation")
+  suggestPublicAssistanceReferral       Boolean       @default(false) @map("suggest_public_assistance_referral")
+  suggestSyndicReferral                 Boolean       @default(false) @map("suggest_syndic_referral")
+  reviewerId                            String        @map("reviewer_id")
+  reviewer                              User          @relation("ComplaintClassificationReviewer", fields: [reviewerId], references: [id], onDelete: Cascade)
+  createdAt                             DateTime      @default(now()) @map("created_at")
+
+  @@index([complaintCaseId], map: "idx_complaint_classification_case")
+  @@map("complaint_classification_reviews")
+}
+
+// @domain: compliance
+model ComplaintCorrectiveActionPlan {
+  id                String        @id @default(cuid())
+  complaintCaseId   String        @map("complaint_case_id")
+  complaintCase     ComplaintCase @relation(fields: [complaintCaseId], references: [id], onDelete: Cascade)
+  rootCauseSummary  String        @map("root_cause_summary") @db.Text
+  correctiveActions Json          @default("[]") @map("corrective_actions")
+  preventiveActions Json          @default("[]") @map("preventive_actions")
+  ownerUserId       String        @map("owner_user_id")
+  owner             User          @relation("ComplaintCapaOwner", fields: [ownerUserId], references: [id], onDelete: Cascade)
+  dueDate           DateTime?     @map("due_date") @db.Date
+  completed         Boolean       @default(false)
+  completedAt       DateTime?     @map("completed_at")
+  createdAt         DateTime      @default(now()) @map("created_at")
+  updatedAt         DateTime      @updatedAt @map("updated_at")
+
+  @@index([complaintCaseId], map: "idx_complaint_capa_case")
+  @@map("complaint_corrective_action_plans")
+}
+
+// @domain: compliance
+model ComplaintEscalationSuggestion {
+  id              String        @id @default(cuid())
+  complaintCaseId String        @map("complaint_case_id")
+  complaintCase   ComplaintCase @relation(fields: [complaintCaseId], references: [id], onDelete: Cascade)
+  destination     String        @map("destination")
+  reason          String        @db.Text
+  recommended     Boolean       @default(true)
+  completed       Boolean       @default(false)
+  completedAt     DateTime?     @map("completed_at")
+  createdByUserId String?       @map("created_by_user_id")
+  createdBy       User?         @relation("ComplaintEscalationCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  createdAt       DateTime      @default(now()) @map("created_at")
+
+  @@index([complaintCaseId], map: "idx_complaint_escalation_case")
+  @@index([destination], map: "idx_complaint_escalation_destination")
+  @@map("complaint_escalation_suggestions")
+}
+
+// @domain: compliance
+model ComplianceAuditRecord {
+  id                    String   @id @default(cuid())
+  auditNumber           String   @unique @map("audit_number")
+  ownerType             String   @map("owner_type")
+  ownerId               String   @map("owner_id")
+  entityType            String   @map("entity_type")
+  entityId              String   @map("entity_id")
+  actionType            String   @map("action_type")
+  moduleKey             String   @map("module_key")
+  actorType             String?  @map("actor_type")
+  actorId               String?  @map("actor_id")
+  linkedListingId       String?  @map("linked_listing_id")
+  linkedDealId          String?  @map("linked_deal_id")
+  linkedOfferId         String?  @map("linked_offer_id")
+  linkedContractId      String?  @map("linked_contract_id")
+  linkedComplaintCaseId String?  @map("linked_complaint_case_id")
+  linkedTrustDepositId  String?  @map("linked_trust_deposit_id")
+  aiAssisted            Boolean  @default(false) @map("ai_assisted")
+  humanReviewRequired   Boolean  @default(false) @map("human_review_required")
+  humanReviewCompleted  Boolean  @default(false) @map("human_review_completed")
+  severity              String   @default("info")
+  summary               String   @db.Text
+  details               Json?    @db.JsonB
+  immutableHash         String   @map("immutable_hash")
+  eventTimestamp        DateTime @default(now()) @map("event_timestamp")
+
+  @@index([ownerType, ownerId], map: "idx_compliance_audit_owner")
+  @@index([eventTimestamp], map: "idx_compliance_audit_event_ts")
+  @@index([moduleKey], map: "idx_compliance_audit_module")
+  @@map("compliance_audit_records")
+}
+
+// @domain: compliance
+model ComplianceExportBundle {
+  id               String    @id @default(cuid())
+  bundleNumber     String    @unique @map("bundle_number")
+  ownerType        String    @map("owner_type")
+  ownerId          String    @map("owner_id")
+  bundleType       String    @map("bundle_type")
+  status           String
+  targetEntityType String?   @map("target_entity_type")
+  targetEntityId   String?   @map("target_entity_id")
+  dateFrom         DateTime? @map("date_from")
+  dateTo           DateTime? @map("date_to")
+  generatedById    String?   @map("generated_by_id")
+  generatedAt      DateTime? @map("generated_at")
+  sealedAt         DateTime? @map("sealed_at")
+  manifest         Json?     @db.JsonB
+  fileUrl          String?   @map("file_url") @db.Text
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  items ComplianceExportItem[]
+
+  @@index([ownerType, ownerId], map: "idx_compliance_export_owner")
+  @@map("compliance_export_bundles")
+}
+
+// @domain: compliance
+model ComplianceExportItem {
+  id                       String @id @default(cuid())
+  complianceExportBundleId String @map("compliance_export_bundle_id")
+  sourceType               String @map("source_type")
+  sourceId                 String @map("source_id")
+  label                    String @db.Text
+  sortOrder                Int    @default(0) @map("sort_order")
+  metadata                 Json?  @db.JsonB
+
+  complianceExportBundle ComplianceExportBundle @relation(fields: [complianceExportBundleId], references: [id], onDelete: Cascade)
+
+  @@index([complianceExportBundleId], map: "idx_compliance_export_item_bundle")
+  @@map("compliance_export_items")
+}
+
+// @domain: compliance
+model ComplianceGuardrailRule {
+  id              String   @id @default(cuid())
+  ruleKey         String   @unique @map("rule_key")
+  ownerType       String   @map("owner_type")
+  ownerId         String   @map("owner_id")
+  moduleKey       String   @map("module_key")
+  actionKey       String   @map("action_key")
+  severity        String
+  enforcementMode String   @map("enforcement_mode")
+  conditionType   String   @map("condition_type")
+  conditionConfig Json?    @map("condition_config") @db.JsonB
+  message         String   @db.Text
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@index([ownerType, ownerId], map: "idx_guardrail_rule_owner")
+  @@index([moduleKey, actionKey], map: "idx_guardrail_rule_module_action")
+  @@map("compliance_guardrail_rules")
+}
+
+// @domain: compliance
+model ComplianceGuardrailDecision {
+  id               String   @id @default(cuid())
+  decisionNumber   String   @unique @map("decision_number")
+  ownerType        String   @map("owner_type")
+  ownerId          String   @map("owner_id")
+  moduleKey        String   @map("module_key")
+  actionKey        String   @map("action_key")
+  entityType       String   @map("entity_type")
+  entityId         String?  @map("entity_id")
+  actorType        String?  @map("actor_type")
+  actorId          String?  @map("actor_id")
+  outcome          String // allowed | warned | soft_blocked | hard_blocked | manual_review_required
+  severity         String
+  triggeredRuleKey String?  @map("triggered_rule_key")
+  reasonCode       String?  @map("reason_code")
+  message          String   @db.Text
+  aiAssisted       Boolean  @default(false) @map("ai_assisted")
+  overrideAllowed  Boolean  @default(false) @map("override_allowed")
+  details          Json?    @db.JsonB
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  @@index([ownerType, ownerId], map: "idx_guardrail_decision_owner")
+  @@index([moduleKey, actionKey], map: "idx_guardrail_decision_module")
+  @@map("compliance_guardrail_decisions")
+}
+
+// @domain: compliance
+model ComplianceManualReviewQueue {
+  id           String   @id @default(cuid())
+  ownerType    String   @map("owner_type")
+  ownerId      String   @map("owner_id")
+  moduleKey    String   @map("module_key")
+  actionKey    String   @map("action_key")
+  entityType   String   @map("entity_type")
+  entityId     String?  @map("entity_id")
+  decisionId   String?  @map("decision_id")
+  priority     String   @default("high")
+  reason       String   @db.Text
+  assignedToId String?  @map("assigned_to_id")
+  status       String   @default("open")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([ownerType, ownerId, status], map: "idx_manual_review_owner_status")
+  @@map("compliance_manual_review_queue")
+}
+
+// @domain: compliance
+model ComplianceScore {
+  id             String   @id @default(cuid())
+  ownerType      String   @map("owner_type")
+  ownerId        String   @map("owner_id")
+  scopeType      String   @default("global") @map("scope_type")
+  scopeId        String?  @map("scope_id")
+  score          Float
+  grade          String
+  riskLevel      String   @map("risk_level")
+  lastComputedAt DateTime @default(now()) @map("last_computed_at")
+  factors        Json     @db.JsonB
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@index([ownerType, ownerId, scopeType, scopeId], map: "idx_compliance_score_owner_scope")
+  @@index([lastComputedAt], map: "idx_compliance_score_computed")
+  @@map("compliance_scores")
+}
+
+// @domain: compliance
+model ComplianceAlert {
+  id               String    @id @default(cuid())
+  ownerType        String    @map("owner_type")
+  ownerId          String    @map("owner_id")
+  alertType        String    @map("alert_type")
+  severity         String
+  title            String
+  description      String    @db.Text
+  entityType       String?   @map("entity_type")
+  entityId         String?   @map("entity_id")
+  acknowledged     Boolean   @default(false)
+  acknowledgedById String?   @map("acknowledged_by_id")
+  acknowledgedAt   DateTime? @map("acknowledged_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+
+  @@index([ownerType, ownerId, acknowledged], map: "idx_compliance_alert_owner_ack")
+  @@map("compliance_alerts")
+}
+
+// @domain: compliance
+model ComplianceRiskEvent {
+  id                String   @id @default(cuid())
+  ownerType         String   @map("owner_type")
+  ownerId           String   @map("owner_id")
+  relatedEntityType String   @map("related_entity_type")
+  relatedEntityId   String?  @map("related_entity_id")
+  riskType          String   @map("risk_type")
+  severity          String
+  description       String   @db.Text
+  detectedBy        String   @map("detected_by")
+  aiConfidence      Float?   @map("ai_confidence")
+  requiresReview    Boolean  @default(true) @map("requires_review")
+  reviewed          Boolean  @default(false)
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@index([ownerType, ownerId], map: "idx_compliance_risk_owner")
+  @@index([riskType, createdAt], map: "idx_compliance_risk_type_created")
+  @@map("compliance_risk_events")
+}
+
+// @domain: compliance
+model ComplianceAnomaly {
+  id            String   @id @default(cuid())
+  entityType    String   @map("entity_type")
+  entityId      String   @map("entity_id")
+  anomalyType   String   @map("anomaly_type")
+  description   String   @db.Text
+  baselineValue Float?   @map("baseline_value")
+  detectedValue Float?   @map("detected_value")
+  severity      String
+  detectedAt    DateTime @default(now()) @map("detected_at")
+
+  @@index([entityType, entityId], map: "idx_compliance_anomaly_entity")
+  @@index([detectedAt], map: "idx_compliance_anomaly_detected")
+  @@map("compliance_anomalies")
+}
+
+// @domain: compliance
+model ComplianceActorProfile {
+  id                    String   @id @default(cuid())
+  userId                String   @unique @map("user_id")
+  actorType             String   @map("actor_type")
+  displayRole           String?  @map("display_role")
+  licenseStatus         String?  @map("license_status")
+  licenseNumber         String?  @map("license_number")
+  licenseCategory       String?  @map("license_category")
+  agencyId              String?  @map("agency_id")
+  supervisingActorId    String?  @map("supervising_actor_id")
+  canHoldTrustAuthority Boolean  @default(false) @map("can_hold_trust_authority")
+  canApproveContracts   Boolean  @default(false) @map("can_approve_contracts")
+  canCloseComplaints    Boolean  @default(false) @map("can_close_complaints")
+  canPublishListings    Boolean  @default(false) @map("can_publish_listings")
+  active                Boolean  @default(true)
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  @@index([actorType], map: "idx_compliance_actor_type")
+  @@index([agencyId], map: "idx_compliance_actor_agency")
+  @@map("compliance_actor_profiles")
+}
+
+// @domain: compliance
+model ComplianceReportDefinition {
+  id            String   @id @default(cuid())
+  reportKey     String   @unique @map("report_key")
+  ownerType     String   @map("owner_type")
+  ownerId       String   @map("owner_id")
+  title         String
+  description   String?  @db.Text
+  reportType    String   @map("report_type")
+  allowedScopes Json     @map("allowed_scopes") @db.JsonB
+  defaultFormat String   @default("json") @map("default_format")
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  runs ComplianceReportRun[]
+
+  @@index([ownerType, ownerId], map: "idx_report_def_owner")
+  @@map("compliance_report_definitions")
+}
+
+// @domain: compliance
+model ComplianceReportRun {
+  id                 String                      @id @default(cuid())
+  runNumber          String                      @unique @map("run_number")
+  ownerType          String                      @map("owner_type")
+  ownerId            String                      @map("owner_id")
+  reportDefinitionId String?                     @map("report_definition_id")
+  reportDefinition   ComplianceReportDefinition? @relation(fields: [reportDefinitionId], references: [id], onDelete: SetNull)
+  reportKey          String                      @map("report_key")
+  reportType         String                      @map("report_type")
+  scopeType          String                      @map("scope_type")
+  scopeId            String?                     @map("scope_id")
+  dateFrom           DateTime?                   @map("date_from")
+  dateTo             DateTime?                   @map("date_to")
+  requestedByActorId String?                     @map("requested_by_actor_id")
+  generatedBySystem  Boolean                     @default(false) @map("generated_by_system")
+  format             String                      @default("json")
+  status             String                      @default("draft")
+  manifest           Json?                       @db.JsonB
+  summary            Json?                       @db.JsonB
+  fileUrl            String?                     @map("file_url") @db.Text
+  generatedAt        DateTime?                   @map("generated_at")
+  sealedAt           DateTime?                   @map("sealed_at")
+  createdAt          DateTime                    @default(now()) @map("created_at")
+  items              ComplianceReportItem[]
+
+  @@index([ownerType, ownerId], map: "idx_report_run_owner")
+  @@index([status], map: "idx_report_run_status")
+  @@map("compliance_report_runs")
+}
+
+// @domain: compliance
+model ComplianceReportItem {
+  id                    String              @id @default(cuid())
+  complianceReportRunId String              @map("compliance_report_run_id")
+  complianceReportRun   ComplianceReportRun @relation(fields: [complianceReportRunId], references: [id], onDelete: Cascade)
+  sourceType            String              @map("source_type")
+  sourceId              String              @map("source_id")
+  label                 String              @db.Text
+  category              String?             @db.VarChar(128)
+  sortOrder             Int                 @default(0) @map("sort_order")
+  metadata              Json?               @db.JsonB
+  createdAt             DateTime            @default(now()) @map("created_at")
+
+  @@index([complianceReportRunId], map: "idx_report_item_run")
+  @@map("compliance_report_items")
+}
+
+// @domain: compliance
+model ComplianceScheduledReport {
+  id               String    @id @default(cuid())
+  ownerType        String    @map("owner_type")
+  ownerId          String    @map("owner_id")
+  reportKey        String    @map("report_key")
+  reportType       String    @map("report_type")
+  scopeType        String    @map("scope_type")
+  scopeId          String?   @map("scope_id")
+  frequency        String
+  active           Boolean   @default(true)
+  lastRunAt        DateTime? @map("last_run_at")
+  nextRunAt        DateTime? @map("next_run_at")
+  createdByActorId String?   @map("created_by_actor_id")
+  createdAt        DateTime  @default(now()) @map("created_at")
+
+  @@index([ownerType, ownerId, active], map: "idx_scheduled_report_owner")
+  @@map("compliance_scheduled_reports")
+}
+
+// @domain: compliance
+model LecipmLegalDocumentTemplate {
+  id          String                               @id @default(cuid())
+  kind        LecipmLegalDocumentTemplateKind      @unique
+  name        String                               @db.VarChar(256)
+  description String?                              @db.Text
+  isActive    Boolean                              @default(true) @map("is_active")
+  createdAt   DateTime                             @default(now()) @map("created_at")
+  updatedAt   DateTime                             @updatedAt @map("updated_at")
+  versions    LecipmLegalDocumentTemplateVersion[]
+
+  @@index([isActive])
+  @@map("lecipm_legal_document_templates")
+}
+
+// @domain: compliance
+model LecipmLegalDocumentTemplateVersion {
+  id              String                        @id @default(cuid())
+  templateId      String                        @map("template_id")
+  template        LecipmLegalDocumentTemplate   @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  versionNumber   Int                           @map("version_number")
+  /// HTML with {{dot.path}} placeholders — operational assist; not legal advice.
+  bodyHtml        String                        @map("body_html") @db.Text
+  changelog       String?                       @db.Text
+  createdByUserId String?                       @map("created_by_user_id")
+  createdBy       User?                         @relation("LegalDocTemplateVersionAuthor", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  createdAt       DateTime                      @default(now()) @map("created_at")
+  artifacts       LecipmLegalDocumentArtifact[]
+
+  @@unique([templateId, versionNumber])
+  @@index([templateId])
+  @@map("lecipm_legal_document_template_versions")
+}
+
+// @domain: compliance
+model LecipmLegalDocumentArtifact {
+  id                               String                             @id @default(cuid())
+  templateVersionId                String                             @map("template_version_id")
+  templateVersion                  LecipmLegalDocumentTemplateVersion @relation(fields: [templateVersionId], references: [id], onDelete: Restrict)
+  kind                             LecipmLegalDocumentTemplateKind
+  domain                           LecipmLegalDocumentDomain
+  dealId                           String?                            @map("deal_id")
+  deal                             Deal?                              @relation(fields: [dealId], references: [id], onDelete: SetNull)
+  capitalDealId                    String?                            @map("capital_deal_id") @db.VarChar(36)
+  capitalDeal                      AmfCapitalDeal?                    @relation(fields: [capitalDealId], references: [id], onDelete: SetNull)
+  sourceDataSnapshot               Json                               @map("source_data_snapshot")
+  renderedHtml                     String                             @map("rendered_html") @db.Text
+  pdfStorageKey                    String?                            @map("pdf_storage_key") @db.VarChar(512)
+  status                           LecipmLegalDocumentArtifactStatus  @default(AWAITING_APPROVAL)
+  approvedByBrokerId               String?                            @map("approved_by_broker_id")
+  approvedByBroker                 User?                              @relation("LegalDocArtifactBrokerApprover", fields: [approvedByBrokerId], references: [id], onDelete: SetNull)
+  approvedAt                       DateTime?                          @map("approved_at")
+  investmentComplianceApprovedById String?                            @map("investment_compliance_approved_by_id")
+  investmentComplianceApprover     User?                              @relation("LegalDocArtifactInvComplianceApprover", fields: [investmentComplianceApprovedById], references: [id], onDelete: SetNull)
+  investmentComplianceApprovedAt   DateTime?                          @map("investment_compliance_approved_at")
+  signatureSessionId               String?                            @unique @map("signature_session_id")
+  signatureSession                 SignatureSession?                  @relation(fields: [signatureSessionId], references: [id], onDelete: SetNull)
+  createdByUserId                  String?                            @map("created_by_user_id")
+  createdBy                        User?                              @relation("LegalDocArtifactCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  createdAt                        DateTime                           @default(now()) @map("created_at")
+  updatedAt                        DateTime                           @updatedAt @map("updated_at")
+  dispatches                       LecipmLegalDocumentDispatch[]
+  digitalSignatures                DigitalSignature[]
+  /// Deterministic locked PDF bytes after broker sign (tamper-evident bundle); regenerate if document changes.
+  lockedPdfBytes                   Bytes?                             @map("locked_pdf_bytes")
+  lockedPdfGeneratedAt             DateTime?                          @map("locked_pdf_generated_at")
+  offerDraftFromPromise            OfferDraft?                        @relation("OfferDraftPromiseArtifact")
+
+  @@index([dealId])
+  @@index([capitalDealId])
+  @@index([status, createdAt])
+  @@index([kind])
+  @@map("lecipm_legal_document_artifacts")
+}
+
+// @domain: compliance
+model LecipmLegalDocumentDispatch {
+  id            String                             @id @default(cuid())
+  artifactId    String                             @map("artifact_id")
+  artifact      LecipmLegalDocumentArtifact        @relation(fields: [artifactId], references: [id], onDelete: Cascade)
+  channel       LecipmLegalDocumentDispatchChannel
+  status        LecipmLegalDocumentDispatchStatus  @default(PENDING)
+  targetSummary Json                               @default("{}") @map("target_summary")
+  errorMessage  String?                            @map("error_message") @db.Text
+  sentAt        DateTime?                          @map("sent_at")
+  createdAt     DateTime                           @default(now()) @map("created_at")
+
+  @@index([artifactId])
+  @@index([status])
+  @@map("lecipm_legal_document_dispatches")
+}
+
+// @domain: compliance
+model VerificationRequest {
+  id               String                    @id @default(uuid()) @db.Uuid
+  userId           String?                   @map("user_id")
+  listingId        String?                   @map("listing_id")
+  type             String
+  status           VerificationRequestStatus @default(pending)
+  notes            String?                   @db.Text
+  submittedAt      DateTime                  @default(now()) @map("submitted_at")
+  reviewedAt       DateTime?                 @map("reviewed_at")
+  reviewedByUserId String?                   @map("reviewed_by_user_id")
+  submitter        User?                     @relation("VerificationRequestSubmitter", fields: [userId], references: [id], onDelete: SetNull)
+  reviewedBy       User?                     @relation("VerificationRequestReviewer", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([userId])
+  @@index([listingId])
+  @@map("verification_requests")
+}
+
+// @domain: compliance
+model OperationalControl {
+  id          String                 @id @default(uuid())
+  controlType OperationalControlType
+  targetType  String // GLOBAL | REGION | USER | LISTING_CATEGORY | MARKET
+  targetId    String? // region code, userId, category slug, etc.
+  payload     Json? // e.g. { "flow": "instant_booking" }, { "holdReason": "..." }
+  active      Boolean                @default(true)
+  reason      String?
+  reasonCode  String?
+  createdBy   String?
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
+  expiresAt   DateTime?
+
+  @@index([controlType])
+  @@index([targetType, targetId])
+  @@index([active])
+}
+
+// @domain: compliance
+model SystemAlert {
+  id           String              @id @default(uuid())
+  alertType    String // FRAUD_SPIKE | PAYMENT_FAILURE | DISPUTE_SPIKE | LATENCY | ERROR_RATE
+  severity     SystemAlertSeverity
+  message      String
+  threshold    Float?
+  currentValue Float?
+  resolvedAt   DateTime?
+  resolvedBy   String?
+  metadata     Json?
+  createdAt    DateTime            @default(now())
+
+  @@index([alertType])
+  @@index([severity])
+  @@index([resolvedAt])
+  @@index([createdAt])
+}
+
+// @domain: compliance
+model PolicyRule {
+  id            String         @id @default(uuid())
+  key           String         @unique
+  name          String
+  description   String?
+  ruleType      PolicyRuleType
+  scope         String         @default("GLOBAL") // GLOBAL | REGION
+  scopeValue    String?
+  conditions    Json // e.g. { "minVerification": "VERIFIED", "maxFraudScore": 0.5 }
+  effect        PolicyEffect
+  effectPayload Json? // e.g. { "holdReasonCode": "VERIFY_IDENTITY" }
+  version       Int            @default(1)
+  active        Boolean        @default(true)
+  updatedBy     String?
+  updatedAt     DateTime       @updatedAt
+  createdAt     DateTime       @default(now())
+
+  @@index([key])
+  @@index([ruleType])
+  @@index([active])
+}
+
+// @domain: compliance
+model ComplianceInspection {
+  id        String   @id @default(cuid())
+  ownerId   String   @map("owner_id")
+  result    String   @db.VarChar(16)
+  issues    Json
+  context   Json?
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([ownerId, createdAt(sort: Desc)], map: "idx_compliance_inspections_owner_created")
+  @@map("compliance_inspections")
+}
+
+// @domain: compliance
+model AbuseSignal {
+  id         String          @id @default(uuid())
+  userId     String?
+  entityType String?
+  entityId   String?
+  signalType AbuseSignalType
+  severity   String // LOW | MEDIUM | HIGH
+  payload    Json? // IP, device hints, correlation ids
+  createdBy  String? // system or staff
+  createdAt  DateTime        @default(now())
+
+  @@index([userId])
+  @@index([signalType])
+  @@index([createdAt])
+}
+
+// @domain: compliance
+model CrisisEvent {
+  id          String            @id @default(uuid())
+  title       String
+  severity    CrisisSeverity
+  status      String            @default("ACTIVE") // ACTIVE | CONTAINED | RESOLVED
+  region      String? // market or region
+  startedAt   DateTime          @default(now())
+  resolvedAt  DateTime?
+  resolvedBy  String?
+  playbookRef String? // reference to runbook
+  summary     String?
+  createdAt   DateTime
+  updatedAt   DateTime          @updatedAt
+  actionLogs  CrisisActionLog[]
+
+  @@index([status])
+  @@index([severity])
+  @@index([startedAt])
+}
+
+// @domain: compliance
+model CrisisActionLog {
+  id          String      @id @default(uuid())
+  crisisId    String
+  crisis      CrisisEvent @relation(fields: [crisisId], references: [id], onDelete: Cascade)
+  actionType  String // BOOKING_FREEZE | PAYOUT_FREEZE | CONTENT_TAKEDOWN | ESCALATION
+  targetType  String?
+  targetId    String?
+  performedBy String
+  reasonCode  String?
+  payload     Json?
+  createdAt   DateTime    @default(now())
+
+  @@index([crisisId])
+  @@index([createdAt])
+}
+
+// @domain: compliance
+model ComplianceRequirement {
+  id             String   @id @default(uuid())
+  marketId       String
+  requirementKey String // TAX_REGISTRATION | LICENSING | DATA_RETENTION | DISCLOSURE
+  name           String
+  description    String?
+  active         Boolean
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([marketId])
+  @@index([requirementKey])
+}
+
+// @domain: compliance
+model ComplianceReview {
+  id            String    @id @default(uuid())
+  requirementId String?
+  entityType    String // USER | LISTING | BOOKING
+  entityId      String
+  marketId      String?
+  status        String // PENDING | COMPLIANT | NON_COMPLIANT | EXCEPTION
+  reviewedAt    DateTime?
+  reviewedBy    String?
+  notes         String?
+  documentRefs  Json
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([entityType, entityId])
+  @@index([marketId])
+  @@index([status])
+}
+
+// @domain: compliance
+model EnforcementAction {
+  id          String                @id @default(uuid())
+  userId      String
+  actionType  EnforcementActionType
+  severity    String // LOW | MEDIUM | HIGH | CRITICAL
+  reasonCode  String
+  reasonText  String?
+  marketId    String?
+  effectiveAt DateTime              @default(now())
+  expiresAt   DateTime?
+  performedBy String?
+  appealId    String?
+  metadata    Json?
+  createdAt   DateTime              @default(now())
+
+  @@index([userId])
+  @@index([actionType])
+  @@index([effectiveAt])
+  @@index([reasonCode])
+}
+
+// @domain: compliance
+model Appeal {
+  id            String       @id @default(uuid())
+  enforcementId String?
+  userId        String
+  reasonCode    String?
+  description   String
+  status        AppealStatus
+  submittedAt   DateTime     @default(now())
+  reviewedBy    String?
+  reviewedAt    DateTime?
+  outcomeNotes  String?
+  createdAt     DateTime
+  updatedAt     DateTime     @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([submittedAt])
+}
+
+// @domain: compliance
+model TrustSafetyIncident {
+  id               String                        @id @default(uuid())
+  reporterId       String                        @map("reporter_id")
+  reporter         User                          @relation("IncidentReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  accusedUserId    String?                       @map("accused_user_id")
+  accusedUser      User?                         @relation("IncidentAccused", fields: [accusedUserId], references: [id], onDelete: SetNull)
+  listingId        String?                       @map("listing_id")
+  listing          ShortTermListing?             @relation(fields: [listingId], references: [id], onDelete: SetNull)
+  bookingId        String?                       @map("booking_id")
+  booking          Booking?                      @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  incidentCategory String                        @map("incident_category")
+  severityLevel    TrustSafetySeverity           @default(MEDIUM) @map("severity_level")
+  riskScore        Float?                        @map("risk_score") // 0-1
+  riskLevel        TrustSafetyRiskLevel?         @map("risk_level")
+  status           TrustSafetyIncidentStatus     @default(SUBMITTED)
+  urgencyLevel     String?                       @map("urgency_level") // normal | high | urgent | emergency
+  description      String
+  incidentTime     DateTime?
+  createdAt        DateTime                      @default(now()) @map("created_at")
+  updatedAt        DateTime                      @updatedAt @map("updated_at")
+  resolvedAt       DateTime?                     @map("resolved_at")
+  resolvedBy       String?                       @map("resolved_by")
+  resolutionNotes  String?                       @map("resolution_notes")
+  evidence         TrustSafetyEvidence[]
+  actions          TrustSafetyAction[]
+  appeals          TrustSafetyAppeal[]
+  responses        TrustSafetyIncidentResponse[]
+
+  @@index([reporterId])
+  @@index([accusedUserId])
+  @@index([listingId])
+  @@index([bookingId])
+  @@index([status])
+  @@index([severityLevel])
+  @@index([incidentCategory])
+  @@index([createdAt])
+  @@map("trust_safety_incidents")
+}
+
+// @domain: compliance
+model TrustSafetyEvidence {
+  id         String              @id @default(uuid())
+  incidentId String              @map("incident_id")
+  incident   TrustSafetyIncident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  fileUrl    String              @map("file_url")
+  fileType   String?             @map("file_type") // photo | video | screenshot | document
+  label      String?
+  uploadedBy String              @map("uploaded_by")
+  createdAt  DateTime            @default(now()) @map("created_at")
+
+  @@index([incidentId])
+  @@map("trust_safety_evidence")
+}
+
+// @domain: compliance
+model TrustSafetyAction {
+  id         String                @id @default(uuid())
+  incidentId String                @map("incident_id")
+  incident   TrustSafetyIncident   @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  actionType TrustSafetyActionType @map("action_type")
+  reasonCode String                @map("reason_code")
+  notes      String?
+  createdBy  String
+  createdAt  DateTime              @default(now()) @map("created_at")
+  metadata   Json?
+
+  @@index([incidentId])
+  @@index([actionType])
+  @@map("trust_safety_actions")
+}
+
+// @domain: compliance
+model TrustSafetyAppeal {
+  id             String                  @id @default(uuid())
+  incidentId     String                  @map("incident_id")
+  incident       TrustSafetyIncident     @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  actionId       String?                 @map("action_id") // TrustSafetyAction.id
+  submittedBy    String                  @map("submitted_by")
+  submitter      User                    @relation(fields: [submittedBy], references: [id], onDelete: Cascade)
+  appealReason   String                  @map("appeal_reason")
+  status         TrustSafetyAppealStatus @default(PENDING)
+  reviewedBy     String?                 @map("reviewed_by")
+  resolvedAt     DateTime?               @map("resolved_at")
+  resolutionNote String?                 @map("resolution_note")
+  createdAt      DateTime                @default(now()) @map("created_at")
+  updatedAt      DateTime                @updatedAt @map("updated_at")
+
+  @@index([incidentId])
+  @@index([submittedBy])
+  @@index([status])
+  @@map("trust_safety_appeals")
+}
+
+// @domain: compliance
+model TrustSafetyIncidentResponse {
+  id           String              @id @default(uuid())
+  incidentId   String              @map("incident_id")
+  incident     TrustSafetyIncident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  respondentId String              @map("respondent_id")
+  body         String
+  createdAt    DateTime
+
+  @@index([incidentId])
+  @@map("trust_safety_incident_responses")
+}
+
+// @domain: compliance
+model LecipmCrmOaciqSellerDeclaration {
+  id        String  @id @default(cuid())
+  listingId String  @map("listing_id")
+  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  sellerId  String  @map("seller_id")
+  seller    User    @relation("LecipmCrmOaciqSellerDeclarationSeller", fields: [sellerId], references: [id], onDelete: Cascade)
+
+  formVersion OaciqMandatoryFormVersion @map("form_version")
+
+  completed Boolean @default(false)
+  signed    Boolean @default(false)
+  refused   Boolean @default(false)
+
+  refusalReason String? @map("refusal_reason") @db.Text
+
+  submittedAt DateTime? @map("submitted_at")
+  signedAt    DateTime? @map("signed_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  disclosure LecipmDeclarationDisclosure?
+
+  @@unique([listingId, sellerId])
+  @@index([listingId])
+  @@map("lecipm_crm_oaciq_seller_declarations")
+}
+
+// @domain: compliance
+model ComplianceFormLog {
+  id                String                   @id @default(cuid())
+  entityType        ComplianceFormEntityType @map("entity_type")
+  entityId          String                   @map("entity_id")
+  action            ComplianceFormAction     @map("action")
+  performedByUserId String?                  @map("performed_by_user_id")
+  performedBy       User?                    @relation("ComplianceFormLogActor", fields: [performedByUserId], references: [id], onDelete: SetNull)
+  aiAssisted        Boolean                  @default(false) @map("ai_assisted")
+  notes             String?                  @db.Text
+  createdAt         DateTime                 @default(now()) @map("created_at")
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("compliance_form_logs")
+}
+
+// @domain: compliance
+model OaciqFormTemplate {
+  id                  String          @id @default(uuid())
+  formFamily          OaciqFormFamily @map("form_family")
+  versionLabel        String?         @map("version_label") @db.VarChar(64)
+  /// Storage key for the uploaded specimen PDF (S3/local) — optional when schema is registry-only.
+  sourcePdfKey        String?         @map("source_pdf_key") @db.VarChar(512)
+  /// Full schema: sections, fields, extraction metadata (no invented fields — only extractor + registry merge).
+  schema              Json            @default("{}")
+  extractedFieldCount Int             @default(0) @map("extracted_field_count")
+  createdAt           DateTime        @default(now()) @map("created_at")
+  updatedAt           DateTime        @updatedAt @map("updated_at")
+
+  fields    OaciqFormField[]
+  instances LecipmFormInstance[]
+
+  @@index([formFamily])
+  @@map("oaciq_form_templates")
+}
+
+// @domain: compliance
+model OaciqFormField {
+  id         String            @id @default(uuid())
+  templateId String            @map("template_id")
+  template   OaciqFormTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  fieldKey   String            @map("field_key") @db.VarChar(200)
+  label      String            @db.Text
+  fieldType  OaciqPdfFieldKind @map("field_type")
+  section    String?           @db.VarChar(200)
+  page       Int?
+  required   Boolean?
+  metadata   Json              @default("{}")
+
+  @@index([templateId])
+  @@index([fieldKey])
+  @@map("oaciq_form_fields")
+}
+
+// @domain: compliance
+model LecipmFormInstance {
+  id              String                   @id @default(uuid())
+  templateId      String                   @map("template_id")
+  template        OaciqFormTemplate        @relation(fields: [templateId], references: [id], onDelete: Restrict)
+  dealId          String                   @map("deal_id")
+  deal            Deal                     @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  status          LecipmFormInstanceStatus @default(draft)
+  data            Json                     @default("{}")
+  version         Int                      @default(1)
+  createdByUserId String?                  @map("created_by_user_id")
+  createdBy       User?                    @relation("LecipmFormInstanceAuthor", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  createdAt       DateTime                 @default(now()) @map("created_at")
+  updatedAt       DateTime                 @updatedAt @map("updated_at")
+
+  versions LecipmFormVersion[]
+
+  @@index([dealId])
+  @@index([templateId])
+  @@index([status])
+  @@map("lecipm_form_instances")
+}
+
+// @domain: compliance
+model LecipmFormVersion {
+  id             String             @id @default(uuid())
+  formInstanceId String             @map("form_instance_id")
+  formInstance   LecipmFormInstance @relation(fields: [formInstanceId], references: [id], onDelete: Cascade)
+  version        Int
+  data           Json               @default("{}")
+  createdAt      DateTime           @default(now()) @map("created_at")
+
+  @@index([formInstanceId])
+  @@map("lecipm_form_versions")
+}
+
+// @domain: compliance
+model SellerDisclosureProfile {
+  id                     String    @id @default(cuid())
+  sellerUserId           String    @unique @map("seller_user_id")
+  misrepresentationScore Float     @default(0) @map("misrepresentation_score")
+  recurringPatternCount  Int       @default(0) @map("recurring_pattern_count")
+  signals                Json      @default("{}")
+  lastEvaluatedAt        DateTime? @map("last_evaluated_at")
+  updatedAt              DateTime  @updatedAt @map("updated_at")
+
+  @@index([misrepresentationScore])
+  @@map("seller_disclosure_profiles")
+}
+
+// @domain: compliance
+model ComplianceFinanceAccount {
+  id        String         @id @default(cuid())
+  name      String         @db.VarChar(256)
+  domain    FinAdminDomain @map("domain")
+  type      FinAccountType @map("type")
+  currency  String         @default("CAD") @db.VarChar(8)
+  createdAt DateTime       @default(now()) @map("created_at")
+  updatedAt DateTime       @updatedAt @map("updated_at")
+
+  ledgerEntries ComplianceFinanceLedgerEntry[]
+
+  @@index([domain, type])
+  @@map("compliance_finance_accounts")
+}
+
+// @domain: compliance
+model ComplianceFinanceLedgerEntry {
+  id                 String                         @id @default(cuid())
+  accountId          String                         @map("account_id")
+  account            ComplianceFinanceAccount       @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  domain             FinAdminDomain                 @map("domain")
+  entryType          FinLedgerEntryType             @map("entry_type")
+  referenceType      String                         @map("reference_type") @db.VarChar(64)
+  referenceId        String?                        @map("reference_id") @db.VarChar(64)
+  amount             Decimal                        @map("amount") @db.Decimal(18, 2)
+  taxExclusiveAmount Decimal?                       @map("tax_exclusive_amount") @db.Decimal(18, 2)
+  gstAmount          Decimal?                       @map("gst_amount") @db.Decimal(18, 2)
+  qstAmount          Decimal?                       @map("qst_amount") @db.Decimal(18, 2)
+  effectiveDate      DateTime                       @map("effective_date")
+  counterpartyId     String?                        @map("counterparty_id")
+  counterparty       ComplianceFinanceCounterparty? @relation(fields: [counterpartyId], references: [id], onDelete: SetNull)
+  notesJson          Json?                          @map("notes_json")
+  createdAt          DateTime                       @default(now()) @map("created_at")
+
+  @@index([domain, effectiveDate])
+  @@index([entryType, effectiveDate])
+  @@index([referenceType, referenceId])
+  @@map("compliance_finance_ledger_entries")
+}
+
+// @domain: compliance
+model ComplianceFinanceCounterparty {
+  id            String              @id @default(cuid())
+  name          String              @db.VarChar(512)
+  type          FinCounterpartyKind @map("type")
+  taxNumberJson Json?               @map("tax_number_json")
+  createdAt     DateTime            @default(now()) @map("created_at")
+
+  ledgerEntries ComplianceFinanceLedgerEntry[]
+
+  @@map("compliance_finance_counterparties")
+}
+
+// @domain: compliance
+model LecipmRegulatoryState {
+  id     String @id @default(cuid())
+  userId String @unique @map("user_id") @db.VarChar(36)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  isLicensedBroker    Boolean @default(false) @map("is_licensed_broker")
+  brokerMode          String  @default("INDEPENDENT") @map("broker_mode") @db.VarChar(24) // INDEPENDENT | AGENCY
+  canOperateBrokerage Boolean @default(false) @map("can_operate_brokerage")
+  canOperateFund      Boolean @default(false) @map("can_operate_fund")
+  fundMode            String  @default("SIMULATION") @map("fund_mode") @db.VarChar(24) // SIMULATION | PRIVATE | REGISTERED
+
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("lecipm_regulatory_states")
+}

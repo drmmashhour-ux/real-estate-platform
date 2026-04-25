@@ -52,7 +52,7 @@ async function main(): Promise<void> {
     warnings.push("Prisma validate skipped (FINAL_CHECK_SKIP_BUILD_GATE=1).");
   } else {
     try {
-      execSync("pnpm exec prisma validate --schema=./prisma/schema.prisma", {
+      execSync("pnpm exec prisma validate --schema=./prisma", {
         cwd: WEB_ROOT,
         stdio: "pipe",
         encoding: "utf8",

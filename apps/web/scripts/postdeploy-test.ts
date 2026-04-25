@@ -2,11 +2,17 @@
  * LECIPM Safe Deployment v1 — smoke tests against a deployed base URL.
  *
  *   POSTDEPLOY_BASE_URL=https://your-app.vercel.app pnpm --filter @lecipm/web run postdeploy:test
+ *   (PRELAUNCH_BASE_URL is also accepted, same as postlaunch-check)
  *
  * Exits non-zero if critical probes fail or any probe returns 5xx / times out.
  */
 function resolveOrigin(): string {
-  const raw = (process.env.POSTDEPLOY_BASE_URL ?? process.env.VERCEL_URL ?? "http://127.0.0.1:3001").trim();
+  const raw = (
+    process.env.POSTDEPLOY_BASE_URL?.trim() ||
+    process.env.PRELAUNCH_BASE_URL?.trim() ||
+    process.env.VERCEL_URL?.trim() ||
+    "http://127.0.0.1:3001"
+  ).trim();
   if (/^https?:\/\//i.test(raw)) return raw;
   return `https://${raw}`;
 }
@@ -55,9 +61,46 @@ async function main(): Promise<void> {
     (r) => r.ok,
   );
   await timedFetch("Health (shallow)", `${origin}/api/health`, undefined, (r) => r.ok && r.status < 500);
-  await timedFetch("Ready", `${origin}/api/ready`, undefined, (r) => r.ok);
+  {
+    const res = await fetch(`${origin}/api/ready`, { signal: AbortSignal.timeout(TIMEOUT_MS) });
+    if (res.status >= 500) throw new Error(`/api/ready server error: ${res.status}`);
+    if (!res.ok) throw new Error(`/api/ready failed: ${res.status}`);
+    const body = (await res.json()) as { status?: string; ready?: boolean; db?: string };
+    if (body.ready !== true) {
+      throw new Error(`/api/ready: expected ready: true, got ${JSON.stringify(body)}`);
+    }
+    if (body.status !== "ok" && body.status !== "degraded") {
+      throw new Error(`/api/ready: unexpected status: ${String(body.status)}`);
+    }
+    console.log(`[postdeploy] OK Ready (JSON: status=${body.status}, ready=true, db=${body.db})`);
+  }
+
   await timedFetch("Homepage", `${origin}/`, undefined, (r) => r.ok && r.status < 500);
   await timedFetch("Listings browse", `${origin}/listings`, undefined, (r) => r.ok && r.status < 500);
+  await timedFetch("Dashboard shell", `${origin}/dashboard`, undefined, (r) => r.ok && r.status < 500);
+
+  await timedFetch(
+    "Listings API (public)",
+    `${origin}/api/listings?country=ca`,
+    undefined,
+    (r) => r.ok,
+  );
+  {
+    const r = await fetch(`${origin}/api/leads`, { signal: AbortSignal.timeout(TIMEOUT_MS) });
+    if (r.status >= 500) throw new Error(`/api/leads: ${r.status} (expected 401 without session)`);
+    if (r.status !== 401) {
+      throw new Error(`/api/leads: expected 401 unauthenticated, got ${r.status}`);
+    }
+    console.log(`[postdeploy] OK /api/leads unauthenticated → ${r.status}`);
+  }
+  {
+    const r = await fetch(`${origin}/api/deals`, { signal: AbortSignal.timeout(TIMEOUT_MS) });
+    if (r.status >= 500) throw new Error(`/api/deals: ${r.status} (expected 401 without session)`);
+    if (r.status !== 401) {
+      throw new Error(`/api/deals: expected 401 unauthenticated, got ${r.status}`);
+    }
+    console.log(`[postdeploy] OK /api/deals unauthenticated → ${r.status}`);
+  }
 
   const bookingProbe = await fetch(`${origin}/api/mobile/broker/home`, { method: "GET" });
   if (![401, 403].includes(bookingProbe.status)) {
@@ -100,6 +143,21 @@ async function main(): Promise<void> {
   console.log(`[postdeploy] OK Stripe readiness: ${hj.stripe ?? "unknown"}`);
 
   console.log("\n[postdeploy] All smoke tests passed.");
+  console.log(`
+--- AUTOMATED SMOKE (this script) ---
+Frontend shell (/):     PASS
+Health + ready:         PASS
+Dashboard route:        PASS
+Listings API:           PASS
+Leads/Deals (no auth):  PASS (401 — routes reachable, no 5xx)
+Stripe checkout probe:  PASS (see logs above)
+--- MANUAL (browser / Vercel / DB) ---
+Auth (sign-in session):  NOT COVERED — test in browser
+BNHub (search, book CTA): NOT COVERED — test in browser
+Stripe hosted redirect:  NOT COVERED — complete a test payment in Stripe test mode
+Vercel logs:             NOT COVERED — check dashboard for 5xx / Prisma
+DB persistence:         NOT COVERED — confirm rows in your DB / Supabase
+`);
 }
 
 main().catch((e) => {

@@ -30,6 +30,11 @@ const CRITICAL_FILES = [
   "app/[locale]/[country]/bnhub/listing-image-gallery.tsx",
   "app/[locale]/[country]/bnhub/availability-calendar.tsx",
   "prisma/schema.prisma",
+  "prisma/00-enums.prisma",
+  "prisma/10-core.prisma",
+  "prisma/20-marketplace.prisma",
+  "prisma/30-compliance.prisma",
+  "prisma/40-intelligence.prisma",
   "lib/auth/protected-route-segment.ts",
 ] as const;
 

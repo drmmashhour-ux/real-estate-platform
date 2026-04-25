@@ -1,3 +1,5 @@
 .vercel
 .env*.local
 .data/
+# Multi-client extract (see scripts/split-prisma.js)
+prisma/generated/

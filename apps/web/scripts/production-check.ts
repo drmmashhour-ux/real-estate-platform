@@ -96,7 +96,17 @@ async function main() {
   add("notices: recordCriticalNoticeShown is defined", typeof recordCriticalNoticeShown === "function");
 
   try {
-    const schemaText = readFileSync(path.join(webRoot, "prisma", "schema.prisma"), "utf8");
+    const schemaDir = path.join(webRoot, "prisma");
+    const schemaPartials = [
+      "00-enums.prisma",
+      "10-core.prisma",
+      "20-marketplace.prisma",
+      "30-compliance.prisma",
+      "40-intelligence.prisma",
+    ];
+    const schemaText = [readFileSync(path.join(schemaDir, "schema.prisma"), "utf8")]
+      .concat(schemaPartials.map((f) => readFileSync(path.join(schemaDir, f), "utf8")))
+      .join("\n");
     add(
       "audit: schema defines LecipmProductionGuardAuditEvent",
       schemaText.includes("model LecipmProductionGuardAuditEvent"),

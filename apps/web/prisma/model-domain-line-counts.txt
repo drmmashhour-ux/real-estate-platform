@@ -1,0 +1,9 @@
+# Model block line counts (by // @domain — includes comment + model body) per merge partial
+# Budget: < ~5000 lines per future prisma/core/schema.prisma (split further if over)
+{
+  "core": 2762,
+  "marketplace": 6298,
+  "compliance": 2301,
+  "analytics": 3169,
+  "intelligence": 22024
+}
