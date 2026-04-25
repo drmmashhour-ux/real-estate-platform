@@ -24,6 +24,16 @@ jobs:
           command_timeout: 30m
           script: |
             set -e
+            # 0. Ensure Swap (for builds on low-RAM servers)
+            if ! free | grep -i swap | grep -qv "0"; then
+              echo "Creating 4G swap file..."
+              fallocate -l 4G /swapfile || dd if=/dev/zero of=/swapfile bs=1M count=4096
+              chmod 600 /swapfile
+              mkswap /swapfile
+              swapon /swapfile
+              echo '/swapfile none swap sw 0 0' | tee -a /etc/fstab || true
+            fi
+
             # 1. Navigate to app directory (create if missing)
             mkdir -p /var/www/lecipm
             cd /var/www/lecipm

@@ -20,7 +20,7 @@
     "postinstall": "prisma generate --schema=./prisma/schema.prisma && pnpm run prisma:generate:split",
     "dev": "next dev -H 0.0.0.0 -p 3001 --webpack",
     "dev:3000": "next dev -H 0.0.0.0 -p 3000 --webpack",
-    "build": "NODE_OPTIONS=--max-old-space-size=6144 next build --webpack",
+    "build": "NODE_OPTIONS=--max-old-space-size=4096 next build --webpack",
     "ci:integrity": "npx tsx scripts/check-repo-integrity.ts",
     "integrity:check": "npx tsx scripts/check-repo-integrity.ts",
     "validate:regulator-claims": "npx tsx scripts/check-regulator-marketing-claims.ts",
