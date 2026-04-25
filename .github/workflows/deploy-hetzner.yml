@@ -43,19 +43,20 @@ jobs:
               cp apps/web/.env.production apps/web/.env
             fi
 
-            # 4. Install Dependencies
-            # Ensure pnpm is installed on the server
-            export PATH=$PATH:/root/.local/share/pnpm:/root/.nvm/versions/node/v20.x/bin
-            pnpm install --frozen-lockfile
+        # 4. Install Dependencies
+        # Ensure pnpm is installed on the server
+        export PATH=$PATH:/root/.local/share/pnpm:/root/.nvm/versions/node/v20.x/bin
+        export NODE_OPTIONS="--max-old-space-size=4096"
+        pnpm install --frozen-lockfile
 
-            # 5. Build
-            pnpm build
+        # 5. Build
+        pnpm build --filter @lecipm/web...
 
-            # 6. Restart/Start with PM2
-            # Ensure pm2 is installed
-            if ! command -v pm2 &> /dev/null; then
-              npm install -g pm2
-            fi
-            pm2 delete lecipm-web || true
-            pm2 start "pnpm run start" --name "lecipm-web" --cwd "/var/www/lecipm/apps/web"
-            pm2 save
+        # 6. Restart/Start with PM2
+        # Ensure pm2 is installed
+        if ! command -v pm2 &> /dev/null; then
+          npm install -g pm2
+        fi
+        pm2 delete lecipm-web || true
+        pm2 start "pnpm start --filter @lecipm/web" --name "lecipm-web"
+        pm2 save
