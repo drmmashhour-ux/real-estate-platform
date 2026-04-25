@@ -50,7 +50,7 @@ jobs:
             pnpm install --frozen-lockfile
 
             # 5. Build
-            pnpm build --filter @lecipm/web...
+            pnpm --filter @lecipm/web... build
 
             # 6. Restart/Start with PM2
             # Ensure pm2 is installed
