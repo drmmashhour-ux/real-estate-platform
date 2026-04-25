@@ -1,3 +1,13 @@
+/**
+ * Broker CRM insights (`getInsights`) — dashboard analytics for stalled / uncontacted / ignored leads
+ * and early-stage deal bottlenecks. Consumed by `GET /api/crm/insights` and `BrokerCrmHomeClient`.
+ * Suggest-only; no messaging or financial automation. Never throws.
+ *
+ * STEP 5 — Operational insights: stalled, uncontacted, high-score ignored, deal bottlenecks, overdue follow-ups.
+ * Related: assignments + outcomes in `broker-crm-autopilot.service.ts` / `broker-crm-outcome.service.ts`;
+ * deal heuristics in `broker-crm-deal-intelligence.service.ts` (`evaluateDealProgress`).
+ */
+
 import { prisma } from "@/lib/db";
 import { brokerCrmKpis } from "@/lib/broker-crm/list-leads";
 import { playbookLog } from "@/modules/playbook-memory/playbook-memory.logger";

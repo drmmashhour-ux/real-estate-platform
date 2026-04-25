@@ -70,6 +70,30 @@ export function getNoticesForDraft(input: TurboDraftInput, risks: TurboDraftRisk
         severity: "INFO",
       });
     }
+    if (risk.ruleKey === "MISSING_EQUITABLE_TREATMENT_ACK") {
+      notices.push({
+        noticeKey: "EQUITABLE_TREATMENT_NOTICE",
+        title: "⚖️ Avis: Traitement Équitable",
+        content: "En tant qu'acheteur non représenté, vous avez droit à un traitement équitable de la part du courtier du vendeur. Cela signifie qu'il doit vous fournir une information objective sur les faits pertinents à la transaction, mais il ne peut pas protéger vos intérêts au détriment du vendeur.",
+        severity: "CRITICAL",
+      });
+    }
+    if (risk.ruleKey === "MISSING_OACIQ_GUIDE_ACK") {
+      notices.push({
+        noticeKey: "OACIQ_GUIDE_NOTICE",
+        title: "📖 Guide de l'OACIQ",
+        content: "L'OACIQ met à votre disposition des guides pour vous aider dans votre transaction immobilière. Nous vous encourageons fortement à les consulter pour mieux comprendre vos droits et obligations.",
+        severity: "INFO",
+      });
+    }
+    if (risk.ruleKey === "MOVABLE_AMBIGUITY") {
+      notices.push({
+        noticeKey: "MOVABLE_AMBIGUITY_NOTICE",
+        title: "🏠 Distinction Meubles vs Immeubles",
+        content: "Selon le Code civil, certains biens attachés à demeure sont considérés comme immeubles. Pour éviter tout litige, précisez explicitement si les luminaires, rideaux et autres fixtures sont inclus ou exclus.",
+        severity: "WARNING",
+      });
+    }
   });
 
   return notices;

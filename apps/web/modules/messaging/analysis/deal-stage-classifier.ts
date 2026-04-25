@@ -69,11 +69,6 @@ export function classifyDealStage(
     const typeKnown = Boolean(memory.profile.type?.trim());
     const qualifiedSignal = (budgetKnown || areaKnown) && (typeKnown || /property|apartment|house|condo/i.test(blob));
 
-    if (nMessages <= 2 && spanDays < 2) {
-      rationale.push("Short thread, early exchange.");
-      messagingAiLog.dealStageClassified({ stage: "new" });
-      return { stage: "new", confidence: 0.55, rationale };
-    }
     if (lastGapDays > 5 && (insights.engagementScore < 40 || /hesitat|not sure|later/i.test(blob))) {
       rationale.push("Long gap since last message; engagement looks soft.");
       messagingAiLog.dealStageClassified({ stage: "lost_risk" });
@@ -98,6 +93,11 @@ export function classifyDealStage(
       rationale.push("Scheduling or visit phrasing in the thread.");
       messagingAiLog.dealStageClassified({ stage: "visit_ready" });
       return { stage: "visit_ready", confidence: 0.55, rationale };
+    }
+    if (nMessages <= 2 && spanDays < 2) {
+      rationale.push("Short thread, early exchange.");
+      messagingAiLog.dealStageClassified({ stage: "new" });
+      return { stage: "new", confidence: 0.55, rationale };
     }
     if (strongObj) {
       rationale.push("One or more objection signals; conversation may be in a clarifying mode.");

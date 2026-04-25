@@ -18,6 +18,8 @@ const DEMO_MODE_API_MUTATION_ALLOWLIST: AllowRule[] = [
   { path: "/api/admin/demo/reset", methods: ["POST"] },
   { path: "/api/demo/track", methods: ["POST"] },
   { path: "/api/demo/ai-help", methods: ["POST"] },
+  /** LECI global assistant (read-only AI guidance). */
+  { path: "/api/leci/chat", methods: ["POST"] },
   /** Listing deal analyzer (read-only analysis). */
   { path: "/api/listings", methods: ["POST"] },
   /** Listing offer workflow (draft/submit/status/counter/notes). */

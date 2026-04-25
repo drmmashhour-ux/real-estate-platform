@@ -9,7 +9,13 @@ import { evaluateCrossDomainTransfer, logCrossDomainCrmToGrowthSafe } from "@/mo
 
 async function applyTouchpointOutcomeSafe(p: {
   assignmentId: string;
-  touchpoint: "listing_save" | "crm_inquiry" | "deal_create" | "deal_close" | "deal_lost";
+  touchpoint:
+    | "listing_save"
+    | "crm_inquiry"
+    | "deal_create"
+    | "deal_close"
+    | "deal_lost"
+    | "dream_home_match";
   status: MemoryOutcomeStatus;
   realizedConversion?: number | null;
 }): Promise<void> {
@@ -70,6 +76,12 @@ export const playbookLearningBridge = {
           } catch {
             /* */
           }
+          await applyTouchpointOutcomeSafe({
+            assignmentId: input.assignment.assignmentId,
+            touchpoint: "dream_home_match",
+            status: "PARTIAL",
+            realizedConversion: 0.07,
+          });
         } else {
           banditLog.info("fallback_deterministic", { domain: "DREAM_HOME", reason: "no_bandit_assignment" });
           playbookLog.info("learning_fallback", { domain: "DREAM_HOME" });

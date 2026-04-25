@@ -814,7 +814,6 @@ export async function POST(request: NextRequest) {
       Math.max(1, parseInt(String((raw as Record<string, unknown>).limit ?? DEFAULT_LIMIT), 10) || DEFAULT_LIMIT)
     );
     const propertyFilters = parsePropertyBrowseFiltersFromBody(raw);
-    const o = raw as Record<string, unknown>;
     const gRaw = o.greenFilters;
     const greenFilters =
       gRaw != null && typeof gRaw === "object" && !Array.isArray(gRaw) ? (gRaw as GreenSearchFilters) : undefined;

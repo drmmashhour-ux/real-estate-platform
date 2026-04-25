@@ -49,3 +49,27 @@ export function Card({
     </div>
   );
 }
+
+export function CardHeader({ children, className = "", ...rest }: HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div className={["flex flex-col gap-1.5", className].filter(Boolean).join(" ")} {...rest}>
+      {children}
+    </div>
+  );
+}
+
+export function CardTitle({ children, className = "", ...rest }: HTMLAttributes<HTMLHeadingElement>) {
+  return (
+    <h3 className={["text-lg font-semibold leading-none tracking-tight", className].filter(Boolean).join(" ")} {...rest}>
+      {children}
+    </h3>
+  );
+}
+
+export function CardContent({ children, className = "", ...rest }: HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div className={className} {...rest}>
+      {children}
+    </div>
+  );
+}

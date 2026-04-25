@@ -1,33 +1,39 @@
 import { ClauseExplanation } from "./types";
 
-export function explainClause(sectionKey: string, clauseText: string): ClauseExplanation {
-  const explanations: Record<string, Partial<ClauseExplanation>> = {
-    FINANCING: {
-      explanationFr: "Cette clause oblige l'acheteur à faire des démarches sérieuses pour obtenir un prêt hypothécaire.",
-      risksFr: "Si l'acheteur ne respecte pas les délais, le vendeur peut annuler la promesse d'achat.",
-      whatToConfirmFr: "Confirmez avec votre banque que le montant et le délai sont réalistes.",
-      plainLanguageSummaryFr: "Pas de financement = Pas de transaction."
-    },
-    LEGAL_WARRANTY: {
-      explanationFr: "La garantie légale protège l'acheteur contre les vices cachés inconnus au moment de la vente.",
-      risksFr: "Exclure la garantie signifie que l'acheteur accepte l'immeuble dans l'état où il se trouve, sans recours.",
-      whatToConfirmFr: "Voulez-vous vraiment assumer tous les risques de réparations futures ?",
-      plainLanguageSummaryFr: "Garantie = Protection contre les surprises coûteuses."
-    }
-  };
+export function explainClause(args: { 
+  sectionKey: string; 
+  clauseText: string; 
+  context?: any;
+}): ClauseExplanation {
+  const { sectionKey, clauseText } = args;
+  const key = sectionKey.toUpperCase();
 
-  const base = explanations[sectionKey] || {
-    explanationFr: "Cette clause définit les paramètres de votre engagement contractuel.",
-    risksFr: "Tout manquement peut entraîner l'annulation de l'entente ou des dommages-intérêts.",
-    whatToConfirmFr: "Vérifiez que les termes correspondent à vos intentions réelles.",
-    plainLanguageSummaryFr: "Engagement légal standard."
-  };
+  let explanationFr = "Explication de la clause sélectionnée.";
+  let risksFr: string[] = [];
+  let whatToConfirmFr: string[] = [];
+  let plainLanguageSummaryFr = "Résumé simple.";
+
+  if (key.includes("WARRANTY") || key.includes("GARANTIE")) {
+    explanationFr = "Cette clause définit la protection contre les vices cachés.";
+    risksFr = ["Si exclue, vous achetez l'immeuble tel quel.", "Aucun recours pour vice caché majeur."];
+    whatToConfirmFr = ["La condition physique de l'immeuble.", "L'historique des réparations."];
+    plainLanguageSummaryFr = "Vous achetez l'immeuble avec ou sans protection contre les défauts graves non visibles.";
+  } else if (key.includes("FINANCING") || key.includes("FINANCEMENT")) {
+    explanationFr = "Cette clause rend la promesse d'achat conditionnelle à l'obtention d'un prêt.";
+    risksFr = ["Si le délai expire, le vendeur peut annuler la promesse d'achat.", "Besoin d'une preuve de refus pour annuler sans pénalité."];
+    whatToConfirmFr = ["Le montant du prêt nécessaire.", "Le délai réaliste avec votre banque."];
+    plainLanguageSummaryFr = "Si vous n'avez pas votre prêt dans le temps prévu, la vente peut tomber.";
+  } else if (key.includes("PARTIES")) {
+    explanationFr = "Identifie légalement qui achète et qui vend.";
+    risksFr = ["Erreur dans le nom peut invalider le contrat.", "Vérifier si les conjoints doivent signer."];
+    whatToConfirmFr = ["Pièces d'identité valides.", "État civil des parties."];
+    plainLanguageSummaryFr = "Assure que les bonnes personnes signent le contrat.";
+  }
 
   return {
-    explanationFr: base.explanationFr!,
-    risksFr: base.risksFr!,
-    whatToConfirmFr: base.whatToConfirmFr!,
-    plainLanguageSummaryFr: base.plainLanguageSummaryFr!,
-    disclaimerFr: "Explication informative — à valider au besoin avec un professionnel autorisé."
+    explanationFr,
+    risksFr,
+    whatToConfirmFr,
+    plainLanguageSummaryFr: plainLanguageSummaryFr + "\n\nDISCLAIMER: Explication informative — à valider au besoin avec un professionnel autorisé."
   };
 }

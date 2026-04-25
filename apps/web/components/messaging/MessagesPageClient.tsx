@@ -7,6 +7,7 @@ import type { PlatformRole } from "@prisma/client";
 import { ConversationList } from "@/components/messaging/ConversationList";
 import { ConversationThread, type ThreadDetail, type ThreadMessage } from "@/components/messaging/ConversationThread";
 import { AiSuggestReplyBar } from "@/components/messaging/AiSuggestReplyBar";
+import { CallPanel } from "@/components/messaging/CallPanel";
 import { ConversationAssistantPanel } from "@/components/messaging/ConversationAssistantPanel";
 import { ConversationInsightsPanel } from "@/components/messaging/ConversationInsightsPanel";
 import { AutopilotChatBar } from "@/components/messaging/AutopilotChatBar";
@@ -285,7 +286,8 @@ export function MessagesPageClient({
       </section>
 
       {showBrokerInsights ? (
-        <div className="hidden w-[min(100%,400px)] shrink-0 flex-col border-l border-white/10 bg-black/25 xl:flex max-h-screen">
+        <div className="hidden w-[min(100%,400px)] shrink-0 flex-col border-l border-white/10 bg-black/25 xl:flex max-h-screen overflow-y-auto">
+          {showBrokerInsights && selectedId ? <CallPanel conversationId={selectedId} enabled={showBrokerInsights} /> : null}
           <ConversationAssistantPanel
             conversationId={selectedId}
             enabled

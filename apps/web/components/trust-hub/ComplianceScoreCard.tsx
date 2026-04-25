@@ -1,47 +1,55 @@
-"use client";
-
-import { ComplianceScoreResult } from "@/modules/quebec-trust-hub/types";
-import { cn } from "@/lib/utils";
-import { ShieldCheck, ShieldAlert, Shield, ArrowRight } from "lucide-react";
+import React from "react";
+import { ComplianceScoreResult } from "../../modules/quebec-trust-hub/types";
+import { cn } from "../../lib/utils";
+import { Shield, AlertTriangle, CheckCircle, Info } from "lucide-react";
 
 interface Props {
   result: ComplianceScoreResult;
+  className?: string;
 }
 
-export function ComplianceScoreCard({ result }: Props) {
+export const ComplianceScoreCard: React.FC<Props> = ({ result, className }) => {
   const { score, status, missingItems, riskItems, recommendations } = result;
 
-  const colorMap = {
-    LOW: "text-red-500 bg-red-500/10 border-red-500/20",
-    MEDIUM: "text-amber-500 bg-amber-500/10 border-amber-500/20",
-    HIGH: "text-blue-500 bg-blue-500/10 border-blue-500/20",
-    READY: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20",
+  const getStatusColor = () => {
+    switch (status) {
+      case "READY": return "text-emerald-400 border-emerald-500/30 bg-emerald-500/5";
+      case "HIGH": return "text-blue-400 border-blue-500/30 bg-blue-500/5";
+      case "MEDIUM": return "text-amber-400 border-amber-500/30 bg-amber-500/5";
+      case "LOW": return "text-rose-400 border-rose-500/30 bg-rose-500/5";
+      default: return "text-zinc-400 border-zinc-500/30 bg-zinc-500/5";
+    }
   };
 
-  const Icon = score >= 90 ? ShieldCheck : score >= 70 ? Shield : ShieldAlert;
+  const getScoreColor = () => {
+    if (score >= 90) return "text-emerald-400";
+    if (score >= 70) return "text-blue-400";
+    if (score >= 50) return "text-amber-400";
+    return "text-rose-400";
+  };
 
   return (
-    <div className="bnhub-panel-muted p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <h3 className="text-sm font-black uppercase tracking-widest text-neutral-500 italic">Score de Conformité</h3>
-          <p className="text-2xl font-black text-white italic tracking-tighter">
-            {score}% <span className={cn("text-xs not-italic tracking-widest uppercase ml-2 px-2 py-0.5 rounded-full border", colorMap[status])}>{status}</span>
-          </p>
+    <div className={cn("rounded-2xl border bg-black/40 p-6 backdrop-blur-xl", getStatusColor(), className)}>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <Shield className="w-6 h-6" />
+          <h3 className="text-lg font-bold">Indice de Conformité Québec</h3>
         </div>
-        <div className={cn("flex h-12 w-12 items-center justify-center rounded-2xl", colorMap[status])}>
-          <Icon className="h-6 w-6" />
+        <div className={cn("text-3xl font-black", getScoreColor())}>
+          {score}%
         </div>
       </div>
 
       <div className="space-y-4">
         {missingItems.length > 0 && (
           <div className="space-y-2">
-            <p className="text-[10px] font-black uppercase tracking-widest text-red-500">Éléments manquants</p>
-            <ul className="space-y-1">
-              {missingItems.map((item, i) => (
-                <li key={i} className="text-xs text-neutral-400 flex items-center gap-2">
-                  <span className="h-1 w-1 rounded-full bg-red-500" />
+            <p className="text-xs font-bold uppercase tracking-wider opacity-60 flex items-center gap-1.5">
+              <AlertTriangle className="w-3 h-3" /> Éléments manquants
+            </p>
+            <ul className="grid grid-cols-1 gap-1">
+              {missingItems.map((item, idx) => (
+                <li key={idx} className="text-sm flex items-start gap-2">
+                  <span className="mt-1.5 w-1 h-1 rounded-full bg-rose-500 shrink-0" />
                   {item}
                 </li>
               ))}
@@ -51,11 +59,13 @@ export function ComplianceScoreCard({ result }: Props) {
 
         {riskItems.length > 0 && (
           <div className="space-y-2">
-            <p className="text-[10px] font-black uppercase tracking-widest text-amber-500">Risques détectés</p>
-            <ul className="space-y-1">
-              {riskItems.map((item, i) => (
-                <li key={i} className="text-xs text-neutral-400 flex items-center gap-2">
-                  <span className="h-1 w-1 rounded-full bg-amber-500" />
+            <p className="text-xs font-bold uppercase tracking-wider opacity-60 flex items-center gap-1.5">
+              <Info className="w-3 h-3" /> Points de vigilance
+            </p>
+            <ul className="grid grid-cols-1 gap-1">
+              {riskItems.map((item, idx) => (
+                <li key={idx} className="text-sm flex items-start gap-2 text-zinc-300">
+                  <span className="mt-1.5 w-1 h-1 rounded-full bg-amber-500 shrink-0" />
                   {item}
                 </li>
               ))}
@@ -64,19 +74,23 @@ export function ComplianceScoreCard({ result }: Props) {
         )}
 
         {recommendations.length > 0 && (
-          <div className="space-y-2 pt-4 border-t border-white/5">
-            <p className="text-[10px] font-black uppercase tracking-widest text-premium-gold">Recommandations Trust Hub</p>
-            <ul className="space-y-1">
-              {recommendations.map((item, i) => (
-                <li key={i} className="text-xs text-neutral-200 font-bold flex items-center gap-2 italic">
-                  <ArrowRight className="h-3 w-3 text-premium-gold" />
-                  {item}
-                </li>
+          <div className="mt-4 pt-4 border-t border-white/10">
+            <p className="text-xs font-bold uppercase tracking-wider opacity-60 mb-2">Recommandations</p>
+            <div className="space-y-2">
+              {recommendations.map((rec, idx) => (
+                <div key={idx} className="flex items-center gap-2 text-sm text-zinc-100">
+                  <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" />
+                  {rec}
+                </div>
               ))}
-            </ul>
+            </div>
           </div>
         )}
       </div>
+
+      <div className="mt-6 text-[10px] opacity-40 italic leading-tight text-center">
+        Cet indice est fourni à titre informatif et ne remplace pas l'avis d'un professionnel.
+      </div>
     </div>
   );
-}
+};

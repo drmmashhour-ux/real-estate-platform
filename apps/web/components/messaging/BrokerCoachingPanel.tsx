@@ -27,6 +27,13 @@ export function BrokerCoachingPanel({ items, top }: { items: C[]; top: string | 
         {items.map((c, i) => (
           <li key={i} className={`rounded-lg border p-2 ${P[c.priority]}`}>
             <p className="font-medium text-slate-100">{c.title}</p>
+            {c.rationale[0] ? (
+              <ul className="mt-1 list-inside list-disc text-[10px] text-slate-500">
+                {c.rationale.slice(0, 3).map((r, j) => (
+                  <li key={j}>{r}</li>
+                ))}
+              </ul>
+            ) : null}
             <p className="mt-1 text-[10px] text-slate-400">{c.recommendedAction}</p>
             {c.suggestedApproach ? <p className="mt-1 text-[10px] text-slate-500">{c.suggestedApproach}</p> : null}
           </li>

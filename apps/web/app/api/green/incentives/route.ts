@@ -61,11 +61,8 @@ function parseInput(body: Record<string, unknown>): GreenEngineInput | null {
 }
 
 export async function POST(req: Request) {
-  let body: Record<string, unknown> = {};
-  try {
-    body = ((await req.json()) as Record<string, unknown>) ?? {};
-  } catch {
-    return NextResponse.json(
+  const fail = (error: string, extra?: Record<string, unknown>) =>
+    NextResponse.json(
       {
         ok: false,
         recommendations: [],
@@ -73,70 +70,73 @@ export async function POST(req: Request) {
         incentives: [],
         totalEstimatedIncentives: null,
         disclaimers: [...QUEBEC_ESG_ECONOMICS_API_DISCLAIMERS],
-        error: "invalid_json",
+        error,
+        ...extra,
       },
       { status: 200 },
     );
-  }
 
-  const input = parseInput(body);
-  if (!input) {
-    return NextResponse.json({
-      ok: false,
-      recommendations: [],
-      costEstimates: [],
-      incentives: [],
-      totalEstimatedIncentives: null,
-      disclaimers: [...QUEBEC_ESG_ECONOMICS_API_DISCLAIMERS],
-      error: "invalid_input",
+  try {
+    let body: Record<string, unknown> = {};
+    try {
+      body = ((await req.json()) as Record<string, unknown>) ?? {};
+    } catch {
+      return fail("invalid_json");
+    }
+
+    const input = parseInput(body);
+    if (!input) {
+      return fail("invalid_input");
+    }
+
+    const recommendationKeys = Array.isArray(body.recommendationKeys)
+      ? body.recommendationKeys.map((x) => String(x)).filter(Boolean)
+      : undefined;
+    const historyMode = body.historyMode === true;
+    const optionalListingPriceCad =
+      typeof body.optionalListingPriceCad === "number" && Number.isFinite(body.optionalListingPriceCad)
+        ? body.optionalListingPriceCad
+        : null;
+
+    const run = runQuebecEsgEconomicsPipeline(input, {
+      recommendationKeys,
+      historyMode,
+      optionalListingPriceCad,
+      propertyType: input.propertyType ?? null,
     });
-  }
 
-  const recommendationKeys = Array.isArray(body.recommendationKeys)
-    ? body.recommendationKeys.map((x) => String(x)).filter(Boolean)
-    : undefined;
-  const historyMode = body.historyMode === true;
-  const optionalListingPriceCad =
-    typeof body.optionalListingPriceCad === "number" && Number.isFinite(body.optionalListingPriceCad)
-      ? body.optionalListingPriceCad
-      : null;
+    if (!run) {
+      const evaluation = evaluateQuebecEsg(input);
+      const { recommendations } = generateQuebecEsgRecommendations(input, evaluation);
+      return NextResponse.json({
+        ok: false,
+        recommendations,
+        costEstimates: [],
+        incentives: [],
+        totalEstimatedIncentives: null,
+        disclaimers: [...QUEBEC_ESG_ECONOMICS_API_DISCLAIMERS],
+        error: "economics_unavailable",
+      });
+    }
 
-  const run = runQuebecEsgEconomicsPipeline(input, {
-    recommendationKeys,
-    historyMode,
-    optionalListingPriceCad,
-    propertyType: input.propertyType ?? null,
-  });
-
-  if (!run) {
-    const evaluation = evaluateQuebecEsg(input);
-    const { recommendations } = generateQuebecEsgRecommendations(input, evaluation);
     return NextResponse.json({
-      ok: false,
-      recommendations,
-      costEstimates: [],
-      incentives: [],
-      totalEstimatedIncentives: null,
+      ok: true,
+      recommendations: run.recommendations,
+      costEstimates: run.costEstimates.costEstimates,
+      totalLowCost: run.costEstimates.totalLowCost,
+      totalHighCost: run.costEstimates.totalHighCost,
+      incentives: run.incentives.incentives,
+      totalEstimatedIncentives: run.incentives.totalEstimatedIncentives,
+      simulation: run.simulation,
+      roiSummary: {
+        netCostLow: run.roi.netCostLow,
+        netCostHigh: run.roi.netCostHigh,
+        scoreDelta: run.roi.scoreDelta,
+      },
+      pricingBoost: run.pricingBoost,
       disclaimers: [...QUEBEC_ESG_ECONOMICS_API_DISCLAIMERS],
-      error: "economics_unavailable",
     });
+  } catch {
+    return fail("incentives_unavailable");
   }
-
-  return NextResponse.json({
-    ok: true,
-    recommendations: run.recommendations,
-    costEstimates: run.costEstimates.costEstimates,
-    totalLowCost: run.costEstimates.totalLowCost,
-    totalHighCost: run.costEstimates.totalHighCost,
-    incentives: run.incentives.incentives,
-    totalEstimatedIncentives: run.incentives.totalEstimatedIncentives,
-    simulation: run.simulation,
-    roiSummary: {
-      netCostLow: run.roi.netCostLow,
-      netCostHigh: run.roi.netCostHigh,
-      scoreDelta: run.roi.scoreDelta,
-    },
-    pricingBoost: run.pricingBoost,
-    disclaimers: [...QUEBEC_ESG_ECONOMICS_API_DISCLAIMERS],
-  });
 }

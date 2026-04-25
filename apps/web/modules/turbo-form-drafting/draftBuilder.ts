@@ -92,6 +92,14 @@ export async function buildTurboDraft(input: TurboDraftInput): Promise<TurboDraf
     payload: { risks, noticeCount: notices.length, alignmentIssues: alignment.validation },
   });
 
+  // 6. Add Compliance Disclaimer (MANDATORY)
+  sections.push({
+    id: "COMPLIANCE_DISCLAIMER",
+    title: "COMPLIANCE & AI DISCLAIMER",
+    content: `Avis de conformité:\n\n1. Ce document est une suggestion automatisée générée par l'intelligence artificielle de LECIPM. Il doit être validé par les parties ou un professionnel.\n2. L'OACIQ recommande de consulter ses guides acheteur/vendeur pour toute transaction immobilière.\n3. Toute modification manuelle apportée aux clauses après génération peut affecter la validité juridique du document.\n\nGénéré le: ${new Date().toLocaleString("fr-CA")}`,
+    isMandatory: true,
+  });
+
   return {
     draftId: input.draftId,
     formKey: input.formKey,

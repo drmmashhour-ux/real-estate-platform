@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Heart, Star } from "lucide-react";
+import { Heart } from "lucide-react";
 import { ListingCodeBadge } from "@/components/bnhub/ListingCodeBadge";
 import { BrandLogo } from "@/components/ui/Logo";
 import { getActivePromotedListingIds } from "@/lib/promotions";
@@ -7,7 +7,8 @@ import { getMarketingFeaturedListingIds } from "@/src/modules/bnhub-marketing/se
 import { getGrowthFeaturedListingIds } from "@/src/modules/bnhub-growth-engine/services/growthFeaturedBridge";
 import { prisma } from "@/lib/db";
 import { ListingStatus, VerificationStatus } from "@prisma/client";
-import { VerifiedListingBadge } from "@/components/listings/VerifiedListingBadge";
+import { TrustBadge } from "@/components/bnhub/TrustBadge";
+import { computeBnhubTrustRiskLevel } from "@/modules/bnhub/recommendationEngine";
 import { PUBLIC_MAP_SEARCH_URL } from "@/lib/search/public-map-search-urls";
 
 function photoFirst(photos: unknown): string | null {
@@ -106,6 +107,10 @@ export async function FeaturedListings({ variant = "dark" }: { variant?: Feature
       nightPriceCents: true,
       photos: true,
       verificationStatus: true,
+      bnhubListingRatingAverage: true,
+      bnhubListingReviewCount: true,
+      operationalRiskScore: true,
+      bnhubListingHostVerified: true,
     },
   });
 
@@ -173,6 +178,13 @@ export async function FeaturedListings({ variant = "dark" }: { variant?: Feature
             const img = photoFirst(l.photos);
             const stars = starMap.get(l.id) ?? 0;
             const luxury = stars >= 5;
+            const verified = l.verificationStatus === VerificationStatus.VERIFIED || l.bnhubListingHostVerified;
+            const risk = computeBnhubTrustRiskLevel({
+              verificationStatus: l.verificationStatus,
+              reviewCount: l.bnhubListingReviewCount,
+              avgRating: l.bnhubListingRatingAverage,
+              operationalRiskScore: l.operationalRiskScore,
+            });
             return (
               <Link
                 key={l.id}
@@ -180,9 +192,6 @@ export async function FeaturedListings({ variant = "dark" }: { variant?: Feature
                 className="group snap-start shrink-0 w-[min(17.5rem,calc(100vw-2.5rem))] overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm transition hover:shadow-md"
               >
                 <div className="relative aspect-[20/13] bg-slate-100">
-                  {l.verificationStatus === VerificationStatus.VERIFIED ? (
-                    <VerifiedListingBadge variant="light" />
-                  ) : null}
                   {img ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -216,6 +225,14 @@ export async function FeaturedListings({ variant = "dark" }: { variant?: Feature
                     <ListingCodeBadge code={l.listingCode} className="shrink-0" />
                   </div>
                   <p className="mt-1 text-sm text-slate-500">{l.city}</p>
+                  <TrustBadge
+                    className="mt-2"
+                    variant="light"
+                    verified={verified}
+                    hostRating={l.bnhubListingRatingAverage}
+                    reviewCount={l.bnhubListingReviewCount}
+                    riskLevel={risk}
+                  />
                   <p className="mt-2 text-sm font-bold text-slate-900">
                     <span className="font-semibold text-slate-600">from </span>
                     ${(l.nightPriceCents / 100).toFixed(0)}
@@ -239,16 +256,20 @@ export async function FeaturedListings({ variant = "dark" }: { variant?: Feature
           const stars = starMap.get(l.id) ?? 0;
           const luxury = stars >= 5;
           const price = (l.nightPriceCents / 100).toFixed(0);
+          const verified = l.verificationStatus === VerificationStatus.VERIFIED || l.bnhubListingHostVerified;
+          const risk = computeBnhubTrustRiskLevel({
+            verificationStatus: l.verificationStatus,
+            reviewCount: l.bnhubListingReviewCount,
+            avgRating: l.bnhubListingRatingAverage,
+            operationalRiskScore: l.operationalRiskScore,
+          });
           return (
             <Link
               key={l.id}
               href={href}
               className="group overflow-hidden rounded-[12px] border border-bnhub-border bg-bnhub-card shadow-[0_12px_40px_-12px_rgba(0,0,0,0.85)] transition-all duration-300 ease-out hover:-translate-y-1 hover:border-bnhub-gold/40 hover:shadow-[0_16px_48px_-12px_rgba(212,175,55,0.1)] active:scale-[0.98]"
             >
-              <div className="relative aspect-[4/3] bg-neutral-900">
-                {l.verificationStatus === VerificationStatus.VERIFIED ? (
-                  <VerifiedListingBadge variant="dark" />
-                ) : null}
+              <div className="relative aspect-[16/10] bg-neutral-900">
                 {img ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -277,20 +298,22 @@ export async function FeaturedListings({ variant = "dark" }: { variant?: Feature
                     Featured
                   </span>
                 ) : null}
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <p className="line-clamp-2 font-semibold leading-snug text-white group-hover:text-[#D4AF37]">{l.title}</p>
-                      <ListingCodeBadge code={l.listingCode} className="shrink-0 !text-[10px]" />
-                    </div>
-                    <p className="mt-1 flex items-center gap-1 text-xs text-neutral-500">
-                      <span className="line-clamp-1">{l.city}</span>
-                    </p>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <p className="line-clamp-2 font-semibold leading-snug text-white group-hover:text-[#D4AF37]">{l.title}</p>
+                    <ListingCodeBadge code={l.listingCode} className="shrink-0 !text-[10px]" />
                   </div>
-                  <div className="flex shrink-0 items-center gap-0.5 rounded-md bg-black/40 px-2 py-1 text-xs font-semibold text-[#D4AF37]">
-                    <Star className="h-3.5 w-3.5 fill-[#D4AF37]/90 text-[#D4AF37]" aria-hidden />
-                    {stars > 0 ? <span>{stars}</span> : <span className="text-neutral-500">New</span>}
-                  </div>
+                  <p className="mt-1 flex items-center gap-1 text-xs text-neutral-500">
+                    <span className="line-clamp-1">{l.city}</span>
+                  </p>
+                  <TrustBadge
+                    className="mt-2"
+                    variant="dark"
+                    verified={verified}
+                    hostRating={l.bnhubListingRatingAverage}
+                    reviewCount={l.bnhubListingReviewCount}
+                    riskLevel={risk}
+                  />
                 </div>
                 <div className="flex items-end justify-between gap-2 border-t border-white/5 pt-2">
                   <p className="text-lg font-bold tabular-nums text-[#D4AF37]">
@@ -326,11 +349,17 @@ export async function FeaturedListings({ variant = "dark" }: { variant?: Feature
           const img = photoFirst(l.photos);
           const stars = starMap.get(l.id) ?? 0;
           const luxury = stars >= 5;
+          const verified = l.verificationStatus === VerificationStatus.VERIFIED || l.bnhubListingHostVerified;
+          const risk = computeBnhubTrustRiskLevel({
+            verificationStatus: l.verificationStatus,
+            reviewCount: l.bnhubListingReviewCount,
+            avgRating: l.bnhubListingRatingAverage,
+            operationalRiskScore: l.operationalRiskScore,
+          });
           return (
             <li key={l.id}>
               <Link href={href} className="group block overflow-hidden rounded-xl border border-slate-800 bg-slate-900/60">
                 <div className="relative aspect-[16/10] bg-slate-800">
-                  {l.verificationStatus === VerificationStatus.VERIFIED ? <VerifiedListingBadge variant="dark" /> : null}
                   {img ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={img} alt="" className="h-full w-full object-cover opacity-90 transition group-hover:opacity-100" />
@@ -352,6 +381,14 @@ export async function FeaturedListings({ variant = "dark" }: { variant?: Feature
                     <ListingCodeBadge code={l.listingCode} className="!text-[9px]" />
                   </div>
                   <p className="text-xs text-slate-500">{l.city}</p>
+                  <TrustBadge
+                    className="mt-2"
+                    variant="dark"
+                    verified={verified}
+                    hostRating={l.bnhubListingRatingAverage}
+                    reviewCount={l.bnhubListingReviewCount}
+                    riskLevel={risk}
+                  />
                   <p className="mt-1 text-sm font-semibold text-emerald-300">
                     ${(l.nightPriceCents / 100).toFixed(0)} / night
                   </p>

@@ -54,6 +54,28 @@ export function TurboDraftNoticePanel({ notices, draftId, isRepresented, onAckno
         </div>
       )}
 
+      {notices.some(n => n.noticeKey === "OACIQ_GUIDE_NOTICE") && (
+        <div className="rounded-xl bg-blue-500/10 border border-blue-500/20 p-4">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="h-6 w-6 rounded bg-blue-500/20 flex items-center justify-center">
+              <Building2 className="h-4 w-4 text-blue-400" />
+            </div>
+            <h4 className="text-xs font-bold text-blue-400 uppercase tracking-widest">OACIQ Resources</h4>
+          </div>
+          <p className="text-[10px] text-neutral-400 mb-3">
+            Consult real estate guides provided by the regulator (OACIQ) for a safe transaction.
+          </p>
+          <a 
+            href="https://www.oaciq.com/fr/guides" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-[10px] font-black text-blue-400 hover:underline uppercase tracking-tighter"
+          >
+            Open OACIQ Guides Externally ↗
+          </a>
+        </div>
+      )}
+
       {notices.map((notice, i) => {
         const Icon = notice.severity === "CRITICAL" ? AlertCircle : notice.severity === "WARNING" ? AlertTriangle : ShieldCheck;
         const colors = {

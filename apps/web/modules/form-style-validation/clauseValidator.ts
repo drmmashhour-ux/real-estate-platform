@@ -1,50 +1,60 @@
 export interface ClauseIssue {
   clauseKey: string;
   issue: string;
-  severity: "CRITICAL" | "WARNING" | "INFO";
+  severity: "WARNING" | "CRITICAL";
   blocking: boolean;
 }
 
-export function validateClauses(formKey: string, sections: { title: string; content: string }[]): ClauseIssue[] {
+export function validateClauses(formKey: string, sections: { id: string, content: string }[]): ClauseIssue[] {
   const issues: ClauseIssue[] = [];
 
   sections.forEach(section => {
-    const title = section.title.toUpperCase();
     const content = section.content.toLowerCase();
 
-    // 1. Warranty Check
-    if (title === "LEGAL_WARRANTY") {
-      if (!content.includes("garantie légale") && !content.includes("legal warranty")) {
+    // 1. Warranty Validation
+    if (section.id === "LEGAL_WARRANTY") {
+      if (!content.includes("garantie légale")) {
         issues.push({
-          clauseKey: "WARRANTY_MISSING_EXPLICIT",
-          issue: "Warranty clause must be explicit and unambiguous.",
+          clauseKey: "LEGAL_WARRANTY",
+          issue: "La clause de garantie légale est ambiguë ou manquante.",
           severity: "CRITICAL",
           blocking: true
         });
       }
     }
 
-    // 2. Financing Delay Check
-    if (title === "FINANCING") {
-      if (!/\d+/.test(content)) {
+    // 2. Financing Validation
+    if (section.id === "FINANCING") {
+      if (content.includes("financement") && !/\d+/.test(content)) {
         issues.push({
-          clauseKey: "MISSING_FINANCING_DELAY",
-          issue: "Financing section must include a specific delay in days.",
+          clauseKey: "FINANCING",
+          issue: "Le délai de financement n'est pas spécifié numériquement.",
           severity: "CRITICAL",
           blocking: true
         });
       }
     }
 
-    // 3. Vague Inclusions
-    if (title === "INCLUSIONS_EXCLUSIONS") {
-      const vagueWords = ["etc", "tout", "all", "tout le reste", "every"];
-      if (vagueWords.some(word => content.includes(word))) {
+    // 3. Inclusions Validation
+    if (section.id === "INCLUSIONS_EXCLUSIONS") {
+      if (content.includes("tous les") || content.includes("certains")) {
         issues.push({
-          clauseKey: "VAGUE_INCLUSIONS",
-          issue: "Avoid vague terms like 'etc' or 'all' in inclusions/exclusions.",
+          clauseKey: "INCLUSIONS_EXCLUSIONS",
+          issue: "Les inclusions/exclusions utilisent des termes vagues (ex: 'tous les'). Veuillez les lister individuellement.",
           severity: "WARNING",
           blocking: false
+        });
+      }
+    }
+
+    // 4. Price Validation
+    if (section.id === "PRICE") {
+      if (!content.includes("$") && !content.includes("dollars")) {
+        issues.push({
+          clauseKey: "PRICE",
+          issue: "Le prix ne semble pas être formaté correctement ou est manquant.",
+          severity: "CRITICAL",
+          blocking: true
         });
       }
     }

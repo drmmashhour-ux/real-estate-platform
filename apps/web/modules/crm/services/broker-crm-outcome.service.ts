@@ -1,3 +1,8 @@
+/**
+ * STEP 8 — Outcome tracking: lead → deal (`logLeadToDealConversion`), deal terminal closed/cancelled
+ * (`syncBrokerCrmDealTerminalPlaybookMemory`). Updates playbook-memory + assignment bandit outcomes. Never throws.
+ */
+
 import type { MemoryOutcomeStatus } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { playbookLog } from "@/modules/playbook-memory/playbook-memory.logger";
@@ -210,6 +215,9 @@ export async function syncBrokerCrmDealTerminalPlaybookMemory(dealId: string): P
     } else if (deal.status === "cancelled") {
       await onDealCancelledForPlaybookMemory(dealId);
     }
+    void import("@/modules/strategy-benchmark/outcome-tracking.service")
+      .then((m) => m.syncStrategyOutcomeForDealId(dealId).catch(() => undefined))
+      .catch(() => undefined);
   } catch (e) {
     playbookLog.warn("syncBrokerCrmDealTerminalPlaybookMemory skipped", {
       message: e instanceof Error ? e.message : String(e),

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { listLuxuryBnhubStayShowcases } from "@/components/bnhub/bnhub-luxury-stay-showcase-data";
+import { TrustBadge } from "@/components/bnhub/TrustBadge";
 
 type StayRow = {
   slug: string;
@@ -23,23 +24,29 @@ const MARKETING_STAYS: StayRow[] = listLuxuryBnhubStayShowcases().map((s) => ({
 }));
 
 function StayCard({ item, detailHref }: { item: StayRow; detailHref: string }) {
+  const ratingNum = parseFloat(item.rating) || null;
   return (
     <div className="group overflow-hidden rounded-[28px] border border-white/8 bg-[#0C0C0C]">
       <div
-        className="h-72 bg-cover bg-center transition duration-500 group-hover:scale-[1.03]"
+        className="h-80 bg-cover bg-center transition duration-500 group-hover:scale-[1.03]"
         style={{ backgroundImage: `url(${item.image})` }}
       />
       <div className="p-5">
-        <div className="flex items-center justify-between gap-4">
-          <h3 className="text-xl font-medium text-white">{item.title}</h3>
-          <div className="text-sm text-[#D4AF37]">★ {item.rating}</div>
-        </div>
+        <h3 className="text-xl font-medium text-white">{item.title}</h3>
         <p className="mt-2 text-sm text-white/55">{item.location}</p>
-        <div className="mt-5 flex items-center justify-between">
+        <TrustBadge
+          className="mt-3"
+          variant="dark"
+          verified
+          hostRating={ratingNum}
+          reviewCount={12}
+          riskLevel="low"
+        />
+        <div className="mt-5 flex items-center justify-between gap-3">
           <div className="text-lg font-semibold text-[#D4AF37]">{item.price}</div>
           <Link
             href={detailHref}
-            className="rounded-full border border-[#D4AF37]/40 px-4 py-2 text-sm text-[#D4AF37] hover:bg-[#D4AF37]/10"
+            className="shrink-0 rounded-full border border-[#D4AF37]/40 px-4 py-2 text-sm text-[#D4AF37] hover:bg-[#D4AF37]/10"
           >
             View stay
           </Link>
@@ -93,38 +100,23 @@ export function BnhubLuxuryStaysMarketing({ locale, country }: BnhubLuxuryStaysM
         </div>
 
         <div className="mb-10 rounded-[30px] border border-[#D4AF37]/18 bg-black/40 p-4 shadow-[0_0_70px_rgba(212,175,55,0.08)] backdrop-blur-xl">
-          <div className="grid gap-3 lg:grid-cols-[1.4fr_0.8fr_0.8fr_0.8fr]">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch">
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Where are you going?"
-              className="rounded-[20px] border border-white/10 bg-white/5 px-5 py-4 text-sm text-white placeholder:text-white/35 focus:border-[#D4AF37]/40 focus:outline-none"
+              placeholder="Search by city, address, or listing ID"
+              className="min-h-[52px] flex-1 rounded-[20px] border border-white/10 bg-white/5 px-5 py-4 text-sm text-white placeholder:text-white/35 focus:border-[#D4AF37]/40 focus:outline-none"
             />
-            <input type="text" placeholder="Check-in" className="rounded-[20px] border border-white/10 bg-white/5 px-5 py-4 text-sm text-white placeholder:text-white/35 focus:border-[#D4AF37]/40 focus:outline-none" />
-            <input type="text" placeholder="Check-out" className="rounded-[20px] border border-white/10 bg-white/5 px-5 py-4 text-sm text-white placeholder:text-white/35 focus:border-[#D4AF37]/40 focus:outline-none" />
             <button
               type="button"
-              className="rounded-[20px] border border-[#D4AF37]/60 bg-[#D4AF37] px-5 py-4 text-sm font-medium text-black hover:brightness-110"
+              className="min-h-[52px] shrink-0 rounded-[20px] border border-[#D4AF37]/60 bg-[#D4AF37] px-8 text-sm font-medium text-black hover:brightness-110 sm:px-10"
             >
               Search
             </button>
           </div>
         </div>
 
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-          <div className="text-sm text-white/55">{filteredStable.length} luxury stays shown</div>
-          <div className="flex flex-wrap items-center gap-3">
-            {["Waterfront", "Penthouse", "Pool"].map((tag) => (
-              <button
-                key={tag}
-                type="button"
-                className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/80 hover:border-[#D4AF37]/35 hover:text-[#D4AF37]"
-              >
-                {tag}
-              </button>
-            ))}
-          </div>
-        </div>
+        <div className="mb-6 text-sm text-white/55">{filteredStable.length} luxury stays shown</div>
 
         <div className="grid gap-7 md:grid-cols-2 xl:grid-cols-3">
           {filteredStable.map((item) => (

@@ -20,6 +20,7 @@ import {
 import { BrokerAssistantQuickLinks } from "@/components/broker-assistant/BrokerAssistantQuickLinks";
 import { BrokerMandatoryDisclosureStatus } from "@/components/compliance/BrokerMandatoryDisclosureStatus";
 import { getBrokerDisclosureStatusForDeal, mandatoryBrokerDisclosureEnforced } from "@/lib/compliance/oaciq/broker-mandatory-disclosure.service";
+import { QcClosingRoomPanel } from "@/components/broker-residential/deals/qc-closing/qc-closing-room-panel";
 
 export const dynamic = "force-dynamic";
 
@@ -77,6 +78,7 @@ export default async function BrokerResidentialDealDetailPage({
   const mandatoryDisclosure = await getBrokerDisclosureStatusForDeal(id);
   const pkg = deal.assignedFormPackageKey ? getFormPackageByKey(deal.assignedFormPackageKey) : null;
   const executionHref = `/${locale}/${country}/dashboard/deals/${id}/execution`;
+  const pipelineClosingHref = `/${locale}/${country}/dashboard/deals/pipeline/${id}/closing`;
 
   return (
     <div className="space-y-8">
@@ -145,6 +147,8 @@ export default async function BrokerResidentialDealDetailPage({
       />
 
       <ResidentialDealWorkspaceClient dealId={id} executionHref={executionHref} />
+
+      <QcClosingRoomPanel dealId={id} pipelineClosingHref={pipelineClosingHref} />
 
       <OaciqEngineDealPanel dealId={id} locale={locale} country={country} />
 

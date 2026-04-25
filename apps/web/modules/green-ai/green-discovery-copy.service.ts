@@ -1,4 +1,4 @@
-import type { GreenSearchResultDecoration } from "./green-search.types";
+import type { GreenOpportunityBucket, GreenSearchResultDecoration } from "./green-search.types";
 
 /**
  * Short, policy-safe public lines — not guarantees, not official programs.
@@ -34,4 +34,18 @@ export function lineUpgradesNudge(d: GreenSearchResultDecoration | null | undefi
   if (!d) return "Add green details to unlock modeled upgrade and incentive hints.";
   if (d.computedOnTheFly) return "Scoring used partial inputs — add heating/envelope for tighter fit.";
   return "Upgrade signals are assistive, not a bid or a quote.";
+}
+
+/**
+ * Coarse UI bucket for cards / admin — not a government label.
+ */
+export function getGreenOpportunityBucket(
+  d: GreenSearchResultDecoration | null
+): GreenOpportunityBucket {
+  if (!d) return "unknown";
+  if (d.currentScore != null && d.currentScore >= 70) return "top_current";
+  if (d.hasPotentialIncentives && (d.estimatedIncentives ?? 0) >= 3_000) return "incentives";
+  if (d.improvementPotential === "high" || (d.scoreDelta ?? 0) >= 12) return "upgrade";
+  if (d.currentScore != null || d.projectedScore != null) return "mixed";
+  return "unknown";
 }

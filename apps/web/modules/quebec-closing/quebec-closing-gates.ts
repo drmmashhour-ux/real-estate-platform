@@ -6,10 +6,11 @@ export function deriveInitialQcStage(dealStatus: string, conditions: { status: s
   const unresolved = conditions.filter((c) => c.status !== "fulfilled" && c.status !== "waived");
   if (unresolved.length > 0) return "CONDITIONS_PENDING";
   if (["accepted", "inspection", "financing", "closing_scheduled", "closed"].includes(dealStatus)) {
-    return "CONDITIONS_SATISFIED";
+    return "CONDITIONS_MET";
   }
   if (dealStatus === "offer_submitted") return "OFFER_ACCEPTED";
-  return "OFFER_SENT";
+  if (dealStatus === "initiated") return "OFFER_ACCEPTED";
+  return "OFFER_ACCEPTED";
 }
 
 export function isQcWorkflowActive(closing: Pick<DealClosing, "qcClosingStage" | "qcWorkflowStartedAt"> | null): boolean {
@@ -49,9 +50,7 @@ export function notaryChecklistTerminal(items: DealQuebecNotaryChecklistItem[]):
 export function qcLandRegisterBlocksClose(
   closing: Pick<DealClosing, "landRegisterStatus" | "qcClosingStage"> | null,
 ): boolean {
-  if (!closing?.qcClosingStage) return false;
-  if (closing.landRegisterStatus === "PENDING") return true;
-  return false;
+  return closing?.landRegisterStatus === "PENDING";
 }
 
 /** Blockers for final closing-room readiness (orchestrator) when Québec workflow is active. */
@@ -109,7 +108,7 @@ export function qcExecutionBlockers(input: {
   return blockers;
 }
 
-/** Gate: move to SIGNING_SCHEDULED */
+/** Gate: move to SIGNING_READY */
 export function signingScheduledBlockers(input: {
   closing: DealClosing | null;
   conditions: DealClosingCondition[];

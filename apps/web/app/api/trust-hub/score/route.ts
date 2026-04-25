@@ -1,51 +1,52 @@
-import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
-import { calculateComplianceScore } from "@/modules/quebec-trust-hub/complianceScore";
-import { requireUser } from "@/lib/auth/require-user";
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "../../../../lib/prisma";
+import { calculateComplianceScore } from "../../../../modules/quebec-trust-hub/complianceScore";
+import { logTrustHubEvent } from "../../../../modules/quebec-trust-hub/trustHubAuditLogger";
 
-import { logTrustHubEvent } from "@/modules/quebec-trust-hub/trustHubAuditLogger";
-
-export async function POST(req: Request) {
-  const auth = await requireUser();
-  if (!auth.ok) return auth.response;
-
+export async function POST(req: NextRequest) {
   try {
     const { draftId } = await req.json();
+    if (!draftId) return NextResponse.json({ error: "Missing draftId" }, { status: 400 });
 
-    // @ts-ignore
     const draft = await prisma.turboDraft.findUnique({
-      where: { id: draftId }
+      where: { id: draftId },
     });
 
     if (!draft) return NextResponse.json({ error: "Draft not found" }, { status: 404 });
 
-    const input = draft.contextJson as any;
-    const result = draft.resultJson as any;
+    const acks = await prisma.turboDraftAcknowledgement.findMany({
+      where: { draftId },
+    });
 
-    const scoreResult = calculateComplianceScore(input, result);
+    const context = {
+      ...(draft.contextJson as any),
+      resultJson: draft.resultJson,
+      acknowledgements: acks,
+    };
 
-    // Save score
-    // @ts-ignore
+    const result = calculateComplianceScore(context);
+
+    // Persist score
     await prisma.trustHubScore.create({
       data: {
         draftId,
-        userId: auth.user.id,
-        score: scoreResult.score,
-        status: scoreResult.status,
-        resultJson: scoreResult as any
-      }
+        userId: draft.userId,
+        score: result.score,
+        status: result.status,
+        resultJson: result as any,
+      },
     });
 
     await logTrustHubEvent({
       draftId,
-      userId: auth.user.id,
+      userId: draft.userId || undefined,
       eventKey: "trust_score_calculated",
-      severity: scoreResult.score >= 70 ? "SUCCESS" : "WARNING",
-      payload: { score: scoreResult.score, status: scoreResult.status }
+      payload: { score: result.score, status: result.status },
     });
 
-    return NextResponse.json(scoreResult);
-  } catch (err) {
-    return NextResponse.json({ error: "Failed to calculate score" }, { status: 500 });
+    return NextResponse.json(result);
+  } catch (error: any) {
+    console.error("[TRUST_HUB_SCORE]", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

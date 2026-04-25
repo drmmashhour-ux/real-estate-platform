@@ -37,4 +37,12 @@ describe("estimateQuebecEsgIncentives", () => {
     const out = estimateQuebecEsgIncentives([rec("install_triple_glazed_windows")], input);
     expect(out.incentives.some((i) => i.title.includes("Rénoclimat"))).toBe(true);
   });
+
+  it("returns null total when heat-pump stack is only informational programs", () => {
+    const input: GreenEngineInput = {};
+    const out = estimateQuebecEsgIncentives([rec("replace_heating_heat_pump")], input, { historyMode: false });
+    expect(out.incentives.length).toBeGreaterThan(0);
+    expect(out.incentives.every((i) => i.status !== "closed")).toBe(true);
+    expect(out.totalEstimatedIncentives).toBeNull();
+  });
 });

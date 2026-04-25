@@ -1,50 +1,49 @@
-import { TurboDraftInput, TurboDraftResult } from "../turbo-form-drafting/types";
 import { SaferChoice } from "./types";
 
-export function generateSaferChoices(input: TurboDraftInput, result: TurboDraftResult): SaferChoice[] {
+export function generateSaferChoices(context: any): SaferChoice[] {
   const choices: SaferChoice[] = [];
-  const { answers, representedStatus } = input;
+  const { answers, representedStatus, resultJson } = context;
 
-  // 1. Warranty
-  if (answers.withoutWarranty === true) {
+  // 1. Warranty exclusion
+  if (answers?.withoutWarranty) {
     choices.push({
       issueKey: "WARRANTY_EXCLUSION",
-      currentRisk: "Vente sans garantie légale : l'acheteur perd ses recours pour vices cachés.",
-      saferOptionFr: "Vendre avec garantie légale, ou exclure seulement certains éléments spécifiques.",
-      reasonFr: "Offrir une garantie augmente la valeur perçue et réduit les risques de litiges futurs.",
-      actionRequired: false
-    });
-  }
-
-  // 2. Representation
-  if (representedStatus === "NOT_REPRESENTED") {
-    choices.push({
-      issueKey: "BUYER_NOT_REPRESENTED",
-      currentRisk: "Vous n'êtes pas représenté par un courtier. Vous gérez seul les aspects légaux complexes.",
-      saferOptionFr: "Demander à un courtier partenaire de réviser votre offre (Service Broker Assist).",
-      reasonFr: "Un professionnel peut détecter des anomalies que vous pourriez manquer.",
+      currentRisk: "Vente sans garantie légale (risques élevés pour l'acheteur).",
+      saferOptionFr: "Vente avec garantie légale, ou exclusion partielle.",
+      reasonFr: "La garantie légale protège contre les vices cachés. L'exclure totalement limite vos recours.",
       actionRequired: true
     });
   }
 
-  // 3. Financing Delay
-  if (answers.financingRequired && answers.financingDelay && parseInt(answers.financingDelay) < 10) {
+  // 2. Unrepresented buyer
+  if (representedStatus === "NOT_REPRESENTED") {
     choices.push({
-      issueKey: "SHORT_FINANCING_DELAY",
-      currentRisk: "Le délai de financement est très court. Risque de caducité de l'offre.",
-      saferOptionFr: "Prévoir au moins 15 jours pour obtenir une lettre de confirmation bancaire.",
-      reasonFr: "Les banques mettent souvent plus de 10 jours pour finaliser un dossier complet.",
+      issueKey: "BUYER_NOT_REPRESENTED",
+      currentRisk: "Acheteur agissant seul (traitement équitable seulement).",
+      saferOptionFr: "Engager un courtier pour vous représenter.",
+      reasonFr: "Un courtier à votre service a l'obligation de protéger vos intérêts et de vous conseiller.",
+      actionRequired: true
+    });
+  }
+
+  // 3. Short financing delay
+  if (answers?.financingRequired && answers?.financingDelay && parseInt(answers.financingDelay) < 10) {
+    choices.push({
+      issueKey: "SHORT_FINANCING",
+      currentRisk: `Délai de financement court (${answers.financingDelay} jours).`,
+      saferOptionFr: "Augmenter le délai à 10 ou 14 jours.",
+      reasonFr: "Les banques ont souvent besoin de plus de temps pour traiter une demande complète.",
       actionRequired: false
     });
   }
 
-  // 4. Inclusions ambiguity
-  if (answers.inclusions && answers.inclusions.toLowerCase().includes("électro")) {
-    choices.push({
-      issueKey: "VAGUE_INCLUSIONS",
-      currentRisk: "Les 'électros' sont une source fréquente de litiges (marques, modèles, état).",
-      saferOptionFr: "Détailler : Marque, Modèle et Année (ex: Réfrigérateur Samsung RF28).",
-      reasonFr: "Une description précise évite les substitutions avant le passage chez le notaire.",
+  // 4. EV Charger ambiguity
+  if (answers?.inclusions && answers.inclusions.toLowerCase().includes("borne") && !answers.inclusions.toLowerCase().includes("recharge")) {
+     choices.push({
+      issueKey: "EV_CHARGER",
+      currentRisk: "Ambiguité sur la borne de recharge.",
+      saferOptionFr: "Préciser s'il s'agit d'une borne de recharge pour VE.",
+      reasonFr: "Les bornes de recharge sont souvent un point de litige si non spécifiées.",
       actionRequired: false
     });
   }

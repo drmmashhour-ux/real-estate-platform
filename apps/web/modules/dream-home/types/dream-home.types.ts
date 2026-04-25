@@ -2,6 +2,8 @@
  * Dream Home — user-declared inputs only. No nationality, ethnicity, religion, or inferred protected traits.
  */
 
+import type { PlaybookAssignmentResult } from "@/modules/playbook-memory/types/playbook-memory.types";
+
 export type DreamHomeQuestionnaireInput = {
   familySize?: number;
   adultsCount?: number;
@@ -112,6 +114,8 @@ export type DreamHomeMatchResult = {
   tradeoffs: string[];
   source: "ai" | "deterministic";
   warnings?: string[];
+  /** Present when POST /api/dream-home/match created a bandit assignment (audit row; not executed). */
+  playbookAssignment?: PlaybookAssignmentResult | null;
 };
 
 export type DreamHomeMatchedListing = {

@@ -9,9 +9,9 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 /**
- * Suggestion-side conversion path: create Deal from eligible broker CRM lead, update lead stage.
- * Body: `{ leadId: string, priceDollars?: number, idempotencyKey?: string }` — `leadId` required.
- * Idempotent when a deal already exists for this lead. No auto-messaging. Never throws from handler.
+ * STEP 3 — Lead → deal (suggest-side). Body: `{ leadId }` required; optional `priceDollars`, `idempotencyKey`.
+ * Validates scope, prevents duplicate deal for same lead (idempotent), updates lead toward negotiating, `[crm]` logs.
+ * No auto-messaging. Never throws from handler.
  */
 export async function POST(req: NextRequest) {
   let body: { leadId?: string; priceDollars?: number; idempotencyKey?: string };

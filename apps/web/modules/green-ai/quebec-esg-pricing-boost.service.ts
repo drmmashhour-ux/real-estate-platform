@@ -73,7 +73,7 @@ export function generateGreenPricingBoostSignal(params: GreenPricingBoostParams)
       rationale,
     };
   } catch {
-    greenAiLog.warn("quebec_esg_pricing_boost_generated", { ok: false });
+    greenAiLog.warn("quebec_esg_pricing_boost_failed", { ok: false });
     return {
       scoreInfluence: 0,
       labelInfluence: "neutral",

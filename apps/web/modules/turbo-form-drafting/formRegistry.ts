@@ -16,6 +16,8 @@ export const FORM_TEMPLATES: Record<string, TurboFormTemplate> = {
       { key: "withoutWarranty", label: "Sold without legal warranty", type: "boolean", required: true },
       { key: "rightOfWithdrawalAck", label: "I acknowledge the 3-day right of withdrawal", type: "boolean", required: true },
       { key: "privacyConsent", label: "Privacy Consent (Law 25)", type: "boolean", required: true },
+      { key: "equitableTreatmentAck", label: "I acknowledge the fair treatment notice (unrepresented buyer)", type: "boolean", required: false },
+      { key: "oaciqGuideAck", label: "I have received or accessed the OACIQ guide", type: "boolean", required: false },
       { key: "inclusions", label: "Inclusions", type: "textarea", required: false },
       { key: "exclusions", label: "Exclusions", type: "textarea", required: false },
       { key: "acceptanceExpiry", label: "Offer expiry date/time", type: "date", required: true },
@@ -23,7 +25,7 @@ export const FORM_TEMPLATES: Record<string, TurboFormTemplate> = {
     steps: [
       { id: "price", title: "Price & Deposit", fieldKeys: ["purchasePrice", "depositAmount"] },
       { id: "financing", title: "Financing & Inspection", fieldKeys: ["financingRequired", "financingDelay", "inspectionRequired", "inspectionDelay"] },
-      { id: "legal", title: "Legal & Privacy", fieldKeys: ["withoutWarranty", "rightOfWithdrawalAck", "privacyConsent"] },
+      { id: "legal", title: "Legal & Privacy", fieldKeys: ["withoutWarranty", "rightOfWithdrawalAck", "privacyConsent", "equitableTreatmentAck", "oaciqGuideAck"] },
       { id: "details", title: "Inclusions & Exclusions", fieldKeys: ["inclusions", "exclusions"] },
       { id: "expiry", title: "Final Details & Expiry", fieldKeys: ["acceptanceExpiry"] },
     ],

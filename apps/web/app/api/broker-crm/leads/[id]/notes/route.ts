@@ -27,5 +27,8 @@ export async function POST(request: NextRequest, context: Params) {
   if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
 
   const note = await addBrokerCrmNote(id, auth.user.id, parsed.body);
+  void import("@/modules/user-intelligence/integrations/crm-user-intelligence").then((m) =>
+    m.recordBrokerCrmNoteSignal(auth.user.id, { leadId: id }).catch(() => {}),
+  );
   return NextResponse.json({ note: { id: note.id, body: note.body, createdAt: note.createdAt.toISOString() } });
 }

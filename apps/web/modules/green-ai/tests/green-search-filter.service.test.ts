@@ -43,4 +43,17 @@ describe("applyGreenSearchFilters", () => {
     const out = applyGreenSearchFilters([{ id: "a" }], { minimumGreenLabel: "IMPROVABLE" }, m);
     expect(out).toHaveLength(1);
   });
+
+  it("hasUpgradePotential requires high/medium or score delta", () => {
+    const m = new Map<string, GreenSearchResultDecoration | null>([
+      ["a", baseDec({ improvementPotential: "high", scoreDelta: 2 })],
+      ["b", baseDec({ improvementPotential: "low", scoreDelta: 15 })],
+    ]);
+    expect(applyGreenSearchFilters([{ id: "a" }, { id: "b" }], { hasUpgradePotential: true }, m)).toHaveLength(2);
+  });
+
+  it("minimumQuebecScore excludes when score null", () => {
+    const m = new Map([["a", baseDec({ currentScore: null, label: "LOW" })]]);
+    expect(applyGreenSearchFilters([{ id: "a" }], { minimumQuebecScore: 10 }, m)).toHaveLength(0);
+  });
 });

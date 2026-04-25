@@ -7,7 +7,6 @@ import { estimateQuebecEsgUpgradeCosts, type QuebecEsgCostEstimateResult } from 
 import { estimateQuebecEsgIncentives, type QuebecEsgIncentiveEstimateResult } from "./quebec-esg-incentive.service";
 import { calculateQuebecEsgRetrofitRoi, type QuebecEsgRetrofitRoiResult } from "./quebec-esg-roi.service";
 import { generateGreenPricingBoostSignal, type GreenPricingBoostSignal } from "./quebec-esg-pricing-boost.service";
-import { QUEBEC_ESG_INCENTIVES_CATALOG_VERSION } from "./quebec-esg-incentives.catalog";
 
 function quebecLabelToPerformanceLabel(q: QuebecEsgResult["label"]): GreenAiPerformanceLabel {
   if (q === "GREEN") return "GREEN";

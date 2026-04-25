@@ -1,8 +1,7 @@
 import { Metadata } from "next";
+import { LeciSurfaceBootstrap } from "@/components/leci/LeciSurfaceBootstrap";
 import { TurboDraftForm } from "@/components/turbo-draft/TurboDraftForm";
 import { requireUser } from "@/lib/auth/require-user";
-import { redirect } from "next/navigation";
-import { prisma } from "@/lib/db";
 
 export const metadata: Metadata = {
   title: "Turbo Form Drafting | LECIPM",
@@ -19,13 +18,19 @@ type Props = {
 
 export default async function TurboDraftPage({ searchParams }: Props) {
   const auth = await requireUser();
-  const userId = auth.ok ? auth.user.id : undefined;
+  if (!auth.ok) return auth.response;
   const params = await searchParams;
+  const leciRole = String(auth.user.role).toLowerCase();
 
   const formKey = params.type || "PROMISE_TO_PURCHASE";
 
   return (
     <div className="min-h-screen bg-[#050505] py-12">
+      <LeciSurfaceBootstrap
+        userRole={leciRole}
+        draftSummary={`Turbo draft · formulaire ${formKey}`}
+        focusTopic={/promise|offre/i.test(formKey) ? "offer_draft" : undefined}
+      />
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-8 flex flex-col items-center justify-between gap-4 md:flex-row">
           <div>

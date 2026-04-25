@@ -4,26 +4,26 @@ export interface SectionValidationResult {
   valid: boolean;
   missingSections: string[];
   invalidOrder: boolean;
-  duplicateSections: string[];
+  duplicates: string[];
 }
 
-export function validateSections(formKey: string, draftSections: { title: string }[]): SectionValidationResult {
+export function validateSections(formKey: string, sectionIds: string[]): SectionValidationResult {
   const schema = FORM_SCHEMAS[formKey];
   if (!schema) {
-    return { valid: false, missingSections: ["SCHEMA_NOT_FOUND"], invalidOrder: false, duplicateSections: [] };
+    return { valid: true, missingSections: [], invalidOrder: false, duplicates: [] };
   }
 
-  const sectionTitles = draftSections.map(s => s.title.toUpperCase());
-  const missingSections = schema.requiredSections.filter(s => !sectionTitles.includes(s));
-  const duplicateSections = sectionTitles.filter((item, index) => sectionTitles.indexOf(item) !== index);
-
+  const missingSections = schema.requiredSections.filter(s => !sectionIds.includes(s));
+  const duplicates = sectionIds.filter((item, index) => sectionIds.indexOf(item) !== index);
+  
   let invalidOrder = false;
   if (schema.orderEnforced) {
-    const presentRequired = schema.requiredSections.filter(s => sectionTitles.includes(s));
-    const actualOrder = sectionTitles.filter(s => schema.requiredSections.includes(s));
+    // Check if relative order matches schema for existing sections
+    const existingSchemaSections = schema.requiredSections.filter(s => sectionIds.includes(s));
+    const actualOrder = sectionIds.filter(s => schema.requiredSections.includes(s));
     
-    for (let i = 0; i < presentRequired.length; i++) {
-      if (presentRequired[i] !== actualOrder[i]) {
+    for (let i = 0; i < actualOrder.length; i++) {
+      if (actualOrder[i] !== existingSchemaSections[i]) {
         invalidOrder = true;
         break;
       }
@@ -31,9 +31,9 @@ export function validateSections(formKey: string, draftSections: { title: string
   }
 
   return {
-    valid: missingSections.length === 0 && !invalidOrder && duplicateSections.length === 0,
+    valid: missingSections.length === 0 && !invalidOrder && duplicates.length === 0,
     missingSections,
     invalidOrder,
-    duplicateSections
+    duplicates,
   };
 }

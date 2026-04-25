@@ -1,0 +1,77 @@
+/**
+ * Scenario-based negotiation simulation — not predictions, not legal or financial advice, no auto actions.
+ */
+
+import type { OfferPostureStyle } from "@/modules/offer-strategy/offer-strategy.types";
+
+export type NegotiationApproachKey =
+  | "soft_follow_up"
+  | "firm_follow_up"
+  | "value_reinforcement"
+  | "objection_first"
+  | "timing_pause"
+  | "visit_push"
+  | "offer_discussion_now";
+
+export type NegotiationSimulatorContext = {
+  dealId?: string;
+  leadId?: string | null;
+  conversationId?: string | null;
+  brokerId?: string | null;
+  clientId?: string | null;
+  closingReadinessScore?: number | null;
+  offerReadinessScore?: number | null;
+  posture?: OfferPostureStyle | null;
+  blockers?: unknown;
+  objections?: unknown;
+  competitiveRisk?: "low" | "medium" | "high" | null;
+  urgencyLevel?: "low" | "medium" | "high" | null;
+  financingReadiness?: "unknown" | "weak" | "medium" | "strong";
+  engagementScore?: number | null;
+  silenceGapDays?: number | null;
+  trustLevel?: "low" | "medium" | "high" | "unknown";
+  visitCompleted?: boolean;
+  offerDiscussed?: boolean;
+  clientMemory?: unknown;
+  priceSensitivity?: "low" | "medium" | "high" | "unknown";
+  /** Heuristic: postponed or later language. */
+  postponementHint?: boolean;
+};
+
+export type NegotiationApproach = {
+  key: NegotiationApproachKey;
+  title: string;
+  description: string;
+};
+
+export type NegotiationScenario = {
+  approachKey: string;
+  expectedOutcome: "positive_progress" | "neutral_progress" | "stall_risk" | "pushback_risk";
+  /** 0–1, capped — not a guarantee. */
+  confidence: number;
+  rationale: string[];
+  likelyNextStep: string;
+  likelyObjectionPath: string[];
+};
+
+export type MomentumRiskResult = {
+  level: "low" | "medium" | "high";
+  rationale: string[];
+};
+
+export type ObjectionPathForecast = {
+  likelyObjections: {
+    type: string;
+    probabilityBand: "low" | "medium" | "high";
+    rationale: string[];
+  }[];
+};
+
+export type NegotiationSimulatorOutput = {
+  scenarios: NegotiationScenario[];
+  safestApproach: string | null;
+  highestUpsideApproach: string | null;
+  momentumRisk: MomentumRiskResult;
+  objectionForecast: ObjectionPathForecast;
+  coachNotes: string[];
+};

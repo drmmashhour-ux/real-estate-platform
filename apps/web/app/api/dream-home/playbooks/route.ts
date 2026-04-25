@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getSessionUserIdFromRequest } from "@/lib/auth/api-session";
 import { getDreamHomePlaybookRecommendations, suggestDreamHomePlaybookAssignment } from "@/modules/dream-home/services/dream-home-playbook.service";
 
 export const dynamic = "force-dynamic";
@@ -11,8 +12,25 @@ export async function GET(req: Request) {
   if (city) {
     segment.city = city;
   }
+  segment.source = "dream_home_playbooks_get";
   const recs = await getDreamHomePlaybookRecommendations({ segment });
-  return NextResponse.json({ ok: true, playbooks: recs });
+  const createAssignment =
+    url.searchParams.get("createAssignment") === "1" || url.searchParams.get("createAssignment") === "true";
+  let assignment: Awaited<ReturnType<typeof suggestDreamHomePlaybookAssignment>> = null;
+  if (createAssignment) {
+    const entityId = url.searchParams.get("entityId")?.trim() || undefined;
+    const userId = await getSessionUserIdFromRequest(req).catch(() => null);
+    try {
+      assignment = await suggestDreamHomePlaybookAssignment({ entityId, segment, userId });
+    } catch {
+      assignment = null;
+    }
+  }
+  return NextResponse.json({
+    ok: true,
+    playbooks: recs,
+    ...(createAssignment ? { assignment } : {}),
+  });
 }
 
 export async function POST(req: Request) {
@@ -35,7 +53,26 @@ export async function POST(req: Request) {
     const res = await suggestDreamHomePlaybookAssignment({ entityId, segment });
     return NextResponse.json({ ok: true, assignment: res });
   }
-  const segment = b.segment && typeof b.segment === "object" && !Array.isArray(b.segment) ? b.segment : {};
-  const recs = await getDreamHomePlaybookRecommendations({ segment: segment as Record<string, unknown> });
-  return NextResponse.json({ ok: true, playbooks: recs });
+  const segment =
+    b.segment && typeof b.segment === "object" && !Array.isArray(b.segment)
+      ? (b.segment as Record<string, unknown>)
+      : {};
+  const merged = { ...segment, source: "dream_home_playbooks_post" };
+  const recs = await getDreamHomePlaybookRecommendations({ segment: merged });
+  const createAssignment = b.createAssignment === true || b.createAssignment === "true" || b.createAssignment === 1;
+  let assignment: Awaited<ReturnType<typeof suggestDreamHomePlaybookAssignment>> = null;
+  if (createAssignment) {
+    const entityId = typeof b.entityId === "string" ? b.entityId : undefined;
+    const userId = typeof b.userId === "string" ? b.userId : undefined;
+    try {
+      assignment = await suggestDreamHomePlaybookAssignment({ entityId, segment: merged, userId });
+    } catch {
+      assignment = null;
+    }
+  }
+  return NextResponse.json({
+    ok: true,
+    playbooks: recs,
+    ...(createAssignment ? { assignment } : {}),
+  });
 }

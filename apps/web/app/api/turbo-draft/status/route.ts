@@ -4,6 +4,7 @@ import { requireUser } from "@/lib/auth/require-user";
 
 import { createDealFromTurboDraft } from "@/modules/turbo-form-drafting/deal-pipeline.service";
 import { validateBeforeSignature } from "@/modules/production-guard/validationEngine";
+import { logProductionAuditEvent } from "@/modules/production-guard/auditTrail";
 
 export async function POST(req: Request) {
   const auth = await requireUser();
@@ -80,6 +81,9 @@ export async function POST(req: Request) {
     // Trigger deal pipeline if ready
     if (canSign && draft.status === "DRAFT") {
       await createDealFromTurboDraft(draftId).catch(console.error);
+      await logProductionAuditEvent(draftId, auth.user.id, "PG_SIGNATURE_GATE_PASS", { score: latestScore?.score || 0, ip }, ip);
+    } else if (!canSign && errors.length > 0) {
+      await logProductionAuditEvent(draftId, auth.user.id, "PG_SIGNATURE_GATE_FAIL", { errors, ip }, ip, "WARNING");
     }
 
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";

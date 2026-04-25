@@ -41,3 +41,12 @@ Internal-only estimation layers for broker tools and listing metadata. **Not fin
 ## Periodic refresh
 
 - When programs change (rates, closures, new intake), update the catalog, bump `QUEBEC_ESG_INCENTIVES_CATALOG_VERSION`, and adjust tests if behavior changes.
+
+## Final compliance checklist (engineering)
+
+- **Closed** programs (e.g. Chauffez vert stream modeled as closed after 2026-03-31) must not appear as current incentives unless `historyMode: true` on the incentive estimator / API body.
+- **Costs** are always internal bands — never presented as quotes or appraisals.
+- **Incentive totals** are `null` whenever any matched program has unmodeled amounts (informational-only rows) so we do not imply a stacked dollar figure.
+- **ROI** outputs are narrative-first; no guaranteed resale percentage.
+- **Pricing boost** is internal-only; do not use multipliers as public list-price advice.
+- All surfaces must show **`QUEBEC_ESG_INCENTIVES_UI_DISCLAIMER`** (Québec-inspired + verify with official programs).

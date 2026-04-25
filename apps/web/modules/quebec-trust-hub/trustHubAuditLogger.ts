@@ -1,17 +1,21 @@
-import { logTurboDraftEvent } from "../turbo-form-drafting/auditLogger";
+import { prisma } from "../../lib/prisma";
 
 export async function logTrustHubEvent(args: {
   draftId: string;
   userId?: string;
   eventKey: "trust_score_calculated" | "trust_badge_granted" | "safer_choice_generated" | "clause_explained" | "protection_mode_enabled" | "broker_assist_requested";
-  severity: "INFO" | "WARNING" | "SUCCESS" | "CRITICAL";
   payload?: any;
 }) {
-  return logTurboDraftEvent({
-    draftId: args.draftId,
-    userId: args.userId,
-    eventKey: args.eventKey,
-    severity: args.severity,
-    payload: args.payload
+  const { draftId, userId, eventKey, payload } = args;
+
+  // Use existing TurboDraftAuditLog if possible, or a specialized one
+  await prisma.turboDraftAuditLog.create({
+    data: {
+      draftId,
+      userId,
+      eventKey,
+      severity: "INFO",
+      payloadJson: payload || {},
+    },
   });
 }

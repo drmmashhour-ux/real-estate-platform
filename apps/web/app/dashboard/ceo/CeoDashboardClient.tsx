@@ -6,6 +6,7 @@ import { CeoLongTermGoalsPanel } from "@/components/ceo-ai/CeoLongTermGoalsPanel
 import { Brain, TrendingUp, BarChart3, ShieldAlert, Cpu } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { LaunchSequencerSummaryStrip } from "@/components/launch-sequencer/LaunchSequencerSummaryStrip";
 
 interface CeoDashboardClientProps {
   initialSnapshot: any;
@@ -62,6 +63,10 @@ export function CeoDashboardClient({ initialSnapshot, strategicSnapshot, weeklyP
           icon={<ShieldAlert className={`h-4 w-4 ${snapshot.context.context.deals.avgRejectionRate > 0.3 ? "text-rose-500" : "text-slate-400"}`} />}
           status={snapshot.context.context.deals.avgRejectionRate > 0.3 ? "warning" : "stable"}
         />
+      </div>
+
+      <div className="rounded-lg border border-slate-200 bg-slate-950 p-1">
+        <LaunchSequencerSummaryStrip dashboardHref="/dashboard/launch-sequencer" />
       </div>
 
       {/* Main Content Tabs */}

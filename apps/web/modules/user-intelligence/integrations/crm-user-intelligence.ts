@@ -248,3 +248,72 @@ export async function recordMarketplaceLeadNoteSignal(brokerUserId: string, inpu
     playbookLog.warn("user_intelligence: marketplace_lead_note", { message: e instanceof Error ? e.message : String(e) });
   }
 }
+
+/**
+ * Broker Inquiry CRM — internal note saved (leadId only; never stores note body). Never throws.
+ */
+export async function recordBrokerCrmNoteSignal(brokerUserId: string, input: { leadId: string }): Promise<void> {
+  try {
+    if (!brokerUserId?.trim()) {
+      return;
+    }
+    void (await recordSignal({
+      userId: brokerUserId,
+      sourceDomain: "LEADS",
+      sourceType: "broker_crm_internal_note",
+      sourceId: input.leadId,
+      signalKey: "broker_crm_note_added",
+      signalValue: { leadId: input.leadId },
+      explicitUserProvided: false,
+      derivedFromBehavior: true,
+      confidence: 0.4,
+      signalWeight: 0.28,
+    }));
+    void (await updateJourneyState({
+      userId: brokerUserId,
+      currentDomain: "LEADS",
+      currentStage: "broker_crm_note",
+      currentIntent: "broker_crm_touch",
+      touchActivityAt: true,
+    }));
+  } catch (e) {
+    playbookLog.warn("user_intelligence: broker_crm_note_signal", { message: e instanceof Error ? e.message : String(e) });
+  }
+}
+
+/**
+ * Broker Inquiry CRM — outbound thread message sent (counts engagement only). Never throws.
+ */
+export async function recordBrokerCrmOutboundMessageSignal(
+  brokerUserId: string,
+  input: { leadId: string; fromAiDraft?: boolean },
+): Promise<void> {
+  try {
+    if (!brokerUserId?.trim()) {
+      return;
+    }
+    void (await recordSignal({
+      userId: brokerUserId,
+      sourceDomain: "LEADS",
+      sourceType: "broker_crm_outbound_message",
+      sourceId: input.leadId,
+      signalKey: "broker_crm_message_sent",
+      signalValue: { leadId: input.leadId, fromAiDraft: input.fromAiDraft === true },
+      explicitUserProvided: false,
+      derivedFromBehavior: true,
+      confidence: 0.42,
+      signalWeight: 0.3,
+    }));
+    void (await updateJourneyState({
+      userId: brokerUserId,
+      currentDomain: "LEADS",
+      currentStage: "message_sent",
+      currentIntent: "broker_crm_messaging",
+      touchActivityAt: true,
+    }));
+  } catch (e) {
+    playbookLog.warn("user_intelligence: broker_crm_message_signal", {
+      message: e instanceof Error ? e.message : String(e),
+    });
+  }
+}

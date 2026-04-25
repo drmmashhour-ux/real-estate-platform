@@ -1,7 +1,6 @@
 import { createHash } from "node:crypto";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { prisma } from "@/lib/db";
-import { generateDocumentHash } from "@/lib/compliance/document-hash";
 import { recordProductionGuardAudit } from "./audit-service";
 
 /**
@@ -14,7 +13,7 @@ export async function sealFinalDraftPdf(input: {
   title: string;
   canonicalText: string;
 }): Promise<{ contentSha256: string; pdfSha256: string; artifactId: string }> {
-  const contentSha256 = generateDocumentHash(input.canonicalText);
+  const contentSha256 = createHash("sha256").update(input.canonicalText, "utf8").digest("hex");
 
   const pdf = await PDFDocument.create();
   pdf.setTitle(input.title);

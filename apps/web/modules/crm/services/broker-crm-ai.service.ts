@@ -1,3 +1,9 @@
+/**
+ * STEP 1 — AI lead scoring (rule-based; suggest-only).
+ * Factors reflected in rationale: recency, engagement (thread), source, responsiveness proxy,
+ * property/listing fit, pipeline status. Integrates playbook-memory on score. Never throws.
+ */
+
 import { scoreBrokerCrmLead } from "@/lib/broker-crm/score-lead";
 import { playbookLog } from "@/modules/playbook-memory/playbook-memory.logger";
 import { playbookMemoryWriteService } from "@/modules/playbook-memory/services/playbook-memory-write.service";
@@ -45,7 +51,9 @@ export async function scoreLead(leadOrId: string | { id: string }): Promise<Lead
       return { ok: false, error: "invalid_lead" };
     }
     const { priorityScore, priorityLabel } = await scoreBrokerCrmLead(leadId);
-    const reasons: string[] = [];
+    const reasons: string[] = [
+      "Rule-based composite: thread intent/visit language, engagement depth, message recency, inbound unread/responsiveness proxy, listing linkage, and CRM stage.",
+    ];
     if (priorityScore >= 60) {
       reasons.push("High combined engagement and intent signals from thread text and recency.");
     } else if (priorityScore >= 30) {

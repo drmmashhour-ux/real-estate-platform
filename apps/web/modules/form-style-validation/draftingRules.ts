@@ -1,34 +1,38 @@
-import { TurboDraftInput } from "../turbo-form-drafting/types";
+import { ClauseIssue } from "./clauseValidator";
 
 export interface DraftingRule {
-  id: string;
-  check: (input: TurboDraftInput) => { valid: boolean; message?: string };
-  severity: "CRITICAL" | "WARNING";
+  key: string;
+  check: (context: any) => ClauseIssue | null;
 }
 
 export const DRAFTING_RULES: DraftingRule[] = [
   {
-    id: "price_must_exist",
-    check: (input) => ({
-      valid: !!input.answers.purchasePrice || !!input.answers.listingPrice,
-      message: "A price must be specified."
-    }),
-    severity: "CRITICAL"
+    key: "EXPLICIT_WARRANTY",
+    check: (ctx) => {
+      if (ctx.answers?.withoutWarranty && !ctx.sections.find((s: any) => s.id === "LEGAL_WARRANTY")?.content.includes("sans garantie légale")) {
+        return {
+          clauseKey: "LEGAL_WARRANTY",
+          issue: "L'exclusion de garantie doit être mentionnée explicitement dans la clause.",
+          severity: "CRITICAL",
+          blocking: true
+        };
+      }
+      return null;
+    }
   },
   {
-    id: "parties_must_exist",
-    check: (input) => ({
-      valid: input.parties.length >= 1,
-      message: "At least one party must be identified."
-    }),
-    severity: "CRITICAL"
-  },
-  {
-    id: "representation_disclosure",
-    check: (input) => ({
-      valid: input.representedStatus === "REPRESENTED" || !!input.answers.representationAck,
-      message: "Representation must be disclosed if not represented by a broker."
-    }),
-    severity: "CRITICAL"
+    key: "PARTIES_MANDATORY",
+    check: (ctx) => {
+      const parties = ctx.sections.find((s: any) => s.id === "PARTIES");
+      if (!parties || parties.content.length < 20) {
+        return {
+          clauseKey: "PARTIES",
+          issue: "L'identification des parties est incomplète ou manquante.",
+          severity: "CRITICAL",
+          blocking: true
+        };
+      }
+      return null;
+    }
   }
 ];

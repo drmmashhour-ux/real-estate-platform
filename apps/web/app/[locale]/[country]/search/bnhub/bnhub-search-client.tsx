@@ -18,6 +18,8 @@ import dynamic from "next/dynamic";
 import type { MapListing } from "@/components/map/MapListing";
 import { hasValidCoordinates } from "@/components/map/MapListing";
 import type { MapDisplayMode } from "@/components/map/ListingMap";
+import { TrustBadge } from "@/components/bnhub/TrustBadge";
+import { annotateBnhubListingsForGuest } from "@/modules/bnhub/recommendationEngine";
 
 const ListingMap = dynamic(
   () => import("@/components/map/ListingMap").then((m) => m.ListingMap),
@@ -251,17 +253,6 @@ function getPhotoUrls(photos: string[] | unknown): string[] {
     return photos.filter((p): p is string => typeof p === "string");
   }
   return [];
-}
-
-function getRating(listing: Listing): string | null {
-  const reviews = listing.reviews;
-  if (reviews && reviews.length > 0) {
-    const avg =
-      reviews.reduce((s, r) => s + r.propertyRating, 0) / reviews.length;
-    return avg.toFixed(1);
-  }
-  if (listing._count?.reviews && listing._count.reviews > 0) return "—";
-  return null;
 }
 
 function hasAmenity(listing: Listing, amenity: string): boolean {
@@ -809,9 +800,11 @@ export function BnhubSearchClient() {
     [t, locale, effectiveFilters, filters, hasActiveFilters]
   );
 
+  const viewListings = useMemo(() => annotateBnhubListingsForGuest(listings), [listings]);
+
   const mapListings: MapListing[] = useMemo(
     () =>
-      listings
+      viewListings
         .filter((l) => hasValidCoordinates(l))
         .map((l) => ({
           id: l.id,
@@ -825,10 +818,10 @@ export function BnhubSearchClient() {
           platformListing: true as const,
           listingHeadline: "Nightly stay" as const,
         })),
-    [listings]
+    [viewListings]
   );
 
-  const mapAvailable = mapListings.length > 0 || listings.length === 0;
+  const mapAvailable = mapListings.length > 0 || viewListings.length === 0;
 
   const applyLocationPick = useCallback(
     (raw: string, opts?: { listingCode?: string }) => {
@@ -1275,16 +1268,17 @@ export function BnhubSearchClient() {
 
   return (
     <div ref={containerRef} className="lecipm-bg-light-page min-h-screen">
-      {/* Hero — smart search */}
-      <section className="border-b border-neutral-200 bg-gradient-to-b from-neutral-100 to-neutral-50">
-        <div className="lecipm-safe-gutter-x mx-auto max-w-4xl py-8 sm:py-12">
-          <h1 className="text-center text-2xl font-semibold text-slate-900 sm:text-3xl">
+      {/* Hero — single search, black + gold */}
+      <section className="border-b border-neutral-900 bg-[#0B0B0B]">
+        <div className="lecipm-safe-gutter-x mx-auto max-w-3xl py-10 sm:py-14">
+          <p className="text-center text-[11px] font-semibold uppercase tracking-[0.28em] text-[#D4AF37]/80">
+            BNHub
+          </p>
+          <h1 className="mt-3 text-center text-2xl font-semibold tracking-tight text-white sm:text-4xl">
             {t("search.heroTitle")}
           </h1>
-          <p className="mt-2 text-center text-slate-600">
-            {t("search.heroSubtitle")}
-          </p>
-          <div className="mx-auto mt-8 max-w-3xl space-y-4 rounded-2xl border border-neutral-200 bg-neutral-100 p-4 shadow-sm sm:p-6">
+          <p className="mx-auto mt-2 max-w-lg text-center text-sm text-white/55">{t("search.heroSubtitle")}</p>
+          <div className="mx-auto mt-8 rounded-2xl border border-[#D4AF37]/25 bg-black/40 p-3 shadow-[0_0_60px_rgba(212,175,55,0.12)] sm:p-4">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
               <input
                 type="search"
@@ -1303,57 +1297,47 @@ export function BnhubSearchClient() {
                     void applySearch();
                   }
                 }}
-                className="min-h-[52px] flex-1 rounded-xl border border-neutral-200 px-4 text-base text-slate-900 placeholder:text-slate-400 focus:border-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-400/20"
+                className="min-h-[56px] flex-1 rounded-xl border border-white/15 bg-white/5 px-4 text-base text-white placeholder:text-white/35 focus:border-[#D4AF37]/50 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/25"
               />
               <button
                 type="button"
                 onClick={() => void handleSearch()}
-                className="min-h-[52px] shrink-0 rounded-xl bg-rose-500 px-8 text-base font-semibold text-white hover:bg-rose-600 sm:px-10"
+                className="min-h-[56px] shrink-0 rounded-xl bg-[#D4AF37] px-8 text-base font-semibold text-black hover:brightness-110 sm:px-10"
               >
                 {nlBusy ? t("search.searching") : t("search.button")}
               </button>
             </div>
-            {recentSearches.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                <span className="w-full text-xs font-medium uppercase tracking-wide text-slate-500">
-                  {t("search.recent")}
-                </span>
-                {recentSearches.slice(0, 6).map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => applyLocationPick(s)}
-                    className="rounded-full border border-neutral-200 bg-neutral-100 px-3 py-1.5 text-sm text-slate-700 hover:border-rose-200 hover:bg-rose-50"
-                  >
-                    {s}
-                  </button>
-                ))}
+            {recentSearches.length > 0 ? (
+              <details className="mt-3 border-t border-white/10 pt-3 text-left">
+                <summary className="cursor-pointer text-xs font-medium text-[#D4AF37]/90">{t("search.recent")}</summary>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {recentSearches.slice(0, 6).map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => applyLocationPick(s)}
+                      className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs text-white/80 hover:border-[#D4AF37]/40"
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </details>
+            ) : null}
+            <details className="mt-2 text-left text-xs text-white/45">
+              <summary className="cursor-pointer text-[#D4AF37]/80">More options</summary>
+              <div className="mt-2 flex flex-wrap gap-x-4 gap-y-2 text-white/70">
+                <button type="button" onClick={saveCurrentSearch} className="hover:text-[#D4AF37]">
+                  {t("search.saveThisSearch")}
+                </button>
+                <button type="button" onClick={() => setSavedOpen(true)} className="hover:text-[#D4AF37]">
+                  {t("search.savedSearches")}
+                </button>
+                <Link href="/projects" className="hover:text-[#D4AF37]">
+                  {t("search.buyRentProjects")}
+                </Link>
               </div>
-            )}
-            <div className="flex flex-wrap items-center gap-3 border-t border-neutral-200 pt-4 text-sm">
-              <button
-                type="button"
-                onClick={saveCurrentSearch}
-                className="font-semibold text-rose-600 hover:text-rose-700"
-              >
-                {t("search.saveThisSearch")}
-              </button>
-              <span className="text-slate-300">|</span>
-              <button
-                type="button"
-                onClick={() => setSavedOpen(true)}
-                className="font-medium text-slate-600 hover:text-slate-900"
-              >
-                {t("search.savedSearches")}
-              </button>
-              <span className="text-slate-300">|</span>
-              <Link href="/projects" className="font-medium text-slate-600 hover:text-slate-900">
-                {t("search.buyRentProjects")}
-              </Link>
-              <p className="w-full text-xs text-slate-500">
-                {t("search.alertsNote")}
-              </p>
-            </div>
+            </details>
           </div>
         </div>
       </section>
@@ -1906,19 +1890,22 @@ export function BnhubSearchClient() {
               </div>
             ) : (
               <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-                {listings.map((listing, index) => {
+                {viewListings.map((listing, index) => {
                   const photos = getPhotoUrls(listing.photos);
-                  const rating = getRating(listing);
                   const badges = listing._conversionBadges;
                   const href = `/bnhub/${listing.listingCode || listing.id}`;
+                  const fraudWatch = listing.fraud.level === "watch";
+                  const aiExtras = listing.valueLabel && !(listing._aiLabels ?? []).includes(listing.valueLabel) ? [listing.valueLabel] : [];
                   return (
                     <Link
                       key={listing.id}
                       href={href}
                       onClick={() => logListingCardClick(listing.id, index)}
-                      className="group relative flex min-h-[320px] flex-col overflow-hidden rounded-2xl border-2 border-neutral-200 bg-neutral-100 transition hover:border-rose-300 hover:shadow-xl active:scale-[0.99]"
+                      className={`group relative flex min-h-[300px] flex-col overflow-hidden rounded-2xl border-2 bg-white transition hover:border-rose-300 hover:shadow-xl active:scale-[0.99] ${
+                        fraudWatch ? "border-amber-400 shadow-amber-100" : "border-neutral-200"
+                      }`}
                     >
-                      <div className="relative aspect-[4/3] shrink-0 overflow-hidden bg-slate-100">
+                      <div className="relative aspect-[16/10] shrink-0 overflow-hidden bg-slate-100">
                         {photos[0] ? (
                           <img
                             src={photos[0]}
@@ -1930,13 +1917,9 @@ export function BnhubSearchClient() {
                             No photo
                           </div>
                         )}
-                        <span className="absolute left-3 top-3 rounded-lg bg-neutral-50/95 px-2.5 py-1.5 text-sm font-semibold text-slate-900 shadow-md ring-1 ring-black/5">
-                          $
-                          {(listing.nightPriceCents / 100).toFixed(0)}
-                          <span className="font-normal text-slate-500">
-                            {" "}
-                            / night
-                          </span>
+                        <span className="absolute left-3 top-3 rounded-lg bg-white/95 px-3 py-1.5 text-base font-bold tabular-nums text-slate-900 shadow-md ring-1 ring-black/5">
+                          ${(listing.nightPriceCents / 100).toFixed(0)}
+                          <span className="text-sm font-normal text-slate-600"> / night</span>
                         </span>
                         <div className="absolute bottom-3 left-3 flex flex-wrap gap-1.5">
                           {badges?.isNew ? (
@@ -1956,13 +1939,13 @@ export function BnhubSearchClient() {
                           ) : null}
                         </div>
                         <div className="absolute right-3 top-3 flex max-w-[55%] flex-col items-end gap-1">
-                          {(listing._aiLabels ?? []).map((label) => (
+                          {[...(listing._aiLabels ?? []), ...aiExtras].map((label, i) => (
                             <span
-                              key={label}
+                              key={`${label}-${i}`}
                               className={`rounded-lg px-2.5 py-1 text-xs font-medium text-white shadow ${
-                                label === "Best Match"
+                                label === "Best Match" || label === "Best value"
                                   ? "bg-rose-500"
-                                  : label === "Great Price"
+                                  : label === "Great Price" || label === "Great price"
                                     ? "bg-emerald-500"
                                     : "bg-amber-500"
                               }`}
@@ -1970,18 +1953,15 @@ export function BnhubSearchClient() {
                               {label}
                             </span>
                           ))}
-                          {listing.verificationStatus === "VERIFIED" && (
-                            <span className="rounded-lg bg-slate-700 px-2.5 py-1 text-xs font-medium text-white">
-                              Verified Host
+                          {fraudWatch ? (
+                            <span className="rounded-lg bg-amber-600 px-2.5 py-1 text-[11px] font-semibold text-white shadow">
+                              Trust review
                             </span>
-                          )}
-                          <span className="rounded-lg bg-emerald-600 px-2.5 py-1 text-xs font-medium text-white">
-                            Protected Booking
-                          </span>
+                          ) : null}
                         </div>
                       </div>
                       <div className="flex flex-1 flex-col p-4">
-                        <h2 className="line-clamp-2 font-semibold leading-snug text-slate-900 group-hover:text-rose-600">
+                        <h2 className="line-clamp-2 text-lg font-semibold leading-snug text-slate-900 group-hover:text-rose-600">
                           {listing.title}
                         </h2>
                         <p className="mt-1 text-sm font-medium text-slate-700">{listing.city}</p>
@@ -1990,6 +1970,17 @@ export function BnhubSearchClient() {
                             {listing.propertyType}
                             {listing.roomType ? ` · ${listing.roomType}` : ""}
                           </p>
+                        ) : null}
+                        <TrustBadge
+                          className="mt-3"
+                          variant="light"
+                          verified={listing.verified}
+                          hostRating={listing.displayRating}
+                          reviewCount={listing.displayReviewCount}
+                          riskLevel={listing.riskLevel}
+                        />
+                        {fraudWatch && listing.fraud.reason ? (
+                          <p className="mt-2 text-xs text-amber-800">{listing.fraud.reason}</p>
                         ) : null}
                         <p className="mt-2 text-sm text-slate-600">
                           {listing.beds != null || listing.baths != null
@@ -2000,22 +1991,7 @@ export function BnhubSearchClient() {
                         {listing.listingCode ? (
                           <p className="mt-1 font-mono text-[11px] text-slate-400">ID {listing.listingCode}</p>
                         ) : null}
-                        {rating !== null ? (
-                          <p className="mt-2 text-xs text-slate-500">
-                            ★ {rating}
-                            {listing._count?.reviews != null &&
-                              listing._count.reviews > 0 && (
-                                <span className="ml-1">
-                                  ({listing._count.reviews} review
-                                  {listing._count.reviews !== 1 ? "s" : ""})
-                                </span>
-                              )}
-                          </p>
-                        ) : (
-                          <p className="mt-2 text-xs text-slate-400">
-                            ★ — (no reviews yet)
-                          </p>
-                        )}
+                        <p className="mt-2 text-xs text-slate-500">Total with fees shown before you pay — no surprise charges at checkout.</p>
                         <span className="mt-auto inline-flex items-center gap-1 pt-3 text-sm font-semibold text-rose-600 group-hover:text-rose-700">
                           View details
                           <span aria-hidden>→</span>

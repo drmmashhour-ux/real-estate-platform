@@ -2,42 +2,80 @@ import { describe, expect, it } from "vitest";
 import { rankListingsWithGreenSignals } from "../green-ranking.service";
 import type { GreenSearchResultDecoration } from "../green-search.types";
 
-const d = (o: Partial<GreenSearchResultDecoration>): GreenSearchResultDecoration => ({
-  currentScore: 50,
-  projectedScore: 70,
-  scoreDelta: 20,
-  label: "IMPROVABLE",
-  quebecLabel: "STANDARD",
-  improvementPotential: "high",
-  hasPotentialIncentives: true,
-  estimatedIncentives: 5000,
-  rankingBoostSuggestion: 1.04,
+const dec = (o: Partial<GreenSearchResultDecoration>): GreenSearchResultDecoration => ({
+  currentScore: null,
+  projectedScore: null,
+  scoreDelta: null,
+  label: null,
+  quebecLabel: null,
+  improvementPotential: null,
+  hasPotentialIncentives: false,
+  estimatedIncentives: null,
+  rankingBoostSuggestion: 1,
   brokerCallouts: [],
   disclaimers: [],
   rationale: ["r1"],
-  efficientHeating: true,
-  highInsulation: true,
-  highWindowPerformance: true,
-  hasSolar: false,
-  hasGreenRoof: false,
-  usedSnapshot: true,
+  efficientHeating: null,
+  highInsulation: null,
+  highWindowPerformance: null,
+  hasSolar: null,
+  hasGreenRoof: null,
+  usedSnapshot: false,
   computedOnTheFly: false,
   ...o,
 });
 
 describe("rankListingsWithGreenSignals", () => {
-  it("orders by green_best_now (higher current first)", () => {
-    const dec = new Map<string, GreenSearchResultDecoration | null>([
-      ["a", d({ currentScore: 40 })],
-      ["b", d({ currentScore: 80 })],
+  it("orders by current score in green_best_now (public)", () => {
+    const a = { id: "a", n: 1 };
+    const b = { id: "b", n: 2 };
+    const m = new Map<string, GreenSearchResultDecoration | null>([
+      ["a", dec({ currentScore: 50 })],
+      ["b", dec({ currentScore: 80 })],
     ]);
-    const { ranked } = rankListingsWithGreenSignals({
-      items: [{ id: "a" }, { id: "b" }],
-      decorationById: dec,
-      getId: (x) => (x as { id: string }).id,
+    const { ranked, signals } = rankListingsWithGreenSignals({
+      items: [a, b],
+      decorationById: m,
+      getId: (x) => x.id,
+      getBaseScore: () => 0.5,
       sortMode: "green_best_now",
       audience: "public",
     });
-    expect((ranked[0] as { id: string }).id).toBe("b");
+    expect(ranked[0]!.id).toBe("b");
+    expect(signals.get("b")?.currentScore).toBe(80);
+  });
+
+  it("ranks by delta in green_upgrade_potential", () => {
+    const a = { id: "a" };
+    const b = { id: "b" };
+    const m = new Map<string, GreenSearchResultDecoration | null>([
+      ["a", dec({ currentScore: 60, scoreDelta: 5 })],
+      ["b", dec({ currentScore: 50, scoreDelta: 30 })],
+    ]);
+    const { ranked } = rankListingsWithGreenSignals({
+      items: [a, b],
+      decorationById: m,
+      getId: (x) => x.id,
+      sortMode: "green_upgrade_potential",
+      audience: "public",
+    });
+    expect(ranked[0]!.id).toBe("b");
+  });
+
+  it("incentive mode prefers higher illustrative totals", () => {
+    const a = { id: "a" };
+    const b = { id: "b" };
+    const m = new Map<string, GreenSearchResultDecoration | null>([
+      ["a", dec({ estimatedIncentives: 20_000, hasPotentialIncentives: true, currentScore: 50 })],
+      ["b", dec({ estimatedIncentives: 1000, hasPotentialIncentives: true, currentScore: 50 })],
+    ]);
+    const { ranked } = rankListingsWithGreenSignals({
+      items: [a, b],
+      decorationById: m,
+      getId: (x) => x.id,
+      sortMode: "green_incentive_opportunity",
+      audience: "public",
+    });
+    expect(ranked[0]!.id).toBe("a");
   });
 });

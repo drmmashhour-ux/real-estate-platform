@@ -120,3 +120,12 @@ export const EXPLICIT_PREFERENCE_SIGNAL_KEYS = [
 ] as const;
 
 export type ExplicitPreferenceSignalKey = (typeof EXPLICIT_PREFERENCE_SIGNAL_KEYS)[number];
+
+/** Point-in-time profile for transparency (API/list snapshots). */
+export type UserPreferenceSnapshotView = {
+  id: string;
+  createdAt: string;
+  snapshotType: string;
+  summary: string | null;
+  source: string | null;
+};

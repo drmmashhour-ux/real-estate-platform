@@ -1,28 +1,30 @@
-"use client";
-
-import { TrustBadge } from "@/modules/quebec-trust-hub/types";
-import { Check } from "lucide-react";
+import React from "react";
+import { TrustHubBadgeInfo } from "../../modules/quebec-trust-hub/types";
+import { Award, ShieldCheck } from "lucide-react";
+import { cn } from "../../lib/utils";
 
 interface Props {
-  badges: TrustBadge[];
+  badges: TrustHubBadgeInfo[];
+  className?: string;
 }
 
-export function TrustBadgeList({ badges }: Props) {
+export const TrustBadgeList: React.FC<Props> = ({ badges, className }) => {
   if (badges.length === 0) return null;
 
   return (
-    <div className="flex flex-wrap gap-2">
-      {badges.map((badge) => (
-        <div 
-          key={badge.badgeKey}
-          className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400"
-        >
-          <div className="bg-emerald-500 rounded-full p-0.5">
-            <Check className="h-2 w-2 text-black" />
+    <div className={cn("space-y-3", className)}>
+      <h4 className="text-xs font-bold uppercase tracking-widest text-zinc-500 px-1">Gages de confiance</h4>
+      <div className="flex flex-wrap gap-2">
+        {badges.map((badge) => (
+          <div 
+            key={badge.badgeKey}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#D4AF37]/10 border border-[#D4AF37]/20 text-[#D4AF37] text-xs font-medium"
+          >
+            <ShieldCheck className="w-3.5 h-3.5" />
+            {badge.labelFr}
           </div>
-          <span className="text-[10px] font-black uppercase tracking-widest">{badge.labelFr}</span>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
-}
+};

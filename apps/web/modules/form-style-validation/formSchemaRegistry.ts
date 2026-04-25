@@ -1,3 +1,8 @@
+export interface FormSectionSchema {
+  id: string;
+  mandatory: boolean;
+}
+
 export interface FormSchema {
   formKey: string;
   requiredSections: string[];
@@ -18,7 +23,7 @@ export const FORM_SCHEMAS: Record<string, FormSchema> = {
       "DECLARATIONS",
       "SIGNATURE"
     ],
-    orderEnforced: true
+    orderEnforced: true,
   },
   BROKERAGE_CONTRACT: {
     formKey: "BROKERAGE_CONTRACT",
@@ -30,16 +35,6 @@ export const FORM_SCHEMAS: Record<string, FormSchema> = {
       "EXPIRY",
       "SIGNATURE"
     ],
-    orderEnforced: true
-  },
-  SELLER_DISCLOSURE: {
-    formKey: "SELLER_DISCLOSURE",
-    requiredSections: [
-      "PARTIES",
-      "PROPERTY",
-      "DECLARATIONS",
-      "SIGNATURE"
-    ],
-    orderEnforced: true
+    orderEnforced: true,
   }
 };

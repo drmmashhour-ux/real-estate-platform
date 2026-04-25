@@ -227,6 +227,15 @@ async function handleSearch(request: NextRequest, body?: z.infer<typeof bodySche
     });
   }
 
+  const greenSearchHint =
+    b.greenFilters != null || b.sortMode
+      ? {
+          supported: false,
+          reason:
+            "Short-term (BNHub) rows do not include LECIPM FSBO green metadata. Use LECIPM property browse (POST /api/buyer/browse) or /api/fsbo/search for green filters and ranking.",
+        }
+      : undefined;
+
   return NextResponse.json({
     listings,
     total: result.total,
@@ -237,6 +246,7 @@ async function handleSearch(request: NextRequest, body?: z.infer<typeof bodySche
       engine: "modules/search/ranking.engine",
       sort,
     },
+    ...(greenSearchHint ? { greenSearch: greenSearchHint } : {}),
   });
 }
 

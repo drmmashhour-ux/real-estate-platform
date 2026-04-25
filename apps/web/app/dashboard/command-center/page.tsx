@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { CommandCenterAiRefreshButton } from "@/components/command-center/CommandCenterAiRefreshButton";
 import { CommandCenterTrackedLink } from "@/components/command-center/CommandCenterTrackedLink";
+import { LaunchSequencerSummaryStrip } from "@/components/launch-sequencer/LaunchSequencerSummaryStrip";
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
 import { buildCommandCenterAiPayload, getLatestCommandCenterSnapshotMeta } from "@/modules/command-center/command-center-ai.service";
 import { prisma } from "@repo/db";
@@ -69,6 +70,8 @@ export default async function CommandCenterAiPage() {
             </Link>
           </div>
         </header>
+
+        <LaunchSequencerSummaryStrip dashboardHref="/dashboard/launch-sequencer" />
 
         {/* 1 Executive overview */}
         <section className="space-y-3">

@@ -2,6 +2,7 @@ import type { FsboListing, Listing } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { isFsboPubliclyVisible } from "@/lib/fsbo/constants";
 import { normalizeAnyPublicListingCode } from "@/lib/listing-code-public";
+import { isActiveOaciqLicenceOnFile } from "@/lib/trust/broker-trust";
 
 export type ResolvedPublicListing =
   | {
@@ -18,6 +19,13 @@ export type ResolvedPublicListing =
             brokerageCompany: string;
             verificationStatus: string;
           }>;
+          lecipmBrokerLicenceProfile: {
+            licenceNumber: string | null;
+            licenceStatus: string;
+            practiceMode: string | null;
+            regulator: string | null;
+            fullName: string | null;
+          } | null;
         };
         externalListings: Array<{ id: string; status: string }>;
       };
@@ -36,6 +44,13 @@ export type ResolvedPublicListing =
             brokerageCompany: string;
             verificationStatus: string;
           }>;
+          lecipmBrokerLicenceProfile: {
+            licenceNumber: string | null;
+            licenceStatus: string;
+            practiceMode: string | null;
+            regulator: string | null;
+            fullName: string | null;
+          } | null;
         } | null;
       };
     }
@@ -60,6 +75,15 @@ const fsboPublicInclude = {
         },
         take: 1,
         orderBy: { updatedAt: "desc" as const },
+      },
+      lecipmBrokerLicenceProfile: {
+        select: {
+          licenceNumber: true,
+          licenceStatus: true,
+          practiceMode: true,
+          regulator: true,
+          fullName: true,
+        },
       },
     },
   },
@@ -87,6 +111,15 @@ const crmPublicInclude = {
         },
         take: 1,
         orderBy: { updatedAt: "desc" as const },
+      },
+      lecipmBrokerLicenceProfile: {
+        select: {
+          licenceNumber: true,
+          licenceStatus: true,
+          practiceMode: true,
+          regulator: true,
+          fullName: true,
+        },
       },
     },
   },
@@ -161,11 +194,22 @@ export function mapCrmListingToBuyerPayload(
         brokerageCompany: string;
         verificationStatus: string;
       }>;
+      lecipmBrokerLicenceProfile: {
+        licenceNumber: string | null;
+        licenceStatus: string;
+        practiceMode: string | null;
+        regulator: string | null;
+        fullName: string | null;
+      } | null;
     } | null;
   }
 ) {
   const priceCents = Math.round(Number(row.price) * 100);
   const brokerVerification = row.owner?.brokerVerifications?.[0] ?? null;
+  const licProfile = row.owner?.lecipmBrokerLicenceProfile ?? null;
+  const licenseNumber =
+    licProfile?.licenceNumber?.trim() || brokerVerification?.licenseNumber || null;
+  const licensedActiveOaciq = isActiveOaciqLicenceOnFile(licProfile);
   return {
     id: row.id,
     listingCode: row.listingCode,
@@ -191,13 +235,17 @@ export function mapCrmListingToBuyerPayload(
     cadastreNumber: null as string | null,
     listingKind: "crm" as const,
     representative: {
-      name: row.owner?.name ?? "Listing broker",
+      name: licProfile?.fullName?.trim() || row.owner?.name || "Listing broker",
       roleLabel: "Listing broker",
       email: row.owner?.email ?? "info@lecipm.com",
       phone: row.owner?.phone ?? null,
       company: brokerVerification?.brokerageCompany ?? "Brokerage on file",
-      licenseNumber: brokerVerification?.licenseNumber ?? null,
+      licenseNumber,
       licenseVerified: brokerVerification?.verificationStatus === "VERIFIED",
+      brokerUserId: row.owner?.id ?? null,
+      licenceStatus: licProfile?.licenceStatus ?? null,
+      practiceMode: licProfile?.practiceMode ?? null,
+      licensedActiveOaciq,
       address: row.owner?.sellerProfileAddress ?? null,
     },
     propertyDetails: [

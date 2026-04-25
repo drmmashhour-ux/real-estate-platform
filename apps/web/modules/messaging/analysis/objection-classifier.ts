@@ -81,7 +81,9 @@ export function classifyObjections(
         const matches = text.matchAll(new RegExp(rule.re.source, "gi"));
         for (const m of matches) {
           if (!m[0] || m.index == null) continue;
-          if (isNegatedNear(text, m.index, 40)) continue;
+          // "not ready" is a timing concern, not a negation to discard.
+          const isNotReadyTiming = rule.type === "timing" && /\bnot ready\b/i.test(m[0]);
+          if (!isNotReadyTiming && isNegatedNear(text, m.index, 40)) continue;
           const ex = m[0].slice(0, MAX_SNIPPET);
           if (!ex.trim()) continue;
           const add = (rule.minConf * weight) / 1.2;

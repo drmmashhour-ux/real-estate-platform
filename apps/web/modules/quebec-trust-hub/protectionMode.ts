@@ -1,29 +1,33 @@
-import { TurboDraftInput, TurboDraftResult } from "../turbo-form-drafting/types";
 import { ProtectionModeStatus } from "./types";
 
-export function getProtectionModeStatus(input: TurboDraftInput, result: TurboDraftResult): ProtectionModeStatus {
-  const reasonsFr: string[] = [];
-  const recommendedActionsFr: string[] = [];
+export function getProtectionModeStatus(context: any): ProtectionModeStatus {
+  const reasons: string[] = [];
+  const { answers, representedStatus, resultJson } = context;
 
-  if (input.representedStatus === "NOT_REPRESENTED") {
-    reasonsFr.push("Acheteur non représenté");
-    recommendedActionsFr.push("Consulter un courtier avant de signer");
+  if (representedStatus === "NOT_REPRESENTED") {
+    reasons.push("Acheteur non représenté");
   }
 
-  if (input.answers.withoutWarranty) {
-    reasonsFr.push("Vente sans garantie légale");
-    recommendedActionsFr.push("Effectuer une inspection préachat exhaustive");
+  if (answers?.withoutWarranty) {
+    reasons.push("Vente sans garantie légale");
   }
 
-  // @ts-ignore
-  if (result.styleValidation?.clauses.some((c: any) => c.severity === "CRITICAL")) {
-    reasonsFr.push("Anomalies de rédaction critiques");
-    recommendedActionsFr.push("Réviser les clauses signalées par l'IA");
+  if (!answers?.privacyConsent) {
+    reasons.push("Consentement Loi 25 manquant");
+  }
+
+  const risks = resultJson?.risks || [];
+  const criticalRisks = risks.filter((r: any) => r.severity === "CRITICAL");
+  if (criticalRisks.length > 0) {
+    reasons.push(`${criticalRisks.length} risques critiques détectés`);
+  }
+
+  if (!answers?.financingDelay && answers?.financingRequired) {
+    reasons.push("Condition de financement incomplète");
   }
 
   return {
-    enabled: reasonsFr.length > 0,
-    reasonsFr,
-    recommendedActionsFr
+    enabled: reasons.length > 0,
+    reasons
   };
 }

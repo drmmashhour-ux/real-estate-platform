@@ -3,7 +3,7 @@
  */
 export * from "./production-mode";
 export * from "./critical-notices";
-export * from "./form-schema";
+export * from "./formSchema";
 export * from "./signature-gate";
 export * from "./notice-ack.service";
 export * from "./audit-service";

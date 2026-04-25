@@ -26,7 +26,7 @@ export function GreenFilterSection({ greenFilters, onChange, sortMode, onSortMod
       <div className="mt-3 flex flex-wrap gap-3">
         <label
           className="flex cursor-pointer items-center gap-2 text-xs"
-          title="Filter to higher modeled LECIPM / Québec-inspired band. Not a government label."
+          title="Filter to the strongest modeled LECIPM / Québec-inspired band. Not a government label."
         >
           <input
             type="checkbox"
@@ -38,7 +38,24 @@ export function GreenFilterSection({ greenFilters, onChange, sortMode, onSortMod
               })
             }
           />
-          Green homes
+          Green (modeled)
+        </label>
+        <label
+          className="flex cursor-pointer items-center gap-2 text-xs"
+          title="Includes “Improvable” and “Green” modeled bands — not Rénoclimat or a government cert."
+        >
+          <input
+            type="checkbox"
+            checked={Boolean(greenFilters.minimumGreenLabel === "IMPROVABLE")}
+            onChange={(e) =>
+              onChange({
+                ...greenFilters,
+                minimumGreenLabel: e.target.checked ? "IMPROVABLE" : undefined,
+              })
+            }
+            disabled={greenFilters.minimumGreenLabel === "GREEN"}
+          />
+          Improvable or better
         </label>
         <label
           className="flex cursor-pointer items-center gap-2 text-xs"

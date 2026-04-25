@@ -1,72 +1,70 @@
-import { TurboDraftInput, TurboDraftResult } from "../turbo-form-drafting/types";
-import { TrustBadge } from "./types";
+import { TrustHubBadgeInfo } from "./types";
 
-export function generateTrustBadges(input: TurboDraftInput, result: TurboDraftResult): TrustBadge[] {
-  const badges: TrustBadge[] = [];
+export function getTrustBadges(context: any): TrustHubBadgeInfo[] {
+  const badges: TrustHubBadgeInfo[] = [];
+  const { answers, acknowledgements, resultJson, identityVerified } = context;
+
+  const acks = acknowledgements || [];
+  const notices = resultJson?.notices || [];
 
   // 1. Notices reviewed
-  const criticalNotices = result.notices.filter(n => n.severity === "CRITICAL");
-  const allAcked = criticalNotices.length > 0 && criticalNotices.every(n => n.acknowledged);
-  if (allAcked) {
+  const criticalNotices = notices.filter((n: any) => n.severity === "CRITICAL");
+  const missingAcks = criticalNotices.filter((n: any) => !acks.find((a: any) => a.noticeKey === n.noticeKey));
+  if (criticalNotices.length > 0 && missingAcks.length === 0) {
     badges.push({
       badgeKey: "NOTICES_REVIEWED",
-      labelFr: "Avis critiques lus",
-      proofJson: { count: criticalNotices.length, timestamp: new Date() }
+      labelFr: "Avis consultés",
+      proofJson: { totalAcks: acks.length }
     });
   }
 
   // 2. Representation disclosed
-  if (input.representedStatus !== "NOT_REPRESENTED" || input.answers.representationAck) {
+  if (context.representedStatus) {
     badges.push({
       badgeKey: "REPRESENTATION_DISCLOSED",
-      labelFr: "Rôle divulgué",
-      proofJson: { status: input.representedStatus }
+      labelFr: "Représentation déclarée",
+      proofJson: { status: context.representedStatus }
     });
   }
 
   // 3. Warranty clarified
-  if (input.answers.withoutWarranty !== undefined) {
+  if (answers?.withoutWarranty !== undefined) {
     badges.push({
       badgeKey: "WARRANTY_CLARIFIED",
       labelFr: "Garantie précisée",
-      proofJson: { withoutWarranty: input.answers.withoutWarranty }
+      proofJson: { withoutWarranty: answers.withoutWarranty }
     });
   }
 
   // 4. Inclusions verified
-  if (input.answers.inclusions) {
+  if (answers?.inclusions && answers.inclusions.length > 10) {
     badges.push({
       badgeKey: "INCLUSIONS_VERIFIED",
-      labelFr: "Inclusions listées",
-      proofJson: { length: input.answers.inclusions.length }
+      labelFr: "Inclusions détaillées",
     });
   }
 
   // 5. Privacy consent recorded
-  if (input.answers.privacyConsent) {
+  if (answers?.privacyConsent) {
     badges.push({
       badgeKey: "PRIVACY_CONSENT_RECORDED",
       labelFr: "Consentement Loi 25",
-      proofJson: { accepted: true }
     });
   }
 
   // 6. AI review completed
-  // @ts-ignore
-  if (result.styleValidation) {
+  if (resultJson?.risks) {
     badges.push({
       badgeKey: "AI_REVIEW_COMPLETED",
-      labelFr: "Révision IA terminée",
-      proofJson: { engine: "FormStyleValidationEngine" }
+      labelFr: "Analyse IA terminée",
     });
   }
 
-  // 7. Signature gate passed
-  if (result.canProceed) {
+  // 7. Identity verified
+  if (identityVerified) {
     badges.push({
-      badgeKey: "SIGNATURE_GATE_PASSED",
-      labelFr: "Signature autorisée",
-      proofJson: { readyAt: new Date() }
+      badgeKey: "IDENTITY_VERIFIED",
+      labelFr: "Identité confirmée",
     });
   }
 

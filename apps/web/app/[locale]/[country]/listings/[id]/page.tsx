@@ -51,6 +51,7 @@ import {
 import { buildPropertyConversionSurface } from "@/modules/conversion/property-conversion-surface";
 import { prisma } from "@repo/db";
 import { isBrokerInsuranceValid, getBrokerInsuranceStatus } from "@/modules/compliance/insurance/insurance.service";
+import { isActiveOaciqLicenceOnFile } from "@/lib/trust/broker-trust";
 import { loadFsboListingScore } from "@/modules/listing-ranking/fsbo-score-loader";
 import { ListingRankingBadges } from "@/components/listings/ListingRankingBadges";
 import { getPublicEsgBadge, touchEsgOnListingView } from "@/modules/esg/esg.service";
@@ -372,7 +373,10 @@ export default async function PublicListingRoute({ params, searchParams }: Props
         status: insuranceStatus.status,
       } : null,
       representative: {
-        name: row.owner.name ?? (row.listingOwnerType === "BROKER" ? "Listing broker" : "Property owner"),
+        name:
+          ownerLicProfile?.fullName?.trim() ||
+          row.owner.name ||
+          (row.listingOwnerType === "BROKER" ? "Listing broker" : "Property owner"),
         roleLabel: row.listingOwnerType === "BROKER" ? "Listing broker" : "Property owner",
         email: row.contactEmail,
         phone: row.contactPhone ?? row.owner.phone,
@@ -380,8 +384,12 @@ export default async function PublicListingRoute({ params, searchParams }: Props
           row.listingOwnerType === "BROKER"
             ? ownerBrokerVerification?.brokerageCompany ?? "Brokerage on file"
             : "Sell Hub Free",
-        licenseNumber: ownerBrokerVerification?.licenseNumber ?? null,
+        licenseNumber: fsboLicenseNumber,
         licenseVerified: ownerBrokerVerification?.verificationStatus === "VERIFIED",
+        brokerUserId: row.listingOwnerType === "BROKER" ? row.ownerId : null,
+        licenceStatus: ownerLicProfile?.licenceStatus ?? null,
+        practiceMode: ownerLicProfile?.practiceMode ?? null,
+        licensedActiveOaciq: licensedActiveOaciqFsbo,
         address: row.owner.sellerProfileAddress ?? null,
       },
       propertyDetails: [
@@ -567,7 +575,7 @@ export default async function PublicListingRoute({ params, searchParams }: Props
   const conversionSurfaceCrm = buildPropertyConversionSurface({
     priceCents: payload.priceCents,
     city: payload.city,
-    verified: payload.representative?.licenseVerified ?? false,
+    verified: Boolean(payload.representative?.licensedActiveOaciq || payload.representative?.licenseVerified),
     featured: false,
     listingUpdatedAt: resolved.row.updatedAt,
     demandUi: demandUiCrm,

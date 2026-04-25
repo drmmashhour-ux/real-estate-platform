@@ -54,82 +54,67 @@ function parseGreenInput(intake: Record<string, unknown>): GreenEngineInput {
 }
 
 export async function POST(req: Request) {
-  let body: Record<string, unknown> = {};
+  const empty = (error: string) =>
+    NextResponse.json({
+      ok: false,
+      currentScore: null,
+      projectedScore: null,
+      delta: null,
+      netCostLow: null,
+      netCostHigh: null,
+      roi: null,
+      pricingBoost: null,
+      disclaimers: [...QUEBEC_ESG_ECONOMICS_API_DISCLAIMERS],
+      error,
+    });
+
   try {
-    body = ((await req.json()) as Record<string, unknown>) ?? {};
+    let body: Record<string, unknown> = {};
+    try {
+      body = ((await req.json()) as Record<string, unknown>) ?? {};
+    } catch {
+      return empty("invalid_json");
+    }
+
+    const baseRaw = body.baseInput ?? body.input ?? body.intake;
+    if (!baseRaw || typeof baseRaw !== "object" || Array.isArray(baseRaw)) {
+      return empty("baseInput_required");
+    }
+
+    const input = parseGreenInput(baseRaw as Record<string, unknown>);
+    const recommendationKeys = Array.isArray(body.recommendationKeys)
+      ? body.recommendationKeys.map((x) => String(x)).filter(Boolean)
+      : undefined;
+    const optionalListingPrice =
+      typeof body.optionalListingPrice === "number" && Number.isFinite(body.optionalListingPrice)
+        ? body.optionalListingPrice
+        : null;
+
+    const run = runQuebecEsgEconomicsPipeline(input, {
+      recommendationKeys,
+      optionalListingPriceCad: optionalListingPrice,
+      propertyType: input.propertyType ?? null,
+    });
+
+    if (!run) {
+      return empty("roi_unavailable");
+    }
+
+    return NextResponse.json({
+      ok: true,
+      currentScore: run.simulation.currentScore,
+      projectedScore: run.simulation.projectedScore,
+      delta: run.simulation.delta,
+      netCostLow: run.roi.netCostLow,
+      netCostHigh: run.roi.netCostHigh,
+      roi: run.roi,
+      pricingBoost: run.pricingBoost,
+      costEstimates: run.costEstimates,
+      incentives: run.incentives,
+      recommendations: run.recommendations,
+      disclaimers: [...QUEBEC_ESG_ECONOMICS_API_DISCLAIMERS],
+    });
   } catch {
-    return NextResponse.json({
-      ok: false,
-      currentScore: null,
-      projectedScore: null,
-      delta: null,
-      netCostLow: null,
-      netCostHigh: null,
-      roi: null,
-      pricingBoost: null,
-      disclaimers: [...QUEBEC_ESG_ECONOMICS_API_DISCLAIMERS],
-      error: "invalid_json",
-    });
+    return empty("roi_unavailable");
   }
-
-  const baseRaw = body.baseInput ?? body.input ?? body.intake;
-  if (!baseRaw || typeof baseRaw !== "object" || Array.isArray(baseRaw)) {
-    return NextResponse.json({
-      ok: false,
-      currentScore: null,
-      projectedScore: null,
-      delta: null,
-      netCostLow: null,
-      netCostHigh: null,
-      roi: null,
-      pricingBoost: null,
-      disclaimers: [...QUEBEC_ESG_ECONOMICS_API_DISCLAIMERS],
-      error: "baseInput_required",
-    });
-  }
-
-  const input = parseGreenInput(baseRaw as Record<string, unknown>);
-  const recommendationKeys = Array.isArray(body.recommendationKeys)
-    ? body.recommendationKeys.map((x) => String(x)).filter(Boolean)
-    : undefined;
-  const optionalListingPrice =
-    typeof body.optionalListingPrice === "number" && Number.isFinite(body.optionalListingPrice)
-      ? body.optionalListingPrice
-      : null;
-
-  const run = runQuebecEsgEconomicsPipeline(input, {
-    recommendationKeys,
-    optionalListingPriceCad: optionalListingPrice,
-    propertyType: input.propertyType ?? null,
-  });
-
-  if (!run) {
-    return NextResponse.json({
-      ok: false,
-      currentScore: null,
-      projectedScore: null,
-      delta: null,
-      netCostLow: null,
-      netCostHigh: null,
-      roi: null,
-      pricingBoost: null,
-      disclaimers: [...QUEBEC_ESG_ECONOMICS_API_DISCLAIMERS],
-      error: "roi_unavailable",
-    });
-  }
-
-  return NextResponse.json({
-    ok: true,
-    currentScore: run.simulation.currentScore,
-    projectedScore: run.simulation.projectedScore,
-    delta: run.simulation.delta,
-    netCostLow: run.roi.netCostLow,
-    netCostHigh: run.roi.netCostHigh,
-    roi: run.roi,
-    pricingBoost: run.pricingBoost,
-    costEstimates: run.costEstimates,
-    incentives: run.incentives,
-    recommendations: run.recommendations,
-    disclaimers: [...QUEBEC_ESG_ECONOMICS_API_DISCLAIMERS],
-  });
 }

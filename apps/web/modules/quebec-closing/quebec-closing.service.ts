@@ -16,7 +16,12 @@ import {
   isQcWorkflowActive,
 } from "@/modules/quebec-closing/quebec-closing-gates";
 import type { QcClosingStage } from "@/modules/quebec-closing/quebec-closing.types";
-import { QC_NOTARY_CHECKLIST_KEYS, type DealClosingAdjustmentKind } from "@/modules/quebec-closing/quebec-closing.types";
+import {
+  QC_NOTARY_CHECKLIST_KEYS,
+  normalizeQcClosingStage,
+  type DealClosingAdjustmentKind,
+} from "@/modules/quebec-closing/quebec-closing.types";
+import { summarizeClosingFundFlow } from "@/modules/quebec-closing/quebec-closing-fund-flow";
 
 export async function ensureQuebecClosingSessionDefaults(dealId: string): Promise<void> {
   const [deal, closing, conds] = await Promise.all([
@@ -55,6 +60,22 @@ async function ensureNotaryChecklistRows(dealId: string): Promise<void> {
   );
 }
 
+/** Migrate legacy `qcClosingStage` strings in DB to current canonical stages. */
+async function persistNormalizedQcStage(dealId: string): Promise<void> {
+  const row = await prisma.dealClosing.findUnique({
+    where: { dealId },
+    select: { qcClosingStage: true },
+  });
+  if (!row?.qcClosingStage) return;
+  const n = normalizeQcClosingStage(row.qcClosingStage);
+  if (n && n !== row.qcClosingStage) {
+    await prisma.dealClosing.update({
+      where: { dealId },
+      data: { qcClosingStage: n, updatedAt: new Date() },
+    });
+  }
+}
+
 async function appendCoordinationAudit(dealId: string, actorUserId: string, action: string, payload: Record<string, unknown>) {
   await prisma.dealCoordinationAuditLog.create({
     data: {
@@ -70,8 +91,9 @@ async function appendCoordinationAudit(dealId: string, actorUserId: string, acti
 export async function getQuebecClosingBundle(dealId: string) {
   await ensureQuebecClosingSessionDefaults(dealId);
   await ensureNotaryChecklistRows(dealId);
+  await persistNormalizedQcStage(dealId);
 
-  const [closing, conditions, notary, checklist, adjustments, audits, closingAudits, readiness, packet] =
+  const [closing, conditions, notary, checklist, adjustments, audits, closingAudits, readiness, packet, payments] =
     await Promise.all([
       prisma.dealClosing.findUnique({ where: { dealId } }),
       prisma.dealClosingCondition.findMany({ where: { dealId }, orderBy: { deadline: "asc" } }),
@@ -90,6 +112,7 @@ export async function getQuebecClosingBundle(dealId: string) {
       }),
       evaluateFinalClosingReadiness(dealId),
       buildClosingPacketIndex(dealId),
+      prisma.lecipmDealPayment.findMany({ where: { dealId }, orderBy: { createdAt: "asc" } }),
     ]);
 
   const qcBlockers =
@@ -130,6 +153,7 @@ export async function getQuebecClosingBundle(dealId: string) {
     coordinationAudits: audits,
     closingAudits: closingAudits,
     closingPacket: packet,
+    fundFlow: summarizeClosingFundFlow(payments),
     flags: {
       qcWorkflowActive: isQcWorkflowActive(closing),
       notaryOk: notaryAssignmentComplete(notary),
@@ -150,6 +174,8 @@ export async function applyQuebecNotaryUpdate(options: {
   appointmentAt?: string | null;
   requestedDocuments?: unknown[] | null;
   deedReadinessNotes?: string | null;
+  /** IN_PERSON | REMOTE_DIGITAL | HYBRID */
+  signingChannel?: string | null;
   checklist?: Partial<Record<(typeof QC_NOTARY_CHECKLIST_KEYS)[number], { status: string; notes?: string | null }>>;
   markPacketComplete?: boolean;
 }) {
@@ -173,6 +199,7 @@ export async function applyQuebecNotaryUpdate(options: {
       appointmentAt,
       requestedDocumentsJson: options.requestedDocuments ?? [],
       deedReadinessNotes: options.deedReadinessNotes ?? null,
+      signingChannel: options.signingChannel?.trim() || null,
       selectedAt: options.notaryId || options.notaryDisplayName ? new Date() : null,
     },
     update: {
@@ -184,6 +211,8 @@ export async function applyQuebecNotaryUpdate(options: {
       appointmentAt: appointmentAt === null && options.appointmentAt === null ? undefined : appointmentAt,
       requestedDocumentsJson: options.requestedDocuments ?? undefined,
       deedReadinessNotes: options.deedReadinessNotes === undefined ? undefined : options.deedReadinessNotes,
+      signingChannel:
+        options.signingChannel === undefined ? undefined : options.signingChannel?.trim() || null,
       selectedAt: options.notaryId || options.notaryDisplayName ? new Date() : undefined,
       updatedAt: new Date(),
     },
@@ -208,24 +237,15 @@ export async function applyQuebecNotaryUpdate(options: {
 
   const checklistRows = await prisma.dealQuebecNotaryChecklistItem.findMany({ where: { dealId: options.dealId } });
   const closing = await prisma.dealClosing.findUnique({ where: { dealId: options.dealId } });
-  let nextStage = (closing?.qcClosingStage as QcClosingStage | null) ?? null;
-  const preserveStages: QcClosingStage[] = [
-    "SIGNING_SCHEDULED",
-    "DEED_SIGNED",
-    "LAND_REGISTER_PENDING",
-    "CLOSED",
-    "KEYS_RELEASED",
-  ];
+  let nextStage = normalizeQcClosingStage(closing?.qcClosingStage) ?? null;
+  const preserveStages: QcClosingStage[] = ["SIGNING_READY", "SIGNED", "CLOSED"];
   if (notaryAssignmentComplete(row) && (!nextStage || !preserveStages.includes(nextStage))) {
     const hasPending = checklistRows.some((r) => r.status === "PENDING");
-    if (
-      !nextStage ||
-      ["OFFER_SENT", "OFFER_ACCEPTED", "CONDITIONS_PENDING", "CONDITIONS_SATISFIED"].includes(nextStage)
-    ) {
+    if (!nextStage || ["OFFER_ACCEPTED", "CONDITIONS_PENDING", "CONDITIONS_MET"].includes(nextStage)) {
       nextStage = "NOTARY_ASSIGNED";
     }
     if (hasPending) {
-      nextStage = "NOTARY_DOCUMENT_REVIEW";
+      nextStage = "DOCUMENT_PREP";
     }
   }
 
@@ -294,7 +314,7 @@ export async function applyQuebecConditionsUpdate(options: {
   const anyFailed = conditions.some((c) => c.status === "failed");
   let nextStage = closing.qcClosingStage as QcClosingStage | undefined;
   if (!anyFailed && conditions.every(isConditionResolved)) {
-    nextStage = "CONDITIONS_SATISFIED";
+    nextStage = "CONDITIONS_MET";
   } else if (conditions.some((c) => !isConditionResolved(c) && c.status !== "failed")) {
     nextStage = "CONDITIONS_PENDING";
   }
@@ -336,18 +356,18 @@ export async function markQuebecSigningReady(options: { dealId: string; actorUse
   await prisma.dealClosing.update({
     where: { dealId: options.dealId },
     data: {
-      qcClosingStage: "SIGNING_SCHEDULED",
+      qcClosingStage: "SIGNING_READY",
       signingScheduledAt: signingScheduledAt ?? new Date(),
       updatedAt: new Date(),
     },
   });
 
-  await appendCoordinationAudit(options.dealId, options.actorUserId, "QC_SIGNING_SCHEDULED", {});
+  await appendCoordinationAudit(options.dealId, options.actorUserId, "QC_SIGNING_READY", {});
   await appendClosingAudit({
     dealId: options.dealId,
     actorUserId: options.actorUserId,
-    eventType: "QC_SIGNING_SCHEDULED",
-    note: "Signing scheduled (Québec)",
+    eventType: "QC_SIGNING_READY",
+    note: "Signing ready — notary signing (Québec)",
     metadataJson: { signingScheduledAt: (signingScheduledAt ?? new Date()).toISOString() },
   });
 
@@ -382,18 +402,18 @@ export async function completeQuebecClosing(options: {
         deedActNumber: options.deedActNumber ?? null,
         deedPublicationReference: options.deedPublicationReference ?? null,
         landRegisterStatus: "PENDING",
-        qcClosingStage: "LAND_REGISTER_PENDING",
+        qcClosingStage: "SIGNED",
         updatedAt: new Date(),
       },
     });
     await appendClosingAudit({
       dealId: options.dealId,
       actorUserId: options.actorUserId,
-      eventType: "QC_DEED_SIGNED",
-      note: "Deed signed — land register pending",
+      eventType: "QC_NOTARY_SIGNED",
+      note: "Notarial signing recorded — land register pending",
       metadataJson: { landRegisterStatus: "PENDING" },
     });
-    await appendCoordinationAudit(options.dealId, options.actorUserId, "QC_DEED_SIGNED", { landRegisterStatus: "PENDING" });
+    await appendCoordinationAudit(options.dealId, options.actorUserId, "QC_NOTARY_SIGNED", { landRegisterStatus: "PENDING" });
     return getQuebecClosingBundle(options.dealId);
   }
 
@@ -450,7 +470,6 @@ export async function completeQuebecClosing(options: {
       where: { dealId: options.dealId },
       data: {
         keysReleasedAt: new Date(),
-        qcClosingStage: "KEYS_RELEASED",
         updatedAt: new Date(),
       },
     });

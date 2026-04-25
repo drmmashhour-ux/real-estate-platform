@@ -1,7 +1,9 @@
 import type { Prisma } from "@prisma/client";
 import { NextRequest } from "next/server";
+import { getSessionUserIdFromRequest } from "@/lib/auth/api-session";
 import { fsboCityWhereFromParam } from "@/lib/geo/city-search";
 import { prisma } from "@repo/db";
+import { reorderListingsForWave13Personalization } from "@/modules/user-intelligence/services/user-personalization.service";
 import { engineFlags } from "@/config/feature-flags";
 import { applyListingRankingBoostIfEnabled } from "@/lib/trustgraph/application/integrations/listingRankingIntegration";
 import type { TrustScore } from "@/modules/trust/trust.types";
@@ -122,6 +124,8 @@ async function runSearch(args: {
   page: number;
   limit: number;
   green: { greenFilters?: GreenSearchFilters; sortMode?: GreenRankingSortMode; audience?: "public" | "internal" };
+  /** Optional logged-in user: tiny city-alignment reorder after filters (additive). */
+  personalizationUserId?: string | null;
 }) {
   const and = [...args.andBase];
   if (isGreenFiltersActive(args.green.greenFilters)) {
@@ -165,6 +169,13 @@ async function runSearch(args: {
       sortMode: args.green.sortMode,
       audience: args.green.audience === "internal" ? "internal" : "public",
     }).ranked as typeof rowsRaw;
+  }
+
+  if (args.personalizationUserId?.trim()) {
+    workRows = (await reorderListingsForWave13Personalization(
+      workRows,
+      args.personalizationUserId,
+    )) as typeof rowsRaw;
   }
 
   const data = await buildResponse(workRows as FsboSelectRow[]);
@@ -220,6 +231,7 @@ function buildBaseAnd(
  */
 export async function GET(request: NextRequest) {
   try {
+    const personalizationUserId = await getSessionUserIdFromRequest(request).catch(() => null);
     const { searchParams } = new URL(request.url);
     const cityRaw = searchParams.get("city")?.trim() ?? "";
     const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10) || 1);
@@ -249,6 +261,7 @@ export async function GET(request: NextRequest) {
       page,
       limit,
       green: { greenFilters, audience: "public" },
+      personalizationUserId,
     });
     return Response.json(result);
   } catch (e) {
@@ -299,6 +312,7 @@ export async function POST(request: NextRequest) {
         sortMode,
         audience: raw.greenAudience === "internal" ? "internal" : "public",
       },
+      personalizationUserId,
     });
     return Response.json(result);
   } catch (e) {

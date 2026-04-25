@@ -7,31 +7,39 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export async function GET(req: NextRequest) {
-  const u = await requireAuthenticatedUser(req);
-  if (u instanceof NextResponse) {
-    return u;
+  try {
+    const u = await requireAuthenticatedUser(req);
+    if (u instanceof NextResponse) {
+      return u;
+    }
+    const j = await getJourneyState(u.id);
+    if (!j.ok) {
+      return NextResponse.json({ ok: false, error: j.error, journey: null }, { status: 200 });
+    }
+    return NextResponse.json({ ok: true, journey: j.data });
+  } catch {
+    return NextResponse.json({ ok: false, error: "journey_unavailable", journey: null }, { status: 200 });
   }
-  const j = await getJourneyState(u.id);
-  if (!j.ok) {
-    return NextResponse.json({ ok: false, error: j.error, journey: null }, { status: 200 });
-  }
-  return NextResponse.json({ ok: true, journey: j.data });
 }
 
 export async function POST(req: NextRequest) {
-  const u = await requireAuthenticatedUser(req);
-  if (u instanceof NextResponse) {
-    return u;
-  }
-  let body: Partial<UserJourneyUpdateInput> = {};
   try {
-    body = (await req.json()) as Partial<UserJourneyUpdateInput>;
+    const u = await requireAuthenticatedUser(req);
+    if (u instanceof NextResponse) {
+      return u;
+    }
+    let body: Partial<UserJourneyUpdateInput> = {};
+    try {
+      body = (await req.json()) as Partial<UserJourneyUpdateInput>;
+    } catch {
+      return NextResponse.json({ ok: false, error: "invalid_json" }, { status: 400 });
+    }
+    const r = await updateJourneyState({ ...body, userId: u.id });
+    if (!r.ok) {
+      return NextResponse.json({ ok: false, error: r.error }, { status: 200 });
+    }
+    return NextResponse.json({ ok: true, journey: r.data });
   } catch {
-    return NextResponse.json({ ok: false, error: "invalid_json" }, { status: 400 });
+    return NextResponse.json({ ok: false, error: "journey_unavailable" }, { status: 200 });
   }
-  const r = await updateJourneyState({ ...body, userId: u.id });
-  if (!r.ok) {
-    return NextResponse.json({ ok: false, error: r.error }, { status: 200 });
-  }
-  return NextResponse.json({ ok: true, journey: r.data });
 }

@@ -12,7 +12,24 @@ export const AUTOPILOT_ALLOWED_INTERNAL_ACTIONS = new Set([
   "playbook_recommendation",
 ]);
 
-export const AUTOPILOT_BLOCKED_ACTION_PREFIXES = ["send_", "message_", "sms_", "email_", "payment_", "charge_", "payout_"];
+/** Block external comms and financial / legal execution from autopilot (suggest-only layer). */
+export const AUTOPILOT_BLOCKED_ACTION_PREFIXES = [
+  "send_",
+  "message_",
+  "sms_",
+  "email_",
+  "payment_",
+  "charge_",
+  "payout_",
+  "disburse_",
+  "wire_",
+  "escrow_",
+  "notarize_",
+  "execute_payment",
+  "auto_sign",
+  "sign_contract",
+  "legal_file",
+];
 
 export function isAutopilotActionSafe(actionType: string, reasonBucket?: string | null): boolean {
   const t = (actionType ?? "").toLowerCase();

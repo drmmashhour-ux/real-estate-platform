@@ -18,6 +18,9 @@ import {
 } from "@/lib/compliance/conflict-deal-compliance.service";
 import { DealConflictDisclosureClient } from "@/components/deals/DealConflictDisclosureClient";
 import { BrokerAssistantQuickLinks } from "@/components/broker-assistant/BrokerAssistantQuickLinks";
+import { DealCloserPanel } from "@/components/deals/DealCloserPanel";
+import { OfferStrategyPanel } from "@/components/deals/OfferStrategyPanel";
+import { NegotiationSimulatorPanel } from "@/components/deals/NegotiationSimulatorPanel";
 import { BrokerMandatoryDisclosureStatus } from "@/components/compliance/BrokerMandatoryDisclosureStatus";
 import { getBrokerDisclosureStatusForDeal, mandatoryBrokerDisclosureEnforced } from "@/lib/compliance/oaciq/broker-mandatory-disclosure.service";
 
@@ -138,6 +141,24 @@ export default async function DealDetailPage({
         {(viewer?.role === "ADMIN" || (viewer?.role === "BROKER" && deal.brokerId === userId)) && (
           <div className="mt-4">
             <BrokerAssistantQuickLinks crmDealId={id} />
+          </div>
+        )}
+
+        {(viewer?.role === "ADMIN" || (viewer?.role === "BROKER" && deal.brokerId === userId)) && (
+          <div className="mt-4">
+            <DealCloserPanel dealId={id} enabled />
+          </div>
+        )}
+
+        {(viewer?.role === "ADMIN" || (viewer?.role === "BROKER" && deal.brokerId === userId)) && (
+          <div className="mt-4">
+            <OfferStrategyPanel dealId={id} enabled />
+          </div>
+        )}
+
+        {(viewer?.role === "ADMIN" || (viewer?.role === "BROKER" && deal.brokerId === userId)) && (
+          <div className="mt-4">
+            <NegotiationSimulatorPanel dealId={id} enabled />
           </div>
         )}
 

@@ -58,6 +58,7 @@ export async function prefillTurboDraftFromListing(args: {
     purchasePrice: property.priceCents || 0,
     inclusions: property.inclusions || "",
     exclusions: property.exclusions || "",
+    referralFees: property.referralFees || 0, // Prefill if available in listing data
   };
 
   return {

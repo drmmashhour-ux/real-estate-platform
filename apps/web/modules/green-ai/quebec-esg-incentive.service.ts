@@ -151,7 +151,7 @@ export function estimateQuebecEsgIncentives(
 
     return { incentives, totalEstimatedIncentives: total };
   } catch {
-    greenAiLog.warn("quebec_esg_incentives_estimated", { ok: false });
+    greenAiLog.warn("quebec_esg_incentives_estimate_failed", { ok: false });
     return { incentives: [], totalEstimatedIncentives: null };
   }
 }

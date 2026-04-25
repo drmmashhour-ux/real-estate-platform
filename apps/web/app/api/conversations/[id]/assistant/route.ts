@@ -15,6 +15,9 @@ import {
 } from "@/modules/crm-memory/memory.engine";
 import { getNextBestAction, type AssistantConversationShape } from "@/modules/messaging/assistant/next-action.service";
 import { generateMessageSuggestion } from "@/modules/messaging/assistant/message-suggestion.service";
+import { getDealCloserHintsForConversation } from "@/modules/deal-closer/deal-closer-conversation-bridge.service";
+import { getOfferStrategyHintsForConversation } from "@/modules/offer-strategy/offer-strategy-conversation-bridge.service";
+import { getNegotiationSimulatorHintsForConversation } from "@/modules/negotiation-simulator/negotiation-simulator-conversation-bridge.service";
 import { analyzeVoiceMessage } from "@/modules/messaging/voice/voice-analysis.service";
 import { recordConversationActionAssignment } from "@/modules/messaging/assistant/conversation-action-assignment.service";
 import { messagingAiLog } from "@/modules/messaging/assistant/messaging-ai-logger";
@@ -101,9 +104,26 @@ export async function GET(_req: NextRequest, context: Params) {
     const hasListingContext =
       Boolean(conv.listing) || Boolean(conv.fsboListing) || conv.type === "LISTING";
     if (!counterpartyId) {
+      const nba0 = { action: "Add a contact to the thread", priority: "low" as const, rationale: [] as string[] };
+      const sm0 = {
+        message: "",
+        tone: "professional" as const,
+        goal: "n/a",
+        reason: "No message draft when there is no counterparty.",
+        goalType: "general_checkin" as const,
+      };
+      const in0 = {
+        headline: "No counterparty in thread",
+        dealStatus: "n/a",
+        objections: [] as string[],
+        voice: null as null,
+      };
       return NextResponse.json(
         {
           ok: true,
+          nextBestAction: nba0,
+          suggestedMessage: { message: sm0.message, tone: sm0.tone, goal: sm0.goal },
+          insightsSummary: in0,
           assistant: {
             sentiment: "NEUTRAL",
             dealPrediction: { dealProbability: 0, engagementScore: 0 },
@@ -122,20 +142,9 @@ export async function GET(_req: NextRequest, context: Params) {
               }[],
               topCoachingPriority: null as string | null,
             },
-            nextBestAction: { action: "Add a contact to the thread", priority: "low" as const, rationale: [] },
-            suggestedMessage: {
-              message: "",
-              tone: "professional" as const,
-              goal: "n/a",
-              reason: "No message draft when there is no counterparty.",
-              goalType: "general_checkin" as const,
-            },
-            insightsSummary: {
-              headline: "No counterparty in thread",
-              dealStatus: "n/a",
-              objections: [] as string[],
-              voice: null,
-            },
+            nextBestAction: nba0,
+            suggestedMessage: sm0,
+            insightsSummary: in0,
           },
         },
         { status: 200 }
@@ -198,6 +207,11 @@ export async function GET(_req: NextRequest, context: Params) {
       },
       memory
     );
+    const [dealCloserHint, offerStrat, negSim] = await Promise.all([
+      getDealCloserHintsForConversation(conversationId, userId),
+      getOfferStrategyHintsForConversation(conversationId, userId),
+      getNegotiationSimulatorHintsForConversation(conversationId, userId),
+    ]);
     const suggested = generateMessageSuggestion({
       conversation: { ...ac, type: hasListingContext && !ac.type ? "LISTING" : ac.type },
       memory,
@@ -213,6 +227,13 @@ export async function GET(_req: NextRequest, context: Params) {
       dominantObjection: ai.objections.dominantObjection,
       riskOverall: ai.riskHeatmap.overallRisk,
       coachingTop: ai.coaching.topCoachingPriority,
+      dealCloserTopActionKey: dealCloserHint?.topActionKey ?? null,
+      dealCloserPushRisk: dealCloserHint?.prematurePushRisk ?? null,
+      offerStrategyTopKey: offerStrat?.topRecKey ?? null,
+      offerStrategyCompetitiveLevel: offerStrat?.competitiveLevel ?? null,
+      negotiationSafestApproach: negSim?.safestApproach ?? null,
+      negotiationHighestUpsideApproach: negSim?.highestUpsideApproach ?? null,
+      negotiationMomentumLevel: negSim?.momentumLevel ?? null,
     });
     const oneHourAgo = Date.now() - 3_600_000;
     const recentThreadMessageCount1h = rows.filter((m) => m.createdAt.getTime() >= oneHourAgo).length;
@@ -257,9 +278,19 @@ export async function GET(_req: NextRequest, context: Params) {
     const snap = buildHeuristicSnapshotV1(ai, hasBudgetFromExtraction);
     await mergeAssistantHeuristicSnapshot({ clientId: counterpartyId, brokerId: userId, snapshot: snap });
 
+    const smOut = {
+      message: suggested.message,
+      tone: suggested.tone,
+      goal: suggested.goal,
+      reason: suggested.reason,
+      goalType: suggested.goalType,
+    };
     return NextResponse.json(
       {
         ok: true,
+        nextBestAction,
+        suggestedMessage: { message: smOut.message, tone: smOut.tone, goal: smOut.goal },
+        insightsSummary,
         assistant: {
           sentiment: ai.sentiment,
           dealPrediction: ai.dealPrediction,
@@ -270,23 +301,34 @@ export async function GET(_req: NextRequest, context: Params) {
           closingReadiness: ai.closingReadiness,
           coaching: ai.coaching,
           nextBestAction,
-          suggestedMessage: {
-            message: suggested.message,
-            tone: suggested.tone,
-            goal: suggested.goal,
-            reason: suggested.reason,
-            goalType: suggested.goalType,
-          },
+          suggestedMessage: smOut,
           insightsSummary,
         },
       },
       { status: 200 }
     );
   } catch (e) {
+    const nbaF = {
+      action: "Open the thread and review recent messages",
+      priority: "low" as const,
+      rationale: ["Simplified output while the deeper pass was unavailable."],
+    };
+    const smF = {
+      message:
+        "If it helps, I can suggest a short, neutral line for you to edit and send when you are ready (you always choose what to send).",
+      tone: "professional" as const,
+      goal: "safety fallback",
+      reason: "A neutral template while heuristics were limited.",
+      goalType: "general_checkin" as const,
+    };
+    const inF = { headline: "Heuristics limited", dealStatus: "Unknown", objections: [] as string[], voice: null };
     return NextResponse.json(
       {
         ok: true,
         warning: e instanceof Error ? e.message : "assistant_degraded",
+        nextBestAction: nbaF,
+        suggestedMessage: { message: smF.message, tone: smF.tone, goal: smF.goal },
+        insightsSummary: inF,
         assistant: {
           sentiment: "NEUTRAL" as const,
           dealPrediction: { dealProbability: 0, engagementScore: 0 },
@@ -298,20 +340,9 @@ export async function GET(_req: NextRequest, context: Params) {
           riskHeatmap: { overallRisk: "low" as const, riskScore: 0, risks: [] },
           closingReadiness: { score: 0, label: "not_ready" as const, rationale: [] },
           coaching: { coaching: [], topCoachingPriority: null as string | null },
-          nextBestAction: {
-            action: "Open the thread and review recent messages",
-            priority: "low" as const,
-            rationale: ["Simplified output while the deeper pass was unavailable."],
-          },
-          suggestedMessage: {
-            message:
-              "If it helps, I can suggest a short, neutral line for you to edit and send when you are ready (you always choose what to send).",
-            tone: "professional" as const,
-            goal: "safety fallback",
-            reason: "A neutral template while heuristics were limited.",
-            goalType: "general_checkin" as const,
-          },
-          insightsSummary: { headline: "Heuristics limited", dealStatus: "Unknown", objections: [] as string[], voice: null },
+          nextBestAction: nbaF,
+          suggestedMessage: smF,
+          insightsSummary: inF,
         },
       },
       { status: 200 }

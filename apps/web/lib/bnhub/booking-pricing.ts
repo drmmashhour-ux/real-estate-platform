@@ -14,9 +14,10 @@ import {
 import { resolveEarlyBookingDiscount } from "@/lib/bnhub/early-booking-discount";
 import { pickBestLodgingDiscount, type LoyaltyTierCode } from "@/lib/loyalty/loyalty-engine";
 import { getLoyaltyLodgingDiscountForGuest } from "@/lib/loyalty/loyalty-service";
+import { resolveBnhubPlatformGuestFeePercent } from "@/lib/bnhub/booking-revenue-pricing";
 
-/** Guest-facing service fee on lodging (percent). Kept in sync with pricing-model fee calculator. */
-export const BNHUB_GUEST_SERVICE_FEE_PERCENT = 12;
+/** Guest-facing service fee on lodging (percent). Clamped 10–15 via `BNHUB_PLATFORM_FEE_PERCENT`. */
+export const BNHUB_GUEST_SERVICE_FEE_PERCENT = resolveBnhubPlatformGuestFeePercent();
 /** Host platform fee on lodging (percent). */
 export const BNHUB_HOST_FEE_PERCENT = 3;
 

@@ -146,7 +146,7 @@ export function estimateQuebecEsgUpgradeCosts(
 
     return { costEstimates, totalLowCost: totalLow, totalHighCost: totalHigh };
   } catch {
-    greenAiLog.warn("quebec_esg_costs_estimated", { ok: false });
+    greenAiLog.warn("quebec_esg_costs_estimate_failed", { ok: false });
     return { costEstimates: [], totalLowCost: null, totalHighCost: null };
   }
 }

@@ -1,14 +1,14 @@
-export type ComplianceStatus = "LOW" | "MEDIUM" | "HIGH" | "READY";
+export type TrustHubStatus = "LOW" | "MEDIUM" | "HIGH" | "READY";
 
 export interface ComplianceScoreResult {
   score: number;
-  status: ComplianceStatus;
+  status: TrustHubStatus;
   missingItems: string[];
   riskItems: string[];
   recommendations: string[];
 }
 
-export interface TrustBadge {
+export interface TrustHubBadgeInfo {
   badgeKey: string;
   labelFr: string;
   proofJson?: any;
@@ -24,14 +24,12 @@ export interface SaferChoice {
 
 export interface ClauseExplanation {
   explanationFr: string;
-  risksFr: string;
-  whatToConfirmFr: string;
+  risksFr: string[];
+  whatToConfirmFr: string[];
   plainLanguageSummaryFr: string;
-  disclaimerFr: string;
 }
 
 export interface ProtectionModeStatus {
   enabled: boolean;
-  reasonsFr: string[];
-  recommendedActionsFr: string[];
+  reasons: string[];
 }

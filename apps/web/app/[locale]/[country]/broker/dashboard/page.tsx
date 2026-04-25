@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LeciSurfaceBootstrap } from "@/components/leci/LeciSurfaceBootstrap";
 import { MvpNav } from "@/components/investment/MvpNav";
 import { requireBrokerDashboard } from "@/modules/mortgage/services/require-broker-dashboard";
 import { BrokerDashboardClient } from "../broker-dashboard-client";
@@ -25,6 +26,7 @@ export default async function BrokerDashboardPage() {
 
   return (
     <div className="min-h-screen bg-[#0B0B0B] text-slate-50">
+      <LeciSurfaceBootstrap userRole="broker" draftSummary="Tableau de bord courtier — vue pipeline et alertes" />
       <MvpNav variant="live" />
       <div className="mx-auto max-w-4xl px-4 py-10">
         <p className="mb-6 rounded-xl border border-white/10 bg-[#14110a]/80 px-4 py-3 text-xs leading-relaxed text-slate-400">

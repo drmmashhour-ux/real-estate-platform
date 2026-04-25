@@ -7,7 +7,29 @@ export type BnhubUpsellSelection = {
   insurance?: boolean;
   earlyCheckIn?: boolean;
   lateCheckOut?: boolean;
+  /** Deep clean / turnover add-on charged to guest; host receives this portion of base. */
+  cleaningAddon?: boolean;
 };
+
+/** Default upsell amounts (cents) from env — shared by checkout and revenue calculator. */
+export function bnhubUpsellLineCents(upsells?: BnhubUpsellSelection): {
+  insurance: number;
+  earlyCheckIn: number;
+  lateCheckOut: number;
+  cleaningAddon: number;
+} {
+  const u = upsells ?? {};
+  const ins = Math.max(0, Number(process.env.BNHUB_UPSELL_INSURANCE_CENTS ?? "1999"));
+  const early = Math.max(0, Number(process.env.BNHUB_UPSELL_EARLY_CHECKIN_CENTS ?? "2500"));
+  const late = Math.max(0, Number(process.env.BNHUB_UPSELL_LATE_CHECKOUT_CENTS ?? "2500"));
+  const clean = Math.max(0, Number(process.env.BNHUB_UPSELL_CLEANING_ADDON_CENTS ?? "3500"));
+  return {
+    insurance: u.insurance ? ins : 0,
+    earlyCheckIn: u.earlyCheckIn ? early : 0,
+    lateCheckOut: u.lateCheckOut ? late : 0,
+    cleaningAddon: u.cleaningAddon ? clean : 0,
+  };
+}
 
 export function isBnhubItemizedCheckoutEnabled(): boolean {
   return process.env.BNHUB_CHECKOUT_ITEMIZED_FEES?.trim() === "1";
@@ -38,7 +60,7 @@ export function computeBnhubGuestCheckoutCents(input: {
   baseFeeCents: number;
   peakFeeCents: number;
   serviceFeeTotalCents: number;
-  upsellCents: { insurance: number; earlyCheckIn: number; lateCheckOut: number };
+  upsellCents: { insurance: number; earlyCheckIn: number; lateCheckOut: number; cleaningAddon: number };
   totalCents: number;
 } {
   const baseBps = Math.max(0, Number(process.env.BNHUB_SERVICE_FEE_BASE_BPS ?? "800"));
@@ -51,16 +73,15 @@ export function computeBnhubGuestCheckoutCents(input: {
   const peakFeeCents = Math.round((accommodation * peakExtraBps * peakRatio) / 10000);
   const serviceFeeTotalCents = baseFeeCents + peakFeeCents;
 
-  const ins = Math.max(0, Number(process.env.BNHUB_UPSELL_INSURANCE_CENTS ?? "1999"));
-  const early = Math.max(0, Number(process.env.BNHUB_UPSELL_EARLY_CHECKIN_CENTS ?? "2500"));
-  const late = Math.max(0, Number(process.env.BNHUB_UPSELL_LATE_CHECKOUT_CENTS ?? "2500"));
-  const u = input.upsells ?? {};
+  const lines = bnhubUpsellLineCents(input.upsells);
   const upsellCents = {
-    insurance: u.insurance ? ins : 0,
-    earlyCheckIn: u.earlyCheckIn ? early : 0,
-    lateCheckOut: u.lateCheckOut ? late : 0,
+    insurance: lines.insurance,
+    earlyCheckIn: lines.earlyCheckIn,
+    lateCheckOut: lines.lateCheckOut,
+    cleaningAddon: lines.cleaningAddon,
   };
-  const upsellSum = upsellCents.insurance + upsellCents.earlyCheckIn + upsellCents.lateCheckOut;
+  const upsellSum =
+    upsellCents.insurance + upsellCents.earlyCheckIn + upsellCents.lateCheckOut + upsellCents.cleaningAddon;
   const totalCents = accommodation + serviceFeeTotalCents + upsellSum;
 
   return {
@@ -83,5 +104,6 @@ export function parseUpsellsFromBody(body: unknown): BnhubUpsellSelection | unde
     insurance: o.insurance === true,
     earlyCheckIn: o.earlyCheckIn === true || o.early_check_in === true,
     lateCheckOut: o.lateCheckOut === true || o.late_check_out === true,
+    cleaningAddon: o.cleaningAddon === true || o.cleaning_addon === true,
   };
 }

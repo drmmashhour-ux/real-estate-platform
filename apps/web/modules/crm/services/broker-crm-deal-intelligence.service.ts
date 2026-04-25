@@ -1,3 +1,8 @@
+/**
+ * STEP 9 — Deal intelligence: `evaluateDealProgress` for risk/stagnation/suggestions (non-legal).
+ * Writes observability to playbook-memory; no execution. Never throws.
+ */
+
 import { prisma } from "@/lib/db";
 import { playbookLog } from "@/modules/playbook-memory/playbook-memory.logger";
 import { playbookMemoryWriteService } from "@/modules/playbook-memory/services/playbook-memory-write.service";

@@ -5,7 +5,8 @@ const FALLBACK_BY_FORM: Record<string, Record<string, unknown>> = {
   lecipm_promise_to_purchase: {
     buyerLegalName: "TBD",
     sellerLegalName: "TBD",
-    propertyCivicAddress: "TBD",
+    /** Min length 5 in registry — placeholder must validate when AI fails. */
+    propertyCivicAddress: "TBD — address pending",
     offerPriceCents: 1,
     occupancyDate: new Date().toISOString().slice(0, 10),
     includesMovableProperty: false,
@@ -16,7 +17,8 @@ const FALLBACK_BY_FORM: Record<string, Record<string, unknown>> = {
       "This offer is conditional upon the Buyer obtaining, on terms acceptable to the Buyer, a written commitment for purchase financing within the agreed deadline.",
   },
   lecipm_brokerage_ack: {
-    brokerLicenseNumber: "TBD",
+    /** Min length 4 in registry */
+    brokerLicenseNumber: "TBD0",
     agencyName: "TBD",
     agency_relationship_summary:
       "The broker acknowledges the duty to disclose agency relationships in accordance with applicable regulations. This summary is informational and does not replace mandatory OACIQ forms.",

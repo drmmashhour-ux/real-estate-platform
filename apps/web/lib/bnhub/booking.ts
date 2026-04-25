@@ -44,14 +44,15 @@ import {
   findOverlappingExternalIcsBlock,
 } from "@/lib/bookings/checkAvailability";
 import { logGuestExperienceOutcome } from "@/lib/bnhub/guest-experience/log-signal";
+import { resolveBnhubPlatformGuestFeePercent } from "@/lib/bnhub/booking-revenue-pricing";
 
-const GUEST_FEE_PERCENT = 12;
 const HOST_FEE_PERCENT = 3;
 
 /** Legacy fee calculation (used when pricing engine not needed). */
 export function calculateFees(nightPriceCents: number, nights: number) {
+  const guestPct = resolveBnhubPlatformGuestFeePercent();
   const totalCents = nightPriceCents * nights;
-  const guestFeeCents = Math.round((totalCents * GUEST_FEE_PERCENT) / 100);
+  const guestFeeCents = Math.round((totalCents * guestPct) / 100);
   const hostFeeCents = Math.round((totalCents * HOST_FEE_PERCENT) / 100);
   const hostPayoutCents = totalCents - hostFeeCents;
   const guestTotalCents = totalCents + guestFeeCents;

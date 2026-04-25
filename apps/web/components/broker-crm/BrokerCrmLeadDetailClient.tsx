@@ -262,7 +262,7 @@ export function BrokerCrmLeadDetailClient({ leadId }: { leadId: string }) {
     void (async () => {
       try {
         const res = await fetch(
-          `/api/broker-crm/leads/${encodeURIComponent(leadId)}/playbook-suggestions`,
+          `/api/broker-crm/leads/${encodeURIComponent(leadId)}/playbook-suggestions?withAssignment=1`,
           { credentials: "same-origin" }
         );
         const j = (await res.json()) as { recommendations?: PlaybookRecRow[] };
@@ -524,7 +524,7 @@ export function BrokerCrmLeadDetailClient({ leadId }: { leadId: string }) {
             ))}
           </ul>
           <p className="mt-2 text-[11px] text-slate-500">
-            Assignments that update the bandit run only from explicit autopilot evaluate — nothing here auto-executes.
+            Playbook suggestions load with an auditable assignment row for the learning loop (withAssignment=1). Still suggest-only — no auto-messages or execution.
           </p>
         </section>
       ) : playbookRecs && playbookRecs.length === 0 ? (

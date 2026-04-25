@@ -1,70 +1,111 @@
-"use client";
-
-import { useState } from "react";
-import { UserCheck, ArrowRight, ShieldCheck, Check } from "lucide-react";
-import { useToast } from "@/components/ui/ToastProvider";
+import React, { useState } from "react";
+import { UserCheck, Shield, ChevronRight, Check, Loader2 } from "lucide-react";
+import { cn } from "../../lib/utils";
 
 interface Props {
   draftId: string;
-  reasonFr?: string;
+  reasonFr: string;
+  status?: "NONE" | "REQUESTED" | "ACCEPTED" | "COMPLETED";
+  onRequest?: () => void;
+  className?: string;
 }
 
-export function BrokerAssistCard({ draftId, reasonFr }: Props) {
-  const [requested, setRequested] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const { showToast } = useToast();
+export const BrokerAssistCard: React.FC<Props> = ({ draftId, reasonFr, status = "NONE", onRequest, className }) => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [currentStatus, setCurrentStatus] = useState(status);
 
-  async function handleRequest() {
-    setLoading(true);
+  const handleRequest = async () => {
+    setIsLoading(true);
     try {
       const res = await fetch("/api/trust-hub/broker-assist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ draftId, reasonFr })
+        body: JSON.stringify({ draftId, action: "REQUEST" }),
       });
       if (res.ok) {
-        setRequested(true);
-        showToast("Demande de révision envoyée", "success");
+        setCurrentStatus("REQUESTED");
+        onRequest?.();
       }
+    } catch (e) {
+      console.error(e);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
-  }
+  };
 
-  return (
-    <div className="relative overflow-hidden rounded-3xl border border-premium-gold/30 bg-gradient-to-br from-black to-premium-gold/5 p-8 shadow-2xl">
-      <div className="absolute right-0 top-0 h-40 w-40 translate-x-1/2 -translate-y-1/2 bg-premium-gold/10 blur-[100px]" />
-      
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
-        <div className="flex items-start gap-6">
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-premium-gold/10 shadow-inner">
-            <UserCheck className="h-8 w-8 text-premium-gold" />
+  if (currentStatus === "REQUESTED") {
+    return (
+      <div className={cn("rounded-2xl border border-blue-500/30 bg-blue-500/5 p-6 backdrop-blur-xl", className)}>
+        <div className="flex items-center gap-4">
+          <div className="shrink-0 p-3 rounded-2xl bg-blue-500/20 text-blue-400">
+            <Loader2 className="w-6 h-6 animate-spin" />
           </div>
-          <div className="space-y-2">
-            <h3 className="text-xl font-black uppercase italic tracking-tighter text-white">
-              Service <span className="text-premium-gold">Broker Assist</span>
-            </h3>
-            <p className="text-sm text-neutral-400 max-w-md leading-relaxed">
-              Faites réviser votre brouillon par un courtier immobilier licencié pour $275. 
-              Une protection juridique supplémentaire pour vos transactions complexes.
+          <div>
+            <h3 className="text-lg font-bold text-blue-100">Demande envoyée</h3>
+            <p className="text-sm text-blue-200/60 leading-relaxed">
+              Un courtier partenaire a été notifié pour réviser votre document.
             </p>
           </div>
         </div>
+      </div>
+    );
+  }
 
-        <button 
+  if (currentStatus === "ACCEPTED" || currentStatus === "COMPLETED") {
+    return (
+      <div className={cn("rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-6 backdrop-blur-xl", className)}>
+        <div className="flex items-center gap-4">
+          <div className="shrink-0 p-3 rounded-2xl bg-emerald-500/20 text-emerald-400">
+            <Check className="w-6 h-6" />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-emerald-100">Révision professionnelle activée</h3>
+            <p className="text-sm text-emerald-200/60 leading-relaxed">
+              Votre document est sous la supervision d'un professionnel.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={cn("group relative overflow-hidden rounded-2xl border border-[#D4AF37]/20 bg-black/40 p-6 backdrop-blur-xl transition hover:border-[#D4AF37]/40", className)}>
+      <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition">
+        <UserCheck className="w-32 h-32" />
+      </div>
+
+      <div className="relative space-y-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-[#D4AF37]/20 text-[#D4AF37]">
+            <Shield className="w-6 h-6" />
+          </div>
+          <h3 className="text-lg font-bold text-white">Révision Professionnelle</h3>
+        </div>
+
+        <p className="text-sm text-zinc-400 leading-relaxed">
+          {reasonFr}
+        </p>
+
+        <button
           onClick={handleRequest}
-          disabled={requested || loading}
-          className="group relative inline-flex items-center gap-3 px-8 py-4 rounded-2xl bg-premium-gold text-black font-black uppercase tracking-widest text-xs transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:hover:scale-100"
+          disabled={isLoading}
+          className="w-full mt-2 inline-flex min-h-[52px] items-center justify-center rounded-2xl bg-[#D4AF37] px-8 text-base font-bold text-black shadow-lg shadow-[#D4AF37]/25 transition hover:brightness-110 active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
         >
-          {requested ? (
-            <><Check className="h-4 w-4" /> Demande Envoyée</>
-          ) : loading ? (
-            "Traitement..."
+          {isLoading ? (
+            <Loader2 className="w-5 h-5 animate-spin" />
           ) : (
-            <><ShieldCheck className="h-4 w-4" /> Faire réviser l&apos;offre <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" /></>
+            <>
+              Faire réviser par un courtier
+              <ChevronRight className="w-5 h-5 ml-2" />
+            </>
           )}
         </button>
+
+        <p className="text-[10px] text-center text-zinc-500 font-medium italic">
+          Service optionnel. Des frais peuvent s'appliquer.
+        </p>
       </div>
     </div>
   );
-}
+};

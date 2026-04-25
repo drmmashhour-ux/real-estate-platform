@@ -253,6 +253,12 @@ export default async function BNHubHostDashboardPage({
             Host Agreement
           </Link>
           <Link
+            href={`/${locale}/${country}/host/bnhub/insights`}
+            className="inline-flex items-center rounded-lg border border-white/30 px-4 py-2 text-sm font-medium opacity-90 hover:opacity-100"
+          >
+            Insights
+          </Link>
+          <Link
             href="/dashboard/bnhub"
             className="inline-flex items-center rounded-lg px-4 py-2 text-sm font-medium opacity-80 hover:underline"
             style={{ color: theme.accent }}

@@ -12,7 +12,13 @@ vi.mock("@/lib/db", () => ({
   },
 }));
 
-import { buildPersonalizationContext, mergePlaybookContextWithUserIntelligence } from "../services/user-personalization.service";
+import type { UserPersonalizationContext } from "../types/user-intelligence.types";
+import {
+  buildPersonalizationContext,
+  mergePlaybookContextWithUserIntelligence,
+  personalisationListingNudge,
+  resolvePreferredCityHint,
+} from "../services/user-personalization.service";
 
 beforeEach(() => {
   findUniqueJ.mockReset();
@@ -45,5 +51,36 @@ describe("user-personalization.service", () => {
     });
     expect(out.signals?.a).toBe(1);
     expect(out.userId).toBe("u1");
+  });
+
+  it("resolvePreferredCityHint prefers journey over housing", () => {
+    const ctx: UserPersonalizationContext = {
+      userId: "u",
+      hasProfile: true,
+      confidence: 0.5,
+      signals: {},
+      journey: { latestCity: "Laval", currentDomain: null, currentStage: null },
+      housingPreferences: { dream_home_location_city: "montreal" } as Record<string, unknown>,
+      designPreferences: null,
+      budgetPreferences: null,
+      usedWave13Profile: true,
+    };
+    expect(resolvePreferredCityHint(ctx)).toBe("Laval");
+  });
+
+  it("personalisationListingNudge matches stored housing city", () => {
+    const ctx: UserPersonalizationContext = {
+      userId: "u",
+      hasProfile: true,
+      confidence: 0.8,
+      signals: {},
+      housingPreferences: { dream_home_location_city: "montreal" } as Record<string, unknown>,
+      designPreferences: null,
+      budgetPreferences: null,
+      usedWave13Profile: true,
+    };
+    const n = personalisationListingNudge(0.5, ctx, "Montreal");
+    expect(n.reason).toBe("city_match_durable");
+    expect(n.score).toBeGreaterThan(0.5);
   });
 });

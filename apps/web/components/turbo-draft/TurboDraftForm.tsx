@@ -38,9 +38,10 @@ export function TurboDraftForm({ formKey, initialInput, listingId, listingKind }
 
   // Trust Hub State
   const [complianceScore, setComplianceScore] = useState<ComplianceScoreResult | null>(null);
-  const [trustBadges, setTrustBadges] = useState<TrustBadge[]>([]);
+  const [trustBadges, setTrustBadges] = useState<TrustHubBadgeInfo[]>([]);
   const [saferChoices, setSaferChoices] = useState<SaferChoice[]>([]);
   const [protectionMode, setProtectionMode] = useState<ProtectionModeStatus | null>(null);
+  const [brokerAssistStatus, setBrokerAssistStatus] = useState<any>(null);
 
   useEffect(() => {
     if (listingId && listingKind) {
@@ -54,11 +55,37 @@ export function TurboDraftForm({ formKey, initialInput, listingId, listingKind }
     }
   }, [result?.draftId, answers]); // Refresh on answer changes
 
+  async function refreshTrustHub(draftId: string) {
+    try {
+      // Parallel fetch for speed
+      const [scoreRes, badgesRes, choicesRes, protectionRes, assistRes] = await Promise.all([
+        fetch("/api/trust-hub/score", { method: "POST", body: JSON.stringify({ draftId }) }),
+        fetch("/api/trust-hub/badges", { method: "POST", body: JSON.stringify({ draftId }) }),
+        fetch("/api/trust-hub/safer-choices", { method: "POST", body: JSON.stringify({ draftId }) }),
+        fetch("/api/trust-hub/protection-mode", { method: "POST", body: JSON.stringify({ draftId }) }),
+        fetch("/api/trust-hub/broker-assist", { method: "POST", body: JSON.stringify({ draftId }) }),
+      ]);
+
+      if (scoreRes.ok) setComplianceScore(await scoreRes.json());
+      if (badgesRes.ok) setTrustBadges(await badgesRes.json());
+      if (choicesRes.ok) setSaferChoices(await choicesRes.json());
+      if (protectionRes.ok) setProtectionMode(await protectionRes.json());
+      if (assistRes.ok) setBrokerAssistStatus(await assistRes.json());
+    } catch (e) {
+      console.error("Failed to refresh trust hub", e);
+    }
+  }
+
+
   if (!template) return <div>Template not found: {formKey}</div>;
 
-  const currentStep = template.steps[currentStepIdx];
-  const isLastStep = currentStepIdx === template.steps.length - 1;
-  const progress = ((currentStepIdx + 1) / template.steps.length) * 100;
+  const currentStep = currentStepIdx < template.steps.length 
+    ? template.steps[currentStepIdx] 
+    : { id: "review", title: "Révision Finale", fieldKeys: [] };
+
+  const isReviewStep = currentStepIdx === template.steps.length;
+  const isLastFormStep = currentStepIdx === template.steps.length - 1;
+  const progress = ((currentStepIdx + 1) / (template.steps.length + 1)) * 100;
 
   async function build(autoSave = false) {
     if (!autoSave) setBusy(true);
@@ -116,7 +143,7 @@ export function TurboDraftForm({ formKey, initialInput, listingId, listingKind }
     // 2. Auto-save
     await build(true);
     // 3. Advance
-    if (!isLastStep) {
+    if (currentStepIdx < template.steps.length) {
       setCurrentStepIdx(prev => prev + 1);
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
@@ -295,16 +322,41 @@ export function TurboDraftForm({ formKey, initialInput, listingId, listingKind }
           />
           
           <div className="space-y-1">
-            <p className="text-[8px] font-black uppercase tracking-[0.3em] text-premium-gold/60 italic">Étape {currentStepIdx + 1} sur {template.steps.length}</p>
+            <p className="text-[8px] font-black uppercase tracking-[0.3em] text-premium-gold/60 italic">Étape {currentStepIdx + 1} sur {template.steps.length + 1}</p>
             <h3 className="text-lg font-black text-white uppercase italic tracking-tight">{currentStep.title}</h3>
           </div>
 
           <div className="space-y-6">
-            {currentStep.fieldKeys.map((key) => {
-              const field = template.fields.find(f => f.key === key);
-              if (!field) return null;
-              return <div key={key}>{renderField(field)}</div>;
-            })}
+            {isReviewStep ? (
+              <div className="space-y-6 divide-y divide-white/5">
+                {template.steps.map((step) => (
+                  <div key={step.id} className="pt-4 first:pt-0">
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-premium-gold/60 mb-3">{step.title}</h4>
+                    <div className="grid gap-3">
+                      {step.fieldKeys.map(key => {
+                        const field = template.fields.find(f => f.key === key);
+                        if (!field) return null;
+                        const val = answers[key];
+                        return (
+                          <div key={key} className="flex items-center justify-between text-xs">
+                            <span className="text-neutral-500">{field.label}</span>
+                            <span className="font-bold text-white">
+                              {field.type === "money" ? `${(val || 0) / 100} $` : field.type === "boolean" ? (val ? "Oui" : "Non") : (val || "—")}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              currentStep.fieldKeys.map((key) => {
+                const field = template.fields.find(f => f.key === key);
+                if (!field) return null;
+                return <div key={key}>{renderField(field)}</div>;
+              })
+            )}
           </div>
           
           <div className="flex gap-4 pt-4 border-t border-white/5">
@@ -318,14 +370,16 @@ export function TurboDraftForm({ formKey, initialInput, listingId, listingKind }
               </button>
             )}
             
-            <button
-              type="button"
-              disabled={busy}
-              onClick={handleNextStep}
-              className="flex-[2] bnhub-touch-feedback rounded-xl bg-premium-gold py-4 text-[10px] font-black uppercase tracking-widest text-black shadow-xl shadow-premium-gold/20 disabled:opacity-50"
-            >
-              {busy ? "Enregistrement..." : isLastStep ? "Réviser le brouillon" : "Suivant"}
-            </button>
+            {!isReviewStep && (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={handleNextStep}
+                className="flex-[2] bnhub-touch-feedback rounded-xl bg-premium-gold py-4 text-[10px] font-black uppercase tracking-widest text-black shadow-xl shadow-premium-gold/20 disabled:opacity-50"
+              >
+                {busy ? "Enregistrement..." : isLastFormStep ? "Réviser le brouillon" : "Suivant"}
+              </button>
+            )}
           </div>
         </div>
 
@@ -366,7 +420,12 @@ export function TurboDraftForm({ formKey, initialInput, listingId, listingKind }
             />
             
             <div id="broker-assist-section" className="scroll-mt-8">
-              <BrokerAssistCard draftId={result.draftId} />
+              <BrokerAssistCard 
+                draftId={result.draftId} 
+                status={brokerAssistStatus?.status}
+                reasonFr={brokerAssistStatus?.reasonFr || "Une révision professionnelle sécurise votre transaction."}
+                onRequest={() => result?.draftId && refreshTrustHub(result.draftId)}
+              />
             </div>
 
             <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-black/80 to-neutral-900/80 p-12 text-center backdrop-blur-xl">

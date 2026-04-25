@@ -91,6 +91,7 @@ export function DreamHomeWizard({ basePath }: Props) {
         tradeoffs?: DreamHomeMatchResult["tradeoffs"];
         source?: DreamHomeMatchResult["source"];
         warnings?: string[];
+        playbookAssignment?: DreamHomeMatchResult["playbookAssignment"];
       };
       if (!mRes.ok || !mData.ok || !mData.profile) {
         setErr("Could not load matching listings. Try again.");
@@ -102,6 +103,7 @@ export function DreamHomeWizard({ basePath }: Props) {
         tradeoffs: mData.tradeoffs ?? [],
         source: mData.source === "ai" || mData.source === "deterministic" ? mData.source : "deterministic",
         warnings: mData.warnings,
+        playbookAssignment: mData.playbookAssignment ?? null,
       });
       setErr(null);
       return true;

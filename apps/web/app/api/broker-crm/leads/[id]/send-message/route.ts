@@ -53,5 +53,9 @@ export async function POST(request: NextRequest, context: Params) {
     });
   }
 
+  void import("@/modules/user-intelligence/integrations/crm-user-intelligence").then((m) =>
+    m.recordBrokerCrmOutboundMessageSignal(auth.user.id, { leadId: id, fromAiDraft }).catch(() => {}),
+  );
+
   return NextResponse.json({ messageId: result.messageId });
 }

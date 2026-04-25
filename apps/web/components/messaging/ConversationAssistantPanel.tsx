@@ -1,6 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { BrokerCoachingPanel } from "@/components/messaging/BrokerCoachingPanel";
+import { ClosingReadinessCard } from "@/components/messaging/ClosingReadinessCard";
+import { ConversationDealStageBadge } from "@/components/messaging/ConversationDealStageBadge";
+import { ConversationObjectionsPanel } from "@/components/messaging/ConversationObjectionsPanel";
+import { ConversationRiskHeatmap } from "@/components/messaging/ConversationRiskHeatmap";
 
 type Nba = {
   action: string;
@@ -9,13 +14,39 @@ type Nba = {
   suggestedMessage?: string;
 };
 
-type Sug = { message: string; tone: string; goal: string };
+type Sug = { message: string; tone: string; goal: string; reason?: string; goalType?: string };
 
 type Ins = {
   headline: string;
   dealStatus: string;
   objections: string[];
   voice?: { speakingSpeed?: number; confidence?: string; urgency?: string } | null;
+};
+
+type ClassifiedOb = {
+  type: string;
+  confidence: number;
+  evidence: string[];
+  severity: "low" | "medium" | "high";
+};
+
+type DealStagePayload = { stage: string; confidence: number; rationale: string[] };
+type ObjectionsPayload = { objections: ClassifiedOb[]; dominantObjection: string | null };
+type RiskPayload = {
+  overallRisk: "low" | "medium" | "high";
+  riskScore: number;
+  risks: { key: string; label: string; level: "low" | "medium" | "high"; rationale: string[] }[];
+};
+type ClosingPayload = { score: number; label: "not_ready" | "progressing" | "near_closing"; rationale: string[] };
+type CoachingPayload = {
+  coaching: {
+    title: string;
+    priority: "high" | "medium" | "low";
+    rationale: string[];
+    recommendedAction: string;
+    suggestedApproach?: string;
+  }[];
+  topCoachingPriority: string | null;
 };
 
 const PRI: Record<"high" | "medium" | "low", string> = {
@@ -31,6 +62,9 @@ type Props = {
   onUseSuggestionInComposer: () => void;
 };
 
+/**
+ * Broker-side copilot: next steps + **heuristic** stage, objections, risk, closing, coaching. Nothing auto-sends.
+ */
 export function ConversationAssistantPanel({
   conversationId,
   enabled,
@@ -44,12 +78,22 @@ export function ConversationAssistantPanel({
   const [ins, setIns] = useState<Ins | null>(null);
   const [copyDone, setCopyDone] = useState(false);
   const [degraded, setDegraded] = useState(false);
+  const [dealStage, setDealStage] = useState<DealStagePayload | null>(null);
+  const [objectionBlock, setObjectionBlock] = useState<ObjectionsPayload | null>(null);
+  const [risk, setRisk] = useState<RiskPayload | null>(null);
+  const [closing, setClosing] = useState<ClosingPayload | null>(null);
+  const [coaching, setCoaching] = useState<CoachingPayload | null>(null);
 
   const load = useCallback(async () => {
     if (!conversationId || !enabled) {
       setNextBest(null);
       setSuggested(null);
       setIns(null);
+      setDealStage(null);
+      setObjectionBlock(null);
+      setRisk(null);
+      setClosing(null);
+      setCoaching(null);
       onSuggestionText?.(null);
       return;
     }
@@ -61,23 +105,51 @@ export function ConversationAssistantPanel({
         credentials: "same-origin",
       });
       const j = (await res.json()) as {
-        nextBestAction?: Nba;
-        suggestedMessage?: Sug;
-        insightsSummary?: Ins;
+        ok?: boolean;
         error?: string;
         warning?: string;
+        nextBestAction?: Nba;
+        suggestedMessage?: Pick<Sug, "message" | "tone" | "goal"> & { reason?: string; goalType?: string };
+        insightsSummary?: Ins;
+        assistant?: {
+          nextBestAction: Nba;
+          suggestedMessage: Sug;
+          insightsSummary: Ins;
+          dealStage: DealStagePayload;
+          objections: ObjectionsPayload;
+          riskHeatmap: RiskPayload;
+          closingReadiness: ClosingPayload;
+          coaching: CoachingPayload;
+        };
       };
-      if (!res.ok) {
+      if (!res.ok || j.ok === false) {
         setErr(j.error ?? "Could not load assistant");
         onSuggestionText?.(null);
         return;
       }
-      if (j.nextBestAction) setNextBest(j.nextBestAction);
-      if (j.suggestedMessage) {
-        setSuggested(j.suggestedMessage);
-        onSuggestionText?.(j.suggestedMessage.message || null);
+      const a = j.assistant;
+      const nba = a?.nextBestAction ?? j.nextBestAction;
+      const sug = a?.suggestedMessage ?? j.suggestedMessage;
+      const insum = a?.insightsSummary ?? j.insightsSummary;
+      if (nba) setNextBest(nba);
+      if (sug) {
+        setSuggested(sug as Sug);
+        onSuggestionText?.(sug.message?.trim() ? sug.message : null);
       } else onSuggestionText?.(null);
-      if (j.insightsSummary) setIns(j.insightsSummary);
+      if (insum) setIns(insum);
+      if (a) {
+        setDealStage(a.dealStage);
+        setObjectionBlock(a.objections);
+        setRisk(a.riskHeatmap);
+        setClosing(a.closingReadiness);
+        setCoaching(a.coaching);
+      } else {
+        setDealStage(null);
+        setObjectionBlock(null);
+        setRisk(null);
+        setClosing(null);
+        setCoaching(null);
+      }
       if (j.warning) setDegraded(true);
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Failed");
@@ -90,16 +162,6 @@ export function ConversationAssistantPanel({
   useEffect(() => {
     void load();
   }, [load]);
-
-  const copySug = useCallback(() => {
-    if (!suggested?.message) return;
-    if (typeof navigator === "undefined" || !navigator.clipboard?.writeText) {
-      return;
-    }
-    void navigator.clipboard.writeText(suggested.message);
-    setCopyDone(true);
-    window.setTimeout(() => setCopyDone(false), 2000);
-  }, [suggested?.message]);
 
   const post = useCallback(
     async (event: "suggestion_used" | "action_executed", extra: Record<string, string | null | undefined>) => {
@@ -114,13 +176,25 @@ export function ConversationAssistantPanel({
     [conversationId]
   );
 
+  const copySug = useCallback(() => {
+    if (!suggested?.message) return;
+    if (typeof navigator === "undefined" || !navigator.clipboard?.writeText) {
+      return;
+    }
+    void navigator.clipboard.writeText(suggested.message);
+    setCopyDone(true);
+    void post("suggestion_used", { messagePreview: suggested.message, actionLabel: "copy" });
+    window.setTimeout(() => setCopyDone(false), 2000);
+  }, [suggested, post]);
+
   if (!enabled) return null;
 
   return (
     <div className="border-b border-white/5 bg-gradient-to-b from-slate-950/90 to-slate-950/40 p-3">
       <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Conversation assistant</p>
       <p className="mt-0.5 text-xs leading-snug text-slate-500">
-        Suggestions only — you choose what to send. Not legal or financial advice.
+        Suggestions only — you choose what to send. Not legal or financial advice. Heuristics are explainable, not
+        facts about people.
       </p>
 
       {!conversationId ? (
@@ -129,6 +203,41 @@ export function ConversationAssistantPanel({
       {loading ? <p className="mt-2 text-xs text-slate-500">Loading…</p> : null}
       {err ? <p className="mt-1 text-xs text-rose-400">{err}</p> : null}
       {degraded && !err ? <p className="mt-1 text-[10px] text-amber-200/80">Heuristics were reduced for this response.</p> : null}
+
+      {dealStage && conversationId ? (
+        <div className="mt-3">
+          <ConversationDealStageBadge stage={dealStage.stage} confidence={dealStage.confidence} rationale={dealStage.rationale} />
+        </div>
+      ) : null}
+      {objectionBlock && conversationId ? (
+        <div className="mt-3">
+          <p className="text-[10px] font-semibold uppercase text-slate-500">Objection signals</p>
+          <div className="mt-1">
+            <ConversationObjectionsPanel
+              objections={objectionBlock.objections}
+              dominant={objectionBlock.dominantObjection}
+            />
+          </div>
+        </div>
+      ) : null}
+      {risk && conversationId ? (
+        <div className="mt-3">
+          <ConversationRiskHeatmap overallRisk={risk.overallRisk} riskScore={risk.riskScore} risks={risk.risks} />
+        </div>
+      ) : null}
+      {closing && conversationId ? (
+        <div className="mt-3">
+          <ClosingReadinessCard score={closing.score} label={closing.label} rationale={closing.rationale} />
+        </div>
+      ) : null}
+      {coaching && coaching.coaching.length > 0 && conversationId ? (
+        <div className="mt-3">
+          <p className="text-[10px] font-semibold uppercase text-slate-500">Broker coaching</p>
+          <div className="mt-1">
+            <BrokerCoachingPanel items={coaching.coaching} top={coaching.topCoachingPriority} />
+          </div>
+        </div>
+      ) : null}
 
       {nextBest ? (
         <section className="mt-3 space-y-2">
@@ -159,7 +268,7 @@ export function ConversationAssistantPanel({
             <button
               type="button"
               className="rounded-md border border-white/15 bg-white/5 px-2 py-1 text-[10px] font-medium text-slate-200 hover:bg-white/10"
-              onClick={() => void post("action_executed", { actionLabel: nextBest.action, messagePreview: null })}
+              onClick={() => void post("action_executed", { actionLabel: nextBest.action, messagePreview: "" })}
             >
               Log next step
             </button>
@@ -176,6 +285,9 @@ export function ConversationAssistantPanel({
           <p className="text-[10px] text-slate-500">
             Tone: {suggested.tone} · Goal: {suggested.goal}
           </p>
+          {suggested.reason ? (
+            <p className="text-[10px] leading-relaxed text-slate-500">{suggested.reason}</p>
+          ) : null}
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
@@ -206,7 +318,7 @@ export function ConversationAssistantPanel({
               {ins.voice.speakingSpeed != null ? `· pace ~${ins.voice.speakingSpeed} (rough)` : null}
             </p>
           ) : null}
-          <p className="text-[10px] font-semibold uppercase text-slate-500">Objections (wording heuristics)</p>
+          <p className="text-[10px] font-semibold uppercase text-slate-500">Objections (summary line)</p>
           <ul className="list-inside list-disc text-xs text-slate-300">
             {ins.objections.map((o, i) => (
               <li key={i}>{o}</li>

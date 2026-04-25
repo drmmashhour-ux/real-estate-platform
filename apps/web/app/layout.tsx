@@ -12,6 +12,7 @@ import {
   PLATFORM_NAME,
 } from "@/lib/brand/platform";
 import { OG_DEFAULT_PLATFORM } from "@/lib/seo/og-defaults";
+import { LeciShell } from "@/components/leci/LeciShell";
 import TenantThemeProvider from "@/components/tenant/TenantThemeProvider";
 import { getTenantContextOptional } from "@/lib/tenant/context";
 import { getSiteBaseUrl } from "@/modules/seo/lib/siteBaseUrl";
@@ -113,7 +114,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <SkipLinks />
         <ConversionFlagsPanel />
         <TenantThemeProvider brand={tenantForBrand?.brand}>
-          {children}
+          <LeciShell>{children}</LeciShell>
         </TenantThemeProvider>
       </body>
     </html>

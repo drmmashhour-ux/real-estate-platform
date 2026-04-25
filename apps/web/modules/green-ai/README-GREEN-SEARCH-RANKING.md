@@ -1,51 +1,59 @@
-# Green search & green ranking (LECIPM)
+# LECIPM — Green search & green ranking
 
-This module adds **Québec-inspired** discovery, filtering, and assistive ranking on top of existing LECIPM green evaluation, grants, ROI hints, and pricing-boost heuristics. It does **not** assert official Rénoclimat, EnerGuide, or government certification.
+Internal **Québec-inspired** performance signals for discovery, filtering, and assistive ranking. This is not Rénoclimat, EnerGuide, or any official program output.
 
 ## Public vs broker / admin
 
-- **Public** (`/api/buyer/browse` with `greenAudience: "public"`, default): each FSBO card can include `green` with scores, label band, **illustrative** incentive total, `rationale`, and a **fixed disclaimer** line. Internal broker strings are not returned in `green`.
-- **Broker / admin** (`greenAudience: "internal"` on the same route): also returns `greenIntelligence` with `brokerCallouts`, full `rationale`, and `rankingBoostSuggestion` (assistive, not a placement guarantee). When a **green `sortMode`** is applied, `greenIntelligence.rankingSignal` carries the per-listing `GreenRankingSignal` from the ranker (explanatory, not a government label).
-- **BNHub short-term stays** (`/api/listings/search`): `greenFilters` and `sortMode` are **accepted in the request** for API compatibility, but LECIPM FSBO snapshots are **not** attached; the route logs a no-op (stays rows do not carry the same metadata). Existing search still succeeds.
-- **Legacy `GET /api/listings`** (array of BNHub stays): response body is **unchanged**; if you pass `?green=1` or `?green=true`, the response includes an **`X-Lecipm-Green-Layer` header** pointing to FSBO / residential search routes (additive hint for clients, no body contract change).
+| Surface | What users see | Notes |
+|--------|----------------|--------|
+| **Public** | `green` on browse responses: scores, model band, illustrative incentives **total**, short `rationale`, and a **disclaimer** | No internal pricing-boost or broker-only phrasing. |
+| **Broker / admin** | Same plus `greenIntelligence` when `greenAudience: "internal"` in POST /api/buyer/browse | Includes `brokerCallouts`, `rankingBoostSuggestion`, and optional `rankingSignal` after a green `greenSortMode`. |
 
-## Filter semantics
+Always prefer wording such as: **“Québec-inspired green score”**, **“Upgrade potential”**, **“Potential incentive opportunity”** — never imply guaranteed savings, grants, or a government rating.
 
-Filters in `green-search.types.ts` (`GreenSearchFilters`) are **strict**: if a listing lacks the data needed to evaluate a filter, it **does not** match (deterministic, safe for discovery). Illustrative grant totals are parsed heuristically from `amount` strings; always verify with official program rules.
+## Filter semantics (`greenFilters` on buyer browse / fsbo search)
 
-## Ranking modes
+- **`minimumQuebecScore` / `minimumGreenLabel`**: Require a stored or modeled current score/label. Listings with **no** green data **do not match** when these filters are set.
+- **Upgrade / incentive filters**: If the signal is **missing** (e.g. no snapshot), the listing is **excluded** when that filter is **true**.
+- **Component toggles** (efficient heating, insulation, windows, solar, green roof): if we cannot evaluate the flag (`null` / unknown), the listing is **excluded** when the toggle is on.
+- All filtering is **deterministic**; inputs are not mutated in place in the service layer.
 
-`green-search.types.ts` / `green-ranking.service.ts`:
+## Ranking modes (`greenSortMode` / `sortMode`)
 
-- `green_best_now` — favors higher modeled current performance.
-- `green_upgrade_potential` — favors larger modeled uplift (projected − current).
-- `green_incentive_opportunity` — favors **illustrative** incentive opportunity strength (not cash guarantees).
-- `standard_with_green_boost` — light blend of base order with small green nudge (weaker in `audience: "public"` than internal).
+| Mode | Use |
+|------|-----|
+| `green_best_now` | Emphasize higher **current** modeled performance. |
+| `green_upgrade_potential` | Emphasize **score delta** / improvement band. |
+| `green_incentive_opportunity` | Emphasize illustrative **incentive** totals and paths. |
+| `standard_with_green_boost` | Blends a **base** relevance score with a **light** green nudge; default assistive behavior for public. |
+
+`audience: "internal"` uses slightly stronger weighting in the same modes (see `green-ranking.service.ts`).
+
+## Stays (BNHub) — `/api/listings/search`
+
+- Accepts optional `greenFilters` and `sortMode` for **API compatibility**; **does not** attach per-listing `green` (stays do not carry FSBO metadata).
+- When those fields are present, the response may include `greenSearch: { supported: false, reason: "..." }` so clients know to use **buyer browse** or **fsbo search** for LECIPM green.
 
 ## Snapshot dependencies
 
-`GreenListingMetadata` in `modules/green/green.types.ts` can include:
+Decoration prefers, in order:
 
-- `quebecEsgSnapshot`, `grantsSnapshot` (existing),
-- `greenSearchSnapshot` (precomputed: projected score, delta, improvement bucket, illustrative incentives total, boost suggestion, optional solar/green roof flags),
-- `greenIntake` (optional structured intake),
-- `recommendationsSnapshot` (string[]; folded into public `rationale` lines),
-- `incentivesSnapshot` (optional `totalIllustrativeCad` when a single stored total is used),
-- `roiSnapshot` (illustrative band / note — not a performance guarantee),
-- `pricingBoostSnapshot` (`boostFactor` merged with `greenSearchSnapshot.rankingBoostSuggestion` for internal assistive ranking, capped).
+1. `lecipmGreenMetadataJson` — `quebecEsgSnapshot`, `grantsSnapshot`, `greenSearchSnapshot`, optional `recommendationsSnapshot`, `incentivesSnapshot`, `roiSnapshot`, `pricingBoostSnapshot`, `quebecEsgEconomicsSnapshot` (when present).
+2. `lecipmGreenInternalScore` / `lecipmGreenAiLabel` on the listing row.
+3. Optional **on-the-fly** `evaluateGreenEngine` / `runGreenAiAnalysis` when intake (or year-built-only fallback) is available.
 
-The FSBO green `PATCH` route updates `greenSearchSnapshot` additively when the owner syncs.
+**Never throw** in decoration — failures yield null-safe fields and a minimal rationale.
 
-## Disclaimers & safe wording
+## Disclaimers
 
-- Public UI copy should say **“Québec-inspired green score / model / discovery”** — not “certified”, not “EnerGuide”, not Rénoclimat approval.
-- Always show the **disclaimer** `GREEN_SEARCH_PUBLIC_DISCLAIMER` / `toPublicListingGreenPayload().disclaimer` when any score is shown.
-- Broker `greenIntelligence` is for **operations**, not for consumer-facing marketing without review.
+- Every public `green` block includes a **long-form disclaimer** (`GREEN_SEARCH_PUBLIC_DISCLAIMER`).
+- UI that surfaces a score should show a short line such as: `GREEN_COPY.disclaimerShort` (see `green-discovery-copy.service.ts`).
 
-## Logging
+## Related files
 
-`[green-ai]` events: `green_search_decoration_applied`, `green_search_filters_applied`, `green_ranking_applied`, `green_snapshot_used`, `green_snapshot_missing` (see `green-search-helpers.ts` and services).
-
-## Tests
-
-`modules/green-ai/tests/*green-search*`
+- Types: `green-search.types.ts`
+- Decoration: `green-search-decoration.service.ts`
+- Filters: `green-search-filter.service.ts`
+- Ranking: `green-ranking.service.ts`
+- Copy: `green-discovery-copy.service.ts`
+- Tests: `tests/green-search-*.test.ts`

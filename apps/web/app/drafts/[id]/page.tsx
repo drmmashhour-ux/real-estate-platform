@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import { LeciSurfaceBootstrap } from "@/components/leci/LeciSurfaceBootstrap";
 import { TurboDraftForm } from "@/components/turbo-draft/TurboDraftForm";
 import { requireUser } from "@/lib/auth/require-user";
 import { notFound } from "next/navigation";
@@ -31,6 +32,11 @@ export default async function DraftDetailPage({ params }: Props) {
 
   return (
     <div className="min-h-screen bg-[#050505] py-12">
+      <LeciSurfaceBootstrap
+        userRole={String(auth.user.role).toLowerCase()}
+        draftSummary={`Édition brouillon ${id} · statut ${draft.status}`}
+        focusTopic="turbo_draft_edit"
+      />
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-8 flex flex-col items-center justify-between gap-4 md:flex-row">
           <div>

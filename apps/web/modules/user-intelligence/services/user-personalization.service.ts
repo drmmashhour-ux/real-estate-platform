@@ -102,20 +102,94 @@ export async function mergePlaybookContextWithUserIntelligence(
   return { ...context, signals: merged as RecommendationRequestContext["signals"] };
 }
 
+/** Resolves a single durable city hint: journey first, then explicit housing, then flattened prefs. */
+export function resolvePreferredCityHint(ctx: UserPersonalizationContext | null): string | null {
+  if (!ctx) {
+    return null;
+  }
+  const j = ctx.journey?.latestCity?.trim();
+  if (j) {
+    return j;
+  }
+  const h = ctx.housingPreferences;
+  if (h && typeof h === "object") {
+    const o = h as Record<string, unknown>;
+    for (const k of ["dream_home_location_city", "location_city", "city"]) {
+      const v = o[k];
+      if (typeof v === "string" && v.trim()) {
+        return v.trim();
+      }
+    }
+  }
+  for (const k of ["pref_dream_home_location_city", "pref_location_city", "journey_city"]) {
+    const v = ctx.signals[k];
+    if (typeof v === "string" && v.trim()) {
+      return v.trim();
+    }
+  }
+  return null;
+}
+
 /**
  * Optional nudge for listing relevance (0-1), never dominant over session filters.
+ * Uses journey and/or Wave 13 housing prefs — explicit stored city beats nothing, low weight when profile sparse.
  */
 export function personalisationListingNudge(
   base01: number,
   ctx: UserPersonalizationContext | null,
   listingCity: string,
 ): { score: number; reason: string } {
-  if (!ctx?.usedWave13Profile || !ctx.housingPreferences) {
-    return { score: base01, reason: "no_stored_profile" };
+  if (!ctx) {
+    return { score: base01, reason: "no_context" };
   }
-  const city = ctx.journey?.latestCity;
-  if (city && listingCity.toLowerCase() === String(city).toLowerCase()) {
-    return { score: Math.min(1, base01 + 0.04 * ctx.confidence), reason: "city_match_durable" };
+  const city = resolvePreferredCityHint(ctx);
+  const lc = String(listingCity ?? "").trim();
+  if (!city || !lc) {
+    return { score: base01, reason: "neutral" };
+  }
+  if (lc.toLowerCase() === city.toLowerCase()) {
+    const conf =
+      ctx.usedWave13Profile && ctx.confidence > 0
+        ? ctx.confidence
+        : ctx.hasProfile
+          ? Math.max(0.2, ctx.confidence)
+          : 0.25;
+    return { score: Math.min(1, base01 + 0.04 * conf), reason: "city_match_durable" };
   }
   return { score: base01, reason: "neutral" };
+}
+
+/**
+ * Stable re-order: small city-match boost for logged-in users (does not replace filter/sort engines). Never throws.
+ */
+export async function reorderListingsForWave13Personalization<T extends { city?: string | null }>(
+  rows: T[],
+  userId: string | null | undefined,
+): Promise<T[]> {
+  try {
+    const uid = userId?.trim();
+    if (!uid || rows.length < 2) {
+      return rows;
+    }
+    const res = await buildPersonalizationContext(uid, null);
+    if (!res.ok) {
+      return rows;
+    }
+    const ctx = res.data;
+    if (!resolvePreferredCityHint(ctx)) {
+      return rows;
+    }
+    const tagged = rows.map((r, i) => {
+      const n = personalisationListingNudge(0, ctx, String(r.city ?? ""));
+      const boost = n.reason === "city_match_durable" ? 1 : 0;
+      return { r, i, boost };
+    });
+    tagged.sort((a, b) => (b.boost !== a.boost ? b.boost - a.boost : a.i - b.i));
+    return tagged.map((x) => x.r);
+  } catch (e) {
+    playbookLog.warn("user_intelligence: reorderListingsForWave13Personalization", {
+      message: e instanceof Error ? e.message : String(e),
+    });
+    return rows;
+  }
 }

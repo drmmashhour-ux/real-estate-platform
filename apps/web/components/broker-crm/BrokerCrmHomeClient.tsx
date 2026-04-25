@@ -454,6 +454,12 @@ export function BrokerCrmHomeClient() {
         </section>
       ) : null}
 
+      <p className="text-[11px] text-slate-500">
+        <span className="font-medium text-slate-400">Scores &amp; suggestions</span> are assistive only (prioritization
+        + playbook hints). Use <strong className="text-slate-300">Convert</strong> for{" "}
+        <code className="text-slate-400">POST /api/crm/convert-to-deal</code> when eligible.
+      </p>
+
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap gap-2">
           {FILTERS.map((f) => (
@@ -498,8 +504,12 @@ export function BrokerCrmHomeClient() {
                 <th className="px-3 py-2">Lead</th>
                 <th className="px-3 py-2">Listing</th>
                 <th className="px-3 py-2">Status</th>
-                <th className="px-3 py-2">AI / score</th>
-                <th className="px-3 py-2">Suggestion</th>
+                <th className="px-3 py-2" title="Rule-based priority; not legal or financial advice.">
+                  AI score
+                </th>
+                <th className="px-3 py-2" title="Playbook / autopilot hints only — nothing is auto-sent.">
+                  Suggested actions
+                </th>
                 <th className="px-3 py-2">Priority</th>
                 <th className="px-3 py-2">Last activity</th>
                 <th className="px-3 py-2">Next follow-up</th>
@@ -604,22 +614,31 @@ export function BrokerCrmHomeClient() {
                       <Link href={`/dashboard/crm/${l.id}`} className="block hover:text-premium-gold">
                         <span className="line-clamp-2">{l.displayName}</span>
                       </Link>
-                      <span className="mt-0.5 flex flex-wrap items-center gap-1 text-[10px] text-slate-500">
-                        <span>{l.listing?.title ?? "No listing"} · {l.status}</span>
+                      <p className="mt-1 text-[9px] uppercase tracking-wide text-slate-500">Listing · stage</p>
+                      <p className="text-[10px] text-slate-400">
+                        {l.listing?.title ?? "No listing"} · {l.status}
+                      </p>
+                      <p className="mt-1.5 text-[9px] uppercase tracking-wide text-slate-500">AI score (assistive)</p>
+                      <div className="mt-0.5 flex flex-wrap items-center gap-1" aria-label="AI lead score">
                         {l.aiThermal ? (
                           <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-medium uppercase ${badgeThermal(l.aiThermal)}`}>
                             {l.aiThermal}
                           </span>
-                        ) : null}
-                        <span>
+                        ) : (
+                          <span className="rounded-full bg-slate-700/50 px-1.5 py-0.5 text-[9px] text-slate-400">—</span>
+                        )}
+                        <span className="rounded-full border border-violet-500/25 bg-violet-950/30 px-1.5 py-0.5 text-[10px] font-medium text-violet-100">
                           {l.aiScore01 != null ? `${(l.aiScore01 * 100).toFixed(0)}%` : l.aiScoreLabel ?? `${l.priorityScore}`}
                         </span>
-                      </span>
+                      </div>
+                      <p className="mt-1.5 text-[9px] uppercase tracking-wide text-slate-500">Suggested next</p>
                       {l.suggestedNext ? (
-                        <p className="mt-1 line-clamp-2 text-[10px] text-violet-200/90" title="Suggestion only — nothing auto-sent.">
+                        <p className="line-clamp-3 text-[10px] text-violet-200/90" title="Suggestion only — nothing auto-sent.">
                           {l.suggestedNext}
                         </p>
-                      ) : null}
+                      ) : (
+                        <p className="text-[10px] text-slate-600">—</p>
+                      )}
                       {leadEligibleForConvert(l) ? (
                         <div className="mt-2 space-y-1">
                           <button

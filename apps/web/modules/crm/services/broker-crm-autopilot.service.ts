@@ -1,3 +1,8 @@
+/**
+ * STEP 4 + 7 — Autopilot: score + playbook recs + safe internal suggestion row + playbook-memory assignment
+ * (domain LEADS, entityType broker_lead). Non-blocking. No external messaging / financial execution. Never throws.
+ */
+
 import { prisma } from "@/lib/db";
 import { crmLog } from "@/modules/crm/crm-pipeline-logger";
 import { isAutopilotActionSafe } from "@/modules/crm/autopilot-safety";
@@ -60,6 +65,7 @@ export async function evaluateLead(leadOrId: string | { id: string }): Promise<E
     const score = await scoreLead(leadId);
     const { items: recommendations, playbooks: playbookRecsRaw } = await getLeadRecommendationsWithPlaybooks(leadId);
     const allowedPlaybookIds = recommendations.filter((r) => r.allowed).map((r) => r.playbookId);
+    const top = recommendations.find((r) => r.allowed) ?? null;
 
     let assignment: Awaited<ReturnType<typeof playbookMemoryAssignmentService.assignBestOrManualFallback>> | null = null;
     const bandit: PlaybookBanditContext = {
@@ -85,7 +91,18 @@ export async function evaluateLead(leadOrId: string | { id: string }): Promise<E
       playbookLog.warn("evaluateLead assignment", { message: e instanceof Error ? e.message : String(e) });
     }
 
-    const top = recommendations.find((r) => r.allowed) ?? null;
+    if (!assignment && top) {
+      const pr = playbookRecsRaw.find((p) => p.playbookId === top.playbookId && p.allowed);
+      if (pr) {
+        try {
+          assignment = await playbookMemoryAssignmentService.createManualAssignment({ context: bandit, playbook: pr });
+        } catch (e) {
+          playbookLog.warn("evaluateLead manual assignment for top rec", {
+            message: e instanceof Error ? e.message : String(e),
+          });
+        }
+      }
+    }
     try {
       playbookLearningBridge.afterBrokerLeadAutopilotEvaluate({ leadId, assignment });
     } catch (e) {
@@ -152,6 +169,19 @@ export async function evaluateLead(leadOrId: string | { id: string }): Promise<E
     };
   } catch (e) {
     playbookLog.warn("evaluateLead", { message: e instanceof Error ? e.message : String(e) });
-    return { ok: false, error: "evaluate_unavailable" };
+    const fallbackId =
+      typeof leadOrId === "string" ? leadOrId : String((leadOrId as { id?: string })?.id ?? "");
+    return {
+      ok: true,
+      leadId: fallbackId || "unknown",
+      score: { ok: false, error: "evaluate_unavailable" },
+      recommendations: [],
+      assignment: null,
+      suggestedNext: "Evaluation paused — open the lead and retry; nothing was auto-sent.",
+      suggestedNextAction: "Evaluation paused — open the lead and retry; nothing was auto-sent.",
+      recommendation: null,
+      confidence: 0.2,
+      blockedReasons: [],
+    };
   }
 }

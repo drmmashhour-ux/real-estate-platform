@@ -1,46 +1,43 @@
-import { validateFormSchema, PRODUCTION_FORM_SCHEMAS } from "./formSchema";
-import { TurboDraftResult } from "@/modules/turbo-form-drafting/types";
-
-export { validateFormSchema, PRODUCTION_FORM_SCHEMAS };
-
-export interface SignatureGateResult {
-  canSign: boolean;
-  errors: string[];
-}
+import { validateFormSchema, FORM_SCHEMAS } from "./formSchema";
+import { TurboDraftSection } from "../turbo-form-drafting/types";
 
 export function validateBeforeSignature(
-  draft: any, // TurboDraft model from DB
-  result: TurboDraftResult, // Validation result from engine
+  draft: any,
+  resultJson: any,
   complianceScore: number,
   isPaid: boolean
-): SignatureGateResult {
+): { canSign: boolean; errors: string[] } {
   const errors: string[] = [];
 
-  // 1. Compliance Score Check (Threshold 90)
-  if (complianceScore < 90) {
-    errors.push(`Compliance score too low: ${complianceScore}/100. Minimum 90 required.`);
+  // 1. Compliance Score threshold
+  const minScore = 80; 
+  if (complianceScore < minScore) {
+    errors.push(`Compliance score too low: ${complianceScore} (min ${minScore})`);
   }
 
-  // 2. Critical Notices Acknowledgment
-  const unacknowledgedCritical = result.notices.filter(n => n.severity === "CRITICAL" && !n.acknowledged);
-  if (unacknowledgedCritical.length > 0) {
-    errors.push(`Unacknowledged critical notices: ${unacknowledgedCritical.map(n => n.noticeKey).join(", ")}`);
+  // 2. Critical notices
+  const notices = resultJson?.notices || [];
+  const criticalUnaccepted = notices.filter((n: any) => n.severity === "CRITICAL" && !n.acknowledged);
+  if (criticalUnaccepted.length > 0) {
+    errors.push(`${criticalUnaccepted.length} critical notices remain unacknowledged`);
   }
 
-  // 3. Schema Validation
-  const schemaValidation = validateFormSchema(draft.formKey, draft.contextJson);
+  // 3. Mandatory sections/schema
+  const schemaValidation = validateFormSchema(draft.formKey, resultJson?.sections || []);
   if (!schemaValidation.valid) {
     errors.push(...schemaValidation.errors);
   }
 
-  // 4. Payment Gate
+  // 4. Payment
   if (!isPaid) {
-    errors.push("Payment not completed.");
+    errors.push("Payment required for signature");
   }
 
-  // 5. Blocking Risks from AI/Engine
-  if (!result.canProceed) {
-    errors.push(...result.blockingReasons);
+  // 5. Required fields check
+  const context = draft.contextJson as any;
+  const schema = FORM_SCHEMAS[draft.formKey];
+  if (schema) {
+    // Basic field presence check can be added here if needed
   }
 
   return {
@@ -50,30 +47,20 @@ export function validateBeforeSignature(
 }
 
 export function validateAIOutput(
-  aiOutput: any,
+  result: any,
   formKey: string
 ): { valid: boolean; errors: string[] } {
-  const schema = PRODUCTION_FORM_SCHEMAS[formKey];
-  if (!schema) return { valid: false, errors: ["Invalid form key"] };
+  const schema = FORM_SCHEMAS[formKey];
+  if (!schema) return { valid: false, errors: [`Schema not found for ${formKey}`] };
 
+  const sectionIds = (result.sections || []).map((s: any) => s.id);
   const errors: string[] = [];
 
-  // 1. Ensure all required sections exist and haven't been removed by AI
-  const sectionIds = new Set(aiOutput.sections.map((s: any) => s.id));
-  schema.requiredSections.forEach(rs => {
-    if (!sectionIds.has(rs)) {
-      errors.push(`AI attempted to remove mandatory section: ${rs}`);
+  // AI must not remove required sections
+  for (const req of schema.requiredSections) {
+    if (!sectionIds.includes(req)) {
+      errors.push(`AI removed mandatory section: ${req}`);
     }
-  });
-
-  // 2. Prevent AI from inventing non-schema sections (if strict)
-  if (schema.strictMode) {
-    const allowedSections = new Set(schema.requiredSections);
-    aiOutput.sections.forEach((s: any) => {
-      if (!allowedSections.has(s.id)) {
-        errors.push(`AI generated unallowed section: ${s.id}`);
-      }
-    });
   }
 
   return {

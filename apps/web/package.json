@@ -155,6 +155,7 @@
     "@prisma/client": "^6",
     "@react-google-maps/api": "^2.20.8",
     "@react-pdf/renderer": "^4.3.2",
+    "@repo/ai": "workspace:*",
     "@repo/db": "workspace:*",
     "@repo/tenant": "workspace:*",
     "@sentry/nextjs": "^9",

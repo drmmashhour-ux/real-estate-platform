@@ -17,6 +17,7 @@ import {
 
 import { recordEvolutionOutcome } from "@/modules/evolution/outcome-tracker.service";
 import { deedAndRegistrationBlockers, deriveInitialQcStage } from "@/modules/quebec-closing/quebec-closing-gates";
+import { seedDefaultQuebecClosingConditions } from "@/modules/quebec-closing/quebec-closing-seed.service";
 
 const TAG = "[closing-room]";
 
@@ -84,6 +85,7 @@ export async function startClosingRoom(options: {
   await seedDefaultClosingDocuments(options.dealId);
   await seedDefaultClosingChecklist(options.dealId);
   await seedDefaultSignatures(options.dealId);
+  await seedDefaultQuebecClosingConditions(options.dealId);
   await syncDealClosingReadiness(options.dealId);
 
   await appendClosingAudit({

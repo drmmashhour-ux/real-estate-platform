@@ -176,6 +176,11 @@ export function AdminHubLuxuryShell({ locale, country, summary }: Props) {
     brokers: `${topAdmin}/brokers`,
     investor: `${topAdmin}/investor`,
     inbox: `${topAdmin}/ai-inbox`,
+    defensibility: `${adminBase}/defensibility`,
+    outreach: `/admin/outreach`,
+    bookings: `/admin/bookings`,
+    execution: `/admin/execution`,
+    closing: `/admin/closing`,
   };
 
   const modules: { title: string; description: string; href: string }[] = [
@@ -324,6 +329,36 @@ export function AdminHubLuxuryShell({ locale, country, summary }: Props) {
                   className="rounded-full border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/80 hover:border-[#D4AF37]/35 hover:text-[#D4AF37]"
                 >
                   Users & roles
+                </Link>
+                <Link
+                  href={hrefs.defensibility}
+                  className="rounded-full border border-[#D4AF37]/45 bg-[#D4AF37]/5 px-4 py-3 text-sm text-[#D4AF37] hover:bg-[#D4AF37]/10"
+                >
+                  Moat & Defensibility
+                </Link>
+                <Link
+                  href={hrefs.outreach}
+                  className="rounded-full border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/80 hover:border-[#D4AF37]/35 hover:text-[#D4AF37]"
+                >
+                  Outreach Engine
+                </Link>
+                <Link
+                  href={hrefs.bookings}
+                  className="rounded-full border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/80 hover:border-[#D4AF37]/35 hover:text-[#D4AF37]"
+                >
+                  Booking Manager
+                </Link>
+                <Link
+                  href={hrefs.execution}
+                  className="rounded-full border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/80 hover:border-[#D4AF37]/35 hover:text-[#D4AF37]"
+                >
+                  Execution Engine
+                </Link>
+                <Link
+                  href={hrefs.closing}
+                  className="rounded-full border border-[#D4AF37]/45 bg-[#D4AF37]/5 px-4 py-3 text-sm text-[#D4AF37] hover:bg-[#D4AF37]/10"
+                >
+                  Closing Accelerator
                 </Link>
               </div>
             </div>

@@ -88,7 +88,7 @@ export async function buildMemorySnapshot(params: {
 export type AssistantHeuristicSnapshotV1 = {
   version: 1;
   updatedAt: string;
-  source: "assistant_engine";
+  source: "assistant_engine" | "post_call_engine";
   dominantObjection: string | null;
   /** How firm the system thinks budget alignment is (heuristic; not a financial assessment). */
   budgetConfidence: "low" | "medium" | "high" | null;

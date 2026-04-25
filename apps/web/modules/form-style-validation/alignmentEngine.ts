@@ -1,32 +1,54 @@
 import { FORM_SCHEMAS } from "./formSchemaRegistry";
-import { validateSections } from "./sectionValidator";
-import { validateClauses } from "./clauseValidator";
+import { validateSections, SectionValidationResult } from "./sectionValidator";
+import { validateClauses, ClauseIssue } from "./clauseValidator";
+import { DRAFTING_RULES } from "./draftingRules";
 
-export function alignDraftToFormSchema(formKey: string, sections: { title: string; content: string }[]) {
+export interface AlignmentResult {
+  sections: any[];
+  validation: {
+    sections: SectionValidationResult;
+    clauses: ClauseIssue[];
+  };
+}
+
+export function alignDraftToFormSchema(formKey: string, sections: any[]): AlignmentResult {
   const schema = FORM_SCHEMAS[formKey];
-  if (!schema) return { sections, issues: ["SCHEMA_NOT_FOUND"] };
-
-  // 1. Reorder sections based on schema
-  const alignedSections = schema.requiredSections.map(requiredTitle => {
-    const existing = sections.find(s => s.title.toUpperCase() === requiredTitle);
-    if (existing) return existing;
-    
-    // 2. Insert missing section placeholders
-    return {
-      title: requiredTitle,
-      content: `[MISSING CONTENT: ${requiredTitle}]`,
-      isPlaceholder: true
-    };
-  });
-
-  // Add any extra sections that were in the original draft but not in schema (at the end)
-  const extraSections = sections.filter(s => !schema.requiredSections.includes(s.title.toUpperCase()));
+  const sectionIds = sections.map(s => s.id);
   
+  // 1. Run Validators
+  const sectionValidation = validateSections(formKey, sectionIds);
+  const clauseValidation = validateClauses(formKey, sections);
+
+  // 2. Alignment Logic: Reorder and Add Placeholders
+  let alignedSections = [...sections];
+
+  if (schema) {
+    // Reorder based on schema
+    alignedSections = schema.requiredSections
+      .map(id => {
+        const existing = sections.find(s => s.id === id);
+        if (existing) return existing;
+        
+        // Return placeholder for missing mandatory section
+        return {
+          id,
+          title: id.replace(/_/g, " "),
+          content: `[SECTION MANQUANTE: ${id}]`,
+          isPlaceholder: true,
+          isMandatory: true
+        };
+      });
+    
+    // Add any sections that were in original draft but not in schema (at the end)
+    const extraSections = sections.filter(s => !schema.requiredSections.includes(s.id));
+    alignedSections = [...alignedSections, ...extraSections];
+  }
+
   return {
-    sections: [...alignedSections, ...extraSections],
+    sections: alignedSections,
     validation: {
-      sections: validateSections(formKey, sections),
-      clauses: validateClauses(formKey, sections)
+      sections: sectionValidation,
+      clauses: clauseValidation
     }
   };
 }

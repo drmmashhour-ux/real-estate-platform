@@ -132,7 +132,7 @@ export function calculateQuebecEsgRetrofitRoi(params: QuebecEsgRetrofitRoiParams
       paybackNotes,
     };
   } catch {
-    greenAiLog.warn("quebec_esg_roi_calculated", { ok: false });
+    greenAiLog.warn("quebec_esg_roi_calculate_failed", { ok: false });
     return {
       netCostLow: null,
       netCostHigh: null,

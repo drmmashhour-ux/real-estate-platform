@@ -5,10 +5,10 @@
  * sourceUrlKey resolves via SOURCE_URLS — do not embed raw URLs in UI copy.
  */
 
-export const QUEBEC_ESG_INCENTIVES_CATALOG_VERSION = "2026-04-24";
+export const QUEBEC_ESG_INCENTIVES_CATALOG_VERSION = "2026-04-23";
 
 /** When the catalog as a whole was last reviewed against public program pages (best effort). */
-export const QUEBEC_ESG_INCENTIVE_CATALOG_LAST_VERIFIED_AT = "2026-04-24";
+export const QUEBEC_ESG_INCENTIVE_CATALOG_LAST_VERIFIED_AT = "2026-04-23";
 
 export type IncentiveCatalogStatus = "active" | "conditional" | "closed";
 
@@ -124,7 +124,7 @@ export const QUEBEC_ESG_INCENTIVES_CATALOG: QuebecEsgIncentiveCatalogEntry[] = [
   },
   {
     key: "canada_greener_homes_loan",
-    title: "Canada Greener Homes Loan",
+    title: "Canada Greener Homes Loan (interest-free financing — available subject to eligibility)",
     jurisdiction: "CA",
     status: "active",
     amountType: "informational",
