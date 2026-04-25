@@ -331,6 +331,40 @@ export function LecipmLuxuryHomepage({ locale = routing.defaultLocale, country =
       <section className="relative px-6 py-24 lg:px-10">
         <div className="mx-auto max-w-7xl">
           <SectionHeading
+            eyebrow="The Product"
+            title="The Decision Layer on Real Estate."
+            subtitle="We don't just show data. We guide decisions. LECIPM anchors every search to a high-value outcome."
+          />
+
+          <div className="grid gap-10 lg:grid-cols-3">
+             <div className="space-y-4 text-center p-8 bg-white/5 border border-white/5 rounded-[2.5rem] hover:border-[#D4AF37]/30 transition-all">
+                <div className="w-14 h-14 bg-[#D4AF37]/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                   <Brain className="w-8 h-8 text-[#D4AF37]" />
+                </div>
+                <h3 className="text-xl font-black text-white uppercase tracking-tighter">1. Decision</h3>
+                <p className="text-sm text-gray-500 leading-relaxed">Identifying smarter opportunities and hidden value through structured AI signals.</p>
+             </div>
+             <div className="space-y-4 text-center p-8 bg-white/5 border border-white/5 rounded-[2.5rem] hover:border-[#22c55e]/30 transition-all">
+                <div className="w-14 h-14 bg-[#22c55e]/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                   <TrendingUp className="w-8 h-8 text-[#22c55e]" />
+                </div>
+                <h3 className="text-xl font-black text-white uppercase tracking-tighter">2. Value</h3>
+                <p className="text-sm text-gray-500 leading-relaxed">Turning data into clarity. Reducing uncertainty to drive confident, high-stakes actions.</p>
+             </div>
+             <div className="space-y-4 text-center p-8 bg-white/5 border border-white/5 rounded-[2.5rem] hover:border-blue-500/30 transition-all">
+                <div className="w-14 h-14 bg-blue-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                   <ShieldCheck className="w-8 h-8 text-blue-400" />
+                </div>
+                <h3 className="text-xl font-black text-white uppercase tracking-tighter">3. Outcome</h3>
+                <p className="text-sm text-gray-500 leading-relaxed">Seamlessly moving from search to compliant drafting and successful transactions.</p>
+             </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="relative px-6 py-24 lg:px-10">
+        <div className="mx-auto max-w-7xl">
+          <SectionHeading
             eyebrow="Platform"
             title="Six Hubs. One Elevated Experience."
             subtitle="Each hub has its own character, but all of them carry the same LECIPM black-and-gold luxury DNA."

@@ -167,9 +167,27 @@ export default function InterruptionSimulator() {
                     <TrendingUp className="w-4 h-4" />
                     Conseils de Pro
                   </h3>
-                  <p className="text-xs text-gray-400 italic">
-                    "Une interruption n'est pas une attaque, c'est une preuve d'intérêt. Ne vous justifiez pas, affirmez."
-                  </p>
+                  <div className="space-y-3">
+                    <p className="text-xs text-gray-400 italic">
+                      "Une interruption n'est pas une attaque, c'est une preuve d'intérêt. Ne vous justifiez pas, affirmez."
+                    </p>
+                    <div className="pt-2 border-t border-white/5 space-y-2">
+                      <p className="text-[10px] font-black text-blue-300 uppercase tracking-widest">What Wins</p>
+                      <p className="text-[11px] text-white font-bold">Anchor everything to: decision → value → outcome</p>
+                    </div>
+                  </div>
+               </div>
+               <div className="p-6 bg-[#ef4444]/5 border border-[#ef4444]/10 rounded-3xl space-y-4">
+                  <h3 className="text-sm font-bold text-[#ef4444] uppercase tracking-widest flex items-center gap-2">
+                    <Shield className="w-4 h-4" />
+                    Founder Test
+                  </h3>
+                  <div className="grid grid-cols-2 gap-2 text-[10px] font-black text-gray-500 uppercase">
+                    <div className="flex items-center gap-2"><CheckCircle2 className="w-3 h-3 text-[#ef4444]" /> Clarity</div>
+                    <div className="flex items-center gap-2"><CheckCircle2 className="w-3 h-3 text-[#ef4444]" /> Confidence</div>
+                    <div className="flex items-center gap-2"><CheckCircle2 className="w-3 h-3 text-[#ef4444]" /> Focus</div>
+                    <div className="flex items-center gap-2"><CheckCircle2 className="w-3 h-3 text-[#ef4444]" /> Simplify</div>
+                  </div>
                </div>
                <div className="p-6 bg-white/5 border border-white/5 rounded-3xl space-y-4">
                   <h3 className="text-sm font-bold text-gray-300 uppercase tracking-widest">Dernières Stats</h3>

@@ -80,3 +80,14 @@ export type InvestmentOpportunity = { scopeKey: string; scopeType: RoiScopeType;
 export type InvestmentRisk = { type: string; message: string; dataTrace: string };
 
 export type MarketExpansionCandidate = { marketKey: string; openDeals: number; wonDeals: number; avgValue: number | null };
+
+export type InvestorSnapshotBundle = InvestorSnapshotView & {
+  expansion: {
+    topMarkets: MarketExpansionCandidate[];
+    topSegments: InvestmentOpportunity[];
+    risks: InvestmentRisk[];
+    capacityNotes: string[];
+  };
+  alertItems: InvestorAlert[];
+  roi: RoiInsight[];
+};

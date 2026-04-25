@@ -24,7 +24,7 @@ describe("analyzeRoiPerformance", () => {
     expect(r).toEqual([]);
   });
 
-  it("degrades when no spend in row", async () => {
+  it("degrades when lead spend is absent (0 bucket — ratio branch without spend>0)", async () => {
     findMany.mockResolvedValue([
       {
         id: "1",
@@ -40,9 +40,9 @@ describe("analyzeRoiPerformance", () => {
     ]);
     spFind.mockResolvedValue([]);
     upsert.mockResolvedValue({});
-    aggregate.mockResolvedValue({ _sum: { dynamicLeadPriceCents: null } });
     const r = await analyzeRoiPerformance({ persist: true });
     expect(r.length).toBeGreaterThan(0);
-    expect(r[0]!.estimatedLeadSpend).toBeNull();
+    expect(r[0]!.estimatedLeadSpend).toBe(0);
+    expect(r[0]!.trace.join(" ")).toMatch(/spend|winRate|closed/i);
   });
 });
