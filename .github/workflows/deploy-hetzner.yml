@@ -21,6 +21,7 @@ jobs:
           host: ${{ secrets.HETZNER_HOST }}
           username: ${{ secrets.HETZNER_USER }}
           password: ${{ secrets.HETZNER_PASSWORD }}
+          command_timeout: 30m
           script: |
             set -e
             # 1. Navigate to app directory (create if missing)
