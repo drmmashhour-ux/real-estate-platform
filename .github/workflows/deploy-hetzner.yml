@@ -1,0 +1,56 @@
+name: Deploy to Hetzner Cloud
+
+on:
+  push:
+    branches:
+      - main
+      - feature/locale-routing-security-observability-platform
+
+jobs:
+  deploy:
+    name: Deploy to Ubuntu Server
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HETZNER_HOST }}
+          username: ${{ secrets.HETZNER_USER }}
+          key: ${{ secrets.HETZNER_SSH_KEY }}
+          script: |
+            # 1. Navigate to app directory (create if missing)
+            mkdir -p /var/www/lecipm
+            cd /var/www/lecipm
+
+            # 2. Sync Code
+            if [ ! -d ".git" ]; then
+              git clone https://github.com/drmmashhour-ux/real-estate-platform.git .
+            else
+              git fetch origin
+              git reset --hard origin/${{ github.ref_name }}
+            fi
+
+            # 3. Environment Setup (Ensure .env exists)
+            # You should manually create /var/www/lecipm/apps/web/.env.production on the server once
+            # This script will link it or ensure it is present
+            if [ -f "apps/web/.env.production" ]; then
+              cp apps/web/.env.production apps/web/.env
+            fi
+
+            # 4. Install Dependencies
+            # Ensure pnpm is installed on the server
+            export PATH=$PATH:/root/.local/share/pnpm:/root/.nvm/versions/node/v20.x/bin
+            pnpm install --frozen-lockfile
+
+            # 5. Build
+            pnpm build
+
+            # 6. Restart/Start with PM2
+            # Ensure pm2 is installed: npm install -g pm2
+            pm2 delete lecipm-web || true
+            pm2 start "pnpm run start" --name "lecipm-web" --cwd "/var/www/lecipm/apps/web"
+            pm2 save
