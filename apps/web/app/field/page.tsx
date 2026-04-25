@@ -1,19 +1,12 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
-import { FieldDashboardClient } from "@/components/field/FieldDashboardClient";
-import { getSession } from "@/lib/auth/get-session";
+import { FieldDemoClient } from "@/components/field/FieldDemoClient";
 
 export const metadata: Metadata = {
   title: "Field Demo Team | LECIPM",
   description:
-    "Tableau de bord terrain : pistes courtiers, script de démo, suivi des rencontres et objectifs quotidiens pour l’équipe démo LECIPM.",
+    "Tableau de bord terrain : leads courtiers, script démo, support LECI, objectifs du jour et journal de résultats.",
 };
 
-export default async function FieldTeamPage() {
-  const { user } = await getSession();
-  if (!user) {
-    redirect("/auth/login?next=/field");
-  }
-
-  return <FieldDashboardClient agentUserId={user.id} agentEmail={user.email} />;
+export default function FieldDemoTeamPage() {
+  return <FieldDemoClient />;
 }

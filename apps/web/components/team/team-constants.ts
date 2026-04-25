@@ -8,6 +8,7 @@ export const FIELD_TEAM_DAILY_TARGETS = {
   followUps: 3,
 } as const;
 
+/** Verbatim interview script for Field Demo Specialist hiring. */
 export const INTERVIEW_QUESTIONS = [
   {
     id: "q1",
@@ -19,7 +20,7 @@ export const INTERVIEW_QUESTIONS = [
   },
   {
     id: "q3",
-    text: "How would you react if someone says they don’t have time?",
+    text: "How would you react if someone says they don't have time?",
   },
   {
     id: "q4",

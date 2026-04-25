@@ -5,7 +5,10 @@ export function FieldSpecialistContractTemplate() {
     <Card variant="default" className="border-white/10 bg-[#121212]">
       <CardHeader>
         <CardTitle className="text-lg text-white">Field Demo Specialist Agreement</CardTitle>
-        <p className="text-xs text-white/50">Template for HR / contracting — not a substitute for legal review.</p>
+        <p className="text-xs text-white/50">
+          Template for HR / contracting — role description, no legal advice, confidentiality, compensation framework. Not a
+          substitute for legal review.
+        </p>
       </CardHeader>
       <CardContent className="prose prose-invert max-w-none text-sm text-white/80">
         <ol className="list-decimal space-y-3 pl-5">

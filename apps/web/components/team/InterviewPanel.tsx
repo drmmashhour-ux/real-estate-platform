@@ -77,21 +77,26 @@ export function InterviewPanel({ candidateId, interviewScoresJson, onSaveRubric,
   return (
     <Card variant="default" className="border-white/10 bg-[#121212]">
       <CardHeader>
-        <CardTitle className="text-lg text-white">Interview questions</CardTitle>
-        <p className="text-sm text-white/55">Use the script below in the conversation, then score the rubric (1–5).</p>
+        <CardTitle className="text-lg text-white">Interview</CardTitle>
+        <p className="text-sm text-white/55">
+          Ask the questions live, then score 1–5 on each dimension. Save attaches rubric to the candidate record.
+        </p>
       </CardHeader>
       <CardContent className="space-y-6">
-        <ul className="space-y-3 text-sm text-white/85">
-          {INTERVIEW_QUESTIONS.map((q, i) => (
-            <li key={q.id} className="rounded-lg border border-white/10 bg-black/20 px-3 py-2">
-              <span className="text-premium-gold/90">Q{i + 1}. </span>
-              {q.text}
-            </li>
-          ))}
-        </ul>
+        <div>
+          <h4 className="mb-2 text-xs font-bold uppercase tracking-[0.15em] text-white/45">Interview questions</h4>
+          <ul className="space-y-3 text-sm text-white/85">
+            {INTERVIEW_QUESTIONS.map((q, i) => (
+              <li key={q.id} className="rounded-lg border border-white/10 bg-black/20 px-3 py-2">
+                <span className="text-premium-gold/90">Q{i + 1}: </span>
+                <span className="text-white/90">&ldquo;{q.text}&rdquo;</span>
+              </li>
+            ))}
+          </ul>
+        </div>
 
         <div className="rounded-lg border border-amber-500/20 bg-amber-500/[0.06] p-4">
-          <h4 className="mb-3 text-sm font-medium text-amber-100">Scoring</h4>
+          <h4 className="mb-3 text-xs font-bold uppercase tracking-[0.15em] text-amber-200/90">Scoring</h4>
           <div className="grid gap-3 sm:grid-cols-2">
             <RubricSlider label="Clarity" value={rubric.clarity} onChange={(v) => setRubric((r) => ({ ...r, clarity: v }))} />
             <RubricSlider

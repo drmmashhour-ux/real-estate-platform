@@ -15,20 +15,20 @@ export const metadata: Metadata = {
 
 const DAYS = [
   {
-    title: "Day 1 — Product",
-    items: ["Understand LECIPM positioning and hubs", "Watch full product demo (recording or live)"],
+    title: "DAY 1 — Product",
+    items: ["Understand LECIPM (positioning, hubs, compliance story)", "Watch the full demo (recording or live with a coach)"],
   },
   {
-    title: "Day 2 — Script",
-    items: ["Memorize the approved demo script", "Practice clicks and pacing with a coach"],
+    title: "DAY 2 — Script",
+    items: ["Memorize the approved demo script", "Practice pacing, clicks, and transitions"],
   },
   {
-    title: "Day 3 — Roleplay",
-    items: ["Run objection drills", "Use the broker dashboard training roleplay tab"],
+    title: "DAY 3 — Roleplay",
+    items: ["Run objection drills with a partner", "Use the roleplay simulator / training workspace"],
   },
   {
-    title: "Day 4 — Real demo",
-    items: ["Shadow an experienced specialist", "Run first supervised demo and log outcome"],
+    title: "DAY 4 — Real Demo",
+    items: ["Shadow an experienced field specialist", "Run your first supervised demo and log the outcome in `/field`"],
   },
 ];
 
