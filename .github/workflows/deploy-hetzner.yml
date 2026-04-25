@@ -22,6 +22,7 @@ jobs:
           username: ${{ secrets.HETZNER_USER }}
           password: ${{ secrets.HETZNER_PASSWORD }}
           script: |
+            set -e
             # 1. Navigate to app directory (create if missing)
             mkdir -p /var/www/lecipm
             cd /var/www/lecipm
