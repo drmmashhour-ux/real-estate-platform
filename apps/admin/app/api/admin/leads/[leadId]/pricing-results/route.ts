@@ -54,8 +54,8 @@ async function requireAdminPricingResults(leadId: string) {
 }
 
 /** GET — latest observation snapshot for operators. */
-export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const { id: leadId } = await params;
+export async function GET(_req: Request, { params }: { params: Promise<{ leadId: string }> }) {
+  const { leadId } = await params;
   const gate = await requireAdminPricingResults(leadId);
   if ("error" in gate) return gate.error;
 
@@ -67,8 +67,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
  * POST — evaluate a stored observation, or capture a new advisory observation (internal audit).
  * Body: { action: "evaluate", observationId?: string } | capture fields for action "capture".
  */
-export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const { id: leadId } = await params;
+export async function POST(req: Request, { params }: { params: Promise<{ leadId: string }> }) {
+  const { leadId } = await params;
   const gate = await requireAdminPricingResults(leadId);
   if ("error" in gate) return gate.error;
 
