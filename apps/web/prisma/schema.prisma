@@ -1,6 +1,15 @@
 // Materialized from 00-enums.prisma, 10-core.prisma, 20-marketplace.prisma, 30-compliance.prisma, 40-intelligence.prisma — regenerate: pnpm run prisma:materialize-full
 // Used as input to scripts/split-prisma.js when you prefer a single file over on-disk partials.
 
+generator client {
+  provider   = "prisma-client-js"
+  engineType = "binary"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
 
 // @domain: enums (shared) — copy into per-domain schemas on extraction; Prisma will need duplicates across split clients.
 // Auto-split from models.prisma — domain buckets for LECIPM (see scripts/split-prisma-by-domain.mjs).
