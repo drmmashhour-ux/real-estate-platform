@@ -54,11 +54,13 @@ export async function findOverlappingActiveBnhubBooking(
   tx: Prisma.TransactionClient,
   listingId: string,
   checkIn: Date,
-  checkOut: Date
+  checkOut: Date,
+  excludeBookingId?: string
 ) {
   return tx.booking.findFirst({
     where: {
       listingId,
+      id: excludeBookingId ? { not: excludeBookingId } : undefined,
       status: { in: ["CONFIRMED", "PENDING", "AWAITING_HOST_APPROVAL"] },
       checkIn: { lt: checkOut },
       checkOut: { gt: checkIn },

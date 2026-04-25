@@ -40,11 +40,9 @@ import { getResolvedMarket } from "@/lib/markets";
 import { normalizeLocaleCode, translateServer } from "@/lib/i18n/server-translate";
 import { isPlatformAdmin } from "@/lib/auth/is-platform-admin";
 import { recordLecipmManagerGrowthEvent } from "@/lib/growth/manager-events";
-import {
-  expireStaleBnhubPendingBookings,
-  findOverlappingActiveBnhubBooking,
-  findOverlappingExternalIcsBlock,
-} from "@/lib/bookings/checkAvailability";
+import { expireStaleBnhubPendingBookings } from "@/lib/bookings/checkAvailability";
+import { assertInventoryAvailableForNewStay, isBookingHoldActive } from "@/modules/bookings/availability.service";
+import { validateBookingHoldByBlockId } from "@/modules/bookings/booking-hold.service";
 import { logGuestExperienceOutcome } from "@/lib/bnhub/guest-experience/log-signal";
 import { resolveBnhubPlatformGuestFeePercent } from "@/lib/bnhub/booking-revenue-pricing";
 import { calculateTrustScore, flagBnhubUserTrustForReview } from "@/modules/trust/trust.engine";
@@ -127,6 +125,11 @@ export async function createBooking(data: {
   specialRequest?: string;
   /** Structured requests (airport pickup, parking, shuttle, extras). */
   specialRequestsJson?: Record<string, unknown> | null;
+  /**
+   * If set, consumes a `BOOKING_HOLD` `AvailabilityBlock` created by `createBookingHold`.
+   * Must match listing and stay dates (validated before the inventory transaction).
+   */
+  releaseAvailabilityBlockId?: string;
 }) {
   const checkIn = new Date(data.checkIn);
   const checkOut = new Date(data.checkOut);
@@ -260,31 +263,39 @@ export async function createBooking(data: {
   const pendingExpiresAt =
     initialStatus === BookingStatus.PENDING ? new Date(Date.now() + 60 * 60 * 1000) : null;
 
+  if (data.releaseAvailabilityBlockId?.trim()) {
+    const h = await prisma.availabilityBlock.findUnique({
+      where: { id: data.releaseAvailabilityBlockId.trim() },
+      select: { id: true, listingId: true, startDate: true, endDate: true, blockType: true, reason: true },
+    });
+    if (!h || h.blockType !== "BOOKING_HOLD" || h.listingId !== data.listingId) {
+      throw new Error("Invalid or expired hold. Refresh dates and try again.");
+    }
+    if (!isBookingHoldActive(h.reason)) {
+      throw new Error("Hold expired. Check availability and try again.");
+    }
+    const wantIn = utcDayStart(checkIn).getTime();
+    const wantOut = utcDayStart(checkOut).getTime();
+    if (h.startDate.getTime() !== wantIn || h.endDate.getTime() !== wantOut) {
+      throw new Error("Hold does not match selected dates.");
+    }
+  }
+
   const booking = await prisma.$transaction(
     async (tx) => {
+      if (data.releaseAvailabilityBlockId?.trim()) {
+        const v = await validateBookingHoldByBlockId(tx, data.releaseAvailabilityBlockId.trim());
+        if (!v) {
+          throw new Error("Hold was released or expired. Try again.");
+        }
+      }
       await expireStaleBnhubPendingBookings(tx, data.listingId);
-      const overlapping = await findOverlappingActiveBnhubBooking(tx, data.listingId, checkIn, checkOut);
-      if (overlapping) {
-        throw new Error("Selected dates are no longer available.");
-      }
-
-      const rangeStart = utcDayStart(checkIn);
-      const rangeEnd = utcDayStart(checkOut);
-      const blockedSlot = await tx.availabilitySlot.findFirst({
-        where: {
-          listingId: data.listingId,
-          date: { gte: rangeStart, lt: rangeEnd },
-          OR: [{ available: false }, { dayStatus: { in: ["BLOCKED", "BOOKED"] } }],
-        },
+      await assertInventoryAvailableForNewStay(tx, {
+        listingId: data.listingId,
+        checkIn,
+        checkOut,
+        ignoreAvailabilityBlockId: data.releaseAvailabilityBlockId?.trim() || undefined,
       });
-      if (blockedSlot) {
-        throw new Error("Listing not available for selected dates");
-      }
-
-      const icsBlock = await findOverlappingExternalIcsBlock(tx, data.listingId, checkIn, checkOut);
-      if (icsBlock) {
-        throw new Error("Listing not available for selected dates");
-      }
 
       const bookingCode = await generateBookingCode(tx);
       const priceSnapshotSubtotalCents =
@@ -390,6 +401,12 @@ export async function createBooking(data: {
         checkOut,
         bookingId: created.id,
       });
+
+      if (data.releaseAvailabilityBlockId?.trim()) {
+        await tx.availabilityBlock
+          .delete({ where: { id: data.releaseAvailabilityBlockId.trim() } })
+          .catch(() => {});
+      }
 
       return created;
     },

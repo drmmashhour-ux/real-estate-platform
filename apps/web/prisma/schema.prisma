@@ -571,6 +571,8 @@ model User {
   leadRoutingRecommendations               LeadRoutingDecision[]                    @relation("LeadRoutingRecommended")
   /// Investor-intelligence / expansion scenarios authored by this user.
   investorIntelligenceScenarios            ExpansionScenario[]                      @relation("InvestorIntelligenceScenarios")
+  selfEvolutionProposalsApproved         EvolutionProposal[]                        @relation("SelfEvolutionProposalApprover")
+  selfEvolutionPromotionDecided          EvolutionPromotionEvent[]                  @relation("SelfEvolutionPromotionDecider")
   brokerLoadMetric                         BrokerLoadMetric?
   dealCapitalAllocationsProposed           DealCapitalAllocation[]                  @relation("DealCapitalAllocationProposedBy")
   dealCapitalAllocationsApproved           DealCapitalAllocation[]                  @relation("DealCapitalAllocationApprovedBy")
@@ -11732,6 +11734,158 @@ model StrategicRecommendation {
   @@index([status, category, createdAt])
   @@index([recommendationKey])
   @@map("strategic_recommendations")
+}
+
+// Self-evolution: versioned proposals, sandbox, governed promotion, rollback.
+enum EvolutionProposalCategory {
+  PLAYBOOK
+  ROUTING_WEIGHT
+  RANKING_WEIGHT
+  HANDOFF_RULE
+  FOLLOWUP_TIMING
+  THRESHOLD
+  FEATURE_SUBSET
+  OTHER
+}
+
+enum EvolutionTargetScopeType {
+  GLOBAL
+  MARKET
+  DOMAIN
+  BROKERAGE
+  SEGMENT
+}
+
+enum EvolutionProposalStatus {
+  DRAFT
+  SANDBOXED
+  READY_FOR_REVIEW
+  APPROVED
+  REJECTED
+  PROMOTED
+  ROLLED_BACK
+}
+
+enum EvolutionAuthorKind {
+  SYSTEM
+  HUMAN
+}
+
+enum EvolutionRiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum EvolutionExperimentType {
+  SHADOW
+  SANDBOX
+  LIMITED_TRAFFIC
+}
+
+enum EvolutionExperimentStatus {
+  RUNNING
+  COMPLETED
+  FAILED
+  STOPPED
+}
+
+enum EvolutionEventDecision {
+  PROMOTED
+  REJECTED
+  ROLLED_BACK
+}
+
+enum EvolutionEventActor {
+  SYSTEM
+  HUMAN
+}
+
+enum EvolutionPolicyScopeType {
+  GLOBAL
+  DOMAIN
+}
+
+model EvolutionProposal {
+  id                 String                 @id @default(cuid())
+  createdAt          DateTime               @default(now()) @map("created_at")
+  updatedAt          DateTime               @updatedAt @map("updated_at")
+  category           EvolutionProposalCategory
+  targetScopeType   EvolutionTargetScopeType @map("target_scope_type")
+  targetScopeKey     String                 @map("target_scope_key") @db.VarChar(256)
+  currentVersionKey  String                 @map("current_version_key") @db.VarChar(256)
+  proposedVersionKey String                 @map("proposed_version_key") @db.VarChar(256)
+  proposalJson       Json                   @map("proposal_json")
+  rationaleJson      Json                  @map("rationale_json")
+  expectedImpactJson Json                  @map("expected_impact_json")
+  riskLevel         EvolutionRiskLevel     @map("risk_level")
+  status             EvolutionProposalStatus @default(DRAFT) @map("status")
+  generatedBy        EvolutionAuthorKind    @map("generated_by")
+  approvedByUserId  String?                @map("approved_by_user_id")
+  approvedBy        User?                  @relation("SelfEvolutionProposalApprover", fields: [approvedByUserId], references: [id], onDelete: SetNull)
+  promotedAt        DateTime?              @map("promoted_at")
+  rolledBackAt      DateTime?              @map("rolled_back_at")
+  experiments       EvolutionExperiment[]
+  promotionEvents   EvolutionPromotionEvent[]
+
+  @@index([status, riskLevel, createdAt])
+  @@index([category, status])
+  @@index([approvedByUserId])
+  @@map("self_evolution_proposals")
+}
+
+model EvolutionExperiment {
+  id                 String                 @id @default(cuid())
+  createdAt          DateTime               @default(now()) @map("created_at")
+  updatedAt          DateTime               @updatedAt @map("updated_at")
+  proposalId         String                 @map("proposal_id")
+  proposal           EvolutionProposal        @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  experimentType     EvolutionExperimentType @map("experiment_type")
+  baselineVersionKey String                 @map("baseline_version_key") @db.VarChar(256)
+  candidateVersionKey  String                 @map("candidate_version_key") @db.VarChar(256)
+  scopeJson         Json                    @map("scope_json")
+  metricsJson         Json                    @map("metrics_json")
+  status             EvolutionExperimentStatus @map("status")
+  resultJson         Json?                    @map("result_json")
+
+  @@index([proposalId, status])
+  @@index([status, createdAt])
+  @@map("self_evolution_experiments")
+}
+
+model EvolutionPromotionEvent {
+  id              String            @id @default(cuid())
+  createdAt       DateTime         @default(now()) @map("created_at")
+  proposalId     String            @map("proposal_id")
+  proposal       EvolutionProposal   @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  decision        EvolutionEventDecision
+  decidedBy     EvolutionEventActor  @map("decided_by")
+  decidedByUserId String?         @map("decided_by_user_id")
+  decidedByUser User?             @relation("SelfEvolutionPromotionDecider", fields: [decidedByUserId], references: [id], onDelete: SetNull)
+  reasonJson     Json            @map("reason_json")
+
+  @@index([proposalId, createdAt])
+  @@index([decision, createdAt])
+  @@map("self_evolution_promotion_events")
+}
+
+model EvolutionPolicy {
+  id                            String                 @id @default(cuid())
+  createdAt                     DateTime              @default(now()) @map("created_at")
+  updatedAt                      DateTime              @updatedAt @map("updated_at")
+  scopeType                    EvolutionPolicyScopeType @map("scope_type")
+  scopeKey                      String                 @map("scope_key") @db.VarChar(256)
+  allowedSelfPromotionCategoriesJson  Json  @map("allowed_self_promotion_categories_json")
+  approvalRequiredCategoriesJson  Json  @map("approval_required_categories_json")
+  blockedCategoriesJson          Json  @map("blocked_categories_json")
+  maxAutoPromoteRiskLevel        EvolutionRiskLevel?   @map("max_auto_promote_risk_level")
+  minEvidenceThresholdJson        Json  @map("min_evidence_threshold_json")
+  rollbackThresholdJson         Json  @map("rollback_threshold_json")
+  isActive                       Boolean               @default(true) @map("is_active")
+
+  @@index([isActive, scopeType, scopeKey])
+  @@map("self_evolution_policies")
 }
 
 /// AI capital allocator — recommends deployable capital slice for a CRM deal (advisory only; broker approves).
