@@ -1,0 +1,615 @@
+enum PlatformAutopilotRiskClass {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum SecurityEventSeverity {
+  info
+  low
+  medium
+  high
+  critical
+}
+
+enum MemoryDomain {
+  GROWTH
+  PRICING
+  LEADS
+  DEALS
+  LISTINGS
+  MESSAGING
+  PROMOTIONS
+  BOOKINGS
+  BROKER_ROUTING
+  RISK
+  DREAM_HOME
+}
+
+enum MemorySource {
+  HUMAN
+  SYSTEM
+  AI_RECOMMENDATION
+  AI_AUTOMATION
+  IMPORTED
+}
+
+enum MemoryOutcomeStatus {
+  PENDING
+  PARTIAL
+  SUCCEEDED
+  FAILED
+  NEUTRAL
+  CANCELLED
+}
+
+enum PlaybookStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+enum PlaybookExecutionMode {
+  RECOMMEND_ONLY
+  HUMAN_APPROVAL
+  SAFE_AUTOPILOT
+  FULL_AUTOPILOT
+}
+
+enum PlaybookScoreBand {
+  LOW
+  MEDIUM
+  HIGH
+  ELITE
+}
+
+enum PlaybookAssignmentSelectionMode {
+  exploit
+  explore
+  manual
+}
+
+enum CompanyStrategyDomain {
+  GROWTH
+  DEALS
+  EXECUTION
+  INVESTMENT
+  ESG
+  FINANCE
+  MARKETPLACE
+}
+
+enum CompanyAdaptationSource {
+  CEO
+  EVOLUTION
+  PORTFOLIO
+  OPPORTUNITY
+  COMMAND_CENTER
+}
+
+enum CompanyAdaptationType {
+  WEIGHT_SHIFT
+  PRIORITY_SHIFT
+  SEGMENT_FOCUS_CHANGE
+  RISK_TIGHTENING
+  RESOURCE_REALLOCATION
+  EXPERIMENT_RECOMMENDATION
+}
+
+enum CompanyAdaptationStatus {
+  PROPOSED
+  APPROVED
+  REJECTED
+  ROLLED_OUT
+}
+
+enum CompanyOutcomePeriodType {
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+}
+
+enum CommandCenterAlertType {
+  RISK
+  OPPORTUNITY
+  APPROVAL
+  FINANCE
+  CLOSING
+  INVESTOR
+  COMPLIANCE
+}
+
+enum CommandCenterAlertSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum CommandCenterRecommendationCategory {
+  PRIORITIZE
+  APPROVE
+  FOLLOW_UP
+  REVIEW
+  ESCALATE
+  IGNORE
+}
+
+enum LecipmExecutionTaskType {
+  MESSAGE
+  FOLLOW_UP
+  DOCUMENT_PREP
+  OFFER_PREP
+  PRICE_UPDATE_PREP
+  INVESTOR_PACKET_PREP
+  NOTARY_REMINDER
+  INVOICE_PREP
+  DISCLOSURE_PREP
+  DEAL_STAGE_PREP
+}
+
+enum LecipmExecutionEntityType {
+  LISTING
+  DEAL
+  CONVERSATION
+  PACKET
+  INVOICE
+  CLOSING
+}
+
+enum LecipmExecutionTaskStatus {
+  DRAFT
+  QUEUED
+  READY_FOR_APPROVAL
+  APPROVED
+  EXECUTED
+  REJECTED
+  FAILED
+}
+
+enum LecipmExecutionRiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum LecipmAutonomousExecutionMode {
+  OFF
+  ASSIST
+  SAFE_AUTOMATION
+  APPROVAL_REQUIRED
+}
+
+enum LecipmDiscoveryEntityType {
+  LISTING
+  DEAL
+  SHORT_TERM_UNIT
+  INVESTMENT
+}
+
+enum LecipmOpportunityKind {
+  UNDERVALUED
+  VALUE_ADD
+  HIGH_DEMAND
+  ESG_UPSIDE
+  INVESTOR_FIT
+  ARBITRAGE
+}
+
+enum LecipmOpportunityCandidateStatus {
+  NEW
+  REVIEWED
+  DISMISSED
+  ACTIONED
+}
+
+enum LecipmOpportunityRiskTier {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum LecipmOpportunityOutcomeKind {
+  CONTACTED
+  OFFER_SENT
+  BOOKED
+  INVESTED
+  CLOSED
+  DISMISSED
+}
+
+enum SeniorAutonomyMode {
+  OFF
+  ASSIST
+  SAFE_AUTOPILOT
+  FULL_AUTOPILOT_APPROVAL
+}
+
+enum AmfExemptionCategory {
+  ACCREDITED_INVESTOR
+  FAMILY_FRIENDS_BUSINESS_ASSOCIATES
+}
+
+enum ExemptFilingFormStatus {
+  DRAFT
+  READY
+  FILED
+}
+
+enum InvestorCapitalCommitmentStatus {
+  PENDING
+  PARTIAL
+  FUNDED
+  CANCELLED
+}
+
+enum FinAdminDomain {
+  BROKERAGE
+  PLATFORM
+  INVESTMENT
+}
+
+enum FinAccountType {
+  BANK
+  RECEIVABLE
+  PAYABLE
+  TAX
+  ESCROW_SIMULATION
+}
+
+enum FinLedgerEntryType {
+  INVOICE
+  PAYMENT
+  COMMISSION
+  OACIQ_FEE
+  INSURANCE
+  GST
+  QST
+  AMF_FEE
+  LEGAL
+  DISTRIBUTION
+  REFUND
+}
+
+enum FinCounterpartyKind {
+  CLIENT
+  BROKER
+  INVESTOR
+  GOVERNMENT
+  VENDOR
+  LAWYER
+  NOTARY
+}
+
+enum TaxFilingFrequency {
+  MONTHLY
+  QUARTERLY
+  ANNUAL
+}
+
+enum RegulatoryAuthority {
+  OACIQ
+  REVENU_QUEBEC
+  CRA
+  FARCIQ
+  AMF
+}
+
+enum RegulatoryObligationType {
+  LICENCE_RENEWAL
+  INSURANCE_RENEWAL
+  GST_QST_RETURN
+  EXEMPT_DISTRIBUTION_REPORT
+  FEE_PAYMENT
+}
+
+enum RegulatoryObligationStatus {
+  OPEN
+  DRAFT
+  FILED
+  PAID
+}
+
+enum InvestmentFundStrategy {
+  CAPITAL_PRESERVATION
+  GROWTH
+  AGRESSIVE_GROWTH
+  INCOME
+}
+
+enum InvestmentFundStatus {
+  ACTIVE
+  PAUSED
+  CLOSED
+}
+
+enum InvestmentFundMode {
+  SIMULATION
+  LIVE
+}
+
+enum FundDistributionType {
+  PROFIT
+  RETURN_OF_CAPITAL
+}
+
+enum CareResidenceType {
+  INDEPENDENT
+  ASSISTED
+  MEDICAL
+}
+
+enum CareServiceKind {
+  MEDICAL
+  DAILY_LIVING
+  SAFETY
+}
+
+enum CareFoodPlanTier {
+  NONE
+  ONE_MEAL
+  FULL
+}
+
+enum CareLevel {
+  INDEPENDENT
+  ASSISTED
+  MEMORY_CARE
+  SKILLED
+}
+
+enum CareHubEventKind {
+  ALERT
+  HEALTH
+  MOVEMENT
+  EMERGENCY
+}
+
+enum CareHubEventSeverity {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum PrivacyPurpose {
+  TRANSACTION_EXECUTION
+  IDENTITY_VERIFICATION
+  DISCLOSURE_TO_BROKERS
+  DISCLOSURE_TO_INFORMATION_DISSEMINATION_SERVICE
+  DISCLOSURE_TO_BUYER_BROKER
+  DISCLOSURE_TO_UNREPRESENTED_BUYER
+  MARKETING
+  COMMERCIAL_PROSPECTING
+  SECONDARY_USE
+  LOCKBOX_CODE_DISCLOSURE
+  ALARM_CODE_DISCLOSURE
+  PHONE_DISCLOSURE_FOR_VISIT
+  SOLD_PRICE_DISCLOSURE_TO_LICENSE_HOLDERS
+}
+
+enum PrivacySensitivityLevel {
+  PUBLIC
+  INTERNAL
+  CONFIDENTIAL
+  RESTRICTED
+  HIGHLY_SENSITIVE
+}
+
+enum PrivacyDataCategory {
+  CONTACT_INFORMATION
+  IDENTITY_INFORMATION
+  FINANCIAL_INFORMATION
+  LEGAL_AUTHORITY_INFORMATION
+  PROPERTY_LINKED_SENSITIVE_INFORMATION
+  COMMUNICATION_MEDIA
+}
+
+enum ConfidentialityIncidentCategory {
+  UNAUTHORIZED_ACCESS
+  UNAUTHORIZED_DISCLOSURE
+  LOSS_OF_DATA
+  THEFT_OF_DATA
+  SECURITY_BREACH
+  HUMAN_ERROR
+  MALICIOUS_ACT
+}
+
+enum ConfidentialityIncidentRiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum LecipmPreDisputeRiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum LecipmDisputePredictedCategory {
+  NO_SHOW_CONFLICT
+  PAYMENT_FRICTION
+  MISLEADING_EXPECTATION
+  RESPONSE_DELAY_CONFLICT
+  DOCUMENTATION_GAP
+  NEGOTIATION_BREAKDOWN
+  OTHER
+}
+
+enum LecipmSystemAdjustmentStatus {
+  PROPOSED
+  APPROVED
+  REJECTED
+  IMPLEMENTED
+  REVERSED
+}
+
+enum LecipmTrustEngineTargetType {
+  BROKER
+  LISTING
+  DEAL
+  BOOKING
+  TERRITORY
+}
+
+enum LecipmTrustOperationalBand {
+  HIGH_TRUST
+  GOOD
+  WATCH
+  ELEVATED_RISK
+  CRITICAL_REVIEW
+}
+
+enum LecipmDisputeCaseEntityType {
+  BOOKING
+  DEAL
+  LISTING
+  PAYMENT
+}
+
+enum LecipmDisputeCaseStatus {
+  OPEN
+  IN_REVIEW
+  RESOLVED
+  REJECTED
+  ESCALATED
+}
+
+enum LecipmDisputeCasePriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum LecipmDisputeCaseCategory {
+  NO_SHOW
+  PAYMENT
+  MISLEADING_LISTING
+  OTHER
+}
+
+enum LecipmDisputeCaseEventType {
+  CREATED
+  STATUS_CHANGE
+  MESSAGE_ADDED
+  EVIDENCE_ADDED
+  ESCALATED
+  ADMIN_NOTE
+  RESOLUTION_PROPOSED
+}
+
+enum RolloutPolicyDomain {
+  PRICING
+  RANKING
+  MESSAGING
+  DEAL
+  ESG
+}
+
+enum RolloutPolicySource {
+  AGENT
+  EVOLUTION
+  MANUAL
+}
+
+enum RolloutPolicyStatus {
+  DRAFT
+  APPROVED
+  LIVE
+  PAUSED
+  ROLLED_BACK
+}
+
+enum RolloutExecutionStatus {
+  RUNNING
+  PAUSED
+  COMPLETED
+  ROLLED_BACK
+}
+
+enum RolloutDecisionAction {
+  INCREASE
+  PAUSE
+  ROLLBACK
+}
+
+enum EmpireEntityType {
+  HOLDING
+  OPERATING
+  INVESTMENT
+  SERVICE
+}
+
+enum EmpireRoleType {
+  FOUNDER
+  MANAGER
+  BOARD
+  OPERATOR
+  ADVISOR
+}
+
+enum GrowthChannel {
+  CONTENT
+  SEO
+  REFERRAL
+  EMAIL
+  LANDING
+  PRICING
+  ONBOARDING
+  PAID
+}
+
+enum GrowthExperimentStatus {
+  DRAFT
+  RUNNING
+  PAUSED
+  COMPLETED
+}
+
+enum AiAgentStatus {
+  ACTIVE
+  PAUSED
+}
+
+enum InvestorStage {
+  NEW
+  CONTACTED
+  INTERESTED
+  NEGOTIATING
+  CLOSED
+}
+
+enum InvestorInteractionType {
+  EMAIL
+  CALL
+  MEETING
+  OTHER
+}
+
+enum LedgerEntryType {
+  CHARGE
+  FEE
+  PAYOUT
+  REFUND
+}
+
+enum LedgerEntryStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+}
+
+enum ExecutiveReportStatus {
+  GENERATED
+  SENT
+  FAILED
+}
+
+enum ExecutiveReportScheduleFrequency {
+  WEEKLY
+  MONTHLY
+}

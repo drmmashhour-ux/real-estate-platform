@@ -2,10 +2,12 @@
 /**
  * LECIPM — tag every `model` with // @domain: core|marketplace|compliance|analytics|intelligence
  *
- * Rules: aligned with split-prisma-by-domain (mechanical) + "analytics" sub-bucket
- * (Score, Graph, AI, …) on the former intelligence catch-all. Enums: one header only.
+ * CURSOR / product mapping: analytics (AI/metrics) vs compliance (OACIQ, disclosure, etc.) vs
+ * marketplace (BNHub, listing, payment) vs core (User, Session, org, team) is implemented in
+ * `domainForModel()` + `isAnalyticsName()`. `pnpm run prisma:extract` re-reads
+ * `model-domains.json` and strips cross-domain @relation for standalone clients under prisma/{core,…}.
  *
- * Run from apps/web:  node scripts/annotate-prisma-model-domains.mjs
+ * Run from apps/web:  pnpm run prisma:annotate-domains
  */
 import fs from "node:fs";
 import path from "node:path";

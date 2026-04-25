@@ -1,0 +1,681 @@
+model BnhubSafetyAuditLog {
+  id          String   @id @default(uuid()) @map("id")
+  listingId   String?  @map("listing_id")
+  actorUserId String?  @map("actor_user_id")
+  actionType  String   @map("action_type")
+  payloadJson Json     @default("{}") @map("payload_json")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([listingId])
+  @@index([actorUserId])
+  @@index([createdAt])
+  @@map("bnhub_safety_audit_logs")
+}
+
+model BnhubGuestFavorite {
+  id          String           @id @default(uuid()) @map("id")
+  guestUserId String           @map("guest_user_id")
+  listingId   String           @map("listing_id")
+  listing     ShortTermListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  createdAt   DateTime         @default(now()) @map("created_at")
+
+  @@unique([guestUserId, listingId], map: "bnhub_guest_favorites_user_listing_key")
+  @@index([guestUserId])
+  @@index([listingId])
+  @@map("bnhub_guest_favorites")
+}
+
+model BnhubSupabaseGuestFavorite {
+  id                String   @id @default(cuid())
+  guestUserId       String   @map("guest_user_id")
+  supabaseListingId String   @map("supabase_listing_id")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@unique([guestUserId, supabaseListingId], map: "bnhub_supabase_fav_user_listing_key")
+  @@index([guestUserId])
+  @@index([supabaseListingId])
+  @@map("bnhub_supabase_guest_favorites")
+}
+
+model BnhubClientSearchEvent {
+  id          String   @id @default(cuid())
+  userId      String?  @map("user_id")
+  anonymousId String?  @map("anonymous_id")
+  query       String   @db.Text
+  filtersJson Json?    @map("filters_json")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([userId, createdAt])
+  @@index([anonymousId, createdAt])
+  @@map("bnhub_client_search_events")
+}
+
+model BnhubClientListingViewEvent {
+  id                String   @id @default(cuid())
+  userId            String?  @map("user_id")
+  anonymousId       String?  @map("anonymous_id")
+  supabaseListingId String   @map("supabase_listing_id")
+  source            String?  @map("source")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@index([userId, createdAt])
+  @@index([supabaseListingId, createdAt])
+  @@map("bnhub_client_listing_view_events")
+}
+
+model BnhubClientClickEvent {
+  id                String   @id @default(cuid())
+  userId            String?  @map("user_id")
+  anonymousId       String?  @map("anonymous_id")
+  /// e.g. cta_primary | listing_card | search_chip | bnhub_nav
+  targetType        String   @map("target_type") @db.VarChar(64)
+  targetUrl         String?  @map("target_url") @db.Text
+  supabaseListingId String?  @map("supabase_listing_id")
+  metaJson          Json?    @map("meta_json")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@index([userId, createdAt])
+  @@index([targetType, createdAt])
+  @@map("bnhub_client_click_events")
+}
+
+model BnhubClientBookingFunnelEvent {
+  id                String                  @id @default(cuid())
+  userId            String?                 @map("user_id")
+  anonymousId       String?                 @map("anonymous_id")
+  stage             BnhubBookingFunnelStage @map("stage")
+  supabaseBookingId String?                 @map("supabase_booking_id") @db.VarChar(80)
+  supabaseListingId String?                 @map("supabase_listing_id") @db.VarChar(80)
+  amountCents       Int?                    @map("amount_cents")
+  metaJson          Json?                   @map("meta_json")
+  createdAt         DateTime                @default(now()) @map("created_at")
+
+  @@index([userId, createdAt])
+  @@index([supabaseListingId, createdAt])
+  @@index([stage, createdAt])
+  @@map("bnhub_client_booking_funnel_events")
+}
+
+model BnhubListingDemandScore {
+  id                String   @id @default(cuid())
+  supabaseListingId String   @unique @map("supabase_listing_id")
+  score             Int      @default(50) @map("score")
+  factorsJson       Json?    @map("factors_json")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@map("bnhub_listing_demand_scores")
+}
+
+model BnhubSupabasePricingSnapshot {
+  id                String   @id @default(cuid())
+  supabaseListingId String   @map("supabase_listing_id")
+  priceCents        Int      @map("price_cents")
+  source            String   @default("system") @map("source")
+  factorsJson       Json?    @map("factors_json")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@index([supabaseListingId, createdAt])
+  @@map("bnhub_supabase_pricing_snapshots")
+}
+
+model BnhubListingPriceWatch {
+  id                  String    @id @default(cuid())
+  userId              String    @map("user_id")
+  supabaseListingId   String    @map("supabase_listing_id")
+  lastKnownPriceCents Int?      @map("last_known_price_cents")
+  lastNotifiedAt      DateTime? @map("last_notified_at")
+  createdAt           DateTime  @default(now()) @map("created_at")
+
+  @@unique([userId, supabaseListingId], map: "bnhub_price_watch_user_listing_key")
+  @@index([supabaseListingId])
+  @@map("bnhub_listing_price_watches")
+}
+
+model BnhubDiscoveryAlert {
+  id                String                  @id @default(cuid())
+  userId            String                  @map("user_id")
+  alertType         BnhubDiscoveryAlertType @map("alert_type")
+  city              String?                 @map("city")
+  /// Supabase listing id when alert is listing-scoped.
+  supabaseListingId String?                 @map("supabase_listing_id")
+  active            Boolean                 @default(true) @map("active")
+  prefsJson         Json?                   @map("prefs_json")
+  createdAt         DateTime                @default(now()) @map("created_at")
+  updatedAt         DateTime                @updatedAt @map("updated_at")
+
+  @@index([userId, active])
+  @@map("bnhub_discovery_alerts")
+}
+
+model BnhubMobileNotificationQueue {
+  id           String                         @id @default(uuid()) @map("id")
+  userId       String                         @map("user_id")
+  channel      BnhubMobileNotificationChannel @map("channel")
+  status       BnhubMobileNotificationStatus  @default(PENDING) @map("status")
+  title        String                         @map("title")
+  body         String                         @map("body")
+  dataJson     Json?                          @map("data_json")
+  scheduledFor DateTime?                      @map("scheduled_for")
+  sentAt       DateTime?                      @map("sent_at")
+  errorMessage String?                        @map("error_message") @db.Text
+  createdAt    DateTime                       @default(now()) @map("created_at")
+
+  @@index([userId, status])
+  @@index([scheduledFor])
+  @@map("bnhub_mobile_notification_queue")
+}
+
+model BnhubReviewModeration {
+  id                String                      @id @default(uuid()) @map("id")
+  reviewId          String                      @unique @map("review_id")
+  status            BnhubReviewModerationStatus @default(VISIBLE) @map("status")
+  moderatedByUserId String?                     @map("moderated_by_user_id")
+  reason            String?                     @map("reason") @db.Text
+  updatedAt         DateTime                    @updatedAt @map("updated_at")
+  createdAt         DateTime                    @default(now()) @map("created_at")
+
+  @@index([status])
+  @@map("bnhub_review_moderation")
+}
+
+model BnhubReviewAbuseReport {
+  id             String   @id @default(uuid()) @map("id")
+  reviewId       String   @map("review_id")
+  reporterUserId String   @map("reporter_user_id")
+  reason         String   @map("reason") @db.Text
+  status         String   @default("open") @map("status")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@index([reviewId])
+  @@index([reporterUserId])
+  @@map("bnhub_review_abuse_reports")
+}
+
+model BnhubService {
+  id                      String                      @id @default(uuid()) @map("id")
+  serviceCode             String                      @unique @map("service_code")
+  name                    String                      @map("name")
+  category                BnhubAddonServiceCategory   @map("category")
+  description             String?                     @map("description") @db.Text
+  shortDescription        String?                     @map("short_description") @db.Text
+  fullDescription         String?                     @map("full_description") @db.Text
+  icon                    String?                     @map("icon")
+  iconKey                 String?                     @map("icon_key")
+  serviceScope            BnhubServiceScope           @default(LISTING_HOSTED) @map("service_scope")
+  catalogPricingBehavior  BnhubCatalogPricingBehavior @default(FIXED) @map("pricing_behavior")
+  defaultRequiresApproval Boolean                     @default(false) @map("default_requires_approval")
+  isActive                Boolean                     @default(true) @map("is_active")
+  /// Premium add-ons are hidden for listings with HIGH/CRITICAL trust risk.
+  isPremiumTier           Boolean                     @default(false) @map("is_premium_tier")
+  /// Minimum listing `BnhubTrustProfile.trustScore` required for this service to be offered (null = no minimum).
+  minListingTrustScore    Int?                        @map("min_listing_trust_score")
+  createdAt               DateTime                    @default(now()) @map("created_at")
+  updatedAt               DateTime                    @updatedAt @map("updated_at")
+
+  listingOffers BnhubListingService[]
+  bookingLines  BnhubBookingService[]
+  requests      BnhubServiceRequest[]
+  bundleItems   BnhubBundleItem[]
+
+  @@index([category])
+  @@index([isActive])
+  @@map("bnhub_services")
+}
+
+model BnhubListingService {
+  id                 String                              @id @default(uuid()) @map("id")
+  listingId          String                              @map("listing_id")
+  listing            ShortTermListing                    @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  hostUserId         String?                             @map("host_user_id")
+  serviceId          String                              @map("service_id")
+  service            BnhubService                        @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  isEnabled          Boolean                             @default(true) @map("is_enabled")
+  pricingType        BnhubListingServicePricingType      @map("pricing_type")
+  /// Price in minor units (cents); meaning depends on `pricingType` (per unit / per night / per guest / per booking).
+  priceCents         Int                                 @default(0) @map("price_cents")
+  currency           String                              @default("USD") @map("currency")
+  /// Complimentary / bundled — shown clearly to guests, not charged.
+  isIncluded         Boolean                             @default(false) @map("is_included")
+  requiresApproval   Boolean                             @default(false) @map("requires_approval")
+  capacityLimit      Int?                                @map("capacity_limit")
+  advanceNoticeHours Int?                                @map("advance_notice_hours")
+  availabilityRules  Json?                               @map("availability_rules")
+  notes              String?                             @map("notes") @db.Text
+  moderationStatus   BnhubListingServiceModerationStatus @default(APPROVED) @map("moderation_status")
+  /// Admin hard-offer for risky listings (host cannot override).
+  adminDisabled      Boolean                             @default(false) @map("admin_disabled")
+  createdAt          DateTime                            @default(now()) @map("created_at")
+  updatedAt          DateTime                            @updatedAt @map("updated_at")
+
+  bookingLines BnhubBookingService[]
+
+  @@unique([listingId, serviceId], map: "bnhub_listing_services_listing_service_key")
+  @@index([listingId])
+  @@index([serviceId])
+  @@index([hostUserId])
+  @@map("bnhub_listing_services")
+}
+
+model BnhubBookingService {
+  id               String                          @id @default(uuid()) @map("id")
+  bookingId        String                          @map("booking_id")
+  listingId        String                          @map("listing_id")
+  listing          ShortTermListing                @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  guestUserId      String?                         @map("guest_user_id")
+  hostUserId       String?                         @map("host_user_id")
+  listingServiceId String                          @map("listing_service_id")
+  listingService   BnhubListingService             @relation(fields: [listingServiceId], references: [id], onDelete: Restrict)
+  serviceId        String                          @map("service_id")
+  service          BnhubService                    @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  quantity         Int                             @default(1) @map("quantity")
+  linePricingType  BnhubListingServicePricingType? @map("line_pricing_type")
+  unitPriceCents   Int                             @map("unit_price_cents")
+  totalPriceCents  Int                             @map("total_price_cents")
+  serviceDate      DateTime?                       @map("service_date") @db.Date
+  status           BnhubBookingServiceLineStatus   @default(CONFIRMED) @map("status")
+  selectedFrom     BnhubServiceSelectedFrom        @default(BOOKING_FLOW) @map("selected_from")
+  notes            String?                         @map("notes") @db.Text
+  selectedAt       DateTime                        @default(now()) @map("selected_at")
+  createdAt        DateTime                        @default(now()) @map("created_at")
+  updatedAt        DateTime                        @updatedAt @map("updated_at")
+
+  @@index([bookingId])
+  @@index([listingId])
+  @@index([serviceId])
+  @@index([guestUserId])
+  @@index([hostUserId])
+  @@map("bnhub_booking_services")
+}
+
+model BnhubServiceRequest {
+  id                  String                    @id @default(uuid()) @map("id")
+  bookingId           String                    @map("booking_id")
+  listingId           String?                   @map("listing_id")
+  listing             ShortTermListing?         @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  serviceId           String?                   @map("service_id")
+  service             BnhubService?             @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  guestUserId         String                    @map("guest_user_id")
+  hostUserId          String?                   @map("host_user_id")
+  requestType         BnhubServiceRequestType   @default(SERVICE_REQUEST) @map("request_type")
+  message             String                    @map("message") @db.Text
+  status              BnhubServiceRequestStatus @default(PENDING) @map("status")
+  adminReviewRequired Boolean                   @default(false) @map("admin_review_required")
+  createdAt           DateTime                  @default(now()) @map("created_at")
+  updatedAt           DateTime                  @updatedAt @map("updated_at")
+
+  @@index([bookingId])
+  @@index([listingId])
+  @@index([guestUserId])
+  @@index([hostUserId])
+  @@index([status])
+  @@map("bnhub_service_requests")
+}
+
+model BnhubServiceBundle {
+  id              String                     @id @default(uuid()) @map("id")
+  bundleCode      String                     @unique @map("bundle_code")
+  name            String                     @map("name")
+  description     String?                    @map("description") @db.Text
+  targetSegment   BnhubBundleTargetSegment   @map("target_segment")
+  pricingType     BnhubBundlePricingType     @map("pricing_type")
+  basePriceCents  Int?                       @map("base_price_cents")
+  currency        String                     @default("USD") @map("currency")
+  isActive        Boolean                    @default(true) @map("is_active")
+  visibilityScope BnhubBundleVisibilityScope @default(PUBLIC) @map("visibility_scope")
+  createdAt       DateTime                   @default(now()) @map("created_at")
+  updatedAt       DateTime                   @updatedAt @map("updated_at")
+
+  items          BnhubBundleItem[]
+  bookingBundles BnhubBookingBundle[]
+
+  @@index([bundleCode])
+  @@index([isActive])
+  @@index([targetSegment])
+  @@map("bnhub_service_bundles")
+}
+
+model BnhubBundleItem {
+  id                   String             @id @default(uuid()) @map("id")
+  bundleId             String             @map("bundle_id")
+  bundle               BnhubServiceBundle @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+  serviceId            String             @map("service_id")
+  service              BnhubService       @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  isRequired           Boolean            @default(true) @map("is_required")
+  defaultQuantity      Int                @default(1) @map("default_quantity")
+  pricingOverrideCents Int?               @map("pricing_override_cents")
+  createdAt            DateTime           @default(now()) @map("created_at")
+
+  @@index([bundleId])
+  @@index([serviceId])
+  @@map("bnhub_bundle_items")
+}
+
+model BnhubBookingBundle {
+  id              String                   @id @default(uuid()) @map("id")
+  bookingId       String                   @map("booking_id")
+  bundleId        String                   @map("bundle_id")
+  bundle          BnhubServiceBundle       @relation(fields: [bundleId], references: [id], onDelete: Restrict)
+  guestUserId     String                   @map("guest_user_id")
+  listingId       String                   @map("listing_id")
+  listing         ShortTermListing         @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  totalPriceCents Int                      @map("total_price_cents")
+  bundleStatus    BnhubBookingBundleStatus @default(SELECTED) @map("bundle_status")
+  createdAt       DateTime                 @default(now()) @map("created_at")
+  updatedAt       DateTime                 @updatedAt @map("updated_at")
+
+  @@index([bookingId])
+  @@index([bundleId])
+  @@index([guestUserId])
+  @@index([listingId])
+  @@map("bnhub_booking_bundles")
+}
+
+model BnhubConciergeSession {
+  id            String                      @id @default(uuid()) @map("id")
+  userId        String                      @map("user_id")
+  bookingId     String?                     @map("booking_id")
+  listingId     String?                     @map("listing_id")
+  listing       ShortTermListing?           @relation(fields: [listingId], references: [id], onDelete: SetNull)
+  roleContext   BnhubConciergeRoleContext   @map("role_context")
+  sessionStatus BnhubConciergeSessionStatus @default(ACTIVE) @map("session_status")
+  aiMode        BnhubConciergeAiMode        @default(MOCK) @map("ai_mode")
+  summary       String?                     @map("summary") @db.Text
+  metadataJson  Json?                       @map("metadata_json")
+  createdAt     DateTime                    @default(now()) @map("created_at")
+  updatedAt     DateTime                    @updatedAt @map("updated_at")
+
+  messages BnhubConciergeMessage[]
+
+  @@index([userId])
+  @@index([bookingId])
+  @@index([listingId])
+  @@index([sessionStatus])
+  @@map("bnhub_concierge_sessions")
+}
+
+model BnhubConciergeMessage {
+  id           String                    @id @default(uuid()) @map("id")
+  sessionId    String                    @map("session_id")
+  session      BnhubConciergeSession     @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  senderType   BnhubConciergeSenderType  @map("sender_type")
+  senderId     String?                   @map("sender_id")
+  messageText  String                    @map("message_text") @db.Text
+  messageType  BnhubConciergeMessageType @default(TEXT) @map("message_type")
+  metadataJson Json?                     @map("metadata_json")
+  createdAt    DateTime                  @default(now()) @map("created_at")
+
+  @@index([sessionId])
+  @@index([createdAt])
+  @@map("bnhub_concierge_messages")
+}
+
+model BnhubMembershipPlan {
+  id             String                      @id @default(uuid()) @map("id")
+  membershipCode String                      @unique @map("membership_code")
+  name           String                      @map("name")
+  audienceType   BnhubMembershipAudienceType @map("audience_type")
+  description    String?                     @map("description") @db.Text
+  priceCents     Int                         @default(0) @map("price_cents")
+  billingCycle   BnhubMembershipBillingCycle @map("billing_cycle")
+  currency       String                      @default("USD") @map("currency")
+  benefitsJson   Json                        @default("{}") @map("benefits_json")
+  isActive       Boolean                     @default(true) @map("is_active")
+  createdAt      DateTime                    @default(now()) @map("created_at")
+  updatedAt      DateTime                    @updatedAt @map("updated_at")
+
+  memberships BnhubUserMembership[]
+
+  @@index([membershipCode])
+  @@index([isActive])
+  @@map("bnhub_membership_plans")
+}
+
+model BnhubUserMembership {
+  id               String                     @id @default(uuid()) @map("id")
+  userId           String                     @map("user_id")
+  planId           String                     @map("plan_id")
+  plan             BnhubMembershipPlan        @relation(fields: [planId], references: [id], onDelete: Restrict)
+  membershipStatus BnhubUserMembershipStatus  @default(ACTIVE) @map("membership_status")
+  startsAt         DateTime                   @map("starts_at")
+  endsAt           DateTime?                  @map("ends_at")
+  renewalMode      BnhubMembershipRenewalMode @default(MANUAL) @map("renewal_mode")
+  metadataJson     Json?                      @map("metadata_json")
+  createdAt        DateTime                   @default(now()) @map("created_at")
+  updatedAt        DateTime                   @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([planId])
+  @@index([membershipStatus])
+  @@map("bnhub_user_memberships")
+}
+
+model BnhubServiceProviderProfile {
+  id                    String                          @id @default(uuid()) @map("id")
+  providerType          BnhubProviderType               @map("provider_type")
+  providerUserId        String?                         @map("provider_user_id")
+  displayName           String                          @map("display_name")
+  contactEmail          String?                         @map("contact_email")
+  contactPhone          String?                         @map("contact_phone")
+  verificationStatus    BnhubProviderVerificationStatus @default(UNVERIFIED) @map("verification_status")
+  serviceCategoriesJson Json                            @default("[]") @map("service_categories_json")
+  coverageRegionsJson   Json                            @default("[]") @map("coverage_regions_json")
+  ratingSummaryJson     Json?                           @map("rating_summary_json")
+  isActive              Boolean                         @default(true) @map("is_active")
+  createdAt             DateTime                        @default(now()) @map("created_at")
+  updatedAt             DateTime                        @updatedAt @map("updated_at")
+
+  travelProducts BnhubTravelProduct[]
+
+  @@index([providerUserId])
+  @@index([providerType])
+  @@index([verificationStatus])
+  @@map("bnhub_service_provider_profiles")
+}
+
+model BnhubHospitalitySafetyRule {
+  id             String                          @id @default(uuid()) @map("id")
+  ruleName       String                          @map("rule_name")
+  serviceCode    String?                         @map("service_code")
+  category       BnhubAddonServiceCategory?      @map("category")
+  scopeType      BnhubHospitalitySafetyScopeType @map("scope_type")
+  scopeId        String?                         @map("scope_id")
+  isEnabled      Boolean                         @default(true) @map("is_enabled")
+  conditionsJson Json                            @default("{}") @map("conditions_json")
+  actionsJson    Json                            @default("{}") @map("actions_json")
+  priority       Int                             @default(0) @map("priority")
+  createdAt      DateTime                        @default(now()) @map("created_at")
+  updatedAt      DateTime                        @updatedAt @map("updated_at")
+
+  @@index([scopeType])
+  @@index([scopeId])
+  @@index([serviceCode])
+  @@index([isEnabled])
+  @@map("bnhub_service_safety_rules")
+}
+
+model BnhubHospitalityAuditLog {
+  id            String                         @id @default(uuid()) @map("id")
+  actorType     BnhubHospitalityAuditActorType @map("actor_type")
+  actorId       String?                        @map("actor_id")
+  entityType    String                         @map("entity_type")
+  entityId      String                         @map("entity_id")
+  actionType    String                         @map("action_type")
+  actionSummary String                         @map("action_summary") @db.Text
+  beforeJson    Json?                          @map("before_json")
+  afterJson     Json?                          @map("after_json")
+  createdAt     DateTime                       @default(now()) @map("created_at")
+
+  @@index([entityType, entityId])
+  @@index([actorId])
+  @@index([createdAt])
+  @@map("bnhub_service_audit_logs")
+}
+
+model BnhubTravelProduct {
+  id                String                       @id @default(uuid()) @map("id")
+  productType       BnhubTravelProductType       @map("product_type")
+  providerProfileId String?                      @map("provider_profile_id")
+  providerProfile   BnhubServiceProviderProfile? @relation(fields: [providerProfileId], references: [id], onDelete: SetNull)
+  externalRef       String?                      @map("external_ref")
+  title             String                       @map("title")
+  locationJson      Json                         @default("{}") @map("location_json")
+  availabilityJson  Json?                        @map("availability_json")
+  pricingJson       Json?                        @map("pricing_json")
+  status            BnhubTravelProductStatus     @default(DRAFT) @map("status")
+  metadataJson      Json?                        @map("metadata_json")
+  createdAt         DateTime                     @default(now()) @map("created_at")
+  updatedAt         DateTime                     @updatedAt @map("updated_at")
+
+  @@index([productType])
+  @@index([status])
+  @@index([providerProfileId])
+  @@map("bnhub_travel_products")
+}
+
+model BnhubServiceDiscountRule {
+  id             String   @id @default(uuid()) @map("id")
+  ruleCode       String   @unique @map("rule_code")
+  name           String   @map("name")
+  appliesTo      String   @map("applies_to") // service | bundle | fee
+  discountBps    Int      @default(0) @map("discount_bps")
+  conditionsJson Json     @default("{}") @map("conditions_json")
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@index([isActive])
+  @@map("bnhub_service_discount_rules")
+}
+
+model BnhubAutomatedHostMessageLog {
+  id           String           @id @default(cuid())
+  bookingId    String           @map("booking_id")
+  hostId       String           @map("host_id")
+  guestId      String           @map("guest_id")
+  listingId    String           @map("listing_id")
+  listing      ShortTermListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  messageType  String           @map("message_type") @db.VarChar(64)
+  triggerType  String           @map("trigger_type") @db.VarChar(64)
+  locale       String           @default("en") @db.VarChar(8)
+  content      String           @db.Text
+  status       String           @db.VarChar(24)
+  recipient    String           @default("guest") @map("recipient") @db.VarChar(24)
+  metadataJson Json?            @map("metadata_json")
+  createdAt    DateTime         @default(now()) @map("created_at")
+
+  @@index([bookingId, createdAt])
+  @@index([hostId, createdAt])
+  @@index([guestId, createdAt])
+  @@map("bnhub_automated_host_message_logs")
+}
+
+model MarketplaceAutonomyApproval {
+  id                String    @id @default(cuid())
+  /// pending | approved | rejected | executed
+  status            String    @default("pending") @db.VarChar(20)
+  actionType        String    @map("action_type") @db.VarChar(64)
+  riskTier          String    @map("risk_tier") @db.VarChar(16)
+  payload           Json      @default("{}")
+  summary           String?   @db.VarChar(512)
+  requestedByUserId String?   @map("requested_by_user_id")
+  reviewedByUserId  String?   @map("reviewed_by_user_id")
+  reviewNote        String?   @map("review_note") @db.Text
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+  executedAt        DateTime? @map("executed_at")
+
+  @@index([status, createdAt])
+  @@index([actionType, status])
+  @@map("marketplace_autonomy_approvals")
+}
+
+model ListingAnalytics {
+  id                      String               @id @default(cuid())
+  kind                    ListingAnalyticsKind @map("listing_kind")
+  listingId               String               @map("listing_id")
+  viewsTotal              Int                  @default(0) @map("views_total")
+  saves                   Int                  @default(0)
+  contactClicks           Int                  @default(0) @map("contact_clicks")
+  bookingAttempts         Int                  @default(0) @map("booking_attempts")
+  bookings                Int                  @default(0)
+  demandScore             Int                  @default(0) @map("demand_score")
+  demandScoreComputedAt   DateTime?            @map("demand_score_computed_at")
+  views24hCached          Int                  @default(0) @map("views_24h_cached")
+  uniqueViews24hCached    Int                  @default(0) @map("unique_views_24h_cached")
+  shareCount              Int                  @default(0) @map("share_count")
+  unlockCheckoutStarts    Int                  @default(0) @map("unlock_checkout_starts")
+  unlockCheckoutSuccesses Int                  @default(0) @map("unlock_checkout_successes")
+  createdAt               DateTime             @default(now()) @map("created_at")
+  updatedAt               DateTime             @updatedAt @map("updated_at")
+
+  @@unique([kind, listingId])
+  @@index([kind, listingId])
+  @@index([demandScore])
+  @@map("listing_analytics")
+}
+
+model ListingPriceHistory {
+  id                 String               @id @default(cuid())
+  kind               ListingAnalyticsKind @map("listing_kind")
+  listingId          String               @map("listing_id")
+  /// New price after change (major unit: cents).
+  priceCents         Int                  @map("price_cents")
+  /// Previous price when this row records a change (optional for legacy snapshot-only rows).
+  previousPriceCents Int?                 @map("previous_price_cents")
+  changedByUserId    String?              @map("changed_by_user_id")
+  changeReason       String?              @map("change_reason") @db.VarChar(128)
+  recordedAt         DateTime             @default(now()) @map("recorded_at")
+
+  @@index([kind, listingId, recordedAt])
+  @@map("listing_price_history")
+}
+
+model PropertyLegalProfile {
+  id                    String    @id @default(cuid())
+  listingScope          String    @map("listing_scope")
+  listingId             String    @map("listing_id")
+  latentDefectRiskScore Float     @default(0) @map("latent_defect_risk_score")
+  disclosureRiskScore   Float     @default(0) @map("disclosure_risk_score")
+  fraudRiskScore        Float     @default(0) @map("fraud_risk_score")
+  overallLegalRiskScore Float     @default(0) @map("overall_legal_risk_score")
+  latestRiskLevel       String    @default("MEDIUM") @map("latest_risk_level")
+  lastEvaluatedAt       DateTime? @map("last_evaluated_at")
+  signals               Json      @default("{}")
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  @@unique([listingScope, listingId])
+  @@index([overallLegalRiskScore])
+  @@map("property_legal_profiles")
+}
+
+model OutreachDailyStat {
+  id          String   @id @default(cuid())
+  date        DateTime @unique @default(now()) @db.Date
+  callsMade   Int      @default(0) @map("calls_made")
+  dmsSent     Int      @default(0) @map("dms_sent")
+  demosBooked Int      @default(0) @map("demos_booked")
+  demosDone   Int      @default(0) @map("demos_done")
+  loomsSent   Int      @default(0) @map("looms_sent")
+  conversions Int      @default(0)
+  notes       String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("outreach_daily_stats")
+}
+
+model OutreachDailyTask {
+  id        String   @id @default(cuid())
+  date      DateTime @default(now()) @db.Date
+  label     String
+  category  String // outreach, follow_up, demo, product
+  completed Boolean  @default(false)
+  quota     Int      @default(1)
+  progress  Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([date])
+  @@map("outreach_daily_tasks")
+}
