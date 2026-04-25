@@ -21,9 +21,11 @@ export function revenueFlowTypeLabel(paymentType: PaymentType): string {
     case "booking":
       return "booking";
     case "fsbo_publish":
+    case "fsbo_listing":
       return "fsbo";
     case "lead_unlock":
     case "mortgage_contact_unlock":
+    case "lead_purchase":
       return "lead";
     case "featured_listing":
       return "featured";
@@ -32,6 +34,7 @@ export function revenueFlowTypeLabel(paymentType: PaymentType): string {
     case "closing_fee":
       return "closing";
     case "subscription":
+    case "premium_subscription":
       return "subscription";
     default:
       return paymentType;
@@ -46,7 +49,10 @@ export type PaymentType =
   | "deposit"
   | "closing_fee"
   | "featured_listing"
-  | "fsbo_publish";
+  | "fsbo_publish"
+  | "lead_purchase"
+  | "premium_subscription"
+  | "fsbo_listing";
 
 export type CreateCheckoutParams = {
   successUrl: string;

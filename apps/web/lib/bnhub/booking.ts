@@ -1,4 +1,5 @@
 import {
+  AvailabilityBlockType,
   BookingStatus,
   BnhubBookingServiceLineStatus,
   BnhubBookingSource,
@@ -268,7 +269,7 @@ export async function createBooking(data: {
       where: { id: data.releaseAvailabilityBlockId.trim() },
       select: { id: true, listingId: true, startDate: true, endDate: true, blockType: true, reason: true },
     });
-    if (!h || h.blockType !== "BOOKING_HOLD" || h.listingId !== data.listingId) {
+    if (!h || h.blockType !== AvailabilityBlockType.BOOKING_HOLD || h.listingId !== data.listingId) {
       throw new Error("Invalid or expired hold. Refresh dates and try again.");
     }
     if (!isBookingHoldActive(h.reason)) {
