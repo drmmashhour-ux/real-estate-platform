@@ -33,6 +33,7 @@ jobs:
             else
               git fetch origin
               git reset --hard origin/${{ github.ref_name }}
+              git clean -fd
             fi
 
             # 3. Environment Setup (Ensure .env exists)
