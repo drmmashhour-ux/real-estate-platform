@@ -21,13 +21,14 @@ jobs:
           host: ${{ secrets.HETZNER_HOST }}
           username: ${{ secrets.HETZNER_USER }}
           password: ${{ secrets.HETZNER_PASSWORD }}
-          command_timeout: 30m
+          command_timeout: 45m
+          capture_stdout: true
           script: |
             set -e
             # 0. Ensure Swap (for builds on low-RAM servers)
             if ! free | grep -i swap | grep -qv "0"; then
-              echo "Creating 4G swap file..."
-              fallocate -l 4G /swapfile || dd if=/dev/zero of=/swapfile bs=1M count=4096
+              echo "Creating 8G swap file..."
+              fallocate -l 8G /swapfile || dd if=/dev/zero of=/swapfile bs=1M count=8192
               chmod 600 /swapfile
               mkswap /swapfile
               swapon /swapfile
