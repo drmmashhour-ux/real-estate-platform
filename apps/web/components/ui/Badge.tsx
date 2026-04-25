@@ -7,6 +7,10 @@ type Variant =
   | "success"
   | "warning"
   | "danger"
+  /** LECIPM compliance (green / yellow / red) */
+  | "complianceGood"
+  | "complianceWarning"
+  | "complianceCritical"
   /** Part 11 — semantic status */
   | "verified"
   | "active"
@@ -22,6 +26,9 @@ const styles: Record<Variant, string> = {
   success: "bg-emerald-500/15 text-emerald-300 border border-emerald-500/30",
   warning: "bg-amber-500/15 text-amber-200 border border-amber-500/30",
   danger: "bg-red-500/15 text-red-300 border border-red-500/30",
+  complianceGood: "bg-emerald-500/12 text-emerald-200 border border-emerald-400/40",
+  complianceWarning: "bg-amber-500/12 text-amber-100 border border-amber-400/45",
+  complianceCritical: "bg-red-600/15 text-red-200 border border-red-500/50",
   verified:
     "bg-emerald-500/12 text-emerald-200 border border-emerald-400/35 ring-1 ring-emerald-500/15",
   active: "bg-[#2E8B57]/18 text-emerald-100 border border-[#2E8B57]/35",

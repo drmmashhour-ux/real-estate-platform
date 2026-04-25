@@ -90,6 +90,9 @@ export async function onLeadUnlockPaymentRecorded(args: {
 
     const { markLeadAssignmentUnlocked } = await import("@/modules/brokers/broker-leads.service");
     markLeadAssignmentUnlocked(args.leadId);
+
+    const { markBrokerTestimonialEligible } = await import("@/modules/growth/broker-testimonial.service");
+    await markBrokerTestimonialEligible(uid, "first_purchase").catch(() => {});
   } catch {
     /* noop */
   }

@@ -50,6 +50,7 @@ export async function POST(req: NextRequest) {
     data: {
       brokerId: userId,
       name: name.slice(0, 200),
+      role: "Broker",
       city: city.slice(0, 120),
       quote: quote.slice(0, 5000),
       rating,

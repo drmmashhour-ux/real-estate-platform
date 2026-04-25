@@ -1,157 +1,208 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
-import { MessageSquare, X, Send, ArrowRight, Zap, Info, ShieldCheck, DollarSign } from "lucide-react";
-import { Button } from "@/components/ui/Button";
-import { Card, CardContent } from "@/components/ui/Card";
-import { generateVisitorGuideResponse, VisitorContext } from "@/modules/ai-guide/visitor-guide.agent";
-import { usePathname } from "next/navigation";
-import { trackEvent } from "@/lib/tracking/events";
+import * as React from "react";
+import Link from "next/link";
+import { MessageCircle, X, Send, Sparkles } from "lucide-react";
+import { getConversionCtaMessage } from "@/modules/ai-guide/visitor-guide.agent";
 
-export function VisitorGuideChat() {
-  const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<{ role: "assistant" | "user"; content: string; quickReplies?: string[] }[]>([
-    {
-      role: "assistant",
-      content: "Hey! I'm your LECIPM guide. How can I help you close more deals today?",
-      quickReplies: ["What is this?", "How does it work?", "How do I get leads?"]
+type Surface = "landing" | "dashboard";
+
+type Msg = { role: "user" | "assistant"; text: string };
+
+const QUICK: { label: string; text: string }[] = [
+  { label: "What is this platform?", text: "What is LECIPM, in simple terms, for a broker?" },
+  { label: "How do I get leads?", text: "How do I get leads and prioritize them in LECIPM?" },
+  { label: "How does AI help me?", text: "How does the AI help me day to day? Keep it non-technical." },
+];
+
+const VG_SESSION = "lecipm_vg_session_v1";
+
+function getSessionId(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    let s = sessionStorage.getItem(VG_SESSION);
+    if (!s) {
+      s = crypto.randomUUID();
+      sessionStorage.setItem(VG_SESSION, s);
     }
-  ]);
-  const [inputValue, setInputValue] = useState("");
-  const pathname = usePathname();
-  const scrollRef = useRef<HTMLDivElement>(null);
+    return s;
+  } catch {
+    return null;
+  }
+}
 
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+function postGuideEvent(payload: {
+  kind: "cta_click" | "quick_question" | "signup_nav";
+  surface: Surface;
+  ctaKey?: string;
+  questionText?: string;
+  label?: string;
+}) {
+  const sessionId = getSessionId();
+  void fetch("/api/ai/visitor-guide/event", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ...payload, sessionId: sessionId ?? undefined }),
+  }).catch(() => {});
+}
+
+export function VisitorGuideChat({ surface }: { surface: Surface }) {
+  const [open, setOpen] = React.useState(false);
+  const [input, setInput] = React.useState("");
+  const [loading, setLoading] = React.useState(false);
+  const [messages, setMessages] = React.useState<Msg[]>([]);
+  const [userTurns, setUserTurns] = React.useState<string[]>([]);
+  const [turnIndex, setTurnIndex] = React.useState(0);
+  const endRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, open]);
+
+  async function sendText(text: string) {
+    const t = text.trim();
+    if (!t || loading) return;
+    setLoading(true);
+    setMessages((m) => [...m, { role: "user", text: t }]);
+    setInput("");
+
+    const lastUserMessages = userTurns.slice(-4);
+
+    try {
+      const res = await fetch("/api/ai/visitor-guide", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: t,
+          surface,
+          lastUserMessages,
+          turnIndex,
+          sessionId: getSessionId() ?? undefined,
+        }),
+      });
+      const j = (await res.json()) as { reply?: string; error?: string; intent?: string; ctaUsed?: string };
+      if (!res.ok) {
+        setMessages((m) => [...m, { role: "assistant", text: "Something went wrong. Try again in a moment." }]);
+        return;
+      }
+      const reply = j.reply ?? "LECIPM helps you focus on the deals that matter and what to do next.";
+      setMessages((m) => [...m, { role: "assistant", text: reply }]);
+      setUserTurns((u) => [...u, t]);
+      setTurnIndex((i) => i + 1);
+    } catch {
+      setMessages((m) => [...m, { role: "assistant", text: "Could not reach the guide. Check your connection." }]);
+    } finally {
+      setLoading(false);
     }
-  }, [messages, isOpen]);
-
-  const handleSendMessage = (text: string) => {
-    if (!text.trim()) return;
-
-    // Track interaction (Phase 8)
-    trackEvent("ai_guide_question", { question: text, route: pathname });
-
-    setMessages(prev => [...prev, { role: "user", content: text }]);
-    setInputValue("");
-
-    setTimeout(() => {
-      const context: VisitorContext = {
-        route: pathname,
-        isLoggedIn: false, // Default for guide, can be dynamic
-        hasPurchasedBefore: false
-      };
-      
-      const response = generateVisitorGuideResponse(text, context);
-      
-      setMessages(prev => [...prev, { 
-        role: "assistant", 
-        content: response.text,
-        quickReplies: response.quickReplies
-      }]);
-    }, 600);
-  };
-
-  const handleQuickReply = (text: string) => {
-    handleSendMessage(text);
-  };
-
-  if (!isOpen) {
-    return (
-      <button 
-        onClick={() => {
-          setIsOpen(true);
-          trackEvent("ai_guide_opened", { route: pathname });
-        }}
-        className="fixed bottom-6 right-6 w-14 h-14 bg-[#D4AF37] text-black rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-all z-50 animate-bounce"
-      >
-        <MessageSquare className="w-6 h-6" />
-      </button>
-    );
   }
 
   return (
-    <div className="fixed bottom-6 right-6 w-full max-w-[350px] z-50 animate-in slide-in-from-bottom-4 duration-300">
-      <Card className="bg-zinc-900 border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden rounded-3xl">
-        <div className="bg-[#D4AF37] p-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-black/20 rounded-full flex items-center justify-center">
-              <Zap className="w-4 h-4 text-black" />
-            </div>
-            <div>
-              <p className="text-[10px] font-black text-black/50 uppercase tracking-widest">AI Guide</p>
-              <p className="text-xs font-black text-black uppercase">LECIPM Assistant</p>
-            </div>
-          </div>
-          <button onClick={() => setIsOpen(false)} className="text-black/50 hover:text-black transition-colors">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        <CardContent className="p-0">
-          <div 
-            ref={scrollRef}
-            className="h-[350px] overflow-y-auto p-4 space-y-4 scrollbar-hide bg-black/20"
-          >
-            {messages.map((m, i) => (
-              <div key={i} className={`flex ${m.role === "assistant" ? "justify-start" : "justify-end"}`}>
-                <div className={`max-w-[85%] p-3 rounded-2xl text-xs leading-relaxed ${
-                  m.role === "assistant" 
-                    ? "bg-white/5 text-zinc-300 rounded-tl-none border border-white/5" 
-                    : "bg-[#D4AF37] text-black font-bold rounded-tr-none"
-                }`}>
-                  {m.content}
-                  
-                  {m.role === "assistant" && m.quickReplies && (
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {m.quickReplies.map((qr, qi) => (
-                        <button
-                          key={qi}
-                          onClick={() => {
-                            handleQuickReply(qr);
-                            trackEvent("ai_guide_quick_reply", { reply: qr, route: pathname });
-                          }}
-                          className="bg-white/10 hover:bg-white/20 text-[10px] font-bold py-1 px-3 rounded-full transition-colors border border-white/5"
-                        >
-                          {qr}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
+    <div className="pointer-events-none fixed bottom-0 right-0 z-[80] p-4 sm:p-6">
+      <div className="pointer-events-auto ml-auto w-full max-w-sm">
+        {open && (
+          <div className="mb-3 flex max-h-[min(70vh,520px)] flex-col overflow-hidden rounded-2xl border border-white/15 bg-zinc-950/95 text-zinc-100 shadow-2xl shadow-black/50 backdrop-blur-md">
+            <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
+              <div className="flex items-center gap-2 text-sm font-semibold text-white">
+                <Sparkles className="h-4 w-4 text-amber-400" />
+                Visitor guide
               </div>
-            ))}
-          </div>
-
-          <div className="p-4 border-t border-white/5 bg-zinc-900/80">
-            <form 
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="rounded-lg p-1.5 text-zinc-500 hover:bg-white/10 hover:text-white"
+                aria-label="Close"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="min-h-0 flex-1 space-y-2 overflow-y-auto px-3 py-3 text-sm whitespace-pre-wrap">
+              {messages.length === 0 && (
+                <p className="whitespace-normal text-zinc-500">
+                  {surface === "landing"
+                    ? "Ask anything about LECIPM in plain language — we keep answers short and practical."
+                    : "Ask how to use the product day to day. Short answers, no jargon."}
+                </p>
+              )}
+              {messages.map((m, i) => (
+                <div
+                  key={i}
+                  className={`rounded-xl px-3 py-2 ${m.role === "user" ? "ml-6 bg-amber-500/15 text-white" : "mr-4 bg-white/5 text-zinc-200"}`}
+                >
+                  {m.text}
+                </div>
+              ))}
+              {loading && <p className="text-xs text-zinc-500">…</p>}
+              <div ref={endRef} />
+            </div>
+            <div className="space-y-2 border-t border-white/10 px-3 py-2">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Quick</p>
+              <div className="flex flex-wrap gap-1.5">
+                {QUICK.map((q) => (
+                  <button
+                    key={q.label}
+                    type="button"
+                    onClick={() => {
+                      postGuideEvent({ kind: "quick_question", surface, label: q.label, questionText: q.text });
+                      void sendText(q.text);
+                    }}
+                    disabled={loading}
+                    className="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-left text-[11px] text-zinc-200 hover:border-amber-500/30 hover:text-white disabled:opacity-50"
+                  >
+                    {q.label}
+                  </button>
+                ))}
+              </div>
+              <p className="pt-1 text-[11px] text-amber-200/90">{getConversionCtaMessage(surface, turnIndex)}</p>
+              {surface === "landing" && (
+                <Link
+                  href="/signup"
+                  className="mt-1 block text-center text-xs font-semibold text-amber-300 underline-offset-2 hover:underline"
+                  onClick={() => postGuideEvent({ kind: "signup_nav", surface, ctaKey: "footer_signup" })}
+                >
+                  Create a broker account
+                </Link>
+              )}
+            </div>
+            <form
+              className="flex gap-2 border-t border-white/10 p-3"
               onSubmit={(e) => {
                 e.preventDefault();
-                handleSendMessage(inputValue);
+                void sendText(input);
               }}
-              className="relative"
             >
-              <input 
-                type="text"
-                placeholder="Ask me anything..."
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-4 pr-12 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#D4AF37] transition-all"
+              <input
+                className="min-w-0 flex-1 rounded-xl border border-white/10 bg-black/50 px-3 py-2 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:ring-1 focus:ring-amber-500/50"
+                placeholder="Your question…"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                maxLength={2000}
               />
-              <button 
+              <button
                 type="submit"
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-[#D4AF37] hover:text-white transition-colors"
+                disabled={loading || !input.trim()}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/90 text-black hover:bg-amber-400 disabled:opacity-40"
+                aria-label="Send"
               >
-                <Send className="w-4 h-4" />
+                <Send className="h-4 w-4" />
               </button>
             </form>
-            <p className="mt-2 text-[8px] text-zinc-600 font-bold uppercase text-center tracking-widest">
-              Guided by LECIPM Intelligence
-            </p>
           </div>
-        </CardContent>
-      </Card>
+        )}
+        <button
+          type="button"
+          onClick={() => {
+            setOpen((o) => {
+              if (!o) postGuideEvent({ kind: "cta_click", surface, ctaKey: "open_widget" });
+              return !o;
+            });
+          }}
+          className="ml-auto flex h-14 w-14 items-center justify-center rounded-full border border-amber-500/40 bg-zinc-950/90 text-amber-300 shadow-lg shadow-amber-900/30 transition hover:scale-[1.02] hover:border-amber-400"
+          aria-expanded={open}
+          aria-label={open ? "Close guide" : "Open visitor guide"}
+        >
+          {open ? <X className="h-6 w-6" /> : <MessageCircle className="h-6 w-6" />}
+        </button>
+      </div>
     </div>
   );
 }

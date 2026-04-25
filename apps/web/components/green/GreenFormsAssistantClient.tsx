@@ -6,6 +6,7 @@ import { runFormAssistant } from "@/modules/green-ai/form-assistant/form-assista
 import type { GreenEngineInput } from "@/modules/green/green.types";
 import { evaluateGreenEngine } from "@/modules/green/green.engine";
 import { FIELD_GUIDANCE } from "@/modules/green-ai/form-assistant/form-assistant.engine";
+import { GreenBrokerValuePanelShowcase } from "./GreenBrokerValuePanelShowcase";
 
 const emptyDraft: RenoclimatFormDraft = {
   ownerName: "",
@@ -280,6 +281,8 @@ export function GreenFormsAssistantClient() {
           ))}
         </div>
       </section>
+
+      <GreenBrokerValuePanelShowcase />
     </div>
   );
 }

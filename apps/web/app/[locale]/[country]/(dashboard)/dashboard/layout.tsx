@@ -8,6 +8,8 @@ import { getPlatformLegalGateStatus } from "@/lib/legal/platform-legal-status";
 import { BrokerAssistantFloating } from "@/components/assistant/BrokerAssistantFloating";
 import { BrokerageOaciqDisclaimer } from "@/components/compliance/BrokerageOaciqDisclaimer";
 import { OnboardingGate } from "@/src/modules/onboarding/OnboardingGate";
+import { BrokerTestimonialPrompt } from "@/components/broker/BrokerTestimonialPrompt";
+import { VisitorGuideChat } from "@/components/ai/VisitorGuideChat";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -19,12 +21,15 @@ export default async function DashboardSectionLayout({ children }: { children: R
     where: { id },
     select: { role: true },
   });
-  showGuide = user?.role === "BROKER" || user?.role === "ADMIN";
+  const isBroker = user?.role === "BROKER";
+  showGuide = isBroker || user?.role === "ADMIN";
 
   const legal = await getPlatformLegalGateStatus(id);
 
   return (
     <OnboardingGate userId={id}>
+      {isBroker ? <BrokerTestimonialPrompt /> : null}
+      {showGuide ? <VisitorGuideChat surface="dashboard" /> : null}
       {showGuide ? <BrokerAssistantFloating /> : null}
       {showGuide ? <DashboardGuideBanner /> : null}
       <AccountLegalStrip userId={id} />

@@ -57,5 +57,9 @@ export async function POST(request: NextRequest, context: Params) {
     m.recordBrokerCrmOutboundMessageSignal(auth.user.id, { leadId: id, fromAiDraft }).catch(() => {}),
   );
 
+  void import("@/modules/growth/broker-testimonial.service").then((m) =>
+    m.markBrokerTestimonialEligible(auth.user.id, "first_lead_interaction").catch(() => {}),
+  );
+
   return NextResponse.json({ messageId: result.messageId });
 }

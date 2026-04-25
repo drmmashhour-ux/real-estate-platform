@@ -3,7 +3,17 @@ import { cloneElement, isValidElement } from "react";
 
 import { Loader2 } from "lucide-react";
 
-type Variant = "primary" | "goldPrimary" | "secondary" | "outline" | "ghost" | "danger";
+type Variant =
+  | "primary"
+  | "goldPrimary"
+  /** LECIPM Premium: gold background, true black text — same intent as `goldPrimary`, tuned for #000 / #D4AF37 shell */
+  | "lpPrimary"
+  | "secondary"
+  /** LECIPM Premium: gold border + gold label on dark */
+  | "outlineGold"
+  | "outline"
+  | "ghost"
+  | "danger";
 type Size = "sm" | "md" | "lg" | "senior";
 
 const variants: Record<Variant, string> = {
@@ -11,8 +21,12 @@ const variants: Record<Variant, string> = {
     "bg-[#0B0B0B] text-white border border-[#0B0B0B] shadow-sm hover:bg-[#151515] hover:shadow active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-[#D4AF37] focus-visible:ring-offset-2",
   goldPrimary:
     "bg-premium-gold text-[#0B0B0B] shadow-md shadow-premium-gold/25 hover:bg-premium-gold-hover focus-visible:ring-2 focus-visible:ring-premium-gold focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B0B0B] active:scale-[0.98]",
+  lpPrimary:
+    "bg-ds-gold text-ds-bg shadow-ds-glow hover:brightness-110 focus-visible:ring-2 focus-visible:ring-ds-gold/80 focus-visible:ring-offset-2 focus-visible:ring-offset-ds-bg active:scale-[0.98] motion-safe:transition",
   secondary:
     "bg-white text-[#0B0B0B] border border-[#D9D9D2] shadow-sm hover:border-[#5C5C57]/35 hover:bg-[#FAFAF7] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-[#D4AF37]",
+  outlineGold:
+    "border border-ds-gold/60 bg-transparent text-ds-gold hover:bg-ds-gold/10 hover:border-ds-gold/90 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-ds-gold/50 focus-visible:ring-offset-2 focus-visible:ring-offset-ds-bg motion-safe:transition",
   outline:
     "border border-white/25 bg-transparent text-white hover:bg-white/10 hover:border-white/35 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-[#D4AF37]",
   ghost:

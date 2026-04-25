@@ -1,6 +1,14 @@
 import type { HTMLAttributes, ReactNode } from "react";
 
-export type CardVariant = "default" | "stat" | "action" | "alert" | "residence" | "dashboardPanel";
+export type CardVariant =
+  | "default"
+  | "stat"
+  | "action"
+  | "alert"
+  | "residence"
+  | "dashboardPanel"
+  /** LECIPM Premium: #1a1a1a surface, #2a2a2a border, soft shadow */
+  | "lecipm";
 
 const variantShell: Record<CardVariant, string> = {
   default: "border-white/10 bg-[#121212]",
@@ -9,6 +17,7 @@ const variantShell: Record<CardVariant, string> = {
   alert: "border-amber-500/25 bg-amber-500/[0.06]",
   residence: "border-white/10 bg-[#FAFAF7] text-[#0B0B0B]",
   dashboardPanel: "border-[#D9D9D2]/80 bg-white text-[#0B0B0B] shadow-[var(--ds-shadow-card)]",
+  lecipm: "border-ds-border bg-ds-card text-ds-text shadow-ds-soft",
 };
 
 type CardProps = HTMLAttributes<HTMLDivElement> & {
@@ -29,7 +38,7 @@ export function Card({
   ...rest
 }: CardProps) {
   const base =
-    variant === "residence" || variant === "dashboardPanel"
+    variant === "residence" || variant === "dashboardPanel" || variant === "lecipm"
       ? "lecipm-transition rounded-[var(--ds-radius-xl)] border p-5 sm:p-6"
       : "lecipm-transition rounded-[var(--ds-radius-xl)] border p-[var(--lecipm-card-padding,1.25rem)] sm:p-6";
 

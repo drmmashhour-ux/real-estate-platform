@@ -711,7 +711,7 @@ model User {
   /// Listing supply pipeline rows assigned to this admin/operator.
   listingAcquisitionLeadsAssigned          ListingAcquisitionLead[]                 @relation("AcquisitionLeadAssignee")
   outreachLeadsCreated                     OutreachLead[]                           @relation("OutreachLeadCreator")
-  brokerTestimonials                        Testimonial[]
+  brokerTestimonials                        Testimonial[] @relation("BrokerTestimonials")
   founderLaunchSimulationState             FounderLaunchSimulationState?
   hostListingPerformanceSnapshots          HostListingPerformanceSnapshot[]         @relation("HostListingPerfSnapshots")
   hostGrowthOutreachLogsAuthored           HostGrowthOutreachLog[]                  @relation("HostGrowthOutreachAuthor")
@@ -2747,23 +2747,6 @@ model ListingAcquisitionLead {
   @@index([sourceType])
   @@index([createdAt])
   @@map("listing_acquisition_leads")
-}
-
-/// Broker marketing quotes — public only when `isApproved` (admin review).
-model Testimonial {
-  id         String   @id @default(cuid())
-  createdAt  DateTime @default(now()) @map("created_at")
-  brokerId   String   @map("broker_id")
-  broker     User     @relation(fields: [brokerId], references: [id], onDelete: Cascade)
-  name       String   @db.VarChar(200)
-  city       String   @db.VarChar(120)
-  quote      String   @db.Text
-  rating     Int
-  isApproved Boolean  @default(false) @map("is_approved")
-
-  @@index([brokerId])
-  @@index([isApproved, createdAt(sort: Desc)])
-  @@map("testimonials")
 }
 
 /// Founder / growth CRM — manual Montreal host outreach (Law 25: no auto-send; drafts reviewed in-app).
@@ -26223,7 +26206,7 @@ model FastDealOutcome {
   @@map("fast_deal_outcomes")
 }
 
-/// Client quotes for marketing / trust sections (admin-moderated).
+/// Client quotes for marketing / trust sections (admin-moderated). Optional `brokerId` when submitted by a broker account.
 model Testimonial {
   id         String   @id @default(cuid())
   name       String
@@ -26235,9 +26218,12 @@ model Testimonial {
   featured   Boolean  @default(false)
   isApproved Boolean  @default(false) @map("is_approved")
   createdAt  DateTime @default(now()) @map("created_at")
+  brokerId   String?  @map("broker_id")
+  broker     User?    @relation("BrokerTestimonials", fields: [brokerId], references: [id], onDelete: SetNull)
 
   @@index([isApproved, featured])
   @@index([createdAt])
+  @@index([brokerId])
   @@map("testimonials")
 }
 

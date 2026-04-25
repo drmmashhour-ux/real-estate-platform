@@ -1,0 +1,109 @@
+/**
+ * LECIPM Premium UI — works with `globals.css` @theme (bg-ds-*, text-ds-*, border-ds-*, etc.).
+ * Tokens: background #000000, text #FFFFFF, gold #D4AF37, surface #1a1a1a, border #2a2a2a
+ */
+
+/* ------------------------------------------------------------------------- */
+/* Page shell */
+/* ------------------------------------------------------------------------- */
+.lp-surface {
+  background-color: var(--color-ds-bg);
+  color: var(--color-ds-text);
+  min-height: 100dvh;
+}
+
+.lp-section-bleed {
+  width: 100%;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: max(1.25rem, env(safe-area-inset-left, 0px));
+  padding-right: max(1.25rem, env(safe-area-inset-right, 0px));
+}
+
+/* ------------------------------------------------------------------------- */
+/* Typography */
+/* ------------------------------------------------------------------------- */
+.lp-h1 {
+  font-size: clamp(1.875rem, 2vw + 1rem, 3rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  color: var(--color-ds-text);
+}
+
+.lp-h2 {
+  font-size: clamp(1.5rem, 1.2vw + 1rem, 2rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: var(--color-ds-text);
+}
+
+.lp-body {
+  font-size: 1rem;
+  line-height: 1.65;
+  color: var(--color-ds-text-secondary);
+}
+
+/* ------------------------------------------------------------------------- */
+/* Motion */
+/* ------------------------------------------------------------------------- */
+.lp-fade {
+  animation: lp-fade-up 0.45s var(--lecipm-ease-out, cubic-bezier(0.22, 1, 0.36, 1)) both;
+}
+
+@keyframes lp-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.lp-step {
+  animation: lp-step-in 0.4s var(--lecipm-ease-out, cubic-bezier(0.22, 1, 0.36, 1)) both;
+}
+
+@keyframes lp-step-in {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-fade,
+  .lp-step {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ------------------------------------------------------------------------- */
+/* Nav + tap helper — pair with Tailwind in components */
+/* ------------------------------------------------------------------------- */
+.lp-nav-bar {
+  border-bottom: 1px solid var(--color-ds-border);
+  background: rgb(0 0 0 / 0.78);
+  backdrop-filter: blur(12px);
+}
+
+@supports (backdrop-filter: blur(10px)) {
+  .lp-nav-bar {
+    background: rgb(0 0 0 / 0.65);
+  }
+}
+
+.lp-tap {
+  min-height: 44px;
+  min-width: 44px;
+}

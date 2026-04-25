@@ -50,8 +50,11 @@ export async function listPendingTestimonials() {
 }
 
 export async function approveTestimonial(id: string, isApproved: boolean) {
-  return prisma.testimonial.update({
-    where: { id },
-    data: { isApproved },
-  });
+  if (isApproved) {
+    return prisma.testimonial.update({
+      where: { id },
+      data: { isApproved: true },
+    });
+  }
+  return prisma.testimonial.delete({ where: { id } });
 }

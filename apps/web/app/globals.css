@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "mapbox-gl/dist/mapbox-gl.css";
 @import "../design-system/design-system.css";
+@import "../design-system/lecipm-premium.css";
 
 /* Mobile shell — prevent horizontal scroll; scale with rem/% */
 html {

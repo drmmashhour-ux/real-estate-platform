@@ -4,6 +4,8 @@ import { Footer } from "@/components/marketing/Footer";
 import { LandingScrollDepth } from "@/components/marketing/LandingScrollDepth";
 import { HomeMarketingFunnelPv } from "@/components/marketing/HomeMarketingFunnelPv";
 import { LecipmLandingLeadForm } from "@/components/marketing/lecipm-landing-lead-form";
+import { PublicTestimonialsStrip } from "@/components/marketing/PublicTestimonialsStrip";
+import { VisitorGuideChat } from "@/components/ai/VisitorGuideChat";
 import { DEFAULT_COUNTRY_SLUG } from "@/config/countries";
 import { routing } from "@/i18n/routing";
 
@@ -21,6 +23,7 @@ export function LecipmLeadCaptureLanding({
 
   return (
     <div className="flex min-h-screen flex-col bg-black text-white">
+      <VisitorGuideChat surface="landing" />
       <HomeMarketingFunnelPv />
       <LandingScrollDepth />
       <header className="sticky top-0 z-50 border-b border-white/10 bg-black/85 backdrop-blur-md">
@@ -88,6 +91,8 @@ export function LecipmLeadCaptureLanding({
             <p className="text-sm font-medium text-brand-gold/95">AI-powered listing optimization</p>
           </div>
         </section>
+
+        <PublicTestimonialsStrip />
 
         {/* Green program — marketplace + investor angle */}
         <section className="border-b border-white/10 bg-gradient-to-b from-emerald-950/40 to-black py-16">
