@@ -1,4 +1,4 @@
-import { marketplacePrisma } from "@/lib/db";
+import { listingsDB } from "@/lib/db";
 
 /** Stripe Checkout `metadata.paymentType` for `POST /api/checkout` (listing demo / marketplace holds). */
 export const MARKETPLACE_LISTING_CHECKOUT = "marketplace_listing_checkout" as const;
@@ -57,7 +57,7 @@ export function whereBookingListOverlapsWindow(from: Date, to: Date) {
  * Mark unpaid holds as expired (Order 57) — run from cron; releases inventory.
  */
 export async function expirePendingMarketplaceBookings() {
-  return marketplacePrisma.booking.updateMany({
+  return listingsDB.booking.updateMany({
     where: {
       status: "pending",
       expiresAt: { lt: new Date() },
@@ -82,7 +82,7 @@ export function marketplaceListingBookingIdFromStripeMetadata(
  * `checkout.session.expired` — no successful charge; clear `pending` hold so inventory is released.
  */
 export async function expirePendingMarketplaceListingBookingOnCheckoutExpired(bookingId: string) {
-  const r = await marketplacePrisma.booking.updateMany({
+  const r = await listingsDB.booking.updateMany({
     where: { id: bookingId, status: "pending" },
     data: { status: "expired", expiresAt: null },
   });
@@ -98,7 +98,7 @@ export async function confirmMarketplaceListingBookingPaid(
   bookingId: string,
   opts?: { paymentIntentId?: string | null }
 ) {
-  const b = await marketplacePrisma.booking.findUnique({ where: { id: bookingId } });
+  const b = await listingsDB.booking.findUnique({ where: { id: bookingId } });
   if (!b) {
     return { ok: false as const, reason: "not_found" as const };
   }
@@ -109,7 +109,7 @@ export async function confirmMarketplaceListingBookingPaid(
     return { ok: false as const, reason: "not_pending" as const };
   }
   const paymentIntentId = opts?.paymentIntentId?.trim() || undefined;
-  await marketplacePrisma.booking.update({
+  await listingsDB.booking.update({
     where: { id: bookingId },
     data: {
       status: "confirmed",

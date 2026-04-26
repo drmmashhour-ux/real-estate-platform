@@ -246,6 +246,29 @@ export async function POST(req: Request) {
       ? `checkout_${metadata.bookingId.trim()}`.slice(0, 255)
       : undefined;
 
+  /** Echo session keys onto the PaymentIntent so `payment_intent.*` webhooks can resolve `booking_id`. */
+  const paymentIntentMetadata: Record<string, string> = {};
+  for (const key of [
+    "booking_id",
+    "listing_id",
+    "bookingId",
+    "listingId",
+    "paymentType",
+    "userId",
+  ] as const) {
+    const v = metadata[key];
+    if (typeof v === "string" && v.trim()) paymentIntentMetadata[key] = v.trim();
+  }
+  const mergedPaymentIntentData =
+    paymentIntentData || Object.keys(paymentIntentMetadata).length > 0
+      ? {
+          ...(paymentIntentData ?? {}),
+          ...(Object.keys(paymentIntentMetadata).length > 0
+            ? { metadata: paymentIntentMetadata }
+            : {}),
+        }
+      : undefined;
+
   try {
     const session = await stripe.checkout.sessions.create(
       {
@@ -266,7 +289,7 @@ export async function POST(req: Request) {
         success_url: successUrl,
         cancel_url: cancelUrl,
         ...(Object.keys(metadata).length > 0 ? { metadata } : {}),
-        ...(paymentIntentData ? { payment_intent_data: paymentIntentData } : {}),
+        ...(mergedPaymentIntentData ? { payment_intent_data: mergedPaymentIntentData } : {}),
       },
       idempotencyKey ? { idempotencyKey } : undefined
     );

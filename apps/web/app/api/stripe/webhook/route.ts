@@ -3,6 +3,8 @@ import { headers } from "next/headers";
 import Stripe from "stripe";
 import { PaymentStatus, PlatformInvoiceStatus, type Prisma } from "@prisma/client";
 import { prisma } from "@repo/db";
+import { listingsDB } from "@/lib/db";
+import { marketplaceListingBookingIdFromStripeMetadata } from "@/lib/marketplace/booking-hold";
 import { generateInvoiceNumber } from "@/lib/codes/generate-code";
 import { PAID_STORAGE_PLAN_KEYS, plans, type PlanKey } from "@/lib/billing/plans";
 import { getResend, isResendConfigured, getFromEmail } from "@/lib/email/resend";
@@ -628,6 +630,23 @@ export async function POST(req: NextRequest) {
         paymentIntentId: pi.id,
       });
     }
+    const listingsMpBid = marketplaceListingBookingIdFromStripeMetadata(md as Record<string, string>);
+    if (md.paymentType === "marketplace_listing_checkout" && listingsMpBid) {
+      const u = await listingsDB.booking
+        .updateMany({
+          where: { id: listingsMpBid, status: "pending" },
+          data: { status: "failed" },
+        })
+        .catch((e) => {
+          logError("Webhook: marketplace listing booking payment_intent.payment_failed update failed", e);
+          return { count: 0 };
+        });
+      logInfo("[stripe/webhook] marketplace_listing_checkout payment_intent.payment_failed", {
+        bookingId: listingsMpBid,
+        paymentIntentId: pi.id,
+        rowsUpdated: u.count,
+      });
+    }
     void import("@/lib/fraud/compute-payment-risk")
       .then((m) => m.evaluatePaymentFraudFromStripePaymentIntent(pi))
       .catch(() => {});
@@ -712,6 +731,7 @@ export async function POST(req: NextRequest) {
       );
       if (bid) {
         const released = await expirePendingMarketplaceListingBookingOnCheckoutExpired(bid);
+        console.log("[WEBHOOK] booking hold expired (listingsDB)", bid, { count: released.count });
         logInfo("[STRIPE] checkout.session.expired — marketplace_listing_checkout hold updated", {
           sessionId: expiredSession.id,
           bookingId: bid,
@@ -983,6 +1003,9 @@ export async function POST(req: NextRequest) {
               ? String((piRaw as { id: string }).id)
               : null;
         const r = await confirmMarketplaceListingBookingPaid(mk, { paymentIntentId });
+        if (r.ok) {
+          console.log("[WEBHOOK] booking confirmed (listingsDB)", mk);
+        }
         logInfo("[stripe/webhook] marketplace_listing_checkout (Order 66 — payment success → confirmed)", {
           sessionId: session.id,
           bookingId: mk,
