@@ -44,7 +44,16 @@ const nextConfig: NextConfig = {
     remotePatterns: [{ protocol: "https", hostname: "images.unsplash.com", pathname: "/**" }],
   },
   /** PDF rendering uses Node-only deps; keep them external for App Router API routes. */
-  serverExternalPackages: ["@prisma/client", "@repo/db", "@react-pdf/renderer", "nspell"],
+  serverExternalPackages: [
+    "@prisma/client",
+    "@prisma/client-runtime-utils",
+    "@repo/db",
+    "@repo/db-marketplace",
+    "@repo/db-core",
+    "@repo/db-auth",
+    "@react-pdf/renderer",
+    "nspell",
+  ],
   /** Short SEO landing URLs → default locale/country growth-seo pages (indexable). */
   async rewrites() {
     const L = "/en/ca";

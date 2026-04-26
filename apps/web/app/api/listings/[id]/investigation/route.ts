@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@repo/db";
+import { monolithPrisma } from "@/lib/db/monolith-client";
 
 /**
  * GET /api/listings/:id/investigation
@@ -14,7 +14,7 @@ export async function GET(
     await getGuestId(); // optional: public could be 404 for no-auth
     const { id: listingId } = await context.params;
 
-    const investigation = await prisma.listingInvestigation.findFirst({
+    const investigation = await monolithPrisma.listingInvestigation.findFirst({
       where: { listingId },
       orderBy: { openedAt: "desc" },
       include: {

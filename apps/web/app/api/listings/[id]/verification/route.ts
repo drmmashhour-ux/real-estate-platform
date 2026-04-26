@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@repo/db";
+import { monolithPrisma } from "@/lib/db/monolith-client";
 
 /**
  * GET /api/listings/:id/verification
@@ -12,7 +12,7 @@ export async function GET(
 ) {
   try {
     const { id: listingId } = await context.params;
-    const listing = await prisma.shortTermListing.findUnique({
+    const listing = await monolithPrisma.shortTermListing.findUnique({
       where: { id: listingId },
       select: {
         id: true,

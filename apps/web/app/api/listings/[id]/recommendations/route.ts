@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@repo/db";
+import { monolithPrisma } from "@/lib/db/monolith-client";
 import { getGuestId } from "@/lib/auth/session";
 import { getRecommendationsForListingDetail } from "@/src/modules/recommendations/recommendation.service";
 
@@ -10,7 +10,7 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
   const sessionId = req.headers.get("x-session-id")?.trim().slice(0, 128) ?? null;
   const userId = await getGuestId().catch(() => null);
 
-  const row = await prisma.fsboListing.findUnique({
+  const row = await monolithPrisma.fsboListing.findUnique({
     where: { id },
     select: {
       id: true,

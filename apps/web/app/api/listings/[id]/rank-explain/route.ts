@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { engineFlags } from "@/config/feature-flags";
 import { requireRole } from "@/lib/auth/require-role";
-import { prisma } from "@/lib/db";
+import { monolithPrisma } from "@/lib/db/monolith-client";
 import { logRankingAudit } from "@/lib/marketplace-ranking/ranking-audit";
 import {
   buildRankingContextPayload,
@@ -30,7 +30,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
   const propertyType = searchParams.get("propertyType") ?? undefined;
   const guests = searchParams.get("guests");
 
-  const row = await prisma.shortTermListing.findUnique({
+  const row = await monolithPrisma.shortTermListing.findUnique({
     where: { id: listingId },
     include: {
       _count: { select: { reviews: true, bookings: true } },

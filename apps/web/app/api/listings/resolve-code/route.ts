@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@repo/db";
+import { monolithPrisma } from "@/lib/db/monolith-client";
 import { normalizeAnyPublicListingCode } from "@/lib/listing-code-public";
 import { buildBnhubStaySeoSlug, buildFsboPublicListingPath } from "@/lib/seo/public-urls";
 
@@ -17,15 +17,15 @@ export async function GET(request: NextRequest) {
   }
 
   const [st, crm, fsbo] = await Promise.all([
-    prisma.shortTermListing.findFirst({
+    monolithPrisma.shortTermListing.findFirst({
       where: { listingCode: { equals: code, mode: "insensitive" } },
       select: { id: true, city: true, propertyType: true },
     }),
-    prisma.listing.findFirst({
+    monolithPrisma.listing.findFirst({
       where: { listingCode: { equals: code, mode: "insensitive" } },
       select: { id: true },
     }),
-    prisma.fsboListing.findFirst({
+    monolithPrisma.fsboListing.findFirst({
       where: { listingCode: { equals: code, mode: "insensitive" } },
       select: { id: true, city: true, propertyType: true },
     }),

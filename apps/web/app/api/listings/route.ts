@@ -1,6 +1,5 @@
-import { marketplacePrisma } from "@/lib/db";
+import { listingsDB } from "@/lib/db/listings-client";
 import { requireAuth } from "@/lib/auth/middleware";
-import { emit } from "@/lib/events";
 import {
   alertIfHighRiskListing,
   alertIfLowConversion,
@@ -8,6 +7,7 @@ import {
 import { getCacheOrRedis, setCacheAndRedis } from "@/lib/cache";
 
 export async function GET(req: Request) {
+  console.log("[LISTINGS DB] using listingsDB");
   const { searchParams } = new URL(req.url);
 
   const city = searchParams.get("city");
@@ -20,7 +20,7 @@ export async function GET(req: Request) {
     return Response.json(cached);
   }
 
-  const rows = await marketplacePrisma.listing.findMany({
+  const rows = await listingsDB.listing.findMany({
     where: {
       city: city ? { contains: city, mode: "insensitive" } : undefined,
       price: {
@@ -29,8 +29,20 @@ export async function GET(req: Request) {
       },
     },
     orderBy: { createdAt: "desc" },
-    include: { _count: { select: { bookings: true } } },
   });
+
+  const ids = rows.map((r) => r.id);
+  const bookingGroups =
+    ids.length > 0
+      ? await listingsDB.booking.groupBy({
+          by: ["listingId"],
+          where: { listingId: { in: ids } },
+          _count: { _all: true },
+        })
+      : [];
+  const bookingCountByListingId = new Map(
+    bookingGroups.map((g) => [g.listingId, g._count._all])
+  );
 
   const listings = rows.map((l) => ({
     id: l.id,
@@ -41,7 +53,7 @@ export async function GET(req: Request) {
     userId: l.userId,
     createdAt: l.createdAt,
     updatedAt: l.updatedAt,
-    bookings: l._count.bookings,
+    bookings: bookingCountByListingId.get(l.id) ?? 0,
   }));
 
   await setCacheAndRedis(cacheKey, listings, 10_000);
@@ -50,6 +62,7 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
+  console.log("[LISTINGS DB] using listingsDB");
   const user = requireAuth(req);
 
   if (!user) {
@@ -58,7 +71,7 @@ export async function POST(req: Request) {
 
   const body = await req.json();
 
-  const listing = await marketplacePrisma.listing.create({
+  const listing = await listingsDB.listing.create({
     data: {
       title: body.title,
       price: body.price,
@@ -76,6 +89,7 @@ export async function POST(req: Request) {
   alertIfLowConversion(listing.id, conversionRate);
   alertIfHighRiskListing(listing.id, trustScore);
 
+  const { emit } = await import("@/lib/events");
   await emit("listing.updated", {
     id: listing.id,
     title: listing.title,

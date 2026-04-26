@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@repo/db";
+import { monolithPrisma } from "@/lib/db/monolith-client";
 
 export const dynamic = "force-dynamic";
 
@@ -8,7 +8,7 @@ type Ctx = { params: Promise<{ id: string }> };
 /** Listing owner user id for scheduling (property visits). */
 export async function GET(_request: Request, ctx: Ctx) {
   const { id } = await ctx.params;
-  const listing = await prisma.listing.findUnique({
+  const listing = await monolithPrisma.listing.findUnique({
     where: { id },
     select: {
       id: true,

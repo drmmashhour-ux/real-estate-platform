@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { ListingAnalyticsKind } from "@prisma/client";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
 import { isFsboPubliclyVisible } from "@/lib/fsbo/constants";
-import { prisma } from "@repo/db";
+import { listingsDB } from "@/lib/db/listings-client";
+import { monolithPrisma } from "@/lib/db/monolith-client";
 import {
   incrementFsboContactClick,
   incrementListingShareCount,
@@ -40,7 +41,7 @@ export async function POST(request: NextRequest) {
   }
 
   if (kind === "FSBO" && event === "contact_click") {
-    const listing = await prisma.fsboListing.findUnique({ where: { id: listingId } });
+    const listing = await monolithPrisma.fsboListing.findUnique({ where: { id: listingId } });
     if (!listing || !isFsboPubliclyVisible(listing)) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
@@ -49,9 +50,9 @@ export async function POST(request: NextRequest) {
   }
 
   if (kind === "CRM" && event === "contact_click") {
-    const listing = await prisma.listing.findUnique({ where: { id: listingId } });
+    const listing = await listingsDB.listing.findUnique({ where: { id: listingId } });
     if (!listing) return NextResponse.json({ error: "Not found" }, { status: 404 });
-    await prisma.listingAnalytics.upsert({
+    await monolithPrisma.listingAnalytics.upsert({
       where: { kind_listingId: { kind: ListingAnalyticsKind.CRM, listingId } },
       create: { kind: ListingAnalyticsKind.CRM, listingId, contactClicks: 1 },
       update: { contactClicks: { increment: 1 } },
@@ -61,7 +62,7 @@ export async function POST(request: NextRequest) {
   }
 
   if (event === "share" && kind === "FSBO") {
-    const listing = await prisma.fsboListing.findUnique({ where: { id: listingId } });
+    const listing = await monolithPrisma.fsboListing.findUnique({ where: { id: listingId } });
     if (!listing || !isFsboPubliclyVisible(listing)) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
@@ -70,7 +71,7 @@ export async function POST(request: NextRequest) {
   }
 
   if (event === "share" && kind === "CRM") {
-    const listing = await prisma.listing.findUnique({ where: { id: listingId } });
+    const listing = await listingsDB.listing.findUnique({ where: { id: listingId } });
     if (!listing) return NextResponse.json({ error: "Not found" }, { status: 404 });
     await incrementListingShareCount(ListingAnalyticsKind.CRM, listingId);
     await recomputeCrmListingDemandScore(listingId);

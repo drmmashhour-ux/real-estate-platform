@@ -1,4 +1,4 @@
-import { prisma } from "@repo/db";
+import { monolithPrisma } from "@/lib/db/monolith-client";
 import { getGuestId } from "@/lib/auth/session";
 import { isPlatformAdmin } from "@/lib/auth/is-platform-admin";
 import { recommendFsboListingPrice, persistFsboPricingAdviceSnapshot } from "@/src/modules/pricing/pricing.engine";
@@ -27,7 +27,7 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
   if (!userId) return Response.json({ error: "Sign in required" }, { status: 401 });
 
   try {
-    const listing = await prisma.fsboListing.findUnique({
+    const listing = await monolithPrisma.fsboListing.findUnique({
       where: { id },
       select: { ownerId: true },
     });

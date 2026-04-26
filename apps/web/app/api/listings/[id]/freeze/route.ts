@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
 import { freezeListing, holdPayoutsForListing } from "@/lib/trust-safety/fraud-response";
-import { prisma } from "@repo/db";
+import { monolithPrisma } from "@/lib/db/monolith-client";
 
 /**
  * POST /api/listings/:id/freeze
@@ -19,7 +19,7 @@ export async function POST(
     }
 
     const { id: listingId } = await context.params;
-    const listing = await prisma.shortTermListing.findUnique({
+    const listing = await monolithPrisma.shortTermListing.findUnique({
       where: { id: listingId },
       select: { id: true, listingStatus: true },
     });
