@@ -6,13 +6,13 @@ const aggregate = vi.fn();
 const upsert = vi.fn();
 const spFind = vi.fn();
 
-vi.mock("@repo/db", () => ({
-  prisma: {
+vi.mock("@/lib/db/legacy", () => ({
+  getLegacyDB: () => ({
     deal: { findMany: (...a: unknown[]) => findMany(...a) },
     lead: { aggregate: (...a: unknown[]) => aggregate(...a) },
     roiPerformanceAggregate: { upsert: (...a: unknown[]) => upsert(...a) },
     strategyPerformanceAggregate: { findMany: (...a: unknown[]) => spFind(...a) },
-  },
+  })
 }));
 
 import { analyzeRoiPerformance } from "../roi-engine.service";

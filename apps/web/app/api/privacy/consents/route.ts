@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);

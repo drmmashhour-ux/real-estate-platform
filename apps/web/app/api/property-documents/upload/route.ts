@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { checkQuotaBeforeUpload, addUsage } from "@/lib/storage-quota";
 import { createStorageFileRecord } from "@/lib/storage/record";
 import { savePropertyDocument } from "@/lib/verification/document-storage";

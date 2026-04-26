@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createToolLead, type ToolLeadType } from "@/lib/leads/create-tool-lead";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { getGuestId } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";

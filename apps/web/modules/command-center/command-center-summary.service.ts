@@ -11,7 +11,8 @@ import type {
 } from "./command-center.types";
 import { isExecutiveCommandCenter } from "./command-center.types";
 
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 
 function moneyCents(cents: number): string {
   return `$${(cents / 100).toLocaleString("en-CA", { maximumFractionDigits: 0 })}`;

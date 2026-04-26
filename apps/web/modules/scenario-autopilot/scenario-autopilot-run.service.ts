@@ -15,7 +15,8 @@ import {
 import type { ApprovalPayload, EnrichedCandidate, RankingResult } from "./scenario-autopilot.types";
 import { scenarioAutopilotLog } from "./scenario-autopilot-log";
 
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 
 function enrich(
   raw: ReturnType<typeof generateCandidateScenarios>,

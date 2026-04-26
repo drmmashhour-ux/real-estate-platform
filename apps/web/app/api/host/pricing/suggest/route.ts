@@ -5,7 +5,8 @@ import { logHostAi } from "@/modules/host-ai/host-ai.logger";
 import { logPricingAiSuggestion } from "@/modules/pricing-ai/pricing-ai.logger";
 import { suggestDynamicPrice } from "@/modules/pricing-ai/pricing.engine";
 import { buildPricingAiSignalBundle } from "@/modules/pricing-ai/signals.loader";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 
 export const dynamic = "force-dynamic";
 

@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { syncIcsImport } from "@/modules/calendar/ics/ics-sync.service";
 
 export const dynamic = "force-dynamic";

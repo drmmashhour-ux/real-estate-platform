@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { getAutonomyModeRecommendation } from "@/modules/autonomy/services/autonomy-mode-recommendation.service";
 
 export async function GET() {

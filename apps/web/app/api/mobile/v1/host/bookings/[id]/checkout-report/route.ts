@@ -1,5 +1,6 @@
 import { PlatformRole } from "@prisma/client";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { assertBnhubHostOrAdmin } from "@/lib/mobile/mobileAuth";
 
 export const dynamic = "force-dynamic";

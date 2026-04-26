@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { MemoryDomain } from "@prisma/client";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { authorizePlaybookMemoryApi } from "@/modules/playbook-memory/api/playbook-memory-authorize";
 
 export const dynamic = "force-dynamic";

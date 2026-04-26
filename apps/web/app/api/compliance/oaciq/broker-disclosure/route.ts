@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
 import { PlatformRole } from "@prisma/client";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import {
   MandatoryBrokerDisclosureError,
   getBrokerDisclosureStatusForDeal,

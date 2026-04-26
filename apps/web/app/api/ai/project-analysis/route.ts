@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { getDemoProjectById } from "@/lib/data/demo-projects";
 import { analyzeProject } from "@/lib/ai/projects-analysis";
 import { analyzeProjectInvestment } from "@/lib/ai/openai-investment";

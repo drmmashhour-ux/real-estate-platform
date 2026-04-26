@@ -2,7 +2,8 @@ import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
 import { createReview } from "@/lib/bnhub/reviews";
 import { canLeaveReview } from "@/lib/policy-engine";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 
 /** POST /api/reviews — authenticated guest submits a BNHUB stay review. */
 export async function POST(request: NextRequest) {

@@ -30,9 +30,10 @@ export const marketplaceDB = marketplaceClient;
 export { marketplaceClient as listingsDB, marketplaceClient as marketplacePrisma };
 
 export { prisma as authPrisma } from "@repo/db-auth";
-export { prisma as bnhubDB } from "@repo/db";
-export { prisma as complianceDB } from "@repo/db";
-export { prisma as monolithPrisma } from "@repo/db";
+export { getLegacyDB } from "./legacy";
+export const bnhubDB = getLegacyDB();
+export const complianceDB = getLegacyDB();
+export const monolithPrisma = getLegacyDB();
 export { prisma as miniCorePrisma } from "@repo/db-core";
 
 export { assertMarketplace } from "./domain-db";

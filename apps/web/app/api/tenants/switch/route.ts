@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { setTenantContextCookie } from "@/lib/auth/session";
 import { requireSessionUser } from "@/modules/tenancy/services/tenant-api-helpers";
 import { getUserTenantMembership } from "@/modules/tenancy/services/tenant-context-service";

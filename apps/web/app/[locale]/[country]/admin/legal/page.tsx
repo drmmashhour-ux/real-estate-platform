@@ -6,7 +6,8 @@ import { LEGAL_DOCUMENT_TYPES } from "@/lib/legal/constants";
 import { HubLayout } from "@/components/hub/HubLayout";
 import { hubNavigation } from "@/lib/hub/navigation";
 import { getHubTheme } from "@/lib/hub/themes";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { canAccessLegalManagement } from "@/lib/legal-management/admin-auth";
 import {
   allRequiredCorporateDocsSigned,

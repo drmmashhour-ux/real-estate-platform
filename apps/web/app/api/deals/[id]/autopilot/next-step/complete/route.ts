@@ -1,6 +1,7 @@
 import { authenticateBrokerDealRoute } from "@/lib/deals/broker-draft-auth";
 import { dealAutopilotFlags } from "@/config/feature-flags";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { logBrokerWorkspaceEvent, brokerWorkspaceAuditKeys } from "@/lib/broker/broker-workspace-audit";
 
 export const dynamic = "force-dynamic";

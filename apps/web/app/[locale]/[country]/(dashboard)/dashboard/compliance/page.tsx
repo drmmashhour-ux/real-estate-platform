@@ -3,7 +3,8 @@ import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { PlatformRole } from "@prisma/client";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { oaciqAlignmentEnforcementEnabled } from "@/lib/compliance/oaciq/oaciq-alignment-layer.service";
 import { resolveOaciqAlignmentEventAction } from "./actions";
 

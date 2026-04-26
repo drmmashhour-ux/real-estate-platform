@@ -1,4 +1,5 @@
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { analyzeRoiPerformance } from "@/modules/investor-intelligence/roi-engine.service";
 import { corporateStrategyLog } from "./corporate-strategy-logger";
 import type { BottleneckInsight, BottleneckSeverity } from "./corporate-strategy.types";

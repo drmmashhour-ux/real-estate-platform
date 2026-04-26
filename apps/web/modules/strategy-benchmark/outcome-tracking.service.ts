@@ -1,5 +1,6 @@
 import type { StrategyBucketOutcome } from "@prisma/client";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { strategyBenchmarkLog } from "./strategy-benchmark-logger";
 import { attributeOutcomeToStrategies } from "./strategy-attribution.engine";
 import { updateAggregatesForOutcome } from "./performance-aggregator.service";

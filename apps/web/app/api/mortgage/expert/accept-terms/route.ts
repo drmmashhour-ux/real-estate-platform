@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { recordPlatformEvent } from "@/lib/observability";
 import { requireMortgageExpertSession } from "@/modules/mortgage/services/expert-guard";
 

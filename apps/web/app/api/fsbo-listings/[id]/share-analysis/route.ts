@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { captureServerEvent } from "@/lib/analytics/posthog-server";
 import { signListingAnalysisShare } from "@/lib/share/listing-analysis-share";
 import { getPublicAppUrl } from "@/lib/config/public-app-url";

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { lecipmLaunchInvestorFlags } from "@/config/feature-flags";
 import { requirePlatformLaunchInvestor } from "@/lib/launch-investor-api-auth";
 import { logGrowthEngineAudit } from "@/modules/growth-engine-audit/growth-engine-audit.service";

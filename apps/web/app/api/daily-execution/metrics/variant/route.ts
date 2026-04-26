@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { recordDmVariantReply, recordDmVariantUse } from "@/src/modules/daily-execution/application/dailyMetricsService";
 
 const ALLOWED = new Set(["curiosity", "problem_focused", "direct_value"]);

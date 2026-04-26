@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { ExecutionDashboardShell } from "@/components/execution/ExecutionDashboardShell";
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import Link from "next/link";
 
 export const metadata: Metadata = {

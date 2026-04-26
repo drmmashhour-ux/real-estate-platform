@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { createCalibrationBatch } from "@/modules/continuous-calibration/application/createCalibrationBatch";
 import { listCalibrationBatches } from "@/modules/continuous-calibration/infrastructure/calibrationRepository";
 import { requirePlatformAdmin } from "../../model-validation/_auth";

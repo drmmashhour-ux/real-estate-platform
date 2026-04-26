@@ -20,7 +20,8 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: "listing_id required" }, { status: 400 });
     }
 
-    const { prisma } = await import("@repo/db");
+    const { getLegacyDB } = await import("@/lib/db/legacy");
+    const prisma = getLegacyDB();
     const listing = await prisma.shortTermListing.findUnique({
       where: { id: listingId },
       select: { ownerId: true },

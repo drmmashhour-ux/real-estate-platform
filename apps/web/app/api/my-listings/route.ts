@@ -1,4 +1,5 @@
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { requireAuth } from "@/lib/auth/middleware";
 
 export async function GET(req: Request) {

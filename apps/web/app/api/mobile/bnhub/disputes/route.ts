@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { createDispute } from "@/lib/bnhub/disputes";
 import { requireMobileGuestUser } from "@/lib/bnhub/mobile-api";
 import { notifyActiveAdmins } from "@/lib/bnhub/notify-admins-mobile";

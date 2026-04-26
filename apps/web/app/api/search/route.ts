@@ -3,8 +3,9 @@ import { getGuestId } from "@/lib/auth/session";
 import { trackDemoEvent } from "@/lib/demo-analytics";
 import { DemoEvents } from "@/lib/demo-event-types";
 import { redisGet, redisSet } from "@/lib/redis";
-import { listingsDB } from "@/lib/db/listings-client";
+import { getListingsDB } from "@/lib/db/routeSwitch";
 import { measure } from "@/lib/db/loggedQuery";
+import { track } from "@/lib/analytics/events";
 
 export const dynamic = "force-dynamic";
 
@@ -27,8 +28,11 @@ export async function GET(request: NextRequest) {
       return Response.json([]);
     }
 
+    void track("search_performed", { query: q });
+
     const key = `search:${q}`;
-    console.log("[SEARCH DB] using listingsDB");
+    const db = getListingsDB();
+    console.log("[SEARCH DB] getListingsDB()");
 
     const cached = await redisGet(key);
     if (cached != null) {
@@ -36,7 +40,7 @@ export async function GET(request: NextRequest) {
     }
 
     const listings = await measure("search listingsDB title", () =>
-      listingsDB.listing.findMany({
+      db.listing.findMany({
         where: {
           title: { contains: q, mode: "insensitive" },
         },

@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { DEFAULT_RENTAL_LEASE_CONTRACT } from "@/lib/rental/default-contract";
 import { createRentPaymentSchedule } from "@/lib/rental/lease-payments";
 

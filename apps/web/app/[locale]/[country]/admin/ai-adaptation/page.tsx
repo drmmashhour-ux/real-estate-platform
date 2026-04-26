@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { requireAdminUser } from "@/modules/analytics/services/require-admin";
 import { getCrmSuggestionQuality } from "@/modules/ai-training/application/crmSuggestionQualityService";
 import { getSeoPerformanceFeedback } from "@/modules/ai-training/application/seoPerformanceFeedbackService";

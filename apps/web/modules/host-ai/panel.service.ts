@@ -1,5 +1,6 @@
 import { ListingStatus } from "@prisma/client";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { suggestDynamicPrice } from "@/modules/pricing-ai/pricing.engine";
 import { buildPricingAiSignalBundle } from "@/modules/pricing-ai/signals.loader";
 import { buildHostInsights } from "./insights.engine";

@@ -4,7 +4,7 @@
 
 import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { monolithPrisma } from "@/lib/db";
+import { authPrisma, monolithPrisma } from "@/lib/db";
 import { getStripe, isStripeConfigured } from "@/lib/stripe";
 import { stripeAppBaseUrl } from "@/lib/stripe/app-base-url";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
@@ -35,14 +35,13 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const user = await monolithPrisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      stripeAccountId: true,
-      role: true,
-      _count: { select: { shortTermListings: true } },
-    },
-  });
+  const [user, stCount] = await Promise.all([
+    authPrisma.user.findUnique({
+      where: { id: userId },
+      select: { stripeAccountId: true, role: true },
+    }),
+    monolithPrisma.shortTermListing.count({ where: { ownerId: userId } }),
+  ]);
   if (!user?.stripeAccountId?.trim()) {
     return Response.json(
       { error: "No connected account yet. Call POST /api/stripe/connect/create-account first." },
@@ -50,7 +49,7 @@ export async function POST(request: NextRequest) {
     );
   }
   // Web session has no Supabase host id here; BNHUB listing count is not applied (use mobile Connect API for full eligibility).
-  if (!isBnhubHostConnectEligible(user.role, user._count.shortTermListings, 0)) {
+  if (!isBnhubHostConnectEligible(user.role, stCount, 0)) {
     return Response.json({ error: "Not allowed" }, { status: 403 });
   }
 

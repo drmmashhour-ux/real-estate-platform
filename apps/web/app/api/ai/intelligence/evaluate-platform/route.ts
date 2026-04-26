@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { ListingStatus } from "@prisma/client";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { requireAdminSession } from "@/lib/admin/require-admin";
 import { evaluateListingForAutopilot } from "@/lib/ai/autopilot/evaluateListingForAutopilot";
 

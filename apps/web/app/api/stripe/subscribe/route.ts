@@ -3,7 +3,8 @@
  * Mortgage expert Stripe Checkout (subscription mode).
  */
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { requireMortgageExpertWithTerms } from "@/modules/mortgage/services/expert-guard";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
 import { getStripe, isStripeConfigured } from "@/lib/stripe";

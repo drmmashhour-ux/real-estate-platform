@@ -1,5 +1,6 @@
 import type { StrategyBenchmarkDomain } from "@prisma/client";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 
 export type StrategyPerformanceView = {
   winRate: number | null;

@@ -4,7 +4,8 @@ import { getGuestId } from "@/lib/auth/session";
 import { isPlatformAdmin } from "@/lib/auth/is-platform-admin";
 import { EquityAdminClient } from "@/components/admin/EquityAdminClient";
 import type { Prisma } from "@prisma/client";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { getCapTableSnapshot } from "@/src/modules/equity/capTable";
 
 export const dynamic = "force-dynamic";

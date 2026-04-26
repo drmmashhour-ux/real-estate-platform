@@ -3,7 +3,8 @@ import { isReasonableListingId } from "@/lib/api/safe-params";
 import { requireBnhubHostAccess } from "@/lib/host/require-bnhub-host-access";
 import { logHostAi } from "@/modules/host-ai/host-ai.logger";
 import { suggestBookingAssistance } from "@/modules/host-ai/booking-assistant";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 
 export const dynamic = "force-dynamic";
 

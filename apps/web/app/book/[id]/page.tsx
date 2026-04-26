@@ -1,18 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 
+import { generateUrgency } from "@/lib/ai/urgency";
 import {
   calculateTotalPrice,
   dateFromYmd,
   totalWithPlatformFeeCents,
 } from "@/lib/pricing/calculateTotal";
+import { BookingSummary } from "./BookingSummary";
 
 type BookedRange = { id: string; startDate: string; endDate: string };
+
+const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
 function toISODateLocal(d: Date): string {
   const y = d.getFullYear();
@@ -58,6 +62,12 @@ function rangeTouchesBooked(from: Date, to: Date, bookedDates: BookedRange[]): b
   return false;
 }
 
+function stayNightsFromRange(start: Date, end: Date): number {
+  const n = (end.getTime() - start.getTime()) / MS_PER_DAY;
+  if (n <= 0) return 1;
+  return Math.max(1, Math.round(n));
+}
+
 export default function BookingPage() {
   const params = useParams();
   const listingId = typeof params?.id === "string" ? params.id : "";
@@ -67,7 +77,8 @@ export default function BookingPage() {
   const [range, setRange] = useState<[Date, Date] | Date | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [listing, setListing] = useState<{ price: number } | null>(null);
+  const [listing, setListing] = useState<{ price: number; title?: string } | null>(null);
+  const [bookingCountSignal, setBookingCountSignal] = useState(0);
   /** Active calendar month’s year; drives a bounded `from`/`to` booking fetch (Order 64). */
   const [bookingsViewYear, setBookingsViewYear] = useState(() => new Date().getFullYear());
 
@@ -78,7 +89,10 @@ export default function BookingPage() {
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (data && typeof data === "object" && typeof (data as { price?: number }).price === "number") {
-          setListing({ price: (data as { price: number }).price });
+          setListing({
+            price: (data as { price: number }).price,
+            title: typeof (data as { title?: string }).title === "string" ? (data as { title: string }).title : undefined,
+          });
         } else {
           setListing(null);
         }
@@ -102,6 +116,41 @@ export default function BookingPage() {
       })
       .catch(() => setBookedDates([]));
   }, [listingId, bookingsViewYear]);
+
+  useEffect(() => {
+    if (!listingId) return;
+    fetch(
+      `/api/listings/${listingId}/bookings?from=${encodeURIComponent("2000-01-01")}&to=${encodeURIComponent("2100-12-31")}`
+    )
+      .then((r) => r.json())
+      .then((data: unknown) => {
+        if (Array.isArray(data)) setBookingCountSignal(data.length);
+        else setBookingCountSignal(0);
+      })
+      .catch(() => setBookingCountSignal(0));
+  }, [listingId]);
+
+  const urgencyMessages = useMemo(
+    () => generateUrgency({ bookings: bookingCountSignal, views: undefined }),
+    [bookingCountSignal]
+  );
+
+  const { displayNights: nightsForUi, totalDisplay } = useMemo(() => {
+    if (!listing || !startDate || !endDate) {
+      return { displayNights: 0, totalDisplay: "—" };
+    }
+    const start = dateFromYmd(startDate);
+    const end = dateFromYmd(endDate);
+    const n = stayNightsFromRange(start, end);
+    const subtotalDollars = calculateTotalPrice(start, end, listing.price);
+    const subtotalCents = Math.round(subtotalDollars * 100);
+    const { finalCents } = totalWithPlatformFeeCents(subtotalCents);
+    const totalDisplay = (finalCents / 100).toLocaleString("en-US", {
+      style: "currency",
+      currency: "USD",
+    });
+    return { displayNights: n, totalDisplay };
+  }, [listing, startDate, endDate]);
 
   async function handleBooking() {
     if (!listingId || !startDate || !endDate) {
@@ -156,7 +205,7 @@ export default function BookingPage() {
           amount,
           productName: `Stay (${startDate} → ${endDate})`,
           listingId,
-          successUrl: `${base}/success?bookingId=${encodeURIComponent(data.id)}`,
+          successUrl: `${base}/success?bookingId=${encodeURIComponent(data.id!)}`,
           cancelUrl: `${base}/cancel`,
           metadata: {
             bookingId: data.id,
@@ -180,80 +229,99 @@ export default function BookingPage() {
 
   if (!listingId) {
     return (
-      <div style={{ padding: 40 }}>
+      <div className="p-10">
         <p>Invalid listing.</p>
-        <Link href="/listings">Back</Link>
+        <Link className="text-blue-600 underline" href="/listings">
+          Back
+        </Link>
       </div>
     );
   }
 
   return (
-    <div style={{ padding: 40 }}>
-      <nav style={{ marginBottom: 16 }}>
-        <Link href={`/listings/${listingId}`}>← Listing</Link>
-        {" · "}
-        <Link href="/listings">All listings</Link>
-      </nav>
+    <div className="min-h-screen bg-zinc-50 px-4 py-8 dark:bg-zinc-950">
+      <div className="mx-auto max-w-5xl">
+        <nav className="mb-6 text-sm text-zinc-600 dark:text-zinc-400">
+          <Link className="hover:text-zinc-900 dark:hover:text-zinc-100" href={`/listings/${listingId}`}>
+            ← Listing
+          </Link>
+          <span className="mx-2">·</span>
+          <Link className="hover:text-zinc-900 dark:hover:text-zinc-100" href="/listings">
+            All listings
+          </Link>
+        </nav>
 
-      <h1>Book Listing</h1>
+        <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100">
+          {listing?.title ? `Book: ${listing.title}` : "Book your stay"}
+        </h1>
 
-      <p style={{ fontSize: 14, color: "#555", maxWidth: 480 }}>
-        Unavailable dates are greyed out on the calendar. Select a check-in and check-out range (inclusive).
-      </p>
+        <p className="mt-2 max-w-xl text-sm text-zinc-600 dark:text-zinc-400">
+          Unavailable dates are greyed out. Select a check-in and check-out range. Prices include a 10% service
+          fee at checkout.
+        </p>
 
-      <div style={{ marginTop: 16, maxWidth: 400 }}>
-        <Calendar
-          selectRange
-          value={range}
-          onActiveStartDateChange={({ activeStartDate }) => {
-            setError(null);
-            setBookingsViewYear(activeStartDate.getFullYear());
-          }}
-          onChange={(v) => {
-            setError(null);
-            if (Array.isArray(v) && v[0] && v[1]) {
-              const a = v[0];
-              const b = v[1];
-              const from = a < b ? a : b;
-              const to = a < b ? b : a;
-              if (rangeTouchesBooked(from, to, bookedDates)) {
-                setError("Some dates are not available. Please select a different range.");
-                setRange(null);
-                setStartDate("");
-                setEndDate("");
-                return;
-              }
-              setRange([from, to]);
-              setStartDate(toISODateLocal(from));
-              setEndDate(toISODateLocal(to));
-              return;
-            }
-            if (v instanceof Date) {
-              setRange(v);
-              setStartDate(toISODateLocal(v));
-              setEndDate(toISODateLocal(v));
-            }
-          }}
-          tileDisabled={({ date }) => isBooked(date, bookedDates)}
-        />
-      </div>
+        <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(280px,400px)]">
+          <div>
+            <div className="max-w-md overflow-hidden rounded-2xl border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-900">
+              <Calendar
+                selectRange
+                value={range}
+                onActiveStartDateChange={({ activeStartDate }) => {
+                  setError(null);
+                  setBookingsViewYear(activeStartDate.getFullYear());
+                }}
+                onChange={(v) => {
+                  setError(null);
+                  if (Array.isArray(v) && v[0] && v[1]) {
+                    const a = v[0];
+                    const b = v[1];
+                    const from = a < b ? a : b;
+                    const to = a < b ? b : a;
+                    if (rangeTouchesBooked(from, to, bookedDates)) {
+                      setError("Some dates are not available. Please select a different range.");
+                      setRange(null);
+                      setStartDate("");
+                      setEndDate("");
+                      return;
+                    }
+                    setRange([from, to]);
+                    setStartDate(toISODateLocal(from));
+                    setEndDate(toISODateLocal(to));
+                    return;
+                  }
+                  if (v instanceof Date) {
+                    setRange(v);
+                    setStartDate(toISODateLocal(v));
+                    setEndDate(toISODateLocal(v));
+                  }
+                }}
+                tileDisabled={({ date }) => isBooked(date, bookedDates)}
+              />
+            </div>
 
-      {error ? (
-        <div
-          className="mt-4 max-w-md rounded-lg bg-red-100 p-3 text-sm text-red-700"
-          role="alert"
-        >
-          {error}
+            {error ? (
+              <div
+                className="mt-4 max-w-md rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-200"
+                role="alert"
+              >
+                {error}
+              </div>
+            ) : null}
+          </div>
+
+          <BookingSummary
+            from={startDate || "—"}
+            to={endDate || "—"}
+            nights={nightsForUi}
+            pricePerNight={listing?.price ?? 0}
+            totalDisplay={totalDisplay}
+            onConfirm={() => void handleBooking()}
+            busy={busy}
+            disabled={busy || !startDate || !endDate || !listing}
+            urgencyMessages={urgencyMessages}
+          />
         </div>
-      ) : null}
-
-      <p style={{ marginTop: 16 }}>
-        <strong>From:</strong> {startDate || "—"} <strong>To:</strong> {endDate || "—"}
-      </p>
-
-      <button type="button" onClick={() => void handleBooking()} disabled={busy || !startDate || !endDate}>
-        {busy ? "Working…" : "Confirm Booking"}
-      </button>
+      </div>
     </div>
   );
 }

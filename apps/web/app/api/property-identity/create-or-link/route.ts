@@ -2,7 +2,8 @@ import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
 import { createOrLink } from "@/lib/property-identity/create-or-link";
 import { LISTING_TYPES } from "@/lib/property-identity/constants";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 
 /**
  * POST /api/property-identity/create-or-link

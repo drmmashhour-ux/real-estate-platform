@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { checkListingLocationPolicy } from "@/modules/bnhub-trust/services/zonePolicyService";
 import { ListingStatus } from "@prisma/client";
 

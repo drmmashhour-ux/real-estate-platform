@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { DEMO_PROJECTS } from "@/lib/data/demo-projects";
 import { getTrialEndDate } from "@/lib/projects-pricing";
 import { isFeaturedEffective, sortProjectsByFeaturedAndPremium } from "@/lib/projects-featured";

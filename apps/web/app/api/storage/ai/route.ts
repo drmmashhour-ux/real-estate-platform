@@ -1,5 +1,6 @@
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { getUsage } from "@/lib/storage-quota";
 import { getStorageAnalytics } from "@/lib/storage/analytics";
 import { getOptimizationRecommendations } from "@/lib/storage/ai-optimizer";

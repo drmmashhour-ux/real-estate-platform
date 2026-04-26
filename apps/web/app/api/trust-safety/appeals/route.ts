@@ -1,7 +1,8 @@
 import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
 import { submitAppeal } from "@/lib/trust-safety/appeals-service";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 
 /**
  * POST /api/trust-safety/appeals

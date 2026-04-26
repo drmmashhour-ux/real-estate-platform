@@ -1,4 +1,5 @@
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { authenticateBrokerDealRoute } from "@/lib/deals/broker-draft-auth";
 import { logContractEngineEvent } from "@/lib/contract-engine/events";
 import { requireAiContractEngine } from "@/lib/contract-engine/guard";

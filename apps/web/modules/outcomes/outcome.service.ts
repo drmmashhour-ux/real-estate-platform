@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 
 import { outcomeAlertsFromSummary } from "./outcome-alerts";
 import { maybeAppendLearningProposals } from "./outcome-learning.service";

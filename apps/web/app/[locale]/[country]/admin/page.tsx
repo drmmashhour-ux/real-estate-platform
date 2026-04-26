@@ -3,7 +3,8 @@ import { redirect } from "next/navigation";
 import { HubLayout } from "@/components/hub/HubLayout";
 import { getGuestId } from "@/lib/auth/session";
 import { ACCOUNTANT_NAV } from "@/lib/admin/accountant-nav";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { requireAdminSession } from "@/lib/admin/require-admin";
 import { isOpsTeamRole } from "@/lib/admin/staff-portal-auth";
 

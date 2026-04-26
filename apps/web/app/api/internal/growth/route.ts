@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { requireAdminSession } from "@/lib/admin/require-admin";
 import { isGrowthAutomationEnabled } from "@/lib/feature-flags/revenue-growth";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { runGrowthAutomation } from "@/modules/growth/application/runGrowthAutomation";
 
 export const dynamic = "force-dynamic";

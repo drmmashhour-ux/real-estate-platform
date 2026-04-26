@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
 import { applyLoginSessionCookies } from "@/lib/auth/apply-login-session";
 import { isMortgageExpertRole } from "@/lib/marketplace/mortgage-role";

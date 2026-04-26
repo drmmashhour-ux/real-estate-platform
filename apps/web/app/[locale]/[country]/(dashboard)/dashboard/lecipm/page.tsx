@@ -3,7 +3,8 @@ import type { Metadata } from "next";
 import { CommandCenterView } from "@/components/command-center/CommandCenterView";
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
 import { loadCommandCenterPagePayload } from "@/modules/command-center/command-center-page.service";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 
 export const metadata: Metadata = {
   title: "LECIPM Command Center",

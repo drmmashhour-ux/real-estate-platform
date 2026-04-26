@@ -2,10 +2,10 @@ import { describe, expect, it, vi } from "vitest";
 
 const findManyS = vi.fn();
 
-vi.mock("@repo/db", () => ({
-  prisma: {
+vi.mock("@/lib/db/legacy", () => ({
+  getLegacyDB: () => ({
     segmentPerformanceAggregate: { findMany: (...a: unknown[]) => findManyS(...a) },
-  },
+  })
 }));
 
 import { analyzeSegmentPerformance } from "../segment-intelligence.service";

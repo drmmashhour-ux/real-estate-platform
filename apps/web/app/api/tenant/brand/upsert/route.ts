@@ -1,6 +1,7 @@
 import { PlatformRole } from "@prisma/client";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { upsertTenantBrand } from "@/lib/tenant/branding";
 import { logTenantAudit } from "@/lib/tenant/audit";
 import { getTenantMembership, TENANT_BRAND_ROLES } from "@/lib/tenant/permissions";

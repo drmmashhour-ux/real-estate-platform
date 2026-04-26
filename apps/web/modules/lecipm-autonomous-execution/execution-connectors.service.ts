@@ -1,6 +1,7 @@
 import type { LecipmExecutionTask } from "@prisma/client";
 import { ActionPipelineType } from "@prisma/client";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { createActionPipelineRecord } from "@/modules/action-pipeline/action-pipeline.service";
 
 /**

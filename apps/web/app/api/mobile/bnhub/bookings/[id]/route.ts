@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { getBookingById } from "@/lib/bnhub/booking";
 import { requireMobileGuestUser } from "@/lib/bnhub/mobile-api";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 
 export const dynamic = "force-dynamic";
 

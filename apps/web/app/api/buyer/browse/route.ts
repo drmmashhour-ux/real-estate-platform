@@ -8,7 +8,8 @@ import {
   parsePropertyBrowseFiltersFromBody,
   type PropertyBrowseFilters,
 } from "@/lib/buy/property-browse-filters";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { buildFsboPublicVisibilityWhere } from "@/lib/fsbo/listing-expiry";
 import { getListingTransactionFlagsForListings } from "@/lib/fsbo/listing-transaction-flag";
 import type { GlobalSearchFiltersExtended } from "@/components/search/FilterState";

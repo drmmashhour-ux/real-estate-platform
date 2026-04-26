@@ -1,5 +1,5 @@
 import { stripe } from "@/lib/stripe";
-import { monolithPrisma } from "@/lib/db";
+import { authPrisma, monolithPrisma } from "@/lib/db";
 import { requireAuth } from "@/lib/auth/middleware";
 
 export const dynamic = "force-dynamic";
@@ -27,7 +27,7 @@ export async function POST(_req: Request) {
   const base =
     process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "").trim() || "http://localhost:3001";
 
-  const dbUser = await monolithPrisma.user.findUnique({
+  const dbUser = await authPrisma.user.findUnique({
     where: { id: userId },
     select: { stripeAccountId: true, email: true },
   });

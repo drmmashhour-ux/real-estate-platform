@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { getGuestId } from "@/lib/auth/session";
 import { MarketplaceOnboardingLayout } from "@/components/marketplace/MarketplaceOnboardingLayout";
 import { BrokerLecipmOnboardingWizard } from "@/components/broker-onboarding/BrokerLecipmOnboardingWizard";

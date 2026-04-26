@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
 import { resolveSeniorHubAccess, canAccessResidenceDashboard } from "@/lib/senior-dashboard/role";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";

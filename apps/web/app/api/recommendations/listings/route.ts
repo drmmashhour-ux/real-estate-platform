@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { buildFsboPublicVisibilityWhere } from "@/lib/fsbo/listing-expiry";
 import { buildFsboPublicListingPath } from "@/lib/seo/public-urls";
 import {

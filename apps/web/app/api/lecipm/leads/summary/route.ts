@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { Prisma } from "@prisma/client";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { getGuestId } from "@/lib/auth/session";
 import { PLATFORM_BNHUB_HOST_FEE_RATE } from "@/lib/leads/commission";
 import { normalizePipelineStage } from "@/lib/leads/pipeline-stage";

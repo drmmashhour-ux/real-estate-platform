@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { logSeniorCommand } from "@/lib/senior-command/log";
 import { seniorCommandAuth, canOps } from "@/lib/senior-command/api-auth";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 
 export const dynamic = "force-dynamic";
 

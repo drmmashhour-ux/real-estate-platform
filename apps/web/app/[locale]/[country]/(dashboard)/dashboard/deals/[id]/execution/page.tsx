@@ -9,7 +9,8 @@ import {
 } from "@/config/feature-flags";
 import { getGuestId } from "@/lib/auth/session";
 import { canMutateExecution, findDealForParticipant } from "@/lib/deals/execution-access";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { DealExecutionWorkspace } from "@/components/deals/DealExecutionWorkspace";
 import { DealTimeline } from "@/components/deal-timeline/DealTimeline";
 

@@ -2,7 +2,8 @@ import { Suspense } from "react";
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
 import { BrokerMessagesTabs } from "@/components/messaging/BrokerMessagesTabs";
 import { MessagesPageClient } from "@/components/messaging/MessagesPageClient";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { countUnreadLecipmBrokerInbox } from "@/lib/messages/unread-count";
 
 export const dynamic = "force-dynamic";

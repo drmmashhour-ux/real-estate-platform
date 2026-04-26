@@ -1,4 +1,4 @@
-import { listingsDB } from "@/lib/db/listings-client";
+import { getListingsDB } from "@/lib/db/routeSwitch";
 
 import { toDateOnlyFromString } from "@/lib/dates/dateOnly";
 import {
@@ -18,7 +18,8 @@ export async function GET(
   req: Request,
   context: { params: Promise<{ id: string }> }
 ) {
-  console.log("[LISTINGS DB] using listingsDB");
+  const db = getListingsDB();
+  console.log("[LISTINGS DB] getListingsDB()");
   const { id: listingId } = await context.params;
   if (!listingId?.trim()) {
     return Response.json({ error: "listingId required" }, { status: 400 });
@@ -41,7 +42,7 @@ export async function GET(
     return Response.json({ error: "Both from and to are required when using a date range" }, { status: 400 });
   }
 
-  const bookings = await listingsDB.booking.findMany({
+  const bookings = await db.booking.findMany({
     where: {
       listingId: listingsId,
       ...activeMarketplaceInventoryFilter(),

@@ -1,4 +1,4 @@
-import { authPrisma, listingsDB, marketplacePrisma, monolithPrisma } from "@/lib/db";
+import { authPrisma, getListingsDB, marketplacePrisma } from "@/lib/db";
 
 /**
  * Cross-client “join”: Prisma cannot model relations across `listingsDB` and `authPrisma`.
@@ -8,7 +8,7 @@ import { authPrisma, listingsDB, marketplacePrisma, monolithPrisma } from "@/lib
  * minimal slice for rollout; full `User` lives in `@repo/db-auth` here.
  */
 export async function getListingWithUser(listingId: string) {
-  const listing = await listingsDB.listing.findUnique({
+  const listing = await getListingsDB().listing.findUnique({
     where: { id: listingId },
   });
 
@@ -22,8 +22,7 @@ export async function getListingWithUser(listingId: string) {
 }
 
 /**
- * Order 90 — Split marketplace `Listing` + monolith `User` (host profile, Stripe Connect, etc.).
- * Same instance as `listingsDB` / `marketplacePrisma`; host row is only on the monolith schema.
+ * Order 90 — marketplace `Listing` + `authPrisma` host row (shared `users` table).
  */
 export async function getListingWithHost(listingId: string) {
   const listing = await marketplacePrisma.listing.findUnique({
@@ -32,7 +31,7 @@ export async function getListingWithHost(listingId: string) {
 
   if (!listing) return null;
 
-  const host = await monolithPrisma.user.findUnique({
+  const host = await authPrisma.user.findUnique({
     where: { id: listing.userId },
   });
 

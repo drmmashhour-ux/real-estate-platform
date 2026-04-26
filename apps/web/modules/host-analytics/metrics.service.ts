@@ -3,7 +3,8 @@
  */
 
 import { BookingStatus, ListingStatus } from "@prisma/client";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { eachNightBetween, utcDayStart } from "@/lib/bnhub/availability-day-helpers";
 import type {
   HostAnalyticsTimePoint,

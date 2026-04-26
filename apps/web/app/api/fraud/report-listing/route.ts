@@ -2,7 +2,8 @@ import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
 import { openInvestigation } from "@/lib/trust-safety/investigation-service";
 import { FRAUD_REASON_CODES } from "@/lib/trust-safety/constants";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 
 /**
  * POST /api/fraud/report-listing

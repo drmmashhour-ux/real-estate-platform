@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("@repo/db", () => ({
-  prisma: { deal: { count: vi.fn().mockResolvedValue(10) } },
+vi.mock("@/lib/db/legacy", () => ({
+  getLegacyDB: () => ({ deal: { count: vi.fn().mockResolvedValue(10) } }),
 }));
 vi.mock("../roi-engine.service", () => ({
   analyzeRoiPerformance: vi.fn().mockResolvedValue([]),

@@ -7,7 +7,8 @@ import { listNeighborhoodSlugs } from "@/src/modules/demand-engine/neighborhoodR
 import { GROWTH_CITY_SLUGS } from "@/lib/growth/geo-slugs";
 import { listDistinctCitiesWithData } from "@/lib/market/data";
 import { cityToSlug } from "@/lib/market/slug";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { buildFsboPublicVisibilityWhere } from "@/lib/fsbo/listing-expiry";
 import { getSiteBaseUrl } from "@/modules/seo/lib/siteBaseUrl";
 import { buildBnhubStaySeoSlug, buildFsboPublicListingPath } from "@/lib/seo/public-urls";

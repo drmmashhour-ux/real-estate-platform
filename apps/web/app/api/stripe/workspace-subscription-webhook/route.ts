@@ -1,7 +1,8 @@
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { logError } from "@/lib/logger";
 import { syncSubscriptionFromWebhook } from "@/modules/billing/syncSubscriptionFromWebhook";
 

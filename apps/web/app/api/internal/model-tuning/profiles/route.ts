@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { createTuningProfile } from "@/modules/model-tuning/infrastructure/tuningRepository";
 import type { TuningProfileConfig } from "@/modules/scoring/tuningProfile";
 import { requirePlatformAdmin } from "../_auth";

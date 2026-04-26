@@ -2,7 +2,8 @@
  * Mobile-friendly JSON — same rules as guest web summary.
  */
 
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { requireMobileUser } from "@/lib/mobile/mobileAuth";
 import { getGuestPaymentSummary } from "@/modules/bnhub-payments/services/paymentService";
 import { getRefundSummary } from "@/modules/bnhub-payments/services/refundService";

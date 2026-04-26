@@ -1,4 +1,5 @@
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { investIntelLog } from "./investor-intel-logger";
 import type { InvestmentOpportunity, InvestmentRisk, MarketExpansionCandidate } from "./investor-intelligence.types";
 import { analyzeRoiPerformance } from "./roi-engine.service";

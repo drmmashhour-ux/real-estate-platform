@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { mapMobileNotification, requireMobileGuestUser } from "@/lib/bnhub/mobile-api";
 import {
   markAllNotificationsRead,

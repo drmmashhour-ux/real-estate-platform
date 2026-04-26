@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { classifyActionKey } from "@/lib/ai/policies/action-policy";
 import { getManagerAiPlatformSettings } from "@/lib/manager-ai/platform-settings";
 

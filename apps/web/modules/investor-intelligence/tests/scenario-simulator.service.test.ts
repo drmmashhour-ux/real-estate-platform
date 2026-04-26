@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 
 const create = vi.fn();
-vi.mock("@repo/db", () => ({
-  prisma: { expansionScenario: { create: (...a: unknown[]) => create(...a) } },
+vi.mock("@/lib/db/legacy", () => ({
+  getLegacyDB: () => ({ expansionScenario: { create: (...a: unknown[]) => create(...a) } }),
 }));
 
 import { simulateInvestmentScenario } from "../scenario-simulator.service";

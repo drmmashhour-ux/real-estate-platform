@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { getGuestId } from "@/lib/auth/session";
 import { pipelineLog } from "@/modules/green-ai/pipeline/pipeline-logger";
 import { isSubsidyPipelineStage } from "@/modules/green-ai/pipeline/upgrade-flow";

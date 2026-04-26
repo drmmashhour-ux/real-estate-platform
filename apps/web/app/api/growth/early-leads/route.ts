@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import type { Prisma } from "@prisma/client";
 import { z } from "zod";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
 import { sendFormSubmissionNotificationToAdmin } from "@/lib/email/notifications";
 import { formatFormActivityNote } from "@/lib/forms/form-activity";

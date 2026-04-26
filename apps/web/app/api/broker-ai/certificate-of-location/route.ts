@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { brokerAiFlags } from "@/config/feature-flags";
 import { assertCertificateOfLocationListingAccess } from "@/modules/broker-ai/certificate-of-location/certificate-of-location-access.service";
 import { loadCertificateOfLocationPresentation } from "@/modules/broker-ai/certificate-of-location/certificate-of-location-view-model.service";

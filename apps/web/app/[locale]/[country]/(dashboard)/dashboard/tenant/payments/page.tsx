@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
 import { RentDecisionAiCard } from "@/components/rental/RentDecisionAiCard";
 import { RentLifecycleTimeline } from "@/components/rental/RentLifecycleTimeline";

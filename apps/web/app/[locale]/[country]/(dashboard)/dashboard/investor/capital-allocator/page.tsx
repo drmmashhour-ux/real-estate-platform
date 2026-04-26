@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { getGuestId } from "@/lib/auth/session";
 import { getLatestCapitalPlanSummary } from "@/modules/capital-allocator/capital-plan-summary.service";
 import { CapitalAllocatorV2Client } from "@/components/capital-allocator/CapitalAllocatorV2Client";

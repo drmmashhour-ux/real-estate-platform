@@ -1,7 +1,8 @@
 import type { EnrichedCandidate, RollbackEvent } from "./scenario-autopilot.types";
 import { scenarioAutopilotLog } from "./scenario-autopilot-log";
 
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 
 /**
  * Marks a run reversed; does not recreate historical config (connectors must implement restore).

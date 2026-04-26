@@ -1,7 +1,8 @@
 import type { Prisma } from "@prisma/client";
 import { cookies } from "next/headers";
 import { fsboCityWhereFromParam } from "@/lib/geo/city-search";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { getGuestId } from "@/lib/auth/session";
 import { parseSessionUserId, TENANT_CONTEXT_COOKIE_NAME } from "@/lib/auth/session-cookie";
 import {

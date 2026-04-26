@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { LeadContactOrigin } from "@prisma/client";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 
 export async function ImmoContactControlSections() {
   const [dealsWithLead, commissionRows] = await Promise.all([

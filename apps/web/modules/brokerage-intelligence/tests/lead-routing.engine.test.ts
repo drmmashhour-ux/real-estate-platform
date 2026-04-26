@@ -3,11 +3,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const findManyUser = vi.fn();
 const wbr = vi.fn();
 
-vi.mock("@repo/db", () => ({
-  prisma: {
+vi.mock("@/lib/db/legacy", () => ({
+  getLegacyDB: () => ({
     user: { findMany: (...a: unknown[]) => findManyUser(...a) },
     workspaceBrokerReputation: { findMany: (...a: unknown[]) => wbr(...a) },
-  },
+  })
 }));
 
 vi.mock("../broker-load.service", () => ({

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { welcomeTaxForPriceCents } from "@/lib/compare/welcome-slug";
 
 export const dynamic = "force-dynamic";

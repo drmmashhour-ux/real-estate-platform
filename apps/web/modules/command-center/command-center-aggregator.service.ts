@@ -1,6 +1,7 @@
 import type { PlatformRole } from "@prisma/client";
 import { TenantInvoiceStatus } from "@prisma/client";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { loadCommandCenterPagePayload } from "./command-center-page.service";
 import { isExecutiveCommandCenter } from "./command-center.types";
 import type {

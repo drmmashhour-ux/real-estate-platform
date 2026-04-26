@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { getGuestId } from "@/lib/auth/session";
 import { AdminFsboClient } from "./admin-fsbo-client";
 import { getListingTransactionFlagsForListings } from "@/lib/fsbo/listing-transaction-flag";

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { reputationEngineFlags } from "@/config/feature-flags";
 import { computeListingQualityBundle } from "@/modules/reputation/listing-quality.service";
 import { computeReputationRankingForListing } from "@/modules/ranking/ranking-engine.service";

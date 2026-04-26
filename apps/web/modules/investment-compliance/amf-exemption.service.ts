@@ -1,5 +1,6 @@
 import type { AmfExemptionCategory } from "@prisma/client";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { logInvestmentComplianceTagged } from "@/lib/server/launch-logger";
 import { generateFullLegalPack } from "@/modules/legal-pack";
 

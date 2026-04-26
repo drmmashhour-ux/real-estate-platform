@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { requireSessionUser } from "@/modules/tenancy/services/tenant-api-helpers";
 import { slugifyTenantName } from "@/modules/tenancy/utils/slug";
 

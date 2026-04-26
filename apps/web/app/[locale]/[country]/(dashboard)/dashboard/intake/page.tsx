@@ -1,6 +1,7 @@
 import { HubLayout } from "@/components/hub/HubLayout";
 import { hubNavigation } from "@/lib/hub/navigation";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
 import { calculateChecklistProgress } from "@/modules/intake/services/calculate-checklist-progress";
 import { buildIntakeReadinessSummary } from "@/modules/intake/services/build-intake-readiness-summary";

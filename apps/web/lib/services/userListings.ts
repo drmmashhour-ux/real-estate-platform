@@ -1,4 +1,4 @@
-import { authPrisma, listingsDB } from "@/lib/db";
+import { authPrisma, getListingsDB } from "@/lib/db";
 
 /**
  * Example cross-client read: Prisma cannot join `@repo/db-auth` User with `@repo/db-marketplace` Listing.
@@ -6,7 +6,7 @@ import { authPrisma, listingsDB } from "@/lib/db";
 export async function getUserWithMarketplaceListings(userId: string) {
   const user = await authPrisma.user.findUnique({ where: { id: userId } });
   if (!user) return null;
-  const listings = await listingsDB.listing.findMany({
+  const listings = await getListingsDB().listing.findMany({
     where: { userId },
     orderBy: { createdAt: "desc" },
   });

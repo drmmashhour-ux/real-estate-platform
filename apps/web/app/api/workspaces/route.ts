@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { createEnterpriseWorkspace } from "@/modules/enterprise/infrastructure/enterpriseWorkspaceService";
 
 export const dynamic = "force-dynamic";

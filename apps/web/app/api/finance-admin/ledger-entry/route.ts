@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import type { FinAdminDomain, FinLedgerEntryType } from "@prisma/client";
 import { canAccessFinanceAdminHub } from "@/lib/admin/finance-hub-access";
 import { createHubLedgerEntry } from "@/modules/finance-admin/finance-admin-ledger.service";

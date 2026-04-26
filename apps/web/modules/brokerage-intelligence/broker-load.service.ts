@@ -1,5 +1,6 @@
 import { AccountStatus, PlatformRole } from "@prisma/client";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { portfolioIntelLog } from "./brokerage-intelligence-logger";
 import type { BrokerLoadEntry, LoadRebalanceAction, LoadRebalanceSuggestion } from "./brokerage-intelligence.types";
 

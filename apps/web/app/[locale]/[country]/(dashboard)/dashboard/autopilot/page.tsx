@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { getOrCreateListingAutopilotSettings } from "@/lib/autopilot/get-autopilot-settings";
 import { AutopilotSettingsForm } from "./autopilot-settings-form";
 

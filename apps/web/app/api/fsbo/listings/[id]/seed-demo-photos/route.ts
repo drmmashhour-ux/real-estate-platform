@@ -1,7 +1,8 @@
 import { existsSync } from "fs";
 import { readFile } from "fs/promises";
 import path from "path";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { getGuestId } from "@/lib/auth/session";
 import { assessListingPhotoForPropertyUse } from "@/lib/fsbo/assess-listing-photo-relevance";
 import {

@@ -3,7 +3,8 @@ import { z } from "zod";
 import { engineFlags } from "@/config/feature-flags";
 import { getGuestId } from "@/lib/auth/session";
 import { recordFunnelStep } from "@/modules/funnel/funnel.service";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { MarketingSystemEventCategory } from "@prisma/client";
 
 export const dynamic = "force-dynamic";

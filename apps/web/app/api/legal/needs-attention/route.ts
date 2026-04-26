@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { legalIntelligenceFlags } from "@/config/feature-flags";
 import { getGuestId } from "@/lib/auth/session";
 import { getLegalIntelligenceSignals } from "@/modules/legal/legal-intelligence.service";

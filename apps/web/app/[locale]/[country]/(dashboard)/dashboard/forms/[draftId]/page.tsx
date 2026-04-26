@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 import { LegalFormWorkspaceClient } from "@/components/forms/LegalFormWorkspaceClient";
 import { loadLegalDraftWorkspace } from "@/lib/forms/load-draft-workspace";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
 
 export const dynamic = "force-dynamic";

@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { getGuestId } from "@/lib/auth/session";
 import { isComplianceOversightStaff } from "@/lib/admin/compliance-access";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 
 export async function createRegulatorCorrespondenceAction(formData: FormData): Promise<{ ok: true } | { ok: false; error: string }> {
   const userId = await getGuestId();

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { recordComparison } from "@/modules/model-tuning/infrastructure/tuningRepository";
 import { simulateTuningOnValidationRun } from "@/modules/model-tuning/infrastructure/thresholdSimulationService";
 import type { TuningProfileConfig } from "@/modules/scoring/tuningProfile";

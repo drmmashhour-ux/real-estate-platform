@@ -3,7 +3,8 @@ import { z } from "zod";
 import { getGuestId } from "@/lib/auth/session";
 import { intelligenceFlags } from "@/config/feature-flags";
 import { runAutopilotV2ForListing } from "@/src/modules/autopilot/v2/autopilot.engine";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { isReasonableListingId } from "@/lib/api/safe-params";
 import { logIntelligenceEvent } from "@/src/modules/events/event.logger";
 

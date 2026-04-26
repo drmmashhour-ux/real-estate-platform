@@ -1,5 +1,6 @@
 import type { StrategyBucketOutcome } from "@prisma/client";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { computeStrategyReward, type ComputeStrategyRewardInput } from "./reward.service";
 import { recordReward } from "./arm-stats.service";
 import { reinforcementLog } from "./reinforcement-logger";

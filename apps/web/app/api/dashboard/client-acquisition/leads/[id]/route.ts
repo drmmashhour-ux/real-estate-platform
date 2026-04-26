@@ -1,6 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { incrementDailyProgress } from "@/lib/client-acquisition/daily-progress";
 import { requireAcquisitionAdmin } from "@/lib/client-acquisition/auth";
 

@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { updateListing } from "@/lib/bnhub/listings";
 import { getGuestId } from "@/lib/auth/session";
 import { postCreateShortTermListingFlow } from "@/lib/bnhub/post-create-short-term-listing";

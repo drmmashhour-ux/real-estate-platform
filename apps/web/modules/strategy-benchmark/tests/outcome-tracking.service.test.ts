@@ -4,10 +4,10 @@ import { mapDealToStrategyOutcome, trackDealOutcome } from "../outcome-tracking.
 const findUnique = vi.fn();
 const create = vi.fn();
 
-vi.mock("@repo/db", () => ({
-  prisma: {
+vi.mock("@/lib/db/legacy", () => ({
+  getLegacyDB: () => ({
     strategyOutcomeEvent: { findUnique: (...a: unknown[]) => findUnique(...a), create: (...a: unknown[]) => create(...a) },
-  },
+  })
 }));
 
 vi.mock("../strategy-attribution.engine", () => ({

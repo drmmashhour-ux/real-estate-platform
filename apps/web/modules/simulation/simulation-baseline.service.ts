@@ -4,7 +4,8 @@ import type { PlatformRole } from "@prisma/client";
 import type { SimulationBaseline } from "./simulation.types";
 import { isExecutiveCommandCenter } from "@/modules/command-center/command-center.types";
 
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 
 /**
  * Read-only snapshot for sandbox — no writes.

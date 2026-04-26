@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { canAccessFinanceAdminHub } from "@/lib/admin/finance-hub-access";
 import { FinanceAdminHubClient } from "./FinanceAdminHubClient";
 

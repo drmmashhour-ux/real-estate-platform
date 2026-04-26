@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { track } from "@/lib/analytics/events";
 import { buildListingSearchAssistantPrompt } from "@/lib/ai/booking-flow-prompts";
 import { generateSocialProof } from "@/lib/ai/socialProof";
 
@@ -149,7 +150,14 @@ export default function ListingsPage() {
         return (
         <div key={l.id} style={{ marginBottom: 20, border: "1px solid #ccc", padding: 15, borderRadius: 8 }}>
           <h3>
-            <a href={`/listings/${l.id}`}>{l.title}</a>
+            <Link
+              href={`/listings/${l.id}`}
+              onClick={() => {
+                void track("listing_clicked", { listingId: l.id });
+              }}
+            >
+              {l.title}
+            </Link>
           </h3>
           <p>{l.city}, {l.country}</p>
           <p><strong>${l.price}</strong></p>

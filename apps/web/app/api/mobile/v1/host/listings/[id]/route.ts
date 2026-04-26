@@ -1,5 +1,6 @@
 import { ListingStatus, Prisma } from "@prisma/client";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { requireMobileUser, resolveMobileAppRoleFromRequest } from "@/lib/mobile/mobileAuth";
 import { enqueueHostAutopilot } from "@/lib/ai/autopilot/triggers";
 

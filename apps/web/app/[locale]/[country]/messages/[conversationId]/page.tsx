@@ -2,7 +2,8 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
 import { MessagesPageClient } from "@/components/messaging/MessagesPageClient";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 
 export const dynamic = "force-dynamic";
 

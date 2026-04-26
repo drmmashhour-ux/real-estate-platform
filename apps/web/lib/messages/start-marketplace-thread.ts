@@ -1,5 +1,6 @@
 import { LeadContactOrigin, MessageEventType, MessageType, NotificationType } from "@prisma/client";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { getDefaultTenantId } from "@/lib/buyer/tenant-context";
 import { buyerHasPaidListingContact, isListingContactPaywallEnabled } from "@/lib/leads";
 import { PRICING } from "@/lib/monetization/pricing";

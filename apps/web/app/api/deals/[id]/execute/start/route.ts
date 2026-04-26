@@ -1,7 +1,8 @@
 import { authenticateBrokerDealRoute } from "@/lib/deals/broker-draft-auth";
 import { requireDealExecutionV1 } from "@/lib/deals/pipeline-feature-guard";
 import { startExecution } from "@/modules/execution/execution.service";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 
 export const dynamic = "force-dynamic";
 

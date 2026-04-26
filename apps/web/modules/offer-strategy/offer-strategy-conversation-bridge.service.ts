@@ -1,4 +1,5 @@
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { runOfferStrategy } from "@/modules/offer-strategy/offer-strategy.engine";
 import { buildOfferStrategyContext } from "@/modules/offer-strategy/offer-strategy-context.service";
 

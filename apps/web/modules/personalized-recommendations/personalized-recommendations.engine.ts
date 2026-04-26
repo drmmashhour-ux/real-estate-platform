@@ -1,5 +1,6 @@
 import { PlatformRole } from "@prisma/client";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { buildFsboPublicVisibilityWhere } from "@/lib/fsbo/listing-expiry";
 import { buildFsboPublicListingPath } from "@/lib/seo/public-urls";
 import type { LoadedRecommendationContext } from "./recommendation-context.loader";

@@ -4,7 +4,8 @@ import {
   bookingToInvoiceJson,
   redactBnhubInvoiceForGuest,
 } from "@/lib/bnhub/booking-invoice";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 
 export const dynamic = "force-dynamic";
 

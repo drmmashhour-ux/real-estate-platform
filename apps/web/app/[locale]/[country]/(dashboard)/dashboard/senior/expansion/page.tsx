@@ -5,7 +5,8 @@ import {
   canAccessSeniorCommandCenter,
   seniorCommandAccessTier,
 } from "@/lib/senior-command/access";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { getCountryBySlug } from "@/config/countries";
 
 export const dynamic = "force-dynamic";

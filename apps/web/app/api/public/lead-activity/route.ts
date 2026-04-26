@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { appendLeadTimelineEvent } from "@/lib/leads/timeline-helpers";
 import { refreshEvaluationLeadCrmScore } from "@/lib/leads/refresh-evaluation-score";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";

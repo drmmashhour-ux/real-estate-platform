@@ -1,5 +1,6 @@
 import { authenticateBrokerDealRoute } from "@/lib/deals/broker-draft-auth";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { lecipmOaciqFlags } from "@/config/feature-flags";
 import { updateFormInstanceData } from "@/modules/form-instance/form-instance.service";
 

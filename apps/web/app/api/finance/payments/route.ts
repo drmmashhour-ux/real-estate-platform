@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { PaymentRecordType } from "@prisma/client";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { requireTenantContext } from "@/modules/tenancy/services/tenant-context-service";
 import { recordPayment } from "@/modules/finance/services/payment-record-service";
 import { canRecordPayment, canViewFinance } from "@/modules/finance/services/finance-permissions";

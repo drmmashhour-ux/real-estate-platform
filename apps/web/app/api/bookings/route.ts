@@ -1,4 +1,4 @@
-import { listingsDB } from "@/lib/db";
+import { getListingsDB } from "@/lib/db/routeSwitch";
 
 export const dynamic = "force-dynamic";
 
@@ -8,8 +8,9 @@ export const dynamic = "force-dynamic";
  * Calendar / listing-scoped availability: `GET /api/listings/:id/bookings`.
  */
 export async function GET() {
-  console.log("[BOOKINGS DB] using listingsDB");
-  const bookings = await listingsDB.booking.findMany({
+  const db = getListingsDB();
+  console.log("[BOOKINGS DB] getListingsDB()");
+  const bookings = await db.booking.findMany({
     take: 20,
     orderBy: { startDate: "desc" },
   });

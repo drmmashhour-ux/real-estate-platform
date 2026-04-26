@@ -3,7 +3,8 @@ import { redirect } from "next/navigation";
 
 import { LecipmDashboardShell } from "@/components/layouts/dashboard-shell";
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { buildLecipmShellPayload, shellUserDisplayName } from "@/lib/navigation/lecipm-shell-server";
 import {
   canAccessResidenceDashboard,

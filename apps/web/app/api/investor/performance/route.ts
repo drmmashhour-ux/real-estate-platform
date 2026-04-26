@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { requireBnhubInvestorPortalAccessApi } from "@/modules/investor/auth/require-bnhub-investor-portal-api";
 
 export const dynamic = "force-dynamic";

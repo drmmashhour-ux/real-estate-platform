@@ -1,5 +1,6 @@
 import * as React from "react";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { AccountLegalStrip } from "@/components/dashboard/AccountLegalStrip";
 import { DashboardGuideBanner } from "@/components/dashboard/DashboardGuideBanner";
 import { PlatformLegalGate } from "@/components/legal/PlatformLegalGate";

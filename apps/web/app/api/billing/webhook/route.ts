@@ -2,7 +2,8 @@ import { NextRequest } from "next/server";
 import { headers } from "next/headers";
 import Stripe from "stripe";
 import { getStripe, isStripeConfigured } from "@/lib/stripe";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { PAID_STORAGE_PLAN_KEYS, plans, type PlanKey } from "@/lib/billing/plans";
 import { trackGrowthFunnelEvent } from "@/src/modules/growth-funnel/application/trackGrowthFunnelEvent";
 

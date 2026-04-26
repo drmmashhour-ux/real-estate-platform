@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { computeEsgScore } from "@/modules/esg/esg-score.engine";
 import type { EsgProfilePayload } from "@/modules/esg/esg.types";
 import { syncEsgScoreForListing } from "@/modules/esg/esg.service";

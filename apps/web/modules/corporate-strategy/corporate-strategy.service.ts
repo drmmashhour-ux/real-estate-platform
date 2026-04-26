@@ -1,5 +1,6 @@
 import { PlatformRole } from "@prisma/client";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { engineFlags } from "@/config/feature-flags";
 import { detectOrganizationalBottlenecks } from "./bottleneck.engine";
 import { generateBudgetStrategy } from "./budget-strategy.engine";

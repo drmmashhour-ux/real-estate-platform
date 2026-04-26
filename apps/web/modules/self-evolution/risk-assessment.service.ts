@@ -1,5 +1,6 @@
 import type { EvolutionProposalCategory, EvolutionRiskLevel } from "@prisma/client";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { getDefaultPolicySnapshot, parsePolicyFromDb } from "./evolution-policy-defaults";
 import { selfEvolutionLog } from "./self-evolution-logger";
 import type { EvolutionCandidate, EvolutionRiskAssessment } from "./self-evolution.types";

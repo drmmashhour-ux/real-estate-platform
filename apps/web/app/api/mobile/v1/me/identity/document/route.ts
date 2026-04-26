@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { saveVerificationImage } from "@/lib/verification/document-storage";
 import { requireMobileUser } from "@/lib/mobile/mobileAuth";
 import { resolvePrismaIdentitySubjectUserId } from "@/lib/mobile/resolvePrismaIdentitySubjectUserId";

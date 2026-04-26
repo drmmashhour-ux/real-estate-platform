@@ -1,7 +1,8 @@
 import type { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { logError } from "@/lib/logger";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { canManageCapital } from "@/modules/capital/capital-policy";
 import { addOffer } from "@/modules/capital/lender-offer.service";
 import { canAccessPipelineDeal, requireAuthUser } from "@/lib/deals/guard-pipeline-deal";

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { generateReferralCodeCandidate } from "@/modules/referrals";
 import { requireGrowthMachineActor } from "@/modules/growth-machine/growth-api-context";
 

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifyCeoAccess } from "@/modules/ceo-ai/ceo-auth.helper";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { createLongTermGoal } from "@/modules/ceo-ai/ceo-long-term-goals.service";
 
 export async function GET() {

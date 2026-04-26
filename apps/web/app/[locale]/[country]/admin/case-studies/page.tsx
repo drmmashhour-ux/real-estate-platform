@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { CaseStudiesAdminClient } from "./case-studies-admin-client";
 
 export default async function AdminCaseStudiesPage() {

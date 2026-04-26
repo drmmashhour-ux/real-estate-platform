@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { createDealRoom } from "@/lib/deals/create-deal-room";
 import { createDealRoomFromLead } from "@/lib/deals/create-from-lead";
 import { createDealRoomFromThread } from "@/lib/deals/create-from-thread";

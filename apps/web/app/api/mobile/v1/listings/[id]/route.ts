@@ -1,4 +1,5 @@
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { fetchListingCardWithQuality, fetchPublicListingCardsByIds, toPublicListingCard } from "@/lib/mobile/listingMobileDto";
 
 export const dynamic = "force-dynamic";

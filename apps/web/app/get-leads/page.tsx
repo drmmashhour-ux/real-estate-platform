@@ -4,7 +4,8 @@ import { PLATFORM_NAME } from "@/lib/brand/platform";
 import { PlatformRole } from "@prisma/client";
 import { engineFlags } from "@/config/feature-flags";
 import { getConversionEngineFlagsEffective } from "@/config/rollout";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { getGuestId } from "@/lib/auth/session";
 import { buildLeadScarcityLines } from "@/modules/growth/lead-scarcity.service";
 import {

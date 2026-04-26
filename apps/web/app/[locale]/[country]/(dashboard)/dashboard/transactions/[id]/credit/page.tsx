@@ -2,7 +2,8 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { TransactionCreditChecksPanel } from "@/components/transactions/TransactionCreditChecksPanel";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { canAccessTransaction } from "@/modules/transactions/transaction-policy";
 import { getTransactionById } from "@/modules/transactions/transaction.service";
 

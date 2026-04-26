@@ -5,7 +5,8 @@ import type {
   LecipmExecutionTaskStatus,
 } from "@prisma/client";
 import { Prisma } from "@prisma/client";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 
 import { recordExecutionAudit } from "./execution-audit.service";
 import { runExecutionConnector } from "./execution-connectors.service";

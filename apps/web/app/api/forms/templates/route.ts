@@ -1,4 +1,5 @@
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { lecipmOaciqFlags } from "@/config/feature-flags";
 import { listFormDefinitions } from "@/modules/oaciq-mapper/form-definition.registry";
 

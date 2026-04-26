@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import type { AddValidationItemInput } from "@/modules/model-validation/domain/validation.types";
 import { updateItem } from "@/modules/model-validation/infrastructure/validationRepository";
 import { requirePlatformAdmin } from "../../../../_auth";

@@ -6,12 +6,12 @@ const sumBucketPulls = vi.fn();
 const getActivePolicy = vi.fn();
 const createDecision = vi.fn();
 
-vi.mock("@repo/db", () => ({
-  prisma: {
+vi.mock("@/lib/db/legacy", () => ({
+  getLegacyDB: () => ({
     reinforcementDecision: {
       create: (...a: unknown[]) => createDecision(...a),
     },
-  },
+  })
 }));
 
 vi.mock("../arm-stats.service", () => ({

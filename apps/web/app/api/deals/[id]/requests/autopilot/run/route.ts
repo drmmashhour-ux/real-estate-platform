@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { canMutateCoordination, loadDealForCoordination } from "@/lib/deals/coordination-access";
 import { coordinationFlags } from "@/lib/deals/coordination-feature-flags";
 import { runDocumentRequestAutopilot } from "@/modules/document-request-autopilot/document-request-autopilot.service";

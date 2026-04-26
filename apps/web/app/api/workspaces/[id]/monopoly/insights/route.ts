@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { requireWorkspacePermission } from "@/modules/enterprise/infrastructure/requireWorkspacePermission";
 import { generateDealInsights } from "@/modules/lecipm-monopoly/application/generateDealInsights";
 import { buildWorkspaceAggregatedStats } from "@/modules/lecipm-monopoly/infrastructure/buildWorkspaceAggregatedStats";

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PlatformRole } from "@prisma/client";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { computeDealPriority } from "@/modules/brokerage-intelligence/deal-priority.engine";
 import type { DealPortfolioSlice } from "@/modules/brokerage-intelligence/brokerage-intelligence.types";
 import { portfolioIntelLog } from "@/modules/brokerage-intelligence/brokerage-intelligence-logger";

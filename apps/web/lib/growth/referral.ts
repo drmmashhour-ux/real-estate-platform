@@ -39,3 +39,10 @@ export async function trackReferral(code: string, newUserId: string) {
     console.log("Reward user");
   }
 }
+
+/**
+ * One-line copy for messages / SMS / social; use with a shareable `link` (e.g. `/landing?ref=…`).
+ */
+export function getReferralMessage(link: string) {
+  return `Get early access to better listings: ${link}`;
+}

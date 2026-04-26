@@ -1,4 +1,4 @@
-import { listingsDB } from "@/lib/db/listings-client";
+import { getListingsDB } from "@/lib/db/routeSwitch";
 import { requireAuth } from "@/lib/auth/middleware";
 import {
   alertIfHighRiskListing,
@@ -7,7 +7,8 @@ import {
 import { getCacheOrRedis, setCacheAndRedis } from "@/lib/cache";
 
 export async function GET(req: Request) {
-  console.log("[LISTINGS DB] using listingsDB");
+  const db = getListingsDB();
+  console.log("[LISTINGS DB] getListingsDB()");
   const { searchParams } = new URL(req.url);
 
   const city = searchParams.get("city");
@@ -20,7 +21,7 @@ export async function GET(req: Request) {
     return Response.json(cached);
   }
 
-  const rows = await listingsDB.listing.findMany({
+  const rows = await db.listing.findMany({
     where: {
       city: city ? { contains: city, mode: "insensitive" } : undefined,
       price: {
@@ -34,7 +35,7 @@ export async function GET(req: Request) {
   const ids = rows.map((r) => r.id);
   const bookingGroups =
     ids.length > 0
-      ? await listingsDB.booking.groupBy({
+      ? await db.booking.groupBy({
           by: ["listingId"],
           where: { listingId: { in: ids } },
           _count: { _all: true },
@@ -62,7 +63,8 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  console.log("[LISTINGS DB] using listingsDB");
+  const db = getListingsDB();
+  console.log("[LISTINGS DB] getListingsDB() POST");
   const user = requireAuth(req);
 
   if (!user) {
@@ -71,7 +73,7 @@ export async function POST(req: Request) {
 
   const body = await req.json();
 
-  const listing = await listingsDB.listing.create({
+  const listing = await db.listing.create({
     data: {
       title: body.title,
       price: body.price,

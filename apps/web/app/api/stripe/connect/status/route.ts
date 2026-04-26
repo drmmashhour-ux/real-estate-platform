@@ -2,7 +2,7 @@
  * GET /api/stripe/connect/status — Sync onboarding from Stripe + persist requirements snapshot for host dashboard.
  */
 
-import { monolithPrisma } from "@/lib/db";
+import { authPrisma, monolithPrisma } from "@/lib/db";
 import { getGuestId } from "@/lib/auth/session";
 import { getStripe, isStripeConfigured } from "@/lib/stripe";
 import { syncHostOnboardingCompleteFromStripe } from "@/lib/stripe/hostConnectExpress";
@@ -65,7 +65,7 @@ export async function GET() {
     const disabledReason =
       typeof reqObj.disabled_reason === "string" ? reqObj.disabled_reason : null;
 
-    const fresh = await monolithPrisma.user.findUnique({
+    const fresh = await authPrisma.user.findUnique({
       where: { id: userId },
       select: { stripeOnboardingComplete: true },
     });

@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { ContentSocialPlatform, ContentSocialPostStatus } from "@prisma/client";
 import { verifyContentAutomationWebhook } from "@/lib/content-automation/webhook-verify";
 import { recordPerformanceSnapshot } from "@/lib/content-automation/sync-performance";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 
 export const dynamic = "force-dynamic";
 

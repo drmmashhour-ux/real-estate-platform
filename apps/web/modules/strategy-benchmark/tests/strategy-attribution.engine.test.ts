@@ -3,8 +3,8 @@ import { attributeOutcomeToStrategies } from "../strategy-attribution.engine";
 
 const findMany = vi.fn();
 
-vi.mock("@repo/db", () => ({
-  prisma: { strategyExecutionEvent: { findMany: (...a: unknown[]) => findMany(...a) } },
+vi.mock("@/lib/db/legacy", () => ({
+  getLegacyDB: () => ({ strategyExecutionEvent: { findMany: (...a: unknown[]) => findMany(...a) } }),
 }));
 
 vi.mock("../strategy-benchmark-logger", () => ({

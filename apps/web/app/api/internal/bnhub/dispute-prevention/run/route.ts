@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { runBnhubDisputePreventionScan } from "@/lib/ai/disputes/run-bnhub-dispute-prevention";
 
 export const dynamic = "force-dynamic";

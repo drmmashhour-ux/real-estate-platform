@@ -4,7 +4,8 @@ import { isDealAnalyzerEnabled, isDealAnalyzerAlertsEnabled } from "@/modules/de
 import { addPropertyToWatchlist } from "@/modules/deal-analyzer/infrastructure/services/watchlistService";
 import { assertFsboListingAccessibleForPhase3 } from "@/lib/deal-analyzer/phase3ListingAccess";
 import { addWatchlistItemBodySchema } from "@/modules/deal-analyzer/api/phase3Schemas";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 
 export const dynamic = "force-dynamic";
 

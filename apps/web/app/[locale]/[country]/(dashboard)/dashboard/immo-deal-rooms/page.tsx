@@ -4,7 +4,8 @@ import { ImmoDealRoomsListClient } from "@/components/immo-deal-room/ImmoDealRoo
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
 import { roleCanUseImmoDealRooms } from "@/modules/deal-room/deal-room-access";
 import { listDealRoomsVisibleToUser } from "@/modules/deal-room/deal-room.service";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 
 export const dynamic = "force-dynamic";
 

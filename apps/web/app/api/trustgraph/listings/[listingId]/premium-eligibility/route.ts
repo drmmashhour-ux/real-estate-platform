@@ -1,6 +1,7 @@
 import { getGuestId } from "@/lib/auth/session";
 import { isPlatformAdmin } from "@/lib/auth/is-platform-admin";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { isTrustGraphEnabled, isTrustGraphPremiumPlacementEnabled } from "@/lib/trustgraph/feature-flags";
 import { computePremiumEligibilityForListing } from "@/lib/trustgraph/infrastructure/services/premiumEligibilityService";
 import { trustgraphJsonError, trustgraphJsonOk } from "@/lib/trustgraph/infrastructure/auth/http";

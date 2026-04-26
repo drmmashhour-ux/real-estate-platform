@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { GROWTH_CITY_SLUGS, type GrowthCitySlug } from "@/lib/growth/geo-slugs";
 import { runMarketingEngineDaily } from "@/modules/marketing-engine/pipeline";
 

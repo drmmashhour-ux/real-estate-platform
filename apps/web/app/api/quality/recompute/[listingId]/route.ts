@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { requireAdminSession } from "@/lib/admin/require-admin";
 import { updateListingQuality } from "@/lib/quality/update-listing-quality";
 

@@ -1,7 +1,8 @@
 import { authenticateDealParticipantRoute } from "@/lib/deals/execution-access";
 import { requireSignatureSystemV1 } from "@/lib/deals/pipeline-feature-guard";
 import { getLatestSignatureSummary } from "@/modules/signature/signature-tracking.service";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 
 export const dynamic = "force-dynamic";
 

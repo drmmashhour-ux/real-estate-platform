@@ -13,15 +13,15 @@ vi.mock("@/lib/auth/session", () => ({
   getGuestId: vi.fn(async () => "user-1"),
 }));
 
-vi.mock("@repo/db", () => ({
-  prisma: {
+vi.mock("@/lib/db/legacy", () => ({
+  getLegacyDB: () => ({
     user: {
       findUnique: vi.fn(async () => ({ role: "ADMIN" })),
     },
     fsboListing: {
       findFirst: vi.fn(async () => ({ id: "lst-1" })),
     },
-  },
+  })
 }));
 
 vi.mock("@/modules/broker-ai/certificate-of-location/certificate-of-location-access.service", () => ({

@@ -1,7 +1,8 @@
 import { getGuestId } from "@/lib/auth/session";
 import { HostBookingsPage } from "@/components/host/HostBookingsPage";
 import { getHostBookings } from "@/lib/host/bookings-data";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 
 export const dynamic = "force-dynamic";
 

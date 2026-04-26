@@ -1,7 +1,8 @@
 import type { ExecutionStep } from "./scenario-autopilot.types";
 import { scenarioAutopilotLog } from "./scenario-autopilot-log";
 
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 
 /**
  * Production execution path — only invoked after explicit APPROVED state.

@@ -1,6 +1,7 @@
 import type { PlatformRole } from "@prisma/client";
 import { NextResponse } from "next/server";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { getGuestId } from "@/lib/auth/session";
 
 export async function requireExecutionActor(): Promise<

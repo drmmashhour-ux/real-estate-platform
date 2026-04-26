@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdminSession } from "@/lib/admin/require-admin";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { loadKpiSnapshot } from "@/modules/kpi/application/loadKpiSnapshot";
 
 export const dynamic = "force-dynamic";

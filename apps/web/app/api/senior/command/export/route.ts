@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { seniorCommandAuth } from "@/lib/senior-command/api-auth";
 import { getLatestScoresForLeads } from "@/modules/senior-living/lead-scoring.service";
 import { getOperatorSummaries } from "@/modules/senior-living/command/senior-command.service";

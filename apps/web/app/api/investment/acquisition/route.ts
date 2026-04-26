@@ -2,7 +2,8 @@ import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
 import { runAcquisitionAnalysis } from "@/modules/investment/acquisition.service";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import type { UnderwritingInput } from "@/modules/investment/underwriting.types";
 import { isLecipmPhaseEnabled, lecipmRolloutDisabledMeta, logRolloutGate } from "@/lib/lecipm/rollout";
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { canViewOffer, resolveOfferActorRole } from "@/modules/offers/services/offer-access";
 import { maskEmail } from "@/modules/offers/services/mask-email";
 import {

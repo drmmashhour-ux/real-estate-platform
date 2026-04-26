@@ -7,7 +7,8 @@ import { CorporateStrategyCommandStrip } from "@/components/corporate-strategy/C
 import { InvestorIntelligenceCommandStrip } from "@/components/investor/InvestorIntelligenceCommandStrip";
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
 import { buildCommandCenterAiPayload, getLatestCommandCenterSnapshotMeta } from "@/modules/command-center/command-center-ai.service";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 
 export const metadata: Metadata = {
   title: "AI Command Cockpit",

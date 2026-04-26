@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifyCeoAccess } from "@/modules/ceo-ai/ceo-auth.helper";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 
 export async function GET() {
   const auth = await verifyCeoAccess();

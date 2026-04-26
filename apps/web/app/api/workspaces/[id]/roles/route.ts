@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { LecipmWorkspaceRole } from "@prisma/client";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { appendWorkspaceAuditLog } from "@/modules/enterprise/infrastructure/workspaceAuditLogService";
 import { requireWorkspacePermission } from "@/modules/enterprise/infrastructure/requireWorkspacePermission";
 

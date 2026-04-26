@@ -1,5 +1,6 @@
 import { safeApiError } from "@/lib/api/safe-error-response";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { isProductionEnv } from "@/lib/runtime-env";
 
 export const dynamic = "force-dynamic";

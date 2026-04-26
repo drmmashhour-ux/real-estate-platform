@@ -5,7 +5,7 @@
  */
 
 import { NextRequest } from "next/server";
-import { monolithPrisma } from "@/lib/db";
+import { authPrisma, monolithPrisma } from "@/lib/db";
 import { getGuestId } from "@/lib/auth/session";
 import { getStripe, isStripeConfigured } from "@/lib/stripe";
 import { stripeAppBaseUrl } from "@/lib/stripe/app-base-url";
@@ -42,22 +42,24 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const user = await monolithPrisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      id: true,
-      email: true,
-      role: true,
-      stripeAccountId: true,
-      _count: { select: { shortTermListings: true } },
-    },
-  });
+  const [user, shortTermListingCount] = await Promise.all([
+    authPrisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        stripeAccountId: true,
+      },
+    }),
+    monolithPrisma.shortTermListing.count({ where: { ownerId: userId } }),
+  ]);
   if (!user) {
     return Response.json({ error: "User not found" }, { status: 404 });
   }
 
   const isHostish =
-    user.role === "HOST" || user.role === "ADMIN" || user._count.shortTermListings > 0;
+    user.role === "HOST" || user.role === "ADMIN" || shortTermListingCount > 0;
   const isMortgageExpert =
     user.role === "MORTGAGE_EXPERT" || user.role === "MORTGAGE_BROKER";
   if (!isHostish && !isMortgageExpert) {

@@ -1,16 +1,17 @@
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("@repo/db", () => ({
-  prisma: {
+vi.mock("@/lib/db/legacy", () => ({
+  getLegacyDB: () => ({
     amfInvestor: {
       findFirst: vi.fn(),
     },
-  },
+  })
 }));
 
 describe("AMF private exempt eligibility", () => {
   it("blocks non-accredited investor on accredited path", async () => {
-    const { prisma } = await import("@repo/db");
+    const { getLegacyDB } = await import("@/lib/db/legacy");
+    const prisma = getLegacyDB();
     vi.mocked(prisma.amfInvestor.findFirst).mockResolvedValue({
       accreditationStatus: "PENDING",
       suitabilityIntakeJson: null,

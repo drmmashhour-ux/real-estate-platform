@@ -1,5 +1,6 @@
 import type { StrategyBenchmarkDomain } from "@prisma/client";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { buildStrategyContextBucket, normalizeContextInput } from "./context-bucket.service";
 import { getActivePolicy, selectStrategyFromScores, computeUcbLiteScore } from "./policy.service";
 import { getArmStat, recordSelection, sumBucketPulls } from "./arm-stats.service";

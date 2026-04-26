@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { requireCronSecretOrAdmin } from "@/lib/server/verify-cron-or-admin";
 import { z } from "zod";
 

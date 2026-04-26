@@ -1,4 +1,5 @@
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import bcrypt from "bcryptjs";
 import { signToken } from "@/lib/auth/jwt";
 import { cookies } from "next/headers";

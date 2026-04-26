@@ -1,5 +1,6 @@
 import { BookingStatus } from "@prisma/client";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { buildListingIcsCalendar } from "@/modules/calendar/ics/ics-export";
 
 export const dynamic = "force-dynamic";

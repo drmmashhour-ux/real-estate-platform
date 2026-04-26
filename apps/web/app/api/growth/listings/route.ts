@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { PlatformRole } from "@prisma/client";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { topOpportunityListings } from "@/modules/listing-growth";
 import { requireGrowthMachineActor } from "@/modules/growth-machine/growth-api-context";
 

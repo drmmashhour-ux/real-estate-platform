@@ -1,6 +1,8 @@
-import { prisma as oldDB } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
 import { coreDB } from "@repo/db-core";
 import { USE_NEW_DB } from "./db-switch";
+
+const oldDB = getLegacyDB();
 
 /**
  * Rollout switch: `USE_NEW_DB=1` → `@repo/db-core` (small schema). Default → `@repo/db` monolith.
@@ -27,3 +29,6 @@ export {
   marketplacePrisma,
   miniCorePrisma,
 } from "./db/index";
+export { getListingsDB } from "./db/routeSwitch";
+export type { ListingsDbClient } from "./db/routeSwitch";
+export { assertSafeUsage } from "./db/assert";

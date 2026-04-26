@@ -2,7 +2,8 @@ import { PlatformRole } from "@prisma/client";
 import { redirect } from "next/navigation";
 import { brokerResidentialFlags } from "@/config/feature-flags";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 
 export const dynamic = "force-dynamic";
 

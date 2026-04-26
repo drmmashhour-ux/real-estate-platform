@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { LeadContactOrigin, NotificationType } from "@prisma/client";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { gateDistributedRateLimit } from "@/lib/rate-limit-enforcement";
 import { parseFsboContactBody } from "@/lib/fsbo/validation";
 import { isFsboPubliclyVisible } from "@/lib/fsbo/constants";

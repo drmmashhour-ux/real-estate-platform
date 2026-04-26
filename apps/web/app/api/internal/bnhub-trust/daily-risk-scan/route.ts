@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { recomputeListingTrust } from "@/modules/bnhub-trust/services/listingRiskService";
 import { ListingStatus } from "@prisma/client";
 

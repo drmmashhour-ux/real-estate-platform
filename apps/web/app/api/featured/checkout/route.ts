@@ -5,7 +5,8 @@ import { getStripe, isStripeConfigured } from "@/lib/stripe";
 import { getPublicAppUrl } from "@/lib/config/public-app-url";
 import { PRICING } from "@/lib/monetization/pricing";
 import { compactStripeMetadata } from "@/lib/stripe/checkoutMetadata";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { trackFunnelEvent } from "@/lib/funnel/tracker";
 
 export const dynamic = "force-dynamic";

@@ -1,4 +1,5 @@
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { selfEvolutionLog } from "./self-evolution-logger";
 import type { EvolutionSandboxResult } from "./self-evolution.types";
 import { getDefaultPolicySnapshot, parsePolicyFromDb } from "./evolution-policy-defaults";

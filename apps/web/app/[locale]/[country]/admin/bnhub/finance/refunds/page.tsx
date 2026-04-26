@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { redirect } from "next/navigation";
 
 export default async function AdminBnhubFinanceRefundsPage() {

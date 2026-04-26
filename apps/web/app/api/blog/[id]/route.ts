@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { MarketingBlogPostStatus } from "@prisma/client";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { engineFlags } from "@/config/feature-flags";
 import { requireUser } from "@/modules/security/access-guard.service";
 import { blogPatchBodySchema, deleteMarketingBlogPost, updateMarketingBlogPost } from "@/modules/blog";

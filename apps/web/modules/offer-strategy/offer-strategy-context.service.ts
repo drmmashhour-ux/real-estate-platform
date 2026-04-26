@@ -1,4 +1,5 @@
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { buildDealCloserContext } from "@/modules/deal-closer/deal-closer-context.service";
 import { computeDealClosingReadiness } from "@/modules/deal-closer/closing-readiness.engine";
 import type { OfferStrategyContext } from "@/modules/offer-strategy/offer-strategy.types";

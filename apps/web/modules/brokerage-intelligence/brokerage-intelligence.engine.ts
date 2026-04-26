@@ -1,4 +1,5 @@
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { engineFlags } from "@/config/feature-flags";
 import { computeBrokerLoadMetrics, recommendLoadRebalancing } from "./broker-load.service";
 import { computeDealPriority } from "./deal-priority.engine";

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { buildEsgRecommendations, computeEsgScore } from "@/modules/esg/esg-score.engine";
 import type { EsgProfilePayload } from "@/modules/esg/esg.types";
 import { getEsgDashboardBundle, upsertEsgProfile, userCanManageListingListing } from "@/modules/esg/esg.service";

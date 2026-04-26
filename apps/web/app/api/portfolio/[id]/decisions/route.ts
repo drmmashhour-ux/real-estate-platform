@@ -4,7 +4,8 @@ import { generateProposedDecisions } from "@/modules/portfolio/ai-asset-manager.
 import { canAccessBrokerPortfolio } from "@/modules/portfolio/portfolio-policy";
 import { getPortfolioById } from "@/modules/portfolio/portfolio.service";
 import { requireAuthUser } from "@/lib/deals/guard-pipeline-deal";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 
 export const dynamic = "force-dynamic";
 

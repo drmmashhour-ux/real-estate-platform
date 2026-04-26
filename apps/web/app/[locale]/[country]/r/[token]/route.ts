@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { getSiteBaseUrl } from "@/modules/seo/lib/siteBaseUrl";
 
 export const dynamic = "force-dynamic";

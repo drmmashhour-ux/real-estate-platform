@@ -3,7 +3,8 @@ import { dealExecutionFlags } from "@/config/feature-flags";
 import { authenticateBrokerDealRoute } from "@/lib/deals/broker-draft-auth";
 import { logDraftingAudit } from "@/lib/deals/drafting-audit";
 import { canMutateExecution } from "@/lib/deals/execution-access";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { runDraftingEngineSafeMode } from "@/modules/drafting-ai/drafting-engine";
 
 export const dynamic = "force-dynamic";

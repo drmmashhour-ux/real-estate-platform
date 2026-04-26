@@ -2,10 +2,10 @@ import { describe, expect, it, vi } from "vitest";
 import { POST } from "./route";
 
 vi.mock("@/app/api/legal-workflow/_auth", () => ({ requireDocumentAccess: vi.fn() }));
-vi.mock("@repo/db", () => ({
-  prisma: {
+vi.mock("@/lib/db/legacy", () => ({
+  getLegacyDB: () => ({
     sellerDeclarationDraft: { findUnique: vi.fn() },
-  },
+  })
 }));
 vi.mock("@/src/modules/case-command-center/application/getCaseLegalSummary", () => ({
   getCaseLegalSummary: vi.fn().mockResolvedValue({
@@ -24,7 +24,8 @@ vi.mock("@/src/modules/case-command-center/application/getCaseLegalSummary", () 
 }));
 
 import { requireDocumentAccess } from "@/app/api/legal-workflow/_auth";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { getCaseLegalSummary } from "@/src/modules/case-command-center/application/getCaseLegalSummary";
 import { LECIPM_WORKFLOW_EVALUATE_FALLBACK } from "@/src/modules/case-command-center/application/lecipmTrustCopy";
 

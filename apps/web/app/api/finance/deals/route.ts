@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { requireTenantContext } from "@/modules/tenancy/services/tenant-context-service";
 import { createOrUpdateDealFinancial } from "@/modules/finance/services/deal-financial-service";
 import { canManageFinance, canViewFinance } from "@/modules/finance/services/finance-permissions";

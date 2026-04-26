@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { buildPropertyInput } from "@/lib/valuation/input";
 import { checkValuationGuardrails } from "@/lib/valuation/guardrails";
 import { computeSaleValuation } from "@/lib/valuation/sale";

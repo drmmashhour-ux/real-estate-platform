@@ -6,7 +6,8 @@ import { hubNavigation } from "@/lib/hub/navigation";
 import { evaluateLaunchPolicy } from "@/src/modules/bnhub-growth-engine/policies/growthPolicyService";
 import { listGrowthCampaigns } from "@/src/modules/bnhub-growth-engine/services/growthCampaignService";
 import { listLeadsByListing } from "@/src/modules/bnhub-growth-engine/services/leadEngineService";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import type { ClassificationBreakdown } from "@/src/modules/bnhub-growth-engine/services/propertyClassificationService";
 import Link from "next/link";
 

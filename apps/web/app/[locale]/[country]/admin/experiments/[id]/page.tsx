@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import { LecipmControlShell } from "@/components/admin/LecipmControlShell";
 import { getAdminRiskAlerts } from "@/lib/admin/control-center";
 import { requireAdminControlUserId } from "@/lib/admin/guard";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { getExperimentResults } from "@/lib/experiments/get-results";
 import {
   archiveExperimentAction,

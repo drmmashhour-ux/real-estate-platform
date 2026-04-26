@@ -1,4 +1,5 @@
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { DEMO_AUTH_DISABLED_MESSAGE, isDemoAuthAllowed } from "@/lib/auth/demo-auth-allowed";
 import { DEMO_ACCOUNT_EMAILS } from "@/lib/demo/demo-account-constants";
 

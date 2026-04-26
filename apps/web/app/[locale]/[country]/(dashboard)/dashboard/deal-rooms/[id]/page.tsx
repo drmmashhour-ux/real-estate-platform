@@ -1,7 +1,8 @@
 import { notFound, redirect } from "next/navigation";
 import { DealRoomDetailClient } from "@/components/deal-rooms/DealRoomDetailClient";
 import { loadDealRoomPageData } from "@/lib/deals/load-deal-room-page";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
 
 export const dynamic = "force-dynamic";

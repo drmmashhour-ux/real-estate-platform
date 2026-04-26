@@ -3,7 +3,8 @@ import { PlatformRole } from "@prisma/client";
 
 import { getGuestId } from "@/lib/auth/session";
 import { findDealForUser } from "@/lib/deals/deal-party-access";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { computeDealIntelligenceSnapshot } from "@/modules/deal/deal.service";
 import { getLatestCloseProbability } from "@/modules/deal/close-probability.service";
 

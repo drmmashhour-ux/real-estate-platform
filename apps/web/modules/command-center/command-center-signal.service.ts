@@ -24,7 +24,8 @@ import {
 } from "./command-center-actions.service";
 import type { CommandCenterSummaryPayload } from "./command-center.types";
 import { isExecutiveCommandCenter } from "./command-center.types";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 
 const MAX_PRIMARY_SIGNALS = 6;
 

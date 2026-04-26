@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { buildPortfolioInsights } from "@/modules/capital-allocator/capital-portfolio-insight.service";
 import type { AllocationPlanResult } from "@/modules/capital-allocator/capital-allocator.types";
 

@@ -4,11 +4,11 @@ import { trackStrategyExecution } from "../strategy-tracking.service";
 const create = vi.fn();
 const upsert = vi.fn();
 
-vi.mock("@repo/db", () => ({
-  prisma: {
+vi.mock("@/lib/db/legacy", () => ({
+  getLegacyDB: () => ({
     strategyExecutionEvent: { create: (...a: unknown[]) => create(...a) },
     strategyPerformanceAggregate: { upsert: (...a: unknown[]) => upsert(...a) },
-  },
+  })
 }));
 
 vi.mock("../strategy-benchmark-logger", () => ({

@@ -1,9 +1,11 @@
 import type { QueryResult } from "pg";
-import { prisma as oldDB } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
 import { coreDB } from "@repo/db-core";
 
 import { pool } from "./db/index";
 import { USE_NEW_DB } from "./db-switch";
+
+const oldDB = getLegacyDB();
 
 type MonolithClient = typeof oldDB;
 

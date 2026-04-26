@@ -1,6 +1,7 @@
 import { DocumentEventType } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { requireDocumentUser } from "@/modules/documents/services/api-helpers";
 import {
   canAccessFolder,

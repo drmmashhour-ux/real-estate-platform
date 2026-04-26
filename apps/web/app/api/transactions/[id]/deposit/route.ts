@@ -2,7 +2,8 @@ import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
 import { recordDeposit } from "@/lib/transactions/deposits";
 import { ensureClosingSteps } from "@/lib/transactions/steps";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { DEPOSIT_PAYMENT_STATUSES } from "@/lib/transactions/constants";
 
 /**

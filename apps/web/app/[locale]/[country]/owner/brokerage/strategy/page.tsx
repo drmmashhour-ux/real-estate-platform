@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 import { executiveDashboardFlags } from "@/config/feature-flags";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { StrategyBoard } from "@/components/strategy-board/StrategyBoard";
 import { getExecutiveSession } from "@/modules/owner-access/executive-visibility.service";
 import { buildStrategyBoardWithMetrics } from "@/modules/strategy-board/strategy-board.service";

@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { requireBrokerAutopilotApiUser } from "@/lib/broker-autopilot/api-auth";
 import { prepareExecuteAutopilotAction } from "@/lib/broker-autopilot/execute-approved-action";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 
 export const dynamic = "force-dynamic";
 

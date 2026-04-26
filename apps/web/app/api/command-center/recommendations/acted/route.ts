@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { recordCommandCenterAudit } from "@/modules/command-center/command-center-ai-audit.service";
 import { requireCommandCenterActor } from "@/modules/command-center/command-center-api-guard";
 

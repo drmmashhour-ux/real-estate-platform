@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { engineFlags } from "@/config/feature-flags";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { buildFollowUpActions } from "@/modules/growth/followup-actions.service";
 import { buildFunnelSummary, getLeadsByStage } from "@/modules/growth/funnel.service";
 import { requireGrowthMachineActor } from "@/modules/growth-machine/growth-api-context";

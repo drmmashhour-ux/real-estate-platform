@@ -21,3 +21,11 @@ export const AnalyticsEvents = {
 } as const;
 
 export type AnalyticsEventName = (typeof AnalyticsEvents)[keyof typeof AnalyticsEvents];
+
+/**
+ * Funnel / behavior tape — logs to server or browser console; wire to PostHog or ingest later.
+ * Use: `search_performed`, `listing_clicked`, `checkout_started`, etc.
+ */
+export async function track(event: string, data?: Record<string, unknown>): Promise<void> {
+  console.log("[EVENT]", event, data ?? {});
+}

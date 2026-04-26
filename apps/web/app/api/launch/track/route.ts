@@ -1,7 +1,8 @@
 import { NextRequest } from "next/server";
 import type { Prisma } from "@prisma/client";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { getGuestId } from "@/lib/auth/session";
 import { logError } from "@/lib/logger";
 

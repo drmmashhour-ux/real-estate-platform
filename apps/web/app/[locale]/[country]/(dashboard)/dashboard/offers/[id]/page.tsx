@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
 import { getListingById } from "@/lib/bnhub/listings";
 import { canViewOffer, resolveOfferActorRole } from "@/modules/offers/services/offer-access";

@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { canViewCapitalDeal } from "@/modules/amf-capital/amf-access.service";
 import { getCapitalDealDetail } from "@/modules/amf-capital/amf-capital.service";
 

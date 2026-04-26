@@ -9,9 +9,10 @@ import {
   MARKETPLACE_LISTING_CHECKOUT,
   whereRangeBlocksListing,
 } from "@/lib/marketplace/booking-hold";
-import { listingsDB, coreDB, bnhubDB } from "@/lib/db";
+import { assertSafeUsage, authPrisma, getListingsDB, bnhubDB } from "@/lib/db";
 import { requireAuth } from "@/lib/auth/middleware";
 import { toDateOnlyFromString } from "@/lib/dates/dateOnly";
+import { track } from "@/lib/analytics/events";
 
 export const dynamic = "force-dynamic";
 
@@ -43,6 +44,7 @@ void bnhubDB;
  * - Stripe session creation and Connect logic stay on the existing Stripe / monolith-integrated path.
  */
 export async function POST(req: Request) {
+  assertSafeUsage("checkout route");
   if (!stripe) {
     return Response.json(
       { error: "Stripe is not configured (set STRIPE_SECRET_KEY or disable demo mode)" },
@@ -124,7 +126,7 @@ export async function POST(req: Request) {
     }
     const userId = (user as { userId: string }).userId;
 
-    const listing = await listingsDB.listing.findUnique({
+    const listing = await listDb.listing.findUnique({
       where: { id: listingIdRaw },
       select: { id: true, userId: true },
     });
@@ -142,9 +144,9 @@ export async function POST(req: Request) {
       return Response.json({ error: "endDate must be after startDate" }, { status: 400 });
     }
 
-    console.log("[CHECKOUT] using listingsDB for booking");
+    console.log("[CHECKOUT] using getListingsDB() for booking");
     try {
-      createdBooking = await listingsDB.$transaction(async (tx) => {
+      createdBooking = await listDb.$transaction(async (tx) => {
         const conflict = await tx.booking.findFirst({
           where: whereRangeBlocksListing(listingIdRaw, startDate, endDate),
         });
@@ -188,7 +190,7 @@ export async function POST(req: Request) {
     if (!metadata.listingId) metadata.listingId = listing.id;
     metadata.paymentType = MARKETPLACE_LISTING_CHECKOUT;
   } else if (listingIdRaw) {
-    connectListing = await listingsDB.listing.findUnique({
+    connectListing = await listDb.listing.findUnique({
       where: { id: listingIdRaw },
       select: { id: true, userId: true },
     });
@@ -202,7 +204,7 @@ export async function POST(req: Request) {
     | undefined;
 
   if (connectListing?.userId) {
-    const host = await coreDB.user.findUnique({
+    const host = await authPrisma.user.findUnique({
       where: { id: connectListing.userId },
       select: { stripeAccountId: true },
     });
@@ -268,6 +270,10 @@ export async function POST(req: Request) {
             : {}),
         }
       : undefined;
+
+  if (listingIdRaw) {
+    void track("checkout_started", { listingId: listingIdRaw });
+  }
 
   try {
     const session = await stripe.checkout.sessions.create(

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { executeActions, type AutonomousAction, type ExecuteContext } from "@/lib/ai/executor";
 import { getGuestId } from "@/lib/auth/session";
-import { monolithPrisma, listingsDB } from "@/lib/db";
+import { getListingsDB, monolithPrisma } from "@/lib/db";
 import { logError } from "@/lib/monitoring/errorLogger";
 
 export const dynamic = "force-dynamic";
@@ -67,7 +67,7 @@ export async function POST(req: Request) {
     }
   }
   if (rawCtx.marketplaceListingId) {
-    const row = await listingsDB.listing.findFirst({
+    const row = await getListingsDB().listing.findFirst({
       where: { id: rawCtx.marketplaceListingId, userId },
       select: { id: true },
     });

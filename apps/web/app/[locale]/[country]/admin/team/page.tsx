@@ -2,7 +2,8 @@ import { redirect } from "next/navigation";
 import { HubLayout } from "@/components/hub/HubLayout";
 import { hubNavigation } from "@/lib/hub/navigation";
 import { requireStaffPortalSession } from "@/lib/admin/staff-portal-auth";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { getPerformanceForUsers, getTodayTarget, listOpsUserIds, utcDateKey } from "@/lib/team/team-queries";
 import {
   TeamAdminTargetForm,

@@ -1,4 +1,5 @@
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import type { EvolutionAuthorKind, EvolutionProposalCategory, EvolutionTargetScopeType } from "@prisma/client";
 import { analyzeRoiPerformance } from "@/modules/investor-intelligence/roi-engine.service";
 import { selfEvolutionLog } from "./self-evolution-logger";

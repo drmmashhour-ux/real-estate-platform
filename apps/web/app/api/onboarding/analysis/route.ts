@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { buildMarketAnalysis } from "@/lib/market/analysis-service";
 import { cityToSlug } from "@/lib/market/slug";
 

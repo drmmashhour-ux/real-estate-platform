@@ -1,6 +1,7 @@
 import { authenticateBrokerDealRoute } from "@/lib/deals/broker-draft-auth";
 import { requireNotarySystemV1 } from "@/lib/deals/pipeline-feature-guard";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { getNotaryById } from "@/modules/notary/notary.service";
 
 export const dynamic = "force-dynamic";

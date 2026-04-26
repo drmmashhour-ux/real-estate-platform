@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 
 import { LecipmConsoleShell } from "@/components/dashboard/LecipmConsoleShell";
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";

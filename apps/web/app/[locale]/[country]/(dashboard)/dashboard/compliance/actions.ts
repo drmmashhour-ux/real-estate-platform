@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { PlatformRole } from "@prisma/client";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 
 export async function resolveOaciqAlignmentEventAction(
   formData: FormData,

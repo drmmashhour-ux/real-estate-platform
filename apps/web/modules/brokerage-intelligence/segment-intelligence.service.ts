@@ -1,4 +1,5 @@
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { buildPortfolioContextBucketForDeal } from "./context.service";
 import { portfolioIntelLog } from "./brokerage-intelligence-logger";
 import type { DealPortfolioSlice, SegmentInsight } from "./brokerage-intelligence.types";

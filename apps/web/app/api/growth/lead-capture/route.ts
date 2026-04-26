@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { EarlyUserTrackingType } from "@prisma/client";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
 import { createGrowthLeadFromCapture } from "@/lib/growth/lead-service";
 import { sendBuyerEarlyAccessWelcome } from "@/lib/growth/opt-in-emails";

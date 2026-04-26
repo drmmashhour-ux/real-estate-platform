@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PlatformRole } from "@prisma/client";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { buildCorporateStrategySnapshot } from "@/modules/corporate-strategy/corporate-strategy.service";
 import { engineFlags } from "@/config/feature-flags";
 

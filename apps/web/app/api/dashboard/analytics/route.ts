@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { computeUnifiedAnalytics } from "@/modules/analytics/unified-analytics/analytics.service";
 import { resolveUnifiedAnalyticsAccess } from "@/modules/analytics/unified-analytics/unified-analytics-access";
 import type { UnifiedAnalyticsRangePreset } from "@/modules/analytics/unified-analytics/unified-analytics.types";

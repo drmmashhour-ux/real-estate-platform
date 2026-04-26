@@ -1,6 +1,7 @@
 import { getExternalListingTrust } from "@/lib/trustgraph/application/getExternalListingTrust";
 import { trackExternalApiUsage } from "@/lib/trustgraph/application/integrations/billingIntegration";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { trustgraphJsonError, trustgraphJsonOk } from "@/lib/trustgraph/infrastructure/auth/http";
 import { requirePartnerApiKey } from "@/lib/trustgraph/infrastructure/auth/requireApiKey";
 import { z } from "zod";

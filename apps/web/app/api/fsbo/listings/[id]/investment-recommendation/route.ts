@@ -1,4 +1,5 @@
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { computeListingInvestmentRecommendation } from "@/lib/fsbo/listing-investment-recommendation";
 import { isFsboPubliclyVisible } from "@/lib/fsbo/constants";
 import { assertBrokeredTransaction } from "@/modules/legal-boundary/compliance-action-guard";

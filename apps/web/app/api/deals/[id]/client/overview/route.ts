@@ -1,7 +1,8 @@
 import { findDealForParticipant } from "@/lib/deals/execution-access";
 import { getGuestId } from "@/lib/auth/session";
 import { requireClientDealViewV1 } from "@/lib/deals/pipeline-feature-guard";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { normalizeState } from "@/modules/execution/execution-state-machine";
 import { listConditions } from "@/modules/deal-execution/condition-tracker.service";
 import { dealTransactionFlags, productionPipelineFlags } from "@/config/feature-flags";

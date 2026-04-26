@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { engineFlags, growthPolicyEnforcementFlags } from "@/config/feature-flags";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { buildAutonomousDecisions } from "@/modules/autonomous/autonomous-decision.service";
 import type { AutonomousDecisionContext } from "@/modules/autonomous/autonomous-marketplace.types";
 import { getAutonomousExecutionLogs } from "@/modules/autonomous/autonomous-execution.service";

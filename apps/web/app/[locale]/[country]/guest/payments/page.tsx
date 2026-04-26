@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 
 function getPaymentTimelineLabel(paymentStatus: string | null | undefined, legacyStatus: string | null | undefined) {
   if (paymentStatus === "PAID") return { label: "Payment confirmed", tone: "text-emerald-300" };

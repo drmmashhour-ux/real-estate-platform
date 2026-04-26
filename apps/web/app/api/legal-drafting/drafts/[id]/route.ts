@@ -1,4 +1,5 @@
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { assertDraftAccess } from "@/lib/forms/guards";
 import { requireBrokerLikeApi } from "@/lib/forms/require-broker";
 

@@ -1,4 +1,5 @@
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 
 export default async function AdminAmbassadorPayoutsPage() {
   const payouts = await prisma.ambassadorPayout.findMany({ orderBy: { createdAt: "desc" }, take: 50 }).catch(() => []);

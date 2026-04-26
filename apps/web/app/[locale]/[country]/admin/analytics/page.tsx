@@ -7,7 +7,8 @@ import { LecipmControlShell } from "@/components/admin/LecipmControlShell";
 import { getAdminRiskAlerts } from "@/lib/admin/control-center";
 import { requireAdminControlUserId } from "@/lib/admin/guard";
 import { getPlatformStats } from "@/modules/analytics/services/get-platform-stats";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { StrategyInsightsDashboard } from "@/components/strategy/StrategyInsightsDashboard";
 import { PortfolioDashboard } from "@/components/brokerage-intelligence/PortfolioDashboard";
 

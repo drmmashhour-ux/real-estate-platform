@@ -3,10 +3,10 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 vi.mock("@/config/feature-flags", () => ({
   engineFlags: { brokerageIntelligenceV1: true },
 }));
-vi.mock("@repo/db", () => ({
-  prisma: {
+vi.mock("@/lib/db/legacy", () => ({
+  getLegacyDB: () => ({
     portfolioSnapshot: { create: vi.fn().mockResolvedValue({ id: "snap" }) },
-  },
+  })
 }));
 vi.mock("../broker-load.service", () => ({
   computeBrokerLoadMetrics: vi.fn().mockResolvedValue([{ brokerId: "b1", activeDeals: 0, activeLeads: 0, avgResponseTime: null, workloadScore: 90 }]),

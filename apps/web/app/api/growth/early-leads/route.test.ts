@@ -5,11 +5,11 @@ const createMock = vi.fn();
 const activityCreateMock = vi.fn();
 const notifyMock = vi.fn();
 
-vi.mock("@repo/db", () => ({
-  prisma: {
+vi.mock("@/lib/db/legacy", () => ({
+  getLegacyDB: () => ({
     formSubmission: { create: (...args: unknown[]) => createMock(...args) },
     formActivity: { create: (...args: unknown[]) => activityCreateMock(...args) },
-  },
+  })
 }));
 
 vi.mock("@/lib/email/notifications", () => ({

@@ -1,5 +1,6 @@
 import type { Prisma } from "@prisma/client";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 
 import { recordOpportunityAiAudit } from "./opportunity-audit.service";
 import type { DiscoveredOpportunity } from "./opportunity.types";

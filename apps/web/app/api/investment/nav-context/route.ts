@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { getSessionUserIdFromRequest } from "@/lib/auth/api-session";
 
 /** Client hint for investment bottom nav: demo links when not a real account session. */

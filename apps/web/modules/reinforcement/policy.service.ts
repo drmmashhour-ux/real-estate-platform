@@ -1,5 +1,6 @@
 import type { ReinforcementPolicyType, StrategyBenchmarkDomain } from "@prisma/client";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import type { ReinforcementCandidate } from "./reinforcement.types";
 import { reinforcementLog } from "./reinforcement-logger";
 

@@ -1,7 +1,8 @@
 import { dealExecutionFlags } from "@/config/feature-flags";
 import { authenticateBrokerDealRoute } from "@/lib/deals/broker-draft-auth";
 import { logDraftingAudit } from "@/lib/deals/drafting-audit";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { buildFieldPrefillProposal } from "@/modules/drafting-ai/field-prefill-engine";
 
 export const dynamic = "force-dynamic";

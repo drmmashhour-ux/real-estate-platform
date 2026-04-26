@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 import { getGuestId } from "@/lib/auth/session";
 import { isPlatformAdmin } from "@/lib/auth/is-platform-admin";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { ApprovalsClient } from "./approvals-client";
 
 export default async function AiApprovalsPage() {

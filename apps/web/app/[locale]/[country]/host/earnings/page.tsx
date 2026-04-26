@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 import { getGuestId } from "@/lib/auth/session";
 import { HostEarningsPage } from "@/components/host/HostEarningsPage";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { buildHostEarningsSnapshot } from "@/lib/host-earnings/dashboard";
 import { getHostMonthlyPaymentTotals } from "@/lib/host-earnings/monthly-breakdown";
 import { getResolvedMarket } from "@/lib/markets";

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { requireBrokerOrAdminApi } from "@/modules/crm/services/require-broker-api";
 import { recalculateLeadLecipmScores } from "@/modules/crm/application/recalculateLeadLecipmScores";
 import { suggestAutoActions } from "@/modules/crm/application/suggestAutoActions";

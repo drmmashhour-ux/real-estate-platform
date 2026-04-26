@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { isFinancialStaff } from "@/lib/admin/finance-access";
 import type { Metadata } from "next";
 

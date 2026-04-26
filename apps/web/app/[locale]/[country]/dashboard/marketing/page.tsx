@@ -4,7 +4,8 @@ import { getMarketingHubDashboardPayload } from "@/modules/marketing/marketing-d
 import { MarketingPanelClient } from "./marketing-panel-client";
 import { engineFlags } from "@/config/feature-flags";
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { canAccessAdminDashboard, resolveSeniorHubAccess } from "@/lib/senior-dashboard/role";
 
 export const dynamic = "force-dynamic";

@@ -3,7 +3,8 @@ import { redirect } from "next/navigation";
 import { PlatformRole } from "@prisma/client";
 import { InvestorDashboard } from "@/components/investor/InvestorDashboard";
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 
 export const metadata: Metadata = {
   title: "Investor intelligence (internal)",

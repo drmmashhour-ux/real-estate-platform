@@ -1,4 +1,5 @@
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { createBooking } from "@/lib/bnhub/booking";
 import { isListingAvailable } from "@/lib/bnhub/listings";
 import { requireMobileUser } from "@/lib/mobile/mobileAuth";

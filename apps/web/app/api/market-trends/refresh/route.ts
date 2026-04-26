@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdminSession } from "@/lib/admin/require-admin";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { refreshMarketSnapshotsFromMarketData } from "@/modules/market-trends/application/refreshMarketSnapshotsFromMarketData";
 
 export const dynamic = "force-dynamic";

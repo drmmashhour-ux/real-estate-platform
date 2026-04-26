@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { getGuestId } from "@/lib/auth/session";
 import { scoreLead } from "@/lib/ai/lead-scoring";
 import { mergeFormAndBehaviorScore } from "@/lib/ai/behavior-scoring";

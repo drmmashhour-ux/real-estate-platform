@@ -3,7 +3,8 @@ import type { Metadata } from "next";
 import { PlatformRole } from "@prisma/client";
 import { RecommendationsDebugClient } from "@/components/recommendations/RecommendationsDebugClient";
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 
 export const metadata: Metadata = {
   title: "Recommendations debug",

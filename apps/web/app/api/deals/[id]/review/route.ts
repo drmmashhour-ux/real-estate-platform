@@ -2,7 +2,8 @@ import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
 import { canMutateExecution, loadDealWithActor } from "@/lib/deals/execution-access";
 import { dealExecutionFlags } from "@/config/feature-flags";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { brokerApproveDocument } from "@/modules/review/broker-review.service";
 
 export const dynamic = "force-dynamic";

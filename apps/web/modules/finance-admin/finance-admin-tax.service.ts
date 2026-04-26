@@ -1,4 +1,5 @@
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { FINANCIAL_CONFIG } from "@/config/financial";
 import { logFinanceAdminTagged } from "@/lib/server/launch-logger";
 import type { FinAdminDomain } from "@prisma/client";

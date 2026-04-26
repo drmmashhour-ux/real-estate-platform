@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { createAppointmentEvent, afterAppointmentEvent } from "@/modules/scheduling/services/appointment-helpers";
 import { notifyAppointmentCompleted } from "@/modules/scheduling/services/appointment-notifications";
 import { canManageAppointment, type AppointmentViewer } from "@/modules/scheduling/services/appointment-permissions";

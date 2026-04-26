@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { requireResidenceDashboardApi } from "@/lib/senior-dashboard/api-auth";
 import { getResidenceDashboardPayload } from "@/modules/senior-living/dashboard/residence-dashboard.service";
 

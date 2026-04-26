@@ -49,7 +49,8 @@ import {
   incrementCrmListingView,
 } from "@/lib/listings/listing-analytics-service";
 import { buildPropertyConversionSurface } from "@/modules/conversion/property-conversion-surface";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { isBrokerInsuranceValid, getBrokerInsuranceStatus } from "@/modules/compliance/insurance/insurance.service";
 import { isActiveOaciqLicenceOnFile } from "@/lib/trust/broker-trust";
 import { loadFsboListingScore } from "@/modules/listing-ranking/fsbo-score-loader";

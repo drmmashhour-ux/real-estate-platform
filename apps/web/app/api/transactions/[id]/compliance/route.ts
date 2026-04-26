@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { logError } from "@/lib/logger";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { requireBrokerOrAdminTransactionSession } from "@/lib/transactions/require-sd-transaction-session";
 import { getTransactionById } from "@/modules/transactions/transaction.service";
 import { canAccessTransaction } from "@/modules/transactions/transaction-policy";

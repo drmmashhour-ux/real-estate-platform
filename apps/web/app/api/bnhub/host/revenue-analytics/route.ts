@@ -3,7 +3,8 @@ import { utcDayStart } from "@/lib/bnhub/availability-day-helpers";
 import { buildHostRevenueInsightsFromMetrics } from "@/modules/host-analytics/insights.engine";
 import type { HostRevenueMetrics } from "@/modules/host-analytics/host-analytics.types";
 import { buildHostRevenueMetrics, computeWeekendWeekdayAdr } from "@/modules/host-analytics/metrics.service";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 
 export const dynamic = "force-dynamic";
 

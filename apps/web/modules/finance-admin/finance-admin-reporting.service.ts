@@ -1,4 +1,5 @@
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { summarizeHubGstQst, taxableRevenueByDomain } from "./finance-admin-tax.service";
 import { FINANCE_HUB_DISCLAIMERS } from "./finance-admin.types";
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PlatformRole } from "@prisma/client";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { getGuestId } from "@/lib/auth/session";
 import { isFinancialStaff } from "@/lib/admin/finance-access";
 import { getFullFinancialModel } from "@/modules/finance/investor-financial-model";

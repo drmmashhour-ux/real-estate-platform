@@ -5,7 +5,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { scoreLead } from "@/lib/ai/lead-scoring";
 import { logAiEvent } from "@/lib/ai/log";
 import {

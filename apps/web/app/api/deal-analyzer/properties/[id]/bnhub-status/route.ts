@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
 import { isPlatformAdmin } from "@/lib/auth/is-platform-admin";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { isFsboPubliclyVisible } from "@/lib/fsbo/constants";
 import { isDealAnalyzerBnhubModeEnabled, isDealAnalyzerEnabled } from "@/modules/deal-analyzer/config";
 import { getDealAnalysisPublicDto } from "@/modules/deal-analyzer/application/getDealAnalysis";

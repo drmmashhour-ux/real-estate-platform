@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { isReasonableListingId } from "@/lib/api/safe-params";
 import { requireBnhubHostAccess } from "@/lib/host/require-bnhub-host-access";
 import { patchShortTermListingForHost } from "@/lib/host/patch-short-term-listing-for-host";

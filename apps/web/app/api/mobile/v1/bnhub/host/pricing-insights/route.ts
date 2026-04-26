@@ -1,6 +1,7 @@
 import { getSupabaseAuthIdFromRequest } from "@/lib/bnhub/getSupabaseAuthIdFromRequest";
 import { getSupabaseServiceForGuestBookings } from "@/lib/stripe/guestSupabaseBooking";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { getMobileAuthUser, resolveMobileAppRoleFromRequest } from "@/lib/mobile/mobileAuth";
 
 export const dynamic = "force-dynamic";

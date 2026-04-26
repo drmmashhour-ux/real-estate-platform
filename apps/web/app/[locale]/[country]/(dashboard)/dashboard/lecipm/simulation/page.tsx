@@ -4,7 +4,8 @@ import { redirect } from "next/navigation";
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
 import { SimulationSandboxClient } from "./simulation-sandbox-client";
 
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { PlatformRole } from "@prisma/client";
 
 export const metadata: Metadata = {

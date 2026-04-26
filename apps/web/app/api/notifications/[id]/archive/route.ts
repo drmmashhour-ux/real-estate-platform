@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { archiveNotification } from "@/modules/notifications/services/create-notification";
 import { canViewNotification } from "@/modules/notifications/services/notification-permissions";
 import { requireNotificationUser } from "@/modules/notifications/services/api-helpers";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 
 export const dynamic = "force-dynamic";
 

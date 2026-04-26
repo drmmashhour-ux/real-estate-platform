@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { logError } from "@/lib/logger";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { updateFinancingConditionStatus } from "@/modules/capital/financing-conditions.service";
 import { canAccessPipelineDeal, requireAuthUser } from "@/lib/deals/guard-pipeline-deal";
 

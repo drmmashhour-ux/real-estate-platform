@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("@repo/db", () => ({ prisma: { deal: { count: vi.fn().mockResolvedValue(0), groupBy: vi.fn().mockResolvedValue([]) } } }));
+vi.mock("@/lib/db/legacy", () => ({ getLegacyDB: () => ({ deal: { count: vi.fn().mockResolvedValue(0), groupBy: vi.fn().mockResolvedValue([]) } } }));
 vi.mock("@/modules/investor-intelligence/expansion-analysis.engine", () => ({
   evaluateExpansionOpportunities: () => Promise.resolve({ topMarkets: [], topSegments: [], risks: [], capacityNotes: [] }),
 }));

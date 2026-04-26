@@ -1,4 +1,5 @@
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { isTrustGraphEnabled } from "@/lib/trustgraph/config";
 import { toTrustProfileDto } from "@/lib/trustgraph/application/dto/trustProfileDto";
 import { trustgraphJsonError, trustgraphJsonOk } from "@/lib/trustgraph/infrastructure/auth/http";

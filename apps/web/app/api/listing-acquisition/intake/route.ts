@@ -5,7 +5,8 @@ import {
   ListingAcquisitionPermissionStatus,
   type FsboListingOwnerType,
 } from "@prisma/client";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
 import { normalizeListingDescription } from "@/lib/listings/normalize-listing-description";
 import { createGrowthLeadFromListingAcquisition } from "@/lib/growth/lead-service";

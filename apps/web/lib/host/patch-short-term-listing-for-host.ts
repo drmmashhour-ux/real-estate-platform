@@ -1,5 +1,6 @@
 import { ListingStatus } from "@prisma/client";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { updateListing, type UpdateListingData } from "@/lib/bnhub/listings";
 import { logPricingAiApplied } from "@/modules/pricing-ai/pricing-ai.logger";
 

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getStripe, isStripeConfigured } from "@/lib/stripe";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { createBrokerCheckoutSession } from "@/modules/billing/brokerLeadBilling";
 import { requireBrokerOrAdminApi } from "@/modules/crm/services/require-broker-api";
 

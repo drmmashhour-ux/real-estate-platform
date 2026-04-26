@@ -1,5 +1,6 @@
 import { BookingStatus, PaymentStatus } from "@prisma/client";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { completeBooking } from "@/lib/bnhub/booking";
 import { maybeBlockRequestWithLegalGate } from "@/modules/legal/legal-api-gate";
 import { requireMobileUser } from "@/lib/mobile/mobileAuth";

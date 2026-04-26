@@ -4,7 +4,8 @@ import { getGuestId, getUserRole, isHubAdminRole } from "@/lib/auth/session";
 import { redirect, notFound } from "next/navigation";
 import { HubLayout } from "@/components/hub/HubLayout";
 
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { hubNavigation } from "@/lib/hub/navigation";
 import { isTrustGraphAdminQueueEnabled, isTrustGraphEnabled } from "@/lib/trustgraph/config";
 import { TrustGraphCaseActions } from "@/components/trust/TrustGraphCaseActions";

@@ -1,7 +1,8 @@
 import { NextRequest } from "next/server";
 
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { getCentrisBrokerDominationSnapshot } from "@/modules/centris-conversion/centris-funnel-analytics.service";
 
 export const dynamic = "force-dynamic";

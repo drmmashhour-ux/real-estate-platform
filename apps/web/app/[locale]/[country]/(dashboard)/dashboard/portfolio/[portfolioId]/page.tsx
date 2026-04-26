@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { canAccessBrokerPortfolio } from "@/modules/portfolio/portfolio-policy";
 import { getPortfolioById } from "@/modules/portfolio/portfolio.service";
 import {

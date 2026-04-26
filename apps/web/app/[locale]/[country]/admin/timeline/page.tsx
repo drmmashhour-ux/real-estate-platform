@@ -4,7 +4,8 @@ import { getGuestId, getUserRole, isHubAdminRole } from "@/lib/auth/session";
 import { redirect } from "next/navigation";
 import { HubLayout } from "@/components/hub/HubLayout";
 
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { hubNavigation } from "@/lib/hub/navigation";
 import { AdminAuditTimelinesPanel } from "../immo-logs/AdminAuditTimelinesPanel";
 import { getAdminMovementMonitor } from "@/lib/admin/admin-movement-monitor";

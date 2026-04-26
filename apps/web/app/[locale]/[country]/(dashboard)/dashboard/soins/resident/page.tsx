@@ -1,4 +1,5 @@
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
 import { SoinsResidentDashboardClient } from "@/components/soins/SoinsResidentDashboardClient";
 import { urgencyFromSeverity } from "@/design-system/soins-hub";

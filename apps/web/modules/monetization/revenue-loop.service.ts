@@ -2,7 +2,8 @@
  * Revenue acceleration loop: repeat purchase hints, subscription nudges, real-only urgency.
  * No fake scarcity; pricing copy references catalog + Stripe.
  */
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { logInfo } from "@/lib/logger";
 import { getPricing } from "./pricing.config";
 

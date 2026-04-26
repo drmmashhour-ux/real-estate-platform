@@ -35,7 +35,8 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: "Property identity not found" }, { status: 404 });
     }
 
-    const { prisma } = await import("@repo/db");
+    const { getLegacyDB } = await import("@/lib/db/legacy");
+    const prisma = getLegacyDB();
     const listingPrice = listingId
       ? (await prisma.shortTermListing.findUnique({ where: { id: listingId }, select: { nightPriceCents: true } }))?.nightPriceCents
       : null;

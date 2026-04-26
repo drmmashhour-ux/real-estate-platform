@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { PlatformRole } from "@prisma/client";
 import { buildLeaderboard } from "@/modules/gamification/broker-leaderboard.service";
 import type { LeaderboardScope, LeaderboardWindow } from "@/modules/gamification/broker-gamification.types";

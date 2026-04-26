@@ -4,7 +4,8 @@ import { loadSimulationBaseline } from "./simulation-baseline.service";
 import { simulationLog } from "./simulation-log";
 import type { PlatformRole } from "@prisma/client";
 
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 
 function mapRow(
   r: {

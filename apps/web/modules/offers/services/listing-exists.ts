@@ -1,5 +1,6 @@
 import { getListingById } from "@/lib/bnhub/listings";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 
 const DEMO_LISTING_IDS = new Set(["1", "test-listing-1", "demo-listing-montreal"]);
 

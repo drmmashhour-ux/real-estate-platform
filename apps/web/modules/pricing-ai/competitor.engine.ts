@@ -1,6 +1,7 @@
 import { ListingStatus } from "@prisma/client";
 import type { Prisma } from "@prisma/client";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import type { PricingAiListingInput, PricingAiSignalBundle } from "./signals.types";
 
 export type CompetitorAdjustment = {

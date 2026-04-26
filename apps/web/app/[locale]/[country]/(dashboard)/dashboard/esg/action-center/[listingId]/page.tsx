@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { EsgActionCenterAssetClient } from "@/components/esg/EsgActionCenterAssetClient";
 
 export const metadata = {

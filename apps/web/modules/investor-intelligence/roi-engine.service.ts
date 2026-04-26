@@ -1,5 +1,6 @@
 import type { RoiScopeType } from "@prisma/client";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { investIntelLog } from "./investor-intel-logger";
 import type { RoiInsight } from "./investor-intelligence.types";
 

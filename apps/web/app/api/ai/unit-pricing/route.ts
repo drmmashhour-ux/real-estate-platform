@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { predictUnitPrice } from "@/lib/ai/unit-pricing";
 import { predictUnitValueAI } from "@/lib/ai/openai-investment";
 import { logError } from "@/lib/logger";

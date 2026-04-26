@@ -6,13 +6,13 @@ const countLead = vi.fn();
 const findFirstLead = vi.fn();
 const upsertBl = vi.fn();
 
-vi.mock("@repo/db", () => ({
-  prisma: {
+vi.mock("@/lib/db/legacy", () => ({
+  getLegacyDB: () => ({
     user: { findMany: (...a: unknown[]) => findManyU(...a) },
     deal: { count: (...a: unknown[]) => countDeal(...a) },
     lead: { count: (...a: unknown[]) => countLead(...a), findFirst: (...a: unknown[]) => findFirstLead(...a) },
     brokerLoadMetric: { upsert: (...a: unknown[]) => upsertBl(...a) },
-  },
+  })
 }));
 
 import { computeBrokerLoadMetrics } from "../broker-load.service";

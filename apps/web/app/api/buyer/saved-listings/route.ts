@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { persistLaunchEvent } from "@/src/modules/launch/persistLaunchEvent";
 import { recordEvolutionOutcome } from "@/modules/evolution/outcome-tracker.service";
 import { getGuestId } from "@/lib/auth/session";

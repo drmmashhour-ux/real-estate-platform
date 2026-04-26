@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { requireMortgageExpertWithTerms } from "@/modules/mortgage/services/expert-guard";
 import { appendLeadTimelineEvent } from "@/lib/leads/timeline-helpers";
 import { toStoredPipelineStatus, normalizePipelineStage } from "@/lib/leads/pipeline-stage";

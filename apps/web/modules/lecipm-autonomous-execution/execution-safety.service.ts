@@ -1,5 +1,6 @@
 import type { LecipmExecutionTaskType } from "@prisma/client";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 
 const MAX_AUTO_EXECUTIONS_PER_HOUR = 24;
 const FAILURE_STREAK_BEFORE_PAUSE = 4;

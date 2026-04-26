@@ -5,14 +5,14 @@ const findMany = vi.fn();
 const update = vi.fn();
 const recordReward = vi.fn();
 
-vi.mock("@repo/db", () => ({
-  prisma: {
+vi.mock("@/lib/db/legacy", () => ({
+  getLegacyDB: () => ({
     reinforcementDecision: {
       findUnique: (...a: unknown[]) => findUnique(...a),
       findMany: (...a: unknown[]) => findMany(...a),
       update: (...a: unknown[]) => update(...a),
     },
-  },
+  })
 }));
 
 vi.mock("../arm-stats.service", () => ({

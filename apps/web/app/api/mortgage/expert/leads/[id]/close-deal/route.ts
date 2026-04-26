@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { appendLeadTimelineEvent } from "@/lib/leads/timeline-helpers";
 import { normalizePipelineStage } from "@/lib/leads/pipeline-stage";
 import { splitMortgageCommission } from "@/modules/mortgage/services/commission";

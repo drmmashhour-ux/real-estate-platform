@@ -1,5 +1,6 @@
 import { AccountStatus, PlatformRole } from "@prisma/client";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { buildPortfolioContextBucketForLead } from "./context.service";
 import { portfolioIntelLog } from "./brokerage-intelligence-logger";
 import type { LeadPortfolioSlice, LeadRoutingResult } from "./brokerage-intelligence.types";

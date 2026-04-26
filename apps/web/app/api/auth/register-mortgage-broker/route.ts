@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { hashPassword } from "@/lib/auth/password";
 import { createDbSession } from "@/lib/auth/db-session";
 import { setGuestIdCookie } from "@/lib/auth/session";

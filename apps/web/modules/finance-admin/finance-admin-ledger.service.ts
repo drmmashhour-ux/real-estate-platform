@@ -1,5 +1,6 @@
 import type { Prisma } from "@prisma/client";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { logFinanceAdminTagged } from "@/lib/server/launch-logger";
 import type { CreateHubLedgerEntryInput } from "./finance-admin.types";
 

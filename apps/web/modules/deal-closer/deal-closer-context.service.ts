@@ -1,4 +1,5 @@
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { buildMemorySnapshot } from "@/modules/messaging/crm-memory/memory.engine";
 import { runConversationAiEngine } from "@/modules/messaging/analysis/conversation-ai.engine";
 import type { AssistantConversationShape } from "@/modules/messaging/assistant/next-action.service";

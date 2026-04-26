@@ -3,7 +3,8 @@ import type { PlatformRole } from "@prisma/client";
 import type { AlertApprovalRow } from "./command-center.types";
 import { isExecutiveCommandCenter } from "./command-center.types";
 
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 
 import { getLecipmOutcomesSummary } from "@/modules/outcomes/outcome.service";
 

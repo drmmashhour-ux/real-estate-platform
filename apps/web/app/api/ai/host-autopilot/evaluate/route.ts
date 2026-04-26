@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { getHostAutopilotConfig } from "@/lib/ai/autopilot/host-config";
 import { evaluateAutopilotActions, AUTOPILOT_EVALUATE_RATE_LIMIT_PER_HOUR } from "@/modules/host-ai";
 import { logManagerAction } from "@/lib/ai/logger";

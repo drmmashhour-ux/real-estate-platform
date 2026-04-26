@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { requireSellerOrAdminForListing } from "@/app/api/seller-declaration-ai/_auth";
 import { saveDeclarationDraft } from "@/src/modules/seller-declaration-ai/application/saveDeclarationDraft";
 import { COMPLAINT_PLATFORM_OWNER_ID } from "@/lib/compliance/complaint-case-number";

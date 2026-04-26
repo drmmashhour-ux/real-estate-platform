@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { getGuestId } from "@/lib/auth/session";
 import { buildPortfolio, fetchFsboListingsForPortfolio, type PortfolioListing } from "@/lib/invest/portfolio";
 import type { InvestorProfileInput } from "@/lib/invest/portfolio-types";

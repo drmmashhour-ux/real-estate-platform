@@ -1,4 +1,5 @@
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { attributeOutcomeToStrategies, type AttributedStrategy } from "./strategy-attribution.engine";
 import type { StrategyBucketOutcome } from "@prisma/client";
 

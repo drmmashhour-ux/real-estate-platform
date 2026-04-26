@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { checkGrowthPaywall } from "@/src/modules/growth-funnel/application/checkGrowthPaywall";
 import { recordSuccessfulSimulatorRun } from "@/src/modules/growth-funnel/application/recordSuccessfulSimulatorRun";
 import { runFirstValueSimulation } from "@/src/modules/growth-funnel/application/runFirstValueSimulation";

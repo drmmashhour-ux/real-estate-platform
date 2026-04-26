@@ -2,7 +2,8 @@ import { NextRequest } from "next/server";
 import Stripe from "stripe";
 import { paymentsV8SafetyFlags } from "@/config/feature-flags";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { PAID_STORAGE_PLAN_KEYS, plans, type PlanKey } from "@/lib/billing/plans";
 import { assertCheckoutSessionIdShape, runV8SafePaymentOperation } from "@/lib/payments/v8-safety";
 

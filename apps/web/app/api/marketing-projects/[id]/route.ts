@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { engineFlags } from "@/config/feature-flags";
 import { requireUser } from "@/modules/security/access-guard.service";
 import { marketingProjectUpdateBodySchema } from "@/modules/marketing-studio/marketing-projects-api.schema";

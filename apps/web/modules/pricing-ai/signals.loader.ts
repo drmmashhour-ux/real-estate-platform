@@ -1,6 +1,7 @@
 import { BookingStatus } from "@prisma/client";
 import { differenceInCalendarDays, max as maxDate, min as minDate, subDays } from "date-fns";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { loadBnhubPricingSignals } from "@/modules/bnhub/pricing/bnhub-pricing-signals.service";
 import { loadPeerMedians } from "./competitor.engine";
 import type { PricingAiListingInput, PricingAiSignalBundle, PricingAiDemandLevel } from "./signals.types";

@@ -7,7 +7,8 @@ import { Card } from "@/components/ui/Card";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { TrustgraphQueueQuickActions } from "@/components/trust/TrustgraphQueueQuickActions";
 
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { hubNavigation } from "@/lib/hub/navigation";
 import { loadVerificationQueue, loadVerificationQueueStats } from "@/lib/trustgraph/application/loadVerificationQueue";
 import { isTrustGraphAdminQueueEnabled, isTrustGraphEnabled } from "@/lib/trustgraph/config";

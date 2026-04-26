@@ -28,15 +28,15 @@ vi.mock("@/lib/insurance/assign-partner", () => ({
   assignInsurancePartner: vi.fn().mockResolvedValue(null),
 }));
 
-vi.mock("@repo/db", () => ({
-  prisma: {
+vi.mock("@/lib/db/legacy", () => ({
+  getLegacyDB: () => ({
     insuranceLead: { create: vi.fn(), findMany: vi.fn(), update: vi.fn(), findFirst: vi.fn() },
     insurancePartner: { findFirst: vi.fn(), findUnique: vi.fn(), findMany: vi.fn() },
     user: { findUnique: vi.fn() },
     shortTermListing: { findUnique: vi.fn() },
     fsboListing: { findUnique: vi.fn() },
     listing: { findUnique: vi.fn() },
-  },
+  })
 }));
 
 vi.mock("@/lib/auth/session", () => ({
@@ -52,7 +52,8 @@ vi.mock("@/lib/logger", () => ({
   logWarn: vi.fn(),
 }));
 
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { getGuestId } from "@/lib/auth/session";
 import { sendInsuranceLeadToPartner } from "@/lib/email/send-insurance-lead";
 

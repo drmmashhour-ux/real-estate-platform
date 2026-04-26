@@ -1,5 +1,6 @@
 import { InsuranceLeadStatus } from "@prisma/client";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { insuranceHubScopedWhere, requireInsuranceHubAccess } from "@/lib/insurance/require-insurance-hub";
 import { transitionInsuranceLeadStatus } from "@/lib/insurance/transition-insurance-lead-status";
 

@@ -5,7 +5,8 @@ import { Prisma } from "@prisma/client";
 import { getGuestId, getUserRole, isHubAdminRole } from "@/lib/auth/session";
 import { LegalPacketLink } from "@/components/admin/LegalPacketLink";
 import { HubLayout } from "@/components/hub/HubLayout";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { formatFormActivityNote } from "@/lib/forms/form-activity";
 import { hubNavigation } from "@/lib/hub/navigation";
 

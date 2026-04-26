@@ -1,4 +1,5 @@
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { parsePolicyFromDb } from "./evolution-policy-defaults";
 import { getDefaultPolicySnapshot } from "./evolution-policy-defaults";
 import { selfEvolutionLog } from "./self-evolution-logger";

@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { POST } from "./route";
 
-vi.mock("@repo/db", () => ({
-  prisma: {
+vi.mock("@/lib/db/legacy", () => ({
+  getLegacyDB: () => ({
     user: { findUnique: vi.fn() },
     mortgageExpert: { findUnique: vi.fn() },
-  },
+  })
 }));
 
 vi.mock("@/lib/auth/password", () => ({
@@ -24,7 +24,8 @@ vi.mock("@/lib/observability", () => ({
   recordPlatformEvent: vi.fn().mockResolvedValue(undefined),
 }));
 
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { verifyPassword } from "@/lib/auth/password";
 
 describe("POST /api/auth/login", () => {

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PlatformRole } from "@prisma/client";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { requireActiveResidentialBrokerLicence } from "@/lib/compliance/oaciq/broker-licence-guard";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
 import { createOfferDocument, type OfferTypeKey } from "@/modules/offers/services/offer-service";

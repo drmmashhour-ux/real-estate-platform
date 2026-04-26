@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { canAccessContract, getContractForAccess, resolveListingOwnerId } from "@/modules/contracts/services/access";
 import { E_SIGN_CONTRACT_TYPES } from "@/lib/hubs/contract-types";
 import { evaluateContractBrainSignatureGate } from "@/lib/legal/contract-brain-engine";

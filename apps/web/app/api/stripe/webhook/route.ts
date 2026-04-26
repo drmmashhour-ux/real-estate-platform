@@ -2,8 +2,9 @@ import { NextRequest } from "next/server";
 import { headers } from "next/headers";
 import Stripe from "stripe";
 import { PaymentStatus, PlatformInvoiceStatus, type Prisma } from "@prisma/client";
-import { prisma } from "@repo/db";
-import { listingsDB } from "@/lib/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
+import { authPrisma, getListingsDB } from "@/lib/db";
 import { marketplaceListingBookingIdFromStripeMetadata } from "@/lib/marketplace/booking-hold";
 import { generateInvoiceNumber } from "@/lib/codes/generate-code";
 import { PAID_STORAGE_PLAN_KEYS, plans, type PlanKey } from "@/lib/billing/plans";
@@ -106,7 +107,7 @@ async function sendPaymentSuccessEmail(userId: string): Promise<void> {
   const resend = getResend();
   if (!resend) return;
   try {
-    const user = await prisma.user.findUnique({
+    const user = await authPrisma.user.findUnique({
       where: { id: userId },
       select: { email: true },
     });
@@ -273,7 +274,7 @@ function enqueueStripeGovernanceFeedback(params: {
 }
 
 async function syncConnectedAccountStatusFromEvent(stripe: Stripe, accountId: string) {
-  const user = await prisma.user.findFirst({
+  const user = await authPrisma.user.findFirst({
     where: { stripeAccountId: accountId },
     select: { id: true },
   });
@@ -632,8 +633,8 @@ export async function POST(req: NextRequest) {
     }
     const listingsMpBid = marketplaceListingBookingIdFromStripeMetadata(md as Record<string, string>);
     if (md.paymentType === "marketplace_listing_checkout" && listingsMpBid) {
-      const u = await listingsDB.booking
-        .updateMany({
+      const u = await getListingsDB()
+        .booking.updateMany({
           where: { id: listingsMpBid, status: "pending" },
           data: { status: "failed" },
         })

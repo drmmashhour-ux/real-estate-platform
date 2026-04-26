@@ -1,4 +1,5 @@
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
 import { getClientIpFromRequest } from "@/lib/insurance/client-ip";
 import { scoreInsuranceLead } from "@/lib/insurance/score-lead";

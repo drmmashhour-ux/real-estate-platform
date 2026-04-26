@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { InvestorMemoDashboardClient } from "@/components/investor/InvestorMemoDashboardClient";
 import { userCanAccessInvestorDocuments } from "@/modules/investor/investor-permissions";
 import { getLatestInvestorMemo } from "@/modules/investor/investor-memo.service";

@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { MessageEventType } from "@prisma/client";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import {
   canAccessConversationContext,
   canArchiveConversation,

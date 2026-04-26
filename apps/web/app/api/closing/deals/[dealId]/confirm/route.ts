@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { findDealForClosingAccess } from "@/modules/closing/closing-access";
 import { canConfirmClosing } from "@/modules/closing/closing-access";
 import { confirmClosingExecution } from "@/modules/closing/closing-room.service";

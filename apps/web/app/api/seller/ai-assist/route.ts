@@ -1,4 +1,5 @@
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { getGuestId } from "@/lib/auth/session";
 import { assertSellerListingActivation } from "@/modules/legal/assert-legal";
 import { generateText } from "@/lib/ai/writer";

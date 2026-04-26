@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { acknowledgeContractBrainNotice } from "@/lib/legal/contract-brain-engine";
 import { canAccessContract, getContractForAccess, resolveListingOwnerId } from "@/modules/contracts/services/access";
 

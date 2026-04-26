@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { VerificationsDashboardClient } from "./verifications-dashboard-client";
 import { ProfessionalVerificationsClient } from "./professional-verifications-client";
 

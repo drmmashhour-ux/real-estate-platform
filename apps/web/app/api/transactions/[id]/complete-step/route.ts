@@ -1,7 +1,8 @@
 import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
 import { completeStep } from "@/lib/transactions/steps";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { CLOSING_STEP_NAMES } from "@/lib/transactions/constants";
 
 /**

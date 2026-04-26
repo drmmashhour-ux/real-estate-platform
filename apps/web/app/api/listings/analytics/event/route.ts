@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { ListingAnalyticsKind } from "@prisma/client";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
 import { isFsboPubliclyVisible } from "@/lib/fsbo/constants";
-import { listingsDB } from "@/lib/db/listings-client";
+import { getListingsDB } from "@/lib/db/routeSwitch";
 import { monolithPrisma } from "@/lib/db/monolith-client";
 import {
   incrementFsboContactClick,
@@ -50,7 +50,8 @@ export async function POST(request: NextRequest) {
   }
 
   if (kind === "CRM" && event === "contact_click") {
-    const listing = await listingsDB.listing.findUnique({ where: { id: listingId } });
+    const db = getListingsDB();
+    const listing = await db.listing.findUnique({ where: { id: listingId } });
     if (!listing) return NextResponse.json({ error: "Not found" }, { status: 404 });
     await monolithPrisma.listingAnalytics.upsert({
       where: { kind_listingId: { kind: ListingAnalyticsKind.CRM, listingId } },
@@ -71,7 +72,8 @@ export async function POST(request: NextRequest) {
   }
 
   if (event === "share" && kind === "CRM") {
-    const listing = await listingsDB.listing.findUnique({ where: { id: listingId } });
+    const db = getListingsDB();
+    const listing = await db.listing.findUnique({ where: { id: listingId } });
     if (!listing) return NextResponse.json({ error: "Not found" }, { status: 404 });
     await incrementListingShareCount(ListingAnalyticsKind.CRM, listingId);
     await recomputeCrmListingDemandScore(listingId);

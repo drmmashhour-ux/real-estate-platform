@@ -1,5 +1,6 @@
 import { Suspense } from "react";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { requireBrokerProfilePage } from "@/modules/mortgage/services/require-broker-onboarding";
 import { CompleteProfileClient } from "./complete-profile-client";
 

@@ -10,12 +10,12 @@ vi.mock("@/lib/deal-analyzer/phase3ListingAccess", () => ({
 vi.mock("@/src/modules/offer-strategy-simulator/application/simulateOfferStrategy", () => ({
   simulateOfferStrategy: vi.fn(),
 }));
-vi.mock("@repo/db", () => ({
-  prisma: {
+vi.mock("@/lib/db/legacy", () => ({
+  getLegacyDB: () => ({
     user: {
       findUnique: vi.fn().mockResolvedValue({ plan: "free", role: "USER" }),
     },
-  },
+  })
 }));
 vi.mock("@/src/modules/growth-funnel/application/checkGrowthPaywall", () => ({
   checkGrowthPaywall: vi.fn().mockResolvedValue({ allowed: true, remaining: 8, limit: 8 }),

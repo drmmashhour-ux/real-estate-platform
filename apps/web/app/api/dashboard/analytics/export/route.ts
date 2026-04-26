@@ -54,7 +54,8 @@ export async function GET(req: NextRequest) {
     const format = req.nextUrl.searchParams.get("format") ?? "csv";
     const range = parsePreset(req.nextUrl.searchParams.get("range"));
 
-    const { prisma } = await import("@repo/db");
+    const { getLegacyDB } = await import("@/lib/db/legacy");
+    const prisma = getLegacyDB();
     const user = await prisma.user.findUnique({
       where: { id: viewerId },
       select: { role: true },

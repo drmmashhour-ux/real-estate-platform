@@ -1,4 +1,4 @@
-import { monolithPrisma, listingsDB } from "@/lib/db";
+import { getListingsDB, monolithPrisma } from "@/lib/db";
 
 export type AutonomousAction =
   | {
@@ -38,7 +38,7 @@ export async function executeActions(
             data: { nightPriceCents: Math.round(action.newPrice * 100) },
           });
         } else if (ctx.marketplaceListingId) {
-          await listingsDB.listing.update({
+          await getListingsDB().listing.update({
             where: { id: ctx.marketplaceListingId },
             data: { price: action.newPrice },
           });

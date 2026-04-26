@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { PrintPageButton } from "@/components/ui/PrintPageButton";
 import { ClientSignatureActions } from "./client-signature-actions";
 

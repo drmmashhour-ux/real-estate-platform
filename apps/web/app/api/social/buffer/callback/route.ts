@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { Prisma } from "@prisma/client";
 import { exchangeBufferAuthorizationCode } from "@/lib/integrations/scheduler/connect";
 import { encryptTokens } from "@/lib/content-automation/social-accounts";

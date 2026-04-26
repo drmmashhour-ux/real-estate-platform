@@ -1,5 +1,5 @@
-import { coreDB } from "@/lib/db/core-client";
-import { listingsDB } from "@/lib/db/listings-client";
+import { authPrisma } from "@/lib/db";
+import { getListingsDB } from "@/lib/db/routeSwitch";
 import { requireAuth } from "@/lib/auth/middleware";
 
 /** Public read for marketplace `listings` rows (same source as `GET /api/listings`). */
@@ -7,16 +7,17 @@ export async function GET(
   _req: Request,
   context: { params: Promise<{ id: string }> }
 ) {
-  console.log("[LISTINGS DB] using listingsDB");
+  const db = getListingsDB();
+  console.log("[LISTINGS DB] getListingsDB()");
   const { id } = await context.params;
-  const listing = await listingsDB.listing.findUnique({
+  const listing = await db.listing.findUnique({
     where: { id },
   });
   if (!listing) {
     return Response.json({ error: "Not found" }, { status: 404 });
   }
   const host = listing.userId
-    ? await coreDB.user.findUnique({ where: { id: listing.userId } })
+    ? await authPrisma.user.findUnique({ where: { id: listing.userId } })
     : null;
   return Response.json({ ...listing, host });
 }
@@ -32,8 +33,9 @@ export async function DELETE(
   }
 
   const { id } = await context.params;
+  const db = getListingsDB();
 
-  const listing = await listingsDB.listing.findUnique({
+  const listing = await db.listing.findUnique({
     where: { id },
   });
 
@@ -41,7 +43,7 @@ export async function DELETE(
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  await listingsDB.listing.delete({
+  await db.listing.delete({
     where: { id },
   });
 

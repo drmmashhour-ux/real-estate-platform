@@ -1,12 +1,12 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
 vi.mock("@/config/feature-flags", () => ({ engineFlags: { brokerageIntelligenceV1: true, investorIntelligenceV1: false } }));
-vi.mock("@repo/db", () => ({
-  prisma: {
+vi.mock("@/lib/db/legacy", () => ({
+  getLegacyDB: () => ({
     deal: { count: vi.fn().mockResolvedValue(0), findMany: vi.fn().mockResolvedValue([]) },
     lead: { aggregate: vi.fn().mockResolvedValue({ _sum: { dynamicLeadPriceCents: null } }) },
     investorSnapshot: { create: vi.fn() },
-  },
+  })
 }));
 vi.mock("../roi-engine.service", () => ({
   analyzeRoiPerformance: vi.fn().mockResolvedValue([]),

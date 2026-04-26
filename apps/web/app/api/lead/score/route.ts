@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { PlatformRole } from "@prisma/client";
 import { logError } from "@/lib/logger";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { scoreSeniorLead } from "@/modules/senior-living/lead-scoring.service";
 import type { LeadFeatureHints } from "@/modules/senior-living/lead-features.service";
 

@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
 import { addDesign } from "@/lib/designs-store";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { getOrCreateUserStorage, addUsage } from "@/lib/storage-quota";
 
 export const dynamic = "force-dynamic";

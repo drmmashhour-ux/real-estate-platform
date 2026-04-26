@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { BROKER_PROSPECT_STATUSES } from "@/modules/growth/broker-prospect.service";
 import { requireGrowthMachineActor } from "@/modules/growth-machine/growth-api-context";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 
 export const dynamic = "force-dynamic";
 

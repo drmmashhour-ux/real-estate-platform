@@ -1,5 +1,6 @@
 import { requireBrokerPushEnabled, requireMobileBrokerUser } from "@/lib/mobile/require-mobile-broker";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { mapMobileNotification } from "@/lib/bnhub/mobile-api";
 
 export const dynamic = "force-dynamic";

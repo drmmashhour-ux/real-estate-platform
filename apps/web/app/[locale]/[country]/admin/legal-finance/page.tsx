@@ -2,7 +2,8 @@ import { HubLayout } from "@/components/hub/HubLayout";
 import { getGuestId, getUserRole, isHubAdminRole } from "@/lib/auth/session";
 
 import { hubNavigation } from "@/lib/hub/navigation";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { redirect } from "next/navigation";
 import { LegalFinanceAdminClient } from "./LegalFinanceAdminClient";
 

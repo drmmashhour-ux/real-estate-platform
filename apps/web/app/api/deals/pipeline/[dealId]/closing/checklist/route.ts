@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { logError } from "@/lib/logger";
 import { updateChecklistItemStatus } from "@/modules/closing/closing-checklist.service";
 import { canManageClosing } from "@/modules/closing/closing-policy";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { canAccessPipelineDeal, requireAuthUser } from "@/lib/deals/guard-pipeline-deal";
 import { getDealById } from "@/modules/deals/deal.service";
 

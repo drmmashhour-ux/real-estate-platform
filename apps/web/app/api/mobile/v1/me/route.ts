@@ -1,4 +1,5 @@
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { getSupabaseAuthIdFromRequest } from "@/lib/bnhub/getSupabaseAuthIdFromRequest";
 import { getBnhubHostListingCountForUser } from "@/lib/bnhub/supabaseHostListings";
 import { getMobileAuthUser, resolveMobileAppRole } from "@/lib/mobile/mobileAuth";

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { assertListingOwnerOrAdmin } from "@/lib/decision-engine/assertListingOwnerOrAdmin";
 import { runDecisionEngine } from "@/modules/decision-engine/application/runDecisionEngine";
 import { isDealAnalyzerEnabled } from "@/modules/deal-analyzer/config";

@@ -1,4 +1,5 @@
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { effectiveListingSafety } from "@/lib/mobile/safetyPublic";
 
 export const dynamic = "force-dynamic";

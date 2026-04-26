@@ -4,8 +4,8 @@ import { updateAggregatesForOutcome } from "../performance-aggregator.service";
 const findUnique = vi.fn();
 const upsert = vi.fn();
 
-vi.mock("@repo/db", () => ({
-  prisma: { strategyPerformanceAggregate: { findUnique: (...a: unknown[]) => findUnique(...a), upsert: (...a: unknown[]) => upsert(...a) } },
+vi.mock("@/lib/db/legacy", () => ({
+  getLegacyDB: () => ({ strategyPerformanceAggregate: { findUnique: (...a: unknown[]) => findUnique(...a), upsert: (...a: unknown[]) => upsert(...a) } }),
 }));
 
 vi.mock("../strategy-benchmark-logger", () => ({

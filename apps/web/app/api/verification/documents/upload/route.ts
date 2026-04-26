@@ -1,7 +1,8 @@
 import { NextRequest } from "next/server";
 import { headers } from "next/headers";
 import { requireApiSession } from "@/lib/auth/require-api-session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { savePropertyDocument } from "@/lib/verification/document-storage";
 import type { PropertyDocumentType } from "@prisma/client";
 import { safeApiError, toSafeErrorMessage } from "@/lib/security/api-error";

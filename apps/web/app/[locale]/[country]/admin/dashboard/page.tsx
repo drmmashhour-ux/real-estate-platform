@@ -4,7 +4,8 @@ import { getGuestId, getUserRole, isHubAdminRole } from "@/lib/auth/session";
 import { redirect } from "next/navigation";
 import { HubLayout } from "@/components/hub/HubLayout";
 
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { hubNavigation } from "@/lib/hub/navigation";
 import { getHubTheme } from "@/lib/hub/themes";
 import { getAdminAiSummary } from "@/lib/ai/brain";

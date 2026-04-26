@@ -3,7 +3,8 @@ import { getGuestId } from "@/lib/auth/session";
 import { loadDealWithActor } from "@/lib/deals/execution-access";
 import { loadCopilotSuggestions } from "@/modules/deal-copilot/deal-copilot.service";
 import { suggestWorkflowPackage } from "@/modules/form-packages/workflow-matcher.service";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 
 export const dynamic = "force-dynamic";
 

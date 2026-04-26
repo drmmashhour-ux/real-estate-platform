@@ -1,5 +1,6 @@
 import { authenticateBrokerDealRoute } from "@/lib/deals/broker-draft-auth";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { lecipmOaciqFlags } from "@/config/feature-flags";
 import { generateStructuredContractFieldsForForm } from "@/modules/ai-contract/ai-contract-generator";
 import { assertBrokeredTransaction } from "@/modules/legal-boundary/compliance-action-guard";

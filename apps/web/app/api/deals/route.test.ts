@@ -9,8 +9,8 @@ vi.mock("@/lib/codes/generate-code", () => ({
   generateDealCode: vi.fn().mockResolvedValue("DEL-000001"),
 }));
 
-vi.mock("@repo/db", () => ({
-  prisma: {
+vi.mock("@/lib/db/legacy", () => ({
+  getLegacyDB: () => ({
     $transaction: vi.fn(),
     deal: { findMany: vi.fn(), create: vi.fn(), update: vi.fn() },
     lead: { findFirst: vi.fn() },
@@ -19,11 +19,12 @@ vi.mock("@repo/db", () => ({
     brokerVerification: { findUnique: vi.fn() },
     shortTermListing: { findFirst: vi.fn(), findUnique: vi.fn() },
     contract: { findFirst: vi.fn(), create: vi.fn() },
-  },
+  })
 }));
 
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 
 describe("GET /api/deals", () => {
   beforeEach(() => {

@@ -2,8 +2,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { NextRequest } from "next/server";
 import { POST } from "./route";
 
-vi.mock("@repo/db", () => ({
-  prisma: {
+vi.mock("@/lib/db/legacy", () => ({
+  getLegacyDB: () => ({
     user: {
       findUnique: vi.fn(),
       create: vi.fn(),
@@ -29,7 +29,7 @@ vi.mock("@repo/db", () => ({
       };
       return cb(tx as never);
     }),
-  },
+  })
 }));
 
 vi.mock("@/lib/auth/password", () => ({
@@ -55,7 +55,8 @@ vi.mock("@/lib/bnhub/revenue-automation", () => ({
   runBnhubPostSignupAutomation: vi.fn().mockResolvedValue(undefined),
 }));
 
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 
 function nextRequest(url: string, body: Record<string, unknown>) {
   const req = new Request(url, {

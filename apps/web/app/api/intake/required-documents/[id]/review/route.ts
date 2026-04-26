@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { DemoEvents } from "@/lib/demo-event-types";
 import { trackDemoEvent } from "@/lib/demo-analytics";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { getBrokerClientForIntake, requireIntakeUser } from "@/modules/intake/services/api-helpers";
 import { canReviewRequiredDocument, canViewIntakeProfile } from "@/modules/intake/services/intake-permissions";
 import {

@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { getStorageAnalytics } from "@/lib/storage/analytics";
 import { getOptimizationRecommendations } from "@/lib/storage/ai-optimizer";
 

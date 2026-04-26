@@ -1,7 +1,8 @@
 import { requireDailyActionCenterEnabled, requireMobileBrokerUser } from "@/lib/mobile/require-mobile-broker";
 import { loadBrokerMobileSnoozed } from "@/lib/mobile/broker-mobile-preferences";
 import { gatherDailyActionsForBroker } from "@/modules/daily-action-center/daily-action-center.service";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { DealExecutionType } from "@prisma/client";
 import { trackMobileBrokerHomeViewed } from "@/lib/analytics/mobile-broker-analytics";
 import { logGrowthEngineAudit } from "@/modules/growth-engine-audit/growth-engine-audit.service";

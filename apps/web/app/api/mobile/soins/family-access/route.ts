@@ -1,5 +1,6 @@
 import { getMobileAuthUser } from "@/modules/auth/mobile-auth";
-import { prisma } from "@repo/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+const prisma = getLegacyDB();
 import { resolveViewerForResident } from "@/modules/soins/soins-access.service";
 import {
   revokeFamilyAccess,
