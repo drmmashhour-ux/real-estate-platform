@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { LecipmBrandLockup } from "@/components/brand/LecipmBrandLockup";
+import { TrustConversionBlocks } from "@/components/landing/TrustConversionBlocks";
 import { VisitorGuideChat } from "@/components/marketing/VisitorGuideChat";
 import { DEFAULT_COUNTRY_SLUG } from "@/config/countries";
 import { routing } from "@/i18n/routing";
@@ -100,6 +101,8 @@ export function LecipmLuxuryHomepage({ locale = routing.defaultLocale, country =
           </div>
         </div>
       </section>
+
+      <TrustConversionBlocks variant="inverted" />
 
       {/* Social proof: Luxury Stats & Trust (Phase 9) */}
       <section id="proof" className="scroll-mt-20 border-y border-white/5 bg-zinc-950 py-24">

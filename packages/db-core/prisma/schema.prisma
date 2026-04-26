@@ -1,0 +1,23 @@
+generator client {
+  provider   = "prisma-client-js"
+  engineType = "binary"
+  output     = "../generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model PlatformConfig {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String
+}
+
+/// Minimal `users` slice for modular client rollout (same table as monolith / db-auth).
+model User {
+  id    String @id @default(uuid())
+  email String @unique
+
+  @@map("users")
+}

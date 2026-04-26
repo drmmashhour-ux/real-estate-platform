@@ -1,5 +1,6 @@
 import { launchSystemV1Flags } from "@/config/feature-flags";
 import { requireLaunchSystemPlatform } from "@/lib/launch-system-api-auth";
+import { runLaunchChecks } from "@/lib/launch/checks";
 import { buildLaunchChecklist } from "@/modules/launch/launch-checklist.service";
 import { logGrowthEngineAudit } from "@/modules/growth-engine-audit/growth-engine-audit.service";
 import { trackLaunchStatusRead } from "@/lib/analytics/launch-analytics";
@@ -15,11 +16,12 @@ export async function GET() {
   }
 
   const payload = await buildLaunchChecklist();
+  const envChecks = runLaunchChecks();
   await logGrowthEngineAudit({
     actorUserId: auth.userId,
     action: "launch_status_read",
     payload: { status: payload.status },
   });
   trackLaunchStatusRead({ status: payload.status, issueCount: payload.issues.length });
-  return Response.json({ ok: true, ...payload });
+  return Response.json({ ok: true, envChecks, ...payload });
 }

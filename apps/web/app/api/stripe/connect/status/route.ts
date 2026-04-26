@@ -2,7 +2,7 @@
  * GET /api/stripe/connect/status — Sync onboarding from Stripe + persist requirements snapshot for host dashboard.
  */
 
-import { prisma } from "@repo/db";
+import { monolithPrisma } from "@/lib/db";
 import { getGuestId } from "@/lib/auth/session";
 import { getStripe, isStripeConfigured } from "@/lib/stripe";
 import { syncHostOnboardingCompleteFromStripe } from "@/lib/stripe/hostConnectExpress";
@@ -24,7 +24,7 @@ export async function GET() {
     return Response.json({ error: "Sign in required" }, { status: 401 });
   }
 
-  const user = await prisma.user.findUnique({
+  const user = await monolithPrisma.user.findUnique({
     where: { id: userId },
     select: { stripeAccountId: true, stripeOnboardingComplete: true },
   });
@@ -51,7 +51,7 @@ export async function GET() {
 
     await upsertHostStripeAccountSnapshot(stripe, userId, accountId);
 
-    const snap = await prisma.hostStripeAccountSnapshot.findUnique({
+    const snap = await monolithPrisma.hostStripeAccountSnapshot.findUnique({
       where: { hostUserId: userId },
       select: { rawRequirementsJson: true, onboardingComplete: true },
     });
@@ -65,7 +65,7 @@ export async function GET() {
     const disabledReason =
       typeof reqObj.disabled_reason === "string" ? reqObj.disabled_reason : null;
 
-    const fresh = await prisma.user.findUnique({
+    const fresh = await monolithPrisma.user.findUnique({
       where: { id: userId },
       select: { stripeOnboardingComplete: true },
     });

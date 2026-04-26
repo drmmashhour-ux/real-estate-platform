@@ -1,0 +1,6 @@
+{
+  "name": "@repo/db-compliance",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Staging package for Prisma model shards (compliance bucket). Populate prisma/schema.prisma from enums.prisma + models.prisma after manual relation fixes."
+}

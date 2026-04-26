@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
 import { getHeatmapData } from "@/lib/market-intelligence";
+import { logError } from "@/lib/monitoring/errorLogger";
 
 const METRICS = ["demand", "price", "rent", "bnhub_revenue", "investment"] as const;
 
@@ -21,6 +22,7 @@ export async function GET(request: NextRequest) {
     const zones = await getHeatmapData(regionType, metric as (typeof METRICS)[number], period);
     return Response.json({ heatmap: zones });
   } catch (e) {
+    logError(e, { route: "/api/market/heatmap" });
     return Response.json({ error: "Failed to build heatmap" }, { status: 500 });
   }
 }

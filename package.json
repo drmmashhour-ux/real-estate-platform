@@ -94,7 +94,8 @@
     "git:verify:with-lint": "pnpm --filter @lecipm/web run ci:lint && pnpm git:verify",
     "git:size-check": "git count-objects -vH",
     "git:clean": "git rm -r --cached . && git add .",
-    "codemod:imports": "jscodeshift -t scripts/codemods/replace-imports.js apps/web --extensions=ts,tsx --parser=tsx --ignore-pattern=**/node_modules/**"
+    "codemod:imports": "jscodeshift -t scripts/codemods/replace-imports.js apps/web --extensions=ts,tsx --parser=tsx --ignore-pattern=**/node_modules/**",
+    "split-models": "tsx scripts/split-models.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.15.0",
@@ -105,6 +106,7 @@
     "lint-staged": "^15.5.2",
     "prettier": "^3.3.3",
     "prisma": "^7.8.0",
+    "tsx": "^4.19.0",
     "puppeteer": "^24.2.0",
     "typescript": "^5.6.0",
     "typescript-eslint": "^8.15.0"
@@ -126,6 +128,9 @@
   },
   "dependencies": {
     "@expo/ngrok": "^4.1.3",
-    "@prisma/client": "^7.8.0"
+    "@prisma/client": "^7.8.0",
+    "dotenv": "^17.4.2",
+    "openai": "^6.34.0",
+    "pg": "^8.20.0"
   }
 }

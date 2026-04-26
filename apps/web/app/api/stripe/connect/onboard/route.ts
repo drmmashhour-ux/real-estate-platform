@@ -5,7 +5,7 @@
  */
 
 import { NextRequest } from "next/server";
-import { prisma } from "@repo/db";
+import { monolithPrisma } from "@/lib/db";
 import { getGuestId } from "@/lib/auth/session";
 import { getStripe, isStripeConfigured } from "@/lib/stripe";
 import { stripeAppBaseUrl } from "@/lib/stripe/app-base-url";
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const user = await prisma.user.findUnique({
+  const user = await monolithPrisma.user.findUnique({
     where: { id: userId },
     select: {
       id: true,
@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
           metadata: { platformUserId: user.id },
         });
         accountId = account.id;
-        await prisma.user.update({
+        await monolithPrisma.user.update({
           where: { id: user.id },
           data: { stripeAccountId: accountId, stripeOnboardingComplete: false },
         });

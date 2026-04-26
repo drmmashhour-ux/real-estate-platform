@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { z } from "zod";
 import { getActivePromotedListingIds } from "@/lib/promotions";
 import { getGuestId } from "@/lib/auth/session";
@@ -263,6 +264,7 @@ export async function POST(request: NextRequest) {
     return handleSearch(request, parsed.data);
   } catch (e) {
     console.error("[listings/search]", e);
+    Sentry.captureException(e, { tags: { route: "POST /api/listings/search" } });
     return NextResponse.json({ error: "search_failed" }, { status: 500 });
   }
 }
@@ -292,6 +294,7 @@ export async function GET(request: NextRequest) {
     });
   } catch (e) {
     console.error("[listings/search GET]", e);
+    Sentry.captureException(e, { tags: { route: "GET /api/listings/search" } });
     return NextResponse.json({ error: "search_failed" }, { status: 500 });
   }
 }

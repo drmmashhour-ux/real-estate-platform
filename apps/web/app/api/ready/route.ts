@@ -1,13 +1,17 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { checkReady } from "@/lib/ready";
+import { prismaWithCoreFallback } from "@/lib/db-safe";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  const poolReady = await checkReady();
   const readiness: Record<string, string | boolean> = {
     status: "ok",
     databaseUrl: process.env.DATABASE_URL ? "set" : "missing",
     db: "pending",
+    // Order 75 — `pg` `pool` from `@/lib/db` can differ from the Prisma client URL in split-DB scenarios.
+    pgPool: poolReady,
     stripe: "pending",
     ai: "pending",
   };
@@ -20,8 +24,8 @@ export async function GET() {
   }
 
   try {
-    // 1. DB (canonical Prisma client; same DATABASE_URL as split clients)
-    await prisma.$queryRaw`SELECT 1`;
+    // 1. Prisma / modular DB — `USE_NEW_DB=1` tries `db-core` first, falls back to monolith
+    await prismaWithCoreFallback((db) => db.$queryRaw`SELECT 1`);
     readiness.db = "ok";
 
     // 2. Stripe (Basic env check)
@@ -40,8 +44,15 @@ export async function GET() {
       readiness.status = "degraded";
     }
 
-    /** Machine-friendly flag for smoke tests (DB + server up; optional services may be degraded). */
-    readiness.ready = readiness.db === "ok";
+    /**
+     * Machine-friendly: Prisma check passed, pool probe passed, and `DATABASE_URL` set.
+     * Optional services (Stripe, AI) can still be `missing_config` with `status: degraded`.
+     */
+    readiness.ready = readiness.db === "ok" && poolReady;
+
+    if (!poolReady) {
+      readiness.status = "degraded";
+    }
 
     return NextResponse.json(readiness);
   } catch (error) {

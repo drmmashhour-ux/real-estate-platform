@@ -1120,7 +1120,12 @@ model ShortTermListing {
 
   @@index([city, verificationStatus])
   @@index([city, listingStatus])
-  @@index([nightPriceCents])
+  /// Order 79 — single-column price filter / sort (canonical name for ops).
+  @@index([nightPriceCents], map: "idx_listing_price")
+  /// Order 79 — city-only filters (complements composite city+status indexes).
+  @@index([city], map: "idx_listing_city")
+  /// Order 79 — sort/filter by cached guest rating average.
+  @@index([bnhubListingRatingAverage], map: "idx_listing_rating")
   @@index([createdAt])
   @@index([propertyIdentityId])
   @@index([ownerId])

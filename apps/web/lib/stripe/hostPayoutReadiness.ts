@@ -154,19 +154,24 @@ export async function validateHostStripePayoutReadiness(
       details_submitted: account.details_submitted,
       charges_enabled: account.charges_enabled,
       payouts_enabled: account.payouts_enabled,
+      currently_due: account.requirements?.currently_due?.length ?? 0,
     });
 
+    const hasDueRequirements = (account.requirements?.currently_due?.length ?? 0) > 0;
     const isReady =
       account.details_submitted === true &&
       account.charges_enabled === true &&
-      account.payouts_enabled === true;
+      account.payouts_enabled === true &&
+      !hasDueRequirements;
 
     if (!isReady) {
       return {
         ok: false,
         code: "HOST_PAYOUT_NOT_READY",
         userMessage: BNHUB_HOST_CHECKOUT_UNAVAILABLE_MESSAGE,
-        logDetail: "Stripe account not fully enabled (charges/payouts)",
+        logDetail: hasDueRequirements
+          ? "Stripe account has outstanding currently_due requirements"
+          : "Stripe account not fully enabled (charges/payouts)",
       };
     }
   } catch (e: unknown) {

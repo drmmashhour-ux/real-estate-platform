@@ -6,6 +6,8 @@ node_modules/
 node_modules/.prisma
 src/generated/prisma
 **/generated/prisma
+# Monolithic app client output (regenerate: prisma generate in apps/web)
+apps/web/src/generated/client
 .prisma
 
 # Prisma engines (OS-specific)
@@ -46,3 +48,7 @@ missing_files.txt
 *.pptx
 .vercel
 .env*.local
+
+# DB dumps from scripts/backup.sh (do not commit)
+backups/
+backup.sql

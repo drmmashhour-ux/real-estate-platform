@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { searchListings } from "@/lib/bnhub/listings";
 import { getGuestId } from "@/lib/auth/session";
 import { recordEvolutionOutcome } from "@/modules/evolution/outcome-tracker.service";
@@ -72,6 +73,7 @@ export async function POST(request: NextRequest) {
     return Response.json({ listings });
   } catch (e) {
     console.error(e);
+    Sentry.captureException(e, { tags: { route: "POST /api/search/listings" } });
     return Response.json({ error: "Search failed" }, { status: 500 });
   }
 }

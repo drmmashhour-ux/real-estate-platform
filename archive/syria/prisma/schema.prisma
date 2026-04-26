@@ -1,7 +1,8 @@
 // Syria platform — isolated tables (`syria_*`). Same DATABASE_URL as rest of monorepo; no overlap with apps/web schema.
 generator client {
-  provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
+  provider   = "prisma-client-js"
+  engineType = "binary"
+  output     = "../src/generated/prisma"
 }
 
 datasource db {

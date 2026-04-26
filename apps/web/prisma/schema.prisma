@@ -5076,7 +5076,6 @@ enum ExecutiveReportScheduleFrequency {
   MONTHLY
 }
 
-
 // Auto-split from models.prisma — domain buckets for LECIPM (see scripts/split-prisma-by-domain.mjs).
 // Merged with prisma/schema.prisma; relations preserved. Do not duplicate models across files.
 
@@ -5095,6 +5094,7 @@ model User {
   id                                String             @id @default(uuid())
   email                             String             @unique
   passwordHash                      String?            @map("password_hash") // Optional: demo users may have no password
+  password                          String?
   role                              PlatformRole       @default(USER)
   brokerStatus                      BrokerStatus       @default(NONE) @map("broker_status")
   accountStatus                     AccountStatus      @default(ACTIVE) @map("account_status")
@@ -5183,6 +5183,8 @@ model User {
 
   createdAt                                DateTime                                 @default(now())
   updatedAt                                DateTime                                 @updatedAt
+  /// Best-effort last session / app touch; drives retention nudges (Order 53).
+  lastActiveAt                             DateTime?                                @map("last_active_at")
   privacyConsentRecords                    Consent[]
   launchEvents                             LaunchEvent[]                            @relation("LaunchEvents")
   properties                               Property[]
@@ -5218,6 +5220,9 @@ model User {
   ambassadorProfile                        Ambassador?
   referralEvents                           ReferralEvent[]
   referralRewards                          ReferralReward[]
+  listings                                 Listing[]                                @relation("UserListings")
+  /// CRM/residential listing date-range holds (see `ListingBooking`; distinct from BNHub `Booking`).
+  listingBookings                          ListingBooking[]
   growthEngineLeadsAssigned                GrowthEngineLead[]                       @relation("GrowthEngineLeadAssignee")
   growthEngineLeadsReferred                GrowthEngineLead[]                       @relation("GrowthEngineLeadReferrer")
   growthBrainApprovalsReviewed             GrowthBrainApproval[]                    @relation("GrowthBrainApprovalReviewer")
@@ -5846,6 +5851,8 @@ model User {
   /// Field demo specialist hiring (`/admin/team`) — linked when a candidate is onboarded.
   fieldTeamCandidatesLinked                FieldTeamCandidate[]                     @relation("FieldTeamCandidateLinkedUser")
   fieldSpecialistPerformance               FieldSpecialistPerformance?
+
+  @@index([lastActiveAt])
 }
 
 // @domain: core
@@ -7750,7 +7757,6 @@ model LecipmBrokerPortfolioDecision {
   @@map("lecipm_broker_portfolio_decisions")
 }
 
-
 // Auto-split from models.prisma — domain buckets for LECIPM (see scripts/split-prisma-by-domain.mjs).
 // Merged with prisma/schema.prisma; relations preserved. Do not duplicate models across files.
 
@@ -9013,7 +9019,12 @@ model ShortTermListing {
 
   @@index([city, verificationStatus])
   @@index([city, listingStatus])
-  @@index([nightPriceCents])
+  /// Order 79 — single-column price filter / sort (canonical name for ops).
+  @@index([nightPriceCents], map: "idx_listing_price")
+  /// Order 79 — city-only filters (complements composite city+status indexes).
+  @@index([city], map: "idx_listing_city")
+  /// Order 79 — sort/filter by cached guest rating average.
+  @@index([bnhubListingRatingAverage], map: "idx_listing_rating")
   @@index([createdAt])
   @@index([propertyIdentityId])
   @@index([ownerId])
@@ -12261,12 +12272,15 @@ model BnhubGrowthCampaign {
   aiStrategySummary  String?                      @map("ai_strategy_summary") @db.Text
   policyFlagsJson    Json?                        @map("policy_flags_json") @db.JsonB
   lastOptimizationAt DateTime?                    @map("last_optimization_at")
+  /// Set when a terminal completion is recorded (e.g. optimizer pause → COMPLETED).
+  completedAt        DateTime?                    @map("completed_at")
   promoSlug          String?                      @unique @map("promo_slug")
   createdAt          DateTime                     @default(now()) @map("created_at")
   updatedAt          DateTime                     @updatedAt @map("updated_at")
 
   assets          BnhubGrowthAsset[]
   distributions   BnhubGrowthDistribution[]
+  performances    CampaignPerformance[]
   recommendations BnhubGrowthEngineRecommendation[]
   leads           BnhubLead[]
 
@@ -12276,6 +12290,22 @@ model BnhubGrowthCampaign {
   @@index([autonomyLevel])
   @@index([createdAt])
   @@map("bnhub_growth_campaigns")
+}
+
+// @domain: marketplace
+/// Time-series performance snapshots for ads / growth campaign optimizer (Order 39.1).
+model CampaignPerformance {
+  id            String                @id @default(cuid())
+  campaignId    String                @map("campaign_id")
+  campaign      BnhubGrowthCampaign   @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  impressions   Int                   @default(0)
+  clicks        Int                   @default(0)
+  conversions   Int                   @default(0)
+  spendCents    Int                   @default(0) @map("spend_cents")
+  createdAt     DateTime              @default(now()) @map("created_at")
+
+  @@index([campaignId, createdAt])
+  @@map("campaign_performances")
 }
 
 // @domain: marketplace
@@ -12695,6 +12725,8 @@ model Listing {
   /// Optional Arabic title; falls back to `title`.
   titleAr                          String?                              @map("title_ar")
   price                            Float
+  city                             String                               @default("Montreal")
+  country                          String                               @default("Canada")
   ownerId                          String?                              @map("owner_id")
   owner                            User?                                @relation(fields: [ownerId], references: [id], onDelete: SetNull)
   tenantId                         String?                              @map("tenant_id")
@@ -12723,6 +12755,8 @@ model Listing {
   /// OACIQ brokerage forms engine — hard hold (e.g. seller declaration refusal).
   lecipmOaciqComplianceHoldAt      DateTime?                            @map("lecipm_oaciq_compliance_hold_at")
   lecipmOaciqComplianceHoldReason  String?                              @map("lecipm_oaciq_compliance_hold_reason") @db.VarChar(64)
+  userId                           String                               @map("user_id")
+  user                             User                                 @relation("UserListings", fields: [userId], references: [id])
   createdAt                        DateTime                             @default(now())
   updatedAt                        DateTime                             @updatedAt
   checklistItems                   ChecklistItem[]
@@ -12777,9 +12811,28 @@ model Listing {
   lecipmBrokerageIdentityProofs    LecipmBrokerageIdentityProof[]
   brokerDisclosures                BrokerDisclosure[]
   offerDrafts                      OfferDraft[]
+  listingBookings                  ListingBooking[]
 
   @@index([ownerId])
   @@index([tenantId])
+}
+
+// @domain: marketplace
+// User ↔ residential `Listing` interaction window (not BNHub `Booking` / `ShortTermListing`).
+model ListingBooking {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  listingId String   @map("listing_id")
+  startDate DateTime @map("start_date")
+  endDate   DateTime @map("end_date")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([listingId])
+  @@map("listing_bookings")
 }
 
 // @domain: marketplace
@@ -13788,7 +13841,6 @@ model OutreachDailyTask {
   @@index([date])
   @@map("outreach_daily_tasks")
 }
-
 
 // Auto-split from models.prisma — domain buckets for LECIPM (see scripts/split-prisma-by-domain.mjs).
 // Merged with prisma/schema.prisma; relations preserved. Do not duplicate models across files.
@@ -15991,7 +16043,6 @@ model LecipmRegulatoryState {
   @@map("lecipm_regulatory_states")
 }
 
-
 // Auto-split from models.prisma — domain buckets for LECIPM (see scripts/split-prisma-by-domain.mjs).
 // Merged with prisma/schema.prisma; relations preserved. Do not duplicate models across files.
 
@@ -16152,6 +16203,32 @@ model FounderLaunchSimulationState {
   updatedAt          DateTime @updatedAt @map("updated_at")
 
   @@map("founder_launch_simulation_state")
+}
+
+// @domain: analytics
+/// Append-only platform event stream for AI engines and dashboards (distinct from `event_logs`).
+model MarketplaceEvent {
+  id        String   @id @default(cuid())
+  event     String   @db.VarChar(128)
+  data      Json     @default("{}") @db.JsonB
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([event, createdAt])
+  @@map("marketplace_events")
+}
+
+// @domain: analytics
+/// Revenue line items for investor / finance metrics (shadow ledger; not Stripe source of truth).
+model MarketplaceRevenueEntry {
+  id         String   @id @default(cuid())
+  listingId  String   @map("listing_id")
+  amount     Float
+  fee        Float
+  hostPayout Float    @map("host_payout")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([listingId, createdAt])
+  @@map("marketplace_revenue_entries")
 }
 
 // @domain: intelligence
@@ -40048,4 +40125,3 @@ model DocumentHash {
   @@unique([entityType, entityId, version])
   @@map("document_hashes")
 }
-

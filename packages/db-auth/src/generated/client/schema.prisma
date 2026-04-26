@@ -1,0 +1,60 @@
+generator client {
+  provider   = "prisma-client-js"
+  engineType = "binary"
+  output     = "../src/generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum PlatformRole {
+  VISITOR
+  USER
+  CLIENT
+  TESTER
+  HOST
+  BROKER
+  MORTGAGE_EXPERT
+  DEVELOPER
+  ACCOUNTANT
+  ADMIN
+}
+
+enum BrokerStatus {
+  NONE
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum AccountStatus {
+  ACTIVE
+  PENDING_VERIFICATION
+  RESTRICTED
+  SUSPENDED
+  BANNED
+}
+
+enum MarketplacePersona {
+  UNSET
+  BUYER
+  SELLER_DIRECT
+  BROKER
+  MORTGAGE_BROKER
+}
+
+model User {
+  id                 String             @id @default(uuid())
+  email              String             @unique
+  passwordHash       String?            @map("password_hash")
+  password           String?
+  role               PlatformRole       @default(USER)
+  brokerStatus       BrokerStatus       @default(NONE) @map("broker_status")
+  accountStatus      AccountStatus      @default(ACTIVE) @map("account_status")
+  marketplacePersona MarketplacePersona @default(UNSET) @map("marketplace_persona")
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  @@map("users")
+}

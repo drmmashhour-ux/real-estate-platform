@@ -45,3 +45,18 @@ export function constructWebhookEvent(
     return null;
   }
 }
+
+/**
+ * Eager Stripe client for simple Hosted Checkout demos (`POST /api/checkout`).
+ * Respects demo mode and the same key validation as {@link getStripe}. When unavailable, this is `null`.
+ *
+ * **Production BNHub booking payments** should continue to use `/api/stripe/checkout` and webhook-confirmed state.
+ */
+export const stripe: Stripe | null = (() => {
+  if (isDemoMode()) return null;
+  const secretKey = process.env.STRIPE_SECRET_KEY;
+  if (!secretKey || !isValidStripeSecretKey(secretKey)) return null;
+  return new Stripe(secretKey, {
+    apiVersion: "2023-10-16",
+  });
+})();

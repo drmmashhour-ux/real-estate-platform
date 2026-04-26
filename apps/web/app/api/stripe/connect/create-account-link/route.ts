@@ -4,7 +4,7 @@
 
 import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
-import { prisma } from "@repo/db";
+import { monolithPrisma } from "@/lib/db";
 import { getStripe, isStripeConfigured } from "@/lib/stripe";
 import { stripeAppBaseUrl } from "@/lib/stripe/app-base-url";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const user = await prisma.user.findUnique({
+  const user = await monolithPrisma.user.findUnique({
     where: { id: userId },
     select: {
       stripeAccountId: true,

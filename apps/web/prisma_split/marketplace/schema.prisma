@@ -2,7 +2,7 @@
 generator client {
   provider   = "prisma-client-js"
   output     = "../../prisma/generated/marketplace"
-  engineType = "library"
+  engineType = "binary"
 }
 
 datasource db {

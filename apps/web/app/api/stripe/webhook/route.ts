@@ -699,6 +699,26 @@ export async function POST(req: NextRequest) {
       bookingId: typeof em.bookingId === "string" ? em.bookingId : null,
       listingId: typeof em.listingId === "string" ? em.listingId : null,
     });
+    if (
+      typeof em.paymentType === "string" &&
+      em.paymentType === "marketplace_listing_checkout" /* @repo/db-marketplace MARKETPLACE_LISTING_CHECKOUT */
+    ) {
+      const {
+        marketplaceListingBookingIdFromStripeMetadata,
+        expirePendingMarketplaceListingBookingOnCheckoutExpired,
+      } = await import("@/lib/marketplace/booking-hold");
+      const bid = marketplaceListingBookingIdFromStripeMetadata(
+        em as unknown as Record<string, string>
+      );
+      if (bid) {
+        const released = await expirePendingMarketplaceListingBookingOnCheckoutExpired(bid);
+        logInfo("[STRIPE] checkout.session.expired — marketplace_listing_checkout hold updated", {
+          sessionId: expiredSession.id,
+          bookingId: bid,
+          pendingRowsExpired: released.count,
+        });
+      }
+    }
     return Response.json({ received: true });
   }
 
@@ -948,6 +968,39 @@ export async function POST(req: NextRequest) {
 
   if (session.payment_status === "paid") {
     const md = session.metadata ?? {};
+    if (md.paymentType === "marketplace_listing_checkout") {
+      const { marketplaceListingBookingIdFromStripeMetadata, confirmMarketplaceListingBookingPaid } =
+        await import("@/lib/marketplace/booking-hold");
+      const mk = marketplaceListingBookingIdFromStripeMetadata(
+        md as unknown as Record<string, string>
+      );
+      if (mk) {
+        const piRaw = session.payment_intent;
+        const paymentIntentId =
+          typeof piRaw === "string"
+            ? piRaw
+            : piRaw && typeof piRaw === "object" && "id" in piRaw
+              ? String((piRaw as { id: string }).id)
+              : null;
+        const r = await confirmMarketplaceListingBookingPaid(mk, { paymentIntentId });
+        logInfo("[stripe/webhook] marketplace_listing_checkout (Order 66 — payment success → confirmed)", {
+          sessionId: session.id,
+          bookingId: mk,
+          paymentIntentId,
+          r,
+        });
+        const { recordMarketplacePaymentLedgerFromCheckoutSession } = await import(
+          "@/lib/marketplace/payment-ledger"
+        );
+        await recordMarketplacePaymentLedgerFromCheckoutSession(session, { bookingId: mk }).catch((err) => {
+          logError("[stripe/webhook] Order 67 marketplace payment ledger", err);
+        });
+      } else {
+        logWarn("[stripe/webhook] marketplace_listing_checkout — missing bookingId / booking_id in metadata", {
+          sessionId: session.id,
+        });
+      }
+    }
     const bookingIdMeta = typeof md.bookingId === "string" ? md.bookingId.trim() : "";
     const userIdMeta = typeof md.userId === "string" ? md.userId.trim() : "";
     if (bookingIdMeta && userIdMeta) {

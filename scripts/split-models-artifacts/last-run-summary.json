@@ -1,0 +1,12 @@
+{
+  "schema": "apps/web/prisma/schema.prisma",
+  "generatedAt": "2026-04-26T03:20:28.512Z",
+  "enumCount": 631,
+  "modelCount": 1602,
+  "buckets": {
+    "core": 2,
+    "listings": 104,
+    "bnhub": 25,
+    "compliance": 1471
+  }
+}

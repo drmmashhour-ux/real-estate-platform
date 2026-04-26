@@ -1,0 +1,96 @@
+// Relation-safe split: do not add `User` (or other) relations to models in other Prisma
+// clients. Keep `userId` (FK columns only). Compose reads in `apps/web/lib/services/*`
+// (see `listingService.ts`). Intra-module relations (e.g. Listing↔Booking) are OK.
+generator client {
+  provider   = "prisma-client-js"
+  engineType = "binary"
+  output     = "../src/generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Listing {
+  id        String   @id @default(cuid())
+  title     String
+  price     Float
+  city      String   @default("Montreal")
+  country   String   @default("Canada")
+  /// FK to `users.id` — no `User` relation (cross-client).
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  listingBookings ListingBooking[]
+  bookings        Booking[]
+
+  @@map("listings")
+}
+
+model Booking {
+  id        String   @id @default(cuid())
+  listingId String   @map("listing_id")
+  /// FK to `users.id` — no `User` relation (cross-client).
+  userId    String   @map("user_id")
+  /// Order 61: `DATE` only — no time component; avoids tz drift in inventory/pricing.
+  startDate DateTime @db.Date @map("start_date")
+  endDate   DateTime @db.Date @map("end_date")
+  /// `pending` = unpaid hold, `confirmed` = paid, `expired` = hold lapsed (Order 57).
+  status     String    @default("pending")
+  /// When a `pending` hold may no longer block inventory; cleared when `confirmed`.
+  expiresAt  DateTime? @map("expires_at")
+  /// Set when a guest (or system) cancels; releases inventory.
+  cancelledAt            DateTime? @map("cancelled_at")
+  /// Stripe `pi_*` for marketplace checkouts; used for refund on cancel (Orders 57–59).
+  stripePaymentIntentId  String?   @map("stripe_payment_intent_id")
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  /// Order 68 — duplicate / retry safety: one active shape per (guest, listing, stay window).
+  @@unique([userId, listingId, startDate, endDate], map: "bookings_user_listing_stay_unique")
+  @@index([listingId])
+  @@index([listingId, startDate, endDate])
+  @@index([status, expiresAt])
+  @@map("bookings")
+}
+
+/// Order 67 — one append-only row per successful Stripe Checkout session (idempotent on `stripeCheckoutSessionId`).
+model MarketplacePaymentLedger {
+  id                      String   @id @default(cuid())
+  listingId               String?  @map("listing_id")
+  bookingId               String?  @map("booking_id")
+  /// Gross amount charged to the guest (Stripe `amount_total`, minor units).
+  amountCents             Int      @map("amount_cents")
+  /// Platform application fee in minor units (Connect `application_fee_amount` or metadata echo).
+  applicationFeeCents     Int      @default(0) @map("application_fee_cents")
+  stripePaymentIntentId  String?  @map("stripe_payment_intent_id")
+  /// Idempotency: webhook retries / duplicate events do not double-log finance rows.
+  stripeCheckoutSessionId String  @unique @map("stripe_checkout_session_id")
+  /// Connect `transfer_data.destination` (`acct_...`) when set at session creation.
+  destinationAccountId    String?  @map("destination_account_id")
+  createdAt               DateTime @default(now()) @map("created_at")
+
+  @@index([bookingId])
+  @@index([listingId])
+  @@map("marketplace_payment_ledger")
+}
+
+/// Aligns with monolith `listing_bookings` (user ↔ `listings` interaction).
+model ListingBooking {
+  id        String   @id @default(cuid())
+  /// FK to `users.id` — no `User` relation (cross-client).
+  userId    String   @map("user_id")
+  listingId String   @map("listing_id")
+  startDate DateTime @db.Date @map("start_date")
+  endDate   DateTime @db.Date @map("end_date")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([listingId])
+  @@map("listing_bookings")
+}

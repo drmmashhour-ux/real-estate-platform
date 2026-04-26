@@ -17,5 +17,17 @@ export async function generateMetadata(): Promise<Metadata> {
 
 /** Public `/` — luxury black/gold marketing (same UI as `[locale]/[country]/page.tsx`; implemented in `LecipmLuxuryHomepage`). */
 export default function RootMarketingHomePage() {
-  return <LecipmLuxuryHomepage />;
+  return (
+    <>
+      <div style={{ padding: 20, backgroundColor: '#f0f0f0', borderBottom: '1px solid #ccc' }}>
+        <nav style={{ display: 'flex', gap: 20 }}>
+          <a href="/listings">View Listings</a>
+          <a href="/create-listing">Create Listing</a>
+          <a href="/dashboard">Dashboard</a>
+          <a href="/login">Login</a>
+        </nav>
+      </div>
+      <LecipmLuxuryHomepage />
+    </>
+  );
 }

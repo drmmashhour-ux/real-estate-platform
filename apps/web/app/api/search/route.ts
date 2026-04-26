@@ -3,14 +3,42 @@ import { searchListings } from "@/lib/bnhub/listings";
 import { getGuestId } from "@/lib/auth/session";
 import { trackDemoEvent } from "@/lib/demo-analytics";
 import { DemoEvents } from "@/lib/demo-event-types";
+import { redisGet, redisSet } from "@/lib/redis";
+import { marketplacePrisma } from "@/lib/db";
+import { measure } from "@/lib/db/loggedQuery";
+
+export const dynamic = "force-dynamic";
 
 /**
- * GET /api/search — Search listings (MVP).
- * Query: location (city), priceMin, priceMax, propertyType (optional), checkIn, checkOut (availability).
+ * GET /api/search — Search listings.
+ *
+ * - Default: BNHub `searchListings` (city, price, dates, etc.) with Redis (30s) + `measure` (Orders 93–94).
+ * - `?engine=marketplace` — split `marketplace` `listings` table; title `contains` on `q` (Redis 30s). Does not
+ *   replace the default; use for slim-schema / demos.
  */
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
+    const guestId = await getGuestId().catch(() => null);
+    if (searchParams.get("engine") === "marketplace") {
+      const q = searchParams.get("q") || "";
+      const key = `search:mp:${guestId ?? "anon"}:${q}`;
+      const cached = await redisGet(key);
+      if (cached) {
+        return Response.json(cached);
+      }
+      const listings = await measure("search marketplace listing title", () =>
+        marketplacePrisma.listing.findMany({
+          where: {
+            title: { contains: q, mode: "insensitive" },
+          },
+          take: 50,
+        })
+      );
+      await redisSet(key, listings, 30);
+      return Response.json(listings);
+    }
+
     const rawQ = searchParams.get("q");
     const q = typeof rawQ === "string" ? rawQ.trim() : "";
     const locationParam = searchParams.get("location") ?? searchParams.get("city");
@@ -33,20 +61,27 @@ export async function GET(request: NextRequest) {
       sort: sort === "priceAsc" || sort === "priceDesc" || sort === "recommended" ? sort : "newest",
     } as const;
 
-    let listings = await searchListings(args);
-
-    // Guarantee useful results when DB is non-empty:
-    // - empty q should already be broad
-    // - if q/location yields no rows, fall back to broad search
-    if (listings.length === 0 && (q || locationParam)) {
-      listings = await searchListings({
-        ...args,
-        city: undefined,
-      });
+    const searchKey = `search:bnhub:v1:${guestId ?? "anon"}:${searchParams.toString()}`;
+    const cachedBnhub = await redisGet(searchKey);
+    if (cachedBnhub) {
+      return Response.json(cachedBnhub);
     }
 
+    const listings = await measure("searchListings", async () => {
+      let list = await searchListings(args);
+      if (list.length === 0 && (q || locationParam)) {
+        list = await searchListings({
+          ...args,
+          city: undefined,
+        });
+      }
+      return list;
+    });
+
+    await redisSet(searchKey, listings, 30);
+
     if (process.env.NEXT_PUBLIC_ENV === "staging") {
-      const uid = await getGuestId().catch(() => null);
+      const uid = guestId;
       const resultsCount = listings.length;
       const filters = {
         city: args.city,

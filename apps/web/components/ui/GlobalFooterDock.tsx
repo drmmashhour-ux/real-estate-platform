@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
-import { getAssistantConfig } from "@/lib/ai/assistant-config";
+// import { getAssistantConfig } from "@/lib/ai/assistant-config";
 import { getContactTelHref, getContactWhatsAppUrl } from "@/lib/config/contact";
 import { useFooterHistoryNavSuppressed } from "@/components/layout/FooterHistoryNavContext";
 import { FooterHistoryNavPair } from "@/components/layout/FooterHistoryNavPair";
@@ -29,7 +29,8 @@ const iconBtn =
 export function GlobalFooterDock() {
   const pathname = usePathname() ?? "";
   const historyNavSuppressed = useFooterHistoryNavSuppressed();
-  const assistantCfg = getAssistantConfig();
+  // const assistantCfg = getAssistantConfig();
+  const assistantCfg = { assistantEnabled: false };
   const [chatMenuOpen, setChatMenuOpen] = useState(false);
   const chatMenuRef = useRef<HTMLDivElement>(null);
 

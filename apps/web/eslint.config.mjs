@@ -29,6 +29,56 @@ const eslintConfig = defineConfig([
       "monorepo-isolation/no-cross-app-imports": ["error", { mode: "web" }],
     },
   },
+  // Order 89 — monolith: prefer `@/lib/db` in app code. Barrel files must import `@repo/db` to re-export.
+  {
+    files: [
+      "app/**/*.{ts,tsx}",
+      "components/**/*.{ts,tsx}",
+      "lib/**/*.{ts,tsx}",
+      "modules/**/*.{ts,tsx}",
+      "config/**/*.{ts,tsx}",
+    ],
+    ignores: [
+      "lib/db.ts",
+      "lib/db/index.ts",
+      "lib/db-safe.ts",
+    ],
+    rules: {
+      "no-restricted-imports": [
+        "warn",
+        {
+          paths: [
+            {
+              name: "@repo/db",
+              message:
+                "Use @/lib/db instead (e.g. monolithPrisma, marketplacePrisma, pool). Do not import the monolith client package directly in app code.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    // Stricter surface for the service / marketplace facades (no @repo/db here).
+    files: [
+      "lib/services/**/*.ts",
+      "lib/marketplace/**/*.ts",
+    ],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "@repo/db",
+              message:
+                "Use @/lib/db (monolithPrisma or marketplacePrisma) instead of importing @repo/db directly.",
+            },
+          ],
+        },
+      ],
+    },
+  },
 ]);
 
 export default eslintConfig;

@@ -1,0 +1,20 @@
+{
+  "name": "@repo/db-marketplace",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./client": "./src/client.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^7.8.0"
+  },
+  "devDependencies": {
+    "prisma": "^7.8.0"
+  },
+  "scripts": {
+    "prisma:generate": "prisma generate"
+  }
+}

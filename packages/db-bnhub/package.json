@@ -1,0 +1,6 @@
+{
+  "name": "@repo/db-bnhub",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Staging package for Prisma model shards (bnhub bucket). Populate prisma/schema.prisma from enums.prisma + models.prisma after manual relation fixes."
+}
