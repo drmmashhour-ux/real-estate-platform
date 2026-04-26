@@ -1,0 +1,438 @@
+// Syria platform — isolated tables (`syria_*`). Same DATABASE_URL as rest of monorepo; no overlap with apps/web schema.
+generator client {
+  provider   = "prisma-client-js"
+  engineType = "binary"
+  output     = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SyriaUserRole {
+  USER
+  HOST
+  ADMIN
+}
+
+enum SyriaPropertyType {
+  SALE
+  RENT
+  BNHUB
+}
+
+enum SyriaPropertyStatus {
+  DRAFT
+  PENDING_REVIEW
+  PUBLISHED
+  REJECTED
+  ARCHIVED
+}
+
+/// Listing marketing tier. Declared order: free < featured < premium (used with `orderBy: { plan: desc }` → premium first).
+enum SyriaListingPlan {
+  free
+  featured
+  premium
+}
+
+enum SyriaBookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+enum SyriaBookingPaymentStatus {
+  UNPAID
+  PENDING_MANUAL
+  PAID
+  HELD
+}
+
+enum SyriaPayoutLedgerStatus {
+  PENDING
+  APPROVED
+  PAID
+}
+
+enum SyriaListingPaymentPurpose {
+  LISTING_FEE
+  FEATURED
+  PREMIUM
+  BNHUB_LISTING
+  OTHER
+}
+
+enum SyriaListingPaymentStatus {
+  PENDING
+  VERIFIED
+  FAILED
+}
+
+/// Manual-friendly payment rails (no Stripe assumption).
+enum SyriaPaymentMethod {
+  MANUAL_TRANSFER
+  CASH
+  LOCAL_GATEWAY_PLACEHOLDER
+}
+
+enum SyriaPromotionZone {
+  HOME
+  CATEGORY
+  CITY
+  SEARCH_BOOST
+}
+
+enum SyriaAutonomyRecommendationStatus {
+  PENDING
+  DISMISSED
+  ACKNOWLEDGED
+}
+
+enum SyriaMarketplaceApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUPERSEDED
+}
+
+enum SyriaMarketplaceAutonomyRunStatus {
+  RUNNING
+  COMPLETED
+  FAILED
+  BLOCKED
+}
+
+enum SyriaMarketplaceActionOutcome {
+  BLOCKED
+  DRY_RUN
+  EXECUTED
+  FAILED
+  ROLLED_BACK
+  SKIPPED_APPROVAL_PENDING
+}
+
+model SyriaAppUser {
+  id        String        @id @default(cuid())
+  email     String        @unique
+  name      String?
+  phone     String?
+  role      SyriaUserRole @default(USER)
+  createdAt DateTime      @default(now()) @map("created_at")
+  updatedAt DateTime      @updatedAt @map("updated_at")
+
+  propertiesOwned       SyriaProperty[]           @relation("PropertyOwner")
+  bookingsAsGuest       SyriaBooking[]            @relation("BookingGuest")
+  payoutsReceived       SyriaPayout[]             @relation("PayoutHost")
+  listingPayments       SyriaListingPayment[]
+  inquiriesSubmitted    SyriaInquiry[]
+  reviewedListingPayments   SyriaListingPayment[]           @relation("ListingPaymentReviewer")
+  autonomyRecommendations   SyriaAutonomyRecommendation[]   @relation("AutonomyOwner")
+
+  @@map("syria_users")
+}
+
+model SyriaInquiry {
+  id          String        @id @default(cuid())
+  propertyId  String        @map("property_id")
+  property    SyriaProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  fromUserId  String?       @map("from_user_id")
+  fromUser    SyriaAppUser? @relation(fields: [fromUserId], references: [id], onDelete: SetNull)
+  name        String
+  phone       String
+  message     String?       @db.Text
+  utmSource   String?       @map("utm_source")
+  utmMedium   String?       @map("utm_medium")
+  utmCampaign String?       @map("utm_campaign")
+  createdAt   DateTime      @default(now()) @map("created_at")
+
+  @@index([propertyId])
+  @@map("syria_inquiries")
+}
+
+model SyriaProperty {
+  id               String              @id @default(cuid())
+  titleAr          String              @map("title_ar")
+  titleEn          String?             @map("title_en")
+  descriptionAr    String              @map("description_ar") @db.Text
+  descriptionEn    String?             @map("description_en") @db.Text
+  price            Decimal             @db.Decimal(14, 2)
+  currency         String              @default("SYP")
+  type             SyriaPropertyType
+  /// Canonical governorate `name_en` from `syriaLocations` (search + display).
+  governorate      String?             @map("governorate")
+  /// Legacy search key: English city name from catalog (kept for filters and URL).
+  city             String
+  /// Bilingual display: Arabic city label (optional; backfilled from catalog in new listings).
+  cityAr           String?             @map("city_ar")
+  /// Bilingual display: English city label (optional; often matches `city`).
+  cityEn           String?             @map("city_en")
+  /// Legacy: area / district (often Arabic from catalog or custom text).
+  area             String?             @map("area")
+  /// Bilingual district (optional; may mirror `area` for AR).
+  districtAr       String?             @map("district_ar") @db.Text
+  districtEn       String?             @map("district_en") @db.Text
+  /// Google place name or user text when a place was used to set the pin (optional).
+  placeName        String?             @map("place_name")
+  addressText      String?             @map("address_text") @db.Text
+  latitude         Float?              @map("latitude")
+  longitude        Float?              @map("longitude")
+  images           Json                @default("[]")
+  amenities        Json                @default("[]")
+  ownerId          String              @map("owner_id")
+  owner            SyriaAppUser        @relation("PropertyOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  status           SyriaPropertyStatus @default(DRAFT)
+  /// Effective tier (updated on publish from verified one-time payments; drives sort + badges).
+  plan             SyriaListingPlan    @default(free) @map("plan")
+  fraudFlag        Boolean             @default(false) @map("fraud_flag")
+  /// Admin/manual "Verified" — UI badge only; no auto logic.
+  listingVerified  Boolean             @default(false) @map("listing_verified")
+  isFeatured       Boolean             @default(false) @map("is_featured")
+  featuredUntil    DateTime?           @map("featured_until")
+  featuredPriority Int                 @default(0) @map("featured_priority")
+  neighborhood     String?             @map("neighborhood")
+  bedrooms         Int?
+  bathrooms        Int?
+  furnished        Boolean?
+  propertyCategory String?             @map("property_category")
+  guestsMax        Int?                @map("guests_max")
+  createdAt        DateTime            @default(now()) @map("created_at")
+  updatedAt        DateTime            @updatedAt @map("updated_at")
+
+  bookings           SyriaBooking[]
+  listingPayments    SyriaListingPayment[]
+  inquiries          SyriaInquiry[]
+  featuredPlacements SyriaFeaturedPlacement[]
+  autonomyRecommendations SyriaAutonomyRecommendation[]
+
+  @@index([city])
+  @@index([governorate])
+  @@index([type])
+  @@index([status])
+  @@map("syria_properties")
+}
+
+model SyriaBooking {
+  id                   String                     @id @default(cuid())
+  propertyId           String                     @map("property_id")
+  property             SyriaProperty              @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  guestId              String                     @map("guest_id")
+  guest                SyriaAppUser               @relation("BookingGuest", fields: [guestId], references: [id], onDelete: Cascade)
+  checkIn              DateTime                   @map("check_in")
+  checkOut             DateTime                   @map("check_out")
+  nightsCount       Int                        @default(1) @map("nights_count")
+  nightlyRate       Decimal?                   @map("nightly_rate") @db.Decimal(14, 2)
+  totalPrice        Decimal                    @map("total_price") @db.Decimal(14, 2)
+  platformFeeAmount Decimal?                   @map("platform_fee_amount") @db.Decimal(14, 2)
+  hostNetAmount     Decimal?                   @map("host_net_amount") @db.Decimal(14, 2)
+  currency             String                     @default("SYP")
+  status               SyriaBookingStatus         @default(PENDING)
+  guestPaymentStatus   SyriaBookingPaymentStatus  @default(UNPAID) @map("guest_payment_status")
+  payoutStatus         SyriaPayoutLedgerStatus    @default(PENDING) @map("payout_status")
+  fraudFlag            Boolean                    @default(false) @map("fraud_flag")
+  manualPaymentRef     String?                    @map("manual_payment_ref")
+  proofUrl             String?                    @map("proof_url")
+  guestCount           Int?                       @map("guest_count")
+  checkedInAt          DateTime?                  @map("checked_in_at")
+  utmSource            String?                    @map("utm_source")
+  utmMedium            String?                    @map("utm_medium")
+  utmCampaign          String?                    @map("utm_campaign")
+  createdAt            DateTime                   @default(now()) @map("created_at")
+  updatedAt            DateTime                   @updatedAt @map("updated_at")
+
+  payouts SyriaPayout[]
+
+  @@index([propertyId])
+  @@index([guestId])
+  @@map("syria_bookings")
+}
+
+model SyriaPayout {
+  id           String                  @id @default(cuid())
+  bookingId    String                  @map("booking_id")
+  booking      SyriaBooking            @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  hostId       String                  @map("host_id")
+  host         SyriaAppUser            @relation("PayoutHost", fields: [hostId], references: [id], onDelete: Cascade)
+  amount       Decimal                 @db.Decimal(14, 2)
+  platformFee  Decimal                 @map("platform_fee") @db.Decimal(14, 2)
+  currency     String                  @default("SYP")
+  status       SyriaPayoutLedgerStatus @default(PENDING)
+  approvedAt   DateTime?               @map("approved_at")
+  paidAt       DateTime?               @map("paid_at")
+  notes        String?                 @db.Text
+  createdAt    DateTime                @default(now()) @map("created_at")
+  updatedAt    DateTime                @updatedAt @map("updated_at")
+
+  @@unique([bookingId])
+  @@index([hostId])
+  @@index([status])
+  @@map("syria_payouts")
+}
+
+model SyriaListingPayment {
+  id              String                     @id @default(cuid())
+  propertyId      String                     @map("property_id")
+  property        SyriaProperty              @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  ownerId         String                     @map("owner_id")
+  owner           SyriaAppUser               @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  amount          Decimal                    @db.Decimal(14, 2)
+  currency        String                     @default("SYP")
+  purpose         SyriaListingPaymentPurpose
+  status          SyriaListingPaymentStatus  @default(PENDING)
+  referenceNumber String?                    @map("reference_number")
+  proofUrl        String?                    @map("proof_url")
+  paymentMethod   SyriaPaymentMethod         @default(MANUAL_TRANSFER) @map("payment_method")
+  reviewedById    String?                    @map("reviewed_by")
+  reviewedBy      SyriaAppUser?              @relation("ListingPaymentReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedAt      DateTime?                  @map("reviewed_at")
+  createdAt       DateTime                   @default(now()) @map("created_at")
+  updatedAt       DateTime                   @updatedAt @map("updated_at")
+
+  @@index([propertyId])
+  @@index([ownerId])
+  @@index([status])
+  @@map("syria_listing_payments")
+}
+
+/// Paid visibility placement (zones + ordering); admin-controlled.
+model SyriaFeaturedPlacement {
+  id                     String           @id @default(cuid())
+  propertyId             String           @map("property_id")
+  property               SyriaProperty    @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  zone                   SyriaPromotionZone
+  priority               Int              @default(0)
+  active                 Boolean          @default(true)
+  startsAt               DateTime         @map("starts_at")
+  endsAt                 DateTime?        @map("ends_at")
+  linkedListingPaymentId String?          @map("linked_listing_payment_id")
+  createdAt              DateTime         @default(now()) @map("created_at")
+  updatedAt              DateTime         @updatedAt @map("updated_at")
+
+  @@index([zone, active, priority])
+  @@index([propertyId])
+  @@map("syria_featured_placements")
+}
+
+/// Lightweight growth / funnel events (admin aggregates only in this phase).
+model SyriaGrowthEvent {
+  id          String   @id @default(cuid())
+  eventType   String   @map("event_type")
+  payload     Json     @default("{}")
+  userId      String?  @map("user_id")
+  propertyId  String?  @map("property_id")
+  bookingId   String?  @map("booking_id")
+  inquiryId   String?  @map("inquiry_id")
+  utmSource   String?  @map("utm_source")
+  utmMedium   String?  @map("utm_medium")
+  utmCampaign String?  @map("utm_campaign")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([eventType, createdAt])
+  @@index([utmCampaign])
+  @@map("syria_growth_events")
+}
+
+/// Runs of the deterministic marketplace autonomy pipeline (Syria-local only).
+model SyriaMarketplaceAutonomyRun {
+  id                   String                             @id @default(cuid())
+  startedAt            DateTime                           @default(now()) @map("started_at")
+  finishedAt           DateTime?                          @map("finished_at")
+  dryRun               Boolean                            @default(true) @map("dry_run")
+  autonomyModeLabel    String                             @map("autonomy_mode_label")
+  governanceModeLabel  String                             @map("governance_mode_label")
+  entityScope          String                             @map("entity_scope")
+  entityId             String?                            @map("entity_id")
+  status               SyriaMarketplaceAutonomyRunStatus  @default(RUNNING)
+  signalsCount         Int                                @default(0) @map("signals_count")
+  opportunitiesCount   Int                                @default(0) @map("opportunities_count")
+  proposalsCount       Int                                @default(0) @map("proposals_count")
+  executedCount        Int                                @default(0) @map("executed_count")
+  blockedCount         Int                                @default(0) @map("blocked_count")
+  summaryJson          Json?                              @map("summary_json")
+  errorNotes           String?                            @db.Text @map("error_notes")
+
+  @@index([startedAt])
+  @@map("syria_marketplace_autonomy_runs")
+}
+
+model SyriaMarketplaceAutonomyApproval {
+  id                String                         @id @default(cuid())
+  proposalKey       String                         @unique @map("proposal_key")
+  actionType        String                         @map("action_type")
+  targetEntityType  String                         @map("target_entity_type")
+  targetEntityId    String?                        @map("target_entity_id")
+  payloadJson       Json                           @default("{}") @map("payload_json")
+  policySnapshot    Json?                          @map("policy_snapshot")
+  status            SyriaMarketplaceApprovalStatus @default(PENDING)
+  requestedByUserId String?                        @map("requested_by_user_id")
+  decidedByUserId   String?                        @map("decided_by_user_id")
+  decidedAt         DateTime?                      @map("decided_at")
+  notes             String?                        @db.Text
+  createdAt         DateTime                       @default(now()) @map("created_at")
+  updatedAt         DateTime                       @updatedAt @map("updated_at")
+
+  @@index([status, createdAt])
+  @@map("syria_marketplace_autonomy_approvals")
+}
+
+model SyriaMarketplaceAutonomyAuditLog {
+  id          String   @id @default(cuid())
+  runId       String?  @map("run_id")
+  eventType   String   @map("event_type")
+  payloadJson Json     @default("{}") @map("payload_json")
+  actorUserId String?  @map("actor_user_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([runId])
+  @@index([eventType, createdAt])
+  @@map("syria_marketplace_autonomy_audit_logs")
+}
+
+model SyriaMarketplaceAutonomyActionRecord {
+  id             String                       @id @default(cuid())
+  runId          String?                      @map("run_id")
+  approvalId     String?                      @map("approval_id")
+  actionType     String                       @map("action_type")
+  targetEntityId String?                      @map("target_entity_id")
+  dryRun         Boolean                      @default(true) @map("dry_run")
+  outcome        SyriaMarketplaceActionOutcome @default(DRY_RUN)
+  detailJson     Json?                        @map("detail_json")
+  rollbackOfId   String?                      @map("rollback_of_id")
+  createdAt      DateTime                     @default(now()) @map("created_at")
+
+  @@index([runId])
+  @@index([approvalId])
+  @@map("syria_marketplace_autonomy_action_records")
+}
+
+model SyriaMarketplaceOutcomeFeedbackRollup {
+  id          String   @id @default(cuid())
+  periodStart DateTime @map("period_start")
+  periodEnd   DateTime @map("period_end")
+  rollupJson  Json     @default("{}") @map("rollup_json")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([periodEnd])
+  @@map("syria_marketplace_outcome_feedback_rollups")
+}
+
+/// Safe autonomy — recommendations only; no auto messaging / pricing / payout.
+model SyriaAutonomyRecommendation {
+  id           String                           @id @default(cuid())
+  propertyId   String?                          @map("property_id")
+  property     SyriaProperty?                   @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  userId       String?                          @map("user_id")
+  user         SyriaAppUser?                    @relation("AutonomyOwner", fields: [userId], references: [id], onDelete: SetNull)
+  actionType   String                           @map("action_type")
+  status       SyriaAutonomyRecommendationStatus @default(PENDING)
+  payload      Json                             @default("{}")
+  autonomyMode String                           @map("autonomy_mode")
+  explanation  String?                          @db.Text
+  resolvedAt   DateTime?                        @map("resolved_at")
+  createdAt    DateTime                         @default(now()) @map("created_at")
+
+  @@index([status, createdAt])
+  @@index([propertyId])
+  @@map("syria_autonomy_recommendations")
+}

@@ -8,6 +8,8 @@ src/generated/prisma
 **/generated/prisma
 # Monolithic app client output (regenerate: prisma generate in apps/web)
 apps/web/src/generated/client
+# @repo/db-listings (regenerate: pnpm --filter @repo/db-listings exec prisma generate)
+packages/db-listings/generated
 .prisma
 
 # Prisma engines (OS-specific)

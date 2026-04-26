@@ -1,0 +1,90 @@
+/**
+ * Hadiah Link — CSS variables only (namespace --darlink-*; historic token names preserved).
+ * Imported from globals.css. Do not import other monorepo product themes here.
+ */
+
+:root {
+  /* Core palette — primary CTA red + gold accent */
+  --darlink-navy: #0f172a;
+  --darlink-sand: #d4af37;
+  --darlink-off-white: #f8f6f2;
+  --darlink-primary: #dc2626;
+  --darlink-accent: #dc2626;
+  --darlink-red: #dc2626;
+  --darlink-red-soft: #f87171;
+  --darlink-gold: #d4af37;
+
+  /* Semantic */
+  --darlink-bg: var(--darlink-navy);
+  --darlink-surface: var(--darlink-off-white);
+  --darlink-surface-muted: #eef1f4;
+  --darlink-border: rgb(15 23 42 / 0.12);
+  --darlink-text: var(--darlink-navy);
+  --darlink-text-muted: rgb(15 23 42 / 0.65);
+  --darlink-success: #15803d;
+  --darlink-warning: #b45309;
+
+  /* Spacing scale */
+  --darlink-space-1: 0.25rem;
+  --darlink-space-2: 0.5rem;
+  --darlink-space-3: 0.75rem;
+  --darlink-space-4: 1rem;
+  --darlink-space-6: 1.5rem;
+  --darlink-space-8: 2rem;
+  --darlink-space-12: 3rem;
+
+  /* Radius */
+  --darlink-radius-sm: 0.375rem;
+  --darlink-radius-md: 0.5rem;
+  --darlink-radius-lg: 0.75rem;
+  --darlink-radius-xl: 1rem;
+  --darlink-radius-2xl: 1.25rem;
+  --darlink-radius-3xl: 1.5rem;
+
+  /* Shadows */
+  --darlink-shadow-sm: 0 1px 2px rgb(15 23 42 / 0.06);
+  --darlink-shadow-md: 0 4px 14px rgb(15 23 42 / 0.08);
+  --darlink-shadow-lg: 0 12px 40px rgb(15 23 42 / 0.12);
+  --darlink-shadow-xl: 0 24px 48px rgb(15 23 42 / 0.14);
+
+  --darlink-ring: 0 0 0 3px rgb(220 38 38 / 0.35);
+  --darlink-sand-soft: rgb(212 175 55 / 0.35);
+
+  /* Primary buttons — red-600 / red-700 */
+  --hadiah-btn: #dc2626;
+  --hadiah-btn-hover: #b91c1c;
+  --hadiah-btn-premium-ring: #d4af37;
+
+  /* Typography scale */
+  --darlink-text-xs: 0.75rem;
+  --darlink-text-sm: 0.875rem;
+  --darlink-text-base: 1rem;
+  --darlink-text-lg: 1.125rem;
+  --darlink-text-xl: 1.25rem;
+  --darlink-text-2xl: 1.5rem;
+  --darlink-text-3xl: 1.875rem;
+  --darlink-text-4xl: 2.25rem;
+
+  /* Fonts — actual families injected via next/font on <html> */
+  --font-darlink-ar: system-ui, sans-serif;
+  --font-darlink-en: system-ui, sans-serif;
+  --font-darlink-marketing: var(--font-darlink-en);
+
+  /* Shell */
+  --darlink-header-height: 4rem;
+  --darlink-mobile-nav-height: 3.75rem;
+}
+
+/* RTL-safe logical spacing helpers */
+.darlink-ms-auto {
+  margin-inline-start: auto;
+}
+.darlink-me-auto {
+  margin-inline-end: auto;
+}
+.darlink-ps {
+  padding-inline-start: var(--darlink-space-4);
+}
+.darlink-pe {
+  padding-inline-end: var(--darlink-space-4);
+}

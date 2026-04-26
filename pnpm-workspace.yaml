@@ -1,4 +1,3 @@
-# BNHub + LECIPM — pnpm workspaces (primary package manager)
 packages:
   - "apps/*"
   - "packages/*"

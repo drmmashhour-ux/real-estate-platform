@@ -1,5 +1,5 @@
 ---
-description: Darlink apps/syria — never mix with LECIPM or apps/web
+description: Hadiah Link (apps/syria) — never mix with LECIPM or apps/web
 globs:
   - apps/syria/**/*
 alwaysApply: false
@@ -9,7 +9,7 @@ You are working **ONLY** in:
 
 ## `apps/syria`
 
-This is **Darlink** (Syria platform). It is **completely separate** from LECIPM (`apps/web`, Canada).
+This is **Hadiah Link** (Syria Hub; product was previously referred to as Darlink). It is **completely separate** from LECIPM (`apps/web`, Canada).
 
 ### CRITICAL — do NOT
 
@@ -18,7 +18,7 @@ This is **Darlink** (Syria platform). It is **completely separate** from LECIPM 
 - Reuse Stripe/North-American payment flows unless explicitly integrating a Syria-approved PSP.
 - Reuse LECIPM pricing, broker acquisition, or CRM modules.
 
-Darlink uses:
+Hadiah Link uses:
 
 - Simple **listing fee** model (see `src/lib/pricing.ts`, `src/config/pricing.ts`).
 - **Manual** payment verification — not broker-commission engines.
@@ -26,6 +26,6 @@ Darlink uses:
 
 ### If you see references to Canada, Québec, OACIQ, or `apps/web` business logic in **this app’s runnable code**
 
-→ Remove or replace with Syria/Darlink-specific logic.
+→ Remove or replace with Syria / Hadiah Link–specific logic.
 
 Prefer existing guards: `src/lib/guard.ts`, ESLint isolation rule, `pnpm check:cross-contamination`.

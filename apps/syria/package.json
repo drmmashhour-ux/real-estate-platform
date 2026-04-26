@@ -1,0 +1,52 @@
+{
+  "name": "@lecipm/syria",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "next dev -H 0.0.0.0 -p 3002",
+    "build": "next build",
+    "start": "next start -p 3002",
+    "lint": "eslint",
+    "test": "vitest run",
+    "postinstall": "prisma generate --schema=./prisma/schema.prisma",
+    "prisma:generate": "prisma generate --schema=./prisma/schema.prisma",
+    "prisma:migrate": "prisma migrate dev --schema=./prisma/schema.prisma",
+    "prisma:push": "prisma db push --schema=./prisma/schema.prisma",
+    "db:seed": "prisma db seed --schema=./prisma/schema.prisma",
+    "brand:rasters": "node scripts/generate-brand-rasters.mjs",
+    "check:isolation": "tsx ../../scripts/check-isolation.ts",
+    "check:cross-contamination": "pnpm exec tsx ../../scripts/check-cross-contamination.ts",
+    "check:darlink": "pnpm check:cross-contamination && pnpm check:isolation"
+  },
+  "prisma": {
+    "seed": "npx tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^6",
+    "@react-google-maps/api": "^2.20.8",
+    "next": "16.1.6",
+    "next-intl": "^4.9.1",
+    "react": "19.2.3",
+    "react-dom": "19.2.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^22",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "eslint": "^9",
+    "eslint-config-next": "16.1.6",
+    "png-to-ico": "^3.0.1",
+    "postcss": "^8",
+    "prisma": "^6",
+    "sharp": "^0.34.5",
+    "tailwindcss": "^4",
+    "tsx": "^4",
+    "typescript": "^5",
+    "vite": "^5.0.0",
+    "vitest": "1.5.0"
+  }
+}

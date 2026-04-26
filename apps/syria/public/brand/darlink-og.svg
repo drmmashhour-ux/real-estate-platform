@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="ogBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F172A"/>
+      <stop offset="55%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="ogAr" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#cbd5e1"/>
+    </linearGradient>
+    <linearGradient id="ogGold" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#D6C3A1"/>
+      <stop offset="100%" stop-color="#eedfcc"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#ogBg)"/>
+  <circle cx="900" cy="120" r="280" fill="#1e293b" opacity="0.35"/>
+  <circle cx="200" cy="520" r="220" fill="#d6c3a1" opacity="0.08"/>
+  <g transform="translate(72,228) scale(3.6)">
+    <rect width="112" height="112" rx="28" fill="#f8f6f2"/>
+    <path fill="#0F172A" d="M56 26 76 42v52H36V42zm0 42V38l-8 8v46h16V46z"/>
+    <circle cx="92" cy="38" r="14" fill="#BE123C"/>
+  </g>
+  <text x="470" y="290" font-size="72" font-weight="700" fill="url(#ogAr)" font-family="Noto Sans Arabic, Arial Unicode MS, sans-serif">دارلينك</text>
+  <text x="470" y="368" font-size="56" font-weight="700" fill="#FFFFFF" font-family="Inter, system-ui, sans-serif">Darlink</text>
+  <text x="470" y="428" font-size="28" font-weight="600" fill="url(#ogGold)" font-family="Noto Sans Arabic, Arial Unicode MS, sans-serif">بوابتك العقارية في سوريا</text>
+  <text x="470" y="518" font-size="22" fill="rgb(148 163 184)" font-family="Inter, system-ui, sans-serif">darlink.sy &#183; Syria real estate marketplace</text>
+</svg>
