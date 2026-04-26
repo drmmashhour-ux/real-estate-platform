@@ -4,23 +4,49 @@ import {
   isHostNotReadyToReceivePaymentsError,
 } from "@/lib/stripe/assert-host-ready";
 import { bnhubStripeApplicationFeeCents } from "@/lib/stripe/bnhub-connect";
-import { MARKETPLACE_LISTING_CHECKOUT } from "@/lib/marketplace/booking-hold";
-import { marketplacePrisma, monolithPrisma } from "@/lib/db";
+import {
+  computeHoldExpiry,
+  MARKETPLACE_LISTING_CHECKOUT,
+  whereRangeBlocksListing,
+} from "@/lib/marketplace/booking-hold";
+import { listingsDB, coreDB, bnhubDB } from "@/lib/db";
+import { requireAuth } from "@/lib/auth/middleware";
+import { toDateOnlyFromString } from "@/lib/dates/dateOnly";
 
 export const dynamic = "force-dynamic";
 
 const DEFAULT_ORIGIN = "http://localhost:3001";
 
+class BookingDateConflictError extends Error {
+  constructor() {
+    super("Dates not available");
+    this.name = "BookingDateConflictError";
+  }
+}
+
+function isOverlapDbError(e: unknown): boolean {
+  const s = String(e);
+  if (s.includes("no_overlap_booking")) return true;
+  if (s.includes("23P01")) return true;
+  if (s.toLowerCase().includes("exclusion") && s.toLowerCase().includes("violation")) return true;
+  return false;
+}
+
+void bnhubDB;
+
 /**
- * Minimal Hosted Checkout for BNHub / booking demos (`mode: payment`, dynamic `price_data`).
+ * Minimal Hosted Checkout for marketplace listings (`mode: payment`, dynamic `price_data`).
  *
- * **Production** booking and Connect flows should use `POST /api/stripe/checkout` (webhook is source of truth for paid state).
+ * - `listingId` + `startDate` + `endDate` + auth → `pending` booking on `listingsDB`, Stripe `metadata`
+ *   `booking_id` + `listing_id` (source of truth for webhooks / ledger).
+ * - `listingId` only (no dates) — legacy: Connect routing from host `stripeAccountId` only.
+ * - Stripe session creation and Connect logic stay on the existing Stripe / monolith-integrated path.
  */
 export async function POST(req: Request) {
   if (!stripe) {
     return Response.json(
       { error: "Stripe is not configured (set STRIPE_SECRET_KEY or disable demo mode)" },
-      { status: 503 },
+      { status: 503 }
     );
   }
 
@@ -28,11 +54,10 @@ export async function POST(req: Request) {
     amount?: unknown;
     successUrl?: unknown;
     cancelUrl?: unknown;
-    /** Shown as Checkout line item title (default: "Booking"). */
     productName?: unknown;
-    /** When set, funds route to the listing owner’s Connect account (if `stripeAccountId` is present). */
     listingId?: unknown;
-    /** Attached to the Stripe object for ops / reconciliation (string values only). */
+    startDate?: unknown;
+    endDate?: unknown;
     metadata?: unknown;
   };
   try {
@@ -45,7 +70,7 @@ export async function POST(req: Request) {
   if (!Number.isInteger(amount) || amount < 50) {
     return Response.json(
       { error: "amount must be an integer >= 50 (USD cents, Stripe minimum)" },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -73,7 +98,6 @@ export async function POST(req: Request) {
       if (metadata[k].length > 500) metadata[k] = metadata[k].slice(0, 500);
     }
   }
-  /** Webhook + Stripe dashboard: canonical camelCase; clients may send `booking_id` from demos. */
   if (metadata.booking_id && !metadata.bookingId) {
     metadata.bookingId = metadata.booking_id;
   }
@@ -84,6 +108,92 @@ export async function POST(req: Request) {
     metadata.paymentType = MARKETPLACE_LISTING_CHECKOUT;
   }
 
+  const listingIdRaw =
+    typeof body.listingId === "string" ? body.listingId.trim() : String(body.listingId ?? "").trim();
+  const startRaw = typeof body.startDate === "string" ? body.startDate.trim() : "";
+  const endRaw = typeof body.endDate === "string" ? body.endDate.trim() : "";
+  const hasBookingWindow = Boolean(listingIdRaw && startRaw && endRaw);
+
+  let createdBooking: { id: string } | null = null;
+  let connectListing: { id: string; userId: string } | null = null;
+
+  if (hasBookingWindow) {
+    const user = requireAuth(req);
+    if (!user || typeof user !== "object" || !("userId" in user)) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const userId = (user as { userId: string }).userId;
+
+    const listing = await listingsDB.listing.findUnique({
+      where: { id: listingIdRaw },
+      select: { id: true, userId: true },
+    });
+    if (!listing) {
+      return Response.json({ error: "Listing not found" }, { status: 404 });
+    }
+    connectListing = listing;
+
+    const startDate = toDateOnlyFromString(startRaw);
+    const endDate = toDateOnlyFromString(endRaw);
+    if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+      return Response.json({ error: "Invalid startDate or endDate" }, { status: 400 });
+    }
+    if (endDate <= startDate) {
+      return Response.json({ error: "endDate must be after startDate" }, { status: 400 });
+    }
+
+    console.log("[CHECKOUT] using listingsDB for booking");
+    try {
+      createdBooking = await listingsDB.$transaction(async (tx) => {
+        const conflict = await tx.booking.findFirst({
+          where: whereRangeBlocksListing(listingIdRaw, startDate, endDate),
+        });
+        if (conflict) {
+          throw new BookingDateConflictError();
+        }
+        return tx.booking.create({
+          data: {
+            userId,
+            listingId: listingIdRaw,
+            startDate,
+            endDate,
+            status: "pending",
+            expiresAt: computeHoldExpiry(),
+          },
+        });
+      });
+    } catch (e) {
+      if (e instanceof BookingDateConflictError) {
+        return Response.json({ error: e.message, code: "BOOKING_CONFLICT" }, { status: 409 });
+      }
+      if (typeof e === "object" && e !== null && "code" in e && (e as { code: string }).code === "P2002") {
+        return Response.json(
+          { error: "A booking for these dates already exists. Refresh and try again.", code: "BOOKING_DUPLICATE" },
+          { status: 409 }
+        );
+      }
+      if (isOverlapDbError(e)) {
+        return Response.json({ error: "Dates not available", code: "BOOKING_CONFLICT" }, { status: 409 });
+      }
+      console.error("checkout: booking create", e);
+      return Response.json(
+        { error: "Could not create booking", detail: String(e) },
+        { status: 500 }
+      );
+    }
+
+    metadata.booking_id = createdBooking.id;
+    metadata.listing_id = listing.id;
+    if (!metadata.bookingId) metadata.bookingId = createdBooking.id;
+    if (!metadata.listingId) metadata.listingId = listing.id;
+    metadata.paymentType = MARKETPLACE_LISTING_CHECKOUT;
+  } else if (listingIdRaw) {
+    connectListing = await listingsDB.listing.findUnique({
+      where: { id: listingIdRaw },
+      select: { id: true, userId: true },
+    });
+  }
+
   let paymentIntentData:
     | {
         transfer_data: { destination: string };
@@ -91,45 +201,44 @@ export async function POST(req: Request) {
       }
     | undefined;
 
-  const listingIdRaw =
-    typeof body.listingId === "string" ? body.listingId.trim() : String(body.listingId ?? "").trim();
-  if (listingIdRaw) {
-    const listing = await marketplacePrisma.listing.findUnique({
-      where: { id: listingIdRaw },
-      select: { userId: true },
+  if (connectListing?.userId) {
+    const host = await coreDB.user.findUnique({
+      where: { id: connectListing.userId },
+      select: { stripeAccountId: true },
     });
-    if (listing?.userId) {
-      const host = await monolithPrisma.user.findUnique({
-        where: { id: listing.userId },
-        select: { stripeAccountId: true },
-      });
-      const destination = host?.stripeAccountId?.trim();
-      if (destination) {
-        try {
-          await assertHostReady(stripe, destination);
-        } catch (e) {
-          if (isHostNotReadyToReceivePaymentsError(e)) {
-            return Response.json(
-              { error: "Host is not ready to receive payments", code: e.code },
-              { status: 400 }
-            );
-          }
-          console.error("checkout: assertHostReady", e);
+    const destination = host?.stripeAccountId?.trim();
+    if (destination) {
+      try {
+        await assertHostReady(stripe, destination);
+      } catch (e) {
+        if (isHostNotReadyToReceivePaymentsError(e)) {
           return Response.json(
-            { error: "Could not verify host payout account. Try again later." },
-            { status: 502 }
+            { error: "Host is not ready to receive payments", code: e.code },
+            { status: 400 }
           );
         }
-        const applicationFee = bnhubStripeApplicationFeeCents(amount);
-        paymentIntentData = { transfer_data: { destination } };
-        if (applicationFee > 0 && applicationFee < amount) {
-          paymentIntentData.application_fee_amount = applicationFee;
-          metadata.application_fee_cents = String(applicationFee);
-        }
-        metadata.destinationAccountId = destination;
+        console.error("checkout: assertHostReady", e);
+        return Response.json(
+          { error: "Could not verify host payout account. Try again later." },
+          { status: 502 }
+        );
       }
+      const applicationFee = bnhubStripeApplicationFeeCents(amount);
+      paymentIntentData = { transfer_data: { destination } };
+      if (applicationFee > 0 && applicationFee < amount) {
+        paymentIntentData.application_fee_amount = applicationFee;
+        metadata.application_fee_cents = String(applicationFee);
+      }
+      metadata.destinationAccountId = destination;
     }
-    metadata.listing_id = listingIdRaw;
+  }
+  if (listingIdRaw) {
+    if (!metadata.listing_id) {
+      metadata.listing_id = listingIdRaw;
+    }
+    if (!metadata.listingId) {
+      metadata.listingId = listingIdRaw;
+    }
   }
 
   const idempotencyKey =
@@ -166,7 +275,7 @@ export async function POST(req: Request) {
       return Response.json({ error: "Checkout session missing url" }, { status: 500 });
     }
 
-    return Response.json({ url: session.url });
+    return Response.json({ url: session.url, bookingId: createdBooking?.id ?? null });
   } catch (e) {
     console.error("checkout.sessions.create", e);
     return Response.json({ error: "Stripe error", detail: String(e) }, { status: 502 });

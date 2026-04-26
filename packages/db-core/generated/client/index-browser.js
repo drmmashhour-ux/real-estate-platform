@@ -128,7 +128,8 @@ exports.Prisma.PlatformConfigScalarFieldEnum = {
 
 exports.Prisma.UserScalarFieldEnum = {
   id: 'id',
-  email: 'email'
+  email: 'email',
+  stripeAccountId: 'stripeAccountId'
 };
 
 exports.Prisma.SortOrder = {
@@ -139,6 +140,11 @@ exports.Prisma.SortOrder = {
 exports.Prisma.QueryMode = {
   default: 'default',
   insensitive: 'insensitive'
+};
+
+exports.Prisma.NullsOrder = {
+  first: 'first',
+  last: 'last'
 };
 
 
