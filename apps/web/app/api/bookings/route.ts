@@ -1,13 +1,15 @@
-import { marketplacePrisma } from "@/lib/db";
+import { listingsDB } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
 /**
- * Read-only: latest bookings for production verification (safe deploy phase).
- * Calendar / listing-scoped availability remains on `GET /api/listings/:id/bookings`.
+ * First clean slice: marketplace `bookings` only via `listingsDB` (@repo/db-marketplace),
+ * not the monolith. User/guest rows — when needed — use `coreDB` in services (no cross-Prisma relations).
+ * Calendar / listing-scoped availability: `GET /api/listings/:id/bookings`.
  */
 export async function GET() {
-  const bookings = await marketplacePrisma.booking.findMany({
+  console.log("[BOOKINGS DB] using listingsDB");
+  const bookings = await listingsDB.booking.findMany({
     take: 20,
     orderBy: { startDate: "desc" },
   });
