@@ -1,8 +1,10 @@
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
+import { syriaFlags } from "@/lib/platform-flags";
 
 export default async function AdminHomePage() {
   const t = await getTranslations("Admin");
+  const mvp = syriaFlags.SYRIA_MVP;
 
   return (
     <div className="grid gap-4 md:grid-cols-2">
@@ -41,33 +43,48 @@ export default async function AdminHomePage() {
         <h2 className="text-lg font-semibold text-stone-900">{t("tilePayments")}</h2>
         <p className="mt-2 text-sm text-stone-600">{t("homePaymentsDesc")}</p>
       </Link>
+      {!mvp ? (
+        <Link
+          href="/admin/promotions"
+          className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm hover:border-stone-300"
+        >
+          <h2 className="text-lg font-semibold text-stone-900">{t("tilePromotions")}</h2>
+          <p className="mt-2 text-sm text-stone-600">{t("homePromotionsDesc")}</p>
+        </Link>
+      ) : null}
+      {!mvp ? (
+        <Link
+          href="/admin/growth"
+          className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm hover:border-stone-300"
+        >
+          <h2 className="text-lg font-semibold text-stone-900">{t("tileGrowth")}</h2>
+          <p className="mt-2 text-sm text-stone-600">{t("homeGrowthDesc")}</p>
+        </Link>
+      ) : null}
+      {!mvp ? (
+        <Link
+          href="/admin/autonomy"
+          className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm hover:border-stone-300"
+        >
+          <h2 className="text-lg font-semibold text-stone-900">{t("tileAutonomy")}</h2>
+          <p className="mt-2 text-sm text-stone-600">{t("homeAutonomyDesc")}</p>
+        </Link>
+      ) : null}
+      {!mvp ? (
+        <Link
+          href="/admin/listing-assistant"
+          className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm hover:border-stone-300"
+        >
+          <h2 className="text-lg font-semibold text-stone-900">{t("tileListingAssistant")}</h2>
+          <p className="mt-2 text-sm text-stone-600">{t("homeListingAssistantDesc")}</p>
+        </Link>
+      ) : null}
       <Link
-        href="/admin/promotions"
-        className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm hover:border-stone-300"
+        href="/admin/ai"
+        className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-6 shadow-sm hover:border-emerald-300"
       >
-        <h2 className="text-lg font-semibold text-stone-900">{t("tilePromotions")}</h2>
-        <p className="mt-2 text-sm text-stone-600">{t("homePromotionsDesc")}</p>
-      </Link>
-      <Link
-        href="/admin/growth"
-        className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm hover:border-stone-300"
-      >
-        <h2 className="text-lg font-semibold text-stone-900">{t("tileGrowth")}</h2>
-        <p className="mt-2 text-sm text-stone-600">{t("homeGrowthDesc")}</p>
-      </Link>
-      <Link
-        href="/admin/autonomy"
-        className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm hover:border-stone-300"
-      >
-        <h2 className="text-lg font-semibold text-stone-900">{t("tileAutonomy")}</h2>
-        <p className="mt-2 text-sm text-stone-600">{t("homeAutonomyDesc")}</p>
-      </Link>
-      <Link
-        href="/admin/listing-assistant"
-        className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm hover:border-stone-300"
-      >
-        <h2 className="text-lg font-semibold text-stone-900">{t("tileListingAssistant")}</h2>
-        <p className="mt-2 text-sm text-stone-600">{t("homeListingAssistantDesc")}</p>
+        <h2 className="text-lg font-semibold text-stone-900">AI</h2>
+        <p className="mt-2 text-sm text-stone-600">Listing quality & search heuristics (SY-13)</p>
       </Link>
     </div>
   );

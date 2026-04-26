@@ -1,15 +1,10 @@
 "use server";
 
-import { Prisma } from "@/generated/prisma";
-import { prisma } from "@/lib/db";
-import { requireSessionUser } from "@/lib/auth";
 import { assertDarlinkRuntimeEnv } from "@/lib/guard";
 import { redirect } from "@/i18n/navigation";
 import { getLocale } from "next-intl/server";
 import { revalidateSyriaPaths } from "@/lib/revalidate-locale";
-import { SYRIA_PRICING } from "@/lib/pricing";
-import { onlyDigits } from "@/lib/syria-phone";
-import { trackSyriaGrowthEvent } from "@/lib/growth-events";
+import { persistQuickListing } from "@/lib/persist-quick-listing";
 
 function parseImagesMvp(raw: string): string[] {
   return raw
@@ -24,78 +19,42 @@ function parseImagesMvp(raw: string): string[] {
  */
 export async function createMvpPropertyListing(formData: FormData): Promise<void> {
   assertDarlinkRuntimeEnv();
-  const user = await requireSessionUser();
 
   const titleAr = String(formData.get("title") ?? "").trim();
   const price = String(formData.get("price") ?? "").trim();
+  const state = String(formData.get("state") ?? "").trim();
   const city = String(formData.get("city") ?? "").trim();
-  const phone = onlyDigits(String(formData.get("phone") ?? "").trim());
-  const type = String(formData.get("type") ?? "SALE").toUpperCase();
+  const area = String(formData.get("area") ?? "").trim();
+  const addressDetails = String(formData.get("addressDetails") ?? "").trim();
+  const phoneRaw = String(formData.get("phone") ?? "");
+  const typeRaw = String(formData.get("type") ?? "SALE").toUpperCase();
+  const type = typeRaw === "RENT" ? "RENT" : "SALE";
   const images = parseImagesMvp(String(formData.get("images") ?? ""));
+  const amenitiesMvp = formData.getAll("amenities").map((x) => String(x).trim()).filter(Boolean);
 
-  if (titleAr.length < 2 || !city || !price || phone.length < 8) {
+  if (!["SALE", "RENT"].includes(typeRaw)) {
     return;
   }
 
-  if (!["SALE", "RENT"].includes(type)) {
-    return;
-  }
-
-  const priceDec = new Prisma.Decimal(price);
-  if (priceDec.lte(0)) {
-    return;
-  }
-
-  const descriptionAr = "—";
-  const titleEn: string | null = null;
-  const descriptionEn: string | null = null;
-
-  const property = await prisma.$transaction(async (tx) => {
-    await tx.syriaAppUser.update({
-      where: { id: user.id },
-      data: { phone: phone || undefined },
-    });
-
-    return tx.syriaProperty.create({
-      data: {
-        titleAr,
-        titleEn,
-        descriptionAr,
-        descriptionEn,
-        governorate: null,
-        city,
-        cityAr: city,
-        cityEn: city,
-        area: null,
-        districtAr: null,
-        districtEn: null,
-        placeName: null,
-        addressText: null,
-        latitude: null,
-        longitude: null,
-        price: priceDec,
-        currency: SYRIA_PRICING.currency,
-        type: type as "SALE" | "RENT",
-        images,
-        amenities: [],
-        ownerId: user.id,
-        status: "PUBLISHED",
-        plan: "free",
-        isFeatured: false,
-        featuredUntil: null,
-        listingVerified: false,
-      },
-    });
+  const out = await persistQuickListing({
+    title: titleAr,
+    state,
+    city,
+    area: area || undefined,
+    addressDetails: addressDetails || undefined,
+    price,
+    phoneRaw,
+    type,
+    images,
+    amenities: amenitiesMvp,
+    source: "mvp_sell",
   });
-
-  await trackSyriaGrowthEvent({
-    eventType: "listing_created_mvp",
-    userId: user.id,
-    propertyId: property.id,
-    payload: { city, type },
-  });
+  if (!out.ok) {
+    return;
+  }
+  const property = { id: out.id };
 
   await revalidateSyriaPaths("/sell", "/dashboard/listings", "/buy", "/rent", "/");
   const locale = await getLocale();
-  redirect({ href: "/dashboard/listings?posted=1", locale });
+  redirect({ href: `/listing/${property.id}?posted=1`, locale });
 }

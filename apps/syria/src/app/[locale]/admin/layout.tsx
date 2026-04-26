@@ -2,10 +2,12 @@ import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { requireAdmin } from "@/lib/auth";
 import { LogoutForm } from "@/components/LogoutForm";
+import { syriaFlags } from "@/lib/platform-flags";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   await requireAdmin();
   const t = await getTranslations("Admin");
+  const mvp = syriaFlags.SYRIA_MVP;
 
   return (
     <div className="space-y-8">
@@ -27,21 +29,29 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <Link href="/admin/payments" className="hover:underline">
             {t("navPayments")}
           </Link>
-          <Link href="/admin/promotions" className="hover:underline">
-            {t("navPromotions")}
-          </Link>
-          <Link href="/admin/growth" className="hover:underline">
-            {t("navGrowth")}
-          </Link>
-          <Link href="/admin/autonomy" className="hover:underline">
-            {t("navAutonomy")}
-          </Link>
+          {!mvp ? (
+            <Link href="/admin/promotions" className="hover:underline">
+              {t("navPromotions")}
+            </Link>
+          ) : null}
+          {!mvp ? (
+            <Link href="/admin/growth" className="hover:underline">
+              {t("navGrowth")}
+            </Link>
+          ) : null}
+          {!mvp ? (
+            <Link href="/admin/autonomy" className="hover:underline">
+              {t("navAutonomy")}
+            </Link>
+          ) : null}
           <Link href="/admin/users" className="hover:underline">
             {t("navUsers")}
           </Link>
-          <Link href="/admin/listing-assistant" className="hover:underline">
-            {t("navListingAssistant")}
-          </Link>
+          {!mvp ? (
+            <Link href="/admin/listing-assistant" className="hover:underline">
+              {t("navListingAssistant")}
+            </Link>
+          ) : null}
           <Link href="/" className="hover:underline">
             {t("navSite")}
           </Link>

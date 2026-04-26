@@ -1,0 +1,124 @@
+import { Prisma } from "@/generated/prisma";
+import { prisma } from "@/lib/db";
+import { getSessionUser, setSessionUserId } from "@/lib/auth";
+import { SYRIA_PRICING } from "@/lib/pricing";
+import { onlyDigits, toWhatsAppPath } from "@/lib/syria-phone";
+import { trackSyriaGrowthEvent } from "@/lib/growth-events";
+import { normalizeSyriaAmenityKeys } from "@/lib/syria/amenities";
+
+export type PersistQuickListingResult = { ok: true; id: string; userId: string } | { ok: false };
+
+/**
+ * Minimal create for SyriaProperty — maps to existing Prisma model (titleAr, Decimal price, owner phone, etc.).
+ */
+export async function persistQuickListing(input: {
+  title: string;
+  /** English key from `SYRIA_STATES` */
+  state: string;
+  city: string;
+  area?: string;
+  addressDetails?: string;
+  price: string | number;
+  phoneRaw: string;
+  type?: "SALE" | "RENT";
+  images?: string[];
+  /** e.g. "quick_post" | "mvp_sell" */
+  source: string;
+  amenities?: string[];
+  /** Optional Arabic description; defaults to short placeholder when empty. */
+  descriptionAr?: string;
+}): Promise<PersistQuickListingResult> {
+  const titleAr = input.title.trim();
+  const state = input.state?.trim() ?? "";
+  const city = input.city.trim();
+  const area = input.area?.trim() || null;
+  const addressDetails = input.addressDetails?.trim() || null;
+  const priceStr = typeof input.price === "number" ? String(input.price) : input.price.trim();
+  const phone = onlyDigits(input.phoneRaw.trim());
+  const type: "SALE" | "RENT" = input.type === "RENT" ? "RENT" : "SALE";
+  const images = (input.images?.filter((s): s is string => typeof s === "string" && s.length > 0) ?? []).slice(0, 5);
+  const amenities = normalizeSyriaAmenityKeys(input.amenities);
+
+  if (titleAr.length < 2 || !state || !city || !priceStr || phone.length < 8) {
+    return { ok: false };
+  }
+  if (!toWhatsAppPath(phone)) {
+    return { ok: false };
+  }
+
+  const priceDec = new Prisma.Decimal(priceStr);
+  if (priceDec.lte(0)) {
+    return { ok: false };
+  }
+
+  let user = await getSessionUser();
+  if (!user) {
+    const guestEmail = `mvp-${phone}@guest.hadiah`;
+    user = await prisma.syriaAppUser.upsert({
+      where: { email: guestEmail },
+      create: {
+        email: guestEmail,
+        name: titleAr.slice(0, 120),
+        phone,
+      },
+      update: {
+        name: titleAr.slice(0, 120),
+        phone,
+      },
+    });
+    await setSessionUserId(user.id);
+  }
+
+  const descriptionAr =
+    input.descriptionAr?.trim() && input.descriptionAr.trim() !== "—"
+      ? input.descriptionAr.trim().slice(0, 4000)
+      : "—";
+  const property = await prisma.$transaction(async (tx) => {
+    await tx.syriaAppUser.update({
+      where: { id: user.id },
+      data: { phone },
+    });
+    return tx.syriaProperty.create({
+      data: {
+        titleAr,
+        titleEn: null,
+        descriptionAr,
+        descriptionEn: null,
+        state,
+        governorate: state,
+        city,
+        cityAr: city,
+        cityEn: city,
+        area,
+        districtAr: null,
+        districtEn: null,
+        placeName: null,
+        addressText: null,
+        addressDetails,
+        latitude: null,
+        longitude: null,
+        price: priceDec,
+        currency: SYRIA_PRICING.currency,
+        type,
+        images,
+        amenities,
+        ownerId: user.id,
+        status: "PUBLISHED",
+        plan: "free",
+        isFeatured: false,
+        featuredUntil: null,
+        listingVerified: false,
+        verified: false,
+      },
+    });
+  });
+
+  await trackSyriaGrowthEvent({
+    eventType: "listing_persisted",
+    userId: user.id,
+    propertyId: property.id,
+    payload: { city, state, type, source: input.source },
+  });
+
+  return { ok: true, id: property.id, userId: user.id };
+}

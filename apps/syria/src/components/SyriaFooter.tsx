@@ -2,12 +2,14 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { HadiahLogo } from "@/components/brand/HadiahLogo";
 import { getHadiahBrandLockup } from "@/lib/brand/darlink-copy";
+import { isBnhubInSyriaUI } from "@/lib/platform-flags";
 
 /** Hadiah Link footer — operational copy from i18n. */
 export async function SyriaFooter() {
   const t = await getTranslations("Footer");
   const locale = await getLocale();
   const lock = getHadiahBrandLockup(locale);
+  const showBnhub = isBnhubInSyriaUI();
 
   return (
     <footer className="mt-auto border-t border-[color:var(--darlink-border)] bg-[color:var(--darlink-navy)] text-[color:var(--darlink-off-white)]">
@@ -42,11 +44,13 @@ export async function SyriaFooter() {
                   {t("linkRent")}
                 </Link>
               </li>
-              <li>
-                <Link href="/bnhub/stays" className="text-white/85 transition hover:text-white">
-                  {t("linkStays")}
-                </Link>
-              </li>
+              {showBnhub ? (
+                <li>
+                  <Link href="/bnhub/stays" className="text-white/85 transition hover:text-white">
+                    {t("linkStays")}
+                  </Link>
+                </li>
+              ) : null}
               <li>
                 <Link href="/sell" className="font-medium text-[color:var(--darlink-sand)] transition hover:text-white">
                   {t("linkSell")}

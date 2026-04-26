@@ -6,6 +6,7 @@ import {
   normalizeCitySearchParam,
   normalizeGovernorateSearchParam,
 } from "@/lib/syria-location-catalog";
+import { parseFeaturesQuery } from "@/lib/syria/amenities";
 
 export type ListingKind = "sale" | "rent" | "bnhub";
 
@@ -41,6 +42,7 @@ function textSearchOr(q: string): Prisma.SyriaPropertyWhereInput[] | undefined {
     { city: { contains: term, mode: "insensitive" } },
     { neighborhood: { contains: term, mode: "insensitive" } },
     { area: { contains: term, mode: "insensitive" } },
+    { addressDetails: { contains: term, mode: "insensitive" } },
   ];
 }
 
@@ -74,6 +76,13 @@ export function buildPropertyWhere(
   const orText = textSearchOr(sp.q ?? "");
   if (orText?.length) {
     andParts.push({ OR: orText });
+  }
+
+  const stateQ = (sp.state ?? "").trim();
+  if (stateQ) {
+    andParts.push({
+      OR: [{ state: stateQ }, { governorate: stateQ }],
+    });
   }
 
   const cityNorm = normalizeCitySearchParam(sp.city ?? "");
@@ -152,6 +161,11 @@ export function buildPropertyWhere(
     andParts.push({
       OR: [{ guestsMax: null }, { guestsMax: { gte: guests } }],
     });
+  }
+
+  const featureKeys = parseFeaturesQuery(sp.features);
+  if (featureKeys.length) {
+    andParts.push({ amenities: { hasEvery: featureKeys } });
   }
 
   const base: Prisma.SyriaPropertyWhereInput = {

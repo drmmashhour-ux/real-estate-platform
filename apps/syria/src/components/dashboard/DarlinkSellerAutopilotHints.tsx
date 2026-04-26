@@ -1,4 +1,4 @@
-import { getDarlinkAutonomyFlags } from "@/lib/platform-flags";
+import { getDarlinkAutonomyFlags, syriaFlags } from "@/lib/platform-flags";
 import { buildMarketplaceSnapshot } from "@/modules/autonomy/darlink-marketplace-snapshot.service";
 import { buildMarketplaceSignals } from "@/modules/autonomy/darlink-signal-builder.service";
 
@@ -9,6 +9,7 @@ type Props = {
 };
 
 export async function DarlinkSellerAutopilotHints(props: Props) {
+  if (syriaFlags.SYRIA_MVP) return null;
   const flags = getDarlinkAutonomyFlags();
   if (!flags.AUTONOMY_ENABLED || props.listingIds.length === 0) return null;
 

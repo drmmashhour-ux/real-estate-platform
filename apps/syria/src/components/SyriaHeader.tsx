@@ -4,6 +4,7 @@ import { getSessionUser } from "@/lib/auth";
 import { LocaleToggle } from "@/components/ui/LocaleToggle";
 import { MobileNavMenu } from "@/components/MobileNavMenu";
 import { DARLINK_COPY, getHadiahBrandLockup } from "@/lib/brand/darlink-copy";
+import { isBnhubInSyriaUI } from "@/lib/platform-flags";
 import { HadiahLogo } from "@/components/brand/HadiahLogo";
 
 /** Hadiah Link shell header — Syria product lane only. */
@@ -13,6 +14,7 @@ export async function SyriaHeader() {
   const user = await getSessionUser();
   const brandCopy = locale.startsWith("en") ? DARLINK_COPY.en : DARLINK_COPY.ar;
   const lock = getHadiahBrandLockup(locale);
+  const showBnhubNav = isBnhubInSyriaUI();
 
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-[color:var(--darlink-bg)] text-[color:var(--darlink-off-white)] shadow-[var(--darlink-shadow-md)] backdrop-blur-md">
@@ -46,9 +48,11 @@ export async function SyriaHeader() {
           <Link className="rounded-[var(--darlink-radius-md)] px-3 py-2 text-white/90 transition hover:bg-white/10" href="/rent">
             {t("rent")}
           </Link>
-          <Link className="rounded-[var(--darlink-radius-md)] px-3 py-2 text-white/90 transition hover:bg-white/10" href="/bnhub/stays">
-            {t("bnhub")}
-          </Link>
+          {showBnhubNav ? (
+            <Link className="rounded-[var(--darlink-radius-md)] px-3 py-2 text-white/90 transition hover:bg-white/10" href="/bnhub/stays">
+              {t("bnhub")}
+            </Link>
+          ) : null}
           <Link
             className="hadiah-btn-primary inline-flex min-h-10 items-center justify-center rounded-[var(--darlink-radius-lg)] px-4 py-2 text-sm font-semibold"
             href="/sell"
@@ -75,7 +79,7 @@ export async function SyriaHeader() {
         </nav>
 
         <div className="flex items-center gap-2 md:hidden">
-          <MobileNavMenu signedIn={!!user} isAdmin={user?.role === "ADMIN"} />
+          <MobileNavMenu signedIn={!!user} isAdmin={user?.role === "ADMIN"} showBnhub={showBnhubNav} />
         </div>
       </div>
     </header>

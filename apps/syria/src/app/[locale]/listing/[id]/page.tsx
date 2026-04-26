@@ -9,7 +9,7 @@ import { getLocalizedPropertyCity, getLocalizedPropertyDistrict } from "@/lib/pr
 import { money } from "@/lib/format";
 import { getSessionUser } from "@/lib/auth";
 import { createBnhubBooking } from "@/actions/bookings";
-import { syriaFlags } from "@/lib/platform-flags";
+import { isBnhubInSyriaUI, syriaFlags } from "@/lib/platform-flags";
 import { SYRIA_PRICING } from "@/lib/pricing";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
@@ -20,10 +20,25 @@ import { trackSyriaGrowthEvent } from "@/lib/growth-events";
 import { PropertyImageGallery } from "@/components/PropertyImageGallery";
 import { VerifiedBadge } from "@/components/ds/VerifiedBadge";
 import { RelatedListings } from "@/components/listing/RelatedListings";
+import { ListingTrustPanel } from "@/components/listing/ListingTrustPanel";
+import { ListingShareActions } from "@/components/listing/ListingShareActions";
+import { ListingPostSuccessNudge } from "@/components/listing/ListingPostSuccessNudge";
 import { fuzzLatLngForDisplay } from "@/lib/geo";
 import { ListingApproximateMap } from "@/components/listing/ListingApproximateMap";
 import { ListingMobileBookingBar } from "@/components/listing/ListingMobileBookingBar";
-import { buildWhatsAppSendUrl, getSyriaPublicOrigin } from "@/lib/syria-whatsapp";
+import { ListingContactDock } from "@/components/listing/ListingContactDock";
+import { ListingOwnerContactCard } from "@/components/listing/ListingOwnerContactCard";
+import { buildWhatsAppContactHref, buildTelHref, isNewListing } from "@/lib/syria-phone";
+import { SELF_MKT_VIEWS_HOT_BADGE_MIN } from "@/lib/self-marketing";
+import { getMonetizationAdminContact } from "@/lib/monetization-contact";
+import { syriaPlatformConfig } from "@/config/syria-platform.config";
+import { MakeFeaturedCta } from "@/components/listing/MakeFeaturedCta";
+import { labelSyriaState } from "@/lib/syria/states";
+import { SYRIA_AMENITIES, labelSyriaAmenityForListing } from "@/lib/syria/amenities";
+import { getTrustWarningLines } from "@/lib/ai/trustAssistant";
+import { ListingTrustAiSection } from "@/components/listing/ListingTrustAiSection";
+import { ShortStayAvailabilityCalendar } from "@/components/listing/ShortStayAvailabilityCalendar";
+import { incrementPublicListingView } from "@/lib/syria/listing-views";
 
 type Props = {
   params: Promise<{ locale: string; id: string }>;
@@ -70,21 +85,24 @@ export default async function ListingDetailPage(props: Props) {
     notFound();
   }
 
-  await trackSyriaGrowthEvent({
-    eventType: "listing_view",
-    propertyId: id,
-    payload: { locale },
-    utm: {
-      source: typeof sp.utm_source === "string" ? sp.utm_source : Array.isArray(sp.utm_source) ? sp.utm_source[0] : null,
-      medium: typeof sp.utm_medium === "string" ? sp.utm_medium : Array.isArray(sp.utm_medium) ? sp.utm_medium[0] : null,
-      campaign:
-        typeof sp.utm_campaign === "string"
-          ? sp.utm_campaign
-          : Array.isArray(sp.utm_campaign)
-            ? sp.utm_campaign[0]
-            : null,
-    },
-  });
+  await Promise.all([
+    trackSyriaGrowthEvent({
+      eventType: "listing_view",
+      propertyId: id,
+      payload: { locale },
+      utm: {
+        source: typeof sp.utm_source === "string" ? sp.utm_source : Array.isArray(sp.utm_source) ? sp.utm_source[0] : null,
+        medium: typeof sp.utm_medium === "string" ? sp.utm_medium : Array.isArray(sp.utm_medium) ? sp.utm_medium[0] : null,
+        campaign:
+          typeof sp.utm_campaign === "string"
+            ? sp.utm_campaign
+            : Array.isArray(sp.utm_campaign)
+              ? sp.utm_campaign[0]
+              : null,
+      },
+    }),
+    incrementPublicListingView(id),
+  ]);
 
   const localized = backfillLocalizedPropertyShape(listing);
   const titleDisplay = pickListingTitle(listing, locale);
@@ -92,37 +110,86 @@ export default async function ListingDetailPage(props: Props) {
   const cityDisplay = getLocalizedPropertyCity(localized, locale);
   const districtDisplay = getLocalizedPropertyDistrict(localized, locale);
   const areaDisplay = districtDisplay ?? listing.area ?? listing.neighborhood ?? null;
+  const stateLine =
+    listing.state?.trim() ? labelSyriaState(listing.state, locale) : listing.governorate?.trim() ? listing.governorate : null;
   const fuzz =
     listing.latitude != null && listing.longitude != null
       ? fuzzLatLngForDisplay(listing.id, listing.latitude, listing.longitude)
       : null;
   const numberLoc = locale.startsWith("ar") ? "ar-SY" : "en-US";
+  const sharePriceLine = money(listing.price, listing.currency, numberLoc);
 
-  const images = Array.isArray(listing.images)
-    ? (listing.images as unknown[]).filter((x): x is string => typeof x === "string")
+  const images = listing.images.filter((x) => x.length > 0);
+  const photoQualityHighlight = images.length >= 3;
+  const rawAmenities: string[] = Array.isArray(listing.amenities)
+    ? (listing.amenities as string[]).filter((x): x is string => typeof x === "string")
     : [];
-  const amenities = Array.isArray(listing.amenities)
-    ? (listing.amenities as unknown[]).filter((x): x is string => typeof x === "string")
-    : [];
+  const amenityDisplayOrder = [
+    ...SYRIA_AMENITIES.map((a) => a.key).filter((k) => rawAmenities.includes(k)),
+    ...rawAmenities.filter((k) => !SYRIA_AMENITIES.some((a) => a.key === k)),
+  ];
+
+  const isVerifiedField = listing.verified === true;
+  const showTrustedHighlight = images.length >= 3 && rawAmenities.length >= 2;
+  const aiTrustLines = getTrustWarningLines(
+    {
+      photoCount: images.length,
+      amenityCount: rawAmenities.length,
+      verified: listing.verified,
+      listingVerified: listing.listingVerified,
+    },
+    locale,
+  );
 
   const user = await getSessionUser();
-  const showBooking =
-    listing.type === "BNHUB" && syriaFlags.BNHUB_ENABLED && user && user.id !== listing.ownerId;
+  const allowBnhubBooking =
+    !syriaFlags.SYRIA_MVP &&
+    isBnhubInSyriaUI() &&
+    listing.type === "BNHUB" &&
+    syriaFlags.BNHUB_ENABLED &&
+    user &&
+    user.id !== listing.ownerId;
+
+  const showBooking = allowBnhubBooking;
 
   const hostName = listing.owner.name?.trim() || listing.owner.email.split("@")[0];
-
-  const publicOrigin = getSyriaPublicOrigin();
-  const listingPath = `/${locale}/listing/${listing.id}`;
-  const listingAbsoluteUrl = publicOrigin ? `${publicOrigin}${listingPath}` : listingPath;
-  const interestLine = locale.startsWith("ar")
-    ? `مرحباً، أنا مهتم بهذا الإعلان على هدية لينك:\n${titleDisplay}\n${listingAbsoluteUrl}`
-    : `Hi, I'm interested in this Hadiah Link listing:\n${titleDisplay}\n${listingAbsoluteUrl}`;
-  const interestWhatsAppHref = buildWhatsAppSendUrl(interestLine);
+  const ownerPhone = listing.owner.phone?.trim() ?? "";
+  const waOwnerHref = ownerPhone ? buildWhatsAppContactHref(ownerPhone) : null;
+  const telOwnerHref = ownerPhone ? buildTelHref(ownerPhone) : null;
+  const showNewBadge = isNewListing(listing.createdAt);
+  const isOwner = user?.id === listing.ownerId;
+  const canContact = !isOwner && Boolean(waOwnerHref || telOwnerHref);
+  const showBnhubInUi = isBnhubInSyriaUI() && syriaFlags.BNHUB_ENABLED;
+  const showContactAside =
+    !isOwner && (listing.type === "SALE" || listing.type === "RENT" || (listing.type === "BNHUB" && !showBnhubInUi));
+  const monetizationContact = getMonetizationAdminContact();
+  const showMakeFeatured = isOwner && (listing.plan === "free" || listing.plan === "featured");
+  const f1PendingPayment = isOwner
+    ? await prisma.syriaPaymentRequest.findFirst({
+        where: { listingId: id, status: "pending" },
+        orderBy: { createdAt: "desc" },
+      })
+    : null;
+  const justPosted = sp.posted === "1" || (Array.isArray(sp.posted) && sp.posted[0] === "1");
+  const showAfterPostShare = Boolean(justPosted && isOwner);
 
   return (
     <>
       {showBooking ? <ListingMobileBookingBar amount={listing.price} currency={listing.currency} numberLoc={numberLoc} /> : null}
-      <article className={showBooking ? "pb-24 md:pb-0" : undefined}>
+      {canContact ? (
+        <ListingContactDock
+          listingId={listing.id}
+          whatsappHref={waOwnerHref}
+          telHref={telOwnerHref}
+          labelWhatsapp={t("contactWhatsapp")}
+          labelCall={t("contactCall")}
+        />
+      ) : null}
+      <article
+        className={
+          canContact ? "max-w-full overflow-x-hidden pb-40 max-md:pb-44 md:pb-0" : "max-w-full overflow-x-hidden"
+        }
+      >
         <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start lg:gap-10">
           <div className="min-w-0 space-y-10">
             <header>
@@ -136,45 +203,123 @@ export default async function ListingDetailPage(props: Props) {
                   </span>
                 ) : null}
                 {listing.plan === "featured" ? <Badge tone="accent">{t("featuredBadge")}</Badge> : null}
-                <VerifiedBadge label={t("reviewedBadge")} />
+                {showNewBadge ? (
+                  <div className="bg-blue-500 px-2 py-1 text-xs font-medium text-white rounded">{t("badgeNew")}</div>
+                ) : null}
+                {(listing.views ?? 0) >= SELF_MKT_VIEWS_HOT_BADGE_MIN ? (
+                  <span className="rounded-full bg-orange-100 px-2.5 py-1 text-xs font-bold text-orange-900 ring-1 ring-orange-200/80">
+                    {t("badgeHot")}
+                  </span>
+                ) : null}
+                {isVerifiedField ? (
+                  <div className="bg-green-600 px-2 py-1 text-xs font-medium text-white rounded">{t("verifiedBadge")}</div>
+                ) : null}
+                {photoQualityHighlight ? (
+                  <span className="rounded-full bg-emerald-100/90 px-2.5 py-1 text-xs font-bold text-emerald-900 ring-1 ring-emerald-200">
+                    {t("badgePhotoQuality")}
+                  </span>
+                ) : null}
+                {showTrustedHighlight ? (
+                  <div className="w-full basis-full text-sm text-green-600">{t("badgeTrustedListing")}</div>
+                ) : null}
+                {!syriaFlags.SYRIA_MVP ? <VerifiedBadge label={t("reviewedBadge")} /> : null}
               </div>
               <h1 className="mt-4 text-3xl font-bold tracking-tight text-[color:var(--darlink-text)] sm:text-4xl">{titleDisplay}</h1>
-              <p className="mt-2 text-[color:var(--darlink-text-muted)]">
-                {cityDisplay}
-                {areaDisplay ? ` · ${areaDisplay}` : ""}
+              <div className="mt-2 space-y-0.5 text-sm leading-relaxed text-[color:var(--darlink-text-muted)]">
+                {stateLine ? <p className="font-medium text-[color:var(--darlink-text)]">{stateLine}</p> : null}
+                {cityDisplay ? <p>{cityDisplay}</p> : null}
+                {areaDisplay ? <p>{areaDisplay}</p> : null}
+                {listing.addressDetails?.trim() ? <p className="whitespace-pre-wrap">{listing.addressDetails.trim()}</p> : null}
+              </div>
+              <p className="mt-3 text-2xl font-bold tabular-nums text-[color:var(--darlink-text)] lg:hidden">
+                {money(listing.price, listing.currency, numberLoc)}
               </p>
             </header>
 
             <PropertyImageGallery images={images} title={titleDisplay} />
 
-            <Card className="border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface-muted)]/50 p-5 shadow-[var(--darlink-shadow-sm)]">
-              <p className="text-sm leading-relaxed text-[color:var(--darlink-text)]">{t("trustNotice")}</p>
-            </Card>
-
-            <section>
-              <h2 className="text-lg font-semibold text-[color:var(--darlink-text)]">{t("description")}</h2>
-              <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-[color:var(--darlink-text-muted)]">
-                {displayDescription}
+            <div className="min-w-0 max-w-full space-y-2">
+              {showAfterPostShare ? (
+                <ListingPostSuccessNudge>
+                  <ListingShareActions
+                    listingId={id}
+                    shareTitle={titleDisplay}
+                    sharePriceLine={sharePriceLine}
+                    shareCity={cityDisplay ?? undefined}
+                  />
+                </ListingPostSuccessNudge>
+              ) : (
+                <ListingShareActions
+                  listingId={id}
+                  shareTitle={titleDisplay}
+                  sharePriceLine={sharePriceLine}
+                  shareCity={cityDisplay ?? undefined}
+                />
+              )}
+              <p className="text-xs text-[color:var(--darlink-text-muted)]" aria-live="polite">
+                {t("leadTapsLine", { count: (listing.whatsappClicks ?? 0) + (listing.phoneClicks ?? 0) })}
               </p>
-            </section>
+            </div>
 
-            {amenities.length > 0 ? (
+            <div className="min-w-0 max-w-full">
+              <ListingTrustPanel listingId={listing.id} phoneRaw={ownerPhone} isOwner={isOwner} />
+            </div>
+
+            <div className="min-w-0 max-w-full">
+              <ListingTrustAiSection title={t("aiTrustTipsTitle")} lines={aiTrustLines} />
+            </div>
+
+            {!syriaFlags.SYRIA_MVP ? (
+              <Card className="border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface-muted)]/50 p-5 shadow-[var(--darlink-shadow-sm)]">
+                <p className="text-sm leading-relaxed text-[color:var(--darlink-text)]">{t("trustNotice")}</p>
+              </Card>
+            ) : null}
+
+            {displayDescription.trim() !== "—" ? (
+              <section>
+                <h2 className="text-lg font-semibold text-[color:var(--darlink-text)]">{t("description")}</h2>
+                <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-[color:var(--darlink-text-muted)]">
+                  {displayDescription}
+                </p>
+              </section>
+            ) : null}
+
+            {amenityDisplayOrder.length > 0 ? (
               <section>
                 <h2 className="text-lg font-semibold text-[color:var(--darlink-text)]">{t("amenities")}</h2>
-                <ul className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                  {amenities.map((a) => (
-                    <li
-                      key={a}
-                      className="flex items-center gap-2 rounded-[var(--darlink-radius-lg)] border border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface)] px-3 py-2 text-sm text-[color:var(--darlink-text)]"
-                    >
-                      <span className="text-[color:var(--darlink-accent)]" aria-hidden>
-                        ·
-                      </span>
-                      {a}
-                    </li>
-                  ))}
+                <ul
+                  className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3 [dir=rtl]:text-right"
+                  dir={locale.startsWith("ar") ? "rtl" : "ltr"}
+                >
+                  {amenityDisplayOrder.map((key) => {
+                    const { primary, secondary } = labelSyriaAmenityForListing(key, locale);
+                    return (
+                      <li
+                        key={key}
+                        className="flex items-start gap-2 rounded-[var(--darlink-radius-lg)] border border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface)] px-3 py-2 text-sm text-[color:var(--darlink-text)]"
+                      >
+                        <span className="shrink-0 text-base leading-tight text-emerald-700" aria-hidden>
+                          ✔
+                        </span>
+                        <span>
+                          <span className="font-medium leading-snug">{primary}</span>
+                          {secondary ? (
+                            <span className="mt-0.5 block text-xs text-[color:var(--darlink-text-muted)]">{secondary}</span>
+                          ) : null}
+                        </span>
+                      </li>
+                    );
+                  })}
                 </ul>
               </section>
+            ) : null}
+
+            {listing.type === "BNHUB" ? (
+              <ShortStayAvailabilityCalendar
+                listingId={listing.id}
+                initialBooked={Array.isArray(listing.availability) ? listing.availability : []}
+                isOwner={isOwner}
+              />
             ) : null}
 
             <section className="rounded-[var(--darlink-radius-2xl)] border border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface)] p-5 shadow-[var(--darlink-shadow-sm)]">
@@ -227,11 +372,34 @@ export default async function ListingDetailPage(props: Props) {
               <p className="mt-1 text-xs text-[color:var(--darlink-text-muted)]">{t("hostHint")}</p>
             </Card>
 
-            {listing.type === "BNHUB" && !syriaFlags.BNHUB_ENABLED ? (
+            {f1PendingPayment && isOwner ? (
+              <Card className="border-amber-200/80 bg-amber-50/90 p-4 shadow-[var(--darlink-shadow-sm)]">
+                <p className="text-sm font-semibold text-amber-950">{t("f1PaymentPending")}</p>
+                <p className="mt-1 text-xs text-amber-900/90">{t("f1PaymentPendingHint")}</p>
+              </Card>
+            ) : null}
+            {showMakeFeatured ? (
+              <MakeFeaturedCta
+                listingId={listing.id}
+                currentPlan={listing.plan}
+                contact={monetizationContact}
+                featuredDurationDays={syriaPlatformConfig.monetization.featuredDurationDays}
+              />
+            ) : null}
+            {isOwner && (listing.plan === "featured" || listing.plan === "premium") ? (
+              <Card className="border-[color:var(--darlink-sand)]/30 bg-amber-50/30 p-4 shadow-[var(--darlink-shadow-sm)]">
+                <p className="text-sm font-medium text-[color:var(--darlink-text)]">
+                  {listing.plan === "featured" ? t("makeFeaturedActiveFeatured") : t("makeFeaturedActiveLuxury")}
+                </p>
+                <p className="mt-1 text-xs text-[color:var(--darlink-text-muted)]">{t("makeFeaturedActiveHint")}</p>
+              </Card>
+            ) : null}
+
+            {listing.type === "BNHUB" && !showBnhubInUi ? (
               <Card className="border-[color:var(--darlink-border)] p-5 shadow-[var(--darlink-shadow-sm)]">
                 <p className="text-sm font-medium text-[color:var(--darlink-text)]">{t("bnhubDisabledShort")}</p>
               </Card>
-            ) : listing.type === "BNHUB" && syriaFlags.BNHUB_ENABLED ? (
+            ) : listing.type === "BNHUB" && showBnhubInUi ? (
               <Card className="p-6 shadow-[var(--darlink-shadow-md)]" id="darlink-booking">
                 <h2 className="text-lg font-semibold text-[color:var(--darlink-text)]">{t("bnhubTitle")}</h2>
                 <p className="mt-1 text-sm text-[color:var(--darlink-text-muted)]">
@@ -293,20 +461,17 @@ export default async function ListingDetailPage(props: Props) {
                   </form>
                 ) : null}
               </Card>
-            ) : listing.type !== "BNHUB" ? (
-              <Card className="border-[color:var(--darlink-border)] p-5 shadow-[var(--darlink-shadow-sm)]">
-                <p className="text-sm text-[color:var(--darlink-text-muted)]">{t("contactHint")}</p>
-                <a
-                  href={interestWhatsAppHref}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="hadiah-btn-primary mt-4 flex w-full min-h-11 items-center justify-center rounded-[var(--darlink-radius-xl)] px-4 py-2.5 text-sm font-semibold"
-                >
-                  {t("whatsappCta")}
-                </a>
-                <p className="mt-2 text-xs text-[color:var(--darlink-text-muted)]">{t("whatsappCtaSub")}</p>
-              </Card>
+            ) : showContactAside ? (
+              <ListingOwnerContactCard
+                listingId={listing.id}
+                waOwnerHref={waOwnerHref}
+                telOwnerHref={telOwnerHref}
+                canContact={canContact}
+                ownerHasPhone={Boolean(ownerPhone)}
+              />
             ) : null}
+            <p className="text-sm font-medium text-[color:var(--darlink-text)]">{t("shareCtaAside")}</p>
+            <p className="text-sm leading-relaxed text-[color:var(--darlink-text-muted)]">{t("trustVerifyPayment")}</p>
           </aside>
         </div>
       </article>

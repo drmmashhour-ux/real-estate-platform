@@ -7,6 +7,10 @@ import { pickListingTitle } from "@/lib/listing-localized";
 import { analyzeListingQuality } from "@/lib/listing-quality";
 import { DarlinkSellerAutopilotHints } from "@/components/dashboard/DarlinkSellerAutopilotHints";
 import { buildWhatsAppSendUrl, getSyriaPublicOrigin } from "@/lib/syria-whatsapp";
+import { buildListingShareMessage } from "@/lib/ai/shareMessage";
+import { backfillLocalizedPropertyShape } from "@/lib/property-legacy-compat";
+import { getLocalizedPropertyCity } from "@/lib/property-localization";
+import { SelfMarketingPanel } from "@/components/dashboard/SelfMarketingPanel";
 
 type PageProps = { searchParams: Promise<Record<string, string | string[] | undefined>> };
 
@@ -14,6 +18,11 @@ function planLabelKey(plan: string): "planFree" | "planFeatured" | "planPremium"
   if (plan === "featured") return "planFeatured";
   if (plan === "premium") return "planPremium";
   return "planFree";
+}
+
+function tierKey(plan: string): "statusNormal" | "statusFeatured" {
+  if (plan === "free") return "statusNormal";
+  return "statusFeatured";
 }
 
 export default async function DashboardListingsPage({ searchParams }: PageProps) {
@@ -25,26 +34,41 @@ export default async function DashboardListingsPage({ searchParams }: PageProps)
   const user = await requireSessionUser();
 
   const origin = getSyriaPublicOrigin();
-  const siteLink = origin ? `${origin}/${locale}/buy` : `/${locale}/buy`;
-  const shareText = locale.startsWith("ar")
-    ? `شارك إعلانك الآن — تصفح العقار على هدية لينك: ${siteLink}`
-    : `Share your listing — browse on Hadiah Link: ${siteLink}`;
-  const shareWhatsAppHref = buildWhatsAppSendUrl(shareText);
 
   const listings = await prisma.syriaProperty.findMany({
     where: { ownerId: user.id },
     orderBy: { createdAt: "desc" },
   });
 
+  /** After publish redirect (`?posted=1`): share the **listing URL**, not /buy — same copy as public listing share. */
+  const newest = listings[0];
+  const postShareWhatsappHref =
+    showShareCta && newest
+      ? buildWhatsAppSendUrl(
+          buildListingShareMessage({
+            title: pickListingTitle(newest, locale),
+            priceLine: money(newest.price, newest.currency, numberLoc),
+            url: (() => {
+              const path = `/${locale}/listing/${newest.id}`;
+              const base = origin?.replace(/\/$/, "");
+              return base ? `${base}${path}` : path;
+            })(),
+            locale,
+            city: getLocalizedPropertyCity(backfillLocalizedPropertyShape(newest), locale) || newest.city,
+          }),
+        )
+      : "";
+
   return (
     <div className="space-y-4">
-      {showShareCta ? (
+      <SelfMarketingPanel listings={listings} />
+      {showShareCta && postShareWhatsappHref ? (
         <div className="rounded-2xl border border-emerald-200 bg-emerald-50/90 p-4 sm:p-5">
           <p className="text-sm font-semibold text-emerald-950">{t("postShareTitle")}</p>
           <p className="mt-1 text-sm text-emerald-900/90">{t("postShareBody")}</p>
           <div className="mt-4 flex flex-col gap-2 min-[400px]:flex-row min-[400px]:items-center">
             <a
-              href={shareWhatsAppHref}
+              href={postShareWhatsappHref}
               target="_blank"
               rel="noreferrer"
               className="hadiah-btn-primary inline-flex min-h-11 w-full min-w-0 items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold min-[400px]:w-auto"
@@ -87,6 +111,10 @@ export default async function DashboardListingsPage({ searchParams }: PageProps)
                 <th className="px-4 py-3">{t("tableCity")}</th>
                 <th className="px-4 py-3">{t("tablePrice")}</th>
                 <th className="px-4 py-3">{t("tableQuality")}</th>
+                <th className="px-4 py-3">{t("tableTier")}</th>
+                <th className="px-4 py-3">{t("tableViews")}</th>
+                <th className="px-4 py-3">{t("tableLeadsWhatsapp")}</th>
+                <th className="px-4 py-3">{t("tableLeadsPhone")}</th>
                 <th className="px-4 py-3">{t("tablePlan")}</th>
                 <th className="px-4 py-3">{t("tableStatus")}</th>
               </tr>
@@ -115,8 +143,14 @@ export default async function DashboardListingsPage({ searchParams }: PageProps)
                       </p>
                     ) : null}
                   </td>
-                  <td className="px-4 py-3 text-[color:var(--darlink-text)]">{t(planLabelKey(l.plan))}</td>
-                  <td className="px-4 py-3 text-[color:var(--darlink-text)]">{l.status}</td>
+                  <td className="px-4 py-3 text-[color:var(--darlink-text)]">{t(tierKey(l.plan))}</td>
+                  <td className="px-4 py-3 tabular-nums text-[color:var(--darlink-text)]">
+                    {t("tableViewsValue", { count: l.views ?? 0 })}
+                  </td>
+                  <td className="px-4 py-3 tabular-nums text-[color:var(--darlink-text)]">{l.whatsappClicks ?? 0}</td>
+                  <td className="px-4 py-3 tabular-nums text-[color:var(--darlink-text)]">{l.phoneClicks ?? 0}</td>
+                  <td className="px-4 py-3 text-[color:var(--darlink-text)] text-xs">{t(planLabelKey(l.plan))}</td>
+                  <td className="px-4 py-3 text-[color:var(--darlink-text)] text-xs">{l.status}</td>
                 </tr>
               );
               })}

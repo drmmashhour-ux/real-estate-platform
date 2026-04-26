@@ -9,9 +9,12 @@ import { cn } from "@/lib/cn";
 export function MobileNavMenu({
   signedIn,
   isAdmin,
+  showBnhub = true,
 }: {
   signedIn: boolean;
   isAdmin: boolean;
+  /** Stays (BNHub) — hidden in Syria MVP. */
+  showBnhub?: boolean;
 }) {
   const t = useTranslations("nav");
   const [open, setOpen] = useState(false);
@@ -59,13 +62,15 @@ export function MobileNavMenu({
             >
               {t("rent")}
             </Link>
-            <Link
-              href="/bnhub/stays"
-              className="rounded-[var(--darlink-radius-md)] px-3 py-3 text-sm font-medium hover:bg-white/10"
-              onClick={() => setOpen(false)}
-            >
-              {t("bnhub")}
-            </Link>
+            {showBnhub ? (
+              <Link
+                href="/bnhub/stays"
+                className="rounded-[var(--darlink-radius-md)] px-3 py-3 text-sm font-medium hover:bg-white/10"
+                onClick={() => setOpen(false)}
+              >
+                {t("bnhub")}
+              </Link>
+            ) : null}
             <Link
               href="/sell"
               className="hadiah-btn-primary w-full rounded-[var(--darlink-radius-lg)] px-3 py-3 text-center text-sm font-semibold"

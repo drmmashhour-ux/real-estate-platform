@@ -1,6 +1,8 @@
 import { getLocale, getTranslations } from "next-intl/server";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { BrowseExperienceClient } from "@/components/browse/BrowseExperienceClient";
+import { BrowseMvpExperienceClient } from "@/components/browse/BrowseMvpExperienceClient";
+import { syriaFlags } from "@/lib/platform-flags";
 import { trackSyriaGrowthEvent } from "@/lib/growth-events";
 import { parseUtmFromSearchParams } from "@/lib/utm";
 import { flattenSearchParams } from "@/lib/property-search";
@@ -52,13 +54,17 @@ export default async function BuyPage(props: Props) {
   return (
     <div className="space-y-8">
       <SectionHeading title={t("title")} description={t("subtitle")} />
-      <BrowseExperienceClient
-        surface="sale"
-        basePath="/buy"
-        locale={locale}
-        initialQs={initialQs}
-        initialResult={initialResult}
-      />
+      {syriaFlags.SYRIA_MVP ? (
+        <BrowseMvpExperienceClient surface="sale" basePath="/buy" locale={locale} initialResult={initialResult} />
+      ) : (
+        <BrowseExperienceClient
+          surface="sale"
+          basePath="/buy"
+          locale={locale}
+          initialQs={initialQs}
+          initialResult={initialResult}
+        />
+      )}
     </div>
   );
 }

@@ -19,6 +19,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
         </div>
         <div className="flex flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <nav className="flex flex-wrap gap-2" aria-label="Dashboard">
+            <Link href="/dashboard" className={navLink}>
+              {t("navHome")}
+            </Link>
             <Link href="/dashboard/listings" className={navLink}>
               {t("navListings")}
             </Link>

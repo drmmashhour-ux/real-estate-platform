@@ -2,7 +2,7 @@
  * Unified marketplace snapshot — read-only Prisma aggregates; deterministic; never throws (returns safe empty snapshot).
  */
 
-import type { Prisma, SyriaPropertyStatus, SyriaPropertyType } from "@/generated/prisma";
+import type { SyriaPropertyStatus, SyriaPropertyType } from "@/generated/prisma";
 import { prisma } from "@/lib/db";
 import { analyzeListingQuality } from "@/lib/listing-quality";
 import type {
@@ -90,8 +90,9 @@ export async function buildMarketplaceSnapshot(params: BuildMarketplaceSnapshotP
       titleEn: string | null;
       descriptionAr: string;
       descriptionEn: string | null;
-      images: unknown;
-      amenities: unknown;
+      images: string[];
+      amenities: string[];
+      verified: boolean;
     }[] = [];
 
     const windowStart = new Date(Date.now() - 30 * 86400000);
@@ -177,6 +178,7 @@ export async function buildMarketplaceSnapshot(params: BuildMarketplaceSnapshotP
             descriptionEn: true,
             images: true,
             amenities: true,
+            verified: true,
           },
         })
         .catch(() => null);
@@ -204,6 +206,7 @@ export async function buildMarketplaceSnapshot(params: BuildMarketplaceSnapshotP
             descriptionEn: true,
             images: true,
             amenities: true,
+            verified: true,
           },
         })
         .catch(() => []);
@@ -218,8 +221,8 @@ export async function buildMarketplaceSnapshot(params: BuildMarketplaceSnapshotP
           titleEn: p.titleEn,
           descriptionAr: p.descriptionAr,
           descriptionEn: p.descriptionEn,
-          images: p.images as Prisma.JsonValue,
-          amenities: p.amenities as Prisma.JsonValue,
+          images: p.images,
+          amenities: Array.isArray(p.amenities) ? p.amenities : [],
           city: p.city,
         }).score;
       } catch {

@@ -11,7 +11,7 @@
 }
 
 html {
-  scroll-behavior: smooth;
+  scroll-behavior: auto;
 }
 
 body {
@@ -81,7 +81,7 @@ html[lang="en"] body {
 .hadiah-btn-primary {
   background-color: var(--hadiah-btn);
   color: #fff;
-  box-shadow: var(--darlink-shadow-sm);
+  box-shadow: none;
 }
 .hadiah-btn-primary:hover {
   background-color: var(--hadiah-btn-hover);
@@ -95,7 +95,7 @@ html[lang="en"] body {
 .hadiah-btn-premium {
   background-color: var(--hadiah-btn);
   color: #fff;
-  box-shadow: 0 0 0 1px var(--hadiah-btn-premium-ring), var(--darlink-shadow-sm);
+  box-shadow: 0 0 0 1px var(--hadiah-btn-premium-ring);
 }
 .hadiah-btn-premium:hover {
   background-color: var(--hadiah-btn-hover);
@@ -106,5 +106,22 @@ html[lang="en"] body {
   border-radius: var(--darlink-radius-2xl);
   border: 1px solid var(--darlink-border);
   background: var(--darlink-surface);
-  box-shadow: var(--darlink-shadow-md);
+  box-shadow: var(--darlink-shadow-sm);
+}
+
+/* Secondary / outline (no fill) */
+.hadiah-btn-secondary {
+  color: var(--darlink-text);
+  background: transparent;
+  border: 1px solid var(--darlink-border);
+  box-shadow: none;
+}
+.hadiah-btn-secondary:hover {
+  background: var(--darlink-surface-muted);
+}
+
+/* Defer off-screen paint (homepage sections below the fold) — no JS */
+.hadiah-below-fold {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 360px;
 }

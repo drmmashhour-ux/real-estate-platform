@@ -1,17 +1,19 @@
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { getSessionUser } from "@/lib/auth";
+import { isBnhubInSyriaUI } from "@/lib/platform-flags";
 
 /** Fixed bottom navigation — visible on small screens only; Hadiah Link shell only. */
 export async function DarlinkMobileNav() {
   const t = await getTranslations("nav");
   const user = await getSessionUser();
+  const showBnhub = isBnhubInSyriaUI();
 
   const items: { href: string; label: string }[] = [
     { href: "/", label: t("home") },
     { href: "/buy", label: t("buy") },
     { href: "/rent", label: t("rent") },
-    { href: "/bnhub/stays", label: t("bnhub") },
+    ...(showBnhub ? [{ href: "/bnhub/stays", label: t("bnhub") }] : []),
     user
       ? { href: "/dashboard", label: t("dashboard") }
       : { href: "/login", label: t("signIn") },

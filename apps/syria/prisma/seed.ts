@@ -38,7 +38,7 @@ async function main() {
       type: "SALE" as const,
       status: "PUBLISHED" as const,
       isFeatured: true,
-      amenities: ["Parking", "Garden", "Backup power"],
+      amenities: ["wifi", "furnished", "electricity_24h"],
     },
     {
       titleAr: "شقة مطلة على البحر — اللاذقية",
@@ -71,7 +71,7 @@ async function main() {
       type: "BNHUB" as const,
       status: "PUBLISHED" as const,
       isFeatured: false,
-      amenities: ["Wi-Fi", "Kitchenette"],
+      amenities: ["wifi", "hot_water_24h", "furnished"],
     },
   ];
 

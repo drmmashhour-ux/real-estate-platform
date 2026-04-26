@@ -19,24 +19,34 @@ export type SerializedBrowseListing = {
   titleEn: string | null;
   descriptionAr: string;
   descriptionEn: string | null;
+  state: string;
+  governorate: string | null;
   city: string;
   cityAr: string | null;
   cityEn: string | null;
   area: string | null;
   districtAr: string | null;
   districtEn: string | null;
+  addressDetails: string | null;
   price: string;
   currency: string;
   type: string;
   isFeatured: boolean;
   plan: string;
-  images: unknown;
+  images: string[];
   bedrooms: number | null;
   bathrooms: number | null;
   guestsMax: number | null;
-  amenities: unknown;
+  amenities: string[];
   latitude: number | null;
   longitude: number | null;
+  listingVerified: boolean;
+  /** SY-11 marketplace trust flag */
+  verified: boolean;
+  /** ISO */
+  createdAt: string;
+  /** Page views (simple counter) */
+  views: number;
 };
 
 export type SearchPropertiesResult = {
@@ -60,12 +70,15 @@ function serialize(p: SyriaProperty): SerializedBrowseListing {
     titleEn: p.titleEn,
     descriptionAr: p.descriptionAr,
     descriptionEn: p.descriptionEn,
+    state: p.state,
+    governorate: p.governorate ?? null,
     city: p.city,
     cityAr: p.cityAr ?? null,
     cityEn: p.cityEn ?? null,
     area: p.area,
     districtAr: p.districtAr ?? null,
     districtEn: p.districtEn ?? null,
+    addressDetails: p.addressDetails ?? null,
     price: p.price.toString(),
     currency: p.currency,
     type: p.type,
@@ -78,6 +91,10 @@ function serialize(p: SyriaProperty): SerializedBrowseListing {
     amenities: p.amenities,
     latitude: p.latitude ?? null,
     longitude: p.longitude ?? null,
+    listingVerified: p.listingVerified,
+    verified: p.verified,
+    createdAt: p.createdAt.toISOString(),
+    views: p.views,
   };
 }
 
@@ -107,6 +124,8 @@ export async function searchProperties(
     ? ((() => {
         const allow = new Set([
           "city",
+          "state",
+          "features",
           "minPrice",
           "maxPrice",
           "page",

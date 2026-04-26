@@ -299,8 +299,12 @@ export function BrowseExperienceClient(props: {
         <div className={cn("min-w-0 space-y-4", mapMode ? "[dir=rtl]:lg:col-start-1" : "")}>
           {bundle.items.length === 0 && !loading ? (
             <div className="rounded-[var(--darlink-radius-2xl)] border border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface-muted)]/40 px-6 py-16 text-center">
-              <p className="text-lg font-semibold text-[color:var(--darlink-text)]">{t("emptyResultsTitle")}</p>
-              <p className="mt-2 text-sm text-[color:var(--darlink-text-muted)]">{t("emptyResultsHint")}</p>
+              <p className="text-lg font-semibold text-[color:var(--darlink-text)]">
+                {hasFilters ? t("emptyNoMatchTitle") : t("emptyResultsTitle")}
+              </p>
+              <p className="mt-2 text-sm text-[color:var(--darlink-text-muted)]">
+                {hasFilters ? t("emptyNoMatchHint") : t("emptyResultsHint")}
+              </p>
               {hasFilters ? (
                 <Button type="button" variant="secondary" className="mt-6" onClick={clearAll}>
                   {t("clearFilters")}

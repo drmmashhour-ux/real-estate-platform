@@ -16,6 +16,7 @@
     "prisma:migrate": "prisma migrate dev --schema=./prisma/schema.prisma",
     "prisma:push": "prisma db push --schema=./prisma/schema.prisma",
     "db:seed": "prisma db seed --schema=./prisma/schema.prisma",
+    "seed:g2": "tsx scripts/seed-g2-sprint-listings.ts",
     "brand:rasters": "node scripts/generate-brand-rasters.mjs",
     "check:isolation": "tsx ../../scripts/check-isolation.ts",
     "check:cross-contamination": "pnpm exec tsx ../../scripts/check-cross-contamination.ts",

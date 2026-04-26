@@ -160,6 +160,8 @@ model SyriaProperty {
   price            Decimal             @db.Decimal(14, 2)
   currency         String              @default("SYP")
   type             SyriaPropertyType
+  /// Syrian governorate — English label from `SYRIA_STATES` (structured filter + display).
+  state            String              @default("") @map("state")
   /// Canonical governorate `name_en` from `syriaLocations` (search + display).
   governorate      String?             @map("governorate")
   /// Legacy search key: English city name from catalog (kept for filters and URL).
@@ -176,18 +178,33 @@ model SyriaProperty {
   /// Google place name or user text when a place was used to set the pin (optional).
   placeName        String?             @map("place_name")
   addressText      String?             @map("address_text") @db.Text
+  /// Free-form location notes (optional; no street / GPS required).
+  addressDetails   String?             @map("address_details") @db.Text
   latitude         Float?              @map("latitude")
   longitude        Float?              @map("longitude")
-  images           Json                @default("[]")
-  amenities        Json                @default("[]")
+  /// Data URLs or external URLs (MVP: client-compressed base64; max 5 in quick post).
+  images           String[]            @default([]) @map("images")
+  /// Feature keys from `SYRIA_AMENITIES` (e.g. `wifi`, `furnished`).
+  amenities        String[]            @default([]) @map("amenities")
+  /// Simple public view counter; incremented on published listing page load.
+  views            Int                 @default(0) @map("views")
+  /// Leads: taps on owner WhatsApp (listing contact), best-effort increment.
+  whatsappClicks   Int                 @default(0) @map("whatsapp_clicks")
+  /// Leads: taps on owner phone (tel), best-effort increment.
+  phoneClicks      Int                 @default(0) @map("phone_clicks")
+  /// Short-stay (BNHUB): `YYYY-MM-DD` dates that are **booked** / not available. Absent dates = available.
+  availability     String[]            @default([]) @map("availability")
   ownerId          String              @map("owner_id")
   owner            SyriaAppUser        @relation("PropertyOwner", fields: [ownerId], references: [id], onDelete: Cascade)
   status           SyriaPropertyStatus @default(DRAFT)
-  /// Effective tier (updated on publish from verified one-time payments; drives sort + badges).
+  /// Marketing tier: `free` (default) and `featured` (manual admin flag or verified payment). `premium` is legacy/optional.
+  /// Browse sort: plan descending → featured listings surface before free.
   plan             SyriaListingPlan    @default(free) @map("plan")
   fraudFlag        Boolean             @default(false) @map("fraud_flag")
   /// Admin/manual "Verified" — UI badge only; no auto logic.
   listingVerified  Boolean             @default(false) @map("listing_verified")
+  /// SY-11: explicit trust / marketplace verification (operator-set).
+  verified         Boolean             @default(false) @map("verified")
   isFeatured       Boolean             @default(false) @map("is_featured")
   featuredUntil    DateTime?           @map("featured_until")
   featuredPriority Int                 @default(0) @map("featured_priority")
@@ -200,13 +217,16 @@ model SyriaProperty {
   createdAt        DateTime            @default(now()) @map("created_at")
   updatedAt        DateTime            @updatedAt @map("updated_at")
 
-  bookings           SyriaBooking[]
-  listingPayments    SyriaListingPayment[]
-  inquiries          SyriaInquiry[]
-  featuredPlacements SyriaFeaturedPlacement[]
-  autonomyRecommendations SyriaAutonomyRecommendation[]
+  bookings                  SyriaBooking[]
+  listingPayments           SyriaListingPayment[]
+  inquiries                 SyriaInquiry[]
+  featuredPlacements        SyriaFeaturedPlacement[]
+  autonomyRecommendations   SyriaAutonomyRecommendation[]
+  paymentRequestsF1         SyriaPaymentRequest[]   @relation("PropertyPaymentRequest")
+  listingFinanceF1          SyriaListingFinance?   @relation("PropertyListingFinance")
 
   @@index([city])
+  @@index([state])
   @@index([governorate])
   @@index([type])
   @@index([status])
@@ -293,6 +313,38 @@ model SyriaListingPayment {
   @@index([ownerId])
   @@index([status])
   @@map("syria_listing_payments")
+}
+
+/// F1: manual باقة مميز/فاخر — request → WhatsApp proof → admin confirm.
+model SyriaPaymentRequest {
+  id         String   @id @default(uuid()) @db.Uuid
+  listingId  String   @map("listing_id")
+  listing    SyriaProperty @relation("PropertyPaymentRequest", fields: [listingId], references: [id], onDelete: Cascade)
+  /// "featured" | "premium" (String for stable API contract).
+  plan       String
+  amount     Int
+  currency   String   @default("SYP")
+  /// pending | confirmed | rejected
+  status     String   @default("pending")
+  method     String?  // e.g. cash | bank | wallet
+  note       String?  @db.Text
+  createdAt  DateTime @default(now()) @map("created_at")
+  confirmedAt DateTime? @map("confirmed_at")
+
+  @@index([listingId, status])
+  @@index([status, createdAt])
+  @@map("syria_payment_requests")
+}
+
+/// F1: one row per listing — counters for support / ops.
+model SyriaListingFinance {
+  listingId      String  @id @map("listing_id")
+  listing        SyriaProperty @relation("PropertyListingFinance", fields: [listingId], references: [id], onDelete: Cascade)
+  totalRequests  Int     @default(0) @map("total_requests")
+  totalConfirmed Int     @default(0) @map("total_confirmed")
+  lastStatus     String? @map("last_status")
+
+  @@map("syria_listing_finance")
 }
 
 /// Paid visibility placement (zones + ordering); admin-controlled.
