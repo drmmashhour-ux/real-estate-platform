@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { assertDarlinkRuntimeEnv } from "@/lib/guard";
 import { requireF1Admin } from "@/lib/payment-f1-admin";
-import { prisma } from "@/lib/db";
+import { runF1Reject } from "@/lib/payment-f1-service";
+import { revalidateF1ListingOnly } from "@/lib/payment-f1-revalidate";
 
 export async function POST(req: Request) {
   const gate = await requireF1Admin(req);
@@ -29,33 +30,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "missing_request_id" }, { status: 400 });
   }
 
-  const row = await prisma.syriaPaymentRequest.findUnique({ where: { id: requestId } });
-  if (!row) {
+  const out = await runF1Reject(requestId, reason);
+  if (out.type === "not_found") {
     return NextResponse.json({ ok: false, error: "not_found" }, { status: 404 });
   }
-  if (row.status !== "pending") {
-    return NextResponse.json({ ok: true, already: true, status: row.status });
+  if (out.type === "already") {
+    return NextResponse.json({ ok: true, already: true, status: out.status });
   }
 
-  const note = reason ? `rejected: ${reason}` : "rejected";
-  const mergedNote = row.note ? `${row.note}\n${note}` : note;
-
-  await prisma.$transaction([
-    prisma.syriaPaymentRequest.update({
-      where: { id: requestId },
-      data: { status: "rejected", note: mergedNote },
-    }),
-    prisma.syriaListingFinance.upsert({
-      where: { listingId: row.listingId },
-      create: {
-        listingId: row.listingId,
-        totalRequests: 0,
-        totalConfirmed: 0,
-        lastStatus: "rejected",
-      },
-      update: { lastStatus: "rejected" },
-    }),
-  ]);
-
+  revalidateF1ListingOnly(out.listingId);
   return NextResponse.json({ ok: true });
 }

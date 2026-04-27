@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { assertDarlinkRuntimeEnv } from "@/lib/guard";
 import { persistQuickListing } from "@/lib/persist-quick-listing";
 import { revalidateAllLocaleHomePages } from "@/lib/revalidate-syria-home";
+import { parseMarketplacePair } from "@/lib/marketplace-categories";
 
 export async function POST(req: Request) {
   try {
@@ -37,6 +38,17 @@ export async function POST(req: Request) {
 
   const amenitiesRaw = Array.isArray(o.amenities) ? o.amenities.filter((x): x is string => typeof x === "string") : undefined;
   const descriptionAr = typeof o.description === "string" ? o.description : undefined;
+  const catIn = typeof o.category === "string" ? o.category : undefined;
+  const subIn = typeof o.subcategory === "string" ? o.subcategory : undefined;
+  if (subIn && !catIn) {
+    return NextResponse.json({ ok: false, error: "invalid_category" }, { status: 400 });
+  }
+  if (catIn) {
+    const pair = parseMarketplacePair(catIn, subIn);
+    if (!pair) {
+      return NextResponse.json({ ok: false, error: "invalid_category" }, { status: 400 });
+    }
+  }
 
   const out = await persistQuickListing({
     title,
@@ -47,12 +59,15 @@ export async function POST(req: Request) {
     price,
     phoneRaw: phone,
     type: o.type === "RENT" ? "RENT" : "SALE",
+    category: catIn,
+    subcategory: subIn,
     images: Array.isArray(o.images)
       ? o.images.filter((x): x is string => typeof x === "string" && x.length > 0).slice(0, 5)
       : undefined,
     amenities: amenitiesRaw,
     descriptionAr,
     source: "quick_post",
+    isDirect: o.isDirect !== false,
   });
 
   if (!out.ok) {

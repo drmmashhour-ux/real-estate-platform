@@ -5,6 +5,7 @@ import { ListingCard } from "@/components/ListingCard";
 import { HeroSegmentedSearch } from "@/components/HeroSegmentedSearch";
 import { isBnhubInSyriaUI, syriaFlags } from "@/lib/platform-flags";
 import { Card } from "@/components/ui/Card";
+import { HomeCategoryGrid } from "@/components/home/HomeCategoryGrid";
 import type { SyriaProperty } from "@/generated/prisma";
 
 export default async function HomePage() {
@@ -19,7 +20,7 @@ export default async function HomePage() {
     const [rows, count] = await prisma.$transaction([
       prisma.syriaProperty.findMany({
         where: { status: "PUBLISHED", fraudFlag: false },
-        orderBy: { createdAt: "desc" },
+        orderBy: [{ isDirect: "desc" }, { plan: "desc" }, { createdAt: "desc" }],
         take: 12,
       }),
       prisma.syriaProperty.count({
@@ -66,15 +67,28 @@ export default async function HomePage() {
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--darlink-sand)]">{t("metaLabel")}</p>
           <h1 className="mt-3 max-w-2xl text-3xl font-bold leading-tight sm:text-4xl lg:text-5xl">{t("title")}</h1>
           <p className="mt-4 max-w-xl text-sm leading-relaxed text-white/80 sm:text-base">{t("heroSubtitle")}</p>
-          <p
-            className={`mt-2 text-sm font-medium text-[color:var(--darlink-sand)] ${
-              publishedCount > 0 ? "text-base font-bold sm:text-lg" : ""
-            }`}
+          <div
+            className={
+              publishedCount > 0
+                ? "mt-3 inline-flex max-w-full rounded-full border border-amber-400/40 bg-amber-500/15 px-4 py-2 ring-1 ring-amber-500/20"
+                : "mt-2"
+            }
           >
-            {t("listingCountLine", { count: publishedCount })}
-          </p>
+            <p
+              className={`text-sm font-medium text-[color:var(--darlink-sand)] ${
+                publishedCount > 0 ? "text-base font-bold sm:text-lg" : ""
+              }`}
+            >
+              {t("listingCountLine", { count: publishedCount })}
+            </p>
+          </div>
           <div className="mt-10 max-w-2xl">
             <HeroSegmentedSearch showStaysTab={showBnhubHome} />
+          </div>
+          <div className="mt-10 max-w-3xl text-[color:var(--darlink-text)]">
+            <div className="rounded-[var(--darlink-radius-2xl)] border border-white/10 bg-white/5 p-4 sm:p-5">
+              <HomeCategoryGrid />
+            </div>
           </div>
           <div className="darlink-rtl-row mt-8 flex w-full flex-col gap-3 min-[480px]:flex-row min-[480px]:flex-wrap">
             <Link
@@ -206,16 +220,16 @@ export default async function HomePage() {
       <section className="hadiah-below-fold border-y border-[color:var(--darlink-border)] py-10">
         <h2 className="text-center text-sm font-semibold uppercase tracking-[0.15em] text-[color:var(--darlink-text-muted)]">{t("trustStripTitle")}</h2>
         <ul className="mx-auto mt-6 grid max-w-3xl gap-3 text-center text-sm text-[color:var(--darlink-text)] sm:grid-cols-2 sm:text-start sm:text-base">
-          <li className="rounded-[var(--darlink-radius-xl)] border border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface)] px-4 py-3 shadow-[var(--darlink-shadow-sm)]">
+          <li className="rounded-[var(--darlink-radius-xl)] border border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface)] px-4 py-3">
             {t("trustStrip1")}
           </li>
-          <li className="rounded-[var(--darlink-radius-xl)] border border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface)] px-4 py-3 shadow-[var(--darlink-shadow-sm)]">
+          <li className="rounded-[var(--darlink-radius-xl)] border border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface)] px-4 py-3">
             {t("trustStrip2")}
           </li>
-          <li className="rounded-[var(--darlink-radius-xl)] border border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface)] px-4 py-3 shadow-[var(--darlink-shadow-sm)]">
+          <li className="rounded-[var(--darlink-radius-xl)] border border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface)] px-4 py-3">
             {t("trustStrip3")}
           </li>
-          <li className="rounded-[var(--darlink-radius-xl)] border border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface)] px-4 py-3 shadow-[var(--darlink-shadow-sm)]">
+          <li className="rounded-[var(--darlink-radius-xl)] border border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface)] px-4 py-3">
             {t("trustStrip4")}
           </li>
         </ul>

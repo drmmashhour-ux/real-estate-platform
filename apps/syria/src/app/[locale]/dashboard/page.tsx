@@ -33,11 +33,10 @@ export default async function DashboardHomePage() {
   ]);
 
   const cardClass =
-    "group block rounded-[var(--darlink-radius-2xl)] border border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface)] p-6 shadow-[var(--darlink-shadow-sm)] transition hover:border-[color:var(--darlink-accent)]/35 hover:shadow-[var(--darlink-shadow-md)]";
+    "group block rounded-[var(--darlink-radius-2xl)] border border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface)] p-6 shadow-none hover:border-[color:var(--darlink-accent)]/35";
 
   return (
     <div className="space-y-8">
-      <SelfMarketingPanel listings={listings} />
       <div className="grid gap-5 md:grid-cols-3">
         <Link href="/dashboard/listings" className={cardClass}>
           <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--darlink-text-muted)]">{t("homeListings")}</p>
@@ -65,7 +64,7 @@ export default async function DashboardHomePage() {
           </p>
         ) : (
           <div className="overflow-x-auto overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
-            <table className="w-full min-w-[800px] text-left text-sm">
+            <table className="w-full min-w-[720px] text-left text-sm">
               <thead className="bg-stone-50 text-xs uppercase tracking-wide text-stone-500">
                 <tr>
                   <th className="px-4 py-3">{t("tableTitle")}</th>
@@ -109,6 +108,8 @@ export default async function DashboardHomePage() {
           </Link>
         </p>
       </section>
+
+      <SelfMarketingPanel listings={listings} />
     </div>
   );
 }

@@ -2,7 +2,7 @@
 @import "../theme/darlink-theme.css";
 
 @theme inline {
-  --color-darlink-navy: #0f172a;
+  --color-darlink-navy: #0b0b0b;
   --color-darlink-sand: #d4af37;
   --color-darlink-off: #f8f6f2;
   --color-darlink-accent: #dc2626;
@@ -12,6 +12,17 @@
 
 html {
   scroll-behavior: auto;
+}
+
+/* Production: no decorative motion by default (Syria / low-end devices). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
 }
 
 body {
@@ -101,12 +112,12 @@ html[lang="en"] body {
   background-color: var(--hadiah-btn-hover);
 }
 
-/* Card surface — consistent marketing cards */
+/* Card surface — border-first; no heavy shadow (Syria perf) */
 .darlink-card-elevated {
   border-radius: var(--darlink-radius-2xl);
   border: 1px solid var(--darlink-border);
   background: var(--darlink-surface);
-  box-shadow: var(--darlink-shadow-sm);
+  box-shadow: none;
 }
 
 /* Secondary / outline (no fill) */

@@ -21,7 +21,7 @@ export async function DarlinkMobileNav() {
 
   return (
     <nav
-      className="darlink-mobile-nav fixed inset-x-0 bottom-0 z-40 border-t border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface)]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
+      className="darlink-mobile-nav fixed inset-x-0 bottom-0 z-40 border-t border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface)] pb-[env(safe-area-inset-bottom)] md:hidden"
       aria-label="Primary"
     >
       <ul className="mx-auto flex max-w-7xl items-stretch justify-between gap-1 px-2 py-2 text-[11px] font-semibold text-[color:var(--darlink-text)]">

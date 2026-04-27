@@ -4,6 +4,7 @@ import { syriaFlags } from "@/lib/platform-flags";
 
 export default async function AdminHomePage() {
   const t = await getTranslations("Admin");
+  const tSupply = await getTranslations("AdminSupplyGrowth");
   const mvp = syriaFlags.SYRIA_MVP;
 
   return (
@@ -42,6 +43,13 @@ export default async function AdminHomePage() {
       >
         <h2 className="text-lg font-semibold text-stone-900">{t("tilePayments")}</h2>
         <p className="mt-2 text-sm text-stone-600">{t("homePaymentsDesc")}</p>
+      </Link>
+      <Link
+        href="/admin/payment-requests"
+        className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50/80 to-white p-6 shadow-sm hover:border-emerald-300"
+      >
+        <h2 className="text-lg font-semibold text-stone-900">{t("navF1Payments")}</h2>
+        <p className="mt-2 text-sm text-stone-600">{t("f1RequestsIntro")}</p>
       </Link>
       {!mvp ? (
         <Link
@@ -85,6 +93,13 @@ export default async function AdminHomePage() {
       >
         <h2 className="text-lg font-semibold text-stone-900">AI</h2>
         <p className="mt-2 text-sm text-stone-600">Listing quality & search heuristics (SY-13)</p>
+      </Link>
+      <Link
+        href="/admin/supply-growth"
+        className="rounded-2xl border border-amber-300 bg-gradient-to-br from-amber-50 to-white p-6 shadow-sm hover:border-amber-400"
+      >
+        <h2 className="text-lg font-semibold text-stone-900">{tSupply("tileTitle")}</h2>
+        <p className="mt-2 text-sm text-stone-600">{tSupply("tileDesc")}</p>
       </Link>
     </div>
   );

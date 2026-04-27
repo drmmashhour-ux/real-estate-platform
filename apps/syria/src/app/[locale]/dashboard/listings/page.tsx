@@ -8,6 +8,7 @@ import { analyzeListingQuality } from "@/lib/listing-quality";
 import { DarlinkSellerAutopilotHints } from "@/components/dashboard/DarlinkSellerAutopilotHints";
 import { buildWhatsAppSendUrl, getSyriaPublicOrigin } from "@/lib/syria-whatsapp";
 import { buildListingShareMessage } from "@/lib/ai/shareMessage";
+import { getListingPath } from "@/lib/syria/listing-share";
 import { backfillLocalizedPropertyShape } from "@/lib/property-legacy-compat";
 import { getLocalizedPropertyCity } from "@/lib/property-localization";
 import { SelfMarketingPanel } from "@/components/dashboard/SelfMarketingPanel";
@@ -49,7 +50,7 @@ export default async function DashboardListingsPage({ searchParams }: PageProps)
             title: pickListingTitle(newest, locale),
             priceLine: money(newest.price, newest.currency, numberLoc),
             url: (() => {
-              const path = `/${locale}/listing/${newest.id}`;
+              const path = getListingPath(locale, newest.id);
               const base = origin?.replace(/\/$/, "");
               return base ? `${base}${path}` : path;
             })(),

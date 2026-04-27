@@ -147,6 +147,16 @@ export default async function SellPage() {
               placeholder="https://…"
             />
           </label>
+          <div className="rounded-[var(--darlink-radius-lg)] border border-emerald-200/60 bg-emerald-50/50 p-3 [dir:rtl]:text-right">
+            <input type="hidden" name="isDirect" value="0" />
+            <label className="flex cursor-pointer items-start gap-2">
+              <input type="checkbox" name="isDirect" value="1" defaultChecked className="mt-0.5 size-4 text-emerald-600" />
+              <span>
+                <span className="block text-sm font-medium text-[color:var(--darlink-text)]">{tMvp("fieldIsDirect")}</span>
+                <span className="mt-0.5 block text-xs text-[color:var(--darlink-text-muted)]">{tMvp("fieldIsDirectHint")}</span>
+              </span>
+            </label>
+          </div>
           <button
             type="submit"
             className="hadiah-btn-primary w-full min-h-12 rounded-[var(--darlink-radius-xl)] py-3 text-sm font-semibold"
@@ -311,6 +321,16 @@ export default async function SellPage() {
               />
             </label>
           </div>
+        </div>
+        <div className="rounded-xl border border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface-muted)]/40 p-3">
+          <input type="hidden" name="isDirect" value="0" />
+          <label className="flex cursor-pointer items-start gap-2">
+            <input type="checkbox" name="isDirect" value="1" defaultChecked className="mt-0.5 size-4 text-emerald-600" />
+            <span>
+              <span className="block text-sm font-medium text-stone-800">{t("fieldIsDirect")}</span>
+              <span className="mt-0.5 block text-xs text-stone-600">{t("fieldIsDirectHint")}</span>
+            </span>
+          </label>
         </div>
         <button
           type="submit"

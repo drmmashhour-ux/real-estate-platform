@@ -31,6 +31,7 @@ export async function createMvpPropertyListing(formData: FormData): Promise<void
   const type = typeRaw === "RENT" ? "RENT" : "SALE";
   const images = parseImagesMvp(String(formData.get("images") ?? ""));
   const amenitiesMvp = formData.getAll("amenities").map((x) => String(x).trim()).filter(Boolean);
+  const isDirect = formData.getAll("isDirect").includes("1");
 
   if (!["SALE", "RENT"].includes(typeRaw)) {
     return;
@@ -48,6 +49,7 @@ export async function createMvpPropertyListing(formData: FormData): Promise<void
     images,
     amenities: amenitiesMvp,
     source: "mvp_sell",
+    isDirect,
   });
   if (!out.ok) {
     return;

@@ -173,21 +173,34 @@ export default async function ListingDetailPage(props: Props) {
   const justPosted = sp.posted === "1" || (Array.isArray(sp.posted) && sp.posted[0] === "1");
   const showAfterPostShare = Boolean(justPosted && isOwner);
 
+  const displayViews = (listing.views ?? 0) + 1;
+  const isHot = displayViews >= SELF_MKT_VIEWS_HOT_BADGE_MIN;
+
+  const fromAmenities = amenityDisplayOrder.slice(0, 3).map((k) => labelSyriaAmenityForListing(k, locale).primary);
+  const defHi = [t("convDefHighlight1"), t("convDefHighlight2"), t("convDefHighlight3")];
+  const highlightLines: string[] = [];
+  const seenH = new Set<string>();
+  for (const a of fromAmenities) {
+    if (highlightLines.length >= 3) break;
+    if (seenH.has(a)) continue;
+    seenH.add(a);
+    highlightLines.push(a);
+  }
+  for (const d of defHi) {
+    if (highlightLines.length >= 3) break;
+    if (seenH.has(d)) continue;
+    seenH.add(d);
+    highlightLines.push(d);
+  }
+  const conversionCompactShare = syriaFlags.SYRIA_MVP && canContact && !isOwner;
+
   return (
     <>
       {showBooking ? <ListingMobileBookingBar amount={listing.price} currency={listing.currency} numberLoc={numberLoc} /> : null}
-      {canContact ? (
-        <ListingContactDock
-          listingId={listing.id}
-          whatsappHref={waOwnerHref}
-          telHref={telOwnerHref}
-          labelWhatsapp={t("contactWhatsapp")}
-          labelCall={t("contactCall")}
-        />
-      ) : null}
+      {canContact ? <ListingContactDock listingId={listing.id} whatsappHref={waOwnerHref} telHref={telOwnerHref} /> : null}
       <article
         className={
-          canContact ? "max-w-full overflow-x-hidden pb-40 max-md:pb-44 md:pb-0" : "max-w-full overflow-x-hidden"
+          canContact ? "max-w-full overflow-x-hidden pb-52 max-md:pb-56 md:pb-0" : "max-w-full overflow-x-hidden"
         }
       >
         <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start lg:gap-10">
@@ -197,6 +210,11 @@ export default async function ListingDetailPage(props: Props) {
                 <span className="rounded-full bg-[color:var(--darlink-surface-muted)] px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-[color:var(--darlink-text-muted)]">
                   {listing.type}
                 </span>
+                {listing.isDirect ? (
+                  <span className="rounded-full bg-gradient-to-r from-emerald-100 to-amber-100/90 px-2.5 py-1 text-xs font-bold text-emerald-900 ring-1 ring-emerald-300/70">
+                    {t("badgeDirect")}
+                  </span>
+                ) : null}
                 {listing.plan === "premium" ? (
                   <span className="rounded-full bg-gradient-to-r from-[color:var(--darlink-sand)]/30 to-amber-100/90 px-2.5 py-1 text-xs font-bold text-amber-950 ring-1 ring-[color:var(--darlink-sand)]/50">
                     {t("premiumBadge")}
@@ -206,25 +224,42 @@ export default async function ListingDetailPage(props: Props) {
                 {showNewBadge ? (
                   <div className="bg-blue-500 px-2 py-1 text-xs font-medium text-white rounded">{t("badgeNew")}</div>
                 ) : null}
-                {(listing.views ?? 0) >= SELF_MKT_VIEWS_HOT_BADGE_MIN ? (
+                {isHot ? (
                   <span className="rounded-full bg-orange-100 px-2.5 py-1 text-xs font-bold text-orange-900 ring-1 ring-orange-200/80">
                     {t("badgeHot")}
                   </span>
                 ) : null}
-                {isVerifiedField ? (
+                {!syriaFlags.SYRIA_MVP && isVerifiedField ? (
                   <div className="bg-green-600 px-2 py-1 text-xs font-medium text-white rounded">{t("verifiedBadge")}</div>
                 ) : null}
-                {photoQualityHighlight ? (
+                {!syriaFlags.SYRIA_MVP && photoQualityHighlight ? (
                   <span className="rounded-full bg-emerald-100/90 px-2.5 py-1 text-xs font-bold text-emerald-900 ring-1 ring-emerald-200">
                     {t("badgePhotoQuality")}
                   </span>
                 ) : null}
-                {showTrustedHighlight ? (
+                {!syriaFlags.SYRIA_MVP && showTrustedHighlight ? (
                   <div className="w-full basis-full text-sm text-green-600">{t("badgeTrustedListing")}</div>
                 ) : null}
                 {!syriaFlags.SYRIA_MVP ? <VerifiedBadge label={t("reviewedBadge")} /> : null}
               </div>
               <h1 className="mt-4 text-3xl font-bold tracking-tight text-[color:var(--darlink-text)] sm:text-4xl">{titleDisplay}</h1>
+              {listing.isDirect ? (
+                <p className="mt-2 text-sm font-medium text-[color:var(--darlink-text)]">{t("directTrustLine")}</p>
+              ) : null}
+              <ul
+                className="mt-3 list-none space-y-1.5 [dir:rtl]:text-right"
+                dir={locale.startsWith("ar") ? "rtl" : "ltr"}
+              >
+                {highlightLines.map((line) => (
+                  <li key={line} className="flex items-baseline gap-2 text-sm font-medium text-[color:var(--darlink-text)]">
+                    <span className="shrink-0 text-emerald-600" aria-hidden>
+                      ✔
+                    </span>
+                    <span>{line}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-2 text-xs text-[color:var(--darlink-text-muted)]">{t("viewCountLine", { count: displayViews })}</p>
               <div className="mt-2 space-y-0.5 text-sm leading-relaxed text-[color:var(--darlink-text-muted)]">
                 {stateLine ? <p className="font-medium text-[color:var(--darlink-text)]">{stateLine}</p> : null}
                 {cityDisplay ? <p>{cityDisplay}</p> : null}
@@ -284,7 +319,7 @@ export default async function ListingDetailPage(props: Props) {
               </section>
             ) : null}
 
-            {amenityDisplayOrder.length > 0 ? (
+            {!syriaFlags.SYRIA_MVP && amenityDisplayOrder.length > 0 ? (
               <section>
                 <h2 className="text-lg font-semibold text-[color:var(--darlink-text)]">{t("amenities")}</h2>
                 <ul
@@ -365,6 +400,19 @@ export default async function ListingDetailPage(props: Props) {
               </p>
               <p className="mt-3 text-xs leading-relaxed text-[color:var(--darlink-text-muted)]">{t("priceHint")}</p>
             </Card>
+
+            {isOwner ? (
+              <Card className="border-[color:var(--darlink-border)] p-5 shadow-[var(--darlink-shadow-sm)]">
+                <h2 className="text-sm font-semibold text-[color:var(--darlink-text)]">{t("adStudioTitle")}</h2>
+                <p className="mt-1 text-xs leading-relaxed text-[color:var(--darlink-text-muted)]">{t("adStudioBlurb")}</p>
+                <Link
+                  href={`/studio/${id}`}
+                  className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-[var(--darlink-radius-lg)] bg-[color:var(--darlink-surface-muted)] px-4 text-sm font-semibold text-[color:var(--darlink-accent)] ring-1 ring-inset ring-[color:var(--darlink-border)] hover:bg-[color:var(--darlink-surface)]"
+                >
+                  {t("adStudioCta")}
+                </Link>
+              </Card>
+            ) : null}
 
             <Card className="border-[color:var(--darlink-border)] p-5 shadow-[var(--darlink-shadow-sm)]">
               <h2 className="text-sm font-semibold text-[color:var(--darlink-text)]">{t("hostTitle")}</h2>
@@ -470,8 +518,6 @@ export default async function ListingDetailPage(props: Props) {
                 ownerHasPhone={Boolean(ownerPhone)}
               />
             ) : null}
-            <p className="text-sm font-medium text-[color:var(--darlink-text)]">{t("shareCtaAside")}</p>
-            <p className="text-sm leading-relaxed text-[color:var(--darlink-text-muted)]">{t("trustVerifyPayment")}</p>
           </aside>
         </div>
       </article>

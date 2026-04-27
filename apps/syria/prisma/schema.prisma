@@ -213,6 +213,13 @@ model SyriaProperty {
   bathrooms        Int?
   furnished        Boolean?
   propertyCategory String?             @map("property_category")
+  /// Marketplace vertical (full Hadiah): `real_estate` | `cars` | `electronics` | …
+  category         String              @default("real_estate") @map("marketplace_category")
+  subcategory      String              @default("sale") @map("marketplace_subcategory")
+  /// Ad Studio template: `price` | `highlight` | `clean` (optional).
+  adStyle          String?             @map("ad_style")
+  /// SY-22: direct owner deal (no broker) — `true` is default; boosts sort and trust UI.
+  isDirect         Boolean             @default(true) @map("is_direct")
   guestsMax        Int?                @map("guests_max")
   createdAt        DateTime            @default(now()) @map("created_at")
   updatedAt        DateTime            @updatedAt @map("updated_at")
@@ -230,6 +237,9 @@ model SyriaProperty {
   @@index([governorate])
   @@index([type])
   @@index([status])
+  @@index([isDirect])
+  @@index([category, subcategory])
+  @@index([category])
   @@map("syria_properties")
 }
 
@@ -315,7 +325,7 @@ model SyriaListingPayment {
   @@map("syria_listing_payments")
 }
 
-/// F1: manual باقة مميز/فاخر — request → WhatsApp proof → admin confirm.
+/// FI / F1 manual payment request (باقة مميز/فاخر): upgrade → WhatsApp proof → admin confirm (`PaymentRequest` shape).
 model SyriaPaymentRequest {
   id         String   @id @default(uuid()) @db.Uuid
   listingId  String   @map("listing_id")

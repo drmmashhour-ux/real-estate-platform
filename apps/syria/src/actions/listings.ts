@@ -75,6 +75,7 @@ export async function createPropertyListing(formData: FormData): Promise<void> {
   const type = String(formData.get("type") ?? "SALE").toUpperCase();
   const images = parseImages(String(formData.get("images") ?? ""));
   const amenities = parseAmenities(String(formData.get("amenities") ?? ""));
+  const isDirect = formData.getAll("isDirect").includes("1");
   const planRaw = String(formData.get("plan") ?? "free").toLowerCase();
   const plan: SyriaListingPlan = ["free", "featured", "premium"].includes(planRaw)
     ? (planRaw as SyriaListingPlan)
@@ -148,6 +149,9 @@ export async function createPropertyListing(formData: FormData): Promise<void> {
       price: new Prisma.Decimal(price),
       currency: SYRIA_PRICING.currency,
       type: type as "SALE" | "RENT" | "BNHUB",
+      category: "real_estate",
+      subcategory:
+        type === "RENT" ? "rent" : type === "BNHUB" ? "hotel" : "sale",
       images,
       amenities,
       ownerId: user.id,
@@ -155,6 +159,7 @@ export async function createPropertyListing(formData: FormData): Promise<void> {
       plan,
       isFeatured: false,
       featuredUntil: null,
+      isDirect,
     },
   });
 
