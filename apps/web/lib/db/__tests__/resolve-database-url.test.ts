@@ -14,11 +14,11 @@ describe("resolveDatabaseUrlIntoEnv", () => {
 
   it("does not override a valid DATABASE_URL", () => {
     process.env.DATABASE_URL =
-      "postgresql://u:p@ep-real.neon.tech:5432/db?sslmode=require";
+      "postgresql://u:p@aws-0-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require";
     delete process.env.POSTGRES_PRISMA_URL;
     delete process.env.POSTGRES_URL;
     resolveDatabaseUrlIntoEnv();
-    expect(process.env.DATABASE_URL).toContain("ep-real.neon.tech");
+    expect(process.env.DATABASE_URL).toContain("pooler.supabase.com");
   });
 
   it("fills DATABASE_URL from POSTGRES_PRISMA_URL when DATABASE_URL is a HOST template", () => {

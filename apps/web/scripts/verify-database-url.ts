@@ -11,8 +11,6 @@ function redactedSummary(url: string): {
   port: string;
   database: string;
   hasSslMode: boolean;
-  looksNeon: boolean;
-  looksNeonPooler: boolean;
   looksSupabasePooler: boolean;
   error?: string;
 } {
@@ -26,9 +24,8 @@ function redactedSummary(url: string): {
       port: u.port || "5432",
       database: (u.pathname || "/").replace(/^\//, "") || "(none)",
       hasSslMode: hasSslMode,
-      looksNeon: host.includes("neon.tech"),
-      looksNeonPooler: host.includes("pooler") && host.includes("neon.tech"),
-      looksSupabasePooler: host.includes("pooler.supabase.com") || u.port === "6543",
+      looksSupabasePooler:
+        host.includes("pooler.supabase.com") || host.includes("supabase.com") || u.port === "6543",
     };
   } catch (e) {
     return {
@@ -37,8 +34,6 @@ function redactedSummary(url: string): {
       port: "",
       database: "",
       hasSslMode: false,
-      looksNeon: false,
-      looksNeonPooler: false,
       looksSupabasePooler: false,
       error: e instanceof Error ? e.message : String(e),
     };
@@ -63,13 +58,8 @@ async function main(): Promise<void> {
   console.log(`  port=${s.port}`);
   console.log(`  database=${s.database}`);
   console.log(`  sslmode in URL: ${s.hasSslMode ? "yes" : "no (app may add for remote — see database-url-ssl)"}`);
-  if (s.looksNeon && !s.looksNeonPooler) {
-    console.warn(
-      "  ⚠ Neon: prefer the pooled connection string (host often contains -pooler) for serverless / many clients.",
-    );
-  }
   if (s.looksSupabasePooler) {
-    console.log("  Supabase pooler pattern detected (6543 or pooler host).");
+    console.log("  Supabase pooler / transaction port pattern detected (6543 or *.pooler.supabase.com).");
   }
 
   const client = new Client({ connectionString: url, connectionTimeoutMillis: 15_000 });
@@ -98,10 +88,10 @@ async function main(): Promise<void> {
     console.error("   ", msg);
     console.error("");
     console.error("Checklist:");
-    console.error("  1) Copy DATABASE_URL from Neon/Supabase dashboard (Pooled / Transaction mode).");
+    console.error("  1) Copy DATABASE_URL from Supabase → Settings → Database (Transaction / Pooler, port 6543).");
     console.error("  2) URL-encode special characters in the password.");
     console.error("  3) Ensure ?sslmode=require (or app will add for remote in resolve).");
-    console.error("  4) Neon: unpause project; Supabase: project active; rotate password if unsure.");
+    console.error("  4) Supabase: project active; reset DB password in dashboard if unsure.");
     process.exit(1);
   } finally {
     await client.end().catch(() => {});

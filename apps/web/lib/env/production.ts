@@ -56,17 +56,17 @@ export function getProductionEnvStatus(): ProductionEnvCheck {
   const prodHint = productionLikeRuntime();
   if (prodHint && db && databaseUrlHasLiteralHostPlaceholder(db)) {
     warnings.push(
-      "DATABASE_URL still uses the literal hostname HOST (template not replaced). In Vercel → Settings → Environment Variables, paste your real Neon connection string (pooled URL with -pooler is best for serverless)."
+      "DATABASE_URL still uses the literal hostname HOST (template not replaced). In Vercel → Environment Variables, paste the full Supabase Transaction pooler URI (port 6543)."
     );
   }
   if (prodHint && db && /ep-xxxx|USER:PASSWORD|placeholder/i.test(db)) {
     warnings.push(
-      "DATABASE_URL looks like a placeholder or example string — replace with a real Neon connection string."
+      "DATABASE_URL looks like a placeholder or example string — replace with the real Supabase pooler connection string."
     );
   }
-  if (prodHint && db && db.includes("neon.tech") && !db.includes("-pooler")) {
+  if (prodHint && db && db.includes("supabase.com") && !db.includes("pooler") && !db.includes(":6543")) {
     warnings.push(
-      'DATABASE_URL may be a direct Neon host; prefer the pooled connection string for serverless (hostname usually contains "-pooler").'
+      "DATABASE_URL may be a direct Supabase session string; for serverless Prisma prefer the Transaction pooler (hostname contains pooler, port 6543)."
     );
   }
 

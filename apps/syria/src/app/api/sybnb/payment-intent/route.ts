@@ -14,9 +14,9 @@ export async function POST(req: Request): Promise<Response> {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  let body: { bookingId?: string };
+  let body: { bookingId?: string; idempotencyKey?: string };
   try {
-    body = (await req.json()) as { bookingId?: string };
+    body = (await req.json()) as { bookingId?: string; idempotencyKey?: string };
   } catch {
     return NextResponse.json({ error: "invalid_json" }, { status: 400 });
   }

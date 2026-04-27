@@ -6,7 +6,7 @@ import { ensureDatabaseUrlSslModeRequireForRemote } from "./database-url-ssl";
  * 1) `SUPABASE_POOLER_URL` / `SUPABASE_DATABASE_URL` — Supabase transaction pooler (port 6543) for serverless
  * 2) Vercel `POSTGRES_PRISMA_URL` / `POSTGRES_URL` / `POSTGRES_URL_NON_POOLING`
  *
- * After resolution, non-local URLs get `sslmode=require` if not already set (Supabase/Neon/RDS).
+ * After resolution, non-local URLs get `sslmode=require` if not already set (Supabase/RDS/managed Postgres).
  */
 export function resolveDatabaseUrlIntoEnv(): void {
   const current = process.env.DATABASE_URL?.trim();

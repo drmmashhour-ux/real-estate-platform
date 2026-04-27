@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { assertDarlinkRuntimeEnv } from "@/lib/guard";
+import { getAdminUser } from "@/lib/auth";
 import { requireF1Admin } from "@/lib/payment-f1-admin";
 import { runF1Reject } from "@/lib/payment-f1-service";
 import { revalidateF1ListingOnly } from "@/lib/payment-f1-revalidate";
@@ -30,7 +31,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "missing_request_id" }, { status: 400 });
   }
 
-  const out = await runF1Reject(requestId, reason);
+  const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
+  const admin = await getAdminUser();
+  const out = await runF1Reject(requestId, reason, { adminId: admin?.id ?? null, clientIp });
   if (out.type === "not_found") {
     return NextResponse.json({ ok: false, error: "not_found" }, { status: 404 });
   }

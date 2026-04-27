@@ -1,9 +1,13 @@
 const { Client } = require('pg');
 
-const connectionString = 'postgresql://neondb_owner:Mm123456Mm%40%40@ep-royal-cake-ammngg79-pooler.c-5.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require';
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString || !String(connectionString).trim()) {
+  console.error('Set DATABASE_URL (e.g. from apps/web/.env.local) before running this script.');
+  process.exit(1);
+}
 
 const client = new Client({
-  connectionString: connectionString,
+  connectionString,
 });
 
 async function test() {

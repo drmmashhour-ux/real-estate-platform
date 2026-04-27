@@ -22,4 +22,12 @@ export const sybnbConfig = {
    */
   complianceMode: (process.env.SYBNB_COMPLIANCE_MODE ?? "relaxed") as "relaxed" | "strict",
   complianceMock: (process.env.SYBNB_COMPLIANCE_MOCK ?? "pass") as "pass" | "fail",
+  /**
+   * Hosts with accounts newer than this many days cannot use **instant book** (when offered).
+   * Unverified hosts are blocked separately via `hostMayEnableSybnbInstantBook`.
+   */
+  minHostAccountAgeForInstantBookDays: (() => {
+    const n = Number(process.env.SYBNB_MIN_HOST_ACCOUNT_AGE_DAYS_FOR_INSTANT ?? "7");
+    return Number.isFinite(n) && n > 0 ? Math.floor(n) : 7;
+  })(),
 } as const;

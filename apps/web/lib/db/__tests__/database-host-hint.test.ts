@@ -25,20 +25,20 @@ describe("database-host-hint", () => {
     expect(databaseUrlHasLiteralHostPlaceholder("")).toBe(false);
     expect(
       databaseUrlHasLiteralHostPlaceholder(
-        "postgresql://u:p@ep-abc-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require"
+        "postgresql://u:p@aws-0-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require"
       )
     ).toBe(false);
   });
 
   it("classifies db host kind", () => {
     expect(getDbHostKind("HOST")).toBe("placeholder");
-    expect(getDbHostKind("ep-1.us-east-2.aws.neon.tech")).toBe("neon");
+    expect(getDbHostKind("db.abcdefghijklmnop.pooler.supabase.com")).toBe("supabase");
     expect(getDbHostKind(null)).toBe("unset");
   });
 
   it("parses hostname from DATABASE_URL", () => {
     process.env.DATABASE_URL =
-      "postgresql://u:p@ep-xyz-pooler.us-east-2.aws.neon.tech/db?sslmode=require";
-    expect(getDatabaseHostHint()).toBe("ep-xyz-pooler.us-east-2.aws.neon.tech");
+      "postgresql://u:p@aws-0-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require";
+    expect(getDatabaseHostHint()).toBe("aws-0-us-east-1.pooler.supabase.com");
   });
 });

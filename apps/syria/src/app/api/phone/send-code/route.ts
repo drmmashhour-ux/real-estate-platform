@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { assertDarlinkRuntimeEnv } from "@/lib/guard";
+import { prisma } from "@/lib/db";
 import { createAndStorePhoneOtp } from "@/lib/anti-fraud/phone-otp";
 import { ensureGuestUserForPhone } from "@/lib/syria-mvp-guest";
 import { onlyDigits } from "@/lib/syria-phone";

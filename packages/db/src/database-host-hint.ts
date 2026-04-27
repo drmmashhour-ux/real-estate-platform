@@ -24,13 +24,12 @@ export function getDatabaseHostHint(): string | null {
   return hostOnly || null;
 }
 
-export type DbHostKind = "neon" | "supabase" | "placeholder" | "unknown" | "unset";
+export type DbHostKind = "supabase" | "placeholder" | "unknown" | "unset";
 
 /** Classify host for /api/ready — hostname only; never exposes credentials. */
 export function getDbHostKind(host: string | null): DbHostKind {
   if (!host) return "unset";
   if (host.toLowerCase() === "host") return "placeholder";
-  if (host.includes("neon.tech")) return "neon";
-  if (host.includes("supabase.co")) return "supabase";
+  if (host.includes("supabase.co") || host.includes("pooler.supabase.com")) return "supabase";
   return "unknown";
 }

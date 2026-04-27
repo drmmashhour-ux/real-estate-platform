@@ -1,5 +1,5 @@
 /**
- * Neon connection strings sometimes include `channel_binding=require`.
+ * Some managed Postgres connection strings (e.g. Supabase) include `channel_binding=require`.
  * That parameter breaks many Prisma + node-postgres stacks on Vercel/serverless.
  * Strip it while preserving other query params (e.g. sslmode=require).
  */

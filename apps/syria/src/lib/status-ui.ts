@@ -30,14 +30,34 @@ export function bookingLifecycleLabel(
     checkedInAt: Date | null;
     checkOut: Date;
   },
-): "pending" | "pending_payment" | "confirmed" | "checked_in" | "completed" | "cancelled" {
+):
+  | "request_pending"
+  | "host_approved_awaiting_card"
+  | "host_approved_manual"
+  | "pending"
+  | "pending_payment"
+  | "confirmed"
+  | "checked_in"
+  | "completed"
+  | "cancelled" {
   if (row.status === "CANCELLED") return "cancelled";
+  if (row.status === "COMPLETED") return "completed";
   if (row.checkedInAt) {
     const now = Date.now();
     if (now >= row.checkOut.getTime()) return "completed";
     return "checked_in";
   }
   if (row.status === "CONFIRMED") return "confirmed";
+  if (row.status === "APPROVED") {
+    if (row.guestPaymentStatus === "PENDING_MANUAL") return "host_approved_manual";
+    if (row.guestPaymentStatus === "UNPAID") return "host_approved_awaiting_card";
+  }
+  if (row.status === "PENDING") {
+    if (row.guestPaymentStatus === "UNPAID" || row.guestPaymentStatus === "PENDING_MANUAL") {
+      return "request_pending";
+    }
+    return "pending";
+  }
   if (row.guestPaymentStatus === "UNPAID" || row.guestPaymentStatus === "PENDING_MANUAL") {
     return "pending_payment";
   }

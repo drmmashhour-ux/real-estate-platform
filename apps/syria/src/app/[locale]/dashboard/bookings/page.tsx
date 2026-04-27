@@ -4,14 +4,37 @@ import { prisma } from "@/lib/db";
 import { requireSessionUser } from "@/lib/auth";
 import { money } from "@/lib/format";
 import { markBookingCheckedIn } from "@/actions/bookings";
-import { hostRespondSybnbBooking } from "@/actions/sybnb-booking";
+import { hostRespondSybnbBooking, runSybnbPostStayCompletion } from "@/actions/sybnb-booking";
 import { describePayoutEligibility } from "@/lib/payout-policy";
 import { pickListingTitle } from "@/lib/listing-localized";
+import { bookingLifecycleLabel } from "@/lib/status-ui";
+import { sybnbConfig } from "@/config/sybnb.config";
+import { isSybnbCardCheckoutUiEnabled } from "@/lib/sybnb/payment-policy";
+import { SybnbGuestPayStubButton } from "@/components/sybnb/SybnbGuestPayStubButton";
+
+type BookingLifecycleLabel = ReturnType<typeof bookingLifecycleLabel>;
+
+function sybnbPhaseKey(label: BookingLifecycleLabel): string {
+  const m: Record<BookingLifecycleLabel, string> = {
+    request_pending: "sybnbPhaseRequestPending",
+    host_approved_awaiting_card: "sybnbPhaseHostApprovedAwaitingCard",
+    host_approved_manual: "sybnbPhaseHostApprovedManual",
+    pending: "sybnbPhasePending",
+    pending_payment: "sybnbPhasePendingPayment",
+    confirmed: "sybnbPhaseConfirmed",
+    checked_in: "sybnbPhaseCheckedIn",
+    completed: "sybnbPhaseCompleted",
+    cancelled: "sybnbPhaseCancelled",
+  };
+  return m[label] ?? "sybnbPhasePending";
+}
 
 export default async function DashboardBookingsPage() {
   const t = await getTranslations("Dashboard");
   const locale = await getLocale();
   const user = await requireSessionUser();
+
+  await runSybnbPostStayCompletion();
 
   const bookings = await prisma.syriaBooking.findMany({
     where: {
@@ -39,6 +62,16 @@ export default async function DashboardBookingsPage() {
             const isHost = b.property.ownerId === user.id;
             const eligibility = describePayoutEligibility({ checkedInAt: b.checkedInAt });
             const payout = b.payouts[0];
+            const showSybnbPayStub =
+              b.property.category === "stay" &&
+              !isHost &&
+              b.status === "APPROVED" &&
+              b.guestPaymentStatus === "UNPAID" &&
+              isSybnbCardCheckoutUiEnabled(sybnbConfig.provider);
+            const sybnbPhase =
+              b.property.category === "stay"
+                ? t("sybnbPhaseLabel", { phase: t(sybnbPhaseKey(bookingLifecycleLabel(b))) })
+                : null;
 
             return (
               <li key={b.id} className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
@@ -53,6 +86,7 @@ export default async function DashboardBookingsPage() {
                     <p className="text-sm text-stone-600">
                       {b.checkIn.toISOString().slice(0, 10)} → {b.checkOut.toISOString().slice(0, 10)}
                     </p>
+                    {sybnbPhase ? <p className="mt-1 text-xs text-stone-500">{sybnbPhase}</p> : null}
                   </div>
                   <div className="text-right text-sm">
                     <p className="font-semibold">{money(b.totalPrice, b.currency)}</p>
@@ -113,6 +147,8 @@ export default async function DashboardBookingsPage() {
                     </form>
                   </div>
                 ) : null}
+
+                {showSybnbPayStub ? <SybnbGuestPayStubButton bookingId={b.id} /> : null}
 
                 {isHost || user.role === "ADMIN" ? (
                   <form action={markBookingCheckedIn} className="mt-3 inline">

@@ -38,6 +38,7 @@ import { getMonetizationAdminContact } from "@/lib/monetization-contact";
 import { syriaPlatformConfig } from "@/config/syria-platform.config";
 import { sybnbConfig } from "@/config/sybnb.config";
 import { isSybnbCardCheckoutUiEnabled } from "@/lib/sybnb/payment-policy";
+import { SybnbQuotePreview } from "@/components/sybnb/SybnbQuotePreview";
 import { MakeFeaturedCta } from "@/components/listing/MakeFeaturedCta";
 import { OwnerUpgradeStickyCta } from "@/components/listing/OwnerUpgradeStickyCta";
 import { labelSyriaState } from "@/lib/syria/states";
@@ -177,6 +178,9 @@ export default async function ListingDetailPage(props: Props) {
     isSybnbStay &&
     listing.sybnbReview === "APPROVED" &&
     !listing.owner.sybnbSupplyPaused &&
+    !listing.needsReview &&
+    !listing.fraudFlag &&
+    !listing.owner.flagged &&
     user &&
     user.id !== listing.ownerId;
   const showContactAside =
@@ -558,6 +562,7 @@ export default async function ListingDetailPage(props: Props) {
                 {!isSybnbCardCheckoutUiEnabled(sybnbConfig.provider) ? (
                   <p className="mt-2 text-xs text-[color:var(--darlink-text-muted)]">{t("sybnbPaymentsOffNotice")}</p>
                 ) : null}
+                <SybnbQuotePreview propertyId={listing.id} />
                 <form action={createSybnbStayBooking} className="mt-4 grid gap-4 md:grid-cols-2">
                   <input type="hidden" name="propertyId" value={listing.id} />
                   {typeof sp.utm_source === "string" ? <input type="hidden" name="utm_source" value={sp.utm_source} /> : null}

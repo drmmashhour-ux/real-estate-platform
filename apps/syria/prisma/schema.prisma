@@ -74,8 +74,14 @@ enum SyriaListingPlan {
 }
 
 enum SyriaBookingStatus {
+  /// Guest requested dates; host has not decided.
   PENDING
+  /// Host approved; guest must pay (card) or settle manually.
+  APPROVED
+  /// Paid (or admin-verified manual) & reservation locked.
   CONFIRMED
+  /// Stay window ended (SYBNB post-checkout).
+  COMPLETED
   CANCELLED
 }
 
@@ -469,6 +475,8 @@ model SyriaBooking {
   utmSource            String?                    @map("utm_source")
   utmMedium            String?                    @map("utm_medium")
   utmCampaign          String?                    @map("utm_campaign")
+  /// SYBNB: Stripe Checkout session id (stub or live) after host approval when card payments are on.
+  sybnbCheckoutSessionId String?                  @map("sybnb_checkout_session_id")
   createdAt            DateTime                   @default(now()) @map("created_at")
   updatedAt            DateTime                   @updatedAt @map("updated_at")
 

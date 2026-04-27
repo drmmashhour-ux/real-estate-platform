@@ -1,9 +1,8 @@
 "use server";
 
-import { Prisma } from "@/generated/prisma";
+import { randomBytes } from "node:crypto";
 import { prisma } from "@/lib/db";
 import { requireSessionUser } from "@/lib/auth";
-import { SYRIA_PRICING } from "@/lib/pricing";
 import { syriaFlags } from "@/lib/platform-flags";
 import { redirect } from "@/i18n/navigation";
 import { revalidateSyriaPaths } from "@/lib/revalidate-locale";
@@ -11,11 +10,75 @@ import { parseUtmFromFormData } from "@/lib/utm";
 import { trackSyriaGrowthEvent } from "@/lib/growth-events";
 import { assertDarlinkRuntimeEnv } from "@/lib/guard";
 import { sybnbConfig } from "@/config/sybnb.config";
+import { computeSybnbQuote } from "@/lib/sybnb/sybnb-quote";
+import { evaluateSybnbStayRequestEligibility } from "@/lib/sybnb/sybnb-booking-rules";
 
-function nightsBetween(checkIn: Date, checkOut: Date): number {
-  const ms = checkOut.getTime() - checkIn.getTime();
-  const n = Math.ceil(ms / 86400000);
-  return Math.max(1, n);
+export type SybnbQuoteResult =
+  | {
+      ok: true;
+      nights: number;
+      nightly: string;
+      total: string;
+      platformFee: string;
+      hostNet: string;
+      currency: string;
+    }
+  | { ok: false; error: "not_found" | "invalid" };
+
+/**
+ * Server-side quote for the listing detail page (same math as `createSybnbStayBooking`).
+ */
+export async function getSybnbStayQuote(input: {
+  propertyId: string;
+  checkIn: string;
+  checkOut: string;
+  guests: number;
+}): Promise<SybnbQuoteResult> {
+  const property = await prisma.syriaProperty.findUnique({
+    where: { id: input.propertyId.trim() },
+    include: { owner: true },
+  });
+  if (!property || property.category !== "stay" || property.type !== "RENT") {
+    return { ok: false, error: "not_found" };
+  }
+  if (evaluateSybnbStayRequestEligibility(property, property.owner).ok !== true) {
+    return { ok: false, error: "not_found" };
+  }
+  const checkIn = new Date(input.checkIn);
+  const checkOut = new Date(input.checkOut);
+  if (Number.isNaN(+checkIn) || Number.isNaN(+checkOut) || checkOut <= checkIn) {
+    return { ok: false, error: "invalid" };
+  }
+  const q = computeSybnbQuote(property, checkIn, checkOut);
+  return {
+    ok: true,
+    nights: q.nights,
+    nightly: q.nightly.toString(),
+    total: q.total.toString(),
+    platformFee: q.platformFee.toString(),
+    hostNet: q.hostNet.toString(),
+    currency: q.currency,
+  };
+}
+
+/**
+ * After checkout date, mark confirmed stays as completed (SYBNB / stay only).
+ */
+export async function runSybnbPostStayCompletion(): Promise<void> {
+  const now = new Date();
+  const rows = await prisma.syriaBooking.findMany({
+    where: {
+      status: "CONFIRMED",
+      checkOut: { lt: now },
+      property: { category: "stay" },
+    },
+    select: { id: true },
+  });
+  if (rows.length === 0) return;
+  await prisma.syriaBooking.updateMany({
+    where: { id: { in: rows.map((r) => r.id) } },
+    data: { status: "COMPLETED" },
+  });
 }
 
 /**
@@ -62,7 +125,7 @@ export async function createSybnbStayBooking(formData: FormData): Promise<void> 
     return;
   }
 
-  const nights = nightsBetween(checkIn, checkOut);
+  const nights = sybnbNightsBetween(checkIn, checkOut);
   const nightlyDec =
     property.pricePerNight != null
       ? new Prisma.Decimal(property.pricePerNight)
@@ -149,12 +212,15 @@ export async function hostRespondSybnbBooking(formData: FormData): Promise<void>
 
   const booking = await prisma.syriaBooking.findUnique({
     where: { id: bookingId },
-    include: { property: true },
+    include: { property: { include: { owner: true } } },
   });
   if (!booking || booking.status !== "PENDING") {
     return;
   }
   if (booking.property.category !== "stay") {
+    return;
+  }
+  if (action === "confirm" && evaluateSybnbStayRequestEligibility(booking.property, booking.property.owner).ok !== true) {
     return;
   }
   const isHost = booking.property.ownerId === user.id;
@@ -172,17 +238,41 @@ export async function hostRespondSybnbBooking(formData: FormData): Promise<void>
     return;
   }
 
-  await prisma.syriaBooking.update({
-    where: { id: bookingId },
-    data: { status: "CONFIRMED" },
-  });
+  if (evaluateSybnbStayRequestEligibility(booking.property, booking.property.owner).ok !== true) {
+    return;
+  }
+  if (!sybnbBookingRowMatchesServerQuote(booking, booking.property)) {
+    return;
+  }
+
+  /// Host approved: next step is manual settlement or Stripe checkout (stub), not final confirmation until payment/webhook.
+  const cardPath = sybnbConfig.paymentsEnabled && sybnbConfig.provider === "stripe";
+  if (cardPath) {
+    const sessionId = `stub_cs_${randomBytes(10).toString("hex")}`;
+    await prisma.syriaBooking.update({
+      where: { id: bookingId },
+      data: {
+        status: "APPROVED",
+        guestPaymentStatus: "UNPAID",
+        sybnbCheckoutSessionId: sessionId,
+      },
+    });
+  } else {
+    await prisma.syriaBooking.update({
+      where: { id: bookingId },
+      data: {
+        status: "APPROVED",
+        guestPaymentStatus: "PENDING_MANUAL",
+      },
+    });
+  }
 
   await trackSyriaGrowthEvent({
-    eventType: "sybnb_booking_confirmed",
+    eventType: "sybnb_host_approved_booking",
     userId: booking.guestId,
     propertyId: booking.propertyId,
     bookingId: booking.id,
-    payload: { by: isAdmin ? "admin" : "host" },
+    payload: { by: isAdmin ? "admin" : "host", next: cardPath ? "awaiting_card" : "manual_required" },
   });
 
   await revalidateSyriaPaths("/dashboard/bookings", "/admin/bookings", "/sybnb", `/listing/${booking.propertyId}`);

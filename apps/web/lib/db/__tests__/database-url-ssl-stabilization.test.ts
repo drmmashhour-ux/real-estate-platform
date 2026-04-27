@@ -16,7 +16,7 @@ describe("Supabase / Prisma URL stabilization (sslmode=require)", () => {
 
   it("preserves existing sslmode=require", () => {
     const u =
-      "postgresql://u:p@ep-xxx.region.aws.neon.tech/neondb?sslmode=require";
+      "postgresql://u:p@aws-0-eu-west-1.pooler.supabase.com:6543/postgres?sslmode=require";
     expect(ensureDatabaseUrlSslModeRequireForRemote(u)).toBe(u);
   });
 });

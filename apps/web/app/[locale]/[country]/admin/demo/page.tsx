@@ -25,7 +25,7 @@ export default async function AdminDemoPage() {
         <div>
           <h1 className="text-xl font-semibold text-white">Demo & staging</h1>
           <p className="mt-2 text-sm text-slate-400">
-            Use a separate Vercel project + Supabase/Neon database for staging. Never point staging at the production{" "}
+            Use a separate Vercel project + Supabase database for staging. Never point staging at the production{" "}
             <code className="rounded bg-white/10 px-1">DATABASE_URL</code>. See{" "}
             <code className="rounded bg-white/10 px-1">docs/STAGING_ENVIRONMENT.md</code> in the repository.
           </p>

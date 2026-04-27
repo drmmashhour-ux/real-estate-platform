@@ -83,15 +83,15 @@ export async function persistQuickListing(input: {
   const isDirect = input.isDirect !== false;
 
   if (titleAr.length < 2 || !state || !city || !priceStr || phone.length < 8) {
-    return { ok: false };
+    return { ok: false, reason: "validation" };
   }
   if (!toWhatsAppPath(phone)) {
-    return { ok: false };
+    return { ok: false, reason: "validation" };
   }
 
   const priceDec = new Prisma.Decimal(priceStr);
   if (priceDec.lte(0)) {
-    return { ok: false };
+    return { ok: false, reason: "validation" };
   }
   const nightlyInt = category === "stay" ? Math.trunc(Number(priceStr)) : null;
 
@@ -109,7 +109,9 @@ export async function persistQuickListing(input: {
     category,
   });
   if (!guards.ok) {
-    return { ok: false, code: guards.code } as const;
+    if (guards.code === "daily_limit") return { ok: false, reason: "daily_limit" };
+    if (guards.code === "duplicate") return { ok: false, reason: "duplicate" };
+    return { ok: false, reason: "validation" };
   }
   const priceWarningKey = guards.priceWarningKey;
 

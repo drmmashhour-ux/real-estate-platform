@@ -17,9 +17,9 @@ export function s2GetClientIp(req: Request | NextRequest): string {
   }
   const realIp = h("x-real-ip");
   if (realIp?.trim()) return realIp.trim();
-  const nreq = req as NextRequest;
-  if (nreq && typeof nreq.ip === "string" && nreq.ip.length > 0) {
-    return nreq.ip;
+  const direct = (req as Request & { ip?: string }).ip;
+  if (typeof direct === "string" && direct.length > 0) {
+    return direct;
   }
   return "0";
 }

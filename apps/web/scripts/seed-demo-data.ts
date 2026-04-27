@@ -2,7 +2,7 @@
  * End-to-end demo seed: published BNHUB stays (Prisma → `bnhub_listings`), photos,
  * optional insurance partner + sample lead. Idempotent via fixed row ids.
  *
- * Database: set `DATABASE_URL` to your Postgres URL (e.g. Neon dashboard → connection string).
+ * Database: set `DATABASE_URL` to your Postgres URL (e.g. Supabase → Settings → Database, Transaction pooler).
  * Prisma talks to Postgres directly. This is the supported path.
  *
  * Optional: `NEXT_PUBLIC_SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` — verifies REST can read `bnhub_listings`
@@ -416,7 +416,7 @@ async function seedInsuranceLayer(firstListingId: string): Promise<void> {
 
 async function main() {
   if (!process.env.DATABASE_URL?.trim()) {
-    console.error("DATABASE_URL is required (Postgres connection string, e.g. Neon pooled URL).");
+    console.error("DATABASE_URL is required (Postgres connection string, e.g. Supabase pooler URL).");
     process.exit(1);
   }
 

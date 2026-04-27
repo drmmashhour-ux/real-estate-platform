@@ -1,6 +1,6 @@
 /**
  * PostgreSQL URL SSL expectations for production.
- * Neon / managed Postgres should use TLS; libpq accepts sslmode=require (or verify-full) in the query string.
+ * Remote / managed Postgres should use TLS; libpq accepts sslmode=require (or verify-full) in the query string.
  */
 
 const LOCAL_HOSTS = new Set([
