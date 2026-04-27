@@ -151,9 +151,18 @@ export function buildPropertyWhere(
     andParts.push({ furnished: false });
   }
 
-  const cat = (sp.category ?? "").trim();
-  if (cat) {
-    andParts.push({ propertyCategory: cat });
+  const propLine = (sp.propertyCategory ?? "").trim();
+  if (propLine) {
+    andParts.push({ propertyCategory: propLine });
+  }
+
+  const mcat = (sp.category ?? "").trim();
+  if (mcat) {
+    andParts.push({ category: mcat });
+  }
+  const msub = (sp.subcategory ?? "").trim();
+  if (msub) {
+    andParts.push({ subcategory: msub });
   }
 
   const guests = num(sp.guests);
@@ -166,6 +175,10 @@ export function buildPropertyWhere(
   const featureKeys = parseFeaturesQuery(sp.features);
   if (featureKeys.length) {
     andParts.push({ amenities: { hasEvery: featureKeys } });
+  }
+
+  if (sp.direct === "1" || sp.direct === "true" || sp.directOnly === "1") {
+    andParts.push({ isDirect: true });
   }
 
   const base: Prisma.SyriaPropertyWhereInput = {

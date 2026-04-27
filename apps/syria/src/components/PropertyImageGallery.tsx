@@ -10,7 +10,7 @@ export function PropertyImageGallery({ images, title }: { images: string[]; titl
   if (images.length === 0) {
     return (
       <div
-        className="overflow-hidden rounded-[var(--darlink-radius-3xl)] border border-dashed border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface-muted)]/80 p-10 text-center shadow-[var(--darlink-shadow-sm)]"
+        className="overflow-hidden rounded-[var(--darlink-radius-3xl)] border border-dashed border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface-muted)]/80 p-10 text-center shadow-none"
         role="img"
         aria-label={t("noImages")}
       >
@@ -45,9 +45,9 @@ export function PropertyImageGallery({ images, title }: { images: string[]; titl
                 className="w-full min-w-full shrink-0 snap-center snap-always"
                 aria-hidden={i !== active}
               >
-                <div className="overflow-hidden rounded-[var(--darlink-radius-3xl)] border border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface-muted)] shadow-[var(--darlink-shadow-md)]">
+                <div className="overflow-hidden rounded-[var(--darlink-radius-3xl)] border border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface-muted)] shadow-none">
                   <div className="aspect-[16/10] w-full sm:aspect-[21/9]">
-                    <img src={src} alt="" className="h-full w-full object-cover" />
+                    <img src={src} alt="" className="h-full w-full object-cover" loading="lazy" decoding="async" />
                   </div>
                 </div>
               </div>
@@ -61,12 +61,12 @@ export function PropertyImageGallery({ images, title }: { images: string[]; titl
 
       <div
         className={cn(
-          "overflow-hidden rounded-[var(--darlink-radius-3xl)] border border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface-muted)] shadow-[var(--darlink-shadow-md)]",
+          "overflow-hidden rounded-[var(--darlink-radius-3xl)] border border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface-muted)] shadow-none",
           images.length > 1 && "hidden md:block",
         )}
       >
         <div className="aspect-[16/10] w-full sm:aspect-[21/9]">
-          <img src={main} alt="" className="h-full w-full object-cover" />
+          <img src={main} alt="" className="h-full w-full object-cover" loading="eager" decoding="async" />
         </div>
       </div>
 
@@ -78,14 +78,14 @@ export function PropertyImageGallery({ images, title }: { images: string[]; titl
               type="button"
               onClick={() => setActive(i)}
               className={cn(
-                "relative size-16 shrink-0 overflow-hidden rounded-[var(--darlink-radius-lg)] border-2 transition sm:size-20",
+                "relative size-16 min-h-[44px] min-w-[44px] shrink-0 overflow-hidden rounded-[var(--darlink-radius-lg)] border-2 sm:size-20",
                 i === active
                   ? "border-[color:var(--darlink-accent)] ring-2 ring-[color:var(--darlink-accent)]/25"
                   : "border-transparent opacity-80 hover:opacity-100",
               )}
               aria-label={`${title} — ${i + 1}`}
             >
-              <img src={src} alt="" className="h-full w-full object-cover" />
+              <img src={src} alt="" className="h-full w-full object-cover" loading="lazy" decoding="async" />
             </button>
           ))}
         </div>

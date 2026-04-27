@@ -76,15 +76,18 @@ export function HeroSegmentedSearch({ showStaysTab = true }: Props) {
             aria-selected={effectiveIntent === s.id}
             onClick={() => setIntent(s.id)}
             className={cn(
-              "flex-1 rounded-[var(--darlink-radius-lg)] px-3 py-2.5 text-sm font-semibold transition",
-              effectiveIntent === s.id ? "bg-white text-[color:var(--darlink-navy)] shadow-sm" : "text-white/90 hover:bg-white/10",
+              "min-h-11 flex-1 rounded-[var(--darlink-radius-lg)] px-3 py-2.5 text-sm font-semibold",
+              effectiveIntent === s.id ? "bg-white text-[color:var(--darlink-navy)]" : "text-white/90 hover:bg-white/10",
             )}
           >
             {s.label}
           </button>
         ))}
       </div>
-      <form onSubmit={submit} className="space-y-3 rounded-[var(--darlink-radius-2xl)] bg-white p-4 shadow-[var(--darlink-shadow-xl)] ring-1 ring-black/5">
+      <form
+        onSubmit={submit}
+        className="space-y-3 rounded-[var(--darlink-radius-2xl)] border border-black/5 bg-white p-4 shadow-[var(--darlink-shadow-sm)]"
+      >
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="block text-sm font-medium text-[color:var(--darlink-text-muted)]">
             {t("searchState")}

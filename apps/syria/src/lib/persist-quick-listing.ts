@@ -5,6 +5,13 @@ import { SYRIA_PRICING } from "@/lib/pricing";
 import { onlyDigits, toWhatsAppPath } from "@/lib/syria-phone";
 import { trackSyriaGrowthEvent } from "@/lib/growth-events";
 import { normalizeSyriaAmenityKeys } from "@/lib/syria/amenities";
+import {
+  defaultSubcategory,
+  isMarketplaceCategory,
+  isSubcategoryForCategory,
+  listingTypeForMarketplace,
+  type MarketplaceCategory,
+} from "@/lib/marketplace-categories";
 
 export type PersistQuickListingResult = { ok: true; id: string; userId: string } | { ok: false };
 
@@ -24,6 +31,11 @@ export async function persistQuickListing(input: {
   images?: string[];
   /** e.g. "quick_post" | "mvp_sell" */
   source: string;
+  /** SY-22: default true (direct owner, no broker). */
+  isDirect?: boolean;
+  /** Marketplace vertical; default `real_estate` / `sale` */
+  category?: string;
+  subcategory?: string;
   amenities?: string[];
   /** Optional Arabic description; defaults to short placeholder when empty. */
   descriptionAr?: string;
@@ -35,9 +47,25 @@ export async function persistQuickListing(input: {
   const addressDetails = input.addressDetails?.trim() || null;
   const priceStr = typeof input.price === "number" ? String(input.price) : input.price.trim();
   const phone = onlyDigits(input.phoneRaw.trim());
-  const type: "SALE" | "RENT" = input.type === "RENT" ? "RENT" : "SALE";
+  let category: MarketplaceCategory = "real_estate";
+  let subcategory = "sale";
+  const cr = (input.category ?? "").trim();
+  const sr = (input.subcategory ?? "").trim();
+  if (cr && isMarketplaceCategory(cr)) {
+    category = cr;
+    if (sr && isSubcategoryForCategory(cr, sr)) {
+      subcategory = sr;
+    } else {
+      subcategory = defaultSubcategory(cr);
+    }
+  }
+  const type = listingTypeForMarketplace(category, subcategory);
+  const typeOverride: "SALE" | "RENT" | "BNHUB" =
+    input.type === "RENT" ? "RENT" : type === "BNHUB" ? "BNHUB" : type === "RENT" ? "RENT" : "SALE";
+  const finalType: "SALE" | "RENT" | "BNHUB" = input.type === "RENT" ? "RENT" : typeOverride;
   const images = (input.images?.filter((s): s is string => typeof s === "string" && s.length > 0) ?? []).slice(0, 5);
   const amenities = normalizeSyriaAmenityKeys(input.amenities);
+  const isDirect = input.isDirect !== false;
 
   if (titleAr.length < 2 || !state || !city || !priceStr || phone.length < 8) {
     return { ok: false };
@@ -99,7 +127,9 @@ export async function persistQuickListing(input: {
         longitude: null,
         price: priceDec,
         currency: SYRIA_PRICING.currency,
-        type,
+        type: finalType,
+        category,
+        subcategory,
         images,
         amenities,
         ownerId: user.id,
@@ -109,6 +139,7 @@ export async function persistQuickListing(input: {
         featuredUntil: null,
         listingVerified: false,
         verified: false,
+        isDirect,
       },
     });
   });
@@ -117,7 +148,7 @@ export async function persistQuickListing(input: {
     eventType: "listing_persisted",
     userId: user.id,
     propertyId: property.id,
-    payload: { city, state, type, source: input.source },
+    payload: { city, state, type: finalType, category, subcategory, source: input.source },
   });
 
   return { ok: true, id: property.id, userId: user.id };

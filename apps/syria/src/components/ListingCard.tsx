@@ -19,6 +19,7 @@ import type { SyriaProperty } from "@/generated/prisma";
 import type { SerializedBrowseListing } from "@/services/search/search.service";
 import { labelSyriaState } from "@/lib/syria/states";
 import { labelSyriaAmenity } from "@/lib/syria/amenities";
+import { MARKETPLACE_CATEGORY_EMOJI } from "@/lib/marketplace-categories";
 
 type CardListing = Pick<
   SyriaProperty,
@@ -49,6 +50,9 @@ type CardListing = Pick<
   | "verified"
   | "createdAt"
   | "views"
+  | "category"
+  | "subcategory"
+  | "isDirect"
 >;
 
 export type ListingCardModel = CardListing | SerializedBrowseListing;
@@ -82,7 +86,15 @@ export function ListingCard({
   priority?: boolean;
 }) {
   const t = useTranslations("Listing");
+  const tCat = useTranslations("Categories");
   const resolved = backfillLocalizedPropertyShape(listing);
+  const catKey = "category" in listing && typeof (listing as { category?: string }).category === "string" ? (listing as { category: string }).category : null;
+  const subKey =
+    "subcategory" in listing && typeof (listing as { subcategory?: string }).subcategory === "string"
+      ? (listing as { subcategory: string }).subcategory
+      : null;
+  const catEmoji =
+    catKey && (MARKETPLACE_CATEGORY_EMOJI as Record<string, string>)[catKey] ? (MARKETPLACE_CATEGORY_EMOJI as Record<string, string>)[catKey] : null;
   const title = getLocalizedPropertyTitle(listing, locale);
   const cityDisplay = getLocalizedPropertyCity(resolved, locale);
   const districtLine = getLocalizedPropertyDistrict(resolved, locale);
@@ -107,6 +119,11 @@ export function ListingCard({
   const showNew = created ? isNewListing(created) : false;
   const viewCount = "views" in listing && typeof (listing as { views?: unknown }).views === "number" ? (listing as { views: number }).views : 0;
   const showHot = viewCount >= SELF_MKT_VIEWS_HOT_BADGE_MIN;
+  const isDirectVal =
+    "isDirect" in listing && typeof (listing as { isDirect?: boolean }).isDirect === "boolean" ?
+      (listing as { isDirect: boolean }).isDirect
+    : true;
+  const showDirect = isDirectVal !== false;
   const flagVerified = "verified" in listing && typeof listing.verified === "boolean" ? listing.verified : false;
   const nAmenities = Array.isArray(listing.amenities)
     ? listing.amenities.filter((x): x is string => typeof x === "string" && x.length > 0).length
@@ -117,7 +134,7 @@ export function ListingCard({
     <Link
       href={`/listing/${listing.id}`}
       className={cn(
-        "group flex flex-col overflow-hidden rounded-[var(--darlink-radius-2xl)] border border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface)] shadow-[var(--darlink-shadow-sm)] hover:border-[color:var(--darlink-accent)]/30",
+        "group flex flex-col overflow-hidden rounded-[var(--darlink-radius-2xl)] border border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface)] shadow-none hover:border-[color:var(--darlink-accent)]/30",
         planTier === "premium" && "ring-1 ring-[color:var(--darlink-sand)]/40",
       )}
     >
@@ -166,6 +183,11 @@ export function ListingCard({
               {t("featuredBadge")}
             </Badge>
           ) : null}
+          {showDirect ? (
+            <span className="rounded-full bg-gradient-to-r from-emerald-100/95 to-amber-100/90 px-2 py-0.5 text-[10px] font-bold text-emerald-900 ring-1 ring-emerald-300/60">
+              {t("badgeDirect")}
+            </span>
+          ) : null}
           {showNew ? (
             <div className="bg-blue-500 px-2 py-1 text-xs font-medium text-white rounded">{t("badgeNew")}</div>
           ) : null}
@@ -200,6 +222,12 @@ export function ListingCard({
         >
           {title}
         </h3>
+        {catKey && subKey ? (
+          <p className="line-clamp-1 text-[11px] text-[color:var(--darlink-text-muted)]" dir="auto">
+            {catEmoji ? <span aria-hidden>{catEmoji} </span> : null}
+            {(tCat as (k: string) => string)(catKey)} · {(tCat as (k: string) => string)(`sub_${subKey}`)}
+          </p>
+        ) : null}
         {showTrustedHighlight ? <div className="text-sm text-green-600">{t("badgeTrustedListing")}</div> : null}
         <p className="text-sm leading-snug text-[color:var(--darlink-text-muted)]">
           {locationPrimary}

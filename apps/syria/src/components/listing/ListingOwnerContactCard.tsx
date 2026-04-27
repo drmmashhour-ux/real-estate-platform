@@ -19,9 +19,12 @@ export function ListingOwnerContactCard({
 }) {
   const t = useTranslations("Listing");
   return (
-    <Card className="border-[color:var(--darlink-border)] p-5 shadow-[var(--darlink-shadow-sm)]">
+    <Card className="border-[color:var(--darlink-border)] p-4 shadow-[var(--darlink-shadow-sm)]">
       {ownerHasPhone ? (
-        <p className="text-sm text-[color:var(--darlink-text-muted)]">{t("contactHint")}</p>
+        <>
+          <p className="text-center text-xs font-semibold text-amber-900/95">{t("contactUrgency")}</p>
+          <p className="mt-0.5 text-center text-[11px] text-[color:var(--darlink-text-muted)]">{t("trustVerifyPayment")}</p>
+        </>
       ) : (
         <p className="text-sm text-amber-800">{t("contactNoPhone")}</p>
       )}
@@ -33,7 +36,7 @@ export function ListingOwnerContactCard({
           onClick={() => {
             trackLeadWhatsappClick(listingId);
           }}
-          className="hadiah-btn-primary mt-4 flex w-full min-h-12 items-center justify-center rounded-[var(--darlink-radius-xl)] px-4 py-2.5 text-sm font-semibold"
+          className="mt-3 flex h-14 w-full items-center justify-center rounded-xl bg-[#25D366] px-4 text-base font-bold text-white shadow-md hover:bg-[#20bd5a]"
         >
           {t("contactWhatsapp")}
         </a>
@@ -44,13 +47,10 @@ export function ListingOwnerContactCard({
           onClick={() => {
             trackLeadPhoneClick(listingId);
           }}
-          className="mt-2 flex w-full min-h-12 items-center justify-center rounded-[var(--darlink-radius-xl)] border-2 border-[color:var(--darlink-navy)] bg-[color:var(--darlink-surface)] px-4 py-2.5 text-sm font-semibold text-[color:var(--darlink-navy)]"
+          className="mt-2 flex h-12 w-full items-center justify-center rounded-xl border-2 border-[color:var(--darlink-navy)] bg-[color:var(--darlink-surface)] px-4 text-sm font-bold text-[color:var(--darlink-navy)]"
         >
           {t("contactCall")}
         </a>
-      ) : null}
-      {ownerHasPhone ? (
-        <p className="mt-2 text-xs text-[color:var(--darlink-text-muted)]">{t("contactWhatsappCallHint")}</p>
       ) : null}
     </Card>
   );

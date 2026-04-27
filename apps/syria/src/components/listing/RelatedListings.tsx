@@ -23,7 +23,7 @@ export async function RelatedListings({
       status: "PUBLISHED",
       fraudFlag: false,
     },
-    orderBy: [{ plan: "desc" }, { createdAt: "desc" }],
+    orderBy: [{ isDirect: "desc" }, { plan: "desc" }, { createdAt: "desc" }],
     take: 4,
   });
 

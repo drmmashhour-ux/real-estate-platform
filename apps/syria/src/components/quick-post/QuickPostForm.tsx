@@ -13,6 +13,12 @@ import { SYRIA_PRICING } from "@/lib/pricing";
 import { ListingShareActions } from "@/components/listing/ListingShareActions";
 import { QuickPostAiPanel } from "@/components/quick-post/QuickPostAiPanel";
 import { QuickPostAiShareBlock } from "@/components/quick-post/QuickPostAiShareBlock";
+import {
+  MARKETPLACE_CATEGORIES,
+  MARKETPLACE_SUBCATEGORIES,
+  MARKETPLACE_CATEGORY_EMOJI,
+  type MarketplaceCategory,
+} from "@/lib/marketplace-categories";
 
 type FormState = {
   title: string;
@@ -23,6 +29,7 @@ type FormState = {
   addressDetails: string;
   price: string;
   phone: string;
+  isDirect: boolean;
 };
 
 export function QuickPostForm() {
@@ -38,6 +45,7 @@ export function QuickPostForm() {
     addressDetails: "",
     price: "",
     phone: "",
+    isDirect: true,
   });
   const [shareMeta, setShareMeta] = useState<{ id: string; title: string; city: string; price: string } | null>(null);
   const [amenityKeys, setAmenityKeys] = useState<string[]>([]);
@@ -48,6 +56,10 @@ export function QuickPostForm() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [createdId, setCreatedId] = useState<string | null>(null);
+  const tCat = useTranslations("Categories");
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [marketCategory, setMarketCategory] = useState<MarketplaceCategory | null>(null);
+  const [marketSub, setMarketSub] = useState<string | null>(null);
 
   async function onPickPhotos(files: FileList | null) {
     if (!files?.length) return;
@@ -69,6 +81,10 @@ export function QuickPostForm() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    if (!marketCategory || !marketSub) {
+      setError(t("errorRequired"));
+      return;
+    }
     const priceNum = Number(form.price);
     if (!form.title.trim() || !form.state.trim() || !form.city.trim() || !form.phone.trim()) {
       setError(t("errorRequired"));
@@ -94,6 +110,8 @@ export function QuickPostForm() {
           price: priceNum,
           phone: form.phone.trim(),
           type: "SALE",
+          category: marketCategory ?? undefined,
+          subcategory: marketSub ?? undefined,
           amenities: amenityKeys,
           images: imageUrls.length > 0 ? imageUrls : undefined,
         }),
@@ -120,6 +138,7 @@ export function QuickPostForm() {
         addressDetails: "",
         price: "",
         phone: "",
+        isDirect: true,
       });
       setAmenityKeys([]);
       setImageUrls([]);
@@ -128,6 +147,63 @@ export function QuickPostForm() {
     } finally {
       setSubmitting(false);
     }
+  }
+
+  if (step === 1) {
+    return (
+      <div className="space-y-4 rounded-[var(--darlink-radius-2xl)] border border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface)] p-6 shadow-[var(--darlink-shadow-sm)]">
+        <p className="text-center text-sm font-semibold text-[color:var(--darlink-text)]">{t("stepPickCategory")}</p>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          {MARKETPLACE_CATEGORIES.map((c) => (
+            <button
+              type="button"
+              key={c}
+              onClick={() => {
+                setMarketCategory(c);
+                setStep(2);
+              }}
+              className="flex min-h-[88px] flex-col items-center justify-center gap-1 rounded-[var(--darlink-radius-xl)] border border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface)] p-3 text-center shadow-sm transition hover:border-[color:var(--darlink-accent)]"
+            >
+              <span className="text-2xl leading-none" aria-hidden>
+                {MARKETPLACE_CATEGORY_EMOJI[c]}
+              </span>
+              <span className="text-center text-xs font-semibold leading-tight sm:text-sm">{tCat(c)}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (step === 2 && marketCategory) {
+    const subs = [...MARKETPLACE_SUBCATEGORIES[marketCategory]];
+    return (
+      <div className="space-y-4 rounded-[var(--darlink-radius-2xl)] border border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface)] p-6 shadow-[var(--darlink-shadow-sm)]">
+        <p className="text-center text-sm font-semibold text-[color:var(--darlink-text)]">{t("stepPickSub")}</p>
+        <button
+          type="button"
+          className="text-sm font-medium text-[color:var(--darlink-accent)] underline"
+          onClick={() => setStep(1)}
+        >
+          {t("stepBack")}
+        </button>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          {subs.map((s) => (
+            <button
+              type="button"
+              key={s}
+              onClick={() => {
+                setMarketSub(s);
+                setStep(3);
+              }}
+              className="min-h-11 rounded-[var(--darlink-radius-xl)] border border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface)] px-2 py-2 text-sm font-semibold text-[color:var(--darlink-text)] hover:border-[color:var(--darlink-accent)]"
+            >
+              {(tCat as (k: string) => string)(`sub_${s}`)}
+            </button>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   if (success) {
@@ -144,8 +220,10 @@ export function QuickPostForm() {
               {t("viewListing")}
             </Link>
             <p className="mt-5 text-base font-bold text-emerald-950 sm:text-lg">{t("shareAfterPost")}</p>
-            <div className="mt-3 rounded-[var(--darlink-radius-xl)] border border-emerald-300/50 bg-white/80 p-3 text-start shadow-sm ring-1 ring-emerald-500/15 sm:mx-auto sm:max-w-md">
+            <div className="mt-3 rounded-[var(--darlink-radius-xl)] border border-emerald-300/50 bg-white/80 p-4 text-start shadow-sm ring-1 ring-emerald-500/15 sm:mx-auto sm:max-w-md">
               <ListingShareActions
+                variant="growth"
+                whatsappLabel={t("shareWhatsAppCta")}
                 listingId={createdId}
                 {...(shareMeta
                   ? {
@@ -180,6 +258,9 @@ export function QuickPostForm() {
             setSuccess(false);
             setCreatedId(null);
             setShareMeta(null);
+            setStep(1);
+            setMarketCategory(null);
+            setMarketSub(null);
             if (fileInputRef.current) fileInputRef.current.value = "";
           }}
         >
@@ -191,6 +272,24 @@ export function QuickPostForm() {
 
   return (
     <form onSubmit={onSubmit} className="space-y-4 rounded-[var(--darlink-radius-2xl)] border border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface)] p-6 shadow-[var(--darlink-shadow-sm)]">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm font-medium text-[color:var(--darlink-text)]">{t("stepDetails")}</p>
+        <button
+          type="button"
+          onClick={() => {
+            setStep(1);
+            setMarketSub(null);
+          }}
+          className="text-xs font-medium text-[color:var(--darlink-accent)] underline"
+        >
+          {t("stepBack")}
+        </button>
+      </div>
+      {marketCategory && marketSub ? (
+        <p className="text-xs text-[color:var(--darlink-text-muted)]">
+          {tCat(marketCategory)} · {(tCat as (k: string) => string)(`sub_${marketSub}`)}
+        </p>
+      ) : null}
       <label className="block text-sm font-medium text-[color:var(--darlink-text)]">
         {t("fieldTitle")} <span className="text-red-600">*</span>
         <Input
@@ -319,6 +418,20 @@ export function QuickPostForm() {
             );
           })}
         </div>
+      </div>
+      <div className="rounded-[var(--darlink-radius-lg)] border border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface-muted)]/50 p-3 [dir:rtl]:text-right">
+        <label className="flex cursor-pointer items-start gap-2">
+          <input
+            type="checkbox"
+            checked={form.isDirect}
+            onChange={(e) => setForm((f) => ({ ...f, isDirect: e.target.checked }))}
+            className="mt-0.5 size-4 rounded border-[color:var(--darlink-border)] text-emerald-600"
+          />
+          <span>
+            <span className="block text-sm font-medium text-[color:var(--darlink-text)]">{t("fieldIsDirect")}</span>
+            <span className="mt-0.5 block text-xs text-[color:var(--darlink-text-muted)]">{t("fieldIsDirectHint")}</span>
+          </span>
+        </label>
       </div>
       <label className="block text-sm font-medium text-[color:var(--darlink-text)]">
         {t("fieldPrice")} <span className="text-red-600">*</span>

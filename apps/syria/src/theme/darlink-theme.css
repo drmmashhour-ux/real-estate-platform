@@ -1,12 +1,12 @@
 /**
- * Hadiah Link — CSS variables only (namespace --darlink-*; historic token names preserved).
+ * Hadiah Link — CSS variables (namespace --darlink-*; historic names preserved).
+ * Dark shell tokens align with `src/lib/design-tokens.ts` (HADIAH_COLORS).
  * Imported from globals.css. Do not import other monorepo product themes here.
- * Palette values mirror `src/lib/design-tokens.ts` (HADIAH_COLORS) where applicable.
  */
 
 :root {
   /* Core palette — primary CTA red + gold accent (production tokens) */
-  --darlink-navy: #0f172a;
+  --darlink-navy: #0b0b0b;
   --darlink-sand: #d4af37;
   --darlink-off-white: #f8f6f2;
   --darlink-primary: #dc2626;
@@ -42,11 +42,11 @@
   --darlink-radius-2xl: 1.25rem;
   --darlink-radius-3xl: 1.5rem;
 
-  /* Shadows — keep light (Syria / slow devices): avoid large elevation */
-  --darlink-shadow-sm: 0 1px 2px rgb(15 23 42 / 0.05);
-  --darlink-shadow-md: 0 2px 6px rgb(15 23 42 / 0.06);
-  --darlink-shadow-lg: 0 4px 12px rgb(15 23 42 / 0.08);
-  --darlink-shadow-xl: 0 6px 16px rgb(15 23 42 / 0.09);
+  /* Shadows — minimal (Syria: avoid heavy elevation; prefer border) */
+  --darlink-shadow-sm: 0 1px 0 rgb(15 23 42 / 0.04);
+  --darlink-shadow-md: 0 1px 1px rgb(15 23 42 / 0.05);
+  --darlink-shadow-lg: 0 1px 2px rgb(15 23 42 / 0.06);
+  --darlink-shadow-xl: 0 2px 4px rgb(15 23 42 / 0.06);
 
   --darlink-ring: 0 0 0 3px rgb(220 38 38 / 0.35);
   --darlink-sand-soft: rgb(212 175 55 / 0.35);

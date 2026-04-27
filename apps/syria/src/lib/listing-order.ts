@@ -17,10 +17,12 @@ export function describeListingSortAutonomyOverlay(
   return `${base}: ${autonomyNotes.slice(0, 2).join(" · ")}`;
 }
 
+const DIRECT_FIRST: Prisma.SyriaPropertyOrderByWithRelationInput = { isDirect: "desc" };
+
 export function listingBrowseOrderBy(sort: string | undefined): Prisma.SyriaPropertyOrderByWithRelationInput[] {
   const s = sort ?? "featured";
-  if (s === "price_asc") return [{ price: "asc" }];
-  if (s === "price_desc") return [{ price: "desc" }];
-  if (s === "new" || s === "newest") return [{ createdAt: "desc" }];
-  return [{ plan: "desc" }, { createdAt: "desc" }];
+  if (s === "price_asc") return [DIRECT_FIRST, { price: "asc" }];
+  if (s === "price_desc") return [DIRECT_FIRST, { price: "desc" }];
+  if (s === "new" || s === "newest") return [DIRECT_FIRST, { createdAt: "desc" }];
+  return [DIRECT_FIRST, { plan: "desc" }, { createdAt: "desc" }];
 }

@@ -38,7 +38,7 @@ export function MobileNavMenu({
           <button type="button" className="absolute inset-0 bg-black/50" aria-label={t("closeMenu")} onClick={() => setOpen(false)} />
           <nav
             className={cn(
-              "absolute start-0 top-0 flex h-full w-[min(100%,20rem)] flex-col gap-1 border-e border-white/10 bg-[color:var(--darlink-bg)] p-4 pt-6 text-white shadow-[var(--darlink-shadow-xl)]",
+              "absolute start-0 top-0 flex h-full w-[min(100%,20rem)] flex-col gap-1 border-e border-white/10 bg-[color:var(--darlink-bg)] p-4 pt-6 text-white shadow-[var(--darlink-shadow-sm)]",
             )}
           >
             <Link

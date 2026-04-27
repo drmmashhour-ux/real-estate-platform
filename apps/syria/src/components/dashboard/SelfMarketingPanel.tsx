@@ -34,7 +34,7 @@ export async function SelfMarketingPanel({ listings }: { listings: SyriaProperty
   return (
     <div className="space-y-3">
       {needShare.length > 0 ? (
-        <div className="rounded-[var(--darlink-radius-2xl)] border border-amber-200 bg-amber-50/80 px-4 py-3 text-sm text-amber-950 shadow-[var(--darlink-shadow-sm)]">
+        <div className="rounded-[var(--darlink-radius-2xl)] border border-amber-200 bg-amber-50/80 px-4 py-3 text-sm text-amber-950 shadow-none">
           <p className="font-semibold">{t("reminderShare")}</p>
           <ul className="mt-2 list-inside list-disc text-xs text-amber-900/95">
             {needShare.slice(0, 4).map((l) => (
@@ -48,12 +48,12 @@ export async function SelfMarketingPanel({ listings }: { listings: SyriaProperty
         </div>
       ) : null}
       {upsellFeat.length > 0 ? (
-        <div className="rounded-[var(--darlink-radius-2xl)] border border-red-200 bg-red-50/60 px-4 py-3 text-sm text-red-950 shadow-[var(--darlink-shadow-sm)]">
+        <div className="rounded-[var(--darlink-radius-2xl)] border border-red-200 bg-red-50/60 px-4 py-3 text-sm text-red-950 shadow-none">
           <p className="font-semibold">{t("upsellFeatured")}</p>
           {upsellFeat.slice(0, 1).map((l) => (
             <Link
               key={l.id}
-              href={`/listing/${l.id}`}
+              href={`/listing/${l.id}#make-featured`}
               className="mt-2 inline-flex min-h-11 w-full max-w-sm items-center justify-center rounded-[var(--darlink-radius-xl)] bg-[var(--hadiah-btn)] px-4 text-sm font-bold text-white hover:opacity-95"
             >
               {t("upsellCta")}

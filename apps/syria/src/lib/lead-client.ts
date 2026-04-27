@@ -6,6 +6,7 @@ function postLead(path: "/api/lead/whatsapp" | "/api/lead/phone", listingId: str
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ listingId }),
+    keepalive: true,
   });
 }
 

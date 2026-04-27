@@ -142,7 +142,7 @@ export function BrowseFiltersClient({ basePath, defaultQ, defaultCity, defaultSo
           <button type="button" className="absolute inset-0 bg-[color:var(--darlink-navy)]/40" aria-label={t("closeFilters")} onClick={() => setOpen(false)} />
           <div
             className={cn(
-              "absolute inset-x-0 bottom-0 max-h-[88vh] overflow-y-auto rounded-t-[var(--darlink-radius-3xl)] bg-[color:var(--darlink-surface)] p-6 pb-10 shadow-[var(--darlink-shadow-xl)]",
+              "absolute inset-x-0 bottom-0 max-h-[88vh] overflow-y-auto rounded-t-[var(--darlink-radius-3xl)] border-t border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface)] p-6 pb-10 shadow-[var(--darlink-shadow-sm)]",
               "[dir=rtl]:text-right",
             )}
           >

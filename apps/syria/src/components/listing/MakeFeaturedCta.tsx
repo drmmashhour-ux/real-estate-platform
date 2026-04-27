@@ -46,7 +46,6 @@ export function MakeFeaturedCta({
 
   useEffect(() => {
     if (modalOpen) {
-      setPlan(canPickFeatured ? "featured" : "premium");
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "";
@@ -54,9 +53,10 @@ export function MakeFeaturedCta({
     return () => {
       document.body.style.overflow = "";
     };
-  }, [modalOpen, canPickFeatured]);
+  }, [modalOpen]);
 
   const valueLines = [t("bakaValue1"), t("bakaValue2"), t("bakaValue3")];
+  const priceForSelectedPlan = plan === "featured" ? lineFeatured : linePremium;
 
   async function onWhatsappPayClick() {
     if (!contact) return;
@@ -74,7 +74,11 @@ export function MakeFeaturedCta({
         setErr(t("makeFeaturedError"));
         return;
       }
-      trackClientAnalyticsEvent("f1_payment_request", { propertyId: listingId, payload: { plan } });
+      trackClientAnalyticsEvent("f1_payment_request", { propertyId: listingId, payload: { plan, listingId } });
+      trackClientAnalyticsEvent("whatsapp_clicked", {
+        propertyId: listingId,
+        payload: { listingId, plan },
+      });
       window.open(data.whatsappUrl, "_blank", "noopener,noreferrer");
     } catch {
       setErr(t("makeFeaturedError"));
@@ -86,7 +90,8 @@ export function MakeFeaturedCta({
   function onOpenModal() {
     setErr(null);
     setModalOpen(true);
-    trackClientAnalyticsEvent("upgrade_opened", { propertyId: listingId });
+    setPlan(canPickFeatured ? "featured" : "premium");
+    trackClientAnalyticsEvent("upgrade_opened", { propertyId: listingId, payload: { listingId } });
   }
 
   const modal = modalOpen
@@ -122,29 +127,33 @@ export function MakeFeaturedCta({
                 <h3 id="baka-modal-title" className="mt-3 text-base font-bold text-[color:var(--darlink-text)]">
                   {t("bakaModalTitle")}
                 </h3>
-                <p className="mt-1 text-sm font-medium text-emerald-800">{t("bakaReinforcement")}</p>
+                <p className="mt-2 rounded-lg bg-emerald-50/90 px-3 py-2 text-sm font-semibold text-emerald-900 ring-1 ring-emerald-200/60">
+                  {t("bakaReinforcement")}
+                </p>
               </div>
               <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4 sm:px-5">
-                <p className="text-xs font-semibold uppercase text-[color:var(--darlink-gold)]">{t("bakaPickPlan")}</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--darlink-gold)]">
+                  {t("bakaPickPlan")}
+                </p>
                 <div className="grid gap-3 sm:grid-cols-1">
                   {canPickFeatured ? (
                   <button
                     type="button"
                     onClick={() => setPlan("featured")}
-                    className={`w-full min-h-[5.5rem] rounded-[var(--darlink-radius-xl)] border-2 p-5 text-start transition ${
+                    className={`w-full min-h-32 rounded-[var(--darlink-radius-xl)] border-2 p-6 text-start ${
                       plan === "featured"
-                        ? "border-[var(--hadiah-btn)] bg-red-100/80 ring-2 ring-red-300/50"
+                        ? "border-[var(--hadiah-btn)] bg-red-50 ring-2 ring-red-200/60"
                         : "border-[color:var(--darlink-border)] bg-red-50/50"
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <p className="text-base font-bold text-[color:var(--darlink-text)]">{t("bakaPlanFeatured")}</p>
-                        <p className="mt-1 text-lg font-extrabold tabular-nums text-[var(--hadiah-btn)] sm:text-xl">
+                      <div className="min-w-0">
+                        <p className="text-lg font-extrabold text-[color:var(--darlink-text)]">{t("bakaPlanFeatured")}</p>
+                        <p className="mt-1.5 text-base font-extrabold tabular-nums text-[var(--hadiah-btn)] sm:text-lg">
                           {t("bakaCardPrice", { amount: lineFeatured, days: featuredDurationDays })}
                         </p>
                       </div>
-                      <span className="shrink-0 rounded-full bg-[#D4AF37]/20 px-2.5 py-0.5 text-[10px] font-bold text-amber-950">
+                      <span className="shrink-0 rounded-full bg-[#D4AF37]/30 px-2.5 py-1 text-[10px] font-bold text-amber-950">
                         {t("bakaMostPopular")}
                       </span>
                     </div>
@@ -153,7 +162,7 @@ export function MakeFeaturedCta({
                   <button
                     type="button"
                     onClick={() => setPlan("premium")}
-                    className={`w-full min-h-[4.25rem] rounded-[var(--darlink-radius-xl)] border-2 p-3.5 text-start ${
+                    className={`w-full min-h-[4.5rem] rounded-[var(--darlink-radius-xl)] border-2 p-3.5 text-start ${
                       plan === "premium"
                         ? "border-[color:var(--darlink-sand)] bg-amber-50/80 ring-2 ring-amber-200/50"
                         : "border-[color:var(--darlink-border)] bg-white"
@@ -165,10 +174,12 @@ export function MakeFeaturedCta({
                     </p>
                   </button>
                 </div>
-                <div className="space-y-1.5 text-sm text-[color:var(--darlink-text)]">
-                  <p>{t("bakaStep1")}</p>
-                  <p>{t("bakaStep2")}</p>
-                  <p>{t("bakaStep3")}</p>
+                <div className="rounded-[var(--darlink-radius-lg)] border border-stone-200/90 bg-stone-50/80 px-3 py-2.5">
+                  <ol className="list-inside list-decimal space-y-1.5 text-sm font-medium text-[color:var(--darlink-text)]" dir={isAr ? "rtl" : "ltr"}>
+                    <li>{t("bakaStep1")}</li>
+                    <li>{t("bakaStep2")}</li>
+                    <li>{t("bakaStep3")}</li>
+                  </ol>
                 </div>
                 <div className="space-y-1 text-xs text-[color:var(--darlink-text-muted)]">
                   <p>{t("bakaReassure1")}</p>
@@ -183,12 +194,19 @@ export function MakeFeaturedCta({
                   </a>
                 ) : null}
               </div>
-              <div className="shrink-0 border-t border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface)] p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+              <div className="sticky bottom-0 z-20 shrink-0 border-t border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface)] p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+                <p className="mb-2 text-center text-sm font-bold tabular-nums text-[color:var(--darlink-text)]">
+                  {t("bakaStickyPrice", {
+                    amount: priceForSelectedPlan,
+                    days: featuredDurationDays,
+                    plan: plan === "featured" ? t("bakaPlanFeatured") : t("bakaPlanPremium"),
+                  })}
+                </p>
                 {contact ? (
                   <button
                     type="button"
                     disabled={waLoading}
-                    className="flex min-h-14 w-full items-center justify-center rounded-[var(--darlink-radius-xl)] bg-[#25D366] px-4 text-base font-bold text-white hover:bg-[#20bd5a] active:bg-[#1daf54] disabled:opacity-60"
+                    className="flex min-h-[3.5rem] w-full items-center justify-center rounded-[var(--darlink-radius-xl)] bg-[#25D366] px-4 text-base font-bold text-white hover:bg-[#20bd5a] active:bg-[#1daf54] disabled:opacity-60"
                     onClick={() => void onWhatsappPayClick()}
                   >
                     {waLoading ? "…" : t("bakaWhatsappCta")}
@@ -198,10 +216,7 @@ export function MakeFeaturedCta({
                   type="button"
                   className="mt-2 w-full min-h-11 text-center text-sm font-medium text-[color:var(--darlink-text-muted)] underline"
                   onClick={() => {
-                    trackClientAnalyticsEvent("payment_confirmed", {
-                      propertyId: listingId,
-                      payload: { plan, intent: "mark_sent" },
-                    });
+                    trackClientAnalyticsEvent("payment_confirmed", { propertyId: listingId, payload: { listingId, plan } });
                   }}
                 >
                   {t("bakaMarkProofSent")}
@@ -216,28 +231,31 @@ export function MakeFeaturedCta({
     : null;
 
   return (
-    <Card className="border-[color:var(--darlink-sand)]/40 bg-amber-50/40 p-5 shadow-[var(--darlink-shadow-sm)]">
+    <Card id="make-featured" className="scroll-mt-24 border-[color:var(--darlink-sand)]/40 bg-amber-50/40 p-4 sm:p-5">
       <h2 className="text-base font-bold leading-snug text-[color:var(--darlink-text)] sm:text-lg">{t("makeFeaturedValueHeadline")}</h2>
-      <ul className="mt-3 space-y-1.5 text-sm leading-snug text-[color:var(--darlink-text)]" dir={isAr ? "rtl" : "ltr"}>
+      <ul className="mt-2.5 space-y-0.5 text-sm leading-tight text-[color:var(--darlink-text)]" dir={isAr ? "rtl" : "ltr"}>
         {valueLines.map((line) => (
-          <li key={line} className="flex items-start gap-2.5">
-            <span className="shrink-0 text-[#D4AF37]" aria-hidden>
-              ✓
+          <li key={line} className="flex items-start gap-2">
+            <span className="mt-0.5 shrink-0 text-xs leading-none text-[#D4AF37]" aria-hidden>
+              ✦
             </span>
             <span>{line}</span>
           </li>
         ))}
       </ul>
-      <p className="mt-2 text-sm font-bold tabular-nums text-[color:var(--darlink-text)]">
+      <p className="mt-2.5 text-sm font-bold tabular-nums text-[color:var(--darlink-text)]" dir="ltr">
         {t("bakaTeaserPrice", { amount: lineFeatured, days: featuredDurationDays })}
       </p>
       <p className="text-xs text-[color:var(--darlink-text-muted)]">{t("makeFeaturedPriceNote")}</p>
       <p className="mt-2 text-sm font-medium text-amber-900/90">{t("makeFeaturedUrgency")}</p>
       <p className="text-xs text-[color:var(--darlink-text-muted)]">{t("bakaTeaserSocial")}</p>
+      <p className="mt-1 rounded-md bg-white/50 px-2 py-1.5 text-center text-sm font-medium text-emerald-900/90 sm:text-left">
+        {t("bakaReinforcement")}
+      </p>
       <Button
         type="button"
         variant="primary"
-        className="mt-4 w-full min-h-12 text-base"
+        className="mt-3 w-full min-h-12 text-base"
         onClick={onOpenModal}
       >
         {t("bakaUpgradeCta")}

@@ -15,7 +15,7 @@ export function ListingMobileBookingBar({
 }) {
   const t = useTranslations("Listing");
   return (
-    <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface)]/95 px-4 py-3 shadow-[var(--darlink-shadow-lg)] backdrop-blur-md md:hidden">
+    <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface)] px-4 py-3 shadow-[var(--darlink-shadow-sm)] md:hidden">
       <div className="darlink-rtl-row mx-auto flex max-w-7xl items-center justify-between gap-4">
         <p className="text-lg font-bold tabular-nums text-[color:var(--darlink-text)]">{money(amount, currency, numberLoc)}</p>
         <a

@@ -17,7 +17,7 @@ export async function SyriaHeader() {
   const showBnhubNav = isBnhubInSyriaUI();
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/10 bg-[color:var(--darlink-bg)] text-[color:var(--darlink-off-white)] shadow-[var(--darlink-shadow-md)] backdrop-blur-md">
+    <header className="sticky top-0 z-50 border-b border-white/10 bg-[color:var(--darlink-bg)] text-[color:var(--darlink-off-white)] shadow-[var(--darlink-shadow-sm)]">
       <div className="darlink-header-bar mx-auto flex min-w-0 max-w-7xl items-center justify-between gap-3 overflow-hidden px-3 py-3 sm:gap-4 sm:px-6 sm:py-3.5">
         <Link
           href="/"

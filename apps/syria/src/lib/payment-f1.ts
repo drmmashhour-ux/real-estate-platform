@@ -1,11 +1,14 @@
 import type { SyriaListingPlan } from "@/generated/prisma";
 import { toWhatsAppPath } from "@/lib/syria-phone";
 
-/** F1 hardcoded SYP amounts (Order F1 — no gateway). */
+/** Manual باقة مميز/فاخر — SYP, no external gateway. */
 export const F1_PLAN_PRICES_SYP = {
   featured: 50_000,
   premium: 120_000,
 } as const;
+
+/** Alias for Financial Core (FI) integration docs. */
+export const FI_MANUAL_PRICES_SYP = F1_PLAN_PRICES_SYP;
 
 export type F1PlanKey = keyof typeof F1_PLAN_PRICES_SYP;
 
@@ -30,9 +33,9 @@ export function f1PlanStronger(a: SyriaListingPlan, b: SyriaListingPlan): SyriaL
   return tier[a] >= tier[b] ? a : b;
 }
 
-/** Arabic first line for WhatsApp proof (admin matches requestId). */
+/** Arabic proof line — admin matches `requestId` to the payment request row. */
 export function f1BuildWhatsAppPaymentText(listingId: string, requestId: string): string {
-  return `قمت بالدفع للإعلان ${listingId}\nرقم الطلب: ${requestId}`;
+  return `قمت بالدفع للإعلان رقم ${listingId}\nرقم الطلب: ${requestId}`;
 }
 
 export function f1BuildWhatsAppPaymentTextEn(listingId: string, requestId: string): string {

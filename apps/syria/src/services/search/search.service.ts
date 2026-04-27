@@ -43,10 +43,14 @@ export type SerializedBrowseListing = {
   listingVerified: boolean;
   /** SY-11 marketplace trust flag */
   verified: boolean;
+  /** SY-22: no broker / direct owner */
+  isDirect: boolean;
   /** ISO */
   createdAt: string;
   /** Page views (simple counter) */
   views: number;
+  category: string;
+  subcategory: string;
 };
 
 export type SearchPropertiesResult = {
@@ -93,8 +97,11 @@ function serialize(p: SyriaProperty): SerializedBrowseListing {
     longitude: p.longitude ?? null,
     listingVerified: p.listingVerified,
     verified: p.verified,
+    isDirect: p.isDirect,
     createdAt: p.createdAt.toISOString(),
     views: p.views,
+    category: p.category,
+    subcategory: p.subcategory,
   };
 }
 
@@ -132,6 +139,9 @@ export async function searchProperties(
           "pageSize",
           "sort",
           "governorate",
+          "category",
+          "subcategory",
+          "direct",
         ]);
         return Object.fromEntries(Object.entries(flatMvp).filter(([k]) => allow.has(k)));
       })() as Record<string, string>)
@@ -157,17 +167,20 @@ export async function searchProperties(
         longitude: { not: null },
       },
       take: 450,
-      orderBy: [{ plan: "desc" }, { createdAt: "desc" }],
+      orderBy: listingBrowseOrderBy("featured"),
     });
     let rows = capped.filter((r) => r.latitude != null && r.longitude != null);
     if (amenityTags.length > 0) {
       rows = rows.filter((r) => listingMatchesAmenityTags(r.amenities, amenityTags));
     }
-    rows.sort(
-      (a, b) =>
+    rows.sort((a, b) => {
+      const d =
         haversineKm(centerLat!, centerLng!, a.latitude!, a.longitude!) -
-        haversineKm(centerLat!, centerLng!, b.latitude!, b.longitude!),
-    );
+        haversineKm(centerLat!, centerLng!, b.latitude!, b.longitude!);
+      if (d !== 0) return d;
+      if (a.isDirect === b.isDirect) return 0;
+      return a.isDirect ? -1 : 1;
+    });
     const total = rows.length;
     const sliced = rows.slice((page - 1) * pageSize, page * pageSize);
     return {

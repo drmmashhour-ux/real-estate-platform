@@ -157,7 +157,7 @@ export function BrowseExperienceClient(props: {
     <div className="space-y-6">
       <div
         className={cn(
-          "sticky top-14 z-30 -mx-4 border-b border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface)]/95 px-4 py-3 backdrop-blur-md supports-[backdrop-filter]:bg-[color:var(--darlink-surface)]/85 md:-mx-0 md:rounded-[var(--darlink-radius-2xl)] md:border md:px-4",
+          "sticky top-14 z-30 -mx-4 border-b border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface)] px-4 py-3 md:-mx-0 md:rounded-[var(--darlink-radius-2xl)] md:border md:px-4",
           "[dir=rtl]:text-right",
         )}
       >
@@ -337,7 +337,7 @@ export function BrowseExperienceClient(props: {
       {drawerOpen ? (
         <div className="fixed inset-0 z-[60] md:hidden" role="dialog" aria-modal="true">
           <button type="button" className="absolute inset-0 bg-[color:var(--darlink-navy)]/40" aria-label={t("closeFilters")} onClick={() => setDrawerOpen(false)} />
-          <div className="absolute inset-x-0 bottom-0 max-h-[88vh] overflow-y-auto rounded-t-[var(--darlink-radius-3xl)] bg-[color:var(--darlink-surface)] p-6 pb-10 shadow-[var(--darlink-shadow-xl)]">
+          <div className="absolute inset-x-0 bottom-0 max-h-[88vh] overflow-y-auto rounded-t-[var(--darlink-radius-3xl)] border-t border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface)] p-6 pb-10 shadow-[var(--darlink-shadow-sm)]">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-semibold">{t("filterSheetTitle")}</h2>
               <button type="button" className="text-sm font-semibold text-[color:var(--darlink-accent)]" onClick={() => setDrawerOpen(false)}>
