@@ -1,25 +1,34 @@
-import { getDynamicPrice } from "@/lib/services/pricingEngine";
+import {
+  getDynamicPriceForSource,
+  type PricingDataSource,
+} from "@/lib/services/pricingEngine";
 
 export const dynamic = "force-dynamic";
 
+function parseSource(raw: string | null): PricingDataSource {
+  if (raw === "bnhub") return "bnhub";
+  return "marketplace";
+}
+
 /**
- * Suggested dynamic nightly price for a BNHub `ShortTermListing` (id in path).
- * Uses SQL aggregates over `"Booking"` + base `nightPriceCents` (see `pricingEngine.ts`).
+ * Suggested dynamic price: `source=bnhub` → `bnhub_listings` + `Booking`; default `marketplace` → `Listing` + `listing_bookings`.
  */
 export async function GET(
-  _req: Request,
+  req: Request,
   context: { params: Promise<{ id: string }> }
 ) {
   const { id } = await context.params;
   if (!id?.trim()) {
     return Response.json({ error: "id required" }, { status: 400 });
   }
-  const price = await getDynamicPrice(id.trim());
+  const { searchParams } = new URL(req.url);
+  const source = parseSource(searchParams.get("source"));
+  const price = await getDynamicPriceForSource(id.trim(), source);
   if (price == null) {
     return Response.json(
       { error: "Not found or insufficient pricing data" },
       { status: 404 }
     );
   }
-  return Response.json({ price });
+  return Response.json({ price, source });
 }

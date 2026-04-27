@@ -4,11 +4,43 @@ type ListingIntelligenceRow = {
   id: string;
   title: string;
   price: string;
+  city: string;
   crm_marketplace_live: string; // "true" | "false" from ::text
   oaciqHold: boolean;
   views: string;
   bookings: string;
 };
+
+/**
+ * Inferred from listing signals (additive, non-breaking optional fields on each insight).
+ * - `not_on_marketplace` / low visibility → **seller** (list more inventory)
+ * - `compliance_hold` → **broker** (workflow / performance)
+ * - Low bookings on live listing → **host** (bookings / stay conversion style messaging)
+ * - Default active listing / buyer funnels → **buyer**
+ */
+function inferInsightMeta(input: {
+  status: "compliance_hold" | "marketplace_live" | "not_on_marketplace";
+  views: number;
+  bookings: number;
+  conversionRate: number;
+}): { audience: "buyer" | "seller" | "host" | "broker"; type: string } {
+  if (input.status === "compliance_hold") {
+    return { audience: "broker", type: "compliance_hold" };
+  }
+  if (input.status === "not_on_marketplace") {
+    return { audience: "seller", type: "low_inventory" };
+  }
+  if (input.status === "marketplace_live") {
+    if (input.bookings === 0 && input.views >= 2) {
+      return { audience: "host", type: "low_bookings" };
+    }
+    if (input.conversionRate < 0.02) {
+      return { audience: "buyer", type: "low_conversion" };
+    }
+    return { audience: "buyer", type: "listing_active" };
+  }
+  return { audience: "buyer", type: "general" };
+}
 
 /**
  * CRM residential listings visible to a broker: rows they own (`user_id`) or can access
@@ -23,6 +55,7 @@ export async function getBrokerIntelligence(brokerId: string) {
       l."id",
       l."title",
       l."price"::text,
+      l."city",
       l."crm_marketplace_live"::text,
       (l."lecipm_oaciq_compliance_hold_at" IS NOT NULL) AS "oaciqHold",
       (
@@ -61,10 +94,13 @@ export async function getBrokerIntelligence(brokerId: string) {
         ? "marketplace_live"
         : "not_on_marketplace";
 
+    const { audience, type } = inferInsightMeta({ status, views: v, bookings: b, conversionRate });
+    const cityNorm = l.city && l.city.trim() !== "" ? l.city : undefined;
     return {
       listingId: l.id,
       title: l.title,
       price: Number(l.price) || 0,
+      city: cityNorm,
       views: v,
       bookings: b,
       status,
@@ -74,6 +110,8 @@ export async function getBrokerIntelligence(brokerId: string) {
         conversionRate < 0.02
           ? "Improve price, photos, description, or trust signals"
           : "Listing is performing normally",
+      audience,
+      type,
     };
   });
 }

@@ -2,6 +2,7 @@ import { getLegacyDB } from "@/lib/db/legacy";
 const prisma = getLegacyDB();
 import { createBooking } from "@/lib/bnhub/booking";
 import { isListingAvailable } from "@/lib/bnhub/listings";
+import { getClientIpFromRequest } from "@/lib/security/ip-fingerprint";
 import { requireMobileUser } from "@/lib/mobile/mobileAuth";
 import { logApiRouteError } from "@/lib/api/dev-log";
 import { GuestIdentityRequiredError } from "@/lib/bnhub/guest-identity-gate";
@@ -74,12 +75,14 @@ export async function POST(request: Request) {
     if (!available) {
       return Response.json({ error: "Listing not available for selected dates" }, { status: 400 });
     }
+    const clientIp = getClientIpFromRequest(request);
     const booking = await createBooking({
       listingId,
       guestId: user.id,
       checkIn,
       checkOut,
       guestNotes: typeof body.guestNotes === "string" ? body.guestNotes : undefined,
+      clientIp,
     });
     return Response.json({ booking: { id: booking.id, status: booking.status } });
   } catch (e) {

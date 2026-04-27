@@ -1,6 +1,6 @@
 import { BnhubGrowthCampaignStatus } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import { trackEvent } from "@/lib/analytics/tracker";
+import { writeMarketplaceEvent } from "@/lib/analytics/tracker";
 import { flags } from "@/lib/flags";
 import { generateMarketingCopy, type MarketingGeneratorInput } from "@/modules/marketing/marketing-generator.service";
 
@@ -150,7 +150,7 @@ export async function optimizeCampaign(
       },
     });
     base.applied = true;
-    void trackEvent("campaign_paused_by_optimizer", { campaignId, userId, dryRun: false }).catch(
+    void writeMarketplaceEvent("campaign_paused_by_optimizer", { campaignId, userId, dryRun: false }).catch(
       () => {}
     );
   }

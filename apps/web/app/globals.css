@@ -55,6 +55,27 @@ html {
   animation: lecipm-save-pulse 2.2s ease-in-out infinite;
 }
 
+/* Launch banner — very subtle opacity pulse (not a strobing flash) */
+@keyframes launchBannerSubtle {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.94;
+  }
+}
+
+.launch-banner-subtle-pulse {
+  animation: launchBannerSubtle 4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .launch-banner-subtle-pulse {
+    animation: none;
+  }
+}
+
 /* /sell hero — slow drift + light shimmer (sea-like motion without heavy video assets) */
 @keyframes sell-hero-drift {
   0% {

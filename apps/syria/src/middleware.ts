@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { s2GetClientIp } from "@/lib/security/s2-ip";
+import { s2CheckRateLimit } from "@/lib/security/s2-rate-limit";
+import { s2Log } from "@/lib/security/s2-logger";
 
 /**
  * H1 — Non-MVP routes blocked when phone-first MVP is on.
@@ -25,11 +28,33 @@ function isBlockedPath(rel: string): boolean {
   return BLOCKED.some((b) => rel === b || rel.startsWith(`${b}/`));
 }
 
+/** S2 — per-IP rate limit on high-abuse public APIs (≈15/min). */
+function s2RateLimitTagApi(pathname: string): string | null {
+  if (pathname.startsWith("/api/lead")) return "s2:lead";
+  if (pathname.startsWith("/api/payments")) return "s2:payments";
+  if (pathname === "/api/listings/create") return "s2:listings_create";
+  return null;
+}
+
 export function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+  const s2Tag = s2RateLimitTagApi(pathname);
+  if (s2Tag) {
+    const ip = s2GetClientIp(request);
+    const key = `${s2Tag}|${ip}`;
+    const r = s2CheckRateLimit(key);
+    if (!r.ok) {
+      s2Log("s2_rate_limited", { path: pathname, ip, retryAfter: r.retryAfterSec });
+      return NextResponse.json(
+        { ok: false, error: "rate_limited" },
+        { status: 429, headers: { "Retry-After": String(r.retryAfterSec) } },
+      );
+    }
+  }
+
   if (!MVP_ON) {
     return NextResponse.next();
   }
-  const pathname = request.nextUrl.pathname;
   const rel = pathWithoutLocale(pathname);
   if (!isBlockedPath(rel)) {
     return NextResponse.next();

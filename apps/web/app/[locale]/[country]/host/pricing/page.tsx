@@ -4,6 +4,8 @@ import { getHostPricingOverview } from "@/lib/host/getHostPricingOverview";
 import { getLegacyDB } from "@/lib/db/legacy";
 const prisma = getLegacyDB();
 import { HostBnhubPricingSuggestionsPanel } from "@/components/host/HostBnhubPricingSuggestionsPanel";
+import { MarketInsights } from "@/components/MarketInsights";
+import { getMarketInsights } from "@/lib/services/marketInsightsService";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +17,7 @@ export default async function HostSmartPricingPage() {
 
   const overview = await getHostPricingOverview(hostId);
 
-  const [dailySuggestions, executionLogs, listingModes] = await Promise.all([
+  const [dailySuggestions, executionLogs, listingModes, marketInsights] = await Promise.all([
     prisma.bnhubPricingSuggestion.findMany({
       where: { listing: { ownerId: hostId } },
       orderBy: { date: "asc" },
@@ -38,6 +40,7 @@ export default async function HostSmartPricingPage() {
         pricingSuggestionsEnabled: true,
       },
     }),
+    getMarketInsights(),
   ]);
 
   const serializedSuggestions = dailySuggestions.map((s) => ({
@@ -114,6 +117,17 @@ export default async function HostSmartPricingPage() {
           <p className="mt-2 text-2xl font-bold text-white">{(overview.demandScoreAvg * 100).toFixed(0)}%</p>
         </div>
       </section>
+
+      {marketInsights.insights.length > 0 || marketInsights.actions.length > 0 ? (
+        <section className="rounded-2xl border border-zinc-800 bg-[#111] p-5">
+          <MarketInsights
+            variant="dark"
+            insights={marketInsights.insights}
+            actions={marketInsights.actions}
+            cities={marketInsights.cities}
+          />
+        </section>
+      ) : null}
 
       <section className="overflow-hidden rounded-2xl border border-zinc-800 bg-[#111]">
         <div className="border-b border-zinc-800 px-4 py-3">

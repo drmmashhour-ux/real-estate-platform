@@ -1,7 +1,11 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { ListingStatus } from "@prisma/client";
+import { getGuestId } from "@/lib/auth/session";
 import { getCachedBnhubListingById } from "@/lib/bnhub/cached-listing";
+import { mergeTrafficAttributionIntoMetadata } from "@/lib/attribution/social-traffic";
+import { trackEvent } from "@/src/services/analytics";
 import { JsonLdScript } from "@/components/seo/JsonLdScript";
 import { breadcrumbJsonLd, vacationRentalListingJsonLd } from "@/modules/seo/infrastructure/jsonLd";
 import { getSiteBaseUrl } from "@/modules/seo/lib/siteBaseUrl";
@@ -9,6 +13,18 @@ import { SaveListingButton } from "@/components/bnhub/SaveListingButton";
 import { BnhubStayEthicalHeader } from "@/components/bnhub/BnhubStayEthicalHeader";
 import { TrustStrip } from "@/components/bnhub/TrustStrip";
 import { ListingBadges, deriveBnhubListingBadges } from "@/components/bnhub/ListingBadges";
+import { BookNowCTA } from "@/components/listing/BookNowCTA";
+import { HelpBanner } from "@/components/support/HelpBanner";
+import { ConversionNudgePanel } from "@/components/bnhub/ConversionNudgePanel";
+import { Recommendations } from "@/components/Recommendations";
+import { getConversionNudge, getConversionScore } from "@/lib/ai/conversionEngine";
+import { getListingReputation } from "@/lib/ai/reputationEngine";
+import { generateSocialProof } from "@/lib/ai/socialProof";
+import { getUserProfile } from "@/lib/ai/userProfile";
+import { flags } from "@/lib/flags";
+import { getListingAvailability } from "@/lib/booking/availability";
+import { ListingAvailabilityBlock } from "@/components/bnhub/ListingAvailabilityBlock";
+import { ListingSocialProofBlock } from "@/components/bnhub/ListingSocialProofBlock";
 
 type BnhubListingRow = NonNullable<Awaited<ReturnType<typeof getCachedBnhubListingById>>>;
 
@@ -35,6 +51,21 @@ export async function BnhubListingView(opts: {
   const listing = await getCachedBnhubListingById(opts.routeLookupKey);
   if (!listing || listing.listingStatus !== ListingStatus.PUBLISHED) notFound();
 
+  const guestId = await getGuestId().catch(() => null);
+  const cookieHeader = (await headers()).get("cookie");
+  void trackEvent(
+    "listing_view",
+    mergeTrafficAttributionIntoMetadata(cookieHeader, {
+      listingId: listing.id,
+      userId: guestId,
+      city: listing.city,
+      listingCode: listing.listingCode,
+      listingKind: "bnhub",
+      step: "bnhub_stay_public",
+    }),
+    { userId: guestId }
+  ).catch(() => {});
+
   const imgs = bnhubGalleryUrls(listing);
   const base = getSiteBaseUrl().replace(/\/$/, "");
   const path = opts.seoCanonicalPath ?? `/stays/${listing.listingCode || listing.id}`;
@@ -56,6 +87,47 @@ export async function BnhubListingView(opts: {
   if (opts.prefill?.checkOut) demoQs.set("checkOut", opts.prefill.checkOut);
   if (opts.prefill?.guests) demoQs.set("guests", opts.prefill.guests);
   const demoHref = `/bnhub/demo/guest-flow${demoQs.toString() ? `?${demoQs}` : ""}`;
+
+  let conversionNudge = null as ReturnType<typeof getConversionNudge> | null;
+  let conversionScore = null as Awaited<ReturnType<typeof getConversionScore>> | null;
+  if (flags.RECOMMENDATIONS && guestId) {
+    try {
+      const s = await getConversionScore({ listingId: listing.id, userId: guestId, city: listing.city });
+      conversionScore = s;
+      conversionNudge = getConversionNudge(s);
+    } catch {
+      /* keep nudge off on failure */
+    }
+  }
+
+  const socialProof = generateSocialProof({
+    bookings: listing.bnhubListingCompletedStays ?? 0,
+    views: listing.bnhubListingViewCount ?? 0,
+    rating: listing.bnhubListingRatingAverage ?? 0,
+  });
+  if (socialProof.messages.length > 0) {
+    void trackEvent(
+      "social_proof_shown",
+      { listingId: listing.id, strength: socialProof.strength },
+      { userId: guestId }
+    ).catch(() => {});
+  }
+  if (flags.RECOMMENDATIONS) {
+    try {
+      const rep = await getListingReputation(listing.id);
+      void trackEvent("reputation_viewed", { listingId: listing.id, score: rep.score }, { userId: guestId }).catch(
+        () => {}
+      );
+    } catch {
+      /* analytics only */
+    }
+  }
+  const userProfile = await getUserProfile().catch(() => null);
+  const availability = await getListingAvailability(listing.id).catch((): null => null);
+  const emphasizeSocialProof =
+    flags.RECOMMENDATIONS &&
+    userProfile?.behaviorType === "high_intent" &&
+    socialProof.strength === "high";
 
   const breadcrumbLd = breadcrumbJsonLd({
     items: [
@@ -140,6 +212,23 @@ export async function BnhubListingView(opts: {
                 <span className="text-base font-normal text-white/50"> / night</span>
               </p>
               <TrustStrip />
+              <ListingSocialProofBlock sp={socialProof} emphasize={emphasizeSocialProof} />
+              {conversionNudge && conversionScore ? (
+                <ConversionNudgePanel
+                  listingId={listing.id}
+                  score={conversionScore}
+                  nudge={conversionNudge}
+                  className="mb-1"
+                />
+              ) : null}
+              <div
+                id="bnhub-book-cta"
+                className="sticky top-0 z-20 space-y-3 rounded-xl border border-white/10 bg-[#030303]/90 py-3 backdrop-blur-md"
+              >
+                {availability ? <ListingAvailabilityBlock availability={availability} variant="dark" /> : null}
+                <BookNowCTA listingId={listing.id} className="mt-0" />
+                <HelpBanner variant="dark" className="mt-0" />
+              </div>
               <div className="flex flex-col gap-3 sm:flex-row">
                 <Link
                   href={demoHref}
@@ -155,8 +244,8 @@ export async function BnhubListingView(opts: {
                 </Link>
               </div>
               <p className="text-xs text-white/45">
-                Full calendar checkout lives in the booking demo for now — real availability is enforced server-side
-                when you complete a reservation.
+                Check-in above reflects real booking holds on the calendar. Full checkout continues in the booking flow
+                (availability enforced server-side at reservation time).
               </p>
             </div>
           </div>
@@ -167,6 +256,14 @@ export async function BnhubListingView(opts: {
               {listing.description?.trim() || "The host hasn’t added a long description yet."}
             </p>
           </section>
+
+          <Recommendations
+            key={listing.id}
+            listingId={listing.id}
+            variant="dark"
+            className="mt-14"
+            title="You may also like"
+          />
         </article>
       </main>
     </>

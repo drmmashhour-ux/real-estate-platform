@@ -52,6 +52,7 @@ import { useToast } from "@/components/ui/ToastProvider";
 import type { ListingDemandUiPayload } from "@/lib/listings/listing-analytics-service";
 import { LISTING_EXPLORE_NO_PAYMENT_LINE } from "@/lib/listings/listing-ad-trust-copy";
 import { TrustStrip } from "@/components/shared/TrustStrip";
+import { HelpBanner } from "@/components/support/HelpBanner";
 import { useConversionEngineFlags } from "@/lib/conversion/use-conversion-engine-flags";
 import { recordPropertyDetailViewOnce } from "@/modules/conversion/funnel-metrics.service";
 import type { PropertyConversionSurface } from "@/modules/conversion/property-conversion-surface";
@@ -911,6 +912,8 @@ export function BuyerListingDetail({
             Saved listings
           </Link>
         </div>
+
+        <HelpBanner variant="dark" className="mt-4" />
 
         <div className="mt-4 lg:grid lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-4">
           <div className="min-w-0">

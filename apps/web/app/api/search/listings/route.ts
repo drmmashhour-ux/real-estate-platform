@@ -1,6 +1,10 @@
 import { NextRequest } from "next/server";
 import * as Sentry from "@sentry/nextjs";
+import { trackEvent } from "@/lib/analytics/tracker";
+import { getUserProfile } from "@/lib/ai/userProfile";
 import { searchListings } from "@/lib/bnhub/listings";
+import { flags } from "@/lib/flags";
+import { rankSearchResults } from "@/lib/search/ranking";
 import { getGuestId } from "@/lib/auth/session";
 import { recordEvolutionOutcome } from "@/modules/evolution/outcome-tracker.service";
 
@@ -26,6 +30,8 @@ export async function POST(request: NextRequest) {
       amenities?: string[];
       propertyType?: string;
       sort?: SortKey | string;
+      q?: string;
+      minRating?: number;
     };
 
     const sortRaw = typeof body.sort === "string" ? body.sort : "ai";
@@ -40,8 +46,11 @@ export async function POST(request: NextRequest) {
 
     const userId = await getGuestId();
 
-    const listings = await searchListings({
-      city: typeof body.city === "string" ? body.city.trim() || undefined : undefined,
+    const q = typeof body.q === "string" && body.q.trim() ? body.q.trim().slice(0, 200) : undefined;
+    const cityParam = typeof body.city === "string" ? body.city.trim() || undefined : undefined;
+
+    let listings = await searchListings({
+      city: cityParam,
       countryCode: typeof body.countryCode === "string" ? body.countryCode.trim() || undefined : undefined,
       marketCountryId: typeof body.marketCountryId === "string" ? body.marketCountryId.trim() || undefined : undefined,
       marketCityId: typeof body.marketCityId === "string" ? body.marketCityId.trim() || undefined : undefined,
@@ -54,7 +63,24 @@ export async function POST(request: NextRequest) {
       amenitySlugs: Array.isArray(body.amenities) && body.amenities.length ? body.amenities : undefined,
       sort,
       userId,
+      q,
+      minRating: typeof body.minRating === "number" && body.minRating > 0 ? body.minRating : undefined,
     });
+
+    const useOrder82 = flags.RECOMMENDATIONS && (sort === "ai" || sort === "recommended") && listings.length > 0;
+    let rankTookMs = 0;
+    if (useOrder82) {
+      const t0 = Date.now();
+      const userProfile = await getUserProfile(userId ?? undefined);
+      listings = await rankSearchResults({
+        listings,
+        query: q,
+        city: cityParam ?? null,
+        userProfile,
+      });
+      rankTookMs = Date.now() - t0;
+      void trackEvent("search_ranked", { query: q ?? "", resultCount: listings.length });
+    }
 
     void recordEvolutionOutcome({
       domain: "BNHUB",
@@ -70,7 +96,14 @@ export async function POST(request: NextRequest) {
       idempotent: false,
     }).catch(() => {});
 
-    return Response.json({ listings });
+    return Response.json({
+      listings,
+      meta: {
+        ranking: useOrder82 ? "ai" : "none",
+        resultCount: listings.length,
+        tookMs: rankTookMs,
+      },
+    });
   } catch (e) {
     console.error(e);
     Sentry.captureException(e, { tags: { route: "POST /api/search/listings" } });

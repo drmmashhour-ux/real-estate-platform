@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { getUserRole, isHubAdminRole } from "@/lib/auth/session";
 import { getLegacyDB } from "@/lib/db/legacy";
+import { flags } from "@/lib/flags";
 const prisma = getLegacyDB();
 import { AdminAiInsightType } from "@prisma/client";
 
@@ -9,6 +10,9 @@ export const dynamic = "force-dynamic";
 const INSIGHT_TYPES = new Set<string>(Object.values(AdminAiInsightType));
 
 export async function GET(request: NextRequest) {
+  if (!flags.AI_ASSISTANT) {
+    return Response.json({ error: "AI assistant disabled", disabled: true }, { status: 403 });
+  }
   const role = await getUserRole();
   if (!isHubAdminRole(role)) {
     return Response.json({ error: "Admin required" }, { status: 403 });

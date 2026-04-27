@@ -1,5 +1,7 @@
+import { PremiumTrust } from "@/components/booking/PremiumTrust";
 import { TrustBadges } from "@/components/listing/TrustBadges";
 import { PriceBreakdown } from "@/components/booking/PriceBreakdown";
+import { BookingHoldNotice } from "@/components/booking/BookingHoldNotice";
 
 export type BookingSummaryProps = {
   from: string;
@@ -13,6 +15,10 @@ export type BookingSummaryProps = {
   disabled?: boolean;
   /** From `generateUrgency` — short conversion nudges. */
   urgencyMessages?: string[];
+  /** ISO — from POST /api/bookings for 15m hold copy (Order 57.1). */
+  holdExpiresAt?: string | null;
+  /** When false, skip flat nightly × rate block — parent shows Order 61 dynamic lines. */
+  showFlatBreakdown?: boolean;
 };
 
 export function BookingSummary({
@@ -52,11 +58,13 @@ export function BookingSummary({
         </div>
       ) : null}
 
-      {nights > 0 ? (
-        <PriceBreakdown nights={nights} pricePerNight={pricePerNight} />
-      ) : (
-        <p className="mt-4 text-sm text-zinc-500 dark:text-zinc-400">Select your dates to see the price breakdown.</p>
-      )}
+      {showFlatBreakdown ? (
+        nights > 0 ? (
+          <PriceBreakdown nights={nights} pricePerNight={pricePerNight} />
+        ) : (
+          <p className="mt-4 text-sm text-zinc-500 dark:text-zinc-400">Select your dates to see the price breakdown.</p>
+        )
+      ) : null}
 
       {nights > 0 && totalDisplay !== "—" ? (
         <p className="mt-2 text-sm">
@@ -67,8 +75,15 @@ export function BookingSummary({
       ) : null}
 
       <div className="mt-4 border-t border-zinc-100 pt-4 dark:border-zinc-800">
+        <PremiumTrust />
         <TrustBadges />
       </div>
+
+      {nights > 0 && from && to && from !== "—" && to !== "—" ? (
+        <div className="mt-4 rounded-lg border border-amber-200/50 bg-amber-50/80 px-3 py-2 dark:border-amber-900/40 dark:bg-amber-950/30">
+          <BookingHoldNotice expiresAtIso={holdExpiresAt} />
+        </div>
+      ) : null}
 
       <button
         type="button"

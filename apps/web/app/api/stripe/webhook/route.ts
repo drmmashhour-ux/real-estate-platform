@@ -88,6 +88,7 @@ import { recordAnalyticsFunnelEvent } from "@/lib/funnel/analytics-events";
 import { trackFunnelEvent } from "@/lib/funnel/tracker";
 import { securityLog } from "@/lib/security/security-logger";
 import { logPaymentTagged, logStripeTagged } from "@/lib/server/launch-logger";
+import { trackRevenue } from "@/lib/analytics/revenue";
 import { auditStripePaymentEventIfApplicable } from "@/modules/stripe/validation.service";
 import { onLeadUnlockPaymentRecorded } from "@/modules/leads/lead-monetization-monitoring.service";
 import { classifyGovernanceOutcome } from "@/modules/autonomous-marketplace/feedback/governance-feedback-classifier.service";
@@ -733,6 +734,11 @@ export async function POST(req: NextRequest) {
       if (bid) {
         const released = await expirePendingMarketplaceListingBookingOnCheckoutExpired(bid);
         console.log("[WEBHOOK] booking hold expired (listingsDB)", bid, { count: released.count });
+        void trackEvent("booking_abandoned", {
+          bookingId: bid,
+          sessionId: expiredSession.id,
+          reason: "checkout_session_expired",
+        }).catch(() => {});
         logInfo("[STRIPE] checkout.session.expired — marketplace_listing_checkout hold updated", {
           sessionId: expiredSession.id,
           bookingId: bid,
@@ -988,37 +994,51 @@ export async function POST(req: NextRequest) {
   }
 
   if (session.payment_status === "paid") {
+    const revenueListingId =
+      typeof session.metadata?.listingId === "string"
+        ? session.metadata.listingId.trim()
+        : typeof session.metadata?.listing_id === "string"
+          ? session.metadata.listing_id.trim()
+          : "";
+    if (revenueListingId) {
+      trackRevenue(session.amount_total ?? 0, revenueListingId);
+    }
     const md = session.metadata ?? {};
     if (md.paymentType === "marketplace_listing_checkout") {
-      const { marketplaceListingBookingIdFromStripeMetadata, confirmMarketplaceListingBookingPaid } =
-        await import("@/lib/marketplace/booking-hold");
-      const mk = marketplaceListingBookingIdFromStripeMetadata(
-        md as unknown as Record<string, string>
-      );
+      const { confirmMarketplaceListingBookingFromCheckoutSession } = await import("@/lib/marketplace/booking-hold");
+      const r = await confirmMarketplaceListingBookingFromCheckoutSession({
+        id: session.id,
+        payment_status: session.payment_status,
+        amount_total: session.amount_total,
+        metadata: session.metadata as Record<string, string> | null | undefined,
+        payment_intent: session.payment_intent,
+      });
+      const mk = typeof md.bookingId === "string" ? md.bookingId.trim() : (typeof md.booking_id === "string" ? md.booking_id.trim() : null);
       if (mk) {
-        const piRaw = session.payment_intent;
-        const paymentIntentId =
-          typeof piRaw === "string"
-            ? piRaw
-            : piRaw && typeof piRaw === "object" && "id" in piRaw
-              ? String((piRaw as { id: string }).id)
-              : null;
-        const r = await confirmMarketplaceListingBookingPaid(mk, { paymentIntentId });
         if (r.ok) {
-          console.log("[WEBHOOK] booking confirmed (listingsDB)", mk);
+          console.log("[WEBHOOK] booking confirmed (listingsDB)", mk, {
+            idempotent: "idempotent" in r && r.idempotent,
+          });
+        } else {
+          logWarn("[stripe/webhook] marketplace_listing_checkout — confirmation skipped", {
+            sessionId: session.id,
+            bookingId: mk,
+            r,
+          });
         }
-        logInfo("[stripe/webhook] marketplace_listing_checkout (Order 66 — payment success → confirmed)", {
+        logInfo("[stripe/webhook] marketplace_listing_checkout (Order 57.1/66 — payment success → confirmed)", {
           sessionId: session.id,
           bookingId: mk,
-          paymentIntentId,
           r,
         });
-        const { recordMarketplacePaymentLedgerFromCheckoutSession } = await import(
-          "@/lib/marketplace/payment-ledger"
-        );
-        await recordMarketplacePaymentLedgerFromCheckoutSession(session, { bookingId: mk }).catch((err) => {
-          logError("[stripe/webhook] Order 67 marketplace payment ledger", err);
-        });
+        if (r.ok) {
+          const { recordMarketplacePaymentLedgerFromCheckoutSession } = await import(
+            "@/lib/marketplace/payment-ledger"
+          );
+          await recordMarketplacePaymentLedgerFromCheckoutSession(session, { bookingId: mk }).catch((err) => {
+            logError("[stripe/webhook] Order 67 marketplace payment ledger", err);
+          });
+        }
       } else {
         logWarn("[stripe/webhook] marketplace_listing_checkout — missing bookingId / booking_id in metadata", {
           sessionId: session.id,
@@ -1293,6 +1313,18 @@ export async function POST(req: NextRequest) {
         brokerTaxSnapshot: brokerTaxSnapshot ?? undefined,
       },
     });
+
+    if (paymentType === "booking" && bookingId && userId) {
+      const { flags } = await import("@/lib/flags");
+      if (flags.COMPLIANCE_HARD_LOCK) {
+        const { auditHardLockPaymentConfirmed } = await import("@/lib/compliance/hardLockAudit");
+        void auditHardLockPaymentConfirmed({
+          bookingId,
+          guestId: userId as string,
+          amountCents: sessionAmountTotal,
+        });
+      }
+    }
 
     logInfo("[STRIPE] [PAYMENT] platform_payment recorded (awaiting type-specific fulfillment)", {
       platformPaymentId: platformPayment.id,

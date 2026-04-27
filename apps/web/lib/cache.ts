@@ -1,48 +1,60 @@
 /**
- * Order 77 — small in-process TTL cache for hot read paths (per-instance; cleared on deploy).
- * For multi-instance / shared cache see `lib/redis.ts` and {@link getCacheOrRedis}.
+ * Order 73.2 — in-memory TTL cache for safe, read-only aggregates (no Redis).
+ * Do not use for user-specific private data, writes, or payment state.
  */
 
-import { redisGet, redisSet } from "./redis";
-
-type CacheEntry = {
-  data: unknown;
-  expires: number;
+export type CacheEntry<T> = {
+  value: T;
+  expiresAt: number;
 };
 
-const store = new Map<string, CacheEntry>();
-
-export function getCache(key: string): unknown | null {
-  const entry = store.get(key);
-  if (!entry) return null;
-
-  if (Date.now() > entry.expires) {
-    store.delete(key);
-    return null;
-  }
-
-  return entry.data;
-}
-
-export function setCache(key: string, data: unknown, ttlMs = 10_000) {
-  store.set(key, {
-    data,
-    expires: Date.now() + ttlMs,
-  });
-}
+const cache = new Map<string, CacheEntry<unknown>>();
 
 /**
- * Order 78 — try Redis first (shared across instances), then in-memory (Order 77).
+ * Returns cached value if present and not expired; otherwise runs `loader`, stores result, returns it.
+ * On loader failure, if a (possibly expired) entry exists, returns that stale value and logs a warning.
  */
-export async function getCacheOrRedis(key: string): Promise<unknown | null> {
-  const fromRedis = await redisGet(key);
-  if (fromRedis != null) return fromRedis;
-  return getCache(key);
+export async function getCached<T>(key: string, ttlSeconds: number, loader: () => Promise<T>): Promise<T> {
+  const now = Date.now();
+  const existing = cache.get(key) as CacheEntry<T> | undefined;
+  if (existing && now < existing.expiresAt) {
+    return existing.value;
+  }
+  try {
+    const value = await loader();
+    cache.set(key, { value, expiresAt: now + ttlSeconds * 1000 });
+    return value;
+  } catch (err) {
+    if (existing) {
+      console.warn("[cache] loader failed; returning stale value", { key, err });
+      return existing.value;
+    }
+    throw err;
+  }
 }
 
-/** Writes both layers: `ttlMs` for memory, Redis `EX` in whole seconds (min 1). */
-export async function setCacheAndRedis(key: string, data: unknown, ttlMs = 10_000) {
-  setCache(key, data, ttlMs);
-  const sec = Math.max(1, Math.ceil(ttlMs / 1000));
-  await redisSet(key, data, sec);
+/** Drop one key, or the entire map when `key` is omitted. */
+export function clearCache(key?: string): void {
+  if (key == null || key === "") {
+    cache.clear();
+    return;
+  }
+  cache.delete(key);
 }
+
+export function getCacheStats(): { size: number } {
+  return { size: cache.size };
+}
+
+/** Stable keys for Order 73.2 docs / invalidation. */
+export const CACHE_KEYS = {
+  demandHeatmap: "demand:heatmap",
+  earlyUsersCount: "early-users:count",
+  trustSignals: (cityKey: string) => `trust-signals:${cityKey}`,
+  investorMetrics: "investor-metrics",
+  launchReadiness: "launch-readiness",
+  availability: (listingId: string, start: string, end: string) =>
+    `availability:${listingId}:${start}:${end}`,
+  /** Order 82.1 — per-user `user_preferences` read cache (getPreferences). */
+  prefsUser: (userId: string) => `prefs:${userId}`,
+} as const;

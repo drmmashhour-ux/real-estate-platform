@@ -1,27 +1,41 @@
-import { launchSystemV1Flags } from "@/config/feature-flags";
-import { requireLaunchSystemPlatform } from "@/lib/launch-system-api-auth";
-import { runLaunchChecks } from "@/lib/launch/checks";
-import { buildLaunchChecklist } from "@/modules/launch/launch-checklist.service";
-import { logGrowthEngineAudit } from "@/modules/growth-engine-audit/growth-engine-audit.service";
-import { trackLaunchStatusRead } from "@/lib/analytics/launch-analytics";
+import { requireAdminSession } from "@/lib/admin/require-admin";
+import { flags } from "@/lib/flags";
+import { getLaunchStatus } from "@/lib/launch/controller";
+import { getClientIp, rateLimit } from "@/lib/security/rateLimit";
+import { logError } from "@/lib/monitoring/errorLogger";
 
 export const dynamic = "force-dynamic";
 
-/** GET /api/launch/status — launch readiness checklist (DB + env; no fake green). */
-export async function GET() {
-  const auth = await requireLaunchSystemPlatform();
-  if (!auth.ok) return auth.response;
-  if (!launchSystemV1Flags.launchSystemV1) {
-    return Response.json({ error: "FEATURE_LAUNCH_SYSTEM_V1 disabled" }, { status: 403 });
+export async function GET(req: Request) {
+  const ip = getClientIp(req);
+  if (!rateLimit(ip)) {
+    return Response.json({ error: "Too many requests" }, { status: 429 });
   }
 
-  const payload = await buildLaunchChecklist();
-  const envChecks = runLaunchChecks();
-  await logGrowthEngineAudit({
-    actorUserId: auth.userId,
-    action: "launch_status_read",
-    payload: { status: payload.status },
-  });
-  trackLaunchStatusRead({ status: payload.status, issueCount: payload.issues.length });
-  return Response.json({ ok: true, envChecks, ...payload });
+  if (!flags.AUTONOMOUS_AGENT) {
+    return Response.json(
+      { message: "Launch control is disabled.", status: null, startedAt: null, currentDay: null },
+      { status: 200, headers: { "Cache-Control": "no-store" } }
+    );
+  }
+
+  const admin = await requireAdminSession();
+  if (!admin.ok) {
+    return Response.json({ error: "Admin only" }, { status: admin.status });
+  }
+
+  try {
+    const s = await getLaunchStatus();
+    return Response.json(
+      {
+        status: s.status,
+        startedAt: s.startedAt?.toISOString() ?? null,
+        currentDay: s.currentDay,
+      },
+      { status: 200, headers: { "Cache-Control": "no-store" } }
+    );
+  } catch (e) {
+    logError(e, { route: "GET /api/launch/status" });
+    return Response.json({ error: "Failed" }, { status: 500 });
+  }
 }

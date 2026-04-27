@@ -3,10 +3,14 @@ import { randomUUID } from "node:crypto";
 import { query } from "@/lib/sql";
 
 /**
- * Append-only event log for AI + analytics (`marketplace_events`).
+ * Append-only event log for AI + demand analytics (`marketplace_events`).
+ * Standard event names: `listing_view`, `booking_created` (see `eventTracker` dual-write).
  * Keep payloads small and non-PII unless you have a data contract.
  */
-export async function trackEvent(event: string, data: Record<string, unknown>): Promise<void> {
+export async function writeMarketplaceEvent(
+  event: string,
+  data: Record<string, unknown>
+): Promise<void> {
   const id = randomUUID();
   await query(
     `
@@ -16,3 +20,6 @@ export async function trackEvent(event: string, data: Record<string, unknown>): 
     [id, event, JSON.stringify(data ?? {})]
   );
 }
+
+/** @deprecated Use `writeMarketplaceEvent` — kept for a few internal call sites. */
+export const trackEvent = writeMarketplaceEvent;

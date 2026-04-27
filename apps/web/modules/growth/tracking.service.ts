@@ -43,6 +43,7 @@ export const GROWTH_CLIENT_ALLOWED_EVENTS = new Set<GrowthEventNameType>([
   GrowthEventName.BOOKING_STARTED,
   GrowthEventName.BROKER_LEAD,
   GrowthEventName.CTA_CLICK,
+  GrowthEventName.AB_EXPOSURE,
 ]);
 
 const TRAFFIC_TO_GROWTH: Record<string, GrowthEventNameType> = {
@@ -53,6 +54,7 @@ const TRAFFIC_TO_GROWTH: Record<string, GrowthEventNameType> = {
   booking_started: GrowthEventName.BOOKING_STARTED,
   broker_lead: GrowthEventName.BROKER_LEAD,
   cta_click: GrowthEventName.CTA_CLICK,
+  ab_exposure: GrowthEventName.AB_EXPOSURE,
 };
 
 export function trafficEventTypeToGrowthName(eventType: string): GrowthEventNameType | null {

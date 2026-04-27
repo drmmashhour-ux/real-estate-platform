@@ -1,25 +1,21 @@
-import { pool } from "@/lib/db";
+import { getLegacyDB } from "@/lib/db/legacy";
+import { logError } from "@/lib/monitoring/errorLogger";
 
 export const dynamic = "force-dynamic";
 
 /**
- * DB connectivity check (Orders 70, 82): single `pg` pool from `@/lib/db` — no duplicate layer.
+ * GET /api/db-test — lightweight Prisma connectivity check (no auth; use behind edge / monitoring only).
  */
 export async function GET() {
   try {
-    const res = await pool.query("SELECT 1 AS ok");
-    return Response.json({
-      ok: true,
-      res: res.rows,
-    });
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
+    const prisma = getLegacyDB();
+    await prisma.$queryRaw`SELECT 1`;
+    return Response.json({ status: "ok" });
+  } catch (e) {
+    logError(e, { route: "/api/db-test" });
     return Response.json(
-      {
-        ok: false,
-        error: message,
-      },
-      { status: 500 }
+      { status: "error", message: e instanceof Error ? e.message : "database_unreachable" },
+      { status: 503 }
     );
   }
 }

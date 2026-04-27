@@ -208,16 +208,6 @@ export default async function PublicListingRoute({ params, searchParams }: Props
 
   if (resolved.kind === "bnhub") {
     const guestIdBnhub = await getGuestId();
-    void trackEvent(
-      "listing_view",
-      mergeTrafficAttributionIntoMetadata(cookieHeader, {
-        listingId: resolved.id,
-        city: resolved.city,
-        listingKind: "bnhub",
-        step: "lecipm_listing_detail",
-      }),
-      { userId: guestIdBnhub }
-    );
     void recordAnalyticsFunnelEvent({
       name: "listing_view",
       listingId: resolved.id,
@@ -250,6 +240,10 @@ export default async function PublicListingRoute({ params, searchParams }: Props
     if (guestIdBnhub) {
       const { recordSearchToClick } = await import("@/modules/evolution/funnel-wiring.service");
       void recordSearchToClick(guestIdBnhub, resolved.id, { source: "search_results" }).catch(() => {});
+      const { recordSearchPreferencesFromListingView } = await import("@/lib/ai/preferences");
+      void recordSearchPreferencesFromListingView({ userId: guestIdBnhub, listingId: resolved.id }).catch(
+        () => {}
+      );
     }
     fireViewListingGrowth({
       userId: guestIdBnhub,

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Suspense } from "react";
 import { notFound, redirect } from "next/navigation";
 import { CookieConsentBanner } from "@/components/legal/CookieConsentBanner";
 import { HeaderGate } from "@/components/layout/HeaderGate";
@@ -25,6 +26,7 @@ import {
   type CountryCodeLower,
 } from "@/config/countries";
 import { CountryProvider } from "@/lib/region/country-context";
+import { LaunchBanner, LaunchBannerStatic } from "@/components/landing/LaunchBanner";
 
 type Props = {
   children: ReactNode;
@@ -66,6 +68,9 @@ export default async function CountryChromeLayout({ children, params }: Props) {
         <FooterHistoryNavProvider>
           <div className="flex min-h-screen flex-col">
             <HeaderGate />
+            <Suspense fallback={<LaunchBannerStatic />}>
+              <LaunchBanner basePath={`/${locale}/${slug}`} />
+            </Suspense>
             <LaunchTrustSignalsBanner />
             <DemoModeBanner />
             <TestModeBanner />

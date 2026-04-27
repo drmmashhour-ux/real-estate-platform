@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { EarlyTractionStrip } from "@/components/landing/EarlyTractionStrip";
 import { track } from "@/lib/analytics/events";
 import { buildListingSearchAssistantPrompt } from "@/lib/ai/booking-flow-prompts";
 import { generateSocialProof } from "@/lib/ai/socialProof";
@@ -77,6 +78,8 @@ export default function ListingsPage() {
       </nav>
 
       <h1>Listings</h1>
+
+      <EarlyTractionStrip className="mt-3 max-w-xl" />
 
       {/* Filters */}
       <div style={{ marginBottom: 20, display: "flex", gap: 10, flexWrap: "wrap" }}>
@@ -161,9 +164,9 @@ export default function ListingsPage() {
           </h3>
           <p>{l.city}, {l.country}</p>
           <p><strong>${l.price}</strong></p>
-          {enriched.socialProof.length > 0 ? (
+          {enriched.socialProof.messages.length > 0 ? (
             <ul style={{ margin: "8px 0 0 0", paddingLeft: 18, color: "#0a0", fontSize: 14 }}>
-              {enriched.socialProof.map((line) => (
+              {enriched.socialProof.messages.map((line) => (
                 <li key={line}>{line}</li>
               ))}
             </ul>

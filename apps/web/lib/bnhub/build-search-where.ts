@@ -39,7 +39,7 @@ export type BuildSearchWhereInput = {
 };
 
 /** Canadian postal code loose match on listing address / city. */
-function isCanadianPostalToken(s: string): boolean {
+export function isCanadianPostalToken(s: string): boolean {
   const c = s.replace(/\s/g, "").toUpperCase();
   return /^[A-Z]\d[A-Z]\d[A-Z]\d$/.test(c);
 }

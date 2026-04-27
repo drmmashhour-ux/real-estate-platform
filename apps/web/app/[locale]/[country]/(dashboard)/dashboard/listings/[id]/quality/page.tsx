@@ -45,6 +45,14 @@ export default async function ListingQualityDashboardPage({
         <span className="text-slate-400">
           · {listing.listingCode} · {listing.city}
         </span>
+        <span className="ml-2">
+          <Link
+            href={`${base}/dashboard/listings/${id}/performance`}
+            className="font-semibold text-indigo-700 hover:underline"
+          >
+            AI performance
+          </Link>
+        </span>
       </p>
 
       <div className="mt-8">

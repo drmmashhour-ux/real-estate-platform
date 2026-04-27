@@ -24,7 +24,8 @@ export function PriceBreakdown({ nights, pricePerNight }: PriceBreakdownProps) {
       <p>
         {safeNights} {safeNights === 1 ? "night" : "nights"} × ${fmtUsd(pricePerNight)} = ${subtotal}
       </p>
-      <p>Service fee (10%) = ${fee}</p>
+      <p>Platform fee (10%) = ${fee}</p>
+      <div className="my-2 border-t border-zinc-200 dark:border-zinc-700" />
       <p className="font-semibold text-zinc-900 dark:text-zinc-100">Total = ${total}</p>
     </div>
   );

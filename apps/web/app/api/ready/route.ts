@@ -1,69 +1,106 @@
 import { NextResponse } from "next/server";
+import { getCacheStats } from "@/lib/cache";
+import {
+  getDbResilienceMetrics,
+  getDbResilienceState,
+  getPoolStats,
+  isDbCircuitOpen,
+  safeQuery,
+} from "@/lib/db";
 import { checkReady } from "@/lib/ready";
-import { prismaWithCoreFallback } from "@/lib/db-safe";
 
 export const dynamic = "force-dynamic";
 
+const DEGRADED_LATENCY_MS = 2000;
+
 export async function GET() {
-  const poolReady = await checkReady();
-  const readiness: Record<string, string | boolean> = {
-    status: "ok",
+  const poolCheck = await checkReady();
+  const poolReady = poolCheck.ok;
+  const resState = getDbResilienceState();
+  const metrics = getDbResilienceMetrics();
+
+  const base = {
     databaseUrl: process.env.DATABASE_URL ? "set" : "missing",
-    db: "pending",
-    // Order 75 — `pg` `pool` from `@/lib/db` can differ from the Prisma client URL in split-DB scenarios.
-    pgPool: poolReady,
-    stripe: "pending",
-    ai: "pending",
+    stripe: "pending" as string,
+    ai: "pending" as string,
+    metrics,
   };
 
-  if (readiness.databaseUrl === "missing") {
-    readiness.status = "degraded";
-  }
   if (process.env.VERCEL) {
-    readiness.runtime = "vercel";
+    (base as Record<string, unknown>).runtime = "vercel";
   }
 
+  let prismaOk = false;
+  let prismaError: string | undefined;
   try {
-    // 1. Prisma / modular DB — `USE_NEW_DB=1` tries `db-core` first, falls back to monolith
-    await prismaWithCoreFallback((db) => db.$queryRaw`SELECT 1`);
-    readiness.db = "ok";
-
-    // 2. Stripe (Basic env check)
-    if (process.env.STRIPE_SECRET_KEY) {
-      readiness.stripe = "ok";
-    } else {
-      readiness.stripe = "missing_config";
-      readiness.status = "degraded";
-    }
-
-    // 3. AI (Basic env check)
-    if (process.env.OPENAI_API_KEY) {
-      readiness.ai = "ok";
-    } else {
-      readiness.ai = "missing_config";
-      readiness.status = "degraded";
-    }
-
-    /**
-     * Machine-friendly: Prisma check passed, pool probe passed, and `DATABASE_URL` set.
-     * Optional services (Stripe, AI) can still be `missing_config` with `status: degraded`.
-     */
-    readiness.ready = readiness.db === "ok" && poolReady;
-
-    if (!poolReady) {
-      readiness.status = "degraded";
-    }
-
-    return NextResponse.json(readiness);
-  } catch (error) {
-    return NextResponse.json(
-      {
-        status: "not_ready",
-        ready: false,
-        error: error instanceof Error ? error.message : "System not ready",
-        databaseUrl: process.env.DATABASE_URL ? "set" : "missing",
-      },
-      { status: 503 }
-    );
+    await safeQuery("api.ready.prismaPing", (db) => db.$queryRaw`SELECT 1`);
+    prismaOk = true;
+  } catch (e) {
+    prismaOk = false;
+    prismaError = e instanceof Error ? e.message : String(e);
   }
+
+  if (process.env.STRIPE_SECRET_KEY) {
+    base.stripe = "ok";
+  } else {
+    base.stripe = "missing_config";
+  }
+  if (process.env.OPENAI_API_KEY) {
+    base.ai = "ok";
+  } else {
+    base.ai = "missing_config";
+  }
+
+  const dbOk = prismaOk && poolReady;
+  const circuitOpen = isDbCircuitOpen() || resState.circuitOpen;
+  const latencyMs = poolCheck.latencyMs;
+  const poolStats = getPoolStats();
+  const highLatency =
+    typeof latencyMs === "number" && latencyMs >= DEGRADED_LATENCY_MS;
+
+  let status: "ok" | "degraded" | "down" = "ok";
+  if (!prismaOk || !poolReady || circuitOpen) {
+    status = "down";
+  } else if (
+    base.databaseUrl === "missing" ||
+    base.stripe === "missing_config" ||
+    base.ai === "missing_config" ||
+    highLatency
+  ) {
+    status = "degraded";
+  }
+
+  const ready =
+    dbOk &&
+    !circuitOpen &&
+    base.databaseUrl !== "missing" &&
+    process.env.DATABASE_URL != null;
+
+  const body = {
+    ready,
+    status,
+    cache: getCacheStats(),
+    /** Unified DB health: `ok` is Prisma + pool probe; `pool` is live pg `Pool` stats. */
+    db: {
+      ok: dbOk,
+      latencyMs,
+      pool: {
+        total: poolStats.total,
+        idle: poolStats.idle,
+        waiting: poolStats.waiting,
+      },
+      poolOk: poolReady,
+      circuitOpen,
+      prismaOk,
+      ...(prismaError ? { error: prismaError } : {}),
+    },
+    /** @deprecated use `db.poolOk` (same: raw pg `SELECT 1` result from {@link checkReady}). */
+    pgPool: poolReady,
+    ...base,
+  };
+
+  const httpStatus =
+    status === "down" || !ready ? 503 : 200;
+
+  return NextResponse.json(body, { status: httpStatus });
 }

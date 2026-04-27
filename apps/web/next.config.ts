@@ -49,6 +49,7 @@ const nextConfig: NextConfig = {
     "@prisma/client-runtime-utils",
     "@repo/db",
     "@repo/db-marketplace",
+    "@repo/db-listings",
     "@repo/db-core",
     "@repo/db-auth",
     "@react-pdf/renderer",

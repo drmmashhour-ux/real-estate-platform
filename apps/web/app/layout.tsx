@@ -17,6 +17,8 @@ import TenantThemeProvider from "@/components/tenant/TenantThemeProvider";
 import { getTenantContextOptional } from "@/lib/tenant/context";
 import { getSiteBaseUrl } from "@/modules/seo/lib/siteBaseUrl";
 import { VisitorGuideChat } from "@/components/ai/VisitorGuideChat";
+import { Law25ConsentBanner } from "@/components/privacy/Law25ConsentBanner";
+import { DemoModeBanner } from "@/components/demo/DemoModeBanner";
 
 const inter = Inter({
   subsets: ["latin", "latin-ext"],
@@ -113,11 +115,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         className={`${inter.className} min-h-screen bg-[#0B0B0B] text-white antialiased`}
       >
         <SkipLinks />
+        <DemoModeBanner />
         <ConversionFlagsPanel />
         <TenantThemeProvider brand={tenantForBrand?.brand}>
           <LeciShell>{children}</LeciShell>
           <VisitorGuideChat />
         </TenantThemeProvider>
+        {process.env.NEXT_PUBLIC_FEATURE_LAW25_BANNER === "1" ? <Law25ConsentBanner /> : null}
       </body>
     </html>
   );

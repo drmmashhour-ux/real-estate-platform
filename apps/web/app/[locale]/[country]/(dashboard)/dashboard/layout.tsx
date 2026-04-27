@@ -11,6 +11,7 @@ import { BrokerageOaciqDisclaimer } from "@/components/compliance/BrokerageOaciq
 import { OnboardingGate } from "@/src/modules/onboarding/OnboardingGate";
 import { BrokerTestimonialPrompt } from "@/components/broker/BrokerTestimonialPrompt";
 import { VisitorGuideChat } from "@/components/ai/VisitorGuideChat";
+import { ReferralViralBlock } from "@/components/dashboard/ReferralViralBlock";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -34,6 +35,7 @@ export default async function DashboardSectionLayout({ children }: { children: R
       {showGuide ? <BrokerAssistantFloating /> : null}
       {showGuide ? <DashboardGuideBanner /> : null}
       <AccountLegalStrip userId={id} />
+      <ReferralViralBlock userId={id} />
       <PlatformLegalGate
         needsPlatformIntermediary={legal.needsPlatformIntermediary}
         needsBrokerCollaboration={legal.needsBrokerCollaboration}

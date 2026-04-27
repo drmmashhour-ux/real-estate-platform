@@ -48,6 +48,7 @@ import {
 } from "@/config/countries";
 import { routing } from "@/i18n/routing";
 import { EXPERIMENT_SESSION_COOKIE_NAME, EXPERIMENT_SESSION_HEADER } from "@/lib/experiments/constants";
+import { REFERRAL_CODE_COOKIE, REFERRAL_CODE_MAX_AGE_SEC } from "@/lib/growth/referral-constants";
 
 /** Must match `next-intl` internal header so `getLocale()` stays in sync when we rebuild `NextResponse.next`. */
 const NEXT_INTL_LOCALE_HEADER = "X-NEXT-INTL-LOCALE";
@@ -121,15 +122,39 @@ function isPublicPathForStaging(pathname: string): boolean {
   return false;
 }
 
+/**
+ * First-touch: `?ref=REF-…` → HTTP-only `referral_code` (7d) for post-signup attribution.
+ * Does not clobber a cookie already set (keeps the earliest captured code).
+ */
+function setReferralCodeCookieFromRefParam(request: NextRequest, response: NextResponse): NextResponse {
+  const raw = request.nextUrl.searchParams.get("ref")?.trim();
+  if (!raw) return response;
+  const upper = raw.toUpperCase();
+  if (!upper.startsWith("REF-") || request.cookies.get(REFERRAL_CODE_COOKIE)?.value) {
+    return response;
+  }
+  response.cookies.set({
+    name: REFERRAL_CODE_COOKIE,
+    value: upper,
+    maxAge: REFERRAL_CODE_MAX_AGE_SEC,
+    path: "/",
+    sameSite: "lax",
+    secure: isSecureCookieContext(),
+    httpOnly: true,
+  });
+  return response;
+}
+
 function applyAttributionCookie(request: NextRequest, response: NextResponse): NextResponse {
+  let res = setReferralCodeCookieFromRefParam(request, response);
   const incoming = attributionFromSearchParams(request.nextUrl.searchParams);
   if (!incoming.source && !incoming.campaign && !incoming.medium) {
-    return response;
+    return res;
   }
   const existingRaw = request.headers.get("cookie");
   const existing = parseAttributionCookieHeader(existingRaw);
   if (!shouldSetFirstTouchCookie(existing, incoming)) {
-    return response;
+    return res;
   }
   const value = serializeAttributionCookieValue({
     source: incoming.source,
@@ -137,7 +162,7 @@ function applyAttributionCookie(request: NextRequest, response: NextResponse): N
     medium: incoming.medium,
     capturedAt: new Date().toISOString(),
   });
-  response.cookies.set({
+  res.cookies.set({
     name: LECIPM_ATTRIBUTION_COOKIE,
     value,
     maxAge: ATTRIBUTION_COOKIE_MAX_AGE_SEC,
@@ -145,7 +170,7 @@ function applyAttributionCookie(request: NextRequest, response: NextResponse): N
     sameSite: "lax",
     secure: isSecureCookieContext(),
   });
-  return response;
+  return res;
 }
 
 function ensureRequestIdHeader(request: NextRequest): Headers {

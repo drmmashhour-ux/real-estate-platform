@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { z } from "zod";
+import { trackEvent } from "@/lib/analytics/tracker";
+import { getUserProfile } from "@/lib/ai/userProfile";
 import { getActivePromotedListingIds } from "@/lib/promotions";
 import { getGuestId } from "@/lib/auth/session";
 import { searchListingsPaginated } from "@/lib/bnhub/listings";
+import { flags } from "@/lib/flags";
+import { rankSearchResults } from "@/lib/search/ranking";
 import { intelligenceFlags } from "@/config/feature-flags";
 import { getMemorySignalsForEngine } from "@/lib/marketplace-memory/memory-query.service";
 import { buildMemoryRankHintFromSignals } from "@/lib/marketplace-memory/memory-ranking-hint";
@@ -14,6 +18,7 @@ import {
 } from "@/modules/search/ranking.engine";
 import { greenAiLog } from "@/modules/green-ai/green-ai-logger";
 
+/** Order 73.1 — keep DB fan-out bounded (avoid unbounded parallel pool work per request). */
 export const dynamic = "force-dynamic";
 
 const greenFilterSchema = z
@@ -48,6 +53,9 @@ const bodySchema = z.object({
   sort: z.string().optional(),
   page: z.number().int().min(1).optional(),
   limit: z.number().int().min(1).max(100).optional(),
+  /** Order 80.1 — title FTS (`plainto_tsquery`); GIN on `bnhub_listings.title`. */
+  q: z.string().max(200).optional(),
+  minRating: z.number().min(0).max(5).optional(),
   rankingDebug: z.boolean().optional(),
   /** Optional 0–1 affinity per listing id — bounded in engine; for signed-in experiments only. */
   guestAiAffinity: z.record(z.string(), z.number()).optional(),
@@ -178,11 +186,19 @@ function parseSearchParams(sp: URLSearchParams) {
     sort: sp.get("sort") ?? undefined,
     page: Number.isFinite(pageN) ? pageN : undefined,
     limit: Number.isFinite(limitN) ? limitN : undefined,
+    q: sp.get("q") ?? undefined,
+    minRating: (() => {
+      const m = sp.get("minRating");
+      if (m == null || m === "") return undefined;
+      const n = Number(m);
+      return Number.isFinite(n) ? n : undefined;
+    })(),
     rankingDebug: sp.get("rankingDebug") === "1" || sp.get("rankingDebug") === "true",
   };
 }
 
 async function handleSearch(request: NextRequest, body?: z.infer<typeof bodySchema>) {
+  const start = Date.now();
   const rankingDebug =
     request.nextUrl.searchParams.get("rankingDebug") === "1" ||
     request.nextUrl.searchParams.get("rankingDebug") === "true" ||
@@ -190,37 +206,99 @@ async function handleSearch(request: NextRequest, body?: z.infer<typeof bodySche
 
   const b = body ?? {};
   const sort = sortKeyFromClient(typeof b.sort === "string" ? b.sort : undefined);
+  const searchQuery = typeof b.q === "string" && b.q.trim() ? b.q.trim() : undefined;
 
-  const result = await searchListingsPaginated({
-    city: b.city?.trim() || undefined,
-    countryCode: b.countryCode?.trim() || undefined,
-    marketCountryId: b.marketCountryId?.trim() || undefined,
-    marketCityId: b.marketCityId?.trim() || undefined,
-    checkIn: b.checkIn?.trim() || undefined,
-    checkOut: b.checkOut?.trim() || undefined,
-    guests: typeof b.guests === "number" && b.guests > 0 ? b.guests : undefined,
-    minPrice: typeof b.priceMin === "number" && b.priceMin > 0 ? b.priceMin : undefined,
-    maxPrice: typeof b.priceMax === "number" && b.priceMax > 0 ? b.priceMax : undefined,
-    propertyType: b.propertyType?.trim() || undefined,
-    amenitySlugs: Array.isArray(b.amenities) && b.amenities.length ? b.amenities : undefined,
-    sort,
-    page: b.page ?? 1,
-    limit: b.limit ?? 24,
-    userId: null,
-  });
+  let result: Awaited<ReturnType<typeof searchListingsPaginated>>;
+  try {
+    result = await searchListingsPaginated({
+      city: b.city?.trim() || undefined,
+      countryCode: b.countryCode?.trim() || undefined,
+      marketCountryId: b.marketCountryId?.trim() || undefined,
+      marketCityId: b.marketCityId?.trim() || undefined,
+      checkIn: b.checkIn?.trim() || undefined,
+      checkOut: b.checkOut?.trim() || undefined,
+      guests: typeof b.guests === "number" && b.guests > 0 ? b.guests : undefined,
+      minPrice: typeof b.priceMin === "number" && b.priceMin > 0 ? b.priceMin : undefined,
+      maxPrice: typeof b.priceMax === "number" && b.priceMax > 0 ? b.priceMax : undefined,
+      propertyType: b.propertyType?.trim() || undefined,
+      amenitySlugs: Array.isArray(b.amenities) && b.amenities.length ? b.amenities : undefined,
+      sort,
+      page: b.page ?? 1,
+      limit: b.limit ?? 20,
+      userId: null,
+      q: searchQuery,
+      minRating: typeof b.minRating === "number" && b.minRating > 0 ? b.minRating : undefined,
+    });
+  } catch (e) {
+    Sentry.captureException(e, { tags: { route: "listings_search_handle" } });
+    throw e;
+  } finally {
+    const duration = Date.now() - start;
+    Sentry.captureMessage("search_performance", {
+      level: "info",
+      extra: {
+        duration,
+        query: searchQuery ?? null,
+        city: b.city?.trim() ?? null,
+        route: "GET|POST /api/listings/search",
+      },
+    });
+    if (duration > 500) {
+      Sentry.captureMessage("slow_search_query", {
+        level: "warning",
+        extra: { duration, query: searchQuery ?? b.city?.trim() ?? null },
+      });
+    }
+  }
 
-  const listings = await maybeApplyMarketplaceRanking(request, result.listings, {
-    sort,
-    city: b.city?.trim(),
-    checkIn: b.checkIn?.trim(),
-    checkOut: b.checkOut?.trim(),
-    guests: typeof b.guests === "number" ? b.guests : undefined,
-    priceMin: typeof b.priceMin === "number" ? b.priceMin : undefined,
-    priceMax: typeof b.priceMax === "number" ? b.priceMax : undefined,
-    propertyType: b.propertyType?.trim(),
-    rankingDebug,
-    guestAiAffinity: b.guestAiAffinity,
-  });
+  const useOrder82 =
+    flags.RECOMMENDATIONS && (sort === "ai" || sort === "recommended") && result.listings.length > 0;
+  let rankingTookMs = 0;
+  let listings: Awaited<ReturnType<typeof searchListingsPaginated>>["listings"] = result.listings;
+
+  if (useOrder82) {
+    const tRank = Date.now();
+    const uid = await getGuestId().catch(() => null);
+    const userProfile = await getUserProfile(uid ?? undefined);
+    listings = await rankSearchResults({
+      listings: result.listings,
+      query: searchQuery,
+      city: b.city?.trim() ?? null,
+      userProfile,
+    });
+    rankingTookMs = Date.now() - tRank;
+    void trackEvent("search_ranked", {
+      query: searchQuery ?? "",
+      city: b.city?.trim() ?? null,
+      resultCount: listings.length,
+    });
+  } else {
+    listings = await maybeApplyMarketplaceRanking(request, result.listings, {
+      sort,
+      city: b.city?.trim(),
+      checkIn: b.checkIn?.trim(),
+      checkOut: b.checkOut?.trim(),
+      guests: typeof b.guests === "number" ? b.guests : undefined,
+      priceMin: typeof b.priceMin === "number" ? b.priceMin : undefined,
+      priceMax: typeof b.priceMax === "number" ? b.priceMax : undefined,
+      propertyType: b.propertyType?.trim(),
+      rankingDebug,
+      guestAiAffinity: b.guestAiAffinity,
+    });
+  }
+
+  const resultCount = listings.length;
+  const queryLabel = searchQuery ?? b.city?.trim() ?? "";
+  if (queryLabel) {
+    void trackEvent("search_performed", {
+      query: searchQuery ?? b.city?.trim() ?? "",
+      city: b.city?.trim() ?? null,
+      resultCount,
+    });
+    if (resultCount === 0) {
+      void trackEvent("search_no_results", { query: searchQuery ?? b.city?.trim() ?? "" });
+    }
+  }
 
   if (b.greenFilters != null || b.sortMode) {
     greenAiLog.info("stays_listing_search_green_ignored", {
@@ -243,8 +321,13 @@ async function handleSearch(request: NextRequest, body?: z.infer<typeof bodySche
     page: result.page,
     limit: result.limit,
     hasMore: result.hasMore,
+    meta: {
+      ranking: useOrder82 ? "ai" : "none",
+      resultCount: listings.length,
+      tookMs: rankingTookMs,
+    },
     rankingMeta: {
-      engine: "modules/search/ranking.engine",
+      engine: useOrder82 ? "lib/search/ranking" : "modules/search/ranking.engine",
       sort,
     },
     ...(greenSearchHint ? { greenSearch: greenSearchHint } : {}),
@@ -290,6 +373,8 @@ export async function GET(request: NextRequest) {
       sort: q.sort,
       page: Number.isFinite(q.page) ? q.page : undefined,
       limit: Number.isFinite(q.limit) ? q.limit : undefined,
+      q: q.q,
+      minRating: q.minRating,
       rankingDebug: q.rankingDebug,
     });
   } catch (e) {

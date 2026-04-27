@@ -5,8 +5,16 @@ import { getLegacyDB } from "@/lib/db/legacy";
 const prisma = getLegacyDB();
 import { getOrCreateListingAutopilotSettings } from "@/lib/autopilot/get-autopilot-settings";
 import { AutopilotSettingsForm } from "./autopilot-settings-form";
+import { ApplySafeBatchButton } from "./apply-safe-batch-button";
+import { RollbackAiLogButton } from "./rollback-ai-log-button";
 
 export const dynamic = "force-dynamic";
+
+function logHasPriceSnapshot(log: { beforeSnapshot: unknown }): boolean {
+  if (log.beforeSnapshot == null) return false;
+  const b = log.beforeSnapshot as Record<string, unknown>;
+  return typeof b.nightPriceCents === "number" || typeof b.price === "number";
+}
 
 export default async function DashboardAutopilotPage({
   params,
@@ -37,6 +45,7 @@ export default async function DashboardAutopilotPage({
       where: {
         listing: { ownerId: userId },
         status: "suggested",
+        appliedAt: null,
       },
       orderBy: { createdAt: "desc" },
       take: 25,
@@ -58,6 +67,24 @@ export default async function DashboardAutopilotPage({
       include: { listing: { select: { title: true, listingCode: true } } },
     }),
   ]);
+
+  const listingIds = listings.map((l) => l.id);
+  const recentPriceLogs =
+    listingIds.length === 0
+      ? []
+      : await prisma.aiExecutionLog.findMany({
+          where: { listingId: { in: listingIds } },
+          orderBy: { createdAt: "desc" },
+          take: 40,
+        });
+  const rollbackableLogs = recentPriceLogs.filter(logHasPriceSnapshot);
+
+  const pendingByListing = new Map<string, { title: string; count: number }>();
+  for (const s of pendingSuggestions) {
+    const cur = pendingByListing.get(s.listingId);
+    if (cur) cur.count += 1;
+    else pendingByListing.set(s.listingId, { title: s.listing.title, count: 1 });
+  }
 
   const weak = listings.filter(
     (l) => (l.listingQualityScore?.qualityScore ?? 100) < 58 || !l.listingQualityScore
@@ -125,6 +152,50 @@ export default async function DashboardAutopilotPage({
                 <li key={s.id}>
                   <span className="font-medium text-slate-800">{s.listing.title}</span> · {s.fieldType} ·{" "}
                   {s.riskLevel} risk
+                </li>
+              ))
+            )}
+          </ul>
+          {pendingByListing.size > 0 ? (
+            <div className="mt-4 space-y-3 rounded-lg border border-slate-200 bg-slate-50/80 p-3">
+              <h3 className="text-sm font-semibold text-slate-800">Batch apply (safe: ≤5% nightly change)</h3>
+              {Array.from(pendingByListing.entries()).map(([listingId, v]) => (
+                <div
+                  key={listingId}
+                  className="flex flex-wrap items-center justify-between gap-2 text-sm text-slate-600"
+                >
+                  <span>
+                    <span className="font-medium text-slate-800">{v.title}</span> — {v.count} pending
+                  </span>
+                  <ApplySafeBatchButton listingId={listingId} />
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </section>
+
+        <section>
+          <h2 className="text-lg font-semibold text-slate-900">Recent AI price executions</h2>
+          <p className="mt-1 text-xs text-slate-500">
+            Undo restores the previous price from the execution log (BNHub or marketplace, depending on the change).
+          </p>
+          <ul className="mt-3 space-y-2 text-sm text-slate-600">
+            {rollbackableLogs.length === 0 ? (
+              <li className="text-slate-500">No price executions with a stored “before” snapshot yet.</li>
+            ) : (
+              rollbackableLogs.map((log) => (
+                <li
+                  key={log.id}
+                  className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2"
+                >
+                  <span>
+                    <span className="font-mono text-xs text-slate-500">
+                      {log.createdAt.toISOString().slice(0, 10)}
+                    </span>{" "}
+                    <span className="text-slate-400">·</span> listing{" "}
+                    <code className="text-xs text-slate-500">{log.listingId}</code>
+                  </span>
+                  <RollbackAiLogButton logId={log.id} />
                 </li>
               ))
             )}

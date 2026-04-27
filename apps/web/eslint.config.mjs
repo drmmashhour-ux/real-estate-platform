@@ -30,6 +30,7 @@ const eslintConfig = defineConfig([
     },
   },
   // Order 89 — monolith: prefer `@/lib/db` in app code. Barrel files must import `@repo/db` to re-export.
+  // Order 81.1 — `db-safe` / `db-direct` are internal; all usage goes through `lib/db/index` / `@/lib/db`.
   {
     files: [
       "app/**/*.{ts,tsx}",
@@ -41,6 +42,7 @@ const eslintConfig = defineConfig([
     ignores: [
       "lib/db.ts",
       "lib/db/index.ts",
+      "lib/db/sql-query.ts",
       "lib/db-safe.ts",
     ],
     rules: {
@@ -52,6 +54,15 @@ const eslintConfig = defineConfig([
               name: "@repo/db",
               message:
                 "Use @/lib/db instead (e.g. monolithPrisma, marketplacePrisma, pool). Do not import the monolith client package directly in app code.",
+            },
+            {
+              name: "@/lib/db-safe",
+              message:
+                "Order 81.1: use @/lib/db (query, safeQuery, getDbResilienceState, isDbCircuitOpen, setPoolProbeResult, …).",
+            },
+            {
+              name: "@/lib/db-direct",
+              message: "Order 81.1: use @/lib/db for pool, getPoolStats, and query().",
             },
           ],
         },

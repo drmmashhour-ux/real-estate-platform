@@ -17,7 +17,11 @@ export { USE_NEW_DB, USE_MARKETPLACE_DB } from "./db-switch";
 
 export {
   pool,
+  getPoolStats,
   coreDB,
+  tracedCoreDB,
+  tracedMonolithDB,
+  monolithClient,
   marketplaceDB,
   assertMarketplace,
   MARKETPLACE_LISTINGS_WITH_BOOKING_COUNT_EXAMPLE,
@@ -28,6 +32,25 @@ export {
   monolithPrisma,
   marketplacePrisma,
   miniCorePrisma,
+  // Order 81.1
+  query,
+  readOnlyQuery,
+  ReadOnlyQueryError,
+  runTx,
+  extractLeadingSqlCommentTag,
+  classifySqlStatementKind,
+  safeQuery,
+  safePooledQuery,
+  loggedQuery,
+  queryWithRetry,
+  getDbResilienceMetrics,
+  getDbResilienceState,
+  isDbCircuitOpen,
+  isDatabaseDegraded,
+  setPoolProbeResult,
+  DB_ERROR_CODES,
+  DbTimeoutError,
+  DbUnavailableError,
 } from "./db/index";
 export { getListingsDB } from "./db/routeSwitch";
 export type { ListingsDbClient } from "./db/routeSwitch";

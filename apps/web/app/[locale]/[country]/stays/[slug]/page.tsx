@@ -1,19 +1,16 @@
 import type { Metadata } from "next";
 import { ListingStatus } from "@prisma/client";
-import { headers } from "next/headers";
 import { notFound, permanentRedirect } from "next/navigation";
 import { getCachedBnhubListingById } from "@/lib/bnhub/cached-listing";
 import { buildPageMetadata } from "@/lib/seo/page-metadata";
 import { buildBnhubStaySeoSlug, stayPathLookupKeys } from "@/lib/seo/public-urls";
 import { BnhubListingView, bnhubGalleryUrls } from "@/app/[locale]/[country]/bnhub/bnhub-listing-view";
 import { getGuestId } from "@/lib/auth/session";
-import { trackEvent } from "@/src/services/analytics";
 import { onMessagingTriggerListingView } from "@/src/modules/messaging/triggers";
 import { CityIntentLanding } from "@/components/growth/CityIntentLanding";
 import { defaultCityIntentPath } from "@/lib/growth/city-intent-seo";
 import { growthCityDisplayName, growthCityRegion } from "@/lib/growth/geo-slugs";
 import { parseGrowthCitySlugParam } from "@/lib/growth/geo-slugs";
-import { mergeTrafficAttributionIntoMetadata } from "@/lib/attribution/social-traffic";
 import { hasAdUtmParams } from "@/lib/marketing/bnhub-ad-landing-url";
 import { recordBnhubStayPublicView } from "@/lib/bnhub/bnhub-ethical-seeding";
 
@@ -112,16 +109,6 @@ export default async function StaySeoPage({
 
   const guestId = await getGuestId().catch(() => null);
   void recordBnhubStayPublicView(listing.id, guestId);
-  const cookieHeader = (await headers()).get("cookie");
-  void trackEvent(
-    "listing_view",
-    mergeTrafficAttributionIntoMetadata(cookieHeader, {
-      listingId: listing.id,
-      listingCode: listing.listingCode,
-      city: listing.city,
-    }),
-    { userId: guestId }
-  ).catch(() => {});
   if (guestId) {
     void onMessagingTriggerListingView(guestId, listing.city ?? undefined).catch(() => {});
   }

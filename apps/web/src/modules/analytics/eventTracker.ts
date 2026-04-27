@@ -3,6 +3,7 @@
  * Never throws to callers. Set LIVE_DEBUG_MODE=1 for verbose server logs.
  */
 import type { Prisma, UserEventType } from "@prisma/client";
+import { writeMarketplaceEvent } from "@/lib/analytics/tracker";
 import { prisma } from "@/lib/db";
 import { logError, logInfo } from "@/lib/logger";
 
@@ -82,6 +83,15 @@ export async function trackEvent(
     }
     if (isLiveDebugMode()) {
       logInfo(`[live-debug] user_event ${eventType}`, { userId: opts?.userId ?? null });
+    }
+
+    if (eventType === "listing_view" || eventType === "booking_created") {
+      void writeMarketplaceEvent(eventType, {
+        ...meta,
+        userId: opts?.userId ?? null,
+      }).catch((err) => {
+        logError("eventTracker: marketplace_events mirror failed", err);
+      });
     }
   } catch (e) {
     logError("eventTracker: persist user_event failed", e);

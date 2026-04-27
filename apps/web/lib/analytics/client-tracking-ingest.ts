@@ -89,6 +89,8 @@ export const ALLOWED_CLIENT_TRACKING_EVENT_TYPES = new Set([
   "cta_click",
   "booking_started",
   "booking_completed",
+  /** A/B: variant shown to user — `meta` should include `experiment` + `variant` (and optional `growthDedupeKey`). */
+  "ab_exposure",
   /** LECIPM content automation + social attribution */
   "social_listing_landing",
   "booking_started_from_social",

@@ -5,6 +5,8 @@ import {
   alertIfLowConversion,
 } from "@/lib/alerts";
 import { getCacheOrRedis, setCacheAndRedis } from "@/lib/cache";
+import { isDemoDataActive, parseDemoScenarioFromRequest } from "@/lib/demo/mode";
+import { getDemoListings } from "@/lib/demo/data";
 
 export async function GET(req: Request) {
   const db = getListingsDB();
@@ -12,6 +14,21 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
 
   const city = searchParams.get("city");
+  if (isDemoDataActive(req)) {
+    const scenario = parseDemoScenarioFromRequest(req);
+    let rows = getDemoListings(scenario);
+    if (city?.trim()) {
+      const c = city.trim();
+      rows = rows.filter((l) => l.city.toLowerCase().includes(c.toLowerCase()));
+    }
+    const minP = searchParams.get("minPrice");
+    const maxP = searchParams.get("maxPrice");
+    const minN = minP ? Number(minP) : null;
+    const maxN = maxP ? Number(maxP) : null;
+    if (minN != null && !Number.isNaN(minN)) rows = rows.filter((l) => l.price >= minN);
+    if (maxN != null && !Number.isNaN(maxN)) rows = rows.filter((l) => l.price <= maxN);
+    return Response.json(rows);
+  }
   const minPrice = searchParams.get("minPrice");
   const maxPrice = searchParams.get("maxPrice");
 

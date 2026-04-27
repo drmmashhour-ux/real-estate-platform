@@ -7,6 +7,14 @@ export type LaunchPlanDay = {
   tasks: string[];
 };
 
+/** Read-only string for marketing / investor (Order 49.1). */
+export function getLaunchFocusLineForDay(day1Based: number): string {
+  const d = Math.max(1, Math.min(7, Math.floor(day1Based) || 1));
+  const entry = launchPlan[d - 1];
+  if (!entry) return "";
+  return `Day ${d}: ${entry.focus}`;
+}
+
 export const launchPlan: readonly LaunchPlanDay[] = [
   {
     day: 1,

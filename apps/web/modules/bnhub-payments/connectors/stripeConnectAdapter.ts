@@ -4,6 +4,7 @@
 
 import Stripe from "stripe";
 import { getStripe, isStripeConfigured } from "@/lib/stripe";
+import { assertStripeCheckoutOnlyPolicy } from "@/lib/stripe/checkoutOnlyPolicy";
 import type {
   CapturePaymentInput,
   CreatePaymentSessionInput,
@@ -75,6 +76,7 @@ export class StripeConnectAdapter implements MarketplacePaymentProcessorAdapter 
   }
 
   async createPaymentSession(input: CreatePaymentSessionInput) {
+    assertStripeCheckoutOnlyPolicy();
     const s = stripe();
     if (!s) return { error: "Stripe not configured" };
     const paymentIntentData: Stripe.Checkout.SessionCreateParams.PaymentIntentData = {

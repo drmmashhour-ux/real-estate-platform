@@ -7,6 +7,8 @@ type BookingPayload = {
   id: string;
   startDate: string;
   endDate: string;
+  status?: string;
+  refundStatus?: string;
   listing: { title: string; city: string };
 };
 
@@ -64,6 +66,22 @@ export function BookingSuccessPanel({ bookingId }: { bookingId?: string }) {
     return <p className="text-muted-foreground">Loading booking…</p>;
   }
 
+  const statusLine =
+    booking.status === "cancelled" ? (
+      <p>
+        <strong>Status:</strong> Cancelled
+        {booking.refundStatus === "pending" && (
+          <span className="ml-2 text-amber-600 dark:text-amber-400">— Refund in progress</span>
+        )}
+        {booking.refundStatus === "completed" && (
+          <span className="ml-2 text-emerald-600 dark:text-emerald-400">— Refund completed</span>
+        )}
+        {booking.refundStatus === "failed" && (
+          <span className="ml-2 text-destructive">— Refund could not be completed; contact support</span>
+        )}
+      </p>
+    ) : null;
+
   return (
     <div className="space-y-2 rounded-md border bg-muted/30 p-4 text-sm">
       <p>
@@ -75,6 +93,7 @@ export function BookingSuccessPanel({ bookingId }: { bookingId?: string }) {
       <p>
         <strong>Dates:</strong> {booking.startDate.slice(0, 10)} → {booking.endDate.slice(0, 10)}
       </p>
+      {statusLine}
       <Link href="/listings" className="underline">
         Back to listings
       </Link>

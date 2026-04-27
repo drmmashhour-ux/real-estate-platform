@@ -74,3 +74,20 @@ export async function recordMarketplacePaymentLedgerFromCheckoutSession(
     throw e;
   }
 }
+
+/**
+ * Order 59.1 — gross amount charged to the guest for a marketplace booking (from the append-only ledger).
+ */
+export async function getMarketplaceTotalPaidCentsForBooking(
+  bookingId: string
+): Promise<number | null> {
+  const id = bookingId?.trim();
+  if (!id) return null;
+  const row = await marketplacePrisma.marketplacePaymentLedger.findFirst({
+    where: { bookingId: id },
+    orderBy: { createdAt: "asc" },
+    select: { amountCents: true },
+  });
+  if (!row) return null;
+  return row.amountCents;
+}

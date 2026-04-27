@@ -4,7 +4,9 @@
  * | Use case | Use |
  * |----------|-----|
  * | Create / read / update / delete, transactions, `where` filters | `marketplaceDB`, `coreDB`, or `monolithPrisma` from `@/lib/db` |
- * | Cross-table aggregations, large joins, analytics, reporting | `pool` (see {@link import('@/lib/sql').query}) or `queryWithRetry` / `safeQuery` in `lib/db-safe.ts` |
+ * | Cross-table aggregations, large joins, analytics, reporting | `pool` (see {@link import('@/lib/sql').query}) or `queryWithRetry` / `safePooledQuery` in `lib/db-safe.ts` |
+ * **Order 73.1** — avoid unbounded `Promise.all` over *N* arbitrary rows in hot paths (search/listings);
+ * batch or cap concurrency so the `pg` pool is not starved; use `getPoolStats()` (see `lib/db/pool-core.ts`) in readiness to observe queue pressure.
  *
  * For marketplace split (`@repo/db-marketplace`) the physical tables are `listings` and `bookings`
  * (see `prisma` schema), not the Prisma model names `Listing` / `Booking` in raw SQL.

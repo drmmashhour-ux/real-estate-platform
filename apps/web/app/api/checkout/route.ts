@@ -4,6 +4,7 @@ import {
   isHostNotReadyToReceivePaymentsError,
 } from "@/lib/stripe/assert-host-ready";
 import { bnhubStripeApplicationFeeCents } from "@/lib/stripe/bnhub-connect";
+import { buildMarketplaceConflictSuggestions } from "@/lib/booking/availabilityHelpers";
 import {
   computeHoldExpiry,
   MARKETPLACE_LISTING_CHECKOUT,
@@ -12,7 +13,13 @@ import {
 import { assertSafeUsage, authPrisma, getListingsDB, bnhubDB } from "@/lib/db";
 import { requireAuth } from "@/lib/auth/middleware";
 import { toDateOnlyFromString } from "@/lib/dates/dateOnly";
+import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
+import { getClientIpFromRequest } from "@/lib/security/ip-fingerprint";
+import { logApi } from "@/lib/observability/structured-log";
 import { track } from "@/lib/analytics/events";
+import { calculateDynamicTotal } from "@/lib/pricing/calculateDynamicTotal";
+import { trackEvent } from "@/src/services/analytics";
+import { assertStripeCheckoutOnlyPolicy } from "@/lib/stripe/checkoutOnlyPolicy";
 
 export const dynamic = "force-dynamic";
 
@@ -45,6 +52,16 @@ void bnhubDB;
  */
 export async function POST(req: Request) {
   assertSafeUsage("checkout route");
+  assertStripeCheckoutOnlyPolicy();
+  const listDb = getListingsDB();
+  const ip = getClientIpFromRequest(req);
+  const rl = checkRateLimit(`checkout:${ip}`, { windowMs: 60_000, max: 30 });
+  if (!rl.allowed) {
+    return new Response(JSON.stringify({ error: "Too many requests" }), {
+      status: 429,
+      headers: { "content-type": "application/json", ...getRateLimitHeaders(rl) },
+    });
+  }
   if (!stripe) {
     return Response.json(
       { error: "Stripe is not configured (set STRIPE_SECRET_KEY or disable demo mode)" },
@@ -68,6 +85,10 @@ export async function POST(req: Request) {
     return Response.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return Response.json({ error: "Invalid input" }, { status: 400 });
+  }
+
   const amount = typeof body.amount === "number" ? body.amount : Number(body.amount);
   if (!Number.isInteger(amount) || amount < 50) {
     return Response.json(
@@ -75,6 +96,16 @@ export async function POST(req: Request) {
       { status: 400 }
     );
   }
+
+  type PriceSnapshot = {
+    subtotalCents: number;
+    feeCents: number;
+    finalCents: number;
+    nights: number;
+    /** Order 61 nightly lines for `pricingSnapshot` on the booking row. */
+    nightlyPrices: import("@/lib/pricing/calculateDynamicTotal").NightlyPriceLine[];
+  } | null;
+  let priceSnapshot: PriceSnapshot = null;
 
   const base =
     process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "").trim() || DEFAULT_ORIGIN;
@@ -128,7 +159,7 @@ export async function POST(req: Request) {
 
     const listing = await listDb.listing.findUnique({
       where: { id: listingIdRaw },
-      select: { id: true, userId: true },
+      select: { id: true, userId: true, price: true },
     });
     if (!listing) {
       return Response.json({ error: "Listing not found" }, { status: 404 });
@@ -143,6 +174,31 @@ export async function POST(req: Request) {
     if (endDate <= startDate) {
       return Response.json({ error: "endDate must be after startDate" }, { status: 400 });
     }
+
+    const startY = startRaw.slice(0, 10);
+    const endY = endRaw.slice(0, 10);
+    const dyn = await calculateDynamicTotal({ listingId: listingIdRaw, startDate: startY, endDate: endY });
+    if (!dyn) {
+      return Response.json({ error: "Could not price this stay" }, { status: 400 });
+    }
+    if (amount !== dyn.finalCents) {
+      return Response.json(
+        {
+          error: "amount does not match server pricing for these dates",
+          code: "PRICE_MISMATCH",
+          expectedAmountCents: dyn.finalCents,
+        },
+        { status: 400 }
+      );
+    }
+    priceSnapshot = {
+      subtotalCents: dyn.subtotalCents,
+      feeCents: dyn.platformFeeCents,
+      finalCents: dyn.finalCents,
+      nights: dyn.nights,
+      nightlyPrices: dyn.nightlyPrices,
+    };
+    void trackEvent("booking_priced_dynamic", { listingId: listingIdRaw, finalCents: dyn.finalCents }).catch(() => {});
 
     console.log("[CHECKOUT] using getListingsDB() for booking");
     try {
@@ -161,12 +217,46 @@ export async function POST(req: Request) {
             endDate,
             status: "pending",
             expiresAt: computeHoldExpiry(),
+            ...(priceSnapshot
+              ? {
+                  subtotalCents: priceSnapshot.subtotalCents,
+                  feeCents: priceSnapshot.feeCents,
+                  finalCents: priceSnapshot.finalCents,
+                  nights: priceSnapshot.nights,
+                  pricingSnapshot: {
+                    v: 1,
+                    source: "order_61_calculateDynamicTotal",
+                    nightlyPrices: priceSnapshot.nightlyPrices,
+                  },
+                }
+              : {}),
           },
         });
       });
+      void import("@/lib/events")
+        .then((m) =>
+          m.emit("booking.created", {
+            listingId: listingIdRaw,
+            bookingId: createdBooking.id,
+            userId,
+            source: "marketplace",
+          })
+        )
+        .catch(() => {});
     } catch (e) {
       if (e instanceof BookingDateConflictError) {
-        return Response.json({ error: e.message, code: "BOOKING_CONFLICT" }, { status: 409 });
+        const suggestions = await buildMarketplaceConflictSuggestions(listingIdRaw, startRaw.slice(0, 10), endRaw.slice(0, 10));
+        return Response.json(
+          {
+            error: e.message,
+            code: "BOOKING_CONFLICT",
+            suggestions: {
+              nextAvailableStart: suggestions.nextAvailableStart,
+              nearestRanges: suggestions.nearestRanges,
+            },
+          },
+          { status: 409 }
+        );
       }
       if (typeof e === "object" && e !== null && "code" in e && (e as { code: string }).code === "P2002") {
         return Response.json(
@@ -175,7 +265,18 @@ export async function POST(req: Request) {
         );
       }
       if (isOverlapDbError(e)) {
-        return Response.json({ error: "Dates not available", code: "BOOKING_CONFLICT" }, { status: 409 });
+        const suggestions = await buildMarketplaceConflictSuggestions(listingIdRaw, startRaw.slice(0, 10), endRaw.slice(0, 10));
+        return Response.json(
+          {
+            error: "Dates not available",
+            code: "BOOKING_CONFLICT",
+            suggestions: {
+              nextAvailableStart: suggestions.nextAvailableStart,
+              nearestRanges: suggestions.nearestRanges,
+            },
+          },
+          { status: 409 }
+        );
       }
       console.error("checkout: booking create", e);
       return Response.json(
@@ -188,7 +289,14 @@ export async function POST(req: Request) {
     metadata.listing_id = listing.id;
     if (!metadata.bookingId) metadata.bookingId = createdBooking.id;
     if (!metadata.listingId) metadata.listingId = listing.id;
+    metadata.userId = userId;
+    metadata.expected_amount_cents = String(amount);
     metadata.paymentType = MARKETPLACE_LISTING_CHECKOUT;
+    if (priceSnapshot) {
+      metadata.subtotal_cents = String(priceSnapshot.subtotalCents);
+      metadata.fee_cents = String(priceSnapshot.feeCents);
+      metadata.nights = String(priceSnapshot.nights);
+    }
   } else if (listingIdRaw) {
     connectListing = await listDb.listing.findUnique({
       where: { id: listingIdRaw },
@@ -257,6 +365,8 @@ export async function POST(req: Request) {
     "listingId",
     "paymentType",
     "userId",
+    "expected_amount_cents",
+    "expectedAmountCents",
   ] as const) {
     const v = metadata[key];
     if (typeof v === "string" && v.trim()) paymentIntentMetadata[key] = v.trim();
@@ -304,6 +414,7 @@ export async function POST(req: Request) {
       return Response.json({ error: "Checkout session missing url" }, { status: 500 });
     }
 
+    logApi("checkout_session_created", { listingId: listingIdRaw || null, hasBooking: Boolean(createdBooking?.id) });
     return Response.json({ url: session.url, bookingId: createdBooking?.id ?? null });
   } catch (e) {
     console.error("checkout.sessions.create", e);

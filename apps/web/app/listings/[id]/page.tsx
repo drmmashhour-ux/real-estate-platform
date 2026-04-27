@@ -4,13 +4,18 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { TrustBadges } from "@/components/listing/TrustBadges";
-import { generateUrgency } from "@/lib/ai/urgency";
+import { BookNowCTA } from "@/components/listing/BookNowCTA";
+import { HelpBanner } from "@/components/support/HelpBanner";
+import { getDealLabel } from "@/lib/ai/dealScore";
 
 type Listing = {
   id: string;
   title: string;
   city: string;
   price: number;
+  dealHighlightScore?: number;
+  marketPrice?: number | null;
+  highlight?: string | null;
 };
 
 export default function ListingPage() {
@@ -18,7 +23,11 @@ export default function ListingPage() {
   const id = typeof params?.id === "string" ? params.id : "";
   const [listing, setListing] = useState<Listing | null>(null);
   const [ready, setReady] = useState(false);
-  const [bookingCount, setBookingCount] = useState(0);
+  const [availability, setAvailability] = useState<{
+    nextAvailableDate: string | null;
+    occupancyRate: number;
+    urgency: string | null;
+  } | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -34,7 +43,17 @@ export default function ListingPage() {
           typeof (data as Listing).city === "string" &&
           typeof (data as Listing).price === "number"
         ) {
-          setListing(data as Listing);
+          const row = data as Record<string, unknown> & Listing;
+          setListing({
+            id: row.id,
+            title: row.title,
+            city: row.city,
+            price: row.price,
+            dealHighlightScore:
+              typeof row.dealHighlightScore === "number" ? row.dealHighlightScore : undefined,
+            marketPrice: typeof row.marketPrice === "number" ? row.marketPrice : null,
+            highlight: typeof row.highlight === "string" ? row.highlight : null,
+          });
         } else {
           setListing(null);
         }
@@ -45,20 +64,33 @@ export default function ListingPage() {
 
   useEffect(() => {
     if (!id) return;
-    fetch(
-      `/api/listings/${id}/bookings?from=${encodeURIComponent("2000-01-01")}&to=${encodeURIComponent("2100-12-31")}`
-    )
-      .then((r) => r.json())
+    fetch(`/api/listings/${id}/availability`)
+      .then((r) => (r.ok ? r.json() : null))
       .then((data: unknown) => {
-        if (Array.isArray(data)) setBookingCount(data.length);
-        else setBookingCount(0);
+        if (data && typeof data === "object" && "occupancyRate" in data) {
+          const o = data as {
+            nextAvailableDate?: string | null;
+            occupancyRate: number;
+            urgency?: string | null;
+          };
+          setAvailability({
+            nextAvailableDate: o.nextAvailableDate ?? null,
+            occupancyRate: typeof o.occupancyRate === "number" ? o.occupancyRate : 0,
+            urgency: o.urgency ?? null,
+          });
+        } else {
+          setAvailability(null);
+        }
       })
-      .catch(() => setBookingCount(0));
+      .catch(() => setAvailability(null));
   }, [id]);
 
-  const urgencyMessages = useMemo(
-    () => generateUrgency({ bookings: bookingCount, views: undefined }),
-    [bookingCount]
+  const dealLabel = useMemo(
+    () =>
+      typeof listing?.dealHighlightScore === "number"
+        ? getDealLabel(listing.dealHighlightScore)
+        : null,
+    [listing]
   );
 
   if (!id) {
@@ -105,27 +137,41 @@ export default function ListingPage() {
           ${listing.price}
           <span className="text-sm font-normal text-zinc-500"> / night</span>
         </p>
+        {dealLabel ? (
+          <span className="mt-1 block text-sm text-green-600 dark:text-green-500">{dealLabel}</span>
+        ) : null}
+        {listing.highlight ? (
+          <p className="mt-1 text-sm text-green-600 dark:text-green-400">{listing.highlight}</p>
+        ) : null}
 
-        {urgencyMessages.length > 0 ? (
-          <div className="mt-3 flex flex-wrap gap-2">
-            {urgencyMessages.map((m) => (
-              <span key={m} className="text-sm font-medium text-red-600 dark:text-red-500">
-                {m}
-              </span>
-            ))}
+        {availability ? (
+          <div className="mt-3 space-y-1 text-sm text-zinc-700 dark:text-zinc-300">
+            {availability.nextAvailableDate ? (
+              <p>
+                <span className="text-zinc-500">Next available: </span>
+                {new Date(availability.nextAvailableDate).toLocaleDateString(undefined, {
+                  month: "long",
+                  day: "numeric",
+                })}
+              </p>
+            ) : null}
+            <p>
+              <span className="text-zinc-500">This month: </span>
+              {Math.min(100, Math.round(availability.occupancyRate * 100))}% booked
+              <span className="text-zinc-500"> (trailing 30 days)</span>
+            </p>
+            {availability.urgency ? (
+              <p className="font-medium text-amber-800 dark:text-amber-200/90">{availability.urgency}</p>
+            ) : null}
           </div>
         ) : null}
 
-        <TrustBadges />
+        <div className="sticky top-0 z-30 -mx-4 space-y-3 border-b border-zinc-200/90 bg-zinc-50/95 px-4 py-4 shadow-sm backdrop-blur-md dark:border-zinc-800/90 dark:bg-zinc-950/95 sm:mx-0 sm:px-0">
+          <BookNowCTA listingId={listing.id} className="mt-0" />
+          <HelpBanner className="mt-0" />
+        </div>
 
-        <p className="mt-8">
-          <Link
-            className="inline-flex rounded-xl bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white dark:bg-zinc-100 dark:text-zinc-900"
-            href={`/book/${listing.id}`}
-          >
-            Book now
-          </Link>
-        </p>
+        <TrustBadges />
       </div>
     </div>
   );

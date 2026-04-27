@@ -3,6 +3,12 @@ import { LecipmBrandLockup } from "@/components/brand/LecipmBrandLockup";
 import { TrustConversionBlocks } from "@/components/landing/TrustConversionBlocks";
 import { VisitorGuideChat } from "@/components/marketing/VisitorGuideChat";
 import { DEFAULT_COUNTRY_SLUG } from "@/config/countries";
+import { getPersonalizedContent } from "@/lib/ai/personalizationEngine";
+import { getUserProfile } from "@/lib/ai/userProfile";
+import { getEarlyUserSignals, earlyUserHeroSubline } from "@/lib/growth/earlyUserSignals";
+import { isPlatformLaunchRunning } from "@/lib/launch/controller";
+import { flags } from "@/lib/flags";
+import { cn } from "@/lib/utils";
 import { routing } from "@/i18n/routing";
 import { ArrowRight, Check, MapPin, Sparkles } from "lucide-react";
 
@@ -17,6 +23,8 @@ const valueProps = ["Close more deals", "Save time", "Stop guessing", "Focus on 
 type Props = {
   locale?: string;
   country?: string;
+  /** Override market city for trust blocks; when omitted, Canada uses Montréal when `country` is `ca`. */
+  city?: string;
 };
 
 function Navbar({ base }: { base: string }) {
@@ -62,16 +70,45 @@ function SectionLabel({ children }: { children: string }) {
   );
 }
 
+function trustCityForRoute(country: string | undefined, cityProp: string | undefined): string | undefined {
+  if (cityProp != null && cityProp.trim() !== "") return cityProp;
+  if (country != null && country.toLowerCase() === DEFAULT_COUNTRY_SLUG) return "Montréal";
+  return undefined;
+}
+
 /** Québec-focused broker marketing home — black / gold, conversion-first. */
-export function LecipmLuxuryHomepage({ locale = routing.defaultLocale, country = DEFAULT_COUNTRY_SLUG }: Props) {
-  const base = `/${locale}/${country}`;
+export async function LecipmLuxuryHomepage({
+  locale = routing.defaultLocale,
+  country,
+  city: cityProp,
+}: Props) {
+  const base = `/${locale}/${country ?? DEFAULT_COUNTRY_SLUG}`;
+  const city = trustCityForRoute(country, cityProp);
+  const userProfile = await getUserProfile();
+  const personalized = getPersonalizedContent(userProfile);
+  const showReco = flags.RECOMMENDATIONS && (personalized.recommendedCities.length > 0 || personalized.recommendedListings.length > 0);
+  const earlyUserSignals = flags.RECOMMENDATIONS ? await getEarlyUserSignals() : null;
+  const earlyUserLine = earlyUserSignals ? earlyUserHeroSubline(earlyUserSignals) : null;
+  const launchMode =
+    flags.AUTONOMOUS_AGENT ? await isPlatformLaunchRunning().catch(() => false) : false;
+  const brokerCtaUrgent =
+    (flags.RECOMMENDATIONS &&
+      earlyUserSignals != null &&
+      earlyUserSignals.isEarlyPhase &&
+      earlyUserSignals.remaining < 20) ||
+    launchMode;
 
   return (
     <main className="min-h-screen bg-black text-white">
       <Navbar base={base} />
 
       {/* Hero */}
-      <section className="relative overflow-hidden border-b border-white/10">
+      <section
+        className={cn(
+          "relative overflow-hidden border-b border-white/10",
+          launchMode && "ring-2 ring-amber-500/25 ring-inset"
+        )}
+      >
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_100%_60%_at_50%_-10%,rgba(212,175,55,0.16),transparent_55%)]" />
         <div className="relative mx-auto max-w-6xl px-5 pb-20 pt-32 md:px-8 md:pb-28 md:pt-48">
           <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-[#D4AF37]/25 bg-white/[0.04] px-5 py-2.5 text-[12px] font-black uppercase tracking-[0.1em] text-[#D4AF37]/90">
@@ -87,7 +124,10 @@ export function LecipmLuxuryHomepage({ locale = routing.defaultLocale, country =
           <div className="mt-12 flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
             <Link
               href={`${base}/onboarding/broker`}
-              className="inline-flex min-h-[64px] items-center justify-center rounded-[1.5rem] bg-[#D4AF37] px-10 py-4 text-center text-sm font-black uppercase tracking-[0.2em] text-black transition hover:scale-105 hover:brightness-110 shadow-2xl shadow-[#D4AF37]/20"
+              className={cn(
+                "inline-flex min-h-[64px] items-center justify-center rounded-[1.5rem] bg-[#D4AF37] px-10 py-4 text-center text-sm font-black uppercase tracking-[0.2em] text-black transition hover:scale-105 hover:brightness-110 shadow-2xl shadow-[#D4AF37]/20",
+                brokerCtaUrgent && "ring-2 ring-amber-200/50 animate-pulse shadow-[#D4AF37]/40"
+              )}
             >
               Try it with real leads
             </Link>
@@ -99,10 +139,56 @@ export function LecipmLuxuryHomepage({ locale = routing.defaultLocale, country =
               <ArrowRight className="h-4 w-4" aria-hidden />
             </a>
           </div>
+          {flags.RECOMMENDATIONS &&
+          earlyUserLine &&
+          earlyUserSignals != null &&
+          earlyUserSignals.remaining > 0 ? (
+            <p className="mt-4 text-sm font-medium text-zinc-400" aria-live="polite">
+              {earlyUserLine}
+            </p>
+          ) : null}
+          {showReco ? (
+            <div className="mt-12 max-w-3xl space-y-4 rounded-2xl border border-white/10 bg-white/[0.03] p-5 md:p-6">
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#D4AF37]">Picks for you</p>
+              {personalized.recommendedCities.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {personalized.recommendedCities.map((c) => (
+                    <Link
+                      key={c}
+                      href={`${base}/search/bnhub?q=${encodeURIComponent(c)}`}
+                      className="rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-medium text-white/90 transition hover:border-[#D4AF37]/40 hover:text-[#D4AF37]"
+                    >
+                      {c}
+                    </Link>
+                  ))}
+                </div>
+              ) : null}
+              {personalized.recommendedListings.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {personalized.recommendedListings.map((id) => (
+                    <Link
+                      key={id}
+                      href={`${base}/listings/${id}`}
+                      className="rounded-full border border-white/10 bg-white/5 px-4 py-1.5 font-mono text-xs text-zinc-300 transition hover:border-[#D4AF37]/40 hover:text-[#D4AF37]"
+                    >
+                      View stay {id.slice(0, 8)}…
+                    </Link>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       </section>
 
-      <TrustConversionBlocks variant="inverted" />
+      <TrustConversionBlocks
+        variant="inverted"
+        city={city}
+        userProfile={userProfile}
+        pricingBias={flags.RECOMMENDATIONS ? personalized.pricingBias : undefined}
+        trustMessageVariant={flags.RECOMMENDATIONS ? personalized.trustMessageVariant : "security"}
+        earlyUsersJoined={flags.RECOMMENDATIONS && earlyUserSignals != null ? earlyUserSignals.count : null}
+      />
 
       {/* Social proof: Luxury Stats & Trust (Phase 9) */}
       <section id="proof" className="scroll-mt-20 border-y border-white/5 bg-zinc-950 py-24">
@@ -122,7 +208,7 @@ export function LecipmLuxuryHomepage({ locale = routing.defaultLocale, country =
             ))}
           </div>
 
-          <SectionLabel>L'élite nous fait confiance</SectionLabel>
+          <SectionLabel>{"L'élite nous fait confiance"}</SectionLabel>
           <div className="mt-12 grid gap-8 md:grid-cols-3">
             {testimonials.map((t, i) => (
               <figure

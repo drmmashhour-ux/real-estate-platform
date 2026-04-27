@@ -47,6 +47,9 @@ import { validateBookingHoldByBlockId } from "@/modules/bookings/booking-hold.se
 import { logGuestExperienceOutcome } from "@/lib/bnhub/guest-experience/log-signal";
 import { resolveBnhubPlatformGuestFeePercent } from "@/lib/bnhub/booking-revenue-pricing";
 import { calculateTrustScore, flagBnhubUserTrustForReview } from "@/modules/trust/trust.engine";
+import { assertStripeCheckoutOnlyPolicy } from "@/lib/stripe/checkoutOnlyPolicy";
+import { assertBookingFraudAllowed } from "@/lib/security/bookingFraudGuard";
+import { auditHardLockBookingCreated } from "@/lib/compliance/hardLockAudit";
 
 const HOST_FEE_PERCENT = 3;
 
@@ -418,6 +421,17 @@ export async function createBooking(data: {
     }
   );
 
+  void import("@/lib/events")
+    .then((m) =>
+      m.emit("booking.created", {
+        listingId: data.listingId,
+        bookingId: booking.id,
+        userId: data.guestId,
+        source: "bnhub",
+      })
+    )
+    .catch(() => {});
+
   void import("@/modules/pricing/pricing-engine.service")
     .then((m) => m.generatePricing(data.listingId))
     .catch(() => {});
@@ -431,6 +445,12 @@ export async function createBooking(data: {
       })
     )
     .catch(() => {});
+
+  void auditHardLockBookingCreated({
+    bookingId: booking.id,
+    guestId: data.guestId,
+    listingId: data.listingId,
+  });
 
   await recordBookingEvent(
     booking.id,

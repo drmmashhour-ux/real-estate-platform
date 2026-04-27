@@ -5130,6 +5130,8 @@ model User {
   /// User-level acknowledgment of listing accuracy (optional; per-listing also on `FsboListing`).
   sellerLegalAccuracyAcceptedAt     DateTime?          @map("seller_legal_accuracy_accepted_at")
   referralCode                      String?            @unique
+  /// Canonical public codes (`REF-…`) from {@link ReferralCode} (growth/Order 49).
+  referralCodeRecords               ReferralCode[]     @relation("ReferralCodeOwner")
   plan                              String             @default("free") @map("plan") // free | basic | pro
   /// Marketplace onboarding group — drives default dashboard routes and UX.
   marketplacePersona                MarketplacePersona @default(UNSET) @map("marketplace_persona")
@@ -5158,6 +5160,8 @@ model User {
   launchOnboardingCompletedAt       DateTime?          @map("launch_onboarding_completed_at")
   /// Optional: `find` | `list` | `invest`
   launchPersonaChoice               String?            @map("launch_persona_choice") @db.VarChar(32)
+  /// When set, 7-day launch plan “current day” auto-advances from this date (Order 49.1).
+  launchPlanStartAt                 DateTime?          @map("launch_plan_start_at")
   /// First-touch acquisition at signup (channel + UTM + optional `?src=`). See `buildSignupAttributionPayload`.
   signupAttributionJson             Json?              @map("signup_attribution_json")
   /// Until this instant, user sees premium AI insights (deal score, investor views). Set by subscription or one-off Stripe.
@@ -5185,8 +5189,16 @@ model User {
   updatedAt                                DateTime                                 @updatedAt
   /// Best-effort last session / app touch; drives retention nudges (Order 53).
   lastActiveAt                             DateTime?                                @map("last_active_at")
+  /// Order 58: marketing re-engagement (email/SMS) — off by default; respect unsubscribe.
+  marketingEmailOptIn                      Boolean            @default(false) @map("marketing_email_opt_in")
+  marketingSmsOptIn                        Boolean            @default(false) @map("marketing_sms_opt_in")
+  /// Last re-engagement message sent (any channel) — for 3-day rate cap.
+  lastReengagementMessageAt                DateTime?          @map("last_reengagement_message_at")
   privacyConsentRecords                    Consent[]
+  reengagementMessageLogs                 ReengagementMessageLog[]
+
   launchEvents                             LaunchEvent[]                            @relation("LaunchEvents")
+  launchProgressRecords                    LaunchProgress[]                         @relation("UserLaunchProgress")
   properties                               Property[]
   shortTermListings                        ShortTermListing[]
   bnhubChannelConnections                  BnhubChannelConnection[]
@@ -5828,6 +5840,8 @@ model User {
   officeReconciliationRecordedBy           OfficeReconciliationRecord[]             @relation("OfficeReconciliationActor")
   lecipmFormInstancesAuthored              LecipmFormInstance[]                     @relation("LecipmFormInstanceAuthor")
   growthEvents                             GrowthEvent[]
+  /// Additive: learned search taste (city / property / queries) for personalized ranking.
+  userPreferences                          UserPreference[]
   bnhubInquiryThreadsAsGuest               BnhubInquiryThread[]                     @relation("BnhubInquiryThreadGuest")
   bnhubInquiryThreadsAsHost                BnhubInquiryThread[]                     @relation("BnhubInquiryThreadHost")
   bnhubInquiryMessagesSent                 BnhubInquiryMessage[]                    @relation("BnhubInquiryMessageSender")
@@ -9030,6 +9044,8 @@ model ShortTermListing {
   @@index([ownerId])
   @@index([verificationStatus])
   @@index([listingStatus])
+  /// Feed API: published listings by recency.
+  @@index([listingStatus, createdAt(sort: Desc)], map: "idx_bnhub_listings_pub_created_feed")
   @@index([listingVerificationStatus])
   @@index([cadastreNumber])
   @@index([rankingTotalScoreCache(sort: Desc)])
@@ -9450,12 +9466,15 @@ model ListingOptimizationSuggestion {
   status           ListingOptimizationSuggestionStatus @default(suggested)
   createdAt        DateTime                            @default(now()) @map("created_at")
   updatedAt        DateTime                            @updatedAt @map("updated_at")
+  /// Set when a host applies this suggestion via `POST /api/ai/apply` (idempotent claim).
+  appliedAt        DateTime?                           @map("applied_at")
 
   audits ListingOptimizationAudit[]
 
   @@index([listingId])
   @@index([runId])
   @@index([status])
+  @@index([appliedAt])
   @@map("listing_optimization_suggestions")
 }
 
@@ -9883,6 +9902,46 @@ model BnhubPricingExecutionLog {
 
   @@index([listingId, createdAt])
   @@map("bnhub_pricing_execution_logs")
+}
+
+// @domain: marketplace
+/// Suggested price from the signals/optimizer path (`lib/ai/*`). Audit only — no auto-apply.
+model PriceSuggestion {
+  id                  String   @id @default(cuid())
+  listingId           String
+  suggestedPriceCents Int
+  reason              String?  @db.Text
+  createdAt           DateTime @default(now())
+  applied             Boolean  @default(false)
+
+  @@index([listingId])
+  @@index([createdAt])
+  @@map("PriceSuggestion")
+}
+
+// @domain: marketplace
+/// JSON blob from `lib/ai/autoOptimizer` (quality + optional dynamic price decision; no auto-apply from this row alone).
+model ListingOptimization {
+  id            String   @id @default(cuid())
+  listingId     String
+  suggestions   Json
+  createdAt     DateTime @default(now())
+  applied       Boolean  @default(false)
+
+  @@index([listingId])
+  @@index([createdAt])
+  @@map("ListingOptimization")
+}
+
+// @domain: intelligence
+/// Append-only log of `buildActions` output from `getGrowthRecommendations` (JSON in `action`).
+model GrowthActionLog {
+  id        String   @id
+  action    String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@map("GrowthActionLog")
 }
 
 // @domain: marketplace
@@ -11360,6 +11419,18 @@ model Referral {
   @@index([inviteKind])
   @@index([referralPublicCode])
   @@index([status])
+}
+
+// @domain: marketplace — durable shareable link code → owner (Order 49; abuse-resistant generation).
+model ReferralCode {
+  /// Public code string (e.g. REF-XXXX), primary key.
+  code        String   @id
+  ownerUserId String
+  owner       User     @relation("ReferralCodeOwner", fields: [ownerUserId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@index([ownerUserId], map: "ReferralCode_ownerUserId_idx")
+  @@map("ReferralCode")
 }
 
 // @domain: marketplace
@@ -16229,6 +16300,21 @@ model MarketplaceRevenueEntry {
 
   @@index([listingId, createdAt])
   @@map("marketplace_revenue_entries")
+}
+
+/// Audit trail for autonomous or manual BNHub nightly price applies (read rollback support).
+model PricingExecutionLog {
+  id            String   @id @default(uuid())
+  listingId     String   @map("listing_id")
+  oldPrice      Float    @map("old_price")
+  newPrice      Float    @map("new_price")
+  adjustmentPct Float    @map("adjustment_pct")
+  reason        String   @db.Text
+  source        String   @db.VarChar(32)
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([listingId, createdAt])
+  @@map("pricing_execution_logs")
 }
 
 // @domain: intelligence
@@ -27822,6 +27908,91 @@ model GrowthEvent {
   @@map("growth_events")
 }
 
+/// Outcome weights / tunables written by `lib/ab/learn.ts` (A/B and ops — not the core LECIPM brain).
+// @domain: intelligence
+model LearningMetric {
+  id        String   @id @default(cuid())
+  key       String   @unique @db.VarChar(256)
+  value     Float
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("learning_metrics")
+}
+
+/// User-specific search signals (composite PK). Not the core LECIPM “brain” — additive personalization only.
+// @domain: intelligence
+model UserPreference {
+  userId    String   @map("user_id") @db.VarChar(36)
+  key       String   @db.VarChar(64)
+  value     String   @db.VarChar(256)
+  weight    Float    @default(1)
+  updatedAt DateTime @default(now()) @map("updated_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, key, value])
+  @@index([userId])
+  @@index([key])
+  @@map("user_preferences")
+}
+
+/// Autonomous `executeActions` audit trail (rate limit + forensics) — not core LECIPM business rows.
+// @domain: intelligence
+model AiExecutionLog {
+  id              String   @id @default(cuid())
+  listingId       String?  @map("listing_id") @db.VarChar(32)
+  action          String   @db.Text
+  /// Optional JSON snapshot before `price_update` / materialized apply (BNHub or marketplace).
+  beforeSnapshot  Json?    @map("before_snapshot")
+  /// Optional JSON snapshot after apply (same tick as `action`).
+  afterSnapshot   Json?    @map("after_snapshot")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@index([listingId, createdAt])
+  @@map("ai_execution_logs")
+}
+
+/// Autonomy run: flags → policy + agent plan → (optional) write — for audit & demos.
+// @domain: intelligence
+model AiActionAudit {
+  id        String   @id @default(cuid())
+  listingId String?  @map("listing_id") @db.VarChar(32)
+  flags     Json?
+  decision  Json?
+  actions   Json?
+  executed  Boolean  @default(false) @map("executed")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([listingId, createdAt])
+  @@map("ai_action_audits")
+}
+
+/// Snapshot before autonomous price nudges for rollback (additive, ops/AI safety).
+// @domain: intelligence
+model ConversionBackup {
+  id        String   @id @default(cuid())
+  listingId String   @map("listing_id") @db.VarChar(32)
+  data      Json
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([listingId, createdAt])
+  @@map("conversion_backups")
+}
+
+// @domain: intelligence
+/// Fraud / trust engine audit row (additive; not a payment hold).
+model RiskEvent {
+  id        String   @id @default(cuid())
+  listingId String?  @map("listing_id") @db.VarChar(32)
+  userId    String?  @map("user_id") @db.VarChar(32)
+  score     Int
+  decision  String   @db.VarChar(32)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([listingId, createdAt])
+  @@index([userId, createdAt])
+  @@map("risk_events")
+}
+
 // @domain: intelligence
 model MarketingCampaign {
   id          String   @id @default(cuid())
@@ -28975,6 +29146,33 @@ model LaunchActionLog {
   @@index([runDate, city])
   @@index([createdAt])
   @@map("launch_actions_log")
+}
+
+/// Per-user checklist state for the 7-day {@link launchPlan} (Order 49.1). `launchPlan` itself stays read-only in code.
+model LaunchProgress {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  user      User     @relation("UserLaunchProgress", fields: [userId], references: [id], onDelete: Cascade)
+  day       Int
+  taskIndex Int      @map("task_index")
+  completed Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([userId, day, taskIndex])
+  @@index([userId, day])
+  @@map("launch_progress")
+}
+
+/// Global platform 7-day launch run (Order 50). Latest `createdAt` = current; only one `running` row at a time.
+model LaunchState {
+  id        String    @id @default(uuid())
+  startedAt DateTime? @map("started_at")
+  /// `idle` | `running` | `completed` — not an enum to keep migration additive / lightweight.
+  status    String   @default("running") @db.VarChar(16)
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  @@index([status, createdAt])
+  @@map("launch_state")
 }
 
 // @domain: intelligence
@@ -33664,6 +33862,8 @@ model ExperimentVariant {
   variantKey    String   @map("variant_key")
   name          String
   configJson    Json     @map("config_json")
+  /// Order 59 — optional traffic weight for simple A/B (defaults to 50 in engine if null).
+  weight        Int?     @map("weight")
   /// active | winner | loser | inconclusive — recommendation layer; not auto-applied UX.
   outcomeStatus String?  @map("outcome_status") @db.VarChar(24)
   createdAt     DateTime @default(now()) @map("created_at")
@@ -34877,6 +35077,19 @@ model PortfolioOptimizationRun {
 
   @@index([createdAt])
   @@map("portfolio_optimization_runs")
+}
+
+/// LECIPM daily autonomous optimization loop — persisted suggested actions only (no execution).
+model LecipmAutonomousOptimizationRun {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  dryRun    Boolean  @default(true)
+  trigger   String   @default("cron")
+  actions   Json
+  summary   Json?
+
+  @@index([createdAt])
+  @@map("lecipm_autonomous_optimization_runs")
 }
 
 // @domain: analytics
@@ -40124,4 +40337,94 @@ model DocumentHash {
 
   @@unique([entityType, entityId, version])
   @@map("document_hashes")
+}
+
+/// Simulated broker ad campaign lifecycle (Order 38 / 38.1).
+enum BrokerAdSimulationCampaignStatus {
+  draft
+  scheduled
+  running
+  completed
+}
+
+// @domain: marketing — Order 38 broker ad simulation (no live Meta/TikTok/Google APIs; CRON-ready run endpoint).
+model BrokerAdSimulationCampaign {
+  id          String                         @id @default(uuid())
+  userId      String                         @map("user_id")
+  audience    String                         @db.VarChar(32)
+  city        String?                        @db.VarChar(120)
+  platform    String                         @db.VarChar(16)
+  headline    String                         @db.Text
+  body        String                         @db.Text
+  status      BrokerAdSimulationCampaignStatus @default(draft)
+  /// Who created the row: broker UI vs automation (audit).
+  createdBy   String?                        @map("created_by") @db.VarChar(16)
+  scheduledAt DateTime?                      @map("scheduled_at")
+  startedAt   DateTime?                      @map("started_at")
+  completedAt DateTime?                      @map("completed_at")
+  createdAt   DateTime                       @default(now()) @map("created_at")
+  updatedAt   DateTime                       @updatedAt @map("updated_at")
+
+  performanceRows BrokerAdSimulationPerformance[]
+
+  @@index([userId, createdAt])
+  @@map("broker_ad_simulation_campaigns")
+}
+
+model BrokerAdSimulationPerformance {
+  id          String                     @id @default(uuid())
+  campaignId  String                     @map("campaign_id")
+  campaign    BrokerAdSimulationCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  impressions Int
+  clicks      Int
+  conversions Int
+  spend       Float
+  createdAt   DateTime                   @default(now()) @map("created_at")
+
+  /// One simulation snapshot per campaign (38.1).
+  @@unique([campaignId])
+  @@index([campaignId, createdAt])
+  @@map("broker_ad_simulation_performances")
+}
+
+// @domain: investor-outreach — Order 51.1 (trackable pipeline; no outbound email in product layer)
+model InvestorLead {
+  id        String   @id @default(uuid())
+  name      String?
+  email     String?
+  /// Pipeline: new | contacted | replied | meeting | closed
+  status    String   @default("new")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  outreach InvestorOutreach[]
+
+  @@map("investor_leads")
+}
+
+model InvestorOutreach {
+  id         String       @id @default(uuid())
+  investorId String       @map("investor_id")
+  investor   InvestorLead @relation(fields: [investorId], references: [id], onDelete: Cascade)
+  message    String       @db.Text
+  sentAt     DateTime     @default(now()) @map("sent_at")
+
+  @@index([investorId])
+  @@map("investor_outreach")
+}
+
+// @domain: retention — Order 58 re-engagement audit trail (no delivery truth; providers live outside app)
+model ReengagementMessageLog {
+  id         String   @id @default(cuid())
+  userId     String   @map("user_id")
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// email | sms
+  channel    String   @db.VarChar(8)
+  subject    String?  @db.VarChar(256)
+  bodyPreview String  @map("body_preview") @db.Text
+  dryRun     Boolean  @default(true) @map("dry_run")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([userId, createdAt])
+  @@index([createdAt])
+  @@map("reengagement_message_logs")
 }

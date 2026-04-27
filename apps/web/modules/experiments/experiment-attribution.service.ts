@@ -63,6 +63,7 @@ export function mergeExperimentRootsIntoClientMeta(meta: Record<string, unknown>
     out.ab = ab;
   }
   if (typeof meta.experimentId === "string") out.experimentId = meta.experimentId;
+  if (typeof meta.experiment === "string") out.experiment = meta.experiment;
   if (typeof meta.variant === "string") out.variant = meta.variant;
   return out;
 }

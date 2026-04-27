@@ -70,6 +70,8 @@ export const TrackingEvent = {
   BOOKING_COMPLETED: "booking_completed",
   /** Product search submitted (home, search, BNHub). */
   SEARCH: "search",
+  /** A/B test exposure — `meta` must include `experiment` + `variant` (string). */
+  AB_EXPOSURE: "ab_exposure",
 } as const;
 
 export type TrackingEventType =
@@ -110,6 +112,7 @@ const TRAFFIC_ATTRIBUTION_EVENTS = new Set([
   "host_signup",
   "broker_lead",
   "search",
+  "ab_exposure",
 ]);
 
 /**

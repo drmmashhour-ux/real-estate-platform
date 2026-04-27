@@ -39,6 +39,11 @@ import {
   orderBnhubListingsByRankingEngine,
 } from "@/src/modules/ranking/rankingService";
 import {
+  canUseOrder80FtsPath,
+  DEFAULT_MAX_IDS_NON_PAG,
+  runBnhubFtsWithIlikeFallback,
+} from "@/lib/bnhub/bnhub-listings-fts-search";
+import {
   expireStaleBnhubPendingBookings,
   findOverlappingActiveBnhubBooking,
 } from "@/lib/bookings/checkAvailability";
@@ -93,6 +98,12 @@ export type ListingSearchParams = {
   marketCityId?: string;
   /** Country code: matches `ExpansionCountry.code` or legacy listing `country` when FK unset. */
   countryCode?: string;
+  /**
+   * Title / keyword search (Order 80.1) — GIN `plainto_tsquery` on `title`, hybrid filters, ILIKE fallback.
+   */
+  q?: string;
+  /** Minimum cached guest rating (1–5) — `bnhub_listing_rating_average`. */
+  minRating?: number;
 };
 
 /** Maps filter keys to substrings matched against `ShortTermListing.amenities` JSON strings. */
@@ -250,6 +261,8 @@ export async function searchListings(params: ListingSearchParams) {
     marketCountryId,
     marketCityId,
     countryCode,
+    q: qParam,
+    minRating,
   } = params;
 
   const where = buildPublishedListingSearchWhere({
@@ -278,11 +291,67 @@ export async function searchListings(params: ListingSearchParams) {
 
   const orderBy = searchOrderBy(sort, {});
 
-  const listingsRaw = await prisma.shortTermListing.findMany({
-    where,
-    include: LISTING_SEARCH_BASE_INCLUDE,
-    orderBy: orderBy.length > 0 ? orderBy : [{ createdAt: "desc" }],
-  });
+  let qMergedWhere: Prisma.ShortTermListingWhereInput | null = null;
+  if (qParam?.trim() && !canUseOrder80FtsPath({ ...params, q: qParam })) {
+    const qt = qParam.trim();
+    qMergedWhere = {
+      ...where,
+      AND: [
+        {
+          OR: [
+            { title: { contains: qt, mode: "insensitive" } },
+            { city: { contains: qt, mode: "insensitive" } },
+          ],
+        },
+      ],
+    };
+  }
+
+  const whereWithMinRating: Prisma.ShortTermListingWhereInput =
+    minRating != null && minRating > 0
+      ? { AND: [qMergedWhere ?? where, { bnhubListingRatingAverage: { gte: minRating } }] }
+      : (qMergedWhere ?? where);
+
+  let listingsRaw;
+  if (qParam?.trim() && canUseOrder80FtsPath({ ...params, q: qParam })) {
+    const fts = await runBnhubFtsWithIlikeFallback({
+      q: qParam.trim(),
+      skip: 0,
+      take: DEFAULT_MAX_IDS_NON_PAG,
+      useIlike: false,
+      city,
+      minPrice,
+      maxPrice,
+      guests,
+      minRating,
+      propertyType,
+      roomType,
+      instantBook,
+      minBeds,
+      minBaths,
+      marketCountryId,
+      marketCityId,
+      countryCode,
+    });
+    const ids = fts.rows.map((r) => r.id);
+    if (ids.length === 0) {
+      listingsRaw = [];
+    } else {
+      const found = await prisma.shortTermListing.findMany({
+        where: { id: { in: ids } },
+        include: LISTING_SEARCH_BASE_INCLUDE,
+        orderBy: orderBy.length > 0 ? orderBy : [{ createdAt: "desc" }],
+      });
+      const order = new Map(ids.map((id, i) => [id, i] as const));
+      listingsRaw = [...found].sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
+    }
+  } else {
+    listingsRaw = await prisma.shortTermListing.findMany({
+      where: listingsWhere,
+      include: LISTING_SEARCH_BASE_INCLUDE,
+      orderBy: orderBy.length > 0 ? orderBy : [{ createdAt: "desc" }],
+    });
+  }
 
   let result = await attachReviewAggregatesForSearch(listingsRaw);
 
@@ -542,6 +611,8 @@ export async function searchListingsPaginated(
     south,
     east,
     west,
+    q: qPage,
+    minRating: minRatingPage,
   } = params;
 
   const where = buildPublishedListingSearchWhere({
@@ -572,16 +643,73 @@ export async function searchListingsPaginated(
 
   const skip = Math.max(0, (page - 1) * limit);
 
-  const [total, listingsRaw] = await Promise.all([
-    prisma.shortTermListing.count({ where }),
-    prisma.shortTermListing.findMany({
-      where,
-      include: LISTING_SEARCH_BASE_INCLUDE,
-      orderBy,
-      take: limit,
+  let qMergedWherePage: Prisma.ShortTermListingWhereInput | null = null;
+  if (qPage?.trim() && !canUseOrder80FtsPath({ ...params, q: qPage })) {
+    const qt = qPage.trim();
+    qMergedWherePage = {
+      ...where,
+      AND: [
+        {
+          OR: [
+            { title: { contains: qt, mode: "insensitive" } },
+            { city: { contains: qt, mode: "insensitive" } },
+          ],
+        },
+      ],
+    };
+  }
+  const listingsWherePage = qMergedWherePage ?? where;
+
+  let total: number;
+  let listingsRaw: Awaited<ReturnType<typeof prisma.shortTermListing.findMany>>;
+
+  if (qPage?.trim() && canUseOrder80FtsPath({ ...params, q: qPage })) {
+    const fts = await runBnhubFtsWithIlikeFallback({
+      q: qPage.trim(),
       skip,
-    }),
-  ]);
+      take: limit,
+      useIlike: false,
+      city,
+      minPrice,
+      maxPrice,
+      guests,
+      minRating: minRatingPage,
+      propertyType,
+      roomType,
+      instantBook,
+      minBeds,
+      minBaths,
+      marketCountryId,
+      marketCityId,
+      countryCode,
+    });
+    total = Number(fts.total);
+    const ids = fts.rows.map((r) => r.id);
+    if (ids.length === 0) {
+      listingsRaw = [];
+    } else {
+      const found = await prisma.shortTermListing.findMany({
+        where: { id: { in: ids } },
+        include: LISTING_SEARCH_BASE_INCLUDE,
+        orderBy,
+      });
+      const order = new Map(ids.map((id, i) => [id, i] as const));
+      listingsRaw = [...found].sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
+    }
+  } else {
+    const pair = await Promise.all([
+      prisma.shortTermListing.count({ where: listingsWherePageWithRating }),
+      prisma.shortTermListing.findMany({
+        where: listingsWherePageWithRating,
+        include: LISTING_SEARCH_BASE_INCLUDE,
+        orderBy,
+        take: limit,
+        skip,
+      }),
+    ]);
+    total = pair[0];
+    listingsRaw = pair[1];
+  }
 
   let result = await attachReviewAggregatesForSearch(listingsRaw);
 

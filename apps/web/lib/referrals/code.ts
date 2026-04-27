@@ -10,10 +10,16 @@ export function generateViralReferralInstanceCode(): string {
   return `V${randomBytes(6).toString("hex").toUpperCase()}`;
 }
 
+/**
+ * Public share code (`User.referralCode` + `ReferralCode` row). New users get collision-safe `REF-…` codes.
+ * Dynamic import avoids a static cycle with `lib/growth/referral` (which uses `createReferralIfNeeded`).
+ */
 export async function ensureReferralCode(userId: string): Promise<string> {
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { referralCode: true } });
-  if (user?.referralCode) return user.referralCode;
-  const code = generateReferralCode();
-  await prisma.user.update({ where: { id: userId }, data: { referralCode: code } });
-  return code;
+  if (user?.referralCode) {
+    const { ensureReferralCodeLinked } = await import("@/lib/growth/referral");
+    return ensureReferralCodeLinked(userId);
+  }
+  const { generateReferralCode: gen } = await import("@/lib/growth/referral");
+  return gen(userId);
 }

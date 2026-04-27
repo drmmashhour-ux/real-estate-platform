@@ -1,9 +1,12 @@
 import { z } from "zod";
 
 import { getGuestId } from "@/lib/auth/session";
-import { tryRefundMarketplacePayment } from "@/lib/marketplace/refund-marketplace-booking";
+import { getCancellationPolicy, isMarketplaceStayCompletedOrPast } from "@/lib/marketplace/cancellation-policy";
+import { getMarketplaceTotalPaidCentsForBooking } from "@/lib/marketplace/payment-ledger";
+import { tryRefundMarketplacePaymentAmount } from "@/lib/marketplace/refund-marketplace-booking";
 import { marketplacePrisma } from "@/lib/db";
-import { logInfo } from "@/lib/logger";
+import { logInfo, logWarn } from "@/lib/logger";
+import { trackEvent } from "@/src/services/analytics";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +16,7 @@ const bodySchema = z.object({
 
 /**
  * POST /api/bookings/cancel — marketplace `bookings` only (not BNHub monolith `Booking`).
- * Body: `{ bookingId }`. Guest must own the row; cancels + optional Stripe refund.
+ * Order 59.1: policy-based partial refunds, idempotent cancel, refund status, validation before Stripe.
  */
 export async function POST(req: Request) {
   const userId = await getGuestId();
@@ -42,43 +45,202 @@ export async function POST(req: Request) {
   if (booking.userId !== userId) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
+
   if (booking.status === "cancelled") {
-    return Response.json({ error: "Already cancelled" }, { status: 409 });
+    return Response.json({
+      ok: true,
+      idempotent: true,
+      cancelledAt: booking.cancelledAt?.toISOString() ?? null,
+      refundStatus: booking.refundStatus ?? "none",
+      refundAmountCents: booking.refundedAmountCents ?? 0,
+    });
   }
+
   if (booking.status === "expired") {
-    return Response.json({ error: "Booking already expired" }, { status: 409 });
+    return Response.json({ error: "Booking has expired" }, { status: 400 });
+  }
+
+  if (isMarketplaceStayCompletedOrPast(booking)) {
+    return Response.json({ error: "This stay has already ended" }, { status: 400 });
   }
 
   const now = new Date();
+  const pi = booking.stripePaymentIntentId?.trim() ?? "";
+  const isPaidHold = booking.status === "confirmed" && pi.length > 0;
+
+  if (!isPaidHold) {
+    await marketplacePrisma.booking.update({
+      where: { id: bookingId },
+      data: {
+        cancelledAt: now,
+        status: "cancelled",
+        refundStatus: "none",
+      },
+    });
+    return Response.json({
+      ok: true,
+      cancelledAt: now.toISOString(),
+      refund: null,
+      refundAmountCents: 0,
+      refundStatus: "none",
+      policy: null,
+    });
+  }
+
+  const totalPaidCents =
+    booking.finalCents != null && booking.finalCents > 0
+      ? booking.finalCents
+      : (await getMarketplaceTotalPaidCentsForBooking(bookingId)) ?? 0;
+  if (totalPaidCents <= 0) {
+    logWarn("[bookings/cancel] confirmed without ledger row — cancelling without refund", { bookingId });
+    await marketplacePrisma.booking.update({
+      where: { id: bookingId },
+      data: {
+        cancelledAt: now,
+        status: "cancelled",
+        refundStatus: "none",
+      },
+    });
+    return Response.json({
+      ok: true,
+      cancelledAt: now.toISOString(),
+      refund: null,
+      refundAmountCents: 0,
+      refundStatus: "none",
+      policy: { reason: "No payment on file for refund." },
+    });
+  }
+
+  const policy = getCancellationPolicy(
+    {
+      startDate: booking.startDate,
+      endDate: booking.endDate,
+      status: booking.status,
+      totalPaidCents,
+    },
+    now
+  );
+
+  const alreadyRefunded = Math.max(0, booking.refundedAmountCents ?? 0);
+  if (policy.refundPercent === 0 || policy.refundableAmount === 0) {
+    await marketplacePrisma.booking.update({
+      where: { id: bookingId },
+      data: {
+        cancelledAt: now,
+        status: "cancelled",
+        refundStatus: "none",
+      },
+    });
+    return Response.json({
+      ok: true,
+      cancelledAt: now.toISOString(),
+      refund: null,
+      refundAmountCents: 0,
+      refundStatus: "none",
+      policy: { type: policy.type, refundPercent: policy.refundPercent, reason: policy.reason },
+    });
+  }
+
+  if (alreadyRefunded >= totalPaidCents) {
+    await marketplacePrisma.booking.update({
+      where: { id: bookingId },
+      data: { cancelledAt: now, status: "cancelled", refundStatus: "completed" },
+    });
+    return Response.json({
+      ok: true,
+      cancelledAt: now.toISOString(),
+      refund: { skipped: true, reason: "already_fully_refunded" },
+      refundAmountCents: 0,
+      refundStatus: "completed",
+    });
+  }
+
+  if (!pi.startsWith("pi_")) {
+    await marketplacePrisma.booking.update({
+      where: { id: bookingId },
+      data: { cancelledAt: now, status: "cancelled", refundStatus: "failed" },
+    });
+    return Response.json(
+      {
+        ok: true,
+        cancelledAt: now.toISOString(),
+        refund: { ok: false, reason: "invalid_payment_intent" },
+        refundStatus: "failed",
+      },
+      { status: 200 }
+    );
+  }
+
+  const refundCents = Math.min(policy.refundableAmount, totalPaidCents - alreadyRefunded);
+  if (refundCents <= 0) {
+    await marketplacePrisma.booking.update({
+      where: { id: bookingId },
+      data: { cancelledAt: now, status: "cancelled", refundStatus: "none" },
+    });
+    return Response.json({
+      ok: true,
+      cancelledAt: now.toISOString(),
+      refund: null,
+      refundAmountCents: 0,
+      refundStatus: "none",
+    });
+  }
+
+  void trackEvent("refund_requested", { bookingId, amount: refundCents }).catch(() => {});
+
   await marketplacePrisma.booking.update({
     where: { id: bookingId },
-    data: {
-      cancelledAt: now,
-      status: "cancelled",
-    },
+    data: { cancelledAt: now, status: "cancelled", refundStatus: "pending" },
   });
 
-  // Unpaid hold: no payment to refund, inventory released.
-  if (booking.status === "pending" || !booking.stripePaymentIntentId?.trim()) {
-    return Response.json({ ok: true, cancelledAt: now.toISOString(), refund: null });
+  let refund:
+    | { ok: true; refundId: string; amountCents: number }
+    | { ok: false; reason: string }
+    | null = null;
+  try {
+    refund = await tryRefundMarketplacePaymentAmount(pi, refundCents, {
+      alreadyRefundedCents: alreadyRefunded,
+      maxTotalCents: totalPaidCents,
+    });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    logInfo("[bookings/cancel] refund threw (mark failed)", { bookingId, err: msg });
+    refund = { ok: false, reason: msg };
   }
 
-  let refund: { ok: true; refundId: string } | { ok: false; reason: string } | null = null;
-  if (booking.stripePaymentIntentId?.trim()) {
-    try {
-      refund = await tryRefundMarketplacePayment(booking.stripePaymentIntentId);
-    } catch (e) {
-      logInfo("[bookings/cancel] refund failed (booking still cancelled)", {
-        bookingId,
-        err: e instanceof Error ? e.message : String(e),
-      });
-      refund = { ok: false, reason: e instanceof Error ? e.message : String(e) };
-    }
+  if (refund?.ok) {
+    const newTotal = alreadyRefunded + refund.amountCents;
+    await marketplacePrisma.booking.update({
+      where: { id: bookingId },
+      data: {
+        refundStatus: "completed",
+        refundedAmountCents: newTotal,
+      },
+    });
+    logInfo("[bookings/cancel] refund completed", { bookingId, refundId: refund.refundId, amountCents: refund.amountCents });
+    return Response.json({
+      ok: true,
+      cancelledAt: now.toISOString(),
+      refund: { ok: true, refundId: refund.refundId, amountCents: refund.amountCents },
+      refundAmountCents: refund.amountCents,
+      refundStatus: "completed",
+      policy: { type: policy.type, refundPercent: policy.refundPercent, reason: policy.reason },
+    });
   }
+
+  const reason = refund && !refund.ok ? refund.reason : "refund_failed";
+  await marketplacePrisma.booking.update({
+    where: { id: bookingId },
+    data: { refundStatus: "failed" },
+  });
+  logInfo("[bookings/cancel] refund failed (cancel still applied)", { bookingId, reason });
 
   return Response.json({
     ok: true,
     cancelledAt: now.toISOString(),
-    refund,
+    refund: { ok: false, reason },
+    refundAmountCents: 0,
+    refundStatus: "failed",
+    policy: { type: policy.type, refundPercent: policy.refundPercent, reason: policy.reason },
   });
 }

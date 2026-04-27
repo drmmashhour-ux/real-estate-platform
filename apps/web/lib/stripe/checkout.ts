@@ -11,6 +11,7 @@ import {
   compactStripeMetadata,
   validateBookingPaymentMetadata,
 } from "@/lib/stripe/checkoutMetadata";
+import { assertStripeCheckoutOnlyPolicy } from "@/lib/stripe/checkoutOnlyPolicy";
 
 /**
  * Short Stripe metadata `type` for dashboards / logs (maps to paymentType).
@@ -103,6 +104,7 @@ export type CreateCheckoutParams = {
 export async function createCheckoutSession(
   params: CreateCheckoutParams
 ): Promise<{ url: string; sessionId: string } | { error: string }> {
+  assertStripeCheckoutOnlyPolicy();
   if (!isStripeConfigured()) {
     return { error: "Stripe is not configured" };
   }

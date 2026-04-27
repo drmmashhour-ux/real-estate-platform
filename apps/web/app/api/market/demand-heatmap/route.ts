@@ -6,7 +6,8 @@ export const dynamic = "force-dynamic";
 
 /**
  * GET /api/market/demand-heatmap
- * Per-city view + booking-based demand, sorted by bookings then views.
+ * Per-city view + booking demand, normalized by published listing count (fair across city sizes),
+ * with conversion rate, 7d booking trend, and 30s in-memory cache. Sorted by `demandScore` desc.
  */
 export async function GET(req: Request) {
   const ip = getClientIp(req);

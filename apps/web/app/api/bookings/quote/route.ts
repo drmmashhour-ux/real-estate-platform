@@ -3,11 +3,61 @@ import { calculateBookingQuote } from "@/lib/bookings/calculateBookingQuote";
 import { getGuestId } from "@/lib/auth/session";
 import { logInfo } from "@/lib/logger";
 import { logApiRouteError } from "@/lib/api/dev-log";
+import { calculateDynamicTotal } from "@/lib/pricing/calculateDynamicTotal";
+import { getBookingPriceBreakdown } from "@/lib/booking/pricing";
+import { trackEvent } from "@/src/services/analytics";
 
 export const dynamic = "force-dynamic";
 
 /**
- * POST /api/bookings/quote — live price preview only (no booking row).
+ * GET /api/bookings/quote?listingId=&startDate=YYYY-MM-DD&endDate=YYYY-MM-DD — **marketplace** dynamic
+ * nightly total (Order 61). No BNHub short-term path.
+ */
+export async function GET(request: NextRequest) {
+  const u = new URL(request.url);
+  const listingId = u.searchParams.get("listingId")?.trim() ?? "";
+  const startDate = u.searchParams.get("startDate")?.trim() ?? u.searchParams.get("checkIn")?.trim() ?? "";
+  const endDate = u.searchParams.get("endDate")?.trim() ?? u.searchParams.get("checkOut")?.trim() ?? "";
+  if (!listingId || !startDate || !endDate) {
+    return Response.json(
+      { error: "listingId, startDate, and endDate (or checkIn / checkOut) are required" },
+      { status: 400 }
+    );
+  }
+  if (endDate <= startDate) {
+    return Response.json({ error: "endDate must be after startDate" }, { status: 400 });
+  }
+  try {
+    const d = await calculateDynamicTotal({ listingId, startDate, endDate });
+    if (!d) {
+      return Response.json({ error: "Could not load quote" }, { status: 400 });
+    }
+    const br = await getBookingPriceBreakdown({ listingId, startDate, endDate });
+    void trackEvent("dynamic_quote_viewed", {
+      listingId,
+      nights: d.nights,
+      subtotalCents: d.subtotalCents,
+      finalCents: d.finalCents,
+    }).catch(() => {});
+    return Response.json({
+      ok: true,
+      breakdown: {
+        nights: d.nights,
+        nightlyPrices: d.nightlyPrices,
+        allNightsAvailable: br?.allNightsAvailable ?? true,
+        subtotalCents: d.subtotalCents,
+        platformFeeCents: d.platformFeeCents,
+        finalCents: d.finalCents,
+      },
+    });
+  } catch (e) {
+    logApiRouteError("GET /api/bookings/quote (marketplace)", e);
+    return Response.json({ error: "Could not load quote" }, { status: 500 });
+  }
+}
+
+/**
+ * POST /api/bookings/quote — BNHub monolith: live price preview only (no booking row).
  */
 export async function POST(request: NextRequest) {
   try {

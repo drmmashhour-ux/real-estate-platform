@@ -6,6 +6,7 @@ import { getLegacyDB } from "@/lib/db/legacy";
 const prisma = getLegacyDB();
 import { engineFlags } from "@/config/feature-flags";
 import { ClassicDashboardBanner } from "@/components/dashboard/ClassicDashboardBanner";
+import { TodaysLaunchWidget } from "@/components/launch/TodaysLaunchWidget";
 import { requireAuthenticatedUser } from "@/lib/auth/require-session";
 import {
   LECIPM_DASHBOARD_CONSOLE_COOKIE,
@@ -42,6 +43,11 @@ export default async function InvestmentPortfolioDashboardPage({
 }) {
   const { locale, country } = await params;
   const { userId } = await requireAuthenticatedUser();
+  const userRow = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { role: true },
+  });
+  const showLaunchWidget = userRow?.role === PlatformRole.ADMIN;
 
   const jar = await cookies();
   const pref = jar.get(LECIPM_DASHBOARD_CONSOLE_COOKIE)?.value;
@@ -67,6 +73,11 @@ export default async function InvestmentPortfolioDashboardPage({
       <MvpNav variant="live" />
       <div className="mx-auto w-full max-w-6xl px-4 pt-6">
         <ClassicDashboardBanner />
+        {showLaunchWidget ? (
+          <div className="mt-4">
+            <TodaysLaunchWidget userId={userId} locale={locale} country={country} />
+          </div>
+        ) : null}
       </div>
       <PortfolioDashboardClient
         deals={deals}

@@ -20,6 +20,8 @@ export const GrowthEventName = {
   LEAD_CAPTURE: "lead_capture",
   DEAL_CREATED: "deal_created",
   CTA_CLICK: "cta_click",
+  /** A/B exposure (variant shown) — metadata must include `experiment` + `variant` (string). */
+  AB_EXPOSURE: "ab_exposure",
   /** Growth Machine — AI execution panel (measurement-only telemetry; server POST). */
   GROWTH_EXECUTION_AI_VIEW: "growth_execution_ai_view",
   GROWTH_EXECUTION_AI_COPY: "growth_execution_ai_copy",
