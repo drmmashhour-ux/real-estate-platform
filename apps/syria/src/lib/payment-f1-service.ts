@@ -33,6 +33,7 @@ export async function runF1Confirm(requestId: string): Promise<F1ConfirmOutcome>
       return { type: "bad_state" as const };
     }
 
+    /** M2 close: upgrade listing plan on confirm (`featured` or `premium` per request). */
     const targetPlan: SyriaListingPlan = row.plan === "premium" ? "premium" : "featured";
     const listing = await tx.syriaProperty.findUnique({ where: { id: row.listingId } });
     if (!listing) {

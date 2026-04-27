@@ -7,8 +7,9 @@ import {
   normalizeGovernorateSearchParam,
 } from "@/lib/syria-location-catalog";
 import { parseFeaturesQuery } from "@/lib/syria/amenities";
+import { tryNormalizeAdCodeQuery } from "@/lib/syria/ad-code";
 
-export type ListingKind = "sale" | "rent" | "bnhub";
+export type ListingKind = "sale" | "rent" | "bnhub" | "stay";
 
 export type RawSearchParams = Record<string, string | string[] | undefined>;
 
@@ -34,7 +35,8 @@ function num(raw: string | undefined): number | undefined {
 function textSearchOr(q: string): Prisma.SyriaPropertyWhereInput[] | undefined {
   const term = q.trim();
   if (!term) return undefined;
-  return [
+  const codeEq = tryNormalizeAdCodeQuery(term);
+  const or: Prisma.SyriaPropertyWhereInput[] = [
     { titleAr: { contains: term, mode: "insensitive" } },
     { titleEn: { contains: term, mode: "insensitive" } },
     { descriptionAr: { contains: term, mode: "insensitive" } },
@@ -43,7 +45,12 @@ function textSearchOr(q: string): Prisma.SyriaPropertyWhereInput[] | undefined {
     { neighborhood: { contains: term, mode: "insensitive" } },
     { area: { contains: term, mode: "insensitive" } },
     { addressDetails: { contains: term, mode: "insensitive" } },
+    { adCode: { contains: term, mode: "insensitive" } },
   ];
+  if (codeEq) {
+    or.push({ adCode: { equals: codeEq } });
+  }
+  return or;
 }
 
 export function parseAmenityTags(raw: string | undefined): string[] {
@@ -69,7 +76,8 @@ export function buildPropertyWhere(
   kind: ListingKind,
   sp: Record<string, string>,
 ): Prisma.SyriaPropertyWhereInput {
-  const type = kind === "sale" ? "SALE" : kind === "rent" ? "RENT" : "BNHUB";
+  const type =
+    kind === "sale" ? "SALE" : kind === "rent" || kind === "stay" ? "RENT" : "BNHUB";
 
   const andParts: Prisma.SyriaPropertyWhereInput[] = [];
 
@@ -157,7 +165,9 @@ export function buildPropertyWhere(
   }
 
   const mcat = (sp.category ?? "").trim();
-  if (mcat) {
+  if (kind === "stay") {
+    andParts.push({ category: "stay" });
+  } else if (mcat) {
     andParts.push({ category: mcat });
   }
   const msub = (sp.subcategory ?? "").trim();

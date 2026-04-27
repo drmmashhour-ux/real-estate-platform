@@ -13,6 +13,7 @@ import { SYRIA_AMENITIES, parseFeaturesQuery } from "@/lib/syria/amenities";
 import type { BrowseSurface, SearchPropertiesResult } from "@/services/search/search.service";
 
 function buildQuery(
+  q: string,
   state: string,
   city: string,
   minP: string,
@@ -22,15 +23,18 @@ function buildQuery(
   category: string,
   subcategory: string,
   directOnly: boolean,
+  lockCategory?: string,
 ) {
   const n = new URLSearchParams();
+  if (q.trim()) n.set("q", q.trim());
   if (state.trim()) n.set("state", state.trim());
   if (city.trim()) n.set("city", city.trim());
   if (minP.trim()) n.set("minPrice", minP.trim());
   if (maxP.trim()) n.set("maxPrice", maxP.trim());
   if (sort && sort !== "featured") n.set("sort", sort);
   if (featuresCsv.trim()) n.set("features", featuresCsv.trim());
-  if (category.trim()) n.set("category", category.trim());
+  const cat = (lockCategory ?? "").trim() || category.trim();
+  if (cat) n.set("category", cat);
   if (subcategory.trim()) n.set("subcategory", subcategory.trim());
   if (directOnly) n.set("direct", "1");
   return n.toString();
@@ -41,8 +45,9 @@ export function BrowseMvpExperienceClient(props: {
   basePath: string;
   locale: string;
   initialResult: SearchPropertiesResult;
+  lockCategory?: string;
 }) {
-  const { surface, basePath, locale, initialResult } = props;
+  const { surface, basePath, locale, initialResult, lockCategory } = props;
   const t = useTranslations("Browse");
   const tCat = useTranslations("Categories");
   const ulocale = useLocale();
@@ -51,6 +56,7 @@ export function BrowseMvpExperienceClient(props: {
   const sp = useSearchParams();
   const [bundle, setBundle] = useState(initialResult);
   const [loading, setLoading] = useState(false);
+  const q = sp.get("q") ?? "";
   const st = sp.get("state") ?? "";
   const city = sp.get("city") ?? "";
   const minP = sp.get("minPrice") ?? "";
@@ -60,6 +66,7 @@ export function BrowseMvpExperienceClient(props: {
   const mcat = sp.get("category") ?? "";
   const msub = sp.get("subcategory") ?? "";
   const directQ = sp.get("direct") === "1";
+  const [qL, setQL] = useState(q);
   const [stateL, setStateL] = useState(st);
   const [cityL, setCityL] = useState(city);
   const [minL, setMinL] = useState(minP);
@@ -72,15 +79,16 @@ export function BrowseMvpExperienceClient(props: {
   const skip = useRef(true);
 
   useEffect(() => {
+    setQL(q);
     setStateL(st);
     setCityL(city);
     setMinL(minP);
     setMaxL(maxP);
     setSortL(sort);
     setFeatureKeysL(parseFeaturesQuery(featuresQ));
-    setMcatL(mcat);
+    setMcatL((lockCategory ?? "").trim() || mcat);
     setMsubL(msub);
-  }, [st, city, minP, maxP, sort, featuresQ, mcat, msub]);
+  }, [q, st, city, minP, maxP, sort, featuresQ, mcat, msub, lockCategory]);
 
   const refresh = useCallback(async () => {
     const qs = sp.toString();
@@ -104,13 +112,14 @@ export function BrowseMvpExperienceClient(props: {
 
   function apply(e: React.FormEvent) {
     e.preventDefault();
-    const qs = buildQuery(stateL, cityL, minL, maxL, sortL, featureKeysL.join(","), mcatL, msubL, directL);
+    const qs = buildQuery(qL, stateL, cityL, minL, maxL, sortL, featureKeysL.join(","), mcatL, msubL, directL, lockCategory);
     router.push(qs ? `${basePath}?${qs}` : basePath);
   }
 
+  const effectiveMcat = (lockCategory ?? "").trim() || mcatL;
   const subOptions =
-    mcatL && (MARKETPLACE_CATEGORIES as readonly string[]).includes(mcatL)
-      ? [...MARKETPLACE_SUBCATEGORIES[mcatL as MarketplaceCategory]]
+    effectiveMcat && (MARKETPLACE_CATEGORIES as readonly string[]).includes(effectiveMcat)
+      ? [...MARKETPLACE_SUBCATEGORIES[effectiveMcat as MarketplaceCategory]]
       : [];
 
   return (
@@ -119,6 +128,18 @@ export function BrowseMvpExperienceClient(props: {
         onSubmit={apply}
         className="grid gap-3 rounded-[var(--darlink-radius-2xl)] border border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface)] p-4 sm:grid-cols-2 lg:grid-cols-3"
       >
+        <label className="sm:col-span-2 lg:col-span-3 [dir:rtl]:text-right">
+          <span className="mb-1 block text-xs font-semibold text-[color:var(--darlink-text-muted)]">{t("filterKeywords")}</span>
+          <Input
+            name="q"
+            value={qL}
+            onChange={(e) => setQL(e.target.value)}
+            placeholder="RE-1023"
+            className="w-full"
+            inputMode="search"
+            autoComplete="off"
+          />
+        </label>
         <div className="flex items-center gap-2 rounded-[var(--darlink-radius-lg)] border border-emerald-200/80 bg-emerald-50/60 px-3 py-2 sm:col-span-2 lg:col-span-3 [dir:rtl]:text-right">
           <input
             type="checkbox"
@@ -131,25 +152,27 @@ export function BrowseMvpExperienceClient(props: {
             {t("filterDirectOnly")}
           </label>
         </div>
-        <label className="text-sm text-[color:var(--darlink-text-muted)] sm:col-span-2 lg:col-span-1">
-          {t("filterCategory")}
-          <select
-            value={mcatL}
-            onChange={(e) => {
-              setMcatL(e.target.value);
-              setMsubL("");
-            }}
-            className="mt-1 w-full min-h-11 rounded-[var(--darlink-radius-lg)] border border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface)] px-3 py-2 text-sm"
-            name="category"
-          >
-            <option value="">{t("categoryAll")}</option>
-            {MARKETPLACE_CATEGORIES.map((c) => (
-              <option key={c} value={c}>
-                {tCat(c)}
-              </option>
-            ))}
-          </select>
-        </label>
+        {!lockCategory ? (
+          <label className="text-sm text-[color:var(--darlink-text-muted)] sm:col-span-2 lg:col-span-1">
+            {t("filterCategory")}
+            <select
+              value={mcatL}
+              onChange={(e) => {
+                setMcatL(e.target.value);
+                setMsubL("");
+              }}
+              className="mt-1 w-full min-h-11 rounded-[var(--darlink-radius-lg)] border border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface)] px-3 py-2 text-sm"
+              name="category"
+            >
+              <option value="">{t("categoryAll")}</option>
+              {MARKETPLACE_CATEGORIES.map((c) => (
+                <option key={c} value={c}>
+                  {tCat(c)}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
         <label className="text-sm text-[color:var(--darlink-text-muted)] sm:col-span-2 lg:col-span-1">
           {t("filterSubcategory")}
           <select
@@ -157,7 +180,7 @@ export function BrowseMvpExperienceClient(props: {
             onChange={(e) => setMsubL(e.target.value)}
             className="mt-1 w-full min-h-11 rounded-[var(--darlink-radius-lg)] border border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface)] px-3 py-2 text-sm"
             name="subcategory"
-            disabled={!mcatL}
+            disabled={!effectiveMcat}
           >
             <option value="">{t("subcategoryAll")}</option>
             {subOptions.map((s) => (

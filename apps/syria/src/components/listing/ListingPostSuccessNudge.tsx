@@ -1,31 +1,29 @@
 "use client";
 
-import { useEffect, type ReactNode } from "react";
+import { type ReactNode } from "react";
+import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 
-/**
- * Wraps share actions after a fresh publish — prominent nudge, then removes `?posted=1` from the URL
- * so refresh does not keep highlighting.
- */
-export function ListingPostSuccessNudge({ children }: { children: ReactNode }) {
-  const t = useTranslations("Listing");
+type Props = {
+  children: ReactNode;
+  /**
+   * When set on the listing page, the block hides after `?posted=1` is removed (dismiss or navigation).
+   * Leave unset on e.g. quick-post success, where the URL has no `posted` param.
+   */
+  urlGated?: boolean;
+};
 
-  useEffect(() => {
-    try {
-      const u = new URL(window.location.href);
-      if (u.searchParams.get("posted") === "1") {
-        u.searchParams.delete("posted");
-        const q = u.searchParams.toString();
-        window.history.replaceState(null, "", u.pathname + (q ? `?${q}` : "") + u.hash);
-      }
-    } catch {
-      /* ignore */
-    }
-  }, []);
+/**
+ * Prominent after-publish share CTA (inline, not a modal). Pair with `PostSuccessTopBanner` on the listing page.
+ */
+export function ListingPostSuccessNudge({ children, urlGated }: Props) {
+  const t = useTranslations("Listing");
+  const searchParams = useSearchParams();
+  if (urlGated && searchParams.get("posted") !== "1") return null;
 
   return (
-    <div className="rounded-2xl border border-emerald-200 bg-emerald-50/90 p-4 sm:p-5">
-      <p className="text-sm font-semibold text-emerald-950">{t("afterPostShareTitle")}</p>
+    <div className="mt-4 rounded-2xl border-2 border-emerald-200/80 bg-gradient-to-b from-emerald-50/95 to-white p-4 shadow-md ring-1 ring-emerald-100/60 sm:mt-5 sm:p-5">
+      <p className="text-base font-bold text-emerald-950">{t("afterPostShareTitle")}</p>
       <p className="mt-1 text-sm text-emerald-900/90">{t("afterPostShareTagline")}</p>
       <div className="mt-4 min-w-0 max-w-full">{children}</div>
       <p className="mt-3 text-xs leading-relaxed text-emerald-900/80">{t("afterPostShareReferral")}</p>

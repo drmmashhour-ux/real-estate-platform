@@ -12,6 +12,7 @@ import {
   type F1PlanKey,
 } from "@/lib/payment-f1";
 import { syriaPlatformConfig } from "@/config/syria-platform.config";
+import { getSyriaPublicOrigin } from "@/lib/syria-whatsapp";
 
 function parseBody(body: unknown): { listingId: string; plan: F1PlanKey } | null {
   if (!body || typeof body !== "object") return null;
@@ -97,10 +98,17 @@ export async function POST(req: Request) {
     return created.id;
   });
 
+  const pathLocale = locale === "en" ? "en" : "ar";
+  const origin = getSyriaPublicOrigin();
+  const listingUrl =
+    origin.length > 0
+      ? `${origin}/${pathLocale}/listing/${listingId}`
+      : `/${pathLocale}/listing/${listingId}`;
+  const adCode = listing.adCode?.trim() || listingId;
   const text =
     locale === "en"
-      ? f1BuildWhatsAppPaymentTextEn(listingId, requestId)
-      : f1BuildWhatsAppPaymentText(listingId, requestId);
+      ? f1BuildWhatsAppPaymentTextEn(adCode, listingUrl, requestId)
+      : f1BuildWhatsAppPaymentText(adCode, listingUrl, requestId);
   const whatsappUrl = f1BuildWhatsAppUrl(contact.displayPhone, text);
 
   return NextResponse.json({

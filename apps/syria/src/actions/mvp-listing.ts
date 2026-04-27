@@ -52,11 +52,19 @@ export async function createMvpPropertyListing(formData: FormData): Promise<void
     isDirect,
   });
   if (!out.ok) {
+    const locale = await getLocale();
+    const q =
+      out.reason === "daily_limit" ? "af=daily" :
+        out.reason === "duplicate" ? "af=duplicate" :
+        "af=invalid";
+    redirect({ href: `/sell?${q}`, locale });
     return;
   }
   const property = { id: out.id };
+  const search =
+    out.priceWarningKey === "priceWarnGeneric" || out.priceWarningKey === "priceWarnStay" ? `&af=${out.priceWarningKey}` : "";
 
-  await revalidateSyriaPaths("/sell", "/dashboard/listings", "/buy", "/rent", "/");
+  await revalidateSyriaPaths("/sell", "/dashboard/listings", "/buy", "/rent", "/sybnb", "/");
   const locale = await getLocale();
-  redirect({ href: `/listing/${property.id}?posted=1`, locale });
+  redirect({ href: `/listing/${property.id}?posted=1${search}`, locale });
 }

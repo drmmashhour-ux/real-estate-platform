@@ -25,6 +25,7 @@ async function main() {
 
   const seedListings = [
     {
+      adCode: "RE-9001",
       titleAr: "فيلا بحديقة — دمشق",
       titleEn: "Garden villa — Damascus",
       descriptionAr: "شارع هادئ، فناء ظليل، كهرباء محدّثة.",
@@ -41,6 +42,7 @@ async function main() {
       amenities: ["wifi", "furnished", "electricity_24h"],
     },
     {
+      adCode: "RE-9002",
       titleAr: "شقة مطلة على البحر — اللاذقية",
       descriptionAr: "وحدتان نوم، ركنية، إطلالة شروق.",
       /** Intentionally omit English title/description — tests EN → AR fallback in UI */
@@ -58,6 +60,7 @@ async function main() {
       amenities: ["Elevator", "Balcony"],
     },
     {
+      adCode: "RE-9003",
       titleAr: "إقامة BNHub — غرفة في البلدة القديمة",
       titleEn: "BNHub stay — Old City loft",
       descriptionAr: "إقامات قصيرة في الحي التاريخي. تسوية يدوية للضيف.",
@@ -80,6 +83,7 @@ async function main() {
     for (const row of seedListings) {
       await prisma.syriaProperty.create({
         data: {
+          adCode: row.adCode,
           titleAr: row.titleAr,
           titleEn: row.titleEn,
           descriptionAr: row.descriptionAr,
@@ -101,6 +105,11 @@ async function main() {
         },
       });
     }
+    await prisma.syriaAdCodeSequence.upsert({
+      where: { id: "global" },
+      create: { id: "global", nextSeq: 9003 },
+      update: { nextSeq: 9003 },
+    });
   }
 
   console.info("[syria seed] users ready; sample listings skipped if DB already had properties", {

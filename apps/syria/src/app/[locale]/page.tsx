@@ -181,6 +181,17 @@ export default async function HomePage() {
         </div>
       </section>
 
+      <section className="rounded-[var(--darlink-radius-3xl)] border border-sky-200/70 bg-gradient-to-r from-sky-50/95 to-white px-6 py-8 sm:px-10">
+        <h2 className="text-lg font-bold text-[color:var(--darlink-text)] sm:text-xl">{t("sectionSybnbTitle")}</h2>
+        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[color:var(--darlink-text-muted)]">{t("sectionSybnbDesc")}</p>
+        <Link
+          href="/sybnb"
+          className="mt-5 inline-flex min-h-12 items-center justify-center rounded-[var(--darlink-radius-xl)] border border-sky-300/80 bg-white px-6 py-3 text-sm font-semibold text-sky-950 shadow-sm hover:bg-sky-50"
+        >
+          {t("sectionSybnbTitle")}
+        </Link>
+      </section>
+
       <section className="rounded-[var(--darlink-radius-3xl)] border border-emerald-200/60 bg-gradient-to-r from-emerald-50/90 to-white px-6 py-8 text-center sm:px-10 sm:py-10">
         <h2 className="text-lg font-bold leading-snug text-[color:var(--darlink-text)] sm:text-xl">{t("growthListHookTitle")}</h2>
         <Link

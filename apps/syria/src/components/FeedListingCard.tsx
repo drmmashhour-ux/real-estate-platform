@@ -14,6 +14,7 @@ import type { SyriaProperty } from "@/generated/prisma";
 type FeedItem = Pick<
   SyriaProperty,
   | "id"
+  | "adCode"
   | "titleAr"
   | "titleEn"
   | "state"
@@ -21,6 +22,9 @@ type FeedItem = Pick<
   | "city"
   | "cityAr"
   | "cityEn"
+  | "area"
+  | "districtAr"
+  | "districtEn"
   | "price"
   | "currency"
   | "images"
@@ -100,6 +104,11 @@ export function FeedListingCard({
         )}
       </div>
       <div className="min-w-0 flex-1">
+        {listing.adCode ? (
+          <p className="mb-0.5 text-[10px] font-semibold tabular-nums text-[color:var(--darlink-text-muted)] [dir:ltr]">
+            {listing.adCode}
+          </p>
+        ) : null}
         <p className="text-xl font-bold tabular-nums leading-none text-[color:var(--darlink-text)] sm:text-2xl">
           {formatSyriaCurrency(listing.price, listing.currency, locale)}
         </p>

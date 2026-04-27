@@ -87,7 +87,7 @@ export async function approveProperty(formData: FormData): Promise<void> {
     }
   });
 
-  await revalidateSyriaPaths("/admin/listings", "/buy", "/rent", "/bnhub/stays", "/");
+  await revalidateSyriaPaths("/admin/listings", "/buy", "/rent", "/bnhub/stays", "/sybnb", "/");
 }
 
 export async function rejectProperty(formData: FormData): Promise<void> {

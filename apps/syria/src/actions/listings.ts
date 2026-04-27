@@ -13,6 +13,7 @@ import { validateListingGovernorateCityArea } from "@/lib/syria-location-catalog
 import { assertDarlinkRuntimeEnv } from "@/lib/guard";
 import { findSyriaCityByStored } from "@/data/syriaLocations";
 import { validateBilingualListingCopy } from "@/lib/listing-bilingual-validation";
+import { allocateAdCodeInTransaction } from "@/lib/syria/ad-code";
 
 function districtEnFromStored(cityCanonicalEn: string, areaStored: string | null | undefined): string | null {
   try {
@@ -129,68 +130,109 @@ export async function createPropertyListing(formData: FormData): Promise<void> {
       ? new Prisma.Decimal(syriaPlatformConfig.monetization.bnhubListingFeeAmount)
       : null;
 
-  const property = await prisma.syriaProperty.create({
-    data: {
-      titleAr,
-      titleEn,
-      descriptionAr,
-      descriptionEn,
-      governorate: governorateEn,
-      city,
-      cityAr,
-      cityEn: cityEnStored,
-      area,
-      districtAr: area,
-      districtEn: districtEnStored,
-      placeName,
-      addressText,
-      latitude: coordsOk ? latitude : null,
-      longitude: coordsOk ? longitude : null,
-      price: new Prisma.Decimal(price),
-      currency: SYRIA_PRICING.currency,
-      type: type as "SALE" | "RENT" | "BNHUB",
-      category: "real_estate",
-      subcategory:
-        type === "RENT" ? "rent" : type === "BNHUB" ? "hotel" : "sale",
-      images,
-      amenities,
-      ownerId: user.id,
-      status: "PENDING_REVIEW",
-      plan,
-      isFeatured: false,
-      featuredUntil: null,
-      isDirect,
-    },
-  });
-
-  await prisma.syriaListingPayment.create({
-    data: {
-      propertyId: property.id,
-      ownerId: user.id,
-      amount: listingFee,
-      currency: SYRIA_PRICING.currency,
-      purpose: "LISTING_FEE",
-      status: "PENDING",
-      referenceNumber: manualRef,
-      proofUrl,
-      paymentMethod,
-    },
-  });
-
-  if (featuredFee) {
-    await prisma.syriaListingPayment.create({
+  const property = await prisma.$transaction(async (tx) => {
+    const adCode = await allocateAdCodeInTransaction(tx, "real_estate");
+    const p = await tx.syriaProperty.create({
       data: {
-        propertyId: property.id,
-        ownerId: user.id,
-        amount: featuredFee,
+        adCode,
+        titleAr,
+        titleEn,
+        descriptionAr,
+        descriptionEn,
+        governorate: governorateEn,
+        city,
+        cityAr,
+        cityEn: cityEnStored,
+        area,
+        districtAr: area,
+        districtEn: districtEnStored,
+        placeName,
+        addressText,
+        latitude: coordsOk ? latitude : null,
+        longitude: coordsOk ? longitude : null,
+        price: new Prisma.Decimal(price),
         currency: SYRIA_PRICING.currency,
-        purpose: "FEATURED",
+        type: type as "SALE" | "RENT" | "BNHUB",
+        category: "real_estate",
+        subcategory:
+          type === "RENT" ? "rent" : type === "BNHUB" ? "hotel" : "sale",
+        images,
+        amenities,
+        ownerId: user.id,
+        status: "PENDING_REVIEW",
+        plan,
+        isFeatured: false,
+        featuredUntil: null,
+        isDirect,
+      },
+    });
+
+    await tx.syriaListingPayment.create({
+      data: {
+        propertyId: p.id,
+        ownerId: user.id,
+        amount: listingFee,
+        currency: SYRIA_PRICING.currency,
+        purpose: "LISTING_FEE",
         status: "PENDING",
         referenceNumber: manualRef,
         proofUrl,
         paymentMethod,
       },
     });
+
+    if (featuredFee) {
+      await tx.syriaListingPayment.create({
+        data: {
+          propertyId: p.id,
+          ownerId: user.id,
+          amount: featuredFee,
+          currency: SYRIA_PRICING.currency,
+          purpose: "FEATURED",
+          status: "PENDING",
+          referenceNumber: manualRef,
+          proofUrl,
+          paymentMethod,
+        },
+      });
+    }
+
+    if (premiumFee) {
+      await tx.syriaListingPayment.create({
+        data: {
+          propertyId: p.id,
+          ownerId: user.id,
+          amount: premiumFee,
+          currency: SYRIA_PRICING.currency,
+          purpose: "PREMIUM",
+          status: "PENDING",
+          referenceNumber: manualRef,
+          proofUrl,
+          paymentMethod,
+        },
+      });
+    }
+
+    if (bnhubListingFee) {
+      await tx.syriaListingPayment.create({
+        data: {
+          propertyId: p.id,
+          ownerId: user.id,
+          amount: bnhubListingFee,
+          currency: SYRIA_PRICING.currency,
+          purpose: "BNHUB_LISTING",
+          status: "PENDING",
+          referenceNumber: manualRef,
+          proofUrl,
+          paymentMethod,
+        },
+      });
+    }
+
+    return p;
+  });
+
+  if (featuredFee) {
     await trackSyriaGrowthEvent({
       eventType: "featured_upgrade_selected",
       userId: user.id,
@@ -200,40 +242,11 @@ export async function createPropertyListing(formData: FormData): Promise<void> {
   }
 
   if (premiumFee) {
-    await prisma.syriaListingPayment.create({
-      data: {
-        propertyId: property.id,
-        ownerId: user.id,
-        amount: premiumFee,
-        currency: SYRIA_PRICING.currency,
-        purpose: "PREMIUM",
-        status: "PENDING",
-        referenceNumber: manualRef,
-        proofUrl,
-        paymentMethod,
-      },
-    });
     await trackSyriaGrowthEvent({
       eventType: "premium_upgrade_selected",
       userId: user.id,
       propertyId: property.id,
       payload: { amount: SYRIA_PRICING.premiumBoostAmount, currency: SYRIA_PRICING.currency, plan: "premium" as const },
-    });
-  }
-
-  if (bnhubListingFee) {
-    await prisma.syriaListingPayment.create({
-      data: {
-        propertyId: property.id,
-        ownerId: user.id,
-        amount: bnhubListingFee,
-        currency: SYRIA_PRICING.currency,
-        purpose: "BNHUB_LISTING",
-        status: "PENDING",
-        referenceNumber: manualRef,
-        proofUrl,
-        paymentMethod,
-      },
     });
   }
 

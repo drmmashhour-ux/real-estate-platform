@@ -20,6 +20,8 @@ export function buildListingShareMessage(input: {
   locale: string;
   /** Shown on its own line before the link when set. */
   city?: string;
+  /** SY-28: e.g. RE-1023 — adds a “interested in listing #” line for phone/WhatsApp handoff. */
+  adCode?: string;
   /** When set, Arabic message uses this amount with `ar-SY` digits + " ل.س" (ignores SYP in priceLine for that line). */
   priceAmount?: number;
 }): string {
@@ -29,19 +31,28 @@ export function buildListingShareMessage(input: {
   const link = input.url.trim();
   const place = input.city?.trim() ?? "";
   const n = input.priceAmount;
+  const code = input.adCode?.trim() ?? "";
 
   if (isAr) {
     const priceRow =
       typeof n === "number" && Number.isFinite(n)
         ? `${n.toLocaleString("ar-SY", { maximumFractionDigits: 0 })} ل.س`
         : `${price.replace(/^SYP\s+/i, "").trim()} ل.س`;
-    const parts: string[] = ["شاهد هذا الإعلان على Hadiah Link 🎁", title, priceRow];
+    const parts: string[] = ["شاهد هذا الإعلان على Hadiah Link 🎁"];
+    if (code) {
+      parts.push(`مرحباً، مهتم بالإعلان رقم ${code}`);
+    }
+    parts.push(title, priceRow);
     if (place) parts.push(place);
     parts.push("", link);
     return parts.join("\n");
   }
 
-  const parts: string[] = ["See this listing on Hadiah Link 🎁", title, `Price: ${price}`];
+  const parts: string[] = ["See this listing on Hadiah Link 🎁"];
+  if (code) {
+    parts.push(`Hi, I'm interested in listing ${code}`);
+  }
+  parts.push(title, `Price: ${price}`);
   if (place) parts.push(`Location: ${place}`);
   parts.push("", link);
   return parts.join("\n");

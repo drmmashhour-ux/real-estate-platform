@@ -4,11 +4,14 @@ function qs(category: string, subcategory: string): string {
   return `category=${encodeURIComponent(category)}&subcategory=${encodeURIComponent(subcategory)}`;
 }
 
-/** Target browse URL for a category+sub (sale → /buy, rent → /rest, short stay → /bnhub/stays). */
+/** Target browse URL for a category+sub (sale → /buy, rent → /rest, short stay → /bnhub/stays, SYBNB → /sybnb). */
 export function browseHrefForMarketplaceSub(
   category: MarketplaceCategory,
   subcategory: string,
 ): { href: string } {
+  if (category === "stay") {
+    return { href: `/sybnb?${qs(category, subcategory)}` };
+  }
   if (subcategory === "rent") {
     return { href: `/rent?${qs(category, subcategory)}` };
   }

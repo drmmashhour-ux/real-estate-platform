@@ -51,8 +51,7 @@ export function MakeFeaturedCta({
 
   const showViewsNudge = currentPlan === "free" && viewCount >= 10;
   const showDirectNudge = currentPlan === "free" && isDirect && !showViewsNudge;
-  const benefits = [t("revUpgradeBullet1"), t("revUpgradeBullet2"), t("revUpgradeBullet3")];
-  const steps = [t("r1Step1"), t("r1Step2"), t("r1Step3")];
+  const benefits = [t("makeFeaturedM1Benefit1"), t("makeFeaturedM1Benefit2"), t("makeFeaturedM1Benefit3")];
 
   async function onWhatsappPayClick() {
     if (!contact) return;
@@ -82,15 +81,14 @@ export function MakeFeaturedCta({
 
   return (
     <Card
-      id="r1-upgrade"
       className="scroll-mt-24 border-amber-200/80 bg-gradient-to-b from-amber-50/95 to-[color:var(--darlink-surface)] p-4 shadow-[var(--darlink-shadow-sm)] sm:p-5"
     >
       {showViewsNudge ? (
-        <p className="text-sm font-semibold leading-snug text-amber-950">{t("revNudgeViews")}</p>
+        <p className="text-sm font-bold leading-snug text-amber-950">{t("revNudgeViews")}</p>
       ) : showDirectNudge ? (
-        <p className="text-sm font-semibold leading-snug text-amber-950">{t("revNudgeDirectFree")}</p>
+        <p className="text-sm font-bold leading-snug text-amber-950">{t("revNudgeDirectFree")}</p>
       ) : (
-        <h2 className="text-base font-bold leading-snug text-[color:var(--darlink-text)] sm:text-lg">{t("makeFeaturedValueHeadline")}</h2>
+        <h2 className="text-base font-bold leading-snug text-amber-950 sm:text-lg">{t("makeFeaturedM1Headline")}</h2>
       )}
 
       <ul className="mt-2.5 list-none space-y-1" dir={isAr ? "rtl" : "ltr"}>
@@ -103,30 +101,6 @@ export function MakeFeaturedCta({
           </li>
         ))}
       </ul>
-
-      <p className="mt-2.5 text-sm font-bold text-[color:var(--darlink-text)]" dir={isAr ? "rtl" : "ltr"}>
-        {t("r1PromotionPrice", { amount: plan === "featured" ? lineFeatured : linePremium })}
-      </p>
-      {showLadderHint ? (
-        <p
-          className="mt-2 text-sm font-semibold text-amber-900"
-          dir={isAr ? "rtl" : "ltr"}
-        >
-          {t("f1PriceLadderHint")}
-        </p>
-      ) : null}
-      <p className="text-xs text-[color:var(--darlink-text-muted)]">
-        {t("makeFeaturedPriceNote")} · {t("r1DurationNote", { days: featuredDurationDays })}
-      </p>
-
-      <ol
-        className="mt-3 list-inside list-decimal space-y-0.5 text-sm font-medium text-[color:var(--darlink-text)]"
-        dir={isAr ? "rtl" : "ltr"}
-      >
-        {steps.map((s) => (
-          <li key={s}>{s}</li>
-        ))}
-      </ol>
 
       {canPickFeatured ? (
         <div className="mt-4 grid gap-2">
@@ -161,11 +135,27 @@ export function MakeFeaturedCta({
         </div>
       ) : null}
 
+      <p className="mt-3 text-sm font-bold text-amber-950" dir={isAr ? "rtl" : "ltr"}>
+        {t("makeFeaturedM1PriceLine", { amount: priceForSelectedPlan })}
+      </p>
+      {showLadderHint ? (
+        <p className="mt-1 text-sm font-semibold text-amber-900" dir={isAr ? "rtl" : "ltr"}>
+          {t("f1PriceLadderHint")}
+        </p>
+      ) : null}
+      <p className="mt-1.5 text-xs text-[color:var(--darlink-text-muted)]" dir={isAr ? "rtl" : "ltr"}>
+        {t("r1DurationNote", { days: featuredDurationDays })}
+      </p>
+
+      <p
+        className="mt-3 text-center text-sm font-bold text-amber-900"
+        dir={isAr ? "rtl" : "ltr"}
+      >
+        {t("makeFeaturedM1Urgency7d")}
+      </p>
+
       {contact ? (
         <>
-          <p className="mt-4 text-center text-xs font-semibold text-amber-950" dir={isAr ? "rtl" : "ltr"}>
-            {t("f1UrgencyLine")}
-          </p>
           <Button
             type="button"
             disabled={waLoading}
@@ -173,7 +163,7 @@ export function MakeFeaturedCta({
             className="mt-2 w-full min-h-12 text-base"
             onClick={() => void onWhatsappPayClick()}
           >
-            {waLoading ? "…" : t("bakaUpgradeCta")}
+            {waLoading ? "…" : t("makeFeaturedCta")}
           </Button>
         </>
       ) : null}
@@ -189,7 +179,7 @@ export function MakeFeaturedCta({
 
       {!contact ? <p className="mt-3 text-center text-xs text-amber-900/80">{t("makeFeaturedNoAdminPhone")}</p> : null}
       {err ? <p className="mt-2 text-sm text-amber-900">{err}</p> : null}
-      {canPickFeatured ? (
+      {canPickFeatured && contact ? (
         <p className="mt-1 text-center text-xs text-[color:var(--darlink-text-muted)]" dir="ltr">
           {t("bakaTeaserPrice", { amount: priceForSelectedPlan, days: featuredDurationDays })}
         </p>

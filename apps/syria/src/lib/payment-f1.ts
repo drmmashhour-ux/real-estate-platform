@@ -39,13 +39,13 @@ export function f1PlanStronger(a: SyriaListingPlan, b: SyriaListingPlan): SyriaL
   return tier[a] >= tier[b] ? a : b;
 }
 
-/** Arabic proof line — admin matches `requestId` to the payment request row. */
-export function f1BuildWhatsAppPaymentText(listingId: string, requestId: string): string {
-  return `قمت بالدفع للإعلان رقم ${listingId}\nرقم الطلب: ${requestId}`;
+/** Admin matches `requestId` to the payment request row. */
+export function f1BuildWhatsAppPaymentText(adCode: string, listingUrl: string, requestId: string): string {
+  return `مرحباً، أريد تمييز الإعلان:\n${adCode}\n${listingUrl}\n\nرقم الطلب: ${requestId}`;
 }
 
-export function f1BuildWhatsAppPaymentTextEn(listingId: string, requestId: string): string {
-  return `I paid for listing ${listingId}\nRequest ID: ${requestId}`;
+export function f1BuildWhatsAppPaymentTextEn(adCode: string, listingUrl: string, requestId: string): string {
+  return `Hello, I would like to feature this listing:\n${adCode}\n${listingUrl}\n\nRequest ID: ${requestId}`;
 }
 
 /** `wa.me` to admin with proof text; `phoneRaw` = env admin phone. */

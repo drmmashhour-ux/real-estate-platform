@@ -7,6 +7,7 @@ import { syriaFlags } from "@/lib/platform-flags";
  */
 export const MARKETPLACE_CATEGORIES = [
   "real_estate",
+  "stay",
   "cars",
   "electronics",
   "furniture",
@@ -18,6 +19,7 @@ export type MarketplaceCategory = (typeof MARKETPLACE_CATEGORIES)[number];
 
 export const MARKETPLACE_SUBCATEGORIES: Record<MarketplaceCategory, readonly string[]> = {
   real_estate: ["sale", "rent", "furnished", "hotel", "commercial"],
+  stay: ["furnished", "hotel"],
   cars: ["sale", "rent", "motorcycle"],
   electronics: ["mobile", "laptop", "appliances"],
   furniture: ["sale", "used", "office"],
@@ -27,6 +29,7 @@ export const MARKETPLACE_SUBCATEGORIES: Record<MarketplaceCategory, readonly str
 
 export const MARKETPLACE_CATEGORY_EMOJI: Record<MarketplaceCategory, string> = {
   real_estate: "🏠",
+  stay: "🏨",
   cars: "🚗",
   electronics: "📱",
   furniture: "🛋️",
@@ -67,6 +70,7 @@ export function listingTypeForMarketplace(
   category: MarketplaceCategory,
   subcategory: string,
 ): SyriaPropertyType {
+  if (category === "stay") return "RENT";
   if (subcategory === "rent") return "RENT";
   if (category === "real_estate" && subcategory === "hotel" && syriaFlags.BNHUB_ENABLED) {
     return "BNHUB";

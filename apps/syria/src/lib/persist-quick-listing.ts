@@ -12,8 +12,19 @@ import {
   listingTypeForMarketplace,
   type MarketplaceCategory,
 } from "@/lib/marketplace-categories";
+import { allocateAdCodeInTransaction } from "@/lib/syria/ad-code";
+import { runAntiFraudGuardsForPublish } from "@/lib/anti-fraud/guards";
+import { ensureGuestUserForPhone } from "@/lib/syria-mvp-guest";
 
-export type PersistQuickListingResult = { ok: true; id: string; userId: string } | { ok: false };
+export type PersistQuickListingResult =
+  | {
+      ok: true;
+      id: string;
+      userId: string;
+      adCode: string;
+      priceWarningKey?: "priceWarnGeneric" | "priceWarnStay";
+    }
+  | { ok: false; reason: "validation" | "daily_limit" | "duplicate" };
 
 /**
  * Minimal create for SyriaProperty — maps to existing Prisma model (titleAr, Decimal price, owner phone, etc.).
@@ -62,7 +73,10 @@ export async function persistQuickListing(input: {
   const type = listingTypeForMarketplace(category, subcategory);
   const typeOverride: "SALE" | "RENT" | "BNHUB" =
     input.type === "RENT" ? "RENT" : type === "BNHUB" ? "BNHUB" : type === "RENT" ? "RENT" : "SALE";
-  const finalType: "SALE" | "RENT" | "BNHUB" = input.type === "RENT" ? "RENT" : typeOverride;
+  let finalType: "SALE" | "RENT" | "BNHUB" = input.type === "RENT" ? "RENT" : typeOverride;
+  if (category === "stay") {
+    finalType = "RENT";
+  }
   const images = (input.images?.filter((s): s is string => typeof s === "string" && s.length > 0) ?? []).slice(0, 5);
   const amenities = normalizeSyriaAmenityKeys(input.amenities);
   const isDirect = input.isDirect !== false;
@@ -78,24 +92,25 @@ export async function persistQuickListing(input: {
   if (priceDec.lte(0)) {
     return { ok: false };
   }
+  const nightlyInt = category === "stay" ? Math.trunc(Number(priceStr)) : null;
 
   let user = await getSessionUser();
   if (!user) {
-    const guestEmail = `mvp-${phone}@guest.hadiah`;
-    user = await prisma.syriaAppUser.upsert({
-      where: { email: guestEmail },
-      create: {
-        email: guestEmail,
-        name: titleAr.slice(0, 120),
-        phone,
-      },
-      update: {
-        name: titleAr.slice(0, 120),
-        phone,
-      },
-    });
+    const ensured = await ensureGuestUserForPhone(phone, titleAr.slice(0, 120));
+    user = (await prisma.syriaAppUser.findUniqueOrThrow({ where: { id: ensured.id } })) as typeof user;
     await setSessionUserId(user.id);
   }
+
+  const guards = await runAntiFraudGuardsForPublish({
+    ownerId: user.id,
+    titleAr,
+    priceDec,
+    category,
+  });
+  if (!guards.ok) {
+    return { ok: false, code: guards.code } as const;
+  }
+  const priceWarningKey = guards.priceWarningKey;
 
   const descriptionAr =
     input.descriptionAr?.trim() && input.descriptionAr.trim() !== "—"
@@ -106,8 +121,10 @@ export async function persistQuickListing(input: {
       where: { id: user.id },
       data: { phone },
     });
+    const adCode = await allocateAdCodeInTransaction(tx, category);
     return tx.syriaProperty.create({
       data: {
+        adCode,
         titleAr,
         titleEn: null,
         descriptionAr,
@@ -126,6 +143,7 @@ export async function persistQuickListing(input: {
         latitude: null,
         longitude: null,
         price: priceDec,
+        ...(nightlyInt != null && nightlyInt > 0 ? { pricePerNight: nightlyInt } : {}),
         currency: SYRIA_PRICING.currency,
         type: finalType,
         category,
@@ -151,5 +169,11 @@ export async function persistQuickListing(input: {
     payload: { city, state, type: finalType, category, subcategory, source: input.source },
   });
 
-  return { ok: true, id: property.id, userId: user.id };
+  return {
+    ok: true,
+    id: property.id,
+    userId: user.id,
+    adCode: property.adCode,
+    ...(priceWarningKey ? { priceWarningKey } : {}),
+  };
 }

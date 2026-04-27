@@ -24,6 +24,7 @@ import { MARKETPLACE_CATEGORY_EMOJI } from "@/lib/marketplace-categories";
 type CardListing = Pick<
   SyriaProperty,
   | "id"
+  | "adCode"
   | "titleAr"
   | "titleEn"
   | "descriptionAr"
@@ -53,6 +54,7 @@ type CardListing = Pick<
   | "category"
   | "subcategory"
   | "isDirect"
+  | "pricePerNight"
 >;
 
 export type ListingCardModel = CardListing | SerializedBrowseListing;
@@ -93,6 +95,7 @@ export function ListingCard({
     "subcategory" in listing && typeof (listing as { subcategory?: string }).subcategory === "string"
       ? (listing as { subcategory: string }).subcategory
       : null;
+  const isStay = catKey === "stay";
   const catEmoji =
     catKey && (MARKETPLACE_CATEGORY_EMOJI as Record<string, string>)[catKey] ? (MARKETPLACE_CATEGORY_EMOJI as Record<string, string>)[catKey] : null;
   const title = getLocalizedPropertyTitle(listing, locale);
@@ -109,6 +112,10 @@ export function ListingCard({
   const guests = listing.guestsMax ?? null;
   const previewTags = amenityPreview(listing.amenities, 3, locale);
   const isBnhub = listing.type === "BNHUB";
+  const nightly =
+    "pricePerNight" in listing && typeof (listing as { pricePerNight?: number | null }).pricePerNight === "number"
+      ? (listing as { pricePerNight: number }).pricePerNight
+      : null;
   const planTier = ("plan" in listing && listing.plan ? listing.plan : "free") as "free" | "featured" | "premium";
   const created =
     "createdAt" in listing && listing.createdAt ?
@@ -226,6 +233,11 @@ export function ListingCard({
           planTier === "premium" && "sm:gap-2.5 sm:p-5",
         )}
       >
+        {"adCode" in listing && listing.adCode ? (
+          <p className="mb-1 text-[11px] font-semibold tabular-nums text-[color:var(--darlink-text-muted)] [dir:ltr]">
+            {listing.adCode}
+          </p>
+        ) : null}
         <h3
           className={cn("line-clamp-2 text-base font-semibold leading-snug text-[color:var(--darlink-text)]", planTier === "premium" && "sm:text-lg")}
         >
@@ -251,14 +263,14 @@ export function ListingCard({
         {isBnhub && guests != null ? (
           <p className="text-xs text-[color:var(--darlink-text-muted)]">{t("cardGuestsMax", { n: guests })}</p>
         ) : null}
-        {isBnhub && previewTags.length > 0 ? (
+        {(isBnhub || isStay) && previewTags.length > 0 ? (
           <p className="line-clamp-1 text-[11px] text-[color:var(--darlink-text-muted)]">{previewTags.join(" · ")}</p>
         ) : null}
         <div className="mt-auto border-t border-[color:var(--darlink-border)]/60 pt-3">
           <p className="text-xl font-bold tabular-nums leading-tight text-[color:var(--darlink-text)] sm:text-2xl">
-            {formatSyriaCurrency(listing.price, listing.currency, locale)}
+            {formatSyriaCurrency(isStay && nightly != null ? nightly : listing.price, listing.currency, locale)}
           </p>
-          {isBnhub ? (
+          {isBnhub || isStay ? (
             <p className="mt-0.5 text-[11px] font-medium uppercase tracking-wide text-[color:var(--darlink-text-muted)]">
               {t("cardPerNight")}
             </p>

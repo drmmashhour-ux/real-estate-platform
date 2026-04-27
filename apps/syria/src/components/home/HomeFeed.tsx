@@ -1,16 +1,16 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { FeedListingCard } from "@/components/FeedListingCard";
 import { Card } from "@/components/ui/Card";
 import type { SyriaProperty } from "@/generated/prisma";
-import { useInView } from "react-intersection-observer";
 import { cn } from "@/lib/cn";
 
 type Item = Pick<
   SyriaProperty,
   | "id"
+  | "adCode"
   | "titleAr"
   | "titleEn"
   | "state"
@@ -18,6 +18,9 @@ type Item = Pick<
   | "city"
   | "cityAr"
   | "cityEn"
+  | "area"
+  | "districtAr"
+  | "districtEn"
   | "price"
   | "currency"
   | "images"
@@ -61,12 +64,21 @@ export function HomeFeed({ initial, locale, emptyKey }: { initial: Item[]; local
     }
   }, [hasMore, loading, nextOffset]);
 
-  const { ref: sentinelRef } = useInView({
-    rootMargin: "320px 0px",
-    onChange: (inView) => {
-      if (inView) void load();
-    },
-  });
+  const sentRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const el = sentRef.current;
+    if (!el || !hasMore) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) void load();
+        }
+      },
+      { root: null, rootMargin: "320px 0px", threshold: 0.01 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [load, hasMore, items.length, nextOffset]);
 
   if (items.length === 0) {
     return <Card className="border-dashed p-8 text-center text-sm text-[color:var(--darlink-text-muted)]">{emptyKey}</Card>;
@@ -78,7 +90,7 @@ export function HomeFeed({ initial, locale, emptyKey }: { initial: Item[]; local
         <FeedListingCard key={l.id} listing={l} locale={locale} priority={i < 4} />
       ))}
       {hasMore ? (
-        <div className="pt-1" ref={sentinelRef}>
+        <div className="pt-1" ref={sentRef}>
           <button
             type="button"
             onClick={() => void load()}

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
@@ -23,6 +24,8 @@ import { RelatedListings } from "@/components/listing/RelatedListings";
 import { ListingTrustPanel } from "@/components/listing/ListingTrustPanel";
 import { ListingShareActions } from "@/components/listing/ListingShareActions";
 import { ListingPostSuccessNudge } from "@/components/listing/ListingPostSuccessNudge";
+import { PostSuccessTopBanner } from "@/components/listing/PostSuccessTopBanner";
+import { ListingAdCodeQrRow } from "@/components/listing/ListingAdCodeQrRow";
 import { fuzzLatLngForDisplay } from "@/lib/geo";
 import { ListingApproximateMap } from "@/components/listing/ListingApproximateMap";
 import { ListingMobileBookingBar } from "@/components/listing/ListingMobileBookingBar";
@@ -118,8 +121,12 @@ export default async function ListingDetailPage(props: Props) {
       ? fuzzLatLngForDisplay(listing.id, listing.latitude, listing.longitude)
       : null;
   const numberLoc = locale.startsWith("ar") ? "ar-SY" : "en-US";
-  const sharePriceLine = money(listing.price, listing.currency, numberLoc);
-  const sharePriceAmount = Number(listing.price);
+  const isSybnbStay = listing.category === "stay";
+  const nightlyForUi = listing.pricePerNight != null ? listing.pricePerNight : Number(listing.price);
+  const sharePriceLine = isSybnbStay
+    ? `${money(nightlyForUi, listing.currency, numberLoc)} · ${t("cardPerNight")}`
+    : money(listing.price, listing.currency, numberLoc);
+  const sharePriceAmount = isSybnbStay ? nightlyForUi : Number(listing.price);
 
   const images = listing.images.filter((x) => x.length > 0);
   const photoQualityHighlight = images.length >= 3;
@@ -194,8 +201,9 @@ export default async function ListingDetailPage(props: Props) {
     seenH.add(d);
     highlightLines.push(d);
   }
-  /** Visitors with a contact card get share in the aside; main column for everyone else and for after-post. */
-  const showShareInMain = !showContactAside || showAfterPostShare;
+  /** Visitors with a contact card get share in the aside; main column for everyone else. After-post CTA is under the title. */
+  const showShareInMain = !showContactAside;
+  const showShareBlockAfterGallery = showShareInMain && !showAfterPostShare;
   const viewCountStored = listing.views ?? 0;
   const showOwnerUpgradeSticky = isOwner && listing.plan === "free" && viewCountStored >= 10;
 
@@ -215,8 +223,14 @@ export default async function ListingDetailPage(props: Props) {
       >
         <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start lg:gap-10">
           <div className="min-w-0 space-y-10">
+            {showAfterPostShare ? (
+              <Suspense fallback={null}>
+                <PostSuccessTopBanner />
+              </Suspense>
+            ) : null}
             <header>
-              <div className="flex flex-wrap items-center gap-2">
+              <ListingAdCodeQrRow listingId={id} adCode={listing.adCode} />
+              <div className="mt-4 flex flex-wrap items-center gap-2">
                 <span className="rounded-full bg-[color:var(--darlink-surface-muted)] px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-[color:var(--darlink-text-muted)]">
                   {listing.type}
                 </span>
@@ -261,6 +275,49 @@ export default async function ListingDetailPage(props: Props) {
                 {!syriaFlags.SYRIA_MVP ? <VerifiedBadge label={t("reviewedBadge")} /> : null}
               </div>
               <h1 className="mt-4 text-3xl font-bold tracking-tight text-[color:var(--darlink-text)] sm:text-4xl">{titleDisplay}</h1>
+              {showMakeFeatured ? (
+                <div
+                  id="r1-upgrade"
+                  className="mt-4 space-y-4 [dir:rtl]:text-right"
+                  dir={locale.startsWith("ar") ? "rtl" : "ltr"}
+                >
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--darlink-text-muted)]">
+                      {isSybnbStay ? t("sybnbNightlyLabel") : t("priceLabel")}
+                    </p>
+                    <p className="mt-1 text-2xl font-bold tabular-nums text-[color:var(--darlink-text)] sm:text-3xl">
+                      {money(nightlyForUi, listing.currency, numberLoc)}
+                    </p>
+                    {isSybnbStay ? (
+                      <p className="mt-0.5 text-xs font-medium text-[color:var(--darlink-text-muted)]">{t("cardPerNight")}</p>
+                    ) : null}
+                  </div>
+                  <MakeFeaturedCta
+                    listingId={listing.id}
+                    currentPlan={listing.plan}
+                    contact={monetizationContact}
+                    featuredDurationDays={syriaPlatformConfig.monetization.featuredDurationDays}
+                    viewCount={viewCountStored}
+                    isDirect={listing.isDirect === true}
+                  />
+                </div>
+              ) : null}
+              {showAfterPostShare ? (
+                <Suspense fallback={null}>
+                  <ListingPostSuccessNudge urlGated>
+                    <ListingShareActions
+                      variant="growth"
+                      listingId={id}
+                      shareTitle={titleDisplay}
+                      sharePriceLine={sharePriceLine}
+                      shareCity={cityDisplay ?? undefined}
+                      sharePriceAmount={sharePriceAmount}
+                      whatsappLabel={t("shareViaWhatsappCta")}
+                      copyButtonLabel={t("copyLink")}
+                    />
+                  </ListingPostSuccessNudge>
+                </Suspense>
+              ) : null}
               {listing.isDirect ? (
                 <p className="mt-2 text-sm font-medium text-[color:var(--darlink-text)]">{t("directTrustLine")}</p>
               ) : null}
@@ -284,36 +341,29 @@ export default async function ListingDetailPage(props: Props) {
                 {areaDisplay ? <p>{areaDisplay}</p> : null}
                 {listing.addressDetails?.trim() ? <p className="whitespace-pre-wrap">{listing.addressDetails.trim()}</p> : null}
               </div>
-              <p className="mt-3 text-2xl font-bold tabular-nums text-[color:var(--darlink-text)] lg:hidden">
-                {money(listing.price, listing.currency, numberLoc)}
-              </p>
+              {!showMakeFeatured ? (
+                <div className="mt-3 lg:hidden">
+                  <p className="text-2xl font-bold tabular-nums text-[color:var(--darlink-text)]">
+                    {isSybnbStay ? money(nightlyForUi, listing.currency, numberLoc) : money(listing.price, listing.currency, numberLoc)}
+                  </p>
+                  {isSybnbStay ? (
+                    <p className="mt-0.5 text-xs font-medium text-[color:var(--darlink-text-muted)]">{t("cardPerNight")}</p>
+                  ) : null}
+                </div>
+              ) : null}
             </header>
 
             <PropertyImageGallery images={images} title={titleDisplay} />
 
             <div className="min-w-0 max-w-full space-y-2">
-              {showShareInMain ? (
-                showAfterPostShare ? (
-                  <ListingPostSuccessNudge>
-                    <ListingShareActions
-                      variant="growth"
-                      listingId={id}
-                      shareTitle={titleDisplay}
-                      sharePriceLine={sharePriceLine}
-                      shareCity={cityDisplay ?? undefined}
-                      whatsappLabel={t("shareViaWhatsappCta")}
-                      copyButtonLabel={t("copyLink")}
-                    />
-                  </ListingPostSuccessNudge>
-                ) : (
-                  <ListingShareActions
-                    listingId={id}
-                    shareTitle={titleDisplay}
-                    sharePriceLine={sharePriceLine}
-                    shareCity={cityDisplay ?? undefined}
-                    sharePriceAmount={sharePriceAmount}
-                  />
-                )
+              {showShareBlockAfterGallery ? (
+                <ListingShareActions
+                  listingId={id}
+                  shareTitle={titleDisplay}
+                  sharePriceLine={sharePriceLine}
+                  shareCity={cityDisplay ?? undefined}
+                  sharePriceAmount={sharePriceAmount}
+                />
               ) : null}
               <p className="text-xs text-[color:var(--darlink-text-muted)]" aria-live="polite">
                 {t("leadTapsLine", { count: (listing.whatsappClicks ?? 0) + (listing.phoneClicks ?? 0) })}
@@ -418,11 +468,15 @@ export default async function ListingDetailPage(props: Props) {
 
           <aside className="mt-10 space-y-4 lg:sticky lg:top-24 lg:mt-0">
             <Card className="overflow-hidden border-[color:var(--darlink-border)] p-6 shadow-[var(--darlink-shadow-md)]">
-              <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--darlink-text-muted)]">{t("priceLabel")}</p>
-              <p className="mt-2 text-3xl font-bold tabular-nums text-[color:var(--darlink-text)]">
-                {money(listing.price, listing.currency, numberLoc)}
+              <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--darlink-text-muted)]">
+                {isSybnbStay ? t("sybnbNightlyLabel") : t("priceLabel")}
               </p>
-              <p className="mt-3 text-xs leading-relaxed text-[color:var(--darlink-text-muted)]">{t("priceHint")}</p>
+              <p className="mt-2 text-3xl font-bold tabular-nums text-[color:var(--darlink-text)]">
+                {money(nightlyForUi, listing.currency, numberLoc)}
+              </p>
+              <p className="mt-3 text-xs leading-relaxed text-[color:var(--darlink-text-muted)]">
+                {isSybnbStay ? t("sybnbNightlyHint") : t("priceHint")}
+              </p>
             </Card>
 
             {isOwner ? (
@@ -449,16 +503,6 @@ export default async function ListingDetailPage(props: Props) {
                 <p className="text-sm font-semibold text-amber-950">{t("f1PaymentPending")}</p>
                 <p className="mt-1 text-xs text-amber-900/90">{t("f1PaymentPendingHint")}</p>
               </Card>
-            ) : null}
-            {showMakeFeatured ? (
-              <MakeFeaturedCta
-                listingId={listing.id}
-                currentPlan={listing.plan}
-                contact={monetizationContact}
-                featuredDurationDays={syriaPlatformConfig.monetization.featuredDurationDays}
-                viewCount={viewCountStored}
-                isDirect={listing.isDirect === true}
-              />
             ) : null}
             {isOwner && (listing.plan === "featured" || listing.plan === "premium") ? (
               <Card className="border-[color:var(--darlink-sand)]/30 bg-amber-50/30 p-4 shadow-[var(--darlink-shadow-sm)]">
@@ -551,6 +595,7 @@ export default async function ListingDetailPage(props: Props) {
                 sharePriceLine={sharePriceLine}
                 shareCity={cityDisplay ?? undefined}
                 sharePriceAmount={sharePriceAmount}
+                adCode={listing.adCode}
               />
             ) : null}
           </aside>

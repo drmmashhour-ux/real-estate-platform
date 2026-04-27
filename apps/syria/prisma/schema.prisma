@@ -118,11 +118,15 @@ model SyriaAppUser {
   email     String        @unique
   name      String?
   phone     String?
+  /// S1: set when phone verified via SMS/WhatsApp OTP (soft trust).
+  phoneVerifiedAt DateTime?            @map("phone_verified_at")
   role      SyriaUserRole @default(USER)
   createdAt DateTime      @default(now()) @map("created_at")
   updatedAt DateTime      @updatedAt @map("updated_at")
 
   propertiesOwned       SyriaProperty[]           @relation("PropertyOwner")
+  phoneOtps                 SyriaPhoneOtp[]
+  listingReportsFiled   SyriaListingReport[]      @relation("ListingReportReporter")
   bookingsAsGuest       SyriaBooking[]            @relation("BookingGuest")
   payoutsReceived       SyriaPayout[]             @relation("PayoutHost")
   listingPayments       SyriaListingPayment[]
@@ -158,6 +162,8 @@ model SyriaProperty {
   descriptionAr    String              @map("description_ar") @db.Text
   descriptionEn    String?             @map("description_en") @db.Text
   price            Decimal             @db.Decimal(14, 2)
+  /// Nightly rate for `category = stay` (SYBNB); optional; `price` should mirror for sort/filters.
+  pricePerNight    Int?                @map("price_per_night")
   currency         String              @default("SYP")
   type             SyriaPropertyType
   /// Syrian governorate — English label from `SYRIA_STATES` (structured filter + display).
@@ -201,6 +207,8 @@ model SyriaProperty {
   /// Browse sort: plan descending → featured listings surface before free.
   plan             SyriaListingPlan    @default(free) @map("plan")
   fraudFlag        Boolean             @default(false) @map("fraud_flag")
+  /// S1: ≥3 user reports — queued for admin (with status PENDING_REVIEW).
+  needsReview      Boolean             @default(false) @map("needs_review")
   /// Admin/manual "Verified" — UI badge only; no auto logic.
   listingVerified  Boolean             @default(false) @map("listing_verified")
   /// SY-11: explicit trust / marketplace verification (operator-set).
@@ -221,6 +229,8 @@ model SyriaProperty {
   /// SY-22: direct owner deal (no broker) — `true` is default; boosts sort and trust UI.
   isDirect         Boolean             @default(true) @map("is_direct")
   guestsMax        Int?                @map("guests_max")
+  /// SY-28: human-friendly listing code, e.g. RE-1001 (global number + category prefix).
+  adCode           String              @unique @map("ad_code")
   createdAt        DateTime            @default(now()) @map("created_at")
   updatedAt        DateTime            @updatedAt @map("updated_at")
 
@@ -231,6 +241,7 @@ model SyriaProperty {
   autonomyRecommendations   SyriaAutonomyRecommendation[]
   paymentRequestsF1         SyriaPaymentRequest[]   @relation("PropertyPaymentRequest")
   listingFinanceF1          SyriaListingFinance?   @relation("PropertyListingFinance")
+  listingReports            SyriaListingReport[]    @relation("PropertyReports")
 
   @@index([city])
   @@index([state])
@@ -240,7 +251,47 @@ model SyriaProperty {
   @@index([isDirect])
   @@index([category, subcategory])
   @@index([category])
+  @@index([status, needsReview, createdAt])
   @@map("syria_properties")
+}
+
+/// S1: short-lived phone verification code (hashed at rest).
+model SyriaPhoneOtp {
+  id        String       @id @default(cuid())
+  userId    String       @map("user_id")
+  user      SyriaAppUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  codeHash  String       @map("code_hash")
+  expiresAt DateTime     @map("expires_at")
+  createdAt DateTime     @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("syria_phone_otp")
+}
+
+/// S1: user report on a listing (fraud, wrong price, duplicate).
+model SyriaListingReport {
+  id         String        @id @default(cuid())
+  propertyId String        @map("property_id")
+  property   SyriaProperty @relation("PropertyReports", fields: [propertyId], references: [id], onDelete: Cascade)
+  reporterId String?       @map("reporter_id")
+  reporter   SyriaAppUser? @relation("ListingReportReporter", fields: [reporterId], references: [id], onDelete: SetNull)
+  /// "fraud" | "wrong_price" | "duplicate"
+  reason     String
+  createdAt  DateTime      @default(now()) @map("created_at")
+
+  @@index([propertyId])
+  @@index([createdAt])
+  @@map("syria_listing_reports")
+}
+
+/// Monotonic counter for `SyriaProperty.adCode` (SY-28). Single row `id = global`.
+model SyriaAdCodeSequence {
+  id      String @id
+  /// Last assigned number; first increment after migration yields the next public code.
+  nextSeq Int    @default(1000) @map("next_seq")
+
+  @@map("syria_ad_code_sequence")
 }
 
 model SyriaBooking {

@@ -75,5 +75,5 @@ export async function POST(req: Request) {
   }
 
   revalidateAllLocaleHomePages();
-  return NextResponse.json({ ok: true, id: out.id });
+  return NextResponse.json({ ok: true, id: out.id, adCode: out.adCode });
 }

@@ -6,6 +6,7 @@ function parseSurface(v: string | null): BrowseSurface | null {
   if (s === "sale" || s === "buy") return "sale";
   if (s === "rent") return "rent";
   if (s === "bnhub" || s === "stays") return "bnhub";
+  if (s === "stay" || s === "sybnb") return "stay";
   return null;
 }
 
@@ -18,7 +19,7 @@ export async function GET(req: Request) {
   const surface = parseSurface(url.searchParams.get("surface"));
   if (!surface) {
     return NextResponse.json(
-      { error: "Missing or invalid surface (use sale, rent, or bnhub)." },
+      { error: "Missing or invalid surface (use sale, rent, bnhub, or stay)." },
       { status: 400 },
     );
   }

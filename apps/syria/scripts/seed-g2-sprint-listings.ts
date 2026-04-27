@@ -5,6 +5,7 @@
  *   cd apps/syria && pnpm exec tsx scripts/seed-g2-sprint-listings.ts
  */
 import { PrismaClient, Prisma } from "../src/generated/prisma";
+import { allocateAdCodeInTransaction } from "../src/lib/syria/ad-code";
 
 const prisma = new PrismaClient();
 
@@ -64,41 +65,45 @@ async function main() {
   });
 
   for (const r of rows) {
-    await prisma.syriaProperty.create({
-      data: {
-        titleAr: r.titleAr,
-        titleEn: null,
-        descriptionAr: r.descriptionAr,
-        descriptionEn: null,
-        state: r.state,
-        governorate: r.governorate,
-        city: r.city,
-        cityAr: r.cityAr,
-        cityEn: r.city,
-        area: r.area,
-        districtAr: r.area,
-        districtEn: null,
-        placeName: null,
-        addressText: null,
-        addressDetails: null,
-        latitude: null,
-        longitude: null,
-        price: new Prisma.Decimal(r.price),
-        currency: "SYP",
-        type: r.type,
-        images: [],
-        amenities: r.amenities,
-        ownerId: owner.id,
-        status: "PUBLISHED",
-        plan: "free",
-        fraudFlag: false,
-        listingVerified: false,
-        verified: false,
-        isFeatured: false,
-        featuredUntil: null,
-        featuredPriority: 0,
-        neighborhood: r.area,
-      },
+    await prisma.$transaction(async (tx) => {
+      const adCode = await allocateAdCodeInTransaction(tx, "real_estate");
+      await tx.syriaProperty.create({
+        data: {
+          adCode,
+          titleAr: r.titleAr,
+          titleEn: null,
+          descriptionAr: r.descriptionAr,
+          descriptionEn: null,
+          state: r.state,
+          governorate: r.governorate,
+          city: r.city,
+          cityAr: r.cityAr,
+          cityEn: r.city,
+          area: r.area,
+          districtAr: r.area,
+          districtEn: null,
+          placeName: null,
+          addressText: null,
+          addressDetails: null,
+          latitude: null,
+          longitude: null,
+          price: new Prisma.Decimal(r.price),
+          currency: "SYP",
+          type: r.type,
+          images: [],
+          amenities: r.amenities,
+          ownerId: owner.id,
+          status: "PUBLISHED",
+          plan: "free",
+          fraudFlag: false,
+          listingVerified: false,
+          verified: false,
+          isFeatured: false,
+          featuredUntil: null,
+          featuredPriority: 0,
+          neighborhood: r.area,
+        },
+      });
     });
   }
 

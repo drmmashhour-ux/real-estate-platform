@@ -15,6 +15,7 @@ export function ListingOwnerContactCard({
   sharePriceLine,
   shareCity,
   sharePriceAmount,
+  adCode,
 }: {
   listingId: string;
   waOwnerHref: string | null;
@@ -25,6 +26,7 @@ export function ListingOwnerContactCard({
   sharePriceLine?: string;
   shareCity?: string;
   sharePriceAmount?: number;
+  adCode?: string;
 }) {
   const t = useTranslations("Listing");
   return (
@@ -69,6 +71,7 @@ export function ListingOwnerContactCard({
             sharePriceLine={sharePriceLine}
             shareCity={shareCity}
             sharePriceAmount={sharePriceAmount}
+            adCode={adCode}
           />
         </div>
       ) : null}

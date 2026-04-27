@@ -11,7 +11,7 @@ import {
   parseSearchNumber,
 } from "@/lib/property-search";
 
-export type BrowseSurface = "sale" | "rent" | "bnhub";
+export type BrowseSurface = "sale" | "rent" | "bnhub" | "stay";
 
 export type SerializedBrowseListing = {
   id: string;
@@ -45,12 +45,16 @@ export type SerializedBrowseListing = {
   verified: boolean;
   /** SY-22: no broker / direct owner */
   isDirect: boolean;
+  /** SY-28 */
+  adCode: string;
   /** ISO */
   createdAt: string;
   /** Page views (simple counter) */
   views: number;
   category: string;
   subcategory: string;
+  /** Nightly SYP for SYBNB; null if unset. */
+  pricePerNight: number | null;
 };
 
 export type SearchPropertiesResult = {
@@ -98,10 +102,12 @@ function serialize(p: SyriaProperty): SerializedBrowseListing {
     listingVerified: p.listingVerified,
     verified: p.verified,
     isDirect: p.isDirect,
+    adCode: p.adCode,
     createdAt: p.createdAt.toISOString(),
     views: p.views,
     category: p.category,
     subcategory: p.subcategory,
+    pricePerNight: p.pricePerNight ?? null,
   };
 }
 
@@ -127,9 +133,13 @@ export async function searchProperties(
 ): Promise<SearchPropertiesResult> {
   const kind = surfaceToKind(surface);
   const flatMvp: Record<string, string> = normalizeSearchParams(rawParams);
+  if (surface === "stay") {
+    flatMvp.category = "stay";
+  }
   const flat: Record<string, string> = syriaFlags.SYRIA_MVP
     ? ((() => {
         const allow = new Set([
+          "q",
           "city",
           "state",
           "features",

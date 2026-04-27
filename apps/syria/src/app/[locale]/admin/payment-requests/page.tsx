@@ -5,6 +5,8 @@ import { money } from "@/lib/format";
 import { pickListingTitle } from "@/lib/listing-localized";
 import { adminF1ConfirmFormAction, adminF1RejectFormAction } from "@/actions/payment-f1-admin";
 import { AdminF1Tabs, type AdminF1Filter } from "@/components/admin/AdminF1Tabs";
+import { F1M2ClosingSection } from "@/components/admin/F1M2ClosingSection";
+import { getF1DailyClosingStats } from "@/lib/monetization-f1-daily-stats";
 import type { Prisma } from "@/generated/prisma";
 
 type PageProps = { searchParams: Promise<Record<string, string | string[] | undefined>> };
@@ -42,8 +44,11 @@ export default async function AdminF1PaymentRequestsPage({ searchParams }: PageP
   const sp = await searchParams;
   const raw = typeof sp.filter === "string" ? sp.filter : "all";
   const filter: AdminF1Filter =
-    raw === "pending" || raw === "active" || raw === "expired" || raw === "archived" ? raw : "all";
+    raw === "pending" || raw === "followup" || raw === "active" || raw === "expired" || raw === "archived"
+      ? raw
+      : "all";
   const { where } = buildF1Where(filter);
+  const daily = await getF1DailyClosingStats();
 
   const rows = await prisma.syriaPaymentRequest.findMany({
     where,
@@ -58,6 +63,33 @@ export default async function AdminF1PaymentRequestsPage({ searchParams }: PageP
         <h2 className="text-lg font-semibold text-stone-900">{t("f1RequestsTitle")}</h2>
         <p className="mt-1 text-sm text-stone-600">{t("f1RequestsIntro")}</p>
       </div>
+
+      <section className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
+        <h3 className="text-sm font-bold text-stone-900">{t("f1M2DailyLogTitle")}</h3>
+        <p className="mt-0.5 text-xs text-stone-500">{t("f1M2DailyLogHint")}</p>
+        <dl className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-xl bg-stone-50 px-3 py-2">
+            <dt className="text-xs font-medium text-stone-500">{t("f1M2StatPending")}</dt>
+            <dd className="text-lg font-bold tabular-nums text-stone-900">{daily.pendingCount}</dd>
+          </div>
+          <div className="rounded-xl bg-stone-50 px-3 py-2">
+            <dt className="text-xs font-medium text-stone-500">{t("f1M2StatRequestsToday")}</dt>
+            <dd className="text-lg font-bold tabular-nums text-stone-900">{daily.requestsCreatedToday}</dd>
+          </div>
+          <div className="rounded-xl bg-stone-50 px-3 py-2">
+            <dt className="text-xs font-medium text-stone-500">{t("f1M2StatPaymentsToday")}</dt>
+            <dd className="text-lg font-bold tabular-nums text-stone-900">{daily.paymentsConfirmedToday}</dd>
+          </div>
+          <div className="rounded-xl bg-amber-50 px-3 py-2 ring-1 ring-amber-200/80">
+            <dt className="text-xs font-medium text-amber-900/80">{t("f1M2StatRevenueToday")}</dt>
+            <dd className="text-lg font-bold tabular-nums text-amber-950">
+              {money(daily.revenueSypToday, "SYP", numberLoc)}
+            </dd>
+          </div>
+        </dl>
+      </section>
+
+      <F1M2ClosingSection />
 
       <AdminF1Tabs current={filter} t={t} />
 
@@ -85,8 +117,13 @@ export default async function AdminF1PaymentRequestsPage({ searchParams }: PageP
                 const listing = r.listing;
                 const title = listing ? pickListingTitle(listing, locale) : "—";
                 const pending = r.status === "pending";
+                const ageMs = Date.now() - r.createdAt.getTime();
+                const needsFollowup = pending && ageMs >= 12 * 60 * 60 * 1000;
                 return (
-                  <tr key={r.id} className="border-t border-stone-100 align-top">
+                  <tr
+                    key={r.id}
+                    className={`border-t border-stone-100 align-top ${needsFollowup ? "bg-amber-50/80" : ""}`}
+                  >
                     <td className="px-3 py-3 font-mono text-xs text-stone-700">{r.id}</td>
                     <td className="px-3 py-3">
                       {listing ? (
@@ -107,7 +144,16 @@ export default async function AdminF1PaymentRequestsPage({ searchParams }: PageP
                     <td className="px-3 py-3 tabular-nums text-stone-700" dir="ltr">
                       {r.pricingTier}
                     </td>
-                    <td className="px-3 py-3 text-stone-800">{r.status}</td>
+                    <td className="px-3 py-3 text-stone-800">
+                      <span className="inline-flex flex-col gap-1">
+                        <span>{r.status}</span>
+                        {needsFollowup ? (
+                          <span className="w-fit rounded-full bg-amber-200/90 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-950">
+                            {t("f1M2FollowupBadge")}
+                          </span>
+                        ) : null}
+                      </span>
+                    </td>
                     <td className="px-3 py-3 text-xs text-stone-500">
                       {r.createdAt.toLocaleString(locale.startsWith("ar") ? "ar-SY" : "en-GB", {
                         dateStyle: "short",

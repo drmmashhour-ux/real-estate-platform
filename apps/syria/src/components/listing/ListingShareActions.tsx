@@ -26,6 +26,8 @@ type Props = {
   copyButtonLabel?: string;
   /** Arabic viral: amount + " ل.س" in `buildListingShareMessage` */
   sharePriceAmount?: number;
+  /** SY-28 */
+  adCode?: string;
 };
 
 export function ListingShareActions({
@@ -37,6 +39,7 @@ export function ListingShareActions({
   whatsappLabel,
   copyButtonLabel,
   sharePriceAmount,
+  adCode,
 }: Props) {
   const t = useTranslations("Listing");
   const locale = useLocale();
@@ -56,11 +59,12 @@ export function ListingShareActions({
         url: fullUrl,
         locale,
         city: shareCity,
+        adCode,
         priceAmount: sharePriceAmount,
       });
     }
     return t("shareWhatsAppBody", { url: fullUrl });
-  }, [fullUrl, shareTitle, sharePriceLine, shareCity, sharePriceAmount, locale, t]);
+  }, [fullUrl, shareTitle, sharePriceLine, shareCity, sharePriceAmount, adCode, locale, t]);
 
   async function onCopy() {
     if (!fullUrl) return;

@@ -1,10 +1,11 @@
 import { Link } from "@/i18n/navigation";
 
-export type AdminF1Filter = "all" | "pending" | "active" | "expired" | "archived" | "stats";
+export type AdminF1Filter = "all" | "pending" | "followup" | "active" | "expired" | "archived" | "stats";
 
 const TAB_KEYS: { id: AdminF1Filter; msg: string }[] = [
   { id: "all", msg: "tabAll" },
   { id: "pending", msg: "tabPending" },
+  { id: "followup", msg: "tabFollowup" },
   { id: "active", msg: "tabActive" },
   { id: "expired", msg: "tabExpired" },
   { id: "archived", msg: "tabArchived" },
