@@ -67,3 +67,19 @@ export function productionRequiresDatabaseSslStrict(): boolean {
     process.env.REQUIRE_DATABASE_SSL_IN_URL === "1"
   );
 }
+
+/**
+ * For non-local PostgreSQL URLs, appends `sslmode=require` when no explicit strict TLS mode is set.
+ * Respects `sslmode=disable` / `allow` (returns unchanged). Supabase pooler + Prisma expect TLS.
+ */
+export function ensureDatabaseUrlSslModeRequireForRemote(urlStr: string): string {
+  const raw = urlStr.trim();
+  const u = parsePostgresUrl(raw);
+  if (!u) return urlStr;
+  if (isLocalDatabaseHost(u.hostname)) return urlStr;
+  const mode = (u.searchParams.get("sslmode") ?? "").toLowerCase();
+  if (mode === "disable" || mode === "allow") return urlStr;
+  if (databaseUrlDeclaresSsl(u)) return urlStr;
+  u.searchParams.set("sslmode", "require");
+  return u.toString();
+}

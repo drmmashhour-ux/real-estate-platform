@@ -66,6 +66,8 @@ export type BnhubListingForRanking = {
   verificationStatus?: string;
   bnhubListingRatingAverage?: number | null;
   bnhubListingReviewCount?: number | null;
+  /** When returned by search / listing APIs for social proof. */
+  bnhubListingViewCount?: number | null;
   bnhubListingCompletedStays?: number | null;
   _count?: { reviews?: number; bookings?: number };
   reviews?: { propertyRating?: number }[];

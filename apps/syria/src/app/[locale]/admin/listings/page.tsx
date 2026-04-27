@@ -6,6 +6,7 @@ import {
   rejectProperty,
   verifyListingPayment,
   setPropertyFraudFlag,
+  setSybnbListingReview,
 } from "@/actions/admin";
 import { getDarlinkAutonomyFlags } from "@/lib/platform-flags";
 import { money } from "@/lib/format";
@@ -63,6 +64,11 @@ export default async function AdminListingsPage() {
                     </span>
                   ) : null}
                 </p>
+                {p.category === "stay" ? (
+                  <p className="mt-1 text-xs text-stone-600">
+                    {t("sybnbReviewLabel")}: <strong>{p.sybnbReview}</strong>
+                  </p>
+                ) : null}
               </div>
               <div className="flex flex-wrap gap-2">
                 <form action={approveProperty}>
@@ -83,6 +89,40 @@ export default async function AdminListingsPage() {
                     {t("reject")}
                   </button>
                 </form>
+                {p.category === "stay" ? (
+                  <>
+                    <form action={setSybnbListingReview} className="inline">
+                      <input type="hidden" name="propertyId" value={p.id} />
+                      <input type="hidden" name="review" value="APPROVED" />
+                      <button
+                        type="submit"
+                        className="rounded-lg bg-sky-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-sky-800"
+                      >
+                        {t("sybnbApproveShortStay")}
+                      </button>
+                    </form>
+                    <form action={setSybnbListingReview} className="inline">
+                      <input type="hidden" name="propertyId" value={p.id} />
+                      <input type="hidden" name="review" value="REJECTED" />
+                      <button
+                        type="submit"
+                        className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-950 hover:bg-amber-100"
+                      >
+                        {t("sybnbRejectShortStay")}
+                      </button>
+                    </form>
+                    <form action={setSybnbListingReview} className="inline">
+                      <input type="hidden" name="propertyId" value={p.id} />
+                      <input type="hidden" name="review" value="PENDING" />
+                      <button
+                        type="submit"
+                        className="rounded-lg border border-stone-200 bg-stone-50 px-3 py-1.5 text-xs font-semibold text-stone-800 hover:bg-stone-100"
+                      >
+                        {t("sybnbResetShortStay")}
+                      </button>
+                    </form>
+                  </>
+                ) : null}
               </div>
             </div>
 

@@ -191,6 +191,11 @@ export function buildPropertyWhere(
     andParts.push({ isDirect: true });
   }
 
+  if (kind === "stay") {
+    andParts.push({ sybnbReview: "APPROVED" });
+    andParts.push({ owner: { sybnbSupplyPaused: false } });
+  }
+
   const base: Prisma.SyriaPropertyWhereInput = {
     type,
     status: "PUBLISHED",

@@ -3,6 +3,7 @@ import { createListing } from "@/lib/bnhub/listings";
 import { getGuestId } from "@/lib/auth/session";
 import { assertCanCreateListing } from "@/lib/compliance/professional-compliance";
 import { postCreateShortTermListingFlow } from "@/lib/bnhub/post-create-short-term-listing";
+import { HostPublishIdentityError } from "@/lib/compliance/identityGateForPublish";
 
 export const dynamic = "force-dynamic";
 
@@ -106,6 +107,9 @@ export async function POST(req: NextRequest) {
 
     return Response.json({ listing: flow.listing });
   } catch (e) {
+    if (e instanceof HostPublishIdentityError) {
+      return Response.json({ error: e.message }, { status: 403 });
+    }
     console.error(e);
     return Response.json(
       { error: e instanceof Error ? e.message : "Failed to create listing" },

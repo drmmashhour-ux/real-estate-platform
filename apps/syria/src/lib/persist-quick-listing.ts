@@ -15,6 +15,7 @@ import {
 import { allocateAdCodeInTransaction } from "@/lib/syria/ad-code";
 import { runAntiFraudGuardsForPublish } from "@/lib/anti-fraud/guards";
 import { ensureGuestUserForPhone } from "@/lib/syria-mvp-guest";
+import { sybnbConfig } from "@/config/sybnb.config";
 
 export type PersistQuickListingResult =
   | {
@@ -97,7 +98,7 @@ export async function persistQuickListing(input: {
   let user = await getSessionUser();
   if (!user) {
     const ensured = await ensureGuestUserForPhone(phone, titleAr.slice(0, 120));
-    user = (await prisma.syriaAppUser.findUniqueOrThrow({ where: { id: ensured.id } })) as typeof user;
+    user = await prisma.syriaAppUser.findUniqueOrThrow({ where: { id: ensured.id } });
     await setSessionUserId(user.id);
   }
 
@@ -158,6 +159,11 @@ export async function persistQuickListing(input: {
         listingVerified: false,
         verified: false,
         isDirect,
+        ...(category === "stay" ?
+          {
+            sybnbReview: sybnbConfig.autoApproveStays ? "APPROVED" : "PENDING",
+          }
+        : {}),
       },
     });
   });

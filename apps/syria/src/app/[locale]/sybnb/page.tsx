@@ -1,5 +1,5 @@
-import { getLocale, getTranslations } from "next-intl/server";
-import { SectionHeading } from "@/components/ui/SectionHeading";
+import { getLocale } from "next-intl/server";
+import { SybnbHomeHero } from "@/components/sybnb/SybnbHomeHero";
 import { BrowseExperienceClient } from "@/components/browse/BrowseExperienceClient";
 import { BrowseMvpExperienceClient } from "@/components/browse/BrowseMvpExperienceClient";
 import { syriaFlags } from "@/lib/platform-flags";
@@ -21,7 +21,6 @@ function toInitialQs(flat: Record<string, string>): string {
 }
 
 export default async function SybnbPage(props: Props) {
-  const t = await getTranslations("Sybnb");
   const locale = await getLocale();
   const spRaw = await props.searchParams;
   const flatRaw = flattenSearchParams(spRaw);
@@ -53,7 +52,7 @@ export default async function SybnbPage(props: Props) {
 
   return (
     <div className="space-y-8">
-      <SectionHeading title={t("title")} description={t("subtitle")} />
+      <SybnbHomeHero />
       {syriaFlags.SYRIA_MVP ? (
         <BrowseMvpExperienceClient
           surface="stay"

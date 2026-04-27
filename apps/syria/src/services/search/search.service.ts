@@ -2,7 +2,7 @@ import { prisma } from "@/lib/db";
 import { syriaFlags } from "@/lib/platform-flags";
 import type { SyriaProperty } from "@/generated/prisma";
 import { haversineKm } from "@/lib/geo";
-import { listingBrowseOrderBy } from "@/lib/listing-order";
+import { listingBrowseOrderBy, listingBrowseOrderBySybnb } from "@/lib/listing-order";
 import type { ListingKind } from "@/lib/property-search";
 import {
   buildPropertyWhere,
@@ -68,6 +68,7 @@ export type SearchPropertiesResult = {
 function surfaceToKind(surface: BrowseSurface): ListingKind {
   if (surface === "sale") return "sale";
   if (surface === "rent") return "rent";
+  if (surface === "stay") return "stay";
   return "bnhub";
 }
 
@@ -166,6 +167,7 @@ export async function searchProperties(
   const centerLng = parseSearchNumber(flat.lng);
 
   const where = buildPropertyWhere(kind, flat);
+  const orderBy = surface === "stay" ? listingBrowseOrderBySybnb : listingBrowseOrderBy;
 
   const useDistanceSort = sort === "distance" && centerLat !== undefined && centerLng !== undefined;
 
@@ -177,7 +179,7 @@ export async function searchProperties(
         longitude: { not: null },
       },
       take: 450,
-      orderBy: listingBrowseOrderBy("featured"),
+      orderBy: orderBy("featured"),
     });
     let rows = capped.filter((r) => r.latitude != null && r.longitude != null);
     if (amenityTags.length > 0) {
@@ -205,7 +207,7 @@ export async function searchProperties(
   if (amenityTags.length > 0) {
     const fetched = await prisma.syriaProperty.findMany({
       where,
-      orderBy: listingBrowseOrderBy(sort === "distance" ? "featured" : sort),
+      orderBy: orderBy(sort === "distance" ? "featured" : sort),
       take: 1200,
     });
     const filtered = fetched.filter((r) => listingMatchesAmenityTags(r.amenities, amenityTags));
@@ -223,7 +225,7 @@ export async function searchProperties(
   const total = await prisma.syriaProperty.count({ where });
   const rows = await prisma.syriaProperty.findMany({
     where,
-    orderBy: listingBrowseOrderBy(sort === "distance" ? "featured" : sort),
+    orderBy: orderBy(sort === "distance" ? "featured" : sort),
     skip: (page - 1) * pageSize,
     take: pageSize,
   });

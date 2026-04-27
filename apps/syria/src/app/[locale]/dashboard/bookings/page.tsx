@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { requireSessionUser } from "@/lib/auth";
 import { money } from "@/lib/format";
 import { markBookingCheckedIn } from "@/actions/bookings";
+import { hostRespondSybnbBooking } from "@/actions/sybnb-booking";
 import { describePayoutEligibility } from "@/lib/payout-policy";
 import { pickListingTitle } from "@/lib/listing-localized";
 
@@ -87,6 +88,31 @@ export default async function DashboardBookingsPage() {
                 <p className="mt-2 text-xs text-stone-600">
                   {t("payoutGuidance")} {eligibility.notes} ({eligibility.reason})
                 </p>
+
+                {b.property.category === "stay" && isHost && b.status === "PENDING" ? (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <form action={hostRespondSybnbBooking}>
+                      <input type="hidden" name="bookingId" value={b.id} />
+                      <input type="hidden" name="action" value="confirm" />
+                      <button
+                        type="submit"
+                        className="rounded-lg bg-emerald-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800"
+                      >
+                        {t("sybnbConfirmRequest")}
+                      </button>
+                    </form>
+                    <form action={hostRespondSybnbBooking}>
+                      <input type="hidden" name="bookingId" value={b.id} />
+                      <input type="hidden" name="action" value="decline" />
+                      <button
+                        type="submit"
+                        className="rounded-lg border border-stone-300 bg-stone-50 px-3 py-1.5 text-xs font-medium text-stone-800 hover:bg-stone-100"
+                      >
+                        {t("sybnbDeclineRequest")}
+                      </button>
+                    </form>
+                  </div>
+                ) : null}
 
                 {isHost || user.role === "ADMIN" ? (
                   <form action={markBookingCheckedIn} className="mt-3 inline">

@@ -53,8 +53,11 @@ model User {
   brokerStatus                      BrokerStatus       @default(NONE) @map("broker_status")
   accountStatus                     AccountStatus      @default(ACTIVE) @map("account_status")
   marketplacePersona                MarketplacePersona @default(UNSET) @map("marketplace_persona")
-  createdAt                         DateTime           @default(now())
-  updatedAt                         DateTime           @updatedAt
+  /// Stripe Connect Express; same `users` table as monolith.
+  stripeAccountId                   String?   @map("stripe_account_id")
+  stripeOnboardingComplete          Boolean   @default(false) @map("stripe_onboarding_complete")
+  createdAt                         DateTime  @default(now())
+  updatedAt                         DateTime  @updatedAt
 
   @@map("users")
 }

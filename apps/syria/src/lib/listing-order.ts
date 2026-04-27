@@ -19,6 +19,20 @@ export function describeListingSortAutonomyOverlay(
 
 const DIRECT_FIRST: Prisma.SyriaPropertyOrderByWithRelationInput = { isDirect: "desc" };
 
+const PHONE_VERIFIED_FIRST: Prisma.SyriaPropertyOrderByWithRelationInput = {
+  owner: { phoneVerifiedAt: "desc" },
+};
+
+/**
+ * Short-stay feed: same as browse, but phone-verified hosts surface earlier (trust).
+ */
+export function listingBrowseOrderBySybnb(
+  sort: string | undefined,
+): Prisma.SyriaPropertyOrderByWithRelationInput[] {
+  const base = listingBrowseOrderBy(sort);
+  return [DIRECT_FIRST, PHONE_VERIFIED_FIRST, ...base.slice(1)];
+}
+
 export function listingBrowseOrderBy(sort: string | undefined): Prisma.SyriaPropertyOrderByWithRelationInput[] {
   const s = sort ?? "featured";
   if (s === "price_asc") return [DIRECT_FIRST, { price: "asc" }];

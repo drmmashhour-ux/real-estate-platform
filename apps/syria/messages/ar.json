@@ -161,8 +161,8 @@
     "sub_other": "أخرى"
   },
   "Sybnb": {
-    "title": "مركز SYBNB",
-    "subtitle": "غرف مفروشة وفنادق صغيرة — سعر لليلة والتواصل مع المضيف. بدون حجز داخل التطبيق."
+    "title": "SYBNB · إقامات قصيرة",
+    "subtitle": "أسعار ليلية مع تأكيد من المضيف ودفع يدوي أولاً. الدفع بالبطاقة يبقى معطّلاً حتى يسمح القانون."
   },
   "home": {
     "metaLabel": "هدية لينك · سوريا",
@@ -345,7 +345,18 @@
     "cardPerNight": "لليلة",
     "priceLabel": "السعر",
     "sybnbNightlyLabel": "السعر لليلة",
-    "sybnbNightlyHint": "تواصل مع المضيف عبر واتساب أو الهاتف — بلا حجز أو دفع داخل التطبيق.",
+    "sybnbNightlyHint": "السعر لليلة بالليرة — يمكن طلب الإقامة؛ الدفع يدوي ما لم يُفعّل الدفع بالبطاقة في منطقتك.",
+    "fieldGuestCountOptional": "عدد الضيوف (اختياري)",
+    "sybnbRequestTitle": "طلب إقامة",
+    "sybnbRequestSubtitle": "يؤكد المضيف الطلب. عمولة المنصة {rate}% عند التأكيد والصرف.",
+    "sybnbPaymentsOffNotice": "الدفع بالبطاقة (Stripe) معطّل افتراضياً. استخدم الحقول اليدوية إن اتفقتم خارجياً.",
+    "sybnbManualHint": "اختياري: مرجع وإثبات للتسوية اليدوية — ليس دفعاً بالبطاقة مباشرة.",
+    "sybnbRequestCta": "إرسال الطلب للمضيف",
+    "sybnbReviewPendingTitle": "الإعلان قيد المراجعة",
+    "sybnbReviewPendingHint": "لا يظهر هذا الإعلان في بحث الإقامات حتى يعتمد المشغّل.",
+    "sybnbReviewRejectedTitle": "غير متاح للإقامة القصيرة",
+    "sybnbReviewRejectedHint": "لم يُعتمد للـ SYBNB. يمكنك التواصل مع المضيف لترتيبات أخرى.",
+    "sybnbSupplyPausedTitle": "المضيف لا يقبل طلبات إقامة جديدة مؤقتاً.",
     "priceHint": "أكّد التفاصيل مع المالك قبل أي تعامل خارج المنصة.",
     "hostTitle": "المضيف / المالك",
     "hostHint": "التواصل حسب اتفاقكم. هدية لينك لا يضمن أوقات الرد.",
@@ -648,6 +659,8 @@
     "payoutHint": "حصة المضيف {host} · عمولة {fee} · السجل {ledger}",
     "payoutGuidance": "إرشاد الصرف:",
     "checkInBtn": "تسجيل وقت الوصول",
+    "sybnbConfirmRequest": "تأكيد الإقامة (SYBNB)",
+    "sybnbDeclineRequest": "رفض",
     "paymentsTitle": "مدفوعات الإدراج",
     "paymentsIntro": "رسوم الإدراج والتمييز تظهر هنا مع مراجع يدوية. الإدارة تتحقق قبل النشر.",
     "paymentsEmpty": "لا مدفوعات مسجلة.",

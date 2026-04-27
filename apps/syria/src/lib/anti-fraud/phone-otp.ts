@@ -73,7 +73,7 @@ export async function verifyPhoneOtpAndMarkUser(
     prisma.syriaPhoneOtp.deleteMany({ where: { userId } }),
     prisma.syriaAppUser.update({
       where: { id: userId },
-      data: { phoneVerifiedAt: now },
+      data: { phoneVerifiedAt: now, verifiedAt: now, verificationLevel: "phone" },
     }),
   ]);
   return { ok: true };

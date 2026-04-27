@@ -34,7 +34,11 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
   const unique = [...new Set(raw as string[])].sort().slice(0, 366);
 
   const existing = await prisma.syriaProperty.findFirst({
-    where: { id, ownerId: user.id, type: "BNHUB" },
+    where: {
+      id,
+      ownerId: user.id,
+      OR: [{ type: "BNHUB" }, { category: "stay", type: "RENT" }],
+    },
     select: { id: true },
   });
   if (!existing) {

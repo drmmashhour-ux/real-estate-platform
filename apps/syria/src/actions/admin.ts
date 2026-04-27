@@ -7,6 +7,7 @@ import { syriaPlatformConfig } from "@/config/syria-platform.config";
 import { trackSyriaGrowthEvent } from "@/lib/growth-events";
 import { persistAutonomyPreview } from "@/lib/autonomy-recommendations";
 import { assertDarlinkRuntimeEnv } from "@/lib/guard";
+import type { SyriaSybnbListingReview } from "@/generated/prisma";
 
 export async function approveProperty(formData: FormData): Promise<void> {
   assertDarlinkRuntimeEnv();
@@ -88,6 +89,24 @@ export async function approveProperty(formData: FormData): Promise<void> {
   });
 
   await revalidateSyriaPaths("/admin/listings", "/buy", "/rent", "/bnhub/stays", "/sybnb", "/");
+}
+
+export async function setSybnbListingReview(formData: FormData): Promise<void> {
+  assertDarlinkRuntimeEnv();
+  await requireAdmin();
+  const id = String(formData.get("propertyId") ?? "").trim();
+  const raw = String(formData.get("review") ?? "").trim().toUpperCase();
+  if (!id) return;
+  if (raw !== "APPROVED" && raw !== "REJECTED" && raw !== "PENDING") return;
+
+  const next = raw as SyriaSybnbListingReview;
+  const updated = await prisma.syriaProperty.updateMany({
+    where: { id, category: "stay" },
+    data: { sybnbReview: next },
+  });
+  if (updated.count === 0) return;
+
+  await revalidateSyriaPaths("/admin/listings", "/sybnb", "/");
 }
 
 export async function rejectProperty(formData: FormData): Promise<void> {

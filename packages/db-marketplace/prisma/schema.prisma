@@ -42,6 +42,14 @@ model Booking {
   expiresAt  DateTime? @map("expires_at")
   /// Set when a guest (or system) cancels; releases inventory.
   cancelledAt            DateTime? @map("cancelled_at")
+  /// Order 59.1: none | pending | completed | failed
+  refundStatus            String   @default("none") @map("refund_status")
+  refundedAmountCents     Int      @default(0) @map("refunded_amount_cents")
+  subtotalCents  Int?     @map("subtotal_cents")
+  feeCents       Int?     @map("fee_cents")
+  finalCents     Int?     @map("final_cents")
+  nights         Int?     @map("nights")
+  pricingSnapshot Json?   @map("pricing_snapshot")
   /// Stripe `pi_*` for marketplace checkouts; used for refund on cancel (Orders 57–59).
   stripePaymentIntentId  String?   @map("stripe_payment_intent_id")
   createdAt  DateTime  @default(now())

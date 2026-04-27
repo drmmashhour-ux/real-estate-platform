@@ -1,6 +1,22 @@
 {
   "name": "@repo/db-listings",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
-  "description": "Staging package for Prisma model shards (listings bucket). Populate prisma/schema.prisma from enums.prisma + models.prisma after manual relation fixes."
+  "description": "Listings + marketplace slice Prisma client (enums + models shard, relation-stripped) — production `listingsDB` source.",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./client": "./src/client.ts"
+  },
+  "scripts": {
+    "prisma:generate": "node scripts/build-schema.mjs && prisma generate",
+    "build:schema": "node scripts/build-schema.mjs"
+  },
+  "dependencies": {
+    "@prisma/client": "^7.8.0"
+  },
+  "devDependencies": {
+    "prisma": "^7.8.0"
+  }
 }

@@ -10,6 +10,7 @@ import { getLocalizedPropertyCity, getLocalizedPropertyDistrict } from "@/lib/pr
 import { money } from "@/lib/format";
 import { getSessionUser } from "@/lib/auth";
 import { createBnhubBooking } from "@/actions/bookings";
+import { createSybnbStayBooking } from "@/actions/sybnb-booking";
 import { isBnhubInSyriaUI, syriaFlags } from "@/lib/platform-flags";
 import { SYRIA_PRICING } from "@/lib/pricing";
 import { Badge } from "@/components/ui/Badge";
@@ -35,6 +36,8 @@ import { buildWhatsAppContactHref, buildTelHref, isNewListing } from "@/lib/syri
 import { SELF_MKT_VIEWS_HOT_BADGE_MIN } from "@/lib/self-marketing";
 import { getMonetizationAdminContact } from "@/lib/monetization-contact";
 import { syriaPlatformConfig } from "@/config/syria-platform.config";
+import { sybnbConfig } from "@/config/sybnb.config";
+import { isSybnbCardCheckoutUiEnabled } from "@/lib/sybnb/payment-policy";
 import { MakeFeaturedCta } from "@/components/listing/MakeFeaturedCta";
 import { OwnerUpgradeStickyCta } from "@/components/listing/OwnerUpgradeStickyCta";
 import { labelSyriaState } from "@/lib/syria/states";
@@ -169,8 +172,19 @@ export default async function ListingDetailPage(props: Props) {
   const isOwner = user?.id === listing.ownerId;
   const canContact = !isOwner && Boolean(waOwnerHref || telOwnerHref);
   const showBnhubInUi = isBnhubInSyriaUI() && syriaFlags.BNHUB_ENABLED;
+  const showSybnbRequestCard =
+    !syriaFlags.SYRIA_MVP &&
+    isSybnbStay &&
+    listing.sybnbReview === "APPROVED" &&
+    !listing.owner.sybnbSupplyPaused &&
+    user &&
+    user.id !== listing.ownerId;
   const showContactAside =
-    !isOwner && (listing.type === "SALE" || listing.type === "RENT" || (listing.type === "BNHUB" && !showBnhubInUi));
+    !isOwner &&
+    (listing.type === "SALE" ||
+      (listing.type === "RENT" && !isSybnbStay) ||
+      (listing.type === "BNHUB" && !showBnhubInUi)) &&
+    !showSybnbRequestCard;
   const monetizationContact = getMonetizationAdminContact();
   const showMakeFeatured = isOwner && (listing.plan === "free" || listing.plan === "featured");
   const f1PendingPayment = isOwner
@@ -518,6 +532,74 @@ export default async function ListingDetailPage(props: Props) {
               </Card>
             ) : null}
 
+            {!syriaFlags.SYRIA_MVP && isSybnbStay && !isOwner && listing.sybnbReview === "PENDING" ? (
+              <Card className="border-amber-200/80 bg-amber-50/90 p-5 shadow-[var(--darlink-shadow-sm)]">
+                <p className="text-sm font-semibold text-amber-950">{t("sybnbReviewPendingTitle")}</p>
+                <p className="mt-1 text-xs text-amber-900/90">{t("sybnbReviewPendingHint")}</p>
+              </Card>
+            ) : null}
+            {!syriaFlags.SYRIA_MVP && isSybnbStay && !isOwner && listing.sybnbReview === "REJECTED" ? (
+              <Card className="border-stone-200 p-5 shadow-[var(--darlink-shadow-sm)]">
+                <p className="text-sm font-medium text-[color:var(--darlink-text)]">{t("sybnbReviewRejectedTitle")}</p>
+                <p className="mt-1 text-xs text-[color:var(--darlink-text-muted)]">{t("sybnbReviewRejectedHint")}</p>
+              </Card>
+            ) : null}
+            {!syriaFlags.SYRIA_MVP && isSybnbStay && !isOwner && listing.owner.sybnbSupplyPaused ? (
+              <Card className="border-stone-200 p-5 shadow-[var(--darlink-shadow-sm)]">
+                <p className="text-sm font-medium text-[color:var(--darlink-text)]">{t("sybnbSupplyPausedTitle")}</p>
+              </Card>
+            ) : null}
+            {showSybnbRequestCard ? (
+              <Card className="p-6 shadow-[var(--darlink-shadow-md)]" id="sybnb-booking">
+                <h2 className="text-lg font-semibold text-[color:var(--darlink-text)]">{t("sybnbRequestTitle")}</h2>
+                <p className="mt-1 text-sm text-[color:var(--darlink-text-muted)]">
+                  {t("sybnbRequestSubtitle", { rate: (SYRIA_PRICING.bnhubCommissionRate * 100).toFixed(1) })}
+                </p>
+                {!isSybnbCardCheckoutUiEnabled(sybnbConfig.provider) ? (
+                  <p className="mt-2 text-xs text-[color:var(--darlink-text-muted)]">{t("sybnbPaymentsOffNotice")}</p>
+                ) : null}
+                <form action={createSybnbStayBooking} className="mt-4 grid gap-4 md:grid-cols-2">
+                  <input type="hidden" name="propertyId" value={listing.id} />
+                  {typeof sp.utm_source === "string" ? <input type="hidden" name="utm_source" value={sp.utm_source} /> : null}
+                  {typeof sp.utm_medium === "string" ? <input type="hidden" name="utm_medium" value={sp.utm_medium} /> : null}
+                  {typeof sp.utm_campaign === "string" ? (
+                    <input type="hidden" name="utm_campaign" value={sp.utm_campaign} />
+                  ) : null}
+                  <label className="block text-sm text-[color:var(--darlink-text)]">
+                    {t("fieldCheckIn")}
+                    <Input required type="datetime-local" name="check_in" className="mt-1" />
+                  </label>
+                  <label className="block text-sm text-[color:var(--darlink-text)]">
+                    {t("fieldCheckOut")}
+                    <Input required type="datetime-local" name="check_out" className="mt-1" />
+                  </label>
+                  <label className="block text-sm text-[color:var(--darlink-text)] md:col-span-2">
+                    {t("fieldGuestCountOptional")}
+                    <Input name="guest_count" type="number" min={1} step={1} className="mt-1" />
+                  </label>
+                  <div className="md:col-span-2 rounded-[var(--darlink-radius-xl)] border border-[color:var(--darlink-warning)]/35 bg-[color:var(--darlink-surface-muted)] p-4 text-sm text-[color:var(--darlink-text)]">
+                    <p className="font-medium">{t("manualTitle")}</p>
+                    <p className="mt-1 text-xs text-[color:var(--darlink-text-muted)]">{t("sybnbManualHint")}</p>
+                    <div className="mt-3 grid gap-3 md:grid-cols-2">
+                      <label className="block text-xs font-medium text-[color:var(--darlink-text-muted)]">
+                        {t("fieldManualRef")}
+                        <Input name="manual_ref" className="mt-1 bg-[color:var(--darlink-surface)]" />
+                      </label>
+                      <label className="block text-xs font-medium text-[color:var(--darlink-text-muted)]">
+                        {t("fieldProof")}
+                        <Input name="proof_url" className="mt-1 bg-[color:var(--darlink-surface)]" />
+                      </label>
+                    </div>
+                  </div>
+                  <button
+                    type="submit"
+                    className="hadiah-btn-primary md:col-span-2 w-full rounded-[var(--darlink-radius-xl)] py-3 text-sm font-semibold sm:w-auto"
+                  >
+                    {t("sybnbRequestCta")}
+                  </button>
+                </form>
+              </Card>
+            ) : null}
             {listing.type === "BNHUB" && !showBnhubInUi ? (
               <Card className="border-[color:var(--darlink-border)] p-5 shadow-[var(--darlink-shadow-sm)]">
                 <p className="text-sm font-medium text-[color:var(--darlink-text)]">{t("bnhubDisabledShort")}</p>

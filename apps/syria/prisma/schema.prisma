@@ -16,6 +16,42 @@ enum SyriaUserRole {
   ADMIN
 }
 
+/// SYBNB: operator review for short-stay supply (trust gate before browse).
+enum SyriaSybnbListingReview {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+/// SYBNB 2.0 — request / payment / settlement lifecycle (see `SybnbBooking`).
+enum SybnbBookingStatus {
+  requested
+  approved
+  payment_pending
+  paid
+  confirmed
+  declined
+  cancelled
+  completed
+  refunded
+  needs_review
+}
+
+enum SybnbGuestPaymentState {
+  none
+  pending
+  paid
+  failed
+  refunded
+  manual_required
+}
+
+enum SybnbRiskState {
+  clear
+  review
+  blocked
+}
+
 enum SyriaPropertyType {
   SALE
   RENT
@@ -120,6 +156,16 @@ model SyriaAppUser {
   phone     String?
   /// S1: set when phone verified via SMS/WhatsApp OTP (soft trust).
   phoneVerifiedAt DateTime?            @map("phone_verified_at")
+  /// SYBNB general trust time — set/updated with phone or ID verification.
+  verifiedAt    DateTime?  @map("verified_at")
+  /// "phone" | "id" — strongest verification achieved.
+  verificationLevel String? @map("verification_level")
+  /// SYBNB: when true, new listings are hidden from public feed (abuse; ≥5 valid reports, etc.).
+  sybnbSupplyPaused Boolean @default(false) @map("sybnb_supply_paused")
+  /// SYBNB: operator-facing reputation aggregate (0+).
+  reputationScore  Int     @default(0) @map("reputation_score")
+  /// SYBNB / trust: account-level abuse or sanctions flag (hide from book flows in UI if needed).
+  flagged            Boolean @default(false)
   role      SyriaUserRole @default(USER)
   createdAt DateTime      @default(now()) @map("created_at")
   updatedAt DateTime      @updatedAt @map("updated_at")
@@ -133,6 +179,10 @@ model SyriaAppUser {
   inquiriesSubmitted    SyriaInquiry[]
   reviewedListingPayments   SyriaListingPayment[]           @relation("ListingPaymentReviewer")
   autonomyRecommendations   SyriaAutonomyRecommendation[]   @relation("AutonomyOwner")
+  sybnbBookingsAsGuest  SybnbBooking[]            @relation("SybnbGuestBookings")
+  sybnbBookingsAsHost   SybnbBooking[]            @relation("SybnbHostBookings")
+  sybnbPaymentAudits    SybnbPaymentAudit[]
+  sybnbReportsFiled     SybnbListingReport[]    @relation("SybnbListingReportReporter")
 
   @@map("syria_users")
 }
@@ -200,6 +250,8 @@ model SyriaProperty {
   phoneClicks      Int                 @default(0) @map("phone_clicks")
   /// Short-stay (BNHUB): `YYYY-MM-DD` dates that are **booked** / not available. Absent dates = available.
   availability     String[]            @default([]) @map("availability")
+  /// SYBNB: admin/host trust gate; only APPROVED stay listings show in /sybnb feed.
+  sybnbReview      SyriaSybnbListingReview @default(PENDING) @map("sybnb_review")
   ownerId          String              @map("owner_id")
   owner            SyriaAppUser        @relation("PropertyOwner", fields: [ownerId], references: [id], onDelete: Cascade)
   status           SyriaPropertyStatus @default(DRAFT)
@@ -231,6 +283,8 @@ model SyriaProperty {
   guestsMax        Int?                @map("guests_max")
   /// SY-28: human-friendly listing code, e.g. RE-1001 (global number + category prefix).
   adCode           String              @unique @map("ad_code")
+  /// SYBNB: stay subtype — stay | apartment | room | villa | chalet (optional).
+  sybnbStayType    String?             @map("sybnb_stay_type")
   createdAt        DateTime            @default(now()) @map("created_at")
   updatedAt        DateTime            @updatedAt @map("updated_at")
 
@@ -242,6 +296,9 @@ model SyriaProperty {
   paymentRequestsF1         SyriaPaymentRequest[]   @relation("PropertyPaymentRequest")
   listingFinanceF1          SyriaListingFinance?   @relation("PropertyListingFinance")
   listingReports            SyriaListingReport[]    @relation("PropertyReports")
+  sybnbImages               SybnbListingImage[]
+  sybnbBookings             SybnbBooking[]
+  sybnbListingReports       SybnbListingReport[]
 
   @@index([city])
   @@index([state])
@@ -283,6 +340,99 @@ model SyriaListingReport {
   @@index([propertyId])
   @@index([createdAt])
   @@map("syria_listing_reports")
+}
+
+/// SYBNB: ordered image URLs (optional; parallel to `images` on `SyriaProperty`).
+model SybnbListingImage {
+  id         String        @id @default(cuid())
+  propertyId String        @map("property_id")
+  property   SyriaProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  url        String
+  sortOrder  Int           @default(0) @map("sort_order")
+  createdAt  DateTime      @default(now()) @map("created_at")
+
+  @@index([propertyId])
+  @@map("sybnb_listing_images")
+}
+
+/// SYBNB 2.0 short-stay booking (new flow; `SyriaBooking` remains for BNHUB).
+model SybnbBooking {
+  id        String   @id @default(cuid())
+  listingId String   @map("listing_id")
+  listing   SyriaProperty @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  guestId   String   @map("guest_id")
+  guest     SyriaAppUser  @relation("SybnbGuestBookings", fields: [guestId], references: [id], onDelete: Cascade)
+  hostId    String   @map("host_id")
+  host      SyriaAppUser  @relation("SybnbHostBookings", fields: [hostId], references: [id], onDelete: Cascade)
+
+  checkIn  DateTime @map("check_in")
+  checkOut DateTime @map("check_out")
+  guests   Int
+
+  nightlyPrice Int @map("nightly_price")
+  nights       Int
+  serviceFee   Int    @default(0) @map("service_fee")
+  totalAmount  Int    @map("total_amount")
+  currency     String @default("SYP")
+
+  status        SybnbBookingStatus     @default(requested) @map("status")
+  paymentStatus SybnbGuestPaymentState @default(none) @map("payment_status")
+
+  paymentProvider   String? @map("payment_provider")
+  paymentIntentId   String? @map("payment_intent_id")
+  checkoutSessionId String? @map("checkout_session_id")
+
+  riskScore  Int            @default(0) @map("risk_score")
+  riskStatus SybnbRiskState @default(clear) @map("risk_status")
+
+  manualRef String? @map("manual_ref")
+  proofUrl  String? @map("proof_url")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  paymentAudits SybnbPaymentAudit[]
+
+  @@index([listingId])
+  @@index([guestId])
+  @@index([hostId])
+  @@index([status])
+  @@map("sybnb_bookings")
+}
+
+/// SYBNB listing report (operator queue via `reviewed`).
+model SybnbListingReport {
+  id         String        @id @default(cuid())
+  propertyId String        @map("property_id")
+  property   SyriaProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  reporterId String?       @map("reporter_id")
+  reporter   SyriaAppUser?   @relation("SybnbListingReportReporter", fields: [reporterId], references: [id], onDelete: SetNull)
+  reason     String
+  reviewed   Boolean       @default(false)
+  createdAt  DateTime      @default(now()) @map("created_at")
+
+  @@index([propertyId])
+  @@index([reviewed])
+  @@map("sybnb_listing_reports")
+}
+
+/// SYBNB payment / checkout audit (append-only).
+model SybnbPaymentAudit {
+  id        String  @id @default(cuid())
+  bookingId String? @map("booking_id")
+  booking   SybnbBooking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  actorId   String? @map("actor_id")
+  actor     SyriaAppUser? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  event     String
+  provider  String?
+  amount    Int?
+  currency  String?
+  metadata  Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([bookingId])
+  @@index([actorId])
+  @@map("sybnb_payment_audit")
 }
 
 /// Monotonic counter for `SyriaProperty.adCode` (SY-28). Single row `id = global`.
