@@ -396,9 +396,26 @@ model SyriaPaymentRequest {
   createdAt  DateTime @default(now()) @map("created_at")
   confirmedAt DateTime? @map("confirmed_at")
 
+  auditLogs   SyriaPaymentAuditLog[]
+
   @@index([listingId, status])
   @@index([status, createdAt])
   @@map("syria_payment_requests")
+}
+
+/// S3 — append-only audit for F1 payment requests (created / confirmed / rejected).
+model SyriaPaymentAuditLog {
+  id        String   @id @default(cuid())
+  requestId String   @map("request_id") @db.Uuid
+  request   SyriaPaymentRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  action    String
+  adminId   String?  @map("admin_id")
+  ip        String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([requestId])
+  @@index([createdAt])
+  @@map("syria_payment_audit_log")
 }
 
 /// F1: one row per listing — counters for support / ops.

@@ -134,6 +134,8 @@ export async function createBooking(data: {
    * Must match listing and stay dates (validated before the inventory transaction).
    */
   releaseAvailabilityBlockId?: string;
+  /** For fraud / velocity limits (e.g. from `getClientIp(request)` on API routes). */
+  clientIp?: string | null;
 }) {
   const checkIn = new Date(data.checkIn);
   const checkOut = new Date(data.checkOut);
@@ -199,6 +201,13 @@ export async function createBooking(data: {
   });
   if (!pricing) throw new Error("Could not compute pricing");
   const b = pricing.breakdown;
+
+  assertBookingFraudAllowed({
+    clientIp: data.clientIp,
+    userId: data.guestId,
+    baseStayCents: b.subtotalCents,
+    subtotalCents: b.lodgingSubtotalAfterDiscountCents + b.cleaningFeeCents + b.addonsSubtotalCents,
+  });
 
   await assertGuestIdentityAllowedForBooking({
     prismaListingId: data.listingId,

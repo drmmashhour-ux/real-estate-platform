@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { getLegacyDB } from "@/lib/db/legacy";
 const prisma = getLegacyDB();
+import { HostPublishIdentityError } from "@/lib/compliance/goLive";
 import { updateListing } from "@/lib/bnhub/listings";
 import { getGuestId } from "@/lib/auth/session";
 import { postCreateShortTermListingFlow } from "@/lib/bnhub/post-create-short-term-listing";
@@ -19,7 +20,14 @@ export async function POST(_req: NextRequest, ctx: Ctx) {
   if (!row) return Response.json({ error: "Not found" }, { status: 404 });
   if (row.ownerId !== userId) return Response.json({ error: "Forbidden" }, { status: 403 });
 
-  await updateListing(id, { listingStatus: "PUBLISHED" });
+  try {
+    await updateListing(id, { listingStatus: "PUBLISHED" });
+  } catch (e) {
+    if (e instanceof HostPublishIdentityError) {
+      return Response.json({ error: e.message }, { status: 403 });
+    }
+    throw e;
+  }
   const listing = await prisma.shortTermListing.findUniqueOrThrow({ where: { id } });
 
   const flow = await postCreateShortTermListingFlow({

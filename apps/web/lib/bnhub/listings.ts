@@ -24,6 +24,7 @@ import { getActivePromotedListingIds } from "@/lib/promotions";
 import { getApprovedHost, hasAcceptedHostAgreement } from "./host";
 import { buildPublishedListingSearchWhere, searchOrderBy } from "./build-search-where";
 import { applyStaysFilters, hasActiveStaysFilters, type StaysSearchFilters } from "@/lib/bnhub/stays-filters";
+import { requireHostIdentityForShortTermPublish } from "@/lib/compliance/identityGateForPublish";
 import { geocodeAddressLine } from "@/lib/geo/geocode-nominatim";
 import { listingQualityBadgeLabelFromRow } from "@/lib/quality/validators";
 import {
@@ -1055,6 +1056,11 @@ export async function createListing(
     }
   }
 
+  const initialStatus = data.listingStatus ?? ListingStatus.DRAFT;
+  if (initialStatus === ListingStatus.PUBLISHED) {
+    await requireHostIdentityForShortTermPublish(data.ownerId);
+  }
+
   const listing = await prisma.$transaction(async (tx) => {
     const listingCode = await allocateUniqueLSTListingCode(tx);
     return tx.shortTermListing.create({
@@ -1091,7 +1097,7 @@ export async function createListing(
       instantBookEnabled: data.instantBookEnabled ?? false,
       minStayNights: data.minStayNights,
       maxStayNights: data.maxStayNights,
-      listingStatus: data.listingStatus ?? "DRAFT",
+      listingStatus: initialStatus,
       safetyFeatures: data.safetyFeatures ?? [],
       accessibilityFeatures: data.accessibilityFeatures ?? [],
       parkingDetails: data.parkingDetails,
@@ -1203,9 +1209,16 @@ export type UpdateListingData = Partial<{
 export async function updateListing(id: string, data: UpdateListingData) {
   const listing = await prisma.shortTermListing.findUnique({
     where: { id },
-    select: { ownerId: true },
+    select: { ownerId: true, listingStatus: true },
   });
   if (!listing) throw new Error("Listing not found");
+
+  const nextStatus = (data as { listingStatus?: ListingStatus | string | null }).listingStatus;
+  const wantsPublished =
+    nextStatus === ListingStatus.PUBLISHED || nextStatus === "PUBLISHED";
+  if (wantsPublished && listing.listingStatus !== ListingStatus.PUBLISHED) {
+    await requireHostIdentityForShortTermPublish(listing.ownerId);
+  }
 
   // PHASE 2: FORCE BROKER OWNERSHIP
   // In a real request, we'd have the logged-in user ID here. 

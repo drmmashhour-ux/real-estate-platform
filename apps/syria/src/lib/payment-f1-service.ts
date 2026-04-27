@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { syriaPlatformConfig } from "@/config/syria-platform.config";
 import type { SyriaListingPlan } from "@/generated/prisma";
+import { f1GetPaymentSecret, f1VerifyPaymentRequestSig } from "@/lib/payment-request-signature";
 
 export type F1ConfirmOutcome =
   | { type: "ok"; listingId: string }
@@ -8,7 +9,9 @@ export type F1ConfirmOutcome =
   | { type: "rejected" }
   | { type: "bad_state" }
   | { type: "listing_missing" }
-  | { type: "already"; listingId: string };
+  | { type: "already"; listingId: string }
+  | { type: "bad_sig" }
+  | { type: "no_secret" };
 
 export type F1RejectOutcome =
   | { type: "ok"; listingId: string }
@@ -16,37 +19,61 @@ export type F1RejectOutcome =
   | { type: "already"; status: string };
 
 /**
- * Manual payment confirm (F1). Idempotent: second confirm returns `already` without extra increments.
+ * Manual payment confirm (F1). S3: requires HMAC sig; idempotent on second confirm.
  */
-export async function runF1Confirm(requestId: string): Promise<F1ConfirmOutcome> {
+export async function runF1Confirm(
+  requestId: string,
+  ctx: { sig: string; adminId: string | null; clientIp: string | null },
+): Promise<F1ConfirmOutcome> {
+  const secret = f1GetPaymentSecret();
+  if (!secret) {
+    return { type: "no_secret" };
+  }
+
+  const row = await prisma.syriaPaymentRequest.findUnique({ where: { id: requestId } });
+  if (!row) {
+    return { type: "not_found" };
+  }
+  if (row.status === "confirmed") {
+    return { type: "already", listingId: row.listingId };
+  }
+  if (row.status === "rejected") {
+    return { type: "rejected" };
+  }
+  if (row.status !== "pending") {
+    return { type: "bad_state" };
+  }
+  if (!f1VerifyPaymentRequestSig(ctx.sig, row.id, row.listingId, row.amount, secret)) {
+    return { type: "bad_sig" };
+  }
+
   const days = syriaPlatformConfig.monetization.featuredDurationDays;
+  const targetPlan: SyriaListingPlan = row.plan === "premium" ? "premium" : "featured";
+
   return prisma.$transaction(async (tx) => {
-    const row = await tx.syriaPaymentRequest.findUnique({ where: { id: requestId } });
-    if (!row) return { type: "not_found" as const };
-    if (row.status === "confirmed") {
-      return { type: "already" as const, listingId: row.listingId };
-    }
-    if (row.status === "rejected") {
-      return { type: "rejected" as const };
-    }
-    if (row.status !== "pending") {
+    const up = await tx.syriaPaymentRequest.updateMany({
+      where: { id: requestId, status: "pending" },
+      data: { status: "confirmed", confirmedAt: new Date() },
+    });
+    if (up.count === 0) {
+      const cur = await tx.syriaPaymentRequest.findUnique({ where: { id: requestId } });
+      if (cur?.status === "confirmed" && cur.listingId) {
+        return { type: "already" as const, listingId: cur.listingId };
+      }
       return { type: "bad_state" as const };
     }
 
-    /** M2 close: upgrade listing plan on confirm (`featured` or `premium` per request). */
-    const targetPlan: SyriaListingPlan = row.plan === "premium" ? "premium" : "featured";
     const listing = await tx.syriaProperty.findUnique({ where: { id: row.listingId } });
     if (!listing) {
+      await tx.syriaPaymentRequest.updateMany({
+        where: { id: requestId, status: "confirmed" },
+        data: { status: "pending", confirmedAt: null },
+      });
       return { type: "listing_missing" as const };
     }
 
     const until = new Date();
     until.setDate(until.getDate() + days);
-
-    await tx.syriaPaymentRequest.update({
-      where: { id: requestId },
-      data: { status: "confirmed", confirmedAt: new Date() },
-    });
 
     await tx.syriaProperty.update({
       where: { id: row.listingId },
@@ -71,11 +98,24 @@ export async function runF1Confirm(requestId: string): Promise<F1ConfirmOutcome>
       },
     });
 
+    await tx.syriaPaymentAuditLog.create({
+      data: {
+        requestId,
+        action: "confirmed",
+        adminId: ctx.adminId,
+        ip: ctx.clientIp,
+      },
+    });
+
     return { type: "ok" as const, listingId: row.listingId };
   });
 }
 
-export async function runF1Reject(requestId: string, reason?: string): Promise<F1RejectOutcome> {
+export async function runF1Reject(
+  requestId: string,
+  reason: string | undefined,
+  ctx: { adminId: string | null; clientIp: string | null },
+): Promise<F1RejectOutcome> {
   const row = await prisma.syriaPaymentRequest.findUnique({ where: { id: requestId } });
   if (!row) {
     return { type: "not_found" };
@@ -101,6 +141,14 @@ export async function runF1Reject(requestId: string, reason?: string): Promise<F
         lastStatus: "rejected",
       },
       update: { lastStatus: "rejected" },
+    }),
+    prisma.syriaPaymentAuditLog.create({
+      data: {
+        requestId,
+        action: "rejected",
+        adminId: ctx.adminId,
+        ip: ctx.clientIp,
+      },
     }),
   ]);
 

@@ -12,6 +12,7 @@ import {
   BNHUB_LAUNCH_TAG_NEW,
   BNHUB_LAUNCH_TAG_SPECIAL,
 } from "@/lib/bnhub/bnhub-launch-quality";
+import { requireHostIdentityForShortTermPublish } from "@/lib/compliance/identityGateForPublish";
 
 export type CreateQuickBnhubListingInput = {
   ownerId: string;
@@ -38,6 +39,11 @@ export async function createQuickBnhubListingRecord(input: CreateQuickBnhubListi
     throw new Error(q.errors.join(" "));
   }
 
+  const targetStatus = input.listingStatus ?? ListingStatus.PUBLISHED;
+  if (targetStatus === ListingStatus.PUBLISHED) {
+    await requireHostIdentityForShortTermPublish(input.ownerId);
+  }
+
   const listing = await prisma.$transaction(async (tx) => {
     const listingCode = await allocateUniqueLSTListingCode(tx);
     return tx.shortTermListing.create({
@@ -56,7 +62,7 @@ export async function createQuickBnhubListingRecord(input: CreateQuickBnhubListi
         maxGuests: 4,
         photos: input.photos as unknown as Prisma.InputJsonValue,
         amenities: input.amenities as unknown as Prisma.InputJsonValue,
-        listingStatus: input.listingStatus ?? ListingStatus.PUBLISHED,
+        listingStatus: targetStatus,
         experienceTags: (input.experienceTags ?? []) as unknown as Prisma.InputJsonValue,
       },
     });

@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { HostPublishIdentityError } from "@/lib/compliance/goLive";
 import { getGuestId } from "@/lib/auth/session";
 import { ListingStatus } from "@prisma/client";
 import {
@@ -73,6 +74,9 @@ export async function POST(request: NextRequest) {
       listingCode: listing.listingCode,
     });
   } catch (e) {
+    if (e instanceof HostPublishIdentityError) {
+      return Response.json({ error: e.message }, { status: 403 });
+    }
     const msg = e instanceof Error ? e.message : "Create failed";
     return Response.json({ error: msg }, { status: 400 });
   }

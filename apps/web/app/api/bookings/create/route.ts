@@ -18,6 +18,7 @@ import { maybeBlockRequestWithLegalGate } from "@/modules/legal/legal-api-gate";
 import { syncAvailability } from "@/modules/channel-manager/channel-sync.service";
 import { jsonErr, jsonOk } from "@/lib/api/standard-json";
 import { recordEvolutionOutcome } from "@/modules/evolution/outcome-tracker.service";
+import { getClientIp } from "@/lib/security/rateLimit";
 
 export const dynamic = "force-dynamic";
 
@@ -163,6 +164,7 @@ export async function POST(request: NextRequest) {
       guestId,
       checkIn,
       checkOut,
+      clientIp: getClientIp(request),
       guestCount: guestsCount,
       guestContactEmail: typeof body.guestEmail === "string" ? body.guestEmail : undefined,
       guestContactName: typeof body.guestName === "string" ? body.guestName : undefined,

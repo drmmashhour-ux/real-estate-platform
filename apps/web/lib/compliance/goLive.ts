@@ -5,6 +5,13 @@ import { auditHardLockListingPublish } from "./hardLockAudit";
 import { assertUserEmailPhoneVerifiedForPublish } from "./identityGateForPublish";
 import { flags } from "@/lib/flags";
 
+export {
+  assertUserEmailPhoneVerifiedForPublish,
+  requireHostIdentityForShortTermPublish,
+  HostPublishIdentityError,
+  HOST_PUBLISH_IDENTITY_ERROR_MESSAGE,
+} from "./identityGateForPublish";
+
 const AUDIT_KEY_BLOCKED = "oaciq.crm_listing.go_live_blocked";
 const AUDIT_KEY_SUCCESS = "oaciq.crm_listing.go_live_success";
 

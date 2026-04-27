@@ -1,6 +1,7 @@
 import { ListingStatus } from "@prisma/client";
 import { getLegacyDB } from "@/lib/db/legacy";
 const prisma = getLegacyDB();
+import { HostPublishIdentityError, HOST_PUBLISH_IDENTITY_ERROR_MESSAGE } from "@/lib/compliance/identityGateForPublish";
 import { updateListing, type UpdateListingData } from "@/lib/bnhub/listings";
 import { logPricingAiApplied } from "@/modules/pricing-ai/pricing-ai.logger";
 
@@ -8,10 +9,14 @@ export async function patchShortTermListingForHost(
   hostId: string,
   listingId: string,
   body: Record<string, unknown>
-): Promise<{ ok: true; listing: Awaited<ReturnType<typeof updateListing>> } | { ok: false; status: 404 | 403 }> {
+): Promise<
+  | { ok: true; listing: Awaited<ReturnType<typeof updateListing>> }
+  | { ok: false; status: 404 }
+  | { ok: false; status: 403; error?: string }
+> {
   const row = await prisma.shortTermListing.findUnique({ where: { id: listingId } });
   if (!row) return { ok: false, status: 404 };
-  if (row.ownerId !== hostId) return { ok: false, status: 403 };
+  if (row.ownerId !== hostId) return { ok: false, status: 403, error: "Forbidden" };
 
   const patch: UpdateListingData = {};
 
@@ -44,7 +49,15 @@ export async function patchShortTermListingForHost(
   }
 
   const pricingAiApplied = body.pricingAiApplied === true;
-  const updated = await updateListing(listingId, patch);
+  let updated: Awaited<ReturnType<typeof updateListing>>;
+  try {
+    updated = await updateListing(listingId, patch);
+  } catch (e) {
+    if (e instanceof HostPublishIdentityError) {
+      return { ok: false, status: 403, error: HOST_PUBLISH_IDENTITY_ERROR_MESSAGE };
+    }
+    throw e;
+  }
   if (pricingAiApplied && typeof patch.nightPriceCents === "number") {
     logPricingAiApplied({
       listingId: listingId.slice(0, 8),

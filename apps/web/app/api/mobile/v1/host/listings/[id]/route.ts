@@ -1,6 +1,11 @@
 import { ListingStatus, Prisma } from "@prisma/client";
 import { getLegacyDB } from "@/lib/db/legacy";
 const prisma = getLegacyDB();
+import {
+  HostPublishIdentityError,
+  HOST_PUBLISH_IDENTITY_ERROR_MESSAGE,
+  requireHostIdentityForShortTermPublish,
+} from "@/lib/compliance/identityGateForPublish";
 import { requireMobileUser, resolveMobileAppRoleFromRequest } from "@/lib/mobile/mobileAuth";
 import { enqueueHostAutopilot } from "@/lib/ai/autopilot/triggers";
 
@@ -40,6 +45,14 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         listing.listingStatus === ListingStatus.UNLISTED ||
         listing.listingStatus === ListingStatus.APPROVED
       ) {
+        try {
+          await requireHostIdentityForShortTermPublish(user.id);
+        } catch (e) {
+          if (e instanceof HostPublishIdentityError) {
+            return Response.json({ error: HOST_PUBLISH_IDENTITY_ERROR_MESSAGE }, { status: 403 });
+          }
+          throw e;
+        }
         data.listingStatus = ListingStatus.PUBLISHED;
       }
     }

@@ -1,15 +1,27 @@
-import { prisma } from "../lib/db";
+/**
+ * Raw Postgres connection (no Prisma). Load env the same way as Prisma CLI.
+ * Run: pnpm tsx scripts/test-db.ts
+ */
+import "./load-apps-web-env";
 
-async function main() {
-  try {
-    console.log("Testing DB connection...");
-    const result = await prisma.$queryRaw`SELECT 1 as result`;
-    console.log("DB Result:", result);
-    process.exit(0);
-  } catch (e) {
-    console.error("DB Error:", e);
+import pkg from "pg";
+const { Client } = pkg;
+
+const client = new Client({
+  connectionString: process.env.DATABASE_URL,
+});
+
+void (async () => {
+  if (!process.env.DATABASE_URL?.trim()) {
+    console.error("DB FAILED: DATABASE_URL is not set (check apps/web/.env and .env.local)");
     process.exit(1);
   }
-}
-
-main();
+  try {
+    await client.connect();
+    console.log("DB CONNECTED");
+    await client.end();
+  } catch (e) {
+    console.error("DB FAILED:", e);
+    process.exit(1);
+  }
+})();

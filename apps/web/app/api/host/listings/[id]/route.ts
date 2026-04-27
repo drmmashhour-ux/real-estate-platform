@@ -80,6 +80,9 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
 
   const result = await patchShortTermListingForHost(userId, id, body);
   if (!result.ok) {
+    if (result.status === 403) {
+      return Response.json({ error: result.error ?? "Forbidden" }, { status: 403 });
+    }
     return Response.json({ error: "Not found" }, { status: 404 });
   }
 
