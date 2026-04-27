@@ -19,24 +19,24 @@ export function describeListingSortAutonomyOverlay(
 
 const DIRECT_FIRST: Prisma.SyriaPropertyOrderByWithRelationInput = { isDirect: "desc" };
 
-const PHONE_VERIFIED_FIRST: Prisma.SyriaPropertyOrderByWithRelationInput = {
-  owner: { phoneVerifiedAt: "desc" },
-};
+/** SY8: denormalized feed score (location + trust + bookings), then monetization tier, then recency. */
+const SY8_FEED_RANK: Prisma.SyriaPropertyOrderByWithRelationInput = { sy8FeedRankScore: "desc" };
 
 /**
- * Short-stay feed: same as browse, but phone-verified hosts surface earlier (trust).
+ * Short-stay feed: same ordering as the main browse surface.
  */
 export function listingBrowseOrderBySybnb(
   sort: string | undefined,
 ): Prisma.SyriaPropertyOrderByWithRelationInput[] {
-  const base = listingBrowseOrderBy(sort);
-  return [DIRECT_FIRST, PHONE_VERIFIED_FIRST, ...base.slice(1)];
+  return listingBrowseOrderBy(sort);
 }
 
 export function listingBrowseOrderBy(sort: string | undefined): Prisma.SyriaPropertyOrderByWithRelationInput[] {
   const s = sort ?? "featured";
-  if (s === "price_asc") return [DIRECT_FIRST, { price: "asc" }];
-  if (s === "price_desc") return [DIRECT_FIRST, { price: "desc" }];
-  if (s === "new" || s === "newest") return [DIRECT_FIRST, { createdAt: "desc" }];
-  return [DIRECT_FIRST, { plan: "desc" }, { createdAt: "desc" }];
+  if (s === "price_asc") return [DIRECT_FIRST, SY8_FEED_RANK, { price: "asc" }];
+  if (s === "price_desc") return [DIRECT_FIRST, SY8_FEED_RANK, { price: "desc" }];
+  if (s === "new" || s === "newest") {
+    return [DIRECT_FIRST, SY8_FEED_RANK, { plan: "desc" }, { createdAt: "desc" }];
+  }
+  return [DIRECT_FIRST, SY8_FEED_RANK, { plan: "desc" }, { createdAt: "desc" }];
 }

@@ -1,0 +1,66 @@
+# Syria SYBNB — blocks merge/deploy when payments safety preflight fails (see apps/syria/scripts/payments-preflight.js).
+name: Payments Preflight
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      APP_ID: syria
+      APP_ENV: development
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5433/lecipm_dev
+      SYBNB_ESCROW_ENABLED: "true"
+      SYBNB_AUTO_RELEASE_PAYOUTS: "false"
+      SYBNB_PAYMENTS_KILL_SWITCH: "false"
+      SYBNB_PAYMENT_PROVIDER: manual
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Start DB
+        run: docker compose -f apps/web/docker-compose.local-db.yml up -d
+
+      - name: Wait for DB
+        run: |
+          for _ in $(seq 1 30); do
+            if nc -z 127.0.0.1 5433 2>/dev/null; then
+              echo "DB ready"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "DB not ready"
+          exit 1
+
+      - name: Apply Syria migrations
+        run: |
+          cd apps/syria
+          pnpm exec prisma migrate deploy --schema=./prisma/schema.prisma
+
+      - name: Run Payments Preflight
+        run: |
+          cd apps/syria
+          pnpm payments:preflight

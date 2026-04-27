@@ -3,6 +3,7 @@ import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { Cairo, Inter } from "next/font/google";
+import { DemoGlobalBanner } from "@/components/demo/DemoGlobalBanner";
 import { SyriaHeader } from "@/components/SyriaHeader";
 import { SyriaFooter } from "@/components/SyriaFooter";
 import { DarlinkMobileNav } from "@/components/DarlinkMobileNav";
@@ -86,6 +87,7 @@ export default async function LocaleLayout({ children, params }: Props) {
         className={`flex min-h-screen flex-col bg-[color:var(--darlink-surface)] antialiased [--font-darlink-ar:var(--font-darlink-cairo)] [--font-darlink-en:var(--font-darlink-inter)] ${dir === "rtl" ? "darlink-root-rtl" : "darlink-root-ltr"}`}
       >
         <NextIntlClientProvider messages={messages}>
+          <DemoGlobalBanner />
           <SyriaHeader />
           <main className="darlink-main-pad mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6 sm:py-10">{children}</main>
           <SyriaFooter />

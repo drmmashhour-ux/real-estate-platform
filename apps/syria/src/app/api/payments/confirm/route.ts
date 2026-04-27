@@ -6,6 +6,7 @@ import { requireF1Admin } from "@/lib/payment-f1-admin";
 import { runF1Confirm } from "@/lib/payment-f1-service";
 import { f1GetPaymentSecret, f1SignPaymentRequest } from "@/lib/payment-request-signature";
 import { revalidateF1AfterConfirm } from "@/lib/payment-f1-revalidate";
+import { logSecurityEvent } from "@/lib/sybnb/sybnb-security-log";
 
 export async function POST(req: Request) {
   const gate = await requireF1Admin(req);
@@ -43,6 +44,13 @@ export async function POST(req: Request) {
   const admin = await getAdminUser();
   const sig = f1SignPaymentRequest(row.id, row.listingId, row.amount, secret);
   const out = await runF1Confirm(requestId, { sig, adminId: admin?.id ?? null, clientIp });
+  if (admin && (out.type === "ok" || out.type === "already")) {
+    void logSecurityEvent({
+      action: "f1_payment_confirmed",
+      userId: admin.id,
+      metadata: { requestId, listingId: out.listingId },
+    });
+  }
 
   if (out.type === "not_found") {
     return NextResponse.json({ ok: false, error: "not_found" }, { status: 404 });

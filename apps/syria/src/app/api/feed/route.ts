@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { sy8FeedExtraWhere } from "@/lib/sy8/sy8-feed-visibility";
 
 const PAGE = 12;
 const MAX_OFFSET = 500;
@@ -17,8 +18,13 @@ export async function GET(req: Request) {
   try {
     const [rows, total] = await prisma.$transaction([
       prisma.syriaProperty.findMany({
-        where: { status: "PUBLISHED", fraudFlag: false },
-        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+        where: { status: "PUBLISHED", fraudFlag: false, ...sy8FeedExtraWhere },
+        orderBy: [
+          { owner: { verifiedAt: { sort: "desc", nulls: "last" } } },
+          { plan: "desc" },
+          { createdAt: "desc" },
+          { id: "desc" },
+        ],
         take: PAGE,
         skip: offset,
         select: {
@@ -44,7 +50,7 @@ export async function GET(req: Request) {
           views: true,
         },
       }),
-      prisma.syriaProperty.count({ where: { status: "PUBLISHED", fraudFlag: false } }),
+      prisma.syriaProperty.count({ where: { status: "PUBLISHED", fraudFlag: false, ...sy8FeedExtraWhere } }),
     ]);
 
     return NextResponse.json(

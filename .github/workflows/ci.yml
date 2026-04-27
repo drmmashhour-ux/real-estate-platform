@@ -49,8 +49,10 @@ jobs:
         id: install
         run: pnpm install --frozen-lockfile
 
-      - name: Multi-country isolation (Darlink scan + web / syria / uae / packages)
-        run: pnpm check:darlink-isolation
+      - name: Monorepo isolation (cross-app imports + app identity)
+        run: |
+          pnpm run check:isolation
+          pnpm run check:cross-contamination
 
       # Never echo DATABASE_URL — would leak real credentials when set from Actions secrets.
       - name: Verify DATABASE_URL for Prisma
@@ -115,3 +117,140 @@ jobs:
             apps/web/.integrity-report.json
             apps/web/typecheck-ci.log
             apps/web/next-build-ci.log
+
+  env-safety:
+    name: DB env safety (web + syria)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: @repo/db env-guard (expected throw cases)
+        run: pnpm --filter @repo/db run verify:env-guard
+
+      - name: LECIPM web — env:check (safe dev DSN)
+        working-directory: apps/web
+        env:
+          APP_ID: lecipm
+          APP_ENV: development
+          DATABASE_URL: postgresql://ci:ci@127.0.0.1:5432/lecipm_ci
+        run: pnpm run env:check
+
+      - name: Syria — env:check (safe dev DSN)
+        working-directory: apps/syria
+        env:
+          APP_ID: syria
+          APP_ENV: development
+          DATABASE_URL: postgresql://ci:ci@127.0.0.1:5432/syria_ci
+        run: pnpm run env:check
+
+      - name: Web — production must not allow localhost
+        working-directory: apps/web
+        env:
+          APP_ID: lecipm
+          APP_ENV: production
+          NODE_ENV: production
+          DATABASE_URL: postgresql://u:p@127.0.0.1:5432/lecipm
+        run: |
+          if pnpm run env:check; then
+            echo "expected env:check to fail (localhost in production)" >&2
+            exit 1
+          fi
+          echo "ok (exit non-zero as expected)"
+
+      - name: Web — APP_ID must match this package
+        working-directory: apps/web
+        env:
+          APP_ID: syria
+          APP_ENV: development
+          DATABASE_URL: postgresql://ci:ci@127.0.0.1:5432/lecipm_ci
+        run: |
+          if pnpm run env:check; then
+            echo "expected env:check to fail (wrong APP_ID for web)" >&2
+            exit 1
+          fi
+          echo "ok (exit non-zero as expected)"
+
+      - name: Web — LECIPM must not use Syria DSN
+        working-directory: apps/web
+        env:
+          APP_ID: lecipm
+          APP_ENV: staging
+          DATABASE_URL: postgresql://u:p@stg.example.com:5432/syria_stg?sslmode=require
+        run: |
+          if pnpm run env:check; then
+            echo "expected env:check to fail (syria token for lecipm app)" >&2
+            exit 1
+          fi
+          echo "ok (exit non-zero as expected)"
+
+      - name: Staging — remote DSN must declare ssl
+        working-directory: apps/web
+        env:
+          APP_ID: lecipm
+          APP_ENV: staging
+          DATABASE_URL: postgresql://u:p@rds.example.com:5432/lecipm?sslmode=disable
+        run: |
+          if pnpm run env:check; then
+            echo "expected env:check to fail (sslmode=disable for remote staging)" >&2
+            exit 1
+          fi
+          echo "ok (exit non-zero as expected)"
+
+      - name: Web — staging DSN must not match production URL
+        working-directory: apps/web
+        env:
+          APP_ID: lecipm
+          APP_ENV: staging
+          PRODUCTION_DATABASE_URL: postgresql://u:p@db.example.com:5432/lecipm?sslmode=require
+          DATABASE_URL: postgresql://u:p@db.example.com:5432/lecipm?sslmode=require
+        run: |
+          if pnpm run env:check; then
+            echo "expected env:check to fail (staging same as production)" >&2
+            exit 1
+          fi
+          echo "ok (exit non-zero as expected)"
+
+      - name: Syria — investor demo cannot use production APP_ENV
+        working-directory: apps/syria
+        env:
+          APP_ID: syria
+          APP_ENV: production
+          INVESTOR_DEMO_MODE: "true"
+          NODE_ENV: production
+          PRODUCTION_DATABASE_URL: postgresql://u:p@db.prod.example.com:5432/syria?sslmode=require
+          DATABASE_URL: postgresql://u:p@db.prod.example.com:5432/syria?sslmode=require
+        run: |
+          if pnpm run env:check; then
+            echo "expected env:check to fail (demo in production)" >&2
+            exit 1
+          fi
+          echo "ok (exit non-zero as expected)"
+
+      - name: Syria — demo mode must not point at production database
+        working-directory: apps/syria
+        env:
+          APP_ID: syria
+          APP_ENV: development
+          INVESTOR_DEMO_MODE: "true"
+          PRODUCTION_DATABASE_URL: postgresql://u:p@db.prod.example.com:5432/syria_sybnb?sslmode=require
+          DATABASE_URL: postgresql://u:p@db.prod.example.com:5432/syria_sybnb?sslmode=require
+        run: |
+          if pnpm run env:check; then
+            echo "expected env:check to fail (demo URL = production DSN)" >&2
+            exit 1
+          fi
+          echo "ok (exit non-zero as expected)"

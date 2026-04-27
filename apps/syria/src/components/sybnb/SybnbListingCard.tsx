@@ -1,0 +1,62 @@
+import { getTranslations } from "next-intl/server";
+import { Link } from "@/i18n/navigation";
+import { getLocalizedPropertyCity } from "@/lib/property-localization";
+import { money } from "@/lib/format";
+import { pickListingTitle } from "@/lib/listing-localized";
+import type { SyriaProperty } from "@/generated/prisma";
+import { SybnbTrustBadge } from "@/components/sybnb/SybnbTrustBadge";
+
+type Row = SyriaProperty & {
+  owner: { phoneVerifiedAt: Date | null; verifiedAt: Date | null; verificationLevel: string | null };
+};
+
+type Props = {
+  property: Row;
+  locale: string;
+  activeListings: number;
+  soldListings: number;
+};
+
+/**
+ * One SYBNB stay card (grid / carousels). Use with counts from `getSy8OwnerListingCountsMap` or precomputed.
+ */
+export async function SybnbListingCard({ property: p, locale, activeListings, soldListings }: Props) {
+  const t = await getTranslations("Sybnb.home");
+  const cover = p.images[0] ?? null;
+  const city = getLocalizedPropertyCity(p, locale);
+  const price = p.pricePerNight != null ? p.pricePerNight : p.price.toString();
+  return (
+    <li>
+      <Link
+        href={`/sybnb/listings/${p.id}`}
+        className="group block overflow-hidden rounded-2xl border border-neutral-200/80 bg-white shadow-sm transition hover:border-amber-200/60 hover:shadow-md"
+      >
+        <div className="relative aspect-[4/3] bg-neutral-100">
+          {cover ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={cover} alt="" className="h-full w-full object-cover transition group-hover:scale-[1.02]" />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center text-xs text-neutral-400">—</div>
+          )}
+          {p.verified || p.listingVerified ? (
+            <span className="absolute left-2 top-2 rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-semibold text-neutral-800 shadow">
+              {t("badgeVerified")}
+            </span>
+          ) : null}
+        </div>
+        <div className="p-3">
+          <p className="line-clamp-1 text-sm font-semibold text-neutral-900 group-hover:text-amber-900">
+            {pickListingTitle(p, locale)}
+          </p>
+          <p className="mt-0.5 text-xs text-neutral-500">{city}</p>
+          <div className="mt-1">
+            <SybnbTrustBadge owner={p.owner} activeListings={activeListings} soldListings={soldListings} />
+          </div>
+          <p className="mt-2 text-sm font-bold text-neutral-900">
+            {money(price, p.currency)} <span className="text-xs font-normal text-neutral-500">/ {t("night")}</span>
+          </p>
+        </div>
+      </Link>
+    </li>
+  );
+}

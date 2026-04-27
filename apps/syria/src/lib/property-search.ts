@@ -8,6 +8,7 @@ import {
 } from "@/lib/syria-location-catalog";
 import { parseFeaturesQuery } from "@/lib/syria/amenities";
 import { tryNormalizeAdCodeQuery } from "@/lib/syria/ad-code";
+import { sy8FeedExtraWhere } from "@/lib/sy8/sy8-feed-visibility";
 
 export type ListingKind = "sale" | "rent" | "bnhub" | "stay";
 
@@ -200,6 +201,7 @@ export function buildPropertyWhere(
     type,
     status: "PUBLISHED",
     fraudFlag: false,
+    ...sy8FeedExtraWhere,
   };
 
   if (andParts.length > 0) {

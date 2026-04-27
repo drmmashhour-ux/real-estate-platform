@@ -1,4 +1,6 @@
 // Syria platform — isolated tables (`syria_*`). Same DATABASE_URL as rest of monorepo; no overlap with apps/web schema.
+// SYBNB (app): `apps/syria/src/lib/sybnb/*` + `components/sybnb/*` + `app/api/sybnb/*`. The shipping short-stay flow uses
+// `SyriaBooking` with `property.category = stay` (and `SybnbListingReport`); the `SybnbBooking` model is reserved for a future dedicated flow.
 generator client {
   provider   = "prisma-client-js"
   engineType = "binary"
@@ -24,6 +26,7 @@ enum SyriaSybnbListingReview {
 }
 
 /// SYBNB 2.0 — request / payment / settlement lifecycle (see `SybnbBooking`).
+/// SYBNB-1 (no card payment) uses: `requested` | `approved` | `declined` | `cancelled` | `completed` — other values reserved for later phases.
 enum SybnbBookingStatus {
   requested
   approved
@@ -37,6 +40,7 @@ enum SybnbBookingStatus {
   needs_review
 }
 
+/// Guest-side payment. SYBNB-1: `none` (request) then `manual_required` after host approves; card states unused until checkout ships.
 enum SybnbGuestPaymentState {
   none
   pending
@@ -175,6 +179,8 @@ model SyriaAppUser {
   role      SyriaUserRole @default(USER)
   createdAt DateTime      @default(now()) @map("created_at")
   updatedAt DateTime      @updatedAt @map("updated_at")
+  /// Investor-demo seed only: `{"demo":true,"source":"investor-demo"}` — excluded from prod metrics/alerts when set.
+  demoMeta Json? @map("demo_meta")
 
   propertiesOwned       SyriaProperty[]           @relation("PropertyOwner")
   phoneOtps                 SyriaPhoneOtp[]
@@ -293,6 +299,10 @@ model SyriaProperty {
   sybnbStayType    String?             @map("sybnb_stay_type")
   createdAt        DateTime            @default(now()) @map("created_at")
   updatedAt        DateTime            @updatedAt @map("updated_at")
+  /// Investor-demo seed marker — excluded from aggregate fraud/payment metrics when set.
+  demoMeta Json? @map("demo_meta")
+  /// Denormalized SY8/SYBNB feed boost: location richness + verified seller + ≥1 booking. Recomputed on listing save and booking create.
+  sy8FeedRankScore Int                 @default(0) @map("sy8_feed_rank_score")
 
   bookings                  SyriaBooking[]
   listingPayments           SyriaListingPayment[]
@@ -315,6 +325,7 @@ model SyriaProperty {
   @@index([category, subcategory])
   @@index([category])
   @@index([status, needsReview, createdAt])
+  @@index([sy8FeedRankScore, createdAt])
   @@map("syria_properties")
 }
 
@@ -477,14 +488,35 @@ model SyriaBooking {
   utmCampaign          String?                    @map("utm_campaign")
   /// SYBNB: Stripe Checkout session id (stub or live) after host approval when card payments are on.
   sybnbCheckoutSessionId String?                  @map("sybnb_checkout_session_id")
+  /// Card / risk — `blocked` stops payment; `review` signals manual or held settlement.
+  riskStatus            SybnbRiskState            @default(clear) @map("risk_status")
   createdAt            DateTime                   @default(now()) @map("created_at")
   updatedAt            DateTime                   @updatedAt @map("updated_at")
+  /// Investor-demo seed marker — excluded from anomaly aggregates when set.
+  demoMeta Json? @map("demo_meta")
 
-  payouts SyriaPayout[]
+  payouts          SyriaPayout[]
+  sybnbCoreAudits  SyriaSybnbCoreAudit[]
 
   @@index([propertyId])
   @@index([guestId])
   @@map("syria_bookings")
+}
+
+/// Append-only financial / payment events for SYBNB on `SyriaBooking` (no updates or deletes in app).
+model SyriaSybnbCoreAudit {
+  id        String        @id @default(cuid())
+  bookingId String?       @map("booking_id")
+  booking   SyriaBooking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  /// e.g. payment_intent_stub | checkout_webhook_paid | admin_payout_approved | admin_payout_paid
+  event     String
+  provider  String?
+  metadata  Json?
+  createdAt DateTime      @default(now()) @map("created_at")
+
+  @@index([bookingId])
+  @@index([event, createdAt])
+  @@map("syria_sybnb_core_audit")
 }
 
 model SyriaPayout {
@@ -500,12 +532,23 @@ model SyriaPayout {
   approvedAt   DateTime?               @map("approved_at")
   paidAt       DateTime?               @map("paid_at")
   notes        String?                 @db.Text
+  /// SYBNB escrow lifecycle (additive; no PSP transfer — internal ledger only).
+  escrowStatus         String    @default("HELD") @map("escrow_status")
+  releaseEligibleAt    DateTime? @map("release_eligible_at")
+  releasedAt           DateTime? @map("escrow_released_at")
+  blockedAt            DateTime? @map("blocked_at")
+  blockedReason        String?   @map("blocked_reason") @db.Text
+  releaseApprovedById  String?   @map("release_approved_by_id")
+  releaseApprovedAt    DateTime? @map("release_approved_at")
+  /// Payout-side risk gate: PENDING_REVIEW | LOW | MEDIUM | HIGH | BLOCK (string; not the same as booking.riskStatus enum).
+  riskStatus           String    @default("PENDING_REVIEW") @map("payout_risk_status")
   createdAt    DateTime                @default(now()) @map("created_at")
   updatedAt    DateTime                @updatedAt @map("updated_at")
 
   @@unique([bookingId])
   @@index([hostId])
   @@index([status])
+  @@index([escrowStatus])
   @@map("syria_payouts")
 }
 

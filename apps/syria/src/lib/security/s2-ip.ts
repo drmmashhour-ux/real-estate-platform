@@ -27,3 +27,17 @@ export function s2GetClientIp(req: Request | NextRequest): string {
 export function s2RateLimitKey(ip: string, routeTag: string): string {
   return `${routeTag}|${ip}`;
 }
+
+/** For server actions: same IP heuristics as `s2GetClientIp` (trust x-forwarded-for first hop). */
+export async function s2GetClientIpFromRequestHeaders(): Promise<string> {
+  const { headers } = await import("next/headers");
+  const h = await headers();
+  const forwarded = h.get("x-forwarded-for");
+  if (forwarded) {
+    const first = forwarded.split(",")[0]?.trim();
+    if (first) return first;
+  }
+  const real = h.get("x-real-ip");
+  if (real?.trim()) return real.trim();
+  return "0";
+}

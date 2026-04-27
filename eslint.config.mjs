@@ -2,7 +2,12 @@ import js from "@eslint/js";
 import tseslint from "typescript-eslint";
 import monorepoIsolation from "./rules/eslint/monorepo-isolation-plugin.mjs";
 
-/** Shared ESLint config for LECIPM monorepo. Apps (e.g. Next) use their own config. */
+/**
+ * Shared ESLint config for LECIPM monorepo. Product apps use their own eslint.config.mjs:
+ * apps/web, apps/syria, apps/hadialink — each enforces `monorepo-isolation/no-cross-app-imports`.
+ * Static scan: `pnpm run check:isolation` (scripts/check-isolation.ts).
+ * Legacy `.eslintrc.cjs` documents the same; ESLint 9 reads this flat config only.
+ */
 export default tseslint.config(
   {
     ignores: [
@@ -20,6 +25,7 @@ export default tseslint.config(
       "apps/carrefour-prestige/**",
       "apps/web-next14-starter/**",
       "apps/uae/**",
+      "apps/hadialink/**",
       "carrefour-immobilier/**",
       "immobilier-prestige/**",
     ],

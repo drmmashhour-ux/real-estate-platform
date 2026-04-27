@@ -14,6 +14,7 @@ import { assertDarlinkRuntimeEnv } from "@/lib/guard";
 import { findSyriaCityByStored } from "@/data/syriaLocations";
 import { validateBilingualListingCopy } from "@/lib/listing-bilingual-validation";
 import { allocateAdCodeInTransaction } from "@/lib/syria/ad-code";
+import { recomputeSy8FeedRankForPropertyId } from "@/lib/sy8/sy8-feed-rank-refresh";
 
 function districtEnFromStored(cityCanonicalEn: string, areaStored: string | null | undefined): string | null {
   try {
@@ -139,6 +140,7 @@ export async function createPropertyListing(formData: FormData): Promise<void> {
         titleEn,
         descriptionAr,
         descriptionEn,
+        state: governorateEn,
         governorate: governorateEn,
         city,
         cityAr,
@@ -263,6 +265,8 @@ export async function createPropertyListing(formData: FormData): Promise<void> {
       hasArea: Boolean(area),
     },
   });
+
+  await recomputeSy8FeedRankForPropertyId(property.id);
 
   await revalidateSyriaPaths("/sell", "/dashboard/listings", "/admin/listings");
   const locale = await getLocale();

@@ -3,7 +3,7 @@ const path = require("path");
 
 const envPath = path.join(__dirname, "..", ".env.local");
 const localUrl =
-  "postgresql://postgres:postgres@localhost:5432/lecipm_dev?schema=public";
+  "postgresql://postgres:postgres@localhost:5433/lecipm_dev?schema=public";
 
 let existing = "";
 if (fs.existsSync(envPath)) {
@@ -33,4 +33,4 @@ lines.push(`DATABASE_URL="${localUrl}"`);
 fs.writeFileSync(envPath, lines.join("\n"));
 
 console.log("Updated .env.local to use local Postgres.");
-console.log("DATABASE_URL=postgresql://postgres:****@localhost:5432/lecipm_dev?schema=public");
+console.log("DATABASE_URL=postgresql://postgres:****@localhost:5433/lecipm_dev?schema=public");

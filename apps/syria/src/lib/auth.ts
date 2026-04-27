@@ -3,7 +3,8 @@ import { redirect } from "@/i18n/navigation";
 import type { SyriaAppUser } from "@/generated/prisma";
 import { prisma } from "./db";
 
-const COOKIE = "syria_user_id";
+/** Isolated from Canada `apps/web` (different deploy + DB). Override only for exceptional cookie rotation. */
+const COOKIE = process.env.SYRIA_AUTH_SESSION_COOKIE?.trim() || "syria_user_id";
 
 export async function getSessionUser() {
   const jar = await cookies();

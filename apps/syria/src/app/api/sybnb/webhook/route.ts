@@ -1,31 +1,57 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
-import { trackSyriaGrowthEvent } from "@/lib/growth-events";
-import { revalidateSyriaPaths } from "@/lib/revalidate-locale";
+import { sybnbConfig } from "@/config/sybnb.config";
+import { applySybnbCheckoutComplete } from "@/lib/sybnb/apply-sybnb-checkout";
+import { verifyOptionalSybnbWebhookBodyHmac, verifySybnbAppWebhookSecret } from "@/lib/sybnb/sybnb-payment-provider";
+import { logSecurityEvent } from "@/lib/sybnb/sybnb-security-log";
+import { sybnbFail, sybnbJson } from "@/lib/sybnb/sybnb-api-http";
+
+function assertWebhookSignature(req: Request) {
+  if (process.env.NODE_ENV !== "production") {
+    return;
+  }
+  const signature = req.headers.get("stripe-signature");
+  if (!signature?.trim()) {
+    throw new Error("Missing webhook signature");
+  }
+}
 
 /**
- * Stub Stripe webhook — no signature verification against Stripe until a PSP is legally enabled.
- * Expects JSON: `{ "type": "checkout.session.completed", "data": { "object": { "metadata": { "bookingId": "..." } } } }`
- * or `{ "bookingId": "..." }` for local testing.
- * Set `SYBNB_STRIPE_WEBHOOK_SECRET` and send header `x-sybnb-webhook-secret` with the same value.
+ * Stripe / PSP webhook — verify shared secret (and optional HMAC) before mutating money state. SYBNB-7: uniform error JSON.
  */
 export async function POST(req: Request): Promise<Response> {
-  const secret = process.env.SYBNB_STRIPE_WEBHOOK_SECRET?.trim();
-  if (secret) {
-    const sent = req.headers.get("x-sybnb-webhook-secret");
-    if (sent !== secret) {
-      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-    }
+  try {
+    assertWebhookSignature(req);
+  } catch {
+    return sybnbFail("Invalid webhook", 400);
+  }
+
+  const rawBody = await req.text();
+
+  await logSecurityEvent({
+    action: "webhook_received",
+    metadata: { bytes: rawBody.length, hasStripeSignature: Boolean(req.headers.get("stripe-signature")?.trim()) },
+  });
+
+  const secret = process.env.SYBNB_STRIPE_WEBHOOK_SECRET?.trim() ?? null;
+  if (sybnbConfig.requireWebhookSharedSecret && !secret) {
+    return sybnbFail("webhook_secret_not_configured", 503);
+  }
+  if (secret && !verifySybnbAppWebhookSecret(req.headers.get("x-sybnb-webhook-secret"), secret)) {
+    return sybnbFail("unauthorized", 401);
+  }
+  const hmacHeader = req.headers.get("x-sybnb-body-hmac");
+  if (!verifyOptionalSybnbWebhookBodyHmac(rawBody, hmacHeader)) {
+    return sybnbFail("invalid_body_hmac", 401);
   }
 
   let body: unknown;
   try {
-    body = await req.json();
+    body = rawBody.length > 0 ? (JSON.parse(rawBody) as unknown) : {};
   } catch {
-    return NextResponse.json({ error: "invalid_json" }, { status: 400 });
+    return sybnbFail("invalid_json", 400);
   }
   if (!body || typeof body !== "object") {
-    return NextResponse.json({ error: "invalid_body" }, { status: 400 });
+    return sybnbFail("invalid_body", 400);
   }
 
   const o = body as Record<string, unknown>;
@@ -41,43 +67,20 @@ export async function POST(req: Request): Promise<Response> {
     bookingId = o.bookingId;
   }
   if (!bookingId.trim()) {
-    return NextResponse.json({ error: "missing_booking_id" }, { status: 400 });
+    return sybnbFail("missing_booking_id", 400);
   }
 
-  const booking = await prisma.syriaBooking.findUnique({
-    where: { id: bookingId.trim() },
-    include: { property: { include: { owner: true } } },
-  });
-  if (!booking || booking.property.category !== "stay") {
-    return NextResponse.json({ error: "not_found" }, { status: 404 });
-  }
-  if (booking.status !== "APPROVED" || booking.guestPaymentStatus !== "UNPAID") {
-    return NextResponse.json({ error: "invalid_state" }, { status: 409 });
-  }
-  if (evaluateSybnbStayRequestEligibility(booking.property, booking.property.owner).ok !== true) {
-    return NextResponse.json({ error: "listing_or_host_blocked" }, { status: 409 });
-  }
-  if (!sybnbBookingRowMatchesServerQuote(booking, booking.property)) {
-    return NextResponse.json({ error: "amount_mismatch" }, { status: 409 });
+  const applied = await applySybnbCheckoutComplete(bookingId, { growthEventSource: "sybnb_webhook" });
+  if (!applied.ok) {
+    const e = applied.error;
+    if (e.code === "payment_gated") {
+      return NextResponse.json(
+        { success: false, error: e.reason, reason: e.reason, detail: e.detail, riskCodes: e.riskCodes },
+        { status: e.status },
+      );
+    }
+    return sybnbFail(e.code, e.status);
   }
 
-  await prisma.syriaBooking.update({
-    where: { id: booking.id },
-    data: {
-      status: "CONFIRMED",
-      guestPaymentStatus: "PAID",
-    },
-  });
-
-  await trackSyriaGrowthEvent({
-    eventType: "sybnb_checkout_webhook_paid",
-    userId: booking.guestId,
-    propertyId: booking.propertyId,
-    bookingId: booking.id,
-    payload: { source: "sybnb_webhook_stub" },
-  });
-
-  await revalidateSyriaPaths("/dashboard/bookings", "/admin/bookings", "/sybnb", `/listing/${booking.propertyId}`);
-
-  return NextResponse.json({ ok: true, received: true });
+  return sybnbJson({ received: true });
 }

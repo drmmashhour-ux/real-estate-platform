@@ -13,6 +13,7 @@ import {
   type MarketplaceCategory,
 } from "@/lib/marketplace-categories";
 import { allocateAdCodeInTransaction } from "@/lib/syria/ad-code";
+import { recomputeSy8FeedRankForPropertyId } from "@/lib/sy8/sy8-feed-rank-refresh";
 import { runAntiFraudGuardsForPublish } from "@/lib/anti-fraud/guards";
 import { ensureGuestUserForPhone } from "@/lib/syria-mvp-guest";
 import { sybnbConfig } from "@/config/sybnb.config";
@@ -169,6 +170,8 @@ export async function persistQuickListing(input: {
       },
     });
   });
+
+  await recomputeSy8FeedRankForPropertyId(property.id);
 
   await trackSyriaGrowthEvent({
     eventType: "listing_persisted",

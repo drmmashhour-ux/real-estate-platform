@@ -44,7 +44,9 @@ function isAllowlistedSyriaPath(relFromSyria: string): boolean {
     n === "src/lib/guard.ts" ||
     n === "src/lib/__tests__/guard.test.ts" ||
     n === "src/lib/brand/darlink-guardrails.ts" ||
-    n === "src/lib/brand/__tests__/darlink-guardrails.test.ts"
+    n === "src/lib/brand/__tests__/darlink-guardrails.test.ts" ||
+    n === "src/config/app-identity.ts" ||
+    n === "src/lib/env/app-isolation.ts"
   );
 }
 

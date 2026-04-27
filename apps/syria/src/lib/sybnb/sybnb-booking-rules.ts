@@ -1,5 +1,6 @@
 import type { SyriaAppUser, SyriaBooking, SyriaProperty } from "@/generated/prisma";
 import { sybnbConfig } from "@/config/sybnb.config";
+import { hasSy8ListingStateAndCity } from "@/lib/sy8/sy8-feed-rank-compute";
 import { computeSybnbQuote } from "@/lib/sybnb/sybnb-quote";
 
 /**
@@ -14,7 +15,10 @@ export type SybnbStayRequestBlockCode =
   | "fraud_flag"
   | "needs_review"
   | "host_flagged"
-  | "supply_paused";
+  | "host_unverified"
+  | "reports_threshold"
+  | "supply_paused"
+  | "location_incomplete";
 
 /**
  * Hosts must be phone- or account-verified, and the account must be past a minimum age window
@@ -25,6 +29,9 @@ export function hostMayEnableSybnbInstantBook(
   owner: Pick<SyriaAppUser, "phoneVerifiedAt" | "verifiedAt" | "createdAt">,
   now = new Date(),
 ): boolean {
+  if (!sybnbConfig.instantBookEnabled) {
+    return false;
+  }
   const hasTrust = Boolean(owner.phoneVerifiedAt || owner.verifiedAt);
   if (!hasTrust) return false;
   const minAgeMs = sybnbConfig.minHostAccountAgeForInstantBookDays * 86400000;
@@ -39,11 +46,18 @@ export function hostMayEnableSybnbInstantBook(
  * a pending request (re-evaluate at confirm time; listing/host state can change).
  */
 export function evaluateSybnbStayRequestEligibility(
-  property: Pick<SyriaProperty, "category" | "type" | "sybnbReview" | "status" | "fraudFlag" | "needsReview">,
-  owner: Pick<SyriaAppUser, "flagged" | "sybnbSupplyPaused">,
+  property: Pick<
+    SyriaProperty,
+    "category" | "type" | "sybnbReview" | "status" | "fraudFlag" | "needsReview" | "state" | "governorate" | "city"
+  >,
+  owner: Pick<SyriaAppUser, "flagged" | "sybnbSupplyPaused" | "phoneVerifiedAt" | "verifiedAt">,
+  opts?: { unreviewedReportCount?: number },
 ): { ok: true } | { ok: false; code: SybnbStayRequestBlockCode } {
   if (property.category !== "stay" || property.type !== "RENT") {
     return { ok: false, code: "not_stay" };
+  }
+  if (!hasSy8ListingStateAndCity(property)) {
+    return { ok: false, code: "location_incomplete" };
   }
   if (property.sybnbReview !== "APPROVED") {
     return { ok: false, code: "listing_not_approved" };
@@ -59,6 +73,14 @@ export function evaluateSybnbStayRequestEligibility(
   }
   if (owner.flagged) {
     return { ok: false, code: "host_flagged" };
+  }
+  if (sybnbConfig.requireHostVerifiedForStayRequests && !owner.phoneVerifiedAt && !owner.verifiedAt) {
+    return { ok: false, code: "host_unverified" };
+  }
+  if (opts?.unreviewedReportCount != null) {
+    if (opts.unreviewedReportCount >= sybnbConfig.maxUnreviewedReportsBlockBookings) {
+      return { ok: false, code: "reports_threshold" };
+    }
   }
   if (owner.sybnbSupplyPaused) {
     return { ok: false, code: "supply_paused" };

@@ -1,0 +1,11 @@
+{
+  "framework": "nextjs",
+  "buildCommand": "cd ../.. && pnpm --filter @lecipm/syria build",
+  "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
+  "crons": [
+    {
+      "path": "/api/sybnb/cron/complete-bookings",
+      "schedule": "0 2 * * *"
+    }
+  ]
+}

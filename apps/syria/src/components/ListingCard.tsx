@@ -20,6 +20,8 @@ import type { SerializedBrowseListing } from "@/services/search/search.service";
 import { labelSyriaState } from "@/lib/syria/states";
 import { labelSyriaAmenity } from "@/lib/syria/amenities";
 import { MARKETPLACE_CATEGORY_EMOJI } from "@/lib/marketplace-categories";
+import { SybnbTrustBadge } from "@/components/sybnb/SybnbTrustBadge";
+import type { Sy8ReputationTier } from "@/lib/sy8/sy8-reputation";
 
 type CardListing = Pick<
   SyriaProperty,
@@ -248,6 +250,14 @@ export function ListingCard({
             {catEmoji ? <span aria-hidden>{catEmoji} </span> : null}
             {(tCat as (k: string) => string)(catKey)} · {(tCat as (k: string) => string)(`sub_${subKey}`)}
           </p>
+        ) : null}
+        {"sy8ReputationLabelId" in listing && listing.sy8ReputationLabelId ? (
+          <SybnbTrustBadge
+            precomputed={{
+              sellerVerified: Boolean("sy8SellerVerified" in listing && listing.sy8SellerVerified),
+              reputationLabelId: listing.sy8ReputationLabelId as Sy8ReputationTier,
+            }}
+          />
         ) : null}
         {showTrustedHighlight ? <div className="text-sm text-green-600">{t("badgeTrustedListing")}</div> : null}
         <p className="text-sm leading-snug text-[color:var(--darlink-text-muted)]">

@@ -7,7 +7,25 @@ import { getG5TopCityByWhatsappClicks } from "@/lib/growth-operating-metrics";
 import { isBnhubInSyriaUI, syriaFlags } from "@/lib/platform-flags";
 import { Card } from "@/components/ui/Card";
 import { HomeCategoryGrid } from "@/components/home/HomeCategoryGrid";
-import type { SyriaProperty } from "@/generated/prisma";
+import type { Prisma, SyriaProperty } from "@/generated/prisma";
+import { sy8FeedExtraWhere } from "@/lib/sy8/sy8-feed-visibility";
+import { getSy8OwnerListingCountsMap } from "@/lib/sy8/sy8-owner-listing-counts";
+import {
+  computeSy8SellerScore,
+  isSy8SellerVerified,
+  sy8ReputationLabelId,
+} from "@/lib/sy8/sy8-reputation";
+
+type WithOwner = SyriaProperty & {
+  owner: { phoneVerifiedAt: Date | null; verifiedAt: Date | null; verificationLevel: string | null };
+};
+
+const sy8HomeOrder: Prisma.SyriaPropertyOrderByWithRelationInput[] = [
+  { isDirect: "desc" },
+  { owner: { verifiedAt: { sort: "desc", nulls: "last" } } },
+  { plan: "desc" },
+  { createdAt: "desc" },
+];
 
 export default async function HomePage() {
   const t = await getTranslations("home");
@@ -16,16 +34,17 @@ export default async function HomePage() {
   const bnhubOn = syriaFlags.BNHUB_ENABLED && showBnhubHome;
 
   let publishedCount = 0;
-  let latestListings: SyriaProperty[] = [];
+  let latestListings: WithOwner[] = [];
   try {
     const [rows, count] = await prisma.$transaction([
       prisma.syriaProperty.findMany({
-        where: { status: "PUBLISHED", fraudFlag: false },
-        orderBy: [{ isDirect: "desc" }, { plan: "desc" }, { createdAt: "desc" }],
+        where: { status: "PUBLISHED", fraudFlag: false, ...sy8FeedExtraWhere },
+        orderBy: sy8HomeOrder,
         take: 12,
+        include: { owner: { select: { phoneVerifiedAt: true, verifiedAt: true, verificationLevel: true } } },
       }),
       prisma.syriaProperty.count({
-        where: { status: "PUBLISHED", fraudFlag: false },
+        where: { status: "PUBLISHED", fraudFlag: false, ...sy8FeedExtraWhere },
       }),
     ]);
     latestListings = rows;
@@ -35,13 +54,14 @@ export default async function HomePage() {
     publishedCount = 0;
   }
 
-  let bnhubRows: SyriaProperty[] = [];
+  let bnhubRows: WithOwner[] = [];
   if (bnhubOn) {
     try {
       bnhubRows = await prisma.syriaProperty.findMany({
-        where: { type: "BNHUB", status: "PUBLISHED", fraudFlag: false },
-        orderBy: [{ plan: "desc" }, { createdAt: "desc" }],
+        where: { type: "BNHUB", status: "PUBLISHED", fraudFlag: false, ...sy8FeedExtraWhere },
+        orderBy: sy8HomeOrder,
         take: 4,
+        include: { owner: { select: { phoneVerifiedAt: true, verifiedAt: true, verificationLevel: true } } },
       });
     } catch {
       bnhubRows = [];
@@ -63,13 +83,53 @@ export default async function HomePage() {
     g5Domination = null;
   }
 
+  const homeSy8Map =
+    latestListings.length > 0 ? await getSy8OwnerListingCountsMap(latestListings.map((l) => l.ownerId)) : new Map();
+  const bnhubSy8Map =
+    bnhubRows.length > 0 ? await getSy8OwnerListingCountsMap(bnhubRows.map((l) => l.ownerId)) : new Map();
+
   const cards =
-    latestListings.length > 0
-      ? latestListings.map((l, i) => <ListingCard key={l.id} listing={l} locale={locale} priority={i < 3} />)
-      : null;
+    latestListings.length > 0 ?
+      latestListings.map((l, i) => {
+        const { owner, ...rest } = l;
+        const c = homeSy8Map.get(l.ownerId) ?? { activeListings: 0, soldListings: 0 };
+        const sy8ReputationScore = computeSy8SellerScore(c.soldListings, c.activeListings);
+        return (
+          <ListingCard
+            key={l.id}
+            listing={{
+              ...rest,
+              sy8SellerVerified: isSy8SellerVerified(owner),
+              sy8ReputationScore,
+              sy8ReputationLabelId: sy8ReputationLabelId(sy8ReputationScore),
+            }}
+            locale={locale}
+            priority={i < 3}
+          />
+        );
+      })
+    : null;
 
   const bnhubCards =
-    bnhubRows.length > 0 ? bnhubRows.map((l) => <ListingCard key={l.id} listing={l} locale={locale} />) : null;
+    bnhubRows.length > 0 ?
+      bnhubRows.map((l) => {
+        const { owner, ...rest } = l;
+        const c = bnhubSy8Map.get(l.ownerId) ?? { activeListings: 0, soldListings: 0 };
+        const sy8ReputationScore = computeSy8SellerScore(c.soldListings, c.activeListings);
+        return (
+          <ListingCard
+            key={l.id}
+            listing={{
+              ...rest,
+              sy8SellerVerified: isSy8SellerVerified(owner),
+              sy8ReputationScore,
+              sy8ReputationLabelId: sy8ReputationLabelId(sy8ReputationScore),
+            }}
+            locale={locale}
+          />
+        );
+      })
+    : null;
 
   return (
     <div className="space-y-16 sm:space-y-20">

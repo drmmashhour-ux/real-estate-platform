@@ -10,6 +10,13 @@ import {
   parseAmenityTags,
   parseSearchNumber,
 } from "@/lib/property-search";
+import { getSy8OwnerListingCountsMap } from "@/lib/sy8/sy8-owner-listing-counts";
+import {
+  computeSy8SellerScore,
+  isSy8SellerVerified,
+  sy8ReputationLabelId,
+  type Sy8ReputationTier,
+} from "@/lib/sy8/sy8-reputation";
 
 export type BrowseSurface = "sale" | "rent" | "bnhub" | "stay";
 
@@ -55,6 +62,10 @@ export type SerializedBrowseListing = {
   subcategory: string;
   /** Nightly SYP for SYBNB; null if unset. */
   pricePerNight: number | null;
+  /** SY8: present when the row came from `searchProperties` (browse). */
+  sy8SellerVerified?: boolean;
+  sy8ReputationScore?: number;
+  sy8ReputationLabelId?: Sy8ReputationTier;
 };
 
 export type SearchPropertiesResult = {
@@ -72,7 +83,13 @@ function surfaceToKind(surface: BrowseSurface): ListingKind {
   return "bnhub";
 }
 
-function serialize(p: SyriaProperty): SerializedBrowseListing {
+type PropertyWithOwnerForSy8 = SyriaProperty & {
+  owner: { phoneVerifiedAt: Date | null; verifiedAt: Date | null; verificationLevel: string | null };
+};
+
+const ownerSelectSy8 = { owner: { select: { phoneVerifiedAt: true, verifiedAt: true, verificationLevel: true } } };
+
+function baseFields(p: SyriaProperty) {
   return {
     id: p.id,
     titleAr: p.titleAr,
@@ -110,6 +127,21 @@ function serialize(p: SyriaProperty): SerializedBrowseListing {
     subcategory: p.subcategory,
     pricePerNight: p.pricePerNight ?? null,
   };
+}
+
+async function serializeWithSy8(rows: PropertyWithOwnerForSy8[]): Promise<SerializedBrowseListing[]> {
+  if (rows.length === 0) return [];
+  const countMap = await getSy8OwnerListingCountsMap(rows.map((r) => r.ownerId));
+  return rows.map((p) => {
+    const c = countMap.get(p.ownerId) ?? { activeListings: 0, soldListings: 0 };
+    const sy8ReputationScore = computeSy8SellerScore(c.soldListings, c.activeListings);
+    return {
+      ...baseFields(p),
+      sy8SellerVerified: isSy8SellerVerified(p.owner),
+      sy8ReputationScore,
+      sy8ReputationLabelId: sy8ReputationLabelId(sy8ReputationScore),
+    };
+  });
 }
 
 /** Ensures geo filter has a sensible radius when lat/lng present but radius omitted. */
@@ -180,6 +212,7 @@ export async function searchProperties(
       },
       take: 450,
       orderBy: orderBy("featured"),
+      include: ownerSelectSy8,
     });
     let rows = capped.filter((r) => r.latitude != null && r.longitude != null);
     if (amenityTags.length > 0) {
@@ -194,9 +227,9 @@ export async function searchProperties(
       return a.isDirect ? -1 : 1;
     });
     const total = rows.length;
-    const sliced = rows.slice((page - 1) * pageSize, page * pageSize);
+    const sliced = rows.slice((page - 1) * pageSize, page * pageSize) as PropertyWithOwnerForSy8[];
     return {
-      items: sliced.map(serialize),
+      items: await serializeWithSy8(sliced),
       total,
       page,
       pageSize,
@@ -209,12 +242,13 @@ export async function searchProperties(
       where,
       orderBy: orderBy(sort === "distance" ? "featured" : sort),
       take: 1200,
+      include: ownerSelectSy8,
     });
     const filtered = fetched.filter((r) => listingMatchesAmenityTags(r.amenities, amenityTags));
     const total = filtered.length;
     const sliced = filtered.slice((page - 1) * pageSize, page * pageSize);
     return {
-      items: sliced.map(serialize),
+      items: await serializeWithSy8(sliced as PropertyWithOwnerForSy8[]),
       total,
       page,
       pageSize,
@@ -228,10 +262,11 @@ export async function searchProperties(
     orderBy: orderBy(sort === "distance" ? "featured" : sort),
     skip: (page - 1) * pageSize,
     take: pageSize,
+    include: ownerSelectSy8,
   });
 
   return {
-    items: rows.map(serialize),
+    items: await serializeWithSy8(rows as PropertyWithOwnerForSy8[]),
     total,
     page,
     pageSize,

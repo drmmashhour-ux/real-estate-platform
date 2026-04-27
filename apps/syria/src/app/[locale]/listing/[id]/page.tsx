@@ -47,6 +47,7 @@ import { getTrustWarningLines } from "@/lib/ai/trustAssistant";
 import { ListingTrustAiSection } from "@/components/listing/ListingTrustAiSection";
 import { ShortStayAvailabilityCalendar } from "@/components/listing/ShortStayAvailabilityCalendar";
 import { incrementPublicListingView } from "@/lib/syria/listing-views";
+import { Sy8LocationQualityBadge } from "@/components/sy8/Sy8LocationQualityBadge";
 
 type Props = {
   params: Promise<{ locale: string; id: string }>;
@@ -359,6 +360,11 @@ export default async function ListingDetailPage(props: Props) {
                 {areaDisplay ? <p>{areaDisplay}</p> : null}
                 {listing.addressDetails?.trim() ? <p className="whitespace-pre-wrap">{listing.addressDetails.trim()}</p> : null}
               </div>
+              {isSybnbStay ? (
+                <div className="mt-2 [dir=rtl]:text-right">
+                  <Sy8LocationQualityBadge listing={listing} />
+                </div>
+              ) : null}
               {!showMakeFeatured ? (
                 <div className="mt-3 lg:hidden">
                   <p className="text-2xl font-bold tabular-nums text-[color:var(--darlink-text)]">
@@ -389,7 +395,13 @@ export default async function ListingDetailPage(props: Props) {
             </div>
 
             <div className="min-w-0 max-w-full">
-              <ListingTrustPanel listingId={listing.id} phoneRaw={ownerPhone} isOwner={isOwner} />
+              <ListingTrustPanel
+                listingId={listing.id}
+                phoneRaw={ownerPhone}
+                isOwner={isOwner}
+                isSybnbStay={isSybnbStay}
+                canReport={!!user}
+              />
             </div>
 
             <div className="min-w-0 max-w-full">

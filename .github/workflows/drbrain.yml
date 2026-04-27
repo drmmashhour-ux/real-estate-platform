@@ -1,0 +1,39 @@
+# Monorepo DR.BRAIN — env isolation + DB ping + Syria payments posture (no secrets logged).
+name: DR.BRAIN
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+  push:
+    branches: [main, develop]
+
+jobs:
+  drbrain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: DR.BRAIN check (repo root)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: pnpm drbrain:check

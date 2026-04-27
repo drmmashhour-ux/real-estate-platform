@@ -1,5 +1,9 @@
 import { getLocale } from "next-intl/server";
-import { SybnbHomeHero } from "@/components/sybnb/SybnbHomeHero";
+import { SybnbHero } from "@/components/sybnb/SybnbHero";
+import { SybnbUrgencyStrip } from "@/components/sybnb/SybnbUrgencyStrip";
+import { SybnbCategoryChips } from "@/components/sybnb/SybnbCategoryChips";
+import { SybnbLatestStaysGrid } from "@/components/sybnb/SybnbLatestStaysGrid";
+import { SybnbHomeTrustStrip } from "@/components/sybnb/SybnbHomeTrustStrip";
 import { BrowseExperienceClient } from "@/components/browse/BrowseExperienceClient";
 import { BrowseMvpExperienceClient } from "@/components/browse/BrowseMvpExperienceClient";
 import { syriaFlags } from "@/lib/platform-flags";
@@ -7,6 +11,7 @@ import { trackSyriaGrowthEvent } from "@/lib/growth-events";
 import { parseUtmFromSearchParams } from "@/lib/utm";
 import { flattenSearchParams } from "@/lib/property-search";
 import { searchProperties } from "@/services/search/search.service";
+import { getSybnbLatestStays, getSybnbPublicListingCount } from "@/lib/sybnb/sybnb-public-data";
 
 type Props = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -49,27 +54,37 @@ export default async function SybnbPage(props: Props) {
 
   const initialQs = toInitialQs(flat);
   const initialResult = await searchProperties("stay", flat);
+  const [liveCount, latestStays] = await Promise.all([getSybnbPublicListingCount(), getSybnbLatestStays(8)]);
 
   return (
-    <div className="space-y-8">
-      <SybnbHomeHero />
-      {syriaFlags.SYRIA_MVP ? (
-        <BrowseMvpExperienceClient
-          surface="stay"
-          basePath="/sybnb"
-          locale={locale}
-          initialResult={initialResult}
-          lockCategory="stay"
-        />
-      ) : (
-        <BrowseExperienceClient
-          surface="stay"
-          basePath="/sybnb"
-          locale={locale}
-          initialQs={initialQs}
-          initialResult={initialResult}
-        />
-      )}
+    <div className="space-y-10">
+      <SybnbHero />
+      <SybnbUrgencyStrip liveCount={liveCount} />
+      <div className="space-y-6">
+        <SybnbCategoryChips />
+        <SybnbLatestStaysGrid items={latestStays} locale={locale} />
+      </div>
+      <SybnbHomeTrustStrip />
+
+      <section className="space-y-3">
+        {syriaFlags.SYRIA_MVP ? (
+          <BrowseMvpExperienceClient
+            surface="stay"
+            basePath="/sybnb"
+            locale={locale}
+            initialResult={initialResult}
+            lockCategory="stay"
+          />
+        ) : (
+          <BrowseExperienceClient
+            surface="stay"
+            basePath="/sybnb"
+            locale={locale}
+            initialQs={initialQs}
+            initialResult={initialResult}
+          />
+        )}
+      </section>
     </div>
   );
 }

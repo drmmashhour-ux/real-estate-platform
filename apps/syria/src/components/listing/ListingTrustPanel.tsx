@@ -4,18 +4,26 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { buildTelHref, buildWhatsAppContactHref, onlyDigits } from "@/lib/syria-phone";
 import { trackLeadPhoneClick, trackLeadWhatsappClick } from "@/lib/lead-client";
+import { ListingReportForm } from "@/components/listing/ListingReportForm";
+import { SybnbReportListingForm } from "@/components/sybnb/SybnbReportListingForm";
 
 /**
- * Phone reveal + report (no moderation backend). Safety copy lives in listing aside.
+ * Phone reveal + report. Stay listings use SYBNB report API + thresholds.
  */
 export function ListingTrustPanel({
   listingId,
   phoneRaw,
   isOwner,
+  isSybnbStay = false,
+  canReport = true,
 }: {
   listingId: string;
   phoneRaw: string;
   isOwner: boolean;
+  /** When true, guest report goes to `POST /api/sybnb/.../report` (SybnbListingReport). */
+  isSybnbStay?: boolean;
+  /** Signed-in non-owner; when false, Sybnb report is hidden. */
+  canReport?: boolean;
 }) {
   const t = useTranslations("Listing");
   const [revealed, setRevealed] = useState(false);
@@ -69,15 +77,15 @@ export function ListingTrustPanel({
           )}
         </div>
       ) : null}
-      <button
-        type="button"
-        className="text-sm text-red-600 hover:underline"
-        onClick={() => {
-          console.log("report", listingId);
-        }}
-      >
-        {t("reportListing")}
-      </button>
+      {isSybnbStay ? (
+        <SybnbReportListingForm
+          propertyId={listingId}
+          variant="section"
+          disabled={isOwner || !canReport}
+        />
+      ) : (
+        <ListingReportForm propertyId={listingId} disabled={isOwner} />
+      )}
     </section>
   );
 }

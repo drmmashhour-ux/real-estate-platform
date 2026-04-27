@@ -13,12 +13,21 @@
     "./normalize-database-url": "./src/normalize-database-url.ts",
     "./database-url-ssl": "./src/database-url-ssl.ts",
     "./with-db-retry": "./src/with-db-retry.ts",
-    "./db-error-classification": "./src/db-error-classification.ts"
+    "./db-error-classification": "./src/db-error-classification.ts",
+    "./env-guard": "./src/env-guard.ts",
+    "./safe-log": "./src/safe-log.ts"
   },
   "dependencies": {
     "@prisma/client": "^7.8.0"
   },
   "peerDependencies": {
     "typescript": ">=5"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "tsx": "^4.19.0"
+  },
+  "scripts": {
+    "verify:env-guard": "tsx scripts/verify-env-guard-throws.ts"
   }
 }

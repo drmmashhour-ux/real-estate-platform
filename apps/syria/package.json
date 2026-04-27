@@ -6,6 +6,13 @@
     "node": ">=20"
   },
   "scripts": {
+    "env:check": "tsx scripts/check-env.ts",
+    "env:resolve": "node scripts/resolve-env-db.js",
+    "dev:safe": "pnpm env:resolve && pnpm env:check && pnpm dev",
+    "build:safe": "pnpm env:check && pnpm build",
+    "test-db": "tsx scripts/test-db.ts",
+    "payments:preflight": "node scripts/payments-preflight.js",
+    "payments:phase0": "tsx scripts/check-phase0-payments.ts",
     "dev": "next dev -H 0.0.0.0 -p 3002",
     "build": "next build",
     "start": "next start -p 3002",
@@ -17,6 +24,9 @@
     "prisma:push": "prisma db push --schema=./prisma/schema.prisma",
     "db:seed": "prisma db seed --schema=./prisma/schema.prisma",
     "seed:g2": "tsx scripts/seed-g2-sprint-listings.ts",
+    "demo:seed": "tsx scripts/seed-investor-demo.ts",
+    "demo:reset": "tsx scripts/reset-investor-demo.ts",
+    "demo:reload": "pnpm demo:reset && pnpm demo:seed",
     "brand:rasters": "node scripts/generate-brand-rasters.mjs",
     "check:isolation": "tsx ../../scripts/check-isolation.ts",
     "check:cross-contamination": "pnpm exec tsx ../../scripts/check-cross-contamination.ts",
@@ -26,15 +36,20 @@
     "seed": "npx tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@repo/db": "workspace:*",
+    "@repo/drbrain": "workspace:*",
     "@prisma/client": "^6",
     "@react-google-maps/api": "^2.20.8",
     "next": "16.1.6",
     "next-intl": "^4.9.1",
     "qrcode": "^1.5.4",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "recharts": "^2.15.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
+    "dotenv": "^16.4.5",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^22",
     "@types/qrcode": "^1.5.6",

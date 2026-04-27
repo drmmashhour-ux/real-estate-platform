@@ -1,0 +1,10 @@
+{
+  "maxErrorRate": 0.03,
+  "maxP95LatencyMs": 800,
+  "maxPaymentErrorRate": 0.02,
+  "allowedDrBrainStatuses": ["OK", "WARNING"],
+  "requireDbHealthy": true,
+  "shadowMaxDeltaErrorRate": 0.012,
+  "shadowMaxDeltaP95LatencyMs": 150,
+  "shadowMaxDeltaPaymentErrorRate": 0.008
+}

@@ -1,0 +1,249 @@
+# validate → preview → shadow → 5% → SLO → 25% → SLO → 100% → final SLO.
+# Coordinate with deploy-vercel.yml — avoid duplicate prod pushes.
+#
+# Secrets (repository):
+#   APP_URL — origin only (e.g. https://prod.example.com) for scripts/check-slo.js
+#   CURRENT_APP_URL — baseline origin for scripts/shadow-traffic-check.js
+#   CANDIDATE_APP_URL — preview/staging origin after deploy-preview
+#   VERCEL_TOKEN — scripts/rollback-production.js (never logged)
+# CI uses local Postgres only inside validate — never production DATABASE_URL.
+# Never echo secrets.
+
+name: Deploy Gate
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-gate-${{ github.ref }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  NEXT_TELEMETRY_DISABLED: "1"
+  APP_ENV: staging
+  APP_CONTEXT: lecipm
+  APP_ID: syria
+  SYBNB_ESCROW_ENABLED: "true"
+  SYBNB_AUTO_RELEASE_PAYOUTS: "false"
+  SYBNB_PAYMENTS_KILL_SWITCH: "false"
+  SYBNB_PAYMENT_PROVIDER: manual
+  DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5433/lecipm_dev
+  DIRECT_URL: postgresql://postgres:postgres@127.0.0.1:5433/lecipm_dev
+
+jobs:
+  validate:
+    name: Validate (system check + platform ready)
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Start DB
+        run: docker compose -f apps/web/docker-compose.local-db.yml up -d
+
+      - name: Wait for DB
+        run: |
+          for i in {1..30}; do
+            if (echo > /dev/tcp/127.0.0.1/5433) 2>/dev/null; then
+              echo "DB ready (127.0.0.1:5433)"
+              exit 0
+            fi
+            echo "Waiting for postgres ($i/30)..."
+            sleep 2
+          done
+          echo "DB not ready"
+          exit 1
+
+      - name: Syria Prisma migrate (preflight prerequisite)
+        run: cd apps/syria && pnpm exec prisma migrate deploy --schema=./prisma/schema.prisma
+
+      - name: System check
+        run: cd apps/web && pnpm system:check
+
+      - name: Platform ready
+        run: pnpm platform:ready
+
+  deploy-preview:
+    name: Deploy preview candidate
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Preview deploy (placeholder)
+        run: |
+          echo "::notice::Deploy candidate to preview/staging — wire hosting CLI here."
+          echo "::notice::Set repository secret CANDIDATE_APP_URL to the preview origin (no trailing slash)."
+
+  shadow-check:
+    name: Shadow traffic check
+    needs: deploy-preview
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      CURRENT_APP_URL: ${{ secrets.CURRENT_APP_URL }}
+      CANDIDATE_APP_URL: ${{ secrets.CANDIDATE_APP_URL }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Shadow compare (GET-only)
+        run: node scripts/shadow-traffic-check.js
+
+      - name: Shadow failure — stop rollout
+        if: failure()
+        run: echo "::error::Candidate worse than baseline — abort rollout (no production rollback invoked)."
+
+  deploy-5:
+    name: Deploy 5% traffic
+    needs: shadow-check
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy 5%
+        run: |
+          echo "::notice::Deploying to 5% traffic (placeholder)"
+          echo "Wire weighted routing / edge split here."
+
+  slo-check-5:
+    name: SLO check (5%)
+    needs: deploy-5
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      APP_URL: ${{ secrets.APP_URL }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Wait for stabilization
+        run: sleep 60
+
+      - name: SLO gate
+        run: node scripts/check-slo.js
+
+      - name: Rollback on failure
+        if: failure()
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: node scripts/rollback-production.js
+
+  deploy-25:
+    name: Deploy 25% traffic
+    needs: slo-check-5
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy 25%
+        run: |
+          echo "::notice::Deploying to 25% traffic (placeholder)"
+
+  slo-check-25:
+    name: SLO check (25%)
+    needs: deploy-25
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      APP_URL: ${{ secrets.APP_URL }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Wait for stabilization
+        run: sleep 120
+
+      - name: SLO gate
+        run: node scripts/check-slo.js
+
+      - name: Rollback on failure
+        if: failure()
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: node scripts/rollback-production.js
+
+  deploy-100:
+    name: Deploy 100% traffic
+    needs: slo-check-25
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy 100%
+        run: |
+          echo "::notice::Deploying to 100% (placeholder)"
+
+  slo-check-100:
+    name: SLO check (100% — final)
+    needs: deploy-100
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    env:
+      APP_URL: ${{ secrets.APP_URL }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Wait for stabilization
+        run: sleep 180
+
+      - name: Final SLO gate
+        run: node scripts/check-slo.js
+
+      - name: Rollback on failure
+        if: failure()
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: node scripts/rollback-production.js

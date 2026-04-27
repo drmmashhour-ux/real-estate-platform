@@ -1,5 +1,4 @@
 import { getLocale, getTranslations } from "next-intl/server";
-import { Link } from "@/i18n/navigation";
 import { prisma } from "@/lib/db";
 import { requireSessionUser } from "@/lib/auth";
 import { money } from "@/lib/format";
@@ -9,8 +8,10 @@ import { describePayoutEligibility } from "@/lib/payout-policy";
 import { pickListingTitle } from "@/lib/listing-localized";
 import { bookingLifecycleLabel } from "@/lib/status-ui";
 import { sybnbConfig } from "@/config/sybnb.config";
+import { hostEscrowStatusLabel } from "@/lib/sybnb/payout-release-policy";
 import { isSybnbCardCheckoutUiEnabled } from "@/lib/sybnb/payment-policy";
 import { SybnbGuestPayStubButton } from "@/components/sybnb/SybnbGuestPayStubButton";
+import { SybnbBookingCard } from "@/components/sybnb/SybnbBookingCard";
 
 type BookingLifecycleLabel = ReturnType<typeof bookingLifecycleLabel>;
 
@@ -62,6 +63,17 @@ export default async function DashboardBookingsPage() {
             const isHost = b.property.ownerId === user.id;
             const eligibility = describePayoutEligibility({ checkedInAt: b.checkedInAt });
             const payout = b.payouts[0];
+            const hostEscrowLine =
+              isHost && b.property.category === "stay" && payout && sybnbConfig.escrowEnabled
+                ? (() => {
+                    const k = hostEscrowStatusLabel(payout.escrowStatus);
+                    if (k === "held") return t("hostEscrowHeld");
+                    if (k === "review") return t("hostEscrowReview");
+                    if (k === "eligibleSoon") return t("hostEscrowEligibleSoon");
+                    if (k === "released") return t("hostEscrowReleased");
+                    return t("hostEscrowBlocked");
+                  })()
+                : null;
             const showSybnbPayStub =
               b.property.category === "stay" &&
               !isHost &&
@@ -74,55 +86,34 @@ export default async function DashboardBookingsPage() {
                 : null;
 
             return (
-              <li key={b.id} className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <p className="text-xs uppercase text-stone-500">
-                      {isHost ? t("roleHosting") : t("roleGuest")}
-                    </p>
-                    <Link href={`/listing/${b.propertyId}`} className="text-lg font-semibold text-stone-900 hover:underline">
-                      {pickListingTitle(b.property, locale)}
-                    </Link>
-                    <p className="text-sm text-stone-600">
-                      {b.checkIn.toISOString().slice(0, 10)} → {b.checkOut.toISOString().slice(0, 10)}
-                    </p>
-                    {sybnbPhase ? <p className="mt-1 text-xs text-stone-500">{sybnbPhase}</p> : null}
-                  </div>
-                  <div className="text-right text-sm">
-                    <p className="font-semibold">{money(b.totalPrice, b.currency)}</p>
-                    {b.nightlyRate ? (
-                      <p className="text-xs text-stone-500">
-                        {b.nightsCount}n × {money(b.nightlyRate, b.currency)}
-                      </p>
-                    ) : null}
-                    {b.platformFeeAmount != null && b.hostNetAmount != null ? (
-                      <p className="text-xs text-stone-500">
-                        Fee {money(b.platformFeeAmount, b.currency)} · Net {money(b.hostNetAmount, b.currency)}
-                      </p>
-                    ) : null}
-                    <p className="text-stone-600">
-                      {t("guestPay")} {b.guestPaymentStatus}
-                    </p>
-                    <p className="text-stone-600">
-                      {t("payout")} {b.payoutStatus}
-                    </p>
-                  </div>
-                </div>
-
-                {payout ? (
-                  <p className="mt-2 text-xs text-stone-500">
-                    {t("payoutHint", {
-                      host: money(payout.amount, payout.currency),
-                      fee: money(payout.platformFee, payout.currency),
-                      ledger: payout.status,
-                    })}
-                  </p>
-                ) : null}
-
-                <p className="mt-2 text-xs text-stone-600">
-                  {t("payoutGuidance")} {eligibility.notes} ({eligibility.reason})
-                </p>
-
+              <SybnbBookingCard
+                key={b.id}
+                roleLabel={isHost ? t("roleHosting") : t("roleGuest")}
+                propertyTitle={pickListingTitle(b.property, locale)}
+                propertyHref={`/listing/${b.propertyId}`}
+                checkInOut={`${b.checkIn.toISOString().slice(0, 10)} → ${b.checkOut.toISOString().slice(0, 10)}`}
+                amountPrimary={money(b.totalPrice, b.currency)}
+                amountSub={b.nightlyRate ? `${b.nightsCount}n × ${money(b.nightlyRate, b.currency)}` : null}
+                amountBreakdown={
+                  b.platformFeeAmount != null && b.hostNetAmount != null
+                    ? `Fee ${money(b.platformFeeAmount, b.currency)} · Net ${money(b.hostNetAmount, b.currency)}`
+                    : null
+                }
+                guestPayLine={`${t("guestPay")} ${b.guestPaymentStatus}`}
+                payoutStatusLine={`${t("payout")} ${b.payoutStatus}`}
+                sybnbPhaseLine={sybnbPhase}
+                payoutHint={
+                  payout
+                    ? t("payoutHint", {
+                        host: money(payout.amount, payout.currency),
+                        fee: money(payout.platformFee, payout.currency),
+                        ledger: payout.status,
+                      })
+                    : null
+                }
+                hostEscrowLine={hostEscrowLine}
+                guidanceLine={`${t("payoutGuidance")} ${eligibility.notes} (${eligibility.reason})`}
+              >
                 {b.property.category === "stay" && isHost && b.status === "PENDING" ? (
                   <div className="mt-3 flex flex-wrap gap-2">
                     <form action={hostRespondSybnbBooking}>
@@ -161,7 +152,7 @@ export default async function DashboardBookingsPage() {
                     </button>
                   </form>
                 ) : null}
-              </li>
+              </SybnbBookingCard>
             );
           })}
         </ul>

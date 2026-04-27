@@ -8,10 +8,22 @@ import { trackSyriaGrowthEvent } from "@/lib/growth-events";
 import { persistAutonomyPreview } from "@/lib/autonomy-recommendations";
 import { assertDarlinkRuntimeEnv } from "@/lib/guard";
 import type { SyriaSybnbListingReview } from "@/generated/prisma";
+import { appendSyriaSybnbCoreAudit } from "@/lib/sybnb/sybnb-financial-audit";
+import { logSecurityEvent } from "@/lib/sybnb/sybnb-security-log";
+import { recomputeSy8FeedRankForPropertyId } from "@/lib/sy8/sy8-feed-rank-refresh";
+import {
+  SYBNB_PAYOUTS_KILL_SWITCH,
+  sybnbConfig,
+} from "@/config/sybnb.config";
+import {
+  applySybnbPayoutEscrowReleaseApproved,
+  SYBNB_ESCROW_BLOCKED,
+  SYBNB_ESCROW_RELEASED,
+} from "@/lib/sybnb/payout-release-policy";
 
 export async function approveProperty(formData: FormData): Promise<void> {
   assertDarlinkRuntimeEnv();
-  await requireAdmin();
+  const admin = await requireAdmin();
   const id = String(formData.get("propertyId") ?? "").trim();
   if (!id) return;
 
@@ -88,12 +100,15 @@ export async function approveProperty(formData: FormData): Promise<void> {
     }
   });
 
+  await recomputeSy8FeedRankForPropertyId(id);
+
   await revalidateSyriaPaths("/admin/listings", "/buy", "/rent", "/bnhub/stays", "/sybnb", "/");
+  void logSecurityEvent({ action: "admin_listing_approved", userId: admin.id, metadata: { propertyId: id } });
 }
 
 export async function setSybnbListingReview(formData: FormData): Promise<void> {
   assertDarlinkRuntimeEnv();
-  await requireAdmin();
+  const admin = await requireAdmin();
   const id = String(formData.get("propertyId") ?? "").trim();
   const raw = String(formData.get("review") ?? "").trim().toUpperCase();
   if (!id) return;
@@ -107,11 +122,16 @@ export async function setSybnbListingReview(formData: FormData): Promise<void> {
   if (updated.count === 0) return;
 
   await revalidateSyriaPaths("/admin/listings", "/sybnb", "/");
+  void logSecurityEvent({
+    action: "admin_sybnb_listing_review",
+    userId: admin.id,
+    metadata: { propertyId: id, review: next },
+  });
 }
 
 export async function rejectProperty(formData: FormData): Promise<void> {
   assertDarlinkRuntimeEnv();
-  await requireAdmin();
+  const admin = await requireAdmin();
   const id = String(formData.get("propertyId") ?? "").trim();
   if (!id) return;
 
@@ -166,9 +186,58 @@ export async function verifyGuestBookingPayment(formData: FormData): Promise<voi
 
 export async function approvePayout(formData: FormData): Promise<void> {
   assertDarlinkRuntimeEnv();
-  await requireAdmin();
+  const admin = await requireAdmin();
   const payoutId = String(formData.get("payoutId") ?? "").trim();
   if (!payoutId) return;
+
+  if (SYBNB_PAYOUTS_KILL_SWITCH) {
+    const row = await prisma.syriaPayout.findUnique({
+      where: { id: payoutId },
+      select: { bookingId: true },
+    });
+    await appendSyriaSybnbCoreAudit({
+      bookingId: row?.bookingId ?? null,
+      event: "SYBNB_PAYOUT_KILL_SWITCH_BLOCKED",
+      metadata: { payoutId, adminId: admin.id, action: "approvePayout" },
+    });
+    void logSecurityEvent({
+      action: "admin_payout_blocked_kill_switch",
+      userId: admin.id,
+      metadata: { payoutId },
+    });
+    return;
+  }
+
+  const row = await prisma.syriaPayout.findUnique({
+    where: { id: payoutId },
+    include: { booking: { include: { property: true } } },
+  });
+  if (!row || row.status !== "PENDING") return;
+
+  const isStayEscrow = row.booking.property.category === "stay" && sybnbConfig.escrowEnabled;
+
+  if (isStayEscrow) {
+    const result = await applySybnbPayoutEscrowReleaseApproved({
+      payoutId,
+      adminId: admin.id,
+      request: { type: "admin", actorId: admin.id },
+    });
+    if (!result.ok) {
+      await appendSyriaSybnbCoreAudit({
+        bookingId: row.bookingId,
+        event: "SYBNB_PAYOUT_RELEASE_DENIED",
+        metadata: { payoutId, code: result.code },
+      });
+      throw new Error(result.message);
+    }
+    await revalidateSyriaPaths("/admin/payouts", "/admin/bookings");
+    void logSecurityEvent({
+      action: "admin_payout_approved",
+      userId: admin.id,
+      metadata: { payoutId, escrowRelease: true },
+    });
+    return;
+  }
 
   const updated = await prisma.syriaPayout.updateMany({
     where: { id: payoutId, status: "PENDING" },
@@ -186,13 +255,141 @@ export async function approvePayout(formData: FormData): Promise<void> {
   });
 
   await revalidateSyriaPaths("/admin/payouts", "/admin/bookings");
+  void logSecurityEvent({ action: "admin_payout_approved", userId: admin.id, metadata: { payoutId } });
+}
+
+/** Stay SYBNB: approve internal escrow release (ledger APPROVED; no PSP transfer). */
+export async function approveSybnbPayoutRelease(formData: FormData): Promise<void> {
+  assertDarlinkRuntimeEnv();
+  const admin = await requireAdmin();
+  const payoutId = String(formData.get("payoutId") ?? "").trim();
+  if (!payoutId) return;
+
+  if (SYBNB_PAYOUTS_KILL_SWITCH) {
+    const row = await prisma.syriaPayout.findUnique({
+      where: { id: payoutId },
+      select: { bookingId: true },
+    });
+    await appendSyriaSybnbCoreAudit({
+      bookingId: row?.bookingId ?? null,
+      event: "SYBNB_PAYOUT_KILL_SWITCH_BLOCKED",
+      metadata: { payoutId, adminId: admin.id, action: "approveSybnbPayoutRelease" },
+    });
+    void logSecurityEvent({
+      action: "admin_payout_blocked_kill_switch",
+      userId: admin.id,
+      metadata: { payoutId },
+    });
+    return;
+  }
+
+  const row = await prisma.syriaPayout.findUnique({
+    where: { id: payoutId },
+    include: { booking: { include: { property: true } } },
+  });
+  if (!row || row.status !== "PENDING") return;
+  if (row.booking.property.category !== "stay" || !sybnbConfig.escrowEnabled) return;
+
+  const result = await applySybnbPayoutEscrowReleaseApproved({
+    payoutId,
+    adminId: admin.id,
+    request: { type: "admin", actorId: admin.id },
+  });
+  if (!result.ok) {
+    await appendSyriaSybnbCoreAudit({
+      bookingId: row.bookingId,
+      event: "SYBNB_PAYOUT_RELEASE_DENIED",
+      metadata: { payoutId, code: result.code },
+    });
+    throw new Error(result.message);
+  }
+
+  await revalidateSyriaPaths("/admin/payouts", "/admin/bookings");
+  void logSecurityEvent({
+    action: "admin_sybnb_escrow_released",
+    userId: admin.id,
+    metadata: { payoutId },
+  });
+}
+
+export async function blockSybnbPayout(formData: FormData): Promise<void> {
+  assertDarlinkRuntimeEnv();
+  const admin = await requireAdmin();
+  const payoutId = String(formData.get("payoutId") ?? "").trim();
+  const rawReason = String(formData.get("blockedReason") ?? "").trim();
+  const blockedReason = rawReason.slice(0, 2000);
+  if (!payoutId || !blockedReason) return;
+
+  const row = await prisma.syriaPayout.findUnique({
+    where: { id: payoutId },
+    include: { booking: { include: { property: true } } },
+  });
+  if (!row || row.booking.property.category !== "stay" || !sybnbConfig.escrowEnabled) return;
+  if (row.escrowStatus === SYBNB_ESCROW_RELEASED || row.status === "PAID") return;
+
+  await prisma.syriaPayout.update({
+    where: { id: payoutId },
+    data: {
+      escrowStatus: SYBNB_ESCROW_BLOCKED,
+      blockedAt: new Date(),
+      blockedReason,
+    },
+  });
+
+  await appendSyriaSybnbCoreAudit({
+    bookingId: row.bookingId,
+    event: "SYBNB_PAYOUT_RELEASE_BLOCKED",
+    metadata: { payoutId, adminId: admin.id },
+  });
+
+  await revalidateSyriaPaths("/admin/payouts", "/admin/bookings");
+  void logSecurityEvent({
+    action: "admin_sybnb_payout_blocked",
+    userId: admin.id,
+    metadata: { payoutId },
+  });
 }
 
 export async function markPayoutPaid(formData: FormData): Promise<void> {
   assertDarlinkRuntimeEnv();
-  await requireAdmin();
+  const admin = await requireAdmin();
+  if (SYBNB_PAYOUTS_KILL_SWITCH) {
+    void logSecurityEvent({
+      action: "admin_payout_mark_paid_blocked",
+      userId: admin.id,
+      metadata: { reason: "payouts_kill_switch" },
+    });
+    return;
+  }
   const payoutId = String(formData.get("payoutId") ?? "").trim();
   if (!payoutId) return;
+
+  const payoutRow = await prisma.syriaPayout.findUnique({
+    where: { id: payoutId },
+    include: { booking: { include: { property: true } } },
+  });
+  if (!payoutRow || payoutRow.status !== "APPROVED") return;
+  const booking = payoutRow.booking;
+  if (
+    booking.property.category === "stay" &&
+    sybnbConfig.escrowEnabled &&
+    payoutRow.escrowStatus !== SYBNB_ESCROW_RELEASED
+  ) {
+    void logSecurityEvent({
+      action: "admin_payout_mark_paid_blocked_escrow",
+      userId: admin.id,
+      metadata: { payoutId, escrowStatus: payoutRow.escrowStatus },
+    });
+    await appendSyriaSybnbCoreAudit({
+      bookingId: booking.id,
+      event: "SYBNB_PAYOUT_RELEASE_DENIED",
+      metadata: { payoutId, adminId: admin.id, reason: "mark_paid_requires_escrow_release" },
+    });
+    return;
+  }
+  if (booking.property.category === "stay" && booking.status !== "COMPLETED") {
+    return;
+  }
 
   const marked = await prisma.syriaPayout.updateMany({
     where: { id: payoutId, status: "APPROVED" },
@@ -210,7 +407,18 @@ export async function markPayoutPaid(formData: FormData): Promise<void> {
     data: { payoutStatus: "PAID" },
   });
 
+  await appendSyriaSybnbCoreAudit({
+    bookingId: booking.id,
+    event: "admin_payout_marked_paid",
+    metadata: { adminId: admin.id, payoutId, amount: existing.amount.toString(), currency: existing.currency },
+  });
+
   await revalidateSyriaPaths("/admin/payouts", "/admin/bookings");
+  void logSecurityEvent({
+    action: "admin_payout_marked_paid",
+    userId: admin.id,
+    metadata: { payoutId, bookingId: booking.id },
+  });
 }
 
 export async function setPropertyFraudFlag(formData: FormData): Promise<void> {

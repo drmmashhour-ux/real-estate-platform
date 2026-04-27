@@ -4,7 +4,13 @@ import { prisma } from "@/lib/db";
 export async function incrementPublicListingView(listingId: string): Promise<void> {
   try {
     await prisma.syriaProperty.update({
-      where: { id: listingId, status: "PUBLISHED", fraudFlag: false },
+      where: {
+        id: listingId,
+        status: "PUBLISHED",
+        fraudFlag: false,
+        needsReview: false,
+        owner: { flagged: false },
+      },
       data: { views: { increment: 1 } },
     });
   } catch {

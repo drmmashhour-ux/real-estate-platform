@@ -71,7 +71,8 @@ function syriaAllowlisted(relFromSyria: string): boolean {
     n === "src/lib/assertContext.ts" ||
     n === "src/lib/__tests__/guard.test.ts" ||
     n === "src/lib/brand/darlink-guardrails.ts" ||
-    n === "src/lib/brand/__tests__/darlink-guardrails.test.ts"
+    n === "src/lib/brand/__tests__/darlink-guardrails.test.ts" ||
+    n === "src/lib/env/app-isolation.ts"
   );
 }
 
@@ -82,6 +83,7 @@ function webDarlinkAllowlisted(relFromRepo: string): boolean {
     n.endsWith("README_GUARD.md") ||
     n.endsWith(".env.example") ||
     n === "apps/web/lib/assertContext.ts" ||
+    n === "apps/web/lib/env/db-app-isolation.ts" ||
     n.includes("/docs/architecture/") ||
     n.includes("/.cursor/rules/") ||
     n.includes("/scripts/check-isolation.ts") ||
@@ -109,10 +111,13 @@ function scanSyria(repoRoot: string, violations: string[]): void {
     if (
       /from\s+["']@lecipm\/web/.test(content) ||
       /from\s+["']@lecipm\/uae/.test(content) ||
+      /from\s+["']@lecipm\/hadialink/.test(content) ||
       /from\s+["'][^"']*apps\/web/.test(content) ||
       /from\s+["'][^"']*apps\/uae/.test(content) ||
+      /from\s+["'][^"']*apps\/hadialink/.test(content) ||
       /@lecipm\/web\//.test(content) ||
-      /@lecipm\/uae\//.test(content)
+      /@lecipm\/uae\//.test(content) ||
+      /@lecipm\/hadialink\//.test(content)
     ) {
       violations.push(`${ERR} — cross-app import in apps/syria/${relFromSyria}`);
     }
@@ -153,9 +158,12 @@ function scanWeb(repoRoot: string, violations: string[]): void {
     if (
       /from\s+["']@lecipm\/syria/.test(content) ||
       /from\s+["']@lecipm\/uae/.test(content) ||
+      /from\s+["']@lecipm\/hadialink/.test(content) ||
       /from\s+["'][^"']*apps\/syria/.test(content) ||
       /from\s+["'][^"']*apps\/uae/.test(content) ||
-      /\bimport\s*\(\s*["'][^"']*apps\/syria/.test(content)
+      /from\s+["'][^"']*apps\/hadialink/.test(content) ||
+      /\bimport\s*\(\s*["'][^"']*apps\/syria/.test(content) ||
+      /\bimport\s*\(\s*["'][^"']*apps\/hadialink/.test(content)
     ) {
       violations.push(`${ERR} — cross-app import in ${rel}`);
     }
@@ -201,8 +209,10 @@ function scanUae(repoRoot: string, violations: string[]): void {
     if (
       /from\s+["']@lecipm\/web/.test(content) ||
       /from\s+["']@lecipm\/syria/.test(content) ||
+      /from\s+["']@lecipm\/hadialink/.test(content) ||
       /from\s+["'][^"']*apps\/web/.test(content) ||
-      /from\s+["'][^"']*apps\/syria/.test(content)
+      /from\s+["'][^"']*apps\/syria/.test(content) ||
+      /from\s+["'][^"']*apps\/hadialink/.test(content)
     ) {
       violations.push(`${ERR} — cross-app import in ${rel}`);
     }
@@ -219,6 +229,36 @@ function scanUae(repoRoot: string, violations: string[]): void {
     }
     if (/\bsyria\b/i.test(scanBody) && /\bdarlink\b/i.test(scanBody)) {
       violations.push(`${ERR} — embedded Syria/Darlink product coupling in ${rel}`);
+    }
+  }
+}
+
+function scanHadialink(repoRoot: string, violations: string[]): void {
+  const hadRoot = path.join(repoRoot, "apps", "hadialink");
+  if (!fs.existsSync(hadRoot)) return;
+
+  const roots = [path.join(hadRoot, "src")].filter((p) => fs.existsSync(p));
+  const files: string[] = [];
+  for (const r of roots) walkDir(r, files);
+
+  for (const abs of files) {
+    const rel = path.relative(repoRoot, abs).replace(/\\/g, "/");
+    let content: string;
+    try {
+      content = fs.readFileSync(abs, "utf8");
+    } catch {
+      continue;
+    }
+
+    if (
+      /from\s+["']@lecipm\/web/.test(content) ||
+      /from\s+["']@lecipm\/syria/.test(content) ||
+      /from\s+["']@lecipm\/uae/.test(content) ||
+      /from\s+["'][^"']*apps\/web/.test(content) ||
+      /from\s+["'][^"']*apps\/syria/.test(content) ||
+      /from\s+["'][^"']*apps\/uae/.test(content)
+    ) {
+      violations.push(`${ERR} — cross-app import in ${rel}`);
     }
   }
 }
@@ -248,19 +288,54 @@ function scanPackages(repoRoot: string, violations: string[]): void {
   }
 }
 
+function expectFileContains(repoRoot: string, rel: string, mustInclude: string, violations: string[]): void {
+  const abs = path.join(repoRoot, rel.replace(/\\/g, path.sep));
+  if (!fs.existsSync(abs)) {
+    violations.push(`${ERR} — missing app identity file: ${rel}`);
+    return;
+  }
+  const content = fs.readFileSync(abs, "utf8");
+  if (!content.includes(mustInclude)) {
+    violations.push(`${ERR} — app identity file ${rel} must export: ${mustInclude}`);
+  }
+}
+
+function verifyAppIdentityFiles(repoRoot: string, violations: string[]): void {
+  expectFileContains(
+    repoRoot,
+    "apps/web/lib/config/app-identity.ts",
+    'export const APP_ID = "lecipm"',
+    violations,
+  );
+  expectFileContains(
+    repoRoot,
+    "apps/syria/src/config/app-identity.ts",
+    'export const APP_ID = "syria"',
+    violations,
+  );
+  expectFileContains(
+    repoRoot,
+    "apps/hadialink/src/config/app-identity.ts",
+    'export const APP_ID = "hadialink"',
+    violations,
+  );
+}
+
 function main(): void {
   const repoRoot = resolveRepoRoot();
   const violations: string[] = [];
+  verifyAppIdentityFiles(repoRoot, violations);
   scanSyria(repoRoot, violations);
   scanWeb(repoRoot, violations);
   scanUae(repoRoot, violations);
+  scanHadialink(repoRoot, violations);
   scanPackages(repoRoot, violations);
 
   if (violations.length > 0) {
     console.error(violations.join("\n"));
     process.exit(1);
   }
-  console.log("✅ Monorepo isolation check passed (syria + web + uae + packages scan).");
+  console.log("✅ Monorepo isolation check passed (identity + syria + web + uae + hadialink + packages).");
 }
 
 main();

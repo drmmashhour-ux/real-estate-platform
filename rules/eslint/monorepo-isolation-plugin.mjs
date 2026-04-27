@@ -3,8 +3,9 @@
  *
  * Modes:
  * - `syria` — cannot import apps/web, apps/uae, or @lecipm/web / @lecipm/uae
- * - `web` — cannot import apps/syria, apps/uae, or @lecipm/syria / @lecipm/uae
- * - `uae` — cannot import apps/web, apps/syria, or @lecipm/web / @lecipm/syria
+ * - `web` — cannot import apps/syria, apps/uae, apps/hadialink, or @lecipm/syria / @lecipm/uae / @lecipm/hadialink
+ * - `uae` — cannot import apps/web, apps/syria, apps/hadialink, or @lecipm/web / @lecipm/syria / @lecipm/hadialink
+ * - `hadialink` — cannot import apps/web, apps/syria, apps/uae, or their @lecipm/* packages
  * - `package` — shared packages cannot import any `apps/*` product code
  */
 
@@ -37,8 +38,14 @@ function referencesApp(s, app) {
   return l.includes(seg);
 }
 
+/** @param {string} s */
+function referencesHadialink(s) {
+  const l = lower(s);
+  return l.includes("@lecipm/hadialink") || l.includes("apps/hadialink");
+}
+
 /**
- * @param {"syria" | "web" | "uae" | "package"} mode
+ * @param {"syria" | "web" | "uae" | "hadialink" | "package"} mode
  * @param {string | undefined} source
  */
 export function isCrossAppImport(mode, source) {
@@ -46,14 +53,21 @@ export function isCrossAppImport(mode, source) {
   if (mode === "package") {
     return hasAppsSegment(source);
   }
+  if (mode === "hadialink") {
+    return (
+      referencesApp(source, "web") || referencesApp(source, "syria") || referencesApp(source, "uae")
+    );
+  }
   if (mode === "syria") {
-    return referencesApp(source, "web") || referencesApp(source, "uae");
+    return referencesApp(source, "web") || referencesApp(source, "uae") || referencesHadialink(source);
   }
   if (mode === "web") {
-    return referencesApp(source, "syria") || referencesApp(source, "uae");
+    return (
+      referencesApp(source, "syria") || referencesApp(source, "uae") || referencesHadialink(source)
+    );
   }
   if (mode === "uae") {
-    return referencesApp(source, "web") || referencesApp(source, "syria");
+    return referencesApp(source, "web") || referencesApp(source, "syria") || referencesHadialink(source);
   }
   return false;
 }
@@ -69,7 +83,7 @@ const rule = {
       {
         type: "object",
         properties: {
-          mode: { enum: ["syria", "web", "uae", "package"] },
+          mode: { enum: ["syria", "web", "uae", "hadialink", "package"] },
         },
         additionalProperties: false,
       },

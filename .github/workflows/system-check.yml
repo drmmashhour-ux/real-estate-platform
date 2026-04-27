@@ -1,0 +1,71 @@
+# Local Postgres (Docker) + apps/web pnpm system:check — hard gate: failure blocks green CI.
+# Uses only the compose DB on host port 5433; no production DATABASE_URL or Vercel secrets.
+name: System Check
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches: [main, develop, "feature/**"]
+  pull_request:
+
+concurrency:
+  group: system-check-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  NEXT_TELEMETRY_DISABLED: 1
+  # Local-only (matches apps/web/docker-compose.local-db.yml: postgres:postgres, db lecipm_dev, 5433:5432)
+  DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5433/lecipm_dev?schema=public
+  DIRECT_URL: postgresql://postgres:postgres@127.0.0.1:5433/lecipm_dev?schema=public
+  APP_CONTEXT: lecipm
+
+jobs:
+  system-check:
+    name: System check (local DB)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Start Postgres
+        run: docker compose -f apps/web/docker-compose.local-db.yml up -d
+
+      - name: Wait for DB
+        run: |
+          for i in {1..30}; do
+            if (echo > /dev/tcp/127.0.0.1/5433) 2>/dev/null; then
+              echo "DB ready (127.0.0.1:5433)"
+              exit 0
+            fi
+            echo "Waiting for postgres ($i/30)..."
+            sleep 2
+          done
+          echo "DB not ready on 127.0.0.1:5433"
+          exit 1
+
+      - name: Run system check
+        run: |
+          cd apps/web
+          pnpm system:check

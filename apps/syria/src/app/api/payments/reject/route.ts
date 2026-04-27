@@ -4,6 +4,7 @@ import { getAdminUser } from "@/lib/auth";
 import { requireF1Admin } from "@/lib/payment-f1-admin";
 import { runF1Reject } from "@/lib/payment-f1-service";
 import { revalidateF1ListingOnly } from "@/lib/payment-f1-revalidate";
+import { logSecurityEvent } from "@/lib/sybnb/sybnb-security-log";
 
 export async function POST(req: Request) {
   const gate = await requireF1Admin(req);
@@ -34,6 +35,13 @@ export async function POST(req: Request) {
   const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
   const admin = await getAdminUser();
   const out = await runF1Reject(requestId, reason, { adminId: admin?.id ?? null, clientIp });
+  if (admin && out.type === "ok") {
+    void logSecurityEvent({
+      action: "f1_payment_rejected",
+      userId: admin.id,
+      metadata: { requestId, reason: reason || null, listingId: out.listingId },
+    });
+  }
   if (out.type === "not_found") {
     return NextResponse.json({ ok: false, error: "not_found" }, { status: 404 });
   }
