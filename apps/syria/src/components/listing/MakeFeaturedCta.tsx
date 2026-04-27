@@ -1,62 +1,58 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
+import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { formatSyriaCurrency } from "@/lib/format";
 import { trackClientAnalyticsEvent } from "@/lib/client-analytics";
+import { f1ViewTierAndPrices } from "@/config/syria-f1-pricing.config";
 import { f1AmountForPlan, type F1PlanKey } from "@/lib/payment-f1";
 import { SYRIA_PRICING } from "@/lib/pricing";
+import { formatSyriaCurrency } from "@/lib/format";
 
 type Contact = { displayPhone: string; whatsappHref: string | null; telHref: string | null } | null;
-
 type Plan = F1PlanKey;
+
+function formatR1PriceLine(amount: number, locale: string): string {
+  if (locale.startsWith("ar")) {
+    return `${amount.toLocaleString("ar-SY", { maximumFractionDigits: 0 })} ل.س`;
+  }
+  return formatSyriaCurrency(amount, SYRIA_PRICING.currency, locale);
+}
 
 export function MakeFeaturedCta({
   listingId,
   contact,
   featuredDurationDays,
   currentPlan,
+  viewCount = 0,
+  isDirect = false,
 }: {
   listingId: string;
   contact: Contact;
-  /** Shown in price copy (e.g. / 30 days) */
   featuredDurationDays: number;
-  /** F1: free → featured/premium; featured → premium only. */
   currentPlan: "free" | "featured" | "premium";
+  /** Stored public views (triggers R1 nudge at >= 10). */
+  viewCount?: number;
+  isDirect?: boolean;
 }) {
   const t = useTranslations("Listing");
   const locale = useLocale();
   const isAr = locale.startsWith("ar");
   const canPickFeatured = currentPlan === "free";
-  const [modalOpen, setModalOpen] = useState(false);
   const [plan, setPlan] = useState<Plan>(canPickFeatured ? "featured" : "premium");
   const [err, setErr] = useState<string | null>(null);
   const [waLoading, setWaLoading] = useState(false);
-  const [mounted, setMounted] = useState(false);
 
-  const lineFeatured = formatSyriaCurrency(f1AmountForPlan("featured"), SYRIA_PRICING.currency, locale);
-  const linePremium = formatSyriaCurrency(f1AmountForPlan("premium"), SYRIA_PRICING.currency, locale);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (modalOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [modalOpen]);
-
-  const valueLines = [t("bakaValue1"), t("bakaValue2"), t("bakaValue3")];
+  const lineFeatured = formatR1PriceLine(f1AmountForPlan("featured", viewCount), locale);
+  const linePremium = formatR1PriceLine(f1AmountForPlan("premium", viewCount), locale);
   const priceForSelectedPlan = plan === "featured" ? lineFeatured : linePremium;
+  const { showLadderHint } = f1ViewTierAndPrices(viewCount);
+
+  const showViewsNudge = currentPlan === "free" && viewCount >= 10;
+  const showDirectNudge = currentPlan === "free" && isDirect && !showViewsNudge;
+  const benefits = [t("revUpgradeBullet1"), t("revUpgradeBullet2"), t("revUpgradeBullet3")];
+  const steps = [t("r1Step1"), t("r1Step2"), t("r1Step3")];
 
   async function onWhatsappPayClick() {
     if (!contact) return;
@@ -75,10 +71,7 @@ export function MakeFeaturedCta({
         return;
       }
       trackClientAnalyticsEvent("f1_payment_request", { propertyId: listingId, payload: { plan, listingId } });
-      trackClientAnalyticsEvent("whatsapp_clicked", {
-        propertyId: listingId,
-        payload: { listingId, plan },
-      });
+      trackClientAnalyticsEvent("whatsapp_clicked", { propertyId: listingId, payload: { listingId, plan } });
       window.open(data.whatsappUrl, "_blank", "noopener,noreferrer");
     } catch {
       setErr(t("makeFeaturedError"));
@@ -87,181 +80,120 @@ export function MakeFeaturedCta({
     }
   }
 
-  function onOpenModal() {
-    setErr(null);
-    setModalOpen(true);
-    setPlan(canPickFeatured ? "featured" : "premium");
-    trackClientAnalyticsEvent("upgrade_opened", { propertyId: listingId, payload: { listingId } });
-  }
-
-  const modal = modalOpen
-    ? createPortal(
-        <div
-          className="fixed inset-0 z-[100] flex items-end justify-center sm:items-center"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="baka-modal-title"
-        >
-          <button
-            type="button"
-            className="absolute inset-0 bg-black/50"
-            tabIndex={-1}
-            aria-label={t("bakaClose")}
-            onClick={() => setModalOpen(false)}
-          />
-          <div
-            className="relative z-10 flex max-h-[min(92vh,800px)] w-full max-w-lg flex-col rounded-t-[1.25rem] border border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface)] shadow-[var(--darlink-shadow-sm)] sm:max-h-[min(88vh,760px)] sm:rounded-[var(--darlink-radius-2xl)]"
-            dir={isAr ? "rtl" : "ltr"}
-          >
-            <div className="flex max-h-full min-h-0 flex-1 flex-col">
-              <div className="relative shrink-0 border-b border-[color:var(--darlink-border)] px-4 py-3 pt-9 text-center sm:px-5">
-                <button
-                  type="button"
-                  className="absolute end-2 top-2 rounded-lg px-2.5 py-1 text-sm text-[color:var(--darlink-text-muted)] hover:bg-[color:var(--darlink-surface-muted)]"
-                  onClick={() => setModalOpen(false)}
-                >
-                  ✕
-                </button>
-                <p className="text-sm font-bold text-amber-900">{t("bakaModalUrgency")}</p>
-                <p className="mt-1 text-xs text-[color:var(--darlink-text-muted)]">{t("bakaModalSocial")}</p>
-                <h3 id="baka-modal-title" className="mt-3 text-base font-bold text-[color:var(--darlink-text)]">
-                  {t("bakaModalTitle")}
-                </h3>
-                <p className="mt-2 rounded-lg bg-emerald-50/90 px-3 py-2 text-sm font-semibold text-emerald-900 ring-1 ring-emerald-200/60">
-                  {t("bakaReinforcement")}
-                </p>
-              </div>
-              <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4 sm:px-5">
-                <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--darlink-gold)]">
-                  {t("bakaPickPlan")}
-                </p>
-                <div className="grid gap-3 sm:grid-cols-1">
-                  {canPickFeatured ? (
-                  <button
-                    type="button"
-                    onClick={() => setPlan("featured")}
-                    className={`w-full min-h-32 rounded-[var(--darlink-radius-xl)] border-2 p-6 text-start ${
-                      plan === "featured"
-                        ? "border-[var(--hadiah-btn)] bg-red-50 ring-2 ring-red-200/60"
-                        : "border-[color:var(--darlink-border)] bg-red-50/50"
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="text-lg font-extrabold text-[color:var(--darlink-text)]">{t("bakaPlanFeatured")}</p>
-                        <p className="mt-1.5 text-base font-extrabold tabular-nums text-[var(--hadiah-btn)] sm:text-lg">
-                          {t("bakaCardPrice", { amount: lineFeatured, days: featuredDurationDays })}
-                        </p>
-                      </div>
-                      <span className="shrink-0 rounded-full bg-[#D4AF37]/30 px-2.5 py-1 text-[10px] font-bold text-amber-950">
-                        {t("bakaMostPopular")}
-                      </span>
-                    </div>
-                  </button>
-                  ) : null}
-                  <button
-                    type="button"
-                    onClick={() => setPlan("premium")}
-                    className={`w-full min-h-[4.5rem] rounded-[var(--darlink-radius-xl)] border-2 p-3.5 text-start ${
-                      plan === "premium"
-                        ? "border-[color:var(--darlink-sand)] bg-amber-50/80 ring-2 ring-amber-200/50"
-                        : "border-[color:var(--darlink-border)] bg-white"
-                    }`}
-                  >
-                    <p className="text-sm font-bold text-[color:var(--darlink-text)]">{t("bakaPlanPremium")}</p>
-                    <p className="mt-1 text-base font-bold tabular-nums text-amber-950 sm:text-lg">
-                      {t("bakaCardPrice", { amount: linePremium, days: featuredDurationDays })}
-                    </p>
-                  </button>
-                </div>
-                <div className="rounded-[var(--darlink-radius-lg)] border border-stone-200/90 bg-stone-50/80 px-3 py-2.5">
-                  <ol className="list-inside list-decimal space-y-1.5 text-sm font-medium text-[color:var(--darlink-text)]" dir={isAr ? "rtl" : "ltr"}>
-                    <li>{t("bakaStep1")}</li>
-                    <li>{t("bakaStep2")}</li>
-                    <li>{t("bakaStep3")}</li>
-                  </ol>
-                </div>
-                <div className="space-y-1 text-xs text-[color:var(--darlink-text-muted)]">
-                  <p>{t("bakaReassure1")}</p>
-                  <p>{t("bakaReassure2")}</p>
-                </div>
-                {contact?.telHref ? (
-                  <a
-                    href={contact.telHref}
-                    className="flex min-h-11 w-full items-center justify-center rounded-[var(--darlink-radius-xl)] border-2 border-[color:var(--darlink-navy)] bg-white px-4 text-sm font-semibold text-[color:var(--darlink-navy)]"
-                  >
-                    {t("makeFeaturedCall", { phone: contact.displayPhone })}
-                  </a>
-                ) : null}
-              </div>
-              <div className="sticky bottom-0 z-20 shrink-0 border-t border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface)] p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-                <p className="mb-2 text-center text-sm font-bold tabular-nums text-[color:var(--darlink-text)]">
-                  {t("bakaStickyPrice", {
-                    amount: priceForSelectedPlan,
-                    days: featuredDurationDays,
-                    plan: plan === "featured" ? t("bakaPlanFeatured") : t("bakaPlanPremium"),
-                  })}
-                </p>
-                {contact ? (
-                  <button
-                    type="button"
-                    disabled={waLoading}
-                    className="flex min-h-[3.5rem] w-full items-center justify-center rounded-[var(--darlink-radius-xl)] bg-[#25D366] px-4 text-base font-bold text-white hover:bg-[#20bd5a] active:bg-[#1daf54] disabled:opacity-60"
-                    onClick={() => void onWhatsappPayClick()}
-                  >
-                    {waLoading ? "…" : t("bakaWhatsappCta")}
-                  </button>
-                ) : null}
-                <button
-                  type="button"
-                  className="mt-2 w-full min-h-11 text-center text-sm font-medium text-[color:var(--darlink-text-muted)] underline"
-                  onClick={() => {
-                    trackClientAnalyticsEvent("payment_confirmed", { propertyId: listingId, payload: { listingId, plan } });
-                  }}
-                >
-                  {t("bakaMarkProofSent")}
-                </button>
-                {!contact ? <p className="mt-1 text-center text-xs text-amber-900/80">{t("makeFeaturedNoAdminPhone")}</p> : null}
-              </div>
-            </div>
-          </div>
-        </div>,
-        document.body,
-      )
-    : null;
-
   return (
-    <Card id="make-featured" className="scroll-mt-24 border-[color:var(--darlink-sand)]/40 bg-amber-50/40 p-4 sm:p-5">
-      <h2 className="text-base font-bold leading-snug text-[color:var(--darlink-text)] sm:text-lg">{t("makeFeaturedValueHeadline")}</h2>
-      <ul className="mt-2.5 space-y-0.5 text-sm leading-tight text-[color:var(--darlink-text)]" dir={isAr ? "rtl" : "ltr"}>
-        {valueLines.map((line) => (
-          <li key={line} className="flex items-start gap-2">
-            <span className="mt-0.5 shrink-0 text-xs leading-none text-[#D4AF37]" aria-hidden>
-              ✦
+    <Card
+      id="r1-upgrade"
+      className="scroll-mt-24 border-amber-200/80 bg-gradient-to-b from-amber-50/95 to-[color:var(--darlink-surface)] p-4 shadow-[var(--darlink-shadow-sm)] sm:p-5"
+    >
+      {showViewsNudge ? (
+        <p className="text-sm font-semibold leading-snug text-amber-950">{t("revNudgeViews")}</p>
+      ) : showDirectNudge ? (
+        <p className="text-sm font-semibold leading-snug text-amber-950">{t("revNudgeDirectFree")}</p>
+      ) : (
+        <h2 className="text-base font-bold leading-snug text-[color:var(--darlink-text)] sm:text-lg">{t("makeFeaturedValueHeadline")}</h2>
+      )}
+
+      <ul className="mt-2.5 list-none space-y-1" dir={isAr ? "rtl" : "ltr"}>
+        {benefits.map((line) => (
+          <li key={line} className="flex items-start gap-2 text-sm text-[color:var(--darlink-text)]">
+            <span className="shrink-0 text-emerald-600" aria-hidden>
+              ✔
             </span>
             <span>{line}</span>
           </li>
         ))}
       </ul>
-      <p className="mt-2.5 text-sm font-bold tabular-nums text-[color:var(--darlink-text)]" dir="ltr">
-        {t("bakaTeaserPrice", { amount: lineFeatured, days: featuredDurationDays })}
+
+      <p className="mt-2.5 text-sm font-bold text-[color:var(--darlink-text)]" dir={isAr ? "rtl" : "ltr"}>
+        {t("r1PromotionPrice", { amount: plan === "featured" ? lineFeatured : linePremium })}
       </p>
-      <p className="text-xs text-[color:var(--darlink-text-muted)]">{t("makeFeaturedPriceNote")}</p>
-      <p className="mt-2 text-sm font-medium text-amber-900/90">{t("makeFeaturedUrgency")}</p>
-      <p className="text-xs text-[color:var(--darlink-text-muted)]">{t("bakaTeaserSocial")}</p>
-      <p className="mt-1 rounded-md bg-white/50 px-2 py-1.5 text-center text-sm font-medium text-emerald-900/90 sm:text-left">
-        {t("bakaReinforcement")}
+      {showLadderHint ? (
+        <p
+          className="mt-2 text-sm font-semibold text-amber-900"
+          dir={isAr ? "rtl" : "ltr"}
+        >
+          {t("f1PriceLadderHint")}
+        </p>
+      ) : null}
+      <p className="text-xs text-[color:var(--darlink-text-muted)]">
+        {t("makeFeaturedPriceNote")} · {t("r1DurationNote", { days: featuredDurationDays })}
       </p>
-      <Button
-        type="button"
-        variant="primary"
-        className="mt-3 w-full min-h-12 text-base"
-        onClick={onOpenModal}
+
+      <ol
+        className="mt-3 list-inside list-decimal space-y-0.5 text-sm font-medium text-[color:var(--darlink-text)]"
+        dir={isAr ? "rtl" : "ltr"}
       >
-        {t("bakaUpgradeCta")}
-      </Button>
+        {steps.map((s) => (
+          <li key={s}>{s}</li>
+        ))}
+      </ol>
+
+      {canPickFeatured ? (
+        <div className="mt-4 grid gap-2">
+          <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--darlink-gold)]">{t("bakaPickPlan")}</p>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <button
+              type="button"
+              onClick={() => setPlan("featured")}
+              className={`w-full min-h-14 rounded-[var(--darlink-radius-lg)] border-2 p-3 text-start ${
+                plan === "featured"
+                  ? "border-[#D4AF37] bg-amber-50/90 ring-1 ring-amber-300/50"
+                  : "border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface)]"
+              }`}
+            >
+              <p className="text-sm font-bold text-[color:var(--darlink-text)]">{t("bakaPlanFeatured")}</p>
+              <p className="mt-0.5 text-sm font-bold tabular-nums text-amber-900">{lineFeatured}</p>
+            </button>
+            <button
+              type="button"
+              onClick={() => setPlan("premium")}
+              className={`w-full min-h-14 rounded-[var(--darlink-radius-lg)] border-2 p-3 text-start ${
+                plan === "premium"
+                  ? "border-[color:var(--darlink-sand)] bg-amber-50/90 ring-1 ring-amber-200/50"
+                  : "border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface)]"
+              }`}
+            >
+              <p className="text-sm font-bold text-[color:var(--darlink-text)]">{t("bakaPlanPremium")}</p>
+              <p className="mt-0.5 text-sm font-bold tabular-nums text-amber-900">{linePremium}</p>
+              <p className="mt-1.5 text-[11px] font-medium leading-snug text-amber-950/90">{t("f1PremiumBundleLine")}</p>
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {contact ? (
+        <>
+          <p className="mt-4 text-center text-xs font-semibold text-amber-950" dir={isAr ? "rtl" : "ltr"}>
+            {t("f1UrgencyLine")}
+          </p>
+          <Button
+            type="button"
+            disabled={waLoading}
+            variant="primary"
+            className="mt-2 w-full min-h-12 text-base"
+            onClick={() => void onWhatsappPayClick()}
+          >
+            {waLoading ? "…" : t("bakaUpgradeCta")}
+          </Button>
+        </>
+      ) : null}
+
+      {contact?.telHref ? (
+        <a
+          href={contact.telHref}
+          className="mt-2 flex min-h-11 w-full items-center justify-center rounded-[var(--darlink-radius-xl)] border-2 border-[color:var(--darlink-navy)] bg-[color:var(--darlink-surface)] px-4 text-sm font-semibold text-[color:var(--darlink-navy)]"
+        >
+          {t("makeFeaturedCall", { phone: contact.displayPhone })}
+        </a>
+      ) : null}
+
+      {!contact ? <p className="mt-3 text-center text-xs text-amber-900/80">{t("makeFeaturedNoAdminPhone")}</p> : null}
       {err ? <p className="mt-2 text-sm text-amber-900">{err}</p> : null}
-      {mounted ? modal : null}
+      {canPickFeatured ? (
+        <p className="mt-1 text-center text-xs text-[color:var(--darlink-text-muted)]" dir="ltr">
+          {t("bakaTeaserPrice", { amount: priceForSelectedPlan, days: featuredDurationDays })}
+        </p>
+      ) : null}
     </Card>
   );
 }

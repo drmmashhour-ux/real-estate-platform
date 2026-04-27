@@ -1,16 +1,18 @@
+import { f1AmountForPlanFromViews, f1ViewTierAndPrices, F1_BASELINE_SYP, F1_LADDER_CAP_SYP } from "@/config/syria-f1-pricing.config";
 import type { SyriaListingPlan } from "@/generated/prisma";
 import { toWhatsAppPath } from "@/lib/syria-phone";
 
-/** Manual باقة مميز/فاخر — SYP, no external gateway. */
-export const F1_PLAN_PRICES_SYP = {
-  featured: 50_000,
-  premium: 120_000,
-} as const;
+/** Baseline (tier 0) — docs / display fallback. */
+export const F1_PLAN_PRICES_SYP = F1_BASELINE_SYP;
+
+export const F1_PRICE_CAPS_SYP = F1_LADDER_CAP_SYP;
 
 /** Alias for Financial Core (FI) integration docs. */
 export const FI_MANUAL_PRICES_SYP = F1_PLAN_PRICES_SYP;
 
-export type F1PlanKey = keyof typeof F1_PLAN_PRICES_SYP;
+export { f1ViewTierAndPrices, f1AmountForPlanFromViews } from "@/config/syria-f1-pricing.config";
+
+export type F1PlanKey = keyof typeof F1_BASELINE_SYP;
 
 const tier: Record<SyriaListingPlan, number> = {
   free: 0,
@@ -18,8 +20,12 @@ const tier: Record<SyriaListingPlan, number> = {
   premium: 2,
 };
 
-export function f1AmountForPlan(plan: F1PlanKey): number {
-  return F1_PLAN_PRICES_SYP[plan];
+/**
+ * F1 price for a plan from **public view count** (must match server at payment-request time).
+ * @param views — optional; when missing, uses tier 0 (same as 0 views).
+ */
+export function f1AmountForPlan(plan: F1PlanKey, views?: number): number {
+  return f1AmountForPlanFromViews(plan, views ?? 0);
 }
 
 /** True if listing can request an upgrade to `target` (no downgrades; premium is top). */

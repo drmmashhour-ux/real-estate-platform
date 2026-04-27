@@ -3,6 +3,8 @@ import { Link } from "@/i18n/navigation";
 import type { SyriaProperty } from "@/generated/prisma";
 import { pickListingTitle } from "@/lib/listing-localized";
 import {
+  G4_WEAK_LEADS_MAX,
+  G4_WEAK_VIEWS_MIN,
   SELF_MKT_MIN_AMENITIES_FOR_QUALITY,
   SELF_MKT_VIEWS_FEATURED_UPSELL_MIN,
   SELF_MKT_VIEWS_SHARE_REMINDER_MAX,
@@ -21,7 +23,17 @@ export async function SelfMarketingPanel({ listings }: { listings: SyriaProperty
   const published = listings.filter((l) => l.status === "PUBLISHED" && !l.fraudFlag);
   if (published.length === 0) return null;
 
-  const needShare = published.filter((l) => (l.views ?? 0) <= SELF_MKT_VIEWS_SHARE_REMINDER_MAX);
+  const leadTaps = (l: SyriaProperty) => (l.whatsappClicks ?? 0) + (l.phoneClicks ?? 0);
+  const reshareAfterLeads = published.filter((l) => leadTaps(l) >= 1);
+  const needShare = published.filter(
+    (l) =>
+      (l.views ?? 0) <= SELF_MKT_VIEWS_SHARE_REMINDER_MAX &&
+      leadTaps(l) === 0,
+  );
+  const weakEngagement = published.filter(
+    (l) =>
+      (l.views ?? 0) >= G4_WEAK_VIEWS_MIN && leadTaps(l) <= G4_WEAK_LEADS_MAX,
+  );
   const upsellFeat = published.filter(
     (l) => l.plan === "free" && (l.views ?? 0) >= SELF_MKT_VIEWS_FEATURED_UPSELL_MIN,
   );
@@ -29,15 +41,52 @@ export async function SelfMarketingPanel({ listings }: { listings: SyriaProperty
     (l) => imageCount(l.images) === 0 || amenityCount(l.amenities) < SELF_MKT_MIN_AMENITIES_FOR_QUALITY,
   );
 
-  if (needShare.length === 0 && upsellFeat.length === 0 && lowQ.length === 0) return null;
+  if (
+    reshareAfterLeads.length === 0 &&
+    needShare.length === 0 &&
+    weakEngagement.length === 0 &&
+    upsellFeat.length === 0 &&
+    lowQ.length === 0
+  ) {
+    return null;
+  }
 
   return (
     <div className="space-y-3">
+      {reshareAfterLeads.length > 0 ? (
+        <div className="rounded-[var(--darlink-radius-2xl)] border border-emerald-200 bg-emerald-50/80 px-4 py-3 text-sm text-emerald-950 shadow-none">
+          <p className="font-semibold">{t("g4ReshareTitle")}</p>
+          <ul className="mt-2 list-inside list-disc text-xs text-emerald-900/95">
+            {reshareAfterLeads.slice(0, 4).map((l) => (
+              <li key={l.id}>
+                <Link href={`/listing/${l.id}`} className="font-medium text-emerald-950 underline">
+                  {pickListingTitle(l, locale)}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
       {needShare.length > 0 ? (
         <div className="rounded-[var(--darlink-radius-2xl)] border border-amber-200 bg-amber-50/80 px-4 py-3 text-sm text-amber-950 shadow-none">
           <p className="font-semibold">{t("reminderShare")}</p>
           <ul className="mt-2 list-inside list-disc text-xs text-amber-900/95">
             {needShare.slice(0, 4).map((l) => (
+              <li key={l.id}>
+                <Link href={`/listing/${l.id}`} className="font-medium text-amber-950 underline">
+                  {pickListingTitle(l, locale)}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+      {weakEngagement.length > 0 ? (
+        <div className="rounded-[var(--darlink-radius-2xl)] border border-amber-300/80 bg-amber-50/90 px-4 py-3 text-sm text-amber-950 shadow-none">
+          <p className="font-semibold">{t("g4WeakEngagementTitle")}</p>
+          <p className="mt-1 text-xs text-amber-900/90">{t("g4WeakEngagementBody")}</p>
+          <ul className="mt-2 list-inside list-disc text-xs text-amber-900/95">
+            {weakEngagement.slice(0, 4).map((l) => (
               <li key={l.id}>
                 <Link href={`/listing/${l.id}`} className="font-medium text-amber-950 underline">
                   {pickListingTitle(l, locale)}
@@ -53,7 +102,7 @@ export async function SelfMarketingPanel({ listings }: { listings: SyriaProperty
           {upsellFeat.slice(0, 1).map((l) => (
             <Link
               key={l.id}
-              href={`/listing/${l.id}#make-featured`}
+              href={`/listing/${l.id}#r1-upgrade`}
               className="mt-2 inline-flex min-h-11 w-full max-w-sm items-center justify-center rounded-[var(--darlink-radius-xl)] bg-[var(--hadiah-btn)] px-4 text-sm font-bold text-white hover:opacity-95"
             >
               {t("upsellCta")}

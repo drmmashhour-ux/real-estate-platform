@@ -22,6 +22,10 @@ type Props = {
   variant?: "default" | "growth" | "copyOnly";
   /** Override WhatsApp button label; defaults to Listing.shareButton */
   whatsappLabel?: string;
+  /** Override copy button label; defaults to Listing.copyLink */
+  copyButtonLabel?: string;
+  /** Arabic viral: amount + " ل.س" in `buildListingShareMessage` */
+  sharePriceAmount?: number;
 };
 
 export function ListingShareActions({
@@ -31,6 +35,8 @@ export function ListingShareActions({
   shareCity,
   variant = "default",
   whatsappLabel,
+  copyButtonLabel,
+  sharePriceAmount,
 }: Props) {
   const t = useTranslations("Listing");
   const locale = useLocale();
@@ -50,10 +56,11 @@ export function ListingShareActions({
         url: fullUrl,
         locale,
         city: shareCity,
+        priceAmount: sharePriceAmount,
       });
     }
     return t("shareWhatsAppBody", { url: fullUrl });
-  }, [fullUrl, shareTitle, sharePriceLine, shareCity, locale, t]);
+  }, [fullUrl, shareTitle, sharePriceLine, shareCity, sharePriceAmount, locale, t]);
 
   async function onCopy() {
     if (!fullUrl) return;
@@ -76,7 +83,7 @@ export function ListingShareActions({
           className="w-full min-h-10 rounded-lg border border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface)] px-3 py-2 text-xs font-medium text-[color:var(--darlink-text)] disabled:opacity-50"
           onClick={() => void onCopy()}
         >
-          {copied ? t("linkCopied") : t("copyLink")}
+          {copied ? t("linkCopied") : copyButtonLabel ?? t("copyLink")}
         </button>
       </div>
     );
@@ -104,7 +111,7 @@ export function ListingShareActions({
         {whatsappLabel ?? t("shareButton")}
       </button>
       <button type="button" disabled={!fullUrl} className={secondaryClass} onClick={() => void onCopy()}>
-        {copied ? t("linkCopied") : t("copyLink")}
+        {copied ? t("linkCopied") : copyButtonLabel ?? t("copyLink")}
       </button>
     </div>
   );

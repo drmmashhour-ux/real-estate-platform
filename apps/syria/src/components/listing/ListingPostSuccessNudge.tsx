@@ -26,7 +26,9 @@ export function ListingPostSuccessNudge({ children }: { children: ReactNode }) {
   return (
     <div className="rounded-2xl border border-emerald-200 bg-emerald-50/90 p-4 sm:p-5">
       <p className="text-sm font-semibold text-emerald-950">{t("afterPostShareTitle")}</p>
+      <p className="mt-1 text-sm text-emerald-900/90">{t("afterPostShareTagline")}</p>
       <div className="mt-4 min-w-0 max-w-full">{children}</div>
+      <p className="mt-3 text-xs leading-relaxed text-emerald-900/80">{t("afterPostShareReferral")}</p>
     </div>
   );
 }

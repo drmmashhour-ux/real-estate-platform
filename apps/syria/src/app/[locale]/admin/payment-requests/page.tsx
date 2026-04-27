@@ -4,13 +4,49 @@ import { prisma } from "@/lib/db";
 import { money } from "@/lib/format";
 import { pickListingTitle } from "@/lib/listing-localized";
 import { adminF1ConfirmFormAction, adminF1RejectFormAction } from "@/actions/payment-f1-admin";
+import { AdminF1Tabs, type AdminF1Filter } from "@/components/admin/AdminF1Tabs";
+import type { Prisma } from "@/generated/prisma";
 
-export default async function AdminF1PaymentRequestsPage() {
+type PageProps = { searchParams: Promise<Record<string, string | string[] | undefined>> };
+
+function buildF1Where(
+  filter: AdminF1Filter,
+): { where: Prisma.SyriaPaymentRequestWhereInput; tab: AdminF1Filter } {
+  if (filter === "stats") {
+    return { where: {}, tab: "all" };
+  }
+  if (filter === "pending") {
+    return { where: { status: "pending" }, tab: "pending" };
+  }
+  if (filter === "active") {
+    return { where: { status: "confirmed" }, tab: "active" };
+  }
+  if (filter === "archived") {
+    return { where: { status: "rejected" }, tab: "archived" };
+  }
+  if (filter === "expired") {
+    const stale = new Date();
+    stale.setDate(stale.getDate() - 14);
+    return {
+      where: { status: "pending", createdAt: { lt: stale } },
+      tab: "expired",
+    };
+  }
+  return { where: {}, tab: "all" };
+}
+
+export default async function AdminF1PaymentRequestsPage({ searchParams }: PageProps) {
   const t = await getTranslations("Admin");
   const locale = await getLocale();
   const numberLoc = locale.startsWith("ar") ? "ar-SY" : "en-US";
+  const sp = await searchParams;
+  const raw = typeof sp.filter === "string" ? sp.filter : "all";
+  const filter: AdminF1Filter =
+    raw === "pending" || raw === "active" || raw === "expired" || raw === "archived" ? raw : "all";
+  const { where } = buildF1Where(filter);
 
   const rows = await prisma.syriaPaymentRequest.findMany({
+    where,
     orderBy: { createdAt: "desc" },
     take: 100,
     include: { listing: { select: { id: true, titleAr: true, titleEn: true } } },
@@ -23,8 +59,12 @@ export default async function AdminF1PaymentRequestsPage() {
         <p className="mt-1 text-sm text-stone-600">{t("f1RequestsIntro")}</p>
       </div>
 
+      <AdminF1Tabs current={filter} t={t} />
+
       {rows.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-stone-200 bg-white p-8 text-sm text-stone-500">{t("f1Empty")}</p>
+        <p className="rounded-2xl border border-dashed border-stone-200 bg-white p-8 text-sm text-stone-500">
+          {filter === "all" ? t("f1Empty") : t("f1FilterEmpty")}
+        </p>
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-stone-200 bg-white shadow-sm">
           <table className="w-full min-w-[720px] text-left text-sm">
@@ -34,6 +74,7 @@ export default async function AdminF1PaymentRequestsPage() {
                 <th className="px-3 py-3">{t("f1ColListing")}</th>
                 <th className="px-3 py-3">{t("f1ColPlan")}</th>
                 <th className="px-3 py-3">{t("f1ColAmount")}</th>
+                <th className="px-3 py-3">{t("f1ColTier")}</th>
                 <th className="px-3 py-3">{t("f1ColStatus")}</th>
                 <th className="px-3 py-3">{t("f1ColCreated")}</th>
                 <th className="px-3 py-3" />
@@ -63,6 +104,9 @@ export default async function AdminF1PaymentRequestsPage() {
                     </td>
                     <td className="px-3 py-3 text-stone-800">{r.plan}</td>
                     <td className="px-3 py-3 tabular-nums">{money(r.amount, r.currency, numberLoc)}</td>
+                    <td className="px-3 py-3 tabular-nums text-stone-700" dir="ltr">
+                      {r.pricingTier}
+                    </td>
                     <td className="px-3 py-3 text-stone-800">{r.status}</td>
                     <td className="px-3 py-3 text-xs text-stone-500">
                       {r.createdAt.toLocaleString(locale.startsWith("ar") ? "ar-SY" : "en-GB", {

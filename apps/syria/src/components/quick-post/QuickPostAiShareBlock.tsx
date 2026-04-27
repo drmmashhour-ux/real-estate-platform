@@ -26,6 +26,7 @@ export function QuickPostAiShareBlock(props: { listingId: string; title: string;
       city: props.city,
       url,
       locale,
+      priceAmount: Number(props.price) || 0,
     });
     try {
       await navigator.clipboard.writeText(full);
@@ -41,7 +42,16 @@ export function QuickPostAiShareBlock(props: { listingId: string; title: string;
     <div className="mt-4 rounded-[var(--darlink-radius-xl)] border border-violet-200/70 bg-violet-50/50 p-4 text-start">
       <p className="text-xs font-semibold text-violet-950">{t("aiShareBlockTitle")}</p>
       <pre className="mt-2 max-h-32 overflow-y-auto whitespace-pre-wrap break-words text-xs text-[color:var(--darlink-text)]" dir="auto">
-        {url ? buildListingShareMessage({ title: props.title, priceLine, city: props.city, url, locale }) : "…"}
+        {url
+          ? buildListingShareMessage({
+              title: props.title,
+              priceLine,
+              city: props.city,
+              url,
+              locale,
+              priceAmount: Number(props.price) || 0,
+            })
+          : "…"}
       </pre>
       <button
         type="button"

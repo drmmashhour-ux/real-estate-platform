@@ -32,6 +32,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <Link href="/admin/payment-requests" className="hover:underline">
             {t("navF1Payments")}
           </Link>
+          <Link href="/admin/stats" className="hover:underline">
+            {t("navStats")}
+          </Link>
           {!mvp ? (
             <Link href="/admin/promotions" className="hover:underline">
               {t("navPromotions")}

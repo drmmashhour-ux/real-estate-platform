@@ -11,6 +11,7 @@ import { MAX_LISTING_IMAGES, processListingImageFiles } from "@/lib/syria/photo-
 import { formatSyriaCurrency } from "@/lib/format";
 import { SYRIA_PRICING } from "@/lib/pricing";
 import { ListingShareActions } from "@/components/listing/ListingShareActions";
+import { ListingPostSuccessNudge } from "@/components/listing/ListingPostSuccessNudge";
 import { QuickPostAiPanel } from "@/components/quick-post/QuickPostAiPanel";
 import { QuickPostAiShareBlock } from "@/components/quick-post/QuickPostAiShareBlock";
 import {
@@ -34,6 +35,7 @@ type FormState = {
 
 export function QuickPostForm() {
   const t = useTranslations("QuickPost");
+  const tList = useTranslations("Listing");
   const locale = useLocale();
   const isAr = locale.startsWith("ar");
   const [form, setForm] = useState<FormState>({
@@ -219,20 +221,23 @@ export function QuickPostForm() {
             >
               {t("viewListing")}
             </Link>
-            <p className="mt-5 text-base font-bold text-emerald-950 sm:text-lg">{t("shareAfterPost")}</p>
-            <div className="mt-3 rounded-[var(--darlink-radius-xl)] border border-emerald-300/50 bg-white/80 p-4 text-start shadow-sm ring-1 ring-emerald-500/15 sm:mx-auto sm:max-w-md">
-              <ListingShareActions
-                variant="growth"
-                whatsappLabel={t("shareWhatsAppCta")}
-                listingId={createdId}
-                {...(shareMeta
-                  ? {
-                      shareTitle: shareMeta.title,
-                      sharePriceLine: formatSyriaCurrency(Number(shareMeta.price) || 0, SYRIA_PRICING.currency, locale),
-                      shareCity: shareMeta.city,
-                    }
-                  : {})}
-              />
+            <div className="mt-5 sm:mx-auto sm:max-w-md">
+              <ListingPostSuccessNudge>
+                <ListingShareActions
+                  variant="growth"
+                  whatsappLabel={tList("shareViaWhatsappCta")}
+                  copyButtonLabel={tList("copyLink")}
+                  listingId={createdId}
+                  {...(shareMeta
+                    ? {
+                        shareTitle: shareMeta.title,
+                        sharePriceLine: formatSyriaCurrency(Number(shareMeta.price) || 0, SYRIA_PRICING.currency, locale),
+                        shareCity: shareMeta.city,
+                        sharePriceAmount: Number(shareMeta.price) || 0,
+                      }
+                    : {})}
+                />
+              </ListingPostSuccessNudge>
             </div>
             {shareMeta ? (
               <QuickPostAiShareBlock

@@ -33,6 +33,7 @@ import { SELF_MKT_VIEWS_HOT_BADGE_MIN } from "@/lib/self-marketing";
 import { getMonetizationAdminContact } from "@/lib/monetization-contact";
 import { syriaPlatformConfig } from "@/config/syria-platform.config";
 import { MakeFeaturedCta } from "@/components/listing/MakeFeaturedCta";
+import { OwnerUpgradeStickyCta } from "@/components/listing/OwnerUpgradeStickyCta";
 import { labelSyriaState } from "@/lib/syria/states";
 import { SYRIA_AMENITIES, labelSyriaAmenityForListing } from "@/lib/syria/amenities";
 import { getTrustWarningLines } from "@/lib/ai/trustAssistant";
@@ -118,6 +119,7 @@ export default async function ListingDetailPage(props: Props) {
       : null;
   const numberLoc = locale.startsWith("ar") ? "ar-SY" : "en-US";
   const sharePriceLine = money(listing.price, listing.currency, numberLoc);
+  const sharePriceAmount = Number(listing.price);
 
   const images = listing.images.filter((x) => x.length > 0);
   const photoQualityHighlight = images.length >= 3;
@@ -192,15 +194,23 @@ export default async function ListingDetailPage(props: Props) {
     seenH.add(d);
     highlightLines.push(d);
   }
-  const conversionCompactShare = syriaFlags.SYRIA_MVP && canContact && !isOwner;
+  /** Visitors with a contact card get share in the aside; main column for everyone else and for after-post. */
+  const showShareInMain = !showContactAside || showAfterPostShare;
+  const viewCountStored = listing.views ?? 0;
+  const showOwnerUpgradeSticky = isOwner && listing.plan === "free" && viewCountStored >= 10;
 
   return (
     <>
       {showBooking ? <ListingMobileBookingBar amount={listing.price} currency={listing.currency} numberLoc={numberLoc} /> : null}
       {canContact ? <ListingContactDock listingId={listing.id} whatsappHref={waOwnerHref} telHref={telOwnerHref} /> : null}
+      {showOwnerUpgradeSticky ? <OwnerUpgradeStickyCta /> : null}
       <article
         className={
-          canContact ? "max-w-full overflow-x-hidden pb-52 max-md:pb-56 md:pb-0" : "max-w-full overflow-x-hidden"
+          canContact
+            ? "max-w-full overflow-x-hidden pb-52 max-md:pb-56 md:pb-0"
+            : showOwnerUpgradeSticky
+              ? "max-w-full overflow-x-hidden max-md:pb-28 md:pb-0"
+              : "max-w-full overflow-x-hidden"
         }
       >
         <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start lg:gap-10">
@@ -210,17 +220,25 @@ export default async function ListingDetailPage(props: Props) {
                 <span className="rounded-full bg-[color:var(--darlink-surface-muted)] px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-[color:var(--darlink-text-muted)]">
                   {listing.type}
                 </span>
-                {listing.isDirect ? (
+                {listing.isDirect && (listing.plan === "featured" || listing.plan === "premium") ? (
                   <span className="rounded-full bg-gradient-to-r from-emerald-100 to-amber-100/90 px-2.5 py-1 text-xs font-bold text-emerald-900 ring-1 ring-emerald-300/70">
-                    {t("badgeDirect")}
+                    {listing.plan === "premium" ? t("badgeDirectPlusPremium") : t("badgeDirectPlusBoost")}
                   </span>
-                ) : null}
-                {listing.plan === "premium" ? (
-                  <span className="rounded-full bg-gradient-to-r from-[color:var(--darlink-sand)]/30 to-amber-100/90 px-2.5 py-1 text-xs font-bold text-amber-950 ring-1 ring-[color:var(--darlink-sand)]/50">
-                    {t("premiumBadge")}
-                  </span>
-                ) : null}
-                {listing.plan === "featured" ? <Badge tone="accent">{t("featuredBadge")}</Badge> : null}
+                ) : (
+                  <>
+                    {listing.isDirect ? (
+                      <span className="rounded-full bg-gradient-to-r from-emerald-100 to-amber-100/90 px-2.5 py-1 text-xs font-bold text-emerald-900 ring-1 ring-emerald-300/70">
+                        {t("badgeDirect")}
+                      </span>
+                    ) : null}
+                    {listing.plan === "premium" ? (
+                      <span className="rounded-full bg-gradient-to-r from-[color:var(--darlink-sand)]/30 to-amber-100/90 px-2.5 py-1 text-xs font-bold text-amber-950 ring-1 ring-[color:var(--darlink-sand)]/50">
+                        {t("premiumBadge")}
+                      </span>
+                    ) : null}
+                    {listing.plan === "featured" ? <Badge tone="accent">{t("featuredBadge")}</Badge> : null}
+                  </>
+                )}
                 {showNewBadge ? (
                   <div className="bg-blue-500 px-2 py-1 text-xs font-medium text-white rounded">{t("badgeNew")}</div>
                 ) : null}
@@ -274,23 +292,29 @@ export default async function ListingDetailPage(props: Props) {
             <PropertyImageGallery images={images} title={titleDisplay} />
 
             <div className="min-w-0 max-w-full space-y-2">
-              {showAfterPostShare ? (
-                <ListingPostSuccessNudge>
+              {showShareInMain ? (
+                showAfterPostShare ? (
+                  <ListingPostSuccessNudge>
+                    <ListingShareActions
+                      variant="growth"
+                      listingId={id}
+                      shareTitle={titleDisplay}
+                      sharePriceLine={sharePriceLine}
+                      shareCity={cityDisplay ?? undefined}
+                      whatsappLabel={t("shareViaWhatsappCta")}
+                      copyButtonLabel={t("copyLink")}
+                    />
+                  </ListingPostSuccessNudge>
+                ) : (
                   <ListingShareActions
                     listingId={id}
                     shareTitle={titleDisplay}
                     sharePriceLine={sharePriceLine}
                     shareCity={cityDisplay ?? undefined}
+                    sharePriceAmount={sharePriceAmount}
                   />
-                </ListingPostSuccessNudge>
-              ) : (
-                <ListingShareActions
-                  listingId={id}
-                  shareTitle={titleDisplay}
-                  sharePriceLine={sharePriceLine}
-                  shareCity={cityDisplay ?? undefined}
-                />
-              )}
+                )
+              ) : null}
               <p className="text-xs text-[color:var(--darlink-text-muted)]" aria-live="polite">
                 {t("leadTapsLine", { count: (listing.whatsappClicks ?? 0) + (listing.phoneClicks ?? 0) })}
               </p>
@@ -432,11 +456,18 @@ export default async function ListingDetailPage(props: Props) {
                 currentPlan={listing.plan}
                 contact={monetizationContact}
                 featuredDurationDays={syriaPlatformConfig.monetization.featuredDurationDays}
+                viewCount={viewCountStored}
+                isDirect={listing.isDirect === true}
               />
             ) : null}
             {isOwner && (listing.plan === "featured" || listing.plan === "premium") ? (
               <Card className="border-[color:var(--darlink-sand)]/30 bg-amber-50/30 p-4 shadow-[var(--darlink-shadow-sm)]">
-                <p className="text-sm font-medium text-[color:var(--darlink-text)]">
+                {listing.plan === "premium" && listing.isDirect ? (
+                  <p className="text-sm font-bold text-amber-950">{t("premiumDirectHeadline")}</p>
+                ) : null}
+                <p
+                  className={`text-sm font-medium text-[color:var(--darlink-text)] ${listing.plan === "premium" && listing.isDirect ? "mt-1" : ""}`}
+                >
                   {listing.plan === "featured" ? t("makeFeaturedActiveFeatured") : t("makeFeaturedActiveLuxury")}
                 </p>
                 <p className="mt-1 text-xs text-[color:var(--darlink-text-muted)]">{t("makeFeaturedActiveHint")}</p>
@@ -516,6 +547,10 @@ export default async function ListingDetailPage(props: Props) {
                 telOwnerHref={telOwnerHref}
                 canContact={canContact}
                 ownerHasPhone={Boolean(ownerPhone)}
+                shareTitle={titleDisplay}
+                sharePriceLine={sharePriceLine}
+                shareCity={cityDisplay ?? undefined}
+                sharePriceAmount={sharePriceAmount}
               />
             ) : null}
           </aside>

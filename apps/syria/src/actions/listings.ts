@@ -253,5 +253,5 @@ export async function createPropertyListing(formData: FormData): Promise<void> {
 
   await revalidateSyriaPaths("/sell", "/dashboard/listings", "/admin/listings");
   const locale = await getLocale();
-  redirect({ href: "/dashboard/listings?posted=1", locale });
+  redirect({ href: "/dashboard?posted=1", locale });
 }

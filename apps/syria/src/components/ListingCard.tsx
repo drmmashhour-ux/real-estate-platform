@@ -124,6 +124,7 @@ export function ListingCard({
       (listing as { isDirect: boolean }).isDirect
     : true;
   const showDirect = isDirectVal !== false;
+  const showDirectPlusBoost = showDirect && (planTier === "featured" || planTier === "premium");
   const flagVerified = "verified" in listing && typeof listing.verified === "boolean" ? listing.verified : false;
   const nAmenities = Array.isArray(listing.amenities)
     ? listing.amenities.filter((x): x is string => typeof x === "string" && x.length > 0).length
@@ -173,21 +174,29 @@ export function ListingCard({
           </div>
         )}
         <div className="absolute start-3 top-3 z-[1] flex max-w-[calc(100%-1.5rem)] flex-wrap gap-1.5">
-          {planTier === "premium" ? (
-            <span className="rounded-full bg-amber-100/90 px-2 py-0.5 text-[10px] font-bold text-amber-950 ring-1 ring-[color:var(--darlink-sand)]/35">
-              {t("premiumBadge")}
+          {showDirectPlusBoost ? (
+            <span className="max-w-[min(100%,12rem)] rounded-full bg-gradient-to-r from-amber-100 via-emerald-100 to-amber-100 px-2 py-0.5 text-[10px] font-bold leading-tight text-amber-950 ring-1 ring-amber-300/50">
+              {t("badgeDirectPlusBoost")}
             </span>
-          ) : null}
-          {planTier === "featured" ? (
-            <Badge tone="accent">
-              {t("featuredBadge")}
-            </Badge>
-          ) : null}
-          {showDirect ? (
-            <span className="rounded-full bg-gradient-to-r from-emerald-100/95 to-amber-100/90 px-2 py-0.5 text-[10px] font-bold text-emerald-900 ring-1 ring-emerald-300/60">
-              {t("badgeDirect")}
-            </span>
-          ) : null}
+          ) : (
+            <>
+              {planTier === "premium" ? (
+                <span className="rounded-full bg-amber-100/90 px-2 py-0.5 text-[10px] font-bold text-amber-950 ring-1 ring-[color:var(--darlink-sand)]/35">
+                  {t("premiumBadge")}
+                </span>
+              ) : null}
+              {planTier === "featured" ? (
+                <Badge tone="accent">
+                  {t("featuredBadge")}
+                </Badge>
+              ) : null}
+              {showDirect ? (
+                <span className="rounded-full bg-gradient-to-r from-emerald-100/95 to-amber-100/90 px-2 py-0.5 text-[10px] font-bold text-emerald-900 ring-1 ring-emerald-300/60">
+                  {t("badgeDirect")}
+                </span>
+              ) : null}
+            </>
+          )}
           {showNew ? (
             <div className="bg-blue-500 px-2 py-1 text-xs font-medium text-white rounded">{t("badgeNew")}</div>
           ) : null}

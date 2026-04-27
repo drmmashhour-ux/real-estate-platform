@@ -6,12 +6,10 @@ import { money } from "@/lib/format";
 import { pickListingTitle } from "@/lib/listing-localized";
 import { analyzeListingQuality } from "@/lib/listing-quality";
 import { DarlinkSellerAutopilotHints } from "@/components/dashboard/DarlinkSellerAutopilotHints";
-import { buildWhatsAppSendUrl, getSyriaPublicOrigin } from "@/lib/syria-whatsapp";
-import { buildListingShareMessage } from "@/lib/ai/shareMessage";
-import { getListingPath } from "@/lib/syria/listing-share";
-import { backfillLocalizedPropertyShape } from "@/lib/property-legacy-compat";
-import { getLocalizedPropertyCity } from "@/lib/property-localization";
+import { getSyriaPublicOrigin } from "@/lib/syria-whatsapp";
+import { buildViralShareForSyriaProperty } from "@/lib/syria/viral-listing-share";
 import { SelfMarketingPanel } from "@/components/dashboard/SelfMarketingPanel";
+import { ViralPostShareBanner } from "@/components/dashboard/ViralPostShareBanner";
 
 type PageProps = { searchParams: Promise<Record<string, string | string[] | undefined>> };
 
@@ -41,50 +39,20 @@ export default async function DashboardListingsPage({ searchParams }: PageProps)
     orderBy: { createdAt: "desc" },
   });
 
-  /** After publish redirect (`?posted=1`): share the **listing URL**, not /buy — same copy as public listing share. */
   const newest = listings[0];
-  const postShareWhatsappHref =
-    showShareCta && newest
-      ? buildWhatsAppSendUrl(
-          buildListingShareMessage({
-            title: pickListingTitle(newest, locale),
-            priceLine: money(newest.price, newest.currency, numberLoc),
-            url: (() => {
-              const path = getListingPath(locale, newest.id);
-              const base = origin?.replace(/\/$/, "");
-              return base ? `${base}${path}` : path;
-            })(),
-            locale,
-            city: getLocalizedPropertyCity(backfillLocalizedPropertyShape(newest), locale) || newest.city,
-          }),
-        )
-      : "";
+  const newestViral = newest
+    ? buildViralShareForSyriaProperty(newest, locale, numberLoc, origin)
+    : null;
 
   return (
     <div className="space-y-4">
-      <SelfMarketingPanel listings={listings} />
-      {showShareCta && postShareWhatsappHref ? (
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50/90 p-4 sm:p-5">
-          <p className="text-sm font-semibold text-emerald-950">{t("postShareTitle")}</p>
-          <p className="mt-1 text-sm text-emerald-900/90">{t("postShareBody")}</p>
-          <div className="mt-4 flex flex-col gap-2 min-[400px]:flex-row min-[400px]:items-center">
-            <a
-              href={postShareWhatsappHref}
-              target="_blank"
-              rel="noreferrer"
-              className="hadiah-btn-primary inline-flex min-h-11 w-full min-w-0 items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold min-[400px]:w-auto"
-            >
-              {t("postShareWhatsapp")}
-            </a>
-            <Link
-              href="/dashboard/listings"
-              className="text-center text-sm font-medium text-emerald-900 underline min-[400px]:text-start"
-            >
-              {t("postShareDismiss")}
-            </Link>
-          </div>
-        </div>
+      {showShareCta && newestViral ? (
+        <ViralPostShareBanner
+          whatsappHref={newestViral.whatsappHref}
+          canonicalListingUrl={newestViral.canonicalUrl}
+        />
       ) : null}
+      <SelfMarketingPanel listings={listings} />
       <DarlinkSellerAutopilotHints listingIds={listings.map((l) => l.id)} />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
@@ -123,6 +91,10 @@ export default async function DashboardListingsPage({ searchParams }: PageProps)
             <tbody>
               {listings.map((l) => {
                 const q = analyzeListingQuality(l);
+                const lowViewsViral =
+                  l.status === "PUBLISHED" && (l.views ?? 0) < 5
+                    ? buildViralShareForSyriaProperty(l, locale, numberLoc, origin)
+                    : null;
                 return (
                 <tr key={l.id} className="border-t border-[color:var(--darlink-border)]">
                   <td className="px-4 py-3 font-medium text-[color:var(--darlink-text)]">
@@ -145,8 +117,21 @@ export default async function DashboardListingsPage({ searchParams }: PageProps)
                     ) : null}
                   </td>
                   <td className="px-4 py-3 text-[color:var(--darlink-text)]">{t(tierKey(l.plan))}</td>
-                  <td className="px-4 py-3 tabular-nums text-[color:var(--darlink-text)]">
-                    {t("tableViewsValue", { count: l.views ?? 0 })}
+                  <td className="px-4 py-3 text-[color:var(--darlink-text)]">
+                    <span className="tabular-nums">{t("tableViewsValue", { count: l.views ?? 0 })}</span>
+                    {lowViewsViral ? (
+                      <div className="mt-1 max-w-xs space-y-1.5">
+                        <p className="text-xs text-amber-800">{t("shareForViewsHint")}</p>
+                        <a
+                          href={lowViewsViral.whatsappHref}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex min-h-9 w-full min-w-0 max-w-[12rem] items-center justify-center rounded-lg bg-emerald-600 px-2.5 text-xs font-bold text-white hover:bg-emerald-700"
+                        >
+                          {t("lowViewsShareCta")}
+                        </a>
+                      </div>
+                    ) : null}
                   </td>
                   <td className="px-4 py-3 tabular-nums text-[color:var(--darlink-text)]">{l.whatsappClicks ?? 0}</td>
                   <td className="px-4 py-3 tabular-nums text-[color:var(--darlink-text)]">{l.phoneClicks ?? 0}</td>

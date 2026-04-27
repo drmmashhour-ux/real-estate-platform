@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { trackLeadPhoneClick, trackLeadWhatsappClick } from "@/lib/lead-client";
 
@@ -17,6 +18,7 @@ export function ListingContactDock({
   telHref: string | null;
 }) {
   const t = useTranslations("Listing");
+  const [showPostContactUpsell, setShowPostContactUpsell] = useState(false);
   if (!whatsappHref && !telHref) return null;
 
   return (
@@ -50,6 +52,14 @@ export function ListingContactDock({
           >
             {t("contactCall")}
           </a>
+        ) : null}
+        {showPostContactUpsell ? (
+          <p
+            className="rounded-md bg-amber-50/95 px-2 py-1.5 text-center text-[11px] font-medium text-amber-950 ring-1 ring-amber-200/70 [overflow-wrap:anywhere]"
+            role="status"
+          >
+            {t("postContactUpgradeHint")}
+          </p>
         ) : null}
       </div>
     </div>

@@ -25,8 +25,8 @@ export const syriaPlatformConfig = {
     featuredFeeAmount: SYRIA_PRICING.featuredBoostAmount,
     bnhubPlatformFeeRate: SYRIA_PRICING.bnhubCommissionRate,
     currency: SYRIA_PRICING.currency,
-    /** Default featured visibility duration when admin publishes with verified featured payment (days). */
-    featuredDurationDays: envNum("SYRIA_FEATURED_DURATION_DAYS", 30),
+    /** F1 promotion window after admin confirms payment (days). */
+    featuredDurationDays: envNum("SYRIA_FEATURED_DURATION_DAYS", 7),
     /** Optional BNHub-specific listing publish fee (same table purpose OTHER unless product adds enum). */
     bnhubListingFeeAmount: envNum("SYRIA_BNHUB_LISTING_FEE_AMOUNT", 0),
   },

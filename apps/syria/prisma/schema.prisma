@@ -336,6 +336,10 @@ model SyriaPaymentRequest {
   currency   String   @default("SYP")
   /// pending | confirmed | rejected
   status     String   @default("pending")
+  /// Legacy A/B cell — retained for old rows; new requests use `pricingTier` (view ladder).
+  pricingBucket Int @default(0) @map("pricing_bucket")
+  /// View ladder: 0 = under 10 views, 1 = 10–24, 2 = 25+ (see syria-f1-pricing.config).
+  pricingTier   Int    @default(0) @map("pricing_tier")
   method     String?  // e.g. cash | bank | wallet
   note       String?  @db.Text
   createdAt  DateTime @default(now()) @map("created_at")

@@ -3,6 +3,7 @@ import { Link } from "@/i18n/navigation";
 import { prisma } from "@/lib/db";
 import { ListingCard } from "@/components/ListingCard";
 import { HeroSegmentedSearch } from "@/components/HeroSegmentedSearch";
+import { getG5TopCityByWhatsappClicks } from "@/lib/growth-operating-metrics";
 import { isBnhubInSyriaUI, syriaFlags } from "@/lib/platform-flags";
 import { Card } from "@/components/ui/Card";
 import { HomeCategoryGrid } from "@/components/home/HomeCategoryGrid";
@@ -47,6 +48,21 @@ export default async function HomePage() {
     }
   }
 
+  let g5Domination: { href: string; label: string } | null = null;
+  try {
+    const top = await getG5TopCityByWhatsappClicks();
+    if (top.city && top.whatsappClicks >= 1) {
+      const label =
+        locale.toLowerCase().startsWith("ar") && top.cityAr ? top.cityAr : top.city;
+      g5Domination = {
+        label,
+        href: `/buy?city=${encodeURIComponent(top.city)}`,
+      };
+    }
+  } catch {
+    g5Domination = null;
+  }
+
   const cards =
     latestListings.length > 0
       ? latestListings.map((l, i) => <ListingCard key={l.id} listing={l} locale={locale} priority={i < 3} />)
@@ -60,6 +76,18 @@ export default async function HomePage() {
       <div className="rounded-[var(--darlink-radius-2xl)] border border-amber-400/35 bg-gradient-to-r from-amber-500/20 via-amber-400/10 to-amber-600/15 px-4 py-3.5 text-center sm:px-6">
         <p className="text-sm font-bold leading-snug text-amber-950 sm:text-base">{t("tractionBanner")}</p>
       </div>
+
+      {g5Domination ? (
+        <Link
+          href={g5Domination.href}
+          className="block rounded-[var(--darlink-radius-2xl)] border border-orange-400/45 bg-gradient-to-r from-orange-500/20 via-amber-400/12 to-orange-600/15 px-4 py-3.5 text-center shadow-sm sm:px-6"
+        >
+          <p className="text-sm font-bold leading-snug text-amber-950 sm:text-base">
+            {t("g5DominationBanner", { city: g5Domination.label })}
+          </p>
+          <p className="mt-1 text-xs font-medium text-amber-900/90">{t("g5DominationBannerSub")}</p>
+        </Link>
+      ) : null}
 
       {/* Hero — static band, no image layers (Syria: fast, minimal) */}
       <section className="relative overflow-hidden rounded-[var(--darlink-radius-3xl)] border border-white/5 bg-[color:var(--darlink-bg)] text-white">

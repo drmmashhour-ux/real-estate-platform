@@ -4,7 +4,10 @@ import { prisma } from "@/lib/db";
 import { requireSessionUser } from "@/lib/auth";
 import { money } from "@/lib/format";
 import { pickListingTitle } from "@/lib/listing-localized";
+import { getSyriaPublicOrigin } from "@/lib/syria-whatsapp";
+import { buildViralShareForSyriaProperty } from "@/lib/syria/viral-listing-share";
 import { SelfMarketingPanel } from "@/components/dashboard/SelfMarketingPanel";
+import { ViralPostShareBanner } from "@/components/dashboard/ViralPostShareBanner";
 
 function tierKey(plan: string): "statusNormal" | "statusFeatured" {
   if (plan === "free") return "statusNormal";
@@ -77,27 +80,46 @@ export default async function DashboardHomePage() {
                 </tr>
               </thead>
               <tbody>
-                {listings.map((l) => (
-                  <tr key={l.id} className="border-t border-[color:var(--darlink-border)]">
-                    <td className="px-4 py-3 font-medium text-[color:var(--darlink-text)]">
-                      {l.status === "PUBLISHED" ? (
-                        <Link href={`/listing/${l.id}`} className="hover:underline">
-                          {pickListingTitle(l, locale)}
-                        </Link>
-                      ) : (
-                        <span>{pickListingTitle(l, locale)}</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-[color:var(--darlink-text-muted)]">{l.city}</td>
-                    <td className="px-4 py-3 tabular-nums">{money(l.price, l.currency, numberLoc)}</td>
-                    <td className="px-4 py-3 text-[color:var(--darlink-text)]">{t(tierKey(l.plan))}</td>
-                    <td className="px-4 py-3 tabular-nums text-[color:var(--darlink-text)]">
-                      {t("tableViewsValue", { count: l.views ?? 0 })}
-                    </td>
-                    <td className="px-4 py-3 tabular-nums text-[color:var(--darlink-text)]">{l.whatsappClicks ?? 0}</td>
-                    <td className="px-4 py-3 tabular-nums text-[color:var(--darlink-text)]">{l.phoneClicks ?? 0}</td>
-                  </tr>
-                ))}
+                {listings.map((l) => {
+                  const lowViewsViral =
+                    l.status === "PUBLISHED" && (l.views ?? 0) < 5
+                      ? buildViralShareForSyriaProperty(l, locale, numberLoc, origin)
+                      : null;
+                  return (
+                    <tr key={l.id} className="border-t border-[color:var(--darlink-border)]">
+                      <td className="px-4 py-3 font-medium text-[color:var(--darlink-text)]">
+                        {l.status === "PUBLISHED" ? (
+                          <Link href={`/listing/${l.id}`} className="hover:underline">
+                            {pickListingTitle(l, locale)}
+                          </Link>
+                        ) : (
+                          <span>{pickListingTitle(l, locale)}</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-[color:var(--darlink-text-muted)]">{l.city}</td>
+                      <td className="px-4 py-3 tabular-nums">{money(l.price, l.currency, numberLoc)}</td>
+                      <td className="px-4 py-3 text-[color:var(--darlink-text)]">{t(tierKey(l.plan))}</td>
+                      <td className="px-4 py-3 text-[color:var(--darlink-text)]">
+                        <span className="tabular-nums">{t("tableViewsValue", { count: l.views ?? 0 })}</span>
+                        {lowViewsViral ? (
+                          <div className="mt-1 max-w-xs space-y-1.5">
+                            <p className="text-xs text-amber-800">{t("shareForViewsHint")}</p>
+                            <a
+                              href={lowViewsViral.whatsappHref}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex min-h-9 w-full min-w-0 max-w-[12rem] items-center justify-center rounded-lg bg-emerald-600 px-2.5 text-xs font-bold text-white hover:bg-emerald-700"
+                            >
+                              {t("lowViewsShareCta")}
+                            </a>
+                          </div>
+                        ) : null}
+                      </td>
+                      <td className="px-4 py-3 tabular-nums text-[color:var(--darlink-text)]">{l.whatsappClicks ?? 0}</td>
+                      <td className="px-4 py-3 tabular-nums text-[color:var(--darlink-text)]">{l.phoneClicks ?? 0}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

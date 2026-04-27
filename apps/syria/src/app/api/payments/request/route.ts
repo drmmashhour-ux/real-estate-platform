@@ -3,8 +3,8 @@ import { assertDarlinkRuntimeEnv } from "@/lib/guard";
 import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getMonetizationAdminContact } from "@/lib/monetization-contact";
+import { f1ViewTierAndPrices } from "@/config/syria-f1-pricing.config";
 import {
-  f1AmountForPlan,
   f1BuildWhatsAppPaymentText,
   f1BuildWhatsAppPaymentTextEn,
   f1BuildWhatsAppUrl,
@@ -63,7 +63,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "invalid_plan_upgrade" }, { status: 400 });
   }
 
-  const amount = f1AmountForPlan(targetPlan);
+  const views = listing.views ?? 0;
+  const ladder = f1ViewTierAndPrices(views);
+  const pricingTier = ladder.tier;
+  const amount = targetPlan === "featured" ? ladder.featured : ladder.premium;
   const locale = req.headers.get("accept-language")?.toLowerCase().includes("en") ? "en" : "ar";
   const requestId = await prisma.$transaction(async (tx) => {
     const created = await tx.syriaPaymentRequest.create({
@@ -73,6 +76,7 @@ export async function POST(req: Request) {
         amount,
         currency: "SYP",
         status: "pending",
+        pricingTier,
         note: null,
       },
     });

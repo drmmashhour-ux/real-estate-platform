@@ -1,0 +1,58 @@
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/db";
+
+const PAGE = 12;
+const MAX_OFFSET = 500;
+
+/**
+ * Public feed: newest listings first (offset paginated for load more).
+ * GET /api/feed?offset=0
+ */
+export async function GET(req: Request) {
+  const url = new URL(req.url);
+  const raw = url.searchParams.get("offset");
+  const n = raw === null || raw === "" ? 0 : Number.parseInt(raw, 10);
+  const offset = Number.isFinite(n) ? Math.max(0, Math.min(MAX_OFFSET, n)) : 0;
+
+  try {
+    const [rows, total] = await prisma.$transaction([
+      prisma.syriaProperty.findMany({
+        where: { status: "PUBLISHED", fraudFlag: false },
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+        take: PAGE,
+        skip: offset,
+        select: {
+          id: true,
+          titleAr: true,
+          titleEn: true,
+          city: true,
+          cityAr: true,
+          cityEn: true,
+          state: true,
+          governorate: true,
+          price: true,
+          currency: true,
+          images: true,
+          isDirect: true,
+          type: true,
+          plan: true,
+          createdAt: true,
+          views: true,
+        },
+      }),
+      prisma.syriaProperty.count({ where: { status: "PUBLISHED", fraudFlag: false } }),
+    ]);
+
+    return NextResponse.json(
+      { items: rows, hasMore: offset + rows.length < total, nextOffset: offset + rows.length },
+      {
+        headers: {
+          "Cache-Control": "public, s-maxage=20, stale-while-revalidate=40",
+        },
+      },
+    );
+  } catch (e) {
+    console.error("[api/feed]", e);
+    return NextResponse.json({ error: "Feed failed." }, { status: 500 });
+  }
+}
