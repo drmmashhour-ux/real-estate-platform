@@ -1,0 +1,43 @@
+.ultra-lite-shell {
+  max-width: 36rem;
+  margin: 0 auto;
+  padding: 12px;
+}
+
+.ultra-lite-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 10px 0 14px;
+  border-bottom: 1px solid #ddd;
+}
+
+.ultra-lite-nav a {
+  color: #0369a1;
+  font-weight: 600;
+}
+
+.ultra-lite-main {
+  padding: 14px 0 40px;
+}
+
+.ultra-lite-row {
+  padding: 10px 0;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+html[data-ultra-lite="true"] *,
+html[data-ultra-lite="true"] *::before,
+html[data-ultra-lite="true"] *::after {
+  animation-duration: 0ms !important;
+  transition-duration: 0ms !important;
+}
+
+html[data-ultra-lite="true"] button,
+html[data-ultra-lite="true"] a {
+  box-shadow: none !important;
+}
+
+html[data-ultra-lite="true"] {
+  background: #f7f7f7 !important;
+}

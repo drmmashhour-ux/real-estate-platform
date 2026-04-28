@@ -6,6 +6,7 @@ import { HeaderGate } from "@/components/layout/HeaderGate";
 import { InvestmentShellChrome } from "@/components/layout/InvestmentShellChrome";
 import { FooterHistoryNavProvider } from "@/components/layout/FooterHistoryNavContext";
 import FooterClient from "@/components/layout/FooterClient";
+import { HadiaLiteModeGate } from "@/components/hadia-lite/HadiaLiteModeGate";
 import { MarketingMainArea } from "@/components/layout/MarketingMainArea";
 import { GlobalFooterDock } from "@/components/ui/GlobalFooterDock";
 import { ImmoChatWidgetLazy } from "@/components/immo/ImmoChatWidgetLazy";
@@ -76,7 +77,9 @@ export default async function CountryChromeLayout({ children, params }: Props) {
             <TestModeBanner />
 
             <MarketingMainArea>
-              <InvestmentShellChrome>{children}</InvestmentShellChrome>
+              <InvestmentShellChrome>
+                <HadiaLiteModeGate>{children}</HadiaLiteModeGate>
+              </InvestmentShellChrome>
             </MarketingMainArea>
 
             <CookieConsentBanner />

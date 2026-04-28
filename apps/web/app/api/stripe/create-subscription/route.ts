@@ -14,6 +14,7 @@ import { engineFlags, lecipmMonetizationSystemV1 } from "@/config/feature-flags"
 import { createHostSubscriptionCheckoutSession } from "@/modules/stripe/subscription-checkout.service";
 import { recordLecipmMonetizationTransaction } from "@/lib/monetization/lecipm-financial-operations";
 import { trackMonetizationSubscriptionCheckoutStarted } from "@/lib/analytics/monetization-analytics";
+import { requireCheckoutRailsOpen } from "@/lib/payment-readiness/route-guards";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +28,10 @@ export async function POST(req: NextRequest) {
   if (!lecipmMonetizationSystemV1.stripeMonetizationApiV1) {
     return NextResponse.json({ error: "LECIPM Stripe monetization API disabled" }, { status: 403 });
   }
+
+  const railBlock = requireCheckoutRailsOpen();
+  if (railBlock) return railBlock;
+
   if (!isStripeConfigured()) {
     return NextResponse.json({ error: "Stripe is not configured" }, { status: 503 });
   }

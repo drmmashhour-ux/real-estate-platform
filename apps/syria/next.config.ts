@@ -31,7 +31,7 @@ mergeMonorepoRootEnv();
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 const nextConfig: NextConfig = {
-  transpilePackages: ["@repo/drbrain"],
+  transpilePackages: ["@repo/drbrain", "@repo/offline"],
   reactStrictMode: true,
   /** Low-Q band for `next/image` (Syria: smaller payloads on remote images). */
   images: {

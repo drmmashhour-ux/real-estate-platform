@@ -6,6 +6,7 @@ const prisma = getLegacyDB();
 import { isStripeConfigured } from "@/lib/stripe";
 import { createWorkspaceCheckoutSession } from "@/modules/billing/createWorkspaceCheckoutSession";
 import { engineFlags } from "@/config/feature-flags";
+import { requireCheckoutRailsOpen } from "@/lib/payment-readiness/route-guards";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +30,9 @@ export async function POST(req: Request) {
 
   const userId = await getGuestId();
   if (!userId) return NextResponse.json({ error: "Sign in required" }, { status: 401 });
+
+  const railBlock = requireCheckoutRailsOpen();
+  if (railBlock) return railBlock;
 
   let json: unknown;
   try {

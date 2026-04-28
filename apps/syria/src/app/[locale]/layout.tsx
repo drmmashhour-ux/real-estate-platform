@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
+import { headers } from "next/headers";
 import { Cairo, Inter } from "next/font/google";
 import { NarrationProvider } from "@/components/demo/NarrationProvider";
 import { DemoRecordingProvider } from "@/components/demo/DemoRecordingProvider";
@@ -13,6 +14,9 @@ import { isDarlinkEnabled, syriaFlags } from "@/lib/platform-flags";
 import { routing } from "@/i18n/routing";
 import { getAutoNarrationEnvSnapshot } from "@/lib/demo/auto-narration-env";
 import { isInvestorDemoModeActive } from "@/lib/sybnb/investor-demo";
+import { SyriaOfflineRoot } from "@/components/offline/SyriaOfflineRoot";
+import { UltraLiteRibbon } from "@/components/lite/UltraLiteRibbon";
+import { SyriaModeProvider } from "@/context/ModeContext";
 import { darlinkMetadataBase, buildDarlinkPageMetadata } from "@/lib/seo/darlink-metadata";
 import type { DarlinkLocale } from "@/lib/i18n/types";
 
@@ -70,13 +74,9 @@ export default async function LocaleLayout({ children, params }: Props) {
 
   setRequestLocale(locale);
 
-  const messages = await getMessages();
-  const demoUxActive = isInvestorDemoModeActive();
-  const narrationEnv = getAutoNarrationEnvSnapshot();
-  const dir = locale === "ar" ? "rtl" : "ltr";
-
   if (!syriaFlags.SYRIA_PLATFORM_ENABLED) {
     const t = await getTranslations({ locale, namespace: "PlatformDisabled" });
+    const dir = locale === "ar" ? "rtl" : "ltr";
     return (
       <html lang={locale} dir={dir} data-theme="darlink" className={`${cairo.variable} ${inter.variable}`}>
         <body className="min-h-screen bg-[color:var(--darlink-surface)] p-8 text-[color:var(--darlink-text)] antialiased">
@@ -87,25 +87,55 @@ export default async function LocaleLayout({ children, params }: Props) {
     );
   }
 
+  const messages = await getMessages();
+  const liteRoute = (await headers()).get("x-syria-lite") === "1";
+
+  if (liteRoute) {
+    const dir = locale === "ar" ? "rtl" : "ltr";
+    return (
+      <html lang={locale} dir={dir} data-theme="ultra-lite" data-ultra-lite="true">
+        <body className="min-h-screen bg-[#f7f7f7] font-sans text-[13px] leading-snug text-neutral-900 antialiased">
+          <NextIntlClientProvider messages={messages}>
+            <SyriaModeProvider>
+              <SyriaOfflineRoot>
+                <UltraLiteRibbon litePath />
+                {children}
+              </SyriaOfflineRoot>
+            </SyriaModeProvider>
+          </NextIntlClientProvider>
+        </body>
+      </html>
+    );
+  }
+
+  const demoUxActive = isInvestorDemoModeActive();
+  const narrationEnv = getAutoNarrationEnvSnapshot();
+  const dir = locale === "ar" ? "rtl" : "ltr";
+
   return (
     <html lang={locale} dir={dir} data-theme="darlink" className={`${cairo.variable} ${inter.variable}`}>
       <body
         className={`flex min-h-screen flex-col bg-[color:var(--darlink-surface)] antialiased [--font-darlink-ar:var(--font-darlink-cairo)] [--font-darlink-en:var(--font-darlink-inter)] ${dir === "rtl" ? "darlink-root-rtl" : "darlink-root-ltr"}`}
       >
         <NextIntlClientProvider messages={messages}>
-          <NarrationProvider
-            investorDemoActive={demoUxActive}
-            autoNarrationEnabled={narrationEnv.autoNarrationEnabled}
-            autoNarrationTtsEnabled={narrationEnv.autoNarrationTtsEnabled}
-          >
-            <DemoRecordingProvider demoUxActive={demoUxActive}>
-              <DemoGlobalBanner />
-              <SyriaHeader />
-              <main className="darlink-main-pad mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6 sm:py-10">{children}</main>
-              <SyriaFooter />
-              <DarlinkMobileNav />
-            </DemoRecordingProvider>
-          </NarrationProvider>
+          <SyriaModeProvider>
+            <NarrationProvider
+              investorDemoActive={demoUxActive}
+              autoNarrationEnabled={narrationEnv.autoNarrationEnabled}
+              autoNarrationTtsEnabled={narrationEnv.autoNarrationTtsEnabled}
+            >
+              <DemoRecordingProvider demoUxActive={demoUxActive}>
+                <SyriaOfflineRoot>
+                  <DemoGlobalBanner />
+                  <UltraLiteRibbon />
+                  <SyriaHeader />
+                  <main className="darlink-main-pad mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6 sm:py-10">{children}</main>
+                  <SyriaFooter />
+                  <DarlinkMobileNav />
+                </SyriaOfflineRoot>
+              </DemoRecordingProvider>
+            </NarrationProvider>
+          </SyriaModeProvider>
         </NextIntlClientProvider>
       </body>
     </html>

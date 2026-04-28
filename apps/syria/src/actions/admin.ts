@@ -129,9 +129,51 @@ export async function setSybnbListingReview(formData: FormData): Promise<void> {
   });
 }
 
-export async function rejectProperty(formData: FormData): Promise<void> {
+export async function setSybnbListingFieldAgent(formData: FormData): Promise<void> {
   assertDarlinkRuntimeEnv();
   const admin = await requireAdmin();
+  const propertyId = String(formData.get("propertyId") ?? "").trim();
+  const clear = String(formData.get("clearAgent") ?? "").trim() === "1";
+  const agentEmailRaw = String(formData.get("agentEmail") ?? "").trim().toLowerCase();
+  if (!propertyId) return;
+
+  const listing = await prisma.syriaProperty.findUnique({
+    where: { id: propertyId },
+    select: { id: true, category: true },
+  });
+  if (!listing || listing.category !== "stay") return;
+
+  let sybnbAgentUserId: string | null | undefined;
+
+  if (clear) {
+    sybnbAgentUserId = null;
+  } else if (agentEmailRaw.length > 0) {
+    const agent = await prisma.syriaAppUser.findUnique({
+      where: { email: agentEmailRaw },
+      select: { id: true },
+    });
+    if (!agent) return;
+    sybnbAgentUserId = agent.id;
+  } else {
+    return;
+  }
+
+  await prisma.syriaProperty.update({
+    where: { id: propertyId },
+    data: { sybnbAgentUserId },
+  });
+
+  await revalidateSyriaPaths("/admin/listings", "/admin/sybnb/agents", "/sybnb/agents", "/sybnb");
+  void logSecurityEvent({
+    action: "admin_sybnb_field_agent_set",
+    userId: admin.id,
+    metadata: { propertyId, cleared: clear, agentEmail: clear ? null : agentEmailRaw || null },
+  });
+}
+
+export async function rejectProperty(formData: FormData): Promise<void> {
+  assertDarlinkRuntimeEnv();
+  await requireAdmin();
   const id = String(formData.get("propertyId") ?? "").trim();
   if (!id) return;
 

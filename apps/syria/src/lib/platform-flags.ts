@@ -16,6 +16,11 @@ export const syriaFlags = {
   BNHUB_ENABLED: process.env.BNHUB_ENABLED !== "false",
   /** When false (default), hosts are never auto-paid; admin approves payouts. */
   AUTO_PAYOUT_ENABLED: process.env.AUTO_PAYOUT_ENABLED === "true",
+  /**
+   * Local-first UI: IndexedDB cache, offline queue, service worker stale-while-revalidate.
+   * Default enabled; set NEXT_PUBLIC_SYRIA_OFFLINE_FIRST=0 to disable client-side wiring only.
+   */
+  SYRIA_OFFLINE_FIRST: typeof process.env.NEXT_PUBLIC_SYRIA_OFFLINE_FIRST === "undefined" || process.env.NEXT_PUBLIC_SYRIA_OFFLINE_FIRST !== "false",
 } as const;
 
 export function assertSyriaEnabled(): boolean {

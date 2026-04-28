@@ -4,6 +4,10 @@ import { prisma } from "@/lib/db";
 import { requireSessionUser } from "@/lib/auth";
 import { pickListingTitle } from "@/lib/listing-localized";
 import { SybnbV1HostActions } from "@/components/sybnb/SybnbV1HostActions";
+import { getMonetizationAdminContact } from "@/lib/monetization-contact";
+import { buildWhatsAppPrefillUrl } from "@/lib/syria-phone";
+import { getSybnbFeaturedUsdBand } from "@/lib/sybnb/sybnb-early-monetization";
+import { getSybnbFeaturedMaxPerPage } from "@/lib/sybnb/featured-feed-cap";
 export default async function SybnbHostPage(props: { params: Promise<{ locale: string }> }) {
   const { locale } = await props.params;
   const t = await getTranslations("Sybnb.host");
@@ -35,6 +39,14 @@ export default async function SybnbHostPage(props: { params: Promise<{ locale: s
   const verificationLabel =
     user.verificationLevel?.trim() ||
     (user.phoneVerifiedAt || user.verifiedAt ? t("verificationHasPhone") : null);
+
+  const monetizationContact = getMonetizationAdminContact();
+  const usdBand = getSybnbFeaturedUsdBand();
+  const featuredCapPerPage = getSybnbFeaturedMaxPerPage();
+  const outreachAr =
+    process.env.NEXT_PUBLIC_SYBNB_FEATURED_OUTREACH_AR?.trim() || t("monetizationPitchAr");
+  const waPitchHref =
+    monetizationContact && outreachAr ? buildWhatsAppPrefillUrl(monetizationContact.displayPhone, outreachAr) : null;
 
   return (
     <div className="space-y-10">
@@ -143,9 +155,58 @@ export default async function SybnbHostPage(props: { params: Promise<{ locale: s
       </section>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-2xl border border-neutral-200/80 bg-white p-5 shadow-sm [dir=rtl]:text-right">
-          <h2 className="text-sm font-semibold text-neutral-900">{t("earningsTitle")}</h2>
-          <p className="mt-2 text-sm leading-relaxed text-neutral-600">{t("earningsPlaceholder")}</p>
+        <div className="rounded-2xl border border-amber-300/80 bg-gradient-to-br from-amber-50 via-white to-stone-50 p-5 shadow-sm [dir=rtl]:text-right">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-900/90">{t("monetizationKicker")}</p>
+          <h2 className="mt-2 text-sm font-semibold text-neutral-900">{t("monetizationTitle")}</h2>
+          <p className="mt-2 text-sm leading-relaxed text-neutral-700">{t("monetizationLead")}</p>
+          <h3 className="mt-4 text-xs font-semibold uppercase tracking-wide text-neutral-600">{t("monetizationFeaturedTitle")}</h3>
+          <ul className="mt-2 list-disc space-y-1 ps-5 text-sm text-neutral-700">
+            <li>{t("monetizationBenefit1")}</li>
+            <li>{t("monetizationBenefit2")}</li>
+            <li>{t("monetizationBenefit3")}</li>
+          </ul>
+          <h3 className="mt-4 text-xs font-semibold uppercase tracking-wide text-neutral-600">{t("monetizationTargetTitle")}</h3>
+          <ul className="mt-2 list-disc space-y-1 ps-5 text-sm text-neutral-700">
+            <li>{t("monetizationTarget1")}</li>
+            <li>{t("monetizationTarget2")}</li>
+          </ul>
+          <h3 className="mt-4 text-xs font-semibold uppercase tracking-wide text-neutral-600">{t("monetizationProcessTitle")}</h3>
+          <ol className="mt-2 list-decimal space-y-1 ps-5 text-sm text-neutral-700">
+            <li>{t("monetizationProcess1")}</li>
+            <li>{t("monetizationProcess2")}</li>
+            <li>{t("monetizationProcess3")}</li>
+          </ol>
+          <p className="mt-3 text-sm font-medium text-amber-950">
+            {t("monetizationPriceHint", { min: String(usdBand.min), max: String(usdBand.max) })}
+          </p>
+          <p className="mt-2 text-xs leading-relaxed text-neutral-600">{t("monetizationManual")}</p>
+          <p className="mt-2 text-xs leading-relaxed text-neutral-600">{t("monetizationCapNote", { max: String(featuredCapPerPage) })}</p>
+          <p className="mt-4 text-xs font-semibold text-neutral-700">{t("monetizationPitchLabel")}</p>
+          <pre className="mt-2 max-h-28 overflow-auto whitespace-pre-wrap rounded-lg border border-amber-200/80 bg-white/90 p-3 text-xs leading-relaxed text-neutral-900 [dir=rtl]:text-right">
+            {outreachAr}
+          </pre>
+          <p className="mt-2 text-xs text-neutral-500">{t("monetizationPitchEnHint")}</p>
+          <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+            {waPitchHref ? (
+              <a
+                href={waPitchHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl bg-emerald-700 px-4 py-2 text-center text-xs font-semibold text-white shadow-sm hover:bg-emerald-800"
+              >
+                {t("monetizationWaCta")}
+              </a>
+            ) : (
+              <p className="text-xs text-amber-900/90">{t("monetizationNoPhone")}</p>
+            )}
+            <Link
+              href="/dashboard/listings"
+              className="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl border border-neutral-300 bg-white px-4 py-2 text-center text-xs font-semibold text-neutral-900 hover:bg-neutral-50"
+            >
+              {t("monetizationDashCta")}
+            </Link>
+          </div>
+          <p className="mt-2 text-[11px] text-neutral-500">{t("monetizationDashHint")}</p>
         </div>
         <div className="rounded-2xl border border-neutral-900/10 bg-neutral-900 p-5 text-white [dir=rtl]:text-right">
           <h2 className="text-sm font-semibold text-amber-200">{t("verificationTitle")}</h2>

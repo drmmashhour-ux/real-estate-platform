@@ -45,11 +45,6 @@ export async function SybnbListingCard({ property: p, locale, activeListings, so
               {tSp("excellentDealBadge")}
             </span>
           ) : null}
-          {p.verified || p.listingVerified ? (
-            <span className={`absolute ${showExcellentDeal ? "left-2 top-10" : "left-2 top-2"} rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-semibold text-neutral-800 shadow`}>
-              {t("badgeVerified")}
-            </span>
-          ) : null}
         </div>
         <div className="p-3">
           <p className="line-clamp-1 text-sm font-semibold text-neutral-900 group-hover:text-amber-900">
@@ -57,9 +52,14 @@ export async function SybnbListingCard({ property: p, locale, activeListings, so
           </p>
           <p className="mt-0.5 text-xs text-neutral-500">{city}</p>
           <div className="mt-1">
-            <SybnbTrustBadge owner={p.owner} activeListings={activeListings} soldListings={soldListings} />
+            <SybnbTrustBadge
+              owner={p.owner}
+              activeListings={activeListings}
+              soldListings={soldListings}
+              className="text-xs font-medium text-neutral-700"
+            />
           </div>
-          <p className="mt-2 text-sm font-bold text-neutral-900">
+          <p className="mt-2 text-sm font-bold tabular-nums text-neutral-900">
             {money(price, p.currency)} <span className="text-xs font-normal text-neutral-500">/ {t("night")}</span>
           </p>
         </div>

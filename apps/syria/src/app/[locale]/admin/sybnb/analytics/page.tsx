@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import { Link } from "@/i18n/navigation";
 import { prisma } from "@/lib/db";
 import { SYBNB_ANALYTICS_EVENT_TYPES } from "@/lib/sybnb/sybnb-analytics-events";
 
@@ -18,9 +19,17 @@ export default async function AdminSybnbAnalyticsPage() {
 
   return (
     <div className="space-y-6 [dir=rtl]:text-right">
-      <div>
+      <div className="space-y-1">
         <h1 className="text-2xl font-bold text-stone-900">{t("sybnbAnalyticsTitle")}</h1>
         <p className="mt-1 text-sm text-stone-600">{t("sybnbAnalyticsSubtitle")}</p>
+        <p className="pt-1">
+          <Link
+            href="/admin/sybnb/performance"
+            className="text-sm font-semibold text-amber-900 underline-offset-2 hover:underline"
+          >
+            {t("sybnbPerformancePromoLink")}
+          </Link>
+        </p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

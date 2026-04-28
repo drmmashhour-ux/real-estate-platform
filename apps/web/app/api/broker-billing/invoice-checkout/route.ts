@@ -4,6 +4,7 @@ import { getLegacyDB } from "@/lib/db/legacy";
 const prisma = getLegacyDB();
 import { createBrokerInvoiceBatchCheckout } from "@/modules/billing/brokerLeadBilling";
 import { requireBrokerOrAdminApi } from "@/modules/crm/services/require-broker-api";
+import { requireCheckoutRailsOpen } from "@/lib/payment-readiness/route-guards";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,9 @@ export const dynamic = "force-dynamic";
 export async function POST(req: Request) {
   const gate = await requireBrokerOrAdminApi();
   if (!gate.ok) return gate.response;
+
+  const railBlock = requireCheckoutRailsOpen();
+  if (railBlock) return railBlock;
 
   if (!isStripeConfigured()) {
     return NextResponse.json({ error: "Payments are not configured" }, { status: 503 });

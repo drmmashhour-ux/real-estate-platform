@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
+import { enqueueAction } from "@repo/offline";
+import { SYRIA_OFFLINE_NAMESPACE } from "@/lib/offline/constants";
+import { useSyriaOffline } from "@/components/offline/SyriaOfflineProvider";
 import { Input } from "@/components/ui/Input";
 import { triggerNarration } from "@/lib/demo/narrator";
 
@@ -15,18 +18,38 @@ type Props = {
 export function SybnbV1RequestForm({ listingId, guestsMax, disabled }: Props) {
   const t = useTranslations("Sybnb.v1");
   const router = useRouter();
+  const { online, refreshQueueHint } = useSyriaOffline();
   const [checkIn, setCheckIn] = useState("");
   const [checkOut, setCheckOut] = useState("");
   const [guests, setGuests] = useState("2");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [queuedOffline, setQueuedOffline] = useState(false);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     triggerNarration("ACTION_REQUEST_BOOKING");
     setError(null);
     setLoading(true);
+    const guestN = Math.max(1, Math.floor(Number(guests) || 1));
     try {
+      if (!online) {
+        await enqueueAction(SYRIA_OFFLINE_NAMESPACE, {
+          id: crypto.randomUUID(),
+          type: "booking_request",
+          payload: {
+            listingId,
+            checkIn,
+            checkOut,
+            guests: guestN,
+          },
+          clientVersion: 1,
+        });
+        await refreshQueueHint();
+        setError(null);
+        return;
+      }
+
       const res = await fetch("/api/sybnb/bookings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -34,7 +57,7 @@ export function SybnbV1RequestForm({ listingId, guestsMax, disabled }: Props) {
           listingId,
           checkIn,
           checkOut,
-          guests: Math.max(1, Math.floor(Number(guests) || 1)),
+          guests: guestN,
         }),
       });
       const data = (await res.json().catch(() => ({}))) as {
@@ -109,6 +132,11 @@ export function SybnbV1RequestForm({ listingId, guestsMax, disabled }: Props) {
                 ? t("errors.own")
                 : t("errors.generic")}
         </p>
+      ) : null}
+      {queuedOffline ? (
+        <div className="rounded-xl border border-amber-200/80 bg-amber-50/90 px-3 py-2 text-xs text-amber-950 [dir=rtl]:text-right">
+          {t("offlineQueued")}
+        </div>
       ) : null}
       <p className="text-xs text-neutral-500 [dir=rtl]:text-right">{t("noPaymentNote")}</p>
       <button

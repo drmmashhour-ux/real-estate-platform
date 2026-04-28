@@ -90,6 +90,11 @@ import { securityLog } from "@/lib/security/security-logger";
 import { logPaymentTagged, logStripeTagged } from "@/lib/server/launch-logger";
 import { trackRevenue } from "@/lib/analytics/revenue";
 import { auditStripePaymentEventIfApplicable } from "@/modules/stripe/validation.service";
+import { requireProductionLockForPaymentIngress } from "@/lib/payment-readiness/route-guards";
+import {
+  recordUnifiedStripeCaptureFromCheckoutSessionPaid,
+  recordUnifiedStripeCaptureFromPaymentIntent,
+} from "@/lib/revenue/stripe-unified-money-capture";
 import { onLeadUnlockPaymentRecorded } from "@/modules/leads/lead-monetization-monitoring.service";
 import { classifyGovernanceOutcome } from "@/modules/autonomous-marketplace/feedback/governance-feedback-classifier.service";
 import { buildGovernanceTrainingRow } from "@/modules/autonomous-marketplace/feedback/governance-training-data.service";
@@ -315,6 +320,12 @@ export async function POST(req: NextRequest) {
   if (stripeKeyErr) {
     logError(`[STRIPE] ${stripeKeyErr}`);
     return Response.json({ error: stripeKeyErr }, { status: 503 });
+  }
+
+  const ingressLocked = requireProductionLockForPaymentIngress();
+  if (ingressLocked) {
+    logError("[STRIPE] webhook blocked — PRODUCTION_LOCK_MODE is not true");
+    return ingressLocked;
   }
 
   const stripe = getStripe();
@@ -913,6 +924,7 @@ export async function POST(req: NextRequest) {
         console.warn("[governance:feedback:stripe]", e);
       }
     })();
+    void recordUnifiedStripeCaptureFromPaymentIntent({ prisma, pi }).catch(() => {});
     return Response.json({ received: true });
   }
 
@@ -994,6 +1006,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (session.payment_status === "paid") {
+    void recordUnifiedStripeCaptureFromCheckoutSessionPaid({ prisma, session }).catch(() => {});
     const revenueListingId =
       typeof session.metadata?.listingId === "string"
         ? session.metadata.listingId.trim()

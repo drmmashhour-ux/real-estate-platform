@@ -43,6 +43,7 @@ import {
 import { onCheckoutStartAutomation } from "@/src/services/automation";
 import { onMessagingTriggerCheckoutStarted } from "@/src/modules/messaging/triggers";
 import { mergeTrafficAttributionIntoMetadata } from "@/lib/attribution/social-traffic";
+import { requireCheckoutRailsOpen } from "@/lib/payment-readiness/route-guards";
 import { recordInternalCrmEvent } from "@/lib/crm/internal-crm-telemetry";
 import { BNHUB_BOOKING_CHECKOUT_SKIPS_HOST_CONNECT } from "@/lib/stripe/bnhubCheckoutConnectMode";
 import { parseUpsellsFromBody } from "@/lib/monetization/bnhub-checkout-pricing";
@@ -107,6 +108,9 @@ const PAYMENT_TYPES: PaymentType[] = [
 ];
 
 export async function POST(request: NextRequest) {
+  const railBlock = requireCheckoutRailsOpen();
+  if (railBlock) return railBlock;
+
   const ip =
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
     request.headers.get("x-real-ip") ??

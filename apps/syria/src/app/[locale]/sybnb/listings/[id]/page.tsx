@@ -11,12 +11,10 @@ import { syriaFlags } from "@/lib/platform-flags";
 import { SybnbReportForm } from "@/components/sybnb/SybnbReportForm";
 import { SybnbV1RequestForm } from "@/components/sybnb/SybnbV1RequestForm";
 import { PropertyImageGallery } from "@/components/PropertyImageGallery";
-import { VerifiedBadge } from "@/components/ds/VerifiedBadge";
 import { darlinkMetadataBase, buildDarlinkPageMetadata } from "@/lib/seo/darlink-metadata";
 import type { DarlinkLocale } from "@/lib/i18n/types";
 import { getHostSybnbStats } from "@/lib/sybnb/sybnb-public-data";
 import { getSy8OwnerListingCounts } from "@/lib/sy8/sy8-owner-listing-counts";
-import { isSy8SellerVerified } from "@/lib/sy8/sy8-reputation";
 import { SybnbTrustBadge } from "@/components/sybnb/SybnbTrustBadge";
 import { labelSyriaAmenityForListing } from "@/lib/syria/amenities";
 import { Sy8LocationQualityBadge } from "@/components/sy8/Sy8LocationQualityBadge";
@@ -24,6 +22,7 @@ import { buildWhatsAppContactHref, buildTelHref } from "@/lib/syria-phone";
 import { ListingOwnerContactCard } from "@/components/listing/ListingOwnerContactCard";
 import { ListingContactDock } from "@/components/listing/ListingContactDock";
 import { SybnbListingViewBeacon } from "@/components/sybnb/SybnbListingViewBeacon";
+import { OfflineListingMessageDraft } from "@/components/offline/OfflineListingMessageDraft";
 import { SYBNB_SHOW_PHONE, sybnbPrioritizeContactOverBooking } from "@/lib/sybnb/config";
 
 type Props = { params: Promise<{ locale: string; id: string }> };
@@ -51,7 +50,6 @@ const AMENITY_KEYS = ["wifi", "furnished", "ac", "parking", "kitchen"] as const;
 export default async function SybnbListingPage(props: Props) {
   const { id, locale } = await props.params;
   const t = await getTranslations("Sybnb.listing");
-  const t8 = await getTranslations("Sy8");
   const user = await getSessionUser();
 
   const listing = await prisma.syriaProperty.findUnique({ where: { id }, include: { owner: true } });
@@ -93,8 +91,6 @@ export default async function SybnbListingPage(props: Props) {
   /** Logged-in visitor (not owner) — drives sidebar guest flows */
   const guest = Boolean(user && !isOwner);
   const hasContactChannels = Boolean(waOwnerHref || telOwnerHref);
-  const hostVerified = isSy8SellerVerified(listing.owner);
-
   return (
     <>
       <SybnbListingViewBeacon listingId={listing.id} />
@@ -108,23 +104,12 @@ export default async function SybnbListingPage(props: Props) {
             <h1 className="text-2xl font-semibold tracking-tight text-neutral-900 [dir=rtl]:text-right">
               {pickListingTitle(listing, locale)}
             </h1>
-            <div className="mt-2 flex flex-wrap items-center gap-2 [dir=rtl]:text-right">
-              {hostVerified ? (
-                <VerifiedBadge label={t8("verifiedSeller")} />
-              ) : (
-                <span className="inline-flex max-w-full items-center rounded-full border border-neutral-200 bg-neutral-50 px-2.5 py-0.5 text-xs font-medium text-neutral-700 [overflow-wrap:anywhere]">
-                  {t8("unverifiedSeller")}
-                </span>
-              )}
-            </div>
             <p className="mt-1 text-sm text-neutral-500 [dir=rtl]:text-right">
               {city} · {listing.governorate ?? listing.state}
             </p>
-            <p className="mt-1.5">
-              <Sy8LocationQualityBadge listing={listing} />
-            </p>
-            <div className="mt-2">
+            <div className="mt-3">
               <SybnbTrustBadge
+                className="text-sm font-medium text-neutral-800"
                 owner={{
                   phoneVerifiedAt: listing.owner.phoneVerifiedAt,
                   verifiedAt: listing.owner.verifiedAt,
@@ -134,15 +119,17 @@ export default async function SybnbListingPage(props: Props) {
                 soldListings={sy8Counts.soldListings}
               />
             </div>
-          </div>
-
-          <div className="flex gap-2 rounded-2xl border border-amber-200/60 bg-amber-50/80 px-4 py-3 text-sm text-amber-950 [dir=rtl]:text-right">
-            <span className="shrink-0" aria-hidden>
-              ⚠️
-            </span>
-            <p>
-              <span className="font-semibold">{t("payWarningShort")}</span>
-              <span className="mt-0.5 block text-amber-900/90">{t("payWarning")}</span>
+            <div className="mt-3 flex gap-2 rounded-2xl border border-amber-200/60 bg-amber-50/80 px-4 py-3 text-sm text-amber-950 [dir=rtl]:text-right">
+              <span className="shrink-0" aria-hidden>
+                ⚠️
+              </span>
+              <p>
+                <span className="font-semibold">{t("payWarningShort")}</span>
+                <span className="mt-0.5 block text-amber-900/90">{t("payWarning")}</span>
+              </p>
+            </div>
+            <p className="mt-3">
+              <Sy8LocationQualityBadge listing={listing} />
             </p>
           </div>
 
@@ -182,6 +169,12 @@ export default async function SybnbListingPage(props: Props) {
           </div>
 
           <SybnbReportForm propertyId={listing.id} disabled={isOwner || !user} variant="section" />
+
+          {guest ? (
+            <div className="mt-8">
+              <OfflineListingMessageDraft listingId={listing.id} disabled={isOwner || !user} />
+            </div>
+          ) : null}
         </div>
 
         <div className="lg:col-span-4">
@@ -197,8 +190,24 @@ export default async function SybnbListingPage(props: Props) {
                 </p>
               ) : null}
 
+              {guest && (hasContactChannels || canBook) ? (
+                <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-neutral-100 pb-3 text-xs font-semibold text-neutral-700 [dir=rtl]:text-right">
+                  <span className="text-neutral-500">{t("conversionQuickNav")}</span>
+                  {hasContactChannels ? (
+                    <a href="#sybnb-contact-panel" className="text-amber-900 underline underline-offset-2 hover:text-amber-950">
+                      {t("jumpContact")}
+                    </a>
+                  ) : null}
+                  {canBook ? (
+                    <a href="#sybnb-request-anchor" className="text-amber-900 underline underline-offset-2 hover:text-amber-950">
+                      {t("jumpRequest")}
+                    </a>
+                  ) : null}
+                </div>
+              ) : null}
+
               {guest && hasContactChannels ? (
-                <div className="mt-4 min-w-0">
+                <div id="sybnb-contact-panel" className="mt-4 min-w-0 scroll-mt-28">
                   <ListingOwnerContactCard
                     listingId={listing.id}
                     waOwnerHref={waOwnerHref}
@@ -211,7 +220,7 @@ export default async function SybnbListingPage(props: Props) {
               ) : null}
 
               {guest && hasContactChannels && canBook && !prioritizeBookingAfterContactSoft ? (
-                <div className="mt-4 min-w-0">
+                <div id="sybnb-request-anchor" className="mt-4 min-w-0 scroll-mt-28">
                   <p className="mb-2 text-xs font-semibold text-neutral-600 [dir=rtl]:text-right">{t("requestAfterContact")}</p>
                   <SybnbV1RequestForm listingId={listing.id} guestsMax={listing.guestsMax} />
                 </div>
@@ -222,7 +231,7 @@ export default async function SybnbListingPage(props: Props) {
               ) : null}
 
               {guest && !hasContactChannels && canBook ? (
-                <div id="sybnb-request" className="mt-4 min-w-0 scroll-mt-28">
+                <div id="sybnb-request-anchor" className="mt-4 min-w-0 scroll-mt-28">
                   <p className="mb-2 text-sm font-semibold text-neutral-900 [dir=rtl]:text-right">{t("requestCta")}</p>
                   <SybnbV1RequestForm listingId={listing.id} guestsMax={listing.guestsMax} />
                 </div>

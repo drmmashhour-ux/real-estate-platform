@@ -6,17 +6,35 @@ import { useDemo } from "@/components/demo/demo-context";
 import { DemoProgressBar } from "@/components/demo/DemoProgressBar";
 
 const GOLD = "var(--color-premium-gold)";
+const GUIDED_INVESTOR_TOUR = "guided_investor_tour" as const;
 
 export function DemoOverlay() {
   const pathname = usePathname();
-  const { isActive, currentStepIndex, totalSteps, steps, nextStep, prevStep, skipDemo } = useDemo();
+  const {
+    isActive,
+    currentStepIndex,
+    totalSteps,
+    steps,
+    nextStep,
+    prevStep,
+    skipDemo,
+    tourId,
+    investorAutoplayActive,
+    investorTourPaused,
+    enableInvestorAutoplay,
+    disableInvestorAutoplay,
+    pauseInvestorTour,
+    resumeInvestorTour,
+  } = useDemo();
   const step = steps[currentStepIndex];
+  const isGuidedInvestor = tourId === GUIDED_INVESTOR_TOUR;
+  const guidedAutoplayPlaying = investorAutoplayActive && !investorTourPaused;
   const [rect, setRect] = useState<{ top: number; left: number; width: number; height: number } | null>(null);
   const [aiText, setAiText] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
 
   const updateHighlight = useCallback(() => {
-    if (!isActive || !step?.highlight) {
+    if (!isActive || !step?.highlight || isGuidedInvestor) {
       setRect(null);
       return;
     }
@@ -32,7 +50,7 @@ export function DemoOverlay() {
       width: r.width,
       height: r.height,
     });
-  }, [isActive, step?.highlight]);
+  }, [isActive, isGuidedInvestor, step?.highlight]);
 
   useEffect(() => {
     if (!isActive) {
@@ -57,14 +75,25 @@ export function DemoOverlay() {
       window.removeEventListener("resize", onScroll);
       ro?.disconnect();
     };
-  }, [isActive, pathname, step?.highlight, updateHighlight]);
+  }, [isActive, isGuidedInvestor, pathname, step?.highlight, updateHighlight]);
 
   useEffect(() => {
+    if (isGuidedInvestor) return;
     if (isActive && step?.highlight) {
       const el = document.querySelector(step.highlight);
       el?.scrollIntoView({ block: "center", behavior: "smooth" });
     }
-  }, [isActive, currentStepIndex, step?.highlight]);
+  }, [isActive, isGuidedInvestor, currentStepIndex, step?.highlight]);
+
+  const startGuidedAutoplay = useCallback(() => {
+    resumeInvestorTour();
+    enableInvestorAutoplay();
+  }, [resumeInvestorTour, enableInvestorAutoplay]);
+
+  const pauseGuidedAutoplay = useCallback(() => {
+    pauseInvestorTour();
+    disableInvestorAutoplay();
+  }, [pauseInvestorTour, disableInvestorAutoplay]);
 
   const explainMore = useCallback(async () => {
     if (!step) return;
@@ -107,7 +136,11 @@ export function DemoOverlay() {
       ) : null}
 
       <div
-        className="pointer-events-auto absolute left-1/2 w-[min(100vw-2rem,420px)] -translate-x-1/2 rounded-2xl border border-white/15 bg-[#121212]/95 p-4 text-white shadow-2xl"
+        className={
+          isGuidedInvestor
+            ? "pointer-events-auto absolute left-1/2 w-[min(100vw-2rem,440px)] -translate-x-1/2 rounded-2xl border border-premium-gold/40 bg-[#0a0a0a]/97 p-4 text-white shadow-2xl"
+            : "pointer-events-auto absolute left-1/2 w-[min(100vw-2rem,420px)] -translate-x-1/2 rounded-2xl border border-white/15 bg-[#121212]/95 p-4 text-white shadow-2xl"
+        }
         style={{
           bottom: 24,
           maxHeight: "min(52vh, 420px)",
@@ -119,6 +152,9 @@ export function DemoOverlay() {
           </span>
           <DemoProgressBar current={n} total={totalSteps} />
         </div>
+        {isGuidedInvestor ? (
+          <p className="mb-2 text-[10px] font-medium uppercase tracking-wide text-premium-gold/90">Investor demo · safe mode</p>
+        ) : null}
         <h2 className="text-lg font-semibold" style={{ color: GOLD }}>
           {step.title}
         </h2>
@@ -128,38 +164,83 @@ export function DemoOverlay() {
           <p className="mt-3 rounded-lg border border-white/10 bg-black/40 p-3 text-xs text-slate-200">{aiText}</p>
         ) : null}
 
-        <div className="mt-4 flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={explainMore}
-            disabled={aiLoading}
-            className="rounded-lg border border-premium-gold/50 px-3 py-2 text-xs font-medium text-premium-gold hover:bg-premium-gold/10 disabled:opacity-50"
-          >
-            {aiLoading ? "…" : "Explain more"}
-          </button>
-          <button
-            type="button"
-            onClick={prevStep}
-            disabled={currentStepIndex <= 0}
-            className="rounded-lg border border-white/15 px-3 py-2 text-xs text-slate-200 hover:bg-white/5 disabled:opacity-40"
-          >
-            Back
-          </button>
-          <button
-            type="button"
-            onClick={nextStep}
-            className="rounded-lg bg-premium-gold px-3 py-2 text-xs font-semibold text-black hover:brightness-110"
-          >
-            {currentStepIndex >= totalSteps - 1 ? "Finish" : "Continue"}
-          </button>
-          <button
-            type="button"
-            onClick={skipDemo}
-            className="ml-auto rounded-lg px-2 py-2 text-xs text-slate-500 underline hover:text-slate-300"
-          >
-            Skip
-          </button>
-        </div>
+        {isGuidedInvestor ? (
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={startGuidedAutoplay}
+              disabled={guidedAutoplayPlaying}
+              title="Resume scripted auto-advance (5–8s per step)"
+              className="rounded-lg border border-premium-gold/60 px-3 py-2 text-xs font-medium text-premium-gold hover:bg-premium-gold/10 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              ▶ Start demo
+            </button>
+            <button
+              type="button"
+              onClick={() => nextStep()}
+              className="rounded-lg border border-white/20 px-3 py-2 text-xs text-slate-100 hover:bg-white/10"
+            >
+              ⏭ Next
+            </button>
+            <button
+              type="button"
+              onClick={pauseGuidedAutoplay}
+              disabled={!guidedAutoplayPlaying}
+              title="Pause auto-advance"
+              className="rounded-lg border border-white/20 px-3 py-2 text-xs text-slate-100 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              ⏸ Pause
+            </button>
+            <button
+              type="button"
+              onClick={skipDemo}
+              className="rounded-lg border border-red-500/40 px-3 py-2 text-xs text-red-200/90 hover:bg-red-950/40"
+            >
+              ⏹ Stop
+            </button>
+            <button
+              type="button"
+              onClick={prevStep}
+              disabled={currentStepIndex <= 0}
+              className="ml-auto rounded-lg px-2 py-2 text-xs text-slate-500 underline hover:text-slate-300 disabled:opacity-40"
+            >
+              Back
+            </button>
+          </div>
+        ) : (
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={explainMore}
+              disabled={aiLoading}
+              className="rounded-lg border border-premium-gold/50 px-3 py-2 text-xs font-medium text-premium-gold hover:bg-premium-gold/10 disabled:opacity-50"
+            >
+              {aiLoading ? "…" : "Explain more"}
+            </button>
+            <button
+              type="button"
+              onClick={prevStep}
+              disabled={currentStepIndex <= 0}
+              className="rounded-lg border border-white/15 px-3 py-2 text-xs text-slate-200 hover:bg-white/5 disabled:opacity-40"
+            >
+              Back
+            </button>
+            <button
+              type="button"
+              onClick={nextStep}
+              className="rounded-lg bg-premium-gold px-3 py-2 text-xs font-semibold text-black hover:brightness-110"
+            >
+              {currentStepIndex >= totalSteps - 1 ? "Finish" : "Continue"}
+            </button>
+            <button
+              type="button"
+              onClick={skipDemo}
+              className="ml-auto rounded-lg px-2 py-2 text-xs text-slate-500 underline hover:text-slate-300"
+            >
+              Skip
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

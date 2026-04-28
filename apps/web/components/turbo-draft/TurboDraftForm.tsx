@@ -17,6 +17,7 @@ import { SaferChoicePanel } from "../trust-hub/SaferChoicePanel";
 import { ProtectionModeBanner } from "../trust-hub/ProtectionModeBanner";
 import { BrokerAssistCard } from "../trust-hub/BrokerAssistCard";
 import { ExplainClauseButton } from "../trust-hub/ExplainClauseButton";
+import { readInvestorGuidedSafeFlag } from "@/src/lib/demo/investor-guided-safe";
 
 interface Props {
   formKey: string;
@@ -198,6 +199,10 @@ export function TurboDraftForm({ formKey, initialInput, listingId, listingKind }
       });
       const data = await res.json();
       if (res.status === 402) {
+        if (readInvestorGuidedSafeFlag()) {
+          showToast("Investor demo mode — live checkout is disabled.", "error");
+          return;
+        }
         const offerA = (data as { offerA?: { amountCents: number; offerType: string } }).offerA;
         const amountCents = offerA?.amountCents ?? 1500;
         const offerType = offerA?.offerType ?? "A";

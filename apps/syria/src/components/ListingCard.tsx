@@ -140,6 +140,11 @@ export function ListingCard({
     ? listing.amenities.filter((x): x is string => typeof x === "string" && x.length > 0).length
     : 0;
   const showTrustedHighlight = nPhotos >= 3 && nAmenities >= 2;
+  const sybnbDeal =
+    isStay &&
+    "sybnbExcellentDeal" in listing &&
+    typeof (listing as { sybnbExcellentDeal?: unknown }).sybnbExcellentDeal === "boolean" &&
+    Boolean((listing as { sybnbExcellentDeal: boolean }).sybnbExcellentDeal);
 
   return (
     <Link

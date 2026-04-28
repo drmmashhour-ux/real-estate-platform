@@ -4,7 +4,8 @@
   "private": true,
   "description": "Future HadiaLink app — isolated from LECIPM / SYBNB; reserved workspace slot only.",
   "dependencies": {
-    "@repo/drbrain": "workspace:*"
+    "@repo/drbrain": "workspace:*",
+    "@repo/offline": "workspace:*"
   },
   "scripts": {
     "lint": "eslint"

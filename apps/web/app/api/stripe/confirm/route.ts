@@ -6,6 +6,7 @@ import { getLegacyDB } from "@/lib/db/legacy";
 const prisma = getLegacyDB();
 import { PAID_STORAGE_PLAN_KEYS, plans, type PlanKey } from "@/lib/billing/plans";
 import { assertCheckoutSessionIdShape, runV8SafePaymentOperation } from "@/lib/payments/v8-safety";
+import { requireCheckoutRailsOpen } from "@/lib/payment-readiness/route-guards";
 
 export const dynamic = "force-dynamic";
 
@@ -37,6 +38,9 @@ export async function POST(req: NextRequest) {
     if (!currentUserId) {
       return Response.json({ error: "Sign in required" }, { status: 401 });
     }
+
+    const railBlock = requireCheckoutRailsOpen();
+    if (railBlock) return railBlock;
 
     const body = await req.json().catch(() => ({}));
     const sessionId = body?.session_id as string | undefined;

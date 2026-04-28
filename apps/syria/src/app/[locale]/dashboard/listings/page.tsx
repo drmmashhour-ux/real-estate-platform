@@ -10,8 +10,7 @@ import { getSyriaPublicOrigin } from "@/lib/syria-whatsapp";
 import { buildViralShareForSyriaProperty } from "@/lib/syria/viral-listing-share";
 import { SelfMarketingPanel } from "@/components/dashboard/SelfMarketingPanel";
 import { ViralPostShareBanner } from "@/components/dashboard/ViralPostShareBanner";
-
-type PageProps = { searchParams: Promise<Record<string, string | string[] | undefined>> };
+import { duplicateOwnListingFormAction } from "@/actions/duplicate-listing";
 
 function planLabelKey(plan: string): "planFree" | "planFeatured" | "planPremium" {
   if (plan === "featured") return "planFeatured";
@@ -24,7 +23,11 @@ function tierKey(plan: string): "statusNormal" | "statusFeatured" {
   return "statusFeatured";
 }
 
-export default async function DashboardListingsPage({ searchParams }: PageProps) {
+type DashboardListingsPageProps = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export default async function DashboardListingsPage({ searchParams }: DashboardListingsPageProps) {
   const t = await getTranslations("Dashboard");
   const locale = await getLocale();
   const sp = await searchParams;
@@ -86,6 +89,7 @@ export default async function DashboardListingsPage({ searchParams }: PageProps)
                 <th className="px-4 py-3">{t("tableLeadsPhone")}</th>
                 <th className="px-4 py-3">{t("tablePlan")}</th>
                 <th className="px-4 py-3">{t("tableStatus")}</th>
+                <th className="px-4 py-3">{t("tableDuplicate")}</th>
               </tr>
             </thead>
             <tbody>
@@ -137,6 +141,17 @@ export default async function DashboardListingsPage({ searchParams }: PageProps)
                   <td className="px-4 py-3 tabular-nums text-[color:var(--darlink-text)]">{l.phoneClicks ?? 0}</td>
                   <td className="px-4 py-3 text-[color:var(--darlink-text)] text-xs">{t(planLabelKey(l.plan))}</td>
                   <td className="px-4 py-3 text-[color:var(--darlink-text)] text-xs">{l.status}</td>
+                  <td className="px-4 py-3">
+                    <form action={duplicateOwnListingFormAction}>
+                      <input type="hidden" name="listingId" value={l.id} />
+                      <button
+                        type="submit"
+                        className="rounded-lg border border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface-muted)] px-2 py-1 text-[11px] font-semibold text-[color:var(--darlink-accent)] hover:bg-[color:var(--darlink-surface)]"
+                      >
+                        {t("duplicateDraftCta")}
+                      </button>
+                    </form>
+                  </td>
                 </tr>
               );
               })}

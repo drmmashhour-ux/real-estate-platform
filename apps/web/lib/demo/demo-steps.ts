@@ -1,3 +1,5 @@
+import { investorScriptToDemoSteps } from "@/src/lib/demo/investor-script";
+
 export type DemoStep = {
   id: string;
   title: string;
@@ -7,7 +9,7 @@ export type DemoStep = {
   highlight: string | null;
 };
 
-export type TourId = "standard_user_tour" | "investor_tour";
+export type TourId = "standard_user_tour" | "investor_tour" | "guided_investor_tour";
 
 const standardSteps: DemoStep[] = [
   {
@@ -76,6 +78,7 @@ const standardSteps: DemoStep[] = [
   },
 ];
 
+const guidedInvestorSteps: DemoStep[] = investorScriptToDemoSteps() as DemoStep[];
 const investorSteps: DemoStep[] = [
   {
     id: "inv_welcome",
@@ -127,6 +130,7 @@ const investorSteps: DemoStep[] = [
 const TOURS: Record<TourId, DemoStep[]> = {
   standard_user_tour: standardSteps,
   investor_tour: investorSteps,
+  guided_investor_tour: guidedInvestorSteps,
 };
 
 export function getDemoSteps(tourId: TourId): DemoStep[] {
@@ -134,7 +138,7 @@ export function getDemoSteps(tourId: TourId): DemoStep[] {
 }
 
 export function isTourId(value: string | null): value is TourId {
-  return value === "standard_user_tour" || value === "investor_tour";
+  return value === "standard_user_tour" || value === "investor_tour" || value === "guided_investor_tour";
 }
 
 export function resolveDemoRoute(route: string): string {

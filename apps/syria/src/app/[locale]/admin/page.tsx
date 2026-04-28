@@ -10,6 +10,48 @@ export default async function AdminHomePage() {
   return (
     <div className="grid gap-4 md:grid-cols-2">
       <Link
+        href="/admin/investor"
+        className="rounded-2xl border border-amber-400 bg-gradient-to-br from-amber-100 via-white to-emerald-50/80 p-6 shadow-md hover:border-amber-500 md:col-span-2"
+      >
+        <h2 className="text-lg font-semibold text-amber-950">{t("navInvestorReadiness")}</h2>
+        <p className="mt-2 text-sm text-stone-700">{t("investorHomeTileDesc")}</p>
+      </Link>
+      <Link
+        href="/admin/sybnb/daily"
+        className="rounded-2xl border border-stone-300 bg-gradient-to-br from-stone-50 to-white p-6 shadow-sm hover:border-stone-400 md:col-span-2"
+      >
+        <h2 className="text-lg font-semibold text-stone-900">{t("navDailyExecution")}</h2>
+        <p className="mt-2 text-sm text-stone-700">{t("dailyExecutionHomeTileDesc")}</p>
+      </Link>
+      <Link
+        href="/admin/sybnb/workflow"
+        className="rounded-2xl border border-stone-300 bg-gradient-to-br from-stone-50 to-white p-6 shadow-sm hover:border-stone-400 md:col-span-2"
+      >
+        <h2 className="text-lg font-semibold text-stone-900">{t("navSybnbWorkflow")}</h2>
+        <p className="mt-2 text-sm text-stone-700">{t("workflowHomeTileDesc")}</p>
+      </Link>
+      <Link
+        href="/admin/sybnb/flywheel"
+        className="rounded-2xl border border-stone-300 bg-gradient-to-br from-stone-50 to-white p-6 shadow-sm hover:border-stone-400 md:col-span-2"
+      >
+        <h2 className="text-lg font-semibold text-stone-900">{t("navSybnbFlywheel")}</h2>
+        <p className="mt-2 text-sm text-stone-700">{t("flywheelHomeTileDesc")}</p>
+      </Link>
+      <Link
+        href="/admin/sybnb/agent-program"
+        className="rounded-2xl border border-stone-300 bg-gradient-to-br from-stone-50 to-white p-6 shadow-sm hover:border-stone-400 md:col-span-2"
+      >
+        <h2 className="text-lg font-semibold text-stone-900">{t("navSybnbAgentProgram")}</h2>
+        <p className="mt-2 text-sm text-stone-700">{t("agentPerfHomeTileDesc")}</p>
+      </Link>
+      <Link
+        href="/admin/sybnb/revenue-optimization"
+        className="rounded-2xl border border-stone-300 bg-gradient-to-br from-stone-50 to-white p-6 shadow-sm hover:border-stone-400 md:col-span-2"
+      >
+        <h2 className="text-lg font-semibold text-stone-900">{t("navSybnbRevenueOptimization")}</h2>
+        <p className="mt-2 text-sm text-stone-700">{t("revOptHomeTileDesc")}</p>
+      </Link>
+      <Link
         href="/admin/listings"
         className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm hover:border-stone-300"
       >

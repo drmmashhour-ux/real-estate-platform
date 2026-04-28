@@ -7,6 +7,7 @@ import {
   verifyListingPayment,
   setPropertyFraudFlag,
   setSybnbListingReview,
+  setSybnbListingFieldAgent,
 } from "@/actions/admin";
 import { getDarlinkAutonomyFlags } from "@/lib/platform-flags";
 import { money } from "@/lib/format";
@@ -19,6 +20,7 @@ export default async function AdminListingsPage() {
     include: {
       owner: true,
       listingPayments: true,
+      sybnbAgent: { select: { id: true, email: true, name: true } },
     },
     take: 80,
   });
@@ -125,6 +127,47 @@ export default async function AdminListingsPage() {
                 ) : null}
               </div>
             </div>
+
+            {p.category === "stay" ? (
+              <div className="mt-4 rounded-xl border border-violet-200 bg-violet-50/50 px-4 py-3">
+                <p className="text-xs font-semibold text-violet-950">{t("sybnbFieldAgentTitle")}</p>
+                <p className="mt-1 text-xs text-violet-900/85">{t("sybnbFieldAgentHelp")}</p>
+                <div className="mt-2 flex flex-wrap items-end gap-2">
+                  <form action={setSybnbListingFieldAgent} className="flex flex-wrap items-end gap-2">
+                    <input type="hidden" name="propertyId" value={p.id} />
+                    <label className="flex flex-col gap-0.5">
+                      <span className="text-[11px] text-stone-600">{t("sybnbFieldAgentEmailLabel")}</span>
+                      <input
+                        name="agentEmail"
+                        type="email"
+                        defaultValue={p.sybnbAgent?.email ?? ""}
+                        className="min-w-[220px] rounded-md border border-stone-200 bg-white px-2 py-1 text-xs"
+                        placeholder={t("sybnbFieldAgentPlaceholder")}
+                        autoComplete="off"
+                      />
+                    </label>
+                    <button
+                      type="submit"
+                      className="rounded-lg bg-violet-800 px-3 py-1.5 text-xs font-semibold text-white hover:bg-violet-900"
+                    >
+                      {t("sybnbFieldAgentSave")}
+                    </button>
+                  </form>
+                  {p.sybnbAgent ? (
+                    <form action={setSybnbListingFieldAgent}>
+                      <input type="hidden" name="propertyId" value={p.id} />
+                      <input type="hidden" name="clearAgent" value="1" />
+                      <button
+                        type="submit"
+                        className="rounded-lg border border-violet-300 bg-white px-3 py-1.5 text-xs font-semibold text-violet-900 hover:bg-violet-100"
+                      >
+                        {t("sybnbFieldAgentClear")}
+                      </button>
+                    </form>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
 
             <div className="mt-4 grid gap-3 md:grid-cols-2">
               <form action={setPropertyFraudFlag} className="flex flex-wrap items-center gap-2 rounded-xl bg-stone-50 p-3">

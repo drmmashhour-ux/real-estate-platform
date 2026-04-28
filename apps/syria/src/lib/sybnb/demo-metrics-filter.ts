@@ -1,5 +1,29 @@
 import { Prisma } from "@/generated/prisma";
 
+/** Exclude investor-seeded listings from traction / investor KPI aggregates. */
+export function syriaPropertyExcludeInvestorDemoWhere(): Prisma.SyriaPropertyWhereInput {
+  return {
+    AND: [
+      {
+        NOT: { titleAr: { startsWith: "DEMO" } },
+      },
+      {
+        OR: [
+          { demoMeta: { equals: Prisma.DbNull } },
+          {
+            NOT: {
+              demoMeta: {
+                path: ["demo"],
+                equals: true,
+              },
+            },
+          },
+        ],
+      },
+    ],
+  };
+}
+
 /** Matches investor-demo audit rows tagged in JSON metadata (append-only SYBNB audit). */
 export function sybnbCoreAuditExcludeInvestorDemoWhere(): Prisma.SyriaSybnbCoreAuditWhereInput {
   return {

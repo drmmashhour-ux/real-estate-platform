@@ -20,6 +20,7 @@ import { track } from "@/lib/analytics/events";
 import { calculateDynamicTotal } from "@/lib/pricing/calculateDynamicTotal";
 import { trackEvent } from "@/src/services/analytics";
 import { assertStripeCheckoutOnlyPolicy } from "@/lib/stripe/checkoutOnlyPolicy";
+import { requireCheckoutRailsOpen } from "@/lib/payment-readiness/route-guards";
 
 export const dynamic = "force-dynamic";
 
@@ -53,6 +54,8 @@ void bnhubDB;
 export async function POST(req: Request) {
   assertSafeUsage("checkout route");
   assertStripeCheckoutOnlyPolicy();
+  const railBlock = requireCheckoutRailsOpen();
+  if (railBlock) return railBlock;
   const listDb = getListingsDB();
   const ip = getClientIpFromRequest(req);
   const rl = checkRateLimit(`checkout:${ip}`, { windowMs: 60_000, max: 30 });

@@ -12,6 +12,7 @@ import {
   getStripeMortgageLeadCreditPriceId,
   MORTGAGE_EXPERT_CHECKOUT_PAYMENT_CREDITS,
 } from "@/lib/stripe/mortgage-expert-billing";
+import { requireCheckoutRailsOpen } from "@/lib/payment-readiness/route-guards";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +25,9 @@ export async function POST(req: NextRequest) {
 
   const session = await requireMortgageExpertWithTerms();
   if ("error" in session) return session.error;
+
+  const railBlock = requireCheckoutRailsOpen();
+  if (railBlock) return railBlock;
 
   const rl = checkRateLimit(`stripe:mortgage_credits:${session.expert.id}`, {
     windowMs: 60_000,

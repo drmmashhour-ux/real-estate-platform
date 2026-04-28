@@ -18,6 +18,7 @@ import {
   type Sy8ReputationTier,
 } from "@/lib/sy8/sy8-reputation";
 import { computeSybnbExcellentDealFlags } from "@/lib/sybnb/smart-pricing";
+import { capBoostedFirstPage, getSybnbFeaturedMaxPerPage } from "@/lib/sybnb/featured-feed-cap";
 
 export type BrowseSurface = "sale" | "rent" | "bnhub" | "stay";
 
@@ -67,6 +68,7 @@ export type SerializedBrowseListing = {
   sy8SellerVerified?: boolean;
   sy8ReputationScore?: number;
   sy8ReputationLabelId?: Sy8ReputationTier;
+  sybnbExcellentDeal?: boolean;
 };
 
 export type SearchPropertiesResult = {
@@ -148,6 +150,14 @@ async function serializeWithSy8(rows: PropertyWithOwnerForSy8[]): Promise<Serial
 function applySybnbExcellentDealFlags(list: SerializedBrowseListing[]): SerializedBrowseListing[] {
   const flags = computeSybnbExcellentDealFlags(list);
   return list.map((s) => ({ ...s, sybnbExcellentDeal: flags.get(s.id) === true }));
+}
+
+async function serializeBrowseRows(rows: PropertyWithOwnerForSy8[], surface: BrowseSurface): Promise<SerializedBrowseListing[]> {
+  const base = await serializeWithSy8(rows);
+  if (surface === "stay") {
+    return applySybnbExcellentDealFlags(base);
+  }
+  return base;
 }
 
 /** Ensures geo filter has a sensible radius when lat/lng present but radius omitted. */
@@ -233,7 +243,11 @@ export async function searchProperties(
       return a.isDirect ? -1 : 1;
     });
     const total = rows.length;
-    const sliced = rows.slice((page - 1) * pageSize, page * pageSize) as PropertyWithOwnerForSy8[];
+    let sliced = rows.slice((page - 1) * pageSize, page * pageSize) as PropertyWithOwnerForSy8[];
+    if (surface === "stay" && page === 1) {
+      const pool = rows.slice(0, Math.min(rows.length, page * pageSize + 160));
+      sliced = capBoostedFirstPage(pool, pageSize, getSybnbFeaturedMaxPerPage());
+    }
     return {
       items: await serializeBrowseRows(sliced, surface),
       total,
@@ -252,7 +266,11 @@ export async function searchProperties(
     });
     const filtered = fetched.filter((r) => listingMatchesAmenityTags(r.amenities, amenityTags));
     const total = filtered.length;
-    const sliced = filtered.slice((page - 1) * pageSize, page * pageSize);
+    let sliced = filtered.slice((page - 1) * pageSize, page * pageSize);
+    if (surface === "stay" && page === 1) {
+      const pool = filtered.slice(0, Math.min(filtered.length, page * pageSize + 160));
+      sliced = capBoostedFirstPage(pool as PropertyWithOwnerForSy8[], pageSize, getSybnbFeaturedMaxPerPage());
+    }
     return {
       items: await serializeBrowseRows(sliced as PropertyWithOwnerForSy8[], surface),
       total,
@@ -263,13 +281,27 @@ export async function searchProperties(
   }
 
   const total = await prisma.syriaProperty.count({ where });
-  const rows = await prisma.syriaProperty.findMany({
-    where,
-    orderBy: orderBy(sort === "distance" ? "featured" : sort),
-    skip: (page - 1) * pageSize,
-    take: pageSize,
-    include: ownerSelectSy8,
-  });
+
+  let rows: PropertyWithOwnerForSy8[];
+
+  if (surface === "stay" && page === 1 && !useDistanceSort && amenityTags.length === 0) {
+    const pool = await prisma.syriaProperty.findMany({
+      where,
+      orderBy: orderBy(sort === "distance" ? "featured" : sort),
+      skip: 0,
+      take: Math.min(pageSize + 160, 300),
+      include: ownerSelectSy8,
+    });
+    rows = capBoostedFirstPage(pool as PropertyWithOwnerForSy8[], pageSize, getSybnbFeaturedMaxPerPage());
+  } else {
+    rows = (await prisma.syriaProperty.findMany({
+      where,
+      orderBy: orderBy(sort === "distance" ? "featured" : sort),
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      include: ownerSelectSy8,
+    })) as PropertyWithOwnerForSy8[];
+  }
 
   return {
     items: await serializeBrowseRows(rows as PropertyWithOwnerForSy8[], surface),

@@ -12,9 +12,11 @@ import {
 } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { getDemoSteps, resolveDemoRoute, type DemoStep, type TourId, isTourId } from "@/lib/demo/demo-steps";
+import { dwellMs } from "@/src/lib/demo/demo-player";
+import { setInvestorGuidedSafeFlag } from "@/src/lib/demo/investor-guided-safe";
+
 import { DemoEvents } from "@/lib/demo-event-types";
 import { trackDemoClient } from "@/lib/demo-track-client";
-import { isDemoTourRuntimeEnabled } from "@/lib/demo/demo-env";
 
 const LS_ACTIVE = "demo_mode_active";
 const LS_STEP = "demo_current_step";
@@ -24,6 +26,7 @@ const LS_AUTOSTART_DONE = "lecipm_demo_autostart_done";
 const LS_DISMISS = "lecipm_demo_dismiss_session";
 
 const DEFAULT_TOUR: TourId = "standard_user_tour";
+const GUIDED_INVESTOR_TOUR_ID: TourId = "guided_investor_tour";
 
 export type DemoContextValue = {
   isActive: boolean;
@@ -38,6 +41,13 @@ export type DemoContextValue = {
   skipDemo: () => void;
   endDemo: () => void;
   dismissForSession: () => void;
+  investorAutoplayActive: boolean;
+  investorTourPaused: boolean;
+  beginGuidedInvestorTour: () => void;
+  pauseInvestorTour: () => void;
+  resumeInvestorTour: () => void;
+  enableInvestorAutoplay: () => void;
+  disableInvestorAutoplay: () => void;
 };
 
 const DemoContext = createContext<DemoContextValue | null>(null);
@@ -81,6 +91,9 @@ export function DemoProviderInner({ children }: { children: ReactNode }) {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [tourId, setTourId] = useState<TourId>(DEFAULT_TOUR);
   const autostartRan = useRef(false);
+  const dwellTimerRef = useRef<number | undefined>(undefined);
+  const [investorTourPaused, setInvestorTourPaused] = useState(false);
+  const [investorAutoplayActive, setInvestorAutoplayActive] = useState(false);
 
   const steps = useMemo(() => getDemoSteps(tourId), [tourId]);
 
@@ -88,9 +101,24 @@ export function DemoProviderInner({ children }: { children: ReactNode }) {
     trackDemoClient(event, meta);
   }, []);
 
+  const clearInvestorDwellTimer = useCallback(() => {
+    if (dwellTimerRef.current !== undefined) {
+      window.clearTimeout(dwellTimerRef.current);
+      dwellTimerRef.current = undefined;
+    }
+  }, []);
+
+  const resetInvestorPlaybackState = useCallback(() => {
+    setInvestorTourPaused(false);
+    setInvestorAutoplayActive(false);
+    clearInvestorDwellTimer();
+  }, [clearInvestorDwellTimer]);
+
   const endDemoInternal = useCallback(
     (reason: "complete" | "skip") => {
       if (process.env.NEXT_PUBLIC_ENV !== "staging" && process.env.NEXT_PUBLIC_DEMO_TOUR !== "1") return;
+      resetInvestorPlaybackState();
+      setInvestorGuidedSafeFlag(false);
       setIsActive(false);
       setCurrentStepIndex(0);
       persist(0, false, tourId);
@@ -100,12 +128,19 @@ export function DemoProviderInner({ children }: { children: ReactNode }) {
         track(DemoEvents.DEMO_SKIPPED, { tourId });
       }
     },
-    [tourId, track]
+    [tourId, track, resetInvestorPlaybackState],
   );
 
   const startDemo = useCallback(
     (nextTour: TourId = DEFAULT_TOUR, source = "manual") => {
       if (process.env.NEXT_PUBLIC_ENV !== "staging" && process.env.NEXT_PUBLIC_DEMO_TOUR !== "1") return;
+      if (nextTour !== GUIDED_INVESTOR_TOUR_ID) {
+        resetInvestorPlaybackState();
+        setInvestorGuidedSafeFlag(false);
+      } else {
+        setInvestorAutoplayActive(false);
+        setInvestorTourPaused(false);
+      }
       setTourId(nextTour);
       setIsActive(true);
       setCurrentStepIndex(0);
@@ -117,8 +152,34 @@ export function DemoProviderInner({ children }: { children: ReactNode }) {
         navigateToIndex(router, pathname, 0, nextTour);
       }
     },
-    [pathname, router, track]
+    [pathname, router, track, resetInvestorPlaybackState],
   );
+
+  const beginGuidedInvestorTour = useCallback(() => {
+    resetInvestorPlaybackState();
+    startDemo(GUIDED_INVESTOR_TOUR_ID, "guided_investor_script");
+    setInvestorAutoplayActive(true);
+    setInvestorTourPaused(false);
+  }, [resetInvestorPlaybackState, startDemo]);
+
+  const pauseInvestorTour = useCallback(() => {
+    clearInvestorDwellTimer();
+    setInvestorTourPaused(true);
+  }, [clearInvestorDwellTimer]);
+
+  const resumeInvestorTour = useCallback(() => {
+    setInvestorTourPaused(false);
+  }, []);
+
+  const enableInvestorAutoplay = useCallback(() => {
+    clearInvestorDwellTimer();
+    setInvestorAutoplayActive(true);
+  }, [clearInvestorDwellTimer]);
+
+  const disableInvestorAutoplay = useCallback(() => {
+    clearInvestorDwellTimer();
+    setInvestorAutoplayActive(false);
+  }, [clearInvestorDwellTimer]);
 
   const endDemo = useCallback(() => {
     endDemoInternal("complete");
@@ -134,11 +195,14 @@ export function DemoProviderInner({ children }: { children: ReactNode }) {
     } catch {
       /* ignore */
     }
+    resetInvestorPlaybackState();
+    setInvestorGuidedSafeFlag(false);
     setIsActive(false);
     persist(0, false, tourId);
-  }, [tourId]);
+  }, [tourId, resetInvestorPlaybackState]);
 
   const nextStep = useCallback(() => {
+    clearInvestorDwellTimer();
     setCurrentStepIndex((i) => {
       const list = getDemoSteps(tourId);
       const next = i + 1;
@@ -154,22 +218,23 @@ export function DemoProviderInner({ children }: { children: ReactNode }) {
       }
       return next;
     });
-  }, [tourId, pathname, router, track, endDemoInternal]);
+  }, [clearInvestorDwellTimer, tourId, pathname, router, track, endDemoInternal]);
 
   const prevStep = useCallback(() => {
+    clearInvestorDwellTimer();
     setCurrentStepIndex((i) => {
       if (i <= 0) return i;
-      const prev = i - 1;
-      persist(prev, true, tourId);
+      const prevIdx = i - 1;
+      persist(prevIdx, true, tourId);
       const list = getDemoSteps(tourId);
-      const step = list[prev];
+      const step = list[prevIdx];
       if (step) {
         track(DemoEvents.DEMO_STEP_VIEWED, { stepId: step.id, tourId });
-        navigateToIndex(router, pathname, prev, tourId);
+        navigateToIndex(router, pathname, prevIdx, tourId);
       }
-      return prev;
+      return prevIdx;
     });
-  }, [tourId, pathname, router, track]);
+  }, [clearInvestorDwellTimer, tourId, pathname, router, track]);
 
   useEffect(() => {
     const raw = searchParams.get("demoTour");
@@ -180,7 +245,38 @@ export function DemoProviderInner({ children }: { children: ReactNode }) {
         /* ignore */
       }
     }
+    if (raw === "guided") {
+      try {
+        localStorage.setItem(LS_TOUR, GUIDED_INVESTOR_TOUR_ID);
+      } catch {
+        /* ignore */
+      }
+    }
   }, [searchParams]);
+
+  useEffect(() => {
+    const activeSafe = Boolean(isActive && tourId === GUIDED_INVESTOR_TOUR_ID);
+    setInvestorGuidedSafeFlag(activeSafe);
+    return () => setInvestorGuidedSafeFlag(false);
+  }, [isActive, tourId]);
+
+  useEffect(() => {
+    clearInvestorDwellTimer();
+    if (!(isActive && tourId === GUIDED_INVESTOR_TOUR_ID)) return;
+    if (investorTourPaused || !investorAutoplayActive) return;
+    dwellTimerRef.current = window.setTimeout(() => {
+      nextStep();
+    }, dwellMs());
+    return () => clearInvestorDwellTimer();
+  }, [
+    isActive,
+    tourId,
+    currentStepIndex,
+    investorTourPaused,
+    investorAutoplayActive,
+    clearInvestorDwellTimer,
+    nextStep,
+  ]);
 
   useEffect(() => {
     if (process.env.NEXT_PUBLIC_ENV !== "staging" && process.env.NEXT_PUBLIC_DEMO_TOUR !== "1") return;
@@ -206,6 +302,10 @@ export function DemoProviderInner({ children }: { children: ReactNode }) {
       if (active && !Number.isNaN(idx) && idx >= 0 && idx < list.length) {
         setIsActive(true);
         setCurrentStepIndex(idx);
+        if (tid === GUIDED_INVESTOR_TOUR_ID) {
+          setInvestorAutoplayActive(false);
+          setInvestorTourPaused(false);
+        }
         return;
       }
       const pending = localStorage.getItem(LS_PENDING_AUTOSTART);
@@ -239,6 +339,13 @@ export function DemoProviderInner({ children }: { children: ReactNode }) {
       skipDemo,
       endDemo,
       dismissForSession,
+      investorAutoplayActive,
+      investorTourPaused,
+      beginGuidedInvestorTour,
+      pauseInvestorTour,
+      resumeInvestorTour,
+      enableInvestorAutoplay,
+      disableInvestorAutoplay,
     }),
     [
       isActive,
@@ -251,7 +358,14 @@ export function DemoProviderInner({ children }: { children: ReactNode }) {
       skipDemo,
       endDemo,
       dismissForSession,
-    ]
+      investorAutoplayActive,
+      investorTourPaused,
+      beginGuidedInvestorTour,
+      pauseInvestorTour,
+      resumeInvestorTour,
+      enableInvestorAutoplay,
+      disableInvestorAutoplay,
+    ],
   );
 
   return <DemoContext.Provider value={value}>{children}</DemoContext.Provider>;

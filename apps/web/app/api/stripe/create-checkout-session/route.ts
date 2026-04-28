@@ -14,6 +14,7 @@ import { recordLecipmMonetizationTransaction } from "@/lib/monetization/lecipm-f
 import { lecipmMonetizationSystemV1 } from "@/config/feature-flags";
 import { trackMonetizationCheckoutSessionCreated } from "@/lib/analytics/monetization-analytics";
 import { stripeSecretBlockedInTestMode } from "@/lib/stripe/test-mode-stripe-guard";
+import { requireCheckoutRailsOpen } from "@/lib/payment-readiness/route-guards";
 
 export const dynamic = "force-dynamic";
 
@@ -53,6 +54,9 @@ const BodyZ = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  const railBlock = requireCheckoutRailsOpen();
+  if (railBlock) return railBlock;
+
   if (!lecipmMonetizationSystemV1.stripeMonetizationApiV1) {
     return NextResponse.json({ error: "LECIPM Stripe monetization API disabled" }, { status: 403 });
   }

@@ -1,12 +1,19 @@
 "use client";
 
-import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { useMemo, useState } from "react";
 import { cn } from "@/lib/cn";
+import { useSyriaOffline } from "@/components/offline/SyriaOfflineProvider";
 
 export function PropertyImageGallery({ images, title }: { images: string[]; title: string }) {
   const t = useTranslations("Listing");
+  const { online } = useSyriaOffline();
   const [active, setActive] = useState(0);
+
+  const displayImages = useMemo(() => {
+    if (online || images.length === 0) return images;
+    return images[0] ? [images[0]] : [];
+  }, [images, online]);
   if (images.length === 0) {
     return (
       <div
@@ -19,12 +26,17 @@ export function PropertyImageGallery({ images, title }: { images: string[]; titl
     );
   }
 
-  const main = images[active] ?? images[0];
+  const main = displayImages[active] ?? displayImages[0];
 
   return (
     <div className="space-y-3">
+      {!online && images.length > 1 ? (
+        <p className="rounded-xl border border-amber-200/70 bg-amber-50/90 px-3 py-2 text-xs font-medium text-amber-950 [dir=rtl]:text-right">
+          {t("offlinePhotosLimited")}
+        </p>
+      ) : null}
       {/* Mobile: horizontal swipe (scroll-snap) */}
-      {images.length > 1 ? (
+      {displayImages.length > 1 ? (
         <div
           className="md:hidden"
           onScroll={(e) => {
@@ -32,14 +44,14 @@ export function PropertyImageGallery({ images, title }: { images: string[]; titl
             const w = el.clientWidth;
             if (w <= 0) return;
             const i = Math.round(el.scrollLeft / w);
-            if (i !== active && i >= 0 && i < images.length) setActive(i);
+            if (i !== active && i >= 0 && i < displayImages.length) setActive(i);
           }}
         >
           <div
             className="flex w-full snap-x snap-mandatory overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             style={{ WebkitOverflowScrolling: "touch" as const }}
           >
-            {images.map((src, i) => (
+            {displayImages.map((src, i) => (
               <div
                 key={`slide-${i}`}
                 className="w-full min-w-full shrink-0 snap-center snap-always"
@@ -54,7 +66,7 @@ export function PropertyImageGallery({ images, title }: { images: string[]; titl
             ))}
           </div>
           <p className="mt-1 text-center text-xs text-[color:var(--darlink-text-muted)]" aria-hidden>
-            {active + 1} / {images.length}
+            {active + 1} / {displayImages.length}
           </p>
         </div>
       ) : null}
@@ -62,7 +74,7 @@ export function PropertyImageGallery({ images, title }: { images: string[]; titl
       <div
         className={cn(
           "overflow-hidden rounded-[var(--darlink-radius-3xl)] border border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface-muted)] shadow-none",
-          images.length > 1 && "hidden md:block",
+          displayImages.length > 1 && "hidden md:block",
         )}
       >
         <div className="aspect-[16/10] w-full sm:aspect-[21/9]">
@@ -70,9 +82,9 @@ export function PropertyImageGallery({ images, title }: { images: string[]; titl
         </div>
       </div>
 
-      {images.length > 1 ? (
+      {displayImages.length > 1 ? (
         <div className="hidden gap-2 overflow-x-auto pb-1 [scrollbar-width:thin] md:flex">
-          {images.map((src, i) => (
+          {displayImages.map((src, i) => (
             <button
               key={`thumb-${i}`}
               type="button"

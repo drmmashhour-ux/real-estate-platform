@@ -5,7 +5,7 @@ import { useDemo } from "@/components/demo/demo-context";
 
 /** Secondary entry: tour variants + help link (staging / demo flag). */
 export function DemoLaunchButton() {
-  const { isActive, startDemo, dismissForSession } = useDemo();
+  const { isActive, startDemo, dismissForSession, beginGuidedInvestorTour } = useDemo();
   if (process.env.NEXT_PUBLIC_ENV !== "staging" && process.env.NEXT_PUBLIC_DEMO_TOUR !== "1") return null;
 
   return (
@@ -27,6 +27,14 @@ export function DemoLaunchButton() {
           className="rounded-lg border border-white/15 px-2 py-1.5 hover:bg-white/5 disabled:opacity-40"
         >
           Investor
+        </button>
+        <button
+          type="button"
+          disabled={isActive}
+          onClick={() => beginGuidedInvestorTour()}
+          className="rounded-lg border border-premium-gold/40 px-2 py-1.5 text-premium-gold hover:bg-premium-gold/10 disabled:opacity-40"
+        >
+          Investor demo
         </button>
       </div>
       <Link href="/demos" className="text-[11px] text-slate-500 underline hover:text-slate-300">

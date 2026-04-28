@@ -29,6 +29,7 @@ const nextConfig: NextConfig = {
   turbopack: {},
   transpilePackages: [
     "@repo/drbrain",
+    "@repo/offline",
     "@repo/tenant",
     "@lecipm/ui",
     "@lecipm/api",

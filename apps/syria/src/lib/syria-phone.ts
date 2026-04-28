@@ -27,6 +27,13 @@ export function buildWhatsAppContactHref(phone: string): string | null {
   return `https://wa.me/${path}`;
 }
 
+/** `wa.me` with arbitrary prefilled body — manual outreach / ops scripts (SYBNB-22). */
+export function buildWhatsAppPrefillUrl(phone: string, message: string): string | null {
+  const path = toWhatsAppPath(phone);
+  if (!path) return null;
+  return `https://wa.me/${path}?text=${encodeURIComponent(message)}`;
+}
+
 const MAX_WA_PREFILL_TITLE = 380;
 
 /** `wa.me` with inquiry prefilled · SYBNB-11 funnel (normalize title length for URL size). */

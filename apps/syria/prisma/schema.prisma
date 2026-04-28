@@ -196,6 +196,7 @@ model SyriaAppUser {
   sybnbPaymentAudits    SybnbPaymentAudit[]
   sybnbReportsFiled     SybnbListingReport[]    @relation("SybnbListingReportReporter")
   sybnbAnalyticsEvents  SybnbEvent[]             @relation("SybnbAnalyticsEventActor")
+  sybnbFieldAgentAttributions SyriaProperty[]   @relation("SybnbListingFieldAgent")
 
   @@map("syria_users")
 }
@@ -267,6 +268,9 @@ model SyriaProperty {
   sybnbReview      SyriaSybnbListingReview @default(PENDING) @map("sybnb_review")
   ownerId          String              @map("owner_id")
   owner            SyriaAppUser        @relation("PropertyOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  /// SYBNB-27: optional field agent credited with onboarding this stay listing (manual ops payout — not the host).
+  sybnbAgentUserId String?             @map("sybnb_agent_user_id")
+  sybnbAgent       SyriaAppUser?       @relation("SybnbListingFieldAgent", fields: [sybnbAgentUserId], references: [id], onDelete: SetNull)
   status           SyriaPropertyStatus @default(DRAFT)
   /// Marketing tier: `free` (default) and `featured` (manual admin flag or verified payment). `premium` is legacy/optional.
   /// Browse sort: plan descending → featured listings surface before free.
@@ -318,6 +322,7 @@ model SyriaProperty {
   sybnbListingReports       SybnbListingReport[]
   sybnbAnalyticsEvents      SybnbEvent[]
 
+  @@index([sybnbAgentUserId])
   @@index([city])
   @@index([state])
   @@index([governorate])

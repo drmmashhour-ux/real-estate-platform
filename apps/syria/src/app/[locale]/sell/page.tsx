@@ -9,6 +9,7 @@ import { SYRIA_PRICING } from "@/lib/pricing";
 import { syriaFlags } from "@/lib/platform-flags";
 import { SyriaSellLocationFields } from "@/components/sell/SyriaSellLocationFields";
 import { MapRequiredSellForm } from "@/components/sell/MapRequiredSellForm";
+import { SellAutomationHints } from "@/components/sell/SellAutomationHints";
 
 type SellPageProps = { searchParams?: Promise<Record<string, string | string[] | undefined>> };
 
@@ -50,12 +51,14 @@ export default async function SellPage({ searchParams }: SellPageProps) {
             {tMvp("verifyStayBlocked")}
           </div>
         ) : null}
+        <SellAutomationHints locale={locale} />
         <form action={createMvpPropertyListing} className="space-y-4 rounded-2xl border border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface)] p-5 shadow-[var(--darlink-shadow-sm)]">
           <label className="block text-sm font-medium text-[color:var(--darlink-text)]">
             {tMvp("fieldTitle")} <span className="text-red-600">*</span>
             <input
               required
               name="title"
+              placeholder={tMvp("titlePlaceholderPattern")}
               className="mt-1 w-full min-h-11 rounded-[var(--darlink-radius-lg)] border border-[color:var(--darlink-border)] px-3 py-2 text-[color:var(--darlink-text)]"
               autoComplete="off"
             />
@@ -153,9 +156,9 @@ export default async function SellPage({ searchParams }: SellPageProps) {
             {tMvp("fieldImages")}
             <textarea
               name="images"
-              rows={2}
+              rows={4}
               className="mt-1 w-full rounded-[var(--darlink-radius-lg)] border border-[color:var(--darlink-border)] px-3 py-2 font-mono text-xs text-[color:var(--darlink-text)]"
-              placeholder="https://…"
+              placeholder={tMvp("imagesPlaceholderMultiline")}
             />
           </label>
           <div className="rounded-[var(--darlink-radius-lg)] border border-emerald-200/60 bg-emerald-50/50 p-3 [dir:rtl]:text-right">

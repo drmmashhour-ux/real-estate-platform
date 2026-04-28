@@ -18,7 +18,22 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { ListingGridSkeleton } from "@/components/ListingGridSkeleton";
 import { cn } from "@/lib/cn";
+import { SYRIA_OFFLINE_NAMESPACE } from "@/lib/offline/constants";
+import { normalizeSearchQueryString, searchApiSnapshotKey } from "@/lib/offline/query-normalize";
+import { syriaFlags } from "@/lib/platform-flags";
 import type { BrowseSurface, SearchPropertiesResult } from "@/services/search/search.service";
+import { getApiSnapshot, putApiSnapshot, upsertListingMany } from "@repo/offline";
+
+async function persistBrowseSnapshot(surface: BrowseSurface, spSnap: URLSearchParams, bundle: SearchPropertiesResult) {
+  const n = normalizeSearchQueryString(spSnap.toString());
+  const key = searchApiSnapshotKey(surface, n);
+  await putApiSnapshot(SYRIA_OFFLINE_NAMESPACE, key, bundle);
+  const rows = new Map<string, unknown>();
+  for (const item of bundle.items) {
+    rows.set(item.id, item);
+  }
+  await upsertListingMany(SYRIA_OFFLINE_NAMESPACE, rows);
+}
 
 function mergeSearchParams(
   sp: URLSearchParams,
@@ -61,6 +76,7 @@ export function BrowseExperienceClient(props: {
   const [loading, setLoading] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const seededCacheRef = useRef(false);
 
   const mapMode = sp.get("map") === "1";
 
@@ -82,10 +98,42 @@ export function BrowseExperienceClient(props: {
       if (!res.ok) throw new Error("search failed");
       const json = (await res.json()) as SearchPropertiesResult;
       setBundle(json);
+      await persistBrowseSnapshot(surface, sp, json);
+    } catch {
+      if (syriaFlags.SYRIA_OFFLINE_FIRST && typeof navigator !== "undefined") {
+        const n = normalizeSearchQueryString(sp.toString());
+        const snap = await getApiSnapshot<SearchPropertiesResult>(
+          SYRIA_OFFLINE_NAMESPACE,
+          searchApiSnapshotKey(surface, n),
+        );
+        if (snap?.items?.length) setBundle(snap);
+      }
     } finally {
       setLoading(false);
     }
   }, [sp, surface]);
+
+  useEffect(() => {
+    void (async () => {
+      if (!syriaFlags.SYRIA_OFFLINE_FIRST || typeof navigator === "undefined") return;
+      const n = normalizeSearchQueryString(sp.toString());
+      const snap = await getApiSnapshot<SearchPropertiesResult>(
+        SYRIA_OFFLINE_NAMESPACE,
+        searchApiSnapshotKey(surface, n),
+      );
+      if (!snap?.items?.length) return;
+      const offlineOnly = navigator.onLine === false;
+      if (offlineOnly || initialResult.items.length === 0) {
+        setBundle(snap);
+      }
+    })();
+  }, [surface, sp, initialResult.items.length]);
+
+  useEffect(() => {
+    if (!syriaFlags.SYRIA_OFFLINE_FIRST || seededCacheRef.current) return;
+    seededCacheRef.current = true;
+    void persistBrowseSnapshot(surface, new URLSearchParams(initialQs), initialResult);
+  }, [surface, initialQs, initialResult]);
 
   const skipFirst = useRef(true);
   useEffect(() => {
@@ -132,13 +180,17 @@ export function BrowseExperienceClient(props: {
       const res = await fetch(`/api/search?surface=${surface}&${qs}`, { cache: "no-store" });
       if (!res.ok) return;
       const json = (await res.json()) as SearchPropertiesResult;
-      setBundle((prev) => ({
-        ...json,
-        items: [...prev.items, ...json.items],
-        page: json.page,
-        hasMore: json.hasMore,
-        total: json.total,
-      }));
+      setBundle((prev) => {
+        const merged: SearchPropertiesResult = {
+          ...json,
+          items: [...prev.items, ...json.items],
+          page: json.page,
+          hasMore: json.hasMore,
+          total: json.total,
+        };
+        void persistBrowseSnapshot(surface, sp, merged);
+        return merged;
+      });
     } finally {
       setLoading(false);
     }

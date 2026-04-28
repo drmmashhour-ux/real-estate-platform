@@ -186,6 +186,7 @@
     "@react-pdf/renderer": "^4.3.2",
     "@repo/ai": "workspace:*",
     "@repo/db": "workspace:*",
+    "@repo/offline": "workspace:*",
     "@repo/drbrain": "workspace:*",
     "@repo/db-auth": "workspace:*",
     "@repo/db-core": "workspace:*",

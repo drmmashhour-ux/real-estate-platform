@@ -11,6 +11,7 @@ const prisma = getLegacyDB();
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
 import { isStripeConfigured } from "@/lib/stripe";
 import { createWorkspaceCheckoutSession } from "@/modules/billing/createWorkspaceCheckoutSession";
+import { requireCheckoutRailsOpen } from "@/lib/payment-readiness/route-guards";
 
 export const dynamic = "force-dynamic";
 
@@ -76,6 +77,9 @@ export async function POST(req: Request) {
   if (!user?.email) {
     return NextResponse.json({ error: "User email required for subscription checkout" }, { status: 400 });
   }
+
+  const railBlock = requireCheckoutRailsOpen();
+  if (railBlock) return railBlock;
 
   const result = await createWorkspaceCheckoutSession({
     userId,

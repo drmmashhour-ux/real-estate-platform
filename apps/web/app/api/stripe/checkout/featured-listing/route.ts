@@ -17,6 +17,7 @@ import { engineFlags } from "@/config/feature-flags";
 import { isReasonableListingId } from "@/lib/api/safe-params";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
 import { logError } from "@/lib/logger";
+import { requireCheckoutRailsOpen } from "@/lib/payment-readiness/route-guards";
 
 export const dynamic = "force-dynamic";
 
@@ -76,6 +77,9 @@ export async function POST(req: Request) {
   if (listing.status !== "ACTIVE" || listing.moderationStatus !== "APPROVED") {
     return NextResponse.json({ error: "Listing must be active and approved" }, { status: 400 });
   }
+
+  const railBlock = requireCheckoutRailsOpen();
+  if (railBlock) return railBlock;
 
   const amountCents = minAmountCentsForFsboFeaturedPlan(planKey);
   const days = durationDaysForFsboFeaturedPlan(planKey);

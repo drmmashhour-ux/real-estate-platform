@@ -12,6 +12,7 @@ import { logError } from "@/lib/logger";
 import { getRevenueControlSettings } from "@/modules/revenue/revenue-control-settings";
 import { isReasonableListingId } from "@/lib/api/safe-params";
 import { engineFlags } from "@/config/feature-flags";
+import { requireCheckoutRailsOpen } from "@/lib/payment-readiness/route-guards";
 
 export const dynamic = "force-dynamic";
 
@@ -72,6 +73,9 @@ export async function POST(req: Request) {
   if (listing.listingStatus !== ListingStatus.PUBLISHED) {
     return NextResponse.json({ error: "Listing must be published" }, { status: 400 });
   }
+
+  const railBlock = requireCheckoutRailsOpen();
+  if (railBlock) return railBlock;
 
   const base = getPublicAppUrl().replace(/\/$/, "");
 

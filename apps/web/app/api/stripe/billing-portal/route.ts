@@ -11,6 +11,7 @@ const prisma = getLegacyDB();
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
 import { getStripe, isStripeConfigured } from "@/lib/stripe";
 import { stripeAppBaseUrl } from "@/lib/stripe/app-base-url";
+import { requireCheckoutRailsOpen } from "@/lib/payment-readiness/route-guards";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +31,9 @@ export async function POST(req: NextRequest) {
       { status: 429, headers: getRateLimitHeaders(ipLimit) }
     );
   }
+
+  const railBlock = requireCheckoutRailsOpen();
+  if (railBlock) return railBlock;
 
   if (!isStripeConfigured()) {
     return Response.json({ error: "Payments are not configured." }, { status: 503 });

@@ -3,6 +3,9 @@ import { getRevenueSummary, getRevenueLedger } from "@/lib/revenue-intelligence"
 import { getRevenueEngineDashboardStats, getTopRevenueUsers } from "@/src/modules/revenue/revenueEngine";
 import { getMonetizationAdminSnapshot } from "@/lib/monetization/dashboard";
 import { getPlatformPaymentMonetizationBreakdown } from "@/lib/revenue/platform-payment-breakdown";
+import { prisma } from "@/lib/db";
+import { getStripeConnectivityReadiness } from "@/lib/payment-readiness/stripe-env-readiness";
+import { getUnifiedStripeCaptureSummary } from "@/lib/revenue/unified-capture-admin-stats";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +24,13 @@ export default async function AdminRevenuePage() {
   const monetization = getMonetizationAdminSnapshot();
   const proj = monetization.projectedFromExampleCents;
   const platformSlices = await getPlatformPaymentMonetizationBreakdown();
+  const stripeReadiness = getStripeConnectivityReadiness();
+  const unifiedStripe = await getUnifiedStripeCaptureSummary(prisma).catch(() => ({
+    totalCents30d: 0,
+    bnhubCents30d: 0,
+    nonBnhubCents30d: 0,
+    prev7vsLast7GrowthPercent: null as number | null,
+  }));
 
   return (
     <main className="bg-slate-950 text-slate-50">
@@ -105,6 +115,69 @@ export default async function AdminRevenuePage() {
               ))}
             </ul>
             <p className="mt-4 text-sm text-slate-300">{monetization.recommendation}</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-b border-slate-800 bg-slate-950/90">
+        <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-12 lg:px-8">
+          <h2 className="text-lg font-semibold text-slate-200">Payment rails &amp; Stripe readiness</h2>
+          <p className="mt-1 text-sm text-slate-500">
+            Environment-only checks — no secret values are displayed. Enable{" "}
+            <code className="text-slate-400">PAYMENTS_ENABLED=true</code> only after compliance sign-off and with{" "}
+            <code className="text-slate-400">PRODUCTION_LOCK_MODE=true</code>.
+          </p>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+              <p className="text-xs font-medium uppercase text-slate-500">Secret key</p>
+              <p className="mt-1 text-sm text-slate-200">{stripeReadiness.stripeSecretOk ? "Configured" : "Missing / invalid"}</p>
+            </div>
+            <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+              <p className="text-xs font-medium uppercase text-slate-500">Webhook secret</p>
+              <p className="mt-1 text-sm text-slate-200">{stripeReadiness.stripeWebhookSecretOk ? "Configured" : "Missing / invalid"}</p>
+            </div>
+            <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+              <p className="text-xs font-medium uppercase text-slate-500">Connect (env flag)</p>
+              <p className="mt-1 text-sm text-slate-200">
+                {stripeReadiness.stripeConnectDeclared ? "STRIPE_CONNECT_ENABLED=true" : "Not declared (optional env)"}
+              </p>
+            </div>
+            <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+              <p className="text-xs font-medium uppercase text-slate-500">Webhook URL (canonical)</p>
+              <p className="mt-1 break-all font-mono text-xs text-slate-400">/api/stripe/webhook — alias /api/webhooks/stripe</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-b border-slate-800 bg-slate-900/30">
+        <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-12 lg:px-8">
+          <h2 className="text-lg font-semibold text-slate-200">Unified Stripe capture (30d)</h2>
+          <p className="mt-1 text-sm text-slate-500">
+            Idempotent rows on <code className="text-slate-400">platform_revenue_events</code> from Checkout + PaymentIntent
+            webhooks (Stripe-hosted cards only).
+          </p>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-xl border border-emerald-900/40 bg-slate-900/60 p-4">
+              <p className="text-xs font-medium uppercase text-slate-500">Total (30d)</p>
+              <p className="mt-1 text-2xl font-semibold text-emerald-200">{formatCents(unifiedStripe.totalCents30d)}</p>
+            </div>
+            <div className="rounded-xl border border-sky-900/40 bg-slate-900/60 p-4">
+              <p className="text-xs font-medium uppercase text-slate-500">BNHub-tagged</p>
+              <p className="mt-1 text-2xl font-semibold text-sky-200">{formatCents(unifiedStripe.bnhubCents30d)}</p>
+            </div>
+            <div className="rounded-xl border border-amber-900/40 bg-slate-900/60 p-4">
+              <p className="text-xs font-medium uppercase text-slate-500">Non-BNHub</p>
+              <p className="mt-1 text-2xl font-semibold text-amber-200">{formatCents(unifiedStripe.nonBnhubCents30d)}</p>
+            </div>
+            <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+              <p className="text-xs font-medium uppercase text-slate-500">7d vs prior 7d growth</p>
+              <p className="mt-1 text-2xl font-semibold text-slate-100">
+                {unifiedStripe.prev7vsLast7GrowthPercent == null
+                  ? "—"
+                  : `${unifiedStripe.prev7vsLast7GrowthPercent.toFixed(1)}%`}
+              </p>
+            </div>
           </div>
         </div>
       </section>

@@ -9,6 +9,7 @@ import {
 } from "@/modules/billing/brokerLecipmSubscription";
 import { LECIPM_BROKER_SUBSCRIPTION_CHECKOUT } from "@/modules/billing/constants";
 import type { BrokerPlanSlug } from "@/modules/subscription/domain/brokerPlans";
+import { requireCheckoutRailsOpen } from "@/lib/payment-readiness/route-guards";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +30,9 @@ export async function POST(req: Request) {
   if (!user.email) {
     return NextResponse.json({ error: "Email required on account" }, { status: 400 });
   }
+
+  const railBlock = requireCheckoutRailsOpen();
+  if (railBlock) return railBlock;
 
   if (!isStripeConfigured()) {
     return NextResponse.json({ error: "Payments are not configured" }, { status: 503 });

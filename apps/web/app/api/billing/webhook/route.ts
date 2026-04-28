@@ -6,6 +6,7 @@ import { getLegacyDB } from "@/lib/db/legacy";
 const prisma = getLegacyDB();
 import { PAID_STORAGE_PLAN_KEYS, plans, type PlanKey } from "@/lib/billing/plans";
 import { trackGrowthFunnelEvent } from "@/src/modules/growth-funnel/application/trackGrowthFunnelEvent";
+import { requireProductionLockForPaymentIngress } from "@/lib/payment-readiness/route-guards";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +21,9 @@ export async function POST(request: NextRequest) {
   if (!isStripeConfigured()) {
     return Response.json({ error: "Webhook not configured" }, { status: 503 });
   }
+
+  const ingress = requireProductionLockForPaymentIngress();
+  if (ingress) return ingress;
 
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
   if (!webhookSecret) {

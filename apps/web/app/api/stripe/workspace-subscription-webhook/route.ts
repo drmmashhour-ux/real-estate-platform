@@ -5,6 +5,7 @@ import { getLegacyDB } from "@/lib/db/legacy";
 const prisma = getLegacyDB();
 import { logError } from "@/lib/logger";
 import { syncSubscriptionFromWebhook } from "@/modules/billing/syncSubscriptionFromWebhook";
+import { requireProductionLockForPaymentIngress } from "@/lib/payment-readiness/route-guards";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +32,9 @@ export async function POST(req: Request) {
       { status: 500 }
     );
   }
+
+  const ingress = requireProductionLockForPaymentIngress();
+  if (ingress) return ingress;
 
   const stripe = getStripe();
   if (!stripe) {
