@@ -17,6 +17,11 @@ const withPWA = withPWAInit({
 
 const isProd = process.env.NODE_ENV === "production" || process.env.VERCEL === "1";
 
+const disableWebpackPersistentCache =
+  process.env.NEXT_DISABLE_WEBPACK_CACHE === "1" ||
+  process.env.DISABLE_WEBPACK_DISK_CACHE === "1" ||
+  process.env.CI === "true";
+
 const securityHeaders = buildHttpSecurityHeaders({ isProductionLike: isProd });
 
 /** TEMP: strip edge/browser caching so fresh middleware/HTML is served after deploy. Remove after verification (hurts `_next/static` CDN caching). */
@@ -92,6 +97,17 @@ const nextConfig: NextConfig = {
         headers: [...securityHeaders, ...forceNoStoreDocumentCache],
       },
     ];
+  },
+
+  /**
+   * Avoid webpack’s PackFileCacheStrategy disk cache when builders are low on space (ENOSPC).
+   * Enable with `NEXT_DISABLE_WEBPACK_CACHE=1` or `CI=true` — slightly slower compile, same output.
+   */
+  webpack: (config, { dev }) => {
+    if (!dev && disableWebpackPersistentCache) {
+      config.cache = false;
+    }
+    return config;
   },
 };
 

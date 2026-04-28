@@ -216,7 +216,7 @@ function main() {
   const archived = path.join(backupDir, `models.prisma.archived-${stamp}.txt`);
   fs.renameSync(SOURCE, archived);
   console.log("Moved models.prisma to", path.relative(path.join(__dirname, ".."), archived));
-  console.log("Next: pnpm exec prisma validate --schema=./prisma && pnpm exec prisma generate --schema=./prisma");
+  console.log("Next: pnpm exec prisma validate --schema=./prisma/schema.prisma && pnpm exec prisma generate --schema=./prisma/schema.prisma");
 }
 
 main();
