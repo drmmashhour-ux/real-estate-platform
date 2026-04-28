@@ -1,5 +1,6 @@
 import "server-only";
 
+import { persistProductInsightLogs } from "@/lib/ai/productInsightLog";
 import { getLegacyDB } from "@/lib/db/legacy";
 import { sendNotification } from "@/lib/notifications/system";
 import { findInactiveUsers } from "@/lib/retention/engine";
@@ -18,6 +19,8 @@ export type ProductInsight = {
   metric: number;
 };
 
+export type ProductActionKind = "reengage_users" | "manual";
+
 export type ProductAction = {
   id: string;
   priority: "low" | "medium" | "high";
@@ -26,6 +29,8 @@ export type ProductAction = {
   description: string;
   /** Safe recommendation copy — not auto-executed. */
   suggestedAction: string;
+  /** ORDER SYBNB-AI-120 — drives Run button + modal wiring (`reengage_users` → retention nudge UI). */
+  kind: ProductActionKind;
 };
 
 type FeedbackScan = {
@@ -147,6 +152,10 @@ export async function getProductInsights(): Promise<ProductInsight[]> {
   if (out.length < 1) {
     out.push({ type: "retention", summary: "Not enough data yet; keep collecting events and signups.", metric: 0 });
   }
+
+  await persistProductInsightLogs(out).catch(() => {
+    /* ORDER SYBNB-AI-121 — persistence failure must not block insights response */
+  });
   return out;
 }
 
@@ -173,6 +182,7 @@ export async function getProductActions(): Promise<ProductAction[]> {
       title: "Trigger re-engagement notifications",
       description: `Found ${inactiveN} users inactive for 3+ days. Consider a targeted win-back, not a blast.`,
       suggestedAction: "Run `sendRetentionWeMissYouNudge(userId)` from ops/admin when ready, or a drip campaign. No auto-send in product layer.",
+      kind: "reengage_users",
     });
   } else if (inactiveN >= INACTIVE_FOR_INSIGHT) {
     actions.push({
@@ -182,6 +192,7 @@ export async function getProductActions(): Promise<ProductAction[]> {
       title: "Plan light-touch re-engagement",
       description: `Moderate inactive cohort (${inactiveN}). A/B one email or in-app nudge for a subset first.`,
       suggestedAction: "Segment by last action; use sendRetentionWeMissYouNudge for manual trials only.",
+      kind: "reengage_users",
     });
   }
 
@@ -193,6 +204,7 @@ export async function getProductActions(): Promise<ProductAction[]> {
       title: "Improve onboarding UX",
       description: `Multiple “confusing / unclear” signals in feedback (${scan.confusingHits} hits).`,
       suggestedAction: "Run a 5-user usability review on signup → first value; ship copy and flow fixes behind a feature flag.",
+      kind: "manual",
     });
   } else if (scan.bugHits >= BUG_OCCURRENCE_WARNING) {
     actions.push({
@@ -202,6 +214,7 @@ export async function getProductActions(): Promise<ProductAction[]> {
       title: "Triage reported bugs in feedback",
       description: `Bug / error language appears ${scan.bugHits} time(s) in recent feedback text.`,
       suggestedAction: "File tickets from samples; add integration tests for top flows; monitor error rates in staging.",
+      kind: "manual",
     });
   }
 
@@ -213,6 +226,7 @@ export async function getProductActions(): Promise<ProductAction[]> {
       title: "Increase conversion nudges",
       description: "Monetization signals are low — pair pricing experiments with checkout friction review.",
       suggestedAction: "Use conversion nudges and listing pricing recommendations; do not change live take rates here.",
+      kind: "manual",
     });
   }
 
@@ -224,6 +238,7 @@ export async function getProductActions(): Promise<ProductAction[]> {
       title: "Boost marketplace event volume",
       description: `Only ${eventCount} marketplace_events in 14d — more traffic helps AI layers learn.`,
       suggestedAction: "Run a small paid test or partner push; keep instrumentation healthy before scaling.",
+      kind: "manual",
     });
   }
 
@@ -235,6 +250,7 @@ export async function getProductActions(): Promise<ProductAction[]> {
       title: "Collect more product signals",
       description: "No strong action triggers this week. Keep feedback prompts and event logging on.",
       suggestedAction: "Re-run this view weekly and wire `/demo/live` to surface conversion paths.",
+      kind: "manual",
     });
   }
 

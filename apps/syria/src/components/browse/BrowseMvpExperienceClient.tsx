@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/Button";
 import { SYRIA_STATE_OPTIONS } from "@/lib/syria/states";
 import { MARKETPLACE_CATEGORIES, MARKETPLACE_SUBCATEGORIES, type MarketplaceCategory } from "@/lib/marketplace-categories";
 import { SYRIA_AMENITIES, parseFeaturesQuery } from "@/lib/syria/amenities";
+import { parseBrowseSearchResponseJson } from "@/lib/browse/browse-listing-wire";
 import type { BrowseSurface, SearchPropertiesResult } from "@/services/search/search.service";
 import { ListingGridSkeleton } from "@/components/ListingGridSkeleton";
 import { fetchWithRetry } from "@/lib/syria/fetch-with-retry";
@@ -99,7 +100,7 @@ export function BrowseMvpExperienceClient(props: {
     try {
       const res = await fetchWithRetry(`/api/search?surface=${surface}&${qs}`, { cache: "no-store" });
       if (!res.ok) throw new Error("search");
-      setBundle((await res.json()) as SearchPropertiesResult);
+      setBundle(parseBrowseSearchResponseJson(await res.json()));
     } finally {
       setLoading(false);
     }

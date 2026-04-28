@@ -67,7 +67,7 @@ CREATE INDEX "lecipm_broker_autopilot_actions_action_type_idx" ON "lecipm_broker
 CREATE INDEX "lecipm_broker_autopilot_actions_broker_user_id_status_idx" ON "lecipm_broker_autopilot_actions"("broker_user_id", "status");
 
 ALTER TABLE "lecipm_broker_autopilot_actions" ADD CONSTRAINT "lecipm_broker_autopilot_actions_broker_user_id_fkey" FOREIGN KEY ("broker_user_id") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "lecipm_broker_autopilot_actions" ADD CONSTRAINT "lecipm_broker_autopilot_actions_lead_id_fkey" FOREIGN KEY ("lead_id") REFERENCES "lecipm_broker_crm_leads"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+-- FK to lecipm_broker_crm_leads deferred: table is created in 20260422160000_lecipm_broker_crm_ai (later timestamp).
 
 CREATE TABLE "lecipm_broker_daily_briefings" (
     "id" TEXT NOT NULL,

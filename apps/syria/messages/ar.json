@@ -807,6 +807,7 @@
     "amenities": "المرافق",
     "noImages": "لا توجد صور",
     "offlinePhotosLimited": "في وضع عدم الاتصال يُعرض المعاينة المحفوظة الأولى فقط — أعد الاتصال لتحميل كل الصور.",
+    "galleryShowMore": "عرض كل الصور (+{count})",
     "dataSaverPhotosLimited": "نعرض صورة معاينة واحدة لتوفير البيانات — عطّل «توفير البيانات» في تصفية البحث لتحميل المعرض كاملاً.",
     "badgePhotoQuality": "صور واضحة",
     "badgePhotoGalleryFull": "عرض كامل",

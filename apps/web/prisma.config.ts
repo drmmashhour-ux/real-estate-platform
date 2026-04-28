@@ -2,31 +2,15 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { config as loadDotenv } from "dotenv";
 import { defineConfig, env } from "prisma/config";
-import { resolveDatabaseUrlIntoEnv } from "./lib/db/resolve-database-url";
 
-// Prisma CLI skips default .env loading when prisma.config.ts exists — load explicitly.
+/** Prisma CLI does not load `.env.local` by default; mirror scripts/load-apps-web-env order. */
 const root = path.dirname(fileURLToPath(import.meta.url));
 loadDotenv({ path: path.join(root, ".env") });
-loadDotenv({ path: path.join(root, ".env.local") });
+loadDotenv({ path: path.join(root, ".env.local"), override: true });
 
-resolveDatabaseUrlIntoEnv();
-
-/** Generate/validate only need a syntactically valid URL; runtime must set a real DATABASE_URL. */
-const PRISMA_CLI_PLACEHOLDER =
-  "postgresql://prisma:prisma@127.0.0.1:5432/prisma?sslmode=disable";
-
-if (!process.env.DATABASE_URL?.trim()) {
-  process.env.DATABASE_URL = PRISMA_CLI_PLACEHOLDER;
-}
-
-/** Multi-file schema: `prisma/schema.prisma` (generator + datasource) + `prisma/*.prisma` (models). */
+/** Prisma 7+: Migrate reads `DATABASE_URL` from prisma.config datasource (schema may not declare `url`). */
 export default defineConfig({
-  schema: "./prisma",
-  migrations: {
-    path: "./prisma/migrations",
-    seed: "npx tsx prisma/seed-runner.ts",
-  },
-  /** Prisma ORM 7+: connection URL lives in config, not in the schema file. */
+  schema: "prisma/schema.prisma",
   datasource: {
     url: env("DATABASE_URL"),
   },

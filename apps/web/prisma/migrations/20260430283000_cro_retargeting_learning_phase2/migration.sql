@@ -1,6 +1,7 @@
 -- LECIPM PLATFORM — CRO + retargeting durable learning Phase 2 (additive)
+-- Tables may already exist from 20260402120000_cro_retargeting_durability_v1 bootstrap (ordering fix).
 
-CREATE TABLE "cro_learning_signals" (
+CREATE TABLE IF NOT EXISTS "cro_learning_signals" (
     "id" TEXT NOT NULL,
     "source_growth_event_id" TEXT,
     "listingId" TEXT,
@@ -67,5 +68,5 @@ CREATE TABLE "retargeting_performance_snapshots" (
     CONSTRAINT "retargeting_performance_snapshots_pkey" PRIMARY KEY ("id")
 );
 
-CREATE UNIQUE INDEX "retargeting_performance_snapshots_segment_messageId_key" ON "retargeting_performance_snapshots"("segment", "messageId");
-CREATE INDEX "retargeting_performance_snapshots_segment_updatedAt_idx" ON "retargeting_performance_snapshots"("segment", "updatedAt");
+CREATE UNIQUE INDEX IF NOT EXISTS "retargeting_performance_snapshots_segment_messageId_key" ON "retargeting_performance_snapshots"("segment", "messageId");
+CREATE INDEX IF NOT EXISTS "retargeting_performance_snapshots_segment_updatedAt_idx" ON "retargeting_performance_snapshots"("segment", "updatedAt");

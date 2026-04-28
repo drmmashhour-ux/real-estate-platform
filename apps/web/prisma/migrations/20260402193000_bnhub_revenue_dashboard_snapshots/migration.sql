@@ -17,10 +17,10 @@ CREATE TABLE "bnhub_revenue_metric_snapshots" (
     CONSTRAINT "bnhub_revenue_metric_snapshots_pkey" PRIMARY KEY ("id")
 );
 
-CREATE UNIQUE INDEX "bnhub_revenue_metric_snapshots_scope_type_scope_id_snapshot_date_key"
+CREATE UNIQUE INDEX "bnhub_rev_metric_snapshots_scope_uid_date_uq"
   ON "bnhub_revenue_metric_snapshots"("scope_type", "scope_id", "snapshot_date");
 
-CREATE INDEX "bnhub_revenue_metric_snapshots_scope_type_scope_id_snapshot_date_idx"
+CREATE INDEX "bnhub_rev_metric_snapshots_scope_uid_date_idx"
   ON "bnhub_revenue_metric_snapshots"("scope_type", "scope_id", "snapshot_date");
 
 CREATE TABLE "bnhub_dashboard_event_logs" (

@@ -823,6 +823,7 @@
     "amenities": "Amenities",
     "noImages": "No images available",
     "offlinePhotosLimited": "Only the first saved preview is shown offline — reconnect to load every photo.",
+    "galleryShowMore": "Show all photos ({count} more)",
     "dataSaverPhotosLimited": "Showing one preview photo to save data — turn off Data saver in browse filters to load the full gallery.",
     "badgePhotoQuality": "High quality photos",
     "badgePhotoGalleryFull": "Full gallery",

@@ -18,7 +18,9 @@
     "./safe-log": "./src/safe-log.ts"
   },
   "dependencies": {
-    "@prisma/client": "^7.8.0"
+    "@prisma/adapter-pg": "7.8.0",
+    "@prisma/client": "^7.8.0",
+    "@repo/prisma-disabled-stub": "workspace:*"
   },
   "peerDependencies": {
     "typescript": ">=5"

@@ -2,6 +2,37 @@
 
 ALTER TABLE "deals" ADD COLUMN IF NOT EXISTS "contract_workflow_state" VARCHAR(32);
 
+-- Bootstrap: Prisma maps `DealDocumentVersion` → `deal_document_versions`, but baseline did not emit this table.
+DO $$ BEGIN
+  CREATE TYPE "DealDocumentVersionSource" AS ENUM ('manual', 'ai_prefill', 'ai_suggestion', 'broker_edit');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+CREATE TABLE IF NOT EXISTS "deal_document_versions" (
+    "id" TEXT NOT NULL,
+    "deal_document_id" TEXT NOT NULL,
+    "version_number" INTEGER NOT NULL,
+    "source" "DealDocumentVersionSource" NOT NULL,
+    "changes_summary" JSONB NOT NULL DEFAULT '{}',
+    "snapshot" JSONB,
+    "created_by_id" TEXT,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "deal_document_versions_pkey" PRIMARY KEY ("id")
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS "deal_document_versions_deal_document_id_version_number_key" ON "deal_document_versions" ("deal_document_id", "version_number");
+CREATE INDEX IF NOT EXISTS "deal_document_versions_deal_document_id_idx" ON "deal_document_versions" ("deal_document_id");
+
+DO $$ BEGIN
+  ALTER TABLE "deal_document_versions" ADD CONSTRAINT "deal_document_versions_deal_document_id_fkey" FOREIGN KEY ("deal_document_id") REFERENCES "deal_documents"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  ALTER TABLE "deal_document_versions" ADD CONSTRAINT "deal_document_versions_created_by_id_fkey" FOREIGN KEY ("created_by_id") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
 ALTER TABLE "deal_document_versions" ADD COLUMN IF NOT EXISTS "snapshot" JSONB;
 
 CREATE TABLE IF NOT EXISTS "deal_assets" (

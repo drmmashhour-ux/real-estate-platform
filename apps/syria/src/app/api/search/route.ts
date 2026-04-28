@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
+import { searchPropertiesResultToBrowseWireResponse } from "@/lib/browse/browse-listing-wire";
+import { LISTING_EDGE_CACHE_CONTROL } from "@/lib/http/listing-api-cache";
 import type { BrowseSurface } from "@/services/search/search.service";
 import { searchProperties } from "@/services/search/search.service";
-import { LISTING_EDGE_CACHE_CONTROL } from "@/lib/http/listing-api-cache";
 function parseSurface(v: string | null): BrowseSurface | null {
   const s = (v ?? "").toLowerCase().trim();
   if (s === "sale" || s === "buy") return "sale";
@@ -32,7 +33,7 @@ export async function GET(req: Request) {
 
   try {
     const result = await searchProperties(surface, flat);
-    return NextResponse.json(result, {
+    return NextResponse.json(searchPropertiesResultToBrowseWireResponse(result), {
       headers: {
         "Cache-Control": LISTING_EDGE_CACHE_CONTROL,
       },

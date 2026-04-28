@@ -2,7 +2,7 @@
  * Hadiah Link — single source of truth for production UI (Syria: fast devices + slow networks).
  * Runtime styling uses `src/theme/darlink-theme.css` (`--darlink-*`); this file is the TypeScript contract.
  *
- * Performance rules: no heavy hero images, next/image q≈40–60, below-the-fold `content-visibility`,
+ * Performance rules: listing hero q≈45 (`NEXT_PUBLIC_LISTING_IMAGE_QUALITY`), below-the-fold `content-visibility`,
  * avoid large shadows / blur / decorative motion (see `globals.css` + `hadiah-below-fold`).
  */
 export const HADIAH_COLORS = {
@@ -18,8 +18,11 @@ export const HADIAH_COLORS = {
 /** Alias for product docs / external references */
 export const COLORS = HADIAH_COLORS;
 
-/** next/image quality for listing thumbnails (SYBNB-76: favor smaller remote payloads on slow networks). */
-export const LISTING_IMAGE_QUALITY = 40 as const;
+/**
+ * next/image quality for listing media (SYBNB-129: default 45; override with `NEXT_PUBLIC_LISTING_IMAGE_QUALITY`).
+ * @see getListingImageQuality in `@/lib/listing-image-quality`
+ */
+export { LISTING_IMAGE_QUALITY } from "@/lib/listing-image-quality";
 
 /** Tap targets: min ~44px on primary actions (mobile-first). */
 export const MIN_TAP = "2.75rem" as const;

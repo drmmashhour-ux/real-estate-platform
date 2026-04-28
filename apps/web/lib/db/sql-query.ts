@@ -1,10 +1,12 @@
 /**
- * Order 81.1 — typed `pg` queries on the shared pool (resilience via {@link ../db-safe queryWithRetry}).
+ * Order 81.1 — typed `pg` queries on the shared pool (resilience via {@link @/lib/db/db-safe queryWithRetry}).
  * Prefer `import { query, readOnlyQuery } from "@/lib/db"`.
  */
+import "server-only";
+
 import type { QueryResultRow } from "pg";
 
-import { queryWithRetry } from "../db-safe";
+import { queryWithRetry } from "@/lib/db/db-safe";
 
 import {
   classifySqlStatementKind,
@@ -25,7 +27,7 @@ function logSlow(duration: number, text: string): void {
 }
 
 /**
- * Parameterized query; returns rows only. Uses retry + circuit from `db-safe`.
+ * Parameterized query; returns rows only. Uses retry + circuit from `@/lib/db/db-safe`.
  * Add a leading SQL block comment for observability (first line), e.g. search:listings before SELECT.
  */
 export async function query<T extends QueryResultRow = QueryResultRow>(

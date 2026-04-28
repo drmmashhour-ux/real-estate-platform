@@ -3,6 +3,8 @@
  * (no ad-hoc `new Pool` elsewhere; use `import { pool, query, … } from "@/lib/db"`).
  * Tuning: `max` 10 default, `idleTimeoutMillis` 30s, `connectionTimeoutMillis` 5s.
  */
+import "server-only";
+
 import { Pool } from "pg";
 import * as Sentry from "@sentry/nextjs";
 
@@ -31,7 +33,23 @@ function createPgPool(): Pool {
   return p;
 }
 
-export const pool = globalForDb.pool ?? createPgPool();
+function noopPgPoolPlaceholder(): Pool {
+  const noop = {} as Pool;
+  Object.assign(noop, {
+    query: (): Promise<{ rows: never[]; rowCount: number }> => Promise.resolve({ rows: [], rowCount: 0 }),
+    connect: (): Promise<{ release: () => void }> => Promise.resolve({ release: (): void => undefined }),
+    end: (): Promise<void> => Promise.resolve(),
+    on: (): Pool => noop,
+    totalCount: 0,
+    idleCount: 0,
+    waitingCount: 0,
+  });
+  return noop;
+}
+
+export const pool =
+  globalForDb.pool ??
+  (process.env.NEXT_PUBLIC_DISABLE_DB === "true" ? noopPgPoolPlaceholder() : createPgPool());
 
 if (process.env.NODE_ENV !== "production") {
   globalForDb.pool = pool;

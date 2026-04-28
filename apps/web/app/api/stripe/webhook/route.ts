@@ -300,6 +300,9 @@ async function syncConnectedAccountStatusFromEvent(stripe: Stripe, accountId: st
 const isProdRuntime = process.env.NODE_ENV === "production" || process.env.VERCEL === "1";
 
 export async function POST(req: NextRequest) {
+  if (process.env.NEXT_PUBLIC_DISABLE_DB === "true") {
+    return new Response("DB disabled (dev mode)", { status: 200 });
+  }
   const ingressLocked = requireProductionLockForPaymentIngress();
   if (ingressLocked) {
     logError("[STRIPE] webhook blocked — PRODUCTION_LOCK_MODE is not true");

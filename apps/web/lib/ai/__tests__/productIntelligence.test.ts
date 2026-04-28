@@ -13,6 +13,7 @@ vi.mock("@/lib/db/legacy", () => ({
     userFeedback: { findMany: findManyFeedback },
     marketplaceRevenueEntry: { findMany: findManyRevenue },
     marketplaceEvent: { count: countEvents },
+    productInsightLog: { createMany: vi.fn().mockResolvedValue({ count: 0 }) },
   }),
 }));
 

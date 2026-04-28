@@ -9,9 +9,9 @@ import {
 import { LISTING_EDGE_CACHE_CONTROL } from "@/lib/http/listing-api-cache";
 
 /**
- * GET /api/sybnb/listings-lite?... — ORDER SYBNB-81 / SYBNB-82
- * Stay (SYBNB) browse only: minimal listing rows (no descriptions, single image URL, badge hints).
- * Pagination clamped to **8–10** items per response (ORDER SYBNB-104).
+ * GET /api/sybnb/listings-lite?... — ORDER SYBNB-81 / SYBNB-82 / SYBNB-129
+ * Stay (SYBNB) browse only: minimal listing rows (`firstImage`, badge hints, views).
+ * Pagination clamped to **10** items per response.
  * Optional `stripHotels=1` batches verified HOTEL strip into the same JSON (fewer round trips).
  */
 export async function GET(req: Request) {

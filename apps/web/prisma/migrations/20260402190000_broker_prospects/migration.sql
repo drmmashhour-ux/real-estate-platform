@@ -21,4 +21,4 @@ CREATE TABLE "broker_prospects" (
 CREATE INDEX "broker_prospects_email_idx" ON "broker_prospects"("email");
 CREATE INDEX "broker_prospects_status_idx" ON "broker_prospects"("status");
 
-ALTER TABLE "broker_prospects" ADD CONSTRAINT "broker_prospects_linked_broker_user_id_fkey" FOREIGN KEY ("linked_broker_user_id") REFERENCES "User"("id") ON DELETE SET ON UPDATE CASCADE;
+ALTER TABLE "broker_prospects" ADD CONSTRAINT "broker_prospects_linked_broker_user_id_fkey" FOREIGN KEY ("linked_broker_user_id") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;

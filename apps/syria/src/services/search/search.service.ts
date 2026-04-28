@@ -183,6 +183,7 @@ function baseFields(p: SyriaProperty) {
     pricePerNight: p.pricePerNight ?? null,
     isTest: p.isTest === true,
     amenityCount,
+    views: Math.max(0, typeof p.uniqueViews === "number" ? p.uniqueViews : p.views ?? 0),
   };
 }
 

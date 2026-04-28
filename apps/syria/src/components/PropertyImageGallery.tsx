@@ -5,21 +5,19 @@ import { useMemo, useState } from "react";
 import { cn } from "@/lib/cn";
 import { ListingFadeInImg } from "@/components/syria/ListingFadeInImg";
 import { useSyriaOffline } from "@/components/offline/SyriaOfflineProvider";
-import { useDataSaverOptional } from "@/context/DataSaverProvider";
 
+/**
+ * ORDER SYBNB-129 — first photo paints immediately; additional bytes load only after explicit expand / interaction.
+ */
 export function PropertyImageGallery({ images, title }: { images: string[]; title: string }) {
   const t = useTranslations("Listing");
   const { online } = useSyriaOffline();
-  const { enabled: dataSaver } = useDataSaverOptional();
+  const [expanded, setExpanded] = useState(false);
   const [active, setActive] = useState(0);
 
-  const displayImages = useMemo(() => {
-    if (images.length === 0) return images;
-    if (!online) return images[0] ? [images[0]] : [];
-    if (dataSaver) return images[0] ? [images[0]] : [];
-    return images;
-  }, [images, online, dataSaver]);
-  if (images.length === 0) {
+  const displayImages = useMemo(() => images.filter((u) => typeof u === "string" && u.length > 0), [images]);
+
+  if (displayImages.length === 0) {
     return (
       <div
         className="overflow-hidden rounded-[var(--darlink-radius-3xl)] border border-dashed border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface-muted)]/80 p-10 text-center shadow-none"
@@ -31,21 +29,45 @@ export function PropertyImageGallery({ images, title }: { images: string[]; titl
     );
   }
 
+  const primary = displayImages[0];
+  const canExpand = online && displayImages.length > 1;
+
+  if (!expanded && displayImages.length >= 1) {
+    return (
+      <div className="space-y-3">
+        {!online && displayImages.length > 1 ? (
+          <p className="rounded-xl border border-amber-200/70 bg-amber-50/90 px-3 py-2 text-xs font-medium text-amber-950 [dir=rtl]:text-right">
+            {t("offlinePhotosLimited")}
+          </p>
+        ) : null}
+        <div className="overflow-hidden rounded-[var(--darlink-radius-3xl)] border border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface-muted)] shadow-none">
+          <div className="aspect-[16/10] w-full sm:aspect-[21/9]">
+            <ListingFadeInImg src={primary} alt="" loading="eager" fetchPriority="high" />
+          </div>
+        </div>
+        {canExpand ? (
+          <button
+            type="button"
+            onClick={() => setExpanded(true)}
+            className="w-full min-h-11 rounded-[var(--darlink-radius-xl)] border border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface)] px-4 text-sm font-semibold text-[color:var(--darlink-text)] transition hover:border-[color:var(--darlink-accent)]/40"
+          >
+            {t("galleryShowMore", { count: displayImages.length - 1 })}
+          </button>
+        ) : null}
+      </div>
+    );
+  }
+
   const main = displayImages[active] ?? displayImages[0];
 
   return (
     <div className="space-y-3">
-      {!online && images.length > 1 ? (
+      {!online && displayImages.length > 1 ? (
         <p className="rounded-xl border border-amber-200/70 bg-amber-50/90 px-3 py-2 text-xs font-medium text-amber-950 [dir=rtl]:text-right">
           {t("offlinePhotosLimited")}
         </p>
       ) : null}
-      {online && dataSaver && images.length > 1 ? (
-        <p className="rounded-xl border border-emerald-200/80 bg-emerald-50/90 px-3 py-2 text-xs font-medium text-emerald-950 [dir=rtl]:text-right">
-          {t("dataSaverPhotosLimited")}
-        </p>
-      ) : null}
-      {/* Mobile: horizontal swipe (scroll-snap) */}
+
       {displayImages.length > 1 ? (
         <div
           className="md:hidden"
@@ -69,7 +91,7 @@ export function PropertyImageGallery({ images, title }: { images: string[]; titl
               >
                 <div className="overflow-hidden rounded-[var(--darlink-radius-3xl)] border border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface-muted)] shadow-none">
                   <div className="aspect-[16/10] w-full sm:aspect-[21/9]">
-                    <ListingFadeInImg src={src} alt="" loading="lazy" />
+                    <ListingFadeInImg src={src} alt="" loading={i === 0 ? "eager" : "lazy"} fetchPriority={i === 0 ? "high" : "low"} />
                   </div>
                 </div>
               </div>
@@ -88,7 +110,7 @@ export function PropertyImageGallery({ images, title }: { images: string[]; titl
         )}
       >
         <div className="aspect-[16/10] w-full sm:aspect-[21/9]">
-          <ListingFadeInImg src={main} alt="" loading="lazy" />
+          <ListingFadeInImg src={main} alt="" loading="eager" fetchPriority="high" />
         </div>
       </div>
 

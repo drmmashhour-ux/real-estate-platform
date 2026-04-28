@@ -1,6 +1,6 @@
 /**
  * Best-effort client analytics — never throws.
- * POST `/api/analytics/event` → `syria_growth_events`.
+ * POST `/api/analytics/event` → `syria_growth_events` (fetch uses `keepalive` where supported).
  *
  * Viral funnel:
  * - **Shares** — `listing_shared` with `payload.source`: `whatsapp` | `copy_link` | `copy_full_message`.
@@ -16,6 +16,8 @@ export async function trackListingSharedClient(
     await fetch("/api/analytics/event", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
+      keepalive: true,
       body: JSON.stringify({
         eventType: "listing_shared",
         propertyId: listingId,

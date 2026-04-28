@@ -28,11 +28,8 @@ import { SybnbHotelsBrowseStrip } from "@/components/sybnb/SybnbHotelsBrowseStri
 import { trackClientAnalyticsEvent } from "@/lib/client-analytics";
 import { toggleCommaSeparatedAmenityKey } from "@/lib/syria/amenities";
 import { useDataSaverOptional } from "@/context/DataSaverProvider";
-import {
-  SYRIA_BROWSE_PAGE_SIZE_DEFAULT,
-  SYRIA_CARD_PRIORITY_FIRST_COUNT,
-  SYRIA_DATA_SAVER_BROWSE_PAGE_SIZE,
-} from "@/lib/syria/sybn104-performance";
+import { SYRIA_BROWSE_PAGE_SIZE_DEFAULT, SYRIA_CARD_PRIORITY_FIRST_COUNT } from "@/lib/syria/sybn104-performance";
+import { parseBrowseSearchResponseJson } from "@/lib/browse/browse-listing-wire";
 import {
   sybnbListingsLiteResponseToSearchResult,
   type SybnbListingsLiteResponse,
@@ -140,7 +137,7 @@ export function BrowseExperienceClient(props: {
       const json =
         surface === "stay"
           ? sybnbListingsLiteResponseToSearchResult(raw as SybnbListingsLiteResponse)
-          : (raw as SearchPropertiesResult);
+          : parseBrowseSearchResponseJson(raw);
       setBundle(json);
       await persistBrowseSnapshot(surface, sp, json);
     } catch {
@@ -217,15 +214,11 @@ export function BrowseExperienceClient(props: {
   useEffect(() => {
     if (!dataSaverHydrated) return;
     const raw = sp.get("pageSize");
-    if (dataSaverEnabled) {
-      const target = SYRIA_DATA_SAVER_BROWSE_PAGE_SIZE;
-      if (raw === String(target)) return;
-      replace({ pageSize: String(target) }, { resetPage: true });
-      return;
+    /** Legacy data saver forced `pageSize=8` — SYBNB-129 fixes browse at 10 rows for all modes. */
+    if (raw === "8") {
+      replace({ pageSize: undefined }, { resetPage: true });
     }
-    if (!raw) return;
-    replace({ pageSize: undefined }, { resetPage: true });
-  }, [dataSaverHydrated, dataSaverEnabled, sp, replace]);
+  }, [dataSaverHydrated, sp, replace]);
 
   useEffect(() => {
     if (!govValue || !cityValue) return;
@@ -261,7 +254,7 @@ export function BrowseExperienceClient(props: {
       const json =
         surface === "stay"
           ? sybnbListingsLiteResponseToSearchResult(raw as SybnbListingsLiteResponse)
-          : (raw as SearchPropertiesResult);
+          : parseBrowseSearchResponseJson(raw);
       setBundle((prev) => {
         const merged: SearchPropertiesResult = {
           ...json,

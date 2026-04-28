@@ -27,8 +27,10 @@ export const SYRIA_FEED_API_S_MAXAGE_SECONDS = 45;
 /** Only first N listing-card thumbnails request `priority`/`eager` — rest lazy-load in viewport. */
 export const SYRIA_CARD_PRIORITY_FIRST_COUNT = 2;
 
+/** ORDER SYBNB-129 — profile cold `/buy` or `/sybnb` in DevTools → Network; aim ~500KB first load & minimal parallel requests on DSL emulation. */
+
 /** Default `/buy` `/rent` page size (ORDER SYBNB-88 / SYBNB-104). */
 export const SYRIA_BROWSE_PAGE_SIZE_DEFAULT = 10;
 
-/** Data saver ON — fewer rows per fetch on slow networks (still ≥ minimum enforced by lite API). */
-export const SYRIA_DATA_SAVER_BROWSE_PAGE_SIZE = 8;
+/** @deprecated SYBNB-129 — same as {@link SYRIA_BROWSE_PAGE_SIZE_DEFAULT} (data saver no longer shrinks page size). */
+export const SYRIA_DATA_SAVER_BROWSE_PAGE_SIZE = SYRIA_BROWSE_PAGE_SIZE_DEFAULT;

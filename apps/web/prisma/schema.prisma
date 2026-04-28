@@ -29634,6 +29634,19 @@ model UserFeedback {
   @@map("user_feedback")
 }
 
+/// ORDER SYBNB-AI-121 — append-only log when `getProductInsights` runs (trends / repeated problems).
+model ProductInsightLog {
+  id        String   @id @default(cuid())
+  type      String
+  message   String   @db.Text
+  priority  String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@index([type, createdAt])
+  @@map("product_insight_logs")
+}
+
 // @domain: intelligence
 model DemoEvent {
   id        String   @id @default(cuid())

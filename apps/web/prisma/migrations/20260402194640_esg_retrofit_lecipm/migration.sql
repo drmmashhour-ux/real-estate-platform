@@ -1,5 +1,47 @@
 -- ESG retrofit planner + financing matcher (LECIPM)
 
+-- Bootstrap: `esg_actions` is required by FKs below but had no earlier migration creating the table (schema model EsgAction @@map("esg_actions")).
+CREATE TABLE IF NOT EXISTS "esg_actions" (
+    "id" TEXT NOT NULL,
+    "listing_id" TEXT NOT NULL,
+    "title" VARCHAR(256) NOT NULL,
+    "description" TEXT NOT NULL,
+    "category" VARCHAR(24) NOT NULL,
+    "action_type" VARCHAR(24) NOT NULL,
+    "priority" VARCHAR(16) NOT NULL,
+    "status" VARCHAR(16) NOT NULL DEFAULT 'OPEN',
+    "reason_code" VARCHAR(64) NOT NULL,
+    "reason_text" TEXT,
+    "estimated_score_impact" DOUBLE PRECISION,
+    "estimated_carbon_impact" DOUBLE PRECISION,
+    "estimated_confidence_impact" DOUBLE PRECISION,
+    "estimated_cost_band" VARCHAR(16),
+    "estimated_effort_band" VARCHAR(16),
+    "estimated_timeline_band" VARCHAR(16),
+    "payback_band" VARCHAR(16),
+    "owner_type" VARCHAR(16),
+    "assignee_user_id" TEXT,
+    "blockers_json" JSONB,
+    "dependencies_json" JSONB,
+    "evidence_needed_json" JSONB,
+    "implementation_notes" TEXT,
+    "generated_from_version" VARCHAR(24),
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+    "completed_at" TIMESTAMP(3),
+
+    CONSTRAINT "esg_actions_pkey" PRIMARY KEY ("id")
+);
+CREATE INDEX IF NOT EXISTS "esg_actions_listing_id_status_idx" ON "esg_actions"("listing_id", "status");
+CREATE INDEX IF NOT EXISTS "esg_actions_listing_id_reason_code_idx" ON "esg_actions"("listing_id", "reason_code");
+CREATE INDEX IF NOT EXISTS "esg_actions_assignee_user_id_idx" ON "esg_actions"("assignee_user_id");
+DO $$ BEGIN
+  ALTER TABLE "esg_actions" ADD CONSTRAINT "esg_actions_listing_id_fkey" FOREIGN KEY ("listing_id") REFERENCES "Listing"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN
+  ALTER TABLE "esg_actions" ADD CONSTRAINT "esg_actions_assignee_user_id_fkey" FOREIGN KEY ("assignee_user_id") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
 CREATE TABLE "esg_retrofit_plans" (
     "id" TEXT NOT NULL,
     "listing_id" TEXT NOT NULL,

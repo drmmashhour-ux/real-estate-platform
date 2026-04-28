@@ -1,3 +1,4 @@
+import { createNoopPrismaClient } from "@repo/prisma-disabled-stub";
 import { PrismaClient } from "../generated/client";
 
 const globalForPrisma = globalThis as unknown as {
@@ -9,6 +10,13 @@ const globalForPrisma = globalThis as unknown as {
  * Observability: built-in `log` for query/error/warn, plus per-operation timing in `[DB]`.
  */
 function createCoreClient() {
+  if (process.env.NEXT_PUBLIC_DISABLE_DB === "true") {
+    return createNoopPrismaClient() as unknown as ReturnType<typeof createCoreClientReal>;
+  }
+  return createCoreClientReal();
+}
+
+function createCoreClientReal() {
   const log: Array<"query" | "error" | "warn"> = ["query", "error", "warn"];
 
   const base = new PrismaClient({ log });

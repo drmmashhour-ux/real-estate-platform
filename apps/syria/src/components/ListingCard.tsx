@@ -364,6 +364,7 @@ export function ListingCard({
 
   return (
     <Link
+      prefetch={false}
       href={`/listing/${listing.id}`}
       className={cn(
         "group flex flex-col overflow-hidden rounded-[var(--darlink-radius-2xl)] border border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface)] shadow-none hover:border-[color:var(--darlink-accent)]/30",
@@ -398,7 +399,7 @@ export function ListingCard({
                     "relative z-[2] object-cover transition-opacity duration-300",
                     coverLoaded ? "opacity-100" : "opacity-0",
                   )}
-                  sizes="(max-width: 640px) 100vw, (max-width: 1200px) 50vw, 360px"
+                  sizes="(max-width: 640px) min(96vw, 560px), (max-width: 1280px) min(50vw, 560px), min(520px, 33vw)"
                   quality={listingImageQuality}
                   priority={!!priority}
                   unoptimized={img.startsWith("http://") || img.startsWith("https://")}

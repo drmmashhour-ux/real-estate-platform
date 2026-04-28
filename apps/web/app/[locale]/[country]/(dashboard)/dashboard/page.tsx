@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
+import { PlatformRole } from "@prisma/client";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { PLATFORM_DEFAULT_DESCRIPTION } from "@/lib/brand/platform";
 import { getLegacyDB } from "@/lib/db/legacy";
+import { safeDbCall } from "@/lib/db-safe";
 const prisma = getLegacyDB();
 import { engineFlags } from "@/config/feature-flags";
 import { ClassicDashboardBanner } from "@/components/dashboard/ClassicDashboardBanner";
@@ -43,10 +45,14 @@ export default async function InvestmentPortfolioDashboardPage({
 }) {
   const { locale, country } = await params;
   const { userId } = await requireAuthenticatedUser();
-  const userRow = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { role: true },
-  });
+  const userRow = await safeDbCall(
+    () =>
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: { role: true },
+      }),
+    null
+  );
   const showLaunchWidget = userRow?.role === PlatformRole.ADMIN;
 
   const jar = await cookies();
@@ -55,11 +61,18 @@ export default async function InvestmentPortfolioDashboardPage({
     redirect(`/${locale}/${country}/dashboard/lecipm`);
   }
 
-  const deals = await prisma.investmentDeal.findMany({
-    where: { userId },
-    orderBy: { createdAt: "desc" },
-  });
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: { plan: true } });
+  const deals = await safeDbCall(
+    () =>
+      prisma.investmentDeal.findMany({
+        where: { userId },
+        orderBy: { createdAt: "desc" },
+      }),
+    []
+  );
+  const user = await safeDbCall(
+    () => prisma.user.findUnique({ where: { id: userId }, select: { plan: true } }),
+    null
+  );
   const feed = await getDailyDealFeed({ userId, limit: 18 });
   const watchSummary = await getWatchlistSummary(userId);
   const watchAlerts = await listWatchlistAlerts({ userId, limit: 6 });

@@ -9,6 +9,7 @@
     "./client": "./src/client.ts"
   },
   "dependencies": {
+    "@repo/prisma-disabled-stub": "workspace:*",
     "@prisma/client": "^7.8.0",
     "@prisma/client-runtime-utils": "^7.8.0"
   }

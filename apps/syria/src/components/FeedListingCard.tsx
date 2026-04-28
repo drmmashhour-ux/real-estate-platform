@@ -70,6 +70,7 @@ export function FeedListingCard({
 
   return (
     <Link
+      prefetch={false}
       href={`/listing/${listing.id}`}
       className="flex w-full min-w-0 touch-manipulation gap-3 rounded-[var(--darlink-radius-xl)] border border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface)] p-3 text-start transition hover:border-[color:var(--darlink-accent)]/35 active:bg-[color:var(--darlink-surface-muted)]/50"
     >
@@ -100,8 +101,9 @@ export function FeedListingCard({
                 <Image
                   src={img}
                   alt=""
-                  width={80}
-                  height={80}
+                  width={520}
+                  height={520}
+                  sizes="80px"
                   loading={priority ? "eager" : "lazy"}
                   className={cn(
                     "relative z-[2] size-20 object-cover transition-opacity duration-300",

@@ -1,7 +1,9 @@
 /**
- * Prisma clients wrapped with {@link withTracing} for safe use in {@link ./db-safe.ts}
+ * Prisma clients wrapped with {@link withTracing} for safe use in {@link @/lib/db/db-safe}
  * without importing the full `lib/db/index.ts` (avoids circular deps with `db-safe` → `index` → `db-safe`).
  */
+import "server-only";
+
 import { coreDB } from "@repo/db-core";
 
 import { withTracing } from "../db-extend";

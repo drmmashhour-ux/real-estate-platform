@@ -9,6 +9,7 @@ const MAX_OFFSET = 500;
 /**
  * Public feed: newest listings first (offset paginated for load more).
  * GET /api/feed?offset=0
+ * ORDER SYBNB-129 — response ships **one** image URL per row + view counts (unique preferred).
  */
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -49,13 +50,44 @@ export async function GET(req: Request) {
           adCode: true,
           createdAt: true,
           views: true,
+          uniqueViews: true,
         },
       }),
       prisma.syriaProperty.count({ where: { status: "PUBLISHED", fraudFlag: false, ...sy8FeedExtraWhere } }),
     ]);
 
+    const items = rows.map((r) => {
+      const rawImgs =
+        Array.isArray(r.images) ?
+          r.images.filter((x): x is string => typeof x === "string" && x.trim().length > 0).map((x) => x.trim())
+        : [];
+      const first = rawImgs[0] ?? null;
+      return {
+        id: r.id,
+        titleAr: r.titleAr,
+        titleEn: r.titleEn,
+        area: r.area,
+        districtAr: r.districtAr,
+        districtEn: r.districtEn,
+        city: r.city,
+        cityAr: r.cityAr,
+        cityEn: r.cityEn,
+        state: r.state,
+        governorate: r.governorate,
+        price: r.price,
+        currency: r.currency,
+        images: first ? [first] : [],
+        isDirect: r.isDirect,
+        type: r.type,
+        plan: r.plan,
+        adCode: r.adCode,
+        createdAt: r.createdAt,
+        views: typeof r.uniqueViews === "number" ? r.uniqueViews : r.views ?? 0,
+      };
+    });
+
     return NextResponse.json(
-      { items: rows, hasMore: offset + rows.length < total, nextOffset: offset + rows.length },
+      { items, hasMore: offset + rows.length < total, nextOffset: offset + rows.length },
       {
         headers: {
           "Cache-Control": `public, s-maxage=${SYRIA_FEED_API_S_MAXAGE_SECONDS}, stale-while-revalidate=${SYRIA_FEED_API_S_MAXAGE_SECONDS * 2}`,

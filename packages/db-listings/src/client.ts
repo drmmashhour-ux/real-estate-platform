@@ -1,3 +1,4 @@
+import { createNoopPrismaClient } from "@repo/prisma-disabled-stub";
 import { PrismaClient } from "../generated/client";
 
 const globalForPrisma = globalThis as unknown as {
@@ -9,8 +10,14 @@ const prismaLog: Array<"query" | "warn" | "error"> =
     ? ["query", "warn", "error"]
     : ["warn", "error"];
 
-export const prisma =
-  globalForPrisma.prisma ?? new PrismaClient({ log: prismaLog });
+function createListingsClient(): PrismaClient {
+  if (process.env.NEXT_PUBLIC_DISABLE_DB === "true") {
+    return createNoopPrismaClient() as PrismaClient;
+  }
+  return new PrismaClient({ log: prismaLog });
+}
+
+export const prisma = globalForPrisma.prisma ?? createListingsClient();
 
 if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prisma = prisma;

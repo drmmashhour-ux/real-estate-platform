@@ -75,7 +75,7 @@ export function HomeFeed({ initial, locale, emptyKey }: { initial: Item[]; local
           if (e.isIntersecting) void load();
         }
       },
-      { root: null, rootMargin: "320px 0px", threshold: 0.01 },
+      { root: null, rootMargin: "0px 0px", threshold: 0.01 },
     );
     io.observe(el);
     return () => io.disconnect();

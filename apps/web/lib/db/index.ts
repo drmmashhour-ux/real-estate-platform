@@ -1,8 +1,10 @@
 /**
  * Order 81 / 81.1 — **Single entry** for Prisma clients, `pg` pool, and typed SQL (`query` / `readOnlyQuery`).
  * The process-wide `pg.Pool` is created only in {@link ./pool-core.ts} (not here).
- * App code should import from `@/lib/db` (barrel in `../db.ts`); do not use `@/lib/db-safe` or `@/lib/db-direct` in app modules.
+ * App code should import from `@/lib/db` for pool + Prisma barrels. For optional no-DB guards, use `safeDbCall` / `isDbDisabled` from `@/lib/db-safe`; avoid ad-hoc `lib/db-direct`.
  */
+import "server-only";
+
 import type { Prisma } from "@prisma/client";
 import { coreDB } from "@repo/db-core";
 import { prisma as marketplaceClient } from "@repo/db-listings";
@@ -66,4 +68,4 @@ export {
   safePooledQuery,
   safeQuery,
   setPoolProbeResult,
-} from "./db-safe";
+} from "@/lib/db/db-safe";
