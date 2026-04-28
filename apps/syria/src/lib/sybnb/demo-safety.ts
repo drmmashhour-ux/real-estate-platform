@@ -54,8 +54,16 @@ export async function sendSybnbAlert(input: {
 }
 
 /**
+ * Aligns with env keys `INVESTOR_DEMO_MODE_RUNTIME` / `INVESTOR_DEMO_MODE_EXPIRES_AT` (Syria process-local only).
+ */
+export function setRuntimeFlagInvestorDemoOff(): void {
+  setSyriaInvestorDemoRuntimeEnabled(false);
+  setSyriaInvestorDemoExpiresAt(null);
+}
+
+/**
  * Turns off investor demo for this Node process only when critical risk is detected.
- * Fraud/payment anomaly signals feeding DR.BRAIN already exclude investor-demo audit rows (`demo-metrics-filter`).
+ * Fraud/payment anomaly signals feeding DR.BRAIN exclude investor-demo audit rows (`demo-metrics-filter`).
  *
  * Rate-limited (10 minutes) to prevent alert flapping.
  */
@@ -73,8 +81,7 @@ export async function disableDemoModeSafely(reason: string): Promise<void> {
   const timestamp = new Date().toISOString();
   const autoClean = process.env[SYRIA_INVESTOR_DEMO_AUTO_CLEAN_KEY] === "true";
 
-  setSyriaInvestorDemoRuntimeEnabled(false);
-  setSyriaInvestorDemoExpiresAt(null);
+  setRuntimeFlagInvestorDemoOff();
   delete process.env[SYRIA_INVESTOR_DEMO_SESSION_ID_KEY];
   process.env[SYRIA_INVESTOR_DEMO_AUTO_CLEAN_KEY] = "false";
   delete process.env.DEMO_DATA_ENABLED;
@@ -84,7 +91,7 @@ export async function disableDemoModeSafely(reason: string): Promise<void> {
   lastDemoDisableAt = Date.now();
 
   console.error("[DEMO AUTO-DISABLED]", {
-    type: "DEMO_SESSION_AUTO_DISABLED",
+    type: "DEMO_AUTO_DISABLED",
     reason: trimmedReason,
     timestamp,
     autoClean,
@@ -93,9 +100,9 @@ export async function disableDemoModeSafely(reason: string): Promise<void> {
   try {
     await appendSyriaSybnbCoreAudit({
       bookingId: null,
-      event: "DEMO_SESSION_AUTO_DISABLED",
+      event: "DEMO_AUTO_DISABLED",
       metadata: {
-        type: "DEMO_SESSION_AUTO_DISABLED",
+        type: "DEMO_AUTO_DISABLED",
         reason: trimmedReason,
         timestamp,
         autoClean,
@@ -108,7 +115,7 @@ export async function disableDemoModeSafely(reason: string): Promise<void> {
   await logSecurityEvent({
     action: "demo_auto_disabled",
     metadata: {
-      type: "DEMO_SESSION_AUTO_DISABLED",
+      type: "DEMO_AUTO_DISABLED",
       reason: trimmedReason,
       timestamp,
       autoClean,

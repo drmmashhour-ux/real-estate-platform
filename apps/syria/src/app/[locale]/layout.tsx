@@ -4,6 +4,7 @@ import { getMessages, getTranslations, setRequestLocale } from "next-intl/server
 import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import { NarrationProvider } from "@/components/demo/NarrationProvider";
+import { StoryModeProvider } from "@/components/demo/StoryModeProvider";
 import { DemoRecordingProvider } from "@/components/demo/DemoRecordingProvider";
 import { DemoGlobalBanner } from "@/components/demo/DemoGlobalBanner";
 import { SyriaHeader } from "@/components/SyriaHeader";
@@ -11,6 +12,7 @@ import { SyriaFooter } from "@/components/SyriaFooter";
 import { DarlinkMobileNav } from "@/components/DarlinkMobileNav";
 import { isDarlinkEnabled, syriaFlags } from "@/lib/platform-flags";
 import { routing } from "@/i18n/routing";
+import { getAiNarrationEnvSnapshot } from "@/lib/demo/ai-narration-env";
 import { getAutoNarrationEnvSnapshot } from "@/lib/demo/auto-narration-env";
 import { isInvestorDemoModeActive } from "@/lib/sybnb/investor-demo";
 import { SyriaOfflineRoot } from "@/components/offline/SyriaOfflineRoot";
@@ -102,6 +104,7 @@ export default async function LocaleLayout({ children, params }: Props) {
 
   const demoUxActive = isInvestorDemoModeActive();
   const narrationEnv = getAutoNarrationEnvSnapshot();
+  const aiNarrationEnv = getAiNarrationEnvSnapshot();
   const dir = locale === "ar" ? "rtl" : "ltr";
 
   return (
@@ -116,8 +119,10 @@ export default async function LocaleLayout({ children, params }: Props) {
                 investorDemoActive={demoUxActive}
                 autoNarrationEnabled={narrationEnv.autoNarrationEnabled}
                 autoNarrationTtsEnabled={narrationEnv.autoNarrationTtsEnabled}
+                aiNarrationEnvEnabled={aiNarrationEnv.aiNarrationEnabled}
               >
-                <DemoRecordingProvider demoUxActive={demoUxActive}>
+                <StoryModeProvider>
+                  <DemoRecordingProvider demoUxActive={demoUxActive}>
                   <SyriaOfflineRoot>
                     <DemoGlobalBanner />
                     <UltraLiteRibbon />
@@ -126,7 +131,8 @@ export default async function LocaleLayout({ children, params }: Props) {
                     <SyriaFooter />
                     <DarlinkMobileNav />
                   </SyriaOfflineRoot>
-                </DemoRecordingProvider>
+                  </DemoRecordingProvider>
+                </StoryModeProvider>
               </NarrationProvider>
             </DataSaverProvider>
           </SyriaModeProvider>

@@ -2,8 +2,10 @@ import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { DemoBadge, ProductionLockStrip } from "@/components/demo/DemoBadge";
+import { DemoQA } from "@/components/demo/DemoQA";
 import { InvestorDemoFlowPanel } from "@/components/demo/InvestorDemoFlowPanel";
 import { InvestorDemoMetrics } from "@/components/demo/InvestorDemoMetrics";
+import { getDemoQaEnvSnapshot } from "@/lib/demo/demo-qa-env";
 import { isInvestorDemoModeActive } from "@/lib/sybnb/investor-demo";
 
 export default async function InvestorDemoPage() {
@@ -24,6 +26,8 @@ export default async function InvestorDemoPage() {
     );
   }
 
+  const qaEnv = getDemoQaEnvSnapshot();
+
   return (
     <div className="space-y-10">
       <header className="space-y-2 [dir=rtl]:text-right">
@@ -38,6 +42,8 @@ export default async function InvestorDemoPage() {
         </div>
         <ProductionLockStrip />
       </header>
+
+      <DemoQA aiEnhanced={qaEnv.demoQaAiEnabled} />
 
       <section className="space-y-3 [dir=rtl]:text-right">
         <h2 className="text-lg font-semibold text-stone-900">1. {t("s1")}</h2>

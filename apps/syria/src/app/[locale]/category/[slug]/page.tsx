@@ -7,11 +7,13 @@ import {
   type MarketplaceCategory,
 } from "@/lib/marketplace-categories";
 import { browseHrefForMarketplaceSub } from "@/lib/category-browse-href";
+import { getSyriaPublicOrigin } from "@/lib/syria-whatsapp";
+import { CategoryShareWhatsAppButton } from "@/components/category/CategoryShareWhatsAppButton";
 
 type Props = { params: Promise<{ locale: string; slug: string }> };
 
 export default async function CategorySubPage(props: Props) {
-  const { slug } = await props.params;
+  const { locale, slug } = await props.params;
   if (!isMarketplaceCategory(slug)) {
     notFound();
   }
@@ -19,14 +21,22 @@ export default async function CategorySubPage(props: Props) {
   const t = await getTranslations("Categories");
   const subs = [...MARKETPLACE_SUBCATEGORIES[category]];
   const tSub = (s: string) => (t as (key: string) => string)(`sub_${s}`);
+  const origin = getSyriaPublicOrigin();
+  const sharePath = `/${locale}/category/${category}`;
+  const shareAbsoluteUrl = origin.length > 0 ? `${origin}${sharePath}` : null;
 
   return (
     <div className="space-y-6">
-      <header>
+      <header className="space-y-3">
         <h1 className="text-2xl font-bold text-[color:var(--darlink-text)]">
           {t("pageTitle", { name: t(category) })}
         </h1>
-        <p className="mt-1 text-sm text-[color:var(--darlink-text-muted)]">{t("pageSubtitle")}</p>
+        <p className="text-sm text-[color:var(--darlink-text-muted)]">{t("pageSubtitle")}</p>
+        <CategoryShareWhatsAppButton
+          categoryKey={category}
+          shareAbsoluteUrl={shareAbsoluteUrl}
+          sharePath={sharePath}
+        />
       </header>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
         {subs.map((sub) => {

@@ -5,7 +5,10 @@ import {
   PAYMENT_ATTEMPT_EVENTS,
   getSybnbPaymentStats,
 } from "@/lib/sybnb/monitoring";
-import { sybnbCoreAuditExcludeInvestorDemoWhere } from "@/lib/sybnb/demo-metrics-filter";
+import {
+  sybnbCoreAuditExcludeInvestorDemoWhere,
+  syriaPropertyExcludeInvestorDemoWhere,
+} from "@/lib/sybnb/demo-metrics-filter";
 
 const HOUR_MS = 60 * 60 * 1000;
 
@@ -69,7 +72,14 @@ export async function countDrBrainApiLikeSignals24h(): Promise<number> {
         ],
       },
     }),
-    prisma.syriaPaymentAuditLog.count({ where: { createdAt: { gte: since } } }),
+    prisma.syriaPaymentAuditLog.count({
+      where: {
+        createdAt: { gte: since },
+        request: {
+          listing: syriaPropertyExcludeInvestorDemoWhere(),
+        },
+      },
+    }),
   ]);
   return coreLike + f1Count;
 }

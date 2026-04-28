@@ -1,11 +1,16 @@
 import { NextResponse } from "next/server";
 import { getAdminUser } from "@/lib/auth";
 import {
+  getSyriaInvestorDemoExpiresAtIso,
   getSyriaInvestorDemoRuntimeEnabled,
+  setSyriaInvestorDemoExpiresAt,
   setSyriaInvestorDemoRuntimeEnabled,
 } from "@/lib/demo/runtime-flags";
 import { acknowledgeManualDemoEnable, getDemoAutoDisabledBanner } from "@/lib/sybnb/demo-safety";
 import { isInvestorDemoModeActive } from "@/lib/sybnb/investor-demo";
+
+/** Failsafe TTL when demo runtime is turned ON via this API (process memory only). */
+const DEMO_TOGGLE_RUNTIME_TTL_MS = 60 * 60 * 1000;
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +24,7 @@ export async function GET() {
     ok: true,
     app: "syria" as const,
     runtimeEnabled: getSyriaInvestorDemoRuntimeEnabled(),
+    expiresAtIso: getSyriaInvestorDemoExpiresAtIso() ?? null,
     effective: isInvestorDemoModeActive(),
     autoDisabledReason: banner?.reason ?? null,
     autoDisabledAt: banner?.timestamp ?? null,
@@ -52,9 +58,12 @@ export async function POST(req: Request) {
 
   if (enabled) {
     acknowledgeManualDemoEnable();
+    setSyriaInvestorDemoExpiresAt(new Date(Date.now() + DEMO_TOGGLE_RUNTIME_TTL_MS).toISOString());
+    setSyriaInvestorDemoRuntimeEnabled(true);
+  } else {
+    setSyriaInvestorDemoExpiresAt(null);
+    setSyriaInvestorDemoRuntimeEnabled(false);
   }
-
-  setSyriaInvestorDemoRuntimeEnabled(enabled);
   console.warn("[DEMO MODE]", {
     action: "runtime_toggle",
     app: "syria",
@@ -67,6 +76,7 @@ export async function POST(req: Request) {
     ok: true,
     app: "syria" as const,
     runtimeEnabled: getSyriaInvestorDemoRuntimeEnabled(),
+    expiresAtIso: getSyriaInvestorDemoExpiresAtIso() ?? null,
     effective: isInvestorDemoModeActive(),
     autoDisabledReason: bannerAfter?.reason ?? null,
     autoDisabledAt: bannerAfter?.timestamp ?? null,

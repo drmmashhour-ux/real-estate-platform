@@ -1,12 +1,13 @@
 import { DemoToggle } from "@/components/admin/DemoToggle";
 import { DemoSessionPanel } from "@/components/admin/DemoSessionPanel";
-import { getSyriaInvestorDemoRuntimeEnabled } from "@/lib/demo/runtime-flags";
+import { getSyriaInvestorDemoExpiresAtIso, getSyriaInvestorDemoRuntimeEnabled } from "@/lib/demo/runtime-flags";
 import { getDemoAutoDisabledBanner } from "@/lib/sybnb/demo-safety";
 import { isInvestorDemoModeActive } from "@/lib/sybnb/investor-demo";
 
 export default async function SyriaDemoControlPage() {
-  const runtimeOn = getSyriaInvestorDemoRuntimeEnabled();
   const effective = isInvestorDemoModeActive();
+  const runtimeOn = getSyriaInvestorDemoRuntimeEnabled();
+  const expiresAtIso = getSyriaInvestorDemoExpiresAtIso() ?? null;
   const autoBanner = getDemoAutoDisabledBanner();
 
   return (
@@ -23,6 +24,7 @@ export default async function SyriaDemoControlPage() {
       <DemoToggle
         initialRuntimeEnabled={runtimeOn}
         effectiveDemoOn={effective}
+        expiresAtIso={expiresAtIso}
         autoDisabledReason={autoBanner?.reason ?? null}
         autoDisabledAt={autoBanner?.timestamp ?? null}
       />

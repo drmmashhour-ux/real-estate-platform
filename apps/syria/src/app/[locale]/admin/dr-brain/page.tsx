@@ -108,7 +108,7 @@ export default async function SyriaAdminDrBrainPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div data-demo-highlight="drbrain" className="space-y-6">
       <DrBrainPanel
         title={t("drbrainTitle")}
         report={report}

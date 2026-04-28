@@ -1,5 +1,6 @@
 import { f1AmountForPlanFromViews, f1ViewTierAndPrices, F1_BASELINE_SYP, F1_LADDER_CAP_SYP } from "@/config/syria-f1-pricing.config";
 import type { SyriaListingPlan } from "@/generated/prisma";
+import { formatSyriaCurrency } from "@/lib/format";
 import { toWhatsAppPath } from "@/lib/syria-phone";
 
 /** Baseline (tier 0) — docs / display fallback. */
@@ -42,13 +43,57 @@ export function f1PlanStronger(a: SyriaListingPlan, b: SyriaListingPlan): SyriaL
   return tier[a] >= tier[b] ? a : b;
 }
 
-/** Admin matches `requestId` to the payment request row. */
-export function f1BuildWhatsAppPaymentText(adCode: string, listingUrl: string, requestId: string): string {
-  return `مرحباً، أريد تمييز الإعلان:\n${adCode}\n${listingUrl}\n\nرقم الطلب: ${requestId}`;
+/** SYBNB-133 — Short Arabic-first WA prefill: intent, ids, price, optional scarcity line, payment-details ask; keeps request id for ops. */
+export function f1BuildWhatsAppPaymentText(
+  listingDisplayId: string,
+  plan: F1PlanKey,
+  amountSyp: number,
+  requestId: string,
+): string {
+  const planAr = plan === "premium" ? "فاخر" : "مميز";
+  const price = formatSyriaCurrency(amountSyp, "SYP", "ar");
+  return [
+    "مرحبا 👋",
+    `أرغب بترقية هذا الإعلان إلى ${planAr}`,
+    "",
+    `📌 رقم الإعلان: ${listingDisplayId}`,
+    `📦 الخطة: ${planAr}`,
+    `💰 السعر: ${price}`,
+    "",
+    "إذا متوفر حالياً",
+    "",
+    "هل يمكن تأكيد الطلب؟",
+    "",
+    "أرسل لي تفاصيل الدفع 👍",
+    "",
+    `📋 رقم الطلب: ${requestId}`,
+  ].join("\n");
 }
 
-export function f1BuildWhatsAppPaymentTextEn(adCode: string, listingUrl: string, requestId: string): string {
-  return `Hello, I would like to feature this listing:\n${adCode}\n${listingUrl}\n\nRequest ID: ${requestId}`;
+export function f1BuildWhatsAppPaymentTextEn(
+  listingDisplayId: string,
+  plan: F1PlanKey,
+  amountSyp: number,
+  requestId: string,
+): string {
+  const planEn = plan === "premium" ? "Premium" : "Featured";
+  const price = formatSyriaCurrency(amountSyp, "SYP", "en");
+  return [
+    "Hi 👋",
+    `I'd like to upgrade this listing to ${planEn}`,
+    "",
+    `📌 Listing ID: ${listingDisplayId}`,
+    `📦 Plan: ${planEn}`,
+    `💰 Price: ${price}`,
+    "",
+    "If available now",
+    "",
+    "Can you confirm the request?",
+    "",
+    "Send me payment details 👍",
+    "",
+    `📋 Request ID: ${requestId}`,
+  ].join("\n");
 }
 
 /** `wa.me` to admin with proof text; `phoneRaw` = env admin phone. */

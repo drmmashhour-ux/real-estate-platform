@@ -48,6 +48,7 @@ import { getTrustWarningLines } from "@/lib/ai/trustAssistant";
 import { ListingTrustAiSection } from "@/components/listing/ListingTrustAiSection";
 import { ShortStayAvailabilityCalendar } from "@/components/listing/ShortStayAvailabilityCalendar";
 import { incrementPublicListingView } from "@/lib/syria/listing-views";
+import { shouldShowAdStudioOptimizeNudge } from "@/lib/ad-studio-nudge";
 import { s2GetClientIpFromRequestHeaders } from "@/lib/security/s2-ip";
 import { parseHadiahShareSourceFromSearchParams } from "@/lib/syria/hadiah-share-attribution";
 import {
@@ -320,6 +321,14 @@ export default async function ListingDetailPage(props: Props) {
   const showShareBlockAfterGallery = showShareInMain && !showAfterPostShare;
   const viewCountStored = listing.views ?? 0;
   const showOwnerUpgradeSticky = isOwner && listing.plan === "free" && viewCountStored >= 10;
+  const showAdStudioOptimize =
+    isOwner &&
+    shouldShowAdStudioOptimizeNudge({
+      status: listing.status,
+      views: listing.views,
+      whatsappClicks: listing.whatsappClicks,
+      phoneClicks: listing.phoneClicks,
+    });
 
   return (
     <>
@@ -334,8 +343,9 @@ export default async function ListingDetailPage(props: Props) {
           messageScrollHref={contactDockMessageHref}
         />
       ) : null}
-      {showOwnerUpgradeSticky ? <OwnerUpgradeStickyCta /> : null}
+      {showOwnerUpgradeSticky ? <OwnerUpgradeStickyCta listingId={listing.id} /> : null}
       <article
+        data-demo-highlight="listing"
         className={
           canContact
             ? "max-w-full overflow-x-hidden pb-52 max-md:pb-56 md:pb-0"
@@ -540,8 +550,30 @@ export default async function ListingDetailPage(props: Props) {
                     {isSybnbStay ? money(nightlyForUi, listing.currency, numberLoc) : money(listing.price, listing.currency, numberLoc)}
                   </p>
                   {isSybnbStay ? (
-                    <p className="mt-0.5 text-xs font-medium text-[color:var(--darlink-text-muted)]">{t("cardPerNight")}</p>
-                  ) : null}
+                    <>
+                      <p className="mt-1 text-sm font-medium text-[color:var(--darlink-text)] [dir=rtl]:text-right">
+                        {t("sybnbPriceAboutTagline", { amount: money(nightlyForUi, listing.currency, numberLoc) })}
+                      </p>
+                      {!isOwner ? (
+                        <p className="mt-1 text-[11px] leading-snug text-[color:var(--darlink-text-muted)] [dir=rtl]:text-right">
+                          {t("priceNoCommitmentReassurance")}
+                        </p>
+                      ) : (
+                        <p className="mt-0.5 text-xs font-medium text-[color:var(--darlink-text-muted)]">{t("cardPerNight")}</p>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <p className="mt-1 text-sm font-medium text-[color:var(--darlink-text)] [dir=rtl]:text-right">
+                        {t("priceAboutTagline", { amount: money(listing.price, listing.currency, numberLoc) })}
+                      </p>
+                      {!isOwner ? (
+                        <p className="mt-1 text-[11px] leading-snug text-[color:var(--darlink-text-muted)] [dir=rtl]:text-right">
+                          {t("priceNoCommitmentReassurance")}
+                        </p>
+                      ) : null}
+                    </>
+                  )}
                 </div>
               ) : null}
             </header>
@@ -680,20 +712,41 @@ export default async function ListingDetailPage(props: Props) {
               <p className="mt-2 text-3xl font-bold tabular-nums text-[color:var(--darlink-text)]">
                 {money(nightlyForUi, listing.currency, numberLoc)}
               </p>
-              <p className="mt-3 text-xs leading-relaxed text-[color:var(--darlink-text-muted)]">
-                {isSybnbStay ? t("sybnbNightlyHint") : t("priceHint")}
+              <p className="mt-3 text-sm font-medium leading-snug text-[color:var(--darlink-text)] [dir=rtl]:text-right">
+                {isSybnbStay
+                  ? t("sybnbPriceAboutTagline", { amount: money(nightlyForUi, listing.currency, numberLoc) })
+                  : t("priceAboutTagline", { amount: money(listing.price, listing.currency, numberLoc) })}
               </p>
+              {!isOwner ? (
+                <p className="mt-2 text-[11px] leading-snug text-[color:var(--darlink-text-muted)] [dir=rtl]:text-right">
+                  {t("priceNoCommitmentReassurance")}
+                </p>
+              ) : (
+                <p className="mt-2 text-xs leading-relaxed text-[color:var(--darlink-text-muted)]">
+                  {isSybnbStay ? t("sybnbNightlyHint") : t("priceHint")}
+                </p>
+              )}
             </Card>
 
             {isOwner ? (
-              <Card className="border-[color:var(--darlink-border)] p-5 shadow-[var(--darlink-shadow-sm)]">
+              <Card
+                className={`border-[color:var(--darlink-border)] p-5 shadow-[var(--darlink-shadow-sm)] ${
+                  showAdStudioOptimize ? "border-amber-200/90 bg-amber-50/50 ring-1 ring-amber-200/70" : ""
+                }`}
+              >
                 <h2 className="text-sm font-semibold text-[color:var(--darlink-text)]">{t("adStudioTitle")}</h2>
-                <p className="mt-1 text-xs leading-relaxed text-[color:var(--darlink-text-muted)]">{t("adStudioBlurb")}</p>
+                <p className="mt-1 text-xs leading-relaxed text-[color:var(--darlink-text-muted)]">
+                  {showAdStudioOptimize ? t("adStudioOptimizeHint") : t("adStudioBlurb")}
+                </p>
                 <Link
                   href={`/studio/${id}`}
-                  className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-[var(--darlink-radius-lg)] bg-[color:var(--darlink-surface-muted)] px-4 text-sm font-semibold text-[color:var(--darlink-accent)] ring-1 ring-inset ring-[color:var(--darlink-border)] hover:bg-[color:var(--darlink-surface)]"
+                  className={`mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-[var(--darlink-radius-lg)] px-4 text-sm font-semibold ring-1 ring-inset ring-[color:var(--darlink-border)] ${
+                    showAdStudioOptimize
+                      ? "bg-[color:var(--darlink-accent)] text-white hover:opacity-95"
+                      : "bg-[color:var(--darlink-surface-muted)] text-[color:var(--darlink-accent)] hover:bg-[color:var(--darlink-surface)]"
+                  }`}
                 >
-                  {t("adStudioCta")}
+                  {showAdStudioOptimize ? t("adStudioOptimizeCta") : t("adStudioCta")}
                 </Link>
               </Card>
             ) : null}

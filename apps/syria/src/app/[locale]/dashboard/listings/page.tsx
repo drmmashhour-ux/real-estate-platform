@@ -11,6 +11,7 @@ import { buildViralShareForSyriaProperty } from "@/lib/syria/viral-listing-share
 import { SelfMarketingPanel } from "@/components/dashboard/SelfMarketingPanel";
 import { ViralPostShareBanner } from "@/components/dashboard/ViralPostShareBanner";
 import { duplicateOwnListingFormAction } from "@/actions/duplicate-listing";
+import { shouldShowAdStudioOptimizeNudge } from "@/lib/ad-studio-nudge";
 
 function planLabelKey(plan: string): "planFree" | "planFeatured" | "planPremium" | "planHotelFeatured" {
   if (plan === "featured") return "planFeatured";
@@ -30,6 +31,7 @@ type DashboardListingsPageProps = {
 
 export default async function DashboardListingsPage({ searchParams }: DashboardListingsPageProps) {
   const t = await getTranslations("Dashboard");
+  const tListing = await getTranslations("Listing");
   const locale = await getLocale();
   const sp = await searchParams;
   const showShareCta = sp.posted === "1";
@@ -96,6 +98,12 @@ export default async function DashboardListingsPage({ searchParams }: DashboardL
             <tbody>
               {listings.map((l) => {
                 const q = analyzeListingQuality(l);
+                const studioNudge = shouldShowAdStudioOptimizeNudge({
+                  status: l.status,
+                  views: l.views,
+                  whatsappClicks: l.whatsappClicks,
+                  phoneClicks: l.phoneClicks,
+                });
                 const lowViewsViral =
                   l.status === "PUBLISHED" && (l.views ?? 0) < 5
                     ? buildViralShareForSyriaProperty(l, locale, numberLoc, origin)
@@ -110,6 +118,17 @@ export default async function DashboardListingsPage({ searchParams }: DashboardL
                     ) : (
                       <span>{pickListingTitle(l, locale)}</span>
                     )}
+                    {studioNudge ? (
+                      <div className="mt-2 max-w-[16rem] space-y-1.5 rounded-lg border border-amber-200/90 bg-amber-50/80 p-2">
+                        <p className="text-[11px] font-medium leading-snug text-amber-950">{tListing("adStudioOptimizeHint")}</p>
+                        <Link
+                          href={`/studio/${l.id}`}
+                          className="inline-flex min-h-9 w-full items-center justify-center rounded-lg bg-[color:var(--darlink-accent)] px-2 text-[11px] font-bold text-white hover:opacity-95"
+                        >
+                          {tListing("adStudioOptimizeCta")}
+                        </Link>
+                      </div>
+                    ) : null}
                   </td>
                   <td className="px-4 py-3 text-[color:var(--darlink-text-muted)]">{l.city}</td>
                   <td className="px-4 py-3">{money(l.price, l.currency, numberLoc)}</td>

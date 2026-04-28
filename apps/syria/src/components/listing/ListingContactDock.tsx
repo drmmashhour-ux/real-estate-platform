@@ -39,11 +39,13 @@ export function ListingContactDock({
           <>
             <p className="px-0.5 text-center text-sm font-semibold text-[color:var(--darlink-text)]">{primaryHeading}</p>
             <p className="px-0.5 text-center text-[11px] leading-snug text-[color:var(--darlink-text-muted)]">{t("trustVerifyPayment")}</p>
+            <p className="px-0.5 text-center text-[10px] leading-snug text-[color:var(--darlink-text-muted)]">{t("stickyPaymentAfterConfirm")}</p>
           </>
         ) : (
           <>
             <p className="px-0.5 text-center text-xs font-semibold text-amber-900/95 dark:text-amber-200/95">{t("contactUrgency")}</p>
             <p className="px-0.5 text-center text-[11px] leading-snug text-[color:var(--darlink-text-muted)]">{t("trustVerifyPayment")}</p>
+            <p className="px-0.5 text-center text-[10px] leading-snug text-[color:var(--darlink-text-muted)]">{t("stickyPaymentAfterConfirm")}</p>
           </>
         )}
         {whatsappHref ? (

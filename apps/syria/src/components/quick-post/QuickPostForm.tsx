@@ -346,6 +346,12 @@ export function QuickPostForm() {
     return (
       <div className="space-y-4 rounded-[var(--darlink-radius-2xl)] border border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface)] p-6 shadow-[var(--darlink-shadow-sm)]">
         <p className="text-center text-sm font-semibold text-[color:var(--darlink-text)]">{t("stepPickCategory")}</p>
+        <p
+          className="text-center text-xs font-medium text-[color:var(--darlink-text-muted)] [dir=rtl]:text-right"
+          dir={isAr ? "rtl" : "ltr"}
+        >
+          {t("categoryGridHint")}
+        </p>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           {MARKETPLACE_CATEGORIES.map((c) => (
             <button
@@ -373,6 +379,14 @@ export function QuickPostForm() {
     return (
       <div className="space-y-4 rounded-[var(--darlink-radius-2xl)] border border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface)] p-6 shadow-[var(--darlink-shadow-sm)]">
         <p className="text-center text-sm font-semibold text-[color:var(--darlink-text)]">{t("stepPickSub")}</p>
+        <p className="text-center text-xs text-[color:var(--darlink-text-muted)]" dir={isAr ? "rtl" : "ltr"}>
+          {t("subcategoryHint")}
+        </p>
+        {marketCategory === "real_estate" ? (
+          <p className="text-center text-xs font-semibold text-[color:var(--darlink-text)]" dir={isAr ? "rtl" : "ltr"}>
+            {t("realEstateSubKindsHint")}
+          </p>
+        ) : null}
         <button
           type="button"
           className="text-sm font-medium text-[color:var(--darlink-accent)] underline"

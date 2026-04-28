@@ -3,10 +3,12 @@ import { AdminF1Tabs } from "@/components/admin/AdminF1Tabs";
 import { AdminStatsBarChart } from "@/components/admin/AdminStatsBarChart";
 import {
   getAdminEngagementSums,
+  getAdminF1FunnelSnapshot,
   getAdminF1PricingTierStats,
   getAdminListingStats,
   getAdminMoneyStats,
   getLast7DaysListingViewTrend,
+  type AdminF1FunnelBand,
   type DayCount,
   type F1TierKpi,
 } from "@/lib/admin-stats";
@@ -22,16 +24,83 @@ function fmtInt(n: number, locale: string) {
   return n.toLocaleString(locale.toLowerCase().startsWith("ar") ? "ar-SY" : "en-US");
 }
 
+function fmtFunnelPct(ratio: number | null, locale: string): string {
+  if (ratio === null) return "—";
+  return ratio.toLocaleString(locale.toLowerCase().startsWith("ar") ? "ar-SY" : "en-US", {
+    style: "percent",
+    maximumFractionDigits: 1,
+  });
+}
+
+function F1FunnelRow({
+  title,
+  band,
+  locale,
+  labels,
+}: {
+  title: string;
+  band: AdminF1FunnelBand;
+  locale: string;
+  labels: {
+    opened: string;
+    clicked: string;
+    confirmed: string;
+    openToClick: string;
+    clickToConfirm: string;
+  };
+}) {
+  return (
+    <div className="rounded-2xl border border-emerald-200/90 bg-white p-4 shadow-sm">
+      <p className="text-xs font-semibold uppercase tracking-wide text-emerald-900">{title}</p>
+      <div className="mt-3 grid gap-2 sm:grid-cols-3">
+        <div>
+          <p className="text-[11px] text-stone-500">{labels.opened}</p>
+          <p className="mt-0.5 text-xl font-bold tabular-nums text-stone-900" dir="ltr">
+            {fmtInt(band.opened, locale)}
+          </p>
+        </div>
+        <div>
+          <p className="text-[11px] text-stone-500">{labels.clicked}</p>
+          <p className="mt-0.5 text-xl font-bold tabular-nums text-stone-900" dir="ltr">
+            {fmtInt(band.clicked, locale)}
+          </p>
+        </div>
+        <div>
+          <p className="text-[11px] text-stone-500">{labels.confirmed}</p>
+          <p className="mt-0.5 text-xl font-bold tabular-nums text-emerald-950" dir="ltr">
+            {fmtInt(band.confirmed, locale)}
+          </p>
+        </div>
+      </div>
+      <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm text-stone-700">
+        <span>
+          {labels.openToClick}:{" "}
+          <strong className="tabular-nums text-stone-900" dir="ltr">
+            {fmtFunnelPct(band.openToClickPct, locale)}
+          </strong>
+        </span>
+        <span>
+          {labels.clickToConfirm}:{" "}
+          <strong className="tabular-nums text-stone-900" dir="ltr">
+            {fmtFunnelPct(band.clickToConfirmPct, locale)}
+          </strong>
+        </span>
+      </div>
+    </div>
+  );
+}
+
 export default async function AdminStatsPage() {
   const t = await getTranslations("Admin");
   const locale = await getLocale();
 
-  const [money, listings, engagement, trend, f1tier] = await Promise.all([
+  const [money, listings, engagement, trend, f1tier, f1funnel] = await Promise.all([
     getAdminMoneyStats(),
     getAdminListingStats(),
     getAdminEngagementSums(),
     getLast7DaysListingViewTrend(locale),
     getAdminF1PricingTierStats(),
+    getAdminF1FunnelSnapshot(),
   ]);
 
   const chartPoints = trend.map((d: DayCount) => ({ label: d.label, value: d.count }));
@@ -66,6 +135,42 @@ export default async function AdminStatsPage() {
           ))}
         </div>
         <p className="text-xs text-stone-500">{t("statsMoneyFootnote")}</p>
+      </section>
+
+      <section className="space-y-3">
+        <h3 className="text-base font-semibold text-stone-800">🪜 {t("statsSectionF1Funnel")}</h3>
+        <p className="text-sm text-stone-600">{t("statsF1FunnelIntro")}</p>
+        <div className="grid gap-4 lg:grid-cols-2">
+          <F1FunnelRow
+            title={t("statsMoneyToday")}
+            band={f1funnel.today}
+            locale={locale}
+            labels={{
+              opened: t("statsF1FunnelOpened"),
+              clicked: t("statsF1FunnelClicked"),
+              confirmed: t("statsF1FunnelConfirmed"),
+              openToClick: t("statsF1FunnelOpenToClick"),
+              clickToConfirm: t("statsF1FunnelClickToConfirm"),
+            }}
+          />
+          <F1FunnelRow
+            title={t("statsMoneyWeek")}
+            band={f1funnel.weekRolling}
+            locale={locale}
+            labels={{
+              opened: t("statsF1FunnelOpened"),
+              clicked: t("statsF1FunnelClicked"),
+              confirmed: t("statsF1FunnelConfirmed"),
+              openToClick: t("statsF1FunnelOpenToClick"),
+              clickToConfirm: t("statsF1FunnelClickToConfirm"),
+            }}
+          />
+        </div>
+        <ul className="list-disc space-y-1 ps-5 text-xs text-stone-600">
+          <li>{t("statsF1FunnelHintLowClick")}</li>
+          <li>{t("statsF1FunnelHintLowConfirm")}</li>
+        </ul>
+        <p className="text-xs text-stone-500">{t("statsF1FunnelFootnote")}</p>
       </section>
 
       <section className="space-y-3">

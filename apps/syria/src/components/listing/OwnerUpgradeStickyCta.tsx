@@ -1,13 +1,19 @@
 "use client";
 
+import { useEffect } from "react";
 import { useTranslations } from "next-intl";
+import { trackF1FunnelOpenedOnce } from "@/lib/f1-funnel-client";
 
 /**
  * Mobile-only fixed bar — "ترقية الآن" scrolls to inline upgrade (no modal).
  * Parent renders only when the owner R1 path applies.
  */
-export function OwnerUpgradeStickyCta() {
+export function OwnerUpgradeStickyCta({ listingId }: { listingId: string }) {
   const t = useTranslations("Listing");
+
+  useEffect(() => {
+    trackF1FunnelOpenedOnce(listingId, "owner_upgrade_sticky");
+  }, [listingId]);
 
   return (
     <div

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -9,6 +9,7 @@ import { f1ViewTierAndPrices } from "@/config/syria-f1-pricing.config";
 import { f1AmountForPlan, type F1PlanKey } from "@/lib/payment-f1";
 import { SYRIA_PRICING } from "@/lib/pricing";
 import { formatSyriaCurrency } from "@/lib/format";
+import { trackF1FunnelOpenedOnce } from "@/lib/f1-funnel-client";
 
 type Contact = { displayPhone: string; whatsappHref: string | null; telHref: string | null } | null;
 type Plan = F1PlanKey;
@@ -52,6 +53,10 @@ export function MakeFeaturedCta({
   const showViewsNudge = currentPlan === "free" && viewCount >= 10;
   const showDirectNudge = currentPlan === "free" && isDirect && !showViewsNudge;
   const benefits = [t("makeFeaturedM1Benefit1"), t("makeFeaturedM1Benefit2"), t("makeFeaturedM1Benefit3")];
+
+  useEffect(() => {
+    trackF1FunnelOpenedOnce(listingId, "make_featured_cta");
+  }, [listingId]);
 
   async function onWhatsappPayClick() {
     if (!contact) return;

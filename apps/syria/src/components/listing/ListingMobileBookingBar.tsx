@@ -17,7 +17,10 @@ export function ListingMobileBookingBar({
   return (
     <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface)] px-4 py-3 shadow-[var(--darlink-shadow-sm)] md:hidden">
       <div className="darlink-rtl-row mx-auto flex max-w-7xl items-center justify-between gap-4">
-        <p className="text-lg font-bold tabular-nums text-[color:var(--darlink-text)]">{money(amount, currency, numberLoc)}</p>
+        <div className="min-w-0">
+          <p className="text-lg font-bold tabular-nums text-[color:var(--darlink-text)]">{money(amount, currency, numberLoc)}</p>
+          <p className="mt-0.5 text-[10px] font-medium leading-snug text-[color:var(--darlink-text-muted)]">{t("stickyPaymentAfterConfirm")}</p>
+        </div>
         <a
           href="#darlink-booking"
           className="hadiah-btn-primary inline-flex min-h-[44px] shrink-0 items-center justify-center rounded-[var(--darlink-radius-xl)] px-5 py-2.5 text-sm font-semibold"

@@ -7,7 +7,7 @@ import { buildSyriaInvestorDemoReport } from "@/lib/drbrain/demo-data";
 import { persistSyriaDrBrainTicketsEmitted } from "@/lib/drbrain/ticket-audit";
 import { runSafeAutoMaintenance } from "@/lib/drbrain/auto-maintenance";
 import { countBlockedPaymentEventsInWindow, getSybnbPaymentStats } from "@/lib/sybnb/monitoring";
-import { disableDemoModeSafely } from "@/lib/sybnb/demo-safety";
+import { afterSyriaDrBrainReportComputed } from "@/lib/drbrain/runner";
 
 function monorepoRoot(): string {
   return process.env.DRBRAIN_MONOREPO_ROOT?.trim() || join(process.cwd(), "..", "..");
@@ -18,10 +18,6 @@ function monorepoRoot(): string {
  * exclude investor-demo audit rows & demo booking dimensions (see demo-metrics-filter).
  */
 async function syriaMarketplaceAnomalies(): Promise<DrBrainCheckResult[]> {
-  if (isInvestorDemoModeActive()) {
-    return [];
-  }
-
   const [stats, blockedBurst15m] = await Promise.all([
     getSybnbPaymentStats(),
     countBlockedPaymentEventsInWindow(15),
@@ -88,9 +84,7 @@ export async function runSyriaDrBrainReport(): Promise<DrBrainReport> {
     workspacePaths: { monorepoRoot: monorepoRoot(), appRelativeDir: "apps/syria" },
   });
 
-  if (report.status === "CRITICAL") {
-    await disableDemoModeSafely("Dr. Brain detected CRITICAL system issue");
-  }
+  await afterSyriaDrBrainReportComputed(report);
 
   if (report.ticketsEmitted?.length) {
     await persistSyriaDrBrainTicketsEmitted(report.ticketsEmitted);

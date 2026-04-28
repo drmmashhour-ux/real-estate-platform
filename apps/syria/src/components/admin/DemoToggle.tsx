@@ -1,14 +1,32 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type Props = {
   initialRuntimeEnabled: boolean;
   effectiveDemoOn: boolean;
+  /** ISO timestamp — demo runtime auto-disables after this time (process-local). */
+  expiresAtIso?: string | null;
   /** Present after demo auto-disable via DR.BRAIN CRITICAL failsafe (until operator clears by turning demo ON). */
   autoDisabledReason?: string | null;
   autoDisabledAt?: string | null;
 };
+
+const WARNING_MS = 5 * 60 * 1000;
+
+type ExpiryUi = { minutes: number; urgent: boolean };
+
+function computeExpiryUi(expiresAtIso: string | undefined | null): ExpiryUi | null {
+  if (!expiresAtIso?.trim()) return null;
+  const endMs = Date.parse(expiresAtIso);
+  if (Number.isNaN(endMs)) return null;
+  const leftMs = endMs - Date.now();
+  if (leftMs <= 0) return { minutes: 0, urgent: true };
+  return {
+    minutes: Math.ceil(leftMs / 60_000),
+    urgent: leftMs < WARNING_MS,
+  };
+}
 
 /**
  * Syria investor demo runtime toggle (INVESTOR_DEMO_MODE_RUNTIME). Admin-only via API + session.
@@ -16,12 +34,32 @@ type Props = {
 export function DemoToggle({
   initialRuntimeEnabled,
   effectiveDemoOn,
+  expiresAtIso: initialExpiresAtIso,
   autoDisabledReason,
   autoDisabledAt,
 }: Props) {
   const [runtimeEnabled, setRuntimeEnabled] = useState(initialRuntimeEnabled);
+  const [expiresAtIso] = useState(initialExpiresAtIso);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /** Increments on an interval so countdown stays fresh without syncing React state in an effect body. */
+  const [clock, setClock] = useState(0);
+
+  useEffect(() => {
+    if (!runtimeEnabled || !expiresAtIso) return;
+    const id = setInterval(() => setClock((c) => c + 1), 30_000);
+    return () => clearInterval(id);
+  }, [expiresAtIso, runtimeEnabled]);
+
+  const expiryUi =
+    runtimeEnabled && expiresAtIso ? computeExpiryUi(expiresAtIso) : null;
+
+  useEffect(() => {
+    if (!runtimeEnabled || !expiresAtIso) return;
+    const ui = computeExpiryUi(expiresAtIso);
+    if (!ui || ui.minutes > 0) return;
+    window.location.reload();
+  }, [clock, expiresAtIso, runtimeEnabled]);
 
   async function apply(next: boolean) {
     setPending(true);
@@ -47,6 +85,11 @@ export function DemoToggle({
   }
 
   const showAutoBanner = Boolean(autoDisabledReason?.trim());
+  const showExpiry =
+    runtimeEnabled &&
+    Boolean(expiresAtIso?.trim()) &&
+    expiryUi !== null &&
+    expiryUi.minutes > 0;
 
   return (
     <div className="rounded-2xl border border-amber-300 bg-amber-50/80 p-4 [dir=rtl]:text-right">
@@ -75,6 +118,14 @@ export function DemoToggle({
             <span className="mx-2 text-stone-400">·</span>
             Effective demo UX: <strong>{effectiveDemoOn ? "ON" : "OFF"}</strong>
           </p>
+          {showExpiry && expiryUi ? (
+            <p
+              className={`mt-2 text-xs font-medium ${expiryUi.urgent ? "font-semibold text-red-700" : "text-amber-900/90"}`}
+            >
+              Demo expires in {expiryUi.minutes} minute{expiryUi.minutes === 1 ? "" : "s"}
+              {expiryUi.urgent ? " — runtime turns off automatically at expiry." : ""}
+            </p>
+          ) : null}
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <button

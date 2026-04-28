@@ -12,11 +12,16 @@ export function getSyriaInvestorDemoRuntimeEnabled(): boolean {
   return process.env[SYRIA_INVESTOR_DEMO_RUNTIME_KEY] === "true";
 }
 
+export function getSyriaInvestorDemoExpiresAtIso(): string | undefined {
+  const v = process.env[SYRIA_INVESTOR_DEMO_EXPIRES_AT_KEY]?.trim();
+  return v || undefined;
+}
+
 export function setSyriaInvestorDemoRuntimeEnabled(enabled: boolean): void {
   if (enabled) {
     process.env[SYRIA_INVESTOR_DEMO_RUNTIME_KEY] = "true";
   } else {
-    delete process.env[SYRIA_INVESTOR_DEMO_RUNTIME_KEY];
+    process.env[SYRIA_INVESTOR_DEMO_RUNTIME_KEY] = "false";
   }
 }
 

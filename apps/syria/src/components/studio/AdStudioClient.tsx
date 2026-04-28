@@ -141,8 +141,7 @@ export function AdStudioClient({
 
       {justSaved ? (
         <div className="rounded-2xl border-2 border-emerald-200/80 bg-emerald-50/90 p-4 text-center shadow-sm">
-          <p className="text-lg font-bold text-emerald-900">{t("saveSuccessTitle")}</p>
-          <p className="mt-1 text-sm font-medium text-emerald-800/90">{t("saveSuccessSubtitle")}</p>
+          <p className="text-base font-bold leading-snug text-emerald-900">{t("saveSuccessBanner")}</p>
           <button
             type="button"
             className="mt-4 flex h-12 w-full items-center justify-center rounded-lg bg-[#25D366] text-base font-bold text-white shadow-sm hover:bg-[#20bd5a]"

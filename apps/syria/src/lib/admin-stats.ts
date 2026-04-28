@@ -102,6 +102,85 @@ const f1PlanFilter = { plan: { in: ["featured", "premium"] as string[] } };
 
 export type F1TierKpi = { tier: 0 | 1 | 2; requests: number; confirmed: number; revenue: number };
 
+export type AdminF1FunnelBand = {
+  opened: number;
+  /** Payment requests created (WhatsApp flow started after POST). */
+  clicked: number;
+  confirmed: number;
+  /** clicked ÷ opened */
+  openToClickPct: number | null;
+  /** confirmed ÷ clicked */
+  clickToConfirmPct: number | null;
+};
+
+function funnelPct(part: number, whole: number): number | null {
+  if (whole <= 0) return null;
+  return part / whole;
+}
+
+/** SYBNB-134 — opened (`f1_funnel_opened`) → clicked (`SyriaPaymentRequest`) → confirmed. */
+export async function getAdminF1FunnelSnapshot(): Promise<{ today: AdminF1FunnelBand; weekRolling: AdminF1FunnelBand }> {
+  const now = new Date();
+  const todayStart = utcDayStart(now);
+  const todayEnd = utcDayEndExclusive(todayStart);
+  const weekRollingStart = new Date(now);
+  weekRollingStart.setUTCDate(weekRollingStart.getUTCDate() - 7);
+
+  const [
+    todayOpened,
+    todayClicked,
+    todayConfirmed,
+    weekOpened,
+    weekClicked,
+    weekConfirmed,
+  ] = await Promise.all([
+    prisma.syriaGrowthEvent.count({
+      where: { eventType: "f1_funnel_opened", createdAt: { gte: todayStart, lt: todayEnd } },
+    }),
+    prisma.syriaPaymentRequest.count({
+      where: { ...f1PlanFilter, createdAt: { gte: todayStart, lt: todayEnd } },
+    }),
+    prisma.syriaPaymentRequest.count({
+      where: {
+        ...f1PlanFilter,
+        status: "confirmed",
+        confirmedAt: { gte: todayStart, lt: todayEnd },
+      },
+    }),
+    prisma.syriaGrowthEvent.count({
+      where: { eventType: "f1_funnel_opened", createdAt: { gte: weekRollingStart } },
+    }),
+    prisma.syriaPaymentRequest.count({
+      where: { ...f1PlanFilter, createdAt: { gte: weekRollingStart } },
+    }),
+    prisma.syriaPaymentRequest.count({
+      where: {
+        ...f1PlanFilter,
+        status: "confirmed",
+        confirmedAt: { gte: weekRollingStart },
+      },
+    }),
+  ]);
+
+  const today: AdminF1FunnelBand = {
+    opened: todayOpened,
+    clicked: todayClicked,
+    confirmed: todayConfirmed,
+    openToClickPct: funnelPct(todayClicked, todayOpened),
+    clickToConfirmPct: funnelPct(todayConfirmed, todayClicked),
+  };
+
+  const weekRolling: AdminF1FunnelBand = {
+    opened: weekOpened,
+    clicked: weekClicked,
+    confirmed: weekConfirmed,
+    openToClickPct: funnelPct(weekClicked, weekOpened),
+    clickToConfirmPct: funnelPct(weekConfirmed, weekClicked),
+  };
+
+  return { today, weekRolling };
+}
+
 /** F1 view ladder: tier 0 / 1 / 2 (stored on `pricingTier`). */
 export async function getAdminF1PricingTierStats() {
   const tierNums = [0, 1, 2] as const;

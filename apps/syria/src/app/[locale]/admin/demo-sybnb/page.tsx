@@ -4,13 +4,14 @@ import { DemoToggle } from "@/components/admin/DemoToggle";
 import { DemoSessionPanel } from "@/components/admin/DemoSessionPanel";
 import { INVESTOR_DEMO_TITLE_PREFIX, isInvestorDemoModeActive } from "@/lib/sybnb/investor-demo";
 import { getDemoAutoDisabledBanner } from "@/lib/sybnb/demo-safety";
-import { getSyriaInvestorDemoRuntimeEnabled } from "@/lib/demo/runtime-flags";
+import { getSyriaInvestorDemoExpiresAtIso, getSyriaInvestorDemoRuntimeEnabled } from "@/lib/demo/runtime-flags";
 
 export default async function AdminInvestorDemoSybnbPage() {
   const t = await getTranslations("InvestorDemo");
   const pfx = INVESTOR_DEMO_TITLE_PREFIX;
-  const runtimeOn = getSyriaInvestorDemoRuntimeEnabled();
   const effective = isInvestorDemoModeActive();
+  const runtimeOn = getSyriaInvestorDemoRuntimeEnabled();
+  const expiresAtIso = getSyriaInvestorDemoExpiresAtIso() ?? null;
   const autoBanner = getDemoAutoDisabledBanner();
 
   const [byReview, hostVerified, bookingRows, audits] = effective
@@ -51,6 +52,7 @@ export default async function AdminInvestorDemoSybnbPage() {
       <DemoToggle
         initialRuntimeEnabled={runtimeOn}
         effectiveDemoOn={effective}
+        expiresAtIso={expiresAtIso}
         autoDisabledReason={autoBanner?.reason ?? null}
         autoDisabledAt={autoBanner?.timestamp ?? null}
       />
