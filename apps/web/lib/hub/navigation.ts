@@ -220,6 +220,8 @@ export const hubNavigation: Record<string, NavItem[]> = {
     { label: "Notifications", href: "/dashboard/notifications" },
     { label: "Tasks", href: "/dashboard/tasks" },
     { label: "Staging demo", href: "/admin/demo" },
+    { label: "LECIPM demo", href: "/admin/demo-lecipm" },
+    { label: "Demo control", href: "/admin/demo-control" },
     { label: "Users", href: "/admin/users" },
     { label: "Payments", href: "/admin/finance/overview" },
     { label: "Revenue & ledger", href: "/admin/revenue" },

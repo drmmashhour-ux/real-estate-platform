@@ -14,7 +14,7 @@ export default async function SyriaDemoControlPage() {
       <div>
         <h1 className="text-2xl font-bold text-stone-900">Demo control (Syria)</h1>
         <p className="mt-2 text-sm text-stone-600">
-          Syria Darlink demo is toggled here only. The Canada marketplace app uses a separate deployment and its own
+          Syria Darlink demo is toggled here only. The main web marketplace uses a separate deployment and its own
           demo runtime environment — use that app&apos;s admin Demo hub to change it. No shared database flag between
           apps.
         </p>

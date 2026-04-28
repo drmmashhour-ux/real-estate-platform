@@ -23,12 +23,18 @@ function cookieEnablesDemo(req: Request): boolean {
   return /(?:^|;\s*)lecipm_demo=1(?:;|$)/.test(c);
 }
 
+/** Admin runtime toggle — independent from Syria demo flags. */
+function lecipmRuntimeDemoEnabled(): boolean {
+  return process.env.LECIPM_DEMO_MODE_RUNTIME === "true";
+}
+
 /**
  * **GET-only** paths may return the read-only demo dataset. Never use for write authorization alone.
  * - `FEATURE_DEMO_MODE=1` (and in production, `FEATURE_DEMO_MODE_PROD=1`)
  * - **or** (non-production + `FEATURE_DEMO_MODE_CLIENT=1` + `lecipm_demo=1` cookie for admin preview)
  */
 export function isDemoDataActive(req: Request): boolean {
+  if (lecipmRuntimeDemoEnabled()) return true;
   if (cookieEnablesDemo(req)) return true;
   if (!flags.DEMO_MODE) return false;
   if (process.env.NODE_ENV === "production" && !flags.DEMO_MODE_PROD) {
