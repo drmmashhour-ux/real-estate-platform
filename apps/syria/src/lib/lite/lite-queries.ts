@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import type { SyriaPropertyType } from "@/generated/prisma";
 import { pickListingTitle } from "@/lib/listing-localized";
 import { money } from "@/lib/format";
 
@@ -30,7 +31,7 @@ const STAY_BROWSE_WHERE = {
   status: "PUBLISHED" as const,
   fraudFlag: false,
   category: "stay" as const,
-  type: { in: ["RENT", "HOTEL"] as const },
+  type: { in: ["RENT", "HOTEL"] satisfies SyriaPropertyType[] },
   sybnbReview: "APPROVED" as const,
 };
 

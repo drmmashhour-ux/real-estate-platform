@@ -17,6 +17,11 @@ const bodySchema = z.discriminatedUnion("type", [
     listingId: z.string().min(1).max(64),
     channel: z.enum(["whatsapp", "tel"]),
   }),
+  z.object({
+    type: z.literal("hotel_contact_click"),
+    listingId: z.string().min(1).max(64),
+    channel: z.enum(["whatsapp", "tel"]),
+  }),
 ]);
 
 async function assertStayListingForView(listingId: string): Promise<boolean> {
@@ -41,7 +46,15 @@ async function assertListingForContactClick(listingId: string): Promise<boolean>
   return Boolean(listing?.id && listing.status === "PUBLISHED" && !listing.fraudFlag);
 }
 
-/** SYBNB-10/`listing_view`, SYBNB-11/`contact_click` ingestion. Others emit server-side only. */
+async function assertHotelListingForLead(listingId: string): Promise<boolean> {
+  const listing = await prisma.syriaProperty.findUnique({
+    where: { id: listingId },
+    select: { id: true, status: true, fraudFlag: true, type: true },
+  });
+  return Boolean(listing?.id && listing.status === "PUBLISHED" && !listing.fraudFlag && listing.type === "HOTEL");
+}
+
+/** SYBNB-10/`listing_view`, SYBNB-11/`contact_click`, SYBNB-40/`hotel_contact_click` ingestion. Others emit server-side only. */
 export async function POST(req: Request): Promise<Response> {
   let json: unknown;
   try {
@@ -66,6 +79,29 @@ export async function POST(req: Request): Promise<Response> {
       listingId: payload.listingId,
       userId: session?.id ?? null,
       metadata: { source: "api" },
+    });
+    return NextResponse.json({ ok: true });
+  }
+
+  if (payload.type === "hotel_contact_click") {
+    const okHotel = await assertHotelListingForLead(payload.listingId);
+    if (!okHotel) {
+      return NextResponse.json({ ok: false, error: "listing_unavailable" }, { status: 404 });
+    }
+    const session = await getSessionUser();
+    await recordSybnbEvent({
+      type: "hotel_contact_click",
+      listingId: payload.listingId,
+      userId: session?.id ?? null,
+      metadata: { channel: payload.channel },
+    });
+    void logTimelineEvent({
+      entityType: "syria_property",
+      entityId: payload.listingId,
+      action: "sybnb_hotel_contact_channel_used",
+      actorId: session?.id ?? undefined,
+      actorRole: session ? "user" : "visitor",
+      metadata: { channel: payload.channel },
     });
     return NextResponse.json({ ok: true });
   }

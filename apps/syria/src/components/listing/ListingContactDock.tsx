@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { trackLeadPhoneClick, trackLeadWhatsappClick } from "@/lib/lead-client";
-import { trackListingContactClick } from "@/lib/contact-analytics-client";
+import { trackHotelContactClick, trackListingContactClick } from "@/lib/contact-analytics-client";
 
 /**
  * Sticky contact bar (mobile) — WhatsApp / call · SYBNB-11 headline optional.
@@ -12,11 +12,14 @@ export function ListingContactDock({
   whatsappHref,
   telHref,
   primaryHeading,
+  contactAnalytics = "listing",
 }: {
   listingId: string;
   whatsappHref: string | null;
   telHref: string | null;
   primaryHeading?: string | null;
+  /** SYBNB-40 — `hotel_contact_click` vs default `contact_click`. */
+  contactAnalytics?: "listing" | "hotel";
 }) {
   const t = useTranslations("Listing");
   if (!whatsappHref && !telHref) return null;
@@ -44,7 +47,11 @@ export function ListingContactDock({
             target="_blank"
             rel="noreferrer"
             onClick={() => {
-              trackListingContactClick(listingId, "whatsapp");
+              if (contactAnalytics === "hotel") {
+                trackHotelContactClick(listingId, "whatsapp");
+              } else {
+                trackListingContactClick(listingId, "whatsapp");
+              }
               trackLeadWhatsappClick(listingId);
             }}
             className="flex h-14 w-full touch-manipulation items-center justify-center rounded-xl bg-[#25D366] px-4 text-base font-bold text-white shadow-md transition hover:bg-[#20bd5a] active:scale-[0.99]"
@@ -56,7 +63,11 @@ export function ListingContactDock({
           <a
             href={telHref}
             onClick={() => {
-              trackListingContactClick(listingId, "tel");
+              if (contactAnalytics === "hotel") {
+                trackHotelContactClick(listingId, "tel");
+              } else {
+                trackListingContactClick(listingId, "tel");
+              }
               trackLeadPhoneClick(listingId);
             }}
             className="flex h-12 w-full touch-manipulation items-center justify-center rounded-xl border-2 border-[color:var(--darlink-navy)] bg-[color:var(--darlink-surface)] px-4 text-sm font-bold text-[color:var(--darlink-navy)]"

@@ -47,7 +47,7 @@ export async function getSybnbStayQuote(input: {
     where: { id: input.propertyId.trim() },
     include: { owner: true },
   });
-  if (!property || property.category !== "stay" || property.type !== "RENT") {
+  if (!property || property.category !== "stay" || !isSybnbStayBookablePropertyType(property.type)) {
     return { ok: false, error: "not_found" };
   }
   const unreviewed = await countUnreviewedSybnbReportsForProperty(property.id);

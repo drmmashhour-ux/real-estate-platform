@@ -2,7 +2,8 @@
 
 import { useTranslations } from "next-intl";
 import { trackLeadPhoneClick, trackLeadWhatsappClick } from "@/lib/lead-client";
-import { trackListingContactClick } from "@/lib/contact-analytics-client";
+import { trackLeadPhoneClick, trackLeadWhatsappClick } from "@/lib/lead-client";
+import { trackHotelContactClick, trackListingContactClick } from "@/lib/contact-analytics-client";
 import { Card } from "@/components/ui/Card";
 import { ListingShareActions } from "@/components/listing/ListingShareActions";
 
@@ -18,6 +19,8 @@ export function ListingOwnerContactCard({
   shareCity,
   sharePriceAmount,
   adCode,
+  /** SYBNB-40 — `hotel_contact_click` vs default `contact_click`. */
+  contactAnalytics = "listing",
 }: {
   listingId: string;
   waOwnerHref: string | null;
@@ -31,6 +34,8 @@ export function ListingOwnerContactCard({
   shareCity?: string;
   sharePriceAmount?: number;
   adCode?: string;
+  /** SYBNB-40 — `hotel_contact_click` vs default `contact_click`. */
+  contactAnalytics?: "listing" | "hotel";
 }) {
   const t = useTranslations("Listing");
   return (
@@ -56,7 +61,11 @@ export function ListingOwnerContactCard({
           target="_blank"
           rel="noreferrer"
           onClick={() => {
-            trackListingContactClick(listingId, "whatsapp");
+            if (contactAnalytics === "hotel") {
+              trackHotelContactClick(listingId, "whatsapp");
+            } else {
+              trackListingContactClick(listingId, "whatsapp");
+            }
             trackLeadWhatsappClick(listingId);
           }}
           className="mt-3 flex h-14 w-full items-center justify-center rounded-xl bg-[#25D366] px-4 text-base font-bold text-white shadow-md hover:bg-[#20bd5a]"
@@ -68,7 +77,11 @@ export function ListingOwnerContactCard({
         <a
           href={telOwnerHref}
           onClick={() => {
-            trackListingContactClick(listingId, "tel");
+            if (contactAnalytics === "hotel") {
+              trackHotelContactClick(listingId, "tel");
+            } else {
+              trackListingContactClick(listingId, "tel");
+            }
             trackLeadPhoneClick(listingId);
           }}
           className="mt-2 flex h-12 w-full items-center justify-center rounded-xl border-2 border-[color:var(--darlink-navy)] bg-[color:var(--darlink-surface)] px-4 text-sm font-bold text-[color:var(--darlink-navy)]"

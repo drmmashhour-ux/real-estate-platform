@@ -48,6 +48,16 @@ export function buildListingWhatsAppInquiryHref(phone: string, listingTitle: str
   return `https://wa.me/${path}?text=${encodeURIComponent(text)}`;
 }
 
+/** SYBNB-40 hotel lead — Arabic-first prefill per product copy. */
+export function buildHotelLeadWhatsAppHref(phone: string, hotelName: string, locale: string): string | null {
+  const path = toWhatsAppPath(phone);
+  if (!path) return null;
+  const raw = hotelName.trim().slice(0, MAX_WA_PREFILL_TITLE) || hotelName.trim() || "—";
+  const isAr = locale.toLowerCase().startsWith("ar");
+  const text = isAr ? `مرحبا، مهتم بالحجز في ${raw}` : `Hi, I'm interested in booking at ${raw}`;
+  return `https://wa.me/${path}?text=${encodeURIComponent(text)}`;
+}
+
 /**
  * Prefill for monetization upgrade (باقة مميز / فاخر) — `wa.me` with Arabic-first message.
  */

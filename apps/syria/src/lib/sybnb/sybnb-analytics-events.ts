@@ -7,6 +7,8 @@ export const SYBNB_ANALYTICS_EVENT_TYPES = {
   BOOKING_APPROVED: "booking_approved",
   REPORT_SUBMITTED: "report_submitted",
   CONTACT_CLICK: "contact_click",
+  /** SYBNB-40 — WhatsApp / phone taps on `HOTEL` listings (lead-first, no booking flow). */
+  HOTEL_CONTACT_CLICK: "hotel_contact_click",
 } as const;
 
 export type SybnbAnalyticsCanonicalType = (typeof SYBNB_ANALYTICS_EVENT_TYPES)[keyof typeof SYBNB_ANALYTICS_EVENT_TYPES];
