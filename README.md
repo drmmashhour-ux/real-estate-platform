@@ -1,5 +1,11 @@
 # LECIPM Platform
+## 🚧 Deployment Status
 
+This project is currently running locally / on private infrastructure.
+## 🌐 Live Demo
+
+Coming soon
+⚠️ Public demo link is temporarily unavailable.  
 Monorepo for the LECIPM real-estate ecosystem: marketplace, BNHub short-term rentals, broker/owner tools, trust & safety.
 
 ---
