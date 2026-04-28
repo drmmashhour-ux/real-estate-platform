@@ -10,21 +10,25 @@ export function ListingOwnerContactCard({
   listingId,
   waOwnerHref,
   telOwnerHref,
+  mailtoHref,
   canContact,
-  ownerHasPhone,
+  messageScrollHref,
   primaryHeading,
   shareTitle,
   sharePriceLine,
   shareCity,
   sharePriceAmount,
   adCode,
+  highlightNew,
   contactAnalytics = "listing",
 }: {
   listingId: string;
   waOwnerHref: string | null;
   telOwnerHref: string | null;
+  mailtoHref?: string | null;
   canContact: boolean;
-  ownerHasPhone: boolean;
+  /** ORDER SYBNB-95 — link when messaging is the only channel. */
+  messageScrollHref?: string | null;
   /** SYBNB-11: single headline (e.g. contact the owner). */
   primaryHeading?: string | null;
   shareTitle?: string;
@@ -32,13 +36,14 @@ export function ListingOwnerContactCard({
   shareCity?: string;
   sharePriceAmount?: number;
   adCode?: string;
+  highlightNew?: boolean;
   /** SYBNB-40 — `hotel_contact_click` vs default `contact_click`. */
   contactAnalytics?: "listing" | "hotel";
 }) {
   const t = useTranslations("Listing");
   return (
     <Card className="border-[color:var(--darlink-border)] p-4 shadow-[var(--darlink-shadow-sm)]">
-      {ownerHasPhone ? (
+      {waOwnerHref || telOwnerHref || mailtoHref ? (
         primaryHeading ? (
           <>
             <p className="text-center text-base font-semibold tracking-tight text-[color:var(--darlink-text)]">{primaryHeading}</p>
@@ -50,6 +55,8 @@ export function ListingOwnerContactCard({
             <p className="mt-0.5 text-center text-[11px] text-[color:var(--darlink-text-muted)]">{t("trustVerifyPayment")}</p>
           </>
         )
+      ) : canContact ? (
+        <p className="text-sm leading-relaxed text-[color:var(--darlink-text-muted)]">{t("contactMessageOnlyHint")}</p>
       ) : (
         <p className="text-sm text-amber-800">{t("contactNoPhone")}</p>
       )}
@@ -87,6 +94,22 @@ export function ListingOwnerContactCard({
           {t("contactCall")}
         </a>
       ) : null}
+      {canContact && mailtoHref ? (
+        <a
+          href={mailtoHref}
+          className="mt-2 flex h-11 w-full items-center justify-center rounded-xl border border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface-muted)] px-4 text-sm font-semibold text-[color:var(--darlink-text)]"
+        >
+          {t("contactEmail")}
+        </a>
+      ) : null}
+      {canContact && messageScrollHref ? (
+        <a
+          href={messageScrollHref}
+          className="mt-3 flex h-14 w-full items-center justify-center rounded-xl bg-[color:var(--darlink-navy)] px-4 text-base font-bold text-white shadow-md hover:opacity-95"
+        >
+          {t("contactMessageSend")}
+        </a>
+      ) : null}
       {shareTitle && sharePriceLine ? (
         <div className="mt-3 min-w-0 border-t border-[color:var(--darlink-border)] pt-3 [overflow-wrap:anywhere]">
           <ListingShareActions
@@ -96,6 +119,7 @@ export function ListingOwnerContactCard({
             shareCity={shareCity}
             sharePriceAmount={sharePriceAmount}
             adCode={adCode}
+            highlightNew={highlightNew}
           />
         </div>
       ) : null}

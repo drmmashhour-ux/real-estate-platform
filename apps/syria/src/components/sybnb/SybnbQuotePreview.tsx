@@ -32,7 +32,9 @@ export function SybnbQuotePreview({ propertyId }: Props) {
         guests: Number.isFinite(g) && g > 0 ? Math.floor(g) : 1,
       });
       if (!r.ok) {
-        setErr(r.error === "invalid" ? t("sybnbQuoteInvalidDates") : t("sybnbQuoteError"));
+        if (r.error === "invalid") setErr(t("sybnbQuoteInvalidDates"));
+        else if (r.error === "dates_unavailable") setErr(t("sybnbQuoteDatesUnavailable"));
+        else setErr(t("sybnbQuoteError"));
         return;
       }
       const loc = locale.startsWith("ar") ? "ar-SY" : "en-US";
@@ -52,6 +54,7 @@ export function SybnbQuotePreview({ propertyId }: Props) {
   return (
     <div className="mt-4 space-y-3 rounded-[var(--darlink-radius-xl)] border border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface-muted)]/40 p-4">
       <p className="text-sm font-semibold text-[color:var(--darlink-text)]">{t("sybnbQuoteTitle")}</p>
+      <p className="text-xs leading-relaxed text-[color:var(--darlink-text-muted)]">{t("availabilityApproxDisclaimer")}</p>
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="block text-xs text-[color:var(--darlink-text)]">
           {t("fieldCheckIn")}

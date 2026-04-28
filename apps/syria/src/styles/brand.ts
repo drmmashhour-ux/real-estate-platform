@@ -1,6 +1,6 @@
 /**
  * Darlink brand tokens — JS mirror of CSS (`darlink-theme.css`) for programmatic use.
- * Fonts: Cairo (Arabic), Inter (English) via next/font in `[locale]/layout.tsx`.
+ * Fonts: ORDER SYBNB-86 — system-ui stack (same as `globals.css` / `darlink-theme.css`).
  */
 
 export const brandColors = {
@@ -18,8 +18,8 @@ export const brandColors = {
 } as const;
 
 export const brandFonts = {
-  arabic: "var(--font-darlink-cairo), Cairo, Noto Naskh Arabic, sans-serif",
-  english: "var(--font-darlink-inter), Inter, system-ui, sans-serif",
+  arabic: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  english: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
 } as const;
 
 export const brandShadows = {

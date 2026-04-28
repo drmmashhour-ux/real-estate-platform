@@ -7,7 +7,7 @@ import { BrowseExperienceClient } from "@/components/browse/BrowseExperienceClie
 import { trackSyriaGrowthEvent } from "@/lib/growth-events";
 import { parseUtmFromSearchParams } from "@/lib/utm";
 import { flattenSearchParams } from "@/lib/property-search";
-import { searchProperties } from "@/services/search/search.service";
+import { getCachedBrowseSearch } from "@/lib/cache/darlink-browse-search";
 
 type Props = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -20,6 +20,9 @@ function toInitialQs(flat: Record<string, string>): string {
   }
   return usp.toString();
 }
+
+/** ORDER SYBNB-82 / SYBNB-104 — sync literal with `SYRIA_PUBLIC_SEGMENT_REVALIDATE_SECONDS`. */
+export const revalidate = 45;
 
 export default async function BnhubStaysPage(props: Props) {
   const t = await getTranslations("Bnhub");
@@ -65,7 +68,7 @@ export default async function BnhubStaysPage(props: Props) {
   }
 
   const initialQs = toInitialQs(flat);
-  const initialResult = await searchProperties("bnhub", flat);
+  const initialResult = await getCachedBrowseSearch("bnhub", flat);
 
   return (
     <div className="space-y-8">

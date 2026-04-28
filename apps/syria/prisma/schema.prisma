@@ -1,6 +1,6 @@
 // Syria platform — isolated tables (`syria_*`). Same DATABASE_URL as rest of monorepo; no overlap with apps/web schema.
-// SYBNB (app): `apps/syria/src/lib/sybnb/*` + `components/sybnb/*` + `app/api/sybnb/*`. The shipping short-stay flow uses
-// `SyriaBooking` with `property.category = stay` (and `SybnbListingReport`); the `SybnbBooking` model is reserved for a future dedicated flow.
+// SYBNB (app): `apps/syria/src/lib/sybnb/*` + `components/sybnb/*` + `app/api/sybnb/*`. Stay flows use `ListingReport`
+// (`sybnb_listing_reports`) + `SyriaBooking`; `SybnbBooking` is reserved for future dedicated flows beyond MVP.
 generator client {
   provider   = "prisma-client-js"
   engineType = "binary"
@@ -73,6 +73,8 @@ enum SyriaPropertyType {
 enum SyriaPropertyStatus {
   DRAFT
   PENDING_REVIEW
+  /// ORDER SYBNB-84 — ≥5 cumulative reports (trust gate); hidden from public browse feeds until cleared by ops.
+  NEEDS_REVIEW
   PUBLISHED
   REJECTED
   ARCHIVED
@@ -186,13 +188,18 @@ model SyriaAppUser {
   phone     String?
   /// S1: set when phone verified via SMS/WhatsApp OTP (soft trust).
   phoneVerifiedAt DateTime?            @map("phone_verified_at")
+  /// ORDER SYBNB-96 — mirror flag; kept in sync with `phoneVerifiedAt` when OTP succeeds.
+  phoneVerified   Boolean              @default(false) @map("phone_verified")
+  /// ORDER SYBNB-96 — pending OTP (sha256 hex of digits); cleared after verify / resend.
+  phoneCode       String?              @map("phone_code")
+  phoneCodeExpiry DateTime?            @map("phone_code_expiry")
   /// SYBNB general trust time — set/updated with phone or ID verification.
   verifiedAt    DateTime?  @map("verified_at")
   /// "phone" | "id" — strongest verification achieved.
   verificationLevel String? @map("verification_level")
   /// SYBNB: when true, new listings are hidden from public feed (abuse; ≥5 valid reports, etc.).
   sybnbSupplyPaused Boolean @default(false) @map("sybnb_supply_paused")
-  /// SYBNB: operator-facing reputation aggregate (0+).
+  /// ORDER SYBNB-98 — aggregate trust score (`computeReputationScoreFromAggregates` / displayed tier on listings).
   reputationScore  Int     @default(0) @map("reputation_score")
   /// SYBNB / trust: account-level abuse or sanctions flag (hide from book flows in UI if needed).
   flagged            Boolean @default(false)
@@ -201,6 +208,8 @@ model SyriaAppUser {
   updatedAt DateTime      @updatedAt @map("updated_at")
   /// Investor-demo seed only: `{"demo":true,"source":"investor-demo"}` — excluded from prod metrics/alerts when set.
   demoMeta Json? @map("demo_meta")
+  /// ORDER SYBNB-108 — full platform test mode synthetic users (never mixed into prod KPIs when excluded).
+  isTest Boolean @default(false) @map("is_test")
 
   propertiesOwned       SyriaProperty[]           @relation("PropertyOwner")
   phoneOtps                 SyriaPhoneOtp[]
@@ -214,11 +223,12 @@ model SyriaAppUser {
   sybnbBookingsAsGuest  SybnbBooking[]            @relation("SybnbGuestBookings")
   sybnbBookingsAsHost   SybnbBooking[]            @relation("SybnbHostBookings")
   sybnbPaymentAudits    SybnbPaymentAudit[]
-  sybnbReportsFiled     SybnbListingReport[]    @relation("SybnbListingReportReporter")
+  stayReportsFiled       ListingReport[]       @relation("ListingReportStayReporter")
   sybnbAnalyticsEvents  SybnbEvent[]             @relation("SybnbAnalyticsEventActor")
   sybnbFieldAgentAttributions SyriaProperty[]   @relation("SybnbListingFieldAgent")
   sybnbAgentEarnings      SybnbAgentEarning[]      @relation("SybnbAgentEarningAgent")
 
+  @@index([isTest])
   @@map("syria_users")
 }
 
@@ -229,7 +239,7 @@ model SyriaInquiry {
   fromUserId  String?       @map("from_user_id")
   fromUser    SyriaAppUser? @relation(fields: [fromUserId], references: [id], onDelete: SetNull)
   name        String
-  phone       String
+  phone       String?
   message     String?       @db.Text
   utmSource   String?       @map("utm_source")
   utmMedium   String?       @map("utm_medium")
@@ -237,6 +247,7 @@ model SyriaInquiry {
   createdAt   DateTime      @default(now()) @map("created_at")
 
   @@index([propertyId])
+  @@index([fromUserId, createdAt])
   @@map("syria_inquiries")
 }
 
@@ -277,8 +288,10 @@ model SyriaProperty {
   images           String[]            @default([]) @map("images")
   /// Feature keys from `SYRIA_AMENITIES` (e.g. `wifi`, `furnished`).
   amenities        String[]            @default([]) @map("amenities")
-  /// Simple public view counter; incremented on published listing page load.
+  /// Simple public view counter; incremented with ORDER SYBNB-126 dedupe (30m / viewer fingerprint).
   views            Int                 @default(0) @map("views")
+  /// ORDER SYBNB-126 — lifetime distinct viewers (first fingerprint only).
+  uniqueViews      Int                 @default(0) @map("unique_views")
   /// Leads: taps on owner WhatsApp (listing contact), best-effort increment.
   whatsappClicks   Int                 @default(0) @map("whatsapp_clicks")
   /// Leads: taps on owner phone (tel), best-effort increment.
@@ -287,6 +300,7 @@ model SyriaProperty {
   availability     String[]            @default([]) @map("availability")
   /// SYBNB: admin/host trust gate; only APPROVED stay listings show in /sybnb feed.
   sybnbReview      SyriaSybnbListingReview @default(PENDING) @map("sybnb_review")
+  /// Listing seller — ORDER SYBNB-94: always the authenticated publisher (`SyriaAppUser.id`).
   ownerId          String              @map("owner_id")
   owner            SyriaAppUser        @relation("PropertyOwner", fields: [ownerId], references: [id], onDelete: Cascade)
   /// SYBNB-27: optional field agent credited with onboarding this stay listing (manual ops payout — not the host).
@@ -326,7 +340,13 @@ model SyriaProperty {
   /// SYBNB-39: optional hotel identity + ops fields when `type = HOTEL`.
   hotelName           String?   @map("hotel_name") @db.Text
   roomsAvailable      Int?      @map("rooms_available")
+  /// Listing-specific phone override (hotels + ORDER SYBNB-92 seller contact prefs).
   contactPhone        String?   @map("contact_phone")
+  contactEmail        String?   @map("contact_email")
+  allowPhone          Boolean   @default(true) @map("allow_phone")
+  allowWhatsApp       Boolean   @default(true) @map("allow_whatsapp")
+  allowEmail          Boolean   @default(false) @map("allow_email")
+  allowMessages       Boolean   @default(true) @map("allow_messages")
   receptionAvailable  Boolean?  @map("reception_available")
   createdAt        DateTime            @default(now()) @map("created_at")
   updatedAt        DateTime            @updatedAt @map("updated_at")
@@ -338,10 +358,36 @@ model SyriaProperty {
   sybnbBrowseTier  Int                 @default(1) @map("sybnb_browse_tier")
   /// ORDER SYBNB-65 — cached image count for ORDER BY tie-break (`score DESC`, `images DESC`, `createdAt DESC`). Synced in `recomputeSy8FeedRankForPropertyId`.
   listingPhotoCount Int                @default(0) @map("listing_photo_count")
+  /// ORDER SYBNB-93 — low-tier public post without establishing a browser session (guest owner by phone).
+  isAnonymous      Boolean             @default(false) @map("is_anonymous")
+  /// ORDER SYBNB-93 — `bicycle` | `basic_item` | … for analytics / policy.
+  postingKind      String?             @map("posting_kind")
+  /// ORDER SYBNB-97 — UTC date key (`YYYY-MM-DD`) for daily phone reveal tallies.
+  phoneRevealDayUtc        String?    @map("phone_reveal_day_utc")
+  phoneRevealCountDay      Int        @default(0) @map("phone_reveal_count_day")
+  /// ORDER SYBNB-97 — hide phone/WhatsApp until this time after abnormal reveal volume.
+  phoneRevealCooldownUntil DateTime?  @map("phone_reveal_cooldown_until")
+  /// ORDER SYBNB-99 — declared identity on high-value real-estate listings (owner vs mandate).
+  ownerName             String?    @map("owner_name")
+  ownerPhone            String?    @map("owner_phone")
+  isOwner               Boolean    @default(false) @map("is_owner")
+  hasMandate            Boolean    @default(false) @map("has_mandate")
+  mandateDocumentUrl    String?    @map("mandate_document_url")
+  ownershipVerified     Boolean    @default(false) @map("ownership_verified")
+  /// ORDER SYBNB-100 — at least one proof document on file (badge + trust; URLs not public).
+  proofDocumentsSubmitted Boolean  @default(false) @map("proof_documents_submitted")
+  /// ORDER SYBNB-101 — admin asked seller for clearer deed/proof uploads.
+  ownershipMoreDocsRequestedAt DateTime? @map("ownership_more_docs_requested_at")
+  /// ORDER SYBNB-101 — internal ops note (reject / request-docs context).
+  ownershipVerificationReviewNote String? @db.Text @map("ownership_verification_review_note")
+  /// ORDER SYBNB-108 — synthetic listing rows when `SYBNB_TEST_MODE=true` (excluded from public feeds).
+  isTest Boolean @default(false) @map("is_test")
 
+  propertyDocuments         PropertyDocument[]
   bookings                  SyriaBooking[]
   listingPayments           SyriaListingPayment[]
   inquiries                 SyriaInquiry[]
+  listingMessages           ListingMessage[]
   featuredPlacements        SyriaFeaturedPlacement[]
   autonomyRecommendations   SyriaAutonomyRecommendation[]
   paymentRequestsF1         SyriaPaymentRequest[]   @relation("PropertyPaymentRequest")
@@ -349,8 +395,9 @@ model SyriaProperty {
   listingReports            SyriaListingReport[]    @relation("PropertyReports")
   sybnbImages               SybnbListingImage[]
   sybnbBookings             SybnbBooking[]
-  sybnbListingReports       SybnbListingReport[]
+  stayListingReports       ListingReport[]       @relation("ListingReportStayOnProperty")
   sybnbAnalyticsEvents      SybnbEvent[]
+  listingViewVisits         SyriaListingViewVisit[]
 
   @@index([sybnbAgentUserId])
   @@index([city])
@@ -364,7 +411,51 @@ model SyriaProperty {
   @@index([status, needsReview, createdAt])
   @@index([sy8FeedRankScore, createdAt])
   @@index([sybnbBrowseTier, sy8FeedRankScore])
+  @@index([isTest])
   @@map("syria_properties")
+}
+
+/// ORDER SYBNB-126 — dedupe raw refreshes: one counted view per viewerKey within rolling 30 minutes.
+model SyriaListingViewVisit {
+  id         String        @id @default(cuid())
+  propertyId String        @map("property_id")
+  property   SyriaProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  /// `u:<syriaAppUserId>` or `ip:<clientIp>`
+  viewerKey  String        @map("viewer_key") @db.VarChar(160)
+  lastSeenAt DateTime      @map("last_seen_at")
+
+  @@unique([propertyId, viewerKey])
+  @@index([propertyId])
+  @@map("syria_listing_view_visits")
+}
+
+/// ORDER SYBNB-100 — property legitimacy proofs (stored privately; only badge is public).
+model PropertyDocument {
+  id         String        @id @default(cuid())
+  propertyId String        @map("property_id")
+  property   SyriaProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  /// Stable key from `PROPERTY_DOCUMENT_TYPE_KEYS` (e.g. green_record).
+  type       String
+  /// Cloudinary HTTPS URL — never exposed on public listing/API responses.
+  url        String
+  createdAt  DateTime      @default(now()) @map("created_at")
+
+  @@index([propertyId])
+  @@map("property_documents")
+}
+
+/// ORDER SYBNB-95 — lightweight guest→seller messages (no phone call required).
+model ListingMessage {
+  id          String        @id @default(cuid())
+  listingId   String        @map("listing_id")
+  listing     SyriaProperty @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  senderName  String?       @map("sender_name")
+  senderPhone String?       @map("sender_phone")
+  message     String        @db.Text
+  createdAt   DateTime      @default(now()) @map("created_at")
+
+  @@index([listingId])
+  @@map("listing_messages")
 }
 
 /// S1: short-lived phone verification code (hashed at rest).
@@ -445,6 +536,8 @@ model SybnbBooking {
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
+  /// ORDER SYBNB-108 — mirrors listing/test flow for cleanup (`SYBNB_TEST_MODE`).
+  isTest Boolean @default(false) @map("is_test")
 
   paymentAudits SybnbPaymentAudit[]
 
@@ -452,21 +545,22 @@ model SybnbBooking {
   @@index([guestId])
   @@index([hostId])
   @@index([status])
+  @@index([isTest])
   @@map("sybnb_bookings")
 }
 
-/// SYBNB listing report (operator queue via `reviewed`).
-model SybnbListingReport {
+/// ORDER SYBNB-84 — Guest-submitted SYBNB report (`listing_id` = `SyriaProperty.id`).
+model ListingReport {
   id         String        @id @default(cuid())
-  propertyId String        @map("property_id")
-  property   SyriaProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  listingId  String        @map("property_id")
+  listing    SyriaProperty @relation("ListingReportStayOnProperty", fields: [listingId], references: [id], onDelete: Cascade)
   reporterId String?       @map("reporter_id")
-  reporter   SyriaAppUser?   @relation("SybnbListingReportReporter", fields: [reporterId], references: [id], onDelete: SetNull)
+  reporter   SyriaAppUser? @relation("ListingReportStayReporter", fields: [reporterId], references: [id], onDelete: SetNull)
   reason     String
   reviewed   Boolean       @default(false)
   createdAt  DateTime      @default(now()) @map("created_at")
 
-  @@index([propertyId])
+  @@index([listingId])
   @@index([reviewed])
   @@map("sybnb_listing_reports")
 }
@@ -548,6 +642,8 @@ model SyriaBooking {
   riskStatus            SybnbRiskState            @default(clear) @map("risk_status")
   createdAt            DateTime                   @default(now()) @map("created_at")
   updatedAt            DateTime                   @updatedAt @map("updated_at")
+  /// ORDER SYBNB-108 — BNHub booking row flagged as synthetic test data.
+  isTest Boolean @default(false) @map("is_test")
   /// Investor-demo seed marker — excluded from anomaly aggregates when set.
   demoMeta Json? @map("demo_meta")
 
@@ -557,6 +653,7 @@ model SyriaBooking {
 
   @@index([propertyId])
   @@index([guestId])
+  @@index([isTest])
   @@map("syria_bookings")
 }
 
@@ -740,6 +837,20 @@ model SyriaGrowthEvent {
   @@index([eventType, createdAt])
   @@index([utmCampaign])
   @@map("syria_growth_events")
+}
+
+/// ORDER SYBNB-113 — one counted lead tap per IP hash × listing × channel × UTC day (drops duplicates).
+model SyriaListingContactDedupe {
+  id         String   @id @default(cuid())
+  propertyId String   @map("property_id")
+  ipHash     String   @map("ip_hash")
+  channel    String
+  dayUtc     String   @map("day_utc")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@unique([propertyId, ipHash, channel, dayUtc])
+  @@index([propertyId])
+  @@map("syria_listing_contact_dedupe")
 }
 
 /// Runs of the deterministic marketplace autonomy pipeline (Syria-local only).

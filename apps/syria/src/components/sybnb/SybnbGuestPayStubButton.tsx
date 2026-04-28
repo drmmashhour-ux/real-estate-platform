@@ -1,18 +1,18 @@
 "use client";
 
 import { useId, useState } from "react";
-import { useTranslations } from "next-intl";
-import { triggerNarration } from "@/lib/demo/narrator";
+import { useLocale, useTranslations } from "next-intl";
 
 type Props = {
   bookingId: string;
 };
 
 /**
- * Guest-only: requests stub payment intent (no real Stripe). Idempotency key is generated once per mount.
+ * Guest-only — ORDER SYBNB-110: opens Stripe Checkout (`checkout.session`) when gates pass.
  */
 export function SybnbGuestPayStubButton({ bookingId }: Props) {
   const t = useTranslations("Dashboard");
+  const locale = useLocale();
   const idempotencyKey = useId().replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 80);
   const [msg, setMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -26,22 +26,34 @@ export function SybnbGuestPayStubButton({ bookingId }: Props) {
         disabled={loading}
         className="mt-2 rounded-lg bg-stone-900 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
         onClick={async () => {
-          triggerNarration("ACTION_PAYMENT_BLOCKED");
           setMsg(null);
           setLoading(true);
           try {
-            const res = await fetch("/api/sybnb/payment-intent", {
+            const res = await fetch("/api/sybnb/checkout-session", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               credentials: "include",
-              body: JSON.stringify({ bookingId, idempotencyKey }),
+              body: JSON.stringify({ bookingId, idempotencyKey, locale }),
             });
-            const j = (await res.json()) as { paymentIntentId?: string; error?: string; message?: string };
+            const j = (await res.json()) as Record<string, unknown>;
             if (!res.ok) {
-              setMsg(t("sybnbPayStubError"));
-            } else {
-              setMsg(t("sybnbPayStubOk", { id: j.paymentIntentId ?? "—" }));
+              const detail =
+                typeof j.detail === "string"
+                  ? j.detail
+                  : typeof j.reason === "string"
+                    ? j.reason
+                    : typeof j.error === "string"
+                      ? j.error
+                      : t("sybnbPayStubError");
+              setMsg(detail);
+              return;
             }
+            const url = typeof j.url === "string" ? j.url : "";
+            if (url.startsWith("http")) {
+              window.location.assign(url);
+              return;
+            }
+            setMsg(t("sybnbPayStubError"));
           } catch {
             setMsg(t("sybnbPayStubError"));
           } finally {

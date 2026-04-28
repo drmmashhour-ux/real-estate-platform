@@ -11,6 +11,9 @@ import { SYRIA_STATE_OPTIONS } from "@/lib/syria/states";
 import { MARKETPLACE_CATEGORIES, MARKETPLACE_SUBCATEGORIES, type MarketplaceCategory } from "@/lib/marketplace-categories";
 import { SYRIA_AMENITIES, parseFeaturesQuery } from "@/lib/syria/amenities";
 import type { BrowseSurface, SearchPropertiesResult } from "@/services/search/search.service";
+import { ListingGridSkeleton } from "@/components/ListingGridSkeleton";
+import { fetchWithRetry } from "@/lib/syria/fetch-with-retry";
+import { SYRIA_CARD_PRIORITY_FIRST_COUNT } from "@/lib/syria/sybn104-performance";
 
 function buildQuery(
   q: string,
@@ -94,7 +97,7 @@ export function BrowseMvpExperienceClient(props: {
     const qs = sp.toString();
     setLoading(true);
     try {
-      const res = await fetch(`/api/search?surface=${surface}&${qs}`, { cache: "no-store" });
+      const res = await fetchWithRetry(`/api/search?surface=${surface}&${qs}`, { cache: "no-store" });
       if (!res.ok) throw new Error("search");
       setBundle((await res.json()) as SearchPropertiesResult);
     } finally {
@@ -263,10 +266,13 @@ export function BrowseMvpExperienceClient(props: {
         </div>
       </form>
 
-      {loading ? <p className="text-sm text-[color:var(--darlink-text-muted)]">{t("loadingMore")}</p> : null}
+      {loading && bundle.items.length === 0 ? <ListingGridSkeleton count={6} /> : null}
+      {loading && bundle.items.length > 0 ? (
+        <p className="text-sm font-medium text-[color:var(--darlink-text-muted)]">{t("refreshingResults")}</p>
+      ) : null}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {bundle.items.map((l, i) => (
-          <ListingCard key={l.id} listing={l} locale={locale} priority={i < 6} />
+          <ListingCard key={l.id} listing={l} locale={locale} priority={i < SYRIA_CARD_PRIORITY_FIRST_COUNT} />
         ))}
       </div>
     </div>

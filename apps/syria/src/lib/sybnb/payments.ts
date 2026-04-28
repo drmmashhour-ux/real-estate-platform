@@ -82,7 +82,7 @@ export async function createCheckoutSession(input: {
       url: null,
     };
   }
-  // Future: create Stripe Checkout Session; keep behind feature flag and env keys.
+  /** Live Checkout is created via `POST /api/sybnb/checkout-session` (ORDER SYBNB-110). */
   return {
     ok: true,
     mode: "stripe_pending",

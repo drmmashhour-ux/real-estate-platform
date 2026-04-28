@@ -11,7 +11,7 @@ export async function markSybnbReportReviewed(formData: FormData): Promise<void>
   await requireAdmin();
   const id = String(formData.get("reportId") ?? "").trim();
   if (!id) return;
-  await prisma.sybnbListingReport.update({ where: { id }, data: { reviewed: true } });
+  await prisma.listingReport.update({ where: { id }, data: { reviewed: true } });
   await revalidateSyriaPaths("/admin/sybnb/reports", "/admin/sybnb/bookings", "/sybnb", "/sybnb/host");
   revalidatePath("/[locale]/admin/sybnb/reports", "page");
 }
@@ -21,7 +21,7 @@ export async function markAllSybnbReportsReviewedForListing(formData: FormData):
   await requireAdmin();
   const propertyId = String(formData.get("propertyId") ?? "").trim();
   if (!propertyId) return;
-  await prisma.sybnbListingReport.updateMany({ where: { propertyId, reviewed: false }, data: { reviewed: true } });
+  await prisma.listingReport.updateMany({ where: { listingId: propertyId, reviewed: false }, data: { reviewed: true } });
   await revalidateSyriaPaths("/admin/sybnb/reports", "/sybnb", "/sybnb/host");
   revalidatePath("/[locale]/admin/sybnb/reports", "page");
 }
@@ -49,7 +49,7 @@ export async function adminKeepSybnbListingActive(formData: FormData): Promise<v
   if (!propertyId) {
     return;
   }
-  await prisma.sybnbListingReport.updateMany({ where: { propertyId, reviewed: false }, data: { reviewed: true } });
+  await prisma.listingReport.updateMany({ where: { listingId: propertyId, reviewed: false }, data: { reviewed: true } });
   await prisma.syriaProperty.update({
     where: { id: propertyId, category: "stay" },
     data: { needsReview: false, status: "PUBLISHED" },

@@ -148,7 +148,7 @@ export async function resetInvestorDemoData(client: PrismaClient): Promise<void>
   await client.syriaGrowthEvent.deleteMany({ where: growthWhere });
 
   if (propIds.length > 0) {
-    await client.sybnbListingReport.deleteMany({ where: { propertyId: { in: propIds } } });
+    await client.listingReport.deleteMany({ where: { listingId: { in: propIds } } });
     await client.sybnbListingImage.deleteMany({ where: { propertyId: { in: propIds } } });
     await client.syriaProperty.deleteMany({ where: { id: { in: propIds } } });
   }

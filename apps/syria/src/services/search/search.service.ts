@@ -10,17 +10,21 @@ import {
   collectAmenityFilterTags,
   parseSearchNumber,
 } from "@/lib/property-search";
-import { getAmenityFallbackMinResults, listingMatchesAmenityTagsSome } from "@/lib/syria/amenities";
-import { getSy8OwnerListingCountsMap } from "@/lib/sy8/sy8-owner-listing-counts";
 import {
-  computeSy8SellerScore,
-  isSy8SellerVerified,
-  sy8ReputationLabelId,
-  type Sy8ReputationTier,
-} from "@/lib/sy8/sy8-reputation";
+  getAmenityFallbackMinResults,
+  listingMatchesAmenityTagsSome,
+  normalizeSyriaAmenityKeys,
+  pickListingCardAmenityBadgeKeys,
+} from "@/lib/syria/amenities";
+import { isSy8SellerVerified } from "@/lib/sy8/sy8-reputation";
 import { computeSybnbExcellentDealFlags } from "@/lib/sybnb/smart-pricing";
 import { capBoostedFirstPage, getSybnbFeaturedMaxPerPage } from "@/lib/sybnb/featured-feed-cap";
 import { compareSybnbStayBrowseTieBreak } from "@/lib/sybnb/sybnb-stay-sort";
+import { computeBrowseCtrBadgeKinds, type BrowseCtrBadgeKind } from "@/lib/sybnb/browse-card-signals";
+import type { SyriaAmenityKey } from "@/lib/syria/amenities";
+
+/** ORDER SYBNB-77 / SYBNB-88 / SYBNB-91 — browse wire: no descriptions, one image URL, no views/beds/guests (cards + map pins only). */
+export const SYBNB77_BROWSE_CARD_IMAGE_MAX = 1;
 
 export type BrowseSurface = "sale" | "rent" | "bnhub" | "stay";
 
@@ -28,8 +32,9 @@ export type SerializedBrowseListing = {
   id: string;
   titleAr: string;
   titleEn: string | null;
-  descriptionAr: string;
-  descriptionEn: string | null;
+  /** Browse / SYBNB-88 API omit description keys — optional for callers merging browse + detail shapes. */
+  descriptionAr?: string;
+  descriptionEn?: string | null;
   state: string;
   governorate: string | null;
   city: string;
@@ -44,10 +49,14 @@ export type SerializedBrowseListing = {
   type: string;
   isFeatured: boolean;
   plan: string;
+  /** ≤ `SYBNB77_BROWSE_CARD_IMAGE_MAX` URLs — hero/cover only (SYBNB-77). */
   images: string[];
-  bedrooms: number | null;
-  bathrooms: number | null;
-  guestsMax: number | null;
+  /** True gallery depth from DB — trust badges & ranking without shipping every URL (SYBNB-77). */
+  listingPhotoCount: number;
+  /** SYBNB-91 — omitted on browse wire (detail page / DB rows still have values). */
+  bedrooms?: number | null;
+  bathrooms?: number | null;
+  guestsMax?: number | null;
   amenities: string[];
   latitude: number | null;
   longitude: number | null;
@@ -62,17 +71,27 @@ export type SerializedBrowseListing = {
   adCode: string;
   /** ISO */
   createdAt: string;
-  /** Page views (simple counter) */
-  views: number;
+  /** ORDER SYBNB-100 — badge chip only on browse wire (never proof URLs). */
+  proofDocumentsSubmitted: boolean;
+  /** ORDER SYBNB-101 — ops-verified ownership for apartment/house/land real_estate. */
+  ownershipVerified: boolean;
+  postingKind: string | null;
+  /** SYBNB-91 — omitted on browse wire (saves JSON bytes). */
+  views?: number;
   category: string;
   subcategory: string;
   /** Nightly SYP for SYBNB; null if unset. */
   pricePerNight: number | null;
   /** SY8: present when the row came from `searchProperties` (browse). */
   sy8SellerVerified?: boolean;
-  sy8ReputationScore?: number;
-  sy8ReputationLabelId?: Sy8ReputationTier;
   sybnbExcellentDeal?: boolean;
+  /** ORDER SYBNB-108 — full-platform test mode synthetic rows */
+  isTest: boolean;
+  /** Normalized amenity count — trusted badge logic (`amenities` may be empty on browse wire). */
+  amenityCount: number;
+  /** ORDER SYBNB-80 — server-precomputed chips; full `amenities` omitted on browse (`amenities` may be empty). */
+  browseAmenityBadgeKeys?: SyriaAmenityKey[];
+  browseCtrBadgeKinds?: BrowseCtrBadgeKind[];
 };
 
 export type SearchPropertiesResult = {
@@ -112,13 +131,25 @@ function filterByAmenityTagsWithFallback<T extends { amenities: unknown }>(
   return { rows: strict, relaxed: false };
 }
 
+function amenityCountFromDb(raw: unknown): number {
+  const rawArr = Array.isArray(raw) ? raw.filter((x): x is string => typeof x === "string") : [];
+  return normalizeSyriaAmenityKeys(rawArr).length;
+}
+
 function baseFields(p: SyriaProperty) {
+  const trimmedUrls =
+    Array.isArray(p.images) ?
+      p.images.filter((x): x is string => typeof x === "string" && x.trim().length > 0).map((x) => x.trim())
+    : [];
+  const dbPhotoCount = typeof p.listingPhotoCount === "number" && p.listingPhotoCount >= 0 ? p.listingPhotoCount : 0;
+  const listingPhotoCount = Math.max(dbPhotoCount, trimmedUrls.length);
+  const imagesWire = trimmedUrls.slice(0, SYBNB77_BROWSE_CARD_IMAGE_MAX);
+  const amenityCount = amenityCountFromDb(p.amenities);
+
   return {
     id: p.id,
     titleAr: p.titleAr,
     titleEn: p.titleEn,
-    descriptionAr: p.descriptionAr,
-    descriptionEn: p.descriptionEn,
     state: p.state,
     governorate: p.governorate ?? null,
     city: p.city,
@@ -127,16 +158,14 @@ function baseFields(p: SyriaProperty) {
     area: p.area,
     districtAr: p.districtAr ?? null,
     districtEn: p.districtEn ?? null,
-    addressDetails: p.addressDetails ?? null,
+    addressDetails: null,
     price: p.price.toString(),
     currency: p.currency,
     type: p.type,
     isFeatured: p.isFeatured,
     plan: p.plan,
-    images: p.images,
-    bedrooms: p.bedrooms ?? null,
-    bathrooms: p.bathrooms ?? null,
-    guestsMax: p.guestsMax ?? null,
+    images: imagesWire,
+    listingPhotoCount,
     amenities: p.amenities,
     latitude: p.latitude ?? null,
     longitude: p.longitude ?? null,
@@ -146,24 +175,42 @@ function baseFields(p: SyriaProperty) {
     isDirect: p.isDirect,
     adCode: p.adCode,
     createdAt: p.createdAt.toISOString(),
-    views: p.views,
+    proofDocumentsSubmitted: Boolean(p.proofDocumentsSubmitted),
+    ownershipVerified: Boolean(p.ownershipVerified),
+    postingKind: p.postingKind ?? null,
     category: p.category,
     subcategory: p.subcategory,
     pricePerNight: p.pricePerNight ?? null,
+    isTest: p.isTest === true,
+    amenityCount,
   };
 }
 
-async function serializeWithSy8(rows: PropertyWithOwnerForSy8[]): Promise<SerializedBrowseListing[]> {
+function serializeWithSy8(rows: PropertyWithOwnerForSy8[]): SerializedBrowseListing[] {
   if (rows.length === 0) return [];
-  const countMap = await getSy8OwnerListingCountsMap(rows.map((r) => r.ownerId));
   return rows.map((p) => {
-    const c = countMap.get(p.ownerId) ?? { activeListings: 0, soldListings: 0 };
-    const sy8ReputationScore = computeSy8SellerScore(c.soldListings, c.activeListings);
+    const base = baseFields(p);
+    const sy8SellerVerified = isSy8SellerVerified(p.owner);
+    const browseAmenityBadgeKeys = pickListingCardAmenityBadgeKeys(p.amenities, 2);
+    const browseCtrBadgeKinds = computeBrowseCtrBadgeKinds({
+      verified: p.verified,
+      listingVerified: p.listingVerified,
+      sy8SellerVerified,
+      fraudFlag: p.fraudFlag,
+      listingPhotoCount: base.listingPhotoCount,
+      amenityCount: base.amenityCount,
+      createdAtIso: base.createdAt,
+      proofDocumentsSubmitted: base.proofDocumentsSubmitted,
+      category: base.category,
+      postingKind: base.postingKind,
+      ownershipVerified: base.ownershipVerified,
+    });
     return {
-      ...baseFields(p),
-      sy8SellerVerified: isSy8SellerVerified(p.owner),
-      sy8ReputationScore,
-      sy8ReputationLabelId: sy8ReputationLabelId(sy8ReputationScore),
+      ...base,
+      amenities: [],
+      browseAmenityBadgeKeys,
+      browseCtrBadgeKinds,
+      sy8SellerVerified,
     };
   });
 }
@@ -175,7 +222,7 @@ function applySybnbExcellentDealFlags(list: SerializedBrowseListing[]): Serializ
 
 /** Exported for SYBNB home hotel strip (verified hotels only). */
 export async function serializeBrowseRows(rows: PropertyWithOwnerForSy8[], surface: BrowseSurface): Promise<SerializedBrowseListing[]> {
-  const base = await serializeWithSy8(rows);
+  const base = serializeWithSy8(rows);
   if (surface === "stay") {
     return applySybnbExcellentDealFlags(base);
   }
@@ -230,7 +277,8 @@ export async function searchProperties(
     : flatMvp;
 
   const page = Math.min(500, Math.max(1, parseSearchNumber(flat.page) ?? 1));
-  const pageSize = Math.min(48, Math.max(1, parseSearchNumber(flat.pageSize) ?? 24));
+  /** ORDER SYBNB-88 / SYBNB-FINAL — browse grids capped at 10 rows per page. */
+  const pageSize = Math.min(10, Math.max(1, parseSearchNumber(flat.pageSize) ?? 10));
   const sort = (flat.sort ?? "featured").trim();
 
   const amenityTags = collectAmenityFilterTags(flat);

@@ -21,8 +21,8 @@ type Group = {
 };
 
 async function loadReports() {
-  return prisma.sybnbListingReport.findMany({
-    include: { property: { include: { owner: { select: { email: true, name: true } } } } },
+  return prisma.listingReport.findMany({
+    include: { listing: { include: { owner: { select: { email: true, name: true } } } } },
     orderBy: { createdAt: "desc" },
     take: 600,
   });
@@ -31,20 +31,20 @@ async function loadReports() {
 function groupReports(rows: Awaited<ReturnType<typeof loadReports>>): Group[] {
   const map = new Map<string, Group>();
   for (const r of rows) {
-    const g = map.get(r.propertyId);
+    const g = map.get(r.listingId);
     const nextReason = (counts: Record<string, number>, reason: string) => ({
       ...counts,
       [reason]: (counts[reason] ?? 0) + 1,
     });
     if (!g) {
-      map.set(r.propertyId, {
-        propertyId: r.propertyId,
+      map.set(r.listingId, {
+        propertyId: r.listingId,
         property: {
-          id: r.property.id,
-          titleAr: r.property.titleAr,
-          titleEn: r.property.titleEn,
+          id: r.listing.id,
+          titleAr: r.listing.titleAr,
+          titleEn: r.listing.titleEn,
         },
-        owner: { email: r.property.owner.email, name: r.property.owner.name },
+        owner: { email: r.listing.owner.email, name: r.listing.owner.name },
         reports: [r],
         reasonCounts: nextReason({}, r.reason),
       });

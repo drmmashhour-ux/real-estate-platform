@@ -18,12 +18,15 @@ import {
 import { isMarketplaceCategory } from "@/lib/marketplace-categories";
 import {
   countGrowthEventsByTypeSince,
+  countListingViewsWithShareAttributionSince,
   getSyriaRevenueRollup,
+  topListingsByGrowthEventSince,
   topUtmCampaignsSince,
   leadsBySourceSince,
   bookingsBySourceSince,
   topListingsByViewsSince,
 } from "@/lib/growth-events";
+import { countUndilutedListingSharesSince, topListingsByUndilutedSharesSince } from "@/lib/syria/share-abuse";
 import { money } from "@/lib/format";
 import { getSyriaAutonomyMode } from "@/config/syria-platform.config";
 import { SYRIA_PRICING } from "@/lib/pricing";
@@ -123,6 +126,25 @@ export default async function AdminGrowthPage() {
     select: { id: true, titleAr: true, city: true },
   });
   const titleMap = new Map(propertiesByView.map((p) => [p.id, p]));
+
+  const [topShares, topContacts, attributedShareViews, shareEventsUndiluted30] = await Promise.all([
+    topListingsByUndilutedSharesSince(since30, 8),
+    topListingsByGrowthEventSince("contact_click", since30, 8),
+    countListingViewsWithShareAttributionSince(since30),
+    countUndilutedListingSharesSince(since30),
+  ]);
+
+  const winnerIds = [...new Set([...topShares.map((x) => x.propertyId), ...topContacts.map((x) => x.propertyId)])];
+  const propertiesWinners =
+    winnerIds.length > 0
+      ? await prisma.syriaProperty.findMany({
+          where: { id: { in: winnerIds } },
+          select: { id: true, titleAr: true, city: true },
+        })
+      : [];
+  const winnerMap = new Map(propertiesWinners.map((p) => [p.id, p]));
+
+  const visitsPerShare = shareEventsUndiluted30 > 0 ? attributedShareViews / shareEventsUndiluted30 : null;
 
   const defaultCurrency = revenue.verifiedByCurrency[0]?.currency ?? SYRIA_PRICING.currency;
 
@@ -521,6 +543,73 @@ export default async function AdminGrowthPage() {
               })
             )}
           </ul>
+        </div>
+      </div>
+
+      <div className="space-y-4 rounded-2xl border border-fuchsia-200/80 bg-fuchsia-50/40 p-5 shadow-sm">
+        <div>
+          <h3 className="text-base font-semibold text-stone-900">{t("growthSybnb112Title")}</h3>
+          <p className="mt-1 text-sm text-stone-600">{t("growthSybnb112Intro")}</p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div className="rounded-xl border border-fuchsia-100 bg-white/90 p-3 text-center shadow-sm">
+            <p className="text-xs font-medium text-stone-500">{t("growthAttributedListingViews")}</p>
+            <p className="mt-1 text-2xl font-bold tabular-nums text-fuchsia-950" dir="ltr">
+              {attributedShareViews.toLocaleString(numberLoc)}
+            </p>
+            <p className="mt-1 text-[11px] text-stone-500">{t("growthAttributedListingViewsHint")}</p>
+          </div>
+          <div className="rounded-xl border border-fuchsia-100 bg-white/90 p-3 text-center shadow-sm">
+            <p className="text-xs font-medium text-stone-500">{t("growthShareEvents")}</p>
+            <p className="mt-1 text-2xl font-bold tabular-nums text-fuchsia-950" dir="ltr">
+              {shareEventsUndiluted30.toLocaleString(numberLoc)}
+            </p>
+          </div>
+          <div className="rounded-xl border border-fuchsia-100 bg-white/90 p-3 text-center shadow-sm">
+            <p className="text-xs font-medium text-stone-500">{t("growthVisitsPerShare")}</p>
+            <p className="mt-1 text-2xl font-bold tabular-nums text-fuchsia-950" dir="ltr">
+              {visitsPerShare != null ? visitsPerShare.toFixed(2) : "—"}
+            </p>
+            <p className="mt-1 text-[11px] text-stone-500">{t("growthVisitsPerShareHint")}</p>
+          </div>
+        </div>
+        <div className="grid gap-6 md:grid-cols-2">
+          <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+            <h3 className="text-sm font-semibold text-stone-900">{t("growthTopListingsByShares")}</h3>
+            <ul className="mt-3 space-y-2 text-sm">
+              {topShares.length === 0 ? (
+                <li className="text-stone-500">{t("growthEmpty")}</li>
+              ) : (
+                topShares.map((row) => {
+                  const meta = winnerMap.get(row.propertyId);
+                  return (
+                    <li key={row.propertyId} className="flex justify-between gap-2">
+                      <span className="truncate">{meta ? `${meta.titleAr} (${meta.city})` : row.propertyId}</span>
+                      <span className="font-medium">{row.count}</span>
+                    </li>
+                  );
+                })
+              )}
+            </ul>
+          </div>
+          <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+            <h3 className="text-sm font-semibold text-stone-900">{t("growthTopListingsByContacts")}</h3>
+            <ul className="mt-3 space-y-2 text-sm">
+              {topContacts.length === 0 ? (
+                <li className="text-stone-500">{t("growthEmpty")}</li>
+              ) : (
+                topContacts.map((row) => {
+                  const meta = winnerMap.get(row.propertyId);
+                  return (
+                    <li key={row.propertyId} className="flex justify-between gap-2">
+                      <span className="truncate">{meta ? `${meta.titleAr} (${meta.city})` : row.propertyId}</span>
+                      <span className="font-medium">{row.count}</span>
+                    </li>
+                  );
+                })
+              )}
+            </ul>
+          </div>
         </div>
       </div>
 

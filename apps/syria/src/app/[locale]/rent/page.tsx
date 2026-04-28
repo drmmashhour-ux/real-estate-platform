@@ -6,7 +6,7 @@ import { syriaFlags } from "@/lib/platform-flags";
 import { trackSyriaGrowthEvent } from "@/lib/growth-events";
 import { parseUtmFromSearchParams } from "@/lib/utm";
 import { flattenSearchParams } from "@/lib/property-search";
-import { searchProperties } from "@/services/search/search.service";
+import { getCachedBrowseSearch } from "@/lib/cache/darlink-browse-search";
 
 type Props = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -19,6 +19,9 @@ function toInitialQs(flat: Record<string, string>): string {
   }
   return usp.toString();
 }
+
+/** ORDER SYBNB-82 / SYBNB-104 — sync literal with `SYRIA_PUBLIC_SEGMENT_REVALIDATE_SECONDS`. */
+export const revalidate = 45;
 
 export default async function RentPage(props: Props) {
   const t = await getTranslations("Rent");
@@ -49,7 +52,7 @@ export default async function RentPage(props: Props) {
   }
 
   const initialQs = toInitialQs(flat);
-  const initialResult = await searchProperties("rent", flat);
+  const initialResult = await getCachedBrowseSearch("rent", flat);
 
   return (
     <div className="space-y-8">

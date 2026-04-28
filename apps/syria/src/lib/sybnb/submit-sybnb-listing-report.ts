@@ -8,7 +8,7 @@ import { logTimelineEvent } from "@/lib/timeline/log-event";
 export type SybnbListingReportSubmitError = "not_found" | "self_report" | "not_stay";
 
 /**
- * Creates a `SybnbListingReport` and runs SY8 threshold / revalidation. No auth — pass `reporterId` from a verified session.
+ * Creates a `ListingReport` row (`sybnb_listing_reports`) and runs SY8 threshold / revalidation. Pass `reporterId` from a verified session.
  */
 export async function submitSybnbListingReportCore(input: {
   reporterId: string;
@@ -34,14 +34,13 @@ export async function submitSybnbListingReportCore(input: {
     return { ok: false, error: "self_report" };
   }
 
-  const reportRow = await prisma.sybnbListingReport.create({
+  const reportRow = await prisma.listingReport.create({
     data: {
-      propertyId,
+      listingId: propertyId,
       reporterId: input.reporterId,
       reason,
     },
   });
-  console.log("[SYBNB] listing report submitted", { propertyId, reporterId: input.reporterId, reason });
 
   void recordSybnbEvent({
     type: SYBNB_ANALYTICS_EVENT_TYPES.REPORT_SUBMITTED,

@@ -1,31 +1,17 @@
 import { getLocale, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
-import { prisma } from "@/lib/db";
 import { ListingCard } from "@/components/ListingCard";
 import { HeroSegmentedSearch } from "@/components/HeroSegmentedSearch";
 import { getG5TopCityByWhatsappClicks } from "@/lib/growth-operating-metrics";
 import { isBnhubInSyriaUI, syriaFlags } from "@/lib/platform-flags";
 import { Card } from "@/components/ui/Card";
 import { HomeCategoryGrid } from "@/components/home/HomeCategoryGrid";
-import type { Prisma, SyriaProperty } from "@/generated/prisma";
-import { sy8FeedExtraWhere } from "@/lib/sy8/sy8-feed-visibility";
-import { getSy8OwnerListingCountsMap } from "@/lib/sy8/sy8-owner-listing-counts";
-import {
-  computeSy8SellerScore,
-  isSy8SellerVerified,
-  sy8ReputationLabelId,
-} from "@/lib/sy8/sy8-reputation";
+import { isSy8SellerVerified } from "@/lib/sy8/sy8-reputation";
+import { getCachedDarlinkHomeListingFeeds } from "@/lib/cache/darlink-home-feed";
+import { SYRIA_CARD_PRIORITY_FIRST_COUNT } from "@/lib/syria/sybn104-performance";
 
-type WithOwner = SyriaProperty & {
-  owner: { phoneVerifiedAt: Date | null; verifiedAt: Date | null; verificationLevel: string | null };
-};
-
-const sy8HomeOrder: Prisma.SyriaPropertyOrderByWithRelationInput[] = [
-  { isDirect: "desc" },
-  { owner: { verifiedAt: { sort: "desc", nulls: "last" } } },
-  { plan: "desc" },
-  { createdAt: "desc" },
-];
+/** ORDER SYBNB-82 / SYBNB-104 — ISR (30–60s band). Must stay in sync with `SYRIA_PUBLIC_SEGMENT_REVALIDATE_SECONDS` in `sybn104-performance.ts` (Next requires a literal here). */
+export const revalidate = 45;
 
 export default async function HomePage() {
   const t = await getTranslations("home");
@@ -33,40 +19,7 @@ export default async function HomePage() {
   const showBnhubHome = isBnhubInSyriaUI();
   const bnhubOn = syriaFlags.BNHUB_ENABLED && showBnhubHome;
 
-  let publishedCount = 0;
-  let latestListings: WithOwner[] = [];
-  try {
-    const [rows, count] = await prisma.$transaction([
-      prisma.syriaProperty.findMany({
-        where: { status: "PUBLISHED", fraudFlag: false, ...sy8FeedExtraWhere },
-        orderBy: sy8HomeOrder,
-        take: 12,
-        include: { owner: { select: { phoneVerifiedAt: true, verifiedAt: true, verificationLevel: true } } },
-      }),
-      prisma.syriaProperty.count({
-        where: { status: "PUBLISHED", fraudFlag: false, ...sy8FeedExtraWhere },
-      }),
-    ]);
-    latestListings = rows;
-    publishedCount = count;
-  } catch {
-    latestListings = [];
-    publishedCount = 0;
-  }
-
-  let bnhubRows: WithOwner[] = [];
-  if (bnhubOn) {
-    try {
-      bnhubRows = await prisma.syriaProperty.findMany({
-        where: { type: "BNHUB", status: "PUBLISHED", fraudFlag: false, ...sy8FeedExtraWhere },
-        orderBy: sy8HomeOrder,
-        take: 4,
-        include: { owner: { select: { phoneVerifiedAt: true, verifiedAt: true, verificationLevel: true } } },
-      });
-    } catch {
-      bnhubRows = [];
-    }
-  }
+  const { latestListings, publishedCount, bnhubRows } = await getCachedDarlinkHomeListingFeeds(bnhubOn);
 
   let g5Domination: { href: string; label: string } | null = null;
   try {
@@ -83,28 +36,19 @@ export default async function HomePage() {
     g5Domination = null;
   }
 
-  const homeSy8Map =
-    latestListings.length > 0 ? await getSy8OwnerListingCountsMap(latestListings.map((l) => l.ownerId)) : new Map();
-  const bnhubSy8Map =
-    bnhubRows.length > 0 ? await getSy8OwnerListingCountsMap(bnhubRows.map((l) => l.ownerId)) : new Map();
-
   const cards =
     latestListings.length > 0 ?
       latestListings.map((l, i) => {
         const { owner, ...rest } = l;
-        const c = homeSy8Map.get(l.ownerId) ?? { activeListings: 0, soldListings: 0 };
-        const sy8ReputationScore = computeSy8SellerScore(c.soldListings, c.activeListings);
         return (
           <ListingCard
             key={l.id}
             listing={{
               ...rest,
               sy8SellerVerified: isSy8SellerVerified(owner),
-              sy8ReputationScore,
-              sy8ReputationLabelId: sy8ReputationLabelId(sy8ReputationScore),
             }}
             locale={locale}
-            priority={i < 3}
+            priority={i < SYRIA_CARD_PRIORITY_FIRST_COUNT}
           />
         );
       })
@@ -114,16 +58,12 @@ export default async function HomePage() {
     bnhubRows.length > 0 ?
       bnhubRows.map((l) => {
         const { owner, ...rest } = l;
-        const c = bnhubSy8Map.get(l.ownerId) ?? { activeListings: 0, soldListings: 0 };
-        const sy8ReputationScore = computeSy8SellerScore(c.soldListings, c.activeListings);
         return (
           <ListingCard
             key={l.id}
             listing={{
               ...rest,
               sy8SellerVerified: isSy8SellerVerified(owner),
-              sy8ReputationScore,
-              sy8ReputationLabelId: sy8ReputationLabelId(sy8ReputationScore),
             }}
             locale={locale}
           />

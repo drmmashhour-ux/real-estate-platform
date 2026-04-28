@@ -114,7 +114,7 @@ export async function buildMarketplaceSnapshot(params: BuildMarketplaceSnapshotP
       autopilotPending,
     ] = await Promise.all([
       prisma.syriaProperty.count().catch(() => 0),
-      prisma.syriaProperty.count({ where: { status: "PENDING_REVIEW" } }).catch(() => 0),
+      prisma.syriaProperty.count({ where: { status: { in: ["PENDING_REVIEW", "NEEDS_REVIEW"] } } }).catch(() => 0),
       prisma.syriaProperty.count({ where: { isFeatured: true } }).catch(() => 0),
       prisma.syriaProperty.count({ where: { fraudFlag: true } }).catch(() => 0),
       prisma.syriaProperty

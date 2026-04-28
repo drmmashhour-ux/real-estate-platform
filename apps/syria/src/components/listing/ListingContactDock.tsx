@@ -11,18 +11,23 @@ export function ListingContactDock({
   listingId,
   whatsappHref,
   telHref,
+  mailtoHref,
+  messageScrollHref,
   primaryHeading,
   contactAnalytics = "listing",
 }: {
   listingId: string;
   whatsappHref: string | null;
   telHref: string | null;
+  mailtoHref?: string | null;
+  /** ORDER SYBNB-95 — scroll target when phone/email channels are off (messaging only). */
+  messageScrollHref?: string | null;
   primaryHeading?: string | null;
   /** SYBNB-40 — `hotel_contact_click` vs default `contact_click`. */
   contactAnalytics?: "listing" | "hotel";
 }) {
   const t = useTranslations("Listing");
-  if (!whatsappHref && !telHref) return null;
+  if (!whatsappHref && !telHref && !mailtoHref && !messageScrollHref) return null;
 
   return (
     <div
@@ -73,6 +78,22 @@ export function ListingContactDock({
             className="flex h-12 w-full touch-manipulation items-center justify-center rounded-xl border-2 border-[color:var(--darlink-navy)] bg-[color:var(--darlink-surface)] px-4 text-sm font-bold text-[color:var(--darlink-navy)]"
           >
             {t("contactCall")}
+          </a>
+        ) : null}
+        {mailtoHref ? (
+          <a
+            href={mailtoHref}
+            className="flex h-11 w-full touch-manipulation items-center justify-center rounded-xl border border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface-muted)] px-4 text-sm font-semibold text-[color:var(--darlink-text)]"
+          >
+            {t("contactEmail")}
+          </a>
+        ) : null}
+        {messageScrollHref ? (
+          <a
+            href={messageScrollHref}
+            className="flex h-14 w-full touch-manipulation items-center justify-center rounded-xl bg-[color:var(--darlink-navy)] px-4 text-base font-bold text-white shadow-md transition hover:opacity-95 active:scale-[0.99]"
+          >
+            {t("contactMessageSend")}
           </a>
         ) : null}
       </div>

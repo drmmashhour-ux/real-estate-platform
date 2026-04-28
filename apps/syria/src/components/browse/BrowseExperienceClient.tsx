@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -13,23 +14,44 @@ import {
 } from "@/data/syriaLocations";
 import { SyriaCitySelect, SyriaGovernorateSelect } from "@/components/location/SyriaLocationSelects";
 import { ListingCard } from "@/components/ListingCard";
-import { BrowseMapCanvas } from "@/components/browse/BrowseMapCanvas";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { ListingGridSkeleton } from "@/components/ListingGridSkeleton";
 import { cn } from "@/lib/cn";
+import { fetchWithRetry } from "@/lib/syria/fetch-with-retry";
 import { SYRIA_OFFLINE_NAMESPACE } from "@/lib/offline/constants";
-import { normalizeSearchQueryString, searchApiSnapshotKey } from "@/lib/offline/query-normalize";
+import { normalizeSearchQueryString, browseApiSnapshotKey } from "@/lib/offline/query-normalize";
 import { syriaFlags } from "@/lib/platform-flags";
 import type { BrowseSurface, SearchPropertiesResult, SerializedBrowseListing } from "@/services/search/search.service";
 import { getApiSnapshot, putApiSnapshot, upsertListingMany } from "@repo/offline";
 import { SybnbHotelsBrowseStrip } from "@/components/sybnb/SybnbHotelsBrowseStrip";
 import { trackClientAnalyticsEvent } from "@/lib/client-analytics";
 import { toggleCommaSeparatedAmenityKey } from "@/lib/syria/amenities";
+import { useDataSaverOptional } from "@/context/DataSaverProvider";
+import {
+  SYRIA_BROWSE_PAGE_SIZE_DEFAULT,
+  SYRIA_CARD_PRIORITY_FIRST_COUNT,
+  SYRIA_DATA_SAVER_BROWSE_PAGE_SIZE,
+} from "@/lib/syria/sybn104-performance";
+import {
+  sybnbListingsLiteResponseToSearchResult,
+  type SybnbListingsLiteResponse,
+} from "@/lib/sybnb/sybnb-listings-lite";
+
+/** ORDER SYBNB-86 — maps bundle loads only when map mode is on (client-only). */
+const BrowseMapCanvas = dynamic(
+  () => import("@/components/browse/BrowseMapCanvas").then((m) => m.BrowseMapCanvas),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="min-h-[360px] rounded-xl bg-[color:var(--darlink-surface-muted)]" aria-busy />
+    ),
+  },
+);
 
 async function persistBrowseSnapshot(surface: BrowseSurface, spSnap: URLSearchParams, bundle: SearchPropertiesResult) {
   const n = normalizeSearchQueryString(spSnap.toString());
-  const key = searchApiSnapshotKey(surface, n);
+  const key = browseApiSnapshotKey(surface, n);
   await putApiSnapshot(SYRIA_OFFLINE_NAMESPACE, key, bundle);
   const rows = new Map<string, unknown>();
   for (const item of bundle.items) {
@@ -100,9 +122,25 @@ export function BrowseExperienceClient(props: {
     const qs = sp.toString();
     setLoading(true);
     try {
-      const res = await fetch(`/api/search?surface=${surface}&${qs}`, { cache: "no-store" });
+      if (syriaFlags.SYRIA_OFFLINE_FIRST && typeof navigator !== "undefined" && navigator.onLine === false) {
+        const n = normalizeSearchQueryString(sp.toString());
+        const snap = await getApiSnapshot<SearchPropertiesResult>(
+          SYRIA_OFFLINE_NAMESPACE,
+          browseApiSnapshotKey(surface, n),
+        );
+        if (snap?.items?.length) setBundle(snap);
+        return;
+      }
+      const res = await fetchWithRetry(
+        surface === "stay" ? `/api/sybnb/listings-lite?${qs}` : `/api/search?surface=${surface}&${qs}`,
+        { cache: "no-store" },
+      );
       if (!res.ok) throw new Error("search failed");
-      const json = (await res.json()) as SearchPropertiesResult;
+      const raw: unknown = await res.json();
+      const json =
+        surface === "stay"
+          ? sybnbListingsLiteResponseToSearchResult(raw as SybnbListingsLiteResponse)
+          : (raw as SearchPropertiesResult);
       setBundle(json);
       await persistBrowseSnapshot(surface, sp, json);
     } catch {
@@ -110,7 +148,7 @@ export function BrowseExperienceClient(props: {
         const n = normalizeSearchQueryString(sp.toString());
         const snap = await getApiSnapshot<SearchPropertiesResult>(
           SYRIA_OFFLINE_NAMESPACE,
-          searchApiSnapshotKey(surface, n),
+          browseApiSnapshotKey(surface, n),
         );
         if (snap?.items?.length) setBundle(snap);
       }
@@ -125,7 +163,7 @@ export function BrowseExperienceClient(props: {
       const n = normalizeSearchQueryString(sp.toString());
       const snap = await getApiSnapshot<SearchPropertiesResult>(
         SYRIA_OFFLINE_NAMESPACE,
-        searchApiSnapshotKey(surface, n),
+        browseApiSnapshotKey(surface, n),
       );
       if (!snap?.items?.length) return;
       const offlineOnly = navigator.onLine === false;
@@ -174,6 +212,21 @@ export function BrowseExperienceClient(props: {
     [router, basePath, sp],
   );
 
+  const { hydrated: dataSaverHydrated, enabled: dataSaverEnabled, toggle: toggleDataSaver } = useDataSaverOptional();
+
+  useEffect(() => {
+    if (!dataSaverHydrated) return;
+    const raw = sp.get("pageSize");
+    if (dataSaverEnabled) {
+      const target = SYRIA_DATA_SAVER_BROWSE_PAGE_SIZE;
+      if (raw === String(target)) return;
+      replace({ pageSize: String(target) }, { resetPage: true });
+      return;
+    }
+    if (!raw) return;
+    replace({ pageSize: undefined }, { resetPage: true });
+  }, [dataSaverHydrated, dataSaverEnabled, sp, replace]);
+
   useEffect(() => {
     if (!govValue || !cityValue) return;
     const g = SYRIA_LOCATIONS.find((row) => row.name_en === govValue);
@@ -199,9 +252,16 @@ export function BrowseExperienceClient(props: {
     const qs = mergeSearchParams(sp, { page: String(nextPage) }, { resetPage: false });
     setLoading(true);
     try {
-      const res = await fetch(`/api/search?surface=${surface}&${qs}`, { cache: "no-store" });
+      const res = await fetchWithRetry(
+        surface === "stay" ? `/api/sybnb/listings-lite?${qs}` : `/api/search?surface=${surface}&${qs}`,
+        { cache: "no-store" },
+      );
       if (!res.ok) return;
-      const json = (await res.json()) as SearchPropertiesResult;
+      const raw: unknown = await res.json();
+      const json =
+        surface === "stay"
+          ? sybnbListingsLiteResponseToSearchResult(raw as SybnbListingsLiteResponse)
+          : (raw as SearchPropertiesResult);
       setBundle((prev) => {
         const merged: SearchPropertiesResult = {
           ...json,
@@ -289,6 +349,35 @@ export function BrowseExperienceClient(props: {
           <div className="flex flex-wrap gap-2 md:items-center">
             <button
               type="button"
+              role="switch"
+              aria-checked={dataSaverHydrated ? dataSaverEnabled : false}
+              onClick={() => toggleDataSaver()}
+              title={t("dataSaverHint")}
+              className={cn(
+                "flex min-h-[44px] min-w-[44px] items-center gap-2 rounded-[var(--darlink-radius-lg)] border px-3 text-start text-sm font-semibold transition [dir=rtl]:text-end md:min-w-0",
+                dataSaverHydrated && dataSaverEnabled ?
+                  "border-emerald-500 bg-emerald-500/10 text-emerald-950"
+                : "border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface)] text-[color:var(--darlink-text)]",
+              )}
+            >
+              <span
+                aria-hidden
+                className={cn(
+                  "relative inline-flex h-7 w-12 shrink-0 rounded-full transition-colors",
+                  dataSaverHydrated && dataSaverEnabled ? "bg-emerald-600" : "bg-[color:var(--darlink-border)]",
+                )}
+              >
+                <span
+                  className={cn(
+                    "absolute top-1 flex size-5 rounded-full bg-white shadow transition-transform",
+                    dataSaverHydrated && dataSaverEnabled ? "start-6" : "start-1",
+                  )}
+                />
+              </span>
+              <span className="max-w-[10rem] leading-snug">{t("dataSaverLabel")}</span>
+            </button>
+            <button
+              type="button"
               onClick={() => replace({ map: mapMode ? undefined : "1" })}
               className={cn(
                 "min-h-[44px] rounded-[var(--darlink-radius-lg)] border px-4 text-sm font-semibold transition",
@@ -361,6 +450,12 @@ export function BrowseExperienceClient(props: {
 
       {loading && bundle.items.length === 0 ? <ListingGridSkeleton count={8} /> : null}
 
+      {loading && bundle.items.length > 0 ? (
+        <p className="rounded-xl border border-amber-200/70 bg-amber-50/90 px-3 py-2 text-xs font-medium text-amber-950 [dir=rtl]:text-right">
+          {t("refreshingResults")}
+        </p>
+      ) : null}
+
       <div
         className={cn(
           mapMode ? "grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(320px,42%)] lg:items-start" : "",
@@ -412,7 +507,7 @@ export function BrowseExperienceClient(props: {
                   key={l.id}
                   className={cn(selectedId === l.id ? "ring-2 ring-[color:var(--darlink-accent)] ring-offset-2 ring-offset-[color:var(--darlink-surface)]" : "")}
                 >
-                  <ListingCard listing={l} locale={locale} priority={i < 6} />
+                  <ListingCard listing={l} locale={locale} priority={i < SYRIA_CARD_PRIORITY_FIRST_COUNT} />
                 </div>
               ))}
             </div>

@@ -1,4 +1,8 @@
 import { EXPECTED_APP_NAME } from "@/config/app-identity";
+import { SYRIA_CLOUDINARY_LISTINGS_FOLDER_DEFAULT } from "@/lib/syria/cloudinary-server";
+
+/** Legacy folder name — never use for Syria production (shared-namespace risk vs Canada assets). */
+const LEGACY_CLOUDINARY_LISTINGS_FOLDER = "sybnb/listings";
 
 function isVercelDeploy(): boolean {
   return process.env.VERCEL === "1" || Boolean(process.env.VERCEL_ENV?.trim());
@@ -48,9 +52,26 @@ export function assertSyriaAppNameEnv(): void {
 }
 
 /**
- * One-shot guard: DB + app name (after `assertDarlinkRuntimeEnv`).
+ * ORDER SYBNB-103 — reject accidental Canada-era Cloudinary folder on Syria production deploys.
+ */
+export function assertSyriaCloudinaryFolderIsolation(): void {
+  const folder = process.env.CLOUDINARY_LISTINGS_FOLDER?.trim();
+  if (!folder) return;
+  const prod =
+    process.env.NODE_ENV === "production" || process.env.VERCEL_ENV === "production";
+  if (!prod) return;
+  if (folder === LEGACY_CLOUDINARY_LISTINGS_FOLDER) {
+    throw new Error(
+      `❌ CLOUDINARY_LISTINGS_FOLDER must not be "${LEGACY_CLOUDINARY_LISTINGS_FOLDER}" on Syria — use "${SYRIA_CLOUDINARY_LISTINGS_FOLDER_DEFAULT}" or another Syria-only prefix (ORDER SYBNB-103).`,
+    );
+  }
+}
+
+/**
+ * One-shot guard: DB + app name + storage namespace (after `assertDarlinkRuntimeEnv`).
  */
 export function assertSyriaAppIsolation(): void {
   assertSyriaAppNameEnv();
   assertSyriaDatabaseUrlIsolation();
+  assertSyriaCloudinaryFolderIsolation();
 }

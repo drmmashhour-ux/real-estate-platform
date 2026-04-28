@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/db";
+import { recomputeReputationScoreForUser } from "@/lib/syria/user-reputation";
 import { requireSessionUser } from "@/lib/auth";
 import { syriaFlags } from "@/lib/platform-flags";
 import { redirect } from "@/i18n/navigation";
@@ -15,6 +16,7 @@ import {
   evaluateSybnbStayRequestEligibility,
   isSybnbStayBookablePropertyType,
 } from "@/lib/sybnb/sybnb-booking-rules";
+import { assertStayDatesAvailableForNewRequest } from "@/lib/sybnb/sybnb-stay-availability";
 import { countUnreviewedSybnbReportsForProperty } from "@/lib/sybnb/sybnb-reports";
 import { appendSyriaSybnbCoreAudit } from "@/lib/sybnb/sybnb-financial-audit";
 import { logTimelineEvent } from "@/lib/timeline/log-event";
@@ -31,7 +33,7 @@ export type SybnbQuoteResult =
       hostNet: string;
       currency: string;
     }
-  | { ok: false; error: "not_found" | "invalid" };
+  | { ok: false; error: "not_found" | "invalid" | "dates_unavailable" };
 
 /**
  * Server-side quote for the listing detail page (same math as `createSybnbStayBooking`).
@@ -59,6 +61,15 @@ export async function getSybnbStayQuote(input: {
   if (Number.isNaN(+checkIn) || Number.isNaN(+checkOut) || checkOut <= checkIn) {
     return { ok: false, error: "invalid" };
   }
+  const datesAvail = await assertStayDatesAvailableForNewRequest(
+    property.id,
+    checkIn,
+    checkOut,
+    property.availability,
+  );
+  if (!datesAvail.ok) {
+    return { ok: false, error: "dates_unavailable" };
+  }
   const q = computeSybnbQuote(property, checkIn, checkOut);
   return {
     ok: true,
@@ -82,13 +93,16 @@ export async function runSybnbPostStayCompletion(): Promise<void> {
       checkOut: { lt: now },
       property: { category: "stay" },
     },
-    select: { id: true },
+    select: { id: true, property: { select: { ownerId: true } } },
   });
   if (rows.length === 0) return;
   await prisma.syriaBooking.updateMany({
     where: { id: { in: rows.map((r) => r.id) } },
     data: { status: "COMPLETED" },
   });
+  await Promise.all(
+    [...new Set(rows.map((r) => r.property.ownerId))].map((oid) => recomputeReputationScoreForUser(oid)),
+  );
 }
 
 /**
@@ -133,6 +147,16 @@ export async function createSybnbStayBooking(formData: FormData): Promise<void> 
     return;
   }
 
+  const datesAvail = await assertStayDatesAvailableForNewRequest(
+    property.id,
+    checkIn,
+    checkOut,
+    property.availability,
+  );
+  if (!datesAvail.ok) {
+    return;
+  }
+
   const q = computeSybnbQuote(property, checkIn, checkOut);
   const guestCount = Number.isFinite(guestCountRaw) && guestCountRaw > 0 ? Math.floor(guestCountRaw) : null;
   const guestPaymentStatus = manualRef ? "PENDING_MANUAL" : "UNPAID";
@@ -162,6 +186,7 @@ export async function createSybnbStayBooking(formData: FormData): Promise<void> 
         utmSource: utm.utmSource,
         utmMedium: utm.utmMedium,
         utmCampaign: utm.utmCampaign,
+        isTest: property.isTest,
       },
     });
     await tx.syriaPayout.create({
@@ -200,6 +225,15 @@ export async function createSybnbStayBooking(formData: FormData): Promise<void> 
       propertyId,
       payoutDelayHours: sybnbConfig.payoutDelayHours,
     },
+  });
+
+  await trackSyriaGrowthEvent({
+    eventType: "booking_request",
+    userId: guest.id,
+    propertyId: property.id,
+    bookingId: created.id,
+    utm,
+    payload: { flow: "sybnb_stay", nights: q.nights },
   });
 
   await trackSyriaGrowthEvent({

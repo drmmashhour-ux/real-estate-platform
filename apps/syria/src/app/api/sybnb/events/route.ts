@@ -2,14 +2,25 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { recordSybnbEvent } from "@/lib/sybnb/sybnb-analytics-events";
+import { trackSyriaGrowthEvent } from "@/lib/growth-events";
+import { recordSybnbEvent, SYBNB_ANALYTICS_EVENT_TYPES } from "@/lib/sybnb/sybnb-analytics-events";
+import { recomputeSy8FeedRankForPropertyId } from "@/lib/sy8/sy8-feed-rank-refresh";
 import { logTimelineEvent } from "@/lib/timeline/log-event";
+import { recordListingPhoneRevealForAntispam } from "@/lib/syria/phone-reveal-antispam";
 
 export const runtime = "nodejs";
 
 const bodySchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("listing_view"),
+    listingId: z.string().min(1).max(64),
+  }),
+  z.object({
+    type: z.literal("listing_open"),
+    listingId: z.string().min(1).max(64),
+  }),
+  z.object({
+    type: z.literal("phone_reveal"),
     listingId: z.string().min(1).max(64),
   }),
   z.object({
@@ -23,6 +34,14 @@ const bodySchema = z.discriminatedUnion("type", [
     channel: z.enum(["whatsapp", "tel"]),
   }),
 ]);
+
+async function assertPublishedListingForGuestSignals(listingId: string): Promise<boolean> {
+  const listing = await prisma.syriaProperty.findUnique({
+    where: { id: listingId },
+    select: { id: true, status: true, fraudFlag: true },
+  });
+  return Boolean(listing?.status === "PUBLISHED" && !listing.fraudFlag);
+}
 
 async function assertStayListingForView(listingId: string): Promise<boolean> {
   const listing = await prisma.syriaProperty.findUnique({
@@ -54,7 +73,7 @@ async function assertHotelListingForLead(listingId: string): Promise<boolean> {
   return Boolean(listing?.id && listing.status === "PUBLISHED" && !listing.fraudFlag && listing.type === "HOTEL");
 }
 
-/** SYBNB-10/`listing_view`, SYBNB-11/`contact_click`, SYBNB-40/`hotel_contact_click` ingestion. Others emit server-side only. */
+/** SYBNB-10/`listing_view`, SYBNB-40/`hotel_contact_click`, SYBNB-70/`listing_open` + `contact_click`, SYBNB-85/`phone_reveal` ingestion. Others emit server-side only. */
 export async function POST(req: Request): Promise<Response> {
   let json: unknown;
   try {
@@ -68,6 +87,21 @@ export async function POST(req: Request): Promise<Response> {
   }
   const payload = parsed.data;
 
+  if (payload.type === "listing_open") {
+    const okOpen = await assertPublishedListingForGuestSignals(payload.listingId);
+    if (!okOpen) {
+      return NextResponse.json({ ok: false, error: "listing_unavailable" }, { status: 404 });
+    }
+    const session = await getSessionUser();
+    await recordSybnbEvent({
+      type: "listing_open",
+      listingId: payload.listingId,
+      userId: session?.id ?? null,
+      metadata: { source: "listing_detail_beacon" },
+    });
+    return NextResponse.json({ ok: true });
+  }
+
   if (payload.type === "listing_view") {
     const ok = await assertStayListingForView(payload.listingId);
     if (!ok) {
@@ -80,6 +114,29 @@ export async function POST(req: Request): Promise<Response> {
       userId: session?.id ?? null,
       metadata: { source: "api" },
     });
+    return NextResponse.json({ ok: true });
+  }
+
+  if (payload.type === "phone_reveal") {
+    const okReveal = await assertListingForContactClick(payload.listingId);
+    if (!okReveal) {
+      return NextResponse.json({ ok: false, error: "listing_unavailable" }, { status: 404 });
+    }
+    const session = await getSessionUser();
+    await recordSybnbEvent({
+      type: SYBNB_ANALYTICS_EVENT_TYPES.PHONE_REVEAL,
+      listingId: payload.listingId,
+      userId: session?.id ?? null,
+      metadata: { source: "listing_show_phone" },
+    });
+    void trackSyriaGrowthEvent({
+      eventType: "phone_reveal",
+      propertyId: payload.listingId,
+      userId: session?.id ?? null,
+      payload: { source: "listing_show_phone" },
+    });
+    void recordListingPhoneRevealForAntispam(payload.listingId);
+    void recomputeSy8FeedRankForPropertyId(payload.listingId);
     return NextResponse.json({ ok: true });
   }
 

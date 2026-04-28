@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { trackSyriaGrowthEvent } from "@/lib/growth-events";
 import { parseUtmFromSearchParams } from "@/lib/utm";
+import { s2GetClientIp } from "@/lib/security/s2-ip";
+import { evaluateListingShareAbuse, hashSybn113ClientIp } from "@/lib/syria/share-abuse";
 
 export async function POST(req: Request) {
   let body: unknown;
@@ -34,10 +36,49 @@ export async function POST(req: Request) {
         })
       : undefined;
 
+  const propertyId = typeof o.propertyId === "string" ? o.propertyId : null;
+
+  /** ORDER SYBNB-113 — share spam: daily cap + burst dilution on same listing. */
+  if (eventType === "listing_shared") {
+    if (!propertyId) {
+      return NextResponse.json({ ok: false, error: "missing_property_id" }, { status: 400 });
+    }
+    const ip = s2GetClientIp(req);
+    const ipHash = hashSybn113ClientIp(ip);
+    const decision = await evaluateListingShareAbuse({
+      userId: session?.id ?? null,
+      ipHash,
+      propertyId,
+    });
+    if (!decision.allowed) {
+      return NextResponse.json({ ok: false, error: "share_rate_limited" }, { status: 429 });
+    }
+    const mergedPayload: Record<string, unknown> = {
+      ...payload,
+      sybn113: {
+        ipHash,
+        diluted: decision.diluted,
+        ...(decision.diluted ? { burst: true } : {}),
+        trackingWeight: decision.diluted ? 0.25 : 1,
+      },
+    };
+    await trackSyriaGrowthEvent({
+      eventType,
+      userId: session?.id ?? null,
+      propertyId,
+      bookingId: typeof o.bookingId === "string" ? o.bookingId : null,
+      inquiryId: typeof o.inquiryId === "string" ? o.inquiryId : null,
+      utm,
+      payload: mergedPayload,
+    });
+    void import("@/lib/sy8/sy8-feed-rank-refresh").then((m) => m.recomputeSy8FeedRankForPropertyId(propertyId));
+    return NextResponse.json({ ok: true });
+  }
+
   await trackSyriaGrowthEvent({
     eventType,
     userId: session?.id ?? null,
-    propertyId: typeof o.propertyId === "string" ? o.propertyId : null,
+    propertyId,
     bookingId: typeof o.bookingId === "string" ? o.bookingId : null,
     inquiryId: typeof o.inquiryId === "string" ? o.inquiryId : null,
     utm,

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { assertDarlinkRuntimeEnv } from "@/lib/guard";
 import { incrementListingLeadClicks } from "@/lib/lead-increment";
+import { s2GetClientIp } from "@/lib/security/s2-ip";
+import { hashSybn113ClientIp } from "@/lib/syria/share-abuse";
 
 export async function POST(req: Request) {
   try {
@@ -23,6 +25,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "missing_listing_id" }, { status: 400 });
   }
 
-  await incrementListingLeadClicks(listingId, "phoneClicks");
+  const ip = s2GetClientIp(req);
+  const clientIpHash = hashSybn113ClientIp(ip);
+
+  await incrementListingLeadClicks(listingId, "phoneClicks", { clientIpHash });
   return NextResponse.json({ ok: true });
 }

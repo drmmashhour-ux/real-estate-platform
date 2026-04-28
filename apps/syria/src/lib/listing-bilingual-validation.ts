@@ -1,6 +1,6 @@
 /**
- * Deterministic bilingual listing copy rules — Arabic required for authored content; English optional.
- * No throws.
+ * Listing copy rules — Arabic title required for dashboards / forms that align with Hadiah Link UX.
+ * ORDER SYBNB-88 — description length/format not enforced (casual Arabic & dialect welcome).
  */
 
 export type BilingualListingCopyInput = {
@@ -10,7 +10,7 @@ export type BilingualListingCopyInput = {
   descriptionEn?: string | null;
 };
 
-export type BilingualListingCopyFailureReason = "missing_title_ar" | "missing_description_ar";
+export type BilingualListingCopyFailureReason = "missing_title_ar";
 
 export function validateBilingualListingCopy(input: BilingualListingCopyInput): {
   ok: boolean;
@@ -18,9 +18,7 @@ export function validateBilingualListingCopy(input: BilingualListingCopyInput): 
 } {
   try {
     const ta = typeof input.titleAr === "string" ? input.titleAr.trim() : "";
-    const da = typeof input.descriptionAr === "string" ? input.descriptionAr.trim() : "";
     if (!ta) return { ok: false, reason: "missing_title_ar" };
-    if (!da) return { ok: false, reason: "missing_description_ar" };
     return { ok: true };
   } catch {
     return { ok: false, reason: "missing_title_ar" };

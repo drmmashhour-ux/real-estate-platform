@@ -20,6 +20,7 @@ import {
   SYBNB_ESCROW_BLOCKED,
   SYBNB_ESCROW_RELEASED,
 } from "@/lib/sybnb/payout-release-policy";
+import { mergeStayBookingDatesIntoListingAvailability } from "@/lib/sybnb/sybnb-stay-availability";
 
 export async function approveProperty(formData: FormData): Promise<void> {
   assertDarlinkRuntimeEnv();
@@ -210,6 +211,9 @@ export async function verifyGuestBookingPayment(formData: FormData): Promise<voi
     data: { guestPaymentStatus: "PAID", status: "CONFIRMED" },
   });
 
+  const { mergeStayBookingDatesIntoListingAvailability } = await import("@/lib/sybnb/sybnb-stay-availability");
+  await mergeStayBookingDatesIntoListingAvailability(booking.propertyId, booking.checkIn, booking.checkOut);
+
   await trackSyriaGrowthEvent({
     eventType: "booking_confirmed",
     userId: booking.guestId,
@@ -223,7 +227,7 @@ export async function verifyGuestBookingPayment(formData: FormData): Promise<voi
     },
   });
 
-  await revalidateSyriaPaths("/admin/bookings", "/dashboard/bookings");
+  await revalidateSyriaPaths("/admin/bookings", "/dashboard/bookings", `/listing/${booking.propertyId}`);
 }
 
 export async function approvePayout(formData: FormData): Promise<void> {

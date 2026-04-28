@@ -33,9 +33,24 @@ export async function createMvpPropertyListing(formData: FormData): Promise<void
   const amenitiesMvp = formData.getAll("amenities").map((x) => String(x).trim()).filter(Boolean);
   const isDirect = formData.getAll("isDirect").includes("1");
 
+  let proofDocuments: unknown = undefined;
+  const proofJson = String(formData.get("proofDocumentsJson") ?? "").trim();
+  if (proofJson) {
+    try {
+      proofDocuments = JSON.parse(proofJson) as unknown;
+    } catch {
+      const locale = await getLocale();
+      redirect({ href: "/sell?af=invalid", locale });
+      return;
+    }
+  }
+
   if (!["SALE", "RENT"].includes(typeRaw)) {
     return;
   }
+
+  const category = "real_estate";
+  const subcategory = type === "RENT" ? "rent" : "sale";
 
   const out = await persistQuickListing({
     title: titleAr,
@@ -46,10 +61,15 @@ export async function createMvpPropertyListing(formData: FormData): Promise<void
     price,
     phoneRaw,
     type,
+    category,
+    subcategory,
     images,
     amenities: amenitiesMvp,
     source: "mvp_sell",
     isDirect,
+    isOwner: formData.getAll("ownershipOwner").includes("1"),
+    hasMandate: formData.getAll("ownershipMandate").includes("1"),
+    proofDocuments,
   });
   if (!out.ok) {
     const locale = await getLocale();
@@ -57,6 +77,8 @@ export async function createMvpPropertyListing(formData: FormData): Promise<void
       out.reason === "daily_limit" ? "af=daily"
       : out.reason === "duplicate" ? "af=duplicate"
       : out.reason === "verification_required" ? "af=verify_stay"
+      : out.reason === "ownership_required" ? "af=ownership"
+      : out.reason === "ownership_phone_mismatch" ? "af=ownership_phone"
       : "af=invalid";
     redirect({ href: `/sell?${q}`, locale });
     return;

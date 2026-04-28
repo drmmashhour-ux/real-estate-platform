@@ -20,6 +20,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <Link href="/admin/listings" className="hover:underline">
             {t("navListings")}
           </Link>
+          <Link href="/admin/listing-messages" className="hover:underline">
+            {t("navListingMessages")}
+          </Link>
           <Link href="/admin/bookings" className="hover:underline">
             {t("navBookings")}
           </Link>
@@ -29,8 +32,14 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <Link href="/admin/sybnb/reports" className="hover:underline">
             {t("navSybnbReports")}
           </Link>
+          <Link href="/admin/sybnb/properties" className="hover:underline">
+            {t("navSybnbProperties")}
+          </Link>
           <Link href="/admin/sybnb/hotels" className="hover:underline">
             {t("navSybnbHotels")}
+          </Link>
+          <Link href="/admin/sybnb/hotel-retention" className="hover:underline">
+            {t("navSybnbHotelRetention")}
           </Link>
           <Link href="/admin/sybnb/analytics" className="hover:underline">
             {t("navSybnbAnalytics")}
@@ -47,8 +56,14 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <Link href="/admin/sybnb/daily" className="hover:underline">
             {t("navDailyExecution")}
           </Link>
+          <Link href="/admin/sybnb/follow-ups" className="hover:underline">
+            {t("navSybnbFollowUps")}
+          </Link>
           <Link href="/admin/sybnb/workflow" className="hover:underline">
             {t("navSybnbWorkflow")}
+          </Link>
+          <Link href="/admin/sybnb/semi-automation" className="hover:underline">
+            {t("navSybnbSemiAutomation")}
           </Link>
           <Link href="/admin/sybnb/flywheel" className="hover:underline">
             {t("navSybnbFlywheel")}
@@ -58,6 +73,21 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           </Link>
           <Link href="/admin/sybnb/revenue-optimization" className="hover:underline">
             {t("navSybnbRevenueOptimization")}
+          </Link>
+          <Link href="/admin/sybnb/revenue-10k" className="hover:underline">
+            {t("navSybnbRevenue10k")}
+          </Link>
+          <Link href="/admin/sybnb/team-system" className="hover:underline">
+            {t("navSybnbTeamSystem")}
+          </Link>
+          <Link href="/admin/sybnb/market-domination" className="hover:underline">
+            {t("navSybnbMarketDomination")}
+          </Link>
+          <Link href="/admin/sybnb/page-weight" className="hover:underline">
+            {t("navSybnbPageWeight")}
+          </Link>
+          <Link href="/admin/sybnb/low-connectivity" className="hover:underline">
+            {t("navSybnbLowConnectivity")}
           </Link>
           <Link href="/admin/sybnb/expansion-readiness" className="hover:underline">
             {t("navSybnbExpansionReadiness")}

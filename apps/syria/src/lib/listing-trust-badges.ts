@@ -17,13 +17,21 @@ export function isListingFraudFlagged(fraudFlag: boolean | undefined | null): bo
   return fraudFlag === true;
 }
 
-/** Trusted listing chip: verified seller + ≥3 photos + not fraud-flagged. */
+/**
+ * Trusted listing chip (ORDER SYBNB-FINAL): verified seller + ≥3 photos + ≥2 normalized amenities + not fraud-flagged.
+ */
 export function shouldShowTrustedListingBadge(args: {
   sellerVerified: boolean;
   imageCount: number;
+  amenityCount: number;
   fraudFlag: boolean | undefined | null;
 }): boolean {
-  return args.sellerVerified && args.imageCount >= 3 && !isListingFraudFlagged(args.fraudFlag);
+  return (
+    args.sellerVerified &&
+    args.imageCount >= 3 &&
+    args.amenityCount >= 2 &&
+    !isListingFraudFlagged(args.fraudFlag)
+  );
 }
 
 export type ListingPhotoTrustTier = "none" | "clear" | "full";

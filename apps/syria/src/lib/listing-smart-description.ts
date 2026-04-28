@@ -1,6 +1,7 @@
 /**
- * ORDER SYBNB-68 — deterministic Arabic-first listing copy when description is empty or weak.
- * Optional English subtitle for bilingual browsing.
+ * ORDER SYBNB-68 — deterministic Arabic-first fallback copy when the seller adds **no** description.
+ * ORDER SYBNB-88 — optional English for bilingual UI only; sellers may leave Arabic-only casual copy.
+ * ORDER SYBNB-91 — when the seller wrote any non-empty description, we never replace it with formal broker prose server-side.
  */
 
 import { formatSyriaCurrency } from "@/lib/format";
@@ -8,9 +9,10 @@ import type { SyriaPropertyType } from "@/generated/prisma";
 import { LISTING_MIN_DESCRIPTION_AR_CHARS } from "@/lib/listing-quality";
 import { SYRIA_AMENITIES, normalizeSyriaAmenityKeys, sortSyriaAmenityKeysForListingDisplay } from "@/lib/syria/amenities";
 
+/** True only when the seller left no usable text — SYBNB-88 preserves short/casual Arabic without overwriting. */
 export function listingNeedsSmartArabicDescription(descriptionAr: string | null | undefined): boolean {
   const s = typeof descriptionAr === "string" ? descriptionAr.trim() : "";
-  return s.length === 0 || s === "—" || s.length < LISTING_MIN_DESCRIPTION_AR_CHARS;
+  return s.length === 0 || s === "—";
 }
 
 function joinArabicWa(parts: string[]): string {
@@ -87,10 +89,10 @@ export function buildSmartListingDescriptionArEn(input: SmartListingDescriptionI
       purposeEn = "suited for everyday living";
       break;
     default:
-      openerAr = `مسكن مريح في ${locAr}`;
-      openerEn = `Comfortable home in ${locEn}`;
-      purposeAr = "مناسبة للسكن أو للاستثمار بحسب الحالة";
-      purposeEn = "suited for living or investment depending on condition";
+      openerAr = `عرض في ${locAr}`;
+      openerEn = `Listing in ${locEn}`;
+      purposeAr = "للتواصل للتفاصيل والمعاينة";
+      purposeEn = "contact for details or a viewing";
   }
 
   const amenitiesAr =

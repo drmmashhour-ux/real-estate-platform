@@ -153,26 +153,41 @@ const CARD_AMENITY_EMOJI: Partial<Record<SyriaAmenityKey, string>> = {
 
 export type ListingCardAmenityBadge = { key: SyriaAmenityKey; emoji: string; label: string };
 
+/** ORDER SYBNB-80 — browse API wires catalog keys only; card expands labels client-side with nearly zero work. */
+export function pickListingCardAmenityBadgeKeys(amenities: unknown, max = 3): SyriaAmenityKey[] {
+  const keys = normalizeSyriaAmenityKeys(
+    Array.isArray(amenities) ? amenities.filter((x): x is string => typeof x === "string") : [],
+  );
+  const out: SyriaAmenityKey[] = [];
+  for (const k of CARD_BADGE_PRIORITY) {
+    if (!keys.includes(k)) continue;
+    out.push(k);
+    if (out.length >= max) break;
+  }
+  return out;
+}
+
 /** Pick up to `max` catalog amenities for card chips (stable priority). */
 export function pickListingCardAmenityBadges(
   amenities: unknown,
   locale: string,
   max = 3,
 ): ListingCardAmenityBadge[] {
-  const keys = normalizeSyriaAmenityKeys(
-    Array.isArray(amenities) ? amenities.filter((x): x is string => typeof x === "string") : [],
-  );
-  const out: ListingCardAmenityBadge[] = [];
-  for (const k of CARD_BADGE_PRIORITY) {
-    if (!keys.includes(k)) continue;
-    out.push({
-      key: k,
-      emoji: CARD_AMENITY_EMOJI[k] ?? "✓",
-      label: labelSyriaAmenity(k, locale).primary,
-    });
-    if (out.length >= max) break;
-  }
-  return out;
+  const ids = pickListingCardAmenityBadgeKeys(amenities, max);
+  return ids.map((k) => ({
+    key: k,
+    emoji: CARD_AMENITY_EMOJI[k] ?? "✓",
+    label: labelSyriaAmenity(k, locale).primary,
+  }));
+}
+
+/** Render-ready badges when browse payload shipped only `browseAmenityBadgeKeys` (SYBNB-80). */
+export function listingCardBadgesFromAmenityKeys(keys: SyriaAmenityKey[], locale: string): ListingCardAmenityBadge[] {
+  return keys.map((k) => ({
+    key: k,
+    emoji: CARD_AMENITY_EMOJI[k] ?? "✓",
+    label: labelSyriaAmenity(k, locale).primary,
+  }));
 }
 
 /** Toggle one catalog tag in a comma-separated browse `amenities` query (preserves other tags). */

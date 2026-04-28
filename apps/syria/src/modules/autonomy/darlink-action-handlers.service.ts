@@ -5,6 +5,7 @@
 import type { MarketplaceActionProposal } from "./darlink-marketplace-autonomy.types";
 import { prisma } from "@/lib/db";
 import { trackSyriaGrowthEvent } from "@/lib/growth-events";
+import { mergeStayBookingDatesIntoListingAvailability } from "@/lib/sybnb/sybnb-stay-availability";
 
 export type ActionHandlerResult = {
   ok: boolean;
@@ -106,7 +107,7 @@ async function handleApproveListing(listingId: string | null): Promise<ActionHan
   if (!listingId) return { ok: false, code: "missing_listing_id" };
   const p = await prisma.syriaProperty.findUnique({ where: { id: listingId } });
   if (!p) return { ok: false, code: "listing_not_found" };
-  if (p.status !== "PENDING_REVIEW") {
+  if (p.status !== "PENDING_REVIEW" && p.status !== "NEEDS_REVIEW") {
     return { ok: false, code: "not_pending_review", detail: { status: p.status } };
   }
   await prisma.syriaProperty.update({
@@ -136,6 +137,7 @@ async function handleMarkGuestPaid(bookingId: string | null): Promise<ActionHand
     where: { id: bookingId },
     data: { guestPaymentStatus: "PAID", status: "CONFIRMED" },
   });
+  await mergeStayBookingDatesIntoListingAvailability(b.propertyId, b.checkIn, b.checkOut);
   return { ok: true, code: "guest_marked_paid" };
 }
 

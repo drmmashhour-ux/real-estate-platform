@@ -29,10 +29,10 @@ export default async function SybnbHostPage(props: { params: Promise<{ locale: s
       orderBy: { createdAt: "desc" },
       take: 30,
     }),
-    prisma.sybnbListingReport.count({
+    prisma.listingReport.count({
       where: {
         reviewed: false,
-        property: { ownerId: user.id, category: "stay" },
+        listing: { ownerId: user.id, category: "stay" },
       },
     }),
   ]);

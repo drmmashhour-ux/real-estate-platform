@@ -4,6 +4,7 @@ import { redirect } from "@/i18n/navigation";
 import { getLocale } from "next-intl/server";
 import { prisma } from "@/lib/db";
 import { clearSession, setSessionUserId } from "@/lib/auth";
+import { sybn108OptionalTestFields } from "@/lib/sybn/sybn108-test-mode";
 
 export async function loginWithEmail(formData: FormData): Promise<void> {
   const email = String(formData.get("email") ?? "")
@@ -28,6 +29,7 @@ export async function loginWithEmail(formData: FormData): Promise<void> {
       email,
       name,
       role,
+      ...sybn108OptionalTestFields(),
     },
     update: {
       name: name ?? undefined,

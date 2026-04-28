@@ -1,10 +1,13 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
-import { LISTING_IMAGE_QUALITY } from "@/lib/design-tokens";
+import { ListingFadeInImg } from "@/components/syria/ListingFadeInImg";
+import { ListingImageSkeleton } from "@/components/syria/ListingImageSkeleton";
+import { useDataSaverOptional } from "@/context/DataSaverProvider";
 import { formatSyriaCurrency } from "@/lib/format";
 import { backfillLocalizedPropertyShape } from "@/lib/property-legacy-compat";
 import {
@@ -16,13 +19,15 @@ import { cn } from "@/lib/cn";
 import { isNewListing } from "@/lib/syria-phone";
 import type { SyriaProperty } from "@/generated/prisma";
 import type { SerializedBrowseListing } from "@/services/search/search.service";
+import type { BrowseCtrBadgeKind } from "@/lib/sybnb/browse-card-signals";
 import { labelSyriaState } from "@/lib/syria/states";
-import { pickListingCardAmenityBadges } from "@/lib/syria/amenities";
+import { pickListingCardAmenityBadges, listingCardBadgesFromAmenityKeys, normalizeSyriaAmenityKeys } from "@/lib/syria/amenities";
 import {
   getListingPhotoTrustTier,
   isSellerVerifiedForListingTrust,
   shouldShowTrustedListingBadge,
 } from "@/lib/listing-trust-badges";
+import { isOwnershipVerificationTierListing } from "@/lib/listing-posting-kind";
 
 type CardListing = Pick<
   SyriaProperty,
@@ -43,6 +48,7 @@ type CardListing = Pick<
   | "isFeatured"
   | "plan"
   | "images"
+  | "listingPhotoCount"
   | "area"
   | "districtAr"
   | "districtEn"
@@ -59,6 +65,10 @@ type CardListing = Pick<
   | "subcategory"
   | "isDirect"
   | "pricePerNight"
+  | "proofDocumentsSubmitted"
+  | "ownershipVerified"
+  | "postingKind"
+  | "isTest"
 >;
 
 export type ListingCardModel = CardListing | SerializedBrowseListing;
@@ -77,6 +87,92 @@ function imageCount(images: unknown): number {
   return images.filter((x): x is string => typeof x === "string" && x.length > 0).length;
 }
 
+/** SYBNB-77 — browse wires may ship one image URL but include `listingPhotoCount` for badges. */
+function effectivePhotoCount(listing: ListingCardModel): number {
+  const rpc =
+    "listingPhotoCount" in listing &&
+    listing.listingPhotoCount != null &&
+    typeof listing.listingPhotoCount === "number" ?
+      listing.listingPhotoCount
+    : null;
+  if (rpc != null && rpc >= 0) return rpc;
+  return imageCount(listing.images);
+}
+
+/** ORDER SYBNB-80 — browse payloads ship pre-ranked CTR badge kinds from the API. */
+function browseCtrBadgeElement(kind: BrowseCtrBadgeKind, idx: number, t: (key: string) => string): ReactNode {
+  switch (kind) {
+    case "trusted_listing":
+      return (
+        <span
+          key={`browse-ctr-${idx}`}
+          className="rounded-full bg-teal-700 px-2 py-0.5 text-[10px] font-bold text-white ring-1 ring-teal-400/60"
+        >
+          {t("badgeTrustedListing")}
+        </span>
+      );
+    case "verified_seller":
+      return (
+        <div key={`browse-ctr-${idx}`} className="rounded-full bg-green-600 px-2 py-0.5 text-[10px] font-semibold text-white">
+          {t("verifiedBadge")}
+        </div>
+      );
+    case "ownership_confirmed":
+      return (
+        <span
+          key={`browse-ctr-${idx}`}
+          className="rounded-full bg-emerald-900 px-2 py-0.5 text-[10px] font-bold text-white ring-1 ring-emerald-600/60"
+        >
+          {t("badgeOwnershipConfirmed")}
+        </span>
+      );
+    case "ownership_not_verified":
+      return (
+        <span
+          key={`browse-ctr-${idx}`}
+          className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-950 ring-1 ring-amber-400/70"
+        >
+          {t("badgeOwnershipNotVerified")}
+        </span>
+      );
+    case "proof_documents":
+      return (
+        <span
+          key={`browse-ctr-${idx}`}
+          className="rounded-full bg-slate-700 px-2 py-0.5 text-[10px] font-bold text-white ring-1 ring-slate-500/50"
+        >
+          {t("badgeProofDocuments")}
+        </span>
+      );
+    case "photo_full":
+      return (
+        <span
+          key={`browse-ctr-${idx}`}
+          className="rounded-full bg-violet-100/95 px-2 py-0.5 text-[10px] font-bold text-violet-950 ring-1 ring-violet-300/65"
+        >
+          {t("badgePhotoGalleryFull")}
+        </span>
+      );
+    case "photo_clear":
+      return (
+        <span
+          key={`browse-ctr-${idx}`}
+          className="rounded-full bg-emerald-100/90 px-2 py-0.5 text-[10px] font-bold text-emerald-900 ring-1 ring-emerald-200/80"
+        >
+          {t("badgePhotoQuality")}
+        </span>
+      );
+    case "new":
+      return (
+        <div key={`browse-ctr-${idx}`} className="rounded-full bg-blue-500 px-2 py-0.5 text-[10px] font-medium text-white">
+          {t("badgeNew")}
+        </div>
+      );
+    default:
+      return null;
+  }
+}
+
 export function ListingCard({
   listing,
   locale,
@@ -87,6 +183,7 @@ export function ListingCard({
   priority?: boolean;
 }) {
   const t = useTranslations("Listing");
+  const { listingImageQuality } = useDataSaverOptional();
   const resolved = backfillLocalizedPropertyShape(listing);
   const catKey = "category" in listing && typeof (listing as { category?: string }).category === "string" ? (listing as { category: string }).category : null;
   const isStay = catKey === "stay";
@@ -104,21 +201,17 @@ export function ListingCard({
     .join(" · ");
 
   const img = primaryListingImage(listing.images);
-  const nPhotos = imageCount(listing.images);
-  const fraudFlag = "fraudFlag" in listing && listing.fraudFlag === true;
-  const sellerVerified = isSellerVerifiedForListingTrust({
-    verified: listing.verified,
-    listingVerified: listing.listingVerified,
-    sy8SellerVerified: "sy8SellerVerified" in listing ? listing.sy8SellerVerified : undefined,
-  });
-  const showTrustedListingBadgeUi = shouldShowTrustedListingBadge({
-    sellerVerified,
-    imageCount: nPhotos,
-    fraudFlag,
-  });
-  const showVerifiedSellerOnly = sellerVerified && !showTrustedListingBadgeUi && !fraudFlag;
-  const photoTrustTier = getListingPhotoTrustTier(nPhotos);
-  const cardAmenityBadges = pickListingCardAmenityBadges(listing.amenities, locale, 2);
+  const nPhotos = effectivePhotoCount(listing);
+  const browseWire = listing as SerializedBrowseListing;
+  const browseCtrKinds =
+    Array.isArray(browseWire.browseCtrBadgeKinds) && browseWire.browseCtrBadgeKinds.length > 0 ?
+      browseWire.browseCtrBadgeKinds
+    : null;
+
+  const cardAmenityBadges =
+    Array.isArray(browseWire.browseAmenityBadgeKeys) && browseWire.browseAmenityBadgeKeys.length > 0 ?
+      listingCardBadgesFromAmenityKeys(browseWire.browseAmenityBadgeKeys, locale)
+    : pickListingCardAmenityBadges(listing.amenities, locale, 2);
   const isBnhub = listing.type === "BNHUB";
   const nightly =
     "pricePerNight" in listing && typeof (listing as { pricePerNight?: number | null }).pricePerNight === "number"
@@ -129,59 +222,145 @@ export function ListingCard({
     | "featured"
     | "premium"
     | "hotel_featured";
-  const created =
-    "createdAt" in listing && listing.createdAt ?
-      typeof listing.createdAt === "string" ?
-        new Date(listing.createdAt)
-      : (listing as SyriaProperty).createdAt
-    : null;
-  const showNew = created ? isNewListing(created) : false;
 
-  /** SYBNB-CTR: max 3 badges — trust → photo tier → new */
-  const ctrBadgeRow: ReactNode[] = [];
-  if (showTrustedListingBadgeUi) {
-    ctrBadgeRow.push(
-      <span
-        key="trust"
-        className="rounded-full bg-teal-700 px-2 py-0.5 text-[10px] font-bold text-white ring-1 ring-teal-400/60"
-      >
-        {t("badgeTrustedListing")}
-      </span>,
-    );
-  } else if (showVerifiedSellerOnly) {
-    ctrBadgeRow.push(
-      <div key="verified" className="rounded-full bg-green-600 px-2 py-0.5 text-[10px] font-semibold text-white">
-        {t("verifiedBadge")}
-      </div>,
-    );
+  /** SYBNB-CTR / SYBNB-101 — trust → ownership → proof → photo → new (capped server-side). */
+  let ctrBadgesVisible: ReactNode[];
+  if (browseCtrKinds) {
+    ctrBadgesVisible = browseCtrKinds.map((kind, idx) => browseCtrBadgeElement(kind, idx, t));
+  } else {
+    const fraudFlag = "fraudFlag" in listing && listing.fraudFlag === true;
+    const sellerVerified = isSellerVerifiedForListingTrust({
+      verified: listing.verified,
+      listingVerified: listing.listingVerified,
+      sy8SellerVerified: "sy8SellerVerified" in listing ? listing.sy8SellerVerified : undefined,
+    });
+    const wireAmenityCount =
+      "amenityCount" in listing && typeof (listing as SerializedBrowseListing).amenityCount === "number"
+        ? (listing as SerializedBrowseListing).amenityCount
+        : normalizeSyriaAmenityKeys(
+            Array.isArray(listing.amenities)
+              ? listing.amenities.filter((x): x is string => typeof x === "string")
+              : [],
+          ).length;
+    const showTrustedListingBadgeUi = shouldShowTrustedListingBadge({
+      sellerVerified,
+      imageCount: nPhotos,
+      amenityCount: wireAmenityCount,
+      fraudFlag,
+    });
+    const showVerifiedSellerOnly = sellerVerified && !showTrustedListingBadgeUi && !fraudFlag;
+    const photoTrustTier = getListingPhotoTrustTier(nPhotos);
+    const created =
+      "createdAt" in listing && listing.createdAt ?
+        typeof listing.createdAt === "string" ?
+          new Date(listing.createdAt)
+        : (listing as SyriaProperty).createdAt
+      : null;
+    const showNew = created ? isNewListing(created) : false;
+
+    const ctrBadgeRow: ReactNode[] = [];
+    if (showTrustedListingBadgeUi) {
+      ctrBadgeRow.push(
+        <span
+          key="trust"
+          className="rounded-full bg-teal-700 px-2 py-0.5 text-[10px] font-bold text-white ring-1 ring-teal-400/60"
+        >
+          {t("badgeTrustedListing")}
+        </span>,
+      );
+    } else if (showVerifiedSellerOnly) {
+      ctrBadgeRow.push(
+        <div key="verified" className="rounded-full bg-green-600 px-2 py-0.5 text-[10px] font-semibold text-white">
+          {t("verifiedBadge")}
+        </div>,
+      );
+    }
+    const catStr =
+      "category" in listing && typeof (listing as { category?: string }).category === "string" ?
+        (listing as { category: string }).category
+      : "";
+    const pkStr =
+      "postingKind" in listing ?
+        ((listing as { postingKind?: string | null }).postingKind ?? "")
+      : "";
+    const tierOv = isOwnershipVerificationTierListing(catStr, pkStr) && !fraudFlag;
+    if (tierOv) {
+      const ov = "ownershipVerified" in listing && (listing as { ownershipVerified?: boolean }).ownershipVerified === true;
+      ctrBadgeRow.push(
+        ov ?
+          <span
+            key="own-confirmed"
+            className="rounded-full bg-emerald-900 px-2 py-0.5 text-[10px] font-bold text-white ring-1 ring-emerald-600/60"
+          >
+            {t("badgeOwnershipConfirmed")}
+          </span>
+        : <span
+            key="own-not"
+            className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-950 ring-1 ring-amber-400/70"
+          >
+            {t("badgeOwnershipNotVerified")}
+          </span>,
+      );
+    }
+    const proofUploaded =
+      "proofDocumentsSubmitted" in listing && listing.proofDocumentsSubmitted === true && !fraudFlag;
+    if (proofUploaded) {
+      ctrBadgeRow.push(
+        <span
+          key="proof-docs"
+          className="rounded-full bg-slate-700 px-2 py-0.5 text-[10px] font-bold text-white ring-1 ring-slate-500/50"
+        >
+          {t("badgeProofDocuments")}
+        </span>,
+      );
+    }
+    if (photoTrustTier === "full") {
+      ctrBadgeRow.push(
+        <span
+          key="photo-full"
+          className="rounded-full bg-violet-100/95 px-2 py-0.5 text-[10px] font-bold text-violet-950 ring-1 ring-violet-300/65"
+        >
+          {t("badgePhotoGalleryFull")}
+        </span>,
+      );
+    } else if (photoTrustTier === "clear") {
+      ctrBadgeRow.push(
+        <span
+          key="photo-clear"
+          className="rounded-full bg-emerald-100/90 px-2 py-0.5 text-[10px] font-bold text-emerald-900 ring-1 ring-emerald-200/80"
+        >
+          {t("badgePhotoQuality")}
+        </span>,
+      );
+    }
+    if (showNew) {
+      ctrBadgeRow.push(
+        <div key="new" className="rounded-full bg-blue-500 px-2 py-0.5 text-[10px] font-medium text-white">
+          {t("badgeNew")}
+        </div>,
+      );
+    }
+    ctrBadgesVisible = ctrBadgeRow.slice(0, 4);
   }
-  if (photoTrustTier === "full") {
-    ctrBadgeRow.push(
+
+  const showTestListing =
+    "isTest" in listing && (listing as { isTest?: boolean }).isTest === true;
+  if (showTestListing) {
+    ctrBadgesVisible = [
       <span
-        key="photo-full"
-        className="rounded-full bg-violet-100/95 px-2 py-0.5 text-[10px] font-bold text-violet-950 ring-1 ring-violet-300/65"
+        key="sybn108-test"
+        className="rounded-full bg-fuchsia-900/90 px-2 py-0.5 text-[10px] font-bold text-white ring-1 ring-fuchsia-400/60"
       >
-        {t("badgePhotoGalleryFull")}
+        {t("badgeTestData")}
       </span>,
-    );
-  } else if (photoTrustTier === "clear") {
-    ctrBadgeRow.push(
-      <span
-        key="photo-clear"
-        className="rounded-full bg-emerald-100/90 px-2 py-0.5 text-[10px] font-bold text-emerald-900 ring-1 ring-emerald-200/80"
-      >
-        {t("badgePhotoQuality")}
-      </span>,
-    );
+      ...ctrBadgesVisible,
+    ];
   }
-  if (showNew) {
-    ctrBadgeRow.push(
-      <div key="new" className="rounded-full bg-blue-500 px-2 py-0.5 text-[10px] font-medium text-white">
-        {t("badgeNew")}
-      </div>,
-    );
-  }
-  const ctrBadgesVisible = ctrBadgeRow.slice(0, 3);
+
+  const [coverLoaded, setCoverLoaded] = useState(false);
+  useEffect(() => {
+    setCoverLoaded(false);
+  }, [img]);
 
   return (
     <Link
@@ -198,27 +377,34 @@ export function ListingCard({
             const isDataOrBlob = img.startsWith("data:") || img.startsWith("blob:");
             if (isDataOrBlob) {
               return (
-                <img
+                <ListingFadeInImg
                   src={img}
                   alt=""
-                  className="h-full w-full object-cover"
+                  className=""
                   loading={priority ? "eager" : "lazy"}
-                  decoding="async"
                   fetchPriority={priority ? "high" : "low"}
                 />
               );
             }
             return (
-              <Image
-                src={img}
-                alt=""
-                fill
-                className="object-cover"
-                sizes="(max-width: 640px) 100vw, (max-width: 1200px) 50vw, 360px"
-                quality={LISTING_IMAGE_QUALITY}
-                priority={!!priority}
-                unoptimized={img.startsWith("http://") || img.startsWith("https://")}
-              />
+              <>
+                <ListingImageSkeleton active={!coverLoaded} />
+                <Image
+                  src={img}
+                  alt=""
+                  fill
+                  loading={priority ? "eager" : "lazy"}
+                  className={cn(
+                    "relative z-[2] object-cover transition-opacity duration-300",
+                    coverLoaded ? "opacity-100" : "opacity-0",
+                  )}
+                  sizes="(max-width: 640px) 100vw, (max-width: 1200px) 50vw, 360px"
+                  quality={listingImageQuality}
+                  priority={!!priority}
+                  unoptimized={img.startsWith("http://") || img.startsWith("https://")}
+                  onLoadingComplete={() => setCoverLoaded(true)}
+                />
+              </>
             );
           })()
         ) : (

@@ -50,9 +50,9 @@ const webhookPath = join(root, "src/app/api/sybnb/webhook/route.ts");
 let webhookOk = false;
 if (existsSync(webhookPath)) {
   const w = readFileSync(webhookPath, "utf8");
-  webhookOk = w.includes("stripe-signature") && w.includes("verifySybnbAppWebhookSecret");
+  webhookOk = w.includes("stripe-signature") && w.includes("constructEvent");
 }
-check("Webhook enforces production signature + shared secret path", webhookOk, "src/app/api/sybnb/webhook/route.ts");
+check("Webhook verifies Stripe `stripe-signature` via `constructEvent`", webhookOk, "src/app/api/sybnb/webhook/route.ts");
 
 console.log(
   "\nAlso run: `pnpm env:check` (DB safety). For production: INVESTOR_DEMO_MODE not on prod DB, staging DSN != prod.",

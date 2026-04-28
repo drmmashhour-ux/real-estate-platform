@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { assertDarlinkRuntimeEnv } from "@/lib/guard";
+import { MAX_LISTING_CREATE_PAYLOAD_BYTES } from "@/lib/syria/photo-upload";
 import { persistSybnbHotelOnboarding } from "@/lib/sybnb/sybnb-hotel-onboard-persist";
 import { sybnbHotelOnboardBodySchema } from "@/lib/sybnb/sybnb-hotel-onboard-schema";
 import { revalidateAllLocaleHomePages } from "@/lib/revalidate-syria-home";
@@ -19,6 +20,11 @@ export async function POST(req: Request): Promise<Response> {
     json = await req.json();
   } catch {
     return NextResponse.json({ ok: false, error: "invalid_json" }, { status: 400 });
+  }
+
+  const payloadUtf8 = Buffer.byteLength(JSON.stringify(json), "utf8");
+  if (payloadUtf8 > MAX_LISTING_CREATE_PAYLOAD_BYTES) {
+    return NextResponse.json({ ok: false, error: "payload_too_large" }, { status: 413 });
   }
 
   const parsed = sybnbHotelOnboardBodySchema.safeParse(json);

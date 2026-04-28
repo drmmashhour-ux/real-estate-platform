@@ -6,6 +6,7 @@ import { FeedListingCard } from "@/components/FeedListingCard";
 import { Card } from "@/components/ui/Card";
 import type { SyriaProperty } from "@/generated/prisma";
 import { cn } from "@/lib/cn";
+import { SYRIA_CARD_PRIORITY_FIRST_COUNT } from "@/lib/syria/sybn104-performance";
 
 type Item = Pick<
   SyriaProperty,
@@ -87,7 +88,7 @@ export function HomeFeed({ initial, locale, emptyKey }: { initial: Item[]; local
   return (
     <div className="space-y-2">
       {items.map((l, i) => (
-        <FeedListingCard key={l.id} listing={l} locale={locale} priority={i < 4} />
+        <FeedListingCard key={l.id} listing={l} locale={locale} priority={i < SYRIA_CARD_PRIORITY_FIRST_COUNT} />
       ))}
       {hasMore ? (
         <div className="pt-1" ref={sentRef}>

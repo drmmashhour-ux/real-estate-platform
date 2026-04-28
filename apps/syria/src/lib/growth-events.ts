@@ -125,3 +125,37 @@ export async function topListingsByViewsSince(since: Date, take = 10) {
   });
   return rows.map((r) => ({ propertyId: r.propertyId!, views: r._count.id }));
 }
+
+/** ORDER SYBNB-112 — aggregate winners by canonical growth event (`listing_shared`, `contact_click`, …). */
+export async function topListingsByGrowthEventSince(
+  eventType: string,
+  since: Date,
+  take = 10,
+): Promise<{ propertyId: string; count: number }[]> {
+  const rows = await prisma.syriaGrowthEvent.groupBy({
+    by: ["propertyId"],
+    where: {
+      eventType,
+      createdAt: { gte: since },
+      propertyId: { not: null },
+    },
+    _count: { id: true },
+    orderBy: { _count: { id: "desc" } },
+    take,
+  });
+  return rows.map((r) => ({ propertyId: r.propertyId!, count: r._count.id }));
+}
+
+/** `listing_view` events carrying `payload.shareSource` from Hadiah viral links (`hl_share`). */
+export async function countListingViewsWithShareAttributionSince(since: Date): Promise<number> {
+  return prisma.syriaGrowthEvent.count({
+    where: {
+      eventType: "listing_view",
+      createdAt: { gte: since },
+      OR: [
+        { payload: { path: ["shareSource"], equals: "whatsapp" } },
+        { payload: { path: ["shareSource"], equals: "copy_link" } },
+      ],
+    },
+  });
+}

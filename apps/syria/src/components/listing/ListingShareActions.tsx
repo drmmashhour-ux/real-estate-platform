@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { buildListingShareMessage } from "@/lib/ai/shareMessage";
+import { appendHadiahShareSource } from "@/lib/syria/hadiah-share-attribution";
 import { buildWhatsAppMeShareHref, getListingPath } from "@/lib/syria/listing-share";
 import { trackListingSharedClient } from "@/lib/syria/growth-client";
 
@@ -24,10 +25,12 @@ type Props = {
   whatsappLabel?: string;
   /** Override copy button label; defaults to Listing.copyLink */
   copyButtonLabel?: string;
-  /** Arabic viral: amount + " ل.س" in `buildListingShareMessage` */
+  /** Legacy compatibility — not emitted in SYBNB-111 viral message. */
   sharePriceAmount?: number;
   /** SY-28 */
   adCode?: string;
+  /** Matches browse “New” window — adds 📢 line to viral share copy. */
+  highlightNew?: boolean;
 };
 
 export function ListingShareActions({
@@ -40,36 +43,42 @@ export function ListingShareActions({
   copyButtonLabel,
   sharePriceAmount,
   adCode,
+  highlightNew,
 }: Props) {
   const t = useTranslations("Listing");
   const locale = useLocale();
-  const [fullUrl, setFullUrl] = useState("");
+  /** ORDER SYBNB-112 — WhatsApp body contains link attributed as `whatsapp`; copy uses `copy_link`. */
+  const [shareUrlWhatsapp, setShareUrlWhatsapp] = useState("");
+  const [shareUrlCopy, setShareUrlCopy] = useState("");
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    setFullUrl(new URL(getListingPath(locale, listingId), window.location.origin).href);
+    const base = new URL(getListingPath(locale, listingId), window.location.origin).href;
+    setShareUrlWhatsapp(appendHadiahShareSource(base, "whatsapp"));
+    setShareUrlCopy(appendHadiahShareSource(base, "copy_link"));
   }, [locale, listingId]);
 
   const shareText = useMemo(() => {
-    if (!fullUrl) return "";
+    if (!shareUrlWhatsapp) return "";
     if (shareTitle && sharePriceLine) {
       return buildListingShareMessage({
         title: shareTitle,
         priceLine: sharePriceLine,
-        url: fullUrl,
+        url: shareUrlWhatsapp,
         locale,
         city: shareCity,
         adCode,
         priceAmount: sharePriceAmount,
+        highlightNew,
       });
     }
-    return t("shareWhatsAppBody", { url: fullUrl });
-  }, [fullUrl, shareTitle, sharePriceLine, shareCity, sharePriceAmount, adCode, locale, t]);
+    return t("shareWhatsAppBody", { url: shareUrlWhatsapp });
+  }, [shareUrlWhatsapp, shareTitle, sharePriceLine, shareCity, sharePriceAmount, adCode, highlightNew, locale, t]);
 
   async function onCopy() {
-    if (!fullUrl) return;
+    if (!shareUrlCopy) return;
     try {
-      await navigator.clipboard.writeText(fullUrl);
+      await navigator.clipboard.writeText(shareUrlCopy);
       setCopied(true);
       void trackListingSharedClient(listingId, { source: "copy_link" });
       window.setTimeout(() => setCopied(false), 2000);
@@ -83,7 +92,7 @@ export function ListingShareActions({
       <div className="w-full min-w-0 max-w-full">
         <button
           type="button"
-          disabled={!fullUrl}
+          disabled={!shareUrlCopy}
           className="w-full min-h-10 rounded-lg border border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface)] px-3 py-2 text-xs font-medium text-[color:var(--darlink-text)] disabled:opacity-50"
           onClick={() => void onCopy()}
         >
@@ -106,7 +115,7 @@ export function ListingShareActions({
     <div className="flex w-full min-w-0 max-w-full flex-col gap-3 sm:flex-row sm:items-stretch sm:gap-3">
       <button
         type="button"
-        disabled={!fullUrl || !shareText}
+        disabled={!shareUrlWhatsapp || !shareText}
         className={waClass}
         onClick={() => {
           if (shareText) openWhatsAppWithTracking(listingId, shareText);
@@ -114,7 +123,7 @@ export function ListingShareActions({
       >
         {whatsappLabel ?? t("shareButton")}
       </button>
-      <button type="button" disabled={!fullUrl} className={secondaryClass} onClick={() => void onCopy()}>
+      <button type="button" disabled={!shareUrlCopy} className={secondaryClass} onClick={() => void onCopy()}>
         {copied ? t("linkCopied") : copyButtonLabel ?? t("copyLink")}
       </button>
     </div>

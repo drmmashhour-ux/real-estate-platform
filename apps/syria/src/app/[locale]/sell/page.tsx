@@ -10,12 +10,14 @@ import { syriaFlags } from "@/lib/platform-flags";
 import { SyriaSellLocationFields } from "@/components/sell/SyriaSellLocationFields";
 import { MapRequiredSellForm } from "@/components/sell/MapRequiredSellForm";
 import { SellAutomationHints } from "@/components/sell/SellAutomationHints";
+import { MvpSellProofDocumentsBlock } from "@/components/sell/MvpSellProofDocumentsBlock";
 
 type SellPageProps = { searchParams?: Promise<Record<string, string | string[] | undefined>> };
 
 export default async function SellPage({ searchParams }: SellPageProps) {
   const t = await getTranslations("Sell");
   const tMvp = await getTranslations("SellMvp");
+  const tQuickPost = await getTranslations("QuickPost");
   const locale = await getLocale();
   const isAr = locale.startsWith("ar");
   const user = await getSessionUser();
@@ -49,6 +51,16 @@ export default async function SellPage({ searchParams }: SellPageProps) {
         {showVerifyStayBanner ? (
           <div className="rounded-xl border border-amber-300/90 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-950 [dir=rtl]:text-right">
             {tMvp("verifyStayBlocked")}
+          </div>
+        ) : null}
+        {afFlag === "ownership" ? (
+          <div className="rounded-xl border border-rose-200/90 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-950 [dir=rtl]:text-right">
+            {tQuickPost("ownershipRequired")}
+          </div>
+        ) : null}
+        {afFlag === "ownership_phone" ? (
+          <div className="rounded-xl border border-rose-200/90 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-950 [dir=rtl]:text-right">
+            {tQuickPost("ownershipPhoneMismatch")}
           </div>
         ) : null}
         <SellAutomationHints locale={locale} />
@@ -128,6 +140,19 @@ export default async function SellPage({ searchParams }: SellPageProps) {
                 </label>
               ))}
             </div>
+          </div>
+          <MvpSellProofDocumentsBlock />
+          <div className="space-y-3 rounded-[var(--darlink-radius-lg)] border border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface-muted)]/30 p-4 [dir=rtl]:text-right">
+            <p className="text-sm font-semibold text-[color:var(--darlink-text)]">{tMvp("ownershipSectionTitle")}</p>
+            <label className="flex cursor-pointer items-start gap-2">
+              <input type="checkbox" name="ownershipOwner" value="1" className="mt-0.5 size-4 rounded border-[color:var(--darlink-border)]" />
+              <span className="text-sm text-[color:var(--darlink-text)]">{tMvp("ownershipOwnerLabel")}</span>
+            </label>
+            <label className="flex cursor-pointer items-start gap-2">
+              <input type="checkbox" name="ownershipMandate" value="1" className="mt-0.5 size-4 rounded border-[color:var(--darlink-border)]" />
+              <span className="text-sm text-[color:var(--darlink-text)]">{tMvp("ownershipMandateLabel")}</span>
+            </label>
+            <p className="text-xs text-[color:var(--darlink-text-muted)]">{tMvp("ownershipPhoneHint")}</p>
           </div>
           <label className="block text-sm font-medium text-[color:var(--darlink-text)]">
             {tMvp("fieldPhone")} <span className="text-red-600">*</span>

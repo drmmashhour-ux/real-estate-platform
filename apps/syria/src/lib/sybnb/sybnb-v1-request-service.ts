@@ -127,6 +127,7 @@ export async function createSybnbV1Request(input: {
       paymentStatus: "none",
       riskScore,
       riskStatus,
+      isTest: listing.isTest,
     },
   });
 

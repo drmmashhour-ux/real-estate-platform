@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import {
@@ -7,7 +8,15 @@ import {
   areaDisplayLabel,
   areaStorageValue,
 } from "@/data/syriaLocations";
-import { MapPicker, type MapPin } from "@/components/map/MapPicker";
+import type { MapPin } from "@/components/map/MapPicker";
+
+/** ORDER SYBNB-86 — Maps bundle deferred until client mount. */
+const MapPicker = dynamic(() => import("@/components/map/MapPicker").then((m) => m.MapPicker), {
+  ssr: false,
+  loading: () => (
+    <div className="min-h-[260px] rounded-[var(--darlink-radius-lg)] bg-[color:var(--darlink-surface-muted)]" aria-busy />
+  ),
+});
 
 const OTHER_VALUE = "__other__";
 

@@ -10,11 +10,16 @@ import { syriaFlags } from "@/lib/platform-flags";
 import { trackSyriaGrowthEvent } from "@/lib/growth-events";
 import { parseUtmFromSearchParams } from "@/lib/utm";
 import { flattenSearchParams } from "@/lib/property-search";
-import { searchProperties, fetchSybnbVerifiedHotelsStrip, type SerializedBrowseListing } from "@/services/search/search.service";
+import type { SerializedBrowseListing } from "@/services/search/search.service";
+import { clampSybnbLitePageSize, sybnbStayBrowseResultViaLiteProjection } from "@/lib/sybnb/sybnb-listings-lite";
+import { getCachedBrowseSearch, getCachedSybnbVerifiedHotelsStrip } from "@/lib/cache/darlink-browse-search";
 import { getSybnbLatestStays, getSybnbPublicListingCount } from "@/lib/sybnb/sybnb-public-data";
 import { sybnbSoftLaunchUrgencyMessaging } from "@/lib/sybnb/config";
 import { SybnbBrandSocialProofStrip } from "@/components/sybnb/SybnbBrandSocialProofStrip";
 import { SybnbCityFocusChips } from "@/components/sybnb/SybnbCityFocusChips";
+
+/** ORDER SYBNB-82 / SYBNB-104 — sync literal with `SYRIA_PUBLIC_SEGMENT_REVALIDATE_SECONDS`. */
+export const revalidate = 45;
 
 type Props = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -33,9 +38,13 @@ export default async function SybnbPage(props: Props) {
   const spRaw = await props.searchParams;
   const flatRaw = flattenSearchParams(spRaw);
   const flat: Record<string, string> = { ...flatRaw, category: "stay" };
+  const flatWithLite: Record<string, string> = {
+    ...flat,
+    pageSize: String(clampSybnbLitePageSize(flat.pageSize)),
+  };
 
-  const q = (flat.q ?? "").trim();
-  const city = (flat.city ?? "").trim();
+  const q = (flatWithLite.q ?? "").trim();
+  const city = (flatWithLite.city ?? "").trim();
 
   if (q || city) {
     const utmParsed = parseUtmFromSearchParams(spRaw);
@@ -45,7 +54,7 @@ export default async function SybnbPage(props: Props) {
         q,
         city,
         surface: "sybnb",
-        sort: flat.sort ?? "featured",
+        sort: flatWithLite.sort ?? "featured",
       },
       utm: {
         source: utmParsed.utmSource,
@@ -55,11 +64,12 @@ export default async function SybnbPage(props: Props) {
     });
   }
 
-  const initialQs = toInitialQs(flat);
-  const [initialResult, hotelStripItems] = await Promise.all([
-    searchProperties("stay", flat),
-    syriaFlags.SYRIA_MVP ? Promise.resolve<SerializedBrowseListing[]>([]) : fetchSybnbVerifiedHotelsStrip(flat),
+  const initialQs = toInitialQs(flatWithLite);
+  const [staySearch, hotelStripItems] = await Promise.all([
+    getCachedBrowseSearch("stay", flatWithLite),
+    syriaFlags.SYRIA_MVP ? Promise.resolve<SerializedBrowseListing[]>([]) : getCachedSybnbVerifiedHotelsStrip(flatWithLite),
   ]);
+  const initialResult = sybnbStayBrowseResultViaLiteProjection(staySearch);
   const [liveCount, latestStays] = await Promise.all([getSybnbPublicListingCount(), getSybnbLatestStays(8)]);
   const tH = await getTranslations("Sybnb.home");
 

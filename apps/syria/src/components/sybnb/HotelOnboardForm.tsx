@@ -5,7 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { MAX_LISTING_IMAGES, processListingImageFiles } from "@/lib/syria/photo-upload";
+import { MAX_LISTING_IMAGES, prepareListingImagesForQuickPost } from "@/lib/syria/photo-upload";
 import { formatSyriaCurrency } from "@/lib/format";
 import { SYRIA_PRICING } from "@/lib/pricing";
 import { ListingShareActions } from "@/components/listing/ListingShareActions";
@@ -28,6 +28,7 @@ export function HotelOnboardForm() {
 
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [postedWithoutPhotos, setPostedWithoutPhotos] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [createdId, setCreatedId] = useState<string | null>(null);
   const [shareMeta, setShareMeta] = useState<{
@@ -50,7 +51,7 @@ export function HotelOnboardForm() {
     }
     setParsingImages(true);
     try {
-      const toAdd = await processListingImageFiles(batch, remaining);
+      const { urls: toAdd } = await prepareListingImagesForQuickPost(batch, remaining);
       setImageUrls((prev) => [...prev, ...toAdd].slice(0, MAX_LISTING_IMAGES));
     } catch {
       setError(t("errorServer"));
@@ -63,24 +64,31 @@ export function HotelOnboardForm() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setPostedWithoutPhotos(false);
     if (!hotelName.trim() || !city.trim() || !phone.trim()) {
       setError(t("errorRequired"));
       return;
     }
 
+    const hadImages = imageUrls.length > 0;
+
+    function buildPayload(includeImages: boolean) {
+      return {
+        hotelName: hotelName.trim(),
+        city: city.trim(),
+        phone: phone.trim(),
+        ...(includeImages && imageUrls.length > 0 ? { images: imageUrls } : {}),
+      };
+    }
+
     setSubmitting(true);
     try {
-      const res = await fetch("/api/sybnb/hotel-onboard", {
+      let res = await fetch("/api/sybnb/hotel-onboard", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          hotelName: hotelName.trim(),
-          city: city.trim(),
-          phone: phone.trim(),
-          ...(imageUrls.length > 0 ? { images: imageUrls } : {}),
-        }),
+        body: JSON.stringify(buildPayload(hadImages)),
       });
-      const data = (await res.json()) as {
+      let data = (await res.json().catch(() => ({}))) as {
         ok?: boolean;
         listingId?: string;
         pricePerNight?: number;
@@ -95,24 +103,106 @@ export function HotelOnboardForm() {
         setError(t("errorDailyLimit"));
         return;
       }
-      if (!res.ok || !data.ok || typeof data.listingId !== "string") {
-        setError(t("errorServer"));
+
+      if (res.ok && data.ok && typeof data.listingId === "string") {
+        const nightly =
+          typeof data.pricePerNight === "number" && Number.isFinite(data.pricePerNight) ? data.pricePerNight : 0;
+        setCreatedId(data.listingId);
+        setShareMeta({
+          title: hotelName.trim(),
+          city: city.trim(),
+          pricePerNight: nightly,
+        });
+        setSuccess(true);
+        setHotelName("");
+        setCity("");
+        setPhone("");
+        setImageUrls([]);
         return;
       }
 
-      const nightly = typeof data.pricePerNight === "number" && Number.isFinite(data.pricePerNight) ? data.pricePerNight : 0;
-      setCreatedId(data.listingId);
-      setShareMeta({
-        title: hotelName.trim(),
-        city: city.trim(),
-        pricePerNight: nightly,
-      });
-      setSuccess(true);
-      setHotelName("");
-      setCity("");
-      setPhone("");
-      setImageUrls([]);
+      if (hadImages) {
+        setError(tQ("photoPayloadTooLarge"));
+        res = await fetch("/api/sybnb/hotel-onboard", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(buildPayload(false)),
+        });
+        data = (await res.json().catch(() => ({}))) as typeof data;
+
+        if (res.status === 409 && data.error === "duplicate") {
+          setError(t("errorDuplicate"));
+          return;
+        }
+        if (res.status === 429 && data.error === "daily_limit") {
+          setError(t("errorDailyLimit"));
+          return;
+        }
+
+        if (res.ok && data.ok && typeof data.listingId === "string") {
+          const nightly =
+            typeof data.pricePerNight === "number" && Number.isFinite(data.pricePerNight) ? data.pricePerNight : 0;
+          setPostedWithoutPhotos(true);
+          setCreatedId(data.listingId);
+          setShareMeta({
+            title: hotelName.trim(),
+            city: city.trim(),
+            pricePerNight: nightly,
+          });
+          setSuccess(true);
+          setHotelName("");
+          setCity("");
+          setPhone("");
+          setImageUrls([]);
+          return;
+        }
+      }
+
+      setError(t("errorServer"));
     } catch {
+      if (hadImages) {
+        setError(tQ("photoPayloadTooLarge"));
+        try {
+          const res = await fetch("/api/sybnb/hotel-onboard", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(buildPayload(false)),
+          });
+          const data = (await res.json().catch(() => ({}))) as {
+            ok?: boolean;
+            listingId?: string;
+            pricePerNight?: number;
+            error?: string;
+          };
+          if (res.status === 409 && data.error === "duplicate") {
+            setError(t("errorDuplicate"));
+            return;
+          }
+          if (res.status === 429 && data.error === "daily_limit") {
+            setError(t("errorDailyLimit"));
+            return;
+          }
+          if (res.ok && data.ok && typeof data.listingId === "string") {
+            const nightly =
+              typeof data.pricePerNight === "number" && Number.isFinite(data.pricePerNight) ? data.pricePerNight : 0;
+            setPostedWithoutPhotos(true);
+            setCreatedId(data.listingId);
+            setShareMeta({
+              title: hotelName.trim(),
+              city: city.trim(),
+              pricePerNight: nightly,
+            });
+            setSuccess(true);
+            setHotelName("");
+            setCity("");
+            setPhone("");
+            setImageUrls([]);
+            return;
+          }
+        } catch {
+          /* fall through */
+        }
+      }
       setError(t("errorServer"));
     } finally {
       setSubmitting(false);
@@ -124,6 +214,7 @@ export function HotelOnboardForm() {
       <div className="rounded-[var(--darlink-radius-2xl)] border border-emerald-200 bg-emerald-50/60 p-6 text-center shadow-[var(--darlink-shadow-sm)]">
         <p className="font-semibold text-emerald-950">{t("successTitle")}</p>
         <p className="mt-2 text-sm text-emerald-900/90">{t("successBody")}</p>
+        {postedWithoutPhotos ? <p className="mt-2 text-sm font-medium text-amber-900/90">{tQ("postedWithoutPhotosNote")}</p> : null}
         <Link
           href={`/listing/${createdId}?posted=1`}
           className="mt-4 inline-flex min-h-11 w-full min-w-0 max-w-sm items-center justify-center rounded-[var(--darlink-radius-xl)] bg-emerald-700 px-5 text-sm font-semibold text-white hover:bg-emerald-800 sm:mx-auto"
@@ -138,6 +229,7 @@ export function HotelOnboardForm() {
                 whatsappLabel={tList("shareViaWhatsappCta")}
                 copyButtonLabel={tList("copyLink")}
                 listingId={createdId}
+                highlightNew
                 shareTitle={shareMeta.title}
                 sharePriceLine={formatSyriaCurrency(shareMeta.pricePerNight, SYRIA_PRICING.currency, locale)}
                 shareCity={shareMeta.city}
@@ -151,6 +243,7 @@ export function HotelOnboardForm() {
           className="mt-4 block w-full text-sm text-emerald-800 underline"
           onClick={() => {
             setSuccess(false);
+            setPostedWithoutPhotos(false);
             setCreatedId(null);
             setShareMeta(null);
             if (fileInputRef.current) fileInputRef.current.value = "";

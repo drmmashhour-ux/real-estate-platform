@@ -15,3 +15,11 @@ export function normalizeSearchQueryString(qs: string): string {
 export function searchApiSnapshotKey(surface: string, normalizedQs: string): string {
   return `GET:/api/search?surface=${encodeURIComponent(surface)}&${normalizedQs}`;
 }
+
+/** ORDER SYBNB-81 — stay browse uses listings-lite; offline snapshot keys must match fetch URL. */
+export function browseApiSnapshotKey(surface: string, normalizedQs: string): string {
+  if (surface === "stay") {
+    return `GET:/api/sybnb/listings-lite?${normalizedQs}`;
+  }
+  return searchApiSnapshotKey(surface, normalizedQs);
+}

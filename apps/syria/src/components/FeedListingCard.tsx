@@ -1,9 +1,12 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
-import { LISTING_IMAGE_QUALITY } from "@/lib/design-tokens";
+import { ListingFadeInImg } from "@/components/syria/ListingFadeInImg";
+import { ListingImageSkeleton } from "@/components/syria/ListingImageSkeleton";
+import { useDataSaverOptional } from "@/context/DataSaverProvider";
 import { formatSyriaCurrency } from "@/lib/format";
 import { backfillLocalizedPropertyShape } from "@/lib/property-legacy-compat";
 import { getLocalizedPropertyCity, getLocalizedPropertyTitle } from "@/lib/property-localization";
@@ -48,6 +51,7 @@ export function FeedListingCard({
   priority?: boolean;
 }) {
   const t = useTranslations("Listing");
+  const { listingImageQuality } = useDataSaverOptional();
   const resolved = backfillLocalizedPropertyShape(listing);
   const title = getLocalizedPropertyTitle(listing, locale);
   const cityLine = getLocalizedPropertyCity(resolved, locale);
@@ -56,6 +60,11 @@ export function FeedListingCard({
   const stateLabel = stateRaw ? labelSyriaState(stateRaw, locale) : govRaw;
   const subLocation = stateLabel && stateLabel !== cityLine ? stateLabel : null;
   const img = firstImage(listing.images);
+  const [thumbLoaded, setThumbLoaded] = useState(false);
+  useEffect(() => {
+    setThumbLoaded(false);
+  }, [img]);
+
   const isDirect = listing.isDirect !== false;
   const isStay = listing.type === "BNHUB";
 
@@ -75,26 +84,35 @@ export function FeedListingCard({
             const isDataOrBlob = img.startsWith("data:") || img.startsWith("blob:");
             if (isDataOrBlob) {
               return (
-                <img
-                  src={img}
-                  alt=""
-                  className="size-20 object-cover"
-                  loading={priority ? "eager" : "lazy"}
-                  decoding="async"
-                />
+                <span className="relative block size-20 overflow-hidden">
+                  <ListingFadeInImg
+                    src={img}
+                    alt=""
+                    className="size-20 object-cover"
+                    loading={priority ? "eager" : "lazy"}
+                  />
+                </span>
               );
             }
             return (
-              <Image
-                src={img}
-                alt=""
-                width={80}
-                height={80}
-                className="size-20 object-cover"
-                quality={LISTING_IMAGE_QUALITY}
-                priority={!!priority}
-                unoptimized={img.startsWith("http://") || img.startsWith("https://")}
-              />
+              <span className="relative block size-20 overflow-hidden">
+                <ListingImageSkeleton active={!thumbLoaded} />
+                <Image
+                  src={img}
+                  alt=""
+                  width={80}
+                  height={80}
+                  loading={priority ? "eager" : "lazy"}
+                  className={cn(
+                    "relative z-[2] size-20 object-cover transition-opacity duration-300",
+                    thumbLoaded ? "opacity-100" : "opacity-0",
+                  )}
+                  quality={listingImageQuality}
+                  priority={!!priority}
+                  unoptimized={img.startsWith("http://") || img.startsWith("https://")}
+                  onLoadingComplete={() => setThumbLoaded(true)}
+                />
+              </span>
             );
           })()
         ) : (

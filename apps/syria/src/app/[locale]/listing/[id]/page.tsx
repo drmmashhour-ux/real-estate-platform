@@ -33,12 +33,13 @@ import { ListingMobileBookingBar } from "@/components/listing/ListingMobileBooki
 import { ListingContactDock } from "@/components/listing/ListingContactDock";
 import { ListingOwnerContactCard } from "@/components/listing/ListingOwnerContactCard";
 import { buildListingWhatsAppInquiryHref, buildTelHref, isNewListing } from "@/lib/syria-phone";
-import { SELF_MKT_VIEWS_HOT_BADGE_MIN } from "@/lib/self-marketing";
+import { SELF_MKT_VIEWS_HOT_BADGE_MIN, SELF_MKT_VIEWS_SHARE_REMINDER_MAX } from "@/lib/self-marketing";
 import { getMonetizationAdminContact } from "@/lib/monetization-contact";
 import { syriaPlatformConfig } from "@/config/syria-platform.config";
 import { sybnbConfig } from "@/config/sybnb.config";
 import { isSybnbCardCheckoutUiEnabled } from "@/lib/sybnb/payment-policy";
 import { SybnbQuotePreview } from "@/components/sybnb/SybnbQuotePreview";
+import { SybnbListingOpenBeacon } from "@/components/sybnb/SybnbListingOpenBeacon";
 import { MakeFeaturedCta } from "@/components/listing/MakeFeaturedCta";
 import { OwnerUpgradeStickyCta } from "@/components/listing/OwnerUpgradeStickyCta";
 import { labelSyriaState } from "@/lib/syria/states";
@@ -47,13 +48,18 @@ import { getTrustWarningLines } from "@/lib/ai/trustAssistant";
 import { ListingTrustAiSection } from "@/components/listing/ListingTrustAiSection";
 import { ShortStayAvailabilityCalendar } from "@/components/listing/ShortStayAvailabilityCalendar";
 import { incrementPublicListingView } from "@/lib/syria/listing-views";
+import { s2GetClientIpFromRequestHeaders } from "@/lib/security/s2-ip";
+import { parseHadiahShareSourceFromSearchParams } from "@/lib/syria/hadiah-share-attribution";
 import {
   getListingPhotoTrustTier,
   isSellerVerifiedForListingTrust,
   shouldShowTrustedListingBadge,
 } from "@/lib/listing-trust-badges";
+import { isOwnershipVerificationTierListing } from "@/lib/listing-posting-kind";
 import { Sy8LocationQualityBadge } from "@/components/sy8/Sy8LocationQualityBadge";
 import { SYBNB_SHOW_PHONE } from "@/lib/sybnb/config";
+import { reputationTierFromScore } from "@/lib/syria/user-reputation";
+import { SellerReputationBadge } from "@/components/listing/SellerReputationBadge";
 
 type Props = {
   params: Promise<{ locale: string; id: string }>;
@@ -91,33 +97,59 @@ export default async function ListingDetailPage(props: Props) {
   const sp = props.searchParams ? await props.searchParams : {};
   const t = await getTranslations("Listing");
 
+  const user = await getSessionUser();
+
   const listing = await prisma.syriaProperty.findUnique({
     where: { id },
     include: { owner: true },
   });
 
-  if (!listing || listing.status !== "PUBLISHED" || listing.fraudFlag) {
+  if (!listing || listing.fraudFlag) {
     notFound();
   }
 
-  await Promise.all([
-    trackSyriaGrowthEvent({
-      eventType: "listing_view",
-      propertyId: id,
-      payload: { locale },
-      utm: {
-        source: typeof sp.utm_source === "string" ? sp.utm_source : Array.isArray(sp.utm_source) ? sp.utm_source[0] : null,
-        medium: typeof sp.utm_medium === "string" ? sp.utm_medium : Array.isArray(sp.utm_medium) ? sp.utm_medium[0] : null,
-        campaign:
-          typeof sp.utm_campaign === "string"
-            ? sp.utm_campaign
-            : Array.isArray(sp.utm_campaign)
-              ? sp.utm_campaign[0]
-              : null,
-      },
-    }),
-    incrementPublicListingView(id),
-  ]);
+  const isOwner = user?.id === listing.ownerId;
+  const visibleAsPublished = listing.status === "PUBLISHED";
+  const ownerCanSeeNeedsReview = listing.status === "NEEDS_REVIEW" && isOwner;
+  if (!visibleAsPublished && !ownerCanSeeNeedsReview) {
+    notFound();
+  }
+
+  let viewCounted = false;
+  if (visibleAsPublished) {
+    const shareSource = parseHadiahShareSourceFromSearchParams(sp);
+    const viewerIp = await s2GetClientIpFromRequestHeaders();
+    const inc = await incrementPublicListingView({
+      listingId: id,
+      ownerId: listing.ownerId,
+      viewerUserId: user?.id ?? null,
+      viewerIp,
+    });
+    viewCounted = inc.counted;
+    if (viewCounted) {
+      await trackSyriaGrowthEvent({
+        eventType: "listing_view",
+        propertyId: id,
+        payload: {
+          locale,
+          ...(shareSource ? { shareSource } : {}),
+        },
+        utm: {
+          source: typeof sp.utm_source === "string" ? sp.utm_source : Array.isArray(sp.utm_source) ? sp.utm_source[0] : null,
+          medium: typeof sp.utm_medium === "string" ? sp.utm_medium : Array.isArray(sp.utm_medium) ? sp.utm_medium[0] : null,
+          campaign:
+            typeof sp.utm_campaign === "string"
+              ? sp.utm_campaign
+              : Array.isArray(sp.utm_campaign)
+                ? sp.utm_campaign[0]
+                : null,
+        },
+      });
+    }
+    if (shareSource) {
+      void import("@/lib/sy8/sy8-feed-rank-refresh").then((m) => m.recomputeSy8FeedRankForPropertyId(id));
+    }
+  }
 
   const localized = backfillLocalizedPropertyShape(listing);
   const titleDisplay = pickListingTitle(listing, locale);
@@ -145,17 +177,18 @@ export default async function ListingDetailPage(props: Props) {
     listingVerified: listing.listingVerified,
     owner: listing.owner,
   });
-  const photoTrustTier = getListingPhotoTrustTier(images.length);
-  const showTrustedListingBadgeUi = shouldShowTrustedListingBadge({
-    sellerVerified,
-    imageCount: images.length,
-    fraudFlag: listing.fraudFlag,
-  });
-  const showVerifiedSellerOnly = sellerVerified && !showTrustedListingBadgeUi && !listing.fraudFlag;
   const rawAmenities: string[] = Array.isArray(listing.amenities)
     ? (listing.amenities as string[]).filter((x): x is string => typeof x === "string")
     : [];
   const normAmenities = normalizeSyriaAmenityKeys(rawAmenities);
+  const photoTrustTier = getListingPhotoTrustTier(images.length);
+  const showTrustedListingBadgeUi = shouldShowTrustedListingBadge({
+    sellerVerified,
+    imageCount: images.length,
+    amenityCount: normAmenities.length,
+    fraudFlag: listing.fraudFlag,
+  });
+  const showVerifiedSellerOnly = sellerVerified && !showTrustedListingBadgeUi && !listing.fraudFlag;
   const catalogSortedForDisplay = sortSyriaAmenityKeysForListingDisplay(rawAmenities);
   const amenityDisplayOrder = [
     ...catalogSortedForDisplay,
@@ -172,7 +205,6 @@ export default async function ListingDetailPage(props: Props) {
     locale,
   );
 
-  const user = await getSessionUser();
   const allowBnhubBooking =
     !syriaFlags.SYRIA_MVP &&
     isBnhubInSyriaUI() &&
@@ -184,19 +216,52 @@ export default async function ListingDetailPage(props: Props) {
   const showBooking = allowBnhubBooking;
 
   const hostName = listing.owner.name?.trim() || listing.owner.email.split("@")[0];
+  const sellerReputationTier = reputationTierFromScore(listing.owner.reputationScore ?? 0);
   const ownerPhone = listing.owner.phone?.trim() ?? "";
   const hotelContact =
     listing.type === "HOTEL" && listing.contactPhone?.trim() ? listing.contactPhone.trim() : "";
-  const primaryPhoneLine = hotelContact || ownerPhone;
-  let waOwnerHref = primaryPhoneLine ? buildListingWhatsAppInquiryHref(primaryPhoneLine, titleDisplay, locale) : null;
-  let telOwnerHref = primaryPhoneLine ? buildTelHref(primaryPhoneLine) : null;
-  if (isSybnbStay && !SYBNB_SHOW_PHONE && listing.type !== "HOTEL") {
-    waOwnerHref = null;
-    telOwnerHref = null;
-  }
+  const listingContactOverride =
+    listing.contactPhone?.trim() && listing.type !== "HOTEL" ? listing.contactPhone.trim() : "";
+  const primaryPhoneLine = hotelContact || listingContactOverride || ownerPhone;
+
+  const sybnbHidesPhoneUi = isSybnbStay && !SYBNB_SHOW_PHONE && listing.type !== "HOTEL";
+
+  const allowWhatsAppPref = listing.allowWhatsApp ?? true;
+  const allowPhonePref = listing.allowPhone ?? true;
+  const allowEmailPref = listing.allowEmail ?? false;
+  const allowMessagesPref = listing.allowMessages ?? true;
+
+  const phoneRevealCooldownActive =
+    listing.phoneRevealCooldownUntil != null &&
+    listing.phoneRevealCooldownUntil.getTime() > Date.now();
+
+  /** ORDER SYBNB-95 — seller disabled phone; ORDER SYBNB-97 — flagged sellers: messaging only (no phone/WhatsApp). */
+  const sellerDisabledPhone = !allowPhonePref || listing.owner.flagged;
+
+  let waOwnerHref =
+    primaryPhoneLine && allowWhatsAppPref && !sellerDisabledPhone && !sybnbHidesPhoneUi && !phoneRevealCooldownActive ?
+      buildListingWhatsAppInquiryHref(primaryPhoneLine, titleDisplay, locale)
+    : null;
+  let telOwnerHref =
+    primaryPhoneLine && allowPhonePref && !sybnbHidesPhoneUi && !sellerDisabledPhone && !phoneRevealCooldownActive ?
+      buildTelHref(primaryPhoneLine)
+    : null;
+
+  const contactEmailListing = listing.contactEmail?.trim() ?? "";
+  const mailtoListingHref =
+    allowEmailPref && contactEmailListing ?
+      `mailto:${encodeURIComponent(contactEmailListing)}?subject=${encodeURIComponent(titleDisplay)}`
+    : null;
+
   const showNewBadge = isNewListing(listing.createdAt);
-  const isOwner = user?.id === listing.ownerId;
-  const canContact = !isOwner && Boolean(waOwnerHref || telOwnerHref);
+  const canContact =
+    !isOwner &&
+    Boolean(waOwnerHref || telOwnerHref || mailtoListingHref || allowMessagesPref);
+
+  const listingMessageAnchor =
+    !isOwner && allowMessagesPref ? "#listing-message-form" : null;
+  const contactDockMessageHref =
+    listingMessageAnchor && !waOwnerHref && !telOwnerHref && !mailtoListingHref ? listingMessageAnchor : null;
   const showBnhubInUi = isBnhubInSyriaUI() && syriaFlags.BNHUB_ENABLED;
   const showSybnbRequestCard =
     !syriaFlags.SYRIA_MVP &&
@@ -225,8 +290,14 @@ export default async function ListingDetailPage(props: Props) {
   const justPosted = sp.posted === "1" || (Array.isArray(sp.posted) && sp.posted[0] === "1");
   const showAfterPostShare = Boolean(justPosted && isOwner);
 
-  const displayViews = (listing.views ?? 0) + 1;
+  const displayViews = visibleAsPublished ? (listing.views ?? 0) + (viewCounted ? 1 : 0) : (listing.views ?? 0);
   const isHot = displayViews >= SELF_MKT_VIEWS_HOT_BADGE_MIN;
+  const leadTapsStored = (listing.whatsappClicks ?? 0) + (listing.phoneClicks ?? 0);
+  const showOwnerLowActivityShareBanner =
+    isOwner &&
+    visibleAsPublished &&
+    (listing.views ?? 0) <= SELF_MKT_VIEWS_SHARE_REMINDER_MAX &&
+    leadTapsStored === 0;
 
   const fromAmenities = amenityDisplayOrder.slice(0, 3).map((k) => labelSyriaAmenityForListing(k, locale).primary);
   const defHi = [t("convDefHighlight1"), t("convDefHighlight2"), t("convDefHighlight3")];
@@ -252,8 +323,17 @@ export default async function ListingDetailPage(props: Props) {
 
   return (
     <>
+      <SybnbListingOpenBeacon listingId={listing.id} />
       {showBooking ? <ListingMobileBookingBar amount={listing.price} currency={listing.currency} numberLoc={numberLoc} /> : null}
-      {canContact ? <ListingContactDock listingId={listing.id} whatsappHref={waOwnerHref} telHref={telOwnerHref} /> : null}
+      {canContact ? (
+        <ListingContactDock
+          listingId={listing.id}
+          whatsappHref={waOwnerHref}
+          telHref={telOwnerHref}
+          mailtoHref={mailtoListingHref}
+          messageScrollHref={contactDockMessageHref}
+        />
+      ) : null}
       {showOwnerUpgradeSticky ? <OwnerUpgradeStickyCta /> : null}
       <article
         className={
@@ -271,9 +351,30 @@ export default async function ListingDetailPage(props: Props) {
                 <PostSuccessTopBanner />
               </Suspense>
             ) : null}
+            {showOwnerLowActivityShareBanner ? (
+              <div
+                className="rounded-2xl border border-amber-200/90 bg-amber-50/95 p-4 text-sm font-semibold text-amber-950 shadow-sm [dir:rtl]:text-right"
+                dir={locale.startsWith("ar") ? "rtl" : "ltr"}
+              >
+                {t("shareLowActivityBanner")}
+              </div>
+            ) : null}
             <header>
+              {isOwner && listing.status === "NEEDS_REVIEW" ? (
+                <div
+                  className="mb-4 rounded-[var(--darlink-radius-xl)] border border-amber-300/80 bg-amber-50/95 p-4 text-sm text-amber-950 [dir=rtl]:text-right"
+                  dir={locale.startsWith("ar") ? "rtl" : "ltr"}
+                >
+                  {t("needsReviewHiddenBanner")}
+                </div>
+              ) : null}
               <ListingAdCodeQrRow listingId={id} adCode={listing.adCode} />
               <div className="mt-4 flex flex-wrap items-center gap-2">
+                {listing.isTest ? (
+                  <span className="rounded-full bg-fuchsia-900/90 px-2.5 py-1 text-xs font-bold text-white ring-1 ring-fuchsia-400/60">
+                    {t("badgeTestData")}
+                  </span>
+                ) : null}
                 <span className="rounded-full bg-[color:var(--darlink-surface-muted)] px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-[color:var(--darlink-text-muted)]">
                   {listing.type === "HOTEL" ? t("badgeHotel") : listing.type}
                 </span>
@@ -284,6 +385,21 @@ export default async function ListingDetailPage(props: Props) {
                 ) : null}
                 {!syriaFlags.SYRIA_MVP && showVerifiedSellerOnly ? (
                   <div className="rounded-full bg-green-600 px-2.5 py-1 text-xs font-semibold text-white">{t("verifiedBadge")}</div>
+                ) : null}
+                {listing.proofDocumentsSubmitted ? (
+                  <span className="rounded-full bg-slate-700 px-2.5 py-1 text-xs font-bold text-white ring-1 ring-slate-500/55">
+                    {t("badgeProofDocuments")}
+                  </span>
+                ) : null}
+                {isOwnershipVerificationTierListing(listing.category, listing.postingKind) && listing.ownershipVerified ? (
+                  <span className="rounded-full bg-emerald-900 px-2.5 py-1 text-xs font-bold text-white ring-1 ring-emerald-600/55">
+                    {t("badgeOwnershipConfirmed")}
+                  </span>
+                ) : null}
+                {isOwnershipVerificationTierListing(listing.category, listing.postingKind) && !listing.ownershipVerified ? (
+                  <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-950 ring-1 ring-amber-400/70">
+                    {t("badgeOwnershipNotVerified")}
+                  </span>
                 ) : null}
                 {!syriaFlags.SYRIA_MVP && photoTrustTier === "full" ? (
                   <span className="rounded-full bg-violet-100/95 px-2.5 py-1 text-xs font-bold text-violet-950 ring-1 ring-violet-300/65">
@@ -379,6 +495,8 @@ export default async function ListingDetailPage(props: Props) {
                       sharePriceLine={sharePriceLine}
                       shareCity={cityDisplay ?? undefined}
                       sharePriceAmount={sharePriceAmount}
+                      adCode={listing.adCode}
+                      highlightNew={showNewBadge}
                       whatsappLabel={t("shareViaWhatsappCta")}
                       copyButtonLabel={t("copyLink")}
                     />
@@ -438,6 +556,8 @@ export default async function ListingDetailPage(props: Props) {
                   sharePriceLine={sharePriceLine}
                   shareCity={cityDisplay ?? undefined}
                   sharePriceAmount={sharePriceAmount}
+                  adCode={listing.adCode}
+                  highlightNew={showNewBadge}
                 />
               ) : null}
               <p className="text-xs text-[color:var(--darlink-text-muted)]" aria-live="polite">
@@ -448,10 +568,15 @@ export default async function ListingDetailPage(props: Props) {
             <div className="min-w-0 max-w-full">
               <ListingTrustPanel
                 listingId={listing.id}
-                phoneRaw={ownerPhone}
+                phoneRaw={primaryPhoneLine}
                 isOwner={isOwner}
                 isSybnbStay={isSybnbStay}
                 canReport={!!user}
+                whatsappHref={waOwnerHref}
+                telHref={telOwnerHref}
+                mailtoHref={mailtoListingHref}
+                allowPhone={allowPhonePref && !sybnbHidesPhoneUi && !phoneRevealCooldownActive && !listing.owner.flagged}
+                allowMessages={allowMessagesPref}
               />
             </div>
 
@@ -468,7 +593,7 @@ export default async function ListingDetailPage(props: Props) {
             {displayDescription.trim() !== "—" ? (
               <section>
                 <h2 className="text-lg font-semibold text-[color:var(--darlink-text)]">{t("description")}</h2>
-                <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-[color:var(--darlink-text-muted)]">
+                <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-[color:var(--darlink-text)]">
                   {displayDescription}
                 </p>
               </section>
@@ -504,7 +629,7 @@ export default async function ListingDetailPage(props: Props) {
               </section>
             ) : null}
 
-            {listing.type === "BNHUB" ? (
+            {(isSybnbStay || listing.type === "BNHUB") ? (
               <ShortStayAvailabilityCalendar
                 listingId={listing.id}
                 initialBooked={Array.isArray(listing.availability) ? listing.availability : []}
@@ -575,7 +700,10 @@ export default async function ListingDetailPage(props: Props) {
 
             <Card className="border-[color:var(--darlink-border)] p-5 shadow-[var(--darlink-shadow-sm)]">
               <h2 className="text-sm font-semibold text-[color:var(--darlink-text)]">{t("hostTitle")}</h2>
-              <p className="mt-2 text-sm font-medium text-[color:var(--darlink-text)]">{hostName}</p>
+              <div className="mt-2 flex flex-wrap items-center gap-2 [dir=rtl]:flex-row-reverse">
+                <p className="min-w-0 text-sm font-medium text-[color:var(--darlink-text)]">{hostName}</p>
+                <SellerReputationBadge tier={sellerReputationTier} label={t(`sellerReputation_${sellerReputationTier}`)} />
+              </div>
               <p className="mt-1 text-xs text-[color:var(--darlink-text-muted)]">{t("hostHint")}</p>
             </Card>
 
@@ -744,14 +872,16 @@ export default async function ListingDetailPage(props: Props) {
                 listingId={listing.id}
                 waOwnerHref={waOwnerHref}
                 telOwnerHref={telOwnerHref}
+                mailtoHref={mailtoListingHref}
                 canContact={canContact}
-                ownerHasPhone={Boolean(ownerPhone)}
+                messageScrollHref={contactDockMessageHref}
                 primaryHeading={isSybnbStay ? t("contactPrimaryOwner") : null}
                 shareTitle={titleDisplay}
                 sharePriceLine={sharePriceLine}
                 shareCity={cityDisplay ?? undefined}
                 sharePriceAmount={sharePriceAmount}
                 adCode={listing.adCode}
+                highlightNew={showNewBadge}
               />
             ) : null}
           </aside>

@@ -13,6 +13,12 @@ export const sybnbReportBody = z.object({
   reason: z.string().optional(),
 });
 
+export const sybnbCheckoutSessionBody = z.object({
+  bookingId: z.string().min(1, "bookingId is required"),
+  idempotencyKey: z.string().optional(),
+  locale: z.string().min(2).max(12).optional(),
+});
+
 export const sybnbPaymentIntentBody = z.object({
   bookingId: z.string().min(1, "bookingId is required"),
   idempotencyKey: z.string().optional(),

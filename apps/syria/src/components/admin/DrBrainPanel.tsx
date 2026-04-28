@@ -4,12 +4,11 @@ import type { PredictiveSignal } from "@/lib/drbrain/predictive";
 import type { DrBrainMetrics } from "@/lib/drbrain/metrics";
 import type { DRBRAIN_INVESTOR_DEMO_KPIS } from "@/lib/drbrain/demo-data";
 import type { DrBrainTicket } from "@repo/drbrain";
-import { DrBrainCharts } from "@/components/admin/DrBrainCharts";
 import type { DrBrainChartsLabels } from "@/components/admin/DrBrainCharts";
+import { DrBrainChartsLazyGate } from "@/components/admin/DrBrainChartsLazyGate";
 import { DrBrainMaintenanceActions } from "@/components/admin/DrBrainMaintenanceActions";
 import { DrBrainTicketsPanel } from "@/components/admin/DrBrainTicketsPanel";
 import { DrBrainDay1Checklist } from "@/components/admin/DrBrainDay1Checklist";
-import { DrBrainInvestorDemoCharts } from "@/components/admin/drbrain/DrBrainInvestorDemoCharts";
 import { DrBrainInvestorStory } from "@/components/admin/drbrain/DrBrainInvestorStory";
 
 export type DrBrainSectionLabels = {
@@ -128,11 +127,13 @@ export function DrBrainPanel(props: {
 
       <DrBrainDay1Checklist sectionTitle={sectionLabels.checklistTitle} labels={sectionLabels.checklistItems} />
 
-      {investorDemo && kpis ? (
-        <DrBrainInvestorDemoCharts metrics={metrics} kpis={kpis} demoBanner={sectionLabels.investorDemoRibbon} />
-      ) : (
-        <DrBrainCharts metrics={metrics} labels={chartLabels} />
-      )}
+      <DrBrainChartsLazyGate
+        investorDemo={investorDemo}
+        kpis={kpis}
+        metrics={metrics}
+        chartLabels={chartLabels}
+        demoBanner={sectionLabels.investorDemoRibbon}
+      />
 
       <section className="space-y-4 rounded-2xl border border-violet-200 bg-violet-50/70 p-4 text-sm text-violet-950">
         <p className="text-base font-semibold">{sectionLabels.aiSectionTitle}</p>

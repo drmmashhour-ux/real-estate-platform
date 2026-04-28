@@ -50,6 +50,14 @@ export const syriaPlatformConfig = {
     /** Max payload size for client event posts (bytes). */
     maxEventPayloadBytes: 8192,
   },
+  /** ORDER SYBNB-113 — abuse-resistant growth signals (env-tunable). */
+  sybn113: {
+    maxSharesPerActorPerUtcDay: envNum("SYRIA_SYBN113_MAX_SHARES_PER_DAY", 20),
+    burstWindowMs: envNum("SYRIA_SYBN113_BURST_WINDOW_MS", 10 * 60 * 1000),
+    burstMaxFullWeightSharesSameListing: envNum("SYRIA_SYBN113_BURST_MAX_FULL_WEIGHT", 5),
+    viralityWindowDays: envNum("SYRIA_SYBN113_VIRALITY_WINDOW_DAYS", 30),
+    viralityTrustBoostPoints: envNum("SYRIA_SYBN113_VIRALITY_TRUST_BOOST", 4),
+  },
 } as const;
 
 export function getSyriaAutonomyMode(): SyriaAutonomyMode {

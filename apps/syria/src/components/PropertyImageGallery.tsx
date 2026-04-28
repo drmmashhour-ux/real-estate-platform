@@ -3,17 +3,22 @@
 import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { cn } from "@/lib/cn";
+import { ListingFadeInImg } from "@/components/syria/ListingFadeInImg";
 import { useSyriaOffline } from "@/components/offline/SyriaOfflineProvider";
+import { useDataSaverOptional } from "@/context/DataSaverProvider";
 
 export function PropertyImageGallery({ images, title }: { images: string[]; title: string }) {
   const t = useTranslations("Listing");
   const { online } = useSyriaOffline();
+  const { enabled: dataSaver } = useDataSaverOptional();
   const [active, setActive] = useState(0);
 
   const displayImages = useMemo(() => {
-    if (online || images.length === 0) return images;
-    return images[0] ? [images[0]] : [];
-  }, [images, online]);
+    if (images.length === 0) return images;
+    if (!online) return images[0] ? [images[0]] : [];
+    if (dataSaver) return images[0] ? [images[0]] : [];
+    return images;
+  }, [images, online, dataSaver]);
   if (images.length === 0) {
     return (
       <div
@@ -33,6 +38,11 @@ export function PropertyImageGallery({ images, title }: { images: string[]; titl
       {!online && images.length > 1 ? (
         <p className="rounded-xl border border-amber-200/70 bg-amber-50/90 px-3 py-2 text-xs font-medium text-amber-950 [dir=rtl]:text-right">
           {t("offlinePhotosLimited")}
+        </p>
+      ) : null}
+      {online && dataSaver && images.length > 1 ? (
+        <p className="rounded-xl border border-emerald-200/80 bg-emerald-50/90 px-3 py-2 text-xs font-medium text-emerald-950 [dir=rtl]:text-right">
+          {t("dataSaverPhotosLimited")}
         </p>
       ) : null}
       {/* Mobile: horizontal swipe (scroll-snap) */}
@@ -59,7 +69,7 @@ export function PropertyImageGallery({ images, title }: { images: string[]; titl
               >
                 <div className="overflow-hidden rounded-[var(--darlink-radius-3xl)] border border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface-muted)] shadow-none">
                   <div className="aspect-[16/10] w-full sm:aspect-[21/9]">
-                    <img src={src} alt="" className="h-full w-full object-cover" loading="lazy" decoding="async" />
+                    <ListingFadeInImg src={src} alt="" loading="lazy" />
                   </div>
                 </div>
               </div>
@@ -78,7 +88,7 @@ export function PropertyImageGallery({ images, title }: { images: string[]; titl
         )}
       >
         <div className="aspect-[16/10] w-full sm:aspect-[21/9]">
-          <img src={main} alt="" className="h-full w-full object-cover" loading="eager" decoding="async" />
+          <ListingFadeInImg src={main} alt="" loading="lazy" />
         </div>
       </div>
 
@@ -97,7 +107,9 @@ export function PropertyImageGallery({ images, title }: { images: string[]; titl
               )}
               aria-label={`${title} — ${i + 1}`}
             >
-              <img src={src} alt="" className="h-full w-full object-cover" loading="lazy" decoding="async" />
+              <div className="absolute inset-0">
+                <ListingFadeInImg src={src} alt="" loading="lazy" />
+              </div>
             </button>
           ))}
         </div>

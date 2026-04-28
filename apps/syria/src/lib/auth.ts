@@ -4,9 +4,8 @@ import type { SyriaAppUser } from "@/generated/prisma";
 import { prisma } from "./db";
 
 /**
- * Isolated from Canada (`apps/web`): separate deploy hostname + Syria DB (`syriaAppUser` only).
- * Cookie has no `domain` option → **host-only** (e.g. `syria.` + your deploy host ≠ canada origin). Never set
- * a broad `domain=` on a parent site here — that would share sessions across subdomains.
+ * ORDER SYBNB-103 — Isolated deployment: separate hostname + Syria Postgres (`SyriaAppUser` / `syria_users` only).
+ * Cookie has no `domain` option → **host-only** (e.g. staging vs prod on different hosts). Never set a broad parent `domain=` here — that would share sessions across unrelated sites.
  */
 const COOKIE = process.env.SYRIA_AUTH_SESSION_COOKIE?.trim() || "syria_user_id";
 

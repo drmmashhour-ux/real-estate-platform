@@ -2,11 +2,11 @@ import { prisma } from "@/lib/db";
 import { sybnbConfig } from "@/config/sybnb.config";
 
 /**
- * Unreviewed `SybnbListingReport` rows for a listing; used to block new bookings past the threshold.
+ * Unreviewed SYBNB `ListingReport` rows for a listing; used to block new bookings past the threshold.
  */
 export async function countUnreviewedSybnbReportsForProperty(propertyId: string): Promise<number> {
-  return prisma.sybnbListingReport.count({
-    where: { propertyId, reviewed: false },
+  return prisma.listingReport.count({
+    where: { listingId: propertyId, reviewed: false },
   });
 }
 

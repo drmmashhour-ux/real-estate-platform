@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { buildListingShareMessage } from "@/lib/ai/shareMessage";
+import { appendHadiahShareSource } from "@/lib/syria/hadiah-share-attribution";
 import { getListingPath } from "@/lib/syria/listing-share";
 import { trackListingSharedClient } from "@/lib/syria/growth-client";
 import { SYRIA_PRICING } from "@/lib/pricing";
@@ -16,7 +17,8 @@ export function QuickPostAiShareBlock(props: { listingId: string; title: string;
   const priceLine = formatSyriaCurrency(Number(props.price) || 0, SYRIA_PRICING.currency, locale);
 
   useEffect(() => {
-    setUrl(new URL(getListingPath(locale, props.listingId), window.location.origin).href);
+    const base = new URL(getListingPath(locale, props.listingId), window.location.origin).href;
+    setUrl(appendHadiahShareSource(base, "whatsapp"));
   }, [locale, props.listingId]);
 
   async function onCopy() {
@@ -27,6 +29,7 @@ export function QuickPostAiShareBlock(props: { listingId: string; title: string;
       url,
       locale,
       priceAmount: Number(props.price) || 0,
+      highlightNew: true,
     });
     try {
       await navigator.clipboard.writeText(full);
@@ -50,6 +53,7 @@ export function QuickPostAiShareBlock(props: { listingId: string; title: string;
               url,
               locale,
               priceAmount: Number(props.price) || 0,
+              highlightNew: true,
             })
           : "…"}
       </pre>

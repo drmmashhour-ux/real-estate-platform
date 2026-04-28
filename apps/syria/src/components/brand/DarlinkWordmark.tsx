@@ -7,8 +7,7 @@ type Props = SVGProps<SVGSVGElement> & {
 };
 
 /**
- * Inline vector wordmark — uses Cairo / Inter from the document (next/font CSS vars).
- * Prefer this over `<img src="/brand/*.svg">` so Arabic renders with correct fonts.
+ * Inline vector wordmark — ORDER SYBNB-86 uses system-ui (Arabic + Latin glyphs from OS fonts).
  */
 export function DarlinkWordmark({ variant = "on-dark", className, ...rest }: Props) {
   const onDark = variant === "on-dark";
@@ -56,7 +55,8 @@ export function DarlinkWordmark({ variant = "on-dark", className, ...rest }: Pro
         x="114"
         y="30"
         style={{
-          fontFamily: "var(--font-darlink-cairo), Cairo, Noto Naskh Arabic, sans-serif",
+          fontFamily:
+            'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Naskh Arabic", sans-serif',
           fontSize: 22,
           fontWeight: 700,
           fill: "url(#dw-ar)",
@@ -68,7 +68,7 @@ export function DarlinkWordmark({ variant = "on-dark", className, ...rest }: Pro
         x="114"
         y="54"
         style={{
-          fontFamily: "var(--font-darlink-inter), Inter, system-ui, sans-serif",
+          fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
           fontSize: 18,
           fontWeight: 700,
           letterSpacing: "-0.02em",
@@ -81,7 +81,8 @@ export function DarlinkWordmark({ variant = "on-dark", className, ...rest }: Pro
         x="114"
         y="70"
         style={{
-          fontFamily: "var(--font-darlink-cairo), Cairo, sans-serif",
+          fontFamily:
+            'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Naskh Arabic", sans-serif',
           fontSize: 11,
           fontWeight: 600,
           fill: "url(#dw-tag)",

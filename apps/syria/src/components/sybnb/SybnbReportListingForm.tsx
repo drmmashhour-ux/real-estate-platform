@@ -12,12 +12,23 @@ type Props = {
   variant?: "compact" | "section";
 };
 
+function reportSubmitErrorMessage(t: (key: string) => string, raw: string): string {
+  if (raw.startsWith("Too many")) {
+    return t("reportErr_rate_limit");
+  }
+  if (raw === "not_found" || raw === "self_report" || raw === "not_stay") {
+    return t(`reportErr_${raw}`);
+  }
+  return t("reportErr_generic");
+}
+
 export function SybnbReportListingForm({ propertyId, disabled, variant = "compact" }: Props) {
   const t = useTranslations("Sybnb.listing");
   const t8 = useTranslations("Sy8");
   const [open, setOpen] = useState(false);
   const [sending, setSending] = useState(false);
   const [ok, setOk] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
   if (disabled) {
@@ -28,17 +39,22 @@ export function SybnbReportListingForm({ propertyId, disabled, variant = "compac
     <form
       ref={formRef}
       className={cn(
-        "space-y-2 rounded-xl border border-neutral-200 bg-white p-3 shadow-sm [dir:rtl]:text-right",
+        "space-y-2 rounded-xl border border-neutral-200 bg-white p-3 shadow-sm [dir=rtl]:text-right",
         variant === "section" ? "mt-2" : "mt-3",
       )}
       action={async (fd) => {
         setSending(true);
         setOk(false);
-        await createSybnbListingReport(fd);
+        setError(null);
+        const result = await createSybnbListingReport(fd);
         setSending(false);
-        setOk(true);
-        setOpen(false);
-        formRef.current?.reset();
+        if (result.ok) {
+          setOk(true);
+          setOpen(false);
+          formRef.current?.reset();
+          return;
+        }
+        setError(reportSubmitErrorMessage(t, result.error));
       }}
     >
       <input type="hidden" name="propertyId" value={propertyId} />
@@ -58,13 +74,14 @@ export function SybnbReportListingForm({ propertyId, disabled, variant = "compac
       >
         {sending ? "…" : t8("reportSend")}
       </button>
+      {error ? <p className="text-xs text-red-600">{error}</p> : null}
       {ok ? <p className="text-xs text-emerald-700">{t8("reportOk")}</p> : null}
     </form>
   );
 
   if (variant === "section") {
     return (
-      <section className="rounded-2xl border border-neutral-200/80 bg-neutral-50/80 p-4 [dir:rtl]:text-right">
+      <section className="rounded-2xl border border-neutral-200/80 bg-neutral-50/80 p-4 [dir=rtl]:text-right">
         <h2 className="text-sm font-semibold text-neutral-900">{t("reportSectionTitle")}</h2>
         <p className="mt-1 text-xs text-neutral-500">{t("reportSectionHint")}</p>
         {formInner}

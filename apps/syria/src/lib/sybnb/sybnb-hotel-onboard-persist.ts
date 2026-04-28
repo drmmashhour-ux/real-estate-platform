@@ -7,12 +7,14 @@ import { allocateAdCodeInTransaction } from "@/lib/syria/ad-code";
 import { runAntiFraudGuardsForPublish } from "@/lib/anti-fraud/guards";
 import { ensureGuestUserForPhone } from "@/lib/syria-mvp-guest";
 import { getSessionUser, setSessionUserId } from "@/lib/auth";
-import { recomputeSy8FeedRankForPropertyId } from "@/lib/sy8/sy8-feed-rank-refresh";
+import { recomputeReputationScoreForUser } from "@/lib/syria/user-reputation";
 import { trackSyriaGrowthEvent } from "@/lib/growth-events";
 import type { SybnbHotelLeadStatus } from "@/generated/prisma";
 import { listingPhotoSafetyNeedsReview } from "@/lib/listing-photo-safety";
 import { buildSmartListingDescriptionArEn } from "@/lib/listing-smart-description";
 import { MAX_LISTING_IMAGES } from "@/lib/syria/photo-upload";
+import { normalizeListingImagesForPersist } from "@/lib/syria/server-listing-images";
+import { sybn108OptionalTestFields } from "@/lib/sybn/sybn108-test-mode";
 
 export type HotelOnboardPersistResult =
   | { ok: true; listingId: string; adCode: string; leadId: string; pricePerNight: number }
@@ -64,7 +66,17 @@ export async function persistSybnbHotelOnboarding(input: {
   if (rawImg.length > MAX_LISTING_IMAGES) {
     return { ok: false, reason: "validation" };
   }
-  const imgs = rawImg.slice(0, MAX_LISTING_IMAGES);
+  if (
+    process.env.NODE_ENV === "production" &&
+    rawImg.some(
+      (u) =>
+        u.startsWith("data:") ||
+        (!/^https:\/\//i.test(u.trim()) && u.trim().length > 0),
+    )
+  ) {
+    return { ok: false, reason: "validation" };
+  }
+  const imgs = await normalizeListingImagesForPersist(rawImg.slice(0, MAX_LISTING_IMAGES));
 
   const nightly = DEFAULT_NIGHTLY;
   const priceDec = new Prisma.Decimal(nightly);
@@ -85,6 +97,7 @@ export async function persistSybnbHotelOnboarding(input: {
     where: { id: user.id },
     data: {
       phone,
+      phoneVerified: true,
       verifiedAt: verifiedNow,
       phoneVerifiedAt: verifiedNow,
       verificationLevel: user.verificationLevel?.trim() ? user.verificationLevel : "phone",
@@ -163,11 +176,12 @@ export async function persistSybnbHotelOnboarding(input: {
         contactPhone: phone,
         receptionAvailable: true,
         guestsMax: 4,
+        ...sybn108OptionalTestFields(),
       },
     });
   });
 
-  await recomputeSy8FeedRankForPropertyId(property.id);
+  await recomputeReputationScoreForUser(user.id);
 
   const leadNotesLine = `SYBNB-53 listing ${property.id} · ad ${property.adCode}`;
   const existingLead = await prisma.sybnbHotelLead.findFirst({

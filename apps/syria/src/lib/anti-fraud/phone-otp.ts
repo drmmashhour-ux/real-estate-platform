@@ -1,5 +1,6 @@
 import { createHash, randomInt } from "node:crypto";
 import { prisma } from "@/lib/db";
+import { recomputeReputationScoreForUser } from "@/lib/syria/user-reputation";
 
 const OTP_TTL_MS = 10 * 60 * 1000;
 const MAX_SEND_PER_HOUR = 3;
@@ -73,8 +74,16 @@ export async function verifyPhoneOtpAndMarkUser(
     prisma.syriaPhoneOtp.deleteMany({ where: { userId } }),
     prisma.syriaAppUser.update({
       where: { id: userId },
-      data: { phoneVerifiedAt: now, verifiedAt: now, verificationLevel: "phone" },
+      data: {
+        phoneVerified: true,
+        phoneVerifiedAt: now,
+        verifiedAt: now,
+        verificationLevel: "phone",
+        phoneCode: null,
+        phoneCodeExpiry: null,
+      },
     }),
   ]);
+  await recomputeReputationScoreForUser(userId);
   return { ok: true };
 }

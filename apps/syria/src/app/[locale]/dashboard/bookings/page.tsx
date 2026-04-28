@@ -14,6 +14,16 @@ import { SybnbGuestPayStubButton } from "@/components/sybnb/SybnbGuestPayStubBut
 import { SybnbBookingCard } from "@/components/sybnb/SybnbBookingCard";
 import { SybnbDashboardHostRespondForms } from "@/components/sybnb/SybnbDashboardHostRespondForms";
 
+function showSybnbStripeTestBanner(): boolean {
+  const a = process.env.STRIPE_PUBLIC_KEY?.trim() ?? "";
+  const b = process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY?.trim() ?? "";
+  return a.startsWith("pk_test") || b.startsWith("pk_test");
+}
+
+type PageProps = {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
+
 type BookingLifecycleLabel = ReturnType<typeof bookingLifecycleLabel>;
 
 function sybnbPhaseKey(label: BookingLifecycleLabel): string {
@@ -31,10 +41,15 @@ function sybnbPhaseKey(label: BookingLifecycleLabel): string {
   return m[label] ?? "sybnbPhasePending";
 }
 
-export default async function DashboardBookingsPage() {
+export default async function DashboardBookingsPage(props: PageProps) {
   const t = await getTranslations("Dashboard");
   const locale = await getLocale();
   const user = await requireSessionUser();
+
+  const sp = props.searchParams ? await props.searchParams : {};
+  const checkoutRaw = sp.sybnb_checkout;
+  const checkoutFlash =
+    typeof checkoutRaw === "string" ? checkoutRaw : Array.isArray(checkoutRaw) ? checkoutRaw[0] : undefined;
 
   await runSybnbPostStayCompletion();
 
@@ -52,6 +67,22 @@ export default async function DashboardBookingsPage() {
 
   return (
     <div className="space-y-4">
+      {showSybnbStripeTestBanner() ? (
+        <div
+          className="rounded-2xl border border-amber-300/90 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-950 [dir=rtl]:text-right"
+          dir={locale.startsWith("ar") ? "rtl" : "ltr"}
+        >
+          {t("stripeTestModeBanner")}
+        </div>
+      ) : null}
+      {checkoutFlash === "success" ? (
+        <div
+          className="rounded-2xl border border-emerald-300/90 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-950 [dir=rtl]:text-right"
+          dir={locale.startsWith("ar") ? "rtl" : "ltr"}
+        >
+          {t("sybnbCheckoutSuccessFlash")}
+        </div>
+      ) : null}
       <h2 className="text-lg font-semibold text-stone-900">{t("bookingsTitle")}</h2>
       <p className="text-sm text-stone-600">{t("bookingsIntro")}</p>
       {bookings.length === 0 ? (

@@ -12,7 +12,7 @@ function hostUnverifiedForRisk(owner: SyriaAppUser): boolean {
 async function countReportsForProperty(propertyId: string): Promise<number> {
   const [s1, s2] = await Promise.all([
     prisma.syriaListingReport.count({ where: { propertyId } }),
-    prisma.sybnbListingReport.count({ where: { propertyId } }),
+    prisma.listingReport.count({ where: { listingId: propertyId } }),
   ]);
   return s1 + s2;
 }
@@ -26,7 +26,7 @@ async function countReportsForSeller(ownerId: string): Promise<number> {
   const ids = props.map((p) => p.id);
   const [s1, s2] = await Promise.all([
     prisma.syriaListingReport.count({ where: { propertyId: { in: ids } } }),
-    prisma.sybnbListingReport.count({ where: { propertyId: { in: ids } } }),
+    prisma.listingReport.count({ where: { listingId: { in: ids } } }),
   ]);
   return s1 + s2;
 }

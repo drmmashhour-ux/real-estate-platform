@@ -1,7 +1,16 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
-  "buildCommand": "cd ../.. && pnpm --filter @lecipm/syria build",
   "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
+  "buildCommand": "cd ../.. && pnpm --filter @lecipm/syria build",
+  "env": {
+    "ENABLE_EXPERIMENTAL_COREPACK": "1",
+    "CI": "1",
+    "HUSKY": "0",
+    "NEXT_TELEMETRY_DISABLED": "1",
+    "NPM_CONFIG_PRODUCTION": "false",
+    "NODE_OPTIONS": "--max-old-space-size=8192"
+  },
   "crons": [
     {
       "path": "/api/sybnb/cron/complete-bookings",

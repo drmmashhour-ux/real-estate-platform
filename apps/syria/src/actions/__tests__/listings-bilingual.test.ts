@@ -2,13 +2,10 @@ import { describe, expect, it } from "vitest";
 import { validateBilingualListingCopy } from "@/lib/listing-bilingual-validation";
 
 describe("validateBilingualListingCopy", () => {
-  it("requires non-empty Arabic title and description", () => {
+  it("requires Arabic title only (ORDER SYBNB-88 — optional description)", () => {
     expect(validateBilingualListingCopy({ titleAr: "", descriptionAr: "وصف" }).ok).toBe(false);
     expect(validateBilingualListingCopy({ titleAr: "", descriptionAr: "وصف" }).reason).toBe("missing_title_ar");
-    expect(validateBilingualListingCopy({ titleAr: "عنوان", descriptionAr: "   " }).ok).toBe(false);
-    expect(validateBilingualListingCopy({ titleAr: "عنوان", descriptionAr: "   " }).reason).toBe(
-      "missing_description_ar",
-    );
+    expect(validateBilingualListingCopy({ titleAr: "عنوان", descriptionAr: "   " }).ok).toBe(true);
     expect(validateBilingualListingCopy({ titleAr: "عنوان", descriptionAr: "وصف" }).ok).toBe(true);
   });
 
@@ -31,8 +28,8 @@ describe("validateBilingualListingCopy", () => {
     ).toBe(true);
   });
 
-  it("treats whitespace-only Arabic as invalid", () => {
+  it("treats whitespace-only Arabic title as invalid", () => {
     expect(validateBilingualListingCopy({ titleAr: " \n\t ", descriptionAr: "وصف" }).ok).toBe(false);
-    expect(validateBilingualListingCopy({ titleAr: "عنوان", descriptionAr: "\n" }).ok).toBe(false);
+    expect(validateBilingualListingCopy({ titleAr: "عنوان", descriptionAr: "\n" }).ok).toBe(true);
   });
 });

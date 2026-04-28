@@ -3,12 +3,18 @@ import type { Prisma } from "@/generated/prisma";
 
 export const SYBNB_ANALYTICS_EVENT_TYPES = {
   LISTING_VIEW: "listing_view",
+  /** ORDER SYBNB-70 — Hadiah listing detail (`/listing/[id]`) open beacon (marketplace + mixed surfaces). */
+  LISTING_OPEN: "listing_open",
   BOOKING_REQUEST: "booking_request",
   BOOKING_APPROVED: "booking_approved",
   REPORT_SUBMITTED: "report_submitted",
   CONTACT_CLICK: "contact_click",
+  /** ORDER SYBNB-85 — Guest tapped “Show phone” on listing trust panel (intent before WhatsApp/tel). */
+  PHONE_REVEAL: "phone_reveal",
   /** SYBNB-40 — WhatsApp / phone taps on `HOTEL` listings (lead-first, no booking flow). */
   HOTEL_CONTACT_CLICK: "hotel_contact_click",
+  /** ORDER SYBNB-70 — inquiry form submitted (`SyriaInquiry` created). */
+  GUEST_MESSAGE: "guest_message",
 } as const;
 
 export type SybnbAnalyticsCanonicalType = (typeof SYBNB_ANALYTICS_EVENT_TYPES)[keyof typeof SYBNB_ANALYTICS_EVENT_TYPES];

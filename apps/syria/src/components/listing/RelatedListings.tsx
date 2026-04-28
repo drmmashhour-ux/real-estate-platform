@@ -3,12 +3,7 @@ import { prisma } from "@/lib/db";
 import { ListingCard } from "@/components/ListingCard";
 import type { SyriaPropertyType } from "@/generated/prisma";
 import { sy8FeedExtraWhere } from "@/lib/sy8/sy8-feed-visibility";
-import { getSy8OwnerListingCountsMap } from "@/lib/sy8/sy8-owner-listing-counts";
-import {
-  computeSy8SellerScore,
-  isSy8SellerVerified,
-  sy8ReputationLabelId,
-} from "@/lib/sy8/sy8-reputation";
+import { isSy8SellerVerified } from "@/lib/sy8/sy8-reputation";
 
 export async function RelatedListings({
   excludeId,
@@ -43,19 +38,14 @@ export async function RelatedListings({
 
   if (rows.length === 0) return null;
 
-  const countMap = await getSy8OwnerListingCountsMap(rows.map((r) => r.ownerId));
   const cards = rows.map((l) => {
     const { owner, ...rest } = l;
-    const c = countMap.get(l.ownerId) ?? { activeListings: 0, soldListings: 0 };
-    const sy8ReputationScore = computeSy8SellerScore(c.soldListings, c.activeListings);
     return (
       <ListingCard
         key={l.id}
         listing={{
           ...rest,
           sy8SellerVerified: isSy8SellerVerified(owner),
-          sy8ReputationScore,
-          sy8ReputationLabelId: sy8ReputationLabelId(sy8ReputationScore),
         }}
         locale={locale}
       />

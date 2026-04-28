@@ -1,4 +1,7 @@
-/** Pick listing copy by UI locale — English uses EN fields when set, otherwise Arabic (never empty for required AR). */
+/**
+ * Pick listing copy by UI locale.
+ * ORDER SYBNB-88 — sellers author primarily in Arabic (any register/dialect); English is optional for browsing `en`.
+ */
 
 export type SyriaListingTextFields = {
   titleAr: string;
@@ -16,12 +19,16 @@ export function pickListingTitle(row: Pick<SyriaListingTextFields, "titleAr" | "
 }
 
 export function pickListingDescription(
-  row: Pick<SyriaListingTextFields, "descriptionAr" | "descriptionEn">,
+  row: {
+    descriptionAr?: string | null;
+    descriptionEn?: string | null;
+  },
   locale: string,
 ): string {
   if (locale.startsWith("en")) {
     const en = row.descriptionEn?.trim();
     if (en) return en;
   }
-  return row.descriptionAr;
+  const ar = row.descriptionAr;
+  return typeof ar === "string" ? ar : "";
 }

@@ -1,5 +1,6 @@
 import type { SyriaAppUser, SyriaProperty } from "@/generated/prisma";
 import { normalizeSyriaAmenityKeys } from "@/lib/syria/amenities";
+import { isOwnershipVerificationTierListing } from "@/lib/listing-posting-kind";
 
 export type Sy8LocationQualityTier = "incomplete" | "general" | "medium" | "precise";
 
@@ -7,7 +8,7 @@ export type Sy8LocationQualityTier = "incomplete" | "general" | "medium" | "prec
  * ORDER SYBNB-69 — Smart Ranking v2 engagement inputs (weighted below).
  */
 export type Sy8FeedRankEngagement = {
-  /** SybnbEvent rows: `contact_click` + `hotel_contact_click` */
+  /** SybnbEvent rows: `contact_click` + `hotel_contact_click` + `phone_reveal` (SYBNB-85 — each counts +3 in engagement). */
   contactClicks: number;
   /** Open Sybnb stay requests + legacy BNHUB SyriaBooking pendings */
   bookingRequests: number;
@@ -81,9 +82,20 @@ export function computeSy8EngagementScoreFromSignals(e: Sy8FeedRankEngagement): 
 function computeSy8TrustAndListingSignals(input: {
   property: Pick<
     SyriaProperty,
-    "amenities" | "images" | "area" | "addressDetails" | "type" | "plan" | "listingVerified" | "verified"
+    | "amenities"
+    | "images"
+    | "area"
+    | "addressDetails"
+    | "type"
+    | "plan"
+    | "listingVerified"
+    | "verified"
+    | "proofDocumentsSubmitted"
+    | "ownershipVerified"
+    | "category"
+    | "postingKind"
   >;
-  owner: Pick<SyriaAppUser, "flagged" | "phoneVerifiedAt" | "verifiedAt" | "verificationLevel">;
+  owner: Pick<SyriaAppUser, "flagged" | "phoneVerifiedAt" | "verifiedAt" | "verificationLevel" | "reputationScore">;
 }): number {
   const { property: p, owner } = input;
   let score = 0;
@@ -95,7 +107,18 @@ function computeSy8TrustAndListingSignals(input: {
   const verifiedHotel = p.type === "HOTEL" && (Boolean(p.listingVerified) || Boolean(p.verified));
   if (verifiedHotel) score += 5;
 
+  /** ORDER SYBNB-100 — uploaded legitimacy proofs (document URLs are never public). */
+  if (p.proofDocumentsSubmitted) score += 4;
+
+  /** ORDER SYBNB-101 — high-tier real_estate without ops ownership confirmation ranks lower. */
+  if (isOwnershipVerificationTierListing(p.category, p.postingKind) && !p.ownershipVerified) {
+    score -= 12;
+  }
+
   if (owner.flagged) score -= 10;
+
+  /** ORDER SYBNB-98 — high-reputation sellers (+16 tier) get ranking lift feed-wide. */
+  if ((owner.reputationScore ?? 0) >= 16) score += 5;
 
   if (nz(p.area) !== "") score += 2;
   if (nz(p.addressDetails) !== "") score += 2;
@@ -128,9 +151,15 @@ export function computeSy8FeedRankScore(input: {
     | "listingVerified"
     | "verified"
     | "createdAt"
+    | "proofDocumentsSubmitted"
+    | "ownershipVerified"
+    | "category"
+    | "postingKind"
   >;
-  owner: Pick<SyriaAppUser, "flagged" | "phoneVerifiedAt" | "verifiedAt" | "verificationLevel">;
+  owner: Pick<SyriaAppUser, "flagged" | "phoneVerifiedAt" | "verifiedAt" | "verificationLevel" | "reputationScore">;
   engagement: Sy8FeedRankEngagement;
+  /** ORDER SYBNB-113 — small lift only when shares → attributed visits → contacts correlate in-window. */
+  sybn113ViralityTrustBoost?: number;
   /** Defaults to `Date.now()` — inject in tests */
   nowMs?: number;
 }): number {
@@ -149,7 +178,8 @@ export function computeSy8FeedRankScore(input: {
     imageScore +
     engagementScore +
     computeSybnbFreshBoostV69(p.createdAt, nowMs) -
-    computeListingAgeDecayPenaltyV69(p.createdAt, nowMs);
+    computeListingAgeDecayPenaltyV69(p.createdAt, nowMs) +
+    (input.sybn113ViralityTrustBoost ?? 0);
 
   return clampInt(score, 0, 500);
 }

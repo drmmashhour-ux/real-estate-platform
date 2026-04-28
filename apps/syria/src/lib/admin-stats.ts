@@ -47,7 +47,7 @@ export async function getAdminListingStats() {
   const [total, active, pendingReview, archived, expiredBoost] = await Promise.all([
     prisma.syriaProperty.count(),
     prisma.syriaProperty.count({ where: { status: "PUBLISHED" } }),
-    prisma.syriaProperty.count({ where: { status: "PENDING_REVIEW" } }),
+      prisma.syriaProperty.count({ where: { status: { in: ["PENDING_REVIEW", "NEEDS_REVIEW"] } } }),
     prisma.syriaProperty.count({ where: { status: "ARCHIVED" } }),
     prisma.syriaProperty.count({
       where: {

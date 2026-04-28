@@ -56,7 +56,7 @@ export const sybnbConfig = {
     return Number.isFinite(n) && n > 0 ? Math.floor(n) : 7;
   })(),
   /**
-   * Block new stay requests when a listing has this many unreviewed `SybnbListingReport` rows.
+   * Block new stay requests when a listing has this many unreviewed `ListingReport` rows.
    * Aligns with host supply pause at higher abuse tiers (operator process).
    */
   maxUnreviewedReportsBlockBookings: (() => {
@@ -103,4 +103,12 @@ export const sybnbConfig = {
   })(),
   autoReleasePayouts: process.env.SYBNB_AUTO_RELEASE_PAYOUTS === "true",
   manualPayoutApprovalRequired: process.env.SYBNB_MANUAL_PAYOUT_APPROVAL_REQUIRED !== "false",
+  /**
+   * Reserved for a future cron: drop stale `SyriaProperty.availability` calendar keys older than N days without an owner refresh.
+   * `0` or unset = off (default).
+   */
+  availabilityStaleResetDays: (() => {
+    const n = Number(process.env.SYBNB_AVAILABILITY_STALE_RESET_DAYS ?? "0");
+    return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
+  })(),
 } as const;

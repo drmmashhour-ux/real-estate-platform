@@ -163,3 +163,47 @@ Manual checks:
 - Syria deploy is live on **`syria.lecipm.com`** (or Vercel domain).
 - **No** Canada data in the Syria DB (fresh migrations + Syria-only ops).
 - **Safe** onboarding: payments manual / off per flags above until product allows otherwise.
+
+## ORDER SYBNB-102 — Standalone production deploy (Vercel)
+
+Use a **new** Vercel project (do not reuse `apps/web`):
+
+| Dashboard field | Value |
+|-----------------|--------|
+| **Project name** | `lecipm-syria` |
+| **Root directory** | `apps/syria` |
+| **Install command** | *(leave empty to use `apps/syria/vercel.json`)* → runs **`pnpm install`** from monorepo root (`cd ../.. && pnpm install --frozen-lockfile`). |
+| **Build command** | *(inherit)* → **`pnpm build`** for Syria via `pnpm --filter @lecipm/syria build`. |
+
+**Production environment variables** (minimum — mirror `.env.production.example` for the rest):
+
+| Variable | Notes |
+|----------|--------|
+| `DATABASE_URL` | Syria Postgres DSN (required by Prisma). Must match `SYRIA_DATABASE_URL` when both are set. |
+| `SYRIA_DATABASE_URL` | Same DSN as `DATABASE_URL` (recommended operator label). |
+| `CLOUDINARY_CLOUD_NAME` | Cloudinary upload/deferred URLs for listings and proofs. |
+| `CLOUDINARY_API_KEY` | |
+| `CLOUDINARY_API_SECRET` | |
+| `CLOUDINARY_LISTINGS_FOLDER` | Default in code: **`sybnb/syria`** — never **`sybnb/listings`** on Syria production (guard). |
+| `SYBNB_PAYMENTS_ENABLED` | `false` until PSP rollout. |
+
+**Domain:** add **`syria.lecipm.com`** in Vercel → Domains (DNS `CNAME` to Vercel), or ship first on the default **`*.vercel.app`** hostname.
+
+**CLI:** from the repo, `cd apps/syria && vercel` / `vercel deploy --prod` after linking the project (`vercel link`), or deploy from the Vercel dashboard after connecting Git.
+
+**Acceptance:** homepage loads publicly; browse/listing routes work; API routes (including cron auth where applicable) respond — smoke-test staging/production URLs before announcing.
+
+## ORDER SYBNB-103 — Isolation from Canada platform
+
+Hadiah Link (**`apps/syria`**) must remain a **fully independent** system: no shared database, sessions, cookies across origins, or asset namespaces with LECIPM (**`apps/web`**, Canada).
+
+| Concern | Enforcement |
+|--------|-------------|
+| **Database** | New Postgres only — **`DATABASE_URL`** / **`SYRIA_DATABASE_URL`** (same DSN). **`@repo/db` `assertEnvSafety`** rejects Syria URLs containing **`lecipm`**. Never reuse Canada production DB. |
+| **Auth / sessions** | Prisma models **`SyriaAppUser`** etc. only in Syria schema. Session cookie **`syria_user_id`** (or **`SYRIA_AUTH_SESSION_COOKIE`**) — host-only, httpOnly — see `src/lib/auth.ts`. |
+| **API surface** | **`/api/sybnb/*`** and **`/api/listings/*`** are implemented **only** under **`apps/syria/src/app/api/`**. Canada **`apps/web`** does not define **`api/sybnb`** routes; listing APIs there are unrelated LECIPM endpoints on a **different** hostname and deploy. |
+| **Media storage** | Default Cloudinary folder **`sybnb/syria`** (proofs: **`sybnb/syria/proofs`**). Production rejects **`CLOUDINARY_LISTINGS_FOLDER=sybnb/listings`** (legacy shared path) — see **`assertSyriaCloudinaryFolderIsolation`** in `src/lib/env/app-isolation.ts`. |
+| **Environment files** | Syria production secrets live **only** in the **`lecipm-syria`** Vercel project and/or a **local** **`apps/syria/.env.production`** (gitignored). Do **not** bulk-import **`apps/web`** env into Syria. |
+
+**Acceptance:** no shared user rows with Canada; no cookie/session leakage between deploys; uploads and DB are namespace-separated.
+

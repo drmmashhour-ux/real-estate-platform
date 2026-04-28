@@ -5,6 +5,7 @@ import { assertSybnbPaymentCompleteAsync } from "./payment-policy";
 import { appendSyriaSybnbCoreAudit } from "./sybnb-financial-audit";
 import { isAllowedSybnbStayStatusTransition } from "./sybnb-state-machine";
 import { maybeRecordSybnbAgentEarningForPaidSyriaBooking } from "./sybnb-agent-commission";
+import { mergeStayBookingDatesIntoListingAvailability } from "./sybnb-stay-availability";
 
 export type SybnbCheckoutApplyError =
   | { status: 404; code: "not_found" }
@@ -24,7 +25,7 @@ export type SybnbCheckoutApplyError =
  */
 export async function applySybnbCheckoutComplete(
   bookingId: string,
-  options?: { growthEventSource?: string },
+  options?: { growthEventSource?: string; stripeCheckoutSessionId?: string },
 ): Promise<{ ok: true } | { ok: false; error: SybnbCheckoutApplyError }> {
   const id = bookingId.trim();
   if (!id) {
@@ -37,6 +38,10 @@ export async function applySybnbCheckoutComplete(
   });
   if (!booking || booking.property.category !== "stay") {
     return { ok: false, error: { status: 404, code: "not_found" } };
+  }
+  /** Idempotent Stripe webhook retries — already settled */
+  if (booking.status === "CONFIRMED" && booking.guestPaymentStatus === "PAID") {
+    return { ok: true };
   }
   if (booking.status !== "APPROVED" || booking.guestPaymentStatus !== "UNPAID") {
     return { ok: false, error: { status: 409, code: "invalid_state" } };
@@ -71,18 +76,35 @@ export async function applySybnbCheckoutComplete(
     };
   }
 
-  await prisma.syriaBooking.update({
-    where: { id: booking.id },
+  const settled = await prisma.syriaBooking.updateMany({
+    where: {
+      id: booking.id,
+      status: "APPROVED",
+      guestPaymentStatus: "UNPAID",
+    },
     data: {
       status: "CONFIRMED",
       guestPaymentStatus: "PAID",
     },
   });
+  if (settled.count === 0) {
+    const again = await prisma.syriaBooking.findUnique({ where: { id: booking.id } });
+    if (again?.status === "CONFIRMED" && again.guestPaymentStatus === "PAID") {
+      return { ok: true };
+    }
+    return { ok: false, error: { status: 409, code: "invalid_state" } };
+  }
+
+  await mergeStayBookingDatesIntoListingAvailability(booking.propertyId, booking.checkIn, booking.checkOut);
 
   await appendSyriaSybnbCoreAudit({
     bookingId: booking.id,
     event: "checkout_webhook_paid",
-    metadata: { guestPaymentStatus: "PAID", priorStatus: "APPROVED" },
+    metadata: {
+      guestPaymentStatus: "PAID",
+      priorStatus: "APPROVED",
+      stripeCheckoutSessionId: options?.stripeCheckoutSessionId ?? null,
+    },
   });
 
   await trackSyriaGrowthEvent({

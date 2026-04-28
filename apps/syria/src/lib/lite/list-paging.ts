@@ -8,13 +8,14 @@ export type PagedListQuery = {
   locale: "ar" | "en";
 };
 
-const MAX_LIMIT = 50;
+const MAX_LIMIT = 10;
 
+/** ORDER SYBNB-FINAL — lite browse APIs match marketplace grid cap (max rows per page). */
 export function clampPage(n: number): number {
   return Number.isFinite(n) && n >= 1 ? Math.floor(n) : 1;
 }
 
-/** Default 10; `density=lite` → 5, `density=rich` → 12 unless `limit` is explicit. */
+/** Default 10; `density=lite` → 5; `density=rich` prefers more rows but caps at MAX_LIMIT (SYBNB-FINAL). */
 export function parsePagedListQuery(requestUrl: string): PagedListQuery {
   const url = new URL(requestUrl);
   const rawPage = parseInt(url.searchParams.get("page") || "1", 10);
@@ -26,6 +27,8 @@ export function parsePagedListQuery(requestUrl: string): PagedListQuery {
   let limit = 10;
   if (density === "lite") limit = 5;
   else if (density === "rich") limit = 12;
+
+  limit = Math.min(limit, MAX_LIMIT);
 
   if (explicit != null && explicit.trim() !== "") {
     const n = parseInt(explicit, 10);

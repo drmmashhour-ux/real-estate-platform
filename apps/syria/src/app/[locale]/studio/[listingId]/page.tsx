@@ -43,6 +43,7 @@ export default async function AdStudioPage(props: Props) {
     notFound();
   }
 
+  const tListing = await getTranslations("Listing");
   const numberLoc = locale.startsWith("ar") ? "ar-SY" : "en-US";
   const loc = await getLocale();
   const localized = backfillLocalizedPropertyShape(listing);
@@ -53,6 +54,13 @@ export default async function AdStudioPage(props: Props) {
 
   return (
     <div className="mx-auto max-w-2xl p-4">
+      {listing.isTest ? (
+        <div className="mb-4 rounded-xl border border-fuchsia-300/70 bg-fuchsia-50/90 px-3 py-2 text-center text-xs font-semibold text-fuchsia-950 [dir=rtl]:text-right">
+          <span className="inline-flex rounded-full bg-fuchsia-900/90 px-2.5 py-0.5 text-[11px] font-bold text-white ring-1 ring-fuchsia-400/60">
+            {tListing("badgeTestData")}
+          </span>
+        </div>
+      ) : null}
       <AdStudioClient
         listingId={listing.id}
         initialAdStyle={listing.adStyle}

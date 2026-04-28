@@ -148,30 +148,34 @@ export async function getSybnbInvestorActivityLast7Days() {
   start.setUTCDate(start.getUTCDate() - 7);
   start.setUTCHours(0, 0, 0, 0);
 
-  const types = [
-    SYBNB_ANALYTICS_EVENT_TYPES.LISTING_VIEW,
-    SYBNB_ANALYTICS_EVENT_TYPES.CONTACT_CLICK,
-    SYBNB_ANALYTICS_EVENT_TYPES.BOOKING_REQUEST,
-    SYBNB_ANALYTICS_EVENT_TYPES.REPORT_SUBMITTED,
-  ] as const;
+  const eventWhere: Prisma.SybnbEventWhereInput = {
+    createdAt: { gte: start },
+    AND: [sybnbEventListingNonDemoOrUnsetWhere(), sybnbNonDemoUserWhere()],
+  };
 
-  const counts = await Promise.all(
-    types.map((type) =>
-      prisma.sybnbEvent.count({
-        where: {
-          type,
-          createdAt: { gte: start },
-          AND: [sybnbEventListingNonDemoOrUnsetWhere(), sybnbNonDemoUserWhere()],
-        },
-      }),
-    ),
-  );
+  const [listingViews, contactClicks, bookingRequests, reportsSubmitted] = await Promise.all([
+    prisma.sybnbEvent.count({
+      where: { type: SYBNB_ANALYTICS_EVENT_TYPES.LISTING_VIEW, ...eventWhere },
+    }),
+    prisma.sybnbEvent.count({
+      where: {
+        type: { in: [SYBNB_ANALYTICS_EVENT_TYPES.CONTACT_CLICK, SYBNB_ANALYTICS_EVENT_TYPES.PHONE_REVEAL] },
+        ...eventWhere,
+      },
+    }),
+    prisma.sybnbEvent.count({
+      where: { type: SYBNB_ANALYTICS_EVENT_TYPES.BOOKING_REQUEST, ...eventWhere },
+    }),
+    prisma.sybnbEvent.count({
+      where: { type: SYBNB_ANALYTICS_EVENT_TYPES.REPORT_SUBMITTED, ...eventWhere },
+    }),
+  ]);
 
   return {
-    listingViews: counts[0],
-    contactClicks: counts[1],
-    bookingRequests: counts[2],
-    reportsSubmitted: counts[3],
+    listingViews,
+    contactClicks,
+    bookingRequests,
+    reportsSubmitted,
   };
 }
 

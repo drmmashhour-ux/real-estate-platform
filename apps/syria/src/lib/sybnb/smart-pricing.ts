@@ -68,6 +68,8 @@ export type DealBatchRow = {
   images: unknown;
   verified?: boolean;
   listingVerified?: boolean;
+  /** SYBNB-77 — when browse wires slim `images`, use DB-backed count for deal heuristics. */
+  listingPhotoCount?: number;
 };
 
 /**
@@ -106,6 +108,11 @@ export function computeSybnbExcellentDealFlags(rows: DealBatchRow[]): Map<string
     return im.filter((x): x is string => typeof x === "string" && x.length > 0).length;
   }
 
+  function listingPhotos(r: DealBatchRow): number {
+    if (typeof r.listingPhotoCount === "number" && r.listingPhotoCount >= 0) return r.listingPhotoCount;
+    return imageCount(r.images);
+  }
+
   for (const cohort of byCohort.values()) {
     const sorted = [...cohort].sort((a, b) => a.nightly - b.nightly);
     const k = Math.max(1, Math.ceil(sorted.length * 0.25));
@@ -122,7 +129,7 @@ export function computeSybnbExcellentDealFlags(rows: DealBatchRow[]): Map<string
       if (usd == null) continue;
       const inBudget =
         usd >= SYBNB_USD_REF_BANDS.budget.min && usd < SYBNB_USD_REF_BANDS.budget.max;
-      const imgs = imageCount(r.images);
+      const imgs = listingPhotos(r);
       const trust = Boolean(r.verified ?? r.listingVerified);
       if (inBudget && imgs >= 3 && trust) {
         out.set(r.id, true);

@@ -1,6 +1,7 @@
 "use server";
 
 import { Prisma, SyriaListingPlan, SyriaPaymentMethod, type SyriaPropertyType } from "@/generated/prisma";
+import { sybn108OptionalTestFields } from "@/lib/sybn/sybn108-test-mode";
 import { prisma } from "@/lib/db";
 import { requireSessionUser } from "@/lib/auth";
 import { SYRIA_PRICING } from "@/lib/pricing";
@@ -196,6 +197,7 @@ export async function createPropertyListing(formData: FormData): Promise<void> {
             }
           : {}),
         needsReview: listingPhotoSafetyNeedsReview(images),
+        ...sybn108OptionalTestFields(),
       },
     });
 

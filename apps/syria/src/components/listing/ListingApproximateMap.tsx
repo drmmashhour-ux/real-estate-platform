@@ -1,7 +1,15 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useTranslations } from "next-intl";
-import { MapDisplay } from "@/components/map/MapDisplay";
+
+/** ORDER SYBNB-86 — defer Google Maps client bundle until after hydration. */
+const MapDisplay = dynamic(() => import("@/components/map/MapDisplay").then((m) => m.MapDisplay), {
+  ssr: false,
+  loading: () => (
+    <div className="min-h-[240px] rounded-lg bg-[color:var(--darlink-surface-muted)]" aria-busy />
+  ),
+});
 
 type Props = {
   latitude: number;

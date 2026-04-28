@@ -18,8 +18,8 @@ export const HADIAH_COLORS = {
 /** Alias for product docs / external references */
 export const COLORS = HADIAH_COLORS;
 
-/** next/image quality for listing thumbnails (40–60 range; lower = smaller payload). */
-export const LISTING_IMAGE_QUALITY = 45 as const;
+/** next/image quality for listing thumbnails (SYBNB-76: favor smaller remote payloads on slow networks). */
+export const LISTING_IMAGE_QUALITY = 40 as const;
 
 /** Tap targets: min ~44px on primary actions (mobile-first). */
 export const MIN_TAP = "2.75rem" as const;

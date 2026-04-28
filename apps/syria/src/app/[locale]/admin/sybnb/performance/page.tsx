@@ -121,6 +121,7 @@ export default async function AdminSybnbPerformancePage() {
                 <th className="px-4 py-3">{t("sybnbPerformanceListingColCity")}</th>
                 <th className="px-4 py-3 tabular-nums">{t("sybnbPerformanceListingColViews")}</th>
                 <th className="px-4 py-3 tabular-nums">{t("sybnbPerformanceListingColMessages")}</th>
+                <th className="px-4 py-3 tabular-nums">{t("sybnbPerformanceListingColPhoneReveals")}</th>
                 <th className="px-4 py-3 tabular-nums">{t("sybnbPerformanceListingColBookings")}</th>
                 <th className="px-4 py-3">{t("sybnbPerformanceListingColLink")}</th>
               </tr>
@@ -128,7 +129,7 @@ export default async function AdminSybnbPerformancePage() {
             <tbody>
               {listings.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-10 text-center text-stone-500">
+                  <td colSpan={7} className="px-4 py-10 text-center text-stone-500">
                     {t("sybnbPerformanceListingEmpty")}
                   </td>
                 </tr>
@@ -141,6 +142,7 @@ export default async function AdminSybnbPerformancePage() {
                     <td className="px-4 py-2.5 text-stone-700">{row.city}</td>
                     <td className="px-4 py-2.5 tabular-nums text-stone-800">{fmtInt(row.views, locale)}</td>
                     <td className="px-4 py-2.5 tabular-nums text-stone-800">{fmtInt(row.messages, locale)}</td>
+                    <td className="px-4 py-2.5 tabular-nums text-stone-800">{fmtInt(row.phoneReveals, locale)}</td>
                     <td className="px-4 py-2.5 tabular-nums text-stone-800">{fmtInt(row.bookingsCreated, locale)}</td>
                     <td className="px-4 py-2.5">
                       <Link

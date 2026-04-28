@@ -89,6 +89,7 @@ export async function createBnhubBooking(formData: FormData): Promise<void> {
         utmSource: utm.utmSource,
         utmMedium: utm.utmMedium,
         utmCampaign: utm.utmCampaign,
+        isTest: property.isTest,
       },
     });
 
@@ -103,6 +104,15 @@ export async function createBnhubBooking(formData: FormData): Promise<void> {
       },
     });
     return b;
+  });
+
+  await trackSyriaGrowthEvent({
+    eventType: "booking_request",
+    userId: guest.id,
+    propertyId: property.id,
+    bookingId: created.id,
+    utm,
+    payload: { flow: "bnhub", nights },
   });
 
   await trackSyriaGrowthEvent({

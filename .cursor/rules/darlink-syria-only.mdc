@@ -11,6 +11,12 @@ You are working **ONLY** in:
 
 This is **Hadiah Link** (Syria Hub; product was previously referred to as Darlink). It is **completely separate** from LECIPM (`apps/web`, Canada).
 
+### CRITICAL — isolation (ORDER SYBNB-103)
+
+- **Never** reuse Canada **`DATABASE_URL`** or **`apps/web`** env blocks in Syria — separate Postgres + Vercel project only.
+- **Cloudinary:** uploads default to **`sybnb/syria`**; do not point Syria prod at legacy **`sybnb/listings`**.
+- **`/api/sybnb/*`** and Syria **`/api/listings/*`** exist **only** in **`apps/syria`** — different deploy than LECIPM.
+
 ### CRITICAL — do NOT
 
 - Import from `apps/web`, `@lecipm/web`, or another country app.

@@ -78,7 +78,9 @@ export async function getSybnbPerformanceDailySeries(locale: string, days = 14):
       }),
       prisma.sybnbEvent.count({
         where: {
-          type: SYBNB_ANALYTICS_EVENT_TYPES.CONTACT_CLICK,
+          type: {
+            in: [SYBNB_ANALYTICS_EVENT_TYPES.CONTACT_CLICK, SYBNB_ANALYTICS_EVENT_TYPES.PHONE_REVEAL],
+          },
           createdAt: { gte: start, lt: end },
           AND: [sybnbEventListingNonDemoOrUnsetWhere(), sybnbNonDemoActorWhere()],
         },
@@ -119,6 +121,15 @@ export type SybnbPerformanceCityRow = {
   conversionRequestsPerViewPct: number | null;
 };
 
+/** Merge keyed counts (same listing id): ORDER SYBNB-85 adds `phone_reveal` alongside contact taps for funnel aggregates. */
+function mergeListingEventCounts(a: Map<string, number>, b: Map<string, number>): Map<string, number> {
+  const out = new Map(a);
+  for (const [k, v] of b) {
+    out.set(k, (out.get(k) ?? 0) + v);
+  }
+  return out;
+}
+
 async function eventCountsByListing(
   type: typeof SYBNB_ANALYTICS_EVENT_TYPES[keyof typeof SYBNB_ANALYTICS_EVENT_TYPES],
   since: Date,
@@ -146,15 +157,18 @@ export async function getSybnbPerformanceCitySnapshot(windowDays = 30): Promise<
   since.setUTCDate(since.getUTCDate() - windowDays);
   since.setUTCHours(0, 0, 0, 0);
 
-  const [viewsByListing, contactsByListing, requestsByListing] = await Promise.all([
+  const [viewsByListing, contactsByListing, revealsByListing, requestsByListing] = await Promise.all([
     eventCountsByListing(SYBNB_ANALYTICS_EVENT_TYPES.LISTING_VIEW, since),
     eventCountsByListing(SYBNB_ANALYTICS_EVENT_TYPES.CONTACT_CLICK, since),
+    eventCountsByListing(SYBNB_ANALYTICS_EVENT_TYPES.PHONE_REVEAL, since),
     eventCountsByListing(SYBNB_ANALYTICS_EVENT_TYPES.BOOKING_REQUEST, since),
   ]);
 
+  const contactSignalsByListing = mergeListingEventCounts(contactsByListing, revealsByListing);
+
   const ids = new Set<string>();
   for (const k of viewsByListing.keys()) ids.add(k);
-  for (const k of contactsByListing.keys()) ids.add(k);
+  for (const k of contactSignalsByListing.keys()) ids.add(k);
   for (const k of requestsByListing.keys()) ids.add(k);
 
   if (ids.size === 0) return [];
@@ -181,7 +195,7 @@ export async function getSybnbPerformanceCitySnapshot(windowDays = 30): Promise<
   }
 
   addMap(viewsByListing, "listingViews");
-  addMap(contactsByListing, "contactClicks");
+  addMap(contactSignalsByListing, "contactClicks");
   addMap(requestsByListing, "bookingRequests");
 
   return Object.entries(agg).map(([city, v]) => ({
@@ -199,19 +213,23 @@ export type SybnbPerformanceListingRow = {
   titleAr: string;
   city: string;
   views: number;
+  /** WhatsApp/tel `contact_click` taps (SYBNB-11). */
   messages: number;
+  /** ORDER SYBNB-85 — masked “Show phone” taps (`phone_reveal`). */
+  phoneReveals: number;
   bookingsCreated: number;
 };
 
-/** Top listings by weighted engagement (SYBNB-26 §3). */
+/** Top listings: ORDER SYBNB-85 — primary sort by phone reveals, then weighted engagement (SYBNB-26 §3). */
 export async function getSybnbPerformanceListingLeaderboard(limit = 15): Promise<SybnbPerformanceListingRow[]> {
   const since = new Date();
   since.setUTCDate(since.getUTCDate() - 30);
   since.setUTCHours(0, 0, 0, 0);
 
-  const [viewsByListing, contactsByListing, bookingGroups] = await Promise.all([
+  const [viewsByListing, contactsByListing, revealsByListing, bookingGroups] = await Promise.all([
     eventCountsByListing(SYBNB_ANALYTICS_EVENT_TYPES.LISTING_VIEW, since),
     eventCountsByListing(SYBNB_ANALYTICS_EVENT_TYPES.CONTACT_CLICK, since),
+    eventCountsByListing(SYBNB_ANALYTICS_EVENT_TYPES.PHONE_REVEAL, since),
     prisma.sybnbBooking.groupBy({
       by: ["listingId"],
       where: sybnbBookingBaseWhere({
@@ -226,6 +244,7 @@ export async function getSybnbPerformanceListingLeaderboard(limit = 15): Promise
   const ids = new Set<string>();
   for (const k of viewsByListing.keys()) ids.add(k);
   for (const k of contactsByListing.keys()) ids.add(k);
+  for (const k of revealsByListing.keys()) ids.add(k);
   for (const k of bookingsByListing.keys()) ids.add(k);
 
   if (ids.size === 0) return [];
@@ -239,18 +258,19 @@ export async function getSybnbPerformanceListingLeaderboard(limit = 15): Promise
 
   const meta = new Map(listings.map((p) => [p.id, p]));
 
-  const scored: { listingId: string; score: number }[] = [];
+  const scored: { listingId: string; score: number; phoneReveals: number }[] = [];
   for (const id of ids) {
     const v = viewsByListing.get(id) ?? 0;
     const c = contactsByListing.get(id) ?? 0;
+    const pr = revealsByListing.get(id) ?? 0;
     const b = bookingsByListing.get(id) ?? 0;
-    const score = v + c * 3 + b * 10;
-    scored.push({ listingId: id, score });
+    const score = v + (c + pr) * 3 + b * 10;
+    scored.push({ listingId: id, score, phoneReveals: pr });
   }
 
-  scored.sort((a, b) => b.score - a.score);
+  scored.sort((a, b) => b.phoneReveals - a.phoneReveals || b.score - a.score);
 
-  return scored.slice(0, limit).map(({ listingId }) => {
+  return scored.slice(0, limit).map(({ listingId, phoneReveals }) => {
     const p = meta.get(listingId);
     return {
       listingId,
@@ -258,6 +278,7 @@ export async function getSybnbPerformanceListingLeaderboard(limit = 15): Promise
       city: p?.city?.trim() ? p.city : "(unknown)",
       views: viewsByListing.get(listingId) ?? 0,
       messages: contactsByListing.get(listingId) ?? 0,
+      phoneReveals,
       bookingsCreated: bookingsByListing.get(listingId) ?? 0,
     };
   });

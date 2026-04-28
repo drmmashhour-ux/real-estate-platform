@@ -103,12 +103,22 @@ export async function duplicateOwnListingFormAction(formData: FormData): Promise
         roomsAvailable: src.roomsAvailable,
         contactPhone: src.contactPhone,
         receptionAvailable: src.receptionAvailable,
+        ownerName: src.ownerName,
+        ownerPhone: src.ownerPhone,
+        isOwner: src.isOwner,
+        hasMandate: src.hasMandate,
+        mandateDocumentUrl: src.mandateDocumentUrl,
+        ownershipVerified: false,
+        proofDocumentsSubmitted: false,
+        ownershipMoreDocsRequestedAt: null,
+        ownershipVerificationReviewNote: null,
         adCode,
         sy8FeedRankScore: 0,
         sybnbBrowseTier: 1,
         listingPhotoCount: Array.isArray(src.images)
           ? src.images.filter((x): x is string => typeof x === "string" && x.trim().length > 0).length
           : 0,
+        isTest: src.isTest,
       },
     });
   });

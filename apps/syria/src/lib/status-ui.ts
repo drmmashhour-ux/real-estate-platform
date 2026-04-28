@@ -12,6 +12,7 @@ export function listingStatusTone(s: SyriaPropertyStatus): "neutral" | "warn" | 
     case "PUBLISHED":
       return "ok";
     case "PENDING_REVIEW":
+    case "NEEDS_REVIEW":
       return "warn";
     case "DRAFT":
       return "muted";

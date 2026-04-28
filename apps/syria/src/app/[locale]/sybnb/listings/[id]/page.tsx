@@ -51,6 +51,7 @@ const AMENITY_KEYS = ["wifi", "furnished", "ac", "parking", "kitchen"] as const;
 export default async function SybnbListingPage(props: Props) {
   const { id, locale } = await props.params;
   const t = await getTranslations("Sybnb.listing");
+  const tListing = await getTranslations("Listing");
   const user = await getSessionUser();
 
   const listing = await prisma.syriaProperty.findUnique({ where: { id }, include: { owner: true } });
@@ -124,6 +125,13 @@ export default async function SybnbListingPage(props: Props) {
         <div className="space-y-6 lg:col-span-8">
           <PropertyImageGallery images={listing.images} title={pickListingTitle(listing, locale)} />
           <div>
+            {listing.isTest ? (
+              <div className="mb-2 [dir=rtl]:text-right">
+                <span className="inline-flex rounded-full bg-fuchsia-900/90 px-3 py-1 text-xs font-bold text-white ring-1 ring-fuchsia-400/60">
+                  {tListing("badgeTestData")}
+                </span>
+              </div>
+            ) : null}
             <h1 className="text-2xl font-semibold tracking-tight text-neutral-900 [dir=rtl]:text-right">
               {pickListingTitle(listing, locale)}
             </h1>
@@ -251,7 +259,6 @@ export default async function SybnbListingPage(props: Props) {
                     waOwnerHref={waOwnerHref}
                     telOwnerHref={telOwnerHref}
                     canContact
-                    ownerHasPhone={Boolean(primaryPhone)}
                     primaryHeading={t("primaryContactTitle")}
                   />
                 </div>

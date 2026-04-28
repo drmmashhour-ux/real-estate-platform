@@ -56,7 +56,16 @@ export async function getSybnbBrandSocialProof(): Promise<SybnbBrandSocialProof>
         where: { ...eventBase, type: SYBNB_ANALYTICS_EVENT_TYPES.BOOKING_REQUEST },
       }),
       prisma.sybnbEvent.count({
-        where: { ...eventBase, type: SYBNB_ANALYTICS_EVENT_TYPES.CONTACT_CLICK },
+        where: {
+          ...eventBase,
+          type: {
+            in: [
+              SYBNB_ANALYTICS_EVENT_TYPES.CONTACT_CLICK,
+              SYBNB_ANALYTICS_EVENT_TYPES.HOTEL_CONTACT_CLICK,
+              SYBNB_ANALYTICS_EVENT_TYPES.PHONE_REVEAL,
+            ],
+          },
+        },
       }),
     ]);
 

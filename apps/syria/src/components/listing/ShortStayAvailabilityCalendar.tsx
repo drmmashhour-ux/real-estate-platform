@@ -96,6 +96,9 @@ export function ShortStayAvailabilityCalendar({ listingId, initialBooked, isOwne
     >
       <h2 className="text-lg font-semibold text-[color:var(--darlink-text)]">{t("availabilityTitle")}</h2>
       {isOwner ? <p className="mt-1 text-xs text-[color:var(--darlink-text-muted)]">{t("availabilityOwnerHint")}</p> : null}
+      {!isOwner ? (
+        <p className="mt-2 text-xs leading-relaxed text-[color:var(--darlink-text-muted)]">{t("availabilityApproxDisclaimer")}</p>
+      ) : null}
       {err ? <p className="mt-2 text-sm text-red-700">{err}</p> : null}
       {saving ? <p className="mt-1 text-xs text-[color:var(--darlink-text-muted)]">{t("availabilitySaving")}</p> : null}
       <ul className="mt-4 max-h-80 space-y-2 overflow-y-auto pr-1">

@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { sy8FeedExtraWhere } from "@/lib/sy8/sy8-feed-visibility";
+import { SYRIA_FEED_API_S_MAXAGE_SECONDS } from "@/lib/syria/sybn104-performance";
 
-const PAGE = 12;
+const PAGE = 10;
 const MAX_OFFSET = 500;
 
 /**
@@ -57,7 +58,7 @@ export async function GET(req: Request) {
       { items: rows, hasMore: offset + rows.length < total, nextOffset: offset + rows.length },
       {
         headers: {
-          "Cache-Control": "public, s-maxage=20, stale-while-revalidate=40",
+          "Cache-Control": `public, s-maxage=${SYRIA_FEED_API_S_MAXAGE_SECONDS}, stale-while-revalidate=${SYRIA_FEED_API_S_MAXAGE_SECONDS * 2}`,
         },
       },
     );

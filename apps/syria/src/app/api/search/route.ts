@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { BrowseSurface } from "@/services/search/search.service";
 import { searchProperties } from "@/services/search/search.service";
+import { LISTING_EDGE_CACHE_CONTROL } from "@/lib/http/listing-api-cache";
 function parseSurface(v: string | null): BrowseSurface | null {
   const s = (v ?? "").toLowerCase().trim();
   if (s === "sale" || s === "buy") return "sale";
@@ -33,7 +34,7 @@ export async function GET(req: Request) {
     const result = await searchProperties(surface, flat);
     return NextResponse.json(result, {
       headers: {
-        "Cache-Control": "private, max-age=0, s-maxage=30, stale-while-revalidate=60",
+        "Cache-Control": LISTING_EDGE_CACHE_CONTROL,
       },
     });
   } catch (e) {

@@ -3,6 +3,7 @@ import { Link } from "@/i18n/navigation";
 import { getLocalizedPropertyCity } from "@/lib/property-localization";
 import { money } from "@/lib/format";
 import { pickListingTitle } from "@/lib/listing-localized";
+import { SybnbListingCoverImage } from "@/components/sybnb/SybnbListingCoverImage";
 import type { SyriaProperty } from "@/generated/prisma";
 import { SybnbTrustBadge } from "@/components/sybnb/SybnbTrustBadge";
 
@@ -35,10 +36,9 @@ export async function SybnbListingCard({ property: p, locale, activeListings, so
         className="group block overflow-hidden rounded-2xl border border-neutral-200/80 bg-white shadow-sm transition hover:border-amber-200/60 hover:shadow-md"
       >
         <div className="relative aspect-[4/3] bg-neutral-100">
-          {cover ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={cover} alt="" className="h-full w-full object-cover transition group-hover:scale-[1.02]" />
-          ) : (
+          {cover ?
+            <SybnbListingCoverImage src={cover} />
+          : (
             <div className="flex h-full w-full items-center justify-center text-xs text-neutral-400">—</div>
           )}
           {showExcellentDeal ? (

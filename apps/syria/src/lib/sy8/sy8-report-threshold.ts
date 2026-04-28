@@ -1,11 +1,12 @@
 import { prisma } from "@/lib/db";
 import { SY8_REPORTS_THRESHOLD } from "@/lib/sy8/sy8-constants";
+import { recomputeReputationScoreForUser } from "@/lib/syria/user-reputation";
 
 /** Combined S1 + SYBNB report rows for one property. */
 export async function countReportsForProperty(propertyId: string): Promise<number> {
   const [nSyria, nSybnb] = await Promise.all([
     prisma.syriaListingReport.count({ where: { propertyId } }),
-    prisma.sybnbListingReport.count({ where: { propertyId } }),
+    prisma.listingReport.count({ where: { listingId: propertyId } }),
   ]);
   return nSyria + nSybnb;
 }
@@ -22,14 +23,14 @@ export async function countTotalReportsForOwner(ownerId: string): Promise<number
   }
   const [nSyria, nSybnb] = await Promise.all([
     prisma.syriaListingReport.count({ where: { propertyId: { in: ids } } }),
-    prisma.sybnbListingReport.count({ where: { propertyId: { in: ids } } }),
+    prisma.listingReport.count({ where: { listingId: { in: ids } } }),
   ]);
   return nSyria + nSybnb;
 }
 
 /**
- * SY8-2: after a new report, apply queue thresholds.
- * - ≥5 reports on this listing → “needs review” queue: `needsReview: true` + `status: PENDING_REVIEW` (no `needs_review` enum — same intent)
+ * SY8-2 / SYBNB-84: after a new report, apply queue thresholds.
+ * - ≥5 reports on this listing → `needsReview: true` + `status: NEEDS_REVIEW` (hidden from guest feeds until cleared)
  * - ≥5 reports total for this seller (all listings) → `owner.flagged`
  */
 export async function applySy8ReportThresholds(propertyId: string): Promise<void> {
@@ -49,17 +50,11 @@ export async function applySy8ReportThresholds(propertyId: string): Promise<void
   if (nListing >= SY8_REPORTS_THRESHOLD) {
     await prisma.syriaProperty.update({
       where: { id: p.id },
-      data: { needsReview: true, status: "PENDING_REVIEW" },
+      data: { needsReview: true, status: "NEEDS_REVIEW" },
     });
   }
   if (nSeller >= SY8_REPORTS_THRESHOLD) {
-    const owner = await prisma.syriaAppUser.findUnique({
-      where: { id: p.ownerId },
-      select: { flagged: true },
-    });
     await prisma.syriaAppUser.update({ where: { id: p.ownerId }, data: { flagged: true } });
-    if (!owner?.flagged) {
-      console.log("[SYBNB] seller flagged", { ownerId: p.ownerId, propertyId, totalReports: nSeller });
-    }
   }
+  await recomputeReputationScoreForUser(p.ownerId);
 }
