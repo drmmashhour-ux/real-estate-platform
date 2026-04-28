@@ -3,6 +3,7 @@ import { getGuestId } from "@/lib/auth/session";
 import { getLegacyDB } from "@/lib/db/legacy";
 const prisma = getLegacyDB();
 import { PAID_STORAGE_PLAN_KEYS, plans, type PlanKey } from "@/lib/billing/plans";
+import { requireCheckoutRailsOpen } from "@/lib/payment-readiness/route-guards";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,9 @@ const VALID_UPGRADE_PLANS: PlanKey[] = PAID_STORAGE_PLAN_KEYS;
  */
 export async function POST(request: NextRequest) {
   try {
+    const railBlock = requireCheckoutRailsOpen();
+    if (railBlock) return railBlock;
+
     const userId = await getGuestId();
     if (!userId) {
       return Response.json({ error: "Sign in required" }, { status: 401 });

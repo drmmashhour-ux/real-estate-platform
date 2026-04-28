@@ -42,7 +42,7 @@ export async function GET(req: Request) {
       },
     }),
     listDb.booking.count({ where: { status: "pending", expiresAt: { gt: now } } }),
-    listDb.booking.count({ where: { status: "expired" } } }),
+    listDb.booking.count({ where: { status: "expired" } }),
   ]);
 
   const confirmed = await listDb.booking.count({ where: { status: "confirmed" } }).catch(() => 0);

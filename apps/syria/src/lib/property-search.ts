@@ -77,8 +77,8 @@ export function buildPropertyWhere(
   kind: ListingKind,
   sp: Record<string, string>,
 ): Prisma.SyriaPropertyWhereInput {
-  const type =
-    kind === "sale" ? "SALE" : kind === "rent" || kind === "stay" ? "RENT" : "BNHUB";
+  const resolvedType: Prisma.SyriaPropertyWhereInput["type"] =
+    kind === "stay" ? { in: ["RENT", "HOTEL"] } : kind === "sale" ? "SALE" : kind === "rent" ? "RENT" : "BNHUB";
 
   const andParts: Prisma.SyriaPropertyWhereInput[] = [];
 
@@ -177,7 +177,7 @@ export function buildPropertyWhere(
   }
 
   const guests = num(sp.guests);
-  if (guests !== undefined && type === "BNHUB") {
+  if (guests !== undefined && kind === "bnhub") {
     andParts.push({
       OR: [{ guestsMax: null }, { guestsMax: { gte: guests } }],
     });
@@ -198,7 +198,7 @@ export function buildPropertyWhere(
   }
 
   const base: Prisma.SyriaPropertyWhereInput = {
-    type,
+    type: resolvedType,
     status: "PUBLISHED",
     fraudFlag: false,
     ...sy8FeedExtraWhere,

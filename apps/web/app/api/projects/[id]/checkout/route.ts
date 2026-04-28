@@ -11,6 +11,7 @@ import {
 } from "@/lib/projects-pricing";
 import { logError } from "@/lib/logger";
 import { getPublicAppUrl } from "@/lib/config/public-app-url";
+import { requireCheckoutRailsOpen } from "@/lib/payment-readiness/route-guards";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +21,9 @@ export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const railBlock = requireCheckoutRailsOpen();
+  if (railBlock) return railBlock;
+
   const stripe = getStripe();
   if (!stripe || !isStripeConfigured()) {
     return NextResponse.json(

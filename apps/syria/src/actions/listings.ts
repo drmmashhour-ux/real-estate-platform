@@ -15,6 +15,7 @@ import { findSyriaCityByStored } from "@/data/syriaLocations";
 import { validateBilingualListingCopy } from "@/lib/listing-bilingual-validation";
 import { allocateAdCodeInTransaction } from "@/lib/syria/ad-code";
 import { recomputeSy8FeedRankForPropertyId } from "@/lib/sy8/sy8-feed-rank-refresh";
+import { sybnbConfig } from "@/config/sybnb.config";
 
 function districtEnFromStored(cityCanonicalEn: string, areaStored: string | null | undefined): string | null {
   try {
@@ -114,7 +115,7 @@ export async function createPropertyListing(formData: FormData): Promise<void> {
   const cityEnStored = city;
   const districtEnStored = districtEnFromStored(city, area);
 
-  if (!["SALE", "RENT", "BNHUB"].includes(type)) {
+  if (!["SALE", "RENT", "BNHUB", "HOTEL"].includes(type)) {
     return;
   }
 
@@ -132,7 +133,8 @@ export async function createPropertyListing(formData: FormData): Promise<void> {
       : null;
 
   const property = await prisma.$transaction(async (tx) => {
-    const adCode = await allocateAdCodeInTransaction(tx, "real_estate");
+    const adCategory = type === "HOTEL" ? "stay" : "real_estate";
+    const adCode = await allocateAdCodeInTransaction(tx, adCategory);
     const p = await tx.syriaProperty.create({
       data: {
         adCode,
@@ -154,10 +156,10 @@ export async function createPropertyListing(formData: FormData): Promise<void> {
         longitude: coordsOk ? longitude : null,
         price: new Prisma.Decimal(price),
         currency: SYRIA_PRICING.currency,
-        type: type as "SALE" | "RENT" | "BNHUB",
-        category: "real_estate",
+        type: type as "SALE" | "RENT" | "BNHUB" | "HOTEL",
+        category: type === "HOTEL" ? "stay" : "real_estate",
         subcategory:
-          type === "RENT" ? "rent" : type === "BNHUB" ? "hotel" : "sale",
+          type === "HOTEL" ? "hotel" : type === "RENT" ? "rent" : type === "BNHUB" ? "hotel" : "sale",
         images,
         amenities,
         ownerId: user.id,
@@ -166,6 +168,11 @@ export async function createPropertyListing(formData: FormData): Promise<void> {
         isFeatured: false,
         featuredUntil: null,
         isDirect,
+        ...(type === "HOTEL"
+          ? {
+              sybnbReview: sybnbConfig.autoApproveStays ? "APPROVED" : "PENDING",
+            }
+          : {}),
       },
     });
 

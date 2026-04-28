@@ -4,6 +4,7 @@ import { getGuestId } from "@/lib/auth/session";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
 import { logError } from "@/lib/logger";
 import { initiateLeadUnlockCheckout } from "@/modules/leads/lead-monetization.service";
+import { requireCheckoutRailsOpen } from "@/lib/payment-readiness/route-guards";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,9 @@ export const dynamic = "force-dynamic";
  * Gated by `FEATURE_LEAD_MONETIZATION_V1` (returns 404 when off so legacy paths stay primary).
  */
 export async function POST(req: Request): Promise<NextResponse> {
+  const railBlock = requireCheckoutRailsOpen();
+  if (railBlock) return railBlock;
+
   if (!leadMonetizationFlags.leadMonetizationV1) {
     return NextResponse.json({ error: "Feature disabled" }, { status: 404 });
   }

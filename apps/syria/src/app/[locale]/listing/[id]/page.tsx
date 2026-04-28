@@ -169,9 +169,12 @@ export default async function ListingDetailPage(props: Props) {
 
   const hostName = listing.owner.name?.trim() || listing.owner.email.split("@")[0];
   const ownerPhone = listing.owner.phone?.trim() ?? "";
-  let waOwnerHref = ownerPhone ? buildListingWhatsAppInquiryHref(ownerPhone, titleDisplay, locale) : null;
-  let telOwnerHref = ownerPhone ? buildTelHref(ownerPhone) : null;
-  if (isSybnbStay && !SYBNB_SHOW_PHONE) {
+  const hotelContact =
+    listing.type === "HOTEL" && listing.contactPhone?.trim() ? listing.contactPhone.trim() : "";
+  const primaryPhoneLine = hotelContact || ownerPhone;
+  let waOwnerHref = primaryPhoneLine ? buildListingWhatsAppInquiryHref(primaryPhoneLine, titleDisplay, locale) : null;
+  let telOwnerHref = primaryPhoneLine ? buildTelHref(primaryPhoneLine) : null;
+  if (isSybnbStay && !SYBNB_SHOW_PHONE && listing.type !== "HOTEL") {
     waOwnerHref = null;
     telOwnerHref = null;
   }
@@ -256,7 +259,7 @@ export default async function ListingDetailPage(props: Props) {
               <ListingAdCodeQrRow listingId={id} adCode={listing.adCode} />
               <div className="mt-4 flex flex-wrap items-center gap-2">
                 <span className="rounded-full bg-[color:var(--darlink-surface-muted)] px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-[color:var(--darlink-text-muted)]">
-                  {listing.type}
+                  {listing.type === "HOTEL" ? t("badgeHotel") : listing.type}
                 </span>
                 {listing.isDirect && (listing.plan === "featured" || listing.plan === "premium") ? (
                   <span className="rounded-full bg-gradient-to-r from-emerald-100 to-amber-100/90 px-2.5 py-1 text-xs font-bold text-emerald-900 ring-1 ring-emerald-300/70">

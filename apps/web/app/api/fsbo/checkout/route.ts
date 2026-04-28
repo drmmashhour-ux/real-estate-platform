@@ -1,5 +1,6 @@
 import { getGuestId } from "@/lib/auth/session";
 import { startFsboListingPublishCheckout } from "@/lib/fsbo/publish-checkout";
+import { requireCheckoutRailsOpen } from "@/lib/payment-readiness/route-guards";
 
 export const dynamic = "force-dynamic";
 
@@ -8,6 +9,9 @@ export const dynamic = "force-dynamic";
  * Creates Stripe Checkout (or free publish in dev). Prefer this over calling /api/stripe/checkout directly.
  */
 export async function POST(request: Request) {
+  const railBlock = requireCheckoutRailsOpen();
+  if (railBlock) return railBlock;
+
   const userId = await getGuestId();
   if (!userId) {
     return Response.json({ error: "Sign in required" }, { status: 401 });

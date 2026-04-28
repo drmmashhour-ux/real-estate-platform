@@ -24,6 +24,7 @@ import { ListingContactDock } from "@/components/listing/ListingContactDock";
 import { SybnbListingViewBeacon } from "@/components/sybnb/SybnbListingViewBeacon";
 import { OfflineListingMessageDraft } from "@/components/offline/OfflineListingMessageDraft";
 import { SYBNB_SHOW_PHONE, sybnbPrioritizeContactOverBooking } from "@/lib/sybnb/config";
+import { isSybnbStayBookablePropertyType } from "@/lib/sybnb/sybnb-booking-rules";
 
 type Props = { params: Promise<{ locale: string; id: string }> };
 
@@ -53,7 +54,7 @@ export default async function SybnbListingPage(props: Props) {
   const user = await getSessionUser();
 
   const listing = await prisma.syriaProperty.findUnique({ where: { id }, include: { owner: true } });
-  if (!listing || listing.status !== "PUBLISHED" || listing.fraudFlag || listing.category !== "stay" || listing.type !== "RENT") {
+  if (!listing || listing.status !== "PUBLISHED" || listing.fraudFlag || listing.category !== "stay" || !isSybnbStayBookablePropertyType(listing.type)) {
     notFound();
   }
   if (listing.sybnbReview === "PENDING" || listing.sybnbReview === "REJECTED") {
@@ -80,9 +81,13 @@ export default async function SybnbListingPage(props: Props) {
     .slice(0, 5);
 
   const ownerPhone = listing.owner.phone?.trim() ?? "";
-  let waOwnerHref = ownerPhone ? buildWhatsAppContactHref(ownerPhone) : null;
-  let telOwnerHref = ownerPhone ? buildTelHref(ownerPhone) : null;
-  if (!SYBNB_SHOW_PHONE) {
+  const hotelContactLine =
+    listing.type === "HOTEL" && listing.contactPhone?.trim() ? listing.contactPhone.trim() : "";
+  const primaryPhone = hotelContactLine || ownerPhone;
+  let waOwnerHref = primaryPhone ? buildWhatsAppContactHref(primaryPhone) : null;
+  let telOwnerHref = primaryPhone ? buildTelHref(primaryPhone) : null;
+  const phoneVisibleForPolicy = listing.type === "HOTEL" || SYBNB_SHOW_PHONE;
+  if (!phoneVisibleForPolicy) {
     waOwnerHref = null;
     telOwnerHref = null;
   }
@@ -104,6 +109,16 @@ export default async function SybnbListingPage(props: Props) {
             <h1 className="text-2xl font-semibold tracking-tight text-neutral-900 [dir=rtl]:text-right">
               {pickListingTitle(listing, locale)}
             </h1>
+            {listing.type === "HOTEL" ? (
+              <p className="mt-2">
+                <span className="inline-flex rounded-full bg-amber-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-amber-950 ring-1 ring-amber-300/70">
+                  {t("badgeHotel")}
+                </span>
+              </p>
+            ) : null}
+            {listing.type === "HOTEL" && listing.hotelName?.trim() ? (
+              <p className="mt-2 text-sm font-medium text-neutral-700 [dir=rtl]:text-right">{listing.hotelName.trim()}</p>
+            ) : null}
             <p className="mt-1 text-sm text-neutral-500 [dir=rtl]:text-right">
               {city} · {listing.governorate ?? listing.state}
             </p>
@@ -213,7 +228,7 @@ export default async function SybnbListingPage(props: Props) {
                     waOwnerHref={waOwnerHref}
                     telOwnerHref={telOwnerHref}
                     canContact
-                    ownerHasPhone={Boolean(ownerPhone)}
+                    ownerHasPhone={Boolean(primaryPhone)}
                     primaryHeading={t("primaryContactTitle")}
                   />
                 </div>

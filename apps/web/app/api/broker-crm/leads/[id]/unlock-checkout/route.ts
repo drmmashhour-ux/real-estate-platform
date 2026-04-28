@@ -5,6 +5,7 @@ import { resolveMarketplaceLeadForCrmLead } from "@/modules/brokers/broker-conve
 import { initiateLeadUnlockCheckout } from "@/modules/leads/lead-monetization.service";
 import { maybeBlockRequestWithLegalGate } from "@/modules/legal/legal-api-gate";
 import { logError } from "@/lib/logger";
+import { requireCheckoutRailsOpen } from "@/lib/payment-readiness/route-guards";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,9 @@ type Params = { params: Promise<{ id: string }> };
  * Reuses `lead_unlock` (same as `/api/lecipm/leads/[marketplaceLeadId]/unlock-checkout`).
  */
 export async function POST(_request: Request, context: Params) {
+  const railBlock = requireCheckoutRailsOpen();
+  if (railBlock) return railBlock;
+
   const auth = await requireBrokerCrmApiUser();
   if (!auth.user) return NextResponse.json({ error: auth.error }, { status: auth.status });
 

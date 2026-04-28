@@ -1,7 +1,12 @@
-import type { SyriaAppUser, SyriaBooking, SyriaProperty } from "@/generated/prisma";
+import type { SyriaAppUser, SyriaBooking, SyriaProperty, SyriaPropertyType } from "@/generated/prisma";
 import { sybnbConfig } from "@/config/sybnb.config";
 import { hasSy8ListingStateAndCity } from "@/lib/sy8/sy8-feed-rank-compute";
 import { computeSybnbQuote } from "@/lib/sybnb/sybnb-quote";
+
+/** Stay listings that behave like SYBNB nightly stays (`RENT` + SYBNB-39 `HOTEL`). */
+export function isSybnbStayBookablePropertyType(type: SyriaPropertyType): boolean {
+  return type === "RENT" || type === "HOTEL";
+}
 
 /**
  * Eligibility for a **new** stay booking request (guest) or host **confirm** on an existing request.
@@ -53,7 +58,7 @@ export function evaluateSybnbStayRequestEligibility(
   owner: Pick<SyriaAppUser, "flagged" | "sybnbSupplyPaused" | "phoneVerifiedAt" | "verifiedAt">,
   opts?: { unreviewedReportCount?: number },
 ): { ok: true } | { ok: false; code: SybnbStayRequestBlockCode } {
-  if (property.category !== "stay" || property.type !== "RENT") {
+  if (property.category !== "stay" || !isSybnbStayBookablePropertyType(property.type)) {
     return { ok: false, code: "not_stay" };
   }
   if (!hasSy8ListingStateAndCity(property)) {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyPaymentWebhook } from "@/modules/finance/services/payment-provider-adapter";
+import { requireProductionLockForPaymentIngress } from "@/lib/payment-readiness/route-guards";
 
 export const dynamic = "force-dynamic";
 
@@ -8,6 +9,9 @@ export const dynamic = "force-dynamic";
  * Verify signature and persist events in a future iteration.
  */
 export async function POST(request: NextRequest) {
+  const ingress = requireProductionLockForPaymentIngress();
+  if (ingress) return ingress;
+
   const raw = await request.text();
   let payload: unknown;
   try {

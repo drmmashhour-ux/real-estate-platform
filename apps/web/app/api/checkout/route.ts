@@ -52,10 +52,11 @@ void bnhubDB;
  * - Stripe session creation and Connect logic stay on the existing Stripe / monolith-integrated path.
  */
 export async function POST(req: Request) {
-  assertSafeUsage("checkout route");
-  assertStripeCheckoutOnlyPolicy();
   const railBlock = requireCheckoutRailsOpen();
   if (railBlock) return railBlock;
+
+  assertSafeUsage("checkout route");
+  assertStripeCheckoutOnlyPolicy();
   const listDb = getListingsDB();
   const ip = getClientIpFromRequest(req);
   const rl = checkRateLimit(`checkout:${ip}`, { windowMs: 60_000, max: 30 });

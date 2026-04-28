@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { getGuestId } from "@/lib/auth/session";
 import { createSubscription } from "@/lib/monetization";
+import { requireCheckoutRailsOpen } from "@/lib/payment-readiness/route-guards";
 
 /**
  * POST /api/monetization/subscriptions
@@ -8,6 +9,9 @@ import { createSubscription } from "@/lib/monetization";
  */
 export async function POST(request: NextRequest) {
   try {
+    const railBlock = requireCheckoutRailsOpen();
+    if (railBlock) return railBlock;
+
     const userId = await getGuestId();
     if (!userId) return Response.json({ error: "Sign in required" }, { status: 401 });
 

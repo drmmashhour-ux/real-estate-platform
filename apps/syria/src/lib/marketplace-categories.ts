@@ -70,6 +70,7 @@ export function listingTypeForMarketplace(
   category: MarketplaceCategory,
   subcategory: string,
 ): SyriaPropertyType {
+  if (category === "stay" && subcategory === "hotel") return "HOTEL";
   if (category === "stay") return "RENT";
   if (subcategory === "rent") return "RENT";
   if (category === "real_estate" && subcategory === "hotel" && syriaFlags.BNHUB_ENABLED) {

@@ -78,7 +78,7 @@ export function PitchDeck({ metrics, narrative }: Props) {
             <div className="p-6 bg-zinc-900/50 border border-[#D4AF37]/20 rounded-3xl">
               <Zap className="w-6 h-6 text-[#D4AF37] mb-3" />
               <p className="font-black text-white text-xs uppercase tracking-widest">Instant Drafting</p>
-              <p className="text-[10px] text-zinc-500 mt-2">Generate compliant OACIQ forms in < 2 mins.</p>
+              <p className="text-[10px] text-zinc-500 mt-2">Generate compliant OACIQ forms in under 2 minutes.</p>
             </div>
             <div className="p-6 bg-zinc-900/50 border border-[#D4AF37]/20 rounded-3xl">
               <Star className="w-6 h-6 text-[#D4AF37] mb-3" />

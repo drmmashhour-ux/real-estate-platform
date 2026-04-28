@@ -37,7 +37,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
     where: {
       id,
       ownerId: user.id,
-      OR: [{ type: "BNHUB" }, { category: "stay", type: "RENT" }],
+      OR: [{ type: "BNHUB" }, { category: "stay", type: { in: ["RENT", "HOTEL"] } }],
     },
     select: { id: true },
   });

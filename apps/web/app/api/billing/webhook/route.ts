@@ -18,12 +18,12 @@ const VALID_PLANS: PlanKey[] = PAID_STORAGE_PLAN_KEYS;
  * Requires STRIPE_WEBHOOK_SECRET. Body must be raw (consumed as text) for signature verification.
  */
 export async function POST(request: NextRequest) {
+  const ingress = requireProductionLockForPaymentIngress();
+  if (ingress) return ingress;
+
   if (!isStripeConfigured()) {
     return Response.json({ error: "Webhook not configured" }, { status: 503 });
   }
-
-  const ingress = requireProductionLockForPaymentIngress();
-  if (ingress) return ingress;
 
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
   if (!webhookSecret) {

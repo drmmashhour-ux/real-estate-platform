@@ -11,6 +11,7 @@ const prisma = getLegacyDB();
 import { createPaymentSession } from "@/lib/payments/orchestrator";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
 import { logError } from "@/lib/logger";
+import { requireCheckoutRailsOpen } from "@/lib/payment-readiness/route-guards";
 
 export const dynamic = "force-dynamic";
 
@@ -39,6 +40,9 @@ const bodySchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  const railBlock = requireCheckoutRailsOpen();
+  if (railBlock) return railBlock;
+
   const ip =
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
     request.headers.get("x-real-ip") ??

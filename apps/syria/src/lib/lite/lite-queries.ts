@@ -30,7 +30,7 @@ const STAY_BROWSE_WHERE = {
   status: "PUBLISHED" as const,
   fraudFlag: false,
   category: "stay" as const,
-  type: "RENT" as const,
+  type: { in: ["RENT", "HOTEL"] as const },
   sybnbReview: "APPROVED" as const,
 };
 

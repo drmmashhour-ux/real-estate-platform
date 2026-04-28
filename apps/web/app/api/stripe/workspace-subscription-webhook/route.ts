@@ -25,6 +25,9 @@ function getStripe(): Stripe | null {
  * primary webhook and do not register this URL in Stripe (avoids duplicate processing).
  */
 export async function POST(req: Request) {
+  const ingress = requireProductionLockForPaymentIngress();
+  if (ingress) return ingress;
+
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET?.trim();
   if (!webhookSecret?.startsWith("whsec_")) {
     return NextResponse.json(
@@ -32,9 +35,6 @@ export async function POST(req: Request) {
       { status: 500 }
     );
   }
-
-  const ingress = requireProductionLockForPaymentIngress();
-  if (ingress) return ingress;
 
   const stripe = getStripe();
   if (!stripe) {

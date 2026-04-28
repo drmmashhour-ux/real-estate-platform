@@ -3,6 +3,7 @@ import { getGuestId } from "@/lib/auth/session";
 import { getStripe, isStripeConfigured } from "@/lib/stripe";
 import { PAID_STORAGE_PLAN_KEYS, plans, type PlanKey } from "@/lib/billing/plans";
 import { getPublicAppUrl } from "@/lib/config/public-app-url";
+import { requireCheckoutRailsOpen } from "@/lib/payment-readiness/route-guards";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,9 @@ const VALID_PLANS: PlanKey[] = PAID_STORAGE_PLAN_KEYS;
  */
 export async function POST(request: NextRequest) {
   try {
+    const railBlock = requireCheckoutRailsOpen();
+    if (railBlock) return railBlock;
+
     if (!isStripeConfigured()) {
       return Response.json(
         { error: "Payments are not configured" },

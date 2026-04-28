@@ -19,6 +19,7 @@ import { ensureGuestUserForPhone } from "@/lib/syria-mvp-guest";
 import { sybnbConfig } from "@/config/sybnb.config";
 import { SYBNB_ALLOW_UNVERIFIED } from "@/lib/sybnb/config";
 import { isSy8SellerVerified } from "@/lib/sy8/sy8-reputation";
+import type { SyriaPropertyType } from "@/generated/prisma";
 
 export type PersistQuickListingResult =
   | {
@@ -74,12 +75,18 @@ export async function persistQuickListing(input: {
       subcategory = defaultSubcategory(cr);
     }
   }
-  const type = listingTypeForMarketplace(category, subcategory);
-  const typeOverride: "SALE" | "RENT" | "BNHUB" =
-    input.type === "RENT" ? "RENT" : type === "BNHUB" ? "BNHUB" : type === "RENT" ? "RENT" : "SALE";
-  let finalType: "SALE" | "RENT" | "BNHUB" = input.type === "RENT" ? "RENT" : typeOverride;
+  const marketplaceType = listingTypeForMarketplace(category, subcategory);
+  let finalType: SyriaPropertyType;
   if (category === "stay") {
+    finalType = marketplaceType;
+  } else if (input.type === "RENT") {
     finalType = "RENT";
+  } else if (marketplaceType === "BNHUB") {
+    finalType = "BNHUB";
+  } else if (marketplaceType === "RENT") {
+    finalType = "RENT";
+  } else {
+    finalType = "SALE";
   }
   const images = (input.images?.filter((s): s is string => typeof s === "string" && s.length > 0) ?? []).slice(0, 5);
   const amenities = normalizeSyriaAmenityKeys(input.amenities);

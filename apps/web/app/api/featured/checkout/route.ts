@@ -8,6 +8,7 @@ import { compactStripeMetadata } from "@/lib/stripe/checkoutMetadata";
 import { getLegacyDB } from "@/lib/db/legacy";
 const prisma = getLegacyDB();
 import { trackFunnelEvent } from "@/lib/funnel/tracker";
+import { requireCheckoutRailsOpen } from "@/lib/payment-readiness/route-guards";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +17,9 @@ const BodyZ = z.object({
 });
 
 export async function POST(req: Request) {
+  const railBlock = requireCheckoutRailsOpen();
+  if (railBlock) return railBlock;
+
   if (!isStripeConfigured()) {
     return NextResponse.json({ error: "Stripe is not configured" }, { status: 503 });
   }

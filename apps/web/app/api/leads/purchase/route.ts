@@ -3,11 +3,15 @@ import { prisma } from "@/lib/db";
 import { getGuestId } from "@/lib/auth/session";
 import { createCheckoutSession } from "@/lib/stripe/checkout";
 import { getLeadPricingForBroker } from "@/modules/monetization/pricing-psychology.service";
+import { requireCheckoutRailsOpen } from "@/lib/payment-readiness/route-guards";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
   try {
+    const railBlock = requireCheckoutRailsOpen();
+    if (railBlock) return railBlock;
+
     const userId = await getGuestId();
     if (!userId) {
       return NextResponse.json({ error: "Sign in required" }, { status: 401 });

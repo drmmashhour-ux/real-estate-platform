@@ -14,10 +14,14 @@ import {
   estimateHostPayoutableFromSupabase,
   type HostPayoutEstimate,
 } from "@/lib/bookings/get-host-payout-estimate";
+import { requireCheckoutRailsOpen } from "@/lib/payment-readiness/route-guards";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
+  const railBlock = requireCheckoutRailsOpen();
+  if (railBlock) return railBlock;
+
   if (!isStripeConfigured()) {
     return Response.json({ error: "Stripe is not configured" }, { status: 503 });
   }

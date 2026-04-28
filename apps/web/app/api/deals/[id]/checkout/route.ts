@@ -9,6 +9,7 @@ import { getLegacyDB } from "@/lib/db/legacy";
 const prisma = getLegacyDB();
 import { createCheckoutSession } from "@/lib/stripe/checkout";
 import { isStripeConfigured } from "@/lib/stripe";
+import { requireCheckoutRailsOpen } from "@/lib/payment-readiness/route-guards";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +17,9 @@ export async function POST(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
+  const railBlock = requireCheckoutRailsOpen();
+  if (railBlock) return railBlock;
+
   const userId = await getGuestId();
   if (!userId) return Response.json({ error: "Sign in required" }, { status: 401 });
   if (!isStripeConfigured()) {

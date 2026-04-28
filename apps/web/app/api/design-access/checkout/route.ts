@@ -3,6 +3,7 @@ import { getGuestId } from "@/lib/auth/session";
 import { getStripe, isStripeConfigured } from "@/lib/stripe";
 import { DESIGN_ACCESS_AMOUNT } from "@/lib/design-access";
 import { getPublicAppUrl } from "@/lib/config/public-app-url";
+import { requireCheckoutRailsOpen } from "@/lib/payment-readiness/route-guards";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +15,9 @@ const AMOUNT_CENTS = Math.round(DESIGN_ACCESS_AMOUNT * 100);
  */
 export async function POST(request: NextRequest) {
   try {
+    const railBlock = requireCheckoutRailsOpen();
+    if (railBlock) return railBlock;
+
     if (!isStripeConfigured()) {
       return Response.json(
         { error: "Payments are not configured" },

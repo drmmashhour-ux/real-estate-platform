@@ -26,7 +26,7 @@
     "db:use-local": "node scripts/use-local-db.js",
     "test-db": "npx tsx scripts/test-db.ts",
     "system:check": "node scripts/full-system-check.js",
-    "db:check": "ts-node --transpileOnly -P tsconfig.json scripts/validate-db-url.ts",
+    "db:check": "tsx scripts/validate-db-url.ts",
     "db:check-env": "npx tsx scripts/check-db-env.ts",
     "db:test-raw": "npx tsx scripts/test-db-connection.ts",
     "postinstall": "prisma generate --schema=./prisma/schema.prisma && pnpm run prisma:generate:split",

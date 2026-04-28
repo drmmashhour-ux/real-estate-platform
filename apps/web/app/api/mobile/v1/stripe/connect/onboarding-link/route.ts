@@ -14,10 +14,14 @@ import type { NextRequest } from "next/server";
 import { getMobileAuthUser } from "@/lib/mobile/mobileAuth";
 import { resolvePrismaUserIdForConnect } from "@/lib/mobile/resolvePrismaUserForConnect";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
+import { requireCheckoutRailsOpen } from "@/lib/payment-readiness/route-guards";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
+  const railBlock = requireCheckoutRailsOpen();
+  if (railBlock) return railBlock;
+
   if (!isStripeConfigured()) {
     return Response.json({ error: "Stripe is not configured" }, { status: 503 });
   }

@@ -4,6 +4,7 @@ import { getStripe, isStripeConfigured } from "@/lib/stripe";
 import { PAID_STORAGE_PLAN_KEYS, plans, type PlanKey } from "@/lib/billing/plans";
 import { trackGrowthFunnelEvent } from "@/src/modules/growth-funnel/application/trackGrowthFunnelEvent";
 import { getPublicAppUrl } from "@/lib/config/public-app-url";
+import { requireCheckoutRailsOpen } from "@/lib/payment-readiness/route-guards";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,9 @@ const VALID_PLANS: PlanKey[] = PAID_STORAGE_PLAN_KEYS;
  * Tracks upgrade_started, returns Stripe Checkout URL (same billing as /api/billing/checkout).
  */
 export async function POST(req: Request) {
+  const railBlock = requireCheckoutRailsOpen();
+  if (railBlock) return railBlock;
+
   if (!isStripeConfigured()) {
     return NextResponse.json({ error: "Payments are not configured" }, { status: 503 });
   }

@@ -16,7 +16,7 @@ export function PageSpinner({ label = "Loading…", className = "" }: Props) {
         className="h-10 w-10 animate-spin rounded-full border-2 border-premium-gold/30 border-t-[var(--color-premium-gold)]"
         aria-hidden
       />
-      <p className="text-sm text-slate-400">{label}</p>
+      <p className="text-sm text-premium-text-muted">{label}</p>
     </div>
   );
 }

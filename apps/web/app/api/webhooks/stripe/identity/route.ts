@@ -9,6 +9,7 @@ import { applyIdentityWebhookUpdate } from "@/modules/bnhub-trust/services/ident
 import { StripeIdentityAdapter } from "@/modules/bnhub-trust/connectors/stripeIdentityAdapter";
 import { logTrustAudit } from "@/modules/bnhub-trust/services/trustDecisionAuditService";
 import { BnhubTrustIdentityAuditActor } from "@prisma/client";
+import { requireProductionLockForPaymentIngress } from "@/lib/payment-readiness/route-guards";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +20,9 @@ function getStripe(): Stripe | null {
 }
 
 export async function POST(req: NextRequest) {
+  const ingress = requireProductionLockForPaymentIngress();
+  if (ingress) return ingress;
+
   const secret =
     process.env.STRIPE_IDENTITY_WEBHOOK_SECRET?.trim() ?? process.env.STRIPE_WEBHOOK_SECRET?.trim();
   if (!secret?.startsWith("whsec_")) {

@@ -9,6 +9,7 @@ import {
   countBrokerMarketplacePurchasesThisMonth,
   getBrokerEntitlementsForUser,
 } from "@/modules/subscription/application/getBrokerEntitlements";
+import { requireCheckoutRailsOpen } from "@/lib/payment-readiness/route-guards";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +17,9 @@ export const dynamic = "force-dynamic";
  * POST /api/lead-marketplace/checkout — Stripe Checkout for purchasing a marketplace lead.
  */
 export async function POST(req: Request) {
+  const railBlock = requireCheckoutRailsOpen();
+  if (railBlock) return railBlock;
+
   const gate = await requireBrokerOrAdminApi();
   if (!gate.ok) return gate.response;
 

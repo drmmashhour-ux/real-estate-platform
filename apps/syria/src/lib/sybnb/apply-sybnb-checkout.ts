@@ -4,6 +4,7 @@ import { revalidateSyriaPaths } from "@/lib/revalidate-locale";
 import { assertSybnbPaymentCompleteAsync } from "./payment-policy";
 import { appendSyriaSybnbCoreAudit } from "./sybnb-financial-audit";
 import { isAllowedSybnbStayStatusTransition } from "./sybnb-state-machine";
+import { maybeRecordSybnbAgentEarningForPaidSyriaBooking } from "./sybnb-agent-commission";
 
 export type SybnbCheckoutApplyError =
   | { status: 404; code: "not_found" }
@@ -91,6 +92,8 @@ export async function applySybnbCheckoutComplete(
     bookingId: booking.id,
     payload: { source: options?.growthEventSource ?? "sybnb_checkout" },
   });
+
+  await maybeRecordSybnbAgentEarningForPaidSyriaBooking(booking.id);
 
   await revalidateSyriaPaths("/dashboard/bookings", "/admin/bookings", "/sybnb", `/listing/${booking.propertyId}`);
 

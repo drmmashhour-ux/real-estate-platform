@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { POST } from "./route";
 
 vi.mock("@/lib/auth/session", () => ({
@@ -80,6 +80,8 @@ import { persistLaunchEvent } from "@/src/modules/launch/persistLaunchEvent";
 
 describe("POST /api/stripe/checkout", () => {
   beforeEach(() => {
+    process.env.PRODUCTION_LOCK_MODE = "true";
+    process.env.PAYMENTS_ENABLED = "true";
     process.env.NEXT_PUBLIC_APP_URL = "http://localhost:3001";
     vi.mocked(isStripeConfigured).mockReturnValue(true);
     vi.mocked(createGuestSupabaseBookingCheckoutSession).mockReset();
@@ -328,5 +330,51 @@ describe("POST /api/stripe/checkout", () => {
     });
     const res = await POST(req as never);
     expect(res.status).toBe(403);
+  });
+
+  describe("checkout rails latch", () => {
+    afterEach(() => {
+      vi.unstubAllEnvs();
+    });
+
+    it("returns 503 when PRODUCTION_LOCK_MODE is not true", async () => {
+      vi.stubEnv("PRODUCTION_LOCK_MODE", "false");
+      vi.stubEnv("PAYMENTS_ENABLED", "true");
+      const req = new Request("http://x/api/stripe/checkout", {
+        method: "POST",
+        body: JSON.stringify({
+          successUrl: "https://a.com/s",
+          cancelUrl: "https://a.com/c",
+          amountCents: 2500,
+          paymentType: "booking",
+          bookingId: "booking-1",
+        }),
+        headers: { "Content-Type": "application/json" },
+      });
+      const res = await POST(req as never);
+      expect(res.status).toBe(503);
+      const data = await res.json();
+      expect(data.code).toBe("production_lock_disabled");
+    });
+
+    it("returns 503 when PAYMENTS_ENABLED is false", async () => {
+      vi.stubEnv("PRODUCTION_LOCK_MODE", "true");
+      vi.stubEnv("PAYMENTS_ENABLED", "false");
+      const req = new Request("http://x/api/stripe/checkout", {
+        method: "POST",
+        body: JSON.stringify({
+          successUrl: "https://a.com/s",
+          cancelUrl: "https://a.com/c",
+          amountCents: 2500,
+          paymentType: "booking",
+          bookingId: "booking-1",
+        }),
+        headers: { "Content-Type": "application/json" },
+      });
+      const res = await POST(req as never);
+      expect(res.status).toBe(503);
+      const data = await res.json();
+      expect(data.code).toBe("payments_disabled");
+    });
   });
 });

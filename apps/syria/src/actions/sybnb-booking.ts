@@ -11,7 +11,10 @@ import { assertDarlinkRuntimeEnv } from "@/lib/guard";
 import { sybnbConfig } from "@/config/sybnb.config";
 import { computeSybnbQuote } from "@/lib/sybnb/sybnb-quote";
 import { computeReleaseEligibleAt, refreshSybnbEscrowEligibilityForCompletedStays } from "@/lib/sybnb/payout-release-policy";
-import { evaluateSybnbStayRequestEligibility } from "@/lib/sybnb/sybnb-booking-rules";
+import {
+  evaluateSybnbStayRequestEligibility,
+  isSybnbStayBookablePropertyType,
+} from "@/lib/sybnb/sybnb-booking-rules";
 import { countUnreviewedSybnbReportsForProperty } from "@/lib/sybnb/sybnb-reports";
 import { appendSyriaSybnbCoreAudit } from "@/lib/sybnb/sybnb-financial-audit";
 import { logTimelineEvent } from "@/lib/timeline/log-event";
@@ -89,7 +92,7 @@ export async function runSybnbPostStayCompletion(): Promise<void> {
 }
 
 /**
- * Request-to-book for SYBNB (`category=stay`, `type=RENT`). Host confirms from dashboard; payout row created like BNHUB.
+ * Request-to-book for SYBNB (`category=stay`, types `RENT` | `HOTEL`). Host confirms from dashboard; payout row created like BNHUB.
  */
 export async function createSybnbStayBooking(formData: FormData): Promise<void> {
   assertDarlinkRuntimeEnv();
@@ -119,7 +122,7 @@ export async function createSybnbStayBooking(formData: FormData): Promise<void> 
     where: { id: propertyId },
     include: { owner: true },
   });
-  if (!property || property.category !== "stay" || property.type !== "RENT") {
+  if (!property || property.category !== "stay" || !isSybnbStayBookablePropertyType(property.type)) {
     return;
   }
   const unreviewed = await countUnreviewedSybnbReportsForProperty(property.id);

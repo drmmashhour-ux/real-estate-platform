@@ -56,10 +56,18 @@ enum SybnbRiskState {
   blocked
 }
 
+/// SYBNB-35 — field-agent commission ledger (paid from platform fee share).
+enum SybnbAgentEarningStatus {
+  pending
+  approved
+  paid
+}
+
 enum SyriaPropertyType {
   SALE
   RENT
   BNHUB
+  HOTEL
 }
 
 enum SyriaPropertyStatus {
@@ -197,6 +205,7 @@ model SyriaAppUser {
   sybnbReportsFiled     SybnbListingReport[]    @relation("SybnbListingReportReporter")
   sybnbAnalyticsEvents  SybnbEvent[]             @relation("SybnbAnalyticsEventActor")
   sybnbFieldAgentAttributions SyriaProperty[]   @relation("SybnbListingFieldAgent")
+  sybnbAgentEarnings      SybnbAgentEarning[]      @relation("SybnbAgentEarningAgent")
 
   @@map("syria_users")
 }
@@ -302,6 +311,11 @@ model SyriaProperty {
   adCode           String              @unique @map("ad_code")
   /// SYBNB: stay subtype — stay | apartment | room | villa | chalet (optional).
   sybnbStayType    String?             @map("sybnb_stay_type")
+  /// SYBNB-39: optional hotel identity + ops fields when `type = HOTEL`.
+  hotelName           String?   @map("hotel_name") @db.Text
+  roomsAvailable      Int?      @map("rooms_available")
+  contactPhone        String?   @map("contact_phone")
+  receptionAvailable  Boolean?  @map("reception_available")
   createdAt        DateTime            @default(now()) @map("created_at")
   updatedAt        DateTime            @updatedAt @map("updated_at")
   /// Investor-demo seed marker — excluded from aggregate fraud/payment metrics when set.
@@ -522,10 +536,28 @@ model SyriaBooking {
 
   payouts          SyriaPayout[]
   sybnbCoreAudits  SyriaSybnbCoreAudit[]
+  sybnbAgentEarning SybnbAgentEarning?
 
   @@index([propertyId])
   @@index([guestId])
   @@map("syria_bookings")
+}
+
+/// SYBNB-35 — agent commission accrual per paid stay (`SyriaBooking`); amount derived from platform fee only.
+model SybnbAgentEarning {
+  id        String                   @id @default(cuid())
+  agentId   String                   @map("agent_id")
+  agent     SyriaAppUser             @relation("SybnbAgentEarningAgent", fields: [agentId], references: [id], onDelete: Cascade)
+  bookingId String                   @unique @map("booking_id")
+  booking   SyriaBooking             @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  amount    Decimal                  @db.Decimal(14, 2)
+  currency  String                   @default("SYP")
+  status    SybnbAgentEarningStatus  @default(pending)
+  createdAt DateTime                 @default(now()) @map("created_at")
+
+  @@index([agentId])
+  @@index([status])
+  @@map("sybnb_agent_earnings")
 }
 
 /// Append-only financial / payment events for SYBNB on `SyriaBooking` (no updates or deletes in app).

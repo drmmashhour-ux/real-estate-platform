@@ -52,6 +52,20 @@ export default async function AdminHomePage() {
         <p className="mt-2 text-sm text-stone-700">{t("revOptHomeTileDesc")}</p>
       </Link>
       <Link
+        href="/admin/sybnb/expansion-readiness"
+        className="rounded-2xl border border-stone-300 bg-gradient-to-br from-stone-50 to-white p-6 shadow-sm hover:border-stone-400 md:col-span-2"
+      >
+        <h2 className="text-lg font-semibold text-stone-900">{t("navSybnbExpansionReadiness")}</h2>
+        <p className="mt-2 text-sm text-stone-700">{t("expReadyHomeTileDesc")}</p>
+      </Link>
+      <Link
+        href="/admin/sybnb/agent-commission"
+        className="rounded-2xl border border-stone-300 bg-gradient-to-br from-stone-50 to-white p-6 shadow-sm hover:border-stone-400 md:col-span-2"
+      >
+        <h2 className="text-lg font-semibold text-stone-900">{t("navSybnbAgentCommission")}</h2>
+        <p className="mt-2 text-sm text-stone-700">{t("agentCommHomeTileDesc")}</p>
+      </Link>
+      <Link
         href="/admin/listings"
         className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm hover:border-stone-300"
       >

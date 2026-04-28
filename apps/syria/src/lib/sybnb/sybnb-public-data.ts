@@ -7,7 +7,7 @@ import { sy8FeedExtraWhere } from "@/lib/sy8/sy8-feed-visibility";
 const sybnbBrowseWhere: Prisma.SyriaPropertyWhereInput = {
   ...sy8FeedExtraWhere,
   category: "stay",
-  type: "RENT",
+  type: { in: ["RENT", "HOTEL"] },
   status: "PUBLISHED",
   sybnbReview: "APPROVED",
   fraudFlag: false,

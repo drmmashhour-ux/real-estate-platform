@@ -217,7 +217,9 @@ export async function POST(request: NextRequest) {
     void recordFunnelPricing(listingId, booking.id, pricingBreakdown.totalCents).catch(() => {});
 
     // Step 4: Conversion funnel wiring — check if user had saved this listing
-    if (guestId) {
+    void (async () => {
+      try {
+        if (guestId) {
           const saved = await prisma.buyerSavedListing.findUnique({
             where: { userId_fsboListingId: { userId: guestId, fsboListingId: listingId } },
           });

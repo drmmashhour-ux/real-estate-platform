@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import type { SybnbBooking, SyriaProperty, SyriaAppUser, SyriaUserRole } from "@/generated/prisma";
+import { isSybnbStayBookablePropertyType } from "@/lib/sybnb/sybnb-booking-rules";
 import { countReportsForProperty } from "@/lib/sy8/sy8-report-threshold";
 import { isSy8SellerVerified } from "@/lib/sy8/sy8-reputation";
 import { computeSybnbV1BookingRiskScore, sybnbRiskStateFromScore } from "@/lib/sybnb/sybnb-v1-booking-risk";
@@ -56,7 +57,7 @@ export async function createSybnbV1Request(input: {
   if (!listing) {
     return { ok: false, code: "not_found" };
   }
-  if (listing.category !== "stay" || listing.type !== "RENT") {
+  if (listing.category !== "stay" || !isSybnbStayBookablePropertyType(listing.type)) {
     return { ok: false, code: "not_stay" };
   }
   if (listing.status !== "PUBLISHED") {

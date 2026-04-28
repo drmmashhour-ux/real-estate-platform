@@ -5,6 +5,7 @@ import {
   resetManualPaymentPending,
   setManualPaymentFailed,
 } from "@/lib/bnhub/booking";
+import { requireCheckoutRailsOpen } from "@/lib/payment-readiness/route-guards";
 
 type Body = { bookingId?: string; action?: string; note?: string };
 
@@ -13,6 +14,9 @@ type Body = { bookingId?: string; action?: string; note?: string };
  * Body: `{ bookingId, action: "received" | "failed" | "reset_pending", note? }`
  */
 export async function PATCH(request: NextRequest) {
+  const railBlock = requireCheckoutRailsOpen();
+  if (railBlock) return railBlock;
+
   const userId = await getGuestId();
   if (!userId) return Response.json({ error: "Sign in required" }, { status: 401 });
   let body: Body = {};

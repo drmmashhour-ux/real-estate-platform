@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { requireAdminSession } from "@/lib/admin/require-admin";
 import { verifyCronBearer } from "@/lib/server/internal-cron-auth";
 import { activateFeaturedPlacement, type FeaturedListingKind } from "@/src/modules/featured/featured-activation.service";
+import { requireCheckoutRailsOpen } from "@/lib/payment-readiness/route-guards";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +11,9 @@ export const dynamic = "force-dynamic";
  * Body: { listingKind: "fsbo" | "bnhub", listingId, durationDays?, priority?, source? }
  */
 export async function POST(request: NextRequest) {
+  const railBlock = requireCheckoutRailsOpen();
+  if (railBlock) return railBlock;
+
   const body = (await request.json().catch(() => ({}))) as {
     listingKind?: FeaturedListingKind;
     listingId?: string;

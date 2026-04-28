@@ -300,6 +300,12 @@ async function syncConnectedAccountStatusFromEvent(stripe: Stripe, accountId: st
 const isProdRuntime = process.env.NODE_ENV === "production" || process.env.VERCEL === "1";
 
 export async function POST(req: NextRequest) {
+  const ingressLocked = requireProductionLockForPaymentIngress();
+  if (ingressLocked) {
+    logError("[STRIPE] webhook blocked — PRODUCTION_LOCK_MODE is not true");
+    return ingressLocked;
+  }
+
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET?.trim();
   if (!webhookSecret) {
     logError("STRIPE_WEBHOOK_SECRET is not set");
@@ -320,12 +326,6 @@ export async function POST(req: NextRequest) {
   if (stripeKeyErr) {
     logError(`[STRIPE] ${stripeKeyErr}`);
     return Response.json({ error: stripeKeyErr }, { status: 503 });
-  }
-
-  const ingressLocked = requireProductionLockForPaymentIngress();
-  if (ingressLocked) {
-    logError("[STRIPE] webhook blocked — PRODUCTION_LOCK_MODE is not true");
-    return ingressLocked;
   }
 
   const stripe = getStripe();

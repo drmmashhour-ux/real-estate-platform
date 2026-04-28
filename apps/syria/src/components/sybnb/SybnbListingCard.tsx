@@ -23,6 +23,7 @@ type Props = {
  */
 export async function SybnbListingCard({ property: p, locale, activeListings, soldListings, showExcellentDeal }: Props) {
   const t = await getTranslations("Sybnb.home");
+  const tListing = await getTranslations("Sybnb.listing");
   const tSp = await getTranslations("Sybnb.smartPricing");
   const cover = p.images[0] ?? null;
   const city = getLocalizedPropertyCity(p, locale);
@@ -43,6 +44,11 @@ export async function SybnbListingCard({ property: p, locale, activeListings, so
           {showExcellentDeal ? (
             <span className="absolute left-2 top-2 rounded-full bg-teal-600 px-2 py-0.5 text-[10px] font-bold text-white shadow ring-1 ring-teal-300/80">
               {tSp("excellentDealBadge")}
+            </span>
+          ) : null}
+          {p.type === "HOTEL" ? (
+            <span className="absolute right-2 top-2 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-950 ring-1 ring-amber-300/70">
+              {tListing("badgeHotel")}
             </span>
           ) : null}
         </div>

@@ -10,10 +10,14 @@ import { stripeAppBaseUrl } from "@/lib/stripe/app-base-url";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limit";
 import { createHostAccountOnboardingLink, isBnhubHostConnectEligible } from "@/lib/stripe/hostConnectExpress";
 import { recordPlatformEvent } from "@/lib/observability";
+import { requireCheckoutRailsOpen } from "@/lib/payment-readiness/route-guards";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
+  const railBlock = requireCheckoutRailsOpen();
+  if (railBlock) return railBlock;
+
   if (!isStripeConfigured()) {
     return Response.json({ error: "Stripe is not configured" }, { status: 503 });
   }

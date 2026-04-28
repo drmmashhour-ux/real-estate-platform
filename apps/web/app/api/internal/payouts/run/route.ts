@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { runBnhubPayoutRunner } from "@/lib/payouts/runner";
+import { requireCheckoutRailsOpen } from "@/lib/payment-readiness/route-guards";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +17,9 @@ export async function POST(request: NextRequest) {
   if (token !== secret) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const railBlock = requireCheckoutRailsOpen();
+  if (railBlock) return railBlock;
 
   const result = await runBnhubPayoutRunner();
   return NextResponse.json(result);

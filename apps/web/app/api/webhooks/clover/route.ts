@@ -3,6 +3,7 @@ import { logError, logInfo, logWarn } from "@/lib/logger";
 import { parseCloverHostedCheckoutWebhook } from "@/lib/payments/clover/parseWebhook";
 import { verifyCloverHostedCheckoutSignature } from "@/lib/payments/clover/verifyWebhookSignature";
 import { markOrchestratedPaymentFromCloverSession } from "@/lib/payments/webhook-bridge";
+import { requireProductionLockForPaymentIngress } from "@/lib/payment-readiness/route-guards";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +12,9 @@ export const dynamic = "force-dynamic";
  * Configure URL + signing secret in Clover Dashboard (Ecommerce → Hosted Checkout).
  */
 export async function POST(req: NextRequest) {
+  const ingress = requireProductionLockForPaymentIngress();
+  if (ingress) return ingress;
+
   const secret = process.env.CLOVER_WEBHOOK_SIGNING_SECRET?.trim();
   if (!secret) {
     logWarn("CLOVER_WEBHOOK_SIGNING_SECRET not set — rejecting Clover webhook");

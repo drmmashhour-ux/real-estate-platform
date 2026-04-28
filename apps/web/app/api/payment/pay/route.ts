@@ -3,6 +3,7 @@ import { getLegacyDB } from "@/lib/db/legacy";
 const prisma = getLegacyDB();
 import { getGuestId } from "@/lib/auth/session";
 import { generateCanvaInvoice } from "@/lib/invoice/generate";
+import { requireCheckoutRailsOpen } from "@/lib/payment-readiness/route-guards";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,9 @@ export const dynamic = "force-dynamic";
  * Mock: marks usage as paid, creates CanvaInvoice. Later connect Stripe.
  */
 export async function POST(request: NextRequest) {
+  const railBlock = requireCheckoutRailsOpen();
+  if (railBlock) return railBlock;
+
   if (process.env.NODE_ENV === "production") {
     return Response.json(
       { error: "This payment path is disabled in production. Use Stripe checkout when available." },

@@ -5,6 +5,7 @@ import { logError } from "@/lib/logger";
 import { initiateLeadUnlockCheckout } from "@/modules/leads/lead-monetization.service";
 import { assignLeadFromCrmLeadId } from "@/modules/brokers/broker-leads.service";
 import { maybeBlockRequestWithLegalGate } from "@/modules/legal/legal-api-gate";
+import { requireCheckoutRailsOpen } from "@/lib/payment-readiness/route-guards";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,9 @@ export async function POST(
   _request: NextRequest,
   context: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
+  const railBlock = requireCheckoutRailsOpen();
+  if (railBlock) return railBlock;
+
   const { id: leadId } = await context.params;
   if (!leadId?.trim()) {
     return NextResponse.json({ error: "Invalid lead" }, { status: 400 });

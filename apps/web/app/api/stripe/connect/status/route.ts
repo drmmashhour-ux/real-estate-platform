@@ -7,10 +7,14 @@ import { getGuestId } from "@/lib/auth/session";
 import { getStripe, isStripeConfigured } from "@/lib/stripe";
 import { syncHostOnboardingCompleteFromStripe } from "@/lib/stripe/hostConnectExpress";
 import { upsertHostStripeAccountSnapshot } from "@/lib/stripe/connect/persist-snapshot";
+import { requireCheckoutRailsOpen } from "@/lib/payment-readiness/route-guards";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  const railBlock = requireCheckoutRailsOpen();
+  if (railBlock) return railBlock;
+
   if (!isStripeConfigured()) {
     return Response.json({ error: "Stripe is not configured" }, { status: 503 });
   }

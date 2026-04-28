@@ -14,6 +14,7 @@ import {
 import { trackFunnelEvent } from "@/lib/funnel/tracker";
 import { ListingAnalyticsKind } from "@prisma/client";
 import { incrementUnlockCheckoutStart } from "@/lib/listings/listing-analytics-service";
+import { requireCheckoutRailsOpen } from "@/lib/payment-readiness/route-guards";
 import { logInfo, logWarn } from "@/lib/logger";
 import { stripeSecretBlockedInTestMode } from "@/lib/stripe/test-mode-stripe-guard";
 
@@ -25,6 +26,9 @@ const BodyZ = z.object({
 });
 
 export async function POST(req: Request) {
+  const railBlock = requireCheckoutRailsOpen();
+  if (railBlock) return railBlock;
+
   if (!isStripeConfigured()) {
     return NextResponse.json({ error: "Stripe is not configured" }, { status: 503 });
   }

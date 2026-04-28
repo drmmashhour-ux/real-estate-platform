@@ -2,6 +2,8 @@ import { stripe } from "@/lib/stripe";
 import { authPrisma, monolithPrisma } from "@/lib/db";
 import { requireAuth } from "@/lib/auth/middleware";
 
+import { requireCheckoutRailsOpen } from "@/lib/payment-readiness/route-guards";
+
 export const dynamic = "force-dynamic";
 
 const DEFAULT_COUNTRY = (process.env.STRIPE_CONNECT_DEFAULT_COUNTRY ?? "CA").toUpperCase();
@@ -11,6 +13,9 @@ const DEFAULT_COUNTRY = (process.env.STRIPE_CONNECT_DEFAULT_COUNTRY ?? "CA").toU
  * Persists `User.stripeAccountId` (already on schema). For BNHub-guarded flows see `/api/stripe/connect/create-account`.
  */
 export async function POST(_req: Request) {
+  const railBlock = requireCheckoutRailsOpen();
+  if (railBlock) return railBlock;
+
   if (!stripe) {
     return Response.json(
       { error: "Stripe is not configured (set STRIPE_SECRET_KEY or disable demo mode)" },

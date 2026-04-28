@@ -56,6 +56,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <Link href="/admin/sybnb/revenue-optimization" className="hover:underline">
             {t("navSybnbRevenueOptimization")}
           </Link>
+          <Link href="/admin/sybnb/expansion-readiness" className="hover:underline">
+            {t("navSybnbExpansionReadiness")}
+          </Link>
+          <Link href="/admin/sybnb/agent-commission" className="hover:underline">
+            {t("navSybnbAgentCommission")}
+          </Link>
           <Link href="/admin/payouts" className="hover:underline">
             {t("navPayouts")}
           </Link>
