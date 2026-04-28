@@ -18,6 +18,7 @@ const tier: Record<SyriaListingPlan, number> = {
   free: 0,
   featured: 1,
   premium: 2,
+  hotel_featured: 3,
 };
 
 /**
@@ -30,6 +31,8 @@ export function f1AmountForPlan(plan: F1PlanKey, views?: number): number {
 
 /** True if listing can request an upgrade to `target` (no downgrades; premium is top). */
 export function f1CanRequestPlan(current: SyriaListingPlan, target: F1PlanKey): boolean {
+  /** SYBNB-41 hotel subscriptions are activated manually — no self-serve F1 swap-down. */
+  if (current === "hotel_featured") return false;
   if (target === "featured") return current === "free";
   if (target === "premium") return current === "free" || current === "featured";
   return false;

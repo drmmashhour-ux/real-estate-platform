@@ -8,6 +8,7 @@ import { getMonetizationAdminContact } from "@/lib/monetization-contact";
 import { buildWhatsAppPrefillUrl } from "@/lib/syria-phone";
 import { getSybnbFeaturedUsdBand } from "@/lib/sybnb/sybnb-early-monetization";
 import { getSybnbFeaturedMaxPerPage } from "@/lib/sybnb/featured-feed-cap";
+import { getSybnbHotelSubscriptionUsdBand } from "@/lib/sybnb/sybnb-hotel-monetization";
 export default async function SybnbHostPage(props: { params: Promise<{ locale: string }> }) {
   const { locale } = await props.params;
   const t = await getTranslations("Sybnb.host");
@@ -47,6 +48,15 @@ export default async function SybnbHostPage(props: { params: Promise<{ locale: s
     process.env.NEXT_PUBLIC_SYBNB_FEATURED_OUTREACH_AR?.trim() || t("monetizationPitchAr");
   const waPitchHref =
     monetizationContact && outreachAr ? buildWhatsAppPrefillUrl(monetizationContact.displayPhone, outreachAr) : null;
+
+  const hasHotelListing = listings.some((l) => l.type === "HOTEL");
+  const hotelUsdBand = getSybnbHotelSubscriptionUsdBand();
+  const hotelPitchAr =
+    process.env.NEXT_PUBLIC_SYBNB_HOTEL_SUB_OUTREACH_AR?.trim() || t("hotelPartnerPitchAr");
+  const waHotelHref =
+    monetizationContact && hotelPitchAr ?
+      buildWhatsAppPrefillUrl(monetizationContact.displayPhone, hotelPitchAr)
+    : null;
 
   return (
     <div className="space-y-10">
@@ -153,6 +163,52 @@ export default async function SybnbHostPage(props: { params: Promise<{ locale: s
           </Link>
         </p>
       </section>
+
+      {hasHotelListing ? (
+        <section className="space-y-3 rounded-2xl border border-teal-300/70 bg-gradient-to-br from-teal-50 via-white to-stone-50 p-5 shadow-sm [dir=rtl]:text-right">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-teal-900/90">{t("hotelPartnerKicker")}</p>
+          <h2 className="text-base font-semibold text-neutral-900">{t("hotelPartnerTitle")}</h2>
+          <p className="text-sm leading-relaxed text-neutral-700">
+            {t("hotelPartnerLead", { min: String(hotelUsdBand.min), max: String(hotelUsdBand.max) })}
+          </p>
+          <h3 className="mt-3 text-xs font-semibold uppercase tracking-wide text-neutral-600">{t("hotelPartnerBenefitsTitle")}</h3>
+          <ul className="mt-2 list-disc space-y-1 ps-5 text-sm text-neutral-700">
+            <li>{t("hotelPartnerBenefit1")}</li>
+            <li>{t("hotelPartnerBenefit2")}</li>
+            <li>{t("hotelPartnerBenefit3")}</li>
+          </ul>
+          <p className="mt-3 text-sm font-medium text-teal-950">
+            {t("hotelPartnerPriceHint", { min: String(hotelUsdBand.min), max: String(hotelUsdBand.max) })}
+          </p>
+          <p className="mt-2 text-xs leading-relaxed text-neutral-600">{t("hotelPartnerManual")}</p>
+          <p className="mt-4 text-xs font-semibold text-neutral-700">{t("hotelPartnerPitchLabel")}</p>
+          <pre className="mt-2 max-h-28 overflow-auto whitespace-pre-wrap rounded-lg border border-teal-200/80 bg-white/90 p-3 text-xs leading-relaxed text-neutral-900 [dir=rtl]:text-right">
+            {hotelPitchAr}
+          </pre>
+          <p className="mt-2 text-xs text-neutral-500">{t("hotelPartnerPitchEnHint")}</p>
+          <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+            {waHotelHref ? (
+              <a
+                href={waHotelHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl bg-teal-700 px-4 py-2 text-center text-xs font-semibold text-white shadow-sm hover:bg-teal-800"
+              >
+                {t("hotelPartnerWaCta")}
+              </a>
+            ) : (
+              <p className="text-xs text-teal-900/90">{t("monetizationNoPhone")}</p>
+            )}
+            <Link
+              href="/dashboard/listings"
+              className="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl border border-neutral-300 bg-white px-4 py-2 text-center text-xs font-semibold text-neutral-900 hover:bg-neutral-50"
+            >
+              {t("monetizationDashCta")}
+            </Link>
+          </div>
+          <p className="mt-2 text-[11px] text-neutral-500">{t("hotelPartnerDashHint")}</p>
+        </section>
+      ) : null}
 
       <div className="grid gap-4 md:grid-cols-2">
         <div className="rounded-2xl border border-amber-300/80 bg-gradient-to-br from-amber-50 via-white to-stone-50 p-5 shadow-sm [dir=rtl]:text-right">

@@ -63,6 +63,21 @@ export function parseAmenityTags(raw: string | undefined): string[] {
     .slice(0, 16);
 }
 
+/** Merge `amenities` + `features` URL params into one tag list (substring rules apply via `listingMatchesAmenityTags`). */
+export function collectAmenityFilterTags(sp: Record<string, string>): string[] {
+  const fromAmenities = parseAmenityTags(sp.amenities);
+  const fromFeatures = parseFeaturesQuery(sp.features);
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const t of [...fromAmenities, ...fromFeatures]) {
+    const lower = t.toLowerCase();
+    if (seen.has(lower)) continue;
+    seen.add(lower);
+    out.push(lower);
+  }
+  return out.slice(0, 24);
+}
+
 export function listingMatchesAmenityTags(amenitiesJson: unknown, tags: string[]): boolean {
   if (tags.length === 0) return true;
   const arr = Array.isArray(amenitiesJson)
@@ -181,11 +196,6 @@ export function buildPropertyWhere(
     andParts.push({
       OR: [{ guestsMax: null }, { guestsMax: { gte: guests } }],
     });
-  }
-
-  const featureKeys = parseFeaturesQuery(sp.features);
-  if (featureKeys.length) {
-    andParts.push({ amenities: { hasEvery: featureKeys } });
   }
 
   if (sp.direct === "1" || sp.direct === "true" || sp.directOnly === "1") {

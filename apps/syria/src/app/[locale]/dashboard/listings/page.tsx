@@ -12,9 +12,10 @@ import { SelfMarketingPanel } from "@/components/dashboard/SelfMarketingPanel";
 import { ViralPostShareBanner } from "@/components/dashboard/ViralPostShareBanner";
 import { duplicateOwnListingFormAction } from "@/actions/duplicate-listing";
 
-function planLabelKey(plan: string): "planFree" | "planFeatured" | "planPremium" {
+function planLabelKey(plan: string): "planFree" | "planFeatured" | "planPremium" | "planHotelFeatured" {
   if (plan === "featured") return "planFeatured";
   if (plan === "premium") return "planPremium";
+  if (plan === "hotel_featured") return "planHotelFeatured";
   return "planFree";
 }
 

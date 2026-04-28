@@ -18,7 +18,7 @@ import { getSy8OwnerListingCounts } from "@/lib/sy8/sy8-owner-listing-counts";
 import { SybnbTrustBadge } from "@/components/sybnb/SybnbTrustBadge";
 import { labelSyriaAmenityForListing } from "@/lib/syria/amenities";
 import { Sy8LocationQualityBadge } from "@/components/sy8/Sy8LocationQualityBadge";
-import { buildWhatsAppContactHref, buildTelHref } from "@/lib/syria-phone";
+import { buildHotelLeadWhatsAppHref, buildWhatsAppContactHref, buildTelHref } from "@/lib/syria-phone";
 import { ListingOwnerContactCard } from "@/components/listing/ListingOwnerContactCard";
 import { ListingContactDock } from "@/components/listing/ListingContactDock";
 import { SybnbListingViewBeacon } from "@/components/sybnb/SybnbListingViewBeacon";
@@ -62,6 +62,8 @@ export default async function SybnbListingPage(props: Props) {
   }
 
   const city = getLocalizedPropertyCity(listing, locale);
+  const isHotel = listing.type === "HOTEL";
+  const hotelDisplayName = (listing.hotelName?.trim() || pickListingTitle(listing, locale)).trim();
   const isOwner = user?.id === listing.ownerId;
   const canBook =
     !syriaFlags.SYRIA_MVP &&
@@ -71,6 +73,8 @@ export default async function SybnbListingPage(props: Props) {
     !listing.owner.flagged &&
     user &&
     !isOwner;
+
+  const showBookingRequest = canBook && !isHotel;
 
   const [hostStats, sy8Counts] = await Promise.all([
     getHostSybnbStats(listing.ownerId),
@@ -84,7 +88,13 @@ export default async function SybnbListingPage(props: Props) {
   const hotelContactLine =
     listing.type === "HOTEL" && listing.contactPhone?.trim() ? listing.contactPhone.trim() : "";
   const primaryPhone = hotelContactLine || ownerPhone;
-  let waOwnerHref = primaryPhone ? buildWhatsAppContactHref(primaryPhone) : null;
+  let waOwnerHref: string | null = null;
+  if (primaryPhone) {
+    waOwnerHref =
+      isHotel ?
+        buildHotelLeadWhatsAppHref(primaryPhone, hotelDisplayName, locale) ?? buildWhatsAppContactHref(primaryPhone)
+      : buildWhatsAppContactHref(primaryPhone);
+  }
   let telOwnerHref = primaryPhone ? buildTelHref(primaryPhone) : null;
   const phoneVisibleForPolicy = listing.type === "HOTEL" || SYBNB_SHOW_PHONE;
   if (!phoneVisibleForPolicy) {
@@ -99,7 +109,15 @@ export default async function SybnbListingPage(props: Props) {
   return (
     <>
       <SybnbListingViewBeacon listingId={listing.id} />
-      {canShowContact ? <ListingContactDock listingId={listing.id} whatsappHref={waOwnerHref} telHref={telOwnerHref} /> : null}
+      {canShowContact ? (
+        <ListingContactDock
+          listingId={listing.id}
+          whatsappHref={waOwnerHref}
+          telHref={telOwnerHref}
+          primaryHeading={isHotel ? t("hotelContactPrimaryHeading") : t("primaryContactTitle")}
+          contactAnalytics={isHotel ? "hotel" : "listing"}
+        />
+      ) : null}
       <div
         className={`space-y-8 lg:grid lg:grid-cols-12 lg:gap-8 lg:pb-10 ${canShowContact ? "max-md:pb-52" : "pb-28 max-md:pb-28"}`}
       >
@@ -110,10 +128,15 @@ export default async function SybnbListingPage(props: Props) {
               {pickListingTitle(listing, locale)}
             </h1>
             {listing.type === "HOTEL" ? (
-              <p className="mt-2">
+              <p className="mt-2 flex flex-wrap gap-2">
                 <span className="inline-flex rounded-full bg-amber-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-amber-950 ring-1 ring-amber-300/70">
                   {t("badgeHotel")}
                 </span>
+                {listing.plan === "hotel_featured" ? (
+                  <span className="inline-flex rounded-full bg-indigo-100 px-3 py-1 text-xs font-bold text-indigo-950 ring-1 ring-indigo-300/60">
+                    {t("badgeHotelFeaturedPartner")}
+                  </span>
+                ) : null}
               </p>
             ) : null}
             {listing.type === "HOTEL" && listing.hotelName?.trim() ? (
@@ -252,7 +275,7 @@ export default async function SybnbListingPage(props: Props) {
                 </div>
               ) : null}
 
-              {guest && !hasContactChannels && !canBook ? (
+              {guest && !hasContactChannels && !showBookingRequest ? (
                 <p className="mt-4 text-sm text-amber-900/90 [dir=rtl]:text-right">{t("requestSignedInButBlockedNoPhone")}</p>
               ) : null}
 
@@ -263,7 +286,7 @@ export default async function SybnbListingPage(props: Props) {
                   <Link href="/login" className="font-semibold text-amber-800 underline">
                     {t("signIn")}
                   </Link>{" "}
-                  {t("toBook")}
+                  {isHotel ? t("toContactHotel") : t("toBook")}
                 </p>
               ) : null}
             </div>

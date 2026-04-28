@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { assertDarlinkRuntimeEnv } from "@/lib/guard";
+import { MAX_LISTING_IMAGES } from "@/lib/syria/photo-upload";
 import { persistQuickListing } from "@/lib/persist-quick-listing";
 import { revalidateAllLocaleHomePages } from "@/lib/revalidate-syria-home";
 import { parseMarketplacePair } from "@/lib/marketplace-categories";
@@ -50,6 +51,12 @@ export async function POST(req: Request) {
     }
   }
 
+  const imageUrls =
+    Array.isArray(o.images) ? o.images.filter((x): x is string => typeof x === "string" && x.length > 0) : [];
+  if (imageUrls.length > MAX_LISTING_IMAGES) {
+    return NextResponse.json({ ok: false, error: "too_many_images" }, { status: 400 });
+  }
+
   const out = await persistQuickListing({
     title,
     state,
@@ -61,9 +68,7 @@ export async function POST(req: Request) {
     type: o.type === "RENT" ? "RENT" : "SALE",
     category: catIn,
     subcategory: subIn,
-    images: Array.isArray(o.images)
-      ? o.images.filter((x): x is string => typeof x === "string" && x.length > 0).slice(0, 5)
-      : undefined,
+    images: imageUrls.length > 0 ? imageUrls : undefined,
     amenities: amenitiesRaw,
     descriptionAr,
     source: "quick_post",

@@ -78,11 +78,12 @@ enum SyriaPropertyStatus {
   ARCHIVED
 }
 
-/// Listing marketing tier. Declared order: free < featured < premium (used with `orderBy: { plan: desc }` → premium first).
+/// Listing marketing tier. `hotel_featured` = SYBNB-41 manual hotel subscription (rank ≥ premium in sort).
 enum SyriaListingPlan {
   free
   featured
   premium
+  hotel_featured
 }
 
 enum SyriaBookingStatus {
@@ -165,6 +166,17 @@ enum SyriaMarketplaceActionOutcome {
   FAILED
   ROLLED_BACK
   SKIPPED_APPROVAL_PENDING
+}
+
+/// ORDER SYBNB-52 — Hotel CRM pipeline (admin-only).
+enum SybnbHotelLeadStatus {
+  new
+  contacted
+  interested
+  onboarded
+  active
+  paying
+  lost
 }
 
 model SyriaAppUser {
@@ -322,6 +334,10 @@ model SyriaProperty {
   demoMeta Json? @map("demo_meta")
   /// Denormalized SY8/SYBNB feed boost: location richness + verified seller + ≥1 booking. Recomputed on listing save and booking create.
   sy8FeedRankScore Int                 @default(0) @map("sy8_feed_rank_score")
+  /// SYBNB-42 — Browse tier for stay search (4 = verified subscribed hotels … 0 = fraud-flagged). Recomputed with `sy8FeedRankScore`.
+  sybnbBrowseTier  Int                 @default(1) @map("sybnb_browse_tier")
+  /// ORDER SYBNB-65 — cached image count for ORDER BY tie-break (`score DESC`, `images DESC`, `createdAt DESC`). Synced in `recomputeSy8FeedRankForPropertyId`.
+  listingPhotoCount Int                @default(0) @map("listing_photo_count")
 
   bookings                  SyriaBooking[]
   listingPayments           SyriaListingPayment[]
@@ -347,6 +363,7 @@ model SyriaProperty {
   @@index([category])
   @@index([status, needsReview, createdAt])
   @@index([sy8FeedRankScore, createdAt])
+  @@index([sybnbBrowseTier, sy8FeedRankScore])
   @@map("syria_properties")
 }
 
@@ -845,4 +862,21 @@ model SyriaEventTimeline {
   @@index([actorId])
   @@index([createdAt])
   @@map("syria_event_timeline")
+}
+
+/// ORDER SYBNB-52 — Track hotels from first contact → paying partner (admin CRM).
+model SybnbHotelLead {
+  id        String               @id @default(cuid())
+  name      String
+  phone     String
+  city      String
+  status    SybnbHotelLeadStatus @default(new)
+  notes     String?              @db.Text
+  createdAt DateTime             @default(now()) @map("created_at")
+  updatedAt DateTime             @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@index([city])
+  @@index([createdAt])
+  @@map("sybnb_hotel_leads")
 }

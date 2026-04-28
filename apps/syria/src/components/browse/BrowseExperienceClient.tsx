@@ -21,8 +21,11 @@ import { cn } from "@/lib/cn";
 import { SYRIA_OFFLINE_NAMESPACE } from "@/lib/offline/constants";
 import { normalizeSearchQueryString, searchApiSnapshotKey } from "@/lib/offline/query-normalize";
 import { syriaFlags } from "@/lib/platform-flags";
-import type { BrowseSurface, SearchPropertiesResult } from "@/services/search/search.service";
+import type { BrowseSurface, SearchPropertiesResult, SerializedBrowseListing } from "@/services/search/search.service";
 import { getApiSnapshot, putApiSnapshot, upsertListingMany } from "@repo/offline";
+import { SybnbHotelsBrowseStrip } from "@/components/sybnb/SybnbHotelsBrowseStrip";
+import { trackClientAnalyticsEvent } from "@/lib/client-analytics";
+import { toggleCommaSeparatedAmenityKey } from "@/lib/syria/amenities";
 
 async function persistBrowseSnapshot(surface: BrowseSurface, spSnap: URLSearchParams, bundle: SearchPropertiesResult) {
   const n = normalizeSearchQueryString(spSnap.toString());
@@ -66,8 +69,10 @@ export function BrowseExperienceClient(props: {
   locale: string;
   initialQs: string;
   initialResult: SearchPropertiesResult;
+  /** SYBNB-42 — Verified hotels strip (stay surface only). */
+  hotelStripItems?: SerializedBrowseListing[];
 }) {
-  const { surface, basePath, locale, initialQs, initialResult } = props;
+  const { surface, basePath, locale, initialQs, initialResult, hotelStripItems } = props;
   const t = useTranslations("Browse");
   const router = useRouter();
   const sp = useSearchParams();
@@ -77,6 +82,7 @@ export function BrowseExperienceClient(props: {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const seededCacheRef = useRef(false);
+  const amenitySearchTrackedKey = useRef<string | null>(null);
 
   const mapMode = sp.get("map") === "1";
 
@@ -135,6 +141,22 @@ export function BrowseExperienceClient(props: {
     void persistBrowseSnapshot(surface, new URLSearchParams(initialQs), initialResult);
   }, [surface, initialQs, initialResult]);
 
+  useEffect(() => {
+    const raw = sp.get("amenities")?.trim();
+    if (!raw) return;
+    const key = `${raw}|${bundle.total}|${String(bundle.amenitiesMatchRelaxed ?? false)}|${surface}`;
+    if (amenitySearchTrackedKey.current === key) return;
+    amenitySearchTrackedKey.current = key;
+    trackClientAnalyticsEvent("browse_amenity_search", {
+      payload: {
+        amenities: raw,
+        resultCount: bundle.total,
+        relaxed: bundle.amenitiesMatchRelaxed === true,
+        surface,
+      },
+    });
+  }, [sp, bundle.total, bundle.amenitiesMatchRelaxed, surface]);
+
   const skipFirst = useRef(true);
   useEffect(() => {
     if (skipFirst.current) {
@@ -187,6 +209,7 @@ export function BrowseExperienceClient(props: {
           page: json.page,
           hasMore: json.hasMore,
           total: json.total,
+          amenitiesMatchRelaxed: json.amenitiesMatchRelaxed ?? prev.amenitiesMatchRelaxed,
         };
         void persistBrowseSnapshot(surface, sp, merged);
         return merged;
@@ -286,6 +309,8 @@ export function BrowseExperienceClient(props: {
           </div>
         </div>
 
+        {surface === "stay" || surface === "bnhub" ? <StayAmenityQuickFilters sp={sp} replace={replace} /> : null}
+
         <div className="mt-3 hidden flex-wrap gap-2 md:flex">
           <FilterFields sp={sp} replace={replace} surface={surface} />
           {hasFilters ? (
@@ -311,6 +336,14 @@ export function BrowseExperienceClient(props: {
                 {sp.get("minPrice") ?? "…"} – {sp.get("maxPrice") ?? "…"}
               </span>
             ) : null}
+            {(sp.get("amenities") ?? "").trim() ? (
+              <span
+                className="max-w-[min(100%,14rem)] truncate rounded-full bg-[color:var(--darlink-surface-muted)] px-2.5 py-1 ring-1 ring-[color:var(--darlink-border)]"
+                title={sp.get("amenities") ?? ""}
+              >
+                {sp.get("amenities")}
+              </span>
+            ) : null}
           </>
         ) : (
           <span>{t("noActiveFilters")}</span>
@@ -319,6 +352,12 @@ export function BrowseExperienceClient(props: {
           {bundle.total} {t("resultsCount")}
         </span>
       </div>
+
+      {surface === "stay" && bundle.amenitiesMatchRelaxed && (sp.get("amenities") ?? "").trim() ? (
+        <p className="rounded-xl border border-amber-200/80 bg-amber-50/90 px-3 py-2 text-xs font-medium text-amber-950 [dir=rtl]:text-right">
+          {t("amenityFallbackBanner")}
+        </p>
+      ) : null}
 
       {loading && bundle.items.length === 0 ? <ListingGridSkeleton count={8} /> : null}
 
@@ -349,6 +388,9 @@ export function BrowseExperienceClient(props: {
         ) : null}
 
         <div className={cn("min-w-0 space-y-4", mapMode ? "[dir=rtl]:lg:col-start-1" : "")}>
+          {surface === "stay" && hotelStripItems && hotelStripItems.length > 0 ? (
+            <SybnbHotelsBrowseStrip items={hotelStripItems} locale={locale} />
+          ) : null}
           {bundle.items.length === 0 && !loading ? (
             <div className="rounded-[var(--darlink-radius-2xl)] border border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface-muted)]/40 px-6 py-16 text-center">
               <p className="text-lg font-semibold text-[color:var(--darlink-text)]">
@@ -397,6 +439,7 @@ export function BrowseExperienceClient(props: {
               </button>
             </div>
             <div className="space-y-4">
+              {surface === "stay" || surface === "bnhub" ? <StayAmenityQuickFilters sp={sp} replace={replace} /> : null}
               <FilterFields sp={sp} replace={replace} surface={surface} />
               <Button
                 type="button"
@@ -413,6 +456,54 @@ export function BrowseExperienceClient(props: {
           </div>
         </div>
       ) : null}
+    </div>
+  );
+}
+
+function StayAmenityQuickFilters({
+  sp,
+  replace,
+}: {
+  sp: URLSearchParams;
+  replace: (patch: Record<string, string | undefined>) => void;
+}) {
+  const t = useTranslations("Browse");
+  const raw = sp.get("amenities") ?? "";
+  const tags = raw
+    .split(/[,;\n]/)
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
+  const active = (key: string) => tags.includes(key);
+
+  return (
+    <div className="flex flex-wrap items-center gap-2 border-t border-[color:var(--darlink-border)] pt-3 md:border-t-0 md:pt-0">
+      <span className="text-[11px] font-semibold uppercase tracking-wide text-[color:var(--darlink-text-muted)]">
+        {t("quickAmenityShortcutsLabel")}
+      </span>
+      <button
+        type="button"
+        onClick={() => replace({ amenities: toggleCommaSeparatedAmenityKey(raw, "electricity_24h") })}
+        className={cn(
+          "min-h-[36px] rounded-full border px-3 text-xs font-semibold transition",
+          active("electricity_24h") ?
+            "border-amber-400 bg-amber-50 text-amber-950"
+          : "border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface)] text-[color:var(--darlink-text)]",
+        )}
+      >
+        ⚡ {t("quickFilterElectricity")}
+      </button>
+      <button
+        type="button"
+        onClick={() => replace({ amenities: toggleCommaSeparatedAmenityKey(raw, "wifi") })}
+        className={cn(
+          "min-h-[36px] rounded-full border px-3 text-xs font-semibold transition",
+          active("wifi") ?
+            "border-emerald-400 bg-emerald-50 text-emerald-950"
+          : "border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface)] text-[color:var(--darlink-text)]",
+        )}
+      >
+        📶 {t("quickFilterWifi")}
+      </button>
     </div>
   );
 }

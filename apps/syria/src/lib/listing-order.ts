@@ -19,24 +19,36 @@ export function describeListingSortAutonomyOverlay(
 
 const DIRECT_FIRST: Prisma.SyriaPropertyOrderByWithRelationInput = { isDirect: "desc" };
 
-/** SY8: denormalized feed score (location + trust + bookings), then monetization tier, then recency. */
+/** SYBNB-42 — Verified subscribed hotels → featured plans → verified free → rest (within SYBNB stay browse). */
+const SYBNB_BROWSE_TIER: Prisma.SyriaPropertyOrderByWithRelationInput = { sybnbBrowseTier: "desc" };
+
+/** SYBNB-51 — denormalized ranking score (`sy8FeedRankScore`), then photo-count tie-break (SYBNB-65), then recency. */
 const SY8_FEED_RANK: Prisma.SyriaPropertyOrderByWithRelationInput = { sy8FeedRankScore: "desc" };
 
+/** ORDER SYBNB-65 — more photos break ties after score (matches browse intent). */
+const LISTING_PHOTO_COUNT: Prisma.SyriaPropertyOrderByWithRelationInput = { listingPhotoCount: "desc" };
+
 /**
- * Short-stay feed: same ordering as the main browse surface.
+ * Short-stay feed: tier-aware ordering for SYBNB discovery (same surfaces as main browse).
  */
 export function listingBrowseOrderBySybnb(
   sort: string | undefined,
 ): Prisma.SyriaPropertyOrderByWithRelationInput[] {
-  return listingBrowseOrderBy(sort);
+  const s = sort ?? "featured";
+  if (s === "price_asc") return [SYBNB_BROWSE_TIER, DIRECT_FIRST, SY8_FEED_RANK, LISTING_PHOTO_COUNT, { price: "asc" }];
+  if (s === "price_desc") return [SYBNB_BROWSE_TIER, DIRECT_FIRST, SY8_FEED_RANK, LISTING_PHOTO_COUNT, { price: "desc" }];
+  if (s === "new" || s === "newest") {
+    return [SYBNB_BROWSE_TIER, DIRECT_FIRST, SY8_FEED_RANK, LISTING_PHOTO_COUNT, { plan: "desc" }, { createdAt: "desc" }];
+  }
+  return [SYBNB_BROWSE_TIER, DIRECT_FIRST, SY8_FEED_RANK, LISTING_PHOTO_COUNT, { plan: "desc" }, { createdAt: "desc" }];
 }
 
 export function listingBrowseOrderBy(sort: string | undefined): Prisma.SyriaPropertyOrderByWithRelationInput[] {
   const s = sort ?? "featured";
-  if (s === "price_asc") return [DIRECT_FIRST, SY8_FEED_RANK, { price: "asc" }];
-  if (s === "price_desc") return [DIRECT_FIRST, SY8_FEED_RANK, { price: "desc" }];
+  if (s === "price_asc") return [DIRECT_FIRST, SY8_FEED_RANK, LISTING_PHOTO_COUNT, { price: "asc" }];
+  if (s === "price_desc") return [DIRECT_FIRST, SY8_FEED_RANK, LISTING_PHOTO_COUNT, { price: "desc" }];
   if (s === "new" || s === "newest") {
-    return [DIRECT_FIRST, SY8_FEED_RANK, { plan: "desc" }, { createdAt: "desc" }];
+    return [DIRECT_FIRST, SY8_FEED_RANK, LISTING_PHOTO_COUNT, { plan: "desc" }, { createdAt: "desc" }];
   }
-  return [DIRECT_FIRST, SY8_FEED_RANK, { plan: "desc" }, { createdAt: "desc" }];
+  return [DIRECT_FIRST, SY8_FEED_RANK, LISTING_PHOTO_COUNT, { plan: "desc" }, { createdAt: "desc" }];
 }

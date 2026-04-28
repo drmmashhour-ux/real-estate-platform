@@ -10,7 +10,7 @@ import { syriaFlags } from "@/lib/platform-flags";
 import { trackSyriaGrowthEvent } from "@/lib/growth-events";
 import { parseUtmFromSearchParams } from "@/lib/utm";
 import { flattenSearchParams } from "@/lib/property-search";
-import { searchProperties } from "@/services/search/search.service";
+import { searchProperties, fetchSybnbVerifiedHotelsStrip, type SerializedBrowseListing } from "@/services/search/search.service";
 import { getSybnbLatestStays, getSybnbPublicListingCount } from "@/lib/sybnb/sybnb-public-data";
 import { sybnbSoftLaunchUrgencyMessaging } from "@/lib/sybnb/config";
 import { SybnbBrandSocialProofStrip } from "@/components/sybnb/SybnbBrandSocialProofStrip";
@@ -56,7 +56,10 @@ export default async function SybnbPage(props: Props) {
   }
 
   const initialQs = toInitialQs(flat);
-  const initialResult = await searchProperties("stay", flat);
+  const [initialResult, hotelStripItems] = await Promise.all([
+    searchProperties("stay", flat),
+    syriaFlags.SYRIA_MVP ? Promise.resolve<SerializedBrowseListing[]>([]) : fetchSybnbVerifiedHotelsStrip(flat),
+  ]);
   const [liveCount, latestStays] = await Promise.all([getSybnbPublicListingCount(), getSybnbLatestStays(8)]);
   const tH = await getTranslations("Sybnb.home");
 
@@ -89,6 +92,7 @@ export default async function SybnbPage(props: Props) {
             locale={locale}
             initialQs={initialQs}
             initialResult={initialResult}
+            hotelStripItems={hotelStripItems}
           />
         )}
       </section>

@@ -2,7 +2,6 @@
 
 import { useTranslations } from "next-intl";
 import { trackLeadPhoneClick, trackLeadWhatsappClick } from "@/lib/lead-client";
-import { trackLeadPhoneClick, trackLeadWhatsappClick } from "@/lib/lead-client";
 import { trackHotelContactClick, trackListingContactClick } from "@/lib/contact-analytics-client";
 import { Card } from "@/components/ui/Card";
 import { ListingShareActions } from "@/components/listing/ListingShareActions";
@@ -19,7 +18,6 @@ export function ListingOwnerContactCard({
   shareCity,
   sharePriceAmount,
   adCode,
-  /** SYBNB-40 — `hotel_contact_click` vs default `contact_click`. */
   contactAnalytics = "listing",
 }: {
   listingId: string;

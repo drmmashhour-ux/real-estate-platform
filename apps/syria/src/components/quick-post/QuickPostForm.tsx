@@ -35,6 +35,7 @@ type FormState = {
 
 export function QuickPostForm() {
   const t = useTranslations("QuickPost");
+  const tPhoto = useTranslations("SybnbPhotoSafety");
   const tList = useTranslations("Listing");
   const locale = useLocale();
   const isAr = locale.startsWith("ar");
@@ -67,10 +68,17 @@ export function QuickPostForm() {
     if (!files?.length) return;
     const remaining = MAX_LISTING_IMAGES - imageUrls.length;
     if (remaining <= 0) return;
+    const arr = Array.from(files);
+    let batch = arr;
+    if (arr.length > remaining) {
+      setError(t("photoRejectExtra", { max: MAX_LISTING_IMAGES }));
+      batch = arr.slice(0, remaining);
+    } else {
+      setError(null);
+    }
     setParsingImages(true);
-    setError(null);
     try {
-      const toAdd = await processListingImageFiles(Array.from(files), remaining);
+      const toAdd = await processListingImageFiles(batch, remaining);
       setImageUrls((prev) => [...prev, ...toAdd].slice(0, MAX_LISTING_IMAGES));
     } catch {
       setError(t("errorServer"));
@@ -120,6 +128,10 @@ export function QuickPostForm() {
       });
       const data = (await res.json()) as { ok?: boolean; id?: string; error?: string };
       if (!res.ok || !data.ok) {
+        if (data.error === "too_many_images") {
+          setError(t("errorTooManyPhotos", { max: MAX_LISTING_IMAGES }));
+          return;
+        }
         setError(t("errorServer"));
         return;
       }
@@ -369,6 +381,7 @@ export function QuickPostForm() {
       <div className="space-y-2">
         <p className="text-sm font-medium text-[color:var(--darlink-text)]">{t("fieldPhotos")}</p>
         <p className="text-xs text-[color:var(--darlink-text-muted)]">{t("photoLimitHint")}</p>
+        <p className="text-xs font-medium text-emerald-800/90 [dir=rtl]:text-right">{tPhoto("photoTipContactBoost")}</p>
         <input
           ref={fileInputRef}
           type="file"

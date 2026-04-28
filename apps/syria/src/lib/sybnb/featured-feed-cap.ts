@@ -11,7 +11,7 @@ export function getSybnbFeaturedMaxPerPage(): number {
 }
 
 function isBoostedPlan(plan: string): boolean {
-  return plan === "featured" || plan === "premium";
+  return plan === "featured" || plan === "premium" || plan === "hotel_featured";
 }
 
 /** Preserve sort order; cap boosted rows, then back-fill from the tail so the page stays full. */

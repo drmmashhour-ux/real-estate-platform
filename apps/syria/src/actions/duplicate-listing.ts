@@ -105,6 +105,10 @@ export async function duplicateOwnListingFormAction(formData: FormData): Promise
         receptionAvailable: src.receptionAvailable,
         adCode,
         sy8FeedRankScore: 0,
+        sybnbBrowseTier: 1,
+        listingPhotoCount: Array.isArray(src.images)
+          ? src.images.filter((x): x is string => typeof x === "string" && x.trim().length > 0).length
+          : 0,
       },
     });
   });

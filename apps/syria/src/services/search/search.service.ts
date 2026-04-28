@@ -7,9 +7,10 @@ import type { ListingKind } from "@/lib/property-search";
 import {
   buildPropertyWhere,
   listingMatchesAmenityTags,
-  parseAmenityTags,
+  collectAmenityFilterTags,
   parseSearchNumber,
 } from "@/lib/property-search";
+import { getAmenityFallbackMinResults, listingMatchesAmenityTagsSome } from "@/lib/syria/amenities";
 import { getSy8OwnerListingCountsMap } from "@/lib/sy8/sy8-owner-listing-counts";
 import {
   computeSy8SellerScore,
@@ -19,6 +20,7 @@ import {
 } from "@/lib/sy8/sy8-reputation";
 import { computeSybnbExcellentDealFlags } from "@/lib/sybnb/smart-pricing";
 import { capBoostedFirstPage, getSybnbFeaturedMaxPerPage } from "@/lib/sybnb/featured-feed-cap";
+import { compareSybnbStayBrowseTieBreak } from "@/lib/sybnb/sybnb-stay-sort";
 
 export type BrowseSurface = "sale" | "rent" | "bnhub" | "stay";
 
@@ -52,6 +54,8 @@ export type SerializedBrowseListing = {
   listingVerified: boolean;
   /** SY-11 marketplace trust flag */
   verified: boolean;
+  /** Anti-abuse / fraud — listings must not show trusted layers when true */
+  fraudFlag: boolean;
   /** SY-22: no broker / direct owner */
   isDirect: boolean;
   /** SY-28 */
@@ -77,6 +81,8 @@ export type SearchPropertiesResult = {
   page: number;
   pageSize: number;
   hasMore: boolean;
+  /** True when amenity filter used broad ANY-match because strict ALL-match yielded fewer than the configured threshold. */
+  amenitiesMatchRelaxed?: boolean;
 };
 
 function surfaceToKind(surface: BrowseSurface): ListingKind {
@@ -91,6 +97,20 @@ type PropertyWithOwnerForSy8 = SyriaProperty & {
 };
 
 const ownerSelectSy8 = { owner: { select: { phoneVerifiedAt: true, verifiedAt: true, verificationLevel: true } } };
+
+/** Strict ALL-tags first; if too few rows, widen to ANY-tag (early-market UX). */
+function filterByAmenityTagsWithFallback<T extends { amenities: unknown }>(
+  rows: T[],
+  amenityTags: string[],
+): { rows: T[]; relaxed: boolean } {
+  if (amenityTags.length === 0) return { rows, relaxed: false };
+  const threshold = getAmenityFallbackMinResults();
+  const strict = rows.filter((r) => listingMatchesAmenityTags(r.amenities, amenityTags));
+  if (strict.length >= threshold) return { rows: strict, relaxed: false };
+  const broad = rows.filter((r) => listingMatchesAmenityTagsSome(r.amenities, amenityTags));
+  if (broad.length > strict.length) return { rows: broad, relaxed: true };
+  return { rows: strict, relaxed: false };
+}
 
 function baseFields(p: SyriaProperty) {
   return {
@@ -122,6 +142,7 @@ function baseFields(p: SyriaProperty) {
     longitude: p.longitude ?? null,
     listingVerified: p.listingVerified,
     verified: p.verified,
+    fraudFlag: p.fraudFlag,
     isDirect: p.isDirect,
     adCode: p.adCode,
     createdAt: p.createdAt.toISOString(),
@@ -152,7 +173,8 @@ function applySybnbExcellentDealFlags(list: SerializedBrowseListing[]): Serializ
   return list.map((s) => ({ ...s, sybnbExcellentDeal: flags.get(s.id) === true }));
 }
 
-async function serializeBrowseRows(rows: PropertyWithOwnerForSy8[], surface: BrowseSurface): Promise<SerializedBrowseListing[]> {
+/** Exported for SYBNB home hotel strip (verified hotels only). */
+export async function serializeBrowseRows(rows: PropertyWithOwnerForSy8[], surface: BrowseSurface): Promise<SerializedBrowseListing[]> {
   const base = await serializeWithSy8(rows);
   if (surface === "stay") {
     return applySybnbExcellentDealFlags(base);
@@ -192,6 +214,7 @@ export async function searchProperties(
           "city",
           "state",
           "features",
+          "amenities",
           "minPrice",
           "maxPrice",
           "page",
@@ -210,7 +233,8 @@ export async function searchProperties(
   const pageSize = Math.min(48, Math.max(1, parseSearchNumber(flat.pageSize) ?? 24));
   const sort = (flat.sort ?? "featured").trim();
 
-  const amenityTags = parseAmenityTags(flat.amenities);
+  const amenityTags = collectAmenityFilterTags(flat);
+  let amenitiesMatchRelaxed = false;
   const centerLat = parseSearchNumber(flat.lat);
   const centerLng = parseSearchNumber(flat.lng);
 
@@ -232,15 +256,16 @@ export async function searchProperties(
     });
     let rows = capped.filter((r) => r.latitude != null && r.longitude != null);
     if (amenityTags.length > 0) {
-      rows = rows.filter((r) => listingMatchesAmenityTags(r.amenities, amenityTags));
+      const fr = filterByAmenityTagsWithFallback(rows, amenityTags);
+      rows = fr.rows;
+      amenitiesMatchRelaxed = fr.relaxed;
     }
     rows.sort((a, b) => {
       const d =
         haversineKm(centerLat!, centerLng!, a.latitude!, a.longitude!) -
         haversineKm(centerLat!, centerLng!, b.latitude!, b.longitude!);
-      if (d !== 0) return d;
-      if (a.isDirect === b.isDirect) return 0;
-      return a.isDirect ? -1 : 1;
+      if (Math.abs(d) > 1e-9) return d;
+      return compareSybnbStayBrowseTieBreak(a, b);
     });
     const total = rows.length;
     let sliced = rows.slice((page - 1) * pageSize, page * pageSize) as PropertyWithOwnerForSy8[];
@@ -254,6 +279,7 @@ export async function searchProperties(
       page,
       pageSize,
       hasMore: page * pageSize < total,
+      amenitiesMatchRelaxed,
     };
   }
 
@@ -264,7 +290,12 @@ export async function searchProperties(
       take: 1200,
       include: ownerSelectSy8,
     });
-    const filtered = fetched.filter((r) => listingMatchesAmenityTags(r.amenities, amenityTags));
+    const fr = filterByAmenityTagsWithFallback(fetched, amenityTags);
+    let filtered = fr.rows;
+    amenitiesMatchRelaxed = fr.relaxed;
+    if (surface === "stay") {
+      filtered = [...filtered].sort((a, b) => compareSybnbStayBrowseTieBreak(a, b));
+    }
     const total = filtered.length;
     let sliced = filtered.slice((page - 1) * pageSize, page * pageSize);
     if (surface === "stay" && page === 1) {
@@ -277,6 +308,7 @@ export async function searchProperties(
       page,
       pageSize,
       hasMore: page * pageSize < total,
+      amenitiesMatchRelaxed,
     };
   }
 
@@ -309,5 +341,28 @@ export async function searchProperties(
     page,
     pageSize,
     hasMore: page * pageSize < total,
+    amenitiesMatchRelaxed,
   };
+}
+
+/**
+ * SYBNB-42 — Optional “verified hotels” strip: HOTEL stays matching browse filters, trust-checked,
+ * ordered like main SYBNB search (browse tier + SY8 score).
+ */
+export async function fetchSybnbVerifiedHotelsStrip(flat: Record<string, string>): Promise<SerializedBrowseListing[]> {
+  const sort = (flat.sort ?? "featured").trim();
+  const whereBase = buildPropertyWhere("stay", flat.category === "stay" ? flat : { ...flat, category: "stay" });
+  const rows = await prisma.syriaProperty.findMany({
+    where: {
+      AND: [
+        whereBase,
+        { type: "HOTEL" },
+        { OR: [{ listingVerified: true }, { verified: true }] },
+      ],
+    },
+    orderBy: listingBrowseOrderBySybnb(sort === "distance" ? "featured" : sort),
+    take: 14,
+    include: ownerSelectSy8,
+  });
+  return serializeBrowseRows(rows as PropertyWithOwnerForSy8[], "stay");
 }

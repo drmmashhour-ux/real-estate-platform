@@ -42,11 +42,16 @@ import { SybnbQuotePreview } from "@/components/sybnb/SybnbQuotePreview";
 import { MakeFeaturedCta } from "@/components/listing/MakeFeaturedCta";
 import { OwnerUpgradeStickyCta } from "@/components/listing/OwnerUpgradeStickyCta";
 import { labelSyriaState } from "@/lib/syria/states";
-import { SYRIA_AMENITIES, labelSyriaAmenityForListing } from "@/lib/syria/amenities";
+import { labelSyriaAmenityForListing, normalizeSyriaAmenityKeys, sortSyriaAmenityKeysForListingDisplay } from "@/lib/syria/amenities";
 import { getTrustWarningLines } from "@/lib/ai/trustAssistant";
 import { ListingTrustAiSection } from "@/components/listing/ListingTrustAiSection";
 import { ShortStayAvailabilityCalendar } from "@/components/listing/ShortStayAvailabilityCalendar";
 import { incrementPublicListingView } from "@/lib/syria/listing-views";
+import {
+  getListingPhotoTrustTier,
+  isSellerVerifiedForListingTrust,
+  shouldShowTrustedListingBadge,
+} from "@/lib/listing-trust-badges";
 import { Sy8LocationQualityBadge } from "@/components/sy8/Sy8LocationQualityBadge";
 import { SYBNB_SHOW_PHONE } from "@/lib/sybnb/config";
 
@@ -135,17 +140,28 @@ export default async function ListingDetailPage(props: Props) {
   const sharePriceAmount = isSybnbStay ? nightlyForUi : Number(listing.price);
 
   const images = listing.images.filter((x) => x.length > 0);
-  const photoQualityHighlight = images.length >= 3;
+  const sellerVerified = isSellerVerifiedForListingTrust({
+    verified: listing.verified,
+    listingVerified: listing.listingVerified,
+    owner: listing.owner,
+  });
+  const photoTrustTier = getListingPhotoTrustTier(images.length);
+  const showTrustedListingBadgeUi = shouldShowTrustedListingBadge({
+    sellerVerified,
+    imageCount: images.length,
+    fraudFlag: listing.fraudFlag,
+  });
+  const showVerifiedSellerOnly = sellerVerified && !showTrustedListingBadgeUi && !listing.fraudFlag;
   const rawAmenities: string[] = Array.isArray(listing.amenities)
     ? (listing.amenities as string[]).filter((x): x is string => typeof x === "string")
     : [];
+  const normAmenities = normalizeSyriaAmenityKeys(rawAmenities);
+  const catalogSortedForDisplay = sortSyriaAmenityKeysForListingDisplay(rawAmenities);
   const amenityDisplayOrder = [
-    ...SYRIA_AMENITIES.map((a) => a.key).filter((k) => rawAmenities.includes(k)),
-    ...rawAmenities.filter((k) => !SYRIA_AMENITIES.some((a) => a.key === k)),
+    ...catalogSortedForDisplay,
+    ...rawAmenities.filter((k) => typeof k === "string" && !normAmenities.includes(k)),
   ];
 
-  const isVerifiedField = listing.verified === true;
-  const showTrustedHighlight = images.length >= 3 && rawAmenities.length >= 2;
   const aiTrustLines = getTrustWarningLines(
     {
       photoCount: images.length,
@@ -261,7 +277,38 @@ export default async function ListingDetailPage(props: Props) {
                 <span className="rounded-full bg-[color:var(--darlink-surface-muted)] px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-[color:var(--darlink-text-muted)]">
                   {listing.type === "HOTEL" ? t("badgeHotel") : listing.type}
                 </span>
-                {listing.isDirect && (listing.plan === "featured" || listing.plan === "premium") ? (
+                {!syriaFlags.SYRIA_MVP && showTrustedListingBadgeUi ? (
+                  <span className="rounded-full bg-teal-700 px-2.5 py-1 text-xs font-bold text-white ring-1 ring-teal-400/60">
+                    {t("badgeTrustedListing")}
+                  </span>
+                ) : null}
+                {!syriaFlags.SYRIA_MVP && showVerifiedSellerOnly ? (
+                  <div className="rounded-full bg-green-600 px-2.5 py-1 text-xs font-semibold text-white">{t("verifiedBadge")}</div>
+                ) : null}
+                {!syriaFlags.SYRIA_MVP && photoTrustTier === "full" ? (
+                  <span className="rounded-full bg-violet-100/95 px-2.5 py-1 text-xs font-bold text-violet-950 ring-1 ring-violet-300/65">
+                    {t("badgePhotoGalleryFull")}
+                  </span>
+                ) : !syriaFlags.SYRIA_MVP && photoTrustTier === "clear" ? (
+                  <span className="rounded-full bg-emerald-100/90 px-2.5 py-1 text-xs font-bold text-emerald-900 ring-1 ring-emerald-200">
+                    {t("badgePhotoQuality")}
+                  </span>
+                ) : null}
+                {showNewBadge ? (
+                  <div className="rounded-full bg-blue-500 px-2.5 py-1 text-xs font-medium text-white">{t("badgeNew")}</div>
+                ) : null}
+                {listing.plan === "hotel_featured" ? (
+                  <>
+                    <span className="rounded-full bg-indigo-100/95 px-2.5 py-1 text-xs font-bold text-indigo-950 ring-1 ring-indigo-300/60">
+                      {t("badgeHotelFeaturedPartner")}
+                    </span>
+                    {listing.isDirect ? (
+                      <span className="rounded-full bg-gradient-to-r from-emerald-100 to-amber-100/90 px-2.5 py-1 text-xs font-bold text-emerald-900 ring-1 ring-emerald-300/70">
+                        {t("badgeDirect")}
+                      </span>
+                    ) : null}
+                  </>
+                ) : listing.isDirect && (listing.plan === "featured" || listing.plan === "premium") ? (
                   <span className="rounded-full bg-gradient-to-r from-emerald-100 to-amber-100/90 px-2.5 py-1 text-xs font-bold text-emerald-900 ring-1 ring-emerald-300/70">
                     {listing.plan === "premium" ? t("badgeDirectPlusPremium") : t("badgeDirectPlusBoost")}
                   </span>
@@ -280,24 +327,15 @@ export default async function ListingDetailPage(props: Props) {
                     {listing.plan === "featured" ? <Badge tone="accent">{t("featuredBadge")}</Badge> : null}
                   </>
                 )}
-                {showNewBadge ? (
-                  <div className="bg-blue-500 px-2 py-1 text-xs font-medium text-white rounded">{t("badgeNew")}</div>
-                ) : null}
                 {isHot ? (
                   <span className="rounded-full bg-orange-100 px-2.5 py-1 text-xs font-bold text-orange-900 ring-1 ring-orange-200/80">
                     {t("badgeHot")}
                   </span>
                 ) : null}
-                {!syriaFlags.SYRIA_MVP && isVerifiedField ? (
-                  <div className="bg-green-600 px-2 py-1 text-xs font-medium text-white rounded">{t("verifiedBadge")}</div>
-                ) : null}
-                {!syriaFlags.SYRIA_MVP && photoQualityHighlight ? (
-                  <span className="rounded-full bg-emerald-100/90 px-2.5 py-1 text-xs font-bold text-emerald-900 ring-1 ring-emerald-200">
-                    {t("badgePhotoQuality")}
+                {!syriaFlags.SYRIA_MVP && normAmenities.includes("electricity_24h") ? (
+                  <span className="rounded-full bg-amber-100/95 px-2.5 py-1 text-xs font-bold text-amber-950 ring-1 ring-amber-300/70">
+                    ⚡ {t("electricity24Badge")}
                   </span>
-                ) : null}
-                {!syriaFlags.SYRIA_MVP && showTrustedHighlight ? (
-                  <div className="w-full basis-full text-sm text-green-600">{t("badgeTrustedListing")}</div>
                 ) : null}
                 {!syriaFlags.SYRIA_MVP ? <VerifiedBadge label={t("reviewedBadge")} /> : null}
               </div>
@@ -321,7 +359,9 @@ export default async function ListingDetailPage(props: Props) {
                   </div>
                   <MakeFeaturedCta
                     listingId={listing.id}
-                    currentPlan={listing.plan}
+                    currentPlan={
+                      listing.plan === "premium" ? "premium" : listing.plan === "featured" ? "featured" : "free"
+                    }
                     contact={monetizationContact}
                     featuredDurationDays={syriaPlatformConfig.monetization.featuredDurationDays}
                     viewCount={viewCountStored}
@@ -361,6 +401,9 @@ export default async function ListingDetailPage(props: Props) {
                   </li>
                 ))}
               </ul>
+              {isSybnbStay && normAmenities.includes("electricity_24h") && normAmenities.includes("wifi") ? (
+                <p className="mt-2 text-sm font-semibold text-emerald-800 [dir=rtl]:text-right">{t("convComfortStayLine")}</p>
+              ) : null}
               <p className="mt-2 text-xs text-[color:var(--darlink-text-muted)]">{t("viewCountLine", { count: displayViews })}</p>
               <div className="mt-2 space-y-0.5 text-sm leading-relaxed text-[color:var(--darlink-text-muted)]">
                 {stateLine ? <p className="font-medium text-[color:var(--darlink-text)]">{stateLine}</p> : null}
@@ -542,7 +585,8 @@ export default async function ListingDetailPage(props: Props) {
                 <p className="mt-1 text-xs text-amber-900/90">{t("f1PaymentPendingHint")}</p>
               </Card>
             ) : null}
-            {isOwner && (listing.plan === "featured" || listing.plan === "premium") ? (
+            {isOwner &&
+            (listing.plan === "featured" || listing.plan === "premium" || listing.plan === "hotel_featured") ? (
               <Card className="border-[color:var(--darlink-sand)]/30 bg-amber-50/30 p-4 shadow-[var(--darlink-shadow-sm)]">
                 {listing.plan === "premium" && listing.isDirect ? (
                   <p className="text-sm font-bold text-amber-950">{t("premiumDirectHeadline")}</p>
@@ -550,7 +594,11 @@ export default async function ListingDetailPage(props: Props) {
                 <p
                   className={`text-sm font-medium text-[color:var(--darlink-text)] ${listing.plan === "premium" && listing.isDirect ? "mt-1" : ""}`}
                 >
-                  {listing.plan === "featured" ? t("makeFeaturedActiveFeatured") : t("makeFeaturedActiveLuxury")}
+                  {listing.plan === "featured" ?
+                    t("makeFeaturedActiveFeatured")
+                  : listing.plan === "premium" ?
+                    t("makeFeaturedActiveLuxury")
+                  : t("makeFeaturedActiveHotelFeatured")}
                 </p>
                 <p className="mt-1 text-xs text-[color:var(--darlink-text-muted)]">{t("makeFeaturedActiveHint")}</p>
               </Card>

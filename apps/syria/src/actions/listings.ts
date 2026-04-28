@@ -1,6 +1,6 @@
 "use server";
 
-import { Prisma, SyriaListingPlan, SyriaPaymentMethod } from "@/generated/prisma";
+import { Prisma, SyriaListingPlan, SyriaPaymentMethod, type SyriaPropertyType } from "@/generated/prisma";
 import { prisma } from "@/lib/db";
 import { requireSessionUser } from "@/lib/auth";
 import { SYRIA_PRICING } from "@/lib/pricing";
@@ -16,6 +16,9 @@ import { validateBilingualListingCopy } from "@/lib/listing-bilingual-validation
 import { allocateAdCodeInTransaction } from "@/lib/syria/ad-code";
 import { recomputeSy8FeedRankForPropertyId } from "@/lib/sy8/sy8-feed-rank-refresh";
 import { sybnbConfig } from "@/config/sybnb.config";
+import { listingPhotoSafetyNeedsReview } from "@/lib/listing-photo-safety";
+import { MAX_LISTING_IMAGES } from "@/lib/syria/photo-upload";
+import { listingNeedsSmartArabicDescription, buildSmartListingDescriptionArEn } from "@/lib/listing-smart-description";
 
 function districtEnFromStored(cityCanonicalEn: string, areaStored: string | null | undefined): string | null {
   try {
@@ -32,14 +35,6 @@ function districtEnFromStored(cityCanonicalEn: string, areaStored: string | null
   }
 }
 
-function parseImages(raw: string): string[] {
-  return raw
-    .split(/[\n,]/)
-    .map((s) => s.trim())
-    .filter(Boolean)
-    .slice(0, 24);
-}
-
 function parseAmenities(raw: string): string[] {
   return raw
     .split(/[\n,]/)
@@ -54,8 +49,8 @@ export async function createPropertyListing(formData: FormData): Promise<void> {
 
   const titleAr = String(formData.get("title_ar") ?? "").trim();
   const titleEn = String(formData.get("title_en") ?? "").trim() || null;
-  const descriptionAr = String(formData.get("description_ar") ?? "").trim();
-  const descriptionEn = String(formData.get("description_en") ?? "").trim() || null;
+  let descriptionAr = String(formData.get("description_ar") ?? "").trim();
+  let descriptionEn = String(formData.get("description_en") ?? "").trim() || null;
   const governorate = String(formData.get("governorate") ?? "").trim();
   const cityRaw = String(formData.get("city") ?? "").trim();
   const areaRaw = String(formData.get("area") ?? "").trim();
@@ -76,7 +71,14 @@ export async function createPropertyListing(formData: FormData): Promise<void> {
     longitude <= 180;
   const price = String(formData.get("price") ?? "").trim();
   const type = String(formData.get("type") ?? "SALE").toUpperCase();
-  const images = parseImages(String(formData.get("images") ?? ""));
+  const rawImageUrls = String(formData.get("images") ?? "")
+    .split(/[\n,]/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (rawImageUrls.length > MAX_LISTING_IMAGES) {
+    return;
+  }
+  const images = rawImageUrls;
   const amenities = parseAmenities(String(formData.get("amenities") ?? ""));
   const isDirect = formData.getAll("isDirect").includes("1");
   const planRaw = String(formData.get("plan") ?? "free").toLowerCase();
@@ -90,13 +92,7 @@ export async function createPropertyListing(formData: FormData): Promise<void> {
     ? (rawMethod as SyriaPaymentMethod)
     : "MANUAL_TRANSFER";
 
-  const bilingualOk = validateBilingualListingCopy({
-    titleAr,
-    descriptionAr,
-    titleEn,
-    descriptionEn,
-  });
-  if (!bilingualOk.ok || !cityRaw || !governorate || !price) {
+  if (!cityRaw || !governorate || !price) {
     return;
   }
 
@@ -120,6 +116,32 @@ export async function createPropertyListing(formData: FormData): Promise<void> {
   }
 
   if (!coordsOk) {
+    return;
+  }
+
+  if (listingNeedsSmartArabicDescription(descriptionAr)) {
+    const gen = buildSmartListingDescriptionArEn({
+      cityAr,
+      cityCanonicalEn: city,
+      area,
+      price,
+      amenities,
+      type: type as SyriaPropertyType,
+      currency: SYRIA_PRICING.currency,
+    });
+    descriptionAr = gen.descriptionAr;
+    if (!(descriptionEn ?? "").trim()) {
+      descriptionEn = gen.descriptionEn;
+    }
+  }
+
+  const bilingualOk = validateBilingualListingCopy({
+    titleAr,
+    descriptionAr,
+    titleEn,
+    descriptionEn,
+  });
+  if (!bilingualOk.ok) {
     return;
   }
 
@@ -173,6 +195,7 @@ export async function createPropertyListing(formData: FormData): Promise<void> {
               sybnbReview: sybnbConfig.autoApproveStays ? "APPROVED" : "PENDING",
             }
           : {}),
+        needsReview: listingPhotoSafetyNeedsReview(images),
       },
     });
 

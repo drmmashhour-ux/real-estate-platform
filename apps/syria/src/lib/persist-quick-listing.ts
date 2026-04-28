@@ -4,7 +4,7 @@ import { getSessionUser, setSessionUserId } from "@/lib/auth";
 import { SYRIA_PRICING } from "@/lib/pricing";
 import { onlyDigits, toWhatsAppPath } from "@/lib/syria-phone";
 import { trackSyriaGrowthEvent } from "@/lib/growth-events";
-import { normalizeSyriaAmenityKeys } from "@/lib/syria/amenities";
+import { normalizeSyriaAmenityKeysPreserveOrder } from "@/lib/syria/amenities";
 import {
   defaultSubcategory,
   isMarketplaceCategory,
@@ -13,6 +13,7 @@ import {
   type MarketplaceCategory,
 } from "@/lib/marketplace-categories";
 import { allocateAdCodeInTransaction } from "@/lib/syria/ad-code";
+import { findSyriaCityByStored } from "@/data/syriaLocations";
 import { recomputeSy8FeedRankForPropertyId } from "@/lib/sy8/sy8-feed-rank-refresh";
 import { runAntiFraudGuardsForPublish } from "@/lib/anti-fraud/guards";
 import { ensureGuestUserForPhone } from "@/lib/syria-mvp-guest";
@@ -20,6 +21,9 @@ import { sybnbConfig } from "@/config/sybnb.config";
 import { SYBNB_ALLOW_UNVERIFIED } from "@/lib/sybnb/config";
 import { isSy8SellerVerified } from "@/lib/sy8/sy8-reputation";
 import type { SyriaPropertyType } from "@/generated/prisma";
+import { listingPhotoSafetyNeedsReview } from "@/lib/listing-photo-safety";
+import { MAX_LISTING_IMAGES } from "@/lib/syria/photo-upload";
+import { listingNeedsSmartArabicDescription, buildSmartListingDescriptionArEn } from "@/lib/listing-smart-description";
 
 export type PersistQuickListingResult =
   | {
@@ -53,7 +57,7 @@ export async function persistQuickListing(input: {
   category?: string;
   subcategory?: string;
   amenities?: string[];
-  /** Optional Arabic description; defaults to short placeholder when empty. */
+  /** Optional Arabic description; SYBNB-68 auto-fills when empty or below quality threshold. */
   descriptionAr?: string;
 }): Promise<PersistQuickListingResult> {
   const titleAr = input.title.trim();
@@ -88,8 +92,12 @@ export async function persistQuickListing(input: {
   } else {
     finalType = "SALE";
   }
-  const images = (input.images?.filter((s): s is string => typeof s === "string" && s.length > 0) ?? []).slice(0, 5);
-  const amenities = normalizeSyriaAmenityKeys(input.amenities);
+  const rawImages = (input.images?.filter((s): s is string => typeof s === "string" && s.length > 0) ?? []);
+  if (rawImages.length > MAX_LISTING_IMAGES) {
+    return { ok: false, reason: "validation" };
+  }
+  const images = rawImages.slice(0, MAX_LISTING_IMAGES);
+  const amenities = normalizeSyriaAmenityKeysPreserveOrder(input.amenities);
   const isDirect = input.isDirect !== false;
 
   if (titleAr.length < 2 || !state || !city || !priceStr || phone.length < 8) {
@@ -135,10 +143,28 @@ export async function persistQuickListing(input: {
   }
   const priceWarningKey = guards.priceWarningKey;
 
-  const descriptionAr =
+  let descriptionAr =
     input.descriptionAr?.trim() && input.descriptionAr.trim() !== "—"
       ? input.descriptionAr.trim().slice(0, 4000)
-      : "—";
+      : "";
+  let descriptionEn: string | null = null;
+
+  const cityResolvedAr = findSyriaCityByStored(city)?.city.name_ar ?? city;
+
+  if (listingNeedsSmartArabicDescription(descriptionAr)) {
+    const gen = buildSmartListingDescriptionArEn({
+      cityAr: cityResolvedAr,
+      cityCanonicalEn: city,
+      area,
+      price: priceStr,
+      amenities,
+      type: finalType,
+      currency: SYRIA_PRICING.currency,
+    });
+    descriptionAr = gen.descriptionAr;
+    descriptionEn = gen.descriptionEn;
+  }
+
   const property = await prisma.$transaction(async (tx) => {
     await tx.syriaAppUser.update({
       where: { id: user.id },
@@ -151,7 +177,7 @@ export async function persistQuickListing(input: {
         titleAr,
         titleEn: null,
         descriptionAr,
-        descriptionEn: null,
+        descriptionEn,
         state,
         governorate: state,
         city,
@@ -181,6 +207,7 @@ export async function persistQuickListing(input: {
         listingVerified: false,
         verified: false,
         isDirect,
+        needsReview: listingPhotoSafetyNeedsReview(images),
         ...(category === "stay" ?
           {
             sybnbReview: sybnbConfig.autoApproveStays ? "APPROVED" : "PENDING",

@@ -5,6 +5,7 @@
 
 import type { SyriaProperty } from "@/generated/prisma";
 import { syriaPlatformConfig } from "@/config/syria-platform.config";
+import { normalizeSyriaAmenityKeys } from "@/lib/syria/amenities";
 
 export type ListingQualityIssueCode =
   | "title_short"
@@ -13,6 +14,8 @@ export type ListingQualityIssueCode =
   | "description_weak"
   | "photos_low"
   | "amenities_sparse"
+  | "amenities_empty"
+  | "amenities_missing_basics"
   | "english_missing";
 
 export type ListingQualityResult = {
@@ -26,7 +29,8 @@ export type ListingQualityResult = {
 };
 
 const MIN_TITLE_LEN = 8;
-const MIN_DESC_LEN = 80;
+/** ORDER SYBNB-68 — same threshold for smart-description generation triggers */
+export const LISTING_MIN_DESCRIPTION_AR_CHARS = 80;
 const MIN_PHOTOS = 2;
 const MIN_AMENITIES = 2;
 
@@ -49,6 +53,7 @@ export function analyzeListingQuality(property: Pick<
   const amenities = Array.isArray(property.amenities)
     ? (property.amenities as unknown[]).filter((x): x is string => typeof x === "string")
     : [];
+  const amenitiesNormalized = normalizeSyriaAmenityKeys(amenities);
 
   let score = 100;
 
@@ -72,7 +77,7 @@ export function analyzeListingQuality(property: Pick<
     });
   }
 
-  if (property.descriptionAr.trim().length < MIN_DESC_LEN) {
+  if (property.descriptionAr.trim().length < LISTING_MIN_DESCRIPTION_AR_CHARS) {
     score -= 20;
     issues.push({
       code: "description_short",
@@ -94,13 +99,42 @@ export function analyzeListingQuality(property: Pick<
     tipsEn.push("Include facade, living area, kitchen, and bathroom shots at minimum.");
   }
 
-  if (amenities.length < MIN_AMENITIES) {
-    score -= 12;
+  if (amenities.length === 0) {
+    score -= 14;
     issues.push({
-      code: "amenities_sparse",
-      messageAr: "لوحة المرافق شبه فارغة — أضف مصعد، موقف، مولد، مكيف، إنترنت…",
-      messageEn: "Amenities list is sparse — add elevator, parking, generator, AC, internet…",
+      code: "amenities_empty",
+      messageAr: "لا توجد مرافق مذكورة — أضف كهرباء، واي فاي، ماء ساخن، أو مفروش لرفع الثقة.",
+      messageEn: "No amenities listed — add electricity, Wi‑Fi, hot water, or furnished to improve trust.",
     });
+  } else {
+    if (amenitiesNormalized.length === 0) {
+      score -= 10;
+      issues.push({
+        code: "amenities_sparse",
+        messageAr: "لم نتعرّف على مفاتيح المرافق — استخدم الخيارات المعتمدة (كهرباء، واي فاي…).",
+        messageEn: "Amenities aren’t using catalog keys — pick standard tags (electricity, Wi‑Fi…).",
+      });
+    } else if (amenitiesNormalized.length < MIN_AMENITIES) {
+      score -= 12;
+      issues.push({
+        code: "amenities_sparse",
+        messageAr: "لوحة المرافق شبه فارغة — أضف كهرباء، واي فاي، ماء، مكيف…",
+        messageEn: "Amenities list is sparse — add electricity, Wi‑Fi, hot water, AC…",
+      });
+    }
+    const hasBasics =
+      amenitiesNormalized.includes("electricity_24h") ||
+      amenitiesNormalized.includes("wifi") ||
+      amenitiesNormalized.includes("water") ||
+      amenitiesNormalized.includes("hot_water_24h");
+    if (amenitiesNormalized.length > 0 && !hasBasics) {
+      score -= 8;
+      issues.push({
+        code: "amenities_missing_basics",
+        messageAr: "لا توجد إشارة إلى كهرباء / واي فاي / ماء ساخن — الإعلانات التي تعرضها تُثقَل أكثر.",
+        messageEn: "Missing basics (electricity / Wi‑Fi / hot water) — listings with these signals convert better.",
+      });
+    }
   }
 
   score = Math.max(0, Math.min(100, score));

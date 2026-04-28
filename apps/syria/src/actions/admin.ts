@@ -7,7 +7,7 @@ import { syriaPlatformConfig } from "@/config/syria-platform.config";
 import { trackSyriaGrowthEvent } from "@/lib/growth-events";
 import { persistAutonomyPreview } from "@/lib/autonomy-recommendations";
 import { assertDarlinkRuntimeEnv } from "@/lib/guard";
-import type { SyriaSybnbListingReview } from "@/generated/prisma";
+import type { SyriaListingPlan, SyriaSybnbListingReview } from "@/generated/prisma";
 import { appendSyriaSybnbCoreAudit } from "@/lib/sybnb/sybnb-financial-audit";
 import { logSecurityEvent } from "@/lib/sybnb/sybnb-security-log";
 import { recomputeSy8FeedRankForPropertyId } from "@/lib/sy8/sy8-feed-rank-refresh";
@@ -476,6 +476,8 @@ export async function setPropertyFraudFlag(formData: FormData): Promise<void> {
     data: { fraudFlag: fraud },
   });
 
+  await recomputeSy8FeedRankForPropertyId(id);
+
   await revalidateSyriaPaths("/admin/listings");
 }
 
@@ -554,4 +556,31 @@ export async function resolveAutonomyRecommendation(formData: FormData): Promise
   });
 
   await revalidateSyriaPaths("/admin/autonomy");
+}
+
+/** SYBNB-41 — Set `plan = hotel_featured` (active subscription) or clear to `free` for HOTEL listings only. */
+export async function setSybnbHotelListingPlan(formData: FormData): Promise<void> {
+  assertDarlinkRuntimeEnv();
+  const admin = await requireAdmin();
+  const id = String(formData.get("propertyId") ?? "").trim();
+  const raw = String(formData.get("plan") ?? "").trim();
+  if (!id || (raw !== "hotel_featured" && raw !== "free")) return;
+
+  const listing = await prisma.syriaProperty.findUnique({
+    where: { id },
+    select: { id: true, type: true },
+  });
+  if (!listing || listing.type !== "HOTEL") return;
+
+  await prisma.syriaProperty.update({
+    where: { id },
+    data: { plan: raw as SyriaListingPlan },
+  });
+  await recomputeSy8FeedRankForPropertyId(id);
+  await revalidateSyriaPaths("/admin/listings", "/sybnb", "/sybnb/host", `/listing/${id}`);
+  void logSecurityEvent({
+    action: "admin_hotel_subscription_plan",
+    userId: admin.id,
+    metadata: { propertyId: id, plan: raw },
+  });
 }

@@ -8,6 +8,7 @@ import {
   setPropertyFraudFlag,
   setSybnbListingReview,
   setSybnbListingFieldAgent,
+  setSybnbHotelListingPlan,
 } from "@/actions/admin";
 import { getDarlinkAutonomyFlags } from "@/lib/platform-flags";
 import { money } from "@/lib/format";
@@ -165,6 +166,41 @@ export default async function AdminListingsPage() {
                       </button>
                     </form>
                   ) : null}
+                </div>
+              </div>
+            ) : null}
+
+            {p.type === "HOTEL" ? (
+              <div className="mt-4 rounded-xl border border-teal-200 bg-teal-50/40 px-4 py-3">
+                <p className="text-xs font-semibold text-teal-950">{t("hotelFeaturedHelp")}</p>
+                <p className="mt-2 text-sm text-teal-950">
+                  {t("hotelListingPlanLine", {
+                    plan: p.plan === "hotel_featured" ? t("planLabelHotelFeatured") : String(p.plan),
+                  })}
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <form action={setSybnbHotelListingPlan}>
+                    <input type="hidden" name="propertyId" value={p.id} />
+                    <input type="hidden" name="plan" value="hotel_featured" />
+                    <button
+                      type="submit"
+                      disabled={p.plan === "hotel_featured"}
+                      className="rounded-lg bg-teal-800 px-3 py-1.5 text-xs font-semibold text-white hover:bg-teal-900 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {t("hotelFeaturedActivate")}
+                    </button>
+                  </form>
+                  <form action={setSybnbHotelListingPlan}>
+                    <input type="hidden" name="propertyId" value={p.id} />
+                    <input type="hidden" name="plan" value="free" />
+                    <button
+                      type="submit"
+                      disabled={p.plan === "free"}
+                      className="rounded-lg border border-teal-400 bg-white px-3 py-1.5 text-xs font-semibold text-teal-950 hover:bg-teal-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {t("hotelFeaturedClear")}
+                    </button>
+                  </form>
                 </div>
               </div>
             ) : null}
