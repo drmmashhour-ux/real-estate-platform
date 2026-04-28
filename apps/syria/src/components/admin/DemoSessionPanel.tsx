@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useLocale } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { demoScript } from "@/lib/demo/demo-script";
 import { isAbortError, runDemoScript } from "@/lib/demo/demo-player";
@@ -21,7 +22,6 @@ import { useInvestorDemoRecording } from "@/components/demo/DemoRecordingProvide
 import { useAutoNarration } from "@/components/demo/NarrationProvider";
 import { useStoryMode } from "@/components/demo/StoryModeProvider";
 
-const DEMO_GUIDE_LOCALE_PATH = "/en/demo" as const;
 const LS_DEMO_SESSION_KEY = "syria_investor_demo_session";
 const LS_AI_VOICE_USER = "syria_ai_voice_user_enabled";
 const LS_AUTO_VIDEO_STORY = "syria_demo_auto_video_with_story";
@@ -37,6 +37,7 @@ type StatusJson = {
 };
 
 export function DemoSessionPanel() {
+  const locale = useLocale();
   const router = useRouter();
   const demoRec = useInvestorDemoRecording();
   const narration = useAutoNarration();
@@ -156,8 +157,9 @@ export function DemoSessionPanel() {
       }
       setSuccess("Investor demo started — opening guided flow…");
       await refresh();
+      const demoPath = `/${locale}/demo`;
       window.setTimeout(() => {
-        router.push(DEMO_GUIDE_LOCALE_PATH as never);
+        router.push(demoPath as never);
       }, 400);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Request failed");
@@ -362,6 +364,23 @@ export function DemoSessionPanel() {
         When auto-clean is on, stopping or expiring the session triggers investor-demo reset (demo markers only).
       </p>
 
+      <div className="mt-4 rounded-xl border border-violet-300 bg-gradient-to-br from-violet-50 to-white p-4 shadow-sm [dir=rtl]:text-right">
+        <p className="text-sm font-semibold text-violet-950">Full guided demo (one click)</p>
+        <p className="mt-1 text-xs text-stone-700">
+          Turns on investor demo runtime, seeds DEMO_* data, starts a 60-minute session with auto-clean, then opens the
+          guided flow.
+        </p>
+        <button
+          type="button"
+          disabled={Boolean(busy) || autoDemoRunning || Boolean(storyMode?.running)}
+          aria-busy={busy === "full"}
+          onClick={() => void startFullInvestorDemo()}
+          className="mt-3 rounded-xl border border-violet-600 bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-violet-700 disabled:opacity-50"
+        >
+          {busy === "full" ? "Starting…" : "🚀 Start Investor Demo"}
+        </button>
+      </div>
+
       <dl className="mt-4 space-y-2 text-sm text-stone-700">
         <div className="flex flex-wrap gap-2">
           <dt className="font-medium text-stone-600">Effective demo UX</dt>
@@ -499,14 +518,6 @@ export function DemoSessionPanel() {
           className="rounded-xl border border-stone-500 bg-stone-100 px-4 py-2 text-sm font-semibold text-stone-900 hover:bg-stone-200 disabled:opacity-50"
         >
           ⏹ Stop Demo
-        </button>
-        <button
-          type="button"
-          disabled={Boolean(busy) || autoDemoRunning}
-          onClick={() => void startFullInvestorDemo()}
-          className="rounded-xl border border-violet-600 bg-violet-50 px-4 py-2 text-sm font-semibold text-violet-950 hover:bg-violet-100 disabled:opacity-50"
-        >
-          {busy === "full" ? "Starting…" : "🚀 Start Investor Demo"}
         </button>
         <button
           type="button"

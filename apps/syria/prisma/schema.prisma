@@ -227,6 +227,8 @@ model SyriaAppUser {
   sybnbAnalyticsEvents  SybnbEvent[]             @relation("SybnbAnalyticsEventActor")
   sybnbFieldAgentAttributions SyriaProperty[]   @relation("SybnbListingFieldAgent")
   sybnbAgentEarnings      SybnbAgentEarning[]      @relation("SybnbAgentEarningAgent")
+  sybnbReminderDeliveries SybnbReminderLog[]       @relation("SybnbReminderRecipient")
+  sybnbMessagesSent       SybnbMessage[]           @relation("SybnbMessageSender")
 
   @@index([isTest])
   @@map("syria_users")
@@ -536,17 +538,73 @@ model SybnbBooking {
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
+  /// Set when host approves the SYBNB-1 request (manual payment phase begins).
+  approvedAt DateTime? @map("approved_at")
+  /// Simulated escrow UX only — `none` | `simulated_pending` | `simulated_secured` | `simulated_released` (no PSP / no real funds).
+  sybnbSimulatedEscrowStatus String? @map("sybnb_simulated_escrow_status")
   /// ORDER SYBNB-108 — mirrors listing/test flow for cleanup (`SYBNB_TEST_MODE`).
   isTest Boolean @default(false) @map("is_test")
 
   paymentAudits SybnbPaymentAudit[]
+  reminderLogs  SybnbReminderLog[]
+  sybnbMessages SybnbMessage[]
 
   @@index([listingId])
   @@index([guestId])
   @@index([hostId])
   @@index([status])
   @@index([isTest])
+  @@index([approvedAt])
   @@map("sybnb_bookings")
+}
+
+/// Cron-delivered reminder log (append-only). Rate-limit enforced in application (24h per booking/type/recipient).
+model SybnbReminderLog {
+  id               String       @id @default(cuid())
+  bookingId        String       @map("booking_id")
+  booking          SybnbBooking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  reminderType     String       @map("reminder_type")
+  recipientUserId  String       @map("recipient_user_id")
+  recipient        SyriaAppUser @relation("SybnbReminderRecipient", fields: [recipientUserId], references: [id], onDelete: Cascade)
+  sentAt           DateTime     @default(now()) @map("sent_at")
+
+  @@index([bookingId, reminderType, recipientUserId, sentAt])
+  @@map("sybnb_reminder_log")
+}
+
+/// In-platform booking chat (SYBNB 2.0). Append-only; no external delivery.
+model SybnbMessage {
+  id        String   @id @default(cuid())
+  bookingId String   @map("booking_id")
+  senderId  String   @map("sender_id")
+  content   String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+  /// Advisory risk from {@link analyzeMessage} — `low` | `medium` | `high`.
+  riskLevel String?  @map("risk_level")
+  /// JSON string array of flags — `phone` | `email` | `link` | `external_payment`.
+  riskFlags Json?    @map("risk_flags")
+
+  booking SybnbBooking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  sender  SyriaAppUser @relation("SybnbMessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([bookingId])
+  @@index([bookingId, createdAt])
+  @@map("sybnb_messages")
+}
+
+/// Append-only SYBNB booking lifecycle audit (request / approve / decline). No PII in metadata.
+model SybnbAuditLog {
+  id        String   @id @default(cuid())
+  action    String
+  bookingId String?  @map("booking_id")
+  userId    String?  @map("user_id")
+  actorRole String?  @map("actor_role")
+  metadata  Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([bookingId])
+  @@index([userId])
+  @@map("sybnb_audit_log")
 }
 
 /// ORDER SYBNB-84 — Guest-submitted SYBNB report (`listing_id` = `SyriaProperty.id`).

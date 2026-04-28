@@ -3,7 +3,7 @@ import type { DemoRecordedEvent } from "@/lib/demo/demo-recorder";
 export type ReplayDeps = {
   /** Navigate client-side only — caller must pass locale-prefixed paths from recordings */
   navigate: (path: string) => void | Promise<void>;
-  /** Visual-only pulse / toast — never triggers DOM click dispatch */
+  /** Visual-only pulse — never dispatches synthetic clicks or fetch */
   onUiPulse?: (hint: string) => void;
   /** Pause between steps (navigation / pulse only — no writes). */
   stepDelayMs?: number;
@@ -29,8 +29,10 @@ function sleep(ms: number, signal?: AbortSignal): Promise<void> {
 }
 
 /**
- * Replays a recorded investor-demo session using navigation + UI pulses only.
- * Does not programmatically click elements or call mutation APIs.
+ * Replays a recorded investor-demo session: **client navigation + optional UI hints only**.
+ *
+ * Safe mode (production): does **not** POST to APIs, does **not** trigger payments, does **not**
+ * programmatically click buttons or mutate server state — only `router.push` + `onUiPulse`.
  */
 export async function replayDemoSession(events: DemoRecordedEvent[], deps: ReplayDeps): Promise<void> {
   const sorted = [...events].sort((a, b) => a.timestamp - b.timestamp);

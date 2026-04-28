@@ -109,9 +109,16 @@ export async function getDrBrainMetrics(): Promise<DrBrainMetrics> {
       ORDER BY 1 ASC
     `,
     prisma.$queryRaw<Array<{ bucket: Date; n: bigint }>>`
-      SELECT date_trunc('hour', created_at) AS bucket, COUNT(*)::bigint AS n
-      FROM syria_payment_audit_log
-      WHERE created_at >= NOW() - INTERVAL '24 hours'
+      SELECT date_trunc('hour', pal.created_at) AS bucket, COUNT(*)::bigint AS n
+      FROM syria_payment_audit_log pal
+      INNER JOIN syria_payment_requests spr ON spr.id = pal.request_id
+      INNER JOIN syria_properties sp ON sp.id = spr.listing_id
+      WHERE pal.created_at >= NOW() - INTERVAL '24 hours'
+        AND NOT (sp.title_ar LIKE 'DEMO%')
+        AND (
+          sp.demo_meta IS NULL
+          OR NOT (COALESCE(sp.demo_meta, '{}'::jsonb) @> '{"demo": true}'::jsonb)
+        )
       GROUP BY 1
       ORDER BY 1 ASC
     `,

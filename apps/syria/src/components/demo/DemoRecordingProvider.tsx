@@ -13,11 +13,11 @@ import {
 import { usePathname } from "next/navigation";
 import { useRouter } from "@/i18n/navigation";
 import {
-  appendDemoEventLocal,
   clearDemoEventsLocal,
   DEMO_RECORDING_ACTIVE_KEY,
   DEMO_REPLAY_ACTIVE_KEY,
   loadDemoEventsLocal,
+  recordDemoEvent,
   type DemoRecordedEvent,
 } from "@/lib/demo/demo-recorder";
 import { replayDemoSession } from "@/lib/demo/demo-replay";
@@ -110,7 +110,7 @@ export function DemoRecordingProvider({
       timestamp: Date.now(),
       metadata: { source: "pathname" },
     };
-    appendDemoEventLocal(ev);
+    recordDemoEvent(ev);
     void mirrorEventToServer(ev);
   }, [pathname, recording, demoUxActive]);
 
@@ -138,7 +138,7 @@ export function DemoRecordingProvider({
         timestamp: Date.now(),
         metadata: meta,
       };
-      appendDemoEventLocal(rec);
+      recordDemoEvent(rec);
       void mirrorEventToServer(rec);
     }
 
@@ -168,7 +168,7 @@ export function DemoRecordingProvider({
       timestamp: Date.now(),
       metadata: { source: "record_start" },
     };
-    appendDemoEventLocal(nav);
+    recordDemoEvent(nav);
     void mirrorEventToServer(nav);
   }, [demoUxActive, pathname]);
 

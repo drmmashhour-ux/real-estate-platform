@@ -15,7 +15,10 @@ function isVercelOrProdRuntime(): boolean {
 }
 
 /**
- * One-click investor demo: runtime session + seed. Blocked on hosted production unless explicitly allowed.
+ * One-click full demo session (admin-only JSON API — uses {@link getAdminUser}; page flows use `requireAdmin`).
+ *
+ * Steps: UUID session → {@link applyInvestorDemoSessionStart} (runtime flags + 60m TTL + auto-clean) →
+ * {@link executeInvestorDemoSeed} (demo-marked rows only). Hosted prod requires `INVESTOR_DEMO_IN_PRODUCTION=true`.
  */
 export async function POST() {
   const admin = await getAdminUser();

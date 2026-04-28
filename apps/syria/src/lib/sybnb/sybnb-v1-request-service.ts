@@ -1,10 +1,12 @@
 import { prisma } from "@/lib/db";
 import type { SybnbBooking, SyriaProperty, SyriaAppUser, SyriaUserRole } from "@/generated/prisma";
-import { isSybnbStayBookablePropertyType } from "@/lib/sybnb/sybnb-booking-rules";
+import { evaluateSybnbStayRequestEligibility } from "@/lib/sybnb/sybnb-booking-rules";
 import { countReportsForProperty } from "@/lib/sy8/sy8-report-threshold";
+import { countUnreviewedSybnbReportsForProperty } from "@/lib/sybnb/sybnb-reports";
 import { isSy8SellerVerified } from "@/lib/sy8/sy8-reputation";
 import { computeSybnbV1BookingRiskScore, sybnbRiskStateFromScore } from "@/lib/sybnb/sybnb-v1-booking-risk";
 import { recordSybnbEvent, SYBNB_ANALYTICS_EVENT_TYPES } from "@/lib/sybnb/sybnb-analytics-events";
+import { SYBNB_SIM_ESCROW_PENDING } from "@/lib/sybnb/sybnb-simulated-escrow";
 import { logTimelineEvent } from "@/lib/timeline/log-event";
 
 function parseStayDate(s: string): Date | null {
@@ -39,7 +41,7 @@ export type CreateSybnbV1RequestResult =
 
 /**
  * SYBNB-1: create a `SybnbBooking` (no card or wallet payment).
- * Required gates: `listing.status === PUBLISHED`, `listing.owner.flagged === false` (plus stay safety: `sybnbReview`, no fraud queue, etc.).
+ * Gates match guest-facing browse + {@link evaluateSybnbStayRequestEligibility} (approved stay, published, TRUST bars, location, unreviewed-report threshold, optional host verification).
  * `nights` = UTC-midnight calendar diff; `totalAmount = nights * nightlyRate` with nightlyRate = `pricePerNight` if set, else `floor(price)` (see `listing.price` on stay rows).
  * Row: `status: requested`, `paymentStatus: none`, `hostId: listing.ownerId` (seller).
  */
@@ -57,25 +59,18 @@ export async function createSybnbV1Request(input: {
   if (!listing) {
     return { ok: false, code: "not_found" };
   }
-  if (listing.category !== "stay" || !isSybnbStayBookablePropertyType(listing.type)) {
-    return { ok: false, code: "not_stay" };
-  }
-  if (listing.status !== "PUBLISHED") {
-    return { ok: false, code: "blocked" };
-  }
-  if (listing.sybnbReview !== "APPROVED") {
-    return { ok: false, code: "blocked" };
-  }
-  if (listing.fraudFlag || listing.needsReview) {
-    return { ok: false, code: "blocked" };
-  }
   if (listing.ownerId === input.guestId) {
     return { ok: false, code: "own_listing" };
   }
-  if (listing.owner.flagged) {
-    return { ok: false, code: "blocked" };
-  }
-  if (listing.owner.sybnbSupplyPaused) {
+
+  const unreviewed = await countUnreviewedSybnbReportsForProperty(listing.id);
+  const elig = evaluateSybnbStayRequestEligibility(listing, listing.owner, {
+    unreviewedReportCount: unreviewed,
+  });
+  if (!elig.ok) {
+    if (elig.code === "not_stay") {
+      return { ok: false, code: "not_stay" };
+    }
     return { ok: false, code: "blocked" };
   }
 
@@ -187,6 +182,8 @@ export async function hostApproveSybnbV1Request(input: { userId: string; userRol
     data: {
       status: "approved",
       paymentStatus: "manual_required",
+      approvedAt: new Date(),
+      sybnbSimulatedEscrowStatus: SYBNB_SIM_ESCROW_PENDING,
     },
   });
 

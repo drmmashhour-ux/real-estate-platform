@@ -24,7 +24,12 @@ export function syriaPropertyExcludeInvestorDemoWhere(): Prisma.SyriaPropertyWhe
   };
 }
 
-/** Exclude investor-demo tagged rows / listings from DR.BRAIN fraud & payment aggregates (SYBNB-137). */
+/**
+ * Exclude investor-demo tagged rows / listings from DR.BRAIN fraud & payment aggregates (SYBNB-137).
+ *
+ * Align with raw SQL in {@link getDrBrainMetrics}: hourly `syria_payment_audit_log` buckets JOIN
+ * `syria_properties` and exclude `title_ar LIKE 'DEMO%'` and `demo_meta.demo === true`.
+ */
 export function sybnbCoreAuditExcludeInvestorDemoWhere(): Prisma.SyriaSybnbCoreAuditWhereInput {
   return {
     OR: [

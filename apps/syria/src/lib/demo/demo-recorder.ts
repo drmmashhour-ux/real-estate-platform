@@ -1,6 +1,11 @@
 /**
  * Investor demo interaction recorder — shared types & client-safe helpers.
- * Persistence: browser localStorage (primary) + optional server mirror via demo-recorder-store (admin APIs).
+ *
+ * Persistence: browser `localStorage` (primary) + optional server mirror (`demo-recorder-store` + admin APIs).
+ *
+ * Gating: recording hooks run only when the app shell enables investor demo UX (see `DemoRecordingProvider`:
+ * `isInvestorDemoModeActive()` on the server — covers `INVESTOR_DEMO_MODE=true` **and**
+ * `INVESTOR_DEMO_MODE_RUNTIME` / session TTL). Do not call {@link recordDemoEvent} outside that context.
  */
 
 export type DemoRecordedEventType = "CLICK" | "NAVIGATION";
@@ -19,18 +24,7 @@ export const DEMO_REPLAY_ACTIVE_KEY = "syria_demo_replay_active_v1";
 
 export const DEMO_RECORDER_MAX_EVENTS = 600;
 
-export function parseDemoEventsJson(raw: string | null): DemoRecordedEvent[] {
-  if (!raw?.trim()) return [];
-  try {
-    const v = JSON.parse(raw) as unknown;
-    if (!Array.isArray(v)) return [];
-    return v.filter(isDemoRecordedEvent);
-  } catch {
-    return [];
-  }
-}
-
-function isDemoRecordedEvent(e: unknown): e is DemoRecordedEvent {
+export function isValidDemoRecordedEvent(e: unknown): e is DemoRecordedEvent {
   if (!e || typeof e !== "object") return false;
   const o = e as Record<string, unknown>;
   return (
@@ -38,6 +32,17 @@ function isDemoRecordedEvent(e: unknown): e is DemoRecordedEvent {
     typeof o.path === "string" &&
     typeof o.timestamp === "number"
   );
+}
+
+export function parseDemoEventsJson(raw: string | null): DemoRecordedEvent[] {
+  if (!raw?.trim()) return [];
+  try {
+    const v = JSON.parse(raw) as unknown;
+    if (!Array.isArray(v)) return [];
+    return v.filter(isValidDemoRecordedEvent);
+  } catch {
+    return [];
+  }
 }
 
 export function persistDemoEventsLocal(events: DemoRecordedEvent[]): void {
@@ -76,7 +81,22 @@ export function clearDemoEventsLocal(): void {
   }
 }
 
-/** Strict gate aligned with ops expectation for telemetry (static env flag). */
+/**
+ * Append one interaction to the local tape. Intended for use while investor demo UX is active
+ * (layout + {@link DemoRecordingProvider}); replay stays navigation + UI pulse only — see {@link replayDemoSession}.
+ */
+export function recordDemoEvent(ev: DemoRecordedEvent): DemoRecordedEvent[] {
+  if (typeof window === "undefined") return [];
+  if (!isValidDemoRecordedEvent(ev)) {
+    return loadDemoEventsLocal();
+  }
+  return appendDemoEventLocal(ev);
+}
+
+/**
+ * Build-time / Node-only check — **static** `INVESTOR_DEMO_MODE`. Runtime demo sessions use
+ * `INVESTOR_DEMO_MODE_RUNTIME`; the browser gate is `demoUxActive` from the server layout.
+ */
 export function canRecordInvestorDemoStaticEnv(): boolean {
   return process.env.INVESTOR_DEMO_MODE === "true";
 }

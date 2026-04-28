@@ -36,6 +36,7 @@ export function SybnbV1HostConfirm({ bookingId }: Props) {
       <button
         type="button"
         disabled={loading}
+        data-demo-record="sybnb_host_confirm_booking"
         onClick={() => {
           triggerNarration("ACTION_HOST_CONFIRM");
           void post();

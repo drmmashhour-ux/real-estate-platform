@@ -1,10 +1,16 @@
 import type { DrBrainReport } from "@repo/drbrain";
-import { isInvestorDemoModeActive } from "@/lib/sybnb/investor-demo";
 import { disableDemoModeSafely } from "@/lib/sybnb/demo-safety";
+import { isDemoModeActive } from "@/lib/sybnb/runtime-flags";
 
 /**
- * CRITICAL checks that justify auto-disabling investor demo (production-risk signals).
- * Excludes e.g. local build/typecheck failures (`build.*`) — those must not kill demo sessions.
+ * Auto-disable demo only when CRITICAL results indicate production/system risk — not build-only failures.
+ *
+ * Covers (via check id prefixes): DB health (`database.*`), payment rail posture (`payments.*`),
+ * fraud/anomaly hooks fed by non-demo metrics (`anomalies.*`), env isolation (`env.*`).
+ * Security hooks may gain CRITICAL checks later (`security.*`).
+ *
+ * Excludes: `build.*` (local/typecheck noise). Fraud/payment/error aggregates exclude `metadata.demo === true`
+ * and demo listings/bookings (`demo-metrics-filter`, raw SQL in {@link getDrBrainMetrics}).
  */
 const DEMO_FAILSAFE_CRITICAL_PREFIXES = ["database.", "payments.", "anomalies.", "security.", "env."] as const;
 
@@ -20,13 +26,15 @@ function reportHasProductionRiskCritical(report: DrBrainReport): boolean {
 }
 
 /**
- * PHASE 3 — After Dr. Brain computes a real (non-synthetic) report: disable investor demo if CRITICAL
- * production-risk signals fire while demo is active. Read-only paths never call this.
+ * After Dr. Brain computes a real (non-synthetic) report: disable investor demo only when the report is
+ * CRITICAL **and** at least one failing CRITICAL check is a production-risk category (not build-only).
+ *
+ * Read-only DR.BRAIN rollups must not call this.
  */
 export async function afterSyriaDrBrainReportComputed(report: DrBrainReport): Promise<void> {
   if (report.status !== "CRITICAL") return;
   if (!reportHasProductionRiskCritical(report)) return;
-  if (!isInvestorDemoModeActive()) return;
+  if (!(await isDemoModeActive())) return;
 
   await disableDemoModeSafely("Dr. Brain detected CRITICAL system issue");
 }

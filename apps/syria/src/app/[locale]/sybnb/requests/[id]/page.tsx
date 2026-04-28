@@ -6,7 +6,11 @@ import { prisma } from "@/lib/db";
 import { getSessionUser } from "@/lib/auth";
 import { money } from "@/lib/format";
 import { pickListingTitle } from "@/lib/listing-localized";
-import { SybnbBookingLifecycle } from "@/components/sybnb/SybnbBookingLifecycle";
+import { syncSybnbSimulatedEscrowReleased } from "@/lib/sybnb/sybnb-simulated-escrow";
+import { BookingTimeline } from "@/components/sybnb/BookingTimeline";
+import { ChatBox } from "@/components/sybnb/ChatBox";
+import { EscrowStatus } from "@/components/sybnb/EscrowStatus";
+import { HostPaymentInstructions } from "@/components/sybnb/HostPaymentInstructions";
 import { SybnbV1HostActions } from "@/components/sybnb/SybnbV1HostActions";
 import { SybnbV1HostConfirm } from "@/components/sybnb/SybnbV1HostConfirm";
 
@@ -45,9 +49,19 @@ export default async function SybnbV1RequestStatusPage(props: Props) {
   const { id } = await props.params;
   const locale = await getLocale();
   const t = await getTranslations("Sybnb.v1");
+  const tt = await getTranslations("Sybnb.timeline");
+  const ti = await getTranslations("Sybnb.instructions");
   const u = await getSessionUser();
 
-  const b = await prisma.sybnbBooking.findUnique({
+  let b = await prisma.sybnbBooking.findUnique({
+    where: { id },
+    include: { listing: true, guest: true, host: true },
+  });
+  if (!b) {
+    notFound();
+  }
+  await syncSybnbSimulatedEscrowReleased(b.id);
+  b = await prisma.sybnbBooking.findUnique({
     where: { id },
     include: { listing: true, guest: true, host: true },
   });
@@ -62,17 +76,28 @@ export default async function SybnbV1RequestStatusPage(props: Props) {
     );
   }
   const isHost = u.id === b.hostId;
+  const canChatSend = u.id === b.guestId || u.id === b.hostId;
   const title = pickListingTitle(b.listing, locale);
   const statusLabel = v1StatusLabel(b.status, t);
+
+  const pastManualPhase =
+    b.status === "confirmed" ||
+    b.status === "completed" ||
+    b.status === "paid" ||
+    b.paymentStatus === "paid";
+
+  const showApprovedPaymentHint =
+    b.status !== "declined" &&
+    !pastManualPhase &&
+    (b.status === "approved" ||
+      b.status === "payment_pending" ||
+      b.status === "needs_review" ||
+      b.paymentStatus === "manual_required");
 
   return (
     <div className="mx-auto max-w-2xl space-y-6 [dir=rtl]:text-right">
       <h1 className="text-xl font-semibold text-neutral-900">{t("requestTitle")}</h1>
-      <SybnbBookingLifecycle
-        status={b.status}
-        isHost={isHost}
-        t={t as unknown as (key: string) => string}
-      />
+
       <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
         <p className="text-sm text-neutral-500">{t("property")}</p>
         <p className="mt-0.5 font-medium text-neutral-900">
@@ -109,6 +134,34 @@ export default async function SybnbV1RequestStatusPage(props: Props) {
           </div>
         ) : null}
       </div>
+
+      {b.status === "requested" ? <p className="text-sm text-neutral-700">{tt("hintWaiting")}</p> : null}
+
+      {showApprovedPaymentHint ? (
+        <p className="text-sm text-neutral-700">{tt("hintApprovedPayment")}</p>
+      ) : null}
+
+      {b.status === "declined" ? (
+        <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-950">{tt("declined")}</div>
+      ) : (
+        <BookingTimeline booking={b} t={tt} />
+      )}
+
+      {b.status !== "declined" ? (
+        <ChatBox
+          bookingId={b.id}
+          viewerUserId={u.id}
+          guestId={b.guestId}
+          hostId={b.hostId}
+          canSend={canChatSend}
+          suggestionsEnabled={isHost}
+        />
+      ) : null}
+
+      <EscrowStatus booking={b} isHost={isHost} />
+
+      <HostPaymentInstructions booking={b} isGuest={u.id === b.guestId} t={ti} />
+
       <p>
         <Link href="/sybnb/host" className="text-sm font-medium text-amber-800 underline-offset-2 hover:underline">
           {t("backHost")}

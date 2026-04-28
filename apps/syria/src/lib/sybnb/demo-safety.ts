@@ -1,6 +1,6 @@
 import { appendSyriaSybnbCoreAudit } from "@/lib/sybnb/sybnb-financial-audit";
 import { logSecurityEvent } from "@/lib/sybnb/sybnb-security-log";
-import { runInvestorDemoResetThrottled } from "@/lib/demo/demo-session";
+import { logDemoSessionEvent, runInvestorDemoResetThrottled } from "@/lib/demo/demo-session";
 import {
   setSyriaInvestorDemoExpiresAt,
   setSyriaInvestorDemoRuntimeEnabled,
@@ -16,7 +16,8 @@ import { logTimelineEvent } from "@/lib/timeline/log-event";
 
 const DEMO_DISABLE_COOLDOWN_MS = 10 * 60 * 1000;
 
-let lastDemoDisableAt = 0;
+/** Anti-flap: minimum interval between successful auto-disables (demo-safety + Dr. Brain). */
+let lastDisable = 0;
 
 export type DemoAutoDisabledBannerState = {
   reason: string;
@@ -73,7 +74,7 @@ export async function disableDemoModeSafely(reason: string): Promise<void> {
   }
 
   const now = Date.now();
-  if (lastDemoDisableAt !== 0 && now - lastDemoDisableAt < DEMO_DISABLE_COOLDOWN_MS) {
+  if (lastDisable !== 0 && now - lastDisable < DEMO_DISABLE_COOLDOWN_MS) {
     return;
   }
 
@@ -88,11 +89,16 @@ export async function disableDemoModeSafely(reason: string): Promise<void> {
   setInvestorDemoModeForceOff();
 
   demoAutoDisabledBanner = { reason: trimmedReason, timestamp };
-  lastDemoDisableAt = Date.now();
+  lastDisable = Date.now();
 
   console.error("[DEMO AUTO-DISABLED]", {
     type: "DEMO_AUTO_DISABLED",
     reason: trimmedReason,
+    timestamp,
+  });
+
+  await logDemoSessionEvent("DEMO_AUTO_DISABLED", {
+    reason: trimmedReason.slice(0, 500),
     timestamp,
     autoClean,
   });

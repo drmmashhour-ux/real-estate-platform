@@ -1,6 +1,7 @@
 import { assertSybnb5PerMin, firstZodIssueMessage, sybnbFail, sybnbJson } from "@/lib/sybnb/sybnb-api-http";
 import { sybnbCreateBookingBody } from "@/lib/sybnb/sybnb-api-schemas";
 import { createSybnbV1Request } from "@/lib/sybnb/sybnb-v1-request-service";
+import { logSybnbEvent } from "@/lib/sybnb/sybnb-audit";
 import { getSessionUser } from "@/lib/auth";
 import { assertDarlinkRuntimeEnv } from "@/lib/guard";
 import { prisma } from "@/lib/db";
@@ -100,6 +101,20 @@ export async function POST(req: NextRequest): Promise<Response> {
     };
     return sybnbFail(codeToMsg[result.code] ?? result.code, status);
   }
+
+  await logSybnbEvent({
+    action: "BOOKING_REQUEST_CREATED",
+    bookingId: result.booking.id,
+    userId: user.id,
+    actorRole: "guest",
+    metadata: {
+      listingId,
+      checkIn,
+      checkOut,
+      guests,
+      total: result.booking.totalAmount,
+    },
+  });
 
   return sybnbJson({ booking: result.booking }, 201);
 }
