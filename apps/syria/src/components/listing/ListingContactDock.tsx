@@ -1,24 +1,24 @@
 "use client";
 
-import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { trackLeadPhoneClick, trackLeadWhatsappClick } from "@/lib/lead-client";
+import { trackListingContactClick } from "@/lib/contact-analytics-client";
 
 /**
- * Sticky contact bar (mobile) — full-width green WhatsApp, call below, micro-copy for urgency + trust.
- * Sits above bottom nav (e.g. tab bar) when `bottom-14` matches layout.
+ * Sticky contact bar (mobile) — WhatsApp / call · SYBNB-11 headline optional.
  */
 export function ListingContactDock({
   listingId,
   whatsappHref,
   telHref,
+  primaryHeading,
 }: {
   listingId: string;
   whatsappHref: string | null;
   telHref: string | null;
+  primaryHeading?: string | null;
 }) {
   const t = useTranslations("Listing");
-  const [showPostContactUpsell, setShowPostContactUpsell] = useState(false);
   if (!whatsappHref && !telHref) return null;
 
   return (
@@ -27,14 +27,24 @@ export function ListingContactDock({
       style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
     >
       <div className="mx-auto box-border w-full min-w-0 max-w-7xl space-y-1.5 sm:px-0">
-        <p className="px-0.5 text-center text-xs font-semibold text-amber-900/95 dark:text-amber-200/95">{t("contactUrgency")}</p>
-        <p className="px-0.5 text-center text-[11px] leading-snug text-[color:var(--darlink-text-muted)]">{t("trustVerifyPayment")}</p>
+        {primaryHeading ? (
+          <>
+            <p className="px-0.5 text-center text-sm font-semibold text-[color:var(--darlink-text)]">{primaryHeading}</p>
+            <p className="px-0.5 text-center text-[11px] leading-snug text-[color:var(--darlink-text-muted)]">{t("trustVerifyPayment")}</p>
+          </>
+        ) : (
+          <>
+            <p className="px-0.5 text-center text-xs font-semibold text-amber-900/95 dark:text-amber-200/95">{t("contactUrgency")}</p>
+            <p className="px-0.5 text-center text-[11px] leading-snug text-[color:var(--darlink-text-muted)]">{t("trustVerifyPayment")}</p>
+          </>
+        )}
         {whatsappHref ? (
           <a
             href={whatsappHref}
             target="_blank"
             rel="noreferrer"
             onClick={() => {
+              trackListingContactClick(listingId, "whatsapp");
               trackLeadWhatsappClick(listingId);
             }}
             className="flex h-14 w-full touch-manipulation items-center justify-center rounded-xl bg-[#25D366] px-4 text-base font-bold text-white shadow-md transition hover:bg-[#20bd5a] active:scale-[0.99]"
@@ -46,20 +56,13 @@ export function ListingContactDock({
           <a
             href={telHref}
             onClick={() => {
+              trackListingContactClick(listingId, "tel");
               trackLeadPhoneClick(listingId);
             }}
             className="flex h-12 w-full touch-manipulation items-center justify-center rounded-xl border-2 border-[color:var(--darlink-navy)] bg-[color:var(--darlink-surface)] px-4 text-sm font-bold text-[color:var(--darlink-navy)]"
           >
             {t("contactCall")}
           </a>
-        ) : null}
-        {showPostContactUpsell ? (
-          <p
-            className="rounded-md bg-amber-50/95 px-2 py-1.5 text-center text-[11px] font-medium text-amber-950 ring-1 ring-amber-200/70 [overflow-wrap:anywhere]"
-            role="status"
-          >
-            {t("postContactUpgradeHint")}
-          </p>
         ) : null}
       </div>
     </div>

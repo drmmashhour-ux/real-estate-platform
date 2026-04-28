@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminUser } from "@/lib/auth";
+import { logTimelineEvent } from "@/lib/timeline/log-event";
 import { runMarketplaceAutonomy } from "@/modules/autonomy/darlink-execution-orchestrator.service";
 
 export async function POST(req: Request) {
@@ -19,6 +20,18 @@ export async function POST(req: Request) {
       portfolio: body.portfolio !== false,
       dryRun: body.dryRun !== false,
       actorUserId: admin.id,
+    });
+    void logTimelineEvent({
+      entityType: body.listingId?.trim() ? "syria_property" : "marketplace_autonomy",
+      entityId: body.listingId?.trim() || "portfolio",
+      action: result.ok ? "marketplace_autonomy_completed" : "marketplace_autonomy_conflict_or_failure",
+      actorId: admin.id,
+      actorRole: "admin",
+      metadata: {
+        portfolio: body.portfolio !== false,
+        dryRun: body.dryRun !== false,
+        ok: result.ok,
+      },
     });
     return NextResponse.json({ ok: result.ok, result });
   } catch {

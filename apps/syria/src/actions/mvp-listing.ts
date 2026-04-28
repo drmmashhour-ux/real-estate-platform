@@ -54,9 +54,10 @@ export async function createMvpPropertyListing(formData: FormData): Promise<void
   if (!out.ok) {
     const locale = await getLocale();
     const q =
-      out.reason === "daily_limit" ? "af=daily" :
-        out.reason === "duplicate" ? "af=duplicate" :
-        "af=invalid";
+      out.reason === "daily_limit" ? "af=daily"
+      : out.reason === "duplicate" ? "af=duplicate"
+      : out.reason === "verification_required" ? "af=verify_stay"
+      : "af=invalid";
     redirect({ href: `/sell?${q}`, locale });
     return;
   }

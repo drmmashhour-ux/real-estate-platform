@@ -3,6 +3,7 @@ import { Link } from "@/i18n/navigation";
 import type { SyriaProperty } from "@/generated/prisma";
 import { getSy8OwnerListingCountsMap } from "@/lib/sy8/sy8-owner-listing-counts";
 import { SybnbListingCard } from "@/components/sybnb/SybnbListingCard";
+import { computeSybnbExcellentDealFlags } from "@/lib/sybnb/smart-pricing";
 
 type Row = SyriaProperty & {
   owner: { phoneVerifiedAt: Date | null; verifiedAt: Date | null; verificationLevel: string | null };
@@ -13,6 +14,20 @@ type Props = { items: Row[]; locale: string };
 export async function SybnbLatestStaysGrid({ items, locale }: Props) {
   const t = await getTranslations("Sybnb.home");
   const ownerMap = await getSy8OwnerListingCountsMap(items.map((i) => i.ownerId));
+
+  const dealFlags = computeSybnbExcellentDealFlags(
+    items.map((p) => ({
+      id: p.id,
+      state: p.state,
+      governorate: p.governorate,
+      pricePerNight: p.pricePerNight,
+      price: p.price.toString(),
+      currency: p.currency,
+      images: p.images,
+      verified: p.verified,
+      listingVerified: p.listingVerified,
+    })),
+  );
 
   if (items.length === 0) {
     return (
@@ -40,6 +55,7 @@ export async function SybnbLatestStaysGrid({ items, locale }: Props) {
               locale={locale}
               activeListings={c.activeListings}
               soldListings={c.soldListings}
+              showExcellentDeal={dealFlags.get(p.id) === true}
             />
           );
         })}

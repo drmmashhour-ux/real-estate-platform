@@ -8,7 +8,7 @@ The Syria app (`@lecipm/syria`) is a **separate product** from the Canada LECIPM
 |--------|--------|
 | **Vercel project name** | `lecipm-syria` (recommended) |
 | **Root directory** | `apps/syria` (monorepo) |
-| **Build** | From repo: `pnpm build:syria` or `pnpm --filter @lecipm/syria build` (see `vercel.json` + monorepo `installCommand`) |
+| **Build** | From repo: `pnpm build:syria` or `pnpm --filter @lecipm/syria build` (`package.json` uses `next build --webpack` — stable Tailwind/CSS vs default Turbopack in Next 16) |
 | **Production env file (template)** | `apps/syria/.env.production.example` — copy to a **local** secret `.env.production` (gitignored) or configure only in Vercel. |
 
 **Domains (pick one; both stay isolated from Canada):**
@@ -77,3 +77,89 @@ pnpm start:syria
 - [ ] `SYBNB_PAYMENTS_ENABLED` and `SYBNB_INSTANT_BOOK_ENABLED` set as intended.  
 
 See: `../scripts/check-env.ts`, `../scripts/resolve-env-db.js`, and `../../../packages/db/src/env-guard.ts`.
+
+## ORDER SYBNB-9 — Deploy & isolate (production)
+
+Manual steps happen in Neon/Supabase/Vercel/DNS — the app code is already scoped to **`apps/syria`** only.
+
+### 1. Vercel project
+
+| | |
+|--|--|
+| **Project name** | `lecipm-syria` |
+| **Root directory** | `apps/syria` |
+| **Framework preset** | Next.js (inherits `apps/syria/vercel.json`; install/build run from repo root via `cd ../..`) |
+
+Link the Git repo once; Canada’s `apps/web` project stays separate.
+
+### 2. Database (**new** Postgres)
+
+1. Provision a **new** database for Hadiah Link only (**do not** point at Canada/Lecipm production).
+2. In Vercel → **Production** environment:
+   - **`DATABASE_URL`** = full connection string to that Syria DB (required by Prisma at runtime).
+   - **`SYRIA_DATABASE_URL`** = same string (recommended operator label; must match **`DATABASE_URL`** when both are set — see `scripts/check-env.ts`).
+
+Never paste Canada’s **`DATABASE_URL`** into this project. The **`lecipm`** token guard in **`@repo/db/env-guard`** rejects Canada DSN shapes in Syria builds.
+
+### 3. Env (Syria project only — example)
+
+Configure in **`lecipm-syria`**, not in the Canada web project:
+
+| Variable | Production value |
+|----------|-------------------|
+| `DATABASE_URL` | Syria Postgres DSN (same physical DB as **`SYRIA_DATABASE_URL`**) |
+| `SYRIA_DATABASE_URL` | Same DSN as **`DATABASE_URL`** (optional duplicate for clarity) |
+| `SYBNB_PAYMENTS_ENABLED` | `false` |
+| `SYBNB_PAYMENT_PROVIDER` | `manual` |
+| `APP_ID` | `syria` |
+| `APP_ENV` | `production` |
+
+Copy the rest from **`.env.production.example`** (unique **`AUTH_SECRET`**, cron **`CRON_SECRET`**, maps keys, etc.). **Do not bulk-import Canada’s `.env`** into **`lecipm-syria`**.
+
+### 4. Domain
+
+- Prefer **`https://syria.lecipm.com`** → Vercel → Domains → add + DNS `CNAME` / `A` as instructed.
+- Or use Vercel’s default `*.vercel.app` until DNS is ready.
+
+### 5. Auth isolation (enforced behavior)
+
+| Concern | How Syria stays isolated |
+|--------|---------------------------|
+| Cookies | **`syria_user_id`** (or **`SYRIA_AUTH_SESSION_COOKIE`**) — **host-only**, no **`Domain=.lecipm.com`** in `src/lib/auth.ts`. |
+| Sessions | Rows live only in **`syriaAppUser`** (Syria **`DATABASE_URL`**). Canada web does not share this schema. |
+| Secrets | Separate Vercel project → separate **`AUTH_SECRET`**. |
+
+### 6–7. CI / ops commands (before or after first deploy)
+
+From **monorepo root**:
+
+```bash
+pnpm install
+pnpm build:syria
+pnpm start:syria
+```
+
+Migrate against the **Syria** DB (Production URL in shell or `.env.local` pointing at Syria only):
+
+```bash
+cd apps/syria && pnpm prisma:deploy
+# equivalent: pnpm exec prisma migrate deploy --schema=./prisma/schema.prisma
+```
+
+On Vercel, run **`pnpm prisma:deploy`** from a secured job or your machine whenever migrations ship.
+
+### 8. Smoke test (staging or production URL)
+
+Manual checks:
+
+- **Homepage** loads (`/` locale).
+- **Create listing** (sell flow after sign-in).
+- **SYBNB** booking **request** (no in-app payment when **`SYBNB_PAYMENTS_ENABLED=false`**).
+- **Report** listing.
+- **`/admin`** (or gated admin hub) reachable for an admin account.
+
+### 9. Acceptance
+
+- Syria deploy is live on **`syria.lecipm.com`** (or Vercel domain).
+- **No** Canada data in the Syria DB (fresh migrations + Syria-only ops).
+- **Safe** onboarding: payments manual / off per flags above until product allows otherwise.

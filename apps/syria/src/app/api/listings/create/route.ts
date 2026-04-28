@@ -71,6 +71,9 @@ export async function POST(req: Request) {
   });
 
   if (!out.ok) {
+    if (out.reason === "verification_required") {
+      return NextResponse.json({ ok: false, error: "verification_required" }, { status: 403 });
+    }
     return NextResponse.json({ ok: false, error: "validation" }, { status: 400 });
   }
 

@@ -195,6 +195,7 @@ model SyriaAppUser {
   sybnbBookingsAsHost   SybnbBooking[]            @relation("SybnbHostBookings")
   sybnbPaymentAudits    SybnbPaymentAudit[]
   sybnbReportsFiled     SybnbListingReport[]    @relation("SybnbListingReportReporter")
+  sybnbAnalyticsEvents  SybnbEvent[]             @relation("SybnbAnalyticsEventActor")
 
   @@map("syria_users")
 }
@@ -315,6 +316,7 @@ model SyriaProperty {
   sybnbImages               SybnbListingImage[]
   sybnbBookings             SybnbBooking[]
   sybnbListingReports       SybnbListingReport[]
+  sybnbAnalyticsEvents      SybnbEvent[]
 
   @@index([city])
   @@index([state])
@@ -450,6 +452,24 @@ model SybnbPaymentAudit {
   @@index([bookingId])
   @@index([actorId])
   @@map("sybnb_payment_audit")
+}
+
+/// SYBNB-10 lightweight analytics (append-only). Emitted from server actions + `POST /api/sybnb/events` (listing views).
+model SybnbEvent {
+  id        String         @id @default(cuid())
+  /// e.g. listing_view | booking_request | booking_approved | report_submitted
+  type      String         @map("type")
+  listingId String?        @map("listing_id")
+  listing   SyriaProperty? @relation(fields: [listingId], references: [id], onDelete: SetNull)
+  userId    String?        @map("user_id")
+  user      SyriaAppUser?  @relation("SybnbAnalyticsEventActor", fields: [userId], references: [id], onDelete: SetNull)
+  metadata  Json           @default("{}") @map("metadata")
+  createdAt DateTime       @default(now()) @map("created_at")
+
+  @@index([type, createdAt])
+  @@index([listingId])
+  @@index([userId])
+  @@map("sybnb_events")
 }
 
 /// Monotonic counter for `SyriaProperty.adCode` (SY-28). Single row `id = global`.
@@ -770,4 +790,22 @@ model SyriaAutonomyRecommendation {
   @@index([status, createdAt])
   @@index([propertyId])
   @@map("syria_autonomy_recommendations")
+}
+
+/// Append-only audit timeline for SYBNB / ops (replay & debugging). No secrets — callers must sanitize metadata.
+model SyriaEventTimeline {
+  id         String   @id @default(cuid())
+  entityType String   @map("entity_type")
+  entityId   String   @map("entity_id")
+  action     String
+  actorId    String?  @map("actor_id")
+  actorRole  String?  @map("actor_role")
+  metadata   Json?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([entityType, entityId])
+  @@index([action])
+  @@index([actorId])
+  @@index([createdAt])
+  @@map("syria_event_timeline")
 }

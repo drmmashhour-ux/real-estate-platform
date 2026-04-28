@@ -1,6 +1,7 @@
 import type { DrBrainTicket, DrBrainTicketStatus } from "@repo/drbrain";
 import { Prisma } from "@/generated/prisma";
 import { prisma } from "@/lib/db";
+import { logTimelineEvent } from "@/lib/timeline/log-event";
 
 const OPEN = "DRBRAIN_TICKET_OPEN";
 const STATUS = "DRBRAIN_TICKET_STATUS";
@@ -27,6 +28,17 @@ export async function persistSyriaDrBrainTicketsEmitted(tickets: DrBrainTicket[]
             metadata: t.metadata ?? {},
           },
         } as Prisma.InputJsonValue,
+      },
+    });
+    const severityUpper = String(t.severity ?? "").toUpperCase();
+    void logTimelineEvent({
+      entityType: "dr_brain_ticket",
+      entityId: t.id,
+      action: severityUpper === "CRITICAL" ? "drbrain_critical_alert" : "drbrain_ticket_emitted",
+      metadata: {
+        severity: t.severity,
+        category: t.category,
+        titlePreview: typeof t.title === "string" ? t.title.slice(0, 200) : undefined,
       },
     });
   }

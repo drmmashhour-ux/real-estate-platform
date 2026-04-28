@@ -91,6 +91,7 @@ export function ListingCard({
 }) {
   const t = useTranslations("Listing");
   const tCat = useTranslations("Categories");
+  const tSybnbSp = useTranslations("Sybnb.smartPricing");
   const resolved = backfillLocalizedPropertyShape(listing);
   const catKey = "category" in listing && typeof (listing as { category?: string }).category === "string" ? (listing as { category: string }).category : null;
   const subKey =
@@ -212,6 +213,11 @@ export function ListingCard({
           {showHot ? (
             <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-bold text-orange-900 ring-1 ring-orange-200/80">
               {t("badgeHot")}
+            </span>
+          ) : null}
+          {sybnbDeal ? (
+            <span className="rounded-full bg-teal-600 px-2 py-0.5 text-[10px] font-bold text-white shadow ring-1 ring-teal-300/70">
+              {tSybnbSp("excellentDealBadge")}
             </span>
           ) : null}
           {flagVerified ? (

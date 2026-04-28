@@ -10,12 +10,17 @@ import { syriaFlags } from "@/lib/platform-flags";
 import { SyriaSellLocationFields } from "@/components/sell/SyriaSellLocationFields";
 import { MapRequiredSellForm } from "@/components/sell/MapRequiredSellForm";
 
-export default async function SellPage() {
+type SellPageProps = { searchParams?: Promise<Record<string, string | string[] | undefined>> };
+
+export default async function SellPage({ searchParams }: SellPageProps) {
   const t = await getTranslations("Sell");
   const tMvp = await getTranslations("SellMvp");
   const locale = await getLocale();
   const isAr = locale.startsWith("ar");
   const user = await getSessionUser();
+  const spAwaited = searchParams ? await searchParams : {};
+  const afRaw = spAwaited.af;
+  const afFlag = typeof afRaw === "string" ? afRaw : Array.isArray(afRaw) ? afRaw[0] : undefined;
 
   if (!user && !syriaFlags.SYRIA_MVP) {
     return (
@@ -33,12 +38,18 @@ export default async function SellPage() {
   }
 
   if (syriaFlags.SYRIA_MVP) {
+    const showVerifyStayBanner = afFlag === "verify_stay";
     return (
       <div className="mx-auto max-w-lg space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-[color:var(--darlink-text)]">{tMvp("title")}</h1>
           <p className="mt-1 text-sm text-[color:var(--darlink-text-muted)]">{tMvp("subtitle")}</p>
         </div>
+        {showVerifyStayBanner ? (
+          <div className="rounded-xl border border-amber-300/90 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-950 [dir=rtl]:text-right">
+            {tMvp("verifyStayBlocked")}
+          </div>
+        ) : null}
         <form action={createMvpPropertyListing} className="space-y-4 rounded-2xl border border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface)] p-5 shadow-[var(--darlink-shadow-sm)]">
           <label className="block text-sm font-medium text-[color:var(--darlink-text)]">
             {tMvp("fieldTitle")} <span className="text-red-600">*</span>

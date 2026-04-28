@@ -27,6 +27,20 @@ export function buildWhatsAppContactHref(phone: string): string | null {
   return `https://wa.me/${path}`;
 }
 
+const MAX_WA_PREFILL_TITLE = 380;
+
+/** `wa.me` with inquiry prefilled · SYBNB-11 funnel (normalize title length for URL size). */
+export function buildListingWhatsAppInquiryHref(phone: string, listingTitle: string, locale: string): string | null {
+  const path = toWhatsAppPath(phone);
+  if (!path) return null;
+  const rawTitle = listingTitle.trim().slice(0, MAX_WA_PREFILL_TITLE) || listingTitle.trim() || "—";
+  const isAr = locale.toLowerCase().startsWith("ar");
+  const text = isAr
+    ? `مرحبا، مهتم بالإعلان ${rawTitle}`
+    : `Hi, I'm interested in the listing: ${rawTitle}`;
+  return `https://wa.me/${path}?text=${encodeURIComponent(text)}`;
+}
+
 /**
  * Prefill for monetization upgrade (باقة مميز / فاخر) — `wa.me` with Arabic-first message.
  */

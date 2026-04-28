@@ -14,6 +14,7 @@ import { computeReleaseEligibleAt, refreshSybnbEscrowEligibilityForCompletedStay
 import { evaluateSybnbStayRequestEligibility } from "@/lib/sybnb/sybnb-booking-rules";
 import { countUnreviewedSybnbReportsForProperty } from "@/lib/sybnb/sybnb-reports";
 import { appendSyriaSybnbCoreAudit } from "@/lib/sybnb/sybnb-financial-audit";
+import { logTimelineEvent } from "@/lib/timeline/log-event";
 import { recomputeSy8FeedRankForPropertyId } from "@/lib/sy8/sy8-feed-rank-refresh";
 import { runSybnbHostStayResponse } from "@/lib/sybnb/host-stay-response";
 
@@ -184,6 +185,17 @@ export async function createSybnbStayBooking(formData: FormData): Promise<void> 
     metadata: {
       releaseEligibleAt: releaseEligibleAt?.toISOString() ?? null,
       delayHours: sybnbConfig.payoutDelayHours,
+    },
+  });
+  void logTimelineEvent({
+    entityType: "syria_booking",
+    entityId: created.id,
+    action: "sybnb_escrow_simulated_secured",
+    actorId: guest.id,
+    actorRole: "guest",
+    metadata: {
+      propertyId,
+      payoutDelayHours: sybnbConfig.payoutDelayHours,
     },
   });
 

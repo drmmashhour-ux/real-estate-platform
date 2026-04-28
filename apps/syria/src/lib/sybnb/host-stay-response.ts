@@ -9,6 +9,7 @@ import { assertDarlinkRuntimeEnv } from "@/lib/guard";
 import { evaluateSybnbStayRequestEligibility, sybnbBookingRowMatchesServerQuote } from "./sybnb-booking-rules";
 import { countUnreviewedSybnbReportsForProperty } from "./sybnb-reports";
 import { appendSyriaSybnbCoreAudit } from "./sybnb-financial-audit";
+import { logTimelineEvent } from "@/lib/timeline/log-event";
 import { isAllowedSybnbStayStatusTransition } from "./sybnb-state-machine";
 
 type HostAction = "confirm" | "decline";
@@ -74,6 +75,14 @@ export async function runSybnbHostStayResponse(input: {
       event: "host_declined_stay",
       metadata: { by: isAdmin ? "admin" : "host" },
     });
+    void logTimelineEvent({
+      entityType: "syria_booking",
+      entityId: booking.id,
+      action: "syria_booking_declined_by_host",
+      actorId: user.id,
+      actorRole: isAdmin ? "admin" : "host",
+      metadata: { propertyId: booking.propertyId },
+    });
     await revalidateSyriaPaths("/dashboard/bookings", "/admin/bookings", "/sybnb", `/listing/${booking.propertyId}`);
     return { ok: true };
   }
@@ -114,6 +123,14 @@ export async function runSybnbHostStayResponse(input: {
     bookingId: booking.id,
     event: "host_approved_stay",
     metadata: { by: isAdmin ? "admin" : "host", next: cardPath ? "awaiting_card" : "manual_required" },
+  });
+  void logTimelineEvent({
+    entityType: "syria_booking",
+    entityId: booking.id,
+    action: "syria_booking_approved_by_host",
+    actorId: user.id,
+    actorRole: isAdmin ? "admin" : "host",
+    metadata: { propertyId: booking.propertyId, next: cardPath ? "awaiting_card" : "manual_required" },
   });
 
   await trackSyriaGrowthEvent({

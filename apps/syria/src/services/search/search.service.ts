@@ -17,6 +17,7 @@ import {
   sy8ReputationLabelId,
   type Sy8ReputationTier,
 } from "@/lib/sy8/sy8-reputation";
+import { computeSybnbExcellentDealFlags } from "@/lib/sybnb/smart-pricing";
 
 export type BrowseSurface = "sale" | "rent" | "bnhub" | "stay";
 
@@ -144,6 +145,11 @@ async function serializeWithSy8(rows: PropertyWithOwnerForSy8[]): Promise<Serial
   });
 }
 
+function applySybnbExcellentDealFlags(list: SerializedBrowseListing[]): SerializedBrowseListing[] {
+  const flags = computeSybnbExcellentDealFlags(list);
+  return list.map((s) => ({ ...s, sybnbExcellentDeal: flags.get(s.id) === true }));
+}
+
 /** Ensures geo filter has a sensible radius when lat/lng present but radius omitted. */
 function normalizeSearchParams(sp: Record<string, string>): Record<string, string> {
   const next = { ...sp };
@@ -229,7 +235,7 @@ export async function searchProperties(
     const total = rows.length;
     const sliced = rows.slice((page - 1) * pageSize, page * pageSize) as PropertyWithOwnerForSy8[];
     return {
-      items: await serializeWithSy8(sliced),
+      items: await serializeBrowseRows(sliced, surface),
       total,
       page,
       pageSize,
@@ -248,7 +254,7 @@ export async function searchProperties(
     const total = filtered.length;
     const sliced = filtered.slice((page - 1) * pageSize, page * pageSize);
     return {
-      items: await serializeWithSy8(sliced as PropertyWithOwnerForSy8[]),
+      items: await serializeBrowseRows(sliced as PropertyWithOwnerForSy8[], surface),
       total,
       page,
       pageSize,
@@ -266,7 +272,7 @@ export async function searchProperties(
   });
 
   return {
-    items: await serializeWithSy8(rows as PropertyWithOwnerForSy8[]),
+    items: await serializeBrowseRows(rows as PropertyWithOwnerForSy8[], surface),
     total,
     page,
     pageSize,

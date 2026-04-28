@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { requireSessionUser } from "@/lib/auth";
 import { money } from "@/lib/format";
 import { markBookingCheckedIn } from "@/actions/bookings";
-import { hostRespondSybnbBooking, runSybnbPostStayCompletion } from "@/actions/sybnb-booking";
+import { runSybnbPostStayCompletion } from "@/actions/sybnb-booking";
 import { describePayoutEligibility } from "@/lib/payout-policy";
 import { pickListingTitle } from "@/lib/listing-localized";
 import { bookingLifecycleLabel } from "@/lib/status-ui";
@@ -12,6 +12,7 @@ import { hostEscrowStatusLabel } from "@/lib/sybnb/payout-release-policy";
 import { isSybnbCardCheckoutUiEnabled } from "@/lib/sybnb/payment-policy";
 import { SybnbGuestPayStubButton } from "@/components/sybnb/SybnbGuestPayStubButton";
 import { SybnbBookingCard } from "@/components/sybnb/SybnbBookingCard";
+import { SybnbDashboardHostRespondForms } from "@/components/sybnb/SybnbDashboardHostRespondForms";
 
 type BookingLifecycleLabel = ReturnType<typeof bookingLifecycleLabel>;
 
@@ -115,28 +116,11 @@ export default async function DashboardBookingsPage() {
                 guidanceLine={`${t("payoutGuidance")} ${eligibility.notes} (${eligibility.reason})`}
               >
                 {b.property.category === "stay" && isHost && b.status === "PENDING" ? (
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <form action={hostRespondSybnbBooking}>
-                      <input type="hidden" name="bookingId" value={b.id} />
-                      <input type="hidden" name="action" value="confirm" />
-                      <button
-                        type="submit"
-                        className="rounded-lg bg-emerald-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800"
-                      >
-                        {t("sybnbConfirmRequest")}
-                      </button>
-                    </form>
-                    <form action={hostRespondSybnbBooking}>
-                      <input type="hidden" name="bookingId" value={b.id} />
-                      <input type="hidden" name="action" value="decline" />
-                      <button
-                        type="submit"
-                        className="rounded-lg border border-stone-300 bg-stone-50 px-3 py-1.5 text-xs font-medium text-stone-800 hover:bg-stone-100"
-                      >
-                        {t("sybnbDeclineRequest")}
-                      </button>
-                    </form>
-                  </div>
+                  <SybnbDashboardHostRespondForms
+                    bookingId={b.id}
+                    confirmLabel={t("sybnbConfirmRequest")}
+                    declineLabel={t("sybnbDeclineRequest")}
+                  />
                 ) : null}
 
                 {showSybnbPayStub ? <SybnbGuestPayStubButton bookingId={b.id} /> : null}

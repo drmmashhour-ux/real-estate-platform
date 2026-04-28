@@ -23,6 +23,7 @@ export function InvestorDemoFlowPanel() {
           {s.href ? (
             <Link
               href={s.href as never}
+              data-demo-record={`investor_flow_step_${s.n}`}
               className="shrink-0 text-sm font-medium text-amber-800 underline decoration-amber-300 hover:text-amber-950"
             >
               Open

@@ -1,7 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { requireAdmin } from "@/lib/auth";
-import { isInvestorDemoModeActive } from "@/lib/sybnb/investor-demo";
 import { LogoutForm } from "@/components/LogoutForm";
 import { syriaFlags } from "@/lib/platform-flags";
 
@@ -9,7 +8,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   await requireAdmin();
   const t = await getTranslations("Admin");
   const mvp = syriaFlags.SYRIA_MVP;
-  const investorDemo = isInvestorDemoModeActive();
 
   return (
     <div className="space-y-8">
@@ -30,6 +28,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           </Link>
           <Link href="/admin/sybnb/reports" className="hover:underline">
             {t("navSybnbReports")}
+          </Link>
+          <Link href="/admin/sybnb/analytics" className="hover:underline">
+            {t("navSybnbAnalytics")}
           </Link>
           <Link href="/admin/payouts" className="hover:underline">
             {t("navPayouts")}
@@ -67,11 +68,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <Link href="/admin/users" className="hover:underline">
             {t("navUsers")}
           </Link>
-          {investorDemo ? (
-            <Link href="/admin/demo-sybnb" className="hover:underline">
-              Demo SYBNB
-            </Link>
-          ) : null}
+          <Link href="/admin/demo-sybnb" className="hover:underline">
+            Demo SYBNB
+          </Link>
+          <Link href="/admin/demo-control" className="hover:underline">
+            Demo control
+          </Link>
           {!mvp ? (
             <Link href="/admin/listing-assistant" className="hover:underline">
               {t("navListingAssistant")}

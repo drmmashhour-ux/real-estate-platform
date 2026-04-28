@@ -7,6 +7,8 @@ import {
 } from "@/config/sybnb.config";
 import { sybnbBookingRowMatchesServerQuote } from "@/lib/sybnb/sybnb-booking-rules";
 import { evaluateSybnbPaymentRisk } from "@/lib/sybnb/sybnb-payment-risk";
+import { isInvestorDemoModeActive } from "@/lib/sybnb/investor-demo";
+import { sybnbPaymentsHeldForSoftLaunch } from "@/lib/sybnb/config";
 
 export type SybnbCheckoutBlockReason =
   | "payments_disabled"
@@ -48,7 +50,7 @@ export function assertSybnbStripeBasePreconditions(
 ):
   | { ok: true }
   | { ok: false; reason: SybnbCheckoutBlockReason; detail: string } {
-  if (process.env.INVESTOR_DEMO_MODE === "true") {
+  if (isInvestorDemoModeActive()) {
     return {
       ok: false,
       reason: "demo_mode_payment_blocked",
@@ -153,5 +155,10 @@ export function assertSybnbStripePreconditions(
 
 /** Whether UI may show a “Pay with card” surface (still calls assert before any Stripe API). */
 export function isSybnbCardCheckoutUiEnabled(provider: SybnbPaymentProvider): boolean {
-  return sybnbConfig.paymentsEnabled && !SYBNB_PAYMENTS_KILL_SWITCH && provider === "stripe";
+  return (
+    sybnbConfig.paymentsEnabled &&
+    !sybnbPaymentsHeldForSoftLaunch() &&
+    !SYBNB_PAYMENTS_KILL_SWITCH &&
+    provider === "stripe"
+  );
 }

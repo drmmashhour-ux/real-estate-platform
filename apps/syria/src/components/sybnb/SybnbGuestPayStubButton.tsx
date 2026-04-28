@@ -2,6 +2,7 @@
 
 import { useId, useState } from "react";
 import { useTranslations } from "next-intl";
+import { triggerNarration } from "@/lib/demo/narrator";
 
 type Props = {
   bookingId: string;
@@ -25,6 +26,7 @@ export function SybnbGuestPayStubButton({ bookingId }: Props) {
         disabled={loading}
         className="mt-2 rounded-lg bg-stone-900 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
         onClick={async () => {
+          triggerNarration("ACTION_PAYMENT_BLOCKED");
           setMsg(null);
           setLoading(true);
           try {

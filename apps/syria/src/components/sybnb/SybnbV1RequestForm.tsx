@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { Input } from "@/components/ui/Input";
+import { triggerNarration } from "@/lib/demo/narrator";
 
 type Props = {
   listingId: string;
@@ -22,6 +23,7 @@ export function SybnbV1RequestForm({ listingId, guestsMax, disabled }: Props) {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    triggerNarration("ACTION_REQUEST_BOOKING");
     setError(null);
     setLoading(true);
     try {

@@ -15,13 +15,15 @@ type Props = {
   locale: string;
   activeListings: number;
   soldListings: number;
+  showExcellentDeal?: boolean;
 };
 
 /**
  * One SYBNB stay card (grid / carousels). Use with counts from `getSy8OwnerListingCountsMap` or precomputed.
  */
-export async function SybnbListingCard({ property: p, locale, activeListings, soldListings }: Props) {
+export async function SybnbListingCard({ property: p, locale, activeListings, soldListings, showExcellentDeal }: Props) {
   const t = await getTranslations("Sybnb.home");
+  const tSp = await getTranslations("Sybnb.smartPricing");
   const cover = p.images[0] ?? null;
   const city = getLocalizedPropertyCity(p, locale);
   const price = p.pricePerNight != null ? p.pricePerNight : p.price.toString();
@@ -38,8 +40,13 @@ export async function SybnbListingCard({ property: p, locale, activeListings, so
           ) : (
             <div className="flex h-full w-full items-center justify-center text-xs text-neutral-400">—</div>
           )}
+          {showExcellentDeal ? (
+            <span className="absolute left-2 top-2 rounded-full bg-teal-600 px-2 py-0.5 text-[10px] font-bold text-white shadow ring-1 ring-teal-300/80">
+              {tSp("excellentDealBadge")}
+            </span>
+          ) : null}
           {p.verified || p.listingVerified ? (
-            <span className="absolute left-2 top-2 rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-semibold text-neutral-800 shadow">
+            <span className={`absolute ${showExcellentDeal ? "left-2 top-10" : "left-2 top-2"} rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-semibold text-neutral-800 shadow`}>
               {t("badgeVerified")}
             </span>
           ) : null}

@@ -1,4 +1,4 @@
-import { getLocale } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { SybnbHero } from "@/components/sybnb/SybnbHero";
 import { SybnbUrgencyStrip } from "@/components/sybnb/SybnbUrgencyStrip";
 import { SybnbCategoryChips } from "@/components/sybnb/SybnbCategoryChips";
@@ -12,6 +12,7 @@ import { parseUtmFromSearchParams } from "@/lib/utm";
 import { flattenSearchParams } from "@/lib/property-search";
 import { searchProperties } from "@/services/search/search.service";
 import { getSybnbLatestStays, getSybnbPublicListingCount } from "@/lib/sybnb/sybnb-public-data";
+import { sybnbSoftLaunchUrgencyMessaging } from "@/lib/sybnb/config";
 
 type Props = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -55,11 +56,13 @@ export default async function SybnbPage(props: Props) {
   const initialQs = toInitialQs(flat);
   const initialResult = await searchProperties("stay", flat);
   const [liveCount, latestStays] = await Promise.all([getSybnbPublicListingCount(), getSybnbLatestStays(8)]);
+  const tH = await getTranslations("Sybnb.home");
 
   return (
     <div className="space-y-10">
       <SybnbHero />
-      <SybnbUrgencyStrip liveCount={liveCount} />
+      <p className="text-center text-sm font-medium text-neutral-800 [dir=rtl]:text-right">{tH("liveStaysCount", { count: liveCount })}</p>
+      <SybnbUrgencyStrip liveCount={liveCount} emphasisStrong={sybnbSoftLaunchUrgencyMessaging()} />
       <div className="space-y-6">
         <SybnbCategoryChips />
         <SybnbLatestStaysGrid items={latestStays} locale={locale} />

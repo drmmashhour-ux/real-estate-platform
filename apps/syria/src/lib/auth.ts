@@ -3,7 +3,11 @@ import { redirect } from "@/i18n/navigation";
 import type { SyriaAppUser } from "@/generated/prisma";
 import { prisma } from "./db";
 
-/** Isolated from Canada `apps/web` (different deploy + DB). Override only for exceptional cookie rotation. */
+/**
+ * Isolated from Canada (`apps/web`): separate deploy hostname + Syria DB (`syriaAppUser` only).
+ * Cookie has no `domain` option → **host-only** (e.g. `syria.` + your deploy host ≠ canada origin). Never set
+ * a broad `domain=` on a parent site here — that would share sessions across subdomains.
+ */
 const COOKIE = process.env.SYRIA_AUTH_SESSION_COOKIE?.trim() || "syria_user_id";
 
 export async function getSessionUser() {

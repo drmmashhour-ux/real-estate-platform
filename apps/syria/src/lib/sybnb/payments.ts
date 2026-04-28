@@ -1,5 +1,11 @@
 import { prisma } from "@/lib/db";
 import { sybnbConfig } from "@/config/sybnb.config";
+import { sybnbPaymentsHeldForSoftLaunch } from "@/lib/sybnb/config";
+import { logTimelineEvent } from "@/lib/timeline/log-event";
+
+function sybnbStripeRuntimeEnabled(): boolean {
+  return sybnbConfig.paymentsEnabled && !sybnbPaymentsHeldForSoftLaunch();
+}
 
 /**
  * SYBNB-4: payment abstraction. No Stripe SDK is imported here; when `sybnbConfig.paymentsEnabled` is
@@ -18,6 +24,14 @@ export type SybnbCheckoutSessionResult = {
  * Append-only audit for operator review (and future webhook correlation).
  */
 export async function recordCheckoutAttempt(bookingId: string, actorId: string) {
+  void logTimelineEvent({
+    entityType: "sybnb_booking",
+    entityId: bookingId,
+    action: "sybnb_checkout_attempt",
+    actorId,
+    actorRole: "guest",
+    metadata: { provider: sybnbConfig.provider },
+  });
   return prisma.sybnbPaymentAudit.create({
     data: {
       bookingId,
@@ -35,7 +49,15 @@ export async function createCheckoutSession(input: {
   bookingId: string;
   actorId: string;
 }): Promise<SybnbCheckoutSessionResult> {
-  if (!sybnbConfig.paymentsEnabled) {
+  if (!sybnbStripeRuntimeEnabled()) {
+    void logTimelineEvent({
+      entityType: "sybnb_booking",
+      entityId: input.bookingId,
+      action: "sybnb_escrow_simulated_secured",
+      actorId: input.actorId,
+      actorRole: "guest",
+      metadata: { checkoutMode: "disabled_manual_mock" },
+    });
     return {
       ok: true,
       mode: "disabled",
@@ -45,6 +67,14 @@ export async function createCheckoutSession(input: {
     };
   }
   if (sybnbConfig.provider !== "stripe") {
+    void logTimelineEvent({
+      entityType: "sybnb_booking",
+      entityId: input.bookingId,
+      action: "sybnb_escrow_simulated_secured",
+      actorId: input.actorId,
+      actorRole: "guest",
+      metadata: { checkoutMode: "provider_mock" },
+    });
     return {
       ok: true,
       mode: "mock",
@@ -65,10 +95,16 @@ export async function createCheckoutSession(input: {
  * Webhook or client callback (future). Safe no-op when payments disabled.
  */
 export async function handlePaymentSuccess(
-  _bookingId: string,
+  bookingId: string,
   _metadata?: { providerEventId?: string },
 ): Promise<{ ok: true; mock: boolean }> {
-  if (!sybnbConfig.paymentsEnabled) {
+  if (!sybnbStripeRuntimeEnabled()) {
+    void logTimelineEvent({
+      entityType: "sybnb_booking",
+      entityId: bookingId,
+      action: "sybnb_escrow_simulated_released",
+      metadata: { mockSettlement: true },
+    });
     return { ok: true, mock: true };
   }
   // Future: idempotent mark paid, emit audit, revalidate
@@ -82,7 +118,7 @@ export async function handlePaymentFailure(
   _bookingId: string,
   _metadata?: { reason?: string },
 ): Promise<{ ok: true; mock: boolean }> {
-  if (!sybnbConfig.paymentsEnabled) {
+  if (!sybnbStripeRuntimeEnabled()) {
     return { ok: true, mock: true };
   }
   return { ok: true, mock: false };

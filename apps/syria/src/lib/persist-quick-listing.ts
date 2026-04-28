@@ -17,6 +17,8 @@ import { recomputeSy8FeedRankForPropertyId } from "@/lib/sy8/sy8-feed-rank-refre
 import { runAntiFraudGuardsForPublish } from "@/lib/anti-fraud/guards";
 import { ensureGuestUserForPhone } from "@/lib/syria-mvp-guest";
 import { sybnbConfig } from "@/config/sybnb.config";
+import { SYBNB_ALLOW_UNVERIFIED } from "@/lib/sybnb/config";
+import { isSy8SellerVerified } from "@/lib/sy8/sy8-reputation";
 
 export type PersistQuickListingResult =
   | {
@@ -26,7 +28,7 @@ export type PersistQuickListingResult =
       adCode: string;
       priceWarningKey?: "priceWarnGeneric" | "priceWarnStay";
     }
-  | { ok: false; reason: "validation" | "daily_limit" | "duplicate" };
+  | { ok: false; reason: "validation" | "daily_limit" | "duplicate" | "verification_required" };
 
 /**
  * Minimal create for SyriaProperty — maps to existing Prisma model (titleAr, Decimal price, owner phone, etc.).
@@ -113,6 +115,16 @@ export async function persistQuickListing(input: {
     if (guards.code === "daily_limit") return { ok: false, reason: "daily_limit" };
     if (guards.code === "duplicate") return { ok: false, reason: "duplicate" };
     return { ok: false, reason: "validation" };
+  }
+
+  if (category === "stay" && !SYBNB_ALLOW_UNVERIFIED) {
+    const ownerPick = await prisma.syriaAppUser.findUnique({
+      where: { id: user.id },
+      select: { phoneVerifiedAt: true, verifiedAt: true, verificationLevel: true },
+    });
+    if (!isSy8SellerVerified(ownerPick)) {
+      return { ok: false, reason: "verification_required" };
+    }
   }
   const priceWarningKey = guards.priceWarningKey;
 

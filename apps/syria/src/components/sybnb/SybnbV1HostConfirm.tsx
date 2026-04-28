@@ -1,5 +1,6 @@
 "use client";
 
+import { triggerNarration } from "@/lib/demo/narrator";
 import { useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
@@ -35,7 +36,10 @@ export function SybnbV1HostConfirm({ bookingId }: Props) {
       <button
         type="button"
         disabled={loading}
-        onClick={() => void post()}
+        onClick={() => {
+          triggerNarration("ACTION_HOST_CONFIRM");
+          void post();
+        }}
         className="rounded-lg bg-amber-800 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-900 disabled:opacity-50"
       >
         {loading ? t("sending") : t("confirmBooking")}

@@ -1,11 +1,23 @@
 import { assertEnvSafety } from "@repo/db/env-guard";
 import { PRODUCTION_LOCK_MODE } from "@/config/sybnb.config";
+import { syncInvestorDemoSessionExpiry } from "@/lib/demo/demo-session";
 
 /**
  * Investor demo: fake data, stubbed payments, no real users or cards.
  * Defaults OFF. Never active in production unless INVESTOR_DEMO_IN_PRODUCTION=true.
  */
 export const INVESTOR_DEMO_TITLE_PREFIX = "DEMO —";
+
+/** Process-only failsafe set by demo auto-disable (does not edit .env files). */
+export const INVESTOR_DEMO_MODE_FORCE_OFF_ENV_KEY = "INVESTOR_DEMO_MODE_FORCE_OFF" as const;
+
+export function setInvestorDemoModeForceOff(): void {
+  process.env[INVESTOR_DEMO_MODE_FORCE_OFF_ENV_KEY] = "true";
+}
+
+export function clearInvestorDemoModeForceOff(): void {
+  delete process.env[INVESTOR_DEMO_MODE_FORCE_OFF_ENV_KEY];
+}
 
 function isVercelOrProdRuntime(): boolean {
   return process.env.NODE_ENV === "production" || Boolean(process.env.VERCEL_ENV);
@@ -15,7 +27,12 @@ function isVercelOrProdRuntime(): boolean {
  * Public demo hub / badges / stub payment path.
  */
 export function isInvestorDemoModeActive(): boolean {
-  if (process.env.INVESTOR_DEMO_MODE !== "true") return false;
+  syncInvestorDemoSessionExpiry();
+  if (process.env[INVESTOR_DEMO_MODE_FORCE_OFF_ENV_KEY] === "true") return false;
+  const demoRequested =
+    process.env.INVESTOR_DEMO_MODE === "true" ||
+    process.env.INVESTOR_DEMO_MODE_RUNTIME === "true";
+  if (!demoRequested) return false;
   if (isVercelOrProdRuntime() && process.env.INVESTOR_DEMO_IN_PRODUCTION !== "true") {
     return false;
   }

@@ -32,7 +32,7 @@ import { ListingApproximateMap } from "@/components/listing/ListingApproximateMa
 import { ListingMobileBookingBar } from "@/components/listing/ListingMobileBookingBar";
 import { ListingContactDock } from "@/components/listing/ListingContactDock";
 import { ListingOwnerContactCard } from "@/components/listing/ListingOwnerContactCard";
-import { buildWhatsAppContactHref, buildTelHref, isNewListing } from "@/lib/syria-phone";
+import { buildListingWhatsAppInquiryHref, buildTelHref, isNewListing } from "@/lib/syria-phone";
 import { SELF_MKT_VIEWS_HOT_BADGE_MIN } from "@/lib/self-marketing";
 import { getMonetizationAdminContact } from "@/lib/monetization-contact";
 import { syriaPlatformConfig } from "@/config/syria-platform.config";
@@ -48,6 +48,7 @@ import { ListingTrustAiSection } from "@/components/listing/ListingTrustAiSectio
 import { ShortStayAvailabilityCalendar } from "@/components/listing/ShortStayAvailabilityCalendar";
 import { incrementPublicListingView } from "@/lib/syria/listing-views";
 import { Sy8LocationQualityBadge } from "@/components/sy8/Sy8LocationQualityBadge";
+import { SYBNB_SHOW_PHONE } from "@/lib/sybnb/config";
 
 type Props = {
   params: Promise<{ locale: string; id: string }>;
@@ -168,8 +169,12 @@ export default async function ListingDetailPage(props: Props) {
 
   const hostName = listing.owner.name?.trim() || listing.owner.email.split("@")[0];
   const ownerPhone = listing.owner.phone?.trim() ?? "";
-  const waOwnerHref = ownerPhone ? buildWhatsAppContactHref(ownerPhone) : null;
-  const telOwnerHref = ownerPhone ? buildTelHref(ownerPhone) : null;
+  let waOwnerHref = ownerPhone ? buildListingWhatsAppInquiryHref(ownerPhone, titleDisplay, locale) : null;
+  let telOwnerHref = ownerPhone ? buildTelHref(ownerPhone) : null;
+  if (isSybnbStay && !SYBNB_SHOW_PHONE) {
+    waOwnerHref = null;
+    telOwnerHref = null;
+  }
   const showNewBadge = isNewListing(listing.createdAt);
   const isOwner = user?.id === listing.ownerId;
   const canContact = !isOwner && Boolean(waOwnerHref || telOwnerHref);
@@ -690,6 +695,7 @@ export default async function ListingDetailPage(props: Props) {
                 telOwnerHref={telOwnerHref}
                 canContact={canContact}
                 ownerHasPhone={Boolean(ownerPhone)}
+                primaryHeading={isSybnbStay ? t("contactPrimaryOwner") : null}
                 shareTitle={titleDisplay}
                 sharePriceLine={sharePriceLine}
                 shareCity={cityDisplay ?? undefined}
