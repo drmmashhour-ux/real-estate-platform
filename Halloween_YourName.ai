@@ -1,0 +1,54 @@
+%!PS-Adobe-3.0 EPSF-3.0
+%%Creator: Cursor Cloud Agent
+%%Title: Halloween_YourName.ai
+%%BoundingBox: 0 0 800 800
+%%HiResBoundingBox: 0 0 800 800
+%%LanguageLevel: 2
+%%Pages: 1
+%%EndComments
+
+/drawRect {
+  /h exch def /w exch def /y exch def /x exch def
+  newpath
+  x y moveto
+  w 0 rlineto
+  0 h rlineto
+  w neg 0 rlineto
+  closepath
+} def
+
+/drawCircle {
+  newpath
+  0 360 arc
+  closepath
+} def
+
+gsave
+
+% Orange background
+0.91 0.35 0.05 setrgbcolor
+70 70 660 660 drawRect fill
+
+% White download arrow
+1 1 1 setrgbcolor
+newpath
+400 560 moveto
+400 235 lineto
+360 235 lineto
+360 560 lineto
+300 500 lineto
+272 528 lineto
+400 656 lineto
+528 528 lineto
+500 500 lineto
+440 560 lineto
+closepath
+fill
+
+% White base line
+1 1 1 setrgbcolor
+220 595 360 55 drawRect fill
+
+grestore
+showpage
+%%EOF

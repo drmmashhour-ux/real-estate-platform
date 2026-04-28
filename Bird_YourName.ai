@@ -1,0 +1,79 @@
+%!PS-Adobe-3.0 EPSF-3.0
+%%Creator: Cursor Cloud Agent
+%%Title: Bird_YourName.ai
+%%BoundingBox: 0 0 1000 800
+%%HiResBoundingBox: 0 0 1000 800
+%%LanguageLevel: 2
+%%Pages: 1
+%%EndComments
+
+/drawRect {
+  /h exch def /w exch def /y exch def /x exch def
+  newpath
+  x y moveto
+  w 0 rlineto
+  0 h rlineto
+  w neg 0 rlineto
+  closepath
+} def
+
+gsave
+% Background
+0.97 0.98 0.99 setrgbcolor
+0 0 1000 800 drawRect fill
+
+% Shadow
+0.80 0.85 0.90 setrgbcolor
+newpath 500 700 250 0 360 arc closepath fill
+
+% Bird body
+0.06 0.65 0.91 setrgbcolor
+newpath
+318 435 moveto
+318 304 425 210 548 210 curveto
+664 210 758 291 758 406 curveto
+758 522 667 604 545 604 curveto
+414 604 318 536 318 435 curveto
+closepath fill
+
+% Wing
+0.01 0.52 0.78 setrgbcolor
+newpath
+382 426 moveto
+414 356 507 321 588 354 curveto
+547 426 496 490 398 511 curveto
+371 489 365 455 382 426 curveto
+closepath fill
+
+% Beak
+0.96 0.62 0.04 setrgbcolor
+newpath
+745 390 moveto
+864 432 lineto
+746 478 lineto
+761 454 lineto
+761 417 lineto
+closepath fill
+
+% Eye
+0.06 0.09 0.16 setrgbcolor
+newpath 653 338 17 0 360 arc closepath fill
+1 1 1 setrgbcolor
+newpath 647 332 5 0 360 arc closepath fill
+
+% Tail
+0.01 0.41 0.63 setrgbcolor
+newpath
+305 412 moveto
+250 390 223 336 244 290 curveto
+282 320 323 356 338 397 curveto
+closepath fill
+
+% Legs
+0.20 0.27 0.34 setrgbcolor
+newpath 500 603 moveto 470 676 lineto 500 676 lineto 526 611 lineto closepath fill
+newpath 585 595 moveto 560 676 lineto 590 676 lineto 611 607 lineto closepath fill
+
+grestore
+showpage
+%%EOF

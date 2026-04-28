@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="1000"
+  height="800"
+  viewBox="0 0 1000 800"
+  role="img"
+  aria-labelledby="title desc"
+>
+  <title id="title">Bird Illustration</title>
+  <desc id="desc">Stylized bird composed with pen-like vector paths.</desc>
+
+  <rect width="1000" height="800" fill="#f8fafc" />
+  <ellipse cx="500" cy="700" rx="250" ry="32" fill="#cbd5e1" opacity="0.6" />
+
+  <path
+    d="M318 435
+       C318 304, 425 210, 548 210
+       C664 210, 758 291, 758 406
+       C758 522, 667 604, 545 604
+       C414 604, 318 536, 318 435 Z"
+    fill="#0ea5e9"
+  />
+
+  <path
+    d="M382 426
+       C414 356, 507 321, 588 354
+       C547 426, 496 490, 398 511
+       C371 489, 365 455, 382 426 Z"
+    fill="#0284c7"
+  />
+
+  <path
+    d="M745 390
+       L864 432
+       L746 478
+       C761 454, 761 417, 745 390 Z"
+    fill="#f59e0b"
+  />
+
+  <circle cx="653" cy="338" r="17" fill="#0f172a" />
+  <circle cx="647" cy="332" r="5" fill="#ffffff" />
+
+  <path
+    d="M305 412
+       C250 390, 223 336, 244 290
+       C282 320, 323 356, 338 397
+       Z"
+    fill="#0369a1"
+  />
+
+  <path d="M500 603 L470 676 H500 L526 611 Z" fill="#334155" />
+  <path d="M585 595 L560 676 H590 L611 607 Z" fill="#334155" />
+</svg>
