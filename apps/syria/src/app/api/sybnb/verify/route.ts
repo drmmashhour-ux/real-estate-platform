@@ -3,11 +3,15 @@ import { getAdminUser, getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { firstZodIssueMessage, sybnbFail, sybnbJson } from "@/lib/sybnb/sybnb-api-http";
 import { sybnbVerifyBody } from "@/lib/sybnb/sybnb-api-schemas";
+import { sybnbApiCatch } from "@/lib/sybnb/sybnb-api-catch";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 /**
  * SY8-1: sync seller trust fields — phone (from `phoneVerifiedAt`) or admin manual override.
  */
-export async function POST(req: Request): Promise<Response> {
+async function handleVerifyPOST(req: Request): Promise<Response> {
   try {
     assertDarlinkRuntimeEnv();
   } catch {
@@ -78,4 +82,8 @@ export async function POST(req: Request): Promise<Response> {
     console.error("[SYBNB] verify manual failed", e instanceof Error ? e.message : e);
     return sybnbFail("server_error", 500);
   }
+}
+
+export async function POST(req: Request): Promise<Response> {
+  return sybnbApiCatch(() => handleVerifyPOST(req));
 }

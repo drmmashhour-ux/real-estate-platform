@@ -7,8 +7,10 @@ import { recordSybnbEvent, SYBNB_ANALYTICS_EVENT_TYPES } from "@/lib/sybnb/sybnb
 import { recomputeSy8FeedRankForPropertyId } from "@/lib/sy8/sy8-feed-rank-refresh";
 import { logTimelineEvent } from "@/lib/timeline/log-event";
 import { recordListingPhoneRevealForAntispam } from "@/lib/syria/phone-reveal-antispam";
+import { sybnbApiCatch } from "@/lib/sybnb/sybnb-api-catch";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 const bodySchema = z.discriminatedUnion("type", [
   z.object({
@@ -74,7 +76,7 @@ async function assertHotelListingForLead(listingId: string): Promise<boolean> {
 }
 
 /** SYBNB-10/`listing_view`, SYBNB-40/`hotel_contact_click`, SYBNB-70/`listing_open` + `contact_click`, SYBNB-85/`phone_reveal` ingestion. Others emit server-side only. */
-export async function POST(req: Request): Promise<Response> {
+async function handleEventsPOST(req: Request): Promise<Response> {
   let json: unknown;
   try {
     json = await req.json();
@@ -183,4 +185,8 @@ export async function POST(req: Request): Promise<Response> {
     metadata: { channel: payload.channel },
   });
   return NextResponse.json({ ok: true });
+}
+
+export async function POST(req: Request): Promise<Response> {
+  return sybnbApiCatch(() => handleEventsPOST(req));
 }

@@ -5,6 +5,10 @@ import { getStripeClient, getStripeWebhookSigningSecret } from "@/lib/sybnb/stri
 import { verifyOptionalSybnbWebhookBodyHmac } from "@/lib/sybnb/sybnb-payment-provider";
 import { logSecurityEvent } from "@/lib/sybnb/sybnb-security-log";
 import { sybnbFail, sybnbJson } from "@/lib/sybnb/sybnb-api-http";
+import { sybnbApiCatch } from "@/lib/sybnb/sybnb-api-catch";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 /**
  * Stripe webhook — verifies `stripe-signature` with `STRIPE_WEBHOOK_SECRET` (Dashboard endpoint secret or `stripe listen` `whsec_...`).
@@ -12,7 +16,7 @@ import { sybnbFail, sybnbJson } from "@/lib/sybnb/sybnb-api-http";
  *
  * ORDER SYBNB-110 — test cards via Stripe Checkout; no app-level JSON fallback when Stripe verification is configured.
  */
-export async function POST(req: Request): Promise<Response> {
+async function handleWebhookPOST(req: Request): Promise<Response> {
   const signingSecret = getStripeWebhookSigningSecret();
   if (!signingSecret) {
     return sybnbFail("webhook_secret_not_configured", 503);
@@ -77,4 +81,8 @@ export async function POST(req: Request): Promise<Response> {
 
   /** Acknowledge other events so Stripe does not wedge retries on unsupported types */
   return sybnbJson({ received: true, ignored: event.type });
+}
+
+export async function POST(req: Request): Promise<Response> {
+  return sybnbApiCatch(() => handleWebhookPOST(req));
 }

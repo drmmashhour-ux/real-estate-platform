@@ -6,10 +6,14 @@ import { assertSybnb5PerMin, firstZodIssueMessage, sybnbFail, sybnbJson } from "
 import { sybnbIdParam, sybnbReportBody } from "@/lib/sybnb/sybnb-api-schemas";
 import { s2GetClientIp } from "@/lib/security/s2-ip";
 import { normalizeSy8ReportReason } from "@/lib/sy8/sy8-constants";
+import { sybnbApiCatch } from "@/lib/sybnb/sybnb-api-catch";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
-export async function POST(req: NextRequest, context: RouteParams): Promise<Response> {
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+async function handleListingReportPOST(req: NextRequest, context: RouteParams): Promise<Response> {
   try {
     assertDarlinkRuntimeEnv();
   } catch {
@@ -49,4 +53,8 @@ export async function POST(req: NextRequest, context: RouteParams): Promise<Resp
     return sybnbFail(res.error, 400);
   }
   return sybnbJson({ propertyId: res.propertyId });
+}
+
+export async function POST(req: NextRequest, context: RouteParams): Promise<Response> {
+  return sybnbApiCatch(() => handleListingReportPOST(req, context));
 }

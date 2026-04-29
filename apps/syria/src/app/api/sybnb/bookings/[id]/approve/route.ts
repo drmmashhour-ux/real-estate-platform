@@ -13,7 +13,11 @@ import { hostApproveSybnbV1Request } from "@/lib/sybnb/sybnb-v1-request-service"
 import { broadcastSybnbBookingUpdated } from "@/lib/realtime/sybnb-broadcast";
 import { logSybnbEvent, sybnbAuditRoleHostAction } from "@/lib/sybnb/sybnb-audit";
 import { SYBNB_SYNC_LEGACY_CLIENT_ID } from "@/lib/sybnb/sybnb-sync-constants";
+import { sybnbApiCatch } from "@/lib/sybnb/sybnb-api-catch";
 import { z } from "zod";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -23,7 +27,7 @@ const bodySchema = z.object({
   clientId: z.string().trim().min(8).max(128).optional(),
 });
 
-export async function POST(req: Request, context: RouteParams): Promise<Response> {
+async function handleApprovePOST(req: Request, context: RouteParams): Promise<Response> {
   const { id: rawId } = await context.params;
   const idParsed = sybnbIdParam.safeParse(rawId);
   if (!idParsed.success) {
@@ -118,4 +122,8 @@ export async function POST(req: Request, context: RouteParams): Promise<Response
   broadcastSybnbBookingUpdated(r.booking.id, { status: r.booking.status });
 
   return sybnbJson({ booking: r.booking });
+}
+
+export async function POST(req: Request, context: RouteParams): Promise<Response> {
+  return sybnbApiCatch(() => handleApprovePOST(req, context));
 }

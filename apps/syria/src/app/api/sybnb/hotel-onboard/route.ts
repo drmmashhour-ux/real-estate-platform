@@ -4,11 +4,13 @@ import { MAX_LISTING_CREATE_PAYLOAD_BYTES } from "@/lib/syria/photo-upload";
 import { persistSybnbHotelOnboarding } from "@/lib/sybnb/sybnb-hotel-onboard-persist";
 import { sybnbHotelOnboardBodySchema } from "@/lib/sybnb/sybnb-hotel-onboard-schema";
 import { revalidateAllLocaleHomePages } from "@/lib/revalidate-syria-home";
+import { sybnbApiCatch } from "@/lib/sybnb/sybnb-api-catch";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 /** ORDER SYBNB-53 — Auto-publish HOTEL listing + CRM lead (public; agents may submit on behalf). */
-export async function POST(req: Request): Promise<Response> {
+async function handleHotelOnboardPOST(req: Request): Promise<Response> {
   try {
     assertDarlinkRuntimeEnv();
   } catch {
@@ -59,4 +61,8 @@ export async function POST(req: Request): Promise<Response> {
     leadId: out.leadId,
     pricePerNight: out.pricePerNight,
   });
+}
+
+export async function POST(req: Request): Promise<Response> {
+  return sybnbApiCatch(() => handleHotelOnboardPOST(req));
 }

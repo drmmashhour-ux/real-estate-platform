@@ -29,7 +29,10 @@ import {
 import { normalizeSybnbMessageContent } from "@/lib/sybnb/sybnb-message-content";
 import { updateFraudScore } from "@/lib/sybnb/fraud-score";
 import { adjustTrustScore } from "@/lib/sybnb/trust-score";
+import { sybnbApiCatch } from "@/lib/sybnb/sybnb-api-catch";
+import { rateLimit } from "@/lib/security/rate-limit";
 
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const RISK_WARNING_PROMPT = "This message may contain unsafe content. Continue?";
@@ -45,7 +48,7 @@ function bookingParticipantRole(
   return null;
 }
 
-export async function GET(req: Request): Promise<Response> {
+async function handleSybnbMessagesGET(req: Request): Promise<Response> {
   try {
     assertDarlinkRuntimeEnv();
   } catch {
@@ -95,6 +98,10 @@ export async function GET(req: Request): Promise<Response> {
   return sybnbJson({ messages: rows });
 }
 
+export async function GET(req: Request): Promise<Response> {
+  return sybnbApiCatch(() => handleSybnbMessagesGET(req));
+}
+
 const postBodySchema = z.object({
   bookingId: z.string().trim().min(1),
   content: z.string(),
@@ -112,7 +119,7 @@ function auditPayloadFromAnalysis(a: ChatMessageAnalysis): Prisma.InputJsonValue
   };
 }
 
-export async function POST(req: Request): Promise<Response> {
+async function handleSybnbMessagesPOST(req: Request): Promise<Response> {
   try {
     assertDarlinkRuntimeEnv();
   } catch {
@@ -122,6 +129,12 @@ export async function POST(req: Request): Promise<Response> {
   const user = await getSessionUser();
   if (!user) {
     return sybnbFail("unauthorized", 401);
+  }
+
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const limited = rateLimit(`sybnb:msg:${ip}`, 30, 60_000);
+  if (!limited.allowed) {
+    return Response.json({ ok: false, error: "Too many requests" }, { status: 429 });
   }
 
   let json: unknown;
@@ -281,4 +294,8 @@ export async function POST(req: Request): Promise<Response> {
   broadcastSybnbChatActivity(bookingId);
 
   return sybnbJson({ message: row });
+}
+
+export async function POST(req: Request): Promise<Response> {
+  return sybnbApiCatch(() => handleSybnbMessagesPOST(req));
 }

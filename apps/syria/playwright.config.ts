@@ -6,7 +6,7 @@ import { defineConfig, devices } from "@playwright/test";
 loadDotenv({ path: path.join(process.cwd(), ".env.local") });
 loadDotenv({ path: path.join(process.cwd(), ".env") });
 
-const port = process.env.PLAYWRIGHT_PORT ?? "3002";
+const port = process.env.PLAYWRIGHT_PORT ?? "3001";
 const baseURL = `http://127.0.0.1:${port}`;
 
 /**

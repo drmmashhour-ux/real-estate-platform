@@ -3,13 +3,15 @@ import type { Prisma } from "@/generated/prisma";
 import { getAdminUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { sybnbHotelLeadPatchSchema } from "@/lib/sybnb/sybnb-hotel-lead-schema";
+import { sybnbApiCatch } from "@/lib/sybnb/sybnb-api-catch";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 type RouteCtx = { params: Promise<{ id: string }> };
 
 /** ORDER SYBNB-52 — Admin: update lead (status, notes, contact fields). */
-export async function PATCH(req: Request, ctx: RouteCtx): Promise<Response> {
+async function handleHotelLeadPATCH(req: Request, ctx: RouteCtx): Promise<Response> {
   const admin = await getAdminUser();
   if (!admin) {
     return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
@@ -61,4 +63,8 @@ export async function PATCH(req: Request, ctx: RouteCtx): Promise<Response> {
   } catch {
     return NextResponse.json({ ok: false, error: "not_found" }, { status: 404 });
   }
+}
+
+export async function PATCH(req: Request, ctx: RouteCtx): Promise<Response> {
+  return sybnbApiCatch(() => handleHotelLeadPATCH(req, ctx));
 }

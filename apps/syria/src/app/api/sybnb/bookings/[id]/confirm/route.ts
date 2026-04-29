@@ -10,7 +10,11 @@ import { getSessionUser } from "@/lib/auth";
 import { assertDarlinkRuntimeEnv } from "@/lib/guard";
 import { hostConfirmSybnbV1Booking } from "@/lib/sybnb/sybnb-v1-request-service";
 import { broadcastSybnbBookingUpdated } from "@/lib/realtime/sybnb-broadcast";
+import { sybnbApiCatch } from "@/lib/sybnb/sybnb-api-catch";
 import { z } from "zod";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -18,7 +22,7 @@ const bodySchema = z.object({
   clientVersion: z.coerce.number().int().min(1),
 });
 
-export async function POST(req: Request, context: RouteParams): Promise<Response> {
+async function handleConfirmPOST(req: Request, context: RouteParams): Promise<Response> {
   const { id: rawId } = await context.params;
   const idParsed = sybnbIdParam.safeParse(rawId);
   if (!idParsed.success) {
@@ -68,4 +72,8 @@ export async function POST(req: Request, context: RouteParams): Promise<Response
   broadcastSybnbBookingUpdated(r.booking.id, { status: r.booking.status });
 
   return sybnbJson({ booking: r.booking });
+}
+
+export async function POST(req: Request, context: RouteParams): Promise<Response> {
+  return sybnbApiCatch(() => handleConfirmPOST(req, context));
 }

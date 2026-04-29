@@ -10,13 +10,17 @@ import { isInvestorDemoModeActive } from "@/lib/sybnb/investor-demo";
 import { assertDarlinkRuntimeEnv } from "@/lib/guard";
 import { firstZodIssueMessage, sybnbFail, sybnbJson } from "@/lib/sybnb/sybnb-api-http";
 import { sybnbPaymentIntentBody } from "@/lib/sybnb/sybnb-api-schemas";
+import { sybnbApiCatch } from "@/lib/sybnb/sybnb-api-catch";
 
 const SYBNB_PAYMENT_IDEMPOTENCY_REQUIRED = process.env.SYBNB_PAYMENT_IDEMPOTENCY_REQUIRED === "true";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 /**
  * Returns a stub id when all SYBNB payment gates pass. Live Stripe is not wired in this app until legal approval. SYBNB-7: zod + uniform errors.
  */
-export async function POST(req: Request): Promise<Response> {
+async function handlePaymentIntentPOST(req: Request): Promise<Response> {
   try {
     assertDarlinkRuntimeEnv();
   } catch {
@@ -117,4 +121,8 @@ export async function POST(req: Request): Promise<Response> {
     console.error("[SYBNB] payment-intent failed", e instanceof Error ? e.message : e);
     return sybnbFail("server_error", 500);
   }
+}
+
+export async function POST(req: Request): Promise<Response> {
+  return sybnbApiCatch(() => handlePaymentIntentPOST(req));
 }

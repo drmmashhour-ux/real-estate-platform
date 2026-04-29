@@ -7,15 +7,19 @@ import { sybnbConfig } from "@/config/sybnb.config";
 import { applySybnbCheckoutComplete } from "@/lib/sybnb/apply-sybnb-checkout";
 import { createCheckoutSession, recordCheckoutAttempt } from "@/lib/sybnb/payments";
 import { prisma } from "@/lib/db";
+import { sybnbApiCatch } from "@/lib/sybnb/sybnb-api-catch";
 
 type RouteParams = { params: Promise<{ id: string }> };
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 const MANUAL_MESSAGE = "Payment handled manually";
 
 /**
  * SYBNB-4: checkout — `SybnbBooking` (v1) uses feature-flagged payment abstraction; legacy `SyriaBooking` stay flow unchanged. SYBNB-7: uniform errors.
  */
-export async function POST(_req: Request, context: RouteParams): Promise<Response> {
+async function handleCheckoutPOST(_req: Request, context: RouteParams): Promise<Response> {
   const { id: rawId } = await context.params;
   const idParsed = sybnbIdParam.safeParse(rawId);
   if (!idParsed.success) {
@@ -100,4 +104,8 @@ export async function POST(_req: Request, context: RouteParams): Promise<Respons
     console.error("[SYBNB] checkout failed", e instanceof Error ? e.message : e);
     return sybnbFail("server_error", 500);
   }
+}
+
+export async function POST(req: Request, context: RouteParams): Promise<Response> {
+  return sybnbApiCatch(() => handleCheckoutPOST(req, context));
 }

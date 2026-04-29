@@ -8,8 +8,10 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  /// Neon / pooler: migrations use direct connection (copy from Neon dashboard non-pooled URI).
+  directUrl = env("DIRECT_URL")
 }
 
 enum SyriaUserRole {
@@ -564,6 +566,8 @@ model SybnbBooking {
   @@index([status])
   @@index([isTest])
   @@index([approvedAt])
+  @@index([createdAt])
+  @@index([updatedAt])
   @@map("sybnb_bookings")
 }
 
@@ -594,6 +598,7 @@ model SybnbSyncIdempotency {
   @@id([clientRequestId, clientId])
   @@index([userId])
   @@index([bookingId])
+  @@index([createdAt])
   @@map("sybnb_sync_idempotency")
 }
 
@@ -616,6 +621,8 @@ model SybnbMessage {
 
   @@index([bookingId])
   @@index([bookingId, createdAt])
+  @@index([senderId])
+  @@index([createdAt])
   @@map("sybnb_messages")
 }
 

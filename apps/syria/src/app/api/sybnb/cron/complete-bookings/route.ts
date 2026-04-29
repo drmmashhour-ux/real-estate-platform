@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { assertDarlinkRuntimeEnv } from "@/lib/guard";
 import { autoCompleteDueSybnbBookings } from "@/lib/sybnb/sybnb-v1-lifecycle";
 import { sybnbFail, sybnbJson } from "@/lib/sybnb/sybnb-api-http";
+import { sybnbApiCatch } from "@/lib/sybnb/sybnb-api-catch";
 
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
@@ -17,11 +19,11 @@ function authorize(req: NextRequest): boolean {
 }
 
 export async function GET(req: NextRequest): Promise<Response> {
-  return run(req);
+  return sybnbApiCatch(() => run(req));
 }
 
 export async function POST(req: NextRequest): Promise<Response> {
-  return run(req);
+  return sybnbApiCatch(() => run(req));
 }
 
 async function run(req: NextRequest): Promise<Response> {

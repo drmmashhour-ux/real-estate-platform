@@ -7,6 +7,10 @@ import {
   type SybnbListingLiteItem,
 } from "@/lib/sybnb/sybnb-listings-lite";
 import { LISTING_EDGE_CACHE_CONTROL } from "@/lib/http/listing-api-cache";
+import { sybnbApiCatch } from "@/lib/sybnb/sybnb-api-catch";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 /**
  * GET /api/sybnb/listings-lite?... — ORDER SYBNB-81 / SYBNB-82 / SYBNB-129
@@ -14,7 +18,7 @@ import { LISTING_EDGE_CACHE_CONTROL } from "@/lib/http/listing-api-cache";
  * Pagination clamped to **10** items per response.
  * Optional `stripHotels=1` batches verified HOTEL strip into the same JSON (fewer round trips).
  */
-export async function GET(req: Request) {
+async function handleListingsLiteGET(req: Request) {
   const url = new URL(req.url);
   const flat: Record<string, string> = {};
   url.searchParams.forEach((value, key) => {
@@ -58,4 +62,8 @@ export async function GET(req: Request) {
     console.error("[api/sybnb/listings-lite]", e);
     return NextResponse.json({ error: "Search failed." }, { status: 500 });
   }
+}
+
+export async function GET(req: Request) {
+  return sybnbApiCatch(() => handleListingsLiteGET(req));
 }

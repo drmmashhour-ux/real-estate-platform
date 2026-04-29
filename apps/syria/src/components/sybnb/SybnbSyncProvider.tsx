@@ -20,6 +20,9 @@ type Ctx = {
   retryFailedSync: () => void;
 };
 
+/** Production-safe fallback when WebSocket is disconnected (no heavy 22s polling). */
+const FALLBACK_POLL_MS = 60_000;
+
 const SybnbSyncCtx = createContext<Ctx>({
   phase: "idle",
   pendingCount: 0,
@@ -149,7 +152,7 @@ export function SybnbSyncProvider(props: { children: React.ReactNode }) {
     const id = window.setInterval(() => {
       if (!navigator.onLine) return;
       void runSyncNow();
-    }, 60_000);
+    }, FALLBACK_POLL_MS);
     return () => window.clearInterval(id);
   }, [syncActive, runSyncNow, wsConnected]);
 

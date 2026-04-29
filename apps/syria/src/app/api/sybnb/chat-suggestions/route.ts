@@ -8,14 +8,16 @@ import {
   resolveSuggestionLocale,
   toSafeBookingSnapshot,
 } from "@/lib/sybnb/chat-suggestions";
+import { sybnbApiCatch } from "@/lib/sybnb/sybnb-api-catch";
 
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
  * Host-only GET: loads last guest message + booking snapshot (no guest/host names in API response),
  * returns rule-based (+ optional AI) suggestions — see {@link getReplySuggestions}.
  */
-export async function GET(req: Request): Promise<Response> {
+async function handleChatSuggestionsGET(req: Request): Promise<Response> {
   try {
     assertDarlinkRuntimeEnv();
   } catch {
@@ -75,4 +77,8 @@ export async function GET(req: Request): Promise<Response> {
   });
 
   return sybnbJson({ suggestions, source });
+}
+
+export async function GET(req: Request): Promise<Response> {
+  return sybnbApiCatch(() => handleChatSuggestionsGET(req));
 }

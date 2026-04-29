@@ -9,8 +9,12 @@ import { assertDarlinkRuntimeEnv } from "@/lib/guard";
 import { firstZodIssueMessage, sybnbFail, sybnbJson } from "@/lib/sybnb/sybnb-api-http";
 import { sybnbCheckoutSessionBody } from "@/lib/sybnb/sybnb-api-schemas";
 import { getStripeClient, sybnbAppBaseUrl, sybnbStayTotalUsdCents } from "@/lib/sybnb/stripe-server";
+import { sybnbApiCatch } from "@/lib/sybnb/sybnb-api-catch";
 
 const SYBNB_PAYMENT_IDEMPOTENCY_REQUIRED = process.env.SYBNB_PAYMENT_IDEMPOTENCY_REQUIRED === "true";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 function normalizeLocale(raw: string | undefined): string {
   const l = raw?.trim().toLowerCase() ?? "";
@@ -21,7 +25,7 @@ function normalizeLocale(raw: string | undefined): string {
 /**
  * ORDER SYBNB-110 — Creates a Stripe Checkout Session (test `sk_test_*` only) for an approved stay booking.
  */
-export async function POST(req: Request): Promise<Response> {
+async function handleCheckoutSessionPOST(req: Request): Promise<Response> {
   try {
     assertDarlinkRuntimeEnv();
   } catch {
@@ -158,7 +162,10 @@ export async function POST(req: Request): Promise<Response> {
     });
   } catch (e) {
     console.error("[SYBNB] checkout-session failed", e instanceof Error ? e.message : e);
-    const msg = e instanceof Error ? e.message : "server_error";
-    return sybnbFail(msg, 500);
+    return sybnbFail("server_error", 500);
   }
+}
+
+export async function POST(req: Request): Promise<Response> {
+  return sybnbApiCatch(() => handleCheckoutSessionPOST(req));
 }

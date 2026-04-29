@@ -8,12 +8,17 @@ import { prisma } from "@/lib/db";
 import { broadcastSybnbBookingUpdated } from "@/lib/realtime/sybnb-broadcast";
 import { s2GetClientIp } from "@/lib/security/s2-ip";
 import { SYBNB_SYNC_LEGACY_CLIENT_ID } from "@/lib/sybnb/sybnb-sync-constants";
+import { sybnbApiCatch } from "@/lib/sybnb/sybnb-api-catch";
+import { rateLimit } from "@/lib/security/rate-limit";
 import { NextRequest } from "next/server";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 /**
  * SYBNB-1: `SybnbBooking` request flow (no card payment). SYBNB-7: validation + rate limit + fallbacks.
  */
-export async function GET(): Promise<Response> {
+async function handleBookingsGET(): Promise<Response> {
   try {
     assertDarlinkRuntimeEnv();
   } catch {
@@ -44,7 +49,11 @@ export async function GET(): Promise<Response> {
   }
 }
 
-export async function POST(req: NextRequest): Promise<Response> {
+export async function GET(): Promise<Response> {
+  return sybnbApiCatch(() => handleBookingsGET());
+}
+
+async function handleBookingsPOST(req: NextRequest): Promise<Response> {
   try {
     assertDarlinkRuntimeEnv();
   } catch {
@@ -56,6 +65,10 @@ export async function POST(req: NextRequest): Promise<Response> {
   }
 
   const ip = s2GetClientIp(req);
+  const mem = rateLimit(`sybnb:booking:${ip}`, 30, 60_000);
+  if (!mem.allowed) {
+    return Response.json({ ok: false, error: "Too many requests" }, { status: 429 });
+  }
   const tooMany = assertSybnb5PerMin("booking_create", ip);
   if (tooMany) {
     return tooMany;
@@ -165,4 +178,8 @@ export async function POST(req: NextRequest): Promise<Response> {
   broadcastSybnbBookingUpdated(result.booking.id, { status: result.booking.status });
 
   return sybnbJson({ booking: result.booking }, 201);
+}
+
+export async function POST(req: NextRequest): Promise<Response> {
+  return sybnbApiCatch(() => handleBookingsPOST(req));
 }

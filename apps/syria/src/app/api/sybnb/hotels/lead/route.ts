@@ -2,11 +2,13 @@ import { NextResponse } from "next/server";
 import { getAdminUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { sybnbHotelLeadCreateSchema } from "@/lib/sybnb/sybnb-hotel-lead-schema";
+import { sybnbApiCatch } from "@/lib/sybnb/sybnb-api-catch";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 /** ORDER SYBNB-52 — Admin: list hotel CRM leads (newest first). */
-export async function GET(): Promise<Response> {
+async function handleHotelLeadsGET(): Promise<Response> {
   const admin = await getAdminUser();
   if (!admin) {
     return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
@@ -27,8 +29,12 @@ export async function GET(): Promise<Response> {
   });
 }
 
+export async function GET(): Promise<Response> {
+  return sybnbApiCatch(() => handleHotelLeadsGET());
+}
+
 /** ORDER SYBNB-52 — Admin: create lead (first contact). */
-export async function POST(req: Request): Promise<Response> {
+async function handleHotelLeadPOST(req: Request): Promise<Response> {
   const admin = await getAdminUser();
   if (!admin) {
     return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
@@ -66,4 +72,8 @@ export async function POST(req: Request): Promise<Response> {
       updatedAt: row.updatedAt.toISOString(),
     },
   });
+}
+
+export async function POST(req: Request): Promise<Response> {
+  return sybnbApiCatch(() => handleHotelLeadPOST(req));
 }

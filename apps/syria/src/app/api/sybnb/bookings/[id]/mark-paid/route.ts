@@ -9,8 +9,12 @@ import {
   SYBNB_SIM_ESCROW_SECURED,
   SYBNB_SIM_ESCROW_RELEASED,
 } from "@/lib/sybnb/sybnb-simulated-escrow";
+import { sybnbApiCatch } from "@/lib/sybnb/sybnb-api-catch";
 
 type RouteParams = { params: Promise<{ id: string }> };
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 /**
  * Simulated escrow only — host marks payment received (no PSP, no funds movement).
@@ -18,7 +22,7 @@ type RouteParams = { params: Promise<{ id: string }> };
  * Rules: caller must be **host**; booking must be past host approval (`approved` or subsequent manual-phase statuses);
  * sets `sybnbSimulatedEscrowStatus` → `simulated_secured`. Audit: **PAYMENT_MARKED_RECEIVED**, **ESCROW_SECURED**.
  */
-export async function POST(_req: Request, context: RouteParams): Promise<Response> {
+async function handleMarkPaidPOST(_req: Request, context: RouteParams): Promise<Response> {
   const { id: rawId } = await context.params;
   const idParsed = sybnbIdParam.safeParse(rawId);
   if (!idParsed.success) {
@@ -85,4 +89,8 @@ export async function POST(_req: Request, context: RouteParams): Promise<Respons
   });
 
   return sybnbJson({ booking: updated });
+}
+
+export async function POST(req: Request, context: RouteParams): Promise<Response> {
+  return sybnbApiCatch(() => handleMarkPaidPOST(req, context));
 }

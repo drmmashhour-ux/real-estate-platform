@@ -16,20 +16,20 @@ import {
 
 export type SybnbSyncPhase = "idle" | "pending" | "syncing" | "synced" | "failed" | "paused";
 
-const DELAY_MIN_MS = 300;
-const DELAY_MAX_MS = 500;
 /** Row marked `failed` after this many failed delivery attempts (incremented per failure). */
 const MAX_RETRIES = 3;
 const CIRCUIT_BREAKER_FAILURES = 5;
 const PAUSE_MS = 60_000;
+/** Avoid hammering APIs — process at most this many queue items per sync run. */
+const MAX_BATCH_PER_RUN = 10;
+
+function delayWithJitter(baseMs: number): number {
+  return baseMs + Math.floor(Math.random() * 300);
+}
 
 let running = false;
 let consecutiveFailures = 0;
 let pausedUntil = 0;
-
-function jitterDelayMs(): number {
-  return DELAY_MIN_MS + Math.floor(Math.random() * (DELAY_MAX_MS - DELAY_MIN_MS + 1));
-}
 
 type SybnbSyncApiBody = {
   success?: boolean;
@@ -248,9 +248,10 @@ export async function runSync(opts?: RunSyncOptions): Promise<{ processed: numbe
 
   try {
     const sorted = [...queue].sort((a, b) => a.createdAt - b.createdAt);
+    const batch = sorted.slice(0, MAX_BATCH_PER_RUN);
 
-    for (let i = 0; i < sorted.length; i += 1) {
-      const item = sorted[i];
+    for (let i = 0; i < batch.length; i += 1) {
+      const item = batch[i];
       if (typeof navigator !== "undefined" && !navigator.onLine) break;
 
       const fresh = readSybnbSyncQueue().find((x) => x.id === item.id);
@@ -298,8 +299,8 @@ export async function runSync(opts?: RunSyncOptions): Promise<{ processed: numbe
         }
       }
 
-      if (i < sorted.length - 1) {
-        await new Promise((r) => setTimeout(r, jitterDelayMs()));
+      if (i < batch.length - 1) {
+        await new Promise((r) => setTimeout(r, delayWithJitter(400)));
       }
     }
 
