@@ -1,12 +1,25 @@
 -- AI Growth Brain: recommendations, approvals, outcome events.
+-- Idempotent for partially-applied databases.
 
-CREATE TYPE "GrowthBrainDomain" AS ENUM ('supply', 'demand', 'seo', 'content', 'conversion', 'revenue', 'retention');
+DO $$ BEGIN
+  CREATE TYPE "GrowthBrainDomain" AS ENUM ('supply', 'demand', 'seo', 'content', 'conversion', 'revenue', 'retention');
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
 
-CREATE TYPE "GrowthBrainPriority" AS ENUM ('low', 'medium', 'high');
+DO $$ BEGIN
+  CREATE TYPE "GrowthBrainPriority" AS ENUM ('low', 'medium', 'high');
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
 
-CREATE TYPE "GrowthBrainApprovalStatus" AS ENUM ('pending', 'approved', 'rejected', 'executed');
+DO $$ BEGIN
+  CREATE TYPE "GrowthBrainApprovalStatus" AS ENUM ('pending', 'approved', 'rejected', 'executed');
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
 
-CREATE TABLE "growth_brain_recommendations" (
+CREATE TABLE IF NOT EXISTS "growth_brain_recommendations" (
     "id" TEXT NOT NULL,
     "type" VARCHAR(96) NOT NULL,
     "domain" "GrowthBrainDomain" NOT NULL,
@@ -34,15 +47,15 @@ CREATE TABLE "growth_brain_recommendations" (
     CONSTRAINT "growth_brain_recommendations_pkey" PRIMARY KEY ("id")
 );
 
-CREATE UNIQUE INDEX "growth_brain_recommendations_fingerprint_key" ON "growth_brain_recommendations"("fingerprint");
+CREATE UNIQUE INDEX IF NOT EXISTS "growth_brain_recommendations_fingerprint_key" ON "growth_brain_recommendations"("fingerprint");
 
-CREATE INDEX "growth_brain_recommendations_domain_priority_idx" ON "growth_brain_recommendations"("domain", "priority");
+CREATE INDEX IF NOT EXISTS "growth_brain_recommendations_domain_priority_idx" ON "growth_brain_recommendations"("domain", "priority");
 
-CREATE INDEX "growth_brain_recommendations_run_id_idx" ON "growth_brain_recommendations"("run_id");
+CREATE INDEX IF NOT EXISTS "growth_brain_recommendations_run_id_idx" ON "growth_brain_recommendations"("run_id");
 
-CREATE INDEX "growth_brain_recommendations_status_created_at_idx" ON "growth_brain_recommendations"("status", "created_at");
+CREATE INDEX IF NOT EXISTS "growth_brain_recommendations_status_created_at_idx" ON "growth_brain_recommendations"("status", "created_at");
 
-CREATE TABLE "growth_brain_approvals" (
+CREATE TABLE IF NOT EXISTS "growth_brain_approvals" (
     "id" TEXT NOT NULL,
     "recommendation_id" TEXT NOT NULL,
     "status" "GrowthBrainApprovalStatus" NOT NULL DEFAULT 'pending',
@@ -54,15 +67,23 @@ CREATE TABLE "growth_brain_approvals" (
     CONSTRAINT "growth_brain_approvals_pkey" PRIMARY KEY ("id")
 );
 
-CREATE INDEX "growth_brain_approvals_recommendation_id_idx" ON "growth_brain_approvals"("recommendation_id");
+CREATE INDEX IF NOT EXISTS "growth_brain_approvals_recommendation_id_idx" ON "growth_brain_approvals"("recommendation_id");
 
-CREATE INDEX "growth_brain_approvals_status_created_at_idx" ON "growth_brain_approvals"("status", "created_at");
+CREATE INDEX IF NOT EXISTS "growth_brain_approvals_status_created_at_idx" ON "growth_brain_approvals"("status", "created_at");
 
-ALTER TABLE "growth_brain_approvals" ADD CONSTRAINT "growth_brain_approvals_recommendation_id_fkey" FOREIGN KEY ("recommendation_id") REFERENCES "growth_brain_recommendations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+  ALTER TABLE "growth_brain_approvals" ADD CONSTRAINT "growth_brain_approvals_recommendation_id_fkey" FOREIGN KEY ("recommendation_id") REFERENCES "growth_brain_recommendations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
 
-ALTER TABLE "growth_brain_approvals" ADD CONSTRAINT "growth_brain_approvals_reviewer_id_fkey" FOREIGN KEY ("reviewer_id") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+DO $$ BEGIN
+  ALTER TABLE "growth_brain_approvals" ADD CONSTRAINT "growth_brain_approvals_reviewer_id_fkey" FOREIGN KEY ("reviewer_id") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
 
-CREATE TABLE "growth_brain_outcome_events" (
+CREATE TABLE IF NOT EXISTS "growth_brain_outcome_events" (
     "id" TEXT NOT NULL,
     "recommendation_id" TEXT NOT NULL,
     "event_type" VARCHAR(32) NOT NULL,
@@ -72,6 +93,10 @@ CREATE TABLE "growth_brain_outcome_events" (
     CONSTRAINT "growth_brain_outcome_events_pkey" PRIMARY KEY ("id")
 );
 
-CREATE INDEX "growth_brain_outcome_events_recommendation_id_created_at_idx" ON "growth_brain_outcome_events"("recommendation_id", "created_at");
+CREATE INDEX IF NOT EXISTS "growth_brain_outcome_events_recommendation_id_created_at_idx" ON "growth_brain_outcome_events"("recommendation_id", "created_at");
 
-ALTER TABLE "growth_brain_outcome_events" ADD CONSTRAINT "growth_brain_outcome_events_recommendation_id_fkey" FOREIGN KEY ("recommendation_id") REFERENCES "growth_brain_recommendations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+  ALTER TABLE "growth_brain_outcome_events" ADD CONSTRAINT "growth_brain_outcome_events_recommendation_id_fkey" FOREIGN KEY ("recommendation_id") REFERENCES "growth_brain_recommendations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;

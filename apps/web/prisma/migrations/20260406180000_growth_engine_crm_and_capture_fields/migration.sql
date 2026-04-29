@@ -1,14 +1,31 @@
 -- Growth CRM (permission-based pipeline) + optional fields on public LP captures.
+-- Idempotent: safe if enums partially existed from a failed prior apply.
 
-CREATE TYPE "GrowthEngineLeadRole" AS ENUM ('owner', 'broker', 'buyer', 'host');
+DO $$ BEGIN
+  CREATE TYPE "GrowthEngineLeadRole" AS ENUM ('owner', 'broker', 'buyer', 'host');
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
 
-CREATE TYPE "GrowthEngineLeadSource" AS ENUM ('form', 'csv', 'manual', 'referral');
+DO $$ BEGIN
+  CREATE TYPE "GrowthEngineLeadSource" AS ENUM ('form', 'csv', 'manual', 'referral');
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
 
-CREATE TYPE "GrowthEnginePermissionStatus" AS ENUM ('unknown', 'requested', 'granted', 'rejected', 'granted_by_source');
+DO $$ BEGIN
+  CREATE TYPE "GrowthEnginePermissionStatus" AS ENUM ('unknown', 'requested', 'granted', 'rejected', 'granted_by_source');
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
 
-CREATE TYPE "GrowthEngineLeadStage" AS ENUM ('new', 'contacted', 'interested', 'awaiting_assets', 'converted', 'lost');
+DO $$ BEGIN
+  CREATE TYPE "GrowthEngineLeadStage" AS ENUM ('new', 'contacted', 'interested', 'awaiting_assets', 'converted', 'lost');
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
 
-CREATE TABLE "growth_engine_leads" (
+CREATE TABLE IF NOT EXISTS "growth_engine_leads" (
     "id" TEXT NOT NULL,
     "role" "GrowthEngineLeadRole" NOT NULL,
     "name" VARCHAR(200),
@@ -37,25 +54,33 @@ CREATE TABLE "growth_engine_leads" (
     CONSTRAINT "growth_engine_leads_pkey" PRIMARY KEY ("id")
 );
 
-CREATE UNIQUE INDEX "growth_engine_leads_listing_acquisition_lead_id_key" ON "growth_engine_leads"("listing_acquisition_lead_id");
+CREATE UNIQUE INDEX IF NOT EXISTS "growth_engine_leads_listing_acquisition_lead_id_key" ON "growth_engine_leads"("listing_acquisition_lead_id");
 
-CREATE INDEX "growth_engine_leads_email_idx" ON "growth_engine_leads"("email");
+CREATE INDEX IF NOT EXISTS "growth_engine_leads_email_idx" ON "growth_engine_leads"("email");
 
-CREATE INDEX "growth_engine_leads_stage_idx" ON "growth_engine_leads"("stage");
+CREATE INDEX IF NOT EXISTS "growth_engine_leads_stage_idx" ON "growth_engine_leads"("stage");
 
-CREATE INDEX "growth_engine_leads_source_idx" ON "growth_engine_leads"("source");
+CREATE INDEX IF NOT EXISTS "growth_engine_leads_source_idx" ON "growth_engine_leads"("source");
 
-CREATE INDEX "growth_engine_leads_role_idx" ON "growth_engine_leads"("role");
+CREATE INDEX IF NOT EXISTS "growth_engine_leads_role_idx" ON "growth_engine_leads"("role");
 
-CREATE INDEX "growth_engine_leads_needs_follow_up_idx" ON "growth_engine_leads"("needs_follow_up");
+CREATE INDEX IF NOT EXISTS "growth_engine_leads_needs_follow_up_idx" ON "growth_engine_leads"("needs_follow_up");
 
-CREATE INDEX "growth_engine_leads_created_at_idx" ON "growth_engine_leads"("created_at");
+CREATE INDEX IF NOT EXISTS "growth_engine_leads_created_at_idx" ON "growth_engine_leads"("created_at");
 
-ALTER TABLE "growth_engine_leads" ADD CONSTRAINT "growth_engine_leads_assigned_to_user_id_fkey" FOREIGN KEY ("assigned_to_user_id") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+DO $$ BEGIN
+  ALTER TABLE "growth_engine_leads" ADD CONSTRAINT "growth_engine_leads_assigned_to_user_id_fkey" FOREIGN KEY ("assigned_to_user_id") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
 
-ALTER TABLE "growth_engine_leads" ADD CONSTRAINT "growth_engine_leads_referred_by_user_id_fkey" FOREIGN KEY ("referred_by_user_id") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+DO $$ BEGIN
+  ALTER TABLE "growth_engine_leads" ADD CONSTRAINT "growth_engine_leads_referred_by_user_id_fkey" FOREIGN KEY ("referred_by_user_id") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
 
-ALTER TABLE "growth_engine_leads" ADD CONSTRAINT "growth_engine_leads_listing_acquisition_lead_id_fkey" FOREIGN KEY ("listing_acquisition_lead_id") REFERENCES "listing_acquisition_leads"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+-- FK to listing_acquisition_leads added in 20260416120500 — table is created in 20260416120000_listing_acquisition_supply.
 
 ALTER TABLE "growth_lead_captures" ADD COLUMN IF NOT EXISTS "full_name" VARCHAR(200),
 ADD COLUMN IF NOT EXISTS "city" VARCHAR(120),
