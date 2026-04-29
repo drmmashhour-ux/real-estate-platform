@@ -8,6 +8,7 @@ import { Link } from "@/i18n/navigation";
 import { ListingFadeInImg } from "@/components/syria/ListingFadeInImg";
 import { ListingImageSkeleton } from "@/components/syria/ListingImageSkeleton";
 import { useDataSaverOptional } from "@/context/DataSaverProvider";
+import { useSyriaModeOptional } from "@/context/ModeContext";
 import { formatSyriaCurrency } from "@/lib/format";
 import { backfillLocalizedPropertyShape } from "@/lib/property-legacy-compat";
 import {
@@ -16,6 +17,7 @@ import {
   getLocalizedPropertyTitle,
 } from "@/lib/property-localization";
 import { cn } from "@/lib/cn";
+import { syriaListingThumbUrl } from "@/lib/syria/listing-image-thumb";
 import { isNewListing } from "@/lib/syria-phone";
 import type { SyriaProperty } from "@/generated/prisma";
 import type { SerializedBrowseListing } from "@/services/search/search.service";
@@ -184,6 +186,8 @@ export function ListingCard({
 }) {
   const t = useTranslations("Listing");
   const { listingImageQuality } = useDataSaverOptional();
+  const modeOpt = useSyriaModeOptional();
+  const liteUi = modeOpt?.effectiveMode === "lite";
   const resolved = backfillLocalizedPropertyShape(listing);
   const catKey = "category" in listing && typeof (listing as { category?: string }).category === "string" ? (listing as { category: string }).category : null;
   const isStay = catKey === "stay";
@@ -201,6 +205,7 @@ export function ListingCard({
     .join(" · ");
 
   const img = primaryListingImage(listing.images);
+  const imgForDisplay = img && liteUi ? syriaListingThumbUrl(img, 300) : img;
   const nPhotos = effectivePhotoCount(listing);
   const browseWire = listing as SerializedBrowseListing;
   const browseCtrKinds =
@@ -360,7 +365,7 @@ export function ListingCard({
   const [coverLoaded, setCoverLoaded] = useState(false);
   useEffect(() => {
     setCoverLoaded(false);
-  }, [img]);
+  }, [imgForDisplay]);
 
   return (
     <Link
@@ -379,9 +384,10 @@ export function ListingCard({
             if (isDataOrBlob) {
               return (
                 <ListingFadeInImg
-                  src={img}
+                  src={imgForDisplay ?? img}
                   alt=""
                   className=""
+                  thumbMaxWidth={liteUi ? 300 : undefined}
                   loading={priority ? "eager" : "lazy"}
                   fetchPriority={priority ? "high" : "low"}
                 />
@@ -391,7 +397,7 @@ export function ListingCard({
               <>
                 <ListingImageSkeleton active={!coverLoaded} />
                 <Image
-                  src={img}
+                  src={imgForDisplay ?? img}
                   alt=""
                   fill
                   loading={priority ? "eager" : "lazy"}
@@ -399,8 +405,8 @@ export function ListingCard({
                     "relative z-[2] object-cover transition-opacity duration-300",
                     coverLoaded ? "opacity-100" : "opacity-0",
                   )}
-                  sizes="(max-width: 640px) min(96vw, 560px), (max-width: 1280px) min(50vw, 560px), min(520px, 33vw)"
-                  quality={listingImageQuality}
+                  sizes={liteUi ? "(max-width: 640px) min(96vw, 300px), 300px" : "(max-width: 640px) min(96vw, 560px), (max-width: 1280px) min(50vw, 560px), min(520px, 33vw)"}
+                  quality={liteUi ? Math.min(listingImageQuality, 45) : listingImageQuality}
                   priority={!!priority}
                   unoptimized={img.startsWith("http://") || img.startsWith("https://")}
                   onLoadingComplete={() => setCoverLoaded(true)}

@@ -6,8 +6,8 @@ import { isInvestorDemoModeActive } from "./investor-demo";
  * Effective demo / TTL:
  * - {@link syncInvestorDemoSessionExpiry} runs inside {@link isInvestorDemoModeActive}
  *   (see `@/lib/demo/demo-session`).
- * - When `INVESTOR_DEMO_MODE_EXPIRES_AT` is in the past, runtime demo flags are cleared for this
- *   Node process (no restart, no `.env` writes).
+ * - When `now > INVESTOR_DEMO_MODE_EXPIRES_AT`, runtime demo is cleared, force-off engaged,
+ *   optional {@link runInvestorDemoResetThrottled} when auto-clean was on, and `DEMO_SESSION_EXPIRED` is logged.
  */
 export async function isDemoModeActive(): Promise<boolean> {
   return isInvestorDemoModeActive();

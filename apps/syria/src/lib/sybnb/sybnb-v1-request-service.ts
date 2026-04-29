@@ -7,6 +7,8 @@ import { isSy8SellerVerified } from "@/lib/sy8/sy8-reputation";
 import { computeSybnbV1BookingRiskScore, sybnbRiskStateFromScore } from "@/lib/sybnb/sybnb-v1-booking-risk";
 import { recordSybnbEvent, SYBNB_ANALYTICS_EVENT_TYPES } from "@/lib/sybnb/sybnb-analytics-events";
 import { SYBNB_SIM_ESCROW_PENDING } from "@/lib/sybnb/sybnb-simulated-escrow";
+import { updateFraudScore } from "@/lib/sybnb/fraud-score";
+import { adjustTrustScore } from "@/lib/sybnb/trust-score";
 import { logTimelineEvent } from "@/lib/timeline/log-event";
 
 function parseStayDate(s: string): Date | null {
@@ -35,7 +37,15 @@ export type CreateSybnbV1RequestResult =
   | { ok: true; booking: SybnbBooking }
   | {
       ok: false;
-      code: "unauthorized" | "not_found" | "not_stay" | "bad_dates" | "own_listing" | "blocked" | "validation";
+      code:
+        | "unauthorized"
+        | "not_found"
+        | "not_stay"
+        | "bad_dates"
+        | "own_listing"
+        | "blocked"
+        | "validation"
+        | "restricted";
       message?: string;
     };
 
@@ -105,6 +115,15 @@ export async function createSybnbV1Request(input: {
   if (!isSy8SellerVerified(listing.owner) && riskStatus === "clear") {
     riskStatus = "review";
   }
+
+  const hourAgo = new Date(Date.now() - 60 * 60 * 1000);
+  const recentBookingRequests = await prisma.sybnbBooking.count({
+    where: { guestId: input.guestId, createdAt: { gte: hourAgo } },
+  });
+  if (recentBookingRequests >= 2) {
+    await updateFraudScore(input.guestId, "rapid_booking_requests");
+  }
+
   const booking = await prisma.sybnbBooking.create({
     data: {
       listingId: listing.id,
@@ -187,6 +206,9 @@ export async function hostApproveSybnbV1Request(input: { userId: string; userRol
     },
   });
 
+  void updateFraudScore(b.guestId, "booking_approved_good");
+  void adjustTrustScore(b.guestId, 5);
+
   void recordSybnbEvent({
     type: SYBNB_ANALYTICS_EVENT_TYPES.BOOKING_APPROVED,
     listingId: b.listingId,
@@ -210,10 +232,20 @@ export async function hostDeclineSybnbV1Request(input: { userId: string; userRol
   if (b.status !== "requested") {
     return { ok: false, code: "bad_state" };
   }
+  const priorDeclinedCount = await prisma.sybnbBooking.count({
+    where: {
+      guestId: b.guestId,
+      status: "declined",
+      id: { not: b.id },
+    },
+  });
   const updated = await prisma.sybnbBooking.update({
     where: { id: b.id },
     data: { status: "declined" },
   });
+  if (priorDeclinedCount >= 1) {
+    void adjustTrustScore(b.guestId, -10);
+  }
   return { ok: true, booking: updated };
 }
 

@@ -3,14 +3,18 @@ import { disableDemoModeSafely } from "@/lib/sybnb/demo-safety";
 import { isDemoModeActive } from "@/lib/sybnb/runtime-flags";
 
 /**
- * Auto-disable demo only when CRITICAL results indicate production/system risk — not build-only failures.
+ * Production-risk CRITICAL checks only — never `build.*` (local/typecheck noise).
  *
- * Covers (via check id prefixes): DB health (`database.*`), payment rail posture (`payments.*`),
- * fraud/anomaly hooks fed by non-demo metrics (`anomalies.*`), env isolation (`env.*`).
- * Security hooks may gain CRITICAL checks later (`security.*`).
+ * Maps to operator intent (non-demo signals only — see {@link sybnbCoreAuditExcludeInvestorDemoWhere},
+ * {@link syriaPropertyExcludeInvestorDemoWhere}, booking exclusions in `demo-metrics-filter`):
+ * - DB health → `database.*`
+ * - Payment rail / escrow posture → `payments.*`
+ * - Fraud / blocked-payment spikes (`syriaMarketplaceAnomalies` uses demo-filtered {@link getSybnbPaymentStats}) → `anomalies.*`
+ * - Env isolation → `env.*`
+ * - Security posture → `security.*`
  *
- * Excludes: `build.*` (local/typecheck noise). Fraud/payment/error aggregates exclude `metadata.demo === true`
- * and demo listings/bookings (`demo-metrics-filter`, raw SQL in {@link getDrBrainMetrics}).
+ * Excluded from shutdown triggers: synthetic investor-demo DR.BRAIN (`DRBRAIN_INVESTOR_DEMO_MODE`), demo audit rows,
+ * demo bookings/listings (metrics + anomaly hooks).
  */
 const DEMO_FAILSAFE_CRITICAL_PREFIXES = ["database.", "payments.", "anomalies.", "security.", "env."] as const;
 
@@ -26,14 +30,20 @@ function reportHasProductionRiskCritical(report: DrBrainReport): boolean {
 }
 
 /**
- * After Dr. Brain computes a real (non-synthetic) report: disable investor demo only when the report is
- * CRITICAL **and** at least one failing CRITICAL check is a production-risk category (not build-only).
+ * True when this report should arm the investor-demo failsafe (CRITICAL + at least one production-risk check).
+ * Not every `report.status === "CRITICAL"` (e.g. build-only) qualifies — avoids instability / false shutdowns.
+ */
+export function syriaDrBrainReportRequiresDemoFailsafe(report: DrBrainReport): boolean {
+  return report.status === "CRITICAL" && reportHasProductionRiskCritical(report);
+}
+
+/**
+ * After Dr. Brain computes a real (non-synthetic) report: disable investor demo when the failsafe predicate holds.
  *
- * Read-only DR.BRAIN rollups must not call this.
+ * Read-only DR.BRAIN rollups must not call this (`runSyriaDrBrainReportReadOnly`).
  */
 export async function afterSyriaDrBrainReportComputed(report: DrBrainReport): Promise<void> {
-  if (report.status !== "CRITICAL") return;
-  if (!reportHasProductionRiskCritical(report)) return;
+  if (!syriaDrBrainReportRequiresDemoFailsafe(report)) return;
   if (!(await isDemoModeActive())) return;
 
   await disableDemoModeSafely("Dr. Brain detected CRITICAL system issue");

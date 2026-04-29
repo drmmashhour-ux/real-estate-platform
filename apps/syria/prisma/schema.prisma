@@ -203,6 +203,12 @@ model SyriaAppUser {
   reputationScore  Int     @default(0) @map("reputation_score")
   /// SYBNB / trust: account-level abuse or sanctions flag (hide from book flows in UI if needed).
   flagged            Boolean @default(false)
+  /// SYBNB: simple trust band (0–100). Stored value only — updated on lifecycle events (`src/lib/sybnb/trust-score.ts`), not recomputed in requests.
+  trustScore Int @default(50) @map("trust_score")
+  /// SYBNB / trust: lightweight abuse score (rules-only; no AI). Updated via `src/lib/sybnb/fraud-score.ts`.
+  fraudScore Int @default(0) @map("fraud_score")
+  /// Set when score crosses threshold or manual admin action — blocks new booking requests.
+  fraudFlag Boolean @default(false) @map("fraud_flag")
   role      SyriaUserRole @default(USER)
   createdAt DateTime      @default(now()) @map("created_at")
   updatedAt DateTime      @updatedAt @map("updated_at")
@@ -583,6 +589,8 @@ model SybnbMessage {
   riskLevel String?  @map("risk_level")
   /// JSON string array of flags — `phone` | `email` | `link` | `external_payment`.
   riskFlags Json?    @map("risk_flags")
+  /// Client UUID for offline send dedup; unique per booking + sender when set (`sybnb_messages_booking_sender_client_uidx`).
+  clientId String? @map("client_id")
 
   booking SybnbBooking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   sender  SyriaAppUser @relation("SybnbMessageSender", fields: [senderId], references: [id], onDelete: Cascade)

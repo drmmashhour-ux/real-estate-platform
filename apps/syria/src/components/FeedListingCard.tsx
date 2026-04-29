@@ -7,10 +7,12 @@ import { Link } from "@/i18n/navigation";
 import { ListingFadeInImg } from "@/components/syria/ListingFadeInImg";
 import { ListingImageSkeleton } from "@/components/syria/ListingImageSkeleton";
 import { useDataSaverOptional } from "@/context/DataSaverProvider";
+import { useSyriaModeOptional } from "@/context/ModeContext";
 import { formatSyriaCurrency } from "@/lib/format";
 import { backfillLocalizedPropertyShape } from "@/lib/property-legacy-compat";
 import { getLocalizedPropertyCity, getLocalizedPropertyTitle } from "@/lib/property-localization";
 import { cn } from "@/lib/cn";
+import { syriaListingThumbUrl } from "@/lib/syria/listing-image-thumb";
 import { labelSyriaState } from "@/lib/syria/states";
 import type { SyriaProperty } from "@/generated/prisma";
 
@@ -52,6 +54,7 @@ export function FeedListingCard({
 }) {
   const t = useTranslations("Listing");
   const { listingImageQuality } = useDataSaverOptional();
+  const liteUi = useSyriaModeOptional()?.effectiveMode === "lite";
   const resolved = backfillLocalizedPropertyShape(listing);
   const title = getLocalizedPropertyTitle(listing, locale);
   const cityLine = getLocalizedPropertyCity(resolved, locale);
@@ -60,10 +63,11 @@ export function FeedListingCard({
   const stateLabel = stateRaw ? labelSyriaState(stateRaw, locale) : govRaw;
   const subLocation = stateLabel && stateLabel !== cityLine ? stateLabel : null;
   const img = firstImage(listing.images);
+  const imgDisplay = img && liteUi ? syriaListingThumbUrl(img, 300) : img;
   const [thumbLoaded, setThumbLoaded] = useState(false);
   useEffect(() => {
     setThumbLoaded(false);
-  }, [img]);
+  }, [imgDisplay]);
 
   const isDirect = listing.isDirect !== false;
   const isStay = listing.type === "BNHUB";

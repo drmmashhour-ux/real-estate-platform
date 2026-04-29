@@ -15,7 +15,7 @@ export function clampPage(n: number): number {
   return Number.isFinite(n) && n >= 1 ? Math.floor(n) : 1;
 }
 
-/** Default 10; `density=lite` → 5; `density=rich` prefers more rows but caps at MAX_LIMIT (SYBNB-FINAL). */
+/** Default 10; `density=lite` → 10 (small payloads / Lite Mode); `density=rich` caps at MAX_LIMIT. */
 export function parsePagedListQuery(requestUrl: string): PagedListQuery {
   const url = new URL(requestUrl);
   const rawPage = parseInt(url.searchParams.get("page") || "1", 10);
@@ -25,7 +25,7 @@ export function parsePagedListQuery(requestUrl: string): PagedListQuery {
   const density = url.searchParams.get("density")?.toLowerCase();
 
   let limit = 10;
-  if (density === "lite") limit = 5;
+  if (density === "lite") limit = 10;
   else if (density === "rich") limit = 12;
 
   limit = Math.min(limit, MAX_LIMIT);

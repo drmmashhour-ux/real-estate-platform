@@ -1,3 +1,15 @@
+/**
+ * SYBNB booking chat — **Phase 2**
+ *
+ * - **GET** `?bookingId=` — messages ordered by `createdAt` asc. Session required; **guest**, **host**, or **admin**
+ *   (read-only for admins in UI via `canSend={false}`).
+ * - **POST** `{ bookingId, content, clientId?, confirmRisk? }` — **guest or host only**; trim + max length {@link SYBNB_MESSAGE_MAX_LEN}.
+ *   Optional `clientId` (UUID) dedupes retries/offline flush (`duplicate: true` if already stored).
+ *
+ * **Phase 3 audit:** each successful send logs **MESSAGE_SENT** (`metadata: { length }`); risky content may log **CHAT_RISK_DETECTED**.
+ *
+ * Append-only rows in `SybnbMessage`; no external webhooks. Content normalized via {@link normalizeSybnbMessageContent}.
+ */
 import { z } from "zod";
 import { NextResponse } from "next/server";
 import type { Prisma } from "@/generated/prisma";
@@ -14,6 +26,8 @@ import {
   type ChatMessageAnalysis,
 } from "@/lib/sybnb/chat-fraud";
 import { normalizeSybnbMessageContent } from "@/lib/sybnb/sybnb-message-content";
+import { updateFraudScore } from "@/lib/sybnb/fraud-score";
+import { adjustTrustScore } from "@/lib/sybnb/trust-score";
 
 export const dynamic = "force-dynamic";
 
@@ -73,6 +87,7 @@ export async function GET(req: Request): Promise<Response> {
       createdAt: true,
       riskLevel: true,
       riskFlags: true,
+      clientId: true,
     },
   });
 
@@ -83,6 +98,8 @@ const postBodySchema = z.object({
   bookingId: z.string().trim().min(1),
   content: z.string(),
   confirmRisk: z.boolean().optional(),
+  /** Idempotent retries / offline queue flush */
+  clientId: z.string().trim().min(8).max(128).optional(),
 });
 
 function auditPayloadFromAnalysis(a: ChatMessageAnalysis): Prisma.InputJsonValue {
@@ -140,6 +157,30 @@ export async function POST(req: Request): Promise<Response> {
     return sybnbFail(normalized.error === "too_long" ? "message_too_long" : "message_empty", 400);
   }
 
+  const clientIdTrimmed = parsed.data.clientId?.trim();
+
+  if (clientIdTrimmed) {
+    const existing = await prisma.sybnbMessage.findFirst({
+      where: {
+        bookingId,
+        senderId: user.id,
+        clientId: clientIdTrimmed,
+      },
+      select: {
+        id: true,
+        senderId: true,
+        content: true,
+        createdAt: true,
+        riskLevel: true,
+        riskFlags: true,
+        clientId: true,
+      },
+    });
+    if (existing) {
+      return sybnbJson({ message: existing, duplicate: true });
+    }
+  }
+
   const analysis = analyzeMessage(normalized.content);
 
   if (analysisNeedsUserConfirmation(analysis) && parsed.data.confirmRisk !== true) {
@@ -158,6 +199,7 @@ export async function POST(req: Request): Promise<Response> {
       content: normalized.content,
       riskLevel: analysis.risk,
       riskFlags: analysis.flags as unknown as Prisma.InputJsonValue,
+      ...(clientIdTrimmed ? { clientId: clientIdTrimmed } : {}),
     },
     select: {
       id: true,
@@ -166,10 +208,12 @@ export async function POST(req: Request): Promise<Response> {
       createdAt: true,
       riskLevel: true,
       riskFlags: true,
+      clientId: true,
     },
   });
 
   if (analysisNeedsUserConfirmation(analysis)) {
+    void updateFraudScore(user.id, "chat_risk");
     await logSybnbEvent({
       action: "CHAT_RISK_DETECTED",
       bookingId,
@@ -177,6 +221,46 @@ export async function POST(req: Request): Promise<Response> {
       actorRole: part,
       metadata: auditPayloadFromAnalysis(analysis),
     });
+  }
+
+  if (analysis.flags.includes("external_payment")) {
+    const repeatRows = await prisma.$queryRaw<Array<{ c: bigint }>>`
+      SELECT COUNT(*)::bigint AS c FROM sybnb_messages
+      WHERE sender_id = ${user.id}
+        AND id <> ${row.id}
+        AND CAST(risk_flags AS TEXT) LIKE '%external_payment%'
+    `;
+    const prior = Number(repeatRows[0]?.c ?? 0);
+    if (prior >= 1) {
+      void updateFraudScore(user.id, "external_payment_repeat");
+    }
+  }
+
+  if (analysis.risk === "low" && analysis.flags.length === 0) {
+    const priorClean = await prisma.sybnbMessage.count({
+      where: {
+        bookingId,
+        senderId: user.id,
+        id: { not: row.id },
+        riskLevel: "low",
+      },
+    });
+    if (priorClean === 0) {
+      void adjustTrustScore(user.id, 2);
+    }
+  }
+  if (analysis.risk === "medium" || analysis.risk === "high") {
+    const priorRisky = await prisma.sybnbMessage.count({
+      where: {
+        bookingId,
+        senderId: user.id,
+        id: { not: row.id },
+        riskLevel: { in: ["medium", "high"] },
+      },
+    });
+    if (priorRisky === 0) {
+      void adjustTrustScore(user.id, -15);
+    }
   }
 
   await logSybnbEvent({

@@ -13,8 +13,13 @@ import { logTimelineEvent } from "@/lib/timeline/log-event";
 /** Must match {@link INVESTOR_DEMO_MODE_FORCE_OFF_ENV_KEY} — avoid importing investor-demo (load order). */
 const INVESTOR_DEMO_MODE_FORCE_OFF = "INVESTOR_DEMO_MODE_FORCE_OFF" as const;
 
-const DEMO_SESSION_DURATION_MS = 60 * 60 * 1000;
-const RESET_COOLDOWN_MS = 5 * 60 * 1000;
+export const SYRIA_DEMO_SESSION_DURATION_MS = 60 * 60 * 1000;
+
+/** Minimum interval between successful investor-demo resets (manual + automatic). */
+export const SYRIA_DEMO_RESET_COOLDOWN_MS = 5 * 60 * 1000;
+
+/** Minimum interval between successful demo auto-disables (Dr. Brain / demo-safety flap guard). */
+export const SYRIA_DEMO_DISABLE_COOLDOWN_MS = 10 * 60 * 1000;
 
 let lastInvestorDemoResetAt = 0;
 let expireReentrancyLock = false;
@@ -98,7 +103,7 @@ export async function logDemoSessionEvent(
 
 export async function runInvestorDemoResetThrottled(source: string): Promise<{ skipped: boolean; error?: string }> {
   const now = Date.now();
-  if (lastInvestorDemoResetAt !== 0 && now - lastInvestorDemoResetAt < RESET_COOLDOWN_MS) {
+  if (lastInvestorDemoResetAt !== 0 && now - lastInvestorDemoResetAt < SYRIA_DEMO_RESET_COOLDOWN_MS) {
     console.warn("[DEMO SESSION] reset skipped (cooldown)", { source });
     return { skipped: true };
   }
@@ -148,7 +153,7 @@ export function applyInvestorDemoSessionStart(opts?: DemoSessionStartOptions): {
   sessionId: string;
   expiresAtIso: string;
 } {
-  const duration = opts?.durationMs ?? DEMO_SESSION_DURATION_MS;
+  const duration = opts?.durationMs ?? SYRIA_DEMO_SESSION_DURATION_MS;
   const sessionId = randomUUID();
   const expiresAt = new Date(Date.now() + duration);
 
@@ -163,7 +168,7 @@ export function applyInvestorDemoSessionStart(opts?: DemoSessionStartOptions): {
   return { sessionId, expiresAtIso: expiresAt.toISOString() };
 }
 
-export function applyInvestorDemoSessionStop(): { hadAutoClean: boolean } {
+export function applyInvestorDemoSessionStop(): { hadAutoClean: boolean; sessionId: string | null } {
   const hadAutoClean = process.env[SYRIA_INVESTOR_DEMO_AUTO_CLEAN_KEY] === "true";
   const sessionIdSnap = process.env[SYRIA_INVESTOR_DEMO_SESSION_ID_KEY]?.trim() ?? null;
 
@@ -182,5 +187,5 @@ export function applyInvestorDemoSessionStop(): { hadAutoClean: boolean } {
     metadata: { hadAutoClean },
   });
 
-  return { hadAutoClean };
+  return { hadAutoClean, sessionId: sessionIdSnap };
 }

@@ -29,9 +29,9 @@ function sleep(ms: number, signal?: AbortSignal): Promise<void> {
 }
 
 /**
- * Replays a recorded investor-demo session: **client navigation + optional UI hints only**.
+ * Phase 3 replay engine: walks a recorded tape with **client navigation + optional UI pulses only**.
  *
- * Safe mode (production): does **not** POST to APIs, does **not** trigger payments, does **not**
+ * Safe mode (Phase 5): does **not** POST to APIs, does **not** trigger payments, does **not**
  * programmatically click buttons or mutate server state — only `router.push` + `onUiPulse`.
  */
 export async function replayDemoSession(events: DemoRecordedEvent[], deps: ReplayDeps): Promise<void> {

@@ -8,7 +8,7 @@ export function ListingImageSkeleton({ active, className }: { active: boolean; c
   return (
     <div
       className={cn(
-        "pointer-events-none absolute inset-0 z-[1] animate-pulse bg-[color:var(--darlink-surface-muted)] backdrop-blur-[2px] ring-1 ring-stone-200/30",
+        "pointer-events-none absolute inset-0 z-[1] animate-pulse bg-[color:var(--darlink-surface-muted)] backdrop-blur-[2px] ring-1 ring-stone-200/30 listing-image-skeleton",
         className,
       )}
       aria-hidden

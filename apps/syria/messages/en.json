@@ -404,9 +404,9 @@
       "bannerTitle": "Platform-secured payment (visualization)",
       "simulationDisclaimer": "This is a simulated secure payment flow. SYBNB does not process payments yet.",
       "trustLine": "Trust cue only — no funds are held or moved by the platform.",
-      "pending": "🔒 Payment pending — arrange payment with your host; shown here as tracked for transparency.",
-      "secured": "🛡 Payment secured (held safely) — simulated milestone after the host confirms receipt.",
-      "released": "✅ Payment released after stay — simulated milestone after the check-in date.",
+      "pending": "🔒 Payment pending — arrange with your host; tracked here for transparency only.",
+      "secured": "🛡 Payment secured (held safely)",
+      "released": "✅ Payment released after stay",
       "securedGuestHint": "The host marked payment as received (simulated). SYBNB does not hold funds.",
       "releasedGuestHint": "Visual milestone passed after check-in (simulated). No escrow funds exist.",
       "markPaidCta": "I received payment (simulated)",
@@ -432,7 +432,19 @@
       "riskContinue": "Continue",
       "riskCancel": "Cancel",
       "suggestedRepliesTitle": "Suggested replies",
-      "suggestedRepliesHint": "Tap a suggestion to insert it — edit before sending."
+      "suggestedRepliesHint": "Tap a suggestion to insert it — edit before sending.",
+      "deliveryPending": "Pending",
+      "deliverySent": "Sent",
+      "deliveryFailed": "Failed — tap to retry",
+      "deliveryRetryHint": "Retry sending this message",
+      "offlineRiskBlocked": "Reconnect to send this message — it needs a safety confirmation."
+    },
+    "trust": {
+      "trusted": "Trusted",
+      "normal": "Normal",
+      "low": "Low trust",
+      "chatGuest": "Guest",
+      "chatHost": "Host"
     },
     "instructions": {
       "title": "Manual payment",

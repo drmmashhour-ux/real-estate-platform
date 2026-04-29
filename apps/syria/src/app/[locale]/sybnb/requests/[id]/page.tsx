@@ -9,6 +9,7 @@ import { pickListingTitle } from "@/lib/listing-localized";
 import { syncSybnbSimulatedEscrowReleased } from "@/lib/sybnb/sybnb-simulated-escrow";
 import { BookingTimeline } from "@/components/sybnb/BookingTimeline";
 import { ChatBox } from "@/components/sybnb/ChatBox";
+import { TrustBadge } from "@/components/sybnb/TrustBadge";
 import { EscrowStatus } from "@/components/sybnb/EscrowStatus";
 import { HostPaymentInstructions } from "@/components/sybnb/HostPaymentInstructions";
 import { SybnbV1HostActions } from "@/components/sybnb/SybnbV1HostActions";
@@ -49,6 +50,7 @@ export default async function SybnbV1RequestStatusPage(props: Props) {
   const { id } = await props.params;
   const locale = await getLocale();
   const t = await getTranslations("Sybnb.v1");
+  const ttrust = await getTranslations("Sybnb.trust");
   const tt = await getTranslations("Sybnb.timeline");
   const ti = await getTranslations("Sybnb.instructions");
   const u = await getSessionUser();
@@ -119,6 +121,16 @@ export default async function SybnbV1RequestStatusPage(props: Props) {
         <p className="text-lg font-semibold text-neutral-900">{money(b.totalAmount, b.currency)}</p>
         <p className="mt-3 text-sm text-neutral-500">{t("status")}</p>
         <p className="text-sm font-medium text-neutral-900">{statusLabel}</p>
+        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-neutral-100 pt-3 text-xs text-neutral-700">
+          <span className="inline-flex items-center gap-2">
+            <span className="font-semibold text-neutral-600">{ttrust("chatGuest")}</span>
+            <TrustBadge trustScore={b.guest.trustScore} />
+          </span>
+          <span className="inline-flex items-center gap-2">
+            <span className="font-semibold text-neutral-600">{ttrust("chatHost")}</span>
+            <TrustBadge trustScore={b.host.trustScore} />
+          </span>
+        </div>
         {b.paymentStatus === "manual_required" && b.status === "approved" ? (
           <p className="mt-2 text-xs text-amber-800">{t("manualNext")}</p>
         ) : null}
@@ -148,17 +160,20 @@ export default async function SybnbV1RequestStatusPage(props: Props) {
       )}
 
       {b.status !== "declined" ? (
-        <ChatBox
-          bookingId={b.id}
-          viewerUserId={u.id}
-          guestId={b.guestId}
-          hostId={b.hostId}
-          canSend={canChatSend}
-          suggestionsEnabled={isHost}
-        />
+        <>
+          <EscrowStatus booking={b} isHost={isHost} />
+          <ChatBox
+            bookingId={b.id}
+            viewerUserId={u.id}
+            guestId={b.guestId}
+            hostId={b.hostId}
+            guestTrustScore={b.guest.trustScore}
+            hostTrustScore={b.host.trustScore}
+            canSend={canChatSend}
+            suggestionsEnabled={isHost}
+          />
+        </>
       ) : null}
-
-      <EscrowStatus booking={b} isHost={isHost} />
 
       <HostPaymentInstructions booking={b} isGuest={u.id === b.guestId} t={ti} />
 

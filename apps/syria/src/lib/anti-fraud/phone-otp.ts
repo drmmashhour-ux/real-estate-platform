@@ -1,6 +1,7 @@
 import { createHash, randomInt } from "node:crypto";
 import { prisma } from "@/lib/db";
 import { recomputeReputationScoreForUser } from "@/lib/syria/user-reputation";
+import { adjustTrustScore } from "@/lib/sybnb/trust-score";
 
 const OTP_TTL_MS = 10 * 60 * 1000;
 const MAX_SEND_PER_HOUR = 3;
@@ -69,6 +70,11 @@ export async function verifyPhoneOtpAndMarkUser(
   if (row.codeHash !== hashOtpCode(code)) {
     return { ok: false, reason: "bad_code" };
   }
+  const before = await prisma.syriaAppUser.findUnique({
+    where: { id: userId },
+    select: { phoneVerifiedAt: true },
+  });
+  const wasUnverified = before?.phoneVerifiedAt == null;
   const now = new Date();
   await prisma.$transaction([
     prisma.syriaPhoneOtp.deleteMany({ where: { userId } }),
@@ -85,5 +91,8 @@ export async function verifyPhoneOtpAndMarkUser(
     }),
   ]);
   await recomputeReputationScoreForUser(userId);
+  if (wasUnverified) {
+    await adjustTrustScore(userId, 3);
+  }
   return { ok: true };
 }

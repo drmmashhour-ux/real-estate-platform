@@ -6,6 +6,8 @@ import { sendReminder, type SybnbReminderKind } from "@/lib/sybnb/sybnb-reminder
 export type { SybnbReminderKind };
 
 const MS_H = 3600000;
+/** Max one delivery per booking + reminder kind + recipient within this window (spam guard). */
+export const SYBNB_REMINDER_COOLDOWN_MS = 24 * MS_H;
 
 function subHours(base: Date, hours: number): Date {
   return new Date(base.getTime() - hours * MS_H);
@@ -25,6 +27,11 @@ function manualPaymentPhaseStale(booking: Pick<SybnbBooking, "status" | "payment
 
 /**
  * Pure rule evaluation — which reminder kinds apply right now (before rate limiting).
+ *
+ * Rules (aligned with SYBNB booking timeline payment predicate via {@link sybnbBookingPaymentSettled}):
+ * - **HOST_PENDING**: `status === requested` and request open ≥24h (`createdAt` not newer than `now - 24h`).
+ * - **PAYMENT_PENDING**: `approved` + `manual_required` and approval anchor ≥24h (`approvedAt` or fallback `updatedAt`).
+ * - **CHECKIN_SOON**: upcoming check-in within 48h, payment not settled, not terminal negative states.
  */
 export function getReminderEvents(
   booking: Pick<SybnbBooking, "status" | "paymentStatus" | "createdAt" | "checkIn" | "approvedAt" | "updatedAt">,
@@ -72,7 +79,7 @@ async function canSendReminder(
   if (!last) {
     return true;
   }
-  return now.getTime() - last.sentAt.getTime() >= 24 * MS_H;
+  return now.getTime() - last.sentAt.getTime() >= SYBNB_REMINDER_COOLDOWN_MS;
 }
 
 /** Cron worker: scan eligible bookings, respect 24h caps, append log rows. */

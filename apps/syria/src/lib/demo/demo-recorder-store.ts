@@ -1,6 +1,6 @@
 /**
- * Server-memory mirror for investor demo recordings (Syria Node process only).
- * Does not replace client tape — used when admin APIs sync events.
+ * Optional server-memory mirror for investor demo recordings (Syria Node process only).
+ * Acts as a lightweight **DemoSessionEvents** buffer — not a DB table; client `localStorage` remains canonical.
  */
 
 import type { DemoRecordedEvent } from "@/lib/demo/demo-recorder";

@@ -139,6 +139,12 @@ export function SyriaModeProvider({ children }: { children: ReactNode }) {
 
   const effectiveMode = preferenceToEffective(preference, networkMode);
 
+  /** Drive global Lite Mode styles (`styles/syria-lite-mode.css`) on full UI, not only `/lite/*`. */
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    document.documentElement.dataset.syriaLite = effectiveMode === "lite" ? "true" : "false";
+  }, [effectiveMode]);
+
   useEffect(() => {
     /* eslint-disable react-hooks/set-state-in-effect -- derived hint from refs + runtime clock */
     if (!hydrated || preference !== "auto") {

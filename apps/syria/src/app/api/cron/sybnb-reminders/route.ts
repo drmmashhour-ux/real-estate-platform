@@ -3,6 +3,7 @@ import { assertDarlinkRuntimeEnv } from "@/lib/guard";
 import { sybnbFail, sybnbJson } from "@/lib/sybnb/sybnb-api-http";
 import { runSybnbRemindersCron } from "@/lib/sybnb/reminders";
 
+/** GET|POST `/api/cron/sybnb-reminders` — SYBNB staged reminders (host idle, manual pay, check-in). Authorization: `Authorization: Bearer $CRON_SECRET`. */
 export const dynamic = "force-dynamic";
 
 /** Authorization: Bearer $CRON_SECRET (same pattern as `/api/sybnb/cron/complete-bookings`). */

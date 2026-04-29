@@ -104,6 +104,7 @@ export async function getDrBrainMetrics(): Promise<DrBrainMetrics> {
         COUNT(*)::bigint AS total
       FROM syria_sybnb_core_audit
       WHERE created_at >= NOW() - INTERVAL '24 hours'
+        /* Phase 4: omit metadata.demo === true — aligns Prisma helper sybnbCoreAuditExcludeInvestorDemoWhere */
         AND (metadata IS NULL OR NOT (COALESCE(metadata, '{}'::jsonb) @> '{"demo": true}'::jsonb))
       GROUP BY 1
       ORDER BY 1 ASC

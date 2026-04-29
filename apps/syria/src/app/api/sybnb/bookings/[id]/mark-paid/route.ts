@@ -14,6 +14,9 @@ type RouteParams = { params: Promise<{ id: string }> };
 
 /**
  * Simulated escrow only — host marks payment received (no PSP, no funds movement).
+ *
+ * Rules: caller must be **host**; booking must be past host approval (`approved` or subsequent manual-phase statuses);
+ * sets `sybnbSimulatedEscrowStatus` → `simulated_secured`. Audit: **PAYMENT_MARKED_RECEIVED**, **ESCROW_SECURED**.
  */
 export async function POST(_req: Request, context: RouteParams): Promise<Response> {
   const { id: rawId } = await context.params;

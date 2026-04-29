@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useLocale } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { demoScript } from "@/lib/demo/demo-script";
 import { isAbortError, runDemoScript } from "@/lib/demo/demo-player";
@@ -37,7 +36,6 @@ type StatusJson = {
 };
 
 export function DemoSessionPanel() {
-  const locale = useLocale();
   const router = useRouter();
   const demoRec = useInvestorDemoRecording();
   const narration = useAutoNarration();
@@ -157,9 +155,8 @@ export function DemoSessionPanel() {
       }
       setSuccess("Investor demo started — opening guided flow…");
       await refresh();
-      const demoPath = `/${locale}/demo`;
       window.setTimeout(() => {
-        router.push(demoPath as never);
+        router.push("/demo");
       }, 400);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Request failed");
@@ -383,7 +380,7 @@ export function DemoSessionPanel() {
 
       <dl className="mt-4 space-y-2 text-sm text-stone-700">
         <div className="flex flex-wrap gap-2">
-          <dt className="font-medium text-stone-600">Effective demo UX</dt>
+          <dt className="font-medium text-stone-600">Demo status</dt>
           <dd>{s?.demoEffective ? "ON" : "OFF"}</dd>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -525,7 +522,7 @@ export function DemoSessionPanel() {
           onClick={() => void post("/api/admin/demo-session/start", "start")}
           className="rounded-xl border border-emerald-600 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-950 hover:bg-emerald-100 disabled:opacity-50"
         >
-          {busy === "start" ? "…" : "Start session"}
+          {busy === "start" ? "…" : "Start Session"}
         </button>
         <button
           type="button"
@@ -533,7 +530,7 @@ export function DemoSessionPanel() {
           onClick={() => void post("/api/admin/demo-session/stop", "stop")}
           className="rounded-xl border border-stone-400 bg-stone-100 px-4 py-2 text-sm font-medium text-stone-900 hover:bg-stone-200 disabled:opacity-50"
         >
-          {busy === "stop" ? "…" : "Stop session"}
+          {busy === "stop" ? "…" : "Stop Session"}
         </button>
         <button
           type="button"
@@ -541,7 +538,7 @@ export function DemoSessionPanel() {
           onClick={() => void post("/api/admin/demo-session/reset", "reset")}
           className="rounded-xl border border-amber-400 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-950 hover:bg-amber-100 disabled:opacity-50"
         >
-          {busy === "reset" ? "…" : "Reset demo data"}
+          {busy === "reset" ? "…" : "Reset Demo Data"}
         </button>
         <button
           type="button"

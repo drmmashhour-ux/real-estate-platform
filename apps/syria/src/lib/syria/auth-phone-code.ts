@@ -2,6 +2,7 @@ import { randomInt } from "node:crypto";
 import { prisma } from "@/lib/db";
 import { hashOtpCode } from "@/lib/anti-fraud/phone-otp";
 import { recomputeReputationScoreForUser } from "@/lib/syria/user-reputation";
+import { adjustTrustScore } from "@/lib/sybnb/trust-score";
 
 const CODE_TTL_MS = 5 * 60 * 1000;
 
@@ -65,7 +66,7 @@ export async function verifyAuthPhoneCodeForUser(opts: {
 
   const user = await prisma.syriaAppUser.findUnique({
     where: { id: opts.userId },
-    select: { phone: true, phoneCode: true, phoneCodeExpiry: true },
+    select: { phone: true, phoneCode: true, phoneCodeExpiry: true, phoneVerifiedAt: true },
   });
   if (!user?.phoneCode || !user.phoneCodeExpiry) {
     return { ok: false, reason: "bad_code" };
@@ -86,6 +87,7 @@ export async function verifyAuthPhoneCodeForUser(opts: {
   }
 
   const now = new Date();
+  const wasUnverified = user.phoneVerifiedAt == null;
   await prisma.syriaAppUser.update({
     where: { id: opts.userId },
     data: {
@@ -99,6 +101,9 @@ export async function verifyAuthPhoneCodeForUser(opts: {
   });
 
   await recomputeReputationScoreForUser(opts.userId);
+  if (wasUnverified) {
+    await adjustTrustScore(opts.userId, 3);
+  }
 
   return { ok: true };
 }

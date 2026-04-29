@@ -18,6 +18,8 @@ type Props = {
 
 /**
  * Simulated “platform-secured payment” trust UI — no funds held or transmitted by SYBNB.
+ *
+ * Placement: booking request page — below {@link BookingTimeline}, above {@link ChatBox}.
  */
 export async function EscrowStatus({ booking, isHost }: Props) {
   const eff = getEffectiveSimulatedEscrowStatus(booking);

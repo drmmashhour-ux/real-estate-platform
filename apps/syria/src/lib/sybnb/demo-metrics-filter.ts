@@ -1,5 +1,10 @@
 import { Prisma } from "@/generated/prisma";
 
+/**
+ * Demo exclusion for DR.BRAIN–adjacent aggregates — prevents investor-demo rows from tripping fraud/payment/error
+ * signals that feed {@link afterSyriaDrBrainReportComputed} (via non-demo metrics + `syriaMarketplaceAnomalies`).
+ */
+
 /** Exclude investor-seeded listings from traction / investor KPI aggregates. */
 export function syriaPropertyExcludeInvestorDemoWhere(): Prisma.SyriaPropertyWhereInput {
   return {

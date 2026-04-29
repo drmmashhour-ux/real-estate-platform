@@ -1,6 +1,10 @@
 import { appendSyriaSybnbCoreAudit } from "@/lib/sybnb/sybnb-financial-audit";
 import { logSecurityEvent } from "@/lib/sybnb/sybnb-security-log";
-import { logDemoSessionEvent, runInvestorDemoResetThrottled } from "@/lib/demo/demo-session";
+import {
+  logDemoSessionEvent,
+  runInvestorDemoResetThrottled,
+  SYRIA_DEMO_DISABLE_COOLDOWN_MS,
+} from "@/lib/demo/demo-session";
 import {
   setSyriaInvestorDemoExpiresAt,
   setSyriaInvestorDemoRuntimeEnabled,
@@ -13,8 +17,6 @@ import {
   setInvestorDemoModeForceOff,
 } from "@/lib/sybnb/investor-demo";
 import { logTimelineEvent } from "@/lib/timeline/log-event";
-
-const DEMO_DISABLE_COOLDOWN_MS = 10 * 60 * 1000;
 
 /** Anti-flap: minimum interval between successful auto-disables (demo-safety + Dr. Brain). */
 let lastDisable = 0;
@@ -63,10 +65,11 @@ export function setRuntimeFlagInvestorDemoOff(): void {
 }
 
 /**
- * Turns off investor demo for this Node process only when critical risk is detected.
- * Fraud/payment anomaly signals feeding DR.BRAIN exclude investor-demo audit rows (`demo-metrics-filter`).
+ * Investor-demo failsafe: clears runtime session flags for this Node process only (via {@link setRuntimeFlagInvestorDemoOff}
+ * + force-off latch). Does not edit `.env` files.
  *
- * Rate-limited (10 minutes) to prevent alert flapping.
+ * Logs `console.error("[DEMO AUTO-DISABLED]", { reason })`, persists **DEMO_AUTO_DISABLED** to audit + security logs,
+ * and {@link sendSybnbAlert} with `type: "DEMO_DISABLED"`. Rate-limited by {@link SYRIA_DEMO_DISABLE_COOLDOWN_MS} (10 min).
  */
 export async function disableDemoModeSafely(reason: string): Promise<void> {
   if (!isInvestorDemoModeActive()) {
@@ -74,7 +77,7 @@ export async function disableDemoModeSafely(reason: string): Promise<void> {
   }
 
   const now = Date.now();
-  if (lastDisable !== 0 && now - lastDisable < DEMO_DISABLE_COOLDOWN_MS) {
+  if (lastDisable !== 0 && now - lastDisable < SYRIA_DEMO_DISABLE_COOLDOWN_MS) {
     return;
   }
 
@@ -91,11 +94,7 @@ export async function disableDemoModeSafely(reason: string): Promise<void> {
   demoAutoDisabledBanner = { reason: trimmedReason, timestamp };
   lastDisable = Date.now();
 
-  console.error("[DEMO AUTO-DISABLED]", {
-    type: "DEMO_AUTO_DISABLED",
-    reason: trimmedReason,
-    timestamp,
-  });
+  console.error("[DEMO AUTO-DISABLED]", { reason: trimmedReason });
 
   await logDemoSessionEvent("DEMO_AUTO_DISABLED", {
     reason: trimmedReason.slice(0, 500),

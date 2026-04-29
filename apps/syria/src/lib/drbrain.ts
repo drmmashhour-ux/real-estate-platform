@@ -16,6 +16,7 @@ function monorepoRoot(): string {
 /**
  * Fraud / payment anomaly inputs use {@link getSybnbPaymentStats} & blocked burst counts that
  * exclude investor-demo audit rows & demo booking dimensions (see demo-metrics-filter).
+ * Those feeds must stay demo-free so demo sessions never trip CRITICAL `anomalies.*` from seeded activity.
  */
 async function syriaMarketplaceAnomalies(): Promise<DrBrainCheckResult[]> {
   const [stats, blockedBurst15m] = await Promise.all([

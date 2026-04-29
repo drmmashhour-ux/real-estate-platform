@@ -11,8 +11,9 @@ export function getNetworkMode(): NetworkUiMode {
   if (!conn) return "rich";
 
   const et = String(conn.effectiveType ?? "").toLowerCase();
-  if (et === "2g" || et === "slow-2g" || conn.saveData === true) return "lite";
-  if (et === "3g") return "lite";
+  /** Lite Mode auto: slow cellular + Save-Data (explicit 2g / slow-2g per product spec). */
+  if (et === "2g" || et === "slow-2g") return "lite";
+  if (conn.saveData === true) return "lite";
 
   return "rich";
 }

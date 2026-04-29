@@ -1,11 +1,22 @@
 /**
  * Investor demo interaction recorder — shared types & client-safe helpers.
  *
- * Persistence: browser `localStorage` (primary) + optional server mirror (`demo-recorder-store` + admin APIs).
+ * ## Event shape (stored tape)
+ * ```json
+ * { "type": "CLICK" | "NAVIGATION", "path": "/en/...", "timestamp": 1730000000000, "metadata": {} }
+ * ```
  *
- * Gating: recording hooks run only when the app shell enables investor demo UX (see `DemoRecordingProvider`:
- * `isInvestorDemoModeActive()` on the server — covers `INVESTOR_DEMO_MODE=true` **and**
- * `INVESTOR_DEMO_MODE_RUNTIME` / session TTL). Do not call {@link recordDemoEvent} outside that context.
+ * ## Persistence
+ * - **Client:** `localStorage` (`DEMO_EVENTS_LS_KEY`)
+ * - **Server (optional mirror):** in-memory buffer per session — {@link demoRecorderPush} in `demo-recorder-store.ts`
+ *   (admin APIs under `/api/admin/demo-record/*`). Not a substitute for the client tape.
+ *
+ * ## When recording runs
+ * Hooks live in {@link DemoRecordingProvider}. They run only when the layout passes **`demoUxActive`**
+ * (`isInvestorDemoModeActive()` server-side — covers **`INVESTOR_DEMO_MODE=true`** and/or **`INVESTOR_DEMO_MODE_RUNTIME`**
+ * / session TTL). Use {@link recordDemoEventWhen} so events are never appended when demo UX is off.
+ *
+ * Replay stays navigation + UI pulse only — see {@link replayDemoSession}.
  */
 
 export type DemoRecordedEventType = "CLICK" | "NAVIGATION";
@@ -16,6 +27,9 @@ export type DemoRecordedEvent = {
   timestamp: number;
   metadata?: Record<string, unknown>;
 };
+
+/** Alias — one row in the demo session tape (same as {@link DemoRecordedEvent}). */
+export type DemoSessionEvent = DemoRecordedEvent;
 
 /** Primary tape on the client */
 export const DEMO_EVENTS_LS_KEY = "syria_demo_recorded_events_v1";
@@ -79,6 +93,15 @@ export function clearDemoEventsLocal(): void {
   } catch {
     /* ignore */
   }
+}
+
+/**
+ * Append one interaction to the local tape when **`canRecord`** is true (investor demo UX + recording enabled).
+ * Prefer this over {@link recordDemoEvent} at call sites that might run outside demo mode.
+ */
+export function recordDemoEventWhen(canRecord: boolean, ev: DemoRecordedEvent): DemoRecordedEvent[] {
+  if (!canRecord) return loadDemoEventsLocal();
+  return recordDemoEvent(ev);
 }
 
 /**

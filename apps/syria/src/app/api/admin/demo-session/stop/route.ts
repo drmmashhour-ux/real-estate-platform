@@ -4,6 +4,9 @@ import { applyInvestorDemoSessionStop, logDemoSessionEvent, runInvestorDemoReset
 
 export const dynamic = "force-dynamic";
 
+/**
+ * Admin-only JSON API — uses {@link getAdminUser} (403 when not admin); admin pages use {@link requireAdmin}.
+ */
 export async function POST() {
   const admin = await getAdminUser();
   if (!admin) {

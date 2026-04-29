@@ -1,5 +1,23 @@
 /**
  * Lightweight SYBNB booking-chat risk hints — advisory only (never blocks delivery server-side).
+ *
+ * ## Phase 1 — `analyzeMessage(content)`
+ *
+ * | Signal | Detection |
+ * |--------|-----------|
+ * | **phone** | Digit runs (8+) + phone-ish patterns (`PHONE_LIKE` / `DIGIT_RUN`) |
+ * | **email** | `@` domain regex |
+ * | **external_payment** | Keywords: `whatsapp`, `telegram`, `send money`, `bank transfer outside`, `pay outside` |
+ * | **link** | `http://` / `https://` |
+ *
+ * **Risk:** `high` if multiple serious signals combine; `medium` if any phone/email/external_payment or score threshold; else `low`.
+ *
+ * ## Integration (Phases 2–7)
+ *
+ * - **POST /api/sybnb/messages** runs analysis before insert; **medium/high** → warning JSON + modal confirm (`confirmRisk`).
+ * - **SybnbMessage** stores `riskLevel` + `riskFlags` (JSON array).
+ * - **CHAT_RISK_DETECTED** audit when confirmed medium/high send.
+ * - **ChatBox** shows ⚠️ + tooltip for medium/high rows.
  */
 
 export type ChatMessageRiskLevel = "low" | "medium" | "high";

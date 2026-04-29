@@ -1,0 +1,25 @@
+/**
+ * Client Lite Mode — toggled via `html[data-syria-lite="true"]` (see SyriaModeProvider).
+ * Minimal UI, less motion, hide demo ribbon & video in slow-network / manual lite.
+ */
+
+html[data-syria-lite="true"] .demo-global-banner {
+  display: none !important;
+}
+
+html[data-syria-lite="true"] video {
+  display: none !important;
+}
+
+html[data-syria-lite="true"] .listing-image-skeleton {
+  animation: none !important;
+  backdrop-filter: none !important;
+}
+
+html[data-syria-lite="true"] header.sticky {
+  box-shadow: none !important;
+}
+
+html[data-syria-lite="true"] .syria-lite-strip-gradient {
+  background-image: none !important;
+}

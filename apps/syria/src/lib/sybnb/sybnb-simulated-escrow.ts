@@ -50,6 +50,7 @@ function todayUtcMidnight(): Date {
 
 /**
  * After check-in day (UTC), advance secured → released (simulated). Idempotent.
+ * Audit: **ESCROW_RELEASED** (system).
  */
 export async function syncSybnbSimulatedEscrowReleased(bookingId: string): Promise<void> {
   const b = await prisma.sybnbBooking.findUnique({ where: { id: bookingId.trim() } });

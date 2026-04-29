@@ -17,7 +17,7 @@ import {
   DEMO_RECORDING_ACTIVE_KEY,
   DEMO_REPLAY_ACTIVE_KEY,
   loadDemoEventsLocal,
-  recordDemoEvent,
+  recordDemoEventWhen,
   type DemoRecordedEvent,
 } from "@/lib/demo/demo-recorder";
 import { replayDemoSession } from "@/lib/demo/demo-replay";
@@ -110,7 +110,7 @@ export function DemoRecordingProvider({
       timestamp: Date.now(),
       metadata: { source: "pathname" },
     };
-    recordDemoEvent(ev);
+    recordDemoEventWhen(demoUxActive && recording, ev);
     void mirrorEventToServer(ev);
   }, [pathname, recording, demoUxActive]);
 
@@ -138,7 +138,7 @@ export function DemoRecordingProvider({
         timestamp: Date.now(),
         metadata: meta,
       };
-      recordDemoEvent(rec);
+      recordDemoEventWhen(demoUxActive && recording, rec);
       void mirrorEventToServer(rec);
     }
 
@@ -168,7 +168,7 @@ export function DemoRecordingProvider({
       timestamp: Date.now(),
       metadata: { source: "record_start" },
     };
-    recordDemoEvent(nav);
+    recordDemoEventWhen(demoUxActive, nav);
     void mirrorEventToServer(nav);
   }, [demoUxActive, pathname]);
 
@@ -278,12 +278,24 @@ function DemoRecordingReplayBanner() {
   if (!ctx?.demoUxActive) return null;
   const { recording, replaying } = ctx;
   if (!recording && !replaying) return null;
+
+  if (replaying) {
+    return (
+      <div
+        role="status"
+        className="fixed inset-x-0 top-0 z-[56] border-b border-amber-500 bg-amber-100 px-4 py-2 text-center text-sm font-semibold text-amber-950 shadow-sm"
+      >
+        🎥 Demo Replay Mode
+      </div>
+    );
+  }
+
   return (
     <div
       role="status"
       className="fixed inset-x-0 bottom-0 z-[55] border-t border-violet-500 bg-violet-100 px-4 py-2 text-center text-sm font-semibold text-violet-950"
     >
-      {replaying ? "🎥 Demo Replay Mode" : "🎥 Recording demo interactions"}
+      🎥 Recording demo interactions
     </div>
   );
 }

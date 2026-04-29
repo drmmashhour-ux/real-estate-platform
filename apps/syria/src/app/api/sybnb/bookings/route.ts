@@ -82,6 +82,9 @@ export async function POST(req: NextRequest): Promise<Response> {
   });
 
   if (!result.ok) {
+    if (result.code === "restricted") {
+      return sybnbFail("This account is temporarily restricted", 403);
+    }
     const status =
       result.code === "unauthorized"
         ? 401
@@ -97,6 +100,7 @@ export async function POST(req: NextRequest): Promise<Response> {
       bad_dates: "bad_dates",
       own_listing: "own_listing",
       blocked: "blocked",
+      restricted: "restricted",
       validation: "validation",
     };
     return sybnbFail(codeToMsg[result.code] ?? result.code, status);

@@ -1,6 +1,30 @@
 /**
  * Host reply suggestions — rule-based by default; optional OpenAI assist (server-side only).
- * Never auto-sends; callers must not embed pricing/PII in prompts beyond the safe snapshot fields below.
+ *
+ * ## Phase 1 — `getReplySuggestions(context)`
+ *
+ * **Input (`SybnbReplySuggestionContext`):** `lastGuestMessage`, **safe booking snapshot** only
+ * (`status`, ISO dates, `nights`, `guests` — see {@link toSafeBookingSnapshot}), `locale`.
+ *
+ * ## Phase 2 — Rules (keyword → fixed copy, case-insensitive)
+ *
+ * | Keyword in guest message | EN suggestion |
+ * |--------------------------|---------------|
+ * | `price` | “The price is as listed…” |
+ * | `available` | “Yes, the dates are available…” |
+ * | `payment` | “We will arrange payment after approval.” |
+ *
+ * Arabic copy under {@link RULE_COPY.ar}. If nothing matches, generic neutral fallbacks (still no invention).
+ *
+ * ## Phase 3 — Optional AI (`SYBNB_CHAT_SUGGESTIONS_AI_ENABLED=true`)
+ *
+ * Safe prompt: 2 short replies, **do not invent facts**; booking facts listed as context-only; JSON `{"replies":[...]}`.
+ *
+ * ## Phases 5–6 — Safety
+ *
+ * Never auto-send; prompts exclude identities and sensitive fields — only the snapshot above + truncated guest text.
+ *
+ * **ChatBox** (Phase 4): chips insert into textarea only; host must press Send.
  */
 
 export type SybnbReplySuggestionBookingSnapshot = {

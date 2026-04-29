@@ -12,7 +12,8 @@ import {
 export const dynamic = "force-dynamic";
 
 /**
- * Host-only: suggests short replies from rules (+ optional AI). No personal data in prompts beyond safe booking snapshot.
+ * Host-only GET: loads last guest message + booking snapshot (no guest/host names in API response),
+ * returns rule-based (+ optional AI) suggestions — see {@link getReplySuggestions}.
  */
 export async function GET(req: Request): Promise<Response> {
   try {

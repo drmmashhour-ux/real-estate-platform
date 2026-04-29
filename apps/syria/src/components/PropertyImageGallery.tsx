@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { cn } from "@/lib/cn";
 import { ListingFadeInImg } from "@/components/syria/ListingFadeInImg";
 import { useSyriaOffline } from "@/components/offline/SyriaOfflineProvider";
+import { useSyriaModeOptional } from "@/context/ModeContext";
 
 /**
  * ORDER SYBNB-129 — first photo paints immediately; additional bytes load only after explicit expand / interaction.
@@ -12,6 +13,8 @@ import { useSyriaOffline } from "@/components/offline/SyriaOfflineProvider";
 export function PropertyImageGallery({ images, title }: { images: string[]; title: string }) {
   const t = useTranslations("Listing");
   const { online } = useSyriaOffline();
+  const mode = useSyriaModeOptional();
+  const liteUi = mode?.effectiveMode === "lite";
   const [expanded, setExpanded] = useState(false);
   const [active, setActive] = useState(0);
 
@@ -42,7 +45,13 @@ export function PropertyImageGallery({ images, title }: { images: string[]; titl
         ) : null}
         <div className="overflow-hidden rounded-[var(--darlink-radius-3xl)] border border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface-muted)] shadow-none">
           <div className="aspect-[16/10] w-full sm:aspect-[21/9]">
-            <ListingFadeInImg src={primary} alt="" loading="eager" fetchPriority="high" />
+            <ListingFadeInImg
+              src={primary}
+              alt=""
+              thumbMaxWidth={liteUi ? 300 : undefined}
+              loading={liteUi ? "lazy" : "eager"}
+              fetchPriority={liteUi ? "low" : "high"}
+            />
           </div>
         </div>
         {canExpand ? (
@@ -91,7 +100,13 @@ export function PropertyImageGallery({ images, title }: { images: string[]; titl
               >
                 <div className="overflow-hidden rounded-[var(--darlink-radius-3xl)] border border-[color:var(--darlink-border)] bg-[color:var(--darlink-surface-muted)] shadow-none">
                   <div className="aspect-[16/10] w-full sm:aspect-[21/9]">
-                    <ListingFadeInImg src={src} alt="" loading={i === 0 ? "eager" : "lazy"} fetchPriority={i === 0 ? "high" : "low"} />
+                    <ListingFadeInImg
+                      src={src}
+                      alt=""
+                      thumbMaxWidth={liteUi ? 300 : undefined}
+                      loading="lazy"
+                      fetchPriority={liteUi ? "low" : i === 0 ? "high" : "low"}
+                    />
                   </div>
                 </div>
               </div>
@@ -110,7 +125,7 @@ export function PropertyImageGallery({ images, title }: { images: string[]; titl
         )}
       >
         <div className="aspect-[16/10] w-full sm:aspect-[21/9]">
-          <ListingFadeInImg src={main} alt="" loading="eager" fetchPriority="high" />
+          <ListingFadeInImg src={main} alt="" thumbMaxWidth={liteUi ? 300 : undefined} loading="lazy" fetchPriority={liteUi ? "low" : "high"} />
         </div>
       </div>
 
@@ -130,7 +145,7 @@ export function PropertyImageGallery({ images, title }: { images: string[]; titl
               aria-label={`${title} — ${i + 1}`}
             >
               <div className="absolute inset-0">
-                <ListingFadeInImg src={src} alt="" loading="lazy" />
+                <ListingFadeInImg src={src} alt="" thumbMaxWidth={liteUi ? 120 : undefined} loading="lazy" />
               </div>
             </button>
           ))}

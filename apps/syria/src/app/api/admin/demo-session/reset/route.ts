@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
 import { getAdminUser } from "@/lib/auth";
-import { runInvestorDemoResetThrottled } from "@/lib/demo/demo-session";
+import { runInvestorDemoResetThrottled, SYRIA_DEMO_RESET_COOLDOWN_MS } from "@/lib/demo/demo-session";
 
 export const dynamic = "force-dynamic";
 
+/**
+ * Admin-only JSON API — uses {@link getAdminUser} (403 when not admin); admin pages use {@link requireAdmin}.
+ */
 export async function POST() {
   const admin = await getAdminUser();
   if (!admin) {
@@ -12,7 +15,11 @@ export async function POST() {
 
   const result = await runInvestorDemoResetThrottled(`manual:${admin.id}`);
   if (result.skipped) {
-    return NextResponse.json({ ok: false, message: "Reset cooldown active (5 min)", skipped: true }, { status: 429 });
+    const mins = SYRIA_DEMO_RESET_COOLDOWN_MS / 60_000;
+    return NextResponse.json(
+      { ok: false, message: `Reset cooldown active (${mins} min)`, skipped: true },
+      { status: 429 },
+    );
   }
   if (result.error) {
     return NextResponse.json({ ok: false, message: result.error }, { status: 400 });

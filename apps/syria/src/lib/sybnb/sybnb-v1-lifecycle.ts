@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { recomputeReputationScoreForUser } from "@/lib/syria/user-reputation";
+import { adjustTrustScore } from "@/lib/sybnb/trust-score";
 
 function utcStartOfDay(d: Date): number {
   return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
@@ -30,10 +31,14 @@ export async function autoCompleteDueSybnbBookings(now: Date = new Date()): Prom
     where: { id: { in: ids } },
     data: { status: "completed" },
   });
-  const hosts = await prisma.sybnbBooking.findMany({
+  const parties = await prisma.sybnbBooking.findMany({
     where: { id: { in: ids } },
-    select: { hostId: true },
+    select: { guestId: true, hostId: true },
   });
-  await Promise.all([...new Set(hosts.map((h) => h.hostId))].map((hid) => recomputeReputationScoreForUser(hid)));
+  for (const row of parties) {
+    void adjustTrustScore(row.guestId, 10);
+    void adjustTrustScore(row.hostId, 10);
+  }
+  await Promise.all([...new Set(parties.map((h) => h.hostId))].map((hid) => recomputeReputationScoreForUser(hid)));
   return { updated: res.count, ids };
 }

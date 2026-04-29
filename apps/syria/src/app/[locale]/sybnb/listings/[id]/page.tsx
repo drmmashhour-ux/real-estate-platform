@@ -16,6 +16,7 @@ import type { DarlinkLocale } from "@/lib/i18n/types";
 import { getHostSybnbStats } from "@/lib/sybnb/sybnb-public-data";
 import { getSy8OwnerListingCounts } from "@/lib/sy8/sy8-owner-listing-counts";
 import { SybnbTrustBadge } from "@/components/sybnb/SybnbTrustBadge";
+import { TrustBadge } from "@/components/sybnb/TrustBadge";
 import { labelSyriaAmenityForListing } from "@/lib/syria/amenities";
 import { Sy8LocationQualityBadge } from "@/components/sy8/Sy8LocationQualityBadge";
 import { buildHotelLeadWhatsAppHref, buildWhatsAppContactHref, buildTelHref } from "@/lib/syria-phone";
@@ -153,7 +154,8 @@ export default async function SybnbListingPage(props: Props) {
             <p className="mt-1 text-sm text-neutral-500 [dir=rtl]:text-right">
               {city} · {listing.governorate ?? listing.state}
             </p>
-            <div className="mt-3">
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <TrustBadge trustScore={listing.owner.trustScore} className="text-xs" />
               <SybnbTrustBadge
                 className="text-sm font-medium text-neutral-800"
                 owner={{

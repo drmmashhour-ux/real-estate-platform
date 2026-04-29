@@ -3,27 +3,33 @@
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/cn";
 import { ListingImageSkeleton } from "@/components/syria/ListingImageSkeleton";
+import { useSyriaModeOptional } from "@/context/ModeContext";
+import { syriaListingThumbUrl } from "@/lib/syria/listing-image-thumb";
 
 /** SYBNB grid card hero — lazy load + skeleton (SYBNB-76). */
 export function SybnbListingCoverImage({ src }: { src: string }) {
   const [loaded, setLoaded] = useState(false);
+  const mode = useSyriaModeOptional();
+  const lite = mode?.effectiveMode === "lite";
+  const resolved = lite ? syriaListingThumbUrl(src, 300) : src;
 
   useEffect(() => {
     setLoaded(false);
-  }, [src]);
+  }, [resolved]);
 
   return (
     <div className="relative h-full w-full overflow-hidden">
       <ListingImageSkeleton active={!loaded} className="bg-neutral-200/90 ring-neutral-300/40" />
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src={src}
+        src={resolved}
         alt=""
         loading="lazy"
         decoding="async"
         onLoad={() => setLoaded(true)}
         className={cn(
-          "relative z-[2] h-full w-full object-cover transition-opacity duration-300 group-hover:scale-[1.02]",
+          "relative z-[2] h-full w-full object-cover transition-opacity duration-300",
+          lite ? "" : "group-hover:scale-[1.02]",
           loaded ? "opacity-100" : "opacity-0",
         )}
       />
