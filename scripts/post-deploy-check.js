@@ -1,69 +1,72 @@
 #!/usr/bin/env node
 /**
- * Smoke-check a deployed apps/web instance via GET /api/db-test (JSON { status: "ok" }).
- * Uses DEPLOY_HEALTH_URL only — never prints URLs or secrets (avoid leaking tokens in query strings).
+ * Post-deploy production smoke test — GET `${DEPLOY_HEALTH_BASE_URL||APP_URL}/api/db-test`.
+ * Uses fetch only (no shell injection). Never prints tokens or DATABASE_URL.
+ *
+ * Required secret (repository): APP_URL — production origin only, no trailing slash preferred.
+ * Alternative: DEPLOY_HEALTH_BASE_URL — overrides APP_URL for this script only.
  */
 
-function fail(msg) {
+"use strict";
+
+async function fail(msg) {
   console.error("❌", msg);
   process.exit(1);
 }
 
+function trimOrigin(raw) {
+  const s = String(raw ?? "").trim();
+  return s.replace(/\/$/, "");
+}
+
 async function main() {
-  const raw = process.env.DEPLOY_HEALTH_URL?.trim();
+  const raw = trimOrigin(process.env.DEPLOY_HEALTH_BASE_URL || process.env.APP_URL);
   if (!raw) {
-    fail("DEPLOY_HEALTH_URL is not set — configure GitHub Actions secret with base URL including path (e.g. …/api/db-test)");
+    await fail(
+      "Missing DEPLOY_HEALTH_BASE_URL or APP_URL — set repository secret APP_URL (production origin only).",
+    );
   }
 
   let url;
   try {
-    url = new URL(raw);
+    url = new URL("/api/db-test", raw.endsWith("/") ? raw : `${raw}/`);
   } catch {
-    fail("DEPLOY_HEALTH_URL is not a valid URL");
+    await fail("Invalid APP_URL / DEPLOY_HEALTH_BASE_URL — must be a valid HTTP(S) origin.");
   }
 
-  if (url.protocol !== "https:" && url.protocol !== "http:") {
-    fail("DEPLOY_HEALTH_URL must use http or https");
-  }
-
-  const timeoutMs = Math.min(
-    Math.max(Number(process.env.HEALTHCHECK_TIMEOUT_MS ?? "30000") || 30000, 3000),
-    120000,
-  );
-
-  console.log("Checking remote API health…");
+  console.log("Checking API health (GET /api/db-test)…");
 
   let res;
   try {
     res = await fetch(url, {
-      redirect: "manual",
-      signal: AbortSignal.timeout(timeoutMs),
+      method: "GET",
       headers: { Accept: "application/json" },
+      redirect: "manual",
+      signal: AbortSignal.timeout(25_000),
     });
-  } catch {
-    fail("Post-deploy health request failed (network or timeout)");
-    return;
+  } catch (e) {
+    const err = e instanceof Error ? e.message : String(e);
+    await fail(`Request failed: ${err}`);
   }
 
   if (!res.ok) {
-    fail(`HTTP ${res.status}`);
-    return;
+    await fail(`HTTP ${res.status} from ${url.pathname}`);
   }
 
   let json;
   try {
     json = await res.json();
   } catch {
-    fail("Response was not JSON");
-    return;
+    await fail("Response was not JSON.");
   }
 
-  if (!json || typeof json !== "object" || json.status !== "ok") {
-    fail("API health failed — status was not ok");
-    return;
+  if (json?.status !== "ok") {
+    await fail(`API health failed — expected status ok, got ${JSON.stringify(json?.status)}`);
   }
 
   console.log("✅ API healthy");
 }
 
-main().catch(() => fail("Post-deploy health check failed"));
+main().catch(async (e) => {
+  await fail(e instanceof Error ? e.message : String(e));
+});
